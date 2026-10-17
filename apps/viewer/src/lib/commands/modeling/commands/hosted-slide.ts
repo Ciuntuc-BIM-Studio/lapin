@@ -38,6 +38,8 @@ export interface HostedSlideTarget {
   readonly modelId: string;
   /** The selected element: the opening, or the door or window filling it. */
   readonly expressId: number;
+  /** The door or window filling the opening (null: a bare opening). */
+  readonly filling: number | null;
   readonly host: HostHit;
   /** The opening's Offset now (its placement origin along the host). */
   readonly offset: number;
@@ -77,7 +79,7 @@ export function readHostedSlide(s: ViewerState, modelId: string, expressId: numb
   const lo = host.x[0] - along[0], hi = host.x[1] - along[1];
   // A cut wider than its wall has nowhere to go: it stays where it is.
   const range = lo <= hi ? [lo, hi] as const : [fill.offset, fill.offset] as const;
-  return { modelId, expressId, host, offset: fill.offset, along, up, range };
+  return { modelId, expressId, filling: fill.fillingId, host, offset: fill.offset, along, up, range };
 }
 
 /** The Offset that puts the cut's centre at `cursor` (storey-local), clamped into the host. */

@@ -88,7 +88,7 @@ export function selectFromPlan(globalId: number | null, toggle: boolean): void {
 /** A plan handle was clicked (pressed and released in place): true when it acted. */
 export function clickPlanHandle(handle: PlanHandle): boolean {
   if (handle.kind !== 'flip') return false;
-  const report = flipElements('y');
+  const report = flipElements(handle.axis);
   if (report.refused.length) toast.info(resolve('drafting.msg.flipRefused', { count: report.refused.length, reason: report.refused[0] }));
   return true;
 }

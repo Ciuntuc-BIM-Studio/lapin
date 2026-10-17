@@ -17,7 +17,7 @@ import type { Fit } from '@/lib/rooms/plate-geometry';
 import type { Vec2 } from '@/lib/snap/types';
 import type { PlanCutPolygon } from './usePlanCut';
 import { toScreen } from './PlanLayers';
-import { PLAN_HANDLE_RADIUS_PX, selectedPlanHandles, type PlanHandle } from './plan-handles';
+import { PLAN_HANDLE_RADIUS_PX, planHandleKey, planHandleTitleKey, selectedPlanHandles, type PlanHandle } from './plan-handles';
 
 /** Arrow heads either side of a slide handle, along the wall (screen px). */
 function slideArrows(x: number, y: number, ux: number, uy: number): string {
@@ -37,8 +37,8 @@ export function HandleLayer({ fit, handles, active }: { fit: Fit; handles: reado
     <g data-plan-layer="handles" pointerEvents="none">
       {handles.map((handle) => {
         const [x, y] = toScreen(fit, handle.at);
-        const hot = active !== null && active.kind === handle.kind && (handle.kind !== 'wallEnd' || (active.kind === 'wallEnd' && active.which === handle.which && active.wall === handle.wall));
-        const key = handle.kind === 'wallEnd' ? `end-${handle.wall}-${handle.which}` : handle.kind;
+        const key = planHandleKey(handle);
+        const hot = active !== null && planHandleKey(active) === key;
         if (handle.kind === 'flip') {
           const r = PLAN_HANDLE_RADIUS_PX;
           // Screen y runs down: the plan's +y is the screen's -y.
@@ -50,8 +50,8 @@ export function HandleLayer({ fit, handles, active }: { fit: Fit; handles: reado
           };
           const [ax, ay] = tip(-1), [bx, by] = tip(1);
           return (
-            <g key={key} data-plan-handle="flip" data-plan-handle-hot={hot || undefined}>
-              <title>{t('planHandles.handle.flip')}</title>
+            <g key={key} data-plan-handle={handle.of === 'wall' ? 'flip' : key} data-plan-handle-hot={hot || undefined}>
+              <title>{t(planHandleTitleKey(handle))}</title>
               <circle cx={x} cy={y} r={r} className="fill-overlay-halo stroke-overlay-accent" strokeWidth={hot ? 3 : 2} />
               <path d={`M${ax.toFixed(1)} ${ay.toFixed(1)}L${bx.toFixed(1)} ${by.toFixed(1)}`} className="stroke-overlay-accent" strokeWidth={1.5} />
               <path d={head(1) + head(-1)} className="fill-overlay-accent" />
@@ -70,7 +70,7 @@ export function HandleLayer({ fit, handles, active }: { fit: Fit; handles: reado
         }
         return (
           <g key={key} data-plan-handle={handle.kind === 'wallEnd' ? `wall-${handle.which}` : handle.kind} data-plan-handle-hot={hot || undefined}>
-            <title>{t(handle.kind === 'wallEnd' ? 'planHandles.handle.wallEnd' : 'planHandles.handle.slide')}</title>
+            <title>{t(planHandleTitleKey(handle))}</title>
             {handle.kind === 'slide' && (
               // Screen y runs down: the plan's +y is the screen's -y.
               <path d={slideArrows(x, y, handle.axis[0], -handle.axis[1])} className="fill-overlay-accent" />

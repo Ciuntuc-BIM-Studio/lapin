@@ -19,19 +19,24 @@
  *   axis midpoint, else the middle of its cut outline) (`plan.move`).
  * - A wall: a flip handle beside its middle, off one face; a click flips the
  *   wall across its axis (its layers run from the other face, `flipElements`).
+ * - A door or window in a wall: two flip handles besides its slide handle,
+ *   one past its jamb along the wall (Flip X: the hand) and one off the wall's
+ *   face (Flip Y: the swing side); a click flips it (`flipElements`).
  *
  * Only a single selected element (or several walls) of the session model, on
  * the plan's storey, in Select, and on a model the user may edit, gets handles.
  */
 
 import type { ViewerState } from '@/store';
+import type { TranslationKey } from '@/i18n/en';
 import { resolveEntityRef } from '@/store/resolveEntityRef';
 import { canMutate } from '@/store/mutation-permission';
 import type { Vec2 } from '@/lib/snap/types';
 import type { Vec3, Workplane } from '@/lib/commands/modeling/types';
 import { buildStoreyWorkplane, elementStoreyId, isWorkplane } from '@/lib/commands/modeling/workplane';
 import type { WallEnd } from '@/lib/commands/modeling/commands/wall-move-endpoint';
-import { readHostedSlide, slideHandlePoint } from '@/lib/commands/modeling/commands/hosted-slide';
+import { readHostedSlide, slideHandlePoint, type HostedSlideTarget } from '@/lib/commands/modeling/commands/hosted-slide';
+import { fromHostLocal } from '@/lib/commands/modeling/commands/hosted-host';
 import { readPlanMoveTarget } from '@/lib/commands/modeling/commands/plan-move';
 
 export type PlanHandle =
@@ -40,8 +45,24 @@ export type PlanHandle =
   /** `axis`: the host wall's direction in the plan (unit), for the handle's arrows. */
   | { readonly kind: 'slide'; readonly at: Vec2; readonly axis: Vec2 }
   | { readonly kind: 'move'; readonly at: Vec2 }
-  /** Clicked, not dragged. `normal`: across the wall in the plan (unit), for the handle's arrows. */
-  | { readonly kind: 'flip'; readonly at: Vec2; readonly normal: Vec2 };
+  /**
+   * Clicked, not dragged: flips the selection along its own `axis`. `normal`:
+   * the flip's direction in the plan (unit), for the handle's arrows. `of`:
+   * a wall (across its axis) or a door or window (X: its hand, Y: its swing side).
+   */
+  | { readonly kind: 'flip'; readonly at: Vec2; readonly normal: Vec2; readonly axis: 'x' | 'y'; readonly of: 'wall' | 'joinery' };
+
+/** A handle's identity among the shown ones (React key, hover match). */
+export function planHandleKey(handle: PlanHandle): string {
+  if (handle.kind === 'wallEnd') return `end-${handle.wall}-${handle.which}`;
+  return handle.kind === 'flip' ? `flip-${handle.axis}` : handle.kind;
+}
+
+/** The handle's tooltip key. */
+export function planHandleTitleKey(handle: PlanHandle): TranslationKey {
+  if (handle.kind === 'flip') return handle.of === 'wall' ? 'planHandles.handle.flip' : handle.axis === 'x' ? 'planHandles.handle.flipX' : 'planHandles.handle.flipY';
+  return handle.kind === 'wallEnd' ? 'planHandles.handle.wallEnd' : handle.kind === 'move' ? 'planHandles.handle.move' : 'planHandles.handle.slide';
+}
 
 /** How far the flip handle sits off the wall's face, metres. */
 const FLIP_OFFSET = 0.35;
@@ -109,11 +130,12 @@ export function selectedPlanHandles(s: ViewerState, plane: Workplane | null, out
     const toPlan = storeyToPlan(s, modelId, session.storeyId, plane);
     if (!toPlan) return [];
     const at = slideHandlePoint(slide);
-    const [ax, ay] = slide.host.axisX;
-    const tip = toPlan([at[0] + ax, at[1] + ay, 0]);
-    const centre = toPlan([at[0], at[1], 0]);
-    const len = Math.hypot(tip[0] - centre[0], tip[1] - centre[1]) || 1;
-    return [{ kind: 'slide', at: centre, axis: [(tip[0] - centre[0]) / len, (tip[1] - centre[1]) / len] }];
+    const plan = (p: Vec2) => toPlan([p[0], p[1], 0]);
+    const centre = plan(at);
+    const along = planDirection(plan, at, slide.host.axisX);
+    const handles: PlanHandle[] = [{ kind: 'slide', at: centre, axis: along }];
+    if (slide.filling === expressId) handles.push(...joineryFlips(slide, plan, along));
+    return handles;
   }
 
   const storeyId = elementStoreyId(s, modelId, expressId);
@@ -133,9 +155,31 @@ export function selectedPlanHandles(s: ViewerState, plane: Workplane | null, out
   if (len > 1e-9) {
     const normal: Vec2 = [-(end[1] - start[1]) / len, (end[0] - start[0]) / len];
     const off = wall.thickness / 2 + FLIP_OFFSET;
-    handles.push({ kind: 'flip', at: [mid[0] + normal[0] * off, mid[1] + normal[1] * off], normal });
+    handles.push({ kind: 'flip', at: [mid[0] + normal[0] * off, mid[1] + normal[1] * off], normal, axis: 'y', of: 'wall' });
   }
   return handles;
+}
+
+/** The unit direction `dir` (storey plan) takes in the plan at `at`. */
+function planDirection(plan: (p: Vec2) => Vec2, at: Vec2, dir: Vec2): Vec2 {
+  const a = plan(at), b = plan([at[0] + dir[0], at[1] + dir[1]]);
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+  return [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+}
+
+/** A door's or window's flip handles: X past its jamb on the wall's axis line, Y off the wall's face at its middle. */
+function joineryFlips(slide: HostedSlideTarget, plan: (p: Vec2) => Vec2, along: Vec2): PlanHandle[] {
+  const { host, offset } = slide;
+  const middle = (host.y[0] + host.y[1]) / 2;
+  const centre = offset + (slide.along[0] + slide.along[1]) / 2;
+  const x = plan(fromHostLocal(host, [offset + slide.along[1] + FLIP_OFFSET, middle]));
+  const y = plan(fromHostLocal(host, [centre, host.y[1] + FLIP_OFFSET]));
+  const face = plan(fromHostLocal(host, [centre, host.y[1]]));
+  const len = Math.hypot(y[0] - face[0], y[1] - face[1]) || 1;
+  return [
+    { kind: 'flip', at: x, normal: along, axis: 'x', of: 'joinery' },
+    { kind: 'flip', at: y, normal: [(y[0] - face[0]) / len, (y[1] - face[1]) / len], axis: 'y', of: 'joinery' },
+  ];
 }
 
 /** The handle a press at `cursor` (plan-local) grabs: the nearest within reach, or null. */

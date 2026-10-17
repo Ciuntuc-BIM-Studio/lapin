@@ -15,6 +15,7 @@ import '@/test/setup-dom.js';
 import { installLayout } from '@/test/dom-layout.js';
 installLayout();
 import { afterEach, beforeEach, describe, it } from 'node:test';
+import { useProjectStore } from '@/project/project-store';
 import assert from 'node:assert/strict';
 import { act } from 'react';
 import { readHostedFill } from '@ifc-lite/create';
@@ -219,6 +220,25 @@ describe('plan slide handle (#6232 B3)', () => {
     assert.equal(new Set(added.map((m) => useViewerStore.getState().mutationBatchTags.get(m.id))).size, 1, 'one undo step');
     act(() => useViewerStore.getState().undo(MODEL_ID));
     assert.equal(round(offset()), 2, 'one undo puts it back');
+  });
+
+  it('offers Flip X past its jamb and Flip Y off the wall face; a click flips the hand, then the swing side', async () => {
+    const { ui, svg } = await mountPlan();
+    select(windowId);
+    assert.ok(ui.querySelector('[data-plan-handle="flip-x"]'), 'Flip X shows');
+    assert.ok(ui.querySelector('[data-plan-handle="flip-y"]'), 'Flip Y shows');
+    // The window has no configured type: its plan symbol flips (hand: bit 1, swing side: bit 2).
+    const flips = () => Object.values(useProjectStore.getState().symbolFlips ?? {})[0] ?? 0;
+    const before = flips();
+    const click = (at: Vec2) => {
+      pointer(svg, 'pointerdown', FIT, at);
+      pointer(svg, 'pointerup', FIT, at, { buttons: 0 });
+    };
+    click([2.85, 0]);
+    assert.equal(flips() ^ before, 1, 'Flip X turned the hand');
+    click([2, 0.45]);
+    assert.equal(flips() ^ before, 3, 'Flip Y turned the swing side');
+    assert.equal(useViewerStore.getState().selectedEntityId, toGlobalIdFromModels(useViewerStore.getState().models, MODEL_ID, windowId), 'the window stays selected');
   });
 
   it('is clamped inside the wall at both ends', async () => {

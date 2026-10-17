@@ -7,7 +7,8 @@
  * workspace plan's handles (`plan/plan-handles.ts`): a wall's two axis ends
  * (`wall.moveEndpoint`), a door's, window's or opening's slide along its wall
  * (`hosted.slide`), a move grip at the element's middle (`plan.move`) and,
- * for a wall, a flip grip beside it (a click flips the wall across its axis).
+ * for a wall, a flip grip beside it (a click flips the wall across its axis),
+ * for a door or window its Flip X and Flip Y grips (a click flips its hand or swing side).
  *
  * They show for one selected element of an editable model on the plan's
  * storey, whatever the Edit mode: grabbing one switches Edit mode on, points
@@ -25,7 +26,7 @@ import { buildStoreyWorkplane, isWorkplane } from '@/lib/commands/modeling/workp
 import type { Workplane } from '@/lib/commands/modeling/types';
 import type { Vec2 } from '@/lib/snap/types';
 import { beginPlanHandleDrag, clickPlanHandle } from '@/components/viewer/plan/PlanPointer';
-import { PLAN_HANDLE_RADIUS_PX, PLAN_HANDLE_REACH_PX, selectedPlanHandles, type PlanHandle } from '@/components/viewer/plan/plan-handles';
+import { PLAN_HANDLE_RADIUS_PX, PLAN_HANDLE_REACH_PX, planHandleKey, planHandleTitleKey, selectedPlanHandles, type PlanHandle } from '@/components/viewer/plan/plan-handles';
 import { modelEditTarget } from '@/store/slices/mutation-modelling-records';
 import { aimSessionAtPlan, localScreenMap, type LocalScreenMap } from '@/project/model-command-bridge';
 import { resolveTarget } from '@/project/contour-element';
@@ -138,9 +139,8 @@ export function ModelHandlesLayer({ handles }: { handles: ModelHandles }) {
   return (
     <svg data-bim-handles className="absolute inset-0 h-full w-full pointer-events-none">
       {handles.shown.map(({ handle, x, y }) => {
-        const key = handle.kind === 'wallEnd' ? `end-${handle.wall}-${handle.which}` : handle.kind;
-        const title = t(handle.kind === 'move' ? 'planHandles.handle.move' : handle.kind === 'wallEnd' ? 'planHandles.handle.wallEnd'
-          : handle.kind === 'flip' ? 'planHandles.handle.flip' : 'planHandles.handle.slide');
+        const key = planHandleKey(handle);
+        const title = t(planHandleTitleKey(handle));
         if (handle.kind === 'flip' && handles.map) {
           // The arrows across the wall, on screen.
           const [x1, y1] = handles.map.toScreen([handle.at[0] + handle.normal[0], handle.at[1] + handle.normal[1]]);

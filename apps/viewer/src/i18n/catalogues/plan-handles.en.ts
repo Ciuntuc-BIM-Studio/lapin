@@ -19,6 +19,8 @@ export const planHandlesEn = {
   'planHandles.handle.slide': 'Drag along the wall',
   'planHandles.handle.move': 'Drag to move',
   'planHandles.handle.flip': 'Click to flip the wall (its layers to the other face)',
+  'planHandles.handle.flipX': 'Click to flip the hand (Flip X: hinges to the other jamb)',
+  'planHandles.handle.flipY': 'Click to flip the swing side (Flip Y: to the other face of the wall)',
   'slabOutline.corner': 'Drag to move this corner · double-click to remove it',
   'slabOutline.pushSide': 'Drag to push this side square to itself (a side cut with Knife: only this piece)',
   'slabOutline.knife': 'Click to cut this side here (Knife)',
