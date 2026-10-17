@@ -15,6 +15,8 @@ export const planHandlesEn = {
   'planHandles.move.label': 'Move',
   'planHandles.move.hint': 'Drag to the new place · release to move · Esc cancels',
   'planHandles.move.notMovable': "This element's placement can't be moved here",
+  'planHandles.dimension.label': 'Wall distance',
+  'planHandles.dimension.edit': 'Clear distance to the next wall, face to face (mm): click to type a new one, the wall moves',
   'planHandles.handle.wallEnd': 'Drag the wall end',
   'planHandles.handle.slide': 'Drag along the wall',
   'planHandles.handle.move': 'Drag to move',

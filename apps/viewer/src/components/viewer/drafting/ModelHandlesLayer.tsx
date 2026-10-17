@@ -8,7 +8,8 @@
  * (`wall.moveEndpoint`), a door's, window's or opening's slide along its wall
  * (`hosted.slide`), a move grip at the element's middle (`plan.move`) and,
  * for a wall, a flip grip beside it (a click flips the wall across its axis),
- * for a door or window its Flip X and Flip Y grips (a click flips its hand or swing side).
+ * for a door or window its Flip X and Flip Y grips (a click flips its hand or swing side),
+ * and a selected wall's temporary dimensions to the walls beside it (typing one moves it).
  *
  * They show for one selected element of an editable model on the plan's
  * storey, whatever the Edit mode: grabbing one switches Edit mode on, points
@@ -27,6 +28,8 @@ import type { Workplane } from '@/lib/commands/modeling/types';
 import type { Vec2 } from '@/lib/snap/types';
 import { beginPlanHandleDrag, clickPlanHandle } from '@/components/viewer/plan/PlanPointer';
 import { PLAN_HANDLE_RADIUS_PX, PLAN_HANDLE_REACH_PX, planHandleKey, planHandleTitleKey, selectedPlanHandles, type PlanHandle } from '@/components/viewer/plan/plan-handles';
+import { WallDimensionsLayer } from '@/components/viewer/plan/WallDimensionsLayer';
+import { selectedWallDimensions, type WallDimension } from '@/components/viewer/plan/wall-dimensions';
 import { modelEditTarget } from '@/store/slices/mutation-modelling-records';
 import { aimSessionAtPlan, localScreenMap, type LocalScreenMap } from '@/project/model-command-bridge';
 import { resolveTarget } from '@/project/contour-element';
@@ -53,6 +56,8 @@ export interface ModelHandles {
   map: LocalScreenMap | null;
   /** No grips now (a command runs, a drafting tool is out). */
   idle: boolean;
+  /** The selected wall's temporary dimensions to its neighbours (plan-local, `map` places them). */
+  dimensions: readonly WallDimension[];
   /** A press at screen (x, y): grab the grip there and start its command. True when one was grabbed. */
   grab(x: number, y: number): boolean;
 }
@@ -102,17 +107,19 @@ export function useModelHandles({ view, plane, drawing, transform, axis, draftin
 
   const handles = useMemo(() => {
     void selectedIds; void mutationVersion; void mutationViews;
-    if (!target || !map || drafting || command || selectedId === null) return [];
+    const none = { grips: [] as PlanHandle[], dimensions: [] as WallDimension[] };
+    if (!target || !map || drafting || command || selectedId === null) return none;
     const s = useViewerStore.getState();
-    if (!s.canCollabEdit()) return [];
+    if (!s.canCollabEdit()) return none;
     // As the plan of the Model workspace sees it once a grip is grabbed: the session on this storey, Select, editing.
     const session = { ...(s.session ?? {}), modelId: target.modelId, storeyId: target.storeyId } as NonNullable<typeof s.session>;
     const centre = outlineCentre(drawing, selectedId);
     const local = centre ? map.toLocal(drawingToScreen(centre, transform, axis)) : null;
-    return selectedPlanHandles({ ...s, session, activeTool: 'select', editEnabled: true }, target.workplane, local as Vec2 | null);
+    const planState = { ...s, session, activeTool: 'select' as const, editEnabled: true };
+    return { grips: selectedPlanHandles(planState, target.workplane, local as Vec2 | null), dimensions: selectedWallDimensions(planState, target.workplane) };
   }, [target, map, drafting, command, selectedId, selectedIds, mutationVersion, mutationViews, drawing, transform, axis]);
 
-  const shown = useMemo(() => (map ? handles.map((handle) => {
+  const shown = useMemo(() => (map ? handles.grips.map((handle) => {
     const [x, y] = map.toScreen(handle.at);
     return { handle, x, y };
   }) : []), [handles, map]);
@@ -129,7 +136,7 @@ export function useModelHandles({ view, plane, drawing, transform, axis, draftin
     return beginPlanHandleDrag(best.handle);
   };
 
-  return { shown, grab, target: target ? { modelId: target.modelId, storeyId: target.storeyId } : null, map, idle: drafting || command !== null };
+  return { shown, grab, dimensions: handles.dimensions, target: target ? { modelId: target.modelId, storeyId: target.storeyId } : null, map, idle: drafting || command !== null };
 }
 
 export function ModelHandlesLayer({ handles }: { handles: ModelHandles }) {
@@ -137,6 +144,8 @@ export function ModelHandlesLayer({ handles }: { handles: ModelHandles }) {
   if (handles.shown.length === 0) return null;
   const r = PLAN_HANDLE_RADIUS_PX;
   return (
+    <>
+    {handles.map && <WallDimensionsLayer dims={handles.dimensions} toScreen={handles.map.toScreen} />}
     <svg data-bim-handles className="absolute inset-0 h-full w-full pointer-events-none">
       {handles.shown.map(({ handle, x, y }) => {
         const key = planHandleKey(handle);
@@ -176,5 +185,6 @@ export function ModelHandlesLayer({ handles }: { handles: ModelHandles }) {
         );
       })}
     </svg>
+    </>
   );
 }

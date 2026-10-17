@@ -19,7 +19,9 @@
  *   (`plan-handles.ts`): a wall's ends (the command its 3D end handle
  *   starts), a door's, window's or opening's slide along its wall, a move. A
  *   press on one starts its command; the drag feeds it through the shared
- *   solver, release commits one undo step.
+ *   solver, release commits one undo step. A selected wall also shows its
+ *   clear distances to the parallel walls beside it, face to face; typing one
+ *   moves the wall (`wall-dimensions.ts`).
  * - Wheel zooms, a middle or Ctrl drag pans (a plain drag too in Select).
  * Other tools do nothing here.
  */
@@ -43,6 +45,7 @@ import { ghostFootprints } from './plan-ghost';
 import { beginPlanHandleDrag, clickPlanHandle, routePlanPointer, selectFromPlan } from './PlanPointer';
 import { pickPlanHandle, type PlanHandle } from './plan-handles';
 import { HandleLayer, usePlanHandles } from './PlanHandles';
+import { useWallDimensions, WallDimensionsLayer } from './WallDimensionsLayer';
 import { usePlanViewport } from './usePlanViewport';
 import { PlanHeader } from './PlanHeader';
 import { usePlanGridAxes } from './usePlanGridAxes';
@@ -103,6 +106,7 @@ export function PlanView({ layout }: { layout: ModelLayout }) {
   const designGrids = usePlanGridAxes();
   const cut = usePlanCut(session?.modelId ?? null, session?.storeyId ?? null, plane);
   const handles = usePlanHandles(plane, cut.polygons);
+  const wallDims = useWallDimensions(plane);
   const [grid, setGrid] = useState(true);
   const [hovered, setHovered] = useState<number | null>(null);
   const [hoveredHandle, setHoveredHandle] = useState<PlanHandle | null>(null);
@@ -294,6 +298,7 @@ export function PlanView({ layout }: { layout: ModelLayout }) {
             </>
           )}
         </svg>
+        {fit && !commandOnPlane && <WallDimensionsLayer dims={wallDims} toScreen={project} />}
         {!plane && (
           <p className="pointer-events-none absolute inset-x-0 top-1/3 px-6 text-center text-xs text-muted-foreground">
             {t('modelWorkspace.plan.noPlane')}
