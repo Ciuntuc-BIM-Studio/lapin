@@ -107,20 +107,23 @@ export const DEFAULT_PAD_FOOTING: Omit<PadFootingType, 'typeId' | 'name'> = {
   concrete: DEFAULT_CONCRETE,
 };
 
+/** A layer as the axis rule reads it: its thickness and whether it is the structural core. */
+export interface CoreLayer { readonly thickness: number; readonly core?: boolean }
+
 /** The core layer: the one marked, else the thickest. */
-export function coreIndex(layers: readonly FoundationLayer[]): number {
+export function coreIndex(layers: readonly CoreLayer[]): number {
   const marked = layers.findIndex((l) => l.core);
   if (marked >= 0) return marked;
   return layers.reduce((best, l, i) => (l.thickness > layers[best].thickness ? i : best), 0);
 }
 
 /**
- * Where the stem's layers lie across its axis: its thickness, the body's
- * shift to the left of a centred wall (`WallInStoreParams.Offset`), and the
- * first layer's offset from the axis (`OffsetFromReferenceLine`), so that
- * the core is centred on the axis.
+ * Where a stem's (or a layered wall's) layers lie across its axis: its
+ * thickness, the body's shift to the left of a centred wall
+ * (`WallInStoreParams.Offset`), and the first layer's offset from the axis
+ * (`OffsetFromReferenceLine`), so that the core is centred on the axis.
  */
-export function stemSection(layers: readonly FoundationLayer[]): { thickness: number; bodyOffset: number; layerOffset: number } {
+export function stemSection(layers: readonly CoreLayer[]): { thickness: number; bodyOffset: number; layerOffset: number } {
   const thickness = layers.reduce((sum, l) => sum + l.thickness, 0);
   const core = coreIndex(layers);
   const coreCentre = layers.slice(0, core).reduce((sum, l) => sum + l.thickness, 0) + layers[core].thickness / 2;

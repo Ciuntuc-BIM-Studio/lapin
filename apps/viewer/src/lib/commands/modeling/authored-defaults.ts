@@ -12,7 +12,8 @@
  * A pick from another model, or one that no longer exists (its creation was
  * undone), is skipped. A registered catalogue (`registerCatalogDefaults`)
  * names the type for the kinds it covers, writing it into the model first. A layer set is attached through an
- * IfcMaterialLayerSetUsage per element: across a wall, centred on its axis;
+ * IfcMaterialLayerSetUsage per element: across a wall, with its axis on the
+ * structural layer (the body shifts to put it there, `wall-core-axis.ts`);
  * up from a slab's underside.
  */
 
@@ -20,9 +21,15 @@ import { liveEntityConforms } from '@ifc-lite/create';
 import type { AuthoredElementKind } from '@/store/slices/authoringDefaultsSlice';
 import { modelEditTarget, recordModellingEdit, type ModellingStore } from '@/store/slices/mutation-modelling-records';
 import { AUTHORED_KINDS, authoredKindOf, readLayerSet } from './authored-kinds.js';
+import { alignWallOnCore, markCore, wallLayerOffset } from '@/lib/wall-core-axis';
 
 /** A type (and its layer set) for a kind from outside the inspector's picks: the project's type catalogue. */
-export type CatalogDefaults = (kind: AuthoredElementKind, modelId: string) => { typeId: number; layerSetId: number | null } | null;
+export type CatalogDefaults = (kind: AuthoredElementKind, modelId: string) => {
+  typeId: number;
+  layerSetId: number | null;
+  /** The index of the set's structural layer (a wall's axis runs through it); left out: the thickest. */
+  core?: number;
+} | null;
 let catalogDefaults: CatalogDefaults | null = null;
 
 /** Install the project catalogue's defaults (they win over the inspector's picks for the kinds they cover). */
@@ -30,12 +37,13 @@ export function registerCatalogDefaults(provider: CatalogDefaults | null): void 
   catalogDefaults = provider;
 }
 
-export function applyAuthoredDefaults(store: ModellingStore, modelId: string, ids: readonly number[]): void {
+/** Type and layer what was just built; the ids it re-shaped besides (walls put on their core and the walls joined to them). */
+export function applyAuthoredDefaults(store: ModellingStore, modelId: string, ids: readonly number[]): number[] {
   const state = store.getState();
   const { typeIds, layerSetIds } = state.authoringDefaults;
-  if (ids.length === 0 || (!catalogDefaults && Object.keys(typeIds).length === 0 && Object.keys(layerSetIds).length === 0)) return;
+  if (ids.length === 0 || (!catalogDefaults && Object.keys(typeIds).length === 0 && Object.keys(layerSetIds).length === 0)) return [];
   const target = modelEditTarget(state, modelId);
-  if (!target) return;
+  if (!target) return [];
   const model = { dataStore: target.dataStore, view: target.view };
 
   const byKind = new Map<AuthoredElementKind, number[]>();
@@ -51,10 +59,10 @@ export function applyAuthoredDefaults(store: ModellingStore, modelId: string, id
     const catalog = catalogDefaults?.(kind, modelId) ?? null;
     const typeId = catalog ? catalog.typeId : live(typeIds[kind], info.type);
     const layerSetId = !info.layers ? null : catalog ? catalog.layerSetId : live(layerSetIds[kind], 'IfcMaterialLayerSet');
-    const total = layerSetId === null ? 0 : (readLayerSet(model, layerSetId) ?? []).reduce((sum, layer) => sum + layer.thickness, 0);
-    return { elements, typeId, layerSetId, direction: info.layers, offset: info.layers === 'AXIS2' ? -total / 2 : 0 };
+    const layers = layerSetId === null ? [] : markCore((readLayerSet(model, layerSetId) ?? []).map((layer) => layer.thickness), catalog?.core);
+    return { kind, elements, typeId, layerSetId, layers, direction: info.layers, offset: info.layers === 'AXIS2' ? wallLayerOffset(layers) : 0 };
   }).filter((step) => step.typeId !== null || step.layerSetId !== null);
-  if (plan.length === 0) return;
+  if (plan.length === 0) return [];
 
   recordModellingEdit(store, modelId, (methods) => {
     for (const { elements, typeId, layerSetId, direction, offset } of plan) {
@@ -66,4 +74,13 @@ export function applyAuthoredDefaults(store: ModellingStore, modelId: string, id
       }
     }
   });
+  const reshaped: number[] = [];
+  for (const { kind, elements, layers } of plan) {
+    if (kind !== 'wall') continue;
+    for (const wall of elements) {
+      // A body this cannot rewrite keeps its axis in the middle: the wall is still built and layered.
+      try { reshaped.push(...alignWallOnCore(store, modelId, wall, layers)); } catch (err) { console.warn(`[authoring] wall #${wall} stays centred on its axis`, err); }
+    }
+  }
+  return reshaped;
 }

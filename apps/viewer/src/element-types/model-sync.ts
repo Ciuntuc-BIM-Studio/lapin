@@ -21,7 +21,7 @@ import { applyFoundationTypeToSelection, pushFoundationType } from '@/project/fo
 import {
   assignMaterialInStore, assignTypeInStore, catalogTypeOfElement, ensureCatalogTypeInStore, findCatalogTypeInStore,
   occurrencesOfTypeInStore, readRelatedLists, readRoofSystem, resolveJoineryAnchor, rewriteCatalogTypeInStore, setLayerUsageOffset,
-  addMaterialLayerSetUsageToStore, type CatalogTypeInput, type RoofSystemSpec,
+  addMaterialLayerSetUsageToStore, coreIndex, type CatalogTypeInput, type RoofSystemSpec,
 } from '@ifc-lite/create';
 import { iterateEffectiveEntityIds, type MutablePropertyView } from '@ifc-lite/mutations';
 import type { IfcDataStore } from '@ifc-lite/parser';
@@ -30,6 +30,7 @@ import { recordModellingCommit } from '@/store/slices/mutation-modelling-records
 import { commitElementSize } from '@/lib/element-size-commit';
 import { setElementProfile } from '@/store/slices/mutation-element-profile';
 import { registerCatalogDefaults } from '@/lib/commands/modeling/authored-defaults';
+import { alignWallOnCore, wallLayerOffset } from '@/lib/wall-core-axis';
 import { registerOpeningDefault } from '@/lib/commands/modeling/commands/hosted-place';
 import type { AuthoredElementKind } from '@/store/slices/authoringDefaultsSlice';
 import type { AuthoringTransaction } from '@/lib/commands/modeling/types';
@@ -58,7 +59,8 @@ export function catalogInput(spec: ElementTypeSpec): CatalogTypeInput | null {
 const LAYER_DIRECTION: Partial<Record<ElementTypeKind, 'AXIS2' | 'AXIS3'>> = { wall: 'AXIS2', slab: 'AXIS3' };
 
 /** A wall's layers centred on its axis start half its thickness to the right; a slab's run up from its underside. */
-const usageOffset = (spec: ElementTypeSpec) => (spec.kind === 'wall' ? -layersThickness(spec.layers) / 2 : 0);
+/** A wall's layers start off its axis so that the axis runs through their structural one (`wall-core-axis.ts`). */
+const usageOffset = (spec: ElementTypeSpec) => (spec.kind === 'wall' ? wallLayerOffset(spec.layers) : 0);
 
 /** The catalogue entry an element is typed by, if any. */
 export function elementTypeOfElement(modelId: string, expressId: number): ElementTypeSpec | null {
@@ -75,7 +77,8 @@ function fitOccurrence(tx: AuthoringTransaction, expressId: number, spec: Elemen
     case 'slab': {
       const outcome = commitElementSize(useViewerStore, tx.modelId, expressId, { kind: spec.kind, thickness: layersThickness(spec.layers) });
       if (!outcome.ok) throw new Error(outcome.reason);
-      return outcome.remesh;
+      // A wall's body shifts so that its axis runs through its structural layer.
+      return spec.kind === 'wall' ? [...outcome.remesh, ...alignWallOnCore(useViewerStore, tx.modelId, expressId, spec.layers)] : outcome.remesh;
     }
     case 'column':
     case 'beam': {
@@ -197,7 +200,7 @@ registerCatalogDefaults((kind, modelId) => {
   if (!input) return null;
   return recordModellingCommit(useViewerStore, modelId, (editor, store) => {
     const type = ensureCatalogTypeInStore(store, editor, resolveJoineryAnchor(store, editor.getMutationView()), input);
-    return { typeId: type.typeId, layerSetId: type.layerSetId };
+    return { typeId: type.typeId, layerSetId: type.layerSetId, ...(spec?.kind === 'wall' ? { core: coreIndex(spec.layers) } : {}) };
   });
 });
 

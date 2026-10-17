@@ -20,6 +20,8 @@
 import { AUTHORED_KINDS, authoredKindOf, layerSetOf, type LiveModel } from '@/lib/commands/modeling/authored-kinds';
 import { recordModellingEdit, type ModellingStore } from '@/store/slices/mutation-modelling-records';
 import { setElementSize, type ElementSizeOutcome, type ElementSizePatch } from '@/store/slices/mutation-element-size';
+import { coreIndex, type CoreLayer } from '@ifc-lite/create';
+import { alignWallOnCore, markCore, wallLayerOffset } from '@/lib/wall-core-axis';
 
 /** The smallest a layer may be squeezed to before the set is scaled instead (metres). */
 const MIN_LAYER = 0.001;
@@ -35,6 +37,8 @@ export function layersForThickness(layers: readonly number[], thickness: number)
 /** The layer set a size patch leaves an element with: its own copy, the last layer taking the change. */
 export interface LayerChange {
   readonly set: { MaterialLayers: Array<{ LayerThickness: number; Material?: number }> };
+  /** The new layers, the structural one marked: a wall's axis stays on it. */
+  readonly layers: CoreLayer[];
   usage(setId: number): { ForLayerSet: number; LayerSetDirection: 'AXIS2' | 'AXIS3'; OffsetFromReferenceLine: number };
 }
 
@@ -48,9 +52,13 @@ export function layerChangeFor(live: LiveModel, expressId: number, patch: Elemen
   const total = before.layers.reduce((sum, l) => sum + l.thickness, 0);
   if (Math.abs(total - thickness) < 1e-6) return null;
   const next = layersForThickness(before.layers.map((l) => l.thickness), thickness);
+  // The structural layer is the one that was the thickest: a finish taking the change does not move the axis.
+  const layers = markCore(next, coreIndex(before.layers));
+  const offset = direction !== 'AXIS2' ? 0 : kind === 'wall' ? wallLayerOffset(layers) : -thickness / 2;
   return {
     set: { MaterialLayers: before.layers.map((layer, i) => ({ LayerThickness: next[i], Material: layer.materialId ?? undefined })) },
-    usage: (setId) => ({ ForLayerSet: setId, LayerSetDirection: direction, OffsetFromReferenceLine: direction === 'AXIS2' ? -thickness / 2 : 0 }),
+    layers,
+    usage: (setId) => ({ ForLayerSet: setId, LayerSetDirection: direction, OffsetFromReferenceLine: offset }),
   };
 }
 
@@ -66,5 +74,11 @@ export function commitElementSize(store: ModellingStore, modelId: string, expres
     const usage = m.addMaterialLayerSetUsage(modelId, change.usage(setId)).expressId;
     m.assignMaterial(modelId, usage, [expressId]);
   });
-  return outcome;
+  if (patch.kind !== 'wall') return outcome;
+  // The body shifts so that its axis stays on the structural layer.
+  try {
+    return { ...outcome, remesh: [...new Set([...outcome.remesh, ...alignWallOnCore(store, modelId, expressId, change.layers)])] };
+  } catch (err) {
+    return { ok: false, reason: err instanceof Error ? err.message : String(err) };
+  }
 }

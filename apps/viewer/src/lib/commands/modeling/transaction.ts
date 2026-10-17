@@ -94,7 +94,8 @@ export function runTransaction(
   let result: CommitResult;
   try {
     result = cmd.commit(g, tx);
-    applyAuthoredDefaults(store, result.modelId ?? modelId, result.authored ?? []);
+    const shaped = applyAuthoredDefaults(store, result.modelId ?? modelId, result.authored ?? []);
+    if (shaped.length) result = { ...result, remesh: [...new Set([...result.remesh, ...shaped])] };
     for (const followUp of followUps) {
       const more = followUp(store, result.modelId ?? modelId, result);
       if (more.length) result = { ...result, remesh: [...new Set([...result.remesh, ...more])] };

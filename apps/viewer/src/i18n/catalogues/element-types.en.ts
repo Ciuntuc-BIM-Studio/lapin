@@ -28,6 +28,7 @@ export const elementTypesEn = {
   'elementTypes.width': 'Width (mm)',
   'elementTypes.sill': 'Sill (mm)',
   'elementTypes.section': 'Section',
+  'elementTypes.wallCore': 'Structural layer (the axis runs through its middle)',
   'elementTypes.wallLayers': 'Layers, from the face right of the drawn direction (Flip Y swaps the faces):',
   'elementTypes.slabLayers': 'Layers, top to bottom:',
   'elementTypes.roofLayers': 'Covering, outermost layer first (square to the slope):',

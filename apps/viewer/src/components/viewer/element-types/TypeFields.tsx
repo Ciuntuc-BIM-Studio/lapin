@@ -10,7 +10,7 @@
 
 import { CurtainTypeFields } from '../curtain-wall/CurtainTypeFields';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
-import { catalogLayerColour, type ProfileSectionType } from '@ifc-lite/create';
+import { catalogLayerColour, coreIndex, stemSection, type ProfileSectionType } from '@ifc-lite/create';
 import { useTranslation } from '@/i18n';
 import { IconButton } from '@/components/ui/icon-button';
 import { PROFILE_FIELDS, PROFILE_KINDS, PROFILE_KIND_LABEL, DEFAULT_SECTIONS, sectionDimensions } from '@/lib/profile-section/profile-kinds';
@@ -117,6 +117,26 @@ function SectionFields({ spec, onChange }: { spec: Extract<ElementTypeSpec, { ki
   );
 }
 
+/** `next` layers with the core kept on the layer it was (by name) when layers move or change; else none marked (the thickest). */
+export function keepCore(prev: readonly TypeLayer[], next: TypeLayer[]): TypeLayer[] {
+  const name = prev[coreIndex(prev)]?.name;
+  const marked = prev.some((l) => l.core);
+  const at = marked ? next.findIndex((l) => l.name === name) : -1;
+  return next.map((l, i) => ({ ...l, core: at >= 0 ? i === at : undefined }));
+}
+
+/** Which layer is the structural core, the one the axis runs through. */
+export function CoreLayerField({ layers, label, onChange }: { layers: TypeLayer[]; label: string; onChange: (layers: TypeLayer[]) => void }) {
+  return (
+    <Field label={label}>
+      <select aria-label={label} className="h-6 w-full rounded-sm border border-zinc-300 dark:border-zinc-700 bg-transparent px-1 tabular-nums"
+        value={coreIndex(layers)} onChange={(e) => onChange(layers.map((l, k) => ({ ...l, core: k === Number(e.target.value) })))}>
+        {layers.map((l, i) => <option key={i} value={i}>{`${i + 1}. ${l.name}`}</option>)}
+      </select>
+    </Field>
+  );
+}
+
 export function TypeFields({ spec, onChange }: { spec: ElementTypeSpec; onChange: (spec: ElementTypeSpec) => void }) {
   const { t } = useTranslation();
   switch (spec.kind) {
@@ -124,7 +144,8 @@ export function TypeFields({ spec, onChange }: { spec: ElementTypeSpec; onChange
       return (
         <>
           <Field label={t('elementTypes.height')}><Mm label={t('elementTypes.height')} value={spec.height} onCommit={(height) => onChange({ ...spec, height })} /></Field>
-          <LayerTable layers={spec.layers} onChange={(layers) => onChange({ ...spec, layers })} caption={t('elementTypes.wallLayers')} />
+          <CoreLayerField layers={spec.layers} label={t('elementTypes.wallCore')} onChange={(layers) => onChange({ ...spec, layers })} />
+          <LayerTable layers={spec.layers} onChange={(layers) => onChange({ ...spec, layers: keepCore(spec.layers, layers) })} caption={t('elementTypes.wallLayers')} />
         </>
       );
     case 'slab':
@@ -185,7 +206,7 @@ export function TypeFields({ spec, onChange }: { spec: ElementTypeSpec; onChange
   }
 }
 
-/** The build-up drawn to scale: a wall's (or foundation wall's) layers across it, a slab's or roof's down through it. */
+/** The build-up drawn to scale: a wall's (or foundation wall's) layers across it with its axis, a slab's or roof's down through it. */
 export function LayerPreview({ spec }: { spec: ElementTypeSpec }) {
   if (spec.kind !== 'wall' && spec.kind !== 'slab' && spec.kind !== 'roof' && spec.kind !== 'stripFoundation') return null;
   const total = layersThickness(spec.layers) || 1;
@@ -200,6 +221,11 @@ export function LayerPreview({ spec }: { spec: ElementTypeSpec }) {
         at += size;
         return <rect key={i} x={x} y={y} width={across ? size : W - 40} height={across ? H - 40 : size} fill={catalogLayerColour(spec.layers, i)} stroke="currentColor" strokeWidth={0.5} />;
       })}
+      {across && spec.layers.length > 0 && (() => {
+        // The axis: through the structural layer's middle.
+        const x = 20 + (-stemSection(spec.layers).layerOffset / total) * (W - 40);
+        return <line data-layer-axis x1={x} x2={x} y1={8} y2={H - 8} stroke="currentColor" strokeWidth={1} strokeDasharray="8 3 2 3" />;
+      })()}
     </svg>
   );
 }

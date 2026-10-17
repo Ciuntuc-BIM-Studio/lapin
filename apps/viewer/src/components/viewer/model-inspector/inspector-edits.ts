@@ -25,7 +25,8 @@ import type { AuthoredElementKind } from '@/store/slices/authoringDefaultsSlice'
 import { detachFromType, recordModellingEdit } from '@/store/slices/mutation-modelling-records';
 import { commitElementSize } from '@/lib/element-size-commit';
 import type { ElementSizePatch } from '@/store/slices/mutation-element-size';
-import { setWallSection, type WallSection } from '@/store/slices/mutation-wall-section';
+import type { WallSection } from '@/store/slices/mutation-wall-section';
+import { alignWallOnCore, markCore, wallLayerOffset } from '@/lib/wall-core-axis';
 import { editHostedFillIn, moveHostedFillIn, type HostedFillPosition } from '@/store/slices/mutation-hosted-fill';
 import { setElementProfile } from '@/store/slices/mutation-element-profile';
 import { editStairDimensionsInStore, type HostedElementSize, type ProfileSection, type StairDimensionEdit } from '@ifc-lite/create';
@@ -170,8 +171,8 @@ export interface ApplyLayersSpec {
 
 /**
  * Write any new IfcMaterial, the IfcMaterialLayerSet, and associate it (on
- * the element through a usage: across a wall centred on its axis, up through
- * a slab; or on the type). A wall layered this way takes the layers' total
+ * the element through a usage: across a wall with its axis on its thickest
+ * layer, up through a slab; or on the type). A wall layered this way takes the layers' total
  * thickness in the same step. The new set's id, or null when refused.
  */
 export function applyMaterialLayers(modelId: string, spec: ApplyLayersSpec): number | null {
@@ -179,6 +180,8 @@ export function applyMaterialLayers(modelId: string, spec: ApplyLayersSpec): num
   const direction = AUTHORED_KINDS[kind].layers;
   if (!direction) throw new Error(`A ${kind} has no material layers`);
   const total = layers.reduce((sum, layer) => sum + layer.thickness, 0);
+  // A wall's axis runs through its structural layer (here the thickest), not the middle of its finishes.
+  const core = markCore(layers.map((layer) => layer.thickness), null);
   let layerSetId: number | null = null;
   const ok = runInspectorEdit(modelId, (tx) => {
     recordModellingEdit(useViewerStore, tx.modelId, (m) => {
@@ -195,7 +198,7 @@ export function applyMaterialLayers(modelId: string, spec: ApplyLayersSpec): num
         m.assignMaterial(tx.modelId, setId, [typeId]);
       } else if (elementId !== undefined) {
         const usage = m.addMaterialLayerSetUsage(tx.modelId, {
-          ForLayerSet: setId, LayerSetDirection: direction, OffsetFromReferenceLine: direction === 'AXIS2' ? -total / 2 : 0,
+          ForLayerSet: setId, LayerSetDirection: direction, OffsetFromReferenceLine: direction !== 'AXIS2' ? 0 : kind === 'wall' ? wallLayerOffset(core) : -total / 2,
         });
         m.assignMaterial(tx.modelId, usage.expressId, [elementId]);
       }
@@ -205,11 +208,7 @@ export function applyMaterialLayers(modelId: string, spec: ApplyLayersSpec): num
       return typeId === null || !dataStore ? [] : occurrencesOf({ dataStore, view: tx.store.mutationViews.get(tx.modelId) }, typeId);
     }
     if (elementId === undefined) return [];
-    if (kind === 'wall') {
-      const section = setWallSection(tx.api, tx.modelId, elementId, { thickness: total });
-      if (!section.ok) throw new Error(section.reason);
-      return section.remesh;
-    }
+    if (kind === 'wall') return alignWallOnCore(tx.api, tx.modelId, elementId, core);
     return [elementId];
   });
   return ok ? layerSetId : null;

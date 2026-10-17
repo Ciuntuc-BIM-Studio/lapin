@@ -16,6 +16,11 @@ export interface WallSection {
   readonly thickness?: number;
   /** Metres from the wall's base up. */
   readonly height?: number;
+  /**
+   * The body's shift to the left of its axis (`WallInStoreParams.Offset`),
+   * metres: where the axis sits in the body (a layered wall's on its core).
+   */
+  readonly offset?: number;
 }
 
 export type WallSectionOutcome =
@@ -43,18 +48,22 @@ export function setWallSectionInStore(target: EditTarget, expressId: number, sec
     const refusal = heightRefusal(target, expressId, toNativeLength(unit, section.height), scale);
     if (refusal) return { ok: false, reason: refusal };
   }
-  if (section.thickness !== undefined && section.thickness !== wall.thickness) {
-    const thickness = toNativeLength(unit, section.thickness);
+  const shift = section.offset !== undefined && Math.abs(section.offset - (wall.read?.wall.offset ?? 0)) > 1e-9;
+  if (section.offset !== undefined && !Number.isFinite(section.offset)) return { ok: false, reason: 'A wall body offset must be a number' };
+  if (shift && !wall.read) return { ok: false, reason: "This wall's body can't be shifted across its axis" };
+  if ((section.thickness !== undefined && section.thickness !== wall.thickness) || shift) {
+    const thickness = toNativeLength(unit, section.thickness ?? wall.thickness);
     const hosts = openingsOf(target, expressId).length > 0;
     // The profile is centred on the axis, so a plain wall's faces stay symmetric about the body's centre.
     const before = hosts ? hostBodyExtent(target, expressId) : null;
     if (hosts && !before) return { ok: false, reason: "This wall's body can't be read, so its openings can't follow the new thickness" };
     const joined = wall.read !== null && readWallJoinRels(target.dataStore, target.view, new Set([expressId])).length > 0;
-    const plain = wall.chain !== null && (wall.read === null || (wall.read.plain && !joined));
+    const plain = !shift && wall.chain !== null && (wall.read === null || (wall.read.plain && !joined));
     if (wall.chain && plain) {
       updates.push({ entityId: wall.chain.profileId, index: PROFILE_YDIM, value: thickness });
     } else {
-      const reshaped = reshapeWallsInStore(target.editor, target.dataStore, resolveWallJoinAnchor(target.dataStore, target.view), [{ wallId: expressId, thickness: section.thickness }], {});
+      const reshape = { wallId: expressId, ...(section.thickness !== undefined ? { thickness: section.thickness } : {}), ...(shift ? { offset: section.offset } : {}) };
+      const reshaped = reshapeWallsInStore(target.editor, target.dataStore, resolveWallJoinAnchor(target.dataStore, target.view), [reshape], {});
       remesh.push(...reshaped.walls);
     }
     if (hosts) {

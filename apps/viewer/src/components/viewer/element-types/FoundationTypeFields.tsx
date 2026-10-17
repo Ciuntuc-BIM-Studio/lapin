@@ -12,9 +12,8 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 import { IconButton } from '@/components/ui/icon-button';
-import { coreIndex } from '@ifc-lite/create';
 import type { PadFootingTypeSpec, StripFoundationTypeSpec } from '@/element-types/spec';
-import { Field, LayerTable, Mm } from './TypeFields';
+import { CoreLayerField, Field, keepCore, LayerTable, Mm } from './TypeFields';
 
 const CELL = 'h-6 w-full rounded-sm border border-zinc-300 dark:border-zinc-700 bg-transparent px-1 tabular-nums';
 
@@ -32,8 +31,6 @@ function SignedMm({ label, value, onCommit }: { label: string; value: number; on
 
 export function StripFoundationFields({ spec, onChange }: { spec: StripFoundationTypeSpec; onChange: (spec: StripFoundationTypeSpec) => void }) {
   const { t } = useTranslation();
-  const core = coreIndex(spec.layers);
-  const setCore = (i: number) => onChange({ ...spec, layers: spec.layers.map((l, k) => ({ ...l, core: k === i })) });
   return (
     <>
       <Field label={`${t('elementTypes.foundation.stemHeight')} (mm)`}>
@@ -49,18 +46,8 @@ export function StripFoundationFields({ spec, onChange }: { spec: StripFoundatio
         <SignedMm label={t('elementTypes.foundation.bottom')} value={spec.bottom} onCommit={(bottom) => onChange({ ...spec, bottom })} />
       </Field>
       <p className="text-zinc-500">{t('elementTypes.foundation.bottomHint')}</p>
-      <Field label={t('elementTypes.foundation.core')}>
-        <select aria-label={t('elementTypes.foundation.core')} className={CELL} value={core} onChange={(e) => setCore(Number(e.target.value))}>
-          {spec.layers.map((l, i) => <option key={i} value={i}>{`${i + 1}. ${l.name}`}</option>)}
-        </select>
-      </Field>
-      <LayerTable layers={spec.layers} caption={t('elementTypes.foundation.layers')}
-        onChange={(layers) => {
-          // The core stays the layer it was (by name) when layers move; else the thickest.
-          const name = spec.layers[core]?.name;
-          const at = layers.findIndex((l) => l.name === name);
-          onChange({ ...spec, layers: layers.map((l, i) => ({ ...l, core: at >= 0 ? i === at : undefined })) });
-        }} />
+      <CoreLayerField layers={spec.layers} label={t('elementTypes.foundation.core')} onChange={(layers) => onChange({ ...spec, layers })} />
+      <LayerTable layers={spec.layers} caption={t('elementTypes.foundation.layers')} onChange={(layers) => onChange({ ...spec, layers: keepCore(spec.layers, layers) })} />
     </>
   );
 }

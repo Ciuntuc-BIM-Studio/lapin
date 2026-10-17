@@ -15,6 +15,8 @@ import assert from 'node:assert/strict';
 import { useViewerStore } from '@/store';
 import { MODEL_ID, STOREY, seedModelingSession } from '@/test/modeling-session-fixture';
 import { applyMaterialLayers, createElementType } from '@/components/viewer/model-inspector/inspector-edits';
+import { readWallJoinTarget } from '@ifc-lite/create';
+import { wallLayerOffset } from '@/lib/wall-core-axis';
 import { layerSetOf, typeOf, type LiveModel } from './authored-kinds.js';
 import { runTransaction, setRequestRemesh } from './transaction.js';
 import type { CommandContext, ModelingCommand } from './types.js';
@@ -89,5 +91,19 @@ describe('authored defaults (#6232 M2.5)', () => {
     assert.equal(runTransaction(useViewerStore, command, null, ctx).ok, true);
     assert.equal(typeOf(live(), wall()), null);
     assert.equal(layerSetOf(live(), wall()), null);
+  });
+
+  it("a layered wall's axis runs through its structural layer, not the middle of its finishes", () => {
+    // Plaster 20 mm, brick 250 mm (the thickest: the core), insulation 100 mm, from the right face.
+    const set = applyMaterialLayers(MODEL_ID, { kind: 'wall', target: 'element', typeId: null, layers: [0.02, 0.25, 0.1].map((thickness) => ({ thickness, material: null })) })!;
+    s().setAuthoringDefaults({ typeIds: {}, layerSetIds: { wall: { modelId: MODEL_ID, expressId: set } } });
+    const { command, wall } = addWall(true);
+    assert.equal(runTransaction(useViewerStore, command, null, ctx).ok, true);
+    const body = readWallJoinTarget(live().dataStore, live().view, wall(), 1)!.wall;
+    assert.equal(+body.thickness.toFixed(6), 0.37, 'the wall is as thick as its layers');
+    // Its faces: 20 + 125 mm right of the axis, 125 + 100 mm left of it.
+    assert.equal(+(body.offset ?? 0).toFixed(6), 0.04, 'the body shifts 40 mm to the left of the axis');
+    assert.equal(+wallLayerOffset([{ thickness: 0.02 }, { thickness: 0.25 }, { thickness: 0.1 }]).toFixed(6), -0.145, 'the layers start 145 mm right of the axis');
+    assert.equal(wallLayerOffset([{ thickness: 0.02 }, { thickness: 0.1, core: true }, { thickness: 0.25 }]), -0.07, 'a marked core wins over the thickest');
   });
 });
