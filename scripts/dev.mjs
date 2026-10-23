@@ -17,10 +17,12 @@ console.log('▸ building the engine…');
 const build = spawnSync('dotnet', ['build', join(engine, 'BubbleBim.slnx'), '-v', 'q', '-nologo'], { cwd: root, stdio: 'inherit' });
 if (build.status !== 0) process.exit(build.status ?? 1);
 
-const product = JSON.parse(readFileSync(join(root, 'products/lapin.json'), 'utf8'));
+const productId = process.env.LAPIN_PRODUCT ?? 'lapin';
+const product = JSON.parse(readFileSync(join(root, `products/${productId}.json`), 'utf8'));
 mkdirSync(join(root, '.artifacts'), { recursive: true });
 const manifest = join(root, '.artifacts/product.json');
-writeFileSync(manifest, JSON.stringify({ ...product, extensions: [] }, null, 2));
+// The engine loads the product's engine modules.
+writeFileSync(manifest, JSON.stringify({ id: product.id, name: product.name, modules: product.engine, extensions: [] }, null, 2));
 
 const children = [];
 let down = false;
@@ -39,7 +41,7 @@ process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
 const hostDll = join(engine, 'src/Host/BubbleBim.Host/bin/Debug/net10.0/BubbleBim.Host.dll');
-console.log(`▸ engine: ${product.modules.join(' + ')} on ws://127.0.0.1:${PORT}/ws`);
+console.log(`▸ ${product.name}: UI ${product.modules.join(' + ')} · engine ${product.engine.join(' + ')} on ws://127.0.0.1:${PORT}/ws`);
 run('engine', 'dotnet', [hostDll, '--product', manifest, '--modules-dir', join(engine, 'artifacts/modules'), '--port', String(PORT), '--parent-pid', String(process.pid)]);
-run('ui', 'pnpm', ['--filter', 'ui', 'dev'], { env: { VITE_ENGINE_URL: `ws://127.0.0.1:${PORT}/ws` } });
+run('ui', 'pnpm', ['--filter', 'ui', 'dev'], { env: { VITE_ENGINE_URL: `ws://127.0.0.1:${PORT}/ws`, LAPIN_PRODUCT: productId } });
 if (desktop) run('desktop', 'pnpm', ['tauri', 'dev'], { cwd: join(root, 'desktop'), env: { BUBBLEBIM_ENGINE_URL: `ws://127.0.0.1:${PORT}/ws` } });

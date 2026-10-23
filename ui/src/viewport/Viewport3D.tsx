@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { RenderItem } from '@bbim/platform/types';
 import { useSession } from '../engine/session';
+import { useUi } from '../app/store';
 
 export interface PlanePick { x: number; y: number }
 
@@ -18,7 +19,16 @@ interface Props {
   picking: boolean;
 }
 
-const PAPER = 0xf3efe7;
+const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
+/** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
+const GRID = { paper: [0xb5532d, 0xd6cebf], graphite: [0xe07a4f, 0x34312c] } as const;
+
+function groundGrid(theme: keyof typeof GRID): THREE.GridHelper {
+  const grid = new THREE.GridHelper(60, 60, GRID[theme][0], GRID[theme][1]);
+  grid.rotation.x = Math.PI / 2;
+  grid.name = 'ground-grid';
+  return grid;
+}
 
 function meshOf(item: RenderItem): THREE.Group {
   const group = new THREE.Group();
@@ -55,6 +65,7 @@ function dispose(o: THREE.Object3D) {
 export function Viewport3D({ onPick, picking }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const scene = useRef<THREE.Scene | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const items = useRef(new Map<string, { item: RenderItem; object: THREE.Group }>());
   const pickRef = useRef(onPick);
   pickRef.current = picking ? onPick : undefined;
@@ -63,7 +74,8 @@ export function Viewport3D({ onPick, picking }: Props) {
     const el = host.current!;
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setClearColor(PAPER);
+    renderer.setClearColor(CLEAR[useUi.getState().theme]);
+    rendererRef.current = renderer;
     el.appendChild(renderer.domElement);
     THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
     const s = new THREE.Scene();
@@ -78,9 +90,7 @@ export function Viewport3D({ onPick, picking }: Props) {
     const sun = new THREE.DirectionalLight(0xffffff, 1.6);
     sun.position.set(20, -30, 40);
     s.add(sun);
-    const grid = new THREE.GridHelper(60, 60, 0xb5532d, 0xd6cebf);
-    grid.rotation.x = Math.PI / 2;
-    s.add(grid);
+    s.add(groundGrid(useUi.getState().theme));
 
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = el;
@@ -123,6 +133,18 @@ export function Viewport3D({ onPick, picking }: Props) {
       el.removeChild(renderer.domElement);
     };
   }, []);
+
+  // The view clears to the theme's paper or graphite.
+  const theme = useUi((st) => st.theme);
+  useEffect(() => {
+    rendererRef.current?.setClearColor(CLEAR[theme]);
+    const s = scene.current;
+    const old = s?.getObjectByName('ground-grid');
+    if (!s || !old) return;
+    s.remove(old);
+    dispose(old);
+    s.add(groundGrid(theme));
+  }, [theme]);
 
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);

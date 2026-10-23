@@ -16,9 +16,28 @@ which holds the model as a graph of building elements and derives their geometry
 |---|---|
 | `ui/` | Lapin's interface: ribbon, 3D view, panels (React + three.js) |
 | `desktop/` | the Tauri shell: the window, native dialogs, starts the engine |
-| `products/lapin.json` | the engine modules Lapin loads (building, drawing, ifc, cost) |
+| `products/*.json` | editions: the UI modules a build bundles and the engine modules it loads |
+| `ui/src/modules/` | the UI modules: core, architecture, structure, drafting, phases, cost |
 | `vendor/bubblebim-pro/` | the engine (submodule) |
 | `docs/plan.md` | the plan: decisions, milestones M0–M7 |
+
+## Modules and editions
+
+A module brings its ribbon tabs, its quick tools (the 1–9 bar over the view)
+and its property sections (`ui/src/platform/module.ts`). An edition is a list
+of modules (`products/<id>.json`): a build bundles only those, so a module an
+edition does not have is not in its code at all.
+
+```sh
+LAPIN_PRODUCT=lapin-architecture pnpm dev    # Core + Architecture + Drafting only
+LAPIN_PRODUCT=lapin-architecture pnpm build
+```
+
+## Licences
+
+Lapin is MIT. `pnpm check:licenses` (run by `pnpm build`) fails when a
+production dependency is not under a permissive licence (MIT, ISC, BSD,
+Apache-2.0…), so nothing copyleft gets in by accident.
 
 ## Run
 

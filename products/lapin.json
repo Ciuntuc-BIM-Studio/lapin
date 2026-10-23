@@ -1,1 +1,6 @@
-{ "id": "lapin", "name": "Lapin", "modules": ["building", "drawing", "ifc", "cost"] }
+{
+  "id": "lapin",
+  "name": "Lapin",
+  "modules": ["core", "architecture", "structure", "drafting", "phases", "cost"],
+  "engine": ["building", "drawing", "ifc", "cost"]
+}

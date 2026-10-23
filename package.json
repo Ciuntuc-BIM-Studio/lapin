@@ -11,7 +11,9 @@
     "typecheck": "pnpm --filter ui typecheck",
     "test": "pnpm --filter ui test",
     "dev:desktop": "node scripts/dev.mjs --desktop",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "build": "node scripts/check-licenses.mjs && pnpm --filter ui build"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
