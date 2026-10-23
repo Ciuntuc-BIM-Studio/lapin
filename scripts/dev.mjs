@@ -45,6 +45,7 @@ process.on('SIGTERM', shutdown);
 
 const hostDll = join(engine, 'src/Host/Lapin.Host/bin/Debug/net10.0/Lapin.Host.dll');
 console.log(`▸ ${product.name}: ${product.modules.join(' + ')} on ws://127.0.0.1:${PORT}/ws`);
-run('engine', 'dotnet', [hostDll, '--product', manifest, '--modules-dir', join(engine, 'artifacts/modules'), '--port', String(PORT), '--parent-pid', String(process.pid)]);
+// The dev engine keeps its user data (recovery journals) in the repository, apart from an installed Lapin's.
+run('engine', 'dotnet', [hostDll, '--product', manifest, '--modules-dir', join(engine, 'artifacts/modules'), '--user-dir', join(root, '.artifacts/user'), '--port', String(PORT), '--parent-pid', String(process.pid)]);
 run('ui', 'pnpm', ['--filter', 'ui', 'dev'], { env: { VITE_ENGINE_URL: `ws://127.0.0.1:${PORT}/ws`, LAPIN_PRODUCT_FILE: manifest } });
 if (desktop) run('desktop', 'pnpm', ['tauri', 'dev'], { cwd: join(root, 'desktop'), env: { LAPIN_ENGINE_URL: `ws://127.0.0.1:${PORT}/ws` } });
