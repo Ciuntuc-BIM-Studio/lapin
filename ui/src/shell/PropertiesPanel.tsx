@@ -12,6 +12,7 @@ import { execute, useSession } from '../engine/session';
 import { relatingOf, typeOf } from '../engine/model';
 import type { FieldDescriptor, NodeDto } from '../engine/protocol';
 import { propertySections } from '../platform/modules';
+import { QuantitiesSection } from './QuantitiesSection';
 
 /** An input that commits on Enter or when it loses focus, not on every key. */
 function Commit({ value, onCommit, suffix, className }: { value: string; onCommit: (v: string) => void; suffix?: string; className?: string }) {
@@ -87,6 +88,7 @@ export function PropertiesPanel() {
           <dl className="fields">{cls.fields.map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
         </section>
       )}
+      <QuantitiesSection node={node} />
       {node.editable && node.type !== 'IfcProject' && node.type !== 'IfcSite' && node.type !== 'IfcBuilding' && (
         <section className="sect actions">
           <button type="button" className="btn" onClick={() => void execute('element.delete', { id: node.id })}><Trash2 size={14} />Delete</button>

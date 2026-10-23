@@ -36,6 +36,9 @@ public interface IModuleRegistry
     /// <summary>Builds the geometry of every entity of <paramref name="ifcClass"/>.</summary>
     void Geometry(string ifcClass, GeometryProducer producer);
 
+    /// <summary>What an entity of <paramref name="ifcClass"/> measures: its quantity sets, from its geometry and the model.</summary>
+    void Quantities(string ifcClass, QuantityProducer producer);
+
     /// <summary>Data the module's interface reads (a catalogue of types), published as "module.name".</summary>
     void Catalog(string name, JsonNode data);
 
@@ -49,6 +52,22 @@ public delegate JsonNode? QueryHandler(IQueryContext context, JsonObject args);
 
 /// <summary>An entity's geometry, read from the model (never stored in it).</summary>
 public delegate ElementGeometry? GeometryProducer(Entity entity, IModelView model, IServices services);
+
+/// <summary>An entity's quantity sets, from its built geometry (null: none) and the model.</summary>
+public delegate IEnumerable<QuantitySet> QuantityProducer(Entity entity, ElementGeometry? geometry, IModelView model);
+
+/// <summary>One measured value: its IFC name (NetVolume), the value in SI units, and what kind it is.</summary>
+public sealed record Quantity(string Name, double Value, string Kind, string? Label = null)
+{
+    /// <summary>The unit the value is in: m, m², m³, pcs, kg.</summary>
+    public string Unit => Kind switch { "LENGTH" => "m", "AREA" => "m²", "VOLUME" => "m³", "COUNT" => "pcs", "WEIGHT" => "kg", _ => "" };
+}
+
+/// <summary>
+/// A quantity set (IFC: an IfcElementQuantity), of the element itself or of
+/// one of its parts (a zone, a finish layer: <see cref="Part"/> is its key).
+/// </summary>
+public sealed record QuantitySet(string Name, IReadOnlyList<Quantity> Quantities, string? Part = null, string? PartName = null, string? Material = null);
 
 public interface IServices
 {
@@ -91,8 +110,8 @@ public sealed record ClassDescriptor(
     /// <summary>"element" (placed on a storey), "type", "resource".</summary>
     string Kind = "element");
 
-/// <summary>One coloured part of an element: a wall's layer, a window's frame.</summary>
-public sealed record GeometryPart(string Name, string Color, Solid Solid, string? Material = null);
+/// <summary>One coloured part of an element: a wall's layer or zone, a window's frame. <see cref="Key"/> is stable within the element ("layer:0", "zone:ring-beam").</summary>
+public sealed record GeometryPart(string Name, string Color, Solid Solid, string? Material = null, string? Key = null);
 
 /// <summary>Plan linework of an element: its cut outline, a symbol.</summary>
 public sealed record PlanItem(string Kind, bool Closed, IReadOnlyList<Vec2> Points);

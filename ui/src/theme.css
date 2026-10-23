@@ -205,3 +205,6 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .recent.recover .btn { width: auto; padding: 7px 12px; }
 .plan-grip { fill: var(--panel); stroke: var(--accent); stroke-width: 1.5; cursor: move; }
 .plan-grip-drag { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
+.qset + .qset { margin-top: 10px; }
+.qset-head { font-weight: 600; margin-bottom: 4px; }
+.qrow { display: contents; }

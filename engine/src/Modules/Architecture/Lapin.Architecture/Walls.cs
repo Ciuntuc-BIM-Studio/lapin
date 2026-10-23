@@ -105,8 +105,8 @@ public static class Walls
         edit.Replace(usage.With(attrs: Layers.WriteUsage(u with { Negative = !u.Negative, Offset = -u.Offset })));
     }
 
-    /// <summary>A layer band of the wall's section: across the axis (left of it positive), its material.</summary>
-    public readonly record struct Band(double From, double To, string? Material, string Name);
+    /// <summary>A layer band of the wall's section: across the axis (left of it positive), its material, whether it is the core.</summary>
+    public readonly record struct Band(double From, double To, string? Material, string Name, bool Core = false, int Index = 0);
 
     /// <summary>The wall's section, first layer to last; one centred band for a wall without layers.</summary>
     public static IReadOnlyList<Band> Section(IModelView m, Entity wall)
@@ -115,10 +115,11 @@ public static class Walls
         {
             var layers = Layers.Read(set);
             var bands = Layers.Bands(layers, usage);
-            return layers.Select((l, i) => new Band(bands[i].From, bands[i].To, l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}")).ToList();
+            var core = Layers.CoreIndex(layers);
+            return layers.Select((l, i) => new Band(bands[i].From, bands[i].To, l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", i == core, i)).ToList();
         }
         var t = wall.NumOrNull("thickness") ?? DefaultThickness;
-        return [new Band(-t / 2, t / 2, null, wall.Name)];
+        return [new Band(-t / 2, t / 2, null, wall.Name, true)];
     }
 
     /// <summary>
@@ -152,6 +153,7 @@ public static class Walls
         double At(EndCut c, double y) => yMax - yMin < 1e-12 ? c.Right : c.Right + (c.Left - c.Right) * (y - yMin) / (yMax - yMin);
         Vec2 P(double x, double y) => start + dir * x + left * y;
 
+        var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
         var parts = new List<GeometryPart>();
         var plan = new List<PlanItem>();
         foreach (var band in bands)
@@ -162,10 +164,60 @@ public static class Walls
                 P(-At(startCut, band.From), band.From), P(length + At(endCut, band.From), band.From),
                 P(length + At(endCut, band.To), band.To), P(-At(startCut, band.To), band.To),
             ];
-            if (Prism.ExtrudeFootprint(footprint, z, height, band.Name) is { } solid)
-                parts.Add(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material));
+            // The core of a zoned wall is its zones, bottom to top; every other layer runs the whole height.
+            if (band.Core && zones.Count > 0)
+                foreach (var zb in zones)
+                {
+                    if (Prism.ExtrudeFootprint(footprint, z + zb.Z0, zb.Z1 - zb.Z0, zb.Zone.Name) is { } piece)
+                        parts.Add(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key));
+                }
+            else if (Prism.ExtrudeFootprint(footprint, z, height, band.Name) is { } solid)
+                parts.Add(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"));
             plan.Add(new PlanItem("cut", true, footprint));
         }
         return new ElementGeometry(parts, plan, [start, end], problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>
+    /// What a wall measures: Qto_WallBaseQuantities for the wall; for each
+    /// part, its zone's set (blocks, mortar, concrete, steel) or its layer's
+    /// (Lapin_WallLayerQuantities). Net values come from the built parts.
+    /// </summary>
+    public static IEnumerable<QuantitySet> Quantities(Entity wall, ElementGeometry? geometry, IModelView m)
+    {
+        if (geometry == null || geometry.Parts.Count == 0) yield break;
+        var length = (End(wall) - Start(wall)).Length;
+        var height = wall.Num("height", DefaultHeight);
+        var bands = Section(m, wall);
+        var width = bands.Max(b => b.To) - bands.Min(b => b.From);
+        var volumes = geometry.Parts.ToDictionary(p => p.Key ?? p.Name, p => Measure.Volume(p.Solid));
+        var net = volumes.Values.Sum();
+        yield return new QuantitySet("Qto_WallBaseQuantities",
+        [
+            new("Length", length, "LENGTH"),
+            new("Width", width, "LENGTH"),
+            new("Height", height, "LENGTH"),
+            new("GrossSideArea", length * height, "AREA", "Gross side area"),
+            new("NetSideArea", width > 0 ? net / width : 0, "AREA", "Net side area"),
+            new("GrossVolume", length * height * width, "VOLUME", "Gross volume"),
+            new("NetVolume", net, "VOLUME", "Net volume"),
+        ]);
+        var core = bands.FirstOrDefault(b => b.Core);
+        var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
+        foreach (var zb in zones)
+            if (volumes.TryGetValue("zone:" + zb.Zone.Key, out var v))
+                yield return WallZones.Quantities(zb.Zone, zb.Z0, zb.Z1, length, core.To - core.From, v);
+        foreach (var band in bands)
+        {
+            if (band.Core && zones.Count > 0) continue;
+            if (!volumes.TryGetValue($"layer:{band.Index}", out var v)) continue;
+            var t = band.To - band.From;
+            yield return new QuantitySet("Lapin_WallLayerQuantities",
+            [
+                new("Width", t, "LENGTH"),
+                new("NetSideArea", t > 0 ? v / t : 0, "AREA", "Net side area"),
+                new("NetVolume", v, "VOLUME", "Net volume"),
+            ], $"layer:{band.Index}", band.Name, band.Material);
+        }
     }
 }

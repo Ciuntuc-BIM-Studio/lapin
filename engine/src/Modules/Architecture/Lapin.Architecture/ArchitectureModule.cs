@@ -21,17 +21,19 @@ public sealed class ArchitectureModule : ILapinModule
         r.Class(new(IfcClass.WallType, "Wall type", [new("mark", "Mark", "text")], "#b5654a", Kind: "type"));
 
         r.Geometry(IfcClass.Wall, (wall, model, _) => Walls.Geometry(wall, model));
+        r.Quantities(IfcClass.Wall, (wall, geometry, model) => Walls.Quantities(wall, geometry, model));
+        r.Catalog("defaultZones", new JsonArray(WallZones.Defaults("Brick").Select(z => (JsonNode)z).ToArray()));
 
         r.Command("createWallType", "New wall type", (ctx, a) =>
         {
-            var type = WallTypes.Create(ctx, (string?)a["name"], WallTypes.ParseLayers(a["layers"]), (string?)a["mark"]);
+            var type = WallTypes.Create(ctx, (string?)a["name"], WallTypes.ParseLayers(a["layers"]), (string?)a["mark"], a["zones"]);
             return new JsonObject { ["id"] = type.Id };
         });
 
         r.Command("updateWallType", "Change wall type", (ctx, a) =>
         {
             var type = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.WallType);
-            WallTypes.Update(ctx, type, (string?)a["name"], a["layers"] is null ? null : WallTypes.ParseLayers(a["layers"]));
+            WallTypes.Update(ctx, type, (string?)a["name"], a["layers"] is null ? null : WallTypes.ParseLayers(a["layers"]), a["zones"]);
             return null;
         });
 

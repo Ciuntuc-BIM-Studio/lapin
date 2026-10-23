@@ -61,7 +61,7 @@ public static class WallTypes
         return $"{core.Material} wall {Math.Round(layers.Sum(l => l.Thickness) * 1000)}";
     }
 
-    public static Entity Create(IEdit edit, string? name, IReadOnlyList<LayerSpec> layers, string? mark = null)
+    public static Entity Create(IEdit edit, string? name, IReadOnlyList<LayerSpec> layers, string? mark = null, JsonNode? zones = null)
     {
         Validate(layers);
         var typeName = string.IsNullOrWhiteSpace(name) ? DefaultName(layers) : name.Trim();
@@ -69,6 +69,7 @@ public static class WallTypes
         edit.Add(set);
         var attrs = new JsonObject();
         if (mark != null) attrs["mark"] = mark;
+        if (zones is JsonArray { Count: > 0 }) attrs["zones"] = WallZones.Parse(edit, zones);
         var type = new Entity(edit.NewId(), IfcClass.WallType, typeName, attrs, "STANDARD");
         edit.Add(type);
         edit.Relate(IfcClass.RelAssociatesMaterial, set.Id, type.Id);
@@ -84,13 +85,21 @@ public static class WallTypes
     /// Every wall of the type keeps its axis on the (new) core, mirrored for a
     /// flipped wall.
     /// </summary>
-    public static void Update(IEdit edit, Entity type, string? name, IReadOnlyList<LayerSpec>? layers)
+    public static void Update(IEdit edit, Entity type, string? name, IReadOnlyList<LayerSpec>? layers, JsonNode? zones = null)
     {
         if (name != null)
         {
             var trimmed = name.Trim();
             if (trimmed.Length == 0) throw new CommandException("A type's name cannot be empty.");
             edit.Replace(type.With(name: trimmed));
+        }
+        if (zones != null)
+        {
+            var current = edit.Model.Get(type.Id)!;
+            var attrs = current.CloneAttrs();
+            var parsed = WallZones.Parse(edit, zones);
+            if (parsed.Count == 0) attrs.Remove("zones"); else attrs["zones"] = parsed;
+            edit.Replace(current.With(attrs: attrs));
         }
         if (layers == null) return;
         Validate(layers);

@@ -17,6 +17,7 @@ public sealed class ModuleCatalog : IServices
     readonly Dictionary<string, CommandEntry> _commands = [];
     readonly Dictionary<string, QueryHandler> _queries = [];
     readonly Dictionary<string, GeometryProducer> _geometry = [];
+    readonly Dictionary<string, QuantityProducer> _quantities = [];
     readonly Dictionary<string, JsonNode> _catalogs = [];
     readonly List<(Type Contract, object Implementation)> _services = [];
     readonly List<ILapinModule> _modules = [];
@@ -46,6 +47,7 @@ public sealed class ModuleCatalog : IServices
     public CommandEntry? Command(string name) => _commands.GetValueOrDefault(name);
     public QueryHandler? Query(string name) => _queries.GetValueOrDefault(name);
     public GeometryProducer? Geometry(string ifcClass) => _geometry.GetValueOrDefault(ifcClass);
+    public QuantityProducer? QuantitiesOf(string ifcClass) => _quantities.GetValueOrDefault(ifcClass);
 
     public T? Get<T>() where T : class => _services.Where(s => s.Contract == typeof(T)).Select(s => (T)s.Implementation).FirstOrDefault();
     public IReadOnlyList<T> All<T>() where T : class => _services.Where(s => s.Contract == typeof(T)).Select(s => (T)s.Implementation).ToList();
@@ -77,6 +79,12 @@ public sealed class ModuleCatalog : IServices
         {
             if (c.OwnerOf(ifcClass) != module) throw new InvalidOperationException($"„{module}” builds the geometry of {ifcClass}, which it does not own.");
             c._geometry[ifcClass] = producer;
+        }
+
+        public void Quantities(string ifcClass, QuantityProducer producer)
+        {
+            if (c.OwnerOf(ifcClass) != module) throw new InvalidOperationException($"„{module}” measures {ifcClass}, which it does not own.");
+            c._quantities[ifcClass] = producer;
         }
 
         public void Catalog(string name, JsonNode data) => c._catalogs[Qualified(name)] = data;

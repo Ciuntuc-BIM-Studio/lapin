@@ -182,6 +182,13 @@ public sealed class Session
         return _store.Get(id) is { } e ? Build(e)?.Geometry : null;
     }
 
+    /// <summary>What an entity measures: its quantity sets and its parts' (none when its class has no measures).</summary>
+    public IReadOnlyList<QuantitySet> Quantities(string id)
+    {
+        if (_store.Get(id) is not { } e || _catalog.QuantitiesOf(e.Class) is not { } producer) return [];
+        return producer(e, Geometry(id), _store).ToList();
+    }
+
     // ------------------------------------------------------------ diffs
 
     public Diff Snapshot()
