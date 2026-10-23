@@ -2,9 +2,10 @@
 
 BIM authoring for architects and engineers, on the **BubbleBIM Pro** engine.
 
-Lapin is a desktop application. Its interface (React, TypeScript, three.js) runs in a
-Tauri window and talks over a local WebSocket to the BubbleBIM Pro engine (C#, .NET 10),
-which holds the model as a graph of building elements and derives their geometry.
+Lapin is a desktop application and a classic modeller on the IFC schema. Its interface
+(React, TypeScript, three.js) runs in a Tauri window and talks over a local WebSocket to
+Lapin's engine (C#, .NET 10), which holds the IFC model and derives its geometry with the
+BubbleBIM Pro geometry kernel.
 
 > Private repository. Licensed under the MIT licence (see `LICENSE`).
 > The BubbleBIM Pro engine (`vendor/bubblebim-pro`, a git submodule) is a separate
