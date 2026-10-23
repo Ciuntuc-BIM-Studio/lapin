@@ -28,6 +28,14 @@ public static class WallTypes
     public static IReadOnlyList<MaterialLayer> LayersOf(IModelView m, string typeId) =>
         LayerSetOf(m, typeId) is { } set ? Layers.Read(set) : [];
 
+    /// <summary>A lintel rule as a command gives it, checked.</summary>
+    public static JsonObject ParseLintels(JsonNode node)
+    {
+        var rule = LintelRule.From(node) ?? throw new CommandException("The lintel rule is unreadable.");
+        if (Lintels.Problems(rule) is { Count: > 0 } problems) throw new CommandException($"Lintels: {string.Join("; ", problems)}.");
+        return rule.ToJson();
+    }
+
     public static IReadOnlyList<LayerSpec> ParseLayers(JsonNode? node)
     {
         if (node is not JsonArray arr) throw new CommandException("A wall type needs its layers.");
@@ -61,7 +69,7 @@ public static class WallTypes
         return $"{core.Material} wall {Math.Round(layers.Sum(l => l.Thickness) * 1000)}";
     }
 
-    public static Entity Create(IEdit edit, string? name, IReadOnlyList<LayerSpec> layers, string? mark = null, JsonNode? zones = null)
+    public static Entity Create(IEdit edit, string? name, IReadOnlyList<LayerSpec> layers, string? mark = null, JsonNode? zones = null, JsonNode? lintels = null)
     {
         Validate(layers);
         var typeName = string.IsNullOrWhiteSpace(name) ? DefaultName(layers) : name.Trim();
@@ -70,6 +78,7 @@ public static class WallTypes
         var attrs = new JsonObject();
         if (mark != null) attrs["mark"] = mark;
         if (zones is JsonArray { Count: > 0 }) attrs["zones"] = WallZones.Parse(edit, zones);
+        if (lintels != null) attrs["lintels"] = ParseLintels(lintels);
         var type = new Entity(edit.NewId(), IfcClass.WallType, typeName, attrs, "STANDARD");
         edit.Add(type);
         edit.Relate(IfcClass.RelAssociatesMaterial, set.Id, type.Id);
@@ -85,13 +94,20 @@ public static class WallTypes
     /// Every wall of the type keeps its axis on the (new) core, mirrored for a
     /// flipped wall.
     /// </summary>
-    public static void Update(IEdit edit, Entity type, string? name, IReadOnlyList<LayerSpec>? layers, JsonNode? zones = null)
+    public static void Update(IEdit edit, Entity type, string? name, IReadOnlyList<LayerSpec>? layers, JsonNode? zones = null, JsonNode? lintels = null)
     {
         if (name != null)
         {
             var trimmed = name.Trim();
             if (trimmed.Length == 0) throw new CommandException("A type's name cannot be empty.");
             edit.Replace(type.With(name: trimmed));
+        }
+        if (lintels != null)
+        {
+            var current = edit.Model.Get(type.Id)!;
+            var attrs = current.CloneAttrs();
+            attrs["lintels"] = ParseLintels(lintels);
+            edit.Replace(current.With(attrs: attrs));
         }
         if (zones != null)
         {

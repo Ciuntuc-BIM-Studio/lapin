@@ -13,6 +13,7 @@ import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { materialName, mm, ofClass, relatedOf, typeLayers } from '../../engine/model';
+import { DEFAULT_RULE, LintelRuleEditor, type Rule } from './LintelRule';
 
 interface Row { material: string; thicknessMm: string; core: boolean }
 
@@ -55,12 +56,14 @@ export function WallTypesDialog() {
   const [name, setName] = useState('');
   const [rows, setRows] = useState<Row[]>(blank());
   const [zones, setZones] = useState<ZoneRow[]>([]);
+  const [lintels, setLintels] = useState<Rule>(DEFAULT_RULE);
   const info = useSession((s) => s.info);
 
   // Load the picked type into the editor.
   useEffect(() => {
     const t = editing ? nodes.get(editing) : undefined;
-    if (!t) { setName(''); setRows(blank()); setZones([]); return; }
+    if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); return; }
+    setLintels((t.props.lintels as unknown as Rule | undefined) ?? DEFAULT_RULE);
     setName(t.name);
     setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thicknessMm: mm(l.thickness), core: l.core === true })));
     const stored = Array.isArray(t.props.zones) ? (t.props.zones as unknown as ZoneJson[]) : [];
@@ -88,9 +91,9 @@ export function WallTypesDialog() {
   };
 
   const save = async () => {
-    if (editing) await execute('architecture.updateWallType', { id: editing, name, layers, zones: zoneJson });
+    if (editing) await execute('architecture.updateWallType', { id: editing, name, layers, zones: zoneJson, lintels });
     else {
-      const r = await execute('architecture.createWallType', { name, layers, zones: zoneJson }) as { id?: string } | null;
+      const r = await execute('architecture.createWallType', { name, layers, zones: zoneJson, lintels }) as { id?: string } | null;
       if (r?.id) { setEditing(r.id); useUi.setState({ wallTypeId: r.id }); }
     }
   };
@@ -166,6 +169,7 @@ export function WallTypesDialog() {
                 </tbody>
               </table>
             )}
+            <LintelRuleEditor rule={lintels} onChange={(r) => setLintels(r ?? DEFAULT_RULE)} />
             {zones.length > 0 && <button type="button" className="btn" onClick={() => setZones([...zones, { key: '', name: 'Zone', role: 'masonry', heightMm: '250', rest: false, material: 'Brick', block: '', rebar: '' }])}><Plus size={14} />Zone</button>}
             <div className="row">
               <button type="button" className="btn" onClick={() => setRows([...rows, { material: 'Plaster', thicknessMm: '15', core: false }])}><Plus size={14} />Layer</button>

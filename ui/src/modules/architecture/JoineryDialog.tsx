@@ -12,6 +12,7 @@ import { Plus, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { engine, execute, useSession } from '../../engine/session';
 import { mm, ofClass, relatedOf } from '../../engine/model';
+import { LintelRuleEditor, type Rule } from './LintelRule';
 
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean }
 interface Spec {
@@ -21,6 +22,7 @@ interface Spec {
   columns: number[]; rows: number[]; panels: Panel[];
   board: { interior: number; exterior: number }; threshold: number;
   colors: { frame: string; glass: string; leaf: string }; isExternal: boolean; thermalTransmittance?: number | null;
+  lintel?: Rule | null;
 }
 interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number }[]; ifcType: string }
 
@@ -145,6 +147,7 @@ export function JoineryDialog() {
                 </tbody>
               </table>
               <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>
+              <LintelRuleEditor inherit rule={spec.lintel ?? null} onChange={(r) => set({ lintel: r })} />
               {spec.kind === 'door' && <label className="field-line"><span className="eyebrow">Leaf</span><input type="color" value={spec.colors.leaf} onChange={(e) => set({ colors: { ...spec.colors, leaf: e.target.value } })} /></label>}
             </div>
             <div className="joinery-preview">

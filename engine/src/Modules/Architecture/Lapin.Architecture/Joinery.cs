@@ -47,7 +47,9 @@ public sealed record JoinerySpec(
     double Threshold,
     JoineryColors Colors,
     bool IsExternal,
-    double? ThermalTransmittance = null)
+    double? ThermalTransmittance = null,
+    /// <summary>The lintel over its openings: null, the wall's rule; mode "none", none.</summary>
+    LintelRule? Lintel = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,

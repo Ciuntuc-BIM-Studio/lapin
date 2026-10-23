@@ -103,14 +103,14 @@ public sealed class ArchitectureModule : ILapinModule
 
         r.Command("createWallType", "New wall type", (ctx, a) =>
         {
-            var type = WallTypes.Create(ctx, (string?)a["name"], WallTypes.ParseLayers(a["layers"]), (string?)a["mark"], a["zones"]);
+            var type = WallTypes.Create(ctx, (string?)a["name"], WallTypes.ParseLayers(a["layers"]), (string?)a["mark"], a["zones"], a["lintels"]);
             return new JsonObject { ["id"] = type.Id };
         });
 
         r.Command("updateWallType", "Change wall type", (ctx, a) =>
         {
             var type = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.WallType);
-            WallTypes.Update(ctx, type, (string?)a["name"], a["layers"] is null ? null : WallTypes.ParseLayers(a["layers"]), a["zones"]);
+            WallTypes.Update(ctx, type, (string?)a["name"], a["layers"] is null ? null : WallTypes.ParseLayers(a["layers"]), a["zones"], a["lintels"]);
             return null;
         });
 

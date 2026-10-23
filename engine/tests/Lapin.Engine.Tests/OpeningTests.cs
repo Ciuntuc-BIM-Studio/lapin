@@ -52,6 +52,7 @@ public class OpeningTests
             ["name"] = "Brick 30 zoned",
             ["layers"] = new JsonArray(new JsonObject { ["material"] = "Brick", ["thickness"] = 0.3 }),
             ["zones"] = new JsonArray(WallZones.Defaults("Brick").Select(z => (JsonNode)z.DeepClone()).ToArray()),
+            ["lintels"] = new JsonObject { ["mode"] = "none", ["bearing"] = 0, ["height"] = 0.25 },   // the zones alone, as the old test
         })!["id"]!;
         var wall = f.Wall(0, 0, 5, 0, type);
         // The old test's door: from 1 m to 2 m along the wall, 2.1 m high.
@@ -154,5 +155,51 @@ public class OpeningTests
         Assert.True(Math.Abs((Handle().X - 2.5) + (h.X - 2.5)) < 0.05);   // the other hand
         f.Run("architecture.flipJoinery", new JsonObject { ["id"] = door, ["axis"] = "y" });
         Assert.True(Math.Sign(Handle().Y) != Math.Sign(h.Y) || Math.Abs(Handle().Y - h.Y) > 0.03);   // the other side
+    }
+
+    [Fact]
+    public void A_door_gets_the_default_precast_lintel_through_the_core_which_it_takes_from()
+    {
+        var f = new Fixture();
+        var wall = f.Wall(0, 0, 6, 0);
+        var full = Vol(f, wall);
+        Door(f, wall, 3);
+        var parts = f.Session.Geometry(wall)!.Parts;
+        var lintel = Assert.Single(parts, p => p.Key!.StartsWith("lintel:"));
+        var b = Measure.Bounds(lintel.Solid)!.Value;
+        // 900 + 2 × 250 = 1400 → the 1500 catalogue length, centred over the door; 250 high over its 2100 head; the 250 mm brick core.
+        Assert.Equal(1.5, b.Max.X - b.Min.X, 9);
+        Assert.Equal(2.25, b.Min.X, 9);
+        Assert.Equal(2.1, b.Min.Z, 9);
+        Assert.Equal(2.35, b.Max.Z, 9);
+        Assert.Equal(0.25, b.Max.Y - b.Min.Y, 9);
+        // What the lintel is, the core is not: the wall's volume, door out, stays the same.
+        Assert.Equal(full - 0.9 * 2.1 * 0.285, Vol(f, wall), 6);
+        var set = f.Session.Quantities(wall).Single(s => s.Part?.StartsWith("lintel:") == true);
+        Assert.Equal("Qto_BeamBaseQuantities", set.Name);
+        Assert.Equal(1.5 * 0.25 * 0.25, set.Quantities.Single(q => q.Name == "NetVolume").Value, 6);
+        Assert.Equal(1.5, set.Quantities.Single(q => q.Name == "Length").Value, 6);
+    }
+
+    [Fact]
+    public void A_wall_type_without_lintels_and_a_window_type_with_its_own_rule()
+    {
+        var f = new Fixture();
+        var type = (string)f.Run("architecture.createWallType", new JsonObject
+        {
+            ["name"] = "Partition", ["layers"] = new JsonArray(new JsonObject { ["material"] = "Plasterboard", ["thickness"] = 0.1 }),
+            ["lintels"] = new JsonObject { ["mode"] = "none", ["bearing"] = 0, ["height"] = 0.25 },
+        })!["id"]!;
+        var wall = f.Wall(0, 0, 6, 0, type);
+        Door(f, wall, 2);
+        Assert.DoesNotContain(f.Session.Geometry(wall)!.Parts, p => p.Key!.StartsWith("lintel:"));
+        var cast = (string)f.Run("architecture.createJoineryType", new JsonObject
+        {
+            ["spec"] = (JoinerySpec.DefaultDoor("Door cast") with { Lintel = new LintelRule("cast", 0.2, 0.2) }).ToJson(),
+        })!["id"]!;
+        Door(f, wall, 4.5, cast);
+        var lintel = Assert.Single(f.Session.Geometry(wall)!.Parts, p => p.Key!.StartsWith("lintel:"));
+        Assert.Equal("Lintel (cast)", lintel.Name);
+        Assert.Equal(0.9 + 0.4, Measure.Bounds(lintel.Solid)!.Value.Max.X - Measure.Bounds(lintel.Solid)!.Value.Min.X, 9);
     }
 }

@@ -163,10 +163,30 @@ public static class Walls
         var cutters = openings.Select(o => (o, Box: Openings.Cutter(frame, o with { Along = o.Along - Vec2.Dot(start - Start(wall), dir) }))).Where(c => c.Box != null).ToList();
         var booleans = services?.Get<ISolidBooleans>();
         if (cutters.Count > 0 && booleans == null) problems.Add("Openings need the boolean library (manifold), missing here: the wall is drawn uncut.");
-        GeometryPart Cut(GeometryPart part, double z0, double z1)
+        // Lintels over the openings, through the core; the ring beam coming down over an opening close under it.
+        var core = bands.FirstOrDefault(b => b.Core);
+        var shift = Vec2.Dot(start - Start(wall), dir);
+        var lintels = core.To - core.From > 1e-9 ? Lintels.ForWall(
+            openings.Select(o => new LintelOpening(o.Opening.Id, o.Along - o.Width / 2 - shift, o.Along + o.Width / 2 - shift, o.Sill, o.Sill + o.Height,
+                o.Spec?.Lintel is { Mode: not "none" } own ? own : null, o.Spec?.Lintel is { Mode: "none" })).ToList(),
+            zones, LintelRuleOf(m, wall), (-Math.Max(At(startCut, core.From), At(startCut, core.To)), length + Math.Max(At(endCut, core.From), At(endCut, core.To)), height)) : [];
+        var lintelBoxes = new List<(Lintel Lintel, int Piece, Solid Box)>();
+        foreach (var l in lintels)
+        {
+            var slices = l.Kind == "downstand" ? [(core.From, core.To)] : Lintels.Slices(l.Rule, core.From, core.To, outerAtMin: true);
+            for (var i = 0; i < slices.Count; i++)
+            {
+                var (y0, y1) = slices[i];
+                Vec2[] fp = [P(l.X0, y0), P(l.X1, y0), P(l.X1, y1), P(l.X0, y1)];
+                if (Prism.ExtrudeFootprint(fp, z + l.Z0, l.Z1 - l.Z0, "lintel") is { } box) lintelBoxes.Add((l, i, box));
+            }
+        }
+        GeometryPart Cut(GeometryPart part, double z0, double z1, bool isCore = false)
         {
             if (booleans == null) return part;
-            var reach = cutters.Where(c => c.o.Sill + z < z1 - 1e-9 && c.o.Sill + c.o.Height + z > z0 + 1e-9).Select(c => c.Box!).ToList();
+            var reach = cutters.Where(c => c.o.Sill + z < z1 - 1e-9 && c.o.Sill + c.o.Height + z > z0 + 1e-9).Select(c => c.Box!)
+                .Concat(isCore ? lintelBoxes.Where(b => b.Lintel.Z0 < z1 - 1e-9 && b.Lintel.Z1 > z0 + 1e-9).Select(b => b.Box) : [])
+                .ToList();
             if (reach.Count == 0) return part;
             try { return booleans.Difference(part.Solid, reach, part.Solid.Tag) is { } cut ? part with { Solid = cut } : part; }
             catch (InvalidOperationException ex) { problems.Add($"{part.Name}: an opening could not be cut ({ex.Message})."); return part; }
@@ -186,10 +206,10 @@ public static class Walls
                 foreach (var zb in zones)
                 {
                     if (Prism.ExtrudeFootprint(footprint, z + zb.Z0, zb.Z1 - zb.Z0, zb.Zone.Name) is { } piece)
-                        parts.Add(Cut(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key), zb.Z0, zb.Z1));
+                        parts.Add(Cut(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key), zb.Z0, zb.Z1, isCore: true));
                 }
             else if (Prism.ExtrudeFootprint(footprint, z, height, band.Name) is { } solid)
-                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), 0, height));
+                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), 0, height, isCore: band.Core));
             // In plan, the band between the gaps the openings leave at the cut.
             var x0 = -Math.Max(At(startCut, band.From), At(startCut, band.To));
             var x1 = length + Math.Max(At(endCut, band.From), At(endCut, band.To));
@@ -201,7 +221,33 @@ public static class Walls
                 at = Math.Max(at, g.To);
             }
         }
+        if (booleans != null)
+        {
+            var ring = zones.FirstOrDefault(zb => zb.Zone.Role == "ringBeam");
+            foreach (var (l, i, box) in lintelBoxes)
+            {
+                var material = l.Kind == "downstand" ? ring?.Zone.Material : l.Rule?.Material is { } name ? Materials.Find(m, name)?.Id : Materials.Find(m, "Reinforced concrete")?.Id;
+                var color = material != null ? Materials.ColorOf(m, material) : "#a8a8a8";
+                var label = l.Kind == "downstand" ? "Ring beam over opening" : l.Precast ? "Lintel (precast)" : "Lintel (cast)";
+                parts.Add(new GeometryPart(label, color, box, material, $"{l.Kind}:{l.Key}:{i}"));
+            }
+        }
         return new ElementGeometry(parts, plan, [start, end], problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>The lintel rule of the wall's type: its own, else the default (precast, 25 cm bearing, 25 cm high); mode none, none.</summary>
+    public static LintelRule? LintelRuleOf(IModelView m, Entity wall)
+    {
+        var rule = TypeOf(m, wall.Id) is { } type && type.Attrs["lintels"] is { } node ? LintelRule.From(node) : LintelRule.Default;
+        return rule is { Mode: not "none" } ? rule : null;
+    }
+
+    /// <summary>A prism's width across its length: its volume over its height and its longest horizontal extent.</summary>
+    static double SectionWidth(Solid s, double height)
+    {
+        var b = Measure.Bounds(s)!.Value;
+        var longest = Math.Max(b.Max.X - b.Min.X, b.Max.Y - b.Min.Y);
+        return longest > 0 && height > 0 ? Measure.Volume(s) / (height * longest) : 0;
     }
 
     /// <summary>The plan's cut above the wall's base: the storey's cut height less the wall's base offset.</summary>
@@ -257,6 +303,21 @@ public static class Walls
         foreach (var zb in zones)
             if (volumes.TryGetValue("zone:" + zb.Zone.Key, out var v))
                 yield return WallZones.Quantities(zb.Zone, zb.Z0, zb.Z1, length, core.To - core.From, v);
+        // Lintels and downstands: one set per lintel, its pieces together.
+        foreach (var group in geometry.Parts.Where(p => p.Key is { } k && (k.StartsWith("lintel:") || k.StartsWith("downstand:"))).GroupBy(p => p.Key![..p.Key!.LastIndexOf(':')]))
+        {
+            var volume = group.Sum(p => Measure.Volume(p.Solid));
+            var bounds = group.Select(p => Measure.Bounds(p.Solid)!.Value).ToList();
+            var h = bounds.Max(b => b.Max.Z) - bounds.Min(b => b.Min.Z);
+            var lintelLength = h > 0 && volume > 0 ? volume / (h * Math.Max(1e-9, group.Sum(p => SectionWidth(p.Solid, h)))) : 0;
+            var q = new List<Quantity>
+            {
+                new("Length", lintelLength, "LENGTH"),
+                new("CrossSectionArea", lintelLength > 0 ? volume / lintelLength : 0, "AREA", "Cross section"),
+                new("NetVolume", volume, "VOLUME", "Net volume"),
+            };
+            yield return new QuantitySet("Qto_BeamBaseQuantities", q, group.Key, group.First().Name, group.First().Material);
+        }
         foreach (var band in bands)
         {
             if (band.Core && zones.Count > 0) continue;
