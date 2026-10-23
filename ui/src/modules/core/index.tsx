@@ -6,6 +6,7 @@ import type { LapinModule } from '../../platform/module';
 import { setTool, useUi } from '../../app/store';
 import { MaterialsDialog } from './MaterialsDialog';
 import { StandardsDialog } from './StandardsDialog';
+import { SheetSection } from './SheetSection';
 
 const core: LapinModule = {
   id: 'core',
@@ -42,6 +43,7 @@ const core: LapinModule = {
     ],
   }],
   dialogs: { materials: MaterialsDialog, standards: StandardsDialog },
+  propertySections: [{ id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection }],
   hotbar: [
     { id: 'select', label: 'Select', icon: MousePointer2, shortcut: 'Esc', run: () => setTool(null) },
     { id: 'measure', label: 'Measure', icon: Ruler, shortcut: 'ME' },

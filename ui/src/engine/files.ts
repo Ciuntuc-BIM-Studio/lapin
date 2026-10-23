@@ -115,3 +115,29 @@ export async function guardWindowClose(): Promise<void> {
     await win.destroy();
   });
 }
+
+/**
+ * An export from the engine (PDF, DXF): to the path the save dialog gives on
+ * the desktop, else handed back and downloaded by the browser.
+ */
+export async function exportFile(method: string, args: Record<string, unknown>, name: string, ext: string): Promise<void> {
+  try {
+    if (isDesktop()) {
+      const dialog = await import('@tauri-apps/plugin-dialog');
+      const path = await dialog.save({ defaultPath: name, filters: [{ name: ext.toUpperCase(), extensions: [ext] }] });
+      if (typeof path !== 'string') return;
+      await engine.call(method, { ...args, path });
+      notify(`Exported ${path.split(/[\\/]/).pop()}.`);
+      return;
+    }
+    const r = await engine.call<{ data: string }>(method, args);
+    const bytes = Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0));
+    const url = URL.createObjectURL(new Blob([bytes], { type: ext === 'pdf' ? 'application/pdf' : 'application/dxf' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    notify(`Exported ${name}.`);
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+  }
+}

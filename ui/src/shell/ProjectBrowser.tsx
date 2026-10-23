@@ -22,6 +22,7 @@ export function ProjectBrowser() {
   const plans = views.filter((v) => v.props.kind === 'plan');
   const sections = views.filter((v) => v.props.kind === 'section');
   const elevations = views.filter((v) => v.props.kind === 'elevation');
+  const sheets = [...nodes.values()].filter((n) => n.type === 'LapinSheet');
   const showDrawing = (id: string) => useUi.setState({ view: 'drawing', drawingViewId: id, selection: id, selected: [id] });
   const remove = (id: string) => void execute('element.delete', { id }).then(() => { if (useUi.getState().drawingViewId === id) useUi.setState({ view: 'plan', drawingViewId: null }); });
   const addElevations = async () => {
@@ -81,7 +82,15 @@ export function ProjectBrowser() {
         <button type="button" className={`tree-item${view === '3d' ? ' on' : ''}`} onClick={() => useUi.setState({ view: '3d' })}>{'{3D}'}</button>
       </div>
       <div className="tree-group">
-        <div className="tree-label"><ChevronDown size={12} /><FileText size={13} />Sheets<span className="count">0</span></div>
+        <div className="tree-label"><ChevronDown size={12} /><FileText size={13} />Sheets<span className="count">{sheets.length}</span>
+          <button type="button" className="icon mini" title="New sheet" onClick={() => void execute('sheet.create', { name: 'Sheet', paper: 'A3' }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'sheet', sheetId: id }); })}><Plus size={12} /></button>
+        </div>
+        {sheets.map((v) => (
+          <span key={v.id} className="tree-row">
+            <button type="button" className={`tree-item${view === 'sheet' && ui.sheetId === v.id ? ' on' : ''}`} onClick={() => useUi.setState({ view: 'sheet', sheetId: v.id, selection: v.id, selected: [v.id] })}>{String(v.props.number ?? '')} · {v.name}</button>
+            <button type="button" className="icon mini" title="Delete the sheet" onClick={() => void execute('element.delete', { id: v.id }).then(() => { if (useUi.getState().sheetId === v.id) useUi.setState({ view: 'plan', sheetId: null }); })}><Trash2 size={11} /></button>
+          </span>
+        ))}
       </div>
       <div className="tree-group">
         <div className="tree-label"><ChevronDown size={12} /><Table2 size={13} />Schedules<span className="count">0</span></div>

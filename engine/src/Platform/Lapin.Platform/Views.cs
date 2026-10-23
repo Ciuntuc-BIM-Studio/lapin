@@ -118,17 +118,19 @@ public static class Views
         return spec == null ? (null, null, problem) : (Generator.Draw(parts, spec, symbols), spec, null);
     }
 
-    /// <summary>The view drawn: its pens, bounds and problems.</summary>
-    public static JsonObject Drawing(IQueryContext q, Entity view)
+    /// <summary>A view rendered: its pens (view coordinates, m; widths paper mm), annotations, bounds and scale, or why it cannot be drawn.</summary>
+    public sealed record Rendered(List<Pen> Pens, List<ViewMark> Marks, (Vec2 Min, Vec2 Max)? Bounds, double Scale, string Kind, string? Problem, List<string> RangeProblems);
+
+    public static Rendered Render(IQueryContext q, Entity view)
     {
         var m = q.Model;
+        var scale = view.NumOrNull("scale") ?? 100;
         var (generated, spec, problem) = Generate(q, view);
-        if (generated == null || spec == null) return new JsonObject { ["problem"] = problem, ["pens"] = new JsonArray() };
+        if (generated == null || spec == null) return new Rendered([], [], null, scale, view.Str("kind") ?? "plan", problem, []);
         var drawing = generated;
         var kind = spec.Kind == "plan" ? "plan" : spec.Kind == "elevation" ? "elevation" : "section";
         var materials = MaterialDrawing.Apply(drawing, p => p.Material != null && m.Get(p.Material) is { } mat ? MaterialGraphics.Resolve(mat, kind) : null);
         var project = Spatial.Project(m);
-        var scale = view.NumOrNull("scale") ?? 100;
         var graphics = view.Attrs["graphics"] as JsonObject;
         var categories = (graphics?["categories"] as JsonObject)?.Select(c => (c.Key, G: CategoryGraphics.From(c.Value))).Where(x => x.G != null).ToDictionary(x => x.Key, x => x.G!);
         var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, graphics?["elements"] as JsonObject, null, scale);
@@ -158,19 +160,6 @@ public static class Views
             }
         }
         pens.AddRange(markPens.Values);
-        var o = new JsonObject
-        {
-            ["kind"] = spec.Kind,
-            ["scale"] = scale,
-            ["pens"] = new JsonArray(pens.Select(p => (JsonNode)p.ToJson()).ToArray()),
-            // What a click on an annotation selects, and where its points snap.
-            ["marks"] = new JsonArray(marks.Where(x => x.Owner != null).Select(x => (JsonNode)new JsonObject
-            {
-                ["id"] = x.Owner,
-                ["segments"] = new JsonArray(x.Lines.SelectMany(l => new[] { l.A.X, l.A.Y, l.B.X, l.B.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
-                ["snaps"] = new JsonArray(x.Snaps.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
-            }).ToArray()),
-        };
         // What the view shows: the drawing and its annotations (a text counted by its anchor and height).
         var pts = new List<Vec2>();
         if (drawing.Bounds is { } b) pts.AddRange([b.Min, b.Max]);
@@ -179,9 +168,55 @@ public static class Views
             foreach (var l in mk.Lines) pts.AddRange([l.A, l.B]);
             foreach (var (t, _) in mk.Texts) pts.AddRange([t.At, t.At + new Vec2(0, t.Height * scale / 1000)]);
         }
-        if (pts.Count > 0) o["bounds"] = new JsonArray(pts.Min(p => p.X), pts.Min(p => p.Y), pts.Max(p => p.X), pts.Max(p => p.Y));
-        if (spec.Kind == "plan") o["problems"] = new JsonArray(ViewRanges.Problems(Range(m, view)).Select(x => (JsonNode)x).ToArray());
+        (Vec2, Vec2)? bounds = pts.Count > 0 ? (new Vec2(pts.Min(p => p.X), pts.Min(p => p.Y)), new Vec2(pts.Max(p => p.X), pts.Max(p => p.Y))) : null;
+        return new Rendered(pens, marks, bounds, scale, spec.Kind, null, spec.Kind == "plan" ? ViewRanges.Problems(Range(m, view)) : []);
+    }
+
+    /// <summary>The view drawn, for the interface: its pens, annotations, bounds and problems.</summary>
+    public static JsonObject Drawing(IQueryContext q, Entity view)
+    {
+        var r = Render(q, view);
+        if (r.Problem != null) return new JsonObject { ["problem"] = r.Problem, ["pens"] = new JsonArray() };
+        var o = new JsonObject
+        {
+            ["kind"] = r.Kind,
+            ["scale"] = r.Scale,
+            ["pens"] = new JsonArray(r.Pens.Select(p => (JsonNode)p.ToJson()).ToArray()),
+            // What a click on an annotation selects, and where its points snap.
+            ["marks"] = new JsonArray(r.Marks.Where(x => x.Owner != null).Select(x => (JsonNode)new JsonObject
+            {
+                ["id"] = x.Owner,
+                ["segments"] = new JsonArray(x.Lines.SelectMany(l => new[] { l.A.X, l.A.Y, l.B.X, l.B.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
+                ["snaps"] = new JsonArray(x.Snaps.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
+            }).ToArray()),
+        };
+        if (r.Bounds is { } b) o["bounds"] = new JsonArray(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y);
+        if (r.Kind == "plan") o["problems"] = new JsonArray(r.RangeProblems.Select(x => (JsonNode)x).ToArray());
         return o;
+    }
+
+    /// <summary>A view as DXF at real size (1 m = 1000 mm, y up), its texts and dashes as high as on paper at its scale.</summary>
+    public static byte[] Dxf(IQueryContext q, Entity view)
+    {
+        var r = Render(q, view);
+        var pens = r.Pens.Select(p =>
+        {
+            var o = new Pen(p.Layer, p.Stroke, p.Width, p.Fill, p.Dash?.Select(v => v * r.Scale).ToArray());
+            o.Segments.AddRange(p.Segments.Select(s => (s.A * 1000, s.B * 1000)));
+            o.Loops.AddRange(p.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(v => v * 1000).ToList()));
+            o.Texts.AddRange(p.Texts.Select(t => t with { At = t.At * 1000, Height = t.Height * r.Scale }));
+            return o;
+        }).ToList();
+        // DxfWriter.Page flips y on a page; a model drawing is y up already: give it a page of height 0 mirrored back.
+        var flipped = pens.Select(p =>
+        {
+            var o = new Pen(p.Layer, p.Stroke, p.Width, p.Fill, p.Dash);
+            o.Segments.AddRange(p.Segments.Select(s => (new Vec2(s.A.X, -s.A.Y), new Vec2(s.B.X, -s.B.Y))));
+            o.Loops.AddRange(p.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(v => new Vec2(v.X, -v.Y)).ToList()));
+            o.Texts.AddRange(p.Texts.Select(t => t with { At = new Vec2(t.At.X, -t.At.Y) }));
+            return o;
+        }).ToList();
+        return Lapin.Drawing.Export.DxfWriter.Page(new Lapin.Drawing.Export.PaperPage(0, 0, flipped), $"Lapin · {view.Name} · 1:{r.Scale:0}");
     }
 
     /// <summary>

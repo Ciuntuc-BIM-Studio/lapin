@@ -103,3 +103,12 @@ Ordinea de căutare a fost: Lapin-ul vechi, apoi BubbleBIM Pro, apoi BubbleBIM-S
 | 63 | Grosimile liniilor pe ecran sunt cele de pe hârtie la scara vederii, limitate între 0,5 și 4 px când se mărește mult. | Grosimi fixe pe ecran. | `DrawingLayer` |
 | 64 | Axele, cotele și textele sunt în modulul de motor `drafting`: axele într-un `IfcGrid` (pentru toate etajele), cotele și textele ca `IfcAnnotation` pe o vedere. Cotele sunt deocamdată doar aliniate; capetele se leagă de muchiile tăiate ale elementelor (nu și de axe sau de liniile văzute). O cotă orfană se desenează roșie. | Cote liniare, lanțuri de cote, legături pe axe. | `Lapin.Drafting` |
 | 65 | Textul se introduce deocamdată cu o fereastră de prompt. | Editare pe loc. | `drafting.text` |
+
+## M6 – planșe și export
+
+| # | Ce am ales | Alternative | Unde |
+|---|---|---|---|
+| 66 | Planșele sunt entități `LapinSheet` (format A0–A4, orientare, număr, cartuș, vederile așezate), ca vederile. O vedere stă pe o singură planșă, ca în Revit. Scara unei vederi pe planșă e scara vederii, nu a viewport-ului (Lapin-ul vechi avea scara pe viewport). | Scara pe viewport. | `Sheets` |
+| 67 | Cartușul are câmpurile proiect, beneficiar, desenat, verificat, dată, revizie; proiectul gol ia numele proiectului, data goală ziua de azi. Formatul lui e fix (180 × 50 mm), nu încă un șablon al biroului. | Cartuș configurabil. | `Sheets.Compose` |
+| 68 | PDF-ul e scris de Lapin (vectorial, Helvetica cu literele românești), fără bibliotecă. DXF-ul e R2000, la 1:1 în mm, cu straturi pe tip de linie (CUT, SEEN, HIDDEN, HATCH, DIMENSION…); scheletul lui e generat o dată cu ezdxf și inclus în motor. Umplerile intră în DXF ca SOLID-uri pe triunghiuri. | Bibliotecă PDF; HATCH-uri DXF. | `Lapin.Drawing/Export` |
+| 69 | În browser (pnpm dev) exportul se descarcă; în aplicația desktop se scrie unde alege dialogul. | — | `exportFile` |

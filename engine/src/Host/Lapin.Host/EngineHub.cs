@@ -105,6 +105,17 @@ public sealed class EngineHub(Session session, ProjectFiles files, Recovery? rec
 
     (object? Result, Diff? Diff) Dispatch(string method, JsonObject p)
     {
+        // A file written where asked (the desktop's save dialog), else handed back to download (a browser).
+        JsonObject Deliver(byte[] bytes, string name)
+        {
+            if ((string?)p["path"] is { Length: > 0 } path)
+            {
+                File.WriteAllBytes(path, bytes);
+                return new JsonObject { ["path"] = path, ["bytes"] = bytes.Length };
+            }
+            return new JsonObject { ["name"] = name, ["data"] = Convert.ToBase64String(bytes) };
+        }
+
         string PathParam() => (string?)p["path"] ?? throw new CommandException("The file's path is missing.");
 
         switch (method)
@@ -125,6 +136,22 @@ public sealed class EngineHub(Session session, ProjectFiles files, Recovery? rec
             case "project.new": return (null, session.New());
             case "project.open": return (null, files.Open(session, PathParam()));
             case "project.save": return (null, files.Save(session, (string?)p["path"]));
+            case "export.pdf":
+            {
+                // Sheets as one PDF: those asked for, else all of them in order.
+                var ids = p["sheets"] is JsonArray arr ? arr.Select(x => (string?)x).OfType<string>().ToList() : null;
+                var sheets = session.Model.OfClass(Sheets.Class).Where(s => ids == null || ids.Contains(s.Id)).ToList();
+                if (sheets.Count == 0) throw new CommandException("There is no sheet to print.");
+                return (Deliver(Sheets.Pdf(session.Reader, sheets), "sheets.pdf"), null);
+            }
+            case "export.dxf":
+            {
+                var id = (string?)p["id"] ?? throw new CommandException("Which sheet or view?");
+                var bytes = session.Model.Get(id) is { Class: Sheets.Class } sheet ? Sheets.Dxf(session.Reader, sheet)
+                    : Views.Find(session.Model, id) is { } view ? Views.Dxf(session.Reader, view)
+                    : throw new CommandException("There is no such sheet or view.");
+                return (Deliver(bytes, "drawing.dxf"), null);
+            }
             case "recovery.list": return (recovery?.List() ?? [], null);
             case "recovery.restore": return (null, (recovery ?? throw new CommandException("No recovery here.")).Restore(PathParam()));
             case "recovery.discard":

@@ -5,6 +5,9 @@
     and the DXF and PDF exports build on it.
   -->
   <ItemGroup>
+    <EmbeddedResource Include="Export/dxf-r2000-skeleton.dxf" LogicalName="Lapin.Drawing.Export.dxf-r2000-skeleton.dxf" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="../../Model/Lapin.Model/Lapin.Model.csproj" />
     <ProjectReference Include="$(BubbleEngineDir)src/Platform/BubbleBim.Platform.Geometry/BubbleBim.Platform.Geometry.csproj" />
   </ItemGroup>
