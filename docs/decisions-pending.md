@@ -68,3 +68,14 @@ Ordinea de căutare a fost: Lapin-ul vechi, apoi BubbleBIM Pro, apoi BubbleBIM-S
 | 43 | La îmbinarea automată, elementul nou desenat trece prin colț (la grosimi egale). Swap inversează. | Primul desenat trece. | `Joins.Auto` |
 | 44 | Grinzile se îmbină în plan (tăieturi verticale pe toată înălțimea), ca pereții. Îmbinarea 3D a elementelor liniare înclinate (căpriori) vine cu acoperișurile. Secțiunile sunt doar dreptunghi și cerc; I, L, T, U și țevile vin mai târziu. | Profilele din catalogul vechi acum. | `Beams`, `Section` |
 | 45 | Proprietățile din inspector sunt deocamdată tipul și câteva câmpuri. Editarea completă a tipurilor structurale existente (nu doar crearea) vine mai târziu. | — | `StructureTypesDialog` |
+
+## Acoperișuri
+
+| # | Ce am ales | Alternative | Unde |
+|---|---|---|---|
+| 46 | Acoperișul e portat din BubbleBIM Pro: un singur `IfcRoof` cu conturul (linia pereților), forma (patru ape, două ape, o apă, mansardă, terasă), panta, consolele și regulile pe laturi. Planele, coama, coamele înclinate, doliile, frontoanele, șarpanta, jgheaburile, burlanele și parazăpezile sunt piese derivate, nu entități. Exportul IFC va scrie `IfcSlab` ROOF pe fiecare plan și elementele șarpantei. | Entități separate pentru plane și șarpantă, ca în IFC-ul exportat. | `Roofs/Roof.cs`, `RoofParts` |
+| 47 | Stilurile (31, din Standalone/BubbleBIM) au nume și învelitori traduse în engleză. Stilul implicit e primul: „Plains traditional”, patru ape 28°, țiglă ceramică. | Alt stil implicit. | `RoofCatalog` |
+| 48 | Acoperișul stă pe etajul lui, la partea de sus a etajului (cota + înălțimea etajului + `eaveOffset`). Cosoroaba stă pe pereți, căpriorii pe cosoroabă. | Un nivel de acoperiș separat. | `Roof.Resolve` |
+| 49 | Toți pereții de pe etajul acoperișului îl urmează automat: cei de sub un fronton urcă până sub căpriori, cei de sub o streașină a unei șarpante se opresc sub cosoroabă, ceilalți se taie sub pante. Nu există comanda „atașează la acoperiș” din Lapin-ul vechi. Partea de fronton a unui perete cu zone e zidăria lui de deasupra centurii. | Atașare explicită, perete cu perete, ca în Lapin-ul vechi. | `RoofTop`, `Walls.Geometry` |
+| 50 | Câmpurile acoperișului editate direct în inspector (`element.update`) nu sunt verificate de rezolvitor: dacă forma nu se construiește, acoperișul arată motivul în diagnostic. Stilul și laturile trec prin `updateRoof`/`roofStyle`, care refuză o formă imposibilă. | Toate câmpurile prin `updateRoof`. | `ArchitectureModule` |
+| 51 | Ferestrele de acoperiș și lucarnele (BubbleBIM `RoofOpenings`) nu sunt încă portate. „Învelișul” peretelui pentru prioritățile de tăiere rămâne la înălțimea lui, fără fronton. | Portate acum. | `RoofOpenings` |

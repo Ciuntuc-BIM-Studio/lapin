@@ -219,3 +219,11 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .panel-grid td { padding: 2px; }
 .panel-grid select { width: 100%; font-size: 11.5px; }
 .lintel-rule input.num { width: 60px; padding: 4px 6px; border: 1px solid var(--rule-strong); border-radius: 3px; background: var(--raised); text-align: right; }
+/* Roofs in plan: where they stop (overhead, dashed) and their ridges, hips, valleys and mansard breaks. */
+.plan-item.overhead { stroke: var(--ink-muted); stroke-dasharray: 6 3; fill: none; }
+.plan-item.ridge, .plan-item.hip, .plan-item.valley, .plan-item.break { stroke: var(--ink-muted); stroke-width: 0.7; stroke-dasharray: 2 2; }
+.roof-edges { width: 100%; table-layout: fixed; }
+.roof-edges th:first-child, .roof-edges td:first-child { width: 2.2em; }
+.roof-edges th:nth-child(3), .roof-edges td:nth-child(3) { width: 3.4em; }
+.roof-edges th:nth-child(4), .roof-edges td:nth-child(4) { width: 4.2em; }
+.roof-edges select, .roof-edges input { width: 100%; min-width: 0; box-sizing: border-box; }

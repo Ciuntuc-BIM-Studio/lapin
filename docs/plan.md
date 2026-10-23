@@ -102,6 +102,7 @@ Numerotarea veche avea două variante: cea din commit-ul M0 (M4 faze, M6 raporta
 - **M3 – Configuratorul de uși și ferestre.**
   - Făcut (24.10.2026): golurile în pereți, ușile și ferestrele cu tipurile lor, configuratorul (portat cu testele), simbolurile de bază în plan.
   - Rămas: simbolurile complete și maparea pe modele importate (M5), extrasul de tâmplărie (M6).
+- **Acoperișurile** (aprobate cu M1–M7, făcut 24.10.2026): `IfcRoof` portat din BubbleBIM Pro cu testele lui (forme, stiluri, reguli pe laturi, șarpantă, jgheaburi, burlane, parazăpezi, cantități), pereții care urcă la fronton și se opresc sub cosoroabă sau sub pante, unealta și inspectorul. Rămas: ferestrele de acoperiș și lucarnele.
 - **M4 – Materiale și standarde de desen.**
 - **M5 – Desenul 2D:** generatorul, domeniul vederii, penițele, simbolurile, cotele.
 - **M6 – Faze, planșe, DXF și PDF, citirea `.lapin` formatul 2.**
@@ -115,7 +116,7 @@ Numerotarea veche avea două variante: cea din commit-ul M0 (M4 faze, M6 raporta
   - bibliotecile `.lapinlib`;
   - mai târziu, sincronizarea și versiunile.
 - **M9 – MEP rezidențial,** ca modul `mep`, cu ediția lui: rețeaua și traseul, încălzirea, apa, canalizarea, electricul, ventilația.
-- **Ulterior:** acoperișuri, timber și CLT, infrastructură.
+- **Ulterior:** timber și CLT, infrastructură.
 
 La fiecare etapă, testele-specificație din `transfer.md` se portează înaintea codului.
 

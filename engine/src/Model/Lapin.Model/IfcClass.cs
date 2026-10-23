@@ -13,6 +13,7 @@ public static class IfcClass
     public const string Wall = "IfcWall";
     public const string WallType = "IfcWallType";
     public const string Slab = "IfcSlab";
+    public const string Roof = "IfcRoof";
     public const string SlabType = "IfcSlabType";
     public const string Column = "IfcColumn";
     public const string ColumnType = "IfcColumnType";

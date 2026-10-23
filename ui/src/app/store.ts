@@ -24,6 +24,8 @@ export interface UiState {
   doorTypeId: string | null;
   windowTypeId: string | null;
   slabTypeId: string | null;
+  /** The style a new roof takes (the catalogue's first when null). */
+  roofStyle: string | null;
   dialog: Dialog;
   /** A message for the user (saved, recovered…), cleared by the next one. */
   notice: string | null;
@@ -31,7 +33,7 @@ export interface UiState {
 }
 
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, view: 'plan', storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, slabTypeId: null, dialog: null, notice: null, theme: 'paper',
+  screen: 'start', tab: null, tool: null, view: 'plan', storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper',
 }));
 
 export const setTool = (tool: string | null) => useUi.setState({ tool });

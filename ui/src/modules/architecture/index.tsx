@@ -1,4 +1,4 @@
-/** Architecture: layered walls and their types; later doors and windows, slabs, roofs, rooms. */
+/** Architecture: layered walls and their types, doors and windows, floors, roofs; later rooms. */
 
 import { ArrowLeftRight, BrickWall, CornerDownRight, DoorOpen, Home, LayoutGrid, Layers3, Link2, PanelTop, Settings2, Slash, Square, StretchHorizontal } from 'lucide-react';
 import type { Grip, LapinModule, ToolDef } from '../../platform/module';
@@ -12,6 +12,7 @@ import { JoineryDialog } from './JoineryDialog';
 import { JoinerySection } from './JoinerySection';
 import { SlabSection } from './SlabSection';
 import { SlabTypesDialog } from './SlabTypesDialog';
+import { RoofSection } from './RoofSection';
 
 const wall: ToolDef = {
   id: 'architecture.wall', label: 'Wall', icon: BrickWall, shortcut: 'WA',
@@ -88,6 +89,15 @@ const slab: ToolDef = {
     await ctx.execute('architecture.addSlab', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(typeId ? { typeId } : {}) });
   },
 };
+/** A roof: click the wall line's corners, then the first one again (or Enter); it sits on the storey's top, in the style picked. */
+const roof: ToolDef = {
+  id: 'architecture.roof', label: 'Roof', icon: Home, shortcut: 'RF',
+  gesture: { kind: 'polygon' },
+  complete: async ({ points }, ctx) => {
+    const style = useUi.getState().roofStyle;
+    await ctx.execute('architecture.addRoof', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(style ? { style } : {}) });
+  },
+};
 const slabTypes: ToolDef = { id: 'architecture.slabTypes', label: 'Floor types', icon: Layers3, run: () => useUi.setState({ dialog: 'slabTypes' }) };
 
 const architecture: LapinModule = {
@@ -97,18 +107,19 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 10,
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, { id: 'architecture.roof', label: 'Roof', icon: Home, shortcut: 'RF' }] },
+      { label: 'Build', tools: [wall, door, window_, slab, roof] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew] },
       { label: 'Room', tools: [{ id: 'architecture.room', label: 'Room', icon: LayoutGrid, shortcut: 'RM' }] },
       { label: 'Circulation', tools: [{ id: 'architecture.stair', label: 'Stair', icon: StretchHorizontal }] },
     ],
   }],
-  hotbar: [wall, door, window_, slab],
+  hotbar: [wall, door, window_, slab, roof],
   propertySections: [
     { id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers },
     { id: 'joinery', label: 'Door or window', classes: ['IfcDoor', 'IfcWindow'], component: JoinerySection },
     { id: 'slab', label: 'Floor', classes: ['IfcSlab'], component: SlabSection },
+    { id: 'roof', label: 'Roof', classes: ['IfcRoof'], component: RoofSection },
   ],
   dialogs: { wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog },
   grips: { IfcWall: wallGrips },

@@ -24,6 +24,9 @@ public sealed class PackageTests : IDisposable
         var w = f.Wall(5, 0, 5, 4, type);
         f.Run("architecture.flipWall", new JsonObject { ["id"] = w });
         f.Run("architecture.addWall", new JsonObject { ["storeyId"] = Spatial.Storeys(f.Model).Last().Id, ["x1"] = 0, ["y1"] = 0, ["x2"] = 3, ["y2"] = 0, ["height"] = 2.75 });
+        // A roof with its per-edge rules: nested attributes travel too.
+        var roof = (string)f.Run("architecture.addRoof", new JsonObject { ["x1"] = 0, ["y1"] = 0, ["x2"] = 5, ["y2"] = 4, ["style"] = "fr_provence" })!["id"]!;
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["edges"] = new JsonArray(null, new JsonObject { ["kind"] = "eave", ["pitch"] = 35 }) });
         return f;
     }
 

@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using BubbleBim.Geometry;
 using Lapin.Model;
+using Lapin.Architecture.Roofs;
 using Lapin.Platform;
 
 namespace Lapin.Architecture;
@@ -101,6 +102,100 @@ public sealed class ArchitectureModule : ILapinModule
         {
             var type = Spatial.Require(ctx.Model, (string?)a["typeId"], IfcClass.SlabType);
             foreach (var id in Ids(a)) Slabs.SetType(ctx, Spatial.Require(ctx.Model, id, IfcClass.Slab), type);
+            return null;
+        });
+
+        // ------------------------------------------------------------ roofs
+        r.Class(new(IfcClass.Roof, "Roof",
+        [
+            new("style", "Style", "choice", Choices: [.. RoofCatalog.Styles.Select(s => s.Id)], ReadOnly: true),
+            new("shape", "Shape", "choice", Choices: RoofCatalog.Shapes),
+            new("pitch", "Pitch (eaves)", "angle", Min: 1, Max: 85),
+            new("overhang", "Eave overhang", "length", Min: 0, Max: 5),
+            new("gableOverhang", "Gable overhang", "length", Min: 0, Max: 5),
+            new("upperPitch", "Mansard: upper pitch", "angle", Min: 1, Max: 60),
+            new("mansardInset", "Mansard: break inset", "length", Min: 0.2, Max: 5),
+            new("ridgeDirection", "Ridge (gable roof)", "choice", Choices: ["auto", "x", "y"]),
+            new("eaveOffset", "Wall plate over the storey's top", "length"),
+            new("covering", "Covering", "choice", Choices: [.. RoofCatalog.Coverings.Select(c => c.Id)]),
+            new("structure", "Structure", "choice", Choices: ["rafters", "none"]),
+            new("rafterSection", "Rafters (cm)", "choice", Choices: Roof.RafterSections),
+            new("rafterSpacing", "Rafter spacing", "length", Min: 0.3, Max: 2),
+            new("purlins", "Purlins per slope", "number", Min: 0, Max: 3),
+            new("gutterProfile", "Gutters", "choice", Choices: RoofCatalog.GutterProfiles),
+            new("gutterMaterial", "Gutter material", "choice", Choices: RoofCatalog.GutterMaterials),
+            new("snowGuards", "Snow guards", "choice", Choices: ["True", "False"]),
+        ], "#b0563d"));
+        r.Geometry(IfcClass.Roof, (roof, model, _) => Roof.Geometry(roof, model));
+        r.Quantities(IfcClass.Roof, (roof, geometry, model) => Roof.Quantities(roof, geometry, model));
+        var web = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
+        r.Catalog("roofStyles", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Styles, web)!);
+        r.Catalog("roofCoverings", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Coverings, web)!);
+
+        // A roof over the outline drawn (the wall line, at the top of its storey), in a style (default: the catalogue's first).
+        r.Command("addRoof", "Roof", (ctx, a) =>
+        {
+            var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+            var contour = Slabs.CheckContour(Points(a));
+            var style = (string?)a["style"] is { } sid ? RoofCatalog.StyleOf(sid) ?? throw new CommandException($"There is no roof style „{sid}”.") : RoofCatalog.Styles[0];
+            var roof = new Entity(ctx.NewId(), IfcClass.Roof, $"Roof {ctx.Model.OfClass(IfcClass.Roof).Count() + 1}", Roof.Attrs(style, contour), "NOTDEFINED");
+            CheckRoof(ctx.Model, roof);
+            ctx.Add(roof);
+            Spatial.Contain(ctx, storeyId, roof.Id);
+            return new JsonObject { ["id"] = roof.Id };
+        });
+
+        // Put a roof in a style: shape, pitch, overhangs, covering, gutters, snow guards; its per-edge overrides go.
+        r.Command("roofStyle", "Roof style", (ctx, a) =>
+        {
+            var roof = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Roof);
+            var style = RoofCatalog.StyleOf((string?)a["style"]) ?? throw new CommandException("There is no such roof style.");
+            var attrs = Roof.Attrs(style, Roof.Contour(roof));
+            foreach (var k in new[] { "structure", "rafterSection", "rafterSpacing", "purlins", "eaveOffset" }) if (roof.Attrs[k] is { } v) attrs[k] = v.DeepClone();
+            var next = roof.With(attrs: attrs);
+            CheckRoof(ctx.Model, next);
+            ctx.Replace(next);
+            return null;
+        });
+
+        // The configurator's Apply, one step: the roof's fields and its per-edge rules
+        // ("edges": one entry per edge, null for "as the roof"; null clears them all), its outline. Refused when it would not build.
+        r.Command("updateRoof", "Change roof", (ctx, a) =>
+        {
+            var roof = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Roof);
+            var d = ctx.Describe(IfcClass.Roof)!;
+            var attrs = roof.CloneAttrs();
+            foreach (var (k, v) in a["attrs"] as JsonObject ?? [])
+            {
+                var f = d.Fields.FirstOrDefault(x => x.Key == k && !x.ReadOnly) ?? (k is "lowEdge" or "gutterColor" ? new FieldDescriptor(k, k, k == "lowEdge" ? "number" : "color") : throw new CommandException($"„{k}” is not a roof field."));
+                if (v == null) attrs.Remove(k); else attrs[k] = Fields.Check(f, v);
+            }
+            if (a["points"] != null || a["x1"] != null) attrs["contour"] = Slabs.ContourJson(Slabs.CheckContour(Points(a)));
+            var corners = Slabs.Contour(roof.With(attrs: attrs)).Count;
+            if (a.ContainsKey("edges"))
+            {
+                if (a["edges"] is JsonArray edges)
+                {
+                    if (edges.Count > corners) throw new CommandException($"The roof has {corners} edges, not {edges.Count}.");
+                    var clean = new JsonArray();
+                    foreach (var e in edges)
+                    {
+                        if (e is not JsonObject o) { clean.Add(null); continue; }
+                        var c = new JsonObject();
+                        if ((string?)o["kind"] is { } kind) c["kind"] = kind is "eave" or "gable" ? kind : throw new CommandException("An edge is an eave or a gable.");
+                        if (Json.Number(o["pitch"]) is { } p) c["pitch"] = p;
+                        if (Json.Number(o["overhang"]) is { } oh) c["overhang"] = oh;
+                        clean.Add(c.Count > 0 ? c : null);
+                    }
+                    if (clean.Any(x => x != null)) attrs["edges"] = clean; else attrs.Remove("edges");
+                }
+                else attrs.Remove("edges");
+            }
+            // A roof shaped by hand is no longer exactly its style.
+            if (a.ContainsKey("edges") || (a["attrs"] as JsonObject)?.Count > 0) attrs.Remove("style");
+            var next = roof.With(attrs: attrs);
+            CheckRoof(ctx.Model, next);
+            ctx.Replace(next);
             return null;
         });
 
@@ -232,6 +327,11 @@ public sealed class ArchitectureModule : ILapinModule
     }
 
     /// <summary>A contour: <c>points</c> as [[x, y], …], or the rectangle between (x1, y1) and (x2, y2).</summary>
+    static void CheckRoof(IModelView m, Entity roof)
+    {
+        if (Roof.Resolve(roof, m) is { Flat: false } r && RoofSolver.Problem(r.Outline, r.Rules) is { } problem) throw new CommandException(problem);
+    }
+
     static IReadOnlyList<Vec2> Points(JsonObject a)
     {
         if (a["points"] is JsonArray arr)

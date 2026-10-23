@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using BubbleBim.Geometry;
 using Lapin.Model;
+using Lapin.Architecture.Roofs;
 using Lapin.Platform;
 
 namespace Lapin.Architecture;
@@ -145,6 +146,10 @@ public static class Walls
         var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
         var parts = new List<GeometryPart>();
         var plan = new List<PlanItem>();
+        // Under a roof of its storey: the wall is built up to the highest point of its top, then cut along it.
+        var axisDir = (End(wall) - Start(wall)).Normalized();
+        var roofTop = RoofTop.Profile(wall, new RoofTop.WallAxis(Start(wall), axisDir, (End(wall) - Start(wall)).Length, z, height, yMax - yMin), m);
+        var built = roofTop == null ? height : Math.Max(height, roofTop.Max(p => p.V));
 
         // Openings take their boxes out of every part they reach; the plan shows the gaps where they cross the cut.
         var openings = Openings.PlacedOn(m, wall.Id);
@@ -192,13 +197,19 @@ public static class Walls
             ];
             // The core of a zoned wall is its zones, bottom to top; every other layer runs the whole height.
             if (band.Core && zones.Count > 0)
+            {
                 foreach (var zb in zones)
                 {
                     if (Prism.ExtrudeFootprint(footprint, z + zb.Z0, zb.Z1 - zb.Z0, zb.Zone.Name) is { } piece)
                         parts.Add(Cut(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key), zb.Z0, zb.Z1, isCore: true));
                 }
-            else if (Prism.ExtrudeFootprint(footprint, z, height, band.Name) is { } solid)
-                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), 0, height, isCore: band.Core));
+                // A gable rising over the storey: the masonry goes on above the ring beam.
+                if (built > height + 1e-9 && (zones.LastOrDefault(zb => zb.Zone.Role == "masonry") ?? zones[^1]).Zone is var gz
+                    && Prism.ExtrudeFootprint(footprint, z + height, built - height, "gable") is { } gable)
+                    parts.Add(Cut(new GeometryPart($"Gable ({gz.Name})", Materials.ColorOf(m, gz.Material), gable, gz.Material, "zone:gable"), height, built, isCore: true));
+            }
+            else if (Prism.ExtrudeFootprint(footprint, z, built, band.Name) is { } solid)
+                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), 0, built, isCore: band.Core));
             // In plan, the band between the gaps the openings leave at the cut.
             var x0 = -Math.Max(At(startCut, band.From), At(startCut, band.To));
             var x1 = length + Math.Max(At(endCut, band.From), At(endCut, band.To));
@@ -211,6 +222,16 @@ public static class Walls
             }
         }
         parts = Cuts.Apply(wall, m, services, parts, problems);
+        if (roofTop != null)
+        {
+            if (booleans == null) problems.Add("The roof needs the boolean library (manifold), missing here: the wall keeps its height.");
+            else if (AboveRoof(roofTop, shift, start, dir, left, z, yMin, yMax, built) is { } above)
+                parts = parts.Select(part =>
+                {
+                    try { return booleans.Difference(part.Solid, [above], part.Solid.Tag) is { } cut && Measure.Volume(cut) > 1e-9 ? part with { Solid = cut } : null; }
+                    catch (InvalidOperationException ex) { problems.Add($"{part.Name}: the roof could not be cut ({ex.Message})."); return part; }
+                }).OfType<GeometryPart>().ToList();
+        }
         if (booleans != null)
         {
             var ring = zones.FirstOrDefault(zb => zb.Zone.Role == "ringBeam");
@@ -223,6 +244,29 @@ public static class Walls
             }
         }
         return new ElementGeometry(parts, plan, [start, end], problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>
+    /// What a roof takes off the wall: the region above its top profile (u along
+    /// the wall's own axis, v above its base), across the whole thickness. The
+    /// profile runs on in line past the wall's ends, where joins reach.
+    /// </summary>
+    static Solid? AboveRoof(List<(double U, double V)> profile, double shift, Vec2 start, Vec2 dir, Vec2 left, double z, double yMin, double yMax, double built)
+    {
+        const double reach = 2;
+        var sky = built + 1;
+        double Run((double U, double V) a, (double U, double V) b, double u) => Math.Abs(b.U - a.U) < 1e-9 ? a.V : a.V + (b.V - a.V) * (u - a.U) / (b.U - a.U);
+        var (first, last) = (profile[0], profile[^1]);
+        var pts = new List<(double U, double V)> { (first.U - reach, sky) };
+        pts.Add((first.U - reach, profile.Count > 1 ? Math.Min(sky - 0.5, Run(first, profile[1], first.U - reach)) : first.V));
+        pts.AddRange(profile);
+        pts.Add((last.U + reach, profile.Count > 1 ? Math.Min(sky - 0.5, Run(profile[^2], last, last.U + reach)) : last.V));
+        pts.Add((last.U + reach, sky));
+        const double pad = 0.05;
+        // Clockwise seen from the left face: the extrusion orients it.
+        var ring = pts.Select(p => { var q = start + dir * (p.U - shift) + left * (yMin - pad); return new Vec3(q.X, q.Y, z + p.V); }).ToList();
+        var across = left * (yMax - yMin + 2 * pad);
+        return Prism.Extrude(ring, null, new Vec3(across.X, across.Y, 0), "roof");
     }
 
     /// <summary>The wall's body as drawn, its joins aside: what it cuts lower priorities with.</summary>
