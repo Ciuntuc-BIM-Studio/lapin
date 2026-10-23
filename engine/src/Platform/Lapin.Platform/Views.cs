@@ -103,7 +103,7 @@ public static class Views
             if (view.Str("kind") == "plan" && Generator.SymbolicInPlan.Contains(e.Class) && g.Plan != null && Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey)
                 foreach (var item in g.Plan)
                 {
-                    var role = item.Kind switch { "symbol" => "projection", "overhead" or "ridge" or "hip" or "valley" or "break" => "overhead", _ => null };
+                    var role = item.Kind switch { "symbol" => "projection", "heavy" => "cut", "overhead" or "ridge" or "hip" or "valley" or "break" => "overhead", _ => null };
                     if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role));
                 }
         }

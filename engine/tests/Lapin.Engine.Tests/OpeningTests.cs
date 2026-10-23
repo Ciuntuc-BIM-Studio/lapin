@@ -202,4 +202,46 @@ public class OpeningTests
         Assert.Equal("Lintel (cast)", lintel.Name);
         Assert.Equal(0.9 + 0.4, Measure.Bounds(lintel.Solid)!.Value.Max.X - Measure.Bounds(lintel.Solid)!.Value.Min.X, 9);
     }
+
+    // ------------------------------------------------------------ plan symbols (opening-symbols.test.ts)
+
+    static List<PlanItem> Symbols(Fixture f, string id) => f.Session.Geometry(id)!.Plan!.ToList();
+
+    [Fact]
+    public void A_door_draws_its_leaf_open_at_90_as_a_heavy_rectangle_and_a_quarter_arc()
+    {
+        var f = new Fixture();
+        var wall = f.Wall(0, 0, 5, 0);
+        var door = Door(f, wall, 2.5);
+        var leaf = Symbols(f, door).Single(i => i.Kind == "heavy");
+        Assert.True(leaf.Closed);
+        Assert.Equal(4, leaf.Points.Count);
+        var w = (leaf.Points[1] - leaf.Points[0]).Length;
+        var t = (leaf.Points[3] - leaf.Points[0]).Length;
+        // The leaf as wide as the leaf's opening, a few centimetres thick: clamp(frame depth × 0.4, 0.02, 0.05).
+        Assert.InRange(w, 0.7, 0.9);
+        Assert.Equal(Math.Clamp(0.1 * 0.4, 0.02, 0.05), t, 9);
+        var arc = Symbols(f, door).Where(i => i.Kind == "symbol" && i.Points.Count > 2).Single();
+        // A quarter turn about the hinge: its ends are as far from the hinge as the leaf is long.
+        Assert.Equal(w, (arc.Points[0] - leaf.Points[0]).Length, 6);
+        Assert.Equal(w, (arc.Points[^1] - leaf.Points[0]).Length, 6);
+    }
+
+    [Fact]
+    public void A_double_door_draws_a_leaf_and_an_arc_per_jamb_and_a_window_its_frame_and_double_glass()
+    {
+        var f = new Fixture();
+        var wall = f.Wall(0, 0, 6, 0);
+        var pair = (string)f.Run("architecture.createJoineryType", new JsonObject
+        {
+            ["spec"] = (JoinerySpec.DefaultDoor("Double 1600") with { Width = 1.6, Columns = [1, 1], Panels = [new(0, 0, "swing-left"), new(1, 0, "swing-right")] }).ToJson(),
+        })!["id"]!;
+        var door = Door(f, wall, 2, pair);
+        Assert.Equal(2, Symbols(f, door).Count(i => i.Kind == "heavy"));
+        Assert.Equal(2, Symbols(f, door).Count(i => i.Kind == "symbol" && i.Points.Count > 2));
+        var window = (string)f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["along"] = 4.5 })!["id"]!;
+        var items = Symbols(f, window).Where(i => i.Kind == "symbol").ToList();
+        Assert.Single(items, i => i.Closed);                         // the frame
+        Assert.Equal(2, items.Count(i => !i.Closed && i.Points.Count == 2 && Math.Abs(i.Points[0].X - i.Points[1].X) > 1));   // the double glass
+    }
 }

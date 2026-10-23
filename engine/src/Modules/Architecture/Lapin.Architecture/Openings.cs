@@ -272,8 +272,9 @@ public static class Openings
                 var free = hingeLeft ? r.X1 : r.X0;
                 var w = Math.Abs(free - hinge);
                 var y0 = -depth / 2;   // the interior face
-                // The leaf open at 90° into the interior, and its arc from the closed position.
-                o.Add(new PlanItem("symbol", false, [P(hinge, y0), P(hinge, y0 - w)]));
+                // The leaf open at 90° into the interior, a heavy rectangle clamp(depth × 0.4, 2, 5 cm) thick, and its arc from the closed position.
+                var t = Math.Clamp(spec.Frame.Depth * 0.4, 0.02, 0.05) * Math.Sign(free - hinge);
+                o.Add(new PlanItem("heavy", true, [P(hinge, y0), P(hinge, y0 - w), P(hinge + t, y0 - w), P(hinge + t, y0)]));
                 var arc = new List<Vec2>();
                 for (var i = 0; i <= 16; i++)
                 {

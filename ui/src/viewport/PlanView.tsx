@@ -20,8 +20,8 @@ import { useDrawing } from './drawing';
 
 interface View { cx: number; cy: number; scale: number } // scale = px per metre
 
-const KIND_ORDER: Record<string, number> = { grid: 0, overhead: 1, ridge: 2, hip: 2, valley: 2, break: 2, outline: 3, cut: 4, symbol: 5, label: 6 };
-const PICK_PRIORITY: Record<string, number> = { hit: 0, symbol: 0, cut: 1, outline: 2, overhead: 8 };
+const KIND_ORDER: Record<string, number> = { grid: 0, overhead: 1, ridge: 2, hip: 2, valley: 2, break: 2, outline: 3, cut: 4, symbol: 5, heavy: 5, label: 6 };
+const PICK_PRIORITY: Record<string, number> = { hit: 0, symbol: 0, heavy: 0, cut: 1, outline: 2, overhead: 8 };
 
 export function PlanView() {
   const svgRef = useRef<SVGSVGElement>(null);
