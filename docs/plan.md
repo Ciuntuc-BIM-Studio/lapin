@@ -97,7 +97,11 @@ Numerotarea veche avea două variante: cea din commit-ul M0 (M4 faze, M6 raporta
 
   Formatul vine acum, nu la final, pentru că el fixează forma modelului.
 - **M2 – Pereții:** îmbinări, mitru, zone pe înălțime, straturi de finisaj, buiandrugi, priorități de tăiere, fundații.
+  - Făcut (24.10.2026): îmbinările L, T și în prelungire, butt sau mitre, cu prioritate (ca elemente pe traseu, în platformă); zonele pe înălțime și piesele de finisaj, cu cantitățile lor; buiandrugii și centura coborâtă; plăcile; prioritățile de tăiere; modulul Structure (stâlpi, grinzi, fundații continue și izolate).
+  - Rămas: îmbinarea straturilor după funcție (la M5); îmbinarea buiandrugilor la colțuri; goluri în plăci; profilele I, L, T, U.
 - **M3 – Configuratorul de uși și ferestre.**
+  - Făcut (24.10.2026): golurile în pereți, ușile și ferestrele cu tipurile lor, configuratorul (portat cu testele), simbolurile de bază în plan.
+  - Rămas: simbolurile complete și maparea pe modele importate (M5), extrasul de tâmplărie (M6).
 - **M4 – Materiale și standarde de desen.**
 - **M5 – Desenul 2D:** generatorul, domeniul vederii, penițele, simbolurile, cotele.
 - **M6 – Faze, planșe, DXF și PDF, citirea `.lapin` formatul 2.**
