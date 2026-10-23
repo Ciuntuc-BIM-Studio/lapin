@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Maximize } from 'lucide-react';
+import { Maximize, PenLine } from 'lucide-react';
 import { select, setTool, useUi } from '../app/store';
 import { activeStorey, useSession } from '../engine/session';
 import type { NodeDto, RenderItem } from '../engine/protocol';
@@ -15,6 +15,8 @@ import { findTool, gripsOf } from '../platform/modules';
 import type { Grip } from '../platform/module';
 import { distToSegment, pairs, pointInPolygon, snap, toMm, type SnapResult } from './snap';
 import { completeTool } from './tools';
+import { DrawingLayer } from './DrawingLayer';
+import { useDrawing } from './drawing';
 
 interface View { cx: number; cy: number; scale: number } // scale = px per metre
 
@@ -39,6 +41,11 @@ export function PlanView() {
   const [gripDrag, setGripDrag] = useState<{ grip: Grip; at: Vec2; moved: boolean } | null>(null);
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
+  // The generated drawing of this storey's plan (its own view, else the storey's), the modelling lines over it only where selected.
+  const planViewId = useUi((s) => s.planViewId);
+  const planDrawing = useUi((s) => s.planDrawing);
+  const ownPlan = planViewId && nodes.get(planViewId)?.props.storeyId === storey?.id ? planViewId : null;
+  const drawing = useDrawing(storey ? ownPlan ?? `plan:${storey.id}` : null, planDrawing);
 
   useEffect(() => {
     const el = svgRef.current;
@@ -288,13 +295,16 @@ export function PlanView() {
     <div className="view-pane">
       <div className="view-toolbar">
         <span className="view-title">Plan · {storey?.name ?? '—'}</span>
+        <button type="button" className={`icon${planDrawing ? ' on' : ''}`} title={planDrawing ? 'Drawing: hatches and pens (click for modelling lines)' : 'Modelling lines (click for the drawing)'}
+          onClick={() => useUi.setState({ planDrawing: !planDrawing })}><PenLine size={14} /></button>
         <button type="button" className="icon" title="Fit everything" onClick={fit}><Maximize size={14} /></button>
       </div>
       <svg ref={svgRef} className={`plan-svg${tool?.gesture ? ' tool' : ''}`} data-testid="plan"
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
         onPointerLeave={() => setHover(null)} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}>
         <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>
-        <g>
+        {drawing && planDrawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} />}
+        <g className={`plan-items${drawing && planDrawing ? ' ghost' : ''}`}>
           {drawn.map(({ key, r, kind, d, closed, text, at }) => kind === 'label' ? (
             <text key={key} x={at.x} y={at.y} className="plan-label">{text}</text>
           ) : (

@@ -6,7 +6,7 @@
 
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
-import { notify, useUi } from './app/store';
+import { notify, useUi, type ViewKind } from './app/store';
 import { useShortcuts } from './app/keys';
 import { useSession } from './engine/session';
 import { projectTitle } from './engine/files';
@@ -18,6 +18,7 @@ import { StartScreen } from './shell/StartScreen';
 import { ViewportHud } from './shell/ViewportHud';
 import { PlanView } from './viewport/PlanView';
 import { Viewport3D } from './viewport/Viewport3D';
+import { DrawingView } from './viewport/DrawingView';
 
 function StatusBar() {
   const connected = useSession((s) => s.connected);
@@ -47,6 +48,8 @@ function Notice() {
 
 function Workspace() {
   const view = useUi((s) => s.view);
+  const drawingViewId = useUi((s) => s.drawingViewId);
+  const drawingName = useSession((s) => (drawingViewId ? s.nodes.get(drawingViewId)?.name : undefined));
   const error = useSession((s) => s.error);
   const open = useUi((s) => s.dialog);
   const Dialog = open ? dialog(open) : null;
@@ -57,12 +60,12 @@ function Workspace() {
         <ProjectBrowser />
         <main className="views">
           <div className="view-tabs">
-            {([['plan', 'Plan'], ['3d', '{3D}']] as const).map(([id, name]) => (
+            {([['plan', 'Plan'], ['3d', '{3D}'], ...(drawingName ? [['drawing', drawingName]] : [])] as [ViewKind, string][]).map(([id, name]) => (
               <button type="button" key={id} className={`view-tab${view === id ? ' on' : ''}`} onClick={() => useUi.setState({ view: id })}>{name}<X size={11} /></button>
             ))}
           </div>
           <div className="view-area">
-            {view === 'plan' ? <PlanView /> : <Viewport3D />}
+            {view === 'plan' ? <PlanView /> : view === 'drawing' ? <DrawingView /> : <Viewport3D />}
             <ViewportHud />
             {error && <div className="error" role="alert" onClick={() => useSession.setState({ error: null })}>{error}</div>}
             <Notice />

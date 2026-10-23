@@ -1,6 +1,7 @@
 /** Core: always there — selecting, measuring, the views and how they look, materials and drafting standards. */
 
-import { Box, Eye, Hash, Layers3, MousePointer2, Palette, Ruler, Scissors, Square } from 'lucide-react';
+import { Box, Eye, Hash, Layers3, MousePointer2, Palette, Ruler, Scissors, Square, SquareStack } from 'lucide-react';
+import { execute } from '../../engine/session';
 import type { LapinModule } from '../../platform/module';
 import { setTool, useUi } from '../../app/store';
 import { MaterialsDialog } from './MaterialsDialog';
@@ -24,7 +25,15 @@ const core: LapinModule = {
       { label: 'Views', tools: [
         { id: 'view.3d', label: '3D', icon: Box, run: () => useUi.setState({ view: '3d' }) },
         { id: 'view.plan', label: 'Plan', icon: Square, run: () => useUi.setState({ view: 'plan' }) },
-        { id: 'view.section', label: 'Section', icon: Scissors },
+        { id: 'view.section', label: 'Section', icon: Scissors, shortcut: 'SE',
+          gesture: { kind: 'twoPoints' },
+          complete: async ({ points: [a, b] }, ctx) => {
+            const r = await ctx.execute('view.create', { kind: 'section', start: [a.x, a.y], end: [b.x, b.y] }) as { id?: string } | null;
+            if (r?.id) useUi.setState({ view: 'drawing', drawingViewId: r.id, tool: null });
+          } },
+        { id: 'view.elevations', label: 'Elevations', icon: SquareStack, run: () => void (async () => {
+          for (const direction of ['south', 'east', 'north', 'west']) await execute('view.create', { kind: 'elevation', direction });
+        })() },
       ] },
       { label: 'Graphics', tools: [
         { id: 'view.style', label: 'Visual style', icon: Eye },

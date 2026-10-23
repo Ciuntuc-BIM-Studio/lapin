@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 
 export type Theme = 'paper' | 'graphite';
-export type ViewKind = '3d' | 'plan';
+export type ViewKind = '3d' | 'plan' | 'drawing';
 export type Dialog = string | null;
 
 export interface UiState {
@@ -12,6 +12,12 @@ export interface UiState {
   /** The active tool's id ("architecture.wall"); null: select. */
   tool: string | null;
   view: ViewKind;
+  /** The section or elevation the drawing view shows (a LapinView id). */
+  drawingViewId: string | null;
+  /** The plan view (a LapinView id) the plan shows; null: the storey's own plan. */
+  planViewId: string | null;
+  /** Whether plans show the generated drawing (hatches, pens) or the plain modelling lines. */
+  planDrawing: boolean;
   /** The storey the plan shows and new elements go on; null: the lowest. */
   storeyId: string | null;
   /** The selected entity (the one the properties panel shows). */
@@ -33,7 +39,7 @@ export interface UiState {
 }
 
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, view: 'plan', storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper',
+  screen: 'start', tab: null, tool: null, view: 'plan', drawingViewId: null, planViewId: null, planDrawing: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper',
 }));
 
 export const setTool = (tool: string | null) => useUi.setState({ tool });

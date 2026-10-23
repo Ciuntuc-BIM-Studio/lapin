@@ -17,7 +17,7 @@ public sealed class CoreModule : ILapinModule
     static readonly HashSet<string> PlatformClasses =
     [
         IfcClass.Project, IfcClass.Site, IfcClass.Building, IfcClass.BuildingStorey,
-        IfcClass.Material, IfcClass.MaterialLayerSet, IfcClass.MaterialLayerSetUsage,
+        IfcClass.Material, IfcClass.MaterialLayerSet, IfcClass.MaterialLayerSetUsage, Views.Class,
     ];
 
     public static bool Owns(string ifcClass) => PlatformClasses.Contains(ifcClass) || ifcClass.StartsWith("IfcRel", StringComparison.Ordinal);
@@ -31,6 +31,7 @@ public sealed class CoreModule : ILapinModule
             [new("elevation", "Elevation", "length"), new("height", "Height", "length", Min: 0.1)], "#6c5ce7", Kind: "spatial"));
         r.Class(new(IfcClass.Material, "Material", [new("color", "Colour", "color"), new("category", "Category", "text")], Kind: "resource"));
         DraftingResources.Register(r);
+        Views.Register(r);
 
         r.Command("storey.create", "New storey", (ctx, a) =>
         {
