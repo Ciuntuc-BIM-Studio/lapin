@@ -37,7 +37,7 @@ Căile din acest document se citesc în fork: `C` = `packages/create/src/in-stor
 | Simboluri de goluri, acoperiș în plan, marcaje de secțiune, axe, cote asociative | `V/drafting/opening-symbols.ts`, `V/project/roof-plan.ts`, `section-marks.ts`, `view-grids.ts`, `associative-dims.ts`, `drafting/annotation.ts` | OWN | Motor: `Lapin.Drawing.Symbols`; UI: suprapunerile din vedere | `opening-symbols.test.ts`, `associative-dims.test.ts` |
 | Planșe, viewport-uri, penițe pe planșă, DXF R2000, PDF | `V/project/sheets.ts`, `V/components/viewer/sheets/*` | OWN | Motor: DXF și PDF (BubbleBIM are `Dxf.cs`, `Pdf.cs`); UI: editorul de planșe | `sheets*.test.ts`, `dxf-r2000.test.ts`, `viewport-regions.test.ts` |
 | Pachetul `.lapin` și documentul de proiect | `V/project/types.ts`, `V/project/package/*`, `project-file*.ts` | OWN | Motor: deschidere și salvare; formatul se păstrează (citește și `.lapin` vechi) | `package-io.test.ts`, `project-file*.test.ts`, `versions.test.ts` |
-| **MEP rezidențial** (branch `feature/residential-mep`, 54 de commit-uri, nu e în `lapin`) | vezi secțiunea MEP de mai jos | OWN (fișierele noi); 33 de fișiere ifc-lite atinse doar pentru legături | Motor: `Lapin.Authoring.Mep`; UI: modulul `mep` (tab MEP, dialoguri, bare de opțiuni) | testele de pe branch: `*-mep*`, `hydronic-*`, `heating-*`, `water-*`, `drainage-*`, `ventilation-*`, `electrical-*`, `route-*` |
+| **MEP rezidențial** (M9; branch `feature/residential-mep`, 54 de commit-uri, nu e în `lapin`) | vezi secțiunea MEP de mai jos | OWN (fișierele noi); 33 de fișiere ifc-lite atinse doar pentru legături | Motor: `Lapin.Authoring.Mep`; UI: modulul `mep` (tab MEP, dialoguri, bare de opțiuni) | testele de pe branch: `*-mep*`, `hydronic-*`, `heating-*`, `water-*`, `drainage-*`, `ventilation-*`, `electrical-*`, `route-*` |
 
 ## MEP rezidențial
 
@@ -152,15 +152,18 @@ BubbleBIM are deja, ca punct de plecare:
 
 ## Ordinea transferului
 
-1. **M0b – modelul IFC și tipurile cu straturi:** layer set, usage, axa pe miez, flip, scrierea și rescrierea tipurilor.
+Numerele etapelor sunt cele din `plan.md` (replanificate 23.10.2026).
+
+1. **M1 – modelul IFC și tipurile cu straturi:** layer set, usage, axa pe miez, flip, scrierea și rescrierea tipurilor, plus formatul `.lapin` 3 (`format-lapin.md`).
 2. **M2 – pereții:** îmbinări (rescrise), mitru, zone pe înălțime, straturi de finisaj, buiandrugi, priorități de tăiere, fundații.
 3. **M3 – configuratorul de uși și ferestre:** specificație, geometrie, IFC, simboluri și mapare.
 4. **M4 – materiale și standarde de desen:** aspect IFC, hașuri `.pat`, stiluri de text, cote, axe, etichete, layere.
 5. **M5 – desenul 2D:**
    - generatorul, pe BubbleBIM `HiddenLines`, după specificația de mai sus;
    - domeniul vederii, penițele, desenul pe materiale, simbolurile, acoperișul în plan, marcajele de secțiune, axele, cotele.
-6. **M6 – fazele, planșele, exportul DXF și PDF, pachetul `.lapin`** (care citește și proiectele vechi).
-7. **M7 – MEP rezidențial:** rețeaua și traseul parametric, apoi încălzirea (felia verticală completă), apa, canalizarea, electricul și ventilația. Are nevoie de pereți, goluri, plan și planșe, deci vine după M5–M6.
-8. **Ulterior:** acoperișuri, timber și CLT.
+6. **M6 – fazele, planșele, exportul DXF și PDF, citirea `.lapin` formatul 2** (proiectele vechi).
+7. **M7 – lansarea desktop; M8 – hub-ul cloud** (fără transfer din fork).
+8. **M9 – MEP rezidențial,** ca modul `mep`, cu ediția lui: rețeaua și traseul parametric, apoi încălzirea (felia verticală completă), apa, canalizarea, electricul și ventilația. Are nevoie de pereți, goluri, plan și planșe, deci vine după M5–M6.
+9. **Ulterior:** acoperișuri, timber și CLT.
 
 La fiecare pas, testele-specificație listate în hartă se portează înaintea codului.
