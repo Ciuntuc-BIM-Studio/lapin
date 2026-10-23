@@ -1,14 +1,23 @@
-/** Architecture: walls, doors and windows, slabs, roofs, rooms. */
+/** Architecture: layered walls and their types; later doors and windows, slabs, roofs, rooms. */
 
-import { BrickWall, DoorOpen, Home, LayoutGrid, PanelTop, Square, StretchHorizontal } from 'lucide-react';
-import type { LapinModule } from '../../platform/module';
-import { toggleTool } from '../../app/store';
+import { BrickWall, DoorOpen, Home, LayoutGrid, Layers3, PanelTop, Square, StretchHorizontal } from 'lucide-react';
+import type { LapinModule, ToolDef } from '../../platform/module';
+import { useUi } from '../../app/store';
 import { WallLayers } from './WallLayers';
+import { WallTypesDialog } from './WallTypesDialog';
 
-const wall = { id: 'wall', label: 'Wall', icon: BrickWall, shortcut: 'WA', run: () => toggleTool('wall') };
-const door = { id: 'door', label: 'Door', icon: DoorOpen, shortcut: 'DR' };
-const window_ = { id: 'window', label: 'Window', icon: PanelTop, shortcut: 'WN' };
-const slab = { id: 'slab', label: 'Floor', icon: Square, shortcut: 'SB' };
+const wall: ToolDef = {
+  id: 'architecture.wall', label: 'Wall', icon: BrickWall, shortcut: 'WA',
+  gesture: { kind: 'twoPoints', repeat: true },
+  complete: async ({ points: [a, b] }, ctx) => {
+    const typeId = useUi.getState().wallTypeId;
+    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, ...(typeId ? { typeId } : {}) });
+  },
+};
+const wallTypes: ToolDef = { id: 'architecture.wallTypes', label: 'Wall types', icon: Layers3, run: () => useUi.setState({ dialog: 'wallTypes' }) };
+const door: ToolDef = { id: 'architecture.door', label: 'Door', icon: DoorOpen, shortcut: 'DR' };
+const window_: ToolDef = { id: 'architecture.window', label: 'Window', icon: PanelTop, shortcut: 'WN' };
+const slab: ToolDef = { id: 'architecture.slab', label: 'Floor', icon: Square, shortcut: 'SB' };
 
 const architecture: LapinModule = {
   id: 'architecture',
@@ -17,13 +26,15 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 10,
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, { id: 'roof', label: 'Roof', icon: Home, shortcut: 'RF' }] },
-      { label: 'Room', tools: [{ id: 'room', label: 'Room', icon: LayoutGrid, shortcut: 'RM' }] },
-      { label: 'Circulation', tools: [{ id: 'stair', label: 'Stair', icon: StretchHorizontal }] },
+      { label: 'Build', tools: [wall, door, window_, slab, { id: 'architecture.roof', label: 'Roof', icon: Home, shortcut: 'RF' }] },
+      { label: 'Types', tools: [wallTypes] },
+      { label: 'Room', tools: [{ id: 'architecture.room', label: 'Room', icon: LayoutGrid, shortcut: 'RM' }] },
+      { label: 'Circulation', tools: [{ id: 'architecture.stair', label: 'Stair', icon: StretchHorizontal }] },
     ],
   }],
   hotbar: [wall, door, window_, slab],
-  propertySections: [{ id: 'wall-layers', label: 'Layers', kinds: ['wall'], component: WallLayers }],
+  propertySections: [{ id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers }],
+  dialogs: { wallTypes: WallTypesDialog },
 };
 
 export default architecture;

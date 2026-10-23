@@ -68,6 +68,23 @@ public sealed class CoreModule : ILapinModule
             return null;
         });
 
+        r.Command("element.update", "Change", (ctx, a) =>
+        {
+            var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("Nothing to change.");
+            var d = ctx.Describe(e.Class) ?? throw new CommandException($"{e.Class} cannot be changed here.");
+            var values = a["attrs"] as JsonObject ?? throw new CommandException("Nothing to change.");
+            var attrs = e.CloneAttrs();
+            foreach (var (key, value) in values)
+            {
+                var f = d.Fields.FirstOrDefault(x => x.Key == key) ?? throw new CommandException($"{d.Label} has no field „{key}”.");
+                if (f.ReadOnly) throw new CommandException($"{f.Label} cannot be changed.");
+                if (value is null) { attrs.Remove(key); continue; }
+                attrs[key] = Fields.Check(f, value);
+            }
+            ctx.Replace(e.With(attrs: attrs));
+            return null;
+        });
+
         r.Command("element.delete", "Delete", (ctx, a) =>
         {
             var ids = a["ids"] is JsonArray arr ? arr.Select(n => (string?)n).OfType<string>().ToList() : [];
@@ -164,5 +181,38 @@ public static class Materials
         if (n.Contains("timber") || n.Contains("wood") || n.Contains("lemn")) return "#c08a4f";
         if (n.Contains("aac") || n.Contains("bca")) return "#d9d6cf";
         return "#c9ced6";
+    }
+}
+
+/// <summary>A value checked against the field that holds it.</summary>
+public static class Fields
+{
+    public static JsonNode Check(FieldDescriptor f, JsonNode value)
+    {
+        switch (f.Kind)
+        {
+            case "number" or "length" or "angle":
+            {
+                var n = Json.Number(value) ?? throw new CommandException($"{f.Label} must be a number.");
+                if (!double.IsFinite(n)) throw new CommandException($"{f.Label} must be a number.");
+                if (f.Min is { } min && n < min) throw new CommandException($"{f.Label} must be at least {min}.");
+                if (f.Max is { } max && n > max) throw new CommandException($"{f.Label} must be at most {max}.");
+                return n;
+            }
+            case "bool":
+                return value is JsonValue v && v.TryGetValue<bool>(out var b) ? b : throw new CommandException($"{f.Label} is yes or no.");
+            case "choice":
+            {
+                var c = (string?)value;
+                return c != null && (f.Choices ?? []).Contains(c) ? c : throw new CommandException($"{f.Label} must be one of {string.Join(", ", f.Choices ?? [])}.");
+            }
+            case "color":
+            {
+                var c = (string?)value;
+                return c is { Length: 7 } && c[0] == '#' && c[1..].All(Uri.IsHexDigit) ? c : throw new CommandException($"{f.Label} is a colour like #a8a8a8.");
+            }
+            default:
+                return (string?)value ?? throw new CommandException($"{f.Label} must be text.");
+        }
     }
 }

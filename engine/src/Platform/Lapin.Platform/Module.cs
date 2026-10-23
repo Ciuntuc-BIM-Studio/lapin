@@ -60,6 +60,8 @@ public interface IServices
 public interface ICommandContext : IEdit
 {
     IServices Services { get; }
+    /// <summary>What a class is in this product (its fields), whichever module owns it; null when none does.</summary>
+    ClassDescriptor? Describe(string ifcClass);
 }
 
 public interface IQueryContext

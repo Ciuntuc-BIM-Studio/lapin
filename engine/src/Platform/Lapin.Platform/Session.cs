@@ -318,6 +318,7 @@ sealed class CommandContext(IEdit edit, ModuleCatalog catalog) : ICommandContext
     public IModelView Model => edit.Model;
     public IServices Services => catalog;
     public string NewId() => edit.NewId();
+    public ClassDescriptor? Describe(string ifcClass) => catalog.Class(ifcClass);
 
     void EnsureEditable(Entity e)
     {

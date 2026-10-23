@@ -3,15 +3,6 @@
 import { Clock, Hammer, ListOrdered, Trash2 } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 
-function PhaseSection() {
-  return (
-    <dl className="fields">
-      <dt>Created in</dt><dd><select defaultValue="new"><option value="existing">Existing</option><option value="new">New construction</option></select></dd>
-      <dt>Demolished in</dt><dd><select defaultValue=""><option value="">Not demolished</option><option>Demolition</option></select></dd>
-    </dl>
-  );
-}
-
 const phases: LapinModule = {
   id: 'phases',
   name: 'Phases',
@@ -27,7 +18,6 @@ const phases: LapinModule = {
       ] },
     ],
   }],
-  propertySections: [{ id: 'phase', label: 'Phase', kinds: ['wall', 'slab', 'door', 'window'], component: PhaseSection }],
 };
 
 export default phases;

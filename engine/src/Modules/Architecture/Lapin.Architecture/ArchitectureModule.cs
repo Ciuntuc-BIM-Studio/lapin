@@ -17,7 +17,6 @@ public sealed class ArchitectureModule : ILapinModule
         [
             new("height", "Height", "length", Min: 0.01),
             new("baseOffset", "Base offset", "length"),
-            new("thickness", "Thickness (no layers)", "length", Min: 0.001),
         ], "#b5654a"));
         r.Class(new(IfcClass.WallType, "Wall type", [new("mark", "Mark", "text")], "#b5654a", Kind: "type"));
 

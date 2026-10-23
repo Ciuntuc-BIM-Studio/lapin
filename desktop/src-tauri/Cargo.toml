@@ -1,7 +1,7 @@
 [package]
 name = "lapin-desktop"
 version = "0.1.0"
-description = "Lapin desktop shell: the window, the native dialogs, and the local BubbleBIM Pro engine it starts"
+description = "Lapin desktop shell: the window, the native dialogs, and the local Lapin engine it starts"
 edition = "2021"
 
 # Its own workspace.

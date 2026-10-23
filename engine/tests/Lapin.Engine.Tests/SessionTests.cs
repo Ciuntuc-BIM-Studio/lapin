@@ -127,3 +127,33 @@ public class SessionTests
         public void Register(IModuleRegistry registry) { }
     }
 }
+
+/// <summary>The inspector's edits: element.update changes declared fields only, checked against them.</summary>
+public class ElementUpdateTests
+{
+    [Fact]
+    public void Changes_a_declared_field_and_the_geometry_follows()
+    {
+        var f = new Fixture();
+        var wall = f.Wall(0, 0, 4, 0);
+        f.Run("element.update", new JsonObject { ["id"] = wall, ["attrs"] = new JsonObject { ["height"] = 2.5 } });
+        Assert.Equal(2.5, f.Model.Get(wall)!.Num("height"), 9);
+        Assert.Equal(2.5, f.Bounds(wall).Max.Z, 9);
+        f.Run("element.update", new JsonObject { ["id"] = f.Storey, ["attrs"] = new JsonObject { ["elevation"] = -0.5 } });
+        Assert.Equal(-0.5, f.Bounds(wall).Min.Z, 9);
+    }
+
+    [Fact]
+    public void Refuses_unknown_fields_values_out_of_range_and_wrong_kinds()
+    {
+        var f = new Fixture();
+        var wall = f.Wall(0, 0, 4, 0);
+        Assert.Throws<CommandException>(() => f.Run("element.update", new JsonObject { ["id"] = wall, ["attrs"] = new JsonObject { ["start"] = new JsonArray(1, 2) } }));
+        Assert.Throws<CommandException>(() => f.Run("element.update", new JsonObject { ["id"] = wall, ["attrs"] = new JsonObject { ["height"] = 0 } }));
+        Assert.Throws<CommandException>(() => f.Run("element.update", new JsonObject { ["id"] = wall, ["attrs"] = new JsonObject { ["height"] = "tall" } }));
+        var brick = Materials.Find(f.Model, "Brick")!.Id;
+        Assert.Throws<CommandException>(() => f.Run("element.update", new JsonObject { ["id"] = brick, ["attrs"] = new JsonObject { ["color"] = "red" } }));
+        f.Run("element.update", new JsonObject { ["id"] = brick, ["attrs"] = new JsonObject { ["color"] = "#ff0000" } });
+        Assert.Equal("#ff0000", f.Session.Geometry(wall)!.Parts.Single(p => p.Material == brick).Color);
+    }
+}

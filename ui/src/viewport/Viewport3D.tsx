@@ -1,31 +1,29 @@
 /**
  * The 3D view: the engine's meshes in three.js (metres, Z up), on the
- * architect's-sheet palette. With the wall tool on, two clicks on the
- * storey's plane give the wall's ends.
+ * architect's-sheet palette. A click selects; with a drawing tool on, clicks
+ * on the active storey's plane give its points.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { RenderItem } from '../engine/protocol';
-import { useSession } from '../engine/session';
-import { useUi } from '../app/store';
-
-export interface PlanePick { x: number; y: number }
-
-interface Props {
-  /** Called with the point on the ground plane (z = 0) under a click, while a tool wants points. */
-  onPick?: (p: PlanePick) => void;
-  picking: boolean;
-}
+import { activeStorey, useSession } from '../engine/session';
+import { num } from '../engine/model';
+import { select, setTool, useUi } from '../app/store';
+import { findTool } from '../platform/modules';
+import type { Vec2 } from '../platform/module';
+import { completeTool } from './tools';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
 const GRID = { paper: [0xb5532d, 0xd6cebf], graphite: [0xe07a4f, 0x34312c] } as const;
+const SELECTED = new THREE.Color(0xb5532d);
 
-function groundGrid(theme: keyof typeof GRID): THREE.GridHelper {
+function groundGrid(theme: keyof typeof GRID, z: number): THREE.GridHelper {
   const grid = new THREE.GridHelper(60, 60, GRID[theme][0], GRID[theme][1]);
   grid.rotation.x = Math.PI / 2;
+  grid.position.z = z;
   grid.name = 'ground-grid';
   return grid;
 }
@@ -40,7 +38,9 @@ function meshOf(item: RenderItem): THREE.Group {
       if (normals.length === positions.length) g.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
       else g.computeVertexNormals();
       g.setIndex(new THREE.BufferAttribute(new Uint32Array(indices.buffer, indices.byteOffset, indices.length), 1));
-      group.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 })));
+      const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
+      mesh.userData.nodeId = item.nodeId;
+      group.add(mesh);
     }
     if (edges.length) {
       const e = new THREE.BufferGeometry();
@@ -53,6 +53,14 @@ function meshOf(item: RenderItem): THREE.Group {
   return group;
 }
 
+function highlight(group: THREE.Object3D, on: boolean) {
+  group.traverse((c) => {
+    const m = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+    if (m && 'emissive' in m) m.emissive = on ? SELECTED : new THREE.Color(0);
+    if (m && 'emissiveIntensity' in m) m.emissiveIntensity = on ? 0.45 : 0;
+  });
+}
+
 function dispose(o: THREE.Object3D) {
   o.traverse((c) => {
     const m = c as THREE.Mesh;
@@ -62,13 +70,35 @@ function dispose(o: THREE.Object3D) {
   });
 }
 
-export function Viewport3D({ onPick, picking }: Props) {
+export function Viewport3D() {
   const host = useRef<HTMLDivElement>(null);
   const scene = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const items = useRef(new Map<string, { item: RenderItem; object: THREE.Group }>());
-  const pickRef = useRef(onPick);
-  pickRef.current = picking ? onPick : undefined;
+  const [pending, setPending] = useState<Vec2 | null>(null);
+  const toolId = useUi((s) => s.tool);
+  const tool = findTool(toolId);
+  // What a click does, kept current for the listeners set up once.
+  const clickRef = useRef<(hit: { nodeId: string | null; ground: Vec2 | null }) => void>(() => undefined);
+  const elevationRef = useRef(0);
+  useUi((s) => s.storeyId);
+  useSession((s) => s.nodes);
+  const storey = activeStorey();
+  elevationRef.current = num(storey ?? undefined, 'elevation');
+
+  useEffect(() => { setPending(null); }, [toolId]);
+
+  clickRef.current = ({ nodeId, ground }) => {
+    const g = tool?.gesture;
+    if (!g) { select(nodeId); return; }
+    if (!ground) return;
+    if (g.kind === 'point') { void completeTool(tool!, { points: [ground] }); return; }
+    if (g.kind === 'twoPoints' || g.kind === 'rectangle') {
+      if (!pending) { setPending(ground); return; }
+      void completeTool(tool!, { points: [pending, ground] });
+      setPending(g.kind === 'twoPoints' && g.repeat ? ground : null);
+    }
+  };
 
   useEffect(() => {
     const el = host.current!;
@@ -90,7 +120,7 @@ export function Viewport3D({ onPick, picking }: Props) {
     const sun = new THREE.DirectionalLight(0xffffff, 1.6);
     sun.position.set(20, -30, 40);
     s.add(sun);
-    s.add(groundGrid(useUi.getState().theme));
+    s.add(groundGrid(useUi.getState().theme, elevationRef.current));
 
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = el;
@@ -105,28 +135,37 @@ export function Viewport3D({ onPick, picking }: Props) {
     const loop = () => { frame = requestAnimationFrame(loop); renderer.render(s, camera); };
     loop();
 
-    // A click (not a drag) on the ground plane z = 0, while a tool wants a point.
+    // A click (not a drag): the element under it, and the point on the active storey's plane.
     const ray = new THREE.Raycaster();
-    const ground = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     let down: { x: number; y: number } | null = null;
     const onDown = (e: PointerEvent) => { down = { x: e.clientX, y: e.clientY }; };
     const onUp = (e: PointerEvent) => {
       const start = down;
       down = null;
-      if (!start || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 4 || !pickRef.current) return;
+      if (!start || e.button !== 0 || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 4) return;
       const r = renderer.domElement.getBoundingClientRect();
       ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
-      const hit = ray.ray.intersectPlane(ground, new THREE.Vector3());
-      if (hit) pickRef.current({ x: Math.round(hit.x * 20) / 20, y: Math.round(hit.y * 20) / 20 });
+      const meshes: THREE.Object3D[] = [];
+      for (const { object } of items.current.values()) meshes.push(object);
+      const hit = ray.intersectObjects(meshes, true).find((h) => h.object.userData.nodeId);
+      const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -elevationRef.current);
+      const g = ray.ray.intersectPlane(plane, new THREE.Vector3());
+      clickRef.current({
+        nodeId: (hit?.object.userData.nodeId as string | undefined) ?? null,
+        ground: g ? { x: Math.round(g.x * 20) / 20, y: Math.round(g.y * 20) / 20 } : null,
+      });
     };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setPending(null); if (!(e.target as HTMLElement)?.closest('input, select, textarea')) setTool(null); } };
     renderer.domElement.addEventListener('pointerdown', onDown);
     renderer.domElement.addEventListener('pointerup', onUp);
+    window.addEventListener('keydown', onKey);
     return () => {
       cancelAnimationFrame(frame);
       ro.disconnect();
       controls.dispose();
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('pointerup', onUp);
+      window.removeEventListener('keydown', onKey);
       for (const { object } of items.current.values()) dispose(object);
       items.current.clear();
       renderer.dispose();
@@ -134,20 +173,21 @@ export function Viewport3D({ onPick, picking }: Props) {
     };
   }, []);
 
-  // The view clears to the theme's paper or graphite.
+  // The view clears to the theme's paper or graphite; the grid lies on the active storey.
   const theme = useUi((st) => st.theme);
+  const elevation = elevationRef.current;
   useEffect(() => {
     rendererRef.current?.setClearColor(CLEAR[theme]);
     const s = scene.current;
     const old = s?.getObjectByName('ground-grid');
-    if (!s || !old) return;
-    s.remove(old);
-    dispose(old);
-    s.add(groundGrid(theme));
-  }, [theme]);
+    if (!s) return;
+    if (old) { s.remove(old); dispose(old); }
+    s.add(groundGrid(theme, elevation));
+  }, [theme, elevation]);
 
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);
+  const selection = useUi((st) => st.selection);
   useEffect(() => {
     const s = scene.current;
     if (!s) return;
@@ -164,7 +204,8 @@ export function Viewport3D({ onPick, picking }: Props) {
       s.add(object);
       live.set(id, { item, object });
     }
-  }, [render]);
+    for (const [id, { object }] of live) highlight(object, id === selection);
+  }, [render, selection]);
 
-  return <div ref={host} className={`viewport${picking ? ' picking' : ''}`} />;
+  return <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />;
 }

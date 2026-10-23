@@ -57,15 +57,8 @@ If pnpm complains about @tauri-apps when installing, use `CI=true pnpm install`.
 
 ## Next step
 
-Milestone M1. Done on 2026-10-24:
-- the engine (model, platform, package, host);
-- the architecture module: layered wall types, walls with their own usage, the axis on the core, flip;
-- `.lapin` format 3;
-- products resolved with their requirements, and `build:product`.
+M1 is done (2026-10-24): the engine, the layered walls, `.lapin` format 3, products, binary meshes, the recovery journal, and the UI wired to the engine (plan view, 3D, selection, inspector, wall types, File menu, recovery).
 
-Left in M1:
-- binary meshes;
-- the journal (`journal/ops.jsonl`);
-- the mock UI wired to the engine: browser, inspector, open and save, wall types.
+The user approved M1–M7 plus roofs with walls extended under the roof, to reach a PoC at the old Lapin's level. Decisions taken along the way go into `docs/decisions-pending.md` for review at the end.
 
-After that comes the M2 walls work: joins, mitre, zones, lintels, cut priorities. The milestones are in `docs/plan.md`, and the transfer order is in `docs/transfer.md`.
+Next comes M2, the walls: joins, mitre, zones, finish layers, lintels, cut priorities, foundations. The milestones are in `docs/plan.md`, and the transfer order is in `docs/transfer.md`.

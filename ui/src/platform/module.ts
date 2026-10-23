@@ -8,6 +8,26 @@
 
 import type { ComponentType } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import type { NodeDto } from '../engine/protocol';
+
+export interface Vec2 { x: number; y: number }
+
+/** How a tool takes its input in a view: the gesture, then one engine command. */
+export type Gesture =
+  | { kind: 'twoPoints'; /** Chained: the end of one is the start of the next (walls). */ repeat?: boolean }
+  | { kind: 'point' }
+  | { kind: 'rectangle' }
+  | { kind: 'polygon' }
+  | { kind: 'polyline' }
+  | { kind: 'pick'; /** IFC classes it can be used on. */ types: string[] };
+
+export interface ToolInput { points: Vec2[]; entity?: NodeDto }
+
+/** What a tool's completion can use: the storey it draws on, and the engine. */
+export interface ToolContext {
+  storeyId: string;
+  execute: (command: string, args?: Record<string, unknown>) => Promise<unknown>;
+}
 
 export interface ToolDef {
   id: string;
@@ -15,7 +35,10 @@ export interface ToolDef {
   icon: LucideIcon;
   /** Two-letter shortcut, as in Revit (WA, DR…). */
   shortcut?: string;
-  /** Runs the tool; absent: a mock button for now. */
+  /** A tool drawn in a view: its gesture and what it does at the end. */
+  gesture?: Gesture;
+  complete?: (input: ToolInput, ctx: ToolContext) => Promise<void> | void;
+  /** A button: what it does when pressed (a tool with a gesture is switched on instead). */
   run?: () => void;
 }
 
@@ -29,8 +52,8 @@ export interface RibbonTabDef {
   order: number;
 }
 
-/** A section of the properties panel for a selected element of a kind. */
-export interface PropertySectionDef { id: string; label: string; kinds: string[]; component: ComponentType<{ kind: string }> }
+/** A section of the properties panel for a selected entity of some IFC classes. */
+export interface PropertySectionDef { id: string; label: string; classes: string[]; component: ComponentType<{ node: NodeDto }> }
 
 export interface LapinModule {
   id: string;
@@ -41,4 +64,6 @@ export interface LapinModule {
   /** Tools for the viewport hotbar (1–9), in order. */
   hotbar?: ToolDef[];
   propertySections?: PropertySectionDef[];
+  /** Dialogs the module opens (by the store's `dialog`). */
+  dialogs?: Record<string, ComponentType>;
 }

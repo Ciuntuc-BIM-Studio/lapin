@@ -88,7 +88,7 @@ Formatul `bubbles-house` de azi devine astfel un caz particular al aceluiași IF
 Numerotarea veche avea două variante: cea din commit-ul M0 (M4 faze, M6 raportare, M7 lansare) și cea din `transfer.md` (M7 MEP). Aceasta le înlocuiește pe amândouă.
 
 - **M0 – Schelet** (făcut, `d09bd60`): Tauri, motorul ca submodul, un perete văzut în three.js. Mock-ul interfeței: `6a5b582`.
-- **M1 – Motorul Lapin și formatul** (în lucru; făcut pe 24.10.2026: modelul, platforma, modulul Architecture cu pereții stratificați și flip-ul, `.lapin` formatul 3, host-ul, edițiile și `build:product`):
+- **M1 – Motorul Lapin și formatul** (făcut pe 24.10.2026: modelul, platforma, modulul Architecture cu pereții stratificați și flip-ul, `.lapin` formatul 3, host-ul, edițiile și `build:product`, mesh-urile binare, jurnalul de recuperare, interfața legată de motor):
   - `Lapin.Ifc.Model` (entități și relații IFC4X3, comenzi, undo) și `Lapin.Host`, pe același protocol;
   - tipul de perete stratificat: layer set, usage, axa pe miez, flip;
   - `.lapin` formatul 3: salvare, deschidere, jurnal;

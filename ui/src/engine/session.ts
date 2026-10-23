@@ -1,13 +1,15 @@
 /**
- * Lapin's side of the engine session: the IFC entities and the meshes as the
- * Lapin engine last sent them, kept in step by its diffs. An entity travels
- * as a node whose type is its IFC class. Every edit is an engine command
- * (one undo step); nothing is modelled here.
+ * Lapin's side of the engine session: the IFC entities, their relationships
+ * and the meshes as the Lapin engine last sent them, kept in step by its
+ * diffs. An entity travels as a node whose type is its IFC class. Every edit
+ * is an engine command (one undo step); nothing is modelled here.
  */
 
 import { create } from 'zustand';
 import { EngineClient, engineUrl } from './client';
 import type { Diff, DocState, NodeDto, RelationDto, RenderItem, SessionInfo } from './protocol';
+import { storeys } from './model';
+import { useUi } from '../app/store';
 
 export interface SessionState {
   connected: boolean;
@@ -39,6 +41,11 @@ export function applyDiff(d: Diff): void {
   for (const id of d.renderRemoved) render.delete(id);
   for (const r of d.render) render.set(r.nodeId, r);
   useSession.setState({ nodes, relations, render, doc: d.state, version: d.version });
+  // A selection the edit took away goes too.
+  const sel = useUi.getState().selection;
+  if (sel && !nodes.has(sel)) useUi.setState({ selection: null });
+  const storey = useUi.getState().storeyId;
+  if (storey && !nodes.has(storey)) useUi.setState({ storeyId: null });
 }
 
 /** Run an engine command; its diff arrives as an event. Errors land in the session. */
@@ -55,16 +62,14 @@ export async function execute(command: string, args: Record<string, unknown> = {
 
 export const undo = () => engine.call('doc.undo').catch(() => undefined);
 export const redo = () => engine.call('doc.redo').catch(() => undefined);
-export const newProject = () => engine.call('project.new').catch(() => undefined);
 
-/** The storey new elements go on: the lowest one. */
+/** The storey the plan shows and new elements go on: the chosen one, else the lowest. */
 export function activeStorey(s: SessionState = useSession.getState()): NodeDto | null {
-  const storeys = [...s.nodes.values()].filter((n) => n.type === 'IfcBuildingStorey');
-  const elevation = (n: NodeDto) => (typeof n.props.elevation === 'number' ? n.props.elevation : 0);
-  return storeys.sort((a, b) => elevation(a) - elevation(b))[0] ?? null;
+  const chosen = useUi.getState().storeyId;
+  return (chosen ? s.nodes.get(chosen) : undefined) ?? storeys(s)[0] ?? null;
 }
 
-/** The storey to build on: the lowest, or a new one when the project has none yet. */
+/** The storey to build on: the active one, or a new one when the project has none yet. */
 export async function ensureStorey(): Promise<string | null> {
   const existing = activeStorey();
   if (existing) return existing.id;

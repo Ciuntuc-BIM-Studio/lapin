@@ -1,28 +1,32 @@
 /**
- * Lapin's interface (mock of the target layout): the start screen, then the
- * workspace — ribbon tabs from the product's modules, the project browser,
- * the views with Atrium's HUD, the properties panel, the status bar. The
- * wall tool already builds through the engine; the rest is a mock.
+ * Lapin's interface: the start screen, then the workspace — ribbon tabs from
+ * the product's modules, the project browser, the plan or 3D view with
+ * Atrium's HUD, the properties panel, the status bar.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { X } from 'lucide-react';
-import { useUi } from './app/store';
-import { ensureStorey, execute, useSession } from './engine/session';
-import { modules, productInfo } from './platform/modules';
+import { notify, useUi } from './app/store';
+import { useShortcuts } from './app/keys';
+import { useSession } from './engine/session';
+import { projectTitle } from './engine/files';
+import { dialog, modules, productInfo } from './platform/modules';
 import { ProjectBrowser } from './shell/ProjectBrowser';
 import { PropertiesPanel } from './shell/PropertiesPanel';
 import { Ribbon } from './shell/Ribbon';
 import { StartScreen } from './shell/StartScreen';
 import { ViewportHud } from './shell/ViewportHud';
-import { Viewport3D, type PlanePick } from './viewport/Viewport3D';
+import { PlanView } from './viewport/PlanView';
+import { Viewport3D } from './viewport/Viewport3D';
 
 function StatusBar() {
   const connected = useSession((s) => s.connected);
   const elements = useSession((s) => s.render.size);
+  const doc = useSession((s) => s.doc);
   return (
     <footer className="status">
       <span className={connected ? 'ok' : 'off'}>{connected ? 'Engine connected' : 'Engine offline'}</span>
+      <span>{projectTitle(doc?.path)}{doc?.dirty ? ' · unsaved' : ''}</span>
       <span>{elements} elements</span>
       <span>Units: m</span>
       <span className="grow" />
@@ -31,20 +35,21 @@ function StatusBar() {
   );
 }
 
+function Notice() {
+  const notice = useUi((s) => s.notice);
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => notify(null), 4000);
+    return () => clearTimeout(t);
+  }, [notice]);
+  return notice ? <div className="notice" role="status">{notice}</div> : null;
+}
+
 function Workspace() {
-  const tool = useUi((s) => s.tool);
   const view = useUi((s) => s.view);
   const error = useSession((s) => s.error);
-  const [start, setStart] = useState<PlanePick | null>(null);
-  useEffect(() => { if (tool !== 'wall') setStart(null); }, [tool]);
-  const pick = (p: PlanePick) => {
-    if (tool !== 'wall') return;
-    if (!start) { setStart(p); return; }
-    const from = start;
-    void ensureStorey().then((storeyId) => storeyId && execute('architecture.addWall', { storeyId, x1: from.x, y1: from.y, x2: p.x, y2: p.y }));
-    setStart(p);
-  };
-  const hint = tool === 'wall' ? (start ? 'Click the wall’s end · Esc to stop' : 'Click the wall’s start') : null;
+  const open = useUi((s) => s.dialog);
+  const Dialog = open ? dialog(open) : null;
   return (
     <div className="workspace">
       <Ribbon />
@@ -52,19 +57,21 @@ function Workspace() {
         <ProjectBrowser />
         <main className="views">
           <div className="view-tabs">
-            {[['3d', '{3D}'], ['plan', 'Ground floor']].map(([id, name]) => (
+            {([['plan', 'Plan'], ['3d', '{3D}']] as const).map(([id, name]) => (
               <button type="button" key={id} className={`view-tab${view === id ? ' on' : ''}`} onClick={() => useUi.setState({ view: id })}>{name}<X size={11} /></button>
             ))}
           </div>
           <div className="view-area">
-            <Viewport3D picking={tool === 'wall'} onPick={pick} />
-            <ViewportHud hint={hint} />
-            {error && <div className="error" role="alert">{error}</div>}
+            {view === 'plan' ? <PlanView /> : <Viewport3D />}
+            <ViewportHud />
+            {error && <div className="error" role="alert" onClick={() => useSession.setState({ error: null })}>{error}</div>}
+            <Notice />
           </div>
         </main>
         <PropertiesPanel />
       </div>
       <StatusBar />
+      {Dialog && <Dialog />}
     </div>
   );
 }
@@ -72,6 +79,7 @@ function Workspace() {
 export function App() {
   const screen = useUi((s) => s.screen);
   const theme = useUi((s) => s.theme);
+  useShortcuts();
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   return screen === 'start' ? <StartScreen /> : <Workspace />;
 }

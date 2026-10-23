@@ -1,47 +1,67 @@
-/** The start screen, Atrium's way: the actions on the left, the recent projects on the right. */
+/** The start screen, Atrium's way: the actions on the left; unsaved work to bring back and the recent projects on the right. */
 
-import { FilePlus2, FolderOpen, Link2 } from 'lucide-react';
-import { useUi } from '../app/store';
+import { useEffect, useState } from 'react';
+import { FilePlus2, FolderOpen, History, Trash2 } from 'lucide-react';
 import { modules, productInfo } from '../platform/modules';
-import { newProject } from '../engine/session';
+import { useSession } from '../engine/session';
+import { discardWork, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
+import { useUi } from '../app/store';
 
-const RECENT = [
-  { name: 'Casa P+1 Huși', file: 'casa-p1-husi.lapin', when: '23 Oct 2026 · 18:20', elements: '214 elements · 2 levels' },
-  { name: 'Bloc P+4', file: 'bloc-p4.lapin', when: '21 Oct 2026 · 09:05', elements: '1,219 elements · 6 levels' },
-  { name: 'Hală depozit', file: 'hala-depozit.lapin', when: '18 Oct 2026 · 16:40', elements: '87 elements · 1 level' },
-];
+const when = (iso: string) => new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 export function StartScreen() {
-  const open = () => useUi.setState({ screen: 'workspace', tab: null });
+  const connected = useSession((s) => s.connected);
+  const doc = useSession((s) => s.doc);
+  const [work, setWork] = useState<RecoverableWork[]>([]);
+  const recent = recentProjects();
+  useEffect(() => { if (connected) void listRecovery().then(setWork); }, [connected]);
+  const back = () => useUi.setState({ screen: 'workspace' });
   return (
     <div className="start">
       <section className="start-left">
         <h1 className="start-brand">Lapin</h1>
         <p className="muted">BIM authoring for architects and engineers</p>
-        <button type="button" className="btn primary big" onClick={() => { void newProject(); open(); }}><FilePlus2 size={18} />New project</button>
-        <button type="button" className="btn big" onClick={open}><FolderOpen size={18} />Open project…</button>
-        <button type="button" className="btn big" onClick={open}><Link2 size={18} />Link an IFC model…</button>
+        <button type="button" className="btn primary big" disabled={!connected} onClick={() => void newProject()}><FilePlus2 size={18} />New project</button>
+        <button type="button" className="btn big" disabled={!connected} onClick={() => void openProject()}><FolderOpen size={18} />Open project…</button>
+        {doc && (doc.path || doc.canUndo) && <button type="button" className="btn big" onClick={back}>Back to {projectTitle(doc.path)}</button>}
+        {!connected && <p className="muted small">Starting the engine…</p>}
         <p className="eyebrow">Start here</p>
-        <p className="muted small">A new project starts with a ground floor and its plan. Draw walls with <kbd>WA</kbd>, doors with <kbd>DR</kbd>; every element is native IFC.</p>
+        <p className="muted small">A new project starts with a ground floor and its plan. Draw walls with <kbd>WA</kbd>; every element is native IFC.</p>
         <p className="eyebrow">This edition</p>
         <p className="muted small">{productInfo.name}: {modules.map((m) => m.name).join(' · ')}</p>
       </section>
       <section className="start-right">
+        {work.length > 0 && (
+          <>
+            <p className="eyebrow">Unsaved work</p>
+            {work.map((w) => (
+              <div key={w.file} className="recent recover">
+                <History size={18} />
+                <span className="recent-body">
+                  <span className="recent-name">{w.path ? projectTitle(w.path) : 'A new project'}</span>
+                  <span className="muted small">{w.edits} edits{w.lastEdit ? ` · last: ${w.lastEdit}` : ''} · {when(w.at)}</span>
+                </span>
+                <button type="button" className="btn primary" onClick={() => void restoreWork(w.file)}>Recover</button>
+                <button type="button" className="icon" title="Discard" onClick={() => void discardWork(w.file).then(() => setWork(work.filter((x) => x.file !== w.file)))}><Trash2 size={14} /></button>
+              </div>
+            ))}
+          </>
+        )}
         <p className="eyebrow">Recent</p>
-        {RECENT.map((r) => (
-          <button type="button" key={r.file} className="recent" onClick={open}>
+        {recent.length === 0 && <p className="muted small">Projects you open or save appear here.</p>}
+        {recent.map((path) => (
+          <button type="button" key={path} className="recent" disabled={!connected} onClick={() => void openProject(path)}>
             <span className="thumb" aria-hidden="true" />
             <span className="recent-body">
-              <span className="recent-name">{r.name}</span>
-              <span className="muted small">{r.file} · {r.elements}</span>
+              <span className="recent-name">{projectTitle(path)}</span>
+              <span className="muted small">{path}</span>
             </span>
-            <span className="muted small">{r.when}</span>
           </button>
         ))}
       </section>
       <footer className="start-foot muted small">
         <span>Lapin · Ciuntuc BIM Studio</span>
-        <span>Ctrl+N new · Ctrl+O open · drop a .lapin or .ifc here</span>
+        <span>Ctrl+N new · Ctrl+O open · Ctrl+S save</span>
       </footer>
     </div>
   );
