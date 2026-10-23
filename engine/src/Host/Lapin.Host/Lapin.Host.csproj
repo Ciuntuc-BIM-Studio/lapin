@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    The local engine process the desktop app talks to. It references the
+    platform only; modules are loaded at start from the product manifest.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>Lapin.Host</AssemblyName>
+    <!-- Modules are found by reflection: trimming would cut what they need. -->
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Platform/Lapin.Platform/Lapin.Platform.csproj" />
+    <ProjectReference Include="../../Platform/Lapin.Package/Lapin.Package.csproj" />
+  </ItemGroup>
+</Project>

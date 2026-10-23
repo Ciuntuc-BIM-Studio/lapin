@@ -1,0 +1,15 @@
+<Project>
+  <!-- Common to every Lapin engine project. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Where every module lands after a build, ready for the host to load and a product build to ship. -->
+    <LapinModulesDir>$(MSBuildThisFileDirectory)artifacts/modules/</LapinModulesDir>
+    <!-- The BubbleBIM Pro geometry kernel, used as a library (vendor/bubblebim-pro). -->
+    <BubbleEngineDir>$(MSBuildThisFileDirectory)../vendor/bubblebim-pro/engine/</BubbleEngineDir>
+  </PropertyGroup>
+</Project>

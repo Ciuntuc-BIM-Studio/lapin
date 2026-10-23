@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The platform every Lapin product has: the module contract and loader, the
+    spatial structure and materials, the session (commands, undo, diffs) and
+    the geometry pipeline (on the BubbleBIM Pro kernel). It knows no module.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../../Model/Lapin.Model/Lapin.Model.csproj" />
+    <ProjectReference Include="$(BubbleEngineDir)src/Platform/BubbleBim.Platform.Geometry/BubbleBim.Platform.Geometry.csproj" />
+  </ItemGroup>
+</Project>

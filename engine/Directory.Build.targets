@@ -1,0 +1,16 @@
+<Project>
+  <!--
+    A module is a project that sets <LapinModuleId>. After each build its own
+    assemblies (never the platform's: those references are Private=false) and
+    its module.json are copied to artifacts/modules/<id>/: the folder layout
+    the host loads and a product build ships, one folder per module.
+  -->
+  <Target Name="CopyLapinModule" AfterTargets="Build" Condition="'$(LapinModuleId)' != ''">
+    <ItemGroup>
+      <_LapinModuleFiles Include="$(OutDir)*.dll;$(OutDir)*.pdb" Exclude="$(OutDir)Lapin.Model.*;$(OutDir)Lapin.Platform.*;$(OutDir)BubbleBim.Platform.*" />
+    </ItemGroup>
+    <RemoveDir Directories="$(LapinModulesDir)$(LapinModuleId)" />
+    <Copy SourceFiles="@(_LapinModuleFiles);$(MSBuildProjectDirectory)/module.json"
+          DestinationFolder="$(LapinModulesDir)$(LapinModuleId)" SkipUnchangedFiles="false" />
+  </Target>
+</Project>

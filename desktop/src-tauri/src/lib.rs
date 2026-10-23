@@ -1,12 +1,15 @@
 //! Lapin desktop shell.
 //!
 //! The window shows the TypeScript interface; all modelling happens in the C#
-//! BubbleBIM Pro engine (`bubblebim-host`), a local process this shell starts next to itself
+//! Lapin engine (`lapin-host`), a local process this shell starts next to itself
 //! and stops when the window closes. The interface asks for the engine's
 //! address with `engine_url` and talks to it over a local WebSocket.
 //!
+//! A product package ships the engine with only its product's modules
+//! (`resources/product.json`, `resources/modules/<id>/`).
+//!
 //! In development `pnpm dev:desktop` runs the engine itself and passes its
-//! address in `BUBBLEBIM_ENGINE_URL`; then nothing is started here.
+//! address in `LAPIN_ENGINE_URL`; then nothing is started here.
 
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
@@ -50,9 +53,9 @@ async fn engine_url(engine: State<'_, Arc<Engine>>) -> Result<String, String> {
     .map_err(|e| e.to_string())?
 }
 
-/// The port from the engine's ready line: `BUBBLEBIM_HOST_READY {"port":12345}`.
+/// The port from the engine's ready line: `LAPIN_HOST_READY {"port":12345}`.
 fn ready_port(line: &str) -> Option<u16> {
-    let json = line.strip_prefix("BUBBLEBIM_HOST_READY ")?;
+    let json = line.strip_prefix("LAPIN_HOST_READY ")?;
     let v: serde_json::Value = serde_json::from_str(json.trim()).ok()?;
     v.get("port")?.as_u64().and_then(|p| u16::try_from(p).ok())
 }
@@ -60,24 +63,21 @@ fn ready_port(line: &str) -> Option<u16> {
 fn host_binary() -> Result<PathBuf, String> {
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let dir = exe.parent().ok_or("no executable directory")?;
-    let name = if cfg!(windows) { "bubblebim-host.exe" } else { "bubblebim-host" };
+    let name = if cfg!(windows) { "lapin-host.exe" } else { "lapin-host" };
     Ok(dir.join(name))
 }
 
 fn start_engine(app: &AppHandle, engine: Arc<Engine>) {
-    if let Ok(url) = std::env::var("BUBBLEBIM_ENGINE_URL") {
+    if let Ok(url) = std::env::var("LAPIN_ENGINE_URL") {
         engine.settle(Ok(url));
         return;
     }
     let spawn = || -> Result<Child, String> {
         let host = host_binary()?;
         let res = app.path().resource_dir().map_err(|e| e.to_string())?.join("resources");
-        // The user's own data (price book, recipes) lives in the app's data folder.
-        let user = app.path().app_data_dir().map_err(|e| e.to_string())?;
         Command::new(&host)
             .arg("--product").arg(res.join("product.json"))
             .arg("--modules-dir").arg(res.join("modules"))
-            .arg("--user-dir").arg(user)
             .args(["--port", "0", "--parent-pid", &std::process::id().to_string()])
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
@@ -141,9 +141,9 @@ mod tests {
 
     #[test]
     fn reads_the_port_from_the_ready_line() {
-        assert_eq!(ready_port("BUBBLEBIM_HOST_READY {\"port\":51234}"), Some(51234));
-        assert_eq!(ready_port("BUBBLEBIM_HOST_READY {\"port\":0}"), Some(0));
+        assert_eq!(ready_port("LAPIN_HOST_READY {\"port\":51234}"), Some(51234));
+        assert_eq!(ready_port("LAPIN_HOST_READY {\"port\":0}"), Some(0));
         assert_eq!(ready_port("something else"), None);
-        assert_eq!(ready_port("BUBBLEBIM_HOST_READY nonsense"), None);
+        assert_eq!(ready_port("LAPIN_HOST_READY nonsense"), None);
     }
 }

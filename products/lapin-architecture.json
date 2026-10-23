@@ -1,6 +1,5 @@
 {
   "id": "lapin-architecture",
   "name": "Lapin Architecture",
-  "modules": ["core", "architecture", "drafting"],
-  "engine": ["building", "drawing", "ifc"]
+  "modules": ["architecture", "drafting"]
 }

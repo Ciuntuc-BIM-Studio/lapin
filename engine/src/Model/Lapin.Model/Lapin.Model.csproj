@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Lapin's model: IFC entities and objectified relationships, edited in
+    transactions (one undo step each). No geometry, no modules, no I/O.
+  -->
+</Project>

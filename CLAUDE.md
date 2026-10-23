@@ -5,16 +5,25 @@ Private repo `Ciuntuc-BIM-Studio/lapin-pro`. The user writes in Romanian; the UI
 
 ## Where things are
 
+- `engine/`: Lapin's C# engine (.NET 10), `engine/Lapin.slnx`.
+  - `src/Model/Lapin.Model`: IFC entities and objectified relationships, transactions (one undo step each), GlobalIds, the layer rules (axis on the core).
+  - `src/Platform/Lapin.Platform`: the module contract and loader, the built-in `core` module (spatial structure, materials, rename/delete), the session and its diffs, geometry.
+  - `src/Platform/Lapin.Package`: the `.lapin` package, format 3 (zip, SHA-256 parts, Arrow tables per module × class × storey).
+  - `src/Modules/<Group>/Lapin.<X>`: an engine module with its `module.json` (`requires` lists the modules it needs). Built into `engine/artifacts/modules/<id>/`.
+  - `src/Host/Lapin.Host`: the WebSocket JSON-RPC host (BubbleBIM Pro's protocol); prints `LAPIN_HOST_READY {"port":…}`.
+  - `tests/Lapin.Engine.Tests`: xUnit, including the tests ported from the fork.
 - `ui/`: React 18 + three.js + zustand + lucide, run with Vite on port 5180.
   - `ui/src/shell/`: the ribbon, project browser, properties panel and start screen.
   - `ui/src/modules/<id>/`: the UI modules (core, architecture, structure, drafting, phases, cost). The contract is in `ui/src/platform/module.ts`.
   - `ui/src/engine/session.ts`: the WebSocket JSON-RPC client.
-- `products/<id>.json`: an edition. `modules` lists the UI modules and `engine` the engine modules; a build bundles only those (`LAPIN_PRODUCT=<id>`).
+- `products/<id>.json`: an edition, a list of modules. `scripts/product.mjs` completes it with what the modules require; dev, the UI build and `build:product` all use it, so a package holds only the product's modules (engine and UI).
 - `desktop/src-tauri`: the Tauri shell.
 - `vendor/bubblebim-pro`: a submodule with the user's private C# engine.
-  - Lapin uses it only as a geometry library: Platform.Geometry (B-rep), Platform.Booleans (manifold), Step.cs/StepFile.cs and IfcModel.cs.
-  - Lapin does not use its graph model.
-- `docs/plan.md`: decisions, the architecture and milestones M0–M7.
+  - Lapin uses it only as a geometry library: Platform.Geometry (B-rep) now; Platform.Booleans (manifold), Step.cs/StepFile.cs and IfcModel.cs later.
+  - Lapin does not use its graph model. Its platform patterns (module folders, session, undo, protocol, product packaging) were copied and adapted; code from BubbleBIM Pro and Atrium (`~/Documents/GitHub/Atrium`, MIT-0) may be reused.
+- `docs/decisions.md`: the register of decisions taken, with their sources.
+- `docs/plan.md`: decisions, the architecture and milestones M0–M9.
+- `docs/format-lapin.md`: the `.lapin` package, format 3: the analysis, and what is done.
 - `docs/transfer.md`: what moves from the old Lapin, and how.
 - `docs/mock/`: screenshots of the UI mock.
 
@@ -23,14 +32,15 @@ The old Lapin (ifc-lite fork, MPL-2.0) lives in `~/Documents/GitHub/Lapin/ifc-li
 ## Run
 
 ```sh
-pnpm setup        # submodule, packages, engine build
-pnpm dev          # engine ws://127.0.0.1:47810/ws + UI http://localhost:5180
-pnpm dev:desktop  # the same in the Tauri window
-pnpm typecheck && pnpm test
-pnpm build        # runs check:licenses first
+pnpm setup                     # submodule, packages, engine build
+pnpm dev                       # engine ws://127.0.0.1:47810/ws + UI http://localhost:5180 (LAPIN_PRODUCT=<id>, default lapin)
+pnpm dev:desktop               # the same in the Tauri window
+pnpm typecheck && pnpm test    # UI (vitest) and engine (xUnit); pnpm test:engine for the engine alone
+pnpm products                  # what every product resolves to
+pnpm build:product <id>        # one edition as a desktop app → build/<id>/bundle (check:licenses first)
 ```
 
-If pnpm complains about @tauri-apps when installing, use `CI=true pnpm install`. `.npmrc` hoists `@tauri-apps/*` for the vendor platform code.
+If pnpm complains about @tauri-apps when installing, use `CI=true pnpm install`. `.npmrc` hoists `@tauri-apps/*` for the vendor platform code. `pnpm check:licenses` checks the UI's npm packages and the engine's NuGet packages.
 
 ## Rules
 
@@ -47,4 +57,15 @@ If pnpm complains about @tauri-apps when installing, use `CI=true pnpm install`.
 
 ## Next step
 
-Milestone M0b: the Lapin engine on IFC (`Lapin.Ifc.Model`, `Lapin.Authoring`) with the layered wall type: layer set, usage, axis on the core and flip. After that comes the M2 walls work (joins, mitre, zones, lintels, cut priorities). The order is in `docs/transfer.md`.
+Milestone M1. Done on 2026-10-24:
+- the engine (model, platform, package, host);
+- the architecture module: layered wall types, walls with their own usage, the axis on the core, flip;
+- `.lapin` format 3;
+- products resolved with their requirements, and `build:product`.
+
+Left in M1:
+- binary meshes;
+- the journal (`journal/ops.jsonl`);
+- the mock UI wired to the engine: browser, inspector, open and save, wall types.
+
+After that comes the M2 walls work: joins, mitre, zones, lintels, cut priorities. The milestones are in `docs/plan.md`, and the transfer order is in `docs/transfer.md`.

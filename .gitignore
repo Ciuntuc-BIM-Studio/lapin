@@ -5,3 +5,10 @@ dist/
 .DS_Store
 desktop/src-tauri/target/
 desktop/src-tauri/gen/
+engine/**/bin/
+engine/**/obj/
+engine/artifacts/
+build/
+desktop/src-tauri/binaries/
+desktop/src-tauri/resources/
+desktop/src-tauri/tauri.product.json

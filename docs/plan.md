@@ -6,7 +6,13 @@ Lapin se rescrie fără ifc-lite. Motorul devine BubbleBIM Pro (C#, .NET 10), ia
 
 1. **Desktop întâi.** Aplicație Tauri, cu motorul C# pornit local, ca în BubbleBIM-Pro. Varianta web vine mai târziu.
 2. **Repo separat.** Lapin are repo-ul lui și folosește motorul BubbleBIM Pro ca dependență. Nu e un profil de produs în BubbleBIM-Pro.
-3. **Licență MIT pentru codul Lapin**, dacă se poate (vezi mai jos ce înseamnă concret).
+3. **Licență MIT**, doar MIT.
+4. **Formatul `.lapin` se păstrează.** Formatul 3 e un zip de bucăți adresate după conținut, cu modelul în tabele Arrow (`docs/format-lapin.md`). Citirea proiectelor vechi (formatul 2) vine la M6.
+5. **Modelul Unity / Unreal.** Aplicația lucrează local. Cloud-ul aduce conturile, actualizările și bibliotecile (tipuri, materiale, tâmplărie, hașuri). Mai târziu aduce și sincronizarea, versiunile și lucrul în echipă. Modelarea nu se face pe web.
+6. **Edițiile sunt combinații de module** (24.10.2026). Modulele nu sunt neapărat „premium”: scopul e ca un client să primească în producție, curat, exact combinația de care are nevoie. Exemple: doar arhitectură și structură, doar ce trebuie pentru civile, doar ce trebuie pentru MEP.
+   - Un produs (`products/<id>.json`) numește modulele. Fiecare modul își declară dependențele (`requires` în `module.json`), iar acestea vin automat.
+   - Un modul pe care produsul nu-l are nu există în pachet, nici în motor, nici în interfață.
+7. **Cod refolosit** (24.10.2026). Se poate folosi cod din BubbleBIM Pro și din Atrium, proiectele C# ale utilizatorului. Tiparele de platformă (module încărcate din foldere, sesiune, undo, protocolul, împachetarea pe produs) vin din BubbleBIM Pro, adaptate pe modelul IFC.
 
 ## Backup (făcut)
 
@@ -20,19 +26,12 @@ Lapin se rescrie fără ifc-lite. Motorul devine BubbleBIM Pro (C#, .NET 10), ia
 
 Restaurare: `git clone lapin-all.bundle lapin`.
 
-## Licența: ce poate fi MIT
+## Licența
 
-- **Nu poate fi MIT:**
-  - codul ifc-lite (MPL-2.0, al LTplus AG);
-  - fișierele ifc-lite modificate în Lapin. Acestea rămân MPL, oricine le-ar fi modificat.
-- **Poate fi MIT:** fișierele create de la zero în Lapin. Lista e în `lapin-own-files.txt` (1.336 de fișiere, cam 88k linii TypeScript fără teste), iar toate commit-urile de după fork sunt ale tale.
-  - Ca titular, le poți relicenția. Ce a fost deja publicat sub MPL rămâne valabil pentru cine l-a preluat.
-  - Prudență la fișierele noi care conțin bucăți copiate din fișiere ifc-lite: acolo partea copiată rămâne MPL.
-- **Interfața Lapin de azi** (ribbon, layout, panouri, dialogurile de bază, viewer-ul 3D) e aplicația viewer din ifc-lite. Nu intră în repo-ul MIT, deci interfața nouă se scrie din nou.
-- **Practic, în repo-ul nou nu se copiază cod din fork.** Logica noastră se rescrie: în C#, ca module ale motorului, sau în TypeScript nou, pentru interfață. Fișierele vechi servesc drept specificație și ca sursă pentru teste.
-- **Motorul BubbleBIM Pro** nu are încă licență. El e al tău, deci decizia e separată: poate rămâne închis, chiar dacă Lapin e MIT.
-- **Dependențele native** sunt compatibile: manifold e Apache-2.0.
-- **Aplicația web veche** de pe lapin.ciuntucbimstudio.ro conține cod MPL. Cât timp rulează, sursa ei trebuie să rămână publică. Repo-ul de pe GitHub se șterge doar după ce aplicația veche și build-urile desktop vechi sunt retrase.
+- **Lapin e MIT, doar MIT** (decis 23.10.2026). Licența ifc-lite nu mai e o preocupare a proiectului.
+- **Consecința practică:** în lapin-pro nu intră cod din fork. Logica se rescrie în C#, ca module ale motorului, sau în TypeScript nou, pentru interfață. Fișierele vechi rămân specificația și sursa testelor.
+- **Dependențele** sunt doar permisive, verificate de `pnpm check:licenses`. manifold e Apache-2.0.
+- **Motorul BubbleBIM Pro** e un proiect separat, cu termenii lui.
 
 ## Arhitectura (revizuită 23.10.2026)
 
@@ -46,21 +45,26 @@ Așa lucrează și Lapin-ul de azi. Din BubbleBIM se ia **doar motorul de geomet
 
 ```
 lapin-pro (MIT)
-├─ engine/                Lapin.Engine (C#, .NET 10): modelul IFC al Lapin
-│  ├─ Lapin.Ifc.Model     entitățile și relațiile IFC4X3, editate prin comenzi (un pas de undo fiecare)
-│  ├─ Lapin.Authoring     uneltele: pereți stratificați și îmbinări, plăci, goluri, uși/ferestre,
-│  │                      zone pe înălțime, buiandrugi, faze, tipuri
-│  ├─ Lapin.Geometry      reprezentările IFC → solide → mesh, prin kernelul BubbleBIM
-│  └─ Lapin.Host          WebSocket JSON-RPC, același protocol ca BubbleBIM (doc.execute, diff-uri cu mesh-uri)
-├─ ui/                    interfața Lapin (React + three.js), cum e în M0
-├─ desktop/               shell-ul Tauri
-└─ vendor/bubblebim-pro   doar ca bibliotecă, prin project references:
-                          Platform.Geometry (B-rep, tessellator, skeleton),
-                          Platform.Booleans (manifold),
-                          STEP: Step.cs / StepFile.cs, reprezentări IFC → mesh: IfcModel.cs
+├─ engine/                        motorul Lapin (C#, .NET 10), engine/Lapin.slnx
+│  ├─ src/Model/Lapin.Model        entitățile și relațiile IFC4X3, tranzacții (un pas de undo fiecare),
+│  │                               GlobalId-uri, regulile straturilor (miezul pe axă)
+│  ├─ src/Platform/Lapin.Platform  contractul modulelor și încărcarea lor, modulul „core” (structura spațială,
+│  │                               materialele, comenzile comune), sesiunea, diff-urile, geometria
+│  ├─ src/Platform/Lapin.Package   pachetul .lapin formatul 3 (zip, SHA-256, tabele Arrow)
+│  ├─ src/Modules/<Grup>/Lapin.<X> un modul: clasele IFC pe care le scrie, comenzile, geometria (module.json)
+│  ├─ src/Host/Lapin.Host          WebSocket JSON-RPC, același protocol ca BubbleBIM (doc.execute, diff-uri cu mesh-uri)
+│  └─ tests/Lapin.Engine.Tests     xUnit, cu testele portate din fork
+├─ ui/                            interfața Lapin (React + three.js); ui/src/modules/<id> e jumătatea UI a unui modul
+├─ products/                      edițiile: listele de module
+├─ desktop/                       shell-ul Tauri
+└─ vendor/bubblebim-pro           doar ca bibliotecă, prin project references:
+                                  Platform.Geometry (B-rep, tessellator, skeleton),
+                                  mai târziu Platform.Booleans (manifold) și citirea IFC (Step.cs, IfcModel.cs)
 ```
 
-- **Fișierul de proiect** e IFC (STEP), plus un fișier alăturat pentru ce nu e IFC (vederi, planșe, standarde de desen), ca la Lapin-ul de azi.
+Un modul are o jumătate de motor (`engine/src/Modules/…`, cu `module.json`), o jumătate de interfață (`ui/src/modules/<id>`) sau amândouă. Modulele de motor se construiesc în `engine/artifacts/modules/<id>/`, iar host-ul le încarcă după produs. `pnpm build:product <id>` pune în aplicație doar modulele produsului.
+
+- **Fișierul de proiect** e pachetul `.lapin`, cu intenția modelului, vederile, planșele și standardele (`docs/format-lapin.md`). IFC e formatul de schimb, la import și la export.
 - **Protocolul** cu interfața rămâne cel din M0. Se schimbă doar motorul din spate: în M0 a fost host-ul BubbleBIM, de acum e host-ul Lapin.
 
 ### Compatibilitatea cu BubbleBIM: prin IFC, cu intenția de proiect
@@ -78,6 +82,38 @@ lapin-pro (MIT)
 4. **Și invers.** BubbleBIM poate lega IFC-ul Lapin ca referință, cum leagă deja IFC-uri, sau, mai târziu, să-i citească intenția.
 
 Formatul `bubbles-house` de azi devine astfel un caz particular al aceluiași IFC, iar cele două programe rămân independente ca model intern.
+
+## Etapele (replanificate 23.10.2026, propunere)
+
+Numerotarea veche avea două variante: cea din commit-ul M0 (M4 faze, M6 raportare, M7 lansare) și cea din `transfer.md` (M7 MEP). Aceasta le înlocuiește pe amândouă.
+
+- **M0 – Schelet** (făcut, `d09bd60`): Tauri, motorul ca submodul, un perete văzut în three.js. Mock-ul interfeței: `6a5b582`.
+- **M1 – Motorul Lapin și formatul** (în lucru; făcut pe 24.10.2026: modelul, platforma, modulul Architecture cu pereții stratificați și flip-ul, `.lapin` formatul 3, host-ul, edițiile și `build:product`):
+  - `Lapin.Ifc.Model` (entități și relații IFC4X3, comenzi, undo) și `Lapin.Host`, pe același protocol;
+  - tipul de perete stratificat: layer set, usage, axa pe miez, flip;
+  - `.lapin` formatul 3: salvare, deschidere, jurnal;
+  - mesh-urile trimise binar;
+  - interfața din mock legată la motor: navigator, inspector, deschide și salvează.
+
+  Formatul vine acum, nu la final, pentru că el fixează forma modelului.
+- **M2 – Pereții:** îmbinări, mitru, zone pe înălțime, straturi de finisaj, buiandrugi, priorități de tăiere, fundații.
+- **M3 – Configuratorul de uși și ferestre.**
+- **M4 – Materiale și standarde de desen.**
+- **M5 – Desenul 2D:** generatorul, domeniul vederii, penițele, simbolurile, cotele.
+- **M6 – Faze, planșe, DXF și PDF, citirea `.lapin` formatul 2.**
+- **M7 – Lansarea desktop:**
+  - macOS și Windows (manifold pentru Windows), cu semnare și notarizare;
+  - pagina de bun venit, „Report an issue”, linkul Skool;
+  - apoi se retrag aplicația web veche și fork-ul.
+- **M8 – Hub-ul cloud:**
+  - conturi;
+  - canalul de actualizări pe ediție (updater-ul Tauri);
+  - bibliotecile `.lapinlib`;
+  - mai târziu, sincronizarea și versiunile.
+- **M9 – MEP rezidențial,** ca modul `mep`, cu ediția lui: rețeaua și traseul, încălzirea, apa, canalizarea, electricul, ventilația.
+- **Ulterior:** acoperișuri, timber și CLT, infrastructură.
+
+La fiecare etapă, testele-specificație din `transfer.md` se portează înaintea codului.
 
 ## Riscuri
 

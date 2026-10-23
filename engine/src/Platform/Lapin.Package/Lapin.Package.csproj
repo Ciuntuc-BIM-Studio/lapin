@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The .lapin package, format 3: a zip of content-addressed parts. The model
+    is written as Arrow IPC tables, one per module × class × storey; the
+    project document as JSON (docs/format-lapin.md).
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../../Model/Lapin.Model/Lapin.Model.csproj" />
+    <PackageReference Include="Apache.Arrow" Version="22.1.0" />
+  </ItemGroup>
+</Project>

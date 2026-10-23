@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/Lapin.Host/Lapin.Host.csproj" />
+  </Folder>
+  <Folder Name="/src/Model/">
+    <Project Path="src/Model/Lapin.Model/Lapin.Model.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Architecture/">
+    <Project Path="src/Modules/Architecture/Lapin.Architecture/Lapin.Architecture.csproj" />
+  </Folder>
+  <Folder Name="/src/Platform/">
+    <Project Path="src/Platform/Lapin.Package/Lapin.Package.csproj" />
+    <Project Path="src/Platform/Lapin.Platform/Lapin.Platform.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Lapin.Engine.Tests/Lapin.Engine.Tests.csproj" />
+  </Folder>
+</Solution>

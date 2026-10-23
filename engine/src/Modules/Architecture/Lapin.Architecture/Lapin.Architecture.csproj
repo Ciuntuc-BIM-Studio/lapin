@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Architecture: walls and their layered types (IfcWall, IfcWallType with an
+    IfcMaterialLayerSet, each wall with its own IfcMaterialLayerSetUsage).
+    Later: openings, doors and windows, slabs, stairs.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>architecture</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="$(BubbleEngineDir)src/Platform/BubbleBim.Platform.Geometry/BubbleBim.Platform.Geometry.csproj" Private="false" />
+  </ItemGroup>
+</Project>

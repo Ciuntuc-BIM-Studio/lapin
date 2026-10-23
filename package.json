@@ -6,14 +6,17 @@
   "packageManager": "pnpm@10.33.4",
   "scripts": {
     "setup": "git submodule update --init && pnpm install && pnpm build:engine",
-    "build:engine": "dotnet build vendor/bubblebim-pro/engine/BubbleBim.slnx -v q -nologo",
+    "build:engine": "dotnet build engine/Lapin.slnx -v q -nologo",
     "dev": "node scripts/dev.mjs",
-    "typecheck": "pnpm --filter ui typecheck",
-    "test": "pnpm --filter ui test",
     "dev:desktop": "node scripts/dev.mjs --desktop",
-    "tauri": "tauri",
+    "typecheck": "pnpm --filter ui typecheck",
+    "test": "pnpm --filter ui test && pnpm test:engine",
+    "test:engine": "dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo",
+    "products": "node scripts/product.mjs",
     "check:licenses": "node scripts/check-licenses.mjs",
-    "build": "node scripts/check-licenses.mjs && pnpm --filter ui build"
+    "build": "node scripts/check-licenses.mjs && pnpm --filter ui build",
+    "build:product": "node scripts/check-licenses.mjs && node scripts/build-product.mjs",
+    "tauri": "tauri"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

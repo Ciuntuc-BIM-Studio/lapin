@@ -1,7 +1,8 @@
 /**
- * Lapin's side of the engine session: the graph and the meshes as the
- * BubbleBIM Pro engine last sent them, kept in step by its diffs. Every
- * edit is an engine command (one undo step); nothing is modelled here.
+ * Lapin's side of the engine session: the IFC entities and the meshes as the
+ * Lapin engine last sent them, kept in step by its diffs. An entity travels
+ * as a node whose type is its IFC class. Every edit is an engine command
+ * (one undo step); nothing is modelled here.
  */
 
 import { create } from 'zustand';
@@ -54,7 +55,7 @@ export const newProject = () => engine.call('project.new').catch(() => undefined
 
 /** The storey new elements go on: the lowest one. */
 export function activeStorey(s: SessionState = useSession.getState()): NodeDto | null {
-  const storeys = [...s.nodes.values()].filter((n) => n.type === 'storey');
+  const storeys = [...s.nodes.values()].filter((n) => n.type === 'IfcBuildingStorey');
   const elevation = (n: NodeDto) => (typeof n.props.elevation === 'number' ? n.props.elevation : 0);
   return storeys.sort((a, b) => elevation(a) - elevation(b))[0] ?? null;
 }
@@ -63,8 +64,8 @@ export function activeStorey(s: SessionState = useSession.getState()): NodeDto |
 export async function ensureStorey(): Promise<string | null> {
   const existing = activeStorey();
   if (existing) return existing.id;
-  const result = await execute('storey.create', {}) as { id?: string; nodeId?: string } | null;
-  return activeStorey()?.id ?? result?.id ?? result?.nodeId ?? null;
+  const result = await execute('storey.create', {}) as { id?: string } | null;
+  return activeStorey()?.id ?? result?.id ?? null;
 }
 
 /** Connect to the engine and keep the session in step with it. */

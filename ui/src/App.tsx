@@ -41,7 +41,7 @@ function Workspace() {
     if (tool !== 'wall') return;
     if (!start) { setStart(p); return; }
     const from = start;
-    void ensureStorey().then((storeyId) => storeyId && execute('building.addWall', { storeyId, x1: from.x, y1: from.y, x2: p.x, y2: p.y }));
+    void ensureStorey().then((storeyId) => storeyId && execute('architecture.addWall', { storeyId, x1: from.x, y1: from.y, x2: p.x, y2: p.y }));
     setStart(p);
   };
   const hint = tool === 'wall' ? (start ? 'Click the wall’s end · Esc to stop' : 'Click the wall’s start') : null;
