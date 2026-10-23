@@ -227,3 +227,16 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .roof-edges th:nth-child(3), .roof-edges td:nth-child(3) { width: 3.4em; }
 .roof-edges th:nth-child(4), .roof-edges td:nth-child(4) { width: 4.2em; }
 .roof-edges select, .roof-edges input { width: 100%; min-width: 0; box-sizing: border-box; }
+.hatch-swatch { display: block; }
+.material-views { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.material-views th, .material-views td { padding: 4px 6px; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--rule); font-weight: normal; }
+.material-views input.num { width: 4.5em; }
+.material-item .swatch { margin-right: 6px; }
+.tabs-inline { display: flex; gap: 4px; margin-bottom: 10px; }
+.tab-chip { border: 1px solid var(--rule); background: none; padding: 4px 10px; border-radius: 2px; cursor: pointer; color: var(--ink); }
+.tab-chip.on { border-color: var(--accent); color: var(--accent); }
+.standards-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+.standards-table th, .standards-table td { padding: 3px 4px; text-align: left; border-bottom: 1px solid var(--rule); font-weight: normal; }
+.standards-table input:not([type]), .standards-table select { width: 100%; min-width: 3.5em; box-sizing: border-box; }
+.standards-table input.num { width: 4em; }
+label.check { display: inline-flex; gap: 6px; align-items: center; margin-right: 16px; }

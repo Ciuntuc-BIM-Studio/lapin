@@ -61,6 +61,11 @@ export async function execute(command: string, args: Record<string, unknown> = {
   }
 }
 
+/** Ask the engine a question (no edit): null when it cannot answer. */
+export async function query<T = unknown>(name: string, args: Record<string, unknown> = {}): Promise<T | null> {
+  try { return await engine.call<T>('doc.query', { name, args }); } catch { return null; }
+}
+
 export const undo = () => engine.call('doc.undo').catch(() => undefined);
 export const redo = () => engine.call('doc.redo').catch(() => undefined);
 

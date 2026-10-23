@@ -6,6 +6,7 @@
   -->
   <ItemGroup>
     <ProjectReference Include="../../Model/Lapin.Model/Lapin.Model.csproj" />
+    <ProjectReference Include="../Lapin.Drawing/Lapin.Drawing.csproj" />
     <ProjectReference Include="$(BubbleEngineDir)src/Platform/BubbleBim.Platform.Geometry/BubbleBim.Platform.Geometry.csproj" />
     <!-- Booleans by manifold (Apache-2.0), its native library beside the engine. -->
     <ProjectReference Include="$(BubbleEngineDir)src/Platform/BubbleBim.Platform.Booleans/BubbleBim.Platform.Booleans.csproj" />

@@ -79,3 +79,14 @@ Ordinea de căutare a fost: Lapin-ul vechi, apoi BubbleBIM Pro, apoi BubbleBIM-S
 | 49 | Toți pereții de pe etajul acoperișului îl urmează automat: cei de sub un fronton urcă până sub căpriori, cei de sub o streașină a unei șarpante se opresc sub cosoroabă, ceilalți se taie sub pante. Nu există comanda „atașează la acoperiș” din Lapin-ul vechi. Partea de fronton a unui perete cu zone e zidăria lui de deasupra centurii. | Atașare explicită, perete cu perete, ca în Lapin-ul vechi. | `RoofTop`, `Walls.Geometry` |
 | 50 | Câmpurile acoperișului editate direct în inspector (`element.update`) nu sunt verificate de rezolvitor: dacă forma nu se construiește, acoperișul arată motivul în diagnostic. Stilul și laturile trec prin `updateRoof`/`roofStyle`, care refuză o formă imposibilă. | Toate câmpurile prin `updateRoof`. | `ArchitectureModule` |
 | 51 | Ferestrele de acoperiș și lucarnele (BubbleBIM `RoofOpenings`) nu sunt încă portate. „Învelișul” peretelui pentru prioritățile de tăiere rămâne la înălțimea lui, fără fronton. | Portate acum. | `RoofOpenings` |
+
+## M4 – materiale și standarde de desen
+
+| # | Ce am ales | Alternative | Unde |
+|---|---|---|---|
+| 52 | Felul în care se desenează un material stă pe `IfcMaterial`-ul lui (`section`, `plan`, `elevation`: hașură, scară, umplere, peniță; `membrane`, `drawJoints`), nu într-un tabel separat al proiectului, ca în Lapin-ul vechi. Ce nu e dat vine din nume (beton, cărămidă, izolație, lemn, oțel…). La exportul IFC se scrie ca `IfcSurfaceStyle` și `IfcFillAreaStyle` pe tip de vedere. | Tabelul de materiale al proiectului, separat de IFC. | `MaterialGraphics`, `DraftingResources` |
+| 53 | Umplerea unei tăieturi e oprită implicit, chiar dacă materialul are culoare (în lapin-pro orice material are culoare pentru 3D). Se cere explicit: o culoare sau „material” (culoarea materialului). În Lapin-ul vechi, un rând propriu cu culoare umplea automat. | Umplere implicită cu culoarea materialului. | `MaterialGraphics.Resolve` |
+| 54 | Hașurile importate din `.pat` și standardele de desen (stiluri de text, cote, axe, etichete, layere, grupuri) stau pe `IfcProject` (atributele `hatchPatterns` și `drafting`), deci au undo, se salvează în `.lapin` și călătoresc cu modelul. | Un fișier separat lângă proiect, ca sidecar-ul vechi. | `DraftingResources` |
+| 55 | Materialele, hașurile și standardele sunt în `core` (orice ediție le are), iar calculul lor în biblioteca `Lapin.Drawing`, pe care o vor folosi generatorul 2D, planșele și exporturile. Interfața lor e tab-ul „Manage”. | Un modul de motor `drafting` separat. | `engine/src/Platform/Lapin.Drawing`, `ui/src/modules/core` |
+| 56 | Texturile materialelor pentru 3D (`material-textures.ts` din Lapin-ul vechi) nu sunt încă portate; 3D-ul folosește culoarea și transparența. | Portate acum. | — |
+| 57 | Un material folosit (numit de un tip, un strat, o zonă) nu se poate șterge. | Ștergere cu înlocuire. | `material.delete` |

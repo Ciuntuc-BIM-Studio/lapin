@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Drafting, independent of any module: hatch patterns (.pat) and their fill,
+    how materials draw, the drafting standards. The 2D generator, the sheets
+    and the DXF and PDF exports build on it.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../../Model/Lapin.Model/Lapin.Model.csproj" />
+    <ProjectReference Include="$(BubbleEngineDir)src/Platform/BubbleBim.Platform.Geometry/BubbleBim.Platform.Geometry.csproj" />
+  </ItemGroup>
+</Project>

@@ -30,6 +30,7 @@ public sealed class CoreModule : ILapinModule
         r.Class(new(IfcClass.BuildingStorey, "Storey",
             [new("elevation", "Elevation", "length"), new("height", "Height", "length", Min: 0.1)], "#6c5ce7", Kind: "spatial"));
         r.Class(new(IfcClass.Material, "Material", [new("color", "Colour", "color"), new("category", "Category", "text")], Kind: "resource"));
+        DraftingResources.Register(r);
 
         r.Command("storey.create", "New storey", (ctx, a) =>
         {

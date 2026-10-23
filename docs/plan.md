@@ -104,6 +104,8 @@ Numerotarea veche avea două variante: cea din commit-ul M0 (M4 faze, M6 raporta
   - Rămas: simbolurile complete și maparea pe modele importate (M5), extrasul de tâmplărie (M6).
 - **Acoperișurile** (aprobate cu M1–M7, făcut 24.10.2026): `IfcRoof` portat din BubbleBIM Pro cu testele lui (forme, stiluri, reguli pe laturi, șarpantă, jgheaburi, burlane, parazăpezi, cantități), pereții care urcă la fronton și se opresc sub cosoroabă sau sub pante, unealta și inspectorul. Rămas: ferestrele de acoperiș și lucarnele.
 - **M4 – Materiale și standarde de desen.**
+  - Făcut (24.10.2026): biblioteca `Lapin.Drawing` cu hașurile (`.pat`, biblioteca, umplerea, regiunea, portate cu testele), materialele pe tip de vedere (pe `IfcMaterial`, aspectul pentru IFC), standardele de desen (stiluri de text, cote, axe, etichete, layere, grupuri, citite tolerant), comenzile lor în `core` și dialogurile Materials și Drafting standards.
+  - Rămas: texturile 3D ale materialelor; folosirea lor în desen vine cu M5.
 - **M5 – Desenul 2D:** generatorul, domeniul vederii, penițele, simbolurile, cotele.
 - **M6 – Faze, planșe, DXF și PDF, citirea `.lapin` formatul 2.**
 - **M7 – Lansarea desktop:**

@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Model/Lapin.Model/Lapin.Model.csproj" />
     <ProjectReference Include="../../src/Platform/Lapin.Platform/Lapin.Platform.csproj" />
+    <ProjectReference Include="../../src/Platform/Lapin.Drawing/Lapin.Drawing.csproj" />
     <ProjectReference Include="../../src/Platform/Lapin.Package/Lapin.Package.csproj" />
     <ProjectReference Include="../../src/Modules/Architecture/Lapin.Architecture/Lapin.Architecture.csproj" />
     <ProjectReference Include="../../src/Modules/Structure/Lapin.Structure/Lapin.Structure.csproj" />
