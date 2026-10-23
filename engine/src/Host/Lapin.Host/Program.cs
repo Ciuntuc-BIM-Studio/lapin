@@ -3,7 +3,7 @@ using Lapin.Host;
 using Lapin.Platform;
 
 // The local engine. Started by the desktop shell (or by `pnpm dev`):
-//   Lapin.Host --product <product.json> --modules-dir <dir> [--port 0] [--parent-pid <pid>]
+//   Lapin.Host --product <product.json> --modules-dir <dir> [--user-dir <dir>] [--port 0] [--parent-pid <pid>]
 // It listens on 127.0.0.1 only and prints one line the shell waits for:
 //   LAPIN_HOST_READY {"port":12345}
 
@@ -17,7 +17,10 @@ var product = ModuleLoader.ReadProduct(Arg("--product"));
 var modules = ModuleLoader.Load(Arg("--modules-dir"), product.Modules);
 var port = int.Parse(Arg("--port", "0"));
 var parentPid = int.Parse(Arg("--parent-pid", "0"));
+// The user's own data on this computer: the recovery journals. The shell passes its app data folder.
+var userDir = Arg("--user-dir", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lapin"));
 var session = new Session(ModuleCatalog.Create(modules), product);
+using var recovery = new Recovery(userDir, session);
 
 var builder = WebApplication.CreateSlimBuilder(args);
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
@@ -25,7 +28,7 @@ builder.WebHost.UseKestrel(o => o.Listen(System.Net.IPAddress.Loopback, port));
 var app = builder.Build();
 app.UseWebSockets();
 
-var hub = new EngineHub(session, PackageFiles.Create());
+var hub = new EngineHub(session, PackageFiles.Create(), recovery);
 app.MapGet("/health", () => Results.Json(new { ok = true, product = product.Id, modules = product.Modules }));
 app.Map("/ws", async ctx =>
 {

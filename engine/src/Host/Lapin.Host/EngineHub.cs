@@ -16,7 +16,7 @@ namespace Lapin.Host;
 ///   ← {"event":"diff","data":Diff}   after anything that changed the document
 /// Calls run one at a time: the session is single-threaded by design.
 /// </summary>
-public sealed class EngineHub(Session session, ProjectFiles files)
+public sealed class EngineHub(Session session, ProjectFiles files, Recovery? recovery = null)
 {
     readonly SemaphoreSlim _gate = new(1, 1);
     readonly List<WebSocket> _clients = [];
@@ -124,6 +124,11 @@ public sealed class EngineHub(Session session, ProjectFiles files)
             case "project.new": return (null, session.New());
             case "project.open": return (null, files.Open(session, PathParam()));
             case "project.save": return (null, files.Save(session, (string?)p["path"]));
+            case "recovery.list": return (recovery?.List() ?? [], null);
+            case "recovery.restore": return (null, (recovery ?? throw new CommandException("No recovery here.")).Restore(PathParam()));
+            case "recovery.discard":
+                (recovery ?? throw new CommandException("No recovery here.")).Discard(PathParam());
+                return (null, null);
             default: throw new CommandException($"Unknown method „{method}”.");
         }
     }

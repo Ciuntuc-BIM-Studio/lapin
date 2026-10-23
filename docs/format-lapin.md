@@ -114,8 +114,9 @@ Teste-specificație: `package-io.test.ts`, `project-file*.test.ts`, `versions.te
 - refuzul unei părți deteriorate (hash greșit) și al unui proiect dintr-un Lapin mai nou;
 - o ediție fără un modul păstrează elementele lui și le scrie înapoi neatinse.
 
+**Făcut și jurnalul de recuperare** (24.10.2026), dar în afara pachetului: `<app data>/recovery/*.jsonl`, cu fiecare tranzacție, undo și redo, scrise pe disc imediat (`Lapin.Host/Recovery.cs`, teste în `RecoveryTests`).
+
 **Rămâne:**
-- `journal/ops.jsonl` pentru recuperare;
 - cache-ul `derived/` (geometria afișată pentru modulele lipsă);
 - salvarea incrementală, care rescrie doar bucățile murdare;
 - `analytics/*.parquet`;

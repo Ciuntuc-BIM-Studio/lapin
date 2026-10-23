@@ -166,11 +166,11 @@ sealed class TransactionBuilder(ModelStore store, Func<string> newId) : IEdit
 
     /// <summary>Put the model back as it was (a command threw half way).</summary>
     public void Rollback() =>
-        Replay.Revert(store, _entityOrder.Select(id => _entities[id]).ToList(), _relationOrder.Select(id => _relations[id]).ToList());
+        Replaying.Revert(store, _entityOrder.Select(id => _entities[id]).ToList(), _relationOrder.Select(id => _relations[id]).ToList());
 }
 
 /// <summary>Applying and reverting recorded changes: shared by rollback, undo and redo.</summary>
-static class Replay
+static class Replaying
 {
     public static void Revert(ModelStore s, IReadOnlyList<Change<Entity>> entities, IReadOnlyList<Change<Relation>> relations)
     {
@@ -227,7 +227,7 @@ public sealed class History(ModelStore store)
         if (_undo.Count == 0) return null;
         var t = _undo[^1];
         _undo.RemoveAt(_undo.Count - 1);
-        Replay.Revert(store, t.Entities, t.Relations);
+        Replaying.Revert(store, t.Entities, t.Relations);
         _redo.Add(t);
         return t;
     }
@@ -237,7 +237,7 @@ public sealed class History(ModelStore store)
         if (_redo.Count == 0) return null;
         var t = _redo[^1];
         _redo.RemoveAt(_redo.Count - 1);
-        Replay.Apply(store, t.Entities, t.Relations);
+        Replaying.Apply(store, t.Entities, t.Relations);
         _undo.Add(t);
         return t;
     }
@@ -249,6 +249,16 @@ public sealed class History(ModelStore store)
         _redo.Clear();
         _savedAt = 0;
         _seq = 0;
+    }
+
+    /// <summary>A transaction recorded earlier (the recovery journal), done again: applied, and the top of the undo stack.</summary>
+    public Transaction Replay(Transaction recorded)
+    {
+        Replaying.Apply(store, recorded.Entities, recorded.Relations);
+        var t = recorded with { Seq = ++_seq };
+        _undo.Add(t);
+        _redo.Clear();
+        return t;
     }
 
     public void MarkSaved() => _savedAt = _undo.Count > 0 ? _undo[^1].Seq : 0;

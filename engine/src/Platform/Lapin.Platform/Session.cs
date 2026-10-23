@@ -24,6 +24,19 @@ public sealed class Session
 
     sealed record Built(ElementGeometry? Geometry, HashSet<string> Reads, RenderItem? Item);
 
+    /// <summary>
+    /// Everything that changes the project's history, as it happens: what the
+    /// recovery journal writes. "start": a new, opened or just saved project
+    /// (what came before is safe or gone); "tx", "undo", "redo": an edit.
+    /// </summary>
+    public event Action<HistoryEvent>? HistoryChanged;
+    bool _quiet;
+
+    void Emit(string kind, Transaction? t = null)
+    {
+        if (!_quiet) HistoryChanged?.Invoke(new HistoryEvent(kind, t));
+    }
+
     public Session(ModuleCatalog catalog, ProductManifest product)
     {
         _catalog = catalog;
@@ -56,6 +69,7 @@ public sealed class Session
     {
         StartEmpty();
         Path = null;
+        Emit("start");
         return Snapshot();
     }
 
@@ -90,6 +104,32 @@ public sealed class Session
         _history.Load(entities, relations);
         ForgetAll();
         Path = path;
+        Emit("start");
+        return Snapshot();
+    }
+
+    /// <summary>
+    /// Unsaved work brought back: the project as it started (a file's content,
+    /// or a new project's first state), then the recorded edits, undos and
+    /// redos done again. The undo history comes back with them; the project
+    /// is unsaved.
+    /// </summary>
+    public Diff Recover(IEnumerable<Entity> entities, IEnumerable<Relation> relations, string? path, IReadOnlyDictionary<string, string>? classModules, IEnumerable<HistoryEvent> edits)
+    {
+        _quiet = true;
+        try
+        {
+            Load(entities, relations, path, classModules);
+            foreach (var e in edits)
+                switch (e.Kind)
+                {
+                    case "tx": _history.Replay(e.Transaction ?? throw new InvalidDataException("A journal edit without its changes.")); break;
+                    case "undo": _history.Undo(); break;
+                    case "redo": _history.Redo(); break;
+                }
+        }
+        finally { _quiet = false; }
+        ForgetAll();
         return Snapshot();
     }
 
@@ -98,6 +138,7 @@ public sealed class Session
     {
         Path = path;
         _history.MarkSaved();
+        Emit("start");
         return Empty();
     }
 
@@ -109,11 +150,24 @@ public sealed class Session
         JsonNode? r = null;
         var t = _history.Execute(entry.Label, edit => r = entry.Handler(new CommandContext(edit, _catalog), args));
         result = r;
-        return t == null ? Empty() : DiffOf(t);
+        if (t == null) return Empty();
+        Emit("tx", t);
+        return DiffOf(t);
     }
 
-    public Diff Undo() => _history.Undo() is { } t ? DiffOf(t) : Empty();
-    public Diff Redo() => _history.Redo() is { } t ? DiffOf(t) : Empty();
+    public Diff Undo()
+    {
+        if (_history.Undo() is not { } t) return Empty();
+        Emit("undo");
+        return DiffOf(t);
+    }
+
+    public Diff Redo()
+    {
+        if (_history.Redo() is not { } t) return Empty();
+        Emit("redo");
+        return DiffOf(t);
+    }
 
     public JsonNode? Query(string name, JsonObject args)
     {
@@ -254,6 +308,9 @@ public sealed class Session
         public ElementGeometry? Geometry(string entityId) => s.Geometry(entityId);
     }
 }
+
+/// <summary>A change of the project's history (<see cref="Session.HistoryChanged"/>).</summary>
+public sealed record HistoryEvent(string Kind, Transaction? Transaction = null);
 
 /// <summary>A command's view of the edit: the model, the services, and a refusal for what this product cannot change.</summary>
 sealed class CommandContext(IEdit edit, ModuleCatalog catalog) : ICommandContext

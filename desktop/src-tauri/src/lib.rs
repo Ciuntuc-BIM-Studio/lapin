@@ -75,9 +75,12 @@ fn start_engine(app: &AppHandle, engine: Arc<Engine>) {
     let spawn = || -> Result<Child, String> {
         let host = host_binary()?;
         let res = app.path().resource_dir().map_err(|e| e.to_string())?.join("resources");
+        // The user's own data (the recovery journals) lives in the app's data folder.
+        let user = app.path().app_data_dir().map_err(|e| e.to_string())?;
         Command::new(&host)
             .arg("--product").arg(res.join("product.json"))
             .arg("--modules-dir").arg(res.join("modules"))
+            .arg("--user-dir").arg(user)
             .args(["--port", "0", "--parent-pid", &std::process::id().to_string()])
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
