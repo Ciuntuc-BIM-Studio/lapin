@@ -37,6 +37,25 @@ Căile din acest document se citesc în fork: `C` = `packages/create/src/in-stor
 | Simboluri de goluri, acoperiș în plan, marcaje de secțiune, axe, cote asociative | `V/drafting/opening-symbols.ts`, `V/project/roof-plan.ts`, `section-marks.ts`, `view-grids.ts`, `associative-dims.ts`, `drafting/annotation.ts` | OWN | Motor: `Lapin.Drawing.Symbols`; UI: suprapunerile din vedere | `opening-symbols.test.ts`, `associative-dims.test.ts` |
 | Planșe, viewport-uri, penițe pe planșă, DXF R2000, PDF | `V/project/sheets.ts`, `V/components/viewer/sheets/*` | OWN | Motor: DXF și PDF (BubbleBIM are `Dxf.cs`, `Pdf.cs`); UI: editorul de planșe | `sheets*.test.ts`, `dxf-r2000.test.ts`, `viewport-regions.test.ts` |
 | Pachetul `.lapin` și documentul de proiect | `V/project/types.ts`, `V/project/package/*`, `project-file*.ts` | OWN | Motor: deschidere și salvare; formatul se păstrează (citește și `.lapin` vechi) | `package-io.test.ts`, `project-file*.test.ts`, `versions.test.ts` |
+| **MEP rezidențial** (branch `feature/residential-mep`, 54 de commit-uri, nu e în `lapin`) | vezi secțiunea MEP de mai jos | OWN (fișierele noi); 33 de fișiere ifc-lite atinse doar pentru legături | Motor: `Lapin.Authoring.Mep`; UI: modulul `mep` (tab MEP, dialoguri, bare de opțiuni) | testele de pe branch: `*-mep*`, `hydronic-*`, `heating-*`, `water-*`, `drainage-*`, `ventilation-*`, `electrical-*`, `route-*` |
+
+## MEP rezidențial
+
+Branch-ul `feature/residential-mep` (ultimul commit `8b4835045`, 23.10.2026) e pe GitHub și în backup, și n-a fost unit în `lapin`. Are 258 de fișiere și circa 22.000 de linii. Documentul de proiectare e `docs/architecture/residential-mep.md` de pe branch și se portează ca specificație.
+
+Ce conține:
+
+- **Rețeaua comună:** sistem, echipament, terminal, port, rețea, traseu, piese generate (`apps/viewer/src/mep/*`, `C/mep-equipment-*`, `C/hydronic-connectivity.ts`).
+- **Traseul parametric:** polilinie 2,5D/3D cu stații, cote, pantă, rază minimă de curbură, dimensiuni nominale, plan de montaj (pardoseală 0,2 m, tavan 2,4 m, perete 1,1 m) și piese generate (coturi, teuri, reducții, mufe) (`C/route-*`, `C/hydronic-route-*`).
+- **Încălzire:** cazan, propuneri de radiatoare (suprafață × W/m², afișată mereu ca estimare), trasee tur/retur pereche, sugestia de traseu principal minim, izometria și profilul traseului.
+- **Apă:** tronsoane, armături în linie (robinet, contor), necesar și pierderi de sarcină, tabel.
+- **Canalizare:** coloane, ramuri, ventilații, curățitoare, ieșiri, cu păstrarea pantei.
+- **Electric:** tablou, circuite, prize, lumini, întrerupătoare, cabluri, tabel.
+- **Ventilație:** ventilator, tubulatură circulară și rectangulară, guri de refulare, ramuri, tabel.
+- **Planul:** benzi pe discipline, etichete, porturi neconectate, export SVG, DXF, PDF, XLSX.
+- **IFC:** IfcBoiler, IfcSpaceHeater, IfcPipeSegment și IfcPipeFitting, IfcValve, IfcFlowMeter, IfcSanitaryTerminal, IfcElectricDistributionBoard, IfcOutlet și restul, cu porturi de distribuție, relații de sistem și `Pset_LapinMEP*`.
+
+Toate fișierele noi sunt create de noi (OWN). Cele 33 de fișiere ifc-lite modificate pe branch (panglica, planul, snap-ul, comenzile, i18n) sunt doar puncte de legătură și nu se portează. În lapin-pro le înlocuiesc contractul de modul și protocolul motorului.
 
 ## Specificația părților ifc-lite (pentru rescriere)
 
@@ -141,6 +160,7 @@ BubbleBIM are deja, ca punct de plecare:
    - generatorul, pe BubbleBIM `HiddenLines`, după specificația de mai sus;
    - domeniul vederii, penițele, desenul pe materiale, simbolurile, acoperișul în plan, marcajele de secțiune, axele, cotele.
 6. **M6 – fazele, planșele, exportul DXF și PDF, pachetul `.lapin`** (care citește și proiectele vechi).
-7. **Ulterior:** acoperișuri, timber și CLT.
+7. **M7 – MEP rezidențial:** rețeaua și traseul parametric, apoi încălzirea (felia verticală completă), apa, canalizarea, electricul și ventilația. Are nevoie de pereți, goluri, plan și planșe, deci vine după M5–M6.
+8. **Ulterior:** acoperișuri, timber și CLT.
 
 La fiecare pas, testele-specificație listate în hartă se portează înaintea codului.
