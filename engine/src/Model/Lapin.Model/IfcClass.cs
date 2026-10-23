@@ -14,6 +14,12 @@ public static class IfcClass
     public const string WallType = "IfcWallType";
     public const string Slab = "IfcSlab";
     public const string SlabType = "IfcSlabType";
+    public const string Column = "IfcColumn";
+    public const string ColumnType = "IfcColumnType";
+    public const string Beam = "IfcBeam";
+    public const string BeamType = "IfcBeamType";
+    public const string Footing = "IfcFooting";
+    public const string FootingType = "IfcFootingType";
     public const string OpeningElement = "IfcOpeningElement";
     public const string Door = "IfcDoor";
     public const string DoorType = "IfcDoorType";

@@ -1,0 +1,41 @@
+/** A column, beam or footing in the inspector: its type (and the structure types dialog), what it is made of. */
+
+import { Settings2 } from 'lucide-react';
+import { useUi } from '../../app/store';
+import { execute, useSession } from '../../engine/session';
+import { mm, ofClass, typeOf } from '../../engine/model';
+import type { NodeDto } from '../../engine/protocol';
+
+const TYPE_CLASS: Record<string, string> = { IfcColumn: 'IfcColumnType', IfcBeam: 'IfcBeamType', IfcFooting: 'IfcFootingType' };
+
+export function describeType(t: NodeDto | null): string {
+  if (!t) return '—';
+  const s = t.props.section as { kind?: string; width?: number; depth?: number } | undefined;
+  if (s) return s.kind === 'circle' ? `Ø ${mm(s.width ?? 0)}` : `${mm(s.width ?? 0)} × ${mm(s.depth ?? 0)}`;
+  if (t.props.kind === 'strip') return `stem ${mm(Number(t.props.stemHeight ?? 0))} on ${mm(Number(t.props.footingWidth ?? 0))} × ${mm(Number(t.props.footingHeight ?? 0))}, bottom ${mm(Number(t.props.bottom ?? 0))}`;
+  if (t.props.kind === 'pad') return `${(t.props.steps as unknown[] | undefined)?.length ?? 0} steps, bottom ${mm(Number(t.props.bottom ?? 0))}`;
+  return '';
+}
+
+export function StructureSection({ node }: { node: NodeDto }) {
+  const nodes = useSession((s) => s.nodes);
+  const relations = useSession((s) => s.relations);
+  const model = { nodes, relations };
+  const type = typeOf(model, node.id);
+  const pad = node.props.predefinedType === 'PAD_FOOTING';
+  const types = ofClass(model, TYPE_CLASS[node.type] ?? '').filter((t) => node.type !== 'IfcFooting' || (t.props.kind === 'pad') === pad);
+  return (
+    <div className="layers">
+      <label className="type-pick">
+        <span className="eyebrow">Type</span>
+        <span className="row">
+          <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('structure.setType', { id: node.id, typeId: e.target.value })}>
+            {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+          <button type="button" className="icon" title="Structure types…" onClick={() => useUi.setState({ dialog: 'structureTypes' })}><Settings2 size={14} /></button>
+        </span>
+      </label>
+      <p className="muted small">{describeType(type)}</p>
+    </div>
+  );
+}

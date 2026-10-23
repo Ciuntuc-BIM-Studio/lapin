@@ -1,0 +1,1 @@
+{ "id": "structure", "name": "Structure", "assembly": "Lapin.Structure.dll", "requires": ["core"] }

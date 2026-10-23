@@ -57,3 +57,14 @@ Ordinea de căutare a fost: Lapin-ul vechi, apoi BubbleBIM Pro, apoi BubbleBIM-S
 | 37 | Prioritățile de tăiere sunt calculate, nu scrise ca `IfcRelInterferesElements`. Fiecare element își scade la construire „învelișurile” elementelor cu prioritate mai mare care îl ating. Exportul IFC va scrie relațiile. | Relații scrise la fiecare editare, ca în Lapin-ul vechi. | `ICutters`, `Cuts.Apply` |
 | 38 | Un element caută tăietori doar în clasele cu prioritate mai mare decât a lui. Suprascrierea pe element (`cutPriority`) funcționează între clase diferite, nu între două elemente din aceeași clasă (un perete nu taie alt perete). | Suprascriere și în aceeași clasă (fiecare perete ar citi toți pereții). | `ModuleCatalog.For` |
 | 39 | Plăcile nu au încă goluri proprii (gol de scară, de coș). | — | `Slabs` |
+
+## M2 – structură
+
+| # | Ce am ales | Alternative | Unde |
+|---|---|---|---|
+| 40 | Structure e modul de motor separat (`Lapin.Structure`), care cere doar platforma. O ediție doar de structură nu are pereți, dar are stâlpi, grinzi și fundații. Îmbinările au trecut în platformă, ca „elemente pe traseu”: pereți, grinzi, fundații continue. | Structura în modulul Architecture. | `engine/src/Modules/Structure` |
+| 41 | Fundația continuă e o singură entitate `IfcFooting` STRIP_FOOTING, cu axă și tip (straturile peretelui de fundație și talpa). Peretele de fundație și talpa sunt piese derivate. Exportul IFC va scrie ansamblul (`IfcElementAssembly`, un `IfcWall` și un `IfcFooting`), ca în Lapin-ul vechi. | Ansamblu de entități, ca în Lapin-ul vechi. | `StripFootings` |
+| 42 | Valorile implicite: stâlp 300 × 300 pe înălțimea etajului, grindă 250 × 400 cu fața de sus la nivelul următor, fundație continuă „SF 30” (cea veche) și fundație izolată în două trepte (1,8 și 1,0 m, cea veche). | Alte valori implicite. | `Columns`, `Beams`, `StripFootings`, `PadFootings` |
+| 43 | La îmbinarea automată, elementul nou desenat trece prin colț (la grosimi egale). Swap inversează. | Primul desenat trece. | `Joins.Auto` |
+| 44 | Grinzile se îmbină în plan (tăieturi verticale pe toată înălțimea), ca pereții. Îmbinarea 3D a elementelor liniare înclinate (căpriori) vine cu acoperișurile. Secțiunile sunt doar dreptunghi și cerc; I, L, T, U și țevile vin mai târziu. | Profilele din catalogul vechi acum. | `Beams`, `Section` |
+| 45 | Proprietățile din inspector sunt deocamdată tipul și câteva câmpuri. Editarea completă a tipurilor structurale existente (nu doar crearea) vine mai târziu. | — | `StructureTypesDialog` |

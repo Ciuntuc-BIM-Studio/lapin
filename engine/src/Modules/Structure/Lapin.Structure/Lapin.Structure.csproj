@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Structure: columns, beams, strip foundations (a layered foundation wall
+    on a strip footing) and stepped pad footings. It needs only the platform:
+    an edition may have it with architecture, or without.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>structure</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="$(BubbleEngineDir)src/Platform/BubbleBim.Platform.Geometry/BubbleBim.Platform.Geometry.csproj" Private="false" />
+  </ItemGroup>
+</Project>
