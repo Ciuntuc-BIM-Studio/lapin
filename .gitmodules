@@ -1,0 +1,3 @@
+[submodule "vendor/bubblebim-pro"]
+	path = vendor/bubblebim-pro
+	url = https://github.com/ionuting/BubbleBIM-Pro.git

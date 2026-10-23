@@ -1,0 +1,32 @@
+/* Lapin's look, the architect's sheet: warm paper, navy ink, a brick accent. */
+:root {
+  --paper: #f6f3ec;
+  --sheet: #fdfbf7;
+  --wash: #efeae0;
+  --rule: #e2dccf;
+  --ink: #1e2a3a;
+  --ink-muted: #6b6357;
+  --brick: #b5532d;
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 13px/1.4 var(--font); -webkit-font-smoothing: antialiased; }
+.app { display: flex; flex-direction: column; height: 100%; outline: none; }
+.ribbon { display: flex; align-items: stretch; gap: 4px; padding: 6px 10px; background: var(--sheet); border-bottom: 1px solid var(--rule); }
+.brand { display: flex; align-items: center; padding: 0 12px 0 4px; font-weight: 800; font-size: 16px; letter-spacing: -0.02em; }
+.group { display: flex; gap: 2px; padding: 0 6px; border-left: 1px solid var(--rule); }
+.ribbon button { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; padding: 6px 8px; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--ink); font: 11px var(--font); cursor: pointer; }
+.ribbon button svg { color: var(--brick); }
+.ribbon button:hover:not(:disabled) { background: var(--wash); }
+.ribbon button.active { background: #f1e3d9; border-color: var(--brick); }
+.ribbon button:disabled { opacity: 0.4; cursor: default; }
+.main { position: relative; flex: 1; min-height: 0; }
+.viewport { position: absolute; inset: 0; }
+.viewport.picking { cursor: crosshair; }
+.hint { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); padding: 6px 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; box-shadow: 0 1px 3px rgba(30, 42, 58, 0.12); }
+.error { position: absolute; left: 12px; bottom: 12px; max-width: 480px; padding: 8px 12px; background: #fbe9e3; color: #7a2e12; border: 1px solid #e8b9a6; border-radius: 6px; }
+.status { display: flex; gap: 16px; padding: 4px 12px; background: var(--sheet); border-top: 1px solid var(--rule); color: var(--ink-muted); font-size: 12px; }
+.status .ok::before, .status .off::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #4f9d5d; }
+.status .off::before { background: var(--brick); }

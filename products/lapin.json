@@ -1,0 +1,1 @@
+{ "id": "lapin", "name": "Lapin", "modules": ["building", "drawing", "ifc", "cost"] }

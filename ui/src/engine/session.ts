@@ -1,0 +1,82 @@
+/**
+ * Lapin's side of the engine session: the graph and the meshes as the
+ * BubbleBIM Pro engine last sent them, kept in step by its diffs. Every
+ * edit is an engine command (one undo step); nothing is modelled here.
+ */
+
+import { create } from 'zustand';
+import { EngineClient, engineUrl } from '@bbim/platform/engine';
+import type { Diff, DocState, NodeDto, RenderItem, SessionInfo } from '@bbim/platform/types';
+
+export interface SessionState {
+  connected: boolean;
+  info: SessionInfo | null;
+  nodes: Map<string, NodeDto>;
+  render: Map<string, RenderItem>;
+  doc: DocState | null;
+  version: number;
+  error: string | null;
+}
+
+export const useSession = create<SessionState>(() => ({
+  connected: false, info: null, nodes: new Map(), render: new Map(), doc: null, version: -1, error: null,
+}));
+
+export const engine = new EngineClient(engineUrl);
+
+/** Fold an engine diff into the session (a reset replaces everything). */
+export function applyDiff(d: Diff): void {
+  const s = useSession.getState();
+  const nodes = d.reset ? new Map<string, NodeDto>() : new Map(s.nodes);
+  const render = d.reset ? new Map<string, RenderItem>() : new Map(s.render);
+  for (const id of d.removedNodes) nodes.delete(id);
+  for (const n of d.nodes) nodes.set(n.id, n);
+  for (const id of d.renderRemoved) render.delete(id);
+  for (const r of d.render) render.set(r.nodeId, r);
+  useSession.setState({ nodes, render, doc: d.state, version: d.version });
+}
+
+/** Run an engine command; its diff arrives as an event. Errors land in the session. */
+export async function execute(command: string, args: Record<string, unknown> = {}): Promise<unknown> {
+  try {
+    const result = await engine.call('doc.execute', { command, args });
+    useSession.setState({ error: null });
+    return result;
+  } catch (e) {
+    useSession.setState({ error: e instanceof Error ? e.message : String(e) });
+    return null;
+  }
+}
+
+export const undo = () => engine.call('doc.undo').catch(() => undefined);
+export const redo = () => engine.call('doc.redo').catch(() => undefined);
+export const newProject = () => engine.call('project.new').catch(() => undefined);
+
+/** The storey new elements go on: the lowest one. */
+export function activeStorey(s: SessionState = useSession.getState()): NodeDto | null {
+  const storeys = [...s.nodes.values()].filter((n) => n.type === 'storey');
+  const elevation = (n: NodeDto) => (typeof n.props.elevation === 'number' ? n.props.elevation : 0);
+  return storeys.sort((a, b) => elevation(a) - elevation(b))[0] ?? null;
+}
+
+/** The storey to build on: the lowest, or a new one when the project has none yet. */
+export async function ensureStorey(): Promise<string | null> {
+  const existing = activeStorey();
+  if (existing) return existing.id;
+  const result = await execute('storey.create', {}) as { id?: string; nodeId?: string } | null;
+  return activeStorey()?.id ?? result?.id ?? result?.nodeId ?? null;
+}
+
+/** Connect to the engine and keep the session in step with it. */
+export async function connect(): Promise<void> {
+  engine.onDiff(applyDiff);
+  engine.onStatus(async (connected) => {
+    useSession.setState({ connected });
+    if (!connected) return;
+    const info = await engine.call<SessionInfo>('session.info');
+    const snapshot = await engine.call<Diff>('doc.snapshot');
+    useSession.setState({ info });
+    applyDiff(snapshot);
+  });
+  await engine.start();
+}
