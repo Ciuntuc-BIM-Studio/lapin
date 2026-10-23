@@ -7,7 +7,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import type { RenderItem } from '@bbim/platform/types';
+import type { RenderItem } from '../engine/protocol';
 import { useSession } from '../engine/session';
 import { useUi } from '../app/store';
 
@@ -33,18 +33,18 @@ function groundGrid(theme: keyof typeof GRID): THREE.GridHelper {
 function meshOf(item: RenderItem): THREE.Group {
   const group = new THREE.Group();
   group.userData.nodeId = item.nodeId;
-  const add = (positions: number[], normals: number[], indices: number[], edges: number[], color: string) => {
+  const add = (positions: Float32Array, normals: Float32Array, indices: Int32Array, edges: Float32Array, color: string) => {
     if (positions.length) {
       const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-      if (normals.length === positions.length) g.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+      g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      if (normals.length === positions.length) g.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
       else g.computeVertexNormals();
-      g.setIndex(indices);
+      g.setIndex(new THREE.BufferAttribute(new Uint32Array(indices.buffer, indices.byteOffset, indices.length), 1));
       group.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 })));
     }
     if (edges.length) {
       const e = new THREE.BufferGeometry();
-      e.setAttribute('position', new THREE.Float32BufferAttribute(edges, 3));
+      e.setAttribute('position', new THREE.BufferAttribute(edges, 3));
       group.add(new THREE.LineSegments(e, new THREE.LineBasicMaterial({ color: 0x1e2a3a })));
     }
   };

@@ -6,13 +6,14 @@
  */
 
 import { create } from 'zustand';
-import { EngineClient, engineUrl } from '@bbim/platform/engine';
-import type { Diff, DocState, NodeDto, RenderItem, SessionInfo } from '@bbim/platform/types';
+import { EngineClient, engineUrl } from './client';
+import type { Diff, DocState, NodeDto, RelationDto, RenderItem, SessionInfo } from './protocol';
 
 export interface SessionState {
   connected: boolean;
   info: SessionInfo | null;
   nodes: Map<string, NodeDto>;
+  relations: Map<string, RelationDto>;
   render: Map<string, RenderItem>;
   doc: DocState | null;
   version: number;
@@ -20,7 +21,7 @@ export interface SessionState {
 }
 
 export const useSession = create<SessionState>(() => ({
-  connected: false, info: null, nodes: new Map(), render: new Map(), doc: null, version: -1, error: null,
+  connected: false, info: null, nodes: new Map(), relations: new Map(), render: new Map(), doc: null, version: -1, error: null,
 }));
 
 export const engine = new EngineClient(engineUrl);
@@ -29,12 +30,15 @@ export const engine = new EngineClient(engineUrl);
 export function applyDiff(d: Diff): void {
   const s = useSession.getState();
   const nodes = d.reset ? new Map<string, NodeDto>() : new Map(s.nodes);
+  const relations = d.reset ? new Map<string, RelationDto>() : new Map(s.relations);
   const render = d.reset ? new Map<string, RenderItem>() : new Map(s.render);
   for (const id of d.removedNodes) nodes.delete(id);
   for (const n of d.nodes) nodes.set(n.id, n);
+  for (const id of d.removedRelations) relations.delete(id);
+  for (const r of d.relations) relations.set(r.id, r);
   for (const id of d.renderRemoved) render.delete(id);
   for (const r of d.render) render.set(r.nodeId, r);
-  useSession.setState({ nodes, render, doc: d.state, version: d.version });
+  useSession.setState({ nodes, relations, render, doc: d.state, version: d.version });
 }
 
 /** Run an engine command; its diff arrives as an event. Errors land in the session. */

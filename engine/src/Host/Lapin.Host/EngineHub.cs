@@ -8,8 +8,10 @@ using Lapin.Platform;
 namespace Lapin.Host;
 
 /// <summary>
-/// The engine protocol: JSON messages over one WebSocket, as in BubbleBIM Pro.
+/// The engine protocol, over one WebSocket. The interface sends JSON text:
 ///   → {"id":1,"method":"doc.execute","params":{"command":"architecture.addWall","args":{…}}}
+/// The engine answers in binary frames (<see cref="BinaryFrame"/>: a JSON
+/// header, meshes as raw arrays):
 ///   ← {"id":1,"result":…}            or  {"id":1,"error":"…"}
 ///   ← {"event":"diff","data":Diff}   after anything that changed the document
 /// Calls run one at a time: the session is single-threaded by design.
@@ -53,22 +55,25 @@ public sealed class EngineHub(Session session, ProjectFiles files)
         }
     }
 
-    static async Task Send(WebSocket ws, JsonObject msg)
+    static async Task Send(WebSocket ws, byte[] frame)
     {
         if (ws.State != WebSocketState.Open) return;
-        var bytes = Encoding.UTF8.GetBytes(msg.ToJsonString(Json.Options));
-        await ws.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
+        await ws.SendAsync(frame, WebSocketMessageType.Binary, true, CancellationToken.None);
     }
 
     async Task Broadcast(Diff diff)
     {
-        var msg = new JsonObject { ["event"] = "diff", ["data"] = JsonSerializer.SerializeToNode(diff, Json.Options) };
+        var frame = BinaryFrame.Encode(new DiffEvent("diff", diff));
         WebSocket[] clients;
         lock (_clients) clients = [.. _clients];
-        foreach (var c in clients) await Send(c, msg);
+        foreach (var c in clients) await Send(c, frame);
     }
 
-    public async Task<JsonObject> Handle(string text)
+    sealed record DiffEvent(string Event, Diff Data);
+    sealed record Reply(JsonNode? Id, object? Result, string? Error = null);
+
+    /// <summary>One call: its reply as a frame. The diff it caused has been broadcast before.</summary>
+    public async Task<byte[]> Handle(string text)
     {
         JsonNode? id = null;
         await _gate.WaitAsync();
@@ -80,17 +85,17 @@ public sealed class EngineHub(Session session, ProjectFiles files)
             var p = msg["params"] as JsonObject ?? [];
             var (result, diff) = Dispatch(method, p);
             if (diff != null) await Broadcast(diff);
-            return new JsonObject { ["id"] = id, ["result"] = result };
+            return BinaryFrame.Encode(new Reply(id, result));
         }
         catch (Exception ex) when (ex is ModelException or JsonException or InvalidOperationException or IOException or UnauthorizedAccessException or FormatException or InvalidDataException)
         {
-            return new JsonObject { ["id"] = id, ["error"] = ex.Message };
+            return BinaryFrame.Encode(new Reply(id, null, ex.Message));
         }
         catch (Exception ex)
         {
             // An engine bug: answer the call (the UI must not hang) and leave a trace.
             Console.Error.WriteLine($"[engine] {ex}");
-            return new JsonObject { ["id"] = id, ["error"] = $"Internal engine error: {ex.Message}" };
+            return BinaryFrame.Encode(new Reply(id, null, $"Internal engine error: {ex.Message}"));
         }
         finally
         {
@@ -98,15 +103,14 @@ public sealed class EngineHub(Session session, ProjectFiles files)
         }
     }
 
-    (JsonNode? Result, Diff? Diff) Dispatch(string method, JsonObject p)
+    (object? Result, Diff? Diff) Dispatch(string method, JsonObject p)
     {
-        static JsonNode? J<T>(T v) => JsonSerializer.SerializeToNode(v, Json.Options);
         string PathParam() => (string?)p["path"] ?? throw new CommandException("The file's path is missing.");
 
         switch (method)
         {
-            case "session.info": return (J(session.Info()), null);
-            case "doc.snapshot": return (J(session.Snapshot()), null);
+            case "session.info": return (session.Info(), null);
+            case "doc.snapshot": return (session.Snapshot(), null);
             case "doc.execute":
             {
                 var command = (string?)p["command"] ?? throw new CommandException("The command is missing.");

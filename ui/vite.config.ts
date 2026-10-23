@@ -31,11 +31,8 @@ function productModules(): Plugin {
   };
 }
 
-// The wire protocol's client and types come from BubbleBIM Pro
-// (vendor/bubblebim-pro): Lapin's engine speaks the same protocol.
 export default defineConfig({
   plugins: [react(), productModules()],
-  resolve: { alias: { '@bbim/platform': resolve(__dirname, '../vendor/bubblebim-pro/ui/src/platform') } },
   clearScreen: false,
   server: { port: 5180, strictPort: true, fs: { allow: [resolve(__dirname, '..')] } },
   build: { outDir: process.env.LAPIN_UI_OUT ?? 'dist', emptyOutDir: true, chunkSizeWarningLimit: 1500 },

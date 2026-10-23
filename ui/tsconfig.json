@@ -13,7 +13,6 @@
     "resolveJsonModule": true,
     "types": ["vite/client", "node"],
     "baseUrl": ".",
-    "paths": { "@bbim/platform/*": ["../vendor/bubblebim-pro/ui/src/platform/*"] },
     "noEmit": true
   },
   "include": ["src", "vite.config.ts"]

@@ -66,6 +66,20 @@ public class SessionTests
     }
 
     [Fact]
+    public void A_new_wall_on_a_storey_leaves_the_walls_already_there_alone()
+    {
+        var f = new Fixture();
+        for (var i = 0; i < 5; i++) f.Wall(0, i, 4, i);
+        var diff = f.RunDiff("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 9, ["x2"] = 4, ["y2"] = 9 });
+        Assert.Single(diff.Render);
+        Assert.Single(diff.Nodes, n => n.Type == IfcClass.Wall);
+        // Undo takes only it away, too.
+        var undo = f.Session.Undo();
+        Assert.Single(undo.RenderRemoved);
+        Assert.Empty(undo.Render);
+    }
+
+    [Fact]
     public void A_class_no_module_of_the_product_owns_is_kept_and_shown_but_never_edited()
     {
         var full = new Fixture();

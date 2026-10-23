@@ -17,6 +17,8 @@ public sealed class Session
     readonly ModelStore _store = new();
     readonly History _history;
     readonly Dictionary<string, Built> _built = [];
+    /// <summary>What each read id is read by: the elements to rebuild when it changes.</summary>
+    readonly Dictionary<string, HashSet<string>> _readers = [];
     readonly Dictionary<string, string> _foreignClasses = [];
     long _version;
 
@@ -69,7 +71,7 @@ public sealed class Session
             edit.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
         });
         _history.Reset();
-        _built.Clear();
+        ForgetAll();
     }
 
     /// <summary>
@@ -86,7 +88,7 @@ public sealed class Session
         foreach (var (cls, module) in classModules ?? new Dictionary<string, string>())
             if (_catalog.OwnerOf(cls) == null) _foreignClasses[cls] = module;
         _history.Load(entities, relations);
-        _built.Clear();
+        ForgetAll();
         Path = path;
         return Snapshot();
     }
@@ -130,7 +132,7 @@ public sealed class Session
 
     public Diff Snapshot()
     {
-        _built.Clear();
+        ForgetAll();
         var render = new List<RenderItem>();
         foreach (var e in _store.Entities)
             if (_catalog.Geometry(e.Class) != null && Build(e) is { Item: { } item }) render.Add(item);
@@ -144,7 +146,11 @@ public sealed class Session
 
     Diff DiffOf(Transaction t)
     {
-        var touched = t.TouchedIds().ToHashSet();
+        // An entity's attributes, its relationships (whom a relationship change concerns), its class.
+        var touched = t.Entities.Select(c => c.Id)
+            .Concat(t.Relations.Select(c => c.Id))
+            .Concat(t.Relations.SelectMany(Transaction.Concerned).Select(TrackingView.RelationsKey))
+            .ToHashSet();
         foreach (var c in t.Entities)
         {
             if (c.Before != null) touched.Add(TrackingView.ClassKey(c.Before.Class));
@@ -154,7 +160,7 @@ public sealed class Session
 
         // An entity's node changes with it, and with the relationships that place it (its parent, its storey).
         var nodeIds = t.Entities.Select(c => c.Id)
-            .Concat(t.Relations.SelectMany(c => (c.Before?.Related ?? []).Concat(c.After?.Related ?? [])))
+            .Concat(t.Relations.SelectMany(Transaction.Concerned).Where(id => _store.GetRelation(id) == null))
             .Distinct().ToList();
         var nodes = nodeIds.Select(_store.Get).OfType<Entity>().Select(Dto).ToList();
         var removedNodes = t.Entities.Where(c => _store.Get(c.Id) == null).Select(c => c.Id).ToList();
@@ -162,7 +168,7 @@ public sealed class Session
         var removedRelations = t.Relations.Where(c => _store.GetRelation(c.Id) == null).Select(c => c.Id).ToList();
 
         // Rebuild what read anything the edit touched, and the new elements.
-        var rebuild = _built.Where(kv => kv.Value.Reads.Overlaps(touched)).Select(kv => kv.Key)
+        var rebuild = touched.SelectMany(id => _readers.TryGetValue(id, out var r) ? r : (IEnumerable<string>)[])
             .Concat(t.Entities.Where(c => c.After != null && _catalog.Geometry(c.After.Class) != null).Select(c => c.Id))
             .Distinct().ToList();
         var render = new List<RenderItem>();
@@ -170,7 +176,7 @@ public sealed class Session
         foreach (var id in rebuild)
         {
             var hadItem = _built.TryGetValue(id, out var old) && old.Item != null;
-            _built.Remove(id);
+            Forget(id);
             if (_store.Get(id) is { } e && Build(e) is { Item: { } item }) render.Add(item);
             else if (hadItem) renderRemoved.Add(id);
         }
@@ -207,8 +213,23 @@ public sealed class Session
             problems.Add(ex.Message);
         }
         var built = new Built(g, view.Read, g == null && problems.Count == 0 ? null : Render(e, g, problems));
+        Forget(e.Id);
         _built[e.Id] = built;
+        foreach (var id in built.Reads) (_readers.TryGetValue(id, out var set) ? set : _readers[id] = []).Add(e.Id);
         return built;
+    }
+
+    void Forget(string id)
+    {
+        if (!_built.Remove(id, out var old)) return;
+        foreach (var r in old.Reads)
+            if (_readers.TryGetValue(r, out var set)) { set.Remove(id); if (set.Count == 0) _readers.Remove(r); }
+    }
+
+    void ForgetAll()
+    {
+        _built.Clear();
+        _readers.Clear();
     }
 
     RenderItem Render(Entity e, ElementGeometry? g, List<string> problems)

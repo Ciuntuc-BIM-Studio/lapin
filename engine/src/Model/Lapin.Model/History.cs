@@ -38,13 +38,32 @@ public sealed record Transaction(long Seq, string Label, IReadOnlyList<Change<En
 {
     public int Count => Entities.Count + Relations.Count;
 
-    /// <summary>Every id the transaction touched: its entities and relationships, and both ends of every relationship before and after.</summary>
+    /// <summary>
+    /// Every id the transaction touched: its entities and relationships, and
+    /// whom each relationship change concerns. A new or removed relationship,
+    /// or one whose relating entity changed, concerns everyone in it; one that
+    /// only gained or lost members concerns its relating entity and those
+    /// members, not the others (a storey's thousandth wall leaves the 999
+    /// before it alone).
+    /// </summary>
     public IEnumerable<string> TouchedIds() =>
-        Entities.Select(c => c.Id)
-            .Concat(Relations.SelectMany(c => new[] { c.Id }
-                .Concat(c.Before is { } b ? b.Related.Prepend(b.Relating) : [])
-                .Concat(c.After is { } a ? a.Related.Prepend(a.Relating) : [])))
-            .Distinct();
+        Entities.Select(c => c.Id).Concat(Relations.SelectMany(Concerned)).Distinct();
+
+    public static IEnumerable<string> Concerned(Change<Relation> c)
+    {
+        yield return c.Id;
+        if (c.Before is not { } b || c.After is not { } a || b.Relating != a.Relating || b.Class != a.Class)
+        {
+            foreach (var r in new[] { c.Before, c.After })
+                if (r != null) { yield return r.Relating; foreach (var x in r.Related) yield return x; }
+            yield break;
+        }
+        yield return a.Relating;
+        var before = b.Related.ToHashSet();
+        var after = a.Related.ToHashSet();
+        foreach (var x in after) if (!before.Contains(x)) yield return x;
+        foreach (var x in before) if (!after.Contains(x)) yield return x;
+    }
 }
 
 /// <summary>Applies one command's changes as it goes, recording them for undo.</summary>
