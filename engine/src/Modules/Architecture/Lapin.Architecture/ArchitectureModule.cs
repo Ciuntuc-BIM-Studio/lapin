@@ -17,6 +17,7 @@ public sealed class ArchitectureModule : ILapinModule
         [
             new("height", "Height", "length", Min: 0.01),
             new("baseOffset", "Base offset", "length"),
+            new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
         ], "#b5654a"));
         r.Class(new(IfcClass.WallType, "Wall type", [new("mark", "Mark", "text")], "#b5654a", Kind: "type"));
         r.Class(new(IfcClass.OpeningElement, "Opening", [new("width", "Width", "length", Min: 0.01), new("height", "Height", "length", Min: 0.01)], Kind: "element"));
@@ -57,6 +58,50 @@ public sealed class ArchitectureModule : ILapinModule
                 }).ToArray()),
                 ["ifcType"] = spec.IsDoor ? Joinery.DoorOperation(spec).Type : Joinery.WindowPartitioning(spec).Type,
             };
+        });
+
+        // Floors.
+        r.Class(new(IfcClass.Slab, "Floor", [new("offset", "Top offset", "length"), new("cutPriority", "Cut priority", "number", Min: 0, Max: 100)], "#a8a8a8"));
+        // Cut priorities (the old Lapin's): a slab (60) over a wall (50) cuts its head.
+        r.Cutter(IfcClass.Wall, 50, (wall, model) => Walls.Envelope(wall, model));
+        r.Cutter(IfcClass.Slab, 60, (slab, model) => Slabs.Envelope(slab, model));
+        r.Class(new(IfcClass.SlabType, "Floor type", [], "#a8a8a8", Kind: "type"));
+        r.Geometry(IfcClass.Slab, (slab, model, services) => Slabs.Geometry(slab, model, services));
+        r.Quantities(IfcClass.Slab, Slabs.Quantities);
+
+        r.Command("createSlabType", "New floor type", (ctx, a) =>
+            new JsonObject { ["id"] = Slabs.CreateType(ctx, (string?)a["name"], LayerSets.Parse(a["layers"], "A floor type")).Id });
+
+        r.Command("updateSlabType", "Change floor type", (ctx, a) =>
+        {
+            var type = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.SlabType);
+            Slabs.UpdateType(ctx, type, (string?)a["name"], a["layers"] is null ? null : LayerSets.Parse(a["layers"], "A floor type"));
+            return null;
+        });
+
+        r.Command("addSlab", "Floor", (ctx, a) =>
+        {
+            var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+            var type = (string?)a["typeId"] is { } typeId ? Spatial.Require(ctx.Model, typeId, IfcClass.SlabType) : null;
+            var slab = Slabs.Add(ctx, storeyId, Points(a), Json.Number(a["offset"]) ?? 0, type);
+            return new JsonObject { ["id"] = slab.Id };
+        });
+
+        r.Command("updateSlab", "Change floor", (ctx, a) =>
+        {
+            var slab = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Slab);
+            var attrs = slab.CloneAttrs();
+            if (a["points"] != null || a["x1"] != null) attrs["contour"] = Slabs.ContourJson(Slabs.CheckContour(Points(a)));
+            if (Json.Number(a["offset"]) is { } offset) attrs["offset"] = offset;
+            ctx.Replace(slab.With(attrs: attrs));
+            return null;
+        });
+
+        r.Command("setSlabType", "Change type", (ctx, a) =>
+        {
+            var type = Spatial.Require(ctx.Model, (string?)a["typeId"], IfcClass.SlabType);
+            foreach (var id in Ids(a)) Slabs.SetType(ctx, Spatial.Require(ctx.Model, id, IfcClass.Slab), type);
+            return null;
         });
 
         r.Command("addDoor", "Door", (ctx, a) => AddFill(ctx, a, "door"));
@@ -183,6 +228,15 @@ public sealed class ArchitectureModule : ILapinModule
             foreach (var id in Ids(a)) Walls.Flip(ctx, Spatial.Require(ctx.Model, id, IfcClass.Wall), axis);
             return null;
         });
+    }
+
+    /// <summary>A contour: <c>points</c> as [[x, y], …], or the rectangle between (x1, y1) and (x2, y2).</summary>
+    static IReadOnlyList<Vec2> Points(JsonObject a)
+    {
+        if (a["points"] is JsonArray arr)
+            return arr.OfType<JsonArray>().Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList();
+        var (p, q) = (P(a, "x1", "y1"), P(a, "x2", "y2"));
+        return [p, new Vec2(q.X, p.Y), q, new Vec2(p.X, q.Y)];
     }
 
     static JoinerySpec JinerySpecOrThrow(JsonNode? n) => JoinerySpec.From(n) ?? throw new CommandException("The type's configuration is missing or unreadable.");

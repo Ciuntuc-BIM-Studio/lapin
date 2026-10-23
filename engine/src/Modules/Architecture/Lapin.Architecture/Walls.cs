@@ -36,8 +36,7 @@ public static class Walls
         m.RelatingOf(wallId, IfcClass.RelDefinesByType) is { Class: IfcClass.WallType } t ? t : null;
 
     /// <summary>The wall's own layer set usage, if it has one.</summary>
-    public static Entity? UsageOf(IModelView m, string wallId) =>
-        m.RelatingOf(wallId, IfcClass.RelAssociatesMaterial) is { Class: IfcClass.MaterialLayerSetUsage } u ? u : null;
+    public static Entity? UsageOf(IModelView m, string wallId) => LayerSets.UsageOf(m, wallId);
 
     /// <summary>A new wall on the storey, of the type (the project's default when none), joined where it meets the walls already there.</summary>
     public static Entity Add(IEdit edit, string storeyId, Vec2 start, Vec2 end, double height, double baseOffset, Entity? type, JoinStyle joinStyle = JoinStyle.Butt)
@@ -72,26 +71,8 @@ public static class Walls
     /// mirrored when the wall runs the negative way. A type without layers
     /// leaves the wall its own thickness.
     /// </summary>
-    public static void LayOut(IEdit edit, Entity wall, Entity type)
-    {
-        var set = WallTypes.LayerSetOf(edit.Model, type.Id);
-        var usage = UsageOf(edit.Model, wall.Id);
-        if (set == null)
-        {
-            if (usage != null) edit.Remove(usage.Id);
-            return;
-        }
-        var layers = Layers.Read(set);
-        var negative = usage != null && Layers.ReadUsage(usage) is { Negative: true };
-        var next = new LayerUsage(set.Id, negative, Layers.CoreOffset(layers, negative));
-        if (usage == null)
-        {
-            var made = new Entity(edit.NewId(), IfcClass.MaterialLayerSetUsage, "", Layers.WriteUsage(next));
-            edit.Add(made);
-            edit.Relate(IfcClass.RelAssociatesMaterial, made.Id, wall.Id);
-        }
-        else edit.Replace(usage.With(attrs: Layers.WriteUsage(next)));
-    }
+    public static void LayOut(IEdit edit, Entity wall, Entity type) =>
+        LayerSets.LayOut(edit, wall, type, "AXIS2", Layers.CoreOffset);
 
     /// <summary>
     /// Flips the wall across its axis: its ends stay, its layers swap faces
@@ -221,6 +202,7 @@ public static class Walls
                 at = Math.Max(at, g.To);
             }
         }
+        parts = Cuts.Apply(wall, m, services, parts, problems);
         if (booleans != null)
         {
             var ring = zones.FirstOrDefault(zb => zb.Zone.Role == "ringBeam");
@@ -233,6 +215,20 @@ public static class Walls
             }
         }
         return new ElementGeometry(parts, plan, [start, end], problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>The wall's body as drawn, its joins aside: what it cuts lower priorities with.</summary>
+    public static Solid? Envelope(Entity wall, IModelView m)
+    {
+        var start = Start(wall);
+        var end = End(wall);
+        if ((end - start).Length < MinLength) return null;
+        var left = (end - start).Normalized().Perp;
+        var bands = Section(m, wall);
+        double y0 = bands.Min(b => b.From), y1 = bands.Max(b => b.To);
+        var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        Vec2[] fp = [start + left * y0, end + left * y0, end + left * y1, start + left * y1];
+        return Prism.ExtrudeFootprint(fp, z, wall.Num("height", DefaultHeight), "wall");
     }
 
     /// <summary>The lintel rule of the wall's type: its own, else the default (precast, 25 cm bearing, 25 cm high); mode none, none.</summary>

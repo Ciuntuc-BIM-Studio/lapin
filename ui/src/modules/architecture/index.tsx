@@ -10,6 +10,8 @@ import { WallLayers } from './WallLayers';
 import { WallTypesDialog } from './WallTypesDialog';
 import { JoineryDialog } from './JoineryDialog';
 import { JoinerySection } from './JoinerySection';
+import { SlabSection } from './SlabSection';
+import { SlabTypesDialog } from './SlabTypesDialog';
 
 const wall: ToolDef = {
   id: 'architecture.wall', label: 'Wall', icon: BrickWall, shortcut: 'WA',
@@ -77,7 +79,16 @@ const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'],
 const door = fillTool('door', 'Door', DoorOpen, 'DR');
 const window_ = fillTool('window', 'Window', PanelTop, 'WN');
 const joineryTypes: ToolDef = { id: 'architecture.joineryTypes', label: 'Doors & windows', icon: Settings2, run: () => useUi.setState({ dialog: 'joinery' }) };
-const slab: ToolDef = { id: 'architecture.slab', label: 'Floor', icon: Square, shortcut: 'SB' };
+/** A floor: click its corners, then the first one again (or Enter). */
+const slab: ToolDef = {
+  id: 'architecture.slab', label: 'Floor', icon: Square, shortcut: 'SB',
+  gesture: { kind: 'polygon' },
+  complete: async ({ points }, ctx) => {
+    const typeId = useUi.getState().slabTypeId;
+    await ctx.execute('architecture.addSlab', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(typeId ? { typeId } : {}) });
+  },
+};
+const slabTypes: ToolDef = { id: 'architecture.slabTypes', label: 'Floor types', icon: Layers3, run: () => useUi.setState({ dialog: 'slabTypes' }) };
 
 const architecture: LapinModule = {
   id: 'architecture',
@@ -87,7 +98,7 @@ const architecture: LapinModule = {
     id: 'architecture', label: 'Architecture', order: 10,
     groups: [
       { label: 'Build', tools: [wall, door, window_, slab, { id: 'architecture.roof', label: 'Roof', icon: Home, shortcut: 'RF' }] },
-      { label: 'Types', tools: [wallTypes, joineryTypes] },
+      { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew] },
       { label: 'Room', tools: [{ id: 'architecture.room', label: 'Room', icon: LayoutGrid, shortcut: 'RM' }] },
       { label: 'Circulation', tools: [{ id: 'architecture.stair', label: 'Stair', icon: StretchHorizontal }] },
@@ -97,8 +108,9 @@ const architecture: LapinModule = {
   propertySections: [
     { id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers },
     { id: 'joinery', label: 'Door or window', classes: ['IfcDoor', 'IfcWindow'], component: JoinerySection },
+    { id: 'slab', label: 'Floor', classes: ['IfcSlab'], component: SlabSection },
   ],
-  dialogs: { wallTypes: WallTypesDialog, joinery: JoineryDialog },
+  dialogs: { wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog },
   grips: { IfcWall: wallGrips },
 };
 

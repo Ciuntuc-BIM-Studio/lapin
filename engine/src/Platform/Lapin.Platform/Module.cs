@@ -39,6 +39,16 @@ public interface IModuleRegistry
     /// <summary>What an entity of <paramref name="ifcClass"/> measures: its quantity sets, from its geometry and the model.</summary>
     void Quantities(string ifcClass, QuantityProducer producer);
 
+    /// <summary>
+    /// Entities of <paramref name="ifcClass"/> take part in cut priorities: where
+    /// two overlap, the one of higher priority cuts the other (a column through
+    /// a wall, a slab over its head). <paramref name="priority"/> is the
+    /// class's (an entity's <c>cutPriority</c> attribute overrides it, among
+    /// the classes above the one it would cut: a wall never cuts a wall);
+    /// <paramref name="envelope"/> is the solid it cuts with, from its attributes.
+    /// </summary>
+    void Cutter(string ifcClass, int priority, EnvelopeProducer envelope);
+
     /// <summary>Data the module's interface reads (a catalogue of types), published as "module.name".</summary>
     void Catalog(string name, JsonNode data);
 
@@ -52,6 +62,16 @@ public delegate JsonNode? QueryHandler(IQueryContext context, JsonObject args);
 
 /// <summary>An entity's geometry, read from the model (never stored in it).</summary>
 public delegate ElementGeometry? GeometryProducer(Entity entity, IModelView model, IServices services);
+
+/// <summary>The solid an entity cuts others with: its body's envelope, from its attributes (never from built geometry).</summary>
+public delegate Solid? EnvelopeProducer(Entity entity, IModelView model);
+
+/// <summary>Cut priorities, offered by the platform as a service: what cuts an entity.</summary>
+public interface ICutters
+{
+    /// <summary>The envelopes of the entities of higher priority that reach into <paramref name="bounds"/> (the target's own, of its body).</summary>
+    IReadOnlyList<Solid> For(Entity target, IModelView model, (Vec3 Min, Vec3 Max) bounds);
+}
 
 /// <summary>An entity's quantity sets, from its built geometry (null: none) and the model.</summary>
 public delegate IEnumerable<QuantitySet> QuantityProducer(Entity entity, ElementGeometry? geometry, IModelView model);

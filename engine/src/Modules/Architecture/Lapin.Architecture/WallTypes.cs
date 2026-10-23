@@ -4,9 +4,6 @@ using Lapin.Platform;
 
 namespace Lapin.Architecture;
 
-/// <summary>A layer as a command gives it: a material by name, a thickness in metres, the core mark.</summary>
-public sealed record LayerSpec(string Material, double Thickness, bool Core = false, string? Color = null, string? Name = null);
-
 /// <summary>
 /// Wall types: an IfcWallType carrying its IfcMaterialLayerSet (through an
 /// IfcRelAssociatesMaterial). The walls of a type each lay its layers with
@@ -22,11 +19,9 @@ public static class WallTypes
         new("Plaster", 0.015),
     ];
 
-    public static Entity? LayerSetOf(IModelView m, string typeId) =>
-        m.RelatingOf(typeId, IfcClass.RelAssociatesMaterial) is { Class: IfcClass.MaterialLayerSet } set ? set : null;
+    public static Entity? LayerSetOf(IModelView m, string typeId) => LayerSets.Of(m, typeId);
 
-    public static IReadOnlyList<MaterialLayer> LayersOf(IModelView m, string typeId) =>
-        LayerSetOf(m, typeId) is { } set ? Layers.Read(set) : [];
+    public static IReadOnlyList<MaterialLayer> LayersOf(IModelView m, string typeId) => LayerSets.LayersOf(m, typeId);
 
     /// <summary>A lintel rule as a command gives it, checked.</summary>
     public static JsonObject ParseLintels(JsonNode node)
@@ -36,32 +31,9 @@ public static class WallTypes
         return rule.ToJson();
     }
 
-    public static IReadOnlyList<LayerSpec> ParseLayers(JsonNode? node)
-    {
-        if (node is not JsonArray arr) throw new CommandException("A wall type needs its layers.");
-        var o = new List<LayerSpec>();
-        foreach (var n in arr)
-        {
-            if (n is not JsonObject l) throw new CommandException("Every layer is an object: material and thickness.");
-            var material = ((string?)l["material"])?.Trim();
-            var thickness = Json.Number(l["thickness"]);
-            if (string.IsNullOrEmpty(material)) throw new CommandException("Every layer needs a material.");
-            if (thickness is not > 0) throw new CommandException("Every layer needs a thickness.");
-            o.Add(new LayerSpec(material, thickness.Value, l["core"] is JsonValue c && c.TryGetValue<bool>(out var core) && core, (string?)l["color"], (string?)l["name"]));
-        }
-        Validate(o);
-        return o;
-    }
+    public static IReadOnlyList<LayerSpec> ParseLayers(JsonNode? node) => LayerSets.Parse(node, "A wall type");
 
-    public static void Validate(IReadOnlyList<LayerSpec> layers)
-    {
-        if (layers.Count == 0) throw new CommandException("A wall type needs at least one layer.");
-        if (layers.Any(l => !(l.Thickness > 0))) throw new CommandException("Every layer needs a thickness.");
-        if (layers.Count(l => l.Core) > 1) throw new CommandException("Only one layer can be the core.");
-    }
-
-    static List<MaterialLayer> Resolve(IEdit edit, IReadOnlyList<LayerSpec> layers) =>
-        layers.Select(l => new MaterialLayer(Materials.Ensure(edit, l.Material, l.Color).Id, l.Thickness, l.Core, l.Name)).ToList();
+    public static void Validate(IReadOnlyList<LayerSpec> layers) => LayerSets.Validate(layers, "A wall type");
 
     public static string DefaultName(IReadOnlyList<LayerSpec> layers)
     {
@@ -73,15 +45,13 @@ public static class WallTypes
     {
         Validate(layers);
         var typeName = string.IsNullOrWhiteSpace(name) ? DefaultName(layers) : name.Trim();
-        var set = new Entity(edit.NewId(), IfcClass.MaterialLayerSet, typeName, Layers.Write(Resolve(edit, layers)));
-        edit.Add(set);
         var attrs = new JsonObject();
         if (mark != null) attrs["mark"] = mark;
         if (zones is JsonArray { Count: > 0 }) attrs["zones"] = WallZones.Parse(edit, zones);
         if (lintels != null) attrs["lintels"] = ParseLintels(lintels);
         var type = new Entity(edit.NewId(), IfcClass.WallType, typeName, attrs, "STANDARD");
         edit.Add(type);
-        edit.Relate(IfcClass.RelAssociatesMaterial, set.Id, type.Id);
+        LayerSets.Attach(edit, type, layers);
         return type;
     }
 
@@ -119,14 +89,7 @@ public static class WallTypes
         }
         if (layers == null) return;
         Validate(layers);
-        var resolved = Resolve(edit, layers);
-        if (LayerSetOf(edit.Model, type.Id) is { } set) edit.Replace(set.With(attrs: Layers.Write(resolved, set.CloneAttrs())));
-        else
-        {
-            var made = new Entity(edit.NewId(), IfcClass.MaterialLayerSet, type.Name, Layers.Write(resolved));
-            edit.Add(made);
-            edit.Relate(IfcClass.RelAssociatesMaterial, made.Id, type.Id);
-        }
+        LayerSets.Rewrite(edit, edit.Model.Get(type.Id)!, layers);
         foreach (var wall in edit.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).Where(w => w.Class == IfcClass.Wall).ToList())
             Walls.LayOut(edit, wall, type);
     }
