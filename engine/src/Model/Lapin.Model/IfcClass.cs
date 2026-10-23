@@ -12,6 +12,11 @@ public static class IfcClass
     // Elements and their types.
     public const string Wall = "IfcWall";
     public const string WallType = "IfcWallType";
+    public const string OpeningElement = "IfcOpeningElement";
+    public const string Door = "IfcDoor";
+    public const string DoorType = "IfcDoorType";
+    public const string Window = "IfcWindow";
+    public const string WindowType = "IfcWindowType";
 
     // Materials.
     public const string Material = "IfcMaterial";

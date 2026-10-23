@@ -1,6 +1,6 @@
 /** Architecture: layered walls and their types; later doors and windows, slabs, roofs, rooms. */
 
-import { ArrowLeftRight, BrickWall, CornerDownRight, DoorOpen, Home, LayoutGrid, Layers3, Link2, PanelTop, Slash, Square, StretchHorizontal } from 'lucide-react';
+import { ArrowLeftRight, BrickWall, CornerDownRight, DoorOpen, Home, LayoutGrid, Layers3, Link2, PanelTop, Settings2, Slash, Square, StretchHorizontal } from 'lucide-react';
 import type { Grip, LapinModule, ToolDef } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
@@ -8,6 +8,8 @@ import { execute, useSession } from '../../engine/session';
 import { setJoinStyle, useWallPrefs } from './prefs';
 import { WallLayers } from './WallLayers';
 import { WallTypesDialog } from './WallTypesDialog';
+import { JoineryDialog } from './JoineryDialog';
+import { JoinerySection } from './JoinerySection';
 
 const wall: ToolDef = {
   id: 'architecture.wall', label: 'Wall', icon: BrickWall, shortcut: 'WA',
@@ -62,8 +64,19 @@ function wallGrips(node: NodeDto): Grip[] {
   ];
 }
 const wallTypes: ToolDef = { id: 'architecture.wallTypes', label: 'Wall types', icon: Layers3, run: () => useUi.setState({ dialog: 'wallTypes' }) };
-const door: ToolDef = { id: 'architecture.door', label: 'Door', icon: DoorOpen, shortcut: 'DR' };
-const window_: ToolDef = { id: 'architecture.window', label: 'Window', icon: PanelTop, shortcut: 'WN' };
+/** A door or window: click a wall where it goes (the type: the one picked in the configurator, else the project's first). */
+const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'], shortcut: string): ToolDef => ({
+  id: `architecture.${kind}`, label, icon, shortcut,
+  gesture: { kind: 'pick', types: ['IfcWall'] },
+  complete: async ({ points: [p], entity }, ctx) => {
+    if (!entity) return;
+    const typeId = kind === 'door' ? useUi.getState().doorTypeId : useUi.getState().windowTypeId;
+    await ctx.execute(kind === 'door' ? 'architecture.addDoor' : 'architecture.addWindow', { wallId: entity.id, x: p.x, y: p.y, ...(typeId ? { typeId } : {}) });
+  },
+});
+const door = fillTool('door', 'Door', DoorOpen, 'DR');
+const window_ = fillTool('window', 'Window', PanelTop, 'WN');
+const joineryTypes: ToolDef = { id: 'architecture.joineryTypes', label: 'Doors & windows', icon: Settings2, run: () => useUi.setState({ dialog: 'joinery' }) };
 const slab: ToolDef = { id: 'architecture.slab', label: 'Floor', icon: Square, shortcut: 'SB' };
 
 const architecture: LapinModule = {
@@ -74,15 +87,18 @@ const architecture: LapinModule = {
     id: 'architecture', label: 'Architecture', order: 10,
     groups: [
       { label: 'Build', tools: [wall, door, window_, slab, { id: 'architecture.roof', label: 'Roof', icon: Home, shortcut: 'RF' }] },
-      { label: 'Types', tools: [wallTypes] },
+      { label: 'Types', tools: [wallTypes, joineryTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew] },
       { label: 'Room', tools: [{ id: 'architecture.room', label: 'Room', icon: LayoutGrid, shortcut: 'RM' }] },
       { label: 'Circulation', tools: [{ id: 'architecture.stair', label: 'Stair', icon: StretchHorizontal }] },
     ],
   }],
   hotbar: [wall, door, window_, slab],
-  propertySections: [{ id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers }],
-  dialogs: { wallTypes: WallTypesDialog },
+  propertySections: [
+    { id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers },
+    { id: 'joinery', label: 'Door or window', classes: ['IfcDoor', 'IfcWindow'], component: JoinerySection },
+  ],
+  dialogs: { wallTypes: WallTypesDialog, joinery: JoineryDialog },
   grips: { IfcWall: wallGrips },
 };
 

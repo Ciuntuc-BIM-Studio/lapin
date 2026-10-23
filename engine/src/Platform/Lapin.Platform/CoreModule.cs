@@ -24,6 +24,9 @@ public sealed class CoreModule : ILapinModule
 
     public void Register(IModuleRegistry r)
     {
+        // Booleans for whatever cannot be built constructively (openings through walls); none: callers degrade with a diagnostic.
+        if (BubbleBim.Platform.Booleans.ManifoldBooleans.Available) r.Service<BubbleBim.Geometry.ISolidBooleans>(new BubbleBim.Platform.Booleans.ManifoldBooleans());
+
         r.Class(new(IfcClass.BuildingStorey, "Storey",
             [new("elevation", "Elevation", "length"), new("height", "Height", "length", Min: 0.1)], "#6c5ce7", Kind: "spatial"));
         r.Class(new(IfcClass.Material, "Material", [new("color", "Colour", "color"), new("category", "Category", "text")], Kind: "resource"));

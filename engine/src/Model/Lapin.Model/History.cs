@@ -10,8 +10,11 @@ public interface IEdit
     void Replace(Entity entity);
     /// <summary>
     /// Removes the entity and its part in every relationship: one it relates
-    /// goes, one it is related by shrinks (and goes when empty). A layer set
-    /// usage only it used goes with it: in Lapin a usage belongs to its occurrence.
+    /// goes, one it is related by shrinks (and goes when empty). What cannot
+    /// be without it goes too, as IFC has it: a layer set usage only it used
+    /// (in Lapin a usage belongs to its occurrence), the openings it is voided
+    /// by, the door or window filling an opening, and the opening a door or
+    /// window filled.
     /// </summary>
     void Remove(string id);
     /// <summary>
@@ -119,6 +122,8 @@ sealed class TransactionBuilder(ModelStore store, Func<string> newId) : IEdit
         var usages = new List<string>();
         foreach (var r in store.RelationsOf(id).ToList())
         {
+            if (r.Class is IfcClass.RelVoidsElement or IfcClass.RelFillsElement && r.Relating == id) usages.AddRange(r.Related);
+            if (r.Class == IfcClass.RelFillsElement && r.Related.Contains(id)) usages.Add(r.Relating);
             if (r.Relating == id) { RemoveRelation(r.Id); continue; }
             var rest = r.Related.Where(x => x != id).ToList();
             if (r.Class == IfcClass.RelAssociatesMaterial && rest.Count == 0 && store.Get(r.Relating) is { Class: IfcClass.MaterialLayerSetUsage }) usages.Add(r.Relating);

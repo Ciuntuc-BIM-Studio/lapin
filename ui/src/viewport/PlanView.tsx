@@ -19,7 +19,7 @@ import { completeTool } from './tools';
 interface View { cx: number; cy: number; scale: number } // scale = px per metre
 
 const KIND_ORDER: Record<string, number> = { grid: 0, outline: 3, cut: 4, symbol: 5, label: 6 };
-const PICK_PRIORITY: Record<string, number> = { symbol: 0, cut: 1, outline: 2, overhead: 8 };
+const PICK_PRIORITY: Record<string, number> = { hit: 0, symbol: 0, cut: 1, outline: 2, overhead: 8 };
 
 export function PlanView() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -241,7 +241,7 @@ export function PlanView() {
 
   const drawn = useMemo(() => {
     const out: { key: string; r: RenderItem; kind: string; d: string; closed: boolean; text: string | null; at: Vec2 }[] = [];
-    for (const r of items) r.plan.forEach((it, i) => out.push({
+    for (const r of items) r.plan.forEach((it, i) => it.kind !== 'hit' && out.push({
       key: `${r.nodeId}:${i}`, r, kind: it.kind, closed: it.closed, text: it.text ?? null,
       d: it.kind === 'label' ? '' : path(it.points, it.closed), at: toScreen({ x: it.points[0] ?? 0, y: it.points[1] ?? 0 }),
     }));

@@ -19,8 +19,85 @@ public sealed class ArchitectureModule : ILapinModule
             new("baseOffset", "Base offset", "length"),
         ], "#b5654a"));
         r.Class(new(IfcClass.WallType, "Wall type", [new("mark", "Mark", "text")], "#b5654a", Kind: "type"));
+        r.Class(new(IfcClass.OpeningElement, "Opening", [new("width", "Width", "length", Min: 0.01), new("height", "Height", "length", Min: 0.01)], Kind: "element"));
+        r.Class(new(IfcClass.Door, "Door", [], "#c8a27a"));
+        r.Class(new(IfcClass.Window, "Window", [], "#9cc8e8"));
+        r.Class(new(IfcClass.DoorType, "Door type", [], "#c8a27a", Kind: "type"));
+        r.Class(new(IfcClass.WindowType, "Window type", [], "#9cc8e8", Kind: "type"));
+        r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));
+        r.Geometry(IfcClass.Window, (fill, model, _) => Openings.FillGeometry(fill, model));
+        r.Quantities(IfcClass.Door, (fill, _, model) => FillQuantities(fill, model, "Qto_DoorBaseQuantities"));
+        r.Quantities(IfcClass.Window, (fill, _, model) => FillQuantities(fill, model, "Qto_WindowBaseQuantities"));
+        r.Catalog("joinery", new JsonObject
+        {
+            ["windowOperations"] = new JsonArray(Joinery.WindowOperations.Select(x => (JsonNode)x).ToArray()),
+            ["doorOperations"] = new JsonArray(Joinery.DoorOperations.Select(x => (JsonNode)x).ToArray()),
+            ["defaultDoor"] = JoinerySpecs.Door.ToJson(),
+            ["defaultWindow"] = JoinerySpecs.Window.ToJson(),
+        });
 
-        r.Geometry(IfcClass.Wall, (wall, model, _) => Walls.Geometry(wall, model));
+        // The configurator's preview: the body as boxes (front elevation in X–Z), and why the spec cannot be built.
+        r.Query("joineryPreview", (q, a) =>
+        {
+            var spec = JoinerySpec.From(a["spec"]);
+            if (spec == null) return new JsonObject { ["problem"] = "The configuration is unreadable." };
+            var problem = Joinery.Problem(spec);
+            var boxes = problem == null ? Joinery.Boxes(spec) : [];
+            return new JsonObject
+            {
+                ["problem"] = problem,
+                ["boxes"] = new JsonArray(boxes.Select(b => (JsonNode)new JsonObject
+                {
+                    ["role"] = b.Role, ["x0"] = b.Min.X, ["x1"] = b.Max.X, ["y0"] = b.Min.Y, ["y1"] = b.Max.Y, ["z0"] = b.Min.Z, ["z1"] = b.Max.Z,
+                }).ToArray()),
+                ["panels"] = new JsonArray(Joinery.Normalised(spec).Select(p =>
+                {
+                    var r = Joinery.PanelRect(spec, p);
+                    return (JsonNode)new JsonObject { ["operation"] = p.Operation, ["x0"] = r.X0, ["x1"] = r.X1, ["z0"] = r.Z0, ["z1"] = r.Z1 };
+                }).ToArray()),
+                ["ifcType"] = spec.IsDoor ? Joinery.DoorOperation(spec).Type : Joinery.WindowPartitioning(spec).Type,
+            };
+        });
+
+        r.Command("addDoor", "Door", (ctx, a) => AddFill(ctx, a, "door"));
+        r.Command("addWindow", "Window", (ctx, a) => AddFill(ctx, a, "window"));
+
+        r.Command("moveOpening", "Move opening", (ctx, a) =>
+        {
+            var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("Nothing to move.");
+            Openings.Move(ctx, e, Json.Number(a["along"]), Json.Number(a["sill"]));
+            return null;
+        });
+
+        r.Command("flipJoinery", "Flip", (ctx, a) =>
+        {
+            foreach (var id in Ids(a))
+                if (ctx.Model.Get(id) is { Class: IfcClass.Door or IfcClass.Window } fill) Openings.Flip(ctx, fill, (string?)a["axis"] ?? "y");
+            return null;
+        });
+
+        r.Command("createJoineryType", "New door or window type", (ctx, a) =>
+        {
+            var spec = JoinerySpec.From(a["spec"]) ?? throw new CommandException("The type's configuration is missing or unreadable.");
+            return new JsonObject { ["id"] = Openings.CreateType(ctx, spec).Id };
+        });
+
+        r.Command("updateJoineryType", "Change door or window type", (ctx, a) =>
+        {
+            var type = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.DoorType or IfcClass.WindowType } t ? t : throw new CommandException("There is no such door or window type.");
+            Openings.UpdateType(ctx, type, JinerySpecOrThrow(a["spec"]));
+            return null;
+        });
+
+        r.Command("setJoineryType", "Change type", (ctx, a) =>
+        {
+            var type = ctx.Model.Get((string?)a["typeId"] ?? "") is { Class: IfcClass.DoorType or IfcClass.WindowType } t ? t : throw new CommandException("There is no such door or window type.");
+            foreach (var id in Ids(a))
+                if (ctx.Model.Get(id) is { Class: IfcClass.Door or IfcClass.Window } fill) Openings.SetType(ctx, fill, type);
+            return null;
+        });
+
+        r.Geometry(IfcClass.Wall, (wall, model, services) => Walls.Geometry(wall, model, services));
         r.Quantities(IfcClass.Wall, (wall, geometry, model) => Walls.Quantities(wall, geometry, model));
         r.Catalog("defaultZones", new JsonArray(WallZones.Defaults("Brick").Select(z => (JsonNode)z).ToArray()));
 
@@ -106,6 +183,31 @@ public sealed class ArchitectureModule : ILapinModule
             foreach (var id in Ids(a)) Walls.Flip(ctx, Spatial.Require(ctx.Model, id, IfcClass.Wall), axis);
             return null;
         });
+    }
+
+    static JoinerySpec JinerySpecOrThrow(JsonNode? n) => JoinerySpec.From(n) ?? throw new CommandException("The type's configuration is missing or unreadable.");
+
+    /// <summary>A door or window in the wall picked: where the click falls along it (or <c>along</c>), of the type given or the project's first.</summary>
+    static JsonNode AddFill(ICommandContext ctx, JsonObject a, string kind)
+    {
+        var wall = Spatial.Require(ctx.Model, (string?)a["wallId"], IfcClass.Wall);
+        var type = (string?)a["typeId"] is { } typeId
+            ? ctx.Model.Get(typeId) is { Class: IfcClass.DoorType or IfcClass.WindowType } t ? t : throw new CommandException("There is no such door or window type.")
+            : Openings.EnsureType(ctx, kind);
+        var along = Json.Number(a["along"]) ?? Openings.AlongOf(wall, new Vec2(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0));
+        var fill = Openings.AddFill(ctx, wall, type, along, Json.Number(a["sill"]));
+        return new JsonObject { ["id"] = fill.Id };
+    }
+
+    static IEnumerable<QuantitySet> FillQuantities(Entity fill, IModelView m, string set)
+    {
+        if (Openings.SpecOf(m, fill.Id) is not { } spec) yield break;
+        yield return new QuantitySet(set,
+        [
+            new("Width", spec.Width, "LENGTH"),
+            new("Height", spec.Height, "LENGTH"),
+            new("Area", spec.Width * spec.Height, "AREA"),
+        ]);
     }
 
     static JoinStyle? Style(JsonNode? n) => (string?)n switch { "mitre" => JoinStyle.Mitre, "butt" => JoinStyle.Butt, null => null, var other => throw new CommandException($"A join style is butt or mitre, not „{other}”.") };

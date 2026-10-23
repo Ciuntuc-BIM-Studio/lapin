@@ -38,3 +38,15 @@ Ordinea de căutare a fost: Lapin-ul vechi, apoi BubbleBIM Pro, apoi BubbleBIM-S
 | 23 | Înălțimile zonelor sunt fixe, plus o singură zonă „rest”. Regulile după repere (sub grinda de deasupra, la parapet) nu sunt încă făcute. Peretele nu poate încă suprascrie înălțimea unei zone. | Reperele și suprascrierea locală acum. | `WallZones.Bands` |
 | 24 | Cantitățile sunt calculate, nu stocate: setul elementului (`Qto_WallBaseQuantities`), al fiecărei zone (`Lapin_WallZoneQuantities`, `Qto_BeamBaseQuantities`) și al fiecărui strat (`Lapin_WallLayerQuantities`), cu volumele nete din piesele construite. Formulele de blocuri și mortar sunt cele vechi (mortarul nu coboară sub zero). | — | `Walls.Quantities`, `quantities.of` |
 | 25 | Centura ocupă toată lățimea miezului. Retragerea pentru izolație și lățimea proprie vin mai târziu. | Lățime și retragere configurabile acum. | `WallZones` |
+
+## M3 – goluri, uși și ferestre
+
+| # | Ce am ales | Alternative | Unde |
+|---|---|---|---|
+| 26 | Golurile s-au făcut înaintea buiandrugilor și a priorităților de tăiere (pașii 7–8), pentru că acestea depind de ele. Configuratorul de tâmplărie (pasul 10) s-a făcut împreună cu golurile. | Ordinea din plan. | — |
+| 27 | Un gol își ține poziția pe perete (`along`, centrul pe axă de la start, și `sill`). Lățimea și înălțimea vin din tipul care îl umple, deci un tip schimbat reîncadrează toate golurile lui, iar unul care nu mai încape e refuzat. | Dimensiunile copiate pe gol, rescrise la schimbarea tipului (ca în Lapin-ul vechi). | `Openings.cs` |
+| 28 | Exteriorul unui perete e fața lui din dreapta (prima în lista de straturi, tencuiala exterioară la tipul implicit). Tâmplăria se așază cu +Y spre exterior, pe planul de mijloc al corpului peretelui. Flip „Hand” oglindește stânga ↔ dreapta, flip „Side” interior ↔ exterior. | Exteriorul ales pe perete sau după cameră. | `Openings.FillGeometry` |
+| 29 | Golurile se taie din fiecare piesă a peretelui cu booleene (manifold). Fără biblioteca nativă (pentru Windows, la M7) peretele se desenează netăiat, cu un diagnostic. | Tăiere analitică, fără booleene, ca în Lapin-ul vechi. | `Walls.Geometry` |
+| 30 | Planul taie la 1,20 m deasupra etajului (constantă până la domeniul vederii, M5). Golurile care trec prin tăietură lasă pauze în pereți. | — | `Openings.PlanCut` |
+| 31 | Simbolurile de plan sunt deocamdată cele din `transfer.md`: foaia ușii deschisă la 90° spre interior, cu arc, și fereastra cu tocul și geamul dublu. Simbolurile complete (`simboluri-tamplarie.md`, grosimi, foi duble peste 1,4 m) vin la M5. | — | `Openings.Symbol` |
+| 32 | Ușile și ferestrele primesc mărci automate (D1, D2, W1…) din marca tipului și numărul lor în proiect. | Mărci date de utilizator. | `Openings.AddFill` |

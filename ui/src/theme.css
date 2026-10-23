@@ -208,3 +208,13 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .qset + .qset { margin-top: 10px; }
 .qset-head { font-weight: 600; margin-bottom: 4px; }
 .qrow { display: contents; }
+.joinery-edit { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.joinery-form { display: flex; flex-direction: column; gap: 6px; }
+.joinery-form .field-line { grid-template-columns: 110px 1fr; }
+.joinery-form .field-line input.num { text-align: right; }
+.joinery-preview { display: flex; flex-direction: column; gap: 6px; }
+.joinery-preview svg { background: var(--raised); border: 1px solid var(--rule); }
+.joinery-actions { grid-column: 1 / -1; }
+.panel-grid { border-collapse: collapse; }
+.panel-grid td { padding: 2px; }
+.panel-grid select { width: 100%; font-size: 11.5px; }

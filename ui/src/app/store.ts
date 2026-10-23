@@ -4,7 +4,7 @@ import { create } from 'zustand';
 
 export type Theme = 'paper' | 'graphite';
 export type ViewKind = '3d' | 'plan';
-export type Dialog = 'wallTypes' | null;
+export type Dialog = string | null;
 
 export interface UiState {
   screen: 'start' | 'workspace';
@@ -20,6 +20,9 @@ export interface UiState {
   selected: string[];
   /** The wall type the wall tool draws with; null: the engine's default. */
   wallTypeId: string | null;
+  /** The door and window types the door and window tools place; null: the project's first. */
+  doorTypeId: string | null;
+  windowTypeId: string | null;
   dialog: Dialog;
   /** A message for the user (saved, recovered…), cleared by the next one. */
   notice: string | null;
@@ -27,7 +30,7 @@ export interface UiState {
 }
 
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, view: 'plan', storeyId: null, selection: null, selected: [], wallTypeId: null, dialog: null, notice: null, theme: 'paper',
+  screen: 'start', tab: null, tool: null, view: 'plan', storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, dialog: null, notice: null, theme: 'paper',
 }));
 
 export const setTool = (tool: string | null) => useUi.setState({ tool });

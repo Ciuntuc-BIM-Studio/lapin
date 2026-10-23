@@ -127,7 +127,7 @@ public static class Walls
     /// say (the cut runs straight across the thickness, so each layer takes its
     /// share of it), standing on its storey.
     /// </summary>
-    public static ElementGeometry? Geometry(Entity wall, IModelView m)
+    public static ElementGeometry? Geometry(Entity wall, IModelView m, IServices? services = null)
     {
         var start = Start(wall);
         var end = End(wall);
@@ -156,6 +156,23 @@ public static class Walls
         var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
         var parts = new List<GeometryPart>();
         var plan = new List<PlanItem>();
+
+        // Openings take their boxes out of every part they reach; the plan shows the gaps where they cross the cut.
+        var openings = Openings.PlacedOn(m, wall.Id);
+        var frame = new Openings.WallFrame(start, dir, left, z, yMin, yMax);
+        var cutters = openings.Select(o => (o, Box: Openings.Cutter(frame, o with { Along = o.Along - Vec2.Dot(start - Start(wall), dir) }))).Where(c => c.Box != null).ToList();
+        var booleans = services?.Get<ISolidBooleans>();
+        if (cutters.Count > 0 && booleans == null) problems.Add("Openings need the boolean library (manifold), missing here: the wall is drawn uncut.");
+        GeometryPart Cut(GeometryPart part, double z0, double z1)
+        {
+            if (booleans == null) return part;
+            var reach = cutters.Where(c => c.o.Sill + z < z1 - 1e-9 && c.o.Sill + c.o.Height + z > z0 + 1e-9).Select(c => c.Box!).ToList();
+            if (reach.Count == 0) return part;
+            try { return booleans.Difference(part.Solid, reach, part.Solid.Tag) is { } cut ? part with { Solid = cut } : part; }
+            catch (InvalidOperationException ex) { problems.Add($"{part.Name}: an opening could not be cut ({ex.Message})."); return part; }
+        }
+        var gaps = openings.Where(o => o.Sill < PlanCutAbove(m, wall) && o.Sill + o.Height > PlanCutAbove(m, wall))
+            .Select(o => (From: o.Along - o.Width / 2 - Vec2.Dot(start - Start(wall), dir), To: o.Along + o.Width / 2 - Vec2.Dot(start - Start(wall), dir))).OrderBy(g => g.From).ToList();
         foreach (var band in bands)
         {
             if (!(band.To - band.From > 1e-9)) continue;
@@ -169,13 +186,46 @@ public static class Walls
                 foreach (var zb in zones)
                 {
                     if (Prism.ExtrudeFootprint(footprint, z + zb.Z0, zb.Z1 - zb.Z0, zb.Zone.Name) is { } piece)
-                        parts.Add(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key));
+                        parts.Add(Cut(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key), zb.Z0, zb.Z1));
                 }
             else if (Prism.ExtrudeFootprint(footprint, z, height, band.Name) is { } solid)
-                parts.Add(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"));
-            plan.Add(new PlanItem("cut", true, footprint));
+                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), 0, height));
+            // In plan, the band between the gaps the openings leave at the cut.
+            var x0 = -Math.Max(At(startCut, band.From), At(startCut, band.To));
+            var x1 = length + Math.Max(At(endCut, band.From), At(endCut, band.To));
+            var at = x0;
+            foreach (var g in gaps.Append((From: x1, To: x1)))
+            {
+                var piece = ClipX(footprint, start, dir, at, g.From);
+                if (piece.Count >= 3) plan.Add(new PlanItem("cut", true, piece));
+                at = Math.Max(at, g.To);
+            }
         }
         return new ElementGeometry(parts, plan, [start, end], problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>The plan's cut above the wall's base: the storey's cut height less the wall's base offset.</summary>
+    static double PlanCutAbove(IModelView m, Entity wall) => Openings.PlanCut - wall.Num("baseOffset");
+
+    /// <summary>The part of a convex plan polygon between two distances along the wall (from <paramref name="origin"/>, along <paramref name="dir"/>).</summary>
+    static List<Vec2> ClipX(IReadOnlyList<Vec2> poly, Vec2 origin, Vec2 dir, double from, double to)
+    {
+        if (to - from <= 1e-9) return [];
+        List<Vec2> Clip(IReadOnlyList<Vec2> pts, Func<Vec2, double> inside)
+        {
+            var o = new List<Vec2>();
+            for (var i = 0; i < pts.Count; i++)
+            {
+                var a = pts[i];
+                var b = pts[(i + 1) % pts.Count];
+                double da = inside(a), db = inside(b);
+                if (da >= 0) o.Add(a);
+                if ((da >= 0) != (db >= 0)) o.Add(a + (b - a) * (da / (da - db)));
+            }
+            return o;
+        }
+        var first = Clip(poly, p => Vec2.Dot(p - origin, dir) - from);
+        return first.Count < 3 ? [] : Clip(first, p => to - Vec2.Dot(p - origin, dir));
     }
 
     /// <summary>
