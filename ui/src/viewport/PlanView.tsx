@@ -70,6 +70,7 @@ export function PlanView() {
   // The shown storey only.
   const items = useMemo(() => [...render.values()].filter((r) => r.storeyId === storey?.id), [render, storey?.id]);
   const snapPoints = useMemo(() => items.flatMap((r) => pairs(r.snaps ?? [])), [items]);
+  const markSnaps = useMemo(() => (drawing?.marks ?? []).flatMap((m) => pairs(m.snaps ?? [])), [drawing]);
 
   const fit = useCallback(() => {
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -90,6 +91,15 @@ export function PlanView() {
 
   const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null => {
     const tol = 6 / view.scale;
+    // Annotations (dimensions, texts, grids, section lines) lie over the model: they are picked first.
+    if (!types && drawing?.marks) {
+      for (const m of drawing.marks) {
+        const s = m.segments;
+        for (let k = 0; k + 3 < s.length; k += 4) {
+          if (distToSegment(p, { x: s[k], y: s[k + 1] }, { x: s[k + 2], y: s[k + 3] }) < tol && nodes.get(m.id)) return nodes.get(m.id)!;
+        }
+      }
+    }
     let best: { e: NodeDto; prio: number } | null = null;
     for (const r of items) {
       const e = nodes.get(r.nodeId);
@@ -106,15 +116,15 @@ export function PlanView() {
       }
     }
     return best?.e ?? null;
-  }, [items, nodes, view.scale]);
+  }, [items, nodes, view.scale, drawing]);
 
   // ─── Gestures ────────────────────────────────────────────────────────────
 
   const snapAt = useCallback((clientX: number, clientY: number, from?: Vec2): SnapResult => {
     const rect = svgRef.current!.getBoundingClientRect();
     const raw = toWorld(clientX - rect.left, clientY - rect.top);
-    return snap(raw, { grid: view.scale > 30 ? 0.05 : 0.5, points: snapPoints, pickRadius: 10 / view.scale, from, ortho });
-  }, [toWorld, view.scale, snapPoints, ortho]);
+    return snap(raw, { grid: view.scale > 30 ? 0.05 : 0.5, points: [...snapPoints, ...markSnaps], pickRadius: 10 / view.scale, from, ortho });
+  }, [toWorld, view.scale, snapPoints, markSnaps, ortho]);
 
   const complete = useCallback(async (points: Vec2[], entity?: NodeDto) => {
     if (!tool) return;
@@ -141,6 +151,10 @@ export function PlanView() {
       case 'rectangle':
         if (pts.length === 0) setPts([p]);
         else void complete([pts[0], p]);
+        break;
+      case 'threePoints':
+        if (pts.length < 2) setPts([...pts, p]);
+        else void complete([pts[0], pts[1], p]);
         break;
       case 'polygon': {
         const first = pts[0];
@@ -268,6 +282,16 @@ export function PlanView() {
         </g>
       );
     }
+    if (g === 'threePoints' && pts.length >= 1) {
+      const a = toScreen(pts[0]), b = toScreen(pts[1] ?? cur), c = toScreen(cur);
+      return (
+        <g className="plan-preview">
+          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
+          {pts.length === 2 && <line x1={c.x} y1={c.y} x2={c.x + b.x - a.x} y2={c.y + b.y - a.y} />}
+          <text x={(a.x + b.x) / 2 + 8} y={(a.y + b.y) / 2 - 8}>{toMm(Math.hypot((pts[1] ?? cur).x - pts[0].x, (pts[1] ?? cur).y - pts[0].y))}</text>
+        </g>
+      );
+    }
     if (g === 'rectangle' && pts.length === 1) {
       const a = toScreen(pts[0]), b = toScreen(cur);
       return (
@@ -311,6 +335,12 @@ export function PlanView() {
             <path key={key} d={d} className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${selected.includes(r.nodeId) ? ' selected' : ''}`} />
           ))}
         </g>
+        {(drawing?.marks ?? []).filter((m) => selected.includes(m.id)).map((m) => (
+          <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
+            const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
+            return `M${a.x} ${a.y}L${b.x} ${b.y}`;
+          }).join('')} />
+        ))}
         {pts.map((p, i) => { const s = toScreen(p); return <circle key={i} cx={s.x} cy={s.y} r={3} className="plan-vertex" />; })}
         {grips.map((g) => {
           const q = toScreen(gripDrag?.grip === g ? gripDrag.at : g.at);

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Drafting: what is drawn on views rather than built: grid axes (IfcGrid),
+    dimensions that follow the elements they measure, texts (IfcAnnotation).
+    It needs only the platform; every edition has it.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>drafting</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Drawing/Lapin.Drawing.csproj" Private="false" />
+    <ProjectReference Include="$(BubbleEngineDir)src/Platform/BubbleBim.Platform.Geometry/BubbleBim.Platform.Geometry.csproj" Private="false" />
+  </ItemGroup>
+</Project>

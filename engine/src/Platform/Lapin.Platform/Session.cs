@@ -144,11 +144,14 @@ public sealed class Session
 
     // ------------------------------------------------------------ edits
 
+    /// <summary>The model and its geometry as queries see them.</summary>
+    public IQueryContext Reader => new QueryContext(this);
+
     public Diff Execute(string command, JsonObject args, out JsonNode? result)
     {
         var entry = _catalog.Command(command) ?? throw new CommandException($"Unknown command „{command}”.");
         JsonNode? r = null;
-        var t = _history.Execute(entry.Label, edit => r = entry.Handler(new CommandContext(edit, _catalog), args));
+        var t = _history.Execute(entry.Label, edit => r = entry.Handler(new CommandContext(edit, _catalog, new QueryContext(this)), args));
         result = r;
         if (t == null) return Empty();
         Emit("tx", t);
@@ -320,8 +323,9 @@ public sealed class Session
 public sealed record HistoryEvent(string Kind, Transaction? Transaction = null);
 
 /// <summary>A command's view of the edit: the model, the services, and a refusal for what this product cannot change.</summary>
-sealed class CommandContext(IEdit edit, ModuleCatalog catalog) : ICommandContext
+sealed class CommandContext(IEdit edit, ModuleCatalog catalog, IQueryContext query) : ICommandContext
 {
+    public IQueryContext Query => query;
     public IModelView Model => edit.Model;
     public IServices Services => catalog;
     public string NewId() => edit.NewId();

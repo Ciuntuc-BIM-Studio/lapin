@@ -19,15 +19,27 @@ public sealed class Pen(string layer, string? stroke, double width, string? fill
     public double[]? Dash { get; } = dash;
     public List<(Vec2 A, Vec2 B)> Segments { get; } = [];
     public List<IReadOnlyList<Vec2>> Loops { get; } = [];
+    public List<PenText> Texts { get; } = [];
 
     public JsonObject ToJson()
     {
         var o = new JsonObject { ["layer"] = Layer, ["stroke"] = Stroke, ["width"] = Width, ["fill"] = Fill };
         if (Dash is { Length: > 0 }) o["dash"] = new JsonArray(Dash.Select(x => (JsonNode)x).ToArray());
         if (Segments.Count > 0) o["segments"] = new JsonArray(Segments.SelectMany(s => new[] { s.A.X, s.A.Y, s.B.X, s.B.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray());
+        if (Texts.Count > 0) o["texts"] = new JsonArray(Texts.Select(t => (JsonNode)t.ToJson()).ToArray());
         if (Loops.Count > 0) o["loops"] = new JsonArray(Loops.Select(l => (JsonNode)new JsonArray(l.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray())).ToArray());
         return o;
     }
+}
+
+/// <summary>A text on a drawing: where (view coordinates, m), its height (paper mm), angle (°, counter-clockwise), anchor (start, middle, end) and baseline (bottom, middle).</summary>
+public sealed record PenText(Vec2 At, string Text, double Height, double Angle = 0, string Anchor = "middle", string Baseline = "bottom", bool Bold = false, string Font = "sans")
+{
+    public JsonObject ToJson() => new()
+    {
+        ["x"] = Math.Round(At.X, 5), ["y"] = Math.Round(At.Y, 5), ["text"] = Text, ["height"] = Height, ["angle"] = Math.Round(Angle, 3),
+        ["anchor"] = Anchor, ["baseline"] = Baseline, ["bold"] = Bold, ["font"] = Font,
+    };
 }
 
 /// <summary>A view's per-category graphics: line colour and weight (heavy, medium, light, hairline), fill colour, a cut hatch over the materials'.</summary>

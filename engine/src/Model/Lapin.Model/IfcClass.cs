@@ -14,6 +14,8 @@ public static class IfcClass
     public const string WallType = "IfcWallType";
     public const string Slab = "IfcSlab";
     public const string Roof = "IfcRoof";
+    public const string Grid = "IfcGrid";
+    public const string Annotation = "IfcAnnotation";
     public const string SlabType = "IfcSlabType";
     public const string Column = "IfcColumn";
     public const string ColumnType = "IfcColumnType";

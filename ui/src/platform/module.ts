@@ -17,6 +17,8 @@ export type Gesture =
   | { kind: 'twoPoints'; /** Chained: the end of one is the start of the next (walls). */ repeat?: boolean }
   | { kind: 'point' }
   | { kind: 'rectangle' }
+  /** Two points, then a third (a dimension's line). */
+  | { kind: 'threePoints' }
   | { kind: 'polygon' }
   | { kind: 'polyline' }
   | { kind: 'pick'; /** IFC classes it can be used on. */ types: string[] };
@@ -26,6 +28,8 @@ export interface ToolInput { points: Vec2[]; entity?: NodeDto }
 /** What a tool's completion can use: the storey it draws on, and the engine. */
 export interface ToolContext {
   storeyId: string;
+  /** The view the tool works in (annotations go on it). */
+  viewId: string;
   execute: (command: string, args?: Record<string, unknown>) => Promise<unknown>;
 }
 

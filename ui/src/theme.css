@@ -250,3 +250,5 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .tree-row .icon.mini { opacity: 0; }
 .tree-row:hover .icon.mini { opacity: 1; }
 .icon.on { color: var(--accent); }
+.plan-mark.selected { stroke: var(--accent); stroke-width: 2; fill: none; }
+.pen-text text { user-select: none; }

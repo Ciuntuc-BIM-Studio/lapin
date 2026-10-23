@@ -18,6 +18,7 @@
     <ProjectReference Include="../../src/Platform/Lapin.Package/Lapin.Package.csproj" />
     <ProjectReference Include="../../src/Modules/Architecture/Lapin.Architecture/Lapin.Architecture.csproj" />
     <ProjectReference Include="../../src/Modules/Structure/Lapin.Structure/Lapin.Structure.csproj" />
+    <ProjectReference Include="../../src/Modules/Drafting/Lapin.Drafting/Lapin.Drafting.csproj" />
     <ProjectReference Include="../../src/Host/Lapin.Host/Lapin.Host.csproj" />
   </ItemGroup>
 </Project>

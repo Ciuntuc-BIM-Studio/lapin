@@ -110,14 +110,21 @@ public static class Views
         return (parts, symbols);
     }
 
+    /// <summary>The view's generated drawing (cut areas and lines, before materials and pens), or why there is none.</summary>
+    public static (ViewDrawing? Drawing, ViewSpec? Spec, string? Problem) Generate(IQueryContext q, Entity view)
+    {
+        var (parts, symbols) = Gather(q, view);
+        var (spec, problem) = Spec(q.Model, view, parts);
+        return spec == null ? (null, null, problem) : (Generator.Draw(parts, spec, symbols), spec, null);
+    }
+
     /// <summary>The view drawn: its pens, bounds and problems.</summary>
     public static JsonObject Drawing(IQueryContext q, Entity view)
     {
         var m = q.Model;
-        var (parts, symbols) = Gather(q, view);
-        var (spec, problem) = Spec(m, view, parts);
-        if (spec == null) return new JsonObject { ["problem"] = problem, ["pens"] = new JsonArray() };
-        var drawing = Generator.Draw(parts, spec, symbols);
+        var (generated, spec, problem) = Generate(q, view);
+        if (generated == null || spec == null) return new JsonObject { ["problem"] = problem, ["pens"] = new JsonArray() };
+        var drawing = generated;
         var kind = spec.Kind == "plan" ? "plan" : spec.Kind == "elevation" ? "elevation" : "section";
         var materials = MaterialDrawing.Apply(drawing, p => p.Material != null && m.Get(p.Material) is { } mat ? MaterialGraphics.Resolve(mat, kind) : null);
         var project = Spatial.Project(m);
@@ -126,15 +133,111 @@ public static class Views
         var categories = (graphics?["categories"] as JsonObject)?.Select(c => (c.Key, G: CategoryGraphics.From(c.Value))).Where(x => x.G != null).ToDictionary(x => x.Key, x => x.G!);
         var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, graphics?["elements"] as JsonObject, null, scale);
         var pens = Pens.Of(drawing, materials, new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m)));
+
+        // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
+        var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing);
+        var marks = Marks(ctx).ToList();
+        foreach (var source in q.Services.All<IViewAnnotations>())
+            try { marks.AddRange(source.Marks(ctx)); }
+            catch (CommandException) { }
+        var markPens = new Dictionary<string, Pen>();
+        foreach (var mk in marks)
+        {
+            foreach (var (la, lb, layer, width, color, dash) in mk.Lines)
+            {
+                if (layer == "PICK") continue;
+                var key = $"{layer}:{color}:{width}:{(dash == null ? "" : string.Join(" ", dash))}";
+                if (!markPens.TryGetValue(key, out var pen)) markPens[key] = pen = new Pen(layer, color, width, null, dash);
+                pen.Segments.Add((la, lb));
+            }
+            foreach (var (t, color) in mk.Texts)
+            {
+                var key = "TEXT:" + color;
+                if (!markPens.TryGetValue(key, out var pen)) markPens[key] = pen = new Pen("TEXT", color, 0, null, null);
+                pen.Texts.Add(t);
+            }
+        }
+        pens.AddRange(markPens.Values);
         var o = new JsonObject
         {
             ["kind"] = spec.Kind,
             ["scale"] = scale,
             ["pens"] = new JsonArray(pens.Select(p => (JsonNode)p.ToJson()).ToArray()),
+            // What a click on an annotation selects, and where its points snap.
+            ["marks"] = new JsonArray(marks.Where(x => x.Owner != null).Select(x => (JsonNode)new JsonObject
+            {
+                ["id"] = x.Owner,
+                ["segments"] = new JsonArray(x.Lines.SelectMany(l => new[] { l.A.X, l.A.Y, l.B.X, l.B.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
+                ["snaps"] = new JsonArray(x.Snaps.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
+            }).ToArray()),
         };
-        if (drawing.Bounds is { } b) o["bounds"] = new JsonArray(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y);
+        // What the view shows: the drawing and its annotations (a text counted by its anchor and height).
+        var pts = new List<Vec2>();
+        if (drawing.Bounds is { } b) pts.AddRange([b.Min, b.Max]);
+        foreach (var mk in marks)
+        {
+            foreach (var l in mk.Lines) pts.AddRange([l.A, l.B]);
+            foreach (var (t, _) in mk.Texts) pts.AddRange([t.At, t.At + new Vec2(0, t.Height * scale / 1000)]);
+        }
+        if (pts.Count > 0) o["bounds"] = new JsonArray(pts.Min(p => p.X), pts.Min(p => p.Y), pts.Max(p => p.X), pts.Max(p => p.Y));
         if (spec.Kind == "plan") o["problems"] = new JsonArray(ViewRanges.Problems(Range(m, view)).Select(x => (JsonNode)x).ToArray());
         return o;
+    }
+
+    /// <summary>
+    /// The views' own marks: on a plan, every section's line (a thin chain line,
+    /// a heavy stroke at either end, an arrow at either end looking the way the
+    /// section looks, its name beyond); on a section or elevation, the levels
+    /// (a fine line across, a marker and the level's name and elevation).
+    /// Sized from the view's scale, so they read the same on paper.
+    /// </summary>
+    static IEnumerable<ViewMark> Marks(ViewContext c)
+    {
+        var m = c.Model;
+        var text = Standards.ResolveText(c.Book, []);
+        var k = c.Scale / 100;
+        if (c.Kind == "plan")
+        {
+            foreach (var v in m.OfClass(Class).Where(v => v.Str("kind") == "section"))
+            {
+                if (v.Attrs["start"] is not JsonArray s || v.Attrs["end"] is not JsonArray e) continue;
+                var (a, b) = (new Vec2(Json.Number(s[0]) ?? 0, Json.Number(s[1]) ?? 0), new Vec2(Json.Number(e[0]) ?? 0, Json.Number(e[1]) ?? 0));
+                var len = (b - a).Length;
+                if (len < 1e-6) continue;
+                var u = (b - a) * (1 / len);
+                var look = u.Perp;
+                var mk = new ViewMark(v.Id);
+                var (stroke, arrow, head) = (Math.Min(0.8 * k, len / 3), 0.7 * k, 0.25 * k);
+                mk.Line(a, b, "SECTION", Pens.Default.Hatch, dash: LineStyles.DashOf("center"));
+                mk.Line(a, a + u * stroke, "SECTION", Pens.Default.Cut).Line(b, b - u * stroke, "SECTION", Pens.Default.Cut);
+                foreach (var end in new[] { a, b })
+                {
+                    var tip = end + look * arrow;
+                    mk.Line(end, tip, "SECTION", Pens.Default.Seen)
+                      .Line(tip, tip - look * head + look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
+                      .Line(tip, tip - look * head - look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
+                      .Text(new PenText(tip + look * (0.35 * k), v.Name, text.Height, Baseline: "middle", Font: text.Font));
+                }
+                mk.Snaps.AddRange([a, b]);
+                yield return mk;
+            }
+        }
+        else if (c.Drawing.Bounds is { } bounds)
+        {
+            var (x0, x1) = (bounds.Min.X - 1.0 * k, bounds.Max.X + 1.5 * k);
+            foreach (var storey in Spatial.Storeys(m))
+            {
+                var z = storey.Num("elevation");
+                var y = c.Frame.Map(new Vec3(c.Frame.Origin.X, c.Frame.Origin.Y, z)).Y;
+                var mk = new ViewMark(storey.Id);
+                mk.Line(new Vec2(x0, y), new Vec2(x1, y), "LEVEL", Pens.Default.Hidden, "#555555", LineStyles.DashOf("center"));
+                // The marker: a small triangle standing on the line, the level's name and elevation above it.
+                var t = 1.2 * k;
+                mk.Polyline([new Vec2(x1, y), new Vec2(x1 - t * 0.6, y + t), new Vec2(x1 + t * 0.6, y + t)], true, "LEVEL", Pens.Default.Seen, "#555555");
+                mk.Text(new PenText(new Vec2(x1 + t, y + t * 0.2), $"{storey.Name} {(z >= 0 ? "+" : "−")}{Math.Abs(z):0.00}", text.Height, Anchor: "start", Font: text.Font), "#555555");
+                yield return mk;
+            }
+        }
     }
 
     static JsonArray P2(JsonNode? n, string what) => n is JsonArray a && a.Count >= 2 && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y

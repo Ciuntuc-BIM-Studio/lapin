@@ -26,6 +26,24 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
     }
     // True to paper, within what a screen shows well when zoomed far in or out.
     const width = p.stroke ? Math.min(4, Math.max(0.5, p.width * pxPerMm)) : 0;
+    if (p.texts?.length) {
+      return (
+        <g key={i} className="pen-text" fill={p.stroke ?? '#000'}>
+          {p.texts.map((t, k) => {
+            const at = toScreen({ x: t.x, y: t.y });
+            const size = t.height * pxPerMm;
+            if (size < 3) return null;
+            return (
+              <text key={k} x={at.x} y={at.y} fontSize={size} fontWeight={t.bold ? 700 : 400}
+                fontFamily={t.font === 'serif' ? 'ui-serif, Georgia, serif' : t.font === 'mono' ? 'ui-monospace, Menlo, monospace' : 'ui-sans-serif, system-ui, sans-serif'}
+                textAnchor={t.anchor === 'start' ? 'start' : t.anchor === 'end' ? 'end' : 'middle'}
+                dominantBaseline={t.baseline === 'middle' ? 'central' : 'alphabetic'}
+                transform={t.angle ? `rotate(${-t.angle} ${at.x} ${at.y})` : undefined}>{t.text}</text>
+            );
+          })}
+        </g>
+      );
+    }
     return (
       <path key={i} d={d} className={`pen pen-${p.layer.toLowerCase()}`} fill={p.fill ?? 'none'} fillRule="evenodd"
         stroke={p.stroke ?? 'none'} strokeWidth={width} strokeLinecap="round"

@@ -109,6 +109,8 @@ public interface ICommandContext : IEdit
     IServices Services { get; }
     /// <summary>What a class is in this product (its fields), whichever module owns it; null when none does.</summary>
     ClassDescriptor? Describe(string ifcClass);
+    /// <summary>The model's geometry as it was when the command began (read before editing): what a view draws now.</summary>
+    IQueryContext Query { get; }
 }
 
 public interface IQueryContext

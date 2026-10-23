@@ -15,6 +15,7 @@ export interface PenDto {
   segments?: number[];
   /** Closed loops, x y x y … each. */
   loops?: number[][];
+  texts?: { x: number; y: number; text: string; height: number; angle: number; anchor: string; baseline: string; bold: boolean; font: string }[];
 }
 
 export interface DrawingDto {
@@ -23,6 +24,8 @@ export interface DrawingDto {
   pens: PenDto[];
   bounds?: [number, number, number, number];
   problem?: string;
+  /** Annotations a click selects: their entity, segments and snap points. */
+  marks?: { id: string; segments: number[]; snaps?: number[] }[];
   problems?: string[];
 }
 

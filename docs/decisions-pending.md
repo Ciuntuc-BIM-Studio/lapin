@@ -90,3 +90,16 @@ Ordinea de căutare a fost: Lapin-ul vechi, apoi BubbleBIM Pro, apoi BubbleBIM-S
 | 55 | Materialele, hașurile și standardele sunt în `core` (orice ediție le are), iar calculul lor în biblioteca `Lapin.Drawing`, pe care o vor folosi generatorul 2D, planșele și exporturile. Interfața lor e tab-ul „Manage”. | Un modul de motor `drafting` separat. | `engine/src/Platform/Lapin.Drawing`, `ui/src/modules/core` |
 | 56 | Texturile materialelor pentru 3D (`material-textures.ts` din Lapin-ul vechi) nu sunt încă portate; 3D-ul folosește culoarea și transparența. | Portate acum. | — |
 | 57 | Un material folosit (numit de un tip, un strat, o zonă) nu se poate șterge. | Ștergere cu înlocuire. | `material.delete` |
+
+## M5 – desenul 2D
+
+| # | Ce am ales | Alternative | Unde |
+|---|---|---|---|
+| 58 | Vederile sunt entități `LapinView` în model (plan, plan de fundații, secțiune, fațadă), nu JSON în `project/`, ca să aibă undo și jurnal. Nu se exportă în IFC. Un etaj fără plan propriu are unul implicit (`plan:<etaj>`). | Vederi în `project/views.json`, în afara modelului. | `Views` |
+| 59 | Fațada nu taie nimic: privește din afara modelului (Lapin-ul vechi o așeza cu 5 cm în interiorul limitelor). Secțiunea privește spre stânga liniei, așa cum e desenată. | Fațada ca secțiune la 5 cm în interior. | `ViewSpec.Elevation`, `ViewSpec.Section` |
+| 60 | Liniile „dincolo” (sub Bottom) se decid pe piesă: o piesă cu tot cu vârful sub Bottom e „dincolo”. Lapin-ul vechi decidea pe linie, după adâncimea capătului apropiat. | Pe linie, cu adâncimea fiecărui capăt. | `Generator.Draw` |
+| 61 | În plan, ușile, ferestrele și acoperișurile se desenează prin simbolurile lor (foaia și arcul, cadrul și geamul, conturul și coamele deasupra), nu prin tăietura lor. | Tăietura lor la 1,20 m. | `Generator.SymbolicInPlan` |
+| 62 | Desenul se calculează la cerere (interogarea `view.drawing`), după fiecare editare, fără cache între editări. Planul îl afișează peste liniile de modelare, care rămân ținte de selecție; un buton comută între desen și liniile simple. | Desen incremental, pe element. | `Views.Drawing`, `PlanView` |
+| 63 | Grosimile liniilor pe ecran sunt cele de pe hârtie la scara vederii, limitate între 0,5 și 4 px când se mărește mult. | Grosimi fixe pe ecran. | `DrawingLayer` |
+| 64 | Axele, cotele și textele sunt în modulul de motor `drafting`: axele într-un `IfcGrid` (pentru toate etajele), cotele și textele ca `IfcAnnotation` pe o vedere. Cotele sunt deocamdată doar aliniate; capetele se leagă de muchiile tăiate ale elementelor (nu și de axe sau de liniile văzute). O cotă orfană se desenează roșie. | Cote liniare, lanțuri de cote, legături pe axe. | `Lapin.Drafting` |
+| 65 | Textul se introduce deocamdată cu o fereastră de prompt. | Editare pe loc. | `drafting.text` |
