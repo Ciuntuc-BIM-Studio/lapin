@@ -42,8 +42,9 @@ export function applyDiff(d: Diff): void {
   for (const r of d.render) render.set(r.nodeId, r);
   useSession.setState({ nodes, relations, render, doc: d.state, version: d.version });
   // A selection the edit took away goes too.
-  const sel = useUi.getState().selection;
+  const { selection: sel, selected } = useUi.getState();
   if (sel && !nodes.has(sel)) useUi.setState({ selection: null });
+  if (selected.some((id) => !nodes.has(id))) useUi.setState({ selected: selected.filter((id) => nodes.has(id)) });
   const storey = useUi.getState().storeyId;
   if (storey && !nodes.has(storey)) useUi.setState({ storeyId: null });
 }

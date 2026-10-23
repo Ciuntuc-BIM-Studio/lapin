@@ -25,8 +25,8 @@ export function useShortcuts(): void {
         return;
       }
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        const id = useUi.getState().selection;
-        if (id) { e.preventDefault(); void execute('element.delete', { id }); select(null); }
+        const ids = useUi.getState().selected;
+        if (ids.length) { e.preventDefault(); void execute('element.delete', { ids }); select(null); }
         return;
       }
       const n = Number(e.key);

@@ -39,7 +39,15 @@ public static class Walls
     public static Entity? UsageOf(IModelView m, string wallId) =>
         m.RelatingOf(wallId, IfcClass.RelAssociatesMaterial) is { Class: IfcClass.MaterialLayerSetUsage } u ? u : null;
 
-    public static Entity Add(IEdit edit, string storeyId, Vec2 start, Vec2 end, double height, double baseOffset, Entity? type)
+    /// <summary>A new wall on the storey, of the type (the project's default when none), joined where it meets the walls already there.</summary>
+    public static Entity Add(IEdit edit, string storeyId, Vec2 start, Vec2 end, double height, double baseOffset, Entity? type, JoinStyle joinStyle = JoinStyle.Butt)
+    {
+        var wall = AddUnjoined(edit, storeyId, start, end, height, baseOffset, type);
+        Joins.Auto(edit, wall.Id, joinStyle);
+        return edit.Model.Get(wall.Id)!;
+    }
+
+    public static Entity AddUnjoined(IEdit edit, string storeyId, Vec2 start, Vec2 end, double height, double baseOffset, Entity? type)
     {
         if ((end - start).Length < MinLength) throw new CommandException("A wall needs two different points.");
         if (!(height > 0)) throw new CommandException("A wall's height must be positive.");
@@ -113,28 +121,51 @@ public static class Walls
         return [new Band(-t / 2, t / 2, null, wall.Name)];
     }
 
+    /// <summary>
+    /// The wall's body: a prism per layer, cut at each end the way its joins
+    /// say (the cut runs straight across the thickness, so each layer takes its
+    /// share of it), standing on its storey.
+    /// </summary>
     public static ElementGeometry? Geometry(Entity wall, IModelView m)
     {
         var start = Start(wall);
         var end = End(wall);
+        if ((end - start).Length < MinLength) return new ElementGeometry([], Diagnostics: ["The wall has no length."]);
+        var problems = new List<string>();
+        var ends = Joins.EndsOf(m, wall, problems);
+        if (ends[0] is { } s) start = s.Point;
+        if (ends[1] is { } e) end = e.Point;
+        var startCut = ends[0]?.Cut ?? EndCut.Square;
+        var endCut = ends[1]?.Cut ?? EndCut.Square;
         var along = end - start;
-        if (along.Length < MinLength) return new ElementGeometry([], Diagnostics: ["The wall has no length."]);
+        var length = along.Length;
         var dir = along.Normalized();
         var left = dir.Perp;
         var storey = Spatial.StoreyOf(m, wall.Id);
         var z = (storey?.Num("elevation") ?? 0) + wall.Num("baseOffset");
         var height = wall.Num("height", DefaultHeight);
 
+        var bands = Section(m, wall);
+        var yMin = bands.Min(b => b.From);
+        var yMax = bands.Max(b => b.To);
+        // A cut at a face: Right at yMin, Left at yMax, straight in between.
+        double At(EndCut c, double y) => yMax - yMin < 1e-12 ? c.Right : c.Right + (c.Left - c.Right) * (y - yMin) / (yMax - yMin);
+        Vec2 P(double x, double y) => start + dir * x + left * y;
+
         var parts = new List<GeometryPart>();
         var plan = new List<PlanItem>();
-        foreach (var band in Section(m, wall))
+        foreach (var band in bands)
         {
             if (!(band.To - band.From > 1e-9)) continue;
-            Vec2[] footprint = [start + left * band.From, end + left * band.From, end + left * band.To, start + left * band.To];
+            Vec2[] footprint =
+            [
+                P(-At(startCut, band.From), band.From), P(length + At(endCut, band.From), band.From),
+                P(length + At(endCut, band.To), band.To), P(-At(startCut, band.To), band.To),
+            ];
             if (Prism.ExtrudeFootprint(footprint, z, height, band.Name) is { } solid)
                 parts.Add(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material));
             plan.Add(new PlanItem("cut", true, footprint));
         }
-        return new ElementGeometry(parts, plan, [start, end]);
+        return new ElementGeometry(parts, plan, [start, end], problems.Count > 0 ? problems : null);
     }
 }

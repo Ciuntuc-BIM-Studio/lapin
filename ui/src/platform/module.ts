@@ -52,6 +52,9 @@ export interface RibbonTabDef {
   order: number;
 }
 
+/** A handle the plan shows on a selected element, to drag (a wall's ends). */
+export interface Grip { key: string; at: Vec2; move: (to: Vec2) => Promise<unknown> | void }
+
 /** A section of the properties panel for a selected entity of some IFC classes. */
 export interface PropertySectionDef { id: string; label: string; classes: string[]; component: ComponentType<{ node: NodeDto }> }
 
@@ -66,4 +69,6 @@ export interface LapinModule {
   propertySections?: PropertySectionDef[];
   /** Dialogs the module opens (by the store's `dialog`). */
   dialogs?: Record<string, ComponentType>;
+  /** The grips of a selected entity, by IFC class. */
+  grips?: Record<string, (node: NodeDto) => Grip[]>;
 }

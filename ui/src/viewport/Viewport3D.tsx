@@ -79,7 +79,7 @@ export function Viewport3D() {
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
   // What a click does, kept current for the listeners set up once.
-  const clickRef = useRef<(hit: { nodeId: string | null; ground: Vec2 | null }) => void>(() => undefined);
+  const clickRef = useRef<(hit: { nodeId: string | null; ground: Vec2 | null; add: boolean }) => void>(() => undefined);
   const elevationRef = useRef(0);
   useUi((s) => s.storeyId);
   useSession((s) => s.nodes);
@@ -88,9 +88,9 @@ export function Viewport3D() {
 
   useEffect(() => { setPending(null); }, [toolId]);
 
-  clickRef.current = ({ nodeId, ground }) => {
+  clickRef.current = ({ nodeId, ground, add }) => {
     const g = tool?.gesture;
-    if (!g) { select(nodeId); return; }
+    if (!g) { select(nodeId, add); return; }
     if (!ground) return;
     if (g.kind === 'point') { void completeTool(tool!, { points: [ground] }); return; }
     if (g.kind === 'twoPoints' || g.kind === 'rectangle') {
@@ -153,6 +153,7 @@ export function Viewport3D() {
       clickRef.current({
         nodeId: (hit?.object.userData.nodeId as string | undefined) ?? null,
         ground: g ? { x: Math.round(g.x * 20) / 20, y: Math.round(g.y * 20) / 20 } : null,
+        add: e.shiftKey,
       });
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setPending(null); if (!(e.target as HTMLElement)?.closest('input, select, textarea')) setTool(null); } };
@@ -187,7 +188,7 @@ export function Viewport3D() {
 
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);
-  const selection = useUi((st) => st.selection);
+  const selected = useUi((st) => st.selected);
   useEffect(() => {
     const s = scene.current;
     if (!s) return;
@@ -204,8 +205,8 @@ export function Viewport3D() {
       s.add(object);
       live.set(id, { item, object });
     }
-    for (const [id, { object }] of live) highlight(object, id === selection);
-  }, [render, selection]);
+    for (const [id, { object }] of live) highlight(object, selected.includes(id));
+  }, [render, selected]);
 
   return <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />;
 }

@@ -24,6 +24,14 @@ public interface IEdit
     Relation Relate(string relationClass, string relating, string related);
     /// <summary><paramref name="related"/> leaves the relationships of <paramref name="relationClass"/> it is related by.</summary>
     void Unrelate(string relationClass, string related);
+    /// <summary>
+    /// A relationship of its own, beside any other of its class: one per pair,
+    /// as IfcRelConnectsPathElements (a wall joined at both ends has two).
+    /// </summary>
+    void AddRelation(Relation relation);
+    /// <summary>A relationship changed in place: its attributes, or which side relates (a join whose priority swapped).</summary>
+    void ReplaceRelation(Relation relation);
+    void RemoveRelation(string id);
 }
 
 /// <summary>An entity or relationship before and after a transaction (null: absent), with its place in the order.</summary>
@@ -144,6 +152,23 @@ sealed class TransactionBuilder(ModelStore store, Func<string> newId) : IEdit
         }
     }
 
+    public void AddRelation(Relation relation)
+    {
+        if (store.GetRelation(relation.Id) != null || store.Get(relation.Id) != null) throw new ModelException($"There is already a relationship {relation.Id}.");
+        foreach (var id in relation.Related.Prepend(relation.Relating))
+            if (store.Get(id) == null) throw new ModelException($"There is no entity {id}.");
+        PutRelation(relation);
+    }
+
+    public void ReplaceRelation(Relation relation)
+    {
+        var old = store.GetRelation(relation.Id) ?? throw new ModelException($"There is no relationship {relation.Id}.");
+        if (old.Class != relation.Class) throw new ModelException("A relationship cannot change its class.");
+        foreach (var id in relation.Related.Prepend(relation.Relating))
+            if (store.Get(id) == null) throw new ModelException($"There is no entity {id}.");
+        PutRelation(relation);
+    }
+
     void PutRelation(Relation r)
     {
         Record(r.Id, r);
@@ -151,7 +176,7 @@ sealed class TransactionBuilder(ModelStore store, Func<string> newId) : IEdit
         if (_relations[r.Id].Order < 0) _relations[r.Id] = _relations[r.Id] with { Order = store.OrderOf(r.Id)!.Value };
     }
 
-    void RemoveRelation(string id)
+    public void RemoveRelation(string id)
     {
         if (store.GetRelation(id) == null) return;
         Record(id, (Relation?)null);

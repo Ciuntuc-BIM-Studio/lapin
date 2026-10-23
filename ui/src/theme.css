@@ -203,3 +203,5 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 /* Unsaved work on the start screen. */
 .recent.recover { display: flex; align-items: center; gap: 12px; cursor: default; }
 .recent.recover .btn { width: auto; padding: 7px 12px; }
+.plan-grip { fill: var(--panel); stroke: var(--accent); stroke-width: 1.5; cursor: move; }
+.plan-grip-drag { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }

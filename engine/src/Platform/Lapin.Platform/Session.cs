@@ -342,4 +342,7 @@ sealed class CommandContext(IEdit edit, ModuleCatalog catalog) : ICommandContext
 
     public Relation Relate(string relationClass, string relating, string related) => edit.Relate(relationClass, relating, related);
     public void Unrelate(string relationClass, string related) => edit.Unrelate(relationClass, related);
+    public void AddRelation(Relation relation) => edit.AddRelation(relation);
+    public void ReplaceRelation(Relation relation) => edit.ReplaceRelation(relation);
+    public void RemoveRelation(string id) => edit.RemoveRelation(id);
 }

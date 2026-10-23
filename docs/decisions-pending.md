@@ -24,3 +24,13 @@ Ordinea de căutare a fost: Lapin-ul vechi, apoi BubbleBIM Pro, apoi BubbleBIM-S
 | 14 | Am scos secțiunile demonstrative „Phase” și „Quantities” din inspector, pentru că arătau cifre false pe elemente reale. Revin cu datele reale: cantitățile la M2, fazele la M6. | Păstrarea lor ca machete. | `ui/src/modules/phases`, `cost` |
 | 15 | Proiectele recente se țin în browser (`localStorage`). Lista nu e partajată între calculatoare. | Un fișier în folderul de date al aplicației, prin motor. | `files.ts` |
 | 16 | Editarea generică din inspector (`element.update`) schimbă doar câmpurile declarate de clasă, validate după tip, min și max. Câmpul „grosime fără straturi” nu mai apare la pereți. | O comandă de editare per clasă. | `CoreModule`, `PropertiesPanel` |
+
+## M2 – pereții
+
+| # | Ce am ales | Alternative | Unde |
+|---|---|---|---|
+| 17 | O îmbinare se stochează doar ca intenție (`IfcRelConnectsPathElements` cu tipul, stilul, conexiunile și prioritatea ca `Relating`). Tăieturile capetelor se calculează la fiecare reconstruire, din ambii pereți, deci nu există un profil rescris în model. | Scrierea profilului tăiat în model, ca în Lapin-ul vechi. | `Joins.cs`, `Walls.Geometry` |
+| 18 | Pereții desenați se îmbină automat la capete: colț, perete în prelungire sau T pe traseul altuia. Un colț deja îmbinat nu primește automat un al treilea perete. | Îmbinare doar la cerere; îmbinări de trei pereți. | `Joins.Auto` |
+| 19 | Tragerea capătului unui perete mută și capătul îmbinat al vecinului (colțul se mută întreg). `moveJoinedEnds: false` ține colțul pe loc. Când selecția conține doar peretele tras, vecinul nu „se desprinde”, ca în Lapin-ul vechi (`movesWith`). | Desprinderea vecinului neselectat. | `Joins.MoveEnds` |
+| 20 | Stilul colțurilor noi (butt sau mitre) e o preferință ținută pe calculator, ca în Lapin-ul vechi. | O setare a proiectului. | `ui/src/modules/architecture/prefs.ts` |
+| 21 | Tăietura unui capăt se împarte pe straturi liniar, între fața dreaptă și cea stângă. Straturile nu se „îmbină” între ele (miez la miez); asta ține de desenul pe materiale, la M5. | Îmbinarea straturilor după prioritatea materialelor. | `Walls.Geometry` |

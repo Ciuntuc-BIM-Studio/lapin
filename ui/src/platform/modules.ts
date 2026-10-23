@@ -2,7 +2,8 @@
 
 import loaded, { product } from 'virtual:lapin-modules';
 import type { ComponentType } from 'react';
-import type { LapinModule, RibbonTabDef, ToolDef } from './module';
+import type { Grip, LapinModule, RibbonTabDef, ToolDef } from './module';
+import type { NodeDto } from '../engine/protocol';
 import { toggleTool, useUi } from '../app/store';
 
 export const modules: readonly LapinModule[] = loaded;
@@ -12,6 +13,8 @@ export const ribbonTabs = (): RibbonTabDef[] => modules.flatMap((m) => m.tabs ??
 export const hotbarTools = (): ToolDef[] => modules.flatMap((m) => m.hotbar ?? []).slice(0, 9);
 export const propertySections = (ifcClass: string) => modules.flatMap((m) => m.propertySections ?? []).filter((s) => s.classes.includes(ifcClass));
 export const dialog = (id: string): ComponentType | null => modules.map((m) => m.dialogs?.[id]).find(Boolean) ?? null;
+
+export const gripsOf = (node: NodeDto): Grip[] => modules.flatMap((m) => m.grips?.[node.type]?.(node) ?? []);
 
 /** Every tool of every module, once. */
 export const allTools = (): ToolDef[] => {
