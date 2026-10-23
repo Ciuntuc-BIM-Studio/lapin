@@ -49,6 +49,14 @@ public interface IModuleRegistry
     /// </summary>
     void Cutter(string ifcClass, int priority, EnvelopeProducer envelope);
 
+    /// <summary>
+    /// Entities of <paramref name="ifcClass"/> are path elements: along an axis
+    /// (<c>start</c>, <c>end</c>), joined at corners, in line and in T with
+    /// others of their class (<see cref="Joins"/>). <paramref name="frame"/>
+    /// gives an entity's axis and its body's extent across it.
+    /// </summary>
+    void PathElement(string ifcClass, PathFrame frame);
+
     /// <summary>Data the module's interface reads (a catalogue of types), published as "module.name".</summary>
     void Catalog(string name, JsonNode data);
 

@@ -12,8 +12,9 @@ public sealed record CommandEntry(string Name, string Label, string Module, Comm
 /// queries, geometry, catalogues and services. Built once, at start. The
 /// platform's own module, <see cref="CoreModule"/>, is always first.
 /// </summary>
-public sealed class ModuleCatalog : IServices, ICutters
+public sealed class ModuleCatalog : IServices, ICutters, IPathElements
 {
+    readonly Dictionary<string, PathFrame> _paths = [];
     readonly Dictionary<string, (int Priority, EnvelopeProducer Envelope)> _cutters = [];
     readonly Dictionary<string, (ClassDescriptor Descriptor, string Module)> _classes = [];
     readonly Dictionary<string, CommandEntry> _commands = [];
@@ -52,7 +53,10 @@ public sealed class ModuleCatalog : IServices, ICutters
     public QuantityProducer? QuantitiesOf(string ifcClass) => _quantities.GetValueOrDefault(ifcClass);
 
     public T? Get<T>() where T : class =>
-        typeof(T) == typeof(ICutters) ? (T)(object)this : _services.Where(s => s.Contract == typeof(T)).Select(s => (T)s.Implementation).FirstOrDefault();
+        typeof(T) == typeof(ICutters) || typeof(T) == typeof(IPathElements) ? (T)(object)this : _services.Where(s => s.Contract == typeof(T)).Select(s => (T)s.Implementation).FirstOrDefault();
+
+    public bool IsPath(string ifcClass) => _paths.ContainsKey(ifcClass);
+    public JoinWall? FrameOf(Entity entity, IModelView model) => _paths.TryGetValue(entity.Class, out var f) ? f(entity, model) : null;
 
     /// <summary>An entity's cut priority: its own <c>cutPriority</c>, else its class's; null when its class takes no part.</summary>
     public int? PriorityOf(Entity e) =>
@@ -118,6 +122,12 @@ public sealed class ModuleCatalog : IServices, ICutters
         {
             if (c.OwnerOf(ifcClass) != module) throw new InvalidOperationException($"„{module}” gives cut priorities to {ifcClass}, which it does not own.");
             c._cutters[ifcClass] = (priority, envelope);
+        }
+
+        public void PathElement(string ifcClass, PathFrame frame)
+        {
+            if (c.OwnerOf(ifcClass) != module) throw new InvalidOperationException($"„{module}” makes {ifcClass} a path element, which it does not own.");
+            c._paths[ifcClass] = frame;
         }
 
         public void Catalog(string name, JsonNode data) => c._catalogs[Qualified(name)] = data;

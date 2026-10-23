@@ -143,6 +143,7 @@ public sealed class ArchitectureModule : ILapinModule
         });
 
         r.Geometry(IfcClass.Wall, (wall, model, services) => Walls.Geometry(wall, model, services));
+        r.PathElement(IfcClass.Wall, Walls.Frame);
         r.Quantities(IfcClass.Wall, (wall, geometry, model) => Walls.Quantities(wall, geometry, model));
         r.Catalog("defaultZones", new JsonArray(WallZones.Defaults("Brick").Select(z => (JsonNode)z).ToArray()));
 
@@ -165,7 +166,7 @@ public sealed class ArchitectureModule : ILapinModule
             var type = (string?)a["typeId"] is { } typeId ? Spatial.Require(ctx.Model, typeId, IfcClass.WallType) : null;
             var wall = (a["join"] is JsonValue j && j.TryGetValue<bool>(out var join) && !join)
                 ? Walls.AddUnjoined(ctx, storeyId, P(a, "x1", "y1"), P(a, "x2", "y2"), Json.Number(a["height"]) ?? Walls.DefaultHeight, Json.Number(a["baseOffset"]) ?? 0, type)
-                : Walls.Add(ctx, storeyId, P(a, "x1", "y1"), P(a, "x2", "y2"), Json.Number(a["height"]) ?? Walls.DefaultHeight, Json.Number(a["baseOffset"]) ?? 0, type, Style(a["joinStyle"]) ?? JoinStyle.Butt);
+                : Walls.Add(ctx, Paths(ctx), storeyId, P(a, "x1", "y1"), P(a, "x2", "y2"), Json.Number(a["height"]) ?? Walls.DefaultHeight, Json.Number(a["baseOffset"]) ?? 0, type, Style(a["joinStyle"]) ?? JoinStyle.Butt);
             return new JsonObject { ["id"] = wall.Id };
         });
 
@@ -174,7 +175,7 @@ public sealed class ArchitectureModule : ILapinModule
             var w1 = Spatial.Require(ctx.Model, (string?)a["a"], IfcClass.Wall);
             var w2 = Spatial.Require(ctx.Model, (string?)a["b"], IfcClass.Wall);
             var priority = (string?)a["priority"] switch { "a" => 'a', "b" => 'b', _ => (char?)null };
-            var join = Joins.Join(ctx, w1, w2, Style(a["style"]), priority);
+            var join = Joins.Join(ctx, Paths(ctx), w1, w2, Style(a["style"]), priority);
             return new JsonObject { ["kind"] = join.Kind.ToString(), ["style"] = join.Style == JoinStyle.Mitre ? "mitre" : "butt" };
         });
 
@@ -189,7 +190,7 @@ public sealed class ArchitectureModule : ILapinModule
             var swap = a["swap"] is JsonValue v && v.TryGetValue<bool>(out var sw) && sw;
             var style = Style(a["style"]);
             if (style == null && !swap) throw new CommandException("Say how: a style (butt or mitre), or swap.");
-            var n = Joins.Restyle(ctx, Ids(a), style, swap);
+            var n = Joins.Restyle(ctx, Paths(ctx), Ids(a), style, swap);
             if (n == 0) throw new CommandException("The selected walls have no corner to restyle.");
             return new JsonObject { ["corners"] = n };
         });
@@ -211,7 +212,7 @@ public sealed class ArchitectureModule : ILapinModule
             ctx.Replace(wall.With(attrs: Walls.Attrs(Walls.Start(wall), Walls.End(wall), height, Json.Number(a["baseOffset"]) ?? wall.Num("baseOffset"), thickness)));
             var moveJoined = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var keep) || keep;
             if ((start - Walls.Start(wall)).Length > 1e-12 || (end - Walls.End(wall)).Length > 1e-12)
-                Joins.MoveEnds(ctx, ctx.Model.Get(wall.Id)!, start, end, moveJoined);
+                Joins.MoveEnds(ctx, Paths(ctx), ctx.Model.Get(wall.Id)!, start, end, moveJoined);
             return null;
         });
 
@@ -263,6 +264,8 @@ public sealed class ArchitectureModule : ILapinModule
             new("Area", spec.Width * spec.Height, "AREA"),
         ]);
     }
+
+    static IPathElements Paths(ICommandContext ctx) => ctx.Services.Get<IPathElements>()!;
 
     static JoinStyle? Style(JsonNode? n) => (string?)n switch { "mitre" => JoinStyle.Mitre, "butt" => JoinStyle.Butt, null => null, var other => throw new CommandException($"A join style is butt or mitre, not „{other}”.") };
 

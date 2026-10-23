@@ -39,10 +39,10 @@ public static class Walls
     public static Entity? UsageOf(IModelView m, string wallId) => LayerSets.UsageOf(m, wallId);
 
     /// <summary>A new wall on the storey, of the type (the project's default when none), joined where it meets the walls already there.</summary>
-    public static Entity Add(IEdit edit, string storeyId, Vec2 start, Vec2 end, double height, double baseOffset, Entity? type, JoinStyle joinStyle = JoinStyle.Butt)
+    public static Entity Add(IEdit edit, IPathElements paths, string storeyId, Vec2 start, Vec2 end, double height, double baseOffset, Entity? type, JoinStyle joinStyle = JoinStyle.Butt)
     {
         var wall = AddUnjoined(edit, storeyId, start, end, height, baseOffset, type);
-        Joins.Auto(edit, wall.Id, joinStyle);
+        Joins.Auto(edit, paths, wall.Id, joinStyle);
         return edit.Model.Get(wall.Id)!;
     }
 
@@ -108,13 +108,21 @@ public static class Walls
     /// say (the cut runs straight across the thickness, so each layer takes its
     /// share of it), standing on its storey.
     /// </summary>
+    /// <summary>The wall as joins see it: its axis, its body across it.</summary>
+    public static JoinWall? Frame(Entity wall, IModelView m)
+    {
+        var bands = Section(m, wall);
+        return (End(wall) - Start(wall)).Length < MinLength ? null : new JoinWall(Start(wall), End(wall), bands.Min(b => b.From), bands.Max(b => b.To));
+    }
+
     public static ElementGeometry? Geometry(Entity wall, IModelView m, IServices? services = null)
     {
         var start = Start(wall);
         var end = End(wall);
         if ((end - start).Length < MinLength) return new ElementGeometry([], Diagnostics: ["The wall has no length."]);
         var problems = new List<string>();
-        var ends = Joins.EndsOf(m, wall, problems);
+        var paths = services?.Get<IPathElements>();
+        var ends = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
         if (ends[0] is { } s) start = s.Point;
         if (ends[1] is { } e) end = e.Point;
         var startCut = ends[0]?.Cut ?? EndCut.Square;
