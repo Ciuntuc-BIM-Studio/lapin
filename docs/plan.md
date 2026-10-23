@@ -34,48 +34,50 @@ Restaurare: `git clone lapin-all.bundle lapin`.
 - **Dependențele native** sunt compatibile: manifold e Apache-2.0.
 - **Aplicația web veche** de pe lapin.ciuntucbimstudio.ro conține cod MPL. Cât timp rulează, sursa ei trebuie să rămână publică. Repo-ul de pe GitHub se șterge doar după ce aplicația veche și build-urile desktop vechi sunt retrase.
 
-## Arhitectura
+## Arhitectura (revizuită 23.10.2026)
+
+**Lapin rămâne un modelator clasic, pe schema IFC.** Modelul lui sunt entitățile și relațiile IFC (IFC4X3):
+- `IfcWall` cu `IfcWallType` și `IfcMaterialLayerSetUsage`;
+- `IfcOpeningElement` legat prin `IfcRelVoidsElement` și `IfcRelFillsElement`;
+- `IfcRelConnectsPathElements` pentru îmbinări;
+- seturile de proprietăți și cantitățile.
+
+Așa lucrează și Lapin-ul de azi. Din BubbleBIM se ia **doar motorul de geometrie**, ca bibliotecă, nu modelul lui de graf (pereți care leagă axe).
 
 ```
-Lapin (repo nou, MIT)
-├─ desktop/         Tauri 2: pornește motorul (sidecar), dialoguri native
-├─ ui/              React + TypeScript + three.js: interfața Lapin, scrisă nou
-│                   (ribbon, navigator, inspector, dialoguri, tema „Planșă de arhitect”)
-├─ engine-modules/  module C# ale Lapin, încărcate de ModuleLoader din BubbleBIM Pro:
-│                   pereți stratificați, zone pe înălțime, buiandrugi, faze,
-│                   tipuri de tâmplărie, adnotări de desen (axe, cote…)
-└─ vendor/bubblebim-pro  motorul BubbleBIM Pro (submodul git sau artefact compilat)
+lapin-pro (MIT)
+├─ engine/                Lapin.Engine (C#, .NET 10): modelul IFC al Lapin
+│  ├─ Lapin.Ifc.Model     entitățile și relațiile IFC4X3, editate prin comenzi (un pas de undo fiecare)
+│  ├─ Lapin.Authoring     uneltele: pereți stratificați și îmbinări, plăci, goluri, uși/ferestre,
+│  │                      zone pe înălțime, buiandrugi, faze, tipuri
+│  ├─ Lapin.Geometry      reprezentările IFC → solide → mesh, prin kernelul BubbleBIM
+│  └─ Lapin.Host          WebSocket JSON-RPC, același protocol ca BubbleBIM (doc.execute, diff-uri cu mesh-uri)
+├─ ui/                    interfața Lapin (React + three.js), cum e în M0
+├─ desktop/               shell-ul Tauri
+└─ vendor/bubblebim-pro   doar ca bibliotecă, prin project references:
+                          Platform.Geometry (B-rep, tessellator, skeleton),
+                          Platform.Booleans (manifold),
+                          STEP: Step.cs / StepFile.cs, reprezentări IFC → mesh: IfcModel.cs
 ```
 
-- **Comunicarea UI ↔ motor** folosește protocolul existent din Pro: WebSocket JSON-RPC (`doc.execute`, `doc.query`, `doc.undo`…). După fiecare comandă, motorul trimite un diff cu mesh-urile schimbate. Clientul pornește de la `ui/src/platform/engine.ts` din Pro, rescris pentru Lapin.
-- **Modelul** e graful BubbleBIM: noduri și relații, iar geometria e derivată. IFC e doar format de export. Fișierele IFC importate se leagă ca referință, cum face deja Pro, potrivit principiului „Lapin = native first”.
-- **Fișierul de proiect** e `.bbproj` (JSON). Rămâne de ales o extensie proprie (`.lapin`) peste același format.
-- **Renderer-ul** e three.js, pe mesh-urile trimise de motor. Stilurile de vizualizare (linii, X-ray, creion) se fac acolo.
+- **Fișierul de proiect** e IFC (STEP), plus un fișier alăturat pentru ce nu e IFC (vederi, planșe, standarde de desen), ca la Lapin-ul de azi.
+- **Protocolul** cu interfața rămâne cel din M0. Se schimbă doar motorul din spate: în M0 a fost host-ul BubbleBIM, de acum e host-ul Lapin.
 
-## Ce trebuie adăugat în motor pentru Lapin
+### Compatibilitatea cu BubbleBIM: prin IFC, cu intenția de proiect
 
-| Funcție Lapin (azi, în TypeScript peste IFC) | În BubbleBIM Pro |
-|---|---|
-| Tipuri de perete stratificate, axa pe miez | lipsesc: pereții au un singur material |
-| Îmbinări de perete (cap la cap, mitruit, în T) și tălpi de fundație care se îmbină | există îmbinări din topologie (`Joins.cs`); de verificat mitrul și tălpile |
-| Zone pe înălțime (BCA, zidărie, centură) cu cantități | există centuri; zonele lipsesc |
-| Buiandrugi din tipul ferestrei sau ușii, îmbinare la colț | lipsesc |
-| Faze (existent / construcție / execuție), filtre și suprascrieri | lipsesc |
-| Configurator de uși și ferestre (cercevele, panouri) | de verificat ce are Pro |
-| Desen: axe cu baloane și aliniere, cote, hașuri, planșe | Drawing există (secțiuni, planșe, DXF, PDF); adnotările de verificat |
-| Deviz, cantități | Cost există (deviz românesc, XLSX) |
+**Azi,** Bubbles nu trimite geometrie, ci intenția: un JSON `bubbles-house` cu axele pereților, golurile, contururile și acoperișul. Lapin construiește din el elemente native, cu uneltele lui.
 
-## Etape
+**Îmbunătățirea propusă:** schimbul se face printr-un fișier IFC care poartă și intenția.
+1. **Fișierul se poate deschide oriunde.** Elementele au geometria lor IFC, deci fișierul merge în orice program IFC.
+2. **Intenția e scrisă tot în IFC:**
+   - reprezentarea `Axis` a pereților;
+   - `IfcMaterialLayerSetUsage` pentru straturi;
+   - parametrii fiecărui element, într-un set de proprietăți comun, de exemplu `Pset_BubbleBIM_Intent`: axe, contururi, pantă, regulile golurilor.
+   Lapin reconstruiește din ele elemente native, cum face azi cu `bubbles-house`. Ce nu are intenție (un IFC de la alt program) intră ca referință.
+3. **GlobalId-uri stabile.** Un al doilea export din BubbleBIM al aceleiași case **actualizează** elementele din Lapin, după GlobalId, în loc să le dubleze. Ce ai modificat deja în Lapin e păstrat sau semnalat.
+4. **Și invers.** BubbleBIM poate lega IFC-ul Lapin ca referință, cum leagă deja IFC-uri, sau, mai târziu, să-i citească intenția.
 
-- **M0 – Schelet.** Repo nou (MIT): Tauri, motorul Pro ca submodul, o interfață goală care se conectează la motor, pune un perete și îl vede în three.js. Build pe macOS.
-  - Gata când: comanda `building.addWall` din interfață apare în 3D, iar undo funcționează.
-- **M1 – Interfața de bază.** Ribbon, navigator de proiect (niveluri, vederi), inspector de proprietăți, tema „Planșă de arhitect”, deschide / salvează proiect.
-- **M2 – Pereți Lapin.** Modul C#: tipuri stratificate, axa pe miez, îmbinări, zone pe înălțime, buiandrugi din tipul de tâmplărie. Testele xUnit pornesc de la cazurile din testele TypeScript de azi (`wall-zones*.test.ts`, `wall-lintels*.test.ts`).
-- **M3 – Uși, ferestre, configurator.**
-- **M4 – Faze.** Modul C# pentru faze și pe element; în interfață, tab-ul „Phases”, filtre și suprascrieri.
-- **M5 – Desen 2D și planșe.** Pe modulul Drawing: axe cu aliniere, cote, hașuri, planșe, export DXF și PDF.
-- **M6 – Raportare și comunitate.** Pagina de bun venit, „Report an issue” (serviciul de pe Hetzner rămâne) și linkul Skool.
-- **M7 – Lansare desktop.** Build-uri macOS și Windows (manifold compilat pentru Windows), linkuri pe ciuntucbimstudio.ro. Apoi aplicația web veche și repo-ul fork se retrag.
+Formatul `bubbles-house` de azi devine astfel un caz particular al aceluiași IFC, iar cele două programe rămân independente ca model intern.
 
 ## Riscuri
 
