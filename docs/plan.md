@@ -99,28 +99,35 @@ Numerotarea veche avea două variante: cea din commit-ul M0 (M4 faze, M6 raporta
   Formatul vine acum, nu la final, pentru că el fixează forma modelului.
 - **M2 – Pereții:** îmbinări, mitru, zone pe înălțime, straturi de finisaj, buiandrugi, priorități de tăiere, fundații.
   - Făcut (24.10.2026): îmbinările L, T și în prelungire, butt sau mitre, cu prioritate (ca elemente pe traseu, în platformă); zonele pe înălțime și piesele de finisaj, cu cantitățile lor; buiandrugii și centura coborâtă; plăcile; prioritățile de tăiere; modulul Structure (stâlpi, grinzi, fundații continue și izolate).
-  - Rămas: îmbinarea straturilor după funcție (la M5); îmbinările ca o contopire vizuală a geometriei, cu elementele independente la selecție (#108); îmbinarea buiandrugilor la colțuri; goluri în plăci; profilele I, L, T, U.
+  - Făcut și (24.10.2026, a doua tură): golurile în plăci; profilele metalice I/H, U, T, L (cu catalogul IPE, HEA, HEB, UPN, L); stâlpii pe intersecțiile axelor.
+  - Rămas: îmbinarea straturilor după funcție (la M5); îmbinările ca o contopire vizuală a geometriei, cu elementele independente la selecție (#108); îmbinarea buiandrugilor la colțuri.
 - **M3 – Configuratorul de uși și ferestre.**
   - Făcut (24.10.2026): golurile în pereți, ușile și ferestrele cu tipurile lor, configuratorul (portat cu testele), simbolurile de bază în plan.
-  - Rămas: simbolurile complete și maparea pe modele importate (M5), extrasul de tâmplărie (M6).
-- **Acoperișurile** (aprobate cu M1–M7, făcut 24.10.2026): `IfcRoof` portat din BubbleBIM Pro cu testele lui (forme, stiluri, reguli pe laturi, șarpantă, jgheaburi, burlane, parazăpezi, cantități), pereții care urcă la fronton și se opresc sub cosoroabă sau sub pante, unealta și inspectorul. Rămas: ferestrele de acoperiș și lucarnele.
+  - Făcut și: desenele tipului din spec (planul tăiat prin toc și cercevele, elevația în ambele convenții, cu feroneria, secțiunea), portate cu testele; buiandrugul complet în configurator și produsele prefabricate din CSV.
+  - Rămas: maparea pe modele importate.
+- **Acoperișurile** (aprobate cu M1–M7, făcut 24.10.2026): `IfcRoof` portat din BubbleBIM Pro cu testele lui (forme, stiluri, reguli pe laturi, șarpantă, jgheaburi, burlane, parazăpezi, cantități), pereții care urcă la fronton și se opresc sub cosoroabă sau sub pante, unealta și inspectorul. Făcut și: ferestrele de acoperiș și lucarnele (portate din BubbleBIM Pro).
 - **M4 – Materiale și standarde de desen.**
   - Făcut (24.10.2026): biblioteca `Lapin.Drawing` cu hașurile (`.pat`, biblioteca, umplerea, regiunea, portate cu testele), materialele pe tip de vedere (pe `IfcMaterial`, aspectul pentru IFC), standardele de desen (stiluri de text, cote, axe, etichete, layere, grupuri, citite tolerant), comenzile lor în `core` și dialogurile Materials și Drafting standards.
-  - Rămas: texturile 3D ale materialelor; folosirea lor în desen vine cu M5.
+  - Făcut și: texturile 3D ale materialelor (desenate de aplicație), Object Styles cu tabelul de penițe al proiectului.
 - **M5 – Desenul 2D:** generatorul, domeniul vederii, penițele, simbolurile, cotele.
   - Făcut (24.10.2026): generatorul pe liniile ascunse exacte din BubbleBIM (tăietură, văzut, ascuns, deasupra, dincolo), domeniul vederii, tabelul de penițe și stilurile de linii, desenul pe materiale (hașuri, îmbinări în același material, membrane), vederile ca entități (planuri, planuri de fundații, secțiuni, fațade), marcajele de secțiune și nivelurile, axele, cotele asociative aliniate și textele, cu uneltele lor.
-  - Rămas: unirea liniilor coliniare, eliminarea liniilor parazite, simbolurile complete de tâmplărie după specificație, cote liniare și lanțuri, etichete, editările de linii.
+  - Făcut și (a doua tură): unirea liniilor coliniare; cotele liniare, lanțurile și cotele care conduc, legate și de axe și de axa pereților, rezistente la rotire; etichetele (TAG); editările de linii (Linework); Visibility/Graphics cu seturi și 3D; View Range; punctul de bază și cel topografic; desenul CAD complet (linia de comandă, snap-uri, ortho, ghidaje, layere, offset, trim, extend, fillet, hașuri), pe planuri, secțiuni și fațade.
+  - Rămas: eliminarea liniilor parazite rămase.
 - **M6 – Faze, planșe, DXF și PDF, citirea `.lapin` formatul 2.**
   - Făcut (24.10.2026): planșele (A0–A4, cartuș, vederi la scara lor), PDF și DXF R2000, extrasele de tâmplărie și de buiandrugi (fișe cu desenul tipului, rânduri, celule, tabele, verificare, CSV, paginare, așezare pe planșă).
   - Făcut și fazele (modelul portat cu testele, vederile și 3D-ul după fază și filtru).
   - Făcut și citirea formatului 2 (proiectele vechi se reconstruiesc nativ).
-  - Rămas: XLSX, continuarea automată pe planșe, secțiunile și planșele proiectelor vechi.
+  - Făcut și: XLSX, continuarea pe o planșă nouă, setările extrasului (rânduri, tabele, verificare), secțiunile și planșele proiectelor vechi, planșele cu ghidaje, mânere și avertismente.
 - **M7 – Lansarea desktop:**
   - Făcut (24.10.2026): build-ul macOS al ediției Lapin verificat (aplicația, motorul împachetat cu modulele lui); meniul ? cu „Report an issue”, comunitatea pe Skool și site-ul; pagina de start cu legăturile.
   - Rămas (decizii tale, în `decisions-pending.md` #79–80): semnarea și notarizarea, DMG-ul, Windows (manifold pentru Windows).
   - macOS și Windows (manifold pentru Windows), cu semnare și notarizare;
   - pagina de bun venit, „Report an issue”, linkul Skool;
   - apoi se retrag aplicația web veche și fork-ul.
+- **Module noi** (24.10.2026, a doua tură, cerute după M7):
+  - `civil`: terenul din puncte topo și LandXML, curbe de nivel, linii de rupere, platforme cu săpătură și umplutură;
+  - `studio`: solide din schițe (extrudare, măturare, revoluție) și booleene live între elemente;
+  - interfața în română, puntea MCP pentru agenți AI, mutare/copiere/rotire/oglindire pentru orice element, Create Similar și Match Type.
 - **M8 – Hub-ul cloud:**
   - conturi;
   - canalul de actualizări pe ediție (updater-ul Tauri);
