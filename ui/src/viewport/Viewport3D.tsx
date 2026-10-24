@@ -210,6 +210,39 @@ export function Viewport3D() {
     s.add(groundGrid(theme, elevation));
   }, [theme, elevation]);
 
+  // The grid's axes, on the lowest storey: dash-dot lines with their labels at both ends.
+  const gridNodes = useSession((st) => st.nodes);
+  useEffect(() => {
+    const s = scene.current;
+    if (!s) return;
+    const old = s.getObjectByName('grid-axes');
+    if (old) { s.remove(old); dispose(old); }
+    const group = new THREE.Group();
+    group.name = 'grid-axes';
+    const base = Math.min(0, ...[...gridNodes.values()].filter((n) => n.type === 'IfcBuildingStorey').map((n) => Number(n.props.elevation ?? 0)));
+    for (const g of gridNodes.values()) {
+      if (g.type !== 'IfcGrid') continue;
+      for (const ax of (g.props.axes as { tag: string; a: number[]; b: number[] }[] | undefined) ?? []) {
+        const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(ax.a[0], ax.a[1], base + 0.01), new THREE.Vector3(ax.b[0], ax.b[1], base + 0.01)]);
+        const line = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: 0x8a5a44, dashSize: 0.6, gapSize: 0.25 }));
+        line.computeLineDistances();
+        group.add(line);
+        for (const end of [ax.a, ax.b]) {
+          const cv = document.createElement('canvas');
+          cv.width = cv.height = 64;
+          const c = cv.getContext('2d')!;
+          c.strokeStyle = '#8a5a44'; c.lineWidth = 4; c.beginPath(); c.arc(32, 32, 28, 0, Math.PI * 2); c.stroke();
+          c.fillStyle = '#8a5a44'; c.font = 'bold 30px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(ax.tag, 32, 34);
+          const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+          sprite.position.set(end[0], end[1], base + 0.3);
+          sprite.scale.set(0.7, 0.7, 1);
+          group.add(sprite);
+        }
+      }
+    }
+    s.add(group);
+  }, [gridNodes]);
+
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);
   const selected = useUi((st) => st.selected);
