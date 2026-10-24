@@ -2,7 +2,7 @@
 
 Lapin modelează pe schema IFC, dar până acum un proiect nu putea ieși din el decât ca desen (PDF, DXF) sau ca pachet `.lapin`. Acest document spune ce scrie exportul IFC pentru fiecare entitate și relație din model, ce se refolosește din BubbleBIM Pro, cum se importă înapoi, și în ce ordine se face. Schimbul cu BubbleBIM trece prin același IFC: fișierul poartă și intenția de proiect (`plan.md`, „Compatibilitatea cu BubbleBIM”).
 
-Întrebările deschise sunt marcate **[Î1]** … **[Î6]**; răspunsurile intră în `decisions-pending.md`.
+Întrebările au fost marcate **[Î1]** … **[Î6]**; răspunsurile stau lângă ele („Decis”) și în `decisions-pending.md` (#114). Î1, Î4, Î5 și Î6 sunt decise (25.10.2026); Î2 (ce devine element independent) și Î3 (numele setului de intenție) se lămuresc.
 
 ## Principii
 
@@ -27,7 +27,7 @@ Biblioteca nouă e `engine/src/Platform/Lapin.Ifc`, folosită de `core` (orice e
 
 ## Schema **[Î1]**
 
-Modelul Lapin e numit IFC4X3, dar aproape tot ce scrie există și în IFC4. Propunere: **IFC4 (ADD2 TC1) implicit**, fiindcă îl citesc bine toate programele (Revit, ArchiCAD, Solibri, BIMcollab, Blender BIM), și **IFC4X3_ADD2 la cerere**, singurul care are terenul ca `IfcGeographicElement.TERRAIN` și platformele ca `IfcEarthworksCut`. Diferențele de scriere sunt puține (BubbleBIM le face deja: `IfcCartesianPointList3D` cu TagList, descrierea vederii). În IFC4, terenul iese ca `IfcGeographicElement` fără tip predefinit, iar platformele ca `IfcBuildingElementProxy` cu `ObjectType` „Earthworks cut”.
+**Decis (25.10.2026):** IFC4 implicit, IFC4X3 la cerere, din același cod (`schema` în comandă). Modelul Lapin e numit IFC4X3, dar aproape tot ce scrie există și în IFC4. **IFC4 (ADD2 TC1) implicit**, fiindcă îl citesc bine toate programele (Revit, ArchiCAD, Solibri, BIMcollab, Blender BIM), și **IFC4X3_ADD2 la cerere**, singurul care are terenul ca `IfcGeographicElement.TERRAIN` și platformele ca `IfcEarthworksCut`. Diferențele de scriere sunt puține (BubbleBIM le face deja: `IfcCartesianPointList3D` cu TagList, descrierea vederii). În IFC4, terenul iese ca `IfcGeographicElement` fără tip predefinit, iar platformele ca `IfcBuildingElementProxy` cu `ObjectType` „Earthworks cut”.
 
 ## Arborele spațial și proiectul
 
@@ -59,11 +59,11 @@ Fiecare element: `GlobalId` = id-ul lui, `Name`, `ObjectType` = numele tipului (
 | `IfcFooting` PAD_FOOTING | `IFCFOOTING` PAD_FOOTING | treptele ca un corp | `at`, `rotation`, tipul | |
 | prioritățile de tăiere | nu ca relații (sunt deja în corpuri) | — | `cutPriority` în intenție | #37 spunea „relațiile se vor scrie”; nu aduc nimic unui cititor, corpurile sunt deja tăiate **[Î2]** |
 | Studio: solide și booleene (`IfcRelInterferesElements`) | elementul cu clasa lui (`exportAs` dă clasa reală: `IFCWALL`…); o uniune se scrie o dată, pe țintă; `IFCRELINTERFERESELEMENTS` doar între elemente care rămân amândouă | corpul rezultat | schița (contur, găuri, drum sau axă, pe ce vedere) în intenție | #92 |
-| teren (`IfcGeographicElement` TERRAIN) | `IFCGEOGRAPHICELEMENT` (TERRAIN în 4.3) | TIN + marginea în jos | punctele topo, datumul, liniile de rupere în intenție (pot fi multe: ca `IFCPROPERTYLISTVALUE` sau ca fișier atașat **[Î5]**) | în IFC4 fără tip predefinit |
+| teren (`IfcGeographicElement` TERRAIN) | `IFCGEOGRAPHICELEMENT` (TERRAIN în 4.3) | TIN + marginea în jos | punctele topo, datumul, liniile de rupere în intenție, fiecare ca o proprietate `IfcText` cu JSON (**[Î5]** decis 25.10.2026: fără fișier atașat; STEP nu limitează lungimea textului, iar un singur fișier călătorește singur) | în IFC4 fără tip predefinit |
 | platforme (`IfcEarthworksCut`) | `IFCEARTHWORKSCUT` în 4.3; `IFCBUILDINGELEMENTPROXY` în IFC4 | conturul extrudat între teren și cotă | conturul, cota | `IFCRELVOIDSELEMENT` pe teren rămâne |
 | axe (`IfcGrid`) | `IFCGRID` pe etajul de referință, cu `IFCGRIDAXIS` pe fiecare axă | — | — | ca în BubbleBIM |
-| adnotări, cote, texte, desen CAD (`IfcAnnotation`) | **[Î4]** | — | — | |
-| faze | `Pset_Lapin_Phase` pe element: `Created`, `Demolished` (numele fazelor); lista fazelor pe proiect | — | — | #74; IFC nu are faze |
+| adnotări, cote, texte, desen CAD (`IfcAnnotation`) | **[Î4]** decis (25.10.2026): nu se exportă în prima etapă; axele da | — | — | `IfcAnnotation` cu curbe 2D, mai târziu, când va cere cineva |
+| faze | `Pset_Lapin_Phase` pe element: `Created`, `Demolished` (numele fazelor); lista fazelor pe proiect | — | — | #74; IFC nu are faze. **[Î6]** decis (25.10.2026): întâi tot proiectul; imediat după, filtrul pe fază (`phase` în comandă: ce există la sfârșitul fazei) |
 
 ## Materiale
 
