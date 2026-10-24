@@ -5,15 +5,19 @@
 // EPL, CC-BY-SA…) or unknown — so it is caught before it ships. Dev-only
 // tools (TypeScript, Vite, test runners, xUnit) are not shipped and not checked.
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const ALLOWED = new Set(['MIT', 'MIT-0', 'ISC', 'BSD-2-Clause', 'BSD-3-Clause', '0BSD', 'Apache-2.0', 'Zlib', 'CC0-1.0', 'Unlicense', 'BlueOak-1.0.0', 'Python-2.0']);
 // An SPDX expression passes when one side of an OR is allowed and every side of an AND is.
 const ok = (expr) => expr.split(/\s+OR\s+/i).some((alt) => alt.replace(/[()]/g, '').split(/\s+AND\s+/i).every((p) => ALLOWED.has(p.trim())));
 
-const out = execFileSync('pnpm', ['licenses', 'list', '--prod', '--json'], { encoding: 'utf8', cwd: new URL('..', import.meta.url) });
+// A file path, not a URL's pathname: that one is percent-encoded (a space is %20).
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+// pnpm is pnpm.cmd on Windows, which runs only through the shell.
+const out = execFileSync('pnpm', ['licenses', 'list', '--prod', '--json'], { encoding: 'utf8', cwd: root, shell: process.platform === 'win32' });
 const byLicence = JSON.parse(out);
 const bad = [];
 let count = 0;
@@ -27,8 +31,12 @@ const licences = new Set(Object.keys(byLicence));
 
 // The engine: what the host and the modules reference, transitively (the
 // modules ride on the host's dependencies or bring their own).
-const root = new URL('..', import.meta.url).pathname;
-const projects = ['engine/src/Host/Lapin.Host', ...execFileSync('find', ['engine/src/Modules', '-name', '*.csproj'], { encoding: 'utf8', cwd: root }).trim().split('\n').filter(Boolean)];
+// Found in Node rather than with `find`, which Windows does not have.
+const modulesDir = join(root, 'engine/src/Modules');
+const moduleProjects = existsSync(modulesDir)
+  ? readdirSync(modulesDir, { recursive: true }).map(String).filter((f) => f.endsWith('.csproj')).sort().map((f) => join('engine/src/Modules', f))
+  : [];
+const projects = ['engine/src/Host/Lapin.Host', ...moduleProjects];
 const nuget = process.env.NUGET_PACKAGES ?? join(homedir(), '.nuget/packages');
 // A licence shipped as a file: read its title.
 const FILE_LICENCES = [[/Apache License\s+Version 2\.0/i, 'Apache-2.0'], [/^\s*MIT License/im, 'MIT'], [/Permission is hereby granted, free of charge/i, 'MIT']];

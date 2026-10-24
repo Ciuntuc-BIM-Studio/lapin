@@ -35,8 +35,13 @@ const shutdown = () => {
   for (const c of children) c.kill('SIGTERM');
   setTimeout(() => process.exit(0), 300);
 };
+// pnpm is pnpm.cmd on Windows, which Node starts only through the shell; there
+// an argument with a space (a path) is quoted, the shell would split it otherwise.
+const win = process.platform === 'win32';
+const shellArgs = (cmd, args) => (win && cmd === 'pnpm' ? args.map((a) => (/\s/.test(a) ? `"${a}"` : a)) : args);
 const run = (name, cmd, args, opts = {}) => {
-  const c = spawn(cmd, args, { cwd: root, stdio: 'inherit', ...opts, env: { ...process.env, ...opts.env } });
+  const c = spawn(cmd, shellArgs(cmd, args), { cwd: root, stdio: 'inherit', shell: win && cmd === 'pnpm', ...opts, env: { ...process.env, ...opts.env } });
+  c.on('error', (e) => { console.error(`▸ ${name}: cannot run ${cmd}: ${e.message}`); shutdown(); });
   c.on('exit', (code) => { console.log(`▸ ${name} stopped (${code})`); shutdown(); });
   children.push(c);
 };

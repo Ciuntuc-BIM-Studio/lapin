@@ -7,8 +7,9 @@
 // A module has an engine half (engine/src/Modules/*/*/module.json), a UI half
 // (ui/src/modules/<id>/index.tsx, with an optional module.json beside it), or
 // both. "core" is the platform's and comes with every product.
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const readJson = (f) => JSON.parse(readFileSync(f, 'utf8'));
 
@@ -73,8 +74,9 @@ export function productIds(root) {
 }
 
 // `node scripts/product.mjs [id]`: what a product resolves to (all of them without an id).
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const root = join(new URL('.', import.meta.url).pathname, '..');
+// Compared as file paths: the URL percent-encodes a space, and the module's is the real path.
+if (process.argv[1] && existsSync(process.argv[1]) && fileURLToPath(import.meta.url) === realpathSync(process.argv[1])) {
+  const root = join(dirname(fileURLToPath(import.meta.url)), '..');
   for (const id of process.argv[2] ? [process.argv[2]] : productIds(root)) {
     const p = resolveProduct(root, id);
     console.log(`${p.id} (${p.name}): ${p.modules.join(' + ')}${p.required.length ? `   [required: ${p.required.join(', ')}]` : ''}`);

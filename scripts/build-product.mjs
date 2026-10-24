@@ -17,13 +17,24 @@ try { product = resolveProduct(root, productId); } catch (e) { console.error(e.m
 const out = join(root, 'build', productId);
 const tauriDir = join(root, 'desktop/src-tauri');
 
+// pnpm is pnpm.cmd on Windows, which Node starts only through the shell; there
+// an argument with a space (a path) is quoted, the shell would split it otherwise.
+const win = process.platform === 'win32';
+const shellArgs = (cmd, args) => (win && cmd === 'pnpm' ? args.map((a) => (/\s/.test(a) ? `"${a}"` : a)) : args);
 const sh = (cmd, args, opts = {}) => {
   console.log(`▸ ${cmd} ${args.join(' ')}`);
-  const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', ...opts, env: { ...process.env, ...opts.env } });
+  const r = spawnSync(cmd, shellArgs(cmd, args), { cwd: root, stdio: 'inherit', shell: win && cmd === 'pnpm', ...opts, env: { ...process.env, ...opts.env } });
+  if (r.error) { console.error(`Cannot run ${cmd}: ${r.error.message}`); process.exit(1); }
   if (r.status !== 0) process.exit(r.status ?? 1);
 };
 
-const triple = spawnSync('rustc', ['-vV'], { encoding: 'utf8' }).stdout.match(/^host: (.+)$/m)[1].trim();
+// The target triple of this machine, from the Rust toolchain the desktop shell is built with.
+const rustc = spawnSync('rustc', ['-vV'], { encoding: 'utf8' });
+const triple = rustc.stdout?.match(/^host: (.+)$/m)?.[1].trim();
+if (!triple) {
+  console.error(`Cannot read the target from rustc${rustc.error ? ` (${rustc.error.message})` : ''}: install Rust (https://rustup.rs) and make sure rustc is on the PATH.`);
+  process.exit(1);
+}
 const rid = { 'aarch64-apple-darwin': 'osx-arm64', 'x86_64-apple-darwin': 'osx-x64', 'x86_64-pc-windows-msvc': 'win-x64', 'x86_64-unknown-linux-gnu': 'linux-x64' }[triple];
 if (!rid) { console.error(`No .NET runtime id for ${triple}`); process.exit(1); }
 const exe = triple.includes('windows') ? '.exe' : '';
