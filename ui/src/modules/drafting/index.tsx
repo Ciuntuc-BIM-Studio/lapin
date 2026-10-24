@@ -1,9 +1,7 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import {
-  ArrowRightToLine, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileText, FlipHorizontal2, Grid3x3, Hash, Layers, Move, MoveHorizontal,
-  RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, TrendingUp, Redo2, PenLine, Tag,
-} from 'lucide-react';
+import { ArrowRightToLine, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileText, FlipHorizontal2, Hash, Layers, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag } from 'lucide-react';
+import { DimensionIcon, GridAxisIcon, LevelIcon } from '../../icons';
 import type { Grip, LapinModule, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { useUi } from '../../app/store';
@@ -15,7 +13,7 @@ import { LayersDialog } from './LayersDialog';
 import { frontView } from '../../viewport/frontView';
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string. Ends on an element's cut edge, a grid axis or a wall's centre line follow it. */
-const dimension: ToolDef = { id: 'drafting.dimension', label: 'Aligned', icon: MoveHorizontal, shortcut: 'DI', run: () => void startCommand('DIMALIGNED') };
+const dimension: ToolDef = { id: 'drafting.dimension', label: 'Aligned', icon: DimensionIcon, shortcut: 'DI', run: () => void startCommand('DIMALIGNED') };
 const text: ToolDef = {
   id: 'drafting.text', label: 'Text', icon: Type, shortcut: 'TX',
   gesture: { kind: 'point' },
@@ -26,7 +24,7 @@ const text: ToolDef = {
 };
 /** A grid axis: its two ends; it takes the next label of its direction. */
 const axis: ToolDef = {
-  id: 'drafting.axis', label: 'Grid axis', icon: Grid3x3, shortcut: 'GR',
+  id: 'drafting.axis', label: 'Grid axis', icon: GridAxisIcon, shortcut: 'GR',
   gesture: { kind: 'twoPoints' },
   complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('drafting.addAxis', { x1: a.x, y1: a.y, x2: b.x, y2: b.y }); },
 };
@@ -206,7 +204,7 @@ const drafting: LapinModule = {
         { label: 'Text', tools: [text, cad('tag', 'Tag', Tag, 'TAG')] },
         { label: 'Datum', tools: [
           axis,
-          { id: 'level', label: 'Level', icon: TrendingUp, shortcut: 'LL' },
+          { id: 'level', label: 'Level', icon: LevelIcon, shortcut: 'LL' },
         ] },
         { label: 'Sheets', tools: [{ id: 'sheet', label: 'Sheet', icon: FileText }] },
       ],

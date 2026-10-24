@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="736" height="592" font-family="Inter, system-ui, sans-serif" font-size="10">
+<rect x="0" y="0" width="736" height="296" fill="#fdfbf7"/>
+<g transform="translate(13 10) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10"/><path d="M3 10h18"/><path d="M6 17l3.5-7M11 17l3.5-7M16 17l3.5-7"/></g>
+<text x="46" y="90" text-anchor="middle" fill="#6b6357">wall</text>
+<g transform="translate(105 10) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14h5M2 17h5M17 14h5M17 17h5"/><path d="M7 17V7"/><path d="M7 7a10 10 0 0 1 10 10"/></g>
+<text x="138" y="90" text-anchor="middle" fill="#6b6357">door</text>
+<g transform="translate(197 10) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11h4M2 16h4M18 11h4M18 16h4"/><path d="M6 11v5M18 11v5"/><path d="M6 12.2h12M6 14.8h12"/></g>
+<text x="230" y="90" text-anchor="middle" fill="#6b6357">window</text>
+<g transform="translate(289 10) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="6"/><path d="M6 15l3-6M11 15l3-6M16 15l3-6"/><path d="M3 18h18" stroke-dasharray="2 2"/></g>
+<text x="322" y="90" text-anchor="middle" fill="#6b6357">slab</text>
+<g transform="translate(381 10) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14L12 5l10 9"/><path d="M5 14.5L12 8.5l7 6"/><path d="M6 14.5V21M18 14.5V21"/></g>
+<text x="414" y="90" text-anchor="middle" fill="#6b6357">roof</text>
+<g transform="translate(473 10) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" fill="currentColor"/><path d="M12 3v3.5M12 17.5V21M3 12h3.5M17.5 12H21"/></g>
+<text x="506" y="90" text-anchor="middle" fill="#6b6357">column</text>
+<g transform="translate(565 10) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="8" stroke-dasharray="3 2"/><path d="M3 12h18" stroke-dasharray="5 2 1 2"/></g>
+<text x="598" y="90" text-anchor="middle" fill="#6b6357">beam</text>
+<g transform="translate(657 10) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18v-5h-5V4h-8v11H3z"/><path d="M5 20l3-5M19 20l-3-5"/></g>
+<text x="690" y="90" text-anchor="middle" fill="#6b6357">stripFooting</text>
+<g transform="translate(13 102) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18v-4h-4v-4h-2V4h-6v8H7v4H3z"/><path d="M5 20l2-4M19 20l-2-4"/></g>
+<text x="46" y="182" text-anchor="middle" fill="#6b6357">padFooting</text>
+<g transform="translate(105 102) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18"/><path d="M3 7h18M3 11h18M3 15h18M3 19h18"/><path d="M12 20V4"/><path d="M9 7l3-3 3 3"/></g>
+<text x="138" y="182" text-anchor="middle" fill="#6b6357">stair</text>
+<g transform="translate(197 102) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v9h-7v7H4z"/><path d="M8 9h3"/></g>
+<text x="230" y="182" text-anchor="middle" fill="#6b6357">room</text>
+<g transform="translate(289 102) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15h12"/><path d="M6 15V7M3.5 9.5L6 7l2.5 2.5"/><path d="M18 15V7M15.5 9.5L18 7l2.5 2.5"/></g>
+<text x="322" y="182" text-anchor="middle" fill="#6b6357">section</text>
+<g transform="translate(381 102) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="5"/><path d="M7 14h10"/><path d="M8 9l4-6 4 6"/></g>
+<text x="414" y="182" text-anchor="middle" fill="#6b6357">elevation</text>
+<g transform="translate(473 102) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h18"/><path d="M8 8h8l-4 6z"/><path d="M12 14v6"/></g>
+<text x="506" y="182" text-anchor="middle" fill="#6b6357">level</text>
+<g transform="translate(565 102) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M12 11v10" stroke-dasharray="5 2 1 2"/></g>
+<text x="598" y="182" text-anchor="middle" fill="#6b6357">gridAxis</text>
+<g transform="translate(657 102) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="M4 7v9M20 7v9"/><path d="M2 14l4-4M18 14l4-4"/></g>
+<text x="690" y="182" text-anchor="middle" fill="#6b6357">dimension</text>
+<g transform="translate(13 194) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c6 0 9 3 9 7.5S17 19.5 12 19.5 3 16 3 11.5 6 4 12 4z"/><path d="M12 8c3 0 5 1.6 5 3.8S14.5 15.5 12 15.5 7 14 7 11.8 9 8 12 8z"/><path d="M12 11.8h0.01"/></g>
+<text x="46" y="274" text-anchor="middle" fill="#6b6357">terrain</text>
+<g transform="translate(105 194) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v12H3z"/><path d="M7 11h10v4H7z"/><path d="M3 7l4 4M21 7l-4 4M3 19l4-4M21 19l-4-4"/></g>
+<text x="138" y="274" text-anchor="middle" fill="#6b6357">platform</text>
+<g transform="translate(197 194) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" stroke-dasharray="3 2"/><path d="M4 4l16 16M20 4L4 20"/></g>
+<text x="230" y="274" text-anchor="middle" fill="#6b6357">slabOpening</text>
+<g transform="translate(289 194) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18L21 6"/><path d="M8 15.5l-2-4 8-5.5 2 4z"/><path d="M7 13.5l8-5.5"/></g>
+<text x="322" y="274" text-anchor="middle" fill="#6b6357">roofWindow</text>
+<g transform="translate(381 194) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 19L22 6"/><path d="M8 15l4-5 4 5"/><path d="M8 15v5M16 15v1.5"/><path d="M10 20v-3h4"/></g>
+<text x="414" y="274" text-anchor="middle" fill="#6b6357">dormer</text>
+<g transform="translate(473 194) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18v4H3z"/><path d="M6 14l3-4M11 14l3-4M16 14l3-4"/><path d="M5 14v6M19 14v6"/></g>
+<text x="506" y="274" text-anchor="middle" fill="#6b6357">lintel</text>
+<g transform="translate(565 194) scale(2.75)" fill="none" color="#b5532d" stroke="#b5532d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16"/><path d="M8 4v16M14 4v16"/><path d="M9 20l4-7M9 13l4-7"/></g>
+<text x="598" y="274" text-anchor="middle" fill="#6b6357">wallTypes</text>
+<rect x="0" y="296" width="736" height="296" fill="#1c1b19"/>
+<g transform="translate(13 306) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10"/><path d="M3 10h18"/><path d="M6 17l3.5-7M11 17l3.5-7M16 17l3.5-7"/></g>
+<text x="46" y="386" text-anchor="middle" fill="#a39b8c">wall</text>
+<g transform="translate(105 306) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14h5M2 17h5M17 14h5M17 17h5"/><path d="M7 17V7"/><path d="M7 7a10 10 0 0 1 10 10"/></g>
+<text x="138" y="386" text-anchor="middle" fill="#a39b8c">door</text>
+<g transform="translate(197 306) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11h4M2 16h4M18 11h4M18 16h4"/><path d="M6 11v5M18 11v5"/><path d="M6 12.2h12M6 14.8h12"/></g>
+<text x="230" y="386" text-anchor="middle" fill="#a39b8c">window</text>
+<g transform="translate(289 306) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="6"/><path d="M6 15l3-6M11 15l3-6M16 15l3-6"/><path d="M3 18h18" stroke-dasharray="2 2"/></g>
+<text x="322" y="386" text-anchor="middle" fill="#a39b8c">slab</text>
+<g transform="translate(381 306) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14L12 5l10 9"/><path d="M5 14.5L12 8.5l7 6"/><path d="M6 14.5V21M18 14.5V21"/></g>
+<text x="414" y="386" text-anchor="middle" fill="#a39b8c">roof</text>
+<g transform="translate(473 306) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="8" height="8" fill="currentColor"/><path d="M12 3v3.5M12 17.5V21M3 12h3.5M17.5 12H21"/></g>
+<text x="506" y="386" text-anchor="middle" fill="#a39b8c">column</text>
+<g transform="translate(565 306) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="8" stroke-dasharray="3 2"/><path d="M3 12h18" stroke-dasharray="5 2 1 2"/></g>
+<text x="598" y="386" text-anchor="middle" fill="#a39b8c">beam</text>
+<g transform="translate(657 306) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18v-5h-5V4h-8v11H3z"/><path d="M5 20l3-5M19 20l-3-5"/></g>
+<text x="690" y="386" text-anchor="middle" fill="#a39b8c">stripFooting</text>
+<g transform="translate(13 398) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18v-4h-4v-4h-2V4h-6v8H7v4H3z"/><path d="M5 20l2-4M19 20l-2-4"/></g>
+<text x="46" y="478" text-anchor="middle" fill="#a39b8c">padFooting</text>
+<g transform="translate(105 398) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18"/><path d="M3 7h18M3 11h18M3 15h18M3 19h18"/><path d="M12 20V4"/><path d="M9 7l3-3 3 3"/></g>
+<text x="138" y="478" text-anchor="middle" fill="#a39b8c">stair</text>
+<g transform="translate(197 398) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v9h-7v7H4z"/><path d="M8 9h3"/></g>
+<text x="230" y="478" text-anchor="middle" fill="#a39b8c">room</text>
+<g transform="translate(289 398) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15h12"/><path d="M6 15V7M3.5 9.5L6 7l2.5 2.5"/><path d="M18 15V7M15.5 9.5L18 7l2.5 2.5"/></g>
+<text x="322" y="478" text-anchor="middle" fill="#a39b8c">section</text>
+<g transform="translate(381 398) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="5"/><path d="M7 14h10"/><path d="M8 9l4-6 4 6"/></g>
+<text x="414" y="478" text-anchor="middle" fill="#a39b8c">elevation</text>
+<g transform="translate(473 398) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h18"/><path d="M8 8h8l-4 6z"/><path d="M12 14v6"/></g>
+<text x="506" y="478" text-anchor="middle" fill="#a39b8c">level</text>
+<g transform="translate(565 398) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M12 11v10" stroke-dasharray="5 2 1 2"/></g>
+<text x="598" y="478" text-anchor="middle" fill="#a39b8c">gridAxis</text>
+<g transform="translate(657 398) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="M4 7v9M20 7v9"/><path d="M2 14l4-4M18 14l4-4"/></g>
+<text x="690" y="478" text-anchor="middle" fill="#a39b8c">dimension</text>
+<g transform="translate(13 490) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c6 0 9 3 9 7.5S17 19.5 12 19.5 3 16 3 11.5 6 4 12 4z"/><path d="M12 8c3 0 5 1.6 5 3.8S14.5 15.5 12 15.5 7 14 7 11.8 9 8 12 8z"/><path d="M12 11.8h0.01"/></g>
+<text x="46" y="570" text-anchor="middle" fill="#a39b8c">terrain</text>
+<g transform="translate(105 490) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v12H3z"/><path d="M7 11h10v4H7z"/><path d="M3 7l4 4M21 7l-4 4M3 19l4-4M21 19l-4-4"/></g>
+<text x="138" y="570" text-anchor="middle" fill="#a39b8c">platform</text>
+<g transform="translate(197 490) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" stroke-dasharray="3 2"/><path d="M4 4l16 16M20 4L4 20"/></g>
+<text x="230" y="570" text-anchor="middle" fill="#a39b8c">slabOpening</text>
+<g transform="translate(289 490) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18L21 6"/><path d="M8 15.5l-2-4 8-5.5 2 4z"/><path d="M7 13.5l8-5.5"/></g>
+<text x="322" y="570" text-anchor="middle" fill="#a39b8c">roofWindow</text>
+<g transform="translate(381 490) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 19L22 6"/><path d="M8 15l4-5 4 5"/><path d="M8 15v5M16 15v1.5"/><path d="M10 20v-3h4"/></g>
+<text x="414" y="570" text-anchor="middle" fill="#a39b8c">dormer</text>
+<g transform="translate(473 490) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18v4H3z"/><path d="M6 14l3-4M11 14l3-4M16 14l3-4"/><path d="M5 14v6M19 14v6"/></g>
+<text x="506" y="570" text-anchor="middle" fill="#a39b8c">lintel</text>
+<g transform="translate(565 490) scale(2.75)" fill="none" color="#e07a4f" stroke="#e07a4f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16"/><path d="M8 4v16M14 4v16"/><path d="M9 20l4-7M9 13l4-7"/></g>
+<text x="598" y="570" text-anchor="middle" fill="#a39b8c">wallTypes</text>
+</svg>

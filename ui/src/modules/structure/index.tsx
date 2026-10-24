@@ -1,6 +1,7 @@
 /** Structure: columns, beams, strip and pad foundations (the engine's structure module). */
 
-import { Columns3, Grid3x3, Layers3, Minus, Rows3, SquareStack } from 'lucide-react';
+import { Grid3x3, Layers3 } from 'lucide-react';
+import { BeamIcon, ColumnIcon, PadFootingIcon, StripFootingIcon } from '../../icons';
 import type { Grip, LapinModule, ToolDef } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { useUi } from '../../app/store';
@@ -9,22 +10,22 @@ import { StructureSection } from './StructureSection';
 import { StructureTypesDialog } from './StructureTypesDialog';
 
 const column: ToolDef = {
-  id: 'structure.column', label: 'Column', icon: Columns3, shortcut: 'CL',
+  id: 'structure.column', label: 'Column', icon: ColumnIcon, shortcut: 'CL',
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('structure.addColumn', { storeyId: ctx.storeyId, x: p.x, y: p.y }); },
 };
 const beam: ToolDef = {
-  id: 'structure.beam', label: 'Beam', icon: Minus, shortcut: 'BM',
+  id: 'structure.beam', label: 'Beam', icon: BeamIcon, shortcut: 'BM',
   gesture: { kind: 'twoPoints', repeat: true },
   complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('structure.addBeam', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y }); },
 };
 const strip: ToolDef = {
-  id: 'structure.strip', label: 'Strip footing', icon: Rows3, shortcut: 'SF',
+  id: 'structure.strip', label: 'Strip footing', icon: StripFootingIcon, shortcut: 'SF',
   gesture: { kind: 'twoPoints', repeat: true },
   complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y }); },
 };
 const pad: ToolDef = {
-  id: 'structure.pad', label: 'Pad footing', icon: SquareStack, shortcut: 'PF',
+  id: 'structure.pad', label: 'Pad footing', icon: PadFootingIcon, shortcut: 'PF',
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('structure.addPadFooting', { storeyId: ctx.storeyId, x: p.x, y: p.y }); },
 };

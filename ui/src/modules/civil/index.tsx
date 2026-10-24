@@ -1,6 +1,7 @@
 /** Civil: the terrain from a survey file, its contours, and platforms levelled into it with their cut and fill. */
 
-import { FileUp, LandPlot, Mountain } from 'lucide-react';
+import { FileUp } from 'lucide-react';
+import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { LapinModule, ToolDef } from '../../platform/module';
 import { notify, useUi } from '../../app/store';
 import { execute } from '../../engine/session';
@@ -22,7 +23,7 @@ function lowest(text: string): number | null {
 
 /** A terrain from a survey file: its points, and the surveyed elevation of the project's ±0.00. */
 const terrainFromFile: ToolDef = {
-  id: 'civil.terrain', label: 'Terrain from points', icon: Mountain, shortcut: 'TP',
+  id: 'civil.terrain', label: 'Terrain from points', icon: TerrainIcon, shortcut: 'TP',
   run: () => void pickText(SURVEY).then(async (file) => {
     if (!file) return;
     const low = lowest(file.text);
@@ -51,7 +52,7 @@ const terrainFromLandXml: ToolDef = {
 
 /** A platform: its outline in plan (Enter or the first corner closes it); it is levelled at the ground's height in its middle, changed in the inspector. */
 const platform: ToolDef = {
-  id: 'civil.platform', label: 'Platform', icon: LandPlot, shortcut: 'PD',
+  id: 'civil.platform', label: 'Platform', icon: PlatformIcon, shortcut: 'PD',
   gesture: { kind: 'polygon' },
   complete: async ({ points }, ctx) => {
     await ctx.execute('civil.addPlatform', { points: points.map((p) => [p.x, p.y]) });

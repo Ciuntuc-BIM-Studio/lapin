@@ -1,6 +1,7 @@
 /** Architecture: layered walls and their types, doors and windows, floors, roofs; later rooms. */
 
-import { ArrowLeftRight, BrickWall, CornerDownRight, DoorOpen, Home, LayoutGrid, Layers3, Link2, PanelTop, Settings2, Slash, Square, SquareDashed, StretchHorizontal } from 'lucide-react';
+import { ArrowLeftRight, CornerDownRight, Layers3, Link2, Settings2, Slash } from 'lucide-react';
+import { DoorIcon, DormerIcon, RoofIcon, RoofWindowIcon, RoomIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, LapinModule, ToolDef } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
@@ -17,7 +18,7 @@ import { SlabTypesDialog } from './SlabTypesDialog';
 import { RoofSection } from './RoofSection';
 
 const wall: ToolDef = {
-  id: 'architecture.wall', label: 'Wall', icon: BrickWall, shortcut: 'WA',
+  id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA',
   gesture: { kind: 'twoPoints', repeat: true },
   complete: async ({ points: [a, b] }, ctx) => {
     const typeId = useUi.getState().wallTypeId;
@@ -68,7 +69,7 @@ function wallGrips(node: NodeDto): Grip[] {
     { key: `${node.id}:end`, at: { x: b[0], y: b[1] }, move: (p) => execute('architecture.updateWall', { id: node.id, x2: p.x, y2: p.y }) },
   ];
 }
-const wallTypes: ToolDef = { id: 'architecture.wallTypes', label: 'Wall types', icon: Layers3, run: () => useUi.setState({ dialog: 'wallTypes' }) };
+const wallTypes: ToolDef = { id: 'architecture.wallTypes', label: 'Wall types', icon: WallTypesIcon, run: () => useUi.setState({ dialog: 'wallTypes' }) };
 /** A door or window: click a wall where it goes (the type: the one picked in the configurator, else the project's first). */
 const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'], shortcut: string): ToolDef => ({
   id: `architecture.${kind}`, label, icon, shortcut,
@@ -79,12 +80,12 @@ const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'],
     await ctx.execute(kind === 'door' ? 'architecture.addDoor' : 'architecture.addWindow', { wallId: entity.id, x: p.x, y: p.y, ...(typeId ? { typeId } : {}) });
   },
 });
-const door = fillTool('door', 'Door', DoorOpen, 'DR');
-const window_ = fillTool('window', 'Window', PanelTop, 'WN');
+const door = fillTool('door', 'Door', DoorIcon, 'DR');
+const window_ = fillTool('window', 'Window', WindowIcon, 'WN');
 const joineryTypes: ToolDef = { id: 'architecture.joineryTypes', label: 'Doors & windows', icon: Settings2, run: () => useUi.setState({ dialog: 'joinery' }) };
 /** A floor: click its corners, then the first one again (or Enter). */
 const slab: ToolDef = {
-  id: 'architecture.slab', label: 'Floor', icon: Square, shortcut: 'SB',
+  id: 'architecture.slab', label: 'Floor', icon: SlabIcon, shortcut: 'SB',
   gesture: { kind: 'polygon' },
   complete: async ({ points }, ctx) => {
     const typeId = useUi.getState().slabTypeId;
@@ -93,7 +94,7 @@ const slab: ToolDef = {
 };
 /** A roof: click the wall line's corners, then the first one again (or Enter); it sits on the storey's top, in the style picked. */
 const roof: ToolDef = {
-  id: 'architecture.roof', label: 'Roof', icon: Home, shortcut: 'RF',
+  id: 'architecture.roof', label: 'Roof', icon: RoofIcon, shortcut: 'RF',
   gesture: { kind: 'polygon' },
   complete: async ({ points }, ctx) => {
     const style = useUi.getState().roofStyle;
@@ -102,7 +103,7 @@ const roof: ToolDef = {
 };
 /** An opening through a floor (a stairwell, a shaft): its outline, inside the floor. */
 const slabOpening: ToolDef = {
-  id: 'architecture.slabOpening', label: 'Floor opening', icon: SquareDashed, shortcut: 'SH',
+  id: 'architecture.slabOpening', label: 'Floor opening', icon: SlabOpeningIcon, shortcut: 'SH',
   gesture: { kind: 'polygon' },
   complete: async ({ points }, ctx) => {
     await ctx.execute('architecture.addSlabOpening', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]) });
@@ -110,7 +111,7 @@ const slabOpening: ToolDef = {
 };
 /** A roof window, or a dormer: a click on a slope of a roof (refused where it does not fit). */
 const roofOpening = (kind: 'window' | 'dormer'): ToolDef => ({
-  id: `architecture.roof${kind === 'window' ? 'Window' : 'Dormer'}`, label: kind === 'window' ? 'Roof window' : 'Dormer', icon: kind === 'window' ? PanelTop : Home,
+  id: `architecture.roof${kind === 'window' ? 'Window' : 'Dormer'}`, label: kind === 'window' ? 'Roof window' : 'Dormer', icon: kind === 'window' ? RoofWindowIcon : DormerIcon,
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('architecture.addRoofOpening', { kind, x: p.x, y: p.y }); },
 });
@@ -126,8 +127,8 @@ const architecture: LapinModule = {
       { label: 'Build', tools: [wall, door, window_, slab, roof], small: [slabOpening, roofOpening('window'), roofOpening('dormer')] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew] },
-      { label: 'Room', tools: [{ id: 'architecture.room', label: 'Room', icon: LayoutGrid, shortcut: 'RM' }] },
-      { label: 'Circulation', tools: [{ id: 'architecture.stair', label: 'Stair', icon: StretchHorizontal }] },
+      { label: 'Room', tools: [{ id: 'architecture.room', label: 'Room', icon: RoomIcon, shortcut: 'RM' }] },
+      { label: 'Circulation', tools: [{ id: 'architecture.stair', label: 'Stair', icon: StairIcon }] },
     ],
   }],
   hotbar: [wall, door, window_, slab, roof],

@@ -7,8 +7,8 @@
  */
 
 import type { ComponentType } from 'react';
-import type { LucideIcon } from 'lucide-react';
 import type { NodeDto } from '../engine/protocol';
+import type { Icon } from '../icons';
 
 export interface Vec2 { x: number; y: number }
 
@@ -36,7 +36,8 @@ export interface ToolContext {
 export interface ToolDef {
   id: string;
   label: string;
-  icon: LucideIcon;
+  /** A lucide icon, or one of Lapin's own (`ui/src/icons`). */
+  icon: Icon;
   /** Two-letter shortcut, as in Revit (WA, DR…). */
   shortcut?: string;
   /** A tool drawn in a view: its gesture and what it does at the end. */
