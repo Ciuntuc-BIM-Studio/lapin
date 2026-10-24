@@ -10,6 +10,7 @@
     "dev": "node scripts/dev.mjs",
     "dev:desktop": "node scripts/dev.mjs --desktop",
     "typecheck": "pnpm --filter ui typecheck",
+    "lint": "pnpm --filter ui lint",
     "test": "pnpm --filter ui test && pnpm test:engine",
     "test:engine": "dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo",
     "products": "node scripts/product.mjs",
