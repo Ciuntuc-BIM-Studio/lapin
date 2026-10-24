@@ -56,19 +56,22 @@ try
 catch (IOException) { }
 catch (UnauthorizedAccessException) { }
 
-// Never outlive the window that started us.
-if (parentPid > 0)
+// Never outlive the window that started us, nor the disk image we run from
+// (an ejected image leaves code that cannot load: a watchdog outside it ends us).
+ExitGuard.Arm();
+ExitGuard.Watch();
+_ = Task.Run(async () =>
 {
-    _ = Task.Run(async () =>
+    while (true)
     {
-        while (true)
-        {
-            await Task.Delay(1500);
-            try { if (Process.GetProcessById(parentPid).HasExited) break; }
-            catch (ArgumentException) { break; }
-        }
-        await app.StopAsync();
-    });
-}
+        await Task.Delay(1500);
+        if (parentPid <= 0) continue;
+        try { if (Process.GetProcessById(parentPid).HasExited) break; }
+        catch (ArgumentException) { break; }
+    }
+    // The window is gone: stop cleanly, but not for longer than a few seconds.
+    var stop = app.StopAsync();
+    if (await Task.WhenAny(stop, Task.Delay(5000)) != stop) Environment.Exit(0);
+});
 
 await app.WaitForShutdownAsync();

@@ -14,6 +14,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symli
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveProduct } from './product.mjs';
+import { checkDmg } from './check-dmg.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const productId = process.argv[2];
@@ -96,7 +97,8 @@ sh('pnpm', ['tauri', 'build', '--config', join(tauriDir, 'tauri.product.json')],
 
 // 5. macOS: the DMG (the app and a link to Applications; made here with hdiutil,
 // not Tauri's Finder script, which fails when the image is busy), signed;
-// the signature checked; the DMG notarized and stapled, and the app too.
+// its engine started from it and stopped before it is detached; the signature
+// checked; the DMG notarized and stapled, and the app too.
 if (mac) {
   const macos = join(bundleDir, 'macos');
   const apps = existsSync(macos) ? readdirSync(macos).filter((f) => f.endsWith('.app')) : [];
@@ -115,6 +117,11 @@ if (mac) {
     rmSync(stage, { recursive: true, force: true });
     if (identity) sh('codesign', ['--sign', identity, '--timestamp', dmg]);
     dmgs.push(dmg);
+  }
+  // Each DMG opened and its engine started from it, then stopped before the image is detached.
+  for (const dmg of dmgs) {
+    console.log(`▸ checking ${dmg}`);
+    try { await checkDmg(dmg); } catch (e) { console.error(`The DMG does not work: ${e.message}`); process.exit(1); }
   }
   if (identity) {
     for (const app of apps) sh('codesign', ['--verify', '--deep', '--strict', '--verbose=2', join(macos, app)]);

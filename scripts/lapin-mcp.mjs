@@ -20,6 +20,8 @@ import { createInterface } from 'node:readline';
 
 const VERSION = '0.1.0';
 
+const processAlive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+
 /** Where an open engine left its port: LAPIN_PORT, else the newest host.json of the known user folders. */
 function enginePort() {
   if (process.env.LAPIN_PORT) return Number(process.env.LAPIN_PORT);
@@ -33,7 +35,12 @@ function enginePort() {
   for (const d of dirs) {
     const f = join(d, 'host.json');
     if (existsSync(f)) {
-      try { return JSON.parse(readFileSync(f, 'utf8')).port; } catch { /* next */ }
+      try {
+        const h = JSON.parse(readFileSync(f, 'utf8'));
+        // A file left by an engine that is gone (killed, or its image ejected) names a dead port.
+        if (h.pid && !processAlive(h.pid)) continue;
+        return h.port;
+      } catch { /* next */ }
     }
   }
   return null;
