@@ -51,6 +51,40 @@ public sealed class StructureModule : ILapinModule
             return new JsonObject { ["id"] = c.Id };
         });
 
+        // A column at every crossing of the grid's axes (only those named in `tags`, when given) on the storey, except where one stands already.
+        r.Command("addColumnsAtGrid", "Columns at grid", (ctx, a) =>
+        {
+            var storey = Place.Storey(ctx, a);
+            var type = Place.TypeFor(ctx, a, IfcClass.ColumnType, () => Columns.DefaultType(ctx));
+            var only = (a["tags"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet();
+            static Vec2 P(JsonNode? n) => n is JsonArray p && p.Count >= 2 ? new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0) : default;
+            var axes = ctx.Model.OfClass(IfcClass.Grid).SelectMany(g => (g.Attrs["axes"] as JsonArray)?.OfType<JsonObject>() ?? [])
+                .Where(x => only == null || only.Contains((string?)x["tag"] ?? "")).Select(x => (A: P(x["a"]), B: P(x["b"]))).ToList();
+            var existing = ctx.Model.RelatedOf(storey.Id, IfcClass.RelContainedInSpatialStructure).Where(e => e.Class == IfcClass.Column).Select(e => P(e.Attrs["at"])).ToList();
+            var ids = new JsonArray();
+            for (var i = 0; i < axes.Count; i++)
+                for (var j = i + 1; j < axes.Count; j++)
+                {
+                    var (a1, a2, b1, b2) = (axes[i].A, axes[i].B, axes[j].A, axes[j].B);
+                    var (d1, d2) = (a2 - a1, b2 - b1);
+                    var den = Vec2.Cross(d1, d2);
+                    if (Math.Abs(den) < 1e-9 * d1.Length * d2.Length) continue;
+                    var t = Vec2.Cross(b1 - a1, d2) / den;
+                    var u = Vec2.Cross(b1 - a1, d1) / den;
+                    if (t < -1e-9 || t > 1 + 1e-9 || u < -1e-9 || u > 1 + 1e-9) continue;
+                    var at = a1 + d1 * t;
+                    if (existing.Any(p => (p - at).Length < 1e-3)) continue;
+                    existing.Add(at);
+                    var c = new Entity(ctx.NewId(), IfcClass.Column, type.Name, new JsonObject { ["at"] = Place.Json2(at), ["rotation"] = Math.Atan2(d1.Y, d1.X) }, "COLUMN");
+                    ctx.Add(c);
+                    Spatial.Contain(ctx, storey.Id, c.Id);
+                    ctx.Relate(IfcClass.RelDefinesByType, type.Id, c.Id);
+                    ids.Add(c.Id);
+                }
+            if (ids.Count == 0) throw new CommandException("No grid crossing without a column on this storey.");
+            return new JsonObject { ["ids"] = ids };
+        });
+
         r.Command("updateColumn", "Move column", (ctx, a) =>
         {
             var c = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Column);

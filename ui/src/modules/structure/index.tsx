@@ -1,10 +1,10 @@
 /** Structure: columns, beams, strip and pad foundations (the engine's structure module). */
 
-import { Columns3, Layers3, Minus, Rows3, SquareStack } from 'lucide-react';
+import { Columns3, Grid3x3, Layers3, Minus, Rows3, SquareStack } from 'lucide-react';
 import type { Grip, LapinModule, ToolDef } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { useUi } from '../../app/store';
-import { execute } from '../../engine/session';
+import { ensureStorey, execute } from '../../engine/session';
 import { StructureSection } from './StructureSection';
 import { StructureTypesDialog } from './StructureTypesDialog';
 
@@ -27,6 +27,11 @@ const pad: ToolDef = {
   id: 'structure.pad', label: 'Pad footing', icon: SquareStack, shortcut: 'PF',
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('structure.addPadFooting', { storeyId: ctx.storeyId, x: p.x, y: p.y }); },
+};
+/** A column on every grid crossing of the storey (none twice). */
+const atGrid: ToolDef = {
+  id: 'structure.columnsAtGrid', label: 'Columns at grid', icon: Grid3x3,
+  run: () => void ensureStorey().then((storeyId) => storeyId && execute('structure.addColumnsAtGrid', { storeyId })),
 };
 const types: ToolDef = { id: 'structure.types', label: 'Structure types', icon: Layers3, run: () => useUi.setState({ dialog: 'structureTypes' }) };
 
@@ -51,7 +56,7 @@ const structure: LapinModule = {
   tabs: [{
     id: 'structure', label: 'Structure', order: 20,
     groups: [
-      { label: 'Frame', tools: [column, beam] },
+      { label: 'Frame', tools: [column, beam], small: [atGrid] },
       { label: 'Foundation', tools: [strip, pad] },
       { label: 'Types', tools: [types] },
     ],

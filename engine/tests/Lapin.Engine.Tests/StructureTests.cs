@@ -150,4 +150,17 @@ public class StructureTests
         var sf = Strip(f, 0, 0, 5, 0);
         Assert.NotNull(f.Session.Geometry(sf));
     }
+
+    [Fact]
+    public void Columns_go_on_every_grid_crossing_once_with_a_type_made_later()
+    {
+        var f = new Fixture(new ArchitectureModule(), new StructureModule(), new Lapin.Drafting.DraftingModule());
+        foreach (var x in new[] { 0.0, 5, 10 }) f.Run("drafting.addAxis", new JsonObject { ["x1"] = x, ["y1"] = -1, ["x2"] = x, ["y2"] = 9 });
+        foreach (var y in new[] { 0.0, 8 }) f.Run("drafting.addAxis", new JsonObject { ["x1"] = -1, ["y1"] = y, ["x2"] = 11, ["y2"] = y });
+        var later = (string)f.Run("structure.createColumnType", new JsonObject { ["name"] = "C 40", ["section"] = new JsonObject { ["shape"] = "rectangle", ["width"] = 0.4, ["depth"] = 0.4 } })!["id"]!;
+        var ids = f.Run("structure.addColumnsAtGrid", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = later })!["ids"]!.AsArray();
+        Assert.Equal(6, ids.Count);
+        Assert.All(ids, id => Assert.Equal(later, f.Model.RelatingOf((string)id!, IfcClass.RelDefinesByType)!.Id));
+        Assert.Throws<CommandException>(() => f.Run("structure.addColumnsAtGrid", new JsonObject { ["storeyId"] = f.Storey }));
+    }
 }
