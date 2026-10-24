@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { HelpCircle, X } from 'lucide-react';
 import { notify } from '../app/store';
 import { engine, useSession } from '../engine/session';
+import { setLang, useLang } from '../i18n';
 
 const RECENT: string[] = [];
 let installed = false;
@@ -109,6 +110,9 @@ export function HelpMenu() {
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setReport(true); }}>Report an issue…</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('community'); }}>Community (Skool)</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('site'); }}>ciuntucbimstudio.ro</button>
+          <button type="button" role="menuitem" data-no-i18n onClick={() => { setOpen(false); setLang(useLang.getState().lang === 'ro' ? 'en' : 'ro'); }}>
+            {useLang.getState().lang === 'ro' ? 'Interfața: română → English' : 'Interface: English → română'}
+          </button>
           <span className="muted small menu-note">Lapin {info?.engineVersion ?? ''}</span>
         </div>
       )}

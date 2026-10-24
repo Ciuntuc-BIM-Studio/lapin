@@ -1,0 +1,96 @@
+/** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
+
+export const RO: Record<string, string> = {
+  // The top bar, menus, the start screen
+  'File': 'Fișier', 'New project': 'Proiect nou', 'Open…': 'Deschide…', 'Open project…': 'Deschide un proiect…', 'Save': 'Salvează', 'Save as…': 'Salvează ca…',
+  'Start screen': 'Ecranul de start', 'Commands…': 'Comenzi…', 'Theme': 'Temă', 'Undo': 'Anulează', 'Redo': 'Refă',
+  'Help, report an issue, community': 'Ajutor, raportează o problemă, comunitate', 'Report an issue': 'Raportează o problemă', 'Report an issue…': 'Raportează o problemă…',
+  'Community (Skool)': 'Comunitatea (Skool)', 'Community on Skool': 'Comunitatea pe Skool', 'What happened': 'Ce s-a întâmplat', 'What you expected': 'Ce te așteptai să se întâmple',
+  'E-mail (optional)': 'E-mail (opțional)', 'Screenshot (optional)': 'Captură de ecran (opțional)', 'Cancel': 'Renunță', 'Send': 'Trimite', 'Close': 'Închide', 'Done': 'Gata',
+  'BIM authoring for architects and engineers': 'Modelare BIM pentru arhitecți și ingineri', 'Start here': 'Începe aici', 'Recent': 'Recente', 'Recover': 'Recuperează',
+  'Projects you open or save appear here.': 'Proiectele pe care le deschizi sau le salvezi apar aici.', 'Unsaved work': 'Lucru nesalvat', 'Discard': 'Renunță la el',
+  'Starting the engine…': 'Pornește motorul…', 'This edition': 'Această ediție', 'Engine connected': 'Motor conectat', 'Units: m': 'Unități: m', 'Language': 'Limba',
+
+  // Ribbon tabs and groups
+  'Modify': 'Modifică', 'Architecture': 'Arhitectură', 'Structure': 'Structură', 'Draft': 'Desen', 'Studio': 'Studio', 'Annotate': 'Adnotări', 'Site': 'Teren',
+  'Phases': 'Faze', 'Quantities': 'Cantități', 'Manage': 'Gestionare', 'View': 'Vedere',
+  'Build': 'Construiește', 'Types': 'Tipuri', 'Joins': 'Îmbinări', 'Room': 'Încăpere', 'Circulation': 'Circulații', 'Frame': 'Cadre', 'Foundation': 'Fundații',
+  'Draw': 'Desenează', 'Edit': 'Editează', 'Layers': 'Layere', 'Linework': 'Linii', 'Dimension': 'Cote', 'Text': 'Text', 'Datum': 'Repere', 'Sheets': 'Planșe',
+  'Solids': 'Solide', 'Boolean': 'Booleene', 'Terrain': 'Teren', 'Project': 'Proiect', 'Selection': 'Selecție', 'Take-off': 'Măsurători', 'Estimate': 'Deviz',
+  'Settings': 'Setări', 'Views': 'Vederi', 'Graphics': 'Grafică', 'Like this': 'Ca acesta',
+
+  // Tools
+  'Wall': 'Perete', 'Door': 'Ușă', 'Window': 'Fereastră', 'Floor': 'Placă', 'Roof': 'Acoperiș', 'Floor opening': 'Gol în placă', 'Wall types': 'Tipuri de pereți',
+  'Floor types': 'Tipuri de plăci', 'Doors & windows': 'Uși și ferestre', 'Join': 'Îmbină', 'Mitre': 'La 45°', 'Butt': 'Cap la cap', 'Swap': 'Inversează',
+  'Mitre new corners': 'Colțuri noi la 45°', 'Stair': 'Scară', 'Column': 'Stâlp', 'Beam': 'Grindă', 'Strip footing': 'Fundație continuă', 'Pad footing': 'Fundație izolată',
+  'Structure types': 'Tipuri structurale', 'Columns at grid': 'Stâlpi pe axe', 'Line': 'Linie', 'Polyline': 'Polilinie', 'Rectangle': 'Dreptunghi', 'Circle': 'Cerc', 'Arc': 'Arc',
+  'Move': 'Mută', 'Copy': 'Copiază', 'Rotate': 'Rotește', 'Mirror': 'Oglindește', 'Scale': 'Scalează', 'Erase': 'Șterge', 'Delete': 'Șterge', 'Offset': 'Paralelă',
+  'Trim': 'Taie', 'Extend': 'Prelungește', 'Fillet': 'Racordare', 'Chamfer': 'Teșire', 'Hatch': 'Hașură', 'Reset': 'Resetează',
+  'Aligned': 'Aliniată', 'Linear': 'Liniară', 'Grid axis': 'Axă', 'Level': 'Nivel', 'Sheet': 'Planșă', 'Extrude': 'Extrudare', 'Sweep': 'Măturare', 'Revolve': 'Revoluție',
+  'Edit sketch': 'Editează schița', 'Subtract': 'Scade', 'Union': 'Unește', 'Intersect': 'Intersectează', 'Show operands': 'Arată operanzii', 'Remove operation': 'Anulează operația',
+  'Terrain from points': 'Teren din puncte', 'Platform': 'Platformă', 'Created here': 'Creat aici', 'Demolish': 'Demolează', 'Temporary': 'Temporar',
+  'Schedule': 'Extras', 'Bill of quantities': 'Antemăsurătoare', 'Export XLSX': 'Export XLSX', 'Materials': 'Materiale', 'Drafting standards': 'Standarde de desen',
+  'Object styles': 'Stiluri de obiecte', 'Location': 'Amplasament', '3D': '3D', 'Plan': 'Plan', 'Section': 'Secțiune', 'Elevations': 'Fațade', 'Visibility': 'Vizibilitate',
+  'Visual style': 'Stil vizual', 'View range': 'Domeniul vederii', 'Graphics (VG)': 'Grafică (VG)', 'Create similar': 'Creează similar', 'Match type': 'Preia tipul',
+  'Select': 'Selectează', 'Measure': 'Măsoară', 'Layers…': 'Layere…',
+
+  // Project browser
+  'Levels': 'Niveluri', 'Floor plans': 'Planuri', 'Sections': 'Secțiuni', '3D views': 'Vederi 3D', 'Schedules': 'Extrase', 'New level above': 'Nivel nou deasupra',
+  'A foundation plan of this level': 'Un plan de fundații al acestui nivel', 'Draw a section line in the plan': 'Desenează linia secțiunii în plan',
+  'The four elevations': 'Cele patru fațade', 'New sheet': 'Planșă nouă', 'New schedule': 'Extras nou', 'Delete the view': 'Șterge vederea', 'Delete the sheet': 'Șterge planșa',
+  'Delete the schedule': 'Șterge extrasul', 'Joinery': 'Tâmplărie', 'Lintels': 'Buiandrugi', 'Doors': 'Uși', 'Windows': 'Ferestre',
+
+  // Properties
+  'Properties': 'Proprietăți', 'Select an element to see it here.': 'Selectează un element ca să-l vezi aici.', 'Class': 'Clasă', 'Type': 'Tip', 'Storey': 'Nivel',
+  'Module': 'Modul', 'Name': 'Nume', 'Mark': 'Marcă', 'Value (m)': 'Valoare (m)', 'Delete axis': 'Șterge axa', 'Bubbles': 'Buline', 'Grid axes': 'Axe',
+  'Height': 'Înălțime', 'Height (own)': 'Înălțime (proprie)', 'Base offset': 'Decalaj la bază', 'Top offset': 'Decalaj la partea de sus', 'Width': 'Lățime', 'Depth': 'Adâncime',
+  'Rotation': 'Rotire', 'Angle': 'Unghi', 'Angle (°)': 'Unghi (°)', 'Cut priority': 'Prioritate la tăiere', 'Elevation': 'Cotă', 'Kind': 'Fel', 'Style': 'Stil', 'Shape': 'Formă',
+  'Pitch (eaves)': 'Pantă (la streașină)', 'Eave overhang': 'Streașină', 'Gable overhang': 'Streașină la fronton', 'Gutters': 'Jgheaburi', 'Gutter material': 'Materialul jgheaburilor',
+  'Snow guards': 'Parazăpezi', 'Rafter spacing': 'Distanța între căpriori', 'Rafters (cm)': 'Căpriori (cm)', 'Purlins per slope': 'Pane pe versant', 'Covering': 'Învelitoare',
+  'Ridge (gable roof)': 'Coamă (acoperiș în două ape)', 'Mansard: break inset': 'Mansardă: retragerea frângerii', 'Mansard: upper pitch': 'Mansardă: panta de sus',
+  "Wall plate over the storey's top": 'Cosoroaba peste nivel', 'Scale 1:': 'Scara 1:', 'Cut height': 'Înălțimea tăieturii', 'Hidden lines': 'Linii ascunse', 'Looking': 'Privind',
+  'Paper': 'Format', 'Orientation': 'Orientare', 'Number': 'Număr', 'Title block': 'Cartuș', 'Datum (±0.00 =)': 'Datum (±0.00 =)', 'Contour interval': 'Echidistanța curbelor',
+  'Major contour every': 'Curbă principală la fiecare', 'Depth below the lowest point': 'Adâncime sub punctul cel mai jos', 'Points': 'Puncte', 'Platforms': 'Platforme',
+  'Replace the points…': 'Înlocuiește punctele…', 'Offset from the sketch': 'Decalaj față de schiță', 'Export as': 'Exportă ca', 'Phase': 'Fază', 'Created in': 'Creat în',
+  'Demolished in': 'Demolat în', 'Text style': 'Stil de text', 'Dimension style': 'Stil de cotă', 'Sketch': 'Schiță', 'Face': 'Față', 'Path': 'Traseu', 'Axis': 'Axă',
+
+  // Dialogs
+  'Visibility / Graphics': 'Vizibilitate / Grafică', 'this view\'s own': 'proprie acestei vederi', 'Save as a set…': 'Salvează ca set…', 'Remove the set': 'Șterge setul',
+  'Model categories': 'Categorii de model', 'IFC classes': 'Clase IFC', 'Shown': 'Vizibil', 'Category': 'Categorie', 'Line colour': 'Culoarea liniei', 'Line weight': 'Grosimea liniei',
+  'Cut hatch': 'Hașura tăieturii', 'IFC class': 'Clasă IFC', 'as styled': 'după stil', "the materials'": 'a materialelor', 'by the view\'s kind': 'după felul vederii',
+  'shown': 'arătate', 'hidden': 'ascunse', 'Walls': 'Pereți', 'Slabs': 'Plăci', 'Roofs': 'Acoperișuri', 'Columns': 'Stâlpi', 'Beams': 'Grinzi', 'Stairs': 'Scări',
+  'Railings': 'Balustrade', 'Spaces': 'Încăperi', 'Furniture': 'Mobilier', 'Topography': 'Topografie', 'Other': 'Altele',
+  'Categories': 'Categorii', 'Pen table': 'Tabelul de penițe', 'Pen': 'Peniță', 'Back to the ISO widths': 'Înapoi la grosimile ISO', "Lapin's default": 'implicit în Lapin',
+  'Cut': 'Tăietură', 'Projection': 'Proiecție', 'Hidden': 'Ascuns', 'Overhead': 'Deasupra', 'Beyond': 'Dincolo',
+  'Top': 'Sus', 'Bottom': 'Jos', 'View depth': 'Adâncimea vederii', 'Cut plane': 'Planul de tăiere', 'this level': 'acest nivel', 'the level above': 'nivelul de deasupra',
+  'the level below': 'nivelul de dedesubt', 'unlimited': 'nelimitat', 'Offset (m)': 'Decalaj (m)', 'At': 'La', 'Back to the default': 'Înapoi la implicit',
+  'Drafting layers': 'Layere de desen', 'Current': 'Curent', 'Colour': 'Culoare', 'Pen (mm)': 'Peniță (mm)', 'Locked': 'Blocat', 'Add': 'Adaugă', "New layer's name": 'Numele noului layer',
+  'Base point': 'Punct de bază', 'Survey point': 'Punct topografic', 'Show the base and survey points in plans': 'Arată punctul de bază și punctul topografic în planuri',
+  'Add a survey point': 'Adaugă un punct topografic', 'Remove the survey point': 'Șterge punctul topografic', 'True north (°)': 'Nordul adevărat (°)', 'Easting (m)': 'Est (m)', 'Northing (m)': 'Nord (m)',
+  'Wall type': 'Tip de perete', 'New type': 'Tip nou', 'Save type': 'Salvează tipul', 'Create type': 'Creează tipul', 'Delete type': 'Șterge tipul', 'Draw with it': 'Desenează cu el',
+  'Place with it': 'Pune cu el', 'Layer': 'Strat', 'Material': 'Material', 'Thickness': 'Grosime', 'Core': 'Miez', 'Zone': 'Zonă', 'New door': 'Ușă nouă', 'New window': 'Fereastră nouă',
+  'Precast': 'Prefabricat', 'Cast in place': 'Turnat pe loc', 'None': 'Fără', 'As the wall': 'Ca peretele', 'Product': 'Produs', 'Reinforcement': 'Armare',
+
+  // Schedules, sheets, views
+  'Rows': 'Rânduri', 'On each card': 'Pe fiecare fișă', 'Interior view': 'Vedere din interior', 'Exterior view': 'Vedere din exterior', 'Tables': 'Tabele', 'Table': 'Tabel',
+  'To check': 'De verificat', 'reviewed': 'verificat', 'Back to the default rows': 'Înapoi la rândurile implicite', 'doors and windows': 'uși și ferestre', 'doors': 'uși', 'windows': 'ferestre',
+  'inside and outside': 'interior și exterior', 'outside': 'exterior', 'inside': 'interior', 'Row': 'Rând', 'Place view…': 'Pune o vedere…', 'Fit': 'Încadrează',
+  'Fit everything': 'Încadrează tot', 'Export PDF': 'Exportă PDF', 'Export DXF': 'Exportă DXF', 'Export CSV': 'Exportă CSV', 'Command': 'Comandă',
+  'Object snap (F3)': 'Snap la obiecte (F3)', 'Ortho (F8; hold Shift)': 'Ortho (F8; ține Shift)', 'Polar tracking every 45° (F10)': 'Urmărire polară la 45° (F10)',
+  'The layer new shapes go on': 'Layerul pe care merg formele noi', 'Mode': 'Mod', 'Snap': 'Snap',
+  'Length': 'Lungime', 'Layers run': 'Straturile merg', 'as drawn': 'cum s-a desenat', 'reversed': 'inversat', 'Flip': 'Întoarce', '(no phase)': '(fără fază)', '(stays)': '(rămâne)',
+  'Dimensions': 'Dimensiuni', 'Element': 'Element', 'elements': 'elemente', ' · unsaved': ' · nesalvat', 'POINTS · GRID 0.05 m': 'PUNCTE · GRID 0,05 m', 'SELECT': 'SELECȚIE', 'DRAWING': 'DESEN', 'SHEET': 'PLANȘĂ', 'SCHEDULE': 'EXTRAS', '3D · SHADED': '3D · UMBRIT', 'Total': 'Total',
+  'Volume': 'Volum', 'Area': 'Arie', 'Net volume': 'Volum net', 'Gross volume': 'Volum brut', 'Net area': 'Arie netă', 'Gross area': 'Arie brută', 'Perimeter': 'Perimetru',
+  'Surface area': 'Arie a suprafeței', 'Plan area': 'Arie în plan', 'Lowest point': 'Punctul cel mai jos', 'Highest point': 'Punctul cel mai înalt', 'Fill': 'Umplutură',
+};
+
+/** Phrases with a number or a name in them. */
+export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^(\d+) elements?$/, (m) => `${m[1]} elemente`],
+  [/^Plan · (.+)$/, (m) => `Plan · ${m[1]}`],
+  [/^(\d+) to check$/, (m) => `${m[1]} de verificat`],
+  [/^Plan · (.+)$/, (m) => `Plan · ${m[1]}`],
+  [/^(\d+) line edit\(s\) lost their edge · clean$/, (m) => `${m[1]} editări de linii și-au pierdut muchia · curăță`],
+  [/^view range: (\d+) problem\(s\)$/, (m) => `domeniul vederii: ${m[1]} probleme`],
+  [/^Terrain created from (\d+) points\.$/, (m) => `Teren creat din ${m[1]} puncte.`],
+];
