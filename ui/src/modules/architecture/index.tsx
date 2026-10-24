@@ -5,6 +5,8 @@ import type { Grip, LapinModule, ToolDef } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
+import { typeOf } from '../../engine/model';
+import { activate } from '../../platform/modules';
 import { setJoinStyle, useWallPrefs } from './prefs';
 import { WallLayers } from './WallLayers';
 import { WallTypesDialog } from './WallTypesDialog';
@@ -131,6 +133,19 @@ const architecture: LapinModule = {
   ],
   dialogs: { wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog },
   grips: { IfcWall: wallGrips },
+  similar: {
+    IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },
+    IfcSlab: (n) => { useUi.setState({ slabTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(slab); },
+    IfcDoor: (n) => { useUi.setState({ doorTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(door); },
+    IfcWindow: (n) => { useUi.setState({ windowTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(window_); },
+    IfcRoof: (n) => { useUi.setState({ roofStyle: typeof n.props.style === 'string' ? n.props.style : null }); activate(roof); },
+  },
+  setType: {
+    IfcWall: (ids, typeId) => execute('architecture.setWallType', { ids, typeId }),
+    IfcSlab: (ids, typeId) => execute('architecture.setSlabType', { ids, typeId }),
+    IfcDoor: (ids, typeId) => execute('architecture.setJoineryType', { ids, typeId }),
+    IfcWindow: (ids, typeId) => execute('architecture.setJoineryType', { ids, typeId }),
+  },
 };
 
 export default architecture;

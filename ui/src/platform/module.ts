@@ -77,4 +77,8 @@ export interface LapinModule {
   background?: ComponentType;
   /** The grips of a selected entity, by IFC class. */
   grips?: Record<string, (node: NodeDto) => Grip[]>;
+  /** Create Similar (CS): the tool that builds this class, set up like the element (its type, its style). */
+  similar?: Record<string, (node: NodeDto) => void>;
+  /** Match Type (MA): elements of this class given another type. */
+  setType?: Record<string, (ids: string[], typeId: string) => Promise<unknown>>;
 }

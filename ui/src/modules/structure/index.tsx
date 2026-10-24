@@ -60,6 +60,11 @@ const structure: LapinModule = {
   propertySections: [{ id: 'structure', label: 'Structure', classes: ['IfcColumn', 'IfcBeam', 'IfcFooting'], component: StructureSection }],
   dialogs: { structureTypes: StructureTypesDialog },
   grips: { IfcBeam: pathGrips, IfcFooting: (n) => (n.props.start ? pathGrips(n) : []), IfcColumn: pointGrip },
+  setType: {
+    IfcColumn: (ids, typeId) => execute('structure.setType', { ids, typeId }),
+    IfcBeam: (ids, typeId) => execute('structure.setType', { ids, typeId }),
+    IfcFooting: (ids, typeId) => execute('structure.setType', { ids, typeId }),
+  },
 };
 
 export default structure;

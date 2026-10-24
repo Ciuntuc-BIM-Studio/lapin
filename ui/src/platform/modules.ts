@@ -17,6 +17,8 @@ export const backgrounds = (): ComponentType[] => modules.map((m) => m.backgroun
 export const dialog = (id: string): ComponentType | null => modules.map((m) => m.dialogs?.[id]).find(Boolean) ?? null;
 
 export const gripsOf = (node: NodeDto): Grip[] => modules.flatMap((m) => m.grips?.[node.type]?.(node) ?? []);
+export const similarOf = (cls: string) => modules.map((m) => m.similar?.[cls]).find(Boolean) ?? null;
+export const setTypeOf = (cls: string) => modules.map((m) => m.setType?.[cls]).find(Boolean) ?? null;
 
 /** Every tool of every module, once. */
 export const allTools = (): ToolDef[] => {

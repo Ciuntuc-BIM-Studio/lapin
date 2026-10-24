@@ -54,7 +54,7 @@ const terrainFromFile: ToolDef = {
 
 /** A platform: its outline in plan (Enter or the first corner closes it); it is levelled at the ground's height in its middle, changed in the inspector. */
 const platform: ToolDef = {
-  id: 'civil.platform', label: 'Platform', icon: LandPlot, shortcut: 'PF',
+  id: 'civil.platform', label: 'Platform', icon: LandPlot, shortcut: 'PD',
   gesture: { kind: 'polygon' },
   complete: async ({ points }, ctx) => {
     await ctx.execute('civil.addPlatform', { points: points.map((p) => [p.x, p.y]) });

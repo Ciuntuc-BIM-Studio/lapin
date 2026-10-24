@@ -1,18 +1,74 @@
 /** Core: always there — selecting, measuring, the views and how they look, materials and drafting standards. */
 
-import { Box, Eye, Hash, Layers3, MousePointer2, Palette, Ruler, Scissors, Square, SquareStack } from 'lucide-react';
-import { execute } from '../../engine/session';
+import { Box, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, Move, MousePointer2, Palette, Pipette, RotateCw, Ruler, Scissors, Square, SquareStack, Trash2 } from 'lucide-react';
+import { execute, useSession } from '../../engine/session';
+import { typeOf } from '../../engine/model';
+import { notify } from '../../app/store';
+import { setTypeOf, similarOf } from '../../platform/modules';
+import { registerCommand, startCommand, useCad, cadLog, type Step } from '../../viewport/cad/session';
 import type { LapinModule } from '../../platform/module';
 import { setTool, useUi } from '../../app/store';
 import { MaterialsDialog } from './MaterialsDialog';
 import { StandardsDialog } from './StandardsDialog';
 import { SheetSection } from './SheetSection';
 
+/** Create Similar: the selected element's tool, set up like it. */
+function createSimilar() {
+  const id = useUi.getState().selection;
+  const node = id ? useSession.getState().nodes.get(id) : undefined;
+  const f = node ? similarOf(node.type) : null;
+  if (!node || !f) { notify('Select a wall, floor, roof, door or window to make more like it.'); return; }
+  f(node);
+}
+
+/** MATCHTYPE: a source element's type given to the elements clicked after it (the same class). */
+function matchType(): Step {
+  const withSource = (sourceId: string): Step => {
+    const s = useSession.getState();
+    const src = s.nodes.get(sourceId), type = typeOf(s, sourceId);
+    if (!src || !type || !setTypeOf(src.type)) { cadLog('That element has no type to give.'); return pick(); }
+    const step = (): Step => ({
+      prompt: `Click the elements to give „${type.name}” (Enter to finish)`, want: 'select',
+      point: async (p) => {
+        const id = useCad.getState().host?.pickAny(p);
+        const n = id ? useSession.getState().nodes.get(id) : undefined;
+        if (!n || n.type !== src.type) cadLog('Pick an element of the same kind.');
+        else await setTypeOf(src.type)!([n.id], type.id);
+        return step();
+      },
+      enter: () => null,
+    });
+    return step();
+  };
+  const pick = (): Step => ({
+    prompt: 'Click the element whose type to give', want: 'select',
+    point: (p) => { const id = useCad.getState().host?.pickAny(p); return id ? withSource(id) : pick(); },
+  });
+  const sel = useUi.getState().selection;
+  return sel ? withSource(sel) : pick();
+}
+registerCommand({ names: ['MATCHTYPE', 'MA'], label: 'Match type', start: matchType });
+
 const core: LapinModule = {
   id: 'core',
   name: 'Core',
   summary: 'Project, views, selection and measuring.',
   tabs: [{
+    id: 'modify', label: 'Modify', order: 5,
+    groups: [
+      { label: 'Modify', tools: [
+        { id: 'modify.move', label: 'Move', icon: Move, run: () => void startCommand('MOVE') },
+        { id: 'modify.copy', label: 'Copy', icon: Copy, run: () => void startCommand('COPY') },
+        { id: 'modify.rotate', label: 'Rotate', icon: RotateCw, run: () => void startCommand('ROTATE') },
+        { id: 'modify.mirror', label: 'Mirror', icon: FlipHorizontal2, run: () => void startCommand('MIRROR') },
+        { id: 'modify.delete', label: 'Delete', icon: Trash2, run: () => void startCommand('ERASE') },
+      ] },
+      { label: 'Like this', tools: [
+        { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', run: createSimilar },
+        { id: 'modify.match', label: 'Match type', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHTYPE') },
+      ] },
+    ],
+  }, {
     id: 'manage', label: 'Manage', order: 80,
     groups: [
       { label: 'Settings', tools: [

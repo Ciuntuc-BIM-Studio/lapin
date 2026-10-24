@@ -48,6 +48,7 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
             r.Quantities(cls, Quantities);
         }
         r.Service<IGeometryFilter>(this);
+        r.Service<IElementPlacement>(new StudioPlacement());
 
         r.Command("extrude", "Extrude", (ctx, a) => Create(ctx, a, "extrude"));
         r.Command("sweep", "Sweep", (ctx, a) => Create(ctx, a, "sweep"));

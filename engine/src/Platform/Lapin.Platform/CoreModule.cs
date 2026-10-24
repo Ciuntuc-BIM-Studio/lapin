@@ -91,6 +91,38 @@ public sealed class CoreModule : ILapinModule
             return null;
         });
 
+        // Move, copy, rotate or mirror elements and annotations in plan (one undo step); a copy returns the new ids.
+        r.Command("element.transform", "Transform", (ctx, a) =>
+        {
+            static BubbleBim.Geometry.Vec2 V(JsonNode? n, string what) => n is JsonArray p && p.Count >= 2 && Json.Number(p[0]) is { } x && Json.Number(p[1]) is { } y
+                ? new BubbleBim.Geometry.Vec2(x, y) : throw new CommandException($"The {what} is [x, y].");
+            var ids = a["ids"] is JsonArray arr ? arr.Select(n => (string?)n).OfType<string>().Distinct().ToList() : [];
+            if ((string?)a["id"] is { } one && !ids.Contains(one)) ids.Add(one);
+            var op = (string?)a["op"] ?? "move";
+            var t = op switch
+            {
+                "move" or "copy" => Placement2D.Move(V(a["by"], "displacement")),
+                "rotate" => Placement2D.Rotate(V(a["center"], "centre"), (Json.Number(a["angle"]) ?? 0) * Math.PI / 180),
+                "mirror" => (V(a["a"], "mirror line's start") - V(a["b"], "mirror line's end")).Length < 1e-9
+                    ? throw new CommandException("A mirror line needs two different points.") : Placement2D.Mirror(V(a["a"], "start"), V(a["b"], "end")),
+                _ => throw new CommandException($"„{op}” is not move, copy, rotate or mirror."),
+            };
+            var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
+            var entities = ids.Select(id => ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.")).ToList();
+            // What a module places itself (an opening in its wall) goes with its host, not on its own.
+            entities = entities.Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)
+                && ctx.Model.RelatingOf(e.Id, IfcClass.RelFillsElement) == null && ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement) == null).ToList();
+            var moving = entities.Select(e => e.Id).ToHashSet();
+            var made = new JsonArray();
+            foreach (var e in entities)
+            {
+                if (ctx.Model.Get(e.Id) is not { } now) continue;
+                if (copy) made.Add(Placement.Copy(ctx, now, t));
+                else Placement.Transform(ctx, now, t, moving);
+            }
+            return new JsonObject { ["ids"] = made };
+        });
+
         r.Command("element.delete", "Delete", (ctx, a) =>
         {
             var ids = a["ids"] is JsonArray arr ? arr.Select(n => (string?)n).OfType<string>().ToList() : [];

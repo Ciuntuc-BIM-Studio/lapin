@@ -19,6 +19,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             [new("text", "Text", "text"), new("textStyle", "Text style", "text"), new("dimStyle", "Dimension style", "text"), new("angle", "Angle", "angle")], "#555555", Kind: "annotation"));
         r.Service<IViewAnnotations>(this);
         Cad.DraftCommands.Register(r);
+        r.Service<IElementPlacement>(new Cad.AnnotationPlacement());
 
         // ------------------------------------------------------------ grids
         r.Command("addAxis", "Grid axis", (ctx, a) =>

@@ -185,7 +185,7 @@ function moveOrCopy(copy: boolean): Step | null | void | Promise<Step | null | v
         prompt: copy ? 'Second point (Enter to finish)' : 'Second point', want: 'point', base,
         preview: (c) => shapesOf(ids).map((s) => moved(s, { x: c.x - base.x, y: c.y - base.y })),
         point: async (p) => {
-          await execute('drafting.transform', { ids, op: copy ? 'copy' : 'move', by: [p.x - base.x, p.y - base.y] });
+          await execute('element.transform', { ids, op: copy ? 'copy' : 'move', by: [p.x - base.x, p.y - base.y] });
           return copy ? second() : null;
         },
         enter: () => null,
@@ -199,7 +199,7 @@ function rotate(): Step | null | void | Promise<Step | null | void> {
   return withSelection((ids) => ({
     prompt: 'Base point', want: 'point',
     point: (c) => {
-      const go = async (deg: number) => { await execute('drafting.transform', { ids, op: 'rotate', center: V(c), angle: deg }); return null; };
+      const go = async (deg: number) => { await execute('element.transform', { ids, op: 'rotate', center: V(c), angle: deg }); return null; };
       return { prompt: 'Angle (degrees, or a point)', want: 'point', base: c, preview: (p) => [{ type: 'line', a: c, b: p }], value: go, point: (p) => go((Math.atan2(p.y - c.y, p.x - c.x) * 180) / Math.PI) };
     },
   }));
@@ -212,7 +212,7 @@ function mirror(): Step | null | void | Promise<Step | null | void> {
     point: (a) => {
       const second = (): Step => ({
         prompt: `Second point [Erase source: ${erase ? 'yes' : 'no'}]`, want: 'point', base: a, preview: (p) => [{ type: 'line', a, b: p }],
-        point: async (b) => { await execute('drafting.transform', { ids, op: 'mirror', a: V(a), b: V(b), copy: !erase }); return null; },
+        point: async (b) => { await execute('element.transform', { ids, op: 'mirror', a: V(a), b: V(b), copy: !erase }); return null; },
         keywords: { E: () => { erase = !erase; return second(); } },
       });
       return second();
