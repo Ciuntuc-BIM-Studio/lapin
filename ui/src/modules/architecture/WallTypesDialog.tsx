@@ -8,12 +8,13 @@
  * the type follows.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { materialName, mm, ofClass, relatedOf, typeLayers } from '../../engine/model';
-import { DEFAULT_RULE, LintelRuleEditor, type Rule } from './LintelRule';
+import { LintelRuleEditor } from './LintelRule';
+import { DEFAULT_RULE, type Rule } from './lintels';
 
 interface Row { material: string; thicknessMm: string; core: boolean }
 
@@ -59,9 +60,14 @@ export function WallTypesDialog() {
   const [lintels, setLintels] = useState<Rule>(DEFAULT_RULE);
   const info = useSession((s) => s.info);
 
+  // The editor loads when the picked type changes, not on every diff (which
+  // would throw away what is being typed): it reads the model through a ref.
+  const modelRef = useRef(model);
+  modelRef.current = model;
   // Load the picked type into the editor.
   useEffect(() => {
-    const t = editing ? nodes.get(editing) : undefined;
+    const model = modelRef.current;
+    const t = editing ? model.nodes.get(editing) : undefined;
     if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); return; }
     setLintels((t.props.lintels as unknown as Rule | undefined) ?? DEFAULT_RULE);
     setName(t.name);

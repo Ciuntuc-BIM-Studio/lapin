@@ -105,6 +105,8 @@ export function textureFor(kind: TextureKind, color: string): THREE.Texture {
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = 4;
+    // Shared by every mesh in that material: a mesh that goes leaves it.
+    t.userData.shared = true;
     cache.set(key, t);
   }
   return t;

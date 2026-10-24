@@ -2,26 +2,10 @@
 
 import { FileUp, LandPlot, Mountain } from 'lucide-react';
 import type { LapinModule, ToolDef } from '../../platform/module';
-import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
-
-/** A text file the user picks (a survey: xyz or PENZD), or null when cancelled. */
-export function pickText(accept: string): Promise<{ name: string; text: string } | null> {
-  return new Promise((resolve) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = accept;
-    input.onchange = () => {
-      const f = input.files?.[0];
-      if (!f) { resolve(null); return; }
-      void f.text().then((text) => resolve({ name: f.name.replace(/\.[^.]+$/, ''), text }));
-    };
-    input.click();
-  });
-}
-
-const SURVEY = '.csv,.txt,.xyz,.pts';
+import { execute } from '../../engine/session';
+import { SURVEY, pickText } from './survey';
+import { TerrainSection } from './TerrainSection';
 
 /** The lowest surveyed elevation, rounded down to the metre: what ±0.00 defaults to. */
 function lowest(text: string): number | null {
@@ -73,23 +57,6 @@ const platform: ToolDef = {
     await ctx.execute('civil.addPlatform', { points: points.map((p) => [p.x, p.y]) });
   },
 };
-
-/** A terrain in the inspector: its points, and replacing them from a new survey. */
-function TerrainSection({ node }: { node: NodeDto }) {
-  const count = Array.isArray(node.props.points) ? node.props.points.length : 0;
-  const relations = useSession((s) => s.relations);
-  const pads = [...relations.values()].filter((r) => r.class === 'IfcRelVoidsElement' && r.relating === node.id).reduce((n, r) => n + r.related.length, 0);
-  return (
-    <dl className="fields">
-      <dt>Points</dt><dd>{count}</dd>
-      <dt>Platforms</dt><dd>{pads}</dd>
-      <dt />
-      <dd><button type="button" disabled={!node.editable} onClick={() => void pickText(SURVEY).then((f) => f && execute('civil.updateTerrain', { id: node.id, text: f.text }))}>
-        <FileUp size={13} /> Replace the points…
-      </button></dd>
-    </dl>
-  );
-}
 
 const civil: LapinModule = {
   id: 'civil',

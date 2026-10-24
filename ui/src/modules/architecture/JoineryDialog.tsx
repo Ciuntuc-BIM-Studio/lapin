@@ -7,12 +7,13 @@
  * refitted to its new size.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { engine, execute, useSession } from '../../engine/session';
 import { mm, ofClass, relatedOf } from '../../engine/model';
-import { LintelRuleEditor, type Rule } from './LintelRule';
+import { LintelRuleEditor } from './LintelRule';
+import type { Rule } from './lintels';
 
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean }
 interface Spec {
@@ -54,9 +55,13 @@ export function JoineryDialog() {
   const [rows, setRows] = useState('1');
   const [preview, setPreview] = useState<Preview | null>(null);
 
+  // The editor loads when the picked type changes, not on every diff (which
+  // would throw away what is being typed): it reads the model through a ref.
+  const modelRef = useRef(model);
+  modelRef.current = model;
   // Load the picked type (or a fresh default) into the editor.
   useEffect(() => {
-    const t = editing ? nodes.get(editing) : undefined;
+    const t = editing ? modelRef.current.nodes.get(editing) : undefined;
     const s = (t?.props.spec as unknown as Spec | undefined) ?? catalog?.defaultWindow ?? null;
     setSpec(s ? structuredClone(s) : null);
     if (s) { setCols(s.columns.join(' ')); setRows(s.rows.join(' ')); }

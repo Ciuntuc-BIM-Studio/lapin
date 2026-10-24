@@ -13,13 +13,14 @@ import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { Vec2 } from '../platform/module';
 import { findTool, gripsOf } from '../platform/modules';
 import type { Grip } from '../platform/module';
-import { boxTest, segsOf, type Seg } from './selectBox';
-import { distToSegment, pairs, pointInPolygon, toMm } from './snap';
+import { boxIds, pickAt } from './planPick';
+import { pairs, toMm } from './snap';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
 import { useDrawing } from './drawing';
 import { editDimension } from './dimensionEdit';
-import { CadOverlay, useCadCanvas, type Aimed } from './cad/canvas';
+import { CadOverlay } from './cad/canvas';
+import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
 import type { Shape } from './cad/shapes';
@@ -27,7 +28,6 @@ import type { Shape } from './cad/shapes';
 interface View { cx: number; cy: number; scale: number } // scale = px per metre
 
 const KIND_ORDER: Record<string, number> = { grid: 0, overhead: 1, ridge: 2, hip: 2, valley: 2, break: 2, outline: 3, cut: 4, symbol: 5, heavy: 5, label: 6 };
-const PICK_PRIORITY: Record<string, number> = { hit: 0, symbol: 0, heavy: 0, cut: 1, outline: 2, overhead: 8 };
 
 export function PlanView() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -91,44 +91,17 @@ export function PlanView() {
     setView({ cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, scale: Math.max(5, Math.min(scale, 400)) });
   }, [items, size]);
 
-  // A different storey: frame it.
+  // A different storey: frame it. Only then: an edit or a resize keeps the
+  // view, so the effect reads the current fit through a ref, not as a dependency.
   const measured = size.w > 0 && size.h > 0;
-  useEffect(() => { if (measured) fit(); }, [storey?.id, measured]);
+  const fitRef = useRef(fit);
+  fitRef.current = fit;
+  useEffect(() => { if (measured) fitRef.current(); }, [storey?.id, measured]);
 
   // ─── Picking ─────────────────────────────────────────────────────────────
 
-  const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null => {
-    const tol = 6 / view.scale;
-    // Annotations (dimensions, texts, grids, section lines) lie over the model: they are picked first.
-    if (!types && drawing?.marks) {
-      for (const m of drawing.marks) {
-        const s = m.segments;
-        for (let k = 0; k + 3 < s.length; k += 4) {
-          if (distToSegment(p, { x: s[k], y: s[k + 1] }, { x: s[k + 2], y: s[k + 3] }) >= tol) continue;
-          if (nodes.get(m.id)) return nodes.get(m.id)!;
-          // One axis of a grid (grid#tag): selected on its own.
-          const owner = m.id.includes('#') ? nodes.get(m.id.slice(0, m.id.indexOf('#'))) : undefined;
-          if (owner) return { ...owner, id: m.id, name: `Axis ${m.id.slice(m.id.indexOf('#') + 1)}` };
-        }
-      }
-    }
-    let best: { e: NodeDto; prio: number } | null = null;
-    for (const r of items) {
-      const e = nodes.get(r.nodeId);
-      if (!e || (types && !types.includes(e.type))) continue;
-      for (const it of r.plan) {
-        if (it.kind === 'label' || it.kind === 'grid') continue;
-        const poly = pairs(it.points);
-        let hit = it.closed && pointInPolygon(p, poly);
-        const n = it.closed ? poly.length : poly.length - 1;
-        for (let i = 0; i < n && !hit; i++) if (distToSegment(p, poly[i], poly[(i + 1) % poly.length]) < tol) hit = true;
-        if (!hit) continue;
-        const prio = PICK_PRIORITY[it.kind] ?? 9;
-        if (!best || prio <= best.prio) best = { e, prio };
-      }
-    }
-    return best?.e ?? null;
-  }, [items, nodes, view.scale, drawing]);
+  const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null =>
+    pickAt(p, 6 / view.scale, items, nodes, drawing?.marks, types), [items, nodes, view.scale, drawing]);
 
   // ─── Gestures ────────────────────────────────────────────────────────────
 
@@ -271,22 +244,7 @@ export function PlanView() {
   /** What a selection box takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
   const selectBox = (b: { a: Vec2; b: Vec2 }, add: boolean) => {
     const p = toWorld(b.a.x, b.a.y), q = toWorld(b.b.x, b.b.y);
-    const takes = boxTest(p, q, b.b.x >= b.a.x);
-    const ids: string[] = [];
-    for (const r of items) {
-      const segs: Seg[] = [];
-      for (const it of r.plan) {
-        if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid') continue;
-        const ps = pairs(it.points);
-        for (let i = 0; i + 1 < ps.length + (it.closed ? 1 : 0); i++) segs.push([ps[i], ps[(i + 1) % ps.length]]);
-      }
-      if (nodes.get(r.nodeId) && takes(segs)) ids.push(r.nodeId);
-    }
-    for (const m of drawing?.marks ?? []) {
-      const segs = segsOf(m.segments);
-      const owner = m.id.includes('#') ? m.id.slice(0, m.id.indexOf('#')) : m.id;
-      if (nodes.get(owner) && takes(segs) && !ids.includes(m.id)) ids.push(m.id);
-    }
+    const ids = boxIds(p, q, b.b.x >= b.a.x, items, nodes, drawing?.marks);
     const before = add || useCad.getState().step ? useUi.getState().selected : [];
     const next = [...new Set([...before, ...ids])];
     useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
@@ -307,11 +265,11 @@ export function PlanView() {
 
   // ─── Drawing ─────────────────────────────────────────────────────────────
 
-  const path = (flat: ArrayLike<number>, closed: boolean) => {
+  const path = useCallback((flat: ArrayLike<number>, closed: boolean) => {
     const p = pairs(flat).map(toScreen);
     if (p.length === 0) return '';
     return `M${p.map((q) => `${q.x.toFixed(1)},${q.y.toFixed(1)}`).join('L')}${closed ? 'Z' : ''}`;
-  };
+  }, [toScreen]);
 
   const grid = useMemo(() => {
     const lines: { d: string; major: boolean }[] = [];
@@ -336,7 +294,7 @@ export function PlanView() {
       d: it.kind === 'label' ? '' : path(it.points, it.closed), at: toScreen({ x: it.points[0] ?? 0, y: it.points[1] ?? 0 }),
     }));
     return out.sort((a, b) => (KIND_ORDER[a.kind] ?? 5) - (KIND_ORDER[b.kind] ?? 5));
-  }, [items, toScreen]);
+  }, [items, toScreen, path]);
 
   const preview = (() => {
     if (!tool?.gesture || !hover) return null;

@@ -5,12 +5,12 @@
  * command-line commands.
  */
 
-import { useEffect, useState } from 'react';
 import { Box, Eye, PenTool, RefreshCcw, SquareMinus, SquarePlus, SquareSplitHorizontal, Unlink, Waypoints } from 'lucide-react';
 import type { LapinModule, ToolDef } from '../../platform/module';
-import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
-import { execute, query, useSession } from '../../engine/session';
+import { execute } from '../../engine/session';
+import { editSketch } from './sketch';
+import { FeatureCard } from './FeatureCard';
 import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 
 const CLASSES = ['PROXY', 'MEMBER', 'PLATE', 'COVERING', 'RAILING', 'STAIR', 'RAMP', 'CHIMNEY', 'FURNITURE', 'WALL', 'SLAB', 'COLUMN', 'BEAM', 'ROOF', 'FOOTING'];
@@ -63,22 +63,6 @@ registerCommand({ names: ['EXTRUDE', 'EXT', 'EXTRUSION'], label: 'Extrude', star
 registerCommand({ names: ['SWEEP', 'SW'], label: 'Sweep', start: sweep });
 registerCommand({ names: ['REVOLVE', 'REV'], label: 'Revolve', start: revolve });
 
-interface Feature { operation: string; view?: string; viewId?: string; holes: number; sketch: string[]; area?: number; guide?: string | null }
-
-/** The sketch of a solid opened on its view, selected for editing. */
-async function editSketch(id?: string): Promise<void> {
-  const target = id ?? useUi.getState().selection;
-  if (!target) { notify('Select a solid first: its sketch opens on its view.'); return; }
-  const f = await query<Feature>('studio.feature', { id: target });
-  if (!f?.viewId) { notify('That is not a Studio solid: it is edited with its own tool.'); return; }
-  const view = useSession.getState().nodes.get(f.viewId);
-  const kind = view?.props.kind ?? 'plan';
-  if (kind === 'plan' || f.viewId.startsWith('plan:')) useUi.setState({ view: 'plan', planViewId: f.viewId.startsWith('plan:') ? null : f.viewId });
-  else useUi.setState({ view: 'drawing', drawingViewId: f.viewId });
-  useUi.setState({ selected: f.sketch, selection: f.sketch[0] ?? null });
-  notify('The sketch is selected on its view: edit it and the solid follows.');
-}
-
 /** The selection as a boolean: the first selected is the target, the others its tools. */
 const boolean = (op: 'subtract' | 'union' | 'intersect'): ToolDef['run'] => () => {
   const [target, ...tools] = useUi.getState().selected;
@@ -90,26 +74,6 @@ const boolean = (op: 'subtract' | 'union' | 'intersect'): ToolDef['run'] => () =
       : 'Only what the elements share is left, in the first selected element. The others stay editable through Show operands.');
   });
 };
-
-/** A Studio solid in the inspector: its operation, sketch, net face, guide; Edit sketch. */
-function FeatureCard({ node }: { node: NodeDto }) {
-  const nodes = useSession((s) => s.nodes);
-  const [f, setF] = useState<Feature | null>(null);
-  useEffect(() => { void query<Feature>('studio.feature', { id: node.id }).then(setF); }, [node.id, nodes]);
-  if (!f) return null;
-  const op = f.operation[0].toUpperCase() + f.operation.slice(1);
-  return (
-    <dl className="fields">
-      <dt>Studio</dt><dd>{op}</dd>
-      <dt>Sketch</dt><dd>{f.view ?? '—'} · outline, {f.holes} hole(s)</dd>
-      {f.area != null && <><dt>Face</dt><dd>{f.area.toFixed(2)} m² net</dd></>}
-      {f.guide != null && <><dt>{f.operation === 'sweep' ? 'Path' : 'Axis'}</dt><dd className={f.guide === 'missing' ? 'error-text' : ''}>{f.guide === 'missing' ? 'missing: redraw it to rebuild' : f.guide}</dd></>}
-      <dt />
-      <dd><button type="button" onClick={() => void editSketch(node.id)}><PenTool size={13} /> Edit sketch</button></dd>
-      <dd className="muted small">Every step stays editable: change the sketch, its holes or the path, and the solid follows.</dd>
-    </dl>
-  );
-}
 
 const cmd = (id: string, label: string, icon: ToolDef['icon'], command: string): ToolDef => ({ id: `studio.${id}`, label, icon, run: () => void startCommand(command) });
 

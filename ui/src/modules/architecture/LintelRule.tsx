@@ -13,18 +13,7 @@ import { ChevronDown, ChevronRight, FileUp } from 'lucide-react';
 import { mm } from '../../engine/model';
 import { execute, query, useSession } from '../../engine/session';
 import { notify } from '../../app/store';
-
-interface Product { code: string; width: number; height: number; lengths: number[]; manufacturer?: string }
-interface Bars { count: number; diameter: number }
-export interface Rule {
-  mode: 'none' | 'precast' | 'cast'; bearing: number; height: number;
-  bearingEnd?: number | null; minWidth?: number | null; width?: number | null; placement?: string | null; pieces?: number | null; material?: string | null;
-  product?: Product | null;
-  reinforcement?: { top?: Bars | null; bottom?: Bars | null; stirrups?: { diameter: number; spacing: number } | null; cover?: number | null } | null;
-  [k: string]: unknown;
-}
-
-export const DEFAULT_RULE: Rule = { mode: 'precast', bearing: 0.25, height: 0.25 };
+import { DEFAULT_RULE, type Product, type Rule } from './lintels';
 
 function MmInput({ value, onChange, empty }: { value: number | null | undefined; onChange: (m: number | null) => void; empty?: string }) {
   const [text, setText] = useState(value == null ? '' : mm(value));

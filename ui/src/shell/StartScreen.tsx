@@ -6,7 +6,7 @@ import { modules, productInfo } from '../platform/modules';
 import { useSession } from '../engine/session';
 import { discardWork, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
 import { useUi } from '../app/store';
-import { openLink } from './HelpMenu';
+import { openLink } from './support';
 import { setLang, useLang } from '../i18n';
 
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });

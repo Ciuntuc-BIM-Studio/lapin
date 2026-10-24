@@ -16,7 +16,7 @@ export function HatchSwatch({ hatch, scale = 1, fill, size = 44, membrane = fals
     let live = true;
     void query<Preview>('hatch.preview', { pattern: hatch, scale, size: 20 }).then((r) => { if (r) { cache.set(key, r); if (live) setP(r); } });
     return () => { live = false; };
-  }, [key]);
+  }, [key, hatch, scale]);
   const k = size / 20;
   const segs = p?.segments ?? [];
   return (

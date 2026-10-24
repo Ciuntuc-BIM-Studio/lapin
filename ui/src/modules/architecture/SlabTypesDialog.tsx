@@ -1,6 +1,6 @@
 /** Floor types: the project's IfcSlabTypes and their layers, top to bottom. Saving is one engine command; every floor of the type follows. */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
@@ -18,8 +18,13 @@ export function SlabTypesDialog() {
   const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
   const [name, setName] = useState('');
   const [rows, setRows] = useState<Row[]>(blank());
+  // The editor loads when the picked type changes, not on every diff (which
+  // would throw away what is being typed): it reads the model through a ref.
+  const modelRef = useRef(model);
+  modelRef.current = model;
   useEffect(() => {
-    const t = editing ? nodes.get(editing) : undefined;
+    const model = modelRef.current;
+    const t = editing ? model.nodes.get(editing) : undefined;
     if (!t) { setName(''); setRows(blank()); return; }
     setName(t.name);
     setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thicknessMm: mm(l.thickness), core: l.core === true })));

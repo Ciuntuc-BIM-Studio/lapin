@@ -29,7 +29,7 @@ export function MaterialsDialog() {
   const [newName, setNewName] = useState('');
   // Every edit comes back as a diff: read the materials again.
   useEffect(() => {
-    void query<Material[]>('material.list').then((r) => { if (r) { setList(r); if (!selected && r[0]) setSelected(r[0].id); } });
+    void query<Material[]>('material.list').then((r) => { if (r) { setList(r); setSelected((cur) => cur ?? r[0]?.id ?? null); } });
     void query<Hatch[]>('hatch.list').then((r) => r && setHatches(r));
   }, [nodes]);
   const m = list.find((x) => x.id === selected) ?? null;

@@ -10,7 +10,7 @@ import { Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { ofClass } from '../../engine/model';
-import { describeType } from './StructureSection';
+import { describeType } from './describe';
 
 const mmToM = (t: string) => Number(t.replace(',', '.')) / 1000;
 

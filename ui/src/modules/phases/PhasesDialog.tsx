@@ -1,23 +1,10 @@
 /** Phases: the project's phases in order, the active one (new work, the 3D) and the filter the 3D applies. */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
-import { execute, query, useSession } from '../../engine/session';
-
-export interface PhaseSettingsDto {
-  phases: { id: string; name: string; kind: string }[];
-  filters: { id: string; name: string; states: Record<string, string> }[];
-  overrides: Record<string, { color: string; opacity: number }>;
-  active?: string; activeFilter?: string;
-}
-
-export function usePhaseSettings(): PhaseSettingsDto | null {
-  const nodes = useSession((s) => s.nodes);
-  const [s, setS] = useState<PhaseSettingsDto | null>(null);
-  useEffect(() => { void query<PhaseSettingsDto>('phases.settings').then((r) => r && setS(r)); }, [nodes]);
-  return s;
-}
+import { execute, useSession } from '../../engine/session';
+import { usePhaseSettings } from './settings';
 
 export function PhasesDialog() {
   const s = usePhaseSettings();

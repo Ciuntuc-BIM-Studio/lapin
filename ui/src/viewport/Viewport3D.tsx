@@ -5,10 +5,11 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useLooks, type Look } from '../platform/looks';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import type { RenderItem } from '../engine/protocol';
+import type { NodeDto, RenderItem } from '../engine/protocol';
 import { activeStorey, useSession } from '../engine/session';
 import { num } from '../engine/model';
 import { select, setTool, useUi } from '../app/store';
@@ -21,6 +22,9 @@ const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
 const GRID = { paper: [0xb5532d, 0xd6cebf], graphite: [0xe07a4f, 0x34312c] } as const;
 const SELECTED = new THREE.Color(0xb5532d);
+/** The edges' one material, shared by every element (highlights and looks change only the faces'). */
+const EDGES = new THREE.LineBasicMaterial({ color: 0x1e2a3a });
+EDGES.userData.shared = true;
 
 function groundGrid(theme: keyof typeof GRID, z: number): THREE.GridHelper {
   const grid = new THREE.GridHelper(60, 60, GRID[theme][0], GRID[theme][1]);
@@ -54,7 +58,7 @@ function meshOf(item: RenderItem): THREE.Group {
     if (edges.length) {
       const e = new THREE.BufferGeometry();
       e.setAttribute('position', new THREE.BufferAttribute(edges, 3));
-      group.add(new THREE.LineSegments(e, new THREE.LineBasicMaterial({ color: 0x1e2a3a })));
+      group.add(new THREE.LineSegments(e, EDGES));
     }
   };
   add(item.positions, item.normals, item.indices, item.edges, item.color);
@@ -85,19 +89,37 @@ function look(group: THREE.Object3D, l: Look | undefined) {
   });
 }
 
+/** Free an object's GPU resources: geometries, materials and their textures (not the shared ones). */
 function dispose(o: THREE.Object3D) {
+  const free = (m: THREE.Material) => {
+    if (m.userData.shared) return;
+    const map = (m as THREE.MeshStandardMaterial).map;
+    if (map && !map.userData.shared) map.dispose();
+    m.dispose();
+  };
   o.traverse((c) => {
     const m = c as THREE.Mesh;
     m.geometry?.dispose();
     const mat = m.material as THREE.Material | THREE.Material[] | undefined;
-    if (Array.isArray(mat)) mat.forEach((x) => x.dispose()); else mat?.dispose();
+    if (Array.isArray(mat)) mat.forEach(free); else if (mat) free(mat);
+    if ((c as THREE.Light).isLight) (c as THREE.Light).dispose();
   });
 }
+
+/** The lowest storey's elevation (0 at most): where the grid's axes lie. */
+const gridBase = (nodes: Map<string, NodeDto>) => {
+  let base = 0;
+  for (const n of nodes.values()) if (n.type === 'IfcBuildingStorey') base = Math.min(base, Number(n.props.elevation ?? 0));
+  return base;
+};
+const gridsOf = (nodes: Map<string, NodeDto>) => [...nodes.values()].filter((n) => n.type === 'IfcGrid');
 
 export function Viewport3D() {
   const host = useRef<HTMLDivElement>(null);
   const scene = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  // Frames are drawn on demand: when the camera moves, the view resizes or the scene changes.
+  const invalidate = useRef<() => void>(() => undefined);
   const items = useRef(new Map<string, { item: RenderItem; object: THREE.Group }>());
   const [pending, setPending] = useState<Vec2 | null>(null);
   const toolId = useUi((s) => s.tool);
@@ -146,18 +168,22 @@ export function Viewport3D() {
     s.add(sun);
     s.add(groundGrid(useUi.getState().theme, elevationRef.current));
 
+    let frame = 0;
+    invalidate.current = () => {
+      if (!frame) frame = requestAnimationFrame(() => { frame = 0; renderer.render(s, camera); });
+    };
+    controls.addEventListener('change', invalidate.current);
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = el;
       renderer.setSize(w, h);
       camera.aspect = w / Math.max(h, 1);
       camera.updateProjectionMatrix();
+      invalidate.current();
     };
     const ro = new ResizeObserver(resize);
     ro.observe(el);
     resize();
-    let frame = 0;
-    const loop = () => { frame = requestAnimationFrame(loop); renderer.render(s, camera); };
-    loop();
+    const live = items.current;
 
     // A click (not a drag): the element under it, and the point on the active storey's plane.
     const ray = new THREE.Raycaster();
@@ -170,7 +196,7 @@ export function Viewport3D() {
       const r = renderer.domElement.getBoundingClientRect();
       ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
       const meshes: THREE.Object3D[] = [];
-      for (const { object } of items.current.values()) meshes.push(object);
+      for (const { object } of live.values()) meshes.push(object);
       const hit = ray.intersectObjects(meshes, true).find((h) => h.object.userData.nodeId);
       const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -elevationRef.current);
       const g = ray.ray.intersectPlane(plane, new THREE.Vector3());
@@ -186,14 +212,20 @@ export function Viewport3D() {
     window.addEventListener('keydown', onKey);
     return () => {
       cancelAnimationFrame(frame);
+      invalidate.current = () => undefined;
       ro.disconnect();
       controls.dispose();
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('pointerup', onUp);
       window.removeEventListener('keydown', onKey);
-      for (const { object } of items.current.values()) dispose(object);
-      items.current.clear();
+      // The elements, the lights, the ground grid and the grid's axes.
+      dispose(s);
+      s.clear();
+      live.clear();
+      scene.current = null;
+      rendererRef.current = null;
       renderer.dispose();
+      renderer.forceContextLoss();
       el.removeChild(renderer.domElement);
     };
   }, []);
@@ -208,10 +240,13 @@ export function Viewport3D() {
     if (!s) return;
     if (old) { s.remove(old); dispose(old); }
     s.add(groundGrid(theme, elevation));
+    invalidate.current();
   }, [theme, elevation]);
 
   // The grid's axes, on the lowest storey: dash-dot lines with their labels at both ends.
-  const gridNodes = useSession((st) => st.nodes);
+  // Keyed on the grids and the lowest storey only, not on every diff.
+  const grids = useSession(useShallow((st) => gridsOf(st.nodes)));
+  const base = useSession((st) => gridBase(st.nodes));
   useEffect(() => {
     const s = scene.current;
     if (!s) return;
@@ -219,9 +254,7 @@ export function Viewport3D() {
     if (old) { s.remove(old); dispose(old); }
     const group = new THREE.Group();
     group.name = 'grid-axes';
-    const base = Math.min(0, ...[...gridNodes.values()].filter((n) => n.type === 'IfcBuildingStorey').map((n) => Number(n.props.elevation ?? 0)));
-    for (const g of gridNodes.values()) {
-      if (g.type !== 'IfcGrid') continue;
+    for (const g of grids) {
       for (const ax of (g.props.axes as { tag: string; a: number[]; b: number[] }[] | undefined) ?? []) {
         const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(ax.a[0], ax.a[1], base + 0.01), new THREE.Vector3(ax.b[0], ax.b[1], base + 0.01)]);
         const line = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: 0x8a5a44, dashSize: 0.6, gapSize: 0.25 }));
@@ -241,7 +274,8 @@ export function Viewport3D() {
       }
     }
     s.add(group);
-  }, [gridNodes]);
+    invalidate.current();
+  }, [grids, base]);
 
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);
@@ -273,6 +307,7 @@ export function Viewport3D() {
         else if ((c as THREE.LineSegments).isLineSegments) c.visible = visualStyle !== 'shaded';
       });
     }
+    invalidate.current();
   }, [render, selected, looks, visualStyle]);
 
   return <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />;

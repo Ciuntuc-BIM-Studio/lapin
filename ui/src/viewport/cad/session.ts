@@ -72,8 +72,13 @@ const log = (line: string) => useCad.setState((s) => ({ history: [...s.history, 
 const fmt = (v: number) => String(Math.round(v * 1000) / 1000);
 const V = (p: Vec2) => [p.x, p.y];
 
+/** Bumped when a command is cancelled or another starts: a step that answers after that is dropped. */
+let generation = 0;
+
 async function advance(next: Next): Promise<void> {
+  const g = generation;
   const step = await next;
+  if (g !== generation) return;
   if (step) useCad.setState({ step });
   else useCad.setState({ step: null, command: null });
 }
@@ -346,7 +351,23 @@ export const cadHost = host;
 
 // ─── Input ─────────────────────────────────────────────────────────────────
 
-export async function startCommand(name: string): Promise<boolean> {
+/**
+ * Input reaches the steps one at a time: a step answers (often after an
+ * engine round trip) before the next point or word is fed, so a double-click
+ * goes to the step the first click made, not twice to the same one.
+ */
+let queue: Promise<unknown> = Promise.resolve();
+function serial<A extends unknown[], R>(fn: (...a: A) => Promise<R>): (...a: A) => Promise<R> {
+  return (...a) => {
+    const r = queue.then(() => fn(...a));
+    queue = r.catch(() => undefined);
+    return r;
+  };
+}
+
+export const startCommand = serial(runCommand);
+
+async function runCommand(name: string): Promise<boolean> {
   const c = findCommand(name);
   if (!c) return false;
   cancel(true);
@@ -360,11 +381,12 @@ export async function startCommand(name: string): Promise<boolean> {
 export function cancel(quiet = false): void {
   const s = useCad.getState();
   if (s.command && !quiet) log('*Cancel*');
+  generation++;
   useCad.setState({ command: null, step: null, buffer: '' });
 }
 
 /** A point clicked in a view (already snapped). */
-export async function feedPoint(p: Vec2): Promise<void> {
+export const feedPoint = serial(async (p: Vec2): Promise<void> => {
   const s = useCad.getState();
   if (!s.step) return;
   useCad.setState({ lastPoint: p });
@@ -375,16 +397,16 @@ export async function feedPoint(p: Vec2): Promise<void> {
     return;
   }
   if (s.step.point) await advance(s.step.point(p));
-}
+});
 
 /** What was typed, on Enter or Space. */
-export async function submit(raw: string): Promise<void> {
+export const submit = serial(async (raw: string): Promise<void> => {
   const s = useCad.getState();
   const text = raw.trim();
   useCad.setState({ buffer: '' });
   if (!s.step) {
-    if (!text) { if (s.last) await startCommand(s.last); return; }
-    if (!(await startCommand(text))) log(`Unknown command „${text}”.`);
+    if (!text) { if (s.last) await runCommand(s.last); return; }
+    if (!(await runCommand(text))) log(`Unknown command „${text}”.`);
     return;
   }
   const step = s.step;
@@ -410,4 +432,4 @@ export async function submit(raw: string): Promise<void> {
   }
   if (/^[a-z][a-z0-9_.-]*$/i.test(text) && step.text) { await advance(step.text(text)); return; }
   log(`„${text}”? ${step.prompt}`);
-}
+});
