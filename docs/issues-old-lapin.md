@@ -10,26 +10,24 @@ Status: ✅ done, 🟡 partial, ⬜ to do, ➖ not relevant (cannot happen in la
   - commands LW, LWTRIM, LWEXTEND, LWJOIN, LWRESET;
   - styles: invisible, show, thin, medium, wide, hidden, overhead, beyond, center, dotted;
   - a warning when an edited element has moved.
-- 🟡 **Pen table 1–16 and object styles:** the engine has them; there is no UI and no pen table stored per project.
+- ✅ **Pen table 1–16 and object styles:** the Object Styles dialog; the pen table is the project's.
 - ✅ **Hidden lines per view, with defaults by view type.**
 - ✅ **Elements of the same material meet without a line;** the Joints option per material.
 - 🟡 **Grid axes:** bubbles per axis are done; the ends are set per axis type, not per end of each axis; ends do not line up with each other.
-- ⬜ **Base point and survey point in plans.**
+- ✅ **Base point and survey point in plans.**
 - ✅ **3D hiding by category and IFC class;** VV/VG for the view in front. (IFC layers wait for layers on elements.)
-- 🟡 **Full view range:** done in the engine; the UI needs a View Range dialog and must show its problems.
+- ✅ **Full view range:** the View Range dialog; its problems show on the plan.
 
 ## Dimensions
-- ✅ **Associative dimensions:** they follow moves and thicker walls, but a rotated element orphans them, and they hold only on cut edges.
+- ✅ **Associative dimensions:** they follow moves, turns and thicker walls.
 - ✅ **Dimension ends on grid axes and wall centre lines.**
 - ✅ **Driving dimensions:** typing a value moves the element.
 - ✅ **Dimension strings:** editing one dimension pushes the elements after it.
-- ✅ **Orphan dimensions:** drawn red; one-click freeing and a list are missing.
+- ✅ **Orphan dimensions:** drawn red, listed, freed in one click.
 
 ## Elements and types
-- ✅ **Grids:**
-  - Selection should be per axis, and Delete should remove that axis.
-  - Grids should be pickable in drawing views and shown in 3D.
-- ⬜ **Columns on grid intersections:** intersection snaps.
+- ✅ **Grids:** selected and deleted per axis, in plans and drawing views. (Axes in 3D: later.)
+- ✅ **Columns on grid intersections:** the Columns at grid tool, and intersection snaps.
 - ✅ **Deleting a type:** refuse while it is in use, or reassign its elements; clear the tool's type.
 - ➖ **Grey layer colours after saving a type:** colours come from the materials.
 - ✅ **Material names suggested in the type editors.**
@@ -41,21 +39,21 @@ Status: ✅ done, 🟡 partial, ⬜ to do, ➖ not relevant (cannot happen in la
 
 ## Schedules and lintels
 - 🟡 **Schedule card drawings:** interior and exterior exist; plan and section, and the picker, are missing.
-- 🟡 **Rows:** the order and the marking of overridden cells are missing from the UI.
-- 🟡 **Sub-schedules and continuation sheets:** done in the engine; no UI.
-- 🟡 **Duplicate checks:** done; the review list is missing.
-- 🟡 **Lintel in the configurator:** the editor covers only the mode, bearing and height.
-- ⬜ **Precast lintel products from a CSV.**
+- ✅ **Rows:** chosen and ordered in the schedule's settings; overridden cells marked and reset.
+- ✅ **Sub-schedules and continuation sheets:** tables in the settings; the next page placed on a new sheet from the sheet's warning.
+- ✅ **Duplicate checks:** the list of elements to check, marked reviewed.
+- ✅ **Lintel in the configurator:** the whole rule.
+- ✅ **Precast lintel products from a CSV.**
 - ✅ **The lintel schedule.**
 
 ## Sheets
-- 🟡 **Schedules wrap at the frame;** side handles to set the width are missing.
-- ⬜ **Warnings past the frame or over the title block.**
-- ⬜ **Snap guides while dragging,** arrow nudges of 1 and 10 mm, and double-click to open.
+- ✅ **Schedules wrap at the frame;** side handles set the width.
+- ✅ **Warnings past the frame or over the title block.**
+- ✅ **Snap guides while dragging,** arrow nudges of 1 and 10 mm, and double-click to open.
 
 ## Work
-- 🟡 **Revit shortcuts:** TR, CS, MA, LW and VV come with their tools.
-- 🟡 **Every tool a JSON command:** done; parameter schemas and an MCP bridge are missing.
-- ⬜ **Romanian interface and a language choice.**
+- ✅ **Revit shortcuts:** TR, CS, MA, LW, VV and the CAD aliases.
+- 🟡 **Every tool a JSON command:** done, with the MCP bridge; parameter schemas are missing.
+- ✅ **Romanian interface and a language choice.** (The CAD command line stays English.)
 - ✅ **Reliable saves, crash recovery, a warning before leaving, undoable deletes.**
 - ✅ **Two View buttons without actions:** Visibility and Visual style.
