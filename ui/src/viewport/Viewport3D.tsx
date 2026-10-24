@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { useLooks, type Look } from '../platform/looks';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { RenderItem } from '../engine/protocol';
@@ -58,6 +59,21 @@ function highlight(group: THREE.Object3D, on: boolean) {
     const m = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
     if (m && 'emissive' in m) m.emissive = on ? SELECTED : new THREE.Color(0);
     if (m && 'emissiveIntensity' in m) m.emissiveIntensity = on ? 0.45 : 0;
+  });
+}
+
+/** A module's look (a phase's): hidden, or its faces tinted and see-through; none: its own colours back. */
+function look(group: THREE.Object3D, l: Look | undefined) {
+  group.visible = !l?.hidden;
+  group.traverse((c) => {
+    const m = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+    if (!m || !('emissive' in m)) return;
+    if (m.userData.own === undefined) m.userData.own = m.color.getHex();
+    m.color.setHex(l?.color ? new THREE.Color(l.color).getHex() : m.userData.own as number);
+    const opacity = l?.opacity ?? 1;
+    m.transparent = opacity < 1;
+    m.opacity = opacity;
+    m.depthWrite = opacity >= 1;
   });
 }
 
@@ -189,6 +205,7 @@ export function Viewport3D() {
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);
   const selected = useUi((st) => st.selected);
+  const looks = useLooks((st) => st.looks);
   useEffect(() => {
     const s = scene.current;
     if (!s) return;
@@ -205,8 +222,11 @@ export function Viewport3D() {
       s.add(object);
       live.set(id, { item, object });
     }
-    for (const [id, { object }] of live) highlight(object, selected.includes(id));
-  }, [render, selected]);
+    for (const [id, { object }] of live) {
+      highlight(object, selected.includes(id));
+      look(object, looks[id]);
+    }
+  }, [render, selected, looks]);
 
   return <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />;
 }

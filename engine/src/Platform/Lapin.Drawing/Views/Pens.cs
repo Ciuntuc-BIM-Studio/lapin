@@ -63,7 +63,16 @@ public static class Pens
     static readonly Dictionary<string, double> WeightMm = new() { ["heavy"] = 0.7, ["medium"] = 0.5, ["light"] = 0.25, ["hairline"] = 0.13 };
 
     public sealed record Options(double Scale = 100, bool HiddenLines = true, LineStyles.Resolver? LineStyle = null,
-        IReadOnlyDictionary<string, CategoryGraphics>? Categories = null, IReadOnlyList<HatchPattern>? Patterns = null, int MaxHatchSegments = 60_000);
+        IReadOnlyDictionary<string, CategoryGraphics>? Categories = null, IReadOnlyList<HatchPattern>? Patterns = null, int MaxHatchSegments = 60_000,
+        IReadOnlyDictionary<string, string>? ElementColors = null);
+
+    /// <summary>A colour washed out towards white (a cut filled with a phase's colour stays readable under its hatch).</summary>
+    static string Pale(string css)
+    {
+        if (css is not { Length: 7 } || !int.TryParse(css[1..], System.Globalization.NumberStyles.HexNumber, null, out var n)) return css;
+        int Mix(int c) => (int)Math.Round(c + (255 - c) * 0.6);
+        return $"#{Mix((n >> 16) & 255):x2}{Mix((n >> 8) & 255):x2}{Mix(n & 255):x2}";
+    }
 
     public static List<Pen> Of(ViewDrawing d, MaterialDrawingResult? m, Options o)
     {
@@ -77,7 +86,7 @@ public static class Pens
         {
             if (m?.HidePolygons.Contains(i) == true) continue;
             var p = d.Cuts[i];
-            var fill = Cat(p.Class)?.FillColor ?? (m != null && m.Fills.TryGetValue(i, out var f) ? f : null);
+            var fill = (o.ElementColors?.GetValueOrDefault(p.Element) is { } ec ? Pale(ec) : null) ?? Cat(p.Class)?.FillColor ?? (m != null && m.Fills.TryGetValue(i, out var f) ? f : null);
             if (fill == null) continue;
             var pen = Get("fill:" + fill, () => new Pen("FILL", null, 0, fill, null));
             pen.Loops.AddRange(p.Loops);
@@ -118,7 +127,7 @@ public static class Pens
             if (g?.Hidden == true) continue;
             if (!o.HiddenLines && l.Role == "hidden") continue;
             var styled = o.LineStyle?.Invoke(l.Role, l.Class, l.Element);
-            var color = styled?.Color ?? g?.LineColor;
+            var color = o.ElementColors?.GetValueOrDefault(l.Element) ?? styled?.Color ?? g?.LineColor;
             Pen pen;
             switch (l.Role)
             {

@@ -53,3 +53,9 @@ public interface IViewAnnotations
 {
     IEnumerable<ViewMark> Marks(ViewContext c);
 }
+
+/// <summary>How a module shows an element in a view: hidden, or drawn in another colour; null: as it is (phases).</summary>
+public interface IViewElementFilter
+{
+    (bool Hide, string? Color)? For(IModelView model, Entity view, Entity element);
+}

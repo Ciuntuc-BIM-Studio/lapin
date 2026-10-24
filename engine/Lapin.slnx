@@ -13,6 +13,9 @@
   <Folder Name="/src/Modules/Drafting/">
     <Project Path="src/Modules/Drafting/Lapin.Drafting/Lapin.Drafting.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Phases/">
+    <Project Path="src/Modules/Phases/Lapin.Phases/Lapin.Phases.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Structure/">
     <Project Path="src/Modules/Structure/Lapin.Structure/Lapin.Structure.csproj" />
   </Folder>

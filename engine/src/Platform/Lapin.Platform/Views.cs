@@ -94,9 +94,11 @@ public static class Views
         var storey = view.Str("storeyId");
         var hiddenCats = (view.Attrs["graphics"]?["categories"] as JsonObject)?.Where(c => c.Value?["hidden"] is JsonValue h && h.TryGetValue<bool>(out var b) && b).Select(c => c.Key).ToHashSet() ?? [];
         var hiddenElements = (view.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        var filters = q.Services.All<IViewElementFilter>();
         foreach (var e in m.Entities)
         {
             if (e.Class is IfcClass.OpeningElement || hiddenElements.Contains(e.Id)) continue;
+            if (filters.Select(f => f.For(m, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
             if (LineStyles.CategoryOf(e.Class) is { } cat && hiddenCats.Contains(cat)) continue;
             if (q.Geometry(e.Id) is not { } g) continue;
             foreach (var p in g.Parts) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material));
@@ -134,7 +136,13 @@ public static class Views
         var graphics = view.Attrs["graphics"] as JsonObject;
         var categories = (graphics?["categories"] as JsonObject)?.Select(c => (c.Key, G: CategoryGraphics.From(c.Value))).Where(x => x.G != null).ToDictionary(x => x.Key, x => x.G!);
         var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, graphics?["elements"] as JsonObject, null, scale);
-        var pens = Pens.Of(drawing, materials, new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m)));
+        // Elements a module draws in another colour (a phase's override): their lines and fills.
+        var colors = new Dictionary<string, string>();
+        var filters = q.Services.All<IViewElementFilter>();
+        if (filters.Count > 0)
+            foreach (var id in drawing.Cuts.Select(c => c.Element).Concat(drawing.Lines.Select(l => l.Element)).Distinct())
+                if (m.Get(id) is { } el && filters.Select(f => f.For(m, view, el)).FirstOrDefault(x => x != null) is { Color: { } c }) colors[id] = c;
+        var pens = Pens.Of(drawing, materials, new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors));
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing);

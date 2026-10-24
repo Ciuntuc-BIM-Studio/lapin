@@ -73,6 +73,8 @@ export interface LapinModule {
   propertySections?: PropertySectionDef[];
   /** Dialogs the module opens (by the store's `dialog`). */
   dialogs?: Record<string, ComponentType>;
+  /** Mounted (invisible) while the workspace is open: what keeps a module's state in step with the model. */
+  background?: ComponentType;
   /** The grips of a selected entity, by IFC class. */
   grips?: Record<string, (node: NodeDto) => Grip[]>;
 }

@@ -10,7 +10,7 @@ import { notify, useUi, type ViewKind } from './app/store';
 import { useShortcuts } from './app/keys';
 import { useSession } from './engine/session';
 import { projectTitle } from './engine/files';
-import { dialog, modules, productInfo } from './platform/modules';
+import { backgrounds, dialog, modules, productInfo } from './platform/modules';
 import { ProjectBrowser } from './shell/ProjectBrowser';
 import { PropertiesPanel } from './shell/PropertiesPanel';
 import { Ribbon } from './shell/Ribbon';
@@ -81,6 +81,7 @@ function Workspace() {
       </div>
       <StatusBar />
       {Dialog && <Dialog />}
+      {backgrounds().map((B, i) => <B key={i} />)}
     </div>
   );
 }
