@@ -12,9 +12,10 @@
  *   claude mcp add lapin -- node /path/to/lapin-pro/scripts/lapin-mcp.mjs
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline';
 
 const VERSION = '0.1.0';
@@ -45,6 +46,53 @@ function decode(buf) {
   const n = b.readUInt32LE(4);
   return JSON.parse(b.toString('utf8', 8, 8 + n));
 }
+
+/**
+ * The arguments each command and query reads, found in the engine's source
+ * (every `a["key"]` and `P(a, "x", "y")` of its handler), so they never drift
+ * from the code. Keys read by helpers the handler calls are not seen; the
+ * command's error then names what is missing. Empty when the source is not
+ * beside this script (a packaged app).
+ */
+function argsFromSource() {
+  const root = join(dirname(fileURLToPath(import.meta.url)), '..', 'engine', 'src');
+  const out = new Map();
+  if (!existsSync(root)) return out;
+  const moduleOf = (dir) => {
+    for (let d = dir; d.startsWith(root); d = dirname(d)) {
+      const f = join(d, 'module.json');
+      if (existsSync(f)) try { return JSON.parse(readFileSync(f, 'utf8')).id; } catch { break; }
+    }
+    return 'core';
+  };
+  const walk = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const f = join(dir, e.name);
+      if (e.isDirectory()) { if (e.name !== 'bin' && e.name !== 'obj') walk(f); continue; }
+      if (!e.name.endsWith('.cs')) continue;
+      const src = readFileSync(f, 'utf8');
+      const marks = [...src.matchAll(/\.(Command|Query)\("([\w.]+)"/g)];
+      if (!marks.length) continue;
+      const mod = moduleOf(dir);
+      marks.forEach((m, i) => {
+        let body = src.slice(m.index, marks[i + 1]?.index ?? src.length);
+        const end = body.search(/\n {4}\}\n/); // the registering method's end
+        if (end > 0) body = body.slice(0, end);
+        const keys = new Set();
+        for (const k of body.matchAll(/\ba\["(\w+)"\]/g)) keys.add(k[1]);
+        for (const k of body.matchAll(/\(a, "(\w+)", "(\w+)"/g)) { keys.add(k[1]); keys.add(k[2]); }
+        for (const k of body.matchAll(/\(a, "(\w+)"\)/g)) keys.add(k[1]);
+        const name = m[2].includes('.') ? m[2] : `${mod}.${m[2]}`;
+        out.set(name, { kind: m[1], keys: [...keys] });
+      });
+    }
+  };
+  walk(root);
+  return out;
+}
+
+const ARGS = argsFromSource();
+const withArgs = (name) => (ARGS.get(name)?.keys.length ? `(${ARGS.get(name).keys.join(', ')})` : '');
 
 let ws = null;
 let next = 1;
@@ -81,13 +129,14 @@ async function call(method, params = {}) {
 const TOOLS = [
   {
     name: 'lapin_info',
-    description: "What the open Lapin has: its product and modules, every command (name and label) and every class it builds with the fields each takes. Read this first.",
+    description: "What the open Lapin has: its product and modules, every command (name, the arguments it reads, label), the queries, and every class it builds with the fields each takes. Read this first.",
     inputSchema: { type: 'object', properties: {} },
     run: async () => {
       const i = await call('session.info');
       return {
         product: i.product, modules: i.modules?.map((m) => m.id),
-        commands: i.commands?.map((c) => `${c.name} — ${c.label}`),
+        commands: i.commands?.map((c) => `${c.name}${withArgs(c.name)} — ${c.label}`),
+        queries: [...ARGS].filter(([, d]) => d.kind === 'Query').map(([n]) => `${n}${withArgs(n)}`),
         classes: i.nodeTypes?.map((t) => ({ class: t.type, label: t.label, module: t.module, fields: t.fields?.map((f) => `${f.key} (${f.kind})`) })),
       };
     },

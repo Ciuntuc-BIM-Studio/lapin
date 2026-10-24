@@ -28,7 +28,7 @@ The engine listens only on 127.0.0.1.
 
 | Tool | What it does |
 |---|---|
-| `lapin_info` | The product, its modules, every command, and the classes with their fields. Call it first. |
+| `lapin_info` | The product, its modules, every command with the arguments it reads, the queries, and the classes with their fields. Call it first. The arguments come from the engine source beside the script (each handler's `a["key"]`), so they never drift; keys read inside helpers are not listed, and the command's error names them. |
 | `lapin_model` | The entities (id, class, name, storey, attributes), optionally only some classes. |
 | `lapin_execute` | One command, for example `architecture.addWall {x1, y1, x2, y2}`. Lengths are in metres. |
 | `lapin_query` | A question that changes nothing, for example `view.drawing`, `schedule.csv` or `civil.elevationAt`. |
