@@ -53,6 +53,8 @@ export interface RibbonTabDef {
   id: string;
   label: string;
   groups: RibbonGroupDef[];
+  /** Shared groups another module offers (core's "modify"), shown after this tab's own. */
+  include?: string[];
   /** Lower comes first (Architecture before Annotate). */
   order: number;
 }
@@ -68,7 +70,10 @@ export interface LapinModule {
   name: string;
   /** One line for the about / product pages. */
   summary: string;
+  /** Tabs; a tab with the id of another module's tab adds its groups to it (phases into Manage). */
   tabs?: RibbonTabDef[];
+  /** Groups other modules' tabs can include by id (core's "modify": move, copy, rotate…). */
+  sharedGroups?: Record<string, RibbonGroupDef>;
   /** Tools for the viewport hotbar (1–9), in order. */
   hotbar?: ToolDef[];
   propertySections?: PropertySectionDef[];

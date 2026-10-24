@@ -122,7 +122,7 @@ const architecture: LapinModule = {
   name: 'Architecture',
   summary: 'Layered walls and their joins, doors and windows, floors, roofs and rooms.',
   tabs: [{
-    id: 'architecture', label: 'Architecture', order: 10,
+    id: 'architecture', label: 'Architecture', order: 20, include: ['modify'],
     groups: [
       { label: 'Build', tools: [wall, door, window_, slab, roof], small: [slabOpening, roofOpening('window'), roofOpening('dormer')] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes] },

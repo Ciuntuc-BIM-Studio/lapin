@@ -64,7 +64,7 @@ const civil: LapinModule = {
   name: 'Civil',
   summary: 'The terrain from survey points, its contours, platforms with their cut and fill.',
   tabs: [{
-    id: 'site', label: 'Site', order: 30,
+    id: 'site', label: 'Site', order: 40,
     groups: [{ label: 'Terrain', tools: [terrainFromFile, platform], small: [terrainFromLandXml] }],
   }],
   propertySections: [{ id: 'terrain', label: 'Terrain', classes: ['IfcGeographicElement'], component: TerrainSection }],

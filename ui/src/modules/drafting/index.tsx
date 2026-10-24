@@ -187,7 +187,7 @@ const drafting: LapinModule = {
   summary: 'CAD drawing on views, annotations, grid axes, levels, hatches and sheets.',
   tabs: [
     {
-      id: 'draft', label: 'Draft', order: 25,
+      id: 'draft', label: 'Draft', order: 10,
       groups: [
         { label: 'Draw', tools: [cad('line', 'Line', Slash, 'LINE'), cad('pline', 'Polyline', Spline, 'PLINE'), cad('rect', 'Rectangle', RectangleHorizontal, 'RECTANGLE'), cad('circle', 'Circle', Circle, 'CIRCLE'), cad('arc', 'Arc', Redo2, 'ARC')] },
         { label: 'Modify', tools: [cad('move', 'Move', Move, 'MOVE'), cad('copy', 'Copy', Copy, 'COPY'), cad('rotate', 'Rotate', RotateCw, 'ROTATE'), cad('mirror', 'Mirror', FlipHorizontal2, 'MIRROR')], small: [cad('scale', 'Scale', Scaling, 'SCALE'), cad('erase', 'Erase', Eraser, 'ERASE')] },
@@ -198,7 +198,7 @@ const drafting: LapinModule = {
       ],
     },
     {
-      id: 'annotate', label: 'Annotate', order: 30,
+      id: 'annotate', label: 'Annotate', order: 60,
       groups: [
         { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR')] },
         { label: 'Text', tools: [text, cad('tag', 'Tag', Tag, 'TAG')] },

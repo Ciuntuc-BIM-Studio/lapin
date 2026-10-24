@@ -55,7 +55,7 @@ const structure: LapinModule = {
   name: 'Structure',
   summary: 'Columns, beams, strip and pad foundations, ring beams, lintels.',
   tabs: [{
-    id: 'structure', label: 'Structure', order: 20,
+    id: 'structure', label: 'Structure', order: 30, include: ['modify'],
     groups: [
       { label: 'Frame', tools: [column, beam], small: [atGrid] },
       { label: 'Foundation', tools: [strip, pad] },

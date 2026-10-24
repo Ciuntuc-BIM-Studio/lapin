@@ -60,22 +60,19 @@ const core: LapinModule = {
   id: 'core',
   name: 'Core',
   summary: 'Project, views, selection and measuring.',
+  // The modify tools have no tab of their own: the modelling tabs include them (Architecture, Structure).
+  sharedGroups: {
+    modify: { label: 'Modify', tools: [], small: [
+      { id: 'modify.move', label: 'Move', icon: Move, run: () => void startCommand('MOVE') },
+      { id: 'modify.copy', label: 'Copy', icon: Copy, run: () => void startCommand('COPY') },
+      { id: 'modify.rotate', label: 'Rotate', icon: RotateCw, run: () => void startCommand('ROTATE') },
+      { id: 'modify.mirror', label: 'Mirror', icon: FlipHorizontal2, run: () => void startCommand('MIRROR') },
+      { id: 'modify.delete', label: 'Delete', icon: Trash2, run: () => void startCommand('ERASE') },
+      { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', run: createSimilar },
+      { id: 'modify.match', label: 'Match type', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHTYPE') },
+    ] },
+  },
   tabs: [{
-    id: 'modify', label: 'Modify', order: 5,
-    groups: [
-      { label: 'Modify', tools: [
-        { id: 'modify.move', label: 'Move', icon: Move, run: () => void startCommand('MOVE') },
-        { id: 'modify.copy', label: 'Copy', icon: Copy, run: () => void startCommand('COPY') },
-        { id: 'modify.rotate', label: 'Rotate', icon: RotateCw, run: () => void startCommand('ROTATE') },
-        { id: 'modify.mirror', label: 'Mirror', icon: FlipHorizontal2, run: () => void startCommand('MIRROR') },
-        { id: 'modify.delete', label: 'Delete', icon: Trash2, run: () => void startCommand('ERASE') },
-      ] },
-      { label: 'Like this', tools: [
-        { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', run: createSimilar },
-        { id: 'modify.match', label: 'Match type', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHTYPE') },
-      ] },
-    ],
-  }, {
     id: 'manage', label: 'Manage', order: 80,
     groups: [
       { label: 'Settings', tools: [

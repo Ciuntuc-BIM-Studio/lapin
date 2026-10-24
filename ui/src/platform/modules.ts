@@ -5,12 +5,13 @@ import type { ComponentType } from 'react';
 import type { Grip, LapinModule, RibbonTabDef, ToolDef } from './module';
 import type { NodeDto } from '../engine/protocol';
 import { toggleTool, useUi } from '../app/store';
+import { mergeTabs } from './ribbon';
 import { cancel, useCad } from '../viewport/cad/session';
 
 export const modules: readonly LapinModule[] = loaded;
 export const productInfo: { id: string; name: string } = product;
 
-export const ribbonTabs = (): RibbonTabDef[] => modules.flatMap((m) => m.tabs ?? []).sort((a, b) => a.order - b.order);
+export const ribbonTabs = (): RibbonTabDef[] => mergeTabs(modules);
 export const hotbarTools = (): ToolDef[] => modules.flatMap((m) => m.hotbar ?? []).slice(0, 9);
 export const propertySections = (ifcClass: string) => modules.flatMap((m) => m.propertySections ?? []).filter((s) => s.classes.includes(ifcClass));
 export const backgrounds = (): ComponentType[] => modules.map((m) => m.background).filter((b): b is ComponentType => Boolean(b));
@@ -26,6 +27,7 @@ export const allTools = (): ToolDef[] => {
   for (const m of modules) {
     for (const t of m.hotbar ?? []) seen.set(t.id, t);
     for (const tab of m.tabs ?? []) for (const g of tab.groups) for (const t of [...g.tools, ...(g.small ?? [])]) seen.set(t.id, t);
+    for (const g of Object.values(m.sharedGroups ?? {})) for (const t of [...g.tools, ...(g.small ?? [])]) seen.set(t.id, t);
   }
   return [...seen.values()];
 };

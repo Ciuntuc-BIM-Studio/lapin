@@ -23,10 +23,11 @@ const phases: LapinModule = {
   name: 'Phases',
   summary: 'Project phases, phase filters and graphic overrides.',
   tabs: [{
-    id: 'phases', label: 'Phases', order: 40,
+    // No tab of its own: its groups go into Manage.
+    id: 'manage', label: 'Manage', order: 80,
     groups: [
-      { label: 'Project', tools: [{ id: 'phases.manage', label: 'Phases', icon: ListOrdered, run: () => useUi.setState({ dialog: 'phases' }) }] },
-      { label: 'Selection', tools: [
+      { label: 'Phases', tools: [{ id: 'phases.manage', label: 'Phases', icon: ListOrdered, run: () => useUi.setState({ dialog: 'phases' }) }] },
+      { label: 'Phase of selection', tools: [
         { id: 'phases.created', label: 'Created here', icon: Hammer, run: onSelection('created in the active phase', (a) => ({ created: a })) },
         { id: 'phases.demolish', label: 'Demolish', icon: Trash2, run: onSelection('demolished', (a) => ({ demolished: a })) },
         { id: 'phases.temporary', label: 'Temporary', icon: Clock, run: onSelection('temporary', (a) => ({ created: a, demolished: a })) },

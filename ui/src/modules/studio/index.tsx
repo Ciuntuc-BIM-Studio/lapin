@@ -82,7 +82,7 @@ const studio: LapinModule = {
   name: 'Studio',
   summary: 'Free-form solids from sketches (extrude, sweep, revolve) and live booleans.',
   tabs: [{
-    id: 'studio', label: 'Studio', order: 26,
+    id: 'studio', label: 'Studio', order: 50,
     groups: [
       { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
       {
