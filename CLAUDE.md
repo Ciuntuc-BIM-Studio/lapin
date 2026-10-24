@@ -57,8 +57,6 @@ If pnpm complains about @tauri-apps when installing, use `CI=true pnpm install`.
 
 ## Next step
 
-M1 is done (2026-10-24): the engine, the layered walls, `.lapin` format 3, products, binary meshes, the recovery journal, and the UI wired to the engine (plan view, 3D, selection, inspector, wall types, File menu, recovery).
+M1–M7 and the roofs are done as a PoC (2026-10-24): layered walls with joins, zones and lintels; floors; structure; roofs with walls under them; doors and windows with their configurator; materials and drafting standards; the 2D drawings (plans, sections, elevations, annotations); sheets with PDF and DXF; joinery and lintel schedules; phases; old projects (format 2) open; the macOS build.
 
-The user approved M1–M7 plus roofs with walls extended under the roof, to reach a PoC at the old Lapin's level. Decisions taken along the way go into `docs/decisions-pending.md` for review at the end.
-
-Next comes M2, the walls: joins, mitre, zones, finish layers, lintels, cut priorities, foundations. The milestones are in `docs/plan.md`, and the transfer order is in `docs/transfer.md`.
+Next: the user reviews `docs/decisions-pending.md` (#1–80). Open items needing the user: signing and notarization, Windows (manifold), and what the review changes. Milestones are in `docs/plan.md`.
