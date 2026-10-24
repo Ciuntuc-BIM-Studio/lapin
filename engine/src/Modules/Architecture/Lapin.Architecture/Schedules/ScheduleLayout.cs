@@ -161,18 +161,35 @@ public static class ScheduleLayout
                 Dim(s, at + new Vec2(12 + lw, lh + 4.5), at + new Vec2(12 + lw + sw, lh + 4.5), Mm(l.Width), false);
             });
         }
-        var views = drawings.Where(d => d is "interior" or "exterior").DefaultIfEmpty("interior").ToList();
-        var (ew, eh) = (e.Width * k, e.Height * k);
-        var rowW = views.Count * ew + (views.Count - 1) * Gap;
+        var views = drawings.Where(d => d is "interior" or "exterior" or "plan").DefaultIfEmpty("interior").ToList();
+        // Each drawing's extent (m): an elevation is the type's width × height; a plan the width (and the wall stub) by its depth and swing.
+        const double Stub = 0.3;
+        var plan = e.Spec != null ? JoineryPlan.Of(e.Spec, Math.Max(e.Spec.Frame.Depth * 2.5, Stub)) : [];
+        var (pMinX, pMaxX) = plan.Count > 0 ? (plan.Min(x => Math.Min(x.A.X, x.B.X)), plan.Max(x => Math.Max(x.A.X, x.B.X))) : (-e.Width / 2, e.Width / 2);
+        var (pMinY, pMaxY) = plan.Count > 0 ? (plan.Min(x => Math.Min(x.A.Y, x.B.Y)), plan.Max(x => Math.Max(x.A.Y, x.B.Y))) : (0, 0);
+        double WidthOf(string v) => v == "plan" ? (pMaxX - pMinX) * k : e.Width * k;
+        double HeightOf(string v) => v == "plan" ? (pMaxY - pMinY) * k : e.Height * k;
+        var (ew, eh) = (e.Width * k, Math.Max(e.Height * k, views.Contains("plan") ? HeightOf("plan") : 0));
+        var rowW = views.Sum(WidthOf) + (views.Count - 1) * Gap;
         return (DimLeft + rowW, eh + DimBelow, (s, at) =>
         {
-            for (var i = 0; i < views.Count; i++)
+            var x0 = at.X + DimLeft;
+            foreach (var view in views)
             {
-                var x0 = at.X + DimLeft + i * (ew + Gap);
                 var bottom = at.Y + eh;
-                Vec2 P(Vec2 q) => new(x0 + (q.X + e.Width / 2) * k, bottom - q.Y * k);
+                if (view == "plan")
+                {
+                    // The plan, its interior side (and the door's swing) down, lined up with the elevations' bottom.
+                    var left = x0;
+                    Vec2 Pp(Vec2 q) => new(left + (q.X - pMinX) * k, bottom - (q.Y - pMinY) * k);
+                    foreach (var st in plan) s.Line(Pp(st.A), Pp(st.B), DrawingPen[st.Weight], st.Dashed ? [1.2, 0.8] : null, "SCHEDULE-SYMBOLS");
+                    x0 += WidthOf(view) + Gap;
+                    continue;
+                }
+                var xv = x0;
+                Vec2 P(Vec2 q) => new(xv + (q.X + e.Width / 2) * k, bottom - q.Y * k);
                 if (e.Spec != null)
-                    foreach (var st in JoineryElevation.Of(e.Spec, views[i] == "exterior"))
+                    foreach (var st in JoineryElevation.Of(e.Spec, view == "exterior"))
                         s.Line(P(st.A), P(st.B), DrawingPen[st.Weight], st.Dashed ? [1.2, 0.8] : null, "SCHEDULE-SYMBOLS");
                 else
                 {
@@ -180,10 +197,11 @@ public static class ScheduleLayout
                     foreach (var (p, q) in new[] { (a, new Vec2(b.X, a.Y)), (new Vec2(b.X, a.Y), b), (b, new Vec2(a.X, b.Y)), (new Vec2(a.X, b.Y), a) })
                         s.Line(P(p), P(q), DrawingPen["outline"], layer: "SCHEDULE-SYMBOLS");
                 }
+                x0 += WidthOf(view) + Gap;
             }
             var x = at.X + DimLeft;
             Dim(s, new Vec2(x, at.Y + eh + 4.5), new Vec2(x + ew, at.Y + eh + 4.5), Mm(e.Width), false);
-            Dim(s, new Vec2(x - 4, at.Y), new Vec2(x - 4, at.Y + eh), Mm(e.Height), true);
+            Dim(s, new Vec2(x - 4, at.Y + eh - e.Height * k), new Vec2(x - 4, at.Y + eh), Mm(e.Height), true);
         });
     }
 
