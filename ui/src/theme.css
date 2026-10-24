@@ -375,3 +375,7 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .select-box { stroke-width: 1; }
 .select-box.window { fill: rgba(46, 109, 180, 0.08); stroke: #2e6db4; }
 .select-box.crossing { fill: rgba(31, 157, 85, 0.08); stroke: #1f9d55; stroke-dasharray: 5 3; }
+/* The cut order: a changed priority shows in the accent. */
+.cut-order td.num input { width: 64px; text-align: right; }
+.cut-order tr.changed td:first-child { color: var(--accent); font-weight: 600; }
+.cut-order td.small { max-width: 260px; }

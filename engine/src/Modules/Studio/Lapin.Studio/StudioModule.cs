@@ -44,10 +44,13 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
                 new("offset", "Offset from the sketch", "length"),
                 new("place", "Profile on the path", "choice", Choices: Solids.Places),
                 new("placeOffset", "Gap from the path", "length"),
+                new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
                 new("exportAs", "Export as", "text"),
             ], "#b9b2a6"));
             r.Geometry(cls, Geometry);
             r.Quantities(cls, Quantities);
+            // Studio solids give way to the building's elements; furniture to everything.
+            r.Cutter(cls, cls == "IfcFurnishingElement" ? 10 : 40, (e, m) => Geometry(e, m, null)?.Parts is [{ } only] ? only.Solid : null);
         }
         r.Service<IGeometryFilter>(this);
         r.Service<IElementPlacement>(new StudioPlacement());
@@ -208,7 +211,7 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         return new JsonObject { ["id"] = e.Id };
     }
 
-    public static ElementGeometry? Geometry(Entity e, IModelView m, IServices services)
+    public static ElementGeometry? Geometry(Entity e, IModelView m, IServices? services)
     {
         var problems = new List<string>();
         ElementGeometry Fail(string why) => new([], Diagnostics: [why]);
@@ -255,7 +258,10 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
             plan.AddRange(holes2.Select(h => new PlanItem("outline", true, h)));
         }
         else if (Polygon2.ConvexHull(solid.Vertices.Select(v => new Vec2(v.X, v.Y))) is { Length: >= 3 } hull) plan.Add(new PlanItem("outline", true, hull));
-        return new ElementGeometry([new GeometryPart(e.Name, material != null ? Materials.ColorOf(m, material) : "#b9b2a6", solid, material, "body")], plan, plan.SelectMany(p => p.Points).ToList());
+        var parts = new List<GeometryPart> { new(e.Name, material != null ? Materials.ColorOf(m, material) : "#b9b2a6", solid, material, "body") };
+        // Cut by what ranks above it (walls through a pavement…); its envelope for others is the uncut solid.
+        parts = CutPriorities.Apply(e, m, services, parts, problems);
+        return new ElementGeometry(parts, plan, plan.SelectMany(p => p.Points).ToList(), problems.Count > 0 ? problems : null);
     }
 
     static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)

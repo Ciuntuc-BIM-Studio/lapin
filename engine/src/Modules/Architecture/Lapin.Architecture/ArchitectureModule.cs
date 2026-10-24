@@ -148,6 +148,7 @@ public sealed class ArchitectureModule : ILapinModule
             new("eaveOffset", "Wall plate over the storey's top", "length"),
             new("covering", "Covering", "choice", Choices: [.. RoofCatalog.Coverings.Select(c => c.Id)]),
             new("structure", "Structure", "choice", Choices: ["rafters", "none"]),
+            new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
             new("rafterSection", "Rafters (cm)", "choice", Choices: Roof.RafterSections),
             new("rafterSpacing", "Rafter spacing", "length", Min: 0.3, Max: 2),
             new("purlins", "Purlins per slope", "number", Min: 0, Max: 3),
@@ -155,7 +156,9 @@ public sealed class ArchitectureModule : ILapinModule
             new("gutterMaterial", "Gutter material", "choice", Choices: RoofCatalog.GutterMaterials),
             new("snowGuards", "Snow guards", "choice", Choices: ["True", "False"]),
         ], "#b0563d"));
-        r.Geometry(IfcClass.Roof, (roof, model, _) => Roof.Geometry(roof, model));
+        r.Geometry(IfcClass.Roof, (roof, model, services) => RoofCuts.Geometry(roof, model, services));
+        // A roof cuts walls and Studio solids by its covering, and is cut by slabs, beams, columns and footings.
+        r.Cutter(IfcClass.Roof, 55, RoofCuts.Envelope);
         r.Quantities(IfcClass.Roof, (roof, geometry, model) => Roof.Quantities(roof, geometry, model));
         var web = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
         r.Catalog("roofStyles", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Styles, web)!);
@@ -522,5 +525,29 @@ sealed class VoidShapes : IVoidShapes
             IfcClass.Slab => Slabs.OpeningSolid(m, host, opening),
             _ => null,
         };
+    }
+}
+
+/// <summary>Roofs in the cut order: their body cut by higher priorities, their covering cutting lower ones.</summary>
+static class RoofCuts
+{
+    /// <summary>A roof's body, cut by what has a higher cut priority.</summary>
+    public static ElementGeometry? Geometry(Entity roof, IModelView m, IServices? services)
+    {
+        var g = Roof.Geometry(roof, m);
+        if (g == null || g.Parts.Count == 0 || services == null) return g;
+        var problems = new List<string>();
+        var parts = CutPriorities.Apply(roof, m, services, g.Parts.ToList(), problems);
+        return g with { Parts = parts, Diagnostics = problems.Count > 0 ? [.. g.Diagnostics ?? [], .. problems] : g.Diagnostics };
+    }
+
+    /// <summary>A roof's covering as what it cuts with, solved once per model revision (every wall around asks for it).</summary>
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Entity, Tuple<long, Solid?>> RoofEnvelopes = new();
+    public static Solid? Envelope(Entity roof, IModelView m)
+    {
+        if (RoofEnvelopes.TryGetValue(roof, out var hit) && hit.Item1 == m.Revision) return hit.Item2;
+        var covering = Roof.Geometry(roof, m)?.Parts.FirstOrDefault(p => p.Key == "covering")?.Solid;
+        RoofEnvelopes.AddOrUpdate(roof, Tuple.Create(m.Revision, covering));
+        return covering;
     }
 }

@@ -99,6 +99,10 @@ public interface IDeletion
 
 public interface ICutters
 {
+    /// <summary>The classes that take part in cutting, with the priority their module gives them.</summary>
+    IReadOnlyDictionary<string, int> CutDefaults { get; }
+    /// <summary>A class's priority in this project (the cut order, else the default); null when it takes no part.</summary>
+    int? ClassPriority(string ifcClass, IModelView model);
     /// <summary>The envelopes of the entities of higher priority that reach into <paramref name="bounds"/> (the target's own, of its body).</summary>
     IReadOnlyList<Solid> For(Entity target, IModelView model, (Vec3 Min, Vec3 Max) bounds);
 }

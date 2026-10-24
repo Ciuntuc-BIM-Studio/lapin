@@ -22,6 +22,10 @@ sealed class TrackingView(IModelView inner) : IModelView
     public IEnumerable<Entity> Entities { get { Read.Add("class:*"); return inner.Entities; } }
     public IEnumerable<Relation> Relations { get { Read.Add("class:*"); return inner.Relations; } }
     public IEnumerable<Entity> OfClass(string @class) { Read.Add(ClassKey(@class)); return inner.OfClass(@class); }
+    /// <summary>A class's entities under a narrower key than the class's: what reads them says itself what it depends on.</summary>
+    public IEnumerable<Entity> OfClassUnder(string @class, string key) { Read.Add(key); return inner.OfClass(@class); }
+    /// <summary>The key touched when an element of a class gets, changes or loses its own cut priority.</summary>
+    public static string CutKey(string ifcClass) => "cut:" + ifcClass;
     public IEnumerable<Relation> RelationsOf(string id, string? relationClass = null) { Read.Add(RelationsKey(id)); return inner.RelationsOf(id, relationClass); }
     public int Order(string id) => inner.Order(id);
     public long Revision => inner.Revision;

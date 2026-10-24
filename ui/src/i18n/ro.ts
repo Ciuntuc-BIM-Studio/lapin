@@ -88,6 +88,8 @@ export const RO: Record<string, string> = {
   'Profile on the path': 'Profilul pe traseu', 'Gap from the path': 'Distanța de la traseu', 'centre': 'pe mijloc', 'right': 'la dreapta', 'left': 'la stânga',
   'Attach to roof': 'Atașează la acoperiș', 'Detach from roof': 'Detașează de acoperiș', 'Top under a roof': 'Capătul sub acoperiș', 'attach': 'atașat', 'none': 'nu',
   'Select the walls first, then click the roof they go up to.': 'Selectează întâi pereții, apoi dă click pe acoperișul până la care urcă.', 'Select the walls to detach from the roof.': 'Selectează pereții de detașat de acoperiș.',
+  'Cut order': 'Ordinea de tăiere', 'Default order': 'Ordinea implicită', 'This project': 'Acest proiect', 'Cuts': 'Taie',
+  'Where two elements meet, the one with the higher priority cuts the other. An element can set its own priority in its properties.': 'Unde se întâlnesc două elemente, cel cu prioritatea mai mare îl taie pe celălalt. Un element își poate da propria prioritate din proprietăți.',
   'Phase of selection': 'Faza selecției', 'Key plan': 'Plan-cheie', 'Split': 'Împarte', 'On screen': 'Pe ecran', 'Seen from': 'Văzut din', 'Cut at': 'Tăiat la', 'Look from…': 'Privește din…',
   'Fit (ZE)': 'Încadrează (ZE)', 'Fit everything (ZE)': 'Încadrează tot (ZE)', 'Frame everything': 'Încadrează tot', 'The plan from above': 'Planul de sus',
   'Split: two views side by side': 'Împarte: două vederi una lângă alta', 'Split: one view above the other': 'Împarte: o vedere peste cealaltă', 'Close this pane': 'Închide acest panou',

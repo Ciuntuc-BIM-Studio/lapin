@@ -58,21 +58,35 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
     public bool IsPath(string ifcClass) => _paths.ContainsKey(ifcClass);
     public JoinWall? FrameOf(Entity entity, IModelView model) => _paths.TryGetValue(entity.Class, out var f) ? f(entity, model) : null;
 
-    /// <summary>An entity's cut priority: its own <c>cutPriority</c>, else its class's; null when its class takes no part.</summary>
-    public int? PriorityOf(Entity e) =>
-        _cutters.TryGetValue(e.Class, out var c) ? (int)(e.NumOrNull("cutPriority") ?? c.Priority) : null;
+    /// <summary>The classes that take part in cutting, with the priority each module gives them.</summary>
+    public IReadOnlyDictionary<string, int> CutDefaults => _cutters.ToDictionary(x => x.Key, x => x.Value.Priority);
+
+    /// <summary>A class's cut priority in this project: the project's cut order (<see cref="CutOrder"/>), else its module's; null when it takes no part.</summary>
+    public int? ClassPriority(string ifcClass, IModelView model)
+    {
+        if (!_cutters.TryGetValue(ifcClass, out var c)) return null;
+        return CutOrder.Of(model) is { } table && Json.Number(table[ifcClass]) is { } own ? (int)own : c.Priority;
+    }
+
+    /// <summary>An entity's cut priority: its own <c>cutPriority</c>, else its class's in this project; null when its class takes no part.</summary>
+    public int? PriorityOf(Entity e, IModelView model) =>
+        ClassPriority(e.Class, model) is { } cls ? (int)(e.NumOrNull("cutPriority") ?? cls) : null;
 
     public IReadOnlyList<Solid> For(Entity target, IModelView model, (Vec3 Min, Vec3 Max) bounds)
     {
-        if (PriorityOf(target) is not { } mine) return [];
+        if (PriorityOf(target, model) is not { } mine) return [];
         var o = new List<Solid>();
-        foreach (var (cls, (classPriority, envelope)) in _cutters)
+        foreach (var (cls, (_, envelope)) in _cutters)
         {
-            // Only classes above the target's: a wall never reads every other wall (an edit to one would rebuild them all).
-            if (classPriority <= mine) continue;
-            foreach (var e in model.OfClass(cls))
+            if (ClassPriority(cls, model) is not { } classPriority) continue;
+            // A class ranked under the target's: only its elements raised over the target by their own priority
+            // (read under a narrow key, so a wall does not rebuild on every edit of every other wall).
+            IEnumerable<Entity> candidates = classPriority > mine ? model.OfClass(cls)
+                : model is TrackingView tv ? tv.OfClassUnder(cls, TrackingView.CutKey(cls)).Where(e => e.NumOrNull("cutPriority") > mine).Select(e => model.Get(e.Id)!)
+                : model.OfClass(cls).Where(e => e.NumOrNull("cutPriority") > mine);
+            foreach (var e in candidates)
             {
-                if (e.Id == target.Id || PriorityOf(e) is not { } theirs || theirs <= mine) continue;
+                if (e.Id == target.Id || PriorityOf(e, model) is not { } theirs || theirs <= mine) continue;
                 if (envelope(e, model) is not { } solid || Measure.Bounds(solid) is not { } b) continue;
                 const double eps = 1e-6;
                 if (b.Min.X >= bounds.Max.X - eps || b.Max.X <= bounds.Min.X + eps || b.Min.Y >= bounds.Max.Y - eps || b.Max.Y <= bounds.Min.Y + eps || b.Min.Z >= bounds.Max.Z - eps || b.Max.Z <= bounds.Min.Z + eps) continue;
