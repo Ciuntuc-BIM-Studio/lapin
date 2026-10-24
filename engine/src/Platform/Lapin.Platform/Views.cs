@@ -148,7 +148,7 @@ public static class Views
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing);
-        var marks = Marks(ctx).ToList();
+        var marks = Marks(ctx).Concat(Location.Marks(ctx)).ToList();
         foreach (var source in q.Services.All<IViewAnnotations>())
             try { marks.AddRange(source.Marks(ctx)); }
             catch (CommandException) { }

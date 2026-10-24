@@ -1,6 +1,6 @@
 /** Core: always there — selecting, measuring, the views and how they look, materials and drafting standards. */
 
-import { Box, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareStack, Trash2 } from 'lucide-react';
+import { Box, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareStack, Trash2 } from 'lucide-react';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
 import { notify } from '../../app/store';
@@ -14,6 +14,7 @@ import { SheetSection } from './SheetSection';
 import { Visibility3D, VisibilityDialog } from './VisibilityDialog';
 import { ViewRangeDialog } from './ViewRangeDialog';
 import { ObjectStylesDialog } from './ObjectStylesDialog';
+import { LocationDialog } from './LocationDialog';
 
 /** Create Similar: the selected element's tool, set up like it. */
 function createSimilar() {
@@ -78,6 +79,7 @@ const core: LapinModule = {
         { id: 'manage.materials', label: 'Materials', icon: Palette, run: () => useUi.setState({ dialog: 'materials' }) },
         { id: 'manage.standards', label: 'Drafting standards', icon: Hash, run: () => useUi.setState({ dialog: 'standards' }) },
         { id: 'manage.objectStyles', label: 'Object styles', icon: PenTool, run: () => useUi.setState({ dialog: 'objectStyles' }) },
+        { id: 'manage.location', label: 'Location', icon: MapPin, run: () => useUi.setState({ dialog: 'location' }) },
       ] },
     ],
   }, {
@@ -105,7 +107,7 @@ const core: LapinModule = {
       ] },
     ],
   }],
-  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog },
+  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog },
   background: Visibility3D,
   propertySections: [{ id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection }],
   hotbar: [

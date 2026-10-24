@@ -311,3 +311,6 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .os-table td.os-cell { white-space: nowrap; }
 .os-table td.os-cell select { font-size: 11px; max-width: 74px; }
 .os-table td.os-cell input[type=color] { width: 22px; height: 18px; padding: 0; border: none; vertical-align: middle; }
+.loc h4 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); }
+.loc .row { margin-bottom: 4px; }
+.loc-label { width: 110px; }

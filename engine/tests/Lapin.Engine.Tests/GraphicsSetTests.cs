@@ -83,4 +83,17 @@ public class GraphicsSetTests
         f.Run("view.penTable", new JsonObject { ["reset"] = true });
         Assert.Equal(0.7, CutWidth(), 9);
     }
+
+    [Fact]
+    public void The_base_point_and_the_survey_point_show_in_plans_when_asked()
+    {
+        var f = new Fixture();
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        List<string> Texts() => ((JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = plan })!)["pens"]!.AsArray().OfType<JsonObject>()
+            .Where(p => p["texts"] != null).SelectMany(p => p["texts"]!.AsArray().Select(t => (string)t!["text"]!)).ToList();
+        Assert.DoesNotContain(Texts(), t => t.StartsWith("Base point"));
+        f.Run("project.location", new JsonObject { ["show"] = true, ["base"] = new JsonObject { ["elevation"] = 120.5 }, ["survey"] = new JsonObject { ["x"] = 10, ["y"] = 5, ["easting"] = 500000, ["northing"] = 4500000, ["elevation"] = 118 } });
+        Assert.Contains("Base point +120.50", Texts());
+        Assert.Contains("Survey point E 500000.000 N 4500000.000 +118.00", Texts());
+    }
 }

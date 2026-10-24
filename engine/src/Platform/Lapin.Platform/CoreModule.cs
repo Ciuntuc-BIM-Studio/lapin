@@ -34,6 +34,7 @@ public sealed class CoreModule : ILapinModule
         Views.Register(r);
         GraphicsSets.Register(r);
         ViewLinework.Register(r);
+        Location.Register(r);
         Sheets.Register(r);
 
         r.Command("storey.create", "New storey", (ctx, a) =>
