@@ -89,6 +89,8 @@ export function DrawingView() {
       </div>
       <svg ref={ref} className={`plan-svg drawing-svg${cadStep ? ' tool' : ''}`} data-testid="drawing"
         onWheel={(e) => {
+          // A trackpad's two fingers pan; a pinch (ctrl) or a mouse wheel zooms.
+          if (!e.ctrlKey && (e.deltaX !== 0 || !Number.isInteger(e.deltaY))) { setView({ ...v, cx: v.cx + e.deltaX / v.scale, cy: v.cy - e.deltaY / v.scale }); return; }
           const r = ref.current!.getBoundingClientRect();
           const p = toWorld(e.clientX - r.left, e.clientY - r.top);
           const scale = Math.min(4000, Math.max(2, v.scale * Math.exp(-e.deltaY * 0.0015)));

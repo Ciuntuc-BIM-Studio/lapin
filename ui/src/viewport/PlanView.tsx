@@ -36,6 +36,8 @@ export function PlanView() {
   const [hover, setHover] = useState<Aimed | null>(null);
   const [ortho, setOrtho] = useState(false);
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null);
+  /** A selection box being dragged (screen px): left to right a window, right to left crossing. */
+  const [box, setBox] = useState<{ a: Vec2; b: Vec2 } | null>(null);
 
   const render = useSession((s) => s.render);
   const nodes = useSession((s) => s.nodes);
@@ -241,8 +243,14 @@ export function PlanView() {
     if (d) {
       const dx = e.clientX - d.x, dy = e.clientY - d.y;
       if (Math.hypot(dx, dy) > 4) d.moved = true;
-      // Pan: any button with no tool; middle or right always.
-      if (d.moved && (!tool?.gesture || e.buttons !== 1)) setView({ ...d.view, cx: d.view.cx - dx / d.view.scale, cy: d.view.cy + dy / d.view.scale });
+      const step = useCad.getState().step;
+      // Left drag with no tool: a selection box; middle or right: pan.
+      if (d.moved && e.buttons === 1 && !tool?.gesture && (!step || step.want === 'select')) {
+        const rect = svgRef.current!.getBoundingClientRect();
+        setBox({ a: { x: d.x - rect.left, y: d.y - rect.top }, b: { x: e.clientX - rect.left, y: e.clientY - rect.top } });
+        return;
+      }
+      if (d.moved && e.buttons !== 1) setView({ ...d.view, cx: d.view.cx - dx / d.view.scale, cy: d.view.cy + dy / d.view.scale });
     }
     setHover(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined));
   };
@@ -254,11 +262,52 @@ export function PlanView() {
     }
     const d = drag.current;
     drag.current = null;
+    if (box) { selectBox(box, e.shiftKey); setBox(null); return; }
     if (!d || d.moved || e.button !== 0) return;
     const rect = svgRef.current!.getBoundingClientRect();
     click(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey);
   };
+  /** What a selection box takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
+  const selectBox = (b: { a: Vec2; b: Vec2 }, add: boolean) => {
+    const p = toWorld(b.a.x, b.a.y), q = toWorld(b.b.x, b.b.y);
+    const [x0, x1, y0, y1] = [Math.min(p.x, q.x), Math.max(p.x, q.x), Math.min(p.y, q.y), Math.max(p.y, q.y)];
+    const windowMode = b.b.x >= b.a.x;
+    const inside = (v: Vec2) => v.x >= x0 && v.x <= x1 && v.y >= y0 && v.y <= y1;
+    const crosses = (u: Vec2, v: Vec2) => inside(u) || inside(v) || [[{ x: x0, y: y0 }, { x: x1, y: y0 }], [{ x: x1, y: y0 }, { x: x1, y: y1 }], [{ x: x1, y: y1 }, { x: x0, y: y1 }], [{ x: x0, y: y1 }, { x: x0, y: y0 }]].some(([r, s2]) => {
+      const d1 = { x: v.x - u.x, y: v.y - u.y }, d2 = { x: s2.x - r.x, y: s2.y - r.y };
+      const den = d1.x * d2.y - d1.y * d2.x;
+      if (Math.abs(den) < 1e-15) return false;
+      const t = ((r.x - u.x) * d2.y - (r.y - u.y) * d2.x) / den, w = ((r.x - u.x) * d1.y - (r.y - u.y) * d1.x) / den;
+      return t >= 0 && t <= 1 && w >= 0 && w <= 1;
+    });
+    const takes = (segs: [Vec2, Vec2][]) => segs.length > 0 && (windowMode ? segs.every(([u, v]) => inside(u) && inside(v)) : segs.some(([u, v]) => crosses(u, v)));
+    const ids: string[] = [];
+    for (const r of items) {
+      const segs: [Vec2, Vec2][] = [];
+      for (const it of r.plan) {
+        if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid') continue;
+        const ps = pairs(it.points);
+        for (let i = 0; i + 1 < ps.length + (it.closed ? 1 : 0); i++) segs.push([ps[i], ps[(i + 1) % ps.length]]);
+      }
+      if (nodes.get(r.nodeId) && takes(segs)) ids.push(r.nodeId);
+    }
+    for (const m of drawing?.marks ?? []) {
+      const segs: [Vec2, Vec2][] = [];
+      for (let k = 0; k + 3 < m.segments.length; k += 4) segs.push([{ x: m.segments[k], y: m.segments[k + 1] }, { x: m.segments[k + 2], y: m.segments[k + 3] }]);
+      const owner = m.id.includes('#') ? m.id.slice(0, m.id.indexOf('#')) : m.id;
+      if (nodes.get(owner) && takes(segs) && !ids.includes(m.id)) ids.push(m.id);
+    }
+    const before = add || useCad.getState().step ? useUi.getState().selected : [];
+    const next = [...new Set([...before, ...ids])];
+    useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
+  };
+
   const onWheel = (e: React.WheelEvent) => {
+    // A trackpad's two fingers pan; a pinch (ctrl) or a mouse wheel zooms.
+    if (!e.ctrlKey && (e.deltaX !== 0 || !Number.isInteger(e.deltaY))) {
+      setView({ ...view, cx: view.cx + e.deltaX / view.scale, cy: view.cy - e.deltaY / view.scale });
+      return;
+    }
     const rect = svgRef.current!.getBoundingClientRect();
     const at = toWorld(e.clientX - rect.left, e.clientY - rect.top);
     const scale = Math.max(2, Math.min(view.scale * Math.exp(-e.deltaY * 0.0015), 2000));
@@ -397,6 +446,7 @@ export function PlanView() {
           ? <rect x={marker.x - 5} y={marker.y - 5} width={10} height={10} className="plan-snap point" />
           : <path d={`M${marker.x - 6},${marker.y}H${marker.x + 6}M${marker.x},${marker.y - 6}V${marker.y + 6}`} className="plan-snap" />)}
         {marker && <CadOverlay aimed={hover} toScreen={toScreen} />}
+        {box && <rect className={`select-box${box.b.x >= box.a.x ? ' window' : ' crossing'}`} x={Math.min(box.a.x, box.b.x)} y={Math.min(box.a.y, box.b.y)} width={Math.abs(box.b.x - box.a.x)} height={Math.abs(box.b.y - box.a.y)} />}
       </svg>
       <CommandLine />
     </div>
