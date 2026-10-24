@@ -103,7 +103,7 @@ Toate fișierele noi sunt create de noi (OWN). Cele 33 de fișiere ifc-lite modi
   | dincolo (beyond) | 0,13 | `#9ca3af` | — |
 
 - **Suprascrieri grafice:**
-  - grosimi heavy 0,5, medium 0,35, light 0,25, hairline 0,18;
+  - grosimi din seria ISO 128, la alegere pe categorie: 0,13 / 0,18 / 0,25 / 0,35 / 0,5 / 0,7 / 1,0 mm (decis 24.10.2026); grosimea aleasă e a liniilor tăiate, cele văzute iau penița cu două trepte mai jos (0,5 → 0,25, 1,0 → 0,5); numele vechi heavy, medium, light, hairline se citesc 0,7 / 0,5 / 0,25 / 0,13;
   - întreruperi: dashed [2, 1], dotted [0,5, 0,5], dashdot [3, 1, 0,5, 1], center [6, 1, 1, 1];
   - regulile se aplică în ordinea priorității;
   - presetări: Default (culorile materialelor), Architectural, Fire safety, Structural, MEP, Monochrome.

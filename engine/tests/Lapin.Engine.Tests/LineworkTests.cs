@@ -116,4 +116,23 @@ public class LineworkTests
         // The storey's own plan, not yet a view, keeps no edits.
         Assert.Throws<CommandException>(() => f.Run("view.linework", new JsonObject { ["id"] = "plan:" + f.Storey, ["at"] = new JsonArray(3, -0.125) }));
     }
+
+    [Fact]
+    public void A_category_takes_any_pen_of_the_iso_series_and_its_seen_lines_two_pens_lighter()
+    {
+        var cut = new DLine(new(0, 0), new(4, 0), LineRole.Cut, "G1", "IfcWall");
+        var seen = new DLine(new(0, 1), new(4, 1), LineRole.Projection, "G1", "IfcWall");
+        double[] Widths(string weight) =>
+            Pens.Of(D(cut, seen), null, new Pens.Options(Categories: new Dictionary<string, CategoryGraphics> { ["walls"] = new(LineWeight: weight) }))
+                .Where(p => p.Layer is PenLayer.Cut or PenLayer.Seen).OrderBy(p => p.Layer == PenLayer.Cut ? 0 : 1).Select(p => p.Width).ToArray();
+        Assert.Equal([1.0, 0.5], Widths("1.0"));
+        Assert.Equal([0.7, 0.35], Widths("0.7"));
+        Assert.Equal([0.35, 0.18], Widths("0.35"));
+        Assert.Equal([0.13, 0.13], Widths("0.13"));
+        Assert.Equal([0.18, 0.13], Widths("0.2"));      // a number in between takes the nearest pen
+        Assert.Equal([0.7, 0.35], Widths("heavy"));     // the older names still read
+        Assert.Equal(0.5, Pens.WeightMm(CategoryGraphics.From(new JsonObject { ["lineWeight"] = 0.5 })!.LineWeight));
+        Assert.Null(Pens.WeightMm("thick"));
+        Assert.Equal(100, Lapin.Drawing.Export.DxfWriter.LineWeight(1.0));
+    }
 }

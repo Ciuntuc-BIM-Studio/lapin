@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Lapin.Model;
 using BubbleBim.Geometry;
 using Lapin.Drawing.Hatch;
 
@@ -42,12 +43,21 @@ public sealed record PenText(Vec2 At, string Text, double Height, double Angle =
     };
 }
 
-/// <summary>A view's per-category graphics: line colour and weight (heavy, medium, light, hairline), fill colour, a cut hatch over the materials'.</summary>
+/// <summary>
+/// A view's per-category graphics: line colour and weight, fill colour, a cut
+/// hatch over the materials'. The weight is a pen of the ISO 128 series in mm
+/// ("0.13" … "1.0", see <see cref="Pens.IsoWeights"/>); the older names heavy,
+/// medium, light and hairline still read as 0.7, 0.5, 0.25 and 0.13.
+/// </summary>
 public sealed record CategoryGraphics(string? LineColor = null, string? LineWeight = null, string? FillColor = null, string? CutHatch = null, bool Hidden = false)
 {
     public static CategoryGraphics? From(JsonNode? n) => n is JsonObject o
-        ? new((string?)o["lineColor"], (string?)o["lineWeight"], (string?)o["fillColor"], (string?)o["cutHatch"], o["hidden"] is JsonValue h && h.TryGetValue<bool>(out var b) && b)
+        ? new((string?)o["lineColor"], Weight(o["lineWeight"]), (string?)o["fillColor"], (string?)o["cutHatch"], o["hidden"] is JsonValue h && h.TryGetValue<bool>(out var b) && b)
         : null;
+
+    /// <summary>The weight as written: a name or a number (as text or as a JSON number).</summary>
+    static string? Weight(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s
+        : Json.Number(n) is { } mm ? mm.ToString(System.Globalization.CultureInfo.InvariantCulture) : null;
 }
 
 /// <summary>
@@ -60,7 +70,21 @@ public sealed record CategoryGraphics(string? LineColor = null, string? LineWeig
 public static class Pens
 {
     public static readonly (double Cut, double Seen, double Hidden, double Hatch, double Membrane) Default = (0.5, 0.25, 0.18, 0.13, 0.5);
-    static readonly Dictionary<string, double> WeightMm = new() { ["heavy"] = 0.7, ["medium"] = 0.5, ["light"] = 0.25, ["hairline"] = 0.13 };
+    /// <summary>The ISO 128 pen series (mm) a category's lines can take.</summary>
+    public static readonly double[] IsoWeights = [0.13, 0.18, 0.25, 0.35, 0.5, 0.7, 1.0];
+    static readonly Dictionary<string, double> Named = new() { ["heavy"] = 0.7, ["medium"] = 0.5, ["light"] = 0.25, ["hairline"] = 0.13 };
+
+    /// <summary>A category weight as a pen of the series (the nearest one for a number in between); null when it is not one.</summary>
+    public static double? WeightMm(string? weight)
+    {
+        if (weight == null) return null;
+        if (Named.TryGetValue(weight, out var named)) return named;
+        if (!double.TryParse(weight, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var mm) || !(mm > 0) || !double.IsFinite(mm)) return null;
+        return IsoWeights.MinBy(w => Math.Abs(w - mm));
+    }
+
+    /// <summary>The weight a category's seen lines take when its cut lines take <paramref name="cut"/>: two pens down the series (0.5 → 0.25, 1.0 → 0.5), never under 0.13.</summary>
+    public static double SeenWeight(double cut) => IsoWeights[Math.Max(0, Array.IndexOf(IsoWeights, cut) - 2)];
 
     public sealed record Options(double Scale = 100, bool HiddenLines = true, LineStyles.Resolver? LineStyle = null,
         IReadOnlyDictionary<string, CategoryGraphics>? Categories = null, IReadOnlyList<HatchPattern>? Patterns = null, int MaxHatchSegments = 60_000,
@@ -156,7 +180,7 @@ public static class Pens
                 {
                     var cut = l.Role == LineRole.Cut;
                     var c = color ?? "#000000";
-                    var w = styled?.WidthMm ?? (g?.LineWeight is { } lw && WeightMm.TryGetValue(lw, out var mm) ? mm * (cut ? 1 : 0.5) : cut ? Default.Cut : Default.Seen);
+                    var w = styled?.WidthMm ?? (WeightMm(g?.LineWeight) is { } mm ? (cut ? mm : SeenWeight(mm)) : cut ? Default.Cut : Default.Seen);
                     var dash = styled?.Dash is { Length: > 0 } sd ? sd : null;
                     pen = Get($"{(cut ? "cut" : "seen")}:{c}:{w}:{DashKey(dash)}", () => new Pen(cut ? PenLayer.Cut : PenLayer.Seen, c, w, null, dash));
                     break;

@@ -14,7 +14,9 @@ import { frontView } from '../../viewport/frontView';
 interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string }
 interface Visibility { graphics?: { categories?: Record<string, Row>; classes?: Record<string, Row> } | null; graphicsSet?: string | null; sets: { id: string; name: string }[]; categories: string[] }
 
-const WEIGHTS = ['', 'heavy', 'medium', 'light', 'hairline'];
+/** The ISO 128 pen series (mm), as the engine reads a category's weight; the older names still show when a project has them. */
+const WEIGHTS = ['', '0.13', '0.18', '0.25', '0.35', '0.5', '0.7', '1.0'];
+const LEGACY: Record<string, string> = { heavy: '0.7', medium: '0.5', light: '0.25', hairline: '0.13' };
 const label = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 export function VisibilityDialog() {
@@ -81,7 +83,7 @@ export function VisibilityDialog() {
                       <td><input type="checkbox" checked={!r.hidden} onChange={(e) => set('categories', c, { hidden: !e.target.checked })} /></td>
                       <td>{label(c)}</td>
                       <td><input type="color" value={r.lineColor ?? '#000000'} onChange={(e) => set('categories', c, { lineColor: e.target.value })} />{r.lineColor && <button type="button" className="icon mini" title="As the object styles" onClick={() => set('categories', c, { lineColor: '' })}><X size={10} /></button>}</td>
-                      <td><select value={r.lineWeight ?? ''} onChange={(e) => set('categories', c, { lineWeight: e.target.value })}>{WEIGHTS.map((w) => <option key={w} value={w}>{w || 'as styled'}</option>)}</select></td>
+                      <td><select value={r.lineWeight ?? ''} onChange={(e) => set('categories', c, { lineWeight: e.target.value })}>{(r.lineWeight && !WEIGHTS.includes(r.lineWeight) ? [...WEIGHTS, r.lineWeight] : WEIGHTS).map((w) => <option key={w} value={w}>{w === '' ? 'as styled' : LEGACY[w] ? `${w} (${LEGACY[w]} mm)` : `${w} mm`}</option>)}</select></td>
                       <td><input type="color" value={r.fillColor ?? '#ffffff'} onChange={(e) => set('categories', c, { fillColor: e.target.value })} />{r.fillColor && <button type="button" className="icon mini" title="No fill of its own" onClick={() => set('categories', c, { fillColor: '' })}><X size={10} /></button>}</td>
                       <td><select value={r.cutHatch ?? ''} onChange={(e) => set('categories', c, { cutHatch: e.target.value })}><option value="">the materials'</option>{hatches.map((h) => <option key={h}>{h}</option>)}</select></td>
                     </tr>
