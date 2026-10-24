@@ -3,8 +3,14 @@
 // alike: a module the product does not have is not in the package at all.
 //   pnpm build:product <product>      (lapin | lapin-architecture | lapin-architecture-structure | …)
 // Output: build/<product>/bundle. Each product is its own app (name and identifier).
+//
+// On macOS the app is signed with the Developer ID Application certificate in
+// the keychain (or LAPIN_SIGNING_IDENTITY), put in a DMG, and the DMG notarized
+// and stapled with the notarytool keychain profile LAPIN_NOTARY_PROFILE
+// (default "lapin-notary"; docs/release-macos.md). Without a certificate the
+// app is built unsigned, as before; without the profile it is signed, not notarized.
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveProduct } from './product.mjs';
@@ -66,16 +72,65 @@ for (const m of product.engine.filter((id) => id !== 'core')) {
 sh('pnpm', ['--filter', 'ui', 'build'], { env: { LAPIN_PRODUCT_FILE: manifest, LAPIN_UI_OUT: join(out, 'ui') } });
 
 // 4. The desktop bundle, named and identified per product.
+const mac = process.platform === 'darwin';
+// The Developer ID Application identity: named, else the first one in the keychain.
+const identity = mac ? process.env.LAPIN_SIGNING_IDENTITY
+  ?? spawnSync('security', ['find-identity', '-v', '-p', 'codesigning'], { encoding: 'utf8' }).stdout?.match(/"(Developer ID Application: [^"]+)"/)?.[1] : undefined;
+if (mac) console.log(identity ? `▸ signing as ${identity}` : '▸ no Developer ID Application certificate in the keychain: the app is built unsigned');
 writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   productName: product.name,
   identifier: `ro.ciuntucbimstudio.${productId}`,
   build: { frontendDist: join(out, 'ui') },
   app: { windows: [{ label: 'main', title: product.name, width: 1440, height: 900, minWidth: 1000, minHeight: 640, center: true }] },
-  bundle: { externalBin: ['binaries/lapin-host'], resources: ['resources/**/*'] },
+  bundle: {
+    externalBin: ['binaries/lapin-host'], resources: ['resources/**/*'],
+    ...(mac ? { targets: ['app'], macOS: { minimumSystemVersion: '13.0', hardenedRuntime: true, entitlements: 'entitlements.plist', ...(identity ? { signingIdentity: identity } : {}) } } : {}),
+  },
 }, null, 2));
 const bundleDir = join(tauriDir, 'target/release/bundle');
 rmSync(bundleDir, { recursive: true, force: true }); // never ship another product's leftovers
+// Notarization is done below with the keychain profile, never by Tauri from passwords in the environment.
+if (mac) for (const k of ['APPLE_ID', 'APPLE_PASSWORD', 'APPLE_TEAM_ID', 'APPLE_API_KEY', 'APPLE_API_ISSUER', 'APPLE_API_KEY_PATH']) delete process.env[k];
 sh('pnpm', ['tauri', 'build', '--config', join(tauriDir, 'tauri.product.json')], { cwd: join(root, 'desktop') });
+
+// 5. macOS: the DMG (the app and a link to Applications; made here with hdiutil,
+// not Tauri's Finder script, which fails when the image is busy), signed;
+// the signature checked; the DMG notarized and stapled, and the app too.
+if (mac) {
+  const macos = join(bundleDir, 'macos');
+  const apps = existsSync(macos) ? readdirSync(macos).filter((f) => f.endsWith('.app')) : [];
+  const version = JSON.parse(readFileSync(join(tauriDir, 'tauri.conf.json'), 'utf8')).version;
+  const dmgDir = join(bundleDir, 'dmg');
+  mkdirSync(dmgDir, { recursive: true });
+  const dmgs = [];
+  for (const app of apps) {
+    const stage = join(bundleDir, 'dmg-stage');
+    rmSync(stage, { recursive: true, force: true });
+    mkdirSync(stage);
+    sh('ditto', [join(macos, app), join(stage, app)]);
+    symlinkSync('/Applications', join(stage, 'Applications'));
+    const dmg = join(dmgDir, `${app.replace(/\.app$/, '')}_${version}_${triple.split('-')[0]}.dmg`);
+    sh('hdiutil', ['create', '-volname', app.replace(/\.app$/, ''), '-srcfolder', stage, '-ov', '-format', 'UDZO', dmg]);
+    rmSync(stage, { recursive: true, force: true });
+    if (identity) sh('codesign', ['--sign', identity, '--timestamp', dmg]);
+    dmgs.push(dmg);
+  }
+  if (identity) {
+    for (const app of apps) sh('codesign', ['--verify', '--deep', '--strict', '--verbose=2', join(macos, app)]);
+    const profile = process.env.LAPIN_NOTARY_PROFILE ?? 'lapin-notary';
+    const known = spawnSync('xcrun', ['notarytool', 'history', '--keychain-profile', profile], { encoding: 'utf8' }).status === 0;
+    if (!identity.startsWith('Developer ID Application')) console.log('▸ not a Developer ID certificate: signed for this Mac only, not notarized');
+    else if (!known) console.log(`▸ no notarytool profile "${profile}" in the keychain: signed, not notarized (docs/release-macos.md)`);
+    else {
+      for (const dmg of dmgs) {
+        sh('xcrun', ['notarytool', 'submit', dmg, '--keychain-profile', profile, '--wait']);
+        sh('xcrun', ['stapler', 'staple', dmg]);
+      }
+      for (const app of apps) sh('xcrun', ['stapler', 'staple', join(macos, app)]);
+      for (const app of apps) sh('spctl', ['--assess', '--type', 'execute', '--verbose=2', join(macos, app)]);
+    }
+  }
+}
 
 if (existsSync(bundleDir)) cpSync(bundleDir, join(out, 'bundle'), { recursive: true });
 console.log(`\n✓ ${product.name} (${product.modules.join(' + ')}): ${join(out, 'bundle')}`);
