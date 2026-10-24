@@ -78,7 +78,16 @@ public static class Generator
         var lines = new List<DLine>();
         var plan = v.Kind == "plan";
         var cutZ = v.Frame.Origin.Z;
-        (double Min, double Max) Z(Solid s) => s.Vertices.Length == 0 ? (0, 0) : (s.Vertices.Min(p => p.Z), s.Vertices.Max(p => p.Z));
+        // Each part's height range, once.
+        var zs = new Dictionary<Solid, (double Min, double Max)>(ReferenceEqualityComparer.Instance);
+        (double Min, double Max) Z(Solid s)
+        {
+            if (zs.TryGetValue(s, out var z)) return z;
+            if (s.Vertices.Length == 0) return zs[s] = (0, 0);
+            double lo = double.PositiveInfinity, hi = double.NegativeInfinity;
+            foreach (var p in s.Vertices) { lo = Math.Min(lo, p.Z); hi = Math.Max(hi, p.Z); }
+            return zs[s] = (lo, hi);
+        }
 
         // The primary set: what the cut and the projection below it see.
         var primary = parts.Where(p => !plan || !SymbolicInPlan.Contains(p.Class)).Where(p =>

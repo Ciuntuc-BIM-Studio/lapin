@@ -44,19 +44,27 @@ public static class MaterialDrawing
 
     public static double Len((Vec2 A, Vec2 B) s) => (s.B - s.A).Length;
 
-    /// <summary>Whether two segments lie on one line and overlap over at least half of the shorter.</summary>
-    public static bool Coincide((Vec2 A, Vec2 B) p, (Vec2 A, Vec2 B) q, double tol = Tol)
+    /// <summary>How long <paramref name="q"/> runs along <paramref name="p"/> when both lie on one line (within the tolerance); negative when they do not.</summary>
+    static double Overlap((Vec2 A, Vec2 B) p, (Vec2 A, Vec2 B) q, double tol)
     {
-        double lp = Len(p), lq = Len(q);
-        if (lp < tol || lq < tol) return false;
+        var lp = Len(p);
+        if (lp < tol || Len(q) < tol) return -1;
         var u = (p.B - p.A) * (1 / lp);
         double Off(Vec2 r) => Math.Abs((r.X - p.A.X) * u.Y - (r.Y - p.A.Y) * u.X);
-        if (Off(q.A) > tol || Off(q.B) > tol) return false;
+        if (Off(q.A) > tol || Off(q.B) > tol) return -1;
         double T(Vec2 r) => Vec2.Dot(r - p.A, u);
         var lo = Math.Max(0, Math.Min(T(q.A), T(q.B)));
         var hi = Math.Min(lp, Math.Max(T(q.A), T(q.B)));
-        return hi - lo >= 0.5 * Math.Min(lp, lq);
+        return hi - lo;
     }
+
+    /// <summary>Whether two segments lie on one line and overlap over at least half of the shorter.</summary>
+    public static bool Coincide((Vec2 A, Vec2 B) p, (Vec2 A, Vec2 B) q, double tol = Tol) =>
+        Overlap(p, q, tol) is var o && o >= 0 && o >= 0.5 * Math.Min(Len(p), Len(q));
+
+    /// <summary>Whether a line lies on a side over at least half of the line's own length (a long line is not dropped for a short side on it).</summary>
+    static bool Covers((Vec2 A, Vec2 B) side, (Vec2 A, Vec2 B) line) =>
+        Math.Max(Overlap(line, side, Tol), Overlap(side, line, Tol)) is var o && o >= 0 && o >= 0.5 * Len(line);
 
     static List<(Vec2 A, Vec2 B)> Edges(DPolygon p)
     {
@@ -65,23 +73,46 @@ public static class MaterialDrawing
         return o;
     }
 
-    /// <summary>A coarse hash of segments by their midpoint cell (and its neighbours on lookup).</summary>
+    /// <summary>
+    /// A coarse hash of segments: each in every cell it runs through (sampled
+    /// at half a cell), looked up through the cells of the query segment and
+    /// their neighbours, so a short side finds the long side it lies on
+    /// however far apart their middles are.
+    /// </summary>
     sealed class SegIndex<T>(double size = 0.5)
     {
-        readonly Dictionary<(long, long), List<((Vec2 A, Vec2 B) Seg, T Item)>> _cells = [];
-        (long, long) Key(double x, double y) => ((long)Math.Floor(x / size), (long)Math.Floor(y / size));
+        readonly List<((Vec2 A, Vec2 B) Seg, T Item)> _items = [];
+        readonly Dictionary<(long, long), List<int>> _cells = [];
+        (long, long) Key(Vec2 p) => ((long)Math.Floor(p.X / size), (long)Math.Floor(p.Y / size));
+
+        /// <summary>The cells a segment runs through: its points every half cell, and its ends.</summary>
+        HashSet<(long, long)> Cells((Vec2 A, Vec2 B) seg)
+        {
+            var o = new HashSet<(long, long)>();
+            var n = (int)Math.Min(1e6, Math.Ceiling(Len(seg) / (size / 2)));
+            for (var i = 0; i <= n; i++) o.Add(Key(n == 0 ? seg.A : seg.A + (seg.B - seg.A) * ((double)i / n)));
+            return o;
+        }
+
         public void Add((Vec2 A, Vec2 B) seg, T item)
         {
-            var k = Key((seg.A.X + seg.B.X) / 2, (seg.A.Y + seg.B.Y) / 2);
-            if (!_cells.TryGetValue(k, out var l)) _cells[k] = l = [];
-            l.Add((seg, item));
+            _items.Add((seg, item));
+            foreach (var k in Cells(seg))
+            {
+                if (!_cells.TryGetValue(k, out var l)) _cells[k] = l = [];
+                l.Add(_items.Count - 1);
+            }
         }
+
         public IEnumerable<((Vec2 A, Vec2 B) Seg, T Item)> Near((Vec2 A, Vec2 B) seg)
         {
-            var (cx, cy) = Key((seg.A.X + seg.B.X) / 2, (seg.A.Y + seg.B.Y) / 2);
-            for (var dx = -1; dx <= 1; dx++)
-                for (var dy = -1; dy <= 1; dy++)
-                    if (_cells.TryGetValue((cx + dx, cy + dy), out var l)) foreach (var x in l) yield return x;
+            var seen = new HashSet<int>();
+            foreach (var (cx, cy) in Cells(seg))
+                for (var dx = -1; dx <= 1; dx++)
+                    for (var dy = -1; dy <= 1; dy++)
+                        if (_cells.TryGetValue((cx + dx, cy + dy), out var l))
+                            foreach (var i in l)
+                                if (seen.Add(i)) yield return _items[i];
         }
     }
 
@@ -132,17 +163,29 @@ public static class MaterialDrawing
     {
         var o = new MaterialDrawingResult();
         var named = d.Cuts.Select((p, i) => (P: p, I: i, G: graphics(p))).ToList();
+        // A band's layer in its element's set: by its part's key (layer:<index>), else the first layer of its material.
+        int LayerIndex(DPolygon p, IReadOnlyList<LayerRef> ls)
+        {
+            if (p.Key is { } k && k.StartsWith("layer:", StringComparison.Ordinal) && int.TryParse(k[6..], System.Globalization.CultureInfo.InvariantCulture, out var n) && n >= 0 && n < ls.Count && ls[n].Material == p.Material) return n;
+            for (var j = 0; j < ls.Count; j++) if (p.Material != null && ls[j].Material == p.Material) return j;
+            return -1;
+        }
+        // The bands of layers that draw as membranes (a material marked as one, or a layer thinner than a membrane).
+        var membraneBands = new HashSet<int>();
+        foreach (var (p, i, g) in named)
+            if (g?.Membrane == true || layers != null && membrane != null && layers(p.Element) is { } ls && LayerIndex(p, ls) is var k && k >= 0 && membrane(ls[k]))
+                membraneBands.Add(i);
 
         // Bands: hatch and fill, or (a membrane's own band) a line along its middle.
         foreach (var (p, i, g) in named)
         {
-            if (g == null) continue;
-            if (g.Membrane)
+            if (membraneBands.Contains(i))
             {
                 o.HidePolygons.Add(i);
                 if (Midline(p) is { } m) o.Membranes.Add(m);
                 continue;
             }
+            if (g == null) continue;
             o.Fills[i] = g.Fill;
             if (g.Hatch != null) o.Hatches.Add(new MaterialHatch(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class));
         }
@@ -150,7 +193,7 @@ public static class MaterialDrawing
         // Edges of every band, by join key.
         var index = new SegIndex<(int Poly, string Key, int Side)>();
         foreach (var (p, i, g) in named)
-            if (JoinKey(p, g) is { } key)
+            if (!membraneBands.Contains(i) && JoinKey(p, g) is { } key)
             {
                 var es = Edges(p);
                 for (var s = 0; s < es.Count; s++) index.Add(es[s], (i, key, s));
@@ -160,7 +203,7 @@ public static class MaterialDrawing
         var seamSegs = new SegIndex<bool>();
         foreach (var (p, i, g) in named)
         {
-            if (JoinKey(p, g) is not { } key) continue;
+            if (membraneBands.Contains(i) || JoinKey(p, g) is not { } key) continue;
             var es = Edges(p);
             for (var s = 0; s < es.Count; s++)
                 foreach (var c in index.Near(es[s]))
@@ -170,7 +213,8 @@ public static class MaterialDrawing
                     {
                         if (!o.Seams.TryGetValue(i, out var set)) o.Seams[i] = set = [];
                         set.Add(s);
-                        seamSegs.Add(es[s], true);
+                        // The seam is where the two meet: the shorter of the two sides.
+                        seamSegs.Add(Len(es[s]) <= Len(c.Seg) ? es[s] : c.Seg, true);
                     }
                 }
         }
@@ -178,14 +222,14 @@ public static class MaterialDrawing
         for (var li = 0; li < d.Lines.Count; li++)
         {
             var seg = (d.Lines[li].A, d.Lines[li].B);
-            if (seamSegs.Near(seg).Any(c => Coincide(seg, c.Seg) || Coincide(c.Seg, seg))) o.DropLines.Add(li);
+            if (seamSegs.Near(seg).Any(c => Covers(c.Seg, seg))) o.DropLines.Add(li);
         }
         var cutLines = Enumerable.Range(0, d.Lines.Count).Where(li => d.Lines[li].Role == LineRole.Cut).ToList();
         foreach (var li in cutLines)
         {
             var seg = (d.Lines[li].A, d.Lines[li].B);
             // Two elements' bands of one material meet along this line: it is inside the material.
-            var byKey = index.Near(seg).Where(c => Coincide(seg, c.Seg) || Coincide(c.Seg, seg))
+            var byKey = index.Near(seg).Where(c => Covers(c.Seg, seg))
                 .GroupBy(c => c.Item.Key).Select(g => g.Select(c => d.Cuts[c.Item.Poly].Element).Distinct().Count());
             if (byKey.Any(n => n > 1)) o.DropLines.Add(li);
         }
@@ -198,7 +242,8 @@ public static class MaterialDrawing
                 for (var k = 0; k < ls.Count; k++)
                 {
                     var layer = ls[k];
-                    if (!membrane(layer) || layer.Thickness >= 0.002 && group.Any(x => x.P.Material == layer.Material)) continue;
+                    // A membrane with a band of its own is drawn along its middle already.
+                    if (!membrane(layer) || group.Any(x => membraneBands.Contains(x.I) && LayerIndex(x.P, ls) == k)) continue;
                     var before = ls.Take(k).Reverse().FirstOrDefault(l => !membrane(l));
                     var after = ls.Skip(k + 1).FirstOrDefault(l => !membrane(l));
                     if (before == null || after == null) continue;

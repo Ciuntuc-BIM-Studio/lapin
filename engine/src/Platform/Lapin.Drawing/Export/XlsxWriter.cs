@@ -65,7 +65,7 @@ public static class XlsxWriter
                         var v = rows[r][c] ?? "";
                         var reference = Column(c) + (r + 1);
                         var style = r == 0 ? " s=\"1\"" : "";
-                        if (r > 0 && v.Length > 0 && double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) && double.IsFinite(d))
+                        if (r > 0 && IsNumber(v, out var d))
                             sb.Append($"<c r=\"{reference}\"{style}><v>{d.ToString(CultureInfo.InvariantCulture)}</v></c>");
                         else if (v.Length > 0)
                             sb.Append($"<c r=\"{reference}\"{style} t=\"inlineStr\"><is><t xml:space=\"preserve\">{SecurityElement.Escape(v)}</t></is></c>");
@@ -78,6 +78,10 @@ public static class XlsxWriter
         }
         return ms.ToArray();
     }
+
+    /// <summary>Whether a cell is a number: only when the number writes back as the same text (\"007\", \"+5\" or \"1e3\" stay text).</summary>
+    static bool IsNumber(string v, out double d) =>
+        double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out d) && double.IsFinite(d) && d.ToString(CultureInfo.InvariantCulture) == v;
 
     /// <summary>A column's letters: 0 → A, 25 → Z, 26 → AA.</summary>
     public static string Column(int i)

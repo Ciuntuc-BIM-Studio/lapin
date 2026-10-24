@@ -48,7 +48,9 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             var tag = ((string?)a["newTag"])?.Trim() is { Length: > 0 } nt ? nt : x.Tag;
             if (tag != x.Tag && axes.Any(y => y.Tag == tag)) throw new CommandException($"The grid has an axis {tag} already.");
             var ends = a.ContainsKey("ends") ? (string?)a["ends"] is "both" or "start" or "end" or "none" ? (string?)a["ends"] : null : x.Ends;
-            axes[i] = new Axis(tag, new Vec2(Json.Number(a["x1"]) ?? x.A.X, Json.Number(a["y1"]) ?? x.A.Y), new Vec2(Json.Number(a["x2"]) ?? x.B.X, Json.Number(a["y2"]) ?? x.B.Y), ends);
+            var (p, q) = (new Vec2(Json.Number(a["x1"]) ?? x.A.X, Json.Number(a["y1"]) ?? x.A.Y), new Vec2(Json.Number(a["x2"]) ?? x.B.X, Json.Number(a["y2"]) ?? x.B.Y));
+            if ((q - p).Length < 1e-3) throw new CommandException("An axis needs two different points.");
+            axes[i] = new Axis(tag, p, q, ends);
             Write(ctx, grid, axes);
             return null;
         });

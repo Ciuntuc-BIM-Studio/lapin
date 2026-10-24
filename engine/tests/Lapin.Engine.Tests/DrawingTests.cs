@@ -53,6 +53,15 @@ public class DrawingTests
         Assert.Null(ViewRanges.Bands(ViewRanges.Resolve(0, 1.2, deep, Levels)).BeyondFrom);
     }
 
+    [Fact]
+    public void Levels_closer_than_25_cm_to_the_own_merge_with_it()
+    {
+        double[] levels = [0, 0.1, 3];
+        var r = ViewRanges.Resolve(0, 1.2, new ViewRange(new("above", 0), new("self", 0), new("below", 0)), levels);
+        Near(r.Top, 3);
+        Near(ViewRanges.Resolve(0.1, 1.2, new ViewRange(new("above", 0), new("self", 0), new("below", 0)), levels).Depth, 0.1);
+    }
+
     // ------------------------------------------------------------ whole lines
 
     [Fact]
@@ -206,6 +215,34 @@ public class DrawingTests
         Assert.True(m.Seams.ContainsKey(0) && m.Seams.ContainsKey(1));
         Assert.False(m.Seams.ContainsKey(2));
         Assert.Empty(m.Hatches);
+    }
+
+    [Fact]
+    public void A_short_side_on_a_long_one_far_from_its_middle_is_a_seam()
+    {
+        // A 10 m slab with a 0.3 m wall standing on it near one end, both concrete.
+        var d = new ViewDrawing([Band("S", "10", 0, 10, 0, 0.2, "IfcSlab"), Band("W", "10", 1, 1.3, 0.2, 3)],
+            [Line("S", 0, 0.2, 10, 0.2, cls: "IfcSlab"), Line("W", 1, 0.2, 1.3, 0.2)]);
+        var m = MaterialDrawing.Apply(d, p => Graphics(p));
+        Assert.Equal([2], m.Seams[0]);
+        Assert.Equal([0], m.Seams[1]);
+        // The wall's foot is inside the concrete; the slab's top, mostly open, stays.
+        Assert.Contains(1, m.DropLines);
+        Assert.DoesNotContain(0, m.DropLines);
+    }
+
+    [Fact]
+    public void A_layer_under_2_mm_draws_in_a_plan_as_a_membrane_line_not_a_band()
+    {
+        var f = new Fixture();
+        var t = f.Type("Separated", ("Brick", 0.2, true), ("Separator", 0.001, false), ("Mineral wool", 0.1, false));
+        f.Wall(0, 0, 5, 0, t);
+        var d = Draw(f, new JsonObject { ["storeyId"] = f.Storey });
+        var membranes = Pens(d, PenLayer.Membrane).SelectMany(p => p["segments"]!.AsArray().Select(x => (double)x!).Chunk(4)).ToList();
+        Assert.NotEmpty(membranes);
+        // One line along the wall, not the two sides of a band.
+        var length = membranes.Sum(s => Math.Sqrt((s[2] - s[0]) * (s[2] - s[0]) + (s[3] - s[1]) * (s[3] - s[1])));
+        Assert.InRange(length, 4.5, 5.5);
     }
 
     [Fact]

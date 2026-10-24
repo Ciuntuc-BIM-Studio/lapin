@@ -42,12 +42,15 @@ public static class ViewRanges
         return new ViewRange(new("above", 0), new("self", depth), new("self", depth));
     }
 
+    /// <summary>Levels closer than this to the plan's own are one with it (docs/transfer.md).</summary>
+    public const double MergeLevels = 0.25;
+
     static double? LevelAt(RangeEdge edge, double own, IReadOnlyList<double> levels)
     {
         if (edge.Level == "unlimited") return null;
         var sorted = levels.OrderBy(x => x).ToList();
-        if (edge.Level == "above") return sorted.FirstOrDefault(l => l > own + 1e-6, double.NaN) is var next && !double.IsNaN(next) ? next + edge.Offset : null;
-        if (edge.Level == "below") return (sorted.LastOrDefault(l => l < own - 1e-6, double.NaN) is var prev && !double.IsNaN(prev) ? prev : own) + edge.Offset;
+        if (edge.Level == "above") return sorted.FirstOrDefault(l => l >= own + MergeLevels - 1e-6, double.NaN) is var next && !double.IsNaN(next) ? next + edge.Offset : null;
+        if (edge.Level == "below") return (sorted.LastOrDefault(l => l <= own - MergeLevels + 1e-6, double.NaN) is var prev && !double.IsNaN(prev) ? prev : own) + edge.Offset;
         return own + edge.Offset;
     }
 

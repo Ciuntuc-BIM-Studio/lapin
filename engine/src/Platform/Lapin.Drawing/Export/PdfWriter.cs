@@ -21,7 +21,7 @@ public static class PdfWriter
         return File(pages, streams);
     }
 
-    static string F(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
+    static string F(double v) => double.IsFinite(v) ? v.ToString("0.###", CultureInfo.InvariantCulture) : "0";
 
     static (double R, double G, double B) Rgb(string? css)
     {

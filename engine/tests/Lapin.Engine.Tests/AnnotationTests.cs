@@ -263,6 +263,17 @@ public class AnnotationTests
     }
 
     [Fact]
+    public void An_axis_cannot_be_changed_to_a_single_point()
+    {
+        var f = F();
+        var g = (string)f.Run("drafting.addAxis", new JsonObject { ["x1"] = 0, ["y1"] = 0, ["x2"] = 0, ["y2"] = 10, ["tag"] = "1" })!["gridId"]!;
+        Assert.Throws<CommandException>(() => f.Run("drafting.updateAxis", new JsonObject { ["gridId"] = g, ["tag"] = "1", ["x2"] = 0, ["y2"] = 0 }));
+        var axis = Grids.Axes(f.Model.Get(g)!)[0];
+        Assert.Equal(10, axis.B.Y);
+        Assert.DoesNotContain("NaN", Draw(f, "plan:" + f.Storey).ToJsonString());
+    }
+
+    [Fact]
     public void Parallel_axes_line_up_their_ends_and_an_axis_drawn_backwards_keeps_its_bubble_end()
     {
         var f = F();

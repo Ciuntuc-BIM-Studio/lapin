@@ -145,6 +145,61 @@ public class SheetTests
     }
 
     [Fact]
+    public void Layer_names_keep_their_letters_escaped_and_lose_commas_and_the_tables_count_their_records()
+    {
+        var w = new DxfWriter();
+        var name = w.Layer("Zidărie, exterior", "#000000", 0.25, [3, 1.5]);
+        w.Layer("Țiglă", "#000000", 0.5, [1, 1]);
+        w.Line(new(0, 0), new(1, 0), name);
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        var text = Encoding.GetEncoding(1252).GetString(w.Bytes("test"));
+        var layers = Regex.Matches(text, @"AcDbLayerTableRecord\n\s*2\n([^\n]*)\n").Select(m => m.Groups[1].Value).ToList();
+        Assert.Contains("Zid\\U+0103rie_ exterior", layers);
+        Assert.Contains("\\U+021Aigl\\U+0103", layers);
+        Assert.All(layers, l => Assert.DoesNotMatch("[?,]", l));
+        Assert.Matches(@"LINE\n[\s\S]*?\n\s*8\nZid\\U\+0103rie_ exterior\n", text);
+        // Each table's 70 is the number of its records: the skeleton's and ours.
+        int Count(string table) => int.Parse(Regex.Match(text, $@"\n\s*0\nTABLE\n\s*2\n{table}\n[\s\S]*?AcDbSymbolTable\n\s*70\n(\d+)\n").Groups[1].Value);
+        int Records(string table) => Regex.Matches(text, $@"\n\s*0\n{table}\n\s*5\n").Count;
+        Assert.Equal(Records("LTYPE"), Count("LTYPE"));
+        Assert.Equal(5, Count("LTYPE"));
+        Assert.Equal(Records("LAYER"), Count("LAYER"));
+        Assert.Equal(4, Count("LAYER"));
+    }
+
+    [Fact]
+    public void A_pdf_writes_no_NaN_for_a_point_that_is_not_a_number()
+    {
+        var pen = new Pen("CUT", "#000000", 0.5, null, null);
+        pen.Segments.Add((new Vec2(double.NaN, 1), new Vec2(2, double.PositiveInfinity)));
+        var pdf = PdfWriter.Write([new PaperPage(100, 100, [pen])]);
+        var text = Encoding.Latin1.GetString(pdf);
+        var at = text.IndexOf("stream\n", StringComparison.Ordinal) + 7;
+        var length = int.Parse(Regex.Match(text, @"/Length (\d+) /Filter /FlateDecode").Groups[1].Value);
+        using var z = new System.IO.Compression.ZLibStream(new MemoryStream(pdf, at, length), System.IO.Compression.CompressionMode.Decompress);
+        var content = new StreamReader(z, Encoding.Latin1).ReadToEnd();
+        Assert.Contains(" l", content);
+        Assert.DoesNotContain("NaN", content);
+        Assert.DoesNotContain("∞", content);
+        Assert.DoesNotContain("Infinity", content);
+    }
+
+    [Fact]
+    public void A_spreadsheet_keeps_as_text_what_a_number_would_change()
+    {
+        var bytes = XlsxWriter.Write([("S", [["Mark"], ["007"], ["+5"], ["1.5"], ["12"], ["1e3"], ["-0.25"]])]);
+        using var zip = new System.IO.Compression.ZipArchive(new MemoryStream(bytes));
+        using var r = new StreamReader(zip.GetEntry("xl/worksheets/sheet1.xml")!.Open());
+        var sheet = r.ReadToEnd();
+        Assert.Contains("<t xml:space=\"preserve\">007</t>", sheet);
+        Assert.Contains("<t xml:space=\"preserve\">+5</t>", sheet);
+        Assert.Contains("<t xml:space=\"preserve\">1e3</t>", sheet);
+        Assert.Contains("<c r=\"A4\"><v>1.5</v></c>", sheet);
+        Assert.Contains("<c r=\"A5\"><v>12</v></c>", sheet);
+        Assert.Contains("<c r=\"A7\"><v>-0.25</v></c>", sheet);
+    }
+
+    [Fact]
     public void A_sheet_and_a_view_export_to_DXF()
     {
         var f = F();

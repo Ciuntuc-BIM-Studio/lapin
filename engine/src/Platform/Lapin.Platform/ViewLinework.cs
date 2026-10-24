@@ -32,14 +32,21 @@ public static class ViewLinework
     static Vec2 P(JsonNode? n, string what) => n is JsonArray a && a.Count >= 2 && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y
         ? new Vec2(x, y) : throw new CommandException($"The {what} is [x, y].");
 
-    /// <summary>The edge at a point of the view's drawing as generated (before its edits), within the tolerance (m; default 3 paper mm).</summary>
-    static Edge Pick(ICommandContext ctx, Entity view, Vec2 p, JsonObject a)
+    /// <summary>The view's drawing as generated (before its edits), to pick edges in.</summary>
+    static ViewDrawing Generated(ICommandContext ctx, Entity view)
     {
         var (drawing, _, problem) = Views.Generate(ctx.Query, view);
-        if (drawing == null) throw new CommandException(problem ?? "The view cannot be drawn.");
+        return drawing ?? throw new CommandException(problem ?? "The view cannot be drawn.");
+    }
+
+    /// <summary>The edge at a point of the drawing, within the tolerance (m; default 3 paper mm).</summary>
+    static Edge Pick(ViewDrawing drawing, Entity view, Vec2 p, JsonObject a)
+    {
         var tol = Json.Number(a["tolerance"]) ?? (view.NumOrNull("scale") ?? 100) * 0.003;
         return Linework.EdgeAt(drawing, p, tol) ?? throw new CommandException("There is no line of the model there.");
     }
+
+    static Edge Pick(ICommandContext ctx, Entity view, Vec2 p, JsonObject a) => Pick(Generated(ctx, view), view, p, a);
 
     public static void Register(IModuleRegistry r)
     {
@@ -62,8 +69,10 @@ public static class ViewLinework
         {
             var view = Real(ctx, (string?)a["id"]);
             var mode = (string?)a["mode"] ?? "join";
-            var first = Pick(ctx, view, P(a["first"], "first point"), a);
-            var second = Pick(ctx, view, P(a["second"], "second point"), a);
+            // One drawing for both picks.
+            var drawing = Generated(ctx, view);
+            var first = Pick(drawing, view, P(a["first"], "first point"), a);
+            var second = Pick(drawing, view, P(a["second"], "second point"), a);
             var x = Linework.Crossing(first.A, first.B, second.A, second.B) ?? throw new CommandException("The two edges are parallel: they never meet.");
             var changes = mode switch
             {

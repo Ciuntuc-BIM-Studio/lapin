@@ -155,12 +155,12 @@ public static class Sheets
 
     // ------------------------------------------------------------ the sheet on paper
 
-    /// <summary>A sheet as paper pens: the views clipped to their boxes with their titles, the frame and the title block.</summary>
-    public static PaperPage Compose(IQueryContext q, Entity sheet)
+    /// <summary>A sheet as paper pens: the views clipped to their boxes with their titles, the frame and the title block (its views placed here unless given).</summary>
+    public static PaperPage Compose(IQueryContext q, Entity sheet, List<Placement>? placed = null)
     {
         var (W, H) = PaperOf(sheet);
         var pens = new List<Pen>();
-        var placements = Place(q, sheet);
+        var placements = placed ?? Place(q, sheet);
         foreach (var pl in placements)
             foreach (var pen in pl.Drawing.Pens)
             {
@@ -363,7 +363,9 @@ public static class Sheets
         r.Query("sheet.drawing", (q, a) =>
         {
             var sheet = Require(q.Model, (string?)a["id"]);
-            return PageJson(Compose(q, sheet), Place(q, sheet));
+            // Every view rendered once, for the page and its viewports both.
+            var placements = Place(q, sheet);
+            return PageJson(Compose(q, sheet, placements), placements);
         });
     }
 }

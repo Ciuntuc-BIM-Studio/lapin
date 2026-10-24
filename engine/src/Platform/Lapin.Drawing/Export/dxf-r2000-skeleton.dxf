@@ -1237,7 +1237,7 @@ LTYPE
 100
 AcDbSymbolTable
  70
-3
+{{LTYPECOUNT}}
   0
 LTYPE
   5
@@ -1318,7 +1318,7 @@ LAYER
 100
 AcDbSymbolTable
  70
-2
+{{LAYERCOUNT}}
   0
 LAYER
   5

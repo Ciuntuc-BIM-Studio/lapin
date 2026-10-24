@@ -51,7 +51,12 @@ public sealed class DxfWriter(double patternScale = 1)
 
     static int TrueColor(string? css) { var (r, g, b) = Rgb(css); return (r << 16) | (g << 8) | b; }
     static string Fmt(double v) => double.IsFinite(v) ? Math.Round(v, 4).ToString("0.####", CultureInfo.InvariantCulture) : "0";
-    static string Safe(string s) => new string(s.Select(c => "<>/\\\":;?*|=`".Contains(c) ? '_' : c).ToArray()).Trim() is { Length: > 0 } t ? t[..Math.Min(255, t.Length)] : "0";
+    /// <summary>
+    /// A symbol table name: what names may not hold (&lt;&gt;/\":;?*|=` and the comma)
+    /// as '_', what windows-1252 lacks as \U+XXXX, as AutoCAD writes its own
+    /// names in an R2000 DXF; at most 255 characters.
+    /// </summary>
+    static string Safe(string s) => new string(s.Select(c => "<>/\\\":;?*|=`,".Contains(c) || char.IsControl(c) ? '_' : c).ToArray()).Trim() is { Length: > 0 } t ? Cp1252(t[..Math.Min(255, t.Length)]) : "0";
 
     /// <summary>A line type for a dash pattern (paper mm), registered once; Continuous for none.</summary>
     string LineType(double[]? dash)
@@ -152,7 +157,7 @@ public sealed class DxfWriter(double patternScale = 1)
         var o = new List<string>();
         foreach (var (name, l) in _layers)
         {
-            if (name == "0") continue;
+            if (SkeletonLayers.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
             o.AddRange(["0", "LAYER", "5", Next(), "330", LayerTable, "100", "AcDbSymbolTableRecord", "100", "AcDbLayerTableRecord",
                 "2", name, "70", "0", "62", AciOf(l.Color).ToString(CultureInfo.InvariantCulture), "420", TrueColor(l.Color).ToString(CultureInfo.InvariantCulture),
                 "6", l.LineType, "370", l.Weight.ToString(CultureInfo.InvariantCulture), "390", PlotStyle]);
@@ -166,16 +171,22 @@ public sealed class DxfWriter(double patternScale = 1)
         return new StreamReader(s).ReadToEnd();
     }
 
+    /// <summary>The layers the skeleton has already.</summary>
+    static readonly string[] SkeletonLayers = ["0", "Defpoints"];
+    const int SkeletonLineTypes = 3;
+
     /// <summary>The document, windows-1252 encoded.</summary>
     public byte[] Bytes(string comment)
     {
         var lt = LineTypes();
         var layers = LayerTableRecords();
+        var layerCount = SkeletonLayers.Length + _layers.Keys.Count(n => !SkeletonLayers.Contains(n, StringComparer.OrdinalIgnoreCase));
         static string Pairs(List<string> l) => string.Concat(l.Select((v, i) => (i % 2 == 0 ? v.PadLeft(3) : v) + "\n"));
         var text = Skeleton();
         var nl = text.IndexOf('\n', 4);
         text = "999\n" + comment.Replace("\n", " ") + text[nl..];
-        text = text.Replace("{{LTYPES}}\n", Pairs(lt)).Replace("{{LAYERS}}\n", Pairs(layers)).Replace("{{ENTITIES}}\n", Pairs(_out)).Replace("{{HANDSEED}}", _handle.ToString("X"));
+        text = text.Replace("{{LTYPES}}\n", Pairs(lt)).Replace("{{LAYERS}}\n", Pairs(layers)).Replace("{{ENTITIES}}\n", Pairs(_out)).Replace("{{HANDSEED}}", _handle.ToString("X"))
+            .Replace("{{LTYPECOUNT}}", (SkeletonLineTypes + _lineTypes.Count).ToString(CultureInfo.InvariantCulture)).Replace("{{LAYERCOUNT}}", layerCount.ToString(CultureInfo.InvariantCulture));
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         return Encoding.GetEncoding(1252).GetBytes(text);
     }

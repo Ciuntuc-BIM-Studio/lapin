@@ -132,7 +132,15 @@ public static class Views
         // The view's line edits (Linework) over its generated lines.
         var (drawing, lineworkOrphans) = Linework.Apply(generated, ViewLinework.Edits(view));
         var kind = spec.Kind == "plan" ? "plan" : spec.Kind == "elevation" ? "elevation" : "section";
-        var materials = MaterialDrawing.Apply(drawing, p => p.Material != null && m.Get(p.Material) is { } mat ? MaterialGraphics.Resolve(mat, kind) : null);
+        var resolved = new Dictionary<string, ResolvedMaterial?>();
+        ResolvedMaterial? Resolved(string? id) => id == null ? null
+            : resolved.TryGetValue(id, out var r) ? r : resolved[id] = m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, kind) : null;
+        // Each element's layers, so a layer thinner than a membrane (or of a membrane's material) draws as one.
+        var layerSets = new Dictionary<string, IReadOnlyList<LayerRef>?>();
+        IReadOnlyList<LayerRef>? LayersOf(string element) => layerSets.TryGetValue(element, out var ls) ? ls
+            : layerSets[element] = LayerSets.BandsOf(m, element)?.Select(b => new LayerRef(b.Material, b.Name, Math.Abs(b.To - b.From))).ToList();
+        var materials = MaterialDrawing.Apply(drawing, p => Resolved(p.Material), LayersOf,
+            l => l.Thickness < MaterialGraphics.MembraneThickness || Resolved(l.Material)?.Membrane == true);
         var project = Spatial.Project(m);
         var graphics = GraphicsSets.Of(m, view);
         var categories = (graphics?["categories"] as JsonObject)?.Select(c => (c.Key, G: CategoryGraphics.From(c.Value))).Where(x => x.G != null).ToDictionary(x => x.Key, x => x.G!);
