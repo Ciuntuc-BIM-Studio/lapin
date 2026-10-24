@@ -25,6 +25,10 @@ Each step ends with tests ported or written first, the checks green, and its row
   - One element selected: dragging its end moves only that end. The joined element stays where it is.
   - Several selected: grips at the same point (within a tolerance) become one grip. Dragging it moves every selected element's end there in one engine command, so one undo step.
   - Today the engine's default moves joined ends too. The UI will pass `moveJoinedEnds: false` and a new `element.moveGrips` command will take the list. What happens to the join is question Q1.
+  - **One axis end on its own (decided 25.10.2026).** Even when a shared grip would move several elements, one element's axis end can be moved alone:
+    - Alt (Option) while dragging moves only the element the grip is shown for.
+    - Tab, while the cursor is over a shared grip, cycles which element it belongs to: one wall, the other, all of them. The owner is highlighted and named in the hint.
+    - The rule confirmed on 25.10.2026 stays the default: one element selected moves only its own end; several selected move their shared end together.
 - **Edge grips.** The middle of an edge moves the edge parallel to itself, keeping its neighbours' directions. Ctrl or Alt on an edge middle inserts a vertex. Ctrl on a vertex deletes it, if the shape keeps enough vertices.
 - **Feedback.** While dragging: the rubber band, the length and angle of the moved segments, snaps, tracking, typed values (E5).
 - **Views.** Plans first. Sections and elevations next, for heights and drafted shapes. 3D last, with grips on the active storey's plane (Q4).
@@ -193,7 +197,7 @@ I would start with E10 (the panel grid) and E1 together, because everything afte
 ## Open questions
 
 - **Q1.** One wall selected, its joined end dragged away: is the join dropped, or does the other wall keep its end and the join stay as long as they still touch? Proposed: keep it while they touch (today's `Refresh` does that); a corner pulled apart loses its join.
-- **Q2.** Two walls selected but only one end dragged that is not shared: only that wall changes. Correct?
+- **Q2.** Two walls selected but only one end dragged that is not shared: only that wall changes. Correct? (The selection rule itself, and moving one axis end alone with Alt or Tab, are decided.)
 - **Q3.** Are curved walls and curved beams (arcs) part of this work, or later?
 - **Q4.** Grips in sections and 3D: plans first, sections second, 3D later. Agreed?
 - **Q5.** Which Studio operation first: sweep with two end profiles, sweep along two rails, or loft through several profiles?
