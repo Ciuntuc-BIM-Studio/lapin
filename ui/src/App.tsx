@@ -129,7 +129,7 @@ function Panes() {
     window.addEventListener('pointerup', up);
   };
   return (
-    <div ref={host} className={`panes ${split}`}>
+    <div ref={host} className={`panes split-${split}`}>
       <div className="pane-slot" style={{ flexBasis: count > 1 ? `${ratio * 100}%` : '100%' }}><PaneBody i={0} /></div>
       {count > 1 && <div className="pane-sep" onPointerDown={onDown} role="separator" />}
       {count > 1 && <div className="pane-slot" style={{ flexBasis: `${(1 - ratio) * 100}%` }}><PaneBody i={1} /></div>}
