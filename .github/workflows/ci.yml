@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui:
+    name: UI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Reads the pnpm version from "packageManager" in package.json.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        env:
+          CI: 'true'
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm --filter ui test
+
+  # The engine builds against the private submodule vendor/bubblebim-pro
+  # (github.com/ionuting/BubbleBIM-Pro), which needs a token with read access
+  # to that repository: the repository secret VENDOR_TOKEN. A job-level `if`
+  # cannot read secrets, so this job copies the secret into an env variable,
+  # which `if` can read, and publishes the result as an output; the engine
+  # job depends on it and is skipped (not failed) when the secret is absent,
+  # e.g. on a pull request from a fork.
+  vendor:
+    name: Vendor token
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.check.outputs.available }}
+    steps:
+      - id: check
+        env:
+          VENDOR_TOKEN: ${{ secrets.VENDOR_TOKEN }}
+        run: echo "available=${{ env.VENDOR_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+
+  engine:
+    name: Engine
+    needs: vendor
+    if: needs.vendor.outputs.available == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.VENDOR_TOKEN }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      # The whole solution: the tests load the built modules from engine/artifacts/modules.
+      - run: dotnet build engine/Lapin.slnx -v q -nologo
+      - run: dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo
+      # The licence check covers the UI's npm packages and the engine's NuGet
+      # packages (dotnet list package, after the restore above), so it runs
+      # here, where both pnpm and the restored engine are available.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        env:
+          CI: 'true'
+      - run: pnpm check:licenses
