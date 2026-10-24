@@ -164,6 +164,14 @@ public static class Pens
         if (m != null && m.Membranes.Count > 0)
             Get("membrane", () => new Pen("MEMBRANE", "#000000", Default.Membrane, null, [3, 1.5])).Segments.AddRange(m.Membranes);
 
+        // Whole lines: collinear pieces the hidden-line removal split are joined again.
+        foreach (var p in pens.Values.Where(p => p.Layer != "HATCH" && p.Segments.Count > 1))
+        {
+            var merged = LineMerge.Merge(p.Segments);
+            p.Segments.Clear();
+            p.Segments.AddRange(merged);
+        }
+
         // Fills first, then hatches, then lines: beyond and hidden, overhead, seen, membranes, cut.
         static int Order(Pen p) => p.Layer switch
         {

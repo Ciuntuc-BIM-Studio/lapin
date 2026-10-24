@@ -53,6 +53,27 @@ public class DrawingTests
         Assert.Null(ViewRanges.Bands(ViewRanges.Resolve(0, 1.2, deep, Levels)).BeyondFrom);
     }
 
+    // ------------------------------------------------------------ whole lines
+
+    [Fact]
+    public void Collinear_pieces_join_and_duplicates_and_specks_go()
+    {
+        var m = LineMerge.Merge([
+            (new Vec2(0, 0), new Vec2(1, 0)), (new Vec2(1, 0), new Vec2(2.5, 0)), (new Vec2(3, 0), new Vec2(2, 0)),   // one line 0–3
+            (new Vec2(5, 0), new Vec2(6, 0)),                                                                    // apart: stays
+            (new Vec2(0, 1), new Vec2(0, 2)), (new Vec2(0, 2), new Vec2(0, 1)),                                  // a duplicate, reversed
+            (new Vec2(0, 0), new Vec2(1, 1)), (new Vec2(0.5, 0.5), new Vec2(2, 2)),                              // diagonal overlap
+            (new Vec2(4, 4), new Vec2(4, 4.000001)),                                                             // a speck
+        ]);
+        Assert.Equal(4, m.Count);
+        double Len((Vec2 A, Vec2 B) s) => (s.B - s.A).Length;
+        Assert.Contains(m, s => Math.Abs(Len(s) - 3) < 1e-9 && Math.Abs(s.A.Y) < 1e-9);
+        Assert.Contains(m, s => Math.Abs(Len(s) - Math.Sqrt(8)) < 1e-9);
+        Assert.Contains(m, s => Math.Abs(Len(s) - 1) < 1e-9 && Math.Abs(s.A.X) < 1e-9);
+        // Near-vertical lines either side of the wrap still join.
+        Assert.Single(LineMerge.Merge([(new Vec2(0, 0), new Vec2(1e-9, 1)), (new Vec2(1e-9, 1), new Vec2(0, 2))]));
+    }
+
     // ------------------------------------------------------------ line styles (line-styles.test.ts)
 
     [Fact]
