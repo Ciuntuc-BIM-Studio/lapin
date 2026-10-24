@@ -85,6 +85,7 @@ export const RO: Record<string, string> = {
   'Volume': 'Volum', 'Area': 'Arie', 'Net volume': 'Volum net', 'Gross volume': 'Volum brut', 'Net area': 'Arie netă', 'Gross area': 'Arie brută', 'Perimeter': 'Perimetru',
   'Surface area': 'Arie a suprafeței', 'Plan area': 'Arie în plan', 'Lowest point': 'Punctul cel mai jos', 'Highest point': 'Punctul cel mai înalt', 'Fill': 'Umplutură',
   // Panes, zoom, the key plan
+  'Profile on the path': 'Profilul pe traseu', 'Gap from the path': 'Distanța de la traseu', 'centre': 'pe mijloc', 'right': 'la dreapta', 'left': 'la stânga',
   'Phase of selection': 'Faza selecției', 'Key plan': 'Plan-cheie', 'Split': 'Împarte', 'On screen': 'Pe ecran', 'Seen from': 'Văzut din', 'Cut at': 'Tăiat la', 'Look from…': 'Privește din…',
   'Fit (ZE)': 'Încadrează (ZE)', 'Fit everything (ZE)': 'Încadrează tot (ZE)', 'Frame everything': 'Încadrează tot', 'The plan from above': 'Planul de sus',
   'Split: two views side by side': 'Împarte: două vederi una lângă alta', 'Split: one view above the other': 'Împarte: o vedere peste cealaltă', 'Close this pane': 'Închide acest panou',

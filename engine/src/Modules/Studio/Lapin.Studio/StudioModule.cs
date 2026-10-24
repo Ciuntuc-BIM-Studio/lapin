@@ -42,6 +42,8 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
                 new("depth", "Depth", "length"),
                 new("angle", "Angle (°)", "number", Min: -360, Max: 360),
                 new("offset", "Offset from the sketch", "length"),
+                new("place", "Profile on the path", "choice", Choices: Solids.Places),
+                new("placeOffset", "Gap from the path", "length"),
                 new("exportAs", "Export as", "text"),
             ], "#b9b2a6"));
             r.Geometry(cls, Geometry);
@@ -180,6 +182,12 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
                 if (Drafts.ShapeOf(path) is not (Line or Polyline or Arc or Circle)) throw new CommandException("A path is a line, a polyline, an arc or a circle.");
                 if (path.Str("viewId") != profile.Str("viewId")) throw new CommandException("The path is drawn on the profile's view.");
                 attrs["guide"] = path.Id;
+                if ((string?)a["place"] is { } place)
+                {
+                    if (!Solids.Places.Contains(place)) throw new CommandException($"„{place}” is not a place on the path ({string.Join(", ", Solids.Places)}).");
+                    attrs["place"] = place;
+                }
+                if (Json.Number(a["placeOffset"]) is { } gap) attrs["placeOffset"] = gap;
                 break;
             }
             case "revolve":
@@ -224,7 +232,9 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
             {
                 if (m.Get(e.Str("guide") ?? "") is not { } g || Drafts.ShapeOf(g) is not { } gs) return Fail("The path is missing: draw it again to rebuild.");
                 var path = Geo.Polylines(gs, Math.PI / 24)[0].Select(p => plane.World(p) + shift).ToList();
-                solid = Solids.Sweep(outer2, holes2, path, plane.Normal);
+                var swept = Solids.SweepPlaced(outer2, holes2, path, plane.Normal, e.Str("place") ?? "centre", e.Num("placeOffset"));
+                if (swept.Problem != null) return Fail(swept.Problem);
+                solid = swept.Solid;
                 break;
             }
             case "revolve":

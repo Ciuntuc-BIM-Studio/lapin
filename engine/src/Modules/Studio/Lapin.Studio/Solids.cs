@@ -73,41 +73,98 @@ public static class Solids
         return mesh.Build();
     }
 
+    /// <summary>Where a sweep's profile sits on its path, looking along the path.</summary>
+    public static readonly string[] Places = ["centre", "right", "left", "outside", "inside"];
+
+    /// <summary>A sweep that could not be built, and why (a side too short for its mitres…).</summary>
+    public sealed record SweepResult(Solid? Solid, string? Problem);
+
     /// <summary>
     /// The profile (2D: its outline and holes) standing on a path in a plane
-    /// (normal <paramref name="up"/>): the bottom middle of its box on the
-    /// path, its x across the path, its y along the normal; mitred at corners.
+    /// (normal <paramref name="up"/>): its y along the normal, from the
+    /// bottom of its box; its x across the path, placed by <paramref name="place"/>:
+    /// <list type="bullet">
+    /// <item><c>centre</c>: the middle of its box on the path (shifted right by the offset);</item>
+    /// <item><c>right</c> or <c>left</c> of the path: its left edge (smallest x) on the path, the profile on that side, mirrored for the left so its left edge always meets the path;</item>
+    /// <item><c>outside</c> or <c>inside</c> a closed path: right or left as the path turns, whichever way it was drawn.</item>
+    /// </list>
+    /// The offset is the gap between the path and the profile's near edge.
+    /// Corners are mitred; a closed path (its last point on its first) gives
+    /// one ring, every corner mitred, without end faces.
     /// </summary>
-    public static Solid? Sweep(IReadOnlyList<Vec2> outer, IReadOnlyList<IReadOnlyList<Vec2>> holes, IReadOnlyList<Vec3> path, Vec3 up)
+    public static SweepResult SweepPlaced(IReadOnlyList<Vec2> outer, IReadOnlyList<IReadOnlyList<Vec2>> holes, IReadOnlyList<Vec3> path, Vec3 up, string place = "centre", double offset = 0)
     {
-        if (path.Count < 2 || outer.Count < 3) return null;
+        if (outer.Count < 3) return new(null, "The profile needs three points at least.");
+        var pts = new List<Vec3>();
+        foreach (var p in path) if (pts.Count == 0 || (p - pts[^1]).Length > 1e-9) pts.Add(p);
+        var closed = pts.Count >= 4 && (pts[^1] - pts[0]).Length < 1e-6;
+        if (closed) pts.RemoveAt(pts.Count - 1);
+        if (pts.Count < 2 || (closed && pts.Count < 3)) return new(null, "The path needs two points at least.");
+        var n = pts.Count;
+        var segs = closed ? n : n - 1;
+        var tangents = Enumerable.Range(0, segs).Select(i => (pts[(i + 1) % n] - pts[i]).Normalized()).ToList();
+        Vec3 Right(Vec3 t) => Vec3.Cross(t, up).Normalized();
+
+        // Which side: outside and inside follow the way a closed path turns (seen from above its plane).
+        var u = up.Normalized();
+        var turn = 0.0;
+        for (var i = 0; i < n; i++) turn += Vec3.Dot(Vec3.Cross(pts[i], pts[(i + 1) % n]), u);
+        var ccw = turn > 0;
+        var side = place switch
+        {
+            "right" => 1, "left" => -1,
+            "outside" => ccw || !closed ? 1 : -1,
+            "inside" => ccw || !closed ? -1 : 1,
+            _ => 0,
+        };
         var (minX, maxX, minY) = (outer.Min(p => p.X), outer.Max(p => p.X), outer.Min(p => p.Y));
         var cx = (minX + maxX) / 2;
-        Vec2 L(Vec2 p) => new(p.X - cx, p.Y - minY);
-        var n = path.Count;
-        var tangents = Enumerable.Range(0, n - 1).Select(i => (path[i + 1] - path[i]).Normalized()).ToList();
+        Vec2 L(Vec2 p) => side == 0
+            ? new(p.X - cx + offset, p.Y - minY)
+            : new(side * (p.X - minX + offset), p.Y - minY);
+        var reach = outer.Concat(holes.SelectMany(h => h)).Max(p => Math.Abs(L(p).X));
+
+        // A corner: its mitre (the two sides' bisector, stretched) and how far along each side it reaches.
+        var mitres = new Vec3[n];
+        var takes = new double[n];
+        for (var i = 0; i < n; i++)
+        {
+            var hasPrev = closed || i > 0;
+            var hasNext = closed || i < n - 1;
+            if (!hasPrev) { mitres[i] = Right(tangents[0]); continue; }
+            if (!hasNext) { mitres[i] = Right(tangents[^1]); continue; }
+            var (s1, s2) = (Right(tangents[(i - 1 + segs) % segs]), Right(tangents[i % segs]));
+            var bis = (s1 + s2).Normalized();
+            var cos = Vec3.Dot(bis, s1);
+            mitres[i] = bis * (1 / Math.Max(cos, 0.2));
+            // Half the turn: the section's far edge runs past the corner by reach · tan(half).
+            takes[i] = reach * Math.Sqrt(Math.Max(0, 1 / (Math.Max(cos, 0.2) * Math.Max(cos, 0.2)) - 1));
+        }
+        for (var i = 0; i < segs; i++)
+        {
+            var len = (pts[(i + 1) % n] - pts[i]).Length;
+            if (takes[i] + takes[(i + 1) % n] > len + 1e-9)
+                return new(null, $"Side {i + 1} of the path ({len:0.###} m) is too short for its mitred corners: the section would fold. Lengthen it or narrow the profile.");
+        }
+
         var stations = new List<List<IReadOnlyList<Vec3>>>();
         for (var i = 0; i < n; i++)
         {
-            Vec3 side;
-            if (i == 0) side = Vec3.Cross(tangents[0], up).Normalized();
-            else if (i == n - 1) side = Vec3.Cross(tangents[^1], up).Normalized();
-            else
-            {
-                var (s1, s2) = (Vec3.Cross(tangents[i - 1], up).Normalized(), Vec3.Cross(tangents[i], up).Normalized());
-                var bis = (s1 + s2).Normalized();
-                side = bis * (1 / Math.Max(Vec3.Dot(bis, s1), 0.2));
-            }
-            var at = path[i];
-            var dir = i < n - 1 ? tangents[i] : tangents[^1];
-            Vec3 W(Vec2 p) { var q = L(p); return at + side * q.X + up * q.Y; }
+            var at = pts[i];
+            var dir = closed ? (tangents[(i - 1 + segs) % segs] + tangents[i % segs]).Normalized() : i < n - 1 ? tangents[i] : tangents[^1];
+            if (dir.Length < 1e-9) dir = tangents[i % segs];
+            Vec3 W(Vec2 p) { var q = L(p); return at + mitres[i] * q.X + u * q.Y; }
             var rings = new List<IReadOnlyList<Vec3>> { Orient(outer.Select(W).ToList(), dir, false) };
             rings.AddRange(holes.Select(h => Orient(h.Select(W).ToList(), dir, true)));
             stations.Add(rings);
         }
-        // Every station maps the same 2D profile on its own (side, up): they all come out the same way round.
-        return Loft(stations, false, tangents[0], tangents[^1]);
+        var solid = Loft(stations, closed, tangents[0], tangents[^1]);
+        return new(solid, solid == null ? "The swept solid could not be built." : null);
     }
+
+    /// <summary>The profile on the path, its middle on it, mitred at corners (closed paths make a ring).</summary>
+    public static Solid? Sweep(IReadOnlyList<Vec2> outer, IReadOnlyList<IReadOnlyList<Vec2>> holes, IReadOnlyList<Vec3> path, Vec3 up) =>
+        SweepPlaced(outer, holes, path, up).Solid;
 
     /// <summary>The profile (3D: its outline and holes) turned about an axis by an angle (degrees; 360 closes it).</summary>
     public static Solid? Revolve(IReadOnlyList<Vec3> outer, IReadOnlyList<IReadOnlyList<Vec3>> holes, Vec3 axisAt, Vec3 axisDir, double angleDeg)

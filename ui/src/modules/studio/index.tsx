@@ -33,15 +33,23 @@ function extrude(): Step {
   return pick();
 }
 
-/** SWEEP: pick the path, then the closed profile that travels along it. */
+/**
+ * SWEEP: pick the path, then the closed profile that travels along it. Where
+ * the profile sits on the path is a keyword (Centre, Right, Left, Outside,
+ * Inside: outside a closed outline for a pavement), the gap from the path a
+ * typed value. Corners are mitred; a closed path makes one ring.
+ */
+const PLACES: Record<string, string> = { C: 'centre', R: 'right', L: 'left', O: 'outside', I: 'inside' };
 function sweep(): Step {
-  return {
-    prompt: 'Pick the path (a line, polyline, arc or circle)', want: 'pick',
-    pick: (path) => ({
-      prompt: 'Pick the closed profile', want: 'pick',
-      pick: async (profile) => { await execute('studio.sweep', { profileId: profile.id, pathId: path.id }); return null; },
-    }),
-  };
+  let place = 'centre';
+  let gap = 0;
+  const pickProfile = (path: { id: string }): Step => ({
+    prompt: `Pick the closed profile [Centre/Right/Left/Outside/Inside: now ${place}; type a gap from the path: now ${gap} m]`, want: 'pick',
+    keywords: Object.fromEntries(Object.entries(PLACES).map(([k, v]) => [k, () => { place = v; return pickProfile(path); }])),
+    value: (v) => { gap = v; return pickProfile(path); },
+    pick: async (profile) => { await execute('studio.sweep', { profileId: profile.id, pathId: path.id, place, placeOffset: gap }); return null; },
+  });
+  return { prompt: 'Pick the path (a line, polyline, arc or circle)', want: 'pick', pick: (path) => pickProfile(path) };
 }
 
 /** REVOLVE: pick the closed profile, then the axis line, then the angle (Enter: all the way round). */
