@@ -1,0 +1,120 @@
+/**
+ * The help menu (?): report an issue (it reaches Ciuntuc BIM Studio with the
+ * app's last errors attached), the community on Skool, the site, the version.
+ */
+
+import { useEffect, useRef, useState } from 'react';
+import { HelpCircle, X } from 'lucide-react';
+import { notify } from '../app/store';
+import { engine, useSession } from '../engine/session';
+
+const RECENT: string[] = [];
+let installed = false;
+
+/** Keep the app's last errors (uncaught, rejected, console.error), for the next report. */
+export function installRecentErrors(): void {
+  if (installed || typeof window === 'undefined') return;
+  installed = true;
+  const keep = (text: string) => {
+    RECENT.push(`${new Date().toISOString().slice(11, 19)} ${text}`.slice(0, 400));
+    if (RECENT.length > 20) RECENT.shift();
+  };
+  window.addEventListener('error', (e) => keep(`error: ${e.message} @ ${e.filename}:${e.lineno}`));
+  window.addEventListener('unhandledrejection', (e) => keep(`rejection: ${e.reason instanceof Error ? e.reason.message : String(e.reason)}`));
+  const original = console.error.bind(console);
+  console.error = (...args: unknown[]) => { keep(`console: ${args.map((a) => (a instanceof Error ? a.message : String(a))).join(' ')}`); original(...args); };
+}
+
+const openLink = (link: 'community' | 'site') => void engine.call('support.open', { link }).catch(() => notify('The link could not be opened.'));
+
+/** An image shrunk to at most 1600 px on its longer side, as a JPEG data URL. */
+async function shrink(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+function ReportDialog({ onClose }: { onClose: () => void }) {
+  const [kind, setKind] = useState<'bug' | 'idea' | 'question'>('bug');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [expected, setExpected] = useState('');
+  const [email, setEmail] = useState('');
+  const [screenshot, setScreenshot] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const send = async () => {
+    setBusy(true); setProblem(null);
+    try {
+      const r = await engine.call<{ number: number }>('support.report', {
+        kind, title, description, expected: expected || undefined, email: email || undefined, consent: Boolean(email), screenshot: screenshot ?? undefined,
+        website: '', errors: [...RECENT], screen: `${window.innerWidth}×${window.innerHeight} @${window.devicePixelRatio}`,
+      });
+      notify(`Thank you: report #${r.number} is on its way.`);
+      onClose();
+    } catch (e) {
+      setProblem(e instanceof Error ? e.message : String(e));
+    } finally { setBusy(false); }
+  };
+  return (
+    <div className="dialog-backdrop" role="dialog" aria-label="Report an issue">
+      <div className="dialog">
+        <header className="dialog-head">
+          <span className="panel-title">Report an issue</span>
+          <button type="button" className="icon" onClick={onClose} title="Close"><X size={15} /></button>
+        </header>
+        <div className="dialog-body report">
+          <div className="tabs-inline">
+            {(['bug', 'idea', 'question'] as const).map((k) => <button key={k} type="button" className={`tab-chip${kind === k ? ' on' : ''}`} onClick={() => setKind(k)}>{k === 'bug' ? 'Something is wrong' : k === 'idea' ? 'An idea' : 'A question'}</button>)}
+          </div>
+          <label className="field-line"><span className="eyebrow">Title</span><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="In a few words" /></label>
+          <label className="field-line"><span className="eyebrow">What happened</span><textarea rows={5} value={description} onChange={(e) => setDescription(e.target.value)} /></label>
+          {kind === 'bug' && <label className="field-line"><span className="eyebrow">What you expected</span><textarea rows={2} value={expected} onChange={(e) => setExpected(e.target.value)} /></label>}
+          <label className="field-line"><span className="eyebrow">E-mail (optional)</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+          <label className="field-line"><span className="eyebrow">Screenshot (optional)</span>
+            <input type="file" accept="image/png,image/jpeg" onChange={(e) => { const f = e.target.files?.[0]; if (f) void shrink(f).then(setScreenshot); else setScreenshot(null); }} /></label>
+          <p className="muted small">The app's version and its last {RECENT.length} error message(s) go with the report.</p>
+          {problem && <p className="error-text" role="alert">{problem}</p>}
+          <div className="row">
+            <span className="grow" />
+            <button type="button" className="btn" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn primary" disabled={busy || !title.trim() || !description.trim()} onClick={() => void send()}>{busy ? 'Sending…' : 'Send'}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function HelpMenu() {
+  const [open, setOpen] = useState(false);
+  const [report, setReport] = useState(false);
+  const info = useSession((s) => s.info);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    window.addEventListener('mousedown', away);
+    return () => window.removeEventListener('mousedown', away);
+  }, [open]);
+  return (
+    <div className="help-menu" ref={ref}>
+      <button type="button" className="icon" title="Help, report an issue, community" onClick={() => setOpen(!open)}><HelpCircle size={15} /></button>
+      {open && (
+        <div className="menu-pop" role="menu">
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); setReport(true); }}>Report an issue…</button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('community'); }}>Community (Skool)</button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('site'); }}>ciuntucbimstudio.ro</button>
+          <span className="muted small menu-note">Lapin {info?.engineVersion ?? ''}</span>
+        </div>
+      )}
+      {report && <ReportDialog onClose={() => setReport(false)} />}
+    </div>
+  );
+}
+
+export { openLink };

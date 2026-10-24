@@ -6,6 +6,7 @@ import { modules, productInfo } from '../platform/modules';
 import { useSession } from '../engine/session';
 import { discardWork, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
 import { useUi } from '../app/store';
+import { openLink } from './HelpMenu';
 
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
@@ -60,7 +61,7 @@ export function StartScreen() {
         ))}
       </section>
       <footer className="start-foot muted small">
-        <span>Lapin · Ciuntuc BIM Studio</span>
+        <span>Lapin · Ciuntuc BIM Studio · <button type="button" className="link" onClick={() => openLink('community')}>Community on Skool</button> · <button type="button" className="link" onClick={() => openLink('site')}>ciuntucbimstudio.ro</button></span>
         <span>Ctrl+N new · Ctrl+O open · Ctrl+S save</span>
       </footer>
     </div>

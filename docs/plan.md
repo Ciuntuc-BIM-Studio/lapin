@@ -115,6 +115,8 @@ Numerotarea veche avea două variante: cea din commit-ul M0 (M4 faze, M6 raporta
   - Făcut și citirea formatului 2 (proiectele vechi se reconstruiesc nativ).
   - Rămas: XLSX, continuarea automată pe planșe, secțiunile și planșele proiectelor vechi.
 - **M7 – Lansarea desktop:**
+  - Făcut (24.10.2026): build-ul macOS al ediției Lapin verificat (aplicația, motorul împachetat cu modulele lui); meniul ? cu „Report an issue”, comunitatea pe Skool și site-ul; pagina de start cu legăturile.
+  - Rămas (decizii tale, în `decisions-pending.md` #79–80): semnarea și notarizarea, DMG-ul, Windows (manifold pentru Windows).
   - macOS și Windows (manifold pentru Windows), cu semnare și notarizare;
   - pagina de bun venit, „Report an issue”, linkul Skool;
   - apoi se retrag aplicația web veche și fork-ul.

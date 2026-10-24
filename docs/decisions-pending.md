@@ -119,3 +119,12 @@ Ordinea de căutare a fost: Lapin-ul vechi, apoi BubbleBIM Pro, apoi BubbleBIM-S
 | 74 | Fazele sunt modulul de motor `phases`: fazele și filtrele pe `IfcProject`, faza de creare și de demolare ca atribute ale elementului (`phaseCreated`, `phaseDemolished`), faza și filtrul pe vedere. Un element fără fază e creat în prima fază de construcție. Elementele noi nu primesc încă automat faza activă; se marchează cu „Created here”. La export IFC se vor scrie ca `Pset_Lapin_Phase` (IFC nu are fazele Revit). | Faza activă pusă automat la creare. | `Lapin.Phases` |
 | 75 | Un proiect vechi (formatul 2) se reconstruiește prin comenzile motorului din tabelele native (nu din IFC-ul din pachet): etaje, materiale, tipuri de pereți stratificate (stratul cel mai gros e miezul), pereți, plăci (un tip pe grosime, beton armat), stâlpi și grinzi (un tip pe secțiune), tipuri de uși și ferestre cu așezarea lor, planurile proprii și fațadele. Se deschide nesalvat, fără istoric de undo; salvarea îl scrie în formatul 3. GlobalId-urile sunt noi. | Păstrarea GlobalId-urilor vechi; citirea IFC-ului. | `LegacyPackage`, `LegacyImport` |
 | 76 | Din proiectele vechi nu se preiau încă: secțiunile (linia se redesenează), planșele, golurile fără ușă sau fereastră, elementele „solid” și „system”, adnotările. Aplicația spune ce a lăsat deoparte. | Toate acum. | `LegacyImport` |
+
+## M7 – lansarea desktop
+
+| # | Ce am ales | Alternative | Unde |
+|---|---|---|---|
+| 77 | „Report an issue” trimite raportul prin motor la `https://lapin.ciuntucbimstudio.ro/api/feedback` (serverul unde rapoartele vechi stau ca fișiere), cu versiunea `lapin-pro …` și ultimele erori ale aplicației. Nu am trimis niciun raport de test la server; testul folosește un server local. De verificat: dacă serverul primește rapoarte de la aplicația desktop (nu are origine web). | Alt endpoint pentru lapin-pro. | `Support.Report` |
+| 78 | Meniul ? deschide doar două adrese fixe (Skool și site-ul), prin motor. | Orice link. | `Support.Open` |
+| 79 | Build-ul macOS (`pnpm build:product lapin`) merge: `Lapin.app` de 117 MB, motorul împachetat pornește și modelează. Nu e semnat și nici notarizat: trebuie certificatul Apple Developer și contul (decizia și datele tale). Nu se face încă DMG. | Semnare acum. | `scripts/build-product.mjs` |
+| 80 | Windows nu e construit: manifold (booleanele) există doar pentru macOS arm64; build-ul Windows cere biblioteca manifold compilată pentru Windows și o mașină Windows (sau CI). Fără ea, golurile nu se taie. | — | `vendor/bubblebim-pro` |

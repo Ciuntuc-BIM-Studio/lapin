@@ -156,6 +156,11 @@ public sealed class EngineHub(Session session, ProjectFiles files, Recovery? rec
                     : throw new CommandException("There is no such sheet or view.");
                 return (Deliver(bytes, "drawing.dxf"), null);
             }
+            case "support.report":
+                return (Support.Report(p, typeof(EngineHub).Assembly.GetName().Version?.ToString() ?? "0").GetAwaiter().GetResult(), null);
+            case "support.open":
+                Support.Open((string?)p["link"]);
+                return (null, null);
             case "recovery.list": return (recovery?.List() ?? [], null);
             case "recovery.restore": return (null, (recovery ?? throw new CommandException("No recovery here.")).Restore(PathParam()));
             case "recovery.discard":

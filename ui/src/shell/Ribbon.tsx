@@ -1,7 +1,8 @@
 /** The top bar and the ribbon: the tabs come from the product's modules. */
 
 import { useState } from 'react';
-import { HelpCircle, Moon, Search, Sun } from 'lucide-react';
+import { Moon, Search, Sun } from 'lucide-react';
+import { HelpMenu } from './HelpMenu';
 import { useUi } from '../app/store';
 import { activate, ribbonTabs } from '../platform/modules';
 import { redo, undo, useSession } from '../engine/session';
@@ -46,7 +47,7 @@ export function Ribbon() {
         <button type="button" className="icon" disabled={!doc?.canUndo} onClick={() => void undo()} title={doc?.undoLabel ? `Undo ${doc.undoLabel} (Ctrl Z)` : 'Undo'}>↶</button>
         <button type="button" className="icon" disabled={!doc?.canRedo} onClick={() => void redo()} title={doc?.redoLabel ? `Redo ${doc.redoLabel} (Ctrl ⇧ Z)` : 'Redo'}>↷</button>
         <button type="button" className="icon" title="Theme" onClick={() => useUi.setState({ theme: theme === 'paper' ? 'graphite' : 'paper' })}>{theme === 'paper' ? <Moon size={15} /> : <Sun size={15} />}</button>
-        <button type="button" className="icon" title="Help, report an issue, community"><HelpCircle size={15} /></button>
+        <HelpMenu />
       </div>
       {tab && (
         <div className="band" role="toolbar" aria-label={tab.label}>
