@@ -149,6 +149,8 @@ public static class Walls
         var openings = Openings.PlacedOn(m, wall.Id);
         var frame = new Openings.WallFrame(start, dir, left, z, yMin, yMax);
         var cutters = openings.Select(o => (o, Box: Openings.Cutter(frame, o with { Along = o.Along - Vec2.Dot(start - Start(wall), dir) }))).Where(c => c.Box != null).ToList();
+        // An export wants the body the openings have not cut: IFC writes the openings and subtracts them itself.
+        if (!(services?.Get<GeometryOptions>()?.CutOpenings ?? true)) cutters.Clear();
         var booleans = services?.Get<ISolidBooleans>();
         if (cutters.Count > 0 && booleans == null) problems.Add("Openings need the boolean library (manifold), missing here: the wall is drawn uncut.");
         // Lintels over the openings, through the core; the ring beam coming down over an opening close under it; at a corner, the longer of two that meet runs through.

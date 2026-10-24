@@ -2,7 +2,7 @@
 
 export const RO: Record<string, string> = {
   // The top bar, menus, the start screen
-  'File': 'Fișier', 'New project': 'Proiect nou', 'Open…': 'Deschide…', 'Open project…': 'Deschide un proiect…', 'Save': 'Salvează', 'Save as…': 'Salvează ca…',
+  'File': 'Fișier', 'New project': 'Proiect nou', 'Open…': 'Deschide…', 'Open project…': 'Deschide un proiect…', 'Save': 'Salvează', 'Save as…': 'Salvează ca…', 'Export IFC…': 'Exportă IFC…',
   'Start screen': 'Ecranul de start', 'Commands…': 'Comenzi…', 'Theme': 'Temă', 'Undo': 'Anulează', 'Redo': 'Refă',
   'Help, report an issue, community': 'Ajutor, raportează o problemă, comunitate', 'Report an issue': 'Raportează o problemă', 'Report an issue…': 'Raportează o problemă…',
   'Community (Skool)': 'Comunitatea (Skool)', 'Community on Skool': 'Comunitatea pe Skool', 'What happened': 'Ce s-a întâmplat', 'What you expected': 'Ce te așteptai să se întâmple',

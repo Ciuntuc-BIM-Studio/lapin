@@ -19,6 +19,7 @@
     <ProjectReference Include="../../src/Platform/Lapin.Platform/Lapin.Platform.csproj" />
     <ProjectReference Include="../../src/Platform/Lapin.Drawing/Lapin.Drawing.csproj" />
     <ProjectReference Include="../../src/Platform/Lapin.Package/Lapin.Package.csproj" />
+    <ProjectReference Include="../../src/Platform/Lapin.Ifc/Lapin.Ifc.csproj" />
     <ProjectReference Include="../../src/Modules/Architecture/Lapin.Architecture/Lapin.Architecture.csproj" />
     <ProjectReference Include="../../src/Modules/Structure/Lapin.Structure/Lapin.Structure.csproj" />
     <ProjectReference Include="../../src/Modules/Drafting/Lapin.Drafting/Lapin.Drafting.csproj" />

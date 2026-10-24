@@ -109,7 +109,7 @@ public static class Slabs
                 parts.Add(new GeometryPart(name, Materials.ColorOf(m, material), solid, material, $"layer:{index}"));
         var problems = new List<string>();
         var holes = Holes(m, slab.Id).Select(h => h.Contour).ToList();
-        if (holes.Count > 0 && parts.Count > 0)
+        if (holes.Count > 0 && parts.Count > 0 && (services?.Get<GeometryOptions>()?.CutOpenings ?? true))
         {
             if (services?.Get<ISolidBooleans>() is { } booleans)
             {
@@ -125,6 +125,17 @@ public static class Slabs
         var plan = new List<PlanItem> { new("outline", true, contour) };
         plan.AddRange(holes.Select(h => new PlanItem("outline", true, h)));
         return new ElementGeometry(parts, plan, contour, problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>The prism an opening takes out of its floor, through the whole build-up and a little proud of it: what IFC writes as the opening's body.</summary>
+    public static Solid? OpeningSolid(IModelView m, Entity slab, Entity opening)
+    {
+        var contour = Contour(opening);
+        var section = Section(m, slab);
+        if (contour.Count < 3 || section.Count == 0) return null;
+        var top = Top(m, slab);
+        var (z0, z1) = (top + section.Min(b => b.From) - 0.05, top + section.Max(b => b.To) + 0.05);
+        return Prism.ExtrudeFootprint(contour, z0, z1 - z0, "opening");
     }
 
     /// <summary>The openings that void a floor (shafts, stairwells): each an IfcOpeningElement with its contour in plan.</summary>

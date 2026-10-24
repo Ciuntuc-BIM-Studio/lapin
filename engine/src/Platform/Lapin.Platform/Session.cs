@@ -186,6 +186,16 @@ public sealed class Session
         return _store.Get(id) is { } e ? Build(e)?.Geometry : null;
     }
 
+    /// <summary>An element's geometry built afresh with <paramref name="options"/>, outside the cache the views use (an export).</summary>
+    public ElementGeometry? Geometry(string id, GeometryOptions options)
+    {
+        if (_store.Get(id) is not { } e || _catalog.Geometry(e.Class) is not { } producer) return null;
+        var services = new ServicesWith(_catalog, options);
+        var g = producer(e, _store, services);
+        if (g != null) foreach (var f in _catalog.All<IGeometryFilter>()) g = f.Apply(e, g, _store, services) ?? g;
+        return g;
+    }
+
     /// <summary>What an entity measures: its quantity sets and its parts' (none when its class has no measures).</summary>
     public IReadOnlyList<QuantitySet> Quantities(string id)
     {
@@ -334,6 +344,13 @@ public sealed class Session
         return new RenderItem(e.Id, e.Class, Spatial.StoreyOf(_store, e.Id)?.Id, _catalog.OwnerOf(e.Class) != null,
             parts.FirstOrDefault()?.Color ?? "#c9ced6", [], [], [], [], plan, snaps,
             [.. problems, .. g?.Diagnostics ?? []], parts);
+    }
+
+    /// <summary>The catalog's services and one more, for a single build.</summary>
+    sealed class ServicesWith(IServices inner, object extra) : IServices
+    {
+        public T? Get<T>() where T : class => extra as T ?? inner.Get<T>();
+        public IReadOnlyList<T> All<T>() where T : class => extra is T x ? [x, .. inner.All<T>()] : inner.All<T>();
     }
 
     sealed class QueryContext(Session s) : IQueryContext

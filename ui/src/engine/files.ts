@@ -138,6 +138,8 @@ export async function guardWindowClose(): Promise<void> {
  * An export from the engine (PDF, DXF): to the path the save dialog gives on
  * the desktop, else handed back and downloaded by the browser.
  */
+const MIME: Record<string, string> = { pdf: 'application/pdf', dxf: 'application/dxf', ifc: 'application/x-step' };
+
 export async function exportFile(method: string, args: Record<string, unknown>, name: string, ext: string): Promise<void> {
   try {
     if (isDesktop()) {
@@ -150,7 +152,7 @@ export async function exportFile(method: string, args: Record<string, unknown>, 
     }
     const r = await engine.call<{ data: string }>(method, args, { timeoutMs: LONG_TIMEOUT_MS });
     const bytes = Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0));
-    const url = URL.createObjectURL(new Blob([bytes], { type: ext === 'pdf' ? 'application/pdf' : 'application/dxf' }));
+    const url = URL.createObjectURL(new Blob([bytes], { type: MIME[ext] ?? 'application/octet-stream' }));
     const a = document.createElement('a');
     a.href = url; a.download = name; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
@@ -158,4 +160,10 @@ export async function exportFile(method: string, args: Record<string, unknown>, 
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }
+}
+
+/** The project as IFC (docs/spec-ifc.md): IFC4 by default, IFC4X3 on request; parts grouped under their element unless `detail` is 'simple'. */
+export async function exportIfc(options: { schema?: string; detail?: string; phase?: string } = {}): Promise<void> {
+  const path = useSession.getState().doc?.path ?? null;
+  await exportFile('project.exportIfc', options, `${projectTitle(path)}.ifc`, 'ifc');
 }

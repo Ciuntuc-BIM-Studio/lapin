@@ -129,6 +129,8 @@ public sealed class PhasesModule : ILapinModule, IViewElementFilter
                 if (di >= 0 && di < ci) throw new CommandException($"„{e.Name}” cannot be demolished before it is built.");
                 ctx.Replace(e.With(attrs: attrs));
             }
+            // The first assignment writes the project's phases down, so whoever indexes an element's phases (the IFC export) finds the list.
+            if (Spatial.Project(ctx.Model)?.Attrs["phases"] == null) Write(ctx, s);
             return null;
         });
 

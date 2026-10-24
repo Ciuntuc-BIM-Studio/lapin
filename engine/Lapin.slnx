@@ -27,6 +27,7 @@
   </Folder>
   <Folder Name="/src/Platform/">
     <Project Path="src/Platform/Lapin.Drawing/Lapin.Drawing.csproj" />
+    <Project Path="src/Platform/Lapin.Ifc/Lapin.Ifc.csproj" />
     <Project Path="src/Platform/Lapin.Package/Lapin.Package.csproj" />
     <Project Path="src/Platform/Lapin.Platform/Lapin.Platform.csproj" />
   </Folder>

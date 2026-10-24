@@ -2,6 +2,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Lapin.Ifc;
 using Lapin.Model;
 using Lapin.Platform;
 
@@ -163,6 +164,15 @@ public sealed class EngineHub(Session session, ProjectFiles files, Recovery? rec
                 return (new JsonObject { ["notes"] = new JsonArray(PackageFiles.LastNotes.Select(n => (JsonNode)n).ToArray()) }, diff);
             }
             case "project.save": return (null, files.Save(session, (string?)p["path"]));
+            case "project.exportIfc":
+            {
+                // The project as IFC (docs/spec-ifc.md): IFC4, or IFC4X3; parts grouped under their element, or one body each; a phase, or everything.
+                var options = new IfcExportOptions((string?)p["schema"] ?? "IFC4", (string?)p["detail"] ?? "group", (string?)p["phase"]);
+                if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, ifcPath, options).ToJson(), null);
+                var temp = Path.Combine(Path.GetTempPath(), $"lapin-{Guid.NewGuid():N}.ifc");
+                try { IfcExport.Write(session, temp, options); return (Deliver(File.ReadAllBytes(temp), "project.ifc"), null); }
+                finally { File.Delete(temp); }
+            }
             case "export.pdf":
             {
                 // Sheets as one PDF: those asked for, else all of them in order.

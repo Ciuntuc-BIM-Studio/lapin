@@ -172,3 +172,17 @@ public sealed record ElementGeometry(IReadOnlyList<GeometryPart> Parts, IReadOnl
 
 /// <summary>A command refused for a reason the user should read.</summary>
 public sealed class CommandException(string message) : ModelException(message);
+
+/// <summary>
+/// How geometry is built when a reader wants something other than what the
+/// views show: an IFC export wants the bodies the openings have not cut, as
+/// IFC writes the openings and subtracts them itself. Offered to producers
+/// through <see cref="IServices"/>; absent, the views' geometry.
+/// </summary>
+public sealed record GeometryOptions(bool CutOpenings = true);
+
+/// <summary>The body of a void (an IfcOpeningElement) in its host, for whoever writes it out; a service of the module that owns the host.</summary>
+public interface IVoidShapes
+{
+    Solid? Shape(Entity opening, IModelView model);
+}

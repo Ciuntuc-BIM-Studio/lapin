@@ -26,6 +26,7 @@ public sealed class ArchitectureModule : ILapinModule
         r.Class(new(IfcClass.Window, "Window", [], "#9cc8e8"));
         r.Class(new(IfcClass.DoorType, "Door type", [], "#c8a27a", Kind: "type"));
         r.Class(new(IfcClass.WindowType, "Window type", [], "#9cc8e8", Kind: "type"));
+        r.Service<IVoidShapes>(new VoidShapes());
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Geometry(IfcClass.Window, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Quantities(IfcClass.Door, (fill, _, model) => FillQuantities(fill, model, "Qto_DoorBaseQuantities"));
@@ -475,4 +476,19 @@ public sealed class ArchitectureModule : ILapinModule
     static Vec2 P(JsonObject a, string x, string y) => Args.Point(a, x, y);
 
     static IEnumerable<string> Ids(JsonObject a) => Args.Ids(a);
+}
+
+/// <summary>The bodies of the openings in walls and floors, for the IFC export (IfcOpeningElement).</summary>
+sealed class VoidShapes : IVoidShapes
+{
+    public Solid? Shape(Entity opening, IModelView m)
+    {
+        if (m.RelatingOf(opening.Id, IfcClass.RelVoidsElement) is not { } host) return null;
+        return host.Class switch
+        {
+            IfcClass.Wall => Openings.Cutter(Openings.FrameOf(m, host), Openings.Place(m, opening)),
+            IfcClass.Slab => Slabs.OpeningSolid(m, host, opening),
+            _ => null,
+        };
+    }
 }

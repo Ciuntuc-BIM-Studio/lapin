@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    IFC: the STEP writer and reader (from BubbleBIM Pro, the user's own code)
+    and the export of a session as IFC4 or IFC4X3 (docs/spec-ifc.md). The
+    import comes next. Used by the host for every product.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../Lapin.Platform/Lapin.Platform.csproj" />
+  </ItemGroup>
+</Project>
