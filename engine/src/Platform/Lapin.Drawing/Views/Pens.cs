@@ -127,6 +127,9 @@ public static class Pens
             if (g?.Hidden == true) continue;
             if (!o.HiddenLines && l.Role == "hidden") continue;
             var styled = o.LineStyle?.Invoke(l.Role, l.Class, l.Element);
+            // A line edit's style (Linework) wins over everything else.
+            if (l.Style is { Empty: false } ls)
+                styled = new ResolvedLine(ls.Pen is { } lsPen ? LineStyles.PenWidth(LineStyles.DefaultPenTable(), lsPen, o.Scale) : styled?.WidthMm, ls.Color ?? styled?.Color, ls.Pattern != null ? LineStyles.DashOf(ls.Pattern) : styled?.Dash);
             var color = o.ElementColors?.GetValueOrDefault(l.Element) ?? styled?.Color ?? g?.LineColor;
             Pen pen;
             switch (l.Role)

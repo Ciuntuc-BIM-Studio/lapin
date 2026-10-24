@@ -121,7 +121,7 @@ public static class Views
     }
 
     /// <summary>A view rendered: its pens (view coordinates, m; widths paper mm), annotations, bounds and scale, or why it cannot be drawn.</summary>
-    public sealed record Rendered(List<Pen> Pens, List<ViewMark> Marks, (Vec2 Min, Vec2 Max)? Bounds, double Scale, string Kind, string? Problem, List<string> RangeProblems);
+    public sealed record Rendered(List<Pen> Pens, List<ViewMark> Marks, (Vec2 Min, Vec2 Max)? Bounds, double Scale, string Kind, string? Problem, List<string> RangeProblems, List<string>? LineworkOrphans = null);
 
     public static Rendered Render(IQueryContext q, Entity view)
     {
@@ -129,7 +129,8 @@ public static class Views
         var scale = view.NumOrNull("scale") ?? 100;
         var (generated, spec, problem) = Generate(q, view);
         if (generated == null || spec == null) return new Rendered([], [], null, scale, view.Str("kind") ?? "plan", problem, []);
-        var drawing = generated;
+        // The view's line edits (Linework) over its generated lines.
+        var (drawing, lineworkOrphans) = Linework.Apply(generated, ViewLinework.Edits(view));
         var kind = spec.Kind == "plan" ? "plan" : spec.Kind == "elevation" ? "elevation" : "section";
         var materials = MaterialDrawing.Apply(drawing, p => p.Material != null && m.Get(p.Material) is { } mat ? MaterialGraphics.Resolve(mat, kind) : null);
         var project = Spatial.Project(m);
@@ -183,7 +184,7 @@ public static class Views
             foreach (var (t, _) in mk.Texts) pts.AddRange([t.At, t.At + new Vec2(0, t.Height * scale / 1000)]);
         }
         (Vec2, Vec2)? bounds = pts.Count > 0 ? (new Vec2(pts.Min(p => p.X), pts.Min(p => p.Y)), new Vec2(pts.Max(p => p.X), pts.Max(p => p.Y))) : null;
-        return new Rendered(pens, marks, bounds, scale, spec.Kind, null, spec.Kind == "plan" ? ViewRanges.Problems(Range(m, view)) : []);
+        return new Rendered(pens, marks, bounds, scale, spec.Kind, null, spec.Kind == "plan" ? ViewRanges.Problems(Range(m, view)) : [], lineworkOrphans);
     }
 
     /// <summary>The view drawn, for the interface: its pens, annotations, bounds and problems.</summary>
@@ -207,6 +208,7 @@ public static class Views
         };
         if (r.Bounds is { } b) o["bounds"] = new JsonArray(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y);
         if (r.Kind == "plan") o["problems"] = new JsonArray(r.RangeProblems.Select(x => (JsonNode)x).ToArray());
+        if (r.LineworkOrphans is { Count: > 0 } lo) o["lineworkOrphans"] = new JsonArray(lo.Select(x => (JsonNode)x).ToArray());
         return o;
     }
 

@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Maximize } from 'lucide-react';
 import { select, useUi } from '../app/store';
-import { useSession } from '../engine/session';
+import { execute, useSession } from '../engine/session';
 import type { Vec2 } from '../platform/module';
 import { DrawingLayer } from './DrawingLayer';
 import { useDrawing } from './drawing';
@@ -80,7 +80,12 @@ export function DrawingView() {
     <div className="view-pane">
       <div className="view-toolbar">
         <span className="view-title">{node?.name ?? 'View'} · 1:{drawing?.scale ?? 100}</span>
-        <button type="button" className="icon" title="Fit" onClick={fit}><Maximize size={14} /></button>
+{(drawing?.lineworkOrphans?.length ?? 0) > 0 && id && (
+          <button type="button" className="chip warn" title="The edges they were on are gone: remove them" onClick={() => void execute('view.lineworkReset', { id: id, orphans: true })}>
+            {drawing!.lineworkOrphans!.length} line edit(s) lost their edge · clean
+          </button>
+        )}
+                <button type="button" className="icon" title="Fit" onClick={fit}><Maximize size={14} /></button>
       </div>
       <svg ref={ref} className={`plan-svg drawing-svg${cadStep ? ' tool' : ''}`} data-testid="drawing"
         onWheel={(e) => {

@@ -8,35 +8,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
-import { activeStorey, execute, query, useSession } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
+import { frontView } from '../../viewport/frontView';
 
 interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string }
 interface Visibility { graphics?: { categories?: Record<string, Row>; classes?: Record<string, Row> } | null; graphicsSet?: string | null; sets: { id: string; name: string }[]; categories: string[] }
 
 const WEIGHTS = ['', 'heavy', 'medium', 'light', 'hairline'];
 const label = (s: string) => s[0].toUpperCase() + s.slice(1);
-
-/** The view the dialog works on: the 3D, the section or elevation in front, or the plan's own view (made when the storey has none). */
-let making: Promise<string | null> | null = null;
-async function frontView(): Promise<string | null> {
-  const ui = useUi.getState();
-  if (ui.view === '3d') return '3d';
-  if (ui.view === 'drawing') return ui.drawingViewId;
-  if (ui.view !== 'plan') return null;
-  const nodes = useSession.getState().nodes;
-  const storey = activeStorey();
-  if (ui.planViewId && nodes.get(ui.planViewId)?.props.storeyId === storey?.id) return ui.planViewId;
-  if (!storey) return null;
-  // The storey's first plan view, else a new one (made once, however often asked).
-  const existing = [...nodes.values()].find((n) => n.type === 'LapinView' && n.props.kind === 'plan' && n.props.storeyId === storey.id);
-  if (existing) { useUi.setState({ planViewId: existing.id }); return existing.id; }
-  making ??= (execute('view.create', { kind: 'plan', storeyId: storey.id }) as Promise<{ id?: string } | null>).then((r) => {
-    making = null;
-    if (r?.id) useUi.setState({ planViewId: r.id });
-    return r?.id ?? null;
-  });
-  return making;
-}
 
 export function VisibilityDialog() {
   const nodes = useSession((s) => s.nodes);

@@ -2,7 +2,7 @@
 
 import {
   ArrowRightToLine, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileText, FlipHorizontal2, Grid3x3, Hash, Layers, Move, MoveHorizontal,
-  RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, TrendingUp, Redo2,
+  RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, TrendingUp, Redo2, PenLine,
 } from 'lucide-react';
 import type { Grip, LapinModule, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -12,6 +12,7 @@ import { cadHost, registerCommand, startCommand, type Step } from '../../viewpor
 import { DimensionSection } from './DimensionSection';
 import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
 import { LayersDialog } from './LayersDialog';
+import { frontView } from '../../viewport/frontView';
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string. Ends on an element's cut edge, a grid axis or a wall's centre line follow it. */
 const dimension: ToolDef = { id: 'drafting.dimension', label: 'Aligned', icon: MoveHorizontal, shortcut: 'DI', run: () => void startCommand('DIMALIGNED') };
@@ -77,6 +78,69 @@ function dimCommand(linear: boolean): Step {
 registerCommand({ names: ['DIMALIGNED', 'DAL', 'DIM'], label: 'Aligned dimension', start: () => dimCommand(false) });
 registerCommand({ names: ['DIMLINEAR', 'DLI'], label: 'Linear dimension', start: () => dimCommand(true) });
 
+// ─── Linework (LW…): the view's generated lines hidden, shown or restyled, joined at corners ───
+
+type LwMode = { action: 'hide' | 'show' | 'style'; style?: { pen?: number; color?: string; pattern?: string } };
+const LW_STYLES: Record<string, LwMode> = {
+  INVISIBLE: { action: 'hide' }, SHOW: { action: 'show' },
+  THIN: { action: 'style', style: { pen: 1, pattern: 'solid' } }, MEDIUM: { action: 'style', style: { pen: 3, pattern: 'solid' } }, WIDE: { action: 'style', style: { pen: 5, pattern: 'solid' } },
+  HIDDEN: { action: 'style', style: { pattern: 'hidden' } }, OVERHEAD: { action: 'style', style: { pattern: 'dashed' } },
+  BEYOND: { action: 'style', style: { pen: 1, color: '#808080' } }, CENTER: { action: 'style', style: { pattern: 'center' } }, DOTTED: { action: 'style', style: { pattern: 'dotted' } },
+};
+let lwMode = 'INVISIBLE';
+let lwPen: number | null = null;
+
+function lineworkStep(): Step {
+  const mode = (): LwMode => (lwPen != null ? { action: 'style', style: { pen: lwPen } } : LW_STYLES[lwMode]);
+  const step = (): Step => ({
+    prompt: `Click the edges [${lwPen != null ? `pen ${lwPen}` : lwMode}: ${Object.keys(LW_STYLES).join('/')}; a number: a pen]`, want: 'select',
+    keywords: Object.fromEntries(Object.keys(LW_STYLES).map((k) => [k, () => { lwMode = k; lwPen = null; return step(); }])),
+    value: (n) => { if (n >= 1 && n <= 16) lwPen = Math.round(n); return step(); },
+    point: async (p) => {
+      const id = await frontView();
+      if (id && id !== '3d') await execute('view.linework', { id, at: [p.x, p.y], ...mode() });
+      return step();
+    },
+    enter: () => null,
+  });
+  return step();
+}
+
+function lineworkCorner(mode: 'join' | 'trim' | 'extend'): Step {
+  const first = (): Step => ({
+    prompt: mode === 'join' ? 'First edge' : mode === 'trim' ? 'The edge to cut at' : 'The edge to extend to', want: 'select',
+    point: (a) => ({
+      prompt: mode === 'join' ? 'Second edge' : mode === 'trim' ? 'The edge to cut (the side clicked goes)' : 'The edge to extend', want: 'select',
+      point: async (b) => {
+        const id = await frontView();
+        if (id && id !== '3d') await execute('view.lineworkCorner', { id, first: [a.x, a.y], second: [b.x, b.y], mode });
+        return first();
+      },
+    }),
+    enter: () => null,
+  });
+  return first();
+}
+
+function lineworkReset(): Step {
+  const step = (): Step => ({
+    prompt: 'Click an edge to give it back its own lines [ALL: the whole view; ORPHANS: the edits that lost their edge]', want: 'select',
+    keywords: {
+      ALL: async () => { const id = await frontView(); if (id && id !== '3d') await execute('view.lineworkReset', { id, all: true }); return null; },
+      ORPHANS: async () => { const id = await frontView(); if (id && id !== '3d') await execute('view.lineworkReset', { id, orphans: true }); return null; },
+    },
+    point: async (p) => { const id = await frontView(); if (id && id !== '3d') await execute('view.lineworkReset', { id, at: [p.x, p.y] }); return step(); },
+    enter: () => null,
+  });
+  return step();
+}
+
+registerCommand({ names: ['LINEWORK', 'LW'], label: 'Linework', start: lineworkStep });
+registerCommand({ names: ['LWJOIN', 'LWJ'], label: 'Linework join', start: () => lineworkCorner('join') });
+registerCommand({ names: ['LWTRIM', 'LWTR'], label: 'Linework trim', start: () => lineworkCorner('trim') });
+registerCommand({ names: ['LWEXTEND', 'LWEX'], label: 'Linework extend', start: () => lineworkCorner('extend') });
+registerCommand({ names: ['LWRESET', 'LWR'], label: 'Linework reset', start: lineworkReset });
+
 /** A CAD command started from the ribbon, as if typed. */
 const cad = (id: string, label: string, icon: ToolDef['icon'], command: string): ToolDef => ({ id: `cad.${id}`, label, icon, run: () => void startCommand(command) });
 
@@ -112,6 +176,7 @@ const drafting: LapinModule = {
         { label: 'Modify', tools: [cad('move', 'Move', Move, 'MOVE'), cad('copy', 'Copy', Copy, 'COPY'), cad('rotate', 'Rotate', RotateCw, 'ROTATE'), cad('mirror', 'Mirror', FlipHorizontal2, 'MIRROR')], small: [cad('scale', 'Scale', Scaling, 'SCALE'), cad('erase', 'Erase', Eraser, 'ERASE')] },
         { label: 'Edit', tools: [cad('offset', 'Offset', CopyPlus, 'OFFSET'), cad('trim', 'Trim', Scissors, 'TRIM'), cad('extend', 'Extend', ArrowRightToLine, 'EXTEND'), cad('fillet', 'Fillet', CornerUpRight, 'FILLET')], small: [cad('chamfer', 'Chamfer', CornerUpRight, 'CHAMFER')] },
         { label: 'Fill', tools: [cad('hatch', 'Hatch', Hash, 'HATCH')] },
+        { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset', Eraser, 'LWRESET')] },
         { label: 'Layers', tools: [{ id: 'drafting.layers', label: 'Layers', icon: Layers, run: () => useUi.setState({ dialog: 'draftLayers' }) }] },
       ],
     },

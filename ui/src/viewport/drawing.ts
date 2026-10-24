@@ -27,6 +27,8 @@ export interface DrawingDto {
   /** Annotations a click selects: their entity, segments and snap points. */
   marks?: { id: string; segments: number[]; snaps?: number[] }[];
   problems?: string[];
+  /** Line edits (Linework) whose edge is gone. */
+  lineworkOrphans?: string[];
 }
 
 /** The drawing of a view, fetched again (debounced) after every edit. */

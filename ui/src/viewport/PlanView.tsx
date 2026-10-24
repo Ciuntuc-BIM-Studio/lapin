@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Maximize, PenLine } from 'lucide-react';
 import { select, setTool, useUi } from '../app/store';
-import { activeStorey, useSession } from '../engine/session';
+import { activeStorey, execute, useSession } from '../engine/session';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { Vec2 } from '../platform/module';
 import { findTool, gripsOf } from '../platform/modules';
@@ -349,7 +349,12 @@ export function PlanView() {
     <div className="view-pane">
       <div className="view-toolbar">
         <span className="view-title">Plan · {storey?.name ?? '—'}</span>
-        <button type="button" className={`icon${planDrawing ? ' on' : ''}`} title={planDrawing ? 'Drawing: hatches and pens (click for modelling lines)' : 'Modelling lines (click for the drawing)'}
+{(drawing?.lineworkOrphans?.length ?? 0) > 0 && ownPlan && (
+          <button type="button" className="chip warn" title="The edges they were on are gone: remove them" onClick={() => void execute('view.lineworkReset', { id: ownPlan, orphans: true })}>
+            {drawing!.lineworkOrphans!.length} line edit(s) lost their edge · clean
+          </button>
+        )}
+                <button type="button" className={`icon${planDrawing ? ' on' : ''}`} title={planDrawing ? 'Drawing: hatches and pens (click for modelling lines)' : 'Modelling lines (click for the drawing)'}
           onClick={() => useUi.setState({ planDrawing: !planDrawing })}><PenLine size={14} /></button>
         <button type="button" className="icon" title="Fit everything" onClick={fit}><Maximize size={14} /></button>
       </div>

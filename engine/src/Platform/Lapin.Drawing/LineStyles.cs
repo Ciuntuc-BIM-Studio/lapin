@@ -75,7 +75,7 @@ public static class LineStyles
 
     public static readonly string[] Categories = ["walls", "slabs", "roofs", "columns", "beams", "doors", "windows", "stairs", "railings", "spaces", "furniture", "topography", "other"];
 
-    static LineStyleSpec Merge(LineStyleSpec into, LineStyleSpec? from) => from == null ? into
+    public static LineStyleSpec Merge(LineStyleSpec into, LineStyleSpec? from) => from == null ? into
         : new(into.Pen ?? from.Pen, into.Color ?? from.Color, into.Pattern ?? from.Pattern);
 
     public delegate ResolvedLine? Resolver(string role, string ifcClass, string? elementId);

@@ -8,8 +8,8 @@ public sealed record DrawPart(Solid Solid, string Element, string Class, string?
 /// <summary>A line an element draws in plan by itself (a door's swing, a roof's ridge): its role (projection, overhead…).</summary>
 public sealed record DrawSymbol(IReadOnlyList<Vec2> Points, bool Closed, string Element, string Class, string Role);
 
-/// <summary>A drawn line: its role (cut, projection, hidden, overhead, beyond), its element and class.</summary>
-public sealed record DLine(Vec2 A, Vec2 B, string Role, string Element, string Class);
+/// <summary>A drawn line: its role (cut, projection, hidden, overhead, beyond), its element and class, and a style a line edit gave it.</summary>
+public sealed record DLine(Vec2 A, Vec2 B, string Role, string Element, string Class, LineStyleSpec? Style = null);
 
 /// <summary>What a cut takes out of one part: closed loops, even-odd, with the part's material.</summary>
 public sealed record DPolygon(IReadOnlyList<Vec2[]> Loops, string Element, string Class, string? Key, string? Material);
