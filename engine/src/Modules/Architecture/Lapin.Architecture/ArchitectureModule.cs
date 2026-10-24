@@ -19,6 +19,7 @@ public sealed class ArchitectureModule : ILapinModule
             new("height", "Height", "length", Min: 0.01),
             new("baseOffset", "Base offset", "length"),
             new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
+            new("roofTop", "Top under a roof", "choice", Choices: RoofTop.Modes),
         ], "#b5654a"));
         r.Class(new(IfcClass.WallType, "Wall type", [new("mark", "Mark", "text")], "#b5654a", Kind: "type"));
         r.Class(new(IfcClass.OpeningElement, "Opening", [new("width", "Width", "length", Min: 0.01), new("height", "Height", "length", Min: 0.01)], Kind: "element"));
@@ -362,6 +363,37 @@ public sealed class ArchitectureModule : ILapinModule
             var n = Joins.Restyle(ctx, Paths(ctx), Ids(a), style, swap);
             if (n == 0) throw new CommandException("The selected walls have no corner to restyle.");
             return new JsonObject { ["corners"] = n };
+        });
+
+        // A wall's top under roofs: attached rises to the slopes' underside (from any storey), detached ignores roofs.
+        r.Command("attachToRoof", "Attach to roof", (ctx, a) =>
+        {
+            var ids = Args.Ids(a);
+            var roofIds = a["roofIds"] is JsonArray rs ? rs.Select(x => (string?)x).OfType<string>().ToList() : [];
+            foreach (var rid in roofIds) Spatial.Require(ctx.Model, rid, IfcClass.Roof);
+            foreach (var id in ids)
+            {
+                var wall = Spatial.Require(ctx.Model, id, IfcClass.Wall);
+                var attrs = wall.CloneAttrs();
+                attrs["roofTop"] = "attach";
+                if (roofIds.Count > 0) attrs["roofIds"] = new JsonArray(roofIds.Select(x => (JsonNode)x).ToArray()); else attrs.Remove("roofIds");
+                ctx.Replace(wall.With(attrs: attrs));
+            }
+            return null;
+        });
+        r.Command("detachFromRoof", "Detach from roof", (ctx, a) =>
+        {
+            var mode = (string?)a["mode"] ?? "none";
+            if (mode is not ("none" or "auto")) throw new CommandException("A detached wall either ignores roofs (none) or follows its storey's roof (auto).");
+            foreach (var id in Args.Ids(a))
+            {
+                var wall = Spatial.Require(ctx.Model, id, IfcClass.Wall);
+                var attrs = wall.CloneAttrs();
+                attrs["roofTop"] = mode;
+                attrs.Remove("roofIds");
+                ctx.Replace(wall.With(attrs: attrs));
+            }
+            return null;
         });
 
         r.Command("updateWall", "Change wall", (ctx, a) =>

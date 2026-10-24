@@ -86,6 +86,8 @@ export const RO: Record<string, string> = {
   'Surface area': 'Arie a suprafeței', 'Plan area': 'Arie în plan', 'Lowest point': 'Punctul cel mai jos', 'Highest point': 'Punctul cel mai înalt', 'Fill': 'Umplutură',
   // Panes, zoom, the key plan
   'Profile on the path': 'Profilul pe traseu', 'Gap from the path': 'Distanța de la traseu', 'centre': 'pe mijloc', 'right': 'la dreapta', 'left': 'la stânga',
+  'Attach to roof': 'Atașează la acoperiș', 'Detach from roof': 'Detașează de acoperiș', 'Top under a roof': 'Capătul sub acoperiș', 'attach': 'atașat', 'none': 'nu',
+  'Select the walls first, then click the roof they go up to.': 'Selectează întâi pereții, apoi dă click pe acoperișul până la care urcă.', 'Select the walls to detach from the roof.': 'Selectează pereții de detașat de acoperiș.',
   'Phase of selection': 'Faza selecției', 'Key plan': 'Plan-cheie', 'Split': 'Împarte', 'On screen': 'Pe ecran', 'Seen from': 'Văzut din', 'Cut at': 'Tăiat la', 'Look from…': 'Privește din…',
   'Fit (ZE)': 'Încadrează (ZE)', 'Fit everything (ZE)': 'Încadrează tot (ZE)', 'Frame everything': 'Încadrează tot', 'The plan from above': 'Planul de sus',
   'Split: two views side by side': 'Împarte: două vederi una lângă alta', 'Split: one view above the other': 'Împarte: o vedere peste cealaltă', 'Close this pane': 'Închide acest panou',

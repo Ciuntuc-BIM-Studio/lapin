@@ -1,7 +1,7 @@
 /** Architecture: layered walls and their types, doors and windows, floors, roofs; later rooms. */
 
 import { ArrowLeftRight, CornerDownRight, Layers3, Link2, Settings2, Slash } from 'lucide-react';
-import { DoorIcon, DormerIcon, RoofIcon, RoofWindowIcon, RoomIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
+import { AttachRoofIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RoofWindowIcon, RoomIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, LapinModule, ToolDef } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
@@ -69,6 +69,27 @@ function wallGrips(node: NodeDto): Grip[] {
     { key: `${node.id}:end`, at: { x: b[0], y: b[1] }, move: (p) => execute('architecture.updateWall', { id: node.id, x2: p.x, y2: p.y }) },
   ];
 }
+/** The selected walls rise to the underside of the roof clicked (from any storey), cut along its slopes. */
+const attachRoof: ToolDef = {
+  id: 'architecture.attachRoof', label: 'Attach to roof', icon: AttachRoofIcon, shortcut: 'AR',
+  gesture: { kind: 'pick', types: ['IfcRoof'] },
+  complete: async ({ entity }) => {
+    const ids = useUi.getState().selected.filter((id) => useSession.getState().nodes.get(id)?.type === 'IfcWall');
+    if (!entity) return;
+    if (!ids.length) { notify('Select the walls first, then click the roof they go up to.'); return; }
+    await execute('architecture.attachToRoof', { ids, roofIds: [entity.id] });
+    notify(`${ids.length} wall(s) attached to the roof.`);
+  },
+};
+/** The selected walls keep their own height, whatever roof is over them. */
+const detachRoof: ToolDef = {
+  id: 'architecture.detachRoof', label: 'Detach from roof', icon: DetachRoofIcon,
+  run: () => {
+    const ids = useUi.getState().selected.filter((id) => useSession.getState().nodes.get(id)?.type === 'IfcWall');
+    if (!ids.length) { notify('Select the walls to detach from the roof.'); return; }
+    void execute('architecture.detachFromRoof', { ids }).then(() => notify(`${ids.length} wall(s) keep their own height.`));
+  },
+};
 const wallTypes: ToolDef = { id: 'architecture.wallTypes', label: 'Wall types', icon: WallTypesIcon, run: () => useUi.setState({ dialog: 'wallTypes' }) };
 /** A door or window: click a wall where it goes (the type: the one picked in the configurator, else the project's first). */
 const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'], shortcut: string): ToolDef => ({
@@ -126,7 +147,7 @@ const architecture: LapinModule = {
     groups: [
       { label: 'Build', tools: [wall, door, window_, slab, roof], small: [slabOpening, roofOpening('window'), roofOpening('dormer')] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes] },
-      { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew] },
+      { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [{ id: 'architecture.room', label: 'Room', icon: RoomIcon, shortcut: 'RM' }] },
       { label: 'Circulation', tools: [{ id: 'architecture.stair', label: 'Stair', icon: StairIcon }] },
     ],

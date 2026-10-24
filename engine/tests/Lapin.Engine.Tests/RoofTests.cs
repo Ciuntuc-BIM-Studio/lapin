@@ -278,6 +278,54 @@ public class RoofTests
     }
 
     [Fact]
+    public void A_wall_attached_to_the_roof_rises_to_the_slopes_underside_and_a_detached_one_ignores_it()
+    {
+        var (f, roof, walls) = House("traditional_campie");              // hip, 28°
+        // An inner wall across the house, 2.4 m (joined to the south and north walls, so it runs face to face): left alone it keeps its height under the high roof.
+        var inner = f.Wall(5, 0.5, 5, 5.5);
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = inner, ["height"] = 2.4 });
+        Assert.Equal(2.4, f.Bounds(inner).Max.Z, 6);
+        // Attached, it rises to the underside of the slopes: higher in the middle, cut along them.
+        f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(inner) });
+        var top = f.Bounds(inner).Max.Z;
+        Assert.True(top > 3.5, $"attached, the wall reaches the slopes, not {top}");
+        // Near the south eave it follows the slope down: above its own 2.4 m, well under the middle.
+        var near = f.Session.Geometry(inner)!.Parts.SelectMany(p => p.Solid.Vertices).Where(v => v.Y < 0.3).Max(v => v.Z);
+        Assert.InRange(near, 2.4, top - 1);
+        // Along the wall the top rises by tan 28° a metre, as the slope does.
+        var at1 = f.Session.Geometry(inner)!.Parts.SelectMany(p => p.Solid.Vertices).Where(v => Math.Abs(v.Y - 1.5) < 1e-6).Select(v => v.Z).DefaultIfEmpty(double.NaN).Max();
+        if (!double.IsNaN(at1)) Assert.Equal(near + Tan(28), at1, 2);
+        // The roof raised 0.5 m: the attached wall follows (it read the roof).
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["eaveOffset"] = 0.5 } });
+        Assert.Equal(top + 0.5, f.Bounds(inner).Max.Z, 6);
+        // Detached: its own 2.4 m, whatever the roof; back to auto: the storey's rule again.
+        f.Run("architecture.detachFromRoof", new JsonObject { ["ids"] = new JsonArray(inner) });
+        Assert.Equal("none", f.Model.Get(inner)!.Str("roofTop"));
+        Assert.Equal(2.4, f.Bounds(inner).Max.Z, 6);
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["eaveOffset"] = -1.0 } });
+        Assert.Equal(2.4, f.Bounds(inner).Max.Z, 6);
+        Assert.True(f.Bounds(walls[0]).Max.Z < 2.4, "an eave wall in auto still stops under its lowered plate");
+        f.Run("architecture.detachFromRoof", new JsonObject { ["ids"] = new JsonArray(inner), ["mode"] = "auto" });
+        var cut = f.Session.Geometry(inner)!.Parts.SelectMany(p => p.Solid.Vertices).Where(v => v.Y < 0.3).Max(v => v.Z);
+        Assert.True(cut < 2.4, $"auto again: cut under the lowered slope near the eave, not {cut}");
+    }
+
+    [Fact]
+    public void A_wall_on_the_storey_below_attaches_to_the_roof_above()
+    {
+        var f = new Fixture();
+        var attic = (string)f.Run("storey.create", new JsonObject { ["name"] = "Attic" })!["id"]!;   // +3.00
+        var roof = (string)f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = attic, ["points"] = House10x6, ["style"] = "traditional_campie" })!["id"]!;
+        // A ground-floor wall, 3 m: the attic's roof is not its storey's, so in auto it is left alone.
+        var wall = f.Wall(5, 0.5, 5, 5.5);
+        Assert.Equal(3, f.Bounds(wall).Max.Z, 6);
+        // Attached to that roof by name: it rises through the attic to the slopes.
+        f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(wall), ["roofIds"] = new JsonArray(roof) });
+        Assert.True(f.Bounds(wall).Max.Z > 6.2);
+        Assert.Throws<CommandException>(() => f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(wall), ["roofIds"] = new JsonArray(wall) }));
+    }
+
+    [Fact]
     public void Roof_windows_and_dormers_cut_the_covering_and_are_built_with_the_roof()
     {
         var f = new Fixture();

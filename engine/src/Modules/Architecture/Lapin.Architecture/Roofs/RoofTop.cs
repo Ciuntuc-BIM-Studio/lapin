@@ -14,8 +14,12 @@ namespace Lapin.Architecture.Roofs;
 /// <item>a wall the roof does not cover keeps its height.</item>
 /// </list>
 /// The roof's underside is read along the wall's axis (the line the roof's
-/// outline usually follows). Every wall on the roof's storey follows it: there
-/// is no attach command (decision in decisions-pending).
+/// outline usually follows). A wall's <c>roofTop</c> says how it takes roofs:
+/// <list type="bullet">
+/// <item><c>auto</c> (the default): every wall on the roof's storey follows the rules above;</item>
+/// <item><c>attach</c>: the wall rises to the underside of the slopes over it, from any storey, and is cut along it; under an eave of a framed roof it still stops under the wall plate; <c>roofIds</c> may name the roofs, else every roof over it counts;</item>
+/// <item><c>none</c>: roofs leave the wall alone.</item>
+/// </list>
 /// </summary>
 public static class RoofTop
 {
@@ -37,6 +41,16 @@ public static class RoofTop
         return shape;
     }
 
+    /// <summary>How a wall takes roofs: auto, attach or none.</summary>
+    public static readonly string[] Modes = ["auto", "attach", "none"];
+
+    /// <summary>The roofs a wall attached to roofs follows: those it names, else all.</summary>
+    public static IEnumerable<Entity> AttachedRoofs(Entity wall, IModelView m)
+    {
+        var named = wall.Attrs["roofIds"] is System.Text.Json.Nodes.JsonArray ids ? ids.Select(x => (string?)x).OfType<string>().ToList() : null;
+        return named is { Count: > 0 } ? named.Select(m.Get).OfType<Entity>().Where(r => r.Class == IfcClass.Roof) : m.OfClass(IfcClass.Roof);
+    }
+
     /// <summary>The roofs over an element's storey.</summary>
     public static IEnumerable<Entity> RoofsOver(string elementId, IModelView m)
     {
@@ -50,15 +64,24 @@ public static class RoofTop
     /// </summary>
     public static List<(double U, double V)>? Profile(Entity wall, WallAxis w, IModelView m)
     {
+        var mode = wall.Str("roofTop") ?? "auto";
+        if (mode == "none") return null;
+        var attached = mode == "attach";
         var pieces = new List<Piece>();
-        bool attach = false;
+        bool attach = attached;
         var H = w.Height;
-        foreach (var roof in RoofsOver(wall.Id, m))
+        // Attached: as high as the slopes, but never through a framed roof's wall plate.
+        var cap = double.PositiveInfinity;
+        foreach (var roof in attached ? AttachedRoofs(wall, m) : RoofsOver(wall.Id, m))
         {
             var shape = ShapeOf(roof, m);
             if (shape == null) continue;
             if (UnderEdge(w, shape, EdgeKind.Gable)) attach = true;
-            else if (UnderEdge(w, shape, EdgeKind.Eave) && Roof.Resolve(roof, m) is { Framed: true } r) H = Math.Min(H, r.PlateZ - w.Base);
+            else if (UnderEdge(w, shape, EdgeKind.Eave) && Roof.Resolve(roof, m) is { Framed: true } r)
+            {
+                if (attached) cap = Math.Min(cap, r.PlateZ - w.Base);
+                else H = Math.Min(H, r.PlateZ - w.Base);
+            }
             foreach (var p in shape.Planes) pieces.AddRange(Pieces(w.A, w.Dir, w.Length, p, w.Base));
         }
         if (pieces.Count == 0) return null;
@@ -70,6 +93,7 @@ public static class RoofTop
             us.Add(p.U0); us.Add(p.U1);
             // Where a slope passes the wall's own top: the cut starts or stops there.
             if (Math.Abs(p.K) > 1e-12 && (H - p.Z0) / p.K is var uh && uh > p.U0 && uh < p.U1) us.Add(uh);
+            if (Math.Abs(p.K) > 1e-12 && !double.IsPositiveInfinity(cap) && (cap - p.Z0) / p.K is var uc && uc > p.U0 && uc < p.U1) us.Add(uc);
         }
         for (int i = 0; i < pieces.Count; i++)
             for (int j = i + 1; j < pieces.Count; j++)
@@ -81,7 +105,7 @@ public static class RoofTop
             foreach (var p in pieces) if (u >= p.U0 - 1e-6 && u <= p.U1 + 1e-6) best = Math.Min(best, p.At(u));
             return best;
         }
-        double Top(double env) => double.IsPositiveInfinity(env) ? H : attach ? env : Math.Min(H, env);
+        double Top(double env) => double.IsPositiveInfinity(env) ? H : attach ? Math.Min(env, cap) : Math.Min(H, env);
 
         var profile = new List<(double U, double V)>();
         var breaks = new List<double>();
