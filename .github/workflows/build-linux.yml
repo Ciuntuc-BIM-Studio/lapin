@@ -1,0 +1,60 @@
+name: Build Linux
+
+# The Linux desktop app (.deb and .AppImage) of one product, built on
+# GitHub's Ubuntu: run it by hand (Actions → Build Linux → Run workflow) or
+# push a tag v*. The packages are the run's artifacts. Ubuntu 22.04, so the
+# app needs glibc 2.35 or newer (Ubuntu 22.04, Debian 12, Fedora 36 and later).
+
+on:
+  workflow_dispatch:
+    inputs:
+      product:
+        description: Product (products/<id>.json)
+        default: lapin
+  push:
+    tags: ['v*']
+
+jobs:
+  linux:
+    name: Linux x64
+    runs-on: ubuntu-22.04
+    env:
+      PRODUCT: ${{ inputs.product || 'lapin' }}
+    steps:
+      # The engine needs the private submodule vendor/bubblebim-pro: the secret VENDOR_TOKEN (see ci.yml).
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.VENDOR_TOKEN }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+      # What Tauri needs on Linux (WebKitGTK), and cmake for manifold.
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf cmake
+      # The booleans: manifold's C API as one libmanifoldc.so, picked up by the engine.
+      - run: node vendor/bubblebim-pro/scripts/build-manifold.mjs
+      - run: pnpm install --frozen-lockfile
+        env:
+          CI: 'true'
+      # The engine's tests, now with the booleans on Linux.
+      - run: dotnet build engine/Lapin.slnx -v q -nologo
+      - run: dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo
+      - run: pnpm build:product "$PRODUCT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PRODUCT }}-linux-x64
+          path: |
+            build/${{ env.PRODUCT }}/bundle/deb/*.deb
+            build/${{ env.PRODUCT }}/bundle/appimage/*.AppImage
+          if-no-files-found: error

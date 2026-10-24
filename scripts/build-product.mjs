@@ -84,6 +84,7 @@ writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   app: { windows: [{ label: 'main', title: product.name, width: 1440, height: 900, minWidth: 1000, minHeight: 640, center: true }] },
   bundle: {
     externalBin: ['binaries/lapin-host'], resources: ['resources/**/*'],
+    ...(process.platform === 'linux' ? { targets: ['deb', 'appimage'] } : {}),
     ...(mac ? { targets: ['app'], macOS: { minimumSystemVersion: '13.0', hardenedRuntime: true, entitlements: 'entitlements.plist', ...(identity ? { signingIdentity: identity } : {}) } } : {}),
   },
 }, null, 2));
