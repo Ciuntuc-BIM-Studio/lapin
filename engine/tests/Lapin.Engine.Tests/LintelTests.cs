@@ -118,4 +118,22 @@ public class LintelTests
         Assert.InRange(kg, 6, 7.2);
         Assert.Equal(0, Lintels.ReinforcementMass(null, 1.5, 0.25, 0.25));
     }
+
+    [Fact]
+    public void A_manufacturer_s_lintels_come_from_a_CSV_into_the_project_s_catalogue()
+    {
+        var (products, skipped) = LintelProducts.Parse("code;width;height;lengths;manufacturer\nL1;115;71;1000|1250|1500;Porotherm\nL2,175,71,1000,1250,Wienerberger\nbad line\n# a note\n");
+        Assert.Equal(["L1", "L2"], products.Select(p => p.Code));
+        Assert.Equal([1.0, 1.25, 1.5], products[0].Lengths);
+        Assert.Equal(0.115, products[0].Width, 9);
+        Assert.Equal("Wienerberger", products[1].Manufacturer);
+        Assert.Equal([1.0, 1.25], products[1].Lengths);
+        Assert.Equal(["line 4"], skipped);
+        var f = new Fixture();
+        f.Run("architecture.importLintelProducts", new System.Text.Json.Nodes.JsonObject { ["text"] = "L1;115;71;1000|1250;Porotherm" });
+        f.Run("architecture.importLintelProducts", new System.Text.Json.Nodes.JsonObject { ["text"] = "L1;115;71;1500;Porotherm\nL3;250;71;2000;X" });
+        var catalogue = LintelProducts.Of(f.Model);
+        Assert.Equal(["L1", "L3"], catalogue.Select(p => p.Code).Order());
+        Assert.Equal([1.5], catalogue.Single(p => p.Code == "L1").Lengths);
+    }
 }

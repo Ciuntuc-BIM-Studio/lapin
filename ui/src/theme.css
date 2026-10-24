@@ -331,3 +331,5 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .schedule-part input.wide { width: 100%; box-sizing: border-box; }
 .schedule-grid td.overridden input { color: var(--accent); font-weight: 600; }
 .schedule-grid td.overridden { background: var(--accent-wash); }
+.lintel-more { display: grid; gap: 3px; padding: 6px 0 6px 12px; border-left: 2px solid var(--rule); margin: 4px 0 4px 4px; }
+.lintel-more .row > .muted.small:first-child { min-width: 120px; }
