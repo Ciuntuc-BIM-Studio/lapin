@@ -21,6 +21,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         Cad.DraftCommands.Register(r);
         r.Service<IElementPlacement>(new Cad.AnnotationPlacement());
         r.Service<IDeletion>(new AxisDeletion());
+        Tags.Register(r);
 
         // ------------------------------------------------------------ grids
         r.Command("addAxis", "Grid axis", (ctx, a) =>
@@ -161,7 +162,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         });
     }
 
-    public IEnumerable<ViewMark> Marks(ViewContext c) => Cad.Drafts.Marks(c).Concat(Grids.Marks(c)).Concat(Dimensions.Marks(c)).Concat(Texts.Marks(c));
+    public IEnumerable<ViewMark> Marks(ViewContext c) => Cad.Drafts.Marks(c).Concat(Grids.Marks(c)).Concat(Dimensions.Marks(c)).Concat(Texts.Marks(c)).Concat(Tags.Marks(c));
 
     static void Write(ICommandContext ctx, Entity grid, List<Axis> axes)
     {

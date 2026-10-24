@@ -40,6 +40,9 @@ public sealed class AnnotationPlacement : IElementPlacement
                 if (attrs["hatch"] is JsonObject h)
                     h["loops"] = new JsonArray(Drafts.HatchLoops(e).Select(l => (JsonNode)new JsonArray(l.Select(q => (JsonNode)J(t.Point(q))).ToArray())).ToArray());
                 break;
+            case "TAG":
+                attrs["at"] = J(t.Point(P(attrs["at"])));
+                break;
             case "TEXT":
                 attrs["at"] = J(t.Point(P(attrs["at"])));
                 var deg = Json.Number(attrs["angle"]) ?? 0;

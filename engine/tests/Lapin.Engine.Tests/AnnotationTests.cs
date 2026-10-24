@@ -261,4 +261,21 @@ public class AnnotationTests
         f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray($"{g}#1") });
         Assert.Null(f.Model.Get(g));
     }
+
+    [Fact]
+    public void A_tag_reads_its_element_follows_it_and_goes_red_when_it_is_gone()
+    {
+        var f = F();
+        var w = f.Wall(0, 0, 5, 0);
+        var view = "plan:" + f.Storey;
+        f.Run("drafting.addTag", new JsonObject { ["viewId"] = view, ["element"] = w, ["field"] = "type", ["at"] = new JsonArray(2.5, 2) });
+        List<string> Texts() => Draw(f, view)["pens"]!.AsArray().OfType<JsonObject>().Where(p => p["texts"] != null).SelectMany(p => p["texts"]!.AsArray().Select(t => (string)t!["text"]!)).ToList();
+        var typeName = f.Model.RelatingOf(w, IfcClass.RelDefinesByType)!.Name;
+        Assert.Contains(typeName, Texts());
+        f.Run("element.rename", new JsonObject { ["id"] = f.Model.RelatingOf(w, IfcClass.RelDefinesByType)!.Id, ["name"] = "Outer wall" });
+        Assert.Contains("Outer wall", Texts());
+        f.Run("element.delete", new JsonObject { ["id"] = w });
+        Assert.Contains("?", Texts());
+        Assert.Throws<CommandException>(() => f.Run("drafting.addTag", new JsonObject { ["viewId"] = view, ["element"] = "nope", ["at"] = new JsonArray(0, 0) }));
+    }
 }

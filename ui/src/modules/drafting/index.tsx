@@ -2,7 +2,7 @@
 
 import {
   ArrowRightToLine, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileText, FlipHorizontal2, Grid3x3, Hash, Layers, Move, MoveHorizontal,
-  RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, TrendingUp, Redo2, PenLine,
+  RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, TrendingUp, Redo2, PenLine, Tag,
 } from 'lucide-react';
 import type { Grip, LapinModule, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -75,6 +75,25 @@ function dimCommand(linear: boolean): Step {
   });
   return first();
 }
+/** TAG: click an element, then where its tag goes [MARK/NAME/CLASS/TYPE]. */
+let tagField = 'mark';
+function tagCommand(): Step {
+  const pick = (): Step => ({
+    prompt: `Click the element to tag [${tagField.toUpperCase()}: MARK/NAME/CLASS/TYPE]`, want: 'select',
+    keywords: Object.fromEntries(['MARK', 'NAME', 'CLASS', 'TYPE'].map((k) => [k, () => { tagField = k.toLowerCase(); return pick(); }])),
+    point: (p) => {
+      const id = cadHost()?.pickAny(p);
+      if (!id || id.includes('#')) return pick();
+      return {
+        prompt: 'Where the tag goes', want: 'point', base: p, preview: (c) => [{ type: 'line', a: p, b: c }],
+        point: async (at) => { const h = cadHost(); if (h) await execute('drafting.addTag', { viewId: h.viewId, element: id, field: tagField, at: [at.x, at.y] }); return pick(); },
+      };
+    },
+    enter: () => null,
+  });
+  return pick();
+}
+registerCommand({ names: ['TAG', 'TG'], label: 'Tag', start: tagCommand });
 registerCommand({ names: ['DIMALIGNED', 'DAL', 'DIM'], label: 'Aligned dimension', start: () => dimCommand(false) });
 registerCommand({ names: ['DIMLINEAR', 'DLI'], label: 'Linear dimension', start: () => dimCommand(true) });
 
@@ -184,7 +203,7 @@ const drafting: LapinModule = {
       id: 'annotate', label: 'Annotate', order: 30,
       groups: [
         { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR')] },
-        { label: 'Text', tools: [text] },
+        { label: 'Text', tools: [text, cad('tag', 'Tag', Tag, 'TAG')] },
         { label: 'Datum', tools: [
           axis,
           { id: 'level', label: 'Level', icon: TrendingUp, shortcut: 'LL' },
