@@ -220,7 +220,7 @@ public static class IfcImport
             {
                 var gid = Str(st[0]) ?? "";
                 var name = Str(st[2]) ?? Str(st[7]) ?? "Level";
-                var z = Num(st[9]) * Scale;
+                var z = Length(st[9]);
                 var existing = Spatial.Storeys(edit.Model).Where(x => !matched.Contains(x.Id)).ToList();
                 var match = edit.Model.Get(gid) is { Class: IfcClass.BuildingStorey } byId ? byId
                     : existing.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase))
@@ -244,7 +244,8 @@ public static class IfcImport
             }
         }
 
-        double Scale => model.Scale;
+        /// <summary>A length in metres, clean of the noise a unit conversion leaves (2.8000000000000003 from millimetres).</summary>
+        double Length(object? v) => Math.Round(Num(v) * model.Scale, 9);
 
         /// <summary>The file's materials: those with a Lapin id keep it (what refers to them still holds); the others by name.</summary>
         void Materials(IEdit edit)
@@ -294,7 +295,7 @@ public static class IfcImport
         {
             if (layerSets.TryGetValue(fileSet, out var id)) return id;
             var set = f.Entities[fileSet];
-            var layers = Items(set[0]).Select(l => new MaterialLayer(MaterialId(edit, Ref(l[0])), Num(l[1]) * Scale, Str(l[5]) == "Core", Str(l[3]))).ToList();
+            var layers = Items(set[0]).Select(l => new MaterialLayer(MaterialId(edit, Ref(l[0])), Length(l[1]), Str(l[5]) == "Core", Str(l[3]))).ToList();
             id = Step.Guid(ownerId, "layerset");
             Put(edit, id, IfcClass.MaterialLayerSet, Str(set[1]) ?? "Layers", Layers.Write(layers), null, counts: false);
             return layerSets[fileSet] = id;
@@ -353,7 +354,7 @@ public static class IfcImport
                 {
                     var owner = f.OfType("IFCRELDEFINESBYTYPE").FirstOrDefault(r => Refs(r[4]).Contains(e.Id)) is { } byType && typeIds.TryGetValue(Ref(byType[5]), out var tid) ? tid : gid;
                     var setId = LayerSet(edit, set.Id, owner);
-                    var attrs = Layers.WriteUsage(new LayerUsage(setId, Enum(usage[2]) == "NEGATIVE", Num(usage[3]) * Scale));
+                    var attrs = Layers.WriteUsage(new LayerUsage(setId, Enum(usage[2]) == "NEGATIVE", Length(usage[3])));
                     attrs["layerSetDirection"] = Enum(usage[1]) ?? "AXIS2";
                     var usageId = Step.Guid(gid, "usage");
                     Put(edit, usageId, IfcClass.MaterialLayerSetUsage, "", attrs, null, counts: false);
