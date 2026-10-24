@@ -1,0 +1,141 @@
+/**
+ * Studio (the old Lapin's): solids from sketches drawn on a plan or a
+ * section, an extrusion, a sweep or a revolution, each following its sketch;
+ * live booleans between elements. EXTRUDE, SWEEP and REVOLVE are also
+ * command-line commands.
+ */
+
+import { useEffect, useState } from 'react';
+import { Box, Eye, PenTool, RefreshCcw, SquareMinus, SquarePlus, SquareSplitHorizontal, Unlink, Waypoints } from 'lucide-react';
+import type { LapinModule, ToolDef } from '../../platform/module';
+import type { NodeDto } from '../../engine/protocol';
+import { notify, useUi } from '../../app/store';
+import { execute, query, useSession } from '../../engine/session';
+import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
+
+const CLASSES = ['PROXY', 'MEMBER', 'PLATE', 'COVERING', 'RAILING', 'STAIR', 'RAMP', 'CHIMNEY', 'FURNITURE', 'WALL', 'SLAB', 'COLUMN', 'BEAM', 'ROOF', 'FOOTING'];
+
+/** EXTRUDE: pick a closed outline, then a depth (a class word at any step: SLAB, WALL…). */
+function extrude(): Step {
+  let cls = 'PROXY';
+  const kw = (next: () => Step) => Object.fromEntries(CLASSES.map((c) => [c, () => { cls = c; cadLog(`Class ${c}.`); return next(); }]));
+  const pick = (): Step => ({
+    prompt: `Pick a closed outline [class ${cls}]`, want: 'pick', keywords: kw(pick),
+    pick: (hit) => {
+      const depth = (): Step => ({
+        prompt: `Depth (m; negative: away from you) [class ${cls}] <1>`, want: 'none', keywords: kw(depth),
+        value: async (d) => { await execute('studio.extrude', { profileId: hit.id, depth: d, class: cls }); return null; },
+        enter: async () => { await execute('studio.extrude', { profileId: hit.id, depth: 1, class: cls }); return null; },
+      });
+      return depth();
+    },
+  });
+  return pick();
+}
+
+/** SWEEP: pick the path, then the closed profile that travels along it. */
+function sweep(): Step {
+  return {
+    prompt: 'Pick the path (a line, polyline, arc or circle)', want: 'pick',
+    pick: (path) => ({
+      prompt: 'Pick the closed profile', want: 'pick',
+      pick: async (profile) => { await execute('studio.sweep', { profileId: profile.id, pathId: path.id }); return null; },
+    }),
+  };
+}
+
+/** REVOLVE: pick the closed profile, then the axis line, then the angle (Enter: all the way round). */
+function revolve(): Step {
+  return {
+    prompt: 'Pick the closed profile', want: 'pick',
+    pick: (profile) => ({
+      prompt: 'Pick the axis (a line)', want: 'pick',
+      pick: (axis) => ({
+        prompt: 'Angle (degrees) <360>', want: 'none',
+        value: async (a) => { await execute('studio.revolve', { profileId: profile.id, axisId: axis.id, angle: a }); return null; },
+        enter: async () => { await execute('studio.revolve', { profileId: profile.id, axisId: axis.id, angle: 360 }); return null; },
+      }),
+    }),
+  };
+}
+
+registerCommand({ names: ['EXTRUDE', 'EXT', 'EXTRUSION'], label: 'Extrude', start: extrude });
+registerCommand({ names: ['SWEEP', 'SW'], label: 'Sweep', start: sweep });
+registerCommand({ names: ['REVOLVE', 'REV'], label: 'Revolve', start: revolve });
+
+interface Feature { operation: string; view?: string; viewId?: string; holes: number; sketch: string[]; area?: number; guide?: string | null }
+
+/** The sketch of a solid opened on its view, selected for editing. */
+async function editSketch(id?: string): Promise<void> {
+  const target = id ?? useUi.getState().selection;
+  if (!target) { notify('Select a solid first: its sketch opens on its view.'); return; }
+  const f = await query<Feature>('studio.feature', { id: target });
+  if (!f?.viewId) { notify('That is not a Studio solid: it is edited with its own tool.'); return; }
+  const view = useSession.getState().nodes.get(f.viewId);
+  const kind = view?.props.kind ?? 'plan';
+  if (kind === 'plan' || f.viewId.startsWith('plan:')) useUi.setState({ view: 'plan', planViewId: f.viewId.startsWith('plan:') ? null : f.viewId });
+  else useUi.setState({ view: 'drawing', drawingViewId: f.viewId });
+  useUi.setState({ selected: f.sketch, selection: f.sketch[0] ?? null });
+  notify('The sketch is selected on its view: edit it and the solid follows.');
+}
+
+/** The selection as a boolean: the first selected is the target, the others its tools. */
+const boolean = (op: 'subtract' | 'union' | 'intersect'): ToolDef['run'] => () => {
+  const [target, ...tools] = useUi.getState().selected;
+  if (!target || !tools.length) { notify('Select the target first, then Shift-click the elements to combine with it.'); return; }
+  void execute('studio.boolean', { target, tools, op }).then((r) => {
+    if (!r) return;
+    notify(op === 'subtract' ? `${tools.length} element(s) subtracted from the first selected. Both stay editable: the cut follows them.`
+      : op === 'union' ? 'United into the first selected element. The others stay editable: Show operands, edit them, and the union follows.'
+      : 'Only what the elements share is left, in the first selected element. The others stay editable through Show operands.');
+  });
+};
+
+/** A Studio solid in the inspector: its operation, sketch, net face, guide; Edit sketch. */
+function FeatureCard({ node }: { node: NodeDto }) {
+  const nodes = useSession((s) => s.nodes);
+  const [f, setF] = useState<Feature | null>(null);
+  useEffect(() => { void query<Feature>('studio.feature', { id: node.id }).then(setF); }, [node.id, nodes]);
+  if (!f) return null;
+  const op = f.operation[0].toUpperCase() + f.operation.slice(1);
+  return (
+    <dl className="fields">
+      <dt>Studio</dt><dd>{op}</dd>
+      <dt>Sketch</dt><dd>{f.view ?? '—'} · outline, {f.holes} hole(s)</dd>
+      {f.area != null && <><dt>Face</dt><dd>{f.area.toFixed(2)} m² net</dd></>}
+      {f.guide != null && <><dt>{f.operation === 'sweep' ? 'Path' : 'Axis'}</dt><dd className={f.guide === 'missing' ? 'error-text' : ''}>{f.guide === 'missing' ? 'missing: redraw it to rebuild' : f.guide}</dd></>}
+      <dt />
+      <dd><button type="button" onClick={() => void editSketch(node.id)}><PenTool size={13} /> Edit sketch</button></dd>
+      <dd className="muted small">Every step stays editable: change the sketch, its holes or the path, and the solid follows.</dd>
+    </dl>
+  );
+}
+
+const cmd = (id: string, label: string, icon: ToolDef['icon'], command: string): ToolDef => ({ id: `studio.${id}`, label, icon, run: () => void startCommand(command) });
+
+const studio: LapinModule = {
+  id: 'studio',
+  name: 'Studio',
+  summary: 'Free-form solids from sketches (extrude, sweep, revolve) and live booleans.',
+  tabs: [{
+    id: 'studio', label: 'Studio', order: 26,
+    groups: [
+      { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
+      {
+        label: 'Boolean',
+        tools: [
+          { id: 'studio.subtract', label: 'Subtract', icon: SquareMinus, run: boolean('subtract') },
+          { id: 'studio.union', label: 'Union', icon: SquarePlus, run: boolean('union') },
+          { id: 'studio.intersect', label: 'Intersect', icon: SquareSplitHorizontal, run: boolean('intersect') },
+        ],
+        small: [
+          { id: 'studio.operands', label: 'Show operands', icon: Eye, run: () => { const id = useUi.getState().selection; if (id) void execute('studio.operands', { id }); else notify('Select a united or intersected element: its operands are shown for editing, or hidden again.'); } },
+          { id: 'studio.removeBoolean', label: 'Remove operation', icon: Unlink, run: () => { const ids = useUi.getState().selected; if (!ids.length) { notify('Select the elements whose operation goes.'); return; } void execute('studio.removeBoolean', { ids }).then((r) => r && notify((r as { removed: number }).removed ? 'Operation removed: the elements are separate again.' : 'The selected elements take part in no boolean operation.')); } },
+        ],
+      },
+    ],
+  }],
+  propertySections: [{ id: 'studioFeature', label: 'Studio', classes: ['IfcBuildingElementProxy', 'IfcMember', 'IfcPlate', 'IfcCovering', 'IfcRailing', 'IfcStair', 'IfcRamp', 'IfcChimney', 'IfcFurnishingElement'], component: FeatureCard }],
+};
+
+export default studio;

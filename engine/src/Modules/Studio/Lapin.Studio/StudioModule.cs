@@ -236,7 +236,15 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         }
         if (solid == null) return Fail("The solid could not be built from its sketch.");
         var material = e.Str("material");
-        return new ElementGeometry([new GeometryPart(e.Name, material != null ? Materials.ColorOf(m, material) : "#b9b2a6", solid, material, "body")]);
+        // In plan: the outline of what it covers (its sketch when drawn in plan, else its shadow's hull).
+        var plan = new List<PlanItem>();
+        if (e.Str("operation") == "extrude" && Math.Abs(plane.Normal.Z) > 0.999)
+        {
+            plan.Add(new PlanItem("outline", true, outer2));
+            plan.AddRange(holes2.Select(h => new PlanItem("outline", true, h)));
+        }
+        else if (Polygon2.ConvexHull(solid.Vertices.Select(v => new Vec2(v.X, v.Y))) is { Length: >= 3 } hull) plan.Add(new PlanItem("outline", true, hull));
+        return new ElementGeometry([new GeometryPart(e.Name, material != null ? Materials.ColorOf(m, material) : "#b9b2a6", solid, material, "body")], plan, plan.SelectMany(p => p.Points).ToList());
     }
 
     static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)

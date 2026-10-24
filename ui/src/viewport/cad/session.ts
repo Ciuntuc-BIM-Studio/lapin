@@ -310,7 +310,7 @@ function layer(): Step {
   };
 }
 
-type Starter = () => Step | null | void | Promise<Step | null | void>;
+export type Starter = () => Step | null | void | Promise<Step | null | void>;
 export const COMMANDS: { names: string[]; label: string; start: Starter }[] = [
   { names: ['LINE', 'L'], label: 'Line', start: line },
   { names: ['PLINE', 'PL'], label: 'Polyline', start: pline },
@@ -334,6 +334,15 @@ export const COMMANDS: { names: string[]; label: string; start: Starter }[] = [
 ];
 
 export const findCommand = (name: string) => COMMANDS.find((c) => c.names.includes(name.trim().toUpperCase()));
+
+/** A module's own command for the command line (Studio's EXTRUDE…). */
+export function registerCommand(c: { names: string[]; label: string; start: Starter }): void {
+  if (!COMMANDS.some((x) => x.names[0] === c.names[0])) COMMANDS.push(c);
+}
+
+/** For a module's commands: the log, the host, ending or chaining steps. */
+export const cadLog = log;
+export const cadHost = host;
 
 // ─── Input ─────────────────────────────────────────────────────────────────
 
