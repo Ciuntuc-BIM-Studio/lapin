@@ -65,9 +65,14 @@ export async function openProject(path?: string): Promise<void> {
   const target = path ?? (await pickPath('open'));
   if (!target) return;
   try {
-    await engine.call('project.open', { path: target });
+    const r = await engine.call<{ notes?: string[] } | null>('project.open', { path: target });
     remember(target);
     enter();
+    // An old Lapin project (format 2) is rebuilt natively and opens unsaved; say what it left out.
+    if (!useSession.getState().doc?.path) {
+      const notes = r?.notes ?? [];
+      notify(`Opened an old Lapin project: save it to keep it in the new format.${notes.length ? ` Left out: ${notes.join('; ')}.` : ''}`);
+    }
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }

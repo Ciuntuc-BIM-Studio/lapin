@@ -8,8 +8,18 @@ public static class PackageFiles
 {
     public static ProjectFiles Create() => new(Open, Save);
 
+    /// <summary>What the last opening of an old project left out (format 2), for the interface to tell.</summary>
+    public static List<string> LastNotes { get; private set; } = [];
+
     public static Diff Open(Session session, string path)
     {
+        LastNotes = [];
+        if (LegacyPackage.Is(path))
+        {
+            var imported = LegacyImport.Run(session, LegacyPackage.Read(path));
+            LastNotes = imported.Notes;
+            return imported.Diff;
+        }
         var content = LapinPackage.Read(path);
         return session.Load(content.Entities, content.Relations, path, content.Classes);
     }

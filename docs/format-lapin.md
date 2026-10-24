@@ -120,5 +120,5 @@ Teste-specificație: `package-io.test.ts`, `project-file*.test.ts`, `versions.te
 - cache-ul `derived/` (geometria afișată pentru modulele lipsă);
 - salvarea incrementală, care rescrie doar bucățile murdare;
 - `analytics/*.parquet`;
-- citirea formatului 2, la M6;
+- ~~citirea formatului 2~~ făcută la M6 (24.10.2026): `LegacyPackage` citește tabelele native, `LegacyImport` reconstruiește proiectul prin comenzi;
 - bibliotecile `.lapinlib`, la M8.

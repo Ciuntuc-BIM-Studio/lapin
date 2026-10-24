@@ -134,7 +134,11 @@ public sealed class EngineHub(Session session, ProjectFiles files, Recovery? rec
                 return (session.Query((string?)p["name"] ?? throw new CommandException("The query is missing."), p["args"] as JsonObject ?? [])?.DeepClone(), null);
             case "quantities.of": return (session.Quantities((string?)p["id"] ?? throw new CommandException("Which element?")), null);
             case "project.new": return (null, session.New());
-            case "project.open": return (null, files.Open(session, PathParam()));
+            case "project.open":
+            {
+                var diff = files.Open(session, PathParam());
+                return (new JsonObject { ["notes"] = new JsonArray(PackageFiles.LastNotes.Select(n => (JsonNode)n).ToArray()) }, diff);
+            }
             case "project.save": return (null, files.Save(session, (string?)p["path"]));
             case "export.pdf":
             {
