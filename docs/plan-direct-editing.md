@@ -91,6 +91,29 @@ Each step ends with tests ported or written first, the checks green, and its row
   All stay live like today's solids and are tested on volumes and end faces.
 - **Parameters on 2D and 3D geometry.** These are the user parameters of E10, shown on drafted shapes and Studio solids too.
 
+### E6b. Sweep along a straight-sided path with mitred corners (perimeter pavements, kerbs, copings)
+
+What exists already: `Solids.Sweep` mitres the inner corners of an open polyline, with the corner section stretched by 1/cos of half the turn, capped at 5×.
+
+What is missing:
+- **Closed paths.** A closed polyline is swept as an open one today: its last corner is not mitred and two end caps overlap at the start. A closed path will give one ring, every corner mitred, the first one included, and no caps (`Loft(…, closed: true)`, which the full revolve already uses).
+- **Where the profile sits on the path.** Today the middle of the profile's box sits on the path. A sweep will take an anchor: the profile's left edge, middle or right edge on the path, plus an offset.
+  - For a closed path the choice is outside or inside, found from the path's orientation, so a pavement drawn along the building's outer face lies outside it, whichever way the outline was drawn.
+  - The anchor and offset are properties of the solid, changeable after.
+- **Checks.**
+  - A side shorter than what the mitre takes at its two ends makes the section fold. The solid then fails with a message naming the side, instead of crossing itself.
+  - Arcs in the path keep being split into short straight pieces, as now.
+- **Pavement defaults.**
+  - The profile is drawn as a section: width × thickness, with the slope away from the building on its top edge, so the slope follows round every corner.
+  - The solid's class is `IfcSlab` with predefined type `PAVING`, or `IfcCovering`. It is measured by area along the path, centre-line length and volume (E9).
+  - It lies below walls in the cut order (E8).
+- **Tests** before the code:
+  - a 10 × 6 m rectangle path with a 1.0 × 0.10 m profile placed outside: volume, corner faces at 45°, no caps, a closed manifold;
+  - the same path drawn the other way round: the same solid;
+  - an open L path;
+  - a side too short: a clear failure.
+- **A path from the model (Q10).** Instead of drawing the outline by hand, pick walls and take the outer faces of their chain, kept live, so moving a wall moves the pavement.
+
 ### E7. More kinds of dimension
 
 - Each kind is an engine annotation with its own drawing, associative where it can be, and printed in PDF and DXF:
@@ -161,6 +184,7 @@ Each step ends with tests ported or written first, the checks green, and its row
 | E8 cut order | — | small |
 | E9 Studio class and type | E8, E10 | medium |
 | E6 names, roles, new sweeps | E4, E10 | large (geometry) |
+| E6b closed and anchored sweeps (pavements) | — | small; can go first |
 | E7 dimensions | E5 (input) | medium |
 | E10 user parameters | E10 grid | small |
 
@@ -177,3 +201,4 @@ I would start with E10 (the panel grid) and E1 together, because everything afte
 - **Q7.** User parameters on export: one property set `Pset_Lapin_Parameters`, or named groups of your own (each group its own set)?
 - **Q8.** Slope dimensions by default in %, °, or 1:n? A different default for roofs and for ramps or terraces?
 - **Q9.** Dynamic input: the angle from +X counter-clockwise (AutoCAD), or relative to the previous segment as an option too?
+- **Q10.** Pavements: is a drawn path enough at first, or should the path come live from the walls' outer faces (moving a wall moves the pavement)? And their class: `IfcSlab` PAVING or `IfcCovering`?
