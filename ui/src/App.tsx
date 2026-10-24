@@ -38,6 +38,12 @@ function StatusBar() {
   );
 }
 
+/** The engine has been unreachable for a while, or could not be restarted: said until it is back. */
+function EngineNotice() {
+  const problem = useSession((s) => s.engineProblem);
+  return problem ? <div className="notice" role="alert" style={{ position: 'fixed', zIndex: 40 }}>{problem}</div> : null;
+}
+
 function Notice() {
   const notice = useUi((s) => s.notice);
   useEffect(() => {
@@ -91,5 +97,5 @@ export function App() {
   const theme = useUi((s) => s.theme);
   useShortcuts();
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
-  return screen === 'start' ? <StartScreen /> : <Workspace />;
+  return <>{screen === 'start' ? <StartScreen /> : <Workspace />}<EngineNotice /></>;
 }

@@ -21,10 +21,12 @@ export interface SessionState {
   doc: DocState | null;
   version: number;
   error: string | null;
+  /** Why the engine is unreachable, once that has lasted (null while it is fine). */
+  engineProblem: string | null;
 }
 
 export const useSession = create<SessionState>(() => ({
-  connected: false, info: null, nodes: new Map(), relations: new Map(), render: new Map(), doc: null, version: -1, error: null,
+  connected: false, info: null, nodes: new Map(), relations: new Map(), render: new Map(), doc: null, version: -1, error: null, engineProblem: null,
 }));
 
 export const engine = new EngineClient(engineUrl);
@@ -91,14 +93,34 @@ export async function ensureStorey(): Promise<string | null> {
   return activeStorey()?.id ?? result?.id ?? null;
 }
 
+/** How long the engine may be unreachable before the window says so. */
+const LOST_NOTICE_MS = 10_000;
+const LOST_NOTICE = 'The engine stopped; restarting…';
+
 /** Connect to the engine and keep the session in step with it. */
 export async function connect(): Promise<void> {
   engine.onDiff(applyDiff);
+  let lost: ReturnType<typeof setTimeout> | undefined;
   engine.onStatus((connected) => {
     useSession.setState({ connected });
-    if (connected) void resync();
+    clearTimeout(lost);
+    if (connected) {
+      useSession.setState({ engineProblem: null });
+      void resync();
+    } else {
+      lost = setTimeout(() => { if (!useSession.getState().engineProblem) useSession.setState({ engineProblem: LOST_NOTICE }); }, LOST_NOTICE_MS);
+    }
   });
+  void watchDesktopEngine();
   await engine.start();
+}
+
+/** In the desktop app the shell restarts a stopped engine and says how it went. */
+async function watchDesktopEngine(): Promise<void> {
+  if (!(window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__) return;
+  const { listen } = await import('@tauri-apps/api/event');
+  await listen('engine-restarted', () => notify('The engine stopped and was restarted.'));
+  await listen<string>('engine-failed', (e) => useSession.setState({ engineProblem: e.payload || 'The engine could not be restarted: quit and reopen Lapin.' }));
 }
 
 /**
