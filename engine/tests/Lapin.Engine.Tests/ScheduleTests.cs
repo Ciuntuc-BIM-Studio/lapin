@@ -233,11 +233,9 @@ public class ScheduleTests
         double W() => (double)((JsonObject)f.Session.Query("schedule.layout", new JsonObject { ["id"] = id })!)["w"]!;
         var one = W();
         f.Run("architecture.updateSchedule", new JsonObject { ["id"] = id, ["drawings"] = new JsonArray("interior", "plan") });
-        Assert.True(W() > one);
-        // The door's plan: its leaf open and its arc, besides the wall stubs.
-        var spec = Schedules.Of(f.Session.Reader, "door").Entries[0].Spec!;
-        var plan = JoineryPlan.Of(spec, 0.3);
-        Assert.Contains(plan, st => st.Weight == "thin");
-        Assert.True(plan.Min(st => Math.Min(st.A.Y, st.B.Y)) < -0.15 - spec.Width / 2);
+        var two = W();
+        Assert.True(two > one);
+        f.Run("architecture.updateSchedule", new JsonObject { ["id"] = id, ["drawings"] = new JsonArray("interior", "plan", "section") });
+        Assert.True(W() > two);
     }
 }

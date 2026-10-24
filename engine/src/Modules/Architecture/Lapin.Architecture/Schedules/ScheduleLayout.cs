@@ -161,13 +161,16 @@ public static class ScheduleLayout
                 Dim(s, at + new Vec2(12 + lw, lh + 4.5), at + new Vec2(12 + lw + sw, lh + 4.5), Mm(l.Width), false);
             });
         }
-        var views = drawings.Where(d => d is "interior" or "exterior" or "plan").DefaultIfEmpty("interior").ToList();
-        // Each drawing's extent (m): an elevation is the type's width × height; a plan the width (and the wall stub) by its depth and swing.
-        const double Stub = 0.3;
-        var plan = e.Spec != null ? JoineryPlan.Of(e.Spec, Math.Max(e.Spec.Frame.Depth * 2.5, Stub)) : [];
+        var views = drawings.Where(d => d is "interior" or "exterior" or "plan" or "section").DefaultIfEmpty("interior").ToList();
+        // Each drawing's extent (m): an elevation is the type's width × height; a plan the width by its depth and swing; a section its depth by its height.
+        static List<Stroke> Segs(IEnumerable<JStroke> strokes) => strokes.SelectMany(st => Enumerable.Range(0, st.Pts.Count - (st.Closed ? 0 : 1))
+            .Select(i => new Stroke(st.Pts[i], st.Pts[(i + 1) % st.Pts.Count], st.Weight, st.Dashed))).ToList();
+        var plan = e.Spec != null ? Segs(JoinerySymbols.Plan(e.Spec)) : [];
+        var section = e.Spec != null ? Segs(JoinerySymbols.Section(e.Spec)) : [];
+        var (sMinX, sMaxX) = section.Count > 0 ? (section.Min(x => Math.Min(x.A.X, x.B.X)), section.Max(x => Math.Max(x.A.X, x.B.X))) : (0, 0);
         var (pMinX, pMaxX) = plan.Count > 0 ? (plan.Min(x => Math.Min(x.A.X, x.B.X)), plan.Max(x => Math.Max(x.A.X, x.B.X))) : (-e.Width / 2, e.Width / 2);
         var (pMinY, pMaxY) = plan.Count > 0 ? (plan.Min(x => Math.Min(x.A.Y, x.B.Y)), plan.Max(x => Math.Max(x.A.Y, x.B.Y))) : (0, 0);
-        double WidthOf(string v) => v == "plan" ? (pMaxX - pMinX) * k : e.Width * k;
+        double WidthOf(string v) => v == "plan" ? (pMaxX - pMinX) * k : v == "section" ? (sMaxX - sMinX) * k : e.Width * k;
         double HeightOf(string v) => v == "plan" ? (pMaxY - pMinY) * k : e.Height * k;
         var (ew, eh) = (e.Width * k, Math.Max(e.Height * k, views.Contains("plan") ? HeightOf("plan") : 0));
         var rowW = views.Sum(WidthOf) + (views.Count - 1) * Gap;
@@ -183,6 +186,15 @@ public static class ScheduleLayout
                     var left = x0;
                     Vec2 Pp(Vec2 q) => new(left + (q.X - pMinX) * k, bottom - (q.Y - pMinY) * k);
                     foreach (var st in plan) s.Line(Pp(st.A), Pp(st.B), DrawingPen[st.Weight], st.Dashed ? [1.2, 0.8] : null, "SCHEDULE-SYMBOLS");
+                    x0 += WidthOf(view) + Gap;
+                    continue;
+                }
+                if (view == "section")
+                {
+                    // The vertical section: across the wall left to right (the exterior to the right), its bottom on the line.
+                    var left = x0;
+                    Vec2 Ps(Vec2 q) => new(left + (q.X - sMinX) * k, bottom - q.Y * k);
+                    foreach (var st in section) s.Line(Ps(st.A), Ps(st.B), DrawingPen[st.Weight], st.Dashed ? [1.2, 0.8] : null, "SCHEDULE-SYMBOLS");
                     x0 += WidthOf(view) + Gap;
                     continue;
                 }

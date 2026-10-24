@@ -17,7 +17,7 @@ export interface Settings {
   check: { id: string; name?: string; why: string }[];
 }
 
-const DRAWINGS: [string, string][] = [['interior', 'Interior view'], ['exterior', 'Exterior view'], ['plan', 'Plan']];
+const DRAWINGS: [string, string][] = [['interior', 'Interior view'], ['exterior', 'Exterior view'], ['plan', 'Plan'], ['section', 'Section']];
 
 export function ScheduleSettings({ id, s, kind }: { id: string; s: Settings; kind: string }) {
   const update = (patch: Record<string, unknown>) => void execute('architecture.updateSchedule', { id, ...patch });
