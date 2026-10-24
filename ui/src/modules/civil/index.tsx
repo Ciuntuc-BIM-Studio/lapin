@@ -3,6 +3,9 @@
 import { FileUp } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { LapinModule, ToolDef } from '../../platform/module';
+import type { NodeDto } from '../../engine/protocol';
+import { outlineGrips, outlineRef, toPairs } from '../../viewport/gripKit';
+import { fromPairs } from '../../viewport/contour';
 import { notify, useUi } from '../../app/store';
 import { execute } from '../../engine/session';
 import { SURVEY, pickText } from './survey';
@@ -67,6 +70,10 @@ const civil: LapinModule = {
     id: 'site', label: 'Site', order: 40,
     groups: [{ label: 'Terrain', tools: [terrainFromFile, platform], small: [terrainFromLandXml] }],
   }],
+  grips: {
+    IfcEarthworksCut: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? outlineGrips({ pts }, (o) => ({ command: 'civil.updatePlatform', args: { id: n.id, points: toPairs(o.pts) } })) : []; },
+  },
+  references: { IfcEarthworksCut: (n: NodeDto) => { const pts = fromPairs(n.props.contour); return pts.length >= 3 ? [outlineRef(pts)] : []; } },
   propertySections: [{ id: 'terrain', label: 'Terrain', classes: ['IfcGeographicElement'], component: TerrainSection }],
 };
 

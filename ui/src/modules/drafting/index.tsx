@@ -2,7 +2,8 @@
 
 import { ArrowRightToLine, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileText, FlipHorizontal2, Hash, Layers, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag } from 'lucide-react';
 import { DimensionIcon, GridAxisIcon, LevelIcon } from '../../icons';
-import type { Grip, LapinModule, ToolDef, Vec2 } from '../../platform/module';
+import type { Grip, GripStep, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
+import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
 import type { NodeDto } from '../../engine/protocol';
 import { useUi } from '../../app/store';
 import { execute } from '../../engine/session';
@@ -165,25 +166,73 @@ registerCommand({ names: ['LWRESET', 'LWR'], label: 'Linework reset', start: lin
 /** A CAD command started from the ribbon, as if typed. */
 const cad = (id: string, label: string, icon: ToolDef['icon'], command: string): ToolDef => ({ id: `cad.${id}`, label, icon, run: () => void startCommand(command) });
 
-/** A drafted shape's grips: its ends and corners, a circle's centre and radius; dragging one changes the shape. */
+/**
+ * A drafted shape's grips, drawn in the view it is on: a line's ends and
+ * middle; a polyline's vertices and edge middles (Ctrl/⌘ inserts or removes a
+ * vertex); a circle's centre and quadrants; an arc's centre, ends and middle.
+ */
 function draftGrips(node: NodeDto): Grip[] {
   if (node.props.predefinedType !== 'DRAFT' || !node.props.shape) return [];
   const s = fromJson(node.props.shape as Record<string, unknown>);
   if (!s) return [];
-  const save = (next: Shape) => execute('drafting.updateDraft', { id: node.id, shape: toJson(next) });
-  switch (s.type) {
-    case 'line': return [
-      { key: 'a', at: s.a, move: (p: Vec2) => save({ ...s, a: p }) },
-      { key: 'b', at: s.b, move: (p: Vec2) => save({ ...s, b: p }) },
-    ];
-    case 'polyline': return s.pts.map((q, i) => ({ key: `p${i}`, at: q, move: (p: Vec2) => save({ ...s, pts: s.pts.map((x, j) => (j === i ? p : x)) }) }));
-    case 'circle': return [
-      { key: 'c', at: s.c, move: (p: Vec2) => save({ ...s, c: p }) },
-      { key: 'r', at: keyPoints(s).quadrants[0], move: (p: Vec2) => save({ ...s, r: Math.max(1e-3, Math.hypot(p.x - s.c.x, p.y - s.c.y)) }) },
-    ];
-    case 'arc': return [{ key: 'c', at: s.c, move: (p: Vec2) => save({ ...s, c: p }) }];
-  }
+  const view = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
+  const save = (next: Shape): GripStep => ({ command: 'drafting.updateDraft', args: { id: node.id, shape: toJson(next) } });
+  const on = (r: number, t: number): Vec2 => (s.type === 'arc' || s.type === 'circle' ? { x: s.c.x + Math.cos(t) * r, y: s.c.y + Math.sin(t) * r } : { x: 0, y: 0 });
+  const grips: Grip[] = (() => {
+    switch (s.type) {
+      case 'line': return axisGrips(s.a, s.b, (a, b) => save({ ...s, a, b }));
+      case 'polyline': {
+        if (s.closed && s.pts.length >= 3) return outlineGrips({ pts: s.pts }, (o) => save({ ...s, pts: o.pts }));
+        const out: Grip[] = s.pts.map((q, i) => ({
+          key: `p${i}`, kind: 'vertex' as const, at: q,
+          step: (p: Vec2) => save({ ...s, pts: s.pts.map((x, j) => (j === i ? p : x)) }),
+          remove: () => (s.pts.length > 2 ? save({ ...s, pts: s.pts.filter((_, j) => j !== i) }) : null),
+        }));
+        for (let i = 0; i + 1 < s.pts.length; i++) {
+          const a = s.pts[i], b = s.pts[i + 1], m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+          out.push({
+            key: `e${i}`, kind: 'edgeMid', at: m,
+            // The segment moved parallel to itself.
+            step: (p: Vec2) => {
+              const len = Math.hypot(b.x - a.x, b.y - a.y) || 1, n = { x: -(b.y - a.y) / len, y: (b.x - a.x) / len };
+              const d = (p.x - m.x) * n.x + (p.y - m.y) * n.y;
+              return save({ ...s, pts: s.pts.map((x, j) => (j === i || j === i + 1 ? { x: x.x + n.x * d, y: x.y + n.y * d } : x)) });
+            },
+            insert: () => save({ ...s, pts: [...s.pts.slice(0, i + 1), m, ...s.pts.slice(i + 1)] }),
+          });
+        }
+        return out;
+      }
+      case 'circle': return [
+        { key: 'c', kind: 'centre', at: s.c, step: (p: Vec2) => save({ ...s, c: p }) },
+        ...keyPoints(s).quadrants.map((q, i) => ({ key: `q${i}`, kind: 'radius' as const, at: q, step: (p: Vec2) => save({ ...s, r: Math.max(1e-3, Math.hypot(p.x - s.c.x, p.y - s.c.y)) }) })),
+      ];
+      case 'arc': {
+        const mid = s.start + (((s.end - s.start) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / 2;
+        const angle = (p: Vec2) => Math.atan2(p.y - s.c.y, p.x - s.c.x);
+        return [
+          { key: 'c', kind: 'centre', at: s.c, step: (p: Vec2) => save({ ...s, c: p }) },
+          { key: 's', kind: 'end', at: on(s.r, s.start), step: (p: Vec2) => save({ ...s, start: angle(p) }) },
+          { key: 'e', kind: 'end', at: on(s.r, s.end), step: (p: Vec2) => save({ ...s, end: angle(p) }) },
+          { key: 'm', kind: 'radius', at: on(s.r, mid), step: (p: Vec2) => save({ ...s, r: Math.max(1e-3, Math.hypot(p.x - s.c.x, p.y - s.c.y)) }) },
+        ];
+      }
+    }
+  })();
+  return grips.map((g) => ({ ...g, view }));
 }
+
+/** A grid's axes: each axis's ends and middle (keys "<tag>:start"…), shown when that axis is selected (grid#tag). */
+function gridGrips(node: NodeDto): Grip[] {
+  const axes = (node.props.axes as { tag: string; a: number[]; b: number[] }[] | undefined) ?? [];
+  return axes.flatMap((ax) => {
+    const a = pt(ax.a), b = pt(ax.b);
+    if (!a || !b) return [];
+    return axisGrips(a, b, (s, e) => ({ command: 'drafting.updateAxis', args: { gridId: node.id, tag: ax.tag, x1: s.x, y1: s.y, x2: e.x, y2: e.y } })).map((g) => ({ ...g, key: `${ax.tag}:${g.key}` }));
+  });
+}
+const gridRefs = (node: NodeDto): RefLine[] => ((node.props.axes as { tag: string; a: number[]; b: number[] }[] | undefined) ?? [])
+  .flatMap((ax) => { const a = pt(ax.a), b = pt(ax.b); return a && b ? [{ ...axisRef(a, b), tag: ax.tag }] : []; });
 
 const drafting: LapinModule = {
   id: 'drafting',
@@ -221,7 +270,8 @@ const drafting: LapinModule = {
     { id: 'draft', label: 'Drafting', classes: ['IfcAnnotation'], component: DraftSection, replacesFields: draftsFields },
     { id: 'dimension', label: 'Dimension', classes: ['IfcAnnotation'], component: DimensionSection },
   ],
-  grips: { IfcAnnotation: draftGrips },
+  grips: { IfcAnnotation: draftGrips, IfcGrid: gridGrips },
+  references: { IfcGrid: gridRefs },
 };
 
 export default drafting;

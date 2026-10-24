@@ -21,6 +21,7 @@ import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
 import { boxTest, segsOf } from './selectBox';
+import { useGripEditor } from './GripLayer';
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelPixels, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
@@ -120,6 +121,17 @@ export function DrawingView() {
     return { raw, aimed };
   };
 
+  // Direct editing of the shapes drafted on this view (and of a solid sketched here): their grips and lines.
+  const editor = useGripEditor({
+    viewIds: [id], mode: 'drawing', toScreen, scale: v.scale, disabled: !!cadStep, svg: ref,
+    aim: (cx, cy, from) => {
+      const r = ref.current!.getBoundingClientRect();
+      const a = aim(toWorld(cx - r.left, cy - r.top), from, { orthoHeld: false });
+      setHover(a);
+      return a.point;
+    },
+  });
+
   return (
     <div className="view-pane">
       <div className="view-toolbar">
@@ -145,8 +157,9 @@ export function DrawingView() {
           wheelBurst.current = now;
           setView({ scale, cx: p.x - (p.x - v.cx) * (v.scale / scale), cy: p.y - (p.y - v.cy) * (v.scale / scale) });
         }}
-        onPointerDown={(e) => { if (middleTwice.current(e)) { fit(); return; } drag.current = { x: e.clientX, y: e.clientY, view: v, moved: false }; (e.target as Element).setPointerCapture?.(e.pointerId); }}
+        onPointerDown={(e) => { if (middleTwice.current(e)) { fit(); return; } if (editor.onPointerDown(e)) return; drag.current = { x: e.clientX, y: e.clientY, view: v, moved: false }; (e.target as Element).setPointerCapture?.(e.pointerId); }}
         onPointerMove={(e) => {
+          if (editor.onPointerMove(e)) return;
           const d = drag.current;
           if (d) {
             if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4) d.moved = true;
@@ -161,6 +174,7 @@ export function DrawingView() {
           setHover(at(e).aimed);
         }}
         onPointerUp={(e) => {
+          if (editor.onPointerUp()) return;
           const d = drag.current;
           drag.current = null;
           if (box) { selectBox(box, e.shiftKey); setBox(null); return; }
@@ -186,7 +200,8 @@ export function DrawingView() {
           }).join('')} />
         ))}
         {box && <rect className={`select-box${box.b.x >= box.a.x ? ' window' : ' crossing'}`} x={Math.min(box.a.x, box.b.x)} y={Math.min(box.a.y, box.b.y)} width={Math.abs(box.b.x - box.a.x)} height={Math.abs(box.b.y - box.a.y)} />}
-        {cadStep && <CadOverlay aimed={hover} toScreen={toScreen} />}
+        {editor.render}
+        {(cadStep || editor.dragging) && <CadOverlay aimed={hover} toScreen={toScreen} />}
       </svg>
       {drawing?.problem && <div className="error-text view-problem">{drawing.problem}</div>}
       <CommandLine />

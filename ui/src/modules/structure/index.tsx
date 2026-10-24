@@ -2,7 +2,8 @@
 
 import { Grid3x3, Layers3 } from 'lucide-react';
 import { BeamIcon, ColumnIcon, PadFootingIcon, StripFootingIcon } from '../../icons';
-import type { Grip, LapinModule, ToolDef } from '../../platform/module';
+import type { Grip, LapinModule, RefLine, ToolDef } from '../../platform/module';
+import { axisGrips, axisRef, pt } from '../../viewport/gripKit';
 import type { NodeDto } from '../../engine/protocol';
 import { useUi } from '../../app/store';
 import { ensureStorey, execute } from '../../engine/session';
@@ -38,16 +39,21 @@ const types: ToolDef = { id: 'structure.types', label: 'Structure types', icon: 
 
 /** The ends of a beam or a strip foundation, to drag (a joined corner moves with it). */
 function pathGrips(node: NodeDto): Grip[] {
-  const a = node.props.start as number[] | undefined, b = node.props.end as number[] | undefined;
+  const a = pt(node.props.start), b = pt(node.props.end);
   if (!a || !b) return [];
-  return [
-    { key: `${node.id}:start`, at: { x: a[0], y: a[1] }, move: (p) => execute('structure.updatePath', { id: node.id, x1: p.x, y1: p.y }) },
-    { key: `${node.id}:end`, at: { x: b[0], y: b[1] }, move: (p) => execute('structure.updatePath', { id: node.id, x2: p.x, y2: p.y }) },
-  ];
+  return axisGrips(a, b, (s, e) => ({ command: 'structure.updatePath', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, detachJoinedEnds: true } }));
 }
+const pathRefs = (node: NodeDto): RefLine[] => { const a = pt(node.props.start), b = pt(node.props.end); return a && b ? [axisRef(a, b)] : []; };
+/** A column: its point, and a handle 0.8 m out along its rotation that turns it. */
 function pointGrip(node: NodeDto): Grip[] {
-  const at = node.props.at as number[] | undefined;
-  return at ? [{ key: `${node.id}:at`, at: { x: at[0], y: at[1] }, move: (p) => execute('structure.updateColumn', { id: node.id, x: p.x, y: p.y }) }] : [];
+  const at = pt(node.props.at);
+  if (!at) return [];
+  const rot = (Number(node.props.rotation ?? 0) * Math.PI) / 180;
+  const handle = { x: at.x + Math.cos(rot) * 0.8, y: at.y + Math.sin(rot) * 0.8 };
+  return [
+    { key: 'at', kind: 'centre', at, step: (p) => ({ command: 'structure.updateColumn', args: { id: node.id, x: p.x, y: p.y } }) },
+    { key: 'rotate', kind: 'rotate', at: handle, step: (p) => ({ command: 'structure.updateColumn', args: { id: node.id, rotation: Math.round(((Math.atan2(p.y - at.y, p.x - at.x) * 180) / Math.PI) * 100) / 100 } }) },
+  ];
 }
 
 const structure: LapinModule = {
@@ -66,6 +72,7 @@ const structure: LapinModule = {
   propertySections: [{ id: 'structure', label: 'Structure', classes: ['IfcColumn', 'IfcBeam', 'IfcFooting'], component: StructureSection }],
   dialogs: { structureTypes: StructureTypesDialog },
   grips: { IfcBeam: pathGrips, IfcFooting: (n) => (n.props.start ? pathGrips(n) : []), IfcColumn: pointGrip },
+  references: { IfcBeam: pathRefs, IfcFooting: (n) => (n.props.start ? pathRefs(n) : []) },
   setType: {
     IfcColumn: (ids, typeId) => execute('structure.setType', { ids, typeId }),
     IfcBeam: (ids, typeId) => execute('structure.setType', { ids, typeId }),

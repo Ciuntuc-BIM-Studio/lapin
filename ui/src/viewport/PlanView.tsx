@@ -12,8 +12,8 @@ import { usePaneActive, usePaneField } from '../app/pane';
 import { activeStorey, execute, useSession } from '../engine/session';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { Vec2 } from '../platform/module';
-import { findTool, gripsOf } from '../platform/modules';
-import type { Grip } from '../platform/module';
+import { findTool } from '../platform/modules';
+import { useGripEditor } from './GripLayer';
 import { boxIds, pickAt } from './planPick';
 import { pairs, toMm } from './snap';
 import { completeTool } from './tools';
@@ -49,8 +49,6 @@ export function PlanView() {
   useUi((s) => s.storeyId);
   const storey = activeStorey();
   const selected = useUi((s) => s.selected);
-  /** A grip being dragged: which, and where it is now. */
-  const [gripDrag, setGripDrag] = useState<{ grip: Grip; at: Vec2; moved: boolean } | null>(null);
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
   // The generated drawing of this storey's plan (its own view, else the storey's), the modelling lines over it only where selected.
@@ -220,29 +218,21 @@ export function PlanView() {
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('keyup', onUp); };
   }, [pts, tool, complete]);
 
-  // The grips of what is selected, when no tool is busy.
-  const grips = useMemo(() => (tool?.gesture ? [] : selected.flatMap((id) => {
-    const n = nodes.get(id);
-    return n?.editable ? gripsOf(n) : [];
-  })), [tool, selected, nodes]);
+  // Direct editing: the selection's axes, outlines and grips (none while a tool or a command is busy).
+  const editor = useGripEditor({
+    viewIds: [ownPlan, storey ? `plan:${storey.id}` : null], mode: 'plan', storeyId: storey?.id, toScreen, scale: view.scale,
+    aim: (cx, cy, from) => { const s = snapAt(cx, cy, from); setHover(s); return s.point; },
+    disabled: !!tool?.gesture || !!cadStep, svg: svgRef,
+  });
 
   const onPointerDown = (e: React.PointerEvent) => {
     (e.target as Element).setPointerCapture?.(e.pointerId);
     if (middleTwice.current(e)) { fit(); return; }
-    if (e.button === 0 && grips.length) {
-      const rect = svgRef.current!.getBoundingClientRect();
-      const hit = grips.find((g) => { const q = toScreen(g.at); return Math.hypot(q.x - (e.clientX - rect.left), q.y - (e.clientY - rect.top)) < 7; });
-      if (hit) { setGripDrag({ grip: hit, at: hit.at, moved: false }); return; }
-    }
+    if (editor.onPointerDown(e)) return;
     drag.current = { x: e.clientX, y: e.clientY, view, moved: false };
   };
   const onPointerMove = (e: React.PointerEvent) => {
-    if (gripDrag) {
-      const s = snapAt(e.clientX, e.clientY, gripDrag.grip.at);
-      setHover(s);
-      setGripDrag({ ...gripDrag, at: s.point, moved: gripDrag.moved || Math.hypot(s.point.x - gripDrag.grip.at.x, s.point.y - gripDrag.grip.at.y) > 1e-6 });
-      return;
-    }
+    if (editor.onPointerMove(e)) return;
     const d = drag.current;
     if (d) {
       const dx = e.clientX - d.x, dy = e.clientY - d.y;
@@ -259,11 +249,7 @@ export function PlanView() {
     setHover(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined));
   };
   const onPointerUp = (e: React.PointerEvent) => {
-    if (gripDrag) {
-      if (gripDrag.moved) void gripDrag.grip.move(gripDrag.at);
-      setGripDrag(null);
-      return;
-    }
+    if (editor.onPointerUp()) return;
     const d = drag.current;
     drag.current = null;
     if (box) { selectBox(box, e.shiftKey); setBox(null); return; }
@@ -373,7 +359,7 @@ export function PlanView() {
     return null;
   })();
 
-  const marker = hover && (tool?.gesture || gripDrag || cadStep) ? toScreen(hover.point) : null;
+  const marker = hover && (tool?.gesture || editor.dragging || cadStep) ? toScreen(hover.point) : null;
 
   return (
     <div className="view-pane">
@@ -419,11 +405,7 @@ export function PlanView() {
           }).join('')} />
         ))}
         {pts.map((p, i) => { const s = toScreen(p); return <circle key={i} cx={s.x} cy={s.y} r={3} className="plan-vertex" />; })}
-        {grips.map((g) => {
-          const q = toScreen(gripDrag?.grip === g ? gripDrag.at : g.at);
-          return <rect key={g.key} x={q.x - 4} y={q.y - 4} width={8} height={8} className="plan-grip"><title>Drag</title></rect>;
-        })}
-        {gripDrag?.moved && (() => { const a = toScreen(gripDrag.grip.at), b = toScreen(gripDrag.at); return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="plan-grip-drag" />; })()}
+        {editor.render}
         {preview}
         {marker && hover && !hover.mode && (hover.kind === 'point' && !hover.guides.length
           ? <rect x={marker.x - 5} y={marker.y - 5} width={10} height={10} className="plan-snap point" />

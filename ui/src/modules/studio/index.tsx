@@ -6,9 +6,12 @@
  */
 
 import { Box, Eye, PenTool, RefreshCcw, SquareMinus, SquarePlus, SquareSplitHorizontal, Unlink, Waypoints } from 'lucide-react';
-import type { LapinModule, ToolDef } from '../../platform/module';
+import type { Grip, LapinModule, RefLine, ToolDef } from '../../platform/module';
+import type { NodeDto } from '../../engine/protocol';
+import { gripsOf } from '../../platform/modules';
+import { fromJson } from '../../viewport/cad/shapes';
 import { notify, useUi } from '../../app/store';
-import { execute } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
 import { editSketch } from './sketch';
 import { FeatureCard } from './FeatureCard';
 import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
@@ -85,6 +88,26 @@ const boolean = (op: 'subtract' | 'union' | 'intersect'): ToolDef['run'] => () =
 
 const cmd = (id: string, label: string, icon: ToolDef['icon'], command: string): ToolDef => ({ id: `studio.${id}`, label, icon, run: () => void startCommand(command) });
 
+const SOLID_CLASSES = ['IfcBuildingElementProxy', 'IfcMember', 'IfcPlate', 'IfcCovering', 'IfcRailing', 'IfcStair', 'IfcRamp', 'IfcChimney', 'IfcFurnishingElement'];
+/** The drafted shapes a solid is made from: its profile, and its path or axis. */
+const sources = (n: NodeDto): NodeDto[] => {
+  const nodes = useSession.getState().nodes;
+  return [n.props.profile, n.props.guide].filter((x): x is string => typeof x === 'string').map((id) => nodes.get(id)).filter((x): x is NodeDto => !!x);
+};
+/** A selected solid shows the grips of its sketch: dragging them reshapes the sketch, and the solid follows. */
+const solidGrips = (n: NodeDto): Grip[] => (n.props.operation ? sources(n).flatMap((d) => gripsOf(d)) : []);
+/** And the sketch itself, in its view. */
+const solidRefs = (n: NodeDto): RefLine[] => (n.props.operation ? sources(n).flatMap((d) => {
+  const sh = d.props.shape ? fromJson(d.props.shape as Record<string, unknown>) : null;
+  const view = typeof d.props.viewId === 'string' ? d.props.viewId : undefined;
+  if (!sh) return [];
+  if (sh.type === 'line') return [{ points: [sh.a, sh.b], closed: false, kind: 'sketch' as const, view }];
+  if (sh.type === 'polyline') return [{ points: sh.pts, closed: sh.closed, kind: 'sketch' as const, view }];
+  if (sh.type === 'circle') return [{ points: Array.from({ length: 48 }, (_, i) => ({ x: sh.c.x + Math.cos((i * Math.PI) / 24) * sh.r, y: sh.c.y + Math.sin((i * Math.PI) / 24) * sh.r })), closed: true, kind: 'sketch' as const, view }];
+  const sweep = (((sh.end - sh.start) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) || 2 * Math.PI;
+  return [{ points: Array.from({ length: 25 }, (_, i) => ({ x: sh.c.x + Math.cos(sh.start + (sweep * i) / 24) * sh.r, y: sh.c.y + Math.sin(sh.start + (sweep * i) / 24) * sh.r })), closed: false, kind: 'sketch' as const, view }];
+}) : []);
+
 const studio: LapinModule = {
   id: 'studio',
   name: 'Studio',
@@ -107,7 +130,9 @@ const studio: LapinModule = {
       },
     ],
   }],
-  propertySections: [{ id: 'studioFeature', label: 'Studio', classes: ['IfcBuildingElementProxy', 'IfcMember', 'IfcPlate', 'IfcCovering', 'IfcRailing', 'IfcStair', 'IfcRamp', 'IfcChimney', 'IfcFurnishingElement'], component: FeatureCard }],
+  propertySections: [{ id: 'studioFeature', label: 'Studio', classes: SOLID_CLASSES, component: FeatureCard }],
+  grips: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidGrips])),
+  references: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidRefs])),
 };
 
 export default studio;

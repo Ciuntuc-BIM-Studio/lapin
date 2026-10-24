@@ -243,6 +243,17 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .recent.recover { display: flex; align-items: center; gap: 12px; cursor: default; }
 .recent.recover .btn { width: auto; padding: 7px 12px; }
 .plan-grip { fill: var(--panel); stroke: var(--accent); stroke-width: 1.5; cursor: move; }
+.plan-grip.shared { fill: var(--accent-wash); stroke-width: 2; }
+.plan-grip.hot { fill: var(--accent); }
+.plan-grip.edgeMid { fill: var(--panel); stroke-width: 1.2; cursor: grab; }
+.plan-grip.cross { fill: none; stroke-width: 2; }
+.plan-grip.rotate { stroke-dasharray: 2 1.5; cursor: alias; }
+/* A selected element's reference lines: its axis dash-dot, its outline and its sketch dashed, in the accent. */
+.ref-line { fill: none; stroke: var(--accent); stroke-width: 1.2; vector-effect: non-scaling-stroke; pointer-events: none; }
+.ref-line.axis { stroke-dasharray: 10 3 2 3; }
+.ref-line.outline { stroke-dasharray: 5 3; }
+.ref-line.sketch { stroke-dasharray: 2 3; stroke-width: 1.6; }
+.grip-hint { font-size: 11px; fill: var(--accent); font-weight: 600; pointer-events: none; }
 .plan-grip-drag { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
 .qset + .qset { margin-top: 10px; }
 .qset-head { font-weight: 600; margin-bottom: 4px; }

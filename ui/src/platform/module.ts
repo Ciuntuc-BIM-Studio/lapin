@@ -59,8 +59,35 @@ export interface RibbonTabDef {
   order: number;
 }
 
-/** A handle the plan shows on a selected element, to drag (a wall's ends). */
-export interface Grip { key: string; at: Vec2; move: (to: Vec2) => Promise<unknown> | void }
+/** One engine command a grip asks for; several grips dragged together go as one edit (edit.batch). */
+export interface GripStep { command: string; args: Record<string, unknown> }
+
+/**
+ * A handle shown on a selected element, to drag: a wall's axis ends, a
+ * slab's vertices and edge middles, a circle's radius. Grips of several
+ * selected elements at one point become one grip that moves them all.
+ */
+export interface Grip {
+  /** Unique within its element. */
+  key: string;
+  at: Vec2;
+  kind?: 'end' | 'vertex' | 'edgeMid' | 'centre' | 'radius' | 'move' | 'rotate';
+  /** The element it belongs to (gripsOf fills it in). */
+  owner?: string;
+  /** The view it is drawn in, when it belongs to one (a drafted shape's view); else every 2D view. */
+  view?: string;
+  /** What dragging it to a point does, as one engine command. */
+  step?: (to: Vec2) => GripStep | null;
+  /** For grips that are not one command: do it. */
+  move?: (to: Vec2) => Promise<unknown> | void;
+  /** Ctrl/⌘-click: insert a vertex here (an edge's middle). */
+  insert?: () => GripStep | null;
+  /** Ctrl/⌘-click: take this vertex out. */
+  remove?: () => GripStep | null;
+}
+
+/** A line drawn over a selected element: its axis (walls, beams), its outline (slabs, roofs), its sketch (Studio). */
+export interface RefLine { points: Vec2[]; closed: boolean; kind: 'axis' | 'outline' | 'sketch'; view?: string; /** A grid axis's tag: drawn only when that axis is selected. */ tag?: string }
 
 /** A section of the properties panel for a selected entity of some IFC classes. */
 export interface PropertySectionDef {
@@ -90,6 +117,8 @@ export interface LapinModule {
   background?: ComponentType;
   /** The grips of a selected entity, by IFC class. */
   grips?: Record<string, (node: NodeDto) => Grip[]>;
+  /** The lines drawn over a selected entity (its axis, its outline), by IFC class. */
+  references?: Record<string, (node: NodeDto) => RefLine[]>;
   /** Create Similar (CS): the tool that builds this class, set up like the element (its type, its style). */
   similar?: Record<string, (node: NodeDto) => void>;
   /** Match Type (MA): elements of this class given another type. */

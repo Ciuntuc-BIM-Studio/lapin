@@ -2,7 +2,9 @@
 
 import { ArrowLeftRight, CornerDownRight, Layers3, Link2, Settings2, Slash } from 'lucide-react';
 import { AttachRoofIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RoofWindowIcon, RoomIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
-import type { Grip, LapinModule, ToolDef } from '../../platform/module';
+import type { Grip, LapinModule, RefLine, ToolDef } from '../../platform/module';
+import { axisGrips, axisRef, outlineGrips, outlineRef, pt, toPairs } from '../../viewport/gripKit';
+import { fromPairs } from '../../viewport/contour';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
@@ -62,13 +64,22 @@ const mitreNew: ToolDef = {
 
 /** A wall's ends, to drag: a joined corner moves with it. */
 function wallGrips(node: NodeDto): Grip[] {
-  const a = node.props.start as number[] | undefined, b = node.props.end as number[] | undefined;
+  const a = pt(node.props.start), b = pt(node.props.end);
   if (!a || !b) return [];
-  return [
-    { key: `${node.id}:start`, at: { x: a[0], y: a[1] }, move: (p) => execute('architecture.updateWall', { id: node.id, x1: p.x, y1: p.y }) },
-    { key: `${node.id}:end`, at: { x: b[0], y: b[1] }, move: (p) => execute('architecture.updateWall', { id: node.id, x2: p.x, y2: p.y }) },
-  ];
+  return axisGrips(a, b, (s, e) => ({ command: 'architecture.updateWall', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, detachJoinedEnds: true } }));
 }
+const wallRefs = (node: NodeDto): RefLine[] => { const a = pt(node.props.start), b = pt(node.props.end); return a && b ? [axisRef(a, b)] : []; };
+/** A slab, floor opening or roof: its outline's vertices and edges (a roof's edge rules follow its edges). */
+function contourGrips(command: string, withEdges = false) {
+  return (node: NodeDto): Grip[] => {
+    const pts = fromPairs(node.props.contour);
+    if (pts.length < 3) return [];
+    const edges = withEdges && Array.isArray(node.props.edges) && node.props.edges.length === pts.length ? (node.props.edges as unknown[]) : undefined;
+    return outlineGrips({ pts, edges }, (o) => ({ command, args: { id: node.id, points: toPairs(o.pts), ...(o.edges ? { edges: o.edges } : {}) } }));
+  };
+}
+const contourRefs = (node: NodeDto): RefLine[] => { const pts = fromPairs(node.props.contour); return pts.length >= 3 ? [outlineRef(pts)] : []; };
+
 /** The selected walls rise to the underside of the roof clicked (from any storey), cut along its slopes. */
 const attachRoof: ToolDef = {
   id: 'architecture.attachRoof', label: 'Attach to roof', icon: AttachRoofIcon, shortcut: 'AR',
@@ -160,7 +171,8 @@ const architecture: LapinModule = {
     { id: 'roof', label: 'Roof', classes: ['IfcRoof'], component: RoofSection },
   ],
   dialogs: { wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog },
-  grips: { IfcWall: wallGrips },
+  grips: { IfcWall: wallGrips, IfcSlab: contourGrips('architecture.updateSlab'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: contourGrips('architecture.updateRoof', true) },
+  references: { IfcWall: wallRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: contourRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },
     IfcSlab: (n) => { useUi.setState({ slabTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(slab); },
