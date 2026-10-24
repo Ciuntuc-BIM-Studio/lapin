@@ -28,6 +28,27 @@ public class StructureTests
     static double Q(Fixture f, string id, string name, string? part = null) =>
         f.Session.Quantities(id).Single(s => s.Part == part).Quantities.Single(q => q.Name == name).Value;
 
+    [Fact]
+    public void A_columns_rotation_is_in_degrees_like_every_other_angle()
+    {
+        var f = new Fixture(new ArchitectureModule(), new StructureModule(), new Lapin.Drafting.DraftingModule());
+        var type = (string)f.Run("structure.createColumnType", new JsonObject { ["name"] = "C 30x60", ["section"] = new JsonObject { ["shape"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.6 } })!["id"]!;
+        var flat = (string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = type, ["x"] = 2, ["y"] = 1 })!["id"]!;
+        var turned = (string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = type, ["x"] = 6, ["y"] = 1, ["rotation"] = 90 })!["id"]!;
+        var (a0, a1) = f.Bounds(flat);
+        var (b0, b1) = f.Bounds(turned);
+        Assert.Equal(a1.Y - a0.Y, b1.X - b0.X, 6);
+        Assert.Equal(a1.X - a0.X, b1.Y - b0.Y, 6);
+        // A rigid turn adds degrees.
+        f.Run("element.transform", new JsonObject { ["id"] = turned, ["op"] = "rotate", ["center"] = new JsonArray(6, 1), ["angle"] = 45 });
+        Assert.Equal(135, f.Model.Get(turned)!.Num("rotation"), 9);
+        // Columns on a slanted grid take the axis direction in degrees.
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = 0, ["y1"] = 0, ["x2"] = 10 * Math.Cos(Math.PI / 6), ["y2"] = 10 * Math.Sin(Math.PI / 6) });
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = 4, ["y1"] = -3, ["x2"] = 4, ["y2"] = 8 });
+        var id = (string)f.Run("structure.addColumnsAtGrid", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = type })!["ids"]![0]!;
+        Assert.Contains(Math.Round(f.Model.Get(id)!.Num("rotation"), 6), new[] { 30.0, 90.0 });
+    }
+
     // ------------------------------------------------------------ strip foundations
 
     [Fact]

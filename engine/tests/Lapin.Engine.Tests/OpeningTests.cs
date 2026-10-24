@@ -29,6 +29,39 @@ public class OpeningTests
     }
 
     [Fact]
+    public void A_wall_cannot_be_shortened_or_lowered_under_its_openings()
+    {
+        var f = new Fixture();
+        var wall = f.Wall(0, 0, 6, 0);
+        Door(f, wall, 5.2);                                                                                  // 900 × 2100: 4.75 … 5.65 along
+        f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["along"] = 2 });                 // 1200 × 1500 from 0.9: head at 2.4
+        var shorter = Assert.Throws<CommandException>(() => f.Run("architecture.updateWall", new JsonObject { ["id"] = wall, ["x2"] = 5 }));
+        Assert.Contains("along", shorter.Message);
+        var lower = Assert.Throws<CommandException>(() => f.Run("architecture.updateWall", new JsonObject { ["id"] = wall, ["height"] = 2.3 }));
+        Assert.Contains("height", lower.Message);
+        Assert.Equal(6, Walls.End(f.Model.Get(wall)!).X, 9);
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = wall, ["x2"] = 5.8, ["height"] = 2.5 });
+        Assert.Equal(5.8, Walls.End(f.Model.Get(wall)!).X, 9);
+    }
+
+    [Fact]
+    public void Openings_on_one_wall_may_not_overlap()
+    {
+        var f = new Fixture();
+        var wall = f.Wall(0, 0, 6, 0);
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = wall, ["height"] = 4 });
+        Door(f, wall, 2);                                                                                    // 1.55 … 2.45
+        var over = Assert.Throws<CommandException>(() => Door(f, wall, 2.5));                                // 2.05 … 2.95
+        Assert.Contains("overlap", over.Message);
+        var other = Door(f, wall, 4);
+        Assert.Throws<CommandException>(() => f.Run("architecture.moveOpening", new JsonObject { ["id"] = other, ["along"] = 2.6 }));
+        f.Run("architecture.moveOpening", new JsonObject { ["id"] = other, ["along"] = 3.5 });              // 3.05 … 3.95: clear
+        // A window over the door's head shares its run but not its height: no overlap.
+        f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["along"] = 2, ["sill"] = 2.3 });
+        Assert.Equal(3, Openings.PlacedOn(f.Model, wall).Count);
+    }
+
+    [Fact]
     public void A_door_takes_its_opening_out_of_every_layer_of_its_wall()
     {
         var f = new Fixture();

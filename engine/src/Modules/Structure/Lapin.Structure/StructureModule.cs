@@ -75,7 +75,7 @@ public sealed class StructureModule : ILapinModule
                     var at = a1 + d1 * t;
                     if (existing.Any(p => (p - at).Length < 1e-3)) continue;
                     existing.Add(at);
-                    var c = new Entity(ctx.NewId(), IfcClass.Column, type.Name, new JsonObject { ["at"] = Place.Json2(at), ["rotation"] = Math.Atan2(d1.Y, d1.X) }, "COLUMN");
+                    var c = new Entity(ctx.NewId(), IfcClass.Column, type.Name, new JsonObject { ["at"] = Place.Json2(at), ["rotation"] = Math.Atan2(d1.Y, d1.X) * 180 / Math.PI }, "COLUMN");
                     ctx.Add(c);
                     Spatial.Contain(ctx, storey.Id, c.Id);
                     ctx.Relate(IfcClass.RelDefinesByType, type.Id, c.Id);

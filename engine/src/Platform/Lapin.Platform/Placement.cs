@@ -69,7 +69,8 @@ public static class Placement
         var a = e.CloneAttrs();
         foreach (var k in new[] { "start", "end", "at", "a", "b" })
             if (a[k] is JsonArray { Count: >= 2 } p && e.Class != IfcClass.Annotation) a[k] = J(t.Point(P(p)));
-        if (a["rotation"] != null && e.Class != IfcClass.Annotation) a["rotation"] = t.Angle(Json.Number(a["rotation"]) ?? 0);
+        // The attribute is in degrees; the transformation works in radians.
+        if (a["rotation"] != null && e.Class != IfcClass.Annotation) a["rotation"] = t.Angle((Json.Number(a["rotation"]) ?? 0) * Math.PI / 180) * 180 / Math.PI;
         if (a["contour"] is JsonArray c)
         {
             var pts = c.OfType<JsonArray>().Select(p => t.Point(P(p))).ToList();

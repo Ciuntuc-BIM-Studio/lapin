@@ -103,10 +103,10 @@ static class Place
 
     public static double StoreyHeight(IModelView m, Entity e) => Spatial.StoreyOf(m, e.Id)?.Num("height", 3) ?? 3;
 
-    /// <summary>A footprint turned by <paramref name="rotation"/> (radians) and moved to <paramref name="at"/>.</summary>
+    /// <summary>A footprint turned by <paramref name="rotation"/> (degrees, as the attribute holds it) and moved to <paramref name="at"/>.</summary>
     public static Vec2[] Placed(IEnumerable<Vec2> outline, Vec2 at, double rotation)
     {
-        var (c, s) = (Math.Cos(rotation), Math.Sin(rotation));
+        var (c, s) = (Math.Cos(rotation * Math.PI / 180), Math.Sin(rotation * Math.PI / 180));
         return outline.Select(p => new Vec2(at.X + p.X * c - p.Y * s, at.Y + p.X * s + p.Y * c)).ToArray();
     }
 

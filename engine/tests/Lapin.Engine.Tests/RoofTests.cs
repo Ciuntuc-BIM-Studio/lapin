@@ -133,6 +133,26 @@ public class RoofTests
         f.Session.Quantities(id).Where(s => s.Part == part).SelectMany(s => s.Quantities).Where(q => q.Name == name).Sum(q => q.Value);
 
     [Fact]
+    public void Another_style_keeps_the_roof_windows_and_dormers()
+    {
+        var f = new Fixture();
+        var roof = AddRoof(f, "modern_barn");
+        f.Run("architecture.addRoofOpening", new JsonObject { ["x"] = 3, ["y"] = 1.5 });
+        var dormer = (string)f.Run("architecture.addRoofOpening", new JsonObject { ["x"] = 7, ["y"] = 0.6, ["kind"] = "dormer", ["width"] = 1.4, ["wallHeight"] = 0.9 })!["id"]!;
+        // The dormer would not sit on the hip roof's slope: refused by name, nothing changed.
+        var refused = Assert.Throws<CommandException>(() => f.Run("architecture.roofStyle", new JsonObject { ["id"] = roof, ["style"] = "traditional_campie" }));
+        Assert.Contains("Dormer 1", refused.Message);
+        Assert.Equal("gable", f.Model.Get(roof)!.Str("shape"));
+        Assert.Equal(2, (f.Model.Get(roof)!.Attrs["openings"] as JsonArray)?.Count);
+        // Without it, the new style keeps the roof window.
+        f.Run("architecture.removeRoofOpening", new JsonObject { ["roofId"] = roof, ["id"] = dormer });
+        f.Run("architecture.roofStyle", new JsonObject { ["id"] = roof, ["style"] = "traditional_campie" });
+        Assert.Equal("hip", f.Model.Get(roof)!.Str("shape"));
+        Assert.Equal(1, (f.Model.Get(roof)!.Attrs["openings"] as JsonArray)?.Count);
+        Assert.Equal(1, Q(f, roof, "RoofWindows", "openings"));
+    }
+
+    [Fact]
     public void A_roof_is_one_IfcRoof_over_its_outline_and_its_style_decides_the_rest()
     {
         var f = new Fixture();

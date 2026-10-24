@@ -13,6 +13,21 @@ namespace Lapin.Engine.Tests;
 public class WallTests
 {
     [Fact]
+    public void Editing_a_wall_keeps_what_other_commands_wrote_on_it()
+    {
+        var f = new Fixture(new ArchitectureModule(), new Lapin.Phases.PhasesModule());
+        var wall = f.Wall(0, 0, 5, 0);
+        f.Run("element.update", new JsonObject { ["id"] = wall, ["attrs"] = new JsonObject { ["cutPriority"] = 70 } });
+        f.Run("phases.assign", new JsonObject { ["id"] = wall, ["created"] = "existing" });
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = wall, ["height"] = 2.7, ["x2"] = 6 });
+        var e = f.Model.Get(wall)!;
+        Assert.Equal(2.7, e.Num("height"), 9);
+        Assert.Equal(6, Walls.End(e).X, 9);
+        Assert.Equal(70, e.Num("cutPriority"), 9);
+        Assert.Equal("existing", e.Str("phaseCreated"));
+    }
+
+    [Fact]
     public void A_layered_walls_body_lies_on_its_core()
     {
         var f = new Fixture();

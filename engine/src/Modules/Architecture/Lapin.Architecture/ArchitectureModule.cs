@@ -216,10 +216,17 @@ public sealed class ArchitectureModule : ILapinModule
         {
             var roof = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Roof);
             var style = RoofCatalog.StyleOf((string?)a["style"]) ?? throw new CommandException("There is no such roof style.");
-            var attrs = Roof.Attrs(style, Roof.Contour(roof));
-            foreach (var k in new[] { "structure", "rafterSection", "rafterSpacing", "purlins", "eaveOffset" }) if (roof.Attrs[k] is { } v) attrs[k] = v.DeepClone();
+            // The style's fields replace the roof's; the per-edge overrides go. Everything else on the roof
+            // (its openings, low edge, structure choices, phase) stays.
+            var attrs = roof.CloneAttrs();
+            attrs.Remove("edges");
+            string[] own = ["structure", "rafterSection", "rafterSpacing", "purlins", "eaveOffset"];
+            foreach (var (k, v) in Roof.Attrs(style, Roof.Contour(roof))) if (!own.Contains(k) || attrs[k] == null) attrs[k] = v?.DeepClone();
+            if (style.Shape != "mansard") { attrs.Remove("upperPitch"); attrs.Remove("mansardInset"); }
+            if (style.GutterColor.Length == 0) attrs.Remove("gutterColor");
             var next = roof.With(attrs: attrs);
             CheckRoof(ctx.Model, next);
+            CheckRoofOpenings(ctx.Model, next);
             ctx.Replace(next);
             return null;
         });
@@ -370,7 +377,14 @@ public sealed class ArchitectureModule : ILapinModule
             if (!(height > 0)) throw new CommandException("A wall's height must be positive.");
             var thickness = Json.Number(a["thickness"]) ?? wall.NumOrNull("thickness");
             if (thickness is <= 0) throw new CommandException("A wall's thickness must be positive.");
-            ctx.Replace(wall.With(attrs: Walls.Attrs(Walls.Start(wall), Walls.End(wall), height, Json.Number(a["baseOffset"]) ?? wall.Num("baseOffset"), thickness)));
+            var baseOffset = Json.Number(a["baseOffset"]) ?? wall.Num("baseOffset");
+            // The openings must still fit the wall as it will be, along it and up it.
+            var after = wall.With(attrs: Walls.Attrs(start, end, height, baseOffset, thickness));
+            foreach (var o in Openings.PlacedOn(ctx.Model, wall.Id)) Openings.CheckFits(ctx.Model, after, o.Along, o.Sill, o.Width, o.Height, o.Opening.Id);
+            // Only the wall's own fields change; what other modules wrote on it (its phase, its cut priority) stays.
+            var attrs = wall.CloneAttrs();
+            foreach (var (k, v) in Walls.Attrs(Walls.Start(wall), Walls.End(wall), height, baseOffset, thickness)) attrs[k] = v?.DeepClone();
+            ctx.Replace(wall.With(attrs: attrs));
             var moveJoined = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var keep) || keep;
             if ((start - Walls.Start(wall)).Length > 1e-12 || (end - Walls.End(wall)).Length > 1e-12)
                 Joins.MoveEnds(ctx, Paths(ctx), ctx.Model.Get(wall.Id)!, start, end, moveJoined);
@@ -407,6 +421,18 @@ public sealed class ArchitectureModule : ILapinModule
     }
 
     /// <summary>A roof's openings written back; the one just set must fit (its reason when it does not).</summary>
+    /// <summary>Refused when a roof window or dormer the roof already holds would not sit on the roof as it would become.</summary>
+    static void CheckRoofOpenings(IModelView m, Entity next)
+    {
+        var openings = RoofOpenings.Of(next).ToList();
+        if (openings.Count == 0) return;
+        if (RoofTop.ShapeOf(next, m) is not { } shape) throw new CommandException("The roof holds roof windows or dormers, which a flat roof cannot take; remove them first.");
+        var diags = new List<string>();
+        var placed = RoofOpenings.Place(next, shape, m, diags);
+        if (openings.FirstOrDefault(o => placed.All(p => p.Opening.Id != o.Id)) is { } lost)
+            throw new CommandException(diags.FirstOrDefault(d => d.Contains($"„{lost.Name}”")) ?? $"„{lost.Name}” would no longer sit on the roof; move or remove it first.");
+    }
+
     static void WriteRoofOpenings(ICommandContext ctx, Entity roof, JsonNode[] list, string checkId)
     {
         var attrs = roof.CloneAttrs();

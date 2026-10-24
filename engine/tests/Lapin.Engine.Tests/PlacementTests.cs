@@ -41,7 +41,7 @@ public class PlacementTests
         var c = f.Model.Get(col)!;
         Assert.Equal(0, P(c.Attrs["at"]).X, 9);
         Assert.Equal(2, P(c.Attrs["at"]).Y, 9);
-        Assert.Equal(Math.PI / 2, c.Num("rotation"), 9);
+        Assert.Equal(90, c.Num("rotation"), 9);
 
         var slab = (string)f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 4, ["y2"] = 2 })!["id"]!;
         var hole = (string)f.Run("architecture.addSlabOpening", new JsonObject { ["slabId"] = slab, ["x1"] = 1, ["y1"] = 0.5, ["x2"] = 2, ["y2"] = 1.5 })!["id"]!;

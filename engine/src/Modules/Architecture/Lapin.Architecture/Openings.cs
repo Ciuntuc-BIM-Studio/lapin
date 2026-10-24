@@ -47,14 +47,25 @@ public static class Openings
 
     public static IReadOnlyList<Placed> PlacedOn(IModelView m, string wallId) => Of(m, wallId).Select(o => Place(m, o)).ToList();
 
-    /// <summary>Refused unless the opening lies within its wall: along it and up its height.</summary>
-    public static void CheckFits(IModelView m, Entity wall, double along, double sill, double width, double height)
+    /// <summary>
+    /// Refused unless the opening lies within its wall, along it and up its
+    /// height, and clear of the wall's other openings (<paramref name="except"/>:
+    /// the opening itself, when it is already there).
+    /// </summary>
+    public static void CheckFits(IModelView m, Entity wall, double along, double sill, double width, double height, string? except = null)
     {
         var length = (Walls.End(wall) - Walls.Start(wall)).Length;
         var wallHeight = wall.Num("height", Walls.DefaultHeight);
         if (!(width > 0 && height > 0)) throw new CommandException("An opening needs a width and a height.");
         if (along - width / 2 < -1e-9 || along + width / 2 > length + 1e-9) throw new CommandException($"The opening, {width * 1000:0} mm wide, does not fit along the wall ({length * 1000:0} mm) there.");
         if (sill < -1e-9 || sill + height > wallHeight + 1e-9) throw new CommandException($"The opening, {height * 1000:0} mm high from {sill * 1000:0} mm, does not fit in the wall's height ({wallHeight * 1000:0} mm).");
+        foreach (var o in PlacedOn(m, wall.Id))
+        {
+            if (o.Opening.Id == except) continue;
+            var acrossEachOther = Math.Abs(o.Along - along) < (o.Width + width) / 2 - 1e-9;
+            var overEachOther = sill < o.Sill + o.Height - 1e-9 && o.Sill < sill + height - 1e-9;
+            if (acrossEachOther && overEachOther) throw new CommandException($"The opening would overlap „{o.Fill?.Name ?? o.Opening.Name}” on this wall.");
+        }
     }
 
     /// <summary>Where a point falls along the wall's axis, metres from its start.</summary>
@@ -100,7 +111,7 @@ public static class Openings
         edit.Replace(type.With(name: spec.Name, attrs: TypeAttrs(spec)));
         foreach (var fill in edit.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).ToList())
             if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall)
-                CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), spec.Width, spec.Height);
+                CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), spec.Width, spec.Height, opening.Id);
     }
 
     // ------------------------------------------------------------ placing
@@ -136,7 +147,7 @@ public static class Openings
         var placed = Place(edit.Model, opening);
         var a = along ?? placed.Along;
         var s = sill ?? placed.Sill;
-        CheckFits(edit.Model, wall, a, s, placed.Width, placed.Height);
+        CheckFits(edit.Model, wall, a, s, placed.Width, placed.Height, opening.Id);
         var attrs = opening.CloneAttrs();
         attrs["along"] = a;
         attrs["sill"] = s;
@@ -156,7 +167,7 @@ public static class Openings
         var spec = JoinerySpec.From(type.Attrs["spec"]) ?? throw new CommandException($"„{type.Name}” has no configuration.");
         if ((fill.Class == IfcClass.Door) != spec.IsDoor) throw new CommandException("A door takes a door type, a window a window type.");
         if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall)
-            CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), spec.Width, spec.Height);
+            CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), spec.Width, spec.Height, opening.Id);
         edit.Relate(IfcClass.RelDefinesByType, type.Id, fill.Id);
     }
 
