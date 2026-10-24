@@ -203,6 +203,8 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 
 /* Inputs that commit on Enter or blur; small icon buttons; rows. */
 .commit { display: inline-flex; align-items: center; }
+.fields dd.pair { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.fields dd.pair input.num { width: 64px; }
 .panel-title-input { width: 100%; font-weight: 700; font-size: 14px; border: 1px solid transparent; background: none; padding: 2px 4px; margin-left: -4px; }
 .panel-title-input:hover, .panel-title-input:focus { border-color: var(--rule-strong); background: var(--raised); }
 .icon.mini { width: 20px; height: 20px; margin: 0; }

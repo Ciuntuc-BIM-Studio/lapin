@@ -8,11 +8,15 @@ import { useUi } from '../../app/store';
 import { execute } from '../../engine/session';
 import { cadHost, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import { DimensionSection } from './DimensionSection';
+import { DraftSection } from './DraftSection';
 import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
 import { LayersDialog } from './LayersDialog';
 import { frontView } from '../../viewport/frontView';
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string. Ends on an element's cut edge, a grid axis or a wall's centre line follow it. */
+const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG']);
+const draftsFields = (node: NodeDto) => DRAFTED.has(String(node.props.predefinedType));
+
 const dimension: ToolDef = { id: 'drafting.dimension', label: 'Aligned', icon: DimensionIcon, shortcut: 'DI', run: () => void startCommand('DIMALIGNED') };
 const text: ToolDef = {
   id: 'drafting.text', label: 'Text', icon: Type, shortcut: 'TX',
@@ -212,7 +216,11 @@ const drafting: LapinModule = {
   ],
   hotbar: [dimension],
   dialogs: { draftLayers: LayersDialog },
-  propertySections: [{ id: 'dimension', label: 'Dimension', classes: ['IfcAnnotation'], component: DimensionSection }],
+  propertySections: [
+    // The drafted kinds show their own fields (a line its ends, a circle its radius), so the class's generic ones stay out.
+    { id: 'draft', label: 'Drafting', classes: ['IfcAnnotation'], component: DraftSection, replacesFields: draftsFields },
+    { id: 'dimension', label: 'Dimension', classes: ['IfcAnnotation'], component: DimensionSection },
+  ],
   grips: { IfcAnnotation: draftGrips },
 };
 

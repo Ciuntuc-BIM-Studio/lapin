@@ -101,6 +101,7 @@ export function PropertiesPanel() {
   const model = { nodes, relations };
   const type = typeOf(model, node.id);
   const storey = relatingOf(model, node.id, 'IfcRelContainedInSpatialStructure');
+  const sections = propertySections(node.type);
   return (
     <aside className="panel props" aria-label="Properties">
       <div className="panel-head">
@@ -110,13 +111,13 @@ export function PropertiesPanel() {
           : <span className="panel-title">{node.name}</span>}
       </div>
       {!node.editable && <p className="muted small pad">This element belongs to a module this edition does not have: it is shown and kept, not edited.</p>}
-      {propertySections(node.type).map((s) => (
+      {sections.map((s) => (
         <section className="sect" key={s.id}>
           <h3 className="eyebrow">{s.label}</h3>
           <s.component node={node} />
         </section>
       ))}
-      {cls && cls.fields.length > 0 && node.editable && (
+      {cls && cls.fields.length > 0 && node.editable && !sections.some((s) => s.replacesFields?.(node)) && (
         <section className="sect">
           <h3 className="eyebrow">Dimensions</h3>
           <dl className="fields">{cls.fields.map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>

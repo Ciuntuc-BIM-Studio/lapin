@@ -69,6 +69,17 @@ export function popHistory<T>(key: string): T | undefined {
   return history.get(key)?.pop() as T | undefined;
 }
 
+/**
+ * Whether a wheel event pans rather than zooms. A mouse wheel zooms, as in
+ * every CAD program; so does a trackpad's pinch (the browser reports it with
+ * ctrl) and its two fingers moving up and down. Two fingers moving sideways
+ * pan, and so does the wheel with Shift held. (Telling a mouse from a trackpad
+ * by whole-number deltas does not work: Chrome on macOS reports a mouse
+ * wheel as 4.000244…, so the wheel used to pan instead of zooming.)
+ */
+export const wheelPans = (e: { deltaX: number; deltaY: number; ctrlKey: boolean; shiftKey: boolean }) =>
+  !e.ctrlKey && (e.shiftKey || (e.deltaX !== 0 && Math.abs(e.deltaX) >= Math.abs(e.deltaY)));
+
 /** A wheel's step in pixels, however the device reports it (pixels, lines or pages). */
 export const wheelPixels = (e: { deltaY: number; deltaMode: number }, pageHeight: number) =>
   e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * pageHeight : e.deltaY;

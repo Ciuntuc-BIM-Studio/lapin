@@ -25,7 +25,7 @@ import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
 import type { Shape } from './cad/shapes';
-import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPixels, type Bounds, type View2, type ZoomHost } from './zoom';
+import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelPixels, type Bounds, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
 
@@ -281,8 +281,8 @@ export function PlanView() {
   };
 
   const onWheel = (e: React.WheelEvent) => {
-    // A trackpad's two fingers pan; a pinch (ctrl) or a mouse wheel zooms.
-    if (!e.ctrlKey && (e.deltaX !== 0 || !Number.isInteger(e.deltaY))) {
+    // A wheel, a pinch or two fingers up and down zoom; two fingers sideways or Shift pan.
+    if (wheelPans(e)) {
       setView({ ...view, cx: view.cx + e.deltaX / view.scale, cy: view.cy - e.deltaY / view.scale });
       return;
     }

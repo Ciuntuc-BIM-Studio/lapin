@@ -63,7 +63,14 @@ export interface RibbonTabDef {
 export interface Grip { key: string; at: Vec2; move: (to: Vec2) => Promise<unknown> | void }
 
 /** A section of the properties panel for a selected entity of some IFC classes. */
-export interface PropertySectionDef { id: string; label: string; classes: string[]; component: ComponentType<{ node: NodeDto }> }
+export interface PropertySectionDef {
+  id: string;
+  label: string;
+  classes: string[];
+  component: ComponentType<{ node: NodeDto }>;
+  /** True when the section shows this node's own fields itself, so the panel leaves out the class's generic ones. */
+  replacesFields?: (node: NodeDto) => boolean;
+}
 
 export interface LapinModule {
   id: string;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, wheelPixels } from './zoom';
+import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, wheelPans, wheelPixels } from './zoom';
 
 describe('zoom', () => {
   it('frames bounds in a box, padded and clamped', () => {
@@ -11,6 +11,15 @@ describe('zoom', () => {
   it('knows paper size: a plan at 1:100 shows 10 mm a metre, 37.8 px on a 96 dpi screen', () => {
     expect(actualScale(100)).toBeCloseTo(37.8, 1);
     expect(actualScale(50)).toBeCloseTo(75.6, 1);
+  });
+
+  it('zooms on a mouse wheel, also the fractional one Chrome reports on macOS; pans sideways or with Shift', () => {
+    expect(wheelPans({ deltaX: 0, deltaY: 4.000244140625, ctrlKey: false, shiftKey: false })).toBe(false);
+    expect(wheelPans({ deltaX: 0, deltaY: -120, ctrlKey: false, shiftKey: false })).toBe(false);
+    expect(wheelPans({ deltaX: 0, deltaY: 2.5, ctrlKey: true, shiftKey: false })).toBe(false);
+    expect(wheelPans({ deltaX: 12, deltaY: 1, ctrlKey: false, shiftKey: false })).toBe(true);
+    expect(wheelPans({ deltaX: 0, deltaY: 30, ctrlKey: false, shiftKey: true })).toBe(true);
+    expect(wheelPans({ deltaX: 1, deltaY: 30, ctrlKey: false, shiftKey: false })).toBe(false);
   });
 
   it('takes a wheel in pixels, lines or pages', () => {

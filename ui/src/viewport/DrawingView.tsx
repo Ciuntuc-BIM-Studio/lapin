@@ -21,7 +21,7 @@ import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
 import { boxTest, segsOf } from './selectBox';
-import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPixels, type View2, type ZoomHost } from './zoom';
+import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelPixels, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
 
@@ -135,8 +135,8 @@ export function DrawingView() {
       <KeyPlan mode="drawing" viewId={id} />
       <svg ref={ref} className={`plan-svg drawing-svg${cadStep ? ' tool' : ''}`} data-testid="drawing"
         onWheel={(e) => {
-          // A trackpad's two fingers pan; a pinch (ctrl) or a mouse wheel zooms.
-          if (!e.ctrlKey && (e.deltaX !== 0 || !Number.isInteger(e.deltaY))) { setView({ ...v, cx: v.cx + e.deltaX / v.scale, cy: v.cy - e.deltaY / v.scale }); return; }
+          // A wheel, a pinch or two fingers up and down zoom; two fingers sideways or Shift pan.
+          if (wheelPans(e)) { setView({ ...v, cx: v.cx + e.deltaX / v.scale, cy: v.cy - e.deltaY / v.scale }); return; }
           const r = ref.current!.getBoundingClientRect();
           const p = toWorld(e.clientX - r.left, e.clientY - r.top);
           const scale = clampScale(v.scale * Math.exp(-wheelPixels(e, size.h) * 0.0015));
