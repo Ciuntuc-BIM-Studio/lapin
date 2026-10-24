@@ -32,7 +32,7 @@ Restaurare: `git clone lapin-all.bundle lapin`.
 - **Consecința practică:** în lapin-pro nu intră cod din fork. Logica se rescrie în C#, ca module ale motorului, sau în TypeScript nou, pentru interfață. Fișierele vechi rămân specificația și sursa testelor.
 - **Dependențele** sunt doar permisive, verificate de `pnpm check:licenses`. manifold e Apache-2.0.
 - **Motorul BubbleBIM Pro** e un proiect separat, cu termenii lui.
-- **Auditul de licență** (24.10.2026, `decisions-pending.md` #105): singura zonă derivată din ifc-lite, îmbinările de pereți, a fost rescrisă de la zero. Rămas, planificat: ștergerea versiunii vechi din istoricul git (#109), într-un moment în care nu lucrează două sesiuni pe `main`.
+- **Auditul de licență** (24.10.2026, `decisions-pending.md` #105): singura zonă derivată din ifc-lite, îmbinările de pereți, a fost rescrisă de la zero. Versiunea veche a fost scoasă și din istoricul git (#109, 24.10.2026).
 
 ## Arhitectura (revizuită 23.10.2026)
 
