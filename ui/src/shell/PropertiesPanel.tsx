@@ -30,7 +30,13 @@ function Commit({ value, onCommit, suffix, className }: { value: string; onCommi
 
 function FieldRow({ node, field }: { node: NodeDto; field: FieldDescriptor }) {
   const v = node.props[field.key];
-  const update = (value: unknown) => void execute('element.update', { id: node.id, attrs: { [field.key]: value } });
+  // Every selected element of the same kind takes the change (a Z offset for all of them).
+  const update = (value: unknown) => {
+    const { selected } = useUi.getState();
+    const nodes = useSession.getState().nodes;
+    const ids = selected.includes(node.id) ? selected.filter((id) => nodes.get(id)?.type === node.type) : [node.id];
+    void execute('element.update', { ids, attrs: { [field.key]: value } });
+  };
   let input;
   if (field.kind === 'length') {
     input = <Commit value={typeof v === 'number' ? String(Math.round(v * 1000)) : ''} suffix="mm"

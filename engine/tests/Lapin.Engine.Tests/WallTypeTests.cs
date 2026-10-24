@@ -90,4 +90,16 @@ public class WallTypeTests
         f.Run("element.delete", new JsonObject { ["id"] = spare });
         Assert.Null(f.Model.Get(spare));
     }
+
+    [Fact]
+    public void A_placement_edit_applies_to_every_selected_element()
+    {
+        var f = new Fixture();
+        var (a, b) = (f.Wall(0, 0, 5, 0), f.Wall(0, 3, 5, 3));
+        f.Run("element.update", new JsonObject { ["ids"] = new JsonArray(a, b), ["attrs"] = new JsonObject { ["baseOffset"] = 0.5 } });
+        Assert.Equal(0.5, f.Model.Get(a)!.Num("baseOffset"));
+        Assert.Equal(0.5, f.Model.Get(b)!.Num("baseOffset"));
+        f.Session.Undo();
+        Assert.Equal(0, f.Model.Get(b)!.Num("baseOffset"));
+    }
 }

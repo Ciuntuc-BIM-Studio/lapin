@@ -76,18 +76,25 @@ public sealed class CoreModule : ILapinModule
 
         r.Command("element.update", "Change", (ctx, a) =>
         {
-            var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("Nothing to change.");
-            var d = ctx.Describe(e.Class) ?? throw new CommandException($"{e.Class} cannot be changed here.");
+            // One element, or several (ids): each takes the same values.
+            var ids = a["ids"] is JsonArray arr ? arr.Select(n => (string?)n).OfType<string>().Distinct().ToList() : [];
+            if ((string?)a["id"] is { } one && !ids.Contains(one)) ids.Add(one);
+            if (ids.Count == 0) throw new CommandException("Nothing to change.");
             var values = a["attrs"] as JsonObject ?? throw new CommandException("Nothing to change.");
-            var attrs = e.CloneAttrs();
-            foreach (var (key, value) in values)
+            foreach (var id in ids)
             {
-                var f = d.Fields.FirstOrDefault(x => x.Key == key) ?? throw new CommandException($"{d.Label} has no field „{key}”.");
-                if (f.ReadOnly) throw new CommandException($"{f.Label} cannot be changed.");
-                if (value is null) { attrs.Remove(key); continue; }
-                attrs[key] = Fields.Check(f, value);
+                var e = ctx.Model.Get(id) ?? throw new CommandException("Nothing to change.");
+                var d = ctx.Describe(e.Class) ?? throw new CommandException($"{e.Class} cannot be changed here.");
+                var attrs = e.CloneAttrs();
+                foreach (var (key, value) in values)
+                {
+                    var f = d.Fields.FirstOrDefault(x => x.Key == key) ?? throw new CommandException($"{d.Label} has no field „{key}”.");
+                    if (f.ReadOnly) throw new CommandException($"{f.Label} cannot be changed.");
+                    if (value is null) { attrs.Remove(key); continue; }
+                    attrs[key] = Fields.Check(f, value);
+                }
+                ctx.Replace(e.With(attrs: attrs));
             }
-            ctx.Replace(e.With(attrs: attrs));
             return null;
         });
 
