@@ -18,6 +18,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Class(new(IfcClass.Annotation, "Annotation",
             [new("text", "Text", "text"), new("textStyle", "Text style", "text"), new("dimStyle", "Dimension style", "text"), new("angle", "Angle", "angle")], "#555555", Kind: "annotation"));
         r.Service<IViewAnnotations>(this);
+        Cad.DraftCommands.Register(r);
 
         // ------------------------------------------------------------ grids
         r.Command("addAxis", "Grid axis", (ctx, a) =>
@@ -102,7 +103,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         });
     }
 
-    public IEnumerable<ViewMark> Marks(ViewContext c) => Grids.Marks(c).Concat(Dimensions.Marks(c)).Concat(Texts.Marks(c));
+    public IEnumerable<ViewMark> Marks(ViewContext c) => Cad.Drafts.Marks(c).Concat(Grids.Marks(c)).Concat(Dimensions.Marks(c)).Concat(Texts.Marks(c));
 
     static void Write(ICommandContext ctx, Entity grid, List<Axis> axes)
     {

@@ -29,6 +29,10 @@ public sealed class ViewMark(string? owner)
     public List<(Vec2 A, Vec2 B, string Layer, double Width, string Color, double[]? Dash)> Lines { get; } = [];
     public List<(PenText Text, string Color)> Texts { get; } = [];
     public List<Vec2> Snaps { get; } = [];
+    /// <summary>Filled areas (even-odd loops) and their colour, under the lines.</summary>
+    public List<(IReadOnlyList<IReadOnlyList<Vec2>> Loops, string Color)> Fills { get; } = [];
+    /// <summary>The exact shapes a click or a snap uses (drafted lines, arcs, circles), as their JSON.</summary>
+    public List<System.Text.Json.Nodes.JsonObject> Shapes { get; } = [];
 
     public ViewMark Line(Vec2 a, Vec2 b, string layer, double width, string color = "#000000", double[]? dash = null)
     {

@@ -153,6 +153,12 @@ public static class Views
         var markPens = new Dictionary<string, Pen>();
         foreach (var mk in marks)
         {
+            foreach (var (loops, color) in mk.Fills)
+            {
+                var key = "FILL:" + color;
+                if (!markPens.TryGetValue(key, out var pen)) markPens[key] = pen = new Pen("DRAFT-FILL", null, 0, color, null);
+                pen.Loops.AddRange(loops);
+            }
             foreach (var (la, lb, layer, width, color, dash) in mk.Lines)
             {
                 if (layer == "PICK") continue;
@@ -167,7 +173,7 @@ public static class Views
                 pen.Texts.Add(t);
             }
         }
-        pens.AddRange(markPens.Values);
+        pens.AddRange(markPens.Values.OrderBy(p => p.Fill != null ? 0 : 1));
         // What the view shows: the drawing and its annotations (a text counted by its anchor and height).
         var pts = new List<Vec2>();
         if (drawing.Bounds is { } b) pts.AddRange([b.Min, b.Max]);
@@ -196,6 +202,7 @@ public static class Views
                 ["id"] = x.Owner,
                 ["segments"] = new JsonArray(x.Lines.SelectMany(l => new[] { l.A.X, l.A.Y, l.B.X, l.B.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
                 ["snaps"] = new JsonArray(x.Snaps.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
+                ["shapes"] = x.Shapes.Count > 0 ? new JsonArray(x.Shapes.Select(sh => (JsonNode)sh.DeepClone()).ToArray()) : null,
             }).ToArray()),
         };
         if (r.Bounds is { } b) o["bounds"] = new JsonArray(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y);
