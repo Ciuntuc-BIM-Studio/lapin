@@ -113,7 +113,7 @@ Numerotarea veche avea două variante: cea din commit-ul M0 (M4 faze, M6 raporta
 - **M5 – Desenul 2D:** generatorul, domeniul vederii, penițele, simbolurile, cotele.
   - Făcut (24.10.2026): generatorul pe liniile ascunse exacte din BubbleBIM (tăietură, văzut, ascuns, deasupra, dincolo), domeniul vederii, tabelul de penițe și stilurile de linii, desenul pe materiale (hașuri, îmbinări în același material, membrane), vederile ca entități (planuri, planuri de fundații, secțiuni, fațade), marcajele de secțiune și nivelurile, axele, cotele asociative aliniate și textele, cu uneltele lor.
   - Făcut și (a doua tură): unirea liniilor coliniare; cotele liniare, lanțurile și cotele care conduc, legate și de axe și de axa pereților, rezistente la rotire; etichetele (TAG); editările de linii (Linework); Visibility/Graphics cu seturi și 3D; View Range; punctul de bază și cel topografic; desenul CAD complet (linia de comandă, snap-uri, ortho, ghidaje, layere, offset, trim, extend, fillet, hașuri), pe planuri, secțiuni și fațade.
-  - Rămas: eliminarea liniilor parazite rămase.
+  - Făcut și: eliminarea liniilor parazite (proiecțiile mai lungi de 1,5 × extinderea desenului).
 - **M6 – Faze, planșe, DXF și PDF, citirea `.lapin` formatul 2.**
   - Făcut (24.10.2026): planșele (A0–A4, cartuș, vederi la scara lor), PDF și DXF R2000, extrasele de tâmplărie și de buiandrugi (fișe cu desenul tipului, rânduri, celule, tabele, verificare, CSV, paginare, așezare pe planșă).
   - Făcut și fazele (modelul portat cu testele, vederile și 3D-ul după fază și filtru).

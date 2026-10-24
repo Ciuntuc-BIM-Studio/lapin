@@ -125,6 +125,24 @@ public static class Generator
                 for (var i = 0; i + 1 < n + (sym.Closed ? 1 : 0); i++)
                     lines.Add(new DLine(sym.Points[i], sym.Points[(i + 1) % n], sym.Role, sym.Element, sym.Class));
             }
-        return new ViewDrawing(cuts, lines);
+        // Stray lines: projection longer than the drawing could hold (docs/transfer.md).
+        (Vec2, Vec2)? Box(IEnumerable<Vec2> ps) { var l = ps.ToList(); return l.Count == 0 ? null : (new Vec2(l.Min(p => p.X), l.Min(p => p.Y)), new Vec2(l.Max(p => p.X), l.Max(p => p.Y))); }
+        var cutBox = Box(cuts.SelectMany(c => c.Loops).SelectMany(l => l));
+        var modelBox = Box(primary.SelectMany(p => p.Solid.Vertices).Select(v.Frame.Map));
+        return new ViewDrawing(cuts, DropStray(lines, cutBox, modelBox));
+    }
+
+    /// <summary>
+    /// Projected lines (seen, beyond, hidden, overhead; not cuts nor symbols such
+    /// as a terrain's contours), longer than 1.5 × the larger diagonal of the cut
+    /// area and of the projected model, are left out: numerical strays of the
+    /// projection. Without either extent, all stay.
+    /// </summary>
+    public static List<DLine> DropStray(List<DLine> lines, (Vec2 Min, Vec2 Max)? cut, (Vec2 Min, Vec2 Max)? model)
+    {
+        var diag = Math.Max(cut is { } c ? (c.Max - c.Min).Length : 0, model is { } m ? (m.Max - m.Min).Length : 0);
+        if (!(diag > 1e-9)) return lines;
+        var limit = 1.5 * diag;
+        return lines.Where(l => l.Role is not ("projection" or "beyond" or "hidden" or "overhead") || (l.B - l.A).Length <= limit).ToList();
     }
 }

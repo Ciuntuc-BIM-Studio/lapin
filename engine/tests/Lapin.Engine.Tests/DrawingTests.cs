@@ -74,6 +74,26 @@ public class DrawingTests
         Assert.Single(LineMerge.Merge([(new Vec2(0, 0), new Vec2(1e-9, 1)), (new Vec2(1e-9, 1), new Vec2(0, 2))]));
     }
 
+    [Fact]
+    public void Projection_lines_longer_than_one_and_a_half_times_the_drawn_extent_are_dropped()
+    {
+        // The cut is 4 × 3 (diagonal 5), the projected model 6 × 8 (diagonal 10): lines over 15 go, cut lines never.
+        List<DLine> lines =
+        [
+            new(new Vec2(0, 0), new Vec2(4, 0), "cut", "w", "IfcWall"),
+            new(new Vec2(0, 0), new Vec2(14, 0), "projection", "w", "IfcWall"),
+            new(new Vec2(0, 0), new Vec2(0, 16), "projection", "w", "IfcWall"),
+            new(new Vec2(-500, 0), new Vec2(500, 0), "hidden", "w", "IfcWall"),
+            new(new Vec2(0, 0), new Vec2(40, 0), "cut", "w", "IfcWall"),
+            new(new Vec2(-90, 0), new Vec2(90, 0), "contour", "t", "IfcGeographicElement"),   // a symbol: not measured
+        ];
+        var kept = Generator.DropStray(lines, (new Vec2(0, 0), new Vec2(4, 3)), (new Vec2(0, 0), new Vec2(6, 8)));
+        Assert.Equal(4, kept.Count);
+        Assert.DoesNotContain(kept, l => l.Role is "projection" or "hidden" && (l.B - l.A).Length > 15);
+        // Nothing to measure by: all stay.
+        Assert.Equal(6, Generator.DropStray(lines, null, null).Count);
+    }
+
     // ------------------------------------------------------------ line styles (line-styles.test.ts)
 
     [Fact]
