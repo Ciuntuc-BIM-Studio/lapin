@@ -177,4 +177,20 @@ public class SheetTests
         File.WriteAllBytes(Path.Combine(dir, "sheet.dxf"), Sheets.Dxf(f.Session.Reader, f.Model.Get(s)!));
         File.WriteAllBytes(Path.Combine(dir, "plan.dxf"), Views.Dxf(f.Session.Reader, Views.Find(f.Model, "plan:" + f.Storey)!));
     }
+
+    [Fact]
+    public void A_view_past_the_frame_or_over_the_title_block_is_flagged()
+    {
+        var f = new Fixture();
+        f.Wall(0, 0, 5, 0);
+        var sheet = (string)f.Run("sheet.create", new JsonObject { ["paper"] = "A3" })!["id"]!;
+        var vp = (string)f.Run("sheet.addViewport", new JsonObject { ["id"] = sheet, ["viewId"] = "plan:" + f.Storey, ["x"] = 100, ["y"] = 100 })!["viewportId"]!;
+        JsonArray Warnings() => ((JsonObject)f.Session.Query("sheet.drawing", new JsonObject { ["id"] = sheet })!)["viewports"]![0]!["warnings"]!.AsArray();
+        Assert.Empty(Warnings());
+        f.Run("sheet.updateViewport", new JsonObject { ["id"] = sheet, ["viewportId"] = vp, ["x"] = 5, ["y"] = 100 });
+        Assert.Contains("outside", Warnings().Select(x => (string)x!));
+        // Over the title block (an A3 landscape's: x 220–410, y 237–287).
+        f.Run("sheet.updateViewport", new JsonObject { ["id"] = sheet, ["viewportId"] = vp, ["x"] = 330, ["y"] = 262 });
+        Assert.Contains("titleBlock", Warnings().Select(x => (string)x!));
+    }
 }

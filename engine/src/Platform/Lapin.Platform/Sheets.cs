@@ -73,7 +73,7 @@ public static class Sheets
     }
 
     /// <summary>A sheet's viewport as placed: its box on the paper and the transform from the view's metres.</summary>
-    public sealed record Placement(SheetViewport Viewport, Entity View, Views.Rendered Drawing, double X0, double Y0, double X1, double Y1, Func<Vec2, Vec2> ToPaper, bool Content = false);
+    public sealed record Placement(SheetViewport Viewport, Entity View, Views.Rendered Drawing, double X0, double Y0, double X1, double Y1, Func<Vec2, Vec2> ToPaper, bool Content = false, int Pages = 1);
 
     /// <summary>The frame's inner width and height on a sheet, less the title block's height (what a schedule pages into).</summary>
     public static (double W, double H) FrameSize(Entity sheet)
@@ -97,7 +97,7 @@ public static class Sheets
                 var bw = Math.Max(pw, vp.Width > 0 ? vp.Width : 0);
                 var (x0, y0) = (vp.X - bw / 2, vp.Y - ph / 2);
                 Vec2 Shift(Vec2 p) => new(p.X + x0, p.Y + y0);
-                o.Add(new Placement(vp, other, new Views.Rendered(pp, [], null, 1000, "content", null, []), x0, y0, x0 + bw, y0 + ph, Shift, true));
+                o.Add(new Placement(vp, other, new Views.Rendered(pp, [], null, 1000, "content", null, []), x0, y0, x0 + bw, y0 + ph, Shift, true, pages.Count));
                 continue;
             }
             if (Views.Find(q.Model, vp.ViewId) is not { } view) continue;
@@ -229,15 +229,32 @@ public static class Sheets
         return new PaperPage(W, H, pens, sheet.Name);
     }
 
-    static JsonObject PageJson(PaperPage page, List<Placement> placements) => new()
+    static JsonObject PageJson(PaperPage page, List<Placement> placements)
     {
-        ["w"] = page.W, ["h"] = page.H,
-        ["pens"] = new JsonArray(page.Pens.Select(p => (JsonNode)p.ToJson()).ToArray()),
-        ["viewports"] = new JsonArray(placements.Select(p => (JsonNode)new JsonObject
+        var (W, H) = (page.W, page.H);
+        var (bw, bh) = TitleBlock;
+        double bx0 = W - Margin - bw, by0 = H - Margin - bh, bx1 = W - Margin, by1 = H - Margin;
+        // What runs past the frame or over the title block (paper mm, a little slack).
+        JsonArray Warnings(Placement p)
         {
-            ["id"] = p.Viewport.Id, ["viewId"] = p.Viewport.ViewId, ["x0"] = p.X0, ["y0"] = p.Y0, ["x1"] = p.X1, ["y1"] = p.Y1, ["scale"] = p.Drawing.Scale,
-        }).ToArray()),
-    };
+            var o = new JsonArray();
+            if (p.X0 < Margin - 0.5 || p.Y0 < Margin - 0.5 || p.X1 > W - Margin + 0.5 || p.Y1 > H - Margin + 0.5) o.Add("outside");
+            if (p.X1 > bx0 + 0.5 && p.X0 < bx1 - 0.5 && p.Y1 > by0 + 0.5 && p.Y0 < by1 - 0.5) o.Add("titleBlock");
+            return o;
+        }
+        return new JsonObject
+        {
+            ["w"] = W, ["h"] = H,
+            ["frame"] = new JsonArray(Margin, Margin, W - Margin, H - Margin),
+            ["titleBlock"] = new JsonArray(bx0, by0, bx1, by1),
+            ["pens"] = new JsonArray(page.Pens.Select(p => (JsonNode)p.ToJson()).ToArray()),
+            ["viewports"] = new JsonArray(placements.Select(p => (JsonNode)new JsonObject
+            {
+                ["id"] = p.Viewport.Id, ["viewId"] = p.Viewport.ViewId, ["x0"] = p.X0, ["y0"] = p.Y0, ["x1"] = p.X1, ["y1"] = p.Y1, ["scale"] = p.Drawing.Scale,
+                ["content"] = p.Content, ["page"] = p.Viewport.Page, ["pages"] = p.Pages, ["width"] = p.Viewport.Width, ["warnings"] = Warnings(p),
+            }).ToArray()),
+        };
+    }
 
     public static byte[] Pdf(IQueryContext q, IEnumerable<Entity> sheets) => PdfWriter.Write(sheets.Select(s => Compose(q, s)).ToList());
 
