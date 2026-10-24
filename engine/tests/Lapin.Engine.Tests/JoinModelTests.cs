@@ -135,6 +135,23 @@ public class JoinModelTests
     }
 
     [Fact]
+    public void Detached_only_the_dragged_end_moves_and_the_corner_join_goes_when_they_no_longer_meet()
+    {
+        var (f, ids) = ClockwiseRoom();
+        // Pulled 0.3 m along its own line it still meets the neighbour: the corner holds, rewritten to the crossing.
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = ids[1], ["x2"] = 7.3, ["detachJoinedEnds"] = true });
+        Assert.Equal(4, JoinRels(f).Count);
+        // Pulled well away: the neighbour stays, the two no longer meet, the corner join goes.
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = ids[1], ["x2"] = 8.5, ["y2"] = 6, ["detachJoinedEnds"] = true });
+        Assert.Equal(new Vec2(8.5, 6), Walls.End(Get(f, ids[1])));
+        Assert.Equal(new Vec2(7, 4.5), Walls.Start(Get(f, ids[2])));
+        Assert.True(JoinRels(f).Count < 4, "the corner pulled apart is not a join any more");
+        // Dragged back onto the corner: they meet again and join.
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = ids[1], ["x2"] = 7, ["y2"] = 4.5, ["detachJoinedEnds"] = true });
+        Assert.Equal(4, JoinRels(f).Count);
+    }
+
+    [Fact]
     public void When_the_crossed_wall_is_moved_away_the_T_is_dropped_and_the_ending_wall_ends_square()
     {
         var f = new Fixture();

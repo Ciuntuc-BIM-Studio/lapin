@@ -423,7 +423,7 @@ public sealed class ArchitectureModule : ILapinModule
             ctx.Replace(wall.With(attrs: attrs));
             var moveJoined = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var keep) || keep;
             if ((start - Walls.Start(wall)).Length > 1e-12 || (end - Walls.End(wall)).Length > 1e-12)
-                Joins.MoveEnds(ctx, Paths(ctx), ctx.Model.Get(wall.Id)!, start, end, moveJoined);
+                Joins.MoveEnds(ctx, Paths(ctx), ctx.Model.Get(wall.Id)!, start, end, moveJoined, a["detachJoinedEnds"] is JsonValue dj && dj.TryGetValue<bool>(out var detach) && detach);
             return null;
         });
 

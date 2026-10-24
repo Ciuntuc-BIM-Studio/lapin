@@ -201,11 +201,12 @@ public static class Joins
     /// Gives an element new axis ends. With <paramref name="moveJoinedEnds"/>,
     /// a moved end that is a corner (or an in-line joint) brings the other
     /// element's joined end along; without, the other holds the corner and the
-    /// moved end goes back to it. Every join of what moved is worked out again:
+    /// moved end goes back to it; detached, the moved end goes alone and the
+    /// join stays only while the two still meet. Every join of what moved is worked out again:
     /// one that no longer holds goes, and the moved free ends join what they
     /// now meet.
     /// </summary>
-    public static void MoveEnds(IEdit edit, IPathElements paths, Entity e, Vec2 start, Vec2 end, bool moveJoinedEnds = true)
+    public static void MoveEnds(IEdit edit, IPathElements paths, Entity e, Vec2 start, Vec2 end, bool moveJoinedEnds = true, bool detach = false)
     {
         if ((end - start).Length < 1e-3) throw new CommandException("An element needs two different points: it would have no length.");
         var m = edit.Model;
@@ -220,6 +221,7 @@ public static class Joins
             var (from, to) = mineConn switch { "ATSTART" => (oldStart, start), "ATEND" => (oldEnd, end), _ => (default(Vec2?), default(Vec2)) };
             if (from == null || (to - from.Value).Length < 1e-12) continue;
             if (m.Get(Other(r, e.Id)) is not { } other) continue;
+            if (detach) continue;
             if (moveJoinedEnds)
             {
                 var attrs = other.CloneAttrs();

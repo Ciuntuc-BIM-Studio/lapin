@@ -157,7 +157,7 @@ public sealed class StructureModule : ILapinModule
             var start = new Vec2(Json.Number(a["x1"]) ?? s.X, Json.Number(a["y1"]) ?? s.Y);
             var end = new Vec2(Json.Number(a["x2"]) ?? en.X, Json.Number(a["y2"]) ?? en.Y);
             var keep = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var k) || k;
-            Joins.MoveEnds(ctx, Paths(ctx), e, start, end, keep);
+            Joins.MoveEnds(ctx, Paths(ctx), e, start, end, keep, a["detachJoinedEnds"] is JsonValue dj && dj.TryGetValue<bool>(out var detach) && detach);
             return null;
         });
 
