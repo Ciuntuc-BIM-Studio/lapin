@@ -5,6 +5,7 @@ import type { ComponentType } from 'react';
 import type { Grip, LapinModule, RibbonTabDef, ToolDef } from './module';
 import type { NodeDto } from '../engine/protocol';
 import { toggleTool, useUi } from '../app/store';
+import { cancel, useCad } from '../viewport/cad/session';
 
 export const modules: readonly LapinModule[] = loaded;
 export const productInfo: { id: string; name: string } = product;
@@ -31,6 +32,8 @@ export const findTool = (id: string | null): ToolDef | null => (id ? allTools().
 
 /** Press a tool: a drawing tool switches on (or off), a button does its thing. */
 export function activate(t: ToolDef): void {
+  // A tool ends the drafting command that was running.
+  if (useCad.getState().step) cancel(true);
   if (t.gesture) toggleTool(t.id);
   else if (t.run) { useUi.setState({ tool: null }); t.run(); }
 }

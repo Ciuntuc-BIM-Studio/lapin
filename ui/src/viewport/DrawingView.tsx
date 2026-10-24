@@ -1,25 +1,36 @@
 /**
  * A section or an elevation: the view's generated drawing, panned and zoomed
- * (wheel, drag). The drawing's x runs along the view, its y up.
+ * (wheel, drag). The drawing's x runs along the view, its y up. Drafting
+ * works here as in plans: the command line, snaps, ortho and guide lines; a
+ * click selects an annotation or a drafted shape.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Maximize } from 'lucide-react';
-import { useUi } from '../app/store';
+import { select, useUi } from '../app/store';
 import { useSession } from '../engine/session';
+import type { Vec2 } from '../platform/module';
 import { DrawingLayer } from './DrawingLayer';
 import { useDrawing } from './drawing';
+import { distToSegment } from './snap';
+import { CadOverlay, useCadCanvas, type Aimed } from './cad/canvas';
+import { CommandLine } from './cad/CommandLine';
+import { feedPoint, useCad } from './cad/session';
 
 interface View { cx: number; cy: number; scale: number }
 
 export function DrawingView() {
   const id = useUi((s) => s.drawingViewId);
   const node = useSession((s) => (id ? s.nodes.get(id) : undefined));
+  const nodes = useSession((s) => s.nodes);
+  const selected = useUi((s) => s.selected);
   const drawing = useDrawing(id);
   const ref = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [view, setView] = useState<View | null>(null);
-  const drag = useRef<{ x: number; y: number; view: View } | null>(null);
+  const [hover, setHover] = useState<Aimed | null>(null);
+  const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null);
+  const cadStep = useCad((s) => s.step);
 
   useEffect(() => {
     const el = ref.current;
@@ -40,7 +51,29 @@ export function DrawingView() {
   useEffect(() => { if (!view && drawing?.bounds) fit(); }, [drawing, view, fit]);
 
   const v = view ?? { cx: 0, cy: 0, scale: 40 };
-  const toScreen = useCallback((p: { x: number; y: number }) => ({ x: (p.x - v.cx) * v.scale + size.w / 2, y: size.h / 2 - (p.y - v.cy) * v.scale }), [v.cx, v.cy, v.scale, size]);
+  const toScreen = useCallback((p: Vec2) => ({ x: (p.x - v.cx) * v.scale + size.w / 2, y: size.h / 2 - (p.y - v.cy) * v.scale }), [v.cx, v.cy, v.scale, size]);
+  const toWorld = useCallback((x: number, y: number): Vec2 => ({ x: (x - size.w / 2) / v.scale + v.cx, y: (size.h / 2 - y) / v.scale + v.cy }), [v.cx, v.cy, v.scale, size]);
+
+  /** The annotation or drafted shape under a point. */
+  const pickAny = useCallback((p: Vec2): string | null => {
+    const tol = 6 / v.scale;
+    for (const m of drawing?.marks ?? []) {
+      const s = m.segments;
+      for (let k = 0; k + 3 < s.length; k += 4)
+        if (distToSegment(p, { x: s[k], y: s[k + 1] }, { x: s[k + 2], y: s[k + 3] }) < tol && nodes.get(m.id)) return m.id;
+    }
+    return null;
+  }, [drawing, nodes, v.scale]);
+
+  const { aim, acquire } = useCadCanvas({ viewId: id, drawing, scale: v.scale, pickAny });
+
+  const at = (e: React.PointerEvent): { raw: Vec2; aimed: Aimed } => {
+    const r = ref.current!.getBoundingClientRect();
+    const raw = toWorld(e.clientX - r.left, e.clientY - r.top);
+    const aimed = aim(raw, useCad.getState().step?.base ?? null, { orthoHeld: e.shiftKey });
+    useCad.setState({ cursor: aimed.point });
+    return { raw, aimed };
+  };
 
   return (
     <div className="view-pane">
@@ -48,15 +81,44 @@ export function DrawingView() {
         <span className="view-title">{node?.name ?? 'View'} · 1:{drawing?.scale ?? 100}</span>
         <button type="button" className="icon" title="Fit" onClick={fit}><Maximize size={14} /></button>
       </div>
-      <svg ref={ref} className="plan-svg drawing-svg" data-testid="drawing"
-        onWheel={(e) => { const k = Math.exp(-e.deltaY * 0.0015); setView({ ...v, scale: Math.min(4000, Math.max(2, v.scale * k)) }); }}
-        onPointerDown={(e) => { drag.current = { x: e.clientX, y: e.clientY, view: v }; (e.target as Element).setPointerCapture?.(e.pointerId); }}
-        onPointerMove={(e) => { const d = drag.current; if (d) setView({ ...d.view, cx: d.view.cx - (e.clientX - d.x) / d.view.scale, cy: d.view.cy + (e.clientY - d.y) / d.view.scale }); }}
-        onPointerUp={() => { drag.current = null; }}>
+      <svg ref={ref} className={`plan-svg drawing-svg${cadStep ? ' tool' : ''}`} data-testid="drawing"
+        onWheel={(e) => {
+          const r = ref.current!.getBoundingClientRect();
+          const p = toWorld(e.clientX - r.left, e.clientY - r.top);
+          const scale = Math.min(4000, Math.max(2, v.scale * Math.exp(-e.deltaY * 0.0015)));
+          setView({ scale, cx: p.x - (p.x - v.cx) * (v.scale / scale), cy: p.y - (p.y - v.cy) * (v.scale / scale) });
+        }}
+        onPointerDown={(e) => { drag.current = { x: e.clientX, y: e.clientY, view: v, moved: false }; (e.target as Element).setPointerCapture?.(e.pointerId); }}
+        onPointerMove={(e) => {
+          const d = drag.current;
+          if (d) {
+            if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4) d.moved = true;
+            if (d.moved) { setView({ ...d.view, cx: d.view.cx - (e.clientX - d.x) / d.view.scale, cy: d.view.cy + (e.clientY - d.y) / d.view.scale }); return; }
+          }
+          setHover(at(e).aimed);
+        }}
+        onPointerUp={(e) => {
+          const d = drag.current;
+          drag.current = null;
+          if (!d || d.moved || e.button !== 0) return;
+          const { raw, aimed } = at(e);
+          const step = useCad.getState().step;
+          if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : aimed.point); acquire(aimed.point); return; }
+          select(pickAny(raw), e.shiftKey);
+        }}
+        onPointerLeave={() => setHover(null)}>
         <rect width="100%" height="100%" className="paper" />
         {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} />}
+        {(drawing?.marks ?? []).filter((m) => selected.includes(m.id)).map((m) => (
+          <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
+            const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
+            return `M${a.x} ${a.y}L${b.x} ${b.y}`;
+          }).join('')} />
+        ))}
+        {cadStep && <CadOverlay aimed={hover} toScreen={toScreen} />}
       </svg>
       {drawing?.problem && <div className="error-text view-problem">{drawing.problem}</div>}
+      <CommandLine />
     </div>
   );
 }

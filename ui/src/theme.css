@@ -279,3 +279,25 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .plan-item.terrainEdge { stroke: #5d7a3e; stroke-width: 0.8; stroke-dasharray: 5 3; }
 .small-tools { display: flex; flex-direction: column; justify-content: center; gap: 2px; }
 .tool.small { flex-direction: row; gap: 6px; height: auto; min-width: 0; padding: 3px 8px; justify-content: flex-start; }
+.cad-line { border-top: 1px solid var(--rule); background: var(--panel); font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 3px 10px 4px; }
+.cad-history { color: var(--ink-muted); min-height: 2.9em; white-space: pre; overflow: hidden; }
+.cad-prompt { display: flex; align-items: center; gap: 8px; }
+.cad-label { color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cad-buffer { color: var(--ink); white-space: pre; }
+.cad-buffer .caret { display: inline-block; width: 7px; height: 13px; margin-left: 1px; vertical-align: -2px; background: var(--ink); animation: cad-blink 1s steps(2) infinite; }
+@keyframes cad-blink { 50% { opacity: 0; } }
+.cad-toggle { font: 600 10px/1 ui-monospace, Menlo, monospace; letter-spacing: 0.04em; padding: 3px 6px; border: 1px solid var(--rule-strong); border-radius: 3px; background: none; color: var(--ink-muted); cursor: pointer; }
+.cad-toggle.on { color: var(--accent); border-color: var(--accent); background: var(--accent-wash); }
+.cad-layer { font: 11px ui-monospace, Menlo, monospace; max-width: 120px; }
+.cad-overlay .cad-guide { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 2 4; }
+.cad-overlay .cad-acquired { stroke: var(--accent); stroke-width: 1.5; }
+.cad-overlay .cad-preview { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 6 3; }
+.cad-overlay .cad-snap rect, .cad-overlay .cad-snap path, .cad-overlay .cad-snap circle { fill: none; stroke: #1f9d55; stroke-width: 2; }
+.cad-overlay .cad-snap text { font: 10px ui-monospace, Menlo, monospace; fill: #1f9d55; }
+.dialog-foot { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--rule); }
+.layer-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.layer-table th { text-align: left; font-weight: 500; color: var(--ink-muted); padding: 4px 6px; border-bottom: 1px solid var(--rule); }
+.layer-table td { padding: 3px 6px; border-bottom: 1px solid var(--rule); }
+.layer-table input:not([type]), .layer-table input[type=number] { width: 100%; box-sizing: border-box; }
+/* Over a 2D view the command line takes the bottom: the hotbar sits above it. */
+.view-area:has(.cad-line) .hotbar { bottom: 74px; }

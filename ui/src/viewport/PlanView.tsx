@@ -13,10 +13,14 @@ import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { Vec2 } from '../platform/module';
 import { findTool, gripsOf } from '../platform/modules';
 import type { Grip } from '../platform/module';
-import { distToSegment, pairs, pointInPolygon, snap, toMm, type SnapResult } from './snap';
+import { distToSegment, pairs, pointInPolygon, toMm } from './snap';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
 import { useDrawing } from './drawing';
+import { CadOverlay, useCadCanvas, type Aimed } from './cad/canvas';
+import { CommandLine } from './cad/CommandLine';
+import { feedPoint, useCad } from './cad/session';
+import type { Shape } from './cad/shapes';
 
 interface View { cx: number; cy: number; scale: number } // scale = px per metre
 
@@ -28,7 +32,7 @@ export function PlanView() {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [view, setView] = useState<View>({ cx: 4, cy: 2, scale: 60 });
   const [pts, setPts] = useState<Vec2[]>([]);
-  const [hover, setHover] = useState<SnapResult | null>(null);
+  const [hover, setHover] = useState<Aimed | null>(null);
   const [ortho, setOrtho] = useState(false);
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null);
 
@@ -120,11 +124,28 @@ export function PlanView() {
 
   // ─── Gestures ────────────────────────────────────────────────────────────
 
-  const snapAt = useCallback((clientX: number, clientY: number, from?: Vec2): SnapResult => {
+  // The modelling lines as shapes to snap to (the drawing's own lines come from the canvas).
+  const extra = useMemo(() => {
+    const o: Shape[] = [];
+    for (const r of items) for (const it of r.plan) {
+      if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid') continue;
+      const ps = pairs(it.points);
+      for (let i = 0; i + 1 < ps.length + (it.closed ? 1 : 0); i++) o.push({ type: 'line', a: ps[i], b: ps[(i + 1) % ps.length] });
+    }
+    for (const q of [...snapPoints, ...markSnaps]) o.push({ type: 'line', a: q, b: q });
+    return o;
+  }, [items, snapPoints, markSnaps]);
+  const planViewOf = storey ? ownPlan ?? `plan:${storey.id}` : null;
+  const { aim, acquire } = useCadCanvas({ viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null });
+  const cadStep = useCad((s) => s.step);
+
+  const snapAt = useCallback((clientX: number, clientY: number, from?: Vec2): Aimed => {
     const rect = svgRef.current!.getBoundingClientRect();
     const raw = toWorld(clientX - rect.left, clientY - rect.top);
-    return snap(raw, { grid: view.scale > 30 ? 0.05 : 0.5, points: [...snapPoints, ...markSnaps], pickRadius: 10 / view.scale, from, ortho });
-  }, [toWorld, view.scale, snapPoints, markSnaps, ortho]);
+    const a = aim(raw, from ?? null, { grid: view.scale > 30 ? 0.05 : 0.5, orthoHeld: ortho });
+    useCad.setState({ cursor: a.point });
+    return a;
+  }, [toWorld, view.scale, aim, ortho]);
 
   const complete = useCallback(async (points: Vec2[], entity?: NodeDto) => {
     if (!tool) return;
@@ -134,6 +155,10 @@ export function PlanView() {
   }, [tool]);
 
   const click = useCallback((p: Vec2, raw: Vec2, add: boolean) => {
+    // A drafting command takes the click: a snapped point, or what lies under the cursor.
+    const step = useCad.getState().step;
+    if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : p); acquire(p); return; }
+    if (tool?.gesture) acquire(p);
     if (!tool?.gesture) {
       select(pick(raw)?.id ?? null, add);
       return;
@@ -169,7 +194,7 @@ export function PlanView() {
         break;
       }
     }
-  }, [tool, pts, pick, complete, view.scale]);
+  }, [tool, pts, pick, complete, view.scale, acquire]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -214,7 +239,7 @@ export function PlanView() {
       // Pan: any button with no tool; middle or right always.
       if (d.moved && (!tool?.gesture || e.buttons !== 1)) setView({ ...d.view, cx: d.view.cx - dx / d.view.scale, cy: d.view.cy + dy / d.view.scale });
     }
-    setHover(snapAt(e.clientX, e.clientY, pts[pts.length - 1]));
+    setHover(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined));
   };
   const onPointerUp = (e: React.PointerEvent) => {
     if (gripDrag) {
@@ -226,7 +251,7 @@ export function PlanView() {
     drag.current = null;
     if (!d || d.moved || e.button !== 0) return;
     const rect = svgRef.current!.getBoundingClientRect();
-    click(snapAt(e.clientX, e.clientY, pts[pts.length - 1]).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey);
+    click(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey);
   };
   const onWheel = (e: React.WheelEvent) => {
     const rect = svgRef.current!.getBoundingClientRect();
@@ -313,7 +338,7 @@ export function PlanView() {
     return null;
   })();
 
-  const marker = hover && (tool?.gesture || gripDrag) ? toScreen(hover.point) : null;
+  const marker = hover && (tool?.gesture || gripDrag || cadStep) ? toScreen(hover.point) : null;
 
   return (
     <div className="view-pane">
@@ -323,7 +348,7 @@ export function PlanView() {
           onClick={() => useUi.setState({ planDrawing: !planDrawing })}><PenLine size={14} /></button>
         <button type="button" className="icon" title="Fit everything" onClick={fit}><Maximize size={14} /></button>
       </div>
-      <svg ref={svgRef} className={`plan-svg${tool?.gesture ? ' tool' : ''}`} data-testid="plan"
+      <svg ref={svgRef} className={`plan-svg${tool?.gesture || cadStep ? ' tool' : ''}`} data-testid="plan"
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
         onPointerLeave={() => setHover(null)} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}>
         <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>
@@ -348,10 +373,12 @@ export function PlanView() {
         })}
         {gripDrag?.moved && (() => { const a = toScreen(gripDrag.grip.at), b = toScreen(gripDrag.at); return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="plan-grip-drag" />; })()}
         {preview}
-        {marker && hover && (hover.kind === 'point'
+        {marker && hover && !hover.mode && (hover.kind === 'point' && !hover.guides.length
           ? <rect x={marker.x - 5} y={marker.y - 5} width={10} height={10} className="plan-snap point" />
           : <path d={`M${marker.x - 6},${marker.y}H${marker.x + 6}M${marker.x},${marker.y - 6}V${marker.y + 6}`} className="plan-snap" />)}
+        {marker && <CadOverlay aimed={hover} toScreen={toScreen} />}
       </svg>
+      <CommandLine />
     </div>
   );
 }
