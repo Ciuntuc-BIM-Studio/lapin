@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { ChevronRight, Trash2 } from 'lucide-react';
+import { AlignHorizontalJustifyCenter, ChevronRight, Trash2 } from 'lucide-react';
 import { useUi } from '../app/store';
 import { execute, useSession } from '../engine/session';
 import { relatingOf, typeOf } from '../engine/model';
@@ -80,6 +80,11 @@ export function PropertiesPanel() {
             <option value="">as its axis type</option><option value="both">both ends</option><option value="start">start</option><option value="end">end</option><option value="none">none</option>
           </select></dd>
         </dl>
+        <div className="pad"><button type="button" className="btn" title="Parallel axes start and end on the same lines; with several axes selected, only those"
+          onClick={() => {
+            const tags = useUi.getState().selected.filter((s) => s.startsWith(`${axis.gridId}#`)).map((s) => s.slice(axis.gridId.length + 1));
+            void execute('drafting.alignAxes', { gridId: axis.gridId, ...(tags.length > 1 ? { tags } : {}) });
+          }}><AlignHorizontalJustifyCenter size={14} />Line up the axes</button></div>
         <div className="pad"><button type="button" className="btn" onClick={() => void execute('element.delete', { ids: [selection] }).then(() => useUi.setState({ selection: null, selected: [] }))}><Trash2 size={14} />Delete axis</button></div>
       </aside>
     );

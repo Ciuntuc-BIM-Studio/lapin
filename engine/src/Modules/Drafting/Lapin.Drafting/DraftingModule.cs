@@ -53,6 +53,15 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        r.Command("alignAxes", "Line up grid axes", (ctx, a) =>
+        {
+            var grid = Spatial.Require(ctx.Model, (string?)a["gridId"], IfcClass.Grid);
+            var only = a["tags"] is JsonArray tags ? tags.Select(t => (string?)t).OfType<string>().ToHashSet() : null;
+            var axes = Grids.Align(Grids.Axes(grid), only, out var n);
+            if (n > 0) Write(ctx, grid, axes);
+            return new JsonObject { ["aligned"] = n };
+        });
+
         r.Command("removeAxis", "Remove grid axis", (ctx, a) =>
         {
             var grid = Spatial.Require(ctx.Model, (string?)a["gridId"], IfcClass.Grid);

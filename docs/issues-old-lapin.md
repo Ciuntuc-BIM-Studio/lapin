@@ -13,7 +13,7 @@ Status: ✅ done, 🟡 partial, ⬜ to do, ➖ not relevant (cannot happen in la
 - ✅ **Pen table 1–16 and object styles:** the Object Styles dialog; the pen table is the project's.
 - ✅ **Hidden lines per view, with defaults by view type.**
 - ✅ **Elements of the same material meet without a line;** the Joints option per material.
-- 🟡 **Grid axes:** bubbles per axis are done; the ends are set per axis type, not per end of each axis; ends do not line up with each other.
+- ✅ **Grid axes:** bubbles per axis and per end; parallel axes line up their ends (Line up the axes, `drafting.alignAxes`).
 - ✅ **Base point and survey point in plans.**
 - ✅ **3D hiding by category and IFC class;** VV/VG for the view in front. (IFC layers wait for layers on elements.)
 - ✅ **Full view range:** the View Range dialog; its problems show on the plan.
@@ -26,7 +26,7 @@ Status: ✅ done, 🟡 partial, ⬜ to do, ➖ not relevant (cannot happen in la
 - ✅ **Orphan dimensions:** drawn red, listed, freed in one click.
 
 ## Elements and types
-- ✅ **Grids:** selected and deleted per axis, in plans and drawing views. (Axes in 3D: later.)
+- ✅ **Grids:** selected and deleted per axis, in plans and drawing views. Axes in 3D with their labels.
 - ✅ **Columns on grid intersections:** the Columns at grid tool, and intersection snaps.
 - ✅ **Deleting a type:** refuse while it is in use, or reassign its elements; clear the tool's type.
 - ➖ **Grey layer colours after saving a type:** colours come from the materials.
@@ -38,7 +38,7 @@ Status: ✅ done, 🟡 partial, ⬜ to do, ➖ not relevant (cannot happen in la
 - ✅ **Create Similar, Match Type.**
 
 ## Schedules and lintels
-- 🟡 **Schedule card drawings:** interior and exterior exist; plan and section, and the picker, are missing.
+- ✅ **Schedule card drawings:** interior, exterior, plan and section, picked per schedule.
 - ✅ **Rows:** chosen and ordered in the schedule's settings; overridden cells marked and reset.
 - ✅ **Sub-schedules and continuation sheets:** tables in the settings; the next page placed on a new sheet from the sheet's warning.
 - ✅ **Duplicate checks:** the list of elements to check, marked reviewed.
@@ -53,7 +53,7 @@ Status: ✅ done, 🟡 partial, ⬜ to do, ➖ not relevant (cannot happen in la
 
 ## Work
 - ✅ **Revit shortcuts:** TR, CS, MA, LW, VV and the CAD aliases.
-- 🟡 **Every tool a JSON command:** done, with the MCP bridge; parameter schemas are missing.
+- ✅ **Every tool a JSON command:** done, with the MCP bridge; each command lists the arguments it reads.
 - ✅ **Romanian interface and a language choice.** (The CAD command line stays English.)
 - ✅ **Reliable saves, crash recovery, a warning before leaving, undoable deletes.**
 - ✅ **Two View buttons without actions:** Visibility and Visual style.

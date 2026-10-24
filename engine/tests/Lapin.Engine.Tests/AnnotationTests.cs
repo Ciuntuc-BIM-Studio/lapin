@@ -263,6 +263,39 @@ public class AnnotationTests
     }
 
     [Fact]
+    public void Parallel_axes_line_up_their_ends_and_an_axis_drawn_backwards_keeps_its_bubble_end()
+    {
+        var f = F();
+        var g = (string)f.Run("drafting.addAxis", new JsonObject { ["x1"] = 0, ["y1"] = -1, ["x2"] = 0, ["y2"] = 10, ["tag"] = "1" })!["gridId"]!;
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = 5, ["y1"] = 0.5, ["x2"] = 5, ["y2"] = 8, ["tag"] = "2" });
+        // Drawn top to bottom, its bubble at its start (the top).
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = 9, ["y1"] = 12, ["x2"] = 9, ["y2"] = 2, ["tag"] = "3" });
+        f.Run("drafting.updateAxis", new JsonObject { ["gridId"] = g, ["tag"] = "3", ["ends"] = "start" });
+        // Across them: an axis of the other family stays as it is.
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = -2, ["y1"] = 3, ["x2"] = 11, ["y2"] = 3, ["tag"] = "A" });
+
+        var r = f.Run("drafting.alignAxes", new JsonObject { ["gridId"] = g });
+        Assert.Equal(3, (int)r!["aligned"]!);
+        var axes = Grids.Axes(f.Model.Get(g)!).ToDictionary(a => a.Tag);
+        foreach (var t in new[] { "1", "2", "3" })
+        {
+            var (lo, hi) = (Math.Min(axes[t].A.Y, axes[t].B.Y), Math.Max(axes[t].A.Y, axes[t].B.Y));
+            Assert.Equal(-1, lo, 9);
+            Assert.Equal(12, hi, 9);
+        }
+        Assert.Equal(5, axes["2"].A.X, 9);
+        // Axis 3 still runs downwards, so its bubble is still at the top.
+        Assert.Equal(12, axes["3"].A.Y, 9);
+        Assert.Equal("start", axes["3"].Ends);
+        Assert.Equal(new[] { -2.0, 11.0 }, new[] { axes["A"].A.X, axes["A"].B.X });
+
+        // Only some: the others stay.
+        f.Run("drafting.updateAxis", new JsonObject { ["gridId"] = g, ["tag"] = "2", ["y1"] = 4 });
+        f.Run("drafting.alignAxes", new JsonObject { ["gridId"] = g, ["tags"] = new JsonArray("1", "2") });
+        Assert.Equal(-1, Grids.Axes(f.Model.Get(g)!).First(a => a.Tag == "2").A.Y, 9);
+    }
+
+    [Fact]
     public void A_tag_reads_its_element_follows_it_and_goes_red_when_it_is_gone()
     {
         var f = F();

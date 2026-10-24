@@ -77,6 +77,40 @@ public static class Grids
         return char.IsDigit(first[0]) ? "A" : "1";
     }
 
+    /// <summary>
+    /// Parallel axes lined up: in each family of axes that run the same way
+    /// (a 180° turn included), every axis starts on the family's first start
+    /// line and ends on its last. An axis keeps its own direction, so its
+    /// bubble stays at the end it was on. Axes alone in their family, and
+    /// those not in <paramref name="only"/>, stay as they are.
+    /// </summary>
+    public static List<Axis> Align(IReadOnlyList<Axis> axes, IReadOnlySet<string>? only, out int aligned)
+    {
+        var result = axes.ToList();
+        aligned = 0;
+        var todo = Enumerable.Range(0, axes.Count).Where(i => only == null || only.Contains(axes[i].Tag)).ToList();
+        while (todo.Count > 0)
+        {
+            var d = axes[todo[0]].Dir;
+            var family = todo.Where(i => Math.Abs(Vec2.Cross(axes[i].Dir, d)) < 0.02).ToList();
+            todo.RemoveAll(family.Contains);
+            if (family.Count < 2) continue;
+            double S(Vec2 p) => Vec2.Dot(p, d);
+            var lo = family.Min(i => Math.Min(S(axes[i].A), S(axes[i].B)));
+            var hi = family.Max(i => Math.Max(S(axes[i].A), S(axes[i].B)));
+            foreach (var i in family)
+            {
+                var x = axes[i];
+                // The axis's line, as a point on it and the family's direction.
+                var o = x.A - d * S(x.A);
+                var (p, q) = (o + d * lo, o + d * hi);
+                result[i] = Vec2.Dot(x.Dir, d) >= 0 ? x with { A = p, B = q } : x with { A = q, B = p };
+                aligned++;
+            }
+        }
+        return result;
+    }
+
     public static IEnumerable<ViewMark> Marks(ViewContext c)
     {
         var axisStyle = Standards.ResolveAxis(c.Book, new JsonObject { ["axisStyle"] = c.Book.DefaultAxisStyle });

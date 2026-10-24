@@ -42,7 +42,7 @@ export const RO: Record<string, string> = {
 
   // Properties
   'Properties': 'Proprietăți', 'Select an element to see it here.': 'Selectează un element ca să-l vezi aici.', 'Class': 'Clasă', 'Type': 'Tip', 'Storey': 'Nivel',
-  'Module': 'Modul', 'Name': 'Nume', 'Mark': 'Marcă', 'Value (m)': 'Valoare (m)', 'Delete axis': 'Șterge axa', 'Bubbles': 'Buline', 'Grid axes': 'Axe',
+  'Module': 'Modul', 'Name': 'Nume', 'Mark': 'Marcă', 'Value (m)': 'Valoare (m)', 'Delete axis': 'Șterge axa', 'Line up the axes': 'Aliniază axele', 'Bubbles': 'Buline', 'Grid axes': 'Axe',
   'Height': 'Înălțime', 'Height (own)': 'Înălțime (proprie)', 'Base offset': 'Decalaj la bază', 'Top offset': 'Decalaj la partea de sus', 'Width': 'Lățime', 'Depth': 'Adâncime',
   'Rotation': 'Rotire', 'Angle': 'Unghi', 'Angle (°)': 'Unghi (°)', 'Cut priority': 'Prioritate la tăiere', 'Elevation': 'Cotă', 'Kind': 'Fel', 'Style': 'Stil', 'Shape': 'Formă',
   'Pitch (eaves)': 'Pantă (la streașină)', 'Eave overhang': 'Streașină', 'Gable overhang': 'Streașină la fronton', 'Gutters': 'Jgheaburi', 'Gutter material': 'Materialul jgheaburilor',
