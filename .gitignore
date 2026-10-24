@@ -15,3 +15,6 @@ desktop/src-tauri/tauri.product.json
 
 # Private release notes (signing, Apple accounts): never on GitHub
 docs/release-macos.md
+
+# CodeGraph local index
+.codegraph/
