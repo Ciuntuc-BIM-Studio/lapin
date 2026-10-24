@@ -86,6 +86,7 @@ public sealed class CoreModule : ILapinModule
             foreach (var id in ids)
             {
                 var e = ctx.Model.Get(id) ?? throw new CommandException("Nothing to change.");
+                if (StoredBodies.Has(e)) throw new CommandException($"„{e.Name}” is a reference from an IFC file: it can be deleted, not changed.");
                 var d = ctx.Describe(e.Class) ?? throw new CommandException($"{e.Class} cannot be changed here.");
                 var attrs = e.CloneAttrs();
                 foreach (var (key, value) in values)
@@ -119,6 +120,7 @@ public sealed class CoreModule : ILapinModule
             // What a module places itself (an opening in its wall) goes with its host, not on its own.
             entities = entities.Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)
                 && ctx.Model.RelatingOf(e.Id, IfcClass.RelFillsElement) == null && ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement) == null).ToList();
+            if (entities.FirstOrDefault(StoredBodies.Has) is { } fixedOne) throw new CommandException($"„{fixedOne.Name}” is a reference from an IFC file: it stays where the file put it.");
             var moving = entities.Select(e => e.Id).ToHashSet();
             var made = new JsonArray();
             foreach (var e in entities)

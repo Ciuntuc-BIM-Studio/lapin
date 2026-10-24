@@ -14,15 +14,16 @@ export const isDesktop = () => Boolean((window as unknown as { __TAURI_INTERNALS
 
 export interface RecoverableWork { file: string; path: string | null; at: string; edits: number; lastEdit: string | null }
 
-async function pickPath(mode: 'open' | 'save', defaultName?: string): Promise<string | null> {
+async function pickPath(mode: 'open' | 'save', defaultName?: string, filters = FILTERS): Promise<string | null> {
   if (isDesktop()) {
     const dialog = await import('@tauri-apps/plugin-dialog');
     const r = mode === 'open'
-      ? await dialog.open({ multiple: false, directory: false, filters: FILTERS })
-      : await dialog.save({ filters: FILTERS, defaultPath: defaultName });
+      ? await dialog.open({ multiple: false, directory: false, filters })
+      : await dialog.save({ filters, defaultPath: defaultName });
     return typeof r === 'string' ? r : null;
   }
-  const p = window.prompt(mode === 'open' ? 'Path of the .lapin project to open:' : 'Save as (full path, .lapin):', defaultName ?? '');
+  const ext = filters[0]?.extensions[0] ?? 'lapin';
+  const p = window.prompt(mode === 'open' ? `Path of the .${ext} file to open:` : `Save as (full path, .${ext}):`, defaultName ?? '');
   return p?.trim() || null;
 }
 
@@ -166,4 +167,21 @@ export async function exportFile(method: string, args: Record<string, unknown>, 
 export async function exportIfc(options: { schema?: string; detail?: string; phase?: string } = {}): Promise<void> {
   const path = useSession.getState().doc?.path ?? null;
   await exportFile('project.exportIfc', options, `${projectTitle(path)}.ifc`, 'ifc');
+}
+
+/** An IFC file into the open project: Lapin's own files come back native, others as references (mode 'reference' keeps everything as it is). */
+export async function importIfc(mode: 'auto' | 'reference' = 'auto'): Promise<void> {
+  const path = await pickPath('open', undefined, [{ name: 'IFC', extensions: ['ifc'] }]);
+  if (!path) return;
+  try {
+    const r = await engine.call<{ elements: number; updated: number; references: number; notes: string[] }>('project.importIfc', { path, mode }, { timeoutMs: LONG_TIMEOUT_MS });
+    const parts = [
+      r.elements ? `${r.elements} new` : '',
+      r.updated ? `${r.updated} updated` : '',
+      r.references ? `${r.references} as reference` : '',
+    ].filter(Boolean);
+    notify(`Imported ${path.split(/[\\/]/).pop()}: ${parts.join(', ') || 'nothing to bring in'}.${r.notes?.length ? ` ${r.notes.join(' ')}` : ''}`);
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+  }
 }

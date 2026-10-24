@@ -197,6 +197,8 @@ public static class IfcExport
                 f.Add("IFCSIUNIT", Derived, E("PLANEANGLEUNIT"), Null, E("RADIAN")),
             }));
             var projectRef = f.Add("IFCPROJECT", Gid(project.Id), Null, S(project.Name), Null, Null, S(project.Str("longName")), S(project.Str("phase")), L(new[] { model }), units);
+            // What the project itself holds that an import rebuilds: its location and its phases (the drafting standards and views stay in .lapin).
+            Define(projectRef, IntentOf(project, Gid(project.Id, IntentSetName), null, only: ProjectIntent), Gid(project.Id, "intent-rel"));
 
             var site = m.OfClass(IfcClass.Site).FirstOrDefault();
             var building = Spatial.Building(m);
@@ -219,6 +221,7 @@ public static class IfcExport
                 storeyPlace[st.Id] = place;
                 storeyZ[st.Id] = z;
                 var r = f.Add("IFCBUILDINGSTOREY", Gid(st.Id), Null, S(st.Name), Null, Null, place, Null, Null, E("ELEMENT"), R(z));
+                Define(r, IntentOf(st, Gid(st.Id, IntentSetName), null), Gid(st.Id, "intent-rel"));
                 storeyRef[st.Id] = r;
                 refIdOf[r] = st.Id;
             }
@@ -262,12 +265,13 @@ public static class IfcExport
                 var rectangular = u.All(x => Math.Abs(x.B.X - x.A.X) < 1e-6) && v.All(x => Math.Abs(x.B.Y - x.A.Y) < 1e-6);
                 var grid = f.Add("IFCGRID", Gid(g.Id), Null, S(g.Name), Null, Null, Place(storeyPlace[storey.Id], 0), Null, L(u.Select(Axis)), L(v.Select(Axis)), Null, E(rectangular ? "RECTANGULAR" : "IRREGULAR"));
                 Contain(storeyRef[storey.Id], grid);
+                Define(grid, IntentOf(g, Gid(g.Id, IntentSetName), null), Gid(g.Id, "intent-rel"));
             }
         }
 
         // ─── Elements ───────────────────────────────────────────────────────
 
-        bool IsElement(Entity e) => s.Catalog.Geometry(e.Class) != null && IsElementClass(e);
+        bool IsElement(Entity e) => (s.Catalog.Geometry(e.Class) != null || StoredBodies.Has(e)) && IsElementClass(e);
 
         bool IsElementClass(Entity e) =>
             e.Class is not (IfcClass.OpeningElement or IfcClass.Grid or IfcClass.Annotation)
@@ -320,7 +324,8 @@ public static class IfcExport
             var kind = KindOf(e);
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
-            var grouped = o.Grouped && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
+            // A door's frame and leaf, a column's body, a terrain: one element. Only a wall, a roof and a footing hold parts that are elements of their own.
+            var grouped = o.Grouped && kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
             var place = Place(relTo, 0);
             var reps = new List<string>();
             if (!grouped) reps.Add(BodyOf(parts.Select(p => Brep(p.Solid, p.Color, z0))));
@@ -430,6 +435,8 @@ public static class IfcExport
             var mat = m.Get(id);
             r = f.Add("IFCMATERIAL", S(mat?.Name ?? id), Null, S(mat?.Str("category")));
             materials[id] = r;
+            // Its Lapin id and attributes, so an import gives the material the same id and what refers to it (a column type, a zone) still finds it.
+            if (mat != null) f.Add("IFCMATERIALPROPERTIES", S(IntentSetName), Null, L(IntentProperties(mat, null, [("LapinId", mat.Id)])), r);
             var style = Style(Materials.ColorOf(m, id));
             f.Add("IFCMATERIALDEFINITIONREPRESENTATION", Null, Null,
                 L(new[] { f.Add("IFCSTYLEDREPRESENTATION", model, Null, Null, L(new[] { f.Add("IFCSTYLEDITEM", Null, L(new[] { style }), Null) })) }), r);
@@ -515,7 +522,7 @@ public static class IfcExport
                             var r = Product(k, Gid(op.Id), op.Name, k.ObjectType, Place(place, 0), Null, op.Id);
                             written[oid] = r;
                             Contain(contained.First(c => c.Value.Contains(entity)).Key, r);
-                            Properties(op, k, r, null);
+                            Properties(op, k, r, null, [("LapinHost", e.Id)]);
                             Elements++;
                         }
                         pendingVoids.Add((rel, e.Id, oid));
@@ -533,7 +540,7 @@ public static class IfcExport
 
         // ─── Properties and quantities ──────────────────────────────────────
 
-        void Properties(Entity e, Kind kind, string entity, Entity? type)
+        void Properties(Entity e, Kind kind, string entity, Entity? type, IReadOnlyList<(string Name, string Value)>? extra = null)
         {
             var common = new List<string>();
             if (type != null) common.Add(Single("Reference", Typed("IFCIDENTIFIER", S(type.Name))));
@@ -542,7 +549,7 @@ public static class IfcExport
                 common.Add(Single("IsExternal", Typed("IFCBOOLEAN", isExternal ? True : False)));
             if (common.Count > 0 && CommonSets.Contains(kind.Class))
                 Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "common"), Null, S($"Pset_{kind.Class[3..]}Common"), Null, L(common)), Gid(e.Id, "common-rel"));
-            Define(entity, IntentOf(e, Gid(e.Id, IntentSetName), kind), Gid(e.Id, "intent-rel"));
+            Define(entity, IntentOf(e, Gid(e.Id, IntentSetName), kind, extra), Gid(e.Id, "intent-rel"));
             var phase = new List<string>();
             if (e.Str("phaseCreated") is { } created) phase.Add(Single("Created", Typed("IFCLABEL", S(PhaseName(created)))));
             if (e.Str("phaseDemolished") is { } demolished) phase.Add(Single("Demolished", Typed("IFCLABEL", S(PhaseName(demolished)))));
@@ -555,13 +562,19 @@ public static class IfcExport
         /// degrees, lists and objects as JSON text), the Lapin class when the IFC
         /// one differs, and the version of this set.
         /// </summary>
-        string IntentOf(Entity e, string gid, Kind? kind)
+        string IntentOf(Entity e, string gid, Kind? kind, IReadOnlyList<(string Name, string Value)>? extra = null, IReadOnlySet<string>? only = null) =>
+            f.Add("IFCPROPERTYSET", gid, Null, S(IntentSetName), Null, L(IntentProperties(e, kind, extra, only)));
+
+        static readonly HashSet<string> ProjectIntent = ["location", "phases", "lengthUnit", "longName", "phase", "crs"];
+
+        List<string> IntentProperties(Entity e, Kind? kind, IReadOnlyList<(string Name, string Value)>? extra = null, IReadOnlySet<string>? only = null)
         {
             var fields = (s.Catalog.Class(e.Class)?.Fields ?? []).GroupBy(x => x.Key).ToDictionary(g => g.Key, g => g.First().Kind);
             var props = new List<string>();
             foreach (var (key, v) in e.Attrs)
             {
-                if (v == null) continue;
+                // A stored body (a reference from IFC) is written as geometry, not as text; the project's standards stay in .lapin.
+                if (v == null || key == StoredBodies.Key || (only != null && !only.Contains(key))) continue;
                 var field = fields.GetValueOrDefault(key);
                 var value = v switch
                 {
@@ -574,8 +587,9 @@ public static class IfcExport
             }
             if (kind != null && kind.Class != e.Class) props.Add(Single("LapinClass", Typed("IFCLABEL", S(e.Class))));
             if (e.PredefinedType != null) props.Add(Single("LapinPredefinedType", Typed("IFCLABEL", S(e.PredefinedType))));
+            foreach (var (name, value) in extra ?? []) props.Add(Single(name, Typed("IFCLABEL", S(value))));
             props.Add(Single("LapinVersion", Typed("IFCLABEL", S(Version))));
-            return f.Add("IFCPROPERTYSET", gid, Null, S(IntentSetName), Null, L(props));
+            return props;
         }
 
         /// <summary>The element's quantity sets, by the kind IFC measures; a part's set goes on the part when it is an element of its own, else on the element, named after the part.</summary>

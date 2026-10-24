@@ -159,6 +159,15 @@ public sealed class Session
         return DiffAfter(t);
     }
 
+    /// <summary>One edit made outside a module's commands (an IFC import): one undo step, journalled and diffed like a command.</summary>
+    public Diff Edit(string label, Action<IEdit> edit)
+    {
+        var t = _history.Execute(label, edit);
+        if (t == null) return Empty();
+        Emit("tx", t);
+        return DiffAfter(t);
+    }
+
     public Diff Undo()
     {
         if (_history.Undo() is not { } t) return Empty();
@@ -189,7 +198,7 @@ public sealed class Session
     /// <summary>An element's geometry built afresh with <paramref name="options"/>, outside the cache the views use (an export).</summary>
     public ElementGeometry? Geometry(string id, GeometryOptions options)
     {
-        if (_store.Get(id) is not { } e || _catalog.Geometry(e.Class) is not { } producer) return null;
+        if (_store.Get(id) is not { } e || ProducerOf(e) is not { } producer) return null;
         var services = new ServicesWith(_catalog, options);
         var g = producer(e, _store, services);
         if (g != null) foreach (var f in _catalog.All<IGeometryFilter>()) g = f.Apply(e, g, _store, services) ?? g;
@@ -210,7 +219,7 @@ public sealed class Session
         ForgetAll();
         var render = new List<RenderItem>();
         foreach (var e in _store.Entities)
-            if (_catalog.Geometry(e.Class) != null && Build(e) is { Item: { } item }) render.Add(item);
+            if (ProducerOf(e) != null && Build(e) is { Item: { } item }) render.Add(item);
         return new Diff(++_version, true,
             _store.Entities.Select(Dto).ToList(), [], [], [],
             render, [], State(),
@@ -259,7 +268,7 @@ public sealed class Session
 
         // Rebuild what read anything the edit touched, and the new elements.
         var rebuild = touched.SelectMany(id => _readers.TryGetValue(id, out var r) ? r : (IEnumerable<string>)[])
-            .Concat(t.Entities.Where(c => c.After != null && _catalog.Geometry(c.After.Class) != null).Select(c => c.Id))
+            .Concat(t.Entities.Where(c => c.After != null && ProducerOf(c.After) != null).Select(c => c.Id))
             .Distinct().ToList();
         var render = new List<RenderItem>();
         var renderRemoved = new List<string>();
@@ -288,9 +297,12 @@ public sealed class Session
 
     // ------------------------------------------------------------ geometry
 
+    /// <summary>What builds an entity's geometry: a body that came with it (a reference from IFC), else its class's producer.</summary>
+    GeometryProducer? ProducerOf(Entity e) => StoredBodies.Has(e) ? StoredBodies.Geometry : _catalog.Geometry(e.Class);
+
     Built? Build(Entity e)
     {
-        var producer = _catalog.Geometry(e.Class);
+        var producer = ProducerOf(e);
         if (producer == null) return null;
         var view = new TrackingView(_store);
         view.Read.Add(e.Id);

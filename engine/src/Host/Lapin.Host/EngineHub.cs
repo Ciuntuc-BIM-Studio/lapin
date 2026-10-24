@@ -173,6 +173,12 @@ public sealed class EngineHub(Session session, ProjectFiles files, Recovery? rec
                 try { IfcExport.Write(session, temp, options); return (Deliver(File.ReadAllBytes(temp), "project.ifc"), null); }
                 finally { File.Delete(temp); }
             }
+            case "project.importIfc":
+            {
+                // An IFC file into the open project (docs/spec-ifc.md): Lapin's own files natively, others as references; "reference" keeps everything as it is.
+                var result = IfcImport.Run(session, PathParam(), new IfcImportOptions((string?)p["mode"] ?? "auto"), out var imported);
+                return (result.ToJson(), imported);
+            }
             case "export.pdf":
             {
                 // Sheets as one PDF: those asked for, else all of them in order.
