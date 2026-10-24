@@ -1,0 +1,1 @@
+{ "id": "studio", "name": "Studio", "assembly": "Lapin.Studio.dll", "requires": ["core", "drafting"] }

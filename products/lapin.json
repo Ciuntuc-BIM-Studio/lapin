@@ -1,5 +1,5 @@
 {
   "id": "lapin",
   "name": "Lapin",
-  "modules": ["architecture", "structure", "drafting", "phases", "civil", "cost"]
+  "modules": ["architecture", "structure", "drafting", "studio", "phases", "civil", "cost"]
 }

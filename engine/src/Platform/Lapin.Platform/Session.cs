@@ -270,7 +270,11 @@ public sealed class Session
         view.Read.Add(e.Id);
         ElementGeometry? g;
         List<string> problems = [];
-        try { g = producer(e, view, _catalog); }
+        try
+        {
+            g = producer(e, view, _catalog);
+            if (g != null) foreach (var f in _catalog.All<IGeometryFilter>()) g = f.Apply(e, g, view, _catalog) ?? g;
+        }
         catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException)
         {
             g = null;

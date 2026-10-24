@@ -75,6 +75,22 @@ public delegate ElementGeometry? GeometryProducer(Entity entity, IModelView mode
 public delegate Solid? EnvelopeProducer(Entity entity, IModelView model);
 
 /// <summary>Cut priorities, offered by the platform as a service: what cuts an entity.</summary>
+/// <summary>The geometry producers of the product's classes, for a module that builds on another element's shape (a boolean's tools).</summary>
+public interface IGeometryProducers
+{
+    GeometryProducer? Geometry(string ifcClass);
+}
+
+/// <summary>
+/// A change a module makes to an element's geometry once it is built (a live
+/// boolean: the target with its tools, a union's tools hidden). It reads the
+/// model through the same tracking view, so what it reads rebuilds the element.
+/// </summary>
+public interface IGeometryFilter
+{
+    ElementGeometry? Apply(Entity entity, ElementGeometry geometry, IModelView model, IServices services);
+}
+
 public interface ICutters
 {
     /// <summary>The envelopes of the entities of higher priority that reach into <paramref name="bounds"/> (the target's own, of its body).</summary>

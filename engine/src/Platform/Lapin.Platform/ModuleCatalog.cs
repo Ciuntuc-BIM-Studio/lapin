@@ -12,7 +12,7 @@ public sealed record CommandEntry(string Name, string Label, string Module, Comm
 /// queries, geometry, catalogues and services. Built once, at start. The
 /// platform's own module, <see cref="CoreModule"/>, is always first.
 /// </summary>
-public sealed class ModuleCatalog : IServices, ICutters, IPathElements
+public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometryProducers
 {
     readonly Dictionary<string, PathFrame> _paths = [];
     readonly Dictionary<string, (int Priority, EnvelopeProducer Envelope)> _cutters = [];
@@ -53,7 +53,7 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements
     public QuantityProducer? QuantitiesOf(string ifcClass) => _quantities.GetValueOrDefault(ifcClass);
 
     public T? Get<T>() where T : class =>
-        typeof(T) == typeof(ICutters) || typeof(T) == typeof(IPathElements) ? (T)(object)this : _services.Where(s => s.Contract == typeof(T)).Select(s => (T)s.Implementation).FirstOrDefault();
+        typeof(T) == typeof(ICutters) || typeof(T) == typeof(IPathElements) || typeof(T) == typeof(IGeometryProducers) ? (T)(object)this : _services.Where(s => s.Contract == typeof(T)).Select(s => (T)s.Implementation).FirstOrDefault();
 
     public bool IsPath(string ifcClass) => _paths.ContainsKey(ifcClass);
     public JoinWall? FrameOf(Entity entity, IModelView model) => _paths.TryGetValue(entity.Class, out var f) ? f(entity, model) : null;

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Studio: free-form solids from sketches drawn on a view (extrude, sweep,
+    revolve), each kept tied to its sketch, and live booleans between elements
+    (subtract, union, intersect). It builds on the drafting module's shapes.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>studio</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="../../Drafting/Lapin.Drafting/Lapin.Drafting.csproj" Private="false" />
+  </ItemGroup>
+</Project>
