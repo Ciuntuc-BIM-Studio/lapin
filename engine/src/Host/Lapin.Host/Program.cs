@@ -45,6 +45,17 @@ var bound = new Uri(app.Urls.First()).Port;
 Console.WriteLine($"LAPIN_HOST_READY {{\"port\":{bound}}}");
 Console.Out.Flush();
 
+// Where tools on this machine find the open engine (the MCP bridge): its port, while it runs.
+var hostFile = Path.Combine(userDir, "host.json");
+try
+{
+    Directory.CreateDirectory(userDir);
+    File.WriteAllText(hostFile, $"{{\"port\":{bound},\"pid\":{Environment.ProcessId},\"product\":\"{product.Id}\"}}");
+    app.Lifetime.ApplicationStopping.Register(() => { try { File.Delete(hostFile); } catch (IOException) { } });
+}
+catch (IOException) { }
+catch (UnauthorizedAccessException) { }
+
 // Never outlive the window that started us.
 if (parentPid > 0)
 {
