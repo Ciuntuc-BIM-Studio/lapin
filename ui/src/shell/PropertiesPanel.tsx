@@ -55,6 +55,29 @@ export function PropertiesPanel() {
   const relations = useSession((s) => s.relations);
   const info = useSession((s) => s.info);
   const node = selection ? nodes.get(selection) : undefined;
+  // One grid axis (grid#tag): its label and which ends carry a bubble.
+  const axis = !node && selection?.includes('#') ? (() => {
+    const [gridId, tag] = [selection.slice(0, selection.indexOf('#')), selection.slice(selection.indexOf('#') + 1)];
+    const grid = nodes.get(gridId);
+    const a = (grid?.props.axes as { tag: string; ends?: string }[] | undefined)?.find((x) => x.tag === tag);
+    return grid && a ? { gridId, tag, ends: a.ends ?? '' } : null;
+  })() : null;
+  if (axis) {
+    return (
+      <aside className="panel props" aria-label="Properties">
+        <div className="panel-head"><span className="eyebrow">Grid axis</span>
+          <Commit className="panel-title-input" value={axis.tag} onCommit={(t) => void execute('drafting.updateAxis', { gridId: axis.gridId, tag: axis.tag, newTag: t }).then((r) => { if (r !== null) useUi.setState({ selection: `${axis.gridId}#${t}`, selected: [`${axis.gridId}#${t}`] }); })} />
+        </div>
+        <dl className="fields pad">
+          <dt>Bubbles</dt>
+          <dd><select value={axis.ends} onChange={(e) => void execute('drafting.updateAxis', { gridId: axis.gridId, tag: axis.tag, ends: e.target.value || null })}>
+            <option value="">as its axis type</option><option value="both">both ends</option><option value="start">start</option><option value="end">end</option><option value="none">none</option>
+          </select></dd>
+        </dl>
+        <div className="pad"><button type="button" className="btn" onClick={() => void execute('element.delete', { ids: [selection] }).then(() => useUi.setState({ selection: null, selected: [] }))}><Trash2 size={14} />Delete axis</button></div>
+      </aside>
+    );
+  }
   if (!node) {
     return (
       <aside className="panel props">

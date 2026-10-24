@@ -108,7 +108,7 @@ public sealed class CoreModule : ILapinModule
                 _ => throw new CommandException($"„{op}” is not move, copy, rotate or mirror."),
             };
             var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
-            var entities = ids.Select(id => ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.")).ToList();
+            var entities = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>().ToList();
             // What a module places itself (an opening in its wall) goes with its host, not on its own.
             entities = entities.Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)
                 && ctx.Model.RelatingOf(e.Id, IfcClass.RelFillsElement) == null && ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement) == null).ToList();
@@ -129,7 +129,11 @@ public sealed class CoreModule : ILapinModule
             if ((string?)a["id"] is { } one) ids.Add(one);
             foreach (var id in ids.Distinct())
             {
-                if (ctx.Model.Get(id) is not { } e) continue;
+                if (ctx.Model.Get(id) is not { } e)
+                {
+                    foreach (var d in ctx.Services.All<IDeletion>()) if (d.Delete(ctx, id)) break;
+                    continue;
+                }
                 if (e.Class is IfcClass.Project or IfcClass.Site or IfcClass.Building) throw new CommandException($"The {e.Class} cannot be deleted.");
                 if (e.Class == IfcClass.BuildingStorey && ctx.Model.RelatedOf(e.Id, IfcClass.RelContainedInSpatialStructure).Any())
                     throw new CommandException($"„{e.Name}” still has elements on it.");

@@ -8,10 +8,15 @@ using Lapin.Platform;
 namespace Lapin.Drafting;
 
 /// <summary>A grid axis: its tag (1, A, A1…) and its line in plan (m).</summary>
-public sealed record Axis(string Tag, Vec2 A, Vec2 B)
+public sealed record Axis(string Tag, Vec2 A, Vec2 B, string? Ends = null)
 {
     public Vec2 Dir => (B - A).Normalized();
-    public JsonObject ToJson() => new() { ["tag"] = Tag, ["a"] = new JsonArray(A.X, A.Y), ["b"] = new JsonArray(B.X, B.Y) };
+    public JsonObject ToJson()
+    {
+        var o = new JsonObject { ["tag"] = Tag, ["a"] = new JsonArray(A.X, A.Y), ["b"] = new JsonArray(B.X, B.Y) };
+        if (Ends != null) o["ends"] = Ends;
+        return o;
+    }
 }
 
 /// <summary>
@@ -24,10 +29,15 @@ public sealed record Axis(string Tag, Vec2 A, Vec2 B)
 public static class Grids
 {
     public static List<Axis> Axes(Entity grid) => grid.Attrs["axes"] is JsonArray arr
-        ? arr.OfType<JsonObject>().Select(o => new Axis((string?)o["tag"] ?? "?", P(o["a"]), P(o["b"]))).ToList()
+        ? arr.OfType<JsonObject>().Select(o => new Axis((string?)o["tag"] ?? "?", P(o["a"]), P(o["b"]), (string?)o["ends"] is "both" or "start" or "end" or "none" ? (string?)o["ends"] : null)).ToList()
         : [];
 
     static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
+
+    /// <summary>One axis as the interface selects it: the grid's id and the axis's tag.</summary>
+    public static string AxisId(string gridId, string tag) => $"{gridId}#{tag}";
+
+    public static (string Grid, string Tag)? ParseAxisId(string id) => id.IndexOf('#') is var i and > 0 ? (id[..i], id[(i + 1)..]) : null;
 
     public static Entity Ensure(ICommandContext ctx)
     {
@@ -105,10 +115,11 @@ public static class Grids
                     }
                     (a, b) = (new Vec2(x, span.Y0 - 0.5 * k), new Vec2(x, span.Y1 + 1.0 * k));
                 }
-                var mk = new ViewMark(grid.Id);
+                // Each axis is its own mark: a click selects that axis, Delete removes it.
+                var mk = new ViewMark(AxisId(grid.Id, axis.Tag));
                 mk.Line(a, b, "GRID", Pens.Default.Hidden, color, dash);
                 var u = (b - a).Normalized();
-                var ends = c.Kind == "plan" ? axisStyle.Ends : "end";
+                var ends = c.Kind == "plan" ? axis.Ends ?? axisStyle.Ends : "end";
                 foreach (var (end, outward, on) in new[] { (a, -u, ends is "both" or "start"), (b, u, ends is "both" or "end") })
                 {
                     if (!on) continue;

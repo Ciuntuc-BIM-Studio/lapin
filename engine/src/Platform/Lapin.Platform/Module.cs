@@ -91,6 +91,12 @@ public interface IGeometryFilter
     ElementGeometry? Apply(Entity entity, ElementGeometry geometry, IModelView model, IServices services);
 }
 
+/// <summary>Deleting what is not an entity of its own (one axis of a grid, selected as grid#tag): true when it was handled.</summary>
+public interface IDeletion
+{
+    bool Delete(ICommandContext ctx, string id);
+}
+
 public interface ICutters
 {
     /// <summary>The envelopes of the entities of higher priority that reach into <paramref name="bounds"/> (the target's own, of its body).</summary>

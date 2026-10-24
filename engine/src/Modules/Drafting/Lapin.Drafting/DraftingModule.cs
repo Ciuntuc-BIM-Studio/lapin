@@ -20,6 +20,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Service<IViewAnnotations>(this);
         Cad.DraftCommands.Register(r);
         r.Service<IElementPlacement>(new Cad.AnnotationPlacement());
+        r.Service<IDeletion>(new AxisDeletion());
 
         // ------------------------------------------------------------ grids
         r.Command("addAxis", "Grid axis", (ctx, a) =>
@@ -45,7 +46,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             var x = axes[i];
             var tag = ((string?)a["newTag"])?.Trim() is { Length: > 0 } nt ? nt : x.Tag;
             if (tag != x.Tag && axes.Any(y => y.Tag == tag)) throw new CommandException($"The grid has an axis {tag} already.");
-            axes[i] = new Axis(tag, new Vec2(Json.Number(a["x1"]) ?? x.A.X, Json.Number(a["y1"]) ?? x.A.Y), new Vec2(Json.Number(a["x2"]) ?? x.B.X, Json.Number(a["y2"]) ?? x.B.Y));
+            var ends = a.ContainsKey("ends") ? (string?)a["ends"] is "both" or "start" or "end" or "none" ? (string?)a["ends"] : null : x.Ends;
+            axes[i] = new Axis(tag, new Vec2(Json.Number(a["x1"]) ?? x.A.X, Json.Number(a["y1"]) ?? x.A.Y), new Vec2(Json.Number(a["x2"]) ?? x.B.X, Json.Number(a["y2"]) ?? x.B.Y), ends);
             Write(ctx, grid, axes);
             return null;
         });
@@ -185,4 +187,23 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
     static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y
         ? new Vec2(x, y) : throw new CommandException("A point is [x, y].");
     static JsonArray J(Vec2 p) => [p.X, p.Y];
+}
+
+/// <summary>Deleting one grid axis (selected as grid#tag): the grid goes with its last one.</summary>
+sealed class AxisDeletion : IDeletion
+{
+    public bool Delete(ICommandContext ctx, string id)
+    {
+        if (Grids.ParseAxisId(id) is not var (gridId, tag) || ctx.Model.Get(gridId) is not { Class: IfcClass.Grid } grid) return false;
+        var axes = Grids.Axes(grid);
+        if (axes.RemoveAll(x => x.Tag == tag) == 0) return false;
+        if (axes.Count == 0) ctx.Remove(grid.Id);
+        else
+        {
+            var attrs = grid.CloneAttrs();
+            attrs["axes"] = new JsonArray(axes.Select(x => (JsonNode)x.ToJson()).ToArray());
+            ctx.Replace(grid.With(attrs: attrs));
+        }
+        return true;
+    }
 }

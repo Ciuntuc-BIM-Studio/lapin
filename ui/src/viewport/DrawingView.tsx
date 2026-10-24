@@ -61,7 +61,7 @@ export function DrawingView() {
     for (const m of drawing?.marks ?? []) {
       const s = m.segments;
       for (let k = 0; k + 3 < s.length; k += 4)
-        if (distToSegment(p, { x: s[k], y: s[k + 1] }, { x: s[k + 2], y: s[k + 3] }) < tol && nodes.get(m.id)) return m.id;
+        if (distToSegment(p, { x: s[k], y: s[k + 1] }, { x: s[k + 2], y: s[k + 3] }) < tol && nodes.get(m.id.includes('#') ? m.id.slice(0, m.id.indexOf('#')) : m.id)) return m.id;
     }
     return null;
   }, [drawing, nodes, v.scale]);

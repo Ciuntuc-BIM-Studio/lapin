@@ -244,4 +244,21 @@ public class AnnotationTests
         var lin = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = view, ["a"] = new JsonArray(20, 20), ["b"] = new JsonArray(23, 24), ["at"] = new JsonArray(21, 27), ["dir"] = new JsonArray(1, 0) })!["id"]!;
         Assert.Equal(3, (double)f.Session.Query("drafting.dimension", new JsonObject { ["id"] = lin })!["value"]!, 9);
     }
+
+    [Fact]
+    public void One_grid_axis_is_selected_and_deleted_alone_and_its_bubbles_set_per_axis()
+    {
+        var f = F();
+        var g = (string)f.Run("drafting.addAxis", new JsonObject { ["x1"] = 0, ["y1"] = 0, ["x2"] = 0, ["y2"] = 10, ["tag"] = "1" })!["gridId"]!;
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = 5, ["y1"] = 0, ["x2"] = 5, ["y2"] = 10, ["tag"] = "2" });
+        var marks = Draw(f, "plan:" + f.Storey)["marks"]!.AsArray().Select(m => (string)m!["id"]!).ToList();
+        Assert.Contains($"{g}#1", marks);
+        Assert.Contains($"{g}#2", marks);
+        f.Run("drafting.updateAxis", new JsonObject { ["gridId"] = g, ["tag"] = "1", ["ends"] = "none" });
+        Assert.Equal("none", Grids.Axes(f.Model.Get(g)!)[0].Ends);
+        f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray($"{g}#2") });
+        Assert.Equal(["1"], Grids.Axes(f.Model.Get(g)!).Select(a => a.Tag));
+        f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray($"{g}#1") });
+        Assert.Null(f.Model.Get(g));
+    }
 }

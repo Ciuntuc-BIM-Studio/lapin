@@ -43,8 +43,10 @@ export function applyDiff(d: Diff): void {
   useSession.setState({ nodes, relations, render, doc: d.state, version: d.version });
   // A selection the edit took away goes too.
   const { selection: sel, selected } = useUi.getState();
-  if (sel && !nodes.has(sel)) useUi.setState({ selection: null });
-  if (selected.some((id) => !nodes.has(id))) useUi.setState({ selected: selected.filter((id) => nodes.has(id)) });
+  // A grid axis is selected as grid#tag: it stays while its grid does.
+  const alive = (id: string) => nodes.has(id) || (id.includes('#') && nodes.has(id.slice(0, id.indexOf('#'))));
+  if (sel && !alive(sel)) useUi.setState({ selection: null });
+  if (selected.some((id) => !alive(id))) useUi.setState({ selected: selected.filter(alive) });
   const storey = useUi.getState().storeyId;
   if (storey && !nodes.has(storey)) useUi.setState({ storeyId: null });
   // A type that went is no longer what the tools build with.
