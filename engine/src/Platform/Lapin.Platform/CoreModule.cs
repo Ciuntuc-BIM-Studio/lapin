@@ -101,6 +101,9 @@ public sealed class CoreModule : ILapinModule
                 if (e.Class is IfcClass.Project or IfcClass.Site or IfcClass.Building) throw new CommandException($"The {e.Class} cannot be deleted.");
                 if (e.Class == IfcClass.BuildingStorey && ctx.Model.RelatedOf(e.Id, IfcClass.RelContainedInSpatialStructure).Any())
                     throw new CommandException($"„{e.Name}” still has elements on it.");
+                // A type in use stays: the elements built with it would be left without one.
+                if (ctx.Describe(e.Class)?.Kind == "type" && ctx.Model.RelatedOf(e.Id, IfcClass.RelDefinesByType).Where(x => !ids.Contains(x.Id)).Count() is var n and > 0)
+                    throw new CommandException($"„{e.Name}” is used by {n} element(s): give them another type first.");
                 ctx.Remove(id);
             }
             return null;

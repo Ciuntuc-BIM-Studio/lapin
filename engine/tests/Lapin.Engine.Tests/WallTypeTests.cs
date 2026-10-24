@@ -77,4 +77,17 @@ public class WallTypeTests
         Assert.NotNull(f.Model.Get(type));
         Assert.Empty(f.Model.RelationsOf(wall));
     }
+
+    [Fact]
+    public void A_type_in_use_cannot_be_deleted_an_unused_one_can()
+    {
+        var f = new Fixture();
+        var used = f.Type("Used", ("Brick", 0.25, true));
+        var spare = f.Type("Spare", ("Brick", 0.3, true));
+        f.Wall(0, 0, 5, 0, used);
+        var ex = Assert.Throws<CommandException>(() => f.Run("element.delete", new JsonObject { ["id"] = used }));
+        Assert.Contains("1 element(s)", ex.Message);
+        f.Run("element.delete", new JsonObject { ["id"] = spare });
+        Assert.Null(f.Model.Get(spare));
+    }
 }

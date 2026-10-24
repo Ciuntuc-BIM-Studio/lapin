@@ -47,6 +47,10 @@ export function applyDiff(d: Diff): void {
   if (selected.some((id) => !nodes.has(id))) useUi.setState({ selected: selected.filter((id) => nodes.has(id)) });
   const storey = useUi.getState().storeyId;
   if (storey && !nodes.has(storey)) useUi.setState({ storeyId: null });
+  // A type that went is no longer what the tools build with.
+  const ui = useUi.getState();
+  for (const k of ['wallTypeId', 'slabTypeId', 'doorTypeId', 'windowTypeId'] as const)
+    if (ui[k] && !nodes.has(ui[k]!)) useUi.setState({ [k]: null });
 }
 
 /** Run an engine command; its diff arrives as an event. Errors land in the session. */

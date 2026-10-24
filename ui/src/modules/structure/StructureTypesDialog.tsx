@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { ofClass } from '../../engine/model';
@@ -66,7 +66,11 @@ export function StructureTypesDialog() {
               ))}
             </div>
             <ul className="type-list">
-              {list.map((t) => <li key={t.id} className="tree-item">{t.name}<span className="muted small"> · {describeType(t)}</span></li>)}
+              {list.map((t) => (
+                <li key={t.id} className="tree-item">{t.name}<span className="muted small"> · {describeType(t)}</span>
+                  <button type="button" className="icon mini" title="Delete the type (refused while elements use it)" onClick={() => void execute('element.delete', { id: t.id })}><Trash2 size={11} /></button>
+                </li>
+              ))}
             </ul>
           </div>
           <div className="type-edit">

@@ -174,6 +174,7 @@ export function WallTypesDialog() {
             <div className="row">
               <button type="button" className="btn" onClick={() => setRows([...rows, { material: 'Plaster', thicknessMm: '15', core: false }])}><Plus size={14} />Layer</button>
               <span className="grow" />
+              {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void execute('element.delete', { id: editing }).then((r) => { if (r !== null) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
               {editing && <button type="button" className="btn" onClick={() => use(editing)}>Draw with it</button>}
               <button type="button" className="btn primary" onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>
             </div>

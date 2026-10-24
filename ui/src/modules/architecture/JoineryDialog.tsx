@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { engine, execute, useSession } from '../../engine/session';
 import { mm, ofClass, relatedOf } from '../../engine/model';
@@ -165,6 +165,7 @@ export function JoineryDialog() {
             </div>
             <div className="row joinery-actions">
               <span className="grow" />
+              {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void execute('element.delete', { id: editing }).then((r) => { if (r !== null) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
               {editing && <button type="button" className="btn" onClick={() => useUi.setState(spec.kind === 'door' ? { doorTypeId: editing } : { windowTypeId: editing })}>Place with it</button>}
               <button type="button" className="btn primary" disabled={Boolean(preview?.problem)} onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>
             </div>
