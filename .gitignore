@@ -12,3 +12,6 @@ build/
 desktop/src-tauri/binaries/
 desktop/src-tauri/resources/
 desktop/src-tauri/tauri.product.json
+
+# Private release notes (signing, Apple accounts): never on GitHub
+docs/release-macos.md
