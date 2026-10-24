@@ -26,8 +26,9 @@ public sealed class Session
 
     /// <summary>
     /// Everything that changes the project's history, as it happens: what the
-    /// recovery journal writes. "start": a new, opened or just saved project
-    /// (what came before is safe or gone); "tx", "undo", "redo": an edit.
+    /// recovery journal writes. "start": a new or opened project (what came
+    /// before is gone from the session); "saved": the project written to its
+    /// file (what came before is safe); "tx", "undo", "redo": an edit.
     /// </summary>
     public event Action<HistoryEvent>? HistoryChanged;
     bool _quiet;
@@ -138,7 +139,7 @@ public sealed class Session
     {
         Path = path;
         _history.MarkSaved();
-        Emit("start");
+        Emit("saved");
         return Empty();
     }
 
@@ -155,21 +156,21 @@ public sealed class Session
         result = r;
         if (t == null) return Empty();
         Emit("tx", t);
-        return DiffOf(t);
+        return DiffAfter(t);
     }
 
     public Diff Undo()
     {
         if (_history.Undo() is not { } t) return Empty();
         Emit("undo");
-        return DiffOf(t);
+        return DiffAfter(t);
     }
 
     public Diff Redo()
     {
         if (_history.Redo() is not { } t) return Empty();
         Emit("redo");
-        return DiffOf(t);
+        return DiffAfter(t);
     }
 
     public JsonNode? Query(string name, JsonObject args)
@@ -207,6 +208,21 @@ public sealed class Session
     }
 
     Diff Empty() => new(++_version, false, [], [], [], [], [], [], State(), [], []);
+
+    /// <summary>
+    /// The diff of an edit that is in the history and the journal already. Should
+    /// it fail (an engine bug past what <see cref="Build"/> contains), the whole
+    /// project goes instead: the interface is never left behind the model.
+    /// </summary>
+    Diff DiffAfter(Transaction t)
+    {
+        try { return DiffOf(t); }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[engine] The diff of „{t.Label}” failed; the whole project is sent instead: {ex}");
+            return Snapshot();
+        }
+    }
 
     Diff DiffOf(Transaction t)
     {
@@ -269,18 +285,23 @@ public sealed class Session
         var view = new TrackingView(_store);
         view.Read.Add(e.Id);
         ElementGeometry? g;
+        RenderItem? item = null;
         List<string> problems = [];
         try
         {
             g = producer(e, view, _catalog);
             if (g != null) foreach (var f in _catalog.All<IGeometryFilter>()) g = f.Apply(e, g, view, _catalog) ?? g;
+            if (g != null) item = Render(e, g, problems);
         }
-        catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException)
+        catch (Exception ex)
         {
+            // A refusal the module meant, or a bug in it (or a solid the tessellator cannot
+            // read): the element is shown with its problem, and never takes the diff down with it.
             g = null;
-            problems.Add(ex.Message);
+            problems.Add(ex is ModelException or InvalidOperationException or ArgumentException ? ex.Message : $"{ex.GetType().Name}: {ex.Message}");
+            item = Render(e, null, problems);
         }
-        var built = new Built(g, view.Read, g == null && problems.Count == 0 ? null : Render(e, g, problems));
+        var built = new Built(g, view.Read, item);
         Forget(e.Id);
         _built[e.Id] = built;
         foreach (var id in built.Reads) (_readers.TryGetValue(id, out var set) ? set : _readers[id] = []).Add(e.Id);

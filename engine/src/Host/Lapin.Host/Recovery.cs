@@ -21,7 +21,9 @@ public sealed record RecoverableWork(string File, string? Path, DateTimeOffset A
 /// {"op":"undo"}  {"op":"redo"}
 /// </code>
 /// Saving starts the journal again (the file now holds everything). A
-/// journal with no edit is not worth keeping and is removed.
+/// journal with no edit is not worth keeping and is removed. The open journal
+/// is held exclusively: another Lapin (or recovery.list) sees it is in use
+/// and leaves it alone.
 /// </summary>
 public sealed class Recovery : IDisposable
 {
@@ -30,6 +32,9 @@ public sealed class Recovery : IDisposable
     string? _file;
     StreamWriter? _writer;
     int _edits;
+
+    /// <summary>A journal without edits younger than this may be one a Lapin is just opening: left alone.</summary>
+    static readonly TimeSpan Grace = TimeSpan.FromSeconds(10);
 
     public Recovery(string userDir, Session session)
     {
@@ -44,18 +49,22 @@ public sealed class Recovery : IDisposable
 
     void OnHistory(HistoryEvent e)
     {
-        if (e.Kind == "start") { Start(); return; }
+        switch (e.Kind)
+        {
+            case "saved": Start(keep: false); return;        // the file holds everything the journal held
+            case "start": Start(keep: _edits > 0); return;   // another project over unsaved edits: their journal is the only trace of them
+        }
         var line = e.Kind == "tx" ? TxLine(e.Transaction!) : new JsonObject { ["op"] = e.Kind };
         Write(line);
         _edits++;
     }
 
-    /// <summary>A new journal for the project as it is now; the previous one is no longer needed.</summary>
-    void Start()
+    /// <summary>A new journal for the project as it is now; the previous one goes, unless <paramref name="keep"/> says it holds work saved nowhere else.</summary>
+    void Start(bool keep = false)
     {
-        Close(delete: true);
+        Close(delete: !keep);
         _file = System.IO.Path.Combine(_dir, $"{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString("N")[..8]}.jsonl");
-        _writer = new StreamWriter(new FileStream(_file, FileMode.CreateNew, FileAccess.Write, FileShare.Read));
+        _writer = new StreamWriter(Open(_file, FileMode.CreateNew));
         _edits = 0;
         var path = _session.Path;
         var start = new JsonObject { ["op"] = "start", ["at"] = DateTimeOffset.UtcNow, ["product"] = _session.Product.Id, ["path"] = path };
@@ -71,6 +80,20 @@ public sealed class Recovery : IDisposable
             };
         }
         Write(start);
+    }
+
+    /// <summary>The journal, held exclusively while this session writes in it.</summary>
+    static FileStream Open(string file, FileMode mode) => new(file, mode, FileAccess.Write, FileShare.None);
+
+    /// <summary>Held open by a running Lapin: its exclusive share (a lock, on macOS and Linux) refuses us.</summary>
+    static bool InUse(string file)
+    {
+        try
+        {
+            using var _ = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.None);
+            return false;
+        }
+        catch (IOException) { return File.Exists(file); }
     }
 
     void Write(JsonObject line)
@@ -98,19 +121,23 @@ public sealed class Recovery : IDisposable
 
     // ------------------------------------------------------------ bringing work back
 
-    /// <summary>The journals of earlier sessions with edits in them, newest first. Empty ones are removed.</summary>
+    /// <summary>The journals of earlier sessions with edits in them, newest first. Empty ones are removed; those of running sessions are left alone.</summary>
     public IReadOnlyList<RecoverableWork> List()
     {
         var o = new List<RecoverableWork>();
         foreach (var file in Directory.GetFiles(_dir, "*.jsonl"))
         {
-            if (file == _file) continue;
+            if (file == _file || InUse(file)) continue;
             try
             {
                 var lines = File.ReadAllLines(file).Where(l => l.Length > 0).ToList();
                 var start = lines.Count > 0 ? JsonNode.Parse(lines[0]) as JsonObject : null;
                 var edits = lines.Skip(1).Select(l => JsonNode.Parse(l) as JsonObject).OfType<JsonObject>().ToList();
-                if (start == null || edits.Count == 0) { File.Delete(file); continue; }
+                if (start == null || edits.Count == 0)
+                {
+                    if (DateTime.UtcNow - File.GetLastWriteTimeUtc(file) > Grace) File.Delete(file);
+                    continue;
+                }
                 o.Add(new RecoverableWork(file, (string?)start["path"], start["at"]?.GetValue<DateTimeOffset>() ?? File.GetLastWriteTimeUtc(file),
                     edits.Count, (string?)edits.LastOrDefault(e => (string?)e["op"] == "tx")?["label"]));
             }
@@ -157,18 +184,18 @@ public sealed class Recovery : IDisposable
         var edits = parsed.Skip(1).Select(ReadEvent).ToList();
         var diff = _session.Recover(entities, relations, path, classes, edits);
 
-        // Go on in that journal: a second crash still has everything.
-        Close(delete: true);
+        // Go on in that journal: a second crash still has everything. Unsaved work of this session's own stays in its journal.
+        Close(delete: _edits == 0);
         _file = file;
-        _writer = new StreamWriter(new FileStream(file, FileMode.Append, FileAccess.Write, FileShare.Read));
+        _writer = new StreamWriter(Open(file, FileMode.Append));
         _edits = edits.Count;
         return diff;
     }
 
     public void Discard(string file)
     {
-        if (file == _file) throw new CommandException("That journal is in use.");
         if (System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(file)) != System.IO.Path.GetFullPath(_dir)) throw new CommandException("Not a recovery journal.");
+        if (file == _file || InUse(file)) throw new CommandException("That journal is in use.");
         File.Delete(file);
     }
 

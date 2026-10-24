@@ -19,7 +19,14 @@ namespace Lapin.Host;
 public sealed class EngineHub(Session session, ProjectFiles files, Recovery? recovery = null)
 {
     readonly SemaphoreSlim _gate = new(1, 1);
-    readonly List<WebSocket> _clients = [];
+    readonly List<Client> _clients = [];
+
+    /// <summary>A connected interface: its socket, and the turn to send on it (a reply and another client's broadcast may be due together).</summary>
+    sealed class Client(WebSocket socket)
+    {
+        public WebSocket Socket => socket;
+        public SemaphoreSlim Sending { get; } = new(1, 1);
+    }
 
     public static bool AllowedOrigin(string origin) =>
         origin.StartsWith("http://localhost:", StringComparison.Ordinal)
@@ -28,7 +35,8 @@ public sealed class EngineHub(Session session, ProjectFiles files, Recovery? rec
 
     public async Task Serve(WebSocket ws, CancellationToken ct)
     {
-        lock (_clients) _clients.Add(ws);
+        var client = new Client(ws);
+        lock (_clients) _clients.Add(client);
         try
         {
             var buffer = new byte[1 << 16];
@@ -44,29 +52,44 @@ public sealed class EngineHub(Session session, ProjectFiles files, Recovery? rec
                 } while (!r.EndOfMessage);
 
                 var reply = await Handle(Encoding.UTF8.GetString(ms.ToArray()));
-                await Send(ws, reply);
+                await Send(client, reply);
             }
         }
         catch (OperationCanceledException) { }
         catch (WebSocketException) { }
         finally
         {
-            lock (_clients) _clients.Remove(ws);
+            lock (_clients) _clients.Remove(client);
         }
     }
 
-    static async Task Send(WebSocket ws, byte[] frame)
+    /// <summary>One frame at a time on a socket: the next waits for its turn instead of overlapping.</summary>
+    static async Task Send(Client c, byte[] frame)
     {
-        if (ws.State != WebSocketState.Open) return;
-        await ws.SendAsync(frame, WebSocketMessageType.Binary, true, CancellationToken.None);
+        await c.Sending.WaitAsync();
+        try
+        {
+            if (c.Socket.State == WebSocketState.Open) await c.Socket.SendAsync(frame, WebSocketMessageType.Binary, true, CancellationToken.None);
+        }
+        finally
+        {
+            c.Sending.Release();
+        }
     }
 
     async Task Broadcast(Diff diff)
     {
         var frame = BinaryFrame.Encode(new DiffEvent("diff", diff));
-        WebSocket[] clients;
+        Client[] clients;
         lock (_clients) clients = [.. _clients];
-        foreach (var c in clients) await Send(c, frame);
+        foreach (var c in clients)
+        {
+            try { await Send(c, frame); }
+            catch (Exception ex) when (ex is WebSocketException or ObjectDisposedException or InvalidOperationException or OperationCanceledException)
+            {
+                // A peer gone or going, which its own Serve ends: the caller's command applied, and the others still get the diff.
+            }
+        }
     }
 
     sealed record DiffEvent(string Event, Diff Data);

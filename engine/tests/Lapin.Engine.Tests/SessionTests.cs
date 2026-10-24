@@ -157,3 +157,56 @@ public class ElementUpdateTests
         Assert.Equal("#ff0000", f.Session.Geometry(wall)!.Parts.Single(p => p.Material == brick).Color);
     }
 }
+
+/// <summary>A module's geometry with a bug in it: the element shows its problem; the edit, the diff and the undo history are untouched.</summary>
+public class GeometryFailureTests
+{
+    [Fact]
+    public void A_producer_that_crashes_marks_its_element_and_the_edit_stays_in_the_diff_the_model_and_the_history()
+    {
+        var f = new Fixture(new CursedModule());
+        var diff = f.RunDiff("cursed.add", new JsonObject { ["name"] = "bad" });
+        var item = Assert.Single(diff.Render);
+        Assert.Contains(item.Diagnostics, d => d.Contains("NullReferenceException"));
+        Assert.Empty(item.Parts!);
+        Assert.Contains(diff.Nodes, n => n.Id == item.NodeId);
+        Assert.NotNull(f.Model.Get(item.NodeId));
+        Assert.True(diff.State.CanUndo);
+
+        var undo = f.Session.Undo();
+        Assert.Equal([item.NodeId], undo.RenderRemoved);
+        Assert.Null(f.Model.Get(item.NodeId));
+    }
+
+    [Fact]
+    public void A_snapshot_with_a_crashing_element_draws_the_others_and_marks_it()
+    {
+        var f = new Fixture(new CursedModule());
+        var bad = (string)f.Run("cursed.add", new JsonObject { ["name"] = "bad" })!["id"]!;
+        var good = (string)f.Run("cursed.add", new JsonObject { ["name"] = "good" })!["id"]!;
+        var snapshot = f.Session.Snapshot();
+        Assert.Equal(new[] { bad, good }.Order(), snapshot.Render.Select(r => r.NodeId).Order());
+        Assert.NotEmpty(snapshot.Render.Single(r => r.NodeId == bad).Diagnostics);
+        Assert.Empty(snapshot.Render.Single(r => r.NodeId == good).Diagnostics);
+    }
+
+    /// <summary>A module whose geometry producer throws for the element named "bad".</summary>
+    sealed class CursedModule : ILapinModule
+    {
+        const string Class = "IfcCursed";
+        public string Id => "cursed";
+        public string Name => "Cursed";
+
+        public void Register(IModuleRegistry r)
+        {
+            r.Class(new(Class, "Cursed", []));
+            r.Command("add", "Cursed", (ctx, args) =>
+            {
+                var e = new Entity(ctx.NewId(), Class, (string?)args["name"] ?? "", []);
+                ctx.Add(e);
+                return new JsonObject { ["id"] = e.Id };
+            });
+            r.Geometry(Class, (e, _, _) => e.Name == "bad" ? throw new NullReferenceException("The producer's bug.") : new ElementGeometry([]));
+        }
+    }
+}
