@@ -6,7 +6,8 @@
  */
 
 import { create } from 'zustand';
-import { EngineClient, engineUrl } from './client';
+import { EngineClient, engineUrl, LONG_TIMEOUT_MS } from './client';
+import { notify } from '../app/store';
 import type { Diff, DocState, NodeDto, RelationDto, RenderItem, SessionInfo } from './protocol';
 import { storeys } from './model';
 import { useUi } from '../app/store';
@@ -28,9 +29,10 @@ export const useSession = create<SessionState>(() => ({
 
 export const engine = new EngineClient(engineUrl);
 
-/** Fold an engine diff into the session (a reset replaces everything). */
+/** Fold an engine diff into the session (a reset replaces everything). A diff older than what is shown is skipped. */
 export function applyDiff(d: Diff): void {
   const s = useSession.getState();
+  if (!d.reset && d.version <= s.version) return;
   const nodes = d.reset ? new Map<string, NodeDto>() : new Map(s.nodes);
   const relations = d.reset ? new Map<string, RelationDto>() : new Map(s.relations);
   const render = d.reset ? new Map<string, RenderItem>() : new Map(s.render);
@@ -92,13 +94,28 @@ export async function ensureStorey(): Promise<string | null> {
 /** Connect to the engine and keep the session in step with it. */
 export async function connect(): Promise<void> {
   engine.onDiff(applyDiff);
-  engine.onStatus(async (connected) => {
+  engine.onStatus((connected) => {
     useSession.setState({ connected });
-    if (!connected) return;
-    const info = await engine.call<SessionInfo>('session.info');
-    const snapshot = await engine.call<Diff>('doc.snapshot');
-    useSession.setState({ info });
-    applyDiff(snapshot);
+    if (connected) void resync();
   });
   await engine.start();
+}
+
+/**
+ * After (re)connecting: the engine's description and the whole model. A
+ * connection that drops meanwhile is left to the next status change; any
+ * other failure is said, and tried again shortly, so the screen never keeps
+ * a previous engine's model for good.
+ */
+async function resync(attempt = 0): Promise<void> {
+  try {
+    const info = await engine.call<SessionInfo>('session.info');
+    const snapshot = await engine.call<Diff>('doc.snapshot', {}, { timeoutMs: LONG_TIMEOUT_MS });
+    useSession.setState({ info });
+    applyDiff(snapshot);
+  } catch (e) {
+    if (!useSession.getState().connected) return;
+    if (attempt >= 5) { notify(`The engine's model could not be read: ${e instanceof Error ? e.message : String(e)}`); return; }
+    setTimeout(() => void resync(attempt + 1), 500 * (attempt + 1));
+  }
 }

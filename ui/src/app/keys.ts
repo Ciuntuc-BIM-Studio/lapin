@@ -4,6 +4,11 @@
  * Escape to cancel), where Revit's two-letter shortcuts (WA for Wall…) start
  * their tool at once; Delete for the selection; 1–9 for the hotbar when
  * nothing is being typed; F3 object snap, F8 ortho, F10 polar tracking.
+ *
+ * While a dialog is open the keys belong to it: Escape closes it, Ctrl/Cmd+S
+ * still saves, and nothing else reaches the model (no Delete on the selection
+ * behind it, no tool started by two letters). `keyIntent` decides, without
+ * touching anything, so it can be tested; `useShortcuts` carries it out.
  */
 
 import { useEffect } from 'react';
@@ -13,54 +18,133 @@ import { execute, redo, undo } from '../engine/session';
 import { newProject, openProject, saveProject } from '../engine/files';
 import { cancel, submit, useCad } from '../viewport/cad/session';
 
+/** What `keyIntent` needs to know about the key press. */
+export interface KeyPress {
+  key: string;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+  /** The target is an input, select or textarea: the key is theirs. */
+  inField: boolean;
+  /** The target sits inside an element with role="dialog". */
+  inDialog: boolean;
+}
+
+/** What `keyIntent` needs to know about the interface. */
+export interface KeySnapshot {
+  screen: 'start' | 'workspace';
+  /** The open dialog's id, if any. */
+  dialog: string | null;
+  /** The active tool, if any. */
+  tool: string | null;
+  selected: string[];
+  /** The command line's text. */
+  buffer: string;
+  /** The running command's step: what it wants ("text" takes any character). */
+  step: { want?: string } | null;
+  /** Whether a command ran before (Enter or Space repeats it). */
+  hasLast: boolean;
+  /** How many hotbar slots there are. */
+  hotbar: number;
+  /** Two-letter shortcuts, lower case, to the tool they start. */
+  shortcuts: Record<string, string>;
+}
+
+export type KeyIntent =
+  | { kind: 'undo' } | { kind: 'redo' } | { kind: 'new' } | { kind: 'open' } | { kind: 'save'; as: boolean }
+  | { kind: 'toggle'; what: 'osnap' | 'ortho' | 'polar' }
+  | { kind: 'closeDialog' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
+  | { kind: 'delete'; ids: string[] } | { kind: 'hotbar'; slot: number }
+  | { kind: 'type'; buffer: string } | { kind: 'tool'; id: string };
+
+const TOGGLES: Record<string, 'osnap' | 'ortho' | 'polar'> = { F3: 'osnap', F8: 'ortho', F10: 'polar' };
+
+/** What a key press means, given the interface's state; null when it means nothing here. */
+export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
+  if (e.inField || s.screen !== 'workspace') return null;
+  const mod = e.ctrlKey || e.metaKey;
+  const k = e.key.toLowerCase();
+  if (s.dialog || e.inDialog) {
+    if (e.key === 'Escape') return s.dialog ? { kind: 'closeDialog' } : null;
+    if (mod && k === 's') return { kind: 'save', as: e.shiftKey };
+    return null;
+  }
+  if (mod) {
+    switch (k) {
+      case 'z': return e.shiftKey ? { kind: 'redo' } : { kind: 'undo' };
+      case 'y': return { kind: 'redo' };
+      case 'n': return { kind: 'new' };
+      case 'o': return { kind: 'open' };
+      case 's': return { kind: 'save', as: e.shiftKey };
+      default: return null;
+    }
+  }
+  if (TOGGLES[e.key]) return { kind: 'toggle', what: TOGGLES[e.key] };
+  const typing = s.buffer.length > 0 || !!s.step;
+  if (e.key === 'Escape') return s.step || s.buffer ? { kind: 'cancel' } : null;
+  if (e.key === 'Enter' || (e.key === ' ' && (typing || s.hasLast) && s.step?.want !== 'text')) {
+    // Plan gestures (a floor's outline) take their own Enter.
+    if (!typing && !s.hasLast) return null;
+    if (!typing && s.tool) return null;
+    return { kind: 'submit' };
+  }
+  if (e.key === 'Backspace' && s.buffer) return { kind: 'backspace' };
+  if (e.key === 'Delete' || e.key === 'Backspace') return s.selected.length ? { kind: 'delete', ids: s.selected } : null;
+  const n = Number(e.key);
+  if (!typing && e.key.length === 1 && n >= 1 && n <= 9) return n <= s.hotbar ? { kind: 'hotbar', slot: n } : null;
+  // A text step takes any character; otherwise letters, digits and the coordinate signs.
+  const allowed = s.step?.want === 'text' ? e.key.length === 1 : /^[\w@<.,\-+]$/.test(e.key);
+  if (!allowed) return null;
+  const buffer = s.buffer + e.key;
+  // Two letters that are a tool's shortcut start it at once (when no command is running).
+  if (!s.step && /^[a-z]{2}$/i.test(buffer) && s.shortcuts[buffer.toLowerCase()]) return { kind: 'tool', id: s.shortcuts[buffer.toLowerCase()] };
+  return { kind: 'type', buffer };
+}
+
+function snapshot(): KeySnapshot {
+  const ui = useUi.getState();
+  const cad = useCad.getState();
+  const shortcuts: Record<string, string> = {};
+  for (const t of allTools()) if (t.shortcut) shortcuts[t.shortcut.toLowerCase()] = t.id;
+  return {
+    screen: ui.screen, dialog: ui.dialog, tool: ui.tool, selected: ui.selected,
+    buffer: cad.buffer, step: cad.step ? { want: cad.step.want } : null, hasLast: !!cad.last,
+    hotbar: hotbarTools().length, shortcuts,
+  };
+}
+
+function carryOut(intent: KeyIntent): void {
+  switch (intent.kind) {
+    case 'undo': void undo(); break;
+    case 'redo': void redo(); break;
+    case 'new': void newProject(); break;
+    case 'open': void openProject(); break;
+    case 'save': void saveProject(intent.as); break;
+    case 'toggle': useCad.setState((s) => ({ [intent.what]: !s[intent.what] })); break;
+    case 'closeDialog': useUi.setState({ dialog: null }); break;
+    case 'cancel': cancel(); break;
+    case 'submit': void submit(useCad.getState().buffer); break;
+    case 'backspace': useCad.setState((s) => ({ buffer: s.buffer.slice(0, -1) })); break;
+    case 'delete': void execute('element.delete', { ids: intent.ids }); select(null); break;
+    case 'hotbar': { const t = hotbarTools()[intent.slot - 1]; if (t) activate(t); break; }
+    case 'type': useCad.setState({ buffer: intent.buffer }); break;
+    case 'tool': { useCad.setState({ buffer: '' }); const t = allTools().find((x) => x.id === intent.id); if (t) activate(t); break; }
+  }
+}
+
 export function useShortcuts(): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.closest('input, select, textarea')) return;
-      if (useUi.getState().screen !== 'workspace') return;
-      const mod = e.ctrlKey || e.metaKey;
-      const k = e.key.toLowerCase();
-      if (mod) {
-        const act = ({ z: e.shiftKey ? redo : undo, y: redo, n: newProject, o: () => openProject(), s: () => saveProject(e.shiftKey) } as Record<string, () => unknown>)[k];
-        if (act) { e.preventDefault(); void act(); }
-        return;
-      }
-      const cad = useCad.getState();
-      const toggles: Record<string, () => void> = {
-        F3: () => useCad.setState({ osnap: !cad.osnap }),
-        F8: () => useCad.setState({ ortho: !cad.ortho }),
-        F10: () => useCad.setState({ polar: !cad.polar }),
+      const target = e.target as HTMLElement | null;
+      const press: KeyPress = {
+        key: e.key, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
+        inField: !!target?.closest?.('input, select, textarea'),
+        inDialog: !!target?.closest?.('[role="dialog"]'),
       };
-      if (toggles[e.key]) { e.preventDefault(); toggles[e.key](); return; }
-      const typing = cad.buffer.length > 0 || !!cad.step;
-      if (e.key === 'Escape') { if (cad.step || cad.buffer) cancel(); return; }
-      if (e.key === 'Enter' || (e.key === ' ' && (typing || !!cad.last) && cad.step?.want !== 'text')) {
-        // Plan gestures (a floor's outline) take their own Enter.
-        if (!typing && !cad.last) return;
-        if (!typing && useUi.getState().tool) return;
-        e.preventDefault();
-        void submit(cad.buffer);
-        return;
-      }
-      if (e.key === 'Backspace' && cad.buffer) { e.preventDefault(); useCad.setState({ buffer: cad.buffer.slice(0, -1) }); return; }
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        const ids = useUi.getState().selected;
-        if (ids.length) { e.preventDefault(); void execute('element.delete', { ids }); select(null); }
-        return;
-      }
-      const n = Number(e.key);
-      if (!typing && n >= 1 && n <= 9) { const t = hotbarTools()[n - 1]; if (t) activate(t); return; }
-      // A text step takes any character; otherwise letters, digits and the coordinate signs.
-      const allowed = cad.step?.want === 'text' ? e.key.length === 1 : /^[\w@<.,\-+]$/.test(e.key);
-      if (!allowed) return;
+      const intent = keyIntent(press, snapshot());
+      if (!intent) return;
       e.preventDefault();
-      const buffer = cad.buffer + e.key;
-      useCad.setState({ buffer });
-      // Two letters that are a tool's shortcut start it at once (when no command is running).
-      if (!cad.step && /^[a-z]{2}$/i.test(buffer)) {
-        const t = allTools().find((x) => x.shortcut?.toLowerCase() === buffer.toLowerCase());
-        if (t) { useCad.setState({ buffer: '' }); activate(t); }
-      }
+      carryOut(intent);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

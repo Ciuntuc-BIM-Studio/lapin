@@ -1,0 +1,77 @@
+import { describe, expect, it } from 'vitest';
+import { keyIntent, type KeyPress, type KeySnapshot } from './keys';
+
+const press = (key: string, more: Partial<KeyPress> = {}): KeyPress => ({ key, ctrlKey: false, metaKey: false, shiftKey: false, inField: false, inDialog: false, ...more });
+const state = (more: Partial<KeySnapshot> = {}): KeySnapshot => ({
+  screen: 'workspace', dialog: null, tool: null, selected: [], buffer: '', step: null, hasLast: false, hotbar: 5,
+  shortcuts: { wa: 'architecture.wall', vv: 'view.layers' }, ...more,
+});
+
+describe('keyIntent', () => {
+  it('leaves fields, the start screen and unknown keys alone', () => {
+    expect(keyIntent(press('Delete', { inField: true }), state({ selected: ['w1'] }))).toBeNull();
+    expect(keyIntent(press('Delete'), state({ screen: 'start', selected: ['w1'] }))).toBeNull();
+    expect(keyIntent(press('F7'), state())).toBeNull();
+    expect(keyIntent(press('ArrowUp'), state())).toBeNull();
+  });
+
+  it('gives the keys to an open dialog: Escape closes it, saving still works, nothing reaches the model', () => {
+    const open = state({ dialog: 'materials', selected: ['w1'] });
+    expect(keyIntent(press('Escape'), open)).toEqual({ kind: 'closeDialog' });
+    expect(keyIntent(press('Delete'), open)).toBeNull();
+    expect(keyIntent(press('Backspace'), open)).toBeNull();
+    expect(keyIntent(press('w'), open)).toBeNull();
+    expect(keyIntent(press('Enter'), open)).toBeNull();
+    expect(keyIntent(press('s', { metaKey: true }), open)).toEqual({ kind: 'save', as: false });
+    expect(keyIntent(press('z', { metaKey: true }), open)).toBeNull();
+    // A dialog that keeps its own state (not the store's): the keys still stay with it.
+    expect(keyIntent(press('Delete', { inDialog: true }), state({ selected: ['w1'] }))).toBeNull();
+    expect(keyIntent(press('Escape', { inDialog: true }), state())).toBeNull();
+  });
+
+  it('runs the Ctrl/Cmd shortcuts', () => {
+    expect(keyIntent(press('z', { ctrlKey: true }), state())).toEqual({ kind: 'undo' });
+    expect(keyIntent(press('Z', { metaKey: true, shiftKey: true }), state())).toEqual({ kind: 'redo' });
+    expect(keyIntent(press('y', { ctrlKey: true }), state())).toEqual({ kind: 'redo' });
+    expect(keyIntent(press('n', { metaKey: true }), state())).toEqual({ kind: 'new' });
+    expect(keyIntent(press('o', { metaKey: true }), state())).toEqual({ kind: 'open' });
+    expect(keyIntent(press('s', { metaKey: true, shiftKey: true }), state())).toEqual({ kind: 'save', as: true });
+    expect(keyIntent(press('k', { metaKey: true }), state())).toBeNull();
+  });
+
+  it('deletes the selection, but Backspace edits the command line first', () => {
+    expect(keyIntent(press('Delete'), state({ selected: ['w1', 'w2'] }))).toEqual({ kind: 'delete', ids: ['w1', 'w2'] });
+    expect(keyIntent(press('Delete'), state())).toBeNull();
+    expect(keyIntent(press('Backspace'), state({ selected: ['w1'] }))).toEqual({ kind: 'delete', ids: ['w1'] });
+    expect(keyIntent(press('Backspace'), state({ selected: ['w1'], buffer: '12' }))).toEqual({ kind: 'backspace' });
+  });
+
+  it('types into the command line and starts a tool on its two letters', () => {
+    expect(keyIntent(press('w'), state())).toEqual({ kind: 'type', buffer: 'w' });
+    expect(keyIntent(press('a'), state({ buffer: 'w' }))).toEqual({ kind: 'tool', id: 'architecture.wall' });
+    expect(keyIntent(press('A'), state({ buffer: 'W' }))).toEqual({ kind: 'tool', id: 'architecture.wall' });
+    expect(keyIntent(press('x'), state({ buffer: 'w' }))).toEqual({ kind: 'type', buffer: 'wx' });
+    // While a command runs, its letters are input, not shortcuts.
+    expect(keyIntent(press('a'), state({ buffer: 'w', step: { want: 'point' } }))).toEqual({ kind: 'type', buffer: 'wa' });
+    expect(keyIntent(press('@'), state({ step: { want: 'point' } }))).toEqual({ kind: 'type', buffer: '@' });
+    expect(keyIntent(press(' '), state({ step: { want: 'text' }, buffer: 'ab' }))).toEqual({ kind: 'type', buffer: 'ab ' });
+    expect(keyIntent(press('!'), state())).toBeNull();
+  });
+
+  it('submits with Enter or Space, except when a plan gesture or nothing is waiting', () => {
+    expect(keyIntent(press('Enter'), state({ buffer: 'line' }))).toEqual({ kind: 'submit' });
+    expect(keyIntent(press(' '), state({ hasLast: true }))).toEqual({ kind: 'submit' });
+    expect(keyIntent(press('Enter'), state())).toBeNull();
+    expect(keyIntent(press('Enter'), state({ hasLast: true, tool: 'architecture.slab' }))).toBeNull();
+    expect(keyIntent(press('Enter'), state({ step: { want: 'point' }, tool: 'architecture.slab' }))).toEqual({ kind: 'submit' });
+  });
+
+  it('cancels a running command with Escape, toggles with the F keys, picks the hotbar with digits', () => {
+    expect(keyIntent(press('Escape'), state({ step: { want: 'point' } }))).toEqual({ kind: 'cancel' });
+    expect(keyIntent(press('Escape'), state())).toBeNull();
+    expect(keyIntent(press('F8'), state())).toEqual({ kind: 'toggle', what: 'ortho' });
+    expect(keyIntent(press('3'), state())).toEqual({ kind: 'hotbar', slot: 3 });
+    expect(keyIntent(press('9'), state())).toBeNull();
+    expect(keyIntent(press('3'), state({ buffer: '1' }))).toEqual({ kind: 'type', buffer: '13' });
+  });
+});

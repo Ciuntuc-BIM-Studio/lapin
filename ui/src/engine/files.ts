@@ -5,6 +5,7 @@
  */
 
 import { engine, useSession } from './session';
+import { LONG_TIMEOUT_MS } from './client';
 import { notify, select, useUi } from '../app/store';
 
 const FILTERS = [{ name: 'Lapin project', extensions: ['lapin'] }];
@@ -56,8 +57,12 @@ function enter(): void {
 
 export async function newProject(): Promise<void> {
   if (!(await confirmDiscard('Start a new one'))) return;
-  await engine.call('project.new');
-  enter();
+  try {
+    await engine.call('project.new');
+    enter();
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+  }
 }
 
 export async function openProject(path?: string): Promise<void> {
@@ -65,7 +70,7 @@ export async function openProject(path?: string): Promise<void> {
   const target = path ?? (await pickPath('open'));
   if (!target) return;
   try {
-    const r = await engine.call<{ notes?: string[] } | null>('project.open', { path: target });
+    const r = await engine.call<{ notes?: string[] } | null>('project.open', { path: target }, { timeoutMs: LONG_TIMEOUT_MS });
     remember(target);
     enter();
     // An old Lapin project (format 2) is rebuilt natively and opens unsaved; say what it left out.
@@ -84,7 +89,7 @@ export async function saveProject(as = false): Promise<boolean> {
   if (!target) return false;
   const path = target.endsWith('.lapin') ? target : `${target}.lapin`;
   try {
-    await engine.call('project.save', { path });
+    await engine.call('project.save', { path }, { timeoutMs: LONG_TIMEOUT_MS });
     remember(path);
     notify(`Saved ${projectTitle(path)}.`);
     return true;
@@ -97,9 +102,13 @@ export async function saveProject(as = false): Promise<boolean> {
 export const listRecovery = () => engine.call<RecoverableWork[]>('recovery.list').catch(() => [] as RecoverableWork[]);
 
 export async function restoreWork(file: string): Promise<void> {
-  await engine.call('recovery.restore', { path: file });
-  enter();
-  notify('Your unsaved work is back. Save it to keep it.');
+  try {
+    await engine.call('recovery.restore', { path: file }, { timeoutMs: LONG_TIMEOUT_MS });
+    enter();
+    notify('Your unsaved work is back. Save it to keep it.');
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+  }
 }
 
 export const discardWork = (file: string) => engine.call('recovery.discard', { path: file });
@@ -114,9 +123,13 @@ export async function guardWindowClose(): Promise<void> {
     e.preventDefault();
     const dialog = await import('@tauri-apps/plugin-dialog');
     const save = await dialog.ask('Save the changes to the project before closing?', { title: 'Lapin', kind: 'warning', okLabel: 'Save', cancelLabel: "Don't save" });
+    // Saving cancelled in the file dialog: the window stays.
     if (save && !(await saveProject())) return;
-    // Not saved on purpose: the work is let go, so no recovery is offered next time.
-    if (!save) await engine.call('project.new').catch(() => undefined);
+    if (!save) {
+      // A second thought is still possible; only a confirmed "close" lets the work go (and no recovery is offered next time).
+      if (!(await dialog.confirm('Close without saving? The changes will be lost.', { title: 'Lapin', kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' }))) return;
+      await engine.call('project.new').catch(() => undefined);
+    }
     await win.destroy();
   });
 }
@@ -131,11 +144,11 @@ export async function exportFile(method: string, args: Record<string, unknown>, 
       const dialog = await import('@tauri-apps/plugin-dialog');
       const path = await dialog.save({ defaultPath: name, filters: [{ name: ext.toUpperCase(), extensions: [ext] }] });
       if (typeof path !== 'string') return;
-      await engine.call(method, { ...args, path });
+      await engine.call(method, { ...args, path }, { timeoutMs: LONG_TIMEOUT_MS });
       notify(`Exported ${path.split(/[\\/]/).pop()}.`);
       return;
     }
-    const r = await engine.call<{ data: string }>(method, args);
+    const r = await engine.call<{ data: string }>(method, args, { timeoutMs: LONG_TIMEOUT_MS });
     const bytes = Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0));
     const url = URL.createObjectURL(new Blob([bytes], { type: ext === 'pdf' ? 'application/pdf' : 'application/dxf' }));
     const a = document.createElement('a');
