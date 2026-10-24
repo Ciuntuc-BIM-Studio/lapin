@@ -20,6 +20,7 @@ import { PlanView } from './viewport/PlanView';
 import { Viewport3D } from './viewport/Viewport3D';
 import { DrawingView } from './viewport/DrawingView';
 import { SheetView } from './viewport/SheetView';
+import { ScheduleView } from './viewport/ScheduleView';
 
 function StatusBar() {
   const connected = useSession((s) => s.connected);
@@ -53,6 +54,8 @@ function Workspace() {
   const drawingName = useSession((s) => (drawingViewId ? s.nodes.get(drawingViewId)?.name : undefined));
   const sheetId = useUi((s) => s.sheetId);
   const sheetName = useSession((s) => (sheetId ? s.nodes.get(sheetId)?.name : undefined));
+  const scheduleId = useUi((s) => s.scheduleId);
+  const scheduleName = useSession((s) => (scheduleId ? s.nodes.get(scheduleId)?.name : undefined));
   const error = useSession((s) => s.error);
   const open = useUi((s) => s.dialog);
   const Dialog = open ? dialog(open) : null;
@@ -63,12 +66,12 @@ function Workspace() {
         <ProjectBrowser />
         <main className="views">
           <div className="view-tabs">
-            {([['plan', 'Plan'], ['3d', '{3D}'], ...(drawingName ? [['drawing', drawingName]] : []), ...(sheetName ? [['sheet', sheetName]] : [])] as [ViewKind, string][]).map(([id, name]) => (
+            {([['plan', 'Plan'], ['3d', '{3D}'], ...(drawingName ? [['drawing', drawingName]] : []), ...(sheetName ? [['sheet', sheetName]] : []), ...(scheduleName ? [['schedule', scheduleName]] : [])] as [ViewKind, string][]).map(([id, name]) => (
               <button type="button" key={id} className={`view-tab${view === id ? ' on' : ''}`} onClick={() => useUi.setState({ view: id })}>{name}<X size={11} /></button>
             ))}
           </div>
           <div className="view-area">
-            {view === 'plan' ? <PlanView /> : view === 'drawing' ? <DrawingView /> : view === 'sheet' ? <SheetView /> : <Viewport3D />}
+            {view === 'plan' ? <PlanView /> : view === 'drawing' ? <DrawingView /> : view === 'sheet' ? <SheetView /> : view === 'schedule' ? <ScheduleView /> : <Viewport3D />}
             <ViewportHud />
             {error && <div className="error" role="alert" onClick={() => useSession.setState({ error: null })}>{error}</div>}
             <Notice />

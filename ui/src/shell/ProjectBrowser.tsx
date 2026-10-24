@@ -23,6 +23,7 @@ export function ProjectBrowser() {
   const sections = views.filter((v) => v.props.kind === 'section');
   const elevations = views.filter((v) => v.props.kind === 'elevation');
   const sheets = [...nodes.values()].filter((n) => n.type === 'LapinSheet');
+  const schedules = [...nodes.values()].filter((n) => n.type === 'LapinSchedule');
   const showDrawing = (id: string) => useUi.setState({ view: 'drawing', drawingViewId: id, selection: id, selected: [id] });
   const remove = (id: string) => void execute('element.delete', { id }).then(() => { if (useUi.getState().drawingViewId === id) useUi.setState({ view: 'plan', drawingViewId: null }); });
   const addElevations = async () => {
@@ -93,7 +94,17 @@ export function ProjectBrowser() {
         ))}
       </div>
       <div className="tree-group">
-        <div className="tree-label"><ChevronDown size={12} /><Table2 size={13} />Schedules<span className="count">0</span></div>
+        <div className="tree-label"><ChevronDown size={12} /><Table2 size={13} />Schedules<span className="count">{schedules.length}</span>
+          <select className="mini-select" value="" title="New schedule" onChange={(e) => { const kind = e.target.value; if (kind) void execute('architecture.createSchedule', { kind }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'schedule', scheduleId: id }); }); }}>
+            <option value="">+</option><option value="all">Joinery</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option>
+          </select>
+        </div>
+        {schedules.map((v) => (
+          <span key={v.id} className="tree-row">
+            <button type="button" className={`tree-item${view === 'schedule' && ui.scheduleId === v.id ? ' on' : ''}`} onClick={() => useUi.setState({ view: 'schedule', scheduleId: v.id, selection: v.id, selected: [v.id] })}>{v.name}</button>
+            <button type="button" className="icon mini" title="Delete the schedule" onClick={() => void execute('element.delete', { id: v.id }).then(() => { if (useUi.getState().scheduleId === v.id) useUi.setState({ view: 'plan', scheduleId: null }); })}><Trash2 size={11} /></button>
+          </span>
+        ))}
       </div>
     </nav>
   );

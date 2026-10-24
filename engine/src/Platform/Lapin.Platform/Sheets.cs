@@ -7,19 +7,32 @@ using Lapin.Model;
 
 namespace Lapin.Platform;
 
+/// <summary>
+/// Something other than a view a sheet can show (a schedule): its pages laid
+/// out in paper millimetres (y down from the top-left), at most as wide as asked.
+/// </summary>
+public interface ISheetContent
+{
+    bool Handles(Entity e);
+    /// <summary>Its pages, each with its size and pens; <paramref name="maxWidth"/> and <paramref name="maxHeight"/> (paper mm) wrap and page it.</summary>
+    IReadOnlyList<(double W, double H, List<Pen> Pens)> Pages(IQueryContext q, Entity e, double maxWidth, double? maxHeight);
+}
+
 /// <summary>A view on a sheet: where its centre sits on the paper (mm, from the top-left), its box (0 × 0: fits the drawing), the drawing point at its centre (null: the drawing's centre).</summary>
-public sealed record SheetViewport(string Id, string ViewId, double X, double Y, double Width = 0, double Height = 0, Vec2? Center = null)
+public sealed record SheetViewport(string Id, string ViewId, double X, double Y, double Width = 0, double Height = 0, Vec2? Center = null, int Page = 1)
 {
     public JsonObject ToJson()
     {
         var o = new JsonObject { ["id"] = Id, ["viewId"] = ViewId, ["x"] = X, ["y"] = Y, ["width"] = Width, ["height"] = Height };
         if (Center is { } c) o["center"] = new JsonArray(c.X, c.Y);
+        if (Page > 1) o["page"] = Page;
         return o;
     }
 
     public static SheetViewport? From(JsonNode? n) => n is JsonObject o && (string?)o["id"] is { } id && (string?)o["viewId"] is { } v
         ? new SheetViewport(id, v, Json.Number(o["x"]) ?? 0, Json.Number(o["y"]) ?? 0, Json.Number(o["width"]) ?? 0, Json.Number(o["height"]) ?? 0,
-            o["center"] is JsonArray c && c.Count >= 2 ? new Vec2(Json.Number(c[0]) ?? 0, Json.Number(c[1]) ?? 0) : null)
+            o["center"] is JsonArray c && c.Count >= 2 ? new Vec2(Json.Number(c[0]) ?? 0, Json.Number(c[1]) ?? 0) : null,
+            (int)(Json.Number(o["page"]) ?? 1))
         : null;
 }
 
@@ -60,13 +73,33 @@ public static class Sheets
     }
 
     /// <summary>A sheet's viewport as placed: its box on the paper and the transform from the view's metres.</summary>
-    public sealed record Placement(SheetViewport Viewport, Entity View, Views.Rendered Drawing, double X0, double Y0, double X1, double Y1, Func<Vec2, Vec2> ToPaper);
+    public sealed record Placement(SheetViewport Viewport, Entity View, Views.Rendered Drawing, double X0, double Y0, double X1, double Y1, Func<Vec2, Vec2> ToPaper, bool Content = false);
+
+    /// <summary>The frame's inner width and height on a sheet, less the title block's height (what a schedule pages into).</summary>
+    public static (double W, double H) FrameSize(Entity sheet)
+    {
+        var (w, h) = PaperOf(sheet);
+        return (w - 2 * Margin - 4, h - 2 * Margin - TitleBlock.H - 4);
+    }
 
     public static List<Placement> Place(IQueryContext q, Entity sheet)
     {
         var o = new List<Placement>();
         foreach (var vp in Viewports(sheet))
         {
+            // A schedule (or any module's sheet content): its page, laid out in paper mm, centred on the viewport.
+            if (q.Model.Get(vp.ViewId) is { } other && q.Services.All<ISheetContent>().FirstOrDefault(c => c.Handles(other)) is { } content)
+            {
+                var (fw, fh) = FrameSize(sheet);
+                var wrap = vp.Width > 0 ? Math.Max(60, Math.Min(vp.Width, fw)) : fw;
+                var pages = content.Pages(q, other, wrap, fh);
+                var (pw, ph, pp) = vp.Page - 1 < pages.Count ? pages[vp.Page - 1] : (40, 10, new List<Pen>());
+                var bw = Math.Max(pw, vp.Width > 0 ? vp.Width : 0);
+                var (x0, y0) = (vp.X - bw / 2, vp.Y - ph / 2);
+                Vec2 Shift(Vec2 p) => new(p.X + x0, p.Y + y0);
+                o.Add(new Placement(vp, other, new Views.Rendered(pp, [], null, 1000, "content", null, []), x0, y0, x0 + bw, y0 + ph, Shift, true));
+                continue;
+            }
             if (Views.Find(q.Model, vp.ViewId) is not { } view) continue;
             var r = Views.Render(q, view);
             var k = 1000 / r.Scale;
@@ -155,7 +188,7 @@ public static class Sheets
         Rect(frame, Margin, Margin, W - Margin, H - Margin);
 
         // View titles: the view's name over a rule, its scale beside, under the box's lower-left corner.
-        foreach (var pl in placements)
+        foreach (var pl in placements.Where(p => !p.Content))
         {
             var y = pl.Y1 + 7;
             text.Texts.Add(new PenText(new Vec2(pl.X0, y), pl.View.Name, 3.5, Anchor: "start", Bold: true));
@@ -178,7 +211,7 @@ public static class Sheets
         text.Texts.Add(new PenText(new Vec2(bx0 + 3, by0 + 15), projectName, 5, Anchor: "start", Bold: true));
         text.Texts.Add(new PenText(new Vec2(bx0 + 3, by0 + 24.5), "SHEET", 1.8, Anchor: "start"));
         text.Texts.Add(new PenText(new Vec2(bx0 + 3, by0 + 32), sheet.Name, 4, Anchor: "start", Bold: true));
-        var scales = placements.Select(p => p.Drawing.Scale).Distinct().OrderBy(x => x).Select(s => $"1:{s:0}").ToList();
+        var scales = placements.Where(p => !p.Content).Select(p => p.Drawing.Scale).Distinct().OrderBy(x => x).Select(s => $"1:{s:0}").ToList();
         var cells = new[]
         {
             ("NUMBER", sheet.Str("number") ?? ""),
@@ -271,12 +304,14 @@ public static class Sheets
         {
             var sheet = Require(ctx.Model, (string?)a["id"]);
             var viewId = (string?)a["viewId"] ?? throw new CommandException("Which view?");
-            if (Views.Find(ctx.Model, viewId) == null) throw new CommandException("There is no such view.");
-            if (ctx.Model.OfClass(Class).FirstOrDefault(s => Viewports(s).Any(v => v.ViewId == viewId)) is { } on)
+            var page = (int)(Json.Number(a["page"]) ?? 1);
+            var isContent = ctx.Model.Get(viewId) is { } ent && ctx.Services.All<ISheetContent>().Any(c => c.Handles(ent));
+            if (Views.Find(ctx.Model, viewId) == null && !isContent) throw new CommandException("There is no such view.");
+            if (ctx.Model.OfClass(Class).FirstOrDefault(s => Viewports(s).Any(v => v.ViewId == viewId && v.Page == page)) is { } on)
                 throw new CommandException($"The view is on sheet {on.Str("number")} already.");
             var (W, H) = PaperOf(sheet);
             var vps = Viewports(sheet);
-            var vp = new SheetViewport(ctx.NewId(), viewId, Json.Number(a["x"]) ?? (W - TitleBlock.W) / 2, Json.Number(a["y"]) ?? H / 2);
+            var vp = new SheetViewport(ctx.NewId(), viewId, Json.Number(a["x"]) ?? (W - TitleBlock.W) / 2, Json.Number(a["y"]) ?? H / 2, Page: page);
             vps.Add(vp);
             Write(ctx, sheet, vps);
             return new JsonObject { ["viewportId"] = vp.Id };

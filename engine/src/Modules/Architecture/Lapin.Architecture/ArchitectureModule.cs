@@ -105,6 +105,9 @@ public sealed class ArchitectureModule : ILapinModule
             return null;
         });
 
+        // ------------------------------------------------------------ schedules
+        new Schedules.ScheduleEntity().Register(r);
+
         // ------------------------------------------------------------ roofs
         r.Class(new(IfcClass.Roof, "Roof",
         [

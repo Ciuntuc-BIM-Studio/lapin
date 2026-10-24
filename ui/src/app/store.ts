@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 
 export type Theme = 'paper' | 'graphite';
-export type ViewKind = '3d' | 'plan' | 'drawing' | 'sheet';
+export type ViewKind = '3d' | 'plan' | 'drawing' | 'sheet' | 'schedule';
 export type Dialog = string | null;
 
 export interface UiState {
@@ -16,6 +16,8 @@ export interface UiState {
   drawingViewId: string | null;
   /** The sheet the sheet view shows (a LapinSheet id). */
   sheetId: string | null;
+  /** The schedule the schedule view shows (a LapinSchedule id). */
+  scheduleId: string | null;
   /** The plan view (a LapinView id) the plan shows; null: the storey's own plan. */
   planViewId: string | null;
   /** Whether plans show the generated drawing (hatches, pens) or the plain modelling lines. */
@@ -41,7 +43,7 @@ export interface UiState {
 }
 
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, view: 'plan', drawingViewId: null, sheetId: null, planViewId: null, planDrawing: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper',
+  screen: 'start', tab: null, tool: null, view: 'plan', drawingViewId: null, sheetId: null, scheduleId: null, planViewId: null, planDrawing: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper',
 }));
 
 export const setTool = (tool: string | null) => useUi.setState({ tool });

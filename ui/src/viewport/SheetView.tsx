@@ -51,7 +51,8 @@ export function SheetView() {
   const placed = new Set(d?.viewports.map((x) => x.viewId) ?? []);
   const views = [...nodes.values()].filter((n) => n.type === 'LapinView');
   const storeyPlans = [...nodes.values()].filter((n) => n.type === 'IfcBuildingStorey').map((s) => ({ id: `plan:${s.id}`, name: `${s.name} (plan)` }));
-  const placeable = [...storeyPlans, ...views.map((x) => ({ id: x.id, name: x.name }))].filter((x) => !placed.has(x.id));
+  const schedules = [...nodes.values()].filter((n) => n.type === 'LapinSchedule').map((x) => ({ id: x.id, name: x.name }));
+  const placeable = [...storeyPlans, ...views.map((x) => ({ id: x.id, name: x.name })), ...schedules].filter((x) => !placed.has(x.id));
 
   const exportAs = async (kind: 'pdf' | 'dxf') => {
     if (!sheet) return;

@@ -21,7 +21,7 @@ export function ViewportHud() {
       <div className="hud-card">
         <span className="eyebrow">Mode</span><span>{active ? active.label.toUpperCase() : 'SELECT'}</span>
         <span className="eyebrow">Level</span><span>{(storey?.name ?? '—').toUpperCase()} <span className="accent">{level(num(storey ?? undefined, 'elevation'))}</span></span>
-        <span className="eyebrow">View</span><span>{view === 'plan' ? 'PLAN' : view === 'drawing' ? 'DRAWING' : view === 'sheet' ? 'SHEET' : '3D · SHADED'}</span>
+        <span className="eyebrow">View</span><span>{view === 'plan' ? 'PLAN' : view === 'drawing' ? 'DRAWING' : view === 'sheet' ? 'SHEET' : view === 'schedule' ? 'SCHEDULE' : '3D · SHADED'}</span>
         <span className="eyebrow">Snap</span><span>POINTS · GRID 0.05 m</span>
       </div>
       {hint && <div className="hud-hint">{hint}</div>}

@@ -259,3 +259,11 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .sheet-viewport:hover rect { stroke: var(--accent); stroke-dasharray: 4 3; }
 .sheet-viewport foreignObject { opacity: 0; }
 .sheet-viewport:hover foreignObject { opacity: 1; }
+.schedule-pane { display: flex; flex-direction: column; }
+.schedule-svg { flex: 1 1 60%; min-height: 200px; }
+.schedule-grid { flex: 0 1 40%; overflow: auto; border-top: 1px solid var(--rule); background: var(--panel); }
+.schedule-grid table { border-collapse: collapse; font-size: 12px; }
+.schedule-grid th, .schedule-grid td { border: 1px solid var(--rule); padding: 2px 4px; text-align: left; white-space: nowrap; }
+.schedule-grid input { width: 9em; border: none; background: transparent; }
+.mini-select { margin-left: auto; font-size: 11px; padding: 0 2px; }
+.chip.warn { color: #c2410c; border-color: #c2410c; }

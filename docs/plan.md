@@ -110,6 +110,8 @@ Numerotarea veche avea două variante: cea din commit-ul M0 (M4 faze, M6 raporta
   - Făcut (24.10.2026): generatorul pe liniile ascunse exacte din BubbleBIM (tăietură, văzut, ascuns, deasupra, dincolo), domeniul vederii, tabelul de penițe și stilurile de linii, desenul pe materiale (hașuri, îmbinări în același material, membrane), vederile ca entități (planuri, planuri de fundații, secțiuni, fațade), marcajele de secțiune și nivelurile, axele, cotele asociative aliniate și textele, cu uneltele lor.
   - Rămas: unirea liniilor coliniare, eliminarea liniilor parazite, simbolurile complete de tâmplărie după specificație, cote liniare și lanțuri, etichete, editările de linii.
 - **M6 – Faze, planșe, DXF și PDF, citirea `.lapin` formatul 2.**
+  - Făcut (24.10.2026): planșele (A0–A4, cartuș, vederi la scara lor), PDF și DXF R2000, extrasele de tâmplărie și de buiandrugi (fișe cu desenul tipului, rânduri, celule, tabele, verificare, CSV, paginare, așezare pe planșă).
+  - Rămas: fazele, citirea formatului 2, XLSX, continuarea automată pe planșe.
 - **M7 – Lansarea desktop:**
   - macOS și Windows (manifold pentru Windows), cu semnare și notarizare;
   - pagina de bun venit, „Report an issue”, linkul Skool;
