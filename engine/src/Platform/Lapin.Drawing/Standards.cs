@@ -178,6 +178,14 @@ public static class Standards
         return (metres * factor).ToString("F" + Math.Clamp(precision, 0, 6), CultureInfo.InvariantCulture);
     }
 
+    /// <summary>A level as drawings write it: ±0.00, +3.06, −3.98 (metres, two decimals, a true minus).</summary>
+    public static string FormatLevel(double z)
+    {
+        var r = Math.Round(z, 2);
+        if (Math.Abs(r) < 0.005) return "±0.00";
+        return (r > 0 ? "+" : "\u2212") + Math.Abs(r).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     /// <summary>Text reads left to right, and bottom to top when it runs vertically: a screen angle (°, y down) folded into [−90°, 90°).</summary>
     public static double ReadableDeg(double deg)
     {

@@ -128,3 +128,13 @@ Ordinea de căutare a fost: Lapin-ul vechi, apoi BubbleBIM Pro, apoi BubbleBIM-S
 | 78 | Meniul ? deschide doar două adrese fixe (Skool și site-ul), prin motor. | Orice link. | `Support.Open` |
 | 79 | Build-ul macOS (`pnpm build:product lapin`) merge: `Lapin.app` de 117 MB, motorul împachetat pornește și modelează. Nu e semnat și nici notarizat: trebuie certificatul Apple Developer și contul (decizia și datele tale). Nu se face încă DMG. | Semnare acum. | `scripts/build-product.mjs` |
 | 80 | Windows nu e construit: manifold (booleanele) există doar pentru macOS arm64; build-ul Windows cere biblioteca manifold compilată pentru Windows și o mașină Windows (sau CI). Fără ea, golurile nu se taie. | — | `vendor/bubblebim-pro` |
+
+## După M7 – ce a rămas, plus modulele noi (24.10.2026, a doua sesiune)
+
+| # | Ce am ales | Alternative | Unde |
+|---|---|---|---|
+| 81 | Golurile în plăci sunt `IfcOpeningElement` cu conturul lor în plan, legate de placă prin `IfcRelVoidsElement`, tăiate prin toate straturile cu booleane. Unealta „Floor opening” (SH) găsește singură placa în care e desenat golul. | Conturul plăcii cu găuri. | `Slabs.AddOpening` |
+| 82 | Liniile desenului se unesc: bucățile coliniare care se ating sau se suprapun devin o singură linie (pe ecran, în PDF și în DXF). | — | `LineMerge` |
+| 83 | Terenul e modulul de motor `civil`, în ediția Lapin. Terenul e un `IfcGeographicElement` TERRAIN cu punctele topo (x, y, cota măsurată) și un datum (cota măsurată a lui ±0.00), triangulat Delaunay la fiecare citire. Corpul lui e un solid: TIN-ul deasupra, marginea în jos până la o bază (2 m sub cel mai jos punct), deci se taie în secțiuni cu hașura de pământ (materialul „Earth”). În plan: curbele de nivel (0,50 m, fiecare a 5-a mai groasă și cotată), marginea, platformele. | Suprafață deschisă, fără secțiune; terenul pe `IfcSite`. | `Lapin.Civil` |
+| 84 | Platformele sunt `IfcEarthworksCut` legate de teren prin `IfcRelVoidsElement`: un contur la o cotă. Ce e deasupra se sapă, ce e dedesubt se umple, cu pereți verticali (fără taluzuri deocamdată). Volumele de săpătură și umplutură ies în cantitățile terenului, pe platformă. | Taluzuri cu panta 1:1,5; platforma ca element separat de umplutură. | `Terrains.Geometry` |
+| 85 | Terenul se citește din fișiere de puncte (xyz sau PENZD, ca în Lapin-ul vechi). Lipsesc deocamdată: liniile de rupere, conturul impus, editarea punctelor în plan (există comanda `setTerrainPoint`), LandXML, drumurile, podurile. | — | `civil.addTerrain` |

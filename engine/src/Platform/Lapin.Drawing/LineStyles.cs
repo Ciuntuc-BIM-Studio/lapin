@@ -67,6 +67,7 @@ public static class LineStyles
         "IFCSTAIR" or "IFCSTAIRFLIGHT" or "IFCRAMP" or "IFCRAMPFLIGHT" => "stairs",
         "IFCRAILING" => "railings",
         "IFCSPACE" => "spaces",
+        "IFCGEOGRAPHICELEMENT" or "IFCEARTHWORKSCUT" or "IFCEARTHWORKSFILL" => "topography",
         "IFCFURNISHINGELEMENT" or "IFCFURNITURE" => "furniture",
         "IFCBUILDINGELEMENTPROXY" or "IFCCOVERING" or "IFCPLATE" or "IFCFOOTING" => "other",
         _ => null,

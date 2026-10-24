@@ -274,3 +274,8 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .menu-note { padding: 6px 12px; border-top: 1px solid var(--rule); }
 .dialog-body.report textarea { width: 100%; box-sizing: border-box; font: inherit; }
 button.link { background: none; border: none; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+.plan-item.contour { stroke: #7a9a5a; stroke-width: 0.6; }
+.plan-item.contourMajor { stroke: #5d7a3e; stroke-width: 1.1; }
+.plan-item.terrainEdge { stroke: #5d7a3e; stroke-width: 0.8; stroke-dasharray: 5 3; }
+.small-tools { display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.tool.small { flex-direction: row; gap: 6px; height: auto; min-width: 0; padding: 3px 8px; justify-content: flex-start; }

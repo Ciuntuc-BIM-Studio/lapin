@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Civil: the terrain (a TIN from survey points, its contours, the platforms
+    cut and filled into it, their earthworks) and, later, roads and bridges.
+    It needs only the platform.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>civil</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+  </ItemGroup>
+</Project>

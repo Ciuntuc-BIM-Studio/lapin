@@ -1,6 +1,6 @@
 /** Architecture: layered walls and their types, doors and windows, floors, roofs; later rooms. */
 
-import { ArrowLeftRight, BrickWall, CornerDownRight, DoorOpen, Home, LayoutGrid, Layers3, Link2, PanelTop, Settings2, Slash, Square, StretchHorizontal } from 'lucide-react';
+import { ArrowLeftRight, BrickWall, CornerDownRight, DoorOpen, Home, LayoutGrid, Layers3, Link2, PanelTop, Settings2, Slash, Square, SquareDashed, StretchHorizontal } from 'lucide-react';
 import type { Grip, LapinModule, ToolDef } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
@@ -98,6 +98,14 @@ const roof: ToolDef = {
     await ctx.execute('architecture.addRoof', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(style ? { style } : {}) });
   },
 };
+/** An opening through a floor (a stairwell, a shaft): its outline, inside the floor. */
+const slabOpening: ToolDef = {
+  id: 'architecture.slabOpening', label: 'Floor opening', icon: SquareDashed, shortcut: 'SH',
+  gesture: { kind: 'polygon' },
+  complete: async ({ points }, ctx) => {
+    await ctx.execute('architecture.addSlabOpening', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]) });
+  },
+};
 const slabTypes: ToolDef = { id: 'architecture.slabTypes', label: 'Floor types', icon: Layers3, run: () => useUi.setState({ dialog: 'slabTypes' }) };
 
 const architecture: LapinModule = {
@@ -107,7 +115,7 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 10,
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, roof] },
+      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [slabOpening] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew] },
       { label: 'Room', tools: [{ id: 'architecture.room', label: 'Room', icon: LayoutGrid, shortcut: 'RM' }] },

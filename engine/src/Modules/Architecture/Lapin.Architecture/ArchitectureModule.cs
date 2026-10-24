@@ -101,8 +101,13 @@ public sealed class ArchitectureModule : ILapinModule
         // An opening through a floor (a stairwell, a shaft): its outline in plan.
         r.Command("addSlabOpening", "Floor opening", (ctx, a) =>
         {
-            var slab = Spatial.Require(ctx.Model, (string?)a["slabId"], IfcClass.Slab);
-            return new JsonObject { ["id"] = Slabs.AddOpening(ctx, slab, Points(a)).Id };
+            var pts = Points(a);
+            // No floor named: the one on the storey whose outline holds the opening's middle.
+            var mid = new Vec2(pts.Average(p => p.X), pts.Average(p => p.Y));
+            var slab = (string?)a["slabId"] is { } sid ? Spatial.Require(ctx.Model, sid, IfcClass.Slab)
+                : ctx.Model.OfClass(IfcClass.Slab).FirstOrDefault(s => ((string?)a["storeyId"] == null || Spatial.StoreyOf(ctx.Model, s.Id)?.Id == (string?)a["storeyId"]) && Polygon2.Contains(Slabs.Contour(s), mid))
+                  ?? throw new CommandException("Draw the opening inside a floor.");
+            return new JsonObject { ["id"] = Slabs.AddOpening(ctx, slab, pts).Id };
         });
 
         r.Command("updateSlabOpening", "Change floor opening", (ctx, a) =>

@@ -60,6 +60,15 @@ export function Ribbon() {
                     <span>{tl.label}</span>
                   </button>
                 ))}
+                {g.small && g.small.length > 0 && (
+                  <div className="small-tools">
+                    {g.small.map((tl) => (
+                      <button type="button" key={tl.id} className={`tool small${tool === tl.id ? ' on' : ''}`} onClick={() => activate(tl)} title={tl.shortcut ? `${tl.label} (${tl.shortcut})` : tl.label}>
+                        <tl.icon size={14} strokeWidth={1.6} /><span>{tl.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="group-label">{g.label}</div>
             </div>

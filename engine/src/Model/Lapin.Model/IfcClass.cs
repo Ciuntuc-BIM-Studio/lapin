@@ -28,6 +28,9 @@ public static class IfcClass
     public const string DoorType = "IfcDoorType";
     public const string Window = "IfcWindow";
     public const string WindowType = "IfcWindowType";
+    public const string GeographicElement = "IfcGeographicElement";
+    public const string EarthworksCut = "IfcEarthworksCut";
+    public const string BuildingElementProxy = "IfcBuildingElementProxy";
 
     // Materials.
     public const string Material = "IfcMaterial";
