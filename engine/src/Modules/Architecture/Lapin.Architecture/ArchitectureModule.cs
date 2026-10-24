@@ -98,6 +98,23 @@ public sealed class ArchitectureModule : ILapinModule
             return null;
         });
 
+        // An opening through a floor (a stairwell, a shaft): its outline in plan.
+        r.Command("addSlabOpening", "Floor opening", (ctx, a) =>
+        {
+            var slab = Spatial.Require(ctx.Model, (string?)a["slabId"], IfcClass.Slab);
+            return new JsonObject { ["id"] = Slabs.AddOpening(ctx, slab, Points(a)).Id };
+        });
+
+        r.Command("updateSlabOpening", "Change floor opening", (ctx, a) =>
+        {
+            var o = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.OpeningElement);
+            if (o.Attrs["contour"] == null) throw new CommandException("Not a floor opening.");
+            var attrs = o.CloneAttrs();
+            attrs["contour"] = Slabs.ContourJson(Slabs.CheckContour(Points(a)));
+            ctx.Replace(o.With(attrs: attrs));
+            return null;
+        });
+
         r.Command("setSlabType", "Change type", (ctx, a) =>
         {
             var type = Spatial.Require(ctx.Model, (string?)a["typeId"], IfcClass.SlabType);

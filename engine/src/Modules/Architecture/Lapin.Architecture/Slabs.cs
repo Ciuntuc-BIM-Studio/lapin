@@ -113,8 +113,37 @@ public static class Slabs
             if (to - from > 1e-9 && Prism.ExtrudeFootprint(contour, top + from, to - from, name) is { } solid)
                 parts.Add(new GeometryPart(name, Materials.ColorOf(m, material), solid, material, $"layer:{index}"));
         var problems = new List<string>();
+        var holes = Holes(m, slab.Id).Select(h => h.Contour).ToList();
+        if (holes.Count > 0 && parts.Count > 0)
+        {
+            if (services?.Get<ISolidBooleans>() is { } booleans)
+            {
+                // Each opening as a prism through the whole build-up, a little proud of it.
+                var section = Section(m, slab);
+                var (z0, z1) = (top + section.Min(b => b.From) - 0.05, top + section.Max(b => b.To) + 0.05);
+                var cutters = holes.Select(h => Prism.ExtrudeFootprint(h, z0, z1 - z0, "opening")).OfType<Solid>().ToList();
+                parts = parts.Select(p => booleans.Difference(p.Solid, cutters, p.Solid.Tag) is { } cut ? p with { Solid = cut } : null).OfType<GeometryPart>().ToList();
+            }
+            else problems.Add("Openings in floors need the boolean library (manifold), missing here.");
+        }
         parts = Cuts.Apply(slab, m, services, parts, problems);
-        return new ElementGeometry(parts, [new PlanItem("outline", true, contour)], contour, problems.Count > 0 ? problems : null);
+        var plan = new List<PlanItem> { new("outline", true, contour) };
+        plan.AddRange(holes.Select(h => new PlanItem("outline", true, h)));
+        return new ElementGeometry(parts, plan, contour, problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>The openings that void a floor (shafts, stairwells): each an IfcOpeningElement with its contour in plan.</summary>
+    public static IEnumerable<(Entity Opening, IReadOnlyList<Vec2> Contour)> Holes(IModelView m, string slabId) =>
+        m.RelatedOf(slabId, IfcClass.RelVoidsElement).Where(o => o.Class == IfcClass.OpeningElement)
+            .Select(o => (o, Contour(o))).Where(h => h.Item2.Count >= 3);
+
+    public static Entity AddOpening(IEdit edit, Entity slab, IReadOnlyList<Vec2> contour)
+    {
+        var pts = CheckContour(contour);
+        var opening = new Entity(edit.NewId(), IfcClass.OpeningElement, "Floor opening", new JsonObject { ["contour"] = ContourJson(pts) }, "OPENING");
+        edit.Add(opening);
+        edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelVoidsElement, slab.Id, [opening.Id]));
+        return opening;
     }
 
     static double Top(IModelView m, Entity slab) => (Spatial.StoreyOf(m, slab.Id)?.Num("elevation") ?? 0) + slab.Num("offset");

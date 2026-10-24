@@ -41,6 +41,24 @@ public class SlabTests
     }
 
     [Fact]
+    public void An_opening_goes_through_every_layer_and_goes_with_its_floor()
+    {
+        var f = new Fixture();
+        var slab = Slab(f, f.Storey, 0, 0, 6, 4);
+        var hole = (string)f.Run("architecture.addSlabOpening", new JsonObject { ["slabId"] = slab, ["x1"] = 1, ["y1"] = 1, ["x2"] = 3, ["y2"] = 2 })!["id"]!;
+        Assert.Equal((24 - 2) * 0.22, Vol(f, slab), 6);
+        Assert.Equal(2, f.Session.Geometry(slab)!.Plan!.Count);
+        f.Run("architecture.updateSlabOpening", new JsonObject { ["id"] = hole, ["x1"] = 1, ["y1"] = 1, ["x2"] = 2, ["y2"] = 2 });
+        Assert.Equal((24 - 1) * 0.22, Vol(f, slab), 6);
+        var net = f.Session.Quantities(slab)[0].Quantities.Single(x => x.Name == "NetArea").Value;
+        Assert.Equal(23, net, 6);
+        f.Run("element.delete", new JsonObject { ["id"] = slab });
+        Assert.Null(f.Model.Get(hole));
+        f.Session.Undo();
+        Assert.Equal((24 - 1) * 0.22, Vol(f, slab), 6);
+    }
+
+    [Fact]
     public void A_changed_floor_type_changes_its_floors_and_wrong_outlines_are_refused()
     {
         var f = new Fixture();
