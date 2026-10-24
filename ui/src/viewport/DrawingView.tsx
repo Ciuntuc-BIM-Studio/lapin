@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Maximize } from 'lucide-react';
 import { select, useUi } from '../app/store';
+import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, useSession } from '../engine/session';
 import type { Vec2 } from '../platform/module';
 import { DrawingLayer } from './DrawingLayer';
@@ -20,18 +21,27 @@ import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
 import { boxTest, segsOf } from './selectBox';
+import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPixels, type View2, type ZoomHost } from './zoom';
+import { ScaleChip } from './ScaleChip';
+import { KeyPlan } from './KeyPlan';
 
-interface View { cx: number; cy: number; scale: number }
+type View = View2;
+const clampScale = (s: number) => Math.min(4000, Math.max(2, s));
 
 export function DrawingView() {
-  const id = useUi((s) => s.drawingViewId);
+  const id = usePaneField('drawingViewId');
+  const active = usePaneActive();
   const node = useSession((s) => (id ? s.nodes.get(id) : undefined));
   const nodes = useSession((s) => s.nodes);
   const selected = useUi((s) => s.selected);
   const drawing = useDrawing(id);
   const ref = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const [view, setView] = useState<View | null>(null);
+  // The view is remembered per section or elevation for the session; a new one fits itself once its drawing arrives.
+  const key = id ?? 'drawing:none';
+  const [view, setView] = useState<View | null>(() => recall<View>(key) ?? null);
+  useEffect(() => { if (view) remember(key, view); }, [key, view]);
+  const go = useCallback((v: View) => { setView((old) => { if (old) pushHistory(key, old); return v; }); }, [key]);
   const [hover, setHover] = useState<Aimed | null>(null);
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null);
   /** A selection box being dragged (screen px). */
@@ -49,14 +59,30 @@ export function DrawingView() {
   const fit = useCallback(() => {
     const b = drawing?.bounds;
     if (!b || !size.w) return;
-    const w = Math.max(b[2] - b[0], 1), h = Math.max(b[3] - b[1], 1);
-    setView({ cx: (b[0] + b[2]) / 2, cy: (b[1] + b[3]) / 2, scale: Math.min(size.w / w, size.h / h) * 0.85 });
-  }, [drawing?.bounds, size]);
-  // A new view fits itself once its drawing arrives.
-  useEffect(() => { setView(null); }, [id]);
+    go(framing(b, size, 0.85, 2, 4000));
+  }, [drawing?.bounds, size, go]);
+  useEffect(() => { setView(recall<View>(id ?? 'drawing:none') ?? null); }, [id]);
   useEffect(() => { if (!view && drawing?.bounds) fit(); }, [drawing, view, fit]);
 
   const v = view ?? { cx: 0, cy: 0, scale: 40 };
+  const host: ZoomHost = {
+    fitAll: fit,
+    fitSelection: () => {
+      const pts: Vec2[] = [];
+      for (const m of drawing?.marks ?? []) if (selected.includes(m.id)) for (let k = 0; k + 1 < m.segments.length; k += 2) pts.push({ x: m.segments[k], y: m.segments[k + 1] });
+      const b = boundsOf(pts);
+      if (!b || !size.w) return false;
+      go(framing(b, size, 0.6, 2, 4000));
+      return true;
+    },
+    zoomWindow: (a, b) => go(framing([Math.min(a.x, b.x), Math.min(a.y, b.y), Math.max(a.x, b.x), Math.max(a.y, b.y)], size, 0.95, 2, 4000)),
+    actual: () => go({ ...v, scale: clampScale(actualScale(drawing?.scale ?? 100)) }),
+    zoomBy: (f) => go({ ...v, scale: clampScale(v.scale * f) }),
+    previous: () => { const p = popHistory<View>(key); if (!p) return false; setView(p); return true; },
+  };
+  useZoomHost(active, host);
+  const middleTwice = useRef(middleDouble());
+  const wheelBurst = useRef(0);
   const toScreen = useCallback((p: Vec2) => ({ x: (p.x - v.cx) * v.scale + size.w / 2, y: size.h / 2 - (p.y - v.cy) * v.scale }), [v.cx, v.cy, v.scale, size]);
   const toWorld = useCallback((x: number, y: number): Vec2 => ({ x: (x - size.w / 2) / v.scale + v.cx, y: (size.h / 2 - y) / v.scale + v.cy }), [v.cx, v.cy, v.scale, size]);
 
@@ -103,18 +129,23 @@ export function DrawingView() {
             {drawing!.lineworkOrphans!.length} line edit(s) lost their edge · clean
           </button>
         )}
-                <button type="button" className="icon" title="Fit" onClick={fit}><Maximize size={14} /></button>
+        <ScaleChip pxPerMetre={v.scale} scale={drawing?.scale ?? 100} onActual={host.actual} />
+        <button type="button" className="icon" title="Fit (ZE)" onClick={fit}><Maximize size={14} /></button>
       </div>
+      <KeyPlan mode="drawing" viewId={id} />
       <svg ref={ref} className={`plan-svg drawing-svg${cadStep ? ' tool' : ''}`} data-testid="drawing"
         onWheel={(e) => {
           // A trackpad's two fingers pan; a pinch (ctrl) or a mouse wheel zooms.
           if (!e.ctrlKey && (e.deltaX !== 0 || !Number.isInteger(e.deltaY))) { setView({ ...v, cx: v.cx + e.deltaX / v.scale, cy: v.cy - e.deltaY / v.scale }); return; }
           const r = ref.current!.getBoundingClientRect();
           const p = toWorld(e.clientX - r.left, e.clientY - r.top);
-          const scale = Math.min(4000, Math.max(2, v.scale * Math.exp(-e.deltaY * 0.0015)));
+          const scale = clampScale(v.scale * Math.exp(-wheelPixels(e, size.h) * 0.0015));
+          const now = performance.now();
+          if (now - wheelBurst.current > 400) pushHistory(key, v);
+          wheelBurst.current = now;
           setView({ scale, cx: p.x - (p.x - v.cx) * (v.scale / scale), cy: p.y - (p.y - v.cy) * (v.scale / scale) });
         }}
-        onPointerDown={(e) => { drag.current = { x: e.clientX, y: e.clientY, view: v, moved: false }; (e.target as Element).setPointerCapture?.(e.pointerId); }}
+        onPointerDown={(e) => { if (middleTwice.current(e)) { fit(); return; } drag.current = { x: e.clientX, y: e.clientY, view: v, moved: false }; (e.target as Element).setPointerCapture?.(e.pointerId); }}
         onPointerMove={(e) => {
           const d = drag.current;
           if (d) {

@@ -11,10 +11,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FileDown, Maximize } from 'lucide-react';
 import { notify, select, useUi } from '../app/store';
+import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, query, useSession } from '../engine/session';
 import { exportFile } from '../engine/files';
 import { DrawingLayer } from './DrawingLayer';
 import type { PenDto } from './drawing';
+import { PX_PER_MM, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPixels, type ZoomHost } from './zoom';
 
 interface Vp { id: string; viewId: string; x0: number; y0: number; x1: number; y1: number; scale: number; content: boolean; page: number; pages: number; width?: number; warnings: string[] }
 interface SheetDrawing { w: number; h: number; pens: PenDto[]; frame: number[]; titleBlock: number[]; viewports: Vp[] }
@@ -26,13 +28,18 @@ type Drag =
 const SNAP = 3; // paper mm
 
 export function SheetView() {
-  const id = useUi((s) => s.sheetId);
+  const id = usePaneField('sheetId');
+  const paneActive = usePaneActive();
   const nodes = useSession((s) => s.nodes);
   const sheet = id ? nodes.get(id) : undefined;
   const [d, setD] = useState<SheetDrawing | null>(null);
   const ref = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const [z, setZ] = useState<{ k: number; ox: number; oy: number } | null>(null);
+  type Zoom = { k: number; ox: number; oy: number };
+  const key = id ?? 'sheet:none';
+  const [z, setZ] = useState<Zoom | null>(() => recall<Zoom>(key) ?? null);
+  useEffect(() => { if (z) remember(key, z); }, [key, z]);
+  const go = useCallback((v: Zoom) => { setZ((old) => { if (old) pushHistory(key, old); return v; }); }, [key]);
   const drag = useRef<Drag | null>(null);
   const [moved, setMoved] = useState<{ id: string; dx: number; dy: number; guides: number[][] } | null>(null);
   const [widened, setWidened] = useState<{ id: string; w: number } | null>(null);
@@ -44,7 +51,7 @@ export function SheetView() {
     const t = setTimeout(() => { void query<SheetDrawing>('sheet.drawing', { id }).then((r) => { if (live && r) setD(r); }); }, 100);
     return () => { live = false; clearTimeout(t); };
   }, [id, nodes]);
-  useEffect(() => { setZ(null); setD(null); setActive(null); }, [id]);
+  useEffect(() => { setZ(recall<Zoom>(id ?? 'sheet:none') ?? null); setD(null); setActive(null); }, [id]);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -52,11 +59,13 @@ export function SheetView() {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const fit = useCallback(() => {
-    if (!d || !size.w) return;
-    const k = Math.min(size.w / (d.w + 20), size.h / (d.h + 20));
-    setZ({ k, ox: (size.w - d.w * k) / 2, oy: (size.h - d.h * k) / 2 });
-  }, [d, size]);
+  /** A box of paper (mm) framed in the pane. */
+  const frame = useCallback((x0: number, y0: number, x1: number, y1: number, pad = 20) => {
+    if (!size.w) return;
+    const k = Math.min(size.w / (x1 - x0 + pad), size.h / (y1 - y0 + pad));
+    go({ k, ox: size.w / 2 - ((x0 + x1) / 2) * k, oy: size.h / 2 - ((y0 + y1) / 2) * k });
+  }, [size, go]);
+  const fit = useCallback(() => { if (d) frame(0, 0, d.w, d.h); }, [d, frame]);
   useEffect(() => { if (!z && d) fit(); }, [d, z, fit]);
 
   const moveTo = useCallback((vp: Vp, dx: number, dy: number) => {
@@ -81,6 +90,18 @@ export function SheetView() {
   }, [active, d, moveTo]);
 
   const v = z ?? { k: 1, ox: 0, oy: 0 };
+  const zoomAbout = (k: number, mx = size.w / 2, my = size.h / 2) => ({ k, ox: mx - (mx - v.ox) * (k / v.k), oy: my - (my - v.oy) * (k / v.k) });
+  const host: ZoomHost = {
+    fitAll: fit,
+    fitSelection: () => { const vp = d?.viewports.find((b) => b.id === active); if (!vp) return false; frame(vp.x0, vp.y0, vp.x1, vp.y1, 30); return true; },
+    zoomWindow: (a, b) => frame(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.max(a.x, b.x), Math.max(a.y, b.y), 0),
+    actual: () => go(zoomAbout(PX_PER_MM)),
+    zoomBy: (f) => go(zoomAbout(v.k * f)),
+    previous: () => { const p = popHistory<Zoom>(key); if (!p) return false; setZ(p); return true; },
+  };
+  useZoomHost(paneActive, host);
+  const middleTwice = useRef(middleDouble());
+  const wheelBurst = useRef(0);
   const toScreen = useCallback((p: { x: number; y: number }) => ({ x: p.x * v.k + v.ox, y: p.y * v.k + v.oy }), [v.k, v.ox, v.oy]);
   const paperAt = (e: { clientX: number; clientY: number }) => {
     const r = ref.current!.getBoundingClientRect();
@@ -144,7 +165,8 @@ export function SheetView() {
         </select>
         <button type="button" className="icon" title="Export PDF" onClick={() => void exportAs('pdf')}><FileDown size={14} /><span className="small">PDF</span></button>
         <button type="button" className="icon" title="Export DXF" onClick={() => void exportAs('dxf')}><FileDown size={14} /><span className="small">DXF</span></button>
-        <button type="button" className="icon" title="Fit" onClick={fit}><Maximize size={14} /></button>
+        <button type="button" className="chip scale" title="The sheet's size on screen against paper · click for paper size (ZA)" onClick={host.actual}>{Math.round((v.k / PX_PER_MM) * 100)} %</button>
+        <button type="button" className="icon" title="Fit (ZE)" onClick={fit}><Maximize size={14} /></button>
       </div>
       {problems.length > 0 && (
         <div className="sheet-warnings">
@@ -156,10 +178,13 @@ export function SheetView() {
       <svg ref={ref} className="plan-svg sheet-svg" data-testid="sheet" tabIndex={0}
         onWheel={(e) => {
           const r = ref.current!.getBoundingClientRect();
-          const mx = e.clientX - r.left, my = e.clientY - r.top, f = Math.exp(-e.deltaY * 0.0015);
-          setZ({ k: v.k * f, ox: mx - (mx - v.ox) * f, oy: my - (my - v.oy) * f });
+          const now = performance.now();
+          if (now - wheelBurst.current > 400) pushHistory(key, v);
+          wheelBurst.current = now;
+          setZ(zoomAbout(v.k * Math.exp(-wheelPixels(e, size.h) * 0.0015), e.clientX - r.left, e.clientY - r.top));
         }}
         onPointerDown={(e) => {
+          if (middleTwice.current(e)) { fit(); return; }
           const p = paperAt(e);
           const vp = d?.viewports.find((b) => p.x >= b.x0 && p.x <= b.x1 && p.y >= b.y0 && p.y <= b.y1);
           if (vp && e.button === 0) { drag.current = { kind: 'vp', x: e.clientX, y: e.clientY, vp }; setActive(vp.id); select(sheet.id); }

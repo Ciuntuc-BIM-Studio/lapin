@@ -1,13 +1,16 @@
 /** Core: always there — selecting, measuring, the views and how they look, materials and drafting standards. */
 
-import { Box, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareStack, Trash2 } from 'lucide-react';
+import { AppWindow, Box, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Square, SquareSplitHorizontal, Trash2 } from 'lucide-react';
+import { ElevationIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
 import { notify } from '../../app/store';
 import { setTypeOf, similarOf } from '../../platform/modules';
 import { registerCommand, startCommand, useCad, cadLog, type Step } from '../../viewport/cad/session';
 import type { LapinModule } from '../../platform/module';
-import { setTool, useUi } from '../../app/store';
+import { closePane, setTool, splitPane, useUi } from '../../app/store';
+import { isDesktop } from '../../engine/files';
+import { openViewWindow } from '../../app/windows';
 import { MaterialsDialog } from './MaterialsDialog';
 import { StandardsDialog } from './StandardsDialog';
 import { SheetSection } from './SheetSection';
@@ -88,19 +91,22 @@ const core: LapinModule = {
       { label: 'Views', tools: [
         { id: 'view.3d', label: '3D', icon: Box, run: () => useUi.setState({ view: '3d' }) },
         { id: 'view.plan', label: 'Plan', icon: Square, run: () => useUi.setState({ view: 'plan' }) },
-        { id: 'view.section', label: 'Section', icon: Scissors, shortcut: 'SE',
+        { id: 'view.section', label: 'Section', icon: SectionIcon, shortcut: 'SE',
           gesture: { kind: 'twoPoints' },
           complete: async ({ points: [a, b] }, ctx) => {
             const r = await ctx.execute('view.create', { kind: 'section', start: [a.x, a.y], end: [b.x, b.y] }) as { id?: string } | null;
             if (r?.id) useUi.setState({ view: 'drawing', drawingViewId: r.id, tool: null });
           } },
-        { id: 'view.elevations', label: 'Elevations', icon: SquareStack, run: () => void (async () => {
+        { id: 'view.elevations', label: 'Elevations', icon: ElevationIcon, run: () => void (async () => {
           for (const direction of ['south', 'east', 'north', 'west']) await execute('view.create', { kind: 'elevation', direction });
         })() },
       ] },
       { label: 'Graphics', tools: [
         { id: 'view.layers', label: 'Visibility', icon: Layers3, shortcut: 'VV', run: () => useUi.setState({ dialog: 'visibility' }) },
         { id: 'view.range', label: 'View range', icon: Ruler, run: () => useUi.setState({ dialog: 'viewRange' }) },
+        { id: 'view.keyPlan', label: 'Key plan', icon: Compass, run: () => useUi.setState((s) => ({ keyPlan: !s.keyPlan })) },
+        { id: 'view.split', label: 'Split', icon: SquareSplitHorizontal, run: () => { const s = useUi.getState(); if (s.panes.length > 1) closePane(1); else splitPane('row'); } },
+        { id: 'view.window', label: 'New window', icon: AppWindow, run: () => { const s = useUi.getState(); if (isDesktop()) void openViewWindow(s.panes[s.pane]); else notify('A view in a window of its own needs the desktop app.'); } },
         { id: 'view.style', label: 'Visual style', icon: Eye, run: () => useUi.setState((s) => ({ visualStyle: s.visualStyle === 'shaded' ? 'edges' : s.visualStyle === 'edges' ? 'wireframe' : 'shaded' })) },
       ], small: [
         { id: 'view.graphicsVg', label: 'Graphics (VG)', icon: Layers3, shortcut: 'VG', run: () => useUi.setState({ dialog: 'visibility' }) },

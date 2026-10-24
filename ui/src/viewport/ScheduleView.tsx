@@ -8,10 +8,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FileDown, Maximize, Plus, Settings2 } from 'lucide-react';
 import { ScheduleSettings, type Settings } from './ScheduleSettings';
-import { notify, useUi } from '../app/store';
+import { notify } from '../app/store';
+import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, query, useSession } from '../engine/session';
 import { DrawingLayer } from './DrawingLayer';
 import type { PenDto } from './drawing';
+import { PX_PER_MM, middleDouble, popHistory, pushHistory, useZoomHost, wheelPixels, type ZoomHost } from './zoom';
 
 interface Layout {
   w: number; h: number; pens: PenDto[];
@@ -22,7 +24,8 @@ interface Layout {
 }
 
 export function ScheduleView() {
-  const id = useUi((s) => s.scheduleId);
+  const id = usePaneField('scheduleId');
+  const active = usePaneActive();
   const nodes = useSession((s) => s.nodes);
   const node = id ? nodes.get(id) : undefined;
   const [d, setD] = useState<(Layout & Settings) | null>(null);
@@ -53,6 +56,18 @@ export function ScheduleView() {
   }, [d, size]);
   useEffect(() => { if (!z && d) fit(); }, [d, z, fit]);
   const v = z ?? { k: 2, ox: 10, oy: 10 };
+  const key = id ?? 'schedule:none';
+  const go = (n: typeof v) => { pushHistory(key, v); setZ(n); };
+  const zoomAbout = (k: number, mx = size.w / 2, my = size.h / 2) => ({ k, ox: mx - (mx - v.ox) * (k / v.k), oy: my - (my - v.oy) * (k / v.k) });
+  const host: ZoomHost = {
+    fitAll: fit, fitSelection: () => false,
+    zoomWindow: (a, b) => { if (!size.w) return; const k = Math.min(size.w / Math.max(Math.abs(b.x - a.x), 1), size.h / Math.max(Math.abs(b.y - a.y), 1)); go({ k, ox: size.w / 2 - ((a.x + b.x) / 2) * k, oy: size.h / 2 - ((a.y + b.y) / 2) * k }); },
+    actual: () => go(zoomAbout(PX_PER_MM)), zoomBy: (f) => go(zoomAbout(v.k * f)),
+    previous: () => { const p = popHistory<typeof v>(key); if (!p) return false; setZ(p); return true; },
+  };
+  useZoomHost(active, host);
+  const middleTwice = useRef(middleDouble());
+  const wheelBurst = useRef(0);
   const toScreen = useCallback((p: { x: number; y: number }) => ({ x: p.x * v.k + v.ox, y: p.y * v.k + v.oy }), [v.k, v.ox, v.oy]);
 
   if (!node) return <div className="view-pane"><p className="muted">No schedule.</p></div>;
@@ -89,12 +104,19 @@ export function ScheduleView() {
         <button type="button" className="icon" title="Export CSV" onClick={() => void csv()}><FileDown size={14} /><span className="small">CSV</span></button>
         <button type="button" className="icon" title="Export XLSX (a sheet a table)" onClick={() => void xlsx()}><FileDown size={14} /><span className="small">XLSX</span></button>
         <button type="button" className={`icon${settings ? ' on' : ''}`} title="Rows, card drawings, tables, what to check" onClick={() => setSettings(!settings)}><Settings2 size={14} /><span className="small">Settings</span></button>
-        <button type="button" className="icon" title="Fit" onClick={fit}><Maximize size={14} /></button>
+        <button type="button" className="chip scale" title="Size on screen against paper · click for paper size (ZA)" onClick={host.actual}>{Math.round((v.k / PX_PER_MM) * 100)} %</button>
+        <button type="button" className="icon" title="Fit (ZE)" onClick={fit}><Maximize size={14} /></button>
       </div>
       <div className="schedule-body">
       <svg ref={ref} className="plan-svg sheet-svg schedule-svg" data-testid="schedule"
-        onWheel={(e) => { const r = ref.current!.getBoundingClientRect(); const mx = e.clientX - r.left, my = e.clientY - r.top, f = Math.exp(-e.deltaY * 0.0015); setZ({ k: v.k * f, ox: mx - (mx - v.ox) * f, oy: my - (my - v.oy) * f }); }}
-        onPointerDown={(e) => { drag.current = { x: e.clientX, y: e.clientY, start: v }; (e.target as Element).setPointerCapture?.(e.pointerId); }}
+        onWheel={(e) => {
+          const r = ref.current!.getBoundingClientRect();
+          const now = performance.now();
+          if (now - wheelBurst.current > 400) pushHistory(key, v);
+          wheelBurst.current = now;
+          setZ(zoomAbout(v.k * Math.exp(-wheelPixels(e, size.h) * 0.0015), e.clientX - r.left, e.clientY - r.top));
+        }}
+        onPointerDown={(e) => { if (middleTwice.current(e)) { fit(); return; } drag.current = { x: e.clientX, y: e.clientY, start: v }; (e.target as Element).setPointerCapture?.(e.pointerId); }}
         onPointerMove={(e) => { const g = drag.current; if (g) setZ({ ...g.start, ox: g.start.ox + e.clientX - g.x, oy: g.start.oy + e.clientY - g.y }); }}
         onPointerUp={() => { drag.current = null; }}>
         {d && <><rect x={v.ox - 5 * v.k} y={v.oy - 5 * v.k} width={(d.w + 10) * v.k} height={(d.h + 10) * v.k} className="paper-sheet" />

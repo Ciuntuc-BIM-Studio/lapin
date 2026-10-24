@@ -82,6 +82,21 @@ export const RO: Record<string, string> = {
   'Dimensions': 'Dimensiuni', 'Element': 'Element', 'elements': 'elemente', ' · unsaved': ' · nesalvat', 'POINTS · GRID 0.05 m': 'PUNCTE · GRID 0,05 m', 'SELECT': 'SELECȚIE', 'DRAWING': 'DESEN', 'SHEET': 'PLANȘĂ', 'SCHEDULE': 'EXTRAS', '3D · SHADED': '3D · UMBRIT', 'Total': 'Total',
   'Volume': 'Volum', 'Area': 'Arie', 'Net volume': 'Volum net', 'Gross volume': 'Volum brut', 'Net area': 'Arie netă', 'Gross area': 'Arie brută', 'Perimeter': 'Perimetru',
   'Surface area': 'Arie a suprafeței', 'Plan area': 'Arie în plan', 'Lowest point': 'Punctul cel mai jos', 'Highest point': 'Punctul cel mai înalt', 'Fill': 'Umplutură',
+  // Panes, zoom, the key plan
+  'Key plan': 'Plan-cheie', 'Split': 'Împarte', 'On screen': 'Pe ecran', 'Seen from': 'Văzut din', 'Cut at': 'Tăiat la', 'Look from…': 'Privește din…',
+  'Fit (ZE)': 'Încadrează (ZE)', 'Fit everything (ZE)': 'Încadrează tot (ZE)', 'Frame everything': 'Încadrează tot', 'The plan from above': 'Planul de sus',
+  'Split: two views side by side': 'Împarte: două vederi una lângă alta', 'Split: one view above the other': 'Împarte: o vedere peste cealaltă', 'Close this pane': 'Închide acest panou',
+  'One above the other': 'Una peste cealaltă', 'Side by side': 'Una lângă alta', 'Open this view in a window of its own (for a second screen)': 'Deschide vederea într-o fereastră separată (pentru al doilea ecran)',
+  'Hide the key plan (View › Key plan brings it back)': 'Ascunde planul-cheie (View › Plan-cheie îl aduce înapoi)',
+  "The view's scale, and its size on screen against paper · click for paper size (ZA)": 'Scara vederii și mărimea pe ecran față de hârtie · click pentru mărimea de pe hârtie (ZA)',
+  "The sheet's size on screen against paper · click for paper size (ZA)": 'Mărimea planșei pe ecran față de hârtie · click pentru mărimea de pe hârtie (ZA)',
+  'Size on screen against paper · click for paper size (ZA)': 'Mărimea pe ecran față de hârtie · click pentru mărimea de pe hârtie (ZA)',
+  'Perspective: click for orthographic': 'Perspectivă: click pentru ortogonal', 'Orthographic: click for perspective': 'Ortogonal: click pentru perspectivă',
+  "Stand at a section's line, looking its way": 'Stai pe linia unei secțiuni, privind în sensul ei', 'From the north-east': 'Din nord-est', 'From the south-east': 'Din sud-est', 'From the south-west': 'Din sud-vest', 'From the north-west': 'Din nord-vest',
+  'A view in a window of its own needs the desktop app.': 'O vedere în fereastra ei cere aplicația desktop.', 'Open a plan, section, elevation or sheet to zoom.': 'Deschide un plan, o secțiune, o fațadă sau o planșă ca să faci zoom.',
+  'Nothing is selected in this view.': 'Nimic nu e selectat în această vedere.', 'No zoom before this one.': 'Nu e niciun zoom înaintea acestuia.',
+  'Zoom: first corner [Extents/Selection/Previous/Actual size]': 'Zoom: primul colț [Extents/Selection/Previous/Actual size]', 'Other corner': 'Celălalt colț',
+  'Zoom window': 'Zoom fereastră', 'Zoom everything': 'Zoom tot', 'Zoom to the selection': 'Zoom pe selecție', 'Zoom before': 'Zoomul dinainte', 'Paper size': 'Mărimea de pe hârtie', 'Zoom in': 'Apropie', 'Zoom out': 'Depărtează',
 };
 
 /** Phrases with a number or a name in them. */
@@ -92,5 +107,7 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Plan · (.+)$/, (m) => `Plan · ${m[1]}`],
   [/^(\d+) line edit\(s\) lost their edge · clean$/, (m) => `${m[1]} editări de linii și-au pierdut muchia · curăță`],
   [/^view range: (\d+) problem\(s\)$/, (m) => `domeniul vederii: ${m[1]} probleme`],
+  [/^Camera at (.+) m: drag$/, (m) => `Camera la ${m[1]} m: trage`],
+  [/^(Key plan|On screen|Seen from|Cut at) · (.+)$/, (m) => `${({ 'Key plan': 'Plan-cheie', 'On screen': 'Pe ecran', 'Seen from': 'Văzut din', 'Cut at': 'Tăiat la' } as Record<string, string>)[m[1]]} · ${m[2]}`],
   [/^Terrain created from (\d+) points\.$/, (m) => `Teren creat din ${m[1]} puncte.`],
 ];

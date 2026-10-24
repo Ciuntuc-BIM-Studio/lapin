@@ -17,6 +17,8 @@ import { findTool } from '../platform/modules';
 import type { Vec2 } from '../platform/module';
 import { completeTool } from './tools';
 import { boxUv, textureFor, textureOf } from './textures';
+import { KeyPlan } from './KeyPlan';
+import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
@@ -156,12 +158,75 @@ export function Viewport3D() {
     THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
     const s = new THREE.Scene();
     scene.current = s;
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
-    camera.up.set(0, 0, 1);
-    camera.position.set(18, -22, 16);
-    const controls = new OrbitControls(camera, renderer.domElement);
+    const persp = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
+    persp.up.set(0, 0, 1);
+    persp.position.set(18, -22, 16);
+    const orthoCam = new THREE.OrthographicCamera(-1, 1, 1, -1, -5000, 5000);
+    orthoCam.up.set(0, 0, 1);
+    let cam: THREE.PerspectiveCamera | THREE.OrthographicCamera = persp;
+    const controls = new OrbitControls(persp, renderer.domElement);
     controls.target.set(4, 3, 0);
     controls.update();
+
+    // The camera as the key plan sees and steers it.
+    const pose = (): CameraPose => poseOf(cam.position, controls.target);
+    const orthoFrustum = (distance: number) => {
+      const halfH = distance * Math.tan((persp.fov * Math.PI) / 360);
+      orthoCam.left = -halfH * persp.aspect; orthoCam.right = halfH * persp.aspect; orthoCam.top = halfH; orthoCam.bottom = -halfH;
+      orthoCam.updateProjectionMatrix();
+    };
+    const applyPose = (p: CameraPose) => {
+      const at = positionOf(p);
+      cam.position.set(at.x, at.y, at.z);
+      controls.target.set(p.target.x, p.target.y, p.target.z);
+      if (cam === orthoCam) orthoFrustum(p.distance);
+      controls.update();
+    };
+    const publish = () => {
+      const p = pose();
+      useCamera.setState({ ...p, position: { x: cam.position.x, y: cam.position.y, z: cam.position.z }, fov: (persp.fov * Math.PI) / 180, ortho: cam === orthoCam });
+    };
+    let flight = 0;
+    const flyTo = (goal: CameraPose, animate = true) => {
+      cancelAnimationFrame(flight);
+      if (!animate) { applyPose(goal); publish(); return; }
+      const from = pose();
+      const dAz = Math.atan2(Math.sin(goal.azimuth - from.azimuth), Math.cos(goal.azimuth - from.azimuth));
+      const t0 = performance.now();
+      const step = (now: number) => {
+        const t = Math.min(1, (now - t0) / 250), e = t * (2 - t);
+        const mix = (a: number, b: number) => a + (b - a) * e;
+        applyPose({ azimuth: from.azimuth + dAz * e, pitch: mix(from.pitch, goal.pitch), distance: mix(from.distance, goal.distance), target: { x: mix(from.target.x, goal.target.x), y: mix(from.target.y, goal.target.y), z: mix(from.target.z, goal.target.z) } });
+        publish();
+        if (t < 1) flight = requestAnimationFrame(step);
+      };
+      flight = requestAnimationFrame(step);
+    };
+    const api: CameraApi = {
+      orbitTo: (part, animate = true) => flyTo({ ...pose(), ...part }, animate),
+      lookAt: (p) => { const at = cam.position; flyTo(poseOf({ x: at.x, y: at.y, z: at.z }, p), false); },
+      moveTo: (p) => { const cur = pose(); const dx = p.x - cam.position.x, dy = p.y - cam.position.y; flyTo({ ...cur, target: { x: cur.target.x + dx, y: cur.target.y + dy, z: cur.target.z } }, false); },
+      setHeight: (z) => { const cur = pose(); flyTo({ ...cur, target: { ...cur.target, z: cur.target.z + (z - cam.position.z) } }, false); },
+      fit: (animate = true) => {
+        const box = new THREE.Box3();
+        for (const { object } of live.values()) if (object.visible) box.expandByObject(object);
+        if (box.isEmpty()) box.set(new THREE.Vector3(-5, -5, 0), new THREE.Vector3(5, 5, 3));
+        const centre = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+        const radius = Math.max(size.length() / 2, 1);
+        const distance = (radius / Math.sin((persp.fov * Math.PI) / 360)) * 1.05;
+        flyTo({ ...pose(), target: { x: centre.x, y: centre.y, z: centre.z }, distance }, animate);
+      },
+      setOrtho: (on) => {
+        const p = pose();
+        if (cam === orthoCam && !on) { p.distance /= orthoCam.zoom; orthoCam.zoom = 1; }
+        cam = on ? orthoCam : persp;
+        controls.object = cam;
+        applyPose(p);
+        publish();
+        invalidate.current();
+      },
+    };
+    useCamera.setState({ api });
     s.add(new THREE.HemisphereLight(0xffffff, 0xd6cebf, 2.2));
     const sun = new THREE.DirectionalLight(0xffffff, 1.6);
     sun.position.set(20, -30, 40);
@@ -170,19 +235,22 @@ export function Viewport3D() {
 
     let frame = 0;
     invalidate.current = () => {
-      if (!frame) frame = requestAnimationFrame(() => { frame = 0; renderer.render(s, camera); });
+      if (!frame) frame = requestAnimationFrame(() => { frame = 0; renderer.render(s, cam); });
     };
     controls.addEventListener('change', invalidate.current);
+    controls.addEventListener('change', publish);
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = el;
       renderer.setSize(w, h);
-      camera.aspect = w / Math.max(h, 1);
-      camera.updateProjectionMatrix();
+      persp.aspect = w / Math.max(h, 1);
+      persp.updateProjectionMatrix();
+      orthoFrustum(pose().distance);
       invalidate.current();
     };
     const ro = new ResizeObserver(resize);
     ro.observe(el);
     resize();
+    publish();
     const live = items.current;
 
     // A click (not a drag): the element under it, and the point on the active storey's plane.
@@ -194,7 +262,7 @@ export function Viewport3D() {
       down = null;
       if (!start || e.button !== 0 || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 4) return;
       const r = renderer.domElement.getBoundingClientRect();
-      ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+      ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), cam);
       const meshes: THREE.Object3D[] = [];
       for (const { object } of live.values()) meshes.push(object);
       const hit = ray.intersectObjects(meshes, true).find((h) => h.object.userData.nodeId);
@@ -212,6 +280,8 @@ export function Viewport3D() {
     window.addEventListener('keydown', onKey);
     return () => {
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(flight);
+      if (useCamera.getState().api === api) useCamera.setState({ api: null });
       invalidate.current = () => undefined;
       ro.disconnect();
       controls.dispose();
@@ -310,5 +380,10 @@ export function Viewport3D() {
     invalidate.current();
   }, [render, selected, looks, visualStyle]);
 
-  return <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />;
+  return (
+    <>
+      <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />
+      <KeyPlan mode="3d" />
+    </>
+  );
 }

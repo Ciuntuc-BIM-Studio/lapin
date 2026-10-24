@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Layers, Maximize, PenLine } from 'lucide-react';
 import { select, setTool, useUi } from '../app/store';
+import { usePaneActive, usePaneField } from '../app/pane';
 import { activeStorey, execute, useSession } from '../engine/session';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { Vec2 } from '../platform/module';
@@ -24,15 +25,18 @@ import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
 import type { Shape } from './cad/shapes';
+import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPixels, type Bounds, type View2, type ZoomHost } from './zoom';
+import { ScaleChip } from './ScaleChip';
+import { KeyPlan } from './KeyPlan';
 
-interface View { cx: number; cy: number; scale: number } // scale = px per metre
+type View = View2; // scale = px per metre
+const clampScale = (s: number) => Math.max(2, Math.min(s, 2000));
 
 const KIND_ORDER: Record<string, number> = { grid: 0, overhead: 1, ridge: 2, hip: 2, valley: 2, break: 2, outline: 3, cut: 4, symbol: 5, heavy: 5, label: 6 };
 
 export function PlanView() {
   const svgRef = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const [view, setView] = useState<View>({ cx: 4, cy: 2, scale: 60 });
   const [pts, setPts] = useState<Vec2[]>([]);
   const [hover, setHover] = useState<Aimed | null>(null);
   const [ortho, setOrtho] = useState(false);
@@ -50,10 +54,17 @@ export function PlanView() {
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
   // The generated drawing of this storey's plan (its own view, else the storey's), the modelling lines over it only where selected.
-  const planViewId = useUi((s) => s.planViewId);
+  const planViewId = usePaneField('planViewId');
+  const active = usePaneActive();
   const planDrawing = useUi((s) => s.planDrawing);
   const ownPlan = planViewId && nodes.get(planViewId)?.props.storeyId === storey?.id ? planViewId : null;
   const drawing = useDrawing(storey ? ownPlan ?? `plan:${storey.id}` : null, planDrawing);
+  // The view (centre, zoom) is remembered per plan for the session, so the tab comes back as it was left.
+  const key = ownPlan ?? (storey ? `plan:${storey.id}` : 'plan:none');
+  const [view, setView] = useState<View>(() => recall<View>(key) ?? { cx: 4, cy: 2, scale: 60 });
+  useEffect(() => { remember(key, view); }, [key, view]);
+  /** A zoom the user can come back from (ZP). */
+  const go = useCallback((v: View) => { setView((old) => { pushHistory(key, old); return v; }); }, [key]);
 
   useEffect(() => {
     const el = svgRef.current;
@@ -80,23 +91,41 @@ export function PlanView() {
   const snapPoints = useMemo(() => items.flatMap((r) => pairs(r.snaps ?? [])), [items]);
   const markSnaps = useMemo(() => (drawing?.marks ?? []).flatMap((m) => pairs(m.snaps ?? [])), [drawing]);
 
+  /** What the elements and the drawing's annotations span; null when the plan is empty. */
+  const extent = useCallback((only?: Set<string>): Bounds | null => {
+    const pts: Vec2[] = [];
+    for (const r of items) if (!only || only.has(r.nodeId)) for (const it of r.plan) for (let i = 0; i + 1 < it.points.length; i += 2) pts.push({ x: it.points[i], y: it.points[i + 1] });
+    for (const m of drawing?.marks ?? []) if (!only || only.has(m.id)) for (let k = 0; k + 1 < m.segments.length; k += 2) pts.push({ x: m.segments[k], y: m.segments[k + 1] });
+    return boundsOf(pts);
+  }, [items, drawing]);
   const fit = useCallback(() => {
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    for (const r of items) for (const it of r.plan) for (let i = 0; i + 1 < it.points.length; i += 2) {
-      const x = it.points[i], y = it.points[i + 1];
-      minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
-    }
-    if (!Number.isFinite(minX)) return;
-    const scale = Math.min(size.w / Math.max(maxX - minX, 1), size.h / Math.max(maxY - minY, 1)) * 0.8;
-    setView({ cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, scale: Math.max(5, Math.min(scale, 400)) });
-  }, [items, size]);
+    const b = extent();
+    if (b) go(framing(b, size, 0.8, 5, 400));
+  }, [extent, size, go]);
 
-  // A different storey: frame it. Only then: an edit or a resize keeps the
-  // view, so the effect reads the current fit through a ref, not as a dependency.
+  // A different storey: its remembered view, else frame it. Only then: an edit or a
+  // resize keeps the view, so the effect reads the current fit through a ref, not as a dependency.
   const measured = size.w > 0 && size.h > 0;
   const fitRef = useRef(fit);
   fitRef.current = fit;
-  useEffect(() => { if (measured) fitRef.current(); }, [storey?.id, measured]);
+  useEffect(() => {
+    if (!measured) return;
+    const r = recall<View>(key);
+    if (r) setView(r); else fitRef.current();
+  }, [key, measured]);
+
+  // The zoom commands and keys, while this pane is in front.
+  const host: ZoomHost = {
+    fitAll: fit,
+    fitSelection: () => { const b = extent(new Set(selected)); if (!b) return false; go(framing(b, size, 0.6, 5, 1000)); return true; },
+    zoomWindow: (a, b) => go(framing([Math.min(a.x, b.x), Math.min(a.y, b.y), Math.max(a.x, b.x), Math.max(a.y, b.y)], size, 0.95, 2, 2000)),
+    actual: () => go({ ...view, scale: clampScale(actualScale(drawing?.scale ?? 100)) }),
+    zoomBy: (f) => go({ ...view, scale: clampScale(view.scale * f) }),
+    previous: () => { const p = popHistory<View>(key); if (!p) return false; setView(p); return true; },
+  };
+  useZoomHost(active, host);
+  const middleTwice = useRef(middleDouble());
+  const wheelBurst = useRef(0);
 
   // ─── Picking ─────────────────────────────────────────────────────────────
 
@@ -199,6 +228,7 @@ export function PlanView() {
 
   const onPointerDown = (e: React.PointerEvent) => {
     (e.target as Element).setPointerCapture?.(e.pointerId);
+    if (middleTwice.current(e)) { fit(); return; }
     if (e.button === 0 && grips.length) {
       const rect = svgRef.current!.getBoundingClientRect();
       const hit = grips.find((g) => { const q = toScreen(g.at); return Math.hypot(q.x - (e.clientX - rect.left), q.y - (e.clientY - rect.top)) < 7; });
@@ -258,8 +288,11 @@ export function PlanView() {
     }
     const rect = svgRef.current!.getBoundingClientRect();
     const at = toWorld(e.clientX - rect.left, e.clientY - rect.top);
-    const scale = Math.max(2, Math.min(view.scale * Math.exp(-e.deltaY * 0.0015), 2000));
-    // Zoom about the cursor.
+    const scale = clampScale(view.scale * Math.exp(-wheelPixels(e, size.h) * 0.0015));
+    // Zoom about the cursor; a burst of wheel steps is one zoom for ZP.
+    const now = performance.now();
+    if (now - wheelBurst.current > 400) pushHistory(key, view);
+    wheelBurst.current = now;
     setView({ scale, cx: at.x - (at.x - view.cx) * (view.scale / scale), cy: at.y - (at.y - view.cy) * (view.scale / scale) });
   };
 
@@ -357,8 +390,10 @@ export function PlanView() {
         <button type="button" className="icon" title="View range" onClick={() => useUi.setState({ dialog: 'viewRange' })}><Layers size={14} /></button>
         <button type="button" className={`icon${planDrawing ? ' on' : ''}`} title={planDrawing ? 'Drawing: hatches and pens (click for modelling lines)' : 'Modelling lines (click for the drawing)'}
           onClick={() => useUi.setState({ planDrawing: !planDrawing })}><PenLine size={14} /></button>
-        <button type="button" className="icon" title="Fit everything" onClick={fit}><Maximize size={14} /></button>
+        <ScaleChip pxPerMetre={view.scale} scale={drawing?.scale ?? 100} onActual={host.actual} />
+        <button type="button" className="icon" title="Fit everything (ZE)" onClick={fit}><Maximize size={14} /></button>
       </div>
+      <KeyPlan mode="plan" frame={measured ? [toWorld(0, size.h), toWorld(size.w, 0)] : null} onLookAt={(p) => go({ ...view, cx: p.x, cy: p.y })} />
       <svg ref={svgRef} className={`plan-svg${tool?.gesture || cadStep ? ' tool' : ''}`} data-testid="plan"
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
         onPointerLeave={() => setHover(null)} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}

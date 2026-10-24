@@ -1,13 +1,17 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "The Lapin window: core APIs, open/save dialogs, closing with a save prompt, and the engine address.",
+  "description": "The Lapin window and its detached view windows: core APIs, open/save dialogs, closing with a save prompt, new view windows, the engine address.",
   "windows": [
-    "main"
+    "main",
+    "view-*"
   ],
   "permissions": [
     "core:default",
     "core:window:allow-destroy",
+    "core:window:allow-close",
+    "core:window:allow-set-title",
+    "core:webview:allow-create-webview-window",
     "dialog:allow-open",
     "dialog:allow-save",
     "dialog:allow-ask",

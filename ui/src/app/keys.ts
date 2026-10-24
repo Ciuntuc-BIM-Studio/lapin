@@ -3,7 +3,8 @@
  * to the command line (CAD commands and coordinates, Enter or Space to run,
  * Escape to cancel), where Revit's two-letter shortcuts (WA for Wall…) start
  * their tool at once; Delete for the selection; 1–9 for the hotbar when
- * nothing is being typed; F3 object snap, F8 ortho, F10 polar tracking.
+ * nothing is being typed; F3 object snap, F8 ortho, F10 polar tracking;
+ * + and − zoom the 2D view in front, Shift+Z zooms to the selection.
  *
  * While a dialog is open the keys belong to it: Escape closes it, Ctrl/Cmd+S
  * still saves, and nothing else reaches the model (no Delete on the selection
@@ -17,6 +18,7 @@ import { activate, allTools, hotbarTools } from '../platform/modules';
 import { execute, redo, undo } from '../engine/session';
 import { newProject, openProject, saveProject } from '../engine/files';
 import { cancel, submit, useCad } from '../viewport/cad/session';
+import { zoomHost } from '../viewport/zoom';
 
 /** What `keyIntent` needs to know about the key press. */
 export interface KeyPress {
@@ -55,7 +57,8 @@ export type KeyIntent =
   | { kind: 'toggle'; what: 'osnap' | 'ortho' | 'polar' }
   | { kind: 'closeDialog' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
   | { kind: 'delete'; ids: string[] } | { kind: 'hotbar'; slot: number }
-  | { kind: 'type'; buffer: string } | { kind: 'tool'; id: string };
+  | { kind: 'type'; buffer: string } | { kind: 'tool'; id: string }
+  | { kind: 'zoom'; factor: number } | { kind: 'zoomSelection' };
 
 const TOGGLES: Record<string, 'osnap' | 'ortho' | 'polar'> = { F3: 'osnap', F8: 'ortho', F10: 'polar' };
 
@@ -92,6 +95,10 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   if (e.key === 'Delete' || e.key === 'Backspace') return s.selected.length ? { kind: 'delete', ids: s.selected } : null;
   const n = Number(e.key);
   if (!typing && e.key.length === 1 && n >= 1 && n <= 9) return n <= s.hotbar ? { kind: 'hotbar', slot: n } : null;
+  // Zoom keys, when nothing is being typed (a − may otherwise start a coordinate).
+  if (!typing && (e.key === '+' || e.key === '=')) return { kind: 'zoom', factor: 1.25 };
+  if (!typing && e.key === '-') return { kind: 'zoom', factor: 0.8 };
+  if (!typing && e.key === 'Z' && e.shiftKey) return { kind: 'zoomSelection' };
   // A text step takes any character; otherwise letters, digits and the coordinate signs.
   const allowed = s.step?.want === 'text' ? e.key.length === 1 : /^[\w@<.,\-+]$/.test(e.key);
   if (!allowed) return null;
@@ -129,6 +136,8 @@ function carryOut(intent: KeyIntent): void {
     case 'hotbar': { const t = hotbarTools()[intent.slot - 1]; if (t) activate(t); break; }
     case 'type': useCad.setState({ buffer: intent.buffer }); break;
     case 'tool': { useCad.setState({ buffer: '' }); const t = allTools().find((x) => x.id === intent.id); if (t) activate(t); break; }
+    case 'zoom': zoomHost()?.zoomBy(intent.factor); break;
+    case 'zoomSelection': zoomHost()?.fitSelection(); break;
   }
 }
 

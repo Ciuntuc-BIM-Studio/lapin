@@ -66,6 +66,17 @@ describe('keyIntent', () => {
     expect(keyIntent(press('Enter'), state({ step: { want: 'point' }, tool: 'architecture.slab' }))).toEqual({ kind: 'submit' });
   });
 
+  it('zooms the view in front with + and −, and to the selection with Shift+Z, only while nothing is typed', () => {
+    expect(keyIntent(press('+'), state())).toEqual({ kind: 'zoom', factor: 1.25 });
+    expect(keyIntent(press('='), state())).toEqual({ kind: 'zoom', factor: 1.25 });
+    expect(keyIntent(press('-'), state())).toEqual({ kind: 'zoom', factor: 0.8 });
+    expect(keyIntent(press('Z', { shiftKey: true }), state({ selected: ['w1'] }))).toEqual({ kind: 'zoomSelection' });
+    // A minus inside a running command is the start of a coordinate; a Z is typed.
+    expect(keyIntent(press('-'), state({ step: { want: 'point' } }))).toEqual({ kind: 'type', buffer: '-' });
+    expect(keyIntent(press('+'), state({ buffer: '@2' }))).toEqual({ kind: 'type', buffer: '@2+' });
+    expect(keyIntent(press('z'), state())).toEqual({ kind: 'type', buffer: 'z' });
+  });
+
   it('cancels a running command with Escape, toggles with the F keys, picks the hotbar with digits', () => {
     expect(keyIntent(press('Escape'), state({ step: { want: 'point' } }))).toEqual({ kind: 'cancel' });
     expect(keyIntent(press('Escape'), state())).toBeNull();

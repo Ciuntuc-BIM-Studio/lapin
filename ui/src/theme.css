@@ -88,7 +88,19 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .tree-item:hover { background: var(--wash); }
 .tree-item.on { background: var(--accent-wash); color: var(--accent); font-weight: 600; box-shadow: inset 2px 0 var(--accent); }
 .views { display: flex; flex-direction: column; min-width: 0; }
-.view-tabs { display: flex; gap: 2px; padding: 4px 6px 0; background: var(--bg); border-bottom: 1px solid var(--rule); }
+.view-tabs { display: flex; align-items: flex-end; gap: 2px; padding: 4px 6px 0; background: var(--bg); border-bottom: 1px solid var(--rule); }
+.view-tabs .icon.mini { margin: 0 0 4px; color: var(--ink-muted); }
+.view-tabs .icon.mini:hover { color: var(--ink); }
+/* Panes: one, or two split by a separator; the active one carries the accent on its tab. */
+.panes { flex: 1; min-height: 0; display: flex; flex-direction: row; }
+.panes.column { flex-direction: column; }
+.pane-slot { display: flex; min-width: 0; min-height: 0; flex: 0 0 auto; }
+.pane { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.pane-sep { flex: 0 0 5px; background: var(--rule); cursor: col-resize; }
+.pane-sep:hover { background: var(--accent); }
+.panes.column > .pane-sep { cursor: row-resize; }
+.pane.on .view-tab.on { box-shadow: inset 0 2px var(--accent); }
+.view-window .views { height: 100%; }
 .view-tab { display: flex; align-items: center; gap: 8px; padding: 5px 12px; border: 1px solid var(--rule); border-bottom: 0; border-radius: 3px 3px 0 0; background: var(--wash); cursor: pointer; color: var(--ink-muted); }
 .view-tab.on { background: var(--panel); color: var(--ink); font-weight: 600; }
 .view-area { position: relative; flex: 1; min-height: 0; }
@@ -100,6 +112,31 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .hud-map { position: absolute; right: 12px; top: 12px; width: 180px; padding: 8px 10px 10px; background: var(--hud); border: 1px solid var(--rule); border-radius: 3px; color: var(--ink); }
 .hud-map svg { display: block; width: 100%; margin-top: 6px; }
 .hud-map .you { fill: var(--accent); }
+.hud-map.under { top: 44px; }
+.hud-map .row { gap: 4px; }
+.hud-map svg { touch-action: none; user-select: none; cursor: crosshair; }
+.hud-map .map-box { fill: var(--bg); stroke: var(--rule); }
+.hud-map .footprint { fill: var(--wash); stroke: var(--ink-muted); stroke-width: 0.7; stroke-linejoin: round; }
+.hud-map .footprint.empty { fill: none; stroke-dasharray: 2 2; }
+.hud-map .north path { fill: none; stroke: var(--ink-muted); stroke-width: 1; }
+.hud-map .north text { font-size: 8px; font-weight: 700; fill: var(--ink-muted); }
+.hud-map .cone { fill: var(--accent); opacity: 0.22; }
+.hud-map .cam { fill: var(--accent); stroke: var(--panel); stroke-width: 1.2; cursor: move; }
+.hud-map .target { stroke: var(--accent); stroke-width: 1; }
+.hud-map .compass { font-size: 9px; font-weight: 700; fill: var(--ink-muted); cursor: pointer; }
+.hud-map .compass:hover { fill: var(--accent); }
+.hud-map .iso { fill: var(--rule-strong); cursor: pointer; }
+.hud-map .iso:hover { fill: var(--accent); }
+.hud-map .frame { fill: var(--accent); fill-opacity: 0.08; stroke: var(--accent); stroke-width: 1; }
+.hud-map .section-mark, .hud-map .section-mark path { fill: none; stroke: var(--ink); stroke-width: 1.2; }
+.hud-map marker path { fill: var(--ink); }
+.hud-map .strip line { stroke: var(--rule-strong); stroke-width: 1; }
+.hud-map .strip .tick { stroke: var(--ink-muted); }
+.hud-map .cam-h { fill: var(--accent); cursor: ns-resize; }
+.hud-map-tools { display: flex; gap: 4px; margin-top: 6px; }
+.hud-map-tools .mini-select { margin-left: 0; max-width: 70px; }
+.chip.scale { cursor: pointer; background: none; border-color: var(--rule-strong); color: var(--ink-muted); text-transform: none; letter-spacing: 0; font-size: 11px; font-variant-numeric: tabular-nums; margin: 0 0 4px; }
+.chip.scale:hover { border-color: var(--accent); color: var(--accent); }
 .hud-hint { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); padding: 6px 14px; background: var(--accent); color: var(--accent-ink); border-radius: 3px; font-weight: 600; letter-spacing: 0.04em; }
 .hotbar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; background: var(--hud); border: 1px solid var(--rule); border-radius: 4px; backdrop-filter: blur(4px); }
 .slot { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid var(--rule-strong); border-radius: 3px; background: var(--panel); cursor: pointer; }

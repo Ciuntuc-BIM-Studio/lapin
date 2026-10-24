@@ -23,7 +23,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
-use tauri::{AppHandle, Emitter, Manager, RunEvent, State};
+use tauri::{AppHandle, Emitter, Manager, RunEvent, State, WindowEvent};
 
 /// How many times in a row a stopped engine is started again before giving up.
 const RESTARTS: u32 = 3;
@@ -226,10 +226,15 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building Lapin");
 
-    app.run(move |_, event| {
-        if let RunEvent::Exit = event {
-            engine.stop();
+    app.run(move |app, event| match event {
+        RunEvent::Exit => engine.stop(),
+        // The main window gone: its detached view windows go with it.
+        RunEvent::WindowEvent { label, event: WindowEvent::Destroyed, .. } if label == "main" => {
+            for (_, w) in app.webview_windows() {
+                let _ = w.close();
+            }
         }
+        _ => {}
     });
 }
 
