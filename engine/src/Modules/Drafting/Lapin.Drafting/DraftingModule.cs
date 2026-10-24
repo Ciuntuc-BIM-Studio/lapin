@@ -68,17 +68,72 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             if ((q - p).Length < 1e-4) throw new CommandException("A dimension needs two different points.");
             var attrs = new JsonObject { ["viewId"] = viewId, ["a"] = J(p), ["b"] = J(q), ["at"] = J(at) };
             if ((string?)a["dimStyle"] is { } ds) attrs["dimStyle"] = ds;
-            // Each end on an edge the view cuts follows that element.
+            // Linear: measured along a direction (horizontal, vertical…) rather than end to end.
+            if (a["dir"] is JsonArray) { var d = P(a["dir"]); if (d.Length > 1e-9) attrs["dir"] = J(d.Normalized()); }
+            // In a string: after the dimension named, on its line.
+            if ((string?)a["after"] is { } after && ctx.Model.Get(after) is { Class: IfcClass.Annotation, PredefinedType: "DIMENSION" } prev)
+            {
+                var chain = prev.Str("chain") ?? prev.Id;
+                if (prev.Str("chain") == null) { var pa = prev.CloneAttrs(); pa["chain"] = chain; pa["chainIx"] = 0; ctx.Replace(prev.With(attrs: pa)); }
+                attrs["chain"] = chain;
+                attrs["chainIx"] = prev.Num("chainIx") + 1;
+                if (prev.Attrs["dir"] is JsonArray pd && attrs["dir"] == null) attrs["dir"] = pd.DeepClone();
+            }
+            // Each end on an edge the view cuts, a grid axis or a wall's centre line follows it.
             var scale = view.NumOrNull("scale") ?? 100;
-            if (Views.Generate(ctx.Query, view).Drawing is { } drawing)
+            var (drawing, spec, _) = Views.Generate(ctx.Query, view);
+            if (drawing != null && spec != null)
             {
                 var tolerance = Math.Max(0.01, 1.0 * scale / 1000);
-                if (Dimensions.Associate(drawing, p, tolerance) is { } ra) attrs["refA"] = ra.ToJson();
-                if (Dimensions.Associate(drawing, q, tolerance) is { } rb) attrs["refB"] = rb.ToJson();
+                if (Dimensions.Associate(ctx.Model, spec.Kind, drawing, p, tolerance) is { } ra) attrs["refA"] = ra.ToJson();
+                if (Dimensions.Associate(ctx.Model, spec.Kind, drawing, q, tolerance) is { } rb) attrs["refB"] = rb.ToJson();
             }
             var dim = new Entity(ctx.NewId(), IfcClass.Annotation, "Dimension", attrs, "DIMENSION");
             ctx.Add(dim);
             return new JsonObject { ["id"] = dim.Id, ["associated"] = new JsonArray(attrs["refA"] != null, attrs["refB"] != null) };
+        });
+
+        // A driving dimension: typing its value moves what it measures (and, in a string, what follows).
+        r.Command("setDimensionValue", "Dimension value", (ctx, a) =>
+        {
+            var dim = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Annotation, PredefinedType: "DIMENSION" } d ? d : throw new CommandException("Not a dimension.");
+            var value = Json.Number(a["value"]) ?? throw new CommandException("Which value?");
+            if (value <= 0) throw new CommandException("A dimension's value must be positive.");
+            var view = Views.Find(ctx.Model, dim.Str("viewId") ?? "") ?? throw new CommandException("The dimension's view is gone.");
+            var (drawing, spec, problem) = Views.Generate(ctx.Query, view);
+            if (drawing == null || spec == null) throw new CommandException(problem ?? "The view cannot be drawn.");
+            Dimensions.Drive(ctx, dim, drawing, spec.Kind, value);
+            return null;
+        });
+
+        // Dimensions that lost their element let go of it: they measure where they are drawn.
+        r.Command("freeDimensions", "Free dimensions", (ctx, a) =>
+        {
+            var ids = (a["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList() ?? Orphans(ctx.Query, (string?)a["viewId"]);
+            var freed = 0;
+            foreach (var id in ids)
+            {
+                if (ctx.Model.Get(id) is not { Class: IfcClass.Annotation, PredefinedType: "DIMENSION" } dim) continue;
+                var view = Views.Find(ctx.Model, dim.Str("viewId") ?? "");
+                var (drawing, spec, _) = view == null ? (null, null, null) : Views.Generate(ctx.Query, view);
+                var attrs = dim.CloneAttrs();
+                foreach (var k in new[] { "refA", "refB" })
+                    if (DimEndRef.From(attrs[k]) is { } r && (drawing == null || spec == null || Dimensions.Resolve(ctx.Model, spec.Kind, drawing, r) == null)) { attrs.Remove(k); freed++; }
+                ctx.Replace(dim.With(attrs: attrs));
+            }
+            return new JsonObject { ["freed"] = freed };
+        });
+
+        r.Query("drafting.orphans", (q, a) => new JsonArray(Orphans(q, (string?)a["viewId"]).Select(x => (JsonNode)x).ToArray()));
+
+        // What a dimension measures now (for editing its value).
+        r.Query("drafting.dimension", (q, a) =>
+        {
+            if (q.Model.Get((string?)a["id"] ?? "") is not { Class: IfcClass.Annotation, PredefinedType: "DIMENSION" } dim || Views.Find(q.Model, dim.Str("viewId") ?? "") is not { } view) return null;
+            var (drawing, spec, _) = Views.Generate(q, view);
+            if (drawing == null || spec == null) return null;
+            var (pa, pb, orphan) = Dimensions.Ends(q.Model, spec.Kind, dim, drawing);
+            return new JsonObject { ["value"] = Dimensions.Value(dim, pa, pb), ["orphan"] = orphan, ["driving"] = dim.Attrs["refA"] != null || dim.Attrs["refB"] != null };
         });
 
         r.Command("moveDimension", "Move dimension", (ctx, a) =>
@@ -111,6 +166,20 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         var attrs = grid.CloneAttrs();
         attrs["axes"] = new JsonArray(axes.Select(x => (JsonNode)x.ToJson()).ToArray());
         ctx.Replace(grid.With(attrs: attrs));
+    }
+
+    /// <summary>The dimensions on a view (every view when none is named) that lost an element.</summary>
+    static List<string> Orphans(IQueryContext q, string? viewId)
+    {
+        var o = new List<string>();
+        foreach (var g in q.Model.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == "DIMENSION" && (viewId == null || x.Str("viewId") == viewId)).GroupBy(x => x.Str("viewId") ?? ""))
+        {
+            if (Views.Find(q.Model, g.Key) is not { } view) { o.AddRange(g.Select(x => x.Id)); continue; }
+            var (drawing, spec, _) = Views.Generate(q, view);
+            if (drawing == null || spec == null) continue;
+            o.AddRange(g.Where(x => Dimensions.Ends(q.Model, spec.Kind, x, drawing).Orphan).Select(x => x.Id));
+        }
+        return o;
     }
 
     static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y

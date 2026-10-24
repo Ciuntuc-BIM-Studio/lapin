@@ -12,6 +12,7 @@ import { useSession } from '../engine/session';
 import type { Vec2 } from '../platform/module';
 import { DrawingLayer } from './DrawingLayer';
 import { useDrawing } from './drawing';
+import { editDimension } from './dimensionEdit';
 import { distToSegment } from './snap';
 import { CadOverlay, useCadCanvas, type Aimed } from './cad/canvas';
 import { CommandLine } from './cad/CommandLine';
@@ -106,7 +107,13 @@ export function DrawingView() {
           if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : aimed.point); acquire(aimed.point); return; }
           select(pickAny(raw), e.shiftKey);
         }}
-        onPointerLeave={() => setHover(null)}>
+        onPointerLeave={() => setHover(null)}
+        onDoubleClick={(e) => {
+          if (useCad.getState().step) return;
+          const r = ref.current!.getBoundingClientRect();
+          const id = pickAny(toWorld(e.clientX - r.left, e.clientY - r.top));
+          if (id) void editDimension(id);
+        }}>
         <rect width="100%" height="100%" className="paper" />
         {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} />}
         {(drawing?.marks ?? []).filter((m) => selected.includes(m.id)).map((m) => (

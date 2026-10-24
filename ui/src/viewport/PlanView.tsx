@@ -17,6 +17,7 @@ import { distToSegment, pairs, pointInPolygon, toMm } from './snap';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
 import { useDrawing } from './drawing';
+import { editDimension } from './dimensionEdit';
 import { CadOverlay, useCadCanvas, type Aimed } from './cad/canvas';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
@@ -350,7 +351,13 @@ export function PlanView() {
       </div>
       <svg ref={svgRef} className={`plan-svg${tool?.gesture || cadStep ? ' tool' : ''}`} data-testid="plan"
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
-        onPointerLeave={() => setHover(null)} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}>
+        onPointerLeave={() => setHover(null)} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}
+        onDoubleClick={(e) => {
+          if (tool?.gesture || useCad.getState().step) return;
+          const rect = svgRef.current!.getBoundingClientRect();
+          const n = pick(toWorld(e.clientX - rect.left, e.clientY - rect.top));
+          if (n) void editDimension(n.id);
+        }}>
         <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>
         {drawing && planDrawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} />}
         <g className={`plan-items${drawing && planDrawing ? ' ghost' : ''}`}>

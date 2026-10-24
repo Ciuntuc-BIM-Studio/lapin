@@ -8,18 +8,13 @@ import type { Grip, LapinModule, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { useUi } from '../../app/store';
 import { execute } from '../../engine/session';
-import { startCommand } from '../../viewport/cad/session';
+import { cadHost, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
+import { DimensionSection } from './DimensionSection';
 import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
 import { LayersDialog } from './LayersDialog';
 
-/** An aligned dimension: its two points, then where its line goes. Ends on an element's cut edge follow it. */
-const dimension: ToolDef = {
-  id: 'drafting.dimension', label: 'Aligned', icon: MoveHorizontal, shortcut: 'DI',
-  gesture: { kind: 'threePoints' },
-  complete: async ({ points: [a, b, at] }, ctx) => {
-    await ctx.execute('drafting.addDimension', { viewId: ctx.viewId, a: [a.x, a.y], b: [b.x, b.y], at: [at.x, at.y] });
-  },
-};
+/** An aligned dimension: its two points, then where its line goes; then on as a string. Ends on an element's cut edge, a grid axis or a wall's centre line follow it. */
+const dimension: ToolDef = { id: 'drafting.dimension', label: 'Aligned', icon: MoveHorizontal, shortcut: 'DI', run: () => void startCommand('DIMALIGNED') };
 const text: ToolDef = {
   id: 'drafting.text', label: 'Text', icon: Type, shortcut: 'TX',
   gesture: { kind: 'point' },
@@ -34,6 +29,53 @@ const axis: ToolDef = {
   gesture: { kind: 'twoPoints' },
   complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('drafting.addAxis', { x1: a.x, y1: a.y, x2: b.x, y2: b.y }); },
 };
+
+/**
+ * DIM (aligned) and DLI (linear: horizontal or vertical, by where its line
+ * goes): two points, then the line; then it goes on as a string, each next
+ * point measured from the last on the same line (Enter to finish; S first for
+ * a single one). Ends on elements, grid axes or wall centre lines follow them.
+ */
+function dimCommand(linear: boolean): Step {
+  let single = false;
+  const V = (p: Vec2) => [p.x, p.y];
+  const dirOf = (a: Vec2, b: Vec2, at: Vec2): Vec2 | null => {
+    if (!linear) return null;
+    const m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    return Math.abs(at.y - m.y) >= Math.abs(at.x - m.x) ? { x: 1, y: 0 } : { x: 0, y: 1 };
+  };
+  const first = (): Step => ({
+    prompt: `First point${single ? '' : ' [Single]'}`, want: 'point',
+    keywords: { S: () => { single = true; return first(); } },
+    point: (a) => ({
+      prompt: 'Second point', want: 'point', base: a, preview: (c) => [{ type: 'line', a, b: c }],
+      point: (b) => ({
+        prompt: 'Where the dimension line goes', want: 'point', base: b,
+        preview: (c) => [{ type: 'line', a, b }, { type: 'line', a: c, b: { x: c.x + b.x - a.x, y: c.y + b.y - a.y } }],
+        point: async (at) => {
+          const h = cadHost(); if (!h) return null;
+          const dir = dirOf(a, b, at);
+          const r = await execute('drafting.addDimension', { viewId: h.viewId, a: V(a), b: V(b), at: V(at), ...(dir ? { dir: V(dir) } : {}) }) as { id?: string } | null;
+          if (!r?.id || single) return null;
+          const next = (prev: string, from: Vec2): Step => ({
+            prompt: 'Next point of the string (Enter to finish)', want: 'point', base: from,
+            preview: (c) => [{ type: 'line', a: from, b: c }],
+            point: async (p) => {
+              const hh = cadHost(); if (!hh) return null;
+              const rr = await execute('drafting.addDimension', { viewId: hh.viewId, a: V(from), b: V(p), at: V(at), after: prev, ...(dir ? { dir: V(dir) } : {}) }) as { id?: string } | null;
+              return rr?.id ? next(rr.id, p) : null;
+            },
+            enter: () => null,
+          });
+          return next(r.id, b);
+        },
+      }),
+    }),
+  });
+  return first();
+}
+registerCommand({ names: ['DIMALIGNED', 'DAL', 'DIM'], label: 'Aligned dimension', start: () => dimCommand(false) });
+registerCommand({ names: ['DIMLINEAR', 'DLI'], label: 'Linear dimension', start: () => dimCommand(true) });
 
 /** A CAD command started from the ribbon, as if typed. */
 const cad = (id: string, label: string, icon: ToolDef['icon'], command: string): ToolDef => ({ id: `cad.${id}`, label, icon, run: () => void startCommand(command) });
@@ -76,7 +118,7 @@ const drafting: LapinModule = {
     {
       id: 'annotate', label: 'Annotate', order: 30,
       groups: [
-        { label: 'Dimension', tools: [dimension] },
+        { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR')] },
         { label: 'Text', tools: [text] },
         { label: 'Datum', tools: [
           axis,
@@ -88,6 +130,7 @@ const drafting: LapinModule = {
   ],
   hotbar: [dimension],
   dialogs: { draftLayers: LayersDialog },
+  propertySections: [{ id: 'dimension', label: 'Dimension', classes: ['IfcAnnotation'], component: DimensionSection }],
   grips: { IfcAnnotation: draftGrips },
 };
 
