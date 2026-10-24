@@ -1,6 +1,6 @@
 /** Core: always there — selecting, measuring, the views and how they look, materials and drafting standards. */
 
-import { Box, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, Move, MousePointer2, Palette, Pipette, RotateCw, Ruler, Scissors, Square, SquareStack, Trash2 } from 'lucide-react';
+import { Box, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareStack, Trash2 } from 'lucide-react';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
 import { notify } from '../../app/store';
@@ -13,6 +13,7 @@ import { StandardsDialog } from './StandardsDialog';
 import { SheetSection } from './SheetSection';
 import { Visibility3D, VisibilityDialog } from './VisibilityDialog';
 import { ViewRangeDialog } from './ViewRangeDialog';
+import { ObjectStylesDialog } from './ObjectStylesDialog';
 
 /** Create Similar: the selected element's tool, set up like it. */
 function createSimilar() {
@@ -76,6 +77,7 @@ const core: LapinModule = {
       { label: 'Settings', tools: [
         { id: 'manage.materials', label: 'Materials', icon: Palette, run: () => useUi.setState({ dialog: 'materials' }) },
         { id: 'manage.standards', label: 'Drafting standards', icon: Hash, run: () => useUi.setState({ dialog: 'standards' }) },
+        { id: 'manage.objectStyles', label: 'Object styles', icon: PenTool, run: () => useUi.setState({ dialog: 'objectStyles' }) },
       ] },
     ],
   }, {
@@ -103,7 +105,7 @@ const core: LapinModule = {
       ] },
     ],
   }],
-  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog },
+  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog },
   background: Visibility3D,
   propertySections: [{ id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection }],
   hotbar: [

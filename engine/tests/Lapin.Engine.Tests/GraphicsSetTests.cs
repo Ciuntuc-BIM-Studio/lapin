@@ -65,4 +65,22 @@ public class GraphicsSetTests
         Assert.True((bool)r["custom"]!);
         Assert.Equal(["topBelowCut"], r["problems"]!.AsArray().Select(x => (string)x!));
     }
+
+    [Fact]
+    public void The_project_s_pen_table_widens_its_pens_on_the_drawing()
+    {
+        var f = new Fixture();
+        f.Wall(0, 0, 5, 0);
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        f.Run("view.objectStyle", new JsonObject { ["category"] = "walls", ["role"] = "cut", ["spec"] = new JsonObject { ["pen"] = 7 } });
+        double CutWidth() => ((JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = plan })!)["pens"]!.AsArray().OfType<JsonObject>()
+            .Where(p => (string)p["layer"]! == "CUT").Max(p => (double)p["width"]!);
+        Assert.Equal(0.7, CutWidth(), 9); // pen 7 at 1:100: ISO 0.7
+        f.Run("view.penTable", new JsonObject { ["pen"] = 7, ["scale"] = 100, ["width"] = 0.9 });
+        Assert.Equal(0.9, CutWidth(), 9);
+        Assert.True((bool)f.Session.Query("view.objectStyles", new JsonObject())!["customTable"]!);
+        Assert.Throws<CommandException>(() => f.Run("view.penTable", new JsonObject { ["pen"] = 7, ["scale"] = 75, ["width"] = 0.9 }));
+        f.Run("view.penTable", new JsonObject { ["reset"] = true });
+        Assert.Equal(0.7, CutWidth(), 9);
+    }
 }

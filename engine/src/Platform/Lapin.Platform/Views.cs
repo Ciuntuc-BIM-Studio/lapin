@@ -136,14 +136,15 @@ public static class Views
         var project = Spatial.Project(m);
         var graphics = GraphicsSets.Of(m, view);
         var categories = (graphics?["categories"] as JsonObject)?.Select(c => (c.Key, G: CategoryGraphics.From(c.Value))).Where(x => x.G != null).ToDictionary(x => x.Key, x => x.G!);
-        var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, graphics?["elements"] as JsonObject, null, scale);
+        var table = LineStyles.ReadTable(project?.Attrs["penTable"]);
+        var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, graphics?["elements"] as JsonObject, table, scale);
         // Elements a module draws in another colour (a phase's override): their lines and fills.
         var colors = new Dictionary<string, string>();
         var filters = q.Services.All<IViewElementFilter>();
         if (filters.Count > 0)
             foreach (var id in drawing.Cuts.Select(c => c.Element).Concat(drawing.Lines.Select(l => l.Element)).Distinct())
                 if (m.Get(id) is { } el && filters.Select(f => f.For(m, view, el)).FirstOrDefault(x => x != null) is { Color: { } c }) colors[id] = c;
-        var pens = Pens.Of(drawing, materials, new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors));
+        var pens = Pens.Of(drawing, materials, new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table));
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing);
@@ -395,6 +396,45 @@ public static class Views
 
         // A view's graphics: a category's line colour, weight, fill, cut hatch, lines by role, or hidden; an element's lines by role.
         // The project's object styles: one role of a category ({pen, color, pattern}; null clears it), and its defaults for hidden lines by kind.
+        // The project's pen table: one pen's width at one of the table's scales; reset: ISO again.
+        r.Command("view.penTable", "Pen table", (ctx, a) =>
+        {
+            var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
+            var attrs = project.CloneAttrs();
+            if (a["reset"] is JsonValue rv && rv.TryGetValue<bool>(out var reset) && reset) attrs.Remove("penTable");
+            else
+            {
+                var t = LineStyles.ReadTable(attrs["penTable"]) ?? LineStyles.DefaultPenTable();
+                var pen = (int)(Json.Number(a["pen"]) ?? 0);
+                var i = t.Scales.ToList().IndexOf((int)(Json.Number(a["scale"]) ?? 0));
+                var w = Json.Number(a["width"]) ?? 0;
+                if (pen < 1 || pen > LineStyles.PenCount) throw new CommandException("A pen is 1 to 16.");
+                if (i < 0) throw new CommandException($"The pen table has scales {string.Join(", ", t.Scales.Select(x => "1:" + x))}.");
+                if (!(w > 0 && w <= 10)) throw new CommandException("A pen's width is more than 0 and at most 10 mm.");
+                var widths = t.Widths.Select(r => r.ToList()).ToList();
+                widths[pen - 1][i] = w;
+                attrs["penTable"] = LineStyles.ToJson(new LineStyles.PenTable(t.Scales, widths.Select(r => (IReadOnlyList<double>)r).ToList()));
+            }
+            ctx.Replace(project.With(attrs: attrs));
+            return null;
+        });
+
+        // What the Object Styles dialog shows: the styles, the pen table in force, the hidden-line defaults, and the lists they choose from.
+        r.Query("view.objectStyles", (q, _) =>
+        {
+            var project = Spatial.Project(q.Model);
+            return new JsonObject
+            {
+                ["objectStyles"] = project?.Attrs["objectStyles"]?.DeepClone() ?? new JsonObject(),
+                ["penTable"] = LineStyles.ToJson(LineStyles.ReadTable(project?.Attrs["penTable"]) ?? LineStyles.DefaultPenTable()),
+                ["customTable"] = project?.Attrs["penTable"] != null,
+                ["hiddenLines"] = project?.Attrs["viewDefaults"]?["hiddenLines"]?.DeepClone() ?? new JsonObject(),
+                ["categories"] = new JsonArray(LineStyles.Categories.Select(c => (JsonNode)c).ToArray()),
+                ["roles"] = new JsonArray(LineStyles.Roles.Select(c => (JsonNode)c).ToArray()),
+                ["patterns"] = new JsonArray(LineStyles.Patterns.Select(c => (JsonNode)c).ToArray()),
+            };
+        });
+
         r.Command("view.objectStyle", "Object styles", (ctx, a) =>
         {
             var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");

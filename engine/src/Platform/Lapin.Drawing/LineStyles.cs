@@ -38,6 +38,22 @@ public static class LineStyles
     public static PenTable DefaultPenTable() => new(DefaultScales,
         Enumerable.Range(0, PenCount).Select(i => (IReadOnlyList<double>)DefaultScales.Select(s => Iso[Math.Clamp(i + Shift[s], 0, Iso.Length - 1)]).ToList()).ToList());
 
+    /// <summary>A project's pen table ({scales, widths: 16 rows of one width per scale}); null when it is not one.</summary>
+    public static PenTable? ReadTable(JsonNode? n)
+    {
+        if (n is not JsonObject o || o["scales"] is not JsonArray sc || o["widths"] is not JsonArray w || w.Count != PenCount) return null;
+        var scales = sc.Select(x => (int)(Lapin.Model.Json.Number(x) ?? 0)).ToList();
+        if (scales.Count == 0 || scales.Any(x => x <= 0)) return null;
+        var rows = w.Select(r => r is JsonArray ra && ra.Count == scales.Count ? ra.Select(x => Lapin.Model.Json.Number(x) ?? 0.25).ToList() : null).ToList();
+        return rows.Any(r => r == null) ? null : new PenTable(scales, rows.Select(r => (IReadOnlyList<double>)r!).ToList());
+    }
+
+    public static JsonObject ToJson(PenTable t) => new()
+    {
+        ["scales"] = new JsonArray(t.Scales.Select(x => (JsonNode)x).ToArray()),
+        ["widths"] = new JsonArray(t.Widths.Select(r => (JsonNode)new JsonArray(r.Select(x => (JsonNode)x).ToArray())).ToArray()),
+    };
+
     /// <summary>Pen <paramref name="pen"/>'s width at 1:<paramref name="scale"/> (paper mm), at the nearest listed scale.</summary>
     public static double PenWidth(PenTable t, int pen, double scale)
     {
