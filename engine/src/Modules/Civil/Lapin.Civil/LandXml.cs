@@ -34,17 +34,5 @@ public static class LandXml
         }
         return o;
     }
-
-    /// <summary>Points along breaklines (a terrain's edges that must hold: a kerb, a ditch), every <paramref name="step"/> m, for the TIN to keep their line.</summary>
-    public static IEnumerable<Vec3> Densify(IEnumerable<IReadOnlyList<Vec3>> lines, double step = 1)
-    {
-        foreach (var line in lines)
-            for (var i = 0; i + 1 < line.Count; i++)
-            {
-                var (a, b) = (line[i], line[i + 1]);
-                var n = Math.Max(1, (int)Math.Ceiling(Math.Sqrt((b.X - a.X) * (b.X - a.X) + (b.Y - a.Y) * (b.Y - a.Y)) / step));
-                for (var k = 0; k < n; k++) yield return a + (b - a) * ((double)k / n);
-                if (i + 2 == line.Count) yield return b;
-            }
     }
 }

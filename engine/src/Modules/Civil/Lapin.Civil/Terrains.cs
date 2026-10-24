@@ -35,10 +35,36 @@ public static class Terrains
     public static Terrain Of(Entity e) => Cache.GetValue(e, x =>
     {
         var datum = x.Num("datum");
-        // Breaklines first: their points along them, so the triangles keep their line.
-        var all = LandXml.Densify(Breaklines(x)).Concat(Points(x));
-        return new Terrain(Tin.Delaunay(all.Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList()));
+        // Breaklines first (their heights win where a survey point is in the same place), their segments kept as edges.
+        var all = new List<Vec3>();
+        var segments = new List<(int, int)>();
+        var lines = Breaklines(x);
+        foreach (var line in lines)
+        {
+            for (var i = 0; i < line.Count; i++) { if (i > 0) segments.Add((all.Count - 1, all.Count)); all.Add(line[i]); }
+        }
+        // A survey point on a breakline takes the breakline's height there: the line holds.
+        all.AddRange(Points(x).Select(p => OnBreakline(lines, p) is { } z ? p with { Z = z } : p));
+        return new Terrain(Tin.Delaunay(all.Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList(), segments));
     });
+
+    /// <summary>The height of the breakline a point lies on in plan (within 1 mm), or null.</summary>
+    static double? OnBreakline(List<IReadOnlyList<Vec3>> lines, Vec3 p)
+    {
+        foreach (var line in lines)
+            for (var i = 0; i + 1 < line.Count; i++)
+            {
+                var (a, b) = (line[i], line[i + 1]);
+                var (dx, dy) = (b.X - a.X, b.Y - a.Y);
+                var len2 = dx * dx + dy * dy;
+                if (len2 < 1e-12) continue;
+                var t = ((p.X - a.X) * dx + (p.Y - a.Y) * dy) / len2;
+                if (t < 0 || t > 1) continue;
+                var (qx, qy) = (a.X + dx * t - p.X, a.Y + dy * t - p.Y);
+                if (qx * qx + qy * qy <= 1e-6) return a.Z + (b.Z - a.Z) * t;
+            }
+        return null;
+    }
 
     /// <summary>A terrain's breaklines: polylines of surveyed points [[x, y, z], …].</summary>
     public static List<IReadOnlyList<Vec3>> Breaklines(Entity e) =>

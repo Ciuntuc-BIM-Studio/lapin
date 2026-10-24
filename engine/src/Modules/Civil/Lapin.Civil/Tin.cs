@@ -9,14 +9,24 @@ public sealed record Tin(IReadOnlyList<Vec3> Points, IReadOnlyList<(int A, int B
     /// <summary>
     /// Delaunay in plan (Bowyer–Watson): points that coincide in plan (to 6
     /// decimals) count once, the first one kept; the triangles cover the convex
-    /// hull, counter-clockwise seen from above.
+    /// hull, counter-clockwise seen from above. <paramref name="constraints"/>
+    /// (pairs of input indices: a breakline's segments) are kept as edges
+    /// exactly, split where a point lies on them; the rest stays Delaunay.
     /// </summary>
-    public static Tin Delaunay(IReadOnlyList<Vec3> input)
+    public static Tin Delaunay(IReadOnlyList<Vec3> input, IReadOnlyList<(int A, int B)>? constraints = null)
     {
-        var seen = new HashSet<(long, long)>();
+        var seen = new Dictionary<(long, long), int>();
         var pts = new List<Vec3>();
-        foreach (var p in input)
-            if (double.IsFinite(p.X) && double.IsFinite(p.Y) && double.IsFinite(p.Z) && seen.Add(((long)Math.Round(p.X * 1e6), (long)Math.Round(p.Y * 1e6)))) pts.Add(p);
+        var map = new int[input.Count];
+        for (var k = 0; k < input.Count; k++)
+        {
+            var p = input[k];
+            map[k] = -1;
+            if (!(double.IsFinite(p.X) && double.IsFinite(p.Y) && double.IsFinite(p.Z))) continue;
+            var key = ((long)Math.Round(p.X * 1e6), (long)Math.Round(p.Y * 1e6));
+            if (!seen.TryGetValue(key, out var at)) { seen[key] = at = pts.Count; pts.Add(p); }
+            map[k] = at;
+        }
         var n = pts.Count;
         if (n < 3) return new Tin(pts, []);
         double minX = pts.Min(p => p.X), minY = pts.Min(p => p.Y), maxX = pts.Max(p => p.X), maxY = pts.Max(p => p.Y);
@@ -64,6 +74,9 @@ public sealed record Tin(IReadOnlyList<Vec3> Points, IReadOnlyList<(int A, int B
             if (dead > tris.Count / 2 && tris.Count > 4 * n + 64) { tris.RemoveAll(t => !t.Alive); dead = 0; }
         }
         var result = tris.Where(t => t.Alive && t.A < n && t.B < n && t.C < n).Select(t => (t.A, t.B, t.C)).ToList();
+        if (constraints is { Count: > 0 })
+            result = Constrained.Apply(pts, result, constraints.Where(c => c.A >= 0 && c.B >= 0 && c.A < map.Length && c.B < map.Length)
+                .Select(c => (map[c.A], map[c.B])).Where(c => c.Item1 >= 0 && c.Item2 >= 0 && c.Item1 != c.Item2).ToList());
         return new Tin(pts, result);
     }
 
@@ -233,5 +246,83 @@ public sealed class Terrain
         var all = new HashSet<(int, int)>();
         foreach (var (a, b, c) in Tin.Triangles) { all.Add((a, b)); all.Add((b, c)); all.Add((c, a)); }
         return all.Where(e => !all.Contains((e.Item2, e.Item1))).ToList();
+    }
+}
+
+/// <summary>
+/// Constraint edges forced into a triangulation by flipping the edges that
+/// cross them (Sloan, 1993), then Lawson's flips to bring back the Delaunay
+/// condition everywhere but across a constraint.
+/// </summary>
+static class Constrained
+{
+    public static List<(int A, int B, int C)> Apply(IReadOnlyList<Vec3> pts, List<(int A, int B, int C)> input, IReadOnlyList<(int A, int B)> constraints)
+    {
+        var tris = input.Select(t => new[] { t.A, t.B, t.C }).ToList();
+        var owner = new Dictionary<(int, int), int>();
+        void Own(int t) { var x = tris[t]; owner[(x[0], x[1])] = t; owner[(x[1], x[2])] = t; owner[(x[2], x[0])] = t; }
+        for (var t = 0; t < tris.Count; t++) Own(t);
+        var fixedEdges = new HashSet<(int, int)>();
+        static (int, int) Key(int a, int b) => a < b ? (a, b) : (b, a);
+        double Orient(int a, int b, int c) => (pts[b].X - pts[a].X) * (pts[c].Y - pts[a].Y) - (pts[b].Y - pts[a].Y) * (pts[c].X - pts[a].X);
+        int Third(int t, int u, int v) => tris[t].First(x => x != u && x != v);
+        bool Exists(int a, int b) => owner.ContainsKey((a, b)) || owner.ContainsKey((b, a));
+        // Whether u–v crosses a–b inside both (not at a shared point).
+        bool Crosses(int u, int v, int a, int b) =>
+            u != a && u != b && v != a && v != b && Math.Sign(Orient(a, b, u)) * Math.Sign(Orient(a, b, v)) < 0 && Math.Sign(Orient(u, v, a)) * Math.Sign(Orient(u, v, b)) < 0;
+        // The edge u–v (both triangles there) turned to w1–w2; the new edge, or null when the quad is not convex.
+        (int, int)? Flip(int u, int v)
+        {
+            if (!owner.TryGetValue((u, v), out var t1) || !owner.TryGetValue((v, u), out var t2)) return null;
+            int w1 = Third(t1, u, v), w2 = Third(t2, u, v);
+            if (!(Orient(w1, w2, u) * Orient(w1, w2, v) < 0)) return null;
+            foreach (var t in new[] { t1, t2 }) { var x = tris[t]; owner.Remove((x[0], x[1])); owner.Remove((x[1], x[2])); owner.Remove((x[2], x[0])); }
+            tris[t1] = [u, w2, w1];
+            tris[t2] = [w2, v, w1];
+            Own(t1); Own(t2);
+            return (w1, w2);
+        }
+        var touched = new List<(int, int)>();
+        void Insert(int a, int b, int depth)
+        {
+            if (Exists(a, b)) { fixedEdges.Add(Key(a, b)); return; }
+            // A point on the segment splits it.
+            var ab = new Vec2(pts[b].X - pts[a].X, pts[b].Y - pts[a].Y);
+            var len2 = ab.X * ab.X + ab.Y * ab.Y;
+            var on = Enumerable.Range(0, pts.Count).Where(p => p != a && p != b && Math.Abs(Orient(a, b, p)) <= 1e-9 * len2)
+                .Select(p => (p, s: ((pts[p].X - pts[a].X) * ab.X + (pts[p].Y - pts[a].Y) * ab.Y) / len2)).Where(x => x.s > 1e-9 && x.s < 1 - 1e-9)
+                .OrderBy(x => x.s).Select(x => x.p).FirstOrDefault(-1);
+            if (on >= 0 && depth < 1000) { Insert(a, on, depth + 1); Insert(on, b, depth + 1); return; }
+            var queue = new Queue<(int, int)>(owner.Keys.Where(e => e.Item1 < e.Item2 || !owner.ContainsKey((e.Item2, e.Item1))).Where(e => Crosses(e.Item1, e.Item2, a, b)));
+            var guard = 0;
+            while (queue.Count > 0 && guard++ < 100000)
+            {
+                var (u, v) = queue.Dequeue();
+                if (!Exists(u, v)) continue;
+                if (!owner.ContainsKey((u, v))) (u, v) = (v, u);
+                if (Flip(u, v) is not { } ne) { queue.Enqueue((u, v)); continue; }
+                if (Crosses(ne.Item1, ne.Item2, a, b)) queue.Enqueue(ne); else touched.Add(ne);
+            }
+            if (Exists(a, b)) fixedEdges.Add(Key(a, b));
+        }
+        foreach (var (a, b) in constraints) Insert(a, b, 0);
+
+        // Lawson: an edge whose far point lies inside the circle of the near triangle turns, unless it is a constraint.
+        bool InCircle(int a, int b, int c, int d)
+        {
+            double ax = pts[a].X - pts[d].X, ay = pts[a].Y - pts[d].Y, bx = pts[b].X - pts[d].X, by = pts[b].Y - pts[d].Y, cx = pts[c].X - pts[d].X, cy = pts[c].Y - pts[d].Y;
+            return (ax * ax + ay * ay) * (bx * cy - cx * by) - (bx * bx + by * by) * (ax * cy - cx * ay) + (cx * cx + cy * cy) * (ax * by - bx * ay) > 1e-12;
+        }
+        var stack = new Stack<(int, int)>(touched);
+        var steps = 0;
+        while (stack.Count > 0 && steps++ < 200000)
+        {
+            var (u, v) = stack.Pop();
+            if (fixedEdges.Contains(Key(u, v)) || !owner.TryGetValue((u, v), out var t1) || !owner.TryGetValue((v, u), out var t2)) continue;
+            int w1 = Third(t1, u, v), w2 = Third(t2, u, v);
+            if (!InCircle(u, v, w1, w2) || Flip(u, v) is null) continue;
+            foreach (var e in new[] { (u, w2), (w2, v), (v, w1), (w1, u) }) stack.Push(e);
+        }
+        return tris.Select(x => (x[0], x[1], x[2])).ToList();
     }
 }

@@ -45,6 +45,25 @@ public class CivilTests
     }
 
     [Fact]
+    public void A_constraint_edge_is_kept_exactly_split_where_a_point_lies_on_it_and_the_rest_stays_Delaunay()
+    {
+        // Two points close either side of y = 5: plain Delaunay joins them across the line from (0, 5) to (10, 5).
+        Vec3[] pts = [new(0, 0, 0), new(10, 0, 0), new(10, 10, 0), new(0, 10, 0), new(0, 5, 0), new(10, 5, 0), new(5, 4.9, 0), new(5, 5.1, 0)];
+        bool Has(Tin t, int a, int b) => t.Triangles.Any(x => new[] { (x.A, x.B), (x.B, x.C), (x.C, x.A) }.Any(e => (e.Item1 == a && e.Item2 == b) || (e.Item1 == b && e.Item2 == a)));
+        double Area(Tin t) => t.Triangles.Sum(x => ((t.Points[x.B].X - t.Points[x.A].X) * (t.Points[x.C].Y - t.Points[x.A].Y) - (t.Points[x.B].Y - t.Points[x.A].Y) * (t.Points[x.C].X - t.Points[x.A].X)) / 2);
+        Assert.False(Has(Tin.Delaunay(pts), 4, 5));
+        var c = Tin.Delaunay(pts, [(4, 5)]);
+        Assert.True(Has(c, 4, 5));
+        Assert.Equal(100, Area(c), 9);
+        Assert.All(c.Triangles, x => Assert.True((c.Points[x.B].X - c.Points[x.A].X) * (c.Points[x.C].Y - c.Points[x.A].Y) - (c.Points[x.B].Y - c.Points[x.A].Y) * (c.Points[x.C].X - c.Points[x.A].X) > 0));
+        Assert.Equal(2 * 8 - 2 - 6, c.Triangles.Count);   // 2n − 2 − hull points, (0, 5) and (10, 5) on it
+        // A point on the constraint splits it: both halves are edges.
+        Vec3[] on = [.. pts[..6], new(5, 5, 0), new(3, 6, 0)];
+        var d = Tin.Delaunay(on, [(4, 5)]);
+        Assert.True(Has(d, 4, 6) && Has(d, 6, 5));
+    }
+
+    [Fact]
     public void Interpolates_a_planar_surface_exactly_and_meets_a_slope_line_where_it_should()
     {
         var terrain = new Terrain(Tin.Delaunay(Grid(6, (x, y) => 100 + 0.1 * x + 0.02 * y)));
