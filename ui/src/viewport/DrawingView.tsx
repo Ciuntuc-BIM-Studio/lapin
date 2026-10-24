@@ -2,7 +2,8 @@
  * A section or an elevation: the view's generated drawing, panned and zoomed
  * (wheel, drag). The drawing's x runs along the view, its y up. Drafting
  * works here as in plans: the command line, snaps, ortho and guide lines; a
- * click selects an annotation or a drafted shape.
+ * click selects an annotation or a drafted shape, a left drag selects by a
+ * box (window to the right, crossing to the left), a middle or right drag pans.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -17,6 +18,7 @@ import { distToSegment } from './snap';
 import { CadOverlay, useCadCanvas, type Aimed } from './cad/canvas';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
+import { boxTest, segsOf } from './selectBox';
 
 interface View { cx: number; cy: number; scale: number }
 
@@ -31,6 +33,8 @@ export function DrawingView() {
   const [view, setView] = useState<View | null>(null);
   const [hover, setHover] = useState<Aimed | null>(null);
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null);
+  /** A selection box being dragged (screen px). */
+  const [box, setBox] = useState<{ a: Vec2; b: Vec2 } | null>(null);
   const cadStep = useCad((s) => s.step);
 
   useEffect(() => {
@@ -65,6 +69,19 @@ export function DrawingView() {
     }
     return null;
   }, [drawing, nodes, v.scale]);
+
+  /** The annotations and drafted shapes a box takes, added to the selection with shift (or while a command asks for a selection). */
+  const selectBox = (b: { a: Vec2; b: Vec2 }, add: boolean) => {
+    const takes = boxTest(toWorld(b.a.x, b.a.y), toWorld(b.b.x, b.b.y), b.b.x >= b.a.x);
+    const ids: string[] = [];
+    for (const m of drawing?.marks ?? []) {
+      const owner = m.id.includes('#') ? m.id.slice(0, m.id.indexOf('#')) : m.id;
+      if (nodes.get(owner) && takes(segsOf(m.segments)) && !ids.includes(m.id)) ids.push(m.id);
+    }
+    const before = add || useCad.getState().step ? useUi.getState().selected : [];
+    const next = [...new Set([...before, ...ids])];
+    useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
+  };
 
   const { aim, acquire } = useCadCanvas({ viewId: id, drawing, scale: v.scale, pickAny });
 
@@ -101,6 +118,12 @@ export function DrawingView() {
           const d = drag.current;
           if (d) {
             if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4) d.moved = true;
+            const step = useCad.getState().step;
+            if (d.moved && e.buttons === 1 && (!step || step.want === 'select')) {
+              const r = ref.current!.getBoundingClientRect();
+              setBox({ a: { x: d.x - r.left, y: d.y - r.top }, b: { x: e.clientX - r.left, y: e.clientY - r.top } });
+              return;
+            }
             if (d.moved) { setView({ ...d.view, cx: d.view.cx - (e.clientX - d.x) / d.view.scale, cy: d.view.cy + (e.clientY - d.y) / d.view.scale }); return; }
           }
           setHover(at(e).aimed);
@@ -108,6 +131,7 @@ export function DrawingView() {
         onPointerUp={(e) => {
           const d = drag.current;
           drag.current = null;
+          if (box) { selectBox(box, e.shiftKey); setBox(null); return; }
           if (!d || d.moved || e.button !== 0) return;
           const { raw, aimed } = at(e);
           const step = useCad.getState().step;
@@ -129,6 +153,7 @@ export function DrawingView() {
             return `M${a.x} ${a.y}L${b.x} ${b.y}`;
           }).join('')} />
         ))}
+        {box && <rect className={`select-box${box.b.x >= box.a.x ? ' window' : ' crossing'}`} x={Math.min(box.a.x, box.b.x)} y={Math.min(box.a.y, box.b.y)} width={Math.abs(box.b.x - box.a.x)} height={Math.abs(box.b.y - box.a.y)} />}
         {cadStep && <CadOverlay aimed={hover} toScreen={toScreen} />}
       </svg>
       {drawing?.problem && <div className="error-text view-problem">{drawing.problem}</div>}

@@ -13,6 +13,7 @@ import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { Vec2 } from '../platform/module';
 import { findTool, gripsOf } from '../platform/modules';
 import type { Grip } from '../platform/module';
+import { boxTest, segsOf, type Seg } from './selectBox';
 import { distToSegment, pairs, pointInPolygon, toMm } from './snap';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
@@ -270,20 +271,10 @@ export function PlanView() {
   /** What a selection box takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
   const selectBox = (b: { a: Vec2; b: Vec2 }, add: boolean) => {
     const p = toWorld(b.a.x, b.a.y), q = toWorld(b.b.x, b.b.y);
-    const [x0, x1, y0, y1] = [Math.min(p.x, q.x), Math.max(p.x, q.x), Math.min(p.y, q.y), Math.max(p.y, q.y)];
-    const windowMode = b.b.x >= b.a.x;
-    const inside = (v: Vec2) => v.x >= x0 && v.x <= x1 && v.y >= y0 && v.y <= y1;
-    const crosses = (u: Vec2, v: Vec2) => inside(u) || inside(v) || [[{ x: x0, y: y0 }, { x: x1, y: y0 }], [{ x: x1, y: y0 }, { x: x1, y: y1 }], [{ x: x1, y: y1 }, { x: x0, y: y1 }], [{ x: x0, y: y1 }, { x: x0, y: y0 }]].some(([r, s2]) => {
-      const d1 = { x: v.x - u.x, y: v.y - u.y }, d2 = { x: s2.x - r.x, y: s2.y - r.y };
-      const den = d1.x * d2.y - d1.y * d2.x;
-      if (Math.abs(den) < 1e-15) return false;
-      const t = ((r.x - u.x) * d2.y - (r.y - u.y) * d2.x) / den, w = ((r.x - u.x) * d1.y - (r.y - u.y) * d1.x) / den;
-      return t >= 0 && t <= 1 && w >= 0 && w <= 1;
-    });
-    const takes = (segs: [Vec2, Vec2][]) => segs.length > 0 && (windowMode ? segs.every(([u, v]) => inside(u) && inside(v)) : segs.some(([u, v]) => crosses(u, v)));
+    const takes = boxTest(p, q, b.b.x >= b.a.x);
     const ids: string[] = [];
     for (const r of items) {
-      const segs: [Vec2, Vec2][] = [];
+      const segs: Seg[] = [];
       for (const it of r.plan) {
         if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid') continue;
         const ps = pairs(it.points);
@@ -292,8 +283,7 @@ export function PlanView() {
       if (nodes.get(r.nodeId) && takes(segs)) ids.push(r.nodeId);
     }
     for (const m of drawing?.marks ?? []) {
-      const segs: [Vec2, Vec2][] = [];
-      for (let k = 0; k + 3 < m.segments.length; k += 4) segs.push([{ x: m.segments[k], y: m.segments[k + 1] }, { x: m.segments[k + 2], y: m.segments[k + 3] }]);
+      const segs = segsOf(m.segments);
       const owner = m.id.includes('#') ? m.id.slice(0, m.id.indexOf('#')) : m.id;
       if (nodes.get(owner) && takes(segs) && !ids.includes(m.id)) ids.push(m.id);
     }
