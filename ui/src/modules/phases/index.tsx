@@ -6,7 +6,7 @@ import type { LapinModule, ToolDef } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
-import { useLooks, type Look } from '../../platform/looks';
+import { setLooks, type Look } from '../../platform/looks';
 import { PhasesDialog, usePhaseSettings } from './PhasesDialog';
 
 /** The selection, given a phase relative to the active one. */
@@ -28,7 +28,7 @@ function PhaseLooks() {
       if (!live || !r) return;
       const looks: Record<string, Look> = {};
       for (const [id, x] of Object.entries(r)) looks[id] = x.presentation === 'hide' ? { hidden: true } : { color: x.color, opacity: x.opacity };
-      useLooks.setState({ looks });
+      setLooks('phases', looks);
     });
     return () => { live = false; };
   }, [nodes]);

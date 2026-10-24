@@ -301,3 +301,9 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .layer-table input:not([type]), .layer-table input[type=number] { width: 100%; box-sizing: border-box; }
 /* Over a 2D view the command line takes the bottom: the hotbar sits above it. */
 .view-area:has(.cad-line) .hotbar { bottom: 74px; }
+.vv-set { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.tabs-inline { display: flex; gap: 4px; margin-bottom: 8px; border-bottom: 1px solid var(--rule); }
+.tabs-inline button { border: none; background: none; padding: 6px 10px; cursor: pointer; color: var(--ink-muted); border-bottom: 2px solid transparent; }
+.tabs-inline button.on { color: var(--ink); border-bottom-color: var(--accent); }
+/* Buttons inside dialogs, rows and the panels are compact; the start screen keeps its big ones. */
+.dialog .btn, .row .btn, .props .btn, .dialog-foot .btn { width: auto; padding: 7px 12px; font-size: 11.5px; }

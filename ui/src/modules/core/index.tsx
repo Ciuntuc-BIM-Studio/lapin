@@ -11,6 +11,7 @@ import { setTool, useUi } from '../../app/store';
 import { MaterialsDialog } from './MaterialsDialog';
 import { StandardsDialog } from './StandardsDialog';
 import { SheetSection } from './SheetSection';
+import { Visibility3D, VisibilityDialog } from './VisibilityDialog';
 
 /** Create Similar: the selected element's tool, set up like it. */
 function createSimilar() {
@@ -93,12 +94,15 @@ const core: LapinModule = {
         })() },
       ] },
       { label: 'Graphics', tools: [
-        { id: 'view.style', label: 'Visual style', icon: Eye },
-        { id: 'view.layers', label: 'Visibility', icon: Layers3 },
+        { id: 'view.layers', label: 'Visibility', icon: Layers3, shortcut: 'VV', run: () => useUi.setState({ dialog: 'visibility' }) },
+        { id: 'view.style', label: 'Visual style', icon: Eye, run: () => useUi.setState((s) => ({ visualStyle: s.visualStyle === 'shaded' ? 'edges' : s.visualStyle === 'edges' ? 'wireframe' : 'shaded' })) },
+      ], small: [
+        { id: 'view.graphicsVg', label: 'Graphics (VG)', icon: Layers3, shortcut: 'VG', run: () => useUi.setState({ dialog: 'visibility' }) },
       ] },
     ],
   }],
-  dialogs: { materials: MaterialsDialog, standards: StandardsDialog },
+  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog },
+  background: Visibility3D,
   propertySections: [{ id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection }],
   hotbar: [
     { id: 'select', label: 'Select', icon: MousePointer2, shortcut: 'Esc', run: () => setTool(null) },

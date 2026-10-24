@@ -73,7 +73,7 @@ public static class LineStyles
         _ => null,
     };
 
-    public static readonly string[] Categories = ["walls", "slabs", "roofs", "columns", "beams", "doors", "windows", "stairs", "railings", "spaces", "furniture", "other"];
+    public static readonly string[] Categories = ["walls", "slabs", "roofs", "columns", "beams", "doors", "windows", "stairs", "railings", "spaces", "furniture", "topography", "other"];
 
     static LineStyleSpec Merge(LineStyleSpec into, LineStyleSpec? from) => from == null ? into
         : new(into.Pen ?? from.Pen, into.Color ?? from.Color, into.Pattern ?? from.Pattern);

@@ -32,6 +32,7 @@ public sealed class CoreModule : ILapinModule
         r.Class(new(IfcClass.Material, "Material", [new("color", "Colour", "color"), new("category", "Category", "text")], Kind: "resource"));
         DraftingResources.Register(r);
         Views.Register(r);
+        GraphicsSets.Register(r);
         Sheets.Register(r);
 
         r.Command("storey.create", "New storey", (ctx, a) =>

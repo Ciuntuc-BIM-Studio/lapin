@@ -1,0 +1,54 @@
+using System.Text.Json.Nodes;
+using Lapin.Architecture;
+using Lapin.Model;
+using Lapin.Platform;
+
+namespace Lapin.Engine.Tests;
+
+/// <summary>Visibility / Graphics: a view's own settings, named sets shared by views, IFC classes, the 3D view.</summary>
+public class GraphicsSetTests
+{
+    static int Cut(Fixture f, string view) =>
+        ((JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = view })!)["pens"]!.AsArray().OfType<JsonObject>()
+            .Where(p => (string)p["layer"]! == "CUT").Sum(p => p["segments"]!.AsArray().Count / 4);
+
+    [Fact]
+    public void A_set_reaches_every_view_that_takes_it_and_its_views_keep_it_when_it_goes()
+    {
+        var f = new Fixture();
+        f.Wall(0, 0, 5, 0);
+        f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 5, ["y2"] = 4, ["offset"] = 0.5 });
+        string Plan() => (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        var (v1, v2) = (Plan(), Plan());
+        var all = Cut(f, v1);
+        Assert.True(all > 0);
+        f.Run("view.graphics", new JsonObject { ["id"] = v1, ["category"] = "walls", ["value"] = new JsonObject { ["hidden"] = true } });
+        var noWalls = Cut(f, v1);
+        Assert.True(noWalls < all);
+        Assert.Equal(all, Cut(f, v2));
+        var set = (string)f.Run("view.saveGraphicsSet", new JsonObject { ["id"] = v1, ["name"] = "No walls" })!["id"]!;
+        f.Run("view.useGraphicsSet", new JsonObject { ["id"] = v2, ["setId"] = set });
+        Assert.Equal(noWalls, Cut(f, v2));
+        // A class hidden through one view hides it in both.
+        f.Run("view.graphics", new JsonObject { ["id"] = v2, ["class"] = IfcClass.Slab, ["value"] = new JsonObject { ["hidden"] = true } });
+        Assert.Equal(0, Cut(f, v1));
+        f.Run("view.removeGraphicsSet", new JsonObject { ["setId"] = set });
+        Assert.Equal(0, Cut(f, v2));
+        Assert.Null(f.Model.Get(v1)!.Str("graphicsSet"));
+        Assert.Throws<CommandException>(() => f.Run("view.saveGraphicsSet", new JsonObject { ["id"] = v1, ["name"] = "" }));
+    }
+
+    [Fact]
+    public void The_3D_view_hides_by_category_and_class()
+    {
+        var f = new Fixture();
+        var w = f.Wall(0, 0, 5, 0);
+        Assert.Empty(f.Session.Query("view.hidden3d", new JsonObject())!.AsArray());
+        f.Run("view.graphics", new JsonObject { ["id"] = "3d", ["category"] = "walls", ["value"] = new JsonObject { ["hidden"] = true } });
+        Assert.Equal([w], f.Session.Query("view.hidden3d", new JsonObject())!.AsArray().Select(x => (string)x!));
+        var v = (JsonObject)f.Session.Query("view.visibility", new JsonObject { ["id"] = "3d" })!;
+        Assert.True((bool)v["graphics"]!["categories"]!["walls"]!["hidden"]!);
+        f.Session.Undo();
+        Assert.Empty(f.Session.Query("view.hidden3d", new JsonObject())!.AsArray());
+    }
+}

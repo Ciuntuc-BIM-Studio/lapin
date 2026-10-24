@@ -206,6 +206,7 @@ export function Viewport3D() {
   const render = useSession((st) => st.render);
   const selected = useUi((st) => st.selected);
   const looks = useLooks((st) => st.looks);
+  const visualStyle = useUi((st) => st.visualStyle);
   useEffect(() => {
     const s = scene.current;
     if (!s) return;
@@ -225,8 +226,13 @@ export function Viewport3D() {
     for (const [id, { object }] of live) {
       highlight(object, selected.includes(id));
       look(object, looks[id]);
+      // The visual style: faces, edges, or both.
+      object.traverse((c) => {
+        if ((c as THREE.Mesh).isMesh) c.visible = visualStyle !== 'wireframe';
+        else if ((c as THREE.LineSegments).isLineSegments) c.visible = visualStyle !== 'shaded';
+      });
     }
-  }, [render, selected, looks]);
+  }, [render, selected, looks, visualStyle]);
 
   return <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />;
 }

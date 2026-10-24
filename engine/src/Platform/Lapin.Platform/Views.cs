@@ -92,14 +92,14 @@ public static class Views
         var parts = new List<DrawPart>();
         var symbols = new List<DrawSymbol>();
         var storey = view.Str("storeyId");
-        var hiddenCats = (view.Attrs["graphics"]?["categories"] as JsonObject)?.Where(c => c.Value?["hidden"] is JsonValue h && h.TryGetValue<bool>(out var b) && b).Select(c => c.Key).ToHashSet() ?? [];
+        var viewGraphics = GraphicsSets.Of(m, view);
         var hiddenElements = (view.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         var filters = q.Services.All<IViewElementFilter>();
         foreach (var e in m.Entities)
         {
             if (e.Class is IfcClass.OpeningElement || hiddenElements.Contains(e.Id)) continue;
             if (filters.Select(f => f.For(m, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
-            if (LineStyles.CategoryOf(e.Class) is { } cat && hiddenCats.Contains(cat)) continue;
+            if (GraphicsSets.Hides(viewGraphics, e)) continue;
             if (q.Geometry(e.Id) is not { } g) continue;
             foreach (var p in g.Parts) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material));
             if (view.Str("kind") == "plan" && Generator.SymbolicInPlan.Contains(e.Class) && g.Plan != null && Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey)
@@ -133,7 +133,7 @@ public static class Views
         var kind = spec.Kind == "plan" ? "plan" : spec.Kind == "elevation" ? "elevation" : "section";
         var materials = MaterialDrawing.Apply(drawing, p => p.Material != null && m.Get(p.Material) is { } mat ? MaterialGraphics.Resolve(mat, kind) : null);
         var project = Spatial.Project(m);
-        var graphics = view.Attrs["graphics"] as JsonObject;
+        var graphics = GraphicsSets.Of(m, view);
         var categories = (graphics?["categories"] as JsonObject)?.Select(c => (c.Key, G: CategoryGraphics.From(c.Value))).Where(x => x.G != null).ToDictionary(x => x.Key, x => x.G!);
         var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, graphics?["elements"] as JsonObject, null, scale);
         // Elements a module draws in another colour (a phase's override): their lines and fills.
@@ -377,29 +377,6 @@ public static class Views
         });
 
         // A view's graphics: a category's line colour, weight, fill, cut hatch, lines by role, or hidden; an element's lines by role.
-        r.Command("view.graphics", "View graphics", (ctx, a) =>
-        {
-            var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x ? x : throw new CommandException("Not a view.");
-            var attrs = v.CloneAttrs();
-            var g = attrs["graphics"] as JsonObject ?? new JsonObject();
-            void Set(string bucket, string? key)
-            {
-                if (key == null) return;
-                var b = g[bucket] as JsonObject ?? new JsonObject();
-                if (a["value"] is JsonObject val) b[key] = val.DeepClone(); else b.Remove(key);
-                if (b.Count > 0) g[bucket] = b; else g.Remove(bucket);
-            }
-            if ((string?)a["category"] is { } cat)
-            {
-                if (!LineStyles.Categories.Contains(cat)) throw new CommandException($"„{cat}” is not a category.");
-                Set("categories", cat);
-            }
-            Set("elements", (string?)a["element"]);
-            if (g.Count > 0) attrs["graphics"] = g; else attrs.Remove("graphics");
-            ctx.Replace(v.With(attrs: attrs));
-            return null;
-        });
-
         // The project's object styles: one role of a category ({pen, color, pattern}; null clears it), and its defaults for hidden lines by kind.
         r.Command("view.objectStyle", "Object styles", (ctx, a) =>
         {

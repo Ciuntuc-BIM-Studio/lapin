@@ -40,10 +40,12 @@ export interface UiState {
   /** A message for the user (saved, recovered…), cleared by the next one. */
   notice: string | null;
   theme: Theme;
+  /** How the 3D draws: shaded, shaded with edges, or wireframe. */
+  visualStyle: 'shaded' | 'edges' | 'wireframe';
 }
 
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, view: 'plan', drawingViewId: null, sheetId: null, scheduleId: null, planViewId: null, planDrawing: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper',
+  screen: 'start', tab: null, tool: null, view: 'plan', drawingViewId: null, sheetId: null, scheduleId: null, planViewId: null, planDrawing: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges',
 }));
 
 export const setTool = (tool: string | null) => useUi.setState({ tool });
