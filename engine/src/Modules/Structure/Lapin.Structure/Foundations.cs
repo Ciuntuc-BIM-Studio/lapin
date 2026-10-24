@@ -82,13 +82,7 @@ public static class StripFootings
     /// <summary>The stem's layer bands across the axis (core centred on it), first to last.</summary>
     static IReadOnlyList<(double From, double To, string Material, string Name, int Index)> Bands(IModelView m, Entity footing)
     {
-        if (LayerSets.UsageOf(m, footing.Id) is { } u && Layers.ReadUsage(u) is { } usage && m.Get(usage.ForLayerSet) is { } set)
-        {
-            var layers = Layers.Read(set);
-            var bands = Layers.Bands(layers, usage);
-            return layers.Select((l, i) => (bands[i].From, bands[i].To, l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", i)).ToList();
-        }
-        return [];
+        return LayerSets.BandsOf(m, footing.Id)?.Select(b => (b.From, b.To, b.Material, b.Name, b.Index)).ToList() ?? [];
     }
 
     /// <summary>The stem as joins see it: its axis and its layers' extent.</summary>
@@ -148,7 +142,7 @@ public static class StripFootings
             if (Prism.ExtrudeFootprint(fp, bottom, fh, "footing") is { } solid) parts.Add(new GeometryPart("Footing", Materials.ColorOf(m, concrete), solid, concrete, "footing"));
             plan.Add(new PlanItem("outline", true, fp));
         }
-        parts = Place.CutByPriority(footing, m, services, parts, problems);
+        parts = CutPriorities.Apply(footing, m, services, parts, problems);
         return new ElementGeometry(parts, plan, [Joins.Start(footing), Joins.End(footing)], problems.Count > 0 ? problems : null);
     }
 
@@ -242,7 +236,7 @@ public static class PadFootings
             i++;
         }
         var problems = new List<string>();
-        parts = Place.CutByPriority(pad, m, services, parts, problems);
+        parts = CutPriorities.Apply(pad, m, services, parts, problems);
         return new ElementGeometry(parts, plan, [at], problems.Count > 0 ? problems : null);
     }
 

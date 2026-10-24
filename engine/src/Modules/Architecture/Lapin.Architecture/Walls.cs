@@ -93,13 +93,7 @@ public static class Walls
     /// <summary>The wall's section, first layer to last; one centred band for a wall without layers.</summary>
     public static IReadOnlyList<Band> Section(IModelView m, Entity wall)
     {
-        if (UsageOf(m, wall.Id) is { } usageEntity && Layers.ReadUsage(usageEntity) is { } usage && m.Get(usage.ForLayerSet) is { } set)
-        {
-            var layers = Layers.Read(set);
-            var bands = Layers.Bands(layers, usage);
-            var core = Layers.CoreIndex(layers);
-            return layers.Select((l, i) => new Band(bands[i].From, bands[i].To, l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", i == core, i)).ToList();
-        }
+        if (LayerSets.BandsOf(m, wall.Id) is { } bands) return bands.Select(b => new Band(b.From, b.To, b.Material, b.Name, b.Core, b.Index)).ToList();
         var t = wall.NumOrNull("thickness") ?? DefaultThickness;
         return [new Band(-t / 2, t / 2, null, wall.Name, true)];
     }
@@ -218,7 +212,7 @@ public static class Walls
                 at = Math.Max(at, g.To);
             }
         }
-        parts = Cuts.Apply(wall, m, services, parts, problems);
+        parts = CutPriorities.Apply(wall, m, services, parts, problems);
         if (roofTop != null)
         {
             if (booleans == null) problems.Add("The roof needs the boolean library (manifold), missing here: the wall keeps its height.");

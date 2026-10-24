@@ -70,7 +70,7 @@ public static class Lintels
         if (r.BearingEnd is { } be && !(be >= 0)) o.Add("the end bearing must be zero or more");
         if (r.Width is { } w && !(w > 0)) o.Add("the lintel width must be positive");
         if (r.Pieces is { } p && p is < 1 or > 6) o.Add("pieces must be 1 to 6");
-        if (r.Product is { } pr && !(pr.Width > 0 && pr.Height > 0 && pr.Lengths.Length > 0 && pr.Lengths.All(l => l > 0))) o.Add("the product needs a section and at least one length");
+        if (r.Product is { } pr && !(pr.Width > 0 && pr.Height > 0 && pr.Lengths is { Length: > 0 } && pr.Lengths.All(l => l > 0))) o.Add("the product needs a section and at least one length");
         return o;
     }
 

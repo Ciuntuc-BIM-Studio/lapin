@@ -88,7 +88,7 @@ public static class Pens
             var p = d.Cuts[i];
             var fill = (o.ElementColors?.GetValueOrDefault(p.Element) is { } ec ? Pale(ec) : null) ?? Cat(p.Class)?.FillColor ?? (m != null && m.Fills.TryGetValue(i, out var f) ? f : null);
             if (fill == null) continue;
-            var pen = Get("fill:" + fill, () => new Pen("FILL", null, 0, fill, null));
+            var pen = Get("fill:" + fill, () => new Pen(PenLayer.Fill, null, 0, fill, null));
             pen.Loops.AddRange(p.Loops);
         }
 
@@ -109,14 +109,14 @@ public static class Pens
             var color = Cat(h.Class)?.LineColor ?? "#000000";
             if (pattern.Solid)
             {
-                Get("solid:" + color, () => new Pen("HATCH", null, 0, color, null)).Loops.AddRange(h.Loops);
+                Get("solid:" + color, () => new Pen(PenLayer.Hatch, null, 0, color, null)).Loops.AddRange(h.Loops);
                 continue;
             }
             // Patterns are paper millimetres at 1:1: at 1:scale a millimetre is scale/1000 m.
             var (segs, _) = HatchFill.Segments(h.Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), pattern, new HatchOptions(h.Scale * o.Scale / 1000, MaxSegments: Math.Max(0, budget)));
             budget -= segs.Count;
             var width = h.Pen is { } pn ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), pn, o.Scale) : Default.Hatch;
-            Get($"hatch:{color}:{width}", () => new Pen("HATCH", color, width, null, null)).Segments.AddRange(segs.Select(s => (s.A, s.B)));
+            Get($"hatch:{color}:{width}", () => new Pen(PenLayer.Hatch, color, width, null, null)).Segments.AddRange(segs.Select(s => (s.A, s.B)));
         }
 
         for (var i = 0; i < d.Lines.Count; i++)
@@ -125,7 +125,7 @@ public static class Pens
             var l = d.Lines[i];
             var g = Cat(l.Class);
             if (g?.Hidden == true) continue;
-            if (!o.HiddenLines && l.Role == "hidden") continue;
+            if (!o.HiddenLines && l.Role == LineRole.Hidden) continue;
             var styled = o.LineStyle?.Invoke(l.Role, l.Class, l.Element);
             // A line edit's style (Linework) wins over everything else.
             if (l.Style is { Empty: false } ls)
@@ -134,41 +134,41 @@ public static class Pens
             Pen pen;
             switch (l.Role)
             {
-                case "hidden":
+                case LineRole.Hidden:
                 {
                     var c = color ?? "#666666"; var w = styled?.WidthMm ?? Default.Hidden; var dash = styled?.Dash ?? [1.5, 1];
-                    pen = Get($"hidden:{c}:{w}:{DashKey(dash)}", () => new Pen("HIDDEN", c, w, null, dash));
+                    pen = Get($"hidden:{c}:{w}:{DashKey(dash)}", () => new Pen(PenLayer.Hidden, c, w, null, dash));
                     break;
                 }
-                case "overhead":
+                case LineRole.Overhead:
                 {
                     var c = color ?? "#888888"; var w = styled?.WidthMm ?? Default.Seen * 0.7; var dash = styled?.Dash ?? [2, 1];
-                    pen = Get($"overhead:{c}:{w}:{DashKey(dash)}", () => new Pen("OVERHEAD", c, w, null, dash));
+                    pen = Get($"overhead:{c}:{w}:{DashKey(dash)}", () => new Pen(PenLayer.Overhead, c, w, null, dash));
                     break;
                 }
-                case "beyond":
+                case LineRole.Beyond:
                 {
                     var c = color ?? "#808080"; var w = styled?.WidthMm ?? Default.Hatch; var dash = styled?.Dash;
-                    pen = Get($"beyond:{c}:{w}:{DashKey(dash)}", () => new Pen("BEYOND", c, w, null, dash is { Length: > 0 } ? dash : null));
+                    pen = Get($"beyond:{c}:{w}:{DashKey(dash)}", () => new Pen(PenLayer.Beyond, c, w, null, dash is { Length: > 0 } ? dash : null));
                     break;
                 }
                 default:
                 {
-                    var cut = l.Role == "cut";
+                    var cut = l.Role == LineRole.Cut;
                     var c = color ?? "#000000";
                     var w = styled?.WidthMm ?? (g?.LineWeight is { } lw && WeightMm.TryGetValue(lw, out var mm) ? mm * (cut ? 1 : 0.5) : cut ? Default.Cut : Default.Seen);
                     var dash = styled?.Dash is { Length: > 0 } sd ? sd : null;
-                    pen = Get($"{(cut ? "cut" : "seen")}:{c}:{w}:{DashKey(dash)}", () => new Pen(cut ? "CUT" : "SEEN", c, w, null, dash));
+                    pen = Get($"{(cut ? "cut" : "seen")}:{c}:{w}:{DashKey(dash)}", () => new Pen(cut ? PenLayer.Cut : PenLayer.Seen, c, w, null, dash));
                     break;
                 }
             }
             pen.Segments.Add((l.A, l.B));
         }
         if (m != null && m.Membranes.Count > 0)
-            Get("membrane", () => new Pen("MEMBRANE", "#000000", Default.Membrane, null, [3, 1.5])).Segments.AddRange(m.Membranes);
+            Get("membrane", () => new Pen(PenLayer.Membrane, "#000000", Default.Membrane, null, [3, 1.5])).Segments.AddRange(m.Membranes);
 
         // Whole lines: collinear pieces the hidden-line removal split are joined again.
-        foreach (var p in pens.Values.Where(p => p.Layer != "HATCH" && p.Segments.Count > 1))
+        foreach (var p in pens.Values.Where(p => p.Layer != PenLayer.Hatch && p.Segments.Count > 1))
         {
             var merged = LineMerge.Merge(p.Segments);
             p.Segments.Clear();
@@ -178,7 +178,7 @@ public static class Pens
         // Fills first, then hatches, then lines: beyond and hidden, overhead, seen, membranes, cut.
         static int Order(Pen p) => p.Layer switch
         {
-            "FILL" => 0, "HATCH" => p.Fill != null ? 1 : 2, "BEYOND" or "HIDDEN" => 3, "OVERHEAD" => 4, "SEEN" => 5, "MEMBRANE" => 6, _ => 7,
+            PenLayer.Fill => 0, PenLayer.Hatch => p.Fill != null ? 1 : 2, PenLayer.Beyond or PenLayer.Hidden => 3, PenLayer.Overhead => 4, PenLayer.Seen => 5, PenLayer.Membrane => 6, _ => 7,
         };
         return pens.Values.OrderBy(Order).ToList();
     }

@@ -92,12 +92,7 @@ public static class Slabs
     /// <summary>The floor's layers, top first: their bands below its top (negative), their materials.</summary>
     public static IReadOnlyList<(double From, double To, string? Material, string Name, int Index)> Section(IModelView m, Entity slab)
     {
-        if (LayerSets.UsageOf(m, slab.Id) is { } u && Layers.ReadUsage(u) is { } usage && m.Get(usage.ForLayerSet) is { } set)
-        {
-            var layers = Layers.Read(set);
-            var bands = Layers.Bands(layers, usage);
-            return layers.Select((l, i) => (bands[i].From, bands[i].To, (string?)l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", i)).ToList();
-        }
+        if (LayerSets.BandsOf(m, slab.Id) is { } bands) return bands.Select(b => (b.From, b.To, (string?)b.Material, b.Name, b.Index)).ToList();
         var t = slab.NumOrNull("thickness") ?? 0.2;
         return [(-t, 0.0, null, slab.Name, 0)];
     }
@@ -126,7 +121,7 @@ public static class Slabs
             }
             else problems.Add("Openings in floors need the boolean library (manifold), missing here.");
         }
-        parts = Cuts.Apply(slab, m, services, parts, problems);
+        parts = CutPriorities.Apply(slab, m, services, parts, problems);
         var plan = new List<PlanItem> { new("outline", true, contour) };
         plan.AddRange(holes.Select(h => new PlanItem("outline", true, h)));
         return new ElementGeometry(parts, plan, contour, problems.Count > 0 ? problems : null);

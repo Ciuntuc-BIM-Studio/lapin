@@ -115,7 +115,8 @@ public sealed class PhasesModule : ILapinModule, IViewElementFilter
         r.Command("assign", "Phase", (ctx, a) =>
         {
             var s = Settings(ctx.Model);
-            var ids = a["ids"] is JsonArray arr ? arr.Select(x => (string?)x).OfType<string>().ToList() : [(string?)a["id"] ?? ""];
+            var ids = Args.Ids(a);
+            if (ids.Count == 0) throw new CommandException("Nothing to assign a phase to.");
             string? Check(string? id) => id == null || s.Phases.Any(p => p.Id == id) ? id : throw new CommandException($"There is no phase „{id}”.");
             int Index(string? id) => s.Phases.ToList().FindIndex(p => p.Id == id);
             foreach (var id in ids)

@@ -9,21 +9,21 @@ using Lapin.Platform;
 namespace Lapin.Drafting.Cad;
 
 /// <summary>A drafting layer: its colour, pen width (paper mm), line type, and whether it shows and can be edited.</summary>
-public sealed record DraftLayer(string Name, string Color = "#18181b", double Weight = 0.25, string LineType = "continuous", bool Visible = true, bool Locked = false)
+public sealed record CadLayer(string Name, string Color = "#18181b", double Weight = 0.25, string LineType = "continuous", bool Visible = true, bool Locked = false)
 {
     public static readonly string[] LineTypes = ["continuous", "dashed", "dotted", "dashdot"];
 
     /// <summary>The line type's dashes on paper (mm).</summary>
-    public double[]? Dash => LineType switch { "dashed" => [3, 1.5], "dotted" => [0.3, 1], "dashdot" => [4, 1, 0.3, 1], _ => null };
+    public double[]? Dash => Dashes.Of(LineType) is { Length: > 0 } d ? d : null;
 
     public JsonObject ToJson() => new() { ["name"] = Name, ["color"] = Color, ["weight"] = Weight, ["lineType"] = LineType, ["visible"] = Visible, ["locked"] = Locked };
 
-    public static DraftLayer? From(JsonNode? n)
+    public static CadLayer? From(JsonNode? n)
     {
         if (n is not JsonObject o || ((string?)o["name"])?.Trim() is not { Length: > 0 } name) return null;
         static bool B(JsonNode? x, bool d) => x is JsonValue v && v.TryGetValue<bool>(out var b) ? b : d;
         var lt = (string?)o["lineType"] is { } l && LineTypes.Contains(l) ? l : "continuous";
-        return new DraftLayer(name, (string?)o["color"] ?? "#18181b", Math.Clamp(Json.Number(o["weight"]) ?? 0.25, 0.05, 2), lt, B(o["visible"], true), B(o["locked"], false));
+        return new CadLayer(name, (string?)o["color"] ?? "#18181b", Math.Clamp(Json.Number(o["weight"]) ?? 0.25, 0.05, 2), lt, B(o["visible"], true), B(o["locked"], false));
     }
 }
 
@@ -37,16 +37,16 @@ public static class Drafts
 {
     public const string Predefined = "DRAFT";
 
-    public static IReadOnlyList<DraftLayer> Layers(IModelView m)
+    public static IReadOnlyList<CadLayer> Layers(IModelView m)
     {
-        var list = (Spatial.Project(m)?.Attrs["draftLayers"] as JsonArray)?.Select(DraftLayer.From).OfType<DraftLayer>().ToList() ?? [];
-        if (list.All(l => l.Name != "0")) list.Insert(0, new DraftLayer("0"));
+        var list = (Spatial.Project(m)?.Attrs["draftLayers"] as JsonArray)?.Select(CadLayer.From).OfType<CadLayer>().ToList() ?? [];
+        if (list.All(l => l.Name != "0")) list.Insert(0, new CadLayer("0"));
         return list;
     }
 
-    public static DraftLayer LayerOf(IModelView m, string? name) => Layers(m).FirstOrDefault(l => l.Name == name) ?? Layers(m)[0];
+    public static CadLayer LayerOf(IModelView m, string? name) => Layers(m).FirstOrDefault(l => l.Name == name) ?? Layers(m)[0];
 
-    public static void WriteLayers(ICommandContext ctx, IEnumerable<DraftLayer> layers)
+    public static void WriteLayers(ICommandContext ctx, IEnumerable<CadLayer> layers)
     {
         var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
         var attrs = project.CloneAttrs();

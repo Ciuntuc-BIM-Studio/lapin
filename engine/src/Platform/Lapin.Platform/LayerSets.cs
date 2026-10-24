@@ -12,6 +12,9 @@ public sealed record LayerSpec(string Material, double Thickness, bool Core = fa
 /// its occurrences lay it with their own IfcMaterialLayerSetUsage. The
 /// platform's, since several modules build on it.
 /// </summary>
+/// <summary>One layer of an element's layer set as a band across its axis: from, to, its material, its name, its place in the set, whether it is the core.</summary>
+public readonly record struct LayerBand(double From, double To, string Material, string Name, int Index, bool Core);
+
 public static class LayerSets
 {
     public static Entity? Of(IModelView m, string typeId) =>
@@ -95,6 +98,16 @@ public static class LayerSets
     }
 
     /// <summary>An occurrence's own layer set usage, if it has one.</summary>
+    /// <summary>The element's layers as bands across its axis (by its usage), with material, name, place and whether it is the core; null when it has no layer set.</summary>
+    public static IReadOnlyList<LayerBand>? BandsOf(IModelView m, string occurrenceId)
+    {
+        if (UsageOf(m, occurrenceId) is not { } u || Layers.ReadUsage(u) is not { } usage || m.Get(usage.ForLayerSet) is not { } set) return null;
+        var layers = Layers.Read(set);
+        var bands = Layers.Bands(layers, usage);
+        var core = Layers.CoreIndex(layers);
+        return layers.Select((l, i) => new LayerBand(bands[i].From, bands[i].To, l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", i, i == core)).ToList();
+    }
+
     public static Entity? UsageOf(IModelView m, string occurrenceId) =>
         m.RelatingOf(occurrenceId, IfcClass.RelAssociatesMaterial) is { Class: IfcClass.MaterialLayerSetUsage } u ? u : null;
 }

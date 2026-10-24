@@ -93,15 +93,15 @@ public static class Generator
             var p = primary[a.Owner];
             cuts.Add(new DPolygon(a.Loops, p.Element, p.Class, p.Key, p.Material));
             foreach (var loop in a.Loops)
-                for (var i = 0; i < loop.Length; i++) lines.Add(new DLine(loop[i], loop[(i + 1) % loop.Length], "cut", p.Element, p.Class));
+                for (var i = 0; i < loop.Length; i++) lines.Add(new DLine(loop[i], loop[(i + 1) % loop.Length], LineRole.Cut, p.Element, p.Class));
         }
         foreach (var s in seen)
         {
             var p = primary[s.Owner];
             var beyond = plan && v.BeyondFrom is { } bf && Z(p.Solid).Max < cutZ - bf - 1e-4;
-            lines.Add(new DLine(s.A, s.B, beyond ? "beyond" : "projection", p.Element, p.Class));
+            lines.Add(new DLine(s.A, s.B, beyond ? LineRole.Beyond : LineRole.Projection, p.Element, p.Class));
         }
-        foreach (var s in behind) { var p = primary[s.Owner]; lines.Add(new DLine(s.A, s.B, "hidden", p.Element, p.Class)); }
+        foreach (var s in behind) { var p = primary[s.Owner]; lines.Add(new DLine(s.A, s.B, LineRole.Hidden, p.Element, p.Class)); }
 
         if (plan && v.Above > 0)
         {
@@ -114,7 +114,7 @@ public static class Generator
                 foreach (var s in oLines)
                 {
                     var p = over[s.Owner];
-                    lines.Add(new DLine(new Vec2(s.A.X, -s.A.Y), new Vec2(s.B.X, -s.B.Y), "overhead", p.Element, p.Class));
+                    lines.Add(new DLine(new Vec2(s.A.X, -s.A.Y), new Vec2(s.B.X, -s.B.Y), LineRole.Overhead, p.Element, p.Class));
                 }
             }
         }
@@ -143,6 +143,6 @@ public static class Generator
         var diag = Math.Max(cut is { } c ? (c.Max - c.Min).Length : 0, model is { } m ? (m.Max - m.Min).Length : 0);
         if (!(diag > 1e-9)) return lines;
         var limit = 1.5 * diag;
-        return lines.Where(l => l.Role is not ("projection" or "beyond" or "hidden" or "overhead") || (l.B - l.A).Length <= limit).ToList();
+        return lines.Where(l => l.Role is not (LineRole.Projection or LineRole.Beyond or LineRole.Hidden or LineRole.Overhead) || (l.B - l.A).Length <= limit).ToList();
     }
 }

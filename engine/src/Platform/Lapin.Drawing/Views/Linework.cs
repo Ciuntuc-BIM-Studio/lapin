@@ -70,7 +70,7 @@ public static class Linework
             {
                 var cls = lines.FirstOrDefault(l => l.Element == e.Element)?.Class ?? d.Cuts.FirstOrDefault(c => c.Element == e.Element)?.Class;
                 if (cls == null) { orphans.Add(e.Id); continue; }
-                lines.Add(new DLine(e.A, e.B, "projection", e.Element, cls, e.Style));
+                lines.Add(new DLine(e.A, e.B, LineRole.Projection, e.Element, cls, e.Style));
                 continue;
             }
             var hit = false;
@@ -87,7 +87,7 @@ public static class Linework
                 var mid = Piece(l, t0, t1);
                 switch (e.Action)
                 {
-                    case "show": next.Add(mid.Role == "hidden" ? mid with { Role = "projection" } : mid); break;
+                    case "show": next.Add(mid.Role == LineRole.Hidden ? mid with { Role = LineRole.Projection } : mid); break;
                     case "style": next.Add(mid with { Style = LineStyles.Merge(e.Style ?? new LineStyleSpec(), mid.Style) }); break;
                 }
                 if (t1 < 1 - Tol) next.Add(Piece(l, t1, 1));

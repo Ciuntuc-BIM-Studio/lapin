@@ -80,8 +80,7 @@ public sealed class CoreModule : ILapinModule
         r.Command("element.update", "Change", (ctx, a) =>
         {
             // One element, or several (ids): each takes the same values.
-            var ids = a["ids"] is JsonArray arr ? arr.Select(n => (string?)n).OfType<string>().Distinct().ToList() : [];
-            if ((string?)a["id"] is { } one && !ids.Contains(one)) ids.Add(one);
+            var ids = Args.Ids(a).ToList();
             if (ids.Count == 0) throw new CommandException("Nothing to change.");
             var values = a["attrs"] as JsonObject ?? throw new CommandException("Nothing to change.");
             foreach (var id in ids)
@@ -104,10 +103,8 @@ public sealed class CoreModule : ILapinModule
         // Move, copy, rotate or mirror elements and annotations in plan (one undo step); a copy returns the new ids.
         r.Command("element.transform", "Transform", (ctx, a) =>
         {
-            static BubbleBim.Geometry.Vec2 V(JsonNode? n, string what) => n is JsonArray p && p.Count >= 2 && Json.Number(p[0]) is { } x && Json.Number(p[1]) is { } y
-                ? new BubbleBim.Geometry.Vec2(x, y) : throw new CommandException($"The {what} is [x, y].");
-            var ids = a["ids"] is JsonArray arr ? arr.Select(n => (string?)n).OfType<string>().Distinct().ToList() : [];
-            if ((string?)a["id"] is { } one && !ids.Contains(one)) ids.Add(one);
+            static BubbleBim.Geometry.Vec2 V(JsonNode? n, string what) => Args.Point(n, what);
+            var ids = Args.Ids(a).ToList();
             var op = (string?)a["op"] ?? "move";
             var t = op switch
             {
@@ -135,7 +132,7 @@ public sealed class CoreModule : ILapinModule
 
         r.Command("element.delete", "Delete", (ctx, a) =>
         {
-            var ids = a["ids"] is JsonArray arr ? arr.Select(n => (string?)n).OfType<string>().ToList() : [];
+            var ids = Args.Ids(a).ToList();
             if ((string?)a["id"] is { } one) ids.Add(one);
             foreach (var id in ids.Distinct())
             {

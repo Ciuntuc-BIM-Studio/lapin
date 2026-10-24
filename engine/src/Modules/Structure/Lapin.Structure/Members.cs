@@ -44,7 +44,7 @@ public static class Columns
         var (section, material, _) = Spec(m, column);
         if (Envelope(column, m) is not { } solid) return new ElementGeometry([], Diagnostics: ["The column has no height."]);
         var problems = new List<string>();
-        var parts = Place.CutByPriority(column, m, services, [new GeometryPart(column.Name, Materials.ColorOf(m, material), solid, material, "body")], problems);
+        var parts = CutPriorities.Apply(column, m, services, [new GeometryPart(column.Name, Materials.ColorOf(m, material), solid, material, "body")], problems);
         var footprint = Place.Placed(section.Outline(), Place.Point(column), column.Num("rotation"));
         return new ElementGeometry(parts, [new PlanItem("cut", true, footprint)], [Place.Point(column)], problems.Count > 0 ? problems : null);
     }
@@ -126,7 +126,7 @@ public static class Beams
         }
         else solid = Prism.ExtrudeFootprint(fp, Top(m, beam) - section.Depth, section.Depth, "beam");
         if (solid == null) return new ElementGeometry([], Diagnostics: ["The beam has no section."]);
-        var parts = Place.CutByPriority(beam, m, services, [new GeometryPart(beam.Name, Materials.ColorOf(m, material), solid, material, "body")], problems);
+        var parts = CutPriorities.Apply(beam, m, services, [new GeometryPart(beam.Name, Materials.ColorOf(m, material), solid, material, "body")], problems);
         return new ElementGeometry(parts, [new PlanItem("outline", true, fp)], [f.Start, f.End], problems.Count > 0 ? problems : null);
     }
 

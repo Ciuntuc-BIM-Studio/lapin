@@ -78,7 +78,14 @@ public sealed record JoinerySpec(
     /// <summary>A stored spec read back; null when there is none or it cannot be read.</summary>
     public static JoinerySpec? From(JsonNode? node)
     {
-        try { return node?.Deserialize<JoinerySpec>(Json.Options); }
+        try
+        {
+            var s = node?.Deserialize<JoinerySpec>(Json.Options);
+            // A partial object binds its missing parts to null: as unreadable as bad JSON.
+            if (s is null || s.Kind is null || s.Name is null || s.Mark is null || s.Frame is null || s.Sash is null
+                || s.Columns is null || s.Rows is null || s.Panels is null || s.Board is null || s.Colors is null) return null;
+            return s;
+        }
         catch (JsonException) { return null; }
     }
 }

@@ -23,7 +23,7 @@ public sealed record ResolvedLine(double? WidthMm = null, string? Color = null, 
 /// </summary>
 public static class LineStyles
 {
-    public static readonly string[] Roles = ["cut", "projection", "hidden", "overhead", "beyond"];
+    public static readonly string[] Roles = LineRole.All;
     public static readonly string[] Patterns = ["solid", "dashed", "hidden", "center", "dotted"];
     public const int PenCount = 16;
 
@@ -65,10 +65,7 @@ public static class LineStyles
     }
 
     /// <summary>Dash patterns on paper (mm); solid: none.</summary>
-    public static double[] DashOf(string? pattern) => pattern switch
-    {
-        "dashed" => [3, 1.5], "hidden" => [1.5, 1], "center" => [6, 1.5, 1, 1.5], "dotted" => [0.3, 1], _ => [],
-    };
+    public static double[] DashOf(string? pattern) => Dashes.Of(pattern);
 
     /// <summary>The category of an IFC class in drawings (walls, slabs, roofs…), or null.</summary>
     public static string? CategoryOf(string ifcClass) => ifcClass.ToUpperInvariant() switch
@@ -123,4 +120,31 @@ public static class LineStyles
             return r;
         };
     }
+}
+
+/// <summary>The roles a generated line can have in a drawing (what Pens, Linework, object styles and the views agree on).</summary>
+public static class LineRole
+{
+    public const string Cut = "cut", Projection = "projection", Hidden = "hidden", Overhead = "overhead", Beyond = "beyond";
+    public static readonly string[] All = [Cut, Projection, Hidden, Overhead, Beyond];
+}
+
+/// <summary>The layers a drawing's pens are grouped on, in the order they are drawn (fills first, then lines by role).</summary>
+public static class PenLayer
+{
+    public const string Fill = "FILL", Hatch = "HATCH", Beyond = "BEYOND", Hidden = "HIDDEN", Overhead = "OVERHEAD", Seen = "SEEN", Cut = "CUT", Membrane = "MEMBRANE";
+}
+
+/// <summary>The dash patterns by name, on paper (mm): the one table for pens, drafting standards and CAD layers.</summary>
+public static class Dashes
+{
+    public static double[] Of(string? name) => name switch
+    {
+        "dashed" => [3, 1.5],
+        "hidden" => [1.5, 1],
+        "center" => [6, 1.5, 1, 1.5],
+        "dotted" => [0.3, 1],
+        "dashdot" => [4, 1, 0.3, 1],
+        _ => [],
+    };
 }

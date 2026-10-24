@@ -196,10 +196,7 @@ public static class Standards
     }
 
     /// <summary>A line type's dashes on paper (mm); continuous: none.</summary>
-    public static double[] DashOf(string? lineType) => lineType switch
-    {
-        "dashed" => [3, 1.5], "dotted" => [0.3, 1], "dashdot" => [4, 1, 0.3, 1], _ => [],
-    };
+    public static double[] DashOf(string? lineType) => Dashes.Of(lineType);
 
     /// <summary>Whether a layer shows: its own switch, its group's, then the view's and the sheet viewport's.</summary>
     public static bool LayerShows(DraftLayer layer, IEnumerable<LayerGroup> groups, IEnumerable<string>? viewHides = null, IEnumerable<string>? viewportHides = null)

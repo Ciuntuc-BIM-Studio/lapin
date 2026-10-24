@@ -164,8 +164,8 @@ public sealed class StructureModule : ILapinModule
         r.Command("restyleJoins", "Join style", (ctx, a) =>
         {
             var swap = a["swap"] is JsonValue v && v.TryGetValue<bool>(out var sw) && sw;
-            JoinStyle? style = (string?)a["style"] switch { "mitre" => JoinStyle.Mitre, "butt" => JoinStyle.Butt, _ => null };
-            var ids = a["ids"] is JsonArray arr ? arr.Select(n => (string?)n).OfType<string>().ToList() : [(string?)a["id"] ?? ""];
+            var style = Args.JoinStyle(a["style"]);
+            var ids = Args.Ids(a);
             if (Joins.Restyle(ctx, Paths(ctx), ids, style, swap) == 0) throw new CommandException("The selection has no corner to restyle.");
             return null;
         });
@@ -201,5 +201,5 @@ public sealed class StructureModule : ILapinModule
 
     static IPathElements Paths(ICommandContext ctx) => ctx.Services.Get<IPathElements>()!;
 
-    static JoinStyle Style(JsonNode? n) => (string?)n == "mitre" ? JoinStyle.Mitre : JoinStyle.Butt;
+    static JoinStyle Style(JsonNode? n) => Args.JoinStyle(n) ?? JoinStyle.Butt;
 }

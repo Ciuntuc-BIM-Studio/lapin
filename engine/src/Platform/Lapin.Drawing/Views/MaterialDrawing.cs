@@ -180,7 +180,7 @@ public static class MaterialDrawing
             var seg = (d.Lines[li].A, d.Lines[li].B);
             if (seamSegs.Near(seg).Any(c => Coincide(seg, c.Seg) || Coincide(c.Seg, seg))) o.DropLines.Add(li);
         }
-        var cutLines = Enumerable.Range(0, d.Lines.Count).Where(li => d.Lines[li].Role == "cut").ToList();
+        var cutLines = Enumerable.Range(0, d.Lines.Count).Where(li => d.Lines[li].Role == LineRole.Cut).ToList();
         foreach (var li in cutLines)
         {
             var seg = (d.Lines[li].A, d.Lines[li].B);

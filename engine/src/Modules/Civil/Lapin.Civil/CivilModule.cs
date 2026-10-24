@@ -172,12 +172,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         throw new CommandException("A terrain needs points: [[x, y, z], …] or a survey file's text.");
     }
 
-    static IReadOnlyList<Vec2> Outline(JsonObject a)
-    {
-        if (a["points"] is JsonArray arr) return arr.OfType<JsonArray>().Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList();
-        var (p, q) = (new Vec2(Json.Number(a["x1"]) ?? 0, Json.Number(a["y1"]) ?? 0), new Vec2(Json.Number(a["x2"]) ?? 0, Json.Number(a["y2"]) ?? 0));
-        return [p, new Vec2(q.X, p.Y), q, new Vec2(p.X, q.Y)];
-    }
+    static IReadOnlyList<Vec2> Outline(JsonObject a) => Args.Points(a);
 
     /// <summary>In plans, the major contours' elevations (relative to ±0.00), along them; the platforms' elevations inside them.</summary>
     public IEnumerable<ViewMark> Marks(ViewContext c)

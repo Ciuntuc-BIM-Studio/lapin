@@ -211,7 +211,7 @@ public static class DraftCommands
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : throw new CommandException("A layer needs a name.");
             var layers = Drafts.Layers(ctx.Model).ToList();
             var i = layers.FindIndex(l => l.Name == name);
-            var cur = i >= 0 ? layers[i] : new DraftLayer(name);
+            var cur = i >= 0 ? layers[i] : new CadLayer(name);
             var json = cur.ToJson();
             foreach (var k in new[] { "color", "weight", "lineType", "visible", "locked" }) if (a[k] != null) json[k] = a[k]!.DeepClone();
             var newName = ((string?)a["newName"])?.Trim();
@@ -225,7 +225,7 @@ public static class DraftCommands
                     var at = e.CloneAttrs(); at["layer"] = newName; ctx.Replace(e.With(attrs: at));
                 }
             }
-            var layer = DraftLayer.From(json)!;
+            var layer = CadLayer.From(json)!;
             if (i >= 0) layers[i] = layer; else layers.Add(layer);
             Drafts.WriteLayers(ctx, layers);
             return null;

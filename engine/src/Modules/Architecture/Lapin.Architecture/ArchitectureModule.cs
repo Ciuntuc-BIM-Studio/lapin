@@ -412,13 +412,7 @@ public sealed class ArchitectureModule : ILapinModule
         if (Roof.Resolve(roof, m) is { Flat: false } r && RoofSolver.Problem(r.Outline, r.Rules) is { } problem) throw new CommandException(problem);
     }
 
-    static IReadOnlyList<Vec2> Points(JsonObject a)
-    {
-        if (a["points"] is JsonArray arr)
-            return arr.OfType<JsonArray>().Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList();
-        var (p, q) = (P(a, "x1", "y1"), P(a, "x2", "y2"));
-        return [p, new Vec2(q.X, p.Y), q, new Vec2(p.X, q.Y)];
-    }
+    static IReadOnlyList<Vec2> Points(JsonObject a) => Args.Points(a);
 
     /// <summary>A roof's openings written back; the one just set must fit (its reason when it does not).</summary>
     /// <summary>Refused when a roof window or dormer the roof already holds would not sit on the roof as it would become.</summary>
@@ -476,15 +470,9 @@ public sealed class ArchitectureModule : ILapinModule
 
     static IPathElements Paths(ICommandContext ctx) => ctx.Services.Get<IPathElements>()!;
 
-    static JoinStyle? Style(JsonNode? n) => (string?)n switch { "mitre" => JoinStyle.Mitre, "butt" => JoinStyle.Butt, null => null, var other => throw new CommandException($"A join style is butt or mitre, not „{other}”.") };
+    static JoinStyle? Style(JsonNode? n) => Args.JoinStyle(n);
 
-    static Vec2 P(JsonObject a, string x, string y) =>
-        new(Json.Number(a[x]) ?? throw new CommandException($"Missing {x}."), Json.Number(a[y]) ?? throw new CommandException($"Missing {y}."));
+    static Vec2 P(JsonObject a, string x, string y) => Args.Point(a, x, y);
 
-    static IEnumerable<string> Ids(JsonObject a)
-    {
-        var ids = a["ids"] is JsonArray arr ? arr.Select(n => (string?)n).OfType<string>().ToList() : [];
-        if ((string?)a["id"] is { } one) ids.Add(one);
-        return ids.Distinct();
-    }
+    static IEnumerable<string> Ids(JsonObject a) => Args.Ids(a);
 }
