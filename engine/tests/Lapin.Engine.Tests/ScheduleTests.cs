@@ -204,4 +204,24 @@ public class ScheduleTests
         f.Session.Undo(); f.Session.Undo(); f.Session.Undo();
         Assert.Null(f.Model.Get(id));
     }
+
+    [Fact]
+    public void A_schedule_goes_to_XLSX_a_sheet_a_table_numbers_as_numbers()
+    {
+        var (f, _, _) = House();
+        var id = Schedule(f);
+        f.Run("architecture.updateSchedule", new JsonObject { ["id"] = id, ["parts"] = new JsonArray(new JsonObject { ["id"] = "d", ["title"] = "Doors", ["kind"] = "door" }, new JsonObject { ["id"] = "w", ["title"] = "Windows", ["kind"] = "window" }) });
+        var bytes = Convert.FromBase64String((string)f.Session.Query("schedule.xlsx", new JsonObject { ["id"] = id })!);
+        using var zip = new System.IO.Compression.ZipArchive(new MemoryStream(bytes));
+        Assert.NotNull(zip.GetEntry("xl/workbook.xml"));
+        string Read(string n) { using var r = new StreamReader(zip.GetEntry(n)!.Open()); return r.ReadToEnd(); }
+        var book = Read("xl/workbook.xml");
+        Assert.Contains("name=\"Doors\"", book);
+        Assert.Contains("name=\"Windows\"", book);
+        var sheet = Read("xl/worksheets/sheet1.xml");
+        Assert.Contains("<t xml:space=\"preserve\">Mark</t>", sheet);
+        Assert.Matches("<c r=\"C2\"><v>\\d+</v></c>", sheet); // the width, a number
+        Assert.Equal("AA", Lapin.Drawing.Export.XlsxWriter.Column(26));
+        if (Environment.GetEnvironmentVariable("LAPIN_EXPORT_DIR") is { Length: > 0 } dir) File.WriteAllBytes(Path.Combine(dir, "schedule.xlsx"), bytes);
+    }
 }

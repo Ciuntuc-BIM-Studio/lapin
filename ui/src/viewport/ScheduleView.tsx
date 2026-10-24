@@ -64,6 +64,15 @@ export function ScheduleView() {
     a.download = `${node.name}.csv`; a.click();
     notify(`Exported ${node.name}.csv.`);
   };
+  const xlsx = async () => {
+    const b64 = await query<string>('schedule.xlsx', { id: node.id });
+    if (!b64) return;
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    a.download = `${node.name}.xlsx`; a.click();
+    notify(`Exported ${node.name}.xlsx.`);
+  };
   const problems = d ? d.problems.twice + d.problems.none + d.problems.marks.length : 0;
   return (
     <div className="view-pane schedule-pane">
@@ -78,6 +87,7 @@ export function ScheduleView() {
         </select>
         <button type="button" className="icon" title="A row of your own" onClick={() => { const l = window.prompt('Row label'); if (l?.trim()) void execute('architecture.addScheduleRow', { id: node.id, label: l.trim() }); }}><Plus size={14} /><span className="small">Row</span></button>
         <button type="button" className="icon" title="Export CSV" onClick={() => void csv()}><FileDown size={14} /><span className="small">CSV</span></button>
+        <button type="button" className="icon" title="Export XLSX (a sheet a table)" onClick={() => void xlsx()}><FileDown size={14} /><span className="small">XLSX</span></button>
         <button type="button" className={`icon${settings ? ' on' : ''}`} title="Rows, card drawings, tables, what to check" onClick={() => setSettings(!settings)}><Settings2 size={14} /><span className="small">Settings</span></button>
         <button type="button" className="icon" title="Fit" onClick={fit}><Maximize size={14} /></button>
       </div>

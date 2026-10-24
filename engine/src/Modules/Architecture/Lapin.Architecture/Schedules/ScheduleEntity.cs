@@ -126,7 +126,14 @@ public sealed class ScheduleEntity : ISheetContent
     /// opening, sill, a column per level, total, U, fire, the custom rows), typed
     /// text over the model's. Lintels: the mark and each shown row.
     /// </summary>
-    public static string ToCsv(Entity s, ScheduleData data)
+    public static string ToCsv(Entity s, ScheduleData data) => Csv(Grid(s, data));
+
+    /// <summary>A schedule as a workbook: one sheet a table, as the CSV lays it out.</summary>
+    public static byte[] ToXlsx(Entity s, ScheduleData data) =>
+        Lapin.Drawing.Export.XlsxWriter.Write(Tables(s, data).Select(t => (t.Title, (IReadOnlyList<IReadOnlyList<string>>)Grid(s, t.Data).Select(r => (IReadOnlyList<string>)r.ToList()).ToList())).ToList());
+
+    /// <summary>The schedule as a grid: a header row, then a row an entry.</summary>
+    static List<IEnumerable<string>> Grid(Entity s, ScheduleData data)
     {
         var table = ScheduleTable.Of(s);
         var entries = ScheduleLayout.Sort(data.Entries, table.Sort);
@@ -134,7 +141,7 @@ public sealed class ScheduleEntity : ISheetContent
         if (data.Entries.Count > 0 && data.Entries.All(e => e.Kind == "lintel"))
         {
             var rows = ScheduleLayout.Rows(data, table);
-            return Csv([["Mark", .. rows.Select(r => r.Label)], .. entries.Select(e => (IEnumerable<string>)[e.Mark, .. rows.Select(r => r.Value(e))])]);
+            return [["Mark", .. rows.Select(r => r.Label)], .. entries.Select(e => (IEnumerable<string>)[e.Mark, .. rows.Select(r => r.Value(e))])];
         }
         string Mm(double m) => Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture);
         var head = new List<string> { "Mark", "Name", "Width (mm)", "Height (mm)", "Opening", "Sill" };
@@ -154,7 +161,7 @@ public sealed class ScheduleEntity : ISheetContent
             line.AddRange(table.CustomRows.Select(c => table.Cells.GetValueOrDefault(e.Key)?.GetValueOrDefault("custom:" + c.Id) ?? ""));
             lines.Add(line);
         }
-        return Csv(lines);
+        return lines;
     }
 
     // ------------------------------------------------------------ commands
@@ -284,6 +291,13 @@ public sealed class ScheduleEntity : ISheetContent
                 // Model values typed over on purpose: entry → rows.
                 ["overridden"] = new JsonObject(ScheduleTable.Of(s).Cells.Select(c => KeyValuePair.Create(c.Key, (JsonNode?)new JsonArray(c.Value.Keys.Where(k => !k.StartsWith("custom:", StringComparison.Ordinal)).Select(k => (JsonNode)k).ToArray())))),
             };
+        });
+
+        // The workbook, as base64 (the interface saves it).
+        r.Query("schedule.xlsx", (q, a) =>
+        {
+            var s = Require(q.Model, (string?)a["id"]);
+            return Convert.ToBase64String(ToXlsx(s, Schedules.Of(q, s.Str("kind") ?? "all")));
         });
 
         r.Query("schedule.csv", (q, a) =>
