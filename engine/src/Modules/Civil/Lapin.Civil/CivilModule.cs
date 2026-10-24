@@ -64,6 +64,46 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        // The surfaces of a LandXML file, each a terrain (on the storey; the datum as given).
+        r.Command("importLandXml", "Terrain from LandXML", (ctx, a) =>
+        {
+            var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+            var surfaces = LandXml.Surfaces((string?)a["text"] ?? throw new CommandException("Which file?"));
+            if (surfaces.Count == 0) throw new CommandException("The file has no surface with points.");
+            var earth = Materials.Ensure(ctx, "Earth", Terrains.Color);
+            var ids = new JsonArray();
+            foreach (var s in surfaces)
+            {
+                if (Tin.Delaunay(s.Points).Triangles.Count == 0) continue;
+                var t = new Entity(ctx.NewId(), IfcClass.GeographicElement, s.Name, new JsonObject
+                {
+                    ["points"] = Terrains.PointsJson(s.Points), ["datum"] = Json.Number(a["datum"]) ?? 0, ["interval"] = 0.5, ["majorEvery"] = 5, ["depth"] = 2, ["material"] = earth.Id,
+                }, Terrains.Predefined);
+                ctx.Add(t);
+                Spatial.Contain(ctx, storeyId, t.Id);
+                ids.Add(t.Id);
+            }
+            return new JsonObject { ["ids"] = ids };
+        });
+
+        // A breakline the terrain must keep (a kerb, a ditch's bottom): surveyed points [[x, y, z], …]; remove: its index.
+        r.Command("setBreakline", "Breakline", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var lines = (t.Attrs["breaklines"] as JsonArray)?.Select(x => x!.DeepClone()).ToList() ?? [];
+            if (Json.Number(a["remove"]) is { } ri) { if (ri < 0 || ri >= lines.Count) throw new CommandException("There is no such breakline."); lines.RemoveAt((int)ri); }
+            else
+            {
+                var pts = PointsOf(new JsonObject { ["points"] = a["points"]?.DeepClone() });
+                if (pts.Count < 2) throw new CommandException("A breakline needs two points at least.");
+                lines.Add(Terrains.PointsJson(pts));
+            }
+            var attrs = t.CloneAttrs();
+            if (lines.Count > 0) attrs["breaklines"] = new JsonArray([.. lines]); else attrs.Remove("breaklines");
+            ctx.Replace(t.With(attrs: attrs));
+            return null;
+        });
+
         // A point moved, added or taken away (an index past the end adds).
         r.Command("setTerrainPoint", "Terrain point", (ctx, a) =>
         {

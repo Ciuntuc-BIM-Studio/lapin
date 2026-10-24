@@ -52,6 +52,19 @@ const terrainFromFile: ToolDef = {
   }),
 };
 
+/** Terrains from a LandXML file: each surface of it. */
+const terrainFromLandXml: ToolDef = {
+  id: 'civil.landxml', label: 'Terrain from LandXML', icon: FileUp,
+  run: () => void pickText('.xml,.landxml').then(async (file) => {
+    if (!file) return;
+    const answer = window.prompt('The surveyed elevation of the project\'s ±0.00 (m):', '0');
+    if (answer == null) return;
+    const storeyId = useUi.getState().storeyId;
+    const r = await execute('civil.importLandXml', { text: file.text, datum: Number(answer.replace(',', '.')) || 0, ...(storeyId ? { storeyId } : {}) }) as { ids: string[] } | null;
+    if (r) notify(`${r.ids.length} terrain(s) from ${file.name}.`);
+  }),
+};
+
 /** A platform: its outline in plan (Enter or the first corner closes it); it is levelled at the ground's height in its middle, changed in the inspector. */
 const platform: ToolDef = {
   id: 'civil.platform', label: 'Platform', icon: LandPlot, shortcut: 'PD',
@@ -84,7 +97,7 @@ const civil: LapinModule = {
   summary: 'The terrain from survey points, its contours, platforms with their cut and fill.',
   tabs: [{
     id: 'site', label: 'Site', order: 30,
-    groups: [{ label: 'Terrain', tools: [terrainFromFile, platform] }],
+    groups: [{ label: 'Terrain', tools: [terrainFromFile, platform], small: [terrainFromLandXml] }],
   }],
   propertySections: [{ id: 'terrain', label: 'Terrain', classes: ['IfcGeographicElement'], component: TerrainSection }],
 };

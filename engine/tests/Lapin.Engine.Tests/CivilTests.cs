@@ -152,4 +152,23 @@ public class CivilTests
         var layers = s["pens"]!.AsArray().OfType<JsonObject>().Select(p => (string)p["layer"]!).ToList();
         Assert.True(layers.Contains("HATCH"), string.Join(",", layers));
     }
+
+    [Fact]
+    public void LandXML_surfaces_become_terrains_and_a_breakline_holds_its_line()
+    {
+        // A 3 × 3 TIN, step 20, z = 0.1 x, as LandXML writes it: northing first.
+        var pts = string.Join("", from i in Enumerable.Range(0, 3) from j in Enumerable.Range(0, 3) select $"<P id=\"{i * 3 + j + 1}\">{j * 20} {i * 20} {0.1 * i * 20}</P>");
+        var xml = $"<LandXML xmlns=\"http://www.landxml.org/schema/LandXML-1.2\"><Surfaces><Surface name=\"Existing ground\"><Definition surfType=\"TIN\"><Pnts>{pts}</Pnts><Faces><F>1 2 4</F></Faces></Definition></Surface></Surfaces></LandXML>";
+        var s = LandXml.Surfaces(xml).Single();
+        Assert.Equal(9, s.Points.Count);
+        Assert.Equal(new Vec3(40, 0, 4), s.Points[6]);
+        var f = F();
+        var id = (string)f.Run("civil.importLandXml", new JsonObject { ["text"] = xml })!["ids"]![0]!;
+        Assert.Equal("Existing ground", f.Model.Get(id)!.Name);
+        Assert.Equal(8, Terrains.Of(f.Model.Get(id)!).Tin.Triangles.Count);
+        // A ridge along y = 20 at z 10: the ground there follows it, not the plane.
+        f.Run("civil.setBreakline", new JsonObject { ["id"] = id, ["points"] = new JsonArray(new JsonArray(0, 20, 10), new JsonArray(40, 20, 10)) });
+        Assert.Equal(10, Terrains.Of(f.Model.Get(id)!).ElevationAt(15, 20)!.Value, 6);
+        Assert.Throws<CommandException>(() => f.Run("civil.importLandXml", new JsonObject { ["text"] = "<nope" }));
+    }
 }

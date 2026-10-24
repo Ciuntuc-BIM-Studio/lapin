@@ -35,8 +35,16 @@ public static class Terrains
     public static Terrain Of(Entity e) => Cache.GetValue(e, x =>
     {
         var datum = x.Num("datum");
-        return new Terrain(Tin.Delaunay(Points(x).Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList()));
+        // Breaklines first: their points along them, so the triangles keep their line.
+        var all = LandXml.Densify(Breaklines(x)).Concat(Points(x));
+        return new Terrain(Tin.Delaunay(all.Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList()));
     });
+
+    /// <summary>A terrain's breaklines: polylines of surveyed points [[x, y, z], …].</summary>
+    public static List<IReadOnlyList<Vec3>> Breaklines(Entity e) =>
+        (e.Attrs["breaklines"] as JsonArray)?.OfType<JsonArray>()
+            .Select(l => (IReadOnlyList<Vec3>)l.OfType<JsonArray>().Where(p => p.Count >= 3).Select(p => new Vec3(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0, Json.Number(p[2]) ?? 0)).ToList())
+            .Where(l => l.Count >= 2).ToList() ?? [];
 
     public static IEnumerable<Entity> Pads(IModelView m, string terrainId) =>
         m.RelatedOf(terrainId, IfcClass.RelVoidsElement).Where(o => o.Class == IfcClass.EarthworksCut);
