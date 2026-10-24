@@ -157,29 +157,26 @@ public static class Walls
         var cutters = openings.Select(o => (o, Box: Openings.Cutter(frame, o with { Along = o.Along - Vec2.Dot(start - Start(wall), dir) }))).Where(c => c.Box != null).ToList();
         var booleans = services?.Get<ISolidBooleans>();
         if (cutters.Count > 0 && booleans == null) problems.Add("Openings need the boolean library (manifold), missing here: the wall is drawn uncut.");
-        // Lintels over the openings, through the core; the ring beam coming down over an opening close under it.
-        var core = bands.FirstOrDefault(b => b.Core);
+        // Lintels over the openings, through the core; the ring beam coming down over an opening close under it; at a corner, the longer of two that meet runs through.
         var shift = Vec2.Dot(start - Start(wall), dir);
-        var lintels = core.To - core.From > 1e-9 ? Lintels.ForWall(
-            openings.Select(o => new LintelOpening(o.Opening.Id, o.Along - o.Width / 2 - shift, o.Along + o.Width / 2 - shift, o.Sill, o.Sill + o.Height,
-                o.Spec?.Lintel is { Mode: not "none" } own ? own : null, o.Spec?.Lintel is { Mode: "none" })).ToList(),
-            zones, LintelRuleOf(m, wall), (-Math.Max(At(startCut, core.From), At(startCut, core.To)), length + Math.Max(At(endCut, core.From), At(endCut, core.To)), height)) : [];
         var lintelBoxes = new List<(Lintel Lintel, int Piece, Solid Box)>();
-        foreach (var l in lintels)
+        var lintelsIn = LintelJoins.Resolve(wall, LintelPieces(wall, m, services), m, services, out var intoCore);
+        foreach (var r in lintelsIn)
         {
-            var slices = l.Kind == "downstand" ? [(core.From, core.To)] : Lintels.Slices(l.Rule, core.From, core.To, outerAtMin: true);
-            for (var i = 0; i < slices.Count; i++)
+            if (r.Piece.Box() is not { } box) continue;
+            if (r.CutBy.Count > 0 && booleans != null)
             {
-                var (y0, y1) = slices[i];
-                Vec2[] fp = [P(l.X0, y0), P(l.X1, y0), P(l.X1, y1), P(l.X0, y1)];
-                if (Prism.ExtrudeFootprint(fp, z + l.Z0, l.Z1 - l.Z0, "lintel") is { } box) lintelBoxes.Add((l, i, box));
+                try { box = booleans.Difference(box, r.CutBy, box.Tag) ?? box; }
+                catch (InvalidOperationException ex) { problems.Add($"A lintel could not be cut at its corner ({ex.Message})."); }
             }
+            if (Measure.Volume(box) > 1e-9) lintelBoxes.Add((r.Piece.Lintel, r.Piece.Piece, box));
         }
         GeometryPart Cut(GeometryPart part, double z0, double z1, bool isCore = false)
         {
             if (booleans == null) return part;
             var reach = cutters.Where(c => c.o.Sill + z < z1 - 1e-9 && c.o.Sill + c.o.Height + z > z0 + 1e-9).Select(c => c.Box!)
                 .Concat(isCore ? lintelBoxes.Where(b => b.Lintel.Z0 < z1 - 1e-9 && b.Lintel.Z1 > z0 + 1e-9).Select(b => b.Box) : [])
+                .Concat(isCore ? intoCore.Where(b => b.Z0 - z < z1 - 1e-9 && b.Z1 - z > z0 + 1e-9).Select(b => b.Box) : [])
                 .ToList();
             if (reach.Count == 0) return part;
             try { return booleans.Difference(part.Solid, reach, part.Solid.Tag) is { } cut ? part with { Solid = cut } : part; }
@@ -281,6 +278,48 @@ public static class Walls
         var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
         Vec2[] fp = [start + left * y0, end + left * y0, end + left * y1, start + left * y1];
         return Prism.ExtrudeFootprint(fp, z, wall.Num("height", DefaultHeight), "wall");
+    }
+
+    /// <summary>
+    /// The wall's lintel pieces in its storey, before its corners (see
+    /// <see cref="LintelJoins"/>): over its openings, through its core, inside
+    /// its length as its joins leave it.
+    /// </summary>
+    public static List<LintelPiece> LintelPieces(Entity wall, IModelView m, IServices? services)
+    {
+        var start = Start(wall);
+        var end = End(wall);
+        if ((end - start).Length < MinLength) return [];
+        var paths = services?.Get<IPathElements>();
+        var ends = paths != null ? Joins.EndsOf(m, wall, paths, []) : new (Vec2 Point, EndCut Cut)?[2];
+        if (ends[0] is { } s) start = s.Point;
+        if (ends[1] is { } e) end = e.Point;
+        var (startCut, endCut) = (ends[0]?.Cut ?? EndCut.Square, ends[1]?.Cut ?? EndCut.Square);
+        var length = (end - start).Length;
+        var dir = (end - start).Normalized();
+        var bands = Section(m, wall);
+        var core = bands.FirstOrDefault(b => b.Core);
+        if (!(core.To - core.From > 1e-9)) return [];
+        var (yMin, yMax) = (bands.Min(b => b.From), bands.Max(b => b.To));
+        double At(EndCut c, double y) => yMax - yMin < 1e-12 ? c.Right : c.Right + (c.Left - c.Right) * (y - yMin) / (yMax - yMin);
+        var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var height = wall.Num("height", DefaultHeight);
+        var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
+        var shift = Vec2.Dot(start - Start(wall), dir);
+        var (x0, x1) = (-Math.Max(At(startCut, core.From), At(startCut, core.To)), length + Math.Max(At(endCut, core.From), At(endCut, core.To)));
+        var lintels = Lintels.ForWall(
+            Openings.PlacedOn(m, wall.Id).Select(o => new LintelOpening(o.Opening.Id, o.Along - o.Width / 2 - shift, o.Along + o.Width / 2 - shift, o.Sill, o.Sill + o.Height,
+                o.Spec?.Lintel is { Mode: not "none" } own ? own : null, o.Spec?.Lintel is { Mode: "none" })).ToList(),
+            zones, LintelRuleOf(m, wall), (x0, x1, height));
+        var pieces = new List<LintelPiece>();
+        foreach (var l in lintels)
+        {
+            var slices = l.Kind == "downstand" ? [(core.From, core.To)] : Lintels.Slices(l.Rule, core.From, core.To, outerAtMin: true);
+            for (var i = 0; i < slices.Count; i++)
+                pieces.Add(new LintelPiece(l, i, start, dir, l.X0, l.X1, slices[i].From, slices[i].To, z + l.Z0, z + l.Z1,
+                    ends[0] != null && l.X0 <= x0 + 1e-6, ends[1] != null && l.X1 >= x1 - 1e-6));
+        }
+        return pieces;
     }
 
     /// <summary>The lintel rule of the wall's type: its own, else the default (precast, 25 cm bearing, 25 cm high); mode none, none.</summary>

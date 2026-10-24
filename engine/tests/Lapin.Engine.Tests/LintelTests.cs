@@ -1,4 +1,6 @@
 using System.Text.Json.Nodes;
+using BubbleBim.Geometry;
+using Lapin.Platform;
 using Lapin.Architecture;
 using Lapin.Model;
 
@@ -135,5 +137,36 @@ public class LintelTests
         var catalogue = LintelProducts.Of(f.Model);
         Assert.Equal(["L1", "L3"], catalogue.Select(p => p.Code).Order());
         Assert.Equal([1.5], catalogue.Single(p => p.Code == "L1").Lengths);
+    }
+
+    [Fact]
+    public void The_lintels_of_two_walls_that_meet_at_a_corner_join_the_longer_runs_through()
+    {
+        // The old Lapin's wall-zones.e2e case: windows close to the corner, both lintels bear into it.
+        var f = new Fixture();
+        var a = f.Wall(0, 0, 5, 0);
+        var b = f.Wall(0, 0, 0, 5);
+        string Type(string name, double width) => (string)f.Run("architecture.createJoineryType", new JsonObject
+        {
+            ["spec"] = (JoinerySpec.DefaultWindow(name) with { Width = width, Height = 1.2, Lintel = new LintelRule("cast", 0.4, 0.2) }).ToJson(),
+        })!["id"]!;
+        f.Run("architecture.addWindow", new JsonObject { ["wallId"] = a, ["along"] = 0.9, ["typeId"] = Type("W1", 1.2), ["sill"] = 0.9 });
+        f.Run("architecture.addWindow", new JsonObject { ["wallId"] = b, ["along"] = 0.8, ["typeId"] = Type("W2", 0.9), ["sill"] = 0.9 });
+        GeometryPart L(string wall) => Assert.Single(f.Session.Geometry(wall)!.Parts, p => p.Key!.StartsWith("lintel:"));
+        var (la, lb) = (Measure.Bounds(L(a).Solid)!.Value, Measure.Bounds(L(b).Solid)!.Value);
+        // A's lintel is the longer (2.0 against 1.7): it runs through the corner to the far face of B's core…
+        var t = Walls.DefaultThickness;
+        Assert.Equal(-t / 2, la.Min.X, 6);
+        // …and B's stops at A's lintel.
+        Assert.Equal(la.Max.Y, lb.Min.Y, 6);
+        var booleans = new BubbleBim.Platform.Booleans.ManifoldBooleans();
+        Assert.True(booleans.Intersection(L(a).Solid, L(b).Solid) is not { } both || Measure.Volume(both) < 1e-9);
+        // Neither core holds what a lintel does (the brick, layer 1 of the default type).
+        foreach (var (wall, other) in new[] { (a, b), (b, a) })
+        {
+            var core = f.Session.Geometry(wall)!.Parts.Single(p => p.Key == "layer:1").Solid;
+            Assert.True(booleans.Intersection(core, L(other).Solid) is not { } x || Measure.Volume(x) < 1e-9);
+            Assert.True(booleans.Intersection(core, L(wall).Solid) is not { } y || Measure.Volume(y) < 1e-9);
+        }
     }
 }

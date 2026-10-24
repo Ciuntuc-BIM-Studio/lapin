@@ -100,7 +100,8 @@ Numerotarea veche avea două variante: cea din commit-ul M0 (M4 faze, M6 raporta
 - **M2 – Pereții:** îmbinări, mitru, zone pe înălțime, straturi de finisaj, buiandrugi, priorități de tăiere, fundații.
   - Făcut (24.10.2026): îmbinările L, T și în prelungire, butt sau mitre, cu prioritate (ca elemente pe traseu, în platformă); zonele pe înălțime și piesele de finisaj, cu cantitățile lor; buiandrugii și centura coborâtă; plăcile; prioritățile de tăiere; modulul Structure (stâlpi, grinzi, fundații continue și izolate).
   - Făcut și (24.10.2026, a doua tură): golurile în plăci; profilele metalice I/H, U, T, L (cu catalogul IPE, HEA, HEB, UPN, L); stâlpii pe intersecțiile axelor.
-  - Rămas: îmbinarea straturilor după funcție (la M5); îmbinările ca o contopire vizuală a geometriei, cu elementele independente la selecție (#108); îmbinarea buiandrugilor la colțuri.
+  - Rămas: îmbinarea straturilor după funcție (la M5); îmbinările ca o contopire vizuală a geometriei, cu elementele independente la selecție (#108).
+  - Făcut și: îmbinarea buiandrugilor la colțuri (cel mai lung trece, #35).
 - **M3 – Configuratorul de uși și ferestre.**
   - Făcut (24.10.2026): golurile în pereți, ușile și ferestrele cu tipurile lor, configuratorul (portat cu testele), simbolurile de bază în plan.
   - Făcut și: desenele tipului din spec (planul tăiat prin toc și cercevele, elevația în ambele convenții, cu feroneria, secțiunea), portate cu testele; buiandrugul complet în configurator și produsele prefabricate din CSV.
