@@ -88,6 +88,11 @@ export function MaterialsDialog() {
                   <input key={m.id + m.name} defaultValue={m.name} onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== m.name && update({ name: e.target.value.trim() })} /></label>
                 <label className="field-line"><span className="eyebrow">Colour (3D)</span>
                   <input type="color" value={m.color} onChange={(e) => update({ color: e.target.value })} /></label>
+                <label className="field-line"><span className="eyebrow">Texture (3D)</span>
+                  <select value={String(useSession.getState().nodes.get(m.id)?.props.texture ?? '')} onChange={(e) => update({ texture: e.target.value || null })}>
+                    <option value="">guessed</option>
+                    {['none', 'brick', 'concrete', 'wood', 'plaster', 'stone', 'metal', 'insulation', 'earth', 'tiles'].map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select></label>
               </div>
               <div className="row">
                 <label className="check"><input type="checkbox" checked={m.section.membrane} onChange={(e) => update({ membrane: e.target.checked })} /> Membrane (a dashed line, not a band)</label>

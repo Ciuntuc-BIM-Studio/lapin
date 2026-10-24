@@ -14,6 +14,8 @@ namespace Lapin.Platform;
 /// </summary>
 public static class DraftingResources
 {
+    public static readonly string[] Textures = ["none", "brick", "concrete", "wood", "plaster", "stone", "metal", "insulation", "earth", "tiles"];
+
     /// <summary>The project's own hatch patterns (imported; a built-in's name overrides it).</summary>
     public static IReadOnlyList<HatchPattern> Patterns(IModelView m) =>
         Spatial.Project(m)?.Str("hatchPatterns") is { Length: > 0 } text ? Pat.Parse(text).Patterns : [];
@@ -83,6 +85,13 @@ public static class DraftingResources
                 else attrs["transparency"] = Json.Number(a["transparency"]) is { } t && t >= 0 && t <= 1 ? t : throw new CommandException("Transparency is 0 to 1.");
             }
             if (a.ContainsKey("category")) { if ((string?)a["category"] is { Length: > 0 } cat) attrs["category"] = cat; else attrs.Remove("category"); }
+            // Its look in 3D: a texture (brick, concrete, wood, plaster, stone, metal, insulation, earth, tiles; "none"; null: guessed from its hatch and name).
+            if (a.ContainsKey("texture"))
+            {
+                if ((string?)a["texture"] is { Length: > 0 } tex)
+                    attrs["texture"] = Textures.Contains(tex) ? tex : throw new CommandException($"„{tex}” is not a texture: {string.Join(", ", Textures)}.");
+                else attrs.Remove("texture");
+            }
             foreach (var flag in new[] { "membrane", "drawJoints" })
                 if (a.ContainsKey(flag))
                 {

@@ -15,6 +15,7 @@ import { select, setTool, useUi } from '../app/store';
 import { findTool } from '../platform/modules';
 import type { Vec2 } from '../platform/module';
 import { completeTool } from './tools';
+import { boxUv, textureFor, textureOf } from './textures';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
@@ -32,14 +33,21 @@ function groundGrid(theme: keyof typeof GRID, z: number): THREE.GridHelper {
 function meshOf(item: RenderItem): THREE.Group {
   const group = new THREE.Group();
   group.userData.nodeId = item.nodeId;
-  const add = (positions: Float32Array, normals: Float32Array, indices: Int32Array, edges: Float32Array, color: string) => {
+  const nodes = useSession.getState().nodes;
+  const add = (positions: Float32Array, normals: Float32Array, indices: Int32Array, edges: Float32Array, color: string, material?: string | null) => {
     if (positions.length) {
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       if (normals.length === positions.length) g.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
       else g.computeVertexNormals();
       g.setIndex(new THREE.BufferAttribute(new Uint32Array(indices.buffer, indices.byteOffset, indices.length), 1));
-      const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
+      // The material's texture, tinted by its colour, laid on in metres.
+      const kind = material ? textureOf(nodes.get(material)) : null;
+      if (kind) boxUv(g, kind);
+      const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+        color: kind ? 0xffffff : new THREE.Color(color), map: kind ? textureFor(kind, color) : null,
+        roughness: kind === 'metal' ? 0.45 : 0.85, metalness: kind === 'metal' ? 0.3 : 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
+      }));
       mesh.userData.nodeId = item.nodeId;
       group.add(mesh);
     }
@@ -50,7 +58,7 @@ function meshOf(item: RenderItem): THREE.Group {
     }
   };
   add(item.positions, item.normals, item.indices, item.edges, item.color);
-  for (const p of item.parts ?? []) add(p.positions, p.normals, p.indices, p.edges, p.color);
+  for (const p of item.parts ?? []) add(p.positions, p.normals, p.indices, p.edges, p.color, p.material);
   return group;
 }
 
