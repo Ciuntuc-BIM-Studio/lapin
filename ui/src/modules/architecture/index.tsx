@@ -108,6 +108,12 @@ const slabOpening: ToolDef = {
     await ctx.execute('architecture.addSlabOpening', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]) });
   },
 };
+/** A roof window, or a dormer: a click on a slope of a roof (refused where it does not fit). */
+const roofOpening = (kind: 'window' | 'dormer'): ToolDef => ({
+  id: `architecture.roof${kind === 'window' ? 'Window' : 'Dormer'}`, label: kind === 'window' ? 'Roof window' : 'Dormer', icon: kind === 'window' ? PanelTop : Home,
+  gesture: { kind: 'point' },
+  complete: async ({ points: [p] }, ctx) => { await ctx.execute('architecture.addRoofOpening', { kind, x: p.x, y: p.y }); },
+});
 const slabTypes: ToolDef = { id: 'architecture.slabTypes', label: 'Floor types', icon: Layers3, run: () => useUi.setState({ dialog: 'slabTypes' }) };
 
 const architecture: LapinModule = {
@@ -117,7 +123,7 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 10,
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [slabOpening] },
+      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [slabOpening, roofOpening('window'), roofOpening('dormer')] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew] },
       { label: 'Room', tools: [{ id: 'architecture.room', label: 'Room', icon: LayoutGrid, shortcut: 'RM' }] },

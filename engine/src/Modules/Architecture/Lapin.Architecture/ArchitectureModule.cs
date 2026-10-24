@@ -173,6 +173,45 @@ public sealed class ArchitectureModule : ILapinModule
         });
 
         // Put a roof in a style: shape, pitch, overhangs, covering, gutters, snow guards; its per-edge overrides go.
+        // A roof window or a dormer where it was clicked on a roof (the roof under the point when none is named); refused when it does not fit.
+        r.Command("addRoofOpening", "Roof opening", (ctx, a) =>
+        {
+            var at = P(a, "x", "y");
+            var roof = (string?)a["roofId"] is { } rid ? Spatial.Require(ctx.Model, rid, IfcClass.Roof)
+                : ctx.Model.OfClass(IfcClass.Roof).FirstOrDefault(x => RoofTop.ShapeOf(x, ctx.Model) is { } sh && RoofOpenings.HostAt(sh, at) != null)
+                  ?? throw new CommandException("Click on a slope of a roof.");
+            var kind = (string?)a["kind"] == RoofOpening.Dormer ? RoofOpening.Dormer : RoofOpening.Window;
+            var o = new JsonObject { ["id"] = ctx.NewId(), ["kind"] = kind, ["x"] = at.X, ["y"] = at.Y };
+            foreach (var k in new[] { "width", "length", "wallHeight", "pitch", "overhang", "thickness" }) if (Json.Number(a[k]) is { } v) o[k] = v;
+            if ((string?)a["dormerShape"] is "shed" or "gable") o["dormerShape"] = (string?)a["dormerShape"];
+            var count = RoofOpenings.Of(roof).Count(x => x.Kind == kind) + 1;
+            o["name"] = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : kind == RoofOpening.Window ? $"Roof window {count}" : $"Dormer {count}";
+            WriteRoofOpenings(ctx, roof, [.. (roof.Attrs["openings"] as JsonArray)?.Select(x => x!.DeepClone()) ?? [], o], (string)o["id"]!);
+            return new JsonObject { ["roofId"] = roof.Id, ["id"] = (string)o["id"]! };
+        });
+
+        r.Command("updateRoofOpening", "Change roof opening", (ctx, a) =>
+        {
+            var roof = Spatial.Require(ctx.Model, (string?)a["roofId"], IfcClass.Roof);
+            var list = (roof.Attrs["openings"] as JsonArray)?.Select(x => (JsonObject)x!.DeepClone()).ToList() ?? [];
+            var o = list.FirstOrDefault(x => (string?)x["id"] == (string?)a["id"]) ?? throw new CommandException("The roof has no such opening.");
+            foreach (var k in new[] { "x", "y", "width", "length", "wallHeight", "pitch", "overhang", "thickness" }) if (Json.Number(a[k]) is { } v) o[k] = v;
+            if ((string?)a["dormerShape"] is "shed" or "gable") o["dormerShape"] = (string?)a["dormerShape"];
+            if (((string?)a["name"])?.Trim() is { Length: > 0 } n) o["name"] = n;
+            WriteRoofOpenings(ctx, roof, [.. list], (string)o["id"]!);
+            return null;
+        });
+
+        r.Command("removeRoofOpening", "Remove roof opening", (ctx, a) =>
+        {
+            var roof = Spatial.Require(ctx.Model, (string?)a["roofId"], IfcClass.Roof);
+            var list = (roof.Attrs["openings"] as JsonArray)?.Select(x => x!.DeepClone()).Where(x => (string?)x["id"] != (string?)a["id"]).ToList() ?? [];
+            var attrs = roof.CloneAttrs();
+            if (list.Count > 0) attrs["openings"] = new JsonArray([.. list]); else attrs.Remove("openings");
+            ctx.Replace(roof.With(attrs: attrs));
+            return null;
+        });
+
         r.Command("roofStyle", "Roof style", (ctx, a) =>
         {
             var roof = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Roof);
@@ -365,6 +404,23 @@ public sealed class ArchitectureModule : ILapinModule
             return arr.OfType<JsonArray>().Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList();
         var (p, q) = (P(a, "x1", "y1"), P(a, "x2", "y2"));
         return [p, new Vec2(q.X, p.Y), q, new Vec2(p.X, q.Y)];
+    }
+
+    /// <summary>A roof's openings written back; the one just set must fit (its reason when it does not).</summary>
+    static void WriteRoofOpenings(ICommandContext ctx, Entity roof, JsonNode[] list, string checkId)
+    {
+        var attrs = roof.CloneAttrs();
+        attrs["openings"] = new JsonArray(list);
+        var next = roof.With(attrs: attrs);
+        if (RoofTop.ShapeOf(next, ctx.Model) is not { } shape) throw new CommandException("A flat roof takes no roof windows or dormers.");
+        var diags = new List<string>();
+        var placed = RoofOpenings.Place(next, shape, ctx.Model, diags);
+        if (placed.All(p => p.Opening.Id != checkId))
+        {
+            var name = RoofOpenings.Of(next).FirstOrDefault(o => o.Id == checkId)?.Name ?? "";
+            throw new CommandException(diags.FirstOrDefault(d => d.Contains($"„{name}”")) ?? "The opening does not fit on the roof.");
+        }
+        ctx.Replace(next);
     }
 
     static JoinerySpec JinerySpecOrThrow(JsonNode? n) => JoinerySpec.From(n) ?? throw new CommandException("The type's configuration is missing or unreadable.");

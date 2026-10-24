@@ -57,6 +57,19 @@ export function RoofSection({ node }: { node: NodeDto }) {
           })}
         </tbody>
       </table>
+      {Array.isArray(node.props.openings) && node.props.openings.length > 0 && (
+        <table className="roof-openings">
+          <tbody>
+            {(node.props.openings as { id: string; name: string; kind: string; width?: number; length?: number }[]).map((o) => (
+              <tr key={o.id}>
+                <td>{o.name}</td>
+                <td className="muted small">{o.kind === 'dormer' ? 'dormer' : `${Math.round((o.width ?? 0.78) * 100)}×${Math.round((o.length ?? 1.18) * 100)}`}</td>
+                <td><button type="button" className="icon mini" title="Remove" onClick={() => void execute('architecture.removeRoofOpening', { roofId: node.id, id: o.id })}>×</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

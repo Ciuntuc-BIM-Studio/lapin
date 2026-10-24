@@ -197,6 +197,26 @@ public static class Roof
         }
         if (covering.Count > 0) parts.Add(new GeometryPart("Covering", r.Covering.Color, Openings.Combine(covering, "covering"), null, "covering"));
 
+        // Its roof windows and dormers, as parts of it.
+        var (frames, glass, dormerWalls, dormerRoofs) = (new List<Solid>(), new List<Solid>(), new List<Solid>(), new List<Solid>());
+        foreach (var o in openings)
+        {
+            if (o.Opening.Kind == RoofOpening.Window)
+            {
+                var (f, g, pi) = RoofOpenings.WindowGeometry(o, r.Framed ? r.StructureDepth + r.Covering.Thickness : r.Thickness);
+                frames.AddRange(f); glass.AddRange(g); plan.Add(pi);
+            }
+            else
+            {
+                var (w, rf, g, pi) = RoofOpenings.DormerGeometry(o, r.Covering.Thickness);
+                dormerWalls.AddRange(w); dormerRoofs.AddRange(rf); glass.AddRange(g); plan.Add(pi);
+            }
+        }
+        if (frames.Count > 0) parts.Add(new GeometryPart("Roof windows", "#3c4247", Openings.Combine(frames, "roof-windows"), null, "roof-windows"));
+        if (dormerWalls.Count > 0) parts.Add(new GeometryPart("Dormer walls", "#ece8df", Openings.Combine(dormerWalls, "dormer-walls"), null, "dormer-walls"));
+        if (dormerRoofs.Count > 0) parts.Add(new GeometryPart("Dormer roofs", r.Covering.Color, Openings.Combine(dormerRoofs, "dormer-roofs"), null, "dormer-roofs"));
+        if (glass.Count > 0) parts.Add(new GeometryPart("Glass", "#9cc7e6", Openings.Combine(glass, "glass"), null, "glass"));
+
         var timber = RoofParts.Framing(r, shape, openings).Select(mb => Prism.SweepBox(mb.A, mb.B, mb.Width, mb.Depth, mb.Role)).OfType<Solid>().ToList();
         if (timber.Count > 0) parts.Add(new GeometryPart("Timber structure", "#b98a5a", Openings.Combine(timber, "timber"), null, "timber"));
 
@@ -254,6 +274,7 @@ public static class Roof
             if (len > 1e-6) q.Add(new(name, len, "LENGTH", label));
         }
         yield return new QuantitySet("Qto_RoofBaseQuantities", q);
+        if (RoofOpenings.Quantities(holes).ToList() is { Count: > 0 } oq) yield return new QuantitySet("Lapin_RoofOpeningQuantities", oq, "openings", "Roof windows and dormers");
 
         var members = RoofParts.Framing(r, shape, holes);
         if (members.Count > 0)
@@ -300,12 +321,4 @@ public static class Roof
         if (s.Shape == "mansard") { o["upperPitch"] = s.UpperPitch; o["mansardInset"] = s.MansardInset; }
         return o;
     }
-}
-
-/// <summary>Roof windows and dormers: not yet in Lapin (the records the structure's framing reads).</summary>
-public static class RoofOpenings
-{
-    public sealed record Host(int PlaneIndex, RoofPlane Plane, Func<Vec2, double> Z, Vec2 D, Vec2 N, double Tan);
-    public sealed record Placed(Entity? Opening, Host Host, Vec2 Center, IReadOnlyList<Vec3> Hole);
-    public static List<Placed> Place(Entity roof, RoofShape s, IModelView m, List<string> diags) => [];
 }

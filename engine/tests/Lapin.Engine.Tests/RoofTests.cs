@@ -256,4 +256,34 @@ public class RoofTests
         var nearEnd = section.SelectMany(s => s.Vertices).Where(v => v.Y < 0.3).Max(v => v.Z);
         Assert.True(nearEnd < 2.8, $"near the eave the wall stops under the roof, not at {nearEnd}");
     }
+
+    [Fact]
+    public void Roof_windows_and_dormers_cut_the_covering_and_are_built_with_the_roof()
+    {
+        var f = new Fixture();
+        var roof = AddRoof(f, "modern_barn");
+        var net = Q(f, roof, "NetArea");
+        var gross = Q(f, roof, "GrossArea");
+        Assert.Equal(gross, net, 6);
+        // A 78 × 118 roof window on the south slope: its area on the slope comes off the covering.
+        var w = (string)f.Run("architecture.addRoofOpening", new JsonObject { ["x"] = 3, ["y"] = 1.5 })!["id"]!;
+        Assert.Equal(gross - 0.78 * 1.18, Q(f, roof, "NetArea"), 6);
+        var parts = f.Session.Geometry(roof)!.Parts.Select(p => p.Key).ToList();
+        Assert.Contains("roof-windows", parts);
+        Assert.Contains("glass", parts);
+        Assert.Equal(1, Q(f, roof, "RoofWindows", "openings"));
+        // A gable dormer beside it: its walls, its own roof, its notch out of the covering.
+        f.Run("architecture.addRoofOpening", new JsonObject { ["x"] = 7, ["y"] = 0.6, ["kind"] = "dormer", ["width"] = 1.4, ["wallHeight"] = 0.9 });
+        parts = f.Session.Geometry(roof)!.Parts.Select(p => p.Key).ToList();
+        Assert.Contains("dormer-walls", parts);
+        Assert.Contains("dormer-roofs", parts);
+        Assert.True(Q(f, roof, "DormerWallArea", "openings") > 1);
+        Assert.True(Q(f, roof, "NetArea") < gross - 0.78 * 1.18 - 1);
+        // Off the roof, over another opening, or past its edges: refused.
+        Assert.Throws<CommandException>(() => f.Run("architecture.addRoofOpening", new JsonObject { ["roofId"] = roof, ["x"] = 30, ["y"] = 30 }));
+        Assert.Throws<CommandException>(() => f.Run("architecture.addRoofOpening", new JsonObject { ["roofId"] = roof, ["x"] = 3.2, ["y"] = 1.6 }));
+        Assert.Throws<CommandException>(() => f.Run("architecture.addRoofOpening", new JsonObject { ["roofId"] = roof, ["x"] = 0.1, ["y"] = 1.5 }));
+        f.Run("architecture.removeRoofOpening", new JsonObject { ["roofId"] = roof, ["id"] = w });
+        Assert.Equal(0, Q(f, roof, "RoofWindows", "openings"));
+    }
 }
