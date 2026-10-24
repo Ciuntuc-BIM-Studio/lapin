@@ -104,7 +104,7 @@ const LW_STYLES: Record<string, LwMode> = {
   INVISIBLE: { action: 'hide' }, SHOW: { action: 'show' },
   THIN: { action: 'style', style: { pen: 1, pattern: 'solid' } }, MEDIUM: { action: 'style', style: { pen: 3, pattern: 'solid' } }, WIDE: { action: 'style', style: { pen: 5, pattern: 'solid' } },
   HIDDEN: { action: 'style', style: { pattern: 'hidden' } }, OVERHEAD: { action: 'style', style: { pattern: 'dashed' } },
-  BEYOND: { action: 'style', style: { pen: 1, color: '#808080' } }, CENTER: { action: 'style', style: { pattern: 'center' } }, DOTTED: { action: 'style', style: { pattern: 'dotted' } },
+  BEYOND: { action: 'style', style: { pen: 1, color: '#9ca3af' } }, CENTER: { action: 'style', style: { pattern: 'center' } }, DOTTED: { action: 'style', style: { pattern: 'dotted' } },
 };
 let lwMode = 'INVISIBLE';
 let lwPen: number | null = null;

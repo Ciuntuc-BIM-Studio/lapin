@@ -321,7 +321,7 @@ public class DrawingTests
         f.Run("view.setRange", new JsonObject { ["id"] = view, ["depth"] = new JsonObject { ["level"] = "self", ["offset"] = -3 } });
         var deep = Draw(f, new JsonObject { ["id"] = view });
         Assert.True(Segs(deep, "BEYOND") >= 4);
-        Assert.Equal("#808080", (string)Pens(deep, "BEYOND")[0]["stroke"]!);
+        Assert.Equal("#9ca3af", (string)Pens(deep, "BEYOND")[0]["stroke"]!);
         // A foundation plan (cut 0.50 under the level) cuts a strip foundation's stem and sees the pad (its top at −0.90) below.
         f.Run("structure.addStripFooting", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = -3, ["x2"] = 6, ["y2"] = -3 });
         var foundation = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey, ["foundation"] = true })!["id"]!;

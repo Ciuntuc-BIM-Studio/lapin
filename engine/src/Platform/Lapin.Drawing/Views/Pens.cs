@@ -172,7 +172,7 @@ public static class Pens
                 }
                 case LineRole.Beyond:
                 {
-                    var c = color ?? "#808080"; var w = styled?.WidthMm ?? Default.Hatch; var dash = styled?.Dash;
+                    var c = color ?? "#9ca3af"; var w = styled?.WidthMm ?? Default.Hatch; var dash = styled?.Dash;
                     pen = Get($"beyond:{c}:{w}:{DashKey(dash)}", () => new Pen(PenLayer.Beyond, c, w, null, dash is { Length: > 0 } ? dash : null));
                     break;
                 }
