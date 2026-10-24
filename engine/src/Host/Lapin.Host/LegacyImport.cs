@@ -188,24 +188,63 @@ public static class LegacyImport
             }
         if (old.Of("opening").Any()) notes.Add($"{old.Of("opening").Count()} bare opening(s) (without a door or window) were left out");
 
-        // Views: plans of their own (the automatic ones are the storeys'), elevations; sections need their line drawn again.
+        // Views: plans of their own (the automatic ones are the storeys'), elevations, sections on the line they were drawn on.
+        // The old ids map to the new, for the sheets.
         var levelStorey = ordered.ToDictionary(s => Str(s["name"]) ?? "", s => storeys.GetValueOrDefault(Str(s["id"]) ?? ""));
-        var sections = 0;
+        var viewIds = new Dictionary<string, string>();
+        var sectionsLost = 0;
         foreach (var v in old.Views)
         {
+            var oldId = Str(v["id"]) ?? "";
+            string? made = null;
             switch (Str(v["kind"]))
             {
-                case "plan" when v["auto"] is not JsonValue a || !a.TryGetValue<bool>(out var auto) || !auto:
-                    if (levelStorey.GetValueOrDefault(Str(v["level"]?["name"]) ?? "") is { } st)
-                        Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = st, ["name"] = Str(v["name"]), ["cutHeight"] = Num(v["cutHeight"]) ?? 1.2 });
+                case "plan":
+                    if (levelStorey.GetValueOrDefault(Str(v["level"]?["name"]) ?? "") is not { } st) break;
+                    if (v["auto"] is JsonValue a && a.TryGetValue<bool>(out var auto) && auto) made = "plan:" + st;
+                    else made = Id(Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = st, ["name"] = Str(v["name"]), ["cutHeight"] = Num(v["cutHeight"]) ?? 1.2 }));
                     break;
                 case "elevation" when Str(v["direction"]) is { } dir:
-                    Run("view.create", new JsonObject { ["kind"] = "elevation", ["direction"] = dir, ["name"] = Str(v["name"]) });
+                    made = Id(Run("view.create", new JsonObject { ["kind"] = "elevation", ["direction"] = dir, ["name"] = Str(v["name"]) }));
                     break;
-                case "section": sections++; break;
+                case "section":
+                    // The old viewer's frame is y-up: a plan point is (x, −z). Flipped, it looked the other way.
+                    if (v["marker"]?["a"] is JsonArray ma && v["marker"]?["b"] is JsonArray mb && ma.Count >= 3 && mb.Count >= 3)
+                    {
+                        JsonArray Plan(JsonArray q) => [Num(q[0]) ?? 0, -(Num(q[2]) ?? 0)];
+                        var (start, end) = (Plan(ma), Plan(mb));
+                        if (v["plane"]?["flipped"] is JsonValue fv && fv.TryGetValue<bool>(out var flipped) && flipped) (start, end) = (end, start);
+                        made = Id(Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = start, ["end"] = end, ["name"] = Str(v["name"]) }));
+                    }
+                    else sectionsLost++;
+                    break;
+            }
+            if (made != null) viewIds[oldId] = made;
+        }
+        if (sectionsLost > 0) notes.Add($"{sectionsLost} section(s) without their line: draw them again");
+
+        // Sheets: their paper, number, title block, and the views on them at the scale they had there.
+        var sheetsMade = 0;
+        foreach (var sh in old.Sheets ?? [])
+        {
+            var paper = Str(sh["paper"]) is { } pp && pp.Length == 2 && pp[0] == 'A' ? pp : "A1";
+            if (Id(Run("sheet.create", new JsonObject { ["number"] = Str(sh["number"]), ["name"] = Str(sh["name"]) ?? "Sheet", ["paper"] = paper, ["orientation"] = Str(sh["orientation"]) ?? "landscape" })) is not { } sheetId) continue;
+            sheetsMade++;
+            if (sh["titleBlock"] is JsonObject tb) Run("sheet.titleBlock", new JsonObject { ["id"] = sheetId, ["fields"] = tb.DeepClone() });
+            foreach (var vp in (sh["viewports"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            {
+                if (!viewIds.TryGetValue(Str(vp["viewId"]) ?? "", out var view)) { notes.Add($"A view on sheet {Str(sh["number"])} was left out"); continue; }
+                if (Num(vp["scale"]) is { } sc && sc > 0 && !view.StartsWith("plan:", StringComparison.Ordinal)) Run("element.update", new JsonObject { ["id"] = view, ["attrs"] = new JsonObject { ["scale"] = sc } });
+                var placed = Run("sheet.addViewport", new JsonObject { ["id"] = sheetId, ["viewId"] = view, ["x"] = Num(vp["x"]) ?? 200, ["y"] = Num(vp["y"]) ?? 150 });
+                if (placed?["viewportId"] is JsonValue vid && (Num(vp["width"]) ?? 0) > 0)
+                    Run("sheet.updateViewport", new JsonObject
+                    {
+                        ["id"] = sheetId, ["viewportId"] = (string?)vid, ["width"] = Num(vp["width"]), ["height"] = Num(vp["height"]),
+                        ["center"] = vp["center"] is JsonObject c ? new JsonArray(Num(c["x"]) ?? 0, Num(c["y"]) ?? 0) : null,
+                    });
             }
         }
-        if (sections > 0) notes.Add($"{sections} section(s): draw their lines again");
+        if (sheetsMade > 0) notes.Add($"{sheetsMade} sheet(s) brought over");
 
         // The result is a new project: no undo back through the import, nothing saved yet.
         var diff = session.Load(session.Model.Entities.ToList(), session.Model.Relations.ToList(), null);

@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
 using Lapin.Host;
@@ -50,5 +51,47 @@ public class LegacyTests
         Assert.False(f.Session.History.CanUndo);
         Assert.Null(f.Session.Path);
         Assert.All(r.Notes, n => Assert.DoesNotContain("could not", n));
+    }
+
+    [Fact]
+    public void Its_sections_come_on_their_line_and_its_sheets_with_their_views()
+    {
+        // The fixture with a section drawn on a plan and a sheet that shows it, as the old app wrote them.
+        var path = Path.Combine(Path.GetTempPath(), $"lapin-old-{Guid.NewGuid():N}.lapin");
+        File.Copy(Old, path);
+        try
+        {
+            using (var zip = System.IO.Compression.ZipFile.Open(path, System.IO.Compression.ZipArchiveMode.Update))
+            {
+                JsonObject Read(string n) { using var r = new StreamReader(zip.GetEntry(n)!.Open()); return (JsonObject)JsonNode.Parse(r.ReadToEnd())!; }
+                void Write(string n, JsonNode j) { zip.GetEntry(n)?.Delete(); using var w = new StreamWriter(zip.CreateEntry(n).Open()); w.Write(j.ToJsonString()); }
+                var views = Read("project/views.json");
+                views["views"]!.AsArray().Add(new JsonObject
+                {
+                    ["id"] = "view-sec", ["kind"] = "section", ["name"] = "A-A",
+                    ["plane"] = new JsonObject { ["axis"] = "front", ["offset"] = 0, ["flipped"] = false },
+                    ["marker"] = new JsonObject { ["a"] = new JsonArray(1, 0, -2), ["b"] = new JsonArray(6, 0, -2) },
+                });
+                Write("project/views.json", views);
+                Write("project/sheets.json", new JsonObject { ["sheets"] = new JsonArray(new JsonObject
+                {
+                    ["id"] = "s1", ["number"] = "A-201", ["name"] = "Sections", ["paper"] = "A3", ["orientation"] = "landscape",
+                    ["titleBlock"] = new JsonObject { ["drawn"] = "I.C." },
+                    ["viewports"] = new JsonArray(new JsonObject { ["id"] = "vp1", ["viewId"] = "view-sec", ["x"] = 150, ["y"] = 120, ["scale"] = 50, ["width"] = 0, ["height"] = 0, ["center"] = null }),
+                }) });
+            }
+            var f = new Fixture(new ArchitectureModule(), new Lapin.Structure.StructureModule());
+            var r = LegacyImport.Run(f.Session, LegacyPackage.Read(path));
+            var section = f.Model.OfClass(Views.Class).Single(v => v.Str("kind") == "section");
+            Assert.Equal("A-A", section.Name);
+            Assert.Equal([1.0, 2.0], section.Attrs["start"]!.AsArray().Select(x => (double)x!));
+            Assert.Equal(50, section.Num("scale"));
+            var sheet = f.Model.OfClass(Sheets.Class).Single();
+            Assert.Equal("A-201", sheet.Str("number"));
+            Assert.Equal("I.C.", (string?)sheet.Attrs["titleBlock"]!["drawn"]);
+            Assert.Equal(section.Id, Sheets.Viewports(sheet).Single().ViewId);
+            Assert.Contains(r.Notes, n => n.Contains("1 sheet(s)"));
+        }
+        finally { File.Delete(path); }
     }
 }

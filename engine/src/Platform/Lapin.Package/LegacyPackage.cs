@@ -14,7 +14,7 @@ namespace Lapin.Package;
 /// tables carry every parameter (docs/format-lapin.md, "Formatul 2").
 /// </summary>
 public sealed record LegacyProject(string Name, List<JsonObject> Storeys, List<JsonObject> Materials, List<JsonObject> Types,
-    Dictionary<string, List<JsonObject>> Elements, List<JsonObject> Views, List<string> Skipped)
+    Dictionary<string, List<JsonObject>> Elements, List<JsonObject> Views, List<string> Skipped, List<JsonObject>? Sheets = null)
 {
     public IEnumerable<JsonObject> Of(string kind) => Elements.GetValueOrDefault(kind) ?? [];
 }
@@ -108,7 +108,7 @@ public static class LegacyPackage
             skipped.Add("a model without native tables (an IFC kept as it was): open it as IFC");
         var views = (Json("project/views.json")?["views"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
         var name = (string?)Json("project/document.json")?["name"] ?? (string?)Json("manifest.json")?["projectName"] ?? "Project";
-        if (Json("project/sheets.json") is JsonObject sh && sh["sheets"] is JsonArray { Count: > 0 } sheets) skipped.Add($"{sheets.Count} sheet(s)");
-        return new LegacyProject(name, storeys, materials, types, elements, views, skipped);
+        var sheetList = (Json("project/sheets.json")?["sheets"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
+        return new LegacyProject(name, storeys, materials, types, elements, views, skipped, sheetList);
     }
 }
