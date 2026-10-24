@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Maximize, PenLine } from 'lucide-react';
+import { Layers, Maximize, PenLine } from 'lucide-react';
 import { select, setTool, useUi } from '../app/store';
 import { activeStorey, execute, useSession } from '../engine/session';
 import type { NodeDto, RenderItem } from '../engine/protocol';
@@ -354,7 +354,11 @@ export function PlanView() {
             {drawing!.lineworkOrphans!.length} line edit(s) lost their edge · clean
           </button>
         )}
-                <button type="button" className={`icon${planDrawing ? ' on' : ''}`} title={planDrawing ? 'Drawing: hatches and pens (click for modelling lines)' : 'Modelling lines (click for the drawing)'}
+                {(drawing?.problems?.length ?? 0) > 0 && (
+          <button type="button" className="chip warn" title="The view range is out of order" onClick={() => useUi.setState({ dialog: 'viewRange' })}>view range: {drawing!.problems!.length} problem(s)</button>
+        )}
+        <button type="button" className="icon" title="View range" onClick={() => useUi.setState({ dialog: 'viewRange' })}><Layers size={14} /></button>
+        <button type="button" className={`icon${planDrawing ? ' on' : ''}`} title={planDrawing ? 'Drawing: hatches and pens (click for modelling lines)' : 'Modelling lines (click for the drawing)'}
           onClick={() => useUi.setState({ planDrawing: !planDrawing })}><PenLine size={14} /></button>
         <button type="button" className="icon" title="Fit everything" onClick={fit}><Maximize size={14} /></button>
       </div>

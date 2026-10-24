@@ -359,6 +359,21 @@ public static class Views
         });
 
         // A plan's view range: Top, Bottom and Depth, each a level and an offset; reset: the default. Its problems are reported, not refused (Revit's).
+        // A plan's view range as set (its edges on levels) and what it resolves to, with its problems.
+        r.Query("view.range", (q, a) =>
+        {
+            if (Find(q.Model, (string?)a["id"] ?? "") is not { } v || v.Str("kind") != "plan") return null;
+            var cut = v.NumOrNull("cutHeight") ?? DefaultCut;
+            var range = ViewRange.From(v.Attrs["viewRange"]) ?? ViewRanges.Default(cut);
+            var resolved = Range(q.Model, v);
+            return new JsonObject
+            {
+                ["cutHeight"] = cut, ["range"] = range.ToJson(), ["custom"] = v.Attrs["viewRange"] != null,
+                ["resolved"] = new JsonObject { ["cut"] = resolved.Cut, ["top"] = resolved.Top, ["bottom"] = resolved.Bottom, ["depth"] = resolved.Depth },
+                ["problems"] = new JsonArray(ViewRanges.Problems(resolved).Select(p => (JsonNode)p).ToArray()),
+            };
+        });
+
         r.Command("view.setRange", "View range", (ctx, a) =>
         {
             var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == "plan" ? x : throw new CommandException("Not a plan.");

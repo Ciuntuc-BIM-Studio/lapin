@@ -51,4 +51,18 @@ public class GraphicsSetTests
         f.Session.Undo();
         Assert.Empty(f.Session.Query("view.hidden3d", new JsonObject())!.AsArray());
     }
+
+    [Fact]
+    public void A_plan_s_range_reads_back_with_its_problems()
+    {
+        var f = new Fixture();
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        var r = (JsonObject)f.Session.Query("view.range", new JsonObject { ["id"] = plan })!;
+        Assert.False((bool)r["custom"]!);
+        Assert.Empty(r["problems"]!.AsArray());
+        f.Run("view.setRange", new JsonObject { ["id"] = plan, ["top"] = new JsonObject { ["level"] = "self", ["offset"] = 0.5 } });
+        r = (JsonObject)f.Session.Query("view.range", new JsonObject { ["id"] = plan })!;
+        Assert.True((bool)r["custom"]!);
+        Assert.Equal(["topBelowCut"], r["problems"]!.AsArray().Select(x => (string)x!));
+    }
 }
