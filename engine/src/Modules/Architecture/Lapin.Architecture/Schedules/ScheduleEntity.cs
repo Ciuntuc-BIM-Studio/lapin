@@ -91,6 +91,21 @@ public sealed class ScheduleEntity : ISheetContent
 
     static double Scale(Entity s) => s.NumOrNull("scale") ?? 50;
 
+    static readonly Dictionary<string, string> RowLabels = new()
+    {
+        ["name"] = "Name", ["size"] = "Size", ["operation"] = "Opening", ["sill"] = "Sill height", ["levels"] = "Count by level", ["total"] = "Total",
+        ["uValue"] = "U value", ["fire"] = "Fire rating", ["lintel"] = "Lintel", ["lintelKind"] = "Kind", ["product"] = "Product", ["section"] = "Section",
+        ["length"] = "Length", ["openings"] = "Openings", ["concrete"] = "Concrete", ["steel"] = "Steel",
+    };
+
+    /// <summary>Every row a schedule can show: the built-in ones of its kind, then its own.</summary>
+    static List<(string Id, string Label)> Available(Entity s)
+    {
+        var t = ScheduleTable.Of(s);
+        var builtIn = s.Str("kind") == "lintel" ? ScheduleLayout.LintelRows : ScheduleLayout.JoineryRows;
+        return [.. builtIn.Select(id => (id, RowLabels.GetValueOrDefault(id, id))), .. t.CustomRows.Select(c => ("custom:" + c.Id, c.Label))];
+    }
+
     /// <summary>What a type's card shows: the schedule's drawings (interior by default).</summary>
     static IReadOnlyList<string> Drawings(Entity s) => s.Attrs["drawings"] is JsonArray a ? a.Select(x => (string?)x).OfType<string>().ToList() : ["interior"];
 
@@ -255,6 +270,19 @@ public sealed class ScheduleEntity : ISheetContent
                     ["twice"] = twice.Count, ["none"] = none.Count,
                     ["marks"] = new JsonArray(marks.Select(m => (JsonNode)$"{m.Part}: {m.Mark} × {m.Count}").ToArray()),
                 },
+                // What the settings choose from and what is set: the rows (built in, then the schedule's own), their order, the card's drawings, the tables.
+                ["available"] = new JsonArray(Available(s).Select(r => (JsonNode)new JsonObject { ["id"] = r.Id, ["label"] = r.Label }).ToArray()),
+                ["order"] = new JsonArray((ScheduleTable.Of(s).Rows ?? Available(s).Select(r => r.Id).ToList()).Select(x => (JsonNode)x).ToArray()),
+                ["drawings"] = new JsonArray(Drawings(s).Select(x => (JsonNode)x).ToArray()),
+                ["parts"] = s.Attrs["parts"]?.DeepClone() ?? new JsonArray(),
+                ["reviewed"] = s.Attrs["reviewed"]?.DeepClone() ?? new JsonArray(),
+                // The elements to check, by name: listed twice (and where), listed nowhere.
+                ["check"] = new JsonArray([
+                    .. twice.Select(t => (JsonNode)new JsonObject { ["id"] = t.Key, ["name"] = q.Model.Get(t.Key)?.Name, ["why"] = $"in {string.Join(" and ", t.Value.Select(pid => Parts(s).FirstOrDefault(x => x.Id == pid)?.Title ?? pid))}" }),
+                    .. none.Select(id => (JsonNode)new JsonObject { ["id"] = id, ["name"] = q.Model.Get(id)?.Name, ["why"] = "in no table" }),
+                ]),
+                // Model values typed over on purpose: entry → rows.
+                ["overridden"] = new JsonObject(ScheduleTable.Of(s).Cells.Select(c => KeyValuePair.Create(c.Key, (JsonNode?)new JsonArray(c.Value.Keys.Where(k => !k.StartsWith("custom:", StringComparison.Ordinal)).Select(k => (JsonNode)k).ToArray())))),
             };
         });
 
