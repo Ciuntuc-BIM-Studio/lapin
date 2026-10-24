@@ -163,4 +163,25 @@ public class StructureTests
         Assert.All(ids, id => Assert.Equal(later, f.Model.RelatingOf((string)id!, IfcClass.RelDefinesByType)!.Id));
         Assert.Throws<CommandException>(() => f.Run("structure.addColumnsAtGrid", new JsonObject { ["storeyId"] = f.Storey }));
     }
+
+    [Fact]
+    public void Steel_profiles_from_the_catalogue_or_by_size_for_columns_and_beams()
+    {
+        var f = new Fixture(new ArchitectureModule(), new StructureModule());
+        var ipe = Section.Catalogue["IPE 300"];
+        // I: two flanges and the web between them.
+        Assert.Equal(2 * 0.150 * 0.0107 + (0.300 - 2 * 0.0107) * 0.0071, ipe.Area, 9);
+        var colType = (string)f.Run("structure.createColumnType", new JsonObject { ["section"] = "IPE 300", ["height"] = 3 })!["id"]!;
+        Assert.Equal("Column IPE 300", f.Model.Get(colType)!.Name);
+        var col = (string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = colType, ["x"] = 0, ["y"] = 0 })!["id"]!;
+        Assert.Equal(ipe.Area * 3, f.Session.Geometry(col)!.Parts.Sum(p => Measure.Volume(p.Solid)), 6);
+        Assert.Equal("Steel", f.Model.Get(f.Model.Get(colType)!.Str("material")!)!.Name);
+        // A beam of a profile by its size: swept along its axis, its top at the beam's top.
+        var beamType = (string)f.Run("structure.createBeamType", new JsonObject { ["section"] = new JsonObject { ["kind"] = "U", ["depth"] = 0.2, ["width"] = 0.075, ["web"] = 0.0085, ["flange"] = 0.0115 } })!["id"]!;
+        Assert.Equal("Beam U 200×75", f.Model.Get(beamType)!.Name);
+        var beam = (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = beamType, ["x1"] = 1, ["y1"] = 0, ["x2"] = 6, ["y2"] = 0 })!["id"]!;
+        var upn = Section.From(f.Model.Get(beamType)!.Attrs["section"])!;
+        Assert.Equal(upn.Area * 5, f.Session.Geometry(beam)!.Parts.Sum(p => Measure.Volume(p.Solid)), 6);
+        Assert.Throws<CommandException>(() => f.Run("structure.createBeamType", new JsonObject { ["section"] = new JsonObject { ["kind"] = "I", ["depth"] = 0.2, ["width"] = 0.1, ["web"] = 0.2, ["flange"] = 0.01 } }));
+    }
 }

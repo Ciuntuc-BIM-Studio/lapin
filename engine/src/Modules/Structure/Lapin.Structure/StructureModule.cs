@@ -38,7 +38,7 @@ public sealed class StructureModule : ILapinModule
 
         // ------------------------------------------------------------ columns
         r.Command("createColumnType", "New column type", (ctx, a) =>
-            new JsonObject { ["id"] = Columns.CreateType(ctx, (string?)a["name"], Section.Parse(a["section"]), Json.Number(a["height"]), (string?)a["material"] ?? "Reinforced concrete").Id });
+            Section.Parse(a["section"]) is var cs ? new JsonObject { ["id"] = Columns.CreateType(ctx, (string?)a["name"], cs, Json.Number(a["height"]), (string?)a["material"] ?? (cs.IsProfile ? "Steel" : "Reinforced concrete")).Id } : null);
 
         r.Command("addColumn", "Column", (ctx, a) =>
         {
@@ -98,7 +98,7 @@ public sealed class StructureModule : ILapinModule
 
         // ------------------------------------------------------------ beams
         r.Command("createBeamType", "New beam type", (ctx, a) =>
-            new JsonObject { ["id"] = Beams.CreateType(ctx, (string?)a["name"], Section.Parse(a["section"]), (string?)a["material"] ?? "Reinforced concrete").Id });
+            Section.Parse(a["section"]) is var bs ? new JsonObject { ["id"] = Beams.CreateType(ctx, (string?)a["name"], bs, (string?)a["material"] ?? (bs.IsProfile ? "Steel" : "Reinforced concrete")).Id } : null);
 
         r.Command("addBeam", "Beam", (ctx, a) =>
         {
@@ -194,6 +194,7 @@ public sealed class StructureModule : ILapinModule
             ["column"] = Section.Rectangle(0.3, 0.3).ToJson(),
             ["beam"] = Section.Rectangle(0.25, 0.4).ToJson(),
         });
+        r.Catalog("profiles", new JsonArray(Section.Catalogue.Values.Select(p => (JsonNode)p.ToJson()).ToArray()));
     }
 
     static bool IsPad(IModelView m, Entity footing) => footing.PredefinedType == "PAD_FOOTING" || Place.TypeOf(m, footing.Id) is { } t && PadFootings.IsPad(t);

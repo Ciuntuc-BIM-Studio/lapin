@@ -14,7 +14,7 @@ public static class Columns
 {
     public static Entity CreateType(IEdit edit, string? name, Section section, double? height, string material = "Reinforced concrete")
     {
-        var label = section.Kind == "circle" ? $"Ø{section.Width * 1000:0}" : $"{section.Width * 100:0}×{section.Depth * 100:0}";
+        var label = section.Label;
         var attrs = new JsonObject { ["section"] = section.ToJson(), ["material"] = Materials.Ensure(edit, material).Id };
         if (height != null) attrs["height"] = height;
         var type = new Entity(edit.NewId(), IfcClass.ColumnType, string.IsNullOrWhiteSpace(name) ? $"Column {label}" : name.Trim(), attrs, "COLUMN");
@@ -74,7 +74,7 @@ public static class Beams
     public static Entity CreateType(IEdit edit, string? name, Section section, string material = "Reinforced concrete")
     {
         var type = new Entity(edit.NewId(), IfcClass.BeamType,
-            string.IsNullOrWhiteSpace(name) ? $"Beam {section.Width * 100:0}×{section.Depth * 100:0}" : name.Trim(),
+            string.IsNullOrWhiteSpace(name) ? $"Beam {section.Label}" : name.Trim(),
             new JsonObject { ["section"] = section.ToJson(), ["material"] = Materials.Ensure(edit, material).Id }, "BEAM");
         edit.Add(type);
         return type;
@@ -114,7 +114,18 @@ public static class Beams
         if (Frame(beam, m) is not { } f) return new ElementGeometry([], Diagnostics: ["The beam has no length."]);
         var ends = services?.Get<IPathElements>() is { } paths ? Joins.EndsOf(m, beam, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
         var fp = Strips.Footprint(f, ends, f.YMin, f.YMax);
-        if (Prism.ExtrudeFootprint(fp, Top(m, beam) - section.Depth, section.Depth, "beam") is not { } solid) return new ElementGeometry([], Diagnostics: ["The beam has no section."]);
+        Solid? solid;
+        if (section.IsProfile)
+        {
+            // A steel profile runs along the axis, its web upright, its top at the beam's top.
+            var u = (f.End - f.Start).Normalized();
+            var side = new Vec3(-u.Y, u.X, 0);
+            var mid = Top(m, beam) - section.Depth / 2;
+            var ring = section.Outline().Select(p => new Vec3(f.Start.X, f.Start.Y, mid) + side * p.X + new Vec3(0, 0, p.Y)).ToList();
+            solid = Prism.Extrude(ring, null, new Vec3(u.X, u.Y, 0) * (f.End - f.Start).Length, "beam");
+        }
+        else solid = Prism.ExtrudeFootprint(fp, Top(m, beam) - section.Depth, section.Depth, "beam");
+        if (solid == null) return new ElementGeometry([], Diagnostics: ["The beam has no section."]);
         var parts = Place.CutByPriority(beam, m, services, [new GeometryPart(beam.Name, Materials.ColorOf(m, material), solid, material, "body")], problems);
         return new ElementGeometry(parts, [new PlanItem("outline", true, fp)], [f.Start, f.End], problems.Count > 0 ? problems : null);
     }
