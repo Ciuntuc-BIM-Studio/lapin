@@ -103,6 +103,22 @@ public sealed class CoreModule : ILapinModule
         });
 
         // Move, copy, rotate or mirror elements and annotations in plan (one undo step); a copy returns the new ids.
+        // Several commands as one edit (one undo step): a grip shared by two walls moves both ends; each step keeps its own rules.
+        r.Command("edit.batch", "Edit", (ctx, a) =>
+        {
+            var catalog = ctx.Services as ModuleCatalog ?? throw new CommandException("No commands to batch here.");
+            if (a["steps"] is not JsonArray steps || steps.Count == 0) throw new CommandException("A batch needs its steps.");
+            var results = new JsonArray();
+            foreach (var step in steps)
+            {
+                var name = (string?)step?["command"] ?? throw new CommandException("A step needs its command.");
+                if (name == "edit.batch") throw new CommandException("A batch cannot hold another batch.");
+                var entry = catalog.Command(name) ?? throw new CommandException($"Unknown command „{name}”.");
+                results.Add(entry.Handler(ctx, step!["args"] as JsonObject ?? [])?.DeepClone());
+            }
+            return results;
+        });
+
         r.Command("element.transform", "Transform", (ctx, a) =>
         {
             static BubbleBim.Geometry.Vec2 V(JsonNode? n, string what) => Args.Point(n, what);
