@@ -75,6 +75,7 @@ public sealed class ArchitectureModule : ILapinModule
         r.Quantities(IfcClass.Slab, Slabs.Quantities);
 
         LintelProducts.Register(r);
+        CurtainWalls.Register(r);
 
         r.Command("createSlabType", "New floor type", (ctx, a) =>
             new JsonObject { ["id"] = Slabs.CreateType(ctx, (string?)a["name"], LayerSets.Parse(a["layers"], "A floor type")).Id });

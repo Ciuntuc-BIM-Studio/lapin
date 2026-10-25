@@ -219,4 +219,18 @@ public class IfcExportTests : IDisposable
         var own = SetsOf(file, One(file, "IFCWALL")).Single(x => (string?)x[2] == IfcExport.ParamsSetName);
         Assert.Single(Items(own[4]));
     }
+
+    [Fact]
+    public void A_curtain_wall_goes_out_over_its_mullions_transoms_and_panels()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        f.Run("architecture.addCurtainWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 6, ["y2"] = 0, ["height"] = 3 });
+        var file = StepFile.Read(Export(f, "curtain.ifc"));
+        var cw = One(file, "IFCCURTAINWALL");
+        var parts = Items(file.OfType("IFCRELAGGREGATES").Single(r => Equals(r[4], Ref(cw)))[5]).Select(p => file.Get(p)!).ToList();
+        Assert.Equal(17, parts.Count(p => p.Type == "IFCMEMBER"));
+        Assert.Equal(8, parts.Count(p => p.Type == "IFCPLATE"));
+        Assert.Equal(5, parts.Count(p => p.Type == "IFCMEMBER" && Equals(p[8], new StepEnum("MULLION"))));
+        Assert.Single(file.OfType("IFCCURTAINWALLTYPE"));
+    }
 }

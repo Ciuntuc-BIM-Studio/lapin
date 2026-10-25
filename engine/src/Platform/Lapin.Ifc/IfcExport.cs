@@ -72,6 +72,7 @@ public static class IfcExport
         [IfcClass.Window] = ["WINDOW", "SKYLIGHT", "LIGHTDOME"],
         ["IfcMember"] = ["BRACE", "CHORD", "COLLAR", "MEMBER", "MULLION", "PLATE", "POST", "PURLIN", "RAFTER", "STRINGER", "STRUT", "STUD"],
         ["IfcPlate"] = ["CURTAIN_PANEL", "SHEET"],
+        ["IfcCurtainWall"] = [],
         ["IfcCovering"] = ["CEILING", "FLOORING", "CLADDING", "ROOFING", "MOLDING", "SKIRTINGBOARD", "INSULATION", "MEMBRANE", "SLEEVING", "WRAPPING"],
         ["IfcRailing"] = ["HANDRAIL", "GUARDRAIL", "BALUSTRADE"],
         ["IfcStair"] = ["STRAIGHT_RUN_STAIR", "TWO_STRAIGHT_RUN_STAIR", "QUARTER_WINDING_STAIR", "QUARTER_TURN_STAIR", "HALF_WINDING_STAIR", "HALF_TURN_STAIR", "TWO_QUARTER_WINDING_STAIR", "TWO_QUARTER_TURN_STAIR", "THREE_QUARTER_WINDING_STAIR", "THREE_QUARTER_TURN_STAIR", "SPIRAL_STAIR", "DOUBLE_RETURN_STAIR", "CURVED_RUN_STAIR", "TWO_CURVED_RUN_STAIR"],
@@ -326,7 +327,7 @@ public static class IfcExport
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
             // A door's frame and leaf, a column's body, a terrain: one element. Only a wall, a roof and a footing hold parts that are elements of their own.
-            var grouped = o.Grouped && kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
+            var grouped = o.Grouped && kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
             var place = Place(relTo, 0);
             var reps = new List<string>();
             if (!grouped) reps.Add(BodyOf(parts.Select(p => Brep(p.Solid, p.Color, z0))));
@@ -505,6 +506,9 @@ public static class IfcExport
                 (IfcClass.Roof, "timber") => new("IfcMember", "MEMBER", null),
                 (IfcClass.Roof, "drainage") => new("IfcPipeSegment", "GUTTER", null),
                 (IfcClass.Roof, "snow") => new("IfcDiscreteAccessory", "USERDEFINED", "Snow guard"),
+                ("IfcCurtainWall", "mullion") => new("IfcMember", "MULLION", null),
+                ("IfcCurtainWall", "transom") => new("IfcMember", "USERDEFINED", "TRANSOM"),
+                ("IfcCurtainWall", "panel") => new("IfcPlate", "CURTAIN_PANEL", null),
                 (IfcClass.Footing, "footing") => new(IfcClass.Footing, "STRIP_FOOTING", null),
                 (IfcClass.Footing, "step") => new(IfcClass.Footing, "PAD_FOOTING", null),
                 _ => new("IfcBuildingElementPart", "NOTDEFINED", p.Name),
