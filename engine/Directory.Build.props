@@ -12,7 +12,7 @@
     <!--
       The core shared with BubbleBIM Pro (github.com/Ciuntuc-BIM-Studio/bubble-core):
       BubbleBim.Geometry, BubbleBim.Booleans, BubbleBim.Step. From its packages
-      (BubbleCoreVersion, the feed in nuget.config), or from that repository
+      (BubbleCoreVersion, from nuget.org), or from that repository
       itself when it is checked out beside this one (../bubble-core, or
       BUBBLE_CORE_DIR), so the core and Lapin can be worked on together. CI
       never has it beside: CI always builds against the published packages.

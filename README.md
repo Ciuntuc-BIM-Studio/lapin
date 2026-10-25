@@ -11,7 +11,7 @@ with the BubbleBIM core (`BubbleBim.Geometry`, `BubbleBim.Booleans`, `BubbleBim.
 > The geometry kernel, the booleans and the STEP reader are the BubbleBIM core,
 > shared with BubbleBIM Pro and MIT like Lapin; manifold (Apache-2.0) and Clipper2
 > (BSL-1.0) come with it. With `bubble-core` checked out beside this repo the core
-> is built from source; otherwise its packages are restored (`nuget.config`).
+> is built from source; otherwise its packages are restored from nuget.org.
 
 ## Layout
 

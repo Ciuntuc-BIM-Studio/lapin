@@ -22,12 +22,6 @@ jobs:
     runs-on: windows-2022
     env:
       PRODUCT: ${{ inputs.product || 'lapin' }}
-      # The core's packages (nuget.config): the workflow's token, or one that reads packages.
-      BUBBLE_CORE_USER: ${{ github.actor }}
-      BUBBLE_CORE_TOKEN: ${{ secrets.BUBBLE_CORE_TOKEN || secrets.GITHUB_TOKEN }}
-    permissions:
-      contents: read
-      packages: read
     defaults:
       run:
         shell: bash

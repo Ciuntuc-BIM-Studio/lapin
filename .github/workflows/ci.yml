@@ -28,16 +28,11 @@ jobs:
       - run: pnpm lint
       - run: pnpm --filter ui test
 
-  # The core (BubbleBim.Geometry, Booleans, Step) comes as packages from
-  # github.com/Ciuntuc-BIM-Studio/bubble-core's feed, read with the workflow's
-  # token while that repository is private (or BUBBLE_CORE_TOKEN, a token that
-  # reads packages, when the feed refuses the workflow's; see nuget.config).
+  # The core (BubbleBim.Geometry, Booleans, Step) comes as packages from nuget.org
+  # (github.com/Ciuntuc-BIM-Studio/bubble-core).
   engine:
     name: Engine
     runs-on: ubuntu-22.04
-    permissions:
-      contents: read
-      packages: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -45,9 +40,6 @@ jobs:
           dotnet-version: 10.0.x
       # The whole solution: the tests load the built modules from engine/artifacts/modules.
       - run: dotnet build engine/Lapin.slnx -v q -nologo
-        env:
-          BUBBLE_CORE_USER: ${{ github.actor }}
-          BUBBLE_CORE_TOKEN: ${{ secrets.BUBBLE_CORE_TOKEN || secrets.GITHUB_TOKEN }}
       - run: dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo
       # The licence check covers the UI's npm packages and the engine's NuGet
       # packages (dotnet list package, after the restore above), so it runs
@@ -67,9 +59,6 @@ jobs:
     # The engine in the browser (docs/plan-browser-engine.md): built for lapin and
     # checked in headless Chrome. The desktop jobs above never depend on it.
     runs-on: ubuntu-22.04
-    permissions:
-      contents: read
-      packages: read
     steps:
       - uses: actions/checkout@v4
       # An SDK of its own in a folder the job can write, so the wasm-tools workload installs without root.
@@ -88,9 +77,6 @@ jobs:
         env:
           CI: 'true'
       - run: node scripts/build-web.mjs lapin
-        env:
-          BUBBLE_CORE_USER: ${{ github.actor }}
-          BUBBLE_CORE_TOKEN: ${{ secrets.BUBBLE_CORE_TOKEN || secrets.GITHUB_TOKEN }}
       # A runner is slower than a laptop: the start budget is looser here.
       - run: node scripts/check-web.mjs lapin
         env:
