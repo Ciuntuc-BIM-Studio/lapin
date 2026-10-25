@@ -4,6 +4,16 @@ Lapin are azi un buton „Stair” care nu face nimic și o clasă Studio `IfcSt
 
 Modelul e cel al tâmplăriei, care merge deja: un **tip** (`IfcStairType`, `IfcRampType`) ține regulile și construcția, editate într-un configurator cu previzualizare; o **instanță** (`IfcStair`, `IfcRamp`) ține plasarea, cotele și traseul, editate în plan cu grips. Tot ce iese (corpul 3D, piesele structurale, simbolul din plan, cotele, extrasul, IFC-ul) se deduce din cele două.
 
+## Așa s-a făcut (etapa 1, 25.10.2026)
+
+- Cod: `engine/src/Modules/Architecture/Lapin.Architecture/Stairs/` (`StairSpec`, `StairSolver`, `StairBuilder`, `StairsModule`), teste `StairTests`; interfața în `ui/src/modules/architecture/StairTypesDialog.tsx` și `StairSection.tsx`, comanda CAD `STAIR` (și unealta „Stair”, scurtătura ST).
+- Comenzi: `architecture.createStairType`, `updateStairType`, `addStair {storeyId, typeId?, x, y, x2, y2 | rotation, turn?, width?…}`, `updateStair`; interogări `stairPreview`, `stairPlan`, `stairCheck`.
+- Instanța ține `at`, `rotation` (grade, ca stâlpii, deci mutarea și rotirea din plan o poartă), `turn`, decalajele, `topStoreyId`, `height` (fără etaj deasupra) și ce fixează.
+- Golul din placa de sus e un `IfcOpeningElement` cu `stairId`; conturul lui **se citește din scară la fiecare construire** (`Slabs.HoleContour`), deci urmează scara și la mutare; ștergerea scării îl ia cu ea (`IDeletion` pentru elemente existente, în `element.delete`).
+- Treptele balansate au intradosul în trepte (prisme pe fiecare treaptă), nu o suprafață lină; rampele drepte au vangul înclinat corect.
+- Studio nu mai deține `IfcStair`: scara lui liberă e un proxy exportat ca `IfcStair`.
+- Rămase pentru etapele următoare: partea de deasupra tăieturii pe planul etajului de sus („COBOARĂ”), cota automată „n × h / b”, înălțimea liberă verificată sub placă, rampele, oțelul și lemnul, extrasul.
+
 ## Principii
 
 1. **Se pleacă de la ce știe utilizatorul:** de unde pleacă scara, până unde urcă și cât loc are. Motorul propune contratreapta, treapta și numărul de trepte după normă; utilizatorul corectează doar ce vrea.
@@ -86,7 +96,7 @@ Arhitectul vede în plus **finisajele**: grosimea și materialul treptei finite,
 
 ## Etape
 
-1. Tipul și configuratorul: forma (dreaptă, cu podest, L, U; L și U și cu trepte balansate în loc de podest), regulile pe două seturi (locuință, public) cu verificare, construcția beton armat monolit, finisajele, balustrada bară + montanți; instanța cu plasarea prin două clicuri; corpul 3D pe piese; planul cu linia de întrerupere și săgeata; cantitățile; IFC.
+1. **Făcut (25.10.2026).** Tipul și configuratorul: forma (dreaptă, cu podest, L, U; L și U și cu trepte balansate în loc de podest), regulile pe două seturi (locuință, public) cu verificare, construcția beton armat monolit, finisajele, balustrada bară + montanți; instanța cu plasarea prin două clicuri; corpul 3D pe piese; planul cu linia de întrerupere și săgeata; cantitățile; IFC.
 2. Rampele (aceleași forme, în pantă), golul propus în placă, înălțimea liberă, grips.
 3. Oțel pe vanguri și lemn; extrasul scării; cotarea automată.
 4. Scara elicoidală, traseul desenat de mână, armarea.
