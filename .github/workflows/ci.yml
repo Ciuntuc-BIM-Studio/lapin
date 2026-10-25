@@ -28,46 +28,22 @@ jobs:
       - run: pnpm lint
       - run: pnpm --filter ui test
 
-  # The engine builds against the private submodule vendor/bubblebim-pro
-  # (github.com/ionuting/BubbleBIM-Pro), which needs a token with read access
-  # to that repository: the repository secret VENDOR_TOKEN. A job-level `if`
-  # cannot read secrets, so this job copies the secret into an env variable,
-  # which `if` can read, and publishes the result as an output; the engine
-  # job depends on it and is skipped (not failed) when the secret is absent,
-  # e.g. on a pull request from a fork.
-  vendor:
-    name: Vendor token
-    runs-on: ubuntu-latest
-    outputs:
-      available: ${{ steps.check.outputs.available }}
-    steps:
-      - id: check
-        env:
-          VENDOR_TOKEN: ${{ secrets.VENDOR_TOKEN }}
-        run: echo "available=${{ env.VENDOR_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
-
   engine:
     name: Engine
-    needs: vendor
-    if: needs.vendor.outputs.available == 'true'
-    runs-on: ubuntu-latest
+    # 22.04 like the Linux build, so both share the cached libmanifoldc.so (built against glibc 2.35).
+    runs-on: ubuntu-22.04
     steps:
-      # lapin-pro with the workflow's own token; then the private submodule
-      # vendor/bubblebim-pro, at the commit lapin-pro records, with VENDOR_TOKEN,
-      # which needs read access to that one repository only.
       - uses: actions/checkout@v4
-      - id: vendor
-        run: echo "sha=$(git ls-tree HEAD vendor/bubblebim-pro | awk '{print $3}')" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v4
-        with:
-          repository: ionuting/BubbleBIM-Pro
-          ref: ${{ steps.vendor.outputs.sha }}
-          token: ${{ secrets.VENDOR_TOKEN }}
-          path: vendor/bubblebim-pro
-          persist-credentials: false
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      # The booleans: manifold's C API as libmanifoldc.so (engine/native/linux-x64),
+      # built from source once and kept in the cache while the script is unchanged.
+      - uses: actions/cache@v4
+        with:
+          path: engine/native/linux-x64
+          key: manifold-linux-x64-${{ hashFiles('scripts/build-manifold.mjs') }}
+      - run: test -f engine/native/linux-x64/libmanifoldc.so || node scripts/build-manifold.mjs
       # The whole solution: the tests load the built modules from engine/artifacts/modules.
       - run: dotnet build engine/Lapin.slnx -v q -nologo
       - run: dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo

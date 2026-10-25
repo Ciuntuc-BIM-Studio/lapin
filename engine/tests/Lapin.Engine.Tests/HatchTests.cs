@@ -1,4 +1,4 @@
-using BubbleBim.Geometry;
+using Lapin.Geometry;
 using Lapin.Drawing.Hatch;
 
 namespace Lapin.Engine.Tests;

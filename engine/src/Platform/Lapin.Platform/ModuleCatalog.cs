@@ -1,4 +1,4 @@
-using BubbleBim.Geometry;
+using Lapin.Geometry;
 using System.Text.Json.Nodes;
 using Lapin.Model;
 

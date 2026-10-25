@@ -9,6 +9,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../Model/Lapin.Model/Lapin.Model.csproj" />
-    <ProjectReference Include="$(BubbleEngineDir)src/Platform/BubbleBim.Platform.Geometry/BubbleBim.Platform.Geometry.csproj" />
+    <ProjectReference Include="$(LapinGeometryDir)Lapin.Geometry/Lapin.Geometry.csproj" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Text;
-using BubbleBim.Geometry;
+using Lapin.Geometry;
 
 namespace Lapin.Drawing.Hatch;
 

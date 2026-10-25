@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Booleans between solids, by manifold (github.com/elalish/manifold, Apache-2.0)
+    through its C API. The native library is built by scripts/build-manifold.mjs
+    into engine/native/<rid>/ and travels next to the engine.
+  -->
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Lapin.Geometry/Lapin.Geometry.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)../../../native/osx-arm64/libmanifoldc.dylib" Condition="$([MSBuild]::IsOSPlatform('OSX'))" Link="libmanifoldc.dylib" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="$(MSBuildThisFileDirectory)../../../native/linux-x64/libmanifoldc.so" Condition="$([MSBuild]::IsOSPlatform('Linux')) And Exists('$(MSBuildThisFileDirectory)../../../native/linux-x64/libmanifoldc.so')" Link="libmanifoldc.so" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

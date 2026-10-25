@@ -18,9 +18,10 @@ Private repo `Ciuntuc-BIM-Studio/lapin-pro`. The user writes in Romanian; the UI
   - `ui/src/engine/session.ts`: the WebSocket JSON-RPC client.
 - `products/<id>.json`: an edition, a list of modules. `scripts/product.mjs` completes it with what the modules require; dev, the UI build and `build:product` all use it, so a package holds only the product's modules (engine and UI).
 - `desktop/src-tauri`: the Tauri shell.
-- `vendor/bubblebim-pro`: a submodule with the user's private C# engine.
-  - Lapin uses it only as a geometry library: Platform.Geometry (B-rep) now; Platform.Booleans (manifold), Step.cs/StepFile.cs and IfcModel.cs later.
-  - Lapin does not use its graph model. Its platform patterns (module folders, session, undo, protocol, product packaging) were copied and adapted; code from BubbleBIM Pro and Atrium (`~/Documents/GitHub/Atrium`, MIT-0) may be reused.
+- `engine/src/Geometry`: Lapin.Geometry (the B-rep kernel) and Lapin.Booleans (manifold's C API).
+  - Taken from the user's private BubbleBIM Pro engine on 25.10.2026 (it was the submodule `vendor/bubblebim-pro`); Lapin's own MIT code since, so the repo needs no other repository to build.
+  - `engine/native/<rid>/`: manifold's native library. macOS's is committed; `node scripts/build-manifold.mjs` builds it (CI builds Linux's).
+  - Lapin does not use BubbleBIM Pro's graph model. Its platform patterns (module folders, session, undo, protocol, product packaging) were copied and adapted; code from BubbleBIM Pro and Atrium (`~/Documents/GitHub/Atrium`, MIT-0) may be reused.
 - `docs/decisions.md`: the register of decisions taken, with their sources.
 - `docs/plan.md`: decisions, the architecture and milestones M0–M9.
 - `docs/format-lapin.md`: the `.lapin` package, format 3: the analysis, and what is done.
@@ -32,7 +33,7 @@ The old Lapin (ifc-lite fork, MPL-2.0) lives in `~/Documents/GitHub/Lapin/ifc-li
 ## Run
 
 ```sh
-pnpm setup                     # submodule, packages, engine build
+pnpm setup                     # packages, engine build
 pnpm dev                       # engine ws://127.0.0.1:47810/ws + UI http://localhost:5180 (LAPIN_PRODUCT=<id>, default lapin)
 pnpm dev:desktop               # the same in the Tauri window
 pnpm typecheck && pnpm test    # UI (vitest) and engine (xUnit); pnpm test:engine for the engine alone
@@ -40,7 +41,7 @@ pnpm products                  # what every product resolves to
 pnpm build:product <id>        # one edition as a desktop app → build/<id>/bundle (check:licenses first)
 ```
 
-If pnpm complains about @tauri-apps when installing, use `CI=true pnpm install`. `.npmrc` hoists `@tauri-apps/*` for the vendor platform code. `pnpm check:licenses` checks the UI's npm packages and the engine's NuGet packages.
+If pnpm complains about @tauri-apps when installing, use `CI=true pnpm install`. `.npmrc` hoists `@tauri-apps/*`. `pnpm check:licenses` checks the UI's npm packages and the engine's NuGet packages.
 
 ## Rules
 

@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@10.33.4",
   "scripts": {
-    "setup": "git submodule update --init && pnpm install && pnpm build:engine",
+    "setup": "pnpm install && pnpm build:engine",
     "build:engine": "dotnet build engine/Lapin.slnx -v q -nologo",
     "dev": "node scripts/dev.mjs",
     "dev:desktop": "node scripts/dev.mjs --desktop",

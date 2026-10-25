@@ -58,9 +58,9 @@ lapin-pro (MIT)
 ├─ ui/                            interfața Lapin (React + three.js); ui/src/modules/<id> e jumătatea UI a unui modul
 ├─ products/                      edițiile: listele de module
 ├─ desktop/                       shell-ul Tauri
-└─ vendor/bubblebim-pro           doar ca bibliotecă, prin project references:
-                                  Platform.Geometry (B-rep, tessellator, skeleton),
-                                  mai târziu Platform.Booleans (manifold) și citirea IFC (Step.cs, IfcModel.cs)
+   (engine/src/Geometry           nucleul de geometrie: Lapin.Geometry (B-rep, tessellator, skeleton) și
+                                  Lapin.Booleans (manifold), luate din BubbleBIM Pro pe 25.10.2026; înainte,
+                                  submodulul vendor/bubblebim-pro)
 ```
 
 Un modul are o jumătate de motor (`engine/src/Modules/…`, cu `module.json`), o jumătate de interfață (`ui/src/modules/<id>`) sau amândouă. Modulele de motor se construiesc în `engine/artifacts/modules/<id>/`, iar host-ul le încarcă după produs. `pnpm build:product <id>` pune în aplicație doar modulele produsului.

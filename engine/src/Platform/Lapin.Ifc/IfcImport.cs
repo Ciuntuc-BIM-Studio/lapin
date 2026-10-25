@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using BubbleBim.Geometry;
+using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
 

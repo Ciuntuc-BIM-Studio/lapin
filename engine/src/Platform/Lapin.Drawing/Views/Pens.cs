@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Model;
-using BubbleBim.Geometry;
+using Lapin.Geometry;
 using Lapin.Drawing.Hatch;
 
 namespace Lapin.Drawing.Views;

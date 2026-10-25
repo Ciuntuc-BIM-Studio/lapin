@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using BubbleBim.Geometry;
+using Lapin.Geometry;
 
 namespace Lapin.Drawing.Views;
 

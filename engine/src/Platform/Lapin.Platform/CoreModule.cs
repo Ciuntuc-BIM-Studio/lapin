@@ -25,7 +25,7 @@ public sealed class CoreModule : ILapinModule
     public void Register(IModuleRegistry r)
     {
         // Booleans for whatever cannot be built constructively (openings through walls); none: callers degrade with a diagnostic.
-        if (BubbleBim.Platform.Booleans.ManifoldBooleans.Available) r.Service<BubbleBim.Geometry.ISolidBooleans>(new BubbleBim.Platform.Booleans.ManifoldBooleans());
+        if (Lapin.Booleans.ManifoldBooleans.Available) r.Service<Lapin.Geometry.ISolidBooleans>(new Lapin.Booleans.ManifoldBooleans());
 
         r.Class(new(IfcClass.BuildingStorey, "Storey",
             [new("elevation", "Elevation", "length"), new("height", "Height", "length", Min: 0.1)], "#6c5ce7", Kind: "spatial"));
@@ -164,7 +164,7 @@ public sealed class CoreModule : ILapinModule
 
         r.Command("element.transform", "Transform", (ctx, a) =>
         {
-            static BubbleBim.Geometry.Vec2 V(JsonNode? n, string what) => Args.Point(n, what);
+            static Lapin.Geometry.Vec2 V(JsonNode? n, string what) => Args.Point(n, what);
             var ids = Args.Ids(a).ToList();
             var op = (string?)a["op"] ?? "move";
             var t = op switch

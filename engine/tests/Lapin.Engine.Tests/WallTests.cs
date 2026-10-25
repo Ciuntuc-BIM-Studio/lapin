@@ -133,7 +133,7 @@ public class WallTests
         var (min, max) = f.Bounds(wall);
         Assert.Equal(2.5, min.Z, 9);
         Assert.Equal(5.5, max.Z, 9);
-        Assert.Equal(0.3 * 3 * 3, g.Parts.Sum(p => BubbleBim.Geometry.Measure.Volume(p.Solid)), 6);
+        Assert.Equal(0.3 * 3 * 3, g.Parts.Sum(p => Lapin.Geometry.Measure.Volume(p.Solid)), 6);
     }
 
     [Fact]

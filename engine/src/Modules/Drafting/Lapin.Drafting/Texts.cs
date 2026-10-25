@@ -1,4 +1,4 @@
-using BubbleBim.Geometry;
+using Lapin.Geometry;
 using Lapin.Drawing;
 using Lapin.Drawing.Views;
 using Lapin.Model;

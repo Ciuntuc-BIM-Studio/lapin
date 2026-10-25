@@ -9,7 +9,7 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <!-- Where every module lands after a build, ready for the host to load and a product build to ship. -->
     <LapinModulesDir>$(MSBuildThisFileDirectory)artifacts/modules/</LapinModulesDir>
-    <!-- The BubbleBIM Pro geometry kernel, used as a library (vendor/bubblebim-pro). -->
-    <BubbleEngineDir>$(MSBuildThisFileDirectory)../vendor/bubblebim-pro/engine/</BubbleEngineDir>
+    <!-- The geometry kernel (B-rep) and the booleans (manifold), taken from BubbleBIM Pro on 25.10.2026. -->
+    <LapinGeometryDir>$(MSBuildThisFileDirectory)src/Geometry/</LapinGeometryDir>
   </PropertyGroup>
 </Project>

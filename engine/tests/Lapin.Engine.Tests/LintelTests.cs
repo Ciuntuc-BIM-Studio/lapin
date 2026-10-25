@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using BubbleBim.Geometry;
+using Lapin.Geometry;
 using Lapin.Platform;
 using Lapin.Architecture;
 using Lapin.Model;
@@ -159,7 +159,7 @@ public class LintelTests
         Assert.Equal(-t / 2, la.Min.X, 6);
         // …and B's stops at A's lintel.
         Assert.Equal(la.Max.Y, lb.Min.Y, 6);
-        var booleans = new BubbleBim.Platform.Booleans.ManifoldBooleans();
+        var booleans = new Lapin.Booleans.ManifoldBooleans();
         Assert.True(booleans.Intersection(L(a).Solid, L(b).Solid) is not { } both || Measure.Volume(both) < 1e-9);
         // Neither core holds what a lintel does (the brick, layer 1 of the default type).
         foreach (var (wall, other) in new[] { (a, b), (b, a) })

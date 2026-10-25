@@ -1,15 +1,16 @@
 # Lapin
 
-BIM authoring for architects and engineers, on the **BubbleBIM Pro** geometry kernel.
+BIM authoring for architects and engineers.
 
 Lapin is a desktop application and a classic modeller on the IFC schema. Its interface
 (React, TypeScript, three.js) runs in a Tauri window and talks over a local WebSocket to
 Lapin's engine (C#, .NET 10, `engine/`), which holds the IFC model and derives its geometry
-with the BubbleBIM Pro geometry kernel.
+with its own B-rep kernel (`engine/src/Geometry`) and manifold for the booleans.
 
 > Private repository. Licensed under the MIT licence (see `LICENSE`).
-> The BubbleBIM Pro engine (`vendor/bubblebim-pro`, a git submodule) is a separate
-> project with its own terms.
+> The geometry kernel was taken from BubbleBIM Pro (the author's own engine) on
+> 25.10.2026 and is Lapin's own code since, under the same licence. manifold
+> (Apache-2.0) and Clipper2 (BSL-1.0) are described in `engine/native/README.md`.
 
 ## Layout
 
@@ -20,7 +21,6 @@ with the BubbleBIM Pro geometry kernel.
 | `desktop/` | the Tauri shell: the window, native dialogs, starts the engine |
 | `products/*.json` | editions: the modules a package holds |
 | `ui/src/modules/` | the UI modules: core, architecture, structure, drafting, phases, cost |
-| `vendor/bubblebim-pro/` | the BubbleBIM Pro engine (submodule), used for its geometry kernel |
 | `docs/plan.md` | the plan: decisions, milestones M0–M9 |
 
 ## Modules and editions
@@ -53,7 +53,7 @@ licence (MIT, ISC, BSD, Apache-2.0…), so nothing copyleft gets in by accident.
 Requires .NET 10, Node 22 + pnpm, Rust (for the desktop shell).
 
 ```sh
-pnpm setup        # submodule, packages, engine build
+pnpm setup        # packages, engine build
 pnpm dev          # engine on ws://127.0.0.1:47810/ws, UI on http://localhost:5180
 pnpm dev:desktop  # the same in the Lapin window
 pnpm test         # UI (vitest) and engine (xUnit)

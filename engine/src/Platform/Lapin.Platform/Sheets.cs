@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
-using BubbleBim.Geometry;
+using Lapin.Geometry;
 using Lapin.Drawing.Export;
 using Lapin.Drawing.Views;
 using Lapin.Model;

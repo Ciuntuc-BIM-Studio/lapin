@@ -1,4 +1,4 @@
-using BubbleBim.Geometry;
+using Lapin.Geometry;
 
 namespace Lapin.Architecture.Schedules;
 
