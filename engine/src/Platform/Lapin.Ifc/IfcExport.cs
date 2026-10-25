@@ -45,6 +45,7 @@ public static class IfcExport
 {
     public const string IntentSetName = "Pset_Lapin_Intent";
     public const string PhaseSetName = "Pset_Lapin_Phase";
+    public const string ParamsSetName = "Pset_Lapin_Parameters";
     public const string Version = "1";
 
     public static IfcExportResult Write(Session session, string path, IfcExportOptions? options = null)
@@ -554,6 +555,23 @@ public static class IfcExport
             if (e.Str("phaseCreated") is { } created) phase.Add(Single("Created", Typed("IFCLABEL", S(PhaseName(created)))));
             if (e.Str("phaseDemolished") is { } demolished) phase.Add(Single("Demolished", Typed("IFCLABEL", S(PhaseName(demolished)))));
             if (phase.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, PhaseSetName), Null, S(PhaseSetName), Null, L(phase)), Gid(e.Id, "phase-rel"));
+            // The user's own parameters, typed.
+            var own = new List<string>();
+            foreach (var p in (e.Attrs["params"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            {
+                if ((string?)p["name"] is not { } pname || p["value"] is not { } pv) continue;
+                var value = (string?)p["kind"] switch
+                {
+                    "length" => Json.Number(pv) is { } l ? Typed("IFCLENGTHMEASURE", R(l)) : null,
+                    "area" => Json.Number(pv) is { } ar ? Typed("IFCAREAMEASURE", R(ar)) : null,
+                    "number" or "angle" => Json.Number(pv) is { } nm ? Typed("IFCREAL", R(nm)) : null,
+                    "bool" => pv is JsonValue bv && bv.TryGetValue<bool>(out var yes) ? Typed("IFCBOOLEAN", yes ? True : False) : null,
+                    "choice" => Typed("IFCLABEL", S(pv.ToString())),
+                    _ => Typed("IFCTEXT", S(pv.ToString())),
+                };
+                if (value != null) own.Add(Single(pname, value));
+            }
+            if (own.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, ParamsSetName), Null, S(ParamsSetName), Null, L(own)), Gid(e.Id, "params-rel"));
         }
 
         /// <summary>

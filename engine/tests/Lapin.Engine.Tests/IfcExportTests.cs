@@ -185,4 +185,19 @@ public class IfcExportTests : IDisposable
         var all = StepFile.Read(Export(f, "all.ifc"));
         Assert.Equal(2, all.OfType("IFCWALL").Count());
     }
+
+    [Fact]
+    public void The_users_own_parameters_go_out_as_a_typed_property_set()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var wall = f.Wall(0, 0, 4, 0);
+        f.Run("element.setParam", new JsonObject { ["id"] = wall, ["name"] = "Fire rating", ["kind"] = "choice", ["options"] = new JsonArray("EI30", "EI60"), ["value"] = "EI60" });
+        f.Run("element.setParam", new JsonObject { ["id"] = wall, ["name"] = "Finish height", ["kind"] = "length", ["value"] = 2.1 });
+        f.Run("element.setParam", new JsonObject { ["id"] = wall, ["name"] = "Note", ["kind"] = "text", ["value"] = "check on site" });
+        var text = File.ReadAllText(Export(f, "params.ifc"));
+        Assert.Contains("'Pset_Lapin_Parameters'", text);
+        Assert.Contains("IFCPROPERTYSINGLEVALUE('Fire rating',$,IFCLABEL('EI60'),$)", text);
+        Assert.Contains("IFCPROPERTYSINGLEVALUE('Finish height',$,IFCLENGTHMEASURE(2.1),$)", text);
+        Assert.Contains("IFCTEXT('check on site')", text);
+    }
 }

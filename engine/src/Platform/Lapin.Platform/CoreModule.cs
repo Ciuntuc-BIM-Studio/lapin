@@ -78,6 +78,44 @@ public sealed class CoreModule : ILapinModule
             return null;
         });
 
+        // The user's own parameters on any element, drafted shape or Studio solid: a name, a kind, a value (exported as Pset_Lapin_Parameters).
+        r.Command("element.setParam", "Set parameter", (ctx, a) =>
+        {
+            var ids = Args.Ids(a).ToList();
+            if (ids.Count == 0) throw new CommandException("Which element?");
+            var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : throw new CommandException("A parameter needs a name.");
+            foreach (var id in ids)
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException("Which element?");
+                var list = e.Attrs["params"] is JsonArray old ? (JsonArray)old.DeepClone() : new JsonArray();
+                var existing = list.OfType<JsonObject>().FirstOrDefault(p => string.Equals((string?)p["name"], name, StringComparison.OrdinalIgnoreCase));
+                var kind = (string?)a["kind"] ?? (string?)existing?["kind"] ?? throw new CommandException($"A new parameter needs its kind ({string.Join(", ", Params.Kinds)}).");
+                var options = a["options"] as JsonArray ?? existing?["options"] as JsonArray;
+                var value = Params.Check(kind, a["value"], options);
+                var entry = new JsonObject { ["name"] = name, ["kind"] = kind, ["value"] = value };
+                if (kind == "choice" && options != null) entry["options"] = options.DeepClone();
+                if (existing != null) list[list.IndexOf(existing)] = entry; else list.Add(entry);
+                var attrs = e.CloneAttrs();
+                attrs["params"] = list;
+                ctx.Replace(e.With(attrs: attrs));
+            }
+            return null;
+        });
+        r.Command("element.removeParam", "Remove parameter", (ctx, a) =>
+        {
+            var name = (string?)a["name"] ?? throw new CommandException("Which parameter?");
+            foreach (var id in Args.Ids(a))
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException("Which element?");
+                if (e.Attrs["params"] is not JsonArray old) continue;
+                var list = new JsonArray(old.OfType<JsonObject>().Where(p => !string.Equals((string?)p["name"], name, StringComparison.OrdinalIgnoreCase)).Select(p => (JsonNode)p.DeepClone()).ToArray());
+                var attrs = e.CloneAttrs();
+                if (list.Count == 0) attrs.Remove("params"); else attrs["params"] = list;
+                ctx.Replace(e.With(attrs: attrs));
+            }
+            return null;
+        });
+
         r.Command("element.update", "Change", (ctx, a) =>
         {
             // One element, or several (ids): each takes the same values.
