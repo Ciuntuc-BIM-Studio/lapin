@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lapin.Host;
+using Lapin.Protocol;
 
 namespace Lapin.Engine.Tests;
 

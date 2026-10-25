@@ -26,6 +26,7 @@
     <ProjectReference Include="../../src/Modules/Phases/Lapin.Phases/Lapin.Phases.csproj" />
     <ProjectReference Include="../../src/Modules/Civil/Lapin.Civil/Lapin.Civil.csproj" />
     <ProjectReference Include="../../src/Modules/Studio/Lapin.Studio/Lapin.Studio.csproj" />
+    <ProjectReference Include="../../src/Platform/Lapin.Protocol/Lapin.Protocol.csproj" />
     <ProjectReference Include="../../src/Host/Lapin.Host/Lapin.Host.csproj" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The engine's protocol, without its transport: the JSON-RPC dispatcher and
+    the binary frames it answers with. The desktop host serves it over a
+    WebSocket; the browser host, from a Web Worker (docs/plan-browser-engine.md).
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../Lapin.Platform/Lapin.Platform.csproj" />
+    <ProjectReference Include="../Lapin.Package/Lapin.Package.csproj" />
+    <ProjectReference Include="../Lapin.Ifc/Lapin.Ifc.csproj" />
+  </ItemGroup>
+</Project>

@@ -34,6 +34,7 @@
     <Project Path="src/Platform/Lapin.Ifc/Lapin.Ifc.csproj" />
     <Project Path="src/Platform/Lapin.Package/Lapin.Package.csproj" />
     <Project Path="src/Platform/Lapin.Platform/Lapin.Platform.csproj" />
+    <Project Path="src/Platform/Lapin.Protocol/Lapin.Protocol.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Lapin.Engine.Tests/Lapin.Engine.Tests.csproj" />

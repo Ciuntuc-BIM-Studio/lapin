@@ -4,11 +4,9 @@ using System.Text.Json.Nodes;
 using Lapin.Model;
 using Lapin.Package;
 using Lapin.Platform;
+using Lapin.Protocol;
 
 namespace Lapin.Host;
-
-/// <summary>A journal the user can bring back: unsaved work from a session that ended without saving.</summary>
-public sealed record RecoverableWork(string File, string? Path, DateTimeOffset At, int Edits, string? LastEdit);
 
 /// <summary>
 /// The recovery journal: every edit of the open project, appended as it
@@ -25,7 +23,7 @@ public sealed record RecoverableWork(string File, string? Path, DateTimeOffset A
 /// is held exclusively: another Lapin (or recovery.list) sees it is in use
 /// and leaves it alone.
 /// </summary>
-public sealed class Recovery : IDisposable
+public sealed class Recovery : IRecoveryJournal, IDisposable
 {
     readonly string _dir;
     readonly Session _session;

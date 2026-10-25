@@ -13,5 +13,6 @@
     <ProjectReference Include="../../Platform/Lapin.Platform/Lapin.Platform.csproj" />
     <ProjectReference Include="../../Platform/Lapin.Package/Lapin.Package.csproj" />
     <ProjectReference Include="../../Platform/Lapin.Ifc/Lapin.Ifc.csproj" />
+    <ProjectReference Include="../../Platform/Lapin.Protocol/Lapin.Protocol.csproj" />
   </ItemGroup>
 </Project>

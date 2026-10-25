@@ -1,12 +1,18 @@
 using Lapin.Package;
 using Lapin.Platform;
+using Lapin.Protocol;
 
 namespace Lapin.Host;
 
 /// <summary>Projects on disk: the .lapin package, format 3.</summary>
 public static class PackageFiles
 {
-    public static ProjectFiles Create() => new(Open, Save);
+    public static ProjectFiles Create()
+    {
+        ProjectFiles? files = null;
+        files = new((session, path) => { var d = Open(session, path); files!.LastNotes = LastNotes; return d; }, Save);
+        return files;
+    }
 
     /// <summary>What the last opening of an old project left out (format 2), for the interface to tell.</summary>
     public static List<string> LastNotes { get; private set; } = [];
