@@ -14,7 +14,7 @@ namespace Lapin.Architecture;
 public static class LintelProducts
 {
     public static List<LintelProduct> Of(IModelView m) =>
-        (Spatial.Project(m)?.Attrs["lintelProducts"] as JsonArray)?.Select(n => System.Text.Json.JsonSerializer.Deserialize<LintelProduct>(n, Lapin.Model.Json.Options)).OfType<LintelProduct>().ToList() ?? [];
+        (Spatial.Project(m)?.Attrs["lintelProducts"] as JsonArray)?.Select(n => System.Text.Json.JsonSerializer.Deserialize(n, ArchitectureJson.Default.LintelProduct)).OfType<LintelProduct>().ToList() ?? [];
 
     public static (List<LintelProduct> Products, List<string> Skipped) Parse(string text)
     {
@@ -72,5 +72,5 @@ public static class LintelProducts
         r.Query("architecture.lintelProducts", (q, _) => new JsonArray(Of(q.Model).Select(p => (JsonNode)JsonSerializer(p)).ToArray()));
     }
 
-    static JsonNode JsonSerializer(LintelProduct p) => System.Text.Json.JsonSerializer.SerializeToNode(p, Lapin.Model.Json.Options)!;
+    static JsonNode JsonSerializer(LintelProduct p) => System.Text.Json.JsonSerializer.SerializeToNode(p, ArchitectureJson.Default.LintelProduct)!;
 }

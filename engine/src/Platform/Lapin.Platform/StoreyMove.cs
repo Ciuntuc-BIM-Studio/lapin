@@ -76,7 +76,7 @@ public static class StoreyMove
                     if (changed) ctx.Replace(e.With(attrs: attrs));
                 }
                 Spatial.Contain(ctx, target.Id, e.Id);
-                moved.Add(e.Id);
+                moved.Add((JsonNode)e.Id);
             }
             // Joins only hold on one storey.
             var set = all.Select(e => e.Id).ToHashSet();

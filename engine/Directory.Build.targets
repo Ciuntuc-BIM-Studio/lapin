@@ -1,5 +1,14 @@
 <Project>
   <!--
+    The libraries are trimmable: the engine also runs in the browser, trimmed
+    (docs/plan-browser-engine.md), so reflection that trimming would break is a
+    build error here, on the desktop too. The hosts and the tests are not libraries.
+  -->
+  <PropertyGroup Condition="'$(OutputType)' != 'Exe' And !$(MSBuildProjectName.EndsWith('Tests')) And '$(IsTestProject)' != 'true'">
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+
+  <!--
     A module is a project that sets <LapinModuleId>. After each build its own
     assemblies (never the platform's: those references are Private=false) and
     its module.json are copied to artifacts/modules/<id>/: the folder layout

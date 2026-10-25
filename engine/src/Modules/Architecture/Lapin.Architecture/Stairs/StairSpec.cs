@@ -71,14 +71,14 @@ public sealed record StairSpec(
 
     public bool Turns_ => Shape is "l" or "u";
 
-    public JsonObject ToJson() => (JsonObject)JsonSerializer.SerializeToNode(this, Json.Options)!;
+    public JsonObject ToJson() => (JsonObject)JsonSerializer.SerializeToNode(this, ArchitectureJson.Default.StairSpec)!;
 
     /// <summary>A stored spec read back and made sane; null when unreadable.</summary>
     public static StairSpec? From(JsonNode? node)
     {
         try
         {
-            var s = node?.Deserialize<StairSpec>(Json.Options);
+            var s = node?.Deserialize(ArchitectureJson.Default.StairSpec);
             if (s is null || s.Name is null || s.Rules is null || s.Construction is null || s.Finish is null || s.Railing is null) return null;
             if (!Shapes.Contains(s.Shape)) s = s with { Shape = "straight" };
             if (!Turns.Contains(s.Turn)) s = s with { Turn = "landing" };

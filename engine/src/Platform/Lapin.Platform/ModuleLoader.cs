@@ -16,18 +16,21 @@ public static class ModuleLoader
     /// <summary>A module's manifest: its assembly, and the modules it cannot work without.</summary>
     public sealed record ModuleManifest(string Id, string Name, string Assembly, string[]? Requires = null);
 
+    /// <summary>Why loading from a folder needs the whole code: the desktop host does it, untrimmed; a trimmed host (the browser's) builds its modules in.</summary>
+    const string Untrimmed = "Modules are loaded from their folder by reflection, which only an untrimmed host (the desktop's) can do.";
+
     static readonly List<string> SearchDirs = [];
     static bool _hooked;
 
     public static ProductManifest ReadProduct(string path) =>
-        JsonSerializer.Deserialize<ProductManifest>(File.ReadAllText(path), Json.Options)
+        JsonSerializer.Deserialize(File.ReadAllText(path), PlatformJson.Default.ProductManifest)
         ?? throw new InvalidOperationException($"Bad product manifest {path}.");
 
     public static ModuleManifest ReadModule(string modulesDir, string id)
     {
         var path = Path.Combine(modulesDir, id, "module.json");
         if (!File.Exists(path)) throw new InvalidOperationException($"Module „{id}” is in the product but not installed ({path}).");
-        return JsonSerializer.Deserialize<ModuleManifest>(File.ReadAllText(path), Json.Options)
+        return JsonSerializer.Deserialize(File.ReadAllText(path), PlatformJson.Default.ModuleManifest)
                ?? throw new InvalidOperationException($"Bad module manifest {path}.");
     }
 
@@ -37,6 +40,7 @@ public static class ModuleLoader
     /// "core" is the platform's). A module whose requirements the product
     /// lacks is refused: the package would be broken.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(Untrimmed)]
     public static List<ILapinModule> Load(string modulesDir, IEnumerable<string> moduleIds)
     {
         Hook();
@@ -63,6 +67,7 @@ public static class ModuleLoader
     }
 
     /// <summary>A module's own dependencies (another module's contract) are looked up in every module folder.</summary>
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(Untrimmed)]
     static void Hook()
     {
         if (_hooked) return;

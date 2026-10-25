@@ -78,12 +78,12 @@ public static class Layers
     }
 
     public static IReadOnlyList<MaterialLayer> Read(Entity layerSet) =>
-        layerSet.Get<List<MaterialLayer>>("layers") ?? [];
+        layerSet.Get("layers", ModelJson.Default.ListMaterialLayer) ?? [];
 
     public static JsonObject Write(IEnumerable<MaterialLayer> layers, JsonObject? into = null)
     {
         var o = into ?? [];
-        o["layers"] = System.Text.Json.JsonSerializer.SerializeToNode(layers.ToList(), Json.Options);
+        o["layers"] = System.Text.Json.JsonSerializer.SerializeToNode(layers.ToList(), ModelJson.Default.ListMaterialLayer);
         return o;
     }
 

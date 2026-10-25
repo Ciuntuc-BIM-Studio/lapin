@@ -46,7 +46,7 @@ public static class SiteCommands
             }) ?? throw new CommandException("A stroke is raise, lower, flatten or smooth, with a radius.");
             var attrs = t.CloneAttrs();
             var list = attrs["sculpts"] as JsonArray ?? new JsonArray();
-            list.Add(dab.ToJson());
+            list.Add((JsonNode)dab.ToJson());
             attrs["sculpts"] = list;
             ctx.Replace(t.With(attrs: attrs));
             return new JsonObject { ["strokes"] = list.Count };

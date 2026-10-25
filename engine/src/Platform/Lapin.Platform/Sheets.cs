@@ -238,8 +238,8 @@ public static class Sheets
         JsonArray Warnings(Placement p)
         {
             var o = new JsonArray();
-            if (p.X0 < Margin - 0.5 || p.Y0 < Margin - 0.5 || p.X1 > W - Margin + 0.5 || p.Y1 > H - Margin + 0.5) o.Add("outside");
-            if (p.X1 > bx0 + 0.5 && p.X0 < bx1 - 0.5 && p.Y1 > by0 + 0.5 && p.Y0 < by1 - 0.5) o.Add("titleBlock");
+            if (p.X0 < Margin - 0.5 || p.Y0 < Margin - 0.5 || p.X1 > W - Margin + 0.5 || p.Y1 > H - Margin + 0.5) o.Add((JsonNode)"outside");
+            if (p.X1 > bx0 + 0.5 && p.X0 < bx1 - 0.5 && p.Y1 > by0 + 0.5 && p.Y0 < by1 - 0.5) o.Add((JsonNode)"titleBlock");
             return o;
         }
         return new JsonObject

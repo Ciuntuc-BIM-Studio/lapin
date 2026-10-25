@@ -164,9 +164,8 @@ public sealed class ArchitectureModule : ILapinModule
         // A roof cuts walls and Studio solids by its covering, and is cut by slabs, beams, columns and footings.
         r.Cutter(IfcClass.Roof, 55, RoofCuts.Envelope);
         r.Quantities(IfcClass.Roof, (roof, geometry, model) => Roof.Quantities(roof, geometry, model));
-        var web = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
-        r.Catalog("roofStyles", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Styles, web)!);
-        r.Catalog("roofCoverings", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Coverings, web)!);
+        r.Catalog("roofStyles", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Styles, ArchitectureCatalogJson.Default.IReadOnlyListStyle)!);
+        r.Catalog("roofCoverings", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Coverings, ArchitectureCatalogJson.Default.IReadOnlyListCovering)!);
 
         // A roof over the outline drawn (the wall line, at the top of its storey), in a style (default: the catalogue's first).
         r.Command("addRoof", "Roof", (ctx, a) =>
@@ -267,7 +266,7 @@ public sealed class ArchitectureModule : ILapinModule
                         if ((string?)o["kind"] is { } kind) c["kind"] = kind is "eave" or "gable" ? kind : throw new CommandException("An edge is an eave or a gable.");
                         if (Json.Number(o["pitch"]) is { } p) c["pitch"] = p;
                         if (Json.Number(o["overhang"]) is { } oh) c["overhang"] = oh;
-                        clean.Add(c.Count > 0 ? c : null);
+                        clean.Add((JsonNode?)(c.Count > 0 ? c : null));
                     }
                     if (clean.Any(x => x != null)) attrs["edges"] = clean; else attrs.Remove("edges");
                 }

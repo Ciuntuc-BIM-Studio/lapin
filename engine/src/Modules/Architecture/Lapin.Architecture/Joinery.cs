@@ -73,14 +73,14 @@ public sealed record JoinerySpec(
 
     public bool IsDoor => Kind == "door";
 
-    public JsonObject ToJson() => (JsonObject)JsonSerializer.SerializeToNode(this, Json.Options)!;
+    public JsonObject ToJson() => (JsonObject)JsonSerializer.SerializeToNode(this, ArchitectureJson.Default.JoinerySpec)!;
 
     /// <summary>A stored spec read back; null when there is none or it cannot be read.</summary>
     public static JoinerySpec? From(JsonNode? node)
     {
         try
         {
-            var s = node?.Deserialize<JoinerySpec>(Json.Options);
+            var s = node?.Deserialize(ArchitectureJson.Default.JoinerySpec);
             // A partial object binds its missing parts to null: as unreadable as bad JSON.
             if (s is null || s.Kind is null || s.Name is null || s.Mark is null || s.Frame is null || s.Sash is null
                 || s.Columns is null || s.Rows is null || s.Panels is null || s.Board is null || s.Colors is null) return null;

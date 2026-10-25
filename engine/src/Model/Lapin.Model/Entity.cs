@@ -35,7 +35,8 @@ public sealed class Entity(string id, string @class, string name, JsonObject att
     public double? NumOrNull(string key) => Json.Number(Attrs[key]);
     public string? Str(string key) => Attrs[key] is JsonValue v && v.TryGetValue<string>(out var s) ? s : null;
     public bool Bool(string key) => Attrs[key] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
-    public T? Get<T>(string key) => Attrs[key] is { } n ? n.Deserialize<T>(Json.Options) : default;
+    /// <summary>An attribute read as <typeparamref name="T"/>, by its generated JSON contract (which trimming keeps).</summary>
+    public T? Get<T>(string key, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> info) => Attrs[key] is { } n ? n.Deserialize(info) : default;
 }
 
 /// <summary>
@@ -70,6 +71,4 @@ public static class Json
         if (v.TryGetValue<JsonElement>(out var e) && e.ValueKind == JsonValueKind.Number) return e.GetDouble();
         return v.TryGetValue<string>(out var s) && double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var p) ? p : null;
     }
-
-    public static JsonObject Object<T>(T value) => (JsonObject)JsonSerializer.SerializeToNode(value, Options)!;
 }

@@ -115,7 +115,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 }, Terrains.Predefined);
                 ctx.Add(t);
                 Spatial.Contain(ctx, storeyId, t.Id);
-                ids.Add(t.Id);
+                ids.Add((JsonNode)t.Id);
             }
             return new JsonObject { ["ids"] = ids };
         });

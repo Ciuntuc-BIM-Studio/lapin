@@ -199,7 +199,7 @@ public static class ArrowTables
             {
                 var items = (DoubleArray)((ListArray)array).GetSlicedValues(row);
                 var o = new JsonArray();
-                for (var i = 0; i < items.Length; i++) o.Add(items.GetValue(i)!.Value);
+                for (var i = 0; i < items.Length; i++) o.Add((JsonNode)items.GetValue(i)!.Value);
                 return o;
             }
             case Kind.Text: return JsonValue.Create(((StringArray)array).GetString(row));

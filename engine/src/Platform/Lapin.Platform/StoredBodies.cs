@@ -23,10 +23,10 @@ public static class StoredBodies
         foreach (var p in parts)
         {
             var v = new JsonArray();
-            foreach (var q in p.Vertices) { v.Add(Math.Round(q.X, 4)); v.Add(Math.Round(q.Y, 4)); v.Add(Math.Round(q.Z, 4)); }
+            foreach (var q in p.Vertices) { v.Add((JsonNode)Math.Round(q.X, 4)); v.Add((JsonNode)Math.Round(q.Y, 4)); v.Add((JsonNode)Math.Round(q.Z, 4)); }
             var t = new JsonArray();
-            foreach (var (a, b, c) in p.Triangles) { t.Add(a); t.Add(b); t.Add(c); }
-            list.Add(new JsonObject { ["name"] = p.Name, ["color"] = p.Color, ["v"] = v, ["t"] = t });
+            foreach (var (a, b, c) in p.Triangles) { t.Add((JsonNode)a); t.Add((JsonNode)b); t.Add((JsonNode)c); }
+            list.Add((JsonNode)new JsonObject { ["name"] = p.Name, ["color"] = p.Color, ["v"] = v, ["t"] = t });
         }
         return new JsonObject { ["parts"] = list };
     }

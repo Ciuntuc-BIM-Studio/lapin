@@ -99,7 +99,7 @@ public sealed class CoreModule : ILapinModule
                 var value = Params.Check(kind, a["value"], options);
                 var entry = new JsonObject { ["name"] = name, ["kind"] = kind, ["value"] = value };
                 if (kind == "choice" && options != null) entry["options"] = options.DeepClone();
-                if (existing != null) list[list.IndexOf(existing)] = entry; else list.Add(entry);
+                if (existing != null) list[list.IndexOf(existing)] = entry; else list.Add((JsonNode)entry);
                 var attrs = e.CloneAttrs();
                 attrs["params"] = list;
                 ctx.Replace(e.With(attrs: attrs));
@@ -186,7 +186,7 @@ public sealed class CoreModule : ILapinModule
             foreach (var e in entities)
             {
                 if (ctx.Model.Get(e.Id) is not { } now) continue;
-                if (copy) made.Add(Placement.Copy(ctx, now, t));
+                if (copy) made.Add((JsonNode)Placement.Copy(ctx, now, t));
                 else Placement.Transform(ctx, now, t, moving);
             }
             return new JsonObject { ["ids"] = made };

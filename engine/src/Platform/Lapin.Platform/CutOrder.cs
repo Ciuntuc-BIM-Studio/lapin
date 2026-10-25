@@ -45,7 +45,7 @@ public static class CutOrder
             foreach (var (cls, def) in cutters.CutDefaults.OrderByDescending(x => x.Value))
             {
                 var label = (q.Services as ModuleCatalog)?.Class(cls)?.Label ?? cls;
-                rows.Add(new JsonObject { ["class"] = cls, ["label"] = label, ["default"] = def, ["priority"] = cutters.ClassPriority(cls, q.Model) });
+                rows.Add((JsonNode)new JsonObject { ["class"] = cls, ["label"] = label, ["default"] = def, ["priority"] = cutters.ClassPriority(cls, q.Model) });
             }
             return rows;
         });

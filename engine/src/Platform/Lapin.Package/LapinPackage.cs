@@ -52,7 +52,7 @@ public static class LapinPackage
         var parts = new List<(PackagePart Part, byte[] Bytes)>();
         void Add(string p, byte[] bytes, string? module = null) => parts.Add((new PackagePart(p, Hash(bytes), bytes.Length, module), bytes));
 
-        Add(DocumentPath, JsonSerializer.SerializeToUtf8Bytes(document ?? [], Json.Options));
+        Add(DocumentPath, JsonSerializer.SerializeToUtf8Bytes(document ?? [], PackageJson.Default.JsonObject));
         var classes = new SortedDictionary<string, string>(StringComparer.Ordinal);
         var chunks = model.Entities
             .GroupBy(e => (Module: moduleOf(e.Class), e.Class, Storey: storeyOf(e.Id) ?? "_"))
@@ -74,7 +74,7 @@ public static class LapinPackage
                 using var s = zip.CreateEntry(name, CompressionLevel.Optimal).Open();
                 s.Write(bytes);
             }
-            Entry(ManifestPath, JsonSerializer.SerializeToUtf8Bytes(manifest, new JsonSerializerOptions(Json.Options) { WriteIndented = true }));
+            Entry(ManifestPath, JsonSerializer.SerializeToUtf8Bytes(manifest, PackageJson.Indented.PackageManifest));
             foreach (var (part, bytes) in parts) Entry(part.Path, bytes);
         }
         File.Move(temp, path, overwrite: true);
@@ -92,7 +92,7 @@ public static class LapinPackage
             return ms.ToArray();
         }
 
-        var manifest = JsonSerializer.Deserialize<PackageManifest>(Bytes(ManifestPath), Json.Options)
+        var manifest = JsonSerializer.Deserialize(Bytes(ManifestPath), PackageJson.Default.PackageManifest)
                        ?? throw new InvalidDataException("The project's manifest is unreadable.");
         if (manifest.Format != Format) throw new InvalidDataException($"Not a Lapin project ({manifest.Format}).");
         if (manifest.Version > Version) throw new InvalidDataException($"The project was saved by a newer Lapin (format {manifest.Version}); update Lapin to open it.");
@@ -120,4 +120,19 @@ public static class LapinPackage
 
     /// <summary>A path segment: GlobalIds may hold '$', which zip and file systems keep, but never '/'.</summary>
     static string Safe(string s) => s.Replace('/', '_').Replace('\\', '_');
+}
+
+/// <summary>The package's JSON contracts, generated at build time with the engine's options (web names, numbers read from strings, nulls left out).</summary>
+[System.Text.Json.Serialization.JsonSourceGenerationOptions(JsonSerializerDefaults.Web, NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString, DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+[System.Text.Json.Serialization.JsonSerializable(typeof(PackageManifest))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(JsonObject))]
+public partial class PackageJson : System.Text.Json.Serialization.JsonSerializerContext
+{
+    /// <summary>The manifest as people read it: indented.</summary>
+    public static PackageJson Indented { get; } = new(new JsonSerializerOptions(JsonSerializerDefaults.Web)
+    {
+        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        WriteIndented = true,
+    });
 }

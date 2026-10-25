@@ -80,7 +80,7 @@ public sealed class StructureModule : ILapinModule
                     ctx.Add(c);
                     Spatial.Contain(ctx, storey.Id, c.Id);
                     ctx.Relate(IfcClass.RelDefinesByType, type.Id, c.Id);
-                    ids.Add(c.Id);
+                    ids.Add((JsonNode)c.Id);
                 }
             if (ids.Count == 0) throw new CommandException("No grid crossing without a column on this storey.");
             return new JsonObject { ["ids"] = ids };

@@ -127,9 +127,7 @@ public static class Standards
             List("layerGroups").Where(g => g["id"] is JsonValue).Select(g => new LayerGroup(Str(g["id"], ""), Str(g["name"], "Group"), g["visible"] is not JsonValue gv || !gv.TryGetValue<bool>(out var b) || b, True(g["locked"]))).Where(g => g.Id.Length > 0).ToList());
     }
 
-    static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
-
-    public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, Web)!;
+    public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, DrawingJson.Default.StyleBook)!;
 
     // ------------------------------------------------------------ resolving
 
@@ -138,9 +136,9 @@ public static class Standards
     public static AxisStyle AxisOf(StyleBook b, string? id) => b.AxisStyles.FirstOrDefault(s => s.Id == id) ?? b.AxisStyles.FirstOrDefault(s => s.Id == Standard) ?? DefaultAxis;
 
     /// <summary>A record with the overrides in <paramref name="p"/> (<c>o.field</c>) applied, each only when its type fits.</summary>
-    static T Overridden<T>(T style, JsonObject p, string[] fields) where T : class
+    static T Overridden<T>(T style, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> info, JsonObject p, string[] fields) where T : class
     {
-        var o = (JsonObject)JsonSerializer.SerializeToNode(style, Web)!;
+        var o = (JsonObject)JsonSerializer.SerializeToNode(style, info)!;
         foreach (var f in fields)
         {
             if (p["o." + f] is not JsonValue v) continue;
@@ -151,7 +149,7 @@ public static class Standards
                 || v.GetValueKind() == JsonValueKind.String;
             if (fits) o[f] = v.DeepClone();
         }
-        return JsonSerializer.Deserialize<T>(o, Web)!;
+        return o.Deserialize(info)!;
     }
 
     /// <summary>The text style an annotation is drawn with: its own (or its axis or dimension style's), then its overrides.</summary>
@@ -160,14 +158,14 @@ public static class Standards
         var baseStyle = p["textStyle"] is JsonValue t ? TextOf(b, (string?)t)
             : p["axisStyle"] is JsonValue a ? TextOf(b, AxisOf(b, (string?)a).TextStyle)
             : TextOf(b, DimOf(b, (string?)p["dimStyle"]).TextStyle);
-        return Overridden(baseStyle, p, TextOverrides);
+        return Overridden(baseStyle, DrawingJson.Default.TextStyle, p, TextOverrides);
     }
 
-    public static DimStyle ResolveDim(StyleBook b, JsonObject p) => Overridden(DimOf(b, (string?)p["dimStyle"]), p, DimOverrides);
+    public static DimStyle ResolveDim(StyleBook b, JsonObject p) => Overridden(DimOf(b, (string?)p["dimStyle"]), DrawingJson.Default.DimStyle, p, DimOverrides);
 
     public static AxisStyle ResolveAxis(StyleBook b, JsonObject p)
     {
-        var s = Overridden(AxisOf(b, (string?)p["axisStyle"]), p, AxisOverrides);
+        var s = Overridden(AxisOf(b, (string?)p["axisStyle"]), DrawingJson.Default.AxisStyle, p, AxisOverrides);
         return p["o.lineColor"] is JsonValue c && c.TryGetValue<string>(out var color) ? s with { Color = color } : s;
     }
 
@@ -210,3 +208,11 @@ public static class Standards
     public static bool LayerLocked(DraftLayer layer, IEnumerable<LayerGroup> groups) =>
         layer.Locked || (layer.Group != null && groups.FirstOrDefault(g => g.Id == layer.Group)?.Locked == true);
 }
+
+/// <summary>The drafting standards' JSON contracts, generated at build time (web names, nulls left out), so a trimmed engine writes them as the desktop does.</summary>
+[System.Text.Json.Serialization.JsonSourceGenerationOptions(JsonSerializerDefaults.Web, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[System.Text.Json.Serialization.JsonSerializable(typeof(StyleBook))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(TextStyle))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(DimStyle))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(AxisStyle))]
+public partial class DrawingJson : System.Text.Json.Serialization.JsonSerializerContext;

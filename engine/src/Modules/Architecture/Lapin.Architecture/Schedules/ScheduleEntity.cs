@@ -236,7 +236,7 @@ public sealed class ScheduleEntity : ISheetContent
             var id = ctx.NewId()[..8];
             var attrs = s.CloneAttrs();
             var custom = attrs["customRows"] as JsonArray ?? new JsonArray();
-            custom.Add(new JsonObject { ["id"] = id, ["label"] = label });
+            custom.Add((JsonNode)new JsonObject { ["id"] = id, ["label"] = label });
             attrs["customRows"] = custom;
             attrs["rows"] = new JsonArray([.. (t.Rows ?? DefaultRows(s, t)).Append("custom:" + id).Select(x => (JsonNode)x)]);
             ctx.Replace(s.With(attrs: attrs));

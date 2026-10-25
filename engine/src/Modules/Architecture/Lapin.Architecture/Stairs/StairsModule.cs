@@ -40,8 +40,8 @@ public static class StairsModule
             ["spec"] = StairSpec.Default().ToJson(),
             ["rules"] = new JsonObject
             {
-                ["residential"] = JsonSerializer.SerializeToNode(StairRules.Residential, web),
-                ["public"] = JsonSerializer.SerializeToNode(StairRules.Public, web),
+                ["residential"] = JsonSerializer.SerializeToNode(StairRules.Residential, ArchitectureCatalogJson.Default.StairRules),
+                ["public"] = JsonSerializer.SerializeToNode(StairRules.Public, ArchitectureCatalogJson.Default.StairRules),
             },
             ["shapes"] = new JsonArray(StairSpec.Shapes.Select(x => (JsonNode)x).ToArray()),
             ["turns"] = new JsonArray(StairSpec.Turns.Select(x => (JsonNode)x).ToArray()),
@@ -192,21 +192,21 @@ public static class StairsModule
     {
         static JsonArray Pts(IEnumerable<Vec2> pts) => new(pts.SelectMany(p => new JsonNode[] { Math.Round(p.X, 4), Math.Round(p.Y, 4) }).ToArray());
         var outlines = new JsonArray();
-        foreach (var fl in r.Flights) outlines.Add(new JsonObject { ["kind"] = "flight", ["points"] = Pts(r.FlightOutline(fl).Select(p => place.World(p))), ["risers"] = fl.Risers });
-        foreach (var ld in r.Landings) outlines.Add(new JsonObject { ["kind"] = "landing", ["points"] = Pts(ld.Outline.Select(p => place.World(p))) });
-        foreach (var wd in r.Winders) outlines.Add(new JsonObject { ["kind"] = "winder", ["points"] = Pts(wd.Outline.Select(p => place.World(p))) });
+        foreach (var fl in r.Flights) outlines.Add((JsonNode)new JsonObject { ["kind"] = "flight", ["points"] = Pts(r.FlightOutline(fl).Select(p => place.World(p))), ["risers"] = fl.Risers });
+        foreach (var ld in r.Landings) outlines.Add((JsonNode)new JsonObject { ["kind"] = "landing", ["points"] = Pts(ld.Outline.Select(p => place.World(p))) });
+        foreach (var wd in r.Winders) outlines.Add((JsonNode)new JsonObject { ["kind"] = "winder", ["points"] = Pts(wd.Outline.Select(p => place.World(p))) });
         var risers = new JsonArray();
         foreach (var fl in r.Flights)
             for (var i = 1; i <= fl.Risers; i++)
             {
                 var l = fl.Left * (r.Width / 2);
                 var u = (i - 1) * r.Tread;
-                risers.Add(Pts([place.World(fl.Start + fl.Dir * u - l), place.World(fl.Start + fl.Dir * u + l)]));
+                risers.Add((JsonNode)Pts([place.World(fl.Start + fl.Dir * u - l), place.World(fl.Start + fl.Dir * u + l)]));
             }
         // The first flight's profile (u along, z up), finished surfaces.
         var profile = new JsonArray();
         var f0 = r.Flights[0];
-        for (var i = 1; i <= f0.Risers; i++) { profile.Add((i - 1) * r.Tread); profile.Add(i * r.RiserHeight); if (i < f0.Risers) { profile.Add(i * r.Tread); profile.Add(i * r.RiserHeight); } }
+        for (var i = 1; i <= f0.Risers; i++) { profile.Add((JsonNode)((i - 1) * r.Tread)); profile.Add((JsonNode)(i * r.RiserHeight)); if (i < f0.Risers) { profile.Add((JsonNode)(i * r.Tread)); profile.Add((JsonNode)(i * r.RiserHeight)); } }
         var checks = new JsonArray(r.Checks.Select(c => (JsonNode)new JsonObject { ["key"] = c.Key, ["label"] = c.Label, ["value"] = c.Value, ["min"] = c.Min, ["max"] = c.Max, ["ok"] = c.Ok }).ToArray());
         var top = place.World(r.Top.At);
         return new JsonObject

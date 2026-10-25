@@ -132,7 +132,7 @@ public static class DraftCommands
                 {
                     var n = new Entity(ctx.NewId(), e.Class, e.Name, attrs, e.PredefinedType);
                     ctx.Add(n);
-                    made.Add(n.Id);
+                    made.Add((JsonNode)n.Id);
                 }
                 else ctx.Replace(e.With(attrs: attrs));
             }
@@ -163,7 +163,7 @@ public static class DraftCommands
             {
                 var n = Drafts.Add(ctx, e.Str("viewId")!, e.Str("layer"), p);
                 if (e.Str("color") is { } c) { var at = n.CloneAttrs(); at["color"] = c; ctx.Replace(n.With(attrs: at)); }
-                ids.Add(n.Id);
+                ids.Add((JsonNode)n.Id);
             }
             return new JsonObject { ["ids"] = ids };
         });

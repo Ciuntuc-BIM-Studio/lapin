@@ -207,7 +207,7 @@ public static class DraftingResources
                 foreach (var (k, v) in entry) merged[k] = v?.DeepClone();
                 list[at.i] = merged;
             }
-            else list.Add(entry);
+            else list.Add((JsonNode)entry);
             raw[key] = list;
             if ((string?)a["kind"] == "axis" && a["default"] is JsonValue dv && dv.TryGetValue<bool>(out var isDefault) && isDefault) raw["defaultAxisStyle"] = id;
             Write(ctx, raw);

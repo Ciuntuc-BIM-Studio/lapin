@@ -38,11 +38,11 @@ public sealed record LintelRule(
     /// <summary>A precast product's height, else the rule's.</summary>
     public double LintelHeight => Mode == "precast" && Product != null ? Product.Height : Height;
 
-    public JsonObject ToJson() => (JsonObject)JsonSerializer.SerializeToNode(this, Json.Options)!;
+    public JsonObject ToJson() => (JsonObject)JsonSerializer.SerializeToNode(this, ArchitectureJson.Default.LintelRule)!;
 
     public static LintelRule? From(JsonNode? node)
     {
-        try { return node?.Deserialize<LintelRule>(Json.Options); }
+        try { return node?.Deserialize(ArchitectureJson.Default.LintelRule); }
         catch (JsonException) { return null; }
     }
 }

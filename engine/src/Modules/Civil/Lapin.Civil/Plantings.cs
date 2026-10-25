@@ -49,7 +49,7 @@ public static class Plantings
     }
 
     public static JsonArray SpeciesJson(IEnumerable<Species> species) =>
-        new(species.Select(s => (JsonNode)JsonSerializer.SerializeToNode(s, new JsonSerializerOptions(JsonSerializerDefaults.Web))!).ToArray());
+        new(species.Select(s => (JsonNode)JsonSerializer.SerializeToNode(s, CivilJson.Default.Species)!).ToArray());
 
     public static bool IsZone(Entity e) => e.Attrs["contour"] is JsonArray;
 

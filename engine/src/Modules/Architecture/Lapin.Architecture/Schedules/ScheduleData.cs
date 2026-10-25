@@ -105,7 +105,7 @@ public static class Schedules
                 var steel = !precast && rule?.Reinforcement is { } r ? Steel(r, width, height, length) : 0;
                 var fits = !(precast && rule?.Product is { } pr && !pr.Lengths.Any(l => l >= length - 1e-6));
                 var info = new LintelInfo(precast, product, width, height, length, Math.Round(steel, 2), fits, Measure.Volume(part.Solid), []);
-                var group = System.Text.Json.JsonSerializer.Serialize(new object?[] { precast, product, Mm(width), Mm(height), Mm(length), Math.Round(steel * 10) });
+                var group = new System.Text.Json.Nodes.JsonArray(precast, product, Mm(width), Mm(height), Mm(length), Math.Round(steel * 10)).ToJsonString();
                 pieces.Add((group, info, levelOf(wall.Id), wall.Id, fills));
             }
         }

@@ -107,7 +107,7 @@ public static class GraphicsSets
             var sets = Sets(Spatial.Project(ctx.Model)).DeepClone().AsArray();
             if (sets.OfType<JsonObject>().Any(s => (string?)s["name"] == name)) throw new CommandException($"There is a set „{name}” already.");
             var id = ctx.NewId();
-            sets.Add(new JsonObject { ["id"] = id, ["name"] = name, ["graphics"] = Of(ctx.Model, v)?.DeepClone() ?? new JsonObject() });
+            sets.Add((JsonNode)new JsonObject { ["id"] = id, ["name"] = name, ["graphics"] = Of(ctx.Model, v)?.DeepClone() ?? new JsonObject() });
             WriteSets(ctx, sets);
             var attrs = v.CloneAttrs();
             attrs["graphicsSet"] = id;
