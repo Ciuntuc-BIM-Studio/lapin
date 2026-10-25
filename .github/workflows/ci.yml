@@ -52,10 +52,19 @@ jobs:
     if: needs.vendor.outputs.available == 'true'
     runs-on: ubuntu-latest
     steps:
+      # lapin-pro with the workflow's own token; then the private submodule
+      # vendor/bubblebim-pro, at the commit lapin-pro records, with VENDOR_TOKEN,
+      # which needs read access to that one repository only.
+      - uses: actions/checkout@v4
+      - id: vendor
+        run: echo "sha=$(git ls-tree HEAD vendor/bubblebim-pro | awk '{print $3}')" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         with:
-          submodules: true
+          repository: ionuting/BubbleBIM-Pro
+          ref: ${{ steps.vendor.outputs.sha }}
           token: ${{ secrets.VENDOR_TOKEN }}
+          path: vendor/bubblebim-pro
+          persist-credentials: false
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
