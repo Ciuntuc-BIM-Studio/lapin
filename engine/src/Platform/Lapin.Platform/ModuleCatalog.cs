@@ -68,9 +68,21 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
         return CutOrder.Of(model) is { } table && Json.Number(table[ifcClass]) is { } own ? (int)own : c.Priority;
     }
 
-    /// <summary>An entity's cut priority: its own <c>cutPriority</c>, else its class's in this project; null when its class takes no part.</summary>
-    public int? PriorityOf(Entity e, IModelView model) =>
-        ClassPriority(e.Class, model) is { } cls ? (int)(e.NumOrNull("cutPriority") ?? cls) : null;
+    /// <summary>
+    /// An entity's cut priority: its own <c>cutPriority</c>, else the class it
+    /// is written as (a Studio solid exported as a slab ranks as slabs do), else
+    /// its class's, in this project; null when its class takes no part.
+    /// </summary>
+    public int? PriorityOf(Entity e, IModelView model)
+    {
+        if (ClassPriority(e.Class, model) is not { } own) return null;
+        var asClass = e.Str("exportAs") is { } x ? ClassPriority(x, model) : null;
+        return (int)(e.NumOrNull("cutPriority") ?? asClass ?? own);
+    }
+
+    /// <summary>An element ranked over a priority by its own priority or the class it is written as.</summary>
+    bool Raised(Entity e, IModelView model, int mine) =>
+        e.NumOrNull("cutPriority") > mine || (e.Str("exportAs") is { } x && ClassPriority(x, model) > mine);
 
     public IReadOnlyList<Solid> For(Entity target, IModelView model, (Vec3 Min, Vec3 Max) bounds)
     {
@@ -82,8 +94,8 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
             // A class ranked under the target's: only its elements raised over the target by their own priority
             // (read under a narrow key, so a wall does not rebuild on every edit of every other wall).
             IEnumerable<Entity> candidates = classPriority > mine ? model.OfClass(cls)
-                : model is TrackingView tv ? tv.OfClassUnder(cls, TrackingView.CutKey(cls)).Where(e => e.NumOrNull("cutPriority") > mine).Select(e => model.Get(e.Id)!)
-                : model.OfClass(cls).Where(e => e.NumOrNull("cutPriority") > mine);
+                : model is TrackingView tv ? tv.OfClassUnder(cls, TrackingView.CutKey(cls)).Where(e => Raised(e, model, mine)).Select(e => model.Get(e.Id)!)
+                : model.OfClass(cls).Where(e => Raised(e, model, mine));
             foreach (var e in candidates)
             {
                 if (e.Id == target.Id || PriorityOf(e, model) is not { } theirs || theirs <= mine) continue;

@@ -22,6 +22,29 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
     public static readonly string[] Classes =
         [IfcClass.BuildingElementProxy, "IfcMember", "IfcPlate", "IfcCovering", "IfcRailing", "IfcStair", "IfcRamp", "IfcChimney", "IfcFurnishingElement"];
 
+    /// <summary>A Studio solid's type (shared by the solids that take it); exported as the type of the solid's IFC class (IfcMemberType, IfcSlabType…).</summary>
+    public const string TypeClass = "LapinSolidType";
+
+    /// <summary>What a Studio solid can be, as the inspector offers it: its IFC class (written as itself, or as a proxy that exports as it) and that class's predefined types (IFC4).</summary>
+    public static readonly (string Class, string Label, string[] Predefined)[] Offered =
+    [
+        (IfcClass.BuildingElementProxy, "Proxy (generic)", ["COMPLEX", "ELEMENT", "PARTIAL", "PROVISIONFORVOID", "PROVISIONFORSPACE"]),
+        ("IfcMember", "Member", ["BRACE", "CHORD", "COLLAR", "MEMBER", "MULLION", "PLATE", "POST", "PURLIN", "RAFTER", "STRINGER", "STRUT", "STUD"]),
+        ("IfcPlate", "Plate", ["CURTAIN_PANEL", "SHEET"]),
+        ("IfcCovering", "Covering", ["CEILING", "FLOORING", "CLADDING", "ROOFING", "MOLDING", "SKIRTINGBOARD", "INSULATION", "MEMBRANE", "SLEEVING", "WRAPPING"]),
+        ("IfcRailing", "Railing", ["HANDRAIL", "GUARDRAIL", "BALUSTRADE"]),
+        ("IfcStair", "Stair", ["STRAIGHT_RUN_STAIR", "TWO_STRAIGHT_RUN_STAIR", "QUARTER_WINDING_STAIR", "QUARTER_TURN_STAIR", "HALF_WINDING_STAIR", "HALF_TURN_STAIR", "SPIRAL_STAIR", "CURVED_RUN_STAIR"]),
+        ("IfcRamp", "Ramp", ["STRAIGHT_RUN_RAMP", "TWO_STRAIGHT_RUN_RAMP", "QUARTER_TURN_RAMP", "TWO_QUARTER_TURN_RAMP", "HALF_TURN_RAMP", "SPIRAL_RAMP"]),
+        ("IfcChimney", "Chimney", []),
+        ("IfcFurnishingElement", "Furniture", []),
+        (IfcClass.Wall, "Wall", ["MOVABLE", "PARAPET", "PARTITIONING", "PLUMBINGWALL", "SHEAR", "SOLIDWALL", "STANDARD", "POLYGONAL", "ELEMENTEDWALL"]),
+        (IfcClass.Slab, "Slab", ["FLOOR", "ROOF", "LANDING", "BASESLAB", "PAVING"]),
+        (IfcClass.Column, "Column", ["COLUMN", "PILASTER"]),
+        (IfcClass.Beam, "Beam", ["BEAM", "JOIST", "HOLLOWCORE", "LINTEL", "SPANDREL", "T_BEAM"]),
+        (IfcClass.Roof, "Roof", ["FLAT_ROOF", "SHED_ROOF", "GABLE_ROOF", "HIP_ROOF", "MANSARD_ROOF", "DOME_ROOF", "FREEFORM"]),
+        (IfcClass.Footing, "Footing", ["CAISSON_FOUNDATION", "FOOTING_BEAM", "PAD_FOOTING", "PILE_CAP", "STRIP_FOOTING"]),
+    ];
+
     /// <summary>The words EXTRUDE takes for a class, as in the old Lapin.</summary>
     public static readonly Dictionary<string, string> Words = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -52,6 +75,7 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
             // Studio solids give way to the building's elements; furniture to everything.
             r.Cutter(cls, cls == "IfcFurnishingElement" ? 10 : 40, (e, m) => Geometry(e, m, null)?.Parts is [{ } only] ? only.Solid : null);
         }
+        r.Class(new(TypeClass, "Solid type", [new("description", "Description", "text")], "#b9b2a6", Kind: "type"));
         r.Service<IGeometryFilter>(this);
         r.Service<IElementPlacement>(new StudioPlacement());
 
@@ -59,21 +83,57 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         r.Command("sweep", "Sweep", (ctx, a) => Create(ctx, a, "sweep"));
         r.Command("revolve", "Revolve", (ctx, a) => Create(ctx, a, "revolve"));
 
-        // A solid's class changed: written again under the new one, same id, same sketch.
+        // A solid's class (and its predefined type) changed: written again under the new class, same id, same sketch, same type and booleans.
         r.Command("setClass", "Change class", (ctx, a) =>
         {
-            var e = Solid(ctx.Model, (string?)a["id"]);
-            var (cls, exportAs) = ClassOf((string?)a["class"]);
-            var attrs = e.CloneAttrs();
-            if (exportAs != null) attrs["exportAs"] = exportAs; else attrs.Remove("exportAs");
-            var storey = Spatial.StoreyOf(ctx.Model, e.Id)?.Id;
-            var rels = ctx.Model.Relations.Where(x => x.Touches(e.Id) && x.Class == IfcClass.RelInterferesElements).ToList();
-            ctx.Remove(e.Id);
-            ctx.Add(new Entity(e.Id, cls, e.Name, attrs, e.PredefinedType));
-            if (storey != null) Spatial.Contain(ctx, storey, e.Id);
-            foreach (var x in rels) if (ctx.Model.Get(x.Relating) != null && x.Related.All(id => ctx.Model.Get(id) != null)) ctx.AddRelation(x with { Id = ctx.NewId() });
+            foreach (var id in a["ids"] is JsonArray ? Args.Ids(a) : [(string?)a["id"] ?? ""])
+            {
+                var e = Solid(ctx.Model, id);
+                var (cls, exportAs) = a.ContainsKey("class") ? ClassOf((string?)a["class"]) : (e.Class, e.Str("exportAs"));
+                var attrs = e.CloneAttrs();
+                if (exportAs != null) attrs["exportAs"] = exportAs; else attrs.Remove("exportAs");
+                // A new class drops a predefined type it does not have, unless one is given.
+                var pre = a.ContainsKey("predefinedType") ? ((string?)a["predefinedType"])?.Trim().ToUpperInvariant() is { Length: > 0 } p ? p : null
+                    : (exportAs ?? cls) == (e.Str("exportAs") ?? e.Class) ? e.PredefinedType : null;
+                if (pre != null && !System.Text.RegularExpressions.Regex.IsMatch(pre, "^[A-Z0-9_]+$")) throw new CommandException($"„{pre}” is not a predefined type (capitals, digits and _).");
+                var storey = Spatial.StoreyOf(ctx.Model, e.Id)?.Id;
+                var keep = ctx.Model.Relations.Where(x => x.Touches(e.Id) && x.Class is IfcClass.RelInterferesElements or IfcClass.RelDefinesByType).ToList();
+                ctx.Remove(e.Id);
+                ctx.Add(new Entity(e.Id, cls, e.Name, attrs, pre));
+                if (storey != null) Spatial.Contain(ctx, storey, e.Id);
+                foreach (var x in keep)
+                {
+                    if (x.Class == IfcClass.RelDefinesByType) { if (ctx.Model.Get(x.Relating) != null) ctx.Relate(IfcClass.RelDefinesByType, x.Relating, e.Id); continue; }
+                    if (ctx.Model.Get(x.Relating) != null && x.Related.All(r2 => ctx.Model.Get(r2) != null)) ctx.AddRelation(x with { Id = ctx.NewId() });
+                }
+            }
             return null;
         });
+
+        // Solids given a type (an existing one, or a new one by name), or none.
+        r.Command("setType", "Solid type", (ctx, a) =>
+        {
+            var ids = Args.Ids(a);
+            Entity? type = null;
+            if ((string?)a["typeId"] is { } tid) type = Spatial.Require(ctx.Model, tid, TypeClass);
+            else if (((string?)a["name"])?.Trim() is { Length: > 0 } name)
+            {
+                type = ctx.Model.OfClass(TypeClass).FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase));
+                if (type == null) { type = new Entity(ctx.NewId(), TypeClass, name, new JsonObject()); ctx.Add(type); }
+            }
+            foreach (var id in ids)
+            {
+                Solid(ctx.Model, id);
+                ctx.Unrelate(IfcClass.RelDefinesByType, id);
+                if (type != null) ctx.Relate(IfcClass.RelDefinesByType, type.Id, id);
+            }
+            return type == null ? null : new JsonObject { ["id"] = type.Id };
+        });
+
+        r.Query("studio.classes", (_, _) => new JsonArray(Offered.Select(o => (JsonNode)new JsonObject
+        {
+            ["class"] = o.Class, ["label"] = o.Label, ["predefined"] = new JsonArray(o.Predefined.Select(p => (JsonNode)p).ToArray()),
+        }).ToArray()));
 
         // ------------------------------------------------------------ booleans
 
@@ -264,14 +324,64 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         return new ElementGeometry(parts, plan, plan.SelectMany(p => p.Points).ToList(), problems.Count > 0 ? problems : null);
     }
 
+    /// <summary>
+    /// A solid measured as the class it is written as: always its volume and
+    /// surface; a member, beam or column its length (along its path, or its
+    /// depth) and section; a slab, plate or covering its area and thickness;
+    /// a wall its length, height and width; a railing its length.
+    /// </summary>
     static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)
     {
         if (g == null || g.Parts.Count == 0) yield break;
-        yield return new QuantitySet($"Qto_{(e.Class.StartsWith("Ifc") ? e.Class[3..] : e.Class)}BaseQuantities",
-        [
-            new("NetVolume", g.Parts.Sum(p => Measure.Volume(p.Solid)), "VOLUME", "Net volume"),
-            new("OuterSurfaceArea", g.Parts.Sum(p => Measure.SurfaceArea(p.Solid)), "AREA", "Surface area"),
-        ]);
+        var cls = e.Str("exportAs") ?? e.Class;
+        var volume = g.Parts.Sum(p => Measure.Volume(p.Solid));
+        var list = new List<Quantity>
+        {
+            new("NetVolume", volume, "VOLUME", "Net volume"),
+            new("GrossSurfaceArea", g.Parts.Sum(p => Measure.SurfaceArea(p.Solid)), "AREA", "Surface area"),
+        };
+        var (section, along, width, height) = Measure2(e, m);
+        switch (cls)
+        {
+            case "IfcMember" or IfcClass.Beam or IfcClass.Column or IfcClass.Footing:
+                if (along > 0) list.Add(new("Length", along, "LENGTH", "Length"));
+                if (section > 0) list.Add(new("CrossSectionArea", section, "AREA", "Section area"));
+                break;
+            case IfcClass.Slab or "IfcPlate" or "IfcCovering" or IfcClass.Roof:
+            {
+                var thick = e.Str("operation") == "extrude" ? Math.Abs(e.Num("depth")) : height;
+                if (thick > 0) list.Add(new("Width", thick, "LENGTH", "Thickness"));
+                if (thick > 0) list.Add(new("NetArea", volume / thick, "AREA", "Area"));
+                break;
+            }
+            case IfcClass.Wall:
+                if (along > 0) list.Add(new("Length", along, "LENGTH", "Length"));
+                if (height > 0) list.Add(new("Height", height, "LENGTH", "Height"));
+                if (width > 0) list.Add(new("Width", width, "LENGTH", "Width"));
+                break;
+            case "IfcRailing":
+                if (along > 0) list.Add(new("Length", along, "LENGTH", "Length"));
+                break;
+        }
+        yield return new QuantitySet($"Qto_{(cls.StartsWith("Ifc") ? cls[3..] : cls)}BaseQuantities", list);
+    }
+
+    /// <summary>A solid's section area, its run (path length, or extrusion depth), and its profile's width and height.</summary>
+    static (double Section, double Along, double Width, double Height) Measure2(Entity e, IModelView m)
+    {
+        var profile = m.Get(e.Str("profile") ?? "");
+        var outer = Sketches.Loop(profile != null ? Drafts.ShapeOf(profile) : null);
+        if (outer == null) return (0, 0, 0, 0);
+        var holes = Sketches.Holes(m, profile!, ProfileIds(m));
+        var section = Math.Abs(Polygon2.SignedArea(outer)) - holes.Sum(h => Math.Abs(Polygon2.SignedArea(h.Loop)));
+        var (w, h) = (outer.Max(p => p.X) - outer.Min(p => p.X), outer.Max(p => p.Y) - outer.Min(p => p.Y));
+        var along = e.Str("operation") switch
+        {
+            "extrude" => Math.Abs(e.Num("depth")),
+            "sweep" when m.Get(e.Str("guide") ?? "") is { } gd && Drafts.ShapeOf(gd) is { } gs => Geo.Polylines(gs, Math.PI / 24)[0] is var pl ? pl.Zip(pl.Skip(1), (p, q) => (q - p).Length).Sum() : 0,
+            _ => 0,
+        };
+        return (section, along, w, h);
     }
 
     // ------------------------------------------------------------ live booleans

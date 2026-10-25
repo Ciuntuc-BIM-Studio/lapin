@@ -256,7 +256,7 @@ public sealed class Session
             if (c.After != null) touched.Add(TrackingView.ClassKey(c.After.Class));
             // An element's own cut priority: what lower classes it may now cut (or no longer cuts).
             var (was, now) = (c.Before?.NumOrNull("cutPriority"), c.After?.NumOrNull("cutPriority"));
-            if (was != now)
+            if (was != now || c.Before?.Str("exportAs") != c.After?.Str("exportAs"))
             {
                 if (c.Before != null) touched.Add(TrackingView.CutKey(c.Before.Class));
                 if (c.After != null) touched.Add(TrackingView.CutKey(c.After.Class));
