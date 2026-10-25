@@ -18,9 +18,9 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
     public string Id => "studio";
     public string Name => "Studio";
 
-    /// <summary>The classes a Studio solid can be (those no other module builds); others are written as a proxy with <c>exportAs</c>.</summary>
+    /// <summary>The classes a Studio solid can be (those no other module builds); others, the stair among them since architecture builds stairs, are written as a proxy with <c>exportAs</c>.</summary>
     public static readonly string[] Classes =
-        [IfcClass.BuildingElementProxy, "IfcMember", "IfcPlate", "IfcCovering", "IfcRailing", "IfcStair", "IfcRamp", "IfcChimney", "IfcFurnishingElement"];
+        [IfcClass.BuildingElementProxy, "IfcMember", "IfcPlate", "IfcCovering", "IfcRailing", "IfcRamp", "IfcChimney", "IfcFurnishingElement"];
 
     /// <summary>A Studio solid's type (shared by the solids that take it); exported as the type of the solid's IFC class (IfcMemberType, IfcSlabType…).</summary>
     public const string TypeClass = "LapinSolidType";

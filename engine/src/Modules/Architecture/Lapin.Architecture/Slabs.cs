@@ -130,7 +130,7 @@ public static class Slabs
     /// <summary>The prism an opening takes out of its floor, through the whole build-up and a little proud of it: what IFC writes as the opening's body.</summary>
     public static Solid? OpeningSolid(IModelView m, Entity slab, Entity opening)
     {
-        var contour = Contour(opening);
+        var contour = HoleContour(m, opening);
         var section = Section(m, slab);
         if (contour.Count < 3 || section.Count == 0) return null;
         var top = Top(m, slab);
@@ -141,7 +141,11 @@ public static class Slabs
     /// <summary>The openings that void a floor (shafts, stairwells): each an IfcOpeningElement with its contour in plan.</summary>
     public static IEnumerable<(Entity Opening, IReadOnlyList<Vec2> Contour)> Holes(IModelView m, string slabId) =>
         m.RelatedOf(slabId, IfcClass.RelVoidsElement).Where(o => o.Class == IfcClass.OpeningElement)
-            .Select(o => (o, Contour(o))).Where(h => h.Item2.Count >= 3);
+            .Select(o => (o, HoleContour(m, o))).Where(h => h.Item2.Count >= 3);
+
+    /// <summary>An opening's outline: its own, or, for the opening a stair asked for, the stair's as it is now.</summary>
+    public static IReadOnlyList<Vec2> HoleContour(IModelView m, Entity opening) =>
+        opening.Str("stairId") is { } stairId && m.Get(stairId) is { Class: IfcClass.Stair } stair ? Stairs.StairBuilder.OpeningContour(m, stair) ?? [] : Contour(opening);
 
     public static Entity AddOpening(IEdit edit, Entity slab, IReadOnlyList<Vec2> contour)
     {

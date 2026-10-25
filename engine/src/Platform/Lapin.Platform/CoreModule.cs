@@ -209,6 +209,8 @@ public sealed class CoreModule : ILapinModule
                 // A type in use stays: the elements built with it would be left without one.
                 if (ctx.Describe(e.Class)?.Kind == "type" && ctx.Model.RelatedOf(e.Id, IfcClass.RelDefinesByType).Where(x => !ids.Contains(x.Id)).Count() is var n and > 0)
                     throw new CommandException($"„{e.Name}” is used by {n} element(s): give them another type first.");
+                // A module may take its own element down with what hangs on it (a stair with the opening it asked of the floor above).
+                if (ctx.Services.All<IDeletion>().Any(d => d.Delete(ctx, id))) continue;
                 ctx.Remove(id);
             }
             return null;

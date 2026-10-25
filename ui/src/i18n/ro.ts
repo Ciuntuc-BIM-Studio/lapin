@@ -113,6 +113,16 @@ export const RO: Record<string, string> = {
   'Nothing is selected in this view.': 'Nimic nu e selectat în această vedere.', 'No zoom before this one.': 'Nu e niciun zoom înaintea acestuia.',
   'Zoom: first corner [Extents/Selection/Previous/Actual size]': 'Zoom: primul colț [Extents/Selection/Previous/Actual size]', 'Other corner': 'Celălalt colț',
   'Zoom window': 'Zoom fereastră', 'Zoom everything': 'Zoom tot', 'Zoom to the selection': 'Zoom pe selecție', 'Zoom before': 'Zoomul dinainte', 'Paper size': 'Mărimea de pe hârtie', 'Zoom in': 'Apropie', 'Zoom out': 'Depărtează',
+  // Stairs
+  'Stair types': 'Tipuri de scări', 'Stair type': 'Tip de scară', 'New stair type': 'Tip de scară nou', 'Rules': 'Reguli', 'Construction': 'Construcție', 'Straight': 'Dreaptă',
+  'Straight with landing': 'Dreaptă cu podest', 'L shape': 'În L', 'U shape': 'În U', 'Turn made as': 'Întoarcerea', 'landing': 'podest', 'winders': 'trepte balansate',
+  'Winders per quarter turn': 'Trepte balansate pe sfert de tură', 'Gap between flights': 'Ochiul scării', 'Landing length': 'Lungimea podestului', 'as the width': 'cât lățimea', 'Rule set': 'Setul de reguli', 'residential': 'locuință',
+  'public': 'public', 'Riser': 'Contratreaptă', 'Tread': 'Treaptă', 'Step rule 2h + b': 'Pasul 2h + b', 'Minimum width': 'Lățimea minimă', 'Risers in a flight': 'Trepte pe o rampă',
+  'Headroom': 'Înălțimea liberă', 'Waist': 'Placa rampei', 'Landing slab': 'Placa podestului', 'Concrete': 'Beton', 'Tread finish': 'Finisajul treptei', 'Nosing': 'Nasul treptei',
+  'Railing': 'Balustradă', 'Bar': 'Mâna curentă', 'Post': 'Montant', 'Post spacing': 'Distanța între montanți', 'Preview at a height of': 'Previzualizare la înălțimea de', 'risers': 'contratrepte',
+  'flights': 'rampe', 'Foot of the stair: click the centre of the first riser': 'Piciorul scării: dă clic pe mijlocul primei contratrepte', 'Direction of the first flight': 'Direcția primei rampe', 'Which way does it turn? Click left or right of the flight': 'Încotro întoarce? Dă clic la stânga sau la dreapta rampei', 'Open a plan to place a stair.': 'Deschide un plan ca să plasezi o scară.', 'Turn': 'Întoarcere',
+  'Fixed': 'Fixat', 'free': 'liber', 'Opening in the floor above': 'Gol în placa de deasupra', 'Checks': 'Verificări', 'Stair types…': 'Tipuri de scări…', 'Run in plan': 'Lungimea în plan',
+  'climbs to': 'urcă până la', 'no storey above': 'niciun etaj deasupra',
 };
 
 /** Phrases with a number or a name in them. */

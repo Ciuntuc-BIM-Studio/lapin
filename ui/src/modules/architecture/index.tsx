@@ -2,12 +2,14 @@
 
 import { ArrowLeftRight, CornerDownRight, Layers3, Link2, Settings2, Slash } from 'lucide-react';
 import { AttachRoofIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RoofWindowIcon, RoomIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
-import type { Grip, LapinModule, RefLine, ToolDef } from '../../platform/module';
+import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, outlineRef, pt, toPairs } from '../../viewport/gripKit';
 import { fromPairs } from '../../viewport/contour';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
+import { registerCommand, startCommand, type Step } from '../../viewport/cad/session';
+import type { Shape } from '../../viewport/cad/shapes';
 import { typeOf } from '../../engine/model';
 import { activate } from '../../platform/modules';
 import { setJoinStyle, useWallPrefs } from './prefs';
@@ -18,6 +20,8 @@ import { JoinerySection } from './JoinerySection';
 import { SlabSection } from './SlabSection';
 import { SlabTypesDialog } from './SlabTypesDialog';
 import { RoofSection } from './RoofSection';
+import { StairSection, type StairNumbers } from './StairSection';
+import { StairTypesDialog } from './StairTypesDialog';
 
 const wall: ToolDef = {
   id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA',
@@ -147,6 +151,53 @@ const roofOpening = (kind: 'window' | 'dormer'): ToolDef => ({
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('architecture.addRoofOpening', { kind, x: p.x, y: p.y }); },
 });
+/**
+ * STAIR: the foot (the centre of the first riser), the direction of the first
+ * flight, and, for an L or a U, which way it turns; the type the configurator
+ * picked (else the project's first). The footprint the engine works out
+ * follows the cursor.
+ */
+function stairCommand(): Step {
+  const storeyId = useUi.getState().storeyId;
+  if (!storeyId) { notify('Open a plan to place a stair.'); return { prompt: '', want: 'none' }; }
+  const typeId = useUi.getState().stairTypeId ?? undefined;
+  const plans: Record<string, StairNumbers | null> = { left: null, right: null };
+  for (const turn of ['left', 'right']) void query<StairNumbers>('architecture.stairPlan', { storeyId, typeId, turn }).then((p) => { plans[turn] = p; });
+  const footprint = (turn: string, at: Vec2, dir: Vec2): Shape[] => {
+    const p = plans[turn] ?? plans.left;
+    if (!p) return [];
+    const px = (x: number, y: number): Vec2 => ({ x: at.x + dir.x * x - dir.y * y, y: at.y + dir.y * x + dir.x * y });
+    const shapes: Shape[] = p.outlines.map((o) => ({ type: 'polyline', pts: Array.from({ length: o.points.length / 2 }, (_, i) => px(o.points[2 * i], o.points[2 * i + 1])), closed: true }));
+    for (const l of p.risersLines) shapes.push({ type: 'line', a: px(l[0], l[1]), b: px(l[2], l[3]) });
+    return shapes;
+  };
+  const dirOf = (a: Vec2, c: Vec2): Vec2 => { const d = Math.hypot(c.x - a.x, c.y - a.y); return d < 1e-9 ? { x: 1, y: 0 } : { x: (c.x - a.x) / d, y: (c.y - a.y) / d }; };
+  const place = async (at: Vec2, dir: Vec2, turn: string) => {
+    await execute('architecture.addStair', { storeyId, ...(typeId ? { typeId } : {}), x: at.x, y: at.y, x2: at.x + dir.x, y2: at.y + dir.y, turn });
+    return null;
+  };
+  return {
+    prompt: 'Foot of the stair: click the centre of the first riser', want: 'point',
+    point: (a) => ({
+      prompt: 'Direction of the first flight', want: 'point', base: a,
+      preview: (c) => footprint('left', a, dirOf(a, c)),
+      point: (b) => {
+        const dir = dirOf(a, b);
+        const turns = (plans.left ?? plans.right)?.shape === 'l' || (plans.left ?? plans.right)?.shape === 'u';
+        if (!turns) return place(a, dir, 'left');
+        const side = (c: Vec2) => ((c.x - a.x) * dir.y - (c.y - a.y) * dir.x) > 0 ? 'right' : 'left';
+        return {
+          prompt: 'Which way does it turn? Click left or right of the flight', want: 'point', base: a,
+          preview: (c) => footprint(side(c), a, dir),
+          point: (c) => place(a, dir, side(c)),
+        };
+      },
+    }),
+  };
+}
+registerCommand({ names: ['STAIR', 'ST'], label: 'Stair', start: stairCommand });
+const stair: ToolDef = { id: 'architecture.stair', label: 'Stair', icon: StairIcon, shortcut: 'ST', run: () => void startCommand('STAIR') };
+const stairTypes: ToolDef = { id: 'architecture.stairTypes', label: 'Stair types', icon: Settings2, run: () => useUi.setState({ dialog: 'stairTypes' }) };
 const slabTypes: ToolDef = { id: 'architecture.slabTypes', label: 'Floor types', icon: Layers3, run: () => useUi.setState({ dialog: 'slabTypes' }) };
 
 const architecture: LapinModule = {
@@ -160,7 +211,7 @@ const architecture: LapinModule = {
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [{ id: 'architecture.room', label: 'Room', icon: RoomIcon, shortcut: 'RM' }] },
-      { label: 'Circulation', tools: [{ id: 'architecture.stair', label: 'Stair', icon: StairIcon }] },
+      { label: 'Circulation', tools: [stair, stairTypes] },
     ],
   }],
   hotbar: [wall, door, window_, slab, roof],
@@ -169,8 +220,9 @@ const architecture: LapinModule = {
     { id: 'joinery', label: 'Door or window', classes: ['IfcDoor', 'IfcWindow'], component: JoinerySection },
     { id: 'slab', label: 'Floor', classes: ['IfcSlab'], component: SlabSection },
     { id: 'roof', label: 'Roof', classes: ['IfcRoof'], component: RoofSection },
+    { id: 'stair', label: 'Stair', classes: ['IfcStair'], component: StairSection },
   ],
-  dialogs: { wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog },
+  dialogs: { wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog },
   grips: { IfcWall: wallGrips, IfcSlab: contourGrips('architecture.updateSlab'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: contourGrips('architecture.updateRoof', true) },
   references: { IfcWall: wallRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: contourRefs },
   similar: {

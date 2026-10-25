@@ -434,3 +434,12 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .param-add { display: flex; gap: 4px; margin-top: 8px; }
 .param-add input { flex: 1; min-width: 0; }
 .param-add select { width: 86px; }
+
+/* Stairs: the checks against the rules, the configurator's tabs and preview. */
+.stair-checks { list-style: none; margin: 4px 0; padding: 0; display: grid; grid-template-columns: auto auto 1fr; gap: 2px 10px; font-size: 12px; }
+.stair-checks li { display: contents; }
+.stair-checks li.bad > span:first-child, .stair-checks li.bad .num { color: var(--danger, #c0392b); font-weight: 600; }
+.stair-checks li.ok > span:first-child::before { content: '✓ '; color: var(--ok, #2f8f4e); }
+.stair-tabs { display: flex; gap: 4px; margin: 6px 0; }
+.stair-tabs .tab { padding: 2px 8px; }
+.stair-preview svg { background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; display: block; margin-bottom: 6px; }

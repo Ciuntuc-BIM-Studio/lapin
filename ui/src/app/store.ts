@@ -59,6 +59,8 @@ export interface UiState extends Pane {
   doorTypeId: string | null;
   windowTypeId: string | null;
   slabTypeId: string | null;
+  /** The stair type the stair tool places; null: the project's first. */
+  stairTypeId: string | null;
   /** The style a new roof takes (the catalogue's first when null). */
   roofStyle: string | null;
   dialog: Dialog;
@@ -73,7 +75,7 @@ export interface UiState extends Pane {
 
 const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, split: 'row', windowRole: 'main', planDrawing: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', keyPlan: true,
+  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, split: 'row', windowRole: 'main', planDrawing: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', keyPlan: true,
 }));
 
 // Setting the view in front sets the active pane too.

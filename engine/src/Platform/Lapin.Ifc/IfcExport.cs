@@ -76,6 +76,7 @@ public static class IfcExport
         ["IfcCovering"] = ["CEILING", "FLOORING", "CLADDING", "ROOFING", "MOLDING", "SKIRTINGBOARD", "INSULATION", "MEMBRANE", "SLEEVING", "WRAPPING"],
         ["IfcRailing"] = ["HANDRAIL", "GUARDRAIL", "BALUSTRADE"],
         ["IfcStair"] = ["STRAIGHT_RUN_STAIR", "TWO_STRAIGHT_RUN_STAIR", "QUARTER_WINDING_STAIR", "QUARTER_TURN_STAIR", "HALF_WINDING_STAIR", "HALF_TURN_STAIR", "TWO_QUARTER_WINDING_STAIR", "TWO_QUARTER_TURN_STAIR", "THREE_QUARTER_WINDING_STAIR", "THREE_QUARTER_TURN_STAIR", "SPIRAL_STAIR", "DOUBLE_RETURN_STAIR", "CURVED_RUN_STAIR", "TWO_CURVED_RUN_STAIR"],
+        [IfcClass.StairFlight] = ["STRAIGHT", "WINDER", "SPIRAL", "CURVED", "FREEFORM"],
         ["IfcRamp"] = ["STRAIGHT_RUN_RAMP", "TWO_STRAIGHT_RUN_RAMP", "QUARTER_TURN_RAMP", "TWO_QUARTER_TURN_RAMP", "HALF_TURN_RAMP", "SPIRAL_RAMP"],
         ["IfcChimney"] = [],
         ["IfcFurnishingElement"] = null,
@@ -327,7 +328,7 @@ public static class IfcExport
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
             // A door's frame and leaf, a column's body, a terrain: one element. Only a wall, a roof and a footing hold parts that are elements of their own.
-            var grouped = o.Grouped && kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
+            var grouped = o.Grouped && kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
             var place = Place(relTo, 0);
             var reps = new List<string>();
             if (!grouped) reps.Add(BodyOf(parts.Select(p => Brep(p.Solid, p.Color, z0))));
@@ -375,6 +376,7 @@ public static class IfcExport
                 IfcClass.Door => f.Add(up, [.. common, Opt(height), Opt(width), E(k.Predefined), E("NOTDEFINED"), Null]),
                 IfcClass.Window => f.Add(up, [.. common, Opt(height), Opt(width), E(k.Predefined), E("NOTDEFINED"), Null]),
                 "IfcElementAssembly" => f.Add(up, [.. common, Null, E(k.Predefined)]),
+                IfcClass.StairFlight => f.Add(up, [.. common, Null, Null, Null, Null, E(k.Predefined)]),
                 _ when k.Predefined.Length == 0 => f.Add(up, common),
                 _ => f.Add(up, [.. common, E(k.Predefined)]),
             };
@@ -509,6 +511,11 @@ public static class IfcExport
                 ("IfcCurtainWall", "mullion") => new("IfcMember", "MULLION", null),
                 ("IfcCurtainWall", "transom") => new("IfcMember", "USERDEFINED", "TRANSOM"),
                 ("IfcCurtainWall", "panel") => new("IfcPlate", "CURTAIN_PANEL", null),
+                (IfcClass.Stair, "flight") => new(IfcClass.StairFlight, "STRAIGHT", null),
+                (IfcClass.Stair, "winders") => new(IfcClass.StairFlight, "WINDER", null),
+                (IfcClass.Stair, "landing") => new(IfcClass.Slab, "LANDING", null),
+                (IfcClass.Stair, "railing") => new("IfcRailing", "HANDRAIL", null),
+                (IfcClass.Stair, "finish") => new("IfcCovering", "FLOORING", null),
                 (IfcClass.Footing, "footing") => new(IfcClass.Footing, "STRIP_FOOTING", null),
                 (IfcClass.Footing, "step") => new(IfcClass.Footing, "PAD_FOOTING", null),
                 _ => new("IfcBuildingElementPart", "NOTDEFINED", p.Name),
