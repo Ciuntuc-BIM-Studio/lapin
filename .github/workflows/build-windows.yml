@@ -52,9 +52,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
         env:
           CI: 'true'
-      - run: dotnet build engine/Lapin.slnx -v q -nologo
-      - run: dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo
-      - run: pnpm build:product "$PRODUCT"
+      # msvc-dev-cmd sets Platform=x64, which MSBuild would take as the solution's platform: not for .NET.
+      - run: env -u Platform dotnet build engine/Lapin.slnx -v q -nologo
+      - run: env -u Platform dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo
+      - run: env -u Platform pnpm build:product "$PRODUCT"
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PRODUCT }}-windows-x64
