@@ -2,6 +2,15 @@
 
 Lapin are terenul ca TIN din puncte topo sau LandXML, curbele de nivel și platformele nivelate în el, cu săpătura și umplutura lor (`spec-terrain.md`). Acest document adaugă uneltele de teren și de peisagistică pe care le aveau Lapin-ul vechi și BubbleBIM Standalone (codul tău, nu ifc-lite): sculptarea terenului, rigolele și șanțurile, căile de circulație, zidurile de sprijin și vegetația. Vocabularul e cel din Standalone (`TerrainWorkspace`: sursă, modelare, pensulă, analiză, peisagistică), implementarea e nouă, în C#, pe TIN-ul lui Lapin. Nimic din ifc-lite.
 
+## Așa s-a făcut (etapa 1, 25.10.2026)
+
+- Cod în `engine/src/Modules/Civil/Lapin.Civil/`: `Sculpt.cs` (tușele, aplicate în `Terrains.Of` peste ridicare), `Ditches.cs`, `Paths.cs`, `RetainingWalls.cs`, `Plantings.cs`, `SiteGeometry.cs` (loft între două secțiuni, prismă orientată, îndesirea traseului, random cu sămânță), `SiteCommands.cs`; teste `SiteTests` (6). Interfața în `ui/src/modules/civil/` (`SiteSections`, `BrushDialog`, `prefs`).
+- Comenzi: `civil.addFlatTerrain`, `civil.sculpt {kind, x, y, radius, amount|level|strength}`, `civil.clearSculpt {id, last?}`, `civil.addDitch/updateDitch`, `civil.addPath/updatePath`, `civil.addRetainingWall/updateRetainingWall`, `civil.addPlanting/updatePlanting`.
+- Tabul Site: Terrain (din puncte, plat; LandXML), Earthworks (platformă, șanț, ridică, coboară; nivelează, netezește, pensula…), Landscape (alee, zid de sprijin, plantă, zonă de plantare). Pensula are raza, cantitatea, cota de nivelare și tăria într-un dialog; fiecare clic e o tușă.
+- Șanțurile și aleile sunt legate de teren prin `IfcRelVoidsElement`, ca platformele, iar terenul le scade corpul și le măsoară săpătura în `Lapin_EarthworkQuantities`. Zidul și plantarea stau pe terenul etajului lor fără relație.
+- Planul: aleea și plantarea sunt simbolice (conturul, axul, cercurile coroanelor); zidul se taie ca orice solid; șanțul se desenează pe planul terenului (ax și margini).
+- IFC: `IfcPavement` FLEXIBLE în 4.3 și `IfcSlab` USERDEFINED „Pavement” în IFC4; șanțul `IfcEarthworksCut` TRENCH, în IFC4 proxy „Trench”; zidul `IfcWall` USERDEFINED „RETAININGWALL”; plantarea `IfcGeographicElement` VEGETATION în 4.3, USERDEFINED în IFC4. Relația de gol teren → element se scrie doar pentru `IfcEarthworksCut`, în 4.3.
+
 ## Principii
 
 1. **Terenul rămâne sursa.** Fiecare unealtă scrie un element parametric (sau o operație pe teren) din care se refac corpul, planul, secțiunile și cantitățile. Nimic nu „coace” geometrie în puncte pe care nu le mai poți schimba.
@@ -35,5 +44,5 @@ Analiza (pante, săpătură/umplutură colorate, cote punctuale), tabelul de pla
 
 ## Etape
 
-1. Teren plat, pensula (patru moduri, cu raza și cantitatea în bara de unelte), șanțul, aleea, zidul de sprijin, planta și zona de plantare; secțiunile din inspector; cantitățile; IFC; teste.
+1. **Făcut (25.10.2026).** Teren plat, pensula (patru moduri, cu raza și cantitatea în bara de unelte), șanțul, aleea, zidul de sprijin, planta și zona de plantare; secțiunile din inspector; cantitățile; IFC; teste.
 2. Analiza colorată (pante, săpătură/umplutură), cotele punctuale pe plan, tabelul de plantare, bordurile ca piese, exportul LandXML, umplutura din spatele zidului, rigola cu fund la cotă.

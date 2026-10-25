@@ -22,10 +22,37 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             new("majorEvery", "Major contour every", "number", Min: 1, Max: 100),
             new("depth", "Depth below the lowest point", "length", Min: 0.1),
         ], Terrains.Color));
-        r.Class(new(IfcClass.EarthworksCut, "Platform", [new("elevation", "Elevation", "length")], "#b39b72"));
+        r.Class(new(IfcClass.EarthworksCut, "Earthwork",
+        [
+            new("elevation", "Elevation (platform)", "length"),
+            new("depth", "Depth under the ground (ditch)", "length", Min: 0.05),
+            new("bottomWidth", "Bottom width (ditch)", "length", Min: 0.05),
+            new("slope", "Side slope 1:n (ditch)", "number", Min: 0, Max: 10),
+        ], "#b39b72"));
+        r.Class(new(IfcClass.Pavement, "Path",
+        [
+            new("width", "Width", "length", Min: 0.2), new("surfaceThickness", "Surface course", "length", Min: 0), new("baseThickness", "Base course", "length", Min: 0),
+            new("kerb", "Kerbs", "bool"), new("kerbHeight", "Kerb height", "length", Min: 0.02), new("kerbWidth", "Kerb width", "length", Min: 0.02),
+        ], Paths.Color));
+        r.Class(new(RetainingWalls.Class, "Retaining wall",
+        [
+            new("thickness", "Thickness", "length", Min: 0.1), new("height", "Height over the high ground", "length", Min: 0), new("topElevation", "Crown elevation (fixed)", "length"),
+            new("embed", "Embedment under the low ground", "length", Min: 0), new("footingWidth", "Footing width", "length", Min: 0.1), new("footingThickness", "Footing thickness", "length", Min: 0),
+            new("side", "High ground on the", "choice", Choices: ["left", "right"]),
+        ], RetainingWalls.Color));
+        r.Class(new(Plantings.Class, "Planting", [new("density", "Plants per 100 m²", "number", Min: 0.1, Max: 500), new("seed", "Seed", "number", Min: 0, Max: 1e9)], "#5a9440"));
         r.Geometry(IfcClass.GeographicElement, Terrains.Geometry);
         r.Quantities(IfcClass.GeographicElement, Terrains.Quantities);
+        r.Geometry(IfcClass.Pavement, (e, m, _) => Paths.Geometry(e, m));
+        r.Quantities(IfcClass.Pavement, Paths.Quantities);
+        r.Geometry(RetainingWalls.Class, (e, m, _) => RetainingWalls.Geometry(e, m));
+        r.Quantities(RetainingWalls.Class, RetainingWalls.Quantities);
+        r.Geometry(Plantings.Class, (e, m, _) => Plantings.Geometry(e, m));
+        r.Quantities(Plantings.Class, Plantings.Quantities);
         r.Service<IViewAnnotations>(this);
+        r.Catalog("plants", Plantings.SpeciesJson(Plantings.Catalog));
+        r.Catalog("sculptKinds", new JsonArray(SculptDab.Kinds.Select(k => (JsonNode)k).ToArray()));
+        SiteCommands.Register(r);
 
         // A terrain from points ([x, y, z]) or from a survey file's text (xyz or PENZD).
         r.Command("addTerrain", "Terrain", (ctx, a) =>

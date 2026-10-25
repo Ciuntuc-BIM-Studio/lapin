@@ -70,7 +70,7 @@ public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Bel
 public static class Generator
 {
     /// <summary>Classes drawn in plan by their own symbols instead of their cut.</summary>
-    public static readonly HashSet<string> SymbolicInPlan = ["IfcDoor", "IfcWindow", "IfcRoof", "IfcGeographicElement", "IfcStair"];
+    public static readonly HashSet<string> SymbolicInPlan = ["IfcDoor", "IfcWindow", "IfcRoof", "IfcGeographicElement", "IfcStair", "IfcPavement", "LapinPlanting"];
 
     public static ViewDrawing Draw(IReadOnlyList<DrawPart> parts, ViewSpec v, IReadOnlyList<DrawSymbol>? symbols = null)
     {

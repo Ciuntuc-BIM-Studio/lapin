@@ -82,6 +82,7 @@ public static class IfcExport
         ["IfcFurnishingElement"] = null,
         [IfcClass.BuildingElementProxy] = ["COMPLEX", "ELEMENT", "PARTIAL", "PROVISIONFORVOID", "PROVISIONFORSPACE"],
         [IfcClass.GeographicElement] = ["TERRAIN"],
+        [IfcClass.Pavement] = ["FLEXIBLE", "RIGID"],
         [IfcClass.EarthworksCut] = ["BASE_EXCAVATION", "CUT", "DREDGING", "EXCAVATION", "OVEREXCAVATION", "PAVEMENTMILLING", "STEPEXCAVATION", "TOPSOILREMOVAL", "TRENCH"],
         ["IfcBuildingElementPart"] = ["INSULATION", "PRECASTPANEL"],
         ["IfcPipeSegment"] = ["CULVERT", "FLEXIBLESEGMENT", "RIGIDSEGMENT", "GUTTER", "SPOOL"],
@@ -354,7 +355,10 @@ public static class IfcExport
         Kind KindOf(Entity e)
         {
             var cls = e.Str("exportAs") is { Length: > 3 } x && x.StartsWith("Ifc", StringComparison.Ordinal) ? x : e.Class;
-            if (cls == IfcClass.EarthworksCut && !o.Ifc43) return new(IfcClass.BuildingElementProxy, "USERDEFINED", "Earthworks cut");
+            if (cls == IfcClass.EarthworksCut && !o.Ifc43) return new(IfcClass.BuildingElementProxy, "USERDEFINED", e.PredefinedType == "TRENCH" ? "Trench" : "Earthworks cut");
+            // IFC 4.3's pavement and vegetation; IFC4 has a slab named Pavement and a user-defined geographic element.
+            if (cls == IfcClass.Pavement && !o.Ifc43) return new(IfcClass.Slab, "USERDEFINED", "Pavement");
+            if (cls == IfcClass.GeographicElement && e.PredefinedType == "VEGETATION" && o.Ifc43) return new(cls, "VEGETATION", null);
             if (!Classes.TryGetValue(cls, out var allowed)) return new(IfcClass.BuildingElementProxy, "USERDEFINED", cls);
             if (allowed == null) return new(cls, "", null);
             var pre = e.PredefinedType?.ToUpperInvariant();
@@ -676,7 +680,7 @@ public static class IfcExport
             // A platform voiding the terrain: IFC 4.3 has it as a feature; in IFC4 it is a proxy and only stands there.
             if (o.Ifc43)
                 foreach (var (rel, host, v) in pendingVoids)
-                    if (written.TryGetValue(host, out var h) && written.TryGetValue(v, out var cut))
+                    if (m.Get(v)?.Class == IfcClass.EarthworksCut && written.TryGetValue(host, out var h) && written.TryGetValue(v, out var cut))
                         f.Add("IFCRELVOIDSELEMENT", Gid(rel.Id), Null, Null, Null, h, cut);
             foreach (var (spatial, list) in contained)
                 f.Add("IFCRELCONTAINEDINSPATIALSTRUCTURE", Gid(refIdOf[spatial], "contains"), Null, Null, Null, L(list), spatial);

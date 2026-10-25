@@ -33,6 +33,7 @@ public static class IfcClass
     public const string StairFlight = "IfcStairFlight";
     public const string GeographicElement = "IfcGeographicElement";
     public const string EarthworksCut = "IfcEarthworksCut";
+    public const string Pavement = "IfcPavement";
     public const string BuildingElementProxy = "IfcBuildingElementProxy";
 
     // Materials.

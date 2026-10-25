@@ -45,7 +45,9 @@ public static class Terrains
         }
         // A survey point on a breakline takes the breakline's height there: the line holds.
         all.AddRange(Points(x).Select(p => OnBreakline(lines, p) is { } z ? p with { Z = z } : p));
-        return new Terrain(Tin.Delaunay(all.Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList(), segments));
+        // The brush's strokes, in order, over the survey: the ground as it was worked.
+        var pts = Sculpt.Apply(all.Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList(), segments, Sculpt.Of(x));
+        return new Terrain(Tin.Delaunay(pts, segments));
     });
 
     /// <summary>The height of the breakline a point lies on in plan (within 1 mm), or null.</summary>
@@ -73,12 +75,18 @@ public static class Terrains
             .Where(l => l.Count >= 2).ToList() ?? [];
 
     public static IEnumerable<Entity> Pads(IModelView m, string terrainId) =>
-        m.RelatedOf(terrainId, IfcClass.RelVoidsElement).Where(o => o.Class == IfcClass.EarthworksCut);
+        m.RelatedOf(terrainId, IfcClass.RelVoidsElement).Where(o => o.Class == IfcClass.EarthworksCut && !Ditches.Is(o));
+
+    public static IEnumerable<Entity> DitchesOf(IModelView m, string terrainId) =>
+        m.RelatedOf(terrainId, IfcClass.RelVoidsElement).Where(Ditches.Is);
+
+    public static IEnumerable<Entity> PathsOf(IModelView m, string terrainId) =>
+        m.RelatedOf(terrainId, IfcClass.RelVoidsElement).Where(o => o.Class == IfcClass.Pavement);
 
     public static Entity? TerrainOf(IModelView m, string padId) => m.RelatingOf(padId, IfcClass.RelVoidsElement);
 
-    public static IReadOnlyList<Vec2> Contour(Entity e) =>
-        e.Attrs["contour"] is JsonArray arr
+    public static IReadOnlyList<Vec2> Contour(Entity e, string key = "contour") =>
+        e.Attrs[key] is JsonArray arr
             ? arr.OfType<JsonArray>().Where(p => p.Count >= 2).Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList()
             : [];
 
@@ -171,15 +179,35 @@ public static class Terrains
             }
             else problems.Add("Platforms need the boolean library (manifold), missing here.");
         }
+        // Ditches and paths take their volume out of the ground: the ditch's channel, the path's courses.
+        var cutters = DitchesOf(m, e.Id).Select(d => (Element: d, Solids: Ditches.Cutters(d, t)))
+            .Concat(PathsOf(m, e.Id).Select(pth => { var (surface, @base, _) = Paths.Solids(m, pth); return (Element: pth, Solids: surface.Concat(@base).ToList()); }))
+            .Where(x => x.Solids.Count > 0).ToList();
+        if (cutters.Count > 0)
+        {
+            if (services?.Get<ISolidBooleans>() is { } booleans)
+                foreach (var (element, solids) in cutters)
+                {
+                    try
+                    {
+                        var cutVol = 0.0;
+                        foreach (var c in solids) if (booleans.Intersection(body, c) is { } ci) cutVol += Measure.Volume(ci);
+                        body = booleans.Difference(body, solids, "terrain") ?? body;
+                        works.Add(new Earthwork(element.Id, cutVol, 0));
+                    }
+                    catch (InvalidOperationException ex) { problems.Add($"{element.Name}: could not be cut into the ground ({ex.Message})."); }
+                }
+            else problems.Add("Ditches and paths need the boolean library (manifold), missing here.");
+        }
         var material = e.Str("material");
         var parts = new List<GeometryPart> { new("Ground", Materials.ColorOf(m, material) is "#c9ced6" ? Color : Materials.ColorOf(m, material), body, material, "ground") };
-        var g = new ElementGeometry(parts, Plan(e, t, pads.Select(p => (p.Outline, p.Z)).ToList()), null, problems.Count > 0 ? problems : null);
+        var g = new ElementGeometry(parts, Plan(e, t, pads.Select(p => (p.Outline, p.Z)).ToList(), DitchesOf(m, e.Id).ToList()), null, problems.Count > 0 ? problems : null);
         Works.AddOrUpdate(g, works);
         return g;
     }
 
     /// <summary>The plan: contours (the major ones heavier) outside the platforms, the terrain's edge, the platforms' outlines.</summary>
-    static List<PlanItem> Plan(Entity e, Terrain t, List<(IReadOnlyList<Vec2> Outline, double Z)> pads)
+    static List<PlanItem> Plan(Entity e, Terrain t, List<(IReadOnlyList<Vec2> Outline, double Z)> pads, List<Entity> ditches)
     {
         var items = new List<PlanItem>();
         var interval = e.NumOrNull("interval") ?? 0.5;
@@ -194,6 +222,7 @@ public static class Terrains
         foreach (var (a, b) in t.Boundary())
             items.Add(new PlanItem("terrainEdge", false, [new Vec2(t.Tin.Points[a].X, t.Tin.Points[a].Y), new Vec2(t.Tin.Points[b].X, t.Tin.Points[b].Y)]));
         foreach (var (outline, _) in pads) items.Add(new PlanItem("heavy", true, outline));
+        foreach (var d in ditches) items.AddRange(Ditches.Plan(d));
         return items;
     }
 
@@ -283,6 +312,6 @@ public static class Terrains
             [
                 new("CutVolume", w.Cut, "VOLUME", "Cut"),
                 new("FillVolume", w.Fill, "VOLUME", "Fill"),
-            ], "pad:" + w.Pad, m.Get(w.Pad)?.Name ?? "Platform");
+            ], "pad:" + w.Pad, m.Get(w.Pad)?.Name ?? "Earthwork");
     }
 }
