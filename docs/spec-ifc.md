@@ -63,7 +63,7 @@ Fiecare element: `GlobalId` = id-ul lui, `Name`, `ObjectType` = numele tipului (
 | platforme (`IfcEarthworksCut`) | `IFCEARTHWORKSCUT` în 4.3; `IFCBUILDINGELEMENTPROXY` USERDEFINED „Earthworks cut” în IFC4 | Așa s-a făcut: fără corp propriu (terenul îl desenează deja tăiat; platforma nu are producător de geometrie), scrisă lângă teren, cu intenția ei | conturul, cota | `IFCRELVOIDSELEMENT` teren → platformă doar în 4.3 (în IFC4 un proxy nu poate fi gol) |
 | axe (`IfcGrid`) | `IFCGRID` pe etajul de referință, cu `IFCGRIDAXIS` pe fiecare axă | — | — | ca în BubbleBIM |
 | adnotări, cote, texte, desen CAD (`IfcAnnotation`) | **[Î4]** decis (25.10.2026): nu se exportă în prima etapă; axele da | — | — | `IfcAnnotation` cu curbe 2D, mai târziu, când va cere cineva |
-| faze | `Pset_Lapin_Phase` pe element: `Created`, `Demolished` (numele fazelor); lista fazelor pe proiect | — | — | #74; IFC nu are faze. **[Î6]** decis (25.10.2026): întâi tot proiectul; imediat după, filtrul pe fază (`phase` în comandă: ce există la sfârșitul fazei) |
+| faze | `Lapin_Phase` pe element: `Created`, `Demolished` (numele fazelor); lista fazelor pe proiect | — | — | #74; IFC nu are faze. **[Î6]** decis (25.10.2026): întâi tot proiectul; imediat după, filtrul pe fază (`phase` în comandă: ce există la sfârșitul fazei) |
 
 ## Materiale
 
@@ -78,7 +78,7 @@ Culoarea fiecărei piese se scrie și pe corp (`IFCSTYLEDITEM`), ca în BubbleBI
 ## Proprietăți și cantități
 
 - **Seturile comune IFC** (`Pset_WallCommon`, `Pset_DoorCommon`…): doar proprietățile pe care Lapin le știe sigur (`Reference`, `IsExternal`, `LoadBearing`). Nimic ghicit.
-- **Setul de intenție** **[Î3]** (decis 25.10.2026: numele e `Pset_Lapin_Intent`, pe element și pe tip; BubbleBIM va scrie același set): un `IFCPROPERTYSET` pe element (și unul pe tip), cu proprietățile care îl fac editabil în Lapin, exact atributele lui (`start`, `end`, `height`, `baseOffset`, `along`, `sill`, `contour`, `pitch`, `spec`…), ca `IFCPROPERTYSINGLEVALUE` tipizate (`IfcLengthMeasure` pentru câmpurile de lungime, `IfcReal` pentru restul numerelor, unghiurile în grade cu descrierea „degrees”, nu `IfcPlaneAngleMeasure`, care ar fi citit în radiani; `IfcLabel`, `IfcBoolean`) și, pentru liste și obiecte (contururi, specificații), ca `IfcText` cu JSON. Plus `LapinClass` (clasa Lapin, când diferă de cea IFC: un proxy Studio „exportAs”), `LapinPredefinedType` și `LapinVersion`. Pe tip, setul stă în `HasPropertySets`.
+- **Setul de intenție** **[Î3]** (decis 25.10.2026: numele e `Lapin_Intent`, pe element și pe tip; BubbleBIM va scrie același set. Până la 25.10.2026 s-a numit `Pset_Lapin_Intent`; prefixul `Pset_` e rezervat de IFC seturilor din standard (IfcPropertySet), iar serviciul de validare al bSI îl semnalează. Importul citește ambele nume. Seturile proprii sunt `Lapin_Intent`, `Lapin_Phase` și `Lapin_Parameters`): un `IFCPROPERTYSET` pe element (și unul pe tip), cu proprietățile care îl fac editabil în Lapin, exact atributele lui (`start`, `end`, `height`, `baseOffset`, `along`, `sill`, `contour`, `pitch`, `spec`…), ca `IFCPROPERTYSINGLEVALUE` tipizate (`IfcLengthMeasure` pentru câmpurile de lungime, `IfcReal` pentru restul numerelor, unghiurile în grade cu descrierea „degrees”, nu `IfcPlaneAngleMeasure`, care ar fi citit în radiani; `IfcLabel`, `IfcBoolean`) și, pentru liste și obiecte (contururi, specificații), ca `IfcText` cu JSON. Plus `LapinClass` (clasa Lapin, când diferă de cea IFC: un proxy Studio „exportAs”), `LapinPredefinedType` și `LapinVersion`. Pe tip, setul stă în `HasPropertySets`.
 - **Cantitățile**: `IFCELEMENTQUANTITY` cu numele seturilor Lapin (`Qto_WallBaseQuantities`, `Qto_SlabBaseQuantities`…, exact numele IFC), cantitățile ca `IFCQUANTITYLENGTH/AREA/VOLUME/COUNT/WEIGHT` după `Kind`; seturile pe piesă (`Lapin_WallZoneQuantities`) pe piesa respectivă când e entitate, altfel pe element cu `Description` = piesa.
 
 ## GlobalId-uri derivate
@@ -87,7 +87,7 @@ Culoarea fiecărei piese se scrie și pe corp (`IFCSTYLEDITEM`), ca în BubbleBI
 |---|---|
 | piesă derivată | `{idElement}/{cheiaPiesei}` (`zone:masonry`, `lintel:D1:0`, `step:1`) |
 | relație | relațiile modelului își păstrează id-ul; cele pe care exportul le face el: `{idPărinte}/parts`, `{idTip}/defines`, `{idMaterial}/associates`, `{idEtaj}/contains`, `{idProiect}/aggregates`, `{idSit}/aggregates/building`, `{idClădire}/aggregates/storeys` |
-| pset, qto | `{idElement}/{numeleSetului}` (`…/common`, `…/Pset_Lapin_Intent`, `…/Pset_Lapin_Phase`, `…/qto/{set}` sau `…/qto/{set}/{piesă}`), relația `…-rel` |
+| pset, qto | `{idElement}/{numeleSetului}` (`…/common`, `…/Pset_Lapin_Intent`, `…/Pset_Lapin_Phase` — cheile vechi, păstrate după redenumirea seturilor, ca id-urile să rămână aceleași —, `…/qto/{set}` sau `…/qto/{set}/{piesă}`), relația `…-rel` |
 | plan de acoperiș, element de șarpantă | `{idAcoperiș}/{cheia piesei}/{index}` |
 
 Relațiile care există deja în model (`IfcRelVoidsElement`, `IfcRelFillsElement`, `IfcRelDefinesByType`, `IfcRelAssociatesMaterial`, `IfcRelConnectsPathElements`, `IfcRelInterferesElements`) își păstrează id-ul din model.

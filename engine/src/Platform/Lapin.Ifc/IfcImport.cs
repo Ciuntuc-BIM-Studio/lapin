@@ -24,7 +24,7 @@ public sealed record IfcImportResult(int Elements, int Updated, int References, 
 
 /// <summary>
 /// An IFC file read into the open project, as one undo step. What Lapin (or
-/// BubbleBIM) wrote with <c>Pset_Lapin_Intent</c> is rebuilt natively: the
+/// BubbleBIM) wrote with <c>Lapin_Intent</c> (<c>Pset_Lapin_Intent</c> in files written before 25.10.2026) is rebuilt natively: the
 /// storeys, materials, types with their layer sets, the elements with their
 /// attributes, their openings, doors and windows, usages, joins and phases;
 /// an element already in the project (the same GlobalId) is updated, what
@@ -110,7 +110,7 @@ public static class IfcImport
         {
             var sets = Items(hasPropertySets).Select(x => x.Id).Concat(definitions.GetValueOrDefault(id) ?? []);
             foreach (var sid in sets)
-                if (f.Entities.GetValueOrDefault(sid) is { Type: "IFCPROPERTYSET" } set && Str(set[2]) == IfcExport.IntentSetName) return Parse(Items(set[4]));
+                if (f.Entities.GetValueOrDefault(sid) is { Type: "IFCPROPERTYSET" } set && IfcExport.IsIntentSet(Str(set[2]))) return Parse(Items(set[4]));
             return null;
         }
 
@@ -257,7 +257,7 @@ public static class IfcImport
             foreach (var mat in f.OfType("IFCMATERIAL"))
             {
                 var name = Str(mat[0]) ?? "Material";
-                var props = f.OfType("IFCMATERIALPROPERTIES").FirstOrDefault(p => Ref(p[3]) == mat.Id && Str(p[0]) == IfcExport.IntentSetName);
+                var props = f.OfType("IFCMATERIALPROPERTIES").FirstOrDefault(p => Ref(p[3]) == mat.Id && IfcExport.IsIntentSet(Str(p[0])));
                 var intent = props == null ? null : Parse(Items(props[2]));
                 string id;
                 if (intent?.LapinId is { } lapinId && GlobalId.IsValid(lapinId))

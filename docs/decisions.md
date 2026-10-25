@@ -6,6 +6,7 @@ Aici sunt deciziile luate, cu data și sursa. Cele vechi, din fork-ul ifc-lite, 
 
 | Data | Decizia | Sursa |
 |---|---|---|
+| 25.10.2026 | Seturile de proprietăți proprii ale lui Lapin nu mai încep cu `Pset_` (rezervat de IFC seturilor din standard; serviciul de validare bSI le semnalează): `Lapin_Intent`, `Lapin_Phase`, `Lapin_Parameters`. Importul citește și vechiul `Pset_Lapin_Intent`; GlobalId-urile seturilor rămân aceleași. Prima observație a unui tester. | `spec-ifc.md` |
 | 13.10.2026 | Lapin optimizează proiectele modelate în Lapin. Documentarea IFC-urilor importate ține de IfcSheet. | memorie `lapin-native-first` |
 | 23.10.2026 | Lapin se rescrie fără ifc-lite. Aplicația e desktop întâi (Tauri), într-un repo separat, cu motorul BubbleBIM Pro ca dependență. | `plan.md` |
 | 23.10.2026 | Lapin e **doar MIT**. Licența ifc-lite nu mai e o preocupare; codul din fork nu se copiază, ci se rescrie. | `plan.md` |

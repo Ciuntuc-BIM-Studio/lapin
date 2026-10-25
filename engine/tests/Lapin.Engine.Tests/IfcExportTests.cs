@@ -99,7 +99,7 @@ public class IfcExportTests : IDisposable
         Assert.Equal(0.9, (double)One(step, "IFCDOOR")[9]!, 6);
         Assert.Equal(2.1, (double)One(step, "IFCDOOR")[8]!, 6);
         var sets = SetsOf(step, w);
-        var intent = sets.Single(s => (string?)s[2] == "Pset_Lapin_Intent");
+        var intent = sets.Single(s => (string?)s[2] == "Lapin_Intent");
         Assert.Contains("height", PropertyNames(step, intent));
         Assert.Contains("start", PropertyNames(step, intent));
         Assert.Contains(sets, s => (string?)s[2] == "Pset_WallCommon");
@@ -181,7 +181,7 @@ public class IfcExportTests : IDisposable
         var existing = StepFile.Read(Export(f, "existing.ifc", new IfcExportOptions(Phase: "existing")));
         Assert.True(existing.OfType("IFCWALL").Count() == 1, $"{existing.OfType("IFCWALL").Count()} walls in the existing phase; {_notes}");
         Assert.Equal(old, (string?)One(existing, "IFCWALL")[0]);
-        Assert.Contains(SetsOf(existing, One(existing, "IFCWALL")), s => (string?)s[2] == "Pset_Lapin_Phase");
+        Assert.Contains(SetsOf(existing, One(existing, "IFCWALL")), s => (string?)s[2] == "Lapin_Phase");
 
         var all = StepFile.Read(Export(f, "all.ifc"));
         Assert.Equal(2, all.OfType("IFCWALL").Count());
@@ -196,7 +196,7 @@ public class IfcExportTests : IDisposable
         f.Run("element.setParam", new JsonObject { ["id"] = wall, ["name"] = "Finish height", ["kind"] = "length", ["value"] = 2.1 });
         f.Run("element.setParam", new JsonObject { ["id"] = wall, ["name"] = "Note", ["kind"] = "text", ["value"] = "check on site" });
         var text = File.ReadAllText(Export(f, "params.ifc"));
-        Assert.Contains("'Pset_Lapin_Parameters'", text);
+        Assert.Contains("'Lapin_Parameters'", text);
         Assert.Contains("IFCPROPERTYSINGLEVALUE('Fire rating',$,IFCLABEL('EI60'),$)", text);
         Assert.Contains("IFCPROPERTYSINGLEVALUE('Finish height',$,IFCLENGTHMEASURE(2.1),$)", text);
         Assert.Contains("IFCTEXT('check on site')", text);

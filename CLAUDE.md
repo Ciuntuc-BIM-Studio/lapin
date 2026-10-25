@@ -54,7 +54,7 @@ If pnpm complains about @tauri-apps when installing, use `CI=true pnpm install`.
   - The ifc-lite parts, wall joins and the drawing-2d generator, are reimplemented from the behaviour specified in `docs/transfer.md`.
   - Production dependencies must be permissive; `pnpm check:licenses` enforces it.
 - **Lapin is IFC-native.** Its model is IfcWall, types, IfcMaterialLayerSetUsage and rels, held by a Lapin C# engine.
-  - Interop with BubbleBIM goes through IFC carrying design intent: Axis reps, layer sets, `Pset_BubbleBIM_Intent`, and stable GlobalIds.
+  - Interop with BubbleBIM goes through IFC carrying design intent: Axis reps, layer sets, the `Lapin_Intent` property set, and stable GlobalIds. Lapin's own property sets never start with `Pset_` (IFC keeps that prefix for its standard sets).
 - **Port tests before code.** The old repo's tests listed in `docs/transfer.md` are the specification, ported with the same cases and numbers.
 - **Commits** never carry a Claude co-author or a "Generated with Claude Code" line. Add files by explicit path.
 - **Privacy.** The Bubbles plugins never go public. Never ask the user to paste passwords or tokens in chat.

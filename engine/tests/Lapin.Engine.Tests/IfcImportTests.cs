@@ -91,6 +91,32 @@ public class IfcImportTests : IDisposable
     }
 
     [Fact]
+    public void Lapins_own_sets_carry_no_Pset_prefix_which_IFC_keeps_for_its_own()
+    {
+        // IfcPropertySet: "Property sets that are not declared as part of the IFC specification shall have a Name value not including the Pset_ prefix."
+        var a = House(out var wall);
+        a.Run("element.setParam", new JsonObject { ["id"] = wall, ["name"] = "Fire rating", ["kind"] = "text", ["value"] = "EI60" });
+        var text = File.ReadAllText(Export(a, "house.ifc"));
+        var names = System.Text.RegularExpressions.Regex.Matches(text, @"IFC(?:PROPERTYSET\('[^']*',[^,]*,|MATERIALPROPERTIES\()'([^']*)'").Select(m => m.Groups[1].Value).ToHashSet();
+        Assert.Contains("Lapin_Intent", names);
+        Assert.Contains("Lapin_Parameters", names);
+        Assert.Contains("Pset_WallCommon", names);
+        Assert.All(names.Where(n => n.StartsWith("Pset_", StringComparison.Ordinal)), n => Assert.Matches(@"^Pset_(Wall|Slab|Roof|Column|Beam|Footing|Door|Window|Member|Plate|Covering|Railing|Stair|Ramp|Chimney|BuildingElementProxy)Common$", n));
+    }
+
+    [Fact]
+    public void A_file_written_before_the_sets_lost_their_Pset_prefix_still_comes_back_as_the_same_model()
+    {
+        var a = House(out _);
+        var path = Export(a, "old.ifc");
+        File.WriteAllText(path, File.ReadAllText(path).Replace("'Lapin_Intent'", "'Pset_Lapin_Intent'"));
+        var b = Full();
+        var r = IfcImport.Run(b.Session, path, null, out _);
+        Assert.True(r.References == 0, $"references: {r.References}; {string.Join("; ", r.Notes)}");
+        Assert.Equal(Counts(a.Model), Counts(b.Model));
+    }
+
+    [Fact]
     public void A_second_import_updates_the_elements_instead_of_doubling_them()
     {
         var a = House(out var wall);

@@ -43,9 +43,15 @@ public sealed record IfcExportResult(string Path, string Schema, int Elements, i
 /// </summary>
 public static class IfcExport
 {
-    public const string IntentSetName = "Pset_Lapin_Intent";
-    public const string PhaseSetName = "Pset_Lapin_Phase";
-    public const string ParamsSetName = "Pset_Lapin_Parameters";
+    // Lapin's own sets: no "Pset_" prefix, which IFC keeps for the sets its specification declares (IfcPropertySet).
+    public const string IntentSetName = "Lapin_Intent";
+    public const string PhaseSetName = "Lapin_Phase";
+    public const string ParamsSetName = "Lapin_Parameters";
+    /// <summary>The intent set's name until 25.10.2026: files written before still carry it.</summary>
+    public const string OldIntentSetName = "Pset_Lapin_Intent";
+    public static bool IsIntentSet(string? name) => name is IntentSetName or OldIntentSetName;
+    // The keys the sets' GlobalIds derive from stay the old names: a file exported again keeps its sets' ids.
+    const string IntentKey = "Pset_Lapin_Intent", PhaseKey = "Pset_Lapin_Phase", ParamsKey = "Pset_Lapin_Parameters";
     public const string Version = "1";
 
     public static IfcExportResult Write(Session session, string path, IfcExportOptions? options = null)
@@ -212,7 +218,7 @@ public static class IfcExport
             }));
             var projectRef = f.Add("IFCPROJECT", Gid(project.Id), Null, S(project.Name), Null, Null, S(project.Str("longName")), S(project.Str("phase")), L(new[] { model }), units);
             // What the project itself holds that an import rebuilds: its location and its phases (the drafting standards and views stay in .lapin).
-            Define(projectRef, IntentOf(project, Gid(project.Id, IntentSetName), null, only: ProjectIntent), Gid(project.Id, "intent-rel"));
+            Define(projectRef, IntentOf(project, Gid(project.Id, IntentKey), null, only: ProjectIntent), Gid(project.Id, "intent-rel"));
 
             var site = m.OfClass(IfcClass.Site).FirstOrDefault();
             var building = Spatial.Building(m);
@@ -235,7 +241,7 @@ public static class IfcExport
                 storeyPlace[st.Id] = place;
                 storeyZ[st.Id] = z;
                 var r = f.Add("IFCBUILDINGSTOREY", Gid(st.Id), Null, S(st.Name), Null, Null, place, Null, Null, E("ELEMENT"), R(z));
-                Define(r, IntentOf(st, Gid(st.Id, IntentSetName), null), Gid(st.Id, "intent-rel"));
+                Define(r, IntentOf(st, Gid(st.Id, IntentKey), null), Gid(st.Id, "intent-rel"));
                 storeyRef[st.Id] = r;
                 refIdOf[r] = st.Id;
             }
@@ -279,7 +285,7 @@ public static class IfcExport
                 var rectangular = u.All(x => Math.Abs(x.B.X - x.A.X) < 1e-6) && v.All(x => Math.Abs(x.B.Y - x.A.Y) < 1e-6);
                 var grid = f.Add("IFCGRID", Gid(g.Id), Null, S(g.Name), Null, Null, Place(storeyPlace[storey.Id], 0), Null, L(u.Select(Axis)), L(v.Select(Axis)), Null, E(rectangular ? "RECTANGULAR" : "IRREGULAR"));
                 Contain(storeyRef[storey.Id], grid);
-                Define(grid, IntentOf(g, Gid(g.Id, IntentSetName), null), Gid(g.Id, "intent-rel"));
+                Define(grid, IntentOf(g, Gid(g.Id, IntentKey), null), Gid(g.Id, "intent-rel"));
             }
         }
 
@@ -421,9 +427,9 @@ public static class IfcExport
             if (!types.TryGetValue(type.Id, out var t))
             {
                 var typeClass = type.Class.EndsWith("Type", StringComparison.Ordinal) && Classes.ContainsKey(type.Class[..^4]) ? type.Class : kind.Class + "Type";
-                var intent = IntentOf(type, Gid(type.Id, IntentSetName), null);
+                var intent = IntentOf(type, Gid(type.Id, IntentKey), null);
                 // The type's parameters, which every element of the type has.
-                string[] sets = ParamsOf(type, Gid(type.Id, ParamsSetName)) is { } ps ? [intent, ps] : [intent];
+                string[] sets = ParamsOf(type, Gid(type.Id, ParamsKey)) is { } ps ? [intent, ps] : [intent];
                 var pre = E(kind.Predefined.Length == 0 ? "NOTDEFINED" : kind.Predefined);
                 string[] common = [Gid(type.Id), Null, S(type.Name), Null, Null, L(sets), Null, S(type.Id), S(kind.Predefined == "USERDEFINED" ? kind.ObjectType : null)];
                 var up = typeClass.ToUpperInvariant();
@@ -564,7 +570,7 @@ public static class IfcExport
                     var opening = f.Add("IFCOPENINGELEMENT", Gid(op.Id), Null, S(op.Name), Null, Null, Place(place, 0), shape, S(op.Id), E("OPENING"));
                     written[op.Id] = opening;
                     f.Add("IFCRELVOIDSELEMENT", Gid(rel.Id), Null, Null, Null, entity, opening);
-                    Define(opening, IntentOf(op, Gid(op.Id, IntentSetName), null), Gid(op.Id, "intent-rel"));
+                    Define(opening, IntentOf(op, Gid(op.Id, IntentKey), null), Gid(op.Id, "intent-rel"));
                     pendingFills.AddRange(m.RelationsOf(op.Id, IfcClass.RelFillsElement).Where(r => r.Relating == op.Id));
                 }
         }
@@ -580,13 +586,13 @@ public static class IfcExport
                 common.Add(Single("IsExternal", Typed("IFCBOOLEAN", isExternal ? True : False)));
             if (common.Count > 0 && CommonSets.Contains(kind.Class))
                 Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "common"), Null, S($"Pset_{kind.Class[3..]}Common"), Null, L(common)), Gid(e.Id, "common-rel"));
-            Define(entity, IntentOf(e, Gid(e.Id, IntentSetName), kind, extra), Gid(e.Id, "intent-rel"));
+            Define(entity, IntentOf(e, Gid(e.Id, IntentKey), kind, extra), Gid(e.Id, "intent-rel"));
             var phase = new List<string>();
             if (e.Str("phaseCreated") is { } created) phase.Add(Single("Created", Typed("IFCLABEL", S(PhaseName(created)))));
             if (e.Str("phaseDemolished") is { } demolished) phase.Add(Single("Demolished", Typed("IFCLABEL", S(PhaseName(demolished)))));
-            if (phase.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, PhaseSetName), Null, S(PhaseSetName), Null, L(phase)), Gid(e.Id, "phase-rel"));
+            if (phase.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, PhaseKey), Null, S(PhaseSetName), Null, L(phase)), Gid(e.Id, "phase-rel"));
             // The user's own parameters (those of its type are on the type, which IFC readers pass on to it).
-            if (ParamsOf(e, Gid(e.Id, ParamsSetName)) is { } set) Define(entity, set, Gid(e.Id, "params-rel"));
+            if (ParamsOf(e, Gid(e.Id, ParamsKey)) is { } set) Define(entity, set, Gid(e.Id, "params-rel"));
         }
 
         /// <summary>An entity's own parameters as a typed property set; null when it has none.</summary>

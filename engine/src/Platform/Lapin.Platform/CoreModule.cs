@@ -83,7 +83,7 @@ public sealed class CoreModule : ILapinModule
             return null;
         });
 
-        // The user's own parameters on any element, drafted shape or Studio solid: a name, a kind, a value (exported as Pset_Lapin_Parameters).
+        // The user's own parameters on any element, drafted shape or Studio solid: a name, a kind, a value (exported as Lapin_Parameters).
         r.Command("element.setParam", "Set parameter", (ctx, a) =>
         {
             var ids = Args.Ids(a).ToList();
