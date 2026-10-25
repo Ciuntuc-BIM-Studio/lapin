@@ -86,6 +86,8 @@ writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   bundle: {
     externalBin: ['binaries/lapin-host'], resources: ['resources/**/*'],
     ...(process.platform === 'linux' ? { targets: ['deb', 'appimage'] } : {}),
+    // Windows: an NSIS installer for the current user (no admin rights), which fetches WebView2 when it is missing.
+    ...(win ? { targets: ['nsis'], windows: { nsis: { installMode: 'currentUser' } } } : {}),
     ...(mac ? { targets: ['app'], macOS: { minimumSystemVersion: '13.0', hardenedRuntime: true, entitlements: 'entitlements.plist', ...(identity ? { signingIdentity: identity } : {}) } } : {}),
   },
 }, null, 2));

@@ -10,6 +10,7 @@ engine/**/obj/
 engine/artifacts/
 # manifold for Linux is built by scripts/build-manifold.mjs (CI builds it); macOS's is committed.
 engine/native/linux-x64/
+engine/native/win-x64/
 build/
 desktop/src-tauri/binaries/
 desktop/src-tauri/resources/

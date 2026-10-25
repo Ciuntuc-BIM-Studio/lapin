@@ -6,4 +6,4 @@ statically; no other dependency than the system's. It computes the engine's bool
 (`Lapin.Booleans`).
 
 Rebuild it from source with `node scripts/build-manifold.mjs` (needs git, cmake and a C++
-compiler). macOS and Linux are wired (Linux builds `linux-x64/libmanifoldc.so`, not committed: CI builds it); Windows needs the same static link.
+compiler). macOS, Linux and Windows are wired. Linux builds `linux-x64/libmanifoldc.so` and Windows `win-x64/manifoldc.dll` (from a Visual Studio x64 developer prompt); neither is committed, CI builds them.

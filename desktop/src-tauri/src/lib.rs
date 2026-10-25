@@ -122,14 +122,21 @@ fn spawn_engine(app: &AppHandle) -> Result<Child, String> {
     let res = app.path().resource_dir().map_err(|e| e.to_string())?.join("resources");
     // The user's own data (the recovery journals) lives in the app's data folder.
     let user = app.path().app_data_dir().map_err(|e| e.to_string())?;
-    Command::new(&host)
-        .arg("--product").arg(res.join("product.json"))
+    let mut cmd = Command::new(&host);
+    cmd.arg("--product").arg(res.join("product.json"))
         .arg("--modules-dir").arg(res.join("modules"))
         .arg("--user-dir").arg(user)
         .args(["--port", "0", "--parent-pid", &std::process::id().to_string()])
         .stdout(Stdio::piped())
-        .stderr(Stdio::inherit())
-        .spawn()
+        .stderr(Stdio::inherit());
+    // On Windows the engine is a console program: started without a console window of its own.
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    cmd.spawn()
         .map_err(|e| format!("Cannot start the engine ({}): {e}", host.display()))
 }
 

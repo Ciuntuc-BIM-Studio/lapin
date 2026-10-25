@@ -1,0 +1,62 @@
+name: Build Windows
+
+# The Windows desktop app (an NSIS installer, .exe) of one product, built on
+# GitHub's Windows Server 2022: run it by hand (Actions → Build Windows → Run
+# workflow), push a tag v*, or push a branch build/** to try a change. The
+# installer is the run's artifact. It installs for the current user (no admin
+# rights) and fetches WebView2 when Windows lacks it (Windows 10 and 11 have it).
+
+on:
+  workflow_dispatch:
+    inputs:
+      product:
+        description: Product (products/<id>.json)
+        default: lapin
+  push:
+    tags: ['v*']
+    branches: ['build/**']
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-2022
+    env:
+      PRODUCT: ${{ inputs.product || 'lapin' }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+      # MSVC on the PATH (cl, link) for manifold.
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      # The booleans: manifold's C API as one manifoldc.dll, picked up by the engine.
+      - uses: actions/cache@v4
+        with:
+          path: engine/native/win-x64
+          key: manifold-win-x64-${{ hashFiles('scripts/build-manifold.mjs', 'engine/src/Geometry/Lapin.Booleans/ManifoldBooleans.cs') }}
+      - run: test -f engine/native/win-x64/manifoldc.dll || node scripts/build-manifold.mjs
+      - run: pnpm install --frozen-lockfile
+        env:
+          CI: 'true'
+      - run: dotnet build engine/Lapin.slnx -v q -nologo
+      - run: dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo
+      - run: pnpm build:product "$PRODUCT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PRODUCT }}-windows-x64
+          path: build/${{ env.PRODUCT }}/bundle/nsis/*.exe
+          if-no-files-found: error
