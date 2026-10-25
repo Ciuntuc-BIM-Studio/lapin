@@ -282,13 +282,18 @@ export async function importIfc(mode: 'auto' | 'reference' = 'auto'): Promise<vo
   if (!path) return;
   try {
     const args = picked ? { name: picked.name, data: toBase64(picked.bytes), mode } : { path, mode };
-    const r = await engine.call<{ elements: number; updated: number; references: number; notes: string[] }>('project.importIfc', args, { timeoutMs: LONG_TIMEOUT_MS });
+    const r = await engine.call<{ elements: number; updated: number; references: number; recognized?: number; recognizedByClass?: Record<string, number>; notes: string[] }>('project.importIfc', args, { timeoutMs: LONG_TIMEOUT_MS });
+    // What came in natively (Lapin's own files, and foreign elements recognised into native ones), and what stays a reference.
+    const recognised = r.recognizedByClass && Object.keys(r.recognizedByClass).length
+      ? ` (${Object.entries(r.recognizedByClass).map(([cls, n]) => `${n} ${cls.replace(/^Ifc/, '').replace(/OpeningElement/, 'opening').toLowerCase()}${n === 1 ? '' : 's'}`).join(', ')})`
+      : '';
     const parts = [
-      r.elements ? `${r.elements} new` : '',
+      r.elements ? `${r.elements} native` : '',
+      r.recognized ? `${r.recognized} recognised${recognised}` : '',
       r.updated ? `${r.updated} updated` : '',
       r.references ? `${r.references} as reference` : '',
     ].filter(Boolean);
-    notify(`Imported ${path.split(/[\\/]/).pop()}: ${parts.join(', ') || 'nothing to bring in'}.${r.notes?.length ? ` ${r.notes.join(' ')}` : ''}`);
+    notify(`Imported ${path.split(/[\\/]/).pop()}: ${parts.join(', ') || 'nothing to bring in'}.${r.notes?.length ? ` ${r.notes.slice(0, 4).join(' ')}` : ''}`);
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }

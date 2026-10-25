@@ -65,4 +65,6 @@ M1–M7 and the roofs are done as a PoC (2026-10-24): layered walls with joins, 
 
 Then the engine in the browser (#124, `docs/plan-browser-engine.md`, stages 1–4 done on 25.10.2026): the same engine AOT-compiled in a Web Worker, 6.8 MB, 2.4× native; the desktop unchanged. Live at https://lapin.ciuntucbimstudio.ro/web/ (`deploy/web/deploy.sh`).
 
+Then (#129): foreign IFC recognised into native elements on import (`docs/spec-ifc.md`, Recunoașterea): `IIfcRecognizer` in the platform, bodies read as prisms, walls with axes, layers, openings, doors and windows, floors, columns, beams, pad footings; the rest as references drawn with real faces.
+
 Next: the user reviews `docs/decisions-pending.md` (#1–111). Open items needing the user: signing and notarization, Windows (manifold), and what the review changes. Milestones are in `docs/plan.md`.

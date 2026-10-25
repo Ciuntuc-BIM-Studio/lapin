@@ -13,13 +13,21 @@ public sealed record IfcImportOptions(string Mode = "auto")
     public bool ReferenceOnly => string.Equals(Mode, "reference", StringComparison.OrdinalIgnoreCase);
 }
 
-public sealed record IfcImportResult(int Elements, int Updated, int References, int Storeys, IReadOnlyList<string> Notes)
+public sealed record IfcImportResult(int Elements, int Updated, int References, int Storeys, IReadOnlyList<string> Notes, int Recognized = 0, IReadOnlyDictionary<string, int>? RecognizedByClass = null, IReadOnlyDictionary<string, int>? ReferencesByClass = null, IReadOnlyDictionary<string, int>? Skipped = null)
 {
     public JsonObject ToJson() => new()
     {
-        ["elements"] = Elements, ["updated"] = Updated, ["references"] = References, ["storeys"] = Storeys,
+        ["elements"] = Elements, ["updated"] = Updated, ["references"] = References, ["storeys"] = Storeys, ["recognized"] = Recognized,
+        ["recognizedByClass"] = Counts(RecognizedByClass), ["referencesByClass"] = Counts(ReferencesByClass), ["skipped"] = Counts(Skipped),
         ["notes"] = new JsonArray(Notes.Select(n => (JsonNode)n).ToArray()),
     };
+
+    static JsonObject Counts(IReadOnlyDictionary<string, int>? d)
+    {
+        var o = new JsonObject();
+        if (d != null) foreach (var (k, v) in d.OrderByDescending(kv => kv.Value)) o[k] = v;
+        return o;
+    }
 }
 
 /// <summary>
@@ -32,7 +40,7 @@ public sealed record IfcImportResult(int Elements, int Updated, int References, 
 /// kept as a reference: its class and its triangles, shown and measured,
 /// never edited (docs/spec-ifc.md, Importul).
 /// </summary>
-public static class IfcImport
+public static partial class IfcImport
 {
     public static IfcImportResult Run(Session session, string path, IfcImportOptions? options, out Diff diff) =>
         Run(session, File.ReadAllBytes(path), System.IO.Path.GetFileName(path), options, out diff);
@@ -49,7 +57,7 @@ public static class IfcImport
     /// <summary>What an intent set says: the attributes, and the Lapin class, predefined type and host it names.</summary>
     sealed record Intent(JsonObject Attrs, string? Class, string? Predefined, string? Host, string? LapinId);
 
-    sealed class Reader(Session s, StepFile f, IfcImportOptions o)
+    sealed partial class Reader(Session s, StepFile f, IfcImportOptions o)
     {
         readonly IfcModel model = new(f);
         readonly List<string> notes = [];
@@ -63,7 +71,7 @@ public static class IfcImport
 
         static readonly Dictionary<string, string> ProperNames = BuildNames();
 
-        public IfcImportResult Result() => new(elements, updated, references, storeys, notes);
+        public IfcImportResult Result() => new(elements, updated, references, storeys, notes, recognized, recognizedByClass, referencesByClass, recognition?.Skipped);
 
         public void Apply(IEdit edit)
         {
@@ -332,13 +340,28 @@ public static class IfcImport
                 if (f.Get(r[4]) is { } whole && whole.Type is not ("IFCPROJECT" or "IFCSITE" or "IFCBUILDING" or "IFCBUILDINGSTOREY"))
                     foreach (var part in Refs(r[5])) parentOf[part] = whole.Id;
             var booleans = s.Catalog.Get<ISolidBooleans>();
-            foreach (var e in f.Entities.Values.Where(IsProduct).OrderBy(e => e.Id))
+            var fills = new HashSet<int>(f.OfType("IFCRELFILLSELEMENT").Select(r => Ref(r[5])));
+            var products = f.Entities.Values.Where(IsProduct).OrderBy(e => e.Id).ToList();
+            // First what is rebuilt natively (Lapin's intent, or recognised); then, as references, the rest: not the
+            // parts of a native element (its body is its own), nor a door or window made with its wall.
+            var native = new HashSet<int>();
+            var rest = new List<StepEntity>();
+            foreach (var e in products)
             {
                 var intent = o.ReferenceOnly ? null : IntentOf(e.Id);
-                if (intent != null) { Native(edit, e, intent); continue; }
-                if (parentOf.TryGetValue(e.Id, out var parent) && !o.ReferenceOnly && IntentOf(parent) != null) continue;
+                if (intent != null) { Native(edit, e, intent); native.Add(e.Id); continue; }
+                if (fills.Contains(e.Id)) { rest.Add(e); continue; } // decided by its wall, below
+                if (!o.ReferenceOnly && !parentOf.ContainsKey(e.Id) && Recognize(edit, e)) { native.Add(e.Id); continue; }
+                rest.Add(e);
+            }
+            foreach (var e in rest)
+            {
+                if (parentOf.TryGetValue(e.Id, out var parent) && (native.Contains(parent) || (!o.ReferenceOnly && IntentOf(parent) != null))) continue;
+                if (recognizedFills.Contains(e.Id)) continue;
+                if (!o.ReferenceOnly && parentOf.ContainsKey(e.Id) && !fills.Contains(e.Id) && Recognize(edit, e)) continue;
                 Reference(edit, e, booleans);
             }
+            FinishRecognition(edit);
         }
 
         void Native(IEdit edit, StepEntity e, Intent intent)
@@ -431,6 +454,7 @@ public static class IfcImport
             };
             Put(edit, gid, cls, Str(e[2]) ?? cls[3..], attrs, null, counts: false);
             references++;
+            referencesByClass[cls] = referencesByClass.GetValueOrDefault(cls) + 1;
             var storey = StoreyFor(e.Id);
             relations.Add(x => Contain(x, gid, storey));
         }

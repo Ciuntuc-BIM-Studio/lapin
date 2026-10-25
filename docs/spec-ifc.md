@@ -112,3 +112,63 @@ Un element cu piese agregate sub el (zone, planele acoperișului, treptele) **nu
 2. **Detaliul:** lucarnele ca `IfcWall` + `IfcRoof` sub acoperiș; `detail: "simple"` verificat în Revit și ArchiCAD; recunoașterea elementelor parametrice dintr-un IFC străin (vezi Importul, 3).
 3. **Importul propriu** (round trip) și **importul ca referință**; apoi actualizarea după GlobalId la al doilea import.
 4. **Schimbul cu BubbleBIM:** BubbleBIM scrie setul de intenție cu același nume; `bubbles-house` devine un caz al acestui IFC.
+
+## Recunoașterea unui IFC străin (Importul, 3) în detaliu **[Î7–Î12]**
+
+Cerința (25.10.2026): geometria importată să devină, pe cât se poate, geometrie nativă Lapin, editabilă: pereți și grinzi cu axele lor, în care se pot pune uși și ferestre, care se lungesc și se schimbă parametric; ușile și ferestrele recunoscute, cu tipul lor schimbabil sau mapat pe un tip al proiectului. Azi importul străin aduce mesh-uri (referințe), iar planurile din ele arată prost: fiecare triunghi își dă liniile, tăietura nu are umplutură.
+
+### Ce arată fișierele reale
+
+| Fișier | Pereți | Cum vin corpurile | Ce lipsește |
+|---|---|---|---|
+| `Bloc-P-4.ifc` (IFC4, Bubbles) | 506, din care 140 sunt finisaje exportate ca pereți separați („Finisaj exterior — Tencuială de var") | `IfcExtrudedAreaSolid` cu `IfcRectangleProfileDef` (2469), 160 `IfcBooleanClippingResult` (pereți sub acoperiș), 181 B-rep (scări, balustrade) | fără `Axis`, fără tipuri, fără `IfcMaterialLayerSetUsage`; ușile și ferestrele au `OverallWidth/Height` și `OperationType` |
+| `BURKWIL_DX_B.ifc` (IFC2X3, ArchiCAD) | 540 | 4355 B-rep fațetate, 388 extrudări, 415 `IfcMappedItem` | `Axis` o singură dată; 29 `IfcWallType`, 3 `IfcMaterialLayerSetUsage`, 556 `IfcRelConnectsPathElements` |
+| `Casa_Stil_Brancovenesc.ifc` (IFC4, BubbleBIM) | 6 | extrudări cu profil arbitrar (229), 14 `IfcTriangulatedFaceSet` | — |
+
+Concluzia: `Axis` și straturile de material sunt rare. Recunoașterea trebuie să plece de la **corp**: extrudări cu profilul lor parametric, și prisme B-rep din care se reconstruiește profilul. Lapin vechi convertea doar ușile și ferestrele (golul + dimensiunile), nu pereții; BubbleBIM Standalone scria IFC, nu recunoștea. Deci recunoașterea e cod nou, pe semantica IFC, fără nimic preluat din ifc-lite sau web-ifc.
+
+### Lanțul
+
+1. **Forma canonică a corpului.** Pentru fiecare produs, înainte de triangulare, reprezentarea `Body` se reduce la una dintre formele: `Extrusion(profil 2D cu goluri, direcție, adâncime, plasare)`, din `IfcExtrudedAreaSolid` (și primul operand al unui `IfcBooleanClippingResult`, cu tăieturile reținute separat), sau `Prism(contur 2D cu goluri, axă, înălțime)`, dedus dintr-un B-rep sau un `IfcPolygonalFaceSet` ale cărui fețe sunt plane și se împart în două capace paralele congruente și fețe laterale perpendiculare pe ele. `IfcMappedItem` se dezleagă cu transformarea lui. Orice altceva (sweep, revoluție, mesh triangulat fără structură, mai multe corpuri disjuncte) rămâne **referință**.
+2. **Clasa decide ce se citește din formă.**
+   - **Perete** (`IfcWall`, `IfcWallStandardCase`): cu `Axis` prezent, axa e aceea; altfel, din conturul prismei verticale: perechea de laturi lungi paralele dă grosimea și direcția, mijlocul lor dă axa, extremele conturului proiectate pe axă dau capetele (un perete tăiat în unghi la îmbinare are capetele unde se termină conturul; Lapin îi reface îmbinarea). Înălțimea = adâncimea extrudării; `baseOffset` din cota corpului față de etaj. Straturile: `IfcMaterialLayerSetUsage` când există; altfel un singur strat de grosimea măsurată, cu materialul asociat (`IfcRelAssociatesMaterial`) sau fără. Pereții sub acoperiș (`IfcBooleanClippingResult`) se recunosc din primul operand și rămân cu înălțimea lui; atașarea la acoperiș vine când acoperișul e nativ.
+   - **Placă** (`IfcSlab`): extrudare pe Z a unui profil arbitrar cu goluri sau prismă orizontală → contur, goluri (`addSlabOpening`), grosime, cotă.
+   - **Stâlp, grindă** (`IfcColumn`, `IfcBeam`, `IfcMember`): profilul extrudării → secțiunea (dreptunghi, cerc, I/U/L/T parametrice, potrivite cu catalogul de profile metalice după dimensiuni) și axa (verticală pentru stâlp, orizontală pentru grindă, din plasare și direcție); un B-rep prismă dă același lucru.
+   - **Fundații** (`IfcFooting`): dreptunghi extrudat → talpă izolată; prismă lungă → fundație continuă cu axa ca la perete.
+   - **Goluri, uși, ferestre:** cutia `IfcOpeningElement` în cadrul peretelui-gazdă dă `along`, lățimea, înălțimea și pervazul (`sill`); ușa sau fereastra care îl umple (`IfcRelFillsElement`) ia `OverallWidth/Height` când le are, altfel cutia golului, plus `OperationType`/`PartitioningType` și tipul sursă (`IfcDoorType`/`IfcDoorStyle`). Un gol fără umplutură devine gol simplu.
+   - **Acoperișuri, scări, balustrade, mobilier, spații:** referință (etapa B pentru acoperișurile din plane care formează un stil cunoscut).
+3. **Tipurile.** Perete: un `IfcWallType` per nume de tip sursă, sau, fără tip, per grosime + material („Zidărie 25", „Imported 200"). Uși și ferestre: un tip per tip sursă, sau, fără tip, per lățime × înălțime + operare („Door 90×210 left"); specificația pornește din cea implicită Lapin cu dimensiunile sursei. Stâlpi și grinzi: un tip per secțiune. Materialele se potrivesc după nume cu cele ale proiectului; restul se creează, cu hașura implicită a clasei.
+4. **Identitatea.** Elementul recunoscut păstrează **GlobalId-ul sursei ca id Lapin**, ca re-exportul să dea același GlobalId și un al doilea import să îl regăsească. Păstrează și `ifcClass`, `objectType`, numele și seturile de proprietăți ale sursei, ca text, pentru inspector.
+5. **Raportul.** Importul întoarce ce a recunoscut și ce a rămas referință, pe clase, cu motivul (fără contur dreptunghiular, extrudare oblică, mai multe corpuri). Interfața îl arată la sfârșit.
+6. **Ce rămâne referință se desenează corect.** Triunghiurile unui corp stocat se adună în fețe plane (`SolidFromMesh`) ca liniile din plan să fie muchiile reale, nu ale triunghiurilor; tăietura primește o umplutură neutră; liniile ascunse din interiorul corpului nu se desenează.
+
+### Etapele
+
+- **A (acum):** lanțul de mai sus pentru pereți, plăci, stâlpi, grinzi, fundații din extrudări și prisme; uși și ferestre cu tipuri implicite după sursă; raportul; desenul referințelor. Testat pe `Bloc-P-4.ifc` (toți pereții dreptunghiulari, 175 uși/ferestre) și pe `BURKWIL_DX_B.ifc` (prisme B-rep, tipuri de perete).
+- **B:** dialogul „Map types" după import: fiecare tip importat poate fi înlocuit cu un tip existent al proiectului, alegerea memorată în proiect; finisajele exportate ca pereți separați absorbite ca strat al peretelui alăturat; golurile tăiate direct în corp (fără `IfcOpeningElement`) găsite în contur; acoperișurile din plane; „Convertește la nativ" la cerere pe o referință.
+- **C:** actualizarea la reimport după GlobalId: ce s-a schimbat în sursă se schimbă în model, ce ai editat în Lapin se păstrează sau se semnalează.
+
+### Așa s-a făcut (etapa A, 25.10.2026)
+
+- **Contractul.** `IIfcRecognizer` în `Lapin.Platform` (`Recognition.cs`): importul citește fiecare element străin într-un `ForeignElement` (clasa, corpul ca prisme, golurile cu umpluturile lor, tipul, straturile sau materialul, uzajul, linia `Axis`, întinderile corpului în cadrul axei, piesele agregate) și îl oferă recunoscătorilor modulelor; primul care întoarce un id l-a făcut. Modulele se încarcă dinamic, deci `Lapin.Ifc` nu le poate apela direct: așa rămâne și cunoașterea atributelor în module.
+- **Prismele** (`IfcModel.Prisms`, în `IfcShapes.cs`): extrudările direct (primul operand al unei tăieturi booleene, marcat `Clipped`); B-rep-urile și seturile de fețe poligonale prin perechi de capace paralele congruente cu laturi perpendiculare, după curățarea vârfurilor coliniare (alte programe le lasă unde se ating vecinii); capacul opus poate fi împărțit în mai multe fețe coplanare. O cutie dă trei prisme; clasa alege.
+- **Pereții** (`Lapin.Architecture/ForeignElements.cs`), în ordine: corpul ca prismă verticală (talpa dă grosimea și, fără `Axis`, axa pe mijloc); piesele agregate ca straturi (ArchiCAD: `IfcBuildingElementPart` pe strat), din întinderile fiecărei piese de-a curmezișul axei, suprapunerile împărțite la mijloc; axa cu straturile din fișier și întinderile corpului (pereți tăiați de acoperiș, corpuri multiple). Uzajul fișierului așază straturile exact (`LayerSets.LayOut` cu offsetul și sensul lui); fără el, centrat. Golurile din cutia `IfcOpeningElement` în cadrul peretelui; ușile și ferestrele cu `OverallWidth/Height`, `flipHand` din `OperationType`; golurile fără umplutură ca goluri simple (`width`, `height` pe gol). Pereții se îmbină automat la sfârșit (`Joins.Auto`).
+- **Plăcile:** conturul prismei, găurile ca goluri, grosimea din înălțime, cota din vârf. **Stâlpii:** dreptunghi (cu rotația) sau cerc. **Grinzile:** profil în plan vertical măturat orizontal, sau prismă verticală cu axa pe latura lungă. **Fundațiile izolate:** dreptunghi, o treaptă, `bottom` din bază.
+- **Tipurile:** per nume de tip sursă, altfel per straturi (perete, placă), per secțiune (stâlp, grindă), per dimensiune și operare (uși, ferestre); refolosite în proiect după nume și dimensiune.
+- **Identitatea:** GlobalId-ul sursei e id-ul Lapin al elementului, al golului și al ușii; `imported` ține clasa, numele, tipul și seturile de proprietăți ale sursei. Un al doilea import al aceluiași fișier reface elementul (cu golurile și uzajul lui), nu îl dublează; ce ai făcut tu cu același id rămâne.
+- **Două treceri:** întâi nativ (intenție sau recunoaștere), apoi referințele, fără piesele unui element nativ și fără ușile făcute cu peretele lor.
+- **Referințele** (`StoredBodies`): triunghiurile se adună în fețe plane (`SolidFromMesh`), ca planul să arate muchiile corpului.
+- **Raportul:** `recognized`, `recognizedByClass`, `referencesByClass`, `skipped` (motive numărate) și note; interfața le arată în mesajul de import.
+
+### Rămase pentru etapa B
+
+Dialogul de mapare a tipurilor; finisajele exportate ca pereți separați absorbite ca strat; golurile tăiate direct în corp; plăcile și stâlpii B-rep care nu sunt prisme (conturul din fața de sus, întinderile); ușile peste înălțimea peretelui; fundațiile continue; acoperișurile din plane; „Convertește la nativ” pe o referință; actualizarea la reimport păstrând editările.
+
+### Întrebări
+
+- **[Î7]** Finisajele exportate ca pereți separați (Bubbles): absorbite ca strat al peretelui alăturat când sunt coplanare și adiacente pe toată lungimea, altfel pereți subțiri separați? (Recomand da, în etapa B.)
+- **[Î8]** Tipurile de perete fără sursă: per grosime + material, cu numele materialului și grosimea în nume? (Recomand da.)
+- **[Î9]** Ușile și ferestrele: tip per tip sursă, altfel per dimensiune + operare; maparea pe tipuri existente într-un dialog după import, memorată în proiect? (Recomand da; etapa A face tipurile, B dialogul.)
+- **[Î10]** Recunoaștere nesigură: referință cu raport, nu „cel mai bun perete" forțat? (Recomand referință; conversia manuală vine în B.)
+- **[Î11]** GlobalId-ul sursei devine id-ul Lapin al elementului recunoscut? (Recomand da.)
+- **[Î12]** Ordinea A → B → C? (Recomand da; A începe acum.)

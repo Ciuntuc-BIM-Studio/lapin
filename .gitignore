@@ -25,3 +25,6 @@ docs/release-macos.md
 
 # CodeGraph local index
 .codegraph/
+
+# A symlink named node_modules (a worktree borrowing another checkout's packages) is a file, which the folder pattern above misses.
+node_modules

@@ -42,6 +42,18 @@ public static class StoredBodies
             var t = (p["t"] as JsonArray)?.Select(x => (int)(Json.Number(x) ?? -1)).ToArray() ?? [];
             var vertices = new Vec3[v.Length / 3];
             for (var k = 0; k < vertices.Length; k++) vertices[k] = new Vec3(v[3 * k], v[3 * k + 1], v[3 * k + 2]);
+            // Coplanar triangles merged into faces where the mesh is a closed solid, so the drawings show the body's
+            // edges, not the triangulation's; the triangles as they are where it is not.
+            var tris = new List<(int A, int B, int C)>(t.Length / 3);
+            for (var k = 0; k + 2 < t.Length; k += 3)
+                if (t[k] >= 0 && t[k + 1] >= 0 && t[k + 2] >= 0 && t[k] < vertices.Length && t[k + 1] < vertices.Length && t[k + 2] < vertices.Length) tris.Add((t[k], t[k + 1], t[k + 2]));
+            Solid? merged = null;
+            try { merged = SolidFromMesh.Build(vertices, tris); } catch (InvalidOperationException) { merged = null; }
+            if (merged != null && merged.Faces.Length > 0)
+            {
+                list.Add(new GeometryPart((string?)p["name"] ?? "Body", (string?)p["color"] ?? "#c9ced6", merged, null, $"part:{list.Count}"));
+                continue;
+            }
             var faces = new List<Face>();
             for (var k = 0; k + 2 < t.Length; k += 3)
             {
