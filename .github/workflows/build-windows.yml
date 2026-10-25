@@ -39,23 +39,26 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: desktop/src-tauri
-      # MSVC on the PATH (cl, link) for manifold.
-      - uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
       # The booleans: manifold's C API as one manifoldc.dll, picked up by the engine.
       - uses: actions/cache@v4
         with:
           path: engine/native/win-x64
           key: manifold-win-x64-${{ hashFiles('scripts/build-manifold.mjs', 'engine/src/Geometry/Lapin.Booleans/ManifoldBooleans.cs') }}
-      - run: test -f engine/native/win-x64/manifoldc.dll || node scripts/build-manifold.mjs
+      # MSVC's environment (vcvars64) for this step only: on later steps Git's own
+      # link.exe would shadow MSVC's for Rust, and Platform=x64 would confuse MSBuild.
+      - name: manifold
+        shell: pwsh
+        run: |
+          if (Test-Path engine/native/win-x64/manifoldc.dll) { exit 0 }
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          cmd /c "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" && node scripts/build-manifold.mjs"
+          exit $LASTEXITCODE
       - run: pnpm install --frozen-lockfile
         env:
           CI: 'true'
-      # msvc-dev-cmd sets Platform=x64, which MSBuild would take as the solution's platform: not for .NET.
-      - run: env -u Platform dotnet build engine/Lapin.slnx -v q -nologo
-      - run: env -u Platform dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo
-      - run: env -u Platform pnpm build:product "$PRODUCT"
+      - run: dotnet build engine/Lapin.slnx -v q -nologo
+      - run: dotnet test engine/tests/Lapin.Engine.Tests -v q -nologo
+      - run: pnpm build:product "$PRODUCT"
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PRODUCT }}-windows-x64
