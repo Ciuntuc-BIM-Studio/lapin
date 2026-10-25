@@ -108,6 +108,14 @@ public static class LayerSets
         return layers.Select((l, i) => new LayerBand(bands[i].From, bands[i].To, l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", i, i == core)).ToList();
     }
 
+    /// <summary>Flips a layered element across its axis: its usage's sense turns and its offset changes sign (false: it has no layers).</summary>
+    public static bool Flip(IEdit edit, string occurrenceId)
+    {
+        if (UsageOf(edit.Model, occurrenceId) is not { } usage || Layers.ReadUsage(usage) is not { } u) return false;
+        edit.Replace(usage.With(attrs: Layers.WriteUsage(u with { Negative = !u.Negative, Offset = -u.Offset })));
+        return true;
+    }
+
     public static Entity? UsageOf(IModelView m, string occurrenceId) =>
         m.RelatingOf(occurrenceId, IfcClass.RelAssociatesMaterial) is { Class: IfcClass.MaterialLayerSetUsage } u ? u : null;
 }

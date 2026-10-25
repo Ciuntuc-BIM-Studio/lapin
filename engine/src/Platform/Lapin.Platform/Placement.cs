@@ -84,6 +84,8 @@ public static class Placement
                 return (JsonNode)new JsonArray(q.X, q.Y, Json.Number(p[2]) ?? 0);
             }).ToArray());
         if (a["ridgeDirection"] is JsonArray { Count: >= 2 } rd) a["ridgeDirection"] = J(t.Dir(P(rd)));
+        // A mirrored arc bulges to the other side of its chord.
+        if (t.Mirrored && Json.Number(a[PathCurve.Key]) is { } rise && e.Class != IfcClass.Annotation) a[PathCurve.Key] = -rise;
         return a;
     }
 
@@ -108,6 +110,7 @@ public static class Placement
         if (e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray && m.RelationsOf(e.Id, IfcClass.RelConnectsPathElements).Any())
         {
             var (a, b) = (P(e.Attrs["start"]), P(e.Attrs["end"]));
+            var curve = PathCurve.Of(e);
             foreach (var r in m.RelationsOf(e.Id, IfcClass.RelConnectsPathElements).ToList())
                 foreach (var pid in r.Related.Append(r.Relating).Where(x => x != e.Id && moving?.Contains(x) != true).Distinct())
                 {
@@ -117,7 +120,7 @@ public static class Placement
                     foreach (var k in new[] { "start", "end" })
                     {
                         var q = P(attrs[k]);
-                        if (DistToSegment(q, a, b) < 1e-6) { attrs[k] = J(t.Point(q)); changed = true; }
+                        if ((curve.IsArc ? curve.Distance(q) : DistToSegment(q, a, b)) < 1e-6) { attrs[k] = J(t.Point(q)); changed = true; }
                     }
                     if (changed) ctx.Replace(partner.With(attrs: attrs));
                 }

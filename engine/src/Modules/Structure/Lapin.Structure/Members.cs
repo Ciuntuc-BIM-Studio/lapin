@@ -103,7 +103,8 @@ public static class Beams
         if (Frame(beam, m) is not { } f) return null;
         var left = (f.End - f.Start).Normalized().Perp;
         var depth = Spec(m, beam).Section.Depth;
-        Vec2[] fp = [f.Start + left * f.YMin, f.End + left * f.YMin, f.End + left * f.YMax, f.Start + left * f.YMax];
+        var c = PathCurve.Of(beam);
+        IReadOnlyList<Vec2> fp = c.IsArc ? c.Band(_ => 0, _ => c.Length, f.YMin, f.YMax) : [f.Start + left * f.YMin, f.End + left * f.YMin, f.End + left * f.YMax, f.Start + left * f.YMax];
         return Prism.ExtrudeFootprint(fp, Top(m, beam) - depth, depth, "beam");
     }
 
@@ -113,15 +114,30 @@ public static class Beams
         var (section, material) = Spec(m, beam);
         if (Frame(beam, m) is not { } f) return new ElementGeometry([], Diagnostics: ["The beam has no length."]);
         var ends = services?.Get<IPathElements>() is { } paths ? Joins.EndsOf(m, beam, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
-        var fp = Strips.Footprint(f, ends, f.YMin, f.YMax);
+        var c = PathCurve.Of(beam);
+        IReadOnlyList<Vec2> fp = c.IsArc ? Strips.Footprint(c, f, ends, f.YMin, f.YMax) : Strips.Footprint(f, ends, f.YMin, f.YMax);
+        // Flipped, the section is mirrored across the axis (an angle or a channel faces the other way).
+        var outline = section.Outline().Select(p => beam.Bool("flipped") ? p with { X = -p.X } : p).ToList();
         Solid? solid;
-        if (section.IsProfile)
+        if (section.IsProfile && c.IsArc)
+        {
+            // A steel profile swept along the arc, its web upright.
+            var mid = Top(m, beam) - section.Depth / 2;
+            var (s0, s1) = Strips.Reach(c, f, ends);
+            var rings = c.Stations(s0, s1).Select(st =>
+            {
+                var (at, side) = (c.PointAt(st), c.TangentAt(st).Perp);
+                return (IReadOnlyList<Vec3>)outline.Select(p => new Vec3(at.X + side.X * p.X, at.Y + side.Y * p.X, mid + p.Y)).ToList();
+            }).ToList();
+            solid = Lofts.Rings(rings, "beam");
+        }
+        else if (section.IsProfile)
         {
             // A steel profile runs along the axis, its web upright, its top at the beam's top.
             var u = (f.End - f.Start).Normalized();
             var side = new Vec3(-u.Y, u.X, 0);
             var mid = Top(m, beam) - section.Depth / 2;
-            var ring = section.Outline().Select(p => new Vec3(f.Start.X, f.Start.Y, mid) + side * p.X + new Vec3(0, 0, p.Y)).ToList();
+            var ring = outline.Select(p => new Vec3(f.Start.X, f.Start.Y, mid) + side * p.X + new Vec3(0, 0, p.Y)).ToList();
             solid = Prism.Extrude(ring, null, new Vec3(u.X, u.Y, 0) * (f.End - f.Start).Length, "beam");
         }
         else solid = Prism.ExtrudeFootprint(fp, Top(m, beam) - section.Depth, section.Depth, "beam");
@@ -134,7 +150,7 @@ public static class Beams
     {
         if (g == null || g.Parts.Count == 0) yield break;
         var section = Spec(m, beam).Section;
-        var length = (Joins.End(beam) - Joins.Start(beam)).Length;
+        var length = PathCurve.Of(beam).Length;
         var net = g.Parts.Sum(p => Measure.Volume(p.Solid));
         yield return new QuantitySet("Qto_BeamBaseQuantities",
         [

@@ -54,6 +54,14 @@ public static class Args
     }
 
     /// <summary>A join style by name: butt or mitre; null when not given.</summary>
+    /// <summary>A path's arc: its rise off the chord (<c>arc</c>), or the arc through a third point (<c>x3</c>, <c>y3</c>); 0 for a straight one.</summary>
+    public static double Rise(JsonObject a, Vec2 start, Vec2 end)
+    {
+        var chord = (end - start).Length;
+        if (a["x3"] != null || a["y3"] != null) return PathCurve.CheckRise(PathCurve.RiseThrough(start, end, Point(a, "x3", "y3")), chord);
+        return Json.Number(a[PathCurve.Key]) is { } rise ? PathCurve.CheckRise(rise, chord) : 0;
+    }
+
     public static JoinStyle? JoinStyle(JsonNode? n) => (string?)n switch
     {
         null => null,

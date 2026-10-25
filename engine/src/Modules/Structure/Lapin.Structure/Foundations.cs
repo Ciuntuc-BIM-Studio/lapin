@@ -22,6 +22,20 @@ static class Strips
         Vec2 P(double x, double y) => start + dir * x + left * y;
         return [P(-At(sc, y0), y0), P(length + At(ec, y0), y0), P(length + At(ec, y1), y1), P(-At(sc, y1), y1)];
     }
+
+    /// <summary>The same band along a curved axis: its ends where the joins put them (along the tangent there), cut across the body.</summary>
+    public static List<Vec2> Footprint(PathCurve c, JoinWall f, (Vec2 Point, EndCut Cut)?[] ends, double y0, double y1)
+    {
+        var (from, to) = c.Ends(ends[0], ends[1], f.YMin, f.YMax);
+        return c.Band(from, to, y0, y1);
+    }
+
+    /// <summary>Where a profile swept along a curved axis starts and ends: where its joints leave the axis.</summary>
+    public static (double S0, double S1) Reach(PathCurve c, JoinWall f, (Vec2 Point, EndCut Cut)?[] ends)
+    {
+        var (from, to) = c.Ends(ends[0], ends[1], f.YMin, f.YMax);
+        return (from(0), to(0));
+    }
 }
 
 /// <summary>

@@ -62,6 +62,7 @@ public static class Joins
         var fa = frameFor?.Invoke(a) ?? paths.FrameOf(a, m);
         var fb = frameFor?.Invoke(b) ?? paths.FrameOf(b, m);
         if (fa == null || fb == null) { problem = "A joined element has no body to join."; return null; }
+        (fa, fb) = Tangents(a, b, r, fa, fb);
         try { return WallJoins.Compute(fa, fb, new JoinOptions(Priority: 'a', Style: StyleOf(r))); }
         catch (CommandException ex) { problem = ex.Message; return null; }
     }
@@ -82,6 +83,59 @@ public static class Joins
         return ends;
     }
 
+    /// <summary>
+    /// The frame an element joins by near a point: its own; an arc's, the
+    /// tangent line through the arc's point nearest there, as long as the arc
+    /// and starting as far back as the point is along it (so a joint at its
+    /// start or end is that end).
+    /// </summary>
+    public static JoinWall Tangent(JoinWall f, Entity e, Vec2 near)
+    {
+        var c = PathCurve.Of(e);
+        if (!c.IsArc) return f;
+        var length = c.Length;
+        var s = Math.Clamp(c.Project(near), 0, length);
+        var (p, t) = (c.PointAt(s), c.TangentAt(s));
+        return f with { Start = p - t * s, End = p + t * (length - s) };
+    }
+
+    /// <summary>
+    /// Two elements' frames for joining each other: straight ones as they are;
+    /// an arc by its tangent where they meet (the ends the join names, else the
+    /// nearest end of one to the other's path).
+    /// </summary>
+    static (JoinWall A, JoinWall B) Tangents(Entity a, Entity b, Relation? r, JoinWall fa, JoinWall fb)
+    {
+        var (ca, cb) = (PathCurve.Of(a), PathCurve.Of(b));
+        if (!ca.IsArc && !cb.IsArc) return (fa, fb);
+        Vec2? pa = null, pb = null;
+        if (r != null && r.Touches(a.Id) && r.Touches(b.Id))
+        {
+            var mine = (string?)r.Attrs?[r.Relating == a.Id ? "relatingConnection" : "relatedConnection"];
+            var theirs = (string?)r.Attrs?[r.Relating == a.Id ? "relatedConnection" : "relatingConnection"];
+            pa = mine switch { "ATSTART" => Start(a), "ATEND" => End(a), _ => null };
+            pb = theirs switch { "ATSTART" => Start(b), "ATEND" => End(b), _ => null };
+        }
+        if (pa == null && pb == null)
+        {
+            var best = double.MaxValue;
+            foreach (var p in new[] { Start(a), End(a) })
+                if (cb.Distance(p) is var d && d < best) { best = d; (pa, pb) = (p, p); }
+            foreach (var p in new[] { Start(b), End(b) })
+                if (ca.Distance(p) is var d && d < best - 1e-9) { best = d; (pa, pb) = (p, p); }
+        }
+        pa ??= pb;
+        pb ??= pa;
+        return (Tangent(fa, a, pa!.Value), Tangent(fb, b, pb!.Value));
+    }
+
+    /// <summary>Two elements' frames for joining each other (null when either cannot be joined as it is).</summary>
+    static (JoinWall A, JoinWall B)? Pair(IPathElements paths, IModelView m, Entity a, Entity b)
+    {
+        if (paths.FrameOf(a, m) is not { } fa || paths.FrameOf(b, m) is not { } fb) return null;
+        return Tangents(a, b, Between(m, a.Id, b.Id), fa, fb);
+    }
+
     static string Name(Connection c) => c switch { Connection.AtStart => "ATSTART", Connection.AtEnd => "ATEND", _ => "ATPATH" };
 
     /// <summary>
@@ -96,9 +150,10 @@ public static class Joins
         if (a.Class != b.Class) throw new CommandException($"A {a.Class} joins only a {a.Class}.");
         var existing = Between(edit.Model, a.Id, b.Id);
         priority ??= existing == null ? null : existing.Relating == a.Id ? 'a' : 'b';
-        var join = WallJoins.Compute(Frame(paths, edit.Model, a), Frame(paths, edit.Model, b), new JoinOptions(Priority: priority, Style: style ?? (existing != null ? StyleOf(existing) : JoinStyle.Butt)));
-        MoveAxis(edit, a, join.A.Wall.Start, join.A.Wall.End);
-        MoveAxis(edit, b, join.B.Wall.Start, join.B.Wall.End);
+        var (fa, fb) = Tangents(a, b, existing, Frame(paths, edit.Model, a), Frame(paths, edit.Model, b));
+        var join = WallJoins.Compute(fa, fb, new JoinOptions(Priority: priority, Style: style ?? (existing != null ? StyleOf(existing) : JoinStyle.Butt)));
+        MoveAxis(edit, a, join.A);
+        MoveAxis(edit, b, join.B);
         var (relating, related, relatingSide, relatedSide) = join.Relating == 'a' ? (a, b, join.A, join.B) : (b, a, join.B, join.A);
         var attrs = new JsonObject
         {
@@ -112,9 +167,18 @@ public static class Joins
         return join;
     }
 
-    static void MoveAxis(IEdit edit, Entity e, Vec2 start, Vec2 end)
+    /// <summary>The element's axis brought to the join: a straight one both ends as the join has them; an arc only its joined end (its frame is a tangent).</summary>
+    static void MoveAxis(IEdit edit, Entity e, JoinSide side)
     {
         var current = edit.Model.Get(e.Id)!;
+        var (start, end) = (side.Wall.Start, side.Wall.End);
+        if (PathCurve.Of(current).IsArc)
+            (start, end) = side.Connection switch
+            {
+                Connection.AtStart => (start, End(current)),
+                Connection.AtEnd => (Start(current), end),
+                _ => (Start(current), End(current)),
+            };
         if ((Start(current) - start).Length < 1e-12 && (End(current) - end).Length < 1e-12) return;
         var attrs = current.CloneAttrs();
         attrs["start"] = new JsonArray(start.X, start.Y);
@@ -162,7 +226,7 @@ public static class Joins
             {
                 if (Between(m, id, other.Id) != null) continue;
                 var current = m.Get(other.Id)!;
-                if (paths.FrameOf(e, m) is not { } fe || paths.FrameOf(current, m) is not { } fo) continue;
+                if (Pair(paths, m, e, current) is not (var fe, var fo)) continue;
                 WallJoin trial;
                 try { trial = WallJoins.Compute(fe, fo, new JoinOptions(Style: style)); }
                 catch (CommandException) { continue; }
@@ -179,7 +243,7 @@ public static class Joins
             if (Between(m, id, other.Id) != null) continue;
             var current = m.Get(other.Id)!;
             e = m.Get(id)!;
-            if (paths.FrameOf(e, m) is not { } fe || paths.FrameOf(current, m) is not { } fo) continue;
+            if (Pair(paths, m, e, current) is not (var fe, var fo)) continue;
             WallJoin trial;
             try { trial = WallJoins.Compute(fe, fo); }
             catch (CommandException) { continue; }
@@ -191,6 +255,7 @@ public static class Joins
 
     static double DistanceTo(Entity e, Vec2 p)
     {
+        if (PathCurve.Of(e) is { IsArc: true } c) return c.Distance(p);
         var a = Start(e);
         var d = End(e) - a;
         var t = Math.Clamp(Vec2.Dot(p - a, d) / Math.Max(Vec2.Dot(d, d), 1e-12), 0, 1);

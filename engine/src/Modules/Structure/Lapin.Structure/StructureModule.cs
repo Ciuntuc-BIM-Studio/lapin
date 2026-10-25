@@ -16,7 +16,7 @@ public sealed class StructureModule : ILapinModule
         FieldDescriptor priority = new("cutPriority", "Cut priority", "number", Min: 0, Max: 100);
         r.Class(new(IfcClass.Column, "Column", [new("height", "Height (own)", "length", Min: 0.01), new("baseOffset", "Base offset", "length"), new("rotation", "Rotation", "angle"), priority], "#a8a8a8"));
         r.Class(new(IfcClass.ColumnType, "Column type", [new("height", "Height", "length", Min: 0.01)], "#a8a8a8", Kind: "type"));
-        r.Class(new(IfcClass.Beam, "Beam", [new("topOffset", "Top offset", "length"), priority], "#a8a8a8"));
+        r.Class(new(IfcClass.Beam, "Beam", [new("topOffset", "Top offset", "length"), new(PathCurve.Key, "Arc rise", "length"), priority], "#a8a8a8"));
         r.Class(new(IfcClass.BeamType, "Beam type", [], "#a8a8a8", Kind: "type"));
         r.Class(new(IfcClass.Footing, "Footing", [new("rotation", "Rotation", "angle"), priority], "#a8a8a8"));
         r.Class(new(IfcClass.FootingType, "Footing type", [new("bottom", "Bottom level", "length")], "#a8a8a8", Kind: "type"));
@@ -107,6 +107,7 @@ public sealed class StructureModule : ILapinModule
             if ((e - s).Length < 1e-3) throw new CommandException("A beam needs two different points.");
             var type = Place.TypeFor(ctx, a, IfcClass.BeamType, () => Beams.DefaultType(ctx));
             var b = new Entity(ctx.NewId(), IfcClass.Beam, type.Name, new JsonObject { ["start"] = Place.Json2(s), ["end"] = Place.Json2(e), ["topOffset"] = Json.Number(a["topOffset"]) ?? 0 }, "BEAM");
+            if (Args.Rise(a, s, e) is var rise && rise != 0) b.Attrs[PathCurve.Key] = rise;
             ctx.Add(b);
             Spatial.Contain(ctx, storey.Id, b.Id);
             ctx.Relate(IfcClass.RelDefinesByType, type.Id, b.Id);
@@ -157,7 +158,33 @@ public sealed class StructureModule : ILapinModule
             var start = new Vec2(Json.Number(a["x1"]) ?? s.X, Json.Number(a["y1"]) ?? s.Y);
             var end = new Vec2(Json.Number(a["x2"]) ?? en.X, Json.Number(a["y2"]) ?? en.Y);
             var keep = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var k) || k;
+            // A beam's arc (a strip foundation stays straight).
+            if (e.Class == IfcClass.Beam && (a.ContainsKey(PathCurve.Key) || a["x3"] != null))
+            {
+                var attrs = e.CloneAttrs();
+                if (Args.Rise(a, start, end) is var rise && rise != 0) attrs[PathCurve.Key] = rise; else attrs.Remove(PathCurve.Key);
+                ctx.Replace(e.With(attrs: attrs));
+                e = ctx.Model.Get(e.Id)!;
+            }
             Joins.MoveEnds(ctx, Paths(ctx), e, start, end, keep, a["detachJoinedEnds"] is JsonValue dj && dj.TryGetValue<bool>(out var detach) && detach);
+            return null;
+        });
+
+        // Flip across the axis: a beam's section is mirrored, a strip foundation's layers swap faces.
+        r.Command("flip", "Flip", (ctx, a) =>
+        {
+            foreach (var id in Args.Ids(a))
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.");
+                if (e.Class == IfcClass.Beam)
+                {
+                    var attrs = e.CloneAttrs();
+                    if (e.Bool("flipped")) attrs.Remove("flipped"); else attrs["flipped"] = true;
+                    ctx.Replace(e.With(attrs: attrs));
+                }
+                else if (e.Class == IfcClass.Footing && e.Attrs["start"] != null) LayerSets.Flip(ctx, e.Id);
+                else throw new CommandException($"„{e.Name}” does not flip.");
+            }
             return null;
         });
 

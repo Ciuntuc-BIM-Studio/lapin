@@ -391,7 +391,10 @@ public static class IfcExport
         string? AxisOf(Entity e)
         {
             if (!s.Catalog.IsPath(e.Class) || Pt(e.Attrs["start"]) is not { } a || Pt(e.Attrs["end"]) is not { } b) return null;
-            return f.Add("IFCSHAPEREPRESENTATION", axis, S("Axis"), S("Curve2D"), L(new[] { f.Add("IFCPOLYLINE", L(new[] { P2(a), P2(b) })) }));
+            // An arc as the polyline it is drawn with (steps of at most 5°).
+            var c = PathCurve.Of(e);
+            var pts = c.IsArc ? c.Line(0, c.Length, 0) : [a, b];
+            return f.Add("IFCSHAPEREPRESENTATION", axis, S("Axis"), S("Curve2D"), L(new[] { f.Add("IFCPOLYLINE", L(pts.Select(P2).ToArray())) }));
         }
 
         // ─── Types and materials ────────────────────────────────────────────

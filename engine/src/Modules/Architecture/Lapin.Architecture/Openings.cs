@@ -54,7 +54,7 @@ public static class Openings
     /// </summary>
     public static void CheckFits(IModelView m, Entity wall, double along, double sill, double width, double height, string? except = null)
     {
-        var length = (Walls.End(wall) - Walls.Start(wall)).Length;
+        var length = PathCurve.Of(wall).Length;
         var wallHeight = wall.Num("height", Walls.DefaultHeight);
         if (!(width > 0 && height > 0)) throw new CommandException("An opening needs a width and a height.");
         if (along - width / 2 < -1e-9 || along + width / 2 > length + 1e-9) throw new CommandException($"The opening, {width * 1000:0} mm wide, does not fit along the wall ({length * 1000:0} mm) there.");
@@ -71,6 +71,7 @@ public static class Openings
     /// <summary>Where a point falls along the wall's axis, metres from its start.</summary>
     public static double AlongOf(Entity wall, Vec2 p)
     {
+        if (PathCurve.Of(wall) is { IsArc: true } c) return c.Project(p);
         var a = Walls.Start(wall);
         var d = Walls.End(wall) - a;
         return Vec2.Dot(p - a, d) / Math.Max(d.Length, 1e-12);
@@ -180,13 +181,30 @@ public static class Openings
         public double Centre => (YMin + YMax) / 2;
     }
 
-    public static WallFrame FrameOf(IModelView m, Entity wall)
+    /// <summary>The wall's frame; a curved wall's is its tangent at <paramref name="along"/> (where what it hosts sits), set back so that <c>along</c> still lands there.</summary>
+    public static WallFrame FrameOf(IModelView m, Entity wall, double along = 0)
     {
         var start = Walls.Start(wall);
         var dir = (Walls.End(wall) - start).Normalized();
+        if (PathCurve.Of(wall) is { IsArc: true } c)
+        {
+            dir = c.TangentAt(along);
+            start = c.PointAt(along) - dir * along;
+        }
         var bands = Walls.Section(m, wall);
         var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
         return new WallFrame(start, dir, dir.Perp, z, bands.Min(b => b.From), bands.Max(b => b.To));
+    }
+
+    /// <summary>What an opening takes out of a curved wall: the wall's band between its sides, cut radially, a little past both faces.</summary>
+    public static Solid? ArcCutter(PathCurve c, double baseZ, double yMin, double yMax, Placed p) =>
+        Prism.ExtrudeFootprint(c.Band(_ => p.Along - p.Width / 2, _ => p.Along + p.Width / 2, yMin - 0.05, yMax + 0.05), baseZ + p.Sill, p.Height, "opening");
+
+    /// <summary>The body an opening takes out of its wall, straight or curved.</summary>
+    public static Solid? CutterIn(IModelView m, Entity wall, Placed p)
+    {
+        var f = FrameOf(m, wall, p.Along);
+        return PathCurve.Of(wall) is { IsArc: true } c ? ArcCutter(c, f.Base, f.YMin, f.YMax, p) : Cutter(f, p);
     }
 
     /// <summary>The box an opening takes out of its wall, through the whole thickness and a little past it.</summary>
@@ -211,8 +229,8 @@ public static class Openings
         var opening = OpeningOf(m, fill.Id);
         var wall = opening == null ? null : WallOf(m, opening.Id);
         if (spec == null || opening == null || wall == null) return new ElementGeometry([], Diagnostics: ["A door or window needs its type and its opening in a wall."]);
-        var f = FrameOf(m, wall);
         var p = Place(m, opening);
+        var f = FrameOf(m, wall, p.Along);
         var sx = fill.Bool("flipHand") ? -1 : 1;
         var sy = fill.Bool("flipSide") ? -1 : 1;
         // Type Y (+ to the exterior) is the wall's right: −left.

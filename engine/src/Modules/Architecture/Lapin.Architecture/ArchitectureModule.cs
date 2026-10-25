@@ -18,6 +18,7 @@ public sealed class ArchitectureModule : ILapinModule
         [
             new("height", "Height", "length", Min: 0.01),
             new("baseOffset", "Base offset", "length"),
+            new(PathCurve.Key, "Arc rise", "length"),
             new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
             new("roofTop", "Top under a roof", "choice", Choices: RoofTop.Modes),
         ], "#b5654a"));
@@ -337,9 +338,13 @@ public sealed class ArchitectureModule : ILapinModule
         {
             var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
             var type = (string?)a["typeId"] is { } typeId ? Spatial.Require(ctx.Model, typeId, IfcClass.WallType) : null;
-            var wall = (a["join"] is JsonValue j && j.TryGetValue<bool>(out var join) && !join)
-                ? Walls.AddUnjoined(ctx, storeyId, P(a, "x1", "y1"), P(a, "x2", "y2"), Json.Number(a["height"]) ?? Walls.DefaultHeight, Json.Number(a["baseOffset"]) ?? 0, type)
-                : Walls.Add(ctx, Paths(ctx), storeyId, P(a, "x1", "y1"), P(a, "x2", "y2"), Json.Number(a["height"]) ?? Walls.DefaultHeight, Json.Number(a["baseOffset"]) ?? 0, type, Style(a["joinStyle"]) ?? JoinStyle.Butt);
+            var (p1, p2) = (P(a, "x1", "y1"), P(a, "x2", "y2"));
+            var rise = Args.Rise(a, p1, p2);
+            var unjoined = a["join"] is JsonValue j && j.TryGetValue<bool>(out var join) && !join;
+            var wall = Walls.AddUnjoined(ctx, storeyId, p1, p2, Json.Number(a["height"]) ?? Walls.DefaultHeight, Json.Number(a["baseOffset"]) ?? 0, type);
+            // A curved wall: the arc through its ends, rising off the chord (or through a third point), before it joins.
+            if (rise != 0) { var attrs = wall.CloneAttrs(); attrs[PathCurve.Key] = rise; ctx.Replace(wall.With(attrs: attrs)); }
+            if (!unjoined) Joins.Auto(ctx, Paths(ctx), wall.Id, Style(a["joinStyle"]) ?? JoinStyle.Butt);
             return new JsonObject { ["id"] = wall.Id };
         });
 
@@ -414,12 +419,16 @@ public sealed class ArchitectureModule : ILapinModule
             var thickness = Json.Number(a["thickness"]) ?? wall.NumOrNull("thickness");
             if (thickness is <= 0) throw new CommandException("A wall's thickness must be positive.");
             var baseOffset = Json.Number(a["baseOffset"]) ?? wall.Num("baseOffset");
+            var rise = a.ContainsKey(PathCurve.Key) || a["x3"] != null ? Args.Rise(a, start, end) : wall.NumOrNull(PathCurve.Key) ?? 0;
             // The openings must still fit the wall as it will be, along it and up it.
-            var after = wall.With(attrs: Walls.Attrs(start, end, height, baseOffset, thickness));
+            var next = Walls.Attrs(start, end, height, baseOffset, thickness);
+            if (rise != 0) next[PathCurve.Key] = rise;
+            var after = wall.With(attrs: next);
             foreach (var o in Openings.PlacedOn(ctx.Model, wall.Id)) Openings.CheckFits(ctx.Model, after, o.Along, o.Sill, o.Width, o.Height, o.Opening.Id);
             // Only the wall's own fields change; what other modules wrote on it (its phase, its cut priority) stays.
             var attrs = wall.CloneAttrs();
             foreach (var (k, v) in Walls.Attrs(Walls.Start(wall), Walls.End(wall), height, baseOffset, thickness)) attrs[k] = v?.DeepClone();
+            if (rise != 0) attrs[PathCurve.Key] = rise; else attrs.Remove(PathCurve.Key);
             ctx.Replace(wall.With(attrs: attrs));
             var moveJoined = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var keep) || keep;
             if ((start - Walls.Start(wall)).Length > 1e-12 || (end - Walls.End(wall)).Length > 1e-12)
@@ -521,7 +530,7 @@ sealed class VoidShapes : IVoidShapes
         if (m.RelatingOf(opening.Id, IfcClass.RelVoidsElement) is not { } host) return null;
         return host.Class switch
         {
-            IfcClass.Wall => Openings.Cutter(Openings.FrameOf(m, host), Openings.Place(m, opening)),
+            IfcClass.Wall => Openings.CutterIn(m, host, Openings.Place(m, opening)),
             IfcClass.Slab => Slabs.OpeningSolid(m, host, opening),
             _ => null,
         };

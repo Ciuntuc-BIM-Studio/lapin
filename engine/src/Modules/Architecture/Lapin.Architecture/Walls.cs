@@ -83,8 +83,7 @@ public static class Walls
     public static void Flip(IEdit edit, Entity wall, string axis = "y")
     {
         if (axis == "x") throw new CommandException("A wall flips across its axis (Flip Y): its ends stay where they are.");
-        if (UsageOf(edit.Model, wall.Id) is not { } usage || Layers.ReadUsage(usage) is not { } u) return;
-        edit.Replace(usage.With(attrs: Layers.WriteUsage(u with { Negative = !u.Negative, Offset = -u.Offset })));
+        LayerSets.Flip(edit, wall.Id);
     }
 
     /// <summary>A layer band of the wall's section: across the axis (left of it positive), its material, whether it is the core.</summary>
@@ -115,6 +114,7 @@ public static class Walls
         var start = Start(wall);
         var end = End(wall);
         if ((end - start).Length < MinLength) return new ElementGeometry([], Diagnostics: ["The wall has no length."]);
+        if (PathCurve.Of(wall) is { IsArc: true } arc) return ArcGeometry(wall, arc, m, services);
         var problems = new List<string>();
         var paths = services?.Get<IPathElements>();
         var ends = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
@@ -240,6 +240,71 @@ public static class Walls
     }
 
     /// <summary>
+    /// A curved wall's body: its layers as bands along the arc, cut at the ends
+    /// the way its joins say (along the tangent there), its zones, its
+    /// openings taken out radially. Its lintels and a roof over it wait for later.
+    /// </summary>
+    static ElementGeometry ArcGeometry(Entity wall, PathCurve c, IModelView m, IServices? services)
+    {
+        var problems = new List<string>();
+        var paths = services?.Get<IPathElements>();
+        var ends = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
+        var length = c.Length;
+        var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var height = wall.Num("height", DefaultHeight);
+        var bands = Section(m, wall);
+        var (yMin, yMax) = (bands.Min(x => x.From), bands.Max(x => x.To));
+        // Each face ends where it meets its joint's cut (along the tangent past an end).
+        var (From, To) = c.Ends(ends[0], ends[1], yMin, yMax);
+
+        var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
+        var openings = Openings.PlacedOn(m, wall.Id);
+        var booleans = services?.Get<ISolidBooleans>();
+        var cutters = (services?.Get<GeometryOptions>()?.CutOpenings ?? true)
+            ? openings.Select(o => (o, Box: Openings.ArcCutter(c, z, yMin, yMax, o))).Where(x => x.Box != null).ToList() : [];
+        if (cutters.Count > 0 && booleans == null) problems.Add("Openings need the boolean library (manifold), missing here: the wall is drawn uncut.");
+        GeometryPart Cut(GeometryPart part, double z0, double z1)
+        {
+            if (booleans == null) return part;
+            var reach = cutters.Where(x => x.o.Sill + z < z1 - 1e-9 && x.o.Sill + x.o.Height + z > z0 + 1e-9).Select(x => x.Box!).ToList();
+            if (reach.Count == 0) return part;
+            try { return booleans.Difference(part.Solid, reach, part.Solid.Tag) is { } cut ? part with { Solid = cut } : part; }
+            catch (InvalidOperationException ex) { problems.Add($"{part.Name}: an opening could not be cut ({ex.Message})."); return part; }
+        }
+        var cutAt = PlanCutAbove(m, wall);
+        var gaps = openings.Where(o => o.Sill < cutAt && o.Sill + o.Height > cutAt).Select(o => (From: o.Along - o.Width / 2, To: o.Along + o.Width / 2)).OrderBy(g => g.From).ToList();
+        var parts = new List<GeometryPart>();
+        var plan = new List<PlanItem>();
+        foreach (var band in bands)
+        {
+            if (!(band.To - band.From > 1e-9)) continue;
+            var footprint = c.Band(From, To, band.From, band.To);
+            if (band.Core && zones.Count > 0)
+            {
+                foreach (var zb in zones)
+                    if (Prism.ExtrudeFootprint(footprint, z + zb.Z0, zb.Z1 - zb.Z0, zb.Zone.Name) is { } piece)
+                        parts.Add(Cut(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key), zb.Z0, zb.Z1));
+            }
+            else if (Prism.ExtrudeFootprint(footprint, z, height, band.Name) is { } solid)
+                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), 0, height));
+            // In plan, the band between the gaps the openings leave at the cut.
+            var at = double.NegativeInfinity;
+            foreach (var g in gaps.Append((From: double.PositiveInfinity, To: double.PositiveInfinity)))
+            {
+                var lo = at;
+                double Lo(double y) => Math.Max(From(y), lo);
+                double Hi(double y) => Math.Min(To(y), g.From);
+                if (Hi(band.From) - Lo(band.From) > 1e-9 && Hi(band.To) - Lo(band.To) > 1e-9) plan.Add(new PlanItem("cut", true, c.Band(Lo, Hi, band.From, band.To)));
+                at = Math.Max(at, g.To);
+            }
+        }
+        parts = CutPriorities.Apply(wall, m, services, parts, problems);
+        if (wall.Str("roofTop") == "attach") problems.Add("A curved wall keeps its own height under a roof, for now.");
+        if (openings.Count > 0 && LintelRuleOf(m, wall) != null) problems.Add("A curved wall's openings have no lintels yet.");
+        return new ElementGeometry(parts, plan, [c.Start, c.End, c.PointAt(length / 2)], problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>
     /// What a roof takes off the wall: the region above its top profile (u along
     /// the wall's own axis, v above its base), across the whole thickness. The
     /// profile runs on in line past the wall's ends, where joins reach.
@@ -272,7 +337,8 @@ public static class Walls
         var bands = Section(m, wall);
         double y0 = bands.Min(b => b.From), y1 = bands.Max(b => b.To);
         var z = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
-        Vec2[] fp = [start + left * y0, end + left * y0, end + left * y1, start + left * y1];
+        var c = PathCurve.Of(wall);
+        IReadOnlyList<Vec2> fp = c.IsArc ? c.Band(_ => 0, _ => c.Length, y0, y1) : [start + left * y0, end + left * y0, end + left * y1, start + left * y1];
         return Prism.ExtrudeFootprint(fp, z, wall.Num("height", DefaultHeight), "wall");
     }
 
@@ -285,7 +351,7 @@ public static class Walls
     {
         var start = Start(wall);
         var end = End(wall);
-        if ((end - start).Length < MinLength) return [];
+        if ((end - start).Length < MinLength || PathCurve.Of(wall).IsArc) return [];
         var paths = services?.Get<IPathElements>();
         var ends = paths != null ? Joins.EndsOf(m, wall, paths, []) : new (Vec2 Point, EndCut Cut)?[2];
         if (ends[0] is { } s) start = s.Point;
@@ -365,7 +431,7 @@ public static class Walls
     public static IEnumerable<QuantitySet> Quantities(Entity wall, ElementGeometry? geometry, IModelView m)
     {
         if (geometry == null || geometry.Parts.Count == 0) yield break;
-        var length = (End(wall) - Start(wall)).Length;
+        var length = PathCurve.Of(wall).Length;
         var height = wall.Num("height", DefaultHeight);
         var bands = Section(m, wall);
         var width = bands.Max(b => b.To) - bands.Min(b => b.From);
