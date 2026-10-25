@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <!--
+    The engine in the browser (docs/plan-browser-engine.md): the same engine
+    as the desktop's, run in a Web Worker. Not in Lapin.slnx: the desktop build
+    and its CI never see it; scripts/build-web.mjs builds it for one product
+    (it writes generated/, the product's modules) with the .NET wasm-tools
+    workload. AOT, trimmed whole: the engine's JSON is generated at build time.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RunAOTCompilation Condition="'$(Configuration)' == 'Release'">true</RunAOTCompilation>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
+    <!-- manifold is linked in: engine/native/browser-wasm, built by scripts/build-manifold.mjs with its browser option. -->
+    <WasmBuildNative>true</WasmBuildNative>
+    <LapinNative>$(MSBuildThisFileDirectory)../../../native/browser-wasm/</LapinNative>
+  </PropertyGroup>
+  <ItemGroup>
+    <NativeFileReference Include="$(LapinNative)manifoldc.a;$(LapinNative)libmanifold.a;$(LapinNative)libClipper2.a" />
+    <ProjectReference Include="../../Platform/Lapin.Protocol/Lapin.Protocol.csproj" />
+  </ItemGroup>
+  <Import Project="generated/Product.g.props" />
+  <Target Name="LapinBrowserChecks" BeforeTargets="Build">
+    <Error Condition="!Exists('$(LapinNative)manifoldc.a')" Text="manifold for the browser is missing: run node scripts/build-manifold.mjs --browser-wasm" />
+  </Target>
+</Project>

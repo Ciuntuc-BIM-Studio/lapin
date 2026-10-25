@@ -17,6 +17,7 @@
     "check:licenses": "node scripts/check-licenses.mjs",
     "build": "node scripts/check-licenses.mjs && pnpm --filter ui build",
     "build:product": "node scripts/check-licenses.mjs && node scripts/build-product.mjs",
+    "build:web": "node scripts/check-licenses.mjs && node scripts/build-web.mjs",
     "tauri": "tauri",
     "mcp": "node scripts/lapin-mcp.mjs"
   },

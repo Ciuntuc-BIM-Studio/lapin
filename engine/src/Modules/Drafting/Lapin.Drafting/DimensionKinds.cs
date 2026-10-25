@@ -26,7 +26,7 @@ public static class DimensionKinds
     public static readonly string[] SlopeFormats = ["auto", "%", "deg", "ratio"];
 
     static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
-    static JsonArray J(Vec2 p) => [p.X, p.Y];
+    static JsonArray J(Vec2 p) => new(p.X, p.Y);
 
     public static bool IsKind(Entity dim) => dim.Str("dimKind") is { } k && Kinds.Contains(k);
 

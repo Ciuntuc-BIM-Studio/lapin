@@ -27,7 +27,7 @@ public abstract record Shape
     }
 
     public abstract JsonObject ToJson();
-    protected static JsonArray J(Vec2 p) => [Math.Round(p.X, 9), Math.Round(p.Y, 9)];
+    protected static JsonArray J(Vec2 p) => new(Math.Round(p.X, 9), Math.Round(p.Y, 9));
 }
 
 public sealed record Line(Vec2 A, Vec2 B) : Shape

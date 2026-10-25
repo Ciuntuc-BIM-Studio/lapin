@@ -68,6 +68,36 @@ export function resolveProduct(root, productId) {
   };
 }
 
+/**
+ * The engine modules of a product as a host that builds them in needs them
+ * (the browser's, which loads nothing from a folder): each one's project and
+ * the class that is its ILapinModule, core left out (it is the platform's).
+ */
+export function engineModules(root, productId) {
+  const p = resolveProduct(root, productId);
+  const o = [];
+  const engineDir = join(root, 'engine/src/Modules');
+  for (const group of readdirSync(engineDir))
+    for (const project of readdirSync(join(engineDir, group))) {
+      const dir = join(engineDir, group, project);
+      const f = join(dir, 'module.json');
+      if (!existsSync(f)) continue;
+      const m = readJson(f);
+      if (!p.engine.includes(m.id) || m.id === 'core') continue;
+      let cls = null;
+      for (const file of readdirSync(dir).filter((x) => x.endsWith('.cs'))) {
+        const text = readFileSync(join(dir, file), 'utf8');
+        const c = /public\s+sealed\s+class\s+(\w+)\s*:\s*ILapinModule\b/.exec(text);
+        const ns = /^namespace\s+([\w.]+)\s*;/m.exec(text);
+        if (c && ns) { cls = `${ns[1]}.${c[1]}`; break; }
+      }
+      if (!cls) throw new Error(`Module "${m.id}": no class implementing ILapinModule in ${dir}.`);
+      o.push({ id: m.id, project: join(dir, `${project}.csproj`), cls });
+    }
+  // In the product's order (a module after those it requires).
+  return o.sort((a, b) => p.engine.indexOf(a.id) - p.engine.indexOf(b.id));
+}
+
 /** Every product of the repository. */
 export function productIds(root) {
   return readdirSync(join(root, 'products')).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).sort();

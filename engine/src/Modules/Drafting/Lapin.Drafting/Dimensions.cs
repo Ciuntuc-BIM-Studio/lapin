@@ -20,7 +20,7 @@ namespace Lapin.Drafting;
 /// </summary>
 public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Dir, Vec2? Local = null, Vec2? LocalDir = null, string? Tag = null, double S = 0)
 {
-    static JsonArray J(Vec2 p) => [p.X, p.Y];
+    static JsonArray J(Vec2 p) => new(p.X, p.Y);
     static Vec2? V(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : null;
 
     public JsonObject ToJson()

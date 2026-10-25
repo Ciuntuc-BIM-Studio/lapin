@@ -5,13 +5,20 @@
 // depends on the system only and travels next to the engine.
 //
 //   node scripts/build-manifold.mjs        (needs git, cmake and a C++ compiler)
+//   node scripts/build-manifold.mjs --browser-wasm
+// The engine in the browser (docs/plan-browser-engine.md): static libraries in
+// engine/native/browser-wasm/, linked into the engine's WebAssembly, built by
+// the Emscripten of the .NET wasm-tools workload (DOTNET_ROOT, else
+// ~/.dotnet-wasm) with the runtime's exception model and SIMD. The C API's
+// library is named manifoldc.a: the P/Invoke table names a static library by
+// its file name, and Lapin.Booleans imports "manifoldc".
 // macOS: libmanifoldc.dylib (clang++). Linux: libmanifoldc.so (g++), the C++
 // runtime linked in statically too, so only glibc is needed on the target.
 // Windows: manifoldc.dll (MSVC, run from a Visual Studio developer prompt, or
 // after ilammy/msvc-dev-cmd in CI), the C runtime linked in statically (/MT),
 // exporting the functions Lapin.Booleans imports (read from ManifoldBooleans.cs).
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir, platform, arch } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +31,37 @@ const win = platform() === 'win32';
 const lib = mac ? 'libmanifoldc.dylib' : win ? 'manifoldc.dll' : 'libmanifoldc.so';
 const work = join(tmpdir(), `lapin-manifold-${TAG}`);
 const sh = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, stdio: 'inherit' });
+
+if (process.argv.includes('--browser-wasm')) {
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? '';
+  const dotnet = [process.env.DOTNET_ROOT, join(home, '.dotnet-wasm')].find((d) => d && existsSync(join(d, 'packs')) && readdirSync(join(d, 'packs')).some((p) => p.startsWith('Microsoft.NET.Runtime.Emscripten.')));
+  if (!dotnet) throw new Error('build-manifold: no .NET with the wasm-tools workload (set DOTNET_ROOT, or install it in ~/.dotnet-wasm: see engine/src/Host/Lapin.Browser/README.md).');
+  const packs = join(dotnet, 'packs');
+  const pack = (kind) => { const d = readdirSync(packs).find((p) => p.startsWith(`Microsoft.NET.Runtime.Emscripten.`) && p.includes(`.${kind}.`)); if (!d) throw new Error(`build-manifold: no Emscripten ${kind} pack in ${packs}`); const v = readdirSync(join(packs, d))[0]; return join(packs, d, v, 'tools'); };
+  const sdk = pack('Sdk'), node = join(pack('Node'), 'bin', 'node'), py = join(pack('Python'), 'bin'), cache = join(pack('Cache'), 'emscripten', 'cache');
+  const env = { ...process.env, EMSDK_PATH: sdk, DOTNET_EMSCRIPTEN_LLVM_ROOT: join(sdk, 'bin'), DOTNET_EMSCRIPTEN_BINARYEN_ROOT: sdk, DOTNET_EMSCRIPTEN_NODE_JS: node, EM_CACHE: cache,
+    PATH: [join(sdk, 'emscripten'), join(sdk, 'bin'), py, process.env.PATH].join(process.platform === 'win32' ? ';' : ':') };
+  const wasmWork = `${work}-wasm`;
+  const run = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, stdio: 'inherit', env });
+  if (!existsSync(join(wasmWork, 'src'))) {
+    mkdirSync(wasmWork, { recursive: true });
+    run('git', ['clone', '--depth', '1', '--branch', TAG, 'https://github.com/elalish/manifold.git', 'src'], wasmWork);
+  }
+  rmSync(join(wasmWork, 'build'), { recursive: true, force: true });
+  const flags = '-fwasm-exceptions -msimd128 -O3';
+  run(join(sdk, 'emscripten', process.platform === 'win32' ? 'emcmake.bat' : 'emcmake'), ['cmake', '-S', 'src', '-B', 'build', '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_SHARED_LIBS=OFF', '-DMANIFOLD_TEST=OFF',
+    '-DMANIFOLD_PAR=OFF', '-DMANIFOLD_CBIND=ON', '-DMANIFOLD_CROSS_SECTION=ON', '-DMANIFOLD_USE_BUILTIN_CLIPPER2=ON', '-DMANIFOLD_PYBIND=OFF', '-DMANIFOLD_JSBIND=OFF',
+    `-DCMAKE_C_FLAGS=${flags}`, `-DCMAKE_CXX_FLAGS=${flags}`], wasmWork);
+  run('cmake', ['--build', 'build', '--target', 'manifoldc', '-j', '8'], wasmWork);
+  const wasmOut = join(root, 'engine', 'native', 'browser-wasm');
+  mkdirSync(wasmOut, { recursive: true });
+  const b = (p) => join(wasmWork, 'build', p);
+  copyFileSync(b('bindings/c/libmanifoldc.a'), join(wasmOut, 'manifoldc.a'));
+  copyFileSync(b('src/libmanifold.a'), join(wasmOut, 'libmanifold.a'));
+  copyFileSync(b('_deps/clipper2-build/libClipper2.a'), join(wasmOut, 'libClipper2.a'));
+  console.log(`manifold ${TAG} → engine/native/browser-wasm/{manifoldc,libmanifold,libClipper2}.a`);
+  process.exit(0);
+}
 
 if (!existsSync(join(work, 'src'))) {
   mkdirSync(work, { recursive: true });

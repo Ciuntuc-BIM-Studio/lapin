@@ -24,7 +24,7 @@ public static class Walls
     static Vec2 Point(JsonNode? n) =>
         n is JsonArray { Count: >= 2 } a && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y ? new Vec2(x, y) : default;
 
-    static JsonArray Array(Vec2 p) => [p.X, p.Y];
+    static JsonArray Array(Vec2 p) => new(p.X, p.Y);
 
     public static JsonObject Attrs(Vec2 start, Vec2 end, double height, double baseOffset, double? thickness = null)
     {

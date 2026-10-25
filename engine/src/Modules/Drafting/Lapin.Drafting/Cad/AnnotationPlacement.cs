@@ -22,7 +22,7 @@ public sealed class AnnotationPlacement : IElementPlacement
     };
 
     static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
-    static JsonArray J(Vec2 p) => [p.X, p.Y];
+    static JsonArray J(Vec2 p) => new(p.X, p.Y);
 
     public static JsonObject Carry(IModelView m, Entity e, Placement2D t, IReadOnlySet<string> moving)
     {

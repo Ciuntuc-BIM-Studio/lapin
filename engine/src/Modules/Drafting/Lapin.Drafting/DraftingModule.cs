@@ -213,7 +213,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
 
     static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y
         ? new Vec2(x, y) : throw new CommandException("A point is [x, y].");
-    static JsonArray J(Vec2 p) => [p.X, p.Y];
+    static JsonArray J(Vec2 p) => new(p.X, p.Y);
 }
 
 /// <summary>Deleting one grid axis (selected as grid#tag): the grid goes with its last one.</summary>
