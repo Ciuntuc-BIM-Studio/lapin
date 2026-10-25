@@ -139,6 +139,11 @@ export const RO: Record<string, string> = {
   // Site tools, stage 2
   'Spot level': 'Cotă punctuală', 'Spot levels': 'Cote punctuale', 'Parcel': 'Parcelă', 'Export LandXML': 'Exportă LandXML', 'Analysis': 'Analiză', 'slopes': 'pante',
   'cut and fill': 'săpătură și umplutură', 'elevations': 'cote', 'drawn': 'desenată', 'remove': 'scoate', 'Planting schedule': 'Tabel de plantare',
+  // The engine in the browser.
+  'In the browser': 'În browser',
+  'Your project stays in this browser: nothing is sent anywhere. Save it to keep a file (Safari and Firefox save it as a download). Unsaved work is kept for you if the tab closes.': 'Proiectul rămâne în acest browser: nimic nu pleacă nicăieri. Salvează-l ca să ai un fișier (Safari și Firefox îl salvează ca descărcare). Lucrul nesalvat se păstrează dacă se închide fila.',
+  'Not here, only in the desktop app: the AI bridge (MCP) and views in windows of their own. A large imported IFC file may not fit in the browser.': 'Nu aici, doar în aplicația desktop: puntea AI (MCP) și vederile în ferestre separate. Un fișier IFC importat foarte mare s-ar putea să nu încapă în browser.',
+  'Open a project from a file on this computer.': 'Deschide un proiect dintr-un fișier de pe acest calculator.',
 };
 
 /** Phrases with a number or a name in them. */

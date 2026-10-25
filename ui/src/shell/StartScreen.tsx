@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { FilePlus2, FolderOpen, History, Trash2 } from 'lucide-react';
 import { modules, productInfo } from '../platform/modules';
-import { useSession } from '../engine/session';
+import { engineInBrowser, useSession } from '../engine/session';
 import { discardWork, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
 import { useUi } from '../app/store';
 import { openLink } from './support';
@@ -32,6 +32,11 @@ export function StartScreen() {
         <p className="muted small">A new project starts with a ground floor and its plan. Draw walls with <kbd>WA</kbd>; every element is native IFC.</p>
         <p className="eyebrow">This edition</p>
         <p className="muted small">{productInfo.name}: {modules.map((m) => m.name).join(' · ')}</p>
+        {engineInBrowser && <>
+          <p className="eyebrow">In the browser</p>
+          <p className="muted small">Your project stays in this browser: nothing is sent anywhere. Save it to keep a file (Safari and Firefox save it as a download). Unsaved work is kept for you if the tab closes.</p>
+          <p className="muted small">Not here, only in the desktop app: the AI bridge (MCP) and views in windows of their own. A large imported IFC file may not fit in the browser.</p>
+        </>}
       </section>
       <section className="start-right">
         {work.length > 0 && (
@@ -51,7 +56,7 @@ export function StartScreen() {
           </>
         )}
         <p className="eyebrow">Recent</p>
-        {recent.length === 0 && <p className="muted small">Projects you open or save appear here.</p>}
+        {recent.length === 0 && <p className="muted small">{engineInBrowser ? 'Open a project from a file on this computer.' : 'Projects you open or save appear here.'}</p>}
         {recent.map((path) => (
           <button type="button" key={path} className="recent" disabled={!connected} onClick={() => void openProject(path)}>
             <span className="thumb" aria-hidden="true" />
