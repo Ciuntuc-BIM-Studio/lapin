@@ -41,6 +41,8 @@ pnpm products                  # what every product resolves to
 pnpm build:product <id>        # one edition as a desktop app → build/<id>/bundle (check:licenses first)
 ```
 
+Linux (.deb, .AppImage) and Windows (NSIS installer) builds run in GitHub Actions: Actions → Build Linux / Build Windows → Run workflow, a tag `v*`, or (Windows) a push to a `build/**` branch; the packages are the run's artifacts. Windows builds manifold with MSVC (`node scripts/build-manifold.mjs` from a Visual Studio x64 developer prompt).
+
 If pnpm complains about @tauri-apps when installing, use `CI=true pnpm install`. `.npmrc` hoists `@tauri-apps/*`. `pnpm check:licenses` checks the UI's npm packages and the engine's NuGet packages.
 
 ## Rules
