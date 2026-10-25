@@ -1,12 +1,10 @@
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lapin.Model;
 using Lapin.Package;
 using Lapin.Platform;
-using Lapin.Protocol;
 
-namespace Lapin.Host;
+namespace Lapin.Protocol;
 
 /// <summary>
 /// The recovery journal: every edit of the open project, appended as it
@@ -21,23 +19,26 @@ namespace Lapin.Host;
 /// Saving starts the journal again (the file now holds everything). A
 /// journal with no edit is not worth keeping and is removed. The open journal
 /// is held exclusively: another Lapin (or recovery.list) sees it is in use
-/// and leaves it alone.
+/// and leaves it alone. Where the journals live is the host's
+/// (<see cref="IJournalStore"/>): files on the desktop, the browser's own storage there.
 /// </summary>
 public sealed class Recovery : IRecoveryJournal, IDisposable
 {
-    readonly string _dir;
+    readonly IJournalStore _store;
     readonly Session _session;
     string? _file;
-    StreamWriter? _writer;
+    IJournalWriter? _writer;
     int _edits;
 
     /// <summary>A journal without edits younger than this may be one a Lapin is just opening: left alone.</summary>
     static readonly TimeSpan Grace = TimeSpan.FromSeconds(10);
 
-    public Recovery(string userDir, Session session)
+    /// <summary>The journals in <c>&lt;userDir&gt;/recovery</c>, as files (the desktop).</summary>
+    public Recovery(string userDir, Session session) : this(new FileJournalStore(System.IO.Path.Combine(userDir, "recovery")), session) { }
+
+    public Recovery(IJournalStore store, Session session)
     {
-        _dir = System.IO.Path.Combine(userDir, "recovery");
-        Directory.CreateDirectory(_dir);
+        _store = store;
         _session = session;
         session.HistoryChanged += OnHistory;
         Start();
@@ -61,52 +62,34 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
     void Start(bool keep = false)
     {
         Close(delete: !keep);
-        _file = System.IO.Path.Combine(_dir, $"{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString("N")[..8]}.jsonl");
-        _writer = new StreamWriter(Open(_file, FileMode.CreateNew));
+        (_file, _writer) = _store.Create($"{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString("N")[..8]}.jsonl");
         _edits = 0;
         var path = _session.Path;
         var start = new JsonObject { ["op"] = "start", ["at"] = DateTimeOffset.UtcNow, ["product"] = _session.Product.Id, ["path"] = path };
-        if (path != null && File.Exists(path)) start["sha256"] = Hash(path);
+        if (path != null && _store.ProjectHash(path) is { } sha) start["sha256"] = sha;
         else
         {
             start["path"] = null;
             start["base"] = new JsonObject
             {
                 ["entities"] = new JsonArray(_session.Model.Entities.Select(e => (JsonNode)EntityJson(e)).ToArray()),
-                ["relations"] = JsonSerializer.SerializeToNode(_session.Model.Relations.ToList(), Json.Options),
-                ["classes"] = JsonSerializer.SerializeToNode(_session.Model.Entities.Select(e => e.Class).Distinct().ToDictionary(c => c, _session.ModuleOf), Json.Options),
+                ["relations"] = JsonSerializer.SerializeToNode(_session.Model.Relations.ToList(), ModelJson.Default.ListRelation),
+                ["classes"] = JsonSerializer.SerializeToNode(_session.Model.Entities.Select(e => e.Class).Distinct().ToDictionary(c => c, _session.ModuleOf), ModelJson.Default.DictionaryStringString),
             };
         }
         Write(start);
     }
 
-    /// <summary>The journal, held exclusively while this session writes in it.</summary>
-    static FileStream Open(string file, FileMode mode) => new(file, mode, FileAccess.Write, FileShare.None);
-
-    /// <summary>Held open by a running Lapin: its exclusive share (a lock, on macOS and Linux) refuses us.</summary>
-    static bool InUse(string file)
-    {
-        try
-        {
-            using var _ = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.None);
-            return false;
-        }
-        catch (IOException) { return File.Exists(file); }
-    }
-
     void Write(JsonObject line)
     {
-        if (_writer == null) return;
-        _writer.WriteLine(line.ToJsonString(Json.Options));
-        _writer.Flush();
-        ((FileStream)_writer.BaseStream).Flush(flushToDisk: true);
+        _writer?.WriteLine(line.ToJsonString(Json.Options));
     }
 
     void Close(bool delete)
     {
         _writer?.Dispose();
         _writer = null;
-        if (delete && _file != null && File.Exists(_file)) File.Delete(_file);
+        if (delete && _file != null) _store.Delete(_file);
         _file = null;
     }
 
@@ -123,26 +106,26 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
     public IReadOnlyList<RecoverableWork> List()
     {
         var o = new List<RecoverableWork>();
-        foreach (var file in Directory.GetFiles(_dir, "*.jsonl"))
+        foreach (var file in _store.Journals())
         {
-            if (file == _file || InUse(file)) continue;
+            if (file == _file || _store.InUse(file)) continue;
             try
             {
-                var lines = File.ReadAllLines(file).Where(l => l.Length > 0).ToList();
+                var lines = _store.ReadLines(file).Where(l => l.Length > 0).ToList();
                 var start = lines.Count > 0 ? JsonNode.Parse(lines[0]) as JsonObject : null;
                 var edits = lines.Skip(1).Select(l => JsonNode.Parse(l) as JsonObject).OfType<JsonObject>().ToList();
                 if (start == null || edits.Count == 0)
                 {
-                    if (DateTime.UtcNow - File.GetLastWriteTimeUtc(file) > Grace) File.Delete(file);
+                    if (DateTime.UtcNow - _store.LastWrite(file) > Grace) _store.Delete(file);
                     continue;
                 }
-                o.Add(new RecoverableWork(file, (string?)start["path"], start["at"]?.GetValue<DateTimeOffset>() ?? File.GetLastWriteTimeUtc(file),
+                o.Add(new RecoverableWork(file, (string?)start["path"], start["at"]?.GetValue<DateTimeOffset>() ?? _store.LastWrite(file),
                     edits.Count, (string?)edits.LastOrDefault(e => (string?)e["op"] == "tx")?["label"]));
             }
             catch (Exception ex) when (ex is JsonException or IOException or FormatException or InvalidOperationException)
             {
                 // A journal cut off mid-line by the crash still counts: its complete lines are read on restore.
-                o.Add(new RecoverableWork(file, null, File.GetLastWriteTimeUtc(file), 0, null));
+                o.Add(new RecoverableWork(file, null, _store.LastWrite(file), 0, null));
             }
         }
         return o.OrderByDescending(w => w.At).ToList();
@@ -151,8 +134,8 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
     /// <summary>Brings the work of <paramref name="file"/> back into the session, which goes on journalling in it.</summary>
     public Diff Restore(string file)
     {
-        if (System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(file)) != System.IO.Path.GetFullPath(_dir)) throw new CommandException("Not a recovery journal.");
-        var lines = File.ReadAllLines(file).Where(l => l.Length > 0).ToList();
+        if (!_store.Holds(file)) throw new CommandException("Not a recovery journal.");
+        var lines = _store.ReadLines(file).Where(l => l.Length > 0).ToList();
         var parsed = new List<JsonObject>();
         foreach (var l in lines)
         {
@@ -167,17 +150,17 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         IReadOnlyDictionary<string, string>? classes;
         if (path != null)
         {
-            if (!File.Exists(path)) throw new CommandException($"The project the work was done on is gone: {path}.");
-            if ((string?)start["sha256"] is { } sha && Hash(path) != sha) throw new CommandException($"{System.IO.Path.GetFileName(path)} changed since: the unsaved work no longer fits it.");
-            var content = LapinPackage.Read(path);
+            var now = _store.ProjectHash(path) ?? throw new CommandException($"The project the work was done on is gone: {path}.");
+            if ((string?)start["sha256"] is { } sha && now != sha) throw new CommandException($"{System.IO.Path.GetFileName(path)} changed since: the unsaved work no longer fits it.");
+            var content = _store.ReadProject(path);
             (entities, relations, classes) = (content.Entities, content.Relations, content.Classes);
         }
         else
         {
             var b = start["base"] as JsonObject ?? throw new InvalidDataException("The journal has no starting model.");
             entities = (b["entities"] as JsonArray ?? []).Select(n => ReadEntity(n!.AsObject())).ToList();
-            relations = b["relations"].Deserialize<List<Relation>>(Json.Options) ?? [];
-            classes = b["classes"].Deserialize<Dictionary<string, string>>(Json.Options);
+            relations = b["relations"].Deserialize(ModelJson.Default.ListRelation) ?? [];
+            classes = b["classes"].Deserialize(ModelJson.Default.DictionaryStringString);
         }
         var edits = parsed.Skip(1).Select(ReadEvent).ToList();
         var diff = _session.Recover(entities, relations, path, classes, edits);
@@ -185,25 +168,19 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         // Go on in that journal: a second crash still has everything. Unsaved work of this session's own stays in its journal.
         Close(delete: _edits == 0);
         _file = file;
-        _writer = new StreamWriter(Open(file, FileMode.Append));
+        _writer = _store.Append(file);
         _edits = edits.Count;
         return diff;
     }
 
     public void Discard(string file)
     {
-        if (System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(file)) != System.IO.Path.GetFullPath(_dir)) throw new CommandException("Not a recovery journal.");
-        if (file == _file || InUse(file)) throw new CommandException("That journal is in use.");
-        File.Delete(file);
+        if (!_store.Holds(file)) throw new CommandException("Not a recovery journal.");
+        if (file == _file || _store.InUse(file)) throw new CommandException("That journal is in use.");
+        _store.Delete(file);
     }
 
     // ------------------------------------------------------------ lines
-
-    static string Hash(string path)
-    {
-        using var s = File.OpenRead(path);
-        return Convert.ToHexStringLower(SHA256.HashData(s));
-    }
 
     static JsonObject EntityJson(Entity e) => new()
     {
@@ -227,8 +204,8 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         ["relations"] = new JsonArray(t.Relations.Select(c => (JsonNode)new JsonObject
         {
             ["id"] = c.Id, ["order"] = c.Order,
-            ["before"] = JsonSerializer.SerializeToNode(c.Before, Json.Options),
-            ["after"] = JsonSerializer.SerializeToNode(c.After, Json.Options),
+            ["before"] = c.Before == null ? null : JsonSerializer.SerializeToNode(c.Before, ModelJson.Default.Relation),
+            ["after"] = c.After == null ? null : JsonSerializer.SerializeToNode(c.After, ModelJson.Default.Relation),
         }).ToArray()),
     };
 
@@ -239,7 +216,7 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         var entities = (o["entities"] as JsonArray ?? []).Select(n => n!.AsObject()).Select(c => new Change<Entity>(
             (string)c["id"]!, c["before"] is JsonObject b ? ReadEntity(b) : null, c["after"] is JsonObject a ? ReadEntity(a) : null, (int)c["order"]!)).ToList();
         var relations = (o["relations"] as JsonArray ?? []).Select(n => n!.AsObject()).Select(c => new Change<Relation>(
-            (string)c["id"]!, c["before"].Deserialize<Relation>(Json.Options), c["after"].Deserialize<Relation>(Json.Options), (int)c["order"]!)).ToList();
+            (string)c["id"]!, c["before"].Deserialize(ModelJson.Default.Relation), c["after"].Deserialize(ModelJson.Default.Relation), (int)c["order"]!)).ToList();
         return new HistoryEvent("tx", new Transaction(0, (string?)o["label"] ?? "", entities, relations, o["at"]?.GetValue<DateTimeOffset>() ?? DateTimeOffset.UtcNow));
     }
 }

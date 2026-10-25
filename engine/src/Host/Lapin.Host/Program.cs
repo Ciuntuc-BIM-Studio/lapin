@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Lapin.Host;
 using Lapin.Platform;
+using Lapin.Protocol;
 
 // The local engine. Started by the desktop shell (or by `pnpm dev`):
 //   Lapin.Host --product <product.json> --modules-dir <dir> [--user-dir <dir>] [--port 0] [--parent-pid <pid>]
