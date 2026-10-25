@@ -148,7 +148,7 @@ public static class Walls
         // Openings take their boxes out of every part they reach; the plan shows the gaps where they cross the cut.
         var openings = Openings.PlacedOn(m, wall.Id);
         var frame = new Openings.WallFrame(start, dir, left, z, yMin, yMax);
-        var cutters = openings.Select(o => (o, Box: Openings.Cutter(frame, o with { Along = o.Along - Vec2.Dot(start - Start(wall), dir) }))).Where(c => c.Box != null).ToList();
+        var cutters = openings.SelectMany(o => Openings.Cutters(m, wall, frame, o with { Along = o.Along - Vec2.Dot(start - Start(wall), dir) })).Select(c => (o: c.Reach, Box: (Solid?)c.Box)).ToList();
         // An export wants the body the openings have not cut: IFC writes the openings and subtracts them itself.
         if (!(services?.Get<GeometryOptions>()?.CutOpenings ?? true)) cutters.Clear();
         var booleans = services?.Get<ISolidBooleans>();

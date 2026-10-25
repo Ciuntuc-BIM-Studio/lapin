@@ -590,6 +590,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("Height", spec.Height, "LENGTH"),
             new("Area", spec.Width * spec.Height, "AREA"),
         ]);
+        // The details around it: the reveal's finish, the sills, the surround, the threshold.
+        var details = Openings.DetailQuantities(m, fill).Select(q => new Quantity(q.Name, q.Value, q.Unit)).ToList();
+        if (details.Count > 0) yield return new QuantitySet("Lapin_Details", details);
     }
 
     static IPathElements Paths(ICommandContext ctx) => ctx.Services.Get<IPathElements>()!;

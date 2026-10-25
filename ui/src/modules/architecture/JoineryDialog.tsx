@@ -26,7 +26,17 @@ interface Spec {
   board: { interior: number; exterior: number }; threshold: number;
   colors: { frame: string; glass: string; leaf: string }; isExternal: boolean; thermalTransmittance?: number | null;
   lintel?: Rule | null;
+  details?: Details | null;
 }
+interface Reveal { mode: 'wall' | 'material' | 'none'; material?: string | null; thickness: number }
+interface Sill { on: boolean; projection: number; thickness: number; overhang: number; slope: number; material?: string | null }
+interface Surround { on: boolean; width: number; projection: number; sill: boolean; material?: string | null }
+interface Threshold { on: boolean; height: number; material?: string | null }
+interface Details { reveal?: Reveal | null; sillInside?: Sill | null; sillOutside?: Sill | null; surround?: Surround | null; threshold?: Threshold | null }
+const SILL_IN: Sill = { on: true, projection: 0.03, thickness: 0.02, overhang: 0.02, slope: 0 };
+const SILL_OUT: Sill = { on: true, projection: 0.04, thickness: 0.02, overhang: 0.03, slope: 5 };
+const SURROUND: Surround = { on: true, width: 0.08, projection: 0.02, sill: true };
+const THRESHOLD: Threshold = { on: true, height: 0.02 };
 interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number }[]; ifcType: string }
 interface Stroke { pts: [number, number][]; weight: string; closed: boolean; dashed: boolean }
 interface Drawing { strokes: Stroke[] }
@@ -68,6 +78,24 @@ function Mm({ label, value, onChange }: { label: string; value: number; onChange
   );
 }
 
+/** A sill's fields: on or off, then its sizes (mm), slope (°, the exterior one) and material. */
+function SillFields({ label, sill, fallback, slope = false, onChange }: { label: string; sill: Sill | null; fallback: Sill; slope?: boolean; onChange: (s: Sill) => void }) {
+  const on = sill?.on ?? false;
+  const cur = sill ?? fallback;
+  return (
+    <>
+      <label className="field-line check"><input type="checkbox" checked={on} onChange={(e) => onChange({ ...cur, on: e.target.checked })} /><span>{label}</span></label>
+      {on && <>
+        <Mm label="Projection" value={cur.projection} onChange={(v) => onChange({ ...cur, projection: v })} />
+        <Mm label="Thickness" value={cur.thickness} onChange={(v) => onChange({ ...cur, thickness: v })} />
+        <Mm label="Past the jambs" value={cur.overhang} onChange={(v) => onChange({ ...cur, overhang: v })} />
+        {slope && <label className="field-line"><span className="eyebrow">Slope (°)</span><input className="num" value={cur.slope} onChange={(e) => { const v = Number(e.target.value); if (Number.isFinite(v)) onChange({ ...cur, slope: v }); }} /></label>}
+        <label className="field-line"><span className="eyebrow">Material</span><input list="lapin-materials" value={cur.material ?? ''} onChange={(e) => onChange({ ...cur, material: e.target.value })} /></label>
+      </>}
+    </>
+  );
+}
+
 export function JoineryDialog() {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
@@ -105,6 +133,9 @@ export function JoineryDialog() {
 
   if (!spec || !catalog) return null;
   const set = (patch: Partial<Spec>) => setSpec({ ...spec, ...patch });
+  const details: Details = spec.details ?? {};
+  const setDetails = (patch: Partial<Details>) => set({ details: { ...details, ...patch } });
+  const materials = ofClass(model, 'IfcMaterial');
   const operations = spec.kind === 'door' ? [...catalog.doorOperations, 'fixed'] : catalog.windowOperations;
   const close = () => useUi.setState({ dialog: null });
   const fresh = (kind: 'door' | 'window') => { setEditing(null); const d = structuredClone(kind === 'door' ? catalog.defaultDoor : catalog.defaultWindow); setSpec(d); setCols(d.columns.join(' ')); setRows(d.rows.join(' ')); };
@@ -178,6 +209,31 @@ export function JoineryDialog() {
               </table>
               <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>
               <LintelRuleEditor inherit rule={spec.lintel ?? null} onChange={(r) => set({ lintel: r })} />
+              <p className="eyebrow">Details</p>
+              <datalist id="lapin-materials">{materials.map((m) => <option key={m.id} value={m.name} />)}</datalist>
+              <label className="field-line"><span className="eyebrow">Reveal finish</span>
+                <select value={details.reveal?.mode ?? 'wall'} onChange={(e) => setDetails({ reveal: { ...(details.reveal ?? { thickness: 0.015 }), mode: e.target.value as Reveal['mode'] } })}>
+                  <option value="wall">The wall's finish layers</option><option value="material">A material</option><option value="none">None</option>
+                </select>
+              </label>
+              {details.reveal?.mode === 'material' && <>
+                <label className="field-line"><span className="eyebrow">Reveal material</span><input list="lapin-materials" value={details.reveal.material ?? ''} onChange={(e) => setDetails({ reveal: { ...details.reveal!, material: e.target.value } })} /></label>
+                <Mm label="Reveal thickness" value={details.reveal.thickness} onChange={(v) => setDetails({ reveal: { ...details.reveal!, thickness: v } })} />
+              </>}
+              {spec.kind === 'window' && <SillFields label="Interior sill" sill={details.sillInside ?? null} fallback={{ ...SILL_IN, projection: spec.board.interior || SILL_IN.projection }} onChange={(v) => setDetails({ sillInside: v })} />}
+              {spec.kind === 'window' && <SillFields label="Exterior sill" sill={details.sillOutside ?? null} fallback={{ ...SILL_OUT, projection: spec.board.exterior || SILL_OUT.projection }} slope onChange={(v) => setDetails({ sillOutside: v })} />}
+              <label className="field-line check"><input type="checkbox" checked={details.surround?.on ?? false} onChange={(e) => setDetails({ surround: { ...(details.surround ?? SURROUND), on: e.target.checked } })} /><span>Surround on the facade</span></label>
+              {details.surround?.on && <>
+                <Mm label="Surround width" value={details.surround.width} onChange={(v) => setDetails({ surround: { ...details.surround!, width: v } })} />
+                <Mm label="Surround projection" value={details.surround.projection} onChange={(v) => setDetails({ surround: { ...details.surround!, projection: v } })} />
+                {spec.kind === 'window' && <label className="field-line check"><input type="checkbox" checked={details.surround.sill} onChange={(e) => setDetails({ surround: { ...details.surround!, sill: e.target.checked } })} /><span>Around the sill too</span></label>}
+                <label className="field-line"><span className="eyebrow">Surround material</span><input list="lapin-materials" value={details.surround.material ?? ''} onChange={(e) => setDetails({ surround: { ...details.surround!, material: e.target.value } })} /></label>
+              </>}
+              {spec.kind === 'door' && <label className="field-line check"><input type="checkbox" checked={details.threshold?.on ?? false} onChange={(e) => setDetails({ threshold: { ...(details.threshold ?? THRESHOLD), on: e.target.checked } })} /><span>Threshold</span></label>}
+              {spec.kind === 'door' && details.threshold?.on && <>
+                <Mm label="Threshold height" value={details.threshold.height} onChange={(v) => setDetails({ threshold: { ...details.threshold!, height: v } })} />
+                <label className="field-line"><span className="eyebrow">Threshold material</span><input list="lapin-materials" value={details.threshold.material ?? ''} onChange={(e) => setDetails({ threshold: { ...details.threshold!, material: e.target.value } })} /></label>
+              </>}
               {spec.kind === 'door' && <label className="field-line"><span className="eyebrow">Leaf</span><input type="color" value={spec.colors.leaf} onChange={(e) => set({ colors: { ...spec.colors, leaf: e.target.value } })} /></label>}
             </div>
             <div className="joinery-preview">

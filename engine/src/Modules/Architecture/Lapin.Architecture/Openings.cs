@@ -207,6 +207,23 @@ public static class Openings
         return PathCurve.Of(wall) is { IsArc: true } c ? ArcCutter(c, f.Base, f.YMin, f.YMax, p) : Cutter(f, p);
     }
 
+    /// <summary>
+    /// What an opening takes out of a straight wall: its box through the whole
+    /// thickness, and the room its details need (the reveal's finish on each
+    /// side, widening the opening by the skin; the sills let into the wall),
+    /// each with the opening's reach in height so every part it crosses is cut.
+    /// </summary>
+    public static List<(Placed Reach, Solid Box)> Cutters(IModelView m, Entity wall, WallFrame f, Placed p)
+    {
+        var o = new List<(Placed, Solid)>();
+        if (Cutter(f, p) is { } box) o.Add((p, box));
+        if (p.Spec == null || p.Fill == null) return o;
+        if (PathCurve.Of(wall) is { IsArc: true }) return o;
+        var d = new Dressing(m, wall, f, p, p.Spec, p.Fill.Bool("flipHand") ? -1 : 1, p.Fill.Bool("flipSide") ? -1 : 1).WithPlaced(p);
+        o.AddRange(d.Cutters());
+        return o;
+    }
+
     /// <summary>The box an opening takes out of its wall, through the whole thickness and a little past it.</summary>
     public static Solid? Cutter(WallFrame f, Placed p)
     {
@@ -237,14 +254,202 @@ public static class Openings
         Vec3 Map(double x, double y, double z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.Sill + z);
 
         var parts = new List<GeometryPart>();
-        foreach (var group in Joinery.Boxes(spec).GroupBy(b => b.Role))
+        var dressing = PathCurve.Of(wall) is { IsArc: true } ? null : new Dressing(m, wall, f, p, spec, sx, sy);
+        foreach (var group in Joinery.Boxes(spec).Where(b => dressing?.Replaces(b) != true).GroupBy(b => b.Role))
         {
             var solids = group.Select(b => Box(b, Map)).OfType<Solid>().ToList();
             if (solids.Count == 0) continue;
             var color = group.Key switch { "glass" => spec.Colors.Glass, "leaf" => spec.Colors.Leaf, _ => HandleColor.GetValueOrDefault(group.Key, spec.Colors.Frame) };
             parts.Add(new GeometryPart(group.Key, color, Combine(solids, group.Key), null, group.Key));
         }
+        if (dressing != null) parts.AddRange(dressing.Parts());
         return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy), [f.At(p.Along, f.Centre, 0).Xy]);
+    }
+
+    /// <summary>
+    /// The details around one door or window in its wall (docs/plan-views-and-joinery.md §3):
+    /// the reveal's finish on the jambs and head, each side of the frame with
+    /// its own material (the wall's face layer by default), the interior and
+    /// exterior sills, a surround on the facade, a door's threshold. Each is a
+    /// part with its material, so it shows in 3D, is cut in plans and sections,
+    /// is measured and goes to IFC. The wall is cut to make room for what sits
+    /// inside it (<see cref="Cutters"/>). In the type's frame: X along the
+    /// opening, Y to the exterior, Z up from the opening's bottom; the wall's
+    /// faces at ±T/2.
+    /// </summary>
+    sealed class Dressing
+    {
+        readonly IModelView _m;
+        readonly JoinerySpec _spec;
+        readonly JoineryDetails _d;
+        readonly Func<double, double, double, Vec3> _map;
+        readonly double _t, _yFE, _yFI;
+        readonly (double Thickness, string? Material)[] _finish; // [0] the exterior side, [1] the interior
+
+        public Dressing(IModelView m, Entity wall, WallFrame f, Placed p, JoinerySpec spec, int sx, int sy)
+        {
+            _m = m;
+            _spec = spec;
+            _d = spec.Details ?? new JoineryDetails();
+            _map = (x, y, z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.Sill + z);
+            _t = f.YMax - f.YMin;
+            _yFE = spec.Frame.Offset + spec.Frame.Depth / 2;
+            _yFI = spec.Frame.Offset - spec.Frame.Depth / 2;
+            _finish = Finishes(m, wall, sy, _d.Reveal ?? new JoineryReveal());
+        }
+
+        double YExt => _t / 2;
+        double YInt => -_t / 2;
+        double W => _spec.Width;
+        double H => _spec.Height;
+
+        /// <summary>The reveal's finish on each side: from the wall's face layers (a layer that is not the core, at the face), or the named material, or none.</summary>
+        static (double, string?)[] Finishes(IModelView m, Entity wall, int sy, JoineryReveal r)
+        {
+            if (r.Mode == "none") return [(0, null), (0, null)];
+            if (r.Mode == "material") { var id = MaterialNamed(m, r.Material); return [(Math.Max(0, r.Thickness), id), (Math.Max(0, r.Thickness), id)]; }
+            var bands = Walls.Section(m, wall);
+            if (bands.Count < 2) return [(0, null), (0, null)];
+            // The exterior is the wall's right (its first layer), the left when the side is flipped.
+            var (ext, inte) = sy > 0 ? (bands[0], bands[^1]) : (bands[^1], bands[0]);
+            (double, string?) Of(Walls.Band b) => b.Core || b.Material == null ? (0, null) : (Math.Min(0.025, Math.Abs(b.To - b.From)), b.Material);
+            return [Of(ext), Of(inte)];
+        }
+
+        static string? MaterialNamed(IModelView m, string? name) =>
+            string.IsNullOrWhiteSpace(name) ? null : m.OfClass(IfcClass.Material).FirstOrDefault(x => string.Equals(x.Name, name.Trim(), StringComparison.OrdinalIgnoreCase))?.Id;
+
+        string ColorOf(string? materialId, string? name, string fallback) =>
+            materialId != null ? Materials.ColorOf(_m, materialId) : !string.IsNullOrWhiteSpace(name) ? Materials.DefaultColor(name) : fallback;
+
+        /// <summary>A box of the type's frame as a solid, or null when flat.</summary>
+        Solid? Box(double x0, double x1, double y0, double y1, double z0, double z1, string role) =>
+            x1 - x0 > 1e-6 && y1 - y0 > 1e-6 && z1 - z0 > 1e-6 ? Openings.Box(new JoineryBox(role, new Vec3(x0, y0, z0), new Vec3(x1, y1, z1)), _map) : null;
+
+        /// <summary>A profile in the Y–Z plane at x0, swept to x1 (the sloped exterior sill).</summary>
+        Solid? Swept(double x0, double x1, IReadOnlyList<(double Y, double Z)> profile, string role)
+        {
+            if (x1 - x0 < 1e-6) return null;
+            var pts = profile.Select(q => _map(x0, q.Y, q.Z)).ToList();
+            return Prism.Extrude(pts, null, _map(x1, 0, 0) - _map(x0, 0, 0), role);
+        }
+
+        bool SillInsideOn => _d.SillInside is { On: true };
+        bool SillOutsideOn => _d.SillOutside is { On: true };
+        bool ThresholdOn => _spec.IsDoor && _d.Threshold is { On: true };
+
+        /// <summary>Whether a box of the type's body gives way to a detail: the boards to the detailed sills, the frame's bottom member to the threshold.</summary>
+        public bool Replaces(JoineryBox b) =>
+            b.Role == "board" && (b.Min.Y < 0 ? SillInsideOn : SillOutsideOn)
+            || ThresholdOn && b.Role == "frame" && b.Min.Z < 1e-9 && b.Max.Z <= _spec.Threshold + 1e-9 && b.Max.X - b.Min.X > W - _spec.Frame.Width * 2 - 1e-9;
+
+        /// <summary>The exterior sill's section (Y, Z): from under the frame, out past the face, sloping down.</summary>
+        IReadOnlyList<(double, double)> OutsideSillProfile(JoinerySill sill, double past)
+        {
+            var yOut = YExt + Math.Max(0, sill.Projection) + past;
+            var drop = (yOut - _yFE) * Math.Tan(Math.Clamp(sill.Slope, 0, 45) * Math.PI / 180);
+            return [(_yFE, 0), (yOut, -drop), (yOut, -drop - sill.Thickness), (_yFE, -sill.Thickness)];
+        }
+
+        public IEnumerable<GeometryPart> Parts()
+        {
+            // The reveal's finish: the jambs and the head, each side from the frame's face to the wall's.
+            foreach (var (side, (t, material), y0, y1) in new[] { ("outside", _finish[0], _yFE, YExt), ("inside", _finish[1], YInt, _yFI) })
+            {
+                if (t <= 0 || y1 - y0 < 1e-3) continue;
+                var solids = new[] { Box(-W / 2 - t, -W / 2, y0, y1, 0, H + t, "reveal"), Box(W / 2, W / 2 + t, y0, y1, 0, H + t, "reveal"), Box(-W / 2, W / 2, y0, y1, H, H + t, "reveal") }.OfType<Solid>().ToList();
+                if (solids.Count > 0) yield return new GeometryPart($"Reveal ({side})", ColorOf(material, null, "#e8e2d6"), Combine(solids, "reveal"), material, "reveal:" + side);
+            }
+            if (SillInsideOn)
+            {
+                var sill = _d.SillInside!;
+                var id = MaterialNamed(_m, sill.Material);
+                if (Box(-W / 2 - sill.Overhang, W / 2 + sill.Overhang, YInt - Math.Max(0, sill.Projection), _yFI, -sill.Thickness, 0, "sill") is { } b)
+                    yield return new GeometryPart("Sill (inside)", ColorOf(id, sill.Material, "#dcdcdc"), b, id, "sill:inside");
+            }
+            if (SillOutsideOn)
+            {
+                var sill = _d.SillOutside!;
+                var id = MaterialNamed(_m, sill.Material);
+                if (Swept(-W / 2 - sill.Overhang, W / 2 + sill.Overhang, OutsideSillProfile(sill, 0), "sill") is { } b)
+                    yield return new GeometryPart("Sill (outside)", ColorOf(id, sill.Material, "#b8b8b8"), b, id, "sill:outside");
+            }
+            if (_d.Surround is { On: true } sur)
+            {
+                var (w, dpt) = (Math.Max(0.01, sur.Width), Math.Max(0.005, sur.Projection));
+                var id = MaterialNamed(_m, sur.Material);
+                var z0 = sur.Sill && !_spec.IsDoor ? -w : 0;
+                var solids = new[]
+                {
+                    Box(-W / 2 - w, -W / 2, YExt, YExt + dpt, z0, H + w, "surround"), Box(W / 2, W / 2 + w, YExt, YExt + dpt, z0, H + w, "surround"),
+                    Box(-W / 2, W / 2, YExt, YExt + dpt, H, H + w, "surround"), sur.Sill && !_spec.IsDoor ? Box(-W / 2, W / 2, YExt, YExt + dpt, -w, 0, "surround") : null,
+                }.OfType<Solid>().ToList();
+                if (solids.Count > 0) yield return new GeometryPart("Surround", ColorOf(id, sur.Material, "#e0d8c8"), Combine(solids, "surround"), id, "surround");
+            }
+            if (ThresholdOn)
+            {
+                var th = _d.Threshold!;
+                var id = MaterialNamed(_m, th.Material);
+                if (Box(-W / 2, W / 2, YInt, YExt, 0, Math.Max(0.005, th.Height), "threshold") is { } b)
+                    yield return new GeometryPart("Threshold", ColorOf(id, th.Material, "#8a8a8a"), b, id, "threshold");
+            }
+        }
+
+        /// <summary>What the wall gives up for the details inside it, each with the height it reaches.</summary>
+        public IEnumerable<(Placed Reach, Solid Box)> Cutters()
+        {
+            foreach (var ((t, _), y0, y1, past) in new[] { (_finish[0], _yFE, YExt, 0.05), (_finish[1], YInt, _yFI, -0.05) })
+            {
+                if (t <= 0 || y1 - y0 < 1e-3) continue;
+                var box = past > 0 ? Box(-W / 2 - t, W / 2 + t, y0, y1 + past, 0, H + t, "opening") : Box(-W / 2 - t, W / 2 + t, y0 + past, y1, 0, H + t, "opening");
+                if (box != null) yield return (Reach(0, t), box);
+            }
+            if (SillInsideOn)
+            {
+                var sill = _d.SillInside!;
+                var box = Box(-W / 2 - sill.Overhang, W / 2 + sill.Overhang, YInt - Math.Max(0, sill.Projection) - 0.05, _yFI, -sill.Thickness, 0, "opening");
+                if (box != null) yield return (Reach(sill.Thickness, 0), box);
+            }
+            if (SillOutsideOn)
+            {
+                var sill = _d.SillOutside!;
+                var box = Swept(-W / 2 - sill.Overhang, W / 2 + sill.Overhang, OutsideSillProfile(sill, 0.05), "opening");
+                if (box != null) yield return (Reach(sill.Thickness + (YExt + sill.Projection + 0.05 - _yFE) * Math.Tan(Math.Clamp(sill.Slope, 0, 45) * Math.PI / 180), 0), box);
+            }
+
+            Placed Reach(double below, double above) => _placed with { Sill = _placed.Sill - below, Height = _placed.Height + below + above };
+        }
+
+        Placed _placed;
+        public Dressing WithPlaced(Placed p) { _placed = p; return this; }
+    }
+
+    /// <summary>The details' measures for the schedules and quantities: the reveal's finished area each side, the sills' lengths, the surround's face, the threshold's length.</summary>
+    public static IEnumerable<(string Name, double Value, string Unit)> DetailQuantities(IModelView m, Entity fill)
+    {
+        if (SpecOf(m, fill.Id) is not { } spec || OpeningOf(m, fill.Id) is not { } opening || WallOf(m, opening.Id) is not { } wall) yield break;
+        var p = Place(m, opening);
+        var f = FrameOf(m, wall, p.Along);
+        foreach (var part in (FillGeometry(fill, m)?.Parts ?? []).Where(x => x.Key != null && (x.Key.StartsWith("reveal", StringComparison.Ordinal) || x.Key.StartsWith("sill", StringComparison.Ordinal) || x.Key is "surround" or "threshold")))
+        {
+            var (w, h, t) = (spec.Width, spec.Height, f.YMax - f.YMin);
+            var d = spec.Details ?? new JoineryDetails();
+            switch (part.Key)
+            {
+                case "reveal:outside": yield return ("RevealAreaOutside", (2 * h + w) * Math.Max(0, t / 2 - (spec.Frame.Offset + spec.Frame.Depth / 2)), "AREA"); break;
+                case "reveal:inside": yield return ("RevealAreaInside", (2 * h + w) * Math.Max(0, (spec.Frame.Offset - spec.Frame.Depth / 2) + t / 2), "AREA"); break;
+                case "sill:inside": yield return ("SillInsideLength", w + 2 * (d.SillInside?.Overhang ?? 0), "LENGTH"); break;
+                case "sill:outside": yield return ("SillOutsideLength", w + 2 * (d.SillOutside?.Overhang ?? 0), "LENGTH"); break;
+                case "surround":
+                {
+                    var sw = d.Surround?.Width ?? 0;
+                    var withSill = d.Surround?.Sill == true && !spec.IsDoor;
+                    yield return ("SurroundArea", (w + 2 * sw) * (h + sw + (withSill ? sw : 0)) - w * h, "AREA");
+                    break;
+                }
+                case "threshold": yield return ("ThresholdLength", w, "LENGTH"); break;
+            }
+        }
     }
 
     static Solid? Box(JoineryBox b, Func<double, double, double, Vec3> map)

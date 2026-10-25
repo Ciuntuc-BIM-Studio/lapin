@@ -20,6 +20,26 @@ public sealed record JoineryBoard(double Interior, double Exterior);
 public sealed record JoineryColors(string Frame, string Glass, string Leaf);
 
 /// <summary>
+/// How the opening is finished around the frame (asked 25.10.2026, pending
+/// decision 127): the reveal's finish on the jambs and head, by mode: "wall"
+/// (the wall's own face layers, each side its own, as thick as the layer up to
+/// 25 mm), "material" (one named material, <see cref="Thickness"/>), "none".
+/// </summary>
+public sealed record JoineryReveal(string Mode = "wall", string? Material = null, double Thickness = 0.015);
+
+/// <summary>A sill board: how far it projects past the wall face, its thickness, how far it runs past the jambs, its slope (degrees, the outside one), its material.</summary>
+public sealed record JoinerySill(bool On = true, double Projection = 0.03, double Thickness = 0.02, double Overhang = 0.02, double Slope = 0, string? Material = null);
+
+/// <summary>A surround on the facade: a band of <see cref="Width"/> around the opening, standing <see cref="Projection"/> proud, with or without its sill side.</summary>
+public sealed record JoinerySurround(bool On = false, double Width = 0.08, double Projection = 0.02, bool Sill = true, string? Material = null);
+
+/// <summary>A door's threshold across the wall, its height and material.</summary>
+public sealed record JoineryThreshold(bool On = false, double Height = 0.02, string? Material = null);
+
+/// <summary>The details of a door or window type; a null field keeps the default (the reveal from the wall, the boards as before, no surround, the frame's threshold).</summary>
+public sealed record JoineryDetails(JoineryReveal? Reveal = null, JoinerySill? SillInside = null, JoinerySill? SillOutside = null, JoinerySurround? Surround = null, JoineryThreshold? Threshold = null);
+
+/// <summary>
 /// A door or window type as the configurator edits it (the old Lapin's
 /// joinery spec, ported): the overall size (the opening it fills), the frame
 /// and where it sits across the wall, a grid of columns and rows split by
@@ -50,7 +70,9 @@ public sealed record JoinerySpec(
     bool IsExternal,
     double? ThermalTransmittance = null,
     /// <summary>The lintel over its openings: null, the wall's rule; mode "none", none.</summary>
-    LintelRule? Lintel = null)
+    LintelRule? Lintel = null,
+    /// <summary>The reveal's finish, the sills, a surround, a threshold; null: the defaults.</summary>
+    JoineryDetails? Details = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,

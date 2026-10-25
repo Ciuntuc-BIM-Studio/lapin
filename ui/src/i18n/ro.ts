@@ -58,6 +58,11 @@ export const RO: Record<string, string> = {
   'Elevation from inside': 'Vedere din interior', 'Elevation from outside': 'Vedere din exterior', 'From outside': 'Din exterior', 'Opening symbols in elevation': 'Simbolurile de deschidere în vedere',
   'Apex at the handle (makers)': 'Vârful la mâner (fabricanți)', 'Apex at the hinges (DIN 1356)': 'Vârful la balamale (DIN 1356)', 'Hardware': 'Feronerie', 'Opening symbols': 'Simboluri de deschidere',
 
+  'Details': 'Detalii', 'Reveal finish': 'Finisajul șpaleților', "The wall's finish layers": 'Straturile de finisaj ale peretelui', 'A material': 'Un material', 'None': 'Niciunul', 'Reveal material': 'Materialul șpaleților',
+  'Reveal thickness': 'Grosimea finisajului', 'Interior sill': 'Glaf interior', 'Exterior sill': 'Solbanc', 'Projection': 'Ieșire', 'Thickness': 'Grosime', 'Past the jambs': 'Peste șpaleți', 'Slope (°)': 'Pantă (°)',
+  'Surround on the facade': 'Ancadrament pe fațadă', 'Surround width': 'Lățimea ancadramentului', 'Surround projection': 'Ieșirea ancadramentului', 'Around the sill too': 'Și în jurul solbancului', 'Surround material': 'Materialul ancadramentului',
+  'Threshold': 'Prag', 'Threshold height': 'Înălțimea pragului', 'Threshold material': 'Materialul pragului',
+
   // Properties
   'Properties': 'Proprietăți', 'Select an element to see it here.': 'Selectează un element ca să-l vezi aici.', 'Class': 'Clasă', 'Type': 'Tip', 'Storey': 'Nivel',
   'Module': 'Modul', 'Name': 'Nume', 'Mark': 'Marcă', 'Value (m)': 'Valoare (m)', 'Delete axis': 'Șterge axa', 'Line up the axes': 'Aliniază axele', 'Bubbles': 'Buline', 'Grid axes': 'Axe',
@@ -79,15 +84,15 @@ export const RO: Record<string, string> = {
   'shown': 'arătate', 'hidden': 'ascunse', 'Walls': 'Pereți', 'Slabs': 'Plăci', 'Roofs': 'Acoperișuri', 'Columns': 'Stâlpi', 'Beams': 'Grinzi', 'Stairs': 'Scări',
   'Railings': 'Balustrade', 'Spaces': 'Încăperi', 'Furniture': 'Mobilier', 'Topography': 'Topografie', 'Other': 'Altele',
   'Categories': 'Categorii', 'Pen table': 'Tabelul de penițe', 'Pen': 'Peniță', 'Back to the ISO widths': 'Înapoi la grosimile ISO', "Lapin's default": 'implicit în Lapin',
-  'Cut': 'Tăietură', 'Projection': 'Proiecție', 'Hidden': 'Ascuns', 'Overhead': 'Deasupra', 'Beyond': 'Dincolo',
+  'Cut': 'Tăietură', 'Hidden': 'Ascuns', 'Overhead': 'Deasupra', 'Beyond': 'Dincolo',
   'Top': 'Sus', 'Bottom': 'Jos', 'View depth': 'Adâncimea vederii', 'Cut plane': 'Planul de tăiere', 'this level': 'acest nivel', 'the level above': 'nivelul de deasupra',
   'the level below': 'nivelul de dedesubt', 'unlimited': 'nelimitat', 'Offset (m)': 'Decalaj (m)', 'At': 'La', 'Back to the default': 'Înapoi la implicit',
   'Drafting layers': 'Layere de desen', 'Current': 'Curent', 'Colour': 'Culoare', 'Pen (mm)': 'Peniță (mm)', 'Locked': 'Blocat', 'Add': 'Adaugă', "New layer's name": 'Numele noului layer',
   'Base point': 'Punct de bază', 'Survey point': 'Punct topografic', 'Show the base and survey points in plans': 'Arată punctul de bază și punctul topografic în planuri',
   'Add a survey point': 'Adaugă un punct topografic', 'Remove the survey point': 'Șterge punctul topografic', 'True north (°)': 'Nordul adevărat (°)', 'Easting (m)': 'Est (m)', 'Northing (m)': 'Nord (m)',
   'Wall type': 'Tip de perete', 'New type': 'Tip nou', 'Save type': 'Salvează tipul', 'Create type': 'Creează tipul', 'Delete type': 'Șterge tipul', 'Draw with it': 'Desenează cu el',
-  'Place with it': 'Pune cu el', 'Layer': 'Strat', 'Material': 'Material', 'Thickness': 'Grosime', 'Core': 'Miez', 'Zone': 'Zonă', 'New door': 'Ușă nouă', 'New window': 'Fereastră nouă',
-  'Precast': 'Prefabricat', 'Cast in place': 'Turnat pe loc', 'None': 'Fără', 'As the wall': 'Ca peretele', 'Product': 'Produs', 'Reinforcement': 'Armare',
+  'Place with it': 'Pune cu el', 'Layer': 'Strat', 'Material': 'Material', 'Core': 'Miez', 'Zone': 'Zonă', 'New door': 'Ușă nouă', 'New window': 'Fereastră nouă',
+  'Precast': 'Prefabricat', 'Cast in place': 'Turnat pe loc', 'As the wall': 'Ca peretele', 'Product': 'Produs', 'Reinforcement': 'Armare',
 
   // Schedules, sheets, views
   'Rows': 'Rânduri', 'On each card': 'Pe fiecare fișă', 'Interior view': 'Vedere din interior', 'Exterior view': 'Vedere din exterior', 'Tables': 'Tabele', 'Table': 'Tabel',

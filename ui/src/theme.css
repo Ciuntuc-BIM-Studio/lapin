@@ -331,6 +331,7 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .joinery-small { display: flex; gap: 12px; align-items: flex-end; margin-top: 6px; }
 .joinery-small figure { margin: 0; text-align: center; }
 .joinery-symbols { gap: 10px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.field-line.check { display: flex; align-items: center; gap: 6px; }
 .sheet-svg { background: var(--wash, #ecebe7); }
 .paper-sheet { fill: #ffffff; stroke: var(--rule-strong); filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15)); }
 .sheet-viewport rect { fill: transparent; stroke: transparent; cursor: move; }
@@ -475,3 +476,20 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .stair-preview .caption { margin: -2px 0 6px; }
 
 .legend .swatch, .species .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 1px solid var(--rule-strong); vertical-align: -1px; }
+
+/* The corridor configurator (civil): plots over the form. */
+.corridor-dialog { width: min(1180px, calc(100vw - 32px)); }
+.corridor-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.corridor-grid.even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 900px) { .corridor-grid, .corridor-grid.even { grid-template-columns: 1fr; } }
+.corridor-plot { width: 100%; height: auto; display: block; background: var(--paper, var(--panel)); border: 1px solid var(--rule); border-radius: 2px; color: var(--ink); user-select: none; }
+.corridor-label { font: 11px var(--font-mono, ui-monospace, monospace); fill: var(--ink-muted); }
+.corridor-bar { gap: 6px; margin-bottom: 6px; }
+.corridor-bar input[type=range] { flex: 1; min-width: 120px; }
+.corridor-legend { margin-top: 6px; }
+.corridor-form { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.corridor-form .row { gap: 6px; flex-wrap: wrap; }
+.corridor-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.corridor-side { border: 1px solid var(--rule); border-radius: 2px; padding: 6px 8px; display: grid; gap: 4px; min-width: 0; }
+.corridor-side legend { padding: 0 4px; color: var(--ink-muted); font-size: 12px; }
+.corridor-pvis td { padding: 2px 4px; }

@@ -18,8 +18,12 @@ public class OpeningTests
 
     static string DoorType(Fixture f, double width, double height) => (string)f.Run("architecture.createJoineryType", new JsonObject
     {
-        ["spec"] = (JoinerySpec.DefaultDoor($"Door {width * 1000:0}") with { Width = width, Height = height }).ToJson(),
+        ["spec"] = Plain(JoinerySpec.DefaultDoor($"Door {width * 1000:0}") with { Width = width, Height = height }).ToJson(),
     })!["id"]!;
+
+    /// <summary>A type without the reveal's finish: the plain opening these ported tests measure (the finish is JoineryDetailTests' business).</summary>
+    static JoinerySpec Plain(JoinerySpec s) => s with { Details = new JoineryDetails(new JoineryReveal("none")) };
+    static string PlainType(Fixture f, JoinerySpec spec) => (string)f.Run("architecture.createJoineryType", new JsonObject { ["spec"] = Plain(spec).ToJson() })!["id"]!;
 
     static string Door(Fixture f, string wall, double along, string? typeId = null)
     {
@@ -67,7 +71,7 @@ public class OpeningTests
         var f = new Fixture();
         var wall = f.Wall(0, 0, 5, 0);
         var before = Vol(f, wall);
-        var door = Door(f, wall, 2.5);
+        var door = Door(f, wall, 2.5, PlainType(f, JoinerySpec.DefaultDoor("Plain door")));
         Assert.Equal(IfcClass.Door, f.Model.Get(door)!.Class);
         var opening = Openings.OpeningOf(f.Model, door)!;
         Assert.Equal(wall, Openings.WallOf(f.Model, opening.Id)!.Id);
@@ -105,7 +109,7 @@ public class OpeningTests
         var f = new Fixture();
         var wall = f.Wall(0, 0, 5, 0);
         var cutsBefore = f.Session.Geometry(wall)!.Plan!.Count;
-        var window = (string)f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["x"] = 3.6, ["y"] = 0.3 })!["id"]!;
+        var window = (string)f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["x"] = 3.6, ["y"] = 0.3, ["typeId"] = PlainType(f, JoinerySpec.DefaultWindow("Plain window")) })!["id"]!;
         var opening = Openings.OpeningOf(f.Model, window)!;
         Assert.Equal(3.6, opening.Num("along"), 9);      // the click, projected on the axis
         Assert.Equal(0.9, opening.Num("sill"), 9);       // the type's sill
@@ -170,7 +174,7 @@ public class OpeningTests
         Door(f, wall, 1.5, type);
         Door(f, wall, 4.5, type);
         var before = Vol(f, wall);
-        f.Run("architecture.updateJoineryType", new JsonObject { ["id"] = type, ["spec"] = (JoinerySpec.DefaultDoor("Door 1000") with { Width = 1.0, Height = 2.2 }).ToJson() });
+        f.Run("architecture.updateJoineryType", new JsonObject { ["id"] = type, ["spec"] = Plain(JoinerySpec.DefaultDoor("Door 1000") with { Width = 1.0, Height = 2.2 }).ToJson() });
         Assert.Equal(before - 2 * (1.0 * 2.2 - 0.9 * 2.1) * 0.285, Vol(f, wall), 6);
         Assert.Equal("Door 1000", f.Model.Get(type)!.Name);
         Assert.Equal("SINGLE_SWING_LEFT", f.Model.Get(type)!.Str("operationType"));
@@ -196,7 +200,7 @@ public class OpeningTests
         var f = new Fixture();
         var wall = f.Wall(0, 0, 6, 0);
         var full = Vol(f, wall);
-        Door(f, wall, 3);
+        Door(f, wall, 3, PlainType(f, JoinerySpec.DefaultDoor("Plain door")));
         var parts = f.Session.Geometry(wall)!.Parts;
         var lintel = Assert.Single(parts, p => p.Key!.StartsWith("lintel:"));
         var b = Measure.Bounds(lintel.Solid)!.Value;
