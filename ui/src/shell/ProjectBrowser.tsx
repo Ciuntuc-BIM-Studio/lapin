@@ -96,7 +96,7 @@ export function ProjectBrowser() {
       <div className="tree-group">
         <div className="tree-label"><ChevronDown size={12} /><Table2 size={13} />Schedules<span className="count">{schedules.length}</span>
           <select className="mini-select" value="" title="New schedule" onChange={(e) => { const kind = e.target.value; if (kind) void execute('architecture.createSchedule', { kind }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'schedule', scheduleId: id }); }); }}>
-            <option value="">+</option><option value="all">Joinery</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option>
+            <option value="">+</option><option value="all">Joinery</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option><option value="planting">Planting</option>
           </select>
         </div>
         {schedules.map((v) => (

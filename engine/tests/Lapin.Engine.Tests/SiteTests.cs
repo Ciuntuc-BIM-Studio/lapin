@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using BubbleBim.Geometry;
+using Lapin.Architecture;
 using Lapin.Civil;
 using Lapin.Ifc;
 using Lapin.Model;
@@ -162,5 +163,92 @@ public class SiteTests
             }
             finally { File.Delete(path); }
         }
+    }
+
+    [Fact]
+    public void The_analysis_colours_slopes_and_cut_and_fill_and_tells_their_areas()
+    {
+        var f = Site();
+        var t = Slope(f);
+        // A 10 % slope everywhere: one band, the whole ground.
+        var slope = Analysis.Of(f.Model, f.Model.Get(t)!, "slope")!;
+        Assert.All(slope.Cells, c => Assert.Equal("gentle", c.Band.Key));
+        var legend = (JsonObject)f.Session.Query("civil.analysis", new JsonObject { ["id"] = t, ["kind"] = "slope" })!;
+        Assert.InRange((double)legend["area"]!, 1500, 1600);
+        // A platform at 2,0 over ground from 1,0 to 3,0: cut on the high side, fill on the low one.
+        f.Run("civil.addPlatform", new JsonObject { ["terrainId"] = t, ["x1"] = 10, ["y1"] = 10, ["x2"] = 30, ["y2"] = 20, ["elevation"] = 2.0 });
+        var cutFill = Analysis.Of(f.Model, f.Model.Get(t)!, "cutfill")!;
+        Assert.Contains(cutFill.Cells, c => c.Band.Key.StartsWith("cut", StringComparison.Ordinal));
+        Assert.Contains(cutFill.Cells, c => c.Band.Key.StartsWith("fill", StringComparison.Ordinal));
+        Assert.Contains(cutFill.Cells, c => c.Band.Key == "level" && c.Min.X < 5);
+        // Switched on, the terrain carries the film in 3D.
+        f.Run("civil.updateTerrain", new JsonObject { ["id"] = t, ["analysis"] = "cutfill" });
+        Assert.True(f.Session.Geometry(t)!.Parts.Count(p => p.Key!.StartsWith("analysis:", StringComparison.Ordinal)) >= 3);
+        f.Run("civil.updateTerrain", new JsonObject { ["id"] = t, ["analysis"] = "none" });
+        Assert.Single(f.Session.Geometry(t)!.Parts);
+        Assert.Throws<CommandException>(() => f.Run("civil.updateTerrain", new JsonObject { ["id"] = t, ["analysis"] = "rainbow" }));
+    }
+
+    [Fact]
+    public void Spot_levels_and_the_parcel_are_kept_on_the_terrain_and_measured()
+    {
+        var f = Site();
+        var t = Slope(f);
+        f.Run("civil.addSpot", new JsonObject { ["x"] = 10, ["y"] = 10 });
+        f.Run("civil.addSpot", new JsonObject { ["x"] = 20, ["y"] = 20 });
+        Assert.Equal(2, Terrains.Spots(f.Model.Get(t)!).Count);
+        f.Run("civil.removeSpot", new JsonObject { ["id"] = t, ["x"] = 10.2, ["y"] = 10.1 });
+        Assert.Equal([new BubbleBim.Geometry.Vec2(20, 20)], Terrains.Spots(f.Model.Get(t)!));
+        var r = (JsonObject)f.Run("civil.setParcel", new JsonObject { ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(30, 0), new JsonArray(30, 20), new JsonArray(0, 20)) })!;
+        Assert.Equal(600, (double)r["area"]!, 6);
+        var q = f.Session.Quantities(t).Single(x => x.Name == "Lapin_TerrainQuantities");
+        Assert.Equal(600, q.Quantities.Single(x => x.Name == "ParcelArea").Value, 6);
+        Assert.Equal(100, q.Quantities.Single(x => x.Name == "ParcelPerimeter").Value, 6);
+        f.Run("civil.setParcel", new JsonObject { ["id"] = t });
+        Assert.DoesNotContain(f.Session.Quantities(t).Single(x => x.Name == "Lapin_TerrainQuantities").Quantities, x => x.Name == "ParcelArea");
+    }
+
+    [Fact]
+    public void A_terrain_goes_out_as_LandXML_and_comes_back_the_same()
+    {
+        var f = Site();
+        var t = Slope(f);
+        f.Run("civil.sculpt", new JsonObject { ["kind"] = "raise", ["x"] = 20, ["y"] = 20, ["radius"] = 5, ["amount"] = 1 });
+        var o = (JsonObject)f.Session.Query("civil.landXml", new JsonObject())!;
+        var xml = (string)o["text"]!;
+        Assert.Contains("surfType=\"TIN\"", xml);
+        var surfaces = LandXml.Surfaces(xml);
+        var tin = Terrains.Of(f.Model.Get(t)!).Tin;
+        Assert.Equal(tin.Points.Count, surfaces[0].Points.Count);
+        Assert.Equal(tin.Triangles.Count, surfaces[0].Faces);
+        // Surveyed heights: the datum (100) back on; x and y where they were (the slope tops out at x = 40; the raised ground at (20, 20) is 103).
+        var top = surfaces[0].Points.MaxBy(p => p.Z);
+        Assert.InRange(top.Z, 103.9, 104.1);
+        Assert.InRange(top.X, 39, 41);
+        Assert.InRange(surfaces[0].Points.Where(p => Math.Abs(p.X - 20) < 0.3 && Math.Abs(p.Y - 20) < 0.3).Max(p => p.Z), 102.9, 103.05);
+        var back = (string)f.Run("civil.importLandXml", new JsonObject { ["text"] = xml, ["datum"] = 100 })!["ids"]![0]!;
+        Assert.InRange(GroundAt(f, back, 20, 20), GroundAt(f, t, 20, 20) - 0.02, GroundAt(f, t, 20, 20) + 0.02);
+    }
+
+    [Fact]
+    public void The_planting_schedule_counts_every_species_and_shows_as_a_table()
+    {
+        var f = new Fixture(new ArchitectureModule(), new CivilModule());
+        Flat(f);
+        f.Run("civil.addPlanting", new JsonObject { ["points"] = new JsonArray(new JsonArray(5, 5), new JsonArray(35, 5), new JsonArray(35, 35), new JsonArray(5, 35)), ["density"] = 2, ["seed"] = 7 });
+        f.Run("civil.addPlanting", new JsonObject { ["x"] = 2, ["y"] = 2 });
+        var grid = new PlantingSchedule().Grid(f.Session.Reader);
+        Assert.Equal(["Species", "Kind", "Height (m)", "Crown (m)", "Count"], grid.Columns);
+        Assert.Equal("Total", grid.Rows[^1][0]);
+        Assert.Equal("19", grid.Rows[^1][4]);
+        Assert.True(grid.Rows.Count >= 3);
+        var s = (string)f.Run("architecture.createSchedule", new JsonObject { ["kind"] = "planting" })!["id"]!;
+        Assert.Equal("Planting schedule", f.Model.Get(s)!.Name);
+        var layout = (JsonObject)f.Session.Query("schedule.layout", new JsonObject { ["id"] = s })!;
+        Assert.True(((JsonArray)layout["pens"]!).Count > 0);
+        Assert.Equal(grid.Rows.Count, ((JsonArray)layout["table"]!["rows"]!).Count);
+        var csv = (string)f.Session.Query("schedule.csv", new JsonObject { ["id"] = s })!;
+        Assert.StartsWith("Species,Kind,Height (m),Crown (m),Count", csv);
+        Assert.Throws<CommandException>(() => f.Run("architecture.createSchedule", new JsonObject { ["kind"] = "furniture" }));
     }
 }

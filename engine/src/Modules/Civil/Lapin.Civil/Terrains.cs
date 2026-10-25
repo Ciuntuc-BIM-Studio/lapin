@@ -50,6 +50,23 @@ public static class Terrains
         return new Terrain(Tin.Delaunay(pts, segments));
     });
 
+    static readonly ConditionalWeakTable<Entity, Terrain> ExistingCache = new();
+
+    /// <summary>The ground as surveyed, before the brush (what cut and fill are measured against).</summary>
+    public static Terrain Existing(Entity e) => ExistingCache.GetValue(e, x =>
+    {
+        var datum = x.Num("datum");
+        var all = new List<Vec3>();
+        var segments = new List<(int, int)>();
+        var lines = Breaklines(x);
+        foreach (var line in lines)
+            for (var i = 0; i < line.Count; i++) { if (i > 0) segments.Add((all.Count - 1, all.Count)); all.Add(line[i]); }
+        all.AddRange(Points(x).Select(p => OnBreakline(lines, p) is { } z ? p with { Z = z } : p));
+        return new Terrain(Tin.Delaunay(all.Select(p => new Vec3(p.X, p.Y, p.Z - datum)).ToList(), segments));
+    });
+
+    public static IReadOnlyList<Vec2> Spots(Entity e) => Contour(e, "spots");
+
     /// <summary>The height of the breakline a point lies on in plan (within 1 mm), or null.</summary>
     static double? OnBreakline(List<IReadOnlyList<Vec3>> lines, Vec3 p)
     {
@@ -201,6 +218,7 @@ public static class Terrains
         }
         var material = e.Str("material");
         var parts = new List<GeometryPart> { new("Ground", Materials.ColorOf(m, material) is "#c9ced6" ? Color : Materials.ColorOf(m, material), body, material, "ground") };
+        if (e.Str("analysis") is { } kind && kind != "none" && Analysis.Of(m, e, kind) is { } analysis) parts.AddRange(Analysis.Overlay(analysis));
         var g = new ElementGeometry(parts, Plan(e, t, pads.Select(p => (p.Outline, p.Z)).ToList(), DitchesOf(m, e.Id).ToList()), null, problems.Count > 0 ? problems : null);
         Works.AddOrUpdate(g, works);
         return g;
@@ -306,6 +324,7 @@ public static class Terrains
             new("MaxElevation", t.Bounds.Max.Z, "LENGTH", "Highest point"),
             new("CutVolume", works.Sum(w => w.Cut), "VOLUME", "Cut"),
             new("FillVolume", works.Sum(w => w.Fill), "VOLUME", "Fill"),
+            .. Contour(e, "parcel") is { Count: >= 3 } parcel ? new Quantity[] { new("ParcelArea", Math.Abs(Polygon2.SignedArea(parcel)), "AREA", "Parcel"), new("ParcelPerimeter", Polygon2.Perimeter(parcel), "LENGTH", "Parcel boundary") } : [],
         ]);
         foreach (var w in works)
             yield return new QuantitySet("Lapin_EarthworkQuantities",

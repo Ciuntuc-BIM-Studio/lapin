@@ -109,8 +109,12 @@ public sealed class ScheduleEntity : ISheetContent
     /// <summary>What a type's card shows: the schedule's drawings (interior by default).</summary>
     static IReadOnlyList<string> Drawings(Entity s) => s.Attrs["drawings"] is JsonArray a ? a.Select(x => (string?)x).OfType<string>().ToList() : ["interior"];
 
+    /// <summary>The module that fills a schedule of this kind (a planting schedule), if the kind is not one of the joinery's.</summary>
+    static IScheduleSource? Source(IServices services, string? kind) => kind == null || Kinds.Contains(kind) ? null : services.All<IScheduleSource>().FirstOrDefault(x => x.Kind == kind);
+
     public IReadOnlyList<(double W, double H, List<Pen> Pens)> Pages(IQueryContext q, Entity e, double maxWidth, double? maxHeight)
     {
+        if (Source(q.Services, e.Str("kind")) is { } source) return ScheduleLayout.Pages([(source.Label, ScheduleLayout.Table(source.Grid(q), maxWidth))], maxHeight);
         var data = Schedules.Of(q, e.Str("kind") ?? "all");
         var table = ScheduleTable.Of(e);
         var drawings = Drawings(e);
@@ -184,8 +188,9 @@ public sealed class ScheduleEntity : ISheetContent
         r.Command("createSchedule", "New schedule", (ctx, a) =>
         {
             var kind = (string?)a["kind"] ?? "all";
-            if (!Kinds.Contains(kind)) throw new CommandException("A schedule lists doors, windows, all of them, or lintels.");
-            var name = (string?)a["name"] ?? kind switch { "door" => "Door schedule", "window" => "Window schedule", "lintel" => "Lintel schedule", _ => "Joinery schedule" };
+            var source = Source(ctx.Services, kind);
+            if (!Kinds.Contains(kind) && source == null) throw new CommandException("A schedule lists doors, windows, all of them, lintels, or a table another module offers.");
+            var name = (string?)a["name"] ?? source?.Label ?? kind switch { "door" => "Door schedule", "window" => "Window schedule", "lintel" => "Lintel schedule", _ => "Joinery schedule" };
             var s = new Entity(ctx.NewId(), Class, name, new JsonObject { ["kind"] = kind, ["scale"] = 50 });
             ctx.Add(s);
             return new JsonObject { ["id"] = s.Id };
@@ -259,6 +264,19 @@ public sealed class ScheduleEntity : ISheetContent
         r.Query("schedule.layout", (q, a) =>
         {
             var s = Require(q.Model, (string?)a["id"]);
+            if (Source(q.Services, s.Str("kind")) is { } source)
+            {
+                // A module's table: its pens, and the grid itself; none of the joinery's rows and cards.
+                var grid = source.Grid(q);
+                var (gw, gh, gpens) = Pages(q, s, Json.Number(a["maxWidth"]) ?? 380, null)[0];
+                return new JsonObject
+                {
+                    ["w"] = gw, ["h"] = gh, ["pens"] = new JsonArray(gpens.Select(p => (JsonNode)p.ToJson()).ToArray()),
+                    ["entries"] = new JsonArray(), ["rows"] = new JsonArray(), ["problems"] = new JsonObject { ["twice"] = 0, ["none"] = 0, ["marks"] = new JsonArray() },
+                    ["available"] = new JsonArray(), ["order"] = new JsonArray(), ["drawings"] = new JsonArray(), ["parts"] = new JsonArray(), ["reviewed"] = new JsonArray(), ["check"] = new JsonArray(), ["overridden"] = new JsonObject(),
+                    ["table"] = new JsonObject { ["columns"] = new JsonArray(grid.Columns.Select(c => (JsonNode)c).ToArray()), ["rows"] = new JsonArray(grid.Rows.Select(r => (JsonNode)new JsonArray(r.Select(c => (JsonNode)c).ToArray())).ToArray()) },
+                };
+            }
             var data = Schedules.Of(q, s.Str("kind") ?? "all");
             var pages = Pages(q, s, Json.Number(a["maxWidth"]) ?? 380, null);
             var (twice, none, marks) = Check(s, data);
@@ -297,12 +315,18 @@ public sealed class ScheduleEntity : ISheetContent
         r.Query("schedule.xlsx", (q, a) =>
         {
             var s = Require(q.Model, (string?)a["id"]);
+            if (Source(q.Services, s.Str("kind")) is { } source)
+            {
+                var g = source.Grid(q);
+                return Convert.ToBase64String(Lapin.Drawing.Export.XlsxWriter.Write([(source.Label, (IReadOnlyList<IReadOnlyList<string>>)[g.Columns, .. g.Rows])]));
+            }
             return Convert.ToBase64String(ToXlsx(s, Schedules.Of(q, s.Str("kind") ?? "all")));
         });
 
         r.Query("schedule.csv", (q, a) =>
         {
             var s = Require(q.Model, (string?)a["id"]);
+            if (Source(q.Services, s.Str("kind")) is { } source) { var g = source.Grid(q); return Csv([g.Columns, .. g.Rows]); }
             return ToCsv(s, Schedules.Of(q, s.Str("kind") ?? "all"));
         });
     }

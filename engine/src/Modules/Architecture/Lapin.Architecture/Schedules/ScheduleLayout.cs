@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using BubbleBim.Geometry;
 using Lapin.Drawing.Views;
 using Lapin.Model;
+using Lapin.Platform;
 
 namespace Lapin.Architecture.Schedules;
 
@@ -274,6 +275,42 @@ public static class ScheduleLayout
             bands.Add(new ScheduleBand(w, bandH, s.Pens.Values.ToList()));
         }
         return bands;
+    }
+
+    /// <summary>A plain table (a module's schedule): a header row and the rows, columns as wide as their longest text, within the width.</summary>
+    public static List<ScheduleBand> Table(ScheduleGrid grid, double maxWidth = 380)
+    {
+        const double header = 8, row = 6, pad = 2;
+        var widths = grid.Columns.Select((c, i) => Math.Max(c.Length, grid.Rows.Count == 0 ? 0 : grid.Rows.Max(r => i < r.Count ? r[i].Length : 0)) * 1.9 + 2 * pad).Select(w => Math.Clamp(w, 16, 90)).ToList();
+        var total = widths.Sum();
+        if (total > maxWidth) { var f = maxWidth / total; widths = widths.Select(w => w * f).ToList(); total = maxWidth; }
+        var s = new Sink();
+        var h = header + grid.Rows.Count * row;
+        s.Line(new Vec2(0, 0), new Vec2(total, 0), FramePen); s.Line(new Vec2(total, 0), new Vec2(total, h), FramePen);
+        s.Line(new Vec2(total, h), new Vec2(0, h), FramePen); s.Line(new Vec2(0, h), new Vec2(0, 0), FramePen);
+        s.Line(new Vec2(0, header), new Vec2(total, header), FramePen);
+        var x = 0.0;
+        for (var i = 0; i < widths.Count; i++)
+        {
+            if (i > 0) s.Line(new Vec2(x, 0), new Vec2(x, h), GridPen);
+            s.Text(new Vec2(x + pad, header - 2.5), grid.Columns[i], Text, bold: true);
+            x += widths[i];
+        }
+        for (var r = 0; r < grid.Rows.Count; r++)
+        {
+            var y = header + r * row;
+            if (r > 0) s.Line(new Vec2(0, y), new Vec2(total, y), GridPen);
+            x = 0;
+            for (var i = 0; i < widths.Count; i++)
+            {
+                var text = i < grid.Rows[r].Count ? grid.Rows[r][i] : "";
+                var size = text.Length * 1.9 > widths[i] - 2 * pad ? Math.Max(1.6, (widths[i] - 2 * pad) / Math.Max(text.Length, 1) / 1.9 * Text) : Text;
+                var numeric = double.TryParse(text.Replace(',', '.'), System.Globalization.NumberStyles.Float, CultureInfo.InvariantCulture, out _);
+                s.Text(new Vec2(numeric ? x + widths[i] - pad : x + pad, y + 4.2), text, size, r == grid.Rows.Count - 1 && grid.Rows.Count > 1 && text.Length > 0 && grid.Rows[r][0].StartsWith("Total", StringComparison.Ordinal), numeric ? "end" : "start");
+                x += widths[i];
+            }
+        }
+        return [new ScheduleBand(total, h, s.Pens.Values.ToList())];
     }
 
     /// <summary>

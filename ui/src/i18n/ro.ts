@@ -136,6 +136,9 @@ export const RO: Record<string, string> = {
   'Raise / lower by': 'Ridică / coboară cu', 'Flatten to': 'Nivelează la', 'the ground at the click': 'terenul de la clic', 'Smoothing': 'Netezire', 'Brush strokes': 'Tușe de pensulă', 'undo last': 'scoate ultima',
   'clear': 'șterge toate', 'Platforms, ditches, paths': 'Platforme, șanțuri, alei', 's strokes can be cleared in the inspector.': 'Fiecare clic cu o unealtă de pensulă e o tușă, anulată cu Ctrl Z; tușele unui teren se pot șterge din inspector.',
   'Each click of a brush tool is one stroke, undone with Ctrl Z; a terrain\'s strokes can be cleared in the inspector.': 'Fiecare clic cu o unealtă de pensulă e o tușă, anulată cu Ctrl Z; tușele unui teren se pot șterge din inspector.',
+  // Site tools, stage 2
+  'Spot level': 'Cotă punctuală', 'Spot levels': 'Cote punctuale', 'Parcel': 'Parcelă', 'Export LandXML': 'Exportă LandXML', 'Analysis': 'Analiză', 'slopes': 'pante',
+  'cut and fill': 'săpătură și umplutură', 'elevations': 'cote', 'drawn': 'desenată', 'remove': 'scoate', 'Planting schedule': 'Tabel de plantare',
 };
 
 /** Phrases with a number or a name in them. */

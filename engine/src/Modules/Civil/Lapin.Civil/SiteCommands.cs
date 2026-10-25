@@ -63,6 +63,61 @@ public static class SiteCommands
             return null;
         });
 
+        // A spot level on the plan, at a point of the terrain (removed by index, or the nearest to a point).
+        r.Command("addSpot", "Spot level", (ctx, a) =>
+        {
+            var at = Args.Point(a, "x", "y");
+            var t = TerrainAt(ctx.Model, a, at);
+            var spots = Terrains.Spots(t).ToList();
+            spots.Add(at);
+            var attrs = t.CloneAttrs();
+            attrs["spots"] = Terrains.ContourJson(spots);
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["count"] = spots.Count };
+        });
+
+        r.Command("removeSpot", "Remove spot level", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var spots = Terrains.Spots(t).ToList();
+            var attrs = t.CloneAttrs();
+            if (a["all"] is JsonValue av && av.TryGetValue<bool>(out var all) && all) spots.Clear();
+            else if (Json.Number(a["index"]) is { } i && i >= 0 && i < spots.Count) spots.RemoveAt((int)i);
+            else if (a["x"] != null && spots.Count > 0) { var p = Args.Point(a, "x", "y"); spots.Remove(spots.MinBy(q => (q - p).Length)); }
+            if (spots.Count > 0) attrs["spots"] = Terrains.ContourJson(spots); else attrs.Remove("spots");
+            ctx.Replace(t.With(attrs: attrs));
+            return null;
+        });
+
+        // The parcel (the property's boundary) on a terrain: a closed outline, or none.
+        r.Command("setParcel", "Parcel", (ctx, a) =>
+        {
+            var attrsPts = a["points"] != null ? Terrains.CheckOutline(Args.Points(a)) : null;
+            var t = attrsPts != null ? TerrainAt(ctx.Model, a, attrsPts[0]) : Terrain(ctx.Model, (string?)a["terrainId"] ?? (string?)a["id"]);
+            var attrs = t.CloneAttrs();
+            if (attrsPts != null) attrs["parcel"] = Terrains.ContourJson(attrsPts); else attrs.Remove("parcel");
+            ctx.Replace(t.With(attrs: attrs));
+            return new JsonObject { ["id"] = t.Id, ["area"] = attrsPts == null ? 0 : Math.Round(Math.Abs(Polygon2.SignedArea(attrsPts)), 2) };
+        });
+
+        // What the colours mean, and how much ground each band covers.
+        r.Query("analysis", (q, a) =>
+        {
+            var t = Terrain(q.Model, (string?)a["id"]);
+            var kind = (string?)a["kind"] ?? t.Str("analysis") ?? "none";
+            return Analysis.Of(q.Model, t, kind) is { } r ? Analysis.Legend(r) : null;
+        });
+
+        // The terrains as LandXML (those named, else all), surveyed elevations.
+        r.Query("landXml", (q, a) =>
+        {
+            var ids = a["ids"] is JsonArray arr ? arr.Select(x => (string?)x).OfType<string>().ToHashSet() : null;
+            var terrains = q.Model.OfClass(IfcClass.GeographicElement).Where(t => t.PredefinedType == Terrains.Predefined && (ids == null || ids.Contains(t.Id))).ToList();
+            if (terrains.Count == 0) throw new CommandException("The project has no terrain to export.");
+            var text = LandXml.Write(terrains.Select(t => (t.Name, Terrains.Of(t).Tin, t.Num("datum"))).ToList());
+            return new JsonObject { ["name"] = (terrains.Count == 1 ? terrains[0].Name : "terrain") + ".xml", ["text"] = text, ["surfaces"] = terrains.Count };
+        });
+
         // A ditch along a path, its bottom a depth under the ground, voiding the terrain it runs in.
         r.Command("addDitch", "Ditch", (ctx, a) =>
         {

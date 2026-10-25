@@ -190,3 +190,14 @@ public interface IVoidShapes
 {
     Solid? Shape(Entity opening, IModelView model);
 }
+
+/// <summary>A table a module offers as a schedule: its title, its columns and its rows (text).</summary>
+public sealed record ScheduleGrid(string Title, IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows);
+
+/// <summary>A schedule another module fills (a planting schedule): the kind a schedule entity names, its label, and the table as the model is now.</summary>
+public interface IScheduleSource
+{
+    string Kind { get; }
+    string Label { get; }
+    ScheduleGrid Grid(IQueryContext query);
+}

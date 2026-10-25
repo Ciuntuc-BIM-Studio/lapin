@@ -21,6 +21,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             new("interval", "Contour interval", "length", Min: 0.05),
             new("majorEvery", "Major contour every", "number", Min: 1, Max: 100),
             new("depth", "Depth below the lowest point", "length", Min: 0.1),
+            new("analysis", "Analysis", "choice", Choices: Analysis.Kinds),
         ], Terrains.Color));
         r.Class(new(IfcClass.EarthworksCut, "Earthwork",
         [
@@ -50,6 +51,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Geometry(Plantings.Class, (e, m, _) => Plantings.Geometry(e, m));
         r.Quantities(Plantings.Class, Plantings.Quantities);
         r.Service<IViewAnnotations>(this);
+        r.Service<IScheduleSource>(new PlantingSchedule());
         r.Catalog("plants", Plantings.SpeciesJson(Plantings.Catalog));
         r.Catalog("sculptKinds", new JsonArray(SculptDab.Kinds.Select(k => (JsonNode)k).ToArray()));
         SiteCommands.Register(r);
@@ -87,6 +89,11 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             }
             foreach (var k in new[] { "datum", "interval", "majorEvery", "depth" })
                 if (Json.Number(a[k]) is { } v) attrs[k] = v;
+            if ((string?)a["analysis"] is { } analysis)
+            {
+                if (!Analysis.Kinds.Contains(analysis)) throw new CommandException("An analysis shows slopes, cut and fill, or elevations; or none.");
+                if (analysis == "none") attrs.Remove("analysis"); else attrs["analysis"] = analysis;
+            }
             ctx.Replace(t.With(attrs: attrs));
             return null;
         });
@@ -231,6 +238,26 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 var mid = new Vec2(o.Average(p => p.X), o.Average(p => p.Y));
                 mk.Text(new PenText(mid, $"{pad.Name} {Standards.FormatLevel(pad.Num("elevation"))}", text.Height, 0, "middle", "middle", true, text.Font), "#000000");
             }
+            // Spot levels: a cross and the designed ground's height beside it.
+            var r = 1.2 * c.Mm;
+            foreach (var p in Terrains.Spots(e))
+            {
+                if (Analysis.Proposed(c.Model, e, t, p) is not { } z) continue;
+                mk.Line(p - new Vec2(r, 0), p + new Vec2(r, 0), "LEVELS", Pens.Default.Seen, "#000000");
+                mk.Line(p - new Vec2(0, r), p + new Vec2(0, r), "LEVELS", Pens.Default.Seen, "#000000");
+                mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), Standards.FormatLevel(z), text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#000000");
+                mk.Snaps.Add(p);
+            }
+            // The parcel: its boundary, dash-dotted, and its area.
+            if (Terrains.Contour(e, "parcel") is { Count: >= 3 } parcel)
+            {
+                mk.Polyline(parcel, true, "PARCEL", Pens.Default.Cut, "#6b4e2e", [6, 2, 1, 2]);
+                var centre = new Vec2(parcel.Average(p => p.X), parcel.Average(p => p.Y));
+                mk.Text(new PenText(centre, $"S = {Math.Abs(Polygon2.SignedArea(parcel)):0.0} m²", text.Height, 0, "middle", "middle", true, text.Font), "#6b4e2e");
+            }
+            // The analysis, as fills under the lines.
+            if (e.Str("analysis") is { } kind && kind != "none" && Analysis.Of(c.Model, e, kind) is { } analysis)
+                foreach (var (loops, color) in Analysis.Fills(analysis)) mk.Fills.Add((loops, color));
             yield return mk;
         }
     }

@@ -458,3 +458,5 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .stair-preview { width: 480px; }
 .stair-preview svg { background: #fff; border: 1px solid var(--rule); border-radius: 4px; display: block; margin-bottom: 6px; width: 100%; height: auto; }
 .stair-preview .caption { margin: -2px 0 6px; }
+
+.legend .swatch, .species .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 1px solid var(--rule-strong); vertical-align: -1px; }

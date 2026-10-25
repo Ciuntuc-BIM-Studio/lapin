@@ -45,4 +45,5 @@ Analiza (pante, săpătură/umplutură colorate, cote punctuale), tabelul de pla
 ## Etape
 
 1. **Făcut (25.10.2026).** Teren plat, pensula (patru moduri, cu raza și cantitatea în bara de unelte), șanțul, aleea, zidul de sprijin, planta și zona de plantare; secțiunile din inspector; cantitățile; IFC; teste.
-2. Analiza colorată (pante, săpătură/umplutură), cotele punctuale pe plan, tabelul de plantare, bordurile ca piese, exportul LandXML, umplutura din spatele zidului, rigola cu fund la cotă.
+2. **Făcut (25.10.2026):** analiza colorată (pante, săpătură/umplutură, cote în benzi) ca film peste teren în 3D și ca umpleri în plan, cu legenda și ariile pe benzi în inspector (`civil.updateTerrain {analysis}`, `civil.analysis`); cotele punctuale pe plan (`civil.addSpot/removeSpot`, cota terenului proiectat: platformă, șanț, pensulă); parcela pe teren, cu aria și perimetrul în cantități (`civil.setParcel`); exportul LandXML 1.2 al terenurilor (`civil.landXml`, butonul din inspector și din tab); tabelul de plantare ca extras (`IScheduleSource` în platformă: un modul oferă un tabel, extrasele îl arată, îl pun pe planșă și îl exportă CSV/XLSX; `architecture.createSchedule {kind: "planting"}`).
+3. Rămase: bordurile ca piese separate, umplutura din spatele zidului, rigola cu fund la cotă, profilul terenului de-a lungul unui traseu.

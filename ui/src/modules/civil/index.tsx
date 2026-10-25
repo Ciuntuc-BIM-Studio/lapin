@@ -5,7 +5,7 @@
  * plantings that stand on it (docs/spec-site.md).
  */
 
-import { BrickWall, FileUp, Mountain, MoveVertical, Paintbrush, Route, Shovel, Sprout, TreeDeciduous, Waves } from 'lucide-react';
+import { BrickWall, Crosshair, FileDown, FileUp, Fence, Mountain, MoveVertical, Paintbrush, Route, Shovel, Sprout, TreeDeciduous, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -13,7 +13,7 @@ import { outlineGrips, outlineRef, toPairs } from '../../viewport/gripKit';
 import { edgeMiddles, fromPairs, insertVertex, moveVertex, removeVertex } from '../../viewport/contour';
 import { notify, useUi } from '../../app/store';
 import { execute } from '../../engine/session';
-import { SURVEY, pickText } from './survey';
+import { SURVEY, downloadLandXml, pickText } from './survey';
 import { TerrainSection } from './TerrainSection';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
 import { BrushDialog } from './BrushDialog';
@@ -71,6 +71,23 @@ const flatTerrain: ToolDef = {
     await ctx.execute('civil.addFlatTerrain', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, elevation: Number(answer.replace(',', '.')) || 0 });
   },
 };
+
+/** A spot level at a click: the designed ground's height, written on the plan beside a cross. */
+const spot: ToolDef = {
+  id: 'civil.spot', label: 'Spot level', icon: Crosshair, shortcut: 'SP',
+  gesture: { kind: 'point' },
+  complete: async ({ points: [p] }, ctx) => { await ctx.execute('civil.addSpot', { x: p.x, y: p.y }); },
+};
+
+/** The parcel: the property's boundary on the terrain, drawn dash-dotted with its area. */
+const parcel: ToolDef = {
+  id: 'civil.parcel', label: 'Parcel', icon: Fence, shortcut: 'PC',
+  gesture: { kind: 'polygon' },
+  complete: async ({ points }, ctx) => { await ctx.execute('civil.setParcel', { points: points.map((p) => [p.x, p.y]) }); },
+};
+
+/** Every terrain of the project as one LandXML file. */
+const landXmlOut: ToolDef = { id: 'civil.landxmlExport', label: 'Export LandXML', icon: FileDown, run: () => void downloadLandXml().catch((e) => notify(e instanceof Error ? e.message : String(e))) };
 
 /** A platform: its outline in plan (Enter or the first corner closes it); it is levelled at the ground's height in its middle, changed in the inspector. */
 const platform: ToolDef = {
@@ -147,7 +164,7 @@ const civil: LapinModule = {
   tabs: [{
     id: 'site', label: 'Site', order: 40,
     groups: [
-      { label: 'Terrain', tools: [terrainFromFile, flatTerrain], small: [terrainFromLandXml] },
+      { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainFromLandXml, landXmlOut, spot] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SR'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [sculpt('flatten', 'Flatten', Mountain, 'SF'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, retainingWall, plant, plantingZone] },
     ],
