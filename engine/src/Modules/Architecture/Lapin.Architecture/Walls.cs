@@ -242,7 +242,9 @@ public static class Walls
     /// <summary>
     /// A curved wall's body: its layers as bands along the arc, cut at the ends
     /// the way its joins say (along the tangent there), its zones, its
-    /// openings taken out radially. Its lintels and a roof over it wait for later.
+    /// openings taken out radially, the lintels over them through its core
+    /// (following the arc), and its top under a roof: the roof is read along
+    /// the arc in short straight steps, as along a straight wall.
     /// </summary>
     static ElementGeometry ArcGeometry(Entity wall, PathCurve c, IModelView m, IServices? services)
     {
@@ -257,16 +259,53 @@ public static class Walls
         // Each face ends where it meets its joint's cut (along the tangent past an end).
         var (From, To) = c.Ends(ends[0], ends[1], yMin, yMax);
 
+        // Under a roof: the top read along each step of the arc; built up to its highest point, then cut along it.
+        var reachLo = Math.Min(From(yMin), From(yMax));
+        var reachHi = Math.Max(To(yMin), To(yMax));
+        var stations = c.Stations(reachLo, reachHi);
+        var steps = new List<(Vec2 A, Vec2 Dir, double Length, List<(double U, double V)>? Top)>();
+        for (var i = 0; i + 1 < stations.Count; i++)
+        {
+            var (a, b) = (c.PointAt(stations[i]), c.PointAt(stations[i + 1]));
+            var len = (b - a).Length;
+            if (len < 1e-9) continue;
+            var dir = (b - a) * (1 / len);
+            steps.Add((a, dir, len, RoofTop.Profile(wall, new RoofTop.WallAxis(a, dir, len, z, height, yMax - yMin), m)));
+        }
+        var roofed = steps.Any(x => x.Top != null);
+        var built = roofed ? Math.Max(height, steps.Where(x => x.Top != null).Max(x => x.Top!.Max(p => p.V))) : height;
+
         var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
         var openings = Openings.PlacedOn(m, wall.Id);
         var booleans = services?.Get<ISolidBooleans>();
         var cutters = (services?.Get<GeometryOptions>()?.CutOpenings ?? true)
             ? openings.Select(o => (o, Box: Openings.ArcCutter(c, z, yMin, yMax, o))).Where(x => x.Box != null).ToList() : [];
         if (cutters.Count > 0 && booleans == null) problems.Add("Openings need the boolean library (manifold), missing here: the wall is drawn uncut.");
-        GeometryPart Cut(GeometryPart part, double z0, double z1)
+
+        // Lintels over the openings, through the core, along the arc.
+        var core = bands.FirstOrDefault(b => b.Core);
+        var lintelBoxes = new List<(Lintel Lintel, int Piece, Solid Box)>();
+        if (core.To - core.From > 1e-9)
+        {
+            var (x0, x1) = (Math.Max(From(core.From), From(core.To)), Math.Min(To(core.From), To(core.To)));
+            var lintels = Lintels.ForWall(
+                openings.Select(o => new LintelOpening(o.Opening.Id, o.Along - o.Width / 2, o.Along + o.Width / 2, o.Sill, o.Sill + o.Height,
+                    o.Spec?.Lintel is { Mode: not "none" } own ? own : null, o.Spec?.Lintel is { Mode: "none" })).ToList(),
+                zones, LintelRuleOf(m, wall), (x0, x1, height));
+            foreach (var l in lintels)
+            {
+                var slices = l.Kind == "downstand" ? [(core.From, core.To)] : Lintels.Slices(l.Rule, core.From, core.To, outerAtMin: true);
+                for (var i = 0; i < slices.Count; i++)
+                    if (Prism.ExtrudeFootprint(c.Band(_ => l.X0, _ => l.X1, slices[i].From, slices[i].To), z + l.Z0, l.Z1 - l.Z0, "lintel") is { } box)
+                        lintelBoxes.Add((l, i, box));
+            }
+        }
+        GeometryPart Cut(GeometryPart part, double z0, double z1, bool isCore = false)
         {
             if (booleans == null) return part;
-            var reach = cutters.Where(x => x.o.Sill + z < z1 - 1e-9 && x.o.Sill + x.o.Height + z > z0 + 1e-9).Select(x => x.Box!).ToList();
+            var reach = cutters.Where(x => x.o.Sill + z < z1 - 1e-9 && x.o.Sill + x.o.Height + z > z0 + 1e-9).Select(x => x.Box!)
+                .Concat(isCore ? lintelBoxes.Where(b => b.Lintel.Z0 < z1 - 1e-9 && b.Lintel.Z1 > z0 + 1e-9).Select(b => b.Box) : [])
+                .ToList();
             if (reach.Count == 0) return part;
             try { return booleans.Difference(part.Solid, reach, part.Solid.Tag) is { } cut ? part with { Solid = cut } : part; }
             catch (InvalidOperationException ex) { problems.Add($"{part.Name}: an opening could not be cut ({ex.Message})."); return part; }
@@ -283,10 +322,14 @@ public static class Walls
             {
                 foreach (var zb in zones)
                     if (Prism.ExtrudeFootprint(footprint, z + zb.Z0, zb.Z1 - zb.Z0, zb.Zone.Name) is { } piece)
-                        parts.Add(Cut(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key), zb.Z0, zb.Z1));
+                        parts.Add(Cut(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key), zb.Z0, zb.Z1, isCore: true));
+                // A gable rising over the storey: the masonry goes on above the ring beam.
+                if (built > height + 1e-9 && (zones.LastOrDefault(zb => zb.Zone.Role == "masonry") ?? zones[^1]).Zone is var gz
+                    && Prism.ExtrudeFootprint(footprint, z + height, built - height, "gable") is { } gable)
+                    parts.Add(Cut(new GeometryPart($"Gable ({gz.Name})", Materials.ColorOf(m, gz.Material), gable, gz.Material, "zone:gable"), height, built, isCore: true));
             }
-            else if (Prism.ExtrudeFootprint(footprint, z, height, band.Name) is { } solid)
-                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), 0, height));
+            else if (Prism.ExtrudeFootprint(footprint, z, built, band.Name) is { } solid)
+                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), 0, built, isCore: band.Core));
             // In plan, the band between the gaps the openings leave at the cut.
             var at = double.NegativeInfinity;
             foreach (var g in gaps.Append((From: double.PositiveInfinity, To: double.PositiveInfinity)))
@@ -299,8 +342,32 @@ public static class Walls
             }
         }
         parts = CutPriorities.Apply(wall, m, services, parts, problems);
-        if (wall.Str("roofTop") == "attach") problems.Add("A curved wall keeps its own height under a roof, for now.");
-        if (openings.Count > 0 && LintelRuleOf(m, wall) != null) problems.Add("A curved wall's openings have no lintels yet.");
+        if (roofed)
+        {
+            if (booleans == null) problems.Add("The roof needs the boolean library (manifold), missing here: the wall keeps its height.");
+            else
+            {
+                // Each step's region above the roof (flat at the wall's height where no roof covers it), a little past its ends so the steps overlap.
+                var reach = 0.05 + (yMax - yMin) * 0.1;
+                var above = steps.Select(x => AboveRoof(x.Top ?? [(0, height), (x.Length, height)], 0, x.A, x.Dir, x.Dir.Perp, z, yMin, yMax, built, reach)).OfType<Solid>().ToList();
+                parts = parts.Select(part =>
+                {
+                    try { return booleans.Difference(part.Solid, above, part.Solid.Tag) is { } cut && Measure.Volume(cut) > 1e-9 ? part with { Solid = cut } : null; }
+                    catch (InvalidOperationException ex) { problems.Add($"{part.Name}: the roof could not be cut ({ex.Message})."); return part; }
+                }).OfType<GeometryPart>().ToList();
+            }
+        }
+        if (booleans != null)
+        {
+            var ring = zones.FirstOrDefault(zb => zb.Zone.Role == "ringBeam");
+            foreach (var (l, i, box) in lintelBoxes)
+            {
+                var material = l.Kind == "downstand" ? ring?.Zone.Material : l.Rule?.Material is { } name ? Materials.Find(m, name)?.Id : Materials.Find(m, "Reinforced concrete")?.Id;
+                var color = material != null ? Materials.ColorOf(m, material) : "#a8a8a8";
+                var label = l.Kind == "downstand" ? "Ring beam over opening" : l.Precast ? "Lintel (precast)" : "Lintel (cast)";
+                parts.Add(new GeometryPart(label, color, box, material, $"{l.Kind}:{l.Key}:{i}"));
+            }
+        }
         return new ElementGeometry(parts, plan, [c.Start, c.End, c.PointAt(length / 2)], problems.Count > 0 ? problems : null);
     }
 
@@ -309,9 +376,8 @@ public static class Walls
     /// the wall's own axis, v above its base), across the whole thickness. The
     /// profile runs on in line past the wall's ends, where joins reach.
     /// </summary>
-    static Solid? AboveRoof(List<(double U, double V)> profile, double shift, Vec2 start, Vec2 dir, Vec2 left, double z, double yMin, double yMax, double built)
+    static Solid? AboveRoof(List<(double U, double V)> profile, double shift, Vec2 start, Vec2 dir, Vec2 left, double z, double yMin, double yMax, double built, double reach = 2)
     {
-        const double reach = 2;
         var sky = built + 1;
         double Run((double U, double V) a, (double U, double V) b, double u) => Math.Abs(b.U - a.U) < 1e-9 ? a.V : a.V + (b.V - a.V) * (u - a.U) / (b.U - a.U);
         var (first, last) = (profile[0], profile[^1]);

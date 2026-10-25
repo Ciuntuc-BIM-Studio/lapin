@@ -33,6 +33,12 @@ const strip: ToolDef = {
   gesture: { kind: 'twoPoints', repeat: true },
   complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y }); },
 };
+/** A curved strip foundation: its ends, then a point the arc passes through. */
+const curvedStrip: ToolDef = {
+  id: 'structure.curvedStrip', label: 'Curved strip footing', icon: StripFootingIcon, shortcut: 'SC',
+  gesture: { kind: 'threePoints', arc: true },
+  complete: async ({ points: [a, b, p] }, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y }); },
+};
 const pad: ToolDef = {
   id: 'structure.pad', label: 'Pad footing', icon: PadFootingIcon, shortcut: 'PF',
   gesture: { kind: 'point' },
@@ -55,7 +61,7 @@ function memberGrips(node: NodeDto): Grip[] {
   if (!c) return [];
   const beam = node.type === 'IfcBeam';
   return [
-    ...pathGrips(c, (s, e, rise) => ({ command: 'structure.updatePath', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, ...(beam ? { arc: rise } : {}), detachJoinedEnds: true } })),
+    ...pathGrips(c, (s, e, rise) => ({ command: 'structure.updatePath', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise, detachJoinedEnds: true } })),
     flipAcross(c, (beam ? node.props.flipped : usageOf(useSession.getState(), node.id)?.negative) ? 1 : -1, beam ? 'Flip: mirror the section across the axis' : 'Flip: swap the foundation\'s faces', () => ({ command: 'structure.flip', args: { id: node.id } })),
   ];
 }
@@ -80,7 +86,7 @@ const structure: LapinModule = {
     id: 'structure', label: 'Structure', order: 30, include: ['modify'],
     groups: [
       { label: 'Frame', tools: [column, beam], small: [curvedBeam, atGrid] },
-      { label: 'Foundation', tools: [strip, pad] },
+      { label: 'Foundation', tools: [strip, pad], small: [curvedStrip] },
       { label: 'Types', tools: [types] },
     ],
   }],

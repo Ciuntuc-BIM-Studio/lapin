@@ -18,7 +18,7 @@ public sealed class StructureModule : ILapinModule
         r.Class(new(IfcClass.ColumnType, "Column type", [new("height", "Height", "length", Min: 0.01)], "#a8a8a8", Kind: "type"));
         r.Class(new(IfcClass.Beam, "Beam", [new("topOffset", "Top offset", "length"), new(PathCurve.Key, "Arc rise", "length"), priority], "#a8a8a8"));
         r.Class(new(IfcClass.BeamType, "Beam type", [], "#a8a8a8", Kind: "type"));
-        r.Class(new(IfcClass.Footing, "Footing", [new("rotation", "Rotation", "angle"), priority], "#a8a8a8"));
+        r.Class(new(IfcClass.Footing, "Footing", [new("rotation", "Rotation", "angle"), new(PathCurve.Key, "Arc rise (strip)", "length"), priority], "#a8a8a8"));
         r.Class(new(IfcClass.FootingType, "Footing type", [new("bottom", "Bottom level", "length")], "#a8a8a8", Kind: "type"));
 
         r.Service<IStoreyLevels>(new Levels());
@@ -128,7 +128,8 @@ public sealed class StructureModule : ILapinModule
         {
             var storey = Place.Storey(ctx, a);
             var type = Place.TypeFor(ctx, a, IfcClass.FootingType, () => StripFootings.DefaultType(ctx), StripFootings.IsStrip);
-            var f = StripFootings.Add(ctx, Paths(ctx), storey, Place.P(a, "x1", "y1"), Place.P(a, "x2", "y2"), type, Style(a["joinStyle"]));
+            var (p1, p2) = (Place.P(a, "x1", "y1"), Place.P(a, "x2", "y2"));
+            var f = StripFootings.Add(ctx, Paths(ctx), storey, p1, p2, type, Style(a["joinStyle"]), Args.Rise(a, p1, p2));
             return new JsonObject { ["id"] = f.Id };
         });
 
@@ -159,8 +160,8 @@ public sealed class StructureModule : ILapinModule
             var start = new Vec2(Json.Number(a["x1"]) ?? s.X, Json.Number(a["y1"]) ?? s.Y);
             var end = new Vec2(Json.Number(a["x2"]) ?? en.X, Json.Number(a["y2"]) ?? en.Y);
             var keep = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var k) || k;
-            // A beam's arc (a strip foundation stays straight).
-            if (e.Class == IfcClass.Beam && (a.ContainsKey(PathCurve.Key) || a["x3"] != null))
+            // The arc of a beam or a strip foundation.
+            if (a.ContainsKey(PathCurve.Key) || a["x3"] != null)
             {
                 var attrs = e.CloneAttrs();
                 if (Args.Rise(a, start, end) is var rise && rise != 0) attrs[PathCurve.Key] = rise; else attrs.Remove(PathCurve.Key);

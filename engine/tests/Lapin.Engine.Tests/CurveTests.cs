@@ -143,4 +143,59 @@ public class CurveTests
         var flipped = f.Session.Geometry(channel)!.Parts[0].Solid.Vertices.Average(v => v.Y);
         Assert.Equal(centre - (mass - centre), flipped, 6);
     }
+
+    [Fact]
+    public void A_window_in_a_curved_wall_has_its_lintel_along_the_arc()
+    {
+        var f = new Fixture();
+        var wall = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 8, ["y2"] = 0, ["arc"] = 3 })!["id"]!;
+        var window = (string)f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["x"] = 4, ["y"] = 3.1 })!["id"]!;
+        var g = f.Session.Geometry(wall)!;
+        Assert.Null(g.Diagnostics);
+        var lintels = g.Parts.Where(p => p.Key!.StartsWith("lintel:")).ToList();
+        Assert.NotEmpty(lintels);
+        // Over the window, wider than it, centred on the top of the arc.
+        var spec = Openings.SpecOf(f.Model, window)!;
+        var all = lintels.Select(p => Measure.Bounds(p.Solid)!.Value).ToList();
+        var (x0, x1) = (all.Min(b => b.Min.X), all.Max(b => b.Max.X));
+        Assert.True(x1 - x0 > spec.Width, $"the lintel spans {x1 - x0} over a {spec.Width} window");
+        Assert.Equal(4, (x0 + x1) / 2, 2);
+        var sill = Openings.OpeningOf(f.Model, window)!.Num("sill");
+        Assert.Equal(sill + spec.Height, all.Min(b => b.Min.Z), 6);
+        Assert.Contains(f.Session.Quantities(wall), q => q.Name == "Qto_BeamBaseQuantities");
+    }
+
+    [Fact]
+    public void A_curved_wall_attached_to_a_roof_rises_to_its_slopes_along_the_arc()
+    {
+        var f = new Fixture();
+        f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = f.Storey, ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(10, 0), new JsonArray(10, 6), new JsonArray(0, 6)), ["style"] = "traditional_campie" });
+        // An arc inside the house, from near the south eave up towards the ridge and back.
+        var wall = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 3, ["y1"] = 0.8, ["x2"] = 7, ["y2"] = 0.8, ["arc"] = 2, ["height"] = 2.4 })!["id"]!;
+        Assert.Equal(2.4, f.Bounds(wall).Max.Z, 6);
+        f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(wall) });
+        var g = f.Session.Geometry(wall)!;
+        Assert.Null(g.Diagnostics);
+        var top = f.Bounds(wall).Max.Z;
+        Assert.True(top > 3.5, $"attached, the arc reaches the slopes at its crown, not {top}");
+        // Near its ends (close to the eave) it is lower: the top follows the slope along the arc.
+        var nearEnds = g.Parts.SelectMany(p => p.Solid.Vertices).Where(v => v.Y < 1.0).Max(v => v.Z);
+        Assert.InRange(nearEnds, 2.4, top - 0.5);
+    }
+
+    [Fact]
+    public void A_curved_strip_foundation_follows_its_arc_and_joins_a_straight_one()
+    {
+        var f = new Fixture(new ArchitectureModule(), new StructureModule());
+        var arc = (string)f.Run("structure.addStripFooting", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 6, ["y2"] = 0, ["arc"] = 3 })!["id"]!;
+        var straight = (string)f.Run("structure.addStripFooting", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 6, ["y1"] = 0, ["x2"] = 6, ["y2"] = -4 })!["id"]!;
+        Assert.Single(f.Model.Relations, r => r.Class == Joins.Class && r.Touches(arc) && r.Touches(straight));
+        var g = f.Session.Geometry(arc)!;
+        Assert.Null(g.Diagnostics);
+        Assert.Equal(Math.PI * 3, f.Session.Quantities(arc)[0].Quantities.Single(x => x.Name == "Length").Value, 9);
+        // The footing 600 × 400 under the stem, along the half circle (its end runs on along its tangent into the corner).
+        var footing = Measure.Volume(g.Parts.Single(p => p.Key == "footing").Solid);
+        Assert.InRange(footing, Math.PI * 3 * 0.6 * 0.4 * 0.99, Math.PI * 3 * 0.6 * 0.4 * 1.1);
+        Assert.Equal(3, f.Bounds(arc).Max.Y - 0.3, 1);
+    }
 }

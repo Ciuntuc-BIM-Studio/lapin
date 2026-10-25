@@ -76,10 +76,11 @@ public static class StripFootings
 
     public static Entity DefaultType(IEdit edit) => CreateType(edit, null, DefaultLayers);
 
-    public static Entity Add(IEdit edit, IPathElements paths, Entity storey, Vec2 start, Vec2 end, Entity type, JoinStyle style)
+    public static Entity Add(IEdit edit, IPathElements paths, Entity storey, Vec2 start, Vec2 end, Entity type, JoinStyle style, double rise = 0)
     {
         if ((end - start).Length < 1e-3) throw new CommandException("A strip foundation needs two different points.");
         var f = new Entity(edit.NewId(), IfcClass.Footing, type.Name, new JsonObject { ["start"] = Place.Json2(start), ["end"] = Place.Json2(end) }, "STRIP_FOOTING");
+        if (rise != 0) f.Attrs[PathCurve.Key] = rise;
         edit.Add(f);
         Spatial.Contain(edit, storey.Id, f.Id);
         SetType(edit, f, type);
@@ -122,7 +123,8 @@ public static class StripFootings
         var left = (f.End - f.Start).Normalized().Perp;
         var y0 = Math.Min(f.YMin, Frame(footing, m)?.YMin ?? 0);
         var y1 = Math.Max(f.YMax, Frame(footing, m)?.YMax ?? 0);
-        Vec2[] fp = [f.Start + left * y0, f.End + left * y0, f.End + left * y1, f.Start + left * y1];
+        var c = PathCurve.Of(footing);
+        IReadOnlyList<Vec2> fp = c.IsArc ? c.Band(_ => 0, _ => c.Length, y0, y1) : [f.Start + left * y0, f.End + left * y0, f.End + left * y1, f.Start + left * y1];
         var bottom = Place.Elevation(m, footing) + type.Num("bottom", -1.8);
         return Prism.ExtrudeFootprint(fp, bottom, type.Num("footingHeight", 0.4) + type.Num("stemHeight", 1.4), "footing");
     }
@@ -137,12 +139,15 @@ public static class StripFootings
         var sh = type.Num("stemHeight", 1.4);
         var parts = new List<GeometryPart>();
         var plan = new List<PlanItem>();
+        // Straight, or along its arc.
+        var c = PathCurve.Of(footing);
+        IReadOnlyList<Vec2> Band(JoinWall f, (Vec2 Point, EndCut Cut)?[] ends, double y0, double y1) => c.IsArc ? Strips.Footprint(c, f, ends, y0, y1) : Strips.Footprint(f, ends, y0, y1);
         if (Frame(footing, m) is { } stem)
         {
             var ends = paths != null ? Joins.EndsOf(m, footing, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
             foreach (var (from, to, material, name, index) in Bands(m, footing))
             {
-                var fp = Strips.Footprint(stem, ends, from, to);
+                var fp = Band(stem, ends, from, to);
                 if (Prism.ExtrudeFootprint(fp, bottom + fh, sh, name) is { } solid) parts.Add(new GeometryPart(name, Materials.ColorOf(m, material), solid, material, $"layer:{index}"));
                 plan.Add(new PlanItem("outline", true, fp));
             }
@@ -151,19 +156,20 @@ public static class StripFootings
         {
             // The footing joins as its stem does, with its own width.
             var ends = paths != null ? Joins.EndsOf(m, footing, paths, problems, e => FootingFrame(e, m)) : new (Vec2 Point, EndCut Cut)?[2];
-            var fp = Strips.Footprint(ff, ends, ff.YMin, ff.YMax);
+            var fp = Band(ff, ends, ff.YMin, ff.YMax);
             var concrete = type.Str("concrete");
             if (Prism.ExtrudeFootprint(fp, bottom, fh, "footing") is { } solid) parts.Add(new GeometryPart("Footing", Materials.ColorOf(m, concrete), solid, concrete, "footing"));
             plan.Add(new PlanItem("outline", true, fp));
         }
         parts = CutPriorities.Apply(footing, m, services, parts, problems);
-        return new ElementGeometry(parts, plan, [Joins.Start(footing), Joins.End(footing)], problems.Count > 0 ? problems : null);
+        IReadOnlyList<Vec2> snaps = c.IsArc ? [c.Start, c.End, c.PointAt(c.Length / 2)] : [Joins.Start(footing), Joins.End(footing)];
+        return new ElementGeometry(parts, plan, snaps, problems.Count > 0 ? problems : null);
     }
 
     public static IEnumerable<QuantitySet> Quantities(Entity footing, ElementGeometry? g, IModelView m)
     {
         if (g == null || g.Parts.Count == 0 || Place.TypeOf(m, footing.Id) is not { } type) yield break;
-        var length = (Joins.End(footing) - Joins.Start(footing)).Length;
+        var length = PathCurve.Of(footing).Length;
         var fh = type.Num("footingHeight", 0.4);
         yield return new QuantitySet("Qto_FootingBaseQuantities",
         [
