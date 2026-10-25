@@ -24,7 +24,22 @@ public static class LegacyPackage
     /// <summary>Whether a .lapin file is the old Lapin's (format 2) rather than format 3.</summary>
     public static bool Is(string path)
     {
-        using var zip = ZipFile.OpenRead(path);
+        using var file = File.OpenRead(path);
+        return Is(file);
+    }
+
+    /// <summary>Whether a package's bytes are the old Lapin's (a browser was given them); the stream is left where it was.</summary>
+    public static bool Is(Stream input)
+    {
+        var at = input.Position;
+        try { return IsOld(input); }
+        catch (InvalidDataException) { return false; }
+        finally { input.Position = at; }
+    }
+
+    static bool IsOld(Stream input)
+    {
+        using var zip = new ZipArchive(input, ZipArchiveMode.Read, leaveOpen: true);
         if (zip.GetEntry("manifest.json") is not { } m) return false;
         using var s = m.Open();
         var manifest = JsonNode.Parse(s) as JsonObject;
@@ -83,7 +98,14 @@ public static class LegacyPackage
 
     public static LegacyProject Read(string path)
     {
-        using var zip = ZipFile.OpenRead(path);
+        using var file = File.OpenRead(path);
+        return Read(file);
+    }
+
+    /// <summary>An old project read from a stream (bytes a browser was given).</summary>
+    public static LegacyProject Read(Stream input)
+    {
+        using var zip = new ZipArchive(input, ZipArchiveMode.Read, leaveOpen: true);
         byte[] Bytes(ZipArchiveEntry e) { using var s = e.Open(); using var ms = new MemoryStream(); s.CopyTo(ms); return ms.ToArray(); }
         JsonNode? Json(string name) => zip.GetEntry(name) is { } e ? JsonNode.Parse(Bytes(e)) : null;
         var storeys = new List<JsonObject>(); var materials = new List<JsonObject>(); var types = new List<JsonObject>();

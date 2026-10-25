@@ -31,11 +31,22 @@ public interface ISupportDesk
 /// </summary>
 public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Session, string> write)
 {
-    /// <summary>A project from its bytes (format 3); <paramref name="name"/> is the file's name, its title.</summary>
+    /// <summary>
+    /// A project from its bytes; <paramref name="name"/> is the file's name, its
+    /// title. An old project (format 2) is rebuilt as on the desktop and opens
+    /// unsaved, what it left out in <see cref="LastNotes"/>.
+    /// </summary>
     public Diff OpenBytes(Session session, string name, byte[] bytes)
     {
         LastNotes = [];
-        var content = Lapin.Package.LapinPackage.Read(new MemoryStream(bytes, writable: false));
+        using var input = new MemoryStream(bytes, writable: false);
+        if (Lapin.Package.LegacyPackage.Is(input))
+        {
+            var imported = LegacyImport.Run(session, Lapin.Package.LegacyPackage.Read(input));
+            LastNotes = imported.Notes;
+            return imported.Diff;
+        }
+        var content = Lapin.Package.LapinPackage.Read(input);
         return session.Load(content.Entities, content.Relations, name, content.Classes);
     }
 
@@ -154,7 +165,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 // A project from its bytes (a host without files: the browser), base64 in `data`.
                 var name = (string?)p["name"] ?? "project.lapin";
                 var diff = files.OpenBytes(session, name, Convert.FromBase64String((string?)p["data"] ?? throw new CommandException("The project's bytes are missing.")));
-                return (new JsonObject { ["notes"] = new JsonArray() }, diff);
+                return (new JsonObject { ["notes"] = new JsonArray(files.LastNotes.Select(n => (JsonNode)n).ToArray()) }, diff);
             }
             case "project.saveBytes":
             {

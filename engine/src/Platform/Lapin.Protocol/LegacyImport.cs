@@ -3,7 +3,7 @@ using Lapin.Model;
 using Lapin.Package;
 using Lapin.Platform;
 
-namespace Lapin.Host;
+namespace Lapin.Protocol;
 
 /// <summary>
 /// An old Lapin project (format 2) rebuilt through the engine's own commands,
@@ -211,7 +211,7 @@ public static class LegacyImport
                     // The old viewer's frame is y-up: a plan point is (x, −z). Flipped, it looked the other way.
                     if (v["marker"]?["a"] is JsonArray ma && v["marker"]?["b"] is JsonArray mb && ma.Count >= 3 && mb.Count >= 3)
                     {
-                        JsonArray Plan(JsonArray q) => [Num(q[0]) ?? 0, -(Num(q[2]) ?? 0)];
+                        JsonArray Plan(JsonArray q) => new JsonArray(JsonValue.Create(Num(q[0]) ?? 0), JsonValue.Create(-(Num(q[2]) ?? 0)));
                         var (start, end) = (Plan(ma), Plan(mb));
                         if (v["plane"]?["flipped"] is JsonValue fv && fv.TryGetValue<bool>(out var flipped) && flipped) (start, end) = (end, start);
                         made = Id(Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = start, ["end"] = end, ["name"] = Str(v["name"]) }));

@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
 using Lapin.Host;
+using Lapin.Protocol;
 using Lapin.Model;
 using Lapin.Package;
 using Lapin.Platform;

@@ -99,4 +99,34 @@ public class ProtocolBytesTests
         Assert.Single(g.Model.OfClass("IfcWall"));
         Assert.Null(JsonNode.Parse(BinaryFrame.HeaderText(reply))!["error"]);
     }
+
+    [Fact]
+    public void An_old_project_opens_from_its_bytes_as_from_its_path()
+    {
+        var old = Path.Combine(AppContext.BaseDirectory, "Fixtures", "old-format2.lapin");
+        var f = new Fixture(new ArchitectureModule(), new Lapin.Structure.StructureModule(), new Lapin.Drafting.DraftingModule());
+        var byPath = new EngineDispatcher(f.Session, PackageFiles.Create());
+        var pathNotes = Result(byPath.Handle(new JsonObject { ["id"] = 1, ["method"] = "project.open", ["params"] = new JsonObject { ["path"] = old } }.ToJsonString()).Reply);
+        var g = new Fixture(new ArchitectureModule(), new Lapin.Structure.StructureModule(), new Lapin.Drafting.DraftingModule());
+        var byBytes = new EngineDispatcher(g.Session, PackageFiles.Create());
+        var (reply, diff) = byBytes.Handle(new JsonObject { ["id"] = 1, ["method"] = "project.openBytes", ["params"] = new JsonObject { ["name"] = "old.lapin", ["data"] = Convert.ToBase64String(File.ReadAllBytes(old)) } }.ToJsonString());
+        Assert.NotNull(diff);
+        Assert.Equal(pathNotes["notes"]!.ToJsonString(), Result(reply)["notes"]!.ToJsonString());
+        Assert.Equal(f.Model.Entities.Select(e => (e.Class, e.Name)), g.Model.Entities.Select(e => (e.Class, e.Name)));
+        Assert.Equal(3, g.Model.OfClass(Lapin.Model.IfcClass.Wall).Count());
+        Assert.Null(g.Session.Path);
+    }
+
+    [Fact]
+    public void A_report_is_the_same_body_from_every_host_and_needs_a_title_and_a_description()
+    {
+        var p = new JsonObject { ["kind"] = "idea", ["title"] = " Roofs ", ["description"] = "Hip roofs", ["errors"] = new JsonArray("e1"), ["website"] = "" };
+        var body = SupportReport.Body(p, "1.2", "browser", "Chrome");
+        Assert.Equal("Roofs", (string?)body["title"]);
+        Assert.Equal("lapin-pro 1.2", (string?)body["context"]!["version"]);
+        Assert.Equal("browser", (string?)body["context"]!["url"]);
+        Assert.Equal("""["e1"]""", body["context"]!["errors"]!.ToJsonString());
+        Assert.Throws<Lapin.Platform.CommandException>(() => SupportReport.Body(new JsonObject { ["title"] = "x" }, "1", "desktop", "mac"));
+        Assert.Throws<Lapin.Platform.CommandException>(() => SupportReport.Body(new JsonObject { ["kind"] = "rant", ["title"] = "x", ["description"] = "y" }, "1", "desktop", "mac"));
+    }
 }

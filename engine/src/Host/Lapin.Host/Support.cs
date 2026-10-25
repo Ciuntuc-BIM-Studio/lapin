@@ -24,22 +24,7 @@ public static class Support
     /// <summary>Send a report: kind (bug, idea, question), title and description required; the issue's number back, or the server's reason.</summary>
     public static async Task<JsonObject> Report(JsonObject p, string version)
     {
-        var kind = (string?)p["kind"] ?? "bug";
-        if (kind is not ("bug" or "idea" or "question")) throw new CommandException("A report is a bug, an idea or a question.");
-        var title = ((string?)p["title"])?.Trim();
-        var description = ((string?)p["description"])?.Trim();
-        if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(description)) throw new CommandException("A report needs a title and a description.");
-        var body = new JsonObject
-        {
-            ["app"] = "lapin", ["kind"] = kind, ["title"] = title, ["description"] = description,
-            ["expected"] = (string?)p["expected"], ["email"] = (string?)p["email"], ["consent"] = p["consent"] is JsonValue c && c.TryGetValue<bool>(out var ok) && ok,
-            ["screenshot"] = (string?)p["screenshot"], ["website"] = (string?)p["website"] ?? "",
-            ["context"] = new JsonObject
-            {
-                ["version"] = $"lapin-pro {version}", ["url"] = "desktop", ["userAgent"] = $"{Environment.OSVersion} .NET {Environment.Version}",
-                ["screen"] = (string?)p["screen"], ["errors"] = p["errors"]?.DeepClone() ?? new JsonArray(),
-            },
-        };
+        var body = Lapin.Protocol.SupportReport.Body(p, version, "desktop", $"{Environment.OSVersion} .NET {Environment.Version}");
         try
         {
             using var res = await Http.PostAsJsonAsync(FeedbackUrl, body);

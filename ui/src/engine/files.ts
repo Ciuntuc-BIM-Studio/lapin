@@ -138,15 +138,22 @@ export async function newProject(): Promise<void> {
   }
 }
 
+function tellOld(notes: string[]): void {
+  notify(`Opened an old Lapin project: save it to keep it in the new format.${notes.length ? ` Left out: ${notes.join('; ')}.` : ''}`);
+}
+
 export async function openProject(path?: string): Promise<void> {
   if (!(await confirmDiscard('Open another'))) return;
   if (engineInBrowser) {
     const picked = await pickFile('Lapin project', 'lapin');
     if (!picked) return;
     try {
-      await engine.call('project.openBytes', { name: picked.name, data: toBase64(picked.bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
-      projectHandle = picked.handle;
+      const r = await engine.call<{ notes?: string[] } | null>('project.openBytes', { name: picked.name, data: toBase64(picked.bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
+      // An old project (format 2) opens unsaved: saving must not write the new format over the old file.
+      const old = !useSession.getState().doc?.path;
+      projectHandle = old ? null : picked.handle;
       enter();
+      if (old) tellOld(r?.notes ?? []);
     } catch (e) {
       notify(e instanceof Error ? e.message : String(e));
     }
@@ -159,10 +166,7 @@ export async function openProject(path?: string): Promise<void> {
     remember(target);
     enter();
     // An old Lapin project (format 2) is rebuilt natively and opens unsaved; say what it left out.
-    if (!useSession.getState().doc?.path) {
-      const notes = r?.notes ?? [];
-      notify(`Opened an old Lapin project: save it to keep it in the new format.${notes.length ? ` Left out: ${notes.join('; ')}.` : ''}`);
-    }
+    if (!useSession.getState().doc?.path) tellOld(r?.notes ?? []);
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }

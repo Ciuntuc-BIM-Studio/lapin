@@ -32,7 +32,7 @@ static partial class Engine
         var files = new ProjectFiles(
             (_, _) => throw new CommandException("Pick the project to open: in the browser a project is opened from a file you choose."),
             (_, _) => throw new CommandException("In the browser a project is saved as a download (or to the file you chose)."));
-        _dispatcher = new EngineDispatcher(session, files, recovery);
+        _dispatcher = new EngineDispatcher(session, files, recovery, new BrowserSupportDesk());
         return Product.Manifest.Id;
     }
 
@@ -45,6 +45,21 @@ static partial class Engine
         if (diff != null) Frame(d.DiffFrame(diff));
         return reply;
     }
+}
+
+/// <summary>
+/// The help menu in the browser: a worker cannot wait for the network inside a
+/// call, so a report comes back as the body to send (the same the desktop
+/// posts) and the page posts it; the page opens the links itself.
+/// </summary>
+sealed class BrowserSupportDesk : ISupportDesk
+{
+    public System.Text.Json.Nodes.JsonObject Report(System.Text.Json.Nodes.JsonObject p) => new()
+    {
+        ["send"] = SupportReport.Body(p, typeof(Engine).Assembly.GetName().Version?.ToString() ?? "0", "browser", (string?)p["userAgent"] ?? "browser"),
+    };
+
+    public void Open(string? link) => throw new CommandException("In the browser the page opens its links.");
 }
 
 /// <summary>

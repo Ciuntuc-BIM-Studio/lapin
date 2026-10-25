@@ -6,8 +6,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { HelpCircle, X } from 'lucide-react';
 import { notify } from '../app/store';
-import { engine, useSession } from '../engine/session';
-import { RECENT, openLink } from './support';
+import { useSession } from '../engine/session';
+import { RECENT, openLink, sendReport } from './support';
 import { setLang, useLang } from '../i18n';
 
 
@@ -34,11 +34,11 @@ function ReportDialog({ onClose }: { onClose: () => void }) {
   const send = async () => {
     setBusy(true); setProblem(null);
     try {
-      const r = await engine.call<{ number: number }>('support.report', {
+      const number = await sendReport({
         kind, title, description, expected: expected || undefined, email: email || undefined, consent: Boolean(email), screenshot: screenshot ?? undefined,
         website: '', errors: [...RECENT], screen: `${window.innerWidth}×${window.innerHeight} @${window.devicePixelRatio}`,
       });
-      notify(`Thank you: report #${r.number} is on its way.`);
+      notify(`Thank you: report #${number} is on its way.`);
       onClose();
     } catch (e) {
       setProblem(e instanceof Error ? e.message : String(e));
