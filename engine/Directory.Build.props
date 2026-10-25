@@ -18,7 +18,7 @@
       never has it beside: CI always builds against the published packages.
       BubbleCoreFromPackages=true forces the packages here too.
     -->
-    <BubbleCoreVersion>0.1.0</BubbleCoreVersion>
+    <BubbleCoreVersion>0.2.0</BubbleCoreVersion>
     <BubbleCoreDir Condition="'$(BubbleCoreFromPackages)' != 'true' And '$(BUBBLE_CORE_DIR)' != ''">$([MSBuild]::EnsureTrailingSlash('$(BUBBLE_CORE_DIR)'))</BubbleCoreDir>
     <BubbleCoreDir Condition="'$(BubbleCoreFromPackages)' != 'true' And '$(BubbleCoreDir)' == '' And Exists('$(MSBuildThisFileDirectory)../../bubble-core/BubbleCore.slnx')">$(MSBuildThisFileDirectory)../../bubble-core/</BubbleCoreDir>
   </PropertyGroup>
