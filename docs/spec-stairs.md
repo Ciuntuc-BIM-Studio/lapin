@@ -1,6 +1,6 @@
 # Scări și rampe: configuratorul
 
-Lapin are azi un buton „Stair” care nu face nimic și o clasă Studio `IfcStair` pentru solide libere. Acest document propune sistemul de scări și rampe: cum se configurează, ce tipuri vin gata făcute, ce primește arhitectul și ce primește inginerul din același element, și ce întrebări trebuie lămurite înainte de implementare (marcate **[Î1]** … **[Î10]**, răspunsurile intră în `decisions-pending.md`, #120).
+Lapin are azi un buton „Stair” care nu face nimic și o clasă Studio `IfcStair` pentru solide libere. Acest document propune sistemul de scări și rampe: cum se configurează, ce tipuri vin gata făcute, ce primește arhitectul și ce primește inginerul din același element, și ce întrebări trebuie lămurite înainte de implementare (marcate **[Î1]** … **[Î10]**; **toate decise la 25.10.2026**, în `decisions-pending.md`, #120: două seturi de reguli, locuință și public, alese pe tip; etapa 1 cu formele dreaptă, cu podest, L și U, cu podest sau **balansate**; beton monolit întâi; în `architecture`; golul și balustrada propuse și legate automat, cu posibilitatea de a le scoate; plasarea prin formă, picior, direcție și partea întoarcerii; Studio își păstrează scara liberă; rampele, cotele și finisajele cum au fost propuse).
 
 Modelul e cel al tâmplăriei, care merge deja: un **tip** (`IfcStairType`, `IfcRampType`) ține regulile și construcția, editate într-un configurator cu previzualizare; o **instanță** (`IfcStair`, `IfcRamp`) ține plasarea, cotele și traseul, editate în plan cu grips. Tot ce iese (corpul 3D, piesele structurale, simbolul din plan, cotele, extrasul, IFC-ul) se deduce din cele două.
 
@@ -86,10 +86,10 @@ Arhitectul vede în plus **finisajele**: grosimea și materialul treptei finite,
 
 ## Etape
 
-1. Tipul și configuratorul: forma (dreaptă, cu podest, L, U), regulile cu verificare, construcția beton armat monolit, finisajele, balustrada bară + montanți; instanța cu plasarea prin două clicuri; corpul 3D pe piese; planul cu linia de întrerupere și săgeata; cantitățile; IFC.
+1. Tipul și configuratorul: forma (dreaptă, cu podest, L, U; L și U și cu trepte balansate în loc de podest), regulile pe două seturi (locuință, public) cu verificare, construcția beton armat monolit, finisajele, balustrada bară + montanți; instanța cu plasarea prin două clicuri; corpul 3D pe piese; planul cu linia de întrerupere și săgeata; cantitățile; IFC.
 2. Rampele (aceleași forme, în pantă), golul propus în placă, înălțimea liberă, grips.
 3. Oțel pe vanguri și lemn; extrasul scării; cotarea automată.
-4. Trepte balansate, scara elicoidală, traseul desenat de mână, armarea.
+4. Scara elicoidală, traseul desenat de mână, armarea.
 
 ## Întrebări deschise
 
