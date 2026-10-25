@@ -17,7 +17,9 @@ namespace Lapin.Platform;
 public static class Views
 {
     public const string Class = "LapinView";
-    public static readonly string[] Kinds = ["plan", "section", "elevation"];
+    public static readonly string[] Kinds = ["plan", "section", "elevation", "3d"];
+    /// <summary>The disciplines the browser's default sets group by; a view or sheet may name any other.</summary>
+    public static readonly string[] Disciplines = ["Architecture", "Structure", "MEP"];
     public static readonly string[] Directions = ["north", "south", "east", "west"];
     public const double DefaultCut = 1.2;
 
@@ -36,6 +38,7 @@ public static class Views
     public static Entity? Find(IModelView m, string id)
     {
         if (m.Get(id) is { Class: Class } v) return v;
+        if (id == GraphicsSets.View3d) return GraphicsSets.As3dView(m);
         if (id.StartsWith("plan:", StringComparison.Ordinal) && m.Get(id[5..]) is { Class: IfcClass.BuildingStorey } storey)
             return new Entity(id, Class, storey.Name, new JsonObject { ["kind"] = "plan", ["storeyId"] = storey.Id, ["cutHeight"] = DefaultCut, ["scale"] = 100 });
         return null;
@@ -82,7 +85,33 @@ public static class Views
                 return (ViewSpec.Elevation(dir, bounds, hidden), null);
             }
         }
+        if (kind == "3d") return (null, "A 3D view is not a drawing.");
         return (null, $"„{kind}” is not a kind of view.");
+    }
+
+    /// <summary>"name copy", then "name copy 2", "name copy 3"…, the first not taken by an entity of <paramref name="cls"/>.</summary>
+    public static string CopyName(IModelView m, string name, string cls)
+    {
+        var taken = m.OfClass(cls).Select(e => e.Name).ToHashSet();
+        var stem = System.Text.RegularExpressions.Regex.Replace(name, @" copy( \d+)?$", "");
+        var candidate = stem + " copy";
+        for (var n = 2; taken.Contains(candidate); n++) candidate = $"{stem} copy {n}";
+        return candidate;
+    }
+
+    /// <summary>A 3D view's camera as a command gives it: {azimuth, pitch, distance, target: [x, y, z], ortho?} (radians, metres).</summary>
+    public static JsonObject Camera(JsonNode? n)
+    {
+        if (n is not JsonObject o) throw new CommandException("A camera is {azimuth, pitch, distance, target: [x, y, z], ortho}.");
+        double Num(string k) => Json.Number(o[k]) ?? throw new CommandException($"The camera needs its {k}.");
+        if (o["target"] is not JsonArray t || t.Count < 3) throw new CommandException("The camera needs its target [x, y, z].");
+        var camera = new JsonObject
+        {
+            ["azimuth"] = Num("azimuth"), ["pitch"] = Num("pitch"), ["distance"] = Math.Max(0.01, Num("distance")),
+            ["target"] = new JsonArray(Json.Number(t[0]) ?? 0, Json.Number(t[1]) ?? 0, Json.Number(t[2]) ?? 0),
+        };
+        if (o["ortho"] is JsonValue ov && ov.TryGetValue<bool>(out var ortho)) camera["ortho"] = ortho;
+        return camera;
     }
 
     /// <summary>Every element's parts, and in a plan the symbols of the doors, windows and roofs of its storey.</summary>
@@ -333,15 +362,23 @@ public static class Views
             new("depth", "Depth", "length", Min: 0),
             new("direction", "Looking", "choice", Choices: Directions),
             new("hiddenLines", "Hidden lines", "choice", Choices: ["auto", "show", "hide"]),
+            new("discipline", "Discipline", "text"),
         ], "#555555", Kind: "view"));
 
         r.Command("view.create", "New view", (ctx, a) =>
         {
             var kind = (string?)a["kind"] ?? "plan";
             var attrs = new JsonObject { ["kind"] = kind, ["scale"] = Json.Number(a["scale"]) ?? 100 };
+            if ((string?)a["discipline"] is { Length: > 0 } discipline) attrs["discipline"] = discipline;
             string name;
             switch (kind)
             {
+                case "3d":
+                    // A saved 3D view: its camera (when given), its own hidden elements and graphics; {3D} itself stays on the project.
+                    attrs.Remove("scale");
+                    if (a["camera"] != null) attrs["camera"] = Camera(a["camera"]);
+                    name = (string?)a["name"] ?? $"3D view {ctx.Model.OfClass(Class).Count(v => v.Str("kind") == "3d") + 1}";
+                    break;
                 case "plan":
                 {
                     var storey = Spatial.Require(ctx.Model, (string?)a["storeyId"], IfcClass.BuildingStorey);
@@ -368,11 +405,49 @@ public static class Views
                     attrs["direction"] = dir;
                     name = (string?)a["name"] ?? $"{char.ToUpperInvariant(dir[0])}{dir[1..]} elevation";
                     break;
-                default: throw new CommandException("A view is a plan, a section or an elevation.");
+                default: throw new CommandException("A view is a plan, a section, an elevation or a 3D view.");
             }
             var v = new Entity(ctx.NewId(), Class, name, attrs);
             ctx.Add(v);
             return new JsonObject { ["id"] = v.Id };
+        });
+
+        // A saved 3D view's camera: where it looks from.
+        r.Command("view.setCamera", "View camera", (ctx, a) =>
+        {
+            var id = (string?)a["id"] ?? "";
+            if (id == GraphicsSets.View3d) throw new CommandException("{3D} keeps no camera: save the view as a 3D view first.");
+            var v = ctx.Model.Get(id) is { Class: Class } x && x.Str("kind") == "3d" ? x : throw new CommandException("Not a 3D view.");
+            var attrs = v.CloneAttrs();
+            attrs["camera"] = Camera(a["camera"]);
+            ctx.Replace(v.With(attrs: attrs));
+            return null;
+        });
+
+        // A copy of a view: its settings (kind, storey, range, scale, line, graphics, hidden elements, line edits,
+        // discipline); with detailing, its annotations too (dimensions, texts, tags, drafted shapes). The implicit
+        // plan of a storey copies as a plan view of its own; {3D} as a saved 3D view.
+        r.Command("view.duplicate", "Duplicate view", (ctx, a) =>
+        {
+            var id = (string?)a["id"] ?? throw new CommandException("Which view?");
+            var src = Find(ctx.Model, id) ?? throw new CommandException("There is no such view.");
+            var attrs = src.CloneAttrs();
+            if (id == GraphicsSets.View3d) attrs["kind"] = "3d";
+            if ((string?)a["discipline"] is { Length: > 0 } discipline) attrs["discipline"] = discipline;
+            var copy = new Entity(ctx.NewId(), Class, (string?)a["name"] is { Length: > 0 } nm ? nm : CopyName(ctx.Model, src.Name, Class), attrs);
+            ctx.Add(copy);
+            var annotations = 0;
+            if (a["withDetailing"] is JsonValue dv && dv.TryGetValue<bool>(out var detailing) && detailing)
+                foreach (var ann in ctx.Model.OfClass(IfcClass.Annotation).Where(x => x.Str("viewId") == id).ToList())
+                {
+                    var aa = ann.CloneAttrs();
+                    aa["viewId"] = copy.Id;
+                    var ac = new Entity(ctx.NewId(), ann.Class, ann.Name, aa, ann.PredefinedType);
+                    ctx.Add(ac);
+                    foreach (var rel in ctx.Model.RelationsOf(ann.Id).Where(x => x.Related.Contains(ann.Id)).ToList()) ctx.Relate(rel.Class, rel.Relating, ac.Id);
+                    annotations++;
+                }
+            return new JsonObject { ["id"] = copy.Id, ["annotations"] = annotations };
         });
 
         // Move a section's line.

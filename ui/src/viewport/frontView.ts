@@ -5,10 +5,10 @@ import { activeStorey, execute, useSession } from '../engine/session';
 
 let making: Promise<string | null> | null = null;
 
-/** The view in front, for what is kept on a view (graphics, line edits): the 3D, the section or elevation in front, or the plan's own view (made when the storey has none). */
+/** The view in front, for what is kept on a view (graphics, line edits): the 3D ({3D} or a saved 3D view), the section or elevation in front, or the plan's own view (made when the storey has none). */
 export async function frontView(): Promise<string | null> {
   const ui = useUi.getState();
-  if (ui.view === '3d') return '3d';
+  if (ui.view === '3d') return ui.view3dId ?? '3d';
   if (ui.view === 'drawing') return ui.drawingViewId;
   if (ui.view !== 'plan') return null;
   const nodes = useSession.getState().nodes;

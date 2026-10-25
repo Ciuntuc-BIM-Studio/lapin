@@ -29,7 +29,13 @@ public static class GraphicsSets
     /// <summary>The 3D view's own settings (its set, its graphics).</summary>
     static JsonObject Of3d(IModelView m) => Spatial.Project(m)?.Attrs["view3d"] as JsonObject ?? [];
 
-    static Entity As3dView(IModelView m) => new(View3d, Views.Class, "3D", Of3d(m).DeepClone() as JsonObject ?? []);
+    /// <summary>{3D} as a view: its settings from the project, its kind "3d".</summary>
+    public static Entity As3dView(IModelView m)
+    {
+        var attrs = Of3d(m).DeepClone() as JsonObject ?? [];
+        attrs["kind"] = "3d";
+        return new(View3d, Views.Class, "3D", attrs);
+    }
 
     /// <summary>What a view's graphics hide: its categories and IFC classes.</summary>
     public static (HashSet<string> Categories, HashSet<string> Classes) Hidden(JsonObject? g)
@@ -174,9 +180,12 @@ public static class GraphicsSets
         });
 
         // What the 3D view hides: the elements its categories and classes leave out.
-        r.Query("view.hidden3d", (q, _) =>
+        // What the 3D hides: {3D}'s, or a saved 3D view's (id).
+        r.Query("view.hidden3d", (q, a) =>
         {
-            var g = Of(q.Model, As3dView(q.Model));
+            var id = (string?)a["id"];
+            var view = id == null || id == View3d ? As3dView(q.Model) : q.Model.Get(id) is { Class: Views.Class } v && v.Str("kind") == "3d" ? v : throw new CommandException("Not a 3D view.");
+            var g = Of(q.Model, view);
             return new JsonArray(q.Model.Entities.Where(e => Spatial.StoreyOf(q.Model, e.Id) != null && Hides(g, e)).Select(e => (JsonNode)e.Id).ToArray());
         });
     }

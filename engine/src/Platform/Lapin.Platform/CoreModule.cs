@@ -33,6 +33,7 @@ public sealed class CoreModule : ILapinModule
         DraftingResources.Register(r);
         Views.Register(r);
         GraphicsSets.Register(r);
+        BrowserSets.Register(r);
         ViewLinework.Register(r);
         Location.Register(r);
         Sheets.Register(r);

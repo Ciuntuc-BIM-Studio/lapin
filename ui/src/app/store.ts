@@ -4,7 +4,7 @@
  *
  * The workspace shows one or two panes, each with its own view (a plan, the
  * 3D, a section, a sheet, a schedule). The active pane's view is mirrored in
- * `view`, `drawingViewId`, `sheetId`, `scheduleId` and `planViewId`, so the
+ * `view`, `drawingViewId`, `sheetId`, `scheduleId`, `planViewId` and `view3dId`, so the
  * code that asks "what is in front" keeps asking the store; setting any of
  * those sets the active pane. A detached window (desktop) is a workspace with
  * one pane and no ribbon, sharing the storey, selection and tool with the
@@ -28,10 +28,12 @@ export interface Pane {
   scheduleId: string | null;
   /** The plan view (a LapinView id) the plan shows; null: the storey's own plan. */
   planViewId: string | null;
+  /** The saved 3D view (a LapinView of kind 3d) the 3D shows; null: {3D}. */
+  view3dId: string | null;
 }
 
-export const PANE_KEYS = ['view', 'drawingViewId', 'sheetId', 'scheduleId', 'planViewId'] as const;
-export const emptyPane = (view: ViewKind = 'plan'): Pane => ({ view, drawingViewId: null, sheetId: null, scheduleId: null, planViewId: null });
+export const PANE_KEYS = ['view', 'drawingViewId', 'sheetId', 'scheduleId', 'planViewId', 'view3dId'] as const;
+export const emptyPane = (view: ViewKind = 'plan'): Pane => ({ view, drawingViewId: null, sheetId: null, scheduleId: null, planViewId: null, view3dId: null });
 
 export interface UiState extends Pane {
   screen: 'start' | 'workspace';

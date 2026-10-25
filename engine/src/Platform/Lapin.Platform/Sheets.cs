@@ -287,6 +287,7 @@ public static class Sheets
             new("number", "Number", "text"),
             new("paper", "Paper", "choice", Choices: [.. Papers.Keys]),
             new("orientation", "Orientation", "choice", Choices: ["landscape", "portrait"]),
+            new("discipline", "Discipline", "text"),
         ], "#555555", Kind: "view"));
 
         r.Command("sheet.create", "New sheet", (ctx, a) =>
@@ -299,8 +300,21 @@ public static class Sheets
                 ["number"] = number, ["paper"] = paper, ["orientation"] = (string?)a["orientation"] == "portrait" ? "portrait" : "landscape",
                 ["titleBlock"] = new JsonObject(), ["viewports"] = new JsonArray(),
             });
+            if ((string?)a["discipline"] is { Length: > 0 } discipline) sheet.Attrs["discipline"] = discipline;
             ctx.Add(sheet);
             return new JsonObject { ["id"] = sheet.Id };
+        });
+
+        // A copy of a sheet: its paper, title block and discipline, the next number, no views (a view sits on one sheet).
+        r.Command("sheet.duplicate", "Duplicate sheet", (ctx, a) =>
+        {
+            var sheet = Require(ctx.Model, (string?)a["id"]);
+            var attrs = sheet.CloneAttrs();
+            attrs["number"] = NextNumber(ctx.Model);
+            attrs["viewports"] = new JsonArray();
+            var copy = new Entity(ctx.NewId(), Class, (string?)a["name"] is { Length: > 0 } nm ? nm : Views.CopyName(ctx.Model, sheet.Name, Class), attrs);
+            ctx.Add(copy);
+            return new JsonObject { ["id"] = copy.Id };
         });
 
         // A title block field (project, drawnBy, date, revision…); empty clears it.

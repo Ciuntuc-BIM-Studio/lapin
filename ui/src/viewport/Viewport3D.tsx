@@ -354,6 +354,17 @@ export function Viewport3D() {
 
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);
+  // A saved 3D view opened: its camera (where it looks from, perspective or orthographic).
+  const view3dId = useUi((st) => st.view3dId);
+  useEffect(() => {
+    if (!view3dId) return;
+    const cam = useSession.getState().nodes.get(view3dId)?.props.camera as { azimuth?: number; pitch?: number; distance?: number; target?: number[]; ortho?: boolean } | undefined;
+    const api = useCamera.getState().api;
+    if (!cam || !api) return;
+    api.setOrtho(Boolean(cam.ortho));
+    api.orbitTo({ azimuth: cam.azimuth ?? 0, pitch: cam.pitch ?? -0.5, distance: cam.distance ?? 30, target: { x: cam.target?.[0] ?? 0, y: cam.target?.[1] ?? 0, z: cam.target?.[2] ?? 0 } }, false);
+  }, [view3dId]);
+
   const selected = useUi((st) => st.selected);
   const looks = useLooks((st) => st.looks);
   const visualStyle = useUi((st) => st.visualStyle);

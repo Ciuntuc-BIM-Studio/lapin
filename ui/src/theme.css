@@ -87,6 +87,17 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .tree-item { display: block; width: 100%; padding: 4px 12px 4px 44px; border: 0; background: none; text-align: left; cursor: pointer; }
 .tree-item:hover { background: var(--wash); }
 .tree-item.on { background: var(--accent-wash); color: var(--accent); font-weight: 600; box-shadow: inset 2px 0 var(--accent); }
+/* A set of the browser: its drawings' kinds inside it, one step in. */
+.tree-set { padding: 2px 0; border-top: 1px solid var(--line); }
+.tree-set .tree-label.set { padding: 6px 12px 4px; }
+.tree-set .set-name { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
+.tree-set .tree-group { padding: 0 0 0 10px; }
+.tree-label .icon.mini.fold { margin: 0 -2px 0 -4px; color: var(--ink-muted); }
+.panel-head .icon.mini { margin-left: auto; }
+.dialog-body.sets { display: grid; grid-template-columns: 220px 1fr; gap: 16px; }
+.sets-list .tree-row { display: flex; align-items: center; }
+.sets-editor .checks { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; }
+.sets-editor .field-line input, .sets-editor .field-line textarea { width: 100%; box-sizing: border-box; }
 .views { display: flex; flex-direction: column; min-width: 0; }
 .view-tabs { display: flex; align-items: flex-end; gap: 2px; padding: 4px 6px 0; background: var(--bg); border-bottom: 1px solid var(--rule); }
 .view-tabs .icon.mini { margin: 0 0 4px; color: var(--ink-muted); }

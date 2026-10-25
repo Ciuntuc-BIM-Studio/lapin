@@ -15,6 +15,7 @@ import { MaterialsDialog } from './MaterialsDialog';
 import { StandardsDialog } from './StandardsDialog';
 import { SheetSection } from './SheetSection';
 import { Visibility3D, VisibilityDialog } from './VisibilityDialog';
+import { BrowserSetsDialog } from './BrowserSetsDialog';
 import { ViewRangeDialog } from './ViewRangeDialog';
 import { ObjectStylesDialog } from './ObjectStylesDialog';
 import { LocationDialog } from './LocationDialog';
@@ -114,7 +115,7 @@ const core: LapinModule = {
       ] },
     ],
   }],
-  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog },
+  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog },
   background: Visibility3D,
   propertySections: [{ id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection }],
   hotbar: [

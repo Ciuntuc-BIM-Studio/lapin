@@ -114,11 +114,12 @@ export function VisibilityDialog() {
 /** The 3D leaves out what its Visibility / Graphics hides. */
 export function Visibility3D() {
   const nodes = useSession((s) => s.nodes);
+  const view3dId = useUi((s) => s.view3dId);
   useEffect(() => {
     let live = true;
     void import('../../platform/looks').then(({ setLooks }) =>
-      query<string[]>('view.hidden3d').then((ids) => { if (live && ids) setLooks('visibility', Object.fromEntries(ids.map((id) => [id, { hidden: true }]))); }));
+      query<string[]>('view.hidden3d', { id: view3dId ?? '3d' }).then((ids) => { if (live && ids) setLooks('visibility', Object.fromEntries(ids.map((id) => [id, { hidden: true }]))); }));
     return () => { live = false; };
-  }, [nodes]);
+  }, [nodes, view3dId]);
   return null;
 }

@@ -46,6 +46,55 @@ public static class StoreyMove
                 if (Spatial.StoreyOf(ctx.Model, e.Id) is null) throw new CommandException($"„{e.Name}” is on no storey.");
                 moving.Add(e);
             }
+            return new JsonObject { ["moved"] = Move(ctx, moving, target, keep) };
+        });
+
+        // A copy of a storey, right above it, with its height; the storeys above move up by that height (their
+        // elements follow: heights are relative). With contents, every element on it is copied (with what it hosts)
+        // and put on the new storey, and the joins between the copies are made again from the originals'.
+        r.Command("storey.duplicate", "Duplicate storey", (ctx, a) =>
+        {
+            var src = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.BuildingStorey);
+            var withContents = !(a["withContents"] is JsonValue wv && wv.TryGetValue<bool>(out var w) && !w);
+            var h = src.Num("height", 3);
+            var elev = src.Num("elevation");
+            foreach (var s in Spatial.Storeys(ctx.Model).Where(s => s.Id != src.Id && s.Num("elevation") > elev + 1e-9).ToList())
+            {
+                var sa = s.CloneAttrs();
+                sa["elevation"] = s.Num("elevation") + h;
+                ctx.Replace(s.With(attrs: sa));
+            }
+            var attrs = src.CloneAttrs();
+            attrs["elevation"] = elev + h;
+            attrs["height"] = h;
+            var storey = new Entity(ctx.NewId(), IfcClass.BuildingStorey, (string?)a["name"] is { Length: > 0 } nm ? nm : Views.CopyName(ctx.Model, src.Name, IfcClass.BuildingStorey), attrs);
+            ctx.Add(storey);
+            ctx.Relate(IfcClass.RelAggregates, Spatial.EnsureBuilding(ctx).Id, storey.Id);
+            var copied = new JsonArray();
+            if (withContents)
+            {
+                var map = new Dictionary<string, string>();
+                // What a wall hosts goes with its copy; a reference from an IFC file stays where the file put it.
+                var originals = ctx.Model.RelatedOf(src.Id, IfcClass.RelContainedInSpatialStructure)
+                    .Where(e => Host(ctx.Model, e) == null && !StoredBodies.Has(e) && ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement) == null).ToList();
+                foreach (var e in originals)
+                {
+                    var id = Placement.Copy(ctx, e, Placement2D.Move(default));
+                    map[e.Id] = id;
+                    copied.Add((JsonNode)id);
+                }
+                Move(ctx, map.Values.Select(id => ctx.Model.Get(id)).OfType<Entity>().ToList(), storey, "storey");
+                foreach (var rel in ctx.Model.Relations.Where(x => x.Class == Joins.Class && map.ContainsKey(x.Relating) && x.Related.All(map.ContainsKey)).ToList())
+                    ctx.AddRelation(new Relation(ctx.NewId(), rel.Class, map[rel.Relating], rel.Related.Select(i => map[i]).ToList(), rel.Attrs?.DeepClone() as JsonObject));
+            }
+            return new JsonObject { ["id"] = storey.Id, ["copied"] = copied };
+        });
+    }
+
+    /// <summary>The elements (and what they host and aggregate) to <paramref name="target"/>, kept with the storey or where they are; the ids moved.</summary>
+    public static JsonArray Move(ICommandContext ctx, IReadOnlyList<Entity> moving, Entity target, string keep)
+    {
+        {
             // With what it hosts and aggregates.
             var all = new List<Entity>();
             var seen = new HashSet<string>();
@@ -82,8 +131,8 @@ public static class StoreyMove
             var set = all.Select(e => e.Id).ToHashSet();
             foreach (var rel in ctx.Model.Relations.Where(x => x.Class == Joins.Class && (set.Contains(x.Relating) != x.Related.Any(set.Contains))).ToList())
                 ctx.RemoveRelation(rel.Id);
-            return new JsonObject { ["moved"] = moved };
-        });
+            return moved;
+        }
     }
 
     /// <summary>The wall a door or window fills an opening of (null: it stands on its own).</summary>
