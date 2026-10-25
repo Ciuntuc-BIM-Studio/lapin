@@ -34,11 +34,15 @@ public sealed record IfcImportResult(int Elements, int Updated, int References, 
 /// </summary>
 public static class IfcImport
 {
-    public static IfcImportResult Run(Session session, string path, IfcImportOptions? options, out Diff diff)
+    public static IfcImportResult Run(Session session, string path, IfcImportOptions? options, out Diff diff) =>
+        Run(session, File.ReadAllBytes(path), System.IO.Path.GetFileName(path), options, out diff);
+
+    /// <summary>An IFC file's bytes into the open project (<paramref name="name"/>: the file's name, for the undo label).</summary>
+    public static IfcImportResult Run(Session session, byte[] bytes, string name, IfcImportOptions? options, out Diff diff)
     {
-        var file = StepFile.Read(path);
+        var file = StepFile.Read(bytes);
         var reader = new Reader(session, file, options ?? new IfcImportOptions());
-        diff = session.Edit($"Import {System.IO.Path.GetFileName(path)}", reader.Apply);
+        diff = session.Edit($"Import {name}", reader.Apply);
         return reader.Result();
     }
 

@@ -49,6 +49,16 @@ public static class LapinPackage
     public static void Write(string path, IModelView model, Func<string, string> moduleOf, Func<string, string?> storeyOf,
         string app, string product, IReadOnlyList<PackageModule> modules, JsonObject? document = null)
     {
+        // Written beside, then moved over the old file: a failed save leaves the project as it was.
+        var temp = path + ".saving";
+        using (var file = File.Create(temp)) Write(file, model, moduleOf, storeyOf, app, product, modules, document);
+        File.Move(temp, path, overwrite: true);
+    }
+
+    /// <summary>The package into a stream (a browser hands the bytes to the user to keep).</summary>
+    public static void Write(Stream output, IModelView model, Func<string, string> moduleOf, Func<string, string?> storeyOf,
+        string app, string product, IReadOnlyList<PackageModule> modules, JsonObject? document = null)
+    {
         var parts = new List<(PackagePart Part, byte[] Bytes)>();
         void Add(string p, byte[] bytes, string? module = null) => parts.Add((new PackagePart(p, Hash(bytes), bytes.Length, module), bytes));
 
@@ -65,9 +75,7 @@ public static class LapinPackage
         Add(RelationsPath, ArrowTables.WriteRelations(model.Relations.ToList(), model.Order));
 
         var manifest = new PackageManifest(Format, Version, app, product, modules, parts.Select(p => p.Part).ToList(), classes);
-        var temp = path + ".saving";
-        using (var file = File.Create(temp))
-        using (var zip = new ZipArchive(file, ZipArchiveMode.Create))
+        using (var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
         {
             void Entry(string name, byte[] bytes)
             {
@@ -77,12 +85,18 @@ public static class LapinPackage
             Entry(ManifestPath, JsonSerializer.SerializeToUtf8Bytes(manifest, PackageJson.Indented.PackageManifest));
             foreach (var (part, bytes) in parts) Entry(part.Path, bytes);
         }
-        File.Move(temp, path, overwrite: true);
     }
 
     public static PackageContent Read(string path)
     {
-        using var zip = ZipFile.OpenRead(path);
+        using var file = File.OpenRead(path);
+        return Read(file);
+    }
+
+    /// <summary>A package read from a stream (bytes a browser was given).</summary>
+    public static PackageContent Read(Stream input)
+    {
+        using var zip = new ZipArchive(input, ZipArchiveMode.Read, leaveOpen: true);
         byte[] Bytes(string name)
         {
             var entry = zip.GetEntry(name) ?? throw new InvalidDataException($"The project has no {name}.");

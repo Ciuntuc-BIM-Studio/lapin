@@ -24,9 +24,29 @@ public interface ISupportDesk
     void Open(string? link);
 }
 
-/// <summary>Opening and saving projects: the host's file access, given to the dispatcher so the protocol stays testable.</summary>
+/// <summary>
+/// Opening and saving projects: the host's file access by path, given to the
+/// dispatcher so the protocol stays testable; and by bytes, for a host without
+/// files of its own (the browser: the user picks a file, keeps a download).
+/// </summary>
 public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Session, string> write)
 {
+    /// <summary>A project from its bytes (format 3); <paramref name="name"/> is the file's name, its title.</summary>
+    public Diff OpenBytes(Session session, string name, byte[] bytes)
+    {
+        LastNotes = [];
+        var content = Lapin.Package.LapinPackage.Read(new MemoryStream(bytes, writable: false));
+        return session.Load(content.Entities, content.Relations, name, content.Classes);
+    }
+
+    /// <summary>The project as a package's bytes; the session counts as saved.</summary>
+    public (byte[] Bytes, Diff Diff) SaveBytes(Session session, string name)
+    {
+        using var ms = new MemoryStream();
+        ProjectPackage.Write(session, ms);
+        return (ms.ToArray(), session.Saved(name));
+    }
+
     /// <summary>What the last opening left out (an old project's parts that do not come over), for the interface to tell.</summary>
     public List<string> LastNotes { get; set; } = [];
 
@@ -129,19 +149,38 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return (new JsonObject { ["notes"] = new JsonArray(files.LastNotes.Select(n => (JsonNode)n).ToArray()) }, diff);
             }
             case "project.save": return (null, files.Save(session, (string?)p["path"]));
+            case "project.openBytes":
+            {
+                // A project from its bytes (a host without files: the browser), base64 in `data`.
+                var name = (string?)p["name"] ?? "project.lapin";
+                var diff = files.OpenBytes(session, name, Convert.FromBase64String((string?)p["data"] ?? throw new CommandException("The project's bytes are missing.")));
+                return (new JsonObject { ["notes"] = new JsonArray() }, diff);
+            }
+            case "project.saveBytes":
+            {
+                var name = (string?)p["name"] ?? (session.Path is { } current ? Path.GetFileName(current) : "project.lapin");
+                if (!name.EndsWith(".lapin", StringComparison.OrdinalIgnoreCase)) name += ".lapin";
+                var (bytes, diff) = files.SaveBytes(session, name);
+                return (new JsonObject { ["name"] = name, ["data"] = Convert.ToBase64String(bytes) }, diff);
+            }
             case "project.exportIfc":
             {
                 // The project as IFC (docs/spec-ifc.md): IFC4, or IFC4X3; parts grouped under their element, or one body each; a phase, or everything.
                 var options = new IfcExportOptions((string?)p["schema"] ?? "IFC4", (string?)p["detail"] ?? "group", (string?)p["phase"]);
                 if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, ifcPath, options).ToJson(), null);
-                var temp = Path.Combine(Path.GetTempPath(), $"lapin-{Guid.NewGuid():N}.ifc");
-                try { IfcExport.Write(session, temp, options); return (Deliver(File.ReadAllBytes(temp), "project.ifc"), null); }
-                finally { File.Delete(temp); }
+                using var ms = new MemoryStream();
+                IfcExport.Write(session, ms, "project.ifc", options);
+                return (Deliver(ms.ToArray(), "project.ifc"), null);
             }
             case "project.importIfc":
             {
                 // An IFC file into the open project (docs/spec-ifc.md): Lapin's own files natively, others as references; "reference" keeps everything as it is.
-                var result = IfcImport.Run(session, PathParam(), new IfcImportOptions((string?)p["mode"] ?? "auto"), out var imported);
+                var mode = new IfcImportOptions((string?)p["mode"] ?? "auto");
+                // By path (the desktop), or its bytes, base64 in `data` (the browser).
+                IfcImportResult result;
+                Diff imported;
+                if ((string?)p["data"] is { } data) result = IfcImport.Run(session, Convert.FromBase64String(data), (string?)p["name"] ?? "file.ifc", mode, out imported);
+                else result = IfcImport.Run(session, PathParam(), mode, out imported);
                 return (result.ToJson(), imported);
             }
             case "export.pdf":

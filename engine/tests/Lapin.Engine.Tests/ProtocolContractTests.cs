@@ -60,3 +60,43 @@ public class ProtocolContractTests
         return header + "|" + Convert.ToBase64String(buffers.ToArray());
     }
 }
+
+/// <summary>A host without files (the browser): projects and IFC files go in and out as bytes.</summary>
+public class ProtocolBytesTests
+{
+    static JsonObject Result(byte[] frame) => (JsonObject)JsonNode.Parse(BinaryFrame.HeaderText(frame))!["result"]!;
+
+    [Fact]
+    public void A_project_saved_to_bytes_opens_from_them_as_it_was()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var d = new EngineDispatcher(f.Session, PackageFiles.Create());
+        d.Handle("""{"id":1,"method":"doc.execute","params":{"command":"architecture.addWall","args":{"x1":0,"y1":0,"x2":5,"y2":0}}}""");
+        var (saved, diff) = d.Handle("""{"id":2,"method":"project.saveBytes","params":{"name":"house"}}""");
+        var r = Result(saved);
+        Assert.Equal("house.lapin", (string?)r["name"]);
+        Assert.False(diff!.State.Dirty);
+        var g = new Fixture(new ArchitectureModule());
+        var e = new EngineDispatcher(g.Session, PackageFiles.Create());
+        e.Handle(new JsonObject { ["id"] = 3, ["method"] = "project.openBytes", ["params"] = new JsonObject { ["name"] = "house.lapin", ["data"] = r["data"]!.DeepClone() } }.ToJsonString());
+        Assert.Equal(f.Model.Entities.Select(x => x.Id).Order(), g.Model.Entities.Select(x => x.Id).Order());
+        Assert.Equal("house.lapin", g.Session.Path);
+    }
+
+    [Fact]
+    public void An_ifc_file_goes_out_and_comes_back_as_bytes_without_a_temporary_file()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var d = new EngineDispatcher(f.Session, PackageFiles.Create());
+        d.Handle("""{"id":1,"method":"doc.execute","params":{"command":"architecture.addWall","args":{"x1":0,"y1":0,"x2":5,"y2":0}}}""");
+        var exported = Result(d.Handle("""{"id":2,"method":"project.exportIfc"}""").Reply);
+        var bytes = Convert.FromBase64String((string)exported["data"]!);
+        Assert.StartsWith("ISO-10303-21;", System.Text.Encoding.UTF8.GetString(bytes));
+        var g = new Fixture(new ArchitectureModule());
+        var e = new EngineDispatcher(g.Session, PackageFiles.Create());
+        var (reply, imported) = e.Handle(new JsonObject { ["id"] = 3, ["method"] = "project.importIfc", ["params"] = new JsonObject { ["name"] = "house.ifc", ["data"] = exported["data"]!.DeepClone() } }.ToJsonString());
+        Assert.NotNull(imported);
+        Assert.Single(g.Model.OfClass("IfcWall"));
+        Assert.Null(JsonNode.Parse(BinaryFrame.HeaderText(reply))!["error"]);
+    }
+}

@@ -50,10 +50,20 @@ public static class IfcExport
 
     public static IfcExportResult Write(Session session, string path, IfcExportOptions? options = null)
     {
+        // Built in memory first: a failed export leaves no file behind.
+        using var ms = new MemoryStream();
+        var result = Write(session, ms, System.IO.Path.GetFileName(path), options);
+        File.WriteAllBytes(path, ms.ToArray());
+        return result with { Path = path };
+    }
+
+    /// <summary>The project as IFC into a stream, <paramref name="name"/> in its header (a browser hands the bytes to the user).</summary>
+    public static IfcExportResult Write(Session session, Stream output, string name, IfcExportOptions? options = null)
+    {
         var w = new Writer(session, options ?? new IfcExportOptions());
         w.Run();
-        w.File.Write(path, System.IO.Path.GetFileName(path), w.O.Ifc43 ? "ViewDefinition [ReferenceView]" : "ViewDefinition [ReferenceView_V1.2]", w.O.SchemaName);
-        return new IfcExportResult(path, w.O.SchemaName, w.Elements, w.PartCount, w.StoreyCount, w.Notes);
+        w.File.Write(output, name, w.O.Ifc43 ? "ViewDefinition [ReferenceView]" : "ViewDefinition [ReferenceView_V1.2]", w.O.SchemaName);
+        return new IfcExportResult(name, w.O.SchemaName, w.Elements, w.PartCount, w.StoreyCount, w.Notes);
     }
 
     /// <summary>An IFC class and what the element is as one: its predefined type (empty: the class has none) and, user-defined, the object type that names it.</summary>

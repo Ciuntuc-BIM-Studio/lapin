@@ -77,7 +77,14 @@ public sealed class Step
     /// <param name="schema">IFC4, or IFC4X3_ADD2 (IFC 4.3: alignments, infrastructure).</param>
     public void Write(string path, string name, string description, string schema = "IFC4")
     {
-        using var w = new StreamWriter(path, false, new UTF8Encoding(false)) { NewLine = "\n" };
+        using var file = File.Create(path);
+        Write(file, name, description, schema);
+    }
+
+    /// <summary>The file into a stream.</summary>
+    public void Write(Stream output, string name, string description, string schema = "IFC4")
+    {
+        using var w = new StreamWriter(output, new UTF8Encoding(false), leaveOpen: true) { NewLine = "\n" };
         var now = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
         w.Write("ISO-10303-21;\nHEADER;\n");
         w.Write($"FILE_DESCRIPTION(({S(description)}),'2;1');\n");

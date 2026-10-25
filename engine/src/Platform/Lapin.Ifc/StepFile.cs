@@ -32,9 +32,11 @@ public sealed class StepFile
     public IEnumerable<StepEntity> OfType(string type) => Entities.Values.Where(e => e.Type == type);
 
     /// <summary>Reads a file: ASCII as the standard says, UTF-8 as some programs write it, Latin-1 else.</summary>
-    public static StepFile Read(string path)
+    public static StepFile Read(string path) => Read(File.ReadAllBytes(path));
+
+    /// <summary>Reads a file's bytes: ASCII as the standard says, UTF-8 as some programs write it, Latin-1 else.</summary>
+    public static StepFile Read(byte[] bytes)
     {
-        var bytes = File.ReadAllBytes(path);
         string text;
         try { text = new UTF8Encoding(false, true).GetString(bytes); }
         catch (DecoderFallbackException) { text = Encoding.Latin1.GetString(bytes); }
