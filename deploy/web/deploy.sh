@@ -5,7 +5,8 @@ set -euo pipefail
 # Hetzner server, beside the old Lapin: build/<id>/web goes to
 # <DEPLOY_DIR>/www/web, which the nginx there already serves (static files;
 # application/wasm is in its types), at https://lapin.ciuntucbimstudio.ro/web/.
-# Nothing on the server changes but that folder.
+# Nothing on the server changes but that folder. While the old Lapin is under
+# maintenance, the server's nginx/default.conf opens /web/ and /api/feedback only.
 #
 #   deploy/web/deploy.sh [id]          (default: lapin; builds it unless SKIP_BUILD=1)
 #
