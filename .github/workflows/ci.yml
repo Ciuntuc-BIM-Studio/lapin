@@ -59,3 +59,41 @@ jobs:
         env:
           CI: 'true'
       - run: pnpm check:licenses
+
+  web:
+    name: Web
+    # The engine in the browser (docs/plan-browser-engine.md): built for lapin and
+    # checked in headless Chrome. The desktop jobs above never depend on it.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      # An SDK of its own in a folder the job can write, so the wasm-tools workload installs without root.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
+      - run: dotnet workload install wasm-tools
+      # manifold for the browser (engine/native/browser-wasm), kept while its script is unchanged.
+      - uses: actions/cache@v4
+        with:
+          path: engine/native/browser-wasm
+          key: manifold-browser-wasm-${{ hashFiles('scripts/build-manifold.mjs') }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        env:
+          CI: 'true'
+      - run: node scripts/build-web.mjs lapin
+      # A runner is slower than a laptop: the start budget is looser here.
+      - run: node scripts/check-web.mjs lapin
+        env:
+          LAPIN_WEB_START_BUDGET_MS: '10000'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lapin-web
+          path: build/lapin/web
+          retention-days: 14
