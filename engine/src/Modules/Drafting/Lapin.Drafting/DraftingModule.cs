@@ -16,7 +16,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
     {
         r.Class(new(IfcClass.Grid, "Grid", [], "#555555", Kind: "annotation"));
         r.Class(new(IfcClass.Annotation, "Annotation",
-            [new("text", "Text", "text"), new("textStyle", "Text style", "text"), new("dimStyle", "Dimension style", "text"), new("angle", "Angle", "angle")], "#555555", Kind: "annotation"));
+            [new("text", "Text", "text"), new("textStyle", "Text style", "text"), new("dimStyle", "Dimension style", "text"), new("angle", "Angle", "angle"),
+             new("format", "Slope written as", "choice", Choices: DimensionKinds.SlopeFormats), new("z", "Level written", "length")], "#555555", Kind: "annotation"));
         r.Service<IViewAnnotations>(this);
         Cad.DraftCommands.Register(r);
         r.Service<IElementPlacement>(new Cad.AnnotationPlacement());
@@ -78,6 +79,14 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         {
             var viewId = (string?)a["viewId"] ?? throw new CommandException("A dimension is drawn on a view.");
             var view = Views.Find(ctx.Model, viewId) ?? throw new CommandException("There is no such view.");
+            // An angle, a radius, a diameter, an arc length, a slope, a level, an ordinate.
+            if (DimensionKinds.Attrs(ctx, viewId, a) is { } kindAttrs)
+            {
+                var names = new Dictionary<string, string> { ["angular"] = "Angle", ["radial"] = "Radius", ["diameter"] = "Diameter", ["arc"] = "Arc length", ["slope"] = "Slope", ["level"] = "Level", ["ordinate"] = "Ordinate" };
+                var made = new Entity(ctx.NewId(), IfcClass.Annotation, names[(string)kindAttrs["dimKind"]!], kindAttrs, "DIMENSION");
+                ctx.Add(made);
+                return new JsonObject { ["id"] = made.Id };
+            }
             var (p, q, at) = (P(a["a"]), P(a["b"]), P(a["at"]));
             if ((q - p).Length < 1e-4) throw new CommandException("A dimension needs two different points.");
             var attrs = new JsonObject { ["viewId"] = viewId, ["a"] = J(p), ["b"] = J(q), ["at"] = J(at) };
@@ -113,6 +122,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             var dim = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Annotation, PredefinedType: "DIMENSION" } d ? d : throw new CommandException("Not a dimension.");
             var value = Json.Number(a["value"]) ?? throw new CommandException("Which value?");
             if (value <= 0) throw new CommandException("A dimension's value must be positive.");
+            if (DimensionKinds.IsKind(dim)) { DimensionKinds.Drive(ctx, dim, value); return null; }
             var view = Views.Find(ctx.Model, dim.Str("viewId") ?? "") ?? throw new CommandException("The dimension's view is gone.");
             var (drawing, spec, problem) = Views.Generate(ctx.Query, view);
             if (drawing == null || spec == null) throw new CommandException(problem ?? "The view cannot be drawn.");
@@ -144,6 +154,11 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Query("drafting.dimension", (q, a) =>
         {
             if (q.Model.Get((string?)a["id"] ?? "") is not { Class: IfcClass.Annotation, PredefinedType: "DIMENSION" } dim || Views.Find(q.Model, dim.Str("viewId") ?? "") is not { } view) return null;
+            if (DimensionKinds.IsKind(dim))
+            {
+                var (v, lost) = DimensionKinds.Measure(null, q.Model, dim);
+                return new JsonObject { ["value"] = double.IsInfinity(v) ? null : v, ["orphan"] = lost, ["driving"] = dim.Str("dimKind") is "radial" or "diameter" && dim.Str("shape") != null, ["kind"] = dim.Str("dimKind") };
+            }
             var (drawing, spec, _) = Views.Generate(q, view);
             if (drawing == null || spec == null) return null;
             var (pa, pb, orphan) = Dimensions.Ends(q.Model, spec.Kind, dim, drawing);
@@ -173,7 +188,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         });
     }
 
-    public IEnumerable<ViewMark> Marks(ViewContext c) => Cad.Drafts.Marks(c).Concat(Grids.Marks(c)).Concat(Dimensions.Marks(c)).Concat(Texts.Marks(c)).Concat(Tags.Marks(c));
+    public IEnumerable<ViewMark> Marks(ViewContext c) => Cad.Drafts.Marks(c).Concat(Grids.Marks(c)).Concat(Dimensions.Marks(c)).Concat(DimensionKinds.Marks(c)).Concat(Texts.Marks(c)).Concat(Tags.Marks(c));
 
     static void Write(ICommandContext ctx, Entity grid, List<Axis> axes)
     {

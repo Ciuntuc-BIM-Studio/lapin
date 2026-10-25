@@ -1,13 +1,13 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
 import { ArrowRightToLine, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileText, FlipHorizontal2, Hash, Layers, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag } from 'lucide-react';
-import { DimensionIcon, GridAxisIcon, LevelIcon } from '../../icons';
+import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
 import type { NodeDto } from '../../engine/protocol';
 import { useUi } from '../../app/store';
 import { execute } from '../../engine/session';
-import { cadHost, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
+import { cadHost, cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import { DimensionSection } from './DimensionSection';
 import { DraftSection } from './DraftSection';
 import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
@@ -99,6 +99,106 @@ function tagCommand(): Step {
 registerCommand({ names: ['TAG', 'TG'], label: 'Tag', start: tagCommand });
 registerCommand({ names: ['DIMALIGNED', 'DAL', 'DIM'], label: 'Aligned dimension', start: () => dimCommand(false) });
 registerCommand({ names: ['DIMLINEAR', 'DLI'], label: 'Linear dimension', start: () => dimCommand(true) });
+
+// ─── The other dimensions: angle, radius, diameter, arc length, slope, level, ordinate ───
+
+const pair = (p: Vec2) => [p.x, p.y];
+async function addKind(kind: string, args: Record<string, unknown>): Promise<null> {
+  const h = cadHost();
+  if (!h) return null;
+  await execute('drafting.addDimension', { viewId: h.viewId, dimKind: kind, ...args });
+  return null;
+}
+/** DIMANGULAR: the vertex, a point on each side, then where the arc goes (the side it lies on picks the angle or its reflex). */
+function angularCommand(): Step {
+  return {
+    prompt: 'The angle\'s vertex', want: 'point',
+    point: (c) => ({
+      prompt: 'A point on the first side', want: 'point', base: c, preview: (q) => [{ type: 'line', a: c, b: q }],
+      point: (a) => ({
+        prompt: 'A point on the second side', want: 'point', base: c, preview: (q) => [{ type: 'line', a: c, b: a }, { type: 'line', a: c, b: q }],
+        point: (b) => ({
+          prompt: 'Where the arc goes', want: 'point', base: c,
+          preview: (q) => [{ type: 'line', a: c, b: a }, { type: 'line', a: c, b }, { type: 'circle', c, r: Math.max(1e-3, Math.hypot(q.x - c.x, q.y - c.y)) }],
+          point: (at) => addKind('angular', { c: pair(c), a: pair(a), b: pair(b), at: pair(at) }),
+        }),
+      }),
+    }),
+  };
+}
+/** DIMRADIUS / DIMDIAMETER: a drafted circle or arc (it follows and drives it), or its centre and a point on it [Points]; then where the text goes. */
+function roundCommand(kind: 'radial' | 'diameter'): Step {
+  const place = (args: Record<string, unknown>, centre: Vec2): Step => ({
+    prompt: 'Where the text goes', want: 'point', base: centre,
+    preview: (q) => [{ type: 'line', a: centre, b: q }],
+    point: (at) => addKind(kind, { ...args, at: pair(at) }),
+  });
+  return {
+    prompt: `Pick a drafted circle or arc [Points]`, want: 'pick',
+    pick: (hit) => (hit.shape.type === 'circle' || hit.shape.type === 'arc' ? place({ shape: hit.id }, hit.shape.c) : (cadLog('Pick a circle or an arc.'), roundCommand(kind))),
+    keywords: {
+      P: () => ({
+        prompt: 'The centre', want: 'point',
+        point: (c) => ({ prompt: 'A point on the circle', want: 'point', base: c, preview: (q) => [{ type: 'circle', c, r: Math.max(1e-3, Math.hypot(q.x - c.x, q.y - c.y)) }], point: (a) => place({ c: pair(c), a: pair(a) }, c) }),
+      }),
+    },
+  };
+}
+/** DIMARC: a drafted arc, then where the dimension arc goes. */
+function arcLengthCommand(): Step {
+  return {
+    prompt: 'Pick a drafted arc', want: 'pick',
+    pick: (hit) => (hit.shape.type === 'arc'
+      ? { prompt: 'Where the dimension goes', want: 'point', base: hit.shape.c, point: (at: Vec2) => addKind('arc', { shape: hit.id, at: pair(at) }) }
+      : (cadLog('Pick an arc.'), arcLengthCommand())),
+  };
+}
+/** DIMSLOPE: two points on the sloped line [Percent/Degrees/Ratio/Auto], then a point beside it. */
+function slopeCommand(): Step {
+  let format = 'auto';
+  const kw = (next: () => Step) => ({ P: () => { format = '%'; return next(); }, D: () => { format = 'deg'; return next(); }, R: () => { format = 'ratio'; return next(); }, A: () => { format = 'auto'; return next(); } });
+  const first = (): Step => ({
+    prompt: `First point on the slope [Percent/Degrees/Ratio/Auto: ${format}]`, want: 'point', keywords: kw(() => first()),
+    point: (a) => ({
+      prompt: 'Second point on it', want: 'point', base: a, preview: (q) => [{ type: 'line', a, b: q }],
+      point: (b) => addKind('slope', { a: pair(a), b: pair(b), at: pair({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), format }),
+    }),
+  });
+  return first();
+}
+/** DIMLEVEL: the point, then the side the text goes; a typed value is the level itself (in a plan: else the storey's). */
+function levelCommand(): Step {
+  return {
+    prompt: 'The point whose level is written', want: 'point',
+    point: (a) => {
+      let z: number | null = null;
+      const side = (): Step => ({
+        prompt: `Which side the text goes${z != null ? ` (level ${z} m)` : ' (type a level to write it)'}`, want: 'point', base: a,
+        value: (v) => { z = v; return side(); },
+        point: (at) => addKind('level', { a: pair(a), at: pair(at), ...(z != null ? { z } : {}) }),
+      });
+      return side();
+    },
+  };
+}
+/** DIMORDINATE: the point, then where its leader ends [X/Y: which coordinate; Origin: set it]. */
+const ordinate = { origin: { x: 0, y: 0 } as Vec2 };
+function ordinateCommand(): Step {
+  let axis: 'x' | 'y' = 'x';
+  const step = (): Step => ({
+    prompt: `The point [X/Y: ${axis}; Origin at ${ordinate.origin.x}, ${ordinate.origin.y}]`, want: 'point',
+    keywords: { X: () => { axis = 'x'; return step(); }, Y: () => { axis = 'y'; return step(); }, O: () => ({ prompt: 'The origin', want: 'point', point: (o) => { ordinate.origin = o; return step(); } }) },
+    point: (a) => ({ prompt: 'Where the leader ends', want: 'point', base: a, preview: (q) => [{ type: 'line', a, b: q }], point: (at) => addKind('ordinate', { a: pair(a), at: pair(at), axis, o: pair(ordinate.origin) }) }),
+  });
+  return step();
+}
+registerCommand({ names: ['DIMANGULAR', 'DAN'], label: 'Angular dimension', start: angularCommand });
+registerCommand({ names: ['DIMRADIUS', 'DRA'], label: 'Radius', start: () => roundCommand('radial') });
+registerCommand({ names: ['DIMDIAMETER', 'DDI'], label: 'Diameter', start: () => roundCommand('diameter') });
+registerCommand({ names: ['DIMARC', 'DAR'], label: 'Arc length', start: arcLengthCommand });
+registerCommand({ names: ['DIMSLOPE', 'DSL'], label: 'Slope', start: slopeCommand });
+registerCommand({ names: ['DIMLEVEL', 'DLV'], label: 'Level', start: levelCommand });
+registerCommand({ names: ['DIMORDINATE', 'DOR'], label: 'Ordinate', start: ordinateCommand });
 
 // ─── Linework (LW…): the view's generated lines hidden, shown or restyled, joined at corners ───
 
@@ -253,11 +353,12 @@ const drafting: LapinModule = {
     {
       id: 'annotate', label: 'Annotate', order: 60,
       groups: [
-        { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR')] },
+        { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR')],
+          small: [cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE')] },
         { label: 'Text', tools: [text, cad('tag', 'Tag', Tag, 'TAG')] },
         { label: 'Datum', tools: [
           axis,
-          { id: 'level', label: 'Level', icon: LevelIcon, shortcut: 'LL' },
+          { id: 'level', label: 'Level', icon: LevelIcon, shortcut: 'LL', run: () => void startCommand('DIMLEVEL') },
         ] },
         { label: 'Sheets', tools: [{ id: 'sheet', label: 'Sheet', icon: FileText }] },
       ],

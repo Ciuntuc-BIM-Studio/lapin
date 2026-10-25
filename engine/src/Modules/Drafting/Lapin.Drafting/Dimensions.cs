@@ -199,7 +199,7 @@ public static class Dimensions
 
     public static IEnumerable<ViewMark> Marks(ViewContext c)
     {
-        foreach (var dim in c.Model.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == "DIMENSION" && x.Str("viewId") == c.View.Id))
+        foreach (var dim in c.Model.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == "DIMENSION" && x.Str("viewId") == c.View.Id && !DimensionKinds.IsKind(x)))
         {
             var (a, b, orphan) = Ends(c.Model, c.Kind, dim, c.Drawing);
             if (Along(dim, a, b) is not { } u) continue;
