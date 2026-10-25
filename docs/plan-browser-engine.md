@@ -106,4 +106,9 @@ Stage 0: 2–3 days. Stage 1: 2–3 days (mostly tests). Stage 2: 5–7 days. St
 - **The limits on the start screen** of the web build (in English and Romanian): the project stays in the browser and nothing is sent anywhere; saving keeps a file (a download in Safari and Firefox); unsaved work survives a closed tab; the AI bridge (MCP) and views in windows of their own are only in the desktop app; a very large imported IFC file may not fit.
 - **The deploy target:** `deploy/web/deploy.sh` copies `build/<id>/web` to the Hetzner server's nginx, at `/web/` (`deploy/web/.env`, from `.env.example`). Not run yet: it waits for a yes.
 
-**Next: stage 4** (when wanted): old projects (format 2) from bytes, support reports from the browser.
+**Stage 4, done:**
+
+- **Old projects (format 2) open in the browser.** `LegacyPackage.Is/Read(Stream)`, and `LegacyImport` moved into `Lapin.Protocol`; `project.openBytes` rebuilds an old project as `project.open` does on the desktop, with the same notes. It opens unsaved, so saving never writes format 3 over the file it came from (the page drops that file's handle). `ProtocolContractTests` opens the old fixture by path and by bytes: the same entities, the same notes.
+- **Reports from the browser.** The report's body is built once (`SupportReport.Body`), for both hosts. The desktop posts it as before. In the browser the engine returns it (a worker cannot wait for the network inside a call) and the page posts it to `/api/feedback`, the same server the web build is served from, so no CORS is needed (`VITE_FEEDBACK_URL` overrides that). The help menu's links open in a new tab.
+- Checked in headless Chrome on the built folder: the old fixture opens with its two storeys, the three layered walls joined at their corners, the column and the floor; a report goes out with `url: "browser"` and its number comes back.
+- The third item of the stage (the desktop saving through `project.saveBytes`, its journals elsewhere) was optional and stays open: nothing needs it today.
