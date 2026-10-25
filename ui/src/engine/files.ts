@@ -1,16 +1,86 @@
 /**
  * Projects on disk: New, Open, Save, Save as, recovery of unsaved work. In
  * the desktop app the paths come from the native dialogs; in a browser
- * (pnpm dev) they are typed in.
+ * against the local engine (pnpm dev) they are typed in; with the engine in
+ * the browser (the web build) the project comes from a file the user picks
+ * and goes back to it (or to a download), as bytes.
  */
 
-import { engine, useSession } from './session';
+import { engine, engineInBrowser, useSession } from './session';
 import { LONG_TIMEOUT_MS } from './client';
 import { notify, select, useUi } from '../app/store';
 
 const FILTERS = [{ name: 'Lapin project', extensions: ['lapin'] }];
 
 export const isDesktop = () => Boolean((window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__);
+
+// ─── Files as bytes (the engine in the browser) ──────────────────────────
+
+interface PickerWindow {
+  showOpenFilePicker?: (o: { types: { description: string; accept: Record<string, string[]> }[] }) => Promise<FileSystemFileHandle[]>;
+  showSaveFilePicker?: (o: { suggestedName: string; types: { description: string; accept: Record<string, string[]> }[] }) => Promise<FileSystemFileHandle>;
+}
+const picker = () => window as unknown as PickerWindow;
+
+/** The file the project came from or was last saved to, where the browser lets a page write back to it (Chrome, Edge). */
+let projectHandle: FileSystemFileHandle | null = null;
+
+/** A file the user picks: its name and bytes (null: none picked). */
+async function pickFile(description: string, ext: string): Promise<{ name: string; bytes: Uint8Array; handle: FileSystemFileHandle | null } | null> {
+  const open = picker().showOpenFilePicker;
+  if (open) {
+    try {
+      const [handle] = await open({ types: [{ description, accept: { 'application/octet-stream': [`.${ext}`] } }] });
+      const file = await handle.getFile();
+      return { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()), handle };
+    } catch { return null; }   // cancelled
+  }
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = `.${ext}`;
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      resolve(file ? { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()), handle: null } : null);
+    };
+    input.oncancel = () => resolve(null);
+    input.click();
+  });
+}
+
+/** Bytes as base64, the way the protocol carries them (in pieces: a large project would overflow one call). */
+export function toBase64(bytes: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+const fromBase64 = (data: string) => Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+
+/** Bytes handed to the user as a download. */
+function download(bytes: Uint8Array, name: string, type = 'application/octet-stream'): void {
+  const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+/** Bytes written into a file the user chose (where the browser can), else downloaded; false: the user cancelled. */
+async function keep(bytes: Uint8Array, name: string, handle: FileSystemFileHandle | null, ask: boolean): Promise<{ handle: FileSystemFileHandle | null } | false> {
+  let target = ask ? null : handle;
+  const save = picker().showSaveFilePicker;
+  if (!target && save) {
+    try { target = await save({ suggestedName: name, types: [{ description: 'Lapin project', accept: { 'application/zip': ['.lapin'] } }] }); } catch { return false; }
+  }
+  if (target) {
+    const w = await target.createWritable();
+    await w.write(bytes as BlobPart);
+    await w.close();
+    return { handle: target };
+  }
+  download(bytes, name);
+  return { handle: null };
+}
 
 export interface RecoverableWork { file: string; path: string | null; at: string; edits: number; lastEdit: string | null }
 
@@ -44,6 +114,8 @@ const RECENT_KEY = 'lapin.recent';
 
 /** The projects opened or saved last on this computer (a convenience: kept by the browser). */
 export function recentProjects(): string[] {
+  // The engine in the browser opens what the user picks: there are no paths to go back to.
+  if (engineInBrowser) return [];
   try { return JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]') as string[]; } catch { return []; }
 }
 
@@ -68,6 +140,18 @@ export async function newProject(): Promise<void> {
 
 export async function openProject(path?: string): Promise<void> {
   if (!(await confirmDiscard('Open another'))) return;
+  if (engineInBrowser) {
+    const picked = await pickFile('Lapin project', 'lapin');
+    if (!picked) return;
+    try {
+      await engine.call('project.openBytes', { name: picked.name, data: toBase64(picked.bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
+      projectHandle = picked.handle;
+      enter();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : String(e));
+    }
+    return;
+  }
   const target = path ?? (await pickPath('open'));
   if (!target) return;
   try {
@@ -86,6 +170,19 @@ export async function openProject(path?: string): Promise<void> {
 
 export async function saveProject(as = false): Promise<boolean> {
   const current = useSession.getState().doc?.path ?? null;
+  if (engineInBrowser) {
+    try {
+      const r = await engine.call<{ name: string; data: string }>('project.saveBytes', { name: current ?? 'project.lapin' }, { timeoutMs: LONG_TIMEOUT_MS });
+      const kept = await keep(fromBase64(r.data), r.name, projectHandle, as);
+      if (!kept) return false;
+      projectHandle = kept.handle;
+      notify(`Saved ${projectTitle(r.name)}.`);
+      return true;
+    } catch (e) {
+      notify(e instanceof Error ? e.message : String(e));
+      return false;
+    }
+  }
   const target = as || !current ? await pickPath('save', current ?? 'project.lapin') : current;
   if (!target) return false;
   const path = target.endsWith('.lapin') ? target : `${target}.lapin`;
@@ -116,7 +213,11 @@ export const discardWork = (file: string) => engine.call('recovery.discard', { p
 
 /** The desktop window asks before closing on unsaved work. */
 export async function guardWindowClose(): Promise<void> {
-  if (!isDesktop()) return;
+  if (!isDesktop()) {
+    // A browser tab: the browser asks before leaving unsaved work (the journal keeps it besides).
+    window.addEventListener('beforeunload', (e) => { if (useSession.getState().doc?.dirty) e.preventDefault(); });
+    return;
+  }
   const { getCurrentWindow } = await import('@tauri-apps/api/window');
   const win = getCurrentWindow();
   await win.onCloseRequested(async (e) => {
@@ -171,10 +272,13 @@ export async function exportIfc(options: { schema?: string; detail?: string; pha
 
 /** An IFC file into the open project: Lapin's own files come back native, others as references (mode 'reference' keeps everything as it is). */
 export async function importIfc(mode: 'auto' | 'reference' = 'auto'): Promise<void> {
-  const path = await pickPath('open', undefined, [{ name: 'IFC', extensions: ['ifc'] }]);
+  // By path (the desktop, pnpm dev), or the file's bytes (the engine in the browser).
+  const picked = engineInBrowser ? await pickFile('IFC', 'ifc') : null;
+  const path = engineInBrowser ? picked?.name ?? null : await pickPath('open', undefined, [{ name: 'IFC', extensions: ['ifc'] }]);
   if (!path) return;
   try {
-    const r = await engine.call<{ elements: number; updated: number; references: number; notes: string[] }>('project.importIfc', { path, mode }, { timeoutMs: LONG_TIMEOUT_MS });
+    const args = picked ? { name: picked.name, data: toBase64(picked.bytes), mode } : { path, mode };
+    const r = await engine.call<{ elements: number; updated: number; references: number; notes: string[] }>('project.importIfc', args, { timeoutMs: LONG_TIMEOUT_MS });
     const parts = [
       r.elements ? `${r.elements} new` : '',
       r.updated ? `${r.updated} updated` : '',

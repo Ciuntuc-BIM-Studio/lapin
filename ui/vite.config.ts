@@ -33,6 +33,10 @@ function productModules(): Plugin {
 
 export default defineConfig({
   plugins: [react(), productModules()],
+  // The web build is served from wherever its folder is put (LAPIN_UI_BASE=./); the desktop app and dev from the root.
+  base: process.env.LAPIN_UI_BASE ?? '/',
+  // The engine's worker (src/engine/worker) is an ES module: it imports the engine's runtime from engine/.
+  worker: { format: 'es' },
   clearScreen: false,
   server: { port: 5180, strictPort: true, fs: { allow: [resolve(__dirname, '..')] } },
   build: { outDir: process.env.LAPIN_UI_OUT ?? 'dist', emptyOutDir: true, chunkSizeWarningLimit: 1500 },

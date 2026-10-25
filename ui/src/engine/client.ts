@@ -22,42 +22,75 @@ export const DEFAULT_TIMEOUT_MS = 30_000;
 /** Opening, saving, importing and exporting may legitimately take long. */
 export const LONG_TIMEOUT_MS = 10 * 60_000;
 
+/** An open connection to the engine: messages go out as JSON text. */
+export interface EngineLink { send(text: string): void; close(): void }
+
+/**
+ * How the interface reaches the engine: the local engine over a WebSocket
+ * (the desktop app and pnpm dev), or the engine in a Web Worker (the web
+ * build). Frames come back to `onMessage`; `onClose` when the link drops.
+ */
+export interface EngineTransport {
+  /** Calls `onOpen` as soon as the link is up (before the promise settles), then resolves. */
+  connect(handlers: { onOpen(link: EngineLink): void; onMessage(data: ArrayBuffer | string): void; onClose(): void }): Promise<void>;
+  /** False: one failed start is final (an engine in a worker that would not load will not load the next time either). */
+  readonly retries?: boolean;
+}
+
+/** The local engine, over a WebSocket at the URL given (resolved at each connection: the engine may move ports). */
+export function webSocketTransport(resolveUrl: () => Promise<string>): EngineTransport {
+  return {
+    connect: ({ onOpen, onMessage, onClose }) => resolveUrl().then((url) => new Promise<void>((resolve, reject) => {
+      const ws = new WebSocket(url);
+      ws.binaryType = 'arraybuffer';
+      let open = false;
+      ws.onopen = () => { open = true; onOpen({ send: (t) => ws.send(t), close: () => ws.close() }); resolve(); };
+      ws.onerror = () => { if (!open) reject(new Error('engine unreachable')); };
+      ws.onclose = () => { if (open) onClose(); else reject(new Error('engine unreachable')); };
+      ws.onmessage = (ev) => onMessage(ev.data as ArrayBuffer | string);
+    })),
+  };
+}
+
 export class EngineClient {
-  private ws: WebSocket | null = null;
+  private link: EngineLink | null = null;
   private seq = 0;
   private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   private diffListeners = new Set<(d: Diff) => void>();
   private statusListeners = new Set<(connected: boolean) => void>();
   private closed = false;
+  private readonly transport: EngineTransport;
 
-  constructor(private readonly resolveUrl: () => Promise<string>, private readonly retryMs = 700) {}
+  /** By the engine's WebSocket URL (resolved at each connection), or by a transport of its own (the engine in a worker). */
+  constructor(source: (() => Promise<string>) | EngineTransport, private readonly retryMs = 700) {
+    this.transport = typeof source === 'function' ? webSocketTransport(source) : source;
+  }
 
   async start(): Promise<void> {
     this.closed = false;
     while (!this.closed) {
       try {
-        await this.open(await this.resolveUrl());
+        await this.open();
         return;
-      } catch {
+      } catch (e) {
+        if (this.transport.retries === false) { this.statusListeners.forEach((l) => l(false)); throw e; }
         await new Promise((r) => setTimeout(r, this.retryMs));
       }
     }
   }
 
-  private open(url: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      const ws = new WebSocket(url);
-      ws.binaryType = 'arraybuffer';
-      ws.onopen = () => { this.ws = ws; this.statusListeners.forEach((l) => l(true)); resolve(); };
-      ws.onerror = () => reject(new Error('engine unreachable'));
-      ws.onclose = () => {
-        if (this.ws !== ws) return;
-        this.ws = null;
+  private async open(): Promise<void> {
+    let link: EngineLink | null = null;
+    await this.transport.connect({
+      onOpen: (l) => { link = l; this.link = l; this.statusListeners.forEach((s) => s(true)); },
+      onMessage: (data) => this.receive(data instanceof ArrayBuffer ? decodeFrame<Message>(data) : JSON.parse(String(data)) as Message),
+      onClose: () => {
+        if (this.link !== link) return;
+        this.link = null;
         this.failAll(new Error('The connection to the engine closed.'));
         this.statusListeners.forEach((l) => l(false));
-        if (!this.closed) setTimeout(() => void this.start(), this.retryMs);
-      };
-      ws.onmessage = (ev) => this.receive(ev.data instanceof ArrayBuffer ? decodeFrame<Message>(ev.data) : JSON.parse(String(ev.data)) as Message);
+        if (!this.closed && this.transport.retries !== false) setTimeout(() => void this.start(), this.retryMs);
+      },
     });
   }
 
@@ -77,8 +110,8 @@ export class EngineClient {
   }
 
   call<T = unknown>(method: string, params: Record<string, unknown> = {}, options: CallOptions = {}): Promise<T> {
-    const ws = this.ws;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return Promise.reject(new Error('The engine is not connected.'));
+    const link = this.link;
+    if (!link) return Promise.reject(new Error('The engine is not connected.'));
     const id = ++this.seq;
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     return new Promise<T>((resolve, reject) => {
@@ -87,7 +120,7 @@ export class EngineClient {
         reject(new Error(`The engine did not answer ${method} within ${Math.round(timeoutMs / 1000)} s.`));
       }, timeoutMs);
       this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject, timer });
-      ws.send(JSON.stringify({ id, method, params }));
+      link.send(JSON.stringify({ id, method, params }));
     });
   }
 
@@ -96,7 +129,7 @@ export class EngineClient {
 
   onDiff(l: (d: Diff) => void): () => void { this.diffListeners.add(l); return () => this.diffListeners.delete(l); }
   onStatus(l: (c: boolean) => void): () => void { this.statusListeners.add(l); return () => this.statusListeners.delete(l); }
-  stop(): void { this.closed = true; this.ws?.close(); }
+  stop(): void { this.closed = true; this.link?.close(); }
 }
 
 /** Inside the desktop app the shell knows the engine's port; in a browser (pnpm dev) it is the dev port. */

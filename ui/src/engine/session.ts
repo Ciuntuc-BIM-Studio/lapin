@@ -7,6 +7,7 @@
 
 import { create } from 'zustand';
 import { EngineClient, engineUrl, LONG_TIMEOUT_MS } from './client';
+import { workerTransport } from './workerTransport';
 import { notify } from '../app/store';
 import type { Diff, DocState, NodeDto, RelationDto, RenderItem, SessionInfo } from './protocol';
 import { storeys } from './model';
@@ -29,7 +30,10 @@ export const useSession = create<SessionState>(() => ({
   connected: false, info: null, nodes: new Map(), relations: new Map(), render: new Map(), doc: null, version: -1, error: null, engineProblem: null,
 }));
 
-export const engine = new EngineClient(engineUrl);
+/** The web build runs the engine in a worker (VITE_ENGINE=worker); the desktop app and pnpm dev reach the local engine over its WebSocket. */
+export const engineInBrowser = import.meta.env.VITE_ENGINE === 'worker';
+
+export const engine = new EngineClient(engineInBrowser ? workerTransport() : engineUrl);
 
 /** Fold an engine diff into the session (a reset replaces everything). A diff older than what is shown is skipped. */
 export function applyDiff(d: Diff): void {

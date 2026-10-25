@@ -22,6 +22,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const id = args.find((a) => !a.startsWith('--')) ?? 'lapin';
 const engineOnly = args.includes('--engine-only');
+// The interface alone, over the engine built last time (build/<id>/web-engine).
+const uiOnly = args.includes('--ui-only');
 const product = resolveProduct(root, id);
 const host = join(root, 'engine/src/Host/Lapin.Browser');
 const out = join(root, 'build', id);
@@ -34,7 +36,7 @@ if (!dotnetRoot) { console.error('build-web: no .NET with the wasm-tools workloa
 const dotnet = join(dotnetRoot, process.platform === 'win32' ? 'dotnet.exe' : 'dotnet');
 
 // 1. manifold for the browser.
-if (!existsSync(join(root, 'engine/native/browser-wasm/manifoldc.a'))) sh('node', ['scripts/build-manifold.mjs', '--browser-wasm'], { env: { DOTNET_ROOT: dotnetRoot } });
+if (!uiOnly && !existsSync(join(root, 'engine/native/browser-wasm/manifoldc.a'))) sh('node', ['scripts/build-manifold.mjs', '--browser-wasm'], { env: { DOTNET_ROOT: dotnetRoot } });
 
 // 2. The product's modules, built in (the browser loads nothing from a folder).
 const modules = engineModules(root, id);
@@ -60,8 +62,10 @@ static class Product
 
 // 3. The engine: AOT, trimmed.
 const engineOut = join(out, 'web-engine');
-rmSync(engineOut, { recursive: true, force: true });
-sh(dotnet, ['publish', host, '-c', 'Release', '-o', engineOut, '-nologo', '-v', 'q'], { env: { DOTNET_ROOT: dotnetRoot } });
+if (!uiOnly) {
+  rmSync(engineOut, { recursive: true, force: true });
+  sh(dotnet, ['publish', host, '-c', 'Release', '-o', engineOut, '-nologo', '-v', 'q'], { env: { DOTNET_ROOT: dotnetRoot } });
+} else if (!existsSync(join(engineOut, 'wwwroot'))) { console.error(`build-web: no engine built for ${id} yet (run without --ui-only once).`); process.exit(1); }
 
 /** The bytes a browser downloads for a folder (brotli), MB. */
 const brotliMB = (dir) => {
