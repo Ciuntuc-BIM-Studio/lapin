@@ -84,4 +84,29 @@ public class CutOrderTests
         var b = f.Bounds(wall);
         return b.Max.Y - b.Min.Y;
     }
+
+    [Fact]
+    public void A_material_ranks_its_elements_over_their_class_until_the_element_says_otherwise()
+    {
+        var (f, wall, slab, full) = WallUnderSlab();
+        var slabFull = Vol(f, slab);
+        Assert.True(Vol(f, wall) < full - 1e-6);   // the slab (60) cuts the wall's head (50)
+        var core = Lapin.Platform.CutOrder.MainMaterial(f.Model.Get(wall)!, f.Model)!;
+        var rows = (JsonArray)f.Session.Query("cutOrder.materials", [])!;
+        Assert.Contains(rows, r => (string?)r!["id"] == core && r["priority"] == null);
+        // The wall's core material over floors: the wall now cuts the slab.
+        f.Run("cutOrder.set", new JsonObject { ["materials"] = new JsonObject { [core] = 70 } });
+        Assert.Equal(full, Vol(f, wall), 6);
+        Assert.True(Vol(f, slab) < slabFull - 1e-6);
+        Assert.Contains((JsonArray)f.Session.Query("cutOrder.materials", [])!, r => (string?)r!["id"] == core && (double?)r["priority"] == 70);
+        // The element's own priority still decides.
+        f.Run("element.update", new JsonObject { ["id"] = wall, ["attrs"] = new JsonObject { ["cutPriority"] = 10 } });
+        Assert.True(Vol(f, wall) < full - 1e-6);
+        f.Run("element.update", new JsonObject { ["id"] = wall, ["attrs"] = new JsonObject { ["cutPriority"] = null } });
+        // Back to its class.
+        f.Run("cutOrder.set", new JsonObject { ["materials"] = new JsonObject { [core] = null } });
+        Assert.True(Vol(f, wall) < full - 1e-6);
+        Assert.Equal(slabFull, Vol(f, slab), 6);
+        Assert.Throws<Lapin.Platform.CommandException>(() => f.Run("cutOrder.set", new JsonObject { ["materials"] = new JsonObject { ["nope"] = 5 } }));
+    }
 }

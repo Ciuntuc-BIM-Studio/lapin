@@ -16,6 +16,24 @@ public static class CutOrder
     /// <summary>The project's table (class → priority), or null when it has none.</summary>
     public static JsonObject? Of(IModelView m) => m.OfClass(Class).FirstOrDefault()?.Attrs["priorities"] as JsonObject;
 
+    /// <summary>The project's priorities by material (material id → priority), or null when it gives none.</summary>
+    public static JsonObject? MaterialsOf(IModelView m) => m.OfClass(Class).FirstOrDefault()?.Attrs["materials"] is JsonObject { Count: > 0 } t ? t : null;
+
+    /// <summary>
+    /// What an element is mainly made of: its core layer's material (a wall, a
+    /// floor), else the material it or its type names (a beam, a column, a
+    /// Studio solid).
+    /// </summary>
+    public static string? MainMaterial(Entity e, IModelView m)
+    {
+        if (LayerSets.BandsOf(m, e.Id) is { Count: > 0 } bands) return (bands.Any(b => b.Core) ? bands.First(b => b.Core) : bands[0]).Material;
+        return e.Str("material") ?? m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Str("material");
+    }
+
+    /// <summary>An element's priority by its main material, when the project gives that material one.</summary>
+    public static int? ByMaterial(Entity e, IModelView m) =>
+        MaterialsOf(m) is { } table && MainMaterial(e, m) is { } mat && Json.Number(table[mat]) is { } n ? (int)n : null;
+
     public static void Register(IModuleRegistry r)
     {
         r.Class(new(Class, "Cut order", [], Kind: "resource"));
@@ -32,22 +50,42 @@ public static class CutOrder
             return rows;
         });
 
-        // Priorities for some classes (null puts a class back to its default).
+        // The project's materials, with the priority each is given (null: its elements rank by their class).
+        r.Query("cutOrder.materials", (q, _) =>
+        {
+            var table = MaterialsOf(q.Model);
+            return new JsonArray(q.Model.OfClass(IfcClass.Material).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).Select(x => (JsonNode)new JsonObject
+            {
+                ["id"] = x.Id, ["name"] = x.Name, ["priority"] = table?[x.Id] is { } v ? Json.Number(v) : null,
+            }).ToArray());
+        });
+
+        // Priorities for some classes and some materials (null puts one back to its default).
         r.Command("cutOrder.set", "Change the cut order", (ctx, a) =>
         {
             var cutters = ctx.Services.Get<ICutters>() ?? throw new CommandException("No cut priorities in this product.");
-            if (a["priorities"] is not JsonObject given) throw new CommandException("Give the priorities by class.");
+            if (a["priorities"] is not JsonObject && a["materials"] is not JsonObject) throw new CommandException("Give the priorities by class or by material.");
             var existing = ctx.Model.OfClass(Class).FirstOrDefault();
+            static double Priority(JsonNode v, string what)
+            {
+                var n = Json.Number(v) ?? throw new CommandException($"The priority of {what} is a number.");
+                if (n < 0 || n > 100) throw new CommandException("A priority runs from 0 to 100.");
+                return Math.Round(n);
+            }
             var table = existing?.Attrs["priorities"] is JsonObject t ? (JsonObject)t.DeepClone() : new JsonObject();
-            foreach (var (cls, v) in given)
+            foreach (var (cls, v) in a["priorities"] as JsonObject ?? [])
             {
                 if (!cutters.CutDefaults.ContainsKey(cls)) throw new CommandException($"{cls} takes no part in cutting.");
-                if (v is null) { table.Remove(cls); continue; }
-                var n = Json.Number(v) ?? throw new CommandException($"The priority of {cls} is a number.");
-                if (n < 0 || n > 100) throw new CommandException("A priority runs from 0 to 100.");
-                table[cls] = Math.Round(n);
+                if (v is null) table.Remove(cls); else table[cls] = Priority(v, cls);
+            }
+            var materials = existing?.Attrs["materials"] is JsonObject mt ? (JsonObject)mt.DeepClone() : new JsonObject();
+            foreach (var (id, v) in a["materials"] as JsonObject ?? [])
+            {
+                var mat = ctx.Model.Get(id) is { Class: IfcClass.Material } x ? x : throw new CommandException($"There is no material {id}.");
+                if (v is null) materials.Remove(id); else materials[id] = Priority(v, mat.Name);
             }
             var attrs = new JsonObject { ["priorities"] = table };
+            if (materials.Count > 0) attrs["materials"] = materials;
             if (existing == null) ctx.Add(new Entity(ctx.NewId(), Class, "Cut order", attrs));
             else ctx.Replace(existing.With(attrs: attrs));
             return null;

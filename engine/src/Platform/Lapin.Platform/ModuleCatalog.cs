@@ -77,12 +77,12 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
     {
         if (ClassPriority(e.Class, model) is not { } own) return null;
         var asClass = e.Str("exportAs") is { } x ? ClassPriority(x, model) : null;
-        return (int)(e.NumOrNull("cutPriority") ?? asClass ?? own);
+        return (int)(e.NumOrNull("cutPriority") ?? CutOrder.ByMaterial(e, model) ?? asClass ?? own);
     }
 
-    /// <summary>An element ranked over a priority by its own priority or the class it is written as.</summary>
+    /// <summary>An element ranked over a priority by its own priority, its material or the class it is written as.</summary>
     bool Raised(Entity e, IModelView model, int mine) =>
-        e.NumOrNull("cutPriority") > mine || (e.Str("exportAs") is { } x && ClassPriority(x, model) > mine);
+        e.NumOrNull("cutPriority") > mine || (e.Str("exportAs") is { } x && ClassPriority(x, model) > mine) || CutOrder.ByMaterial(e, model) > mine;
 
     public IReadOnlyList<Solid> For(Entity target, IModelView model, (Vec3 Min, Vec3 Max) bounds)
     {
@@ -93,7 +93,8 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
             if (ClassPriority(cls, model) is not { } classPriority) continue;
             // A class ranked under the target's: only its elements raised over the target by their own priority
             // (read under a narrow key, so a wall does not rebuild on every edit of every other wall).
-            IEnumerable<Entity> candidates = classPriority > mine ? model.OfClass(cls)
+            // Priorities by material: any element may rank over its class, read whole.
+            IEnumerable<Entity> candidates = classPriority > mine || CutOrder.MaterialsOf(model) != null ? model.OfClass(cls)
                 : model is TrackingView tv ? tv.OfClassUnder(cls, TrackingView.CutKey(cls)).Where(e => Raised(e, model, mine)).Select(e => model.Get(e.Id)!)
                 : model.OfClass(cls).Where(e => Raised(e, model, mine));
             foreach (var e in candidates)
