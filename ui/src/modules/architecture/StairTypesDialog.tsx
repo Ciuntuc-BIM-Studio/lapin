@@ -11,6 +11,8 @@ import { useUi } from '../../app/store';
 import { execute, engine, useSession } from '../../engine/session';
 import { ofClass, relatedOf } from '../../engine/model';
 import { ChecksList, type StairNumbers } from './StairSection';
+import { DrawingLayer } from '../../viewport/DrawingLayer';
+import type { DrawingDto } from '../../viewport/drawing';
 
 interface Rules { set: string; riserMin: number; riserMax: number; riserTarget: number; treadMin: number; treadMax: number; treadTarget: number; stepMin: number; stepMax: number; minWidth: number; maxRisers: number; headroom: number; maxSlope: number }
 interface Spec {
@@ -33,6 +35,21 @@ function Mm({ label, value, onChange, step = 5 }: { label: string; value: number
   );
 }
 
+/** A view's drawing fitted into a box, as the generator made it: pens with their widths, dashes and hatches at the view's scale. */
+function Drawn({ drawing, width, label }: { drawing: DrawingDto | null; width: number; label: string }) {
+  const pad = 12;
+  const b = drawing?.bounds ?? [0, 0, 1, 1];
+  const bw = Math.max(b[2] - b[0], 0.5), bh = Math.max(b[3] - b[1], 0.5);
+  const k = (width - 2 * pad) / bw;
+  const height = Math.max(120, Math.round(bh * k + 2 * pad));
+  const toScreen = (p: { x: number; y: number }) => ({ x: pad + (p.x - b[0]) * k, y: height - pad - (p.y - b[1]) * k });
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} aria-label={label}>
+      {drawing && drawing.pens.length > 0 ? <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={k} /> : <text x={width / 2} y={height / 2} textAnchor="middle" fontSize={11} fill="#888">{label}…</text>}
+    </svg>
+  );
+}
+
 export function StairTypesDialog() {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
@@ -46,6 +63,7 @@ export function StairTypesDialog() {
   const [tab, setTab] = useState<'shape' | 'rules' | 'construction'>('shape');
   const [height, setHeight] = useState(3.0);
   const [preview, setPreview] = useState<StairNumbers | null>(null);
+  const [drawn, setDrawn] = useState<{ plan: DrawingDto; section: DrawingDto } | null>(null);
   const modelRef = useRef(model);
   modelRef.current = model;
 
@@ -59,7 +77,11 @@ export function StairTypesDialog() {
     if (!spec) return;
     let live = true;
     void engine.call<StairNumbers>('doc.query', { name: 'architecture.stairPreview', args: { spec, height } }).then((p) => { if (live) setPreview(p); }).catch(() => undefined);
-    return () => { live = false; };
+    // The drawings take a moment (a session of their own): asked for once the spec has settled.
+    const t = setTimeout(() => {
+      void engine.call<{ plan: DrawingDto; section: DrawingDto }>('doc.query', { name: 'architecture.stairDrawing', args: { spec, height } }).then((d) => { if (live) setDrawn(d); }).catch(() => undefined);
+    }, 250);
+    return () => { live = false; clearTimeout(t); };
   }, [spec, height]);
 
   if (!spec || !defaults) return null;
@@ -74,19 +96,7 @@ export function StairTypesDialog() {
     }
   };
 
-  // The plan preview, fitted into its box; the section of the first flight beside it.
-  const W = 320, H = 240, pad = 14;
-  const pts = (preview?.outlines ?? []).flatMap((o) => o.points);
-  let minX = 0, minY = -spec.width, maxX = 1, maxY = spec.width;
-  for (let i = 0; i + 1 < pts.length; i += 2) { minX = Math.min(minX, pts[i]); maxX = Math.max(maxX, pts[i]); minY = Math.min(minY, pts[i + 1]); maxY = Math.max(maxY, pts[i + 1]); }
-  const k = Math.min((W - 2 * pad) / Math.max(maxX - minX, 0.5), (H - 2 * pad) / Math.max(maxY - minY, 0.5));
-  const px = (x: number) => pad + (x - minX) * k;
-  const py = (y: number) => H - pad - (y - minY) * k;
-  const poly = (p: number[]) => Array.from({ length: p.length / 2 }, (_, i) => `${px(p[2 * i])},${py(p[2 * i + 1])}`).join(' ');
-  const prof = preview?.profile ?? [];
-  const run = prof.length ? prof[prof.length - 2] : 1;
-  const ks = Math.min((W - 2 * pad) / Math.max(run, 0.5), (H - 2 * pad) / Math.max(height, 0.5));
-  const sx = (u: number) => pad + u * ks, sz = (z: number) => H - pad - z * ks;
+  const W = 480;
 
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Stair types">
@@ -177,17 +187,10 @@ export function StairTypesDialog() {
             </div>
             <div className="joinery-preview stair-preview">
               <label className="field-line"><span className="eyebrow">Preview at a height of</span><input type="number" step={10} value={Math.round(height * 1000)} onChange={(e) => { const n = Number(e.target.value); if (n > 300) setHeight(n / 1000); }} /><span className="muted small"> mm</span></label>
-              <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-label="Plan">
-                {(preview?.outlines ?? []).map((o, i) => <polygon key={i} points={poly(o.points)} fill={o.kind === 'landing' ? '#eee8dc' : o.kind === 'winder' ? '#e6dfcf' : '#f4f0e8'} stroke="#1e2a3a" strokeWidth={0.8} />)}
-                {(preview?.risersLines ?? []).map((l, i) => <line key={i} x1={px(l[0])} y1={py(l[1])} x2={px(l[2])} y2={py(l[3])} stroke="#1e2a3a" strokeWidth={0.6} />)}
-                {preview && <circle cx={px(0)} cy={py(0)} r={3} fill="#2e6db4" />}
-                {preview && <circle cx={px(preview.top[0])} cy={py(preview.top[1])} r={3} fill="none" stroke="#2e6db4" />}
-              </svg>
-              <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H / 2 + 20} aria-label="Section of the first flight">
-                {prof.length > 2 && <polyline points={`${sx(0)},${sz(0)} ` + Array.from({ length: prof.length / 2 }, (_, i) => `${sx(prof[2 * i])},${sz(prof[2 * i + 1])}`).join(' ')} fill="none" stroke="#1e2a3a" strokeWidth={1} />}
-              </svg>
+              <Drawn drawing={drawn?.plan ?? null} width={W} label="Plan" />
+              <Drawn drawing={drawn?.section ?? null} width={W} label="Section along the first flight" />
               {preview && (
-                <p className="small">
+                <p className="small caption">
                   <b>{preview.risers}</b> risers · <b>{Math.round(preview.riserHeight * 1000)}</b> / <b>{Math.round(preview.tread * 1000)}</b> mm · 2h+b {Math.round(preview.step * 1000)} mm
                   · {preview.flights.join(' + ')} {preview.winders ? `+ ${preview.winders} winders` : ''} · run {Math.round(preview.run * 1000)} mm · {preview.predefinedType}
                 </p>

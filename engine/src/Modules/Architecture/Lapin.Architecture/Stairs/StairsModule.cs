@@ -148,6 +148,33 @@ public static class StairsModule
             return Describe(r, new StairPlacement(new Vec2(0, 0), new Vec2(1, 0), left, 0), spec);
         });
 
+        // The configurator's drawings: the stair the spec would make, built in a session of its own with a floor above, drawn by the
+        // 2D generator as a plan (its symbol) and a section along the first flight, with the materials' hatches and the pens.
+        r.Query("stairDrawing", (q, a) =>
+        {
+            var spec = StairSpec.From(a["spec"]) ?? throw new CommandException("The stair type's specification cannot be read.");
+            var height = Math.Max(0.3, Json.Number(a["height"]) ?? Spatial.Storeys(q.Model).FirstOrDefault()?.Num("height", 3) ?? 3);
+            var turn = (string?)a["turn"] == "right" ? "right" : "left";
+            var scale = Json.Number(a["scale"]) ?? 50;
+            var catalog = q.Services as ModuleCatalog ?? throw new CommandException("No modules to draw with.");
+            var s = new Session(catalog, new ProductManifest("stair-preview", "Stair preview", ["core", .. catalog.Modules.Select(m => m.Id)]));
+            s.New();
+            JsonNode? Run(string command, JsonObject args) { s.Execute(command, args, out var result); return result; }
+            var ground = Spatial.Storeys(s.Model).First();
+            var upper = (string)Run("storey.create", new JsonObject { ["name"] = "Above", ["elevation"] = height, ["height"] = 3.0 })!["id"]!;
+            var type = (string)Run("architecture.createStairType", new JsonObject { ["spec"] = spec.ToJson() })!["id"]!;
+            var r0 = StairSolver.Resolve(spec, height, new StairInputs(Json.Number(a["width"])), turn == "left");
+            var pts = r0.Footprint().SelectMany(x => x).ToList();
+            double x0 = pts.Min(p => p.X) - 1.5, x1 = pts.Max(p => p.X) + 1.5, y0 = pts.Min(p => p.Y) - 1.5, y1 = pts.Max(p => p.Y) + 1.5;
+            Run("architecture.addSlab", new JsonObject { ["storeyId"] = upper, ["points"] = new JsonArray(new JsonArray(x0, y0), new JsonArray(x1, y0), new JsonArray(x1, y1), new JsonArray(x0, y1)) });
+            var stair = new JsonObject { ["storeyId"] = ground.Id, ["typeId"] = type, ["x"] = 0, ["y"] = 0, ["x2"] = 1, ["y2"] = 0, ["turn"] = turn };
+            if (Json.Number(a["width"]) is { } width) stair["width"] = width;
+            Run("architecture.addStair", stair);
+            var plan = (string)Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = ground.Id, ["scale"] = scale })!["id"]!;
+            var section = (string)Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(x0 + 1, 0), ["end"] = new JsonArray(x1 - 1, 0), ["scale"] = scale })!["id"]!;
+            return new JsonObject { ["plan"] = Views.Drawing(s.Reader, s.Model.Get(plan)!), ["section"] = Views.Drawing(s.Reader, s.Model.Get(section)!) };
+        });
+
         // A stair as it is: its numbers and checks, for the inspector.
         r.Query("stairCheck", (q, a) =>
         {

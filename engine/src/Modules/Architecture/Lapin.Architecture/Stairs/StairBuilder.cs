@@ -24,9 +24,6 @@ public sealed record StairPlacement(Vec2 At, Vec2 Dir, bool TurnLeft, double Z0)
 /// </summary>
 public static class StairBuilder
 {
-    /// <summary>The height a plan cuts a stair at, over the storey; what is above shows on the storey above (later).</summary>
-    public const double PlanCut = 1.2;
-
     public static StairSpec SpecOf(IModelView m, Entity stair) =>
         (m.RelatingOf(stair.Id, IfcClass.RelDefinesByType) is { } type ? StairSpec.From(type.Attrs["spec"]) : null) ?? StairSpec.Default();
 
@@ -115,7 +112,7 @@ public static class StairBuilder
                 if (solids.Count > 0) parts.Add(new GeometryPart($"Railing ({side})", "#4a4a4a", Openings.Combine(solids, "railing"), null, $"railing:{side}"));
             }
 
-        var plan = Plan(r, place, stair);
+        var plan = Plan(r, place);
         var foot = r.Flights[0];
         Vec2[] snaps = [place.World(foot.Start - foot.Left * (w / 2)), place.World(foot.Start + foot.Left * (w / 2)), place.World(r.Top.At)];
         foreach (var c in r.Checks.Where(c => !c.Ok)) problems.Add($"{c.Label} {Fmt(c.Value)} is outside {Fmt(c.Min)} … {Fmt(c.Max)}.");
@@ -217,53 +214,43 @@ public static class StairBuilder
 
     // ─── Plan ───────────────────────────────────────────────────────────────
 
-    /// <summary>The stair as a plan draws it: the risers below the cut as lines across, the sides, the landings and winders, the break line at the cut, the arrow of ascent.</summary>
-    static List<PlanItem> Plan(Resolved r, StairPlacement place, Entity stair)
+    /// <summary>
+    /// The stair as a plan draws it, whole, from the foot to the top whatever
+    /// the plan's cut (the user reads the stair entire): every riser as a line
+    /// across, the sides of each flight, the landings and winders, and the
+    /// arrow of ascent along the centre line.
+    /// </summary>
+    static List<PlanItem> Plan(Resolved r, StairPlacement place)
     {
         var items = new List<PlanItem>();
-        var cut = PlanCut - stair.Num("baseOffset");
         var w = r.Width;
         var arrow = new List<Vec2>();
-        var cutHere = false;
-        Vec2? breakAt = null; Vec2? breakDir = null;
         foreach (var fl in r.Flights)
         {
-            if (cutHere) break;
             var l = fl.Left * (w / 2);
-            var lastVisible = -1;
+            var run = (fl.Risers - 1) * r.Tread;
             for (var i = 1; i <= fl.Risers; i++)
             {
-                if (fl.Z0 + i * r.RiserHeight > cut + 1e-9) { cutHere = true; break; }
                 var u = (i - 1) * r.Tread;
                 items.Add(new PlanItem("symbol", false, [place.World(fl.Start + fl.Dir * u - l), place.World(fl.Start + fl.Dir * u + l)]));
-                lastVisible = i;
             }
-            var uEnd = cutHere ? Math.Max(0, lastVisible - 0.5) * r.Tread : (fl.Risers - 1) * r.Tread;
-            items.Add(new PlanItem("symbol", false, [place.World(fl.Start - l), place.World(fl.Start + fl.Dir * uEnd - l)]));
-            items.Add(new PlanItem("symbol", false, [place.World(fl.Start + l), place.World(fl.Start + fl.Dir * uEnd + l)]));
-            if (arrow.Count == 0) arrow.Add(place.World(fl.Start + fl.Dir * (r.Tread / 2)));
-            else arrow.Add(place.World(fl.Start));
-            arrow.Add(place.World(fl.Start + fl.Dir * uEnd));
-            if (cutHere) { breakAt = fl.Start + fl.Dir * uEnd; breakDir = fl.Dir; }
+            items.Add(new PlanItem("symbol", false, [place.World(fl.Start - l), place.World(fl.Start + fl.Dir * run - l)]));
+            items.Add(new PlanItem("symbol", false, [place.World(fl.Start + l), place.World(fl.Start + fl.Dir * run + l)]));
+            arrow.Add(place.World(arrow.Count == 0 ? fl.Start + fl.Dir * (r.Tread / 2) : fl.Start));
+            arrow.Add(place.World(fl.Start + fl.Dir * run));
         }
-        foreach (var ld in r.Landings)
-            if (ld.Z <= cut + 1e-9) items.Add(new PlanItem("symbol", true, ld.Outline.Select(p => place.World(p)).ToArray()));
-        foreach (var wd in r.Winders)
-            if (wd.Z <= cut + 1e-9) items.Add(new PlanItem("symbol", true, wd.Outline.Select(p => place.World(p)).ToArray()));
-        if (breakAt is { } ba && breakDir is { } bd)
-        {
-            // A break line across the flight: a zigzag.
-            var l = bd.Perp * (w / 2);
-            var z = bd * (w * 0.08);
-            items.Add(new PlanItem("symbol", false, [place.World(ba - l), place.World(ba - l * 0.3 - z), place.World(ba + l * 0.3 + z), place.World(ba + l)]));
-        }
+        foreach (var ld in r.Landings) items.Add(new PlanItem("symbol", true, ld.Outline.Select(p => place.World(p)).ToArray()));
+        foreach (var wd in r.Winders) items.Add(new PlanItem("symbol", true, wd.Outline.Select(p => place.World(p)).ToArray()));
         if (arrow.Count >= 2)
         {
+            // Through a turn the arrow goes from the end of one flight to the start of the next, over the landing or the winders.
             items.Add(new PlanItem("symbol", false, [.. arrow]));
             var tip = arrow[^1];
             var d = (arrow[^1] - arrow[^2]).Normalized();
-            var s = Math.Min(0.25, w * 0.25);
-            items.Add(new PlanItem("symbol", false, [tip - d * s + d.Perp * (s * 0.5), tip, tip - d * s - d.Perp * (s * 0.5)]));
+            var size = Math.Min(0.25, w * 0.25);
+            items.Add(new PlanItem("symbol", false, [tip - d * size + d.Perp * (size * 0.5), tip, tip - d * size - d.Perp * (size * 0.5)]));
+            var foot = arrow[0];
+            items.Add(new PlanItem("symbol", true, [foot + new Vec2(0.04, 0), foot + new Vec2(0, 0.04), foot - new Vec2(0.04, 0), foot - new Vec2(0, 0.04)]));
         }
         return items;
     }
