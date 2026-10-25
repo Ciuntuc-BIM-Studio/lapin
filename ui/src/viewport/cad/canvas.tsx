@@ -5,6 +5,7 @@ import type { SnapMode } from './snaps';
 import { polylines } from './shapes';
 import { useCad } from './session';
 import type { Aimed } from './aim';
+import { livePoint, useLive } from '../liveInput';
 
 const GLYPH: Record<SnapMode, (x: number, y: number) => JSX.Element> = {
   endpoint: (x, y) => <rect x={x - 5} y={y - 5} width={10} height={10} />,
@@ -19,9 +20,11 @@ const GLYPH: Record<SnapMode, (x: number, y: number) => JSX.Element> = {
 /** The snap marker, the guides and the running command's preview, in screen coordinates. */
 export function CadOverlay({ aimed, toScreen }: { aimed: Aimed | null; toScreen: (p: Vec2) => { x: number; y: number } }) {
   const step = useCad((s) => s.step);
+  const live = useLive();
   if (!aimed) return null;
   const c = toScreen(aimed.point);
-  const preview = step?.preview ? step.preview(aimed.point) : [];
+  const typed = live.owner && (live.len || live.ang) ? livePoint({ ...live, cursor: aimed.point }) : null;
+  const preview = step?.preview ? step.preview(typed ?? aimed.point) : [];
   return (
     <g className="cad-overlay">
       {aimed.guides.map((g, i) => {

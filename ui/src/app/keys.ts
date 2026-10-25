@@ -19,6 +19,7 @@ import { execute, redo, undo } from '../engine/session';
 import { newProject, openProject, saveProject } from '../engine/files';
 import { cancel, submit, useCad } from '../viewport/cad/session';
 import { zoomHost } from '../viewport/zoom';
+import { liveCommit, useLive } from '../viewport/liveInput';
 
 /** What `keyIntent` needs to know about the key press. */
 export interface KeyPress {
@@ -50,6 +51,8 @@ export interface KeySnapshot {
   hotbar: number;
   /** Two-letter shortcuts, lower case, to the tool they start. */
   shortcuts: Record<string, string>;
+  /** A segment being drawn from a base: its length and angle can be typed (the focused field's text). */
+  live?: { active: boolean; text: string; typed: boolean };
 }
 
 export type KeyIntent =
@@ -58,7 +61,8 @@ export type KeyIntent =
   | { kind: 'closeDialog' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
   | { kind: 'delete'; ids: string[] } | { kind: 'hotbar'; slot: number }
   | { kind: 'type'; buffer: string } | { kind: 'tool'; id: string }
-  | { kind: 'zoom'; factor: number } | { kind: 'zoomSelection' };
+  | { kind: 'zoom'; factor: number } | { kind: 'zoomSelection' }
+  | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' } | { kind: 'liveClear' } | { kind: 'liveCommit' };
 
 const TOGGLES: Record<string, 'osnap' | 'ortho' | 'polar'> = { F3: 'osnap', F8: 'ortho', F10: 'polar' };
 
@@ -83,6 +87,16 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
     }
   }
   if (TOGGLES[e.key]) return { kind: 'toggle', what: TOGGLES[e.key] };
+  // Drawing a segment, nothing on the command line: its length and angle are typed at the cursor.
+  if (s.live?.active && !s.buffer) {
+    if (e.key === 'Tab') return { kind: 'liveFocus' };
+    if (e.key === '<') return { kind: 'liveFocus', field: 'ang' };
+    if (e.key === 'Enter' && s.live.typed) return { kind: 'liveCommit' };
+    if (e.key === 'Escape' && s.live.typed) return { kind: 'liveClear' };
+    if (e.key === 'Backspace' && s.live.text) return { kind: 'liveBack' };
+    if (/^[0-9.,+]$/.test(e.key) || (e.key === '-' && s.live.text)) return { kind: 'liveType', key: e.key };
+    if (/^[mcd]$/i.test(e.key) && /\d$/.test(s.live.text)) return { kind: 'liveType', key: e.key.toLowerCase() };
+  }
   const typing = s.buffer.length > 0 || !!s.step;
   if (e.key === 'Escape') return s.step || s.buffer ? { kind: 'cancel' } : null;
   if (e.key === 'Enter' || (e.key === ' ' && (typing || s.hasLast) && s.step?.want !== 'text')) {
@@ -117,6 +131,7 @@ function snapshot(): KeySnapshot {
     screen: ui.screen, dialog: ui.dialog, tool: ui.tool, selected: ui.selected,
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want } : null, hasLast: !!cad.last,
     hotbar: hotbarTools().length, shortcuts,
+    live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang) }; })(),
   };
 }
 
@@ -137,6 +152,11 @@ function carryOut(intent: KeyIntent): void {
     case 'type': useCad.setState({ buffer: intent.buffer }); break;
     case 'tool': { useCad.setState({ buffer: '' }); const t = allTools().find((x) => x.id === intent.id); if (t) activate(t); break; }
     case 'zoom': zoomHost()?.zoomBy(intent.factor); break;
+    case 'liveType': useLive.setState((l) => ({ [l.focus]: l[l.focus] + intent.key })); break;
+    case 'liveBack': useLive.setState((l) => ({ [l.focus]: l[l.focus].slice(0, -1) })); break;
+    case 'liveFocus': useLive.setState((l) => ({ focus: intent.field ?? (l.focus === 'len' ? 'ang' : 'len') })); break;
+    case 'liveClear': useLive.setState({ len: '', ang: '' }); break;
+    case 'liveCommit': liveCommit(); break;
     case 'zoomSelection': zoomHost()?.fitSelection(); break;
   }
 }

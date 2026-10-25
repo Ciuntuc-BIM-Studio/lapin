@@ -14,6 +14,8 @@ import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { Vec2 } from '../platform/module';
 import { findTool } from '../platform/modules';
 import { useGripEditor } from './GripLayer';
+import { LiveBar, LiveBox } from './LiveBox';
+import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { boxIds, pickAt } from './planPick';
 import { pairs, toMm } from './snap';
 import { completeTool } from './tools';
@@ -152,6 +154,7 @@ export function PlanView() {
     const raw = toWorld(clientX - rect.left, clientY - rect.top);
     const a = aim(raw, from ?? null, { grid: view.scale > 30 ? 0.05 : 0.5, orthoHeld: ortho });
     useCad.setState({ cursor: a.point });
+    liveCursor(a.point);
     return a;
   }, [toWorld, view.scale, aim, ortho]);
 
@@ -217,6 +220,18 @@ export function PlanView() {
     window.addEventListener('keyup', onUp);
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('keyup', onUp); };
   }, [pts, tool, complete]);
+
+  // A tool drawing from a point: its next segment's length and angle can be typed (Enter takes it).
+  const live = useLive();
+  const clickRef = useRef(click);
+  clickRef.current = click;
+  const last = pts[pts.length - 1];
+  useEffect(() => {
+    const k = tool?.gesture?.kind;
+    if (last && (k === 'twoPoints' || k === 'polyline' || k === 'polygon' || k === 'rectangle' || k === 'threePoints')) liveBegin('tool', last, (p) => clickRef.current(p, p, false));
+    else liveEnd('tool');
+  }, [last, tool]);
+  useEffect(() => () => liveEnd('tool'), []);
 
   // Direct editing: the selection's axes, outlines and grips (none while a tool or a command is busy).
   const editor = useGripEditor({
@@ -317,7 +332,7 @@ export function PlanView() {
 
   const preview = (() => {
     if (!tool?.gesture || !hover) return null;
-    const cur = hover.point;
+    const cur = (live.owner === 'tool' && (live.len || live.ang) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point;
     const g = tool.gesture.kind;
     if (g === 'twoPoints' && pts.length === 1) {
       const a = toScreen(pts[0]), b = toScreen(cur);
@@ -413,6 +428,8 @@ export function PlanView() {
         {marker && <CadOverlay aimed={hover} toScreen={toScreen} />}
         {box && <rect className={`select-box${box.b.x >= box.a.x ? ' window' : ' crossing'}`} x={Math.min(box.a.x, box.b.x)} y={Math.min(box.a.y, box.b.y)} width={Math.abs(box.b.x - box.a.x)} height={Math.abs(box.b.y - box.a.y)} />}
       </svg>
+      {active && <LiveBox toScreen={toScreen} />}
+      {active && <LiveBar />}
       <CommandLine />
     </div>
   );

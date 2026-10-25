@@ -12,6 +12,7 @@ import { select, useUi } from '../../app/store';
 import { execute, undo } from '../../engine/session';
 import { applyOrtho, parseCoordinateInput, pointAlong } from './input';
 import { arcThrough, dist, toJson, type Shape } from './shapes';
+import { liveBegin, liveEnd } from '../liveInput';
 
 /** What a 2D view lends the command line: its view, and what lies under a point. */
 export interface CadHost {
@@ -81,6 +82,9 @@ async function advance(next: Next): Promise<void> {
   if (g !== generation) return;
   if (step) useCad.setState({ step });
   else useCad.setState({ step: null, command: null });
+  // A point asked for from a base: its length and angle can be typed at the cursor.
+  if (step && step.want === 'point' && step.base) liveBegin('cad', step.base, (p) => void feedPoint(p));
+  else liveEnd('cad');
 }
 
 function host(): CadHost | null {
@@ -383,6 +387,7 @@ export function cancel(quiet = false): void {
   if (s.command && !quiet) log('*Cancel*');
   generation++;
   useCad.setState({ command: null, step: null, buffer: '' });
+  liveEnd('cad');
 }
 
 /** A point clicked in a view (already snapped). */

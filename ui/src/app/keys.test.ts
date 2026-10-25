@@ -77,6 +77,22 @@ describe('keyIntent', () => {
     expect(keyIntent(press('z'), state())).toEqual({ kind: 'type', buffer: 'z' });
   });
 
+  it('sends digits to the live length while a segment is drawn and the command line is empty', () => {
+    const live = (text = '', typed = false) => state({ live: { active: true, text, typed }, hotbar: 9 });
+    expect(keyIntent(press('3'), live())).toEqual({ kind: 'liveType', key: '3' });
+    expect(keyIntent(press('.'), live('3'))).toEqual({ kind: 'liveType', key: '.' });
+    expect(keyIntent(press('m'), live('3'))).toEqual({ kind: 'liveType', key: 'm' });
+    expect(keyIntent(press('m'), live())).toEqual({ kind: 'type', buffer: 'm' });
+    expect(keyIntent(press('-'), live())).toEqual({ kind: 'zoom', factor: 0.8 });
+    expect(keyIntent(press('Tab'), live())).toEqual({ kind: 'liveFocus' });
+    expect(keyIntent(press('<'), live('2400'))).toEqual({ kind: 'liveFocus', field: 'ang' });
+    expect(keyIntent(press('Enter'), live('2400', true))).toEqual({ kind: 'liveCommit' });
+    expect(keyIntent(press('Escape'), live('2400', true))).toEqual({ kind: 'liveClear' });
+    expect(keyIntent(press('Backspace'), live('24', true))).toEqual({ kind: 'liveBack' });
+    // Something on the command line (@2,3): the digits stay there.
+    expect(keyIntent(press('3'), state({ live: { active: true, text: '', typed: false }, buffer: '@2,' }))).toEqual({ kind: 'type', buffer: '@2,3' });
+  });
+
   it('cancels a running command with Escape, toggles with the F keys, picks the hotbar with digits', () => {
     expect(keyIntent(press('Escape'), state({ step: { want: 'point' } }))).toEqual({ kind: 'cancel' });
     expect(keyIntent(press('Escape'), state())).toBeNull();

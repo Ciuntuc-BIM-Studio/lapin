@@ -22,6 +22,8 @@ import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
 import { boxTest, segsOf } from './selectBox';
 import { useGripEditor } from './GripLayer';
+import { LiveBar, LiveBox } from './LiveBox';
+import { liveCursor } from './liveInput';
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelPixels, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
@@ -118,6 +120,7 @@ export function DrawingView() {
     const raw = toWorld(e.clientX - r.left, e.clientY - r.top);
     const aimed = aim(raw, useCad.getState().step?.base ?? null, { orthoHeld: e.shiftKey });
     useCad.setState({ cursor: aimed.point });
+    liveCursor(aimed.point);
     return { raw, aimed };
   };
 
@@ -128,6 +131,7 @@ export function DrawingView() {
       const r = ref.current!.getBoundingClientRect();
       const a = aim(toWorld(cx - r.left, cy - r.top), from, { orthoHeld: false });
       setHover(a);
+      liveCursor(a.point);
       return a.point;
     },
   });
@@ -204,6 +208,8 @@ export function DrawingView() {
         {(cadStep || editor.dragging) && <CadOverlay aimed={hover} toScreen={toScreen} />}
       </svg>
       {drawing?.problem && <div className="error-text view-problem">{drawing.problem}</div>}
+      {active && <LiveBox toScreen={toScreen} />}
+      {active && <LiveBar />}
       <CommandLine />
     </div>
   );
