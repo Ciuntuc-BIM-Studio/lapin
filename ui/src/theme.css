@@ -73,7 +73,7 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .tool svg { color: var(--accent); }
 .tool:hover { background: var(--wash); }
 .tool.on { background: var(--accent-wash); border-color: var(--accent); }
-.body { flex: 1; min-height: 0; display: grid; grid-template-columns: 250px 1fr 300px; }
+.body { flex: 1; min-height: 0; display: grid; grid-template-columns: 250px 1fr var(--props-w, 300px); }
 .panel { display: flex; flex-direction: column; min-height: 0; overflow: auto; background: var(--panel); }
 .browser { border-right: 1px solid var(--rule); }
 .props { border-left: 1px solid var(--rule); }
@@ -403,3 +403,34 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .live-field.on input { border-color: var(--accent); }
 .live-ro { display: flex; gap: 4px; font: 11.5px var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
 .live-ro span { color: var(--ink-muted); font-family: var(--font); }
+
+/* The properties panel: groups that fold, rows as a grid of cells with a spreadsheet's feel. */
+.props { position: relative; }
+.props-resize { position: absolute; left: -3px; top: 0; bottom: 0; width: 6px; cursor: col-resize; z-index: 5; }
+.props-resize:hover { background: var(--accent); opacity: 0.35; }
+.props-filter { display: flex; align-items: center; gap: 6px; margin: 8px 12px 2px; padding: 0 8px; border: 1px solid var(--rule); border-radius: 3px; background: var(--bg); color: var(--ink-muted); }
+.props-filter input { flex: 1; border: 0; background: transparent; padding: 5px 0; outline: none; }
+.group-sect { padding: 0; }
+.sect-head { display: flex; align-items: center; gap: 6px; width: 100%; padding: 9px 14px 7px; border: 0; background: none; cursor: pointer; text-align: left; }
+.sect-head:hover .eyebrow { color: var(--ink); }
+.sect-head .chev { color: var(--ink-muted); transition: transform 0.12s; transform: rotate(90deg); }
+.group-sect.closed .sect-head .chev { transform: rotate(0); }
+.sect-body { padding: 0 12px 12px; }
+.props .fields { display: grid; grid-template-columns: minmax(92px, 44%) 1fr; gap: 0; margin: 0; border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; background: var(--raised); align-items: stretch; }
+.props .fields dt, .props .fields dd { display: flex; align-items: center; min-height: 27px; margin: 0; border-bottom: 1px solid var(--rule); }
+.props .fields dt { position: relative; padding: 0 8px; background: var(--wash); border-right: 1px solid var(--rule); color: var(--ink-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.props .fields dd { padding: 0 6px; gap: 4px; min-width: 0; }
+.props .fields dd.ro, .props .fields dd.num { justify-content: flex-end; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.props .fields > dt:nth-last-of-type(1), .props .fields > dd:last-child, .props .fields .qrow:last-child > * { border-bottom: 0; }
+.props .fields input:not([type=checkbox]):not([type=color]):not([type=radio]), .props .fields select { width: 100%; min-width: 0; height: 26px; margin: 0; padding: 0 4px; border: 0; border-radius: 0; background: transparent; color: var(--ink); }
+.props .fields input.num, .props .fields .cell.num { text-align: right; font-variant-numeric: tabular-nums; }
+.props .fields input:focus, .props .fields select:focus { outline: 2px solid var(--accent); outline-offset: -1px; background: var(--accent-wash); }
+.props .fields input::placeholder { color: var(--ink-muted); font-style: italic; }
+.cell-wrap { display: flex; align-items: center; width: 100%; min-width: 0; }
+.cell-unit { padding-left: 4px; color: var(--ink-muted); font-size: 11px; }
+.props .filtered { display: none !important; }
+.row-x { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); opacity: 0; }
+.props .fields dt:hover .row-x { opacity: 1; }
+.param-add { display: flex; gap: 4px; margin-top: 8px; }
+.param-add input { flex: 1; min-width: 0; }
+.param-add select { width: 86px; }

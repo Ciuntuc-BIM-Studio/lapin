@@ -5,8 +5,10 @@
  * command (element.rename, element.update, or the module's own).
  */
 
-import { useEffect, useState } from 'react';
-import { AlignHorizontalJustifyCenter, ChevronRight, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { AlignHorizontalJustifyCenter, ChevronRight, Plus, Search, Trash2, X } from 'lucide-react';
+import { Cell, LengthCell } from './cells';
+import { panelFocus, panelKeys, parseNumber } from './cellKeys';
 import { useUi } from '../app/store';
 import { execute, useSession } from '../engine/session';
 import { relatingOf, typeOf } from '../engine/model';
@@ -28,38 +30,148 @@ function Commit({ value, onCommit, suffix, className }: { value: string; onCommi
   );
 }
 
+/** The selected elements a change goes to: every selected element of this one's kind. */
+const sameKind = (node: NodeDto): string[] => {
+  const { selected } = useUi.getState();
+  const nodes = useSession.getState().nodes;
+  return selected.includes(node.id) ? selected.filter((id) => nodes.get(id)?.type === node.type) : [node.id];
+};
+
 function FieldRow({ node, field }: { node: NodeDto; field: FieldDescriptor }) {
+  const nodes = useSession((s) => s.nodes);
+  useUi((s) => s.selected);
   const v = node.props[field.key];
-  // Every selected element of the same kind takes the change (a Z offset for all of them).
-  const update = (value: unknown) => {
-    const { selected } = useUi.getState();
-    const nodes = useSession.getState().nodes;
-    const ids = selected.includes(node.id) ? selected.filter((id) => nodes.get(id)?.type === node.type) : [node.id];
-    void execute('element.update', { ids, attrs: { [field.key]: value } });
-  };
+  // Several selected: a value they share is shown, otherwise "varies"; a change goes to all of them.
+  const others = sameKind(node).map((id) => nodes.get(id)?.props[field.key]);
+  const varies = others.some((x) => JSON.stringify(x ?? null) !== JSON.stringify(v ?? null));
+  const update = (value: unknown) => void execute('element.update', { ids: sameKind(node), attrs: { [field.key]: value } });
+  const ph = varies ? 'varies' : undefined;
   let input;
   if (field.kind === 'length') {
-    input = <Commit value={typeof v === 'number' ? String(Math.round(v * 1000)) : ''} suffix="mm"
-      onCommit={(t) => update(t.trim() === '' ? null : Number(t.replace(',', '.')) / 1000)} />;
+    input = <LengthCell metres={varies ? null : (v as number | undefined)} placeholder={ph} onCommit={update} />;
   } else if (field.kind === 'number' || field.kind === 'angle') {
-    input = <Commit value={typeof v === 'number' ? String(v) : ''} onCommit={(t) => update(t.trim() === '' ? null : Number(t.replace(',', '.')))} />;
+    input = <Cell className="num" value={!varies && typeof v === 'number' ? String(v) : ''} placeholder={ph} suffix={field.kind === 'angle' ? '°' : undefined}
+      onCommit={(t) => { if (!t.trim()) { update(null); return; } const n = parseNumber(t); if (n != null) update(n); }} />;
   } else if (field.kind === 'bool') {
-    input = <input type="checkbox" checked={v === true} onChange={(e) => update(e.target.checked)} />;
+    input = <input type="checkbox" checked={v === true} ref={(el) => { if (el) el.indeterminate = varies; }} onChange={(e) => update(e.target.checked)} />;
   } else if (field.kind === 'choice') {
-    input = <select value={typeof v === 'string' ? v : ''} onChange={(e) => update(e.target.value)}>{(field.choices ?? []).map((c) => <option key={c}>{c}</option>)}</select>;
+    input = <select className="cell" value={!varies && typeof v === 'string' ? v : ''} onChange={(e) => update(e.target.value)}>{varies && <option value="">varies</option>}{(field.choices ?? []).map((c) => <option key={c}>{c}</option>)}</select>;
   } else if (field.kind === 'color') {
     input = <input type="color" value={typeof v === 'string' ? v : '#c9ced6'} onChange={(e) => update(e.target.value)} />;
   } else {
-    input = <Commit value={typeof v === 'string' ? v : ''} onCommit={(t) => update(t)} />;
+    input = <Cell value={!varies && typeof v === 'string' ? v : ''} placeholder={ph} onCommit={(t) => update(t)} />;
   }
-  return <><dt>{field.label}</dt><dd>{field.readOnly ? <span className="num">{String(v ?? '—')}</span> : input}</dd></>;
+  return <><dt title={field.key}>{field.label}</dt><dd className={field.readOnly ? 'ro' : ''}>{field.readOnly ? <span className="num">{String(v ?? '—')}</span> : input}</dd></>;
+}
+
+// ─── Groups that fold, and remember it ──────────────────────────────────────
+
+const CLOSED_KEY = 'lapin.props.closed';
+const readClosed = (): Set<string> => { try { return new Set(JSON.parse(localStorage.getItem(CLOSED_KEY) ?? '[]') as string[]); } catch { return new Set(); } };
+function Group({ id, label, children }: { id: string; label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(() => !readClosed().has(id));
+  const toggle = () => {
+    const closed = readClosed();
+    if (open) closed.add(id); else closed.delete(id);
+    try { localStorage.setItem(CLOSED_KEY, JSON.stringify([...closed])); } catch { /* remembered for this session only */ }
+    setOpen(!open);
+  };
+  return (
+    <section className={`sect group-sect${open ? '' : ' closed'}`} data-group={id}>
+      <button type="button" className="sect-head" onClick={toggle} aria-expanded={open}><ChevronRight size={12} className="chev" /><span className="eyebrow">{label}</span></button>
+      {open && <div className="sect-body">{children}</div>}
+    </section>
+  );
+}
+
+// ─── The user's own parameters ──────────────────────────────────────────────
+
+interface Param { name: string; kind: string; value: unknown; options?: string[] }
+const KINDS = ['text', 'number', 'length', 'area', 'angle', 'bool', 'choice'] as const;
+
+function ParamsSection({ node }: { node: NodeDto }) {
+  const params = (Array.isArray(node.props.params) ? node.props.params : []) as unknown as Param[];
+  const [name, setName] = useState('');
+  const [kind, setKind] = useState<string>('text');
+  const ids = () => sameKind(node);
+  const set = (p: Param, value: unknown) => void execute('element.setParam', { ids: ids(), name: p.name, value });
+  const add = () => {
+    const n = name.trim();
+    if (!n) return;
+    const options = kind === 'choice' ? (window.prompt('The choices, separated by commas') ?? '').split(',').map((x) => x.trim()).filter(Boolean) : undefined;
+    void execute('element.setParam', { ids: ids(), name: n, kind, value: kind === 'bool' ? false : kind === 'text' || kind === 'choice' ? (options?.[0] ?? '') : 0, ...(options ? { options } : {}) }).then(() => setName(''));
+  };
+  return (
+    <>
+      {params.length > 0 && (
+        <dl className="fields">
+          {params.map((p) => (
+            <span key={p.name} className="qrow">
+              <dt title={p.kind}>{p.name}<button type="button" className="icon mini row-x" title="Remove the parameter" onClick={() => void execute('element.removeParam', { ids: ids(), name: p.name })}><X size={10} /></button></dt>
+              <dd>
+                {p.kind === 'length' ? <LengthCell metres={p.value as number} onCommit={(m) => set(p, m)} />
+                  : p.kind === 'bool' ? <input type="checkbox" checked={p.value === true} onChange={(e) => set(p, e.target.checked)} />
+                  : p.kind === 'choice' ? <select className="cell" value={String(p.value ?? '')} onChange={(e) => set(p, e.target.value)}>{(p.options ?? []).map((o) => <option key={o}>{o}</option>)}</select>
+                  : p.kind === 'text' ? <Cell value={String(p.value ?? '')} onCommit={(t) => set(p, t)} />
+                  : <Cell className="num" value={p.value == null ? '' : String(p.value)} suffix={p.kind === 'area' ? 'm²' : p.kind === 'angle' ? '°' : undefined}
+                      onCommit={(t) => { const n = parseNumber(t); if (n != null) set(p, n); }} />}
+              </dd>
+            </span>
+          ))}
+        </dl>
+      )}
+      <div className="param-add">
+        <input placeholder="New parameter" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') add(); }} />
+        <select value={kind} onChange={(e) => setKind(e.target.value)} title="Kind">{KINDS.map((k) => <option key={k}>{k}</option>)}</select>
+        <button type="button" className="icon" title="Add the parameter" onClick={add} disabled={!name.trim()}><Plus size={14} /></button>
+      </div>
+    </>
+  );
+}
+
+// ─── The panel's width, dragged and remembered ──────────────────────────────
+
+const WIDTH_KEY = 'lapin.props.w';
+function useWidth(): [number, (e: React.PointerEvent) => void] {
+  const [w, setW] = useState(() => { try { return Number(localStorage.getItem(WIDTH_KEY)) || 300; } catch { return 300; } });
+  useEffect(() => { document.documentElement.style.setProperty('--props-w', `${w}px`); }, [w]);
+  const start = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const x0 = e.clientX, w0 = w;
+    const move = (ev: PointerEvent) => setW(Math.max(240, Math.min(560, w0 - (ev.clientX - x0))));
+    const up = () => {
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+      setW((cur) => { try { localStorage.setItem(WIDTH_KEY, String(cur)); } catch { /* this session */ } return cur; });
+    };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
+  return [w, start];
+}
+
+/** Rows whose label does not match the filter are hidden (in every section, the modules' too). */
+function useFilter(root: React.RefObject<HTMLElement | null>, text: string, deps: unknown[]) {
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const q = text.trim().toLowerCase();
+    for (const dt of el.querySelectorAll('dl dt')) {
+      const hide = !!q && !(dt.textContent ?? '').toLowerCase().includes(q);
+      dt.classList.toggle('filtered', hide);
+      const dd = dt.nextElementSibling;
+      if (dd?.tagName === 'DD') dd.classList.toggle('filtered', hide);
+    }
+    // A section none of whose rows match goes too, while the filter is on.
+    for (const sect of el.querySelectorAll('.sect')) {
+      const rows = sect.querySelectorAll('dl dt');
+      sect.classList.toggle('filtered', !!q && rows.length > 0 && [...rows].every((r) => r.classList.contains('filtered')));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, ...deps]);
 }
 
 export function PropertiesPanel() {
   const selection = useUi((s) => s.selection);
   const nodes = useSession((s) => s.nodes);
-  const relations = useSession((s) => s.relations);
-  const info = useSession((s) => s.info);
   const node = selection ? nodes.get(selection) : undefined;
   // One grid axis (grid#tag): its label and which ends carry a bubble.
   const axis = !node && selection?.includes('#') ? (() => {
@@ -97,32 +209,43 @@ export function PropertiesPanel() {
       </aside>
     );
   }
+  return <ElementPanel node={node} />;
+}
+
+function ElementPanel({ node }: { node: NodeDto }) {
+  const nodes = useSession((s) => s.nodes);
+  const relations = useSession((s) => s.relations);
+  const info = useSession((s) => s.info);
+  const selectedCount = useUi((s) => s.selected.length);
+  const [filter, setFilter] = useState('');
+  const [, startResize] = useWidth();
+  const body = useRef<HTMLElement>(null);
+  useFilter(body, filter, [node, nodes]);
   const cls = info?.nodeTypes.find((t) => t.type === node.type);
   const model = { nodes, relations };
   const type = typeOf(model, node.id);
   const storey = relatingOf(model, node.id, 'IfcRelContainedInSpatialStructure');
   const sections = propertySections(node.type);
   return (
-    <aside className="panel props" aria-label="Properties">
+    <aside className="panel props" aria-label="Properties" ref={body} onKeyDown={panelKeys} onFocus={panelFocus}>
+      <div className="props-resize" onPointerDown={startResize} title="Drag to widen the panel" />
       <div className="panel-head">
-        <span className="eyebrow">{cls?.label ?? node.type}</span>
+        <span className="eyebrow">{cls?.label ?? node.type}{selectedCount > 1 ? ` · ${selectedCount} selected` : ''}</span>
         {node.editable
           ? <Commit className="panel-title-input" value={node.name} onCommit={(name) => void execute('element.rename', { id: node.id, name })} />
           : <span className="panel-title">{node.name}</span>}
       </div>
+      <label className="props-filter"><Search size={12} /><input placeholder="Filter properties" value={filter} onChange={(e) => setFilter(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setFilter(''); }} /></label>
       {!node.editable && <p className="muted small pad">This element belongs to a module this edition does not have: it is shown and kept, not edited.</p>}
       {sections.map((s) => (
-        <section className="sect" key={s.id}>
-          <h3 className="eyebrow">{s.label}</h3>
-          <s.component node={node} />
-        </section>
+        <Group key={s.id} id={s.id} label={s.label}><s.component node={node} /></Group>
       ))}
       {cls && cls.fields.length > 0 && node.editable && !sections.some((s) => s.replacesFields?.(node)) && (
-        <section className="sect">
-          <h3 className="eyebrow">Dimensions</h3>
+        <Group id="dimensions" label="Dimensions">
           <dl className="fields">{cls.fields.map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
-        </section>
+        </Group>
       )}
+      {node.editable && <Group id="params" label="Parameters"><ParamsSection node={node} /></Group>}
       <QuantitiesSection node={node} />
       {node.editable && node.type !== 'IfcProject' && node.type !== 'IfcSite' && node.type !== 'IfcBuilding' && (
         <section className="sect actions">
