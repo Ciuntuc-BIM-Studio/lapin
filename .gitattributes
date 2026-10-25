@@ -1,0 +1,2 @@
+# The DXF skeleton is read with LF line ends (DxfWriter), keep it so on every checkout.
+*.dxf text eol=lf

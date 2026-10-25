@@ -168,7 +168,8 @@ public sealed class DxfWriter(double patternScale = 1)
     static string Skeleton()
     {
         using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("Lapin.Drawing.Export.dxf-r2000-skeleton.dxf")!;
-        return new StreamReader(s).ReadToEnd();
+        // LF whatever the checkout did to the file (Git on Windows may turn it to CRLF): the placeholders end in \n.
+        return new StreamReader(s).ReadToEnd().ReplaceLineEndings("\n");
     }
 
     /// <summary>The layers the skeleton has already.</summary>
