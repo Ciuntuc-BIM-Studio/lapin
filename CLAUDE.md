@@ -39,6 +39,7 @@ pnpm dev:desktop               # the same in the Tauri window
 pnpm typecheck && pnpm test    # UI (vitest) and engine (xUnit); pnpm test:engine for the engine alone
 pnpm products                  # what every product resolves to
 pnpm build:product <id>        # one edition as a desktop app → build/<id>/bundle (check:licenses first)
+pnpm build:web <id>            # the same edition for the browser (engine in a Web Worker) → build/<id>/web; needs the wasm-tools workload (engine/src/Host/Lapin.Browser/README.md)
 ```
 
 Linux (.deb, .AppImage) and Windows (NSIS installer) builds run in GitHub Actions: Actions → Build Linux / Build Windows → Run workflow, a tag `v*`, or (Windows) a push to a `build/**` branch; the packages are the run's artifacts. Windows builds manifold with MSVC (`node scripts/build-manifold.mjs` from a Visual Studio x64 developer prompt).

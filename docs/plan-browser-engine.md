@@ -1,6 +1,6 @@
 # The engine in the browser: plan
 
-Asked on 25.10.2026 (pending decision 124). The engine compiled to WebAssembly and run in a Web Worker, so a tester opens Lapin from a URL, with the project staying in the browser. This plan starts from what the code does today and is bound by one rule, stated first because everything else bends to it.
+Asked on 25.10.2026 (pending decision 124, decided the same day: go, the 3× speed budget kept). The engine compiled to WebAssembly and run in a Web Worker, so a tester opens Lapin from a URL, with the project staying in the browser. This plan starts from what the code does today and is bound by one rule, stated first because everything else bends to it.
 
 ## The rule: local first stays as it is
 
@@ -78,3 +78,24 @@ Stage 0: 2–3 days. Stage 1: 2–3 days (mostly tests). Stage 2: 5–7 days. St
 3. **Safari and Firefox**: is "save by download" acceptable for testers, or do we wait for them to get the File System Access API? (Default: acceptable, stated on the start screen.)
 4. **Interpreter fallback**: keep a non-AOT build for debugging only, or none? (Default: debugging only, never deployed.)
 5. **The plugins**: the web build excludes the Bubbles tab as every public build does; confirm nothing else is private in the `lapin` product. (Default: nothing else.)
+
+
+## Progress (25.10.2026)
+
+**Stage 1, done** (each step behaviour-preserving, proven by tests; engine 444 tests, UI 87):
+
+- The engine's JSON is generated at build time: a context per assembly (`ModelJson`, `PackageJson`, `PlatformJson`, `DrawingJson`, `ArchitectureJson`, `ArchitectureCatalogJson`, `CivilJson`, `ProtocolJson`) with the options of `Json.Options`; `JsonContractTests` proves every moved type writes exactly what reflection wrote. Every engine library is `IsTrimmable` (in `Directory.Build.targets`, so the hosts and tests are not), which makes reflection that trimming would break a build error on the desktop too. Two patterns the analyzers flag: `JsonArray.Add(x)` with a non-node argument (typed `(JsonNode)x` now) and collection expressions into a `JsonArray` (`new JsonArray(…)` now; the trimmer, not the build-time analyzer, found those).
+- `Lapin.Protocol`: the dispatcher (`EngineDispatcher`) and `BinaryFrame`, without the WebSocket; the desktop's `EngineHub` serves it as before (same constructor, same frames). `ProtocolContractTests` runs a session through the dispatcher twice, the second time writing frames by the generated contracts alone (as a trimmed engine does), and the frames are byte for byte the same.
+- Streams beside paths: `LapinPackage.Read/Write(Stream)`, `IfcExport.Write(session, Stream, name)`, `IfcImport.Run(session, bytes, name)`, `StepFile.Read(bytes)`; the path overloads wrap them (a failed save or export still leaves nothing behind). The protocol gains `project.openBytes`, `project.saveBytes`, and `project.importIfc` with `data`; `project.exportIfc` without a path no longer goes through a temporary file.
+- The recovery journal over `IJournalStore` (moved into `Lapin.Protocol`); `FileJournalStore` is the desktop's code as it was. `JournalStoreTests` brings work back from a store that is not files.
+- The static module list: `engineModules()` in `scripts/product.mjs` (the same resolution the desktop uses) gives each module's project and its `ILapinModule` class; `build-web.mjs` writes them into the browser host.
+- manifold: nothing to move. In the browser `CoreModule`'s probe sees no library to load and registers nothing; the browser host registers the desktop's `ManifoldBooleans`, linked in. `scripts/build-manifold.mjs --browser-wasm` builds it (`engine/native/browser-wasm/`, ignored by git).
+
+**Stage 2, done:**
+
+- `engine/src/Host/Lapin.Browser` (outside `Lapin.slnx`): AOT, **trimmed whole** (`TrimMode=full`), manifold linked in, journals through the worker. `pnpm build:web <id>` builds the engine and the interface into `build/<id>/web`: **6.8 MB** compressed for `lapin`, the engine 6.5 of it.
+- The interface: `EngineClient` takes a transport (`webSocketTransport`, today's code; `workerTransport`, the engine in a worker), chosen by `VITE_ENGINE=worker` at build time; the desktop and `pnpm dev` keep the WebSocket. Projects open from a file the user picks (the File System Access API where there is one, else a file input) and save back to it or as a download; IFC import takes the file's bytes; the tab asks before leaving unsaved work.
+- The worker (`ui/src/engine/worker/engine.worker.ts`) runs .NET as a **sidecar**: `globalThis.dotnetSidecar = true` before `dotnet.js` loads, or the runtime takes a worker that has a message handler for one of its own helper threads and waits forever. Journals: kept in memory (read at start from the origin private file system, folder `recovery`), each line written through in order; a journal another tab writes is held by its Web Lock.
+- Checked in headless Chrome on the built folder, served statically: a new project, two walls drawn with WA (joined at their corner), the 3D view; the tab reloaded without saving offers the unsaved work on the start screen, and Recover brings the walls back. The desktop path was checked the same way from the branch (native host, WebSocket): unchanged.
+
+**Next: stage 3** — the CI job, the start-time and speed budgets measured in the build (the speed is at 3.4× on whole-storey work, against the 3× kept: profiling the rebuild in the browser comes first), the limits written on the start screen, the deploy target.
