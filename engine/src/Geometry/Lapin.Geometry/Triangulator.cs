@@ -15,11 +15,50 @@ public static class Triangulator
     static bool Same(Vec2 a, Vec2 b, double tol) => Math.Abs(a.X - b.X) <= tol && Math.Abs(a.Y - b.Y) <= tol;
 
     /// <summary>
+    /// The face's vertices in its plane, projected once each. A class and plain
+    /// loops rather than a delegate and LINQ: the browser's AOT build runs those
+    /// through its interpreter.
+    /// </summary>
+    sealed class Flat(IReadOnlyList<Vec3> points, Vec3 u, Vec3 v)
+    {
+        readonly Dictionary<int, int> index = [];
+        readonly List<Vec2> flat = [];
+
+        public Vec2 At(int id)
+        {
+            if (!index.TryGetValue(id, out var k))
+            {
+                k = flat.Count;
+                flat.Add(VecMath.Project(points[id], u, v));
+                index[id] = k;
+            }
+            return flat[k];
+        }
+
+        public Vec2[] Of(IReadOnlyList<int> ids)
+        {
+            var o = new Vec2[ids.Count];
+            for (int i = 0; i < o.Length; i++) o[i] = At(ids[i]);
+            return o;
+        }
+    }
+
+    /// <summary>Indices 0..n-1 by ascending key, ties in index order (as a stable OrderBy).</summary>
+    static int[] OrderBy(double[] key)
+    {
+        var order = new int[key.Length];
+        for (int i = 0; i < order.Length; i++) order[i] = i;
+        Array.Sort(order, (x, y) => { var c = key[x].CompareTo(key[y]); return c != 0 ? c : x.CompareTo(y); });
+        return order;
+    }
+
+    /// <summary>
     /// Ear-clip a simple CCW ring. Ids may repeat (bridging duplicates two
     /// vertices), so every test is positional rather than by identity.
     /// </summary>
-    static List<(int, int, int)> EarClip(List<int> poly, Func<int, Vec2> at, double tol)
+    static List<(int, int, int)> EarClip(List<int> poly, Flat flat, double tol)
     {
+        Vec2 at(int id) => flat.At(id);
         var o = new List<(int, int, int)>();
         var ring = new List<int>(poly);
         int guard = ring.Count * ring.Count + 16;
@@ -66,7 +105,10 @@ public static class Triangulator
             }
         }
         if (ring.Count == 3) o.Add((ring[0], ring[1], ring[2]));
-        return o.Where(t => Math.Abs(Cross2(at(t.Item1), at(t.Item2), at(t.Item3))) > tol).ToList();
+        var kept = new List<(int, int, int)>(o.Count);
+        foreach (var t in o)
+            if (Math.Abs(Cross2(at(t.Item1), at(t.Item2), at(t.Item3))) > tol) kept.Add(t);
+        return kept;
     }
 
     /// <summary>
@@ -93,8 +135,9 @@ public static class Triangulator
     /// the ring or of the holes still waiting, and runs inside the face. (A ray
     /// cast picks badly where edges are vertical or holes line up.)
     /// </summary>
-    static List<int>? BridgeHole(List<int> outer, List<int> hole, IReadOnlyList<List<int>> waiting, Func<int, Vec2> at)
+    static List<int>? BridgeHole(List<int> outer, List<int> hole, List<List<int>> waiting, Flat flat)
     {
+        Vec2 at(int id) => flat.At(id);
         int hi = 0;
         for (int i = 1; i < hole.Count; i++)
         {
@@ -102,15 +145,27 @@ public static class Triangulator
             if (p.X < q.X || (p.X == q.X && p.Y < q.Y)) hi = i;
         }
         var m = at(hole[hi]);
-        var ringPoly = outer.Select(at).ToList();
-        var edges = new List<(Vec2, Vec2)>();
-        foreach (var loop in new[] { outer, hole }.Concat(waiting))
-            for (int i = 0; i < loop.Count; i++) edges.Add((at(loop[i]), at(loop[(i + 1) % loop.Count])));
+        var ringPoly = flat.Of(outer);
+        var waitingPolys = new List<Vec2[]>(waiting.Count);
+        foreach (var w in waiting) waitingPolys.Add(flat.Of(w));
+        var from = new List<Vec2>();
+        var to = new List<Vec2>();
+        void Edges(List<int> loop)
+        {
+            for (int i = 0; i < loop.Count; i++) { from.Add(at(loop[i])); to.Add(at(loop[(i + 1) % loop.Count])); }
+        }
+        Edges(outer);
+        Edges(hole);
+        foreach (var w in waiting) Edges(w);
         bool Visible(Vec2 p)
         {
-            if (edges.Any(e => Crosses(m, p, e.Item1, e.Item2))) return false;
+            for (int e = 0; e < from.Count; e++)
+                if (Crosses(m, p, from[e], to[e])) return false;
             var mid = (m + p) * 0.5;
-            return Polygon2.Contains(ringPoly, mid) && !waiting.Any(w => Polygon2.Contains(w.Select(at).ToList(), mid));
+            if (!Polygon2.Contains(ringPoly, mid)) return false;
+            foreach (var w in waitingPolys)
+                if (Polygon2.Contains(w, mid)) return false;
+            return true;
         }
         // A vertex can occur twice in the ring (where an earlier bridge left from it): the bridge must leave from the
         // occurrence whose corner it runs into — inside the angle between its two edges (the ring is CCW).
@@ -120,20 +175,29 @@ public static class Triangulator
             Vec2 a = at(outer[(i - 1 + n) % n]), p = at(outer[i]), b = at(outer[(i + 1) % n]);
             return Cross2(a, p, b) >= 0 ? Cross2(a, p, m) >= 0 && Cross2(p, b, m) >= 0 : Cross2(a, p, m) >= 0 || Cross2(p, b, m) >= 0;
         }
-        var best = Enumerable.Range(0, outer.Count)
-            .OrderBy(i => (at(outer[i]) - m).Length)
-            .Cast<int?>()
-            .FirstOrDefault(i => (at(outer[i!.Value]) - m).Length > 1e-12 && LocallyInside(i.Value) && Visible(at(outer[i.Value])));
-        if (best is not { } bestPos) return null;
+        var dist = new double[outer.Count];
+        for (int i = 0; i < dist.Length; i++) dist[i] = (at(outer[i]) - m).Length;
+        int bestPos = -1;
+        foreach (var i in OrderBy(dist))
+            if (dist[i] > 1e-12 && LocallyInside(i) && Visible(at(outer[i]))) { bestPos = i; break; }
+        if (bestPos < 0) return null;
 
-        var rotated = hole.Skip(hi).Concat(hole.Take(hi)).ToList();
-        var merged = new List<int>();
-        merged.AddRange(outer.Take(bestPos + 1));
+        var rotated = new List<int>(hole.Count);
+        for (int i = 0; i < hole.Count; i++) rotated.Add(hole[(hi + i) % hole.Count]);
+        var merged = new List<int>(outer.Count + hole.Count + 2);
+        for (int i = 0; i <= bestPos; i++) merged.Add(outer[i]);
         merged.AddRange(rotated);
         merged.Add(rotated[0]);
         merged.Add(outer[bestPos]);
-        merged.AddRange(outer.Skip(bestPos + 1));
+        for (int i = bestPos + 1; i < outer.Count; i++) merged.Add(outer[i]);
         return merged;
+    }
+
+    static List<int> Wound(int[] loop, bool reverse)
+    {
+        var o = new List<int>(loop);
+        if (reverse) o.Reverse();
+        return o;
     }
 
     /// <summary>Triangulate one planar face; triangles are vertex ids, CCW around <paramref name="normal"/>.</summary>
@@ -141,23 +205,28 @@ public static class Triangulator
     {
         if (outer.Length < 3) return [];
         var (u, v) = VecMath.PlaneBasis(normal);
-        var flat = new Dictionary<int, Vec2>();
-        Vec2 At(int id)
-        {
-            if (!flat.TryGetValue(id, out var p)) { p = VecMath.Project(points[id], u, v); flat[id] = p; }
-            return p;
-        }
+        var flat = new Flat(points, u, v);
 
-        var ring = Polygon2.SignedArea(outer.Select(At).ToArray()) < 0 ? outer.Reverse().ToList() : outer.ToList();
+        var ring = Wound(outer, Polygon2.SignedArea(flat.Of(outer)) < 0);
         // Holes wound clockwise, the leftmost first (as earcut); each bridge sees the ring and the holes still waiting.
-        var queue = (holes ?? []).Where(h => h.Length >= 3)
-            .Select(h => Polygon2.SignedArea(h.Select(At).ToArray()) > 0 ? h.Reverse().ToList() : h.ToList())
-            .OrderBy(h => h.Min(i => At(i).X)).ToList();
+        var wound = new List<List<int>>();
+        var left = new List<double>();
+        foreach (var h in holes ?? [])
+        {
+            if (h.Length < 3) continue;
+            var pts = flat.Of(h);
+            wound.Add(Wound(h, Polygon2.SignedArea(pts) > 0));
+            var min = pts[0].X;
+            for (int i = 1; i < pts.Length; i++) min = Math.Min(min, pts[i].X);
+            left.Add(min);
+        }
+        var queue = new List<List<int>>(wound.Count);
+        foreach (var i in OrderBy([.. left])) queue.Add(wound[i]);
         for (int k = 0; k < queue.Count; k++)
         {
-            var merged = BridgeHole(ring, queue[k], queue.Skip(k + 1).ToList(), At);
+            var merged = BridgeHole(ring, queue[k], queue.GetRange(k + 1, queue.Count - k - 1), flat);
             if (merged != null) ring = merged;
         }
-        return EarClip(ring, At, tol);
+        return EarClip(ring, flat, tol);
     }
 }

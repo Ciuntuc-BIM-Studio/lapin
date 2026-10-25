@@ -68,8 +68,25 @@ public static class VecMath
     /// </summary>
     public static Vec3 NewellNormal(IReadOnlyList<Vec3> pts)
     {
+        // Arrays and lists as spans: the browser's AOT build interprets interface calls on a struct list.
+        if (pts is Vec3[] a) return NewellNormal(new ReadOnlySpan<Vec3>(a));
+        if (pts is List<Vec3> l) return NewellNormal(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(l));
         double nx = 0, ny = 0, nz = 0;
         for (int i = 0, n = pts.Count; i < n; i++)
+        {
+            var p = pts[i];
+            var q = pts[(i + 1) % n];
+            nx += (p.Y - q.Y) * (p.Z + q.Z);
+            ny += (p.Z - q.Z) * (p.X + q.X);
+            nz += (p.X - q.X) * (p.Y + q.Y);
+        }
+        return new Vec3(nx / 2, ny / 2, nz / 2);
+    }
+
+    public static Vec3 NewellNormal(ReadOnlySpan<Vec3> pts)
+    {
+        double nx = 0, ny = 0, nz = 0;
+        for (int i = 0, n = pts.Length; i < n; i++)
         {
             var p = pts[i];
             var q = pts[(i + 1) % n];
@@ -101,8 +118,22 @@ public static class Polygon2
     /// <summary>Signed area; positive = counter-clockwise.</summary>
     public static double SignedArea(IReadOnlyList<Vec2> pts)
     {
+        if (pts is Vec2[] arr) return SignedArea(new ReadOnlySpan<Vec2>(arr));
+        if (pts is List<Vec2> l) return SignedArea(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(l));
         double a = 0;
         for (int i = 0, n = pts.Count; i < n; i++)
+        {
+            var p = pts[i];
+            var q = pts[(i + 1) % n];
+            a += p.X * q.Y - q.X * p.Y;
+        }
+        return a / 2;
+    }
+
+    public static double SignedArea(ReadOnlySpan<Vec2> pts)
+    {
+        double a = 0;
+        for (int i = 0, n = pts.Length; i < n; i++)
         {
             var p = pts[i];
             var q = pts[(i + 1) % n];
@@ -177,8 +208,23 @@ public static class Polygon2
     /// <summary>Even-odd point-in-polygon.</summary>
     public static bool Contains(IReadOnlyList<Vec2> poly, Vec2 p)
     {
+        if (poly is Vec2[] arr) return Contains(new ReadOnlySpan<Vec2>(arr), p);
+        if (poly is List<Vec2> l) return Contains(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(l), p);
         bool inside = false;
         for (int i = 0, j = poly.Count - 1; i < poly.Count; j = i++)
+        {
+            var a = poly[i];
+            var b = poly[j];
+            if ((a.Y > p.Y) != (b.Y > p.Y) && p.X < (b.X - a.X) * (p.Y - a.Y) / (b.Y - a.Y) + a.X)
+                inside = !inside;
+        }
+        return inside;
+    }
+
+    public static bool Contains(ReadOnlySpan<Vec2> poly, Vec2 p)
+    {
+        bool inside = false;
+        for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
         {
             var a = poly[i];
             var b = poly[j];

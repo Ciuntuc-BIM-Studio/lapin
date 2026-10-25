@@ -9,7 +9,8 @@ public static class SolidBuilder
     public static (List<Vec3> Vertices, int[] Remap) Weld(IReadOnlyList<Vec3> pts, double tol)
     {
         var cell = Math.Max(tol, 1e-12);
-        var buckets = new Dictionary<(long, long, long), List<int>>();
+        // A concrete key and comparer: the browser's AOT build compiles them, where a tuple key falls back to its interpreter.
+        var buckets = new Dictionary<Cell, List<int>>(CellComparer.Instance);
         var vertices = new List<Vec3>();
         var remap = new int[pts.Count];
         var tol2 = tol * tol;
@@ -23,20 +24,35 @@ public static class SolidBuilder
             for (long dj = -1; dj <= 1 && found < 0; dj++)
             for (long dk = -1; dk <= 1 && found < 0; dk++)
             {
-                if (!buckets.TryGetValue((ci + di, cj + dj, ck + dk), out var bucket)) continue;
-                foreach (var vi in bucket)
+                if (!buckets.TryGetValue(new Cell(ci + di, cj + dj, ck + dk), out var bucket)) continue;
+                for (int b = 0; b < bucket.Count; b++)
+                {
+                    var vi = bucket[b];
                     if (Vec3.DistanceSquared(vertices[vi], p) <= tol2) { found = vi; break; }
+                }
             }
             if (found < 0)
             {
                 found = vertices.Count;
                 vertices.Add(p);
-                var k = (ci, cj, ck);
+                var k = new Cell(ci, cj, ck);
                 if (buckets.TryGetValue(k, out var b)) b.Add(found); else buckets[k] = [found];
             }
             remap[n] = found;
         }
         return (vertices, remap);
+    }
+
+    readonly struct Cell(long i, long j, long k)
+    {
+        public readonly long I = i, J = j, K = k;
+    }
+
+    sealed class CellComparer : IEqualityComparer<Cell>
+    {
+        public static readonly CellComparer Instance = new();
+        public bool Equals(Cell a, Cell b) => a.I == b.I && a.J == b.J && a.K == b.K;
+        public int GetHashCode(Cell c) => unchecked((int)(c.I * 73856093 ^ c.J * 19349663 ^ c.K * 83492791) ^ (int)((c.I ^ c.J ^ c.K) >> 32));
     }
 
     static int[] CleanLoop(int[] loop, int[] remap)
@@ -62,24 +78,33 @@ public static class SolidBuilder
     {
         var (pool, remap) = Weld(vertices, tol);
         var outFaces = new List<Face>();
+        // Plain loops, not LINQ: the browser's AOT build runs these through its interpreter otherwise.
         foreach (var f in faces)
         {
             var outer = CleanLoop(f.Outer, remap);
             if (outer.Length < 3) continue;
-            var raw = VecMath.NewellNormal(outer.Select(i => pool[i]).ToArray());
+            var ring = new Vec3[outer.Length];
+            for (int i = 0; i < outer.Length; i++) ring[i] = pool[outer[i]];
+            var raw = VecMath.NewellNormal(ring);
             var area = raw.Length;
             if (area < Tolerance.Area) continue;
             var normal = raw * (1 / area);
-            var holes = (f.Holes ?? []).Select(h => CleanLoop(h, remap)).Where(h => h.Length >= 3).ToArray();
+            var holes = new List<int[]>();
+            if (f.Holes != null)
+                foreach (var h in f.Holes)
+                {
+                    var c = CleanLoop(h, remap);
+                    if (c.Length >= 3) holes.Add(c);
+                }
 
             // The caller's normal decides orientation: flip the winding to match it.
             if (f.Normal is { } want && Vec3.Dot(normal, want) < 0)
             {
                 normal = -normal;
-                outer = outer.Reverse().ToArray();
-                holes = holes.Select(h => h.Reverse().ToArray()).ToArray();
+                Array.Reverse(outer);
+                foreach (var h in holes) Array.Reverse(h);
             }
-            outFaces.Add(new Face(outer, holes, normal, f.Tag));
+            outFaces.Add(new Face(outer, [.. holes], normal, f.Tag));
         }
         return Compact(new Solid([.. pool], [.. outFaces], tag));
     }
@@ -87,18 +112,29 @@ public static class SolidBuilder
     /// <summary>Drop vertices no face uses, renumbering the loops.</summary>
     static Solid Compact(Solid s)
     {
-        var used = new Dictionary<int, int>();
+        var used = new int[s.Vertices.Length];
+        Array.Fill(used, -1);
         var verts = new List<Vec3>();
-        int Id(int v)
+        int[] Renumber(int[] loop)
         {
-            if (!used.TryGetValue(v, out var n)) { n = verts.Count; verts.Add(s.Vertices[v]); used[v] = n; }
-            return n;
+            var o = new int[loop.Length];
+            for (int i = 0; i < loop.Length; i++)
+            {
+                var v = loop[i];
+                if (used[v] < 0) { used[v] = verts.Count; verts.Add(s.Vertices[v]); }
+                o[i] = used[v];
+            }
+            return o;
         }
-        var faces = s.Faces.Select(f => f with
+        var faces = new Face[s.Faces.Length];
+        for (int i = 0; i < faces.Length; i++)
         {
-            Outer = f.Outer.Select(Id).ToArray(),
-            Holes = f.Holes.Select(h => h.Select(Id).ToArray()).ToArray(),
-        }).ToArray();
+            var f = s.Faces[i];
+            var outer = Renumber(f.Outer);
+            var holes = new int[f.Holes.Length][];
+            for (int h = 0; h < holes.Length; h++) holes[h] = Renumber(f.Holes[h]);
+            faces[i] = f with { Outer = outer, Holes = holes };
+        }
         return s with { Vertices = [.. verts], Faces = faces };
     }
 

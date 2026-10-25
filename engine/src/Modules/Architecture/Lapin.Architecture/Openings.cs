@@ -270,9 +270,21 @@ public static class Openings
         {
             var at = vertices.Count;
             vertices.AddRange(s.Vertices);
-            faces.AddRange(s.Faces.Select(f => f with { Outer = f.Outer.Select(i => i + at).ToArray(), Holes = f.Holes.Select(h => h.Select(i => i + at).ToArray()).ToArray() }));
+            foreach (var f in s.Faces)
+            {
+                var holes = new int[f.Holes.Length][];
+                for (int h = 0; h < holes.Length; h++) holes[h] = Shift(f.Holes[h], at);
+                faces.Add(f with { Outer = Shift(f.Outer, at), Holes = holes });
+            }
         }
         return new Solid([.. vertices], [.. faces], tag);
+    }
+
+    static int[] Shift(int[] loop, int by)
+    {
+        var o = new int[loop.Length];
+        for (int i = 0; i < loop.Length; i++) o[i] = loop[i] + by;
+        return o;
     }
 
     /// <summary>
