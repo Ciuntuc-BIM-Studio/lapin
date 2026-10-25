@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { query, useSession } from '../../engine/session';
-import { useCad } from './session';
+import { ROLES, roleLabel, useCad } from './session';
 
 interface LayerDto { name: string; color: string; visible: boolean; locked: boolean }
 
 export function CommandLine() {
-  const { history, buffer, step, command, osnap, ortho, polar, layer } = useCad();
+  const { history, buffer, step, command, osnap, ortho, polar, layer, role } = useCad();
   const nodes = useSession((s) => s.nodes);
   const [layers, setLayers] = useState<LayerDto[]>([]);
   useEffect(() => { void query<LayerDto[]>('drafting.layers').then((l) => l && setLayers(l)); }, [nodes]);
@@ -24,6 +24,10 @@ export function CommandLine() {
         <button type="button" className={`cad-toggle${polar ? ' on' : ''}`} title="Polar tracking every 45° (F10)" onClick={() => useCad.setState({ polar: !polar })}>POLAR</button>
         <select className="cad-layer" value={layer} title="The layer new shapes go on" onChange={(e) => useCad.setState({ layer: e.target.value })}>
           {(layers.length ? layers : [{ name: '0', color: '#18181b', visible: true, locked: false }]).map((l) => <option key={l.name} value={l.name}>{l.name}</option>)}
+        </select>
+        <select className={`cad-layer${role ? ' on' : ''}`} value={role} title="The role new shapes take: a profile, a path… (Studio finds them by it); construction lines are never printed" onChange={(e) => useCad.setState({ role: e.target.value })}>
+          <option value="">no role</option>
+          {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
         </select>
       </div>
     </div>

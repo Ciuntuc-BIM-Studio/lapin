@@ -30,7 +30,8 @@ public static class DraftCommands
             if (Drafts.Layers(ctx.Model).All(l => l.Name != layer)) throw new CommandException($"There is no layer „{layer}”.");
             if (Drafts.LayerOf(ctx.Model, layer).Locked) throw new CommandException($"The layer „{layer}” is locked.");
             var shapes = a["shapes"] is JsonArray arr ? arr.Select(ShapeArg).ToList() : [ShapeArg(a["shape"])];
-            var ids = shapes.Select(s => Drafts.Add(ctx, view.Id, layer, s).Id).ToList();
+            var role = Drafts.CheckRole(a["role"]);
+            var ids = shapes.Select(s => Drafts.Add(ctx, view.Id, layer, s, role).Id).ToList();
             return new JsonObject { ["ids"] = new JsonArray(ids.Select(x => (JsonNode)x).ToArray()) };
         });
 
@@ -48,6 +49,7 @@ public static class DraftCommands
                     attrs["layer"] = layer;
                 }
                 if (a.ContainsKey("color")) { if ((string?)a["color"] is { } c) attrs["color"] = c; else attrs.Remove("color"); }
+                if (a.ContainsKey("role")) { if (Drafts.CheckRole(a["role"]) is { } role) attrs["role"] = role; else attrs.Remove("role"); }
                 ctx.Replace(e.With(attrs: attrs));
             }
             return null;

@@ -12,6 +12,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import type { Vec2 } from '../../platform/module';
 import { fromJson, toJson, type Shape } from '../../viewport/cad/shapes';
+import { ROLES, roleLabel } from '../../viewport/cad/session';
 
 interface Layer { name: string; color: string; weight: number; lineType: string; visible: boolean; locked: boolean }
 
@@ -142,6 +143,11 @@ function Drafted({ node }: { node: NodeDto }) {
           ? <button type="button" className="link" onClick={() => void execute('drafting.updateDraft', { id: node.id, color: null })}>by layer</button>
           : <span className="muted small">by layer</span>}
       </dd>
+      <dt title="What it is for: Studio's operations find their profile, path, rail or axis by it; construction lines are never printed">Role</dt>
+      <dd><select value={typeof node.props.role === 'string' ? node.props.role : ''} onChange={(e) => void execute('drafting.updateDraft', { id: node.id, role: e.target.value || null })}>
+        <option value="">none</option>
+        {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
+      </select></dd>
       {layer && <Row label="Line type" value={layer.lineType} />}
       {layer && <Row label="Pen" value={`${layer.weight} mm`} />}
       {hatch ? <HatchFields hatch={hatch} /> : shape ? <ShapeFields node={node} shape={shape} /> : null}

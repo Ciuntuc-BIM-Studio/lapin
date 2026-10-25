@@ -36,6 +36,8 @@ public sealed record CadLayer(string Name, string Color = "#18181b", double Weig
 public static class Drafts
 {
     public const string Predefined = "DRAFT";
+    /// <summary>The mark layer of construction lines: drawn on screen, left out of sheets, PDF and DXF.</summary>
+    public const string ConstructionLayer = Views.ConstructionLayer;
 
     public static IReadOnlyList<CadLayer> Layers(IModelView m)
     {
@@ -66,22 +68,48 @@ public static class Drafts
         return e;
     }
 
-    public static Entity Add(ICommandContext ctx, string viewId, string? layer, Shape shape)
+    /// <summary>
+    /// What a drafted shape is for, so Studio's operations find their parts:
+    /// construction lines (draft: shown, never printed), a profile, a hole, a
+    /// path, a second rail, an axis, the profile a sweep ends with.
+    /// </summary>
+    public static readonly string[] Roles = ["draft", "profile", "hole", "path", "rail", "axis", "endProfile"];
+
+    public static string? CheckRole(JsonNode? role) => (string?)role switch
+    {
+        null or "" => null,
+        { } r when Roles.Contains(r) => r,
+        { } r => throw new CommandException($"„{r}” is not a role ({string.Join(", ", Roles)})."),
+    };
+
+    public static Entity Add(ICommandContext ctx, string viewId, string? layer, Shape shape, string? role = null)
     {
         var attrs = new JsonObject { ["viewId"] = viewId, ["layer"] = layer ?? "0", ["shape"] = shape.ToJson() };
-        var e = new Entity(ctx.NewId(), IfcClass.Annotation, Name(shape), attrs, Predefined);
+        if (role != null) attrs["role"] = role;
+        var e = new Entity(ctx.NewId(), IfcClass.Annotation, UniqueName(ctx.Model, viewId, role != null && role != "draft" ? Title(role) : Name(shape)), attrs, Predefined);
         ctx.Add(e);
         return e;
     }
 
+    /// <summary>A shape's outline changed: its name stays (a name given, or the unique one it was born with).</summary>
     public static void Set(ICommandContext ctx, Entity e, Shape shape)
     {
         var attrs = e.CloneAttrs();
         attrs["shape"] = shape.ToJson();
-        ctx.Replace(e.With(name: Name(shape), attrs: attrs));
+        ctx.Replace(e.With(attrs: attrs));
     }
 
     static string Name(Shape s) => s switch { Line => "Line", Polyline { Closed: true } => "Polygon", Polyline => "Polyline", Circle => "Circle", Arc => "Arc", _ => "Shape" };
+    static string Title(string role) => role switch { "endProfile" => "End profile", _ => char.ToUpperInvariant(role[0]) + role[1..] };
+
+    /// <summary>A name no other drafted shape on the view has: the word and the next number (Line 12, Profile 3).</summary>
+    public static string UniqueName(IModelView m, string viewId, string word)
+    {
+        var taken = On(m, viewId).Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var next = 1 + taken.Select(n => n.StartsWith(word + " ", StringComparison.OrdinalIgnoreCase) && int.TryParse(n[(word.Length + 1)..], out var k) ? k : 0).DefaultIfEmpty(0).Max();
+        while (taken.Contains($"{word} {next}")) next++;
+        return $"{word} {next}";
+    }
 
     /// <summary>What drafting edits cut against on a view: its other shapes and the lines of its drawing.</summary>
     public static List<Shape> Boundaries(ICommandContext ctx, Entity view, string exceptId)
@@ -143,7 +171,11 @@ public static class Drafts
                 continue;
             }
             if (ShapeOf(e) is not { } shape) continue;
-            foreach (var line in Geo.Polylines(shape)) mk.Polyline(line, false, layer.Name, layer.Weight, color, layer.Dash);
+            // Construction lines: thin, dashed, grey, on a layer of their own that sheets and exports leave out.
+            var construction = e.Str("role") == "draft";
+            foreach (var line in Geo.Polylines(shape))
+                if (construction) mk.Polyline(line, false, ConstructionLayer, Pens.Default.Hatch, "#8f98a3", [2, 1.5]);
+                else mk.Polyline(line, false, layer.Name, layer.Weight, color, layer.Dash);
             var k = Geo.Keys(shape);
             mk.Snaps.AddRange([.. k.Endpoints, .. k.Midpoints, .. k.Centers, .. k.Quadrants]);
             mk.Shapes.Add(shape.ToJson());

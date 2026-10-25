@@ -54,6 +54,8 @@ interface CadState {
   ortho: boolean;
   polar: boolean;
   layer: string;
+  /** The role new shapes take (profile, path…; empty: none). */
+  role: string;
   host: CadHost | null;
   /** Remembered values: offset distance, fillet radius, chamfer distances, hatch pattern and scale. */
   offset: number;
@@ -65,7 +67,7 @@ interface CadState {
 
 export const useCad = create<CadState>(() => ({
   buffer: '', history: [], command: null, step: null, last: null, cursor: null, lastPoint: null,
-  osnap: true, ortho: false, polar: true, layer: '0', host: null,
+  osnap: true, ortho: false, polar: true, layer: '0', role: '', host: null,
   offset: 0.5, radius: 0, chamfer: 0.1, pattern: 'LINES45', hatchScale: 1,
 }));
 
@@ -96,7 +98,8 @@ function host(): CadHost | null {
 async function draw(shapes: Shape[]): Promise<string[]> {
   const h = host();
   if (!h || !shapes.length) return [];
-  const r = await execute('drafting.draw', { viewId: h.viewId, layer: useCad.getState().layer, shapes: shapes.map(toJson) }) as { ids?: string[] } | null;
+  const { layer, role } = useCad.getState();
+  const r = await execute('drafting.draw', { viewId: h.viewId, layer, shapes: shapes.map(toJson), ...(role ? { role } : {}) }) as { ids?: string[] } | null;
   return r?.ids ?? [];
 }
 
@@ -318,6 +321,10 @@ function layer(): Step {
     },
   };
 }
+
+/** What a drafted shape is for (Studio's operations find their parts by it); draft: construction lines, never printed. */
+export const ROLES = ['draft', 'profile', 'hole', 'path', 'rail', 'axis', 'endProfile'] as const;
+export const roleLabel = (r: string) => ({ draft: 'construction', endProfile: 'end profile' } as Record<string, string>)[r] ?? r;
 
 export type Starter = () => Step | null | void | Promise<Step | null | void>;
 export const COMMANDS: { names: string[]; label: string; start: Starter }[] = [

@@ -123,7 +123,11 @@ public static class Views
     /// <summary>A view rendered: its pens (view coordinates, m; widths paper mm), annotations, bounds and scale, or why it cannot be drawn.</summary>
     public sealed record Rendered(List<Pen> Pens, List<ViewMark> Marks, (Vec2 Min, Vec2 Max)? Bounds, double Scale, string Kind, string? Problem, List<string> RangeProblems, List<string>? LineworkOrphans = null);
 
-    public static Rendered Render(IQueryContext q, Entity view)
+    /// <summary>The mark layer of construction lines (drafted shapes whose role is draft): on screen, never printed.</summary>
+    public const string ConstructionLayer = "CONSTRUCTION";
+
+    /// <summary>A view's drawing with its annotations; for print (sheets, PDF, DXF) construction lines are left out.</summary>
+    public static Rendered Render(IQueryContext q, Entity view, bool print = false)
     {
         var m = q.Model;
         var scale = view.NumOrNull("scale") ?? 100;
@@ -171,7 +175,7 @@ public static class Views
             }
             foreach (var (la, lb, layer, width, color, dash) in mk.Lines)
             {
-                if (layer == "PICK") continue;
+                if (layer == "PICK" || (print && layer == ConstructionLayer)) continue;
                 var key = $"{layer}:{color}:{width}:{(dash == null ? "" : string.Join(" ", dash))}";
                 if (!markPens.TryGetValue(key, out var pen)) markPens[key] = pen = new Pen(layer, color, width, null, dash);
                 pen.Segments.Add((la, lb));

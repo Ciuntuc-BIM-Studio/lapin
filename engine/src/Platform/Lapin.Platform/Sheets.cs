@@ -101,7 +101,7 @@ public static class Sheets
                 continue;
             }
             if (Views.Find(q.Model, vp.ViewId) is not { } view) continue;
-            var r = Views.Render(q, view);
+            var r = Views.Render(q, view, print: true);
             var k = 1000 / r.Scale;
             var (w, h) = vp.Width > 0 && vp.Height > 0 ? (vp.Width, vp.Height) : r.Bounds is { } b ? Fit(b, r.Scale) : (120, 80);
             var c = vp.Center ?? (r.Bounds is { } bb ? (bb.Min + bb.Max) * 0.5 : new Vec2(0, 0));

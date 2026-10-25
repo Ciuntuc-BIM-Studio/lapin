@@ -38,6 +38,13 @@ public static class Solids
         }
     }
 
+    /// <summary>Rings of corresponding points turned all together, so their normals run with <paramref name="dir"/> (the first one decides).</summary>
+    static List<List<IReadOnlyList<Vec3>>> OrientAll(List<List<Vec3>> rings, Vec3 dir)
+    {
+        var flip = Vec3.Dot(VecMath.NewellNormal(rings[0]), dir) < 0;
+        return rings.Select(r => new List<IReadOnlyList<Vec3>> { flip ? r.AsEnumerable().Reverse().ToList() : r }).ToList();
+    }
+
     /// <summary>A ring oriented so its normal runs with <paramref name="dir"/> (holes against it).</summary>
     static IReadOnlyList<Vec3> Orient(IReadOnlyList<Vec3> ring, Vec3 dir, bool hole)
     {
@@ -165,6 +172,176 @@ public static class Solids
     /// <summary>The profile on the path, its middle on it, mitred at corners (closed paths make a ring).</summary>
     public static Solid? Sweep(IReadOnlyList<Vec2> outer, IReadOnlyList<IReadOnlyList<Vec2>> holes, IReadOnlyList<Vec3> path, Vec3 up) =>
         SweepPlaced(outer, holes, path, up).Solid;
+
+    // ------------------------------------------------------------ profiles that change: morphs, rails, lofts
+
+    /// <summary>
+    /// Closed rings as corresponding points: each counter-clockwise, from where
+    /// the ray east of its middle meets it, sampled at the same fractions of
+    /// its length (every ring's corners, and an even fill), so a square meets a
+    /// circle corner to corner without losing its corners.
+    /// </summary>
+    public static List<List<Vec2>> Matched(IReadOnlyList<IReadOnlyList<Vec2>> rings, int fill = 48)
+    {
+        var norm = rings.Select(r => Polygon2.SignedArea(r) < 0 ? r.Reverse().ToList() : r.ToList()).ToList();
+        var starts = new List<double>();
+        var lengths = new List<double[]>();
+        var fractions = new SortedSet<double>(Enumerable.Range(0, fill).Select(i => (double)i / fill));
+        foreach (var r in norm)
+        {
+            var cum = new double[r.Count + 1];
+            for (var i = 0; i < r.Count; i++) cum[i + 1] = cum[i] + (r[(i + 1) % r.Count] - r[i]).Length;
+            var total = cum[^1];
+            var mid = new Vec2((r.Min(p => p.X) + r.Max(p => p.X)) / 2, (r.Min(p => p.Y) + r.Max(p => p.Y)) / 2);
+            // Where the ray east of the middle crosses the ring (the farthest crossing, for odd shapes).
+            var s0 = 0.0; var best = double.NegativeInfinity;
+            for (var i = 0; i < r.Count; i++)
+            {
+                var (a, b) = (r[i], r[(i + 1) % r.Count]);
+                if ((a.Y - mid.Y) * (b.Y - mid.Y) > 0 || Math.Abs(b.Y - a.Y) < 1e-12) continue;
+                var t = (mid.Y - a.Y) / (b.Y - a.Y);
+                var x = a.X + (b.X - a.X) * t;
+                if (x > mid.X && x > best) { best = x; s0 = cum[i] + (b - a).Length * t; }
+            }
+            starts.Add(s0);
+            lengths.Add(cum);
+            for (var i = 0; i < r.Count; i++) fractions.Add((((cum[i] - s0) % total) + total) % total / total);
+        }
+        var fs = new List<double>();
+        foreach (var f in fractions) if (fs.Count == 0 || f - fs[^1] > 1e-6) fs.Add(f);
+        if (fs.Count > 1 && 1 - fs[^1] < 1e-6) fs.RemoveAt(fs.Count - 1);
+        var o = new List<List<Vec2>>();
+        for (var k = 0; k < norm.Count; k++)
+        {
+            var (r, cum, s0) = (norm[k], lengths[k], starts[k]);
+            var total = cum[^1];
+            o.Add(fs.Select(f =>
+            {
+                var at = (s0 + f * total) % total;
+                var i = Array.FindLastIndex(cum, c => c <= at + 1e-12);
+                i = Math.Clamp(i, 0, r.Count - 1);
+                var seg = cum[i + 1] - cum[i];
+                var t = seg < 1e-12 ? 0 : (at - cum[i]) / seg;
+                var (a, b) = (r[i], r[(i + 1) % r.Count]);
+                return a + (b - a) * t;
+            }).ToList());
+        }
+        return o;
+    }
+
+    /// <summary>Points at fractions of a polyline's length (its own vertices and the other's, so both rails keep their corners).</summary>
+    static List<double> RailFractions(params IReadOnlyList<Vec3>[] rails)
+    {
+        var fs = new SortedSet<double> { 0, 1 };
+        foreach (var r in rails)
+        {
+            var total = 0.0; var cum = new List<double> { 0 };
+            for (var i = 0; i + 1 < r.Count; i++) { total += (r[i + 1] - r[i]).Length; cum.Add(total); }
+            if (total > 0) foreach (var c in cum) fs.Add(c / total);
+        }
+        var o = new List<double>();
+        foreach (var f in fs) if (o.Count == 0 || f - o[^1] > 1e-6) o.Add(f);
+        return o;
+    }
+
+    static Vec3 At(IReadOnlyList<Vec3> r, double f)
+    {
+        var total = 0.0;
+        for (var i = 0; i + 1 < r.Count; i++) total += (r[i + 1] - r[i]).Length;
+        var at = f * total;
+        for (var i = 0; i + 1 < r.Count; i++)
+        {
+            var seg = (r[i + 1] - r[i]).Length;
+            if (at <= seg + 1e-12) return r[i] + (r[i + 1] - r[i]) * (seg < 1e-12 ? 0 : Math.Min(1, at / seg));
+            at -= seg;
+        }
+        return r[^1];
+    }
+
+    /// <summary>
+    /// A sweep whose profile becomes another on the way: the start profile's
+    /// box bottom-middle on the path at its start, the end profile's at its
+    /// end, the points matched and blended by the distance along the path;
+    /// mitred at corners. Holes are not carried (their counts rarely agree).
+    /// </summary>
+    public static SweepResult SweepMorph(IReadOnlyList<Vec2> start, IReadOnlyList<Vec2> end, IReadOnlyList<Vec3> path, Vec3 up)
+    {
+        if (start.Count < 3 || end.Count < 3) return new(null, "Both profiles need three points at least.");
+        var pts = new List<Vec3>();
+        foreach (var p in path) if (pts.Count == 0 || (p - pts[^1]).Length > 1e-9) pts.Add(p);
+        if (pts.Count < 2) return new(null, "The path needs two points at least.");
+        static List<Vec2> Local(IReadOnlyList<Vec2> r) { var (cx, minY) = ((r.Min(p => p.X) + r.Max(p => p.X)) / 2, r.Min(p => p.Y)); return r.Select(p => new Vec2(p.X - cx, p.Y - minY)).ToList(); }
+        var m = Matched([Local(start), Local(end)]);
+        var u = up.Normalized();
+        var n = pts.Count;
+        var tangents = Enumerable.Range(0, n - 1).Select(i => (pts[i + 1] - pts[i]).Normalized()).ToList();
+        Vec3 Right(Vec3 t) => Vec3.Cross(t, up).Normalized();
+        var cum = new double[n];
+        for (var i = 1; i < n; i++) cum[i] = cum[i - 1] + (pts[i] - pts[i - 1]).Length;
+        var stations = new List<List<IReadOnlyList<Vec3>>>();
+        for (var i = 0; i < n; i++)
+        {
+            Vec3 side;
+            if (i == 0) side = Right(tangents[0]);
+            else if (i == n - 1) side = Right(tangents[^1]);
+            else { var (s1, s2) = (Right(tangents[i - 1]), Right(tangents[i])); var bis = (s1 + s2).Normalized(); side = bis * (1 / Math.Max(Vec3.Dot(bis, s1), 0.2)); }
+            var t = cum[^1] < 1e-12 ? 0 : cum[i] / cum[^1];
+            var dir = i < n - 1 ? tangents[i] : tangents[^1];
+            stations.Add([m[0].Zip(m[1], (a, b) => a + (b - a) * t).Select(q => pts[i] + side * q.X + u * q.Y).ToList()]);
+        }
+        var solid = Loft(OrientAll(stations.Select(st => st[0].ToList()).ToList(), tangents[0]), false, tangents[0], tangents[^1]);
+        return new(solid, solid == null ? "The swept solid could not be built." : null);
+    }
+
+    /// <summary>
+    /// A sweep between two rails: the profile's left edge on the first rail,
+    /// its right edge on the second, stretched across to meet both (its height
+    /// kept), the rails taken at the same fractions of their lengths.
+    /// </summary>
+    public static SweepResult SweepRails(IReadOnlyList<Vec2> outer, IReadOnlyList<IReadOnlyList<Vec2>> holes, IReadOnlyList<Vec3> rail1, IReadOnlyList<Vec3> rail2, Vec3 up)
+    {
+        if (outer.Count < 3) return new(null, "The profile needs three points at least.");
+        if (rail1.Count < 2 || rail2.Count < 2) return new(null, "Each rail needs two points at least.");
+        var u = up.Normalized();
+        var (minX, maxX, minY) = (outer.Min(p => p.X), outer.Max(p => p.X), outer.Min(p => p.Y));
+        var pw = maxX - minX;
+        if (pw < 1e-9) return new(null, "The profile has no width to stretch.");
+        var fs = RailFractions(rail1, rail2);
+        var stations = new List<List<IReadOnlyList<Vec3>>>();
+        Vec3 first = default, last = default;
+        for (var k = 0; k < fs.Count; k++)
+        {
+            var (p, q) = (At(rail1, fs[k]), At(rail2, fs[k]));
+            var across = q - p;
+            across -= u * Vec3.Dot(across, u);
+            var width = across.Length;
+            if (width < 1e-6) return new(null, "The rails meet: the profile would have no width there.");
+            var ex = across * (1 / width);
+            var dir = Vec3.Cross(u, ex).Normalized();
+            if (k == 0) first = dir;
+            last = dir;
+            Vec3 W(Vec2 v) => p + ex * ((v.X - minX) / pw * width) + u * (v.Y - minY);
+            var rings = new List<IReadOnlyList<Vec3>> { Orient(outer.Select(W).ToList(), dir, false) };
+            rings.AddRange(holes.Select(h => Orient(h.Select(W).ToList(), dir, true)));
+            stations.Add(rings);
+        }
+        var solid = Loft(stations, false, first, last);
+        return new(solid, solid == null ? "The solid between the rails could not be built." : null);
+    }
+
+    /// <summary>A loft through profiles in space (each on its own plane), their points matched; capped at both ends.</summary>
+    public static SweepResult LoftThrough(IReadOnlyList<IReadOnlyList<Vec2>> profiles2D, IReadOnlyList<Func<Vec2, Vec3>> world)
+    {
+        if (profiles2D.Count < 2) return new(null, "A loft needs two profiles at least.");
+        var m = Matched(profiles2D);
+        var rings = m.Select((r, i) => r.Select(world[i]).ToList()).ToList();
+        Vec3 Mid(List<Vec3> r) => new(r.Average(p => p.X), r.Average(p => p.Y), r.Average(p => p.Z));
+        var mids = rings.Select(Mid).ToList();
+        for (var i = 0; i + 1 < mids.Count; i++)
+            if ((mids[i + 1] - mids[i]).Length < 1e-6) return new(null, "Two profiles of the loft lie in the same place: draw them on different views or levels.");
+        var solid = Loft(OrientAll(rings, (mids[1] - mids[0]).Normalized()), false, (mids[1] - mids[0]).Normalized(), (mids[^1] - mids[^2]).Normalized());
+        return new(solid, solid == null ? "The loft could not be built." : null);
+    }
 
     /// <summary>The profile (3D: its outline and holes) turned about an axis by an angle (degrees; 360 closes it).</summary>
     public static Solid? Revolve(IReadOnlyList<Vec3> outer, IReadOnlyList<IReadOnlyList<Vec3>> holes, Vec3 axisAt, Vec3 axisDir, double angleDeg)

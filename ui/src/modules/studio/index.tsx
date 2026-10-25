@@ -5,7 +5,7 @@
  * command-line commands.
  */
 
-import { Box, Eye, PenTool, RefreshCcw, SquareMinus, SquarePlus, SquareSplitHorizontal, Unlink, Waypoints } from 'lucide-react';
+import { Box, Eye, Layers2, PenTool, RefreshCcw, SquareMinus, SquarePlus, SquareSplitHorizontal, Unlink, Waypoints } from 'lucide-react';
 import type { Grip, LapinModule, RefLine, ToolDef } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { gripsOf } from '../../platform/modules';
@@ -40,20 +40,53 @@ function extrude(): Step {
  * SWEEP: pick the path, then the closed profile that travels along it. Where
  * the profile sits on the path is a keyword (Centre, Right, Left, Outside,
  * Inside: outside a closed outline for a pavement), the gap from the path a
- * typed value. Corners are mitred; a closed path makes one ring.
+ * typed value; End picks a profile it becomes on the way, Rail a second rail
+ * it stretches to. Corners are mitred; a closed path makes one ring. With
+ * shapes selected that carry roles (path, profile, end profile, rail), it runs
+ * on them at once.
  */
 const PLACES: Record<string, string> = { C: 'centre', R: 'right', L: 'left', O: 'outside', I: 'inside' };
-function sweep(): Step {
+function byRole(): Record<string, string> {
+  const nodes = useSession.getState().nodes;
+  const out: Record<string, string> = {};
+  for (const id of useUi.getState().selected) { const r = nodes.get(id)?.props.role; if (typeof r === 'string' && !out[r]) out[r] = id; }
+  return out;
+}
+function sweep(): Step | null | Promise<null> {
+  const roles = byRole();
+  if (roles.path && roles.profile) {
+    return execute('studio.sweep', { profileId: roles.profile, pathId: roles.path, ...(roles.endProfile ? { endProfileId: roles.endProfile } : {}), ...(roles.rail ? { railId: roles.rail } : {}) })
+      .then((r) => { if (r) cadLog('Swept the selected profile along the selected path.'); return null; });
+  }
   let place = 'centre';
   let gap = 0;
+  let endId: string | null = null;
+  let railId: string | null = null;
+  const run = async (path: { id: string }, profile: { id: string }) => {
+    await execute('studio.sweep', { profileId: profile.id, pathId: path.id, place, placeOffset: gap, ...(endId ? { endProfileId: endId } : {}), ...(railId ? { railId } : {}) });
+    return null;
+  };
   const pickProfile = (path: { id: string }): Step => ({
-    prompt: `Pick the closed profile [Centre/Right/Left/Outside/Inside: now ${place}; type a gap from the path: now ${gap} m]`, want: 'pick',
-    keywords: Object.fromEntries(Object.entries(PLACES).map(([k, v]) => [k, () => { place = v; return pickProfile(path); }])),
+    prompt: `Pick the closed profile [Centre/Right/Left/Outside/Inside: ${place}; gap ${gap} m; End profile${endId ? ' ✓' : ''}; Rail${railId ? ' ✓' : ''}]`, want: 'pick',
+    keywords: {
+      ...Object.fromEntries(Object.entries(PLACES).map(([k, v]) => [k, () => { place = v; return pickProfile(path); }])),
+      E: () => ({ prompt: 'Pick the profile it ends with', want: 'pick', pick: (h) => { endId = h.id; railId = null; return pickProfile(path); } }),
+      RA: () => ({ prompt: 'Pick the second rail', want: 'pick', pick: (h) => { railId = h.id; endId = null; return pickProfile(path); } }),
+    },
     value: (v) => { gap = v; return pickProfile(path); },
-    pick: async (profile) => { await execute('studio.sweep', { profileId: profile.id, pathId: path.id, place, placeOffset: gap }); return null; },
+    pick: (profile) => run(path, profile),
   });
   return { prompt: 'Pick the path (a line, polyline, arc or circle)', want: 'pick', pick: (path) => pickProfile(path) };
 }
+
+/** LOFT: through the closed shapes selected, in the order they were selected (each on its own view: a plan of another level, a section further on). */
+function loft(): null | Promise<null> {
+  const nodes = useSession.getState().nodes;
+  const ids = useUi.getState().selected.filter((id) => nodes.get(id)?.props.predefinedType === 'DRAFT');
+  if (ids.length < 2) { cadLog('Select two closed shapes at least, one on each view (a plan of each level, or sections), in order; then LOFT.'); return null; }
+  return execute('studio.loft', { profileId: ids[0], profileIds: ids }).then((r) => { if (r) cadLog(`Lofted through ${ids.length} profiles.`); return null; });
+}
+registerCommand({ names: ['LOFT', 'LO'], label: 'Loft', start: loft });
 
 /** REVOLVE: pick the closed profile, then the axis line, then the angle (Enter: all the way round). */
 function revolve(): Step {
@@ -115,7 +148,7 @@ const studio: LapinModule = {
   tabs: [{
     id: 'studio', label: 'Studio', order: 50,
     groups: [
-      { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
+      { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), cmd('loft', 'Loft', Layers2, 'LOFT'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
       {
         label: 'Boolean',
         tools: [

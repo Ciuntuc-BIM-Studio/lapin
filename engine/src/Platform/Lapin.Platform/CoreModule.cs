@@ -74,6 +74,10 @@ public sealed class CoreModule : ILapinModule
             var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("Nothing to rename.");
             var name = ((string?)a["name"])?.Trim();
             if (string.IsNullOrEmpty(name)) throw new CommandException("A name cannot be empty.");
+            // A drafted shape's name is unique on its view (Studio finds its profiles and paths by it).
+            if (e.PredefinedType == "DRAFT" && e.Str("viewId") is { } view
+                && ctx.Model.OfClass(e.Class).Any(x => x.Id != e.Id && x.PredefinedType == "DRAFT" && x.Str("viewId") == view && string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)))
+                throw new CommandException($"Another shape on this view is called „{name}”.");
             ctx.Replace(e.With(name: name));
             return null;
         });

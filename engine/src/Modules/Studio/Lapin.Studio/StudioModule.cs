@@ -54,7 +54,7 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         ["ROOF"] = IfcClass.Roof, ["FOOTING"] = IfcClass.Footing,
     };
 
-    public static readonly string[] Operations = ["extrude", "sweep", "revolve"];
+    public static readonly string[] Operations = ["extrude", "sweep", "revolve", "loft"];
 
     public void Register(IModuleRegistry r)
     {
@@ -82,6 +82,7 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         r.Command("extrude", "Extrude", (ctx, a) => Create(ctx, a, "extrude"));
         r.Command("sweep", "Sweep", (ctx, a) => Create(ctx, a, "sweep"));
         r.Command("revolve", "Revolve", (ctx, a) => Create(ctx, a, "revolve"));
+        r.Command("loft", "Loft", (ctx, a) => Create(ctx, a, "loft"));
 
         // A solid's class (and its predefined type) changed: written again under the new class, same id, same sketch, same type and booleans.
         r.Command("setClass", "Change class", (ctx, a) =>
@@ -216,8 +217,18 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         return known != null ? (known, null) : (IfcClass.BuildingElementProxy, cls);
     }
 
+    /// <summary>Every drafted shape a solid uses as a profile: its own, the one it ends with, a loft's.</summary>
     static HashSet<string> ProfileIds(IModelView m) =>
-        Classes.SelectMany(m.OfClass).Select(e => e.Str("profile")).OfType<string>().ToHashSet();
+        Classes.SelectMany(m.OfClass).SelectMany(e => new[] { e.Str("profile"), e.Str("endProfile") }
+            .Concat((e.Attrs["profiles"] as JsonArray)?.Select(x => (string?)x) ?? [])).OfType<string>().ToHashSet();
+
+    static Entity ClosedDraft(IModelView m, string? id, string what)
+    {
+        var d = Drafts.Require(m, id, editable: false);
+        if (Sketches.Loop(Drafts.ShapeOf(d)) == null) throw new CommandException($"The {what} must be a closed polyline or a circle.");
+        if (ProfileIds(m).Contains(d.Id)) throw new CommandException($"That outline is a solid's profile already.");
+        return d;
+    }
 
     static JsonNode? Create(ICommandContext ctx, JsonObject a, string op)
     {
@@ -245,12 +256,41 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
                 if (Drafts.ShapeOf(path) is not (Line or Polyline or Arc or Circle)) throw new CommandException("A path is a line, a polyline, an arc or a circle.");
                 if (path.Str("viewId") != profile.Str("viewId")) throw new CommandException("The path is drawn on the profile's view.");
                 attrs["guide"] = path.Id;
+                // A profile it ends with (the profile becomes it on the way), or a second rail it stretches to.
+                if ((string?)a["endProfileId"] is { } endId)
+                {
+                    var end = ClosedDraft(ctx.Model, endId, "end profile");
+                    if (end.Id == profile.Id) throw new CommandException("The end profile is another outline than the start one.");
+                    if (end.Str("viewId") != profile.Str("viewId")) throw new CommandException("The end profile is drawn on the profile's view.");
+                    attrs["endProfile"] = end.Id;
+                }
+                if ((string?)a["railId"] is { } railId)
+                {
+                    var rail = Drafts.Require(ctx.Model, railId, editable: false);
+                    if (Drafts.ShapeOf(rail) is not (Line or Polyline or Arc)) throw new CommandException("A rail is a line, a polyline or an arc.");
+                    if (rail.Id == path.Id) throw new CommandException("The second rail is another line than the path.");
+                    if (rail.Str("viewId") != profile.Str("viewId")) throw new CommandException("The rail is drawn on the profile's view.");
+                    attrs["rail"] = rail.Id;
+                }
+                if (attrs["endProfile"] != null && attrs["rail"] != null) throw new CommandException("A sweep ends with another profile or follows a second rail, not both.");
                 if ((string?)a["place"] is { } place)
                 {
                     if (!Solids.Places.Contains(place)) throw new CommandException($"„{place}” is not a place on the path ({string.Join(", ", Solids.Places)}).");
                     attrs["place"] = place;
                 }
                 if (Json.Number(a["placeOffset"]) is { } gap) attrs["placeOffset"] = gap;
+                break;
+            }
+            case "loft":
+            {
+                // The profiles in order, each on its own view (a plan of another level, a section further on).
+                var ids = (a["profileIds"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList() ?? [];
+                if (ids.Count < 2) throw new CommandException("A loft needs two profiles at least.");
+                if (ids[0] != profile.Id) ids.Insert(0, profile.Id);
+                var all = ids.Select((id, i) => i == 0 ? profile : ClosedDraft(ctx.Model, id, "profile")).ToList();
+                if (all.Select(x => x.Id).Distinct().Count() != all.Count) throw new CommandException("A profile comes once in a loft.");
+                foreach (var d in all) if (Views.Find(ctx.Model, d.Str("viewId") ?? "") is not { } v || Sketches.PlaneOf(ctx.Model, v) == null) throw new CommandException("Each profile of a loft is drawn on a plan or a section.");
+                attrs["profiles"] = new JsonArray(all.Select(x => (JsonNode)x.Id).ToArray());
                 break;
             }
             case "revolve":
@@ -295,9 +335,37 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
             {
                 if (m.Get(e.Str("guide") ?? "") is not { } g || Drafts.ShapeOf(g) is not { } gs) return Fail("The path is missing: draw it again to rebuild.");
                 var path = Geo.Polylines(gs, Math.PI / 24)[0].Select(p => plane.World(p) + shift).ToList();
-                var swept = Solids.SweepPlaced(outer2, holes2, path, plane.Normal, e.Str("place") ?? "centre", e.Num("placeOffset"));
+                Solids.SweepResult swept;
+                if (e.Str("endProfile") is { } endId)
+                {
+                    if (m.Get(endId) is not { } endDraft || Sketches.Loop(Drafts.ShapeOf(endDraft)) is not { } endLoop) return Fail("The end profile is missing or no longer closed: draw it again to rebuild.");
+                    swept = Solids.SweepMorph(outer2, endLoop, path, plane.Normal);
+                }
+                else if (e.Str("rail") is { } railId)
+                {
+                    if (m.Get(railId) is not { } railDraft || Drafts.ShapeOf(railDraft) is not { } rs) return Fail("The second rail is missing: draw it again to rebuild.");
+                    var rail = Geo.Polylines(rs, Math.PI / 24)[0].Select(p => plane.World(p) + shift).ToList();
+                    swept = Solids.SweepRails(outer2, holes2, path, rail, plane.Normal);
+                }
+                else swept = Solids.SweepPlaced(outer2, holes2, path, plane.Normal, e.Str("place") ?? "centre", e.Num("placeOffset"));
                 if (swept.Problem != null) return Fail(swept.Problem);
                 solid = swept.Solid;
+                break;
+            }
+            case "loft":
+            {
+                var loops = new List<IReadOnlyList<Vec2>>();
+                var worlds = new List<Func<Vec2, Vec3>>();
+                foreach (var id in (e.Attrs["profiles"] as JsonArray)?.Select(x => (string?)x).OfType<string>() ?? [])
+                {
+                    if (m.Get(id) is not { } d || Sketches.Loop(Drafts.ShapeOf(d)) is not { } loop) return Fail("A profile of the loft is missing or no longer closed.");
+                    if (Views.Find(m, d.Str("viewId") ?? "") is not { } v || Sketches.PlaneOf(m, v) is not { } pl) return Fail("A profile's view is gone.");
+                    loops.Add(loop);
+                    worlds.Add(q => pl.World(q) + shift);
+                }
+                var lofted = Solids.LoftThrough(loops, worlds);
+                if (lofted.Problem != null) return Fail(lofted.Problem);
+                solid = lofted.Solid;
                 break;
             }
             case "revolve":
