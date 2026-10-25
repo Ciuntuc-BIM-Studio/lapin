@@ -134,7 +134,7 @@ public static class Views
             if (view.Str("kind") == "plan" && Generator.SymbolicInPlan.Contains(e.Class) && g.Plan != null && Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey)
                 foreach (var item in g.Plan)
                 {
-                    var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" => LineRole.Cut, "heavy" => LineRole.Cut, "overhead" or "ridge" or "hip" or "valley" or "break" => LineRole.Overhead, _ => null };
+                    var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" => LineRole.Cut, "heavy" => LineRole.Cut, "dashed" => LineRole.Hidden, "overhead" or "ridge" or "hip" or "valley" or "break" => LineRole.Overhead, _ => null };
                     if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role));
                 }
         }
@@ -203,7 +203,7 @@ public static class Views
         var pens = Pens.Of(drawing, materials, new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table));
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
-        var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing);
+        var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry);
         var marks = Marks(ctx).Concat(Location.Marks(ctx)).ToList();
         foreach (var source in q.Services.All<IViewAnnotations>())
             try { marks.AddRange(source.Marks(ctx)); }
@@ -363,6 +363,7 @@ public static class Views
             new("direction", "Looking", "choice", Choices: Directions),
             new("hiddenLines", "Hidden lines", "choice", Choices: ["auto", "show", "hide"]),
             new("discipline", "Discipline", "text"),
+            new("openingSymbols", "Opening symbols", "choice", Choices: ["show", "hide"]),
         ], "#555555", Kind: "view"));
 
         r.Command("view.create", "New view", (ctx, a) =>

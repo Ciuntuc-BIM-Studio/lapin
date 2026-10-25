@@ -1,8 +1,10 @@
 /**
  * Doors and windows: the configurator. The project's door and window types
  * on the left; on the right the one being edited — its size, frame, grid of
- * columns and rows, each panel's operation — with the front elevation as
- * the engine builds it (seen from the interior) and what IFC calls it.
+ * columns and rows, each panel's operation — with its drawings as the
+ * engine's symbol engine makes them (the elevation from inside or outside,
+ * the plan, the section), the project's symbol convention, and what IFC
+ * calls it.
  * Saving is one engine command; every door or window of the type is
  * refitted to its new size.
  */
@@ -26,6 +28,31 @@ interface Spec {
   lintel?: Rule | null;
 }
 interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number }[]; ifcType: string }
+interface Stroke { pts: [number, number][]; weight: string; closed: boolean; dashed: boolean }
+interface Drawing { strokes: Stroke[] }
+interface Drawings { elevation: Drawing; exterior: Drawing; plan: Drawing; section: Drawing }
+type Preview2 = Preview & { drawings?: Drawings | null; symbols?: { convention: string; hardware: boolean } };
+
+/** One of the symbol engine's drawings in a box: X across, Y up, fitted; strokes by weight (cut, outline, thin), dashed where asked. */
+function Strokes({ drawing, w, h, flipX = false, label, children }: { drawing: Drawing | undefined; w: number; h: number; flipX?: boolean; label: string; children?: (sx: (x: number) => number, sy: (y: number) => number, k: number) => React.ReactNode }) {
+  const pts = (drawing?.strokes ?? []).flatMap((s) => s.pts);
+  if (pts.length === 0) return <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-label={label} />;
+  const xs = pts.map((p) => (flipX ? -p[0] : p[0])), ys = pts.map((p) => p[1]);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const pad = 10, k = Math.min((w - 2 * pad) / Math.max(x1 - x0, 1e-6), (h - 2 * pad) / Math.max(y1 - y0, 1e-6));
+  const sx = (x: number) => (w - (x1 - x0) * k) / 2 + ((flipX ? -x : x) - x0) * k;
+  const sy = (y: number) => h - (h - (y1 - y0) * k) / 2 - (y - y0) * k;
+  const width = (wt: string) => wt === 'cut' ? 1.6 : wt === 'outline' ? 0.9 : 0.5;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-label={label}>
+      {children?.(sx, sy, k)}
+      {(drawing?.strokes ?? []).map((s, i) => (
+        <polyline key={i} points={s.pts.map((p) => `${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join(' ') + (s.closed ? ` ${sx(s.pts[0][0]).toFixed(1)},${sy(s.pts[0][1]).toFixed(1)}` : '')}
+          fill="none" stroke="#1e2a3a" strokeWidth={width(s.weight)} strokeDasharray={s.dashed ? '4 3' : undefined} strokeLinejoin="round" />
+      ))}
+    </svg>
+  );
+}
 
 const ROLE_ORDER: Record<string, number> = { board: 0, frame: 1, leaf: 2, sash: 3, glass: 4, handle: 5 };
 const weights = (text: string) => text.split(/[ ,;]+/).map(Number).filter((v) => v > 0);
@@ -53,7 +80,8 @@ export function JoineryDialog() {
   const [spec, setSpec] = useState<Spec | null>(null);
   const [cols, setCols] = useState('1');
   const [rows, setRows] = useState('1');
-  const [preview, setPreview] = useState<Preview | null>(null);
+  const [preview, setPreview] = useState<Preview2 | null>(null);
+  const [outside, setOutside] = useState(false);
 
   // The editor loads when the picked type changes, not on every diff (which
   // would throw away what is being typed): it reads the model through a ref.
@@ -71,7 +99,7 @@ export function JoineryDialog() {
   useEffect(() => {
     if (!spec) return;
     let live = true;
-    void engine.call<Preview>('doc.query', { name: 'architecture.joineryPreview', args: { spec } }).then((p) => { if (live) setPreview(p); }).catch(() => undefined);
+    void engine.call<Preview2>('doc.query', { name: 'architecture.joineryPreview', args: { spec } }).then((p) => { if (live) setPreview(p); }).catch(() => undefined);
     return () => { live = false; };
   }, [spec]);
 
@@ -97,11 +125,8 @@ export function JoineryDialog() {
     }
   };
 
-  // The elevation: X across, Z up, scaled into the box; seen from the interior.
-  const W = 300, H = 300, pad = 12;
-  const k = Math.min((W - 2 * pad) / spec.width, (H - 2 * pad) / spec.height);
-  const ex = (x: number) => W / 2 + x * k;
-  const ez = (z: number) => H - pad - z * k;
+  // The elevation's box; the strokes are fitted into it.
+  const W = 300, H = 300;
   const boxes = [...(preview?.boxes ?? [])].sort((a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9));
   const fill = (role: string) => role === 'glass' ? spec.colors.glass : role === 'leaf' ? spec.colors.leaf : role === 'handle' ? '#5a5a5a' : role === 'board' ? '#dcdcdc' : spec.colors.frame;
 
@@ -156,15 +181,20 @@ export function JoineryDialog() {
               {spec.kind === 'door' && <label className="field-line"><span className="eyebrow">Leaf</span><input type="color" value={spec.colors.leaf} onChange={(e) => set({ colors: { ...spec.colors, leaf: e.target.value } })} /></label>}
             </div>
             <div className="joinery-preview">
-              <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-label="Front elevation">
-                {boxes.map((b, i) => <rect key={i} x={ex(b.x0)} y={ez(b.z1)} width={(b.x1 - b.x0) * k} height={(b.z1 - b.z0) * k} fill={fill(b.role)} stroke="#1e2a3a" strokeWidth={0.5} opacity={b.role === 'glass' ? 0.7 : 1} />)}
-                {(preview?.panels ?? []).filter((p) => p.operation.endsWith('-left') || p.operation.endsWith('-right')).map((p, i) => {
-                  // The opening triangle: its apex on the side the handle is, as joinery makers draw it.
-                  const hingeLeft = p.operation.endsWith('-left');
-                  const apexX = hingeLeft ? ex(p.x1) : ex(p.x0), hx = hingeLeft ? ex(p.x0) : ex(p.x1);
-                  return <polyline key={i} points={`${hx},${ez(p.z1)} ${apexX},${ez((p.z0 + p.z1) / 2)} ${hx},${ez(p.z0)}`} fill="none" stroke="#1e2a3a" strokeWidth={0.8} strokeDasharray="4 3" />;
-                })}
-              </svg>
+              <Strokes drawing={outside ? preview?.drawings?.exterior : preview?.drawings?.elevation} w={W} h={H} label={outside ? 'Elevation from outside' : 'Elevation from inside'}>
+                {(sx, sy, kk) => !outside && boxes.map((b, i) => <rect key={i} x={sx(b.x0)} y={sy(b.z1)} width={(b.x1 - b.x0) * kk} height={(b.z1 - b.z0) * kk} fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />)}
+              </Strokes>
+              <div className="joinery-small">
+                <figure><Strokes drawing={preview?.drawings?.plan} w={150} h={90} label="Plan" /><figcaption className="muted small">Plan</figcaption></figure>
+                <figure><Strokes drawing={preview?.drawings?.section} w={90} h={150} label="Section" /><figcaption className="muted small">Section</figcaption></figure>
+              </div>
+              <div className="row joinery-symbols">
+                <label className="small"><input type="checkbox" checked={outside} onChange={(e) => setOutside(e.target.checked)} /> From outside</label>
+                <select className="mini-select" title="Opening symbols in elevation" value={preview?.symbols?.convention ?? 'handle'} onChange={(e) => void execute('architecture.joinerySymbols', { convention: e.target.value }).then(() => setSpec({ ...spec }))}>
+                  <option value="handle">Apex at the handle (makers)</option><option value="hinge">Apex at the hinges (DIN 1356)</option>
+                </select>
+                <label className="small"><input type="checkbox" checked={preview?.symbols?.hardware ?? false} onChange={(e) => void execute('architecture.joinerySymbols', { hardware: e.target.checked }).then(() => setSpec({ ...spec }))} /> Hardware</label>
+              </div>
               <p className="muted small">IFC: {preview?.ifcType ?? '—'}</p>
               {preview?.problem && <p className="error-text">{preview.problem}</p>}
             </div>

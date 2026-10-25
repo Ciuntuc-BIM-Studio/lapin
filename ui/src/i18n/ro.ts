@@ -55,6 +55,9 @@ export const RO: Record<string, string> = {
   'Every field given must hold; a set with none takes everything.': 'Fiecare câmp completat trebuie să se potrivească; un set fără niciunul ia tot.', 'Apply': 'Aplică',
   'Discipline': 'Disciplină',
 
+  'Elevation from inside': 'Vedere din interior', 'Elevation from outside': 'Vedere din exterior', 'From outside': 'Din exterior', 'Opening symbols in elevation': 'Simbolurile de deschidere în vedere',
+  'Apex at the handle (makers)': 'Vârful la mâner (fabricanți)', 'Apex at the hinges (DIN 1356)': 'Vârful la balamale (DIN 1356)', 'Hardware': 'Feronerie', 'Opening symbols': 'Simboluri de deschidere',
+
   // Properties
   'Properties': 'Proprietăți', 'Select an element to see it here.': 'Selectează un element ca să-l vezi aici.', 'Class': 'Clasă', 'Type': 'Tip', 'Storey': 'Nivel',
   'Module': 'Modul', 'Name': 'Nume', 'Mark': 'Marcă', 'Value (m)': 'Valoare (m)', 'Delete axis': 'Șterge axa', 'Line up the axes': 'Aliniază axele', 'Bubbles': 'Buline', 'Grid axes': 'Axe',

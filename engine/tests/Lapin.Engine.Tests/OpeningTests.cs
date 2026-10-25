@@ -240,41 +240,46 @@ public class OpeningTests
 
     static List<PlanItem> Symbols(Fixture f, string id) => f.Session.Geometry(id)!.Plan!.ToList();
 
+    /// <summary>A door's leaves in plan: the heavy rectangles as thick as the leaf (the frame's cut is heavy too, but as deep as the frame).</summary>
+    static List<PlanItem> Leaves(Fixture f, string door, JoinerySpec spec) =>
+        Symbols(f, door).Where(i => i.Kind == "heavy" && i.Closed && i.Points.Count == 4
+            && Math.Abs(Math.Min((i.Points[1] - i.Points[0]).Length, (i.Points[3] - i.Points[0]).Length) - spec.Sash.LeafThickness) < 1e-6).ToList();
+
     [Fact]
     public void A_door_draws_its_leaf_open_at_90_as_a_heavy_rectangle_and_a_quarter_arc()
     {
+        // The symbol engine's plan (docs/simboluri-tamplarie.md), the same the configurator and the schedule draw (25.10.2026).
         var f = new Fixture();
         var wall = f.Wall(0, 0, 5, 0);
         var door = Door(f, wall, 2.5);
-        var leaf = Symbols(f, door).Single(i => i.Kind == "heavy");
-        Assert.True(leaf.Closed);
-        Assert.Equal(4, leaf.Points.Count);
-        var w = (leaf.Points[1] - leaf.Points[0]).Length;
-        var t = (leaf.Points[3] - leaf.Points[0]).Length;
-        // The leaf as wide as the leaf's opening, a few centimetres thick: clamp(frame depth × 0.4, 0.02, 0.05).
+        var spec = Openings.SpecOf(f.Model, door)!;
+        var leaf = Leaves(f, door, spec).Single();
+        var w = Math.Max((leaf.Points[1] - leaf.Points[0]).Length, (leaf.Points[3] - leaf.Points[0]).Length);
+        // The leaf as wide as its opening, as thick as the spec's leaf.
         Assert.InRange(w, 0.7, 0.9);
-        Assert.Equal(Math.Clamp(0.1 * 0.4, 0.02, 0.05), t, 9);
         var arc = Symbols(f, door).Where(i => i.Kind == "symbol" && i.Points.Count > 2).Single();
-        // A quarter turn about the hinge: its ends are as far from the hinge as the leaf is long.
-        Assert.Equal(w, (arc.Points[0] - leaf.Points[0]).Length, 6);
-        Assert.Equal(w, (arc.Points[^1] - leaf.Points[0]).Length, 6);
+        // A quarter turn about the hinge (a corner of the leaf): its ends are as far from the hinge as the leaf is long.
+        Assert.Contains(leaf.Points, c => Math.Abs((arc.Points[0] - c).Length - w) < 1e-6 && Math.Abs((arc.Points[^1] - c).Length - w) < 1e-6);
     }
 
     [Fact]
-    public void A_double_door_draws_a_leaf_and_an_arc_per_jamb_and_a_window_its_frame_and_double_glass()
+    public void A_double_door_draws_a_leaf_and_an_arc_per_jamb_and_a_window_its_frame_and_glass()
     {
         var f = new Fixture();
         var wall = f.Wall(0, 0, 6, 0);
-        var pair = (string)f.Run("architecture.createJoineryType", new JsonObject
-        {
-            ["spec"] = (JoinerySpec.DefaultDoor("Double 1600") with { Width = 1.6, Columns = [1, 1], Panels = [new(0, 0, "swing-left"), new(1, 0, "swing-right")] }).ToJson(),
-        })!["id"]!;
+        var pairSpec = JoinerySpec.DefaultDoor("Double 1600") with { Width = 1.6, Columns = [1, 1], Panels = [new(0, 0, "swing-left"), new(1, 0, "swing-right")] };
+        var pair = (string)f.Run("architecture.createJoineryType", new JsonObject { ["spec"] = pairSpec.ToJson() })!["id"]!;
         var door = Door(f, wall, 2, pair);
-        Assert.Equal(2, Symbols(f, door).Count(i => i.Kind == "heavy"));
+        Assert.Equal(2, Leaves(f, door, pairSpec).Count);
         Assert.Equal(2, Symbols(f, door).Count(i => i.Kind == "symbol" && i.Points.Count > 2));
         var window = (string)f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["along"] = 4.5 })!["id"]!;
-        var items = Symbols(f, window).Where(i => i.Kind == "symbol").ToList();
-        Assert.Single(items, i => i.Closed);                         // the frame
-        Assert.Equal(2, items.Count(i => !i.Closed && i.Points.Count == 2 && Math.Abs(i.Points[0].X - i.Points[1].X) > 1));   // the double glass
+        var items = Symbols(f, window);
+        // The frame cut at the plan's height (heavy), the glass thin and as wide as the pane.
+        Assert.Contains(items, i => i.Kind == "heavy" && i.Closed);
+        // (the window boards seen below the cut are closed symbols too)
+        Assert.Contains(items, i => i.Kind == "symbol" && i.Closed && i.Points.Count == 4
+            && Math.Max((i.Points[1] - i.Points[0]).Length, (i.Points[3] - i.Points[0]).Length) > 0.3
+            && Math.Min((i.Points[1] - i.Points[0]).Length, (i.Points[3] - i.Points[0]).Length) <= 0.03);
     }
 }
+

@@ -288,9 +288,10 @@ public static class Openings
     }
 
     /// <summary>
-    /// The plan symbol (docs/transfer.md): a door's leaves open at 90° with
-    /// their arcs, a window's frame and its double glass line. Drawn on the
-    /// interior side, mirrored with the occurrence.
+    /// The plan symbol: the jambs across the wall, then the symbol engine's plan
+    /// (<see cref="JoinerySymbols.Plan"/>: the frame cut, the glass, a door's
+    /// leaves open at 90° with their arcs), in the wall's frame, mirrored with
+    /// the occurrence.
     /// </summary>
     static List<PlanItem> Symbol(JoinerySpec spec, WallFrame f, Placed p, int sx, int sy)
     {
@@ -302,37 +303,9 @@ public static class Openings
         // The jambs across the wall.
         o.Add(new PlanItem("symbol", false, [P(-half, -depth / 2), P(-half, depth / 2)]));
         o.Add(new PlanItem("symbol", false, [P(half, -depth / 2), P(half, depth / 2)]));
-        if (spec.IsDoor)
-        {
-            var leaves = Joinery.Normalised(spec).Where(x => Joinery.IsDoorLeaf(x.Operation) && Joinery.SwingsInPlan(x.Operation)).ToList();
-            foreach (var leaf in leaves)
-            {
-                var r = Joinery.PanelRect(spec, leaf);
-                var hingeLeft = leaf.Operation.EndsWith("-left");
-                var hinge = hingeLeft ? r.X0 : r.X1;
-                var free = hingeLeft ? r.X1 : r.X0;
-                var w = Math.Abs(free - hinge);
-                var y0 = -depth / 2;   // the interior face
-                // The leaf open at 90° into the interior, a heavy rectangle clamp(depth × 0.4, 2, 5 cm) thick, and its arc from the closed position.
-                var t = Math.Clamp(spec.Frame.Depth * 0.4, 0.02, 0.05) * Math.Sign(free - hinge);
-                o.Add(new PlanItem("heavy", true, [P(hinge, y0), P(hinge, y0 - w), P(hinge + t, y0 - w), P(hinge + t, y0)]));
-                var arc = new List<Vec2>();
-                for (var i = 0; i <= 16; i++)
-                {
-                    var a = i / 16.0 * Math.PI / 2;
-                    arc.Add(P(hinge + Math.Sign(free - hinge) * w * Math.Cos(a), y0 - w * Math.Sin(a)));
-                }
-                o.Add(new PlanItem("symbol", false, arc));
-            }
-        }
-        else
-        {
-            var fd = spec.Frame.Depth;
-            var g = Math.Min(0.012, fd / 3);
-            o.Add(new PlanItem("symbol", true, [P(-half, -fd / 2 + spec.Frame.Offset), P(half, -fd / 2 + spec.Frame.Offset), P(half, fd / 2 + spec.Frame.Offset), P(-half, fd / 2 + spec.Frame.Offset)]));
-            o.Add(new PlanItem("symbol", false, [P(-half, spec.Frame.Offset - g), P(half, spec.Frame.Offset - g)]));
-            o.Add(new PlanItem("symbol", false, [P(-half, spec.Frame.Offset + g), P(half, spec.Frame.Offset + g)]));
-        }
+        // The symbol engine's plan (docs/simboluri-tamplarie.md): the frame cut, the glass, a door's leaves and their arcs.
+        foreach (var st in JoinerySymbols.Plan(spec))
+            o.Add(new PlanItem(st.Weight == "cut" ? "heavy" : st.Dashed ? "dashed" : "symbol", st.Closed, st.Pts.Select(q => P(q.X, q.Y)).ToList()));
         return o;
     }
 }

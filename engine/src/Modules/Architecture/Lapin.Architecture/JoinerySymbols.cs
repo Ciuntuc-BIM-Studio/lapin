@@ -60,7 +60,7 @@ public static class JoinerySymbols
         {
             // It slides along the interior face, towards its side.
             var dir = left ? -1 : 1;
-            return [Rect(r.X0, yIn - t - 0.01, r.X1, yIn - 0.01, "outline"),
+            return [Rect(r.X0, yIn - t - 0.01, r.X1, yIn - 0.01, "cut"),
                 .. Arrow(new((r.X0 + r.X1) / 2 - dir * w / 4, yIn - t - 0.08), new((r.X0 + r.X1) / 2 + dir * w / 4, yIn - t - 0.08), "thin")];
         }
         if (op.StartsWith("folding"))
@@ -74,8 +74,8 @@ public static class JoinerySymbols
         var sgn = left ? 1 : -1;
         var o = new List<JStroke>
         {
-            // The leaf open at 90° to the interior: a thin rectangle from the hinge.
-            Rect(hinge.X, hinge.Y - w, hinge.X + sgn * t, hinge.Y, "outline"),
+            // The leaf open at 90° to the interior: a rectangle from the hinge, cut by the plan (heavy, as the old Lapin drew it).
+            Rect(hinge.X, hinge.Y - w, hinge.X + sgn * t, hinge.Y, "cut"),
             left ? Arc(hinge, w, -Math.PI / 2, 0, "thin") : Arc(hinge, w, Math.PI, 1.5 * Math.PI, "thin"),
         };
         if (op.StartsWith("double-acting"))

@@ -132,7 +132,7 @@ public static class ScheduleLayout
     }
 
     /// <summary>A card's drawing: its size (paper mm) and how to draw it with its top-left at a point.</summary>
-    static (double W, double H, Action<Sink, Vec2> Draw) Block(ScheduleEntry e, double k, IReadOnlyList<string> drawings)
+    static (double W, double H, Action<Sink, Vec2> Draw) Block(ScheduleEntry e, double k, IReadOnlyList<string> drawings, string convention = "handle", bool hardware = false)
     {
         void Dim(Sink s, Vec2 a, Vec2 b, string text, bool vertical)
         {
@@ -202,7 +202,7 @@ public static class ScheduleLayout
                 var xv = x0;
                 Vec2 P(Vec2 q) => new(xv + (q.X + e.Width / 2) * k, bottom - q.Y * k);
                 if (e.Spec != null)
-                    foreach (var st in JoineryElevation.Of(e.Spec, view == "exterior"))
+                    foreach (var st in Segs(JoinerySymbols.Elevation(e.Spec, view == "exterior", convention, hardware)))
                         s.Line(P(st.A), P(st.B), DrawingPen[st.Weight], st.Dashed ? [1.2, 0.8] : null, "SCHEDULE-SYMBOLS");
                 else
                 {
@@ -219,12 +219,12 @@ public static class ScheduleLayout
     }
 
     /// <summary>A table's cards in bands no wider than <paramref name="maxWidth"/> (paper mm), each band's pens from its own top.</summary>
-    public static List<ScheduleBand> Bands(ScheduleData data, ScheduleTable table, double scale = 50, double maxWidth = 380, Func<ScheduleEntry, IReadOnlyList<string>>? drawingsOf = null)
+    public static List<ScheduleBand> Bands(ScheduleData data, ScheduleTable table, double scale = 50, double maxWidth = 380, Func<ScheduleEntry, IReadOnlyList<string>>? drawingsOf = null, string convention = "handle", bool hardware = false)
     {
         var k = 1000 / scale;
         var rows = Rows(data, table);
         var entries = Sort(data.Entries, table.Sort);
-        var blocks = entries.Select(e => Block(e, k, drawingsOf?.Invoke(e) ?? ["interior"])).ToList();
+        var blocks = entries.Select(e => Block(e, k, drawingsOf?.Invoke(e) ?? ["interior"], convention, hardware)).ToList();
         double CardW(int i) => Math.Max(30, blocks[i].W + 10);
         var drawingH = Math.Max(30, blocks.Count == 0 ? 0 : blocks.Max(b => b.H) + 7);
         var bandH = MarkRow + drawingH + rows.Count * Row;

@@ -54,3 +54,12 @@ Defaults are per type; each field can be off. The schedule's section symbol draw
 ## Order and effort
 
 1 (duplicating, 3D views, sets): the engine first, with its tests, then the browser and the dialog. 2 (the joinery's drawings): the preview and the project settings, then the plans and elevations. 3 (the details): the spec and geometry, then the drawings and quantities.
+
+## Progress (25.10.2026)
+
+**1, done** (engine 463 tests, interface 94): `view.duplicate` (with detailing: the annotations of the view copied), `sheet.duplicate`, `storey.duplicate` (inserted above, the storeys above moved up; the contents copied with what they host, the joins made again), 3D views of kind `3d` with `view.setCamera` ({3D} duplicates into one), `discipline` on views and sheets, `browserSets` on the project with `browser.setSet/removeSet/moveSet` and the query `browser.sets` (the defaults when the project has none). The browser shows the sets with their kinds inside, "Other" for what none takes, duplicate buttons on views, sheets, levels and 3D views, "Organize…" for the sets. A saved 3D view opens with its camera; its hidden elements and graphics are its own (`view.hidden3d {id}`). An item sits in every set whose filter it matches.
+
+**2, done:** the preview query returns the symbol engine's drawings (elevation from inside and outside, plan, section) and the configurator shows them, with the project's convention and hardware (`architecture.joinerySymbols`, kept on the project as `joinerySymbols`); the model's plans draw the engine's plan (the door leaf as a cut stroke, as before); the elevations mark the openings whose exterior faces the eye, dashed, through `IViewAnnotations` (layer `JOINERY`), skipping those something stands in front of (`ViewContext.Occluded`, over the elements' geometry) and those the view hides; the view's `openingSymbols` turns them off; the schedule's cards use the same engine and convention (the older `JoineryElevation` is no longer used). Not done: hardware on the elevations (configurator and schedule only); the phases' filter is not consulted for the marks.
+
+**3:** next.
+

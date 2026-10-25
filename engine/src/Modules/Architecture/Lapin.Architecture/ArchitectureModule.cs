@@ -7,13 +7,67 @@ using Lapin.Platform;
 namespace Lapin.Architecture;
 
 /// <summary>Architecture: layered walls and their types.</summary>
-public sealed class ArchitectureModule : ILapinModule
+public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
 {
     public string Id => "architecture";
     public string Name => "Architecture";
 
+    static JoinerySpec? JsonSpec(JsonNode? n) => JoinerySpec.From(n);
+
+    /// <summary>A drawing's strokes as the interface draws them: points, weight (cut, outline, thin), closed, dashed.</summary>
+    static JsonObject Strokes(IEnumerable<JStroke> strokes) => new()
+    {
+        ["strokes"] = new JsonArray(strokes.Select(st => (JsonNode)new JsonObject
+        {
+            ["pts"] = new JsonArray(st.Pts.Select(p => (JsonNode)new JsonArray(p.X, p.Y)).ToArray()),
+            ["weight"] = st.Weight, ["closed"] = st.Closed, ["dashed"] = st.Dashed,
+        }).ToArray()),
+    };
+
+    /// <summary>
+    /// On an elevation, the opening symbols of the doors and windows whose
+    /// exterior faces the eye (docs/simboluri-tamplarie.md): dashed, as seen
+    /// from outside; over the frames the drawing already has; none for one
+    /// something stands in front of, or hidden by the view. The view's
+    /// <c>openingSymbols</c> turns them off.
+    /// </summary>
+    public IEnumerable<ViewMark> Marks(ViewContext c)
+    {
+        if (c.Kind != "elevation" || c.View.Str("openingSymbols") == "hide") yield break;
+        var m = c.Model;
+        var (convention, _) = Joinery.SymbolSettings(m);
+        var hiddenElements = (c.View.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        var graphics = GraphicsSets.Of(m, c.View);
+        foreach (var fill in m.OfClass(IfcClass.Door).Concat(m.OfClass(IfcClass.Window)))
+        {
+            if (hiddenElements.Contains(fill.Id) || GraphicsSets.Hides(graphics, fill)) continue;
+            if (Openings.OpeningOf(m, fill.Id) is not { } opening || Openings.WallOf(m, opening.Id) is not { } wall || Openings.SpecOf(m, fill.Id) is not { } spec) continue;
+            if (hiddenElements.Contains(wall.Id)) continue;
+            var p = Openings.Place(m, opening);
+            var f = Openings.FrameOf(m, wall, p.Along);
+            var sx = fill.Bool("flipHand") ? -1 : 1;
+            var sy = fill.Bool("flipSide") ? -1 : 1;
+            // The exterior is the wall's right (its left when the side is flipped): the symbol shows where that faces the eye.
+            var outward = f.Left * -sy;
+            if (Vec3.Dot(new Vec3(outward.X, outward.Y, 0), c.Frame.Dir) > -0.5) continue;
+            var yExt = sy > 0 ? f.YMin : f.YMax;
+            Vec3 W(double x, double z) => f.At(p.Along + sx * x, yExt, p.Sill + z);
+            if (c.Occluded(W(0, spec.Height / 2), new HashSet<string> { fill.Id, wall.Id, opening.Id })) continue;
+            var mark = new ViewMark(fill.Id);
+            foreach (var panel in Joinery.Normalised(spec))
+            {
+                var r = Joinery.PanelRect(spec, panel);
+                foreach (var st in JoinerySymbols.OpeningMarks(panel.Operation, r, true, convention))
+                    mark.Polyline(st.Pts.Select(q => c.Map(W(q.X, q.Y))).ToList(), st.Closed, "JOINERY", 0.18, dash: st.Dashed ? [2, 1.5] : null);
+            }
+            if (mark.Lines.Count > 0) yield return mark;
+        }
+    }
+
     public void Register(IModuleRegistry r)
     {
+        // The opening symbols on elevations.
+        r.Service<IViewAnnotations>(this);
         r.Class(new(IfcClass.Wall, "Wall",
         [
             new("height", "Height", "length", Min: 0.01),
@@ -45,8 +99,9 @@ public sealed class ArchitectureModule : ILapinModule
         // The configurator's preview: the body as boxes (front elevation in X–Z), and why the spec cannot be built.
         r.Query("joineryPreview", (q, a) =>
         {
-            var spec = JoinerySpec.From(a["spec"]);
+            var spec = JsonSpec(a["spec"]);
             if (spec == null) return new JsonObject { ["problem"] = "The configuration is unreadable." };
+            var (convention, hardware) = Joinery.SymbolSettings(q.Model);
             var problem = Joinery.Problem(spec);
             var boxes = problem == null ? Joinery.Boxes(spec) : [];
             return new JsonObject
@@ -62,7 +117,29 @@ public sealed class ArchitectureModule : ILapinModule
                     return (JsonNode)new JsonObject { ["operation"] = p.Operation, ["x0"] = r.X0, ["x1"] = r.X1, ["z0"] = r.Z0, ["z1"] = r.Z1 };
                 }).ToArray()),
                 ["ifcType"] = spec.IsDoor ? Joinery.DoorOperation(spec).Type : Joinery.WindowPartitioning(spec).Type,
+                // The drawings (the symbol engine's): the elevation from inside and from outside, the plan, the section.
+                ["drawings"] = problem != null ? null : new JsonObject
+                {
+                    ["elevation"] = Strokes(JoinerySymbols.Elevation(spec, false, convention, hardware)),
+                    ["exterior"] = Strokes(JoinerySymbols.Elevation(spec, true, convention, hardware)),
+                    ["plan"] = Strokes(JoinerySymbols.Plan(spec)),
+                    ["section"] = Strokes(JoinerySymbols.Section(spec)),
+                },
+                ["symbols"] = new JsonObject { ["convention"] = convention, ["hardware"] = hardware },
             };
+        });
+
+        // How the opening symbols are drawn, for the project: the convention (handle: the makers' way; hinge: DIN 1356), the hardware.
+        r.Command("joinerySymbols", "Opening symbols", (ctx, a) =>
+        {
+            var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
+            var attrs = project.CloneAttrs();
+            var o = attrs["joinerySymbols"] as JsonObject ?? [];
+            if ((string?)a["convention"] is { } c) o["convention"] = Joinery.Conventions.Contains(c) ? c : throw new CommandException("The convention is handle or hinge.");
+            if (a["hardware"] is JsonValue hv && hv.TryGetValue<bool>(out var h)) o["hardware"] = h;
+            attrs["joinerySymbols"] = o;
+            ctx.Replace(project.With(attrs: attrs));
+            return null;
         });
 
         // Floors.
@@ -573,4 +650,5 @@ static class RoofCuts
         RoofEnvelopes.AddOrUpdate(roof, Tuple.Create(m.Revision, covering));
         return covering;
     }
+
 }

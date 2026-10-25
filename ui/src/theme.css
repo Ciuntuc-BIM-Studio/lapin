@@ -327,6 +327,10 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .plan-mark.selected { stroke: var(--accent); stroke-width: 2; fill: none; }
 .pen-text text { user-select: none; }
 .plan-item.heavy { stroke-width: 1.6; }
+.plan-item.dashed { stroke-width: 0.7; stroke-dasharray: 4 3; }
+.joinery-small { display: flex; gap: 12px; align-items: flex-end; margin-top: 6px; }
+.joinery-small figure { margin: 0; text-align: center; }
+.joinery-symbols { gap: 10px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
 .sheet-svg { background: var(--wash, #ecebe7); }
 .paper-sheet { fill: #ffffff; stroke: var(--rule-strong); filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15)); }
 .sheet-viewport rect { fill: transparent; stroke: transparent; cursor: move; }

@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Model;
+using Lapin.Platform;
 
 namespace Lapin.Architecture;
 
@@ -112,6 +113,17 @@ public static class Joinery
     ];
 
     /// <summary>A door leaf (opaque unless glazed) rather than a glazed sash.</summary>
+    /// <summary>How the opening symbols are drawn: the makers' way (the apex at the handle, fixed panes crossed) or DIN 1356 (the lines meet at the hinges).</summary>
+    public static readonly string[] Conventions = ["handle", "hinge"];
+
+    /// <summary>The project's symbol settings (<c>joinerySymbols</c> on the project): the convention, and whether hinges and handles are drawn.</summary>
+    public static (string Convention, bool Hardware) SymbolSettings(IModelView m)
+    {
+        var o = Spatial.Project(m)?.Attrs["joinerySymbols"] as JsonObject;
+        var hardware = o?["hardware"] is JsonValue v && v.TryGetValue<bool>(out var h) && h;
+        return ((string?)o?["convention"] == "hinge" ? "hinge" : "handle", hardware);
+    }
+
     public static bool IsDoorLeaf(string operation) => DoorOperations.Contains(operation);
 
     /// <summary>Hinged on a vertical side: the panel swings open in plan.</summary>

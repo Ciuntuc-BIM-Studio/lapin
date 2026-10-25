@@ -118,7 +118,8 @@ public sealed class ScheduleEntity : ISheetContent
         var data = Schedules.Of(q, e.Str("kind") ?? "all");
         var table = ScheduleTable.Of(e);
         var drawings = Drawings(e);
-        var tables = Tables(e, data).Select(t => (t.Title, ScheduleLayout.Bands(t.Data, table, Scale(e), maxWidth, _ => drawings))).ToList();
+        var (convention, hardware) = Joinery.SymbolSettings(q.Model);
+        var tables = Tables(e, data).Select(t => (t.Title, ScheduleLayout.Bands(t.Data, table, Scale(e), maxWidth, _ => drawings, convention, hardware))).ToList();
         return ScheduleLayout.Pages(tables, maxHeight);
     }
 

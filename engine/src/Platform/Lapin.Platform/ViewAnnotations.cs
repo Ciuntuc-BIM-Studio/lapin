@@ -10,8 +10,42 @@ namespace Lapin.Platform;
 /// its kind and frame (world → drawing), its scale, the standards and the
 /// generated drawing (cut areas by element: what associative dimensions hold on to).
 /// </summary>
-public sealed record ViewContext(IModelView Model, Entity View, string Kind, ViewFrame Frame, double Scale, StyleBook Book, ViewDrawing Drawing)
+public sealed record ViewContext(IModelView Model, Entity View, string Kind, ViewFrame Frame, double Scale, StyleBook Book, ViewDrawing Drawing, Func<string, ElementGeometry?>? Geometry = null)
 {
+    /// <summary>
+    /// Whether something stands between the eye and <paramref name="point"/>: a face of
+    /// another element, turned to the eye, nearer, with the point inside its outline.
+    /// </summary>
+    public bool Occluded(Vec3 point, IReadOnlySet<string> except)
+    {
+        if (Geometry == null) return false;
+        var at = Map(point);
+        var depth = Frame.Depth(point);
+        var eye = Frame.Origin + Frame.Right * at.X + Frame.Up * at.Y;
+        foreach (var e in Model.Entities)
+        {
+            if (except.Contains(e.Id) || e.Class == IfcClass.OpeningElement || Spatial.StoreyOf(Model, e.Id) == null) continue;
+            if (Geometry(e.Id) is not { } g) continue;
+            foreach (var part in g.Parts)
+            {
+                var s = part.Solid;
+                foreach (var f in s.Faces)
+                {
+                    var nd = Vec3.Dot(f.Normal, Frame.Dir);
+                    if (nd > -1e-6 || f.Outer.Length < 3) continue;
+                    var p0 = s.Vertices[f.Outer[0]];
+                    var t = Vec3.Dot(f.Normal, p0 - eye) / nd;
+                    if (t > depth - 1e-3) continue;
+                    var rings = new Vec2[1 + f.Holes.Length][];
+                    rings[0] = f.Outer.Select(i => Map(s.Vertices[i])).ToArray();
+                    for (var h = 0; h < f.Holes.Length; h++) rings[h + 1] = f.Holes[h].Select(i => Map(s.Vertices[i])).ToArray();
+                    if (Polygon2.Inside(rings, at)) return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /// <summary>Metres of the drawing per paper millimetre.</summary>
     public double Mm => Scale / 1000;
     public Vec2 Map(Vec3 p) => Frame.Map(p);
