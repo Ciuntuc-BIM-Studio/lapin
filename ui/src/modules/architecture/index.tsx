@@ -1,16 +1,17 @@
 /** Architecture: layered walls and their types, doors and windows, floors, roofs; later rooms. */
 
 import { ArrowLeftRight, CornerDownRight, Layers3, Link2, Settings2, Slash } from 'lucide-react';
-import { AttachRoofIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RoofWindowIcon, RoomIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
+import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RoofWindowIcon, RoomIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
-import { axisGrips, axisRef, outlineGrips, outlineRef, pt, toPairs } from '../../viewport/gripKit';
+import { flipAcross, frameAt, outlineGrips, outlineRef, pathGrips, pathRef, toPairs } from '../../viewport/gripKit';
+import { arcOf, project } from '../../viewport/arc';
 import { fromPairs } from '../../viewport/contour';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import type { Shape } from '../../viewport/cad/shapes';
-import { typeOf } from '../../engine/model';
+import { num, relatingOf, typeOf, usageOf } from '../../engine/model';
 import { activate } from '../../platform/modules';
 import { setJoinStyle, useWallPrefs } from './prefs';
 import { WallLayers } from './WallLayers';
@@ -22,6 +23,8 @@ import { SlabTypesDialog } from './SlabTypesDialog';
 import { RoofSection } from './RoofSection';
 import { StairSection, type StairNumbers } from './StairSection';
 import { StairTypesDialog } from './StairTypesDialog';
+import { CurtainWallDialog } from './CurtainWallDialog';
+import { CurtainWallSection } from './CurtainWallSection';
 
 const wall: ToolDef = {
   id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA',
@@ -31,6 +34,26 @@ const wall: ToolDef = {
     await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, joinStyle: useWallPrefs.getState().joinStyle, ...(typeId ? { typeId } : {}) });
   },
 };
+
+/** A curved wall: its start, its end, then a point the arc passes through. */
+const curvedWall: ToolDef = {
+  id: 'architecture.curvedWall', label: 'Curved wall', icon: CurvedWallIcon, shortcut: 'WC',
+  gesture: { kind: 'threePoints', arc: true },
+  complete: async ({ points: [a, b, p] }, ctx) => {
+    const typeId = useUi.getState().wallTypeId;
+    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, joinStyle: useWallPrefs.getState().joinStyle, ...(typeId ? { typeId } : {}) });
+  },
+};
+/** A curtain wall: two points (chained), of the type picked in the configurator, else the project's first. */
+const curtainWall: ToolDef = {
+  id: 'architecture.curtainWall', label: 'Curtain wall', icon: CurtainWallIcon, shortcut: 'CW',
+  gesture: { kind: 'twoPoints', repeat: true },
+  complete: async ({ points: [a, b] }, ctx) => {
+    const typeId = useUi.getState().curtainTypeId;
+    await ctx.execute('architecture.addCurtainWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, ...(typeId ? { typeId } : {}) });
+  },
+};
+const curtainTypes: ToolDef = { id: 'architecture.curtainTypes', label: 'Curtain walls', icon: Settings2, run: () => useUi.setState({ dialog: 'curtainWalls' }) };
 
 /** The selected walls. */
 const selectedWalls = () => {
@@ -66,13 +89,52 @@ const mitreNew: ToolDef = {
   },
 };
 
-/** A wall's ends, to drag: a joined corner moves with it. */
+/**
+ * A wall's ends, to drag (a joined corner moves with it), its arc's middle on
+ * a curved one, and a flip arrow on its exterior face (its right one, the left
+ * once flipped) that swaps its faces.
+ */
 function wallGrips(node: NodeDto): Grip[] {
-  const a = pt(node.props.start), b = pt(node.props.end);
-  if (!a || !b) return [];
-  return axisGrips(a, b, (s, e) => ({ command: 'architecture.updateWall', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, detachJoinedEnds: true } }));
+  const c = arcOf(node.props);
+  if (!c) return [];
+  const flipped = usageOf(useSession.getState(), node.id)?.negative ?? false;
+  return [
+    ...pathGrips(c, (s, e, rise) => ({ command: 'architecture.updateWall', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise, detachJoinedEnds: true } })),
+    flipAcross(c, flipped ? 1 : -1, 'Flip: swap the wall\'s faces (its exterior goes to the other side)', () => ({ command: 'architecture.flipWall', args: { id: node.id } })),
+  ];
 }
-const wallRefs = (node: NodeDto): RefLine[] => { const a = pt(node.props.start), b = pt(node.props.end); return a && b ? [axisRef(a, b)] : []; };
+const pathRefs = (node: NodeDto): RefLine[] => { const c = arcOf(node.props); return c ? [pathRef(c)] : []; };
+
+/**
+ * A door or window: dragged along its wall by its middle, and four flip
+ * arrows round it: along the wall the hand (hinges on the other side), across
+ * it the side (opening to the other face).
+ */
+function joineryGrips(node: NodeDto): Grip[] {
+  const s = useSession.getState();
+  const opening = relatingOf(s, node.id, 'IfcRelFillsElement');
+  const wall = opening ? relatingOf(s, opening.id, 'IfcRelVoidsElement') : null;
+  const c = wall ? arcOf(wall.props) : null;
+  if (!opening || !c) return [];
+  const f = frameAt(c, num(opening, 'along'));
+  const hand = () => ({ command: 'architecture.flipJoinery', args: { id: node.id, axis: 'x' } });
+  const side = () => ({ command: 'architecture.flipJoinery', args: { id: node.id, axis: 'y' } });
+  const arrow = (key: string, d: { x: number; y: number }, title: string, click: () => { command: string; args: Record<string, unknown> }): Grip =>
+    ({ key, kind: 'flip', at: f.at, dir: d, title, click });
+  return [
+    { key: 'along', kind: 'centre', at: f.at, title: 'Drag along the wall', step: (to) => ({ command: 'architecture.moveOpening', args: { id: opening.id, along: project(c, to) } }) },
+    arrow('hand+', f.along, 'Flip the hand: hinges on the other side', hand),
+    arrow('hand-', { x: -f.along.x, y: -f.along.y }, 'Flip the hand: hinges on the other side', hand),
+    arrow('side+', f.left, 'Flip the side: opens to the other face', side),
+    arrow('side-', { x: -f.left.x, y: -f.left.y }, 'Flip the side: opens to the other face', side),
+  ];
+}
+
+/** A curtain wall: its ends, its middle, its arc. */
+function curtainGrips(node: NodeDto): Grip[] {
+  const c = arcOf(node.props);
+  return c ? pathGrips(c, (s, e, rise) => ({ command: 'architecture.updateCurtainWall', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise } })) : [];
+}
 /** A slab, floor opening or roof: its outline's vertices and edges (a roof's edge rules follow its edges). */
 function contourGrips(command: string, withEdges = false) {
   return (node: NodeDto): Grip[] => {
@@ -207,8 +269,8 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20, include: ['modify'],
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [slabOpening, roofOpening('window'), roofOpening('dormer')] },
-      { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes] },
+      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, slabOpening, roofOpening('window'), roofOpening('dormer')] },
+      { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [{ id: 'architecture.room', label: 'Room', icon: RoomIcon, shortcut: 'RM' }] },
       { label: 'Circulation', tools: [stair, stairTypes] },
@@ -221,22 +283,25 @@ const architecture: LapinModule = {
     { id: 'slab', label: 'Floor', classes: ['IfcSlab'], component: SlabSection },
     { id: 'roof', label: 'Roof', classes: ['IfcRoof'], component: RoofSection },
     { id: 'stair', label: 'Stair', classes: ['IfcStair'], component: StairSection },
+    { id: 'curtainWall', label: 'Curtain wall', classes: ['IfcCurtainWall'], component: CurtainWallSection },
   ],
-  dialogs: { wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog },
-  grips: { IfcWall: wallGrips, IfcSlab: contourGrips('architecture.updateSlab'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: contourGrips('architecture.updateRoof', true) },
-  references: { IfcWall: wallRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: contourRefs },
+  dialogs: { wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, curtainWalls: CurtainWallDialog },
+  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: contourGrips('architecture.updateRoof', true) },
+  references: { IfcWall: pathRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: contourRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },
     IfcSlab: (n) => { useUi.setState({ slabTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(slab); },
     IfcDoor: (n) => { useUi.setState({ doorTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(door); },
     IfcWindow: (n) => { useUi.setState({ windowTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(window_); },
     IfcRoof: (n) => { useUi.setState({ roofStyle: typeof n.props.style === 'string' ? n.props.style : null }); activate(roof); },
+    IfcCurtainWall: (n) => { useUi.setState({ curtainTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(curtainWall); },
   },
   setType: {
     IfcWall: (ids, typeId) => execute('architecture.setWallType', { ids, typeId }),
     IfcSlab: (ids, typeId) => execute('architecture.setSlabType', { ids, typeId }),
     IfcDoor: (ids, typeId) => execute('architecture.setJoineryType', { ids, typeId }),
     IfcWindow: (ids, typeId) => execute('architecture.setJoineryType', { ids, typeId }),
+    IfcCurtainWall: (ids, typeId) => execute('architecture.setCurtainWallType', { ids, typeId }),
   },
 };
 

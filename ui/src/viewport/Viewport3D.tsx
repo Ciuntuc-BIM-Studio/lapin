@@ -19,6 +19,7 @@ import { completeTool } from './tools';
 import { boxUv, textureFor, textureOf } from './textures';
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
+import { Grips3D } from './Grips3D';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
@@ -120,6 +121,8 @@ export function Viewport3D() {
   const host = useRef<HTMLDivElement>(null);
   const scene = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  /** The camera in use (perspective or orthographic), for the grips drawn over the scene. */
+  const camRef = useRef<THREE.Camera | null>(null);
   // Frames are drawn on demand: when the camera moves, the view resizes or the scene changes.
   const invalidate = useRef<() => void>(() => undefined);
   const items = useRef(new Map<string, { item: RenderItem; object: THREE.Group }>());
@@ -164,6 +167,7 @@ export function Viewport3D() {
     const orthoCam = new THREE.OrthographicCamera(-1, 1, 1, -1, -5000, 5000);
     orthoCam.up.set(0, 0, 1);
     let cam: THREE.PerspectiveCamera | THREE.OrthographicCamera = persp;
+    camRef.current = cam;
     const controls = new OrbitControls(persp, renderer.domElement);
     controls.target.set(4, 3, 0);
     controls.update();
@@ -220,6 +224,7 @@ export function Viewport3D() {
         const p = pose();
         if (cam === orthoCam && !on) { p.distance /= orthoCam.zoom; orthoCam.zoom = 1; }
         cam = on ? orthoCam : persp;
+        camRef.current = cam;
         controls.object = cam;
         applyPose(p);
         publish();
@@ -383,6 +388,7 @@ export function Viewport3D() {
   return (
     <>
       <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />
+      <Grips3D camera={camRef} canvas={host} />
       <KeyPlan mode="3d" />
     </>
   );

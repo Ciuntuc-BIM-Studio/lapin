@@ -11,12 +11,18 @@ import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 
 interface Row { class: string; label: string; default: number; priority: number }
+interface MaterialRow { id: string; name: string; priority: number | null }
 
 export function CutOrderDialog() {
   const nodes = useSession((s) => s.nodes);
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [materials, setMaterials] = useState<MaterialRow[]>([]);
   const close = () => useUi.setState({ dialog: null });
-  useEffect(() => { void query<Row[]>('cutOrder.list').then((r) => setRows(r ?? [])); }, [nodes]);
+  useEffect(() => {
+    void query<Row[]>('cutOrder.list').then((r) => setRows(r ?? []));
+    void query<MaterialRow[]>('cutOrder.materials').then((r) => setMaterials(r ?? []));
+  }, [nodes]);
+  const setMaterial = (id: string, value: number | null) => void execute('cutOrder.set', { materials: { [id]: value } });
   if (!rows) return null;
   const sorted = [...rows].sort((a, b) => b.priority - a.priority || a.label.localeCompare(b.label));
   const set = (cls: string, value: number | null) => void execute('cutOrder.set', { priorities: { [cls]: value } });
@@ -45,6 +51,29 @@ export function CutOrderDialog() {
                   </tr>
                 );
               })}
+            </tbody>
+          </table>
+          <p className="eyebrow">By material</p>
+          <p className="muted small">A material given a priority ranks the elements made mainly of it (a wall's or a floor's core, a beam's or a column's material) over their class: concrete over masonry, whatever the class.</p>
+          <table className="layer-table cut-order">
+            <thead><tr><th>Material</th><th className="num">Priority</th><th /></tr></thead>
+            <tbody>
+              {materials.map((m) => (
+                <tr key={m.id} className={m.priority != null ? 'changed' : ''}>
+                  <td>{m.name}</td>
+                  <td className="num">
+                    <input type="number" min={0} max={100} step={1} placeholder="by class" defaultValue={m.priority ?? ''} key={`${m.id}:${m.priority}`}
+                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      onBlur={(e) => {
+                        const t = e.target.value.trim();
+                        if (t === '') { if (m.priority != null) setMaterial(m.id, null); return; }
+                        const v = Number(t);
+                        if (Number.isFinite(v) && v !== m.priority) setMaterial(m.id, Math.max(0, Math.min(100, Math.round(v))));
+                      }} />
+                  </td>
+                  <td>{m.priority != null && <button type="button" className="icon mini" title="Rank by class again" onClick={() => setMaterial(m.id, null)}><RotateCcw size={11} /></button>}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

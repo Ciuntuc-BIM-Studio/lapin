@@ -17,8 +17,8 @@ export type Gesture =
   | { kind: 'twoPoints'; /** Chained: the end of one is the start of the next (walls). */ repeat?: boolean }
   | { kind: 'point' }
   | { kind: 'rectangle' }
-  /** Two points, then a third (a dimension's line). */
-  | { kind: 'threePoints' }
+  /** Two points, then a third (a dimension's line; with `arc`, a point the arc passes through). */
+  | { kind: 'threePoints'; arc?: boolean }
   | { kind: 'polygon' }
   | { kind: 'polyline' }
   | { kind: 'pick'; /** IFC classes it can be used on. */ types: string[] };
@@ -71,7 +71,13 @@ export interface Grip {
   /** Unique within its element. */
   key: string;
   at: Vec2;
-  kind?: 'end' | 'vertex' | 'edgeMid' | 'centre' | 'radius' | 'move' | 'rotate';
+  kind?: 'end' | 'vertex' | 'edgeMid' | 'centre' | 'radius' | 'move' | 'rotate' | 'flip';
+  /** A flip arrow's direction (model units); drawn a little way out from `at` along it. */
+  dir?: Vec2;
+  /** A flip arrow: what a click does. */
+  click?: () => GripStep | null;
+  /** What the grip does, shown over it. */
+  title?: string;
   /** The element it belongs to (gripsOf fills it in). */
   owner?: string;
   /** The view it is drawn in, when it belongs to one (a drafted shape's view); else every 2D view. */

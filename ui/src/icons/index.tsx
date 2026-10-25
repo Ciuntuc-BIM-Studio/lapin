@@ -32,6 +32,10 @@ function icon(name: IconName): Icon {
 }
 
 export const WallIcon = icon('wall');
+export const CurvedWallIcon = icon('curvedWall');
+export const CurtainWallIcon = icon('curtainWall');
+export const CurvedBeamIcon = icon('curvedBeam');
+export const MoveToStoreyIcon = icon('moveToStorey');
 export const DoorIcon = icon('door');
 export const WindowIcon = icon('window');
 export const SlabIcon = icon('slab');

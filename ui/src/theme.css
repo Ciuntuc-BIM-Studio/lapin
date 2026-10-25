@@ -106,6 +106,9 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .view-area { position: relative; flex: 1; min-height: 0; }
 .viewport { position: absolute; inset: 0; }
 .viewport.picking { cursor: crosshair; }
+/* The selection's grips over the 3D scene: only the grips themselves take the pointer, the rest goes on to the scene. */
+.grip-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+.grip-overlay .plan-grip, .grip-overlay .plan-grip-hit { pointer-events: all; }
 
 /* HUD over the view (Atrium) */
 .hud-card { position: absolute; left: 12px; top: 12px; display: grid; grid-template-columns: auto auto; gap: 3px 16px; padding: 10px 14px; background: var(--hud); border: 1px solid var(--rule); border-radius: 3px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; backdrop-filter: blur(4px); }
@@ -248,6 +251,11 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .plan-grip.edgeMid { fill: var(--panel); stroke-width: 1.2; cursor: grab; }
 .plan-grip.cross { fill: none; stroke-width: 2; }
 .plan-grip.rotate { stroke-dasharray: 2 1.5; cursor: alias; }
+/* A flip arrow: click to flip the element that way. */
+.plan-grip.flip { fill: var(--accent); stroke: var(--accent); stroke-width: 1.4; stroke-linejoin: round; cursor: pointer; }
+.plan-grip.flip.hot { fill: var(--panel); }
+.fields dt.shadowed { text-decoration: line-through; color: var(--muted); }
+.plan-grip-hit { fill: transparent; stroke: none; cursor: pointer; }
 /* A selected element's reference lines: its axis dash-dot, its outline and its sketch dashed, in the accent. */
 .ref-line { fill: none; stroke: var(--accent); stroke-width: 1.2; vector-effect: non-scaling-stroke; pointer-events: none; }
 .ref-line.axis { stroke-dasharray: 10 3 2 3; }

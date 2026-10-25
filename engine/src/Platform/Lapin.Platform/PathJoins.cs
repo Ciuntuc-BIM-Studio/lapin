@@ -150,6 +150,8 @@ public static class Joins
         if (a.Class != b.Class) throw new CommandException($"A {a.Class} joins only a {a.Class}.");
         var existing = Between(edit.Model, a.Id, b.Id);
         priority ??= existing == null ? null : existing.Relating == a.Id ? 'a' : 'b';
+        // A curved element and a straight one: the arc runs through (on along its tangent), the straight one stops at its face.
+        if (priority == null && PathCurve.Of(a).IsArc != PathCurve.Of(b).IsArc) priority = PathCurve.Of(a).IsArc ? 'a' : 'b';
         var (fa, fb) = Tangents(a, b, existing, Frame(paths, edit.Model, a), Frame(paths, edit.Model, b));
         var join = WallJoins.Compute(fa, fb, new JoinOptions(Priority: priority, Style: style ?? (existing != null ? StyleOf(existing) : JoinStyle.Butt)));
         MoveAxis(edit, a, join.A);

@@ -15,7 +15,8 @@ export interface GripGroup { key: string; at: Vec2; members: Grip[] }
 export function groupGrips(grips: Grip[], tol: number): GripGroup[] {
   const groups: GripGroup[] = [];
   for (const g of grips) {
-    const near = groups.find((x) => Math.hypot(x.at.x - g.at.x, x.at.y - g.at.y) <= tol
+    // A flip arrow is its own element's alone.
+    const near = g.kind === 'flip' ? undefined : groups.find((x) => Math.hypot(x.at.x - g.at.x, x.at.y - g.at.y) <= tol
       && (g.kind ?? 'end') === (x.members[0].kind ?? 'end') && !x.members.some((m) => m.owner === g.owner));
     if (near) near.members.push(g);
     else groups.push({ key: `${g.owner ?? ''}:${g.key}`, at: g.at, members: [g] });

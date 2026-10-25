@@ -99,13 +99,13 @@ public class CurveTests
         Assert.Equal(4, Walls.End(e).X, 9);
         Assert.Null(f.Session.Geometry(arc)!.Diagnostics);
         Assert.Null(f.Session.Geometry(straight)!.Diagnostics);
-        // The corner is closed: the straight wall runs through to the arc's face away from it (its right face, towards the centre).
-        var inner = Walls.Section(f.Model, e).Min(b => b.From);
-        Assert.Equal(4 + inner, f.Bounds(straight).Min.X, 6);
-        // The arc stops at the straight wall's face (its left one, at +Y), along its tangent there.
-        var straightLeft = Walls.Section(f.Model, f.Model.Get(straight)!).Max(b => b.To);
+        // The corner is closed: the arc runs through, on along its tangent (down) to the straight wall's far face (its right one)…
+        var straightRight = Walls.Section(f.Model, f.Model.Get(straight)!).Min(b => b.From);
         var near = f.Session.Geometry(arc)!.Parts.SelectMany(p => p.Solid.Vertices).Where(v => v.X > 3.5).Min(v => v.Y);
-        Assert.Equal(straightLeft, near, 6);
+        Assert.Equal(straightRight, near, 6);
+        // …and the straight wall stops at the arc's face towards it (its left one, outward here).
+        var outer = Walls.Section(f.Model, e).Max(b => b.To);
+        Assert.Equal(4 + outer, f.Bounds(straight).Min.X, 6);
     }
 
     [Fact]

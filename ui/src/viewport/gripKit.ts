@@ -7,6 +7,7 @@
 
 import type { Grip, GripStep, RefLine, Vec2 } from '../platform/module';
 import { edgeMiddles, insertVertex, moveVertex, offsetEdge, removeVertex, toPairs, type Outline } from './contour';
+import { arcLength, axisLine, isArc, middle, pointAt, riseThrough, tangentAt, type Arc } from './arc';
 
 export const pt = (raw: unknown): Vec2 | null => (Array.isArray(raw) && raw.length >= 2 ? { x: Number(raw[0]), y: Number(raw[1]) } : null);
 
@@ -24,6 +25,37 @@ export function axisGrips(a: Vec2, b: Vec2, step: (start: Vec2, end: Vec2) => Gr
 }
 
 export const axisRef = (a: Vec2, b: Vec2): RefLine => ({ points: [a, b], closed: false, kind: 'axis' });
+
+/**
+ * A path's grips, straight or curved: its ends (an arc keeps its rise), a
+ * middle that moves it whole (on a curved one, on its chord) and, on a curved
+ * one, its arc's middle, dragged to bend it through the point.
+ */
+export function pathGrips(c: Arc, step: (start: Vec2, end: Vec2, rise: number) => GripStep): Grip[] {
+  if (!isArc(c)) return axisGrips(c.a, c.b, (s, e) => step(s, e, 0));
+  const chordMid = { x: (c.a.x + c.b.x) / 2, y: (c.a.y + c.b.y) / 2 };
+  return [
+    { key: 'start', kind: 'end', at: c.a, step: (to) => step(to, c.b, c.rise) },
+    { key: 'end', kind: 'end', at: c.b, step: (to) => step(c.a, to, c.rise) },
+    { key: 'move', kind: 'move', at: chordMid, step: (to) => { const d = { x: to.x - chordMid.x, y: to.y - chordMid.y }; return step({ x: c.a.x + d.x, y: c.a.y + d.y }, { x: c.b.x + d.x, y: c.b.y + d.y }, c.rise); } },
+    { key: 'arc', kind: 'radius', at: middle(c), title: 'Drag to bend the arc through the point', step: (to) => step(c.a, c.b, riseThrough(c.a, c.b, to)) },
+  ];
+}
+
+/** A path's axis line (an arc drawn in short steps). */
+export const pathRef = (c: Arc): RefLine => ({ points: axisLine(c), closed: false, kind: 'axis' });
+
+/** The point s along a path and its left normal there. */
+export function frameAt(c: Arc, s: number): { at: Vec2; along: Vec2; left: Vec2 } {
+  const at = pointAt(c, s), along = tangentAt(c, s);
+  return { at, along, left: { x: -along.y, y: along.x } };
+}
+
+/** A flip arrow at a path's middle, across it, pointing to the side `side` (+1 left, −1 right). */
+export function flipAcross(c: Arc, side: number, title: string, click: () => GripStep): Grip {
+  const f = frameAt(c, arcLength(c) / 2);
+  return { key: 'flip', kind: 'flip', at: f.at, dir: { x: f.left.x * side, y: f.left.y * side }, title, click };
+}
 
 /** A closed outline's grips; `save` turns the edited outline into the element's update command. */
 export function outlineGrips<E>(o: Outline<E>, save: (next: Outline<E>) => GripStep): Grip[] {

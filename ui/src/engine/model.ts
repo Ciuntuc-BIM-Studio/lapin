@@ -5,6 +5,7 @@
  */
 
 import type { NodeDto, RelationDto } from './protocol';
+import { arcLength, arcOf } from '../viewport/arc';
 
 export interface ModelState { nodes: Map<string, NodeDto>; relations: Map<string, RelationDto> }
 
@@ -65,7 +66,8 @@ export const materialColor = (s: ModelState, id: string): string => {
 /** "1.234 m" → shown in mm, as the plan does. */
 export const mm = (m: number) => `${Math.round(m * 1000)}`;
 
+/** A wall's length along its axis (an arc's along the arc). */
 export const wallLength = (w: NodeDto): number => {
-  const a = w.props.start as number[] | undefined, b = w.props.end as number[] | undefined;
-  return a && b ? Math.hypot(b[0] - a[0], b[1] - a[1]) : 0;
+  const c = arcOf(w.props);
+  return c ? arcLength(c) : 0;
 };

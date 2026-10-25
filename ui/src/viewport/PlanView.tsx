@@ -29,6 +29,13 @@ import { feedPoint, useCad } from './cad/session';
 import type { Shape } from './cad/shapes';
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelPixels, type Bounds, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
+import { axisLine, riseThrough } from './arc';
+
+/** The radius of the arc from a to b through p (Infinity: in line). */
+function radiusOf(a: Vec2, b: Vec2, p: Vec2): number {
+  const rise = riseThrough(a, b, p), c = Math.hypot(b.x - a.x, b.y - a.y);
+  return rise === 0 ? Infinity : (c * c / 4 + rise * rise) / (2 * Math.abs(rise));
+}
 import { KeyPlan } from './KeyPlan';
 
 type View = View2; // scale = px per metre
@@ -340,6 +347,19 @@ export function PlanView() {
         <g className="plan-preview">
           <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
           <text x={(a.x + b.x) / 2 + 8} y={(a.y + b.y) / 2 - 8}>{toMm(Math.hypot(cur.x - pts[0].x, cur.y - pts[0].y))}</text>
+        </g>
+      );
+    }
+    if (tool.gesture.kind === 'threePoints' && tool.gesture.arc && pts.length >= 1) {
+      // An arc: its ends, then through the cursor.
+      const b = pts[1] ?? cur;
+      const line = pts.length === 2 ? axisLine({ a: pts[0], b, rise: riseThrough(pts[0], b, cur) }) : [pts[0], b];
+      const ps = line.map(toScreen);
+      const m = toScreen(line[Math.floor(line.length / 2)]);
+      return (
+        <g className="plan-preview">
+          <polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} />
+          <text x={m.x + 8} y={m.y - 8}>{pts.length === 2 ? `R ${toMm(Math.abs(radiusOf(pts[0], b, cur)))}` : toMm(Math.hypot(b.x - pts[0].x, b.y - pts[0].y))}</text>
         </g>
       );
     }

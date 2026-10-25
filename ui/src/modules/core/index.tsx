@@ -1,7 +1,7 @@
 /** Core: always there — selecting, measuring, the views and how they look, materials and drafting standards. */
 
 import { AppWindow, Box, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2 } from 'lucide-react';
-import { ElevationIcon, SectionIcon } from '../../icons';
+import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
 import { notify } from '../../app/store';
@@ -19,6 +19,7 @@ import { ViewRangeDialog } from './ViewRangeDialog';
 import { ObjectStylesDialog } from './ObjectStylesDialog';
 import { LocationDialog } from './LocationDialog';
 import { CutOrderDialog } from './CutOrderDialog';
+import { MoveToStoreyDialog } from './MoveToStoreyDialog';
 
 /** Create Similar: the selected element's tool, set up like it. */
 function createSimilar() {
@@ -71,6 +72,7 @@ const core: LapinModule = {
       { id: 'modify.delete', label: 'Delete', icon: Trash2, run: () => void startCommand('ERASE') },
       { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', run: createSimilar },
       { id: 'modify.match', label: 'Match type', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHTYPE') },
+      { id: 'modify.moveToStorey', label: 'Move to storey', icon: MoveToStoreyIcon, run: () => useUi.setState({ dialog: 'moveToStorey' }) },
     ] },
   },
   tabs: [{
@@ -112,7 +114,7 @@ const core: LapinModule = {
       ] },
     ],
   }],
-  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog },
+  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog },
   background: Visibility3D,
   propertySections: [{ id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection }],
   hotbar: [

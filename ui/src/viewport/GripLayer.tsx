@@ -20,7 +20,11 @@ import { gripsOf, referencesOf } from '../platform/modules';
 import { dropGrips, groupGrips, movers, runSteps, type GripGroup } from './grips';
 import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 
-type ToScreen = (p: Vec2) => { x: number; y: number };
+/** Where a model point shows on screen; `z` (the 3D view's) is the height it stands at. */
+type ToScreen = (p: Vec2, z?: number) => { x: number; y: number };
+
+/** How far out from its point a flip arrow is drawn, px. */
+const FLIP_OUT = 22;
 
 export interface GripEditorOptions {
   /** The view's id as drafted shapes name it: a plan view, "plan:<storey>", a section. */
@@ -29,8 +33,12 @@ export interface GripEditorOptions {
   /** The plan's storey: elements on it show their grips. */
   storeyId?: string | null;
   toScreen: ToScreen;
-  /** Where the cursor aims (snapped), measured from a base point. */
-  aim: (clientX: number, clientY: number, from: Vec2) => Vec2;
+  /** Where the cursor aims (snapped), measured from a base point (on the plane at height z, in 3D). */
+  aim: (clientX: number, clientY: number, from: Vec2, z?: number) => Vec2;
+  /** The height an element's grips stand at (3D); none in 2D. */
+  zOf?: (owner: string | undefined) => number;
+  /** Show every selected element's grips, whatever its storey (3D). */
+  anyStorey?: boolean;
   /** Pixels per model unit. */
   scale: number;
   /** A tool or a command is busy: no grips. */
@@ -52,25 +60,37 @@ export function useGripEditor(o: GripEditorOptions) {
 
   // The selection's grips and lines that belong in this view.
   const { grips, refs } = useMemo(() => {
-    if (o.disabled) return { grips: [] as Grip[], refs: [] as RefLine[] };
+    if (o.disabled) return { grips: [] as Grip[], refs: [] as (RefLine & { owner: string })[] };
     const inView = (view: string | undefined, storey: string | null) =>
-      view ? views.includes(view) : o.mode === 'plan' && (!o.storeyId || !storey || storey === o.storeyId);
+      view ? views.includes(view) : o.mode === 'plan' && (o.anyStorey || !o.storeyId || !storey || storey === o.storeyId);
     const gs: Grip[] = [];
-    const rs: RefLine[] = [];
+    const rs: (RefLine & { owner: string })[] = [];
     for (const id of selected) {
       // A grid axis is selected as grid#tag: only that axis.
       const [nodeId, tag] = id.includes('#') ? [id.slice(0, id.indexOf('#')), id.slice(id.indexOf('#') + 1)] : [id, null];
       const n = nodes.get(nodeId);
       if (!n?.editable) continue;
       for (const g of gripsOf(n)) if ((!tag || g.key.startsWith(`${tag}:`)) && inView(g.view, n.storeyId)) gs.push(g);
-      for (const r of referencesOf(n)) if ((!tag || !r.tag || r.tag === tag) && inView(r.view, n.storeyId)) rs.push(r);
+      for (const r of referencesOf(n)) if ((!tag || !r.tag || r.tag === tag) && inView(r.view, n.storeyId)) rs.push({ ...r, owner: n.id });
     }
     return { grips: gs, refs: rs };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, nodes, o.disabled, o.mode, o.storeyId, viewKey]);
+  }, [selected, nodes, o.disabled, o.mode, o.storeyId, o.anyStorey, viewKey]);
 
   const groups = useMemo(() => groupGrips(grips, 3 / Math.max(o.scale, 1e-9)), [grips, o.scale]);
   const pickOf = (g: GripGroup) => pick[g.key] ?? g.members.length;
+  const zOf = (g: GripGroup) => o.zOf?.(g.members[0].owner);
+  /** Where a group shows on screen: its point, a flip arrow a little way out along its direction. */
+  const screenOf = (g: GripGroup, at: Vec2 = g.at) => {
+    const z = zOf(g);
+    const q = o.toScreen(at, z);
+    const d = g.members[0].dir;
+    if (g.members[0].kind !== 'flip' || !d) return { ...q, ux: 0, uy: 0 };
+    const r = o.toScreen({ x: at.x + d.x * 0.01, y: at.y + d.y * 0.01 }, z);
+    const l = Math.hypot(r.x - q.x, r.y - q.y) || 1;
+    const ux = (r.x - q.x) / l, uy = (r.y - q.y) / l;
+    return { x: q.x + ux * FLIP_OUT, y: q.y + uy * FLIP_OUT, ux, uy };
+  };
 
   // Tab over a shared grip: the next owner, then all.
   useEffect(() => {
@@ -95,11 +115,12 @@ export function useGripEditor(o: GripEditorOptions) {
     const p = local(e);
     let best: GripGroup | null = null, bd = 8;
     for (const g of groups) {
-      const q = o.toScreen(g.at);
+      const q = screenOf(g);
       const d = Math.hypot(q.x - p.x, q.y - p.y);
       if (d < bd) { bd = d; best = g; }
     }
     return best;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups, local, o]);
 
   /** True when the press was on a grip (the view should do nothing else). */
@@ -108,6 +129,8 @@ export function useGripEditor(o: GripEditorOptions) {
     const g = hit(e);
     if (!g) return false;
     const who = movers(g, pickOf(g), e.altKey);
+    // A flip arrow: a click.
+    if (who[0].kind === 'flip') { void runSteps([who[0].click?.()]); return true; }
     if (e.ctrlKey || e.metaKey) {
       const first = who[0];
       if (first.insert) void runSteps([first.insert()]);
@@ -123,7 +146,7 @@ export function useGripEditor(o: GripEditorOptions) {
   /** True while dragging a grip. */
   const onPointerMove = (e: React.PointerEvent): boolean => {
     if (!drag) { setHover(hit(e)); return false; }
-    const aimed = o.aim(e.clientX, e.clientY, drag.group.at);
+    const aimed = o.aim(e.clientX, e.clientY, drag.group.at, zOf(drag.group));
     liveCursor(aimed);
     const at = livePoint({ ...useLive.getState(), cursor: aimed }) ?? aimed;
     const members = movers(drag.group, pickOf(drag.group), e.altKey);
@@ -140,11 +163,19 @@ export function useGripEditor(o: GripEditorOptions) {
 
   const nameOf = (owner?: string) => (owner ? nodes.get(owner)?.name ?? owner : '');
   const shape = (g: GripGroup, i: number) => {
-    const q = o.toScreen(drag?.group === g ? drag.at : g.at);
+    const q = screenOf(g, drag?.group === g ? drag.at : g.at);
     const kind = g.members[0].kind ?? 'end';
     const shared = g.members.length > 1;
     const cls = `plan-grip ${kind}${shared ? ' shared' : ''}${hover === g ? ' hot' : ''}`;
-    const title = shared ? `${g.members.map((m) => nameOf(m.owner)).join(' + ')} · Tab picks one · Alt moves one` : kind === 'edgeMid' ? 'Drag the edge · Ctrl/⌘-click adds a vertex' : kind === 'vertex' ? 'Drag · Ctrl/⌘-click removes it' : 'Drag';
+    const title = g.members[0].title ?? (shared ? `${g.members.map((m) => nameOf(m.owner)).join(' + ')} · Tab picks one · Alt moves one` : kind === 'edgeMid' ? 'Drag the edge · Ctrl/⌘-click adds a vertex' : kind === 'vertex' ? 'Drag · Ctrl/⌘-click removes it' : 'Drag');
+    // A flip arrow: a small arrowhead pointing the way it flips, its stem back towards the element.
+    if (kind === 'flip') {
+      const { ux, uy } = q, nx = -uy, ny = ux;
+      const tip = { x: q.x + ux * 6, y: q.y + uy * 6 };
+      const d = `M${tip.x} ${tip.y}L${q.x - ux * 2 + nx * 5} ${q.y - uy * 2 + ny * 5}L${q.x - ux * 2 - nx * 5} ${q.y - uy * 2 - ny * 5}Z`
+        + `M${q.x - ux * 2} ${q.y - uy * 2}L${q.x - ux * 10} ${q.y - uy * 10}`;
+      return <g key={`${g.key}:${i}`}><circle cx={q.x} cy={q.y} r={9} className="plan-grip-hit" /><path d={d} className={cls} /><title>{title}</title></g>;
+    }
     const body = kind === 'edgeMid' ? <path d={`M${q.x - 4} ${q.y}L${q.x} ${q.y - 4}L${q.x + 4} ${q.y}L${q.x} ${q.y + 4}Z`} className={cls} />
       : kind === 'move' ? <path d={`M${q.x - 6} ${q.y}H${q.x + 6}M${q.x} ${q.y - 6}V${q.y + 6}`} className={`${cls} cross`} />
       : kind === 'rotate' || kind === 'radius' ? <circle cx={q.x} cy={q.y} r={4} className={cls} />
@@ -155,14 +186,15 @@ export function useGripEditor(o: GripEditorOptions) {
   const render = (
     <g className="grip-layer">
       {refs.map((r, i) => {
-        const ps = r.points.map(o.toScreen);
+        const z = o.zOf?.(r.owner);
+        const ps = r.points.map((p) => o.toScreen(p, z));
         if (ps.length < 2) return null;
         const d = `M${ps.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join('L')}${r.closed ? 'Z' : ''}`;
         return <path key={`ref${i}`} d={d} className={`ref-line ${r.kind}`} />;
       })}
       {groups.map(shape)}
       {drag?.moved && (() => {
-        const a = o.toScreen(drag.group.at), b = o.toScreen(drag.at);
+        const a = o.toScreen(drag.group.at, zOf(drag.group)), b = o.toScreen(drag.at, zOf(drag.group));
         const dx = drag.at.x - drag.group.at.x, dy = drag.at.y - drag.group.at.y;
         const ang = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
         return (
@@ -173,7 +205,7 @@ export function useGripEditor(o: GripEditorOptions) {
         );
       })()}
       {hover && hover.members.length > 1 && !drag && (() => {
-        const q = o.toScreen(hover.at);
+        const q = o.toScreen(hover.at, zOf(hover));
         const who = movers(hover, pickOf(hover), alt.current);
         return <text x={q.x + 10} y={q.y + 16} className="grip-hint">{who.length > 1 ? `all ${who.length}` : nameOf(who[0].owner)} · Tab</text>;
       })()}

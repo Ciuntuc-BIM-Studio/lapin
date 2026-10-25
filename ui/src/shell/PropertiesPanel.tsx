@@ -11,7 +11,7 @@ import { Cell, LengthCell } from './cells';
 import { panelFocus, panelKeys, parseNumber } from './cellKeys';
 import { useUi } from '../app/store';
 import { execute, useSession } from '../engine/session';
-import { relatingOf, typeOf } from '../engine/model';
+import { relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
 import type { FieldDescriptor, NodeDto } from '../engine/protocol';
 import { propertySections } from '../platform/modules';
 import { QuantitiesSection } from './QuantitiesSection';
@@ -89,11 +89,16 @@ function Group({ id, label, children }: { id: string; label: string; children: R
 interface Param { name: string; kind: string; value: unknown; options?: string[] }
 const KINDS = ['text', 'number', 'length', 'area', 'angle', 'bool', 'choice'] as const;
 
-function ParamsSection({ node }: { node: NodeDto }) {
+/**
+ * The user's parameters of `node` (an element, or the type it shows the
+ * parameters of: `ids` then names who is written). Parameters the element
+ * has of its own shadow its type's of the same name.
+ */
+function ParamsSection({ node, ids: who, shadowed }: { node: NodeDto; ids?: () => string[]; shadowed?: Set<string> }) {
   const params = (Array.isArray(node.props.params) ? node.props.params : []) as unknown as Param[];
   const [name, setName] = useState('');
   const [kind, setKind] = useState<string>('text');
-  const ids = () => sameKind(node);
+  const ids = who ?? (() => sameKind(node));
   const set = (p: Param, value: unknown) => void execute('element.setParam', { ids: ids(), name: p.name, value });
   const add = () => {
     const n = name.trim();
@@ -107,7 +112,7 @@ function ParamsSection({ node }: { node: NodeDto }) {
         <dl className="fields">
           {params.map((p) => (
             <span key={p.name} className="qrow">
-              <dt title={p.kind}>{p.name}<button type="button" className="icon mini row-x" title="Remove the parameter" onClick={() => void execute('element.removeParam', { ids: ids(), name: p.name })}><X size={10} /></button></dt>
+              <dt title={shadowed?.has(p.name.toLowerCase()) ? `${p.kind} · this element has its own value` : p.kind} className={shadowed?.has(p.name.toLowerCase()) ? 'shadowed' : undefined}>{p.name}<button type="button" className="icon mini row-x" title="Remove the parameter" onClick={() => void execute('element.removeParam', { ids: ids(), name: p.name })}><X size={10} /></button></dt>
               <dd>
                 {p.kind === 'length' ? <LengthCell metres={p.value as number} onCommit={(m) => set(p, m)} />
                   : p.kind === 'bool' ? <input type="checkbox" checked={p.value === true} onChange={(e) => set(p, e.target.checked)} />
@@ -240,12 +245,30 @@ function ElementPanel({ node }: { node: NodeDto }) {
       {sections.map((s) => (
         <Group key={s.id} id={s.id} label={s.label}><s.component node={node} /></Group>
       ))}
+      {node.editable && storey && node.type !== 'IfcBuildingStorey' && (
+        <Group id="placement" label="Placement">
+          <dl className="fields">
+            <dt title="Moves the selection there, with the level (Modify › Move to storey keeps it in place)">Storey</dt>
+            <dd>
+              <select className="cell" value={storey.id} onChange={(e) => void execute('element.moveToStorey', { ids: useUi.getState().selected.includes(node.id) ? useUi.getState().selected : [node.id], storeyId: e.target.value })}>
+                {storeys(model).map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
+              </select>
+            </dd>
+          </dl>
+        </Group>
+      )}
       {cls && cls.fields.length > 0 && node.editable && !sections.some((s) => s.replacesFields?.(node)) && (
         <Group id="dimensions" label="Dimensions">
           <dl className="fields">{cls.fields.map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
         </Group>
       )}
       {node.editable && <Group id="params" label="Parameters"><ParamsSection node={node} /></Group>}
+      {node.editable && type && (
+        <Group id="typeParams" label={`Type parameters · ${type.name}`}>
+          <p className="muted small pad">Every element of the type has these; a change here changes them all ({relatedOf(model, type.id, 'IfcRelDefinesByType').length}).</p>
+          <ParamsSection node={type} ids={() => [type.id]} shadowed={new Set(((Array.isArray(node.props.params) ? node.props.params : []) as unknown as Param[]).map((p) => p.name.toLowerCase()))} />
+        </Group>
+      )}
       <QuantitiesSection node={node} />
       {node.editable && node.type !== 'IfcProject' && node.type !== 'IfcSite' && node.type !== 'IfcBuilding' && (
         <section className="sect actions">
