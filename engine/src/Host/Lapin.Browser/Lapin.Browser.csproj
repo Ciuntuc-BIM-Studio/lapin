@@ -13,16 +13,13 @@
     <RunAOTCompilation Condition="'$(Configuration)' == 'Release'">true</RunAOTCompilation>
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>full</TrimMode>
-    <!-- manifold is linked in: engine/native/browser-wasm, built by scripts/build-manifold.mjs with its browser option. -->
+    <!-- manifold is linked in: the static libraries come with BubbleBim.Booleans (its build targets), or from the core beside the repo (engine/Directory.Build.targets). -->
     <WasmBuildNative>true</WasmBuildNative>
-    <LapinNative>$(MSBuildThisFileDirectory)../../../native/browser-wasm/</LapinNative>
   </PropertyGroup>
   <ItemGroup>
-    <NativeFileReference Include="$(LapinNative)manifoldc.a;$(LapinNative)libmanifold.a;$(LapinNative)libClipper2.a" />
     <ProjectReference Include="../../Platform/Lapin.Protocol/Lapin.Protocol.csproj" />
+    <!-- Referenced here, not only through the platform: a package's build targets do not flow through a project reference. -->
+    <BubbleCore Include="BubbleBim.Booleans" />
   </ItemGroup>
   <Import Project="generated/Product.g.props" />
-  <Target Name="LapinBrowserChecks" BeforeTargets="Build">
-    <Error Condition="!Exists('$(LapinNative)manifoldc.a')" Text="manifold for the browser is missing: run node scripts/build-manifold.mjs --browser-wasm" />
-  </Target>
 </Project>

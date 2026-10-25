@@ -20,6 +20,12 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       PRODUCT: ${{ inputs.product || 'lapin' }}
+      # The core's packages (nuget.config): the workflow's token, or one that reads packages.
+      BUBBLE_CORE_USER: ${{ github.actor }}
+      BUBBLE_CORE_TOKEN: ${{ secrets.BUBBLE_CORE_TOKEN || secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -34,16 +40,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: desktop/src-tauri
-      # What Tauri needs on Linux (WebKitGTK), and cmake for manifold.
+      # What Tauri needs on Linux (WebKitGTK).
       - run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf cmake
-      # The booleans: manifold's C API as one libmanifoldc.so, picked up by the engine.
-      - uses: actions/cache@v4
-        with:
-          path: engine/native/linux-x64
-          key: manifold-linux-x64-${{ hashFiles('scripts/build-manifold.mjs') }}
-      - run: test -f engine/native/linux-x64/libmanifoldc.so || node scripts/build-manifold.mjs
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf
       - run: pnpm install --frozen-lockfile
         env:
           CI: 'true'

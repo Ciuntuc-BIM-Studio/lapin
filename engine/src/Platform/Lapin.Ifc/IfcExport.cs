@@ -1,8 +1,9 @@
 using System.Text.Json.Nodes;
-using Lapin.Geometry;
+using BubbleBim.Geometry;
+using BubbleBim.Step;
 using Lapin.Model;
 using Lapin.Platform;
-using static Lapin.Ifc.Step;
+using static BubbleBim.Step.StepWriter;
 
 namespace Lapin.Ifc;
 
@@ -114,7 +115,7 @@ public static class IfcExport
 
     sealed class Writer(Session s, IfcExportOptions o)
     {
-        public readonly Step File = new();
+        public readonly StepWriter File = new() { Application = "Lapin" };
         public IfcExportOptions O => o;
         public int Elements, PartCount, StoreyCount;
         public readonly List<string> Notes = [];
@@ -132,7 +133,7 @@ public static class IfcExport
         readonly List<Relation> pendingFills = [];
         readonly List<(Relation Rel, string Host, string Void)> pendingVoids = [];
 
-        Step f => File;
+        StepWriter f => File;
 
         public void Run()
         {

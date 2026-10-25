@@ -6,5 +6,6 @@
   -->
   <ItemGroup>
     <ProjectReference Include="../Lapin.Platform/Lapin.Platform.csproj" />
+    <BubbleCore Include="BubbleBim.Step" />
   </ItemGroup>
 </Project>

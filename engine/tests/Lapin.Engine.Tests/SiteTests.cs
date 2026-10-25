@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
-using Lapin.Geometry;
+using BubbleBim.Step;
+using BubbleBim.Geometry;
 using Lapin.Architecture;
 using Lapin.Civil;
 using Lapin.Ifc;
@@ -198,7 +199,7 @@ public class SiteTests
         f.Run("civil.addSpot", new JsonObject { ["x"] = 20, ["y"] = 20 });
         Assert.Equal(2, Terrains.Spots(f.Model.Get(t)!).Count);
         f.Run("civil.removeSpot", new JsonObject { ["id"] = t, ["x"] = 10.2, ["y"] = 10.1 });
-        Assert.Equal([new Lapin.Geometry.Vec2(20, 20)], Terrains.Spots(f.Model.Get(t)!));
+        Assert.Equal([new BubbleBim.Geometry.Vec2(20, 20)], Terrains.Spots(f.Model.Get(t)!));
         var r = (JsonObject)f.Run("civil.setParcel", new JsonObject { ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(30, 0), new JsonArray(30, 20), new JsonArray(0, 20)) })!;
         Assert.Equal(600, (double)r["area"]!, 6);
         var q = f.Session.Quantities(t).Single(x => x.Name == "Lapin_TerrainQuantities");

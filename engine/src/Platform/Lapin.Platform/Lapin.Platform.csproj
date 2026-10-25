@@ -7,8 +7,8 @@
   <ItemGroup>
     <ProjectReference Include="../../Model/Lapin.Model/Lapin.Model.csproj" />
     <ProjectReference Include="../Lapin.Drawing/Lapin.Drawing.csproj" />
-    <ProjectReference Include="$(LapinGeometryDir)Lapin.Geometry/Lapin.Geometry.csproj" />
+    <BubbleCore Include="BubbleBim.Geometry" />
     <!-- Booleans by manifold (Apache-2.0), its native library beside the engine. -->
-    <ProjectReference Include="$(LapinGeometryDir)Lapin.Booleans/Lapin.Booleans.csproj" />
+    <BubbleCore Include="BubbleBim.Booleans" />
   </ItemGroup>
 </Project>

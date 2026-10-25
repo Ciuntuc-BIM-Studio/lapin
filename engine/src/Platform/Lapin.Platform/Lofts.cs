@@ -1,4 +1,4 @@
-using Lapin.Geometry;
+using BubbleBim.Geometry;
 
 namespace Lapin.Platform;
 

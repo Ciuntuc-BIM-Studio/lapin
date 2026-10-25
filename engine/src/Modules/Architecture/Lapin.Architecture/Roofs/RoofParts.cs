@@ -1,5 +1,5 @@
 // Ported from BubbleBIM Pro (the user's own engine, engine/src/Modules/Building/BubbleBim.Building/Roofs), adapted to Lapin's model.
-using Lapin.Geometry;
+using BubbleBim.Geometry;
 
 namespace Lapin.Architecture.Roofs;
 

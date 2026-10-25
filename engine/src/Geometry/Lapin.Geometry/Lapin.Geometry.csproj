@@ -1,3 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <!-- The B-rep kernel: no dependencies at all. Taken from BubbleBIM Pro (the user's own engine) on 25.10.2026; Lapin's own copy since. -->
-</Project>

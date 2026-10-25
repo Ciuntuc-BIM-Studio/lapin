@@ -9,6 +9,25 @@
   </PropertyGroup>
 
   <!--
+    The core's libraries: a project says <BubbleCore Include="BubbleBim.Geometry" />
+    (Private="false" where the platform's references are) and gets the project
+    beside the repo or the package (engine/Directory.Build.props).
+  -->
+  <ItemGroup Condition="'$(BubbleCoreDir)' != ''">
+    <ProjectReference Include="@(BubbleCore->'$(BubbleCoreDir)src/%(Identity)/%(Identity).csproj')" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(BubbleCoreDir)' == ''">
+    <PackageReference Include="@(BubbleCore)" Version="$(BubbleCoreVersion)" />
+  </ItemGroup>
+  <!-- The engine in the browser with the core beside the repo: manifold's static libraries from there (the package brings its own targets for this). -->
+  <ItemGroup Condition="'$(BubbleCoreDir)' != '' And '$(RuntimeIdentifier)' == 'browser-wasm'">
+    <NativeFileReference Include="$(BubbleCoreDir)native/browser-wasm/manifoldc.a;$(BubbleCoreDir)native/browser-wasm/libmanifold.a;$(BubbleCoreDir)native/browser-wasm/libClipper2.a" />
+  </ItemGroup>
+  <Target Name="BubbleCoreBrowserNatives" BeforeTargets="Build" Condition="'$(BubbleCoreDir)' != '' And '$(RuntimeIdentifier)' == 'browser-wasm'">
+    <Error Condition="!Exists('$(BubbleCoreDir)native/browser-wasm/manifoldc.a')" Text="manifold for the browser is missing in the core beside this repo: run node $(BubbleCoreDir)scripts/build-manifold.mjs --browser-wasm" />
+  </Target>
+
+  <!--
     A module is a project that sets <LapinModuleId>. After each build its own
     assemblies (never the platform's: those references are Private=false) and
     its module.json are copied to artifacts/modules/<id>/: the folder layout
@@ -16,7 +35,7 @@
   -->
   <Target Name="CopyLapinModule" AfterTargets="Build" Condition="'$(LapinModuleId)' != ''">
     <ItemGroup>
-      <_LapinModuleFiles Include="$(OutDir)*.dll;$(OutDir)*.pdb" Exclude="$(OutDir)Lapin.Model.*;$(OutDir)Lapin.Platform.*;$(OutDir)Lapin.Geometry.*;$(OutDir)Lapin.Booleans.*" />
+      <_LapinModuleFiles Include="$(OutDir)*.dll;$(OutDir)*.pdb" Exclude="$(OutDir)Lapin.Model.*;$(OutDir)Lapin.Platform.*;$(OutDir)BubbleBim.*" />
     </ItemGroup>
     <RemoveDir Directories="$(LapinModulesDir)$(LapinModuleId)" />
     <Copy SourceFiles="@(_LapinModuleFiles);$(MSBuildProjectDirectory)/module.json"

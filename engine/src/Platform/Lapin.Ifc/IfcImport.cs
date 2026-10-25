@@ -1,7 +1,8 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Lapin.Geometry;
+using BubbleBim.Geometry;
+using BubbleBim.Step;
 using Lapin.Model;
 using Lapin.Platform;
 
@@ -300,7 +301,7 @@ public static class IfcImport
             if (layerSets.TryGetValue(fileSet, out var id)) return id;
             var set = f.Entities[fileSet];
             var layers = Items(set[0]).Select(l => new MaterialLayer(MaterialId(edit, Ref(l[0])), Length(l[1]), Str(l[5]) == "Core", Str(l[3]))).ToList();
-            id = Step.Guid(ownerId, "layerset");
+            id = StepWriter.Guid(ownerId, "layerset");
             Put(edit, id, IfcClass.MaterialLayerSet, Str(set[1]) ?? "Layers", Layers.Write(layers), null, counts: false);
             return layerSets[fileSet] = id;
         }
@@ -360,7 +361,7 @@ public static class IfcImport
                     var setId = LayerSet(edit, set.Id, owner);
                     var attrs = Layers.WriteUsage(new LayerUsage(setId, Enum(usage[2]) == "NEGATIVE", Length(usage[3])));
                     attrs["layerSetDirection"] = Enum(usage[1]) ?? "AXIS2";
-                    var usageId = Step.Guid(gid, "usage");
+                    var usageId = StepWriter.Guid(gid, "usage");
                     Put(edit, usageId, IfcClass.MaterialLayerSetUsage, "", attrs, null, counts: false);
                     var relId = Str(rel[0]);
                     relations.Add(x => Relate(x, relId, IfcClass.RelAssociatesMaterial, usageId, gid));

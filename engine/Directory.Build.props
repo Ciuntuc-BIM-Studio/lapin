@@ -9,7 +9,17 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <!-- Where every module lands after a build, ready for the host to load and a product build to ship. -->
     <LapinModulesDir>$(MSBuildThisFileDirectory)artifacts/modules/</LapinModulesDir>
-    <!-- The geometry kernel (B-rep) and the booleans (manifold), taken from BubbleBIM Pro on 25.10.2026. -->
-    <LapinGeometryDir>$(MSBuildThisFileDirectory)src/Geometry/</LapinGeometryDir>
+    <!--
+      The core shared with BubbleBIM Pro (github.com/Ciuntuc-BIM-Studio/bubble-core):
+      BubbleBim.Geometry, BubbleBim.Booleans, BubbleBim.Step. From its packages
+      (BubbleCoreVersion, the feed in nuget.config), or from that repository
+      itself when it is checked out beside this one (../bubble-core, or
+      BUBBLE_CORE_DIR), so the core and Lapin can be worked on together. CI
+      never has it beside: CI always builds against the published packages.
+      BubbleCoreFromPackages=true forces the packages here too.
+    -->
+    <BubbleCoreVersion>0.1.0</BubbleCoreVersion>
+    <BubbleCoreDir Condition="'$(BubbleCoreFromPackages)' != 'true' And '$(BUBBLE_CORE_DIR)' != ''">$([MSBuild]::EnsureTrailingSlash('$(BUBBLE_CORE_DIR)'))</BubbleCoreDir>
+    <BubbleCoreDir Condition="'$(BubbleCoreFromPackages)' != 'true' And '$(BubbleCoreDir)' == '' And Exists('$(MSBuildThisFileDirectory)../../bubble-core/BubbleCore.slnx')">$(MSBuildThisFileDirectory)../../bubble-core/</BubbleCoreDir>
   </PropertyGroup>
 </Project>

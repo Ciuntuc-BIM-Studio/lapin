@@ -11,6 +11,6 @@
     <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
     <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
     <ProjectReference Include="../../../Platform/Lapin.Drawing/Lapin.Drawing.csproj" Private="false" />
-    <ProjectReference Include="$(LapinGeometryDir)Lapin.Geometry/Lapin.Geometry.csproj" Private="false" />
+    <BubbleCore Include="BubbleBim.Geometry" Private="false" />
   </ItemGroup>
 </Project>

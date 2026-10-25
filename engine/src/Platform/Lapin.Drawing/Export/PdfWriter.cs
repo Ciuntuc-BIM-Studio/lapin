@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
-using Lapin.Geometry;
+using BubbleBim.Geometry;
 using Lapin.Drawing.Views;
 
 namespace Lapin.Drawing.Export;

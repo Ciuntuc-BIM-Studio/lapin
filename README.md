@@ -5,12 +5,13 @@ BIM authoring for architects and engineers.
 Lapin is a desktop application and a classic modeller on the IFC schema. Its interface
 (React, TypeScript, three.js) runs in a Tauri window and talks over a local WebSocket to
 Lapin's engine (C#, .NET 10, `engine/`), which holds the IFC model and derives its geometry
-with its own B-rep kernel (`engine/src/Geometry`) and manifold for the booleans.
+with the BubbleBIM core (`BubbleBim.Geometry`, `BubbleBim.Booleans`, `BubbleBim.Step`: the packages of `github.com/Ciuntuc-BIM-Studio/bubble-core`).
 
 > Private repository. Licensed under the MIT licence (see `LICENSE`).
-> The geometry kernel was taken from BubbleBIM Pro (the author's own engine) on
-> 25.10.2026 and is Lapin's own code since, under the same licence. manifold
-> (Apache-2.0) and Clipper2 (BSL-1.0) are described in `engine/native/README.md`.
+> The geometry kernel, the booleans and the STEP reader are the BubbleBIM core,
+> shared with BubbleBIM Pro and MIT like Lapin; manifold (Apache-2.0) and Clipper2
+> (BSL-1.0) come with it. With `bubble-core` checked out beside this repo the core
+> is built from source; otherwise its packages are restored (`nuget.config`).
 
 ## Layout
 

@@ -22,6 +22,12 @@ jobs:
     runs-on: windows-2022
     env:
       PRODUCT: ${{ inputs.product || 'lapin' }}
+      # The core's packages (nuget.config): the workflow's token, or one that reads packages.
+      BUBBLE_CORE_USER: ${{ github.actor }}
+      BUBBLE_CORE_TOKEN: ${{ secrets.BUBBLE_CORE_TOKEN || secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: read
+      packages: read
     defaults:
       run:
         shell: bash
@@ -39,20 +45,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: desktop/src-tauri
-      # The booleans: manifold's C API as one manifoldc.dll, picked up by the engine.
-      - uses: actions/cache@v4
-        with:
-          path: engine/native/win-x64
-          key: manifold-win-x64-${{ hashFiles('scripts/build-manifold.mjs', 'engine/src/Geometry/Lapin.Booleans/ManifoldBooleans.cs') }}
-      # MSVC's environment (vcvars64) for this step only: on later steps Git's own
-      # link.exe would shadow MSVC's for Rust, and Platform=x64 would confuse MSBuild.
-      - name: manifold
-        shell: pwsh
-        run: |
-          if (Test-Path engine/native/win-x64/manifoldc.dll) { exit 0 }
-          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
-          cmd /c "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" && node scripts/build-manifold.mjs"
-          exit $LASTEXITCODE
       - run: pnpm install --frozen-lockfile
         env:
           CI: 'true'

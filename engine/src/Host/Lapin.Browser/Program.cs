@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices.JavaScript;
 using System.Runtime.Versioning;
-using Lapin.Geometry;
+using BubbleBim.Geometry;
 using Lapin.Platform;
 using Lapin.Protocol;
 
@@ -72,5 +72,5 @@ sealed class BrowserModule : ILapinModule
 {
     public string Id => "browser";
     public string Name => "Browser";
-    public void Register(IModuleRegistry r) => r.Service<ISolidBooleans>(new Lapin.Booleans.ManifoldBooleans());
+    public void Register(IModuleRegistry r) => r.Service<ISolidBooleans>(new BubbleBim.Booleans.ManifoldBooleans());
 }

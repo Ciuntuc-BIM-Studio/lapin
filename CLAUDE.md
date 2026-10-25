@@ -18,9 +18,9 @@ Private repo `Ciuntuc-BIM-Studio/lapin-pro`. The user writes in Romanian; the UI
   - `ui/src/engine/session.ts`: the WebSocket JSON-RPC client.
 - `products/<id>.json`: an edition, a list of modules. `scripts/product.mjs` completes it with what the modules require; dev, the UI build and `build:product` all use it, so a package holds only the product's modules (engine and UI).
 - `desktop/src-tauri`: the Tauri shell.
-- `engine/src/Geometry`: Lapin.Geometry (the B-rep kernel) and Lapin.Booleans (manifold's C API).
-  - Taken from the user's private BubbleBIM Pro engine on 25.10.2026 (it was the submodule `vendor/bubblebim-pro`); Lapin's own MIT code since, so the repo needs no other repository to build.
-  - `engine/native/<rid>/`: manifold's native library. macOS's is committed; `node scripts/build-manifold.mjs` builds it (CI builds Linux's).
+- The core shared with BubbleBIM Pro, `github.com/Ciuntuc-BIM-Studio/bubble-core` (MIT; private until the user opens it): the NuGet packages `BubbleBim.Geometry` (the B-rep kernel), `BubbleBim.Booleans` (manifold, with its native library per platform under `runtimes/`) and `BubbleBim.Step` (STEP read and written, an IFC file read).
+  - `engine/Directory.Build.props`: with bubble-core checked out beside this repo (`../bubble-core`), the projects there are referenced directly; else the packages of `BubbleCoreVersion` from the feed in `nuget.config` (GitHub Packages, `BUBBLE_CORE_USER`/`BUBBLE_CORE_TOKEN`). CI always uses the packages. A project declares `<BubbleCore Include="BubbleBim.Geometry" />`.
+  - manifold is built in bubble-core (`scripts/build-manifold.mjs` there, also `--browser-wasm`); nothing native is built here.
   - Lapin does not use BubbleBIM Pro's graph model. Its platform patterns (module folders, session, undo, protocol, product packaging) were copied and adapted; code from BubbleBIM Pro and Atrium (`~/Documents/GitHub/Atrium`, MIT-0) may be reused.
 - `docs/decisions.md`: the register of decisions taken, with their sources.
 - `docs/plan.md`: decisions, the architecture and milestones M0–M9.
@@ -42,7 +42,7 @@ pnpm build:product <id>        # one edition as a desktop app → build/<id>/bun
 pnpm build:web <id>            # the same edition for the browser (engine in a Web Worker) → build/<id>/web; needs the wasm-tools workload (engine/src/Host/Lapin.Browser/README.md)
 ```
 
-Linux (.deb, .AppImage) and Windows (NSIS installer) builds run in GitHub Actions: Actions → Build Linux / Build Windows → Run workflow, a tag `v*`, or (Windows) a push to a `build/**` branch; the packages are the run's artifacts. Windows builds manifold with MSVC (`node scripts/build-manifold.mjs` from a Visual Studio x64 developer prompt).
+Linux (.deb, .AppImage) and Windows (NSIS installer) builds run in GitHub Actions: Actions → Build Linux / Build Windows → Run workflow, a tag `v*`, or (Windows) a push to a `build/**` branch; the packages are the run's artifacts. Nothing native is built here: manifold comes with the core's package.
 
 If pnpm complains about @tauri-apps when installing, use `CI=true pnpm install`. `.npmrc` hoists `@tauri-apps/*`. `pnpm check:licenses` checks the UI's npm packages and the engine's NuGet packages.
 
