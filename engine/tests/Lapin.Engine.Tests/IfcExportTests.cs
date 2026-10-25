@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
+using Lapin.Model;
 using Lapin.Civil;
 using Lapin.Drafting;
 using Lapin.Ifc;
@@ -199,5 +200,23 @@ public class IfcExportTests : IDisposable
         Assert.Contains("IFCPROPERTYSINGLEVALUE('Fire rating',$,IFCLABEL('EI60'),$)", text);
         Assert.Contains("IFCPROPERTYSINGLEVALUE('Finish height',$,IFCLENGTHMEASURE(2.1),$)", text);
         Assert.Contains("IFCTEXT('check on site')", text);
+    }
+
+    [Fact]
+    public void A_types_parameters_go_out_on_the_type_and_an_elements_own_on_it()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var wall = f.Wall(0, 0, 4, 0);
+        var type = f.Model.RelatingOf(wall, IfcClass.RelDefinesByType)!.Id;
+        f.Run("element.setParam", new JsonObject { ["id"] = type, ["name"] = "Fire rating", ["kind"] = "text", ["value"] = "EI90" });
+        f.Run("element.setParam", new JsonObject { ["id"] = wall, ["name"] = "Note", ["kind"] = "text", ["value"] = "own" });
+        var file = StepFile.Read(Export(f, "type-params.ifc"));
+        var wallType = One(file, "IFCWALLTYPE");
+        // The type's HasPropertySets: its intent and its parameters.
+        var names = Items(wallType[5]).Select(r => file.Get(r)![2] as string).ToList();
+        Assert.Contains(IfcExport.ParamsSetName, names);
+        // The wall carries only its own.
+        var own = SetsOf(file, One(file, "IFCWALL")).Single(x => (string?)x[2] == IfcExport.ParamsSetName);
+        Assert.Single(Items(own[4]));
     }
 }

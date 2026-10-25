@@ -21,6 +21,7 @@ public sealed class StructureModule : ILapinModule
         r.Class(new(IfcClass.Footing, "Footing", [new("rotation", "Rotation", "angle"), priority], "#a8a8a8"));
         r.Class(new(IfcClass.FootingType, "Footing type", [new("bottom", "Bottom level", "length")], "#a8a8a8", Kind: "type"));
 
+        r.Service<IStoreyLevels>(new Levels());
         r.Geometry(IfcClass.Column, Columns.Geometry);
         r.Geometry(IfcClass.Beam, Beams.Geometry);
         r.Geometry(IfcClass.Footing, (f, m, s) => IsPad(m, f) ? PadFootings.Geometry(f, m, s) : StripFootings.Geometry(f, m, s));
@@ -229,4 +230,15 @@ public sealed class StructureModule : ILapinModule
     static IPathElements Paths(ICommandContext ctx) => ctx.Services.Get<IPathElements>()!;
 
     static JoinStyle Style(JsonNode? n) => Args.JoinStyle(n) ?? JoinStyle.Butt;
+}
+
+/// <summary>Heights over the storey: a column's base, a beam's top (under the storey's top).</summary>
+sealed class Levels : IStoreyLevels
+{
+    public IEnumerable<(string Key, bool FromTop)> LevelsOf(Entity e) => e.Class switch
+    {
+        IfcClass.Column => [("baseOffset", false)],
+        IfcClass.Beam => [("topOffset", true)],
+        _ => [],
+    };
 }

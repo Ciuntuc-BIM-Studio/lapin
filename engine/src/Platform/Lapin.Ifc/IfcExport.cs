@@ -405,8 +405,10 @@ public static class IfcExport
             {
                 var typeClass = type.Class.EndsWith("Type", StringComparison.Ordinal) && Classes.ContainsKey(type.Class[..^4]) ? type.Class : kind.Class + "Type";
                 var intent = IntentOf(type, Gid(type.Id, IntentSetName), null);
+                // The type's parameters, which every element of the type has.
+                string[] sets = ParamsOf(type, Gid(type.Id, ParamsSetName)) is { } ps ? [intent, ps] : [intent];
                 var pre = E(kind.Predefined.Length == 0 ? "NOTDEFINED" : kind.Predefined);
-                string[] common = [Gid(type.Id), Null, S(type.Name), Null, Null, L(new[] { intent }), Null, S(type.Id), S(kind.Predefined == "USERDEFINED" ? kind.ObjectType : null)];
+                string[] common = [Gid(type.Id), Null, S(type.Name), Null, Null, L(sets), Null, S(type.Id), S(kind.Predefined == "USERDEFINED" ? kind.ObjectType : null)];
                 var up = typeClass.ToUpperInvariant();
                 var r = kind.Class switch
                 {
@@ -558,7 +560,13 @@ public static class IfcExport
             if (e.Str("phaseCreated") is { } created) phase.Add(Single("Created", Typed("IFCLABEL", S(PhaseName(created)))));
             if (e.Str("phaseDemolished") is { } demolished) phase.Add(Single("Demolished", Typed("IFCLABEL", S(PhaseName(demolished)))));
             if (phase.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, PhaseSetName), Null, S(PhaseSetName), Null, L(phase)), Gid(e.Id, "phase-rel"));
-            // The user's own parameters, typed.
+            // The user's own parameters (those of its type are on the type, which IFC readers pass on to it).
+            if (ParamsOf(e, Gid(e.Id, ParamsSetName)) is { } set) Define(entity, set, Gid(e.Id, "params-rel"));
+        }
+
+        /// <summary>An entity's own parameters as a typed property set; null when it has none.</summary>
+        string? ParamsOf(Entity e, string gid)
+        {
             var own = new List<string>();
             foreach (var p in (e.Attrs["params"] as JsonArray)?.OfType<JsonObject>() ?? [])
             {
@@ -574,7 +582,7 @@ public static class IfcExport
                 };
                 if (value != null) own.Add(Single(pname, value));
             }
-            if (own.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, ParamsSetName), Null, S(ParamsSetName), Null, L(own)), Gid(e.Id, "params-rel"));
+            return own.Count > 0 ? f.Add("IFCPROPERTYSET", gid, Null, S(ParamsSetName), Null, L(own)) : null;
         }
 
         /// <summary>

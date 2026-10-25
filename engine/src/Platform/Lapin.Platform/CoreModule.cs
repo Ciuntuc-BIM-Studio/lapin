@@ -37,6 +37,7 @@ public sealed class CoreModule : ILapinModule
         Location.Register(r);
         Sheets.Register(r);
         CutOrder.Register(r);
+        StoreyMove.Register(r);
 
         r.Command("storey.create", "New storey", (ctx, a) =>
         {

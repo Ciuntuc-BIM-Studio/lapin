@@ -29,6 +29,7 @@ public sealed class ArchitectureModule : ILapinModule
         r.Class(new(IfcClass.DoorType, "Door type", [], "#c8a27a", Kind: "type"));
         r.Class(new(IfcClass.WindowType, "Window type", [], "#9cc8e8", Kind: "type"));
         r.Service<IVoidShapes>(new VoidShapes());
+        r.Service<IStoreyLevels>(new Levels());
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Geometry(IfcClass.Window, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Quantities(IfcClass.Door, (fill, _, model) => FillQuantities(fill, model, "Qto_DoorBaseQuantities"));
@@ -520,6 +521,18 @@ public sealed class ArchitectureModule : ILapinModule
     static Vec2 P(JsonObject a, string x, string y) => Args.Point(a, x, y);
 
     static IEnumerable<string> Ids(JsonObject a) => Args.Ids(a);
+}
+
+/// <summary>Heights over the storey: a wall's base, a floor's top, a roof's wall plate (over the storey's top).</summary>
+sealed class Levels : IStoreyLevels
+{
+    public IEnumerable<(string Key, bool FromTop)> LevelsOf(Entity e) => e.Class switch
+    {
+        IfcClass.Wall => [("baseOffset", false)],
+        IfcClass.Slab => [("offset", false)],
+        IfcClass.Roof => [("eaveOffset", true)],
+        _ => [],
+    };
 }
 
 /// <summary>The bodies of the openings in walls and floors, for the IFC export (IfcOpeningElement).</summary>
