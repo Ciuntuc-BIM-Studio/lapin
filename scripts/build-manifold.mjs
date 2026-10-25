@@ -37,10 +37,13 @@ if (process.argv.includes('--browser-wasm')) {
   const dotnet = [process.env.DOTNET_ROOT, join(home, '.dotnet-wasm')].find((d) => d && existsSync(join(d, 'packs')) && readdirSync(join(d, 'packs')).some((p) => p.startsWith('Microsoft.NET.Runtime.Emscripten.')));
   if (!dotnet) throw new Error('build-manifold: no .NET with the wasm-tools workload (set DOTNET_ROOT, or install it in ~/.dotnet-wasm: see engine/src/Host/Lapin.Browser/README.md).');
   const packs = join(dotnet, 'packs');
-  const pack = (kind) => { const d = readdirSync(packs).find((p) => p.startsWith(`Microsoft.NET.Runtime.Emscripten.`) && p.includes(`.${kind}.`)); if (!d) throw new Error(`build-manifold: no Emscripten ${kind} pack in ${packs}`); const v = readdirSync(join(packs, d))[0]; return join(packs, d, v, 'tools'); };
-  const sdk = pack('Sdk'), node = join(pack('Node'), 'bin', 'node'), py = join(pack('Python'), 'bin'), cache = join(pack('Cache'), 'emscripten', 'cache');
+  const pack = (kind, optional = false) => { const d = readdirSync(packs).find((p) => p.startsWith(`Microsoft.NET.Runtime.Emscripten.`) && p.includes(`.${kind}.`)); if (!d) { if (optional) return null; throw new Error(`build-manifold: no Emscripten ${kind} pack in ${packs}`); } const v = readdirSync(join(packs, d))[0]; return join(packs, d, v, 'tools'); };
+  // Linux has no Python pack: the workload uses the system's python3 there.
+  const python = pack('Python', true);
+  const sdk = pack('Sdk'), node = join(pack('Node'), 'bin', 'node'), py = python ? join(python, 'bin') : null, cached = pack('Cache', true);
+  const cache = cached ? join(cached, 'emscripten', 'cache') : join(tmpdir(), 'lapin-emscripten-cache');
   const env = { ...process.env, EMSDK_PATH: sdk, DOTNET_EMSCRIPTEN_LLVM_ROOT: join(sdk, 'bin'), DOTNET_EMSCRIPTEN_BINARYEN_ROOT: sdk, DOTNET_EMSCRIPTEN_NODE_JS: node, EM_CACHE: cache,
-    PATH: [join(sdk, 'emscripten'), join(sdk, 'bin'), py, process.env.PATH].join(process.platform === 'win32' ? ';' : ':') };
+    PATH: [join(sdk, 'emscripten'), join(sdk, 'bin'), py, process.env.PATH].filter(Boolean).join(process.platform === 'win32' ? ';' : ':') };
   const wasmWork = `${work}-wasm`;
   const run = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, stdio: 'inherit', env });
   if (!existsSync(join(wasmWork, 'src'))) {
