@@ -55,6 +55,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Catalog("plants", Plantings.SpeciesJson(Plantings.Catalog));
         r.Catalog("sculptKinds", new JsonArray(SculptDab.Kinds.Select(k => (JsonNode)k).ToArray()));
         SiteCommands.Register(r);
+        CorridorCommands.Register(r);
 
         // A terrain from points ([x, y, z]) or from a survey file's text (xyz or PENZD).
         r.Command("addTerrain", "Terrain", (ctx, a) =>

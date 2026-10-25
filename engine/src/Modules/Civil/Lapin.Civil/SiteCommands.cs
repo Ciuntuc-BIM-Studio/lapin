@@ -152,7 +152,7 @@ public static class SiteCommands
             var surface = Materials.Ensure(ctx, (string?)a["surfaceMaterial"] ?? "Paving stone", Paths.Color);
             var @base = Materials.Ensure(ctx, (string?)a["baseMaterial"] ?? "Gravel", "#a39888");
             var n = ctx.Model.OfClass(IfcClass.Pavement).Count() + 1;
-            var e = new Entity(ctx.NewId(), IfcClass.Pavement, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Path {n}", Paths.Attrs(path, c, surface.Id, @base.Id), "FLEXIBLE");
+            var e = new Entity(ctx.NewId(), IfcClass.Pavement, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Path {n}", CorridorCommands.WithTemplate(Paths.Attrs(path, c, surface.Id, @base.Id), a), "FLEXIBLE");
             ctx.Add(e);
             Spatial.Contain(ctx, terrain != null ? Spatial.StoreyOf(ctx.Model, terrain.Id)?.Id ?? storeyId : storeyId, e.Id);
             if (terrain != null) ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelVoidsElement, terrain.Id, [e.Id]));
@@ -167,6 +167,7 @@ public static class SiteCommands
             foreach (var k in new[] { "width", "surfaceThickness", "baseThickness", "kerbHeight", "kerbWidth" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
             if (a["kerb"] is JsonValue kv && kv.TryGetValue<bool>(out var kerb)) attrs["kerb"] = kerb;
             foreach (var k in new[] { "surfaceMaterial", "baseMaterial" }) if ((string?)a[k] is { } name) attrs[k] = Materials.Ensure(ctx, name).Id;
+            CorridorCommands.WithTemplate(attrs, a);
             ctx.Replace(e.With(attrs: attrs));
             return null;
         });

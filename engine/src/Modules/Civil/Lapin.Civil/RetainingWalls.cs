@@ -7,10 +7,12 @@ namespace Lapin.Civil;
 
 /// <summary>
 /// A retaining wall along a path: a stem on a footing, the high ground on one
-/// side. On each segment the crown is the high ground's height plus the
-/// wall's height (or an absolute elevation) and the footing is embedded under
-/// the low ground, so on a slope the wall steps. A Lapin class exported as
-/// IfcWall RETAININGWALL.
+/// side. Following the ground, each segment's crown is the high ground's
+/// height plus the wall's height (or an absolute elevation) and its footing is
+/// embedded under the low ground, so on a slope the wall steps; with a
+/// designed profile the crown follows the red line. Its corners are mitred,
+/// so it runs on unbroken except at its joints (<see cref="Corridors"/>).
+/// A Lapin class exported as IfcWall RETAININGWALL.
 /// </summary>
 public static class RetainingWalls
 {
@@ -25,72 +27,100 @@ public static class RetainingWalls
         Math.Max(0.1, e.Num("thickness", 0.3)), Math.Max(0, e.Num("height", 1.0)), e.NumOrNull("topElevation"),
         Math.Max(0, e.Num("embed", 0.3)), Math.Max(e.Num("thickness", 0.3), e.Num("footingWidth", 0.8)), Math.Max(0, e.Num("footingThickness", 0.3)), e.Str("side") != "right");
 
-    static Terrain? TerrainFor(IModelView m, Entity e) =>
-        m.OfClass(IfcClass.GeographicElement).FirstOrDefault(t => t.PredefinedType == Terrains.Predefined && Spatial.StoreyOf(m, t.Id)?.Id == Spatial.StoreyOf(m, e.Id)?.Id) is { } te ? Terrains.Of(te) : null;
+    /// <summary>One segment's levels: the crown following the ground, the footing's underside, the high ground, its length.</summary>
+    public sealed record Level(double Top, double Bottom, double Ground, double Length);
 
-    /// <summary>One segment of the wall: its section (the inverted T, in the left-up plane at its start) extruded along it, with the levels it was built to.</summary>
-    public sealed record Segment(Solid Solid, double Length, double Top, double Bottom, double Ground);
+    /// <summary>The levels of every segment, and the crown at a station of a segment (the red line when designed).</summary>
+    public sealed record Built(IReadOnlyList<Level> Levels, Func<double, int, double> Top);
 
-    public static List<Segment> Segments(IModelView m, Entity e)
+    public static Built Levels(IModelView m, Entity e, Chain c)
     {
-        var path = Path(e);
         var s = Of(e);
-        var terrain = TerrainFor(m, e);
-        var fallback = Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
-        var o = new List<Segment>();
-        for (var i = 0; i + 1 < path.Count; i++)
+        var ground = Corridors.GroundOf(m, e, CorridorSpec.Of(e).Ground);
+        var fallback = Corridors.Fallback(m, e);
+        var levels = new List<Level>();
+        for (var i = 0; i < c.Segments; i++)
         {
-            var (p, q) = (path[i], path[i + 1]);
-            var along = q - p;
-            if (along.Length < 1e-6) continue;
-            var dir = along.Normalized();
-            var left = dir.Perp;
+            var (p, q) = (c.Path[i], c.Path[i + 1]);
+            var left = c.Direction(i).Perp;
             var high = s.HighOnLeft ? 1.0 : -1.0;
             var mid = (p + q) * 0.5;
             var probe = s.Thickness / 2 + 0.5;
-            var zHigh = terrain?.ElevationAt(mid.X + left.X * high * probe, mid.Y + left.Y * high * probe) ?? fallback;
-            var zLow = terrain?.ElevationAt(mid.X - left.X * high * probe, mid.Y - left.Y * high * probe) ?? fallback;
+            var zHigh = ground(mid + left * (high * probe)) ?? fallback;
+            var zLow = ground(mid - left * (high * probe)) ?? fallback;
             var bottom = Math.Min(zLow, zHigh) - s.Embed - s.FootingThickness;
-            var top = s.TopElevation ?? zHigh + s.Height;
-            if (top <= bottom + s.FootingThickness + 0.05) top = bottom + s.FootingThickness + 0.05;
-            var (t, wf, tf) = (s.Thickness / 2, s.FootingWidth / 2, s.FootingThickness);
-            Vec3 P(double n, double z) => (p + left * n).At(z);
-            List<Vec3> ring = [P(-wf, bottom), P(wf, bottom), P(wf, bottom + tf), P(t, bottom + tf), P(t, top), P(-t, top), P(-t, bottom + tf), P(-wf, bottom + tf)];
-            if (tf <= 0) ring = [P(-t, bottom), P(t, bottom), P(t, top), P(-t, top)];
-            if (SiteGeometry.Oriented(ring, new Vec3(along.X, along.Y, 0), "retaining") is { } solid) o.Add(new Segment(solid, along.Length, top, bottom, zHigh));
+            levels.Add(new(s.TopElevation ?? zHigh + s.Height, bottom, zHigh, (q - p).Length));
         }
-        return o;
+        var spec = CorridorSpec.Of(e);
+        Func<double, double>? red = spec.Mode == "design" && s.TopElevation == null ? Corridors.RedLine(m, e, c) : null;
+        double Top(double station, int seg)
+        {
+            var l = levels[seg];
+            var top = red?.Invoke(station) ?? l.Top;
+            return Math.Max(top, l.Bottom + s.FootingThickness + 0.05);
+        }
+        return new(levels, Top);
+    }
+
+    /// <summary>The section at a station: the inverted T (a plain stem without a footing), in (offset, elevation).</summary>
+    public static List<SectionPart> SectionAt(Spec s, Built b, double station, int seg)
+    {
+        var bottom = b.Levels[seg].Bottom;
+        var top = b.Top(station, seg);
+        var (t, wf, tf) = (s.Thickness / 2, s.FootingWidth / 2, s.FootingThickness);
+        List<Vec2> ring = tf <= 0
+            ? [new(-t, bottom), new(t, bottom), new(t, top), new(-t, top)]
+            : [new(-wf, bottom), new(wf, bottom), new(wf, bottom + tf), new(t, bottom + tf), new(t, top), new(-t, top), new(-t, bottom + tf), new(-wf, bottom + tf)];
+        return [new("wall", ring)];
     }
 
     public static ElementGeometry? Geometry(Entity e, IModelView m)
     {
-        var segments = Segments(m, e);
-        if (segments.Count == 0) return new ElementGeometry([], Diagnostics: ["The retaining wall needs two points at least."]);
-        var material = e.Str("material");
-        var parts = new List<GeometryPart> { new("Retaining wall", material != null ? Materials.ColorOf(m, material) : Color, Paths.Combine(segments.Select(x => x.Solid).ToList(), "retaining"), material, "wall") };
-        var path = Path(e);
+        var c = Corridors.ChainOf(e);
+        if (c.Segments == 0) return new ElementGeometry([], Diagnostics: ["The retaining wall needs two points at least."]);
         var s = Of(e);
-        var dirs = SiteGeometry.Directions(path);
-        var left = path.Select((p, i) => p + dirs[i].Perp * (s.Thickness / 2)).ToList();
-        var right = path.Select((p, i) => p - dirs[i].Perp * (s.Thickness / 2)).Reverse().ToList();
-        return new ElementGeometry(parts, [new PlanItem("cut", true, [.. left, .. right])], [path[0], path[^1]]);
+        var built = Levels(m, e, c);
+        var spec = CorridorSpec.Of(e);
+        var solids = Corridors.Sweep(c, Corridors.Runs(c, spec), (st, seg) => SectionAt(s, built, st, seg), spec.Mode == "design" ? 1.0 : 1e9);
+        if (!solids.TryGetValue("wall", out var list) || list.Count == 0) return new ElementGeometry([], Diagnostics: ["The retaining wall could not be built."]);
+        var material = e.Str("material");
+        var parts = new List<GeometryPart> { new("Retaining wall", material != null ? Materials.ColorOf(m, material) : Color, Paths.Combine(list, "retaining"), material, "wall") };
+        var plan = new List<PlanItem> { new("cut", true, Corridors.Outline(c, s.Thickness / 2, -s.Thickness / 2)) };
+        foreach (var j in Corridors.Joints(c, spec))
+        {
+            var (a, b) = Corridors.LineAcross(c, j, s.Thickness / 2, -s.Thickness / 2);
+            plan.Add(new("cut", false, [a, b]));
+        }
+        return new ElementGeometry(parts, plan, [c.Path[0], c.Path[^1]]);
     }
 
     public static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)
     {
         if (g == null) yield break;
-        var segments = Segments(m, e);
+        var c = Corridors.ChainOf(e);
+        if (c.Segments == 0) yield break;
         var s = Of(e);
-        var length = segments.Sum(x => x.Length);
-        var stem = segments.Sum(x => s.Thickness * Math.Max(0, x.Top - x.Bottom - s.FootingThickness) * x.Length);
-        var footing = segments.Sum(x => s.FootingWidth * s.FootingThickness * x.Length);
-        var formwork = segments.Sum(x => 2 * Math.Max(0, x.Top - x.Bottom - s.FootingThickness) * x.Length + 2 * s.FootingThickness * x.Length);
+        var built = Levels(m, e, c);
+        var spec = CorridorSpec.Of(e);
+        var joints = Corridors.Joints(c, spec).Count;
+        var length = c.Length;
+        // The stem's height on each segment: the crown's mean over it, less the footing.
+        double Stem(int i)
+        {
+            var (a, b) = (c.StationOf(i), c.StationOf(i + 1));
+            var mean = Enumerable.Range(0, 11).Average(k => built.Top(a + (b - a) * k / 10, i));
+            return Math.Max(0, mean - built.Levels[i].Bottom - s.FootingThickness);
+        }
+        var net = (double i) => built.Levels[(int)i].Length * (1 - joints * spec.JointWidth / Math.Max(length, 1e-9));
+        var stem = Enumerable.Range(0, c.Segments).Sum(i => s.Thickness * Stem(i) * net(i));
+        var footing = Enumerable.Range(0, c.Segments).Sum(i => s.FootingWidth * s.FootingThickness * net(i));
+        var formwork = Enumerable.Range(0, c.Segments).Sum(i => 2 * Stem(i) * net(i) + 2 * s.FootingThickness * net(i));
         yield return new QuantitySet("Lapin_RetainingWallQuantities",
         [
-            new("Length", length, "LENGTH"), new("MaxHeight", segments.Max(x => x.Top - x.Bottom), "LENGTH", "Height, footing included"),
+            new("Length", length, "LENGTH"), new("MaxHeight", Enumerable.Range(0, c.Segments).Max(i => Stem(i) + s.FootingThickness), "LENGTH", "Height, footing included"),
             new("ConcreteVolume", g.Parts.Sum(p => Measure.Volume(p.Solid)), "VOLUME", "Concrete"),
             new("StemVolume", stem, "VOLUME", "Stem"), new("FootingVolume", footing, "VOLUME", "Footing"),
-            new("FormworkArea", formwork, "AREA", "Formwork"),
+            new("FormworkArea", formwork, "AREA", "Formwork"), new("Joints", joints, "COUNT", "Joints"),
         ]);
     }
 

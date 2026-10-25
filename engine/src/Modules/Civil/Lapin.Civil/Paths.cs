@@ -6,15 +6,19 @@ using Lapin.Platform;
 namespace Lapin.Civil;
 
 /// <summary>
-/// A path, an alley, a paved way: a strip along a polyline, level across,
-/// its surface at the ground along the centre line, a wearing course over a
-/// base course, kerbs along the edges when asked. The terrain it voids is
-/// cut by its courses, so the paving sits in the ground. IfcPavement (IFC4X3;
-/// a slab named Pavement in IFC4).
+/// A path, an alley or a simple road: a carriageway along a polyline (one
+/// strip, or two lanes with a crown), its crossfall, a wearing course over a
+/// base course, and on each side, outwards, a gutter, a kerb and a sidewalk
+/// when asked. Its red line follows the ground under its axis or a designed
+/// profile (<see cref="Corridors"/>); its corners are mitred, so the courses
+/// run on unbroken except at joints. The terrain it voids is cut by it.
+/// IfcPavement (IFC4X3; a slab named Pavement in IFC4).
 /// </summary>
 public static class Paths
 {
     public const string Color = "#b8ad9c";
+    const double GutterSlab = 0.12;
+    const double SidewalkFall = 0.02;
 
     public static IReadOnlyList<Vec2> Path(Entity e) => Terrains.Contour(e, "path");
 
@@ -24,82 +28,130 @@ public static class Paths
         Math.Max(0.2, e.Num("width", 1.5)), Math.Max(0, e.Num("surfaceThickness", 0.06)), Math.Max(0, e.Num("baseThickness", 0.2)),
         e.Bool("kerb"), Math.Max(0.02, e.Num("kerbHeight", 0.1)), Math.Max(0.02, e.Num("kerbWidth", 0.1)));
 
-    /// <summary>The terrain the path lies in: the one it voids, else the first on its storey.</summary>
-    public static Entity? TerrainEntity(IModelView m, Entity e) =>
-        Terrains.TerrainOf(m, e.Id) ?? m.OfClass(IfcClass.GeographicElement).FirstOrDefault(t => t.PredefinedType == Terrains.Predefined && Spatial.StoreyOf(m, t.Id)?.Id == Spatial.StoreyOf(m, e.Id)?.Id);
-
-    /// <summary>The ground along the path: the terrain's height at each point, else the storey's elevation.</summary>
-    public static List<Vec3> Profile(IModelView m, Entity e, IReadOnlyList<Vec2> path)
+    /// <summary>What stands at one edge, outwards: a gutter (a shallow channel), a kerb, a sidewalk behind it.</summary>
+    public sealed record Side(bool Gutter, bool Kerb, bool Sidewalk, double GutterWidth, double GutterDepth, double KerbWidth, double KerbHeight, double KerbDepth, double SidewalkWidth, double SidewalkThickness)
     {
-        var terrain = TerrainEntity(m, e) is { } te ? Terrains.Of(te) : null;
-        var fallback = Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
-        double? last = null;
-        var o = new List<Vec3>();
-        foreach (var p in path)
-        {
-            var z = terrain?.ElevationAt(p.X, p.Y) ?? last ?? fallback;
-            last = z;
-            o.Add(p.At(z));
-        }
-        return o;
+        public double Extent => (Gutter ? GutterWidth : 0) + (Kerb || Sidewalk ? KerbWidth : 0) + (Sidewalk ? SidewalkWidth : 0);
     }
 
-    /// <summary>The courses as solids: the surface and the base, each lofted segment by segment; the kerbs as boxes along the edges.</summary>
-    public static (List<Solid> Surface, List<Solid> Base, List<Solid> Kerbs) Solids(IModelView m, Entity e)
+    /// <summary>
+    /// The cross-section: an alley (one strip of <see cref="Width"/>) or a road
+    /// (two lanes); the crossfall (ratio) falling to the right, to the left or
+    /// from a crown on the axis; the courses; the two sides.
+    /// </summary>
+    public sealed record Template(string Kind, double Width, double Crossfall, string Fall, double Surface, double Base, Side L, Side R)
     {
-        var path = SiteGeometry.Densify(Path(e), 2.0);
+        public double Half => Width / 2;
+        public double Left => Half + L.Extent;
+        public double Right => Half + R.Extent;
+    }
+
+    static Side SideOf(Entity e, string key, Courses c)
+    {
+        var o = e.Attrs[key] as JsonObject;
+        double N(string k, double d) => Json.Number(o?[k]) ?? d;
+        bool B(string k, bool d) => o?[k] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : d;
+        // Old paths: one "kerb" switch for both sides, sunk as deep as the surface course.
+        return new(B("gutter", false), B("kerb", o == null && c.Kerb), B("sidewalk", false),
+            Math.Max(0.1, N("gutterWidth", 0.5)), Math.Max(0, N("gutterDepth", 0.05)),
+            Math.Max(0.02, N("kerbWidth", o == null ? c.KerbWidth : 0.15)), Math.Max(0, N("kerbHeight", o == null ? c.KerbHeight : 0.12)), Math.Max(0, N("kerbDepth", o == null ? c.Surface : 0.15)),
+            Math.Max(0.3, N("sidewalkWidth", 1.5)), Math.Max(0.02, N("sidewalkThickness", 0.1)));
+    }
+
+    public static Template TemplateOf(Entity e)
+    {
         var c = Of(e);
-        var surface = new List<Solid>(); var @base = new List<Solid>(); var kerbs = new List<Solid>();
-        if (path.Count < 2) return (surface, @base, kerbs);
-        var profile = Profile(m, e, path);
-        var dirs = SiteGeometry.Directions(path);
-        List<Vec3> Ring(int i, double zTop, double zBottom, double half)
-        {
-            var n = dirs[i].Perp;
-            var p = path[i];
-            return [(p - n * half).At(profile[i].Z + zTop), (p + n * half).At(profile[i].Z + zTop), (p + n * half).At(profile[i].Z + zBottom), (p - n * half).At(profile[i].Z + zBottom)];
-        }
-        for (var i = 0; i + 1 < path.Count; i++)
-        {
-            var half = c.Width / 2;
-            if (c.Surface > 0 && SiteGeometry.Loft(Ring(i, 0, -c.Surface, half), Ring(i + 1, 0, -c.Surface, half), "surface") is { } s) surface.Add(s);
-            if (c.Base > 0 && SiteGeometry.Loft(Ring(i, -c.Surface, -c.Surface - c.Base, half), Ring(i + 1, -c.Surface, -c.Surface - c.Base, half), "base") is { } b) @base.Add(b);
-            if (c.Kerb)
-                foreach (var side in new[] { -1.0, 1.0 })
-                {
-                    List<Vec3> K(int k)
-                    {
-                        var n = dirs[k].Perp * side;
-                        var p = path[k];
-                        var z = profile[k].Z;
-                        return [(p + n * half).At(z + c.KerbHeight), (p + n * (half + c.KerbWidth)).At(z + c.KerbHeight), (p + n * (half + c.KerbWidth)).At(z - c.Surface), (p + n * half).At(z - c.Surface)];
-                    }
-                    if (SiteGeometry.Loft(K(i), K(i + 1), "kerb") is { } k) kerbs.Add(k);
-                }
-        }
-        return (surface, @base, kerbs);
+        var road = e.Str("template") == "road";
+        var width = road ? 2 * Math.Max(1, e.Num("laneWidth", 3)) : c.Width;
+        var fall = e.Str("fall") is "crown" or "left" or "right" ? e.Str("fall")! : road ? "crown" : "right";
+        return new(road ? "road" : "alley", width, Math.Clamp(e.Num("crossfall", road ? 2.5 : 0), 0, 20) / 100, fall, c.Surface, c.Base, SideOf(e, "left", c), SideOf(e, "right", c));
     }
+
+    /// <summary>The cross-section at a station whose red line (the carriageway's top on the axis) is <paramref name="z0"/>: its parts as (offset, elevation) polygons.</summary>
+    public static List<SectionPart> SectionAt(Template t, double z0)
+    {
+        var h = t.Half;
+        double Top(double o) => t.Fall switch { "crown" => z0 - t.Crossfall * Math.Abs(o), "left" => z0 - t.Crossfall * o, _ => z0 + t.Crossfall * o };
+        var across = t.Fall == "crown" ? new[] { -h, 0, h } : [-h, h];
+        List<Vec2> Strip(double down, double thick) =>
+            [.. across.Select(o => new Vec2(o, Top(o) - down)), .. across.Reverse().Select(o => new Vec2(o, Top(o) - down - thick))];
+        var parts = new List<SectionPart>();
+        if (t.Surface > 0) parts.Add(new("surface", Strip(0, t.Surface)));
+        if (t.Base > 0) parts.Add(new("base", Strip(t.Surface, t.Base)));
+        foreach (var (side, sign) in new[] { (t.L, 1.0), (t.R, -1.0) })
+        {
+            var e = sign * h;
+            var z = Top(e);
+            if (side.Gutter)
+            {
+                var (x1, mid) = (e + sign * side.GutterWidth, e + sign * side.GutterWidth / 2);
+                var bottom = z - side.GutterDepth - GutterSlab;
+                parts.Add(new("gutter", [new(e, z), new(mid, z - side.GutterDepth), new(x1, z), new(x1, bottom), new(e, bottom)]));
+                e = x1;
+            }
+            if (side.Kerb || side.Sidewalk)
+            {
+                var x1 = e + sign * side.KerbWidth;
+                parts.Add(new("kerb", [new(e, z + side.KerbHeight), new(x1, z + side.KerbHeight), new(x1, z - side.KerbDepth), new(e, z - side.KerbDepth)]));
+                e = x1;
+                z += side.KerbHeight;
+            }
+            if (side.Sidewalk)
+            {
+                var x1 = e + sign * side.SidewalkWidth;
+                // Draining to the road: the far edge a little higher.
+                var z1 = z + SidewalkFall * side.SidewalkWidth;
+                parts.Add(new("sidewalk", [new(e, z), new(x1, z1), new(x1, z1 - side.SidewalkThickness), new(e, z - side.SidewalkThickness)]));
+            }
+        }
+        return parts;
+    }
+
+    /// <summary>The courses and the side pieces as solids, by part key (surface, base, gutter, kerb, sidewalk).</summary>
+    public static Dictionary<string, List<Solid>> Solids(IModelView m, Entity e)
+    {
+        var c = Corridors.ChainOf(e);
+        if (c.Segments == 0) return [];
+        var t = TemplateOf(e);
+        var red = Corridors.RedLine(m, e, c);
+        return Corridors.Sweep(c, Corridors.Runs(c, CorridorSpec.Of(e)), (s, _) => SectionAt(t, red(s)), 2.0);
+    }
+
+    static readonly (string Key, string Name, string Color)[] PartNames =
+        [("surface", "Surface course", Color), ("base", "Base course", "#a39888"), ("gutter", "Gutters", "#9a9a9a"), ("kerb", "Kerbs", "#8f8f8f"), ("sidewalk", "Sidewalks", "#c3bdb2")];
 
     public static ElementGeometry? Geometry(Entity e, IModelView m)
     {
-        var path = Path(e);
-        if (path.Count < 2) return new ElementGeometry([], Diagnostics: ["The path needs two points at least."]);
-        var (surface, @base, kerbs) = Solids(m, e);
+        var c = Corridors.ChainOf(e);
+        if (c.Segments == 0) return new ElementGeometry([], Diagnostics: ["The path needs two points at least."]);
+        var solids = Solids(m, e);
         var parts = new List<GeometryPart>();
         var sm = e.Str("surfaceMaterial"); var bm = e.Str("baseMaterial");
-        if (surface.Count > 0) parts.Add(new GeometryPart("Surface course", sm != null ? Materials.ColorOf(m, sm) : Color, Openings_Combine(surface, "surface"), sm, "surface"));
-        if (@base.Count > 0) parts.Add(new GeometryPart("Base course", bm != null ? Materials.ColorOf(m, bm) : "#a39888", Openings_Combine(@base, "base"), bm, "base"));
-        if (kerbs.Count > 0) parts.Add(new GeometryPart("Kerbs", "#8f8f8f", Openings_Combine(kerbs, "kerb"), null, "kerb"));
-        var c = Of(e);
-        var dirs = SiteGeometry.Directions(path);
-        var half = c.Width / 2 + (c.Kerb ? c.KerbWidth : 0);
-        var left = path.Select((p, i) => p + dirs[i].Perp * half).ToList();
-        var right = path.Select((p, i) => p - dirs[i].Perp * half).Reverse().ToList();
-        var plan = new List<PlanItem> { new("heavy", true, [.. left, .. right]), new("symbol", false, path) };
-        return new ElementGeometry(parts, plan, [path[0], path[^1]]);
+        foreach (var (key, name, color) in PartNames)
+        {
+            if (!solids.TryGetValue(key, out var list) || list.Count == 0) continue;
+            var material = key == "surface" ? sm : key == "base" ? bm : null;
+            parts.Add(new GeometryPart(name, material != null ? Materials.ColorOf(m, material) : color, Combine(list, key), material, key));
+        }
+        var t = TemplateOf(e);
+        var plan = new List<PlanItem> { new("heavy", true, Corridors.Outline(c, t.Left, -t.Right)), new("symbol", false, c.Path) };
+        // The carriageway's edges inside the outline, where something stands beside it.
+        if (t.L.Extent > 0) plan.Add(new("symbol", false, OffsetLine(c, t.Half)));
+        if (t.R.Extent > 0) plan.Add(new("symbol", false, OffsetLine(c, -t.Half)));
+        var spec = CorridorSpec.Of(e);
+        foreach (var j in Corridors.Joints(c, spec))
+        {
+            var (a, b) = Corridors.LineAcross(c, j, t.Left, -t.Right);
+            plan.Add(new("symbol", false, [a, b]));
+        }
+        return new ElementGeometry(parts, plan, [c.Path[0], c.Path[^1]]);
     }
 
-    static Solid Openings_Combine(IReadOnlyList<Solid> solids, string tag)
+    static List<Vec2> OffsetLine(Chain c, double offset) =>
+        c.Path.Select((p, i) => p + c.Across(c.StationOf(i), Math.Min(i, c.Segments - 1)) * offset).ToList();
+
+    /// <summary>Several solids as one part (a path's segments, a planting's trees).</summary>
+    public static Solid Combine(IReadOnlyList<Solid> solids, string tag)
     {
         if (solids.Count == 1) return solids[0];
         var vertices = new List<Vec3>();
@@ -113,21 +165,21 @@ public static class Paths
         return new Solid([.. vertices], [.. faces], tag);
     }
 
-    /// <summary>Several solids as one part (a path's segments, a planting's trees).</summary>
-    public static Solid Combine(IReadOnlyList<Solid> solids, string tag) => Openings_Combine(solids, tag);
-
     public static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)
     {
         if (g == null) yield break;
-        var path = Path(e);
-        var c = Of(e);
-        var length = SiteGeometry.Length(path);
+        var c = Corridors.ChainOf(e);
+        var t = TemplateOf(e);
+        var length = c.Length;
         double Vol(string key) => g.Parts.Where(p => p.Key == key).Sum(p => Measure.Volume(p.Solid));
+        var sides = new[] { t.L, t.R };
         yield return new QuantitySet("Lapin_PavementQuantities",
         [
-            new("Length", length, "LENGTH"), new("Width", c.Width, "LENGTH"), new("GrossArea", length * c.Width, "AREA", "Paved area"),
+            new("Length", length, "LENGTH"), new("Width", t.Width, "LENGTH"), new("GrossArea", length * t.Width, "AREA", "Paved area"),
             new("SurfaceVolume", Vol("surface"), "VOLUME", "Surface course"), new("BaseVolume", Vol("base"), "VOLUME", "Base course"),
-            new("KerbLength", c.Kerb ? 2 * length : 0, "LENGTH", "Kerbs"),
+            new("KerbLength", sides.Count(s => s.Kerb || s.Sidewalk) * length, "LENGTH", "Kerbs"),
+            new("GutterLength", sides.Count(s => s.Gutter) * length, "LENGTH", "Gutters"),
+            new("SidewalkArea", sides.Where(s => s.Sidewalk).Sum(s => s.SidewalkWidth) * length, "AREA", "Sidewalks"),
         ]);
     }
 
@@ -140,6 +192,22 @@ public static class Paths
         };
         if (surfaceMaterial != null) o["surfaceMaterial"] = surfaceMaterial;
         if (baseMaterial != null) o["baseMaterial"] = baseMaterial;
+        return o;
+    }
+
+    /// <summary>A side as stored: only what was given, merged over what the side had.</summary>
+    public static JsonObject MergeSide(JsonNode? had, JsonNode? given)
+    {
+        var o = had is JsonObject h ? (JsonObject)h.DeepClone() : new JsonObject();
+        if (given is JsonObject g)
+            foreach (var (k, v) in g)
+            {
+                if (k is "gutter" or "kerb" or "sidewalk") { if (v is JsonValue b && b.TryGetValue<bool>(out var on)) o[k] = on; }
+                else if (k is "gutterWidth" or "gutterDepth" or "kerbWidth" or "kerbHeight" or "kerbDepth" or "sidewalkWidth" or "sidewalkThickness")
+                {
+                    if (Json.Number(v) is { } n && double.IsFinite(n)) o[k] = Math.Max(0, n);
+                }
+            }
         return o;
     }
 }

@@ -197,8 +197,8 @@ public static class Terrains
             else problems.Add("Platforms need the boolean library (manifold), missing here.");
         }
         // Ditches and paths take their volume out of the ground: the ditch's channel, the path's courses.
-        var cutters = DitchesOf(m, e.Id).Select(d => (Element: d, Solids: Ditches.Cutters(d, t)))
-            .Concat(PathsOf(m, e.Id).Select(pth => { var (surface, @base, _) = Paths.Solids(m, pth); return (Element: pth, Solids: surface.Concat(@base).ToList()); }))
+        var cutters = DitchesOf(m, e.Id).Select(d => (Element: d, Solids: Ditches.Cutters(d, t, m)))
+            .Concat(PathsOf(m, e.Id).Select(pth => (Element: pth, Solids: Paths.Solids(m, pth).Where(kv => kv.Key != "kerb").SelectMany(kv => kv.Value).ToList())))
             .Where(x => x.Solids.Count > 0).ToList();
         if (cutters.Count > 0)
         {
