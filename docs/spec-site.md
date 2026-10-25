@@ -42,8 +42,21 @@ Analiza (pante, săpătură/umplutură colorate, cote punctuale), tabelul de pla
 - Plantele sunt stilizate (trunchi și coroană din cilindri), în culoarea speciei; biblioteca de modele 3D vine cu cloud-ul.
 - În plan: șanțul și platformele se desenează pe planul terenului (contur „heavy”, ax); aleea și zidul prin corpurile lor; plantele ca cercuri la raza coroanei.
 
+## Coridoarele (configuratorul elementelor pe traseu, decizia 128)
+
+Aleea sau drumul, zidul de sprijin și șanțul sunt elemente pe traseu și au același configurator (selectezi elementul, apoi „Corridor…” din Site sau „Configurator…” din inspector). Modelul e coridorul din Civil 3D și drumurile din BubbleBIM, redus la ce trebuie unei curți sau unui parc; drumurile mari rămân în modulul premium.
+
+- **Stații.** Poziția kilometrică a începutului (`stationStart`) și pasul (`interval`); etichete 0+000.00. Stațiile, vârfurile traseului și rosturile se văd pe profilul longitudinal.
+- **Profilul longitudinal.** Linia roșie urmează terenul de sub ax, natural (ridicarea topo) sau propus (după pensulă), sau e proiectată din PVI-uri (stație, cotă, lungimea racordării parabolice). „Fit to natural / proposed ground” pune PVI-urile pe teren (eșantion la 5 m, simplificare Douglas–Peucker la 10 cm, racordări cât încap). Pe zid linia roșie e coronamentul, pe șanț e fundul, pe alee e partea de sus a carosabilului pe ax. PVI-urile se trag cu mausul sau se scriu în tabel; Shift-clic adaugă unul.
+- **Profilul transversal.** Aleea e o fâșie de lățimea ei, drumul are două benzi; panta transversală cade spre dreapta, spre stânga sau din coronament; stratul de uzură și cel de bază. Pe fiecare parte, spre exterior: rigolă (lățime, adâncime), bordură (lățime, cât iese deasupra, cât intră sub), trotuar (lățime, panta 2 % spre drum). Zidul și șanțul își păstrează secțiunile lor.
+- **Colțurile** se rezolvă singure, în mitră: secțiunea stă pe bisectoarea colțului și se întinde cu 1/cos(jumătate din unghi), cel mult de 4 ori; fâșiile, zidurile și șanțurile trec neîntrerupte.
+- **Rosturile** există doar la cerere: la fiecare n metri și/sau la stații date, fiecare cât de lat e cerut (implicit 2 cm). Se văd în plan ca linii transversale și se numără în cantități.
+- **Secțiunile.** Configuratorul arată secțiunea transversală la orice stație peste terenul natural (punctat) și propus. Stațiile alese („Section here” sau scrise) și toate stațiile pot deveni vederi de secțiune Lapin, perpendiculare pe ax, la 1:50, cu adâncimea 0,5 m, desenate ca orice secțiune.
+- Comenzi: `civil.setCorridor {id, stationStart, interval, sections, joints {every, width, at}, profile {mode, ground, pvis}}`, `civil.profileFromGround {id, ground}`; secțiunea aleii prin `civil.addPath/updatePath {template, laneWidth, crossfall, fall, left, right}`. Interogări: `civil.corridor {id}`, `civil.crossSection {id, station}`.
+
 ## Etape
 
 1. **Făcut (25.10.2026).** Teren plat, pensula (patru moduri, cu raza și cantitatea în bara de unelte), șanțul, aleea, zidul de sprijin, planta și zona de plantare; secțiunile din inspector; cantitățile; IFC; teste.
 2. **Făcut (25.10.2026):** analiza colorată (pante, săpătură/umplutură, cote în benzi) ca film peste teren în 3D și ca umpleri în plan, cu legenda și ariile pe benzi în inspector (`civil.updateTerrain {analysis}`, `civil.analysis`); cotele punctuale pe plan (`civil.addSpot/removeSpot`, cota terenului proiectat: platformă, șanț, pensulă); parcela pe teren, cu aria și perimetrul în cantități (`civil.setParcel`); exportul LandXML 1.2 al terenurilor (`civil.landXml`, butonul din inspector și din tab); tabelul de plantare ca extras (`IScheduleSource` în platformă: un modul oferă un tabel, extrasele îl arată, îl pun pe planșă și îl exportă CSV/XLSX; `architecture.createSchedule {kind: "planting"}`).
-3. Rămase: bordurile ca piese separate, umplutura din spatele zidului, rigola cu fund la cotă, profilul terenului de-a lungul unui traseu.
+3. **Făcut (25.10.2026), decizia 128:** coridoarele (mai sus): stații, profil longitudinal, profil transversal cu rigole, borduri și trotuare ca piese separate, colțuri în mitră, rosturi, secțiuni la stații; rigola cu fund la cotă e șanțul cu profil proiectat.
+4. Rămase: umplutura din spatele zidului, intersecțiile dintre alei, racordarea la teren cu taluzuri a drumului.

@@ -8,7 +8,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
+import { useUi } from '../../app/store';
 import { isDitch } from './prefs';
+
+/** Opens the corridor configurator on the element selected. */
+function Configure() {
+  return <><dt /><dd><button type="button" className="btn compact" onClick={() => useUi.setState({ dialog: 'corridor' })}>Configurator…</button> <span className="muted small">section, profile, stations</span></dd></>;
+}
 
 const mm = (v: unknown, d = 0) => (typeof v === 'number' ? Math.round(v * 1000) : Math.round(d * 1000));
 
@@ -31,6 +37,7 @@ export function EarthworkSection({ node }: { node: NodeDto }) {
         <dt>Depth under the ground</dt><dd><Mm value={node.props.depth} fallback={0.5} min={50} onCommit={(v) => set({ depth: v })} /></dd>
         <dt>Bottom width</dt><dd><Mm value={node.props.bottomWidth} fallback={0.4} min={50} onCommit={(v) => set({ bottomWidth: v })} /></dd>
         <dt>Side slope</dt><dd>1 : <input className="num" type="number" step={0.25} min={0} max={10} value={slope} onChange={(e) => set({ slope: Math.max(0, Number(e.target.value) || 0) })} /></dd>
+        <Configure />
         <dt>Top width</dt><dd><span className="num">{mm((typeof node.props.bottomWidth === 'number' ? node.props.bottomWidth : 0.4) + 2 * slope * (typeof node.props.depth === 'number' ? node.props.depth : 0.5))} mm</span></dd>
       </dl>
     );
@@ -48,6 +55,7 @@ export function PathSection({ node }: { node: NodeDto }) {
   const mat = (key: string) => (typeof node.props[key] === 'string' ? nodes.get(node.props[key] as string)?.name ?? '' : '');
   return (
     <dl className="fields">
+      <Configure />
       <dt>Width</dt><dd><Mm value={node.props.width} fallback={1.5} min={200} onCommit={(v) => set({ width: v })} /></dd>
       <dt>Surface course</dt><dd><Mm value={node.props.surfaceThickness} fallback={0.06} min={0} onCommit={(v) => set({ surfaceThickness: v })} /></dd>
       <dt>Surface material</dt><dd><input defaultValue={mat('surfaceMaterial')} key={mat('surfaceMaterial')} onBlur={(e) => { if (e.target.value.trim() && e.target.value !== mat('surfaceMaterial')) set({ surfaceMaterial: e.target.value.trim() }); }} /></dd>
@@ -67,6 +75,7 @@ export function RetainingWallSection({ node }: { node: NodeDto }) {
   const fixedTop = typeof node.props.topElevation === 'number';
   return (
     <dl className="fields">
+      <Configure />
       <dt>Thickness</dt><dd><Mm value={node.props.thickness} fallback={0.3} min={100} onCommit={(v) => set({ thickness: v })} /></dd>
       <dt>High ground on the</dt>
       <dd><select value={(node.props.side as string | undefined) ?? 'left'} onChange={(e) => set({ side: e.target.value })}><option value="left">left</option><option value="right">right</option></select> <span className="muted small">of the way it was drawn</span></dd>

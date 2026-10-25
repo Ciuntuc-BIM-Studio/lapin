@@ -5,7 +5,7 @@
  * plantings that stand on it (docs/spec-site.md).
  */
 
-import { BrickWall, Crosshair, FileDown, FileUp, Fence, Mountain, MoveVertical, Paintbrush, Route, Shovel, Sprout, TreeDeciduous, Waves } from 'lucide-react';
+import { BrickWall, Crosshair, FileDown, FileUp, Fence, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -17,6 +17,7 @@ import { SURVEY, downloadLandXml, pickText } from './survey';
 import { TerrainSection } from './TerrainSection';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
 import { BrushDialog } from './BrushDialog';
+import { CorridorDialog } from './CorridorDialog';
 import { isDitch, setBrush, useBrush, type BrushKind } from './prefs';
 
 /** The lowest surveyed elevation, rounded down to the metre: what ±0.00 defaults to. */
@@ -122,6 +123,19 @@ const path: ToolDef = {
   complete: async ({ points }, ctx) => { await ctx.execute('civil.addPath', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]) }); },
 };
 
+/** A road along a polyline: two 3 m lanes on a 2,5 % crown, kerbs and 1,5 m sidewalks; the configurator sets the rest. */
+const road: ToolDef = {
+  id: 'civil.road', label: 'Road', icon: Route, shortcut: 'RD',
+  gesture: { kind: 'polyline' },
+  complete: async ({ points }, ctx) => {
+    const side = { kerb: true, sidewalk: true, kerbWidth: 0.15, kerbHeight: 0.12, sidewalkWidth: 1.5 };
+    await ctx.execute('civil.addPath', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), name: 'Road', template: 'road', laneWidth: 3, crossfall: 2.5, fall: 'crown', surfaceThickness: 0.08, baseThickness: 0.3, left: side, right: side });
+  },
+};
+
+/** The corridor configurator of the path, road, retaining wall or ditch selected. */
+const corridor: ToolDef = { id: 'civil.corridor', label: 'Corridor…', icon: Spline, shortcut: 'CO', run: () => useUi.setState({ dialog: 'corridor' }) };
+
 /** A retaining wall along a polyline, the high ground on its left; its section is set in the inspector. */
 const retainingWall: ToolDef = {
   id: 'civil.retainingWall', label: 'Retaining wall', icon: BrickWall, shortcut: 'RW',
@@ -166,7 +180,7 @@ const civil: LapinModule = {
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainFromLandXml, landXmlOut, spot] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SR'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [sculpt('flatten', 'Flatten', Mountain, 'SF'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
-      { label: 'Landscape', tools: [path, retainingWall, plant, plantingZone] },
+      { label: 'Landscape', tools: [path, road, retainingWall, plant, plantingZone], small: [corridor] },
     ],
   }],
   grips: {
@@ -192,7 +206,7 @@ const civil: LapinModule = {
     { id: 'retainingWall', label: 'Retaining wall', classes: ['LapinRetainingWall'], component: RetainingWallSection, replacesFields: () => true },
     { id: 'planting', label: 'Planting', classes: ['LapinPlanting'], component: PlantingSection, replacesFields: () => true },
   ],
-  dialogs: { brush: BrushDialog },
+  dialogs: { brush: BrushDialog, corridor: CorridorDialog },
 };
 
 export default civil;

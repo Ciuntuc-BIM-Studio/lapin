@@ -113,7 +113,7 @@ public static class CorridorCommands
             if (c.Segments == 0) throw new CommandException("The element needs two points at least.");
             var station = Math.Clamp(Json.Number(a["station"]) ?? c.Start, c.Start, c.End);
             var (parts, left, right) = Corridors.Section(q.Model, e, station);
-            var margin = Math.Max(2, (left - right) * 0.5);
+            var margin = Math.Max(1.5, (left - right) * 0.2);
             var (l, r2) = (left + margin, right - margin);
             var seg = c.SegmentAt(station);
             var p = c.PointAt(station);
