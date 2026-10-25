@@ -117,7 +117,22 @@ public static class Views
     {
         var (parts, symbols) = Gather(q, view);
         var (spec, problem) = Spec(q.Model, view, parts);
-        return spec == null ? (null, null, problem) : (Generator.Draw(parts, spec, symbols), spec, null);
+        if (spec == null) return (null, null, problem);
+        var keys = new Dictionary<string, string?>();
+        return (Generator.Draw(parts, spec, symbols, p => SeamKeyOf(q.Model, p.Material, p.Class, keys)), spec, null);
+    }
+
+    /// <summary>
+    /// What an element's part joins by where its surface goes on in one plane
+    /// (<see cref="MaterialDrawing.SeamKey"/>): the same for the elevations'
+    /// seams and the 3D view's. <paramref name="cache"/> keeps one answer per
+    /// material and class for a drawing.
+    /// </summary>
+    public static string? SeamKeyOf(IModelView m, string? material, string ifcClass, Dictionary<string, string?> cache)
+    {
+        var k = material + "|" + ifcClass;
+        if (cache.TryGetValue(k, out var key)) return key;
+        return cache[k] = MaterialDrawing.SeamKey(material == null ? null : m.Get(material) is { } mat ? MaterialGraphics.Resolve(mat, "elevation") : null, ifcClass);
     }
 
     /// <summary>A view rendered: its pens (view coordinates, m; widths paper mm), annotations, bounds and scale, or why it cannot be drawn.</summary>

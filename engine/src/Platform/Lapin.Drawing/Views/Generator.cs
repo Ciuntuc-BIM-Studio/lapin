@@ -72,8 +72,13 @@ public static class Generator
     /// <summary>Classes drawn in plan by their own symbols instead of their cut.</summary>
     public static readonly HashSet<string> SymbolicInPlan = ["IfcDoor", "IfcWindow", "IfcRoof", "IfcGeographicElement", "IfcStair", "IfcPavement", "LapinPlanting"];
 
-    public static ViewDrawing Draw(IReadOnlyList<DrawPart> parts, ViewSpec v, IReadOnlyList<DrawSymbol>? symbols = null)
+    /// <param name="seamKey">
+    /// What a part's surface joins by (<see cref="MaterialDrawing.SeamKey"/>): where it goes on in one plane into a part of the
+    /// same key, the edge between them is no line. Default: parts of one material (or, without one, of one class) join.
+    /// </param>
+    public static ViewDrawing Draw(IReadOnlyList<DrawPart> parts, ViewSpec v, IReadOnlyList<DrawSymbol>? symbols = null, Func<DrawPart, string?>? seamKey = null)
     {
+        seamKey ??= p => p.Material ?? " class:" + p.Class;
         var cuts = new List<DPolygon>();
         var lines = new List<DLine>();
         var plan = v.Kind == "plan";
@@ -96,7 +101,7 @@ public static class Generator
             var (z0, z1) = Z(p.Solid);
             return z0 < cutZ - 1e-9 && z1 > cutZ - v.Below - 1e-9;
         }).ToList();
-        var (seen, areas, behind) = HiddenLines.Draw(primary.Select((p, i) => (p.Solid, i)).ToList(), v.Frame, v.Cut, v.Below, v.Hidden);
+        var (seen, areas, behind) = HiddenLines.Draw(primary.Select((p, i) => (p.Solid, i)).ToList(), v.Frame, v.Cut, v.Below, v.Hidden, primary.Select(seamKey).ToList());
         foreach (var a in areas)
         {
             var p = primary[a.Owner];
@@ -119,7 +124,7 @@ public static class Generator
             if (over.Count > 0)
             {
                 var up = new ViewFrame(new Vec3(0, 0, cutZ), new Vec3(1, 0, 0), new Vec3(0, -1, 0), Vec3.UnitZ);
-                var (oLines, _, _) = HiddenLines.Draw(over.Select((p, i) => (p.Solid, i)).ToList(), up, false, v.Above);
+                var (oLines, _, _) = HiddenLines.Draw(over.Select((p, i) => (p.Solid, i)).ToList(), up, false, v.Above, keys: over.Select(seamKey).ToList());
                 foreach (var s in oLines)
                 {
                     var p = over[s.Owner];

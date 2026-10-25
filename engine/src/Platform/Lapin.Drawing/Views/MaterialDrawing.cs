@@ -148,6 +148,14 @@ public static class MaterialDrawing
         _ => null,
     };
 
+    /// <summary>
+    /// What a surface joins by where it goes on in one plane (the seams of an
+    /// elevation, of the 3D view): its material's name, else its element's kind
+    /// or class; null joins nothing (a membrane, a material whose joints are drawn).
+    /// </summary>
+    public static string? SeamKey(ResolvedMaterial? g, string ifcClass) =>
+        g != null ? (g.Membrane || g.DrawJoints ? null : MaterialGraphics.Normalise(g.Name)) : " kind:" + (KindOf(ifcClass) ?? ifcClass.ToUpperInvariant());
+
     /// <summary>What a band joins by: its material's name, else its kind; null joins nothing (a membrane, a material whose joints are drawn).</summary>
     static string? JoinKey(DPolygon p, ResolvedMaterial? g)
     {

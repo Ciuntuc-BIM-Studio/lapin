@@ -47,9 +47,14 @@ public static class HiddenLines
     }
 
     /// <param name="hidden">Also return the parts of the edges that are hidden (for dashed hidden lines); otherwise that list stays empty.</param>
+    /// <param name="keys">
+    /// What each solid's surface joins by (its material): a face going on in the same plane into another solid's face is
+    /// a seam, no line, only when both join by one key (null joins nothing). Without keys, every coplanar continuation is a seam.
+    /// </param>
     public static (List<Seg2> Lines, List<CutArea> Cuts, List<Seg2> Hidden) Draw(IReadOnlyList<(Solid Solid, int Owner)> solids, ViewFrame view, bool cut = false,
-        double maxDepth = double.PositiveInfinity, bool hidden = false)
+        double maxDepth = double.PositiveInfinity, bool hidden = false, IReadOnlyList<string?>? keys = null)
     {
+        bool Joins(int i, int j) => i == j || keys == null || keys[i] != null && keys[i] == keys[j];
         var occluders = new List<Occluder>();
         var cuts = new List<CutArea>();
         var edges = new List<(Vec3 A, Vec3 B, int Solid, int FaceA, int FaceB, int Owner)>();
@@ -120,8 +125,8 @@ public static class HiddenLines
             if ((b - a).Length < 1e-7) continue;
 
             covered.Clear();
-            // A seam: the edge's one visible face goes on, in the same plane, as another face (the next wall of
-            // the same facade, the storey above). Where the other side of the edge lies in such a face, it is no edge.
+            // A seam: the edge's one visible face goes on, in the same plane, as another face of the same material (the
+            // next wall of the same facade, the storey above). Where the other side of the edge lies in such a face, it is no edge.
             var face = (front.GetValueOrDefault((e.Solid, e.FaceA)), e.FaceB >= 0 ? front.GetValueOrDefault((e.Solid, e.FaceB)) : null) switch
             {
                 ({ } x, null) => x, (null, { } y) => y, _ => null,
@@ -136,7 +141,7 @@ public static class HiddenLines
             foreach (var o in grid.Near(a, b))
             {
                 if (o.Solid == e.Solid && (o.Face == e.FaceA || o.Face == e.FaceB)) continue;
-                if (face != null && Coplanar(o, face, (a + b) * 0.5)) { InsideIntervals(o.Rings, outA, outB, 0, 1, covered); continue; }
+                if (face != null && Joins(e.Solid, o.Solid) && Coplanar(o, face, (a + b) * 0.5)) { InsideIntervals(o.Rings, outA, outB, 0, 1, covered); continue; }
                 if (o.MinDepth > Math.Max(dA, dB) - DepthEps) continue;
                 Covered(o, a, b, dA, dB, covered);
             }
@@ -150,7 +155,7 @@ public static class HiddenLines
                 var seam = new List<(double, double)>();
                 if (face != null)
                     foreach (var o in grid.Near(a, b))
-                        if (!(o.Solid == e.Solid && (o.Face == e.FaceA || o.Face == e.FaceB)) && Coplanar(o, face, (a + b) * 0.5)) InsideIntervals(o.Rings, outA, outB, 0, 1, seam);
+                        if (!(o.Solid == e.Solid && (o.Face == e.FaceA || o.Face == e.FaceB)) && Joins(e.Solid, o.Solid) && Coplanar(o, face, (a + b) * 0.5)) InsideIntervals(o.Rings, outA, outB, 0, 1, seam);
                 var notShown = Complement(shown);
                 foreach (var (s0, s1) in notShown)
                     foreach (var (h0, h1) in Visible([.. seam]).Select(v => (Math.Max(v.Item1, s0), Math.Min(v.Item2, s1))))
@@ -211,39 +216,9 @@ public static class HiddenLines
         InsideIntervals(o.Rings, a, b, lo, hi, hidden);
     }
 
-    /// <summary>Adds the parts of segment a→b (within [lo, hi]) inside the rings, even-odd.</summary>
-    static void InsideIntervals(List<Vec2[]> rings, Vec2 a, Vec2 b, double lo, double hi, List<(double, double)> hidden)
-    {
-        var ts = new List<double> { lo, hi };
-        var d = b - a;
-        foreach (var ring in rings)
-            for (int i = 0, j = ring.Length - 1; i < ring.Length; j = i++)
-            {
-                Vec2 p = ring[j], q = ring[i], e = q - p;
-                var den = Vec2.Cross(d, e);
-                if (Math.Abs(den) < 1e-15) continue;
-                var w = p - a;
-                double t = Vec2.Cross(w, e) / den, u = Vec2.Cross(w, d) / den;
-                if (u >= -1e-12 && u <= 1 + 1e-12 && t > lo && t < hi) ts.Add(t);
-            }
-        ts.Sort();
-        for (var k = 0; k + 1 < ts.Count; k++)
-        {
-            double s0 = ts[k], s1 = ts[k + 1];
-            if (s1 - s0 < 1e-12) continue;
-            if (Inside(rings, a + d * ((s0 + s1) / 2))) hidden.Add((s0, s1));
-        }
-    }
+    static void InsideIntervals(List<Vec2[]> rings, Vec2 a, Vec2 b, double lo, double hi, List<(double, double)> hidden) => Polygon2.InsideIntervals(rings, a, b, lo, hi, hidden);
 
-    static bool Inside(List<Vec2[]> rings, Vec2 p)
-    {
-        var inside = false;
-        foreach (var r in rings)
-            for (int i = 0, j = r.Length - 1; i < r.Length; j = i++)
-                if ((r[i].Y > p.Y) != (r[j].Y > p.Y) && p.X < (r[j].X - r[i].X) * (p.Y - r[i].Y) / (r[j].Y - r[i].Y) + r[i].X)
-                    inside = !inside;
-        return inside;
-    }
+    static bool Inside(List<Vec2[]> rings, Vec2 p) => Polygon2.Inside(rings, p);
 
     /// <summary>[0, 1] without the union of the hidden intervals.</summary>
     static IEnumerable<(double, double)> Visible(List<(double A, double B)> hidden)

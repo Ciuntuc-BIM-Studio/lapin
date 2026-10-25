@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
+using Lapin.Drawing.Views;
 using Lapin.Model;
 
 namespace Lapin.Platform;
@@ -22,7 +23,11 @@ public sealed class Session
     readonly Dictionary<string, string> _foreignClasses = [];
     long _version;
 
-    sealed record Built(ElementGeometry? Geometry, HashSet<string> Reads, RenderItem? Item);
+    /// <summary>An element as built: its geometry, what it read, its render item as the tessellator made it (its edges before the seams go), and its box.</summary>
+    sealed record Built(ElementGeometry? Geometry, HashSet<string> Reads, RenderItem? Item, (Vec3 Min, Vec3 Max)? Bounds);
+
+    /// <summary>Each solid's faces ready for the seams, once per solid (solids are immutable; an element rebuilt brings new ones).</summary>
+    readonly Dictionary<Solid, List<Seams.Plane>> _planes = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>
     /// Everything that changes the project's history, as it happens: what the
@@ -217,9 +222,12 @@ public sealed class Session
     public Diff Snapshot()
     {
         ForgetAll();
-        var render = new List<RenderItem>();
+        var ids = new List<string>();
         foreach (var e in _store.Entities)
-            if (ProducerOf(e) != null && Build(e) is { Item: { } item }) render.Add(item);
+            if (ProducerOf(e) != null && Build(e) is { Item: not null }) ids.Add(e.Id);
+        // Every element built first: each one's edges are trimmed against its neighbours.
+        var keys = new Dictionary<string, string?>();
+        var render = ids.Select(id => Emitted(id, keys)).OfType<RenderItem>().ToList();
         return new Diff(++_version, true,
             _store.Entities.Select(Dto).ToList(), [], [], [],
             render, [], State(),
@@ -273,19 +281,29 @@ public sealed class Session
         var relations = t.Relations.Select(c => _store.GetRelation(c.Id)).OfType<Relation>().Select(Dto).ToList();
         var removedRelations = t.Relations.Where(c => _store.GetRelation(c.Id) == null).Select(c => c.Id).ToList();
 
-        // Rebuild what read anything the edit touched, and the new elements.
+        // Rebuild what read anything the edit touched, and the elements the edit left in the model (new ones; an undone deletion brings one back).
         var rebuild = touched.SelectMany(id => _readers.TryGetValue(id, out var r) ? r : (IEnumerable<string>)[])
-            .Concat(t.Entities.Where(c => c.After != null && ProducerOf(c.After) != null).Select(c => c.Id))
+            .Concat(t.Entities.Where(c => _store.Get(c.Id) is { } now && ProducerOf(now) != null).Select(c => c.Id))
             .Distinct().ToList();
-        var render = new List<RenderItem>();
         var renderRemoved = new List<string>();
+        var emit = new List<string>();
+        // Where the rebuilt elements were and are: the neighbours there get their seams again, or lose them.
+        var boxes = new List<(Vec3 Min, Vec3 Max)>();
         foreach (var id in rebuild)
         {
             var hadItem = _built.TryGetValue(id, out var old) && old.Item != null;
+            if (old?.Bounds is { } was) boxes.Add(was);
             Forget(id);
-            if (_store.Get(id) is { } e && Build(e) is { Item: { } item }) render.Add(item);
+            if (_store.Get(id) is { } e && Build(e) is { Item: not null } built)
+            {
+                emit.Add(id);
+                if (built.Bounds is { } now) boxes.Add(now);
+            }
             else if (hadItem) renderRemoved.Add(id);
         }
+        emit.AddRange(Neighbours(boxes, rebuild.ToHashSet()));
+        var keys = new Dictionary<string, string?>();
+        var render = emit.Select(id => Emitted(id, keys)).OfType<RenderItem>().ToList();
         return new Diff(++_version, false, nodes, removedNodes, [], [], render, renderRemoved, State(), relations, removedRelations);
     }
 
@@ -330,16 +348,75 @@ public sealed class Session
             problems.Add(ex is ModelException or InvalidOperationException or ArgumentException ? ex.Message : $"{ex.GetType().Name}: {ex.Message}");
             item = Render(e, null, problems);
         }
-        var built = new Built(g, view.Read, item);
+        var built = new Built(g, view.Read, item, BoundsOf(g));
         Forget(e.Id);
         _built[e.Id] = built;
         foreach (var id in built.Reads) (_readers.TryGetValue(id, out var set) ? set : _readers[id] = []).Add(e.Id);
         return built;
     }
 
+    static (Vec3 Min, Vec3 Max)? BoundsOf(ElementGeometry? g)
+    {
+        (Vec3 Min, Vec3 Max)? box = null;
+        foreach (var p in g?.Parts ?? [])
+        {
+            if (Measure.Bounds(p.Solid) is not { } b) continue;
+            box = box is { } o
+                ? (new Vec3(Math.Min(o.Min.X, b.Min.X), Math.Min(o.Min.Y, b.Min.Y), Math.Min(o.Min.Z, b.Min.Z)), new Vec3(Math.Max(o.Max.X, b.Max.X), Math.Max(o.Max.Y, b.Max.Y), Math.Max(o.Max.Z, b.Max.Z)))
+                : b;
+        }
+        return box;
+    }
+
+    static bool Overlaps((Vec3 Min, Vec3 Max) a, (Vec3 Min, Vec3 Max) b, double tol = 1e-3) =>
+        a.Min.X <= b.Max.X + tol && b.Min.X <= a.Max.X + tol && a.Min.Y <= b.Max.Y + tol && b.Min.Y <= a.Max.Y + tol && a.Min.Z <= b.Max.Z + tol && b.Min.Z <= a.Max.Z + tol;
+
+    /// <summary>The built elements whose box touches one of <paramref name="boxes"/>, other than <paramref name="except"/>.</summary>
+    IEnumerable<string> Neighbours(IReadOnlyList<(Vec3 Min, Vec3 Max)> boxes, ICollection<string> except)
+    {
+        if (boxes.Count == 0) yield break;
+        foreach (var (id, b) in _built)
+            if (b.Bounds is { } box && b.Item != null && !except.Contains(id) && boxes.Any(x => Overlaps(x, box))) yield return id;
+    }
+
+    /// <summary>
+    /// An element's render item as the interface gets it: its parts' edges less
+    /// the seams, where a surface goes on, in its own plane, into a neighbour's
+    /// part of the same material (a wall's render over the storey above; see
+    /// <see cref="Seams"/>). The same rule as the elevations' and the plan's:
+    /// the elements stay apart, the material reads as one.
+    /// </summary>
+    RenderItem? Emitted(string id, Dictionary<string, string?> keys)
+    {
+        if (!_built.TryGetValue(id, out var b) || b.Item is not { } item) return null;
+        if (b.Geometry is not { } g || b.Bounds is not { } box || item.Parts is not { Count: > 0 } parts || parts.Count != g.Parts.Count) return item;
+        var cls = _store.Get(id)?.Class ?? item.Type;
+        var near = new List<(Built Built, string Class)>();
+        foreach (var (nid, nb) in _built)
+            if (nid != id && nb.Geometry != null && nb.Bounds is { } nbox && Overlaps(box, nbox)) near.Add((nb, _store.Get(nid)?.Class ?? nb.Item?.Type ?? ""));
+        if (near.Count == 0) return item;
+        List<Seams.Plane> PlanesOf(Solid s) => _planes.TryGetValue(s, out var p) ? p : _planes[s] = Seams.Planes(s);
+        List<RenderPart>? trimmed = null;
+        for (var i = 0; i < parts.Count; i++)
+        {
+            var part = g.Parts[i];
+            var key = Views.SeamKeyOf(_store, part.Material, cls, keys);
+            if (key == null || Measure.Bounds(part.Solid) is not { } pbox) continue;
+            var onward = new List<Seams.Plane>();
+            foreach (var (nb, ncls) in near)
+                foreach (var q in nb.Geometry!.Parts)
+                    if (Views.SeamKeyOf(_store, q.Material, ncls, keys) == key && Measure.Bounds(q.Solid) is { } qbox && Overlaps(pbox, qbox)) onward.AddRange(PlanesOf(q.Solid));
+            if (onward.Count == 0) continue;
+            trimmed ??= [.. parts];
+            trimmed[i] = parts[i] with { Edges = Seams.Flat(Seams.Edges(part.Solid, onward)) };
+        }
+        return trimmed == null ? item : item with { Parts = trimmed };
+    }
+
     void Forget(string id)
     {
         if (!_built.Remove(id, out var old)) return;
+        foreach (var p in old.Geometry?.Parts ?? []) _planes.Remove(p.Solid);
         foreach (var r in old.Reads)
             if (_readers.TryGetValue(r, out var set)) { set.Remove(id); if (set.Count == 0) _readers.Remove(r); }
     }
@@ -348,6 +425,7 @@ public sealed class Session
     {
         _built.Clear();
         _readers.Clear();
+        _planes.Clear();
     }
 
     RenderItem Render(Entity e, ElementGeometry? g, List<string> problems)

@@ -205,6 +205,56 @@ public static class Polygon2
         return p;
     }
 
+    /// <summary>Even-odd point-in-rings: inside an odd number of the rings (an outer ring and its holes).</summary>
+    public static bool Inside(IReadOnlyList<Vec2[]> rings, Vec2 p)
+    {
+        var inside = false;
+        foreach (var r in rings)
+            for (int i = 0, j = r.Length - 1; i < r.Length; j = i++)
+                if ((r[i].Y > p.Y) != (r[j].Y > p.Y) && p.X < (r[j].X - r[i].X) * (p.Y - r[i].Y) / (r[j].Y - r[i].Y) + r[i].X)
+                    inside = !inside;
+        return inside;
+    }
+
+    /// <summary>Adds to <paramref name="into"/> the parts of segment a→b (as parameters within [lo, hi]) that lie inside the rings, even-odd.</summary>
+    public static void InsideIntervals(IReadOnlyList<Vec2[]> rings, Vec2 a, Vec2 b, double lo, double hi, List<(double, double)> into)
+    {
+        var ts = new List<double> { lo, hi };
+        var d = b - a;
+        foreach (var ring in rings)
+            for (int i = 0, j = ring.Length - 1; i < ring.Length; j = i++)
+            {
+                Vec2 p = ring[j], q = ring[i], e = q - p;
+                var den = Vec2.Cross(d, e);
+                if (Math.Abs(den) < 1e-15) continue;
+                var w = p - a;
+                double t = Vec2.Cross(w, e) / den, u = Vec2.Cross(w, d) / den;
+                if (u >= -1e-12 && u <= 1 + 1e-12 && t > lo && t < hi) ts.Add(t);
+            }
+        ts.Sort();
+        for (var k = 0; k + 1 < ts.Count; k++)
+        {
+            double s0 = ts[k], s1 = ts[k + 1];
+            if (s1 - s0 < 1e-12) continue;
+            if (Inside(rings, a + d * ((s0 + s1) / 2))) into.Add((s0, s1));
+        }
+    }
+
+    /// <summary>[0, 1] without the union of the intervals (in any order).</summary>
+    public static List<(double A, double B)> Outside(List<(double A, double B)> intervals)
+    {
+        intervals.Sort((x, y) => x.A.CompareTo(y.A));
+        var o = new List<(double, double)>();
+        var at = 0.0;
+        foreach (var (h0, h1) in intervals)
+        {
+            if (h0 > at) o.Add((at, h0));
+            at = Math.Max(at, h1);
+        }
+        if (at < 1) o.Add((at, 1));
+        return o;
+    }
+
     /// <summary>Even-odd point-in-polygon.</summary>
     public static bool Contains(IReadOnlyList<Vec2> poly, Vec2 p)
     {
