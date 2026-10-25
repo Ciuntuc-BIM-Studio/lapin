@@ -60,7 +60,7 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
     {
         foreach (var cls in Classes)
         {
-            r.Class(new(cls, cls == IfcClass.BuildingElementProxy ? "Solid" : cls[3..],
+            r.Class(new(cls, cls == IfcClass.BuildingElementProxy ? "Solid" : Offered.FirstOrDefault(o => o.Class == cls).Label ?? cls[3..],
             [
                 new("depth", "Depth", "length"),
                 new("angle", "Angle (°)", "number", Min: -360, Max: 360),

@@ -2,6 +2,8 @@
 
 Asked on 25.10.2026. This plan starts from what the code does today; the open questions at the end need answers before the items they mark.
 
+**Done (25.10.2026)**, every step below, with the open questions answered by the defaults proposed there (pending decision 119 lists them for review), plus walls attached to roofs. What is left for later: curved walls and beams (Q3), grips in 3D (Q4), cut order by material (Q6), parameters defined on types and inherited (E10), the pavement path taken live from the walls (Q10).
+
 ## What exists today
 
 - **Grips.** A grip is `{key, at, move}` (`ui/src/platform/module.ts`), drawn and dragged only in the plan (`PlanView.tsx`), one at a time. Walls, beams and strip footings have their two ends, columns their point, drafted shapes their ends and vertices. Slabs, roofs, openings, platforms and terrain have none. No axis line is drawn on selection.
