@@ -22,9 +22,10 @@ import { pairs, toMm } from './snap';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
 import { useDrawing } from './drawing';
+import { setUnderlay, useUnderlay } from './underlay';
 import { editDimension } from './dimensionEdit';
 import { CadOverlay } from './cad/canvas';
-import { useCadCanvas, type Aimed } from './cad/aim';
+import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
 import type { Shape } from './cad/shapes';
@@ -67,6 +68,10 @@ export function PlanView() {
   const planDrawing = useUi((s) => s.planDrawing);
   const ownPlan = planViewId && nodes.get(planViewId)?.props.storeyId === storey?.id ? planViewId : null;
   const drawing = useDrawing(storey ? ownPlan ?? `plan:${storey.id}` : null, planDrawing);
+  // Another storey beneath this one, faded: seen and snapped to, never picked.
+  const underId = useUnderlay((u) => (storey ? u.of[storey.id] : undefined));
+  const under = underId && underId !== storey?.id && nodes.get(underId) ? underId : null;
+  const underDrawing = useDrawing(under ? `plan:${under}` : null);
   // The view (centre, zoom) is remembered per plan for the session, so the tab comes back as it was left.
   const key = ownPlan ?? (storey ? `plan:${storey.id}` : 'plan:none');
   const [view, setView] = useState<View>(() => recall<View>(key) ?? { cx: 4, cy: 2, scale: 60 });
@@ -154,8 +159,9 @@ export function PlanView() {
       for (let i = 0; i + 1 < ps.length + (it.closed ? 1 : 0); i++) o.push({ type: 'line', a: ps[i], b: ps[(i + 1) % ps.length] });
     }
     for (const q of [...snapPoints, ...markSnaps]) o.push({ type: 'line', a: q, b: q });
+    if (underDrawing) o.push(...snapShapes(underDrawing).shapes);
     return o;
-  }, [items, snapPoints, markSnaps]);
+  }, [items, snapPoints, markSnaps, underDrawing]);
   const planViewOf = storey ? ownPlan ?? `plan:${storey.id}` : null;
   const { aim, acquire } = useCadCanvas({ viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null });
   const cadStep = useCad((s) => s.step);
@@ -420,6 +426,13 @@ export function PlanView() {
                 {(drawing?.problems?.length ?? 0) > 0 && (
           <button type="button" className="chip warn" title="The view range is out of order" onClick={() => useUi.setState({ dialog: 'viewRange' })}>view range: {drawing!.problems!.length} problem(s)</button>
         )}
+        {storey && <select className={`chip underlay-pick${under ? ' on' : ''}`} title="Underlay: another level's plan beneath this one, faded, to snap to" aria-label="Underlay"
+          value={under ?? ''} onChange={(e) => setUnderlay(storey.id, e.target.value || null)}>
+          <option value="">No underlay</option>
+          {[...nodes.values()].filter((n) => n.type === 'IfcBuildingStorey' && n.id !== storey.id)
+            .sort((a, b) => Number(a.props.elevation ?? 0) - Number(b.props.elevation ?? 0))
+            .map((n) => <option key={n.id} value={n.id}>Underlay: {n.name}</option>)}
+        </select>}
         <button type="button" className="icon" title="View range" onClick={() => useUi.setState({ dialog: 'viewRange' })}><Layers size={14} /></button>
         <button type="button" className={`icon${planDrawing ? ' on' : ''}`} title={planDrawing ? 'Drawing: hatches and pens (click for modelling lines)' : 'Modelling lines (click for the drawing)'}
           onClick={() => useUi.setState({ planDrawing: !planDrawing })}><PenLine size={14} /></button>
@@ -437,6 +450,7 @@ export function PlanView() {
           if (n) void editDimension(n.id);
         }}>
         <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>
+        {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} /></g>}
         {drawing && planDrawing && <g className={scope ? 'scoped-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} /></g>}
         <g className={`plan-items${drawing && planDrawing ? ' ghost' : ''}${scope ? ' scoped' : ''}`}>
           {drawn.map(({ key, r, kind, d, closed, text, at }) => kind === 'label' ? (
