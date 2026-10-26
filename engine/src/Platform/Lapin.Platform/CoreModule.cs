@@ -10,6 +10,10 @@ namespace Lapin.Platform;
 /// </summary>
 public sealed class CoreModule : ILapinModule
 {
+    /// <summary>A storey's height from its base and top levels: the top must be above the base.</summary>
+    static double TopToHeight(double @base, double top) =>
+        top - @base > 1e-6 ? Math.Round((top - @base) * 1e6) / 1e6 : throw new CommandException($"The top level ({top:0.00}) must be above the base level ({@base:0.00}).");
+
     public const string ModuleId = "core";
     public string Id => ModuleId;
     public string Name => "Core";
@@ -51,7 +55,7 @@ public sealed class CoreModule : ILapinModule
             var storey = new Entity(ctx.NewId(), IfcClass.BuildingStorey, name, new JsonObject
             {
                 ["elevation"] = elevation,
-                ["height"] = Json.Number(a["height"]) ?? 3.0,
+                ["height"] = Json.Number(a["top"]) is { } t ? TopToHeight(elevation, t) : Json.Number(a["height"]) ?? 3.0,
             });
             ctx.Add(storey);
             ctx.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
@@ -62,12 +66,18 @@ public sealed class CoreModule : ILapinModule
         {
             var s = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.BuildingStorey);
             var attrs = s.CloneAttrs();
-            if (Json.Number(a["elevation"]) is { } e) attrs["elevation"] = e;
-            if (Json.Number(a["height"]) is { } h)
+            // A storey lies between its base level (elevation) and its top level; its height is what lies between. Either may be below ±0.00.
+            var (oldBase, oldTop) = (s.Num("elevation"), s.Num("elevation") + s.Num("height", 3));
+            var keepTop = a["keepTop"] is JsonValue kt && kt.TryGetValue<bool>(out var k) && k;
+            var @base = Json.Number(a["elevation"]) ?? oldBase;
+            attrs["elevation"] = @base;
+            if (Json.Number(a["top"]) is { } top) attrs["height"] = TopToHeight(@base, top);
+            else if (Json.Number(a["height"]) is { } h)
             {
                 if (!(h > 0)) throw new CommandException("A storey's height must be positive.");
                 attrs["height"] = h;
             }
+            else if (keepTop) attrs["height"] = TopToHeight(@base, oldTop);
             ctx.Replace(s.With(name: (string?)a["name"], attrs: attrs));
             return null;
         });
@@ -333,4 +343,5 @@ public static class Fields
                 return (string?)value ?? throw new CommandException($"{f.Label} must be text.");
         }
     }
+
 }
