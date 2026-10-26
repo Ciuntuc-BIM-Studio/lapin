@@ -590,6 +590,21 @@ public static class Views
             return null;
         });
 
+        // A plan's reference level: another storey's plan drawn under this one on screen, faded, snapped to, never printed ({id, storeyId}; null: none).
+        r.Command("view.setUnderlay", "Reference level", (ctx, a) =>
+        {
+            var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == "plan" ? x : throw new CommandException("Not a plan view.");
+            var attrs = v.CloneAttrs();
+            if ((string?)a["storeyId"] is { Length: > 0 } sid)
+            {
+                if (sid == v.Str("storeyId")) throw new CommandException("A plan cannot reference its own level.");
+                attrs["underlay"] = Spatial.Require(ctx.Model, sid, IfcClass.BuildingStorey).Id;
+            }
+            else attrs.Remove("underlay");
+            ctx.Replace(v.With(attrs: attrs));
+            return null;
+        });
+
         r.Command("view.setRange", "View range", (ctx, a) =>
         {
             var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == "plan" ? x : throw new CommandException("Not a plan.");

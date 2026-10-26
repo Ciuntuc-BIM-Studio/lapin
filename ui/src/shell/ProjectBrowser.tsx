@@ -56,7 +56,8 @@ export function ProjectBrowser() {
   const items: BrowserItem[] = [...levels.map(implicitPlan), THREE_D, ...[...nodes.values()].map(itemOf).filter((i): i is BrowserItem => i !== null)];
   const groups = groupItems(sets, items);
 
-  const showPlan = (id: string, planViewId: string | null = null) => useUi.setState({ view: 'plan', storeyId: id, planViewId });
+  // A plan's own view is selected too, so its properties (discipline, style, range, storeys shown, reference level) come to the panel; a level's default plan has no entity to select.
+  const showPlan = (id: string, planViewId: string | null = null) => useUi.setState({ view: 'plan', storeyId: id, planViewId, selection: planViewId, selected: planViewId ? [planViewId] : [] });
   const showDrawing = (id: string) => useUi.setState({ view: 'drawing', drawingViewId: id, selection: id, selected: [id] });
   const show3d = (id: string | null) => useUi.setState({ view: '3d', view3dId: id, ...(id ? { selection: id, selected: [id] } : {}) });
   const showSheet = (id: string) => useUi.setState({ view: 'sheet', sheetId: id, selection: id, selected: [id] });

@@ -29,6 +29,7 @@ O vedere ia stilul pe care îl numește (`viewStyle`), altfel pe al disciplinei 
 ## Unde se setează
 
 - **Disciplina** unei vederi sau planșe, în proprietățile ei (selector `DisciplinePicker`: disciplinele implicite, ale seturilor browserului, ale stilurilor și cele deja folosite; alta se tastează). Browserul o așază sub setul disciplinei; vederea fără stil numit desenează cu stilul disciplinei. Când nu e nimic selectat, panoul de proprietăți arată vederea din față (`FrontViewPanel`).
+- **Nivelul de referință** al unui plan (planul altui nivel, de sub sau de deasupra, estompat pe ecran, cu snap, netipărit): pe vederea de plan (`underlay`, `view.setUnderlay`), în secțiunea View settings și în cipul din bara planului. Deschiderea unui plan propriu din navigator îl selectează, deci setările lui sunt în panou cât e selectat.
 
 - **View → View settings** (vederea din față) și **proprietățile unei vederi**: stilul, straturile, unirea materialelor, overhead-ul, intervalul vederii (planul de secționare, sus, jos, adâncime: View range…) și etajele afișate (decizia 136).
 - **Manage → View styles**: stilurile proiectului, cu nume, disciplină, straturi, unire și overhead; duplicare, stil nou, ștergere (vederile lui iau stilul disciplinei).

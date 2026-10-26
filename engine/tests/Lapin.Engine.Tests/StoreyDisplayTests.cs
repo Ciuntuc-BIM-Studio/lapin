@@ -121,4 +121,15 @@ public sealed class StoreyDisplayTests
         var section = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(0, -1), ["end"] = new JsonArray(0, 4) })!["id"]!;
         Assert.Throws<CommandException>(() => f.Run("view.setStoreys", new JsonObject { ["id"] = section, ["mode"] = "all" }));
     }
+
+    [Fact]
+    public void A_plan_keeps_its_reference_level()
+    {
+        var (f, ground, below, _, _, plan) = Project();
+        f.Run("view.setUnderlay", new JsonObject { ["id"] = plan, ["storeyId"] = below });
+        Assert.Equal(below, f.Model.Get(plan)!.Str("underlay"));
+        Assert.Throws<CommandException>(() => f.Run("view.setUnderlay", new JsonObject { ["id"] = plan, ["storeyId"] = ground }));
+        f.Run("view.setUnderlay", new JsonObject { ["id"] = plan, ["storeyId"] = null });
+        Assert.Null(f.Model.Get(plan)!.Attrs["underlay"]);
+    }
 }

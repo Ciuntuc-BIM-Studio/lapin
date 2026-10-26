@@ -16,6 +16,7 @@ import { execute, query, useSession } from '../../engine/session';
 import { DisciplinePicker } from './DisciplinePicker';
 import { useViewStyles, type LayerMode, type ViewStyle } from './viewStyles';
 import { frontView } from '../../viewport/frontView';
+import { storeys } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { PlanStoreysEditor } from './PlanStoreys';
 
@@ -65,8 +66,20 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
             <dd><input type="checkbox" checked={state.resolved.overhead} onChange={(e) => set({ overhead: e.target.checked })} /><Reset field="overhead" /></dd>
             <dt>Cut plane and depth</dt>
             <dd><button type="button" className="btn small" onClick={() => useUi.setState({ dialog: 'viewRange' })}>View range…</button></dd>
+            <dt title="Another level's plan drawn under this one on screen, faded, never picked but snapped to; it does not print">Reference level</dt>
+            <dd>
+              <select value={typeof view.props.underlay === 'string' ? view.props.underlay : ''} onChange={(e) => void execute('view.setUnderlay', { id: view.id, storeyId: e.target.value || null })}>
+                <option value="">none</option>
+                {storeys(useSession.getState()).filter((st) => st.id !== view.props.storeyId).reverse().map((st) => {
+                  const dz = Number(st.props.elevation ?? 0) - Number(nodes.get(String(view.props.storeyId))?.props.elevation ?? 0);
+                  return <option key={st.id} value={st.id}>{st.name} ({dz > 0 ? 'above' : 'below'})</option>;
+                })}
+              </select>
+            </dd>
           </>
         )}
+        <dt title="What this view shows and how, by category, class and element (VV)">Graphics</dt>
+        <dd><button type="button" className="btn small" onClick={() => useUi.setState({ dialog: 'visibility' })}>Visibility / Graphics…</button></dd>
       </dl>
       {plan && (
         <>

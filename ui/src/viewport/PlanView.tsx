@@ -69,7 +69,10 @@ export function PlanView() {
   const ownPlan = planViewId && nodes.get(planViewId)?.props.storeyId === storey?.id ? planViewId : null;
   const drawing = useDrawing(storey ? ownPlan ?? `plan:${storey.id}` : null, planDrawing);
   // Another storey beneath this one, faded: seen and snapped to, never picked.
-  const underId = useUnderlay((u) => (storey ? u.of[storey.id] : undefined));
+  // The reference level: the plan's own view's (kept with the project), else the one remembered in this browser for the level.
+  const remembered = useUnderlay((u) => (storey ? u.of[storey.id] : undefined));
+  const ownUnder = ownPlan ? nodes.get(ownPlan)?.props.underlay : undefined;
+  const underId = typeof ownUnder === 'string' ? ownUnder : ownPlan ? undefined : remembered;
   const under = underId && underId !== storey?.id && nodes.get(underId) ? underId : null;
   const underDrawing = useDrawing(under ? `plan:${under}` : null);
   // The view (centre, zoom) is remembered per plan for the session, so the tab comes back as it was left.
@@ -427,7 +430,7 @@ export function PlanView() {
           <button type="button" className="chip warn" title="The view range is out of order" onClick={() => useUi.setState({ dialog: 'viewRange' })}>view range: {drawing!.problems!.length} problem(s)</button>
         )}
         {storey && <select className={`chip underlay-pick${under ? ' on' : ''}`} title="Underlay: another level's plan beneath this one, faded, to snap to" aria-label="Underlay"
-          value={under ?? ''} onChange={(e) => setUnderlay(storey.id, e.target.value || null)}>
+          value={under ?? ''} onChange={(e) => { if (ownPlan) void execute('view.setUnderlay', { id: ownPlan, storeyId: e.target.value || null }); else setUnderlay(storey.id, e.target.value || null); }}>
           <option value="">No underlay</option>
           {[...nodes.values()].filter((n) => n.type === 'IfcBuildingStorey' && n.id !== storey.id)
             .sort((a, b) => Number(a.props.elevation ?? 0) - Number(b.props.elevation ?? 0))
