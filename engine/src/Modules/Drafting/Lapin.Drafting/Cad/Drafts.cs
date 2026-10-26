@@ -152,6 +152,13 @@ public static class Drafts
             var layer = layers.GetValueOrDefault(e.Str("layer") ?? "0") ?? layers["0"];
             if (!layer.Visible || hidden.Contains(layer.Name)) continue;
             var color = e.Str("color") ?? layer.Color;
+            // A link's shapes: out when it is hidden, grey when it is halftone.
+            if (e.Str(Links.Key) is { } linkId)
+            {
+                var link = c.Model.Get(linkId);
+                if (link is not { Class: Links.Class } || !Links.Visible(link)) continue;
+                if (Links.IsHalftone(link)) color = Links.Halftone;
+            }
             var mk = new ViewMark(e.Id);
             if (e.Attrs["hatch"] is JsonObject h)
             {

@@ -43,6 +43,7 @@ export function ImportDxfDialog() {
   const [texts, setTexts] = useState(true);
   const [hatches, setHatches] = useState(true);
   const [dimensions, setDimensions] = useState('native');
+  const [link, setLink] = useState(false);
   const [off, setOff] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const close = () => { dxfFile.current = null; useUi.setState({ dialog: null }); };
@@ -82,7 +83,7 @@ export function ImportDxfDialog() {
         ...(flip === 'auto' ? {} : { flip: flip === 'yes' }),
         scale: Number(scale.replace(',', '.')) || 1,
         ...(layers && off.size ? { layers } : {}),
-        texts, hatches, dimensions,
+        texts, hatches, dimensions, link,
       }) as Result | null;
       if (r) {
         const parts = [r.shapes ? `${r.shapes} shapes` : '', r.hatches ? `${r.hatches} hatches` : '', r.texts ? `${r.texts} texts` : '', r.dimensions ? `${r.dimensions} dimensions` : ''].filter(Boolean);
@@ -134,6 +135,8 @@ export function ImportDxfDialog() {
                   <label><input type="checkbox" checked={texts} onChange={(e) => setTexts(e.target.checked)} /> texts</label>
                   <label><input type="checkbox" checked={hatches} onChange={(e) => setHatches(e.target.checked)} /> hatches</label>
                 </dd>
+                <dt title="Read-only, managed under Manage → Links: shown or hidden, halftone, unlinked, converted to native, read again from its file">As a link</dt>
+                <dd><label><input type="checkbox" checked={link} onChange={(e) => setLink(e.target.checked)} /> read-only, kept with the file</label></dd>
                 <dt>Dimensions</dt>
                 <dd>
                   <select value={dimensions} onChange={(e) => setDimensions(e.target.value)}>

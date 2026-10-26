@@ -30,7 +30,8 @@ public readonly record struct Affine(double A, double B, double C, double D, dou
 
 /// <summary>What an import asks for: the view, metres per drawing unit (null: the file's, or a guess), where the origin lands, the turn, whether to mirror (null: by the view), an extra factor, which layers, and what to bring.</summary>
 public sealed record DxfImportOptions(string ViewId, double? UnitFactor = null, Vec2 At = default, double RotationDeg = 0, bool? Flip = null, double Scale = 1,
-    HashSet<string>? Layers = null, string? LayerPrefix = null, bool Texts = true, bool Hatches = true, string Dimensions = "native");
+    HashSet<string>? Layers = null, string? LayerPrefix = null, bool Texts = true, bool Hatches = true, string Dimensions = "native",
+    bool Link = false, string? LinkId = null, string? Path = null, JsonObject? Raw = null);
 
 /// <summary>
 /// A DXF brought into a view as Lapin's own drafting: its layers as drafting
@@ -80,7 +81,11 @@ public static class DxfImport
         if (dims is not ("native" or "geometry" or "skip")) dims = "native";
         var scale = Json.Number(a["scale"]) ?? 1;
         if (!(scale > 0)) throw new CommandException("The scale factor must be positive.");
-        return new DxfImportOptions(viewId, units, at, Json.Number(a["rotation"]) ?? 0, flip, scale, layers, ((string?)a["layerPrefix"])?.Trim() is { Length: > 0 } pre ? pre : null, B(a["texts"], true), B(a["hatches"], true), dims);
+        // As a link (Manage → Links): read-only, kept with the options it came with so it can be read again from its path.
+        var raw = new JsonObject();
+        foreach (var k in new[] { "units", "at", "rotation", "flip", "scale", "layers", "layerPrefix", "texts", "hatches", "dimensions" }) if (a[k] != null) raw[k] = a[k]!.DeepClone();
+        return new DxfImportOptions(viewId, units, at, Json.Number(a["rotation"]) ?? 0, flip, scale, layers, ((string?)a["layerPrefix"])?.Trim() is { Length: > 0 } pre ? pre : null, B(a["texts"], true), B(a["hatches"], true), dims,
+            B(a["link"], false) || (string?)a["linkId"] != null, (string?)a["linkId"], (string?)a["path"], raw);
     }
 
     /// <summary>Whether a view mirrors an imported drawing: a section or elevation looking towards −X or −Y does; a plan never.</summary>
@@ -229,8 +234,14 @@ public static class DxfImport
         }
     }
 
-    sealed class Run(ICommandContext ctx, Entity view, DxfDocument doc, DxfImportOptions o, double factor)
+    sealed class Run(ICommandContext ctx, Entity view, DxfDocument doc, DxfImportOptions o, double factor, string? linkId = null)
     {
+        /// <summary>A new entity, the link's when importing as one.</summary>
+        void Put(Entity e)
+        {
+            if (linkId != null) { var attrs = e.CloneAttrs(); attrs[Links.Key] = linkId; e = e.With(attrs: attrs); }
+            ctx.Add(e);
+        }
         public readonly Dictionary<string, CadLayer> NewLayers = new(StringComparer.OrdinalIgnoreCase);
         public readonly List<HatchPattern> NewPatterns = [];
         public readonly Dictionary<string, int> Skipped = [];
@@ -261,7 +272,7 @@ public static class DxfImport
             var attrs = new JsonObject { ["viewId"] = view.Id, ["layer"] = layer, ["shape"] = shape.ToJson() };
             if (color != null) attrs["color"] = color;
             var word = shape switch { Line => "Line", Polyline { Closed: true } => "Polygon", Polyline => "Polyline", Circle => "Circle", Arc => "Arc", _ => "Shape" };
-            ctx.Add(new Entity(ctx.NewId(), IfcClass.Annotation, _names.Next(word), attrs, Drafts.Predefined));
+            Put(new Entity(ctx.NewId(), IfcClass.Annotation, _names.Next(word), attrs, Drafts.Predefined));
             Shapes++;
         }
 
@@ -274,7 +285,7 @@ public static class DxfImport
             };
             var attrs = new JsonObject { ["viewId"] = view.Id, ["layer"] = layer, ["hatch"] = hatch };
             if (color != null) attrs["color"] = color;
-            ctx.Add(new Entity(ctx.NewId(), IfcClass.Annotation, $"Hatch {pattern}", attrs, Drafts.Predefined));
+            Put(new Entity(ctx.NewId(), IfcClass.Annotation, $"Hatch {pattern}", attrs, Drafts.Predefined));
             Hatches++;
         }
 
@@ -282,7 +293,7 @@ public static class DxfImport
         {
             var attrs = new JsonObject { ["viewId"] = view.Id, ["at"] = new JsonArray(Math.Round(at.X, 9), Math.Round(at.Y, 9)), ["text"] = text, ["angle"] = Math.Round(angleDeg, 4), ["layer"] = layer, ["overrides"] = new JsonObject { ["height"] = Math.Round(heightMm, 3) } };
             if (color != null) attrs["overrides"]!["color"] = color;
-            ctx.Add(new Entity(ctx.NewId(), IfcClass.Annotation, text.Length > 24 ? text[..24] + "…" : text, attrs, "TEXT"));
+            Put(new Entity(ctx.NewId(), IfcClass.Annotation, text.Length > 24 ? text[..24] + "…" : text, attrs, "TEXT"));
             Texts++;
         }
 
@@ -290,7 +301,7 @@ public static class DxfImport
         {
             var attrs = new JsonObject { ["viewId"] = view.Id, ["a"] = new JsonArray(a.X, a.Y), ["b"] = new JsonArray(b.X, b.Y), ["at"] = new JsonArray(at.X, at.Y), ["layer"] = layer };
             if (dir is { } d) attrs["dir"] = new JsonArray(d.X, d.Y);
-            ctx.Add(new Entity(ctx.NewId(), IfcClass.Annotation, "Dimension", attrs, "DIMENSION"));
+            Put(new Entity(ctx.NewId(), IfcClass.Annotation, "Dimension", attrs, "DIMENSION"));
             Dimensions++;
         }
 
@@ -360,7 +371,14 @@ public static class DxfImport
         var (factor, guessed) = o.UnitFactor is { } uf ? (uf, false) : Units(doc);
         var flip = o.Flip ?? FlipFor(view);
         var root = Affine.Scale(flip ? -factor * o.Scale : factor * o.Scale, factor * o.Scale).Then(Affine.Rotate(o.RotationDeg)).Then(Affine.Translate(o.At));
-        var run = new Run(ctx, view, doc, o, factor);
+        // A link: made now, or (a reload) emptied of what it held.
+        Entity? link = null;
+        if (o.Link)
+        {
+            if (o.LinkId != null) { link = Links.Require(ctx.Model, o.LinkId); Links.RemoveElements(ctx, link.Id); }
+            else link = Links.Create(ctx, "dxf", fileName, o.Path, o.Raw, view.Id);
+        }
+        var run = new Run(ctx, view, doc, o, factor, link?.Id);
         var scaleMm = (view.NumOrNull("scale") ?? 100) / 1000; // metres per paper mm
         var total = 0;
         foreach (var p in Walk(doc, root))
@@ -466,7 +484,7 @@ public static class DxfImport
             ["layers"] = new JsonArray(run.NewLayers.Keys.Select(x => (JsonNode)x).ToArray()),
             ["patterns"] = new JsonArray(run.NewPatterns.Select(x => (JsonNode)x.Name).ToArray()),
             ["skipped"] = new JsonObject(run.Skipped.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value))),
-            ["units"] = DxfUnits.Name(factor), ["unitsGuessed"] = guessed, ["flipped"] = flip,
+            ["units"] = DxfUnits.Name(factor), ["unitsGuessed"] = guessed, ["flipped"] = flip, ["linkId"] = link?.Id,
         };
     }
 

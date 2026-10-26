@@ -13,11 +13,11 @@ public sealed record IfcImportOptions(string Mode = "auto")
     public bool ReferenceOnly => string.Equals(Mode, "reference", StringComparison.OrdinalIgnoreCase);
 }
 
-public sealed record IfcImportResult(int Elements, int Updated, int References, int Storeys, IReadOnlyList<string> Notes, int Recognized = 0, IReadOnlyDictionary<string, int>? RecognizedByClass = null, IReadOnlyDictionary<string, int>? ReferencesByClass = null, IReadOnlyDictionary<string, int>? Skipped = null)
+public sealed record IfcImportResult(int Elements, int Updated, int References, int Storeys, IReadOnlyList<string> Notes, int Recognized = 0, IReadOnlyDictionary<string, int>? RecognizedByClass = null, IReadOnlyDictionary<string, int>? ReferencesByClass = null, IReadOnlyDictionary<string, int>? Skipped = null, string? LinkId = null)
 {
     public JsonObject ToJson() => new()
     {
-        ["elements"] = Elements, ["updated"] = Updated, ["references"] = References, ["storeys"] = Storeys, ["recognized"] = Recognized,
+        ["elements"] = Elements, ["updated"] = Updated, ["references"] = References, ["storeys"] = Storeys, ["recognized"] = Recognized, ["linkId"] = LinkId,
         ["recognizedByClass"] = Counts(RecognizedByClass), ["referencesByClass"] = Counts(ReferencesByClass), ["skipped"] = Counts(Skipped),
         ["notes"] = new JsonArray(Notes.Select(n => (JsonNode)n).ToArray()),
     };
@@ -52,6 +52,31 @@ public static partial class IfcImport
         var reader = new Reader(session, file, options ?? new IfcImportOptions());
         diff = session.Edit($"Import {name}", reader.Apply);
         return reader.Result();
+    }
+
+    /// <summary>
+    /// An IFC file as a link (Manage → Links): imported like any other (its
+    /// elements recognised natively where they can be), then everything it
+    /// brought marked as the link's, read-only. With <paramref name="existing"/>
+    /// the link is reloaded: what it held goes first. One undo step.
+    /// </summary>
+    public static IfcImportResult Link(Session session, byte[] bytes, string name, string? path, IfcImportOptions? options, out Diff diff, string? existing = null)
+    {
+        var file = StepFile.Read(bytes);
+        var reader = new Reader(session, file, options ?? new IfcImportOptions());
+        string? linkId = null;
+        diff = session.Edit(existing != null ? $"Reload {name}" : $"Link {name}", edit =>
+        {
+            Entity link;
+            if (existing != null) { link = Links.Require(edit.Model, existing); Links.RemoveElements(edit, link.Id); }
+            else link = Links.Create(edit, "ifc", name, path);
+            var before = edit.Model.Entities.Select(e => e.Id).ToHashSet();
+            reader.Apply(edit);
+            Links.Tag(edit, link.Id, edit.Model.Entities.Select(e => e.Id).Where(id => !before.Contains(id)).ToList());
+            linkId = link.Id;
+        });
+        var r = reader.Result();
+        return r with { Notes = [.. r.Notes, $"Linked as {linkId}."], LinkId = linkId };
     }
 
     /// <summary>What an intent set says: the attributes, and the Lapin class, predefined type and host it names.</summary>

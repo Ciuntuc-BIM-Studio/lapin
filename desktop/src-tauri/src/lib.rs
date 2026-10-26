@@ -103,6 +103,21 @@ async fn engine_url(engine: State<'_, Arc<Engine>>) -> Result<String, String> {
     .map_err(|e| e.to_string())?
 }
 
+/// Another instance of the app, for a linked file opened on its own (Manage → Links): the new
+/// instance reads LAPIN_OPEN at start and imports that file into a new project, editable there.
+#[tauri::command]
+fn open_separately(path: String) -> Result<(), String> {
+    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    Command::new(exe).env("LAPIN_OPEN", &path).spawn().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// The file this instance was started for (LAPIN_OPEN), if any.
+#[tauri::command]
+fn startup_file() -> Option<String> {
+    std::env::var("LAPIN_OPEN").ok().filter(|p| !p.is_empty())
+}
+
 /// The port from the engine's ready line: `LAPIN_HOST_READY {"port":12345}`.
 fn ready_port(line: &str) -> Option<u16> {
     let json = line.strip_prefix("LAPIN_HOST_READY ")?;
@@ -222,7 +237,7 @@ pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(engine.clone())
-        .invoke_handler(tauri::generate_handler![engine_url])
+        .invoke_handler(tauri::generate_handler![engine_url, open_separately, startup_file])
         .setup({
             let engine = engine.clone();
             move |app| {

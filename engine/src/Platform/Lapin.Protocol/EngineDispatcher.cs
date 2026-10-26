@@ -185,14 +185,38 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             }
             case "project.importIfc":
             {
-                // An IFC file into the open project (docs/spec-ifc.md): Lapin's own files natively, others as references; "reference" keeps everything as it is.
-                var mode = new IfcImportOptions((string?)p["mode"] ?? "auto");
+                // An IFC file into the open project (docs/spec-ifc.md): Lapin's own files natively, others as references; "reference" keeps everything as it is;
+                // "link" brings it in read-only, as a link (Manage → Links).
+                var modeName = (string?)p["mode"] ?? "auto";
+                var mode = new IfcImportOptions(modeName == "link" ? "auto" : modeName);
                 // By path (the desktop), or its bytes, base64 in `data` (the browser).
                 IfcImportResult result;
                 Diff imported;
-                if ((string?)p["data"] is { } data) result = IfcImport.Run(session, Convert.FromBase64String(data), (string?)p["name"] ?? "file.ifc", mode, out imported);
+                if (modeName == "link")
+                {
+                    if ((string?)p["data"] is { } linkData) result = IfcImport.Link(session, Convert.FromBase64String(linkData), (string?)p["name"] ?? "file.ifc", null, mode, out imported);
+                    else { var path = PathParam(); result = IfcImport.Link(session, File.ReadAllBytes(path), Path.GetFileName(path), path, mode, out imported); }
+                }
+                else if ((string?)p["data"] is { } data) result = IfcImport.Run(session, Convert.FromBase64String(data), (string?)p["name"] ?? "file.ifc", mode, out imported);
                 else result = IfcImport.Run(session, PathParam(), mode, out imported);
                 return (result.ToJson(), imported);
+            }
+            case "project.reloadLink":
+            {
+                // A link read again from its file (the desktop: a link made from a path): what it held goes, what the file holds now comes in its place.
+                var link = Links.Require(session.Model, (string?)p["id"]);
+                var path = link.Str("path") ?? throw new CommandException("This link has no file to read again (it was linked from the browser).");
+                if (!File.Exists(path)) throw new CommandException($"The file is gone: {path}.");
+                if (link.Str("kind") == "dxf")
+                {
+                    var args = (link.Attrs["options"] as JsonObject)?.DeepClone() as JsonObject ?? new JsonObject();
+                    args["path"] = path; args["link"] = true; args["linkId"] = link.Id;
+                    if (link.Str("viewId") is { } v) args["viewId"] = v;
+                    var d = session.Execute("drafting.importDxf", args, out var dr);
+                    return (dr, d);
+                }
+                var r = IfcImport.Link(session, File.ReadAllBytes(path), Path.GetFileName(path), path, new IfcImportOptions("auto"), out var reloaded, link.Id);
+                return (r.ToJson(), reloaded);
             }
             case "export.pdf":
             {

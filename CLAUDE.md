@@ -71,4 +71,6 @@ Then (26.10.2026, #130): native DXF import (`docs/dxf-import.md`): layers, shape
 
 Then (#131) the testers' reports of 21–23.10 resolved: the material picker, separation pens, line caps, textures per face, project units (metric and imperial), hatch origins; the reports script is `deploy/feedback/reports.sh`.
 
+Then (#132) links: IFC and DXF files linked read-only (`docs/links.md`), Manage → Links (show, halftone, reload, convert, open separately, unlink), View → Fog.
+
 Next: the user reviews `docs/decisions-pending.md` (#1–111). Open items needing the user: signing and notarization, Windows (manifold), and what the review changes. Milestones are in `docs/plan.md`.

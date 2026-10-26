@@ -274,6 +274,28 @@ export async function exportIfc(options: { schema?: string; detail?: string; pha
   await exportFile('project.exportIfc', options, `${projectTitle(path)}.ifc`, 'ifc');
 }
 
+/**
+ * The file this instance of the desktop app was started for (a link opened on
+ * its own from Manage → Links): a new project with the IFC imported natively,
+ * or the DXF import dialog on a new project's plan.
+ */
+export async function openStartupFile(): Promise<void> {
+  if (!isDesktop()) return;
+  try {
+    const { invoke } = await import('@tauri-apps/api/core');
+    const path = await invoke<string | null>('startup_file');
+    if (!path) return;
+    const name = path.split(/[\\/]/).pop() ?? path;
+    await engine.call('project.new');
+    enter();
+    if (/\.dxf$/i.test(name)) { dxfFile.current = { name, path }; useUi.setState({ dialog: 'importDxf' }); return; }
+    const r = await engine.call<{ elements: number; recognized?: number; references: number }>('project.importIfc', { path, mode: 'auto' }, { timeoutMs: LONG_TIMEOUT_MS });
+    notify(`Opened ${name} on its own: ${r.elements + (r.recognized ?? 0)} native, ${r.references} as reference. Save it as a project of its own.`);
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+  }
+}
+
 /** The DXF the user picked, waiting for the import dialog: by path (the desktop), or its bytes (the browser). */
 export const dxfFile: { current: { name: string; path?: string; data?: string } | null } = { current: null };
 
@@ -287,7 +309,7 @@ export async function importDxf(): Promise<void> {
 }
 
 /** An IFC file into the open project: Lapin's own files come back native, others as references (mode 'reference' keeps everything as it is). */
-export async function importIfc(mode: 'auto' | 'reference' = 'auto'): Promise<void> {
+export async function importIfc(mode: 'auto' | 'reference' | 'link' = 'auto'): Promise<void> {
   // By path on the desktop (the native dialog); in a browser, the file's bytes from the browser's own
   // picker, whether the engine runs in the page or as the local process of pnpm dev: a page never knows a path.
   const picked = isDesktop() ? null : await pickFile('IFC', 'ifc');
@@ -306,7 +328,7 @@ export async function importIfc(mode: 'auto' | 'reference' = 'auto'): Promise<vo
       r.updated ? `${r.updated} updated` : '',
       r.references ? `${r.references} as reference` : '',
     ].filter(Boolean);
-    notify(`Imported ${path.split(/[\\/]/).pop()}: ${parts.join(', ') || 'nothing to bring in'}.${r.notes?.length ? ` ${r.notes.slice(0, 4).join(' ')}` : ''}`);
+    notify(`${mode === 'link' ? 'Linked' : 'Imported'} ${path.split(/[\\/]/).pop()}: ${parts.join(', ') || 'nothing to bring in'}.${mode === 'link' ? ' Read-only: Manage → Links.' : ''}${r.notes?.length ? ` ${r.notes.slice(0, 4).join(' ')}` : ''}`);
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }

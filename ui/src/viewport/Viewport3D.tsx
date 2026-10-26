@@ -376,6 +376,9 @@ export function Viewport3D() {
   const selected = useUi((st) => st.selected);
   const looks = useLooks((st) => st.looks);
   const visualStyle = useUi((st) => st.visualStyle);
+  const fog = useUi((st) => st.fog);
+  // Fog: the model fades into the background with distance (a display rule for linked context, big sites).
+  useEffect(() => { const s = scene.current; if (s) s.fog = fog ? new THREE.FogExp2(CLEAR[theme], 0.012) : null; }, [fog, theme]);
   useEffect(() => {
     const s = scene.current;
     if (!s) return;

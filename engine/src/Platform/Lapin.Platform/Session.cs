@@ -157,7 +157,9 @@ public sealed class Session
     {
         var entry = _catalog.Command(command) ?? throw new CommandException($"Unknown command „{command}”.");
         JsonNode? r = null;
-        var t = _history.Execute(entry.Label, edit => r = entry.Handler(new CommandContext(edit, _catalog, new QueryContext(this)), args));
+        // What a link brought in is read-only, except to the link commands and to the imports that make links.
+        var allowLinked = command.StartsWith("link.", StringComparison.Ordinal) || command.EndsWith(".importDxf", StringComparison.Ordinal);
+        var t = _history.Execute(entry.Label, edit => r = entry.Handler(new CommandContext(edit, _catalog, new QueryContext(this), allowLinked), args));
         result = r;
         if (t == null) return Empty();
         Emit("tx", t);
@@ -462,7 +464,7 @@ public sealed class Session
 public sealed record HistoryEvent(string Kind, Transaction? Transaction = null);
 
 /// <summary>A command's view of the edit: the model, the services, and a refusal for what this product cannot change.</summary>
-sealed class CommandContext(IEdit edit, ModuleCatalog catalog, IQueryContext query) : ICommandContext
+sealed class CommandContext(IEdit edit, ModuleCatalog catalog, IQueryContext query, bool allowLinked = false) : ICommandContext
 {
     public IQueryContext Query => query;
     public IModelView Model => edit.Model;
@@ -474,6 +476,11 @@ sealed class CommandContext(IEdit edit, ModuleCatalog catalog, IQueryContext que
     {
         if (catalog.OwnerOf(e.Class) == null)
             throw new CommandException($"„{e.Name}” ({e.Class}) belongs to a module this product does not have: here it can only be seen.");
+        if (!allowLinked && e.Str(Links.Key) is { } linkId)
+        {
+            var link = edit.Model.Get(linkId);
+            throw new CommandException($"„{e.Name}” belongs to the link „{link?.Name ?? "?"}”: it can be seen, not edited. Manage → Links: unlink it, convert it to native, or open it on its own.");
+        }
     }
 
     public void Add(Entity entity) { EnsureEditable(entity); edit.Add(entity); }
