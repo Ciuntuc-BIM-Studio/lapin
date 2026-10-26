@@ -13,27 +13,43 @@ import { fileURLToPath } from 'node:url';
 
 const readJson = (f) => JSON.parse(readFileSync(f, 'utf8'));
 
-/** Every module the repository can build: id → { id, name, requires, engine, ui }. */
-export function knownModules(root) {
-  const o = { core: { id: 'core', name: 'Core', requires: [], engine: true, ui: existsSync(join(root, 'ui/src/modules/core/index.tsx')) } };
-  const engineDir = join(root, 'engine/src/Modules');
-  if (existsSync(engineDir))
-    for (const group of readdirSync(engineDir))
-      for (const project of readdirSync(join(engineDir, group))) {
-        const f = join(engineDir, group, project, 'module.json');
-        if (!existsSync(f)) continue;
-        const m = readJson(f);
-        o[m.id] = { id: m.id, name: m.name, requires: m.requires ?? [], engine: true, ui: false };
+/**
+ * Every module the repository can build: id → { id, name, requires, engine, ui,
+ * engineDir, uiDir, external }. A product may name modules that live in a
+ * sibling repository ("external": { id: "../lapin-mep" }, a private module):
+ * those roots are scanned the same way (the same engine/src/Modules and
+ * ui/src/modules layout), and the paths say where each half is.
+ */
+export function knownModules(root, externals = {}) {
+  const o = { core: { id: 'core', name: 'Core', requires: [], engine: true, ui: existsSync(join(root, 'ui/src/modules/core/index.tsx')), external: false } };
+  const scan = (base, external) => {
+    const engineDir = join(base, 'engine/src/Modules');
+    if (existsSync(engineDir))
+      for (const group of readdirSync(engineDir))
+        for (const project of readdirSync(join(engineDir, group))) {
+          const f = join(engineDir, group, project, 'module.json');
+          if (!existsSync(f)) continue;
+          const m = readJson(f);
+          o[m.id] = { id: m.id, name: m.name, requires: m.requires ?? [], engine: true, ui: false, engineDir: join(engineDir, group, project), external };
+        }
+    const uiDir = join(base, 'ui/src/modules');
+    if (existsSync(uiDir))
+      for (const id of readdirSync(uiDir)) {
+        if (!existsSync(join(uiDir, id, 'index.tsx'))) continue;
+        const meta = existsSync(join(uiDir, id, 'module.json')) ? readJson(join(uiDir, id, 'module.json')) : {};
+        const m = (o[id] ??= { id, name: meta.name ?? id, requires: [], engine: false, ui: false, external });
+        m.ui = true;
+        m.uiDir = join(uiDir, id);
+        m.requires = [...new Set([...m.requires, ...(meta.requires ?? [])])];
       }
-  const uiDir = join(root, 'ui/src/modules');
-  if (existsSync(uiDir))
-    for (const id of readdirSync(uiDir)) {
-      if (!existsSync(join(uiDir, id, 'index.tsx'))) continue;
-      const meta = existsSync(join(uiDir, id, 'module.json')) ? readJson(join(uiDir, id, 'module.json')) : {};
-      const m = (o[id] ??= { id, name: meta.name ?? id, requires: [], engine: false, ui: false });
-      m.ui = true;
-      m.requires = [...new Set([...m.requires, ...(meta.requires ?? [])])];
-    }
+  };
+  scan(root, false);
+  for (const [id, rel] of Object.entries(externals)) {
+    const base = join(root, rel);
+    if (!existsSync(base)) throw new Error(`Module "${id}" is external, in ${rel}, but that folder is not there (beside this repository?).`);
+    scan(base, true);
+    if (!o[id]) throw new Error(`Module "${id}" is not in ${rel} (no engine/src/Modules/*/*/module.json with that id, no ui/src/modules/${id}/index.tsx).`);
+  }
   return o;
 }
 
@@ -46,7 +62,7 @@ export function resolveProduct(root, productId) {
   const file = join(root, 'products', `${productId}.json`);
   if (!existsSync(file)) throw new Error(`No product "${productId}" in products/.`);
   const product = readJson(file);
-  const known = knownModules(root);
+  const known = knownModules(root, product.external ?? {});
   const order = [];
   const visit = (id, via) => {
     if (!known[id]) throw new Error(`Product "${productId}": no module "${id}"${via ? ` (required by "${via}")` : ''}.`);
@@ -65,6 +81,13 @@ export function resolveProduct(root, productId) {
     required: added,
     engine: order.filter((id) => known[id].engine),
     ui: order.filter((id) => known[id].ui),
+    /** Where the interface half of each module outside this repository is (id → folder): the build imports those by path. */
+    uiPaths: Object.fromEntries(order.filter((id) => known[id].ui && known[id].external).map((id) => [id, known[id].uiDir])),
+    /** The engine projects outside this repository, built one by one (they are not in Lapin.slnx). */
+    engineProjects: order.filter((id) => known[id].engine && known[id].external).map((id) => {
+      const dir = known[id].engineDir;
+      return join(dir, readdirSync(dir).find((f) => f.endsWith('.csproj')));
+    }),
   };
 }
 
@@ -75,15 +98,12 @@ export function resolveProduct(root, productId) {
  */
 export function engineModules(root, productId) {
   const p = resolveProduct(root, productId);
+  const known = knownModules(root, readJson(join(root, 'products', `${productId}.json`)).external ?? {});
   const o = [];
-  const engineDir = join(root, 'engine/src/Modules');
-  for (const group of readdirSync(engineDir))
-    for (const project of readdirSync(join(engineDir, group))) {
-      const dir = join(engineDir, group, project);
-      const f = join(dir, 'module.json');
-      if (!existsSync(f)) continue;
-      const m = readJson(f);
-      if (!p.engine.includes(m.id) || m.id === 'core') continue;
+  for (const m of Object.values(known)) {
+      if (!m.engine || !p.engine.includes(m.id) || m.id === 'core') continue;
+      const dir = m.engineDir;
+      const project = readdirSync(dir).find((f) => f.endsWith('.csproj')).slice(0, -7);
       let cls = null;
       for (const file of readdirSync(dir).filter((x) => x.endsWith('.cs'))) {
         const text = readFileSync(join(dir, file), 'utf8');
@@ -92,8 +112,8 @@ export function engineModules(root, productId) {
         if (c && ns) { cls = `${ns[1]}.${c[1]}`; break; }
       }
       if (!cls) throw new Error(`Module "${m.id}": no class implementing ILapinModule in ${dir}.`);
-      o.push({ id: m.id, project: join(dir, `${project}.csproj`), cls });
-    }
+      o.push({ id: m.id, project: join(dir, `${project}.csproj`), cls, external: m.external });
+  }
   // In the product's order (a module after those it requires).
   return o.sort((a, b) => p.engine.indexOf(a.id) - p.engine.indexOf(b.id));
 }

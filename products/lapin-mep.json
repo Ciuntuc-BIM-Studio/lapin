@@ -1,0 +1,6 @@
+{
+  "id": "lapin-mep",
+  "name": "Lapin MEP",
+  "modules": ["architecture", "structure", "drafting", "studio", "phases", "civil", "cost", "mep"],
+  "external": { "mep": "../lapin-mep" }
+}

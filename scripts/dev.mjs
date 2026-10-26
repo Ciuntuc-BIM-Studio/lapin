@@ -22,6 +22,11 @@ try { product = resolveProduct(root, productId); } catch (e) { console.error(e.m
 console.log('▸ building the engine…');
 const build = spawnSync('dotnet', ['build', join(engine, 'Lapin.slnx'), '-v', 'q', '-nologo'], { cwd: root, stdio: 'inherit' });
 if (build.status !== 0) process.exit(build.status ?? 1);
+// A module from a sibling repository (a private one) is not in the solution: built on its own, it lands in artifacts/modules like the others.
+for (const csproj of product.engineProjects ?? []) {
+  const b = spawnSync('dotnet', ['build', csproj, '-v', 'q', '-nologo'], { cwd: root, stdio: 'inherit' });
+  if (b.status !== 0) process.exit(b.status ?? 1);
+}
 
 mkdirSync(join(root, '.artifacts'), { recursive: true });
 const manifest = join(root, '.artifacts/product.json');
