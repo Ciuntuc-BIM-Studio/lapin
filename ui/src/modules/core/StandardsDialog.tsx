@@ -1,6 +1,7 @@
 /**
  * Drafting standards: the project's text styles, dimension styles, axis types
- * (and the default one), layers and layer groups. Sizes are paper millimetres.
+ * (and the default one), tag types (a box, or a door's or window's marker
+ * across its wall in plan), layers and layer groups. Sizes are paper millimetres.
  * Each change is one engine command; Standard (and layer 0) always stay.
  */
 
@@ -10,9 +11,9 @@ import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string };
 type Col = { key: string; label: string; kind: 'text' | 'mm' | 'number' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
-type Tab = { id: 'text' | 'dim' | 'axis' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
+type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
 const LINE_TYPES = ['continuous', 'dashed', 'dotted', 'dashdot'];
 const TABS: Tab[] = [
@@ -28,6 +29,12 @@ const TABS: Tab[] = [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'textStyle', label: 'Text', kind: 'style' }, { key: 'bubble', label: 'Bubble', kind: 'choice', choices: ['circle', 'square'] },
     { key: 'ends', label: 'Ends', kind: 'choice', choices: ['both', 'start', 'end', 'none'] }, { key: 'size', label: 'Size mm', kind: 'mm' },
     { key: 'lineType', label: 'Line', kind: 'choice', choices: LINE_TYPES }, { key: 'firstLabel', label: 'First', kind: 'text' }, { key: 'color', label: 'Colour', kind: 'color' }] },
+  // A tag's template reads the element: {mark}, {name}, {type}, {class}, a door's or window's {width}, {height}, {sill} (in the unit given); "|" starts a new line.
+  { id: 'tag', label: 'Tags', list: 'tagTypes', fresh: { name: 'Tag', template: '{mark}' }, cols: [
+    { key: 'name', label: 'Name', kind: 'text' }, { key: 'shape', label: 'Shape', kind: 'choice', choices: ['box', 'opening'] },
+    { key: 'template', label: 'Text (outside)', kind: 'text' }, { key: 'inner', label: 'Inside', kind: 'text' },
+    { key: 'unit', label: 'Unit', kind: 'choice', choices: ['cm', 'mm', 'm'] }, { key: 'reach', label: 'Past faces mm', kind: 'mm' },
+    { key: 'textStyle', label: 'Text', kind: 'style' }, { key: 'classes', label: 'Classes', kind: 'text' }] },
   { id: 'layer', label: 'Layers', list: 'layers', fresh: { name: 'Layer' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'color', label: 'Colour', kind: 'color' }, { key: 'lineWeight', label: 'Pen mm', kind: 'mm' },
     { key: 'lineType', label: 'Line', kind: 'choice', choices: LINE_TYPES }, { key: 'group', label: 'Group', kind: 'group' }, { key: 'visible', label: 'On', kind: 'bool' }, { key: 'locked', label: 'Lock', kind: 'bool' }] },
@@ -61,7 +68,7 @@ export function StandardsDialog() {
             const t = ev.target.value.trim();
             if (t === String(v ?? '')) return;
             if (numeric) { const n = Number(t.replace(',', '.')); if (Number.isFinite(n) && n >= 0) put(n); }
-            else if (t) put(t);
+            else if (t || c.key === 'inner' || c.key === 'classes') put(t);
           }} />;
       }
     }

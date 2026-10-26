@@ -31,7 +31,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     /// something stands in front of, or hidden by the view. The view's
     /// <c>openingSymbols</c> turns them off.
     /// </summary>
-    public IEnumerable<ViewMark> Marks(ViewContext c)
+    public IEnumerable<ViewMark> Marks(ViewContext c) => c.Kind == "plan" ? OpeningMarkers.Marks(c) : ElevationSymbols(c);
+
+    IEnumerable<ViewMark> ElevationSymbols(ViewContext c)
     {
         if (c.Kind != "elevation" || c.View.Str("openingSymbols") == "hide") yield break;
         var m = c.Model;
@@ -68,6 +70,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     {
         // The opening symbols on elevations.
         r.Service<IViewAnnotations>(this);
+
+        // Door and window markers on a plan: one for each door and window of its storey not yet tagged there ({viewId, doorType?, windowType?}: tag types of the drafting standards).
+        r.Command("tagOpenings", "Tag doors and windows", (ctx, a) =>
+        {
+            var view = ctx.Model.Get((string?)a["viewId"] ?? "") is { Class: Views.Class } v && v.Str("kind") == "plan" ? v
+                : throw new CommandException("Doors and windows are tagged on a plan view of their storey.");
+            return new JsonObject { ["tagged"] = OpeningMarkers.TagAll(ctx, view, (string?)a["doorType"], (string?)a["windowType"]) };
+        });
         r.Class(new(IfcClass.Wall, "Wall",
         [
             new("height", "Height", "length", Min: 0.01),

@@ -15,11 +15,22 @@ public sealed record DimStyle(string Id, string Name, string TextStyle, string A
 /// <summary>An axis (grid line) type: its label's text style, bubble and which ends carry it, size (paper mm), line type, colour and the label new axes start from.</summary>
 public sealed record AxisStyle(string Id, string Name, string TextStyle, string Bubble, string Ends, double Size, string LineType, string FirstLabel, string? Color = null);
 
-/// <summary>A tag type: a text template whose {fields} read the element's parameters, and the IFC classes it tags (none: any).</summary>
-public sealed record TagType(string Id, string Name, string Template, IReadOnlyList<string> Classes)
+/// <summary>
+/// A tag type: a text template whose {fields} read the element's parameters,
+/// and the IFC classes it tags (none: any). Its shape: a box at a point with a
+/// leader to the element ("box"), or a door's or window's marker in plan
+/// ("opening"): a line across the wall through the opening's middle, reaching
+/// <see cref="Reach"/> paper mm past both faces, the <see cref="Template"/>
+/// at its exterior end and the <see cref="Inner"/> one at its interior end.
+/// A template's "|" starts a new line; sizes ({width}, {height}, {sill}) are
+/// written in <see cref="Unit"/>.
+/// </summary>
+public sealed record TagType(string Id, string Name, string Template, IReadOnlyList<string> Classes,
+    string Shape = "box", string Inner = "", string Unit = "cm", double Reach = 6, string TextStyle = Standards.Standard)
 {
-    public bool Equals(TagType? o) => o is not null && Id == o.Id && Name == o.Name && Template == o.Template && Classes.SequenceEqual(o.Classes);
-    public override int GetHashCode() => HashCode.Combine(Id, Name, Template);
+    public bool Equals(TagType? o) => o is not null && Id == o.Id && Name == o.Name && Template == o.Template && Classes.SequenceEqual(o.Classes)
+        && Shape == o.Shape && Inner == o.Inner && Unit == o.Unit && Reach == o.Reach && TextStyle == o.TextStyle;
+    public override int GetHashCode() => HashCode.Combine(Id, Name, Template, Shape, Inner);
 }
 
 /// <summary>Layers gathered under a group that shows and locks them together.</summary>
@@ -105,9 +116,34 @@ public static class Standards
         if (v["template"] is not JsonValue tv || !tv.TryGetValue<string>(out var template)) return null;
         var classes = v["classes"] is JsonArray arr
             ? arr.Select(c => c is JsonValue cv && cv.TryGetValue<string>(out var s) ? s.Trim() : "").Where(s => s.Length > 0).ToList()
-            : [];
-        return new TagType(id, Str(v["name"], "Tag"), template, classes);
+            : v["classes"] is JsonValue cs && cs.TryGetValue<string>(out var text)
+                ? text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList()
+                : [];
+        return new TagType(id, Str(v["name"], "Tag"), template, classes,
+            OneOf(v["shape"], TagShapes, "box"), v["inner"] is JsonValue iv && iv.TryGetValue<string>(out var inner) ? inner : "",
+            OneOf(v["unit"], TagUnits, "cm"), Positive(v["reach"], 6), Str(v["textStyle"], Standard));
     }
+
+    /// <summary>A tag's shape: a box with a leader, or a door's or window's marker across its wall in plan.</summary>
+    public static readonly string[] TagShapes = ["box", "opening"];
+    /// <summary>The unit a tag writes sizes in.</summary>
+    public static readonly string[] TagUnits = ["cm", "mm", "m"];
+
+    /// <summary>
+    /// The tag types a project starts with: a door's and a window's marker,
+    /// the mark at the exterior end, width/height (and a window's sill
+    /// height) at the interior end, in centimetres.
+    /// </summary>
+    public static readonly IReadOnlyList<TagType> DefaultTagTypes =
+    [
+        new("door", "Door marker", "{mark}", ["IfcDoor"], "opening", "{width}/{height}"),
+        new("window", "Window marker", "{mark}", ["IfcWindow"], "opening", "{width}/{height}|sill {sill}"),
+    ];
+
+    /// <summary>A tag's type: the one it names, else the first that tags its element's class; null when none does.</summary>
+    public static TagType? TagTypeOf(StyleBook b, string? id, string? ifcClass = null) =>
+        (id != null ? b.TagTypes.FirstOrDefault(t => t.Id == id) : null)
+        ?? (ifcClass != null && id == null ? b.TagTypes.FirstOrDefault(t => t.Classes.Contains(ifcClass)) : null);
 
     static DraftLayer ReadLayer(JsonObject v) => new(
         Str(v["id"], "0"), Str(v["name"], Str(v["id"], "0")), Color(v["color"]) ?? Layer0.Color, v["visible"] is not JsonValue vv || !vv.TryGetValue<bool>(out var vis) || vis,
@@ -128,7 +164,7 @@ public static class Standards
             WithStandard(List("textStyles").Select(ReadText).ToList(), DefaultText, t => t.Id),
             WithStandard(List("dimStyles").Select(ReadDim).ToList(), DefaultDim, d => d.Id),
             axes, def,
-            List("tagTypes").Select(ReadTag).OfType<TagType>().ToList(),
+            o["tagTypes"] is JsonArray ? List("tagTypes").Select(ReadTag).OfType<TagType>().ToList() : [.. DefaultTagTypes],
             WithStandard(List("layers").Select(ReadLayer).ToList(), Layer0, l => l.Id, "0"),
             List("layerGroups").Where(g => g["id"] is JsonValue).Select(g => new LayerGroup(Str(g["id"], ""), Str(g["name"], "Group"), g["visible"] is not JsonValue gv || !gv.TryGetValue<bool>(out var b) || b, True(g["locked"]))).Where(g => g.Id.Length > 0).ToList(),
             OneOf(o["lineCap"], LineCaps, "round"), OneOf(o["units"], ProjectUnits, "mm"));

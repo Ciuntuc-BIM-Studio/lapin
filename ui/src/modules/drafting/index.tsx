@@ -1,11 +1,11 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag } from 'lucide-react';
+import { ArrowRightToLine, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag, Tags } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
 import type { NodeDto } from '../../engine/protocol';
-import { useUi } from '../../app/store';
+import { notify, useUi } from '../../app/store';
 import { execute } from '../../engine/session';
 import { cadHost, cadLog, registerCommand, startCommand, withSelection, type Step } from '../../viewport/cad/session';
 import { importDxf } from '../../engine/files';
@@ -365,7 +365,17 @@ const drafting: LapinModule = {
       groups: [
         { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR')],
           small: [cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE')] },
-        { label: 'Text', tools: [text, cad('tag', 'Tag', Tag, 'TAG')] },
+        { label: 'Text', tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
+          id: 'tagOpenings', label: 'Door & window tags', icon: Tags,
+          run: () => void (async () => {
+            // Every door and window of the plan's storey not tagged yet: a marker across its wall (Drafting standards → Tags).
+            if (useUi.getState().view !== 'plan') { notify('Doors and windows are tagged on a plan: open one.'); return; }
+            const viewId = await frontView();
+            if (!viewId) return;
+            const r = await execute('architecture.tagOpenings', { viewId }) as { tagged?: number } | null;
+            if (r) notify(r.tagged ? `${r.tagged} doors and windows tagged.` : 'Every door and window here has its tag already.');
+          })(),
+        }] },
         { label: 'Datum', tools: [
           axis,
           { id: 'level', label: 'Level', icon: LevelIcon, shortcut: 'LL', run: () => void startCommand('DIMLEVEL') },

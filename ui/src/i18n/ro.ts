@@ -14,6 +14,7 @@ export const RO: Record<string, string> = {
   'Other…': 'Alta…', 'in front': 'în față', 'Make its own view': 'Fă-i o vedere proprie', 'Floor plan · in front': 'Plan de nivel · în față',
   'Reference level': 'Nivel de referință', 'Visibility / Graphics…': 'Vizibilitate / Grafică…',
   'Export 3D…': 'Exportă 3D…', 'Export 3D': 'Export 3D', 'Format': 'Format', 'What': 'Ce', 'the whole model': 'tot modelul', 'Origin': 'Origine', 'Edges': 'Muchii', 'every phase': 'toate fazele', 'Exporting…': 'Se exportă…', 'Export': 'Exportă',
+  'Door & window tags': 'Etichete uși și ferestre', 'Tags': 'Etichete', 'Text (outside)': 'Text (exterior)', 'Inside': 'Interior', 'Past faces mm': 'Peste fețe mm', 'Classes': 'Clase',
   // View settings and styles
   'View settings': 'Setările vederii', 'View styles': 'Stiluri de vedere', 'Join materials': 'Unește materialele',
   'Cut plane and depth': 'Planul de secționare și adâncimea', 'View range…': 'Intervalul vederii…', 'Edit styles…': 'Editează stilurile…',

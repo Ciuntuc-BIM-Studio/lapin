@@ -81,7 +81,7 @@ Then (#137) the visual joins are complete by default (a cut side another area's 
 
 Then (#138) a view's or sheet's discipline is chosen in its properties and the browser files it under that discipline's set; the properties panel shows the view in front when nothing is selected. Then (#139) a drawing's settings live in the properties panel while it is selected in the browser: discipline, style, view range, reference level (kept on the plan view), graphics, storeys shown.
 
-Then (#141) the 3D mesh exports (`docs/plan-mesh-export.md`): glTF/GLB, OpenUSD (USDA, USDZ) and COLLADA 1.4.1 (#142) written by `engine/src/Platform/Lapin.Mesh` after their public specifications, no dependencies; File → Export 3D…; textures and OBJ next, imports later if needed.
+Then (#141) the 3D mesh exports (`docs/plan-mesh-export.md`): glTF/GLB, OpenUSD (USDA, USDZ) and COLLADA 1.4.1 (#142) written by `engine/src/Platform/Lapin.Mesh` after their public specifications, no dependencies; File → Export 3D…; textures and OBJ next, imports later if needed. Then (#143) door and window markers in plan (a line across the wall, the mark outside, width/height and sill inside), configured as tag types in Drafting standards → Tags; Annotate → Door & window tags.
 
 The `mep` module (premium, `docs/plan-mep.md`) lives in the private sibling repo `../lapin-mep`, built through `products/lapin-mep.json` (`"external"`); its stages 1–3 (network core, IFC export, the MEP tab, the engineering estimates and schedules) are done.
 
