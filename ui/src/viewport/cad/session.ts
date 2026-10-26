@@ -168,7 +168,8 @@ function arc(): Step {
 }
 
 /** The selection a modify command works on: what is selected, else picked now (Enter when done). */
-function withSelection(then: (ids: string[]) => Next): Step | Promise<Step | null | void> | null | void {
+/** The selection, or the objects clicked one by one until Enter; then what to do with them. */
+export function withSelection(then: (ids: string[]) => Next): Step | Promise<Step | null | void> | null | void {
   const sel = useUi.getState().selected;
   if (sel.length) return then(sel);
   const collect = (): Step => ({

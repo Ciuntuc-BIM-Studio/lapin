@@ -20,6 +20,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
              new("format", "Slope written as", "choice", Choices: DimensionKinds.SlopeFormats), new("z", "Level written", "length")], "#555555", Kind: "annotation"));
         r.Service<IViewAnnotations>(this);
         Cad.DraftCommands.Register(r);
+        Cad.DxfImport.Register(r);
         r.Service<IElementPlacement>(new Cad.AnnotationPlacement());
         r.Service<IDeletion>(new AxisDeletion());
         Tags.Register(r);

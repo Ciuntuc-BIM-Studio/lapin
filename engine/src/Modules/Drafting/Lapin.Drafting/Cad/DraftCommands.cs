@@ -182,6 +182,39 @@ public static class DraftCommands
         r.Command("fillet", "Fillet", (ctx, a) => Corner(ctx, a, false));
         r.Command("chamfer", "Chamfer", (ctx, a) => Corner(ctx, a, true));
 
+        // Lines and open polylines welded end to end into polylines (ends within the tolerance meet; a chain that comes back closes).
+        // Each polyline keeps the first piece's entity (its layer and colour); the other pieces go.
+        r.Command("join", "Join", (ctx, a) =>
+        {
+            var tol = Json.Number(a["tolerance"]) ?? 5e-4;
+            var ids = Ids(a);
+            if (ids.Count == 0) throw new CommandException("Which shapes?");
+            var pieces = new List<(Entity E, IReadOnlyList<Vec2> Pts)>();
+            foreach (var id in ids)
+            {
+                var e = Drafts.Require(ctx.Model, id);
+                switch (Drafts.ShapeOf(e))
+                {
+                    case Line l: pieces.Add((e, [l.A, l.B])); break;
+                    case Polyline { Closed: false } p: pieces.Add((e, p.Pts)); break;
+                }
+            }
+            if (pieces.Count == 0) throw new CommandException("Join welds lines and open polylines.");
+            var made = new JsonArray();
+            var joined = 0;
+            foreach (var chain in Joins.Chains(pieces.Select(p => p.Pts).ToList(), tol))
+            {
+                if (chain.Members.Count < 2 && !chain.Closed) continue;
+                if (chain.Pts.Count < 2) continue;
+                var keep = pieces[chain.Members.Min()].E;
+                Drafts.Set(ctx, keep, chain.Pts.Count == 2 && !chain.Closed ? new Line(chain.Pts[0], chain.Pts[1]) : new Polyline(chain.Pts, chain.Closed && chain.Pts.Count >= 3));
+                foreach (var m in chain.Members) if (pieces[m].E.Id != keep.Id) ctx.Remove(pieces[m].E.Id);
+                made.Add((JsonNode)keep.Id);
+                joined++;
+            }
+            return new JsonObject { ["ids"] = made, ["joined"] = joined, ["pieces"] = pieces.Count };
+        });
+
         // A hatch filling the region around a point: the smallest closed outline there, its islands left out.
         r.Command("hatch", "Hatch", (ctx, a) =>
         {

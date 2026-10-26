@@ -1,13 +1,15 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileText, FlipHorizontal2, Hash, Layers, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag } from 'lucide-react';
+import { ArrowRightToLine, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
 import type { NodeDto } from '../../engine/protocol';
 import { useUi } from '../../app/store';
 import { execute } from '../../engine/session';
-import { cadHost, cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
+import { cadHost, cadLog, registerCommand, startCommand, withSelection, type Step } from '../../viewport/cad/session';
+import { importDxf } from '../../engine/files';
+import { ImportDxfDialog } from './ImportDxfDialog';
 import { DimensionSection } from './DimensionSection';
 import { DraftSection } from './DraftSection';
 import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
@@ -257,6 +259,13 @@ function lineworkReset(): Step {
   return step();
 }
 
+/** JOIN: lines and open polylines welded end to end into polylines (ends within 0.5 mm meet); a chain that comes back closes. */
+registerCommand({ names: ['JOIN', 'J'], label: 'Join', start: () => withSelection(async (ids) => {
+  const r = await execute('drafting.join', { ids }) as { joined?: number; pieces?: number } | null;
+  cadLog(r?.joined ? `${r.joined} polyline${r.joined === 1 ? '' : 's'} from ${r.pieces} pieces.` : 'Nothing met end to end.');
+  return null;
+}) });
+
 registerCommand({ names: ['LINEWORK', 'LW'], label: 'Linework', start: lineworkStep });
 registerCommand({ names: ['LWJOIN', 'LWJ'], label: 'Linework join', start: () => lineworkCorner('join') });
 registerCommand({ names: ['LWTRIM', 'LWTR'], label: 'Linework trim', start: () => lineworkCorner('trim') });
@@ -344,10 +353,11 @@ const drafting: LapinModule = {
       groups: [
         { label: 'Draw', tools: [cad('line', 'Line', Slash, 'LINE'), cad('pline', 'Polyline', Spline, 'PLINE'), cad('rect', 'Rectangle', RectangleHorizontal, 'RECTANGLE'), cad('circle', 'Circle', Circle, 'CIRCLE'), cad('arc', 'Arc', Redo2, 'ARC')] },
         { label: 'Modify', tools: [cad('move', 'Move', Move, 'MOVE'), cad('copy', 'Copy', Copy, 'COPY'), cad('rotate', 'Rotate', RotateCw, 'ROTATE'), cad('mirror', 'Mirror', FlipHorizontal2, 'MIRROR')], small: [cad('scale', 'Scale', Scaling, 'SCALE'), cad('erase', 'Erase', Eraser, 'ERASE')] },
-        { label: 'Edit', tools: [cad('offset', 'Offset', CopyPlus, 'OFFSET'), cad('trim', 'Trim', Scissors, 'TRIM'), cad('extend', 'Extend', ArrowRightToLine, 'EXTEND'), cad('fillet', 'Fillet', CornerUpRight, 'FILLET')], small: [cad('chamfer', 'Chamfer', CornerUpRight, 'CHAMFER')] },
+        { label: 'Edit', tools: [cad('offset', 'Offset', CopyPlus, 'OFFSET'), cad('trim', 'Trim', Scissors, 'TRIM'), cad('extend', 'Extend', ArrowRightToLine, 'EXTEND'), cad('fillet', 'Fillet', CornerUpRight, 'FILLET')], small: [cad('chamfer', 'Chamfer', CornerUpRight, 'CHAMFER'), cad('join', 'Join', Link2, 'JOIN')] },
         { label: 'Fill', tools: [cad('hatch', 'Hatch', Hash, 'HATCH')] },
         { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset', Eraser, 'LWRESET')] },
         { label: 'Layers', tools: [{ id: 'drafting.layers', label: 'Layers', icon: Layers, run: () => useUi.setState({ dialog: 'draftLayers' }) }] },
+        { label: 'Import', tools: [{ id: 'drafting.importDxf', label: 'Import DXF', icon: FileInput, run: () => void importDxf() }] },
       ],
     },
     {
@@ -365,7 +375,7 @@ const drafting: LapinModule = {
     },
   ],
   hotbar: [dimension],
-  dialogs: { draftLayers: LayersDialog },
+  dialogs: { draftLayers: LayersDialog, importDxf: ImportDxfDialog },
   propertySections: [
     // The drafted kinds show their own fields (a line its ends, a circle its radius), so the class's generic ones stay out.
     { id: 'draft', label: 'Drafting', classes: ['IfcAnnotation'], component: DraftSection, replacesFields: draftsFields },

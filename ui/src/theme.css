@@ -522,3 +522,8 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .corridor-side { border: 1px solid var(--rule); border-radius: 2px; padding: 6px 8px; display: grid; gap: 4px; min-width: 0; }
 .corridor-side legend { padding: 0 4px; color: var(--ink-muted); font-size: 12px; }
 .corridor-pvis td { padding: 2px 4px; }
+
+/* The DXF import dialog: its layer list scrolls; a layer's colour as a swatch. */
+.dxf-layers { margin-top: 12px; max-height: 240px; overflow-y: auto; display: block; }
+.dxf-layers td.num { text-align: right; }
+.dxf-layers .swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--rule-strong); vertical-align: middle; margin-right: 4px; }

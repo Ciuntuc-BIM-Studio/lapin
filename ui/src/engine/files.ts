@@ -274,6 +274,18 @@ export async function exportIfc(options: { schema?: string; detail?: string; pha
   await exportFile('project.exportIfc', options, `${projectTitle(path)}.ifc`, 'ifc');
 }
 
+/** The DXF the user picked, waiting for the import dialog: by path (the desktop), or its bytes (the browser). */
+export const dxfFile: { current: { name: string; path?: string; data?: string } | null } = { current: null };
+
+/** A DXF into the view in front, as Lapin's own drafting: the file is picked here, the rest is asked in the import dialog. */
+export async function importDxf(): Promise<void> {
+  const picked = isDesktop() ? null : await pickFile('DXF', 'dxf');
+  const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'DXF', extensions: ['dxf'] }]) : picked?.name ?? null;
+  if (!path) return;
+  dxfFile.current = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path };
+  useUi.setState({ dialog: 'importDxf' });
+}
+
 /** An IFC file into the open project: Lapin's own files come back native, others as references (mode 'reference' keeps everything as it is). */
 export async function importIfc(mode: 'auto' | 'reference' = 'auto'): Promise<void> {
   // By path on the desktop (the native dialog); in a browser, the file's bytes from the browser's own

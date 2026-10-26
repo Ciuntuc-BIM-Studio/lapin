@@ -67,4 +67,6 @@ Then the engine in the browser (#124, `docs/plan-browser-engine.md`, stages 1–
 
 Then (#129): foreign IFC recognised into native elements on import (`docs/spec-ifc.md`, Recunoașterea): `IIfcRecognizer` in the platform, bodies read as prisms, walls with axes, layers, openings, doors and windows, floors, columns, beams, pad footings; the rest as references drawn with real faces.
 
+Then (26.10.2026, #130): native DXF import (`docs/dxf-import.md`): layers, shapes, hatches with the file's patterns, texts, linear dimensions, blocks exploded; into sections and elevations on the view's plane, mirrored when the view looks towards −X or −Y; `JOIN` welds lines into polylines.
+
 Next: the user reviews `docs/decisions-pending.md` (#1–111). Open items needing the user: signing and notarization, Windows (manifold), and what the review changes. Milestones are in `docs/plan.md`.

@@ -6,7 +6,7 @@ import { HelpMenu } from './HelpMenu';
 import { useUi } from '../app/store';
 import { activate, ribbonTabs } from '../platform/modules';
 import { redo, undo, useSession } from '../engine/session';
-import { exportIfc, importIfc, newProject, openProject, saveProject } from '../engine/files';
+import { exportIfc, importDxf, importIfc, newProject, openProject, saveProject } from '../engine/files';
 
 function FileMenu() {
   const [open, setOpen] = useState(false);
@@ -22,6 +22,7 @@ function FileMenu() {
           <button type="button" role="menuitem" onClick={run(() => saveProject(true))}>Save as…<kbd>Ctrl ⇧ S</kbd></button>
           <button type="button" role="menuitem" onClick={run(() => importIfc())}>Import IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => exportIfc())}>Export IFC…</button>
+          <button type="button" role="menuitem" onClick={run(() => importDxf())}>Import DXF…</button>
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ screen: 'start' }))}>Start screen</button>
         </div>
       )}

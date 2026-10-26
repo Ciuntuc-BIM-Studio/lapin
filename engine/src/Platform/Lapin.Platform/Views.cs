@@ -89,6 +89,21 @@ public static class Views
         return (null, $"„{kind}” is not a kind of view.");
     }
 
+    /// <summary>The plan direction a section or an elevation looks along (a section looks left of its line, drawn from start to end); null for a plan or a 3D view.</summary>
+    public static Vec2? Look(Entity view)
+    {
+        switch (view.Str("kind"))
+        {
+            case "section":
+                if (view.Attrs["start"] is not JsonArray s || view.Attrs["end"] is not JsonArray e) return null;
+                var along = new Vec2((Json.Number(e[0]) ?? 0) - (Json.Number(s[0]) ?? 0), (Json.Number(e[1]) ?? 0) - (Json.Number(s[1]) ?? 0));
+                return along.Length < 1e-9 ? null : along.Normalized().Perp;
+            case "elevation":
+                return view.Str("direction") switch { "south" => new(0, 1), "east" => new(-1, 0), "west" => new(1, 0), _ => new(0, -1) };
+            default: return null;
+        }
+    }
+
     /// <summary>"name copy", then "name copy 2", "name copy 3"…, the first not taken by an entity of <paramref name="cls"/>.</summary>
     public static string CopyName(IModelView m, string name, string cls)
     {
