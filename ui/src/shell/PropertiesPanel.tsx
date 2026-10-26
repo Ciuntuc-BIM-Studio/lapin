@@ -62,7 +62,7 @@ function FieldRow({ node, field }: { node: NodeDto; field: FieldDescriptor }) {
   } else if (field.kind === 'bool') {
     input = <input type="checkbox" checked={v === true} ref={(el) => { if (el) el.indeterminate = varies; }} onChange={(e) => update(e.target.checked)} />;
   } else if (field.kind === 'choice') {
-    input = <select className="cell" value={!varies && typeof v === 'string' ? v : ''} onChange={(e) => update(e.target.value)}>{varies && <option value="">varies</option>}{(field.choices ?? []).map((c) => <option key={c}>{c}</option>)}</select>;
+    input = <select className="cell" value={!varies && typeof v === 'string' ? v : ''} onChange={(e) => update(e.target.value)}>{varies && <option value="">varies</option>}{!varies && typeof v !== 'string' && <option value="" disabled>—</option>}{(field.choices ?? []).map((c) => <option key={c}>{c}</option>)}</select>;
   } else if (field.kind === 'color') {
     input = <input type="color" value={typeof v === 'string' ? v : '#c9ced6'} onChange={(e) => update(e.target.value)} />;
   } else {
