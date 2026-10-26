@@ -103,6 +103,25 @@ public static class IfcExport
         ["IfcBuildingElementPart"] = ["INSULATION", "PRECASTPANEL"],
         ["IfcPipeSegment"] = ["CULVERT", "FLEXIBLESEGMENT", "RIGIDSEGMENT", "GUTTER", "SPOOL"],
         ["IfcDiscreteAccessory"] = ["ANCHORPLATE", "BRACKET", "SHOE"],
+        // The distribution elements (the MEP module's nodes and runs), IFC4's enumerations.
+        ["IfcDuctSegment"] = ["RIGIDSEGMENT", "FLEXIBLESEGMENT"],
+        ["IfcCableSegment"] = ["BUSBARSEGMENT", "CABLESEGMENT", "CONDUCTORSEGMENT", "CORESEGMENT"],
+        ["IfcPipeFitting"] = ["BEND", "CONNECTOR", "ENTRY", "EXIT", "JUNCTION", "OBSTRUCTION", "TRANSITION"],
+        ["IfcDuctFitting"] = ["BEND", "CONNECTOR", "ENTRY", "EXIT", "JUNCTION", "OBSTRUCTION", "TRANSITION"],
+        ["IfcBoiler"] = ["WATER", "STEAM"],
+        ["IfcSpaceHeater"] = ["CONVECTOR", "RADIATOR"],
+        ["IfcPump"] = ["CIRCULATOR", "ENDSUCTION", "SPLITCASE", "SUBMERSIBLEPUMP", "SUMPPUMP", "VERTICALINLINE", "VERTICALTURBINE"],
+        ["IfcValve"] = ["AIRRELEASE", "ANTIVACUUM", "CHANGEOVER", "CHECK", "COMMISSIONING", "DIVERTING", "DRAWOFFCOCK", "DOUBLECHECK", "DOUBLEREGULATING", "FAUCET", "FLUSHING", "GASCOCK", "GASTAP", "ISOLATING", "MIXING", "PRESSUREREDUCING", "PRESSURERELIEF", "REGULATING", "SAFETYCUTOFF", "STEAMTRAP", "STOPCOCK"],
+        ["IfcFlowMeter"] = ["ENERGYMETER", "GASMETER", "OILMETER", "WATERMETER"],
+        ["IfcTank"] = ["BASIN", "BREAKPRESSURE", "EXPANSION", "FEEDANDEXPANSION", "PRESSUREVESSEL", "STORAGE", "VESSEL"],
+        ["IfcSanitaryTerminal"] = ["BATH", "BIDET", "CISTERN", "SHOWER", "SINK", "SANITARYFOUNTAIN", "TOILETPAN", "URINAL", "WASHHANDBASIN", "WCSEAT"],
+        ["IfcWasteTerminal"] = ["FLOORTRAP", "FLOORWASTE", "GULLYSUMP", "GULLYTRAP", "ROOFDRAIN", "WASTEDISPOSALUNIT", "WASTETRAP"],
+        ["IfcFan"] = ["CENTRIFUGALFORWARDCURVED", "CENTRIFUGALRADIAL", "CENTRIFUGALBACKWARDINCLINEDCURVED", "CENTRIFUGALAIRFOIL", "TUBEAXIAL", "VANEAXIAL", "PROPELLORAXIAL"],
+        ["IfcAirTerminal"] = ["DIFFUSER", "GRILLE", "LOUVRE", "REGISTER"],
+        ["IfcElectricDistributionBoard"] = ["CONSUMERUNIT", "DISTRIBUTIONBOARD", "MOTORCONTROLCENTRE", "SWITCHBOARD"],
+        ["IfcOutlet"] = ["AUDIOVISUALOUTLET", "COMMUNICATIONSOUTLET", "POWEROUTLET", "DATAOUTLET", "TELEPHONEOUTLET"],
+        ["IfcLightFixture"] = ["POINTSOURCE", "DIRECTIONSOURCE", "SECURITYLIGHTING"],
+        ["IfcSwitchingDevice"] = ["CONTACTOR", "DIMMERSWITCH", "EMERGENCYSTOP", "KEYPAD", "MOMENTARYSWITCH", "SELECTORSWITCH", "STARTER", "SWITCHDISCONNECTOR", "TOGGLESWITCH"],
     };
 
     /// <summary>The classes with a Pset_…Common the export can answer.</summary>
@@ -123,6 +142,8 @@ public static class IfcExport
         Entity project = null!;
         string model = "", body = "", axis = "", metre = "", siteRef = "", sitePlace = "";
         readonly Dictionary<string, string> storeyRef = [], storeyPlace = [], refIdOf = [];
+        readonly Dictionary<string, (string Place, double Z0)> placeOf = [];
+        string buildingRef = "";
         readonly Dictionary<string, double> storeyZ = [];
         readonly Dictionary<string, List<string>> contained = [];
         readonly Dictionary<string, string> styles = [], materials = [], layerSets = [], written = [];
@@ -141,6 +162,7 @@ public static class IfcExport
             foreach (var mat in m.OfClass(IfcClass.Material)) Material(mat.Id);
             Grids();
             WriteElements();
+            Network();
             Finish();
         }
 
@@ -229,7 +251,7 @@ public static class IfcExport
             refIdOf[siteRef] = siteId;
             var buildingPlace = Place(sitePlace, 0);
             var buildingId = building?.Id ?? project.Id;
-            var buildingRef = f.Add("IFCBUILDING", building != null ? Gid(building.Id) : Gid(project.Id, "building"), Null, S(building?.Name ?? "Building"), Null, Null, buildingPlace, Null, Null, E("ELEMENT"), Null, Null, Null);
+            buildingRef = f.Add("IFCBUILDING", building != null ? Gid(building.Id) : Gid(project.Id, "building"), Null, S(building?.Name ?? "Building"), Null, Null, buildingPlace, Null, Null, E("ELEMENT"), Null, Null, Null);
             f.Add("IFCRELAGGREGATES", Gid(project.Id, "aggregates"), Null, Null, Null, projectRef, L(new[] { siteRef }));
             f.Add("IFCRELAGGREGATES", Gid(siteId, "aggregates/building"), Null, Null, Null, siteRef, L(new[] { buildingRef }));
 
@@ -354,6 +376,7 @@ public static class IfcExport
             var (height, width) = Overall(e, type);
             var entity = Product(kind, Gid(e.Id), e.Name, kind.ObjectType ?? type?.Name, place, shape, e.Id, height, width);
             written[e.Id] = entity;
+            placeOf[e.Id] = (place, z0);
             Contain(spatial, entity);
             Elements++;
             if (type != null) TypeOf(type, kind, entity);
@@ -680,6 +703,54 @@ public static class IfcExport
         }
 
         // ─── The relationships gathered on the way ──────────────────────────
+
+        /// <summary>
+        /// The distribution network the modules declare (IIfcNetwork): each
+        /// element's ports nested in it, placed where they are and facing
+        /// their way; the connections between ports; the systems grouping
+        /// their elements and serving the building.
+        /// </summary>
+        void Network()
+        {
+            var nets = s.Catalog.All<IIfcNetwork>();
+            if (nets.Count == 0) return;
+            var portRef = new Dictionary<(string Element, string Port), string>();
+            foreach (var (id, entity) in written.ToList())
+            {
+                if (m.Get(id) is not { } e || !placeOf.TryGetValue(id, out var at)) continue;
+                var ports = new List<string>();
+                foreach (var net in nets)
+                    foreach (var p in net.PortsOf(m, e))
+                    {
+                        if (portRef.ContainsKey((id, p.Key))) continue;
+                        var dir = p.Dir.Length > 1e-9 ? p.Dir.Normalized() : new Vec3(0, 0, 1);
+                        var side = Vec3.Cross(new Vec3(0, 0, 1), dir);
+                        var refDir = side.Length > 1e-6 ? side.Normalized() : new Vec3(1, 0, 0);
+                        var place = f.Add("IFCLOCALPLACEMENT", at.Place, f.Add("IFCAXIS2PLACEMENT3D",
+                            f.Add("IFCCARTESIANPOINT", L(new[] { R(p.At.X), R(p.At.Y), R(p.At.Z - at.Z0) })),
+                            f.Add("IFCDIRECTION", L(new[] { R(dir.X), R(dir.Y), R(dir.Z) })),
+                            f.Add("IFCDIRECTION", L(new[] { R(refDir.X), R(refDir.Y), R(refDir.Z) }))));
+                        var port = f.Add("IFCDISTRIBUTIONPORT", Gid(id, "port/" + p.Key), Null, S(p.Key), Null, Null, place, Null,
+                            E(p.Flow is "SOURCE" or "SINK" or "SOURCEANDSINK" ? p.Flow : "NOTDEFINED"), E(p.Kind.Length > 0 ? p.Kind : "NOTDEFINED"), E(p.SystemType.Length > 0 ? p.SystemType : "NOTDEFINED"));
+                        portRef[(id, p.Key)] = port;
+                        ports.Add(port);
+                    }
+                if (ports.Count > 0) f.Add("IFCRELNESTS", Gid(id, "ports"), Null, Null, Null, entity, L(ports));
+            }
+            foreach (var net in nets)
+            {
+                foreach (var c in net.Connections(m))
+                    if (portRef.TryGetValue((c.ElementA, c.PortA), out var a) && portRef.TryGetValue((c.ElementB, c.PortB), out var b))
+                        f.Add("IFCRELCONNECTSPORTS", Gid(c.ElementA, $"connects/{c.PortA}/{c.ElementB}/{c.PortB}"), Null, Null, Null, a, b, Null);
+                foreach (var sys in net.Systems(m))
+                {
+                    var members = sys.Members.Where(written.ContainsKey).Select(x => written[x]).ToList();
+                    var system = f.Add("IFCDISTRIBUTIONSYSTEM", Gid(sys.Id), Null, S(sys.Name), Null, Null, Null, E(sys.Predefined.Length > 0 ? sys.Predefined : "NOTDEFINED"));
+                    if (members.Count > 0) f.Add("IFCRELASSIGNSTOGROUP", Gid(sys.Id, "members"), Null, Null, Null, L(members), Null, system);
+                    f.Add("IFCRELSERVICESBUILDINGS", Gid(sys.Id, "serves"), Null, Null, Null, system, L(new[] { buildingRef }));
+                }
+            }
+        }
 
         void Finish()
         {
