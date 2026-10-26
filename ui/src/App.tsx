@@ -5,7 +5,8 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { AppWindow, Columns2, Rows2, X } from 'lucide-react';
+import { AppWindow, Columns2, PanelLeftOpen, PanelRightOpen, Rows2, X } from 'lucide-react';
+import { columns, setPanelWidth, togglePanel, usePanels } from './app/panels';
 import { closePane, closeTab, focusPane, notify, openTab, splitPane, tabKey, useUi, type ViewTab } from './app/store';
 import { PaneContext } from './app/pane';
 import { openViewWindow } from './app/windows';
@@ -154,16 +155,43 @@ function Panes() {
   );
 }
 
+/** A separator beside a side panel: dragged, it sets the panel's width. */
+function SideSep({ side }: { side: 'browser' | 'props' }) {
+  const onDown = (e: React.PointerEvent) => {
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    const start = e.clientX;
+    const width = side === 'browser' ? usePanels.getState().browserWidth : usePanels.getState().propsWidth;
+    const move = (ev: PointerEvent) => setPanelWidth(side, width + (side === 'browser' ? ev.clientX - start : start - ev.clientX));
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return <div className="side-sep" role="separator" aria-orientation="vertical" onPointerDown={onDown} onDoubleClick={() => togglePanel(side)} title="Drag to resize; double-click to dock away" />;
+}
+
+/** A docked-away panel: a narrow rail with a button that brings it back. */
+function Rail({ side, label }: { side: 'browser' | 'props'; label: string }) {
+  return (
+    <aside className={`panel rail ${side}`} aria-label={label}>
+      <button type="button" className="icon mini" title={`Show the ${label.toLowerCase()}`} onClick={() => togglePanel(side)}>{side === 'browser' ? <PanelLeftOpen size={15} /> : <PanelRightOpen size={15} />}</button>
+      <span className="rail-label">{label}</span>
+    </aside>
+  );
+}
+
 function Workspace() {
   const open = useUi((s) => s.dialog);
   const Dialog = open ? dialog(open) : null;
+  const panels = usePanels();
   return (
     <div className="workspace">
       <Ribbon />
-      <div className="body">
-        <ProjectBrowser />
+      <div className="body" style={{ gridTemplateColumns: columns(panels) }}>
+        {panels.browserOpen ? <ProjectBrowser /> : <Rail side="browser" label="Project browser" />}
+        {panels.browserOpen ? <SideSep side="browser" /> : <span />}
         <main className="views"><Panes /></main>
-        <PropertiesPanel />
+        {panels.propsOpen ? <SideSep side="props" /> : <span />}
+        {panels.propsOpen ? <PropertiesPanel /> : <Rail side="props" label="Properties" />}
       </div>
       <StatusBar />
       {Dialog && <Dialog />}

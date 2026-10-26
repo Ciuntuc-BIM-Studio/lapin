@@ -77,6 +77,7 @@ public static partial class IfcImport
                     {
                         ["ifcClass"] = foreign.IfcClass, ["name"] = foreign.Name, ["objectType"] = foreign.ObjectType, ["typeName"] = foreign.TypeName,
                         ["properties"] = foreign.Properties.DeepClone(),
+                        ["shape"] = model.Describe(e.Id),
                     };
                     edit.Replace(made.With(attrs: attrs));
                     seen.Add(id);

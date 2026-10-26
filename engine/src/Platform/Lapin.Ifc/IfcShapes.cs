@@ -268,3 +268,117 @@ public sealed partial class IfcModel
         return o;
     }
 }
+
+/// <summary>
+/// A product's body described for the eye (the IFC tree's construction level):
+/// each representation item by what it is, an extrusion with its profile and
+/// depth, a B-rep with its face count, a boolean with its operands, a mapped
+/// item with what it maps. Metres, three decimals; at most twelve items deep.
+/// </summary>
+public sealed partial class IfcModel
+{
+    /// <summary>The representation items' and profiles' names as IFC spells them (ClassName knows the elements, not these).</summary>
+    static readonly Dictionary<string, string> ItemNames = new[]
+    {
+        "IfcExtrudedAreaSolid", "IfcExtrudedAreaSolidTapered", "IfcFacetedBrep", "IfcFacetedBrepWithVoids", "IfcAdvancedBrep", "IfcPolygonalFaceSet", "IfcTriangulatedFaceSet",
+        "IfcBooleanResult", "IfcBooleanClippingResult", "IfcMappedItem", "IfcHalfSpaceSolid", "IfcPolygonalBoundedHalfSpace", "IfcBoxedHalfSpace", "IfcSweptDiskSolid",
+        "IfcRevolvedAreaSolid", "IfcShellBasedSurfaceModel", "IfcFaceBasedSurfaceModel", "IfcCsgSolid", "IfcBlock", "IfcSurfaceCurveSweptAreaSolid", "IfcFixedReferenceSweptAreaSolid",
+        "IfcRectangleProfileDef", "IfcRoundedRectangleProfileDef", "IfcRectangleHollowProfileDef", "IfcCircleProfileDef", "IfcCircleHollowProfileDef", "IfcEllipseProfileDef",
+        "IfcIShapeProfileDef", "IfcTShapeProfileDef", "IfcLShapeProfileDef", "IfcUShapeProfileDef", "IfcCShapeProfileDef", "IfcZShapeProfileDef",
+        "IfcArbitraryClosedProfileDef", "IfcArbitraryProfileDefWithVoids", "IfcCompositeProfileDef", "IfcDerivedProfileDef", "IfcCenterLineProfileDef",
+    }.ToDictionary(n => n.ToUpperInvariant(), n => n);
+
+    static string ItemName(string upper) => ItemNames.TryGetValue(upper, out var n) ? n : ClassName(upper);
+
+    public System.Text.Json.Nodes.JsonArray Describe(int product)
+    {
+        var o = new System.Text.Json.Nodes.JsonArray();
+        var e = File.Entities.GetValueOrDefault(product);
+        if (e == null) return o;
+        var budget = 12;
+        foreach (var rep in Items(File.Get(e[6])?[2]))
+        {
+            if (rep[1] is not string id || NotBody.Contains(id.ToUpperInvariant())) continue;
+            foreach (var item in Items(rep[3]))
+                if (budget-- > 0) o.Add((System.Text.Json.Nodes.JsonNode)DescribeItem(item, 0));
+        }
+        return o;
+    }
+
+    System.Text.Json.Nodes.JsonObject DescribeItem(StepEntity item, int depth)
+    {
+        var o = new System.Text.Json.Nodes.JsonObject { ["type"] = ItemName(item.Type) };
+        if (depth > 4) return o;
+        static double R3(double v) => Math.Round(v, 3);
+        switch (item.Type)
+        {
+            case "IFCEXTRUDEDAREASOLID":
+            case "IFCEXTRUDEDAREASOLIDTAPERED":
+            {
+                if (File.Get(item[0]) is { } p) o["profile"] = DescribeProfile(p);
+                o["depth"] = R3(Num(item[3]) * _len);
+                var d = Direction(item[2]) ?? new Vec3(0, 0, 1);
+                o["direction"] = new System.Text.Json.Nodes.JsonArray(R3(d.X), R3(d.Y), R3(d.Z));
+                break;
+            }
+            case "IFCFACETEDBREP":
+            case "IFCFACETEDBREPWITHVOIDS":
+            case "IFCADVANCEDBREP":
+                o["faces"] = Items(File.Get(item[0])?[0]).Count;
+                break;
+            case "IFCPOLYGONALFACESET":
+                o["faces"] = Items(item[2]).Count;
+                break;
+            case "IFCTRIANGULATEDFACESET":
+                o["triangles"] = item[3] is List<object?> t ? t.Count : 0;
+                break;
+            case "IFCBOOLEANRESULT":
+            case "IFCBOOLEANCLIPPINGRESULT":
+                o["operator"] = (item[0] as StepEnum)?.Value ?? "DIFFERENCE";
+                if (File.Get(item[1]) is { } a) o["first"] = DescribeItem(a, depth + 1);
+                if (File.Get(item[2]) is { } b) o["second"] = DescribeItem(b, depth + 1);
+                break;
+            case "IFCMAPPEDITEM":
+            {
+                var map = File.Get(item[0]);
+                var items = new System.Text.Json.Nodes.JsonArray();
+                foreach (var sub in Items(File.Get(map?[1])?[3]).Take(6)) items.Add((System.Text.Json.Nodes.JsonNode)DescribeItem(sub, depth + 1));
+                o["items"] = items;
+                break;
+            }
+            case "IFCHALFSPACESOLID":
+            case "IFCPOLYGONALBOUNDEDHALFSPACE":
+            case "IFCBOXEDHALFSPACE":
+                o["agrees"] = (item[1] as StepEnum)?.Value != "F";
+                break;
+            case "IFCSWEPTDISKSOLID":
+                o["radius"] = R3(Num(item[1]) * _len);
+                break;
+            case "IFCREVOLVEDAREASOLID":
+                if (File.Get(item[0]) is { } rp) o["profile"] = DescribeProfile(rp);
+                o["angle"] = R3(Num(item[3]) * _angle * 180 / Math.PI);
+                break;
+        }
+        return o;
+    }
+
+    System.Text.Json.Nodes.JsonObject DescribeProfile(StepEntity p)
+    {
+        var o = new System.Text.Json.Nodes.JsonObject { ["type"] = ItemName(p.Type) };
+        double L(int i) => Math.Round(Num(p[i]) * _len, 3);
+        switch (p.Type)
+        {
+            case "IFCRECTANGLEPROFILEDEF": case "IFCROUNDEDRECTANGLEPROFILEDEF": case "IFCRECTANGLEHOLLOWPROFILEDEF":
+                o["x"] = L(3); o["y"] = L(4); if (p.Type.Contains("HOLLOW")) o["wall"] = L(5); break;
+            case "IFCCIRCLEPROFILEDEF": case "IFCCIRCLEHOLLOWPROFILEDEF": o["radius"] = L(3); break;
+            case "IFCELLIPSEPROFILEDEF": o["x"] = L(3); o["y"] = L(4); break;
+            case "IFCISHAPEPROFILEDEF": o["width"] = L(3); o["depth"] = L(4); o["web"] = L(5); o["flange"] = L(6); break;
+            case "IFCTSHAPEPROFILEDEF": case "IFCUSHAPEPROFILEDEF": o["depth"] = L(3); o["width"] = L(4); o["web"] = L(5); o["flange"] = L(6); break;
+            case "IFCLSHAPEPROFILEDEF": o["depth"] = L(3); o["width"] = p[4] is null ? L(3) : L(4); o["thickness"] = L(5); break;
+            case "IFCARBITRARYCLOSEDPROFILEDEF": o["points"] = Curve(File.Get(p[2])).Count; break;
+            case "IFCARBITRARYPROFILEDEFWITHVOIDS": o["points"] = Curve(File.Get(p[2])).Count; o["holes"] = Items(p[3]).Count; break;
+            case "IFCCOMPOSITEPROFILEDEF": o["profiles"] = Items(p[2]).Count; break;
+        }
+        return o;
+    }
+}

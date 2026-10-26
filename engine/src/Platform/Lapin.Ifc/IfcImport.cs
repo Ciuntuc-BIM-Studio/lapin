@@ -451,6 +451,7 @@ public static partial class IfcImport
                 ["ifcClass"] = cls,
                 ["objectType"] = Str(e[4]),
                 ["properties"] = PropertiesJson(e.Id),
+                ["shape"] = model.Describe(e.Id),
             };
             Put(edit, gid, cls, Str(e[2]) ?? cls[3..], attrs, null, counts: false);
             references++;

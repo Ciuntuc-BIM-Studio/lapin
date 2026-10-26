@@ -176,6 +176,10 @@ public class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
         Assert.Equal("Brick 300", type!.Name);
         Assert.Equal(0.3, LayerSets.BandsOf(m, w1.Id)!.Sum(b => b.To - b.From), 6);
         Assert.Equal("IfcWall", (string?)w1.Attrs["imported"]?["ifcClass"]);
+        // The construction the file gave, kept for the IFC tree: a rectangle 5 × 0.3 extruded 2.8 up.
+        var shape = w1.Attrs["imported"]!["shape"]!.AsArray();
+        Assert.Equal("IfcExtrudedAreaSolid", (string?)shape[0]!["type"]);
+        Assert.Equal((5.0, 0.3, 2.8), ((double)shape[0]!["profile"]!["x"]!, (double)shape[0]!["profile"]!["y"]!, (double)shape[0]!["depth"]!));
 
         // The door and the window: on the wall, where and as big as the file said; the door's GlobalId kept; the hand from the operation.
         var door = m.Get(Guid("foreign-test", "door"));
@@ -228,6 +232,8 @@ public class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
         // The railing: a reference, with the reason counted.
         var rail = m.Get(Guid("foreign-test", "railing"))!;
         Assert.True((bool?)rail.Attrs["reference"]);
+        Assert.Equal("IfcFacetedBrep", (string?)rail.Attrs["shape"]![0]!["type"]);
+        Assert.Equal(5, (int)rail.Attrs["shape"]![0]!["faces"]!);
         Assert.Equal(1, r.ReferencesByClass!["IfcRailing"]);
 
         // Exported again, the wall keeps the file's GlobalId.

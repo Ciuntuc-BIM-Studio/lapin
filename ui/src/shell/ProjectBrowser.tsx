@@ -14,6 +14,9 @@ import { num, storeys } from '../engine/model';
 import { projectTitle } from '../engine/files';
 import { useCamera } from '../viewport/camera';
 import { disciplineOf, groupItems, implicitPlan, itemOf, setsOf, THREE_D, type BrowserItem, type BrowserSet } from './browserSets';
+import { IfcTree } from './IfcTree';
+
+const TAB_KEY = 'lapin.browser.tab';
 
 const level = (e: number) => `${e >= 0 ? '+' : '−'}${Math.abs(e).toFixed(2)}`;
 const COLLAPSED_KEY = 'lapin.browser.collapsed';
@@ -40,6 +43,8 @@ export function ProjectBrowser() {
   const levels = storeys({ nodes, relations }).slice().reverse();
   const active = activeStorey();
   const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed);
+  const [tab, setTab] = useState<'project' | 'ifc'>(() => { try { return localStorage.getItem(TAB_KEY) === 'ifc' ? 'ifc' : 'project'; } catch { return 'project'; } });
+  const pickTab = (t: 'project' | 'ifc') => { setTab(t); try { localStorage.setItem(TAB_KEY, t); } catch { /* a convenience only */ } };
   const toggle = (id: string) => {
     const next = new Set(collapsed);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -170,8 +175,13 @@ export function ProjectBrowser() {
         <span className="eyebrow">Project</span>
         <span className="panel-title">{projectTitle(doc?.path)}{doc?.dirty ? ' •' : ''}</span>
         <button type="button" className="icon mini" title="Organize the browser (sets)" onClick={() => useUi.setState({ dialog: 'browserSets' })}><Settings2 size={13} /></button>
+        <div className="browser-tabs" role="tablist">
+          <button type="button" role="tab" className={`browser-tab${tab === 'project' ? ' on' : ''}`} aria-selected={tab === 'project'} onClick={() => pickTab('project')}>Project</button>
+          <button type="button" role="tab" className={`browser-tab${tab === 'ifc' ? ' on' : ''}`} aria-selected={tab === 'ifc'} onClick={() => pickTab('ifc')}>IFC</button>
+        </div>
       </div>
-      <div className="tree-group">
+      {tab === 'ifc' && <IfcTree />}
+      {tab === 'project' && <div className="tree-group">
         <div className="tree-label"><ChevronDown size={12} /><Layers size={13} />Levels<span className="count">{levels.length}</span>
           <button type="button" className="icon mini" title="New level above" onClick={() => void execute('storey.create', {})}><Plus size={12} /></button>
         </div>
@@ -183,8 +193,8 @@ export function ProjectBrowser() {
             <button type="button" className="icon mini" title="Duplicate the level with everything on it (Alt: an empty level)" onClick={(e) => duplicateLevel(s.id, !e.altKey)}><Copy size={11} /></button>
           </span>
         ))}
-      </div>
-      {groups.map((g) => <SetGroup key={g.set?.id ?? 'other'} set={g.set} list={g.items} />)}
+      </div>}
+      {tab === 'project' && groups.map((g) => <SetGroup key={g.set?.id ?? 'other'} set={g.set} list={g.items} />)}
     </nav>
   );
 }

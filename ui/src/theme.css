@@ -73,7 +73,30 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .tool svg { color: var(--accent); }
 .tool:hover { background: var(--wash); }
 .tool.on { background: var(--accent-wash); border-color: var(--accent); }
-.body { flex: 1; min-height: 0; display: grid; grid-template-columns: 250px 1fr var(--props-w, 300px); }
+.body { flex: 1; min-height: 0; display: grid; grid-template-columns: 250px 6px minmax(0, 1fr) 6px 300px; }
+.side-sep { cursor: col-resize; background: var(--bg); border-left: 1px solid var(--rule); border-right: 1px solid var(--rule); }
+.side-sep:hover { background: var(--accent-wash); }
+.panel.rail { align-items: center; padding-top: 6px; gap: 10px; overflow: hidden; }
+.panel.rail .icon.mini { margin: 0; }
+.rail-label { writing-mode: vertical-rl; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.browser-tabs { display: flex; gap: 2px; margin-top: 8px; border-bottom: 1px solid var(--rule); }
+.browser-tab { padding: 4px 10px 5px; border: 0; border-bottom: 2px solid transparent; background: none; cursor: pointer; color: var(--ink-muted); font-weight: 500; font-size: 12px; }
+.browser-tab.on { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+.ifc-tree { padding-bottom: 12px; }
+.ifc-tree .filter { width: calc(100% - 24px); }
+.ifc-row { display: flex; align-items: center; gap: 4px; min-height: 24px; padding-right: 10px; }
+.ifc-row:hover { background: var(--wash); }
+.ifc-row.on { background: var(--accent-wash); box-shadow: inset 2px 0 var(--accent); }
+.ifc-row.on .ifc-label { color: var(--accent); font-weight: 600; }
+.ifc-row.leaf.muted .ifc-label { color: var(--ink-muted); font-size: 12px; }
+.ifc-row .icon.mini.fold { margin: 0; color: var(--ink-muted); flex: none; }
+.ifc-label { flex: 1; min-width: 0; padding: 3px 0; border: 0; background: none; text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ifc-label:disabled { cursor: default; }
+.ifc-row .count { margin-left: auto; font-size: 11px; color: var(--ink-muted); }
+.ifc-id { margin-left: 6px; font-family: var(--mono, monospace); font-size: 10px; color: var(--ink-muted); }
+.ifc-kind { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); }
+.ifc-type { font-style: italic; }
+.ifc-key { color: var(--ink-muted); }
 .panel { display: flex; flex-direction: column; min-height: 0; overflow: auto; background: var(--panel); }
 .browser { border-right: 1px solid var(--rule); }
 .props { border-left: 1px solid var(--rule); }
