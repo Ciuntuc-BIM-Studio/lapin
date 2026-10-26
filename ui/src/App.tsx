@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AppWindow, Columns2, Rows2, X } from 'lucide-react';
-import { closePane, focusPane, notify, setPane, splitPane, useUi, type ViewKind } from './app/store';
+import { closePane, closeTab, focusPane, notify, openTab, splitPane, tabKey, useUi, type ViewTab } from './app/store';
 import { PaneContext } from './app/pane';
 import { openViewWindow } from './app/windows';
 import { useShortcuts } from './app/keys';
@@ -56,23 +56,40 @@ function Notice() {
   return notice ? <div className="notice" role="status">{notice}</div> : null;
 }
 
-/** A pane's tabs: the views it can show, which is in front; split, close, or open it in a window of its own (desktop). */
+/** A pane's tabs: every view opened so far (one list for the workspace), the pane's own marked; split, close, or open it in a window of its own (desktop). */
 function PaneTabs({ i }: { i: number }) {
   const pane = useUi((s) => s.panes[i]);
   const count = useUi((s) => s.panes.length);
   const split = useUi((s) => s.split);
   const role = useUi((s) => s.windowRole);
-  const drawingName = useSession((s) => (pane?.drawingViewId ? s.nodes.get(pane.drawingViewId)?.name : undefined));
-  const sheetName = useSession((s) => (pane?.sheetId ? s.nodes.get(pane.sheetId)?.name : undefined));
-  const scheduleName = useSession((s) => (pane?.scheduleId ? s.nodes.get(pane.scheduleId)?.name : undefined));
+  const tabs = useUi((s) => s.viewTabs);
+  const storeyId = useUi((s) => s.storeyId);
+  const nodes = useSession((s) => s.nodes);
   if (!pane) return null;
-  const tabs = [['plan', 'Plan'], ['3d', '{3D}'], ...(drawingName ? [['drawing', drawingName]] : []), ...(sheetName ? [['sheet', sheetName]] : []), ...(scheduleName ? [['schedule', scheduleName]] : [])] as [ViewKind, string][];
-  const name = tabs.find(([id]) => id === pane.view)?.[1] ?? 'View';
+  const label = (t: ViewTab): string => {
+    switch (t.view) {
+      case 'plan': return t.planViewId ? nodes.get(t.planViewId)?.name ?? 'Plan' : t.storeyId ? nodes.get(t.storeyId)?.name ?? 'Plan' : 'Plan';
+      case '3d': return t.view3dId ? nodes.get(t.view3dId)?.name ?? '3D' : '{3D}';
+      case 'drawing': return (t.drawingViewId && nodes.get(t.drawingViewId)?.name) || 'Drawing';
+      case 'sheet': return (t.sheetId && nodes.get(t.sheetId)?.name) || 'Sheet';
+      default: return (t.scheduleId && nodes.get(t.scheduleId)?.name) || 'Schedule';
+    }
+  };
+  const mine = tabKey({ ...pane, storeyId: pane.view === 'plan' ? storeyId : null });
+  const current = tabs.find((t) => tabKey(t) === mine);
   return (
     <div className="view-tabs">
-      {tabs.map(([id, label]) => (
-        <button type="button" key={id} className={`view-tab${pane.view === id ? ' on' : ''}`} onClick={() => { focusPane(i); setPane(i, { view: id }); }}>{label}<X size={11} /></button>
-      ))}
+      <div className="view-tab-strip">
+        {tabs.map((t) => {
+          const key = tabKey(t);
+          return (
+            <button type="button" key={key} className={`view-tab${key === mine ? ' on' : ''}`} title={label(t)} onClick={() => openTab(i, t)}>
+              {label(t)}
+              <span className="close" role="button" aria-label="Close" onClick={(e) => { e.stopPropagation(); closeTab(key); }}><X size={11} /></span>
+            </button>
+          );
+        })}
+      </div>
       <span className="grow" />
       {role === 'main' && count < 2 && (
         <>
@@ -86,7 +103,7 @@ function PaneTabs({ i }: { i: number }) {
           <button type="button" className="icon mini" title="Close this pane" onClick={() => closePane(i)}><X size={13} /></button>
         </>
       )}
-      {role === 'main' && isDesktop() && <button type="button" className="icon mini" title="Open this view in a window of its own (for a second screen)" onClick={() => void openViewWindow(pane, name)}><AppWindow size={13} /></button>}
+      {role === 'main' && isDesktop() && <button type="button" className="icon mini" title="Open this view in a window of its own (for a second screen)" onClick={() => void openViewWindow(pane, current ? label(current) : 'View')}><AppWindow size={13} /></button>}
     </div>
   );
 }

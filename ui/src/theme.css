@@ -100,6 +100,12 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .sets-editor .field-line input, .sets-editor .field-line textarea { width: 100%; box-sizing: border-box; }
 .views { display: flex; flex-direction: column; min-width: 0; }
 .view-tabs { display: flex; align-items: flex-end; gap: 2px; padding: 4px 6px 0; background: var(--bg); border-bottom: 1px solid var(--rule); }
+.view-tab-strip { display: flex; align-items: flex-end; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.view-tab-strip::-webkit-scrollbar { display: none; }
+.view-tab { white-space: nowrap; max-width: 220px; }
+.view-tab .close { display: inline-flex; border-radius: 3px; padding: 1px; color: var(--ink-muted); opacity: 0.6; }
+.view-tab:hover .close, .view-tab.on .close { opacity: 1; }
+.view-tab .close:hover { background: var(--rule); color: var(--ink); }
 .view-tabs .icon.mini { margin: 0 0 4px; color: var(--ink-muted); }
 .view-tabs .icon.mini:hover { color: var(--ink); }
 /* Panes: one, or two split by a separator; the active one carries the accent on its tab. */

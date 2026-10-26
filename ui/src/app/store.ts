@@ -35,6 +35,26 @@ export interface Pane {
 export const PANE_KEYS = ['view', 'drawingViewId', 'sheetId', 'scheduleId', 'planViewId', 'view3dId'] as const;
 export const emptyPane = (view: ViewKind = 'plan'): Pane => ({ view, drawingViewId: null, sheetId: null, scheduleId: null, planViewId: null, view3dId: null });
 
+/**
+ * An open view, as a tab of the workspace: what a pane shows, plus the storey
+ * a plan tab belongs to (plans are per storey; the other kinds carry their
+ * own id). Every view brought in front gets a tab once; a tab is closed by
+ * hand. The tabs are one list for the workspace; each pane marks its own.
+ */
+export interface ViewTab extends Pane { storeyId: string | null }
+
+/** A view's identity: the key the views keep their zoom under (zoom.ts), so a tab and its zoom memory are one. */
+export function tabKey(t: Pane & { storeyId?: string | null }): string {
+  switch (t.view) {
+    case 'plan': return t.planViewId ?? `plan:${t.storeyId ?? ''}`;
+    case 'drawing': return t.drawingViewId ?? 'drawing:none';
+    case 'sheet': return t.sheetId ?? 'sheet:none';
+    case 'schedule': return t.scheduleId ?? 'schedule:none';
+    default: return t.view3dId ?? '3d';
+  }
+}
+const tabOf = (pane: Pane, storeyId: string | null): ViewTab => ({ ...pane, storeyId: pane.view === 'plan' ? storeyId : null });
+
 export interface UiState extends Pane {
   screen: 'start' | 'workspace';
   tab: string | null;
@@ -43,6 +63,8 @@ export interface UiState extends Pane {
   /** The panes of the workspace (one or two), and which is active (its view is mirrored above). */
   panes: Pane[];
   pane: number;
+  /** The views opened so far, in order, each a tab (see ViewTab). */
+  viewTabs: ViewTab[];
   /** Two panes side by side, or one above the other. */
   split: 'row' | 'column';
   /** The main window, or a detached view window (desktop). */
@@ -79,22 +101,66 @@ export interface UiState extends Pane {
 
 const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, split: 'row', windowRole: 'main', planDrawing: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, curtainTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', keyPlan: true,
+  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, curtainTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', keyPlan: true,
 }));
 
-// Setting the view in front sets the active pane too.
+/**
+ * The tabs after the active pane came to show `pane` on `storeyId`: its tab
+ * added at the end when new. The plan tab of "the lowest storey" (storeyId
+ * null, the state before a storey was chosen) becomes the tab of the storey
+ * chosen first, instead of lingering beside it.
+ */
+function tabsWith(tabs: ViewTab[], pane: Pane, storeyId: string | null): ViewTab[] {
+  const tab = tabOf(pane, storeyId);
+  const key = tabKey(tab);
+  if (tabs.some((t) => tabKey(t) === key)) return tabs;
+  if (tab.view === 'plan' && tab.storeyId && !tab.planViewId) {
+    const k = tabs.findIndex((t) => t.view === 'plan' && !t.planViewId && t.storeyId == null);
+    if (k >= 0) { const next = tabs.slice(); next[k] = tab; return next; }
+  }
+  return [...tabs, tab];
+}
+
+// Setting the view in front sets the active pane too, and opens its tab when it has none yet.
 const rawSet = useUi.setState;
 useUi.setState = ((partial: Partial<UiState> | ((s: UiState) => Partial<UiState>), replace?: boolean) => {
   const p = typeof partial === 'function' ? partial(useUi.getState()) : partial;
   if (!p) return;
-  if (replace || !PANE_KEYS.some((k) => k in p)) { rawSet(p as UiState, replace as false | undefined); return; }
   const s = useUi.getState();
+  const paneChange = PANE_KEYS.some((k) => k in p);
+  const entering = 'screen' in p && p.screen === 'workspace';
+  if (replace || (!paneChange && !('storeyId' in p) && !entering)) { rawSet(p as UiState, replace as false | undefined); return; }
   const panes = s.panes.slice();
   const cur = { ...panes[s.pane] };
-  for (const k of PANE_KEYS) if (k in p) (cur as Record<string, unknown>)[k] = p[k];
-  panes[s.pane] = cur;
-  rawSet({ ...p, panes } as UiState);
+  if (paneChange) { for (const k of PANE_KEYS) if (k in p) (cur as Record<string, unknown>)[k] = p[k]; panes[s.pane] = cur; }
+  const storeyId = 'storeyId' in p ? (p.storeyId ?? null) : s.storeyId;
+  const viewTabs = tabsWith(entering ? [] : s.viewTabs, cur, storeyId);
+  rawSet({ ...p, ...(paneChange ? { panes } : {}), viewTabs } as UiState);
 }) as typeof useUi.setState;
+
+/** Show a tab in a pane: the pane takes the tab's view (and the storey, for a plan) and becomes active. */
+export function openTab(i: number, tab: ViewTab): void {
+  const s = useUi.getState();
+  if (!s.panes[i]) return;
+  const { storeyId, ...pane } = tab;
+  const panes = s.panes.slice();
+  panes[i] = { ...pane };
+  rawSet({ panes, pane: i, ...pane, ...(tab.view === 'plan' && storeyId ? { storeyId } : {}) });
+}
+
+/** Close a tab: a pane that showed it shows the tab before it (else the one after, else a plan). */
+export function closeTab(key: string): void {
+  const s = useUi.getState();
+  const k = s.viewTabs.findIndex((t) => tabKey(t) === key);
+  if (k < 0) return;
+  const rest = s.viewTabs.filter((_, j) => j !== k);
+  const fallback: ViewTab = rest[k - 1] ?? rest[k] ?? { ...emptyPane('plan'), storeyId: s.storeyId };
+  const { storeyId: fbStorey, ...fbPane } = fallback;
+  const showed = (pane: Pane) => tabKey(tabOf(pane, s.storeyId)) === key;
+  const panes = s.panes.map((pane) => (showed(pane) ? { ...fbPane } : pane));
+  const activeShowed = showed(s.panes[s.pane]);
+  rawSet({ viewTabs: rest.length ? rest : [fallback], panes, ...panes[s.pane], ...(activeShowed && fallback.view === 'plan' && fbStorey ? { storeyId: fbStorey } : {}) });
+}
 
 /** The pane at an index, as it is now. */
 export const paneAt = (s: UiState, i: number): Pane => s.panes[i] ?? s.panes[s.pane];

@@ -302,3 +302,68 @@ public class IfcRecognitionSheetTests
         Assert.True(pdf.Length > 1000);
     }
 }
+
+/// <summary>A real file's plan and an elevation as SVG files, for the eye (LAPIN_IFC_SAMPLE and LAPIN_IFC_SVG_DIR).</summary>
+public class IfcRecognitionSvgTests
+{
+    [Fact]
+    public void A_sample_file_as_svgs_when_asked()
+    {
+        var path = Environment.GetEnvironmentVariable("LAPIN_IFC_SAMPLE");
+        var dir = Environment.GetEnvironmentVariable("LAPIN_IFC_SVG_DIR");
+        if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(dir) || !File.Exists(path)) return;
+        Directory.CreateDirectory(dir);
+        var f = new Fixture(new ArchitectureModule(), new StructureModule(), new DraftingModule(), new CivilModule(), new PhasesModule(), new StudioModule());
+        IfcImport.Run(f.Session, path, Environment.GetEnvironmentVariable("LAPIN_IFC_MODE") is { } mode ? new IfcImportOptions(mode) : null, out _);
+        var storeys = Spatial.Storeys(f.Model).OrderBy(s => s.Num("elevation")).ToList();
+        var storey = storeys.Skip(Math.Min(1, storeys.Count - 1)).First();
+        // The building's extent in plan, from every wall.
+        var pts = new List<Vec2>();
+        foreach (var e in f.Model.OfClass(IfcClass.Wall)) { if (StoredBodies.Has(e)) continue; var c = PathCurve.Of(e); pts.Add(c.Start); pts.Add(c.End); }
+        double x0 = pts.Min(p => p.X), x1 = pts.Max(p => p.X), y0 = pts.Min(p => p.Y), y1 = pts.Max(p => p.Y);
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = storey.Id, ["name"] = "Plan", ["scale"] = 50 })!["id"]!;
+        Write(Path.Combine(dir, "plan.svg"), Views.Drawing(f.Session.Reader, f.Model.Get(plan)!));
+        // An elevation looking at the south face (from below the building, up the page), and a section through the middle.
+        string? elev = null;
+        try { elev = (string)f.Run("view.create", new JsonObject { ["kind"] = "elevation", ["start"] = new JsonArray(x0 - 2, y0 - 5), ["end"] = new JsonArray(x1 + 2, y0 - 5), ["name"] = "South", ["scale"] = 50 })!["id"]!; }
+        catch (CommandException) { }
+        if (elev != null) Write(Path.Combine(dir, "elevation.svg"), Views.Drawing(f.Session.Reader, f.Model.Get(elev)!));
+        var section = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(x0 - 2, (y0 + y1) / 2), ["end"] = new JsonArray(x1 + 2, (y0 + y1) / 2), ["name"] = "A", ["scale"] = 50 })!["id"]!;
+        Write(Path.Combine(dir, "section.svg"), Views.Drawing(f.Session.Reader, f.Model.Get(section)!));
+    }
+
+    static void Write(string file, JsonObject d)
+    {
+        var pens = d["pens"]?.AsArray() ?? [];
+        double minX = double.MaxValue, minY = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue;
+        void See(double x, double y) { minX = Math.Min(minX, x); maxX = Math.Max(maxX, x); minY = Math.Min(minY, y); maxY = Math.Max(maxY, y); }
+        var sb = new System.Text.StringBuilder();
+        foreach (var pen in pens.OfType<JsonObject>())
+        {
+            var stroke = (string?)pen["stroke"] ?? "#000";
+            var width = (Json.Number(pen["width"]) ?? 0.18) * 0.02; // paper mm, drawn here in metres at about 1:50
+            var fill = (string?)pen["fill"];
+            var dash = pen["dash"] is JsonArray da && da.Count > 0 ? $" stroke-dasharray=\"{string.Join(' ', da.Select(v => Json.Number(v) ?? 1))}\"" : "";
+            if (pen["loops"] is JsonArray loops)
+                foreach (var loop in loops.OfType<JsonArray>())
+                {
+                    var c = loop.Select(v => Json.Number(v) ?? 0).ToList();
+                    for (var i = 0; i + 1 < c.Count; i += 2) See(c[i], c[i + 1]);
+                    sb.Append($"<polygon points=\"{string.Join(' ', c.Select(v => v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)))}\" fill=\"{(fill is { } fc && fc != "none" ? fc : "#d9d9d9")}\" fill-opacity=\"0.6\" stroke=\"none\"/>\n");
+                }
+            if (pen["segments"] is JsonArray seg)
+            {
+                var c = seg.Select(v => Json.Number(v) ?? 0).ToList();
+                for (var i = 0; i + 3 < c.Count; i += 4)
+                {
+                    See(c[i], c[i + 1]); See(c[i + 2], c[i + 3]);
+                    sb.Append($"<line x1=\"{c[i]:0.###}\" y1=\"{c[i + 1]:0.###}\" x2=\"{c[i + 2]:0.###}\" y2=\"{c[i + 3]:0.###}\" stroke=\"{stroke}\" stroke-width=\"{width}\"{dash}/>\n");
+                }
+            }
+        }
+        if (minX > maxX) { minX = 0; minY = 0; maxX = 10; maxY = 10; }
+        var w = maxX - minX; var h = maxY - minY;
+        var svg = $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{minX - 1:0.###} {-(maxY + 1):0.###} {w + 2:0.###} {h + 2:0.###}\" width=\"{(w + 2) * 70:0}\" height=\"{(h + 2) * 70:0}\" style=\"background:#fff\"><g transform=\"scale(1,-1)\">{sb}</g></svg>";
+        File.WriteAllText(file, svg, System.Text.Encoding.UTF8);
+    }
+}
