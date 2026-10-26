@@ -208,6 +208,9 @@ public static class Views
         foreach (var source in q.Services.All<IViewAnnotations>())
             try { marks.AddRange(source.Marks(ctx)); }
             catch (CommandException) { }
+        // Every element the drawing shows can be picked by what it drew: its cut outlines and its seen lines, as a
+        // mark on the PICK layer (never drawn, only hit and highlighted). Hidden and overhead lines pick nothing.
+        marks.AddRange(PickMarks(drawing));
         var markPens = new Dictionary<string, Pen>();
         foreach (var mk in marks)
         {
@@ -347,6 +350,19 @@ public static class Views
                 yield return mk;
             }
         }
+    }
+
+    /// <summary>A mark per element from its cut loops and seen lines, so a section or an elevation picks what it draws.</summary>
+    static IEnumerable<ViewMark> PickMarks(Lapin.Drawing.Views.ViewDrawing drawing)
+    {
+        var byElement = new Dictionary<string, ViewMark>();
+        ViewMark Of(string id) => byElement.TryGetValue(id, out var mk) ? mk : byElement[id] = new ViewMark(id);
+        foreach (var c in drawing.Cuts)
+            foreach (var loop in c.Loops)
+                if (loop.Length >= 2) Of(c.Element).Polyline(loop, true, "PICK", 0);
+        foreach (var l in drawing.Lines)
+            if (l.Role is not (LineRole.Hidden or LineRole.Overhead)) Of(l.Element).Line(l.A, l.B, "PICK", 0);
+        return byElement.Values;
     }
 
     static JsonArray P2(JsonNode? n, string what) => n is JsonArray a && a.Count >= 2 && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y
