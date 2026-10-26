@@ -11,6 +11,7 @@ export const RO: Record<string, string> = {
   // Storeys shown in a plan
   'Storeys shown': 'Etaje afișate', 'Show': 'Arată', 'Others halftone': 'Celelalte în halftone', 'its own storey only': 'doar etajul propriu',
   'its own and the storeys ticked': 'etajul propriu și etajele bifate', 'every storey': 'toate etajele',
+  'Other…': 'Alta…', 'in front': 'în față', 'Make its own view': 'Fă-i o vedere proprie', 'Floor plan · in front': 'Plan de nivel · în față',
   // View settings and styles
   'View settings': 'Setările vederii', 'View styles': 'Stiluri de vedere', 'Join materials': 'Unește materialele',
   'Cut plane and depth': 'Planul de secționare și adâncimea', 'View range…': 'Intervalul vederii…', 'Edit styles…': 'Editează stilurile…',

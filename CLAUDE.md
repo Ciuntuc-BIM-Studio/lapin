@@ -79,6 +79,8 @@ Then (#136) a new project starts with Foundations, Ground floor and First floor;
 
 Then (#137) the visual joins are complete by default (a cut side another area's corner stands on is split there, so a core running through a butt corner no longer draws the boundary), and view styles (`docs/view-styles.md`): Architectural, Structural (cores only), MEP and the project's own, each with its layers (all, without finishes, core), joins and overhead; a view takes its discipline's style and may override any field (View → View settings, Manage → View styles); finishes by the material's category.
 
+Then (#138) a view's or sheet's discipline is chosen in its properties and the browser files it under that discipline's set; the properties panel shows the view in front when nothing is selected.
+
 The `mep` module (premium, `docs/plan-mep.md`) lives in the private sibling repo `../lapin-mep`, built through `products/lapin-mep.json` (`"external"`); its stages 1–3 (network core, IFC export, the MEP tab, the engineering estimates and schedules) are done.
 
 Next: the user reviews `docs/decisions-pending.md` (#1–111). Open items needing the user: signing and notarization, Windows (manifold), and what the review changes. Milestones are in `docs/plan.md`.

@@ -64,6 +64,17 @@ function matchType(): Step {
 }
 registerCommand({ names: ['MATCHTYPE', 'MA'], label: 'Match type', start: matchType });
 
+/** The class's generic fields less the discipline, which the section shows as a choice of the known disciplines. */
+const butDiscipline = (cls: string) => () => (useSession.getState().info?.nodeTypes.find((t) => t.type === cls)?.fields ?? []).map((f) => f.key).filter((k) => k !== 'discipline');
+
+/** The discipline of the view in front (its own plan view, the section or elevation): what a view made from it takes. */
+const frontDiscipline = (): string | undefined => {
+  const s = useUi.getState();
+  const id = s.view === 'plan' ? s.planViewId : s.view === 'drawing' ? s.drawingViewId : null;
+  const d = id ? useSession.getState().nodes.get(id)?.props.discipline : undefined;
+  return typeof d === 'string' && d.trim() ? d : undefined;
+};
+
 /** What the core keeps running while the workspace is open: the 3D's visibility, the links' looks. */
 function CoreBackground() { return <><Visibility3D /><LinksLook /></>; }
 
@@ -109,11 +120,11 @@ const core: LapinModule = {
         { id: 'view.section', label: 'Section', icon: SectionIcon, shortcut: 'SE',
           gesture: { kind: 'twoPoints' },
           complete: async ({ points: [a, b] }, ctx) => {
-            const r = await ctx.execute('view.create', { kind: 'section', start: [a.x, a.y], end: [b.x, b.y] }) as { id?: string } | null;
+            const r = await ctx.execute('view.create', { kind: 'section', start: [a.x, a.y], end: [b.x, b.y], discipline: frontDiscipline() }) as { id?: string } | null;
             if (r?.id) useUi.setState({ view: 'drawing', drawingViewId: r.id, tool: null });
           } },
         { id: 'view.elevations', label: 'Elevations', icon: ElevationIcon, run: () => void (async () => {
-          for (const direction of ['south', 'east', 'north', 'west']) await execute('view.create', { kind: 'elevation', direction });
+          for (const direction of ['south', 'east', 'north', 'west']) await execute('view.create', { kind: 'elevation', direction, discipline: frontDiscipline() });
         })() },
       ] },
       { label: 'Graphics', tools: [
@@ -134,9 +145,9 @@ const core: LapinModule = {
   dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog },
   background: CoreBackground,
   propertySections: [
-    { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection },
+    { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection, fieldKeys: butDiscipline('LapinSheet') },
     { id: 'storeyLevels', label: 'Levels', classes: ['IfcBuildingStorey'], component: StoreySection, replacesFields: () => true },
-    { id: 'viewSettings', label: 'View settings', classes: ['LapinView'], component: ViewSettingsSection },
+    { id: 'viewSettings', label: 'View settings', classes: ['LapinView'], component: ViewSettingsSection, fieldKeys: butDiscipline('LapinView') },
   ],
   hotbar: [
     { id: 'select', label: 'Select', icon: MousePointer2, shortcut: 'Esc', run: () => setTool(null) },

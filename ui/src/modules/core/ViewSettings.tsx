@@ -13,24 +13,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { Copy, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
+import { DisciplinePicker } from './DisciplinePicker';
+import { useViewStyles, type LayerMode, type ViewStyle } from './viewStyles';
 import { frontView } from '../../viewport/frontView';
 import type { NodeDto } from '../../engine/protocol';
 import { PlanStoreysEditor } from './PlanStoreys';
 
-export type LayerMode = 'all' | 'noFinishes' | 'core';
-export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean }
 interface ViewStyleState { style: ViewStyle; named: boolean; resolved: ViewStyle; overrides: string[] }
 
 const LAYER_MODES: [LayerMode, string][] = [['all', 'every layer'], ['noFinishes', 'without finishes'], ['core', 'the core only']];
 const layerLabel = (m: LayerMode) => LAYER_MODES.find(([k]) => k === m)?.[1] ?? m;
-
-/** The project's view styles, read again whenever the model changes. */
-function useViewStyles(): ViewStyle[] {
-  const nodes = useSession((s) => s.nodes);
-  const [styles, setStyles] = useState<ViewStyle[]>([]);
-  useEffect(() => { void query<ViewStyle[]>('viewStyle.list').then((r) => setStyles(r ?? [])); }, [nodes]);
-  return styles;
-}
 
 /** The editor of one view's settings. */
 export function ViewSettingsEditor({ view }: { view: NodeDto }) {
@@ -49,6 +41,8 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
   return (
     <div className="view-settings">
       <dl className="fields">
+        <dt title="The browser files the view under this discipline's set; without a style of its own the view draws as the discipline's style says">Discipline</dt>
+        <dd><DisciplinePicker node={view} /></dd>
         <dt title="The style gives every setting below; what the view sets itself wins over it">Style</dt>
         <dd>
           <select value={state.named ? state.style.id : ''} onChange={(e) => set({ style: e.target.value || null })}>

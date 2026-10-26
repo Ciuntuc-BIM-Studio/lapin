@@ -10,7 +10,8 @@ import { AlignHorizontalJustifyCenter, ChevronRight, Plus, Search, Trash2, X } f
 import { Cell, LengthCell } from './cells';
 import { panelFocus, panelKeys, parseNumber } from './cellKeys';
 import { useUi } from '../app/store';
-import { execute, useSession } from '../engine/session';
+import { activeStorey, execute, useSession } from '../engine/session';
+import { frontView } from '../viewport/frontView';
 import { relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
 import type { FieldDescriptor, NodeDto } from '../engine/protocol';
 import type { PropertySectionDef } from '../platform/module';
@@ -213,18 +214,42 @@ export function PropertiesPanel() {
       </aside>
     );
   }
-  if (!node) {
-    return (
-      <aside className="panel props">
-        <div className="panel-head"><span className="eyebrow">Properties</span></div>
-        <p className="muted small pad">Select an element to see it here.</p>
-      </aside>
-    );
-  }
+  if (!node) return <FrontViewPanel />;
   return <ElementPanel node={node} />;
 }
 
-function ElementPanel({ node }: { node: NodeDto }) {
+/**
+ * Nothing selected: the view in front, with its own settings (discipline,
+ * style, range, the storeys it shows, its sheet's title block). A level's
+ * plan without a view of its own draws with the defaults, and offers to make one.
+ */
+function FrontViewPanel() {
+  const ui = useUi();
+  const nodes = useSession((s) => s.nodes);
+  const storey = activeStorey();
+  const id = ui.view === 'plan' ? (ui.planViewId && nodes.get(ui.planViewId)?.props.storeyId === storey?.id ? ui.planViewId : null)
+    : ui.view === 'drawing' ? ui.drawingViewId : ui.view === 'sheet' ? ui.sheetId : ui.view === '3d' ? ui.view3dId : null;
+  const front = id ? nodes.get(id) : undefined;
+  if (front) return <ElementPanel node={front} inFront />;
+  if (ui.view === 'plan' && storey) {
+    const own = [...nodes.values()].find((n) => n.type === 'LapinView' && n.props.kind === 'plan' && n.props.storeyId === storey.id);
+    return (
+      <aside className="panel props" aria-label="Properties">
+        <div className="panel-head"><span className="eyebrow">Floor plan · in front</span><span className="panel-title">{storey.name}</span></div>
+        <p className="muted small pad">{own ? 'This plan is the level\'s default one; its own views are in the project browser.' : 'This level\'s plan draws with the defaults (Architecture, cut at 1.20 m). Give it a view of its own to set its discipline, style, range and the storeys it shows.'}</p>
+        {!own && <div className="pad"><button type="button" className="btn" onClick={() => void frontView()}>Make its own view</button></div>}
+      </aside>
+    );
+  }
+  return (
+    <aside className="panel props">
+      <div className="panel-head"><span className="eyebrow">Properties</span></div>
+      <p className="muted small pad">Select an element to see it here.</p>
+    </aside>
+  );
+}
+
+function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
   const info = useSession((s) => s.info);
@@ -242,7 +267,7 @@ function ElementPanel({ node }: { node: NodeDto }) {
     <aside className="panel props" aria-label="Properties" ref={body} onKeyDown={panelKeys} onFocus={panelFocus}>
       <div className="props-resize" onPointerDown={startResize} title="Drag to widen the panel" />
       <div className="panel-head">
-        <span className="eyebrow">{cls?.label ?? node.type}{selectedCount > 1 ? ` · ${selectedCount} selected` : ''}</span>
+        <span className="eyebrow">{cls?.label ?? node.type}{inFront ? ' · in front' : selectedCount > 1 ? ` · ${selectedCount} selected` : ''}</span>
         {node.editable
           ? <Commit className="panel-title-input" value={node.name} onCommit={(name) => void execute('element.rename', { id: node.id, name })} />
           : <span className="panel-title">{node.name}</span>}
