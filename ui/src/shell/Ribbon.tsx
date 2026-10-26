@@ -24,6 +24,7 @@ function FileMenu() {
           <button type="button" role="menuitem" onClick={run(() => importIfc())}>Import IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => importIfc('link'))}>Link IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => exportIfc())}>Export IFC…</button>
+          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportMesh' }))}>Export 3D…</button>
           <button type="button" role="menuitem" onClick={run(() => importDxf())}>Import DXF…</button>
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ screen: 'start' }))}>Start screen</button>
         </div>

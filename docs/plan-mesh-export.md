@@ -85,9 +85,24 @@ Un proiect nou de platformă, `engine/src/Platform/Lapin.Mesh`, managed pur, fă
 - **Importul** acestor formate în Lapin: e alt subiect, mesh-urile n-ar deveni elemente native.
 - Animații, camere și lumini. Camera unei vederi 3D salvate se poate adăuga ușor în glTF și USD, dacă se cere.
 
-## De hotărât
+## Stare (26.10.2026)
 
-1. Ordinea: glTF, Collada, USD, ca mai sus, sau USD înaintea Collada (dacă AR-ul pe iPhone/iPad contează).
+Hotărât: glTF/GLB întâi, OpenUSD al doilea, Collada după. Pentru restul, variantele din plan: tot modelul implicit (sau ce arată vederea 3D), filtrat pe fază ca IFC-ul; muchiile oprite; originea în punctul de bază.
+
+**Făcut** (etapele 1 și 3), în `engine/src/Platform/Lapin.Mesh`, fără nicio dependență:
+- `MeshScene`: proiectul, clădirea, un grup pe etaj (și situl pentru ce nu stă pe un etaj), un element pe element vizibil cu părțile lui unite pe material, materialele (culoare, transparență, categorie), deplasarea rădăcinii la coordonatele reale.
+- `GltfWriter`: GLB (implicit) și glTF cu bufferul inclus ca data URI, deci tot un singur fișier. Y în sus, culorile de bază în RGB liniar, `BLEND` unde materialul e transparent, `extras` cu GlobalId, clasa IFC, tipul și etajul; muchiile ca primitivă `LINES`.
+- `UsdWriter`: USDA cu `upAxis = "Z"`, `metersPerUnit = 1`, `UsdPreviewSurface`, `MaterialBindingAPI`, `extent` pe fiecare mesh, atributele `lapin:` pe element, nume de prim-uri valide (diacriticele transliterate); USDZ ca zip necomprimat cu datele aliniate la 64 de octeți.
+- `project.exportMesh {format: glb|gltf|usdz|usda, viewId?, phase?, edges?, origin: base|internal|survey, path?}`; File → Export 3D….
+- Teste `MeshExportTests` (8): ierarhia și identitatea, o primitivă pe material, volumele egale cu ale solidelor, Y-sus, originea și survey-ul, filtrele (vederea 3D, elementele ascunse), muchiile, glTF cu buffer inclus, USDA (axe, legături de material, numărători), alinierea USDZ, protocolul.
+
+**Verificat cu unelte independente:** Khronos glTF-Validator 2.0.0-dev.3.10, zero erori și zero avertismente pe testLapin.lapin și pe Bloc-P-4.ifc importat (1459 de elemente, 63.508 triunghiuri, GLB de 5,1 MB în 93 ms, USDZ de 7,0 MB în 240 ms); `usdchecker` și `usdchecker --arkit` de pe macOS: „Success” pe USDA și pe USDZ. Riscul din etapa 3 (USDZ cu USDA respins de ARKit) nu s-a confirmat: verificarea ARKit trece. Mesajele „Coding Error … already registered” ale `usdchecker` apar și pe un fișier minimal scris de mână cu mai multe mesh-uri legate, în număr variabil: țin de unealtă, nu de fișier. GLB-ul modelului mare randat în three.js arată clădirea întreagă, dreaptă, cu culorile ei.
+
+**Rămâne:** Collada (etapa 2), texturile (etapa 4), OBJ (etapa 5); deschiderea fișierelor în Blender, Omniverse și AR Quick Look pe un iPhone, de făcut de mână.
+
+## De hotărât (rămas din plan)
+
+1. Ordinea (hotărât: glTF, USD, Collada): glTF, Collada, USD, ca mai sus, sau USD înaintea Collada (dacă AR-ul pe iPhone/iPad contează).
 2. Implicit, exportul ia ce arată vederea 3D din față sau tot modelul pe faze, ca IFC-ul.
 3. Muchiile implicit oprite.
 4. Coordonatele: punctul de bază implicit, survey la cerere.

@@ -368,6 +368,16 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 IfcExport.Write(session, ms, "project.ifc", options);
                 return (Deliver(ms.ToArray(), "project.ifc"), null);
             }
+            case "project.exportMesh":
+            {
+                // The model as a 3D mesh (docs/plan-mesh-export.md): glb, gltf, usdz or usda; a 3D view's visible elements, or all; a phase; edges; the origin.
+                var options = Lapin.Mesh.MeshExportOptions.From(p);
+                var (bytes, result) = Lapin.Mesh.MeshExport.Write(session, options);
+                var name = $"{(session.Path is { } sp ? Path.GetFileNameWithoutExtension(sp) : "project")}.{options.Extension}";
+                var delivered = Deliver(bytes, name);
+                foreach (var (k, v) in result.ToJson()) delivered[k] = v?.DeepClone();
+                return (delivered, null);
+            }
             case "project.importIfc":
             {
                 // An IFC file into the open project (docs/spec-ifc.md): Lapin's own files natively, others as references; "reference" keeps everything as it is;

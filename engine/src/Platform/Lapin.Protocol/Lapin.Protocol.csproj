@@ -8,5 +8,6 @@
     <ProjectReference Include="../Lapin.Platform/Lapin.Platform.csproj" />
     <ProjectReference Include="../Lapin.Package/Lapin.Package.csproj" />
     <ProjectReference Include="../Lapin.Ifc/Lapin.Ifc.csproj" />
+    <ProjectReference Include="../Lapin.Mesh/Lapin.Mesh.csproj" />
   </ItemGroup>
 </Project>
