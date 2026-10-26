@@ -170,7 +170,7 @@ public static class Walls
         GeometryPart Cut(GeometryPart part, double z0, double z1, bool isCore = false)
         {
             if (booleans == null) return part;
-            var reach = cutters.Where(c => c.o.Sill + z < z1 - 1e-9 && c.o.Sill + c.o.Height + z > z0 + 1e-9).Select(c => c.Box!)
+            var reach = cutters.Where(c => c.o.Sill < z1 - 1e-9 && c.o.Sill + c.o.Height > z0 + 1e-9).Select(c => c.Box!)
                 .Concat(isCore ? lintelBoxes.Where(b => b.Lintel.Z0 < z1 - 1e-9 && b.Lintel.Z1 > z0 + 1e-9).Select(b => b.Box) : [])
                 .Concat(isCore ? intoCore.Where(b => b.Z0 - z < z1 - 1e-9 && b.Z1 - z > z0 + 1e-9).Select(b => b.Box) : [])
                 .ToList();
@@ -303,7 +303,7 @@ public static class Walls
         GeometryPart Cut(GeometryPart part, double z0, double z1, bool isCore = false)
         {
             if (booleans == null) return part;
-            var reach = cutters.Where(x => x.o.Sill + z < z1 - 1e-9 && x.o.Sill + x.o.Height + z > z0 + 1e-9).Select(x => x.Box!)
+            var reach = cutters.Where(x => x.o.Sill < z1 - 1e-9 && x.o.Sill + x.o.Height > z0 + 1e-9).Select(x => x.Box!)
                 .Concat(isCore ? lintelBoxes.Where(b => b.Lintel.Z0 < z1 - 1e-9 && b.Lintel.Z1 > z0 + 1e-9).Select(b => b.Box) : [])
                 .ToList();
             if (reach.Count == 0) return part;

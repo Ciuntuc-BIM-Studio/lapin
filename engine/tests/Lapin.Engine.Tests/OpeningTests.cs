@@ -287,3 +287,22 @@ public class OpeningTests
     }
 }
 
+
+public class OpeningsOnUpperStoreysTests
+{
+    /// <summary>The openings' reach is measured from the wall's base, whatever the storey's elevation: a door on a storey at +2.80 cuts its wall as one at ±0.00 does.</summary>
+    [Fact]
+    public void A_door_cuts_a_wall_on_an_upper_storey_too()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var upper = (string)f.Run("storey.create", new JsonObject { ["name"] = "Etaj 1", ["elevation"] = 2.8 })!["id"]!;
+        var ground = f.Wall(0, 0, 5, 0);
+        f.Run("architecture.addDoor", new JsonObject { ["wallId"] = ground, ["along"] = 2.5 });
+        var wall = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = upper, ["x1"] = 0, ["y1"] = 3, ["x2"] = 5, ["y2"] = 3 })!["id"]!;
+        f.Run("architecture.addDoor", new JsonObject { ["wallId"] = wall, ["along"] = 2.5 });
+        double Volume(string id) => f.Session.Geometry(id)!.Parts.Sum(p => Measure.Volume(p.Solid));
+        Assert.Equal(Volume(ground), Volume(wall), 6);
+        var whole = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = upper, ["x1"] = 0, ["y1"] = 6, ["x2"] = 5, ["y2"] = 6 })!["id"]!;
+        Assert.True(Volume(wall) < Volume(whole) - 0.5, $"{Volume(wall)} vs {Volume(whole)}");
+    }
+}
