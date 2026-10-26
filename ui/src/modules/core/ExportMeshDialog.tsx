@@ -2,7 +2,8 @@
  * File → Export 3D… (docs/plan-mesh-export.md): the model as a mesh for
  * rendering, visualisation and AR, not as a model (IFC is that). GLB (one
  * glTF file, the default), glTF, USDZ (OpenUSD packed, for Apple's AR Quick
- * Look and the USD tools) or USDA (OpenUSD text). The whole model or what the
+ * Look and the USD tools), USDA (OpenUSD text) or DAE (COLLADA 1.4.1, which
+ * SketchUp imports). The whole model or what the
  * 3D view shows, at the end of a phase, with or without edges, from the
  * project's base point, its internal origin or the survey point's coordinates.
  */
@@ -18,6 +19,7 @@ const FORMATS: [string, string][] = [
   ['gltf', 'glTF: the same as text, its data inside'],
   ['usdz', 'USDZ: OpenUSD packed (AR Quick Look, Omniverse, USD tools)'],
   ['usda', 'USDA: OpenUSD as text'],
+  ['dae', 'DAE: COLLADA 1.4.1 (SketchUp, Rhino, 3ds Max, Blender)'],
 ];
 const ORIGINS: [string, string][] = [['base', 'the project base point'], ['internal', 'the internal origin'], ['survey', 'the survey point (real coordinates)']];
 

@@ -370,7 +370,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             }
             case "project.exportMesh":
             {
-                // The model as a 3D mesh (docs/plan-mesh-export.md): glb, gltf, usdz or usda; a 3D view's visible elements, or all; a phase; edges; the origin.
+                // The model as a 3D mesh (docs/plan-mesh-export.md): glb, gltf, usdz, usda or dae; a 3D view's visible elements, or all; a phase; edges; the origin.
                 var options = Lapin.Mesh.MeshExportOptions.From(p);
                 var (bytes, result) = Lapin.Mesh.MeshExport.Write(session, options);
                 var name = $"{(session.Path is { } sp ? Path.GetFileNameWithoutExtension(sp) : "project")}.{options.Extension}";

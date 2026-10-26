@@ -98,7 +98,9 @@ Hotărât: glTF/GLB întâi, OpenUSD al doilea, Collada după. Pentru restul, va
 
 **Verificat cu unelte independente:** Khronos glTF-Validator 2.0.0-dev.3.10, zero erori și zero avertismente pe testLapin.lapin și pe Bloc-P-4.ifc importat (1459 de elemente, 63.508 triunghiuri, GLB de 5,1 MB în 93 ms, USDZ de 7,0 MB în 240 ms); `usdchecker` și `usdchecker --arkit` de pe macOS: „Success” pe USDA și pe USDZ. Riscul din etapa 3 (USDZ cu USDA respins de ARKit) nu s-a confirmat: verificarea ARKit trece. Mesajele „Coding Error … already registered” ale `usdchecker` apar și pe un fișier minimal scris de mână cu mai multe mesh-uri legate, în număr variabil: țin de unealtă, nu de fișier. GLB-ul modelului mare randat în three.js arată clădirea întreagă, dreaptă, cu culorile ei.
 
-**Rămâne:** Collada (etapa 2), texturile (etapa 4), OBJ (etapa 5); deschiderea fișierelor în Blender, Omniverse și AR Quick Look pe un iPhone, de făcut de mână.
+**Făcut și Collada** (etapa 2, 26.10.2026): `ColladaWriter`, COLLADA 1.4.1, `Z_UP`, metri, o geometrie pe element cu triunghiurile pe material (efecte Lambert, culoarea așa cum se vede, opacitatea prin `transparent A_ONE`), muchiile ca `lines` în aceeași geometrie, identitatea în `extra` (GlobalId, clasă, tip, numele întreg: numele COLLADA sunt NCName, deci transliterate). Formatul `dae` în `project.exportMesh` și în dialog. Validat cu schema oficială Khronos `collada_schema_1_4_1.xsd` prin `xmllint` (testLapin, cu și fără muchii, și Bloc-P-4: 6,2 MB în 174 ms) și randat cu `ColladaLoader` din three.js, identic cu GLB-ul. Test `MeshExportTests` (9).
+
+**Rămâne:** texturile (etapa 4), OBJ (etapa 5); importul acestor formate, mai târziu, dacă va fi nevoie (analiza: ca referință sau legătură întâi, recunoașterea nativă a prismelor după); deschiderea fișierelor în Blender, Omniverse și AR Quick Look pe un iPhone, de făcut de mână.
 
 ## De hotărât (rămas din plan)
 

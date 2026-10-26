@@ -264,4 +264,47 @@ public sealed class MeshExportTests
         Assert.Equal("Perete_exterior", UsdWriter.Identifier("Perete exterior"));
         Assert.Equal("Fundatie", UsdWriter.Identifier("Fundație"));
     }
+
+    [Fact]
+    public void A_collada_file_is_z_up_in_metres_with_a_geometry_per_element_and_its_identity()
+    {
+        var (f, layered, plain, upper) = Project();
+        var (bytes, result) = MeshExport.Write(f.Session, new MeshExportOptions(Format: "dae", Edges: true));
+        var doc = System.Xml.Linq.XDocument.Parse(Encoding.UTF8.GetString(bytes));
+        System.Xml.Linq.XNamespace c = "http://www.collada.org/2005/11/COLLADASchema";
+        var root = doc.Root!;
+        Assert.Equal("1.4.1", (string?)root.Attribute("version"));
+        Assert.Equal("Z_UP", root.Element(c + "asset")!.Element(c + "up_axis")!.Value);
+        Assert.Equal("1", (string?)root.Element(c + "asset")!.Element(c + "unit")!.Attribute("meter"));
+        Assert.Equal(3, result.Elements);
+        var geometries = root.Element(c + "library_geometries")!.Elements(c + "geometry").ToList();
+        Assert.Equal(3, geometries.Count);
+        // Every element's node carries its GlobalId and binds every material its triangles name.
+        var nodes = root.Descendants(c + "node").Where(n => n.Element(c + "instance_geometry") != null).ToList();
+        Assert.Equal(new[] { layered, plain, upper }.Order(), nodes.Select(n => n.Element(c + "extra")!.Descendants(c + "globalId").Single().Value).Order());
+        foreach (var n in nodes)
+        {
+            var url = ((string)n.Element(c + "instance_geometry")!.Attribute("url")!)[1..];
+            var mesh = geometries.Single(g => (string?)g.Attribute("id") == url).Element(c + "mesh")!;
+            var bound = n.Descendants(c + "instance_material").Select(x => (string)x.Attribute("symbol")!).ToHashSet();
+            Assert.All(mesh.Elements().Where(x => x.Name == c + "triangles" || x.Name == c + "lines"), t => Assert.Contains((string)t.Attribute("material")!, bound));
+            // The counts agree: three indices a triangle, every index within the points.
+            var points = int.Parse((string)mesh.Elements(c + "source").First().Element(c + "float_array")!.Attribute("count")!) / 3;
+            foreach (var t in mesh.Elements(c + "triangles"))
+            {
+                var ix = t.Element(c + "p")!.Value.Split(' ').Select(int.Parse).ToList();
+                Assert.Equal(int.Parse((string)t.Attribute("count")!) * 3, ix.Count);
+                Assert.All(ix, i => Assert.InRange(i, 0, points - 1));
+            }
+            Assert.Single(mesh.Elements(c + "lines"));
+        }
+        // The layered wall: its triangles by its three materials; the transparent insulation's opacity.
+        var layeredMesh = geometries.Single(g => (string?)g.Attribute("id") == ((string)nodes.Single(n => n.Element(c + "extra")!.Descendants(c + "globalId").Single().Value == layered).Element(c + "instance_geometry")!.Attribute("url")!)[1..]);
+        Assert.Equal(3, layeredMesh.Element(c + "mesh")!.Elements(c + "triangles").Count());
+        Assert.Contains(root.Descendants(c + "transparent"), t => t.Element(c + "color")!.Value == "1 1 1 0.5");
+        // Ids are unique; names are NCNames.
+        var ids = root.Descendants().Select(x => (string?)x.Attribute("id")).OfType<string>().ToList();
+        Assert.Equal(ids.Count, ids.Distinct().Count());
+        Assert.All(root.Descendants().Select(x => (string?)x.Attribute("name")).OfType<string>(), nm => Assert.Matches("^[A-Za-z_][A-Za-z0-9_]*$", nm));
+    }
 }

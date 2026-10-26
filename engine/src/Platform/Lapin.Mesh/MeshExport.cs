@@ -13,7 +13,7 @@ public sealed record MeshExportResult(string Format, int Elements, int Triangles
     };
 }
 
-/// <summary>A session as a 3D mesh file (docs/plan-mesh-export.md): glTF 2.0 / GLB or OpenUSD (USDA, USDZ).</summary>
+/// <summary>A session as a 3D mesh file (docs/plan-mesh-export.md): glTF 2.0 / GLB, OpenUSD (USDA, USDZ) or COLLADA 1.4.1.</summary>
 public static class MeshExport
 {
     public static (byte[] Bytes, MeshExportResult Result) Write(Session session, MeshExportOptions o)
@@ -26,6 +26,7 @@ public static class MeshExport
             "gltf" => GltfWriter.Gltf(scene),
             "usdz" => UsdWriter.Usdz(scene),
             "usda" => UsdWriter.Usda(scene),
+            "dae" => ColladaWriter.Dae(scene),
             _ => throw new CommandException($"„{o.Format}” is not a 3D format."),
         };
         return (bytes, new MeshExportResult(o.Format, scene.ElementCount, scene.TriangleCount, scene.Materials.Count, scene.Notes));

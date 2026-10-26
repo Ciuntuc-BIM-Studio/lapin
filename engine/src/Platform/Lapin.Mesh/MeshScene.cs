@@ -7,7 +7,7 @@ using Lapin.Platform;
 namespace Lapin.Mesh;
 
 /// <summary>
-/// What a mesh export takes: its format (glb, gltf, usdz, usda), what it shows
+/// What a mesh export takes: its format (glb, gltf, usdz, usda, dae), what it shows
 /// (a 3D view's visible elements, else the whole model), at the end of which
 /// phase, whether the elements' edges go too, and where the origin is: the
 /// project's base point (the default), its internal origin, or the survey
@@ -15,7 +15,7 @@ namespace Lapin.Mesh;
 /// </summary>
 public sealed record MeshExportOptions(string Format = "glb", string? ViewId = null, string? Phase = null, bool Edges = false, string Origin = "base")
 {
-    public static readonly string[] Formats = ["glb", "gltf", "usdz", "usda"];
+    public static readonly string[] Formats = ["glb", "gltf", "usdz", "usda", "dae"];
     public static readonly string[] Origins = ["base", "internal", "survey"];
 
     public static MeshExportOptions From(JsonObject p)
