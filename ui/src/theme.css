@@ -347,6 +347,12 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 /* Generated drawings: the modelling lines step back to pick targets, the selection still shows. */
 .plan-items.ghost .plan-item:not(.selected) { stroke: transparent; fill: transparent; }
 .plan-items.ghost .plan-item.selected { fill: none; }
+/* An edit scope: the drawing faded, the scope's own elements drawn over it. */
+.scoped-out { opacity: 0.28; }
+.plan-items.ghost.scoped .plan-item.in-scope:not(.selected) { stroke: var(--ink); fill: none; }
+.scope-bar { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 5px 6px 5px 14px; background: var(--accent); color: var(--accent-ink); border-radius: 3px; font-weight: 600; letter-spacing: 0.04em; z-index: 5; }
+.scope-bar button { background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 2px; padding: 3px 10px; font-weight: 600; cursor: pointer; }
+.scope-bar + .hud-hint { top: 50px; }
 .drawing-svg .paper { fill: var(--paper, #fbfaf7); }
 .view-problem { position: absolute; top: 48px; left: 16px; }
 .tree-row { display: flex; align-items: center; }

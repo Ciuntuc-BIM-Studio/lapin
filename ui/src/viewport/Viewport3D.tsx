@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useLooks, type Look } from '../platform/looks';
+import { pickable } from '../platform/scope';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { NodeDto, RenderItem } from '../engine/protocol';
@@ -149,7 +150,7 @@ export function Viewport3D() {
 
   clickRef.current = ({ nodeId, ground, add }) => {
     const g = tool?.gesture;
-    if (!g) { select(nodeId, add); return; }
+    if (!g) { select(nodeId && pickable(useSession.getState().nodes.get(nodeId)) ? nodeId : null, add); return; }
     if (!ground) return;
     if (g.kind === 'point') { void completeTool(tool!, { points: [ground] }); return; }
     if (g.kind === 'twoPoints' || g.kind === 'rectangle') {

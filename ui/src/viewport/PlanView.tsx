@@ -17,6 +17,7 @@ import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { boxIds, pickAt } from './planPick';
+import { pickable, useScope } from '../platform/scope';
 import { pairs, toMm } from './snap';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
@@ -136,8 +137,11 @@ export function PlanView() {
 
   // ─── Picking ─────────────────────────────────────────────────────────────
 
+  // In an edit scope only its elements are picked (the rest stays to snap to).
+  const scope = useScope((s) => s.scope);
+  const pickItems = useMemo(() => (scope ? items.filter((r) => pickable(nodes.get(r.nodeId))) : items), [scope, items, nodes]);
   const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null =>
-    pickAt(p, 6 / view.scale, items, nodes, drawing?.marks, types), [items, nodes, view.scale, drawing]);
+    pickAt(p, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks, types), [pickItems, nodes, view.scale, drawing, scope]);
 
   // ─── Gestures ────────────────────────────────────────────────────────────
 
@@ -282,7 +286,7 @@ export function PlanView() {
   /** What a selection box takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
   const selectBox = (b: { a: Vec2; b: Vec2 }, add: boolean) => {
     const p = toWorld(b.a.x, b.a.y), q = toWorld(b.b.x, b.b.y);
-    const ids = boxIds(p, q, b.b.x >= b.a.x, items, nodes, drawing?.marks);
+    const ids = boxIds(p, q, b.b.x >= b.a.x, pickItems, nodes, scope ? undefined : drawing?.marks);
     const before = add || useCad.getState().step ? useUi.getState().selected : [];
     const next = [...new Set([...before, ...ids])];
     useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
@@ -425,12 +429,12 @@ export function PlanView() {
           if (n) void editDimension(n.id);
         }}>
         <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>
-        {drawing && planDrawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} />}
-        <g className={`plan-items${drawing && planDrawing ? ' ghost' : ''}`}>
+        {drawing && planDrawing && <g className={scope ? 'scoped-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} /></g>}
+        <g className={`plan-items${drawing && planDrawing ? ' ghost' : ''}${scope ? ' scoped' : ''}`}>
           {drawn.map(({ key, r, kind, d, closed, text, at }) => kind === 'label' ? (
             <text key={key} x={at.x} y={at.y} className="plan-label">{text}</text>
           ) : (
-            <path key={key} d={d} className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${selected.includes(r.nodeId) ? ' selected' : ''}`} />
+            <path key={key} d={d} className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${selected.includes(r.nodeId) ? ' selected' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}`} />
           ))}
         </g>
         {(drawing?.marks ?? []).filter((m) => selected.includes(m.id)).map((m) => (

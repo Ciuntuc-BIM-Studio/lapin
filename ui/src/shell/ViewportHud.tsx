@@ -4,6 +4,7 @@ import { useUi } from '../app/store';
 import { activate, findTool, hotbarTools } from '../platform/modules';
 import { activeStorey, useSession } from '../engine/session';
 import { num } from '../engine/model';
+import { ScopeBar } from './ScopeBar';
 
 const level = (e: number) => `${e >= 0 ? '+' : '−'}${Math.abs(e).toFixed(2)}`;
 
@@ -24,6 +25,7 @@ export function ViewportHud() {
         <span className="eyebrow">View</span><span>{view === 'plan' ? 'PLAN' : view === 'drawing' ? 'DRAWING' : view === 'sheet' ? 'SHEET' : view === 'schedule' ? 'SCHEDULE' : '3D · SHADED'}</span>
         <span className="eyebrow">Snap</span><span>POINTS · GRID 0.05 m</span>
       </div>
+      <ScopeBar />
       {hint && <div className="hud-hint">{hint}</div>}
       <div className="hotbar" role="toolbar" aria-label="Quick tools">
         {tools.map((t, i) => (
