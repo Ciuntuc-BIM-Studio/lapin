@@ -69,7 +69,10 @@ public static class Views
             {
                 if (m.Get(view.Str("storeyId") ?? "") is not { Class: IfcClass.BuildingStorey }) return (null, "The plan's storey is gone.");
                 var r = Range(m, view);
-                return (ViewSpec.Plan(r.Cut, ViewRanges.Bands(r), hidden), null);
+                var bands = ViewRanges.Bands(r);
+                // A view style may leave out what lies above the cut (its overhead).
+                if (!ViewStyles.Of(m, view).Overhead) bands = bands with { Above = 0 };
+                return (ViewSpec.Plan(r.Cut, bands, hidden), null);
             }
             case "section":
             {
@@ -181,6 +184,9 @@ public static class Views
         var filters = q.Services.All<IViewElementFilter>();
         var plan = view.Str("kind") is "plan" or null;
         var display = StoreyDisplay.Of(view);
+        // The view's style: which layers of layered elements draw (all, all but the finishes, the cores).
+        var style = ViewStyles.Of(m, view);
+        var bandCache = new Dictionary<string, IReadOnlyList<LayerBand>?>();
         foreach (var e in m.Entities)
         {
             if (e.Class is IfcClass.OpeningElement || hiddenElements.Contains(e.Id)) continue;
@@ -189,7 +195,8 @@ public static class Views
             if (filters.Select(f => f.For(m, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
             if (GraphicsSets.Hides(viewGraphics, e)) continue;
             if (q.Geometry(e.Id) is not { } g) continue;
-            foreach (var p in g.Parts) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material));
+            foreach (var p in g.Parts)
+                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material));
             if (view.Str("kind") == "plan" && Generator.SymbolicInPlan.Contains(e.Class) && g.Plan != null && Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey)
                 foreach (var item in g.Plan)
                 {
@@ -207,7 +214,9 @@ public static class Views
         var (spec, problem) = Spec(q.Model, view, parts);
         if (spec == null) return (null, null, problem);
         var keys = new Dictionary<string, string?>();
-        return (Generator.Draw(parts, spec, symbols, p => SeamKeyOf(q.Model, p.Material, p.Class, keys)), spec, null);
+        // Without the view style's joins, a surface goes on only within its own element.
+        var joins = ViewStyles.Of(q.Model, view).Joins;
+        return (Generator.Draw(parts, spec, symbols, p => SeamKeyOf(q.Model, p.Material, p.Class, keys) is { } k ? (joins ? k : k + "\u0000" + p.Element) : null), spec, null);
     }
 
     /// <summary>
@@ -247,7 +256,7 @@ public static class Views
         IReadOnlyList<LayerRef>? LayersOf(string element) => layerSets.TryGetValue(element, out var ls) ? ls
             : layerSets[element] = LayerSets.BandsOf(m, element)?.Select(b => new LayerRef(b.Material, b.Name, Math.Abs(b.To - b.From))).ToList();
         var materials = MaterialDrawing.Apply(drawing, p => Resolved(p.Material), LayersOf,
-            l => l.Thickness < MaterialGraphics.MembraneThickness || Resolved(l.Material)?.Membrane == true);
+            l => l.Thickness < MaterialGraphics.MembraneThickness || Resolved(l.Material)?.Membrane == true, joins: ViewStyles.Of(m, view).Joins);
         var project = Spatial.Project(m);
         var graphics = GraphicsSets.Of(m, view);
         var categories = (graphics?["categories"] as JsonObject)?.Select(c => (c.Key, G: CategoryGraphics.From(c.Value))).Where(x => x.G != null).ToDictionary(x => x.Key, x => x.G!);

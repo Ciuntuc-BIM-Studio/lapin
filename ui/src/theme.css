@@ -559,3 +559,8 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .plan-storeys-list { list-style: none; margin: 8px 0 4px; padding: 0; }
 .plan-storeys-list li { padding: 2px 0; }
 .plan-storeys-list li.own { font-weight: 500; }
+
+/* View settings and view styles (docs/view-styles.md) */
+.view-settings .fields dd { display: flex; align-items: center; gap: 6px; }
+.view-settings .eyebrow { margin: 12px 0 2px; }
+.view-styles td input:not([type]) { width: 100%; }

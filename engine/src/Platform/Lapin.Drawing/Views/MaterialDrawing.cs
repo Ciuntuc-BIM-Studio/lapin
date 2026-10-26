@@ -186,8 +186,11 @@ public static class MaterialDrawing
     /// <param name="graphics">A polygon's material graphics, or null when it has none.</param>
     /// <param name="layers">An element's layers in order, when it has a layer set.</param>
     /// <param name="membrane">Whether a layer draws as a membrane.</param>
-    public static MaterialDrawingResult Apply(ViewDrawing d, Func<DPolygon, ResolvedMaterial?> graphics, Func<string, IReadOnlyList<LayerRef>?>? layers = null, Func<LayerRef, bool>? membrane = null)
+    /// <param name="joins">Whether one material goes on from one element into another without a line (a view style may turn it off).</param>
+    public static MaterialDrawingResult Apply(ViewDrawing d, Func<DPolygon, ResolvedMaterial?> graphics, Func<string, IReadOnlyList<LayerRef>?>? layers = null, Func<LayerRef, bool>? membrane = null, bool joins = true)
     {
+        // Without joins each element's bands join only its own: the key carries the element.
+        string? Key(DPolygon p, ResolvedMaterial? g) => JoinKey(p, g) is { } k ? (joins ? k : k + "\u0000" + p.Element) : null;
         var o = new MaterialDrawingResult();
         var named = d.Cuts.Select((p, i) => (P: p, I: i, G: graphics(p))).ToList();
         // A band's layer in its element's set: by its part's key (layer:<index>), else the first layer of its material.
@@ -220,7 +223,7 @@ public static class MaterialDrawing
         // Edges of every band, by join key.
         var index = new SegIndex<(int Poly, string Key, int Side)>();
         foreach (var (p, i, g) in named)
-            if (!membraneBands.Contains(i) && JoinKey(p, g) is { } key)
+            if (!membraneBands.Contains(i) && Key(p, g) is { } key)
             {
                 var es = Edges(p);
                 for (var s = 0; s < es.Count; s++) index.Add(es[s], (i, key, s));
@@ -230,7 +233,7 @@ public static class MaterialDrawing
         var seamSegs = new SegIndex<bool>();
         foreach (var (p, i, g) in named)
         {
-            if (membraneBands.Contains(i) || JoinKey(p, g) is not { } key) continue;
+            if (membraneBands.Contains(i) || Key(p, g) is not { } key) continue;
             var es = Edges(p);
             for (var s = 0; s < es.Count; s++)
                 foreach (var c in index.Near(es[s]))

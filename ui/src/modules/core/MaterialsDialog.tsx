@@ -13,6 +13,9 @@ import { execute, query, useSession } from '../../engine/session';
 import { HatchSwatch } from './HatchSwatch';
 
 type Kind = 'section' | 'plan' | 'elevation';
+/** IfcMaterial.Category as the interface offers it (Materials.Categories in the engine). */
+const MATERIAL_CATEGORIES = ['Structure', 'Finish', 'Insulation', 'Membrane', 'Other'];
+
 type Resolved = { hatch: string | null; hatchScale: number; fill: string | null; hatchPen?: number; hatchAngle?: number; hatchAlign?: 'view' | 'layer'; membrane: boolean; drawJoints: boolean; source: 'own' | 'name' };
 type Own = { hatch?: string | null; hatchScale?: number; fill?: string | null; hatchPen?: number; hatchAngle?: number; hatchAlign?: 'view' | 'layer' };
 const TEXTURES = ['none', 'brick', 'brick-end', 'concrete', 'wood', 'wood-end', 'plaster', 'stone', 'metal', 'insulation', 'earth', 'tiles'];
@@ -89,6 +92,11 @@ export function MaterialsDialog() {
                   <input key={m.id + m.name} defaultValue={m.name} onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== m.name && update({ name: e.target.value.trim() })} /></label>
                 <label className="field-line"><span className="eyebrow">Colour (3D)</span>
                   <input type="color" value={m.color} onChange={(e) => update({ color: e.target.value })} /></label>
+                <label className="field-line" title="What the material is in a layered element (IfcMaterial.Category). A view style without finishes leaves out the layers of finish materials; without a category, plaster, render, paint, tiles, boards and floor coverings count as finishes."><span className="eyebrow">Category</span>
+                  <select value={String(useSession.getState().nodes.get(m.id)?.props.category ?? '')} onChange={(e) => update({ category: e.target.value || null })}>
+                    <option value="">by its name</option>
+                    {MATERIAL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select></label>
               </div>
               <div className="row">
                 {([['texture', 'Faces (3D)', 'guessed'], ['textureEnd', 'Ends, cut across (3D)', 'as the faces (brick: its holes)'], ['textureTop', 'Top and bottom (3D)', 'as the ends']] as const).map(([key, label, dflt]) => (
@@ -101,7 +109,7 @@ export function MaterialsDialog() {
               </div>
               <div className="row">
                 <label className="check"><input type="checkbox" checked={m.section.membrane} onChange={(e) => update({ membrane: e.target.checked })} /> Membrane (a dashed line, not a band)</label>
-                <label className="check"><input type="checkbox" checked={m.section.drawJoints} onChange={(e) => update({ drawJoints: e.target.checked })} /> Draw joints</label>
+                <label className="check" title="Off (the default): where this material goes on from one element into another (two walls' cores, footings round a corner) no line is drawn between them. On: the joint is drawn."><input type="checkbox" checked={m.section.drawJoints} onChange={(e) => update({ drawJoints: e.target.checked })} /> Draw joints</label>
               </div>
               <table className="material-views">
                 <thead><tr><th /><th>Look</th><th>Hatch</th><th>Scale</th><th>Angle</th><th title="Where the hatch starts and turns: from the view's origin, or from each band it fills (along the band's longest edge)">Align</th><th>Fill</th><th>Pen</th></tr></thead>

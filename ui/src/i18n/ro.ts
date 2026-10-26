@@ -11,7 +11,10 @@ export const RO: Record<string, string> = {
   // Storeys shown in a plan
   'Storeys shown': 'Etaje afișate', 'Show': 'Arată', 'Others halftone': 'Celelalte în halftone', 'its own storey only': 'doar etajul propriu',
   'its own and the storeys ticked': 'etajul propriu și etajele bifate', 'every storey': 'toate etajele',
-  // Drafting properties
+  // View settings and styles
+  'View settings': 'Setările vederii', 'View styles': 'Stiluri de vedere', 'Join materials': 'Unește materialele',
+  'Cut plane and depth': 'Planul de secționare și adâncimea', 'View range…': 'Intervalul vederii…', 'Edit styles…': 'Editează stilurile…',
+  'every layer': 'toate straturile', 'without finishes': 'fără finisaje', 'the core only': 'doar miezul', 'New style': 'Stil nou',   'by its name': 'după nume', 'Finish': 'Finisaj', 'Insulation': 'Izolație', 'Membrane': 'Membrană',   // Drafting properties
   'Drafting': 'Desen', 'by layer': 'după layer', 'Line type': 'Tip de linie', 'Start': 'Început', 'End': 'Sfârșit', 'Centre': 'Centru', 'Radius': 'Rază', 'Diameter': 'Diametru', 'Circumference': 'Circumferință', 'Vertices': 'Vârfuri', 'Closed': 'Închis', 'Start angle': 'Unghi de început', 'End angle': 'Unghi de sfârșit', 'Pattern': 'Model', 'Position': 'Poziție', 'Tagged element': 'Element etichetat', 'Field': 'Câmp',
   'Start screen': 'Ecranul de start', 'Commands…': 'Comenzi…', 'Theme': 'Temă', 'Undo': 'Anulează', 'Redo': 'Refă',
   'Help, report an issue, community': 'Ajutor, raportează o problemă, comunitate', 'Report an issue': 'Raportează o problemă', 'Report an issue…': 'Raportează o problemă…',

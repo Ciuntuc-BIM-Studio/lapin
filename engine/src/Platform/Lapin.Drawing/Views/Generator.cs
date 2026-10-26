@@ -109,6 +109,9 @@ public static class Generator
             foreach (var loop in a.Loops)
                 for (var i = 0; i < loop.Length; i++) lines.Add(new DLine(loop[i], loop[(i + 1) % loop.Length], LineRole.Cut, p.Element, p.Class));
         }
+        // A cut line another part's corner stands on is split there: where a core running through meets the end of one
+        // stopping at it, only the shared stretch is inside the material, and only that stretch may go (MaterialDrawing).
+        lines = SplitAtCorners(lines, cuts);
         foreach (var s in seen)
         {
             var p = primary[s.Owner];
@@ -144,6 +147,63 @@ public static class Generator
         var cutBox = Box(cuts.SelectMany(c => c.Loops).SelectMany(l => l));
         var modelBox = Box(primary.SelectMany(p => p.Solid.Vertices).Select(v.Frame.Map));
         return new ViewDrawing(cuts, DropStray(lines, cutBox, modelBox));
+    }
+
+    /// <summary>
+    /// The cut lines split at every corner of a cut area that stands on them
+    /// (a T junction): a long side shared only in part with a neighbour becomes
+    /// the stretch it shares and the stretches it does not, so the shared one
+    /// can be left out where the material goes on. Lines of other roles are
+    /// kept as they are.
+    /// </summary>
+    public static List<DLine> SplitAtCorners(List<DLine> lines, IReadOnlyList<DPolygon> cuts, double tol = 1e-6)
+    {
+        const double Cell = 0.5;
+        var grid = new Dictionary<(long, long), List<Vec2>>();
+        static (long, long) Key(Vec2 p) => ((long)Math.Floor(p.X / Cell), (long)Math.Floor(p.Y / Cell));
+        foreach (var c in cuts)
+            foreach (var loop in c.Loops)
+                foreach (var v in loop)
+                {
+                    var k = Key(v);
+                    (grid.TryGetValue(k, out var l) ? l : grid[k] = []).Add(v);
+                }
+        if (grid.Count == 0) return lines;
+        var result = new List<DLine>(lines.Count);
+        var at = new List<double>();
+        foreach (var line in lines)
+        {
+            var d = line.B - line.A;
+            var len2 = d.X * d.X + d.Y * d.Y;
+            if (line.Role != LineRole.Cut || len2 < tol * tol) { result.Add(line); continue; }
+            at.Clear();
+            var (lo, hi) = (Key(new Vec2(Math.Min(line.A.X, line.B.X) - tol, Math.Min(line.A.Y, line.B.Y) - tol)), Key(new Vec2(Math.Max(line.A.X, line.B.X) + tol, Math.Max(line.A.Y, line.B.Y) + tol)));
+            var len = Math.Sqrt(len2);
+            for (var x = lo.Item1; x <= hi.Item1; x++)
+                for (var y = lo.Item2; y <= hi.Item2; y++)
+                {
+                    if (!grid.TryGetValue((x, y), out var pts)) continue;
+                    foreach (var v in pts)
+                    {
+                        var w = v - line.A;
+                        var t = (w.X * d.X + w.Y * d.Y) / len2;
+                        if (t * len <= tol || (1 - t) * len <= tol) continue;
+                        var off = Math.Abs(w.X * d.Y - w.Y * d.X) / len;
+                        if (off <= tol) at.Add(t);
+                    }
+                }
+            if (at.Count == 0) { result.Add(line); continue; }
+            at.Sort();
+            var from = 0.0;
+            foreach (var t in at)
+            {
+                if ((t - from) * len <= tol) continue;
+                result.Add(line with { A = line.A + d * from, B = line.A + d * t });
+                from = t;
+            }
+            result.Add(line with { A = line.A + d * from });
+        }
+        return result;
     }
 
     /// <summary>

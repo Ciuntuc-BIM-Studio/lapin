@@ -44,6 +44,7 @@ public sealed class CoreModule : ILapinModule
         CutOrder.Register(r);
         StoreyMove.Register(r);
         Links.Register(r);
+        ViewStyles.Register(r);
 
         r.Command("storey.create", "New storey", (ctx, a) =>
         {
@@ -293,6 +294,24 @@ public static class Materials
         var m = new Entity(edit.NewId(), IfcClass.Material, name, new JsonObject { ["color"] = color ?? DefaultColor(name) });
         edit.Add(m);
         return m;
+    }
+
+    /// <summary>The material categories the interface offers (IfcMaterial.Category; any other text is kept as given).</summary>
+    public static readonly string[] Categories = ["Structure", "Finish", "Insulation", "Membrane", "Other"];
+
+    /// <summary>
+    /// Whether a material is a finish, which a view style without finishes
+    /// leaves out: its category says so; a material without a category is
+    /// one when its name is a finish's (plaster, render, paint, tiles, boards,
+    /// floor coverings, in English or Romanian).
+    /// </summary>
+    public static bool IsFinish(Entity material)
+    {
+        if (material.Str("category") is { Length: > 0 } c) return string.Equals(c.Trim(), "Finish", StringComparison.OrdinalIgnoreCase);
+        var n = material.Name.ToLowerInvariant();
+        string[] finishes = ["plaster", "render", "paint", "tile", "gypsum", "plasterboard", "drywall", "parquet", "laminate", "carpet", "skim", "finish",
+            "tencu", "glet", "vopsea", "faian", "gresie", "parchet", "rigips", "gips-carton", "finisaj", "zugr"];
+        return finishes.Any(n.Contains);
     }
 
     public static string ColorOf(IModelView m, string? materialId) =>

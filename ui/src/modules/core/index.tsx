@@ -1,7 +1,7 @@
 /** Core: always there — selecting, measuring, the views and how they look, materials and drafting standards. */
 
 import { StoreySection } from './StoreySection';
-import { AppWindow, Box, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2, CloudFog, Link2, History, Layers } from 'lucide-react';
+import { AppWindow, Box, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2, CloudFog, Link2, History, Layers, SlidersHorizontal } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -24,7 +24,8 @@ import { CutOrderDialog } from './CutOrderDialog';
 import { MoveToStoreyDialog } from './MoveToStoreyDialog';
 import { LinksDialog, LinksLook } from './LinksDialog';
 import { VersionsDialog } from './VersionsDialog';
-import { PlanStoreysDialog, PlanStoreysSection } from './PlanStoreys';
+import { PlanStoreysDialog } from './PlanStoreys';
+import { ViewSettingsDialog, ViewSettingsSection, ViewStylesDialog } from './ViewSettings';
 
 /** Create Similar: the selected element's tool, set up like it. */
 function createSimilar() {
@@ -92,6 +93,7 @@ const core: LapinModule = {
         { id: 'manage.objectStyles', label: 'Object styles', icon: PenTool, run: () => useUi.setState({ dialog: 'objectStyles' }) },
         { id: 'manage.location', label: 'Location', icon: MapPin, run: () => useUi.setState({ dialog: 'location' }) },
         { id: 'manage.cutOrder', label: 'Cut order', icon: Scissors, run: () => useUi.setState({ dialog: 'cutOrder' }) },
+        { id: 'manage.viewStyles', label: 'View styles', icon: SlidersHorizontal, run: () => useUi.setState({ dialog: 'viewStyles' }) },
       ] },
       { label: 'Files', tools: [
         { id: 'manage.links', label: 'Links', icon: Link2, run: () => useUi.setState({ dialog: 'links' }) },
@@ -117,6 +119,7 @@ const core: LapinModule = {
       { label: 'Graphics', tools: [
         { id: 'view.layers', label: 'Visibility', icon: Layers3, shortcut: 'VV', run: () => useUi.setState({ dialog: 'visibility' }) },
         { id: 'view.range', label: 'View range', icon: Ruler, run: () => useUi.setState({ dialog: 'viewRange' }) },
+        { id: 'view.settings', label: 'View settings', icon: SlidersHorizontal, run: () => useUi.setState({ dialog: 'viewSettings' }) },
         { id: 'view.storeys', label: 'Storeys shown', icon: Layers, run: () => useUi.setState({ dialog: 'planStoreys' }) },
         { id: 'view.keyPlan', label: 'Key plan', icon: Compass, run: () => useUi.setState((s) => ({ keyPlan: !s.keyPlan })) },
         { id: 'view.split', label: 'Split', icon: SquareSplitHorizontal, run: () => { const s = useUi.getState(); if (s.panes.length > 1) closePane(1); else splitPane('row'); } },
@@ -128,12 +131,12 @@ const core: LapinModule = {
       ] },
     ],
   }],
-  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog },
+  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection },
     { id: 'storeyLevels', label: 'Levels', classes: ['IfcBuildingStorey'], component: StoreySection, replacesFields: () => true },
-    { id: 'planStoreys', label: 'Storeys shown', classes: ['LapinView'], component: PlanStoreysSection },
+    { id: 'viewSettings', label: 'View settings', classes: ['LapinView'], component: ViewSettingsSection },
   ],
   hotbar: [
     { id: 'select', label: 'Select', icon: MousePointer2, shortcut: 'Esc', run: () => setTool(null) },

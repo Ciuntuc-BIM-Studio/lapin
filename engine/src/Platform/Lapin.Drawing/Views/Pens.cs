@@ -208,23 +208,26 @@ public static class Pens
 
     /// <summary>
     /// The cut lines that run between two bands of one element (a wall's
-    /// layers, a floor's): a line on the edge of another cut polygon of the same
-    /// element. They draw with the separation pen; the element's contour keeps the cut pen.
+    /// layers, a floor's), or of two joined elements of one class (a footing's
+    /// core against the next one's waterproofing round a corner): a line on the
+    /// edge of another cut polygon of the same class. They draw with the
+    /// separation pen; the contour keeps the cut pen.
     /// </summary>
     public static HashSet<int> Separations(ViewDrawing d)
     {
         var o = new HashSet<int>();
-        // Each element's cut edges, by polygon.
+        // The cut edges of each class's elements, by polygon: the layers of one element, and of the elements of its kind
+        // it is joined to (a footing's core running on past the end of another's, against that one's waterproofing).
         var edges = new Dictionary<string, List<(int Poly, Vec2 A, Vec2 B)>>();
         for (var i = 0; i < d.Cuts.Count; i++)
             foreach (var loop in d.Cuts[i].Loops)
                 for (var k = 0; k < loop.Length; k++)
-                    (edges.TryGetValue(d.Cuts[i].Element, out var l) ? l : edges[d.Cuts[i].Element] = []).Add((i, loop[k], loop[(k + 1) % loop.Length]));
+                    (edges.TryGetValue(d.Cuts[i].Class, out var l) ? l : edges[d.Cuts[i].Class] = []).Add((i, loop[k], loop[(k + 1) % loop.Length]));
         // A line of a polygon: its own polygon is the one whose edge holds it; the first found.
         for (var i = 0; i < d.Lines.Count; i++)
         {
             var l = d.Lines[i];
-            if (l.Role != LineRole.Cut || !edges.TryGetValue(l.Element, out var es)) continue;
+            if (l.Role != LineRole.Cut || !edges.TryGetValue(l.Class, out var es)) continue;
             var on = new HashSet<int>();
             foreach (var (poly, a, b) in es) if (OnEdge(l.A, l.B, a, b)) on.Add(poly);
             if (on.Count >= 2) o.Add(i);
