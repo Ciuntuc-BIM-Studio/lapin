@@ -1,13 +1,13 @@
 /** Structure: columns, beams, strip and pad foundations (the engine's structure module). */
 
-import { Grid3x3, Layers3 } from 'lucide-react';
+import { ArrowLeftRight, CornerDownRight, Grid3x3, Layers3, Slash } from 'lucide-react';
 import { BeamIcon, ColumnIcon, CurvedBeamIcon, PadFootingIcon, StripFootingIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef } from '../../platform/module';
 import { flipAcross, pathGrips, pathRef, pt } from '../../viewport/gripKit';
 import { arcOf } from '../../viewport/arc';
 import { usageOf } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
-import { useUi } from '../../app/store';
+import { notify, useUi } from '../../app/store';
 import { ensureStorey, execute, useSession } from '../../engine/session';
 import { StructureSection } from './StructureSection';
 import { StructureTypesDialog } from './StructureTypesDialog';
@@ -49,6 +49,20 @@ const atGrid: ToolDef = {
   id: 'structure.columnsAtGrid', label: 'Columns at grid', icon: Grid3x3,
   run: () => void ensureStorey().then((storeyId) => storeyId && execute('structure.addColumnsAtGrid', { storeyId })),
 };
+/** The corners of the strip footings or beams selected: mitred, butt, or the other one through. Round an L corner a footing's outer layers are always mitred. */
+const restyle = (label: string, id: string, icon: ToolDef['icon'], args: Record<string, unknown>): ToolDef => ({
+  id, label, icon,
+  run: () => {
+    const nodes = useSession.getState().nodes;
+    const ids = useUi.getState().selected.filter((x) => ['IfcFooting', 'IfcBeam'].includes(nodes.get(x)?.type ?? ''));
+    if (!ids.length) { notify('Select the strip footings or beams whose corners to change.'); return; }
+    void execute('structure.restyleJoins', { ids, ...args });
+  },
+});
+const mitre = restyle('Mitre', 'structure.mitre', Slash, { style: 'mitre' });
+const butt = restyle('Butt', 'structure.butt', CornerDownRight, { style: 'butt' });
+const swap = restyle('Swap', 'structure.swap', ArrowLeftRight, { swap: true });
+
 const types: ToolDef = { id: 'structure.types', label: 'Structure types', icon: Layers3, run: () => useUi.setState({ dialog: 'structureTypes' }) };
 
 /**
@@ -87,6 +101,7 @@ const structure: LapinModule = {
     groups: [
       { label: 'Frame', tools: [column, beam], small: [curvedBeam, atGrid] },
       { label: 'Foundation', tools: [strip, pad], small: [curvedStrip] },
+      { label: 'Corners', tools: [mitre, butt, swap] },
       { label: 'Types', tools: [types] },
     ],
   }],

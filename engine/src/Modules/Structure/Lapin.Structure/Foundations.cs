@@ -23,6 +23,51 @@ static class Strips
         return [P(-At(sc, y0), y0), P(length + At(ec, y0), y0), P(length + At(ec, y1), y1), P(-At(sc, y1), y1)];
     }
 
+    /// <summary>The band from <paramref name="y0"/> to <paramref name="y1"/>, each end cut as its own join says, across the body that join was worked out for.</summary>
+    public static Vec2[] Footprint(Vec2 axisStart, Vec2 axisEnd, End? start, End? end, double y0, double y1)
+    {
+        var a = start?.Point ?? axisStart;
+        var b = end?.Point ?? axisEnd;
+        var dir = (b - a).Normalized();
+        var left = dir.Perp;
+        var length = (b - a).Length;
+        static double At(End? e, double y)
+        {
+            if (e is not { } x) return 0;
+            return x.YMax - x.YMin < 1e-12 ? x.Cut.Right : x.Cut.Right + (x.Cut.Left - x.Cut.Right) * (y - x.YMin) / (x.YMax - x.YMin);
+        }
+        Vec2 P(double x, double y) => a + dir * x + left * y;
+        return [P(-At(start, y0), y0), P(length + At(end, y0), y0), P(length + At(end, y1), y1), P(-At(start, y1), y1)];
+    }
+
+    /// <summary>One end as a join leaves it: where the axis stops, the cut there, the body the cut is across, the kind of join.</summary>
+    public readonly record struct End(Vec2 Point, EndCut Cut, double YMin, double YMax, JoinKind Kind);
+
+    /// <summary>
+    /// Each end's join worked out with the bodies <paramref name="frameFor"/>
+    /// gives (all the layers, or the cores only) and the style given (else the
+    /// join's own).
+    /// </summary>
+    public static End?[] Ends(IModelView m, Entity e, IPathElements paths, List<string> problems, Func<Entity, JoinWall?> frameFor, JoinStyle? style = null)
+    {
+        var ends = new End?[2];
+        foreach (var r in Joins.Of(m, e.Id))
+        {
+            if (m.Get(r.Relating) is not { } a || r.Related.Count == 0 || m.Get(r.Related[0]) is not { } b || !paths.IsPath(a.Class) || a.Class != b.Class) continue;
+            if (frameFor(a) is not { } fa || frameFor(b) is not { } fb) continue;
+            WallJoin join;
+            try { join = WallJoins.Compute(fa, fb, new JoinOptions(Priority: 'a', Style: style ?? Joins.StyleOf(r))); }
+            catch (CommandException ex) { problems.Add(ex.Message); continue; }
+            var side = r.Relating == e.Id ? join.A : join.B;
+            var i = side.Connection switch { Connection.AtStart => 0, Connection.AtEnd => 1, _ => -1 };
+            if (i < 0 || ends[i] != null) continue;
+            ends[i] = i == 0
+                ? new End(side.Wall.Start, side.Wall.StartCut ?? EndCut.Square, side.Wall.YMin, side.Wall.YMax, join.Kind)
+                : new End(side.Wall.End, side.Wall.EndCut ?? EndCut.Square, side.Wall.YMin, side.Wall.YMax, join.Kind);
+        }
+        return ends;
+    }
+
     /// <summary>The same band along a curved axis: its ends where the joins put them (along the tangent there), cut across the body.</summary>
     public static List<Vec2> Footprint(PathCurve c, JoinWall f, (Vec2 Point, EndCut Cut)?[] ends, double y0, double y1)
     {
@@ -109,6 +154,17 @@ public static class StripFootings
         return new JoinWall(s, e, bands.Min(b => b.From), bands.Max(b => b.To));
     }
 
+    /// <summary>The stem's core alone, as the cores' joins see it.</summary>
+    static JoinWall? CoreFrame(Entity footing, IModelView m)
+    {
+        var bands = LayerSets.BandsOf(m, footing.Id);
+        var (s, e) = (Joins.Start(footing), Joins.End(footing));
+        if (bands is not { Count: > 0 } || (e - s).Length < 1e-3) return null;
+        var core = bands.FirstOrDefault(b => b.Core);
+        if (core.To - core.From <= 1e-9) core = bands.MaxBy(b => b.To - b.From);
+        return new JoinWall(s, e, core.From, core.To);
+    }
+
     /// <summary>The footing as its joins cut it: centred on the axis, its own width.</summary>
     static JoinWall? FootingFrame(Entity footing, IModelView m)
     {
@@ -145,9 +201,25 @@ public static class StripFootings
         if (Frame(footing, m) is { } stem)
         {
             var ends = paths != null ? Joins.EndsOf(m, footing, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
+            // Round an L corner the layers outside the core go on mitred, whatever the style; the cores join as it says.
+            Strips.End?[]? layered = null, cores = null;
+            if (paths != null && !c.IsArc)
+            {
+                var all = Strips.Ends(m, footing, paths, [], e => Frame(e, m));
+                if (all.Any(x => x is { Kind: JoinKind.L }))
+                {
+                    layered = Strips.Ends(m, footing, paths, [], e => Frame(e, m), JoinStyle.Mitre);
+                    cores = Strips.Ends(m, footing, paths, [], e => CoreFrame(e, m));
+                    for (var k = 0; k < 2; k++)
+                        if (all[k] is not { Kind: JoinKind.L }) { layered[k] = all[k]; cores[k] = all[k]; }
+                }
+            }
+            var coreIndex = LayerSets.BandsOf(m, footing.Id)?.FirstOrDefault(b => b.Core) is { } cb && cb.To - cb.From > 1e-9 ? cb.Index : -1;
             foreach (var (from, to, material, name, index) in Bands(m, footing))
             {
-                var fp = Band(stem, ends, from, to);
+                var fp = layered != null && cores != null
+                    ? Strips.Footprint(stem.Start, stem.End, (index == coreIndex ? cores : layered)[0], (index == coreIndex ? cores : layered)[1], from, to)
+                    : Band(stem, ends, from, to);
                 if (Prism.ExtrudeFootprint(fp, bottom + fh, sh, name) is { } solid) parts.Add(new GeometryPart(name, Materials.ColorOf(m, material), solid, material, $"layer:{index}"));
                 plan.Add(new PlanItem("outline", true, fp));
             }
