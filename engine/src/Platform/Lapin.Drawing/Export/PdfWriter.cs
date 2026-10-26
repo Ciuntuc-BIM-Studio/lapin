@@ -35,7 +35,8 @@ public static class PdfWriter
         // Paper y runs down; PDF's runs up.
         string X(double mm) => F(mm * Pt);
         string Y(double mm) => F((page.H - mm) * Pt);
-        var c = new StringBuilder("1 J 1 j\n");
+        // Round caps and joins, or projecting square caps with mitred joins.
+        var c = new StringBuilder(page.LineCap == "square" ? "2 J 0 j\n" : "1 J 1 j\n");
         foreach (var pen in page.Pens)
         {
             if (pen.Fill != null && pen.Loops.Count > 0)

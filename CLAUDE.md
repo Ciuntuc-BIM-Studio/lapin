@@ -69,4 +69,6 @@ Then (#129): foreign IFC recognised into native elements on import (`docs/spec-i
 
 Then (26.10.2026, #130): native DXF import (`docs/dxf-import.md`): layers, shapes, hatches with the file's patterns, texts, linear dimensions, blocks exploded; into sections and elevations on the view's plane, mirrored when the view looks towards −X or −Y; `JOIN` welds lines into polylines.
 
+Then (#131) the testers' reports of 21–23.10 resolved: the material picker, separation pens, line caps, textures per face, project units (metric and imperial), hatch origins; the reports script is `deploy/feedback/reports.sh`.
+
 Next: the user reviews `docs/decisions-pending.md` (#1–111). Open items needing the user: signing and notarization, Windows (manifold), and what the review changes. Milestones are in `docs/plan.md`.

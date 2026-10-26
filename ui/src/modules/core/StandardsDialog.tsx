@@ -10,7 +10,7 @@ import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[] };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string };
 type Col = { key: string; label: string; kind: 'text' | 'mm' | 'number' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
@@ -22,7 +22,7 @@ const TABS: Tab[] = [
   { id: 'dim', label: 'Dimensions', list: 'dimStyles', fresh: { name: 'Dimension' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'textStyle', label: 'Text', kind: 'style' }, { key: 'arrow', label: 'Arrow', kind: 'choice', choices: ['tick', 'arrow', 'dot', 'none'] },
     { key: 'arrowSize', label: 'Arrow mm', kind: 'mm' }, { key: 'extGap', label: 'Gap mm', kind: 'mm' }, { key: 'extOver', label: 'Over mm', kind: 'mm' },
-    { key: 'placement', label: 'Value', kind: 'choice', choices: ['above', 'centered', 'below'] }, { key: 'unit', label: 'Unit', kind: 'choice', choices: ['m', 'cm', 'mm'] },
+    { key: 'placement', label: 'Value', kind: 'choice', choices: ['above', 'centered', 'below'] }, { key: 'unit', label: 'Unit', kind: 'choice', choices: ['m', 'cm', 'mm', 'ft-in', 'in'] },
     { key: 'precision', label: 'Decimals', kind: 'number' }] },
   { id: 'axis', label: 'Grid axes', list: 'axisStyles', fresh: { name: 'Axis' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'textStyle', label: 'Text', kind: 'style' }, { key: 'bubble', label: 'Bubble', kind: 'choice', choices: ['circle', 'square'] },
@@ -39,6 +39,7 @@ export function StandardsDialog() {
   const [book, setBook] = useState<Book | null>(null);
   const [tab, setTab] = useState<Tab>(TABS[0]);
   const [group, setGroup] = useState('');
+  const [project, setProject] = useState(false);
   useEffect(() => { void query<Book>('standards.get').then((b) => b && setBook(b)); }, [nodes]);
   if (!book) return null;
   const set = (entry: Record<string, unknown>, extra: Record<string, unknown> = {}) => void execute('standards.set', { kind: tab.id, entry, ...extra });
@@ -67,6 +68,18 @@ export function StandardsDialog() {
   };
 
   const rows = book[tab.list] as Entry[];
+  const options = (
+    <dl className="fields standards-options">
+      <dt title="Lengths are shown and typed in this unit everywhere; the engine keeps metres">Units</dt>
+      <dd><select value={String(book.units ?? 'mm')} onChange={(e) => void execute('standards.options', { units: e.target.value })}>
+        {[['mm', 'millimetres'], ['cm', 'centimetres'], ['m', 'metres'], ['ft-in', 'feet and inches (12\'-3 1/2")'], ['in', 'inches']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select></dd>
+      <dt title="How lines of true weight end and meet, on screen and on paper: round, or square caps with mitred corners">Line ends</dt>
+      <dd><select value={String(book.lineCap ?? 'round')} onChange={(e) => void execute('standards.options', { lineCap: e.target.value })}>
+        <option value="round">round</option><option value="square">square (mitred)</option>
+      </select></dd>
+    </dl>
+  );
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Drafting standards">
       <div className="dialog wide">
@@ -76,8 +89,10 @@ export function StandardsDialog() {
         </header>
         <div className="dialog-body">
           <div className="tabs-inline">
-            {TABS.map((t) => <button key={t.id} type="button" className={`tab-chip${t.id === tab.id ? ' on' : ''}`} onClick={() => setTab(t)}>{t.label}</button>)}
+            {TABS.map((t) => <button key={t.id} type="button" className={`tab-chip${t.id === tab.id ? ' on' : ''}`} onClick={() => { setTab(t); setProject(false); }}>{t.label}</button>)}
+            <button type="button" className={`tab-chip${project ? ' on' : ''}`} onClick={() => setProject(true)}>Project</button>
           </div>
+          {project ? options : <>
           <table className="standards-table">
             <thead><tr>{tab.id === 'axis' && <th title="New axes and the BIM grids use it">Default</th>}{tab.cols.map((c) => <th key={c.key}>{c.label}</th>)}<th /></tr></thead>
             <tbody>
@@ -106,6 +121,7 @@ export function StandardsDialog() {
               </>
             )}
           </div>
+          </>}
           {error && <p className="error-text" role="alert">{error}</p>}
         </div>
       </div>

@@ -12,6 +12,7 @@ type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
 export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPerMetre }: { drawing: DrawingDto; toScreen: ToScreen; pxPerMetre: number }) {
   // Pixels per paper millimetre: a paper mm is scale/1000 m of the model.
   const pxPerMm = pxPerMetre * (drawing.scale ?? 100) / 1000;
+  const cap = drawing.lineCap === 'square' ? 'square' : 'round';
   const paths = useMemo(() => drawing.pens.map((p, i) => {
     let d = '';
     const pt = (x: number, y: number) => { const s = toScreen({ x, y }); return `${s.x.toFixed(1)} ${s.y.toFixed(1)}`; };
@@ -46,7 +47,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
     }
     return (
       <path key={i} d={d} className={`pen pen-${p.layer.toLowerCase()}`} fill={p.fill ?? 'none'} fillRule="evenodd"
-        stroke={p.stroke ?? 'none'} strokeWidth={width} strokeLinecap="round"
+        stroke={p.stroke ?? 'none'} strokeWidth={width} strokeLinecap={cap} strokeLinejoin={cap === 'square' ? 'miter' : 'round'}
         strokeDasharray={p.dash ? p.dash.map((v) => Math.max(1, Math.min(v * pxPerMm, v * 8)).toFixed(1)).join(' ') : undefined} />
     );
   }), [drawing, toScreen, pxPerMm]);

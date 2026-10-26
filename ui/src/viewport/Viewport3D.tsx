@@ -16,7 +16,7 @@ import { select, setTool, useUi } from '../app/store';
 import { findTool } from '../platform/modules';
 import type { Vec2 } from '../platform/module';
 import { completeTool } from './tools';
-import { boxUv, textureFor, textureOf } from './textures';
+import { boxUv, splitByFace, textureFor, textureOf, type Face, type TextureKind } from './textures';
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
@@ -43,20 +43,28 @@ function meshOf(item: RenderItem): THREE.Group {
   const nodes = useSession.getState().nodes;
   const add = (positions: Float32Array, normals: Float32Array, indices: Int32Array, edges: Float32Array, color: string, material?: string | null) => {
     if (positions.length) {
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      if (normals.length === positions.length) g.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-      else g.computeVertexNormals();
-      g.setIndex(new THREE.BufferAttribute(new Uint32Array(indices.buffer, indices.byteOffset, indices.length), 1));
-      // The material's texture, tinted by its colour, laid on in metres.
-      const kind = material ? textureOf(nodes.get(material)) : null;
-      if (kind) boxUv(g, kind);
-      const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
-        color: kind ? 0xffffff : new THREE.Color(color), map: kind ? textureFor(kind, color) : null,
-        roughness: kind === 'metal' ? 0.45 : 0.85, metalness: kind === 'metal' ? 0.3 : 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
-      }));
-      mesh.userData.nodeId = item.nodeId;
-      group.add(mesh);
+      const mat = material ? nodes.get(material) : undefined;
+      const kinds: Record<Face, TextureKind | null> = { side: textureOf(mat, 'side'), end: textureOf(mat, 'end'), top: textureOf(mat, 'top') };
+      const all = new Uint32Array(indices.buffer, indices.byteOffset, indices.length);
+      // One mesh, or one per face when the ends or the top look different (a brick wall's cut ends).
+      const faces = kinds.end !== kinds.side || kinds.top !== kinds.side ? splitByFace(positions, all) : { side: all };
+      for (const [face, idx] of Object.entries(faces) as [Face, Uint32Array][]) {
+        if (!idx.length) continue;
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        if (normals.length === positions.length) g.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+        else g.computeVertexNormals();
+        g.setIndex(new THREE.BufferAttribute(idx, 1));
+        // The material's texture, tinted by its colour, laid on in metres.
+        const kind = kinds[face];
+        if (kind) boxUv(g, kind);
+        const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+          color: kind ? 0xffffff : new THREE.Color(color), map: kind ? textureFor(kind, color) : null,
+          roughness: kind === 'metal' ? 0.45 : 0.85, metalness: kind === 'metal' ? 0.3 : 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
+        }));
+        mesh.userData.nodeId = item.nodeId;
+        group.add(mesh);
+      }
     }
     if (edges.length) {
       const e = new THREE.BufferGeometry();

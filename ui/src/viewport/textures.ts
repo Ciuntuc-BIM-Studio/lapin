@@ -8,14 +8,24 @@
 import * as THREE from 'three';
 import type { NodeDto } from '../engine/protocol';
 
-export type TextureKind = 'brick' | 'concrete' | 'wood' | 'plaster' | 'stone' | 'metal' | 'insulation' | 'earth' | 'tiles';
+export type TextureKind = 'brick' | 'brick-end' | 'concrete' | 'wood' | 'wood-end' | 'plaster' | 'stone' | 'metal' | 'insulation' | 'earth' | 'tiles';
+/** Which face of a part a texture is for: along it, its ends (cut across), its top and bottom. */
+export type Face = 'side' | 'end' | 'top';
 
 /** A texture's repeat on the model (m per tile). */
-const TILE: Record<TextureKind, number> = { brick: 0.52, concrete: 1, wood: 0.6, plaster: 1, stone: 0.8, metal: 0.5, insulation: 0.4, earth: 2, tiles: 0.6 };
+const TILE: Record<TextureKind, number> = { brick: 0.52, 'brick-end': 0.5, concrete: 1, wood: 0.6, 'wood-end': 0.4, plaster: 1, stone: 0.8, metal: 0.5, insulation: 0.4, earth: 2, tiles: 0.6 };
 
-/** What a material looks like in 3D (null: plain). */
-export function textureOf(material: NodeDto | undefined): TextureKind | null {
+/** What a material looks like in 3D on a face (null: plain): its own texture for that face, else the faces' (the ends of brick and wood show their section). */
+export function textureOf(material: NodeDto | undefined, face: Face = 'side'): TextureKind | null {
   if (!material) return null;
+  if (face !== 'side') {
+    const key = face === 'end' ? 'textureEnd' : 'textureTop';
+    const ownFace = material.props[key] ?? (face === 'top' ? material.props.textureEnd : undefined);
+    if (ownFace === 'none') return null;
+    if (typeof ownFace === 'string' && ownFace in TILE) return ownFace as TextureKind;
+    const side = textureOf(material, 'side');
+    return side === 'brick' ? 'brick-end' : side === 'wood' ? 'wood-end' : side;
+  }
   const own = material.props.texture;
   if (own === 'none') return null;
   if (typeof own === 'string' && own in TILE) return own as TextureKind;
@@ -69,6 +79,30 @@ function draw(kind: TextureKind, color: string): HTMLCanvasElement {
         }
       g.fillStyle = shade(color, 1.45);
       for (let y = 0; y <= rows; y++) g.fillRect(0, y * jh - 1, S, 2);
+      break;
+    }
+    case 'brick-end': {
+      // A hollow block seen across: 2 blocks a tile, each with three rows of holes in its web.
+      const cols = 2, rows = 4, bw = S / cols, bh = S / rows;
+      for (let y = 0; y < rows; y++)
+        for (let x = 0; x < cols; x++) {
+          const off = y % 2 ? bw / 2 : 0;
+          const bx = x * bw + off, by = y * bh;
+          g.fillStyle = shade(color, 0.9 + r() * 0.2);
+          g.fillRect(bx + 2, by + 2, bw - 4, bh - 4);
+          g.fillStyle = shade(color, 0.45);
+          for (let hy = 0; hy < 3; hy++) for (let hx = 0; hx < 4; hx++) g.fillRect(bx + 8 + hx * (bw - 16) / 4 + 2, by + 6 + hy * (bh - 12) / 3 + 2, (bw - 16) / 4 - 4, (bh - 12) / 3 - 4);
+          if (off) { g.fillStyle = shade(color, 0.9); g.fillRect(bx - bw + 2, by + 2, bw - 4, bh - 4); }
+        }
+      g.fillStyle = shade(color, 1.45);
+      for (let y = 0; y <= rows; y++) g.fillRect(0, y * bh - 1, S, 2);
+      break;
+    }
+    case 'wood-end': {
+      // End grain: rings about a point off the tile, every few millimetres.
+      g.strokeStyle = shade(color, 0.72); g.lineWidth = 1.5;
+      for (let i = 0; i < 40; i++) { g.beginPath(); g.arc(S * 0.15, S * 1.1, 10 + i * 9 + r() * 3, 0, 7); g.stroke(); }
+      speckle(600, 0.9, 1.08);
       break;
     }
     case 'concrete': speckle(2600, 0.85, 1.12); for (let i = 0; i < 40; i++) { g.fillStyle = shade(color, 0.75); g.beginPath(); g.arc(r() * S, r() * S, 1 + r() * 2, 0, 7); g.fill(); } break;
@@ -129,4 +163,39 @@ export function boxUv(geometry: THREE.BufferGeometry, kind: TextureKind): void {
     uv[2 * i + 1] = v / tile;
   }
   geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
+
+/**
+ * A part's triangles by the face they lie on: top and bottom (horizontal),
+ * its sides (the vertical faces of the direction with the most area: a wall's
+ * faces along it) and its ends (the vertical faces across that direction).
+ */
+export function splitByFace(positions: Float32Array, indices: Uint32Array): Record<Face, Uint32Array> {
+  const n = indices.length / 3;
+  const nx = new Float64Array(n), ny = new Float64Array(n), nz = new Float64Array(n), area = new Float64Array(n);
+  for (let t = 0; t < n; t++) {
+    const [a, b, c] = [indices[3 * t] * 3, indices[3 * t + 1] * 3, indices[3 * t + 2] * 3];
+    const ux = positions[b] - positions[a], uy = positions[b + 1] - positions[a + 1], uz = positions[b + 2] - positions[a + 2];
+    const vx = positions[c] - positions[a], vy = positions[c + 1] - positions[a + 1], vz = positions[c + 2] - positions[a + 2];
+    const x = uy * vz - uz * vy, y = uz * vx - ux * vz, z = ux * vy - uy * vx;
+    const l = Math.hypot(x, y, z) || 1;
+    nx[t] = x / l; ny[t] = y / l; nz[t] = z / l; area[t] = l / 2;
+  }
+  // The sides' direction: the horizontal normal direction (folded over 180°) carrying the most area, in 5° bins.
+  const bins = new Float64Array(36);
+  for (let t = 0; t < n; t++) {
+    if (Math.abs(nz[t]) > 0.7) continue;
+    const ang = (Math.atan2(ny[t], nx[t]) * 180) / Math.PI;
+    bins[Math.floor((((ang % 180) + 180) % 180) / 5) % 36] += area[t];
+  }
+  let best = 0;
+  for (let i = 1; i < 36; i++) if (bins[i] > bins[best]) best = i;
+  const side = ((best + 0.5) * 5 * Math.PI) / 180;
+  const sx = Math.cos(side), sy = Math.sin(side);
+  const out: Record<Face, number[]> = { side: [], end: [], top: [] };
+  for (let t = 0; t < n; t++) {
+    const face: Face = Math.abs(nz[t]) > 0.7 ? 'top' : Math.abs(nx[t] * sx + ny[t] * sy) < 0.5 ? 'end' : 'side';
+    out[face].push(indices[3 * t], indices[3 * t + 1], indices[3 * t + 2]);
+  }
+  return { side: Uint32Array.from(out.side), end: Uint32Array.from(out.end), top: Uint32Array.from(out.top) };
 }

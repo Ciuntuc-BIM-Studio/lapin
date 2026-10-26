@@ -14,6 +14,7 @@ import { mm } from '../../engine/model';
 import { execute, query, useSession } from '../../engine/session';
 import { notify } from '../../app/store';
 import { DEFAULT_RULE, type Product, type Rule } from './lintels';
+import { MaterialPicker } from '../core/MaterialPicker';
 
 function MmInput({ value, onChange, empty }: { value: number | null | undefined; onChange: (m: number | null) => void; empty?: string }) {
   const [text, setText] = useState(value == null ? '' : mm(value));
@@ -91,7 +92,7 @@ export function LintelRuleEditor({ rule, onChange, inherit }: { rule: Rule | nul
             <select value={rule.placement ?? ''} onChange={(e) => set({ placement: e.target.value || null })}><option value="">centred</option><option value="outer">at the outer face</option><option value="inner">at the inner face</option></select>
           </label>
           <label className="row"><span className="muted small">Pieces side by side</span><NumInput value={rule.pieces} onChange={(n) => set({ pieces: n && n >= 1 ? Math.round(n) : null })} /></label>
-          <label className="row"><span className="muted small">Material</span><input list="lapin-materials" value={rule.material ?? ''} placeholder="the wall's core" onChange={(e) => set({ material: e.target.value || null })} /></label>
+          <label className="row"><span className="muted small">Material</span><MaterialPicker value={rule.material ?? ''} allowEmpty placeholder="the wall's core" onChange={(material) => set({ material: material || null })} /></label>
           {rule.mode === 'cast' && <>
             <span className="eyebrow">Reinforcement</span>
             {(['top', 'bottom'] as const).map((k) => (

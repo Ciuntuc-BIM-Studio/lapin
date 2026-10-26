@@ -6,6 +6,7 @@
 
 import type { NodeDto, RelationDto } from './protocol';
 import { arcLength, arcOf } from '../viewport/arc';
+import { formatLength } from './unitsStore';
 
 export interface ModelState { nodes: Map<string, NodeDto>; relations: Map<string, RelationDto> }
 
@@ -63,8 +64,8 @@ export const materialColor = (s: ModelState, id: string): string => {
   return typeof c === 'string' ? c : '#c9ced6';
 };
 
-/** "1.234 m" → shown in mm, as the plan does. */
-export const mm = (m: number) => `${Math.round(m * 1000)}`;
+/** A length in metres as the interface shows it (the project's unit: mm unless set otherwise). */
+export const mm = (m: number) => formatLength(m);
 
 /** A wall's length along its axis (an arc's along the arc). */
 export const wallLength = (w: NodeDto): number => {

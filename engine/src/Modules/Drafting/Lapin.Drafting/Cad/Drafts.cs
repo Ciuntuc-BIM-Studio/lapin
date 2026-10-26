@@ -166,7 +166,8 @@ public static class Drafts
                 else
                 {
                     var scale = Json.Number(h["scale"]) ?? 1;
-                    var (segs, _) = HatchFill.Segments(loops, pattern, new HatchOptions(scale * c.Mm, Json.Number(h["angle"]) ?? 0, MaxSegments: 20_000));
+                    var origin = h["origin"] is JsonArray oa && oa.Count >= 2 ? new Vec2(Json.Number(oa[0]) ?? 0, Json.Number(oa[1]) ?? 0) : (Vec2?)null;
+                    var (segs, _) = HatchFill.Segments(loops, pattern, new HatchOptions(scale * c.Mm, Json.Number(h["angle"]) ?? 0, origin, 20_000));
                     foreach (var s in segs) mk.Line(s.A, s.B, layer.Name, Pens.Default.Hatch, color);
                 }
                 foreach (var l in loops) mk.Shapes.Add(new Polyline(l, true).ToJson().Also(j => j["hatch"] = true));

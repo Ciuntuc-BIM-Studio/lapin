@@ -10,6 +10,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { ofClass, relatingOf } from '../../engine/model';
 import { useUi } from '../../app/store';
+import { lengthText } from '../../engine/unitsStore';
 
 export interface StairCheck { key: string; label: string; value: number; min: number | null; max: number | null; ok: boolean }
 export interface StairNumbers {
@@ -19,7 +20,7 @@ export interface StairNumbers {
 }
 
 const mm = (v: number) => Math.round(v * 1000);
-const fmtMm = (v: number | null | undefined) => (v == null ? '—' : `${mm(v)} mm`);
+const fmtMm = (v: number | null | undefined) => (v == null ? '—' : lengthText(v));
 
 /** A length typed in mm, committed on Enter or blur; empty frees the value (null). */
 function MmInput({ value, onCommit, placeholder }: { value: number | undefined; onCommit: (m: number | null) => void; placeholder?: string }) {

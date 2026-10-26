@@ -226,7 +226,7 @@ public static class Sheets
             text.Texts.Add(new PenText(new Vec2(x, by0 + 46.5), cells[i].Item2, i == 0 ? 4 : 3, Anchor: "start", Bold: i == 0));
         }
         pens.AddRange([frame, rules, text]);
-        return new PaperPage(W, H, pens, sheet.Name);
+        return new PaperPage(W, H, pens, sheet.Name, DraftingResources.Book(q.Model).LineCap);
     }
 
     static JsonObject PageJson(PaperPage page, List<Placement> placements)

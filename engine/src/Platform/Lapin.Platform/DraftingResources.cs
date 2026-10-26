@@ -14,7 +14,7 @@ namespace Lapin.Platform;
 /// </summary>
 public static class DraftingResources
 {
-    public static readonly string[] Textures = ["none", "brick", "concrete", "wood", "plaster", "stone", "metal", "insulation", "earth", "tiles"];
+    public static readonly string[] Textures = ["none", "brick", "brick-end", "concrete", "wood", "wood-end", "plaster", "stone", "metal", "insulation", "earth", "tiles"];
 
     /// <summary>The project's own hatch patterns (imported; a built-in's name overrides it).</summary>
     public static IReadOnlyList<HatchPattern> Patterns(IModelView m) =>
@@ -24,7 +24,7 @@ public static class DraftingResources
 
     static Entity Project(ICommandContext ctx) => Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
 
-    static readonly HashSet<string> GraphicsFields = ["hatch", "hatchScale", "fill", "hatchPen"];
+    static readonly HashSet<string> GraphicsFields = ["hatch", "hatchScale", "fill", "hatchPen", "hatchAngle", "hatchAlign"];
 
     /// <summary>A view's graphics checked: a known pattern (or null for none), a positive scale, a colour (or "material"), a pen 1–16.</summary>
     static JsonObject CheckGraphics(IModelView m, JsonObject g, string where)
@@ -50,6 +50,12 @@ public static class DraftingResources
                     break;
                 case "hatchPen":
                     o[k] = Json.Number(v) is { } p && p >= 1 && p <= 16 ? (int)p : throw new CommandException($"{where}: a pen is 1 to 16.");
+                    break;
+                case "hatchAngle":
+                    o[k] = Json.Number(v) is { } ang && double.IsFinite(ang) ? ang : throw new CommandException($"{where}: the hatch angle is in degrees.");
+                    break;
+                case "hatchAlign":
+                    o[k] = (string?)v is { } al && HatchAlign.All.Contains(al) ? al : throw new CommandException($"{where}: a hatch aligns to the \"view\" or to the \"layer\".");
                     break;
             }
         }
@@ -86,12 +92,14 @@ public static class DraftingResources
             }
             if (a.ContainsKey("category")) { if ((string?)a["category"] is { Length: > 0 } cat) attrs["category"] = cat; else attrs.Remove("category"); }
             // Its look in 3D: a texture (brick, concrete, wood, plaster, stone, metal, insulation, earth, tiles; "none"; null: guessed from its hatch and name).
-            if (a.ContainsKey("texture"))
-            {
-                if ((string?)a["texture"] is { Length: > 0 } tex)
-                    attrs["texture"] = Textures.Contains(tex) ? tex : throw new CommandException($"„{tex}” is not a texture: {string.Join(", ", Textures)}.");
-                else attrs.Remove("texture");
-            }
+            // Its faces along it (texture), its ends (textureEnd: where a wall is cut across, a brick's holes) and its top and bottom (textureTop); the ends and top follow the faces unless given.
+            foreach (var key in new[] { "texture", "textureEnd", "textureTop" })
+                if (a.ContainsKey(key))
+                {
+                    if ((string?)a[key] is { Length: > 0 } tex)
+                        attrs[key] = Textures.Contains(tex) ? tex : throw new CommandException($"„{tex}” is not a texture: {string.Join(", ", Textures)}.");
+                    else attrs.Remove(key);
+                }
             foreach (var flag in new[] { "membrane", "drawJoints" })
                 if (a.ContainsKey(flag))
                 {
@@ -233,6 +241,16 @@ public static class DraftingResources
             if (kind == "text") { Repoint("dimStyles", "textStyle"); Repoint("axisStyles", "textStyle"); }
             if (kind == "layerGroup") Repoint("layers", "group");
             if (kind == "axis" && (string?)raw["defaultAxisStyle"] == id) raw["defaultAxisStyle"] = Standards.Standard;
+            Write(ctx, raw);
+            return null;
+        });
+
+        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in) and how lines end on screen and paper (round, square).
+        r.Command("standards.options", "Change drafting standards", (ctx, a) =>
+        {
+            var raw = Standards.ToJson(Book(ctx.Model));
+            if (a.ContainsKey("units")) raw["units"] = (string?)a["units"] is { } u && Standards.ProjectUnits.Contains(u) ? u : throw new CommandException($"The units are one of {string.Join(", ", Standards.ProjectUnits)}.");
+            if (a.ContainsKey("lineCap")) raw["lineCap"] = (string?)a["lineCap"] is { } c && Standards.LineCaps.Contains(c) ? c : throw new CommandException("Lines end round or square.");
             Write(ctx, raw);
             return null;
         });

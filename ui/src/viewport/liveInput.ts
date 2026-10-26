@@ -9,27 +9,14 @@
 
 import { create } from 'zustand';
 import type { Vec2 } from '../platform/module';
+import { formatLength as formatByProject, parseLength as parseByProject, unit as projectUnit, type Unit } from '../engine/unitsStore';
 
-/** A length in metres as the interface shows it (mm). */
-export const formatLength = (m: number) => `${Math.round(m * 1000)}`;
+/** A length in metres as the interface shows it (the project's unit: mm unless set otherwise). */
+export const formatLength = (m: number) => formatByProject(m);
 export const formatAngle = (deg: number) => `${(Math.round(deg * 10) / 10).toFixed(1)}`;
 
-const UNIT: Record<string, number> = { mm: 0.001, cm: 0.01, dm: 0.1, m: 1 };
-
-/** A typed length (mm unless it says), sums and differences allowed; metres, or null. */
-export function parseLength(text: string, unit: keyof typeof UNIT = 'mm'): number | null {
-  const t = text.replace(/\s+/g, '').replace(',', '.');
-  if (!t) return null;
-  const terms = t.match(/[+-]?[^+-]+/g);
-  if (!terms) return null;
-  let sum = 0;
-  for (const term of terms) {
-    const m = /^([+-]?)(\d+\.?\d*|\.\d+)(mm|cm|dm|m)?$/.exec(term);
-    if (!m) return null;
-    sum += (m[1] === '-' ? -1 : 1) * Number(m[2]) * UNIT[m[3] ?? unit];
-  }
-  return sum;
-}
+/** A typed length (the project's unit unless it says its own: 240cm, 2.4m, 3'6", 42"), sums and differences allowed; metres, or null. */
+export const parseLength = (text: string, unit?: Unit): number | null => parseByProject(text, unit ?? projectUnit());
 
 /** A typed angle in degrees (a ° allowed, sums too), or null. */
 export function parseAngle(text: string): number | null {

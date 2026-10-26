@@ -15,6 +15,7 @@ import { execute, useSession } from '../../engine/session';
 import { materialName, mm, ofClass, relatedOf, typeLayers } from '../../engine/model';
 import { LintelRuleEditor } from './LintelRule';
 import { DEFAULT_RULE, type Rule } from './lintels';
+import { MaterialPicker } from '../core/MaterialPicker';
 
 interface Row { material: string; thicknessMm: string; core: boolean }
 
@@ -51,7 +52,6 @@ export function WallTypesDialog() {
   const error = useSession((s) => s.error);
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = ofClass(model, 'IfcWallType');
-  const materials = ofClass(model, 'IfcMaterial');
   const current = useUi((s) => s.wallTypeId);
   const [editing, setEditing] = useState<string | null>(current ?? types[0]?.id ?? null);
   const [name, setName] = useState('');
@@ -131,7 +131,7 @@ export function WallTypesDialog() {
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
-                    <td><input list="lapin-materials" value={r.material} onChange={(e) => set(i, { material: e.target.value })} /></td>
+                    <td><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /></td>
                     <td><input className="num" value={r.thicknessMm} onChange={(e) => set(i, { thicknessMm: e.target.value })} /></td>
                     <td><input type="radio" name="core" checked={r.core} onChange={() => set(i, { core: true })} /></td>
                     <td className="row-tools">
@@ -144,7 +144,6 @@ export function WallTypesDialog() {
                 <tr className="total"><td>Total</td><td className="num">{Math.round(total)}</td><td colSpan={2} /></tr>
               </tbody>
             </table>
-            <datalist id="lapin-materials">{materials.map((m) => <option key={m.id} value={m.name} />)}</datalist>
             <div className="row">
               <span className="eyebrow">Zones in height</span>
               <span className="muted small">bottom to top · they divide the core</span>
@@ -163,7 +162,7 @@ export function WallTypesDialog() {
                       <td><select value={z.role} onChange={(e) => setZone(i, { role: e.target.value })}>{ROLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></td>
                       <td><input className="num" disabled={z.rest} value={z.heightMm} onChange={(e) => setZone(i, { heightMm: e.target.value })} /></td>
                       <td><input type="radio" name="rest" checked={z.rest} onChange={() => setZone(i, { rest: true })} /></td>
-                      <td><input list="lapin-materials" value={z.material} onChange={(e) => setZone(i, { material: e.target.value })} /></td>
+                      <td><MaterialPicker value={z.material} onChange={(material) => setZone(i, { material })} allowEmpty placeholder="the layer's" /></td>
                       <td>{z.role === 'masonry'
                         ? <input placeholder="375 × 238 / 10" value={z.block} onChange={(e) => setZone(i, { block: e.target.value })} />
                         : <input placeholder="100" value={z.rebar} onChange={(e) => setZone(i, { rebar: e.target.value })} />}</td>

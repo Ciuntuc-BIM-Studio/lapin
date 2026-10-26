@@ -3,9 +3,10 @@
 import { Settings2 } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { mm, ofClass, relatedOf, typeOf } from '../../engine/model';
+import { ofClass, relatedOf, typeOf } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { arcLength, arcOf } from '../../viewport/arc';
+import { lengthText } from '../../engine/unitsStore';
 
 export function CurtainWallSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -25,7 +26,7 @@ export function CurtainWallSection({ node }: { node: NodeDto }) {
         </span>
       </label>
       <dl className="fields">
-        <dt>Length</dt><dd className="num">{c ? mm(arcLength(c)) : '—'} mm</dd>
+        <dt>Length</dt><dd className="num">{c ? lengthText(arcLength(c)) : '—'}</dd>
         <dt>Of its type</dt><dd className="num">{type ? relatedOf(model, type.id, 'IfcRelDefinesByType').length : 0}</dd>
       </dl>
     </div>

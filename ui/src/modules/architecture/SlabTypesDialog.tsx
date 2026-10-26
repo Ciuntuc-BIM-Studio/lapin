@@ -5,6 +5,7 @@ import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { materialName, mm, ofClass, relatedOf, typeLayers } from '../../engine/model';
+import { MaterialPicker } from '../core/MaterialPicker';
 
 interface Row { material: string; thicknessMm: string; core: boolean }
 const blank = (): Row[] => [{ material: 'Floor finish', thicknessMm: '20', core: false }, { material: 'Screed', thicknessMm: '50', core: false }, { material: 'Reinforced concrete', thicknessMm: '150', core: true }];
@@ -60,7 +61,7 @@ export function SlabTypesDialog() {
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
-                    <td><input list="lapin-materials" value={r.material} onChange={(e) => set(i, { material: e.target.value })} /></td>
+                    <td><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /></td>
                     <td><input className="num" value={r.thicknessMm} onChange={(e) => set(i, { thicknessMm: e.target.value })} /></td>
                     <td><input type="radio" name="slab-core" checked={r.core} onChange={() => set(i, { core: true })} /></td>
                     <td className="row-tools"><button type="button" className="icon mini" title="Remove" onClick={() => setRows(rows.filter((_, k) => k !== i))}><Trash2 size={12} /></button></td>
@@ -68,7 +69,6 @@ export function SlabTypesDialog() {
                 ))}
               </tbody>
             </table>
-            <datalist id="lapin-materials">{ofClass(model, 'IfcMaterial').map((m) => <option key={m.id} value={m.name} />)}</datalist>
             <div className="row">
               <button type="button" className="btn" onClick={() => setRows([...rows, { material: 'Insulation', thicknessMm: '50', core: false }])}><Plus size={14} />Layer</button>
               <span className="grow" />

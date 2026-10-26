@@ -6,6 +6,7 @@
  */
 
 import type { Vec2 } from '../../platform/module';
+import { parseImperial, unit } from '../../engine/unitsStore';
 
 export type Parsed = { kind: 'point'; pt: Vec2 } | { kind: 'distance'; d: number };
 
@@ -24,14 +25,24 @@ export function parseCoordinateInput(text: string, o: { last: Vec2 | null }): Pa
     if (!t) return { kind: 'point', pt: { ...o.last } };
   }
   const base = rel && o.last ? o.last : { x: 0, y: 0 };
+  // Feet and inches (3'6", 42"): a distance, or x,y of them; in an imperial project a bare number is feet.
+  const imperial = /['"″′]/.test(t);
+  const feet = unit() === 'ft-in' || unit() === 'in';
+  const len = (s: string): number | null => (imperial ? parseImperial(s) : feet ? Number(s) * (unit() === 'in' ? 0.0254 : 0.3048) : Number(s));
+  if (imperial) {
+    const parts = t.split(',');
+    if (parts.length === 2) { const x = parseImperial(parts[0]), y = parseImperial(parts[1]); return x != null && y != null ? { kind: 'point', pt: { x: base.x + x, y: base.y + y } } : null; }
+    const d = parseImperial(t);
+    return d != null && !rel ? { kind: 'distance', d } : null;
+  }
   let m = CART.exec(t);
-  if (m) return { kind: 'point', pt: { x: base.x + Number(m[1]), y: base.y + Number(m[2]) } };
+  if (m) return { kind: 'point', pt: { x: base.x + (len(m[1]) ?? 0), y: base.y + (len(m[2]) ?? 0) } };
   m = POLAR.exec(t);
   if (m) {
-    const d = Number(m[1]), a = (Number(m[2]) * Math.PI) / 180;
+    const d = len(m[1]) ?? 0, a = (Number(m[2]) * Math.PI) / 180;
     return { kind: 'point', pt: { x: base.x + d * Math.cos(a), y: base.y + d * Math.sin(a) } };
   }
-  if (!rel && BARE.test(t)) return { kind: 'distance', d: Number(t) };
+  if (!rel && BARE.test(t)) return { kind: 'distance', d: len(t) ?? 0 };
   return null;
 }
 

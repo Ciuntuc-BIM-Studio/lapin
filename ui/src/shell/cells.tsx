@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { parseLength } from '../viewport/liveInput';
+import { formatLength, unitLabel, useStandards } from '../engine/unitsStore';
 
 /** A cell: commits on blur (Enter blurs through the panel's keys), Escape restores. */
 export function Cell({ value, onCommit, suffix, placeholder, className, readOnly }: {
@@ -25,10 +26,11 @@ export function Cell({ value, onCommit, suffix, placeholder, className, readOnly
   );
 }
 
-/** A length cell: shown in mm, typed in mm or with a unit; empty clears it. */
+/** A length cell: shown in the project's unit (mm, cm, m, feet and inches, inches), typed in it or with a unit of its own; empty clears it. */
 export function LengthCell({ metres, onCommit, placeholder }: { metres: number | null | undefined; onCommit: (m: number | null) => void; placeholder?: string }) {
+  const u = useStandards((s) => s.units);
   return (
-    <Cell className="num" value={typeof metres === 'number' ? String(Math.round(metres * 1000)) : ''} suffix="mm" placeholder={placeholder}
+    <Cell className="num" value={typeof metres === 'number' ? formatLength(metres, u) : ''} suffix={unitLabel(u) || undefined} placeholder={placeholder}
       onCommit={(t) => { if (!t.trim()) { onCommit(null); return; } const m = parseLength(t); if (m != null) onCommit(m); }} />
   );
 }

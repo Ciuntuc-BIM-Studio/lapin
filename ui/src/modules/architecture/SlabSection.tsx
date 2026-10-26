@@ -3,8 +3,9 @@
 import { Settings2 } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { materialColor, materialName, mm, ofClass, typeLayers, typeOf } from '../../engine/model';
+import { materialColor, materialName, ofClass, typeLayers, typeOf } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
+import { lengthText } from '../../engine/unitsStore';
 
 export function SlabSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -26,9 +27,9 @@ export function SlabSection({ node }: { node: NodeDto }) {
       <table>
         <tbody>
           {layers.map((l, i) => (
-            <tr key={i}><td><span className="swatch" style={{ background: materialColor(model, l.material) }} />{l.name ?? materialName(model, l.material)}{l.core && <span className="chip">core</span>}</td><td className="num">{mm(l.thickness)} mm</td></tr>
+            <tr key={i}><td><span className="swatch" style={{ background: materialColor(model, l.material) }} />{l.name ?? materialName(model, l.material)}{l.core && <span className="chip">core</span>}</td><td className="num">{lengthText(l.thickness)}</td></tr>
           ))}
-          <tr className="total"><td>Total</td><td className="num">{mm(layers.reduce((s, l) => s + l.thickness, 0))} mm</td></tr>
+          <tr className="total"><td>Total</td><td className="num">{lengthText(layers.reduce((s, l) => s + l.thickness, 0))}</td></tr>
         </tbody>
       </table>
     </div>

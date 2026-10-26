@@ -12,6 +12,7 @@ import { notify } from '../app/store';
 import type { Diff, DocState, NodeDto, RelationDto, RenderItem, SessionInfo } from './protocol';
 import { storeys } from './model';
 import { useUi } from '../app/store';
+import { useStandards, type Unit } from './unitsStore';
 
 export interface SessionState {
   connected: boolean;
@@ -49,6 +50,7 @@ export function applyDiff(d: Diff): void {
   for (const id of d.renderRemoved) render.delete(id);
   for (const r of d.render) render.set(r.nodeId, r);
   useSession.setState({ nodes, relations, render, doc: d.state, version: d.version });
+  void refreshStandards();
   // A selection the edit took away goes too.
   const { selection: sel, selected } = useUi.getState();
   // A grid axis is selected as grid#tag: it stays while its grid does.
@@ -144,4 +146,15 @@ async function resync(attempt = 0): Promise<void> {
     if (attempt >= 5) { notify(`The engine's model could not be read: ${e instanceof Error ? e.message : String(e)}`); return; }
     setTimeout(() => void resync(attempt + 1), 500 * (attempt + 1));
   }
+}
+
+/** The project's units and line caps (its drafting standards), for the panels and the live input. */
+let standardsPending = false;
+async function refreshStandards(): Promise<void> {
+  if (standardsPending) return;
+  standardsPending = true;
+  try {
+    const b = await query<{ units?: Unit; lineCap?: 'round' | 'square' }>('standards.get');
+    if (b) useStandards.setState({ units: b.units ?? 'mm', lineCap: b.lineCap ?? 'round' });
+  } catch { /* no project open */ } finally { standardsPending = false; }
 }

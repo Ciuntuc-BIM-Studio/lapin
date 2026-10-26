@@ -6,20 +6,28 @@ using Lapin.Model;
 namespace Lapin.Drawing;
 
 /// <summary>A material as one kind of view draws it: a hatch (a pattern name, or none), its scale, a fill colour, a hatch pen.</summary>
-public sealed record ViewGraphics(string? Hatch = null, double? HatchScale = null, string? Fill = null, int? HatchPen = null)
+public sealed record ViewGraphics(string? Hatch = null, double? HatchScale = null, string? Fill = null, int? HatchPen = null, double? HatchAngle = null, string? HatchAlign = null)
 {
     public static ViewGraphics? From(JsonNode? n) => n is JsonObject o
         ? new ViewGraphics(o.ContainsKey("hatch") ? (string?)o["hatch"] ?? "" : null, Lapin.Model.Json.Number(o["hatchScale"]),
-            o.ContainsKey("fill") ? (string?)o["fill"] ?? "" : null, Lapin.Model.Json.Number(o["hatchPen"]) is { } p ? (int)p : null)
+            o.ContainsKey("fill") ? (string?)o["fill"] ?? "" : null, Lapin.Model.Json.Number(o["hatchPen"]) is { } p ? (int)p : null,
+            Lapin.Model.Json.Number(o["hatchAngle"]), (string?)o["hatchAlign"] is { } al && al is "layer" or "view" ? al : null)
         : null;
 }
 
+/// <summary>Where a material's hatch starts and turns: from the view's origin, or from each band it fills (its origin on the band's longest edge, its angle along it).</summary>
+public static class HatchAlign
+{
+    public const string View = "view", Layer = "layer";
+    public static readonly string[] All = [View, Layer];
+}
+
 /// <summary>A material's graphics in one kind of view, and where they came from: its own attributes ("own") or its name ("name").</summary>
-public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchScale, string? Fill, int? HatchPen, bool Membrane, bool DrawJoints, string? Color, string Source)
+public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchScale, string? Fill, int? HatchPen, bool Membrane, bool DrawJoints, string? Color, string Source, double HatchAngle = 0, string HatchAlign = HatchAlign.View)
 {
     public JsonObject ToJson()
     {
-        var o = new JsonObject { ["name"] = Name, ["hatch"] = Hatch, ["hatchScale"] = HatchScale, ["fill"] = Fill, ["membrane"] = Membrane, ["drawJoints"] = DrawJoints, ["source"] = Source };
+        var o = new JsonObject { ["name"] = Name, ["hatch"] = Hatch, ["hatchScale"] = HatchScale, ["fill"] = Fill, ["membrane"] = Membrane, ["drawJoints"] = DrawJoints, ["source"] = Source, ["hatchAngle"] = HatchAngle, ["hatchAlign"] = HatchAlign };
         if (HatchPen is { } p) o["hatchPen"] = p;
         if (Color != null) o["color"] = Color;
         return o;
@@ -92,7 +100,7 @@ public static class MaterialGraphics
         (null, null) => null,
         (null, _) => b,
         (_, null) => a,
-        _ => new ViewGraphics(b!.Hatch ?? a!.Hatch, b.HatchScale ?? a!.HatchScale, b.Fill ?? a!.Fill, b.HatchPen ?? a!.HatchPen),
+        _ => new ViewGraphics(b!.Hatch ?? a!.Hatch, b.HatchScale ?? a!.HatchScale, b.Fill ?? a!.Fill, b.HatchPen ?? a!.HatchPen, b.HatchAngle ?? a!.HatchAngle, b.HatchAlign ?? a!.HatchAlign),
     };
 
     /// <summary>The material's graphics in one kind of view: its own fields, else what its name suggests (not for elevations).</summary>
@@ -110,7 +118,7 @@ public static class MaterialGraphics
         var membrane = material?.Attrs["membrane"] is JsonValue mv && mv.TryGetValue<bool>(out var mb) ? mb : guess?.Membrane ?? false;
         if (membrane) hatch = null;
         var joints = material?.Attrs["drawJoints"] is JsonValue jv && jv.TryGetValue<bool>(out var j) && j;
-        return new ResolvedMaterial(name, hatch, own?.HatchScale ?? 1, fill, own?.HatchPen, membrane, joints, color, hasOwn ? "own" : "name");
+        return new ResolvedMaterial(name, hatch, own?.HatchScale ?? 1, fill, own?.HatchPen, membrane, joints, color, hasOwn ? "own" : "name", own?.HatchAngle ?? 0, own?.HatchAlign ?? HatchAlign.View);
     }
 
     /// <summary>

@@ -7,6 +7,7 @@
 
 import type { Vec2 } from '../platform/module';
 import { formatAngle, formatLength, liveCommit, liveMeasure, useLive, type LiveField } from './liveInput';
+import { unitLabel } from '../engine/unitsStore';
 
 type ToScreen = (p: Vec2) => { x: number; y: number };
 
@@ -22,7 +23,7 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
   );
   return (
     <div className="live-box" style={{ left: at.x + 18, top: at.y + 18 }} aria-live="polite">
-      {cell('len', 'L', formatLength(m.len), 'mm')}
+      {cell('len', 'L', formatLength(m.len), unitLabel())}
       {cell('ang', '∠', formatAngle(m.ang), '°')}
     </div>
   );
@@ -47,7 +48,7 @@ export function LiveBar() {
   );
   return (
     <div className="live-bar" role="group" aria-label="Segment">
-      {field('len', 'Length (mm)', formatLength(m.len))}
+      {field('len', `Length${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.len))}
       {field('ang', 'Angle (°)', formatAngle(m.ang))}
       <span className="live-ro"><span>Δx</span>{formatLength(m.dx)}</span>
       <span className="live-ro"><span>Δy</span>{formatLength(m.dy)}</span>

@@ -13,8 +13,9 @@ import { execute, query, useSession } from '../../engine/session';
 import { HatchSwatch } from './HatchSwatch';
 
 type Kind = 'section' | 'plan' | 'elevation';
-type Resolved = { hatch: string | null; hatchScale: number; fill: string | null; hatchPen?: number; membrane: boolean; drawJoints: boolean; source: 'own' | 'name' };
-type Own = { hatch?: string | null; hatchScale?: number; fill?: string | null; hatchPen?: number };
+type Resolved = { hatch: string | null; hatchScale: number; fill: string | null; hatchPen?: number; hatchAngle?: number; hatchAlign?: 'view' | 'layer'; membrane: boolean; drawJoints: boolean; source: 'own' | 'name' };
+type Own = { hatch?: string | null; hatchScale?: number; fill?: string | null; hatchPen?: number; hatchAngle?: number; hatchAlign?: 'view' | 'layer' };
+const TEXTURES = ['none', 'brick', 'brick-end', 'concrete', 'wood', 'wood-end', 'plaster', 'stone', 'metal', 'insulation', 'earth', 'tiles'];
 type Material = { id: string; name: string; color: string; inUse: boolean; section: Resolved; plan: Resolved; elevation: Resolved; own: Partial<Record<Kind, Own>> };
 type Hatch = { name: string; description: string; solid: boolean; project: boolean };
 
@@ -88,18 +89,22 @@ export function MaterialsDialog() {
                   <input key={m.id + m.name} defaultValue={m.name} onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== m.name && update({ name: e.target.value.trim() })} /></label>
                 <label className="field-line"><span className="eyebrow">Colour (3D)</span>
                   <input type="color" value={m.color} onChange={(e) => update({ color: e.target.value })} /></label>
-                <label className="field-line"><span className="eyebrow">Texture (3D)</span>
-                  <select value={String(useSession.getState().nodes.get(m.id)?.props.texture ?? '')} onChange={(e) => update({ texture: e.target.value || null })}>
-                    <option value="">guessed</option>
-                    {['none', 'brick', 'concrete', 'wood', 'plaster', 'stone', 'metal', 'insulation', 'earth', 'tiles'].map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select></label>
+              </div>
+              <div className="row">
+                {([['texture', 'Faces (3D)', 'guessed'], ['textureEnd', 'Ends, cut across (3D)', 'as the faces (brick: its holes)'], ['textureTop', 'Top and bottom (3D)', 'as the ends']] as const).map(([key, label, dflt]) => (
+                  <label key={key} className="field-line"><span className="eyebrow">{label}</span>
+                    <select value={String(useSession.getState().nodes.get(m.id)?.props[key] ?? '')} onChange={(e) => update({ [key]: e.target.value || null })}>
+                      <option value="">{dflt}</option>
+                      {TEXTURES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select></label>
+                ))}
               </div>
               <div className="row">
                 <label className="check"><input type="checkbox" checked={m.section.membrane} onChange={(e) => update({ membrane: e.target.checked })} /> Membrane (a dashed line, not a band)</label>
                 <label className="check"><input type="checkbox" checked={m.section.drawJoints} onChange={(e) => update({ drawJoints: e.target.checked })} /> Draw joints</label>
               </div>
               <table className="material-views">
-                <thead><tr><th /><th>Look</th><th>Hatch</th><th>Scale</th><th>Fill</th><th>Pen</th></tr></thead>
+                <thead><tr><th /><th>Look</th><th>Hatch</th><th>Scale</th><th>Angle</th><th title="Where the hatch starts and turns: from the view's origin, or from each band it fills (along the band's longest edge)">Align</th><th>Fill</th><th>Pen</th></tr></thead>
                 <tbody>
                   {KINDS.map(({ kind, label }) => {
                     const r = m[kind];
@@ -119,6 +124,9 @@ export function MaterialsDialog() {
                         </td>
                         <td><input className="num" key={`${m.id}${kind}s${r.hatchScale}`} defaultValue={r.hatchScale}
                           onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (v > 0 && v !== r.hatchScale) setView(kind, { hatchScale: v }); }} /></td>
+                        <td><input className="num" key={`${m.id}${kind}a${r.hatchAngle ?? 0}`} defaultValue={r.hatchAngle ?? 0}
+                          onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (Number.isFinite(v) && v !== (r.hatchAngle ?? 0)) setView(kind, { hatchAngle: v }); }} /></td>
+                        <td><select value={r.hatchAlign ?? 'view'} onChange={(e) => setView(kind, { hatchAlign: e.target.value as 'view' | 'layer' })}><option value="view">view</option><option value="layer">layer</option></select></td>
                         <td>
                           <select value={fillMode} onChange={(e) => (e.target.value === '' ? clearField(kind, 'fill') : setView(kind, { fill: e.target.value === 'material' ? 'material' : (r.fill ?? '#ffffff') }))}>
                             <option value="">none</option><option value="material">material colour</option><option value="colour">colour…</option>

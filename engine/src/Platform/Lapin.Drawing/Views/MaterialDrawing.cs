@@ -6,7 +6,26 @@ namespace Lapin.Drawing.Views;
 public sealed record LayerRef(string? Material, string Name, double Thickness);
 
 /// <summary>A hatch to lay over a cut band: its loops, pattern, scale and pen, and the class it belongs to.</summary>
-public sealed record MaterialHatch(IReadOnlyList<Vec2[]> Loops, string Pattern, double Scale, int? Pen, string Class);
+public sealed record MaterialHatch(IReadOnlyList<Vec2[]> Loops, string Pattern, double Scale, int? Pen, string Class, double Angle = 0, Vec2? Origin = null)
+{
+    /// <summary>A hatch aligned to the band it fills: its origin at the start of the band's longest edge, its angle along that edge (plus the material's own).</summary>
+    public static MaterialHatch Aligned(IReadOnlyList<Vec2[]> loops, string pattern, double scale, int? pen, string cls, double angle, string align)
+    {
+        if (align != HatchAlign.Layer || loops.Count == 0 || loops[0].Length < 2) return new MaterialHatch(loops, pattern, scale, pen, cls, angle);
+        var outer = loops[0];
+        var best = 0; var bestLen = -1.0;
+        for (var i = 0; i < outer.Length; i++)
+        {
+            var len = (outer[(i + 1) % outer.Length] - outer[i]).Length;
+            if (len > bestLen) { bestLen = len; best = i; }
+        }
+        var d = outer[(best + 1) % outer.Length] - outer[best];
+        var along = Math.Atan2(d.Y, d.X) * 180 / Math.PI;
+        // The band's direction, not its sense: a hatch along a wall reads the same from either end.
+        if (along > 90 + 1e-9 || along <= -90 + 1e-9) along += along > 0 ? -180 : 180;
+        return new MaterialHatch(loops, pattern, scale, pen, cls, along + angle, outer[best]);
+    }
+}
 
 /// <summary>What the materials make of a cut (indices into the drawing's polygons and lines).</summary>
 public sealed class MaterialDrawingResult
@@ -195,7 +214,7 @@ public static class MaterialDrawing
             }
             if (g == null) continue;
             o.Fills[i] = g.Fill;
-            if (g.Hatch != null) o.Hatches.Add(new MaterialHatch(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class));
+            if (g.Hatch != null) o.Hatches.Add(MaterialHatch.Aligned(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, g.HatchAngle, g.HatchAlign));
         }
 
         // Edges of every band, by join key.

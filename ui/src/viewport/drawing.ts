@@ -21,6 +21,9 @@ export interface PenDto {
 export interface DrawingDto {
   kind?: string;
   scale?: number;
+  /** How lines end and meet (the project's standards): round, or square with mitred corners. */
+  lineCap?: 'round' | 'square';
+  units?: string;
   pens: PenDto[];
   bounds?: [number, number, number, number];
   problem?: string;

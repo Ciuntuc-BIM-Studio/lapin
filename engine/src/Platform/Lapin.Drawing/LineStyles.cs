@@ -126,7 +126,9 @@ public static class LineStyles
 public static class LineRole
 {
     public const string Cut = "cut", Projection = "projection", Hidden = "hidden", Overhead = "overhead", Beyond = "beyond";
-    public static readonly string[] All = [Cut, Projection, Hidden, Overhead, Beyond];
+    /// <summary>A cut line between two bands of one element (its layers): styled apart from its contour, never a role a drawing's line carries.</summary>
+    public const string Separation = "separation";
+    public static readonly string[] All = [Cut, Separation, Projection, Hidden, Overhead, Beyond];
 }
 
 /// <summary>The layers a drawing's pens are grouped on, in the order they are drawn (fills first, then lines by role).</summary>

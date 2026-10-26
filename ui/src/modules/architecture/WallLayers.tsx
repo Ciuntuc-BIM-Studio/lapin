@@ -6,8 +6,9 @@
 import { FlipHorizontal2, Settings2 } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { materialColor, materialName, mm, ofClass, typeLayers, typeOf, usageOf, wallLength } from '../../engine/model';
+import { materialColor, materialName, ofClass, typeLayers, typeOf, usageOf, wallLength } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
+import { lengthText } from '../../engine/unitsStore';
 
 export function WallLayers({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -42,16 +43,16 @@ export function WallLayers({ node }: { node: NodeDto }) {
               {shown.map((l, i) => (
                 <tr key={i}>
                   <td><span className="swatch" style={{ background: materialColor(model, l.material) }} />{l.name ?? materialName(model, l.material)}{l.core && <span className="chip">core</span>}</td>
-                  <td className="num">{mm(l.thickness)} mm</td>
+                  <td className="num">{lengthText(l.thickness)}</td>
                 </tr>
               ))}
-              <tr className="total"><td>Total</td><td className="num">{mm(total)} mm</td></tr>
+              <tr className="total"><td>Total</td><td className="num">{lengthText(total)}</td></tr>
             </tbody>
           </table>
         </>
       )}
       <dl className="fields">
-        <dt>Length</dt><dd className="num">{mm(wallLength(node))} mm</dd>
+        <dt>Length</dt><dd className="num">{lengthText(wallLength(node))}</dd>
         <dt>Layers run</dt><dd>{usage ? (usage.negative ? 'flipped' : 'as drawn') : '—'}</dd>
       </dl>
       {node.editable && (

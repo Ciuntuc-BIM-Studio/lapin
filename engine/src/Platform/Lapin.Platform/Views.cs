@@ -267,10 +267,13 @@ public static class Views
     {
         var r = Render(q, view);
         if (r.Problem != null) return new JsonObject { ["problem"] = r.Problem, ["pens"] = new JsonArray() };
+        var book = DraftingResources.Book(q.Model);
         var o = new JsonObject
         {
             ["kind"] = r.Kind,
             ["scale"] = r.Scale,
+            ["lineCap"] = book.LineCap,
+            ["units"] = book.Units,
             ["pens"] = new JsonArray(r.Pens.Select(p => (JsonNode)p.ToJson()).ToArray()),
             // What a click on an annotation selects, and where its points snap.
             ["marks"] = new JsonArray(r.Marks.Where(x => x.Owner != null).Select(x => (JsonNode)new JsonObject

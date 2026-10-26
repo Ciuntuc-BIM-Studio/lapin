@@ -49,6 +49,18 @@ public static class DraftCommands
                     attrs["layer"] = layer;
                 }
                 if (a.ContainsKey("color")) { if ((string?)a["color"] is { } c) attrs["color"] = c; else attrs.Remove("color"); }
+                // A hatch's pattern, scale, angle (°) and origin (where its pattern starts, in the view), merged into what it had.
+                if (a["hatch"] is JsonObject hp && attrs["hatch"] is JsonObject had)
+                {
+                    if ((string?)hp["pattern"] is { } pn)
+                    {
+                        var name = pn.Trim().ToUpperInvariant();
+                        had["pattern"] = HatchLibrary.Find(name, DraftingResources.Patterns(ctx.Model))?.Name ?? throw new CommandException($"There is no hatch pattern „{name}”.");
+                    }
+                    if (hp.ContainsKey("scale")) had["scale"] = Json.Number(hp["scale"]) is { } hs && hs > 0 ? hs : throw new CommandException("The hatch scale must be positive.");
+                    if (hp.ContainsKey("angle")) had["angle"] = Json.Number(hp["angle"]) ?? 0;
+                    if (hp.ContainsKey("origin")) { if (hp["origin"] is JsonArray ho && ho.Count >= 2) had["origin"] = new JsonArray(Json.Number(ho[0]) ?? 0, Json.Number(ho[1]) ?? 0); else had.Remove("origin"); }
+                }
                 if (a.ContainsKey("role")) { if (Drafts.CheckRole(a["role"]) is { } role) attrs["role"] = role; else attrs.Remove("role"); }
                 ctx.Replace(e.With(attrs: attrs));
             }

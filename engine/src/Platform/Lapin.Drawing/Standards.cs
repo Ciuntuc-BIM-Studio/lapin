@@ -38,7 +38,8 @@ public sealed record DraftLayer(string Id, string Name, string Color, bool Visib
 /// </summary>
 public sealed record StyleBook(
     IReadOnlyList<TextStyle> TextStyles, IReadOnlyList<DimStyle> DimStyles, IReadOnlyList<AxisStyle> AxisStyles,
-    string DefaultAxisStyle, IReadOnlyList<TagType> TagTypes, IReadOnlyList<DraftLayer> Layers, IReadOnlyList<LayerGroup> LayerGroups)
+    string DefaultAxisStyle, IReadOnlyList<TagType> TagTypes, IReadOnlyList<DraftLayer> Layers, IReadOnlyList<LayerGroup> LayerGroups,
+    string LineCap = "round", string Units = "mm")
 {
     public static StyleBook Default => Standards.Read(null);
 }
@@ -54,7 +55,12 @@ public static class Standards
     public static readonly string[] Fonts = ["sans", "serif", "mono"];
     public static readonly string[] Arrows = ["tick", "arrow", "dot", "none"];
     public static readonly string[] Placements = ["above", "centered", "below"];
-    public static readonly string[] Units = ["m", "cm", "mm"];
+    /// <summary>A dimension's unit: metric, or feet and inches / inches (fractions of an inch).</summary>
+    public static readonly string[] Units = ["m", "cm", "mm", "ft-in", "in"];
+    /// <summary>The unit the interface shows and takes lengths in (the project's).</summary>
+    public static readonly string[] ProjectUnits = ["mm", "cm", "m", "ft-in", "in"];
+    /// <summary>How a drawing's lines end and meet on screen and on paper: round, or square (projecting caps, mitred corners).</summary>
+    public static readonly string[] LineCaps = ["round", "square"];
     public static readonly string[] Bubbles = ["circle", "square"];
     public static readonly string[] AxisEnds = ["both", "start", "end", "none"];
     public static readonly string[] LineTypes = ["continuous", "dashed", "dotted", "dashdot"];
@@ -124,7 +130,8 @@ public static class Standards
             axes, def,
             List("tagTypes").Select(ReadTag).OfType<TagType>().ToList(),
             WithStandard(List("layers").Select(ReadLayer).ToList(), Layer0, l => l.Id, "0"),
-            List("layerGroups").Where(g => g["id"] is JsonValue).Select(g => new LayerGroup(Str(g["id"], ""), Str(g["name"], "Group"), g["visible"] is not JsonValue gv || !gv.TryGetValue<bool>(out var b) || b, True(g["locked"]))).Where(g => g.Id.Length > 0).ToList());
+            List("layerGroups").Where(g => g["id"] is JsonValue).Select(g => new LayerGroup(Str(g["id"], ""), Str(g["name"], "Group"), g["visible"] is not JsonValue gv || !gv.TryGetValue<bool>(out var b) || b, True(g["locked"]))).Where(g => g.Id.Length > 0).ToList(),
+            OneOf(o["lineCap"], LineCaps, "round"), OneOf(o["units"], ProjectUnits, "mm"));
     }
 
     public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, DrawingJson.Default.StyleBook)!;
@@ -172,8 +179,30 @@ public static class Standards
     /// <summary>A length (metres) in a dimension style's unit and precision.</summary>
     public static string FormatDimension(double metres, string unit, int precision)
     {
+        if (unit is "ft-in" or "in") return FormatImperial(metres, unit == "ft-in", precision);
         var factor = unit == "mm" ? 1000 : unit == "cm" ? 100 : 1;
         return (metres * factor).ToString("F" + Math.Clamp(precision, 0, 6), CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// Feet and inches (12'-3 1/2") or inches (147 1/2"), the inch in fractions
+    /// to the nearest 1/4, 1/8, 1/16… (precision 0, 1, 2…; 2 is the usual 1/16).
+    /// </summary>
+    public static string FormatImperial(double metres, bool feet, int precision)
+    {
+        var denominator = 1 << Math.Clamp(precision + 2, 0, 6);
+        var totalInches = Math.Abs(metres) / 0.0254;
+        var sixteenths = (long)Math.Round(totalInches * denominator);
+        var whole = sixteenths / denominator;
+        var num = sixteenths % denominator;
+        var den = denominator;
+        while (num > 0 && num % 2 == 0) { num /= 2; den /= 2; }
+        var sign = metres < 0 ? "-" : "";
+        // Inches with their fraction: 3 1/2", 1/32", 0".
+        string Inches(long inch) => inch == 0 && num > 0 ? $"{num}/{den}\"" : num > 0 ? $"{inch} {num}/{den}\"" : $"{inch}\"";
+        if (!feet) return sign + Inches(whole);
+        var ft = whole / 12;
+        return ft > 0 ? $"{sign}{ft}'-{Inches(whole % 12)}" : sign + Inches(whole);
     }
 
     /// <summary>A level as drawings write it: ±0.00, +3.06, −3.98 (metres, two decimals, a true minus).</summary>

@@ -70,6 +70,8 @@ public sealed record CategoryGraphics(string? LineColor = null, string? LineWeig
 public static class Pens
 {
     public static readonly (double Cut, double Seen, double Hidden, double Hatch, double Membrane) Default = (0.5, 0.25, 0.18, 0.13, 0.5);
+    /// <summary>The line between two bands of one element (its layers' separation): two pens under the contour (0.5 → 0.25).</summary>
+    public const double Separation = 0.25;
     /// <summary>The ISO 128 pen series (mm) a category's lines can take.</summary>
     public static readonly double[] IsoWeights = [0.13, 0.18, 0.25, 0.35, 0.5, 0.7, 1.0];
     static readonly Dictionary<string, double> Named = new() { ["heavy"] = 0.7, ["medium"] = 0.5, ["light"] = 0.25, ["hairline"] = 0.13 };
@@ -146,20 +148,22 @@ public static class Pens
                 continue;
             }
             // Patterns are paper millimetres at 1:1: at 1:scale a millimetre is scale/1000 m.
-            var (segs, _) = HatchFill.Segments(h.Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), pattern, new HatchOptions(h.Scale * o.Scale / 1000, MaxSegments: Math.Max(0, budget)));
+            var (segs, _) = HatchFill.Segments(h.Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), pattern, new HatchOptions(h.Scale * o.Scale / 1000, h.Angle, h.Origin, Math.Max(0, budget)));
             budget -= segs.Count;
             var width = h.Pen is { } pn ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), pn, o.Scale) : Default.Hatch;
             Get($"hatch:{color}:{width}", () => new Pen(PenLayer.Hatch, color, width, null, null)).Segments.AddRange(segs.Select(s => (s.A, s.B)));
         }
 
+        var separations = Separations(d);
         for (var i = 0; i < d.Lines.Count; i++)
         {
             if (m?.DropLines.Contains(i) == true) continue;
             var l = d.Lines[i];
             var g = Cat(l.Class);
+            var separation = l.Role == LineRole.Cut && separations.Contains(i);
             if (g?.Hidden == true) continue;
             if (!o.HiddenLines && l.Role == LineRole.Hidden) continue;
-            var styled = o.LineStyle?.Invoke(l.Role, l.Class, l.Element);
+            var styled = separation ? o.LineStyle?.Invoke(LineRole.Separation, l.Class, l.Element) ?? o.LineStyle?.Invoke(l.Role, l.Class, l.Element) : o.LineStyle?.Invoke(l.Role, l.Class, l.Element);
             // A line edit's style (Linework) wins over everything else.
             if (l.Style is { Empty: false } ls)
                 styled = new ResolvedLine(ls.Pen is { } lsPen ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), lsPen, o.Scale) : styled?.WidthMm, ls.Color ?? styled?.Color, ls.Pattern != null ? LineStyles.DashOf(ls.Pattern) : styled?.Dash);
@@ -189,7 +193,7 @@ public static class Pens
                 {
                     var cut = l.Role == LineRole.Cut;
                     var c = color ?? "#000000";
-                    var w = styled?.WidthMm ?? (WeightMm(g?.LineWeight) is { } mm ? (cut ? mm : SeenWeight(mm)) : cut ? Default.Cut : Default.Seen);
+                    var w = styled?.WidthMm ?? (WeightMm(g?.LineWeight) is { } mm ? (separation ? SeenWeight(mm) : cut ? mm : SeenWeight(mm)) : separation ? Separation : cut ? Default.Cut : Default.Seen);
                     var dash = styled?.Dash is { Length: > 0 } sd ? sd : null;
                     pen = Get($"{(cut ? "cut" : "seen")}:{c}:{w}:{DashKey(dash)}", () => new Pen(cut ? PenLayer.Cut : PenLayer.Seen, c, w, null, dash));
                     break;
@@ -199,6 +203,55 @@ public static class Pens
         }
         if (m != null && m.Membranes.Count > 0)
             Get("membrane", () => new Pen(PenLayer.Membrane, "#000000", Default.Membrane, null, [3, 1.5])).Segments.AddRange(m.Membranes);
+        return Ordered(pens);
+    }
+
+    /// <summary>
+    /// The cut lines that run between two bands of one element (a wall's
+    /// layers, a floor's): a line on the edge of another cut polygon of the same
+    /// element. They draw with the separation pen; the element's contour keeps the cut pen.
+    /// </summary>
+    public static HashSet<int> Separations(ViewDrawing d)
+    {
+        var o = new HashSet<int>();
+        // Each element's cut edges, by polygon.
+        var edges = new Dictionary<string, List<(int Poly, Vec2 A, Vec2 B)>>();
+        for (var i = 0; i < d.Cuts.Count; i++)
+            foreach (var loop in d.Cuts[i].Loops)
+                for (var k = 0; k < loop.Length; k++)
+                    (edges.TryGetValue(d.Cuts[i].Element, out var l) ? l : edges[d.Cuts[i].Element] = []).Add((i, loop[k], loop[(k + 1) % loop.Length]));
+        // A line of a polygon: its own polygon is the one whose edge holds it; the first found.
+        for (var i = 0; i < d.Lines.Count; i++)
+        {
+            var l = d.Lines[i];
+            if (l.Role != LineRole.Cut || !edges.TryGetValue(l.Element, out var es)) continue;
+            var on = new HashSet<int>();
+            foreach (var (poly, a, b) in es) if (OnEdge(l.A, l.B, a, b)) on.Add(poly);
+            if (on.Count >= 2) o.Add(i);
+        }
+        return o;
+    }
+
+    /// <summary>Whether the segment pq lies along the edge ab (collinear, within it, 0.1 mm).</summary>
+    static bool OnEdge(Vec2 p, Vec2 q, Vec2 a, Vec2 b)
+    {
+        const double tol = 1e-4;
+        var d = b - a;
+        var len = d.Length;
+        if (len < 1e-9) return false;
+        var u = d * (1 / len);
+        foreach (var x in new[] { p, q })
+        {
+            var r = x - a;
+            if (Math.Abs(Vec2.Cross(u, r)) > tol) return false;
+            var t = Vec2.Dot(u, r);
+            if (t < -tol || t > len + tol) return false;
+        }
+        return true;
+    }
+
+    static List<Pen> Ordered(Dictionary<string, Pen> pens)
+    {
 
         // Whole lines: collinear pieces the hidden-line removal split are joined again.
         foreach (var p in pens.Values.Where(p => p.Layer != PenLayer.Hatch && p.Segments.Count > 1))
