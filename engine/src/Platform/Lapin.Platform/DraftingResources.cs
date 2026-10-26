@@ -179,7 +179,10 @@ public static class DraftingResources
             var pattern = HatchLibrary.Find((string?)a["pattern"] ?? "", Patterns(q.Model));
             if (pattern == null) return new JsonObject { ["solid"] = false, ["segments"] = new JsonArray() };
             Vec2[] box = [new(0, 0), new(size, 0), new(size, size), new(0, size)];
-            var (segs, _) = HatchFill.Segments([box], pattern, new HatchOptions(Json.Number(a["scale"]) ?? 1, Json.Number(a["angle"]) ?? 0, MaxSegments: 4000));
+            // The batt's swatch: a band a third of the square high, its loops along it.
+            var segs = BattHatch.Is(pattern)
+                ? BattHatch.Segments([[new(0, size / 3), new(size, size / 3), new(size, 2 * size / 3), new(0, 2 * size / 3)]], 0, 4000)
+                : HatchFill.Segments([box], pattern, new HatchOptions(Json.Number(a["scale"]) ?? 1, Json.Number(a["angle"]) ?? 0, MaxSegments: 4000)).Segments;
             return new JsonObject
             {
                 ["solid"] = pattern.Solid,

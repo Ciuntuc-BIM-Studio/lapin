@@ -68,7 +68,7 @@ public static class HatchLibrary
 74, 1.4,2.2, 2.6,3.4, 0,-2.8
 """;
 
-    static readonly List<HatchPattern> Patterns = Pat.Parse(BuiltIn).Patterns;
+    static readonly List<HatchPattern> Patterns = [.. Pat.Parse(BuiltIn).Patterns, BattHatch.Pattern];
 
     /// <summary>The built-in patterns (records: immutable, safe to share).</summary>
     public static IReadOnlyList<HatchPattern> BuiltInPatterns => Patterns;

@@ -49,7 +49,7 @@ public class DraftingResourcesTests
     public void Names_suggest_hatches_and_membranes()
     {
         Assert.Equal("BRICK", MaterialGraphics.Resolve(Mat("Cărămidă")).Hatch);
-        Assert.Equal("INSULATION", MaterialGraphics.Resolve(Mat("EPS 100")).Hatch);
+        Assert.Equal("BATT", MaterialGraphics.Resolve(Mat("EPS 100")).Hatch);
         Assert.Equal("WOOD", MaterialGraphics.Resolve(Mat("Timber")).Hatch);
         Assert.True(MaterialGraphics.Resolve(Mat("Vapour barrier")).Membrane);
         Assert.Null(MaterialGraphics.Resolve(Mat("Vapour barrier")).Hatch);
@@ -130,6 +130,11 @@ public class DraftingResourcesTests
         Assert.Equal("MINE", MaterialGraphics.Resolve(f.Model.Get(brick), "section").Hatch);
         var preview = f.Session.Query("hatch.preview", new JsonObject { ["pattern"] = "MINE", ["size"] = 10 })!;
         Assert.Equal(5 * 4, preview["segments"]!.AsArray().Count);      // lines at y = 0, 2, 4, 6, 8
+        // The batt's swatch: its looped line along a band of the square, a few hundred short segments.
+        var batt = f.Session.Query("hatch.preview", new JsonObject { ["pattern"] = "BATT", ["size"] = 20 })!;
+        Assert.False((bool)batt["solid"]!);
+        Assert.InRange(batt["segments"]!.AsArray().Count / 4, 40, 4000);
+        Assert.Contains(((JsonArray)f.Session.Query("hatch.list", [])!), x => (string)x!["name"]! == "BATT");
         Assert.Throws<CommandException>(() => f.Run("hatch.import", new JsonObject { ["text"] = "nothing" }));
         f.Session.Undo(); f.Session.Undo(); f.Session.Undo();
         Assert.DoesNotContain(((JsonArray)f.Session.Query("hatch.list", [])!), x => (string)x!["name"]! == "MINE");

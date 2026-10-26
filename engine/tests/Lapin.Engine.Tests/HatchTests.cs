@@ -73,10 +73,11 @@ public class HatchTests
     public void The_library_has_every_pattern_and_the_project_s_own_win()
     {
         var names = HatchLibrary.BuiltInPatterns.Select(p => p.Name).ToList();
-        foreach (var n in new[] { "SOLID", "LINES45", "CROSS", "HORIZONTAL", "BRICK", "CONCRETE", "INSULATION", "EARTH", "STEEL", "WOOD", "WOODCROSS", "GRAVEL", "TILES" })
+        foreach (var n in new[] { "SOLID", "LINES45", "CROSS", "HORIZONTAL", "BRICK", "CONCRETE", "INSULATION", "EARTH", "STEEL", "WOOD", "WOODCROSS", "GRAVEL", "TILES", "BATT" })
             Assert.Contains(n, names);
         foreach (var p in HatchLibrary.BuiltInPatterns)
             if (p.Name == "SOLID") Assert.True(p.Solid);
+            else if (BattHatch.Is(p)) Assert.Empty(p.Families); // drawn by its own rule, not by families
             else { Assert.NotEmpty(p.Families); Assert.All(p.Families, f => Assert.True(Math.Abs(f.DeltaY) > 0, p.Name)); }
         Assert.Equal("BRICK", HatchLibrary.Find("brick")?.Name);
         Assert.Null(HatchLibrary.Find("nope"));
@@ -180,6 +181,13 @@ public class HatchTests
             var r = HatchFill.Segments([box], p, new(1, 15, new Vec2(3, 7)));
             Assert.False(r.Truncated, p.Name);
             if (p.Solid) continue;
+            if (BattHatch.Is(p))
+            {
+                var batt = BattHatch.Segments([box]);
+                Assert.NotEmpty(batt);
+                Assert.All(batt, s => Assert.True(InBox(s.A, 0, 0, 100, 100) && InBox(s.B, 0, 0, 100, 100), p.Name));
+                continue;
+            }
             Assert.NotEmpty(r.Segments);
             Assert.All(r.Segments, s => Assert.True(InBox(s.A, 0, 0, 100, 100) && InBox(s.B, 0, 0, 100, 100), p.Name));
         }
@@ -234,5 +242,38 @@ public class HatchTests
         var region = HatchRegion.At(new Vec2(1, 1), [Sq(0, 0, 100), Sq(10, 10, 40), Sq(20, 20, 20), Sq(26, 26, 5)])!;
         Assert.Equal(4, region.Count);
         Assert.Equal(Sq(10, 10, 40), region[1]);
+    }
+}
+
+public class BattHatchTests
+{
+    /// <summary>The looped line stays inside its band, runs its whole length, and is clipped at a mitred end.</summary>
+    [Fact]
+    public void The_batt_line_fills_a_band_and_stays_inside_it()
+    {
+        Vec2[] band = [new(0, 0), new(2, 0), new(2, 0.1), new(0, 0.1)];
+        var segs = BattHatch.Segments([band]);
+        Assert.True(segs.Count > 200, $"{segs.Count} segments");
+        foreach (var s in segs) foreach (var p in new[] { s.A, s.B })
+        {
+            Assert.InRange(p.X, -1e-6, 2 + 1e-6);
+            Assert.InRange(p.Y, -1e-6, 0.1 + 1e-6);
+        }
+        Assert.True(segs.Min(s => Math.Min(s.A.X, s.B.X)) < 0.05 && segs.Max(s => Math.Max(s.A.X, s.B.X)) > 1.95, "the line runs the whole band");
+        // A vertical band (a wall in section) is drawn up it; a mitred end keeps the line inside the polygon.
+        Vec2[] mitre = [new(0, 0), new(0.2, 0.2), new(0.2, 3), new(0, 3)];
+        var up = BattHatch.Segments([mitre]);
+        Assert.True(up.Count > 100);
+        Assert.DoesNotContain(up, s => s.A.Y < s.A.X - 1e-6 || s.B.Y < s.B.X - 1e-6);
+        // Too thin on paper: nothing.
+        Assert.Empty(BattHatch.Segments([band], minWidth: 0.2));
+    }
+
+    [Fact]
+    public void Insulation_materials_take_the_batt_by_name_and_the_library_knows_it()
+    {
+        Assert.Equal("BATT", Lapin.Drawing.MaterialGraphics.FromName("Vată minerală").Hatch);
+        Assert.Equal("BATT", Lapin.Drawing.MaterialGraphics.FromName("XPS").Hatch);
+        Assert.True(BattHatch.Is(HatchLibrary.Find("batt")));
     }
 }

@@ -52,7 +52,7 @@ public static class MaterialGraphics
     static readonly (Regex Re, Guess G)[] Guesses =
     [
         (new(@"vapou?r|barrier|membrane|foil|\bdpc\b|damp|bitum|sheet|folie|barier"), new(Membrane: true)),
-        (new(@"insul|wool|eps\b|xps\b|polystyren|pir\b|pur\b|vata|izola"), new(Hatch: "INSULATION")),
+        (new(@"insul|wool|eps\b|xps\b|polystyren|pir\b|pur\b|vata|izola"), new(Hatch: "BATT")),
         (new(@"brick|masonry|block|caramid|zidari|bca|aac"), new(Hatch: "BRICK")),
         (new(@"concrete|beton|screed|sapa|c\d\d/"), new(Hatch: "CONCRETE")),
         (new(@"timber|wood|clt|osb|plywood|lemn"), new(Hatch: "WOOD")),

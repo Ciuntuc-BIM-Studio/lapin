@@ -14,7 +14,8 @@ public sealed record HatchLineFamily(double AngleDeg, Vec2 Origin, double DeltaX
 /// <summary>A hatch pattern: its families of lines, or a solid fill when it has none.</summary>
 public sealed record HatchPattern(string Name, string Description, IReadOnlyList<HatchLineFamily> Families)
 {
-    public bool Solid => Families.Count == 0;
+    /// <summary>No line families: a solid fill, unless it is the batt, which draws by its own rule (BattHatch).</summary>
+    public bool Solid => Families.Count == 0 && !Name.Equals(BattHatch.Name, StringComparison.OrdinalIgnoreCase);
     public bool Equals(HatchPattern? o) => o is not null && Name == o.Name && Description == o.Description && Families.SequenceEqual(o.Families);
     public override int GetHashCode() => HashCode.Combine(Name, Description, Families.Count);
 }

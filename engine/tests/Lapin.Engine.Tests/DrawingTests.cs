@@ -157,7 +157,7 @@ public class DrawingTests
     {
         var d = Scene();
         var m = MaterialDrawing.Apply(d, p => Graphics(p), _ => Layers, Membrane);
-        Assert.Equal(["CONCRETE", "CONCRETE", "INSULATION", "INSULATION"], m.Hatches.Select(h => h.Pattern).Order());
+        Assert.Equal(["BATT", "BATT", "CONCRETE", "CONCRETE"], m.Hatches.Select(h => h.Pattern).Order());
         var dropped = m.DropLines.Select(i => Key(d, i)).ToList();
         Assert.Contains("1:4,0-4,0.3", dropped);
         Assert.Contains("2:4,0-4,0.3", dropped);

@@ -131,6 +131,15 @@ public static class Pens
             var pattern = HatchLibrary.Find(h.Pattern, o.Patterns);
             if (pattern == null) continue;
             var color = Cat(h.Class)?.LineColor ?? "#000000";
+            if (BattHatch.Is(pattern))
+            {
+                // The looped line along the layer, metres; a band under 1.2 mm on paper gets none.
+                var batt = BattHatch.Segments(h.Loops.Select(l => (IReadOnlyList<Vec2>)l).ToList(), 1.2 * o.Scale / 1000, Math.Max(0, budget));
+                budget -= batt.Count;
+                var bw = h.Pen is { } bp ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), bp, o.Scale) : Default.Hatch;
+                Get($"hatch:{color}:{bw}", () => new Pen(PenLayer.Hatch, color, bw, null, null)).Segments.AddRange(batt.Select(s => (s.A, s.B)));
+                continue;
+            }
             if (pattern.Solid)
             {
                 Get("solid:" + color, () => new Pen(PenLayer.Hatch, null, 0, color, null)).Loops.AddRange(h.Loops);

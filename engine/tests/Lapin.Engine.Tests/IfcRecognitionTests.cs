@@ -338,6 +338,24 @@ public class IfcRecognitionSvgTests
         Write(Path.Combine(dir, "section.svg"), Views.Drawing(f.Session.Reader, f.Model.Get(section)!));
     }
 
+    /// <summary>A layered wall with insulation, in plan and in section, as SVG (LAPIN_IFC_SVG_DIR): the batt line, for the eye.</summary>
+    [Fact]
+    public void A_wall_with_insulation_as_svgs_when_asked()
+    {
+        var dir = Environment.GetEnvironmentVariable("LAPIN_IFC_SVG_DIR");
+        if (string.IsNullOrEmpty(dir)) return;
+        Directory.CreateDirectory(dir);
+        var f = new Fixture(new ArchitectureModule(), new DraftingModule());
+        var type = f.Type("Insulated 37", ("Lime plaster", 0.02, false), ("Brick", 0.25, true), ("Mineral wool", 0.1, false), ("Render", 0.01, false));
+        var wall = f.Wall(0, 0, 4, 0, type);
+        f.Wall(4, 0, 4, 3, type);
+        f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["along"] = 2 });
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey, ["name"] = "Plan", ["scale"] = 20 })!["id"]!;
+        Write(Path.Combine(dir, "wall-plan.svg"), Views.Drawing(f.Session.Reader, f.Model.Get(plan)!));
+        var section = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(1, -2), ["end"] = new JsonArray(1, 2), ["name"] = "A", ["scale"] = 20 })!["id"]!;
+        Write(Path.Combine(dir, "wall-section.svg"), Views.Drawing(f.Session.Reader, f.Model.Get(section)!));
+    }
+
     static void Write(string file, JsonObject d)
     {
         var pens = d["pens"]?.AsArray() ?? [];

@@ -159,6 +159,10 @@ public static class Drafts
                 if (loops.Count == 0) continue;
                 var pattern = HatchLibrary.Find((string?)h["pattern"] ?? "LINES45", patterns);
                 if (pattern == null || pattern.Solid) mk.Fills.Add((loops, color));
+                else if (BattHatch.Is(pattern))
+                {
+                    foreach (var s in BattHatch.Segments(loops, 1.2 * c.Mm, 20_000)) mk.Line(s.A, s.B, layer.Name, Pens.Default.Hatch, color);
+                }
                 else
                 {
                     var scale = Json.Number(h["scale"]) ?? 1;
