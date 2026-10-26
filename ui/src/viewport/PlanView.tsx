@@ -169,6 +169,14 @@ export function PlanView() {
     return a;
   }, [toWorld, view.scale, aim, ortho]);
 
+  /** A tool's own rule for its next point (a pipe's material), over the snap. */
+  const constrained = (a: Aimed): Aimed => {
+    const g = tool?.gesture;
+    if (g?.kind !== 'polyline' || !g.constrain || pts.length === 0) return a;
+    const p = g.constrain(pts, a.point);
+    return p.x === a.point.x && p.y === a.point.y ? a : { ...a, point: p, kind: 'free', guides: [] };
+  };
+
   const complete = useCallback(async (points: Vec2[], entity?: NodeDto) => {
     if (!tool) return;
     await completeTool(tool, { points, entity });
@@ -272,7 +280,7 @@ export function PlanView() {
       }
       if (d.moved && e.buttons !== 1) setView({ ...d.view, cx: d.view.cx - dx / d.view.scale, cy: d.view.cy + dy / d.view.scale });
     }
-    setHover(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined));
+    setHover(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)));
   };
   const onPointerUp = (e: React.PointerEvent) => {
     if (editor.onPointerUp()) return;
@@ -281,7 +289,7 @@ export function PlanView() {
     if (box) { selectBox(box, e.shiftKey); setBox(null); return; }
     if (!d || d.moved || e.button !== 0) return;
     const rect = svgRef.current!.getBoundingClientRect();
-    click(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey);
+    click(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey);
   };
   /** What a selection box takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
   const selectBox = (b: { a: Vec2; b: Vec2 }, add: boolean) => {
