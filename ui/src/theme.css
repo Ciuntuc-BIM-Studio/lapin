@@ -65,8 +65,9 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .icon { display: grid; place-items: center; width: 28px; height: 28px; margin-bottom: 4px; border: 0; border-radius: 3px; background: none; cursor: pointer; }
 .icon:hover:not(:disabled) { background: var(--wash); }
 .icon:disabled { opacity: 0.35; }
-.band { display: flex; height: 86px; padding: 4px 6px; }
-.group { display: flex; flex-direction: column; padding: 0 8px; border-right: 1px solid var(--rule); }
+/* A tab wider than the window scrolls sideways; its groups never squeeze below their tools (their labels would run into each other). */
+.band { display: flex; height: 86px; padding: 4px 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.group { display: flex; flex-direction: column; flex-shrink: 0; padding: 0 8px; border-right: 1px solid var(--rule); }
 .group-tools { flex: 1; display: flex; gap: 2px; }
 .group-label { text-align: center; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); padding-bottom: 2px; }
 .tool { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 58px; padding: 4px 6px; border: 1px solid transparent; border-radius: 3px; background: none; cursor: pointer; font-size: 11px; }
@@ -386,7 +387,7 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .plan-item.contourMajor { stroke: #5d7a3e; stroke-width: 1.1; }
 .plan-item.terrainEdge { stroke: #5d7a3e; stroke-width: 0.8; stroke-dasharray: 5 3; }
 .small-tools { display: grid; grid-template-rows: repeat(3, auto); grid-auto-flow: column; align-content: center; gap: 2px 4px; }
-.tool.small { flex-direction: row; gap: 6px; height: auto; min-width: 0; padding: 1px 8px; line-height: 1.25; justify-content: flex-start; }
+.tool.small { flex-direction: row; gap: 6px; height: auto; min-width: 0; padding: 1px 8px; line-height: 1.25; justify-content: flex-start; white-space: nowrap; }
 .cad-line { border-top: 1px solid var(--rule); background: var(--panel); font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 3px 10px 4px; }
 .cad-history { color: var(--ink-muted); min-height: 2.9em; white-space: pre; overflow: hidden; }
 .cad-prompt { display: flex; align-items: center; gap: 8px; }
