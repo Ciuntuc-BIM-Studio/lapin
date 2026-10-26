@@ -73,4 +73,6 @@ Then (#131) the testers' reports of 21–23.10 resolved: the material picker, se
 
 Then (#132) links: IFC and DXF files linked read-only (`docs/links.md`), Manage → Links (show, halftone, reload, convert, open separately, unlink), View → Fog.
 
+Then (#134) versions in the `.lapin` file (`docs/versions.md`): each a manifest in `versions/index.json`, the parts the live project no longer has kept once under `versions/blobs/`; Manage → Versions (save, rename, update to current with revisions, restore as one undo step, compare element by element, export, open separately, delete).
+
 Next: the user reviews `docs/decisions-pending.md` (#1–111). Open items needing the user: signing and notarization, Windows (manifold), and what the review changes. Milestones are in `docs/plan.md`.

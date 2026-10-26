@@ -201,6 +201,48 @@ export async function saveProject(as = false): Promise<boolean> {
   }
 }
 
+// ─── Versions (docs/versions.md) ─────────────────────────────────────────
+
+export interface VersionRevision { at: string; note: string | null; entities: number; size: number }
+export interface ProjectVersion { number: number; name: string; note: string | null; at: string; updatedAt: string; entities: number; size: number; parts: number; app: string; revisions: VersionRevision[] }
+
+/** The open project's versions, as its file holds them. */
+export const listVersions = () => engine.call<ProjectVersion[]>('project.versions').catch(() => [] as ProjectVersion[]);
+
+/**
+ * A version call that writes the project's file (a version lives there): on
+ * the desktop in place, so the project needs a file first (Save as); with the
+ * engine in the browser the file comes back as bytes and is kept like a save.
+ * False: the user stepped back; a refusal is thrown.
+ */
+export async function writeVersions(method: string, args: Record<string, unknown>): Promise<boolean> {
+  if (engineInBrowser) {
+    const r = await engine.call<{ name: string; data: string }>(method, { ...args, bytes: true }, { timeoutMs: LONG_TIMEOUT_MS });
+    const kept = await keep(fromBase64(r.data), r.name, projectHandle, false);
+    if (!kept) return false;
+    projectHandle = kept.handle;
+    return true;
+  }
+  if (!useSession.getState().doc?.path) {
+    notify('Save the project first: its versions live in its file.');
+    if (!await saveProject(true)) return false;
+  }
+  await engine.call(method, args, { timeoutMs: LONG_TIMEOUT_MS });
+  return true;
+}
+
+/** A version as a .lapin file of its own, where the user says (the desktop) or as a download. */
+export const exportVersion = (number: number, revision: number | null, name: string) =>
+  exportFile('project.exportVersion', { number, ...(revision == null ? {} : { revision }) }, name, 'lapin');
+
+/** A version written to a file of its own and opened in another Lapin window (the desktop), to look at or edit there. */
+export async function openVersionSeparately(number: number, revision: number | null): Promise<void> {
+  const r = await engine.call<{ path: string }>('project.exportVersion', { number, ...(revision == null ? {} : { revision }), temp: true }, { timeoutMs: LONG_TIMEOUT_MS });
+  const { invoke } = await import('@tauri-apps/api/core');
+  await invoke('open_separately', { path: r.path });
+  notify('Opening the version in another Lapin window.');
+}
+
 export const listRecovery = () => engine.call<RecoverableWork[]>('recovery.list').catch(() => [] as RecoverableWork[]);
 
 export async function restoreWork(file: string): Promise<void> {

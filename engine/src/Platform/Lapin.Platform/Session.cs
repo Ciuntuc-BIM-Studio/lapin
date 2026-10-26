@@ -101,6 +101,13 @@ public sealed class Session
     /// </summary>
     public string ModuleOf(string ifcClass) => _catalog.OwnerOf(ifcClass) ?? _foreignClasses.GetValueOrDefault(ifcClass, "unknown");
 
+    /// <summary>Classes a file's content brought in through an edit (a version restored): which module wrote each, for the next save.</summary>
+    public void AdoptClasses(IReadOnlyDictionary<string, string> classModules)
+    {
+        foreach (var (cls, module) in classModules)
+            if (_catalog.OwnerOf(cls) == null) _foreignClasses[cls] = module;
+    }
+
     /// <summary>Replaces the model with one read from a file (no undo step). <paramref name="classModules"/>: which module wrote each class.</summary>
     public Diff Load(IEnumerable<Entity> entities, IEnumerable<Relation> relations, string? path, IReadOnlyDictionary<string, string>? classModules = null)
     {

@@ -20,6 +20,7 @@ function FileMenu() {
           <button type="button" role="menuitem" onClick={run(() => openProject())}>Open…<kbd>Ctrl O</kbd></button>
           <button type="button" role="menuitem" onClick={run(() => saveProject())}>Save<kbd>Ctrl S</kbd></button>
           <button type="button" role="menuitem" onClick={run(() => saveProject(true))}>Save as…<kbd>Ctrl ⇧ S</kbd></button>
+          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'versions' }))}>Save version…</button>
           <button type="button" role="menuitem" onClick={run(() => importIfc())}>Import IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => importIfc('link'))}>Link IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => exportIfc())}>Export IFC…</button>

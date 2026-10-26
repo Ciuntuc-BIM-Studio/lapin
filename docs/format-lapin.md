@@ -76,6 +76,8 @@ model/types.arrow, materials.arrow, relations.arrow, properties.arrow
 model/opaque/<GlobalId>.ifc        geometrie IFC păstrată exact (elemente importate fără intenție), reemisă identic
 journal/ops.jsonl                  operațiile de la ultima compactare: recuperare acum, lucru în echipă mai târziu
 derived/<hash kernel+parametri>/   cache de mesh (binar, Arrow), se poate șterge
+versions/index.json                versiunile proiectului: fiecare un manifest al ei, cu număr, nume, notă, moment și revizii (docs/versions.md)
+versions/blobs/<sha256>            o parte numită de o versiune pe care proiectul viu nu o mai are, o singură dată
 analytics/*.parquet                tabele pentru BI, doar la versiuni sau la export
 ```
 
@@ -115,6 +117,8 @@ Teste-specificație: `package-io.test.ts`, `project-file*.test.ts`, `versions.te
 - o ediție fără un modul păstrează elementele lui și le scrie înapoi neatinse.
 
 **Făcut și jurnalul de recuperare** (24.10.2026), dar în afara pachetului: `<app data>/recovery/*.jsonl`, cu fiecare tranzacție, undo și redo, scrise pe disc imediat (`Lapin.Host/Recovery.cs`, teste în `RecoveryTests`).
+
+**Făcut și versiunile** (26.10.2026, `docs/versions.md`): `versions/index.json` ține fiecare versiune ca manifest; la salvare se scriu doar blob-urile părților pe care proiectul viu nu le mai are (adresare după conținut, cum prevedea analiza); restaurare într-un pas de undo, comparare element cu element și parte cu parte, export ca pachet de sine stătător (`PackageVersions`, `ModelCompare`, `VersionTests`).
 
 **Rămâne:**
 - cache-ul `derived/` (geometria afișată pentru modulele lipsă);

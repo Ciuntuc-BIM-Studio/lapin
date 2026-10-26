@@ -3,6 +3,11 @@
 export const RO: Record<string, string> = {
   // The top bar, menus, the start screen
   'File': 'Fișier', 'New project': 'Proiect nou', 'Open…': 'Deschide…', 'Open project…': 'Deschide un proiect…', 'Save': 'Salvează', 'Save as…': 'Salvează ca…', 'Export IFC…': 'Exportă IFC…', 'Import IFC…': 'Importă IFC…',
+  // Versions and links (Manage → Files)
+  'Versions': 'Versiuni', 'Save version…': 'Salvează o versiune…', 'Save version': 'Salvează versiunea', 'Links': 'Legături', 'Files': 'Fișiere',
+  'Note': 'Notă', 'Saved': 'Salvată', 'Elements': 'Elemente', 'Size': 'Mărime', 'Restore': 'Restaurează', 'Compare': 'Compară', 'Export…': 'Exportă…',
+  'Added': 'Adăugate', 'Removed': 'Șterse', 'Changed': 'Modificate', 'Current project': 'Proiectul curent', 'Open separately': 'Deschide separat',
+  'Update to current': 'Adu la starea curentă', 'Earlier': 'Mai devreme', 'No versions yet.': 'Nicio versiune încă.',
   // Drafting properties
   'Drafting': 'Desen', 'by layer': 'după layer', 'Line type': 'Tip de linie', 'Start': 'Început', 'End': 'Sfârșit', 'Centre': 'Centru', 'Radius': 'Rază', 'Diameter': 'Diametru', 'Circumference': 'Circumferință', 'Vertices': 'Vârfuri', 'Closed': 'Închis', 'Start angle': 'Unghi de început', 'End angle': 'Unghi de sfârșit', 'Pattern': 'Model', 'Position': 'Poziție', 'Tagged element': 'Element etichetat', 'Field': 'Câmp',
   'Start screen': 'Ecranul de start', 'Commands…': 'Comenzi…', 'Theme': 'Temă', 'Undo': 'Anulează', 'Redo': 'Refă',

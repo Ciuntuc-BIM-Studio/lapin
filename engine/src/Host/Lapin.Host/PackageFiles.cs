@@ -10,7 +10,7 @@ public static class PackageFiles
     public static ProjectFiles Create()
     {
         ProjectFiles? files = null;
-        files = new((session, path) => { var d = Open(session, path); files!.LastNotes = LastNotes; return d; }, Save);
+        files = new((session, path) => { var d = Open(session, path); files!.LastNotes = LastNotes; return d; }, (session, path, versions) => ProjectPackage.Write(session, path, versions));
         return files;
     }
 
@@ -30,5 +30,7 @@ public static class PackageFiles
         return session.Load(content.Entities, content.Relations, path, content.Classes);
     }
 
-    public static void Save(Session session, string path) => ProjectPackage.Write(session, path);
+    /// <summary>The project written to <paramref name="path"/>, with its versions (those of the file it came from, unless given).</summary>
+    public static void Save(Session session, string path, PackageVersions? versions = null) =>
+        ProjectPackage.Write(session, path, versions ?? (session.Path is { } from ? PackageVersions.Of(from) : PackageVersions.None));
 }

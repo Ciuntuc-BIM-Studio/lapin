@@ -1,6 +1,6 @@
 /** Core: always there — selecting, measuring, the views and how they look, materials and drafting standards. */
 
-import { AppWindow, Box, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2, CloudFog, Link2 } from 'lucide-react';
+import { AppWindow, Box, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2, CloudFog, Link2, History } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -22,6 +22,7 @@ import { LocationDialog } from './LocationDialog';
 import { CutOrderDialog } from './CutOrderDialog';
 import { MoveToStoreyDialog } from './MoveToStoreyDialog';
 import { LinksDialog, LinksLook } from './LinksDialog';
+import { VersionsDialog } from './VersionsDialog';
 
 /** Create Similar: the selected element's tool, set up like it. */
 function createSimilar() {
@@ -90,7 +91,10 @@ const core: LapinModule = {
         { id: 'manage.location', label: 'Location', icon: MapPin, run: () => useUi.setState({ dialog: 'location' }) },
         { id: 'manage.cutOrder', label: 'Cut order', icon: Scissors, run: () => useUi.setState({ dialog: 'cutOrder' }) },
       ] },
-      { label: 'Links', tools: [{ id: 'manage.links', label: 'Links', icon: Link2, run: () => useUi.setState({ dialog: 'links' }) }] },
+      { label: 'Files', tools: [
+        { id: 'manage.links', label: 'Links', icon: Link2, run: () => useUi.setState({ dialog: 'links' }) },
+        { id: 'manage.versions', label: 'Versions', icon: History, run: () => useUi.setState({ dialog: 'versions' }) },
+      ] },
     ],
   }, {
     id: 'view', label: 'View', order: 90,
@@ -121,7 +125,7 @@ const core: LapinModule = {
       ] },
     ],
   }],
-  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog },
+  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog },
   background: CoreBackground,
   propertySections: [{ id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection }],
   hotbar: [
