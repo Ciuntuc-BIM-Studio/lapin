@@ -22,7 +22,7 @@ public static class LegacyImport
 
     public static Result Run(Session session, LegacyProject old)
     {
-        session.New();
+        session.New(plain: true);
         var notes = new List<string>(old.Skipped);
         var has = session.Catalog.Commands.Select(c => c.Name).ToHashSet();
         string? Id(JsonNode? r) => (string?)r?["id"];

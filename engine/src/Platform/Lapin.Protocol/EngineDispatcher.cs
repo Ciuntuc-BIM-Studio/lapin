@@ -304,7 +304,8 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             case "doc.query":
                 return (session.Query((string?)p["name"] ?? throw new CommandException("The query is missing."), p["args"] as JsonObject ?? [])?.DeepClone(), null);
             case "quantities.of": return (session.Quantities((string?)p["id"] ?? throw new CommandException("Which element?")), null);
-            case "project.new": return (null, session.New());
+            // A new project with the default storeys; `plain`: one ground floor, for a file that fills it (an IFC opened as a project).
+            case "project.new": return (null, session.New(p["plain"]?.GetValue<bool>() == true));
             case "project.open":
             {
                 var diff = files.Open(session, PathParam());

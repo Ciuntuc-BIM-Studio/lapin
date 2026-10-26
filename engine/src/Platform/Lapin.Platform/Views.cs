@@ -129,6 +129,46 @@ public static class Views
         return camera;
     }
 
+    /// <summary>
+    /// What a plan shows of the other storeys (as ArchiCAD's "show on
+    /// stories"): its own storey's elements only ("home", the default), those
+    /// of the storeys listed besides ("some"), or every storey's ("all");
+    /// <see cref="Halftone"/>: the other storeys' elements draw grey. What
+    /// stands on no storey (the site's) is always shown. A plan view keeps it
+    /// in <c>storeys</c>; it is drawn, so it prints on sheets as on screen.
+    /// </summary>
+    public sealed record StoreyDisplay(string Mode, IReadOnlySet<string> Storeys, bool Halftone)
+    {
+        public static readonly StoreyDisplay Home = new("home", new HashSet<string>(), false);
+        public static readonly string[] Modes = ["home", "some", "all"];
+
+        public static StoreyDisplay Of(Entity view)
+        {
+            if (view.Attrs["storeys"] is not JsonObject o) return Home;
+            var mode = (string?)o["mode"] is { } md && Modes.Contains(md) ? md : "home";
+            var ids = (o["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+            var halftone = o["halftone"] is JsonValue hv && hv.TryGetValue<bool>(out var h) && h;
+            return new StoreyDisplay(mode, ids, halftone);
+        }
+
+        public JsonObject ToJson() => new()
+        {
+            ["mode"] = Mode, ["ids"] = new JsonArray(Storeys.Order(StringComparer.Ordinal).Select(x => (JsonNode)x).ToArray()), ["halftone"] = Halftone,
+        };
+
+        /// <summary>How a plan of <paramref name="home"/> shows an element on <paramref name="storey"/> (null: on none): null hidden, false as it is, true halftone.</summary>
+        public bool? Shows(string? home, string? storey)
+        {
+            if (storey == null || storey == home) return false;
+            var shown = Mode switch { "all" => true, "some" => Storeys.Contains(storey), _ => false };
+            return shown ? Halftone : null;
+        }
+    }
+
+    /// <summary>How a view shows an element by its storey (null: hidden; true: halftone); every element shows in a section, an elevation or a 3D view.</summary>
+    public static bool? ShowsByStorey(IModelView m, Entity view, Entity element) =>
+        view.Str("kind") is "plan" or null ? StoreyDisplay.Of(view).Shows(view.Str("storeyId"), Spatial.StoreyOf(m, element.Id)?.Id) : false;
+
     /// <summary>Every element's parts, and in a plan the symbols of the doors, windows and roofs of its storey.</summary>
     static (List<DrawPart> Parts, List<DrawSymbol> Symbols) Gather(IQueryContext q, Entity view)
     {
@@ -139,9 +179,13 @@ public static class Views
         var viewGraphics = GraphicsSets.Of(m, view);
         var hiddenElements = (view.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         var filters = q.Services.All<IViewElementFilter>();
+        var plan = view.Str("kind") is "plan" or null;
+        var display = StoreyDisplay.Of(view);
         foreach (var e in m.Entities)
         {
             if (e.Class is IfcClass.OpeningElement || hiddenElements.Contains(e.Id)) continue;
+            // A plan shows its own storey's elements, and the other storeys' only as it says (StoreyDisplay).
+            if (plan && display.Shows(storey, Spatial.StoreyOf(m, e.Id)?.Id) == null) continue;
             if (filters.Select(f => f.For(m, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
             if (GraphicsSets.Hides(viewGraphics, e)) continue;
             if (q.Geometry(e.Id) is not { } g) continue;
@@ -212,9 +256,15 @@ public static class Views
         // Elements a module draws in another colour (a phase's override): their lines and fills.
         var colors = new Dictionary<string, string>();
         var filters = q.Services.All<IViewElementFilter>();
-        if (filters.Count > 0)
+        var halftoneOthers = spec.Kind == "plan" && StoreyDisplay.Of(view).Halftone;
+        if (filters.Count > 0 || halftoneOthers)
             foreach (var id in drawing.Cuts.Select(c => c.Element).Concat(drawing.Lines.Select(l => l.Element)).Distinct())
-                if (m.Get(id) is { } el && filters.Select(f => f.For(m, view, el)).FirstOrDefault(x => x != null) is { Color: { } c }) colors[id] = c;
+            {
+                if (m.Get(id) is not { } el) continue;
+                if (filters.Select(f => f.For(m, view, el)).FirstOrDefault(x => x != null) is { Color: { } c }) colors[id] = c;
+                // Another storey's element in a plan that shows it halftone: grey, as a halftone link.
+                else if (halftoneOthers && ShowsByStorey(m, view, el) == true) colors[id] = Links.Halftone;
+            }
         var pens = Pens.Of(drawing, materials, new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table));
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
@@ -510,6 +560,25 @@ public static class Views
                 ["resolved"] = new JsonObject { ["cut"] = resolved.Cut, ["top"] = resolved.Top, ["bottom"] = resolved.Bottom, ["depth"] = resolved.Depth },
                 ["problems"] = new JsonArray(ViewRanges.Problems(resolved).Select(p => (JsonNode)p).ToArray()),
             };
+        });
+
+        // What a plan shows of the other storeys: {id, mode: home|some|all, ids?: [storey ids], halftone?}; the plan's own storey is always shown.
+        r.Command("view.setStoreys", "Storeys shown", (ctx, a) =>
+        {
+            var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == "plan" ? x : throw new CommandException("Not a plan view.");
+            var old = StoreyDisplay.Of(v);
+            var mode = (string?)a["mode"] ?? old.Mode;
+            if (!StoreyDisplay.Modes.Contains(mode)) throw new CommandException($"„{mode}” is not home, some or all.");
+            var ids = a["ids"] is JsonArray arr ? arr.Select(n => (string?)n).OfType<string>().ToHashSet() : old.Storeys.ToHashSet();
+            foreach (var id in ids) Spatial.Require(ctx.Model, id, IfcClass.BuildingStorey);
+            ids.Remove(v.Str("storeyId") ?? "");
+            var halftone = a["halftone"] is JsonValue hv && hv.TryGetValue<bool>(out var h) ? h : old.Halftone;
+            var attrs = v.CloneAttrs();
+            var next = new StoreyDisplay(mode, ids, halftone);
+            if (next.Mode == "home" && next.Storeys.Count == 0 && !next.Halftone) attrs.Remove("storeys");
+            else attrs["storeys"] = next.ToJson();
+            ctx.Replace(v.With(attrs: attrs));
+            return null;
         });
 
         r.Command("view.setRange", "View range", (ctx, a) =>

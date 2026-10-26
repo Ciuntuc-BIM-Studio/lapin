@@ -328,7 +328,8 @@ export async function openStartupFile(): Promise<void> {
     const path = await invoke<string | null>('startup_file');
     if (!path) return;
     const name = path.split(/[\\/]/).pop() ?? path;
-    await engine.call('project.new');
+    // An IFC brings its own storeys: the new project starts with a ground floor only.
+    await engine.call('project.new', { plain: !/\.dxf$/i.test(name) });
     enter();
     if (/\.dxf$/i.test(name)) { dxfFile.current = { name, path }; useUi.setState({ dialog: 'importDxf' }); return; }
     const r = await engine.call<{ elements: number; recognized?: number; references: number }>('project.importIfc', { path, mode: 'auto' }, { timeoutMs: LONG_TIMEOUT_MS });

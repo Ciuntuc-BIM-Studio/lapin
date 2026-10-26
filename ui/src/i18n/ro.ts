@@ -8,6 +8,9 @@ export const RO: Record<string, string> = {
   'Note': 'Notă', 'Saved': 'Salvată', 'Elements': 'Elemente', 'Size': 'Mărime', 'Restore': 'Restaurează', 'Compare': 'Compară', 'Export…': 'Exportă…',
   'Added': 'Adăugate', 'Removed': 'Șterse', 'Changed': 'Modificate', 'Current project': 'Proiectul curent', 'Open separately': 'Deschide separat',
   'Update to current': 'Adu la starea curentă', 'Earlier': 'Mai devreme', 'No versions yet.': 'Nicio versiune încă.',
+  // Storeys shown in a plan
+  'Storeys shown': 'Etaje afișate', 'Show': 'Arată', 'Others halftone': 'Celelalte în halftone', 'its own storey only': 'doar etajul propriu',
+  'its own and the storeys ticked': 'etajul propriu și etajele bifate', 'every storey': 'toate etajele',
   // Drafting properties
   'Drafting': 'Desen', 'by layer': 'după layer', 'Line type': 'Tip de linie', 'Start': 'Început', 'End': 'Sfârșit', 'Centre': 'Centru', 'Radius': 'Rază', 'Diameter': 'Diametru', 'Circumference': 'Circumferință', 'Vertices': 'Vârfuri', 'Closed': 'Închis', 'Start angle': 'Unghi de început', 'End angle': 'Unghi de sfârșit', 'Pattern': 'Model', 'Position': 'Poziție', 'Tagged element': 'Element etichetat', 'Field': 'Câmp',
   'Start screen': 'Ecranul de start', 'Commands…': 'Comenzi…', 'Theme': 'Temă', 'Undo': 'Anulează', 'Redo': 'Refă',

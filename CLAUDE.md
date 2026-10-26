@@ -75,6 +75,8 @@ Then (#132) links: IFC and DXF files linked read-only (`docs/links.md`), Manage 
 
 Then (#134) versions in the `.lapin` file (`docs/versions.md`): each a manifest in `versions/index.json`, the parts the live project no longer has kept once under `versions/blobs/`; Manage → Versions (save, rename, update to current with revisions, restore as one undo step, compare element by element, export, open separately, delete).
 
+Then (#136) a new project starts with Foundations, Ground floor and First floor; a plan draws only its own storey's elements unless its view says otherwise (View → Storeys shown, or the plan view's properties: some or all storeys, halftone), in the engine's drawing so sheets print it.
+
 The `mep` module (premium, `docs/plan-mep.md`) lives in the private sibling repo `../lapin-mep`, built through `products/lapin-mep.json` (`"external"`); its stages 1–3 (network core, IFC export, the MEP tab, the engineering estimates and schedules) are done.
 
 Next: the user reviews `docs/decisions-pending.md` (#1–111). Open items needing the user: signing and notarization, Windows (manifold), and what the review changes. Milestones are in `docs/plan.md`.

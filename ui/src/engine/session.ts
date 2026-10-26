@@ -88,7 +88,9 @@ export const redo = () => engine.call('doc.redo').catch(() => undefined);
 /** The storey the plan shows and new elements go on: the chosen one, else the lowest. */
 export function activeStorey(s: SessionState = useSession.getState()): NodeDto | null {
   const chosen = useUi.getState().storeyId;
-  return (chosen ? s.nodes.get(chosen) : undefined) ?? storeys(s)[0] ?? null;
+  // None chosen: the ground floor (the lowest at or above ±0.00), not the foundations below it.
+  const all = storeys(s);
+  return (chosen ? s.nodes.get(chosen) : undefined) ?? all.find((n) => Number(n.props.elevation ?? 0) >= -1e-6) ?? all[0] ?? null;
 }
 
 /** The storey to build on: the active one, or a new one when the project has none yet. */

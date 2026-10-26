@@ -70,25 +70,47 @@ public sealed class Session
 
     // ------------------------------------------------------------ project
 
-    /// <summary>A new project: the project, site and building, and a ground floor. Nothing to undo, nothing to save.</summary>
-    public Diff New()
+    /// <summary>
+    /// The storeys a new project starts with (name, base level, height): the
+    /// foundations below ±0.00, the ground floor and the first floor.
+    /// </summary>
+    public static readonly IReadOnlyList<(string Name, double Elevation, double Height)> NewProjectStoreys =
+    [
+        ("Foundations", -1.5, 1.5),
+        ("Ground floor", 0.0, 3.0),
+        ("First floor", 3.0, 3.0),
+    ];
+
+    /// <summary>
+    /// A new project: the project, site and building, and its storeys
+    /// (<see cref="NewProjectStoreys"/>); <paramref name="plain"/>: one ground
+    /// floor only, for a project another file fills (an old project, an IFC
+    /// opened as a project). Nothing to undo, nothing to save.
+    /// </summary>
+    public Diff New(bool plain = false)
     {
-        StartEmpty();
+        if (plain) StartEmpty(); else StartEmpty(NewProjectStoreys);
         Path = null;
         Emit("start");
         return Snapshot();
     }
 
-    void StartEmpty()
+    /// <summary>The session as it starts, before a project is made or opened: one ground floor.</summary>
+    void StartEmpty() => StartEmpty([("Ground floor", 0.0, 3.0)]);
+
+    void StartEmpty(IReadOnlyList<(string Name, double Elevation, double Height)> storeys)
     {
         _foreignClasses.Clear();
         _history.Load([], []);
         _history.Execute("New project", edit =>
         {
             var building = Spatial.EnsureBuilding(edit);
-            var storey = new Entity(edit.NewId(), IfcClass.BuildingStorey, "Ground floor", new JsonObject { ["elevation"] = 0.0, ["height"] = 3.0 });
-            edit.Add(storey);
-            edit.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
+            foreach (var (name, elevation, height) in storeys)
+            {
+                var storey = new Entity(edit.NewId(), IfcClass.BuildingStorey, name, new JsonObject { ["elevation"] = elevation, ["height"] = height });
+                edit.Add(storey);
+                edit.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
+            }
         });
         _history.Reset();
         ForgetAll();

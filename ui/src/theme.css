@@ -554,3 +554,8 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .plan-underlay { opacity: 0.32; filter: grayscale(1); pointer-events: none; }
 .underlay-pick { max-width: 170px; }
 .underlay-pick.on { border-color: var(--accent); color: var(--accent); }
+
+/* A plan's storeys shown (View → Storeys shown, the plan view's properties) */
+.plan-storeys-list { list-style: none; margin: 8px 0 4px; padding: 0; }
+.plan-storeys-list li { padding: 2px 0; }
+.plan-storeys-list li.own { font-weight: 500; }
