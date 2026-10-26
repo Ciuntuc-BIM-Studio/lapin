@@ -2,14 +2,15 @@
 // The web build, checked as a tester uses it (docs/plan-browser-engine.md,
 // stage 3): build/<id>/web served as static files, opened in headless Chrome;
 // the engine must start in the worker within the budget, a new project must
-// open, and a wall drawn with WA must show in the plan.
+// open, a wall drawn with WA must show in the plan, and File → Export 3D…
+// must download that wall as GLB, USDZ and DAE (docs/plan-mesh-export.md).
 //
 //   node scripts/check-web.mjs [id]       (default: lapin)
 // CHROME: the browser to drive (default: Chrome where it is usually installed).
 // LAPIN_WEB_START_BUDGET_MS: the start budget (default 4000; slow CI machines set more).
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -92,6 +93,30 @@ try {
       if (!(cut > 0)) fail(`the wall drawn did not show in the plan. ${errors.join(' | ')}`);
       else console.log(`▸ a wall drawn with WA: ${cut} cut band(s) in the plan`);
     }
+  }
+  // 3. File → Export 3D…, as a tester does it: each format downloaded, and what it starts with.
+  if (started && !failed) {
+    const downloads = mkdtempSync(join(tmpdir(), 'lapin-check-web-dl-'));
+    await send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads });
+    const MAGIC = { glb: (b) => b.readUInt32LE(0) === 0x46546c67, usdz: (b) => b.readUInt32LE(0) === 0x04034b50 && b.toString('utf8', 30, 40) === 'model.usda', dae: (b) => b.toString('utf8', 0, 200).includes('<COLLADA') };
+    for (const format of ['glb', 'usdz', 'dae']) {
+      await ev(`[...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click()`);
+      await sleep(200);
+      await ev(`[...document.querySelectorAll('[role=menuitem]')].find(x => /Export 3D/.test(x.textContent))?.click()`);
+      await sleep(400);
+      const chosen = await ev(`(() => { const s = document.querySelector('[aria-label="Export 3D"] select'); if (!s) return false;
+        Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, '${format}'); s.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`);
+      if (!chosen) { fail('File → Export 3D… did not open its dialog.'); break; }
+      await sleep(200);
+      await ev(`[...document.querySelectorAll('[aria-label="Export 3D"] button')].find(x => x.textContent.trim() === 'Export')?.click()`);
+      let file = null;
+      for (let k = 0; k < 80 && !file; k++) { await sleep(250); file = readdirSync(downloads).find((f) => f.endsWith(`.${format}`)) ?? null; }
+      const bytes = file ? readFileSync(join(downloads, file)) : null;
+      if (!bytes || bytes.length < 100) fail(`Export 3D as ${format.toUpperCase()} downloaded nothing. ${errors.join(' | ')}`);
+      else if (!MAGIC[format](bytes)) fail(`Export 3D as ${format.toUpperCase()} is not a ${format} file.`);
+      else console.log(`▸ Export 3D as ${format.toUpperCase()}: ${file}, ${bytes.length} bytes`);
+    }
+    rmSync(downloads, { recursive: true, force: true });
   }
   if (errors.length) fail(`exceptions in the page: ${errors.join(' | ')}`);
   ws.close();
