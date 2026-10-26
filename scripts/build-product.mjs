@@ -11,7 +11,7 @@
 // app is built unsigned, as before; without the profile it is signed, not notarized.
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveProduct } from './product.mjs';
 import { checkDmg } from './check-dmg.mjs';
@@ -81,7 +81,9 @@ if (mac) console.log(identity ? `▸ signing as ${identity}` : '▸ no Developer
 writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   productName: product.name,
   identifier: `ro.ciuntucbimstudio.${productId}`,
-  build: { frontendDist: join(out, 'ui') },
+  // Relative to desktop/src-tauri, with forward slashes: Tauri reads an absolute Windows path ("D:\\a\\…") as a URL with the
+  // scheme "d:", embeds nothing and the installed app opens on "File not found".
+  build: { frontendDist: relative(tauriDir, join(out, 'ui')).split(sep).join('/') },
   app: { windows: [{ label: 'main', title: product.name, width: 1440, height: 900, minWidth: 1000, minHeight: 640, center: true }] },
   bundle: {
     externalBin: ['binaries/lapin-host'], resources: ['resources/**/*'],
