@@ -103,6 +103,8 @@ export interface PropertySectionDef {
   component: ComponentType<{ node: NodeDto }>;
   /** True when the section shows this node's own fields itself, so the panel leaves out the class's generic ones. */
   replacesFields?: (node: NodeDto) => boolean;
+  /** The keys of the class's fields this node shows, when one class holds entities of different kinds (a pipe segment is a run or a stack); null: all of them. */
+  fieldKeys?: (node: NodeDto) => string[] | null;
 }
 
 export interface LapinModule {

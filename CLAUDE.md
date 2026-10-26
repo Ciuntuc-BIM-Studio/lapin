@@ -75,4 +75,6 @@ Then (#132) links: IFC and DXF files linked read-only (`docs/links.md`), Manage 
 
 Then (#134) versions in the `.lapin` file (`docs/versions.md`): each a manifest in `versions/index.json`, the parts the live project no longer has kept once under `versions/blobs/`; Manage → Versions (save, rename, update to current with revisions, restore as one undo step, compare element by element, export, open separately, delete).
 
+The `mep` module (premium, `docs/plan-mep.md`) lives in the private sibling repo `../lapin-mep`, built through `products/lapin-mep.json` (`"external"`); its stages 1–2 (network core, IFC export, the MEP tab) are done.
+
 Next: the user reviews `docs/decisions-pending.md` (#1–111). Open items needing the user: signing and notarization, Windows (manifold), and what the review changes. Milestones are in `docs/plan.md`.

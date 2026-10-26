@@ -13,6 +13,7 @@ import { useUi } from '../app/store';
 import { execute, useSession } from '../engine/session';
 import { relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
 import type { FieldDescriptor, NodeDto } from '../engine/protocol';
+import type { PropertySectionDef } from '../platform/module';
 import { propertySections } from '../platform/modules';
 import { QuantitiesSection } from './QuantitiesSection';
 
@@ -36,6 +37,12 @@ const sameKind = (node: NodeDto): string[] => {
   const nodes = useSession.getState().nodes;
   return selected.includes(node.id) ? selected.filter((id) => nodes.get(id)?.type === node.type) : [node.id];
 };
+
+/** The class's fields this node shows: all, unless a section names the keys its kind of entity has. */
+function fieldsShown(fields: FieldDescriptor[], sections: PropertySectionDef[], node: NodeDto): FieldDescriptor[] {
+  const keys = sections.map((s) => s.fieldKeys?.(node)).find((k) => k != null);
+  return keys ? fields.filter((f) => keys.includes(f.key)) : fields;
+}
 
 function FieldRow({ node, field }: { node: NodeDto; field: FieldDescriptor }) {
   const nodes = useSession((s) => s.nodes);
@@ -259,7 +266,7 @@ function ElementPanel({ node }: { node: NodeDto }) {
       )}
       {cls && cls.fields.length > 0 && node.editable && !sections.some((s) => s.replacesFields?.(node)) && (
         <Group id="dimensions" label="Dimensions">
-          <dl className="fields">{cls.fields.map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
+          <dl className="fields">{fieldsShown(cls.fields, sections, node).map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
         </Group>
       )}
       {node.editable && <Group id="params" label="Parameters"><ParamsSection node={node} /></Group>}
