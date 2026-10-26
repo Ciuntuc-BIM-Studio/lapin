@@ -276,9 +276,10 @@ export async function exportIfc(options: { schema?: string; detail?: string; pha
 
 /** An IFC file into the open project: Lapin's own files come back native, others as references (mode 'reference' keeps everything as it is). */
 export async function importIfc(mode: 'auto' | 'reference' = 'auto'): Promise<void> {
-  // By path (the desktop, pnpm dev), or the file's bytes (the engine in the browser).
-  const picked = engineInBrowser ? await pickFile('IFC', 'ifc') : null;
-  const path = engineInBrowser ? picked?.name ?? null : await pickPath('open', undefined, [{ name: 'IFC', extensions: ['ifc'] }]);
+  // By path on the desktop (the native dialog); in a browser, the file's bytes from the browser's own
+  // picker, whether the engine runs in the page or as the local process of pnpm dev: a page never knows a path.
+  const picked = isDesktop() ? null : await pickFile('IFC', 'ifc');
+  const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'IFC', extensions: ['ifc'] }]) : picked?.name ?? null;
   if (!path) return;
   try {
     const args = picked ? { name: picked.name, data: toBase64(picked.bytes), mode } : { path, mode };
