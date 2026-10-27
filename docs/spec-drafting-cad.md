@@ -15,7 +15,7 @@ Ortho and guide lines from points are new in lapin-pro.
 - **Shapes:**
   - `line {a,b}`, `polyline {pts, closed}` (a rectangle is a closed polyline), `circle {c,r}`, `arc {c,r,start,end}` (counter-clockwise);
   - `text {p,text,height,rotation}`, `leader {pts,text,height}`;
-  - `dimension {aligned|linear, a,b,at,dir?,text?}`, `radial {diameter}`, `angular {c,a,b,at}`;
+  - `dimension {aligned|linear, pts[≥2], refs?, at, dir?, texts?}`: a string of points on one dimension line, one object (a two-point dimension is a string of one segment; an older `a`, `b`, `refA`, `refB` still reads), `radial {diameter}`, `angular {c,a,b,at}`;
   - `level {p,value,ref?}`;
   - `hatch {loops, pattern, scale, angle, color}`.
 - **Layer:** `{name, color, visible, locked, lineWeight (0.25), lineType: continuous|dashed[3,1.5]|dotted[0.3,1]|dashdot[4,1,0.3,1], group}`. The default layer is "0", colour #18181b.
@@ -45,7 +45,8 @@ Ortho and guide lines from points are new in lapin-pro.
   - TRIM and EXTEND cut or extend to the drafted shapes and to the model's lines.
   - FILLET takes a radius; 0 makes a sharp corner.
 - **Annotate:**
-  - Dimensions continue in a chain by default; `S` makes a single one.
+  - Dimensions continue as a string by default, previewed until Enter makes the whole string one dimension (one object, one undo step; `U` takes the last point back); `S` makes a single one.
+  - A string is selected, moved, copied, deleted and shown in the properties as one object; a double-click on a segment drives that segment's value, and what follows it moves along. The properties split a string into single dimensions, and join single ones that go on from one another on one dimension line.
   - A dimension's ends attach to model edges.
 
 ## Command line
@@ -78,7 +79,7 @@ Ortho and guide lines from points are new in lapin-pro.
   - polyline: its vertices, plus a grip in the middle of each side that pushes the side square to itself;
   - circle and arc: the centre;
   - text: its point;
-  - dimension: a, b, the line, and the text.
+  - dimension: like a polyline: each measured point (drag: re-placed and re-associated; Ctrl/⌘: taken out, two stay), each segment's middle on the dimension line (drag: a new point there; Ctrl/⌘: one halfway), and the dimension line's ends (drag: the line's offset).
 - **Selection:**
   - A click picks; Shift adds or toggles.
   - A drag to the right is a window (fully inside); to the left, crossing (touching).

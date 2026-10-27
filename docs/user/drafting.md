@@ -44,4 +44,6 @@ The **Draft** tab draws lines, polylines, rectangles, circles and arcs. It edits
 
 The **Annotate** tab has the dimensions, text, grid axes, levels and tags. A dimension reads the model, so it updates when a wall moves. How text, dimensions, axes and tags look is set in **Manage → Drafting standards**.
 
+An aligned or linear dimension goes on as a string: after the first two points and its line, each click adds the next point on the same line, and **Enter** makes the whole string one dimension (**U** takes the last point back; type **S** first for a single dimension). A string behaves like a polyline: a click selects all of it, and it moves, copies and deletes as one. Its grips sit on each measured point (drag to move it, Ctrl/⌘-click to take it out), in the middle of each segment (drag to add a point, Ctrl/⌘-click to add one halfway) and at the ends of the dimension line (drag to move the line). Double-click a segment to type its value: the element it measures moves, and so does everything after it in the string. The properties show each segment's value and text, split a string into single dimensions, and join single dimensions that continue one another on one line.
+
 ![The Annotate tab](shots/ribbon-annotate.webp)

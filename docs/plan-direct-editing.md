@@ -13,6 +13,7 @@ Asked on 25.10.2026. This plan starts from what the code does today; the open qu
 - **Drafting.** A shape is an `IfcAnnotation` DRAFT with `shape`, `layer`, `color`, `hatch`. The name is automatic ("Line"). There is no role. The property section shows the shape in CAD terms (ends, length, angle, radius, area).
 - **Live input.** While drawing, the plan shows the length of a two-point gesture and W × H of a rectangle; no angle, nothing editable. The command line takes `@dx,dy`, `@d<a`, a bare distance; BIM tools take no typed values.
 - **Dimensions.** Aligned and linear, chained, associative to edges, grid lines and wall or beam axes, driving values on double-click. No angular, radial, diameter, arc length, slope or spot elevation; the ribbon's "Level" does nothing.
+  - Since 27.10.2026 (decision 149) a chain is one object, a string of points (`pts`, `refs`) edited like a polyline: grips on its points, segment middles and line; per-segment driving values; split and join. Older projects' chains (one entity per segment, `chain`/`chainIx`) open as one string each.
 - **Cut order.** The engine has it: a class priority set in code (wall 50, slab 60, beam 80, column 90, footing 95) and an element's own `cutPriority`; higher cuts lower. There is no project table and no place to change it; roofs and Studio solids take no part.
 - **Properties panel.** Module sections, then the class's declared fields; `element.update` refuses any undeclared key. No user parameters, no custom property sets.
 

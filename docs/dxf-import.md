@@ -15,7 +15,7 @@ Un DXF intră într-o vedere (plan, secțiune, fațadă) ca desen nativ Lapin: s
 | HATCH | hașură Lapin pe contururile tesselate (linii, arce, elipse, spline, polilinii cu bulge; text boxes sărite). SOLID → `SOLID`. Dacă fișierul poartă definiția liniilor pattern-ului (53/43–46/49), aceasta se normalizează (scara și unghiul hașurii scoase, offsetul adus pe direcția liniei, ca în `.pat`) și se înregistrează o singură dată în proiect sub numele din DXF (`ANSI31`, …; `-2` la coliziune cu altă definiție; `-M` dacă vederea o oglindește și pattern-ul nu e simetric). Fără definiție: `ANSI31→LINES45`, `ANSI37→CROSS`, `AR-CONC→CONCRETE`, `INSUL→BATT`, … altfel `LINES45`. |
 | SOLID, TRACE | hașură SOLID |
 | INSERT (+ ATTRIB) | blocul explodat: translație, rotație, scară (și negativă = oglindire), coloane/rânduri; entitățile de pe stratul `0` iau stratul insertului; culoarea BYBLOCK ia culoarea insertului; atributele vizibile devin texte |
-| DIMENSION liniară (rotated) și aligned | cotă Lapin (`a`, `b`, `at`, `dir`), nu asociată elementelor; celelalte feluri (și toate, dacă se cere „geometry”) aduc liniile și textele din blocul `*D` |
+| DIMENSION liniară (rotated) și aligned | cotă Lapin (`pts`, `at`, `dir`), nu asociată elementelor; cotele continue (DIMCONTINUE: câte una pe segment) devin un singur lanț, vezi mai jos; celelalte feluri (și toate, dacă se cere „geometry”) aduc liniile și textele din blocul `*D` |
 | LEADER | polilinie deschisă |
 | POINT, IMAGE, WIPEOUT, 3DFACE, REGION, MLEADER, paper space… | lăsate afară și numărate în rezultat |
 
@@ -25,7 +25,7 @@ Culoarea unei entități (ACI sau true color) devine culoarea proprie a formei; 
 
 - `units`: `auto` (implicit), `mm`, `cm`, `m`, `in`, `ft` sau factorul numeric (metri pe unitate). `auto` ia `$INSUNITS`; dacă lipsește, ghicește din întindere (peste 2000 de unități → mm, peste 300 → cm, altfel m). Dacă fișierul declară o unitate care ar da un desen sub 1 m (ArchiCAD scrie metri sub `$INSUNITS = 4`), se ia ghicirea și rezultatul spune `unitsGuessed`.
 - `at` [x, y] în metri în vedere: unde ajunge originea DXF-ului (implicit 0, 0). `rotation` în grade. `scale` factor suplimentar.
-- `layers`: lista straturilor DXF de adus (implicit toate). `layerPrefix`: prefix pentru numele straturilor create. `texts`, `hatches` (implicit true). `dimensions`: `native` (implicit), `geometry`, `skip`.
+- `layers`: lista straturilor DXF de adus (implicit toate). `layerPrefix`: prefix pentru numele straturilor create. `texts`, `hatches` (implicit true). `dimensions`: `native` (implicit), `geometry`, `skip`. `joinDimensions` (implicit true; în dialog: Continued → joined into strings): cotele continue din AutoCAD se unesc într-un singur lanț de puncte, un obiect, cum le face Lapin: cele de pe același strat, liniare cu aceeași direcție (sau aliniate paralele), cu linia de cotă pe aceeași dreaptă, fiecare pornind de unde se termină alta (toleranță 0,01 mm); cotele de bază (baseline) au linii diferite și rămân separate. Rezultatul spune `dimensionStrings` (câte lanțuri s-au făcut); `dimensions` numără în continuare cotele din fișier.
 
 ## Secțiuni și fațade: planul DXF pe planul de tăiere
 
