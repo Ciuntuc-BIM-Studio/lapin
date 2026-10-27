@@ -50,6 +50,17 @@ public static class GraphicsSets
         return classes.Contains(e.Class) || (LineStyles.CategoryOf(e.Class) is { } c && cats.Contains(c));
     }
 
+    /// <summary>The categories a 3D view leaves out until its graphics show them: rooms, whose volumes would hide the building.</summary>
+    public static readonly string[] HiddenIn3d = ["spaces"];
+
+    /// <summary>What a 3D view hides: what its graphics hide, and the categories hidden in 3D unless its graphics show them.</summary>
+    public static bool Hides3d(JsonObject? g, Entity e)
+    {
+        if (Hides(g, e)) return true;
+        if (LineStyles.CategoryOf(e.Class) is not { } c || !HiddenIn3d.Contains(c)) return false;
+        return !(g?["categories"]?[c]?["hidden"] is JsonValue h && h.TryGetValue<bool>(out var hidden) && !hidden);
+    }
+
     /// <summary>The view (or "3d") a command names, and how to write its attributes back.</summary>
     static (Entity View, Action<JsonObject> Write) Target(ICommandContext ctx, string? id)
     {
@@ -176,6 +187,8 @@ public static class GraphicsSets
                 ["graphicsSet"] = v.Str("graphicsSet"),
                 ["sets"] = new JsonArray(Sets(Spatial.Project(q.Model)).OfType<JsonObject>().Select(s => (JsonNode)new JsonObject { ["id"] = s["id"]?.DeepClone(), ["name"] = s["name"]?.DeepClone() }).ToArray()),
                 ["categories"] = new JsonArray(LineStyles.Categories.Select(c => (JsonNode)c).ToArray()),
+                // Hidden until the view's graphics show them (rooms, in 3D).
+                ["hiddenByDefault"] = new JsonArray((v.Str("kind") == "3d" ? HiddenIn3d : []).Select(c => (JsonNode)c).ToArray()),
             };
         });
 
@@ -186,7 +199,7 @@ public static class GraphicsSets
             var id = (string?)a["id"];
             var view = id == null || id == View3d ? As3dView(q.Model) : q.Model.Get(id) is { Class: Views.Class } v && v.Str("kind") == "3d" ? v : throw new CommandException("Not a 3D view.");
             var g = Of(q.Model, view);
-            return new JsonArray(q.Model.Entities.Where(e => Spatial.StoreyOf(q.Model, e.Id) != null && Hides(g, e)).Select(e => (JsonNode)e.Id).ToArray());
+            return new JsonArray(q.Model.Entities.Where(e => Spatial.StoreyOf(q.Model, e.Id) != null && Hides3d(g, e)).Select(e => (JsonNode)e.Id).ToArray());
         });
     }
 }

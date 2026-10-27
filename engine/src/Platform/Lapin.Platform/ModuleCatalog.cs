@@ -108,6 +108,8 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
         }
         return o;
     }
+    public Solid? EnvelopeOf(Entity element, IModelView model) => _cutters.TryGetValue(element.Class, out var c) ? c.Envelope(element, model) : null;
+
     public IReadOnlyList<T> All<T>() where T : class => _services.Where(s => s.Contract == typeof(T)).Select(s => (T)s.Implementation).ToList();
 
     sealed class Registry(ModuleCatalog c, string module) : IModuleRegistry

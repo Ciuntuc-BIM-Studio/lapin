@@ -24,7 +24,7 @@ public sealed record ViewContext(IModelView Model, Entity View, string Kind, Vie
         var eye = Frame.Origin + Frame.Right * at.X + Frame.Up * at.Y;
         foreach (var e in Model.Entities)
         {
-            if (except.Contains(e.Id) || e.Class == IfcClass.OpeningElement || Spatial.StoreyOf(Model, e.Id) == null) continue;
+            if (except.Contains(e.Id) || e.Class is IfcClass.OpeningElement or IfcClass.Space || Spatial.StoreyOf(Model, e.Id) == null) continue;
             if (Geometry(e.Id) is not { } g) continue;
             foreach (var part in g.Parts)
             {
@@ -60,6 +60,8 @@ public sealed record ViewContext(IModelView Model, Entity View, string Kind, Vie
 public sealed class ViewMark(string? owner)
 {
     public string? Owner { get; } = owner;
+    /// <summary>Drawn under the model's own pens, not over them: a room's colour fill and hatch, which walls and furniture stand on.</summary>
+    public bool Under { get; init; }
     public List<(Vec2 A, Vec2 B, string Layer, double Width, string Color, double[]? Dash)> Lines { get; } = [];
     public List<(PenText Text, string Color)> Texts { get; } = [];
     public List<Vec2> Snaps { get; } = [];

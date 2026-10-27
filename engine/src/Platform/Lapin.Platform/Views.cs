@@ -195,7 +195,8 @@ public static class Views
         double? cutZ = plan && style.Ifc2d && m.Get(storey ?? "") is { Class: IfcClass.BuildingStorey } ? Range(m, view).Cut : null;
         foreach (var e in m.Entities)
         {
-            if (e.Class is IfcClass.OpeningElement || hiddenElements.Contains(e.Id)) continue;
+            // Rooms draw as their fills and stamps (their module's marks), never as a body cut or seen.
+            if (e.Class is IfcClass.OpeningElement or IfcClass.Space || hiddenElements.Contains(e.Id)) continue;
             // A plan shows its own storey's elements, and the other storeys' only as it says (StoreyDisplay).
             if (plan && display.Shows(storey, Spatial.StoreyOf(m, e.Id)?.Id) == null) continue;
             if (filters.Select(f => f.For(m, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
@@ -325,29 +326,34 @@ public static class Views
         // Every element the drawing shows can be picked by what it drew: its cut outlines and its seen lines, as a
         // mark on the PICK layer (never drawn, only hit and highlighted). Hidden and overhead lines pick nothing.
         marks.AddRange(PickMarks(drawing));
+        // The marks' pens: those drawn under the model (rooms' fills) go first, the others over it; fills before lines in each.
+        var underPens = new Dictionary<string, Pen>();
         var markPens = new Dictionary<string, Pen>();
         foreach (var mk in marks)
         {
+            var into = mk.Under ? underPens : markPens;
+            var fillLayer = mk.Under ? "ROOM-FILL" : "DRAFT-FILL";
             foreach (var (loops, color) in mk.Fills)
             {
                 var key = "FILL:" + color;
-                if (!markPens.TryGetValue(key, out var pen)) markPens[key] = pen = new Pen("DRAFT-FILL", null, 0, color, null);
+                if (!into.TryGetValue(key, out var pen)) into[key] = pen = new Pen(fillLayer, null, 0, color, null);
                 pen.Loops.AddRange(loops);
             }
             foreach (var (la, lb, layer, width, color, dash) in mk.Lines)
             {
                 if (layer == "PICK" || (print && layer == ConstructionLayer)) continue;
                 var key = $"{layer}:{color}:{width}:{(dash == null ? "" : string.Join(" ", dash))}";
-                if (!markPens.TryGetValue(key, out var pen)) markPens[key] = pen = new Pen(layer, color, width, null, dash);
+                if (!into.TryGetValue(key, out var pen)) into[key] = pen = new Pen(layer, color, width, null, dash);
                 pen.Segments.Add((la, lb));
             }
             foreach (var (t, color) in mk.Texts)
             {
                 var key = "TEXT:" + color;
-                if (!markPens.TryGetValue(key, out var pen)) markPens[key] = pen = new Pen("TEXT", color, 0, null, null);
+                if (!into.TryGetValue(key, out var pen)) into[key] = pen = new Pen("TEXT", color, 0, null, null);
                 pen.Texts.Add(t);
             }
         }
+        pens.InsertRange(0, underPens.Values.OrderBy(p => p.Fill != null ? 0 : 1));
         pens.AddRange(markPens.Values.OrderBy(p => p.Fill != null ? 0 : 1));
         // What the view shows: the drawing and its annotations (a text counted by its anchor and height).
         var pts = new List<Vec2>();

@@ -67,7 +67,7 @@ public static class Placement
     public static JsonObject Carry(Entity e, Placement2D t)
     {
         var a = e.CloneAttrs();
-        foreach (var k in new[] { "start", "end", "at", "a", "b" })
+        foreach (var k in new[] { "start", "end", "at", "a", "b", "seed", "stampAt" })
             if (a[k] is JsonArray { Count: >= 2 } p && e.Class != IfcClass.Annotation) a[k] = J(t.Point(P(p)));
         // The attribute is in degrees; the transformation works in radians.
         if (a["rotation"] != null && e.Class != IfcClass.Annotation) a["rotation"] = t.Angle((Json.Number(a["rotation"]) ?? 0) * Math.PI / 180) * 180 / Math.PI;
@@ -77,6 +77,14 @@ public static class Placement
             if (t.Mirrored) pts.Reverse(); // a mirrored outline keeps running counter-clockwise
             a["contour"] = new JsonArray(pts.Select(p => (JsonNode)J(p)).ToArray());
         }
+        // A room's islands (the columns inside it), loops as its contour is.
+        if (a["islands"] is JsonArray isl)
+            a["islands"] = new JsonArray(isl.OfType<JsonArray>().Select(l =>
+            {
+                var q = l.OfType<JsonArray>().Select(p => t.Point(P(p))).ToList();
+                if (t.Mirrored) q.Reverse();
+                return (JsonNode)new JsonArray(q.Select(p => (JsonNode)J(p)).ToArray());
+            }).ToArray());
         if (a["points"] is JsonArray pts3 && pts3.OfType<JsonArray>().All(p => p.Count >= 3))
             a["points"] = new JsonArray(pts3.OfType<JsonArray>().Select(p =>
             {

@@ -31,7 +31,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     /// something stands in front of, or hidden by the view. The view's
     /// <c>openingSymbols</c> turns them off.
     /// </summary>
-    public IEnumerable<ViewMark> Marks(ViewContext c) => c.Kind == "plan" ? OpeningMarkers.Marks(c) : ElevationSymbols(c);
+    public IEnumerable<ViewMark> Marks(ViewContext c) =>
+        c.Kind == "plan" ? OpeningMarkers.Marks(c).Concat(Rooms.Marks(c)).Concat(ColorSchemes.Legends(c)) : ElevationSymbols(c).Concat(ColorSchemes.Legends(c));
 
     IEnumerable<ViewMark> ElevationSymbols(ViewContext c)
     {
@@ -226,6 +227,44 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
 
         // ------------------------------------------------------------ schedules
         new Schedules.ScheduleEntity().Register(r);
+        r.Service<IScheduleSource>(new RoomSchedule());
+
+        // ------------------------------------------------------------ rooms
+        r.Class(new(Rooms.Class, "Room",
+        [
+            new("number", "Number", "text"),
+            new("function", "Function", "text"),
+            new("department", "Department", "text"),
+            new("finishFloor", "Floor finish", "text"),
+            new("height", "Height", "length", Min: 0.1),
+            new("fillColor", "Own colour", "color"),
+            new("fillHatch", "Own hatch", "text"),
+            new("hatchScale", "Hatch scale", "number", Min: 0.01, Max: 100),
+            new("hatchColor", "Hatch colour", "color"),
+        ], Rooms.Color));
+        r.Geometry(Rooms.Class, Rooms.Geometry);
+        r.Quantities(Rooms.Class, Rooms.Quantities);
+        ColorSchemes.Register(r);
+
+        // A room: a click inside walls ({storeyId, x, y}; its outline found round the point and kept up with them), or its outline drawn ({storeyId, points} or x1…y2).
+        r.Command("addRoom", "Room", (ctx, a) => new JsonObject { ["id"] = Rooms.Add(ctx, a).Id });
+
+        // A room's outline drawn again (points), found round a new point (x, y), or its stamp moved (stampX, stampY; stamp: null puts it back).
+        r.Command("updateRoom", "Change room", (ctx, a) =>
+        {
+            Rooms.Update(ctx, Spatial.Require(ctx.Model, (string?)a["id"], Rooms.Class), a);
+            return null;
+        });
+
+        // The outlines the rooms placed by a click find now, stored on them (the selected ones, a storey's, or all): what they keep should their walls go.
+        r.Command("updateRooms", "Update rooms", (ctx, a) =>
+        {
+            var ids = Args.Ids(a);
+            var rooms = ids.Count > 0 ? ids.Select(id => Spatial.Require(ctx.Model, id, Rooms.Class))
+                : ctx.Model.OfClass(Rooms.Class).Where(x => (string?)a["storeyId"] is not { } sid || Spatial.StoreyOf(ctx.Model, x.Id)?.Id == sid);
+            var (stored, lost) = Rooms.Store(ctx, rooms);
+            return new JsonObject { ["updated"] = stored, ["lost"] = lost };
+        });
 
         // ------------------------------------------------------------ roofs
         r.Class(new(IfcClass.Roof, "Roof",

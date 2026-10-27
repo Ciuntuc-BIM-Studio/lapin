@@ -23,8 +23,58 @@ public sealed class ForeignElements : IIfcRecognizer
     {
         IfcClass.Wall or "IfcWallStandardCase" => Wall(edit, e, ctx),
         IfcClass.Slab => Slab(edit, e, ctx),
+        IfcClass.Space => Room(edit, e, ctx),
         _ => null,
     };
+
+    // ─── Rooms ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// A room from a foreign space: its outline from its body (the base of its
+    /// largest vertical prism, its holes as islands; else the outline of its
+    /// downward faces), its height from the prism; its name from LongName and
+    /// its number from Name (as most tools write them; Name alone is its
+    /// name), its function from ObjectType. It keeps its outline.
+    /// </summary>
+    string? Room(IEdit edit, ForeignElement e, RecognitionContext ctx)
+    {
+        var storey = edit.Model.Get(e.StoreyId);
+        if (storey == null) { ctx.Skip("a space without a storey"); return null; }
+        IReadOnlyList<Vec2> outer;
+        List<IReadOnlyList<Vec2>> islands;
+        double? height = null;
+        if (e.Prisms.Where(p => p.Vertical && p.Height > 1e-3).MaxBy(p => Math.Abs(Footprints.Area(Footprints.Plan(p.Outer)))) is { } prism)
+        {
+            outer = Footprints.Plan(prism.Outer);
+            islands = prism.Holes.Select(h => (IReadOnlyList<Vec2>)Footprints.Plan(h)).Where(h => h.Count >= 3).ToList();
+            height = prism.Height;
+        }
+        else if (e.Footprint is { Count: > 0 } fp)
+        {
+            outer = fp[0];
+            islands = fp.Skip(1).Where(h => h.Count >= 3).ToList();
+            height = e.Box is { } b ? b.Max.Z - b.Min.Z : null;
+        }
+        else { ctx.Skip("a space without a readable outline"); return null; }
+        if (outer.Count < 3 || Math.Abs(Footprints.Area(outer)) < 1e-3) { ctx.Skip("a space without a readable outline"); return null; }
+        var attrs = new JsonObject
+        {
+            ["contour"] = Rooms.Json2(Polygon2.EnsureCcw(outer)),
+            ["auto"] = false,
+        };
+        if (islands.Count > 0) attrs["islands"] = new JsonArray(islands.Select(i => (JsonNode)Rooms.Json2(i)).ToArray());
+        var longName = e.LongName?.Trim() is { Length: > 0 } ln ? ln : null;
+        var plainName = e.Name?.Trim() is { Length: > 0 } nm ? nm : null;
+        var name = longName ?? plainName ?? "Room";
+        if (longName != null && e.Name?.Trim() is { Length: > 0 } number) attrs["number"] = number;
+        if (e.ObjectType?.Trim() is { Length: > 0 } fn) attrs["function"] = fn;
+        if (height is { } h && h > 0.1 && Math.Abs(h - storey.Num("height", 3)) > 1e-3) attrs["height"] = Math.Round(h, 6);
+        var id = GlobalId.IsValid(e.GlobalId) && edit.Model.Get(e.GlobalId) == null ? e.GlobalId : edit.NewId();
+        edit.Add(new Entity(id, Rooms.Class, name, attrs));
+        edit.Relate(IfcClass.RelContainedInSpatialStructure, storey.Id, id);
+        ctx.Made.Add(id);
+        return id;
+    }
 
     /// <summary>Every wall made this import is joined to its neighbours, as a drawn wall is.</summary>
     public void Finish(IEdit edit, RecognitionContext ctx)

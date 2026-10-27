@@ -8,6 +8,8 @@ public static class IfcClass
     public const string Site = "IfcSite";
     public const string Building = "IfcBuilding";
     public const string BuildingStorey = "IfcBuildingStorey";
+    /// <summary>A room: an area of a storey, bounded by walls or drawn, aggregated into its storey in IFC.</summary>
+    public const string Space = "IfcSpace";
 
     // Elements and their types.
     public const string Wall = "IfcWall";

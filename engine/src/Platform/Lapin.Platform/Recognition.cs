@@ -54,7 +54,11 @@ public sealed record ForeignElement(
     /// <summary>Parts aggregated under the element (a wall's layers as IfcBuildingElementParts), each with its body and material.</summary>
     IReadOnlyList<ForeignPart>? Parts = null,
     /// <summary>The body's extents in the frame of the 'Axis' (along it from its start, across it to the left, up), from its triangles, when it has both.</summary>
-    AxisExtents? Extents = null);
+    AxisExtents? Extents = null,
+    /// <summary>A space's LongName (its name; its Name is its number).</summary>
+    string? LongName = null,
+    /// <summary>A space's outline in plan from its triangles, when its body is no prism: the outline first, then its holes.</summary>
+    IReadOnlyList<IReadOnlyList<Vec2>>? Footprint = null);
 
 /// <summary>A part aggregated under a foreign element: its body as prisms, its material, its extents in the whole's axis frame.</summary>
 public sealed record ForeignPart(string GlobalId, string? Name, IReadOnlyList<ShapePrism> Prisms, string? Material, AxisExtents? Extents = null);

@@ -105,6 +105,8 @@ public interface ICutters
     int? ClassPriority(string ifcClass, IModelView model);
     /// <summary>The envelopes of the entities of higher priority that reach into <paramref name="bounds"/> (the target's own, of its body).</summary>
     IReadOnlyList<Solid> For(Entity target, IModelView model, (Vec3 Min, Vec3 Max) bounds);
+    /// <summary>An element's envelope as its class gives it (its body from its attributes, without the openings); null when its class cuts nothing.</summary>
+    Solid? EnvelopeOf(Entity element, IModelView model) => null;
 }
 
 /// <summary>An entity's quantity sets, from its built geometry (null: none) and the model.</summary>

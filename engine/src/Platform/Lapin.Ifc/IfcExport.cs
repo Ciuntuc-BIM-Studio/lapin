@@ -148,6 +148,8 @@ public static class IfcExport
         string buildingRef = "";
         readonly Dictionary<string, double> storeyZ = [];
         readonly Dictionary<string, List<string>> contained = [];
+        /// <summary>The rooms of each storey (by the storey's IFC entity), aggregated into it.</summary>
+        readonly Dictionary<string, List<string>> spaces = [];
         readonly Dictionary<string, string> styles = [], materials = [], layerSets = [], written = [];
         readonly Dictionary<string, (string Ref, List<string> Occurrences)> types = [];
         readonly Dictionary<string, List<string>> materialUses = [];
@@ -399,6 +401,7 @@ public static class IfcExport
 
         void Element(Entity e, IVoidShapes? voids)
         {
+            if (e.Class == IfcClass.Space) { Space(e); return; }
             var geo = s.Geometry(e.Id, new GeometryOptions(CutOpenings: false));
             var parts = geo?.Parts.Where(p => p.Solid.Faces.Length > 0).ToList() ?? [];
             if (parts.Count == 0)
@@ -439,6 +442,52 @@ public static class IfcExport
             Openings(e, entity, place, z0, voids);
             Properties(e, kind, entity, type);
             Quantities(e, entity, grouped);
+        }
+
+        /// <summary>
+        /// A room as IFC has one: an IfcSpace aggregated into its storey (not
+        /// contained), its body its outline extruded up its height (an
+        /// IfcExtrudedAreaSolid of an arbitrary profile, its islands as voids),
+        /// Name its number and LongName its name (as most tools write them),
+        /// ObjectType its function; Pset_SpaceCommon's Reference (its number)
+        /// and IsExternal, its Qto_SpaceBaseQuantities, and Lapin's intent.
+        /// </summary>
+        void Space(Entity e)
+        {
+            var geo = s.Geometry(e.Id);
+            var plan = geo?.Plan ?? [];
+            var outer = plan.FirstOrDefault(p => p.Kind == "room")?.Points;
+            if (outer is not { Count: >= 3 })
+            {
+                Notes.Add($"„{e.Name}” has no outline and was not exported.");
+                return;
+            }
+            var islands = plan.Where(p => p.Kind == "roomIsland" && p.Points.Count >= 3).Select(p => p.Points).ToList();
+            var storey = Spatial.StoreyOf(m, e.Id);
+            var (spatial, relTo, z0) = storey != null && storeyRef.TryGetValue(storey.Id, out var sr) ? (sr, storeyPlace[storey.Id], storeyZ[storey.Id]) : (buildingRef, sitePlace, 0.0);
+            var height = geo!.Parts.Select(p => Measure.Bounds(p.Solid)).OfType<(Vec3 Min, Vec3 Max)>().Select(b => b.Max.Z - b.Min.Z).DefaultIfEmpty(storey?.NumOrNull("height") ?? 3).Max();
+            string Curve(IReadOnlyList<Vec2> loop) => f.Add("IFCPOLYLINE", L(loop.Append(loop[0]).Select(P2)));
+            var profile = islands.Count == 0
+                ? f.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, Curve(Polygon2.EnsureCcw(outer)))
+                : f.Add("IFCARBITRARYPROFILEDEFWITHVOIDS", E("AREA"), Null, Curve(Polygon2.EnsureCcw(outer)), L(islands.Select(i => Curve(Polygon2.EnsureCcw(i).Reverse().ToList()))));
+            var origin = f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), Null, Null);
+            var solid = f.Add("IFCEXTRUDEDAREASOLID", profile, origin, f.Add("IFCDIRECTION", "(0.,0.,1.)"), R(height));
+            f.Add("IFCSTYLEDITEM", solid, L(new[] { Style(geo.Parts.FirstOrDefault()?.Color ?? "#9ec5e8") }), Null);
+            var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("SweptSolid"), L(new[] { solid })) }));
+            var place = Place(relTo, 0);
+            var number = e.Str("number") is { Length: > 0 } n ? n : null;
+            var function = e.Str("function") is { Length: > 0 } fn ? fn : null;
+            var entity = f.Add("IFCSPACE", Gid(e.Id), Null, S(number ?? e.Name), Null, S(function), place, shape, S(e.Name), E("ELEMENT"), E("SPACE"), Null);
+            written[e.Id] = entity;
+            placeOf[e.Id] = (place, z0);
+            (spaces.TryGetValue(spatial, out var l) ? l : spaces[spatial] = []).Add(entity);
+            Elements++;
+            var common = new List<string> { Single("IsExternal", Typed("IFCBOOLEAN", False)) };
+            if (number != null) common.Insert(0, Single("Reference", Typed("IFCIDENTIFIER", S(number))));
+            Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "common"), Null, S("Pset_SpaceCommon"), Null, L(common)), Gid(e.Id, "common-rel"));
+            Define(entity, IntentOf(e, Gid(e.Id, IntentKey), new Kind(IfcClass.Space, "SPACE", null)), Gid(e.Id, "intent-rel"));
+            if (ParamsOf(e, Gid(e.Id, ParamsKey)) is { } set) Define(entity, set, Gid(e.Id, "params-rel"));
+            Quantities(e, entity, false);
         }
 
         /// <summary>A door or window stands on its wall's storey.</summary>
@@ -866,6 +915,9 @@ public static class IfcExport
                         f.Add("IFCRELVOIDSELEMENT", Gid(rel.Id), Null, Null, Null, h, cut);
             foreach (var (spatial, list) in contained)
                 f.Add("IFCRELCONTAINEDINSPATIALSTRUCTURE", Gid(refIdOf[spatial], "contains"), Null, Null, Null, L(list), spatial);
+            // Rooms are parts of their storey: aggregated, as IFC has spaces.
+            foreach (var (spatial, list) in spaces)
+                f.Add("IFCRELAGGREGATES", Gid(refIdOf.GetValueOrDefault(spatial) ?? project.Id, "aggregates/spaces"), Null, Null, Null, spatial, L(list));
         }
 
         static string Connection(string? value)

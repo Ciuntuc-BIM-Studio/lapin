@@ -129,7 +129,9 @@ public static partial class IfcImport
             var type = typeOf?.GetValueOrDefault(e.Id);
             var (layers, material, usage) = MaterialOf(e.Id, type?.Id);
             var storey = StoreyFor(e.Id) ?? Spatial.Storeys(edit.Model).FirstOrDefault()?.Id ?? "";
-            var predefined = e.Args.Count > 8 && e.Type is not ("IFCDOOR" or "IFCWINDOW") ? Enum(e[8]) : null;
+            // IfcSpace: LongName [7], CompositionType [8], PredefinedType [9].
+            var space = e.Type == "IFCSPACE";
+            var predefined = space ? (e.Args.Count > 9 ? Enum(e[9]) : null) : e.Args.Count > 8 && e.Type is not ("IFCDOOR" or "IFCWINDOW") ? Enum(e[8]) : null;
             var axis = model.AxisCurve(e.Id);
             Vec2? origin = null, dir = null;
             if (axis is { Count: >= 2 } && new Vec2(axis[^1].X - axis[0].X, axis[^1].Y - axis[0].Y) is { Length: > 1e-3 } d)
@@ -146,7 +148,57 @@ public static partial class IfcImport
             return new ForeignElement(Str(e[0]) ?? "", cls, predefined, Str(e[2]), Str(e[4]), storey, prisms, why, openings,
                 type == null ? null : Str(type[2]), type == null ? null : Str(type[0]), layers, material, PropertiesJson(e.Id),
                 Axis: axis, Box: prisms.Count == 0 ? model.Bounds(e.Id) : null, Usage: usage, Parts: parts,
-                Extents: origin is { } o2 && dir is { } d2 ? model.Extents(e.Id, o2, d2) : null);
+                Extents: origin is { } o2 && dir is { } d2 ? model.Extents(e.Id, o2, d2) : null,
+                LongName: space && e.Args.Count > 7 ? Str(e[7]) : null,
+                Footprint: space && prisms.Count == 0 ? Footprint(e.Id) : null);
+        }
+
+        /// <summary>
+        /// A body's outline in plan from its triangles, when it is no prism: the
+        /// edges of its downward faces at its lowest level that only one such
+        /// triangle has, chained into loops (the outline and its holes).
+        /// </summary>
+        List<List<Vec2>>? Footprint(int product)
+        {
+            var (body, _) = model.Shape(product);
+            var edges = new Dictionary<(long, long, long, long), (Vec2 A, Vec2 B, int N)>();
+            static (long, long) K(Vec2 p) => ((long)Math.Round(p.X * 1e5), (long)Math.Round(p.Y * 1e5));
+            var low = double.MaxValue;
+            foreach (var (mesh, _) in body) foreach (var v in mesh.V) low = Math.Min(low, v.Z);
+            foreach (var (mesh, _) in body)
+                foreach (var (a, b, c) in mesh.T)
+                {
+                    var (pa, pb, pc) = (mesh.V[a], mesh.V[b], mesh.V[c]);
+                    var n = Vec3.Cross(pb - pa, pc - pa);
+                    if (n.Length < 1e-12 || n.Z / n.Length > -0.99 || Math.Max(pa.Z, Math.Max(pb.Z, pc.Z)) > low + 0.01) continue;
+                    foreach (var (p, q) in new[] { (pa, pb), (pb, pc), (pc, pa) })
+                    {
+                        var (u, w) = (new Vec2(p.X, p.Y), new Vec2(q.X, q.Y));
+                        var (ku, kw) = (K(u), K(w));
+                        var key = ku.CompareTo(kw) < 0 ? (ku.Item1, ku.Item2, kw.Item1, kw.Item2) : (kw.Item1, kw.Item2, ku.Item1, ku.Item2);
+                        edges[key] = edges.TryGetValue(key, out var x) ? x with { N = x.N + 1 } : (u, w, 1);
+                    }
+                }
+            var open = edges.Values.Where(x => x.N == 1).Select(x => (x.A, x.B)).ToList();
+            if (open.Count < 3) return null;
+            var loops = new List<List<Vec2>>();
+            while (open.Count > 0)
+            {
+                var (a0, b0) = open[0];
+                open.RemoveAt(0);
+                var loop = new List<Vec2> { a0 };
+                var cur = b0;
+                for (var guard = 0; guard < 100_000 && K(cur) != K(a0); guard++)
+                {
+                    var i = open.FindIndex(x => K(x.A) == K(cur) || K(x.B) == K(cur));
+                    if (i < 0) break;
+                    loop.Add(cur);
+                    cur = K(open[i].A) == K(cur) ? open[i].B : open[i].A;
+                    open.RemoveAt(i);
+                }
+                if (K(cur) == K(a0) && loop.Count >= 3) loops.Add(Footprints.Clean(loop));
+            }
+            return loops.Count > 0 ? [.. loops.OrderByDescending(l => Math.Abs(Footprints.Area(l)))] : null;
         }
 
         static bool Defined(string? v) => v is { Length: > 0 } and not "NOTDEFINED";

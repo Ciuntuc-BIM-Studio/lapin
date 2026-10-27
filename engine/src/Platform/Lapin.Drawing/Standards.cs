@@ -126,10 +126,13 @@ public static class Standards
             OneOf(v["unit"], TagUnits, "cm"), Positive(v["reach"], 6), Str(v["textStyle"], Standard));
     }
 
-    /// <summary>A tag's shape: a box with a leader, or a door's or window's marker across its wall in plan.</summary>
-    public static readonly string[] TagShapes = ["box", "opening"];
+    /// <summary>A tag's shape: a box with a leader, a door's or window's marker across its wall in plan, or a room's stamp.</summary>
+    public static readonly string[] TagShapes = ["box", "opening", "room"];
     /// <summary>The unit a tag writes sizes in.</summary>
     public static readonly string[] TagUnits = ["cm", "mm", "m", "ft-in", "in", "project"];
+
+    /// <summary>A room's stamp in plan (shape "room"): its name, number and net area, one line each; what a project without a room tag type uses.</summary>
+    public static readonly TagType DefaultRoomTag = new("room", "Room stamp", "{name}|{number}|{area}", ["IfcSpace"], "room");
 
     /// <summary>
     /// The tag types a project starts with: a door's and a window's marker,
@@ -140,6 +143,7 @@ public static class Standards
     [
         new("door", "Door marker", "{mark}", ["IfcDoor"], "opening", "{width}/{height}"),
         new("window", "Window marker", "{mark}", ["IfcWindow"], "opening", "{width}/{height}|sill {sill}"),
+        DefaultRoomTag,
     ];
 
     /// <summary>A tag's type: the one it names, else the first that tags its element's class; null when none does.</summary>

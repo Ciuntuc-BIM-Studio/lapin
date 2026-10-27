@@ -40,7 +40,7 @@ public sealed class AnnotationPlacement : IElementPlacement
                 if (attrs["hatch"] is JsonObject h)
                     h["loops"] = new JsonArray(Drafts.HatchLoops(e).Select(l => (JsonNode)new JsonArray(l.Select(q => (JsonNode)J(t.Point(q))).ToArray())).ToArray());
                 break;
-            case "TAG":
+            case "TAG" or "LEGEND":
                 attrs["at"] = J(t.Point(P(attrs["at"])));
                 break;
             case "TEXT":

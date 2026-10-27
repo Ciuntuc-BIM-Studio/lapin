@@ -104,6 +104,10 @@ public static partial class IfcImport
                 foreach (var p in Refs(r[4])) (definitions.TryGetValue(p, out var l) ? l : definitions[p] = []).Add(Ref(r[5]));
             foreach (var r in f.OfType("IFCRELCONTAINEDINSPATIALSTRUCTURE"))
                 foreach (var p in Refs(r[4])) containedIn[p] = Ref(r[5]);
+            // Rooms are aggregated into their storey, not contained.
+            foreach (var r in f.OfType("IFCRELAGGREGATES"))
+                if (f.Get(r[4]) is { Type: "IFCBUILDINGSTOREY" } storey)
+                    foreach (var p in Refs(r[5])) if (f.Get(p) is { Type: "IFCSPACE" }) containedIn[p] = storey.Id;
             Project(edit);
             Storeys(edit);
             if (!o.ReferenceOnly)
@@ -390,19 +394,39 @@ public static partial class IfcImport
                 if (!o.ReferenceOnly && parentOf.ContainsKey(e.Id) && !fills.Contains(e.Id) && Recognize(edit, e)) continue;
                 Reference(edit, e, booleans);
             }
+            Spaces(edit);
             FinishRecognition(edit);
             if (with2d > 0) notes.Add($"{with2d} reference(s) brought their own 2D for plans; plans draw it instead of their cut (a view's style can turn it off).");
         }
 
         int with2d;
 
+        /// <summary>
+        /// The file's rooms (IfcSpace): Lapin's own rebuilt from their intent,
+        /// the others recognised by the modules (a room of the outline of their
+        /// body); without a module that makes rooms, or reading for reference
+        /// only, they are left out (a space is air, not something to show).
+        /// </summary>
+        void Spaces(IEdit edit)
+        {
+            if (o.ReferenceOnly) return;
+            foreach (var e in f.OfType("IFCSPACE").OrderBy(x => x.Id))
+            {
+                if (e[0] is not string { Length: 22 }) continue;
+                if (IntentOf(e.Id) is { } intent) { Native(edit, e, intent); continue; }
+                Recognize(edit, e);
+            }
+        }
+
         void Native(IEdit edit, StepEntity e, Intent intent)
         {
             var gid = Str(e[0])!;
             var cls = intent.Class ?? ClassName(e.Type);
-            var predefined = intent.Predefined ?? (e.Args.Count > 8 && e.Type is not ("IFCDOOR" or "IFCWINDOW") ? Enum(e[8]) : null);
+            var predefined = intent.Predefined ?? (e.Args.Count > 8 && e.Type is not ("IFCDOOR" or "IFCWINDOW" or "IFCSPACE") ? Enum(e[8]) : null);
             if (predefined is "NOTDEFINED" or "USERDEFINED") predefined = intent.Predefined;
-            Put(edit, gid, cls, Str(e[2]) ?? cls[3..], intent.Attrs, predefined);
+            // A room's name is its LongName (its Name is its number).
+            var name = e.Type == "IFCSPACE" && e.Args.Count > 7 && Str(e[7]) is { Length: > 0 } longName ? longName : Str(e[2]);
+            Put(edit, gid, cls, name ?? cls[3..], intent.Attrs, predefined);
             var storey = StoreyFor(e.Id);
             relations.Add(x => Contain(x, gid, storey));
             if (intent.Host is { } host) relations.Add(x => Relate(x, null, IfcClass.RelVoidsElement, host, gid));

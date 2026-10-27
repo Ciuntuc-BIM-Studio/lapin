@@ -119,9 +119,11 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
         {
             if (!IsElement(session, e) || !InPhase(project, e, o.Phase) || hidden.Contains(e.Id)) continue;
             if (Links.Of(m, e) is { } link && !Links.Visible(link)) continue;
+            // Rooms are volumes of air: a model without a view's graphics leaves them out, as the 3D view does.
+            if (view == null && e.Class == IfcClass.Space) continue;
             if (view != null)
             {
-                if (GraphicsSets.Hides(graphics, e)) continue;
+                if (GraphicsSets.Hides3d(graphics, e)) continue;
                 if (filters.Select(f => f.For(m, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
             }
             ElementGeometry? geo;
