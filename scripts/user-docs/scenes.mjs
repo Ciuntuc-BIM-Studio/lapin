@@ -139,6 +139,32 @@ export const scenes = [
     },
   },
   {
+    id: 'rooms',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      // Two rooms by a click inside the walls, coloured by function on the plan, with a legend.
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4, name: 'Living room', function: 'Living' });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 9.5, y: 4, name: 'Bedroom', function: 'Bedroom' });
+      const rooms = (await t.nodes()).filter((n) => n.type === 'IfcSpace');
+      t.expect(rooms.length === 2, `two rooms placed, found ${rooms.length}`);
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor plan' });
+      await t.cmd('architecture.viewColorScheme', { viewId: plan.id, schemeId: 'by-function' });
+      await t.cmd('architecture.addColorLegend', { viewId: plan.id, x: 0, y: -1.5 });
+      await t.ui({ planViewId: plan.id, keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      await t.shot('rooms-plan', { of: '[data-testid=plan]', pad: 0 });
+      await select(t, rooms[0].id);
+      await t.wait(500);
+      await t.shot('room-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      await t.tool('architecture.roomColors');
+      t.expect(await t.page.locator('[aria-label="Room colours"]').count() > 0, 'the Room colours dialog opens');
+      await t.shot('room-colors', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null, keyPlan: true });
+    },
+  },
+  {
     id: 'structure',
     async run(t) {
       await t.fresh();
