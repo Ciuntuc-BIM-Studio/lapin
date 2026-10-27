@@ -214,7 +214,8 @@ public static class Walls
                 at = Math.Max(at, g.To);
             }
         }
-        parts = CutPriorities.Apply(wall, m, services, parts, problems);
+        // The roof first: the wall comes down under it, so the cut priorities after it have only what is left to settle (cut the other way round,
+        // a wall built up to the ridge was first cut by the roof's framing into slivers the roof's own cut could not take).
         if (roofTop != null)
         {
             if (booleans == null) problems.Add("The roof needs the boolean library (manifold), missing here: the wall keeps its height.");
@@ -225,6 +226,7 @@ public static class Walls
                     catch (InvalidOperationException ex) { problems.Add($"{part.Name}: the roof could not be cut ({ex.Message})."); return part; }
                 }).OfType<GeometryPart>().ToList();
         }
+        parts = CutPriorities.Apply(wall, m, services, parts, problems);
         if (booleans != null)
         {
             var ring = zones.FirstOrDefault(zb => zb.Zone.Role == "ringBeam");
@@ -341,7 +343,7 @@ public static class Walls
                 at = Math.Max(at, g.To);
             }
         }
-        parts = CutPriorities.Apply(wall, m, services, parts, problems);
+        // The roof first, then the cut priorities (as for a straight wall).
         if (roofed)
         {
             if (booleans == null) problems.Add("The roof needs the boolean library (manifold), missing here: the wall keeps its height.");
@@ -357,6 +359,7 @@ public static class Walls
                 }).OfType<GeometryPart>().ToList();
             }
         }
+        parts = CutPriorities.Apply(wall, m, services, parts, problems);
         if (booleans != null)
         {
             var ring = zones.FirstOrDefault(zb => zb.Zone.Role == "ringBeam");

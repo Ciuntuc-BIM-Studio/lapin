@@ -175,7 +175,10 @@ public static class RoofTop
             var (t0, t1) = (ts[i], ts[i + 1]);
             if (t1 - t0 < 1e-9) continue;
             var mid = o + dir * ((t0 + t1) / 2);
-            if (!Polygon2.Contains(poly, mid)) continue;
+            // A wall on the plane's edge (a gable wall under a mansard's upper tier, whose edge is the wall's axis) is under it:
+            // the point is tried a millimetre to either side, so which side the edge test falls on does not matter.
+            var side = dir.Perp * 1e-3;
+            if (!Polygon2.Contains(poly, mid) && !Polygon2.Contains(poly, mid + side) && !Polygon2.Contains(poly, mid - side)) continue;
             double z0 = z(o) - baseZ, k = z(o + dir) - z(o);
             yield return new Piece(t0, t1, z0, k);
         }
