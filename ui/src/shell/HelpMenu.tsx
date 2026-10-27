@@ -1,5 +1,5 @@
 /**
- * The help menu (?): Ask Lapin (the FAQ, also on F1), report an issue (it
+ * Ask Me (the rabbit beside the ?) and the help menu (?): Ask Lapin (the FAQ, also on F1), report an issue (it
  * reaches Ciuntuc BIM Studio with the app's last errors attached), the
  * community on Skool, the site, updates (the desktop app), the version.
  */
@@ -13,6 +13,7 @@ import { isDesktop } from '../engine/files';
 import { checkForUpdates } from '../app/updates';
 import { setLang, useLang } from '../i18n';
 import { AskDialog } from '../help/AskDialog';
+import { BunnyIcon } from '../icons';
 
 
 /** An image shrunk to at most 1600 px on its longer side, as a JPEG data URL. */
@@ -100,6 +101,8 @@ export function HelpMenu() {
     return () => window.removeEventListener('mousedown', away);
   }, [open]);
   return (
+    <>
+    <button type="button" className="ask-me" data-no-i18n title="Ask Lapin how to do something (F1)" onClick={() => setAsking(true)}><BunnyIcon size={17} />Ask Me</button>
     <div className="help-menu" ref={ref}>
        <button type="button" className="icon" title="Help: ask Lapin (F1), report an issue, community" onClick={() => setOpen(!open)}><HelpCircle size={15} /></button>
       {open && (
@@ -119,6 +122,7 @@ export function HelpMenu() {
         onReport={(q) => { setAsking(false); setReport(q ? { kind: 'question', title: q.length > 80 ? `${q.slice(0, 77)}…` : q, description: q } : true); }} />}
       {report && <ReportDialog onClose={() => setReport(false)} start={report === true ? undefined : report} />}
     </div>
+    </>
   );
 }
 

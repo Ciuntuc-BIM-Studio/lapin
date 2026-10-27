@@ -383,6 +383,8 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .mini-select { margin-left: auto; font-size: 11px; padding: 0 2px; }
 .chip.warn { color: #c2410c; border-color: #c2410c; }
 .help-menu { position: relative; }
+.ask-me { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; margin-right: 2px; background: none; border: 1px solid var(--rule); border-radius: 12px; color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
+.ask-me:hover { background: var(--accent-wash); border-color: var(--rule-strong); }
 .menu-pop { position: absolute; right: 0; top: 100%; z-index: 40; min-width: 210px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 3px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); padding: 4px 0; }
 .menu-pop button { text-align: left; padding: 6px 12px; background: none; border: none; cursor: pointer; color: var(--ink); }
 .menu-pop button:hover { background: var(--accent-wash); }

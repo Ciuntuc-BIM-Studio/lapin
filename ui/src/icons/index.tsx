@@ -32,6 +32,8 @@ function icon(name: IconName): Icon {
 }
 
 export const WallIcon = icon('wall');
+/** Ask Me (the FAQ assistant): a minimal rabbit's head, Lapin's own. */
+export const BunnyIcon = icon('bunny');
 export const CurvedWallIcon = icon('curvedWall');
 export const CurtainWallIcon = icon('curtainWall');
 export const CurvedBeamIcon = icon('curvedBeam');
