@@ -62,5 +62,17 @@
     "macOS": {
       "minimumSystemVersion": "13.0"
     }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhCRDU1QzMyMkZDNDY0MTQKUldRVVpNUXZNbHpWaTI5aVIvSTlIem1jbHp1WjlTRU9jano5QWVTd3g1ZU1iamtCNGw3RnVkcVgK",
+      "endpoints": [
+        "https://ciuntucbimstudio.ro/downloads/lapin-update/{{target}}-{{arch}}-{{bundle_type}}.json"
+      ],
+      "requireSignedVersion": true,
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

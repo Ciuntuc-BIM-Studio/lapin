@@ -1,6 +1,7 @@
 /**
  * The help menu (?): report an issue (it reaches Ciuntuc BIM Studio with the
- * app's last errors attached), the community on Skool, the site, the version.
+ * app's last errors attached), the community on Skool, the site, updates (the
+ * desktop app), the version.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -8,6 +9,8 @@ import { HelpCircle, X } from 'lucide-react';
 import { notify } from '../app/store';
 import { useSession } from '../engine/session';
 import { RECENT, openLink, sendReport } from './support';
+import { isDesktop } from '../engine/files';
+import { checkForUpdates } from '../app/updates';
 import { setLang, useLang } from '../i18n';
 
 
@@ -93,6 +96,7 @@ export function HelpMenu() {
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setReport(true); }}>Report an issue…</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('community'); }}>Community (Skool)</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('site'); }}>ciuntucbimstudio.ro</button>
+          {isDesktop() && <button type="button" role="menuitem" onClick={() => { setOpen(false); void checkForUpdates(true); }}>Check for updates…</button>}
           <button type="button" role="menuitem" data-no-i18n onClick={() => { setOpen(false); setLang(useLang.getState().lang === 'ro' ? 'en' : 'ro'); }}>
             {useLang.getState().lang === 'ro' ? 'Interfața: română → English' : 'Interface: English → română'}
           </button>

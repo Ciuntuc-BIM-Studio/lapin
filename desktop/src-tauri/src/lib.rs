@@ -15,6 +15,10 @@
 //! it is started again (a few times, waiting longer each time), the new port
 //! is what `engine_url` answers from then on, and the window hears of it
 //! (`engine-restarted` with the new address, or `engine-failed` with why).
+//!
+//! Updates (the updater plugin) are checked and installed by the interface; it
+//! stops the engine with `stop_engine` once the update is downloaded, so the
+//! installer never meets a running engine, then restarts the app.
 
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
@@ -116,6 +120,12 @@ fn open_separately(path: String) -> Result<(), String> {
 #[tauri::command]
 fn startup_file() -> Option<String> {
     std::env::var("LAPIN_OPEN").ok().filter(|p| !p.is_empty())
+}
+
+/// Stop the engine for good, before an update is installed (the app restarts after it).
+#[tauri::command]
+fn stop_engine(engine: State<'_, Arc<Engine>>) {
+    engine.stop();
 }
 
 /// The port from the engine's ready line: `LAPIN_HOST_READY {"port":12345}`.
@@ -236,8 +246,10 @@ pub fn run() {
     let engine = Arc::new(Engine::default());
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .manage(engine.clone())
-        .invoke_handler(tauri::generate_handler![engine_url, open_separately, startup_file])
+        .invoke_handler(tauri::generate_handler![engine_url, open_separately, startup_file, stop_engine])
         .setup({
             let engine = engine.clone();
             move |app| {

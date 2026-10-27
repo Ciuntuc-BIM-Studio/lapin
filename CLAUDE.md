@@ -44,6 +44,8 @@ pnpm build:web <id>            # the same edition for the browser (engine in a W
 
 Linux (.deb, .AppImage) builds run in GitHub Actions: Actions → Build Linux → Run workflow, or a tag `v*`; the packages are the run's artifacts. Without Actions, `scripts/build-linux-docker.sh [product] [ref]` runs the same steps in an Ubuntu 22.04 x64 container (Docker: OrbStack on the Mac) → `build/<product>-linux/`. Windows builds are made by hand on a Windows machine (`pnpm build:product lapin` from a Visual Studio x64 developer prompt; manifold built with MSVC by `node scripts/build-manifold.mjs`), tested there, and uploaded to the site with `ciuntucbimstudio-site/deploy/upload-downloads.sh` (the installer and a portable zip); the Windows workflow was removed on 26.10.2026. macOS is signed and notarized locally.
 
+Updates: the desktop app looks for a newer build of its edition at start and from Help → Check for updates (Tauri's updater; `ui/src/app/updates.ts`). A build's version is `0.1.<commit count>`. `node scripts/publish-update.mjs <product> <folders…>` signs the update packages with the update key (`~/.tauri/lapin-updater.key`, its password in the keychain item `lapin-updater`; never in the repo) and uploads the downloads and the per-platform manifests (`ciuntucbimstudio.ro/downloads/<product>-update/<target>-<arch>-<kind>.json`). The DMG, the installer and the AppImage update themselves; the .deb asks for the password (pkexec); the portable zip installs the installer's copy.
+
 If pnpm complains about @tauri-apps when installing, use `CI=true pnpm install`. `.npmrc` hoists `@tauri-apps/*`. `pnpm check:licenses` checks the UI's npm packages and the engine's NuGet packages.
 
 ## Rules

@@ -9,8 +9,15 @@
 // and stapled with the notarytool keychain profile LAPIN_NOTARY_PROFILE
 // (default "lapin-notary"; docs/release-macos.md). Without a certificate the
 // app is built unsigned, as before; without the profile it is signed, not notarized.
+//
+// The version is 0.1.<the commit count of HEAD> (or LAPIN_VERSION), the same on
+// every machine for one commit, so the updater can tell a newer build. The app
+// looks for updates at ciuntucbimstudio.ro/downloads/<product>-update/; on macOS
+// the signed, stapled app is also packed as <name>_<version>_<arch>.app.tar.gz,
+// what the updater installs. scripts/publish-update.mjs signs the packages and
+// puts them there.
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveProduct } from './product.mjs';
@@ -46,6 +53,11 @@ const rid = { 'aarch64-apple-darwin': 'osx-arm64', 'x86_64-apple-darwin': 'osx-x
 if (!rid) { console.error(`No .NET runtime id for ${triple}`); process.exit(1); }
 const exe = triple.includes('windows') ? '.exe' : '';
 
+const commits = spawnSync('git', ['rev-list', '--count', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout?.trim();
+const version = process.env.LAPIN_VERSION ?? (commits ? `0.1.${commits}` : null);
+if (!version || !/^\d+\.\d+\.\d+$/.test(version)) { console.error(`No version: set LAPIN_VERSION (x.y.z), or build from a git checkout (${version ?? 'no commit count'}).`); process.exit(1); }
+console.log(`▸ ${product.name} ${version}`);
+
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 
@@ -53,7 +65,7 @@ mkdirSync(out, { recursive: true });
 sh('dotnet', ['build', 'engine/Lapin.slnx', '-c', 'Release', '-v', 'q', '-nologo']);
 for (const csproj of product.engineProjects ?? []) sh('dotnet', ['build', csproj, '-c', 'Release', '-v', 'q', '-nologo']);
 sh('dotnet', ['publish', 'engine/src/Host/Lapin.Host', '-c', 'Release', '-r', rid, '--self-contained', 'true',
-  '-p:PublishSingleFile=true', '-p:IncludeNativeLibrariesForSelfExtract=true', '-p:DebugType=none', '-o', join(out, 'host'), '-v', 'q', '-nologo']);
+  `-p:Version=${version}`, '-p:PublishSingleFile=true', '-p:IncludeNativeLibrariesForSelfExtract=true', '-p:DebugType=none', '-o', join(out, 'host'), '-v', 'q', '-nologo']);
 mkdirSync(join(tauriDir, 'binaries'), { recursive: true });
 cpSync(join(out, 'host', `Lapin.Host${exe}`), join(tauriDir, 'binaries', `lapin-host-${triple}${exe}`));
 
@@ -81,7 +93,9 @@ const identity = mac ? process.env.LAPIN_SIGNING_IDENTITY
 if (mac) console.log(identity ? `▸ signing as ${identity}` : '▸ no Developer ID Application certificate in the keychain: the app is built unsigned');
 writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   productName: product.name,
+  version,
   identifier: `ro.ciuntucbimstudio.${productId}`,
+  plugins: { updater: { endpoints: [`https://ciuntucbimstudio.ro/downloads/${productId}-update/{{target}}-{{arch}}-{{bundle_type}}.json`] } },
   // Relative to desktop/src-tauri, with forward slashes: Tauri reads an absolute Windows path ("D:\\a\\…") as a URL with the
   // scheme "d:", embeds nothing and the installed app opens on "File not found".
   build: { frontendDist: relative(tauriDir, join(out, 'ui')).split(sep).join('/') },
@@ -107,7 +121,6 @@ sh('pnpm', ['tauri', 'build', '--config', join(tauriDir, 'tauri.product.json')],
 if (mac) {
   const macos = join(bundleDir, 'macos');
   const apps = existsSync(macos) ? readdirSync(macos).filter((f) => f.endsWith('.app')) : [];
-  const version = JSON.parse(readFileSync(join(tauriDir, 'tauri.conf.json'), 'utf8')).version;
   const dmgDir = join(bundleDir, 'dmg');
   mkdirSync(dmgDir, { recursive: true });
   const dmgs = [];
@@ -143,6 +156,8 @@ if (mac) {
       for (const app of apps) sh('spctl', ['--assess', '--type', 'execute', '--verbose=2', join(macos, app)]);
     }
   }
+  // What the updater installs: the app as it is now (signed, stapled), packed on its own.
+  for (const app of apps) sh('tar', ['-czf', join(macos, `${app.replace(/\.app$/, '')}_${version}_${triple.split('-')[0]}.app.tar.gz`), '-C', macos, app], { env: { COPYFILE_DISABLE: '1' } });
 }
 
 if (existsSync(bundleDir)) cpSync(bundleDir, join(out, 'bundle'), { recursive: true });

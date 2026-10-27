@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "The Lapin window and its detached view windows: core APIs, open/save dialogs, closing with a save prompt, new view windows, the engine address.",
+  "description": "The Lapin window and its detached view windows: core APIs, open/save dialogs, closing with a save prompt, new view windows, the engine address, updates (checked, downloaded, installed, then the app restarted).",
   "windows": [
     "main",
     "view-*"
@@ -15,6 +15,8 @@
     "dialog:allow-open",
     "dialog:allow-save",
     "dialog:allow-ask",
-    "dialog:allow-message"
+    "dialog:allow-message",
+    "updater:default",
+    "process:allow-restart"
   ]
 }
