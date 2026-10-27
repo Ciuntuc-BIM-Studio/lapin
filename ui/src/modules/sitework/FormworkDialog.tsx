@@ -106,7 +106,7 @@ export function FormworkDialog() {
     if (editing) await execute('sitework.updateFormworkType', { id: editing, name, spec });
     else {
       const r = await execute('sitework.createFormworkType', { name, kind, spec }) as { id?: string } | null;
-      if (r?.id) setEditing(r.id);
+      if (r?.id) { setEditing(r.id); setSiteWorks({ formworkTypeId: r.id, formworkKind: kind }); }
     }
   };
   const props = <Table rows={spec.props} columns={[['name', 'Prop', 'text'], ['min', 'From', 'mm'], ['max', 'To', 'mm']]} onChange={(p) => set({ props: p })} fresh={() => ({ name: 'Prop', min: 1.5, max: 2.5 })} />;

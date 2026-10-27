@@ -21,6 +21,7 @@ export const gripsOf = (node: NodeDto, view?: GripView): Grip[] => modules.flatM
 export const referencesOf = (node: NodeDto): RefLine[] => modules.flatMap((m) => m.references?.[node.type]?.(node) ?? []);
 export const similarOf = (cls: string) => modules.map((m) => m.similar?.[cls]).find(Boolean) ?? null;
 export const setTypeOf = (cls: string) => modules.map((m) => m.setType?.[cls]).find(Boolean) ?? null;
+export const typeFieldsOf = (cls: string) => modules.map((m) => m.typeFields?.[cls]).find(Boolean) ?? null;
 
 /** Every tool of every module, once. */
 export const allTools = (): ToolDef[] => {

@@ -17,7 +17,10 @@ import { activeStorey, engine, execute, useSession } from '../../engine/session'
 import { ScaffoldDialog } from './ScaffoldDialog';
 import { FormworkDialog } from './FormworkDialog';
 import { FormworkSection, ScaffoldSection } from './Sections';
-import { useSiteWorks } from './prefs';
+import { setSiteWorks, useSiteWorks } from './prefs';
+import { FormworkTypeFields, ScaffoldTypeFields } from './TypeFields';
+import { activate } from '../../platform/modules';
+import { typeOf } from '../../engine/model';
 
 const selectedOf = (...classes: string[]): string[] => {
   const nodes = useSession.getState().nodes;
@@ -147,6 +150,15 @@ const sitework: LapinModule = {
     { id: 'formwork', label: 'Formwork', classes: ['LapinFormwork'], component: FormworkSection, replacesFields: () => true },
   ],
   dialogs: { scaffoldTypes: ScaffoldDialog, formworkTypes: FormworkDialog },
+  typeFields: { LapinScaffoldType: ScaffoldTypeFields, LapinFormworkType: FormworkTypeFields },
+  similar: {
+    LapinScaffold: (n) => { setSiteWorks({ scaffoldTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(scaffold); },
+    LapinFormwork: (n) => { setSiteWorks({ formworkTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(formworkOnFace); },
+  },
+  setType: {
+    LapinScaffold: async (ids, typeId) => { for (const id of ids) await execute('sitework.updateScaffold', { id, typeId }); },
+    LapinFormwork: async (ids, typeId) => { for (const id of ids) await execute('sitework.updateFormwork', { id, typeId }); },
+  },
 };
 
 export default sitework;

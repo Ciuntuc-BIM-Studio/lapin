@@ -23,6 +23,8 @@ Each straight run is split into the type's bay lengths, with as few bays as reac
 
 In its properties you can set the **work top**: leave it empty for the walls' top. You can also choose whether the feet stand **on the terrain** or **on the storey**, or **detach** it from the walls.
 
+Every scaffold and formwork has a **type**. You choose it at the top of the properties, or give one element's type to others with Match Type (MA). Under **Type parameters** are the values the configurator sets: the system, the bay lengths, the width, the lift, the plywood, the spacings, the article. You can change them there too. A change is the type's, so every element of that type follows it. Create Similar (CS) draws a new one of the same type. A type you create in the configurator is the one the next scaffold or formwork takes.
+
 **Scaffold types…** opens the configurator. It sets the system (modular or frames), the bay lengths, the width and the lift, the distance from the wall, the decks, guardrails and toe boards, the anchors, the base jacks, the access bays and the protective net. The elevation shows a run of the length and height you choose, with what it counts.
 
 ![The scaffold configurator](shots/scaffold-configurator.webp)

@@ -140,4 +140,6 @@ export interface LapinModule {
   similar?: Record<string, (node: NodeDto) => void>;
   /** Match Type (MA): elements of this class given another type. */
   setType?: Record<string, (ids: string[], typeId: string) => Promise<unknown>>;
+  /** What a type's configurator sets, shown and edited under Type parameters on its elements, by the type's class. */
+  typeFields?: Record<string, ComponentType<{ type: NodeDto; node: NodeDto }>>;
 }

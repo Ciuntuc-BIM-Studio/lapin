@@ -15,7 +15,7 @@ import { frontView } from '../viewport/frontView';
 import { relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
 import type { FieldDescriptor, NodeDto } from '../engine/protocol';
 import type { PropertySectionDef } from '../platform/module';
-import { propertySections } from '../platform/modules';
+import { propertySections, typeFieldsOf } from '../platform/modules';
 import { QuantitiesSection } from './QuantitiesSection';
 
 /** An input that commits on Enter or when it loses focus, not on every key. */
@@ -263,6 +263,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
   const type = typeOf(model, node.id);
   const storey = relatingOf(model, node.id, 'IfcRelContainedInSpatialStructure');
   const sections = propertySections(node.type);
+  const TypeFields = type ? typeFieldsOf(type.type) : null;
   return (
     <aside className="panel props" aria-label="Properties" ref={body} onKeyDown={panelKeys} onFocus={panelFocus}>
       <div className="props-resize" onPointerDown={startResize} title="Drag to widen the panel" />
@@ -298,6 +299,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
       {node.editable && type && (
         <Group id="typeParams" label={`Type parameters · ${type.name}`}>
           <p className="muted small pad">Every element of the type has these; a change here changes them all ({relatedOf(model, type.id, 'IfcRelDefinesByType').length}).</p>
+          {TypeFields && <TypeFields type={type} node={node} />}
           <ParamsSection node={type} ids={() => [type.id]} shadowed={new Set(((Array.isArray(node.props.params) ? node.props.params : []) as unknown as Param[]).map((p) => p.name.toLowerCase()))} />
         </Group>
       )}

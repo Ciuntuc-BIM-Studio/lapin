@@ -214,7 +214,14 @@ export const scenes = [
       await t.shot('formwork-plan', { of: '[data-testid=plan]', pad: 0 });
       await select(t, scaffold.id);
       await t.wait(600);
-      await t.shot('scaffold-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      await t.shot('scaffold-properties', { of: 'aside.props', pad: 0, maxHeight: 1300 });
+      // The type's parameters are the configurator's: a lift changed here is the type's.
+      const lift = t.page.locator('aside.props .qrow', { has: t.page.locator('dt', { hasText: /^Lift$/ }) }).locator('input');
+      await lift.fill('1500');
+      await lift.press('Enter');
+      await t.wait(600);
+      const type = (await t.nodes()).find((n) => n.type === 'LapinScaffoldType');
+      t.expect(Math.abs((type?.props.spec?.lift ?? 0) - 1.5) < 1e-6, `the lift set in the properties is the type's (${JSON.stringify(type?.props.spec?.lift)})`);
       await t.ui({ selection: null, selected: [] });
       await t.tool('sitework.scaffoldTypes');
       t.expect(await t.page.locator('[aria-label="Scaffolds"]').count() > 0, 'the scaffold configurator opens');

@@ -23,6 +23,8 @@ Fiecare tronson drept e împărțit în traveile tipului, cât mai puține câte
 
 În proprietăți poți da **cota de lucru**: o lași goală pentru partea de sus a pereților. Mai poți alege dacă tălpile stau **pe teren** sau **pe etaj**, sau poți **desprinde** schela de pereți.
 
+Fiecare schelă și fiecare cofraj are un **tip**. Îl alegi sus în proprietăți sau dai tipul unui element altora cu Match Type (MA). La **Parametrii tipului** sunt valorile din configurator: sistemul, lungimile de travee, lățimea, nivelul de lucru, placajul, distanțele, articolul. Le poți schimba și acolo. Schimbarea e a tipului, deci o urmează toate elementele acelui tip. Create Similar (CS) desenează unul nou de același tip. Un tip creat în configurator e cel pe care îl ia următoarea schelă sau următorul cofraj.
+
 **Tipuri de schelă…** deschide configuratorul. În el alegi sistemul (modular sau cu cadre), lungimile de travee, lățimea și înălțimea nivelului, distanța de perete, podinele, parapetele și bordurile, ancorele, tălpile reglabile, traveile de acces și plasa de protecție. Vederea arată un tronson de lungimea și înălțimea alese, cu ce numără.
 
 ![Configuratorul de schele](shots/scaffold-configurator.webp)

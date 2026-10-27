@@ -66,7 +66,7 @@ export function ScaffoldDialog() {
     if (editing) await execute('sitework.updateScaffoldType', { id: editing, name, spec });
     else {
       const r = await execute('sitework.createScaffoldType', { name, spec }) as { id?: string } | null;
-      if (r?.id) setEditing(r.id);
+      if (r?.id) { setEditing(r.id); setSiteWorks({ scaffoldTypeId: r.id }); }
     }
   };
 
