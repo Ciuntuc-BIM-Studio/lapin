@@ -15,7 +15,10 @@ namespace Lapin.Platform;
 /// <item><c>joins</c>: whether one material goes on from one element into the
 /// next without a line (the visual joins), on by default;</item>
 /// <item><c>overhead</c>: whether a plan draws what lies above its cut, up to
-/// its range's top.</item>
+/// its range's top;</item>
+/// <item><c>ifc2d</c>: whether a plan draws the 2D an IFC file gave its
+/// elements (their footprints and symbols, <see cref="Plan2d"/>) instead of
+/// their cut, on by default.</item>
 /// </list>
 /// A view takes its style (<c>viewStyle</c>, else its discipline's), and may
 /// set any of these itself: what it sets wins over the style.
@@ -24,21 +27,22 @@ public static class ViewStyles
 {
     public const string Key = "viewStyles";
     public static readonly string[] LayerModes = ["all", "noFinishes", "core"];
-    public static readonly string[] Fields = ["layers", "joins", "overhead"];
+    public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d"];
 
     /// <summary>A style, or a view's settings as its style and its own choices make them.</summary>
-    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead)
+    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true)
     {
         public JsonObject ToJson() => new()
         {
-            ["id"] = Id, ["name"] = Name, ["discipline"] = Discipline, ["layers"] = Layers, ["joins"] = Joins, ["overhead"] = Overhead,
+            ["id"] = Id, ["name"] = Name, ["discipline"] = Discipline, ["layers"] = Layers, ["joins"] = Joins, ["overhead"] = Overhead, ["ifc2d"] = Ifc2d,
         };
 
         public static Style From(JsonObject o) => new(
             (string?)o["id"] ?? "", (string?)o["name"] ?? "Style", (string?)o["discipline"],
             (string?)o["layers"] is { } l && LayerModes.Contains(l) ? l : "all",
             o["joins"] is not JsonValue jv || !jv.TryGetValue<bool>(out var j) || j,
-            o["overhead"] is not JsonValue ov || !ov.TryGetValue<bool>(out var h) || h);
+            o["overhead"] is not JsonValue ov || !ov.TryGetValue<bool>(out var h) || h,
+            o["ifc2d"] is not JsonValue iv || !iv.TryGetValue<bool>(out var i) || i);
     }
 
     /// <summary>The styles a project without its own reads as: one per discipline; the structural one draws the cores alone.</summary>
@@ -74,6 +78,7 @@ public static class ViewStyles
             Layers = (string?)o["layers"] is { } l && LayerModes.Contains(l) ? l : s.Layers,
             Joins = o["joins"] is JsonValue jv && jv.TryGetValue<bool>(out var j) ? j : s.Joins,
             Overhead = o["overhead"] is JsonValue ov && ov.TryGetValue<bool>(out var h) ? h : s.Overhead,
+            Ifc2d = o["ifc2d"] is JsonValue iv && iv.TryGetValue<bool>(out var i) ? i : s.Ifc2d,
         };
     }
 
@@ -107,6 +112,7 @@ public static class ViewStyles
         if ((string?)a["layers"] is { } l) s = s with { Layers = LayerModes.Contains(l) ? l : throw new CommandException($"„{l}” is not all, noFinishes or core.") };
         if (a["joins"] is JsonValue jv && jv.TryGetValue<bool>(out var j)) s = s with { Joins = j };
         if (a["overhead"] is JsonValue ov && ov.TryGetValue<bool>(out var h)) s = s with { Overhead = h };
+        if (a["ifc2d"] is JsonValue iv && iv.TryGetValue<bool>(out var i)) s = s with { Ifc2d = i };
         return s;
     }
 

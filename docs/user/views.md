@@ -34,5 +34,6 @@ The **View** tab sets what the view in front shows and how it looks.
 
 - **View settings.** The view's discipline and style, its range (the cut height and depth), and its graphics.
 - **View styles.** Architectural, Structural (the cores only), MEP or your own. Each style chooses the layers drawn (all, without finishes, or the core) and how materials join.
+- **IFC 2D symbols.** Elements imported or linked from an IFC file that bring their own plan drawing (a footprint, a door's swing, a fixture's symbol, with the file's colours, fills and texts) draw it in plans instead of their cut. Untick it in View settings (or in a view style) to draw their 3D cut instead.
 - **Visibility** (<kbd>VV</kbd>) and **Graphics** (<kbd>VG</kbd>). They show or hide categories and set their pens, line types and fills.
 - **Split** and **Window.** They show two views side by side, or open a view in a separate window.

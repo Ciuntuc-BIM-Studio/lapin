@@ -16,7 +16,9 @@ export const RO: Record<string, string> = {
   'Export 3D…': 'Exportă 3D…', 'Export 3D': 'Export 3D', 'Format': 'Format', 'What': 'Ce', 'the whole model': 'tot modelul', 'Origin': 'Origine', 'Edges': 'Muchii', 'every phase': 'toate fazele', 'Exporting…': 'Se exportă…', 'Export': 'Exportă',
   'Door & window tags': 'Etichete uși și ferestre', 'Tags': 'Etichete', 'Text (outside)': 'Text (exterior)', 'Inside': 'Interior', 'Past faces mm': 'Peste fețe mm', 'Classes': 'Clase',
   // View settings and styles
-  'View settings': 'Setările vederii', 'View styles': 'Stiluri de vedere', 'Join materials': 'Unește materialele',
+  'View settings': 'Setările vederii', 'View styles': 'Stiluri de vedere', 'Join materials': 'Unește materialele', 'IFC 2D symbols': 'Simboluri 2D din IFC',
+  'Elements from an IFC file that bring their own plan drawing (a footprint, a door\'s swing, a fixture\'s symbol) draw it instead of their cut; off: their 3D cut': 'Elementele dintr-un fișier IFC care își aduc desenul de plan (o amprentă, deschiderea unei uși, simbolul unui obiect sanitar) îl desenează în locul secțiunii; oprit: secțiunea lor 3D',
+  'Plans draw the 2D an IFC file gave its elements instead of their cut': 'Planurile desenează 2D-ul dat elementelor de fișierul IFC în locul secțiunii lor',
   'Cut plane and depth': 'Planul de secționare și adâncimea', 'View range…': 'Intervalul vederii…', 'Edit styles…': 'Editează stilurile…',
   'every layer': 'toate straturile', 'without finishes': 'fără finisaje', 'the core only': 'doar miezul', 'New style': 'Stil nou',   'by its name': 'după nume', 'Finish': 'Finisaj', 'Insulation': 'Izolație', 'Membrane': 'Membrană',   // Drafting properties
   'Drafting': 'Desen', 'by layer': 'după layer', 'Line type': 'Tip de linie', 'Start': 'Început', 'End': 'Sfârșit', 'Centre': 'Centru', 'Radius': 'Rază', 'Diameter': 'Diametru', 'Circumference': 'Circumferință', 'Vertices': 'Vârfuri', 'Closed': 'Închis', 'Start angle': 'Unghi de început', 'End angle': 'Unghi de sfârșit', 'Pattern': 'Model', 'Position': 'Poziție', 'Tagged element': 'Element etichetat', 'Field': 'Câmp',

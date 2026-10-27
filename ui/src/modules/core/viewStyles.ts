@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { query, useSession } from '../../engine/session';
 
 export type LayerMode = 'all' | 'noFinishes' | 'core';
-export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean }
+/** ifc2d: plans draw the 2D an IFC file gave its elements (footprints, symbols) instead of their cut. */
+export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean }
 
 export function useViewStyles(): ViewStyle[] {
   const nodes = useSession((s) => s.nodes);

@@ -614,10 +614,15 @@ public sealed partial class IfcModel
     }
 
     /// <summary>A curve as points (arcs every 15°), without its closing repeat.</summary>
-    List<Vec3> Curve(StepEntity? c)
+    List<Vec3> Curve(StepEntity? c) => Curve(c, out _);
+
+    /// <summary>A curve as points, without its closing repeat; <paramref name="closed"/>: it came back to its start (a circle, an ellipse, a loop).</summary>
+    List<Vec3> Curve(StepEntity? c, out bool closed)
     {
+        closed = false;
         var o = new List<Vec3>();
         if (c == null) return o;
+        if (c.Type is "IFCCIRCLE" or "IFCELLIPSE") closed = true;
         switch (c.Type)
         {
             case "IFCPOLYLINE": o.AddRange(Refs(c[0]).Select(r => Point(new StepRef(r)))); break;
@@ -648,7 +653,7 @@ public sealed partial class IfcModel
         }
         var clean = new List<Vec3>();
         foreach (var p in o) if (clean.Count == 0 || (clean[^1] - p).Length > 1e-7) clean.Add(p);
-        if (clean.Count > 2 && (clean[0] - clean[^1]).Length < 1e-7) clean.RemoveAt(clean.Count - 1);
+        if (clean.Count > 2 && (clean[0] - clean[^1]).Length < 1e-7) { clean.RemoveAt(clean.Count - 1); closed = true; }
         return clean;
     }
 

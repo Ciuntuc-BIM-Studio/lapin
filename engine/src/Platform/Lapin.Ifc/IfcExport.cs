@@ -422,6 +422,7 @@ public static class IfcExport
             var reps = new List<string>();
             if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, p.Color, v => Local(jp2, v)) : Brep(p.Solid, p.Color, z0))));
             if (AxisOf(e) is { } ax) reps.Add(ax);
+            reps.AddRange(Plan2dOf(e));
             var shape = reps.Count > 0 ? f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(reps)) : Null;
             var (height, width) = Overall(e, type);
             // Its type in IFC's terms (the mirrored type for an element that is its type's mirror image), which the element repeats.
@@ -496,6 +497,37 @@ public static class IfcExport
             var c = PathCurve.Of(e);
             var pts = c.IsArc ? c.Line(0, c.Length, 0) : [a, b];
             return f.Add("IFCSHAPEREPRESENTATION", axis, S("Axis"), S("Curve2D"), L(new[] { f.Add("IFCPOLYLINE", L(pts.Select(P2).ToArray())) }));
+        }
+
+        string? plan2dContext;
+
+        /// <summary>
+        /// A reference's own 2D, as the file it came from gave it (<see cref="Plan2d"/>), written back: its footprint lines as a
+        /// FootPrint representation, the rest as an Annotation one, in a plan subcontext (colours and patterns are not written).
+        /// </summary>
+        List<string> Plan2dOf(Entity e)
+        {
+            var o = new List<string>();
+            var items = Plan2d.Read(e);
+            if (items.Count == 0) return o;
+            plan2dContext ??= f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("Annotation"), S("Plan"), Derived, Derived, Derived, Derived, model, Null, E("PLAN_VIEW"), Null);
+            string Poly(IReadOnlyList<Vec2> pts, bool closed) => f.Add("IFCPOLYLINE", L((closed ? pts.Append(pts[0]) : pts).Select(P2).ToArray()));
+            string? Item(Plan2dItem i) => i.Kind switch
+            {
+                Plan2dItem.Line when i.Points.Count >= 2 => Poly(i.Points, i.Closed),
+                Plan2dItem.Fill => f.Add("IFCANNOTATIONFILLAREA", Poly(i.Loops[0], true), i.Loops.Count > 1 ? L(i.Loops.Skip(1).Select(l => Poly(l, true)).ToArray()) : Null),
+                Plan2dItem.Label when i.Text != null => f.Add("IFCTEXTLITERAL", S(i.Text),
+                    f.Add("IFCAXIS2PLACEMENT2D", P2(i.Points[0]), f.Add("IFCDIRECTION", L(new[] { R(Math.Cos(i.Angle * Math.PI / 180)), R(Math.Sin(i.Angle * Math.PI / 180)) }))), E("RIGHT")),
+                _ => null,
+            };
+            foreach (var (id, type, footprint) in new[] { ("FootPrint", "GeometricCurveSet", true), ("Annotation", "Annotation2D", false) })
+            {
+                var written = items.Where(i => i.Footprint == footprint).Select(Item).OfType<string>().ToList();
+                if (written.Count == 0) continue;
+                var set = f.Add("IFCGEOMETRICCURVESET", L(written));
+                o.Add(f.Add("IFCSHAPEREPRESENTATION", plan2dContext, S(id), S(type), L(new[] { set })));
+            }
+            return o;
         }
 
         // ─── Types and materials ────────────────────────────────────────────
@@ -720,7 +752,7 @@ public static class IfcExport
             foreach (var (key, v) in e.Attrs)
             {
                 // A stored body (a reference from IFC) is written as geometry, not as text; the project's standards stay in .lapin.
-                if (v == null || key == StoredBodies.Key || (only != null && !only.Contains(key))) continue;
+                if (v == null || key == StoredBodies.Key || key == Plan2d.Key || (only != null && !only.Contains(key))) continue;
                 var field = fields.GetValueOrDefault(key);
                 var value = v switch
                 {

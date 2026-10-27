@@ -172,12 +172,17 @@ public static class Views
     public static bool? ShowsByStorey(IModelView m, Entity view, Entity element) =>
         view.Str("kind") is "plan" or null ? StoreyDisplay.Of(view).Shows(view.Str("storeyId"), Spatial.StoreyOf(m, element.Id)?.Id) : false;
 
-    /// <summary>Every element's parts, and in a plan the symbols of the doors, windows and roofs of its storey.</summary>
-    static (List<DrawPart> Parts, List<DrawSymbol> Symbols) Gather(IQueryContext q, Entity view)
+    /// <summary>
+    /// Every element's parts, and in a plan the symbols of the doors, windows and roofs of its storey; an element with its
+    /// own 2D from an IFC file (<see cref="Plan2d"/>) draws that in a plan instead of its parts, unless the view's style says not.
+    /// </summary>
+    static (List<DrawPart> Parts, List<DrawSymbol> Symbols, List<DFill> Fills, List<DText> Texts) Gather(IQueryContext q, Entity view)
     {
         var m = q.Model;
         var parts = new List<DrawPart>();
         var symbols = new List<DrawSymbol>();
+        var fills = new List<DFill>();
+        var texts = new List<DText>();
         var storey = view.Str("storeyId");
         var viewGraphics = GraphicsSets.Of(m, view);
         var hiddenElements = (view.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
@@ -187,6 +192,7 @@ public static class Views
         // The view's style: which layers of layered elements draw (all, all but the finishes, the cores).
         var style = ViewStyles.Of(m, view);
         var bandCache = new Dictionary<string, IReadOnlyList<LayerBand>?>();
+        double? cutZ = plan && style.Ifc2d && m.Get(storey ?? "") is { Class: IfcClass.BuildingStorey } ? Range(m, view).Cut : null;
         foreach (var e in m.Entities)
         {
             if (e.Class is IfcClass.OpeningElement || hiddenElements.Contains(e.Id)) continue;
@@ -195,28 +201,62 @@ public static class Views
             if (filters.Select(f => f.For(m, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
             if (GraphicsSets.Hides(viewGraphics, e)) continue;
             if (q.Geometry(e.Id) is not { } g) continue;
+            var stored = StoredBodies.Has(e);
+            if (cutZ is { } cz && stored && Plan2d.Read(e) is { Count: > 0 } own)
+            {
+                OwnPlan(e, g, own, cz, symbols, fills, texts);
+                continue;
+            }
             foreach (var p in g.Parts)
-                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material));
-            if (view.Str("kind") == "plan" && Generator.SymbolicInPlan.Contains(e.Class) && g.Plan != null && Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey)
+                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material, CutInPlan: stored));
+            if (view.Str("kind") == "plan" && !stored && Generator.SymbolicInPlan.Contains(e.Class) && g.Plan != null && Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey)
                 foreach (var item in g.Plan)
                 {
                     var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" => LineRole.Cut, "heavy" => LineRole.Cut, "dashed" => LineRole.Hidden, "overhead" or "ridge" or "hip" or "valley" or "break" => LineRole.Overhead, _ => null };
                     if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role));
                 }
         }
-        return (parts, symbols);
+        return (parts, symbols, fills, texts);
+    }
+
+    /// <summary>
+    /// An element's own 2D in a plan (docs/spec-ifc.md, Reprezentările 2D): its lines with the file's colour and pattern, its
+    /// fills and texts. A footprint's lines are cut lines where the element's body crosses the plan's cut (a wall's outline),
+    /// seen lines otherwise; any other line (a door's swing, a fixture's symbol) is seen.
+    /// </summary>
+    static void OwnPlan(Entity e, ElementGeometry g, IReadOnlyList<Plan2dItem> items, double cutZ, List<DrawSymbol> symbols, List<DFill> fills, List<DText> texts)
+    {
+        double lo = double.PositiveInfinity, hi = double.NegativeInfinity;
+        foreach (var p in g.Parts) foreach (var v in p.Solid.Vertices) { lo = Math.Min(lo, v.Z); hi = Math.Max(hi, v.Z); }
+        var crosses = lo < cutZ && hi > cutZ && !Generator.SymbolicInPlan.Contains(e.Class);
+        foreach (var i in items)
+            switch (i.Kind)
+            {
+                case Plan2dItem.Fill:
+                    fills.Add(new DFill(i.Loops.Select(l => l.ToArray()).ToList(), e.Id, e.Class, i.Color));
+                    break;
+                case Plan2dItem.Label when i.Text != null:
+                    texts.Add(new DText(i.Points[0], i.Text, i.Height, i.Angle, e.Id, e.Class, i.Color));
+                    break;
+                case Plan2dItem.Line when i.Points.Count >= 2:
+                    var own = i.Color != null || i.Pattern != null ? new LineStyleSpec(Color: i.Color, Pattern: i.Pattern) : null;
+                    symbols.Add(new DrawSymbol(i.Points, i.Closed, e.Id, e.Class, i.Footprint && crosses ? LineRole.Cut : LineRole.Projection, own));
+                    break;
+            }
     }
 
     /// <summary>The view's generated drawing (cut areas and lines, before materials and pens), or why there is none.</summary>
     public static (ViewDrawing? Drawing, ViewSpec? Spec, string? Problem) Generate(IQueryContext q, Entity view)
     {
-        var (parts, symbols) = Gather(q, view);
+        var (parts, symbols, fills, texts) = Gather(q, view);
         var (spec, problem) = Spec(q.Model, view, parts);
         if (spec == null) return (null, null, problem);
         var keys = new Dictionary<string, string?>();
         // Without the view style's joins, a surface goes on only within its own element.
         var joins = ViewStyles.Of(q.Model, view).Joins;
-        return (Generator.Draw(parts, spec, symbols, p => SeamKeyOf(q.Model, p.Material, p.Class, keys) is { } k ? (joins ? k : k + "\u0000" + p.Element) : null), spec, null);
+        var drawing = Generator.Draw(parts, spec, symbols, p => SeamKeyOf(q.Model, p.Material, p.Class, keys) is { } k ? (joins ? k : k + "\u0000" + p.Element) : null);
+        if (spec.Kind == "plan" && (fills.Count > 0 || texts.Count > 0)) drawing = drawing with { Fills = fills, Texts = texts };
+        return (drawing, spec, null);
     }
 
     /// <summary>
@@ -267,7 +307,7 @@ public static class Views
         var filters = q.Services.All<IViewElementFilter>();
         var halftoneOthers = spec.Kind == "plan" && StoreyDisplay.Of(view).Halftone;
         if (filters.Count > 0 || halftoneOthers)
-            foreach (var id in drawing.Cuts.Select(c => c.Element).Concat(drawing.Lines.Select(l => l.Element)).Distinct())
+            foreach (var id in drawing.Cuts.Select(c => c.Element).Concat(drawing.Lines.Select(l => l.Element)).Concat((drawing.Fills ?? []).Select(f => f.Element)).Concat((drawing.Texts ?? []).Select(t => t.Element)).Distinct())
             {
                 if (m.Get(id) is not { } el) continue;
                 if (filters.Select(f => f.For(m, view, el)).FirstOrDefault(x => x != null) is { Color: { } c }) colors[id] = c;
@@ -439,6 +479,9 @@ public static class Views
                 if (loop.Length >= 2) Of(c.Element).Polyline(loop, true, "PICK", 0);
         foreach (var l in drawing.Lines)
             if (l.Role is not (LineRole.Hidden or LineRole.Overhead)) Of(l.Element).Line(l.A, l.B, "PICK", 0);
+        foreach (var f in drawing.Fills ?? [])
+            foreach (var loop in f.Loops)
+                if (loop.Length >= 2) Of(f.Element).Polyline(loop, true, "PICK", 0);
         return byElement.Values;
     }
 

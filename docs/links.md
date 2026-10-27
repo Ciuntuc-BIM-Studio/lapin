@@ -26,6 +26,7 @@ Un fișier legat (IFC sau DXF) intră în model ca orice import, dar aparține l
 
 - Fog (View → Fog): scena se estompează cu distanța (`THREE.FogExp2`, culoarea fundalului temei), partajat între ferestrele aplicației.
 - Halftone pe legătură: fețele la 35% opacitate, prin mecanismul `looks` (sursa `links`).
+- 2D-ul din IFC (amprente, simboluri, umpleri, texte; docs/spec-ifc.md, Reprezentările 2D) vine și cu o legătură: planurile îl desenează în locul tăieturii, în halftone când legătura e în halftone.
 
 ## Rămase
 

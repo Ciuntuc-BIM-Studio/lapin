@@ -118,6 +118,14 @@ public static class Pens
             pen.Loops.AddRange(p.Loops);
         }
 
+        // The fills of elements' own 2D (an IFC file's annotation fill areas): their colour, under the category's and a module's.
+        foreach (var f in d.Fills ?? [])
+        {
+            var fill = (o.ElementColors?.GetValueOrDefault(f.Element) is { } ec ? Pale(ec) : null) ?? Cat(f.Class)?.FillColor ?? f.Color;
+            if (fill == null || Cat(f.Class)?.Hidden == true) continue;
+            Get("fill:" + fill, () => new Pen(PenLayer.Fill, null, 0, fill, null)).Loops.AddRange(f.Loops);
+        }
+
         // Hatches: the materials', unless the category lays its own over the cut.
         var hatches = new List<MaterialHatch>(m?.Hatches ?? []);
         if (o.Categories != null)
@@ -167,6 +175,9 @@ public static class Pens
             // A line edit's style (Linework) wins over everything else.
             if (l.Style is { Empty: false } ls)
                 styled = new ResolvedLine(ls.Pen is { } lsPen ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), lsPen, o.Scale) : styled?.WidthMm, ls.Color ?? styled?.Color, ls.Pattern != null ? LineStyles.DashOf(ls.Pattern) : styled?.Dash);
+            // The element's own style (an IFC file's colour and pattern) under everything else.
+            if (l.Own is { Empty: false } own)
+                styled = new ResolvedLine(styled?.WidthMm, styled?.Color ?? (g?.LineColor == null ? own.Color : null), styled?.Dash ?? (own.Pattern != null ? LineStyles.DashOf(own.Pattern) : null));
             var color = o.ElementColors?.GetValueOrDefault(l.Element) ?? styled?.Color ?? g?.LineColor;
             Pen pen;
             switch (l.Role)
@@ -200,6 +211,14 @@ public static class Pens
                 }
             }
             pen.Segments.Add((l.A, l.B));
+        }
+        // The texts of elements' own 2D: their height on the model as paper millimetres at the view's scale (2.5 mm without one).
+        foreach (var t in d.Texts ?? [])
+        {
+            if (Cat(t.Class)?.Hidden == true) continue;
+            var c = o.ElementColors?.GetValueOrDefault(t.Element) ?? Cat(t.Class)?.LineColor ?? t.Color ?? "#000000";
+            var mm = t.Height is { } h && h > 0 ? h * 1000 / o.Scale : 2.5;
+            Get("text:" + c, () => new Pen("TEXT", c, 0, null, null)).Texts.Add(new PenText(t.At, t.Text, Math.Round(mm, 3), t.Angle, "start", "bottom"));
         }
         if (m != null && m.Membranes.Count > 0)
             Get("membrane", () => new Pen(PenLayer.Membrane, "#000000", Default.Membrane, null, [3, 1.5])).Segments.AddRange(m.Membranes);

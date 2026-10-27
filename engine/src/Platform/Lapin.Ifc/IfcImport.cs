@@ -391,7 +391,10 @@ public static partial class IfcImport
                 Reference(edit, e, booleans);
             }
             FinishRecognition(edit);
+            if (with2d > 0) notes.Add($"{with2d} reference(s) brought their own 2D for plans; plans draw it instead of their cut (a view's style can turn it off).");
         }
+
+        int with2d;
 
         void Native(IEdit edit, StepEntity e, Intent intent)
         {
@@ -448,12 +451,16 @@ public static partial class IfcImport
                 }
         }
 
-        /// <summary>An element the file describes only by its body: kept as it is, its openings cut where the booleans are.</summary>
+        /// <summary>
+        /// An element the file describes only by its body: kept as it is, its openings cut where the booleans are;
+        /// with the 2D the file drew for its plans (<see cref="Plan2d"/>), and kept for that alone when it has no body.
+        /// </summary>
         void Reference(IEdit edit, StepEntity e, ISolidBooleans? booleans)
         {
             var gid = Str(e[0])!;
             var (body, openings) = model.Shape(e.Id, booleans);
-            if (body.Count == 0) return;
+            var (plan2d, sections2d, elevations2d) = model.Drawing2d(e.Id);
+            if (body.Count == 0 && plan2d.Count == 0) return;
             List<Solid>? cutters = null;
             if (openings.Count > 0 && booleans != null)
                 cutters = openings.Select(m => { var w = m.Welded(); return SolidFromMesh.Build(w.V, w.T); }).OfType<Solid>().ToList();
@@ -471,7 +478,7 @@ public static partial class IfcImport
                 }
                 if (m.T.Count > 0) parts.Add(("Body", colour ?? "#c9ced6", m.V, m.T));
             }
-            if (parts.Count == 0) return;
+            if (parts.Count == 0 && plan2d.Count == 0) return;
             var cls = ClassName(e.Type);
             var attrs = new JsonObject
             {
@@ -482,6 +489,7 @@ public static partial class IfcImport
                 ["properties"] = PropertiesJson(e.Id),
                 ["shape"] = model.Describe(e.Id),
             };
+            if (plan2d.Count > 0) { attrs[Plan2d.Key] = Plan2d.Write(plan2d, sections2d, elevations2d); with2d++; }
             Put(edit, gid, cls, Str(e[2]) ?? cls[3..], attrs, null, counts: false);
             references++;
             referencesByClass[cls] = referencesByClass.GetValueOrDefault(cls) + 1;

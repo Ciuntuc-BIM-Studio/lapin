@@ -2,26 +2,39 @@ using Lapin.Geometry;
 
 namespace Lapin.Drawing.Views;
 
-/// <summary>A solid to draw: its element, IFC class, part key and material (an IfcMaterial id).</summary>
-public sealed record DrawPart(Solid Solid, string Element, string Class, string? Key = null, string? Material = null);
+/// <summary>
+/// A solid to draw: its element, IFC class, part key and material (an IfcMaterial id). <see cref="CutInPlan"/>: a part of a
+/// class plans draw by its symbol (<see cref="Generator.SymbolicInPlan"/>) that has none (a door from an IFC file), cut as any other.
+/// </summary>
+public sealed record DrawPart(Solid Solid, string Element, string Class, string? Key = null, string? Material = null, bool CutInPlan = false);
 
-/// <summary>A line an element draws in plan by itself (a door's swing, a roof's ridge): its role (projection, overhead…).</summary>
-public sealed record DrawSymbol(IReadOnlyList<Vec2> Points, bool Closed, string Element, string Class, string Role);
+/// <summary>A line an element draws in plan by itself (a door's swing, a roof's ridge): its role (projection, overhead…), and the style its file gave it.</summary>
+public sealed record DrawSymbol(IReadOnlyList<Vec2> Points, bool Closed, string Element, string Class, string Role, LineStyleSpec? Own = null);
 
-/// <summary>A drawn line: its role (cut, projection, hidden, overhead, beyond), its element and class, and a style a line edit gave it.</summary>
-public sealed record DLine(Vec2 A, Vec2 B, string Role, string Element, string Class, LineStyleSpec? Style = null);
+/// <summary>
+/// A drawn line: its role (cut, projection, hidden, overhead, beyond), its element and class, a style a line edit gave it,
+/// and the style the element's own 2D gave it (an IFC file's colour and pattern), under every other.
+/// </summary>
+public sealed record DLine(Vec2 A, Vec2 B, string Role, string Element, string Class, LineStyleSpec? Style = null, LineStyleSpec? Own = null);
+
+/// <summary>An area an element's own 2D fills (an IFC annotation fill area): even-odd loops, its colour.</summary>
+public sealed record DFill(IReadOnlyList<Vec2[]> Loops, string Element, string Class, string? Color);
+
+/// <summary>A text of an element's own 2D: where (view m), its height (m on the model; null: the drawing's default), angle (°), colour.</summary>
+public sealed record DText(Vec2 At, string Text, double? Height, double Angle, string Element, string Class, string? Color);
 
 /// <summary>What a cut takes out of one part: closed loops, even-odd, with the part's material.</summary>
 public sealed record DPolygon(IReadOnlyList<Vec2[]> Loops, string Element, string Class, string? Key, string? Material);
 
-/// <summary>A view's drawing in its own coordinates (metres): the cut areas and the lines.</summary>
-public sealed record ViewDrawing(List<DPolygon> Cuts, List<DLine> Lines)
+/// <summary>A view's drawing in its own coordinates (metres): the cut areas and the lines; the fills and texts of elements' own 2D.</summary>
+public sealed record ViewDrawing(List<DPolygon> Cuts, List<DLine> Lines, List<DFill>? Fills = null, List<DText>? Texts = null)
 {
     public (Vec2 Min, Vec2 Max)? Bounds
     {
         get
         {
-            var pts = Cuts.SelectMany(c => c.Loops.SelectMany(l => l)).Concat(Lines.SelectMany(l => new[] { l.A, l.B })).ToList();
+            var pts = Cuts.SelectMany(c => c.Loops.SelectMany(l => l)).Concat(Lines.SelectMany(l => new[] { l.A, l.B }))
+                .Concat((Fills ?? []).SelectMany(f => f.Loops.SelectMany(l => l))).Concat((Texts ?? []).Select(t => t.At)).ToList();
             return pts.Count == 0 ? null : (new Vec2(pts.Min(p => p.X), pts.Min(p => p.Y)), new Vec2(pts.Max(p => p.X), pts.Max(p => p.Y)));
         }
     }
@@ -95,7 +108,7 @@ public static class Generator
         }
 
         // The primary set: what the cut and the projection below it see.
-        var primary = parts.Where(p => !plan || !SymbolicInPlan.Contains(p.Class)).Where(p =>
+        var primary = parts.Where(p => !plan || p.CutInPlan || !SymbolicInPlan.Contains(p.Class)).Where(p =>
         {
             if (!plan) return true;
             var (z0, z1) = Z(p.Solid);
@@ -123,7 +136,7 @@ public static class Generator
         if (plan && v.Above > 0)
         {
             // Overhead: what lies wholly above the cut, below Top (beams, a slab's edge over a void), seen from below as dashed lines.
-            var over = parts.Where(p => !SymbolicInPlan.Contains(p.Class)).Where(p => { var (z0, _) = Z(p.Solid); return z0 > cutZ + 1e-6 && z0 < cutZ + v.Above - 1e-9; }).ToList();
+            var over = parts.Where(p => p.CutInPlan || !SymbolicInPlan.Contains(p.Class)).Where(p => { var (z0, _) = Z(p.Solid); return z0 > cutZ + 1e-6 && z0 < cutZ + v.Above - 1e-9; }).ToList();
             if (over.Count > 0)
             {
                 var up = new ViewFrame(new Vec3(0, 0, cutZ), new Vec3(1, 0, 0), new Vec3(0, -1, 0), Vec3.UnitZ);
@@ -135,18 +148,19 @@ public static class Generator
                 }
             }
         }
+        // Stray lines: projection longer than the drawing could hold (docs/transfer.md). Symbols are drawn, never stray.
+        (Vec2, Vec2)? Box(IEnumerable<Vec2> ps) { var l = ps.ToList(); return l.Count == 0 ? null : (new Vec2(l.Min(p => p.X), l.Min(p => p.Y)), new Vec2(l.Max(p => p.X), l.Max(p => p.Y))); }
+        var cutBox = Box(cuts.SelectMany(c => c.Loops).SelectMany(l => l));
+        var modelBox = Box(primary.SelectMany(p => p.Solid.Vertices).Select(v.Frame.Map));
+        lines = DropStray(lines, cutBox, modelBox);
         if (plan && symbols != null)
             foreach (var sym in symbols)
             {
                 var n = sym.Points.Count;
                 for (var i = 0; i + 1 < n + (sym.Closed ? 1 : 0); i++)
-                    lines.Add(new DLine(sym.Points[i], sym.Points[(i + 1) % n], sym.Role, sym.Element, sym.Class));
+                    lines.Add(new DLine(sym.Points[i], sym.Points[(i + 1) % n], sym.Role, sym.Element, sym.Class, Own: sym.Own));
             }
-        // Stray lines: projection longer than the drawing could hold (docs/transfer.md).
-        (Vec2, Vec2)? Box(IEnumerable<Vec2> ps) { var l = ps.ToList(); return l.Count == 0 ? null : (new Vec2(l.Min(p => p.X), l.Min(p => p.Y)), new Vec2(l.Max(p => p.X), l.Max(p => p.Y))); }
-        var cutBox = Box(cuts.SelectMany(c => c.Loops).SelectMany(l => l));
-        var modelBox = Box(primary.SelectMany(p => p.Solid.Vertices).Select(v.Frame.Map));
-        return new ViewDrawing(cuts, DropStray(lines, cutBox, modelBox));
+        return new ViewDrawing(cuts, lines);
     }
 
     /// <summary>

@@ -8,7 +8,8 @@ namespace Lapin.Platform;
 /// An element whose body came with it (a reference from an IFC file): the
 /// triangles are kept in its <c>body</c> attribute, in metres, world
 /// coordinates, and drawn as they are. Such an element is shown, measured and
-/// snapped to, never edited; its class stays what the file said.
+/// snapped to, never edited; its class stays what the file said. An element
+/// the file gave only a 2D representation has no parts (<see cref="Plan2d"/>).
 /// </summary>
 public static class StoredBodies
 {
@@ -66,6 +67,7 @@ public static class StoredBodies
             if (faces.Count == 0) continue;
             list.Add(new GeometryPart((string?)p["name"] ?? "Body", (string?)p["color"] ?? "#c9ced6", new Solid(vertices, [.. faces]), null, $"part:{list.Count}"));
         }
-        return new ElementGeometry(list);
+        // Its own 2D (a door's swing, a footprint), for picking and snapping in a plan.
+        return new ElementGeometry(list, Plan2d.Has(e) ? Plan2d.PlanItems(e) : null);
     }
 }

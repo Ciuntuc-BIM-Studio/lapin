@@ -4,7 +4,8 @@
  * what the view sets itself: which layers of layered elements draw (all,
  * all but the finishes, the cores), whether one material goes on from
  * element to element without a line, whether a plan draws what is above its
- * cut; with a plan's cut plane and range (View range) and the storeys it
+ * cut, whether a plan draws the 2D an IFC file gave its elements instead of
+ * their cut; with a plan's cut plane and range (View range) and the storeys it
  * shows. In the view's properties and as View → View settings for the view in
  * front. Manage → View styles edits the styles themselves.
  */
@@ -64,6 +65,8 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
           <>
             <dt title="What lies above the cut plane, up to the range's top, drawn dashed">Overhead</dt>
             <dd><input type="checkbox" checked={state.resolved.overhead} onChange={(e) => set({ overhead: e.target.checked })} /><Reset field="overhead" /></dd>
+            <dt title="Elements from an IFC file that bring their own plan drawing (a footprint, a door's swing, a fixture's symbol) draw it instead of their cut; off: their 3D cut">IFC 2D symbols</dt>
+            <dd><input type="checkbox" checked={state.resolved.ifc2d !== false} onChange={(e) => set({ ifc2d: e.target.checked })} /><Reset field="ifc2d" /></dd>
             <dt>Cut plane and depth</dt>
             <dd><button type="button" className="btn small" onClick={() => useUi.setState({ dialog: 'viewRange' })}>View range…</button></dd>
             <dt title="Another level's plan drawn under this one on screen, faded, never picked but snapped to; it does not print">Reference level</dt>
@@ -132,7 +135,7 @@ export function ViewStylesDialog() {
         <header className="dialog-head"><span className="panel-title">View styles</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
           <table className="layer-table view-styles">
-            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th>Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th /></tr></thead>
+            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th>Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th /></tr></thead>
             <tbody>
               {styles.map((s) => (
                 <tr key={s.id}>
@@ -141,6 +144,7 @@ export function ViewStylesDialog() {
                   <td><select value={s.layers} onChange={(e) => update(s.id, { layers: e.target.value as LayerMode })}>{LAYER_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
                   <td><input type="checkbox" checked={s.joins} onChange={(e) => update(s.id, { joins: e.target.checked })} /></td>
                   <td><input type="checkbox" checked={s.overhead} onChange={(e) => update(s.id, { overhead: e.target.checked })} /></td>
+                  <td><input type="checkbox" checked={s.ifc2d !== false} onChange={(e) => update(s.id, { ifc2d: e.target.checked })} /></td>
                   <td className="row-tools">
                     <button type="button" className="icon mini" title="Duplicate" onClick={() => void execute('viewStyle.create', { from: s.id })}><Copy size={12} /></button>
                     <button type="button" className="icon mini" title="Delete: its views take their discipline's style" disabled={styles.length < 2}
