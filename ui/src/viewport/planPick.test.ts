@@ -39,6 +39,14 @@ describe('pickAt', () => {
     expect(pickAt(P(2.01, 0.1), 0.05, [wall, slab], nodes, marks, ['IfcSlab'])?.id).toBe('s');
   });
 
+  it('takes a room inside its outline before the floor under it, and a wall on its edge before the room', () => {
+    const room = item('r', [rect('room', 0, 0.25, 4, 3)]);
+    const withRoom = nodesOf(node('w'), node('s', 'IfcSlab'), node('r', 'IfcSpace'));
+    expect(pickAt(P(1, 2), 0.05, [slab, room, wall], withRoom, undefined)?.id).toBe('r');
+    expect(pickAt(P(1, 2), 0.05, [room, slab, wall], withRoom, undefined)?.id).toBe('r');
+    expect(pickAt(P(1, 0.1), 0.05, [room, slab, wall], withRoom, undefined)?.id).toBe('w');
+  });
+
   it('ignores lines of an element no longer in the model', () => {
     expect(pickAt(P(1, 0.1), 0.05, [wall], nodesOf(node('s', 'IfcSlab')), undefined)).toBeNull();
   });

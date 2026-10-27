@@ -214,6 +214,16 @@ export const FAQ: Entry[] = [
     action: { label: 'Report an issue', labelRo: 'Raportează o problemă', run: { kind: 'report' } },
     source: 'faq',
   },
+  {
+    id: 'rooms',
+    q: ['How do I colour or hatch rooms on a plan?', 'How do I place a room?', 'How do I add a colour legend for rooms?'],
+    qRo: ['Cum colorez sau hașurez încăperile pe un plan?', 'Cum pun o încăpere?', 'Cum adaug o legendă de culori pentru încăperi?'],
+    keywords: ['room', 'rooms', 'space', 'spaces', 'colour', 'color', 'colours', 'colors', 'scheme', 'legend', 'function', 'department', 'area', 'incapere', 'incaperi', 'camera', 'camere', 'spatiu', 'culoare', 'culori', 'colorez', 'schema', 'legenda', 'functiune', 'suprafata', 'arie'],
+    a: 'Architecture → Room (RM), then click inside the walls: Lapin finds the room\'s outline and keeps it up with the walls (Room by outline draws one). Give rooms a function or department in their properties, then View → Room colours: pick a scheme, a colour and/or a hatch for each value, and set "This plan shows". Annotate → Colour legend lists the colours the plan uses.',
+    aRo: 'Architecture → Room (RM), apoi clic între pereți: Lapin găsește conturul încăperii și îl ține la zi cu pereții (Room by outline desenează unul). Dă încăperilor o funcțiune sau un departament în proprietăți, apoi View → Room colours: alegi o schemă, o culoare și/sau o hașură pentru fiecare valoare și setezi „This plan shows”. Annotate → Colour legend pune legenda culorilor folosite pe plan.',
+    action: { label: 'Room colours', labelRo: 'Culorile încăperilor', run: { kind: 'tool', id: 'architecture.roomColors' } },
+    source: 'faq',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

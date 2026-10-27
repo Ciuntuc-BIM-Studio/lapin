@@ -38,7 +38,7 @@ function useFootprint(storeyId: string | null) {
     for (const r of render.values()) {
       if (r.storeyId !== storeyId) continue;
       for (const it of r.plan) {
-        if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid' || it.points.length < 4) continue;
+        if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid' || it.kind.startsWith('room') || it.points.length < 4) continue;
         polys.push(it.points as number[]);
         for (let i = 0; i + 1 < it.points.length; i += 2) {
           const x = it.points[i], y = it.points[i + 1];

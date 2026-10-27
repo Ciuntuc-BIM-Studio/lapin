@@ -12,7 +12,7 @@ import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 
 interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string }
-interface Visibility { graphics?: { categories?: Record<string, Row>; classes?: Record<string, Row> } | null; graphicsSet?: string | null; sets: { id: string; name: string }[]; categories: string[] }
+interface Visibility { graphics?: { categories?: Record<string, Row>; classes?: Record<string, Row> } | null; graphicsSet?: string | null; sets: { id: string; name: string }[]; categories: string[]; /** Hidden until the graphics show them (rooms, in 3D). */ hiddenByDefault?: string[] }
 
 /** The ISO 128 pen series (mm), as the engine reads a category's weight; the older names still show when a project has them. */
 const WEIGHTS = ['', '0.13', '0.18', '0.25', '0.35', '0.5', '0.7', '1.0'];
@@ -38,7 +38,9 @@ export function VisibilityDialog() {
   const row = (bucket: 'categories' | 'classes', key: string): Row => v.graphics?.[bucket]?.[key] ?? {};
   const set = (bucket: 'categories' | 'classes', key: string, patch: Row) => {
     const next: Row = { ...row(bucket, key), ...patch };
-    for (const k of Object.keys(next) as (keyof Row)[]) if (next[k] === '' || next[k] === false || next[k] == null) delete next[k];
+    // A category hidden by default keeps "shown" as a value of its own.
+    const keepsShown = bucket === 'categories' && (v.hiddenByDefault ?? []).includes(key);
+    for (const k of Object.keys(next) as (keyof Row)[]) if (next[k] === '' || (next[k] === false && !(k === 'hidden' && keepsShown)) || next[k] == null) delete next[k];
     void execute('view.graphics', { id: target, [bucket === 'categories' ? 'category' : 'class']: key, value: Object.keys(next).length ? next : null });
   };
   const setName = v.sets.find((s) => s.id === v.graphicsSet)?.name;
@@ -80,7 +82,7 @@ export function VisibilityDialog() {
                   const r = row('categories', c);
                   return (
                     <tr key={c}>
-                      <td><input type="checkbox" checked={!r.hidden} onChange={(e) => set('categories', c, { hidden: !e.target.checked })} /></td>
+                      <td><input type="checkbox" checked={!(r.hidden ?? (v.hiddenByDefault ?? []).includes(c))} onChange={(e) => set('categories', c, { hidden: !e.target.checked })} /></td>
                       <td>{label(c)}</td>
                       <td><input type="color" value={r.lineColor ?? '#000000'} onChange={(e) => set('categories', c, { lineColor: e.target.value })} />{r.lineColor && <button type="button" className="icon mini" title="As the object styles" onClick={() => set('categories', c, { lineColor: '' })}><X size={10} /></button>}</td>
                       <td><select value={r.lineWeight ?? ''} onChange={(e) => set('categories', c, { lineWeight: e.target.value })}>{(r.lineWeight && !WEIGHTS.includes(r.lineWeight) ? [...WEIGHTS, r.lineWeight] : WEIGHTS).map((w) => <option key={w} value={w}>{w === '' ? 'as styled' : LEGACY[w] ? `${w} (${LEGACY[w]} mm)` : `${w} mm`}</option>)}</select></td>

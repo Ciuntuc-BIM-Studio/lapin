@@ -200,6 +200,23 @@ export const RO: Record<string, string> = {
   'Own image (3D, exports)': 'Imagine proprie (3D, exporturi)', 'Membrane (a dashed line, not a band)': 'Membrană (linie întreruptă, nu bandă)', 'Look': 'Aspect',
   'from the name': 'după nume', 'From the name': 'După nume', 'none (default)': 'niciuna (implicit)', 'Cut (section)': 'Secționat (secțiune)', 'Cut (plan)': 'Secționat (plan)',
   'guessed': 'ghicită', 'as the faces (brick: its holes)': 'ca fețele (cărămidă: golurile ei)', 'as the ends': 'ca capetele',
+  // Rooms and their colours (docs/rooms.md)
+  'Also the values no room has yet': 'Și valorile pe care nu le are încă nicio încăpere', 'Colour legend: the view has no colour scheme': 'Legenda culorilor: vederea nu are o schemă de culori',
+  'Rooms': 'Încăperi', 'Room by outline': 'Încăpere după contur', 'Update rooms': 'Actualizează încăperile', 'Room colours': 'Culorile încăperilor',
+  'Room colours…': 'Culorile încăperilor…', 'Colour legend': 'Legenda culorilor', 'Scheme': 'Schemă', 'New': 'Nou',
+  'Duplicate': 'Duplică', 'Colour by': 'Colorează după', 'This plan shows': 'Planul acesta arată', 'no room colours': 'fără culori de încăperi',
+  'Show this scheme': 'Arată schema aceasta', 'Open a plan to show room colours in it.': 'Deschide un plan ca să arăți culorile încăperilor în el.', 'Value': 'Valoare', 'Ink': 'Cerneală',
+  'Looks': 'Aspect', 'Fill missing colours': 'Completează culorile lipsă', 'Place a legend': 'Plasează o legendă', 'Function': 'Funcțiune',
+  'Department': 'Departament', 'Floor finish': 'Finisajul pardoselii', 'Own colour': 'Culoare proprie', 'Own hatch': 'Hașură proprie',
+  'as its scheme': 'ca în schema sa', 'Outline': 'Contur', 'found from the walls round its point': 'găsit din pereții din jurul punctului său', 'no longer enclosed: it keeps its last outline': 'nu mai este închisă: își păstrează ultimul contur',
+  'Update outline': 'Actualizează conturul', 'Hatch scale': 'Scara hașurii', 'Hatch colour': 'Culoarea hașurii', "the storey's": 'a etajului',
+  'Move the stamp': 'Mută eticheta', "The room's point: its outline is found round it": 'Punctul încăperii: conturul ei se găsește în jurul lui', 'By function': 'După funcțiune', 'By department': 'După departament',
+  'A colour legend goes on a plan: open one.': 'Legenda culorilor se pune pe un plan: deschide unul.', 'Every value has its colour.': 'Fiecare valoare are culoarea ei.', 'Take the value out of the scheme': 'Scoate valoarea din schemă', 'No fill colour': 'Fără culoare de umplere',
+  'A new scheme, its values filled from the rooms': 'O schemă nouă, cu valorile luate din încăperi', 'A copy of this scheme': 'O copie a acestei scheme', 'Delete the scheme: the views that show it fill no rooms': 'Șterge schema: vederile care o arată nu mai colorează încăperile', "The rooms' field the colours go by": 'Câmpul încăperilor după care merg culorile',
+  'The plan in front fills its rooms with the scheme it names; none by default': 'Planul din față colorează încăperile după schema pe care o numește; implicit niciuna', 'The colour scheme this plan fills its rooms with; none by default': 'Schema de culori cu care planul acesta colorează încăperile; implicit niciuna', 'Rooms with this value': 'Încăperi cu această valoare', 'Click where the legend goes on the plan': 'Dă clic unde vine legenda pe plan',
+  'Every value the rooms have gets an entry, and every entry without a look a colour of the palette': 'Fiecare valoare a încăperilor primește o intrare, iar fiecare intrare fără aspect o culoare din paletă', "The room's own colour, over its colour scheme's": 'Culoarea proprie a încăperii, peste cea a schemei', "The room's own hatch, over its colour scheme's": 'Hașura proprie a încăperii, peste cea a schemei', "Empty: the storey's height": 'Gol: înălțimea etajului',
+  'As its scheme says': 'Cum spune schema', 'What the room is used for: a colour scheme by function colours it': 'La ce folosește încăperea: o schemă după funcțiune o colorează', 'Store the outline the room finds now: what it keeps should its walls go': 'Păstrează conturul pe care încăperea îl găsește acum: pe acesta îl ține dacă pereții dispar', 'Room colours by function': 'Culorile încăperilor după funcțiune',
+  'Room stamp': 'Eticheta încăperii',
 };
 
 /** Phrases with a number or a name in them. */
@@ -220,4 +237,8 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(\d+) element\(s\) selected, now on (.+)\.$/, (m) => `${m[1]} element(e) selectate, acum pe ${m[2]}.`],
   [/^Type parameters · (.+)$/, (m) => `Parametrii tipului · ${m[1]}`],
   [/^(\d+) bays along × (\d+) up · IFC: (.+)$/, (m) => `${m[1]} travei în lungime × ${m[2]} pe înălțime · IFC: ${m[3]}`],
+  [/^(\d+) value\(s\) added\.$/, (m) => `${m[1]} valori adăugate.`],
+  [/^(\d+) room\(s\) updated\.$/, (m) => `${m[1]} încăperi actualizate.`],
+  [/^(\d+) room\(s\) updated; (\d+) no longer enclosed \(they keep their last outline\)\.$/, (m) => `${m[1]} încăperi actualizate; ${m[2]} nu mai sunt închise (își păstrează ultimul contur).`],
+  [/^No room has a value for this field yet\. Give rooms a (.+) in their properties\.$/, (m) => `Nicio încăpere nu are încă o valoare pentru acest câmp. Dă încăperilor o valoare (${m[1]}) în proprietăți.`],
 ];

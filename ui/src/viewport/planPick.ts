@@ -13,7 +13,7 @@ import { distToSegment, pairs, pointInPolygon } from './snap';
 /** A drawing's annotations: their ids and segments (x1, y1, x2, y2, …). */
 export type Mark = { id: string; segments: number[] };
 
-const PICK_PRIORITY: Record<string, number> = { hit: 0, symbol: 0, heavy: 0, cut: 1, outline: 2, overhead: 8 };
+const PICK_PRIORITY: Record<string, number> = { hit: 0, symbol: 0, heavy: 0, cut: 1, room: 1.5, outline: 2, overhead: 8, roomIsland: 9 };
 
 /** What lies under `p` within `tol` (metres); with `types`, only elements of those classes (annotations then are not picked). */
 export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<string, NodeDto>, marks: Mark[] | undefined, types?: string[]): NodeDto | null {

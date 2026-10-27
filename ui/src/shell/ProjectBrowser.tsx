@@ -160,7 +160,7 @@ export function ProjectBrowser() {
           <Kind id={`${id}:schedules`} icon={<Table2 size={13} />} label="Schedules" list={of('schedule')}
             plus={set && (
               <select className="mini-select" value="" title="New schedule" onChange={(e) => { const kind = e.target.value; if (kind) void execute('architecture.createSchedule', { kind }).then((r) => { const n = made(r); if (n) showSchedule(n); }); }}>
-                <option value="">+</option><option value="all">Joinery</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option><option value="planting">Planting</option>
+                <option value="">+</option><option value="all">Joinery</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option><option value="rooms">Rooms</option><option value="planting">Planting</option>
               </select>
             )}>
             {(item) => <Row item={item} on={view === 'schedule' && ui.scheduleId === item.id} open={() => showSchedule(item.id)} />}
