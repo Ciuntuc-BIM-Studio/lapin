@@ -24,7 +24,9 @@ pnpm build:product lapin --target windows
 scripts/windows-vm/test-build.sh
 ```
 
-It starts the VM if needed, installs the newest `build/lapin/bundle/nsis/*_x64-setup.exe` silently, starts the installed engine and drives it from the Mac through an SSH tunnel (`engine-smoke.mjs`: a wall, a window in it, a slab, the plan, save and open, IFC and GLB exports), then opens the app in the user's session and saves a screenshot to `build/windows-vm-screenshot.png`.
+It starts the VM if needed, installs the newest `build/lapin/bundle/nsis/*_x64-setup.exe` silently, starts the installed engine and drives it from the Mac through an SSH tunnel (`engine-smoke.mjs`: a wall, a window in it, a slab, the plan, save and open, IFC and GLB exports), then opens the app in the user's session and saves a screenshot to `build/windows-vm-screenshot.png`. Two things Windows does its own way: OpenSSH ends whatever a session started when the session ends (so the engine runs inside an SSH session held open, with the tunnel), and what SSH starts has no desktop (so the app and the screenshot, `lapin-shot.ps1`, run as scheduled tasks in the logged-on session).
+
+First run, 27.10.2026: Windows 11 Pro ARM64 26300; the build 0.1.228 made on the Mac installed, its engine passed `engine-smoke.mjs` with the same results as on the Mac (the wall with its window 4 parts and 180 triangles, the IFC 54,437 bytes), and the app opened on its start screen with its engine connected.
 
 ## By hand
 
