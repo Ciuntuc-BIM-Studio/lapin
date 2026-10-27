@@ -3,7 +3,8 @@
  * draws where a section or plan cuts it and in elevation: hatch, scale, fill
  * and pen, or a membrane line. A field it does not set comes from its name
  * (concrete, brick, insulation…). Hatch patterns can be imported from .pat
- * files; they travel with the project.
+ * files; they travel with the project. A material can carry its own image
+ * for 3D (OwnImage), which the 3D exports take along.
  */
 
 import { useEffect, useState } from 'react';
@@ -11,6 +12,8 @@ import { FileUp, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { HatchSwatch } from './HatchSwatch';
+import { OwnImage } from './OwnImage';
+import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
 
 type Kind = 'section' | 'plan' | 'elevation';
 /** IfcMaterial.Category as the interface offers it (Materials.Categories in the engine). */
@@ -30,6 +33,7 @@ export function MaterialsDialog() {
   const [list, setList] = useState<Material[]>([]);
   const [hatches, setHatches] = useState<Hatch[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [mine, setMine] = useState(myPatterns);
   const [newName, setNewName] = useState('');
   // Every edit comes back as a diff: read the materials again.
   useEffect(() => {
@@ -53,8 +57,13 @@ export function MaterialsDialog() {
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      const r = await execute('hatch.import', { text: await file.text() }) as { count: number; errors: string[] } | null;
-      if (r) notify(`${r.count} hatch pattern${r.count === 1 ? '' : 's'} loaded${r.errors.length ? `, ${r.errors.length} line(s) skipped` : ''}.`);
+      const text = await file.text();
+      const r = await execute('hatch.import', { text }) as { count: number; errors: string[] } | null;
+      if (r) {
+        keepPatterns(file.name, text);
+        setMine(myPatterns());
+        notify(`${r.count} hatch pattern${r.count === 1 ? '' : 's'} loaded${r.errors.length ? `, ${r.errors.length} line(s) skipped` : ''}, and kept in My patterns on this computer.`);
+      }
     };
     input.click();
   };
@@ -84,6 +93,23 @@ export function MaterialsDialog() {
                 onClick={() => void execute('material.create', { name: newName.trim() }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) { setSelected(id); setNewName(''); } })}><Plus size={14} /></button>
             </div>
             <button type="button" className="btn" onClick={importPat}><FileUp size={14} />Import .pat</button>
+            {mine.length > 0 && (
+              <div className="my-patterns">
+                <span className="eyebrow" title="The .pat files you imported, kept on this computer for any project">My patterns</span>
+                <ul className="plain">
+                  {mine.map((f) => (
+                    <li key={f.name} className="row">
+                      <span className="grow small" title={f.names.join(', ')}>{f.name} <span className="muted">· {f.names.length}</span></span>
+                      <button type="button" className="icon mini" title="Forget this file (projects keep what they use)" onClick={() => { forgetPatterns(f.name); setMine(myPatterns()); }}><Trash2 size={12} /></button>
+                    </li>
+                  ))}
+                </ul>
+                <button type="button" className="btn compact" onClick={() => void execute('hatch.import', { text: mine.map((f) => f.text).join('\n') }).then((r) => {
+                  const n = (r as { count?: number } | null)?.count ?? 0;
+                  notify(`${n} pattern${n === 1 ? '' : 's'} from My patterns in this project.`);
+                })}>Add to this project</button>
+              </div>
+            )}
           </div>
           {m && (
             <div className="type-edit">
@@ -107,6 +133,7 @@ export function MaterialsDialog() {
                     </select></label>
                 ))}
               </div>
+              <OwnImage materialId={m.id} />
               <div className="row">
                 <label className="check"><input type="checkbox" checked={m.section.membrane} onChange={(e) => update({ membrane: e.target.checked })} /> Membrane (a dashed line, not a band)</label>
                 <label className="check" title="Off (the default): where this material goes on from one element into another (two walls' cores, footings round a corner) no line is drawn between them. On: the joint is drawn."><input type="checkbox" checked={m.section.drawJoints} onChange={(e) => update({ drawJoints: e.target.checked })} /> Draw joints</label>

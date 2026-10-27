@@ -35,6 +35,7 @@ public sealed class CoreModule : ILapinModule
             [new("elevation", "Elevation", "length"), new("height", "Height", "length", Min: 0.1)], "#6c5ce7", Kind: "spatial"));
         r.Class(new(IfcClass.Material, "Material", [new("color", "Colour", "color"), new("category", "Category", "text")], Kind: "resource"));
         DraftingResources.Register(r);
+        Images.Register(r);
         Views.Register(r);
         GraphicsSets.Register(r);
         BrowserSets.Register(r);

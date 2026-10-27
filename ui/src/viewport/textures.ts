@@ -199,3 +199,59 @@ export function splitByFace(positions: Float32Array, indices: Uint32Array): Reco
   }
   return { side: Uint32Array.from(out.side), end: Uint32Array.from(out.end), top: Uint32Array.from(out.top) };
 }
+
+// ─── A material's own image (Materials → Own image): the user's file, laid on in metres ───
+
+/** A material's own image: its id, its file as a data URL, and how large it lies on the model (metres). */
+export interface OwnImage { id: string; url: string; width: number; height: number }
+
+/** The image a material brings, or null (then its drawn texture, or its colour). */
+export function imageOf(material: NodeDto | undefined, nodes: Map<string, NodeDto>): OwnImage | null {
+  const id = material?.props.textureImage;
+  if (typeof id !== 'string') return null;
+  const img = nodes.get(id);
+  const data = img?.props.data, mime = img?.props.mime;
+  if (typeof data !== 'string' || typeof mime !== 'string') return null;
+  const size = material?.props.textureSize;
+  const [w, h] = Array.isArray(size) && size.length === 2 && size.every((x) => typeof x === 'number' && x > 0) ? (size as number[]) : [1, 1];
+  return { id, url: `data:${mime};base64,${data}`, width: w, height: h };
+}
+
+const images = new Map<string, THREE.Texture>();
+const listeners = new Set<() => void>();
+
+/** Called when an image has loaded (the 3D view draws only when told). */
+export function whenImagesLoad(f: () => void): () => void {
+  listeners.add(f);
+  return () => { listeners.delete(f); };
+}
+
+/** The texture of an image (loaded once per image). */
+export function imageTexture(img: OwnImage): THREE.Texture {
+  let t = images.get(img.id);
+  if (!t) {
+    t = new THREE.TextureLoader().load(img.url, () => { for (const f of listeners) f(); });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    images.set(img.id, t);
+  }
+  return t;
+}
+
+/** Box-projected coordinates for an image <paramref name="width"/> × <paramref name="height"/> metres (as the exports lay it). */
+export function boxUvSized(geometry: THREE.BufferGeometry, width: number, height: number): void {
+  const pos = geometry.getAttribute('position');
+  const nrm = geometry.getAttribute('normal');
+  if (!pos || !nrm) return;
+  const uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    const [x, y, z] = [pos.getX(i), pos.getY(i), pos.getZ(i)];
+    const [ax, ay, az] = [Math.abs(nrm.getX(i)), Math.abs(nrm.getY(i)), Math.abs(nrm.getZ(i))];
+    let u: number, v: number;
+    if (az >= ax && az >= ay) { u = x; v = y; } else if (ax >= ay) { u = y; v = z; } else { u = x; v = z; }
+    uv[2 * i] = u / width;
+    uv[2 * i + 1] = v / height;
+  }
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}

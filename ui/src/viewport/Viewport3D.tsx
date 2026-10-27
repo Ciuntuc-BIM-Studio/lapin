@@ -17,7 +17,7 @@ import { select, setTool, useUi } from '../app/store';
 import { findTool } from '../platform/modules';
 import type { Vec2 } from '../platform/module';
 import { completeTool } from './tools';
-import { boxUv, splitByFace, textureFor, textureOf, type Face, type TextureKind } from './textures';
+import { boxUv, boxUvSized, imageOf, imageTexture, splitByFace, textureFor, textureOf, whenImagesLoad, type Face, type TextureKind } from './textures';
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
@@ -45,10 +45,23 @@ function meshOf(item: RenderItem): THREE.Group {
   const add = (positions: Float32Array, normals: Float32Array, indices: Int32Array, edges: Float32Array, color: string, material?: string | null) => {
     if (positions.length) {
       const mat = material ? nodes.get(material) : undefined;
+      // The material's own image: on every face, untinted, at its size in metres.
+      const own = imageOf(mat, nodes);
+      if (own) {
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        if (normals.length === positions.length) g.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+        else g.computeVertexNormals();
+        g.setIndex(new THREE.BufferAttribute(new Uint32Array(indices.buffer, indices.byteOffset, indices.length), 1));
+        boxUvSized(g, own.width, own.height);
+        const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0xffffff, map: imageTexture(own), roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
+        mesh.userData.nodeId = item.nodeId;
+        group.add(mesh);
+      }
       const kinds: Record<Face, TextureKind | null> = { side: textureOf(mat, 'side'), end: textureOf(mat, 'end'), top: textureOf(mat, 'top') };
       const all = new Uint32Array(indices.buffer, indices.byteOffset, indices.length);
       // One mesh, or one per face when the ends or the top look different (a brick wall's cut ends).
-      const faces = kinds.end !== kinds.side || kinds.top !== kinds.side ? splitByFace(positions, all) : { side: all };
+      const faces = own ? {} : kinds.end !== kinds.side || kinds.top !== kinds.side ? splitByFace(positions, all) : { side: all };
       for (const [face, idx] of Object.entries(faces) as [Face, Uint32Array][]) {
         if (!idx.length) continue;
         const g = new THREE.BufferGeometry();
@@ -253,6 +266,8 @@ export function Viewport3D() {
     };
     controls.addEventListener('change', invalidate.current);
     controls.addEventListener('change', publish);
+    // A material's image arrives after its mesh: draw again then.
+    const unlisten = whenImagesLoad(() => invalidate.current());
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = el;
       renderer.setSize(w, h);
@@ -296,6 +311,7 @@ export function Viewport3D() {
       cancelAnimationFrame(frame);
       cancelAnimationFrame(flight);
       if (useCamera.getState().api === api) useCamera.setState({ api: null });
+      unlisten();
       invalidate.current = () => undefined;
       ro.disconnect();
       controls.dispose();

@@ -29,6 +29,9 @@ public static class MeshExport
             "dae" => ColladaWriter.Dae(scene),
             _ => throw new CommandException($"„{o.Format}” is not a 3D format."),
         };
-        return (bytes, new MeshExportResult(o.Format, scene.ElementCount, scene.TriangleCount, scene.Materials.Count, scene.Notes));
+        // One file with no room for an image: the materials' own textures go out in GLB, glTF and USDZ.
+        if (o.Format is "usda" or "dae" && scene.Materials.Any(m => m.Texture != null))
+            scene.Notes.Add($"{(o.Format == "dae" ? "DAE" : "USDA")} is one file without the materials' own images: their textures go out in GLB, glTF and USDZ.");
+                return (bytes, new MeshExportResult(o.Format, scene.ElementCount, scene.TriangleCount, scene.Materials.Count, scene.Notes));
     }
 }

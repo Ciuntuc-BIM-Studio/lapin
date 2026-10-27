@@ -578,3 +578,11 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .ask-foot input { min-width: 0; }
 .status-link { border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 2px; }
 .status-link:hover { color: var(--accent); }
+
+/* A material's own image (Materials). */
+.own-image { display: grid; gap: 4px; margin: 6px 0; }
+.own-image .row { gap: 8px; align-items: center; flex-wrap: wrap; }
+.own-image-thumb { width: 48px; height: 48px; object-fit: cover; border: 1px solid var(--rule); border-radius: 2px; display: inline-grid; place-items: center; }
+.own-image input.num { width: 64px; }
+.my-patterns { display: grid; gap: 4px; margin-top: 10px; }
+.my-patterns ul { max-height: 120px; overflow-y: auto; }

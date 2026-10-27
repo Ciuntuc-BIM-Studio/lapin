@@ -100,6 +100,28 @@ public static class DraftingResources
                         attrs[key] = Textures.Contains(tex) ? tex : throw new CommandException($"„{tex}” is not a texture: {string.Join(", ", Textures)}.");
                     else attrs.Remove(key);
                 }
+            // Its own texture: an image of the project (null takes it off; an image nothing uses goes) and how large it lies on the model, metres.
+            if (a.ContainsKey("textureImage"))
+            {
+                var had = attrs["textureImage"] is JsonValue hv ? (string?)hv : null;
+                if ((string?)a["textureImage"] is { Length: > 0 } img)
+                {
+                    if (ctx.Model.Get(img) is not { Class: Images.Class }) throw new CommandException("There is no such image in the project.");
+                    attrs["textureImage"] = img;
+                }
+                else attrs.Remove("textureImage");
+                if (had != null && had != (string?)attrs["textureImage"]) Images.DropIfUnused(ctx, had, mat.Id);
+            }
+            if (a.ContainsKey("textureSize"))
+            {
+                if (a["textureSize"] is JsonArray { Count: 2 } ts && Json.Number(ts[0]) is { } tw && Json.Number(ts[1]) is { } th)
+                {
+                    if (!(tw >= 0.01 && th >= 0.01 && tw <= 1000 && th <= 1000)) throw new CommandException("A texture lies 1 cm to 1 km wide and high.");
+                    attrs["textureSize"] = new JsonArray(tw, th);
+                }
+                else if (a["textureSize"] is null) attrs.Remove("textureSize");
+                else throw new CommandException("A texture's size is [width, height] in metres.");
+            }
             foreach (var flag in new[] { "membrane", "drawJoints" })
                 if (a.ContainsKey(flag))
                 {

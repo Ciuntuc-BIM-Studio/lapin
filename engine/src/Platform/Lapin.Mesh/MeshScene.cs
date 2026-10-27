@@ -31,11 +31,17 @@ public sealed record MeshExportOptions(string Format = "glb", string? ViewId = n
     public string Extension => Format;
 }
 
-/// <summary>A material as the exports write it: its name, its colour (0–1) and opacity, and the IFC category it has.</summary>
-public sealed record MeshMaterial(string Name, float R, float G, float B, float Alpha, string? Category);
+/// <summary>A material's own image: its file as it came (PNG or JPEG), its name, and how large it lies on the model (metres).</summary>
+public sealed record MeshTexture(string Name, string Mime, byte[] Bytes, double Width, double Height);
 
-/// <summary>One material's triangles of an element: flat shaded (vertices per face), positions and normals Z up, metres, from the export's origin.</summary>
-public sealed record MeshPart(int Material, float[] Positions, float[] Normals, int[] Indices);
+/// <summary>A material as the exports write it: its name, its colour (0–1) and opacity, the IFC category it has, its own image.</summary>
+public sealed record MeshMaterial(string Name, float R, float G, float B, float Alpha, string? Category, MeshTexture? Texture = null);
+
+/// <summary>
+/// One material's triangles of an element: flat shaded (vertices per face), positions and normals Z up, metres, from the export's origin;
+/// texture coordinates (u, v per vertex) when its material has an image.
+/// </summary>
+public sealed record MeshPart(int Material, float[] Positions, float[] Normals, int[] Indices, float[]? Uvs = null);
 
 /// <summary>An element: its GlobalId, name, IFC class and type, its parts by material, and its edges as segments (when asked for).</summary>
 public sealed record MeshElement(string GlobalId, string Name, string IfcClass, string? Type, List<MeshPart> Parts, float[] Edges);
@@ -92,7 +98,14 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             if (materialIndex.TryGetValue(key, out var i)) return i;
             var (r, g, b) = Rgb(mat?.Str("color") ?? p.Color);
             var alpha = 1 - Math.Clamp(mat?.NumOrNull("transparency") ?? 0, 0, 1);
-            materials.Add(new MeshMaterial(mat?.Name ?? "Colour " + p.Color.TrimStart('#'), r, g, b, (float)alpha, mat?.Str("category")));
+            MeshTexture? texture = null;
+            if (mat != null && Images.Of(m, mat) is { } image)
+            {
+                var size = Images.SizeOf(mat);
+                try { texture = new MeshTexture(image.Name, image.Str("mime") ?? "image/png", Images.Bytes(image), size[0], size[1]); }
+                catch (FormatException) { notes.Add($"The image of „{mat.Name}” could not be read: the material goes out in its colour."); }
+            }
+            materials.Add(new MeshMaterial(mat?.Name ?? "Colour " + p.Color.TrimStart('#'), r, g, b, (float)alpha, mat?.Str("category"), texture));
             return materialIndex[key] = materials.Count - 1;
         }
 
@@ -131,7 +144,9 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             var meshParts = byMaterial.OrderBy(kv => kv.Key).Select(kv =>
             {
                 var merged = TriMesh.Merge(kv.Value);
-                return new MeshPart(kv.Key, Shift(merged.Positions, ox, oy, oz), merged.Normals, merged.Indices);
+                // A material's image is laid on in the model's own metres, before the origin moves (as the 3D view lays it).
+                var uvs = materials[kv.Key].Texture is { } t ? BoxUv(merged.Positions, merged.Normals, t.Width, t.Height) : null;
+                return new MeshPart(kv.Key, Shift(merged.Positions, ox, oy, oz), merged.Normals, merged.Indices, uvs);
             }).ToList();
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Name;
             var element = new MeshElement(e.Id, e.Name, e.Class, type, meshParts, Shift([.. edges], ox, oy, oz));
@@ -142,6 +157,26 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
         var list = groups.Values.Where(g => g.Elements.Count > 0).ToList();
         if (siteGroup.Elements.Count > 0) list.Insert(0, siteGroup);
         return new MeshScene(project?.Name ?? "Project", Spatial.Building(m)?.Name ?? "Building", list, materials, root, notes);
+    }
+
+    /// <summary>
+    /// Texture coordinates by box projection, as the 3D view lays a texture: the
+    /// face's dominant axis drops out (Z up: on a wall u runs along it and v up),
+    /// metres over the image's width and height. v grows upwards.
+    /// </summary>
+    public static float[] BoxUv(float[] positions, float[] normals, double width, double height)
+    {
+        var n = positions.Length / 3;
+        var uv = new float[n * 2];
+        for (var i = 0; i < n; i++)
+        {
+            double x = positions[i * 3], y = positions[i * 3 + 1], z = positions[i * 3 + 2];
+            double ax = Math.Abs(normals[i * 3]), ay = Math.Abs(normals[i * 3 + 1]), az = Math.Abs(normals[i * 3 + 2]);
+            var (u, v) = az >= ax && az >= ay ? (x, y) : ax >= ay ? (y, z) : (x, z);
+            uv[i * 2] = (float)(u / width);
+            uv[i * 2 + 1] = (float)(v / height);
+        }
+        return uv;
     }
 
     static float[] Shift(float[] xyz, double ox, double oy, double oz)

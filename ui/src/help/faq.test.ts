@@ -18,6 +18,8 @@ describe('Ask Lapin', () => {
     expect(best('copiere perete')).toBe('copy-move');
     expect(best('cum fac o secțiune')).toBe('sections');
     expect(best('vreau să export pdf')).toBe('sheets-pdf');
+    expect(best('cum pun o textură proprie pe un material')).toBe('textures');
+    expect(best('import my own .pat hatch patterns')).toBe('pat');
   });
 
   it('says nothing to what it does not know', () => {

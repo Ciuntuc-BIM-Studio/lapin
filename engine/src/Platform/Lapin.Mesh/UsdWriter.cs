@@ -22,7 +22,13 @@ public static class UsdWriter
     public static byte[] Usda(MeshScene scene) => Encoding.UTF8.GetBytes(Text(scene));
 
     /// <summary>A USDZ package: an uncompressed zip whose files' data each start on a 64-byte boundary, the root layer first.</summary>
-    public static byte[] Usdz(MeshScene scene) => Package([(LayerName, Usda(scene))]);
+    public static byte[] Usdz(MeshScene scene) =>
+        Package([(LayerName, Usda(scene)), .. TextureFiles(scene).Select(t => (t.Path, t.Texture.Bytes))]);
+
+    /// <summary>The materials' own images as the layer refers to them (textures/…), packed beside it in a USDZ.</summary>
+    public static List<(int Material, string Path, MeshTexture Texture)> TextureFiles(MeshScene scene) =>
+        scene.Materials.Select((m, i) => (m, i)).Where(x => x.m.Texture != null)
+            .Select(x => (x.i, $"textures/{Identifier(x.m.Name)}_{x.i}.{(x.m.Texture!.Mime == "image/jpeg" ? "jpg" : "png")}", x.m.Texture!)).ToList();
 
     static string F(double v) => v.ToString("R", CultureInfo.InvariantCulture);
     static string F(float v) => (v == 0 ? 0f : v).ToString("R", CultureInfo.InvariantCulture);
@@ -92,8 +98,10 @@ public static class UsdWriter
         var materialNames = new Names();
         var materialPaths = new List<string>();
         o.Append("\n    def Scope \"Materials\"\n    {\n");
-        foreach (var m in scene.Materials)
+        var files = TextureFiles(scene).ToDictionary(t => t.Material, t => t.Path);
+        for (var mi = 0; mi < scene.Materials.Count; mi++)
         {
+            var m = scene.Materials[mi];
             var name = materialNames.Of(m.Name);
             var path = $"/{root}/Materials/{name}";
             materialPaths.Add(path);
@@ -102,12 +110,30 @@ public static class UsdWriter
             if (m.Category != null) o.Append($"            custom string lapin:category = {Quote(m.Category)}\n");
             o.Append("\n            def Shader \"Surface\"\n            {\n");
             o.Append("                uniform token info:id = \"UsdPreviewSurface\"\n");
-            o.Append($"                color3f inputs:diffuseColor = ({F(GltfWriter.Linear(m.R))}, {F(GltfWriter.Linear(m.G))}, {F(GltfWriter.Linear(m.B))})\n");
+            // Its own image: the colour comes from it, read at the mesh's st.
+            if (files.TryGetValue(mi, out var file)) o.Append($"                color3f inputs:diffuseColor.connect = <{path}/Image.outputs:rgb>\n");
+            else o.Append($"                color3f inputs:diffuseColor = ({F(GltfWriter.Linear(m.R))}, {F(GltfWriter.Linear(m.G))}, {F(GltfWriter.Linear(m.B))})\n");
             o.Append("                float inputs:metallic = 0\n");
             if (m.Alpha < 1) o.Append($"                float inputs:opacity = {F(m.Alpha)}\n");
             o.Append("                float inputs:roughness = 0.9\n");
             o.Append("                token outputs:surface\n");
-            o.Append("            }\n        }\n");
+            o.Append("            }\n");
+            if (files.TryGetValue(mi, out var image))
+            {
+                o.Append("\n            def Shader \"Image\"\n            {\n");
+                o.Append("                uniform token info:id = \"UsdUVTexture\"\n");
+                o.Append($"                asset inputs:file = @{image}@\n");
+                o.Append($"                float2 inputs:st.connect = <{path}/St.outputs:result>\n");
+                o.Append("                token inputs:wrapS = \"repeat\"\n                token inputs:wrapT = \"repeat\"\n");
+                o.Append("                float3 outputs:rgb\n");
+                o.Append("            }\n");
+                o.Append("\n            def Shader \"St\"\n            {\n");
+                o.Append("                uniform token info:id = \"UsdPrimvarReader_float2\"\n");
+                o.Append("                string inputs:varname = \"st\"\n");
+                o.Append("                float2 outputs:result\n");
+                o.Append("            }\n");
+            }
+            o.Append("        }\n");
         }
         var edgePath = $"/{root}/Materials/{materialNames.Of("Edges")}";
         if (scene.Groups.Any(g => g.Elements.Any(e => e.Edges.Length >= 6)))
@@ -183,6 +209,12 @@ public static class UsdWriter
         Points(o, "normal3f[]", "normals", p.Normals, "interpolation = \"vertex\"");
         o.Append("                    uniform token orientation = \"rightHanded\"\n");
         Points(o, "point3f[]", "points", p.Positions);
+        if (p.Uvs is { } uv)
+        {
+            o.Append("                    texCoord2f[] primvars:st = [");
+            for (var i = 0; i + 1 < uv.Length; i += 2) { if (i > 0) o.Append(", "); o.Append($"({F(uv[i])}, {F(uv[i + 1])})"); }
+            o.Append("] (\n                        interpolation = \"vertex\"\n                    )\n");
+        }
         o.Append("                    uniform token subdivisionScheme = \"none\"\n");
         o.Append("                }\n");
     }
