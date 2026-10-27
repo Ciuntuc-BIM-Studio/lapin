@@ -14,6 +14,10 @@ tell application "UTM"
   set setupIso to POSIX file "$VM/lapin-setup.iso"
   set vm to make new virtual machine with properties {backend:qemu, configuration:{name:"$NAME", notes:"Lapin's Windows test machine (lapin-pro/scripts/windows-vm).", architecture:"aarch64", memory:8192, cpu cores:4, hypervisor:true, uefi:true, drives:{{removable:true, interface:USB, source:winIso}, {removable:true, interface:USB, source:setupIso}, {interface:NVMe, guest size:65536}}, network interfaces:{{mode:shared, hardware:"virtio-net-pci"}}}}
   set c to configuration of vm
+  -- A screen: a VM made by script has none (virtio-ramfb needs no driver in Windows).
+  set displays of c to {{hardware:"virtio-ramfb"}}
+  update configuration of vm with c
+  set c to configuration of vm
   set nets to network interfaces of c
   set mac to address of item 1 of nets
   start vm
