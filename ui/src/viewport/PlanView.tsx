@@ -51,7 +51,8 @@ export function PlanView() {
   const [pts, setPts] = useState<Vec2[]>([]);
   const [hover, setHover] = useState<Aimed | null>(null);
   const [ortho, setOrtho] = useState(false);
-  const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null);
+  /** A press: where, the view then, whether it moved; `carry`: the selection it was pressed on (a drag moves it, or copies it with Ctrl). */
+  const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean } | null>(null);
   /** A selection box being dragged (screen px): left to right a window, right to left crossing. */
   const [box, setBox] = useState<{ a: Vec2; b: Vec2 } | null>(null);
 
@@ -272,7 +273,15 @@ export function PlanView() {
     (e.target as Element).setPointerCapture?.(e.pointerId);
     if (middleTwice.current(e)) { fit(); return; }
     if (editor.onPointerDown(e)) return;
-    drag.current = { x: e.clientX, y: e.clientY, view, moved: false };
+    // Pressed on what is selected, with no tool or command running: a drag carries the selection.
+    let carry: string[] | undefined;
+    if (e.button === 0 && !tool?.gesture && !useCad.getState().step) {
+      const rect = svgRef.current!.getBoundingClientRect();
+      const hit = pick(toWorld(e.clientX - rect.left, e.clientY - rect.top));
+      const sel = useUi.getState().selected;
+      if (hit && sel.includes(hit.id)) carry = sel;
+    }
+    drag.current = { x: e.clientX, y: e.clientY, view, moved: false, carry, copy: e.altKey || e.ctrlKey || e.metaKey };
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (editor.onPointerMove(e)) return;
@@ -282,7 +291,7 @@ export function PlanView() {
       if (Math.hypot(dx, dy) > 4) d.moved = true;
       const step = useCad.getState().step;
       // Left drag with no tool: a selection box; middle or right: pan.
-      if (d.moved && e.buttons === 1 && !tool?.gesture && (!step || step.want === 'select')) {
+      if (d.moved && e.buttons === 1 && !tool?.gesture && !d.carry && (!step || step.want === 'select')) {
         const rect = svgRef.current!.getBoundingClientRect();
         setBox({ a: { x: d.x - rect.left, y: d.y - rect.top }, b: { x: e.clientX - rect.left, y: e.clientY - rect.top } });
         return;
@@ -296,6 +305,29 @@ export function PlanView() {
     const d = drag.current;
     drag.current = null;
     if (box) { selectBox(box, e.shiftKey); setBox(null); return; }
+    if (d?.moved && e.button === 0) {
+      // A drag is two points: where it was pressed and where it was let go, both snapped.
+      const step = useCad.getState().step;
+      if (d.carry) {
+        const a = snapAt(d.x, d.y).point;
+        const b = snapAt(e.clientX, e.clientY, a).point;
+        if (Math.hypot(b.x - a.x, b.y - a.y) > 1e-9) void execute('element.transform', { ids: d.carry, op: d.copy || e.ctrlKey || e.metaKey || e.altKey ? 'copy' : 'move', by: [b.x - a.x, b.y - a.y] });
+        return;
+      }
+      if (step?.want === 'point' && !tool?.gesture) {
+        const a = snapAt(d.x, d.y, step.base ?? undefined).point;
+        void (async () => {
+          await feedPoint(a);
+          acquire(a);
+          const next = useCad.getState().step;
+          if (next?.want !== 'point') return;
+          const b = snapAt(e.clientX, e.clientY, next.base ?? a).point;
+          await feedPoint(b);
+          acquire(b);
+        })();
+        return;
+      }
+    }
     if (!d || d.moved || e.button !== 0) return;
     const rect = svgRef.current!.getBoundingClientRect();
     click(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey);

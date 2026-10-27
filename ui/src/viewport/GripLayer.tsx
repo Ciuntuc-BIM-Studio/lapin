@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUi } from '../app/store';
-import { useSession } from '../engine/session';
+import { execute, useSession } from '../engine/session';
 import type { Grip, RefLine, Vec2 } from '../platform/module';
 import { gripsOf, referencesOf } from '../platform/modules';
 import { dropGrips, groupGrips, movers, runSteps, type GripGroup } from './grips';
@@ -46,7 +46,8 @@ export interface GripEditorOptions {
   svg: React.RefObject<SVGSVGElement | null>;
 }
 
-interface Drag { group: GripGroup; members: Grip[]; at: Vec2; moved: boolean }
+/** A grip being dragged; `copy`: a move grip dragged with Ctrl/⌘, which leaves the element and drops a copy. */
+interface Drag { group: GripGroup; members: Grip[]; at: Vec2; moved: boolean; copy?: boolean }
 
 export function useGripEditor(o: GripEditorOptions) {
   const selected = useUi((s) => s.selected);
@@ -131,14 +132,15 @@ export function useGripEditor(o: GripEditorOptions) {
     const who = movers(g, pickOf(g), e.altKey);
     // A flip arrow: a click.
     if (who[0].kind === 'flip') { void runSteps([who[0].click?.()]); return true; }
-    if (e.ctrlKey || e.metaKey) {
+    const copy = (e.ctrlKey || e.metaKey) && who[0].kind === 'move';
+    if ((e.ctrlKey || e.metaKey) && !copy) {
       const first = who[0];
       if (first.insert) void runSteps([first.insert()]);
       else if (first.remove) void runSteps([first.remove()]);
       return true;
     }
     (e.target as Element).setPointerCapture?.(e.pointerId);
-    setDrag({ group: g, members: who, at: g.at, moved: false });
+    setDrag({ group: g, members: who, at: g.at, moved: false, copy });
     // Its length and angle can be typed while dragging; Enter puts it there.
     liveBegin('grip', g.at, (p) => { void dropGrips(movers(g, pickOf(g), alt.current), p); setDrag(null); liveEnd('grip'); });
     return true;
@@ -155,7 +157,11 @@ export function useGripEditor(o: GripEditorOptions) {
   };
   const onPointerUp = (): boolean => {
     if (!drag) return false;
-    if (drag.moved) void dropGrips(drag.members, drag.at);
+    if (drag.moved && drag.copy) {
+      // Ctrl/⌘ on a move grip: the elements stay, a copy goes where the grip was let go.
+      const ids = [...new Set(drag.members.map((m) => m.owner).filter((x): x is string => !!x))];
+      if (ids.length) void execute('element.transform', { ids, op: 'copy', by: [drag.at.x - drag.group.at.x, drag.at.y - drag.group.at.y] });
+    } else if (drag.moved) void dropGrips(drag.members, drag.at);
     setDrag(null);
     liveEnd('grip');
     return true;
@@ -167,7 +173,7 @@ export function useGripEditor(o: GripEditorOptions) {
     const kind = g.members[0].kind ?? 'end';
     const shared = g.members.length > 1;
     const cls = `plan-grip ${kind}${shared ? ' shared' : ''}${hover === g ? ' hot' : ''}`;
-    const title = g.members[0].title ?? (shared ? `${g.members.map((m) => nameOf(m.owner)).join(' + ')} · Tab picks one · Alt moves one` : kind === 'edgeMid' ? 'Drag the edge · Ctrl/⌘-click adds a vertex' : kind === 'vertex' ? 'Drag · Ctrl/⌘-click removes it' : 'Drag');
+    const title = g.members[0].title ?? (shared ? `${g.members.map((m) => nameOf(m.owner)).join(' + ')} · Tab picks one · Alt moves one` : kind === 'edgeMid' ? 'Drag the edge · Ctrl/⌘-click adds a vertex' : kind === 'vertex' ? 'Drag · Ctrl/⌘-click removes it' : kind === 'move' ? 'Drag to move · Ctrl/⌘-drag to copy' : 'Drag');
     // A flip arrow: a small arrowhead pointing the way it flips, its stem back towards the element.
     if (kind === 'flip') {
       const { ux, uy } = q, nx = -uy, ny = ux;
