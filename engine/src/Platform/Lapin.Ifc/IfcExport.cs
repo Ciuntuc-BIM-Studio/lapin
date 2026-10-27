@@ -105,6 +105,8 @@ public static class IfcExport
         ["IfcBuildingElementPart"] = ["INSULATION", "PRECASTPANEL"],
         ["IfcPipeSegment"] = ["CULVERT", "FLEXIBLESEGMENT", "RIGIDSEGMENT", "GUTTER", "SPOOL"],
         ["IfcDiscreteAccessory"] = ["ANCHORPLATE", "BRACKET", "SHOE"],
+        // Formwork and scaffolding (the site works module): assemblies of members, plates and accessories.
+        ["IfcElementAssembly"] = ["ACCESSORY_ASSEMBLY", "ARCH", "BEAM_GRID", "BRACED_FRAME", "GIRDER", "REINFORCEMENT_UNIT", "RIGID_FRAME", "SLAB_FIELD", "TRUSS"],
         // The distribution elements (the MEP module's nodes and runs), IFC4's enumerations.
         ["IfcDuctSegment"] = ["RIGIDSEGMENT", "FLEXIBLESEGMENT"],
         ["IfcCableSegment"] = ["BUSBARSEGMENT", "CABLESEGMENT", "CONDUCTORSEGMENT", "CORESEGMENT"],
@@ -417,7 +419,7 @@ public static class IfcExport
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
             // A door's frame and leaf, a column's body, a terrain: one element. Only a wall, a roof and a footing hold parts that are elements of their own.
-            var grouped = o.Grouped && kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
+            var grouped = o.Grouped && kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair or "IfcElementAssembly" && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
             // A door or window: placed with its local +Y the way its panels open, which IFC's left and right are seen along.
             var joinery = e.Class is IfcClass.Door or IfcClass.Window && !grouped ? s.Catalog.Get<IJoineryIfc>() : null;
             var at = joinery?.Place(m, e);
@@ -695,6 +697,12 @@ public static class IfcExport
                 (IfcClass.Roof, "timber") => new("IfcMember", "MEMBER", null),
                 (IfcClass.Roof, "drainage") => new("IfcPipeSegment", "GUTTER", null),
                 (IfcClass.Roof, "snow") => new("IfcDiscreteAccessory", "USERDEFINED", "Snow guard"),
+                ("IfcElementAssembly", "standards" or "ledgers" or "transoms" or "guardrails") => new("IfcMember", "MEMBER", null),
+                ("IfcElementAssembly", "diagonals") => new("IfcMember", "BRACE", null),
+                ("IfcElementAssembly", "props") => new("IfcMember", "STRUT", null),
+                ("IfcElementAssembly", "primary" or "secondary" or "bearers" or "chamfers") => new("IfcMember", "USERDEFINED", p.Name),
+                ("IfcElementAssembly", "decks" or "toe" or "plywood" or "edges" or "bottom" or "sides" or "net") => new("IfcPlate", "USERDEFINED", p.Name),
+                ("IfcElementAssembly", "jacks" or "anchors") => new("IfcDiscreteAccessory", "USERDEFINED", p.Name),
                 ("IfcCurtainWall", "mullion") => new("IfcMember", "MULLION", null),
                 ("IfcCurtainWall", "transom") => new("IfcMember", "USERDEFINED", "TRANSOM"),
                 ("IfcCurtainWall", "panel") => new("IfcPlate", "CURTAIN_PANEL", null),
@@ -757,6 +765,8 @@ public static class IfcExport
             var phase = new List<string>();
             if (e.Str("phaseCreated") is { } created) phase.Add(Single("Created", Typed("IFCLABEL", S(PhaseName(created)))));
             if (e.Str("phaseDemolished") is { } demolished) phase.Add(Single("Demolished", Typed("IFCLABEL", S(PhaseName(demolished)))));
+            // Created and struck in one phase (formwork, a scaffold): temporary, as IFC's Status says it.
+            if (e.Str("phaseCreated") is { } c0 && c0 == e.Str("phaseDemolished")) phase.Add(Single("Status", Typed("IFCLABEL", S("TEMPORARY"))));
             if (phase.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, PhaseKey), Null, S(PhaseSetName), Null, L(phase)), Gid(e.Id, "phase-rel"));
             // The user's own parameters (those of its type are on the type, which IFC readers pass on to it).
             if (ParamsOf(e, Gid(e.Id, ParamsKey)) is { } set) Define(entity, set, Gid(e.Id, "params-rel"));
@@ -908,6 +918,19 @@ public static class IfcExport
                 if (rel.Related.Count > 0 && written.TryGetValue(rel.Relating, out var a) && written.TryGetValue(rel.Related[0], out var b))
                     f.Add("IFCRELCONNECTSPATHELEMENTS", Gid(rel.Id), Null, S((string?)rel.Attrs?["kind"]), S((string?)rel.Attrs?["style"]), Null, a, b, "()", "()",
                         E(Connection((string?)rel.Attrs?["relatedConnection"])), E(Connection((string?)rel.Attrs?["relatingConnection"])));
+            // Temporary works: the product resource they are (formwork, a scaffold), assigned to them; formwork connected to the element it forms.
+            foreach (var e in m.Entities)
+            {
+                if (!written.TryGetValue(e.Id, out var element)) continue;
+                if (e.Str("resource") is { Length: > 0 } res)
+                {
+                    var known = res is "FORMWORK" or "ASSEMBLY";
+                    var resource = f.Add("IFCCONSTRUCTIONPRODUCTRESOURCE", Gid(e.Id, "resource"), Null, S(e.Name), Null, S(known ? null : res), Null, Null, Null, Null, Null, E(known ? res : "USERDEFINED"));
+                    f.Add("IFCRELASSIGNSTOPRODUCT", Gid(e.Id, "resource-rel"), Null, Null, Null, L(new[] { resource }), Null, element);
+                }
+                if (e.Str("host") is { } host && written.TryGetValue(host, out var h))
+                    f.Add("IFCRELCONNECTSELEMENTS", Gid(e.Id, "host-rel"), Null, S("Formwork"), Null, Null, h, element);
+            }
             // A platform voiding the terrain: IFC 4.3 has it as a feature; in IFC4 it is a proxy and only stands there.
             if (o.Ifc43)
                 foreach (var (rel, host, v) in pendingVoids)

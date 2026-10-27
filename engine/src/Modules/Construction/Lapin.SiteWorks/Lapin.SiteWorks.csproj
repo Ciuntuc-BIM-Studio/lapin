@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Site works: the temporary works of the site, laid out from the model —
+    facade scaffolding along a path or the walls' faces, formwork on the named
+    faces of floors and beams (soffits, edges, bottoms, sides) — each from a
+    system type set in its configurator, created and struck in an execution
+    phase. It finds faces, the ground and the phases through the platform's
+    services, so it needs no other module's code.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>sitework</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+  </ItemGroup>
+</Project>

@@ -22,9 +22,14 @@ export type Gesture =
   | { kind: 'polygon' }
   /** `constrain`: where the next point may go, given the points placed (a pipe of copper turns only by 45°): the aimed point moved onto what is allowed. */
   | { kind: 'polyline'; constrain?: (placed: Vec2[], aimed: Vec2) => Vec2 }
-  | { kind: 'pick'; /** IFC classes it can be used on. */ types: string[] };
+  | { kind: 'pick'; /** IFC classes it can be used on. */ types: string[] }
+  /** A face of an element (a floor's soffit, a beam's side): in 3D the face under the cursor lights up; in plan, an edge or the outline picked. */
+  | { kind: 'face'; /** IFC classes it can be used on. */ types: string[] };
 
-export interface ToolInput { points: Vec2[]; entity?: NodeDto }
+/** Where a face pick landed: the point (model x, y, z; in plan x, y only) and, in 3D, the normal of the triangle hit. */
+export interface FaceHit { point: number[]; normal?: number[] }
+
+export interface ToolInput { points: Vec2[]; entity?: NodeDto; face?: FaceHit }
 
 /** What a tool's completion can use: the storey it draws on, and the engine. */
 export interface ToolContext {

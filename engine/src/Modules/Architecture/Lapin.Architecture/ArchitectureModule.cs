@@ -97,6 +97,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IJoineryIfc>(new JoineryIfc());
         r.Service<IIfcRecognizer>(new ForeignElements());
         r.Service<IStoreyLevels>(new Levels());
+        r.Service<IElementFaces>(new ArchitectureFaces());
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Geometry(IfcClass.Window, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Quantities(IfcClass.Door, (fill, _, model) => FillQuantities(fill, model, "Qto_DoorBaseQuantities"));

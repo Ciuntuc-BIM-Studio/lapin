@@ -1,0 +1,62 @@
+using Lapin.Geometry;
+using Lapin.Model;
+using Lapin.Platform;
+
+namespace Lapin.Architecture;
+
+/// <summary>
+/// The named faces of floors and walls (<see cref="IElementFaces"/>): a floor's
+/// soffit, top and edges (one per side of its outline, in its order); a straight
+/// wall's left and right faces (seen along its axis) and its top.
+/// </summary>
+public sealed class ArchitectureFaces : IElementFaces
+{
+    public bool Covers(string ifcClass) => ifcClass is IfcClass.Slab or IfcClass.Wall;
+
+    public IReadOnlyList<ElementFace> FacesOf(Entity e, IModelView m) => e.Class switch
+    {
+        IfcClass.Slab => Slab(e, m),
+        IfcClass.Wall => Wall(e, m),
+        _ => [],
+    };
+
+    static List<ElementFace> Slab(Entity slab, IModelView m)
+    {
+        var contour = Slabs.Contour(slab);
+        if (contour.Count < 3) return [];
+        var ccw = Polygon2.EnsureCcw(contour);
+        var top = Slabs.Top(m, slab);
+        var section = Slabs.Section(m, slab);
+        var bottom = top + section.Min(b => b.From);
+        top += section.Max(b => b.To);
+        var holes = Slabs.Holes(m, slab.Id).Select(h => h.Contour).ToList();
+        var faces = new List<ElementFace>
+        {
+            ElementFaces.Level("Soffit", "Soffit", ccw, bottom, true, holes),
+            ElementFaces.Level("Top", "Top", ccw, top, false, holes),
+        };
+        for (var i = 0; i < ccw.Count; i++)
+        {
+            var (a, b) = (ccw[i], ccw[(i + 1) % ccw.Count]);
+            if ((b - a).Length < 1e-6) continue;
+            faces.Add(ElementFaces.Upright($"Edge[{i}]", $"Edge {i + 1}", a, b, bottom, top, -(b - a).Normalized().Perp));
+        }
+        return faces;
+    }
+
+    static List<ElementFace> Wall(Entity wall, IModelView m)
+    {
+        if (PathCurve.Of(wall).IsArc || Walls.Frame(wall, m) is not { } f) return [];
+        var dir = (f.End - f.Start).Normalized();
+        var left = dir.Perp;
+        var z0 = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var z1 = z0 + wall.Num("height", Walls.DefaultHeight);
+        Vec2 P(Vec2 at, double y) => at + left * y;
+        return
+        [
+            ElementFaces.Upright("Face.Left", "Left face", P(f.Start, f.YMax), P(f.End, f.YMax), z0, z1, left),
+            ElementFaces.Upright("Face.Right", "Right face", P(f.Start, f.YMin), P(f.End, f.YMin), z0, z1, -left),
+            ElementFaces.Level("Top", "Top", [P(f.Start, f.YMin), P(f.End, f.YMin), P(f.End, f.YMax), P(f.Start, f.YMax)], z1, false),
+        ];
+    }
+}

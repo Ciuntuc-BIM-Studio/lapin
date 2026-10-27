@@ -46,6 +46,7 @@ public sealed class CoreModule : ILapinModule
         StoreyMove.Register(r);
         Links.Register(r);
         ViewStyles.Register(r);
+        ElementFaces.Register(r);
 
         r.Command("storey.create", "New storey", (ctx, a) =>
         {

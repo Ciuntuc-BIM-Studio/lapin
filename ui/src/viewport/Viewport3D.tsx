@@ -11,11 +11,11 @@ import { pickable } from '../platform/scope';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { NodeDto, RenderItem } from '../engine/protocol';
-import { activeStorey, useSession } from '../engine/session';
+import { activeStorey, engine, useSession } from '../engine/session';
 import { num } from '../engine/model';
 import { select, setTool, useUi } from '../app/store';
 import { findTool } from '../platform/modules';
-import type { Vec2 } from '../platform/module';
+import type { FaceHit, Vec2 } from '../platform/module';
 import { completeTool } from './tools';
 import { boxUv, boxUvSized, imageOf, imageTexture, splitByFace, textureFor, textureOf, whenImagesLoad, type Face, type TextureKind } from './textures';
 import { KeyPlan } from './KeyPlan';
@@ -137,6 +137,32 @@ const gridBase = (nodes: Map<string, NodeDto>) => {
   for (const n of nodes.values()) if (n.type === 'IfcBuildingStorey') base = Math.min(base, Number(n.props.elevation ?? 0));
   return base;
 };
+/** A named face as the engine gives it (core.faceAt). */
+interface FaceDto { role: string; label: string; normal: number[]; outline: number[][] }
+
+/** Where a ray hit: the point, and the hit triangle's normal in the world. */
+function faceHit(hit: THREE.Intersection): FaceHit {
+  const n = hit.face ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld) : null;
+  return { point: [hit.point.x, hit.point.y, hit.point.z], ...(n ? { normal: [n.x, n.y, n.z] } : {}) };
+}
+
+/** A face lit up: its outline filled, a hair off it towards the viewer, and drawn round. */
+function faceMesh(face: FaceDto): THREE.Object3D {
+  const n = new THREE.Vector3(face.normal[0], face.normal[1], face.normal[2]).normalize();
+  const pts = face.outline.map((p) => new THREE.Vector3(p[0], p[1], p[2]).addScaledVector(n, 0.004));
+  const seed = Math.abs(n.x) < 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+  const u = new THREE.Vector3().crossVectors(n, seed).normalize();
+  const v = new THREE.Vector3().crossVectors(n, u);
+  const flat = pts.map((p) => new THREE.Vector2(p.dot(u), p.dot(v)));
+  const tris = THREE.ShapeUtils.triangulateShape(flat, []);
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  geo.setIndex(tris.flat());
+  const group = new THREE.Group();
+  group.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: SELECTED, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false })));
+  group.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: SELECTED })));
+  return group;
+}
+
 const gridsOf = (nodes: Map<string, NodeDto>) => [...nodes.values()].filter((n) => n.type === 'IfcGrid');
 
 export function Viewport3D() {
@@ -152,18 +178,29 @@ export function Viewport3D() {
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
   // What a click does, kept current for the listeners set up once.
-  const clickRef = useRef<(hit: { nodeId: string | null; ground: Vec2 | null; add: boolean }) => void>(() => undefined);
+  const clickRef = useRef<(hit: { nodeId: string | null; ground: Vec2 | null; add: boolean; face?: FaceHit }) => void>(() => undefined);
+  /** The classes a face tool works on (null: no face tool on), for the hover that lights up the face under the cursor. */
+  const faceTypes = useRef<string[] | null>(null);
+  const clearFace = useRef<() => void>(() => undefined);
+  const [faceLabel, setFaceLabel] = useState<{ text: string; x: number; y: number } | null>(null);
   const elevationRef = useRef(0);
   useUi((s) => s.storeyId);
   useSession((s) => s.nodes);
   const storey = activeStorey();
   elevationRef.current = num(storey ?? undefined, 'elevation');
 
-  useEffect(() => { setPending(null); }, [toolId]);
+  useEffect(() => { setPending(null); clearFace.current(); setFaceLabel(null); }, [toolId]);
+  faceTypes.current = tool?.gesture?.kind === 'face' ? tool.gesture.types : null;
 
-  clickRef.current = ({ nodeId, ground, add }) => {
+  clickRef.current = ({ nodeId, ground, add, face }) => {
     const g = tool?.gesture;
     if (!g) { select(nodeId && pickable(useSession.getState().nodes.get(nodeId)) ? nodeId : null, add); return; }
+    if (g.kind === 'face' || g.kind === 'pick') {
+      const node = nodeId ? useSession.getState().nodes.get(nodeId) : undefined;
+      if (!node || !g.types.includes(node.type)) { useSession.setState({ error: 'Pick an element this tool works on.' }); return; }
+      void completeTool(tool!, { points: ground ? [ground] : [], entity: node, face });
+      return;
+    }
     if (!ground) return;
     if (g.kind === 'point') { void completeTool(tool!, { points: [ground] }); return; }
     if (g.kind === 'twoPoints' || g.kind === 'rectangle') {
@@ -301,8 +338,45 @@ export function Viewport3D() {
         nodeId: (hit?.object.userData.nodeId as string | undefined) ?? null,
         ground: g ? { x: Math.round(g.x * 20) / 20, y: Math.round(g.y * 20) / 20 } : null,
         add: e.shiftKey,
+        face: hit ? faceHit(hit) : undefined,
       });
     };
+    // A face tool: the face under the cursor, as the engine names it, lit up with its name beside the cursor.
+    const faceGroup = new THREE.Group();
+    faceGroup.name = 'face-hover';
+    s.add(faceGroup);
+    let hoverFrame = 0;
+    let hoverKey = '';
+    const showFace = (face: FaceDto | null) => {
+      for (const c of [...faceGroup.children]) { faceGroup.remove(c); dispose(c); }
+      if (face) faceGroup.add(faceMesh(face));
+      invalidate.current();
+    };
+    clearFace.current = () => { hoverKey = ''; showFace(null); };
+    const onMove = (e: PointerEvent) => {
+      const types = faceTypes.current;
+      if (!types || down || hoverFrame) return;
+      const at = { x: e.clientX, y: e.clientY };
+      hoverFrame = requestAnimationFrame(() => {
+        hoverFrame = 0;
+        const r = renderer.domElement.getBoundingClientRect();
+        ray.setFromCamera(new THREE.Vector2(((at.x - r.left) / r.width) * 2 - 1, -((at.y - r.top) / r.height) * 2 + 1), cam);
+        const meshes: THREE.Object3D[] = [];
+        for (const { object } of live.values()) meshes.push(object);
+        const hit = ray.intersectObjects(meshes, true).find((h) => h.object.userData.nodeId);
+        const id = hit?.object.userData.nodeId as string | undefined;
+        const node = id ? useSession.getState().nodes.get(id) : undefined;
+        if (!hit || !node || !types.includes(node.type)) { if (hoverKey) { hoverKey = ''; showFace(null); setFaceLabel(null); } return; }
+        const f = faceHit(hit);
+        void engine.call<FaceDto | null>('doc.query', { name: 'core.faceAt', args: { id: node.id, point: f.point, normal: f.normal } }).then((face) => {
+          if (faceTypes.current !== types) return;
+          const key = face ? `${node.id}/${face.role}` : '';
+          if (key !== hoverKey) { hoverKey = key; showFace(face); }
+          setFaceLabel(face ? { text: `${node.name} · ${face.label}`, x: at.x, y: at.y } : null);
+        }).catch(() => undefined);
+      });
+    };
+    renderer.domElement.addEventListener('pointermove', onMove);
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setPending(null); if (!(e.target as HTMLElement)?.closest('input, select, textarea')) setTool(null); } };
     renderer.domElement.addEventListener('pointerdown', onDown);
     renderer.domElement.addEventListener('pointerup', onUp);
@@ -317,6 +391,9 @@ export function Viewport3D() {
       controls.dispose();
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('pointerup', onUp);
+      renderer.domElement.removeEventListener('pointermove', onMove);
+      cancelAnimationFrame(hoverFrame);
+      clearFace.current = () => undefined;
       window.removeEventListener('keydown', onKey);
       // The elements, the lights, the ground grid and the grid's axes.
       dispose(s);
@@ -427,6 +504,7 @@ export function Viewport3D() {
   return (
     <>
       <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />
+      {faceLabel && <div className="face-label" style={{ left: faceLabel.x + 14, top: faceLabel.y + 14 }}>{faceLabel.text}</div>}
       <Grips3D camera={camRef} canvas={host} />
       <KeyPlan mode="3d" />
     </>

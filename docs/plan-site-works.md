@@ -4,6 +4,40 @@ Cerut pe 27.10.2026: un tab nou în ediția open (`products/lapin.json`). În el
 
 Planul continuă decizia din 17.10.2026 (`Lapin/docs/pereti-compusi-si-executie.md`, etapele V5 și V9). Execuția face parte din proiectare: cofrajele și schelele rezultă din model, se configurează pe tipuri, iar în model sunt elemente temporare.
 
+## Așa s-a făcut (27.10.2026)
+
+Deciziile S-1…S-5 confirmate de utilizator; ordinea cerută: schela, placa, grinda, desenele.
+
+- **Platforma.** `IElementFaces` (`ElementFaces.cs`): rolurile fețelor declarate de module din atribute (`ArchitectureFaces`: placa și peretele drept; `StructureFaces`: grinda dreaptă și stâlpul). Interogările `core.faces {id}` și `core.faceAt {id, point, normal?}`. `IGround` (Civil: terenul cu tușele pensulei) și `IPhaseService` (Phases: faza de execuție, adăugată și făcută activă) în `SiteServices.cs`.
+- **Interfața.** Gestul `face`: în 3D, fața de sub cursor se colorează și apare eticheta „element · față”; clicul dă punctul și normala. În plan, un clic pe element dă punctul, iar motorul alege latura cea mai apropiată sau intradosul.
+- **Modulul `sitework`** (`engine/src/Modules/Construction/Lapin.SiteWorks`, `ui/src/modules/sitework`, în `products/lapin.json`), tabul Site works:
+  - **Scaffold**: pe o polilinie.
+  - **Scaffold on walls**: pe pereții selectați; îi urmează.
+  - **Formwork**: pe plăcile și grinzile selectate.
+  - **Formwork on face**.
+  - **Formwork plan**: planul etajului activ în faza de execuție, secționat la 1 m.
+  - **Formwork schedule** și **Scaffold schedule**.
+  - Configuratoarele **Scaffold types…** și **Formwork types…**, cu previzualizarea calculată de motor (`sitework.scaffoldPreview`, `sitework.formworkPreview`).
+- **Comenzi**: `sitework.createScaffoldType/updateScaffoldType`, `createFormworkType/updateFormworkType`, `addScaffold`, `scaffoldFromWalls`, `updateScaffold`, `addFormwork {hostIds, faces?}`, `updateFormwork`, `formworkPlan`.
+- **Reguli**:
+  - **Traveile** sunt cele mai puține piese din catalog care ajung la capăt; 30 cm de prisos cântăresc cât o piesă.
+  - **Nivelurile** urcă până când podina de sus e la cel mult `reach` (1,50 m) sub cota de lucru.
+  - **Colțurile**: la colțul exterior tronsonul continuă cu o lățime, la cel interior se oprește cu o lățime mai devreme.
+  - **Tălpile schelei** stau pe teren; dacă terenul coboară pe un tronson mai mult decât preiau tălpile reglabile, apare un avertisment.
+  - **Cofrajul plăcii** stă pe etajul de sub intradosul ei, ca să-l deseneze planul acelui etaj.
+  - **Aria de contact** se calculează exact (benzi între evenimente), fără booleane.
+- **IFC**:
+  - `IfcElementAssembly` USERDEFINED FORMWORK sau SCAFFOLD, cu piesele ca `IfcMember`, `IfcPlate` și `IfcDiscreteAccessory`;
+  - `Status` TEMPORARY în setul de faze;
+  - `IfcConstructionProductResource` prin `IfcRelAssignsToProduct`;
+  - `IfcRelConnectsElements` între gazdă și cofraj.
+- **Teste**: `SiteWorksTests` (11). **Ghidul**: `docs/user/site-works.md` (și `ro/`), cu scena `site-works`.
+- **Rămase**:
+  - vederea de plafon propriu-zisă (planul de cofraj folosește banda de deasupra a planului);
+  - grinzile curbe;
+  - articolele de deviz legate de normele RO;
+  - S6.
+
 ## Ce există deja
 
 - **Fazele** (`Lapin.Phases`) au felul `execution` și starea `temporary`, adică un element creat și demolat în aceeași fază. Filtrul „Show execution” arată elementele temporare. Cofrajul și schela sunt exact cazul pentru care starea a fost gândită.
@@ -187,4 +221,4 @@ Fiecare etapă vine cu teste în `Lapin.Engine.Tests` (`SiteWorksTests`), cu num
 - **S-3.** Reperul este un rol semantic de față, declarat de modulul gazdei, nu o față a B-rep-ului.
 - **S-4.** Clasa IFC este `IfcElementAssembly` USERDEFINED (FORMWORK / SCAFFOLD), cu statusul TEMPORARY, plus resursa `IfcConstructionProductResource`. IFC nu are o clasă dedicată pentru cofraj sau schelă.
 - **S-5.** Cofrajele și schelele intră în faza de execuție activă. Dacă nu există una, tabul o creează („Execution”) la prima unealtă.
-- **S-6.** Ordinea este placă → grindă → schelă → desene. Schela (S4) poate merge în paralel cu S2–S3, fiindcă depinde doar de S1.
+- **S-6.** Ordinea, aleasă de utilizator: schelă → placă → grindă → desene.

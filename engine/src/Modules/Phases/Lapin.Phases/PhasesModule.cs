@@ -51,6 +51,7 @@ public sealed class PhasesModule : ILapinModule, IViewElementFilter
     public void Register(IModuleRegistry r)
     {
         r.Service<IViewElementFilter>(this);
+        r.Service<IPhaseService>(new ExecutionPhases());
 
         r.Command("addPhase", "New phase", (ctx, a) =>
         {
@@ -164,5 +165,29 @@ public sealed class PhasesModule : ILapinModule, IViewElementFilter
             }
             return o;
         });
+    }
+}
+
+/// <summary>The execution phase formwork and scaffolding go in: the active one if it is one, else the first; else one added after the others. It becomes the active phase, so the views that follow the active phase show what is placed in it.</summary>
+sealed class ExecutionPhases : IPhaseService
+{
+    public string EnsureExecutionPhase(ICommandContext ctx)
+    {
+        var s = PhasesModule.Settings(ctx.Model);
+        var phase = s.ActivePhase is { Kind: "execution" } a ? a : s.Phases.FirstOrDefault(p => p.Kind == "execution");
+        var phases = s.Phases.ToList();
+        if (phase == null)
+        {
+            phase = new ProjectPhase(PhaseSettings.FreshId("Execution", phases.Select(p => p.Id)), "Execution", "execution");
+            phases.Add(phase);
+        }
+        if (s.Active != phase.Id || phases.Count != s.Phases.Count)
+        {
+            var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
+            var attrs = project.CloneAttrs();
+            attrs["phases"] = (s with { Phases = phases, Active = phase.Id }).ToJson();
+            ctx.Replace(project.With(attrs: attrs));
+        }
+        return phase.Id;
     }
 }

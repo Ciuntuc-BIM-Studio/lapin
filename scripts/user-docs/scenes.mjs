@@ -182,6 +182,51 @@ export const scenes = [
     },
   },
   {
+    id: 'site-works',
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      const first = await t.storey('First floor');
+      const ground = await t.storey();
+      const slab = (await t.cmd('architecture.addSlab', { storeyId: first, points: [[0, 0], [12, 0], [12, 8], [0, 8]] })).id;
+      const beam = (await t.cmd('structure.addBeam', { storeyId: ground, x1: 0, y1: 4, x2: 7, y2: 4 })).id;
+      await t.button('Site works', { exact: true });
+      await t.shot('ribbon-site-works', { of: '.topbar', pad: 0 });
+      // A scaffold round the four outer walls, formwork under the first floor and its beam.
+      await t.ui({ selection: walls[0], selected: [walls[0], walls[1], walls[2], walls[3]] });
+      await t.tool('sitework.scaffoldOnWalls');
+      await t.ui({ selection: slab, selected: [slab, beam] });
+      await t.tool('sitework.formwork');
+      await t.wait(800);
+      const nodes = await t.nodes();
+      const scaffold = nodes.find((n) => n.type === 'LapinScaffold');
+      t.expect(scaffold && scaffold.props.closed === true, 'one closed scaffold round the walls');
+      t.expect(nodes.filter((n) => n.type === 'LapinFormwork').length === 2, 'formwork on the floor and on the beam');
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.shot('site-works-3d', { of: 'canvas', pad: 0 });
+      // The ground floor's formwork plan: the props cut, the beams over them dashed.
+      await t.ui({ storeyId: ground });
+      await t.tool('sitework.formworkPlan');
+      await t.wait(1500);
+      await t.fit();
+      t.expect((await t.nodes()).some((n) => n.type === 'IfcAnnotation' || n.name?.startsWith('Formwork plan')), 'a formwork plan');
+      await t.shot('formwork-plan', { of: '[data-testid=plan]', pad: 0 });
+      await select(t, scaffold.id);
+      await t.wait(600);
+      await t.shot('scaffold-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      await t.ui({ selection: null, selected: [] });
+      await t.tool('sitework.scaffoldTypes');
+      t.expect(await t.page.locator('[aria-label="Scaffolds"]').count() > 0, 'the scaffold configurator opens');
+      await t.shot('scaffold-configurator', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      await t.tool('sitework.formworkTypes');
+      t.expect(await t.page.locator('[aria-label="Formwork"]').count() > 0, 'the formwork configurator opens');
+      await t.shot('formwork-configurator', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     id: 'levels',
     async run(t) {
       await t.fresh();

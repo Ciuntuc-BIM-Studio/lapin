@@ -23,6 +23,7 @@ public sealed class StructureModule : ILapinModule
         r.Class(new(IfcClass.FootingType, "Footing type", [new("bottom", "Bottom level", "length")], "#a8a8a8", Kind: "type"));
 
         r.Service<IStoreyLevels>(new Levels());
+        r.Service<IElementFaces>(new StructureFaces());
         r.Geometry(IfcClass.Column, Columns.Geometry);
         r.Geometry(IfcClass.Beam, Beams.Geometry);
         r.Geometry(IfcClass.Footing, (f, m, s) => IsPad(m, f) ? PadFootings.Geometry(f, m, s) : StripFootings.Geometry(f, m, s));

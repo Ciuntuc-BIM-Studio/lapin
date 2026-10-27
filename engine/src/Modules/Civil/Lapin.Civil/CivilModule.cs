@@ -51,6 +51,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Geometry(Plantings.Class, (e, m, _) => Plantings.Geometry(e, m));
         r.Quantities(Plantings.Class, Plantings.Quantities);
         r.Service<IViewAnnotations>(this);
+        r.Service<IGround>(new Ground());
         r.Service<IScheduleSource>(new PlantingSchedule());
         r.Catalog("plants", Plantings.SpeciesJson(Plantings.Catalog));
         r.Catalog("sculptKinds", new JsonArray(SculptDab.Kinds.Select(k => (JsonNode)k).ToArray()));
@@ -261,5 +262,16 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 foreach (var (loops, color) in Analysis.Fills(analysis)) mk.Fills.Add((loops, color));
             yield return mk;
         }
+    }
+}
+
+/// <summary>The ground's height under a point: the first terrain that reaches there, with its brush strokes (model height).</summary>
+sealed class Ground : IGround
+{
+    public double? ElevationAt(IModelView model, double x, double y)
+    {
+        foreach (var t in model.OfClass(IfcClass.GeographicElement))
+            if (t.PredefinedType == Terrains.Predefined && Terrains.Of(t).ElevationAt(x, y) is { } z) return z;
+        return null;
     }
 }

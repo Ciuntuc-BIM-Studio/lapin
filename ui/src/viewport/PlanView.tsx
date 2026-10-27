@@ -11,7 +11,7 @@ import { select, setTool, useUi } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { activeStorey, execute, useSession } from '../engine/session';
 import type { NodeDto, RenderItem } from '../engine/protocol';
-import type { Vec2 } from '../platform/module';
+import type { FaceHit, Vec2 } from '../platform/module';
 import { findTool } from '../platform/modules';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
@@ -187,9 +187,9 @@ export function PlanView() {
     return p.x === a.point.x && p.y === a.point.y ? a : { ...a, point: p, kind: 'free', guides: [] };
   };
 
-  const complete = useCallback(async (points: Vec2[], entity?: NodeDto) => {
+  const complete = useCallback(async (points: Vec2[], entity?: NodeDto, face?: FaceHit) => {
     if (!tool) return;
-    await completeTool(tool, { points, entity });
+    await completeTool(tool, { points, entity, face });
     if (tool.gesture?.kind === 'twoPoints' && tool.gesture.repeat) setPts([points[points.length - 1]]);
     else setPts([]);
   }, [tool]);
@@ -209,6 +209,12 @@ export function PlanView() {
       case 'pick': {
         const e = pick(raw, g.types);
         if (e) void complete([raw], e);
+        else useSession.setState({ error: 'Pick an element this tool works on.' });
+        break;
+      }
+      case 'face': {
+        const e = pick(raw, g.types);
+        if (e) void complete([raw], e, { point: [raw.x, raw.y] });
         else useSession.setState({ error: 'Pick an element this tool works on.' });
         break;
       }

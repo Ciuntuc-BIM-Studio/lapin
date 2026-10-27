@@ -17,6 +17,9 @@
   <Folder Name="/src/Modules/Civil/">
     <Project Path="src/Modules/Civil/Lapin.Civil/Lapin.Civil.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Construction/">
+    <Project Path="src/Modules/Construction/Lapin.SiteWorks/Lapin.SiteWorks.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Drafting/">
     <Project Path="src/Modules/Drafting/Lapin.Drafting/Lapin.Drafting.csproj" />
   </Folder>
