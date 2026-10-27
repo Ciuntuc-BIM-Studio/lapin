@@ -59,7 +59,8 @@ public static class Standards
 {
     public const string Standard = "standard";
     public static readonly TextStyle DefaultText = new(Standard, "Standard", 2.5, "sans", false, false);
-    public static readonly DimStyle DefaultDim = new(Standard, "Standard", Standard, "tick", 1.5, 1, 1.5, "above", 0.8, 2, "m");
+    /// <summary>The Standard dimension style: in the project's units, with the unit's usual decimals (precision −1).</summary>
+    public static readonly DimStyle DefaultDim = new(Standard, "Standard", Standard, "tick", 1.5, 1, 1.5, "above", 0.8, -1, "project");
     public static readonly AxisStyle DefaultAxis = new(Standard, "Standard", Standard, "circle", "both", 10, "dashdot", "1");
     public static readonly DraftLayer Layer0 = new("0", "0", "#18181b", true, false);
 
@@ -67,7 +68,8 @@ public static class Standards
     public static readonly string[] Arrows = ["tick", "arrow", "dot", "none"];
     public static readonly string[] Placements = ["above", "centered", "below"];
     /// <summary>A dimension's unit: metric, or feet and inches / inches (fractions of an inch).</summary>
-    public static readonly string[] Units = ["m", "cm", "mm", "ft-in", "in"];
+    /// <summary>A dimension style's units: "project" is the project's, whatever they are.</summary>
+    public static readonly string[] Units = ["project", "m", "cm", "mm", "ft-in", "in"];
     /// <summary>The unit the interface shows and takes lengths in (the project's).</summary>
     public static readonly string[] ProjectUnits = ["mm", "cm", "m", "ft-in", "in"];
     /// <summary>How a drawing's lines end and meet on screen and on paper: round, or square (projecting caps, mitred corners).</summary>
@@ -99,7 +101,7 @@ public static class Standards
         var d = DefaultDim;
         return new(Str(v["id"], d.Id), Str(v["name"], d.Name), Str(v["textStyle"], d.TextStyle), OneOf(v["arrow"], Arrows, d.Arrow), Num(v["arrowSize"], d.ArrowSize),
             Num(v["extGap"], d.ExtGap), Num(v["extOver"], d.ExtOver), OneOf(v["placement"], Placements, d.Placement), Num(v["textGap"], d.TextGap),
-            (int)Math.Round(Num(v["precision"], d.Precision)), OneOf(v["unit"], Units, d.Unit), Color(v["color"]));
+            v["precision"] is JsonValue pv && Lapin.Model.Json.Number(pv) is { } pn && double.IsFinite(pn) ? Math.Max(-1, (int)Math.Round(pn)) : d.Precision, OneOf(v["unit"], Units, d.Unit), Color(v["color"]));
     }
 
     static AxisStyle ReadAxis(JsonObject v)
@@ -127,7 +129,7 @@ public static class Standards
     /// <summary>A tag's shape: a box with a leader, or a door's or window's marker across its wall in plan.</summary>
     public static readonly string[] TagShapes = ["box", "opening"];
     /// <summary>The unit a tag writes sizes in.</summary>
-    public static readonly string[] TagUnits = ["cm", "mm", "m"];
+    public static readonly string[] TagUnits = ["cm", "mm", "m", "ft-in", "in", "project"];
 
     /// <summary>
     /// The tag types a project starts with: a door's and a window's marker,
@@ -204,7 +206,8 @@ public static class Standards
         return Overridden(baseStyle, DrawingJson.Default.TextStyle, p, TextOverrides);
     }
 
-    public static DimStyle ResolveDim(StyleBook b, JsonObject p) => Overridden(DimOf(b, (string?)p["dimStyle"]), DrawingJson.Default.DimStyle, p, DimOverrides);
+    /// <summary>A dimension's style with its overrides, "project" units made the project's.</summary>
+    public static DimStyle ResolveDim(StyleBook b, JsonObject p) => Overridden(DimOf(b, (string?)p["dimStyle"]), DrawingJson.Default.DimStyle, p, DimOverrides) is var s && s.Unit == "project" ? s with { Unit = b.Units } : s;
 
     public static AxisStyle ResolveAxis(StyleBook b, JsonObject p)
     {
@@ -212,9 +215,13 @@ public static class Standards
         return p["o.lineColor"] is JsonValue c && c.TryGetValue<string>(out var color) ? s with { Color = color } : s;
     }
 
-    /// <summary>A length (metres) in a dimension style's unit and precision.</summary>
+    /// <summary>The decimals a unit is usually written with: none in millimetres, one in centimetres, two in metres; 1/16" in imperial.</summary>
+    public static int UsualPrecision(string unit) => unit switch { "mm" => 0, "cm" => 1, _ => 2 };
+
+    /// <summary>A length (metres) in a dimension style's unit and precision (below 0: the unit's usual).</summary>
     public static string FormatDimension(double metres, string unit, int precision)
     {
+        if (precision < 0) precision = UsualPrecision(unit);
         if (unit is "ft-in" or "in") return FormatImperial(metres, unit == "ft-in", precision);
         var factor = unit == "mm" ? 1000 : unit == "cm" ? 100 : 1;
         return (metres * factor).ToString("F" + Math.Clamp(precision, 0, 6), CultureInfo.InvariantCulture);

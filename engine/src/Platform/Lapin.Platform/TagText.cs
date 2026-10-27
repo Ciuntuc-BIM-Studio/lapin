@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Lapin.Drawing;
 using Lapin.Model;
 
 namespace Lapin.Platform;
@@ -49,9 +50,11 @@ public static partial class TagText
         Field().Replace(template, x => Value(m, e, x.Groups[1].Value, extra))
             .Split('|').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
 
-    /// <summary>A length (metres) as a tag writes it: whole centimetres or millimetres (a tenth where it is not whole), metres to the centimetre.</summary>
-    public static string Length(double metres, string unit)
+    /// <summary>A length (metres) as a tag writes it: whole centimetres or millimetres (a tenth where it is not whole), metres to the centimetre, feet and inches to 1/16"; "project" in the project's units.</summary>
+    public static string Length(double metres, string unit, string projectUnits = "mm")
     {
+        if (unit == "project") unit = projectUnits;
+        if (unit is "ft-in" or "in") return Standards.FormatImperial(metres, unit == "ft-in", 2);
         var (v, f) = unit switch { "mm" => (metres * 1000, "0.#"), "m" => (metres, "0.00"), _ => (metres * 100, "0.#") };
         return Math.Round(v, 3).ToString(f, CultureInfo.InvariantCulture);
     }

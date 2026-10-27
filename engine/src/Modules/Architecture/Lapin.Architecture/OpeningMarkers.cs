@@ -52,9 +52,9 @@ public static class OpeningMarkers
 
         var values = new Dictionary<string, string>
         {
-            ["width"] = TagText.Length(p.Width, type.Unit),
-            ["height"] = TagText.Length(p.Height, type.Unit),
-            ["sill"] = TagText.Length(p.Sill, type.Unit),
+            ["width"] = TagText.Length(p.Width, type.Unit, c.Book.Units),
+            ["height"] = TagText.Length(p.Height, type.Unit, c.Book.Units),
+            ["sill"] = TagText.Length(p.Sill, type.Unit, c.Book.Units),
         };
         // Along the wall, upright: the angle of the wall folded to (−90°, 90°].
         var along = new Vec2(-outward.Y, outward.X);

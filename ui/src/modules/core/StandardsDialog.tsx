@@ -12,10 +12,12 @@ import { execute, query, useSession } from '../../engine/session';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
 type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string };
-type Col = { key: string; label: string; kind: 'text' | 'mm' | 'number' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
+type Col = { key: string; label: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
 const LINE_TYPES = ['continuous', 'dashed', 'dotted', 'dashdot'];
+/** How a choice reads where its value alone would not say it. */
+const CHOICE_LABELS: Record<string, string> = { project: 'as the project' };
 const TABS: Tab[] = [
   { id: 'text', label: 'Text', list: 'textStyles', fresh: { name: 'Text', height: 2.5 }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'height', label: 'Height mm', kind: 'mm' }, { key: 'font', label: 'Font', kind: 'choice', choices: ['sans', 'serif', 'mono'] },
@@ -23,8 +25,8 @@ const TABS: Tab[] = [
   { id: 'dim', label: 'Dimensions', list: 'dimStyles', fresh: { name: 'Dimension' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'textStyle', label: 'Text', kind: 'style' }, { key: 'arrow', label: 'Arrow', kind: 'choice', choices: ['tick', 'arrow', 'dot', 'none'] },
     { key: 'arrowSize', label: 'Arrow mm', kind: 'mm' }, { key: 'extGap', label: 'Gap mm', kind: 'mm' }, { key: 'extOver', label: 'Over mm', kind: 'mm' },
-    { key: 'placement', label: 'Value', kind: 'choice', choices: ['above', 'centered', 'below'] }, { key: 'unit', label: 'Unit', kind: 'choice', choices: ['m', 'cm', 'mm', 'ft-in', 'in'] },
-    { key: 'precision', label: 'Decimals', kind: 'number' }] },
+    { key: 'placement', label: 'Value', kind: 'choice', choices: ['above', 'centered', 'below'] }, { key: 'unit', label: 'Unit', kind: 'choice', choices: ['project', 'm', 'cm', 'mm', 'ft-in', 'in'] },
+    { key: 'precision', label: 'Decimals', kind: 'decimals' }] },
   { id: 'axis', label: 'Grid axes', list: 'axisStyles', fresh: { name: 'Axis' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'textStyle', label: 'Text', kind: 'style' }, { key: 'bubble', label: 'Bubble', kind: 'choice', choices: ['circle', 'square'] },
     { key: 'ends', label: 'Ends', kind: 'choice', choices: ['both', 'start', 'end', 'none'] }, { key: 'size', label: 'Size mm', kind: 'mm' },
@@ -33,7 +35,7 @@ const TABS: Tab[] = [
   { id: 'tag', label: 'Tags', list: 'tagTypes', fresh: { name: 'Tag', template: '{mark}' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'shape', label: 'Shape', kind: 'choice', choices: ['box', 'opening'] },
     { key: 'template', label: 'Text (outside)', kind: 'text' }, { key: 'inner', label: 'Inside', kind: 'text' },
-    { key: 'unit', label: 'Unit', kind: 'choice', choices: ['cm', 'mm', 'm'] }, { key: 'reach', label: 'Past faces mm', kind: 'mm' },
+    { key: 'unit', label: 'Unit', kind: 'choice', choices: ['cm', 'mm', 'm', 'ft-in', 'in', 'project'] }, { key: 'reach', label: 'Past faces mm', kind: 'mm' },
     { key: 'textStyle', label: 'Text', kind: 'style' }, { key: 'classes', label: 'Classes', kind: 'text' }] },
   { id: 'layer', label: 'Layers', list: 'layers', fresh: { name: 'Layer' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'color', label: 'Colour', kind: 'color' }, { key: 'lineWeight', label: 'Pen mm', kind: 'mm' },
@@ -58,9 +60,13 @@ export function StandardsDialog() {
     switch (c.kind) {
       case 'bool': return <input type="checkbox" checked={v === true || (c.key === 'visible' && v !== false)} onChange={(ev) => put(ev.target.checked)} />;
       case 'color': return <input type="color" value={typeof v === 'string' ? v : '#18181b'} onChange={(ev) => put(ev.target.value)} />;
-      case 'choice': return <select value={String(v ?? '')} onChange={(ev) => put(ev.target.value)}>{c.key === 'lineType' && tab.id === 'layer' && <option value="">continuous</option>}{c.choices!.map((x) => <option key={x}>{x}</option>)}</select>;
+      case 'choice': return <select value={String(v ?? '')} onChange={(ev) => put(ev.target.value)}>{c.key === 'lineType' && tab.id === 'layer' && <option value="">continuous</option>}{c.choices!.map((x) => <option key={x} value={x}>{CHOICE_LABELS[x] ?? x}</option>)}</select>;
       case 'style': return <select value={String(v ?? 'standard')} onChange={(ev) => put(ev.target.value)}>{book.textStyles.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>;
       case 'group': return <select value={String(v ?? '')} onChange={(ev) => put(ev.target.value || null)}><option value="">—</option>{book.layerGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select>;
+      // Decimals: empty is the unit's usual (none in mm, one in cm, two in m, 1/16" in imperial), kept as −1.
+      case 'decimals': return <input className="num" key={`${e.id}${c.key}${v}`} defaultValue={typeof v === 'number' && v >= 0 ? String(v) : ''} placeholder="auto"
+        title="Empty: the unit's usual (none in mm, one in cm, two in m; 1/16&quot; in feet and inches, where 1 is 1/8&quot; and 3 is 1/32&quot;)"
+        onBlur={(ev) => { const t = ev.target.value.trim(); const n = t === '' ? -1 : Math.round(Number(t.replace(',', '.'))); if (Number.isFinite(n) && n >= -1 && n !== (typeof v === 'number' ? v : -1)) put(n); }} />;
       default: {
         const numeric = c.kind === 'mm' || c.kind === 'number';
         return <input className={numeric ? 'num' : undefined} key={`${e.id}${c.key}${v}`} defaultValue={v == null ? '' : String(v)}

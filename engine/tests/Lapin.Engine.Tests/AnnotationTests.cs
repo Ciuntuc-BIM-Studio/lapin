@@ -113,7 +113,7 @@ public class AnnotationTests
         var (a, b, orphan) = Ends(f, dim);
         Near(a, 0.3, 2); Near(b, 5, 2);
         Assert.False(orphan);
-        Assert.Contains("4.70", Texts(Draw(f, "plan:" + f.Storey)));
+        Assert.Contains("4700", Texts(Draw(f, "plan:" + f.Storey)));
     }
 
     [Fact]
@@ -148,6 +148,31 @@ public class AnnotationTests
     }
 
     [Fact]
+    public void The_standard_dimension_style_follows_the_project_units_and_a_style_with_its_own_unit_keeps_it()
+    {
+        var f = F();
+        var view = "plan:" + f.Storey;
+        f.Run("drafting.addDimension", new JsonObject { ["viewId"] = view, ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(1, 0), ["at"] = new JsonArray(0, 1) });
+        // In the project's units, with the unit's usual decimals.
+        Assert.Contains("1000", Texts(Draw(f, view)));
+        f.Run("standards.options", new JsonObject { ["units"] = "cm" });
+        Assert.Contains("100.0", Texts(Draw(f, view)));
+        f.Run("standards.options", new JsonObject { ["units"] = "m" });
+        Assert.Contains("1.00", Texts(Draw(f, view)));
+        f.Run("standards.options", new JsonObject { ["units"] = "ft-in" });
+        Assert.Contains("3'-3 3/8\"", Texts(Draw(f, view)));
+        // Decimals given on the style are kept; a unit of its own does not follow the project.
+        f.Run("standards.set", new JsonObject { ["kind"] = "dim", ["entry"] = new JsonObject { ["id"] = "standard", ["unit"] = "m", ["precision"] = 3 } });
+        Assert.Contains("1.000", Texts(Draw(f, view)));
+        f.Run("standards.options", new JsonObject { ["units"] = "mm" });
+        Assert.Contains("1.000", Texts(Draw(f, view)));
+        // Back to the project's units, decimals as the unit usually has them.
+        f.Run("standards.set", new JsonObject { ["kind"] = "dim", ["entry"] = new JsonObject { ["id"] = "standard", ["unit"] = "project", ["precision"] = -1 } });
+        Assert.Contains("1000", Texts(Draw(f, view)));
+        Assert.Equal("project", Lapin.Drawing.Standards.Read(Lapin.Drawing.Standards.ToJson(Lapin.Drawing.Standards.Read(null))).DimStyles.Single().Unit);
+    }
+
+    [Fact]
     public void Ends_on_no_element_are_left_as_drawn_and_a_dimension_moves_its_line()
     {
         var f = F();
@@ -157,7 +182,7 @@ public class AnnotationTests
         f.Run("drafting.moveDimension", new JsonObject { ["id"] = id, ["at"] = new JsonArray(0, -2) });
         var segs = Mark(Draw(f, "plan:" + f.Storey), id)!["segments"]!.AsArray().Select(x => (double)x!).ToList();
         Assert.Contains(-2.0, segs);
-        Assert.Contains("1.00", Texts(Draw(f, "plan:" + f.Storey)));
+        Assert.Contains("1000", Texts(Draw(f, "plan:" + f.Storey)));
         // Only on its own view.
         var other = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
         Assert.Null(Mark(Draw(f, other), id));

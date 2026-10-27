@@ -92,6 +92,13 @@ public sealed class OpeningMarkerTests
         Assert.Contains(texts, t => t.Text == f.Model.Get(window)!.Name);
         Assert.Contains(texts, t => t.Text == $"{p.Width * 1000:0}x{p.Height * 1000:0}");
         Assert.DoesNotContain(texts, t => t.Text.StartsWith("sill "));
+
+        // In the project's units, here feet and inches; or in inches whatever the project's.
+        f.Run("standards.options", new JsonObject { ["units"] = "ft-in" });
+        f.Run("standards.set", new JsonObject { ["kind"] = "tag", ["entry"] = new JsonObject { ["id"] = "window", ["unit"] = "project" } });
+        Assert.Contains(Texts(Render(f, plan)), t => t.Text == $"{Standards.FormatImperial(p.Width, true, 2)}x{Standards.FormatImperial(p.Height, true, 2)}");
+        f.Run("standards.set", new JsonObject { ["kind"] = "tag", ["entry"] = new JsonObject { ["id"] = "window", ["unit"] = "in" } });
+        Assert.Contains(Texts(Render(f, plan)), t => t.Text == $"{Standards.FormatImperial(p.Width, false, 2)}x{Standards.FormatImperial(p.Height, false, 2)}");
     }
 
     [Fact]

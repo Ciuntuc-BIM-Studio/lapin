@@ -55,8 +55,8 @@ public class DimensionKindTests
         Assert.Equal(2.5, Value(f, d), 9);
         var texts = Texts(f, plan);
         // In the view's dimension style (here metres, two decimals).
-        Assert.Contains("R1.25", texts);
-        Assert.Contains("Ø2.50", texts);
+        Assert.Contains("R1250", texts);
+        Assert.Contains("Ø2500", texts);
         // Typed: the circle takes it.
         f.Run("drafting.setDimensionValue", new JsonObject { ["id"] = d, ["value"] = 4 });
         Assert.Equal(2, ((Circle)Drafts.ShapeOf(f.Model.Get(circle)!)!).R, 9);
