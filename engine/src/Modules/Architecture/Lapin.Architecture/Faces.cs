@@ -6,8 +6,9 @@ namespace Lapin.Architecture;
 
 /// <summary>
 /// The named faces of floors and walls (<see cref="IElementFaces"/>): a floor's
-/// soffit, top and edges (one per side of its outline, in its order); a straight
-/// wall's left and right faces (seen along its axis) and its top.
+/// soffit, top and edges (one per side of its outline, in its order); a wall's
+/// left and right faces (seen along its axis; a curved wall's as curves along
+/// the arc at its base) and its top.
 /// </summary>
 public sealed class ArchitectureFaces : IElementFaces
 {
@@ -46,11 +47,22 @@ public sealed class ArchitectureFaces : IElementFaces
 
     static List<ElementFace> Wall(Entity wall, IModelView m)
     {
-        if (PathCurve.Of(wall).IsArc || Walls.Frame(wall, m) is not { } f) return [];
-        var dir = (f.End - f.Start).Normalized();
-        var left = dir.Perp;
+        if (Walls.Frame(wall, m) is not { } f) return [];
         var z0 = (Spatial.StoreyOf(m, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
         var z1 = z0 + wall.Num("height", Walls.DefaultHeight);
+        if (PathCurve.Of(wall) is { IsArc: true } c)
+        {
+            // A curved wall: its faces as curves along the arc at its base, its top a band.
+            var mid = c.TangentAt(c.Length / 2).Perp;
+            return
+            [
+                ElementFaces.Along("Face.Left", "Left face", c.Line(0, c.Length, f.YMax), z0, new Vec3(mid.X, mid.Y, 0)),
+                ElementFaces.Along("Face.Right", "Right face", c.Line(0, c.Length, f.YMin), z0, new Vec3(-mid.X, -mid.Y, 0)),
+                ElementFaces.Level("Top", "Top", c.Band(_ => 0, _ => c.Length, f.YMin, f.YMax), z1, false),
+            ];
+        }
+        var dir = (f.End - f.Start).Normalized();
+        var left = dir.Perp;
         Vec2 P(Vec2 at, double y) => at + left * y;
         return
         [

@@ -14,9 +14,10 @@ namespace Lapin.Platform;
 /// (plan x, y; height z), counter-clockwise seen from outside (along
 /// <see cref="Normal"/>, towards the face); holes, if any, as rings of their own.
 /// </summary>
-public sealed record ElementFace(string Role, string Label, IReadOnlyList<Vec3> Outline, Vec3 Normal, IReadOnlyList<IReadOnlyList<Vec3>>? Holes = null)
+public sealed record ElementFace(string Role, string Label, IReadOnlyList<Vec3> Outline, Vec3 Normal, IReadOnlyList<IReadOnlyList<Vec3>>? Holes = null, bool Curve = false)
 {
-    public bool IsEdge => Outline.Count == 2;
+    /// <summary>An edge, or a curve along a curved face (a curved beam's side, its axis): a line of points, not an area. Its normal is the outward one at its middle.</summary>
+    public bool IsEdge => Curve || Outline.Count == 2;
 
     public Vec3 Centre => Outline.Count == 0 ? Vec3.Zero : new(Outline.Average(p => p.X), Outline.Average(p => p.Y), Outline.Average(p => p.Z));
 
@@ -25,7 +26,7 @@ public sealed record ElementFace(string Role, string Label, IReadOnlyList<Vec3> 
     {
         get
         {
-            if (IsEdge) return (Outline[1] - Outline[0]).Length;
+            if (IsEdge) return Outline.Zip(Outline.Skip(1), (a, b) => (b - a).Length).Sum();
             double Area(IReadOnlyList<Vec3> ring) => Math.Abs(Vec3.Dot(VecMath.NewellNormal(ring), Normal.Normalized()));
             return Area(Outline) - (Holes?.Sum(Area) ?? 0);
         }
@@ -33,7 +34,7 @@ public sealed record ElementFace(string Role, string Label, IReadOnlyList<Vec3> 
 
     public JsonObject ToJson() => new()
     {
-        ["role"] = Role, ["label"] = Label, ["edge"] = IsEdge, ["size"] = Math.Round(Size, 6),
+        ["role"] = Role, ["label"] = Label, ["edge"] = IsEdge, ["curve"] = Curve, ["size"] = Math.Round(Size, 6),
         ["normal"] = new JsonArray(Normal.X, Normal.Y, Normal.Z),
         ["outline"] = new JsonArray(Outline.Select(p => (JsonNode)new JsonArray(p.X, p.Y, p.Z)).ToArray()),
     };
@@ -134,6 +135,10 @@ public static class ElementFaces
         var t = l2 < 1e-18 ? 0 : Math.Clamp(Vec2.Dot(p - a, d) / l2, 0, 1);
         return (a + d * t - p).Length;
     }
+
+    /// <summary>A curve at a height (a curved face's bottom line, an axis, an edge), its outward normal at its middle.</summary>
+    public static ElementFace Along(string role, string label, IReadOnlyList<Vec2> line, double z, Vec3 normal) =>
+        new(role, label, line.Select(p => p.At(z)).ToList(), normal, null, true);
 
     /// <summary>An upright rectangle on a line in plan, from z0 to z1, facing <paramref name="outward"/> (counter-clockwise seen from there).</summary>
     public static ElementFace Upright(string role, string label, Vec2 a, Vec2 b, double z0, double z1, Vec2 outward)

@@ -14,8 +14,9 @@ namespace Lapin.SiteWorks;
 /// fewest pieces that reach its end), its lifts climb from the highest foot of
 /// the run until the top deck is within reach of the work top (the walls'
 /// tops, or the elevation given), the guardrail stands above it. Corners close
-/// themselves: an outside corner's run goes on one width further, an inside
-/// corner's stops one width short. The feet stand on the ground (the terrain)
+/// themselves: an outside corner's run goes on further, an inside corner's
+/// stops short, by the width × tan(half the turn) (a right angle: one width);
+/// a curved wall is followed in chords of at most 3 m. The feet stand on the ground (the terrain)
 /// on base jacks, or on the storey. Its type (<c>LapinScaffoldType</c>) holds
 /// the system; the scaffold holds where it is. A Lapin class exported as
 /// IfcElementAssembly USERDEFINED "SCAFFOLD".
@@ -82,9 +83,10 @@ public static class Scaffolds
 
     /// <summary>
     /// The walls' outer faces as one line: each wall's face that looks away
-    /// from the middle of all the project's walls, oriented with the outside on
-    /// its left, chained end to start (the nearest next), the corners where the
-    /// faces' lines meet; closed when the last comes back to the first.
+    /// from the middle of all the project's walls (a curved wall's in chords of
+    /// at most <see cref="Chord"/>), oriented with the outside on its left,
+    /// chained end to start (the nearest next), the corners where the faces'
+    /// lines meet; closed when the last comes back to the first.
     /// </summary>
     public static Line? FromWalls(IReadOnlyList<Entity> walls, IModelView m, IServices services)
     {
@@ -92,40 +94,63 @@ public static class Scaffolds
         if (all.Count == 0) return null;
         var mids = all.SelectMany(f => f.Where(x => x.Role is "Face.Left" or "Face.Right")).Select(f => f.Centre.Xy).ToList();
         var middle = new Vec2(mids.Average(p => p.X), mids.Average(p => p.Y));
-        var lines = new List<(Vec2 A, Vec2 B)>();
+        var lines = new List<List<Vec2>>();
         foreach (var w in walls)
         {
             var faces = ElementFaces.Of(services, w, m).Where(f => f.Role is "Face.Left" or "Face.Right").ToList();
             if (faces.Count == 0) continue;
             var outer = faces.MaxBy(f => Vec2.Dot(new Vec2(f.Normal.X, f.Normal.Y), f.Centre.Xy - middle))!;
-            var bottom = outer.Outline.OrderBy(p => p.Z).Take(2).Select(p => p.Xy).ToList();
-            var (a, b) = (bottom[0], bottom[1]);
-            if (Vec2.Dot((b - a).Perp, new Vec2(outer.Normal.X, outer.Normal.Y)) < 0) (a, b) = (b, a);
-            lines.Add((a, b));
+            var n = new Vec2(outer.Normal.X, outer.Normal.Y);
+            List<Vec2> line;
+            if (outer.Curve) line = Rechord(outer.Outline.Select(p => p.Xy).ToList(), Chord);
+            else { var bottom = outer.Outline.OrderBy(p => p.Z).Take(2).Select(p => p.Xy).ToList(); line = [bottom[0], bottom[1]]; }
+            // The outside on the left: judged at the middle of the line.
+            var k = line.Count / 2 - (line.Count % 2 == 0 ? 1 : 0);
+            if (Vec2.Dot((line[Math.Min(k + 1, line.Count - 1)] - line[k]).Perp, n) < 0) line.Reverse();
+            lines.Add(line);
         }
         if (lines.Count == 0) return null;
         // Chain: start at a line no other line ends near, then always the nearest start.
         var left = lines.ToList();
-        var first = left.FirstOrDefault(l => !left.Any(o => o != l && (o.B - l.A).Length < 1.0));
-        if (first == default) first = left[0];
-        var chain = new List<(Vec2 A, Vec2 B)> { first };
+        var first = left.FirstOrDefault(l => !left.Any(o => o != l && (o[^1] - l[0]).Length < 1.0)) ?? left[0];
+        var chain = new List<List<Vec2>> { first };
         left.Remove(first);
         while (left.Count > 0)
         {
-            var end = chain[^1].B;
-            var next = left.MinBy(l => (l.A - end).Length);
+            var end = chain[^1][^1];
+            var next = left.MinBy(l => (l[0] - end).Length)!;
             chain.Add(next);
             left.Remove(next);
         }
-        var closed = chain.Count >= 3 && (chain[^1].B - chain[0].A).Length < 1.0;
+        var closed = chain.Count >= 2 && (chain[^1][^1] - chain[0][0]).Length < 1.0 && chain.Sum(c => c.Count - 1) >= 3;
+        (Vec2, Vec2) Last(List<Vec2> l) => (l[^2], l[^1]);
+        (Vec2, Vec2) First(List<Vec2> l) => (l[0], l[1]);
         var pts = new List<Vec2>();
         for (var i = 0; i < chain.Count; i++)
         {
-            if (i == 0) { pts.Add(closed ? Meet(chain[^1], chain[0]) : chain[0].A); continue; }
-            pts.Add(Meet(chain[i - 1], chain[i]));
+            pts.Add(i == 0 ? (closed ? Meet(Last(chain[^1]), First(chain[0])) : chain[0][0]) : Meet(Last(chain[i - 1]), First(chain[i])));
+            for (var j = 1; j < chain[i].Count - 1; j++) pts.Add(chain[i][j]);
         }
-        if (!closed) pts.Add(chain[^1].B);
+        if (!closed) pts.Add(chain[^1][^1]);
         return new(pts, closed);
+    }
+
+    /// <summary>The longest a chord of a curved facade may be: a curved wall is followed in straight runs no longer.</summary>
+    public const double Chord = 3.0;
+
+    /// <summary>A curve as the fewest equal chords of at most <paramref name="max"/>, from its start to its end.</summary>
+    static List<Vec2> Rechord(List<Vec2> curve, double max)
+    {
+        var at = new List<double> { 0 };
+        for (var i = 1; i < curve.Count; i++) at.Add(at[^1] + (curve[i] - curve[i - 1]).Length);
+        var n = Math.Max(1, (int)Math.Ceiling(at[^1] / max - 1e-9));
+        Vec2 P(double s)
+        {
+            for (var i = 1; i < curve.Count; i++)
+                if (s <= at[i] + 1e-12) return curve[i - 1] + (curve[i] - curve[i - 1]) * ((s - at[i - 1]) / Math.Max(at[i] - at[i - 1], 1e-12));
+            return curve[^1];
+        }
+        return Enumerable.Range(0, n + 1).Select(k => P(at[^1] * k / n)).ToList();
     }
 
     /// <summary>Where two lines meet (the second's start when they are parallel).</summary>
@@ -187,12 +212,15 @@ public static class Scaffolds
             var d = dirs[i];
             var o = d.Perp;
             var length = Vec2.Dot(b - a, d);
-            // The corner at the end: outside (turning right, away from the scaffold) goes on one width; inside stops one width short.
+            // The corner at the end: outside (turning right, away from the scaffold) the run goes on, inside it stops short,
+            // by its width × tan(half the turn): a right angle's width, nothing where it runs on straight.
             if (facade.Closed || i < segs - 1)
             {
-                var turn = Vec2.Cross(d, dirs[(i + 1) % segs]);
-                if (turn < -1e-9) length += s.Width;
-                else if (turn > 1e-9) length -= s.Width;
+                var next = dirs[(i + 1) % segs];
+                var turn = Math.Atan2(Vec2.Cross(d, next), Vec2.Dot(d, next));
+                var by = s.Width * Math.Tan(Math.Min(Math.Abs(turn), 2.6) / 2);
+                if (turn < -1e-9) length += by;
+                else if (turn > 1e-9) length -= by;
             }
             if (length < 0.3) { problems.Add($"Run {i + 1} is too short for a bay ({Lay.M(length)} m)."); continue; }
             var bays = Bays(length, s.Bays);

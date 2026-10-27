@@ -225,32 +225,83 @@ public static class Formwork
 
     // ─────────────────────────────────────────────────────────── beams
 
-    /// <summary>A stretch of one side of a beam that is formed: along the side from <see cref="T0"/> to <see cref="T1"/> (metres from the start), this high from the bottom.</summary>
-    public sealed record SidePiece(string Side, double T0, double T1, double Height);
-
-    public sealed record BeamLayout(BeamSpec Spec, Vec2 Start, Vec2 Dir, double Length, double Width, double Bottom, double Top, IReadOnlyList<(double A, double B)> Free,
-        bool FormBottom, IReadOnlyList<SidePiece> Sides, IReadOnlyList<string> Chamfers, IReadOnlyList<Prop> Props, int Yokes, IReadOnlyList<string> Problems)
+    /// <summary>A stretch of one side of a beam that is formed: along the side from A to B (straight), facing <see cref="Out"/>, this high from the bottom.</summary>
+    public sealed record SidePiece(string Side, Vec2 A, Vec2 B, Vec2 Out, double Height)
     {
+        public double Length => (B - A).Length;
+    }
+
+    /// <summary>
+    /// A beam's formwork laid along its axis (a polyline: two points for a
+    /// straight beam, the arc's for a curved one), stations in metres from its
+    /// start: the stretches its bottom is formed over (<see cref="Free"/>), its
+    /// sides' pieces, its chamfer fillets' length, its props and yokes.
+    /// </summary>
+    public sealed record BeamLayout(BeamSpec Spec, Axis Axis, double Width, double Bottom, double Top, IReadOnlyList<(double A, double B)> Free,
+        bool FormBottom, IReadOnlyList<SidePiece> Sides, double ChamferLength, IReadOnlyList<Prop> Props, int Yokes, IReadOnlyList<string> Problems)
+    {
+        public double Length => Axis.Length;
         public double FreeLength => Free.Sum(f => f.B - f.A);
         public double BottomArea => FormBottom ? FreeLength * Width : 0;
-        public double SideArea => Sides.Sum(s => (s.T1 - s.T0) * s.Height);
-        public double ChamferLength => Chamfers.Count * FreeLength;
+        public double SideArea => Sides.Sum(s => s.Length * s.Height);
+    }
+
+    /// <summary>A polyline with stations: where a station lies, which way it runs there, and lines offset to either side (mitred at the vertices).</summary>
+    public sealed class Axis
+    {
+        public IReadOnlyList<Vec2> Points { get; }
+        readonly double[] at;
+        public Axis(IReadOnlyList<Vec2> points)
+        {
+            Points = points;
+            at = new double[points.Count];
+            for (var i = 1; i < points.Count; i++) at[i] = at[i - 1] + (points[i] - points[i - 1]).Length;
+        }
+        public double Length => at[^1];
+        public int Segments => Points.Count - 1;
+        public double StationOf(int vertex) => at[vertex];
+        public Vec2 Dir(int seg) => (Points[seg + 1] - Points[seg]).Normalized();
+        int SegAt(double s) { for (var k = 0; k < Segments - 1; k++) if (s < at[k + 1]) return k; return Segments - 1; }
+        public Vec2 PointAt(double s) { var k = SegAt(s); return Points[k] + Dir(k) * (s - at[k]); }
+        /// <summary>The vertex's offset direction to the left, mitred (its length 1/cos of half the turn).</summary>
+        public Vec2 Miter(int vertex)
+        {
+            if (vertex == 0) return Dir(0).Perp;
+            if (vertex == Segments) return Dir(Segments - 1).Perp;
+            var (n0, n1) = (Dir(vertex - 1).Perp, Dir(vertex).Perp);
+            return (n0 + n1) * (1 / (1 + Vec2.Dot(n0, n1)));
+        }
+        public List<Vec2> Offset(double y) => Enumerable.Range(0, Points.Count).Select(i => Points[i] + Miter(i) * y).ToList();
+        /// <summary>The band between two offsets from station s0 to s1, counter-clockwise.</summary>
+        public List<Vec2> Band(double s0, double s1, double y0, double y1)
+        {
+            var stations = new List<double> { s0 };
+            for (var i = 1; i < Points.Count - 1; i++) if (at[i] > s0 + 1e-9 && at[i] < s1 - 1e-9) stations.Add(at[i]);
+            stations.Add(s1);
+            Vec2 Off(double s, double y)
+            {
+                for (var i = 1; i < Points.Count - 1; i++) if (Math.Abs(at[i] - s) < 1e-9) return Points[i] + Miter(i) * y;
+                return PointAt(s) + Dir(SegAt(s)).Perp * y;
+            }
+            var right = stations.Select(st => Off(st, y0)).ToList();
+            var left = stations.Select(st => Off(st, y1)).Reverse();
+            return Polygon2.EnsureCcw([.. right, .. left]).ToList();
+        }
     }
 
     public static BeamLayout? BeamLayoutOf(Entity e, IModelView m, IServices services)
     {
         if (HostOf(m, e) is not { Class: IfcClass.Beam } beam) return null;
-        var faces = ElementFaces.Of(services, beam, m);
-        var f = faces.ToDictionary(x => x.Role);
-        if (!f.TryGetValue("End.Start", out var es) || !f.TryGetValue("End.End", out var ee) || !f.TryGetValue("Bottom", out var bottomFace) || !f.TryGetValue("Top", out var topFace)) return null;
+        var f = ElementFaces.Of(services, beam, m).ToDictionary(x => x.Role);
+        if (!f.TryGetValue("Axis", out var axisFace) || !f.TryGetValue("End.Start", out var es) || !f.TryGetValue("Bottom", out var bottomFace) || !f.TryGetValue("Top", out var topFace)) return null;
         var spec = ReadBeam(TypeOf(m, e)?.Attrs["spec"] as JsonObject);
         var problems = new List<string>();
-        var (zb, zt) = (bottomFace.Outline[0].Z, topFace.Outline[0].Z);
-        var (s, end) = (es.Centre.Xy, ee.Centre.Xy);
-        var length = (end - s).Length;
-        var dir = (end - s).Normalized();
-        var left = dir.Perp;
-        var width = es.Outline.Max(p => Vec2.Dot(p.Xy - s, left)) - es.Outline.Min(p => Vec2.Dot(p.Xy - s, left));
+        var (zb, zt) = (bottomFace.Outline.Min(p => p.Z), topFace.Outline.Max(p => p.Z));
+        var axis = new Axis(axisFace.Outline.Select(p => p.Xy).ToList());
+        var L = axis.Length;
+        // Its width: across its start face, corner to corner in plan.
+        var ends = es.Outline.Select(p => p.Xy).ToList();
+        var width = ends.SelectMany(a => ends.Select(b => (b - a).Length)).Max();
         var want = FacesOf(e);
         // What the bottom stops at: columns, beams as deep or deeper, walls it sits on.
         var bodies = Bodies(m, services, beam.Id, IfcClass.Column, IfcClass.Beam, IfcClass.Wall);
@@ -258,42 +309,64 @@ public static class Formwork
             || b.Element.Class == IfcClass.Beam && b.Bottom <= zb + 0.01 && b.Top > zb + 0.01
             || b.Element.Class == IfcClass.Wall && b.Top >= zb - 0.01 && b.Top <= zb + 0.01).ToList();
         var blocked = new List<(double, double)>();
-        foreach (var b in through) Polygon2.InsideIntervals([b.Footprint], s, end, 0, 1, blocked);
-        var free = Polygon2.Outside(blocked).Select(x => (A: x.A * length, B: x.B * length)).Where(x => x.B - x.A > 0.01).ToList();
+        for (var k = 0; k < axis.Segments; k++)
+        {
+            var (s0, s1) = (axis.StationOf(k), axis.StationOf(k + 1));
+            var hits = new List<(double, double)>();
+            foreach (var b in through) Polygon2.InsideIntervals([b.Footprint], axis.Points[k], axis.Points[k + 1], 0, 1, hits);
+            foreach (var (h0, h1) in hits) blocked.Add(((s0 + (s1 - s0) * h0) / L, (s0 + (s1 - s0) * h1) / L));
+        }
+        var free = Polygon2.Outside(blocked).Select(x => (A: x.A * L, B: x.B * L)).Where(x => x.B - x.A > 0.01).ToList();
+        double FreeIn(double s0, double s1) => free.Sum(x => Math.Max(0, Math.Min(x.B, s1) - Math.Max(x.A, s0)));
         // The sides: each stretch as high as the beam below whatever is cast against it there (a floor, a shallower beam framing in).
         var slabs = m.OfClass(IfcClass.Slab).Select(sl => (Soffit: ElementFaces.Find(services, sl, m, "Soffit"), Top: ElementFaces.Find(services, sl, m, "Top")))
             .Where(x => x.Soffit != null && x.Top != null).Select(x => (Ring: x.Soffit!.Outline.Select(p => p.Xy).ToArray(), Soffit: x.Soffit.Outline[0].Z, Top: x.Top!.Outline[0].Z))
             .Where(x => x.Soffit > zb + 0.01 && x.Soffit <= zt + 0.01 && x.Top > zb).ToList();
         var shallow = bodies.Where(b => b.Element.Class == IfcClass.Beam && b.Bottom > zb + 0.01 && b.Bottom < zt && b.Top > zb).ToList();
         var sides = new List<SidePiece>();
+        var chamfer = 0.0;
+        var chamfers = spec.Chamfer > 0 ? want.Where(r => r is "Edge.BottomLeft" or "Edge.BottomRight").ToList() : [];
+        var endFace = f.TryGetValue("End.End", out var ee) ? ee.Outline.Select(p => p.Xy).ToList() : null;
         foreach (var (side, sign) in new[] { ("Side.Left", 1.0), ("Side.Right", -1.0) })
         {
-            if (!want.Contains(side)) continue;
-            var a = s + left * (sign * width / 2);
-            var b = end + left * (sign * width / 2);
-            var probe = left * (sign * 0.02);
-            var cuts = new List<double> { 0, 1 };
-            foreach (var x in free) { cuts.Add(x.A / length); cuts.Add(x.B / length); }
-            var hits = new List<(double, double)>();
-            foreach (var sl in slabs) Polygon2.InsideIntervals([sl.Ring], a + probe, b + probe, 0, 1, hits);
-            foreach (var o in shallow) Polygon2.InsideIntervals([o.Footprint], a + probe, b + probe, 0, 1, hits);
-            foreach (var (h0, h1) in hits) { cuts.Add(h0); cuts.Add(h1); }
-            cuts = cuts.Distinct().Order().ToList();
-            for (var k = 0; k + 1 < cuts.Count; k++)
+            // Mitred offsets along the axis, their ends where the beam's end faces are (square to the arc, not to its first and last chords).
+            var line = axis.Offset(sign * width / 2);
+            line[0] = ends.MinBy(p => (p - line[0]).Length);
+            if (endFace != null) line[^1] = endFace.MinBy(p => (p - line[^1]).Length);
+            var edge = sign > 0 ? "Edge.BottomLeft" : "Edge.BottomRight";
+            for (var k = 0; k < axis.Segments; k++)
             {
-                var (t0, t1) = (cuts[k], cuts[k + 1]);
-                if (t1 - t0 < 1e-6) continue;
-                var mid = (t0 + t1) / 2 * length;
-                if (!free.Any(x => mid > x.A && mid < x.B)) continue;
-                var at = s + dir * mid + left * (sign * width / 2) + probe;
-                var top = zt;
-                foreach (var sl in slabs) if (Polygon2.Contains(sl.Ring, at)) top = Math.Min(top, sl.Soffit);
-                foreach (var o in shallow) if (Polygon2.Contains(o.Footprint, at)) top = Math.Min(top, o.Bottom);
-                var h = top - zb;
-                if (h <= 1e-6) continue;
-                if (sides.Count > 0 && sides[^1].Side == side && Math.Abs(sides[^1].T1 - t0 * length) < 1e-6 && Math.Abs(sides[^1].Height - h) < 1e-6)
-                    sides[^1] = sides[^1] with { T1 = t1 * length };
-                else sides.Add(new(side, t0 * length, t1 * length, h));
+                var (sa, sb) = (line[k], line[k + 1]);
+                var (s0, s1) = (axis.StationOf(k), axis.StationOf(k + 1));
+                var ratio = (sb - sa).Length / Math.Max(s1 - s0, 1e-12);
+                if (chamfers.Contains(edge)) chamfer += FreeIn(s0, s1) * ratio;
+                if (!want.Contains(side)) continue;
+                var outward = axis.Dir(k).Perp * sign;
+                var probe = outward * 0.02;
+                var cuts = new List<double> { 0, 1 };
+                foreach (var x in free) foreach (var st in new[] { x.A, x.B }) if (st > s0 && st < s1) cuts.Add((st - s0) / (s1 - s0));
+                var hits = new List<(double, double)>();
+                foreach (var sl in slabs) Polygon2.InsideIntervals([sl.Ring], sa + probe, sb + probe, 0, 1, hits);
+                foreach (var o in shallow) Polygon2.InsideIntervals([o.Footprint], sa + probe, sb + probe, 0, 1, hits);
+                foreach (var (h0, h1) in hits) { cuts.Add(h0); cuts.Add(h1); }
+                cuts = cuts.Distinct().Order().ToList();
+                for (var i = 0; i + 1 < cuts.Count; i++)
+                {
+                    var (t0, t1) = (cuts[i], cuts[i + 1]);
+                    if (t1 - t0 < 1e-6) continue;
+                    var mid = s0 + (s1 - s0) * (t0 + t1) / 2;
+                    if (!free.Any(x => mid > x.A && mid < x.B)) continue;
+                    var at = sa + (sb - sa) * ((t0 + t1) / 2) + probe;
+                    var top = zt;
+                    foreach (var sl in slabs) if (Polygon2.Contains(sl.Ring, at)) top = Math.Min(top, sl.Soffit);
+                    foreach (var o in shallow) if (Polygon2.Contains(o.Footprint, at)) top = Math.Min(top, o.Bottom);
+                    var h = top - zb;
+                    if (h <= 1e-6) continue;
+                    var (pa, pb) = (sa + (sb - sa) * t0, sa + (sb - sa) * t1);
+                    if (sides.Count > 0 && sides[^1].Side == side && (sides[^1].B - pa).Length < 1e-6 && Math.Abs(sides[^1].Height - h) < 1e-6 && Vec2.Cross(sides[^1].B - sides[^1].A, pb - pa) is var cr && Math.Abs(cr) < 1e-9)
+                        sides[^1] = sides[^1] with { B = pb };
+                    else sides.Add(new(side, pa, pb, outward, h));
+                }
             }
         }
         var formBottom = want.Contains("Bottom");
@@ -301,23 +374,21 @@ public static class Formwork
         var under = zb - spec.Plywood - spec.BearerHeight;
         var props = new List<Prop>();
         var yokes = 0;
-        var depth = zt - zb;
-        var yoke = spec.Yokes.FirstOrDefault(y => depth <= y.Depth + 1e-9) ?? spec.Yokes[^1];
+        var yoke = spec.Yokes.FirstOrDefault(y => zt - zb <= y.Depth + 1e-9) ?? spec.Yokes[^1];
         foreach (var (a, b) in free)
         {
             if (formBottom)
                 foreach (var x in Lay.Spread(a, b, spec.PropSpacing, Math.Min(0.3, (b - a) / 2)))
                 {
-                    var p = s + dir * x;
+                    var p = axis.PointAt(x);
                     var z = support.At(p, under);
                     props.Add(new(p, z, under, PropFor(spec.Props, under - z)));
                 }
             if (sides.Count > 0) yokes += Lay.Spread(a, b, yoke.Spacing, Math.Min(0.15, (b - a) / 2)).Count;
         }
-        var chamfers = spec.Chamfer > 0 ? want.Where(r => r is "Edge.BottomLeft" or "Edge.BottomRight").ToList() : [];
         foreach (var p in props.Where(p => p.Size == null).Take(1))
             problems.Add($"{props.Count(x => x.Size == null)} prop(s) need a length no prop of the type takes ({Lay.M(p.Length)} m here).");
-        return new(spec, s, dir, length, width, zb, zt, free, formBottom, sides, chamfers, props, yokes, problems);
+        return new(spec, axis, width, zb, zt, free, formBottom, sides, chamfer, props, yokes, problems);
     }
 
     // ─────────────────────────────────────────────────────────── geometry and quantities
@@ -331,7 +402,7 @@ public static class Formwork
         object layout;
         if (KindOf(e) == "beam")
         {
-            if (BeamLayoutOf(e, m, services) is not { } b) return new ElementGeometry([], Diagnostics: ["The beam has no faces to form (a curved beam is not formed yet)."]);
+            if (BeamLayoutOf(e, m, services) is not { } b) return new ElementGeometry([], Diagnostics: ["The beam has no faces to form."]);
             (g, layout) = (BeamGeometry(b), b);
         }
         else
@@ -388,45 +459,55 @@ public static class Formwork
         var s = l.Spec;
         var parts = new Parts();
         var plan = new List<PlanItem>();
-        var left = l.Dir.Perp;
         var half = l.Width / 2 + s.Plywood;
-        Vec2 At(double x, double y) => l.Start + l.Dir * x + left * y;
+        var ax = l.Axis;
         foreach (var (a, b) in l.Free)
         {
             if (!l.FormBottom) continue;
-            var band = new[] { At(a, -half), At(b, -half), At(b, half), At(a, half) };
+            var band = ax.Band(a, b, -half, half);
             parts.Add("bottom", "Bottom", Color, Prism.ExtrudeFootprint(band, l.Bottom - s.Plywood, s.Plywood));
             plan.Add(new("outline", true, band));
             var n = s.Bearers;
-            for (var k = 0; k < n; k++)
+            var z = l.Bottom - s.Plywood - s.BearerHeight / 2;
+            for (var k = 0; k < ax.Segments; k++)
             {
-                var y = n == 1 ? 0 : -l.Width / 2 + s.BearerWidth / 2 + k * (l.Width - s.BearerWidth) / (n - 1);
-                var z = l.Bottom - s.Plywood - s.BearerHeight / 2;
-                parts.Add("bearers", "Bearers", TimberColor, Prism.SweepBox(At(a, y).At(z), At(b, y).At(z), s.BearerWidth, s.BearerHeight));
+                var (s0, s1) = (Math.Max(a, ax.StationOf(k)), Math.Min(b, ax.StationOf(k + 1)));
+                if (s1 - s0 < 1e-3) continue;
+                var across = ax.Dir(k).Perp;
+                for (var i = 0; i < n; i++)
+                {
+                    var y = n == 1 ? 0 : -l.Width / 2 + s.BearerWidth / 2 + i * (l.Width - s.BearerWidth) / (n - 1);
+                    parts.Add("bearers", "Bearers", TimberColor, Prism.SweepBox((ax.PointAt(s0) + across * y).At(z), (ax.PointAt(s1) + across * y).At(z), s.BearerWidth, s.BearerHeight));
+                }
             }
         }
         foreach (var p in l.Props) PropSolid(parts, p);
         foreach (var side in l.Sides)
         {
-            var sign = side.Side == "Side.Left" ? 1 : -1;
-            var (y0, y1) = (sign * l.Width / 2, sign * (l.Width / 2 + s.Plywood));
-            parts.Add("sides", "Sides", Color, Prism.ExtrudeFootprint(Polygon2.EnsureCcw([At(side.T0, y0), At(side.T1, y0), At(side.T1, y1), At(side.T0, y1)]).ToArray(), l.Bottom - s.Plywood, side.Height + s.Plywood));
+            var o = side.Out * s.Plywood;
+            parts.Add("sides", "Sides", Color, Prism.ExtrudeFootprint(Polygon2.EnsureCcw([side.A, side.B, side.B + o, side.A + o]).ToArray(), l.Bottom - s.Plywood, side.Height + s.Plywood));
         }
-        foreach (var edge in l.Chamfers)
-        {
-            var sign = edge == "Edge.BottomLeft" ? 1 : -1;
-            var c = s.Chamfer;
-            foreach (var (a, b) in l.Free)
+        if (l.ChamferLength > 0)
+            foreach (var (edge, sign) in new[] { ("Edge.BottomLeft", 1.0), ("Edge.BottomRight", -1.0) })
             {
-                // A fillet: a triangle in the corner, swept along.
-                var y = sign * l.Width / 2;
-                Vec3 Q(double x, double dy, double dz) => At(x, y - sign * dy).At(l.Bottom + dz);
-                var profile = new List<Vec3> { Q(a, 0, 0), Q(a, c, 0), Q(a, 0, c) };
-                if (Vec3.Dot(VecMath.NewellNormal(profile), new Vec3(l.Dir.X, l.Dir.Y, 0)) < 0) profile.Reverse();
-                parts.Add("chamfers", "Chamfer fillets", TimberColor, Prism.Extrude(profile, null, new Vec3(l.Dir.X, l.Dir.Y, 0) * (b - a)));
+                var line = ax.Offset(sign * l.Width / 2);
+                var c = s.Chamfer;
+                for (var k = 0; k < ax.Segments; k++)
+                    foreach (var (a, b) in l.Free)
+                    {
+                        var (s0, s1) = (Math.Max(a, ax.StationOf(k)), Math.Min(b, ax.StationOf(k + 1)));
+                        if (s1 - s0 < 1e-3) continue;
+                        var seg = ax.StationOf(k + 1) - ax.StationOf(k);
+                        var (pa, pb) = (line[k] + (line[k + 1] - line[k]) * ((s0 - ax.StationOf(k)) / seg), line[k] + (line[k + 1] - line[k]) * ((s1 - ax.StationOf(k)) / seg));
+                        // A fillet: a triangle in the corner, swept along.
+                        var inward = -ax.Dir(k).Perp * sign;
+                        var d = pb - pa;
+                        var profile = new List<Vec3> { pa.At(l.Bottom), (pa + inward * c).At(l.Bottom), pa.At(l.Bottom + c) };
+                        if (Vec3.Dot(VecMath.NewellNormal(profile), new Vec3(d.X, d.Y, 0)) < 0) profile.Reverse();
+                        parts.Add("chamfers", "Chamfer fillets", TimberColor, Prism.Extrude(profile, null, new Vec3(d.X, d.Y, 0)));
+                    }
             }
-        }
-        return new ElementGeometry(parts.Build(), plan, [l.Start, l.Start + l.Dir * l.Length], l.Problems.Count > 0 ? l.Problems : null);
+        return new ElementGeometry(parts.Build(), plan, [ax.Points[0], ax.Points[^1]], l.Problems.Count > 0 ? l.Problems : null);
     }
 
     public static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)

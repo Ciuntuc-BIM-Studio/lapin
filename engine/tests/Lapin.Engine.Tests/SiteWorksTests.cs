@@ -52,6 +52,8 @@ public class SiteWorksTests
     static string Beam(Fixture f, double x1, double y1, double x2, double y2) =>
         (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = StoreyNamed(f, "Ground floor"), ["x1"] = x1, ["y1"] = y1, ["x2"] = x2, ["y2"] = y2 })!["id"]!;
 
+    static void Near(double expected, double actual) => Assert.InRange(actual, expected * 0.999, expected * 1.001);
+
     static string[] Ids(JsonNode? r) => ((JsonArray)r!["ids"]!).Select(x => (string)x!).ToArray();
 
     [Fact]
@@ -203,6 +205,56 @@ public class SiteWorksTests
         Assert.Throws<CommandException>(() => f.Run("view.setRange", new JsonObject { ["id"] = plan, ["look"] = "sideways" }));
     }
 
+
+    [Fact]
+    public void A_curved_beam_is_formed_along_its_arc_its_outer_side_longer_than_its_inner()
+    {
+        var f = Site();
+        // From (0, 0) to (6, 0) through (3, 1): a radius of 5 m, a sweep of 4·atan(1/3), the axis 6,435 m long.
+        var beam = (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = StoreyNamed(f, "Ground floor"), ["x1"] = 0, ["y1"] = 0, ["x2"] = 6, ["y2"] = 0, ["x3"] = 3, ["y3"] = 1 })!["id"]!;
+        var sweep = 4 * Math.Atan(1.0 / 3);
+        var length = 5 * sweep;
+        var fw = Ids(f.Run("sitework.addFormwork", new JsonObject { ["hostIds"] = new JsonArray(beam) }))[0];
+        var q = Q(f, fw);
+        // The arc is followed in chords of at most 5°: within a thousandth of it.
+        Near(length, q["FormedLength"]);
+        Near(length * 0.25, q["BottomArea"]);
+        Near(2 * length * 0.40, q["SideArea"]);                                       // (R + w/2)·θ + (R − w/2)·θ = 2·R·θ
+        var l = Formwork.BeamLayoutOf(f.Model.Get(fw)!, f.Model, f.Session.Catalog)!;
+        var bySide = l.Sides.GroupBy(x => x.Side).ToDictionary(g => g.Key, g => g.Sum(x => x.Length));
+        Near(0.25 * sweep, Math.Abs(bySide["Side.Left"] - bySide["Side.Right"]));   // the outer side longer by w·θ
+        Near(2 * length, q["ChamferLength"]);
+        Assert.Equal(6, q["Props"]);                                                  // 6,435 m at no more than 1,20 m, 0,30 m in
+    }
+
+    [Fact]
+    public void A_scaffold_follows_a_curved_wall_in_chords_and_stays_outside_it()
+    {
+        var f = Site();
+        var t = f.Type("Masonry 300", ("Masonry", 0.30, true));
+        f.Wall(0, 0, 10, 0, t); f.Wall(10, 0, 10, 6, t); f.Wall(0, 6, 0, 0, t);
+        // The fourth side bulges out to y = 8.
+        f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 10, ["y1"] = 6, ["x2"] = 0, ["y2"] = 6, ["x3"] = 5, ["y3"] = 8, ["typeId"] = t });
+        var walls = f.Model.OfClass(IfcClass.Wall).Select(w => (JsonNode)w.Id).ToArray();
+        var r = f.Run("sitework.scaffoldFromWalls", new JsonObject { ["wallIds"] = new JsonArray(walls) })!;
+        Assert.True((bool)r["closed"]!);
+        var layout = Scaffolds.LayoutOf(f.Model.Get((string)r["id"]!)!, f.Model, f.Session.Catalog)!;
+        Assert.Empty(layout.Problems);
+        // The arc's outer face is about 12 m long: four chords of at most 3 m, and the three straight sides.
+        Assert.Equal(7, layout.Runs.Count);
+        // The chords: about 3,1 m at the scaffold's radius, those at the corners going on to close them.
+        Assert.Equal(4, layout.Runs.Count(x => x.Length < 5));
+        Assert.All(layout.Runs.Where(x => x.Length < 5), x => Assert.InRange(x.Length, 2.8, 4.0));
+        // Every standard outside the walls: below y = −0,15, past x = 10,15 or before −0,15, or beyond the arc.
+        foreach (var run in layout.Runs)
+            foreach (var x in run.Stations)
+            {
+                var p = run.A + run.Dir * x;
+                var c = new Vec2(5, 6 + (25 - 4) / 4.0 - 2);                           // the arc's centre: radius 7,25, through (0, 6), (5, 8), (10, 6)
+                var inside = p.X > -0.15 && p.X < 10.15 && p.Y > -0.15 && (p.Y < 6 || (p - new Vec2(5, 8 - 7.25)).Length < 7.25 + 0.15);
+                Assert.False(inside, $"{p} is inside the walls");
+            }
+    }
 
     [Fact]
     public void A_straight_scaffold_takes_the_fewest_bays_and_climbs_until_the_work_top_is_within_reach()
