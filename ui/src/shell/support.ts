@@ -2,6 +2,7 @@
 
 import { notify } from '../app/store';
 import { engine, engineInBrowser } from '../engine/session';
+import { useLang } from '../i18n';
 
 /** The app's last errors, newest last (at most 20). */
 export const RECENT: string[] = [];
@@ -22,10 +23,11 @@ export function installRecentErrors(): void {
 }
 
 /** Open the community or the site in the system's browser (the engine does it). */
-export const LINKS = { guide: 'https://lapin.ciuntucbimstudio.ro/docs/', community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://ciuntucbimstudio.ro' } as const;
+export const LINKS = { guide: 'https://lapin.ciuntucbimstudio.ro/docs/', guideRo: 'https://lapin.ciuntucbimstudio.ro/docs/ro/', community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://ciuntucbimstudio.ro' } as const;
 
-/** Open the community or the site: in the system's browser (the engine does it on the desktop), in a new tab on the web. */
-export const openLink = (link: keyof typeof LINKS) => {
+/** Open the community or the site: in the system's browser (the engine does it on the desktop), in a new tab on the web. The guide opens in the interface's language. */
+export const openLink = (which: keyof typeof LINKS) => {
+  const link = which === 'guide' && useLang.getState().lang === 'ro' ? 'guideRo' : which;
   if (engineInBrowser) { window.open(LINKS[link], '_blank', 'noopener'); return; }
   void engine.call('support.open', { link }).catch(() => notify('The link could not be opened.'));
 };

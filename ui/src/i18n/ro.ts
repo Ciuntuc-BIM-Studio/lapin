@@ -180,12 +180,20 @@ export const RO: Record<string, string> = {
   'Your project stays in this browser: nothing is sent anywhere. Save it to keep a file (Safari and Firefox save it as a download). Unsaved work is kept for you if the tab closes.': 'Proiectul rămâne în acest browser: nimic nu pleacă nicăieri. Salvează-l ca să ai un fișier (Safari și Firefox îl salvează ca descărcare). Lucrul nesalvat se păstrează dacă se închide fila.',
   'Not here, only in the desktop app: the AI bridge (MCP) and views in windows of their own. A large imported IFC file may not fit in the browser.': 'Nu aici, doar în aplicația desktop: puntea AI (MCP) și vederile în ferestre separate. Un fișier IFC importat foarte mare s-ar putea să nu încapă în browser.',
   'Open a project from a file on this computer.': 'Deschide un proiect dintr-un fișier de pe acest calculator.',
+  // Materials, levels and help, as the user guide names them
+  'Own image': 'Imagine proprie', 'Import image…': 'Importă o imagine…', 'Replace…': 'Înlocuiește…', 'Import .pat': 'Importă .pat', 'My patterns': 'Modelele mele',
+  'Add to this project': 'Adaugă în acest proiect', 'Draw joints': 'Desenează rosturile', 'Colour (3D)': 'Culoare (3D)', 'Faces (3D)': 'Fețe (3D)',
+  'Ends, cut across (3D)': 'Capete, tăiate transversal (3D)', 'Top and bottom (3D)': 'Sus și jos (3D)', 'Zones in height': 'Zone pe înălțime',
+  'Base level': 'Cota de bază', 'Top level': 'Cota superioară', 'No underlay': 'Fără fundal', 'Ask Lapin…': 'Întreabă Lapin…',
+  'Own image (3D, exports)': 'Imagine proprie (3D, exporturi)', 'Membrane (a dashed line, not a band)': 'Membrană (linie întreruptă, nu bandă)', 'Look': 'Aspect',
+  'from the name': 'după nume', 'From the name': 'După nume', 'none (default)': 'niciuna (implicit)', 'Cut (section)': 'Secționat (secțiune)', 'Cut (plan)': 'Secționat (plan)',
+  'guessed': 'ghicită', 'as the faces (brick: its holes)': 'ca fețele (cărămidă: golurile ei)', 'as the ends': 'ca capetele',
 };
 
 /** Phrases with a number or a name in them. */
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(\d+) elements?$/, (m) => `${m[1]} elemente`],
-  [/^Plan · (.+)$/, (m) => `Plan · ${m[1]}`],
+  [/^Underlay: (.+)$/, (m) => `Fundal: ${m[1]}`],
   [/^(\d+) to check$/, (m) => `${m[1]} de verificat`],
   [/^Plan · (.+)$/, (m) => `Plan · ${m[1]}`],
   [/^(\d+) line edit\(s\) lost their edge · clean$/, (m) => `${m[1]} editări de linii și-au pierdut muchia · curăță`],

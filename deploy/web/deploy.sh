@@ -51,6 +51,6 @@ if [[ "${SKIP_DOCS:-0}" != "1" ]]; then
   ssh "${SERVER}" "mkdir -p ${REMOTE_DIR}/www/docs"
   # The pictures first, the pages last; pictures no page shows any more go.
   rsync -az --delete --exclude '*.html' "${DOCS}/" "${SERVER}:${REMOTE_DIR}/www/docs/"
-  rsync -az "${DOCS}/"*.html "${SERVER}:${REMOTE_DIR}/www/docs/"
+  rsync -az --include '*/' --include '*.html' --exclude '*' "${DOCS}/" "${SERVER}:${REMOTE_DIR}/www/docs/"
   echo "✓ https://lapin.ciuntucbimstudio.ro/docs/"
 fi

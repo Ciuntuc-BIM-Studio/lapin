@@ -8,8 +8,11 @@
 //   summary: One sentence for the list of pages and the search.
 //   ---
 // A picture is written ![What it shows](shots/<name>.webp); the scenes take it.
+// English pages are docs/user/*.md (→ build/user-docs), Romanian ones
+// docs/user/ro/*.md (→ build/user-docs/ro, their pictures from shots/ro); a
+// page with the same name in the other language is linked from the header.
 import { execSync } from 'node:child_process';
-import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Marked } from 'marked';
 
@@ -34,9 +37,27 @@ function parse(file) {
   return { ...meta, order: Number(meta.order ?? 999), body: text.slice(m[0].length) };
 }
 
-export function render(root, out) {
-  const src = join(root, 'docs/user');
-  const shotsDir = join(out, 'shots');
+/** The guide's own words, in each language. */
+const WORDS = {
+  en: { guide: 'Lapin user guide', brand: 'user guide', eyebrow: 'User guide', search: 'Search the guide', theme: 'Light or dark', open: 'Open Lapin', pages: 'Pages', onPage: 'On this page', prev: 'Previous', next: 'Next', none: 'Nothing found. Try Ask Me in the app.', other: 'Română', otherTitle: 'Ghidul în română',
+    footer: (date, commit) => `Pictures taken from Lapin itself on ${date}${commit ? ` (build ${commit})` : ''}. Something missing or wrong? Ask in the app: <b>Ask Me</b>, or <b>?</b> → Report an issue.` },
+  ro: { guide: 'Ghidul utilizatorului Lapin', brand: 'ghidul utilizatorului', eyebrow: 'Ghidul utilizatorului', search: 'Caută în ghid', theme: 'Luminos sau întunecat', open: 'Deschide Lapin', pages: 'Pagini', onPage: 'Pe această pagină', prev: 'Înapoi', next: 'Înainte', none: 'Nimic găsit. Întreabă Ask Me în aplicație.', other: 'English', otherTitle: 'The guide in English',
+    footer: (date, commit) => `Imagini luate din Lapin pe ${date.split('-').reverse().join('.')}${commit ? ` (build ${commit})` : ''}. Lipsește ceva sau e greșit? Întreabă în aplicație: <b>Ask Me</b>, sau <b>?</b> → Raportează o problemă.` },
+};
+
+export function render(root, out, lang = 'en') {
+  const W = WORDS[lang];
+  const sub = lang === 'en' ? '' : lang;
+  const src = join(root, 'docs/user', sub);
+  const otherSrc = join(root, 'docs/user', lang === 'en' ? 'ro' : '');
+  const shotsDir = join(out, 'shots', sub);
+  // Where this language's pages point to the shared files and to the other language.
+  const up = sub ? '../' : '';
+  const shotsHref = `${up}shots/${sub ? `${sub}/` : ''}`;
+  const otherHref = lang === 'en' ? 'ro/' : '../';
+  if (!existsSync(src)) return { pages: 0, missing: [], unused: [] };
+  out = join(out, sub);
+  mkdirSync(out, { recursive: true });
   const pages = readdirSync(src).filter((f) => f.endsWith('.md')).map((f) => ({ file: f, slug: f.replace(/\.md$/, ''), ...parse(join(src, f)) }))
     .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
   const used = new Set();
@@ -59,13 +80,14 @@ export function render(root, out) {
         },
         image({ href, text }) {
           const name = href.replace(/^shots\//, '');
+          const src = shotsHref + name;
           used.add(name);
           const file = join(shotsDir, name);
           if (!existsSync(file)) { missing.push(`${page.file}: ${href}`); return ''; }
           const [w, h] = webpSize(file) ?? [];
           // The pictures are taken at twice the screen's density: shown at half their pixels.
           const size = w ? ` width="${Math.round(w / 2)}" height="${Math.round(h / 2)}"` : '';
-          return `<figure><a href="${esc(href)}" target="_blank" rel="noopener"><img src="${esc(href)}" alt="${esc(text)}"${size} loading="lazy" decoding="async"></a><figcaption>${esc(text)}</figcaption></figure>`;
+          return `<figure><a href="${esc(src)}" target="_blank" rel="noopener"><img src="${esc(src)}" alt="${esc(text)}"${size} loading="lazy" decoding="async"></a><figcaption>${esc(text)}</figcaption></figure>`;
         },
         link({ href, tokens }) {
           const inner = this.parser.parseInline(tokens);
@@ -86,57 +108,59 @@ export function render(root, out) {
     const i = pages.indexOf(page);
     const prev = pages[i - 1], next = pages[i + 1];
     const nav = pages.map((p) => `<li><a href="${p.slug}.html"${p === page ? ' aria-current="page"' : ''}>${esc(p.title)}</a></li>`).join('');
-    const onPage = toc.length > 1 ? `<nav class="toc" aria-label="On this page"><p class="eyebrow">On this page</p><ul>${toc.map((h) => `<li><a href="#${h.id}">${h.html}</a></li>`).join('')}</ul></nav>` : '<div></div>';
-    writeFileSync(join(out, `${page.slug}.html`), template({ page, article, nav, onPage, prev, next, date, commit }));
+    const onPage = toc.length > 1 ? `<nav class="toc" aria-label="${W.onPage}"><p class="eyebrow">${W.onPage}</p><ul>${toc.map((h) => `<li><a href="#${h.id}">${h.html}</a></li>`).join('')}</ul></nav>` : '<div></div>';
+    const other = existsSync(join(otherSrc, page.file)) ? `${otherHref}${page.slug}.html` : null;
+    writeFileSync(join(out, `${page.slug}.html`), template({ page, article, nav, onPage, prev, next, date, commit, lang, W, up, other }));
   }
   writeFileSync(join(out, 'search.json'), JSON.stringify(search));
-  writeFileSync(join(out, 'guide.css'), CSS);
-  writeFileSync(join(out, 'guide.js'), JS);
+  writeFileSync(join(out, up || '.', 'guide.css'), CSS);
+  writeFileSync(join(out, up || '.', 'guide.js'), JS);
   const taken = existsSync(shotsDir) ? readdirSync(shotsDir).filter((f) => f.endsWith('.webp')) : [];
   return { pages: pages.length, missing, unused: taken.filter((f) => !used.has(f)) };
 }
 
-function template({ page, article, nav, onPage, prev, next, date, commit }) {
-  const title = page.slug === 'index' ? 'Lapin user guide' : `${page.title} · Lapin user guide`;
+function template({ page, article, nav, onPage, prev, next, date, commit, lang, W, up, other }) {
+  const title = page.slug === 'index' ? W.guide : `${page.title} · ${W.guide}`;
   return `<!doctype html>
-<html lang="en">
+<html lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(page.summary ?? '')}">
 <link rel="icon" href="/web/favicon.png">
-<link rel="stylesheet" href="guide.css">
+<link rel="stylesheet" href="${up}guide.css">${other ? `\n<link rel="alternate" hreflang="${lang === 'en' ? 'ro' : 'en'}" href="${other}">` : ''}
 <script>try { const t = localStorage.getItem('lapin-guide-theme'); if (t) document.documentElement.dataset.theme = t; } catch {}</script>
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="index.html">Lapin <span>user guide</span></a>
+  <a class="brand" href="index.html">Lapin <span>${W.brand}</span></a>
   <div class="search">
-    <input type="search" id="q" placeholder="Search the guide" aria-label="Search the guide" autocomplete="off">
-    <ul id="hits" hidden></ul>
+    <input type="search" id="q" placeholder="${W.search}" aria-label="${W.search}" autocomplete="off">
+    <ul id="hits" hidden data-none="${esc(W.none)}"></ul>
   </div>
-  <button type="button" class="theme" id="theme" title="Light or dark" aria-label="Light or dark">◐</button>
-  <a class="open" href="/web/">Open Lapin</a>
+  ${other ? `<a class="lang" href="${other}" hreflang="${lang === 'en' ? 'ro' : 'en'}" title="${W.otherTitle}">${W.other}</a>` : ''}
+  <button type="button" class="theme" id="theme" title="${W.theme}" aria-label="${W.theme}">◐</button>
+  <a class="open" href="/web/">${W.open}</a>
 </header>
 <div class="layout">
-  <nav class="pages" aria-label="Pages">
-    <details open><summary>Pages</summary><ol>${nav}</ol></details>
+  <nav class="pages" aria-label="${W.pages}">
+    <details open><summary>${W.pages}</summary><ol>${nav}</ol></details>
   </nav>
   <main>
     <article>
-      ${page.slug === 'index' ? '' : `<p class="eyebrow">User guide</p><h1>${esc(page.title)}</h1>${page.summary ? `<p class="lead">${esc(page.summary)}</p>` : ''}`}
+      ${page.slug === 'index' ? '' : `<p class="eyebrow">${W.eyebrow}</p><h1>${esc(page.title)}</h1>${page.summary ? `<p class="lead">${esc(page.summary)}</p>` : ''}`}
       ${article}
     </article>
     <nav class="pager">
-      ${prev ? `<a class="prev" href="${prev.slug}.html"><span class="eyebrow">Previous</span>${esc(prev.title)}</a>` : '<span></span>'}
-      ${next ? `<a class="next" href="${next.slug}.html"><span class="eyebrow">Next</span>${esc(next.title)}</a>` : '<span></span>'}
+      ${prev ? `<a class="prev" href="${prev.slug}.html"><span class="eyebrow">${W.prev}</span>${esc(prev.title)}</a>` : '<span></span>'}
+      ${next ? `<a class="next" href="${next.slug}.html"><span class="eyebrow">${W.next}</span>${esc(next.title)}</a>` : '<span></span>'}
     </nav>
-    <footer>Pictures taken from Lapin itself on ${date}${commit ? ` (build ${commit})` : ''}. Something missing or wrong? Ask in the app: <b>Ask Me</b>, or <b>?</b> → Report an issue.</footer>
+    <footer>${W.footer(date, commit)}</footer>
   </main>
   ${onPage}
 </div>
-<script src="guide.js" defer></script>
+<script src="${up}guide.js" defer></script>
 </body>
 </html>
 `;
@@ -180,6 +204,8 @@ code { font: 0.9em var(--mono); background: var(--wash); padding: 1px 5px; borde
 #hits small { display: block; color: var(--muted); }
 #hits .none { padding: 8px 12px; color: var(--muted); font-size: 14px; }
 .theme { width: 34px; height: 34px; border: 1px solid var(--rule-strong); border-radius: 4px; background: none; color: var(--ink); cursor: pointer; font-size: 16px; }
+.lang { padding: 6px 10px; border: 1px solid var(--rule-strong); border-radius: 4px; color: var(--ink); font-size: 13px; text-decoration: none; white-space: nowrap; }
+.lang:hover { border-color: var(--accent); color: var(--accent); }
 .open { padding: 7px 14px; border-radius: 4px; background: var(--accent); color: #fff; font-weight: 600; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none; white-space: nowrap; }
 
 .layout { display: grid; grid-template-columns: 240px minmax(0, 760px) 220px; gap: 48px; justify-content: center; padding: 0 24px; }
@@ -282,7 +308,7 @@ const JS = `(() => {
     }
     results.sort((a, b) => b.score - a.score);
     at = -1;
-    hits.innerHTML = results.length ? results.slice(0, 8).map((r) => '<li><a href="' + r.href + '">' + esc(r.title) + '<small>' + esc(r.summary) + '</small></a></li>').join('') : '<li class="none">Nothing found. Try Ask Me in the app.</li>';
+    hits.innerHTML = results.length ? results.slice(0, 8).map((r) => '<li><a href="' + r.href + '">' + esc(r.title) + '<small>' + esc(r.summary) + '</small></a></li>').join('') : '<li class="none">' + esc(hits.dataset.none) + '</li>';
     hits.hidden = false;
   };
   q.addEventListener('input', show);

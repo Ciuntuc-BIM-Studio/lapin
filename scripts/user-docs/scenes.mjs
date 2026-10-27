@@ -311,7 +311,7 @@ export const scenes = [
       await t.fresh();
       await t.button('Ask Me', { exact: true });
       const input = t.page.getByRole('textbox', { name: 'Your question' });
-      await input.fill('how do I copy a wall');
+      await input.fill(t.lang === 'ro' ? 'cum copiez un perete' : 'how do I copy a wall');
       await input.press('Enter');
       await t.wait(400);
       t.expect(await t.page.getByText('How do I copy a wall?').count() > 0, 'Ask Lapin answers how to copy a wall');

@@ -4,14 +4,17 @@
 // scenes (scenes.mjs) that drive the real app the way a user does, in Chrome,
 // and check what they see on the way. A scene that no longer finds its button
 // or its result fails the run: the guide never shows an interface that is gone.
+// The guide is in English (docs/user) and Romanian (docs/user/ro): each scene
+// runs once per language, the pictures taken with the interface in it.
 //
 //   pnpm docs:user                 the engine and the UI started for the run, every scene, then the pages → build/user-docs
 //   pnpm docs:user --only walls    the scenes whose id starts with "walls" (the other pictures stay as they were)
+//   pnpm docs:user --lang ro       one language's pictures (en or ro; the other's stay as they were)
 //   pnpm docs:user --pages         the pages alone, from the pictures already taken
 //
 // CHROME: the browser to drive (default: the installed Google Chrome).
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -26,15 +29,26 @@ const out = join(root, 'build', 'user-docs');
 const shots = join(out, 'shots');
 const args = process.argv.slice(2);
 const only = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
+const LANGS = ['en', 'ro'];
+const langs = args.includes('--lang') ? [args[args.indexOf('--lang') + 1]] : LANGS;
+if (!langs.every((l) => LANGS.includes(l))) { console.error(`✗ --lang: one of ${LANGS.join(', ')}`); process.exit(1); }
+/** A language's pictures: shots/ for English, shots/ro/ for Romanian. */
+const shotsOf = (lang) => (lang === 'en' ? shots : join(shots, lang));
 // Every scene again: the pictures start from nothing, so none outlives the scene that took it.
-if (!only && !args.includes('--pages')) rmSync(shots, { recursive: true, force: true });
-mkdirSync(shots, { recursive: true });
+for (const lang of langs) {
+  if (!only && !args.includes('--pages')) for (const f of existsSync(shotsOf(lang)) ? readdirSync(shotsOf(lang)) : []) if (f.endsWith('.webp')) rmSync(join(shotsOf(lang), f));
+  mkdirSync(shotsOf(lang), { recursive: true });
+}
 
 if (!args.includes('--pages')) await takePictures();
-const { pages, missing, unused } = render(root, out);
-for (const u of unused) console.warn(`▸ a picture no page shows: ${u}`);
-if (missing.length) { console.error(`✗ pictures the pages show but no scene takes: ${missing.join(', ')}`); process.exit(1); }
-console.log(`✓ ${pages} pages → build/user-docs`);
+let failed = false;
+for (const lang of LANGS) {
+  const { pages, missing, unused } = render(root, out, lang);
+  for (const u of unused) console.warn(`▸ ${lang}: a picture no page shows: ${u}`);
+  if (missing.length) { console.error(`✗ ${lang}: pictures the pages show but no scene takes: ${missing.join(', ')}`); failed = true; }
+  console.log(`✓ ${lang}: ${pages} pages → build/user-docs${lang === 'en' ? '' : `/${lang}`}`);
+}
+if (failed) process.exit(1);
 
 async function takePictures() {
   const free = () => new Promise((r) => { const s = createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => r(p)); }); });
@@ -68,8 +82,9 @@ async function takePictures() {
   const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' });
   const failures = [];
   try {
-    for (const scene of scenes.filter((s) => !only || s.id.startsWith(only))) {
+    for (const lang of langs) for (const scene of scenes.filter((s) => !only || s.id.startsWith(only))) {
       const t0 = Date.now();
+      const id = lang === 'en' ? scene.id : `${scene.id} (${lang})`;
       const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
       const errors = [];
       page.on('pageerror', (e) => errors.push(e.message));
@@ -77,15 +92,15 @@ async function takePictures() {
       // Reports a scene might open never leave the machine.
       await page.route('**/api/feedback**', (r) => r.abort());
       try {
-        const t = tools(page, `http://localhost:${uiPort}/`, shots, scene.id);
+        const t = tools(page, `http://localhost:${uiPort}/`, shotsOf(lang), lang);
         await scene.run(t);
         if (errors.length) throw new Error(`errors in the page: ${errors.join(' | ')}`);
-        console.log(`  ✓ ${scene.id} (${t.taken.join(', ')}) ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+        console.log(`  ✓ ${id} (${t.taken.join(', ')}) ${((Date.now() - t0) / 1000).toFixed(1)} s`);
       } catch (e) {
-        failures.push(scene.id);
-        const where = join(temp, `${scene.id}-failed.png`);
+        failures.push(id);
+        const where = join(temp, `${scene.id}-${lang}-failed.png`);
         await page.screenshot({ path: where }).catch(() => {});
-        console.error(`  ✗ ${scene.id}: ${e instanceof Error ? e.message : e}\n    the page as it was: ${where}`);
+        console.error(`  ✗ ${id}: ${e instanceof Error ? e.message : e}\n    the page as it was: ${where}`);
       } finally {
         await page.close();
       }
@@ -98,11 +113,41 @@ async function takePictures() {
   rmSync(temp, { recursive: true, force: true });
 }
 
-/** What a scene drives the app with. */
-function tools(page, url, folder, sceneId) {
+/**
+ * What a scene drives the app with. A scene always drives the interface in
+ * English (its buttons are found by their English names); for another
+ * language, the interface turns to it for each picture and back after.
+ */
+function tools(page, url, folder, lang) {
   const taken = [];
+  let marks = [];
+  const setLang = (l) => page.evaluate(async (l) => (await import('/src/i18n/index.ts')).setLang(l), l);
+  const unplace = () => page.evaluate(() => document.querySelectorAll('.user-docs-mark').forEach((d) => d.remove()));
+  async function place(list) {
+    for (const m of list) {
+      const b = await page.locator(m.of).first().boundingBox().catch(() => null);
+      if (!b) throw new Error(`nothing to mark for ${m.n} (${m.of})`);
+      const at = m.at ?? 'center';
+      const x = at === 'right' ? b.x + b.width - 18 : at === 'left' ? b.x + 18 : at === 'before' ? b.x - 16 : at === 'after' ? b.x + b.width + 18 : b.x + b.width / 2;
+      const y = at === 'below' ? b.y + b.height + 14 : at === 'bottom' ? b.y + b.height - 16 : at === 'center' || at === 'before' || at === 'after' ? b.y + b.height / 2 : b.y + Math.min(b.height / 2, 14);
+      await page.evaluate(([x, y, n]) => {
+        const d = document.createElement('div');
+        d.className = 'user-docs-mark';
+        d.textContent = String(n);
+        Object.assign(d.style, { position: 'fixed', left: `${x - 13}px`, top: `${y - 13}px`, width: '26px', height: '26px', borderRadius: '50%', background: '#b5532d', color: '#fff',
+          font: '700 14px/26px system-ui, sans-serif', textAlign: 'center', zIndex: '99999', boxShadow: '0 0 0 3px #fff, 0 2px 8px rgba(0,0,0,.35)', pointerEvents: 'none' });
+        document.body.appendChild(d);
+      }, [x, y, m.n]);
+    }
+  }
+  /** The interface in the picture's language, and the marks placed again over the words as wide as they now are. */
+  async function speak(l) {
+    await setLang(l);
+    await page.waitForTimeout(250);
+    if (marks.length) { await unplace(); await place(marks); }
+  }
   const t = {
-    page, taken,
+    page, taken, lang,
     /** A command of the engine, as the interface sends it. */
     cmd: (command, args = {}) => page.evaluate(async ([c, a]) => (await import('/src/engine/session.ts')).execute(c, a), [command, args]),
     /** A call of the engine's protocol (doc.snapshot, session.info…). */
@@ -158,24 +203,8 @@ function tools(page, url, folder, sceneId) {
      * [{ of: selector, n: 1, at: 'center' | 'right' | 'left' | 'below' | 'bottom' | 'before' | 'after' }]
      * (right and left: inside the element's top corner; below: under it; bottom: inside its bottom edge; before and after: left and right of it).
      */
-    async callouts(marks) {
-      for (const m of marks) {
-        const b = await page.locator(m.of).first().boundingBox().catch(() => null);
-        if (!b) throw new Error(`nothing to mark for ${m.n} (${m.of})`);
-        const at = m.at ?? 'center';
-        const x = at === 'right' ? b.x + b.width - 18 : at === 'left' ? b.x + 18 : at === 'before' ? b.x - 16 : at === 'after' ? b.x + b.width + 18 : b.x + b.width / 2;
-        const y = at === 'below' ? b.y + b.height + 14 : at === 'bottom' ? b.y + b.height - 16 : at === 'center' || at === 'before' || at === 'after' ? b.y + b.height / 2 : b.y + Math.min(b.height / 2, 14);
-        await page.evaluate(([x, y, n]) => {
-          const d = document.createElement('div');
-          d.className = 'user-docs-mark';
-          d.textContent = String(n);
-          Object.assign(d.style, { position: 'fixed', left: `${x - 13}px`, top: `${y - 13}px`, width: '26px', height: '26px', borderRadius: '50%', background: '#b5532d', color: '#fff',
-            font: '700 14px/26px system-ui, sans-serif', textAlign: 'center', zIndex: '99999', boxShadow: '0 0 0 3px #fff, 0 2px 8px rgba(0,0,0,.35)', pointerEvents: 'none' });
-          document.body.appendChild(d);
-        }, [x, y, m.n]);
-      }
-    },
-    async clearCallouts() { await page.evaluate(() => document.querySelectorAll('.user-docs-mark').forEach((d) => d.remove())); },
+    async callouts(list) { marks = list; await place(list); },
+    async clearCallouts() { marks = []; await unplace(); },
     /** Shows everything in the view on the screen. */
     async fit() { await page.locator('button[title^="Fit"]').first().click().catch(() => t.keys('z', 'e', 'Enter')); await t.wait(500); },
     /** Fails the scene when something is not as the guide says. */
@@ -185,32 +214,36 @@ function tools(page, url, folder, sceneId) {
      * (a CSS selector or a locator, with `pad` pixels around it).
      */
     async shot(name, opts = {}) {
-      await t.wait(opts.settle ?? 500);
-      let clip;
-      const target = typeof opts.of === 'string' ? page.locator(opts.of).first() : opts.of;
-      if (target) {
-        const b = await target.boundingBox();
-        if (!b) throw new Error(`nothing to photograph for ${name} (${opts.of})`);
-        const pad = opts.pad ?? 8;
-        const vp = page.viewportSize();
-        const x = Math.max(0, b.x - pad), y = Math.max(0, b.y - pad);
-        clip = { x, y, width: Math.min(vp.width - x, b.width + 2 * pad), height: Math.min(vp.height - y, b.height + 2 * pad, opts.maxHeight ?? Infinity) };
-      } else if (opts.clip) clip = opts.clip;
-      const png = await page.screenshot({ clip, animations: 'disabled', caret: 'hide' });
-      // WebP, made by the browser itself: a third of a PNG's size, the text as sharp.
-      const webp = await page.evaluate(async (b64) => {
-        const img = new Image(); img.src = `data:image/png;base64,${b64}`; await img.decode();
-        const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
-        c.getContext('2d').drawImage(img, 0, 0);
-        const blob = await new Promise((r) => c.toBlob(r, 'image/webp', 0.9));
-        const bytes = new Uint8Array(await blob.arrayBuffer());
-        let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-        return btoa(s);
-      }, png.toString('base64'));
-      writeFileSync(join(folder, `${name}.webp`), Buffer.from(webp, 'base64'));
-      taken.push(name);
+      if (lang !== 'en') await speak(lang);
+      try { await photograph(name, opts); } finally { if (lang !== 'en') await speak('en'); }
     },
   };
-  void sceneId;
+  /** The picture itself: the window, or a part of it. */
+  async function photograph(name, opts) {
+    await t.wait(opts.settle ?? 500);
+    let clip;
+    const target = typeof opts.of === 'string' ? page.locator(opts.of).first() : opts.of;
+    if (target) {
+      const b = await target.boundingBox();
+      if (!b) throw new Error(`nothing to photograph for ${name} (${opts.of})`);
+      const pad = opts.pad ?? 8;
+      const vp = page.viewportSize();
+      const x = Math.max(0, b.x - pad), y = Math.max(0, b.y - pad);
+      clip = { x, y, width: Math.min(vp.width - x, b.width + 2 * pad), height: Math.min(vp.height - y, b.height + 2 * pad, opts.maxHeight ?? Infinity) };
+    } else if (opts.clip) clip = opts.clip;
+    const png = await page.screenshot({ clip, animations: 'disabled', caret: 'hide' });
+    // WebP, made by the browser itself: a third of a PNG's size, the text as sharp.
+    const webp = await page.evaluate(async (b64) => {
+      const img = new Image(); img.src = `data:image/png;base64,${b64}`; await img.decode();
+      const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0);
+      const blob = await new Promise((r) => c.toBlob(r, 'image/webp', 0.9));
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return btoa(s);
+    }, png.toString('base64'));
+    writeFileSync(join(folder, `${name}.webp`), Buffer.from(webp, 'base64'));
+    taken.push(name);
+  }
   return t;
 }
