@@ -12,6 +12,8 @@ import { PaneContext } from './app/pane';
 import { openViewWindow } from './app/windows';
 import { useShortcuts } from './app/keys';
 import { useSession } from './engine/session';
+import { unitLabel, useStandards } from './engine/unitsStore';
+import { openStandards } from './modules/core/standardsTab';
 import { isDesktop, projectTitle } from './engine/files';
 import { backgrounds, dialog, modules, productInfo } from './platform/modules';
 import { ProjectBrowser } from './shell/ProjectBrowser';
@@ -26,6 +28,7 @@ import { SheetView } from './viewport/SheetView';
 import { ScheduleView } from './viewport/ScheduleView';
 
 function StatusBar() {
+  const units = useStandards((s) => s.units);
   const connected = useSession((s) => s.connected);
   const elements = useSession((s) => s.render.size);
   const doc = useSession((s) => s.doc);
@@ -34,7 +37,7 @@ function StatusBar() {
       <span className={connected ? 'ok' : 'off'}>{connected ? 'Engine connected' : 'Engine offline'}</span>
       <span>{projectTitle(doc?.path)}{doc?.dirty ? ' · unsaved' : ''}</span>
       <span>{elements} elements</span>
-      <span>Units: m</span>
+      <button type="button" className="status-link" title="The project's units: change them in Drafting standards → Project" onClick={() => openStandards('project')}>Units: {unitLabel(units) || units}</button>
       <span className="grow" />
       <span className="mods">{productInfo.name} · {modules.map((m) => m.id).join(' · ')}</span>
     </footer>

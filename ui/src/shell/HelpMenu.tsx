@@ -1,7 +1,7 @@
 /**
- * The help menu (?): report an issue (it reaches Ciuntuc BIM Studio with the
- * app's last errors attached), the community on Skool, the site, updates (the
- * desktop app), the version.
+ * The help menu (?): Ask Lapin (the FAQ, also on F1), report an issue (it
+ * reaches Ciuntuc BIM Studio with the app's last errors attached), the
+ * community on Skool, the site, updates (the desktop app), the version.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -12,6 +12,7 @@ import { RECENT, openLink, sendReport } from './support';
 import { isDesktop } from '../engine/files';
 import { checkForUpdates } from '../app/updates';
 import { setLang, useLang } from '../i18n';
+import { AskDialog } from '../help/AskDialog';
 
 
 /** An image shrunk to at most 1600 px on its longer side, as a JPEG data URL. */
@@ -25,10 +26,13 @@ async function shrink(file: File): Promise<string> {
   return canvas.toDataURL('image/jpeg', 0.85);
 }
 
-function ReportDialog({ onClose }: { onClose: () => void }) {
-  const [kind, setKind] = useState<'bug' | 'idea' | 'question'>('bug');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+/** What a report starts with: a question Ask Lapin could not answer comes in as one. */
+interface ReportStart { kind: 'bug' | 'idea' | 'question'; title: string; description: string }
+
+function ReportDialog({ onClose, start }: { onClose: () => void; start?: ReportStart }) {
+  const [kind, setKind] = useState<'bug' | 'idea' | 'question'>(start?.kind ?? 'bug');
+  const [title, setTitle] = useState(start?.title ?? '');
+  const [description, setDescription] = useState(start?.description ?? '');
   const [expected, setExpected] = useState('');
   const [email, setEmail] = useState('');
   const [screenshot, setScreenshot] = useState<string | null>(null);
@@ -79,8 +83,15 @@ function ReportDialog({ onClose }: { onClose: () => void }) {
 
 export function HelpMenu() {
   const [open, setOpen] = useState(false);
-  const [report, setReport] = useState(false);
+  const [report, setReport] = useState<ReportStart | true | false>(false);
+  const [asking, setAsking] = useState(false);
   const info = useSession((s) => s.info);
+  // F1: Ask Lapin, from anywhere.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'F1') { e.preventDefault(); setAsking(true); } };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -90,9 +101,10 @@ export function HelpMenu() {
   }, [open]);
   return (
     <div className="help-menu" ref={ref}>
-      <button type="button" className="icon" title="Help, report an issue, community" onClick={() => setOpen(!open)}><HelpCircle size={15} /></button>
+       <button type="button" className="icon" title="Help: ask Lapin (F1), report an issue, community" onClick={() => setOpen(!open)}><HelpCircle size={15} /></button>
       {open && (
         <div className="menu-pop" role="menu">
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); setAsking(true); }}>Ask Lapin…<kbd>F1</kbd></button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setReport(true); }}>Report an issue…</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('community'); }}>Community (Skool)</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('site'); }}>ciuntucbimstudio.ro</button>
@@ -103,7 +115,9 @@ export function HelpMenu() {
           <span className="muted small menu-note">Lapin {info?.engineVersion ?? ''}</span>
         </div>
       )}
-      {report && <ReportDialog onClose={() => setReport(false)} />}
+      {asking && <AskDialog onClose={() => setAsking(false)}
+        onReport={(q) => { setAsking(false); setReport(q ? { kind: 'question', title: q.length > 80 ? `${q.slice(0, 77)}…` : q, description: q } : true); }} />}
+      {report && <ReportDialog onClose={() => setReport(false)} start={report === true ? undefined : report} />}
     </div>
   );
 }

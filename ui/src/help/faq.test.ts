@@ -1,0 +1,36 @@
+import { describe, expect, it } from 'vitest';
+import { FAQ, ask, normalise } from './faq';
+
+const best = (q: string) => ask(q)[0]?.entry.id;
+
+describe('Ask Lapin', () => {
+  it('answers the testers\' reports in their own words', () => {
+    expect(best('Needs unit change option (m/Ft)')).toBe('units');
+    expect(best('import of dwg/pdf should be allowed')).toBe('import-dwg-pdf');
+    expect(best("Can't modify walls: I select a wall and try to drag a copy and nothing happens")).toBe('copy-move');
+    expect(best('Material Joints not working in aligned walls')).toBe('material-joints');
+    expect(best('Mansard roof looks odd, gable walls not cut')).toBe('roof-gables');
+  });
+
+  it('answers in Romanian, with or without diacritics', () => {
+    expect(best('cum schimb unitățile în picioare')).toBe('units');
+    expect(best('cum schimb unitatile')).toBe('units');
+    expect(best('copiere perete')).toBe('copy-move');
+    expect(best('cum fac o secțiune')).toBe('sections');
+    expect(best('vreau să export pdf')).toBe('sheets-pdf');
+  });
+
+  it('says nothing to what it does not know', () => {
+    expect(ask('weather tomorrow in Paris')).toEqual([]);
+    expect(ask('can I render photorealistic images with ray tracing?')).toEqual([]);
+    expect(ask('')).toEqual([]);
+  });
+
+  it('keeps its entries whole: ids unique, both languages, keywords already plain', () => {
+    expect(new Set(FAQ.map((e) => e.id)).size).toBe(FAQ.length);
+    for (const e of FAQ) {
+      expect(e.q.length && e.qRo.length && e.a && e.aRo).toBeTruthy();
+      for (const k of e.keywords) expect(normalise(k)).toBe(k);
+    }
+  });
+});

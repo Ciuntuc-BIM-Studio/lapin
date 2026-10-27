@@ -5,6 +5,7 @@
  * Each change is one engine command; Standard (and layer 0) always stay.
  */
 
+import { clearStandardsTab, standardsTab } from './standardsTab';
 import { useEffect, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -48,7 +49,8 @@ export function StandardsDialog() {
   const [book, setBook] = useState<Book | null>(null);
   const [tab, setTab] = useState<Tab>(TABS[0]);
   const [group, setGroup] = useState('');
-  const [project, setProject] = useState(false);
+  const [project, setProject] = useState(() => standardsTab() === 'project');
+  useEffect(() => { clearStandardsTab(); }, []);
   useEffect(() => { void query<Book>('standards.get').then((b) => b && setBook(b)); }, [nodes]);
   if (!book) return null;
   const set = (entry: Record<string, unknown>, extra: Record<string, unknown> = {}) => void execute('standards.set', { kind: tab.id, entry, ...extra });

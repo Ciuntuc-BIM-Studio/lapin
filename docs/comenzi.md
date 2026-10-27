@@ -36,6 +36,8 @@ deploy/feedback/reports.sh close 12        # îl închizi
 deploy/feedback/reports.sh reopen 12       # îl redeschizi
 ```
 
+Un raport care e de fapt „nu găsesc în interfață” se rezolvă și în **Ask Lapin** (Help → Ask Lapin, F1): asistentul de întrebări, clasic, fără AI. Răspunsurile stau în `ui/src/help/faq.ts`: întrebările cum le scrie un utilizator (engleză și română), cuvintele cheie (fără diacritice), răspunsul în ambele limbi, un buton spre locul din interfață și `source: "report #N"`. Testele din `faq.test.ts` verifică că întrebările testerilor, cu cuvintele lor, primesc răspunsul bun. O întrebare la care Ask Lapin nu știe răspunsul ajunge tot aici, ca raport de tip „question”.
+
 ## Publicarea pe web
 
 Publică ultimul commit de pe GitHub la https://lapin.ciuntucbimstudio.ro/web/.
