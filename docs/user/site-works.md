@@ -40,6 +40,18 @@ A **beam's formwork** is its bottom, on bearers and props, and its sides. Each s
 
 ![The formwork configurator](shots/formwork-configurator.webp)
 
+## Walls, columns, ring beams and footings
+
+**Formwork** and **Formwork on face** also work on walls, columns and footings:
+
+- **A wall** gets both faces and its free ends, less its doors and windows. A layered wall with a ring beam or a concrete band gets only those. In its properties you can choose both faces, the ring beams or the free ends.
+- **A column** gets its sides, up to the floor or beam cast on it.
+- **A footing** gets the sides of each step of a pad, or the sides of a strip's sole and stem.
+
+Whatever stands against a face is left out: another wall, a column. A floor cast on top stops the face at its soffit. The type sets the panels (their widths and heights), the ties through walls, the column clamps and the push-pull props.
+
+![The configurator for walls and columns](shots/wall-formwork-configurator.webp)
+
 ## Formwork plan
 
 **Formwork plan** makes a plan of the active storey in the Execution phase, cut a metre above the floor, **seen from below**: a ceiling plan. The props are cut. The formwork above them is drawn as you would see it looking up: the primary and secondary beams, the plywood and the edges. It lies the way the plan lies, so the two match.
@@ -56,5 +68,12 @@ Each scaffold and formwork lists its quantities in its properties:
 - the formwork's contact area by face, props by size, and beams by catalogue length.
 
 **Formwork schedule** and **Scaffold schedule** add their tables to the project browser, under Schedules, to put on a sheet or export.
+
+The formwork schedule closes with a line per type:
+
+- **the set**: the most formwork cast at once. That is per execution phase when the work is split into several, else per storey.
+- **what to buy**: the set, or the total divided by the type's reuses, whichever is more.
+
+Each type has its **article** for the bill of quantities: the code in the norms your estimate uses, and its text. You enter them in the configurator, and the schedule shows them on each line.
 
 In IFC they are written as assemblies (`IfcElementAssembly` FORMWORK and SCAFFOLD) with the status TEMPORARY. The pieces are members, plates and accessories. Each comes with its construction product resource, and the formwork is connected to the element it forms.

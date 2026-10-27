@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 
-export type FormworkKind = 'slab' | 'beam';
+export type FormworkKind = 'slab' | 'beam' | 'upright';
 
 interface SiteWorksPrefs { scaffoldTypeId: string | null; formworkTypeId: string | null; formworkKind: FormworkKind }
 

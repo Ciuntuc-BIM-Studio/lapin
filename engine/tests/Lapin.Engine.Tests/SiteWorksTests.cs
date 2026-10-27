@@ -257,6 +257,70 @@ public class SiteWorksTests
     }
 
     [Fact]
+    public void A_column_is_formed_up_to_the_floor_on_it_with_its_clamps_and_props()
+    {
+        var f = Site();
+        Floor(f);
+        var column = (string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = StoreyNamed(f, "Ground floor"), ["x"] = 3, ["y"] = 2 })!["id"]!;
+        var q = Q(f, Ids(f.Run("sitework.addFormwork", new JsonObject { ["hostIds"] = new JsonArray(column) }))[0]);
+        // 0,30 × 0,30 from ±0,00 up to the floor's soffit at +2,80.
+        Assert.Equal(4 * 0.30 * 2.80, q["ContactArea"], 6);
+        Assert.Equal(5, q["Clamps"]);                                                 // every 0,60 m over 2,80 m
+        Assert.Equal(2, q["Braces"]);
+        Assert.Equal(4 * 1 * 2, q["Panels"]);                                         // each side one 0,30 m panel, 2,70 + 0,60 high
+    }
+
+    [Fact]
+    public void A_concrete_wall_is_formed_both_faces_and_its_free_ends_less_its_openings_with_ties_through_it()
+    {
+        var f = Site();
+        var t = f.Type("RC 250", ("Reinforced concrete", 0.25, true));
+        var wall = f.Wall(0, 0, 6, 0, t);
+        f.Run("architecture.addDoor", new JsonObject { ["wallId"] = wall, ["along"] = 3 });
+        var q = Q(f, Ids(f.Run("sitework.addFormwork", new JsonObject { ["hostIds"] = new JsonArray(wall) }))[0]);
+        // Both faces 6 × 3 m, both ends 0,25 × 3 m, less the door through both faces.
+        Assert.True(q["OpeningsArea"] > 3);
+        Assert.Equal(2 * 6 * 3 + 2 * 0.25 * 3 - q["OpeningsArea"], q["ContactArea"], 6);
+        Assert.Equal(5 * 3, q["Ties"]);                                               // ceil(6 / 1,20) × ceil(3 / 1,35)
+        Assert.Equal(3, q["Braces"]);                                                 // a push-pull prop every 2,50 m along it
+
+        // Another wall standing against its end: that end is not formed.
+        f.Wall(6, -2, 6, 2, t);
+        var again = Q(f, Ids(f.Run("sitework.addFormwork", new JsonObject { ["hostIds"] = new JsonArray(wall) }))[0]);
+        Assert.True(again["ContactArea"] < q["ContactArea"] - 0.7);
+    }
+
+    [Fact]
+    public void A_masonry_walls_ring_beam_is_formed_on_its_own()
+    {
+        var f = Site();
+        var zones = new JsonArray(WallZones.Defaults("Brick").Select(z => (JsonNode)z.DeepClone()).ToArray());
+        var type = (string)f.Run("architecture.createWallType", new JsonObject
+        {
+            ["name"] = "Brick 300 with ring beam", ["zones"] = zones,
+            ["layers"] = new JsonArray(new JsonObject { ["material"] = "Brick", ["thickness"] = 0.30, ["core"] = true }),
+        })!["id"]!;
+        var wall = f.Wall(0, 0, 6, 0, type);
+        var q = Q(f, Ids(f.Run("sitework.addFormwork", new JsonObject { ["hostIds"] = new JsonArray(wall) }))[0]);
+        // The ring beam, 0,25 m high at the top of the 3 m wall, both sides.
+        Assert.Equal(2 * 6 * 0.25, q["ContactArea"], 6);
+        Assert.Equal(2 * 6 * 0.25, q["Area:Zones"], 6);
+        Assert.Equal(5, q["Ties"]);
+    }
+
+    [Fact]
+    public void Footings_are_formed_round_their_steps_and_along_their_sole_and_stem()
+    {
+        var f = Site();
+        var pad = (string)f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 20, ["y"] = 20 })!["id"]!;
+        // The default pad: 1,80 × 1,80 × 0,50 under 1,00 × 1,00 × 0,40.
+        Assert.Equal(4 * 1.8 * 0.5 + 4 * 1.0 * 0.4, Q(f, Ids(f.Run("sitework.addFormwork", new JsonObject { ["hostIds"] = new JsonArray(pad) }))[0])["ContactArea"], 6);
+        var strip = (string)f.Run("structure.addStripFooting", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 30, ["x2"] = 6, ["y2"] = 30 })!["id"]!;
+        // The default strip: a sole 0,40 m high, a stem 1,40 m high, 6 m long, both sides.
+        Assert.Equal(2 * 6 * 0.4 + 2 * 6 * 1.4, Q(f, Ids(f.Run("sitework.addFormwork", new JsonObject { ["hostIds"] = new JsonArray(strip) }))[0])["ContactArea"], 6);
+    }
+
+    [Fact]
     public void A_straight_scaffold_takes_the_fewest_bays_and_climbs_until_the_work_top_is_within_reach()
     {
         var f = Site();
@@ -376,8 +440,8 @@ public class SiteWorksTests
         f.Run("sitework.addScaffold", new JsonObject { ["points"] = new JsonArray(new JsonArray(0, -1), new JsonArray(6, -1)), ["height"] = 4 });
         var q = new Query(f);
         var formwork = new FormworkSchedule().Grid(q);
-        Assert.Equal(2, formwork.Rows.Count);                                        // the floor's, and the total
-        Assert.Equal("28", formwork.Rows[0][5]);
+        Assert.Equal(3, formwork.Rows.Count);                                        // the floor's, the total, its type's set
+        Assert.Equal("28", formwork.Rows[0][6]);
         var scaffold = new ScaffoldSchedule().Grid(q);
         Assert.Equal(2, scaffold.Rows.Count);
         Assert.NotNull(f.Run("architecture.createSchedule", new JsonObject { ["kind"] = "formwork" }));
@@ -395,6 +459,31 @@ public class SiteWorksTests
         Assert.Contains("'TEMPORARY'", text);
         Assert.Contains("IFCMEMBER(", text);                                          // the props and beams as members of the assembly
         Assert.Contains(fw, f.Model.Entities.Select(e => e.Id));
+    }
+
+    [Fact]
+    public void A_types_set_is_the_most_cast_at_once_and_what_to_buy_its_set_or_its_total_over_its_reuses()
+    {
+        var f = Site();
+        var a = Floor(f);
+        // A second floor, the same, a storey up.
+        f.Run("storey.create", new JsonObject { ["name"] = "Second floor", ["elevation"] = 6, ["height"] = 3 });
+        var type = f.Model.OfClass(IfcClass.SlabType).First().Id;
+        var b = (string)f.Run("architecture.addSlab", new JsonObject
+        {
+            ["storeyId"] = StoreyNamed(f, "Second floor"), ["typeId"] = type,
+            ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(6, 0), new JsonArray(6, 4), new JsonArray(0, 4)),
+        })!["id"]!;
+        var ids = Ids(f.Run("sitework.addFormwork", new JsonObject { ["hostIds"] = new JsonArray(a, b), ["faces"] = new JsonArray("Soffit") }));
+        var fwType = Formwork.TypeOf(f.Model, f.Model.Get(ids[0])!)!.Id;
+        f.Run("sitework.updateFormworkType", new JsonObject { ["id"] = fwType, ["spec"] = new JsonObject { ["article"] = "CB01", ["articleText"] = "Cofraje pentru plăci", ["reuses"] = 4 } });
+        var grid = new FormworkSchedule().Grid(new Query(f));
+        Assert.Equal("CB01 Cofraje pentru plăci", grid.Rows[0][3]);
+        var sum = grid.Rows[^1];
+        Assert.Equal("set by storey", sum[1]);
+        Assert.Equal("48", sum[6]);                                                    // 24 + 24
+        Assert.Equal("24", sum[8]);                                                    // one storey at a time
+        Assert.Equal("24", sum[9]);                                                    // the set, more than 48 / 4
     }
 
     sealed class Query(Fixture f) : IQueryContext

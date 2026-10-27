@@ -224,6 +224,16 @@ export const scenes = [
       t.expect(await t.page.locator('[aria-label="Formwork"]').count() > 0, 'the formwork configurator opens');
       await t.shot('formwork-configurator', { of: '.dialog', pad: 0 });
       await t.ui({ dialog: null });
+      // The walls' formwork (their ring beams when they have them, else both faces), and its configurator.
+      await t.ui({ selection: walls[0], selected: [walls[0], walls[1], walls[2], walls[3]] });
+      await t.tool('sitework.formwork');
+      await t.wait(800);
+      t.expect((await t.nodes()).filter((n) => n.type === 'LapinFormwork' && n.props.kind === 'upright').length === 4, 'formwork on the four walls');
+      await t.ui({ selection: null, selected: [] });
+      await t.tool('sitework.formworkTypes');
+      await t.button('Walls & columns', { exact: true });
+      await t.shot('wall-formwork-configurator', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
     },
   },
   {

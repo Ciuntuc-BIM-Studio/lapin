@@ -24,7 +24,7 @@ public static class Formwork
 {
     public const string Class = "LapinFormwork";
     public const string TypeClass = "LapinFormworkType";
-    public static readonly string[] Kinds = ["slab", "beam"];
+    public static readonly string[] Kinds = ["slab", "beam", "upright"];
     public static readonly string[] SlabSystems = ["beams", "panels"];
     public const string Color = "#d9b77a";
     const string TimberColor = "#c48a3a", PropColor = "#d0502a";
@@ -40,12 +40,21 @@ public static class Formwork
         new JsonObject { ["name"] = "Prop 2.5–4.1 m", ["min"] = 2.47, ["max"] = 4.10 },
         new JsonObject { ["name"] = "Prop 3.0–5.5 m", ["min"] = 3.04, ["max"] = 5.50 });
 
-    /// <summary>A generic system for the kind: timber beams and props under floors (spacings by the floor's thickness); a plywood box on bearers under beams.</summary>
-    public static JsonObject DefaultSpec(string kind) => kind == "beam"
+    /// <summary>
+    /// A generic system for the kind: timber beams and props under floors (spacings by the floor's thickness); a plywood box on bearers under beams;
+    /// framed panels with ties, column clamps and push-pull props for walls, columns, ring beams and footings.
+    /// </summary>
+    public static JsonObject DefaultSpec(string kind) => kind == "upright"
+        ? new()
+        {
+            ["panelWidths"] = new JsonArray(2.40, 1.20, 0.90, 0.75, 0.60, 0.45, 0.30), ["panelHeights"] = new JsonArray(2.70, 1.20, 0.60), ["panelThickness"] = 0.12,
+            ["tieAlong"] = 1.20, ["tieUp"] = 1.35, ["clampSpacing"] = 0.60, ["braceSpacing"] = 2.50, ["reuses"] = 20, ["article"] = "", ["articleText"] = "",
+        }
+        : kind == "beam"
         ? new()
         {
             ["plywood"] = 0.021, ["bearerHeight"] = 0.20, ["bearerWidth"] = 0.08, ["bearers"] = 2, ["propSpacing"] = 1.2,
-            ["yokes"] = new JsonArray(Y(0.5, 0.6), Y(0.8, 0.5), Y(1.2, 0.4), Y(2.0, 0.3)), ["chamfer"] = 0.02, ["props"] = PropsJson(), ["reuses"] = 4,
+            ["yokes"] = new JsonArray(Y(0.5, 0.6), Y(0.8, 0.5), Y(1.2, 0.4), Y(2.0, 0.3)), ["chamfer"] = 0.02, ["props"] = PropsJson(), ["reuses"] = 4, ["article"] = "", ["articleText"] = "",
         }
         : new()
         {
@@ -53,7 +62,7 @@ public static class Formwork
             ["lengths"] = new JsonArray(2.45, 2.65, 2.90, 3.30, 3.60, 3.90, 4.50, 4.90, 5.90),
             ["spacing"] = new JsonArray(R(0.20, 0.50, 2.00, 1.50), R(0.25, 0.50, 1.50, 1.25), R(0.30, 0.40, 1.50, 1.00), R(0.40, 0.40, 1.25, 0.90), R(0.50, 0.33, 1.00, 0.80)),
             ["edgeInset"] = 0.15, ["upstand"] = 0.05, ["props"] = PropsJson(),
-            ["panelLength"] = 1.50, ["panelWidth"] = 0.75, ["panelThickness"] = 0.12, ["reuses"] = 4,
+            ["panelLength"] = 1.50, ["panelWidth"] = 0.75, ["panelThickness"] = 0.12, ["reuses"] = 4, ["article"] = "", ["articleText"] = "",
         };
 
     static JsonObject Y(double depth, double spacing) => new() { ["depth"] = depth, ["spacing"] = spacing };
@@ -90,16 +99,39 @@ public static class Formwork
             Math.Max(0.3, Lay.Num(s, "propSpacing", 1.2)), yokes, Math.Max(0, Lay.Num(s, "chamfer", 0.02)), Props(s), Math.Max(1, (int)Lay.Num(s, "reuses", 4)));
     }
 
+    public sealed record UprightSpec(double[] PanelWidths, double[] PanelHeights, double PanelThickness, double TieAlong, double TieUp, double ClampSpacing, double BraceSpacing, int Reuses);
+
+    public static UprightSpec ReadUpright(JsonObject? o)
+    {
+        var s = Lay.Merge(DefaultSpec("upright"), o);
+        return new(Lay.Nums(s, "panelWidths", [2.4, 1.2, 0.9, 0.6, 0.3]), Lay.Nums(s, "panelHeights", [2.7, 1.2, 0.6]), Math.Max(0.01, Lay.Num(s, "panelThickness", 0.12)),
+            Math.Max(0.3, Lay.Num(s, "tieAlong", 1.2)), Math.Max(0.3, Lay.Num(s, "tieUp", 1.35)), Math.Max(0.2, Lay.Num(s, "clampSpacing", 0.6)), Math.Max(0.5, Lay.Num(s, "braceSpacing", 2.5)),
+            Math.Max(1, (int)Lay.Num(s, "reuses", 20)));
+    }
+
+    /// <summary>The deviz article a type's formwork is priced by: its code in the norms the estimate uses (CB…, as the user gives it) and its text.</summary>
+    public static (string Code, string Text) ArticleOf(IModelView m, Entity e) =>
+        TypeOf(m, e)?.Attrs["spec"] is JsonObject spec ? (Lay.Str(spec, "article", ""), Lay.Str(spec, "articleText", "")) : ("", "");
+
     public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
 
-    public static string KindOf(Entity e) => e.Str("kind") == "beam" ? "beam" : "slab";
+    public static string KindOf(Entity e) => e.Str("kind") is "beam" or "upright" ? e.Str("kind")! : "slab";
+
+    /// <summary>The kind of formwork a host takes: a floor's, a beam's, or the upright faces' of a wall, a column or a footing.</summary>
+    public static string? KindFor(string ifcClass) => ifcClass switch
+    {
+        IfcClass.Slab => "slab",
+        IfcClass.Beam => "beam",
+        IfcClass.Wall or IfcClass.Column or IfcClass.Footing => "upright",
+        _ => null,
+    };
 
     public static Entity? HostOf(IModelView m, Entity e) => e.Str("host") is { } id ? m.Get(id) : null;
 
     /// <summary>The faces a formwork forms: its own list, else all (a floor's soffit and free edges; a beam's bottom, sides and bottom edges).</summary>
     public static IReadOnlyList<string> FacesOf(Entity e) =>
         (e.Attrs["faces"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList() is { Count: > 0 } l ? l
-            : KindOf(e) == "beam" ? ["Bottom", "Side.Left", "Side.Right", "Edge.BottomLeft", "Edge.BottomRight"] : ["Soffit", "Edges"];
+            : KindOf(e) switch { "beam" => ["Bottom", "Side.Left", "Side.Right", "Edge.BottomLeft", "Edge.BottomRight"], "upright" => ["Auto"], _ => ["Soffit", "Edges"] };
 
     /// <summary>The shortest prop whose range takes a length; null when none does.</summary>
     public static PropSize? PropFor(IReadOnlyList<PropSize> sizes, double length) => sizes.FirstOrDefault(p => length >= p.Min - 1e-9 && length <= p.Max + 1e-9);
@@ -391,6 +423,140 @@ public static class Formwork
         return new(spec, axis, width, zb, zt, free, formBottom, sides, chamfer, props, yokes, problems);
     }
 
+    // ─────────────────────────────────────────────────────────── upright faces: walls, columns, ring beams, footings
+
+    /// <summary>A stretch of an upright face that is formed: along its bottom line from A to B, facing <see cref="Out"/>, from Z0 up to Z1.</summary>
+    public sealed record UprightPiece(string Role, Vec2 A, Vec2 B, Vec2 Out, double Z0, double Z1)
+    {
+        public double Length => (B - A).Length;
+        public double Area => Length * (Z1 - Z0);
+    }
+
+    public sealed record UprightLayout(UprightSpec Spec, string Host, IReadOnlyList<UprightPiece> Pieces, double HolesArea, int Panels, int Ties, int Clamps, int Braces, IReadOnlyList<string> Problems)
+    {
+        public double ContactArea => Math.Max(0, Pieces.Sum(p => p.Area) - HolesArea);
+    }
+
+    /// <summary>
+    /// The faces "Auto" stands for: a column's sides; a wall's cast zones (its
+    /// ring beams, concrete bands) when it has any, else both its faces and its
+    /// free ends; a pad's steps' sides; a strip's sole and stem sides.
+    /// </summary>
+    static List<ElementFace> Chosen(Entity host, IReadOnlyList<ElementFace> faces, IReadOnlyList<string> want, IModelView m, IServices services)
+    {
+        var upright = faces.Where(f => !f.IsEdge && Math.Abs(f.Normal.Normalized().Z) < 0.3).ToList();
+        if (!want.Contains("Auto") && !want.Contains("Sides") && !want.Contains("Zones") && !want.Contains("Ends")) return upright.Where(f => want.Contains(f.Role)).ToList();
+        var o = upright.Where(f => want.Contains(f.Role)).ToList();
+        bool Zone(ElementFace f) => f.Role.StartsWith("Zone[", StringComparison.Ordinal);
+        bool End(ElementFace f) => f.Role.StartsWith("End.", StringComparison.Ordinal);
+        if (host.Class == IfcClass.Wall)
+        {
+            var zones = upright.Where(Zone).ToList();
+            var ends = upright.Where(End).Where(f => FreeEnd(host, f, m, services)).ToList();
+            if (want.Contains("Zones") || want.Contains("Auto") && zones.Count > 0) o.AddRange(zones);
+            if (want.Contains("Sides") || want.Contains("Auto") && zones.Count == 0) o.AddRange(upright.Where(f => f.Role is "Face.Left" or "Face.Right"));
+            if (want.Contains("Ends") || want.Contains("Auto") && zones.Count == 0) o.AddRange(ends);
+        }
+        else if (want.Contains("Auto") || want.Contains("Sides")) o.AddRange(upright);
+        return o.DistinctBy(f => f.Role).ToList();
+    }
+
+    /// <summary>A wall's end is free (it needs a stop end) unless it stands against another wall.</summary>
+    static bool FreeEnd(Entity wall, ElementFace end, IModelView m, IServices services)
+    {
+        var probe = end.Centre.Xy + new Vec2(end.Normal.X, end.Normal.Y).Normalized() * 0.03;
+        return !m.OfClass(IfcClass.Wall).Where(w => w.Id != wall.Id)
+            .Any(w => ElementFaces.Find(services, w, m, "Top") is { } top && Polygon2.Contains(top.Outline.Select(p => p.Xy).ToList(), probe));
+    }
+
+    public static UprightLayout? UprightLayoutOf(Entity e, IModelView m, IServices services)
+    {
+        if (HostOf(m, e) is not { } host || KindFor(host.Class) != "upright") return null;
+        var faces = ElementFaces.Of(services, host, m);
+        if (faces.Count == 0) return null;
+        var spec = ReadUpright(TypeOf(m, e)?.Attrs["spec"] as JsonObject);
+        var chosen = Chosen(host, faces, FacesOf(e), m, services);
+        // What stands against a face (another wall, a column, a beam, a footing) is not formed; what is cast on top (a floor, a beam) stops it.
+        var bodies = Bodies(m, services, host.Id, IfcClass.Wall, IfcClass.Column, IfcClass.Beam, IfcClass.Footing, IfcClass.Slab);
+        var pieces = new List<UprightPiece>();
+        var holes = 0.0;
+        foreach (var f in chosen)
+        {
+            var bottom = f.Outline.OrderBy(p => p.Z).Take(2).Select(p => p.Xy).ToList();
+            var (a, b) = (bottom[0], bottom[1]);
+            var (z0, z1) = (f.Outline.Min(p => p.Z), f.Outline.Max(p => p.Z));
+            var outward = new Vec2(f.Normal.X, f.Normal.Y).Normalized();
+            var (outside, inside) = (outward * 0.02, outward * -0.02);
+            var cuts = new List<double> { 0, 1 };
+            var hits = new List<(double, double)>();
+            foreach (var body in bodies) Polygon2.InsideIntervals([body.Footprint], a + outside, b + outside, 0, 1, hits);
+            foreach (var body in bodies) Polygon2.InsideIntervals([body.Footprint], a + inside, b + inside, 0, 1, hits);
+            foreach (var (h0, h1) in hits) { cuts.Add(h0); cuts.Add(h1); }
+            cuts = cuts.Distinct().Order().ToList();
+            for (var i = 0; i + 1 < cuts.Count; i++)
+            {
+                var (t0, t1) = (cuts[i], cuts[i + 1]);
+                if (t1 - t0 < 1e-6) continue;
+                var mid = a + (b - a) * ((t0 + t1) / 2);
+                var top = z1;
+                var against = false;
+                foreach (var body in bodies)
+                {
+                    if (body.Top <= z0 + 1e-6 || body.Bottom >= z1 - 1e-6) continue;
+                    // Against it: beside the face, over the face's height.
+                    if (Polygon2.Contains(body.Footprint, mid + outside) && body.Bottom <= z0 + 0.01) { against = true; break; }
+                    // Cast on it: over the element itself, from part way up.
+                    if (Polygon2.Contains(body.Footprint, mid + inside) && body.Bottom > z0 + 0.01) top = Math.Min(top, body.Bottom);
+                }
+                if (against || top - z0 < 1e-6) continue;
+                var (pa, pb) = (a + (b - a) * t0, a + (b - a) * t1);
+                if (pieces.Count > 0 && pieces[^1].Role == f.Role && (pieces[^1].B - pa).Length < 1e-6 && Math.Abs(pieces[^1].Z1 - top) < 1e-6)
+                    pieces[^1] = pieces[^1] with { B = pb };
+                else pieces.Add(new(f.Role, pa, pb, outward, z0, top));
+            }
+            foreach (var h in f.Holes ?? [])
+            {
+                var (hz0, hz1) = (h.Min(p => p.Z), h.Max(p => p.Z));
+                var top = pieces.Where(p => p.Role == f.Role).Select(p => p.Z1).DefaultIfEmpty(z1).Max();
+                var w = h.Select(p => p.Xy).ToList();
+                var width = w.SelectMany(p => w.Select(q => (q - p).Length)).Max();
+                holes += width * Math.Max(0, Math.Min(hz1, top) - hz0);
+            }
+        }
+        var panels = pieces.Sum(p => Lay.Cover(p.Length, spec.PanelWidths).Count * Lay.Cover(p.Z1 - p.Z0, spec.PanelHeights).Count);
+        int ties = 0, clamps = 0, braces = 0;
+        if (host.Class == IfcClass.Wall)
+        {
+            // Ties through the wall: on one face's pieces, a grid of the tie spacings; push-pull props along that face.
+            foreach (var p in pieces.Where(p => p.Role.EndsWith(".Left", StringComparison.Ordinal)))
+            {
+                ties += (int)Math.Ceiling(p.Length / spec.TieAlong - 1e-9) * (int)Math.Ceiling((p.Z1 - p.Z0) / spec.TieUp - 1e-9);
+                if (!p.Role.StartsWith("Zone[", StringComparison.Ordinal)) braces += Math.Max(1, (int)Math.Ceiling(p.Length / spec.BraceSpacing - 1e-9));
+            }
+        }
+        else if (host.Class == IfcClass.Column && pieces.Count > 0)
+        {
+            clamps = (int)Math.Ceiling(pieces.Max(p => p.Z1 - p.Z0) / spec.ClampSpacing - 1e-9);
+            braces = 2;
+        }
+        return new(spec, host.Class, pieces, holes, panels, ties, clamps, braces, []);
+    }
+
+    static ElementGeometry UprightGeometry(UprightLayout l)
+    {
+        var parts = new Parts();
+        var plan = new List<PlanItem>();
+        var t = l.Spec.PanelThickness;
+        foreach (var p in l.Pieces)
+        {
+            var o = p.Out * t;
+            var fp = Polygon2.EnsureCcw([p.A, p.B, p.B + o, p.A + o]).ToArray();
+            parts.Add("panels", "Panels", Color, Prism.ExtrudeFootprint(fp, p.Z0, p.Z1 - p.Z0));
+            plan.Add(new("outline", true, fp));
+        }
+        return new ElementGeometry(parts.Build(), plan, null, l.Problems.Count > 0 ? l.Problems : null);
+    }
+
     // ─────────────────────────────────────────────────────────── geometry and quantities
 
     static readonly ConditionalWeakTable<ElementGeometry, object> Built = new();
@@ -400,7 +566,13 @@ public static class Formwork
         if (HostOf(m, e) == null) return new ElementGeometry([], Diagnostics: ["The element this formwork was on is gone."]);
         ElementGeometry g;
         object layout;
-        if (KindOf(e) == "beam")
+        if (KindOf(e) == "upright")
+        {
+            if (UprightLayoutOf(e, m, services) is not { } u) return new ElementGeometry([], Diagnostics: ["The element has no upright faces to form."]);
+            if (u.Pieces.Count == 0) return new ElementGeometry([], Diagnostics: ["Nothing of the faces chosen is left to form: they stand against other elements."]);
+            (g, layout) = (UprightGeometry(u), u);
+        }
+        else if (KindOf(e) == "beam")
         {
             if (BeamLayoutOf(e, m, services) is not { } b) return new ElementGeometry([], Diagnostics: ["The beam has no faces to form."]);
             (g, layout) = (BeamGeometry(b), b);
@@ -542,6 +714,18 @@ public static class Formwork
             props = b.Props;
             reuses = b.Spec.Reuses;
         }
+        else if (layout is UprightLayout u)
+        {
+            q.AddRange([
+                new("ContactArea", u.ContactArea, "AREA", "Contact area"), new("OpeningsArea", u.HolesArea, "AREA", "Openings left out"),
+                new("Panels", u.Panels, "COUNT"), new("Ties", u.Ties, "COUNT"), new("Clamps", u.Clamps, "COUNT", "Column clamps"), new("Braces", u.Braces, "COUNT", "Push-pull props"),
+            ]);
+            foreach (var grp in u.Pieces.GroupBy(p => p.Role.Split('.')[0].StartsWith("Zone[", StringComparison.Ordinal) ? "Zones" : p.Role.Split('.', '[')[0]))
+                q.Add(new($"Area:{grp.Key}", grp.Sum(p => p.Area), "AREA", grp.Key));
+            q.Add(new("Reuses", u.Spec.Reuses, "COUNT", "Reuses of the type"));
+            yield return new QuantitySet("Lapin_FormworkQuantities", q);
+            yield break;
+        }
         else yield break;
         q.Add(new("Props", props.Count, "COUNT"));
         foreach (var grp in props.GroupBy(p => p.Size?.Name ?? "—").OrderBy(x => x.Key))
@@ -553,6 +737,21 @@ public static class Formwork
     /// <summary>The configurator's section: the layers under a floor of the thickness given (with the spacings used), or the box around a beam of the section given.</summary>
     public static JsonObject Preview(string kind, JsonObject? spec, double thickness, double width, double height, double depth)
     {
+        if (kind == "upright")
+        {
+            var u = ReadUpright(spec);
+            // A wall of the length given (width) and the height given, both faces.
+            var len = Math.Max(0.3, width);
+            var across = Lay.Cover(len, u.PanelWidths);
+            var up = Lay.Cover(height, u.PanelHeights);
+            return new JsonObject
+            {
+                ["across"] = new JsonArray(across.Select(x => (JsonNode)x).ToArray()), ["up"] = new JsonArray(up.Select(x => (JsonNode)x).ToArray()),
+                ["panels"] = 2 * across.Count * up.Count,
+                ["ties"] = (int)Math.Ceiling(len / u.TieAlong - 1e-9) * (int)Math.Ceiling(height / u.TieUp - 1e-9),
+                ["clamps"] = (int)Math.Ceiling(height / u.ClampSpacing - 1e-9), ["area"] = Math.Round(2 * len * height, 3),
+            };
+        }
         if (kind == "beam")
         {
             var b = ReadBeam(spec);

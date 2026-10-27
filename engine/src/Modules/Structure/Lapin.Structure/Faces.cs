@@ -13,12 +13,13 @@ namespace Lapin.Structure;
 /// </summary>
 public sealed class StructureFaces : IElementFaces
 {
-    public bool Covers(string ifcClass) => ifcClass is IfcClass.Beam or IfcClass.Column;
+    public bool Covers(string ifcClass) => ifcClass is IfcClass.Beam or IfcClass.Column or IfcClass.Footing;
 
     public IReadOnlyList<ElementFace> FacesOf(Entity e, IModelView m) => e.Class switch
     {
         IfcClass.Beam => Beam(e, m),
         IfcClass.Column => Column(e, m),
+        IfcClass.Footing => Footing(e, m),
         _ => [],
     };
 
@@ -87,6 +88,52 @@ public sealed class StructureFaces : IElementFaces
             if ((b - a).Length < 1e-6) continue;
             faces.Add(ElementFaces.Upright($"Side[{i}]", $"Side {i + 1}", a, b, z0, z1, -(b - a).Normalized().Perp));
         }
+        return faces;
+    }
+
+    /// <summary>
+    /// A footing's faces. A pad: each step's sides (Step[k].Side[i]), the top
+    /// step's top, the bottom step's bottom. A straight strip: the sole's and
+    /// the stem's sides along the axis (Sole.Left/Right, Stem.Left/Right), the
+    /// stem's top, the sole's bottom.
+    /// </summary>
+    static List<ElementFace> Footing(Entity footing, IModelView m)
+    {
+        if (Place.TypeOf(m, footing.Id) is not { } type) return [];
+        var bottom = Place.Elevation(m, footing) + type.Num("bottom", -1.8);
+        var faces = new List<ElementFace>();
+        if (PadFootings.IsPad(type))
+        {
+            var z = bottom;
+            var steps = PadFootings.Steps(type);
+            for (var k = 0; k < steps.Count; k++)
+            {
+                var fp = Polygon2.EnsureCcw(Place.Placed(Section.Rectangle(steps[k].Length, steps[k].Width).Outline(), Place.Point(footing), footing.Num("rotation")));
+                if (k == 0) faces.Add(ElementFaces.Level("Bottom", "Bottom", fp, z, true));
+                for (var i = 0; i < fp.Count; i++)
+                {
+                    var (a, b) = (fp[i], fp[(i + 1) % fp.Count]);
+                    faces.Add(ElementFaces.Upright($"Step[{k}].Side[{i}]", $"Step {k + 1}, side {i + 1}", a, b, z, z + steps[k].Height, -(b - a).Normalized().Perp));
+                }
+                z += steps[k].Height;
+                if (k == steps.Count - 1) faces.Add(ElementFaces.Level("Top", "Top", fp, z, false));
+            }
+            return faces;
+        }
+        if (!StripFootings.IsStrip(type) || PathCurve.Of(footing).IsArc || StripFootings.Frame(footing, m) is not { } stem) return [];
+        var (s, e) = (Joins.Start(footing), Joins.End(footing));
+        var left = (e - s).Normalized().Perp;
+        var (fh, sh, w) = (type.Num("footingHeight", 0.4), type.Num("stemHeight", 1.4), type.Num("footingWidth", 0.6));
+        Vec2 P(Vec2 at, double y) => at + left * y;
+        faces.Add(ElementFaces.Level("Bottom", "Bottom", [P(s, -w / 2), P(e, -w / 2), P(e, w / 2), P(s, w / 2)], bottom, true));
+        faces.Add(ElementFaces.Upright("Sole.Left", "Sole, left", P(s, w / 2), P(e, w / 2), bottom, bottom + fh, left));
+        faces.Add(ElementFaces.Upright("Sole.Right", "Sole, right", P(s, -w / 2), P(e, -w / 2), bottom, bottom + fh, -left));
+        if (sh > 0)
+        {
+            faces.Add(ElementFaces.Upright("Stem.Left", "Stem, left", P(s, stem.YMax), P(e, stem.YMax), bottom + fh, bottom + fh + sh, left));
+            faces.Add(ElementFaces.Upright("Stem.Right", "Stem, right", P(s, stem.YMin), P(e, stem.YMin), bottom + fh, bottom + fh + sh, -left));
+        }
+        faces.Add(ElementFaces.Level("Top", "Top", [P(s, stem.YMin), P(e, stem.YMin), P(e, stem.YMax), P(s, stem.YMax)], bottom + fh + sh, false));
         return faces;
     }
 }

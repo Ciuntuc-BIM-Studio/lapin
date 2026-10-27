@@ -35,14 +35,15 @@ public sealed class SiteWorksModule : ILapinModule
         r.Catalog("scaffoldDefault", Scaffolds.DefaultSpec());
         r.Catalog("slabFormworkDefault", Formwork.DefaultSpec("slab"));
         r.Catalog("beamFormworkDefault", Formwork.DefaultSpec("beam"));
+        r.Catalog("uprightFormworkDefault", Formwork.DefaultSpec("upright"));
 
         // ------------------------------------------------------------ types
         r.Command("createScaffoldType", "New scaffold type", (ctx, a) =>
             new JsonObject { ["id"] = CreateType(ctx, Scaffolds.TypeClass, (string?)a["name"] ?? "Facade scaffold", null, a["spec"] as JsonObject).Id });
         r.Command("createFormworkType", "New formwork type", (ctx, a) =>
         {
-            var kind = Formwork.Kinds.Contains((string?)a["kind"]) ? (string)a["kind"]! : throw new CommandException("A formwork type is for floors (slab) or beams (beam).");
-            return new JsonObject { ["id"] = CreateType(ctx, Formwork.TypeClass, (string?)a["name"] ?? (kind == "beam" ? "Beam formwork" : "Floor formwork"), kind, a["spec"] as JsonObject).Id };
+            var kind = Formwork.Kinds.Contains((string?)a["kind"]) ? (string)a["kind"]! : throw new CommandException("A formwork type is for floors (slab), beams (beam) or walls, columns and footings (upright).");
+            return new JsonObject { ["id"] = CreateType(ctx, Formwork.TypeClass, (string?)a["name"] ?? KindName(kind), kind, a["spec"] as JsonObject).Id };
         });
         foreach (var (command, cls) in new[] { ("updateScaffoldType", Scaffolds.TypeClass), ("updateFormworkType", Formwork.TypeClass) })
             r.Command(command, "Change type", (ctx, a) =>
@@ -115,17 +116,17 @@ public sealed class SiteWorksModule : ILapinModule
         // On each host (a floor or a beam): all its formable faces, or those named; added to its formwork if it has one.
         r.Command("addFormwork", "Formwork", (ctx, a) =>
         {
-            var hosts = Ids(a, "hostIds").Select(id => ctx.Model.Get(id)).OfType<Entity>().Where(h => h.Class is IfcClass.Slab or IfcClass.Beam).ToList();
-            if (hosts.Count == 0) throw new CommandException("Select the floors or beams to form.");
+            var hosts = Ids(a, "hostIds").Select(id => ctx.Model.Get(id)).OfType<Entity>().Where(h => Formwork.KindFor(h.Class) != null).ToList();
+            if (hosts.Count == 0) throw new CommandException("Select the floors, beams, walls, columns or footings to form.");
             var faces = (a["faces"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList();
             var ids = new JsonArray();
             foreach (var h in hosts)
             {
-                var kind = h.Class == IfcClass.Beam ? "beam" : "slab";
+                var kind = Formwork.KindFor(h.Class)!;
                 if (faces != null && faces.Count > 0)
                 {
                     var known = ElementFaces.Of(ctx.Services, h, ctx.Model).Select(f => f.Role).ToHashSet();
-                    known.Add("Edges");
+                    known.UnionWith(kind == "upright" ? ["Auto", "Sides", "Zones", "Ends"] : ["Edges"]);
                     if (faces.FirstOrDefault(f => !known.Contains(f)) is { } bad) throw new CommandException($"{h.Name} has no face {bad}.");
                 }
                 var existing = ctx.Model.OfClass(Formwork.Class).FirstOrDefault(f => f.Str("host") == h.Id);
@@ -140,7 +141,7 @@ public sealed class SiteWorksModule : ILapinModule
                 }
                 var o = new JsonObject { ["host"] = h.Id, ["kind"] = kind, ["exportAs"] = "IfcElementAssembly", ["resource"] = "FORMWORK" };
                 if (faces is { Count: > 0 }) o["faces"] = new JsonArray(faces.Select(x => (JsonNode)x).ToArray());
-                var storey = StoreyUnder(ctx, h) ?? Spatial.StoreyOf(ctx.Model, h.Id)?.Id ?? Spatial.Storeys(ctx.Model).First().Id;
+                var storey = (kind == "upright" ? null : StoreyUnder(ctx, h)) ?? Spatial.StoreyOf(ctx.Model, h.Id)?.Id ?? Spatial.Storeys(ctx.Model).First().Id;
                 var e = Place(ctx, Formwork.Class, $"Formwork · {h.Name}", o, "FORMWORK", storey, Type(ctx, Formwork.TypeClass, kind, (string?)a["typeId"]));
                 ids.Add((JsonNode)e.Id);
             }
@@ -163,7 +164,7 @@ public sealed class SiteWorksModule : ILapinModule
             if ((string?)a["typeId"] is { } typeId)
             {
                 var t = Spatial.Require(ctx.Model, typeId, Formwork.TypeClass);
-                if (t.Str("kind") != Formwork.KindOf(e)) throw new CommandException($"{t.Name} is a type for {(t.Str("kind") == "beam" ? "beams" : "floors")}.");
+                if ((t.Str("kind") ?? "slab") != Formwork.KindOf(e)) throw new CommandException($"{t.Name} is a type for {KindWhat(t.Str("kind"))}.");
                 ctx.Relate(IfcClass.RelDefinesByType, t.Id, e.Id);
             }
             return null;
@@ -186,7 +187,7 @@ public sealed class SiteWorksModule : ILapinModule
 
         // ------------------------------------------------------------ configurators
         r.Query("sitework.scaffoldPreview", (q, a) => Scaffolds.Preview(a["spec"] as JsonObject, Json.Number(a["length"]) ?? 10, Json.Number(a["height"]) ?? 6));
-        r.Query("sitework.formworkPreview", (q, a) => Formwork.Preview((string?)a["kind"] == "beam" ? "beam" : "slab", a["spec"] as JsonObject,
+        r.Query("sitework.formworkPreview", (q, a) => Formwork.Preview((string?)a["kind"] is "beam" or "upright" ? (string)a["kind"]! : "slab", a["spec"] as JsonObject,
             Json.Number(a["thickness"]) ?? 0.2, Json.Number(a["width"]) ?? 0.3, Json.Number(a["height"]) ?? 2.8, Json.Number(a["depth"]) ?? 0.5));
     }
 
@@ -198,6 +199,9 @@ public sealed class SiteWorksModule : ILapinModule
         var bottom = faces.SelectMany(f => f.Outline).Min(p => p.Z);
         return Spatial.Storeys(ctx.Model).Where(s => s.Num("elevation") <= bottom - 0.01).MaxBy(s => s.Num("elevation"))?.Id;
     }
+
+    static string KindName(string kind) => kind switch { "beam" => "Beam formwork", "upright" => "Wall and column formwork", _ => "Floor formwork" };
+    static string KindWhat(string? kind) => kind switch { "beam" => "beams", "upright" => "walls, columns and footings", _ => "floors" };
 
     static bool Bool(JsonObject a, string key) => a[key] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
 
@@ -228,11 +232,11 @@ public sealed class SiteWorksModule : ILapinModule
         if (id != null)
         {
             var t = Spatial.Require(ctx.Model, id, cls);
-            if (kind != null && t.Str("kind") != kind) throw new CommandException($"{t.Name} is not a type for {(kind == "beam" ? "beams" : "floors")}.");
+            if (kind != null && (t.Str("kind") ?? "slab") != kind) throw new CommandException($"{t.Name} is not a type for {KindWhat(kind)}.");
             return t;
         }
         return ctx.Model.OfClass(cls).FirstOrDefault(t => kind == null || t.Str("kind") == kind)
-            ?? CreateType(ctx, cls, cls == Scaffolds.TypeClass ? "Facade scaffold (generic)" : kind == "beam" ? "Beam formwork (generic)" : "Floor formwork (generic)", kind, null);
+            ?? CreateType(ctx, cls, cls == Scaffolds.TypeClass ? "Facade scaffold (generic)" : $"{KindName(kind ?? "slab")} (generic)", kind, null);
     }
 
     /// <summary>A temporary element: on its storey, of its type, created and struck in the execution phase.</summary>
@@ -255,7 +259,14 @@ public sealed class SiteWorksModule : ILapinModule
     internal static string Q(IReadOnlyList<QuantitySet> sets, string name) => sets.SelectMany(s => s.Quantities).FirstOrDefault(q => q.Name == name) is { } q ? N(q.Value) : "";
 }
 
-/// <summary>The formwork schedule: each formwork with its host, its type, its contact areas and its props, and the totals.</summary>
+/// <summary>
+/// The formwork schedule: each formwork with its host, its type and deviz
+/// article, its contact areas and its props; then, per type, the total, the
+/// set it needs and what to buy. The set is the most cast at once: by
+/// execution phase when the formwork is spread over several, else by storey
+/// (the work going storey by storey); what to buy is that set, or the total
+/// over the type's reuses when that is more.
+/// </summary>
 public sealed class FormworkSchedule : IScheduleSource
 {
     public string Kind => "formwork";
@@ -264,21 +275,38 @@ public sealed class FormworkSchedule : IScheduleSource
     public ScheduleGrid Grid(IQueryContext q)
     {
         var rows = new List<IReadOnlyList<string>>();
-        double contact = 0, props = 0;
+        var all = new List<(Entity E, Entity? Type, double Contact)>();
+        double props = 0;
         foreach (var e in q.Model.OfClass(Formwork.Class).OrderBy(e => e.Name))
         {
-            var g = q.Geometry(e.Id);
-            var sets = Formwork.Quantities(e, g, q.Model).ToList();
-            var host = Formwork.HostOf(q.Model, e);
-            var beam = Formwork.KindOf(e) == "beam";
-            rows.Add([e.Name, host?.Name ?? "—", Formwork.TypeOf(q.Model, e)?.Name ?? "", SiteWorksModule.Q(sets, beam ? "BottomArea" : "SoffitArea"), SiteWorksModule.Q(sets, beam ? "SideArea" : "EdgeArea"),
-                SiteWorksModule.Q(sets, "ContactArea"), SiteWorksModule.Q(sets, "Props")]);
-            contact += sets.SelectMany(s => s.Quantities).Where(x => x.Name == "ContactArea").Sum(x => x.Value);
-            props += sets.SelectMany(s => s.Quantities).Where(x => x.Name == "Props").Sum(x => x.Value);
+            var sets = Formwork.Quantities(e, q.Geometry(e.Id), q.Model).ToList();
+            double Sum(string n) => sets.SelectMany(s => s.Quantities).Where(x => x.Name == n).Sum(x => x.Value);
+            var kind = Formwork.KindOf(e);
+            var type = Formwork.TypeOf(q.Model, e);
+            var (code, text) = Formwork.ArticleOf(q.Model, e);
+            var article = string.Join(" ", new[] { code, text }.Where(x => x.Length > 0));
+            var (first, second) = kind switch { "beam" => ("BottomArea", "SideArea"), "upright" => ("", "ContactArea"), _ => ("SoffitArea", "EdgeArea") };
+            rows.Add([e.Name, Formwork.HostOf(q.Model, e)?.Name ?? "—", type?.Name ?? "", article, first.Length > 0 ? SiteWorksModule.N(Sum(first)) : "", SiteWorksModule.N(Sum(second)),
+                SiteWorksModule.N(Sum("ContactArea")), SiteWorksModule.N(Sum("Props")), "", ""]);
+            all.Add((e, type, Sum("ContactArea")));
+            props += Sum("Props");
         }
-        if (rows.Count > 0) rows.Add(["Total", "", "", "", "", SiteWorksModule.N(contact), SiteWorksModule.N(props)]);
-        return new ScheduleGrid(Label, ["Formwork", "On", "Type", "Soffit / bottom (m²)", "Edges / sides (m²)", "Contact (m²)", "Props"], rows);
+        if (rows.Count == 0) return new ScheduleGrid(Label, Columns, rows);
+        rows.Add(["Total", "", "", "", "", "", SiteWorksModule.N(all.Sum(x => x.Contact)), SiteWorksModule.N(props), "", ""]);
+        foreach (var byType in all.GroupBy(x => x.Type?.Id ?? "").OrderBy(g => g.First().Type?.Name))
+        {
+            var type = byType.First().Type;
+            var total = byType.Sum(x => x.Contact);
+            var phases = byType.Select(x => x.E.Str("phaseCreated")).Distinct().Count();
+            var set = byType.GroupBy(x => phases > 1 ? x.E.Str("phaseCreated") ?? "" : Spatial.StoreyOf(q.Model, x.E.Id)?.Id ?? "").Max(g => g.Sum(x => x.Contact));
+            var reuses = Math.Max(1, (int)(Json.Number((type?.Attrs["spec"] as JsonObject)?["reuses"]) ?? (Formwork.DefaultSpec(type?.Str("kind") ?? "slab")["reuses"] is JsonValue r && r.TryGetValue<int>(out var n) ? n : 1)));
+            var buy = Math.Max(set, total / reuses);
+            rows.Add([$"Type: {type?.Name ?? "—"}", phases > 1 ? "set by phase" : "set by storey", type?.Name ?? "", "", "", "", SiteWorksModule.N(total), "", SiteWorksModule.N(set), SiteWorksModule.N(buy)]);
+        }
+        return new ScheduleGrid(Label, Columns, rows);
     }
+
+    static readonly string[] Columns = ["Formwork", "On", "Type", "Article", "Soffit / bottom (m²)", "Edges / sides (m²)", "Contact (m²)", "Props", "Set (m²)", "To buy (m²)"];
 }
 
 /// <summary>The scaffold schedule: each scaffold with its length, height, area, bays, lifts, decks and anchors, and the totals.</summary>

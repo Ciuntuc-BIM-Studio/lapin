@@ -7,8 +7,9 @@ namespace Lapin.Architecture;
 /// <summary>
 /// The named faces of floors and walls (<see cref="IElementFaces"/>): a floor's
 /// soffit, top and edges (one per side of its outline, in its order); a wall's
-/// left and right faces (seen along its axis; a curved wall's as curves along
-/// the arc at its base) and its top.
+/// left and right faces (seen along its axis, its openings as holes; a curved
+/// wall's as curves along the arc at its base), its top, its ends, and the
+/// faces of its cast zones (ring beams, concrete bands: Zone[key].Left/Right).
 /// </summary>
 public sealed class ArchitectureFaces : IElementFaces
 {
@@ -64,11 +65,28 @@ public sealed class ArchitectureFaces : IElementFaces
         var dir = (f.End - f.Start).Normalized();
         var left = dir.Perp;
         Vec2 P(Vec2 at, double y) => at + left * y;
-        return
-        [
-            ElementFaces.Upright("Face.Left", "Left face", P(f.Start, f.YMax), P(f.End, f.YMax), z0, z1, left),
-            ElementFaces.Upright("Face.Right", "Right face", P(f.Start, f.YMin), P(f.End, f.YMin), z0, z1, -left),
+        // The openings through it, as holes in both faces.
+        var holes = Openings.PlacedOn(m, wall.Id).Select(o => (A: f.Start + dir * (o.Along - o.Width / 2), B: f.Start + dir * (o.Along + o.Width / 2), Z0: z0 + o.Sill, Z1: z0 + o.Sill + o.Height)).ToList();
+        ElementFace Face(string role, string label, double y, Vec2 outward)
+        {
+            var face = ElementFaces.Upright(role, label, P(f.Start, y), P(f.End, y), z0, z1, outward);
+            return holes.Count == 0 ? face : face with { Holes = holes.Select(h => (IReadOnlyList<Vec3>)[P(h.A, y).At(h.Z0), P(h.B, y).At(h.Z0), P(h.B, y).At(h.Z1), P(h.A, y).At(h.Z1)]).ToList() };
+        }
+        var faces = new List<ElementFace>
+        {
+            Face("Face.Left", "Left face", f.YMax, left),
+            Face("Face.Right", "Right face", f.YMin, -left),
             ElementFaces.Level("Top", "Top", [P(f.Start, f.YMin), P(f.End, f.YMin), P(f.End, f.YMax), P(f.Start, f.YMax)], z1, false),
-        ];
+            ElementFaces.Upright("End.Start", "Start", P(f.Start, f.YMin), P(f.Start, f.YMax), z0, z1, -dir),
+            ElementFaces.Upright("End.End", "End", P(f.End, f.YMin), P(f.End, f.YMax), z0, z1, dir),
+        };
+        // The cast zones of a layered wall (ring beams, concrete bands): their faces, each side.
+        if (Walls.TypeOf(m, wall.Id) is { } type)
+            foreach (var band in WallZones.Bands(WallZones.Of(type), z1 - z0).Where(b => b.Zone.Role is "ringBeam" or "concrete"))
+            {
+                faces.Add(ElementFaces.Upright($"Zone[{band.Zone.Key}].Left", $"{band.Zone.Name}, left", P(f.Start, f.YMax), P(f.End, f.YMax), z0 + band.Z0, z0 + band.Z1, left));
+                faces.Add(ElementFaces.Upright($"Zone[{band.Zone.Key}].Right", $"{band.Zone.Name}, right", P(f.Start, f.YMin), P(f.End, f.YMin), z0 + band.Z0, z0 + band.Z1, -left));
+            }
+        return faces;
     }
 }

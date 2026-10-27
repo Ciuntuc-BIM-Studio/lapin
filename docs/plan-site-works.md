@@ -32,11 +32,19 @@ Deciziile S-1…S-5 confirmate de utilizator; ordinea cerută: schela, placa, gr
   - `IfcConstructionProductResource` prin `IfcRelAssignsToProduct`;
   - `IfcRelConnectsElements` între gazdă și cofraj.
 - **Teste**: `SiteWorksTests` (11). **Ghidul**: `docs/user/site-works.md` (și `ro/`), cu scena `site-works`.
-- **Rămase**:
-  - vederea de plafon propriu-zisă (planul de cofraj folosește banda de deasupra a planului);
-  - grinzile curbe;
-  - articolele de deviz legate de normele RO;
-  - S6.
+- **Rămase după prima zi**: toate făcute pe 27.10.2026, a doua tură (mai jos).
+
+### A doua tură (27.10.2026)
+
+- **Vederea de jos.** Orice plan e văzut de sus sau de jos (`look: "up"`, în proprietățile vederii și în View range): de jos, secțiunea și ce e deasupra ei până la marginea de sus a intervalului, ca linii văzute, întoarse ca să stea ca planul (convenția planului de plafon). Planul de cofraj e implicit văzut de jos; „Formwork plan from above” îl face văzut de sus, cu cofrajul întrerupt.
+- **Elemente curbe.** Grinzile curbe se cofrează de-a lungul arcului: axa poligonală (coarde de cel mult 5°), fețele laterale decalate în mitră, cea exterioară mai lungă cu w·θ, capetele la fețele de capăt. Pereții curbi au fețele ca linii de-a lungul arcului; schela îi urmează pe coarde de cel mult 3 m. Colțurile schelei se închid cu lățimea × tan(jumătate din unghi).
+- **S6: pereți, stâlpi, centuri, fundații** (tipul `upright`):
+  - **Fețele.** Pereții au golurile ca găuri în fețe, capetele lor și fețele zonelor turnate (`Zone[key].Left/Right`). Fundațiile au treptele fundației izolate, talpa și elevația celei continue.
+  - **Ce se cofrează.** „Auto” înseamnă: la stâlp, fețele laterale; la peretele compus, centurile, altfel ambele fețe și capetele libere; la fundație, fețele ei.
+  - **Ce se scade.** Ce stă lipit de o față nu se cofrează, iar ce e turnat deasupra o oprește.
+  - **Tipul** dă panourile (lățimi × înălțimi), tijele prin pereți, jugurile stâlpilor și sprijinirile.
+- **Refolosirea și devizul.** Extrasul de cofraje are, pe fiecare tip, setul (cel mai mult turnat deodată: pe fază de execuție dacă sunt mai multe, altfel pe etaj) și ce e de cumpărat (setul, sau totalul împărțit la refolosiri, dacă e mai mult). Tipul ține articolul de deviz (codul din norme și textul, date de utilizator; Lapin nu inventează coduri), arătat pe fiecare rând.
+- **Rămâne.** Cataloagele de producător, ca biblioteci.
 
 ## Ce există deja
 

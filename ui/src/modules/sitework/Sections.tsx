@@ -21,7 +21,7 @@ function TypeField({ node, cls, kind, command }: { node: NodeDto; cls: string; k
   const current = typeOf(model, node.id);
   const open = () => {
     if (cls === 'LapinScaffoldType') { setSiteWorks({ scaffoldTypeId: current?.id ?? null }); useUi.setState({ dialog: 'scaffoldTypes' }); }
-    else { setSiteWorks({ formworkTypeId: current?.id ?? null, formworkKind: (kind as 'slab' | 'beam') ?? 'slab' }); useUi.setState({ dialog: 'formworkTypes' }); }
+    else { setSiteWorks({ formworkTypeId: current?.id ?? null, formworkKind: (kind as 'slab' | 'beam' | 'upright') ?? 'slab' }); useUi.setState({ dialog: 'formworkTypes' }); }
   };
   return <>
     <dt>Type</dt>
@@ -62,30 +62,38 @@ export function ScaffoldSection({ node }: { node: NodeDto }) {
 const SLAB_FACES: [string, string][] = [['Soffit', 'Soffit'], ['Edges', 'Free edges']];
 const BEAM_FACES: [string, string][] = [['Bottom', 'Bottom'], ['Side.Left', 'Left side'], ['Side.Right', 'Right side'], ['Edge.BottomLeft', 'Chamfer, bottom left'], ['Edge.BottomRight', 'Chamfer, bottom right']];
 
+const UPRIGHT_FACES: Record<string, [string, string][]> = {
+  IfcWall: [['Auto', 'As the wall is built (its ring beams, else its faces and free ends)'], ['Sides', 'Both faces'], ['Zones', 'Ring beams and concrete bands'], ['Ends', 'Free ends']],
+  IfcColumn: [['Auto', 'Its sides']],
+  IfcFooting: [['Auto', 'Its sides']],
+};
+
 export function FormworkSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
-  const beam = node.props.kind === 'beam';
+  const kind = (node.props.kind as string | undefined) ?? 'slab';
+  const beam = kind === 'beam';
   const host = typeof node.props.host === 'string' ? nodes.get(node.props.host) : undefined;
-  const all = beam ? BEAM_FACES.map(([k]) => k) : ['Soffit', 'Edges'];
+  const choices = kind === 'upright' ? UPRIGHT_FACES[host?.type ?? ''] ?? [['Auto', 'Its sides']] : beam ? BEAM_FACES : SLAB_FACES;
+  const all = kind === 'upright' ? ['Auto'] : beam ? BEAM_FACES.map(([k]) => k) : ['Soffit', 'Edges'];
   const faces = Array.isArray(node.props.faces) && node.props.faces.length > 0 ? (node.props.faces as string[]) : all;
   const set = (args: Record<string, unknown>) => void execute('sitework.updateFormwork', { id: node.id, ...args });
   const toggle = (k: string, on: boolean) => {
     const next = on ? [...new Set([...faces, k])] : faces.filter((f) => f !== k);
     if (next.length > 0) set({ faces: next });
   };
-  const single = faces.filter((f) => f.startsWith('Edge[')).length;
+  const single = faces.filter((f) => f.startsWith('Edge[') || f.startsWith('Face.') || f.startsWith('Side[') || f.startsWith('Step[') || f.startsWith('Sole.') || f.startsWith('Stem.') || (kind === 'upright' && f.startsWith('Zone['))).length;
   return (
     <dl className="fields">
       <dt>Forms</dt><dd>{host ? host.name : <span className="error-text">its host is gone</span>}</dd>
-      <TypeField node={node} cls="LapinFormworkType" kind={beam ? 'beam' : 'slab'} command="sitework.updateFormwork" />
+      <TypeField node={node} cls="LapinFormworkType" kind={kind} command="sitework.updateFormwork" />
       <dt>Faces</dt>
       <dd>
-        {(beam ? BEAM_FACES : SLAB_FACES).map(([k, label]) => (
+        {choices.map(([k, label]) => (
           <label key={k} className="check-line"><input type="checkbox" checked={faces.includes(k)} onChange={(e) => toggle(k, e.target.checked)} /> {label}</label>
         ))}
-        {single > 0 && <span className="muted small">and {single} edge(s) picked</span>}
+        {single > 0 && <span className="muted small">and {single} face(s) picked</span>}
       </dd>
-      {!beam && <>
+      {kind === 'slab' && <>
         <dt>Primary beams</dt>
         <dd>
           <input className="num" type="number" step={15} value={typeof node.props.direction === 'number' ? node.props.direction : ''} placeholder="along the longest side"

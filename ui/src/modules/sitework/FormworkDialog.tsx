@@ -26,8 +26,15 @@ export interface SlabSpec {
   edgeInset: number; upstand: number; props: PropSize[]; panelLength: number; panelWidth: number; panelThickness: number; reuses: number;
 }
 export interface BeamSpec { plywood: number; bearerHeight: number; bearerWidth: number; bearers: number; propSpacing: number; yokes: Yoke[]; chamfer: number; props: PropSize[]; reuses: number }
-type Spec = SlabSpec & BeamSpec;
-interface Preview { secondary?: number; primary?: number; prop?: number | string; propSize?: string | null; propLength?: number; yokeSpacing?: number; propSpacing?: number; rowThickness?: number }
+export interface UprightSpec { panelWidths: number[]; panelHeights: number[]; panelThickness: number; tieAlong: number; tieUp: number; clampSpacing: number; braceSpacing: number; reuses: number }
+type Spec = SlabSpec & BeamSpec & UprightSpec & { article: string; articleText: string };
+interface Preview {
+  secondary?: number; primary?: number; prop?: number | string; propSize?: string | null; propLength?: number; yokeSpacing?: number; propSpacing?: number; rowThickness?: number;
+  across?: number[]; up?: number[]; panels?: number; ties?: number; clamps?: number; area?: number;
+}
+const KINDS: [FormworkKind, string, string][] = [['slab', 'Floors', 'floor'], ['beam', 'Beams', 'beam'], ['upright', 'Walls & columns', 'wall and column']];
+const CATALOG: Record<FormworkKind, string> = { slab: 'sitework.slabFormworkDefault', beam: 'sitework.beamFormworkDefault', upright: 'sitework.uprightFormworkDefault' };
+const NAME: Record<FormworkKind, string> = { slab: 'Floor formwork', beam: 'Beam formwork', upright: 'Wall and column formwork' };
 
 const Line = ({ label, children }: { label: string; children: React.ReactNode }) => <label className="field-line"><span className="eyebrow">{label}</span><span>{children}</span></label>;
 const r2 = (v: number) => Math.round(v * 100) / 100;
@@ -64,12 +71,14 @@ export function FormworkDialog() {
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const [kind, setKind] = useState<FormworkKind>(useSiteWorks.getState().formworkKind);
   const types = ofClass(model, 'LapinFormworkType').filter((t) => (t.props.kind ?? 'slab') === kind);
-  const fallback = info?.catalogs[kind === 'beam' ? 'sitework.beamFormworkDefault' : 'sitework.slabFormworkDefault'] as unknown as Spec | undefined;
+  const fallback = info?.catalogs[CATALOG[kind]] as unknown as Spec | undefined;
   const chosen = useSiteWorks.getState().formworkTypeId;
   const [editing, setEditing] = useState<string | null>(chosen && nodes.get(chosen)?.props.kind === kind ? chosen : types[0]?.id ?? null);
   const [name, setName] = useState('');
   const [spec, setSpec] = useState<Spec | null>(null);
-  const [size, setSize] = useState({ thickness: 0.2, height: 2.8, width: 0.3, depth: 0.5 });
+  /** The kind the spec was loaded for: until it is the kind shown, the form waits (a floor's spec has no panels). */
+  const [specKind, setSpecKind] = useState<FormworkKind | null>(null);
+  const [size, setSize] = useState({ thickness: 0.2, height: 2.8, width: 0.3, depth: 0.5, length: 3 });
   const [preview, setPreview] = useState<Preview | null>(null);
 
   const modelRef = useRef(model);
@@ -77,21 +86,22 @@ export function FormworkDialog() {
   useEffect(() => {
     const t = editing ? modelRef.current.nodes.get(editing) : undefined;
     setSpec(fallback ? { ...structuredClone(fallback), ...((t?.props.spec as Partial<Spec> | undefined) ?? {}) } : null);
-    setName(t?.name ?? (kind === 'beam' ? 'Beam formwork' : 'Floor formwork'));
+    setSpecKind(kind);
+    setName(t?.name ?? NAME[kind]);
   }, [editing, fallback, kind]);
 
   useEffect(() => {
-    if (!spec) return;
+    if (!spec || specKind !== kind) return;
     let live = true;
-    void engine.call<Preview>('doc.query', { name: 'sitework.formworkPreview', args: { kind, spec, ...size } }).then((p) => { if (live) setPreview(p); }).catch(() => undefined);
+    void engine.call<Preview>('doc.query', { name: 'sitework.formworkPreview', args: { kind, spec, ...size, width: kind === 'upright' ? size.length : size.width } }).then((p) => { if (live) setPreview(p); }).catch(() => undefined);
     return () => { live = false; };
-  }, [spec, size, kind]);
+  }, [spec, size, kind, specKind]);
 
-  if (!spec) return null;
+  if (!spec || specKind !== kind) return null;
   const set = (patch: Partial<Spec>) => setSpec({ ...spec, ...patch });
   const close = () => useUi.setState({ dialog: null });
   const switchKind = (k: FormworkKind) => { setKind(k); setSiteWorks({ formworkKind: k }); setEditing(ofClass(model, 'LapinFormworkType').find((t) => (t.props.kind ?? 'slab') === k)?.id ?? null); };
-  const fresh = () => { setEditing(null); setSpec(structuredClone(fallback ?? spec)); setName(`${kind === 'beam' ? 'Beam' : 'Floor'} formwork ${types.length + 1}`); };
+  const fresh = () => { setEditing(null); setSpec(structuredClone(fallback ?? spec)); setName(`${NAME[kind]} ${types.length + 1}`); };
   const save = async () => {
     if (editing) await execute('sitework.updateFormworkType', { id: editing, name, spec });
     else {
@@ -103,7 +113,7 @@ export function FormworkDialog() {
 
   // The section, across: a floor's layers under it down to the floor below, or a beam's box on its bearers.
   const W = 360, H = 260, pad = 16;
-  const svg = kind === 'beam' ? beamSection(spec, size, W, H, pad) : slabSection(spec, size, preview, W, H, pad);
+  const svg = kind === 'upright' ? uprightElevation(spec, size, preview, W, H, pad) : kind === 'beam' ? beamSection(spec, size, W, H, pad) : slabSection(spec, size, preview, W, H, pad);
 
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Formwork">
@@ -111,8 +121,7 @@ export function FormworkDialog() {
         <header className="dialog-head">
           <span className="panel-title">Formwork</span>
           <span className="tabs-inline">
-            <button type="button" className={`tab${kind === 'slab' ? ' on' : ''}`} onClick={() => switchKind('slab')}>Floors</button>
-            <button type="button" className={`tab${kind === 'beam' ? ' on' : ''}`} onClick={() => switchKind('beam')}>Beams</button>
+            {KINDS.map(([k, label]) => <button key={k} type="button" className={`tab${kind === k ? ' on' : ''}`} onClick={() => switchKind(k)}>{label}</button>)}
           </span>
           <button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button>
         </header>
@@ -125,12 +134,20 @@ export function FormworkDialog() {
                 </button>
               </li>
             ))}
-            <li><button type="button" className="tree-item" onClick={fresh}><Plus size={12} /> New {kind === 'beam' ? 'beam' : 'floor'} formwork type</button></li>
+            <li><button type="button" className="tree-item" onClick={fresh}><Plus size={12} /> New {KINDS.find(([k]) => k === kind)![2]} formwork type</button></li>
           </ul>
           <div className="joinery-edit">
             <div className="joinery-form">
               <Line label="Name"><input value={name} onChange={(e) => setName(e.target.value)} /></Line>
-              {kind === 'slab' ? <>
+              {kind === 'upright' ? <>
+                <Line label="Panel widths"><MmList value={spec.panelWidths} onCommit={(panelWidths) => set({ panelWidths })} /></Line>
+                <Line label="Panel heights"><MmList value={spec.panelHeights} onCommit={(panelHeights) => set({ panelHeights })} /></Line>
+                <Line label="Panel depth"><Mm value={spec.panelThickness} min={10} onCommit={(v) => v && set({ panelThickness: v })} /></Line>
+                <Line label="Ties every"><Mm value={spec.tieAlong} min={300} onCommit={(v) => v && set({ tieAlong: v })} /> <span className="muted small">along</span></Line>
+                <Line label="and every"><Mm value={spec.tieUp} min={300} onCommit={(v) => v && set({ tieUp: v })} /> <span className="muted small">up</span></Line>
+                <Line label="Column clamps every"><Mm value={spec.clampSpacing} min={200} onCommit={(v) => v && set({ clampSpacing: v })} /></Line>
+                <Line label="Push-pull props every"><Mm value={spec.braceSpacing} min={500} onCommit={(v) => v && set({ braceSpacing: v })} /></Line>
+              </> : kind === 'slab' ? <>
                 <Line label="System">
                   <select value={spec.system} onChange={(e) => set({ system: e.target.value as SlabSpec['system'] })}>
                     <option value="beams">plywood on timber beams and props</option><option value="panels">panels on props</option>
@@ -159,24 +176,33 @@ export function FormworkDialog() {
                 <p className="eyebrow">Yokes by the beam's depth (no more than)</p>
                 <Table rows={spec.yokes} columns={[['depth', 'Beam up to', 'mm'], ['spacing', 'Yokes every', 'mm']]} onChange={(yokes) => set({ yokes })} fresh={() => ({ depth: 1.0, spacing: 0.45 })} />
               </>}
-              <p className="eyebrow">Props</p>
-              {props}
+              {kind !== 'upright' && <><p className="eyebrow">Props</p>{props}</>}
               <Line label="Reuses"><Num value={spec.reuses} min={1} onCommit={(v) => set({ reuses: Math.round(v) })} /></Line>
+              <p className="eyebrow">Bill of quantities</p>
+              <Line label="Article code"><input value={spec.article ?? ''} placeholder="as the norms the estimate uses" onChange={(e) => set({ article: e.target.value })} /></Line>
+              <Line label="Article text"><input value={spec.articleText ?? ''} onChange={(e) => set({ articleText: e.target.value })} /></Line>
             </div>
             <div className="joinery-preview">
               {svg}
               <div className="row">
-                {kind === 'slab'
+                {kind === 'upright'
+                  ? <Line label="Wall"><Mm value={size.length} min={300} onCommit={(v) => v && setSize({ ...size, length: v })} /></Line>
+                  : kind === 'slab'
                   ? <Line label="Floor"><Mm value={size.thickness} min={50} onCommit={(v) => v && setSize({ ...size, thickness: v })} /></Line>
                   : <><Line label="Beam"><Mm value={size.width} min={100} onCommit={(v) => v && setSize({ ...size, width: v })} /></Line><Line label="×"><Mm value={size.depth} min={100} onCommit={(v) => v && setSize({ ...size, depth: v })} /></Line></>}
                 <Line label="clear height"><Mm value={size.height} min={500} onCommit={(v) => v && setSize({ ...size, height: v })} /></Line>
               </div>
+              {kind === 'upright' ? <>
+                <p className="muted small">{(preview?.across ?? []).map(r2).join(' + ')} m along × {(preview?.up ?? []).map(r2).join(' + ')} m up · {preview?.panels ?? 0} panels both faces · {preview?.ties ?? 0} ties · {preview?.clamps ?? 0} clamps on a column · {preview?.area ?? 0} m²</p>
+                <p className="muted small">Walls: both faces, the free ends, less the openings; a layered wall's ring beams and concrete bands alone. Columns and footings: their sides. What stands against a face is left out; a floor cast on top stops it.</p>
+              </> : <>
               <p className="muted small">
                 {kind === 'slab'
                   ? (spec.system === 'beams' ? `Secondary every ${r2(preview?.secondary ?? 0)} m · primary every ${r2(preview?.primary ?? 0)} m · props every ${r2(Number(preview?.prop ?? 0))} m` : `Panels ${r2(spec.panelLength)} × ${r2(spec.panelWidth)} m on props`)
                   : `Yokes every ${r2(preview?.yokeSpacing ?? 0)} m · props every ${r2(preview?.propSpacing ?? 0)} m`}
               </p>
               <p className="muted small">Prop {r2(preview?.propLength ?? 0)} m: {(kind === 'slab' ? preview?.propSize : (preview?.prop as string | null | undefined)) ?? <span className="error-text">no prop of the type takes it</span>}</p>
+              </>}
               <p className="muted small">IFC: IfcElementAssembly (FORMWORK) over IfcPlate and IfcMember, temporary; a product resource FORMWORK</p>
             </div>
             <div className="row joinery-actions">
@@ -246,6 +272,31 @@ function beamSection(s: Spec, size: { width: number; depth: number; height: numb
         return <rect key={i} x={x(y)} y={z(bottom - s.plywood)} width={s.bearerWidth * k} height={s.bearerHeight * k} fill="#c48a3a" />;
       })}
       <line x1={x(b0 + size.width / 2)} x2={x(b0 + size.width / 2)} y1={z(under)} y2={z(0)} stroke="#d0502a" strokeWidth={2} />
+      <line x1={pad / 2} x2={W - pad / 2} y1={z(0)} y2={z(0)} stroke="#6b4e2e" strokeWidth={1.2} />
+    </svg>
+  );
+}
+
+/** A wall's formwork in elevation: its panels across and up, at the length and height chosen. */
+function uprightElevation(s: Spec, size: { length: number; height: number }, p: Preview | null, W: number, H: number, pad: number) {
+  const across = p?.across ?? [];
+  const up = p?.up ?? [];
+  const len = Math.max(across.reduce((a, b) => a + b, 0), size.length);
+  const tall = Math.max(up.reduce((a, b) => a + b, 0), size.height);
+  const k = Math.min((W - 2 * pad) / len, (H - 2 * pad) / tall);
+  const x = (v: number) => pad + v * k;
+  const z = (v: number) => H - pad - v * k;
+  const xs = [0]; for (const a of across) xs.push(xs[xs.length - 1] + a);
+  const zs = [0]; for (const u of up) zs.push(zs[zs.length - 1] + u);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-label="Elevation">
+      {xs.slice(0, -1).flatMap((x0, i) => zs.slice(0, -1).map((z0, j) => (
+        <rect key={`${i}-${j}`} x={x(x0)} y={z(z0 + up[j])} width={across[i] * k} height={up[j] * k} fill="#d9b77a" stroke="#8a6a2a" strokeWidth={0.8} />
+      )))}
+      <rect x={x(0)} y={z(size.height)} width={size.length * k} height={size.height * k} fill="none" stroke="#b5532d" strokeDasharray="4 3" strokeWidth={1} />
+      {Array.from({ length: Math.max(0, Math.ceil(size.length / s.tieAlong)) }, (_, i) => Array.from({ length: Math.max(0, Math.ceil(size.height / s.tieUp)) }, (_, j) => (
+        <circle key={`t${i}-${j}`} cx={x((i + 0.5) * size.length / Math.ceil(size.length / s.tieAlong))} cy={z((j + 0.5) * size.height / Math.ceil(size.height / s.tieUp))} r={2.5} fill="#1e2a3a" />
+      )))}
       <line x1={pad / 2} x2={W - pad / 2} y1={z(0)} y2={z(0)} stroke="#6b4e2e" strokeWidth={1.2} />
     </svg>
   );

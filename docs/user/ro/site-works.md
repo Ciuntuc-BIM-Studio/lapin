@@ -40,6 +40,18 @@ Fiecare tronson drept e împărțit în traveile tipului, cât mai puține câte
 
 ![Configuratorul de cofraje](shots/formwork-configurator.webp)
 
+## Pereți, stâlpi, centuri și fundații
+
+**Cofraje** și **Cofraj pe față** merg și pe pereți, stâlpi și fundații:
+
+- **Un perete** primește ambele fețe și capetele libere, fără ușile și ferestrele lui. Un perete compus cu centură sau cu bandă de beton primește doar centura sau banda. În proprietăți poți alege ambele fețe, centurile sau capetele libere.
+- **Un stâlp** primește fețele laterale, până la placa sau grinda turnată peste el.
+- **O fundație** primește fețele fiecărei trepte, la fundația izolată, sau fețele tălpii și ale elevației, la fundația continuă.
+
+Ce stă lipit de o față nu se cofrează: alt perete, un stâlp. Placa turnată deasupra oprește fața la intradosul ei. Tipul alege panourile (lățimi și înălțimi), tijele prin pereți, jugurile stâlpilor și sprijinirile.
+
+![Configuratorul pentru pereți și stâlpi](shots/wall-formwork-configurator.webp)
+
 ## Planul de cofraj
 
 **Plan de cofraj** face un plan al etajului activ în faza Execuție, secționat la un metru deasupra plăcii și **văzut de jos**: un plan de plafon. Popii apar secționați. Cofrajul de deasupra lor e desenat cum îl vezi privind în sus: grinzile principale și secundare, placajul și marginile. Planul stă orientat la fel ca planul obișnuit, ca să se potrivească unul peste altul.
@@ -56,5 +68,12 @@ Fiecare schelă și fiecare cofraj își arată cantitățile în proprietăți:
 - la cofraj: aria de contact pe fiecare față, popii pe mărimi și grinzile pe lungimile din catalog.
 
 **Extras de cofraje** și **Extras de schele** își pun tabelele în browserul proiectului, la Extrase, ca să le pui pe planșă sau să le exporți.
+
+Extrasul de cofraje se încheie cu un rând pentru fiecare tip:
+
+- **setul**: cel mai mult cofraj turnat deodată. Se socotește pe fază de execuție, când lucrarea e împărțită în mai multe, altfel pe etaj.
+- **de cumpărat**: setul, sau totalul împărțit la refolosirile tipului, oricare e mai mare.
+
+Fiecare tip are **articolul de deviz**: codul din normele folosite în deviz și textul lui. Le scrii în configurator, iar extrasul le arată pe fiecare rând.
 
 În IFC se scriu ca ansambluri (`IfcElementAssembly` FORMWORK și SCAFFOLD) cu statusul TEMPORARY. Piesele sunt bare, plăci și accesorii. Fiecare are resursa ei de construcție, iar cofrajul e legat de elementul pe care îl cofrează.

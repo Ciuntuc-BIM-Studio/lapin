@@ -25,9 +25,9 @@ const selectedOf = (...classes: string[]): string[] => {
 };
 
 /** The type chosen in the configurator, when it is one for this kind. */
-const formworkType = (kind: 'slab' | 'beam'): string | undefined => {
+const formworkType = (kind: 'slab' | 'beam' | 'upright'): string | undefined => {
   const id = useSiteWorks.getState().formworkTypeId;
-  return id && useSession.getState().nodes.get(id)?.props.kind === kind ? id : undefined;
+  return id && (useSession.getState().nodes.get(id)?.props.kind ?? 'slab') === kind ? id : undefined;
 };
 
 const placed = (r: unknown, what: string) => { if (r) notify(`${what} placed in the execution phase: it shows in views of that phase (Manage → Phases).`); };
@@ -53,17 +53,19 @@ const scaffoldOnWalls: ToolDef = {
   },
 };
 
-/** Formwork on every floor and beam selected: all their formable faces. */
+/** Formwork on every floor, beam, wall, column and footing selected: all their formable faces. */
 const formworkOnSelection: ToolDef = {
   id: 'sitework.formwork', label: 'Formwork', icon: Layers, shortcut: 'FW',
   run: () => {
-    const slabs = selectedOf('IfcSlab');
-    const beams = selectedOf('IfcBeam');
-    if (slabs.length + beams.length === 0) { notify('Select the floors and beams to form, then press Formwork; or use Formwork on face.'); return; }
+    const groups: ['slab' | 'beam' | 'upright', string[]][] = [['slab', selectedOf('IfcSlab')], ['beam', selectedOf('IfcBeam')], ['upright', selectedOf('IfcWall', 'IfcColumn', 'IfcFooting')]];
+    if (groups.every(([, ids]) => ids.length === 0)) { notify('Select the floors, beams, walls, columns or footings to form, then press Formwork; or use Formwork on face.'); return; }
     void (async () => {
       let r: unknown = null;
-      if (slabs.length) r = await execute('sitework.addFormwork', { hostIds: slabs, ...(formworkType('slab') ? { typeId: formworkType('slab') } : {}) });
-      if (beams.length) r = await execute('sitework.addFormwork', { hostIds: beams, ...(formworkType('beam') ? { typeId: formworkType('beam') } : {}) }) ?? r;
+      for (const [kind, hostIds] of groups) {
+        if (!hostIds.length) continue;
+        const typeId = formworkType(kind);
+        r = await execute('sitework.addFormwork', { hostIds, ...(typeId ? { typeId } : {}) }) ?? r;
+      }
       placed(r, 'Formwork');
     })();
   },
@@ -71,16 +73,17 @@ const formworkOnSelection: ToolDef = {
 
 interface FaceDto { role: string; label: string }
 
-/** Formwork on the face picked: a floor's soffit or one of its edges, a beam's bottom or one of its sides. */
+/** Formwork on the face picked: a floor's soffit or one of its edges, a beam's bottom or one of its sides, a wall's face, a column's or a footing's side. */
 const formworkOnFace: ToolDef = {
   id: 'sitework.formworkFace', label: 'Formwork on face', icon: MousePointerClick, shortcut: 'FF',
-  gesture: { kind: 'face', types: ['IfcSlab', 'IfcBeam'] },
+  gesture: { kind: 'face', types: ['IfcSlab', 'IfcBeam', 'IfcWall', 'IfcColumn', 'IfcFooting'] },
   complete: async ({ entity, face }) => {
     if (!entity || !face) return;
     const f = await engine.call<FaceDto | null>('doc.query', { name: 'core.faceAt', args: { id: entity.id, point: face.point, normal: face.normal } }).catch(() => null);
-    if (!f) { notify('No face to form there: pick a floor\'s soffit or edge, a beam\'s bottom or side.'); return; }
-    if (f.role === 'Top' || f.role.startsWith('End.')) { notify(`The ${f.label.toLowerCase()} is not formed: pick a soffit, an edge, a bottom or a side.`); return; }
-    const kind = entity.type === 'IfcBeam' ? 'beam' : 'slab';
+    if (!f) { notify('No face to form there: pick a floor\'s soffit or edge, a beam\'s bottom or side, a wall\'s face, a column\'s or a footing\'s side.'); return; }
+    const upright = ['IfcWall', 'IfcColumn', 'IfcFooting'].includes(entity.type);
+    if (f.role === 'Top' || (f.role === 'Bottom' && upright) || (f.role.startsWith('End.') && !upright)) { notify(`The ${f.label.toLowerCase()} is not formed: pick a soffit, an edge, a bottom or a side.`); return; }
+    const kind = upright ? 'upright' : entity.type === 'IfcBeam' ? 'beam' : 'slab';
     const typeId = formworkType(kind);
     const r = await execute('sitework.addFormwork', { hostIds: [entity.id], faces: [f.role], ...(typeId ? { typeId } : {}) });
     if (r) notify(`${entity.name} · ${f.label}: formed.`);
