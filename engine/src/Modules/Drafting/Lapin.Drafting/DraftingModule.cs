@@ -159,21 +159,52 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             return null;
         });
 
-        // A point put into a string, before the point at `index` (0: before the first; the count: after the last).
+        // Points put into a string: before the point at `index` (0: before the first; the count: after the last), or,
+        // without one, each where it falls along the dimension line, as ArchiCAD inserts a point (one beyond an end: the new end).
         r.Command("insertDimensionPoint", "Add dimension point", (ctx, a) =>
         {
             var dim = Linear(ctx.Model, a);
             var st = Current(ctx.Query, dim);
-            var i = Json.Number(a["index"]) is { } ix && ix >= 0 && ix <= st.Count ? (int)ix : throw new CommandException("Where in the string?");
-            var p = P(a["point"]);
             var texts = Dimensions.TextsOf(dim.Attrs, st.Count - 1);
-            st.Insert(i, (p, Associator(ctx, View(ctx.Model, dim))(p)));
-            // The segment split in two measures anew; one added at an end has no text of its own.
-            if (i == 0) texts.Insert(0, null);
-            else if (i == st.Count - 1) texts.Add(null);
-            else { texts.RemoveAt(i - 1); texts.InsertRange(i - 1, [null, null]); }
+            var hold = Associator(ctx, View(ctx.Model, dim));
+            var pts = a["points"] is JsonArray pa ? pa.Select(P).ToList() : [P(a["point"])];
+            var u = Dimensions.Along(dim.Attrs, st[0].P, st[^1].P);
+            var added = new JsonArray();
+            foreach (var p in pts)
+            {
+                int i;
+                if (a["index"] != null)
+                    i = Json.Number(a["index"]) is { } ix && ix >= 0 && ix <= st.Count ? (int)ix : throw new CommandException("Where in the string?");
+                else
+                {
+                    if (u is not { } dir) throw new CommandException("The dimension has no direction.");
+                    var t = st.Select(s => Vec2.Dot(s.P - st[0].P, dir)).ToList();
+                    var tp = Vec2.Dot(p - st[0].P, dir);
+                    // A point the string measures already is not doubled.
+                    if (t.Any(x => Math.Abs(x - tp) < 1e-4)) continue;
+                    // The string runs one way along the line (first to last); the point goes where it falls in it.
+                    var sign = t[^1] >= t[0] ? 1 : -1;
+                    i = 0;
+                    while (i < st.Count && sign * t[i] < sign * tp) i++;
+                }
+                var r = hold(p);
+                st.Insert(i, (p, r));
+                // The segment split in two measures anew; one added at an end has no text of its own.
+                if (i == 0) texts.Insert(0, null);
+                else if (i == st.Count - 1) texts.Add(null);
+                else { texts.RemoveAt(i - 1); texts.InsertRange(i - 1, [null, null]); }
+                added.Add((JsonNode)(r != null));
+            }
+            if (added.Count == 0) throw new CommandException("The string measures that point already.");
+            // An aligned string measures from its first point to its last: a new end off that line keeps the direction it had.
+            if (dim.Attrs["dir"] is not JsonArray && u is { } keep && Dimensions.Along(dim.Attrs, st[0].P, st[^1].P) is { } now && Math.Abs(Vec2.Cross(keep, now)) > 1e-9)
+            {
+                var attrs = dim.CloneAttrs();
+                attrs["dir"] = J(keep);
+                dim = dim.With(attrs: attrs);
+            }
             Save(ctx, dim, st, texts);
-            return null;
+            return new JsonObject { ["associated"] = added };
         });
 
         // A point taken out of a string; a dimension keeps two.

@@ -30,7 +30,7 @@ Ortho and guide lines from points are new in lapin-pro.
 | Draw | `LINE L`, `PLINE PL`, `RECTANGLE REC`, `CIRCLE C`, `ARC A` |
 | Modify (on a selection) | `ERASE E`, `MOVE M`, `COPY CO`, `ROTATE RO`, `MIRROR MI` |
 | Edit | `OFFSET O`, `TRIM TR`, `EXTEND EX`, `FILLET F` |
-| Annotate | `TEXT T`, `LEADER LE`, `DIMALIGNED DAL`, `DIMLINEAR DLI`, `DIMRADIUS DRA`, `DIMDIAMETER DDI`, `DIMANGULAR DAN`, `LEVEL LV`, `HATCH H` |
+| Annotate | `TEXT T`, `LEADER LE`, `DIMALIGNED DAL`, `DIMLINEAR DLI`, `DIMADD DAP`, `DIMRADIUS DRA`, `DIMDIAMETER DDI`, `DIMANGULAR DAN`, `LEVEL LV`, `HATCH H` |
 
 - **Draw:**
   - LINE and PLINE: `C` closes the shape, `U` undoes the last vertex.

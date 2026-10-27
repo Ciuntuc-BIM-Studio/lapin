@@ -53,6 +53,7 @@ describe('dimension grips', () => {
     expect(gs[1].step?.({ x: 5, y: 0 })).toEqual({ command: 'drafting.moveDimensionPoint', args: { id: 'd', index: 1, point: [5, 0] } });
     expect(gs[0].remove?.()).toEqual({ command: 'drafting.removeDimensionPoint', args: { id: 'd', index: 0 } });
     expect(gs[4].insert?.()).toEqual({ command: 'drafting.insertDimensionPoint', args: { id: 'd', index: 2, point: [5.5, 0] } });
+    expect(gs[4].step?.({ x: 5, y: 0 })).toEqual({ command: 'drafting.insertDimensionPoint', args: { id: 'd', point: [5, 0] } });
     expect(gs[6].at).toEqual({ x: 7, y: 2 });
     expect(gs[6].step?.({ x: 7, y: 3 })).toEqual({ command: 'drafting.moveDimension', args: { id: 'd', at: [7, 3] } });
     expect(gs.every((g) => g.view === 'v')).toBe(true);

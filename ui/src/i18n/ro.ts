@@ -137,6 +137,7 @@ export const RO: Record<string, string> = {
   'What it is for: Studio\'s operations find their profile, path, rail or axis by it; construction lines are never printed': 'La ce folosește: operațiile Studio își găsesc după el profilul, traseul sau axa; liniile de construcție nu se tipăresc',
   'The role new shapes take: a profile, a path… (Studio finds them by it); construction lines are never printed': 'Rolul formelor noi: profil, traseu… (Studio le găsește după el); liniile de construcție nu se tipăresc', 'Arc length': 'Lungime de arc', 'Slope': 'Pantă', 'Ordinate': 'Ordonată', 'Written as': 'Scrisă ca',
   // Dimension strings (continuous dimensions as one object)
+  'Add points': 'Adaugă puncte', 'Add dimension points': 'Adaugă puncte de cotă', 'Click points to put into the string, each where it falls along its line (DIMADD)': 'Clic pe punctele de pus în lanț; fiecare intră la locul lui pe linia de cotă (DIMADD)',
   'Split into single dimensions': 'Împarte în cote simple', 'Join into a string': 'Unește într-un lanț de cote', 'One single dimension per segment': 'O cotă simplă pentru fiecare segment',
   'The selected dimensions, going on from one another on one dimension line, as one string': 'Cotele selectate, care se continuă una pe alta pe aceeași linie de cotă, ca un singur lanț',
   'Written over the segment instead of its measure (empty: the measure)': 'Scris peste segment în locul măsurii (gol: măsura)', 'text': 'text',

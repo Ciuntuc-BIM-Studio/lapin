@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { select, useUi } from '../../app/store';
+import { startCommand } from '../../viewport/cad/session';
 import type { DimensionInfo } from '../../viewport/dimensionEdit';
 
 export function DimensionSection({ node }: { node: NodeDto }) {
@@ -46,6 +47,7 @@ export function DimensionSection({ node }: { node: NodeDto }) {
       {!d.kind && <>
         <dt />
         <dd>
+          <button type="button" title="Click points to put into the string, each where it falls along its line (DIMADD)" onClick={() => { select(node.id); void startCommand('DIMADD'); }}>Add points</button>
           {string && <button type="button" title="One single dimension per segment" onClick={() => void execute('drafting.splitDimension', { id: node.id }).then((r) => {
             const ids = (r as { ids?: string[] } | null)?.ids;
             if (ids?.length) select(ids[0]);

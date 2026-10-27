@@ -121,6 +121,39 @@ public class DimensionStringTests
         Assert.Equal(3, Stored(f, id).Count);
     }
 
+    /// <summary>As in ArchiCAD: points clicked into a selected string go where they fall along its line, inside it or beyond its ends, each holding on what it lands on.</summary>
+    [Fact]
+    public void Points_added_to_a_string_go_where_they_fall_along_it()
+    {
+        var f = F();
+        var w = f.Wall(4, -3, 4, 3);
+        // A string drawn right to left: the order runs that way.
+        var id = String(f, Pts((9, 0), (6, 0), (0, 0)), (0, 2));
+        Run(f, id, (2, -1), (7.5, 1));
+        Assert.Equal([1.5, 1.5, 4.0, 2.0], Values(f, id));
+        Assert.Equal([9.0, 7.5, 6.0, 2.0, 0.0], Stored(f, id).Select(p => p.X));
+        // One past an end is the new end; one on the wall's centre line follows it.
+        Run(f, id, (4, 0), (-1, 0.5), (10, 0));
+        Assert.Equal([10.0, 9.0, 7.5, 6.0, 4.0, 2.0, 0.0, -1.0], Stored(f, id).Select(p => p.X));
+        Assert.NotNull(Dimensions.Stations(f.Model.Get(id)!)[4].Ref);
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(w), ["op"] = "move", ["by"] = new JsonArray(0.5, 0) });
+        Assert.Equal([1.0, 1.5, 1.5, 1.5, 2.5, 2.0, 1.0], Values(f, id));
+        // A point the string measures already is not doubled; one call is one undo step.
+        Assert.Throws<CommandException>(() => Run(f, id, (6, 5)));
+        f.Session.Undo();
+        Assert.Equal(8, Stored(f, id).Count);
+        f.Session.Undo();
+        Assert.Equal(5, Stored(f, id).Count);
+
+        // An aligned string keeps its direction when a new end lies off its line.
+        var a = String(f, Pts((0, 10), (4, 10)), (0, 12));
+        Run(f, a, (6, 11));
+        Assert.Equal([4.0, 2.0], Values(f, a));
+
+        static void Run(Fixture f, string id, params (double X, double Y)[] p) =>
+            f.Run("drafting.insertDimensionPoint", new JsonObject { ["id"] = id, ["points"] = Pts(p) });
+    }
+
     [Fact]
     public void A_string_splits_into_single_dimensions_and_they_join_back()
     {

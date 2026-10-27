@@ -1,12 +1,12 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag, Tags } from 'lucide-react';
+import { ArrowRightToLine, ListPlus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag, Tags } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
 import type { NodeDto } from '../../engine/protocol';
-import { notify, useUi } from '../../app/store';
-import { execute } from '../../engine/session';
+import { notify, select, useUi } from '../../app/store';
+import { execute, useSession } from '../../engine/session';
 import { cadHost, cadLog, registerCommand, startCommand, withSelection, type Step } from '../../viewport/cad/session';
 import { importDxf } from '../../engine/files';
 import { ImportDxfDialog } from './ImportDxfDialog';
@@ -107,6 +107,36 @@ function stringPreview(pts: Vec2[], at: Vec2, u: Vec2): Shape[] {
   pts.forEach((p, i) => shapes.push({ type: 'line', a: p, b: onLine[i] }));
   return shapes;
 }
+/** Whether an id is a dimension string (a linear or aligned dimension, not an angle, a radius…). */
+const isString = (id: string | null | undefined): id is string => {
+  const n = id ? useSession.getState().nodes.get(id) : undefined;
+  return n?.props.predefinedType === 'DIMENSION' && !n.props.dimKind;
+};
+
+/**
+ * DIMADD, as ArchiCAD inserts a dimension point: a dimension string (the one
+ * selected, else one clicked), then each point clicked goes into it where it
+ * falls along its line (inside it, or beyond an end as the new end), holding
+ * on the element, axis or wall centre line it lands on; one undo step each,
+ * Enter or Esc to finish.
+ */
+function dimAddCommand(): Step {
+  const add = (id: string): Step => ({
+    prompt: 'Point to add to the dimension string (Enter to finish)', want: 'point',
+    point: async (p) => { await execute('drafting.insertDimensionPoint', { id, point: [p.x, p.y] }); return add(id); },
+    enter: () => null,
+  });
+  const sel = useUi.getState().selected.filter(isString);
+  if (sel.length === 1) return add(sel[0]);
+  const pick = (): Step => ({
+    prompt: 'Select the dimension string', want: 'select',
+    point: (p) => { const id = cadHost()?.pickAny(p); if (!isString(id)) return pick(); select(id); return add(id); },
+    enter: () => null,
+  });
+  return pick();
+}
+registerCommand({ names: ['DIMADD', 'DAP'], label: 'Add dimension points', start: dimAddCommand });
+
 /** TAG: click an element, then where its tag goes [MARK/NAME/CLASS/TYPE]. */
 let tagField = 'mark';
 function tagCommand(): Step {
@@ -390,8 +420,8 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
     const m = { x: (line[i].x + line[i + 1].x) / 2, y: (line[i].y + line[i + 1].y) / 2 };
     const half = { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 };
     grips.push({
-      key: `e${i}`, kind: 'edgeMid', at: m, title: 'Drag: a new point where it is dropped; Ctrl/⌘-click: one halfway',
-      step: (to: Vec2) => ({ command: 'drafting.insertDimensionPoint', args: { id, index: i + 1, point: [to.x, to.y] } }),
+      key: `e${i}`, kind: 'edgeMid', at: m, title: 'Drag: a new point where it is dropped (in its place along the string); Ctrl/⌘-click: one halfway',
+      step: (to: Vec2) => ({ command: 'drafting.insertDimensionPoint', args: { id, point: [to.x, to.y] } }),
       insert: () => ({ command: 'drafting.insertDimensionPoint', args: { id, index: i + 1, point: [half.x, half.y] } }),
     });
   }
@@ -443,7 +473,8 @@ const drafting: LapinModule = {
       id: 'annotate', label: 'Annotate', order: 60,
       groups: [
         { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR')],
-          small: [cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE')] },
+          // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
+          small: [cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE')] },
         { label: 'Text', tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
           id: 'tagOpenings', label: 'Door & window tags', icon: Tags,
           run: () => void (async () => {
