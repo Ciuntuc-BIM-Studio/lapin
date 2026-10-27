@@ -71,6 +71,8 @@ function dimCommand(linear: boolean): Step {
             point: (p) => { pts.push(p); return next(); },
             keywords: { U: () => { if (pts.length > 2) pts.pop(); return next(); } },
             enter: async () => { await addString(pts, at, dir ?? (collinear(pts) ? null : along)); return null; },
+            // Escape keeps the string drawn so far, as AutoCAD keeps a continued dimension.
+            escape: () => addString(pts, at, dir ?? (collinear(pts) ? null : along)),
           });
           return next();
         },

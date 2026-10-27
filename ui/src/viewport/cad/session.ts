@@ -40,6 +40,8 @@ export interface Step {
   keywords?: Record<string, () => Next>;
   /** Enter with nothing typed. */
   enter?: () => Next;
+  /** Escape (or another command starting): what the step keeps of the work so far, as a dimension string keeps its points. */
+  escape?: () => void | Promise<void>;
 }
 
 interface CadState {
@@ -393,6 +395,7 @@ async function runCommand(name: string): Promise<boolean> {
 export function cancel(quiet = false): void {
   const s = useCad.getState();
   if (s.command && !quiet) log('*Cancel*');
+  if (s.step?.escape) void Promise.resolve(s.step.escape()).catch(() => undefined);
   generation++;
   useCad.setState({ command: null, step: null, buffer: '' });
   liveEnd('cad');
