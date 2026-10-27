@@ -2,7 +2,15 @@
 // Build one product as a desktop app, with only its modules, engine and UI
 // alike: a module the product does not have is not in the package at all.
 //   pnpm build:product <product>      (lapin | lapin-architecture | lapin-architecture-structure | …)
+//   pnpm build:product <product> --target windows    (on a Mac: the Windows x64 build, cross-compiled)
 // Output: build/<product>/bundle. Each product is its own app (name and identifier).
+//
+// Windows from a Mac (docs/release-windows.md): the engine is published for
+// win-x64 (with engine/native/win-x64/manifoldc.dll), the shell compiled with
+// cargo-xwin (the MSVC SDK it downloads, under Microsoft's licence) and packed
+// by NSIS (makensis); the installer and a portable zip, unsigned, as the
+// Windows machine makes them. Tauri calls this cross build experimental: test
+// it on Windows before publishing.
 //
 // On macOS the app is signed with the Developer ID Application certificate in
 // the keychain (or LAPIN_SIGNING_IDENTITY), put in a DMG, and the DMG notarized
@@ -35,6 +43,9 @@ const tauriDir = join(root, 'desktop/src-tauri');
 // an argument with a space (a path) is quoted, the shell would split it otherwise.
 const win = process.platform === 'win32';
 const shellArgs = (cmd, args) => (win && cmd === 'pnpm' ? args.map((a) => (/\s/.test(a) ? `"${a}"` : a)) : args);
+// A cross build: --target windows (or a Rust target triple).
+const targetArg = (() => { const i = process.argv.indexOf('--target'); return i > 0 ? process.argv[i + 1] : undefined; })();
+const crossTriple = targetArg === 'windows' ? 'x86_64-pc-windows-msvc' : targetArg;
 const sh = (cmd, args, opts = {}) => {
   console.log(`▸ ${cmd} ${args.join(' ')}`);
   const r = spawnSync(cmd, shellArgs(cmd, args), { cwd: root, stdio: 'inherit', shell: win && cmd === 'pnpm', ...opts, env: { ...process.env, ...opts.env } });
@@ -44,8 +55,11 @@ const sh = (cmd, args, opts = {}) => {
 
 // The target triple of this machine, from the Rust toolchain the desktop shell is built with.
 const rustc = spawnSync('rustc', ['-vV'], { encoding: 'utf8' });
-const triple = rustc.stdout?.match(/^host: (.+)$/m)?.[1].trim();
-if (!triple) {
+const hostTriple = rustc.stdout?.match(/^host: (.+)$/m)?.[1].trim();
+const triple = crossTriple ?? hostTriple;
+const cross = Boolean(crossTriple && crossTriple !== hostTriple);
+if (cross && crossTriple !== 'x86_64-pc-windows-msvc') { console.error(`A cross build is made for Windows only (--target windows), not ${crossTriple}.`); process.exit(1); }
+if (!hostTriple) {
   console.error(`Cannot read the target from rustc${rustc.error ? ` (${rustc.error.message})` : ''}: install Rust (https://rustup.rs) and make sure rustc is on the PATH.`);
   process.exit(1);
 }
@@ -64,7 +78,8 @@ mkdirSync(out, { recursive: true });
 // 1. Engine: the modules (Release), then the host as one self-contained file.
 sh('dotnet', ['build', 'engine/Lapin.slnx', '-c', 'Release', '-v', 'q', '-nologo']);
 for (const csproj of product.engineProjects ?? []) sh('dotnet', ['build', csproj, '-c', 'Release', '-v', 'q', '-nologo']);
-sh('dotnet', ['publish', 'engine/src/Host/Lapin.Host', '-c', 'Release', '-r', rid, '--self-contained', 'true',
+// LapinNativeRid: the native libraries of the platform built for, in every project (the runtime id itself does not reach a referenced library).
+sh('dotnet', ['publish', 'engine/src/Host/Lapin.Host', '-c', 'Release', '-r', rid, '--self-contained', 'true', `-p:LapinNativeRid=${rid}`,
   `-p:InformationalVersion=${version}`, '-p:PublishSingleFile=true', '-p:IncludeNativeLibrariesForSelfExtract=true', '-p:DebugType=none', '-o', join(out, 'host'), '-v', 'q', '-nologo']);
 mkdirSync(join(tauriDir, 'binaries'), { recursive: true });
 cpSync(join(out, 'host', `Lapin.Host${exe}`), join(tauriDir, 'binaries', `lapin-host-${triple}${exe}`));
@@ -85,8 +100,15 @@ for (const m of product.engine.filter((id) => id !== 'core')) {
 // 3. UI: only this product's UI modules are bundled.
 sh('pnpm', ['--filter', 'ui', 'build'], { env: { LAPIN_PRODUCT_FILE: manifest, LAPIN_UI_OUT: join(out, 'ui') } });
 
-// 4. The desktop bundle, named and identified per product.
-const mac = process.platform === 'darwin';
+// 4. The desktop bundle, named and identified per product (for the platform built for).
+const targetWin = triple.includes('windows');
+const mac = !cross && process.platform === 'darwin';
+if (cross) {
+  // What a Windows build from a Mac needs: cargo-xwin, makensis, clang-cl and lld-link (LLVM), the Rust target.
+  const missing = [['cargo-xwin', ['--version']], ['makensis', ['-VERSION']], ['lld-link', ['--version']]].filter(([c, a]) => spawnSync(c, a).status !== 0).map(([c]) => c);
+  if (spawnSync('rustup', ['target', 'list', '--installed'], { encoding: 'utf8' }).stdout?.includes(triple) === false) missing.push(`rustup target add ${triple}`);
+  if (missing.length) { console.error(`For a Windows build on this Mac, install: ${missing.join(', ')} (docs/release-windows.md).`); process.exit(1); }
+}
 // The Developer ID Application identity: named, else the first one in the keychain.
 const identity = mac ? process.env.LAPIN_SIGNING_IDENTITY
   ?? spawnSync('security', ['find-identity', '-v', '-p', 'codesigning'], { encoding: 'utf8' }).stdout?.match(/"(Developer ID Application: [^"]+)"/)?.[1] : undefined;
@@ -102,17 +124,36 @@ writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   app: { windows: [{ label: 'main', title: product.name, width: 1440, height: 900, minWidth: 1000, minHeight: 640, center: true }] },
   bundle: {
     externalBin: ['binaries/lapin-host'], resources: ['resources/**/*'],
-    ...(process.platform === 'linux' ? { targets: ['deb', 'appimage'] } : {}),
+    ...(!cross && process.platform === 'linux' ? { targets: ['deb', 'appimage'] } : {}),
     // Windows: an NSIS installer for the current user (no admin rights), which fetches WebView2 when it is missing.
-    ...(win ? { targets: ['nsis'], windows: { nsis: { installMode: 'currentUser' } } } : {}),
+    ...(targetWin ? { targets: ['nsis'], windows: { nsis: { installMode: 'currentUser' } } } : {}),
     ...(mac ? { targets: ['app'], macOS: { minimumSystemVersion: '13.0', hardenedRuntime: true, entitlements: 'entitlements.plist', ...(identity ? { signingIdentity: identity } : {}) } } : {}),
   },
 }, null, 2));
-const bundleDir = join(tauriDir, 'target/release/bundle');
+const releaseDir = join(tauriDir, cross ? `target/${triple}/release` : 'target/release');
+const bundleDir = join(releaseDir, 'bundle');
 rmSync(bundleDir, { recursive: true, force: true }); // never ship another product's leftovers
 // Notarization is done below with the keychain profile, never by Tauri from passwords in the environment.
 if (mac) for (const k of ['APPLE_ID', 'APPLE_PASSWORD', 'APPLE_TEAM_ID', 'APPLE_API_KEY', 'APPLE_API_ISSUER', 'APPLE_API_KEY_PATH']) delete process.env[k];
-sh('pnpm', ['tauri', 'build', '--config', join(tauriDir, 'tauri.product.json')], { cwd: join(root, 'desktop') });
+sh('pnpm', ['tauri', 'build', '--config', join(tauriDir, 'tauri.product.json'), ...(cross ? ['--runner', 'cargo-xwin', '--target', triple] : [])],
+  { cwd: join(root, 'desktop'), env: cross ? { XWIN_ACCEPT_LICENSE: '1' } : {} });
+
+// Windows: besides the installer, a portable zip (the app, its engine and resources in one folder), as testers unpack and run it.
+if (targetWin) {
+  const appExe = join(releaseDir, 'lapin-desktop.exe');
+  const portable = join(bundleDir, 'portable', product.name);
+  if (!existsSync(appExe)) { console.error(`No ${appExe}: the Windows app was not built.`); process.exit(1); }
+  rmSync(join(bundleDir, 'portable'), { recursive: true, force: true });
+  mkdirSync(portable, { recursive: true });
+  cpSync(appExe, join(portable, `${product.name}.exe`));
+  cpSync(join(tauriDir, 'binaries', `lapin-host-${triple}.exe`), join(portable, 'lapin-host.exe'));
+  cpSync(res, join(portable, 'resources'), { recursive: true });
+  const zip = join(bundleDir, 'nsis', `${product.name}_${version}_x64-portable.zip`);
+  mkdirSync(dirname(zip), { recursive: true });
+  if (win) sh('powershell', ['-NoProfile', '-Command', `Compress-Archive -Path '${portable}' -DestinationPath '${zip}' -Force`]);
+  else sh('zip', ['-qr', '-X', zip, product.name], { cwd: join(bundleDir, 'portable') });
+  rmSync(join(bundleDir, 'portable'), { recursive: true, force: true });
+}
 
 // 5. macOS: the DMG (the app and a link to Applications; made here with hdiutil,
 // not Tauri's Finder script, which fails when the image is busy), signed;

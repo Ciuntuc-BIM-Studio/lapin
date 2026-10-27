@@ -10,9 +10,21 @@
   <ItemGroup>
     <ProjectReference Include="../Lapin.Geometry/Lapin.Geometry.csproj" />
   </ItemGroup>
+  <!--
+    The library of the platform built for: LapinNativeRid when the build names it (scripts/build-product.mjs does, as a
+    global property: a published app's runtime id does not reach the libraries it references), else the runtime id
+    asked for, else the machine's own.
+  -->
+  <PropertyGroup>
+    <LapinNativeRid Condition="'$(LapinNativeRid)' == '' And '$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</LapinNativeRid>
+    <LapinNativeRid Condition="'$(LapinNativeRid)' == '' And $([MSBuild]::IsOSPlatform('OSX'))">osx-arm64</LapinNativeRid>
+    <LapinNativeRid Condition="'$(LapinNativeRid)' == '' And $([MSBuild]::IsOSPlatform('Linux'))">linux-x64</LapinNativeRid>
+    <LapinNativeRid Condition="'$(LapinNativeRid)' == '' And $([MSBuild]::IsOSPlatform('Windows'))">win-x64</LapinNativeRid>
+    <LapinNative>$(MSBuildThisFileDirectory)../../../native/$(LapinNativeRid)/</LapinNative>
+  </PropertyGroup>
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)../../../native/osx-arm64/libmanifoldc.dylib" Condition="$([MSBuild]::IsOSPlatform('OSX'))" Link="libmanifoldc.dylib" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <None Include="$(MSBuildThisFileDirectory)../../../native/linux-x64/libmanifoldc.so" Condition="$([MSBuild]::IsOSPlatform('Linux')) And Exists('$(MSBuildThisFileDirectory)../../../native/linux-x64/libmanifoldc.so')" Link="libmanifoldc.so" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <None Include="$(MSBuildThisFileDirectory)../../../native/win-x64/manifoldc.dll" Condition="$([MSBuild]::IsOSPlatform('Windows')) And Exists('$(MSBuildThisFileDirectory)../../../native/win-x64/manifoldc.dll')" Link="manifoldc.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="$(LapinNative)libmanifoldc.dylib" Condition="$(LapinNativeRid.StartsWith('osx')) And Exists('$(LapinNative)libmanifoldc.dylib')" Link="libmanifoldc.dylib" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="$(LapinNative)libmanifoldc.so" Condition="$(LapinNativeRid.StartsWith('linux')) And Exists('$(LapinNative)libmanifoldc.so')" Link="libmanifoldc.so" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="$(LapinNative)manifoldc.dll" Condition="$(LapinNativeRid.StartsWith('win')) And Exists('$(LapinNative)manifoldc.dll')" Link="manifoldc.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
