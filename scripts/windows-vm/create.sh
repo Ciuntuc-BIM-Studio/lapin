@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # The Lapin test VM in UTM (scripts/windows-vm/README.md): Windows 11 ARM, 8 GB, 4 cores, a 64 GB NVMe disk,
-# the two media of prepare.sh on USB (Windows first, the setup media second, so it is E: for the drivers), a
+# the disk first (empty, the firmware falls through to the Windows media; once Setup has written it, every restart
+# goes on from it instead of booting the no-prompt installer again), the two media of prepare.sh on USB after it
+# (Windows, then the setup media, so it is E: for the drivers), a
 # virtio network on UTM's shared network (the Mac reaches the guest at its own address: vm-ip.sh). Started at once: Windows installs by itself
 # (20–30 minutes), then lapin-setup.ps1 installs the guest tools and OpenSSH; wait.sh waits for it.
 set -euo pipefail
@@ -12,7 +14,7 @@ mac="$(osascript <<OSA
 tell application "UTM"
   set winIso to POSIX file "$VM/windows-noprompt.iso"
   set setupIso to POSIX file "$VM/lapin-setup.iso"
-  set vm to make new virtual machine with properties {backend:qemu, configuration:{name:"$NAME", notes:"Lapin's Windows test machine (lapin-pro/scripts/windows-vm).", architecture:"aarch64", memory:8192, cpu cores:4, hypervisor:true, uefi:true, drives:{{removable:true, interface:USB, source:winIso}, {removable:true, interface:USB, source:setupIso}, {interface:NVMe, guest size:65536}}, network interfaces:{{mode:shared, hardware:"virtio-net-pci"}}}}
+  set vm to make new virtual machine with properties {backend:qemu, configuration:{name:"$NAME", notes:"Lapin's Windows test machine (lapin-pro/scripts/windows-vm).", architecture:"aarch64", memory:8192, cpu cores:4, hypervisor:true, uefi:true, drives:{{interface:NVMe, guest size:65536}, {removable:true, interface:USB, source:winIso}, {removable:true, interface:USB, source:setupIso}}, network interfaces:{{mode:shared, hardware:"virtio-net-pci"}}}}
   set c to configuration of vm
   -- A screen: a VM made by script has none (virtio-ramfb needs no driver in Windows).
   set displays of c to {{hardware:"virtio-ramfb"}}
