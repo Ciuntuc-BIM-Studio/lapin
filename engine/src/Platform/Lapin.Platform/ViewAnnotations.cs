@@ -67,6 +67,8 @@ public sealed class ViewMark(string? owner)
     public List<(IReadOnlyList<IReadOnlyList<Vec2>> Loops, string Color)> Fills { get; } = [];
     /// <summary>The exact shapes a click or a snap uses (drafted lines, arcs, circles), as their JSON.</summary>
     public List<System.Text.Json.Nodes.JsonObject> Shapes { get; } = [];
+    /// <summary>What the mark tells the interface of itself (a dimension string: its points as drawn now, for its grips).</summary>
+    public System.Text.Json.Nodes.JsonObject? Data { get; set; }
 
     public ViewMark Line(Vec2 a, Vec2 b, string layer, double width, string color = "#000000", double[]? dash = null)
     {

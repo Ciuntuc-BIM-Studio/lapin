@@ -132,6 +132,18 @@ public static class DraftCommands
                     attrs["at"] = new JsonArray(q.X, q.Y);
                     attrs["angle"] = (Json.Number(attrs["angle"]) ?? 0) + turn * 180 / Math.PI;
                 }
+                else if (Dimensions.IsLinear(e))
+                {
+                    // The whole string; moved, it measures where it is now: it lets go of its elements.
+                    Dimensions.Write(attrs, Dimensions.Stations(e).Select(s => (point(s.P), (DimEndRef?)null)).ToList());
+                    if (attrs["at"] is JsonArray at2) attrs["at"] = new JsonArray(point(P(at2, "at")).X, point(P(at2, "at")).Y);
+                    if (attrs["dir"] is JsonArray dj)
+                    {
+                        var d0 = P(dj, "dir");
+                        var dn = point(d0) - point(new Vec2(0, 0));
+                        if (dn.Length > 1e-12) attrs["dir"] = new JsonArray(dn.Normalized().X, dn.Normalized().Y);
+                    }
+                }
                 else if (e.PredefinedType == "DIMENSION")
                 {
                     foreach (var k in new[] { "a", "b", "at" })

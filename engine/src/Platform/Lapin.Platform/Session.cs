@@ -139,11 +139,21 @@ public sealed class Session
         _foreignClasses.Clear();
         foreach (var (cls, module) in classModules ?? new Dictionary<string, string>())
             if (_catalog.OwnerOf(cls) == null) _foreignClasses[cls] = module;
-        _history.Load(entities, relations);
+        var (es, rs) = Upgraded(entities, relations);
+        _history.Load(es, rs);
         ForgetAll();
         Path = path;
         Emit("start");
         return Snapshot();
+    }
+
+    /// <summary>What an older Lapin wrote, as this one keeps it: each module's <see cref="IProjectUpgrade"/> in turn.</summary>
+    public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgraded(IEnumerable<Entity> entities, IEnumerable<Relation> relations)
+    {
+        IReadOnlyList<Entity> es = entities as IReadOnlyList<Entity> ?? entities.ToList();
+        IReadOnlyList<Relation> rs = relations as IReadOnlyList<Relation> ?? relations.ToList();
+        foreach (var upgrade in _catalog.All<IProjectUpgrade>()) (es, rs) = upgrade.Upgrade(es, rs);
+        return (es, rs);
     }
 
     /// <summary>

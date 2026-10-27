@@ -48,11 +48,17 @@ public sealed class AnnotationPlacement : IElementPlacement
                 var deg = Json.Number(attrs["angle"]) ?? 0;
                 attrs["angle"] = t.Angle(deg * Math.PI / 180) * 180 / Math.PI;
                 break;
+            case "DIMENSION" when Dimensions.IsLinear(e):
+            {
+                // The whole string: every point, its line, its direction; a point whose element stays behind measures where it is now.
+                var stations = Dimensions.Stations(e).Select(s => (t.Point(s.P), s.Ref is { } r && moving.Contains(r.Element) ? r : null)).ToList();
+                Dimensions.Write(attrs, stations);
+                if (attrs["at"] is JsonArray) attrs["at"] = J(t.Point(P(attrs["at"])));
+                if (attrs["dir"] is JsonArray) attrs["dir"] = J(t.Dir(P(attrs["dir"])));
+                break;
+            }
             case "DIMENSION":
                 foreach (var k in new[] { "a", "b", "at" }) if (attrs[k] is JsonArray) attrs[k] = J(t.Point(P(attrs[k])));
-                // An end whose element stays behind measures where it is now.
-                foreach (var k in new[] { "refA", "refB" })
-                    if (attrs[k] is JsonObject r && ((string?)r["element"] ?? (string?)r["grid"]) is { } owner && !moving.Contains(owner)) attrs.Remove(k);
                 break;
         }
         return attrs;

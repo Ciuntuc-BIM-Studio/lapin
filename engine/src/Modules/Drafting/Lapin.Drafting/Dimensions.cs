@@ -54,11 +54,13 @@ public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Di
 
 /// <summary>
 /// Dimensions on a view (the old Lapin's associative dimensions): aligned, or
-/// linear along a direction (<c>dir</c>). Each end on an element, a grid axis
-/// or a wall's centre line is found anew each time the view is drawn; an end
-/// whose element is gone is an orphan, drawn red where it was, until freed. A
-/// dimension in a string (<c>chain</c>, <c>chainIx</c>) drives its string:
-/// typing its value moves what lies after it.
+/// linear along a direction (<c>dir</c>). A dimension is a string of points
+/// (<c>pts</c>, two or more) on one dimension line through <c>at</c>: one
+/// object however many segments it has, like a polyline. Each point on an
+/// element, a grid axis or a wall's centre line (<c>refs</c>) is found anew
+/// each time the view is drawn; a point whose element is gone is an orphan,
+/// drawn red where it was, until freed. Typing a segment's value moves what
+/// lies after it in the string.
 /// </summary>
 public static class Dimensions
 {
@@ -177,78 +179,185 @@ public static class Dimensions
         return best?.P;
     }
 
-    /// <summary>A dimension's ends as drawn now, and whether any end lost what it held on.</summary>
+    // ------------------------------------------------------------ the string: its points, what each holds on, its texts
+
+    /// <summary>A dimension's stored points, each with what it holds on (null: a free point), from <c>pts</c>/<c>refs</c> (or an older dimension's <c>a</c>, <c>b</c>, <c>refA</c>, <c>refB</c>).</summary>
+    public static List<(Vec2 P, DimEndRef? Ref)> Stations(Entity dim) => Stations(dim.Attrs);
+
+    public static List<(Vec2 P, DimEndRef? Ref)> Stations(JsonObject attrs)
+    {
+        var o = new List<(Vec2, DimEndRef?)>();
+        if (attrs["pts"] is JsonArray pts)
+        {
+            var refs = attrs["refs"] as JsonArray;
+            for (var i = 0; i < pts.Count; i++) o.Add((P(pts[i]), refs != null && i < refs.Count ? DimEndRef.From(refs[i]) : null));
+            return o;
+        }
+        o.Add((P(attrs["a"]), DimEndRef.From(attrs["refA"])));
+        o.Add((P(attrs["b"]), DimEndRef.From(attrs["refB"])));
+        return o;
+    }
+
+    /// <summary>The value written over each segment instead of its measure (null: the measure): <c>texts</c>, or a one-segment dimension's <c>text</c>.</summary>
+    public static List<string?> TextsOf(JsonObject attrs, int segments)
+    {
+        var o = new List<string?>();
+        var texts = attrs["texts"] as JsonArray;
+        for (var i = 0; i < segments; i++)
+            o.Add(texts != null && i < texts.Count && texts[i] is JsonValue v && v.TryGetValue<string>(out var t) && t.Length > 0 ? t : null);
+        if (texts == null && segments == 1 && (string?)attrs["text"] is { Length: > 0 } one) o[0] = one;
+        return o;
+    }
+
+    /// <summary>
+    /// A string's points and texts written into <paramref name="attrs"/> (<c>pts</c>,
+    /// <c>refs</c> when any point holds on something, <c>texts</c> when any segment
+    /// has its own); what older dimensions kept (<c>a</c>, <c>b</c>, <c>refA</c>,
+    /// <c>refB</c>, <c>chain</c>, <c>chainIx</c>) goes. Texts not given stay as they are.
+    /// </summary>
+    public static void Write(JsonObject attrs, IReadOnlyList<(Vec2 P, DimEndRef? Ref)> stations, IReadOnlyList<string?>? texts = null)
+    {
+        foreach (var k in new[] { "a", "b", "refA", "refB", "chain", "chainIx" }) attrs.Remove(k);
+        attrs["pts"] = new JsonArray(stations.Select(x => (JsonNode)J(x.P)).ToArray());
+        if (stations.Any(x => x.Ref != null)) attrs["refs"] = new JsonArray(stations.Select(x => (JsonNode?)x.Ref?.ToJson()).ToArray());
+        else attrs.Remove("refs");
+        if (texts == null) return;
+        if (texts.Count == 1) { attrs.Remove("texts"); if (texts[0] is { } t0) attrs["text"] = t0; else attrs.Remove("text"); return; }
+        attrs.Remove("text");
+        if (texts.Any(t => t != null)) attrs["texts"] = new JsonArray(texts.Select(t => t == null ? null : (JsonNode)JsonValue.Create(t)).ToArray());
+        else attrs.Remove("texts");
+    }
+
+    static JsonArray J(Vec2 p) => new(p.X, p.Y);
+
+    /// <summary>A linear or aligned dimension (not one of <see cref="DimensionKinds"/>).</summary>
+    public static bool IsLinear(Entity? e) => e is { Class: IfcClass.Annotation, PredefinedType: "DIMENSION" } && !DimensionKinds.IsKind(e);
+
+    /// <summary>The string's points as drawn now (each on what it holds on), and whether any lost it.</summary>
+    public static (List<Vec2> Pts, bool Orphan) Points(IModelView m, string viewKind, Entity dim, ViewDrawing d)
+    {
+        var orphan = false;
+        var o = new List<Vec2>();
+        foreach (var (p, r) in Stations(dim))
+        {
+            if (r == null) { o.Add(p); continue; }
+            if (Resolve(m, viewKind, d, r) is { } q) o.Add(q);
+            else { o.Add(p); orphan = true; }
+        }
+        return (o, orphan);
+    }
+
+    /// <summary>A dimension's first and last points as drawn now, and whether any point lost what it held on.</summary>
     public static (Vec2 A, Vec2 B, bool Orphan) Ends(IModelView m, string viewKind, Entity dim, ViewDrawing d)
     {
-        var (a, b) = (P(dim.Attrs["a"]), P(dim.Attrs["b"]));
-        var orphan = false;
-        if (DimEndRef.From(dim.Attrs["refA"]) is { } ra) { if (Resolve(m, viewKind, d, ra) is { } p) a = p; else orphan = true; }
-        if (DimEndRef.From(dim.Attrs["refB"]) is { } rb) { if (Resolve(m, viewKind, d, rb) is { } p) b = p; else orphan = true; }
-        return (a, b, orphan);
+        var (pts, orphan) = Points(m, viewKind, dim, d);
+        return (pts[0], pts[^1], orphan);
     }
 
     /// <summary>The direction a dimension measures along: its own <c>dir</c> (linear), else from end to end (aligned).</summary>
-    public static Vec2? Along(Entity dim, Vec2 a, Vec2 b)
+    public static Vec2? Along(Entity dim, Vec2 a, Vec2 b) => Along(dim.Attrs, a, b);
+
+    public static Vec2? Along(JsonObject attrs, Vec2 a, Vec2 b)
     {
-        if (dim.Attrs["dir"] is JsonArray && P(dim.Attrs["dir"]) is var d && d.Length > 1e-9) return d.Normalized();
+        if (attrs["dir"] is JsonArray && P(attrs["dir"]) is var d && d.Length > 1e-9) return d.Normalized();
         return (b - a).Length < 1e-9 ? null : (b - a).Normalized();
     }
 
+    /// <summary>A string's direction: its <c>dir</c>, else from its first point to its last.</summary>
+    public static Vec2? Along(Entity dim, IReadOnlyList<Vec2> pts) => Along(dim.Attrs, pts[0], pts[^1]);
+
     /// <summary>What a dimension measures: the distance along its direction.</summary>
     public static double Value(Entity dim, Vec2 a, Vec2 b) => Along(dim, a, b) is { } u ? Math.Abs(Vec2.Dot(b - a, u)) : 0;
+
+    /// <summary>What each segment of a string measures, along the string's direction.</summary>
+    public static List<double> Values(Entity dim, IReadOnlyList<Vec2> pts) =>
+        Along(dim, pts) is { } u ? Enumerable.Range(0, pts.Count - 1).Select(i => Math.Abs(Vec2.Dot(pts[i + 1] - pts[i], u))).ToList() : Enumerable.Repeat(0.0, pts.Count - 1).ToList();
+
+    /// <summary>How a string lies: its direction, the square to it, and each point carried square onto the dimension line through <c>at</c> (with how far it went).</summary>
+    public sealed record Layout(Vec2 U, Vec2 N, List<Vec2> Line, List<double> Off);
+
+    public static Layout? Lay(Entity dim, IReadOnlyList<Vec2> pts)
+    {
+        if (Along(dim, pts) is not { } u) return null;
+        var n = u.Perp;
+        var at = P(dim.Attrs["at"]);
+        var off = pts.Select(p => Vec2.Dot(at - p, n)).ToList();
+        return new Layout(u, n, pts.Select((p, i) => p + n * off[i]).ToList(), off);
+    }
+
+    /// <summary>The segment of a string nearest <paramref name="at"/> (on its dimension line).</summary>
+    public static int SegmentAt(Layout lay, Vec2 at)
+    {
+        var (best, bd) = (0, double.PositiveInfinity);
+        for (var i = 0; i + 1 < lay.Line.Count; i++)
+        {
+            var dist = Foot(at, lay.Line[i], lay.Line[i + 1]).Dist;
+            if (dist < bd) (best, bd) = (i, dist);
+        }
+        return best;
+    }
 
     public static IEnumerable<ViewMark> Marks(ViewContext c)
     {
         foreach (var dim in c.Model.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == "DIMENSION" && x.Str("viewId") == c.View.Id && !DimensionKinds.IsKind(x)))
         {
-            var (a, b, orphan) = Ends(c.Model, c.Kind, dim, c.Drawing);
-            if (Along(dim, a, b) is not { } u) continue;
-            var len = Math.Abs(Vec2.Dot(b - a, u));
-            if (len < 1e-6) continue;
+            var (pts, orphan) = Points(c.Model, c.Kind, dim, c.Drawing);
+            if (pts.Count < 2 || Lay(dim, pts) is not { } lay) continue;
+            var (u, n, line, offs) = (lay.U, lay.N, lay.Line, lay.Off);
+            var values = Enumerable.Range(0, pts.Count - 1).Select(i => Math.Abs(Vec2.Dot(line[i + 1] - line[i], u))).ToList();
+            if (values.All(v => v < 1e-6)) continue;
             var style = Standards.ResolveDim(c.Book, ParamsOf(dim));
             var text = Standards.ResolveText(c.Book, ParamsOf(dim));
+            var texts = TextsOf(dim.Attrs, pts.Count - 1);
             var color = orphan ? "#c0392b" : style.Color ?? "#000000";
-            var n = u.Perp;
-            var at = P(dim.Attrs["at"]);
-            // Each end carried square to the dimension line through `at`.
-            var (offA, offB) = (Vec2.Dot(at - a, n), Vec2.Dot(at - b, n));
-            var (da, db) = (a + n * offA, b + n * offB);
-            if (Vec2.Dot(db - da, u) < 0) u = -u;
             var mm = c.Mm;
             var mk = new ViewMark(dim.Id);
-            mk.Line(da, db, "DIMENSION", Pens.Default.Hatch, color);
-            foreach (var (p, q, off) in new[] { (a, da, offA), (b, db, offB) })
+            // One dimension line, from the first point to the last as they lie along it.
+            var ts = line.Select(q => Vec2.Dot(q - line[0], u)).ToList();
+            mk.Line(line[0] + u * ts.Min(), line[0] + u * ts.Max(), "DIMENSION", Pens.Default.Hatch, color);
+            var s = style.ArrowSize * mm;
+            // Each point once: its extension line (a gap from the measured point, past the dimension line by the overshoot), its tick or dot.
+            for (var i = 0; i < pts.Count; i++)
             {
+                var (p, q, off) = (pts[i], line[i], offs[i]);
                 var side = off >= 0 ? 1 : -1;
-                // Extension lines: a gap from the measured point, past the dimension line by the overshoot.
                 if (Math.Abs(off) > style.ExtGap * mm) mk.Line(p + n * (side * style.ExtGap * mm), q + n * (side * style.ExtOver * mm), "DIMENSION", Pens.Default.Hatch, color);
-                var s = style.ArrowSize * mm;
                 switch (style.Arrow)
                 {
                     case "tick": { var t = (u + n).Normalized() * (s / 2); mk.Line(q - t, q + t, "DIMENSION", Pens.Default.Seen, color); break; }
-                    case "arrow":
-                    {
-                        var inward = q == da ? u : -u;
-                        mk.Line(q, q + inward * s + n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color).Line(q, q + inward * s - n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color);
-                        break;
-                    }
                     case "dot": mk.Polyline(ViewMark.Circle(q, s / 4, 12), true, "DIMENSION", Pens.Default.Seen, color); break;
                 }
             }
-            // The value: in the style's unit (or the text written over it), reading left to right (bottom to top), above, on or below the line.
-            var value = dim.Str("text") is { Length: > 0 } over ? over : Standards.FormatDimension(len, style.Unit, style.Precision);
-            var angle = Math.Atan2(u.Y, u.X) * 180 / Math.PI;
-            var readable = -Standards.ReadableDeg(-angle);
-            var up = new Vec2(-Math.Sin(readable * Math.PI / 180), Math.Cos(readable * Math.PI / 180));
-            var mid = (da + db) * 0.5;
-            var (tat, baseline) = style.Placement switch
+            for (var i = 0; i + 1 < pts.Count; i++)
             {
-                "centered" => (mid, "middle"),
-                "below" => (mid - up * (style.TextGap * mm + text.Height * mm), "bottom"),
-                _ => (mid + up * (style.TextGap * mm), "bottom"),
+                if (values[i] < 1e-6) continue;
+                var (qa, qb) = (line[i], line[i + 1]);
+                var su = Vec2.Dot(qb - qa, u) >= 0 ? u : -u;
+                // Arrows: each segment's, at both its ends, pointing in.
+                if (style.Arrow == "arrow")
+                    foreach (var (q, inward) in new[] { (qa, su), (qb, -su) })
+                        mk.Line(q, q + inward * s + n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color).Line(q, q + inward * s - n * (s * 0.3), "DIMENSION", Pens.Default.Hatch, color);
+                // The value: in the style's unit (or the text written over it), reading left to right (bottom to top), above, on or below the line.
+                var value = texts[i] ?? Standards.FormatDimension(values[i], style.Unit, style.Precision);
+                var angle = Math.Atan2(su.Y, su.X) * 180 / Math.PI;
+                var readable = -Standards.ReadableDeg(-angle);
+                var up = new Vec2(-Math.Sin(readable * Math.PI / 180), Math.Cos(readable * Math.PI / 180));
+                var mid = (qa + qb) * 0.5;
+                var (tat, baseline) = style.Placement switch
+                {
+                    "centered" => (mid, "middle"),
+                    "below" => (mid - up * (style.TextGap * mm + text.Height * mm), "bottom"),
+                    _ => (mid + up * (style.TextGap * mm), "bottom"),
+                };
+                mk.Text(new PenText(tat, value, text.Height, readable, "middle", baseline, text.Bold, text.Font), color);
+            }
+            mk.Snaps.AddRange(line);
+            // For the grips: the points as drawn now, and where each lands on the dimension line.
+            mk.Data = new JsonObject
+            {
+                ["points"] = new JsonArray(pts.Select(p => (JsonNode)J(p)).ToArray()),
+                ["line"] = new JsonArray(line.Select(p => (JsonNode)J(p)).ToArray()),
             };
-            mk.Text(new PenText(tat, value, text.Height, readable, "middle", baseline, text.Bold, text.Font), color);
-            mk.Snaps.AddRange([da, db]);
             yield return mk;
         }
     }
@@ -262,42 +371,50 @@ public static class Dimensions
         return p;
     }
 
+    static string Key(DimEndRef r) => r.Kind == "grid" ? $"{r.Element}:{r.Tag}" : r.Element;
+
     /// <summary>
-    /// A dimension driven to <paramref name="value"/>: what its second end holds
-    /// on moves along it (its first end's, when the second is free), and in a
-    /// string so does everything after it, so the other dimensions keep theirs.
+    /// A string's segment driven to <paramref name="value"/>: what its second
+    /// point holds on moves along the string, and so does what every later
+    /// point holds on, so the other segments keep theirs (when the second point
+    /// is free, what the first holds on moves instead, alone). The stored
+    /// points follow: those that moved are kept where they went.
     /// </summary>
-    public static void Drive(ICommandContext ctx, Entity dim, ViewDrawing d, string viewKind, double value)
+    public static void Drive(ICommandContext ctx, Entity dim, ViewDrawing d, string viewKind, double value, int segment = 0)
     {
         var m = ctx.Model;
-        var (a, b, orphan) = Ends(m, viewKind, dim, d);
+        var stations = Stations(dim);
+        if (segment < 0 || segment + 1 >= stations.Count) throw new CommandException("The dimension has no such segment.");
+        var (pts, orphan) = Points(m, viewKind, dim, d);
         if (orphan) throw new CommandException("The dimension lost its element: free it first.");
-        if (Along(dim, a, b) is not { } u) throw new CommandException("The dimension measures nothing.");
-        var signed = Vec2.Dot(b - a, u);
+        if (Along(dim, pts) is not { } u) throw new CommandException("The dimension measures nothing.");
+        var signed = Vec2.Dot(pts[segment + 1] - pts[segment], u);
         var delta = value - Math.Abs(signed);
         if (Math.Abs(delta) < 1e-9) return;
         var dir = u * Math.Sign(signed == 0 ? 1 : signed);
-        var refA = DimEndRef.From(dim.Attrs["refA"]);
-        var refB = DimEndRef.From(dim.Attrs["refB"]);
-        DimEndRef? mover = refB;
+        var refA = stations[segment].Ref;
+        var refB = stations[segment + 1].Ref;
+        // The points that go: the second and every later one that holds on something; else the first alone.
+        var movers = new List<DimEndRef>();
         var push = dir * delta;
-        if (mover == null) { mover = refA; push = dir * -delta; }
-        if (mover == null) throw new CommandException("Neither end holds on an element: there is nothing to move.");
-        // In a string: what the later dimensions' second ends hold on goes too.
-        var movers = new List<DimEndRef> { mover };
-        if (dim.Str("chain") is { } chain && mover == refB)
-        {
-            var ix = dim.Num("chainIx");
-            foreach (var other in m.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == "DIMENSION" && x.Str("chain") == chain && x.Num("chainIx") > ix))
-                if (DimEndRef.From(other.Attrs["refB"]) is { } r) movers.Add(r);
-        }
-        var anchor = mover == refB ? refA : refB;
+        if (refB != null) { for (var i = segment + 1; i < stations.Count; i++) if (stations[i].Ref is { } r) movers.Add(r); }
+        else if (refA != null) { movers.Add(refA); push = dir * -delta; }
+        else throw new CommandException("Neither end holds on an element: there is nothing to move.");
+        var anchor = refB != null ? refA : null;
         var moved = new HashSet<string>();
         foreach (var r in movers)
         {
-            if (anchor != null && anchor.Element == r.Element) throw new CommandException("Both ends hold on the same element: it cannot move against itself.");
-            if (!moved.Add(r.Kind == "grid" ? $"{r.Element}:{r.Tag}" : r.Element)) continue;
+            if (anchor != null && Key(anchor) == Key(r)) throw new CommandException("Both ends hold on the same element: it cannot move against itself.");
+            if (!moved.Add(Key(r))) continue;
             Move(ctx, r, push);
+        }
+        // The stored points as drawn now, those whose element moved where they went: they stay true for the grips.
+        var next = stations.Select((s, i) => (s.Ref is { } r && moved.Contains(Key(r)) ? pts[i] + push : pts[i], s.Ref)).ToList();
+        if (ctx.Model.Get(dim.Id) is { } now)
+        {
+            var attrs = now.CloneAttrs();
+            Write(attrs, next);
+            ctx.Replace(now.With(attrs: attrs));
         }
     }
 

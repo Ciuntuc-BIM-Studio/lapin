@@ -224,12 +224,12 @@ public class AnnotationTests
         var r = f.Run("drafting.addDimension", new JsonObject { ["viewId"] = view, ["a"] = new JsonArray(0, 5), ["b"] = new JsonArray(6, 5), ["at"] = new JsonArray(3, 6) })!;
         Assert.Equal([true, true], r["associated"]!.AsArray().Select(x => (bool)x!));
         var d1 = (string)r["id"]!;
-        Assert.Equal("grid", (string)f.Model.Get(d1)!.Attrs["refA"]!["kind"]!);
+        Assert.Equal("grid", Dimensions.Stations(f.Model.Get(d1)!)[0].Ref!.Kind);
         f.Run("drafting.updateAxis", new JsonObject { ["gridId"] = g, ["tag"] = "2", ["x1"] = 7, ["x2"] = 7 });
         Near(Ends(f, d1).B, 7, 5);
         // On the wall's centre line (well inside its thickness).
         var d2 = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = view, ["a"] = new JsonArray(0, 1), ["b"] = new JsonArray(3, 1), ["at"] = new JsonArray(1.5, -2) })!["id"]!;
-        Assert.Equal("axis", (string)f.Model.Get(d2)!.Attrs["refB"]!["kind"]!);
+        Assert.Equal("axis", Dimensions.Stations(f.Model.Get(d2)!)[1].Ref!.Kind);
         f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(w), ["op"] = "move", ["by"] = new JsonArray(0.5, 0) });
         Near(Ends(f, d2).B, 3.5, 1);
     }
@@ -243,11 +243,14 @@ public class AnnotationTests
         var w2 = f.Wall(3, 0, 3, 4);
         var w3 = f.Wall(7, 0, 7, 4);
         var d1 = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = view, ["a"] = new JsonArray(0, 2), ["b"] = new JsonArray(3, 2), ["at"] = new JsonArray(1.5, 6) })!["id"]!;
+        // Going on as a string: the same dimension, one more point.
         var d2 = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = view, ["a"] = new JsonArray(3, 2), ["b"] = new JsonArray(7, 2), ["at"] = new JsonArray(5, 6), ["after"] = d1 })!["id"]!;
-        Assert.Equal(f.Model.Get(d1)!.Str("chain"), f.Model.Get(d2)!.Str("chain"));
-        f.Run("drafting.setDimensionValue", new JsonObject { ["id"] = d1, ["value"] = 4 });
-        Assert.Equal(4, (double)f.Session.Query("drafting.dimension", new JsonObject { ["id"] = d1 })!["value"]!, 6);
-        Assert.Equal(4, (double)f.Session.Query("drafting.dimension", new JsonObject { ["id"] = d2 })!["value"]!, 6);
+        Assert.Equal(d1, d2);
+        Assert.Equal(3, Dimensions.Stations(f.Model.Get(d1)!).Count);
+        f.Run("drafting.setDimensionValue", new JsonObject { ["id"] = d1, ["value"] = 4, ["segment"] = 0 });
+        var q = f.Session.Query("drafting.dimension", new JsonObject { ["id"] = d1 })!;
+        Assert.Equal([4.0, 4.0], q["values"]!.AsArray().Select(x => Math.Round((double)x!, 6)));
+        Assert.Equal(4, (double)f.Session.Query("drafting.dimension", new JsonObject { ["id"] = d1, ["segment"] = 1 })!["value"]!, 6);
         Assert.Equal(8, f.Model.Get(w3)!.Attrs["start"]![0]!.GetValue<double>(), 6);
         Assert.Equal(0, f.Model.Get(w1)!.Attrs["start"]![0]!.GetValue<double>(), 6);
         // One undo puts both back.
@@ -265,7 +268,7 @@ public class AnnotationTests
         Assert.Equal([dim], f.Session.Query("drafting.orphans", new JsonObject { ["viewId"] = view })!.AsArray().Select(x => (string)x!));
         f.Run("drafting.freeDimensions", new JsonObject { ["viewId"] = view });
         Assert.Empty(f.Session.Query("drafting.orphans", new JsonObject { ["viewId"] = view })!.AsArray());
-        Assert.Null(f.Model.Get(dim)!.Attrs["refB"]);
+        Assert.Null(Dimensions.Stations(f.Model.Get(dim)!)[1].Ref);
         var lin = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = view, ["a"] = new JsonArray(20, 20), ["b"] = new JsonArray(23, 24), ["at"] = new JsonArray(21, 27), ["dir"] = new JsonArray(1, 0) })!["id"]!;
         Assert.Equal(3, (double)f.Session.Query("drafting.dimension", new JsonObject { ["id"] = lin })!["value"]!, 9);
     }

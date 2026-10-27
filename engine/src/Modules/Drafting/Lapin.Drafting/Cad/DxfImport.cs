@@ -31,7 +31,7 @@ public readonly record struct Affine(double A, double B, double C, double D, dou
 /// <summary>What an import asks for: the view, metres per drawing unit (null: the file's, or a guess), where the origin lands, the turn, whether to mirror (null: by the view), an extra factor, which layers, and what to bring.</summary>
 public sealed record DxfImportOptions(string ViewId, double? UnitFactor = null, Vec2 At = default, double RotationDeg = 0, bool? Flip = null, double Scale = 1,
     HashSet<string>? Layers = null, string? LayerPrefix = null, bool Texts = true, bool Hatches = true, string Dimensions = "native",
-    bool Link = false, string? LinkId = null, string? Path = null, JsonObject? Raw = null);
+    bool Link = false, string? LinkId = null, string? Path = null, JsonObject? Raw = null, bool JoinDimensions = true);
 
 /// <summary>
 /// A DXF brought into a view as Lapin's own drafting: its layers as drafting
@@ -83,9 +83,9 @@ public static class DxfImport
         if (!(scale > 0)) throw new CommandException("The scale factor must be positive.");
         // As a link (Manage → Links): read-only, kept with the options it came with so it can be read again from its path.
         var raw = new JsonObject();
-        foreach (var k in new[] { "units", "at", "rotation", "flip", "scale", "layers", "layerPrefix", "texts", "hatches", "dimensions" }) if (a[k] != null) raw[k] = a[k]!.DeepClone();
+        foreach (var k in new[] { "units", "at", "rotation", "flip", "scale", "layers", "layerPrefix", "texts", "hatches", "dimensions", "joinDimensions" }) if (a[k] != null) raw[k] = a[k]!.DeepClone();
         return new DxfImportOptions(viewId, units, at, Json.Number(a["rotation"]) ?? 0, flip, scale, layers, ((string?)a["layerPrefix"])?.Trim() is { Length: > 0 } pre ? pre : null, B(a["texts"], true), B(a["hatches"], true), dims,
-            B(a["link"], false) || (string?)a["linkId"] != null, (string?)a["linkId"], (string?)a["path"], raw);
+            B(a["link"], false) || (string?)a["linkId"] != null, (string?)a["linkId"], (string?)a["path"], raw, B(a["joinDimensions"], true));
     }
 
     /// <summary>Whether a view mirrors an imported drawing: a section or elevation looking towards −X or −Y does; a plan never.</summary>
@@ -297,13 +297,64 @@ public static class DxfImport
             Texts++;
         }
 
+        /// <summary>The file's linear and aligned dimensions, made when the walk is done (continued ones joined into strings).</summary>
+        readonly List<JsonObject> _dims = [];
+
         public void AddDimension(Vec2 a, Vec2 b, Vec2 at, Vec2? dir, string layer)
         {
-            var attrs = new JsonObject { ["viewId"] = view.Id, ["a"] = new JsonArray(a.X, a.Y), ["b"] = new JsonArray(b.X, b.Y), ["at"] = new JsonArray(at.X, at.Y), ["layer"] = layer };
+            var attrs = new JsonObject { ["viewId"] = view.Id, ["at"] = new JsonArray(at.X, at.Y), ["layer"] = layer };
+            Lapin.Drafting.Dimensions.Write(attrs, [(a, null), (b, null)]);
             if (dir is { } d) attrs["dir"] = new JsonArray(d.X, d.Y);
-            Put(new Entity(ctx.NewId(), IfcClass.Annotation, "Dimension", attrs, "DIMENSION"));
+            _dims.Add(attrs);
             Dimensions++;
         }
+
+        /// <summary>
+        /// The dimensions made: AutoCAD's continued dimensions (DIMCONTINUE: one per
+        /// segment) joined into one string each when asked: on one layer, along one
+        /// direction, on one dimension line, each starting where another ends.
+        /// </summary>
+        void PutDimensions()
+        {
+            var made = _dims.Select(x => new Entity("dxf", IfcClass.Annotation, "Dimension", x, "DIMENSION")).ToList();
+            var groups = new List<List<Entity>>();
+            if (o.JoinDimensions)
+            {
+                // Each dimension joins the first group it continues; groups that meet through it are one.
+                foreach (var d in made)
+                {
+                    var into = groups.Where(g => g[0].Str("layer") == d.Str("layer") && g.Any(x => Touch(x, d)) && Lapin.Drafting.DimensionStrings.Joined(g.Append(d).Select(Lapin.Drafting.DimensionStrings.PieceOf).ToList(), JoinTolerance) != null).ToList();
+                    if (into.Count == 0) { groups.Add([d]); continue; }
+                    into[0].Add(d);
+                    foreach (var other in into.Skip(1))
+                    {
+                        var merged = into[0].Concat(other).ToList();
+                        if (Lapin.Drafting.DimensionStrings.Joined(merged.Select(Lapin.Drafting.DimensionStrings.PieceOf).ToList(), JoinTolerance) == null) continue;
+                        into[0].AddRange(other);
+                        groups.Remove(other);
+                    }
+                }
+            }
+            else groups.AddRange(made.Select(d => new List<Entity> { d }));
+            foreach (var g in groups)
+            {
+                var attrs = g.Count == 1 ? g[0].Attrs : Lapin.Drafting.DimensionStrings.Joined(g.Select(Lapin.Drafting.DimensionStrings.PieceOf).ToList(), JoinTolerance)!;
+                Put(new Entity(ctx.NewId(), IfcClass.Annotation, "Dimension", attrs, "DIMENSION"));
+            }
+            DimensionStrings = groups.Count(g => g.Count > 1);
+        }
+
+        /// <summary>Whether two dimensions share an end point.</summary>
+        static bool Touch(Entity x, Entity y)
+        {
+            var (a, b) = (Lapin.Drafting.Dimensions.Stations(x), Lapin.Drafting.Dimensions.Stations(y));
+            return new[] { a[0].P, a[^1].P }.Any(p => (p - b[0].P).Length <= JoinTolerance || (p - b[^1].P).Length <= JoinTolerance);
+        }
+
+        /// <summary>How close (m) a continued dimension's first point is to where the one before it ends.</summary>
+        const double JoinTolerance = 1e-5;
+
+        public int DimensionStrings;
 
         /// <summary>The hatch pattern a DXF hatch draws with, and Lapin's scale and angle for it.</summary>
         public (string Name, double Scale, double Angle) Pattern(DxfHatch h, Affine f)
@@ -353,6 +404,7 @@ public static class DxfImport
 
         public void Finish()
         {
+            PutDimensions();
             if (NewLayers.Count > 0) Drafts.WriteLayers(ctx, _layers.Values);
             if (NewPatterns.Count > 0)
             {
@@ -480,7 +532,7 @@ public static class DxfImport
         {
             ["file"] = fileName,
             ["entities"] = total,
-            ["shapes"] = run.Shapes, ["hatches"] = run.Hatches, ["texts"] = run.Texts, ["dimensions"] = run.Dimensions,
+            ["shapes"] = run.Shapes, ["hatches"] = run.Hatches, ["texts"] = run.Texts, ["dimensions"] = run.Dimensions, ["dimensionStrings"] = run.DimensionStrings,
             ["layers"] = new JsonArray(run.NewLayers.Keys.Select(x => (JsonNode)x).ToArray()),
             ["patterns"] = new JsonArray(run.NewPatterns.Select(x => (JsonNode)x.Name).ToArray()),
             ["skipped"] = new JsonObject(run.Skipped.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value))),

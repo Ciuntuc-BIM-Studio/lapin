@@ -169,7 +169,8 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         var version = versions.Require(number);
         var content = versions.Content(ManifestOf(version, revision));
         session.AdoptClasses(content.Classes);
-        return session.Edit($"Restore version {number}", edit => ModelCompare.Apply(edit, content.Entities, content.Relations));
+        var (entities, relations) = session.Upgraded(content.Entities, content.Relations);
+        return session.Edit($"Restore version {number}", edit => ModelCompare.Apply(edit, entities, relations));
     }
 
     /// <summary>A version as a package of its own, to open elsewhere.</summary>

@@ -427,8 +427,7 @@ public class DxfImportTests
         Assert.Contains(texts, x => x.Str("text") == "Hello");
         // The aligned dimension, native.
         var dim = Assert.Single(f.Model.OfClass(IfcClass.Annotation), e => e.PredefinedType == "DIMENSION");
-        Assert.Equal(new Vec2(0, 0), P(dim.Attrs["a"]));
-        Assert.Equal(new Vec2(3, 0), P(dim.Attrs["b"]));
+        Assert.Equal([new Vec2(0, 0), new Vec2(3, 0)], Dimensions.Stations(dim).Select(s => s.P));
         Assert.Equal(new Vec2(0, -0.5), P(dim.Attrs["at"]));
         Assert.Equal(1, (int)r["dimensions"]!);
         // One undo step takes it all back.
