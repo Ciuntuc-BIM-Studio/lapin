@@ -57,6 +57,9 @@ public sealed class Session
     public History History => _history;
     public string? Path { get; private set; }
 
+    /// <summary>The app's version: the build's (0.1.&lt;commit count&gt;, given as InformationalVersion when the desktop app is built), without the commit hash.</summary>
+    public static string AppVersion { get; } = (typeof(Session).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false).FirstOrDefault() as System.Reflection.AssemblyInformationalVersionAttribute)?.InformationalVersion.Split('+')[0] ?? "0";
+
     public SessionInfo Info() => new(
         _product,
         _catalog.Modules.Select(m => new ModuleInfo(m.Id, m.Name, m.SchemaVersion)).ToList(),
@@ -65,7 +68,7 @@ public sealed class Session
         [],
         _catalog.Commands.Select(c => new CommandInfo(c.Name, c.Label)).ToList(),
         "m",
-        typeof(Session).Assembly.GetName().Version?.ToString() ?? "0",
+        AppVersion,
         _catalog.Catalogs);
 
     // ------------------------------------------------------------ project

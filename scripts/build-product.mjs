@@ -65,7 +65,7 @@ mkdirSync(out, { recursive: true });
 sh('dotnet', ['build', 'engine/Lapin.slnx', '-c', 'Release', '-v', 'q', '-nologo']);
 for (const csproj of product.engineProjects ?? []) sh('dotnet', ['build', csproj, '-c', 'Release', '-v', 'q', '-nologo']);
 sh('dotnet', ['publish', 'engine/src/Host/Lapin.Host', '-c', 'Release', '-r', rid, '--self-contained', 'true',
-  `-p:Version=${version}`, '-p:PublishSingleFile=true', '-p:IncludeNativeLibrariesForSelfExtract=true', '-p:DebugType=none', '-o', join(out, 'host'), '-v', 'q', '-nologo']);
+  `-p:InformationalVersion=${version}`, '-p:PublishSingleFile=true', '-p:IncludeNativeLibrariesForSelfExtract=true', '-p:DebugType=none', '-o', join(out, 'host'), '-v', 'q', '-nologo']);
 mkdirSync(join(tauriDir, 'binaries'), { recursive: true });
 cpSync(join(out, 'host', `Lapin.Host${exe}`), join(tauriDir, 'binaries', `lapin-host-${triple}${exe}`));
 

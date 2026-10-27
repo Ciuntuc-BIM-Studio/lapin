@@ -108,7 +108,7 @@ public sealed class EngineHub(Session session, ProjectFiles files, Recovery? rec
     /// <summary>The help menu's reports and links, sent and opened from this computer.</summary>
     sealed class SupportDesk : ISupportDesk
     {
-        public JsonObject Report(JsonObject p) => Support.Report(p, typeof(EngineHub).Assembly.GetName().Version?.ToString() ?? "0").GetAwaiter().GetResult();
+        public JsonObject Report(JsonObject p) => Support.Report(p, Session.AppVersion).GetAwaiter().GetResult();
         public void Open(string? link) => Support.Open(link);
     }
 }
