@@ -49,7 +49,9 @@ public sealed record JoineryDetails(JoineryReveal? Reveal = null, JoinerySill? S
 /// <para>
 /// The type's frame: X along the wall (centred on the opening), Y across it
 /// (0 on the wall's centre plane, +Y to the exterior), Z up from the
-/// opening's bottom. Left and right are as seen from the interior.
+/// opening's bottom. The panels open to the interior (−Y); left and right are
+/// as seen looking the way they open (IFC's rule, docs/spec-ifc.md): a
+/// "swing-left" door has its hinges on the left of someone pushing it open.
 /// </para>
 /// </summary>
 public sealed record JoinerySpec(

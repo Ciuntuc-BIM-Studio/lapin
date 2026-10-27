@@ -198,29 +198,37 @@ public sealed class ForeignElements : IIfcRecognizer
         var cls = kind == "door" ? IfcClass.Door : IfcClass.Window;
         var spec = JoinerySpec.From(type.Attrs["spec"]);
         var marks = edit.Model.OfClass(cls).Count() + 1;
-        var right = fill.Operation is { } o && o.Contains("RIGHT", StringComparison.OrdinalIgnoreCase);
-        var made = new Entity(fill.GlobalId is { Length: 22 } fg && edit.Model.Get(fg) == null ? fg : edit.NewId(), cls, fill.Name ?? $"{spec?.Mark}{marks}", new JsonObject { ["flipHand"] = right, ["flipSide"] = false }, kind == "door" ? "DOOR" : "WINDOW");
+        // The type has the file's hand (as seen the way its panels open); the element opens the way the file's +Y points:
+        // the wall's left unflipped, so the other way flips its side, and its hand with it to keep the file's.
+        var flip = fill.OpensTowards is { } towards && Vec2.Dot(towards, Openings.FrameOf(edit.Model, wall, along).Left) < 0;
+        var made = new Entity(fill.GlobalId is { Length: 22 } fg && edit.Model.Get(fg) == null ? fg : edit.NewId(), cls, fill.Name ?? $"{spec?.Mark}{marks}", new JsonObject { ["flipHand"] = flip, ["flipSide"] = flip }, kind == "door" ? "DOOR" : "WINDOW");
         edit.Add(made);
         edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelFillsElement, opening.Id, [made.Id]));
         edit.Relate(IfcClass.RelDefinesByType, type.Id, made.Id);
         if (Spatial.StoreyOf(edit.Model, wall.Id) is { } storey) Spatial.Contain(edit, storey.Id, made.Id);
         var attrs = made.CloneAttrs();
-        attrs["imported"] = new JsonObject { ["ifcClass"] = fill.IfcClass, ["name"] = fill.Name, ["typeName"] = fill.TypeName, ["operation"] = fill.Operation, ["properties"] = fill.Properties.DeepClone() };
+        attrs["imported"] = new JsonObject { ["ifcClass"] = fill.IfcClass, ["name"] = fill.Name, ["typeName"] = fill.TypeName, ["operation"] = fill.Operation, ["userDefinedOperation"] = fill.UserDefined, ["properties"] = fill.Properties.DeepClone() };
         edit.Replace(made.With(attrs: attrs));
         ctx.Made.Add(made.Id);
     }
 
-    /// <summary>A door or window type: the file's by name, else one per size and operation, from Lapin's default of the kind at that size.</summary>
+    /// <summary>
+    /// A door or window type: the file's by name, else one per size and operation; its panels
+    /// from what the file says of its operation (<see cref="JoineryIfc.FromIfc"/>), the rest
+    /// from Lapin's default of the kind at that size.
+    /// </summary>
     Entity FillType(IEdit edit, ForeignFill fill, string kind, double w, double h, double sill, RecognitionContext ctx)
     {
         var size = $"{w * 1000:0}×{h * 1000:0}";
-        var key = fill.TypeName is { Length: > 0 } tn ? $"{kind}:type:{tn}:{size}" : $"{kind}:{size}:{fill.Operation}";
+        var how = $"{fill.Operation}:{fill.UserDefined}:{string.Join(",", (fill.Panels ?? []).Select(p => $"{p.Operation}/{p.Position}/{p.Width}"))}";
+        var key = fill.TypeName is { Length: > 0 } tn ? $"{kind}:type:{tn}:{size}:{how}" : $"{kind}:{size}:{how}";
         if (ctx.TypeIds.TryGetValue(key, out var id) && edit.Model.Get(id) is { } known) return known;
         var name = fill.TypeName is { Length: > 0 } n ? n : kind == "door" ? $"Door {size}" : $"Window {size}";
         var cls = kind == "door" ? IfcClass.DoorType : IfcClass.WindowType;
         var existing = edit.Model.OfClass(cls).FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase) && JoinerySpec.From(t.Attrs["spec"]) is { } s && Math.Abs(s.Width - w) < 1e-6 && Math.Abs(s.Height - h) < 1e-6);
         if (existing != null) { ctx.TypeIds[key] = existing.Id; return existing; }
         var spec = (kind == "door" ? JoinerySpec.DefaultDoor(name) : JoinerySpec.DefaultWindow(name)) with { Width = Math.Round(w, 4), Height = Math.Round(h, 4), SillHeight = Math.Round(sill, 4) };
+        if (JoineryIfc.FromIfc(spec, fill.Operation, fill.UserDefined, fill.Panels) is { } told && Joinery.Problem(told) == null) spec = told;
         var type = Openings.CreateType(edit, spec);
         ctx.TypeIds[key] = type.Id;
         return type;

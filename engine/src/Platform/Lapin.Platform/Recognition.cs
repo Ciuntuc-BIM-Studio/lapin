@@ -20,8 +20,14 @@ public sealed record ShapePrism(IReadOnlyList<Vec3> Outer, IReadOnlyList<IReadOn
     public double TopZ => Math.Max(BaseZ, BaseZ + Sweep.Z);
 }
 
-/// <summary>What fills a foreign opening: a door or a window, with what the file says of it.</summary>
-public sealed record ForeignFill(string GlobalId, string IfcClass, string? Name, double? Width, double? Height, string? Operation, string? TypeName, string? TypeGlobalId, JsonObject Properties);
+/// <summary>
+/// What fills a foreign opening: a door or a window, with what the file says of it: its
+/// OperationType or PartitioningType (its own, else its type's) with the user-defined text,
+/// its panels, and the way they open (its placement's +Y, in plan; IFC's left and right are
+/// seen looking that way).
+/// </summary>
+public sealed record ForeignFill(string GlobalId, string IfcClass, string? Name, double? Width, double? Height, string? Operation, string? TypeName, string? TypeGlobalId, JsonObject Properties,
+    string? UserDefined = null, IReadOnlyList<IfcJoineryPanel>? Panels = null, Vec2? OpensTowards = null);
 
 /// <summary>An opening that voids a foreign element: its body as prisms, and its fill when it has one.</summary>
 public sealed record ForeignOpening(string GlobalId, string? Name, IReadOnlyList<ShapePrism> Prisms, ForeignFill? Fill);

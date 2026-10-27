@@ -116,11 +116,13 @@ public static partial class IfcImport
                 if (fillOf != null && fillOf.TryGetValue(op.Id, out var filler) && filler.Type is "IFCDOOR" or "IFCWINDOW" or "IFCDOORSTANDARDCASE" or "IFCWINDOWSTANDARDCASE")
                 {
                     var style = typeOf?.GetValueOrDefault(filler.Id);
-                    // IFC4: OverallHeight [8], OverallWidth [9], OperationType/PartitioningType [11]; IFC2X3 doors: the style's OperationType [8].
-                    var operation = filler.Args.Count > 11 ? Enum(filler[11]) : null;
-                    operation ??= style is { Type: "IFCDOORSTYLE" } ? Enum(style[8]) : style is { Type: "IFCWINDOWSTYLE" } ? Enum(style[9]) : null;
+                    var (operation, userDefined) = Operation(filler, style);
                     double? h = filler[8] is null ? null : Length(filler[8]), w = filler[9] is null ? null : Length(filler[9]);
-                    fill = new ForeignFill(Str(filler[0]) ?? "", ClassName(filler.Type), Str(filler[2]), w is > 0 ? w : null, h is > 0 ? h : null, operation, style == null ? null : Str(style[2]), style == null ? null : Str(style[0]), PropertiesJson(filler.Id));
+                    // The way its panels open: its placement's +Y (IFC's rule, which its left and right are seen along).
+                    var y = model.Placement(filler[5]).Y;
+                    Vec2? opens = new Vec2(y.X, y.Y) is { Length: > 1e-6 } yy ? yy.Normalized() : null;
+                    fill = new ForeignFill(Str(filler[0]) ?? "", ClassName(filler.Type), Str(filler[2]), w is > 0 ? w : null, h is > 0 ? h : null, operation, style == null ? null : Str(style[2]), style == null ? null : Str(style[0]), PropertiesJson(filler.Id),
+                        UserDefined: userDefined, Panels: Panels(filler, style), OpensTowards: opens);
                 }
                 openings.Add(new ForeignOpening(Str(op[0]) ?? "", Str(op[2]), opPrisms, fill));
             }
@@ -145,6 +147,37 @@ public static partial class IfcImport
                 type == null ? null : Str(type[2]), type == null ? null : Str(type[0]), layers, material, PropertiesJson(e.Id),
                 Axis: axis, Box: prisms.Count == 0 ? model.Bounds(e.Id) : null, Usage: usage, Parts: parts,
                 Extents: origin is { } o2 && dir is { } d2 ? model.Extents(e.Id, o2, d2) : null);
+        }
+
+        static bool Defined(string? v) => v is { Length: > 0 } and not "NOTDEFINED";
+
+        /// <summary>
+        /// How a door or window operates: its own OperationType/PartitioningType (IFC4 [11], with
+        /// the user-defined text [12]), else its type's ([10], [12]), else an IFC2X3 style's
+        /// (a door style's [8], a window style's [9]).
+        /// </summary>
+        (string? Operation, string? UserDefined) Operation(StepEntity filler, StepEntity? type)
+        {
+            if (filler.Args.Count > 12 && Enum(filler[11]) is { } own && Defined(own)) return (own, Str(filler[12]));
+            if (type is { Type: "IFCDOORTYPE" or "IFCWINDOWTYPE" } && type.Args.Count > 12 && Enum(type[10]) is { } typed && Defined(typed)) return (typed, Str(type[12]));
+            if (type is { Type: "IFCDOORSTYLE" } && Enum(type[8]) is { } ds && Defined(ds)) return (ds, null);
+            if (type is { Type: "IFCWINDOWSTYLE" } && Enum(type[9]) is { } ws && Defined(ws)) return (ws, null);
+            return (null, null);
+        }
+
+        /// <summary>A door's or window's panels as its type (or itself) describes them: IfcDoorPanelProperties, IfcWindowPanelProperties.</summary>
+        List<IfcJoineryPanel>? Panels(StepEntity filler, StepEntity? type)
+        {
+            var sets = (type != null && type.Args.Count > 5 ? Items(type[5]) : []).Concat((definitions.GetValueOrDefault(filler.Id) ?? []).Select(f.Entities.GetValueOrDefault).OfType<StepEntity>());
+            List<IfcJoineryPanel>? o = null;
+            foreach (var p in sets)
+            {
+                if (p.Type == "IFCDOORPANELPROPERTIES" && Enum(p[5]) is { } dop)
+                    (o ??= []).Add(new IfcJoineryPanel(dop, Enum(p[7]) ?? "NOTDEFINED", p[6] is null ? null : Num(p[6])));
+                else if (p.Type == "IFCWINDOWPANELPROPERTIES" && Enum(p[4]) is { } wop)
+                    (o ??= []).Add(new IfcJoineryPanel(wop, Enum(p[5]) ?? "NOTDEFINED", null));
+            }
+            return o;
         }
 
         /// <summary>What the file associates as material to an object (or its type): a layer set (with its usage, when the object has one), or one material.</summary>

@@ -93,6 +93,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Class(new(IfcClass.DoorType, "Door type", [], "#c8a27a", Kind: "type"));
         r.Class(new(IfcClass.WindowType, "Window type", [], "#9cc8e8", Kind: "type"));
         r.Service<IVoidShapes>(new VoidShapes());
+        r.Service<IJoineryIfc>(new JoineryIfc());
         r.Service<IIfcRecognizer>(new ForeignElements());
         r.Service<IStoreyLevels>(new Levels());
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));

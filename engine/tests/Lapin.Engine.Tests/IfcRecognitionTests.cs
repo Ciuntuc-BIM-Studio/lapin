@@ -150,6 +150,74 @@ public class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
         return x.Write(Path.Combine(_dir, "foreign.ifc"));
     }
 
+    /// <summary>
+    /// How the file's doors and windows open comes in with them (docs/spec-ifc.md,
+    /// "Deschiderea ușilor și ferestrelor"): the hand from the OperationType (the
+    /// element's, else its type's), the way it opens from the placement's +Y, a
+    /// window's panels from its PartitioningType and its panels' properties.
+    /// </summary>
+    [Fact]
+    public void Doors_and_windows_open_as_the_file_says()
+    {
+        var x = new Foreign();
+        var wallPl = x.Place(1000, 2000, 0);
+        var wall = x.Element("IFCWALL", "wall", "W1", wallPl, x.Shape(x.Box(2500, 0, 0, 5000, 300, 2800)), E("STANDARD"));
+        x.Material(wall, x.Brick);
+        string Fill(string key, string cls, double along, double sill, double width, double height, string placement, params string[] tail)
+        {
+            var op = x.Element("IFCOPENINGELEMENT", key + "-op", "Opening", x.Place(0, 0, 0, 0, wallPl), x.Shape(x.Box(along, 0, sill, width, 500, height)), E("OPENING"));
+            var fill = x.Element(cls, key, key.ToUpperInvariant(), placement, x.Shape(x.Box(0, 0, 0, width, 100, height)), [R(height), R(width), .. tail]);
+            x.F.Add("IFCRELVOIDSELEMENT", x.G(key + "-v"), Null, Null, Null, wall, op);
+            x.F.Add("IFCRELFILLSELEMENT", x.G(key + "-f"), Null, Null, Null, op, fill);
+            return fill;
+        }
+        string Typed(string key, string cls, string operation, params string[] sets)
+        {
+            var t = x.F.Add(cls, x.G(key), Null, S(key), Null, Null, sets.Length > 0 ? L(sets) : Null, Null, Null, Null, E(cls == "IFCDOORTYPE" ? "DOOR" : "WINDOW"), E(operation), False, Null);
+            return t;
+        }
+        // A left-hand door that opens towards −Y (its placement turned round).
+        Fill("a", "IFCDOOR", 1500, 0, 900, 2100, x.Place(1500, 0, 0, 180, wallPl), E("DOOR"), E("SINGLE_SWING_LEFT"), Null);
+        // A pair of doors, what they are said by their type.
+        var bId = Fill("b", "IFCDOOR", 3000, 0, 1400, 2100, x.Place(3000, 0, 0, 0, wallPl), E("DOOR"), E("NOTDEFINED"), Null);
+        var pair = Typed("pair", "IFCDOORTYPE", "DOUBLE_DOOR_SINGLE_SWING");
+        x.F.Add("IFCRELDEFINESBYTYPE", x.G("pair-rel"), Null, Null, Null, L([bId]), pair);
+        // A window of two panels: side-hung on the left, tilt-and-turn on the right.
+        var cId = Fill("c", "IFCWINDOW", 4500, 900, 1000, 1500, x.Place(4500, 0, 0, 0, wallPl), E("WINDOW"), E("NOTDEFINED"), Null);
+        var p1 = x.F.Add("IFCWINDOWPANELPROPERTIES", x.G("p1"), Null, S("P1"), Null, E("SIDEHUNGLEFTHAND"), E("LEFT"), Null, Null, Null);
+        var p2 = x.F.Add("IFCWINDOWPANELPROPERTIES", x.G("p2"), Null, S("P2"), Null, E("TILTANDTURNRIGHTHAND"), E("RIGHT"), Null, Null, Null);
+        var twin = Typed("twin", "IFCWINDOWTYPE", "DOUBLE_PANEL_VERTICAL", p1, p2);
+        x.F.Add("IFCRELDEFINESBYTYPE", x.G("twin-rel"), Null, Null, Null, L([cId]), twin);
+
+        var f = Full();
+        IfcImport.Run(f.Session, x.Write(Path.Combine(_dir, "joinery.ifc")), null, out _);
+        var m = f.Session.Model;
+        var ifc = new JoineryIfc();
+        (string Operation, Vec3 Opens, JoinerySpec Spec) Read(string key)
+        {
+            var e = m.Get(Guid("foreign-test", key))!;
+            var at = ifc.Place(m, e)!;
+            return (ifc.Type(m, m.RelatingOf(e.Id, IfcClass.RelDefinesByType)!, at.Mirrored)!.Operation, at.Y, Openings.SpecOf(m, e.Id)!);
+        }
+
+        var a = Read("a");
+        Assert.Equal("SINGLE_SWING_LEFT", a.Operation);
+        Assert.Equal(-1, a.Opens.Y, 6);
+        Assert.Equal(["swing-left"], a.Spec.Panels.Select(p => p.Operation));
+        var door = m.Get(Guid("foreign-test", "a"))!;
+        Assert.True(door.Bool("flipSide") && door.Bool("flipHand"));
+
+        var b = Read("b");
+        Assert.Equal("DOUBLE_DOOR_SINGLE_SWING", b.Operation);
+        Assert.Equal(1, b.Opens.Y, 6);
+        Assert.Equal(["swing-left", "swing-right"], b.Spec.Panels.Select(p => p.Operation));
+        Assert.Equal("pair", m.RelatingOf(Guid("foreign-test", "b"), IfcClass.RelDefinesByType)!.Name);
+
+        var c = Read("c");
+        Assert.Equal("DOUBLE_PANEL_VERTICAL", c.Operation);
+        Assert.Equal(["side-left", "tilt-turn-right"], c.Spec.Panels.OrderBy(p => p.Col).Select(p => p.Operation));
+    }
+
     [Fact]
     public void Walls_floors_columns_beams_and_footings_come_in_native_and_the_rest_as_references()
     {
@@ -189,7 +257,10 @@ public class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
         var dOpening = Openings.OpeningOf(m, door.Id)!;
         Assert.Equal(2.0, dOpening.Num("along"), 3);
         Assert.Equal(0, dOpening.Num("sill"), 3);
-        Assert.True((bool)door.Attrs["flipHand"]!);
+        // The file's hand and the way it opens (its placement's +Y, here the world's +Y) are the door's as it stands.
+        var at = new JoineryIfc().Place(m, door)!;
+        Assert.Equal(1, at.Y.Y, 6);
+        Assert.Equal("SINGLE_SWING_RIGHT", new JoineryIfc().Type(m, m.RelatingOf(door.Id, IfcClass.RelDefinesByType)!, at.Mirrored)!.Operation);
         Assert.Equal(w1.Id, Openings.WallOf(m, dOpening.Id)!.Id);
         var win = m.Get(Guid("foreign-test", "win"))!;
         var wSpec = Openings.SpecOf(m, win.Id)!;

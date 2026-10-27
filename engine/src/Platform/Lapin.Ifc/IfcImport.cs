@@ -343,9 +343,13 @@ public static partial class IfcImport
             foreach (var t in f.Entities.Values.Where(e => e.Type.EndsWith("TYPE", StringComparison.Ordinal) && e.Args.Count >= 9 && e[0] is string { Length: 22 }))
             {
                 if (IntentOf(t.Id, t[5]) is not { } intent) continue;
-                var gid = Str(t[0])!;
+                // A door's or window's mirrored type (written for elements flipped on one axis) is the type itself.
+                var gid = intent.Attrs["LapinMirrorOf"] is JsonValue mirror && mirror.TryGetValue<string>(out var of) && of.Length > 0 ? of : Str(t[0])!;
+                intent.Attrs.Remove("LapinMirrorOf");
                 var cls = intent.Class ?? ClassName(t.Type);
-                Put(edit, gid, cls, Str(t[2]) ?? cls[3..], intent.Attrs, intent.Predefined ?? Enum(t[9]), counts: false);
+                var typeName = Str(t[2]) ?? cls[3..];
+                if (gid != Str(t[0]) && typeName.EndsWith(" (mirrored)", StringComparison.Ordinal)) typeName = typeName[..^" (mirrored)".Length];
+                Put(edit, gid, cls, typeName, intent.Attrs, intent.Predefined ?? Enum(t[9]), counts: false);
                 typeIds[t.Id] = gid;
                 foreach (var rel in f.OfType("IFCRELASSOCIATESMATERIAL").Where(r => Refs(r[4]).Contains(t.Id)))
                     if (f.Get(rel[5]) is { Type: "IFCMATERIALLAYERSET" } set)

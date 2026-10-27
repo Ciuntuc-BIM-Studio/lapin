@@ -51,6 +51,8 @@ public static class IfcExport
     public const string OldIntentSetName = "Pset_Lapin_Intent";
     public static bool IsIntentSet(string? name) => name is IntentSetName or OldIntentSetName;
     // The keys the sets' GlobalIds derive from stay the old names: a file exported again keeps its sets' ids.
+    /// <summary>The key a type's mirror image (doors and windows flipped on one axis) is derived from.</summary>
+    const string MirrorKey = "#mirrored";
     const string IntentKey = "Pset_Lapin_Intent", PhaseKey = "Pset_Lapin_Phase", ParamsKey = "Pset_Lapin_Parameters";
     public const string Version = "1";
 
@@ -171,6 +173,7 @@ public static class IfcExport
         /// <summary>The model's id as the GlobalId; one that is not a GlobalId (an old project) is mapped to one, the same every time.</summary>
         static string Gid(string id) => S(GlobalId.IsValid(id) ? id : Guid("lapin", id));
         static string Gid(string parent, string key) => S(Guid(parent, key));
+        static string GlobalIdOf(string id) => GlobalId.IsValid(id) ? id : Guid("lapin", id);
 
         string Place(string? relTo, double z) =>
             f.Add("IFCLOCALPLACEMENT", relTo ?? Null, f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", L(new[] { R(0), R(0), R(z) })), Null, Null));
@@ -204,9 +207,12 @@ public static class IfcExport
         }
 
         /// <summary>A solid as a faceted B-rep, its vertices relative to the placement's height, in its colour.</summary>
-        string Brep(Solid solid, string? hex, double z0)
+        string Brep(Solid solid, string? hex, double z0) => Brep(solid, hex, v => new Vec3(v.X, v.Y, v.Z - z0));
+
+        /// <summary>A solid as a faceted B-rep, its vertices taken into the placement's frame by <paramref name="local"/>, in its colour.</summary>
+        string Brep(Solid solid, string? hex, Func<Vec3, Vec3> local)
         {
-            var pts = solid.Vertices.Select(v => f.Add("IFCCARTESIANPOINT", L(new[] { R(v.X), R(v.Y), R(v.Z - z0) }))).ToArray();
+            var pts = solid.Vertices.Select(local).Select(v => f.Add("IFCCARTESIANPOINT", L(new[] { R(v.X), R(v.Y), R(v.Z) }))).ToArray();
             string Loop(int[] ring) => f.Add("IFCPOLYLOOP", L(ring.Select(i => pts[i])));
             var faces = solid.Faces.Where(x => x.Outer.Length >= 3).Select(face => f.Add("IFCFACE", L(
                 new[] { f.Add("IFCFACEOUTERBOUND", Loop(face.Outer), True) }
@@ -214,6 +220,47 @@ public static class IfcExport
             var brep = f.Add("IFCFACETEDBREP", f.Add("IFCCLOSEDSHELL", L(faces)));
             if (hex != null) f.Add("IFCSTYLEDITEM", brep, L(new[] { Style(hex) }), Null);
             return brep;
+        }
+
+        /// <summary>A door's or window's placement: its origin and axes (world) under the storey's, which stands at <paramref name="z0"/>.</summary>
+        string JoineryPlace(string? relTo, IfcJoineryPlace at, double z0) =>
+            f.Add("IFCLOCALPLACEMENT", relTo ?? Null, f.Add("IFCAXIS2PLACEMENT3D",
+                f.Add("IFCCARTESIANPOINT", L(new[] { R(at.Origin.X), R(at.Origin.Y), R(at.Origin.Z - z0) })),
+                f.Add("IFCDIRECTION", L(new[] { R(0), R(0), R(1) })),
+                f.Add("IFCDIRECTION", L(new[] { R(at.X.X), R(at.X.Y), R(at.X.Z) }))));
+
+        /// <summary>A world point in a door's or window's frame.</summary>
+        static Vec3 Local(IfcJoineryPlace at, Vec3 v)
+        {
+            var d = v - at.Origin;
+            return new Vec3(Vec3.Dot(d, at.X), Vec3.Dot(d, at.Y), d.Z);
+        }
+
+        /// <summary>
+        /// A door or window type's predefined property sets: one IfcDoorPanelProperties or
+        /// IfcWindowPanelProperties per panel (how it opens, where it is) and the lining's.
+        /// </summary>
+        IEnumerable<string> JoinerySets(string key, IfcJoineryType t)
+        {
+            static string Ratio(double v) => v > 0 && v <= 1 ? R(v) : Null;
+            static string Length(double v) => v > 0 ? R(v) : Null;
+            var i = 0;
+            foreach (var p in t.Panels)
+            {
+                var gid = Gid(key, $"panel/{i}");
+                var name = S($"Panel {++i}");
+                yield return t.Door
+                    ? f.Add("IFCDOORPANELPROPERTIES", gid, Null, name, Null, Null, E(p.Operation), p.Width is { } w ? Ratio(w) : Null, E(p.Position), Null)
+                    : f.Add("IFCWINDOWPANELPROPERTIES", gid, Null, name, Null, E(p.Operation), E(p.Position), Length(t.Lining.Depth), Length(t.Lining.Thickness), Null);
+            }
+            var l = t.Lining;
+            string Offset(IReadOnlyList<double> v, int n) => v.Count > n ? Ratio(v[n]) : Null;
+            yield return t.Door
+                ? f.Add("IFCDOORLININGPROPERTIES", Gid(key, "lining"), Null, S("Lining"), Null, Length(l.Depth), Length(l.Thickness), l.Threshold > 0 ? Length(l.Depth) : Null, Length(l.Threshold),
+                    l.TransomOffsets.Count > 0 ? Length(l.Transom) : Null, Offset(l.TransomOffsets, 0), Null, Null, Null, Null, Null, Null, Null)
+                : f.Add("IFCWINDOWLININGPROPERTIES", Gid(key, "lining"), Null, S("Lining"), Null, Length(l.Depth), Length(l.Thickness),
+                    l.TransomOffsets.Count > 0 ? Length(l.Transom) : Null, l.MullionOffsets.Count > 0 ? Length(l.Mullion) : Null,
+                    Offset(l.TransomOffsets, 0), Offset(l.TransomOffsets, 1), Offset(l.MullionOffsets, 0), Offset(l.MullionOffsets, 1), Null, Null, Null, Null);
         }
 
         string BodyOf(IEnumerable<string> breps) => f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("Brep"), L(breps));
@@ -368,18 +415,24 @@ public static class IfcExport
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
             // A door's frame and leaf, a column's body, a terrain: one element. Only a wall, a roof and a footing hold parts that are elements of their own.
             var grouped = o.Grouped && kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
-            var place = Place(relTo, 0);
+            // A door or window: placed with its local +Y the way its panels open, which IFC's left and right are seen along.
+            var joinery = e.Class is IfcClass.Door or IfcClass.Window && !grouped ? s.Catalog.Get<IJoineryIfc>() : null;
+            var at = joinery?.Place(m, e);
+            var place = at is { } jp ? JoineryPlace(relTo, jp, z0) : Place(relTo, 0);
             var reps = new List<string>();
-            if (!grouped) reps.Add(BodyOf(parts.Select(p => Brep(p.Solid, p.Color, z0))));
+            if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, p.Color, v => Local(jp2, v)) : Brep(p.Solid, p.Color, z0))));
             if (AxisOf(e) is { } ax) reps.Add(ax);
             var shape = reps.Count > 0 ? f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(reps)) : Null;
             var (height, width) = Overall(e, type);
-            var entity = Product(kind, Gid(e.Id), e.Name, kind.ObjectType ?? type?.Name, place, shape, e.Id, height, width);
+            // Its type in IFC's terms (the mirrored type for an element that is its type's mirror image), which the element repeats.
+            var mirrored = at?.Mirrored == true;
+            var terms = type != null && joinery != null ? joinery.Type(m, type, mirrored) : null;
+            var entity = Product(kind, Gid(e.Id), e.Name, kind.ObjectType ?? type?.Name, place, shape, e.Id, height, width, terms);
             written[e.Id] = entity;
-            placeOf[e.Id] = (place, z0);
+            if (at == null) placeOf[e.Id] = (place, z0);
             Contain(spatial, entity);
             Elements++;
-            if (type != null) TypeOf(type, kind, entity);
+            if (type != null) TypeOf(type, kind, entity, mirrored, terms);
             MaterialsOf(e, entity, parts, grouped);
             if (grouped) Parts(e, kind, parts, place, z0, entity);
             Openings(e, entity, place, z0, voids);
@@ -410,14 +463,16 @@ public static class IfcExport
         }
 
         /// <summary>The product entity with the attributes its class has: the eight every element shares, then what the class adds.</summary>
-        string Product(Kind k, string gid, string? name, string? objectType, string place, string shape, string tag, double? height = null, double? width = null)
+        string Product(Kind k, string gid, string? name, string? objectType, string place, string shape, string tag, double? height = null, double? width = null, IfcJoineryType? terms = null)
         {
             string[] common = [gid, Null, S(name), Null, S(objectType), place, shape, S(tag)];
             var up = k.Class.ToUpperInvariant();
+            var operation = E(terms?.Operation ?? "NOTDEFINED");
+            var userDefined = S(terms?.Operation == "USERDEFINED" ? terms.UserDefined : null);
             return k.Class switch
             {
-                IfcClass.Door => f.Add(up, [.. common, Opt(height), Opt(width), E(k.Predefined), E("NOTDEFINED"), Null]),
-                IfcClass.Window => f.Add(up, [.. common, Opt(height), Opt(width), E(k.Predefined), E("NOTDEFINED"), Null]),
+                IfcClass.Door => f.Add(up, [.. common, Opt(height), Opt(width), E(k.Predefined), operation, userDefined]),
+                IfcClass.Window => f.Add(up, [.. common, Opt(height), Opt(width), E(k.Predefined), operation, userDefined]),
                 "IfcElementAssembly" => f.Add(up, [.. common, Null, E(k.Predefined)]),
                 IfcClass.StairFlight => f.Add(up, [.. common, Null, Null, Null, Null, E(k.Predefined)]),
                 _ when k.Predefined.Length == 0 => f.Add(up, common),
@@ -445,24 +500,32 @@ public static class IfcExport
 
         // ─── Types and materials ────────────────────────────────────────────
 
-        void TypeOf(Entity type, Kind kind, string entity)
+        void TypeOf(Entity type, Kind kind, string entity, bool mirrored = false, IfcJoineryType? terms = null)
         {
-            if (!types.TryGetValue(type.Id, out var t))
+            var key = mirrored ? type.Id + MirrorKey : type.Id;
+            if (!types.TryGetValue(key, out var t))
             {
                 var typeClass = type.Class.EndsWith("Type", StringComparison.Ordinal) && Classes.ContainsKey(type.Class[..^4]) ? type.Class : kind.Class + "Type";
-                var intent = IntentOf(type, Gid(type.Id, IntentKey), null);
+                var gid = mirrored ? Gid(type.Id, MirrorKey) : Gid(type.Id);
+                // The mirrored type carries the type's intent and says whose mirror it is, so Lapin reads it back as the type itself.
+                var intent = IntentOf(type, Gid(key, IntentKey), null, mirrored ? [("LapinMirrorOf", GlobalIdOf(type.Id))] : null);
                 // The type's parameters, which every element of the type has.
-                string[] sets = ParamsOf(type, Gid(type.Id, ParamsKey)) is { } ps ? [intent, ps] : [intent];
+                var sets = new List<string> { intent };
+                if (ParamsOf(type, Gid(key, ParamsKey)) is { } ps) sets.Add(ps);
+                if (terms != null) sets.AddRange(JoinerySets(key, terms));
                 var pre = E(kind.Predefined.Length == 0 ? "NOTDEFINED" : kind.Predefined);
-                string[] common = [Gid(type.Id), Null, S(type.Name), Null, Null, L(sets), Null, S(type.Id), S(kind.Predefined == "USERDEFINED" ? kind.ObjectType : null)];
+                var name = mirrored ? $"{type.Name} (mirrored)" : type.Name;
+                string[] common = [gid, Null, S(name), Null, Null, L(sets), Null, S(type.Id), S(kind.Predefined == "USERDEFINED" ? kind.ObjectType : null)];
                 var up = typeClass.ToUpperInvariant();
+                var operation = E(terms?.Operation ?? "NOTDEFINED");
+                var userDefined = S(terms?.Operation == "USERDEFINED" ? terms.UserDefined : null);
                 var r = kind.Class switch
                 {
-                    IfcClass.Door => f.Add(up, [.. common, pre, E("NOTDEFINED"), False, Null]),
-                    IfcClass.Window => f.Add(up, [.. common, pre, E("NOTDEFINED"), False, Null]),
+                    IfcClass.Door => f.Add(up, [.. common, pre, operation, False, userDefined]),
+                    IfcClass.Window => f.Add(up, [.. common, pre, operation, False, userDefined]),
                     _ => f.Add(up, [.. common, pre]),
                 };
-                types[type.Id] = t = (r, []);
+                types[key] = t = (r, []);
                 // Its material: the layer set of a layered type; the one material a column's or beam's type names.
                 if (m.RelatingOf(type.Id, IfcClass.RelAssociatesMaterial) is { Class: IfcClass.MaterialLayerSet } set)
                     f.Add("IFCRELASSOCIATESMATERIAL", Gid(type.Id, "material"), Null, Null, Null, L(new[] { r }), LayerSet(set));
