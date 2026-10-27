@@ -71,8 +71,9 @@ public static class Views
                 var r = Range(m, view);
                 var bands = ViewRanges.Bands(r);
                 // A view style may leave out what lies above the cut (its overhead).
-                if (!ViewStyles.Of(m, view).Overhead) bands = bands with { Above = 0 };
-                return (ViewSpec.Plan(r.Cut, bands, hidden), null);
+                var up = view.Str("look") == "up";
+                if (!up && !ViewStyles.Of(m, view).Overhead) bands = bands with { Above = 0 };
+                return (ViewSpec.Plan(r.Cut, bands, hidden, up), null);
             }
             case "section":
             {
@@ -669,6 +670,12 @@ public static class Views
                 attrs["viewRange"] = new ViewRange(Edge(a["top"], current.Top), Edge(a["bottom"], current.Bottom), Edge(a["depth"], current.Depth)).ToJson();
             }
             if (Json.Number(a["cutHeight"]) is { } cut) attrs["cutHeight"] = cut;
+            // Seen from above (a plan) or from below (a reflected ceiling plan).
+            if ((string?)a["look"] is { } look)
+            {
+                if (look is not ("up" or "down")) throw new CommandException("A plan is seen from above (down) or from below (up).");
+                if (look == "up") attrs["look"] = "up"; else attrs.Remove("look");
+            }
             var next = v.With(attrs: attrs);
             ctx.Replace(next);
             return new JsonObject { ["problems"] = new JsonArray(ViewRanges.Problems(Range(ctx.Model, next)).Select(p => (JsonNode)p).ToArray()) };

@@ -42,7 +42,9 @@ Fiecare tronson drept e împărțit în traveile tipului, cât mai puține câte
 
 ## Planul de cofraj
 
-**Plan de cofraj** face un plan al etajului activ în faza Execuție, secționat la un metru deasupra plăcii. Popii apar secționați, iar cofrajul de deasupra lor e desenat cu linie întreruptă, până la nivelul de sus: grinzile principale și secundare, placajul și marginile.
+**Plan de cofraj** face un plan al etajului activ în faza Execuție, secționat la un metru deasupra plăcii și **văzut de jos**: un plan de plafon. Popii apar secționați. Cofrajul de deasupra lor e desenat cum îl vezi privind în sus: grinzile principale și secundare, placajul și marginile. Planul stă orientat la fel ca planul obișnuit, ca să se potrivească unul peste altul.
+
+**Plan de cofraj văzut de sus** face același plan văzut de sus, cu cofrajul desenat cu linie întreruptă peste secțiune. Orice plan se poate schimba între cele două din proprietăți (**Văzut din**) sau din **Intervalul vederii**.
 
 ![Planul de cofraj al parterului](shots/formwork-plan.webp)
 

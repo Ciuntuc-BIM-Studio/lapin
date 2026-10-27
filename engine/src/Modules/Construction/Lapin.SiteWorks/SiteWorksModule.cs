@@ -169,13 +169,17 @@ public sealed class SiteWorksModule : ILapinModule
             return null;
         });
 
-        // A plan of a storey in the execution phase, cut a metre up: the props cut, the formwork above drawn overhead (dashed) up to the level above.
+        // A plan of a storey in the execution phase, cut a metre up, the props cut: seen from below (look "up", the default), the formwork
+        // over them as seen lines up to the level above (a reflected ceiling plan); seen from above ("down"), drawn overhead, dashed.
         r.Command("formworkPlan", "Formwork plan", (ctx, a) =>
         {
             var storey = Spatial.Require(ctx.Model, (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id, IfcClass.BuildingStorey);
+            var look = (string?)a["look"] ?? "up";
+            if (look is not ("up" or "down")) throw new CommandException("A formwork plan is seen from below (up) or from above (down).");
             var attrs = new JsonObject { ["kind"] = "plan", ["scale"] = 50, ["storeyId"] = storey.Id, ["cutHeight"] = 1.0 };
+            if (look == "up") attrs["look"] = "up";
             if (ctx.Services.Get<IPhaseService>()?.EnsureExecutionPhase(ctx) is { } phase) attrs["phaseId"] = phase;
-            var v = new Entity(ctx.NewId(), Views.Class, $"Formwork plan · {storey.Name}", attrs);
+            var v = new Entity(ctx.NewId(), Views.Class, $"Formwork plan · {storey.Name}{(look == "up" ? " (from below)" : "")}", attrs);
             ctx.Add(v);
             return new JsonObject { ["id"] = v.Id };
         });

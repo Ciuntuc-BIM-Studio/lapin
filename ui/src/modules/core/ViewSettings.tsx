@@ -67,6 +67,12 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
             <dd><input type="checkbox" checked={state.resolved.overhead} onChange={(e) => set({ overhead: e.target.checked })} /><Reset field="overhead" /></dd>
             <dt title="Elements from an IFC file that bring their own plan drawing (a footprint, a door's swing, a fixture's symbol) draw it instead of their cut; off: their 3D cut">IFC 2D symbols</dt>
             <dd><input type="checkbox" checked={state.resolved.ifc2d !== false} onChange={(e) => set({ ifc2d: e.target.checked })} /><Reset field="ifc2d" /></dd>
+            <dt title="From above: a plan. From below: a reflected ceiling plan, what lies above the cut up to the range's top (soffits, beams, formwork), drawn the way the plan lies">Seen from</dt>
+            <dd>
+              <select value={view.props.look === 'up' ? 'up' : 'down'} onChange={(e) => void execute('view.setRange', { id: view.id, look: e.target.value })}>
+                <option value="down">above (plan)</option><option value="up">below (ceiling plan)</option>
+              </select>
+            </dd>
             <dt>Cut plane and depth</dt>
             <dd><button type="button" className="btn small" onClick={() => useUi.setState({ dialog: 'viewRange' })}>View range…</button></dd>
             <dt title="Another level's plan drawn under this one on screen, faded, never picked but snapped to; it does not print">Reference level</dt>

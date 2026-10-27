@@ -87,18 +87,18 @@ const formworkOnFace: ToolDef = {
   },
 };
 
-/** A plan of the active storey in the execution phase, cut a metre up: the props cut, the formwork over them dashed; opened. */
-const formworkPlan: ToolDef = {
-  id: 'sitework.formworkPlan', label: 'Formwork plan', icon: MapIcon,
+/** A plan of the active storey in the execution phase, cut a metre up, the props cut, opened: seen from below (the formwork over them as seen), or from above (dashed overhead). */
+const formworkPlan = (look: 'up' | 'down'): ToolDef => ({
+  id: look === 'up' ? 'sitework.formworkPlan' : 'sitework.formworkPlanAbove', label: look === 'up' ? 'Formwork plan' : 'Formwork plan from above', icon: MapIcon,
   run: () => {
     const storeyId = useUi.getState().storeyId ?? activeStorey()?.id ?? null;
-    void execute('sitework.formworkPlan', storeyId ? { storeyId } : {}).then((r) => {
+    void execute('sitework.formworkPlan', { look, ...(storeyId ? { storeyId } : {}) }).then((r) => {
       const id = (r as { id?: string } | null)?.id;
       const view = id ? useSession.getState().nodes.get(id) : undefined;
       if (id) useUi.setState({ view: 'plan', storeyId: (view?.props.storeyId as string | undefined) ?? storeyId, planViewId: id, selection: id, selected: [id] });
     });
   },
-};
+});
 
 const scaffoldTypes: ToolDef = { id: 'sitework.scaffoldTypes', label: 'Scaffold types…', icon: SlidersHorizontal, run: () => useUi.setState({ dialog: 'scaffoldTypes' }) };
 const formworkTypes: ToolDef = { id: 'sitework.formworkTypes', label: 'Formwork types…', icon: SlidersHorizontal, run: () => useUi.setState({ dialog: 'formworkTypes' }) };
@@ -134,7 +134,7 @@ const sitework: LapinModule = {
     groups: [
       { label: 'Scaffolding', tools: [scaffold, scaffoldOnWalls], small: [scaffoldTypes] },
       { label: 'Formwork', tools: [formworkOnSelection, formworkOnFace], small: [formworkTypes] },
-      { label: 'Drawings', tools: [formworkPlan, schedule('formwork', 'Formwork schedule'), schedule('scaffold', 'Scaffold schedule')] },
+      { label: 'Drawings', tools: [formworkPlan('up'), schedule('formwork', 'Formwork schedule'), schedule('scaffold', 'Scaffold schedule')], small: [formworkPlan('down')] },
     ],
   }],
   grips: { LapinScaffold: lineGrips },

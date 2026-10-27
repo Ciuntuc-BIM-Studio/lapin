@@ -64,7 +64,14 @@ export function ViewRangeDialog() {
             </tbody>
           </table>
           {r.problems.length > 0 && <ul className="error-text">{r.problems.map((p) => <li key={p}>{PROBLEMS[p] ?? p}</li>)}</ul>}
-          <p className="muted small">Above the cut, up to Top: dashed (overhead). From the cut down to Bottom: drawn. Below Bottom, down to the depth: faint (beyond).</p>
+          <label className="field-line"><span className="eyebrow">Seen from</span>
+            <select value={nodes.get(id)?.props.look === 'up' ? 'up' : 'down'} onChange={(e) => void execute('view.setRange', { id, look: e.target.value })}>
+              <option value="down">above (plan)</option><option value="up">below (ceiling plan)</option>
+            </select>
+          </label>
+          {nodes.get(id)?.props.look === 'up'
+            ? <p className="muted small">Seen from below: the cut, and above it up to Top drawn as seen (soffits, beams, formwork), lying the way the plan does.</p>
+            : <p className="muted small">Above the cut, up to Top: dashed (overhead). From the cut down to Bottom: drawn. Below Bottom, down to the depth: faint (beyond).</p>}
         </div>
         <footer className="dialog-foot">
           {r.custom && <button type="button" className="btn" onClick={() => void execute('view.setRange', { id, reset: true })}>Back to the default</button>}

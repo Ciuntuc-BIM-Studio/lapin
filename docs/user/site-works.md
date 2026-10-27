@@ -42,7 +42,9 @@ A **beam's formwork** is its bottom, on bearers and props, and its sides. Each s
 
 ## Formwork plan
 
-**Formwork plan** makes a plan of the active storey in the Execution phase, cut a metre above the floor. The props are cut, and the formwork above them is drawn dashed, up to the level above: the primary and secondary beams, the plywood and the edges.
+**Formwork plan** makes a plan of the active storey in the Execution phase, cut a metre above the floor, **seen from below**: a ceiling plan. The props are cut. The formwork above them is drawn as you would see it looking up: the primary and secondary beams, the plywood and the edges. It lies the way the plan lies, so the two match.
+
+**Formwork plan from above** makes the same plan seen from above, with the formwork drawn dashed over the cut. Any plan can be switched between the two in its properties (**Seen from**) or in **View range**.
 
 ![The ground floor's formwork plan](shots/formwork-plan.webp)
 

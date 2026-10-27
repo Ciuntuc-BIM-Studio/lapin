@@ -45,11 +45,15 @@ public sealed record ViewDrawing(List<DPolygon> Cuts, List<DLine> Lines, List<DF
 /// how deep it projects (<see cref="Below"/>), from where lines are beyond, and
 /// for a plan how high overhead elements are drawn (<see cref="Above"/>).
 /// </summary>
-public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Below, double? BeyondFrom = null, double Above = 0, bool Hidden = true)
+public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Below, double? BeyondFrom = null, double Above = 0, bool Hidden = true, bool Up = false)
 {
-    /// <summary>A plan cut at <paramref name="cutZ"/>, looking down.</summary>
-    public static ViewSpec Plan(double cutZ, RangeBands bands, bool hidden = true) =>
-        new("plan", new ViewFrame(new Vec3(0, 0, cutZ), new Vec3(1, 0, 0), new Vec3(0, 1, 0), -Vec3.UnitZ), true, bands.Below, bands.BeyondFrom, bands.Above, hidden);
+    /// <summary>
+    /// A plan cut at <paramref name="cutZ"/>, looking down; or, <paramref name="up"/>, looking up
+    /// (a reflected ceiling plan: what is above the cut up to the range's top, seen from below,
+    /// drawn the way the plan lies so the two lay over each other).
+    /// </summary>
+    public static ViewSpec Plan(double cutZ, RangeBands bands, bool hidden = true, bool up = false) =>
+        new("plan", new ViewFrame(new Vec3(0, 0, cutZ), new Vec3(1, 0, 0), new Vec3(0, 1, 0), -Vec3.UnitZ), true, bands.Below, bands.BeyondFrom, bands.Above, hidden, up);
 
     /// <summary>A section along a line in plan, looking to its left-hand side (as drawn from <paramref name="a"/> to <paramref name="b"/>), as deep as asked.</summary>
     public static ViewSpec Section(Vec2 a, Vec2 b, double depth, bool hidden = true)
@@ -92,6 +96,7 @@ public static class Generator
     public static ViewDrawing Draw(IReadOnlyList<DrawPart> parts, ViewSpec v, IReadOnlyList<DrawSymbol>? symbols = null, Func<DrawPart, string?>? seamKey = null)
     {
         seamKey ??= p => p.Material ?? " class:" + p.Class;
+        if (v.Kind == "plan" && v.Up) return DrawUp(parts, v, seamKey);
         var cuts = new List<DPolygon>();
         var lines = new List<DLine>();
         var plan = v.Kind == "plan";
@@ -160,6 +165,43 @@ public static class Generator
                 for (var i = 0; i + 1 < n + (sym.Closed ? 1 : 0); i++)
                     lines.Add(new DLine(sym.Points[i], sym.Points[(i + 1) % n], sym.Role, sym.Element, sym.Class, Own: sym.Own));
             }
+        return new ViewDrawing(cuts, lines);
+    }
+
+    /// <summary>
+    /// A plan looking up: the cut at the plan's height seen from below, and
+    /// what lies above it up to the range's top (soffits, beams, formwork) as
+    /// seen lines. Seen from below the drawing would come out mirrored; it is
+    /// turned back, so it lies as the plan does (the reflected ceiling plan's
+    /// convention). No symbols: doors and windows are a plan's.
+    /// </summary>
+    static ViewDrawing DrawUp(IReadOnlyList<DrawPart> parts, ViewSpec v, Func<DrawPart, string?> seamKey)
+    {
+        var cutZ = v.Frame.Origin.Z;
+        var reach = v.Above > 0 ? v.Above : ViewRanges.Unlimited;
+        var primary = parts.Where(p => p.CutInPlan || !SymbolicInPlan.Contains(p.Class)).Where(p =>
+        {
+            if (p.Solid.Vertices.Length == 0) return false;
+            double lo = double.PositiveInfinity, hi = double.NegativeInfinity;
+            foreach (var q in p.Solid.Vertices) { lo = Math.Min(lo, q.Z); hi = Math.Max(hi, q.Z); }
+            return hi > cutZ + 1e-9 && lo < cutZ + reach - 1e-9;
+        }).ToList();
+        var up = new ViewFrame(new Vec3(0, 0, cutZ), new Vec3(1, 0, 0), new Vec3(0, -1, 0), Vec3.UnitZ);
+        var (seen, areas, behind) = HiddenLines.Draw(primary.Select((p, i) => (p.Solid, i)).ToList(), up, true, reach, v.Hidden, primary.Select(seamKey).ToList());
+        static Vec2 F(Vec2 p) => new(p.X, -p.Y);
+        var cuts = new List<DPolygon>();
+        var lines = new List<DLine>();
+        foreach (var a in areas)
+        {
+            var p = primary[a.Owner];
+            var loops = a.Loops.Select(l => l.Select(F).Reverse().ToArray()).ToList();
+            cuts.Add(new DPolygon(loops, p.Element, p.Class, p.Key, p.Material));
+            foreach (var loop in loops)
+                for (var i = 0; i < loop.Length; i++) lines.Add(new DLine(loop[i], loop[(i + 1) % loop.Length], LineRole.Cut, p.Element, p.Class));
+        }
+        lines = SplitAtCorners(lines, cuts);
+        foreach (var s in seen) { var p = primary[s.Owner]; lines.Add(new DLine(F(s.A), F(s.B), LineRole.Projection, p.Element, p.Class)); }
+        foreach (var s in behind) { var p = primary[s.Owner]; lines.Add(new DLine(F(s.A), F(s.B), LineRole.Hidden, p.Element, p.Class)); }
         return new ViewDrawing(cuts, lines);
     }
 

@@ -176,8 +176,33 @@ public class SiteWorksTests
         var view = (string)f.Run("sitework.formworkPlan", new JsonObject { ["storeyId"] = StoreyNamed(f, "Ground floor") })!["id"]!;
         Assert.Equal(PhasesModule.Settings(f.Model).ActivePhase!.Id, f.Model.Get(view)!.Str("phaseId"));
         var drawing = f.Session.Query("view.drawing", new JsonObject { ["id"] = view })!.ToJsonString();
-        Assert.Contains(fw, drawing);                                                 // the props cut, the beams overhead
+        Assert.Contains(fw, drawing);                                                 // the props cut, the beams over them
+        Assert.Equal("up", f.Model.Get(view)!.Str("look"));                          // from below by default
     }
+
+    [Fact]
+    public void A_plan_is_seen_from_above_or_from_below_and_from_below_it_lies_as_the_plan_does()
+    {
+        var f = Site();
+        var beam = Beam(f, 1, 2, 5, 2);                                              // its bottom at +2,60, over the cut (+1,20)
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = StoreyNamed(f, "Ground floor") })!["id"]!;
+        var spec = Views.Spec(f.Model, f.Model.Get(plan)!, []).Spec!;
+        Assert.False(spec.Up);
+        f.Run("view.setRange", new JsonObject { ["id"] = plan, ["look"] = "up" });
+        Assert.True(Views.Spec(f.Model, f.Model.Get(plan)!, []).Spec!.Up);
+        var up = (JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = plan })!;
+        var pens = up["pens"]!.AsArray().OfType<JsonObject>().ToList();
+        Assert.Contains(pens, p => (string)p["layer"]! == "SEEN");                    // seen from below, not dashed overhead
+        Assert.DoesNotContain(pens, p => (string)p["layer"]! == "OVERHEAD");
+        // Turned back: the beam's lines lie where it is in plan (y = 2 ± 0,125), not mirrored to y = −2.
+        var ys = pens.SelectMany(p => p["segments"]?.AsArray().Select(x => (double)x!).Where((_, i) => i % 2 == 1) ?? []).ToList();
+        Assert.NotEmpty(ys);
+        Assert.All(ys, y => Assert.InRange(y, 1.8, 2.2));
+        f.Run("view.setRange", new JsonObject { ["id"] = plan, ["look"] = "down" });
+        Assert.Null(f.Model.Get(plan)!.Str("look"));
+        Assert.Throws<CommandException>(() => f.Run("view.setRange", new JsonObject { ["id"] = plan, ["look"] = "sideways" }));
+    }
+
 
     [Fact]
     public void A_straight_scaffold_takes_the_fewest_bays_and_climbs_until_the_work_top_is_within_reach()
