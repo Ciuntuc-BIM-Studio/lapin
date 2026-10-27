@@ -126,7 +126,7 @@ export function DrawingView() {
 
   // Direct editing of the shapes drafted on this view (and of a solid sketched here): their grips and lines.
   const editor = useGripEditor({
-    viewIds: [id], mode: 'drawing', toScreen, scale: v.scale, disabled: !!cadStep, svg: ref,
+    viewIds: [id], mode: 'drawing', toScreen, scale: v.scale, disabled: !!cadStep, svg: ref, marks: drawing?.marks,
     aim: (cx, cy, from) => {
       const r = ref.current!.getBoundingClientRect();
       const a = aim(toWorld(cx - r.left, cy - r.top), from, { orthoHeld: false });
@@ -192,8 +192,9 @@ export function DrawingView() {
         onDoubleClick={(e) => {
           if (useCad.getState().step) return;
           const r = ref.current!.getBoundingClientRect();
-          const id = pickAny(toWorld(e.clientX - r.left, e.clientY - r.top));
-          if (id) void editDimension(id);
+          const w = toWorld(e.clientX - r.left, e.clientY - r.top);
+          const id = pickAny(w);
+          if (id) void editDimension(id, w);
         }}>
         <rect width="100%" height="100%" className="paper" />
         {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} />}

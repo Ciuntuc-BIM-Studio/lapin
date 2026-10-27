@@ -2,7 +2,7 @@
 
 import loaded, { product } from 'virtual:lapin-modules';
 import type { ComponentType } from 'react';
-import type { Grip, LapinModule, RefLine, RibbonTabDef, ToolDef } from './module';
+import type { Grip, GripView, LapinModule, RefLine, RibbonTabDef, ToolDef } from './module';
 import type { NodeDto } from '../engine/protocol';
 import { toggleTool, useUi } from '../app/store';
 import { mergeTabs } from './ribbon';
@@ -17,7 +17,7 @@ export const propertySections = (ifcClass: string) => modules.flatMap((m) => m.p
 export const backgrounds = (): ComponentType[] => modules.map((m) => m.background).filter((b): b is ComponentType => Boolean(b));
 export const dialog = (id: string): ComponentType | null => modules.map((m) => m.dialogs?.[id]).find(Boolean) ?? null;
 
-export const gripsOf = (node: NodeDto): Grip[] => modules.flatMap((m) => m.grips?.[node.type]?.(node) ?? []).map((g) => ({ owner: node.id, ...g }));
+export const gripsOf = (node: NodeDto, view?: GripView): Grip[] => modules.flatMap((m) => m.grips?.[node.type]?.(node, view) ?? []).map((g) => ({ owner: node.id, ...g }));
 export const referencesOf = (node: NodeDto): RefLine[] => modules.flatMap((m) => m.references?.[node.type]?.(node) ?? []);
 export const similarOf = (cls: string) => modules.map((m) => m.similar?.[cls]).find(Boolean) ?? null;
 export const setTypeOf = (cls: string) => modules.map((m) => m.setType?.[cls]).find(Boolean) ?? null;

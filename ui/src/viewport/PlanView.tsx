@@ -266,7 +266,7 @@ export function PlanView() {
   const editor = useGripEditor({
     viewIds: [ownPlan, storey ? `plan:${storey.id}` : null], mode: 'plan', storeyId: storey?.id, toScreen, scale: view.scale,
     aim: (cx, cy, from) => { const s = snapAt(cx, cy, from); setHover(s); return s.point; },
-    disabled: !!tool?.gesture || !!cadStep, svg: svgRef,
+    disabled: !!tool?.gesture || !!cadStep, svg: svgRef, marks: drawing?.marks,
   });
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -481,8 +481,9 @@ export function PlanView() {
         onDoubleClick={(e) => {
           if (tool?.gesture || useCad.getState().step) return;
           const rect = svgRef.current!.getBoundingClientRect();
-          const n = pick(toWorld(e.clientX - rect.left, e.clientY - rect.top));
-          if (n) void editDimension(n.id);
+          const w = toWorld(e.clientX - rect.left, e.clientY - rect.top);
+          const n = pick(w);
+          if (n) void editDimension(n.id, w);
         }}>
         <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>
         {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} /></g>}

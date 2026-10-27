@@ -187,11 +187,14 @@ function TextFields({ node }: { node: NodeDto }) {
 }
 
 function DimensionFields({ node }: { node: NodeDto }) {
-  const a = pt(node.props.a), b = pt(node.props.b), at = pt(node.props.at);
+  // A string's points (pts); an older dimension's two ends (a, b).
+  const pts = Array.isArray(node.props.pts) ? (node.props.pts as unknown[]).map(pt).filter((p): p is NonNullable<ReturnType<typeof pt>> => !!p) : [pt(node.props.a), pt(node.props.b)].filter((p): p is NonNullable<ReturnType<typeof pt>> => !!p);
+  const a = pts[0], b = pts[pts.length - 1], at = pt(node.props.at);
   return (
     <dl className="fields">
       <Row label="Kind" value={pt(node.props.dir) ? 'Linear' : 'Aligned'} />
       <dt>Dimension style</dt><dd><input value={typeof node.props.dimStyle === 'string' ? node.props.dimStyle : ''} placeholder="default" onChange={(e) => void execute('element.update', { id: node.id, attrs: { dimStyle: e.target.value || null } })} /></dd>
+      {pts.length > 2 && <Row label="Points" value={String(pts.length)} />}
       {a && <Point label="Start" p={a} />}
       {b && <Point label="End" p={b} />}
       {a && b && <Row label="Length" value={lengthText(Math.hypot(b.x - a.x, b.y - a.y))} />}

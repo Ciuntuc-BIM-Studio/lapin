@@ -136,6 +136,16 @@ export const RO: Record<string, string> = {
   'Role': 'Rol', 'no role': 'fără rol', 'construction': 'construcție', 'profile': 'profil', 'hole': 'gol', 'path': 'traseu', 'rail': 'al doilea traseu', 'axis': 'axă', 'end profile': 'profil de capăt', 'Loft': 'Loft',
   'What it is for: Studio\'s operations find their profile, path, rail or axis by it; construction lines are never printed': 'La ce folosește: operațiile Studio își găsesc după el profilul, traseul sau axa; liniile de construcție nu se tipăresc',
   'The role new shapes take: a profile, a path… (Studio finds them by it); construction lines are never printed': 'Rolul formelor noi: profil, traseu… (Studio le găsește după el); liniile de construcție nu se tipăresc', 'Arc length': 'Lungime de arc', 'Slope': 'Pantă', 'Ordinate': 'Ordonată', 'Written as': 'Scrisă ca',
+  // Dimension strings (continuous dimensions as one object)
+  'Split into single dimensions': 'Împarte în cote simple', 'Join into a string': 'Unește într-un lanț de cote', 'One single dimension per segment': 'O cotă simplă pentru fiecare segment',
+  'The selected dimensions, going on from one another on one dimension line, as one string': 'Cotele selectate, care se continuă una pe alta pe aceeași linie de cotă, ca un singur lanț',
+  'Written over the segment instead of its measure (empty: the measure)': 'Scris peste segment în locul măsurii (gol: măsura)', 'text': 'text',
+  'Type a value: the element it measures moves (and, in a string, what follows)': 'Scrie o valoare: elementul măsurat se mută (și, într-un lanț, ce urmează)',
+  'Neither end holds on an element': 'Niciun capăt nu e legat de un element', 'Continued': 'Continue', 'joined into strings': 'unite în lanțuri',
+  "AutoCAD's continued dimensions (one per segment) on one dimension line, each starting where another ends, become one string of points, edited as one object": 'Cotele continue din AutoCAD (câte una pe segment) de pe aceeași linie de cotă, fiecare pornind de unde se termină alta, devin un singur lanț de puncte, editat ca un obiect',
+  'Drag: the point moves (and holds on what it lands on); Ctrl/⌘-click: take it out': 'Trage: punctul se mută (și se leagă de ce atinge); Ctrl/⌘-clic: îl scoate',
+  'Drag: a new point where it is dropped; Ctrl/⌘-click: one halfway': 'Trage: un punct nou unde îl lași; Ctrl/⌘-clic: unul la jumătate',
+  'Drag: the dimension line goes through the point': 'Trage: linia de cotă trece prin punct',
   'Angular dimension': 'Cotă unghiulară', 'Slope written as': 'Panta scrisă ca', 'Level written': 'Nivelul scris',
   'Phase of selection': 'Faza selecției', 'Key plan': 'Plan-cheie', 'Split': 'Împarte', 'On screen': 'Pe ecran', 'Seen from': 'Văzut din', 'Cut at': 'Tăiat la', 'Look from…': 'Privește din…',
   'Fit (ZE)': 'Încadrează (ZE)', 'Fit everything (ZE)': 'Încadrează tot (ZE)', 'Frame everything': 'Încadrează tot', 'The plan from above': 'Planul de sus',
@@ -194,6 +204,8 @@ export const RO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Segment (\d+) \((m|°|ratio)\)$/, (m) => `Segmentul ${m[1]} (${m[2] === 'ratio' ? 'raport' : m[2]})`],
+  [/^(aligned|linear) · (\d+) segments$/, (m) => `${m[1] === 'aligned' ? 'aliniată' : 'liniară'} · ${m[2]} segmente`],
   [/^(\d+) elements?$/, (m) => `${m[1]} elemente`],
   [/^Underlay: (.+)$/, (m) => `Fundal: ${m[1]}`],
   [/^(\d+) to check$/, (m) => `${m[1]} de verificat`],

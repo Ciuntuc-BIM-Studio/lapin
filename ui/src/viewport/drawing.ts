@@ -28,7 +28,7 @@ export interface DrawingDto {
   bounds?: [number, number, number, number];
   problem?: string;
   /** Annotations a click selects: their entity, segments and snap points. */
-  marks?: { id: string; segments: number[]; snaps?: number[] }[];
+  marks?: { id: string; segments: number[]; snaps?: number[]; data?: Record<string, unknown> }[];
   problems?: string[];
   /** Line edits (Linework) whose edge is gone. */
   lineworkOrphans?: string[];

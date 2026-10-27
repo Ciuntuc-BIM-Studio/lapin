@@ -2,7 +2,7 @@
 
 import { ArrowRightToLine, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag, Tags } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
-import type { Grip, GripStep, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
+import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
@@ -16,7 +16,7 @@ import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shap
 import { LayersDialog } from './LayersDialog';
 import { frontView } from '../../viewport/frontView';
 
-/** An aligned dimension: its two points, then where its line goes; then on as a string. Ends on an element's cut edge, a grid axis or a wall's centre line follow it. */
+/** An aligned dimension: its two points, then where its line goes; then on as a string, one object. Points on an element's cut edge, a grid axis or a wall's centre line follow it. */
 const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG']);
 const draftsFields = (node: NodeDto) => DRAFTED.has(String(node.props.predefinedType));
 
@@ -39,12 +39,13 @@ const axis: ToolDef = {
 /**
  * DIM (aligned) and DLI (linear: horizontal or vertical, by where its line
  * goes): two points, then the line; then it goes on as a string, each next
- * point measured from the last on the same line (Enter to finish; S first for
- * a single one). Ends on elements, grid axes or wall centre lines follow them.
+ * point measured from the last on the same line, previewed until Enter makes
+ * the whole string one dimension (one object, one undo step; U takes the last
+ * point back; S first for a single one). Points on elements, grid axes or
+ * wall centre lines follow them.
  */
 function dimCommand(linear: boolean): Step {
   let single = false;
-  const V = (p: Vec2) => [p.x, p.y];
   const dirOf = (a: Vec2, b: Vec2, at: Vec2): Vec2 | null => {
     if (!linear) return null;
     const m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
@@ -57,28 +58,52 @@ function dimCommand(linear: boolean): Step {
       prompt: 'Second point', want: 'point', base: a, preview: (c) => [{ type: 'line', a, b: c }],
       point: (b) => ({
         prompt: 'Where the dimension line goes', want: 'point', base: b,
-        preview: (c) => [{ type: 'line', a, b }, { type: 'line', a: c, b: { x: c.x + b.x - a.x, y: c.y + b.y - a.y } }],
+        preview: (c) => stringPreview([a, b], c, dirOf(a, b, c) ?? unit(a, b)),
         point: async (at) => {
-          const h = cadHost(); if (!h) return null;
           const dir = dirOf(a, b, at);
-          const r = await execute('drafting.addDimension', { viewId: h.viewId, a: V(a), b: V(b), at: V(at), ...(dir ? { dir: V(dir) } : {}) }) as { id?: string } | null;
-          if (!r?.id || single) return null;
-          const next = (prev: string, from: Vec2): Step => ({
-            prompt: 'Next point of the string (Enter to finish)', want: 'point', base: from,
-            preview: (c) => [{ type: 'line', a: from, b: c }],
-            point: async (p) => {
-              const hh = cadHost(); if (!hh) return null;
-              const rr = await execute('drafting.addDimension', { viewId: hh.viewId, a: V(from), b: V(p), at: V(at), after: prev, ...(dir ? { dir: V(dir) } : {}) }) as { id?: string } | null;
-              return rr?.id ? next(rr.id, p) : null;
-            },
-            enter: () => null,
+          if (single) { await addString([a, b], at, dir); return null; }
+          const pts = [a, b];
+          // An aligned string measures along its first segment.
+          const along = dir ?? unit(a, b);
+          const next = (): Step => ({
+            prompt: 'Next point of the string [Undo] (Enter to finish)', want: 'point', base: pts[pts.length - 1],
+            preview: (c) => stringPreview([...pts, c], at, along),
+            point: (p) => { pts.push(p); return next(); },
+            keywords: { U: () => { if (pts.length > 2) pts.pop(); return next(); } },
+            enter: async () => { await addString(pts, at, dir ?? (collinear(pts) ? null : along)); return null; },
           });
-          return next(r.id, b);
+          return next();
         },
       }),
     }),
   });
   return first();
+}
+
+const unit = (a: Vec2, b: Vec2): Vec2 => { const l = Math.hypot(b.x - a.x, b.y - a.y) || 1; return { x: (b.x - a.x) / l, y: (b.y - a.y) / l }; };
+/** Whether the points lie on the line through the first two. */
+const collinear = (pts: Vec2[]): boolean => {
+  const u = unit(pts[0], pts[1]);
+  return pts.every((p) => Math.abs((p.x - pts[0].x) * u.y - (p.y - pts[0].y) * u.x) < 1e-6);
+};
+
+/** A string of points made as one dimension (one engine command). */
+async function addString(pts: Vec2[], at: Vec2, dir: Vec2 | null): Promise<void> {
+  const h = cadHost();
+  if (!h) return;
+  const V = (p: Vec2) => [p.x, p.y];
+  await execute('drafting.addDimension', { viewId: h.viewId, pts: pts.map(V), at: V(at), ...(dir ? { dir: V(dir) } : {}) });
+}
+
+/** How a string will look: its dimension line through `at` along `u`, and each point's extension line onto it. */
+function stringPreview(pts: Vec2[], at: Vec2, u: Vec2): Shape[] {
+  const n = { x: -u.y, y: u.x };
+  const onLine = pts.map((p) => { const o = (at.x - p.x) * n.x + (at.y - p.y) * n.y; return { x: p.x + n.x * o, y: p.y + n.y * o }; });
+  const t = onLine.map((q) => (q.x - onLine[0].x) * u.x + (q.y - onLine[0].y) * u.y);
+  const lo = Math.min(...t), hi = Math.max(...t);
+  const shapes: Shape[] = [{ type: 'line', a: { x: onLine[0].x + u.x * lo, y: onLine[0].y + u.y * lo }, b: { x: onLine[0].x + u.x * hi, y: onLine[0].y + u.y * hi } }];
+  pts.forEach((p, i) => shapes.push({ type: 'line', a: p, b: onLine[i] }));
+  return shapes;
 }
 /** TAG: click an element, then where its tag goes [MARK/NAME/CLASS/TYPE]. */
 let tagField = 'mark';
@@ -331,6 +356,58 @@ function draftGrips(node: NodeDto): Grip[] {
   return grips.map((g) => ({ ...g, view }));
 }
 
+/**
+ * A dimension string's grips, like a polyline's: a grip on each measured
+ * point (dragged: the point goes there and holds on what it lands on; Ctrl/⌘:
+ * taken out, two stay), one in each segment's middle on the dimension line
+ * (dragged: a new point where it is dropped; Ctrl/⌘: one halfway), and the
+ * dimension line's ends (dragged: the line goes through the point). They stand
+ * where the view draws the points (on the elements they hold on), else where
+ * they were placed.
+ */
+function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
+  if (node.props.predefinedType !== 'DIMENSION' || node.props.dimKind) return [];
+  const data = view?.mark?.data as { points?: unknown[]; line?: unknown[] } | undefined;
+  const list = (raw: unknown): Vec2[] => (Array.isArray(raw) ? raw.map(pt).filter((p): p is Vec2 => !!p) : []);
+  const stored = Array.isArray(node.props.pts) ? list(node.props.pts) : list([node.props.a, node.props.b]);
+  const pts = data?.points && list(data.points).length === stored.length ? list(data.points) : stored;
+  if (pts.length < 2) return [];
+  const at = pt(node.props.at) ?? pts[0];
+  const dir = pt(node.props.dir);
+  const u = dir ? unit({ x: 0, y: 0 }, dir) : unit(pts[0], pts[pts.length - 1]);
+  const n = { x: -u.y, y: u.x };
+  const line = data?.line && list(data.line).length === pts.length ? list(data.line)
+    : pts.map((p) => { const o = (at.x - p.x) * n.x + (at.y - p.y) * n.y; return { x: p.x + n.x * o, y: p.y + n.y * o }; });
+  const id = node.id;
+  const grips: Grip[] = pts.map((p, i) => ({
+    key: `p${i}`, kind: 'vertex' as const, at: p, title: 'Drag: the point moves (and holds on what it lands on); Ctrl/⌘-click: take it out',
+    step: (to: Vec2) => ({ command: 'drafting.moveDimensionPoint', args: { id, index: i, point: [to.x, to.y] } }),
+    remove: () => (pts.length > 2 ? { command: 'drafting.removeDimensionPoint', args: { id, index: i } } : null),
+  }));
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const m = { x: (line[i].x + line[i + 1].x) / 2, y: (line[i].y + line[i + 1].y) / 2 };
+    const half = { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 };
+    grips.push({
+      key: `e${i}`, kind: 'edgeMid', at: m, title: 'Drag: a new point where it is dropped; Ctrl/⌘-click: one halfway',
+      step: (to: Vec2) => ({ command: 'drafting.insertDimensionPoint', args: { id, index: i + 1, point: [to.x, to.y] } }),
+      insert: () => ({ command: 'drafting.insertDimensionPoint', args: { id, index: i + 1, point: [half.x, half.y] } }),
+    });
+  }
+  // The dimension line's ends: dragged, the line goes through the point.
+  const t = line.map((q) => (q.x - line[0].x) * u.x + (q.y - line[0].y) * u.y);
+  for (const [key, s] of [['l0', Math.min(...t)], ['l1', Math.max(...t)]] as const) {
+    grips.push({
+      key, kind: 'end', at: { x: line[0].x + u.x * s, y: line[0].y + u.y * s }, title: 'Drag: the dimension line goes through the point',
+      step: (to: Vec2) => ({ command: 'drafting.moveDimension', args: { id, at: [to.x, to.y] } }),
+    });
+  }
+  const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
+  return grips.map((g) => ({ ...g, view: viewId }));
+}
+
+/** An annotation's grips: a drafted shape's, a dimension string's. */
+const annotationGrips = (node: NodeDto, view?: GripView): Grip[] => [...draftGrips(node), ...dimensionGrips(node, view)];
+
 /** A grid's axes: each axis's ends and middle (keys "<tag>:start"…), shown when that axis is selected (grid#tag). */
 function gridGrips(node: NodeDto): Grip[] {
   const axes = (node.props.axes as { tag: string; a: number[]; b: number[] }[] | undefined) ?? [];
@@ -391,7 +468,7 @@ const drafting: LapinModule = {
     { id: 'draft', label: 'Drafting', classes: ['IfcAnnotation'], component: DraftSection, replacesFields: draftsFields },
     { id: 'dimension', label: 'Dimension', classes: ['IfcAnnotation'], component: DimensionSection },
   ],
-  grips: { IfcAnnotation: draftGrips, IfcGrid: gridGrips },
+  grips: { IfcAnnotation: annotationGrips, IfcGrid: gridGrips },
   references: { IfcGrid: gridRefs },
 };
 

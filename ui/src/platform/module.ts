@@ -93,6 +93,9 @@ export interface Grip {
   remove?: () => GripStep | null;
 }
 
+/** What a 2D view lends an entity's grips: the mark the engine drew it with (an annotation's points as drawn now, in `data`). */
+export interface GripView { mark?: { id: string; segments: number[]; snaps?: number[]; data?: Record<string, unknown> } }
+
 /** A line drawn over a selected element: its axis (walls, beams), its outline (slabs, roofs), its sketch (Studio). */
 export interface RefLine { points: Vec2[]; closed: boolean; kind: 'axis' | 'outline' | 'sketch'; view?: string; /** A grid axis's tag: drawn only when that axis is selected. */ tag?: string }
 
@@ -124,8 +127,8 @@ export interface LapinModule {
   dialogs?: Record<string, ComponentType>;
   /** Mounted (invisible) while the workspace is open: what keeps a module's state in step with the model. */
   background?: ComponentType;
-  /** The grips of a selected entity, by IFC class. */
-  grips?: Record<string, (node: NodeDto) => Grip[]>;
+  /** The grips of a selected entity, by IFC class (with what the view drew of it, when it draws it itself). */
+  grips?: Record<string, (node: NodeDto, view?: GripView) => Grip[]>;
   /** The lines drawn over a selected entity (its axis, its outline), by IFC class. */
   references?: Record<string, (node: NodeDto) => RefLine[]>;
   /** Create Similar (CS): the tool that builds this class, set up like the element (its type, its style). */

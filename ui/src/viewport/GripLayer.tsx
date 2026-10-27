@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUi } from '../app/store';
 import { execute, useSession } from '../engine/session';
-import type { Grip, RefLine, Vec2 } from '../platform/module';
+import type { Grip, GripView, RefLine, Vec2 } from '../platform/module';
 import { gripsOf, referencesOf } from '../platform/modules';
 import { dropGrips, groupGrips, movers, runSteps, type GripGroup } from './grips';
 import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
@@ -41,6 +41,8 @@ export interface GripEditorOptions {
   anyStorey?: boolean;
   /** Pixels per model unit. */
   scale: number;
+  /** The view's drawn annotations: what an annotation's grips stand on (a dimension's points as drawn now). */
+  marks?: NonNullable<GripView['mark']>[];
   /** A tool or a command is busy: no grips. */
   disabled: boolean;
   svg: React.RefObject<SVGSVGElement | null>;
@@ -71,12 +73,12 @@ export function useGripEditor(o: GripEditorOptions) {
       const [nodeId, tag] = id.includes('#') ? [id.slice(0, id.indexOf('#')), id.slice(id.indexOf('#') + 1)] : [id, null];
       const n = nodes.get(nodeId);
       if (!n?.editable) continue;
-      for (const g of gripsOf(n)) if ((!tag || g.key.startsWith(`${tag}:`)) && inView(g.view, n.storeyId)) gs.push(g);
+      for (const g of gripsOf(n, { mark: o.marks?.find((m) => m.id === n.id) })) if ((!tag || g.key.startsWith(`${tag}:`)) && inView(g.view, n.storeyId)) gs.push(g);
       for (const r of referencesOf(n)) if ((!tag || !r.tag || r.tag === tag) && inView(r.view, n.storeyId)) rs.push({ ...r, owner: n.id });
     }
     return { grips: gs, refs: rs };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, nodes, o.disabled, o.mode, o.storeyId, o.anyStorey, viewKey]);
+  }, [selected, nodes, o.disabled, o.mode, o.storeyId, o.anyStorey, viewKey, o.marks]);
 
   const groups = useMemo(() => groupGrips(grips, 3 / Math.max(o.scale, 1e-9)), [grips, o.scale]);
   const pickOf = (g: GripGroup) => pick[g.key] ?? g.members.length;

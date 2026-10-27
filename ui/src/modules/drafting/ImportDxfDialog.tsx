@@ -43,6 +43,7 @@ export function ImportDxfDialog() {
   const [texts, setTexts] = useState(true);
   const [hatches, setHatches] = useState(true);
   const [dimensions, setDimensions] = useState('native');
+  const [joinDimensions, setJoinDimensions] = useState(true);
   const [link, setLink] = useState(false);
   const [off, setOff] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -83,7 +84,7 @@ export function ImportDxfDialog() {
         ...(flip === 'auto' ? {} : { flip: flip === 'yes' }),
         scale: Number(scale.replace(',', '.')) || 1,
         ...(layers && off.size ? { layers } : {}),
-        texts, hatches, dimensions, link,
+        texts, hatches, dimensions, joinDimensions, link,
       }) as Result | null;
       if (r) {
         const parts = [r.shapes ? `${r.shapes} shapes` : '', r.hatches ? `${r.hatches} hatches` : '', r.texts ? `${r.texts} texts` : '', r.dimensions ? `${r.dimensions} dimensions` : ''].filter(Boolean);
@@ -145,6 +146,10 @@ export function ImportDxfDialog() {
                     <option value="skip">left out</option>
                   </select>
                 </dd>
+                {dimensions === 'native' && <>
+                  <dt title="AutoCAD's continued dimensions (one per segment) on one dimension line, each starting where another ends, become one string of points, edited as one object">Continued</dt>
+                  <dd><label><input type="checkbox" checked={joinDimensions} onChange={(e) => setJoinDimensions(e.target.checked)} /> joined into strings</label></dd>
+                </>}
               </dl>
               <p className="muted small">{willFlip ? 'The drawing will be mirrored for this view.' : 'The drawing keeps its orientation.'} {Object.keys(info.unsupported).length ? `Not brought in: ${Object.entries(info.unsupported).map(([k, n]) => `${n} ${k.toLowerCase()}`).join(', ')}.` : ''}</p>
               <table className="layer-table dxf-layers">
