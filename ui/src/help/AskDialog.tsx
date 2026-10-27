@@ -6,10 +6,12 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircleQuestion, Send, X } from 'lucide-react';
+import { Send, X } from 'lucide-react';
+import { BunnyIcon } from '../icons';
 import { useUi } from '../app/store';
 import { activate, findTool } from '../platform/modules';
 import { openStandards } from '../modules/core/standardsTab';
+import { openLink } from '../shell/support';
 import { useLang } from '../i18n';
 import { FAQ, ask, type Entry } from './faq';
 
@@ -40,6 +42,7 @@ export function AskDialog({ onClose, onReport }: { onClose: () => void; onReport
     const a = e.action?.run;
     if (!a) return;
     if (a.kind === 'report') { onReport(''); return; }
+    if (a.kind === 'guide') { openLink('guide'); return; }
     onClose();
     if (a.kind === 'tool') { const t = findTool(a.id); if (t) activate(t); }
     else if (a.kind === 'tab') useUi.setState({ tab: a.id });
@@ -51,7 +54,7 @@ export function AskDialog({ onClose, onReport }: { onClose: () => void; onReport
     <div className="dialog-backdrop" onClick={onClose}>
       <div className="dialog ask-dialog" role="dialog" aria-label="Ask Lapin" data-no-i18n onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
-          <span className="panel-title"><MessageCircleQuestion size={15} /> {ro ? 'Întreabă Lapin' : 'Ask Lapin'}</span>
+          <span className="panel-title"><BunnyIcon size={16} /> {ro ? 'Întreabă Lapin' : 'Ask Lapin'}</span>
           <button type="button" className="icon" onClick={onClose} title={ro ? 'Închide' : 'Close'}><X size={15} /></button>
         </header>
         <div className="dialog-body ask-body">

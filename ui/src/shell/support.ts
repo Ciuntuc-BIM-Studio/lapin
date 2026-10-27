@@ -22,10 +22,10 @@ export function installRecentErrors(): void {
 }
 
 /** Open the community or the site in the system's browser (the engine does it). */
-export const LINKS = { community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://ciuntucbimstudio.ro' } as const;
+export const LINKS = { guide: 'https://lapin.ciuntucbimstudio.ro/docs/', community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://ciuntucbimstudio.ro' } as const;
 
 /** Open the community or the site: in the system's browser (the engine does it on the desktop), in a new tab on the web. */
-export const openLink = (link: 'community' | 'site') => {
+export const openLink = (link: keyof typeof LINKS) => {
   if (engineInBrowser) { window.open(LINKS[link], '_blank', 'noopener'); return; }
   void engine.call('support.open', { link }).catch(() => notify('The link could not be opened.'));
 };

@@ -40,7 +40,10 @@ pnpm typecheck && pnpm test    # UI (vitest) and engine (xUnit); pnpm test:engin
 pnpm products                  # what every product resolves to
 pnpm build:product <id>        # one edition as a desktop app → build/<id>/bundle (check:licenses first)
 pnpm build:web <id>            # the same edition for the browser (engine in a Web Worker) → build/<id>/web; needs the wasm-tools workload (engine/src/Host/Lapin.Browser/README.md)
+pnpm docs:user                 # the user guide (docs/user/*.md) with its pictures retaken by scripts/user-docs/scenes.mjs → build/user-docs
 ```
+
+The user guide (https://lapin.ciuntucbimstudio.ro/docs/, ? → User guide) is published by `deploy/web/deploy.sh` with each web build. A change users see (a tool, a dialog, a menu) updates its page in `docs/user` and its scene in `scripts/user-docs/scenes.mjs`; a scene that no longer finds what it drives fails the run, so the guide never shows an interface that is gone.
 
 Linux (.deb, .AppImage) builds run in GitHub Actions: Actions → Build Linux → Run workflow, or a tag `v*`; the packages are the run's artifacts. Without Actions, `scripts/build-linux-docker.sh [product] [ref]` runs the same steps in an Ubuntu 22.04 x64 container (Docker: OrbStack on the Mac) → `build/<product>-linux/`. Windows builds are made on the Mac with `pnpm build:product lapin --target windows` (cross-compiled: cargo-xwin, NSIS, the committed `engine/native/win-x64/manifoldc.dll`; docs/release-windows.md), or by hand on a Windows machine (`pnpm build:product lapin` from a Visual Studio x64 developer prompt; manifold built with MSVC by `node scripts/build-manifold.mjs`); either way tested on Windows and uploaded to the site with `ciuntucbimstudio-site/deploy/upload-downloads.sh` (the installer and a portable zip); the Windows workflow was removed on 26.10.2026. macOS is signed and notarized locally.
 

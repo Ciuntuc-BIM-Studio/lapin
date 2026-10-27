@@ -8,13 +8,14 @@ namespace Lapin.Host;
 /// <summary>
 /// Reaching Ciuntuc BIM Studio from the app: a report of an issue (posted to
 /// the Lapin server's feedback endpoint, where reports are kept as files), and
-/// the links the help menu opens (the community on Skool, the site). Through
+/// the links the help menu opens (the user guide, the community on Skool, the site). Through
 /// the host, so the desktop app needs no browser rights of its own.
 /// </summary>
 public static class Support
 {
     public const string CommunityUrl = "https://www.skool.com/bubblebim-club-1376/about";
     public const string SiteUrl = "https://ciuntucbimstudio.ro";
+    public const string GuideUrl = "https://lapin.ciuntucbimstudio.ro/docs/";
 
     /// <summary>Where reports go: LAPIN_FEEDBACK_URL when set (tests, a staging server), else the Lapin server.</summary>
     public static string FeedbackUrl => Environment.GetEnvironmentVariable("LAPIN_FEEDBACK_URL") is { Length: > 0 } u ? u : "https://lapin.ciuntucbimstudio.ro/api/feedback";
@@ -40,7 +41,7 @@ public static class Support
     /// <summary>Open one of the help menu's links in the browser (only these: nothing else is opened on the host's say).</summary>
     public static void Open(string? which)
     {
-        var url = which switch { "community" => CommunityUrl, "site" => SiteUrl, _ => throw new CommandException("Nothing to open.") };
+        var url = which switch { "guide" => GuideUrl, "community" => CommunityUrl, "site" => SiteUrl, _ => throw new CommandException("Nothing to open.") };
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 }

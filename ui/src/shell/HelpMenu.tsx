@@ -1,5 +1,6 @@
 /**
- * Ask Me (the rabbit beside the ?) and the help menu (?): Ask Lapin (the FAQ, also on F1), report an issue (it
+ * Ask Me (the rabbit beside the ?) and the help menu (?): Ask Lapin (the FAQ, also on F1), the user guide
+ * (lapin.ciuntucbimstudio.ro/docs, docs/user), report an issue (it
  * reaches Ciuntuc BIM Studio with the app's last errors attached), the
  * community on Skool, the site, updates (the desktop app), the version.
  */
@@ -108,6 +109,7 @@ export function HelpMenu() {
       {open && (
         <div className="menu-pop" role="menu">
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setAsking(true); }}>Ask Lapin…<kbd>F1</kbd></button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('guide'); }}>User guide</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setReport(true); }}>Report an issue…</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('community'); }}>Community (Skool)</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('site'); }}>ciuntucbimstudio.ro</button>

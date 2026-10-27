@@ -20,6 +20,8 @@ describe('Ask Lapin', () => {
     expect(best('vreau să export pdf')).toBe('sheets-pdf');
     expect(best('cum pun o textură proprie pe un material')).toBe('textures');
     expect(best('import my own .pat hatch patterns')).toBe('pat');
+    expect(best('is there a user manual?')).toBe('guide');
+    expect(best('unde gasesc documentatia')).toBe('guide');
   });
 
   it('says nothing to what it does not know', () => {

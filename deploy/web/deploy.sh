@@ -10,6 +10,10 @@ set -euo pipefail
 #
 #   deploy/web/deploy.sh [id]          (default: lapin; builds it unless SKIP_BUILD=1)
 #
+# The user guide goes with it, to <DEPLOY_DIR>/www/docs (https://lapin.ciuntucbimstudio.ro/docs/):
+# its pictures retaken from this commit by scripts/user-docs (pnpm docs:user), so
+# the guide shows the app being published. SKIP_DOCS=1 leaves the guide as it is.
+#
 # Careful: the old Lapin's deploy (ifc-lite/deploy/lapin/deploy.sh) syncs www/
 # with --delete and would remove www/web; give it --exclude web before using it again.
 
@@ -39,3 +43,14 @@ ssh "${SERVER}" "mkdir -p ${REMOTE_DIR}/www/web"
 rsync -az --exclude index.html "${WEB}/" "${SERVER}:${REMOTE_DIR}/www/web/"
 rsync -az "${WEB}/index.html" "${SERVER}:${REMOTE_DIR}/www/web/index.html"
 echo "✓ https://lapin.ciuntucbimstudio.ro/web/"
+
+if [[ "${SKIP_DOCS:-0}" != "1" ]]; then
+  node scripts/user-docs/run.mjs
+  DOCS="${ROOT}/build/user-docs"
+  echo "→ the user guide to ${SERVER}:${REMOTE_DIR}/www/docs"
+  ssh "${SERVER}" "mkdir -p ${REMOTE_DIR}/www/docs"
+  # The pictures first, the pages last; pictures no page shows any more go.
+  rsync -az --delete --exclude '*.html' "${DOCS}/" "${SERVER}:${REMOTE_DIR}/www/docs/"
+  rsync -az "${DOCS}/"*.html "${SERVER}:${REMOTE_DIR}/www/docs/"
+  echo "✓ https://lapin.ciuntucbimstudio.ro/docs/"
+fi

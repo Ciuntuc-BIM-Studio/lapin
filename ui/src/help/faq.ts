@@ -10,13 +10,14 @@
  * "hard to find in the interface" gets its entry here.
  */
 
-/** What an answer's button does: press a ribbon tool (by its id), show a tab, open a dialog, open Drafting standards on its Project tab, or open the report form. */
+/** What an answer's button does: press a ribbon tool (by its id), show a tab, open a dialog, open Drafting standards on its Project tab, open the report form, or open the user guide. */
 export type Action =
   | { kind: 'tool'; id: string }
   | { kind: 'tab'; id: string }
   | { kind: 'dialog'; id: string }
   | { kind: 'standards' }
-  | { kind: 'report' };
+  | { kind: 'report' }
+  | { kind: 'guide' };
 
 export interface Entry {
   id: string;
@@ -191,6 +192,16 @@ export const FAQ: Entry[] = [
     keywords: ['update', 'updates', 'version', 'new', 'download', 'desktop', 'web', 'browser', 'slow', 'actualizare', 'actualizez', 'versiune', 'lent'],
     a: 'The desktop app looks for a newer build when it starts, and on Help → Check for updates; it asks first. The web version is always the latest. The desktop app is the fastest; the web one runs the same engine in the browser, a little slower.',
     aRo: 'Aplicația desktop caută o versiune nouă la pornire și din Help → Check for updates; întreabă înainte. Versiunea web e mereu cea mai nouă. Aplicația desktop e cea mai rapidă; cea web rulează același motor în browser, ceva mai încet.',
+    source: 'faq',
+  },
+  {
+    id: 'guide',
+    q: ['Is there a manual or a user guide?', 'Where is the documentation?', 'Are there tutorials?'],
+    qRo: ['Există un manual sau un ghid?', 'Unde e documentația?', 'Sunt tutoriale?'],
+    keywords: ['manual', 'guide', 'documentation', 'docs', 'tutorial', 'tutorials', 'help', 'learn', 'ghid', 'documentatie', 'tutoriale', 'invat'],
+    a: 'The user guide at lapin.ciuntucbimstudio.ro/docs shows, page by page with pictures from the app, how to model walls, doors and windows, floors and roofs, structure, views, sheets and exports. It is also on ? → User guide.',
+    aRo: 'Ghidul utilizatorului, la lapin.ciuntucbimstudio.ro/docs, arată pagină cu pagină, cu imagini din aplicație, cum modelezi pereți, uși și ferestre, planșee și acoperișuri, structura, vederile, planșele și exporturile. Îl găsești și la ? → User guide.',
+    action: { label: 'Open the user guide', labelRo: 'Deschide ghidul', run: { kind: 'guide' } },
     source: 'faq',
   },
   {

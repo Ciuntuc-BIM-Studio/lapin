@@ -19,6 +19,7 @@
     "build:product": "node scripts/check-licenses.mjs && node scripts/build-product.mjs",
     "build:web": "node scripts/check-licenses.mjs && node scripts/build-web.mjs",
     "check:web": "node scripts/check-web.mjs",
+    "docs:user": "node scripts/user-docs/run.mjs",
     "tauri": "tauri",
     "mcp": "node scripts/lapin-mcp.mjs"
   },
@@ -28,6 +29,8 @@
     ]
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.5.0"
+    "@tauri-apps/cli": "^2.5.0",
+    "marked": "16.4.1",
+    "playwright-core": "1.56.1"
   }
 }
