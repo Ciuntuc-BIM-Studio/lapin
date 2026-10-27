@@ -68,7 +68,8 @@ const notesFor = async (version, target) => {
   const since = before?.version ? commitOf(before.version) : null;
   const subjects = git(['log', '--format=%s', '--no-merges', since ? `${since}..${at}` : `${at}~10..${at}`]).split('\n')
     .filter((t) => /^(feat|fix)/.test(t)).slice(0, 15)
-    .map((t) => `• ${t.replace(/^\w+(\([^)]*\))?:\s*/, '').split(/[;:]/)[0].trim()}`);
+    .map((t) => t.replace(/^\w+(\([^)]*\))?:\s*/, '').split(/[;:(]/)[0].trim())
+    .map((t) => `• ${t.length > 100 ? `${t.slice(0, 99).replace(/\s+\S*$/, '')}…` : t}`);
   return subjects.length ? subjects.join('\n') : `${product.name ?? 'Lapin'} ${version}`;
 };
 
