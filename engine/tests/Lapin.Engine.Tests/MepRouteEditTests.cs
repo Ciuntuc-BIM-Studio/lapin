@@ -51,7 +51,6 @@ public class MepRouteEditTests
     public void A_node_moved_writes_its_runs_where_they_are_drawn_and_a_detour_survives()
     {
         var (f, _, _, radiator, run) = Heating();
-        SameLine(Stored(f, run), Drawn(f, run));
         var first = Stored(f, run);
         f.Run("mep.detour", new JsonObject { ["id"] = run, ["from"] = new JsonArray(1.5, first[0].Y), ["to"] = new JsonArray(3, first[0].Y), ["offset"] = -0.6 });
         Assert.Equal(first.Count + 4, Stored(f, run).Count);

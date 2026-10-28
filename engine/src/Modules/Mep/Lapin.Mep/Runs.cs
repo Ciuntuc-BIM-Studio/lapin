@@ -416,8 +416,7 @@ public static partial class Runs
         Spatial.Contain(ctx, storeyId, run.Id);
         ConnectEnd(ctx, run, "start", a["start"]);
         ConnectEnd(ctx, run, "end", a["end"]);
-        // Its points where it is drawn: the connected ends on their ports.
-        Refollow(ctx, run.Id);
+        // Kept as drawn (a short leg the user drew between two corners stays): its points are written where it is drawn once what it is on moves, or its route is edited.
         return ctx.Model.Get(run.Id)!;
     }
 
