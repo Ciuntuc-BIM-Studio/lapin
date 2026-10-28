@@ -10,6 +10,9 @@ import { useLooks, type Look } from '../platform/looks';
 import { pickable } from '../platform/scope';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { X } from 'lucide-react';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import { activeStorey, engine, useSession } from '../engine/session';
@@ -23,7 +26,7 @@ import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
 import { useDrawing, type DrawingDto } from './drawing';
-import { cssColor, drawingPoint, evenOddShapes, onCut, paperToModel, sectionPlanes, sectionPose, textFont, textQuad, useSection3d, type DrawingText, type ViewFrameDto } from './section3d';
+import { cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPlanes, sectionPose, textFont, textQuad, useSection3d, type DrawingText, type ViewFrameDto } from './section3d';
 import { clampPitch, exitWalk, lookVector, useWalk, walkStep, WALK_KEYS, type WalkStart } from './walk';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
@@ -207,20 +210,19 @@ function sectionOverlay(d: DrawingDto, annotations: boolean, anisotropy: number)
       })));
     }
     const stroke = cssColor(pen.stroke);
-    const segs = pen.segments ?? [];
+    // Dashed as on paper, the whole pattern in the model's metres at the view's scale; as wide as the pen on a sheet at 100 %.
+    const segs = pen.dash && pen.dash.length >= 2 ? dashSegments(pen.segments ?? [], pen.dash, d.scale) : pen.segments ?? [];
     if (stroke && segs.length >= 4) {
       const pos = new Float32Array((segs.length / 2) * 3);
-      for (let k = 0; k + 1 < segs.length; k += 2) pos.set([segs[k], segs[k + 1], 0], (k / 2) * 3);
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      geo.applyMatrix4(lineAt);
-      const look = { color: new THREE.Color(stroke.hex), transparent: stroke.opacity < 1, opacity: stroke.opacity };
-      // Dashed as on paper (a pattern's first dash and gap), in the model's metres at the view's scale.
-      const dash = pen.dash && pen.dash.length >= 2 ? pen.dash : null;
-      const lines = new THREE.LineSegments(geo, dash
-        ? new THREE.LineDashedMaterial({ ...look, dashSize: paperToModel(dash[0], d.scale), gapSize: paperToModel(dash[1], d.scale) })
-        : new THREE.LineBasicMaterial(look));
-      if (dash) lines.computeLineDistances();
+      for (let k = 0; k + 1 < segs.length; k += 2) {
+        const v = new THREE.Vector3(segs[k], segs[k + 1], 0).applyMatrix4(lineAt);
+        pos.set([v.x, v.y, v.z], (k / 2) * 3);
+      }
+      const geo = new LineSegmentsGeometry().setPositions(pos);
+      const mat = new LineMaterial({ color: new THREE.Color(stroke.hex).getHex(), linewidth: penPixels(pen.width), transparent: stroke.opacity < 1, opacity: stroke.opacity });
+      const lines = new LineSegments2(geo, mat);
+      // Its width is in the screen's pixels: the material learns the screen's size as it is drawn.
+      lines.onBeforeRender = (renderer) => { renderer.getSize(mat.resolution); };
       group.add(lines);
     }
   }

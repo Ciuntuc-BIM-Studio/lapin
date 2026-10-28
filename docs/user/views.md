@@ -28,7 +28,7 @@ Double-click **{3D}** to open the 3D view. Drag with the left button to orbit ar
 
 ### A section in 3D
 
-Right-click a section in the browser and choose **Show in 3D**. The 3D view cuts the model along the section's line. It keeps the side the section looks at, up to the section's depth if it has one. The section's own drawing lies on the cut, with the same cut fills and hatches a sheet prints. Its dimensions, level marks, tags and texts lie on the same plane, the same size and in the same place as in the section. Those drawn beside the building stand in the air beside the cut. **Annotations** on the chip at the bottom of the 3D view hides them or shows them again. An elevation's **Show in 3D** turns the camera to look the way the elevation does.
+Right-click a section in the browser and choose **Show in 3D**. The 3D view cuts the model along the section's line. It keeps the side the section looks at, up to the section's depth if it has one. The section's own drawing lies on the cut, with the same cut fills and hatches a sheet prints. Its dimensions, level marks, tags and texts lie on the same plane, the same size and in the same place as in the section. Lines keep their pen weights and their full dash patterns. Those drawn beside the building stand in the air beside the cut. **Annotations** on the chip at the bottom of the 3D view hides them or shows them again. An elevation's **Show in 3D** turns the camera to look the way the elevation does.
 
 ![The section's right-click menu in the browser](shots/section-3d-menu.webp)
 

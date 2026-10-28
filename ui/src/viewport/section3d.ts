@@ -147,3 +147,45 @@ export function cssColor(s: string | null | undefined): { hex: string; opacity: 
   if (/^#[0-9a-f]{8}$/i.test(s)) return { hex: s.slice(0, 7), opacity: parseInt(s.slice(7), 16) / 255 };
   return { hex: s, opacity: 1 };
 }
+
+/** CSS pixels per paper millimetre: a pen drawn on the cut as wide as on a sheet at 100 %. */
+const PX_PER_MM = 96 / 25.4;
+
+/** A pen's width on the screen, in CSS pixels (a hairline still one pixel). */
+export const penPixels = (mm: number): number => Math.max(1, (mm || 0) * PX_PER_MM);
+
+/**
+ * Segments (x1 y1 x2 y2 …, metres) cut into the dashes of a pattern (paper
+ * mm at the view's scale: dash, gap, dash, gap…; a 0 dash is a dot), as the
+ * 2D drawing dashes them; the pattern goes on where a segment starts at the
+ * previous one's end, so a polyline is dashed as one line.
+ */
+export function dashSegments(segs: number[], pattern: number[], scale: number | undefined): number[] {
+  const raw = pattern.map((v) => paperToModel(Math.abs(v), scale));
+  if (raw.length < 2 || !(raw.reduce((a, b) => a + b, 0) > 1e-9)) return segs;
+  // A dot (a 0 dash) takes no length, as SVG's: drawn as a dash a tenth of the shortest step, so it shows. An odd list repeats.
+  const dot = Math.max(1e-4, Math.min(...raw.filter((v) => v > 0)) / 10);
+  const steps = raw.length % 2 ? [...raw, ...raw] : raw;
+  const out: number[] = [];
+  let idx = 0, rem = steps[0], fresh = true;
+  let lx = NaN, ly = NaN;
+  for (let k = 0; k + 3 < segs.length; k += 4) {
+    const [x1, y1, x2, y2] = segs.slice(k, k + 4);
+    if (!(Math.hypot(x1 - lx, y1 - ly) <= 1e-6)) { idx = 0; rem = steps[0]; fresh = true; }
+    lx = x2; ly = y2;
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    if (len < 1e-9) continue;
+    const ux = (x2 - x1) / len, uy = (y2 - y1) / len;
+    const put = (a: number, b: number) => out.push(x1 + ux * a, y1 + uy * a, x1 + ux * b, y1 + uy * b);
+    let at = 0;
+    while (len - at > 1e-9) {
+      if (fresh && idx % 2 === 0 && steps[idx] === 0) put(at, Math.min(len, at + dot));
+      fresh = false;
+      if (rem <= 1e-12) { idx = (idx + 1) % steps.length; rem = steps[idx]; fresh = true; continue; }
+      const piece = Math.min(rem, len - at);
+      if (idx % 2 === 0) put(at, at + piece);
+      at += piece; rem -= piece;
+    }
+  }
+  return out;
+}

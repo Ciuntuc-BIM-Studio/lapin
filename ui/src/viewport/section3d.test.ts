@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cssColor, drawingPoint, evenOddShapes, onCut, paperToModel, sectionPlanes, sectionPose, textFont, textQuad, type DrawingText, type ViewFrameDto } from './section3d';
+import { cssColor, dashSegments, penPixels, drawingPoint, evenOddShapes, onCut, paperToModel, sectionPlanes, sectionPose, textFont, textQuad, type DrawingText, type ViewFrameDto } from './section3d';
 
 // The engine's frame of a section drawn north from (3, −2) to (3, 2) (AnnotationTests): it looks west, its x runs north.
 const F: ViewFrameDto = { origin: [3, -2, 0], right: [0, 1, 0], up: [0, 0, 1], dir: [-1, 0, 0] };
@@ -113,5 +113,22 @@ describe('a section seen in 3D', () => {
     expect(cssColor('rgba(255, 0, 16, 0.5)')).toEqual({ hex: '#ff0010', opacity: 0.5 });
     expect(cssColor('none')).toBeNull();
     expect(cssColor(null)).toBeNull();
+  });
+
+  it('dashes a line with its whole pattern at the view\'s scale, going on round a polyline\'s corner', () => {
+    // Dash 2 mm, gap 1, dot, gap 1 at 1:100: 0.2 m, 0.1, a dot (drawn 0.01 long, taking no length), 0.1 — a period of 0.4 m.
+    const r = (a: number[]) => a.map((v) => Math.round(v * 1000) / 1000);
+    expect(r(dashSegments([0, 0, 1, 0], [2, 1, 0, 1], 100))).toEqual([0, 0, 0.2, 0, 0.3, 0, 0.31, 0, 0.4, 0, 0.6, 0, 0.7, 0, 0.71, 0, 0.8, 0, 1, 0]);
+    // Round the corner the dash goes on: 0.15 m before it, 0.05 after.
+    expect(r(dashSegments([0, 0, 0.15, 0, 0.15, 0, 0.15, 1], [2, 1], 100)).slice(0, 8)).toEqual([0, 0, 0.15, 0, 0.15, 0, 0.15, 0.05]);
+    // A segment elsewhere starts the pattern again; a solid pen stays as it is.
+    expect(r(dashSegments([0, 0, 0.25, 0, 5, 5, 5.25, 5], [2, 1], 100))).toEqual([0, 0, 0.2, 0, 5, 5, 5.2, 5]);
+    expect(dashSegments([0, 0, 1, 0], [], 100)).toEqual([0, 0, 1, 0]);
+  });
+
+  it('draws a pen as wide on the screen as on a sheet at 100 %, a hairline one pixel', () => {
+    expect(penPixels(0.5)).toBeCloseTo(1.89, 2);
+    expect(penPixels(0.13)).toBe(1);
+    expect(penPixels(1)).toBeCloseTo(3.78, 2);
   });
 });
