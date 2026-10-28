@@ -17,7 +17,13 @@ public sealed record RelationDto(string Id, string Class, string Relating, IRead
 
 public sealed record PlanItemDto(string Kind, bool Closed, double[] Points, string? Text = null);
 
-public sealed record RenderPart(string Name, string Color, float[] Positions, float[] Normals, int[] Indices, float[] Edges, string? Material = null);
+/// <summary>
+/// One part of an element's render. <see cref="HiddenBy"/>: the layers modes of a 3D view
+/// (docs/view-styles.md) that leave it out, noFinishes and/or core (a wall's plaster: both;
+/// its insulation: core); null when every mode shows it. Every part is a closed solid of its own,
+/// so what is kept stays closed.
+/// </summary>
+public sealed record RenderPart(string Name, string Color, float[] Positions, float[] Normals, int[] Indices, float[] Edges, string? Material = null, string[]? HiddenBy = null);
 
 /// <summary>
 /// A part's caps where a section cuts it in 3D (<see cref="Session.Caps"/>): <see cref="Part"/> is its index in the element's parts.

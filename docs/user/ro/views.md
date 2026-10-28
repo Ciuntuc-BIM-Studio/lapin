@@ -64,6 +64,18 @@ Ca să te uiți în interiorul clădirii, arată doar unele dintre etajele ei. C
 
 Etajele ascunse nu se desenează și nu le poți selecta, încadra sau călca pe ele. Ce taie o tăietură (cea de deasupra etajelor afișate, o secțiune arătată în 3D, cutia de secțiune) nu mai e nici în calea plimbării: treci pe lângă partea de sus a unui perete pe care tăietura a înlăturat-o, iar capacele de pe tăietură închid ce deschide ea. **Fișier → Exportă 3D…** ia vederea 3D așa cum o arată (vezi [Import și export](import-export.md)). O vedere 3D salvată își păstrează propria alegere. Eticheta **Etaje** din josul vederii 3D spune ce se vede; **×** de pe ea arată din nou toate etajele.
 
+### Fără finisaje sau doar miezurile
+
+O vedere 3D poate arăta doar structura clădirii, cum o arată un plan de structură. În proprietățile vederii 3D (fără nimic selectat) sau în **Vedere → Setările vederii** cu vederea 3D în față, câmpul **Layere** (straturile) arată:
+
+- **toate straturile**: pereții, planșeele și fundațiile cum sunt construite;
+- **fără finisaje**: fără straturile din materiale de finisaj (tencuială, vopsea, faianță, gresie, rigips, pardoseli sau un material cu categoria Finish în Manage → Materials); izolația rămâne;
+- **doar miezul**: doar stratul marcat ca miez (zidăria, placa de beton).
+
+![O casă în 3D doar cu miezul: pereții sunt zidăria lor, planșeele placa lor](shots/layers-3d-core.webp)
+
+Fiecare strat păstrat rămâne un solid închis, în materialul lui, așa că o tăietură sau cutia de secțiune îl închide ca înainte. Ușile și ferestrele rămân în golurile lor; un șpalet finisat dispare odată cu finisajele peretelui. O vedere 3D își ia straturile din stilul ei, ca un plan: cu **Disciplina** Structure arată doar miezurile; din **Layere** alegi altfel, iar butonul de lângă câmp o întoarce la stil. Eticheta **Straturi afișate** din josul vederii 3D spune ce lipsește; **×** de pe ea arată din nou toate straturile. Straturile ascunse nu se selectează și nu te opresc la plimbare, iar **Fișier → Exportă 3D…** cum o arată vederea exportă aceleași straturi.
+
 ### Plimbare printr-o încăpere
 
 Într-un plan, clic dreapta într-o încăpere și alege **Plimbă-te în 3D**. Vederea 3D te pune în încăpere, la 1,60 m deasupra pardoselii, privind de-a lungul laturii ei celei mai lungi.

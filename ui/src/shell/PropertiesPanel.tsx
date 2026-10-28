@@ -12,6 +12,7 @@ import { panelFocus, panelKeys, parseNumber } from './cellKeys';
 import { useUi } from '../app/store';
 import { activeStorey, execute, useSession } from '../engine/session';
 import { frontView } from '../viewport/frontView';
+import { view3dNode } from '../viewport/storeys3d';
 import { relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
 import type { FieldDescriptor, NodeDto } from '../engine/protocol';
 import type { PropertySectionDef } from '../platform/module';
@@ -261,10 +262,9 @@ function FrontViewPanel() {
     : ui.view === 'drawing' ? ui.drawingViewId : ui.view === 'sheet' ? ui.sheetId : ui.view === '3d' ? ui.view3dId : null;
   const front = id ? nodes.get(id) : undefined;
   if (front) return <ElementPanel node={front} inFront />;
-  // {3D}: no entity of its own (its settings are the project's), so its view settings only (the storeys it shows), as a saved 3D view's; the other sections address entities.
+  // {3D}: no entity of its own (its settings are the project's), so its view settings only (discipline, style, layers, the storeys it shows), as a saved 3D view's; the other sections address entities.
   if (ui.view === '3d') {
-    const project = [...nodes.values()].find((n) => n.type === 'IfcProject');
-    const view3d: NodeDto = { id: '3d', type: 'LapinView', name: '3D', parentId: null, px: 0, py: 0, props: { ...(project?.props.view3d as Record<string, unknown> | undefined), kind: '3d' }, editable: true, module: null, storeyId: null };
+    const view3d = view3dNode(nodes);
     return (
       <aside className="panel props" aria-label="Properties">
         <div className="panel-head"><span className="eyebrow">3D view · in front</span><span className="panel-title" data-no-i18n>3D</span></div>

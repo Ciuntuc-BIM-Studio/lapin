@@ -48,6 +48,11 @@ export function view3dProps(nodes: Map<string, NodeDto>, viewId: string | null):
   return undefined;
 }
 
+/** {3D} as a view node (it has no entity: its settings are the project's `view3d`), for the panels that edit a view. */
+export function view3dNode(nodes: Map<string, NodeDto>): NodeDto {
+  return { id: '3d', type: 'LapinView', name: '3D', parentId: null, px: 0, py: 0, props: { ...(view3dProps(nodes, '3d') as NodeDto['props'] | undefined), kind: '3d' }, editable: true, module: null, storeyId: null };
+}
+
 export const settingOf = (nodes: Map<string, NodeDto>, viewId: string | null): Storeys3d => storeys3dOf(view3dProps(nodes, viewId));
 
 const elevation = (n: NodeDto) => Number(n.props.elevation ?? 0);

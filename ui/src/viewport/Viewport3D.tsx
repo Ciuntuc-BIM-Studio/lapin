@@ -15,10 +15,11 @@ import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeome
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { X } from 'lucide-react';
 import type { CapItem, NodeDto, RenderItem } from '../engine/protocol';
-import { activeStorey, engine, useSession } from '../engine/session';
+import { activeStorey, engine, execute, useSession } from '../engine/session';
 import { num, storeys as storeysOf } from '../engine/model';
 import { chipText, cutZ, settingOf } from './storeys3d';
 import { showAllStoreys3d } from './storeys3dActions';
+import { everyLayerPatch, layers3dOf, layersChip, shownIn } from './layers3d';
 import { select, setTool, useUi } from '../app/store';
 import { findTool } from '../platform/modules';
 import type { FaceHit, Vec2 } from '../platform/module';
@@ -845,6 +846,8 @@ export function Viewport3D() {
   const looks = useLooks((st) => st.looks);
   const visualStyle = useUi((st) => st.visualStyle);
   const fog = useUi((st) => st.fog);
+  // The layers this 3D view shows (its style's or its own): the parts the others are drawn without, picked through, walked through.
+  const layers = useSession((st) => layers3dOf(st.nodes, view3dId).mode);
   // Fog: the model fades into the background with distance (a display rule for linked context, big sites).
   useEffect(() => { const s = scene.current; if (s) s.fog = fog ? new THREE.FogExp2(CLEAR[theme], 0.012) : null; }, [fog, theme]);
   useEffect(() => {
@@ -852,13 +855,15 @@ export function Viewport3D() {
     if (!s) return;
     const live = items.current;
     for (const [id, entry] of live) {
-      if (render.get(id) === entry.item) continue;
+      const now = render.get(id);
+      if (now && shownIn(now, layers) === entry.item) continue;
       s.remove(entry.object);
       dispose(entry.object);
       live.delete(id);
     }
-    for (const [id, item] of render) {
+    for (const [id, whole] of render) {
       if (live.has(id)) continue;
+      const item = shownIn(whole, layers);
       const object = meshOf(item);
       s.add(object);
       live.set(id, { item, object });
@@ -880,11 +885,11 @@ export function Viewport3D() {
       });
     }
     invalidate.current();
-  }, [render, selected, looks, visualStyle, walking, capsShown]);
+  }, [render, layers, selected, looks, visualStyle, walking, capsShown]);
 
   // A walk asked for (a plan's right-click on a room), or ended; the model changed or shown otherwise under a walker.
   useEffect(() => { if (walkStart) walkApi.current.start(walkStart); else walkApi.current.stop(); }, [walkStart]);
-  useEffect(() => walkApi.current.changed(), [render, looks]);
+  useEffect(() => walkApi.current.changed(), [render, looks, layers]);
 
   // The storeys the 3D view shows: where they are cut (capped with the section's caps below).
   const nodes = useSession((st) => st.nodes);
@@ -893,6 +898,8 @@ export function Viewport3D() {
   const activeId = storey?.id ?? null;
   const cut = cutZ(storeySetting, storeyList, activeId);
   const storeysChip = chipText(storeySetting, storeyList, activeId);
+  const layerSetting = layers3dOf(nodes, view3dId);
+  const layersText = layersChip(layerSetting);
 
   // A section shown in 3D: the model cut by its plane (and its depth), its drawing on the cut; an elevation only turns the camera.
   const sectionId = useSection3d((st) => st.viewId);
@@ -911,7 +918,7 @@ export function Viewport3D() {
   const storeyCap: ClipPlane[] = cut === null ? [] : [{ normal: [0, 0, -1], constant: cut }];
   const capPlanes = [...(capStyle === 'drawing' ? (box ? boxPlanes(box) : []) : planes), ...storeyCap];
   const capScale = shown?.scale ?? 50;
-  const capKey = `${planesKey(capPlanes)}|${capStyle}|${capScale}`;
+  const capKey = `${planesKey(capPlanes)}|${capStyle}|${capScale}|${layers}`;
   useEffect(() => {
     // The view deleted: nothing to show any more.
     if (sectionId && !sectionNode) useSection3d.setState({ viewId: null });
@@ -932,7 +939,7 @@ export function Viewport3D() {
     if (!capPlanes.length) { put([]); return; }
     // Asked a moment after the last change (a face dragged asks once it rests), the newest answer kept.
     const timer = setTimeout(() => {
-      void engine.call<CapItem[]>('view.caps', { planes: capPlanes, style: capStyle, scale: capScale }).then((items) => { if (!stale) put(items ?? []); }).catch(() => undefined);
+      void engine.call<CapItem[]>('view.caps', { planes: capPlanes, style: capStyle, scale: capScale, layers }).then((items) => { if (!stale) put(items ?? []); }).catch(() => undefined);
     }, 60);
     return () => { stale = true; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- capKey stands for capPlanes
@@ -972,7 +979,7 @@ export function Viewport3D() {
   return (
     <>
       <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />
-      {(sectionId || walkStart || box || storeysChip) && (
+      {(sectionId || walkStart || box || storeysChip || layersText) && (
         <div className="view3d-modes">
           {sectionId && (
             <span className="mode-chip section">
@@ -1007,6 +1014,14 @@ export function Viewport3D() {
               <span>{storeysChip.text}</span>
               {storeysChip.cut && <span className="mode-hint">{storeysChip.cut}</span>}
               <button type="button" className="mode-close" title="Show every storey" aria-label="Show every storey" onClick={() => void showAllStoreys3d(view3dId ?? '3d')}><X size={12} /></button>
+            </span>
+          )}
+          {layersText && (
+            <span className="mode-chip layers" title="Which layers of walls, floors and footings this 3D view shows: View → View settings, or its properties">
+              <span>Layers shown</span>
+              <span>{layersText}</span>
+              <button type="button" className="mode-close" title="Show every layer" aria-label="Show every layer"
+                onClick={() => void execute('view.setStyle', { id: view3dId ?? '3d', ...everyLayerPatch(layerSetting) })}><X size={12} /></button>
             </span>
           )}
           {walkStart && (

@@ -292,7 +292,7 @@ public sealed class Session
     /// <paramref name="drawing"/>: as a sheet draws the cut, each cap with its material's section
     /// fill and hatch, the hatch at 1:<paramref name="scale"/>.
     /// </summary>
-    public List<CapItem> Caps(IReadOnlyList<ClipPlane> planes, double lift = 0.0005, bool drawing = false, double scale = 50)
+    public List<CapItem> Caps(IReadOnlyList<ClipPlane> planes, double lift = 0.0005, bool drawing = false, double scale = 50, string layers = "all")
     {
         var result = new List<CapItem>();
         if (planes.Count == 0) return result;
@@ -300,6 +300,7 @@ public sealed class Session
         var owners = new List<(string Id, int Part, GeometryPart Geometry)>();
         var seamKeys = new List<string?>();
         var keys = new Dictionary<string, string?>();
+        var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
         foreach (var (id, b) in _built)
         {
             if (b.Geometry is not { } g || b.Bounds is not { } box || b.Item == null) continue;
@@ -321,6 +322,8 @@ public sealed class Session
             var cls = _store.Get(id)?.Class ?? b.Item.Type;
             for (var i = 0; i < g.Parts.Count; i++)
             {
+                // The layers the 3D view leaves out (its layers mode) have no caps: what is kept closes alone.
+                if (!ViewStyles.Shows3d(_store, layers, id, g.Parts[i], bands)) continue;
                 solids.Add(g.Parts[i].Solid);
                 owners.Add((id, i, g.Parts[i]));
                 seamKeys.Add(Views.SeamKeyOf(_store, g.Parts[i].Material, cls, keys));
@@ -522,7 +525,7 @@ public sealed class Session
         {
             g = producer(e, view, _catalog);
             if (g != null) foreach (var f in _catalog.All<IGeometryFilter>()) g = f.Apply(e, g, view, _catalog) ?? g;
-            if (g != null) item = Render(e, g, problems);
+            if (g != null) item = Render(e, g, problems, view);
         }
         catch (Exception ex)
         {
@@ -530,7 +533,7 @@ public sealed class Session
             // read): the element is shown with its problem, and never takes the diff down with it.
             g = null;
             problems.Add(ex is ModelException or InvalidOperationException or ArgumentException ? ex.Message : $"{ex.GetType().Name}: {ex.Message}");
-            item = Render(e, null, problems);
+            item = Render(e, null, problems, view);
         }
         var built = new Built(g, view.Read, item, BoundsOf(g));
         Forget(e.Id);
@@ -612,13 +615,19 @@ public sealed class Session
         _planes.Clear();
     }
 
-    RenderItem Render(Entity e, ElementGeometry? g, List<string> problems)
+    /// <summary>
+    /// An element's render item: each part tessellated, with the layers modes a 3D view
+    /// leaves it out by (<see cref="ViewStyles.HiddenBy"/>), read through the build's
+    /// view so a material's category changed builds the element again.
+    /// </summary>
+    RenderItem Render(Entity e, ElementGeometry? g, List<string> problems, IModelView read)
     {
         var parts = new List<RenderPart>();
+        var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
         foreach (var p in g?.Parts ?? [])
         {
             var m = Tessellator.Tessellate(p.Solid);
-            parts.Add(new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material));
+            parts.Add(new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(read, e.Id, p, bands)));
         }
         var plan = (g?.Plan ?? []).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray())).ToList();
         var snaps = (g?.Snaps ?? []).SelectMany(v => new[] { v.X, v.Y }).ToArray();

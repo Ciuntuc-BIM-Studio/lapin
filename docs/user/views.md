@@ -64,6 +64,18 @@ To look inside the building, show only some of its storeys. Right-click a level 
 
 The storeys hidden are not drawn, and you cannot select them, fit to them or walk on them. What a cut takes away (the cut above the storeys shown, a section shown in 3D, the section box) is not there for a walk either: you walk past a wall's upper part the cut has removed, and the caps on the cut close what it opens. **File → Export 3D…** takes the 3D view as it shows it (see [Import and export](import-export.md)). A saved 3D view keeps its own choice. The **Storeys** chip at the bottom of the 3D view says what is shown; its **×** shows every storey again.
 
+### Without finishes, or the cores only
+
+A 3D view can show the structure of the building alone, as a structural plan does. In the 3D view's properties (with nothing selected), or in **View → View settings** with the 3D view in front, **Layers** shows:
+
+- **every layer**: the walls, floors and footings as they are built;
+- **without finishes**: without the layers whose material is a finish (plaster, render, paint, tiles, boards, floor coverings, or a material whose category is Finish in Manage → Materials); the insulation stays;
+- **the core only**: only the layer marked as the core (the brick, the concrete slab).
+
+![A house in 3D with the core only: the walls are their brick, the floors their slab](shots/layers-3d-core.webp)
+
+Each layer kept stays a closed solid in its own material, so a cut or the section box closes it as before. Doors and windows stay in their openings; a reveal lined in a finish goes with the wall's finishes. A 3D view takes its layers from its style, like a plan: set its **Discipline** to Structure and it shows the cores only; set **Layers** to choose otherwise, and the button beside it goes back to the style's. The **Layers shown** chip at the bottom of the 3D view says what is left out; its **×** shows every layer again. The layers hidden are not selected or walked against, and **File → Export 3D…** as the view shows it exports the same layers.
+
 ### Walking into a room
 
 In a plan, right-click inside a room and choose **Walk in 3D**. The 3D view puts you inside the room, 1.60 m above its floor, looking along its longest side.

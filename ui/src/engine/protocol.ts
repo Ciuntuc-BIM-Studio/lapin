@@ -36,6 +36,8 @@ export interface RenderPart {
   normals: Float32Array;
   indices: Int32Array;
   edges: Float32Array;
+  /** The layers modes of a 3D view that leave this part out (a finish layer: both; insulation: core); none: every mode shows it (layers3d.ts). */
+  hiddenBy?: ('noFinishes' | 'core')[] | null;
 }
 
 /** A part's caps where a section cuts it in 3D (view.caps): `part` is its index in the element's parts. */

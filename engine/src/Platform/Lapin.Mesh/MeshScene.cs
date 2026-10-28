@@ -18,10 +18,12 @@ namespace Lapin.Mesh;
 /// isolated for now), and <see cref="Planes"/>, the planes it cuts the model by
 /// (the cut above the storeys shown, a section shown in 3D, the section box),
 /// which cut the export too, closed by <see cref="SectionCaps"/> in the parts'
-/// materials unless <see cref="Caps"/> is off.
+/// materials unless <see cref="Caps"/> is off. <see cref="Layers"/>: which layers of
+/// layered elements go (all, noFinishes, core; docs/view-styles.md); without it, a 3D
+/// view's export takes the view's own layers mode, and the whole model every layer.
 /// </summary>
 public sealed record MeshExportOptions(string Format = "glb", string? ViewId = null, string? Phase = null, bool Edges = false, string Origin = "base",
-    IReadOnlySet<string>? Hidden = null, IReadOnlyList<ClipPlane>? Planes = null, bool Caps = true)
+    IReadOnlySet<string>? Hidden = null, IReadOnlyList<ClipPlane>? Planes = null, bool Caps = true, string? Layers = null)
 {
     public static readonly string[] Formats = ["glb", "gltf", "usdz", "usda", "dae"];
     public static readonly string[] Origins = ["base", "internal", "survey"];
@@ -36,7 +38,8 @@ public sealed record MeshExportOptions(string Format = "glb", string? ViewId = n
         return new(format, (string?)p["viewId"] is { Length: > 0 } v ? v : null, (string?)p["phase"] is { Length: > 0 } ph ? ph : null,
             p["edges"] is JsonValue ev && ev.TryGetValue<bool>(out var e) && e, origin,
             hidden is { Count: > 0 } ? hidden : null, PlanesOf(p["planes"]) is { Count: > 0 } planes ? planes : null,
-            !(p["caps"] is JsonValue cv && cv.TryGetValue<bool>(out var c) && !c));
+            !(p["caps"] is JsonValue cv && cv.TryGetValue<bool>(out var c) && !c),
+            p["layers"] is { } l ? ViewStyles.LayersOf(l) : null);
     }
 
     /// <summary>Clipping planes as the 3D view gives them: [{normal: [x, y, z], constant}] (at most twelve; a malformed one is skipped).</summary>
@@ -103,6 +106,9 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
         if (o.Hidden != null) hidden.UnionWith(o.Hidden);
         var planes = MeshClip.Unit(o.Planes ?? []);
         var filters = session.Catalog.All<IViewElementFilter>();
+        // The layers a 3D view shows (its style's, or its own), the parts it leaves out left out here too.
+        var layers = o.Layers ?? (view != null ? ViewStyles.Of(m, view).Layers : "all");
+        var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
 
         // Where the export's origin is in the model, and what the root adds back to reach real coordinates.
         var basePoint = Location.Base(m);
@@ -158,7 +164,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             ElementGeometry? geo;
             try { geo = session.Geometry(e.Id); }
             catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException) { notes.Add($"„{e.Name}” was left out: {ex.Message}"); continue; }
-            var parts = geo?.Parts.Where(p => p.Solid.Faces.Length > 0).ToList() ?? [];
+            var parts = geo?.Parts.Where(p => p.Solid.Faces.Length > 0 && ViewStyles.Shows3d(m, layers, e.Id, p, bands)).ToList() ?? [];
             if (parts.Count == 0) continue;
             // Cut as the view cuts it: each part's cap (in its material) closes what the planes open.
             var caps = planes.Length > 0 && o.Caps ? SectionCaps.Make(parts.Select(p => p.Solid).ToList(), planes) : null;
@@ -189,6 +195,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             (storey != null && groups.TryGetValue(storey.Id, out var gr) ? gr : siteGroup).Elements.Add(element);
         }
 
+        if (layers != "all") notes.Add(layers == "core" ? "The layered elements with their cores only, as the 3D view shows them." : "The layered elements without their finishes, as the 3D view shows them.");
         if (planes.Length > 0) notes.Add($"Cut as the 3D view cuts it ({planes.Length} plane{(planes.Length == 1 ? "" : "s")}){(o.Caps ? ", the cuts closed in their materials" : "")}.");
         var list = groups.Values.Where(g => g.Elements.Count > 0).ToList();
         if (siteGroup.Elements.Count > 0) list.Insert(0, siteGroup);

@@ -580,6 +580,56 @@ export const scenes = [
     },
   },
   {
+    id: 'views-3d-layers',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await open3d(t);
+      await t.fit();
+      const { page } = t;
+      // The parts the 3D draws, of all the render sends, in the mode the 3D view resolves to (layers3d.ts).
+      const parts = () => page.evaluate(async () => {
+        const { useSession } = await import('/src/engine/session.ts');
+        const { layers3dOf, shownIn } = await import('/src/viewport/layers3d.ts');
+        const st = useSession.getState();
+        const mode = layers3dOf(st.nodes, null).mode;
+        let all = 0, shown = 0;
+        for (const it of st.render.values()) { all += it.parts?.length ?? 0; shown += shownIn(it, mode).parts?.length ?? 0; }
+        return { mode, all, shown };
+      });
+      let p = await parts();
+      t.expect(p.mode === 'all' && p.shown === p.all, 'a 3D view shows every layer at first');
+      // A Structural 3D view: the cores alone, set in its properties (nothing selected, the 3D in front).
+      await t.ui({ selection: null, selected: [] });
+      await t.wait(400);
+      const props = page.locator('aside.panel.props');
+      await props.locator('dt', { hasText: 'Discipline' }).locator('xpath=following-sibling::dd[1]').locator('select').selectOption('Structure');
+      await t.wait(1500);
+      p = await parts();
+      t.expect(p.mode === 'core' && p.shown < p.all, `a Structural 3D view shows the cores alone (${p.shown} of ${p.all} parts)`);
+      t.expect(await page.locator('.mode-chip.layers').getByText('the core only').count() === 1, 'the chip says the cores alone are shown');
+      const layersSelect = props.locator('dt', { hasText: /^Layers$/ }).locator('xpath=following-sibling::dd[1]').locator('select');
+      t.expect(await layersSelect.inputValue() === 'core', 'the 3D view\'s properties say the core only');
+      // The section box's caps close the cores alone.
+      const capped = await t.call('view.caps', { planes: [{ normal: [-1, 0, 0], constant: 6 }], layers: 'core' });
+      const every = await t.call('view.caps', { planes: [{ normal: [-1, 0, 0], constant: 6 }] });
+      const count = (c) => (c ?? []).reduce((n, it) => n + it.parts.length, 0);
+      t.expect(count(capped) > 0 && count(capped) < count(every), 'a cut closes the cores alone');
+      await t.fit();
+      await t.shot('layers-3d-core', { of: '[data-testid=view3d]', pad: 0 });
+      // Without finishes, chosen in the properties: the insulation is back, the plaster stays out.
+      await layersSelect.selectOption('noFinishes');
+      await t.wait(1200);
+      p = await parts();
+      t.expect(p.mode === 'noFinishes', 'the view sets its own layers over its style');
+      // × shows every layer again.
+      await page.locator('.mode-chip.layers button.mode-close').click();
+      await t.wait(1200);
+      p = await parts();
+      t.expect(p.mode === 'all' && p.shown === p.all && await page.locator('.mode-chip.layers').count() === 0, 'the chip\'s × shows every layer');
+    },
+  },
+  {
     id: 'drafting',
     async run(t) {
       await t.fresh();

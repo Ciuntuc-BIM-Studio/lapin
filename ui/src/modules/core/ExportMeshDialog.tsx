@@ -10,6 +10,8 @@
  * show, by storeys3d.ts, and what is hidden for now, all through the looks)
  * and the planes it cuts by (the cut above the storeys shown, a section, the
  * section box), cut in the export too and closed by caps in the materials.
+ * The layers the view shows (without finishes, the cores only) the engine reads
+ * off the view too, so the export has the same layers as the screen.
  * At the end of a phase, with or without edges, from the project's base
  * point, its internal origin or the survey point's coordinates.
  */
@@ -22,6 +24,7 @@ import { exportFile, projectTitle } from '../../engine/files';
 import { useLooks } from '../../platform/looks';
 import { useClip3d } from '../../viewport/section3d';
 import { view3dProps } from '../../viewport/storeys3d';
+import { layers3dOf } from '../../viewport/layers3d';
 
 const FORMATS: [string, string][] = [
   ['glb', 'GLB: glTF in one binary file (Blender, three.js, viewers)'],
@@ -41,7 +44,8 @@ export function ExportMeshDialog() {
   const [planes] = useState(() => useClip3d.getState().planes);
   const [hidesAny] = useState(() => {
     const own = view3dProps(useSession.getState().nodes, view3dId)?.hiddenElements;
-    return hidden.length > 0 || planes.length > 0 || (Array.isArray(own) && own.length > 0);
+    const nodes = useSession.getState().nodes;
+    return hidden.length > 0 || planes.length > 0 || (Array.isArray(own) && own.length > 0) || layers3dOf(nodes, view3dId).mode !== 'all';
   });
   const [format, setFormat] = useState('glb');
   const [what, setWhat] = useState<'model' | 'view'>(hidesAny ? 'view' : 'model');
@@ -70,7 +74,7 @@ export function ExportMeshDialog() {
             <dd><select value={format} onChange={(e) => setFormat(e.target.value)}>{FORMATS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></dd>
             <dt>What</dt>
             <dd><select className="export-what" value={what} onChange={(e) => setWhat(e.target.value as 'model' | 'view')}
-              title="As the view shows it: its storeys shown, its hidden elements and categories left out, cut as it is cut">
+              title="As the view shows it: its storeys shown, its hidden elements and categories left out, the layers it shows, cut as it is cut">
               <option value="model">everything</option>
               <option value="view">as the view shows it</option>
             </select></dd>

@@ -37,9 +37,19 @@ O vedere ia stilul pe care îl numește (`viewStyle`), altfel pe al disciplinei 
 
 Totul e în desenul motorului (`Views.Gather`, `Views.Spec`, `Views.Render`), deci planșele tipăresc ce arată ecranul. Teste: `ViewStyleTests`.
 
+## În 3D (decizia 162)
+
+O vedere 3D are și ea disciplină, stil și **straturi**, ca o planșă: {3D} le ține pe proiect (`view3d`: `discipline`, `viewStyle`, `styleOverrides`, lângă `storeys`), o vedere 3D salvată pe ea însăși (duplicarea lui {3D} le copiază). O vedere 3D cu disciplina Structure arată doar miezurile; din proprietățile ei (și ale lui {3D} când e în față), din **View → View settings** cu vederea 3D în față (`view.setStyle {id: "3d" | id, discipline?, style?, layers?}`) sau din eticheta **Layers shown** din josul vederii (× înapoi la toate straturile: alegerea proprie dispare când stilul arată totul, altfel devine „toate”).
+
+- Randarea nu se schimbă pentru planuri sau alte vederi: motorul trimite toate părțile, iar fiecare parte are `hiddenBy`, modurile care o lasă deoparte (`ViewStyles.HiddenBy`: tencuiala `noFinishes` și `core`, izolația `core`). Fiecare strat e un solid închis al lui (pereți drepți și curbi, zonați, planșee, fundații continue), deci ce rămâne e închis. Categoria materialului e citită prin vederea de urmărire a construcției, deci o categorie schimbată reconstruiește elementul.
+- Interfața (`viewport/layers3d.ts`, aceeași regulă ca `ViewStyles.Of`) desenează elementul fără acele părți: alegerea, Fit, corpul plimbării și capacele urmează. `view.caps {layers}` închide doar straturile păstrate; `project.exportMesh` cu o vedere 3D ia straturile ei (`MeshExportOptions.Layers`, sau `layers` explicit), „everything” le ia pe toate.
+- Ușile și ferestrele rămân în goluri; un șpalet (`reveal:*`) dintr-un material de finisaj dispare cu finisajele peretelui (doar în 3D: planurile îl desenează ca înainte). Pragurile, glafurile și ancadramentele rămân.
+- Acoperișurile nu au straturi (învelitoare, șarpantă), deci rămân întregi; pereții cortină nu sunt stratificați.
+
+Teste: `View3dLayersTests`, `layers3d.test.ts`; scena `views-3d-layers`.
+
 ## Rămase
 
-- Stilul în 3D (miezurile singure în vederea 3D).
 - Seturile de grafică (Visibility/Graphics) legate de stil; acum vederea își ține setul ei.
 - Intervalul vederii ca parte a stilului (acum e al vederii).
 - Categoria pe strat, nu doar pe material (`IfcMaterialLayer.Category`).

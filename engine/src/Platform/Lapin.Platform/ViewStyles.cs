@@ -83,17 +83,49 @@ public static class ViewStyles
     }
 
     /// <summary>Whether a view draws a part of a layered element (a part keyed layer:&lt;n&gt;; any other part always draws).</summary>
-    public static bool Draws(IModelView m, Style s, string element, string? partKey, Dictionary<string, IReadOnlyList<LayerBand>?> cache)
+    public static bool Draws(IModelView m, Style s, string element, string? partKey, Dictionary<string, IReadOnlyList<LayerBand>?> cache) =>
+        Draws(m, s.Layers, element, partKey, cache);
+
+    /// <summary>Whether a layers mode (all, noFinishes, core) draws a part of a layered element (a part keyed layer:&lt;n&gt;; any other part always draws).</summary>
+    public static bool Draws(IModelView m, string layers, string element, string? partKey, Dictionary<string, IReadOnlyList<LayerBand>?> cache)
     {
-        if (s.Layers == "all" || partKey is not { } k || !k.StartsWith("layer:", StringComparison.Ordinal)
+        if (layers == "all" || partKey is not { } k || !k.StartsWith("layer:", StringComparison.Ordinal)
             || !int.TryParse(k.AsSpan(6), System.Globalization.CultureInfo.InvariantCulture, out var index)) return true;
         if (!cache.TryGetValue(element, out var bands)) cache[element] = bands = LayerSets.BandsOf(m, element);
         if (bands == null || index < 0 || index >= bands.Count) return true;
         var band = bands[index];
         // An element without a marked core keeps all its layers: there is nothing to tell its structure by.
-        if (s.Layers == "core") return band.Core || !bands.Any(b => b.Core);
+        if (layers == "core") return band.Core || !bands.Any(b => b.Core);
         return band.Core || !(m.Get(band.Material) is { } mat && Materials.IsFinish(mat));
     }
+
+    /// <summary>
+    /// Whether a 3D view (and what it exports) shows a part by its layers mode: the
+    /// layers as a drawing keeps them (<see cref="Draws(IModelView, string, string, string?, Dictionary{string, IReadOnlyList{LayerBand}?})"/>);
+    /// and, without the finishes or with the cores only, a door's or window's reveal
+    /// lined in a finish (plaster round the opening) goes with the wall's own
+    /// finishes, so the opening reads through the layers kept.
+    /// </summary>
+    public static bool Shows3d(IModelView m, string layers, string element, GeometryPart part, Dictionary<string, IReadOnlyList<LayerBand>?> cache)
+    {
+        if (layers == "all") return true;
+        if (part.Key is { } k && k.StartsWith("reveal", StringComparison.Ordinal))
+            return !(part.Material is { } mid && m.Get(mid) is { } mat && Materials.IsFinish(mat));
+        return Draws(m, layers, element, part.Key, cache);
+    }
+
+    /// <summary>The layers modes that leave a part out of a 3D view (null: every mode shows it), sent with its render (<see cref="RenderPart.HiddenBy"/>).</summary>
+    public static string[]? HiddenBy(IModelView m, string element, GeometryPart part, Dictionary<string, IReadOnlyList<LayerBand>?> cache)
+    {
+        List<string>? by = null;
+        foreach (var mode in LayerModes)
+            if (mode != "all" && !Shows3d(m, mode, element, part, cache)) (by ??= []).Add(mode);
+        return by?.ToArray();
+    }
+
+    /// <summary>A layers mode as a request names it: all (also when absent), noFinishes or core.</summary>
+    public static string LayersOf(JsonNode? n) =>
+        (string?)n is { } l ? LayerModes.Contains(l) ? l : throw new CommandException($"„{l}” is not all, noFinishes or core.") : "all";
 
     static JsonArray Write(IEnumerable<Style> styles) => new(styles.Select(s => (JsonNode)s.ToJson()).ToArray());
 
@@ -177,8 +209,15 @@ public static class ViewStyles
         // A view's style (style: an id; null: its discipline's) and its own settings over it (a field: its value; null: the style's again).
         r.Command("view.setStyle", "View style", (ctx, a) =>
         {
-            var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Views.Class } x ? x : throw new CommandException("Not a view.");
+            // {3D} ("3d") keeps its settings on the project, as its storeys shown and its graphics.
+            var (v, write) = GraphicsSets.Target(ctx, (string?)a["id"]);
             var attrs = v.CloneAttrs();
+            if (v.Id == GraphicsSets.View3d) attrs.Remove("kind");
+            // {3D}'s discipline (a saved view's is its attribute, set as any other).
+            if (a.ContainsKey("discipline"))
+            {
+                if (((string?)a["discipline"])?.Trim() is { Length: > 0 } d) attrs["discipline"] = d; else attrs.Remove("discipline");
+            }
             if (a.ContainsKey("style"))
             {
                 if ((string?)a["style"] is { Length: > 0 } sid)
@@ -195,7 +234,7 @@ public static class ViewStyles
                 else own[f] = value is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : throw new CommandException($"{f} is true or false.");
             }
             if (own.Count > 0) attrs["styleOverrides"] = own; else attrs.Remove("styleOverrides");
-            ctx.Replace(v.With(attrs: attrs));
+            write(attrs);
             return null;
         });
     }

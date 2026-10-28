@@ -11,12 +11,13 @@ import { useViewStyles } from './viewStyles';
 
 const OTHER = '\u0000other';
 
-export function DisciplinePicker({ node }: { node: NodeDto }) {
+/** `onPick`: how the discipline is set when the view is not an entity of its own ({3D}: view.setStyle). */
+export function DisciplinePicker({ node, onPick }: { node: NodeDto; onPick?: (discipline: string) => void }) {
   const nodes = useSession((s) => s.nodes);
   const styles = useViewStyles();
   const known = knownDisciplines(nodes, styles);
   const current = typeof node.props.discipline === 'string' && node.props.discipline.trim() ? node.props.discipline.trim() : 'Architecture';
-  const set = (discipline: string) => void execute('element.update', { id: node.id, attrs: { discipline } });
+  const set = (discipline: string) => onPick ? onPick(discipline) : void execute('element.update', { id: node.id, attrs: { discipline } });
   const pick = (v: string) => {
     if (v !== OTHER) { set(v); return; }
     const typed = window.prompt('The discipline (the browser groups views and sheets by it)', current)?.trim();

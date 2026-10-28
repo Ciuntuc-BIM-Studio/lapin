@@ -6,6 +6,8 @@
  * element to element without a line, whether a plan draws what is above its
  * cut, whether a plan draws the 2D an IFC file gave its elements instead of
  * their cut; with a plan's cut plane and range (View range) and the storeys it
+ * shows. A 3D view has its discipline, style and layers too (the walls and
+ * floors without their finishes, or their cores alone) and the storeys it
  * shows. In the view's properties and as View → View settings for the view in
  * front. Manage → View styles edits the styles themselves.
  */
@@ -21,6 +23,7 @@ import { storeys } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { PlanStoreysEditor } from './PlanStoreys';
 import { Storeys3DEditor } from './Storeys3D';
+import { view3dNode } from '../../viewport/storeys3d';
 
 interface ViewStyleState { style: ViewStyle; named: boolean; resolved: ViewStyle; overrides: string[] }
 
@@ -38,6 +41,7 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
   const set = (patch: Record<string, unknown>) => void execute('view.setStyle', { id: view.id, ...patch });
   const own = (f: string) => state.overrides.includes(f);
   const plan = view.props.kind === 'plan';
+  const threeD = view.props.kind === '3d';
   const Reset = ({ field }: { field: string }) => own(field)
     ? <button type="button" className="icon mini" title="Back to the style's" onClick={() => set({ [field]: null })}><RotateCcw size={11} /></button>
     : <span className="muted small"> style</span>;
@@ -45,7 +49,7 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
     <div className="view-settings">
       <dl className="fields">
         <dt title="The browser files the view under this discipline's set; without a style of its own the view draws as the discipline's style says">Discipline</dt>
-        <dd><DisciplinePicker node={view} /></dd>
+        <dd><DisciplinePicker node={view} onPick={view.id === '3d' ? (discipline) => set({ discipline }) : undefined} /></dd>
         <dt title="The style gives every setting below; what the view sets itself wins over it">Style</dt>
         <dd>
           <select value={state.named ? state.style.id : ''} onChange={(e) => set({ style: e.target.value || null })}>
@@ -54,14 +58,18 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
           </select>
           <button type="button" className="link small" onClick={() => useUi.setState({ dialog: 'viewStyles' })}>Edit styles…</button>
         </dd>
-        <dt title="Which layers of walls, floors and footings draw: the finishes are the layers of materials whose category is Finish">Layers</dt>
+        <dt title={threeD ? 'Which layers of walls, floors and footings the 3D view shows (each kept layer a solid of its own); the finishes are the layers of materials whose category is Finish' : 'Which layers of walls, floors and footings draw: the finishes are the layers of materials whose category is Finish'}>Layers</dt>
         <dd>
           <select value={state.resolved.layers} onChange={(e) => set({ layers: e.target.value })}>
             {LAYER_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select><Reset field="layers" />
         </dd>
-        <dt title="One material goes on from one element into the next without a line (walls, beams, footings): on by default">Join materials</dt>
-        <dd><input type="checkbox" checked={state.resolved.joins} onChange={(e) => set({ joins: e.target.checked })} /><Reset field="joins" /></dd>
+        {!threeD && (
+          <>
+            <dt title="One material goes on from one element into the next without a line (walls, beams, footings): on by default">Join materials</dt>
+            <dd><input type="checkbox" checked={state.resolved.joins} onChange={(e) => set({ joins: e.target.checked })} /><Reset field="joins" /></dd>
+          </>
+        )}
         {plan && (
           <>
             <dt title="What lies above the cut plane, up to the range's top, drawn dashed">Overhead</dt>
@@ -97,14 +105,18 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
           <PlanStoreysEditor view={view} />
         </>
       )}
+      {threeD && (
+        <>
+          <p className="eyebrow">Storeys shown</p>
+          <Storeys3DEditor viewId={view.id} />
+        </>
+      )}
     </div>
   );
 }
 
-/** In a view's properties (a plan, a section, an elevation; a 3D view's storeys shown). */
+/** In a view's properties (a plan, a section, an elevation, a 3D view: with its layers and the storeys it shows). */
 export function ViewSettingsSection({ node }: { node: NodeDto }) {
-  // A 3D view: the storeys it shows (report #29).
-  if (node.props.kind === '3d') return <><p className="eyebrow">Storeys shown</p><Storeys3DEditor viewId={node.id} /></>;
   return <ViewSettingsEditor view={node} />;
 }
 
@@ -116,11 +128,12 @@ export function ViewSettingsDialog() {
   useEffect(() => {
     void (async () => {
       const ui = useUi.getState();
-      if (ui.view === '3d') { useUi.setState({ notice: 'View settings are a drawing\'s: open a plan, a section or an elevation.' }); close(); return; }
+      // A 3D view in front: its own settings ({3D}'s on the project).
+      if (ui.view === '3d') { setId(ui.view3dId ?? '3d'); return; }
       setId(await frontView());
     })();
   }, []);
-  const view = id ? nodes.get(id) : undefined;
+  const view = id === '3d' ? view3dNode(nodes) : id ? nodes.get(id) : undefined;
   return (
     <div className="dialog-backdrop" onClick={close}>
       <div className="dialog" role="dialog" aria-label="View settings" onClick={(e) => e.stopPropagation()}>
