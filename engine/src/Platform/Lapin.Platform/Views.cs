@@ -274,8 +274,11 @@ public static class Views
         return cache[k] = MaterialDrawing.SeamKey(material == null ? null : m.Get(material) is { } mat ? MaterialGraphics.Resolve(mat, "elevation") : null, ifcClass);
     }
 
-    /// <summary>A view rendered: its pens (view coordinates, m; widths paper mm), annotations, bounds and scale, or why it cannot be drawn.</summary>
-    public sealed record Rendered(List<Pen> Pens, List<ViewMark> Marks, (Vec2 Min, Vec2 Max)? Bounds, double Scale, string Kind, string? Problem, List<string> RangeProblems, List<string>? LineworkOrphans = null);
+    /// <summary>
+    /// A view rendered: its pens (view coordinates, m; widths paper mm), annotations, bounds and scale, or why it cannot be drawn;
+    /// where it looks from (its frame, so the drawing can be laid back into the model) and, for a section, how deep it sees (null: unlimited).
+    /// </summary>
+    public sealed record Rendered(List<Pen> Pens, List<ViewMark> Marks, (Vec2 Min, Vec2 Max)? Bounds, double Scale, string Kind, string? Problem, List<string> RangeProblems, List<string>? LineworkOrphans = null, ViewFrame? Frame = null, double? Depth = null);
 
     /// <summary>The mark layer of construction lines (drafted shapes whose role is draft): on screen, never printed.</summary>
     public const string ConstructionLayer = "CONSTRUCTION";
@@ -365,7 +368,8 @@ public static class Views
             foreach (var (t, _) in mk.Texts) pts.AddRange([t.At, t.At + new Vec2(0, t.Height * scale / 1000)]);
         }
         (Vec2, Vec2)? bounds = pts.Count > 0 ? (new Vec2(pts.Min(p => p.X), pts.Min(p => p.Y)), new Vec2(pts.Max(p => p.X), pts.Max(p => p.Y))) : null;
-        return new Rendered(pens, marks, bounds, scale, spec.Kind, null, spec.Kind == "plan" ? ViewRanges.Problems(Range(m, view)) : [], lineworkOrphans);
+        double? depth = spec.Kind == "section" && spec.Below < ViewRanges.Unlimited ? spec.Below : null;
+        return new Rendered(pens, marks, bounds, scale, spec.Kind, null, spec.Kind == "plan" ? ViewRanges.Problems(Range(m, view)) : [], lineworkOrphans, spec.Frame, depth);
     }
 
     /// <summary>The view drawn, for the interface: its pens, annotations, bounds and problems.</summary>
@@ -394,6 +398,13 @@ public static class Views
         if (r.Bounds is { } b) o["bounds"] = new JsonArray(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y);
         if (r.Kind == "plan") o["problems"] = new JsonArray(r.RangeProblems.Select(x => (JsonNode)x).ToArray());
         if (r.LineworkOrphans is { Count: > 0 } lo) o["lineworkOrphans"] = new JsonArray(lo.Select(x => (JsonNode)x).ToArray());
+        // Where the drawing lies in the model: a drawing point (x, y) is origin + right·x + up·y; dir looks into the scene (the 3D view's section box).
+        if (r.Frame is { } fr)
+        {
+            static JsonArray V(Vec3 v) => new(Math.Round(v.X, 9), Math.Round(v.Y, 9), Math.Round(v.Z, 9));
+            o["frame"] = new JsonObject { ["origin"] = V(fr.Origin), ["right"] = V(fr.Right), ["up"] = V(fr.Up), ["dir"] = V(fr.Dir) };
+            if (r.Depth is { } dp) o["depth"] = dp;
+        }
         return o;
     }
 

@@ -32,6 +32,10 @@ export interface DrawingDto {
   problems?: string[];
   /** Line edits (Linework) whose edge is gone. */
   lineworkOrphans?: string[];
+  /** Where the drawing lies in the model: (x, y) is origin + right·x + up·y; dir looks into the scene. */
+  frame?: { origin: number[]; right: number[]; up: number[]; dir: number[] };
+  /** A section's depth past its line (none: unlimited). */
+  depth?: number;
 }
 
 /** The drawing of a view, fetched again (debounced) after every edit. */

@@ -49,6 +49,31 @@ public class AnnotationTests
         Assert.Contains("Level 1 +3.00", texts);
     }
 
+    [Fact]
+    public void A_section_s_drawing_says_where_it_lies_in_the_model_so_the_3D_can_lay_it_on_its_plane()
+    {
+        var f = F();
+        f.Wall(0, 0, 6, 0);
+        // Drawn north from (3, −2): it looks west (left of its line), its x runs north from the start.
+        var s = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(3, -2), ["end"] = new JsonArray(3, 2), ["depth"] = 4 })!["id"]!;
+        var d = Draw(f, s);
+        double[] V(string k) => d["frame"]![k]!.AsArray().Select(x => (double)x!).ToArray();
+        Assert.Equal(new double[] { 3, -2, 0 }, V("origin"));
+        Assert.Equal(new double[] { 0, 1, 0 }, V("right"));
+        Assert.Equal(new double[] { 0, 0, 1 }, V("up"));
+        Assert.Equal(new double[] { -1, 0, 0 }, V("dir"));
+        Assert.Equal(4, (double)d["depth"]!);
+        // The wall's cut lies 2 m along the line (y = 0 in the model), up from the floor.
+        var xs = Pens(d, "CUT").Where(p => p["segments"] != null)
+            .SelectMany(p => p["segments"]!.AsArray().Select((v, i) => (v: (double)v!, i)).Where(x => x.i % 2 == 0).Select(x => x.v)).ToList();
+        Assert.NotEmpty(xs);
+        Assert.InRange(xs.Min(), 1.6, 2.0);
+        Assert.InRange(xs.Max(), 2.0, 2.4);
+        // Unlimited: no depth.
+        var deep = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(3, -2), ["end"] = new JsonArray(3, 2) })!["id"]!;
+        Assert.Null(Draw(f, deep)["depth"]);
+    }
+
     // ------------------------------------------------------------ grids
 
     [Fact]
