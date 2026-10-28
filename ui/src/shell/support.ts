@@ -23,7 +23,7 @@ export function installRecentErrors(): void {
 }
 
 /** Open the community or the site in the system's browser (the engine does it). */
-export const LINKS = { guide: 'https://lapin.ciuntucbimstudio.ro/docs/', guideRo: 'https://lapin.ciuntucbimstudio.ro/docs/ro/', community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://ciuntucbimstudio.ro' } as const;
+export const LINKS = { guide: 'https://lapin.ciuntucbimstudio.ro/docs/', guideRo: 'https://lapin.ciuntucbimstudio.ro/docs/ro/', community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://ciuntucbimstudio.ro', source: 'https://github.com/Ciuntuc-BIM-Studio/lapin-pro' } as const;
 
 /** Open the community or the site: in the system's browser (the engine does it on the desktop), in a new tab on the web. The guide opens in the interface's language. */
 export const openLink = (which: keyof typeof LINKS) => {

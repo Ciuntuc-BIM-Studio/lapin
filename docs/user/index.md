@@ -23,6 +23,10 @@ New to Lapin? Read [Getting started](getting-started.md), then [Walls](walls.md)
 
 <!-- pages -->
 
+## Free, open source and helpware
+
+Lapin is free and open source, under the MIT licence; its code is on [GitHub](https://github.com/Ciuntuc-BIM-Studio/lapin-pro). It is also **helpware**: if Lapin helps you in any way, we encourage you, without obliging you, to help anyone who needs help, in any way you can: your time, your skills, a hand to someone nearby, a gift to people or a cause you trust. Lapin asks nothing for itself and takes no donations.
+
 ## When you are stuck
 
 Click **Ask Me**, the rabbit at the top right of the app, or press <kbd>F1</kbd>, and type your question in your own words. If it has no answer, it sends your question to us. See [Help and feedback](help.md).

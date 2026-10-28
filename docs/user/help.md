@@ -23,6 +23,9 @@ The **?** button next to Ask Me opens the help menu:
 - **Report an issue…** tells us what went wrong, or sends an idea or a question. Say what happened and what you expected, and add a screenshot if it helps. The app's version and its last error messages go with the report.
 - **Community (Skool)** is where users and the team talk.
 - **Check for updates…** is in the desktop app only.
+- **About Lapin…** shows the version, the licence, a link to the source code, and what helpware means.
+
+  ![About Lapin](shots/about.webp)
 - **Interface: English → română** switches the language. Your choice is remembered on this computer.
 
 ## Updates

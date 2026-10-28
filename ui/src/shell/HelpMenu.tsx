@@ -2,7 +2,8 @@
  * Ask Me (the rabbit beside the ?) and the help menu (?): Ask Lapin (the FAQ, also on F1), the user guide
  * (lapin.ciuntucbimstudio.ro/docs, docs/user), report an issue (it
  * reaches Ciuntuc BIM Studio with the app's last errors attached), the
- * community on Skool, the site, updates (the desktop app), the version.
+ * community on Skool, the site, updates (the desktop app), About Lapin
+ * (open source, MIT, helpware), the version.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -87,6 +88,7 @@ export function HelpMenu() {
   const [open, setOpen] = useState(false);
   const [report, setReport] = useState<ReportStart | true | false>(false);
   const [asking, setAsking] = useState(false);
+  const [about, setAbout] = useState(false);
   const info = useSession((s) => s.info);
   // F1: Ask Lapin, from anywhere.
   useEffect(() => {
@@ -117,14 +119,46 @@ export function HelpMenu() {
           <button type="button" role="menuitem" data-no-i18n onClick={() => { setOpen(false); setLang(useLang.getState().lang === 'ro' ? 'en' : 'ro'); }}>
             {useLang.getState().lang === 'ro' ? 'Interfața: română → English' : 'Interface: English → română'}
           </button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); setAbout(true); }}>About Lapin…</button>
           <span className="muted small menu-note">Lapin {info?.engineVersion ?? ''}</span>
         </div>
       )}
       {asking && <AskDialog onClose={() => setAsking(false)}
         onReport={(q) => { setAsking(false); setReport(q ? { kind: 'question', title: q.length > 80 ? `${q.slice(0, 77)}…` : q, description: q } : true); }} />}
+      {about && <AboutDialog version={info?.engineVersion} onClose={() => setAbout(false)} />}
       {report && <ReportDialog onClose={() => setReport(false)} start={report === true ? undefined : report} />}
     </div>
     </>
   );
 }
 
+/**
+ * About Lapin: its version, that it is open source (MIT) with a link to the
+ * code, and helpware: if Lapin helps, we encourage (never require) helping
+ * anyone who needs it, in any way; Lapin asks nothing and takes no donations.
+ */
+function AboutDialog({ version, onClose }: { version?: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="dialog-backdrop" role="dialog" aria-label="About Lapin">
+      <div className="dialog about">
+        <header className="dialog-head">
+          <span className="panel-title">About Lapin</span>
+          <button type="button" className="icon" onClick={onClose} title="Close"><X size={15} /></button>
+        </header>
+        <div className="dialog-body">
+          <p className="about-name"><BunnyIcon size={22} /><b>Lapin</b> <span className="muted" data-no-i18n>{version ?? ''}</span></p>
+          <p>A classic BIM modeller built natively on IFC, by Ciuntuc BIM Studio.</p>
+          <p>Lapin is free and open source, under the MIT licence. <button type="button" className="link" onClick={() => openLink('source')}>Source code on GitHub</button></p>
+          <h4>Helpware</h4>
+          <p>If Lapin helps you in any way, we encourage you, without obliging you, to help anyone who needs help, in any way you can: your time, your skills, a hand to someone nearby, a gift to people or a cause you trust.</p>
+          <p className="muted small">Lapin asks nothing for itself and takes no donations. This is a request, not a condition of the licence.</p>
+        </div>
+      </div>
+    </div>
+  );
+}

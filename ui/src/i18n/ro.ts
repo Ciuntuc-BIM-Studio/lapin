@@ -148,6 +148,12 @@ export const RO: Record<string, string> = {
   'The role new shapes take: a profile, a path… (Studio finds them by it); construction lines are never printed': 'Rolul formelor noi: profil, traseu… (Studio le găsește după el); liniile de construcție nu se tipăresc', 'Arc length': 'Lungime de arc', 'Slope': 'Pantă', 'Ordinate': 'Ordonată', 'Written as': 'Scrisă ca',
   // Dimension strings (continuous dimensions as one object)
   'Add points': 'Adaugă puncte', 'Add dimension points': 'Adaugă puncte de cotă', 'Click points to put into the string, each where it falls along its line (DIMADD)': 'Clic pe punctele de pus în lanț; fiecare intră la locul lui pe linia de cotă (DIMADD)',
+  'About Lapin…': 'Despre Lapin…', 'About Lapin': 'Despre Lapin',
+  'A classic BIM modeller built natively on IFC, by Ciuntuc BIM Studio.': 'Un program BIM clasic, construit direct pe IFC, de Ciuntuc BIM Studio.',
+  'Lapin is free and open source, under the MIT licence.': 'Lapin e gratuit și are cod deschis, sub licența MIT.',
+  'Source code on GitHub': 'Codul sursă pe GitHub', 'Helpware': 'Helpware',
+  'If Lapin helps you in any way, we encourage you, without obliging you, to help anyone who needs help, in any way you can: your time, your skills, a hand to someone nearby, a gift to people or a cause you trust.': 'Dacă Lapin te ajută cu ceva, te încurajăm, fără să te obligăm, să ajuți și tu pe oricine are nevoie de ajutor, în orice fel poți: cu timpul tău, cu ce știi să faci, cu o mână de ajutor pentru cineva de lângă tine, cu un dar pentru oameni sau o cauză în care ai încredere.',
+  'Lapin asks nothing for itself and takes no donations. This is a request, not a condition of the licence.': 'Lapin nu cere nimic pentru sine și nu primește donații. E o rugăminte, nu o condiție a licenței.',
   'Split into single dimensions': 'Împarte în cote simple', 'Join into a string': 'Unește într-un lanț de cote', 'One single dimension per segment': 'O cotă simplă pentru fiecare segment',
   'The selected dimensions, going on from one another on one dimension line, as one string': 'Cotele selectate, care se continuă una pe alta pe aceeași linie de cotă, ca un singur lanț',
   'Written over the segment instead of its measure (empty: the measure)': 'Scris peste segment în locul măsurii (gol: măsura)', 'text': 'text',

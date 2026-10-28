@@ -391,6 +391,12 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .menu-note { padding: 6px 12px; border-top: 1px solid var(--rule); }
 .dialog-body.report textarea { width: 100%; box-sizing: border-box; font: inherit; }
 button.link { background: none; border: none; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+.dialog.about { max-width: min(520px, calc(100vw - 32px)); }
+.dialog.about .dialog-body p { margin: 0 0 10px; line-height: 1.5; }
+.dialog.about h4 { margin: 14px 0 6px; color: var(--accent); }
+.about-name { display: flex; align-items: center; gap: 8px; font-size: 16px; color: var(--accent); }
+.about-name b { color: var(--ink); }
+.dialog.about button.link { color: var(--accent); }
 .plan-item.contour { stroke: #7a9a5a; stroke-width: 0.6; }
 .plan-item.contourMajor { stroke: #5d7a3e; stroke-width: 1.1; }
 .plan-item.terrainEdge { stroke: #5d7a3e; stroke-width: 0.8; stroke-dasharray: 5 3; }

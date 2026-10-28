@@ -23,6 +23,9 @@ Butonul **?** de lângă Ask Me deschide meniul de ajutor:
 - **Raportează o problemă…** ne spune ce n-a mers, sau ne trimite o idee ori o întrebare. Spune ce s-a întâmplat și ce te așteptai, și adaugă o captură de ecran dacă ajută. Versiunea aplicației și ultimele ei mesaje de eroare pleacă împreună cu raportul.
 - **Comunitatea (Skool)** e locul unde vorbesc utilizatorii și echipa.
 - **Caută actualizări…** există doar în aplicația desktop.
+- **Despre Lapin…** arată versiunea, licența, un link spre codul sursă și ce înseamnă helpware.
+
+  ![Despre Lapin](shots/about.webp)
 - **Interface: English → română** schimbă limba. Alegerea ta se ține minte pe acest calculator.
 
 ## Actualizări

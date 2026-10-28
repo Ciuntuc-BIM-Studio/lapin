@@ -23,6 +23,10 @@ Ești nou în Lapin? Citește [Primii pași](getting-started.md), apoi [Pereți]
 
 <!-- pages -->
 
+## Gratuit, cu cod deschis și helpware
+
+Lapin e gratuit și are cod deschis, sub licența MIT; codul e pe [GitHub](https://github.com/Ciuntuc-BIM-Studio/lapin-pro). Este și **helpware**: dacă Lapin te ajută cu ceva, te încurajăm, fără să te obligăm, să ajuți și tu pe oricine are nevoie de ajutor, în orice fel poți: cu timpul tău, cu ce știi să faci, cu o mână de ajutor pentru cineva de lângă tine, cu un dar pentru oameni sau o cauză în care ai încredere. Lapin nu cere nimic pentru sine și nu primește donații.
+
 ## Când te blochezi
 
 Apasă **Ask Me**, iepurașul din dreapta sus, sau tasta <kbd>F1</kbd>, și scrie întrebarea cu cuvintele tale. Dacă nu are răspuns, îți trimite întrebarea la noi. Vezi [Ajutor și feedback](help.md).
