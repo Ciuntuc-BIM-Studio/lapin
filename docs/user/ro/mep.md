@@ -18,9 +18,22 @@ Sub **Sistem nou**, alege serviciul (**Încălzire**, **Apă**, **Apă caldă**,
 
 ## Trasee
 
-**Traseu** (<kbd>RN</kbd>) desenează un traseu punct cu punct; apasă <kbd>Enter</kbd> ca să termini. Un capăt care cade pe un port liber se conectează la el; un capăt care cade pe un traseu al aceluiași sistem se ramifică din el. Selectează un traseu ca să-l modelezi: trage un punct, trage mijlocul unui tronson ca să-l muți, Ctrl-clic pe un punct îl scoate, pe mijlocul unui tronson adaugă unul; **Adaugă punct** pune unul unde dai clic.
+**Traseu** (<kbd>RN</kbd>) desenează un traseu punct cu punct; apasă <kbd>Enter</kbd> ca să termini. Un capăt care cade pe un port liber se conectează la el; un capăt care cade pe un traseu al aceluiași sistem se ramifică din el.
 
 **Conectează** leagă capătul unui traseu la un nod sau la alt traseu; **Deconectează** îl eliberează. **Porturi libere** selectează tot ce e încă neconectat.
+
+## Modelarea unui traseu
+
+Selectează un traseu: punctele lui stau pe linie așa cum e desenată, chiar și după ce muți nodurile pe care le leagă.
+
+- **Trage un punct** ca să muți colțul acela liber.
+- **Trage mijlocul unui tronson** ca să-l muți lateral; tronsoanele vecine se lungesc, așa că un traseu în unghi drept rămâne în unghi drept. Dacă muți primul sau ultimul tronson, Lapin face acolo un decroș, iar capătul rămâne pe port.
+- **Ctrl-clic** pe un punct îl scoate, pe mijlocul unui tronson adaugă unul; **Adaugă punct** pune unul unde dai clic.
+- **Ocolire** (<kbd>DU</kbd>) duce un traseu pe lângă ceva care îi stă în cale: dă clic pe traseu unde începe ocolirea, apoi unde se termină, pe același tronson, apoi mergi în partea în care iese și dă clic (sau scrie distanța). Traseul iese, merge paralel și revine, cu patru colțuri noi; conexiunile rămân.
+- **Redesenează traseul** (<kbd>RP</kbd>) dă unui traseu un drum nou: selectează-l (sau începe pe el) și desenează drumul punct cu punct, <kbd>Enter</kbd> ca să termini. Traseul își păstrează sistemul, dimensiunea și conexiunile, iar capetele revin pe porturi.
+
+![Traseul unui radiator dus pe lângă un obstacol cu Ocolire: iese, merge paralel și revine](shots/mep-detour.webp)
+
 
 ## Noduri
 

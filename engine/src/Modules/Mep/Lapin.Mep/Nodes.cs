@@ -222,8 +222,13 @@ public static class Nodes
     public static string Label(string cls) => Roles.All.First(x => x.IfcClass == cls).Label;
 }
 
-/// <summary>Nodes and runs move, turn and mirror in plan as any element; a node's connected runs follow (they read it).</summary>
-sealed class MepPlacement : IElementPlacement
+/// <summary>
+/// Nodes and runs move, turn and mirror in plan as any element; a node's
+/// connected runs follow it, and their points are written where they are
+/// drawn (<see cref="Runs.Refollow"/>), so their handles stay on them. Runs
+/// carried by the same transformation move by themselves.
+/// </summary>
+sealed class MepPlacement : IElementPlacement, IElementUpdate
 {
     public bool Handles(Entity e) => Nodes.IsNode(e) || Runs.IsRun(e);
 
@@ -235,8 +240,21 @@ sealed class MepPlacement : IElementPlacement
             var p = t.Point(Nodes.Position(e));
             attrs["x"] = p.X; attrs["y"] = p.Y;
             attrs["rotation"] = t.Angle(Nodes.Rotation(e)) * 180 / Math.PI;
+            ctx.Replace(e.With(attrs: attrs));
+            Runs.RefollowOn(ctx, e.Id, moving);
+            return;
         }
-        else attrs["points"] = Runs.J(Runs.Points(e).Select(t.Point).ToList());
+        attrs["points"] = Runs.J(Runs.Points(e).Select(t.Point).ToList());
         ctx.Replace(e.With(attrs: attrs));
+        // Its ends on what stays: followed (an end on what moves with it moves by itself); the branches off it that stay follow it.
+        var onMoving = new[] { "start", "end" }.Any(end => Runs.EndOf(ctx.Model, e, end) is { } x && moving.Contains(x.NodeId ?? x.RunId ?? ""));
+        if (!onMoving) Runs.Refollow(ctx, e.Id, moving);
+        else foreach (var (branch, _) in Runs.BranchesOf(ctx.Model, e.Id).ToList()) if (!moving.Contains(branch.Id)) Runs.Refollow(ctx, branch.Id, moving);
+    }
+
+    public void Updated(ICommandContext ctx, Entity before, Entity after)
+    {
+        if (Nodes.IsNode(after)) Runs.RefollowOn(ctx, after.Id);
+        else if (Runs.IsRun(after)) Runs.Refollow(ctx, after.Id);
     }
 }

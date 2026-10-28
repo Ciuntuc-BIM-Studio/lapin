@@ -18,9 +18,22 @@ In the edit mode everything that is not the system is faded, and only the system
 
 ## Runs
 
-**Run** (<kbd>RN</kbd>) draws a run point by point; press <kbd>Enter</kbd> to finish. An end that lands on an open port connects to it; an end that lands on a run of the same system branches off it. Select a run to shape it: drag a handle, drag the middle of a leg to slide it, Ctrl-click a handle to take it out or the middle of a leg to add one; **Add handle** puts one where you click.
+**Run** (<kbd>RN</kbd>) draws a run point by point; press <kbd>Enter</kbd> to finish. An end that lands on an open port connects to it; an end that lands on a run of the same system branches off it.
 
 **Connect** joins a run's end to a node or to another run; **Disconnect** frees it. **Open ports** selects everything still unconnected.
+
+## Reshaping a run
+
+Select a run: its handles sit on the line as it is drawn, even after you move the nodes it connects.
+
+- **Drag a handle** to move that corner freely.
+- **Drag the middle of a leg** to slide the leg sideways; the legs next to it stretch, so a square route stays square. Slide the first or the last leg and Lapin adds a jog there, so the end stays on its port.
+- **Ctrl-click** a handle to take it out, or the middle of a leg to add one; **Add handle** puts one where you click.
+- **Detour** (<kbd>DU</kbd>) takes a run round something in the way: click the run where the detour starts, click where it ends on the same leg, then move to the side it goes and click (or type the distance). The run goes out, along and back, with four new corners; it keeps its connections.
+- **Redraw path** (<kbd>RP</kbd>) gives a run a new route: select it (or start on it) and draw the path point by point, <kbd>Enter</kbd> to finish. The run keeps its system, its size and its connections, and its ends go back onto their ports.
+
+![A radiator run taken round an obstacle with Detour: out, along and back](shots/mep-detour.webp)
+
 
 ## Nodes
 

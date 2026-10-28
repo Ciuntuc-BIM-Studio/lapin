@@ -203,7 +203,7 @@ export function PlanView() {
   /** A tool's own rule for its next point (a pipe's material), over the snap. */
   const constrained = (a: Aimed): Aimed => {
     const g = tool?.gesture;
-    if (g?.kind !== 'polyline' || !g.constrain || pts.length === 0) return a;
+    if ((g?.kind !== 'polyline' && g?.kind !== 'threePoints') || !g.constrain || pts.length === 0) return a;
     const p = g.constrain(pts, a.point);
     return p.x === a.point.x && p.y === a.point.y ? a : { ...a, point: p, kind: 'free', guides: [] };
   };
@@ -434,6 +434,12 @@ export function PlanView() {
     if (!tool?.gesture || !hover) return null;
     const cur = (live.owner === 'tool' && (live.len || live.ang) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point;
     const g = tool.gesture.kind;
+    // The tool's own preview (a detour's bypass), when it has one for these points.
+    const own = tool.gesture.kind === 'threePoints' && tool.gesture.preview && pts.length > 0 ? tool.gesture.preview(pts, cur) : null;
+    if (own && own.length > 1) {
+      const ps = own.map(toScreen);
+      return <g className="plan-preview"><polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} /></g>;
+    }
     if (g === 'twoPoints' && pts.length === 1) {
       const a = toScreen(pts[0]), b = toScreen(cur);
       return (

@@ -214,6 +214,23 @@ export const scenes = [
       await t.wait(1000);
       await t.fit();
       await t.shot('mep-plan', { of: '[data-testid=plan]', pad: 0 });
+      // A detour with the tool: two clicks on the first run's longest leg, a third to the side, the span going out, along and back round what is in the way.
+      const first = (await t.nodes()).find((n) => n.id === r.runId);
+      const pts = first.props.points;
+      let leg = 0;
+      for (let i = 1; i + 1 < pts.length; i++) if (Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) > Math.hypot(pts[leg + 1][0] - pts[leg][0], pts[leg + 1][1] - pts[leg][1])) leg = i;
+      const [a, b] = [pts[leg], pts[leg + 1]];
+      const at = (k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      const side = [(-(b[1] - a[1]) / len) * 0.7, ((b[0] - a[0]) / len) * 0.7];
+      await t.tool('mep.detour');
+      for (const [x, y] of [at(0.3), at(0.65), [at(0.65)[0] + side[0], at(0.65)[1] + side[1]]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(300); }
+      await t.keys('Escape');
+      const after = (await t.nodes()).find((n) => n.id === r.runId);
+      t.expect(after.props.points.length === pts.length + 4, `the detour adds four corners (${pts.length} → ${after.props.points.length})`);
+      await select(t, r.runId);
+      await t.wait(500);
+      await t.shot('mep-detour', { of: '[data-testid=plan]', pad: 0 });
       await select(t, r.endpointId);
       await t.wait(500);
       await t.shot('mep-radiator-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });

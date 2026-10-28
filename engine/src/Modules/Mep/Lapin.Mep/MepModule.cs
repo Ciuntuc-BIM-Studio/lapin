@@ -35,7 +35,9 @@ public sealed class MepModule : ILapinModule
             r.Geometry(cls, (e, m, _) => Runs.IsRun(e) ? Runs.Geometry(e, m) : Nodes.IsNode(e) ? Nodes.Geometry(e, m) : null);
             r.Quantities(cls, (e, g, m) => Runs.IsRun(e) ? Runs.Quantities(e, g, m) : Nodes.Quantities(e, g, m));
         }
-        r.Service<IElementPlacement>(new MepPlacement());
+        var placement = new MepPlacement();
+        r.Service<IElementPlacement>(placement);
+        r.Service<IElementUpdate>(placement);
         RegisterLayout(r);
         r.Service<IIfcNetwork>(new MepNetwork());
         r.Service<IScheduleSource>(new MepEquipmentSchedule());

@@ -156,6 +156,8 @@ public sealed class CoreModule : ILapinModule
                     attrs[key] = Fields.Check(f, value);
                 }
                 ctx.Replace(e.With(attrs: attrs));
+                // What follows the element (the runs on a node moved by its x) is told, in the same step.
+                foreach (var u in ctx.Services.All<IElementUpdate>()) u.Updated(ctx, e, ctx.Model.Get(id)!);
             }
             return null;
         });

@@ -50,6 +50,12 @@ public interface IElementPlacement
     string? Copy(ICommandContext ctx, Entity e, Placement2D t) => null;
 }
 
+/// <summary>What a module does when element.update has changed an element (a node moved by its x, y or rotation: the runs on its ports follow it), in the same undo step.</summary>
+public interface IElementUpdate
+{
+    void Updated(ICommandContext ctx, Entity before, Entity after);
+}
+
 /// <summary>
 /// A part of an element selected on its own, by an id that is not an
 /// entity's (a grid's axis, <c>grid#tag</c>): how its module moves, turns,

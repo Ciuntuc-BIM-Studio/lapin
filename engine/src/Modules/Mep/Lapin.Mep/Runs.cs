@@ -22,7 +22,7 @@ public sealed record RunEnd(string? NodeId, string? Port, string? RunId, double 
 /// the size changes; a drainage run falls at its slope from its upstream end.
 /// Its class is the service's (pipe, duct, cable segment).
 /// </summary>
-public static class Runs
+public static partial class Runs
 {
     public static readonly string[] Classes = ["IfcPipeSegment", "IfcDuctSegment", "IfcCableSegment"];
     public const string Connects = "IfcRelConnectsPorts";
@@ -173,20 +173,21 @@ public static class Runs
     }
 
     /// <summary>
-    /// The run's centreline in 3D. <paramref name="vertexOf"/> tells, for each
-    /// of its points, which of the run's own points it is (null: a jog to a
-    /// port, or an elbow the material asked for).
+    /// The run's route in plan as built, what the plan draws: a connected end
+    /// moved onto its port (or its junction), the leg next to it kept in its
+    /// direction by sliding its other point along the leg after it; a rigid
+    /// material's elbow between two ends that no longer line up.
+    /// <c>Source</c>: which of the run's own points each one is. It is what
+    /// is written back into the run when what an end is on moves
+    /// (<see cref="Refollow"/>), so the run's points are where it is drawn.
     /// </summary>
-    public static List<Vec3> Centreline(IModelView m, Entity run, Setting s, out double z0, out List<int?> vertexOf)
+    static (List<Vec2> Points, List<int?> Source, List<double?>? Levels, Vec3? StartAt, Vec3? EndAt) Follow(IModelView m, Entity run, Setting s, double zRun)
     {
         var pts = Points(run);
         var levels = LevelsOf(run);
         var src = Enumerable.Range(0, pts.Count).Select(i => (int?)i).ToList();
-        z0 = Nodes.StoreyZ(m, run);
-        var zRun = z0 + s.Elevation;
-        vertexOf = [];
-        if (pts.Count < 2) return [];
         Vec3? startAt = null, endAt = null;
+        if (pts.Count < 2) return (pts, src, levels, null, null);
         foreach (var end in new[] { "start", "end" })
         {
             var i = end == "start" ? 0 : pts.Count - 1;
@@ -230,6 +231,28 @@ public static class Runs
             var laid = laying.Lay(s.Service, s.Material, pts);
             if (laid.Count != pts.Count) { pts = laid; src = [.. pts.Select((_, k) => k == 0 ? (int?)0 : k == pts.Count - 1 ? 1 : null)]; levels = null; }
         }
+        return (pts, src, levels, startAt, endAt);
+    }
+
+    /// <summary>The run's points as it is drawn in plan: its ends on what they are on.</summary>
+    public static List<Vec2> Followed(IModelView m, Entity run)
+    {
+        var s = SettingOf(m, run);
+        return Follow(m, run, s, Nodes.StoreyZ(m, run) + s.Elevation).Points;
+    }
+
+    /// <summary>
+    /// The run's centreline in 3D. <paramref name="vertexOf"/> tells, for each
+    /// of its points, which of the run's own points it is (null: a jog to a
+    /// port, or an elbow the material asked for).
+    /// </summary>
+    public static List<Vec3> Centreline(IModelView m, Entity run, Setting s, out double z0, out List<int?> vertexOf)
+    {
+        z0 = Nodes.StoreyZ(m, run);
+        var zRun = z0 + s.Elevation;
+        vertexOf = [];
+        if (Points(run).Count < 2) return [];
+        var (pts, src, levels, startAt, endAt) = Follow(m, run, s, zRun);
         var o = new List<Vec3>(pts.Count + 2);
         // The run's own elevations, set in its profile: each point at its own, the ends jogging to their ports.
         if (levels != null)
@@ -393,7 +416,9 @@ public static class Runs
         Spatial.Contain(ctx, storeyId, run.Id);
         ConnectEnd(ctx, run, "start", a["start"]);
         ConnectEnd(ctx, run, "end", a["end"]);
-        return run;
+        // Its points where it is drawn: the connected ends on their ports.
+        Refollow(ctx, run.Id);
+        return ctx.Model.Get(run.Id)!;
     }
 
     /// <summary>
@@ -496,15 +521,10 @@ public static class Runs
         {
             var run = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("Which run?");
             if (!IsRun(run)) throw new CommandException("Not a run.");
-            var attrs = run.CloneAttrs();
-            var setting = SettingOf(ctx.Model, run);
-            var next = Lay(setting.Service, setting.Material, PointsArg(a["points"]));
-            attrs["points"] = J(next);
-            // The elevations follow the points (or come with them).
-            var levels = a["levels"] is JsonArray given && given.Count == next.Count ? (JsonArray)given.DeepClone() : RemapLevels(Points(run), LevelsOf(run), next, setting.Elevation);
-            if (levels != null) attrs["levels"] = levels; else attrs.Remove("levels");
-            ctx.Replace(run.With(attrs: attrs));
+            // The elevations follow the points (or come with them); the connected ends stay on what they are on.
+            SetRoute(ctx, run, PointsArg(a["points"]), a["levels"] as JsonArray);
             return null;
         });
+        RegisterRouteEdits(r);
     }
 }

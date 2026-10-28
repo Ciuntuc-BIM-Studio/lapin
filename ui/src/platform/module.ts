@@ -18,7 +18,13 @@ export type Gesture =
   | { kind: 'point' }
   | { kind: 'rectangle' }
   /** Two points, then a third (a dimension's line; with `arc`, a point the arc passes through). */
-  | { kind: 'threePoints'; arc?: boolean }
+  | {
+    kind: 'threePoints'; arc?: boolean;
+    /** Where the next point may go, given the points placed (a detour's points kept on the leg picked): the aimed point moved onto what is allowed. */
+    constrain?: (placed: Vec2[], aimed: Vec2) => Vec2;
+    /** What the tool would make, drawn as the cursor moves (a detour's bypass); null: the gesture's own preview. */
+    preview?: (placed: Vec2[], aimed: Vec2) => Vec2[] | null;
+  }
   | { kind: 'polygon' }
   /** `constrain`: where the next point may go, given the points placed (a pipe of copper turns only by 45°): the aimed point moved onto what is allowed. */
   | { kind: 'polyline'; constrain?: (placed: Vec2[], aimed: Vec2) => Vec2 }

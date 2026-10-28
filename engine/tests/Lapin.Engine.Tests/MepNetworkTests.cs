@@ -113,8 +113,11 @@ public class MepNetworkTests
         Assert.Equal(3.0, end.Station, 6);
         Assert.Contains(f.Session.Geometry(trunk)!.Parts, p => p.Key == "tee:" + branch);
         // The branch starts on the trunk's centreline, at the trunk's elevation.
+        // (The trunk's first leg follows the boiler's port, 0.175 under it: drawn there, and its points written there since decision 164.)
         var line = Runs.Centreline(f.Model, f.Model.Get(branch)!, Runs.SettingOf(f.Model, f.Model.Get(branch)!), out _);
-        Assert.Equal(-0.5, line[0].Y, 6);
+        var trunkLine = Runs.Centreline(f.Model, f.Model.Get(trunk)!, Runs.SettingOf(f.Model, f.Model.Get(trunk)!), out _);
+        Assert.Equal(trunkLine[0].Y, line[0].Y, 6);
+        Assert.Equal(-0.175, line[0].Y, 6);
         Assert.Equal(0.2, line[0].Z, 6);
     }
 

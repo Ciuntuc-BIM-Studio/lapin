@@ -8,12 +8,13 @@
  * assistants) is mep-pro's, which adds its groups to this tab.
  */
 
-import { AirVent, ArrowDownToLine, Ban, Bath, CircleDot, Droplets, Fan, Flame, Gauge, GitFork, Lightbulb, Link2, Milestone, SquarePen, Waves, MoveVertical, Plug, ScanSearch, ShowerHead, Spline, Thermometer, ToggleLeft, Toilet, Unlink, Utensils, Wind, Workflow, Wrench, Zap, Map as MapIcon } from 'lucide-react';
+import { AirVent, ArrowDownToLine, Ban, Bath, CircleDot, Droplets, Fan, Flame, Gauge, GitFork, Lightbulb, Link2, Milestone, PencilLine, Route, SquarePen, Waves, MoveVertical, Plug, ScanSearch, ShowerHead, Spline, Thermometer, ToggleLeft, Toilet, Unlink, Utensils, Wind, Workflow, Wrench, Zap, Map as MapIcon } from 'lucide-react';
 import type { Icon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
-import { activeStorey, ensureStorey, execute } from '../../engine/session';
+import { activeStorey, ensureStorey, execute, useSession } from '../../engine/session';
+import { bypass, onLeg, runNear, squareOff } from './route';
 import { PICKABLE, RUN_CLASSES, endSpec, isNode, isRun, nearerEnd, nearestRun, networkQuery, openPortsQuery, runPoints, systemFor, systemMaterial } from './network';
 import { runSystem, schedule } from './tools';
 import { mepHooks } from './hooks';
@@ -155,6 +156,66 @@ const addHandle: ToolDef = {
   },
 };
 
+/** How near a run a click must fall to take it (m). */
+const ON_RUN = 0.3;
+const runAt = (p: Vec2) => runNear(useSession.getState().nodes, useUi.getState().selected, p, ON_RUN);
+
+/**
+ * Detour: a click on a run's leg, a second on the same leg (kept on it), then
+ * the side and distance (square off the leg; the distance can be typed): the
+ * span goes out, along and back round what is in the way.
+ */
+const detour: ToolDef = {
+  id: 'mep.detour', label: 'Detour', icon: Route, shortcut: 'DU',
+  gesture: {
+    kind: 'threePoints',
+    constrain: (placed, aimed) => {
+      const on = runAt(placed[0]);
+      if (!on) return aimed;
+      return placed.length === 1 ? onLeg(on.leg, aimed) : squareOff(on.leg, onLeg(on.leg, placed[1]), aimed);
+    },
+    preview: (placed, aimed) => {
+      const on = runAt(placed[0]);
+      if (!on) return null;
+      if (placed.length === 1) return [onLeg(on.leg, placed[0]), onLeg(on.leg, aimed)];
+      return [on.leg.a, ...bypass(on.leg, placed[0], placed[1], aimed), on.leg.b];
+    },
+  },
+  complete: async ({ points: [from, to, side] }) => {
+    const on = runAt(from);
+    if (!on) { notify('Start the detour on a run.'); return; }
+    await execute('mep.detour', { id: on.run.id, from: [from.x, from.y], to: [to.x, to.y], side: [side.x, side.y] });
+    useUi.setState({ selected: [on.run.id], selection: on.run.id });
+  },
+};
+
+/** The run a redrawn path is for: the one selected, else the one the path starts on. */
+const redrawTarget = (first: Vec2): NodeDto | null => {
+  const nodes = useSession.getState().nodes;
+  const sel = useUi.getState().selected.map((id) => nodes.get(id)).filter((n): n is NodeDto => !!n && isRun(n));
+  return sel.length === 1 ? sel[0] : runAt(first)?.run ?? null;
+};
+
+/** Redraw path: the selected run (or the one the path starts on) takes a new path; its system, size and connections stay, its ends on their ports. */
+const redraw: ToolDef = {
+  id: 'mep.redrawRun', label: 'Redraw path', icon: PencilLine, shortcut: 'RP',
+  gesture: {
+    kind: 'polyline',
+    constrain: (placed, aimed) => {
+      const target = redrawTarget(placed[0]);
+      const m = systemMaterial(typeof target?.props.systemId === 'string' ? target.props.systemId : null);
+      return m ? mepHooks.nextPoint(m.service, m.material, placed, aimed) : aimed;
+    },
+  },
+  complete: async ({ points }) => {
+    if (points.length < 2) return;
+    const target = redrawTarget(points[0]);
+    if (!target) { notify('Select the run first, or start the path on it.'); return; }
+    await execute('mep.redrawRun', { id: target.id, points: points.map((p) => [p.x, p.y]) });
+    useUi.setState({ selected: [target.id], selection: target.id });
+  },
+};
+
 const systems: ToolDef = { id: 'mep.systems', label: 'Systems…', icon: Workflow, run: () => useUi.setState({ dialog: 'mepSystems' }) };
 
 /** What is left open in every system: selected, and counted. */
@@ -208,7 +269,8 @@ function runGrips(node: NodeDto): Grip[] {
     const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
     grips.push({
       key: `e${i}`, kind: 'edgeMid', at: mid, title: 'Drag: slide the leg · Ctrl-click adds a handle here',
-      step: (p) => { const dx = p.x - mid.x, dy = p.y - mid.y; return save(pts.map((x, k) => (k === i || k === i + 1 ? { x: x.x + dx, y: x.y + dy } : x))); },
+      // Slid square to itself (the engine keeps the drag's part across the leg); a jog where it meets an end or a leg in line.
+      step: (p) => ({ command: 'mep.slideLeg', args: { id: node.id, leg: i, by: [p.x - mid.x, p.y - mid.y] } }),
       insert: () => save([...pts.slice(0, i + 1), mid, ...pts.slice(i + 1)]),
     });
   }
@@ -228,7 +290,7 @@ const mep: LapinModule = {
     groups: [
       { label: 'New system', tools: [], small: newSystems },
       { label: 'System', tools: [edit], small: [systems, mepPlan, openPorts, equipmentSchedule, runSchedule] },
-      { label: 'Runs', tools: [run], small: [connect, disconnect, addHandle] },
+      { label: 'Runs', tools: [run], small: [connect, disconnect, addHandle, detour, redraw] },
       { label: 'Heating', tools: [], small: [nodeTool(role('boiler')), nodeTool(role('radiator')), nodeTool(role('manifold'))] },
       { label: 'Plumbing', tools: [], small: [nodeTool(role('basin')), nodeTool(role('wc')), nodeTool(role('sink')), nodeTool(role('shower')), nodeTool(role('bath')), nodeTool(role('waterMeter')), nodeTool(role('stack')), nodeTool(role('cleanout'))] },
       { label: 'Electrical', tools: [], small: [nodeTool(role('panel')), nodeTool(role('outlet')), nodeTool(role('light')), nodeTool(role('switch'))] },
