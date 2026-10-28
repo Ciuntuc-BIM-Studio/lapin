@@ -714,7 +714,7 @@ export const scenes = [
     id: 'drafting',
     async run(t) {
       await t.fresh();
-      await house(t, { roof: false });
+      const { walls } = await house(t, { roof: false });
       await t.fit();
       // Copy, as the command line asks for it.
       const wall = (await t.nodes()).find((n) => n.type === 'IfcWall');
@@ -730,6 +730,25 @@ export const scenes = [
       t.expect(/point/i.test(asks), `the command line asks for the next point (it says: ${asks.replace(/\s+/g, ' ').slice(0, 120)})`);
       await t.shot('command-line', { clip: { x: 250, y: 120, width: 860, height: 730 } });
       await t.keys('Escape', 'Escape');
+      // Move the inner wall (decision 165): from its middle (snapped), partway across the room with ortho on.
+      await select(t, walls.inner);
+      await t.page.locator('.band').getByRole('button', { name: 'Move', exact: true }).click();
+      await t.wait(300);
+      await t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      await t.keys('F8');
+      const [bx, by] = await t.planPoint(7, 4);
+      await t.page.mouse.move(bx, by, { steps: 3 }); await t.page.mouse.click(bx, by);
+      const [mx, my] = await t.planPoint(9.6, 4.3);
+      await t.page.mouse.move(mx, my, { steps: 12 });
+      await t.wait(400);
+      t.expect(await t.page.locator('.move-trace .move-base').count() === 1, 'the base point keeps its marker while the wall moves');
+      t.expect(await t.page.locator('.move-trace .move-vector').count() === 1, 'a line runs from the base point to the mouse');
+      t.expect(await t.page.locator('.move-trace .move-ghost').count() > 0, 'a ghost of the wall stays where it was');
+      t.expect(await t.page.locator('.live-box .live-label', { hasText: 'Δx' }).count() === 1, 'the readout at the mouse shows Δx');
+      await t.shot('move-trace', { clip: { x: 250, y: 120, width: 920, height: 730 } });
+      t.expect(await t.page.locator('.move-trace.trace-locked').count() === 1, 'ortho gives the line its locked colour');
+      await t.keys('Escape', 'Escape', 'F8');
+      t.expect(await t.page.locator('.move-trace').count() === 0, 'Esc takes the trace away');
       await t.button('Draft', { exact: true });
       await t.shot('ribbon-draft', { of: '.topbar', pad: 0 });
       await t.button('Annotate', { exact: true });

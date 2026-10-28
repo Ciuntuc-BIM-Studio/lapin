@@ -19,6 +19,9 @@ import type { Grip, GripView, RefLine, Vec2 } from '../platform/module';
 import { gripsOf, referencesOf } from '../platform/modules';
 import { dropGrips, groupGrips, movers, runSteps, type GripGroup } from './grips';
 import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
+import { traceBegin, traceEnd } from './moveTrace';
+import { useCad } from './cad/session';
+import type { Shape } from './cad/shapes';
 
 /** Where a model point shows on screen; `z` (the 3D view's) is the height it stands at. */
 type ToScreen = (p: Vec2, z?: number) => { x: number; y: number };
@@ -95,6 +98,9 @@ export function useGripEditor(o: GripEditorOptions) {
     return { x: q.x + ux * FLIP_OUT, y: q.y + uy * FLIP_OUT, ux, uy };
   };
 
+  // A view that goes while a grip is dragged takes its trace with it.
+  useEffect(() => () => traceEnd('grip'), []);
+
   // Tab over a shared grip: the next owner, then all.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -126,6 +132,17 @@ export function useGripEditor(o: GripEditorOptions) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups, local, o]);
 
+  /** What the grip's owners look like in this view (their outline, else their reference lines), where they are now. */
+  const ghostOf = (who: Grip[]): Shape[] => {
+    const owners = [...new Set(who.map((m) => m.owner).filter((x): x is string => !!x))];
+    const host = useCad.getState().host;
+    return owners.flatMap((id) => {
+      const own = host?.outlinesOf?.(id);
+      if (own?.length) return own;
+      return refs.filter((r) => r.owner === id && r.points.length >= 2).map((r): Shape => ({ type: 'polyline', pts: r.points, closed: !!r.closed }));
+    });
+  };
+
   /** True when the press was on a grip (the view should do nothing else). */
   const onPointerDown = (e: React.PointerEvent): boolean => {
     if (e.button !== 0 || !groups.length) return false;
@@ -144,7 +161,9 @@ export function useGripEditor(o: GripEditorOptions) {
     (e.target as Element).setPointerCapture?.(e.pointerId);
     setDrag({ group: g, members: who, at: g.at, moved: false, copy });
     // Its length and angle can be typed while dragging; Enter puts it there.
-    liveBegin('grip', g.at, (p) => { void dropGrips(movers(g, pickOf(g), alt.current), p); setDrag(null); liveEnd('grip'); });
+    liveBegin('grip', g.at, (p) => { void dropGrips(movers(g, pickOf(g), alt.current), p); setDrag(null); liveEnd('grip'); traceEnd('grip'); }, { delta: true });
+    // In 2D the move's trace: the ghost of what the grip moves left where it is (a move grip carries it along).
+    if (!o.zOf) traceBegin('grip', g.at, ghostOf(who), who[0].kind === 'move');
     return true;
   };
   /** True while dragging a grip. */
@@ -166,6 +185,7 @@ export function useGripEditor(o: GripEditorOptions) {
     } else if (drag.moved) void dropGrips(drag.members, drag.at);
     setDrag(null);
     liveEnd('grip');
+    traceEnd('grip');
     return true;
   };
 
@@ -201,7 +221,7 @@ export function useGripEditor(o: GripEditorOptions) {
         return <path key={`ref${i}`} d={d} className={`ref-line ${r.kind}`} />;
       })}
       {groups.map(shape)}
-      {drag?.moved && (() => {
+      {drag?.moved && o.zOf && (() => {
         const a = o.toScreen(drag.group.at, zOf(drag.group)), b = o.toScreen(drag.at, zOf(drag.group));
         const dx = drag.at.x - drag.group.at.x, dy = drag.at.y - drag.group.at.y;
         const ang = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;

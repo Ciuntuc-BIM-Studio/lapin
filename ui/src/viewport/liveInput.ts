@@ -44,20 +44,23 @@ interface LiveState {
   focus: LiveField;
   /** What a typed point does. */
   commit: ((p: Vec2) => void) | null;
+  /** A move from the base (MOVE, COPY, a dragged grip): the cells at the cursor also show Δx and Δy. */
+  delta: boolean;
 }
 
-export const useLive = create<LiveState>(() => ({ owner: null, base: null, cursor: null, len: '', ang: '', focus: 'len', commit: null }));
+export const useLive = create<LiveState>(() => ({ owner: null, base: null, cursor: null, len: '', ang: '', focus: 'len', commit: null, delta: false }));
 
 /** A segment starts at `base`: its length and angle can now be typed. */
-export function liveBegin(owner: string, base: Vec2, commit: (p: Vec2) => void): void {
+export function liveBegin(owner: string, base: Vec2, commit: (p: Vec2) => void, o: { delta?: boolean } = {}): void {
   const s = useLive.getState();
-  if (s.owner === owner && s.base && Math.hypot(s.base.x - base.x, s.base.y - base.y) < 1e-12) { useLive.setState({ commit }); return; }
-  useLive.setState({ owner, base, commit, len: '', ang: '', focus: 'len' });
+  const delta = !!o.delta;
+  if (s.owner === owner && s.base && Math.hypot(s.base.x - base.x, s.base.y - base.y) < 1e-12) { useLive.setState({ commit, delta }); return; }
+  useLive.setState({ owner, base, commit, delta, len: '', ang: '', focus: 'len' });
 }
 export const liveCursor = (p: Vec2 | null) => useLive.setState({ cursor: p });
 export function liveEnd(owner?: string): void {
   if (owner && useLive.getState().owner !== owner) return;
-  useLive.setState({ owner: null, base: null, commit: null, len: '', ang: '' });
+  useLive.setState({ owner: null, base: null, commit: null, len: '', ang: '', delta: false });
 }
 
 /** Where the segment ends: the typed length and angle, else the cursor's. */

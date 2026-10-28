@@ -49,6 +49,8 @@ export function useCadCanvas(o: {
   scale: number;
   /** Anything selectable under a point (the view's own picking). */
   pickAny: (p: Vec2) => string | null;
+  /** An element's outline in this view (a plan's modelling lines), for previews and the move's ghost. */
+  outlines?: (id: string) => Shape[];
 }) {
   const { shapes, drafts } = useMemo(() => snapShapes(o.drawing, o.extra), [o.drawing, o.extra]);
   const index = useMemo(() => new SnapIndex(shapes), [shapes]);
@@ -58,6 +60,9 @@ export function useCadCanvas(o: {
   scaleRef.current = o.scale;
   const pickRef = useRef(o.pickAny);
   pickRef.current = o.pickAny;
+  const outlinesRef = useRef(o.outlines);
+  outlinesRef.current = o.outlines;
+  const marks = o.drawing?.marks;
 
   // The command line works on this view while it is shown.
   useEffect(() => {
@@ -75,10 +80,21 @@ export function useCadCanvas(o: {
       },
       pickAny: (p) => pickRef.current(p),
       shapeOf: (id) => drafts.get(id)?.[0] ?? null,
+      outlinesOf: (id) => {
+        const exact = drafts.get(id);
+        if (exact) return exact;
+        const own = outlinesRef.current?.(id);
+        if (own?.length) return own;
+        // An annotation: its drawn segments.
+        const s = marks?.find((m) => m.id === id)?.segments ?? [];
+        const out: Shape[] = [];
+        for (let k = 0; k + 3 < s.length; k += 4) out.push({ type: 'line', a: { x: s[k], y: s[k + 1] }, b: { x: s[k + 2], y: s[k + 3] } });
+        return out;
+      },
     };
     useCad.setState({ host });
     return () => { if (useCad.getState().host === host) useCad.setState({ host: null }); };
-  }, [o.viewId, drafts]);
+  }, [o.viewId, drafts, marks]);
 
   // A new command starts with nothing acquired.
   const command = useCad((s) => s.command);

@@ -8,12 +8,15 @@
   --bg: #f6f3ec; --panel: #fdfbf7; --raised: #ffffff; --wash: #efeae0; --rule: #e2dccf; --rule-strong: #d6cebf;
   --ink: #1e2a3a; --ink-muted: #6b6357; --accent: #b5532d; --accent-ink: #ffffff; --accent-wash: #f1e3d9;
   --hud: rgba(253, 251, 247, 0.92); --ok: #4f9d5d; --err: #a1260d;
+  /* A move's trace (decision 165): snapped as the snap marker, locked by ortho or polar, on a tracking guide as the guides, free. */
+  --trace-snap: #1f9d55; --trace-locked: #2f6db5; --trace-tracking: var(--accent); --trace-free: #6b6357;
   color-scheme: light;
 }
 [data-theme="graphite"] {
   --bg: #161513; --panel: #1c1b19; --raised: #22201d; --wash: #2c2a26; --rule: #34312c; --rule-strong: #4a463f;
   --ink: #e9e4da; --ink-muted: #a39b8c; --accent: #e07a4f; --accent-ink: #1c1b19; --accent-wash: #3a2c24;
   --hud: rgba(22, 21, 19, 0.88); --ok: #7fbf8a; --err: #ff8a6b;
+  --trace-snap: #4cc27e; --trace-locked: #79aef0; --trace-tracking: var(--accent); --trace-free: #b3ab9c;
   color-scheme: dark;
 }
 :root { --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --mono: ui-monospace, "SF Mono", Menlo, monospace; }
@@ -425,6 +428,17 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .cad-overlay .cad-preview { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 6 3; }
 .cad-overlay .cad-snap rect, .cad-overlay .cad-snap path, .cad-overlay .cad-snap circle { fill: none; stroke: #1f9d55; stroke-width: 2; }
 .cad-overlay .cad-snap text { font: 10px ui-monospace, Menlo, monospace; fill: #1f9d55; }
+/* A move's trace: the ghost where it was, the dashed line from the base to the cursor, the base marker, in the aim's colour. */
+.move-trace { --trace: var(--trace-free); pointer-events: none; }
+.move-trace.trace-snap { --trace: var(--trace-snap); }
+.move-trace.trace-locked { --trace: var(--trace-locked); }
+.move-trace.trace-tracking { --trace: var(--trace-tracking); }
+.move-trace .move-ghost { fill: none; stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 3 3; opacity: 0.55; }
+.move-trace .move-vector { stroke: var(--trace); stroke-width: 1.3; stroke-dasharray: 7 4; }
+.move-trace .move-base circle { fill: var(--raised); stroke: var(--trace); stroke-width: 1.6; }
+.move-trace .move-base path { stroke: var(--trace); stroke-width: 1.2; }
+.move-trace .move-end { fill: var(--trace); }
+.live-cell.ro { color: var(--ink-muted); }
 .dialog-foot { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--rule); }
 .layer-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .layer-table th { text-align: left; font-weight: 500; color: var(--ink-muted); padding: 4px 6px; border-bottom: 1px solid var(--rule); }

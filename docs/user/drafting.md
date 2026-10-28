@@ -32,6 +32,10 @@ Lapin snaps to the ends, middles and intersections of what is drawn, and to the 
 
 To copy, select the element and type <kbd>CO</kbd>. Click a base point, then a second point. Lapin keeps copying until you press <kbd>Enter</kbd> or <kbd>Esc</kbd>. **Move** (<kbd>M</kbd>) works the same way.
 
+While you move or copy, a marker stays on the base point and a dashed line runs from it to the mouse, with a faded outline of what you move left where it was until you click or press <kbd>Esc</kbd>. The line and the marker change colour with the snap: green on a snapped point, blue when ortho or polar tracking holds the direction, the accent colour on a tracking line, grey when free. Next to the mouse, Lapin shows how far you have moved: Δx, Δy, the distance and the angle, in the project's units. You can type the distance and the angle there, as when you draw. In the Compact interface, these values are in the status line. Dragging a grip shows the same.
+
+![Moving a wall: the marker on the base point, the dashed line to the mouse, the wall's ghost where it was and the offset at the mouse](shots/move-trace.webp)
+
 You can also drag instead. Drag the cross in the middle of a selected element to move it. Hold <kbd>Ctrl</kbd> (<kbd>⌘</kbd> on a Mac) while you drag to leave a copy.
 
 A grid axis moves, copies, rotates and mirrors on its own, or together with other elements. A copy is a new axis of the same grid, named after the last axis that runs its way: with axes 1, 2 and 3, a copy of any of them is 4.

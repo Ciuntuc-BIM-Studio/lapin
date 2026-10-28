@@ -13,6 +13,7 @@ import { execute, undo } from '../../engine/session';
 import { applyOrtho, parseCoordinateInput, pointAlong } from './input';
 import { arcThrough, dist, toJson, type Shape } from './shapes';
 import { liveBegin, liveEnd } from '../liveInput';
+import { traceBegin, traceEnd } from '../moveTrace';
 
 /** What a 2D view lends the command line: its view, and what lies under a point. */
 export interface CadHost {
@@ -23,6 +24,8 @@ export interface CadHost {
   pickAny(p: Vec2): string | null;
   /** A drafted shape's geometry, for previews. */
   shapeOf(id: string): Shape | null;
+  /** What anything selectable looks like in this view (a drafted shape, an annotation's lines, an element's outline in plan), for previews and the move's ghost. */
+  outlinesOf?(id: string): Shape[];
 }
 
 type Next = Step | null | void | Promise<Step | null | void>;
@@ -32,6 +35,8 @@ export interface Step {
   /** The point typed coordinates and distances are relative to, and ortho squares to. */
   base?: Vec2 | null;
   preview?: (cursor: Vec2) => Shape[];
+  /** The step moves these shapes from its base (MOVE, COPY): the base marker, the line to the cursor and this ghost where they were show until the step ends. */
+  trace?: Shape[];
   point?: (p: Vec2) => Next;
   pick?: (hit: { id: string; shape: Shape }, at: Vec2) => Next;
   value?: (v: number) => Next;
@@ -87,8 +92,10 @@ async function advance(next: Next): Promise<void> {
   if (step) useCad.setState({ step });
   else useCad.setState({ step: null, command: null });
   // A point asked for from a base: its length and angle can be typed at the cursor.
-  if (step && step.want === 'point' && step.base) liveBegin('cad', step.base, (p) => void feedPoint(p));
+  if (step && step.want === 'point' && step.base) liveBegin('cad', step.base, (p) => void feedPoint(p), { delta: !!step.trace });
   else liveEnd('cad');
+  if (step?.trace && step.base) traceBegin('cad', step.base, step.trace);
+  else traceEnd('cad');
 }
 
 function host(): CadHost | null {
@@ -182,7 +189,12 @@ export function withSelection(then: (ids: string[]) => Next): Step | Promise<Ste
   return collect();
 }
 
-const shapesOf = (ids: string[]) => ids.map((id) => useCad.getState().host?.shapeOf(id)).filter((s): s is Shape => !!s);
+/** What the ids look like in the view: every shape of each (an element's outline in plan), else a drafted shape's first. */
+const shapesOf = (ids: string[]): Shape[] => {
+  const h = useCad.getState().host;
+  if (!h) return [];
+  return ids.flatMap((id) => { const o = h.outlinesOf?.(id); if (o?.length) return o; const s = h.shapeOf(id); return s ? [s] : []; });
+};
 const moved = (s: Shape, d: Vec2): Shape => {
   const m = (p: Vec2) => ({ x: p.x + d.x, y: p.y + d.y });
   switch (s.type) {
@@ -196,9 +208,11 @@ function moveOrCopy(copy: boolean): Step | null | void | Promise<Step | null | v
   return withSelection((ids) => ({
     prompt: 'Base point', want: 'point',
     point: (base) => {
+      // What is moved, where it is now: the ghost left at the start, and what the preview carries.
+      const ghost = shapesOf(ids);
       const second = (): Step => ({
-        prompt: copy ? 'Second point (Enter to finish)' : 'Second point', want: 'point', base,
-        preview: (c) => shapesOf(ids).map((s) => moved(s, { x: c.x - base.x, y: c.y - base.y })),
+        prompt: copy ? 'Second point (Enter to finish)' : 'Second point', want: 'point', base, trace: ghost,
+        preview: (c) => ghost.map((s) => moved(s, { x: c.x - base.x, y: c.y - base.y })),
         point: async (p) => {
           await execute('element.transform', { ids, op: copy ? 'copy' : 'move', by: [p.x - base.x, p.y - base.y] });
           return copy ? second() : null;
@@ -366,6 +380,7 @@ export function registerCommand(c: { names: string[]; label: string; start: Star
 /** For a module's commands: the log, the host, ending or chaining steps. */
 export const cadLog = log;
 export const cadHost = host;
+export { moved as movedShape };
 
 // ─── Input ─────────────────────────────────────────────────────────────────
 
@@ -403,6 +418,7 @@ export function cancel(quiet = false): void {
   generation++;
   useCad.setState({ command: null, step: null, buffer: '' });
   liveEnd('cad');
+  traceEnd('cad');
 }
 
 /** A point clicked in a view (already snapped). */

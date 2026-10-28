@@ -188,7 +188,19 @@ export function PlanView() {
     return o;
   }, [items, snapPoints, markSnaps, underDrawing]);
   const planViewOf = storey ? ownPlan ?? `plan:${storey.id}` : null;
-  const { aim, acquire } = useCadCanvas({ viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null });
+  /** An element's modelling lines on this plan, as shapes (what MOVE and a dragged grip leave as the ghost and carry). */
+  const outlines = useCallback((id: string): Shape[] => {
+    const r = items.find((x) => x.nodeId === id);
+    if (!r) return [];
+    const o: Shape[] = [];
+    for (const it of r.plan) {
+      if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid') continue;
+      const ps = pairs(it.points);
+      if (ps.length >= 2) o.push({ type: 'polyline', pts: ps, closed: it.closed });
+    }
+    return o;
+  }, [items]);
+  const { aim, acquire } = useCadCanvas({ viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null, outlines });
   const cadStep = useCad((s) => s.step);
 
   const snapAt = useCallback((clientX: number, clientY: number, from?: Vec2): Aimed => {

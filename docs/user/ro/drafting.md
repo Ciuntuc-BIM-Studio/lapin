@@ -32,6 +32,10 @@ Lapin se prinde de capetele, mijloacele și intersecțiile a ce e desenat, și d
 
 Ca să copiezi, selectează elementul și scrie <kbd>CO</kbd>. Dă clic pe un punct de bază, apoi pe un al doilea punct. Lapin copiază mai departe până apeși <kbd>Enter</kbd> sau <kbd>Esc</kbd>. **Mută** (<kbd>M</kbd>) merge la fel.
 
+Cât muți sau copiezi, un marcaj rămâne pe punctul de bază și o linie întreruptă merge de la el până la mouse, iar un contur estompat a ceea ce muți rămâne unde era până dai clic sau apeși <kbd>Esc</kbd>. Linia și marcajul își schimbă culoarea după snap: verde pe un punct prins, albastru când ortho sau urmărirea polară țin direcția, culoarea de accent pe o linie de urmărire, gri când e liber. Lângă mouse, Lapin arată cât ai mutat: Δx, Δy, distanța și unghiul, în unitățile proiectului. Poți scrie acolo distanța și unghiul, ca atunci când desenezi. În interfața Compact, valorile acestea sunt în linia de stare. La fel se vede și când tragi de un grip.
+
+![Mutarea unui perete: marcajul pe punctul de bază, linia întreruptă până la mouse, fantoma peretelui unde era și deplasarea lângă mouse](shots/move-trace.webp)
+
 Poți și să tragi. Trage de crucea din mijlocul unui element selectat ca să-l muți. Ține <kbd>Ctrl</kbd> (<kbd>⌘</kbd> pe Mac) cât tragi ca să lași o copie.
 
 O axă se mută, se copiază, se rotește și se oglindește singură sau împreună cu alte elemente. O copie e o axă nouă a aceluiași caroiaj, numită după ultima axă care merge în aceeași direcție: cu axele 1, 2 și 3, copia oricăreia e 4.

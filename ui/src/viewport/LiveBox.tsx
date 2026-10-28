@@ -1,6 +1,7 @@
 /**
  * The live input on screen: two cells at the cursor (length, angle) while a
- * segment is drawn or dragged, the focused one marked, a typed value bold;
+ * segment is drawn or dragged, the focused one marked, a typed value bold
+ * (a move's Δx and Δy before them, unless the prompt is in the status line);
  * and the bar over the view with the same values and Δx, Δy, x, y, to type
  * into with the mouse elsewhere.
  */
@@ -14,6 +15,8 @@ type ToScreen = (p: Vec2) => { x: number; y: number };
 
 export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
   const live = useLive();
+  // A move's Δx and Δy at the cursor; in the status line instead when the prompt goes there (Compact): the inline bar shows them.
+  const deltaHere = useInterface((s) => s.parts.prompt !== 'commandLine') && live.delta;
   const m = live.owner ? liveMeasure(live) : null;
   if (!live.owner || !m || !live.cursor) return null;
   const at = toScreen(m.end);
@@ -23,7 +26,11 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
     </span>
   );
   return (
-    <div className="live-box" style={{ left: at.x + 18, top: at.y + 18 }} aria-live="polite">
+    <div className={`live-box${deltaHere ? ' move' : ''}`} style={{ left: at.x + 18, top: at.y + 18 }} aria-live="polite">
+      {deltaHere && <>
+        <span className="live-cell ro"><span className="live-label">Δx</span>{formatLength(m.dx)}<span className="live-unit">{unitLabel()}</span></span>
+        <span className="live-cell ro"><span className="live-label">Δy</span>{formatLength(m.dy)}<span className="live-unit">{unitLabel()}</span></span>
+      </>}
       {cell('len', 'L', formatLength(m.len), unitLabel())}
       {cell('ang', '∠', formatAngle(m.ang), '°')}
     </div>
