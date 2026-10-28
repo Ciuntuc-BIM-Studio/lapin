@@ -45,9 +45,16 @@ Ca să vezi din nou tot modelul, apasă **×** pe eticheta **Secțiune** din jos
 ![În camera de zi](shots/room-walk.webp)
 
 - Trage cu butonul stâng ca să privești în jur.
-- <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> sau săgețile te poartă înainte, înapoi și în lateral. <kbd>E</kbd> și <kbd>Q</kbd> urcă și coboară. Ține <kbd>Shift</kbd> ca să alergi.
+- <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> sau săgețile te poartă înainte, înapoi și în lateral. Ține <kbd>Shift</kbd> ca să alergi. <kbd>Spațiu</kbd> sare.
 - Rotița mouse-ului face un pas înainte sau înapoi.
-- Pereții nu te opresc.
+
+Mergi cum ar merge un om. Pereții, stâlpii, mobilierul și ferestrele închise te opresc, iar tu aluneci de-a lungul lor. Stai pe pardoseli, urci și cobori scări și rampe și cazi dacă pășești peste o margine. Ușile îți sunt deschise: treci prin golurile lor.
+
+![Spre ușa dormitorului](shots/room-walk-door.webp)
+
+![Pe scară în sus](shots/room-walk-stair.webp)
+
+**Zbor** din eticheta plimbării, sau <kbd>F</kbd>, te lasă să zbori: fără gravitație, treci prin pereți și planșee. <kbd>E</kbd> și <kbd>Q</kbd> urcă și coboară. Apasă din nou <kbd>F</kbd> ca să mergi; cobori pe pardoseala de sub tine.
 
 <kbd>Esc</kbd> sau **Ieși din plimbare** aduce înapoi camera pe care o aveai.
 

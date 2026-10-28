@@ -1,9 +1,11 @@
 /**
  * Walking through the model: a first-person camera put inside a room (from a
  * plan's right-click), at eye height over its storey, looking along the
- * room. Drag looks round (no roll), W A S D or the arrows walk, E and Q rise
- * and sink, the wheel steps forward and back, Shift runs; Esc goes back to
- * the camera there was. No physics: walls do not stop it.
+ * room. Drag looks round (no roll), W A S D or the arrows walk, the wheel
+ * steps forward and back, Shift runs, Space jumps; Esc goes back to the
+ * camera there was. The walker has a body (walkPhysics.ts): walls stop it,
+ * it stands on floors, climbs stairs and ramps and falls off edges; doors let
+ * it through. F flies: no gravity and no collisions, E and Q rise and sink.
  */
 
 import { create } from 'zustand';
@@ -22,9 +24,12 @@ export const CLIMB_SPEED = 1;
 export interface WalkStart { eye: Vec3; yaw: number; pitch: number; name: string }
 
 /** Where a walk starts (null: not walking); the 3D view takes it up and clears it when the walk ends. */
-export const useWalk = create<{ start: WalkStart | null }>(() => ({ start: null }));
+export const useWalk = create<{ start: WalkStart | null; fly: boolean }>(() => ({ start: null, fly: false }));
 
-export const exitWalk = () => useWalk.setState({ start: null });
+export const exitWalk = () => useWalk.setState({ start: null, fly: false });
+
+/** Flying (through everything, no gravity) or walking with a body. */
+export const toggleFly = () => useWalk.setState((st) => ({ fly: !st.fly }));
 
 /** How far a point is from an outline's nearest edge. */
 function clearance(p: Vec2, loops: Vec2[][]): number {
@@ -103,22 +108,35 @@ export function roomLook(outer: Vec2[], eye: Vec2, islands: Vec2[][] = []): numb
 export const WALK_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyE', 'KeyQ', 'PageUp', 'PageDown']);
 
 /**
- * One step of a walk: where the eye is after `dt` seconds with `keys` held,
- * looking along `yaw`. Forward and sideways stay level whatever the pitch;
- * a diagonal is no faster than straight; Shift (`run`) runs.
+ * The velocity `keys` ask for (m/s), looking along `yaw`. Forward and
+ * sideways stay level whatever the pitch; a diagonal is no faster than
+ * straight; Shift (`run`) runs; E and Q rise and sink (flying).
  */
-export function walkStep(pos: Vec3, yaw: number, keys: ReadonlySet<string>, dt: number, run = false): Vec3 {
+export function walkWish(yaw: number, keys: ReadonlySet<string>, run = false): Vec3 {
   const has = (...k: string[]) => k.some((x) => keys.has(x));
   const fwd = (has('KeyW', 'ArrowUp') ? 1 : 0) - (has('KeyS', 'ArrowDown') ? 1 : 0);
   const side = (has('KeyD', 'ArrowRight') ? 1 : 0) - (has('KeyA', 'ArrowLeft') ? 1 : 0);
   const climb = (has('KeyE', 'PageUp') ? 1 : 0) - (has('KeyQ', 'PageDown') ? 1 : 0);
-  const pace = WALK_SPEED * (run ? RUN_FACTOR : 1) * dt;
+  const pace = WALK_SPEED * (run ? RUN_FACTOR : 1);
   const len = Math.hypot(fwd, side) || 1;
   const c = Math.cos(yaw), s = Math.sin(yaw);
   // Right of the look is the look turned clockwise.
-  const dx = ((fwd * c + side * s) / len) * pace;
-  const dy = ((fwd * s - side * c) / len) * pace;
-  return { x: pos.x + dx, y: pos.y + dy, z: pos.z + climb * CLIMB_SPEED * (run ? RUN_FACTOR : 1) * dt };
+  return { x: ((fwd * c + side * s) / len) * pace, y: ((fwd * s - side * c) / len) * pace, z: climb * CLIMB_SPEED * (run ? RUN_FACTOR : 1) };
+}
+
+/** One step of a flight: where the eye is after `dt` seconds with `keys` held (nothing in the way). */
+export function walkStep(pos: Vec3, yaw: number, keys: ReadonlySet<string>, dt: number, run = false): Vec3 {
+  const w = walkWish(yaw, keys, run);
+  return { x: pos.x + w.x * dt, y: pos.y + w.y * dt, z: pos.z + w.z * dt };
+}
+
+/**
+ * The eye's height as drawn: following the feet, but easing over a stair's
+ * risers (a small jump while on the ground) instead of jolting up each one.
+ */
+export function easeEye(shown: number, target: number, dt: number, grounded: boolean): number {
+  if (!grounded || Math.abs(target - shown) >= 0.45) return target;
+  return shown + (target - shown) * (1 - Math.exp(-14 * dt));
 }
 
 /** The look as a unit vector, from yaw (0 along +X) and pitch (below 0 looks down). */

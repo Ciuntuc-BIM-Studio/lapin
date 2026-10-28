@@ -45,9 +45,16 @@ In a plan, right-click inside a room and choose **Walk in 3D**. The 3D view puts
 ![Standing in the living room](shots/room-walk.webp)
 
 - Drag with the left button to look around.
-- <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or the arrow keys walk. <kbd>E</kbd> and <kbd>Q</kbd> go up and down. Hold <kbd>Shift</kbd> to run.
+- <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or the arrow keys walk. Hold <kbd>Shift</kbd> to run. <kbd>Space</kbd> jumps.
 - The mouse wheel steps forward and back.
-- Walls do not stop you.
+
+You walk as a person would. Walls, columns, furniture and closed windows stop you, and you slide along them. You stand on floors, walk up and down stairs and ramps, and fall if you walk off an edge. Doors are open for you: walk through their openings.
+
+![Walking to the bedroom's door](shots/room-walk-door.webp)
+
+![Up the stair](shots/room-walk-stair.webp)
+
+**Fly** in the walk's chip, or <kbd>F</kbd>, lets you fly instead: no gravity, and you pass through walls and floors. <kbd>E</kbd> and <kbd>Q</kbd> go up and down. Press <kbd>F</kbd> again to walk; you drop onto the floor under you.
 
 <kbd>Esc</kbd> or **Exit walk** brings back the camera you had before.
 

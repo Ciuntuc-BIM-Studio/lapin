@@ -625,3 +625,5 @@ button.mode-chip:hover { color: var(--accent); }
 .mode-chip button.mode-toggle[aria-pressed="false"] { background: transparent; color: var(--ink-muted); box-shadow: inset 0 0 0 1px var(--ink-muted); }
 .mode-chip button.mode-close { display: inline-flex; padding: 3px; background: transparent; color: var(--ink); }
 .mode-chip button.mode-close:hover { color: var(--accent); }
+.mode-chip button.toggle { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--accent); }
+.mode-chip button.toggle.active { background: var(--accent); color: var(--accent-ink); }

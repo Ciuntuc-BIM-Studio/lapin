@@ -59,7 +59,9 @@ export const RO: Record<string, string> = {
   'Levels': 'Niveluri', 'Floor plans': 'Planuri', 'Sections': 'Secțiuni', '3D views': 'Vederi 3D', 'Schedules': 'Extrase', 'New level above': 'Nivel nou deasupra',
   // A section seen in 3D, walking into a room (right-click menus)
   'Open': 'Deschide', 'Show in 3D': 'Arată în 3D', 'Stop showing the section in 3D': 'Nu mai arăta secțiunea în 3D', 'Walk in 3D': 'Plimbă-te în 3D', 'Walking': 'Plimbare',
-  'Drag to look · W A S D to walk · E/Q up and down · Shift runs': 'Trage ca să privești · W A S D ca să mergi · E/Q sus și jos · Shift aleargă',
+  'Drag to look · W A S D to walk · Space jumps · Shift runs': 'Trage ca să privești · W A S D ca să mergi · Spațiu sare · Shift aleargă',
+  'Drag to look · W A S D to fly · E/Q up and down · Shift faster': 'Trage ca să privești · W A S D ca să zbori · E/Q sus și jos · Shift mai repede',
+  'Flying': 'Zbor', 'Fly': 'Zbor', 'Fly through walls and floors, without gravity (F)': 'Zbori prin pereți și planșee, fără gravitație (F)',
   'Exit walk': 'Ieși din plimbare', 'Back to the camera there was (Esc)': 'Înapoi la camera de dinainte (Esc)',
   'Annotations': 'Adnotări', "Show the section's dimensions, levels, tags and texts on the cut": 'Arată pe tăietură cotele, nivelurile, etichetele și textele secțiunii',
   'A foundation plan of this level': 'Un plan de fundații al acestui nivel', 'Draw a section line in the plan': 'Desenează linia secțiunii în plan',

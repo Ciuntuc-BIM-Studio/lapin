@@ -27,7 +27,8 @@ import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from '
 import { Grips3D } from './Grips3D';
 import { useDrawing, type DrawingDto } from './drawing';
 import { cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPlanes, sectionPose, textFont, textQuad, useSection3d, type DrawingText, type ViewFrameDto } from './section3d';
-import { clampPitch, exitWalk, lookVector, useWalk, walkStep, WALK_KEYS, type WalkStart } from './walk';
+import { clampPitch, easeEye, exitWalk, lookVector, toggleFly, useWalk, walkStep, walkWish, EYE_HEIGHT, WALK_KEYS, type WalkStart } from './walk';
+import { TICK, Walker, worldOf } from './walkPhysics';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
@@ -296,7 +297,7 @@ export function Viewport3D() {
   const clearFace = useRef<() => void>(() => undefined);
   const [faceLabel, setFaceLabel] = useState<{ text: string; x: number; y: number } | null>(null);
   /** Walking: started and stopped by the walk's store (set up with the scene). */
-  const walkApi = useRef<{ start(w: WalkStart): void; stop(): void }>({ start: () => undefined, stop: () => undefined });
+  const walkApi = useRef<{ start(w: WalkStart): void; stop(): void; changed(): void }>({ start: () => undefined, stop: () => undefined, changed: () => undefined });
   /** The section the camera was last turned to, so it turns once per showing, not on every edit. */
   const framedSection = useRef<string | null>(null);
   const elevationRef = useRef(0);
@@ -493,8 +494,26 @@ export function Viewport3D() {
       });
     };
     renderer.domElement.addEventListener('pointermove', onMove);
-    // Walking (walk.ts): the orbit controls off, the perspective camera at the eye, turned by a drag, moved by keys and the wheel.
-    let walk: { pos: THREE.Vector3; yaw: number; pitch: number; back: CameraPose; wasOrtho: boolean; keys: Set<string>; run: boolean; loop: number; last: number; drag: { x: number; y: number } | null } | null = null;
+    // Walking (walk.ts): the orbit controls off, the perspective camera at the eye, turned by a drag, moved by keys and the wheel;
+    // a body (walkPhysics.ts) against the shown elements' triangles, built on the walk's first step and again when the model changes.
+    let walk: {
+      pos: THREE.Vector3; yaw: number; pitch: number; back: CameraPose; wasOrtho: boolean; keys: Set<string>; run: boolean; jump: boolean; loop: number; last: number; drag: { x: number; y: number } | null;
+      body: Walker | null; stale: boolean; acc: number;
+    } | null = null;
+    /** The walker's body, its world (re)built when stale; null while the model has nothing to stand on yet. */
+    const bodyOf = (w: NonNullable<typeof walk>): Walker | null => {
+      if (!w.stale) return w.body;
+      w.stale = false;
+      const world = worldOf(Array.from(items.current.values()).filter((e) => e.object.visible).map((e) => e.item));
+      if (w.body) { w.body.world = world; return w.body; }
+      if (!world.count) return null;
+      // Dropped onto the floor under the eye; the ground (where the model has none) at ±0.00, or lower under a basement.
+      const feet = { x: w.pos.x, y: w.pos.y, z: w.pos.z - EYE_HEIGHT + 0.3 };
+      w.body = new Walker(world, feet, Math.min(0, feet.z - 0.3));
+      w.body.drop();
+      w.pos.set(w.body.feet.x, w.body.feet.y, w.body.feet.z + EYE_HEIGHT);
+      return w.body;
+    };
     const placeWalk = () => {
       if (!walk) return;
       const l = lookVector(walk.yaw, walk.pitch);
@@ -509,11 +528,28 @@ export function Viewport3D() {
       if (!walk) return;
       const dt = Math.min(0.1, (now - walk.last) / 1000);
       walk.last = now;
-      const p = walkStep(walk.pos, walk.yaw, walk.keys, dt, walk.run);
-      walk.pos.set(p.x, p.y, p.z);
+      const body = useWalk.getState().fly ? null : bodyOf(walk);
+      if (body) {
+        const wish = walkWish(walk.yaw, walk.keys, walk.run);
+        walk.acc = Math.min(walk.acc + dt, 0.1);
+        while (walk.acc >= TICK) { body.step(TICK, wish, walk.jump); walk.jump = false; walk.acc -= TICK; }
+        walk.pos.set(body.feet.x, body.feet.y, easeEye(walk.pos.z, body.feet.z + EYE_HEIGHT, dt, body.grounded));
+      } else {
+        const p = walkStep(walk.pos, walk.yaw, walk.keys, dt, walk.run);
+        walk.pos.set(p.x, p.y, p.z);
+      }
       placeWalk();
-      walk.loop = walk.keys.size ? requestAnimationFrame(stepWalk) : 0;
+      // On while a key is held, or the body still falls, slows down or eases up a step.
+      const settling = body != null && (!body.still || Math.abs(walk.pos.z - body.feet.z - EYE_HEIGHT) > 1e-3);
+      walk.loop = walk.keys.size || settling ? requestAnimationFrame(stepWalk) : 0;
     };
+    const kickWalk = () => { if (walk && !walk.loop) { walk.last = performance.now(); walk.loop = requestAnimationFrame(stepWalk); } };
+    // Leaving a flight: the body falls from where the eye is.
+    const unFly = useWalk.subscribe((st, prev) => {
+      if (!walk || st.fly === prev.fly) return;
+      if (!st.fly && walk.body) { walk.body.feet = { x: walk.pos.x, y: walk.pos.y, z: walk.pos.z - EYE_HEIGHT }; walk.body.vel = { x: 0, y: 0, z: 0 }; walk.body.grounded = false; }
+      kickWalk();
+    });
     walkApi.current = {
       start: (w) => {
         cancelAnimationFrame(flight);
@@ -527,9 +563,11 @@ export function Viewport3D() {
         persp.near = 0.05;
         persp.fov = 65;
         persp.updateProjectionMatrix();
-        walk = { pos: new THREE.Vector3(w.eye.x, w.eye.y, w.eye.z), yaw: w.yaw, pitch: clampPitch(w.pitch), back, wasOrtho, keys: new Set(), run: false, loop: 0, last: 0, drag: null };
+        walk = { pos: new THREE.Vector3(w.eye.x, w.eye.y, w.eye.z), yaw: w.yaw, pitch: clampPitch(w.pitch), back, wasOrtho, keys: new Set(), run: false, jump: false, loop: 0, last: 0, drag: null, body: null, stale: true, acc: 0 };
+        bodyOf(walk);
         placeWalk();
       },
+      changed: () => { if (walk) { walk.stale = true; kickWalk(); } },
       stop: () => {
         if (!walk) return;
         cancelAnimationFrame(walk.loop);
@@ -563,8 +601,15 @@ export function Viewport3D() {
       e.preventDefault();
       const l = lookVector(walk.yaw, 0);
       const by = -Math.sign(e.deltaY) * (e.shiftKey ? 1.5 : 0.5);
-      walk.pos.x += l.x * by;
-      walk.pos.y += l.y * by;
+      const body = useWalk.getState().fly ? null : bodyOf(walk);
+      if (body) {
+        body.shove({ x: l.x * by, y: l.y * by, z: 0 });
+        walk.pos.set(body.feet.x, body.feet.y, walk.pos.z);
+        kickWalk();
+      } else {
+        walk.pos.x += l.x * by;
+        walk.pos.y += l.y * by;
+      }
       placeWalk();
     };
     // Before the shortcuts (capture on the window): while walking, the letters walk instead of starting tools.
@@ -574,10 +619,12 @@ export function Viewport3D() {
       e.preventDefault();
       if (e.type === 'keydown' && e.key === 'Escape') { exitWalk(); return; }
       walk.run = e.shiftKey;
+      if (e.type === 'keydown' && e.code === 'KeyF' && !e.repeat) { toggleFly(); return; }
+      if (e.code === 'Space') { if (e.type === 'keydown' && !e.repeat) { walk.jump = true; kickWalk(); } return; }
       if (!WALK_KEYS.has(e.code)) return;
       if (e.type === 'keyup') { walk.keys.delete(e.code); return; }
       walk.keys.add(e.code);
-      if (!walk.loop) { walk.last = performance.now(); walk.loop = requestAnimationFrame(stepWalk); }
+      kickWalk();
     };
     const onWalkBlur = () => walk?.keys.clear();
     renderer.domElement.addEventListener('pointerdown', onWalkDown);
@@ -607,7 +654,8 @@ export function Viewport3D() {
       clearFace.current = () => undefined;
       window.removeEventListener('keydown', onKey);
       if (walk) cancelAnimationFrame(walk.loop);
-      walkApi.current = { start: () => undefined, stop: () => undefined };
+      unFly();
+      walkApi.current = { start: () => undefined, stop: () => undefined, changed: () => undefined };
       renderer.domElement.removeEventListener('pointerdown', onWalkDown);
       renderer.domElement.removeEventListener('pointermove', onWalkMove);
       renderer.domElement.removeEventListener('pointerup', onWalkUp);
@@ -690,6 +738,7 @@ export function Viewport3D() {
   const selected = useUi((st) => st.selected);
   const walkStart = useWalk((st) => st.start);
   const walking = walkStart != null;
+  const flying = useWalk((st) => st.fly);
   const looks = useLooks((st) => st.looks);
   const visualStyle = useUi((st) => st.visualStyle);
   const fog = useUi((st) => st.fog);
@@ -725,8 +774,9 @@ export function Viewport3D() {
     invalidate.current();
   }, [render, selected, looks, visualStyle, walking]);
 
-  // A walk asked for (a plan's right-click on a room), or ended.
+  // A walk asked for (a plan's right-click on a room), or ended; the model changed or shown otherwise under a walker.
   useEffect(() => { if (walkStart) walkApi.current.start(walkStart); else walkApi.current.stop(); }, [walkStart]);
+  useEffect(() => walkApi.current.changed(), [render, looks]);
 
   // A section shown in 3D: the model cut by its plane (and its depth), its drawing on the cut; an elevation only turns the camera.
   const sectionId = useSection3d((st) => st.viewId);
@@ -776,8 +826,9 @@ export function Viewport3D() {
           )}
           {walkStart && (
             <span className="mode-chip walk">
-              <span>Walking</span><span data-no-i18n>{walkStart.name}</span>
-              <span className="mode-hint">Drag to look · W A S D to walk · E/Q up and down · Shift runs</span>
+              <span>{flying ? 'Flying' : 'Walking'}</span><span data-no-i18n>{walkStart.name}</span>
+              <span className="mode-hint">{flying ? 'Drag to look · W A S D to fly · E/Q up and down · Shift faster' : 'Drag to look · W A S D to walk · Space jumps · Shift runs'}</span>
+              <button type="button" className={`toggle${flying ? ' active' : ''}`} aria-pressed={flying} onClick={toggleFly} title="Fly through walls and floors, without gravity (F)">Fly</button>
               <button type="button" onClick={exitWalk} title="Back to the camera there was (Esc)">Exit walk</button>
             </span>
           )}

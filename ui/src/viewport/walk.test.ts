@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { centroid, roomEye, roomLook, walkInto, walkStep, EYE_HEIGHT, RUN_FACTOR, WALK_SPEED } from './walk';
+import { centroid, easeEye, roomEye, roomLook, walkInto, walkStep, walkWish, EYE_HEIGHT, RUN_FACTOR, WALK_SPEED } from './walk';
 import { pointInPolygon } from './snap';
 
 const pts = (...xy: number[]) => Array.from({ length: xy.length / 2 }, (_, i) => ({ x: xy[2 * i], y: xy[2 * i + 1] }));
@@ -68,5 +68,21 @@ describe('a walk step', () => {
     expect(walkStep(at, 0, new Set(['KeyE']), 1).z).toBeGreaterThan(1.6);
     expect(walkStep(at, 0, new Set(['KeyW', 'KeyS']), 1)).toEqual(at);
     expect(walkStep(at, 0, new Set(), 1)).toEqual(at);
+  });
+});
+
+describe('the eye over a walker', () => {
+  it('asks for a level velocity whatever is held', () => {
+    const w = walkWish(0, new Set(['KeyW', 'KeyD']));
+    expect(Math.hypot(w.x, w.y)).toBeCloseTo(WALK_SPEED);
+    expect(w.z).toBe(0);
+  });
+
+  it('eases up a stair\'s riser on the ground, follows a fall at once', () => {
+    const eased = easeEye(1.6, 1.77, 1 / 60, true);
+    expect(eased).toBeGreaterThan(1.6);
+    expect(eased).toBeLessThan(1.77);
+    expect(easeEye(4.6, 1.6, 1 / 60, false)).toBe(1.6);
+    expect(easeEye(1.6, 3.0, 1 / 60, true)).toBe(3.0);
   });
 });

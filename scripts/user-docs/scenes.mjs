@@ -294,7 +294,10 @@ export const scenes = [
     id: 'views-3d',
     async run(t) {
       await t.fresh();
-      const { storey } = await house(t);
+      const { storey, walls } = await house(t);
+      // A door between the two rooms, and a stair in the bedroom, to walk through and up.
+      await t.cmd('architecture.addDoor', { wallId: walls.inner, x: 7, y: 2 });
+      await t.cmd('architecture.addStair', { storeyId: storey, x: 10.5, y: 1, x2: 10.5, y2: 7 });
       await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4, name: 'Living room', function: 'Living' });
       await t.cmd('architecture.addRoom', { storeyId: storey, x: 9.5, y: 4, name: 'Bedroom', function: 'Bedroom' });
       const bb = await t.cmd('view.create', { kind: 'section', name: 'B-B', start: [-2, 5], end: [14, 5], scale: 50 });
@@ -360,7 +363,36 @@ export const scenes = [
       await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2);
       await page.mouse.down(); await page.mouse.move(c.x + c.width / 2 - 120, c.y + c.height / 2, { steps: 6 }); await page.mouse.up();
       const after = await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().position);
-      t.expect(Math.hypot(after.x - before.x, after.y - before.y) > 0.2 && Math.abs(after.z - before.z) < 1e-6, 'W walks forward, level');
+      t.expect(Math.hypot(after.x - before.x, after.y - before.y) > 0.2 && Math.abs(after.z - before.z) < 0.01, 'W walks forward, level');
+      // The walker has a body: the inner wall (x 7) stops it, the door in it lets it through, the stair takes it up.
+      const camera = () => page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().position);
+      const walkFrom = async (x, y, yaw, held, ms, pitch = 0) => {
+        await page.evaluate(async ([x, y, yaw, pitch]) => (await import('/src/viewport/walk.ts')).useWalk.setState({ start: { eye: { x, y, z: 1.6 }, yaw, pitch, name: 'Living room' } }), [x, y, yaw, pitch]);
+        await t.wait(400);
+        if (held) { await page.keyboard.down(held); await t.wait(ms); await page.keyboard.up(held); }
+        await t.wait(600);
+        return camera();
+      };
+      const atWall = await walkFrom(5.5, 5, 0, 'w', 2500);
+      t.expect(atWall.x > 6 && atWall.x < 6.9, `a wall stops the walker (x ${atWall.x.toFixed(2)})`);
+      await walkFrom(3.5, 2, 0, null, 0);
+      await t.shot('room-walk-door', { of: '[data-testid=view3d]', pad: 0 });
+      const through = await walkFrom(3.5, 2, 0, 'w', 3500);
+      t.expect(through.x > 7.6, `a door lets the walker through (x ${through.x.toFixed(2)})`);
+      const onStair = await walkFrom(10.5, 0.4, Math.PI / 2, 'w', 1500, -0.3);
+      t.expect(onStair.z > 1.9, `a stair takes the walker up (eye at ${onStair.z.toFixed(2)})`);
+      await t.shot('room-walk-stair', { of: '[data-testid=view3d]', pad: 0 });
+      await page.keyboard.down('w'); await t.wait(2500); await page.keyboard.up('w'); await t.wait(600);
+      const top = await camera();
+      t.expect(top.z > 3.5, `up to the stair's top (eye at ${top.z.toFixed(2)})`);
+      // F flies: through the wall.
+      await page.evaluate(async () => (await import('/src/viewport/walk.ts')).useWalk.setState({ start: { eye: { x: 5.5, y: 5, z: 1.6 }, yaw: 0, pitch: 0, name: 'Living room' } }));
+      await t.wait(400);
+      await t.keys('f');
+      t.expect(await page.locator('.mode-chip.walk button[aria-pressed=true]').count() === 1, 'F flies');
+      await page.keyboard.down('w'); await t.wait(2500); await page.keyboard.up('w');
+      t.expect((await camera()).x > 7.5, 'flying goes through walls');
+      await t.keys('f');
       await t.keys('Escape');
       t.expect(await page.locator('.mode-chip.walk').count() === 0, 'Esc ends the walk');
       const back = await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().position);
