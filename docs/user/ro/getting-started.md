@@ -25,6 +25,8 @@ Un proiect nou are deja trei niveluri: **Foundations** (−1,50), **Ground floor
 7. **Panoul de proprietăți.** Arată ce e selectat. Când nu e nimic selectat, arată vederea din față.
 8. **Ask Me.** Asistentul de ajutor al Lapin. Vezi [Ajutor și feedback](help.md).
 
+Vrei mai mult loc pentru desen? **Vedere → Interfață…** alege o fereastră mai compactă, iar panourile laterale se pliază. Vezi [Interfața și scurtăturile](interface.md).
+
 ## Cum te miști
 
 - **Zoom.** Rotița mouse-ului sau ciupit pe trackpad. Lapin face zoom unde e cursorul.

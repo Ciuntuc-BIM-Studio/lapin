@@ -17,7 +17,7 @@ The **Structure** tab holds the frame and the foundations.
 ## Foundations
 
 - **Strip footing** (<kbd>SF</kbd>) runs under walls. Its outer layers are mitred at the corners.
-- **Curved strip footing** (<kbd>SC</kbd>) follows an arc.
+- **Curved strip footing** (<kbd>CF</kbd>) follows an arc.
 - **Pad footing** (<kbd>PF</kbd>) goes under a column.
 
 Draw foundations on the **Foundations** level, or give them a plan of their own.

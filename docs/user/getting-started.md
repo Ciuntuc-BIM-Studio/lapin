@@ -25,6 +25,8 @@ A new project already has three levels: **Foundations** (−1.50), **Ground floo
 7. **The properties panel.** It shows whatever is selected. With nothing selected, it shows the view in front.
 8. **Ask Me.** This is Lapin's help assistant. See [Help and feedback](help.md).
 
+Want more room for the drawing? **View → Interface…** chooses a more compact window, and the side panels fold away. See [The interface and shortcuts](interface.md).
+
 ## Moving around
 
 - **Zoom.** Turn the mouse wheel or pinch on a trackpad. Lapin zooms where the cursor is.

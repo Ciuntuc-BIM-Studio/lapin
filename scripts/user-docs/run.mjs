@@ -212,6 +212,8 @@ function tools(page, url, folder, lang) {
     async clearCallouts() { marks = []; await unplace(); },
     /** Shows everything in the view on the screen. */
     async fit() { await page.locator('button[title^="Fit"]').first().click().catch(() => t.keys('z', 'e', 'Enter')); await t.wait(500); },
+    /** Data a page shows (shots/<name>.json, in the scene's language): the default shortcuts' table. */
+    data(name, value) { writeFileSync(join(folder, `${name}.json`), JSON.stringify(value, null, 2)); },
     /** Fails the scene when something is not as the guide says. */
     expect(ok, what) { if (!ok) throw new Error(`expected: ${what}`); },
     /**

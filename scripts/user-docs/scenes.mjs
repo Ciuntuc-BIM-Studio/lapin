@@ -607,4 +607,72 @@ export const scenes = [
       await t.shot('about', { of: '.dialog.about', pad: 0 });
     },
   },
+  {
+    // The interface's modes (View → Interface…), the panels folding, the keyboard shortcuts (KS) and their table for the page.
+    id: 'interface',
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      await t.fit();
+      // The table of the default shortcuts, from the registry, in the page's language.
+      await t.data('shortcuts', await t.page.evaluate(async (lang) => {
+        const { commands, current } = await import('/src/app/commands.ts');
+        const { formatBinding } = await import('/src/app/shortcuts.ts');
+        const { translate } = await import('/src/i18n/index.ts');
+        const say = (s) => (lang === 'en' ? s : translate(s) ?? s);
+        const { bindings } = current();
+        return commands().filter((c) => !c.id.startsWith('hotbar.') && (bindings[c.id] ?? []).length)
+          .map((c) => ({ category: say(c.category), command: say(c.label), keys: bindings[c.id].map((b) => formatBinding(b, false)) }));
+      }, t.lang));
+      await t.tool('app.interface');
+      t.expect(await t.page.locator('.interface-dialog').count() === 1, 'View → Interface… opens its dialog');
+      await t.shot('interface-dialog', { of: '.interface-dialog', pad: 0 });
+      // Compact: an icon band, one status line, the quick tools on the edge, the browser on a rail.
+      await t.page.locator('.seg.presets .seg-item').nth(1).click();
+      await t.wait(300);
+      await t.page.locator('.interface-dialog .btn.primary').click();
+      await t.wait(600);
+      t.expect(await t.page.locator('.band.icons').count() === 1 && await t.page.locator('.status.line').count() === 1, 'Compact shows the icon band and the status line');
+      t.expect(await t.page.locator('.hotbar.docked').count() === 1 && await t.page.locator('.panel.rail.browser').count() === 1, 'Compact docks the quick tools and folds the browser');
+      await t.fit();
+      await t.callouts([
+        { of: '.band.icons', n: 1, at: 'bottom' },
+        { of: '.panel.rail.browser .rail-icon >> nth=0', n: 2, at: 'after' },
+        { of: '.hotbar.docked', n: 3, at: 'after' },
+        { of: '.key-plan-button', n: 4, at: 'before' },
+        { of: '.status.line .cad-prompt', n: 5, at: 'center' },
+      ]);
+      await t.shot('interface-compact');
+      await t.clearCallouts();
+      // A folded browser over the view, from its rail.
+      await t.page.locator('.panel.rail.browser .rail-icon').nth(0).click();
+      await t.wait(400);
+      t.expect(await t.page.locator('.panel-overlay nav.browser').count() === 1, 'the rail opens the browser over the view');
+      await t.shot('browser-overlay', { clip: { x: 0, y: 0, width: 640, height: 560 } });
+      await t.keys('Escape');
+      // Focus: the tabs and a command line; a selected wall's card.
+      await t.keys('Control+.');
+      await t.page.locator('.seg.presets .seg-item').nth(2).click();
+      await t.page.locator('.interface-dialog .btn.primary').click();
+      await t.wait(400);
+      await select(t, walls[0]);
+      await t.wait(500);
+      t.expect(await t.page.locator('.sel-card').count() === 1, 'Focus shows the selection in a card');
+      await t.shot('interface-focus');
+      await t.ui({ selection: null, selected: [] });
+      // Back to Comfortable, and the shortcuts by their own letters.
+      await t.keys('Control+.');
+      await t.page.locator('.seg.presets .seg-item').nth(0).click();
+      await t.page.locator('.interface-dialog .btn.primary').click();
+      await t.wait(400);
+      t.expect(await t.page.locator('.band .group').count() > 0, 'Comfortable brings the large ribbon back');
+      await t.page.mouse.click(700, 500);
+      await t.keys('k', 's');
+      await t.wait(400);
+      t.expect(await t.page.locator('.shortcuts-dialog').count() === 1, 'KS opens the keyboard shortcuts');
+      await t.page.locator('.shortcuts-dialog input').first().fill('wall');
+      await t.wait(300);
+      await t.shot('shortcuts-dialog', { of: '.shortcuts-dialog', pad: 0 });
+    },
+  },
 ];

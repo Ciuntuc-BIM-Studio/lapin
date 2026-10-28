@@ -10,7 +10,7 @@ Scrie oriunde în fereastră literele unei unelte, apoi apasă <kbd>Enter</kbd>.
 
 ![Copierea unui perete: după punctul de bază, linia de comandă și căsuțele arată lungimea și unghiul până la mouse](shots/command-line.webp)
 
-Fiecare unealtă își arată literele când ții mouse-ul peste ea. Acestea sunt cele mai folosite:
+Fiecare unealtă își arată literele când ții mouse-ul peste ea; le poți schimba în **Vedere → Scurtături de tastatură…** (vezi [Interfața și scurtăturile](interface.md)). Acestea sunt cele mai folosite:
 
 | Model | | Desen | |
 |---|---|---|---|

@@ -10,7 +10,7 @@ Type a tool's letters anywhere in the window, then press <kbd>Enter</kbd>. For e
 
 ![Copying a wall: after the base point, the command line and the live input show the length and angle to the mouse](shots/command-line.webp)
 
-Every tool shows its letters in its tooltip. These are the ones used most:
+Every tool shows its letters in its tooltip; you can change them in **View → Keyboard shortcuts…** (see [The interface and shortcuts](interface.md)). These are the ones used most:
 
 | Model | | Draft | |
 |---|---|---|---|

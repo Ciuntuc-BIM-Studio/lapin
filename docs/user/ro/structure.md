@@ -17,7 +17,7 @@ Tabul **Structură** are cadrele și fundațiile.
 ## Fundații
 
 - **Fundație continuă** (<kbd>SF</kbd>) merge sub pereți. Straturile ei exterioare se îmbină la 45° în colțuri.
-- **Fundație continuă curbă** (<kbd>SC</kbd>) urmează un arc.
+- **Fundație continuă curbă** (<kbd>CF</kbd>) urmează un arc.
 - **Fundație izolată** (<kbd>PF</kbd>) stă sub un stâlp.
 
 Desenează fundațiile pe nivelul **Foundations** sau dă-le un plan propriu.

@@ -39,11 +39,19 @@ function parse(file) {
 
 /** The guide's own words, in each language. */
 const WORDS = {
-  en: { guide: 'Lapin user guide', brand: 'user guide', eyebrow: 'User guide', search: 'Search the guide', theme: 'Light or dark', open: 'Open Lapin', pages: 'Pages', onPage: 'On this page', prev: 'Previous', next: 'Next', none: 'Nothing found. Try Ask Me in the app.', other: 'Română', otherTitle: 'Ghidul în română',
+  en: { command: 'Command', keys: 'Keys', guide: 'Lapin user guide', brand: 'user guide', eyebrow: 'User guide', search: 'Search the guide', theme: 'Light or dark', open: 'Open Lapin', pages: 'Pages', onPage: 'On this page', prev: 'Previous', next: 'Next', none: 'Nothing found. Try Ask Me in the app.', other: 'Română', otherTitle: 'Ghidul în română',
     footer: (date, commit) => `Pictures taken from Lapin itself on ${date}${commit ? ` (build ${commit})` : ''}. Something missing or wrong? Ask in the app: <b>Ask Me</b>, or <b>?</b> → Report an issue.` },
-  ro: { guide: 'Ghidul utilizatorului Lapin', brand: 'ghidul utilizatorului', eyebrow: 'Ghidul utilizatorului', search: 'Caută în ghid', theme: 'Luminos sau întunecat', open: 'Deschide Lapin', pages: 'Pagini', onPage: 'Pe această pagină', prev: 'Înapoi', next: 'Înainte', none: 'Nimic găsit. Întreabă Ask Me în aplicație.', other: 'English', otherTitle: 'The guide in English',
+  ro: { command: 'Comandă', keys: 'Taste', guide: 'Ghidul utilizatorului Lapin', brand: 'ghidul utilizatorului', eyebrow: 'Ghidul utilizatorului', search: 'Caută în ghid', theme: 'Luminos sau întunecat', open: 'Deschide Lapin', pages: 'Pagini', onPage: 'Pe această pagină', prev: 'Înapoi', next: 'Înainte', none: 'Nimic găsit. Întreabă Ask Me în aplicație.', other: 'English', otherTitle: 'The guide in English',
     footer: (date, commit) => `Imagini luate din Lapin pe ${date.split('-').reverse().join('.')}${commit ? ` (build ${commit})` : ''}. Lipsește ceva sau e greșit? Întreabă în aplicație: <b>Ask Me</b>, sau <b>?</b> → Raportează o problemă.` },
 };
+
+/** The shortcuts' table: one row per command, under its tab. */
+function shortcutsTable(rows, W) {
+  const cats = [...new Set(rows.map((r) => r.category))];
+  const body = cats.map((c) => `<tr><th colspan="2">${esc(c)}</th></tr>` + rows.filter((r) => r.category === c)
+    .map((r) => `<tr><td>${esc(r.command)}</td><td>${r.keys.map((k) => `<kbd>${esc(k)}</kbd>`).join(' ')}</td></tr>`).join('')).join('');
+  return `<table class="shortcuts"><thead><tr><th>${W.command}</th><th>${W.keys}</th></tr></thead><tbody>${body}</tbody></table>`;
+}
 
 export function render(root, out, lang = 'en') {
   const W = WORDS[lang];
@@ -101,7 +109,13 @@ export function render(root, out, lang = 'en') {
     });
     // A paragraph that is only a picture is a figure, not a paragraph around one; <!-- pages --> is every other page, as cards.
     const cards = `<ul class="cards">${pages.filter((p) => p.slug !== 'index').map((p) => `<li><a href="${p.slug}.html"><b>${esc(p.title)}</b><span>${esc(p.summary ?? '')}</span></a></li>`).join('')}</ul>`;
-    const article = marked.parse(page.body).replace(/<p>(<figure>[\s\S]*?<\/figure>)<\/p>/g, '$1').replace('<!-- pages -->', cards);
+    let article = marked.parse(page.body).replace(/<p>(<figure>[\s\S]*?<\/figure>)<\/p>/g, '$1').replace('<!-- pages -->', cards);
+    // <!-- shortcuts -->: the default keyboard shortcuts, as the app's registry has them (the interface scene writes them).
+    if (article.includes('<!-- shortcuts -->')) {
+      const file = join(shotsDir, 'shortcuts.json');
+      if (!existsSync(file)) missing.push(`${page.file}: shortcuts.json`);
+      else article = article.replace('<!-- shortcuts -->', shortcutsTable(JSON.parse(readFileSync(file, 'utf8')), W));
+    }
     const plain = page.body.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/[#*_`>|[\]()-]/g, ' ').replace(/\s+/g, ' ');
     search.push({ slug: page.slug, title: page.title, summary: page.summary ?? '', headings: toc.map((h) => ({ id: h.id, text: h.html.replace(/<[^>]+>/g, '') })), text: plain });
 
