@@ -28,6 +28,7 @@
     <ProjectReference Include="../../src/Modules/Civil/Lapin.Civil/Lapin.Civil.csproj" />
     <ProjectReference Include="../../src/Modules/Studio/Lapin.Studio/Lapin.Studio.csproj" />
     <ProjectReference Include="../../src/Modules/Construction/Lapin.SiteWorks/Lapin.SiteWorks.csproj" />
+    <ProjectReference Include="../../src/Modules/Mep/Lapin.Mep/Lapin.Mep.csproj" />
     <ProjectReference Include="../../src/Platform/Lapin.Protocol/Lapin.Protocol.csproj" />
     <ProjectReference Include="../../src/Host/Lapin.Host/Lapin.Host.csproj" />
   </ItemGroup>

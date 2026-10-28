@@ -1,6 +1,18 @@
 {
   "id": "lapin-mep",
   "name": "Lapin MEP",
-  "modules": ["architecture", "structure", "drafting", "studio", "phases", "civil", "cost", "mep"],
-  "external": { "mep": "../lapin-mep" }
+  "modules": [
+    "architecture",
+    "structure",
+    "drafting",
+    "studio",
+    "phases",
+    "civil",
+    "cost",
+    "mep",
+    "mep-pro"
+  ],
+  "external": {
+    "mep-pro": "../lapin-mep"
+  }
 }

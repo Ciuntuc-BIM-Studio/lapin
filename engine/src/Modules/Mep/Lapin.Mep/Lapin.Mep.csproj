@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    MEP: the building's services as systems drawn as schematics on the plan
+    (docs/plan-mep.md): systems with their defaults, nodes with ports, runs
+    between them, the IFC distribution network. It needs the platform and
+    Architecture (the walls a run crosses). The engineering on the network
+    (sizing, checks, assistants, laying rules) is the premium module mep-pro,
+    which hooks into this one (MepHooks).
+  -->
+  <PropertyGroup>
+    <LapinModuleId>mep</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="$(LapinGeometryDir)Lapin.Geometry/Lapin.Geometry.csproj" Private="false" />
+    <ProjectReference Include="../../Architecture/Lapin.Architecture/Lapin.Architecture.csproj" Private="false" />
+  </ItemGroup>
+</Project>

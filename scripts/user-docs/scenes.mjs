@@ -165,6 +165,31 @@ export const scenes = [
     },
   },
   {
+    id: 'mep',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.button('MEP', { exact: true });
+      await t.shot('ribbon-mep', { of: '.topbar', pad: 0 });
+      // A heating system placed whole: the boiler in the living room, its first radiator under the window across; a second radiator joins by a run of its own (a tee on the first).
+      const r = await t.cmd('mep.placeSystem', { service: 'heating', storeyId: storey, x: 1, y: 1.5, to: [3.5, 7.3] });
+      await t.cmd('mep.placeNode', { systemId: r.id, role: 'radiator', storeyId: storey, x: 9.5, y: 7.3, connect: true });
+      const runs = (await t.nodes()).filter((n) => n.type === 'IfcPipeSegment');
+      t.expect(runs.length === 2, `two runs, found ${runs.length}`);
+      await t.ui({ keyPlan: false });
+      await t.wait(1000);
+      await t.fit();
+      await t.shot('mep-plan', { of: '[data-testid=plan]', pad: 0 });
+      await select(t, r.endpointId);
+      await t.wait(500);
+      await t.shot('mep-radiator-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+      await t.tool('mep.systems');
+      t.expect(await t.page.locator('[aria-label="Systems"]').count() > 0, 'the Systems dialog opens');
+      await t.shot('mep-systems', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null, keyPlan: true });
+    },
+  },
+  {
     id: 'structure',
     async run(t) {
       await t.fresh();
