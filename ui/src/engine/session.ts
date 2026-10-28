@@ -6,7 +6,7 @@
  */
 
 import { create } from 'zustand';
-import { EngineClient, engineUrl, LONG_TIMEOUT_MS } from './client';
+import { EngineClient, engineUrl, LONG_TIMEOUT_MS, type CallOptions } from './client';
 import { workerTransport } from './workerTransport';
 import { notify } from '../app/store';
 import type { Diff, DocState, NodeDto, RelationDto, RenderItem, SessionInfo } from './protocol';
@@ -30,6 +30,7 @@ export interface SessionState {
 export const useSession = create<SessionState>(() => ({
   connected: false, info: null, nodes: new Map(), relations: new Map(), render: new Map(), doc: null, version: -1, error: null, engineProblem: null,
 }));
+(window as any).useSession = useSession;
 
 /** The web build runs the engine in a worker (VITE_ENGINE=worker); the desktop app and pnpm dev reach the local engine over its WebSocket. */
 export const engineInBrowser = import.meta.env.VITE_ENGINE === 'worker';
@@ -66,14 +67,26 @@ export function applyDiff(d: Diff): void {
 }
 
 /** Run an engine command; its diff arrives as an event. Errors land in the session. */
-export async function execute(command: string, args: Record<string, unknown> = {}): Promise<unknown> {
+if (typeof window !== "undefined") (window as any).execute = execute;
+export async function execute(command: string, args: Record<string, unknown> = {}, options?: CallOptions): Promise<unknown> {
+  const isLiteStep = command === 'litestep.recompute';
+  if (isLiteStep && typeof window !== 'undefined') {
+    (window as any).__litestepRecomputing = ((window as any).__litestepRecomputing || 0) + 1;
+  }
   try {
-    const result = await engine.call('doc.execute', { command, args });
+    const opts = command.startsWith('litestep.') ? { timeoutMs: 120_000, ...options } : options;
+    const result = await engine.call('doc.execute', { command, args }, opts);
     useSession.setState({ error: null });
     return result;
   } catch (e) {
     useSession.setState({ error: e instanceof Error ? e.message : String(e) });
     return null;
+  } finally {
+    if (isLiteStep && typeof window !== 'undefined') {
+      setTimeout(() => {
+        (window as any).__litestepRecomputing = Math.max(0, ((window as any).__litestepRecomputing || 1) - 1);
+      }, 250);
+    }
   }
 }
 

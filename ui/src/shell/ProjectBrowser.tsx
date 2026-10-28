@@ -6,7 +6,7 @@
  * browsed by what you draw on.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, Layers, Plus, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
 import { notify, useUi } from '../app/store';
 import { execute, activeStorey, useSession } from '../engine/session';
@@ -15,6 +15,7 @@ import { projectTitle } from '../engine/files';
 import { useCamera } from '../viewport/camera';
 import { disciplineOf, groupItems, implicitPlan, itemOf, setsOf, THREE_D, type BrowserItem, type BrowserSet } from './browserSets';
 import { IfcTree } from './IfcTree';
+import { LiteStepBrowserPanel } from './LiteStepBrowserPanel';
 
 const TAB_KEY = 'lapin.browser.tab';
 
@@ -43,8 +44,27 @@ export function ProjectBrowser() {
   const levels = storeys({ nodes, relations }).slice().reverse();
   const active = activeStorey();
   const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed);
-  const [tab, setTab] = useState<'project' | 'ifc'>(() => { try { return localStorage.getItem(TAB_KEY) === 'ifc' ? 'ifc' : 'project'; } catch { return 'project'; } });
-  const pickTab = (t: 'project' | 'ifc') => { setTab(t); try { localStorage.setItem(TAB_KEY, t); } catch { /* a convenience only */ } };
+  const [tab, setTab] = useState<'project' | 'ifc' | 'litestep'>(() => {
+    try {
+      const v = localStorage.getItem(TAB_KEY);
+      return v === 'ifc' || v === 'litestep' ? v : 'project';
+    } catch {
+      return 'project';
+    }
+  });
+  const pickTab = (t: 'project' | 'ifc' | 'litestep') => {
+    setTab(t);
+    try { localStorage.setItem(TAB_KEY, t); } catch { /* a convenience only */ }
+  };
+
+  useEffect(() => {
+    const onTab = (e: Event) => {
+      const detail = (e as CustomEvent<'project' | 'ifc' | 'litestep'>).detail;
+      if (detail) pickTab(detail);
+    };
+    window.addEventListener('lapin.browser.tab', onTab);
+    return () => window.removeEventListener('lapin.browser.tab', onTab);
+  }, []);
   const toggle = (id: string) => {
     const next = new Set(collapsed);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -179,9 +199,11 @@ export function ProjectBrowser() {
         <div className="browser-tabs" role="tablist">
           <button type="button" role="tab" className={`browser-tab${tab === 'project' ? ' on' : ''}`} aria-selected={tab === 'project'} onClick={() => pickTab('project')}>Project</button>
           <button type="button" role="tab" className={`browser-tab${tab === 'ifc' ? ' on' : ''}`} aria-selected={tab === 'ifc'} onClick={() => pickTab('ifc')}>IFC</button>
+          <button type="button" role="tab" className={`browser-tab${tab === 'litestep' ? ' on' : ''}`} aria-selected={tab === 'litestep'} onClick={() => pickTab('litestep')}>Lite-STEP</button>
         </div>
       </div>
       {tab === 'ifc' && <IfcTree />}
+      {tab === 'litestep' && <LiteStepBrowserPanel />}
       {tab === 'project' && <div className="tree-group">
         <div className="tree-label"><ChevronDown size={12} /><Layers size={13} />Levels<span className="count">{levels.length}</span>
           <button type="button" className="icon mini" title="New level above" onClick={() => void execute('storey.create', {})}><Plus size={12} /></button>

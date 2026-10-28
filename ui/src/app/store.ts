@@ -105,6 +105,7 @@ const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
   screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, curtainTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
 }));
+if (typeof window !== 'undefined') (window as any).useUi = useUi;
 
 /**
  * The tabs after the active pane came to show `pane` on `storeyId`: its tab

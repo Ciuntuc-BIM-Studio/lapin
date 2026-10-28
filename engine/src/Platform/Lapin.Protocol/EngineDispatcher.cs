@@ -297,6 +297,10 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             case "doc.execute":
             {
                 var command = (string?)p["command"] ?? throw new CommandException("The command is missing.");
+                if (command.StartsWith("litestep."))
+                {
+                    return Dispatch(command, p["args"] as JsonObject ?? []);
+                }
                 var diff = session.Execute(command, p["args"] as JsonObject ?? [], out var result);
                 return (result?.DeepClone(), diff);
             }
@@ -413,6 +417,72 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 }
                 var r = IfcImport.Link(session, File.ReadAllBytes(path), Path.GetFileName(path), path, new IfcImportOptions("auto"), out var reloaded, link.Id);
                 return (r.ToJson(), reloaded);
+            }
+            case "litestep.schema":
+            {
+                var bridge = Path.Combine(AppContext.BaseDirectory, "../../../../../../scripts/litestep_bridge.py");
+                if (!File.Exists(bridge)) bridge = Path.GetFullPath("scripts/litestep_bridge.py");
+                var psi = new System.Diagnostics.ProcessStartInfo("python")
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                psi.ArgumentList.Add(bridge);
+                psi.ArgumentList.Add("--schema");
+                using var proc = System.Diagnostics.Process.Start(psi) ?? throw new CommandException("Cannot start python litestep bridge.");
+                var outText = proc.StandardOutput.ReadToEnd();
+                proc.WaitForExit();
+                return (JsonNode.Parse(outText), null);
+            }
+            case "litestep.getParams":
+            {
+                var bridge = Path.Combine(AppContext.BaseDirectory, "../../../../../../scripts/litestep_bridge.py");
+                if (!File.Exists(bridge)) bridge = Path.GetFullPath("scripts/litestep_bridge.py");
+                var psi = new System.Diagnostics.ProcessStartInfo("python")
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                psi.ArgumentList.Add(bridge);
+                psi.ArgumentList.Add("--get-params");
+                using var proc = System.Diagnostics.Process.Start(psi) ?? throw new CommandException("Cannot start python litestep bridge.");
+                var outText = proc.StandardOutput.ReadToEnd();
+                proc.WaitForExit();
+                return (JsonNode.Parse(outText), null);
+            }
+            case "litestep.recompute":
+            {
+                var bridge = Path.Combine(AppContext.BaseDirectory, "../../../../../../scripts/litestep_bridge.py");
+                if (!File.Exists(bridge)) bridge = Path.GetFullPath("scripts/litestep_bridge.py");
+                var paramJson = p["params"]?.ToJsonString() ?? "{}";
+                var ifcOutput = Path.Combine(Path.GetTempPath(), "litestep_cabin.ifc");
+                var paramTemp = Path.Combine(Path.GetTempPath(), "litestep_params.json");
+                File.WriteAllText(paramTemp, paramJson);
+
+                var psi = new System.Diagnostics.ProcessStartInfo("python")
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                psi.ArgumentList.Add(bridge);
+                psi.ArgumentList.Add("--set-params-file");
+                psi.ArgumentList.Add(paramTemp);
+                psi.ArgumentList.Add("--compile");
+                psi.ArgumentList.Add("--out");
+                psi.ArgumentList.Add(ifcOutput);
+
+                using var proc = System.Diagnostics.Process.Start(psi) ?? throw new CommandException("Cannot start python compiler.");
+                var outText = proc.StandardOutput.ReadToEnd();
+                var errText = proc.StandardError.ReadToEnd();
+                proc.WaitForExit();
+                if (proc.ExitCode != 0) throw new CommandException($"Lite-STEP compile failed: {errText}");
+                if (!File.Exists(ifcOutput)) throw new CommandException("IFC was not produced.");
+                var res = IfcImport.Run(session, File.ReadAllBytes(ifcOutput), "05_log_cabin.ifc", new IfcImportOptions("auto"), out var diff);
+                return (res.ToJson(), diff);
             }
             case "export.pdf":
             {

@@ -21,6 +21,7 @@ import { boxUv, boxUvSized, imageOf, imageTexture, splitByFace, textureFor, text
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
+import { LiteStepAABBOverlay } from './LiteStepAABBOverlay';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
@@ -183,6 +184,7 @@ export function Viewport3D() {
   const faceTypes = useRef<string[] | null>(null);
   const clearFace = useRef<() => void>(() => undefined);
   const [faceLabel, setFaceLabel] = useState<{ text: string; x: number; y: number } | null>(null);
+  const [sceneReady, setSceneReady] = useState<THREE.Scene | null>(null);
   const elevationRef = useRef(0);
   useUi((s) => s.storeyId);
   useSession((s) => s.nodes);
@@ -220,6 +222,7 @@ export function Viewport3D() {
     THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
     const s = new THREE.Scene();
     scene.current = s;
+    setSceneReady(s);
     const persp = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
     persp.up.set(0, 0, 1);
     persp.position.set(18, -22, 16);
@@ -400,6 +403,7 @@ export function Viewport3D() {
       s.clear();
       live.clear();
       scene.current = null;
+      setSceneReady(null);
       rendererRef.current = null;
       renderer.dispose();
       renderer.forceContextLoss();
@@ -507,6 +511,7 @@ export function Viewport3D() {
       {faceLabel && <div className="face-label" style={{ left: faceLabel.x + 14, top: faceLabel.y + 14 }}>{faceLabel.text}</div>}
       <Grips3D camera={camRef} canvas={host} />
       <KeyPlan mode="3d" />
+      <LiteStepAABBOverlay scene={sceneReady} invalidate={invalidate.current} />
     </>
   );
 }

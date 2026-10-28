@@ -1,3 +1,4 @@
+import { usePanels } from '../app/panels';
 /** The top bar and the ribbon: the tabs come from the product's modules. */
 
 import { useState } from 'react';
@@ -21,6 +22,11 @@ function FileMenu() {
           <button type="button" role="menuitem" onClick={run(() => saveProject())}>Save<kbd>Ctrl S</kbd></button>
           <button type="button" role="menuitem" onClick={run(() => saveProject(true))}>Save as…<kbd>Ctrl ⇧ S</kbd></button>
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'versions' }))}>Save version…</button>
+          <button type="button" role="menuitem" style={{ color: 'var(--accent, #6366f1)', fontWeight: 600 }} onClick={run(() => {
+            try { localStorage.setItem('lapin.browser.tab', 'litestep'); } catch {}
+            window.dispatchEvent(new CustomEvent('lapin.browser.tab', { detail: 'litestep' }));
+            if (!usePanels.getState().browserOpen) usePanels.setState({ browserOpen: true });
+          })}>Lite-STEP ⇄ Lapin Demo…</button>
           <button type="button" role="menuitem" onClick={run(() => importIfc())}>Import IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => importIfc('link'))}>Link IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => exportIfc())}>Export IFC…</button>
