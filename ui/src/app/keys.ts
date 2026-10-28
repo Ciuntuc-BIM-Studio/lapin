@@ -35,7 +35,7 @@ export interface KeyPress {
 
 /** What `keyIntent` needs to know about the interface. */
 export interface KeySnapshot {
-  screen: 'start' | 'workspace';
+  screen: 'start' | 'workspace' | 'join';
   /** The open dialog's id, if any. */
   dialog: string | null;
   /** The active tool, if any. */

@@ -92,6 +92,8 @@ Then (#147) doors and windows say how they open in IFC by IFC's own rule (+Y the
 
 Then (#151) site works (`docs/plan-site-works.md`): the `sitework` module, tab Site works — facade scaffolding along a line or round the walls' outer faces, formwork on floors (soffit, edges) and beams (bottom, sides, chamfers) from configurable system types, temporary in the execution phase, with schedules, a formwork plan and IFC assemblies; named element faces (`IElementFaces`, `core.faceAt`) and the 3D face pick. Then (#152) plans seen from above or from below (a reflected ceiling plan), curved beams and walls formed and scaffolded, formwork for walls, columns, ring beams and footings, formwork sets and reuse, deviz articles on the types.
 
+Then (#153) working together (`docs/plan-multiplayer.md`): the desktop shares the open project as a listen server (File → Share session…), guests join through the relay (`engine/src/Relay/Lapin.Relay`, `deploy/relay`) from Lapin (Join session…) or from the browser by the link, as thin clients, end-to-end encrypted (AES-256-GCM, a key from the invitation's secret); each undoes only their own edits (`History`); a guest is limited to `EngineDispatcher.AllowedRemote`; presence (participants, cursors and selections in plan). A cloud server is for the premium edition.
+
 The `mep` module (premium, `docs/plan-mep.md`) lives in the private sibling repo `../lapin-mep`, built through `products/lapin-mep.json` (`"external"`); its stages 1–3 (network core, IFC export, the MEP tab, the engineering estimates and schedules) are done.
 
 Next: the user reviews `docs/decisions-pending.md` (#1–111). Open items needing the user: signing and notarization, Windows (manifold), and what the review changes. Milestones are in `docs/plan.md`.

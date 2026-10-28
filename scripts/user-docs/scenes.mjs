@@ -244,6 +244,58 @@ export const scenes = [
     },
   },
   {
+    id: 'sharing',
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      await t.call('share.stop');
+      // The host shares from the File menu: a link for the browser, a code for the desktop.
+      await t.button('File', { exact: true });
+      await t.page.getByRole('menuitem', { name: 'Share session…' }).click();
+      await t.page.locator('.share-dialog input').first().fill('Ionuț');
+      await t.page.locator('.share-dialog .btn.primary').click();
+      await t.page.waitForSelector('.share-secret input', { timeout: 10000 });
+      const link = await t.page.locator('.share-secret input').first().inputValue();
+      t.expect(link.includes('#join='), 'an invitation link');
+      // A guest opens the link in another browser, gives a name and joins.
+      const guestContext = await t.page.context().browser().newContext({ viewport: { width: 1200, height: 800 } });
+      const guest = await guestContext.newPage();
+      try {
+        await guest.goto(link);
+        await guest.waitForSelector('.join-gate input', { timeout: 20000 });
+        await guest.locator('.join-gate input').fill('Ana');
+        await guest.getByRole('button', { name: 'Join', exact: true }).click();
+        const welcomed = () => guest.waitForFunction(async () => (await import('/src/engine/share.ts')).useShare.getState().welcome != null && (await import('/src/engine/session.ts')).useSession.getState().nodes.size > 0, null, { timeout: 30000 });
+        await welcomed();
+        // A new context's page may reload once (Vite): settled again.
+        await guest.waitForTimeout(2000);
+        await welcomed();
+        await t.wait(800);
+        t.expect(await t.page.locator('.share-people li').count() >= 2, 'the guest in the host\'s list');
+        await t.shot('share-dialog', { of: '.share-dialog', pad: 0 });
+        await t.ui({ dialog: null });
+        // She selects a wall and points at the plan: the host sees both, in her colour.
+        await guest.evaluate(async (id) => (await import('/src/app/store.ts')).useUi.setState({ view: 'plan', selection: id, selected: [id] }), walls[0]);
+        const box = await guest.locator('[data-testid=plan]').boundingBox();
+        await guest.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await guest.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2 + 30);
+        await t.ui({ selection: null, selected: [] });
+        await t.wait(1500);
+        t.expect(await t.page.locator('.plan-peer-cursor').count() === 1, 'her cursor in the host\'s plan');
+        await t.shot('sharing-plan', { of: '[data-testid=plan]', pad: 0 });
+        await t.shot('participants', { of: '.participants', pad: 6 });
+      } finally {
+        await t.call('share.stop');
+        await guestContext.close();
+      }
+      // Joining from Lapin: the link or the code, and one's name.
+      await t.button('File', { exact: true });
+      await t.page.getByRole('menuitem', { name: 'Join session…' }).click();
+      await t.shot('join-dialog', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     id: 'levels',
     async run(t) {
       await t.fresh();

@@ -1,7 +1,8 @@
 /** The start screen, Atrium's way: the actions on the left; unsaved work to bring back and the recent projects on the right. */
 
 import { useEffect, useState } from 'react';
-import { FilePlus2, FolderOpen, History, Trash2 } from 'lucide-react';
+import { FilePlus2, FolderOpen, History, Trash2, Users } from 'lucide-react';
+import { JoinDialog } from './Sharing';
 import { modules, productInfo } from '../platform/modules';
 import { engineInBrowser, useSession } from '../engine/session';
 import { discardWork, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
@@ -19,6 +20,7 @@ export function StartScreen() {
   const recent = recentProjects();
   useEffect(() => { if (connected) void listRecovery().then(setWork); }, [connected]);
   const back = () => useUi.setState({ screen: 'workspace' });
+  const joining = useUi((s) => s.dialog === 'join');
   return (
     <div className="start">
       <section className="start-left">
@@ -26,6 +28,7 @@ export function StartScreen() {
         <p className="muted">BIM authoring for architects and engineers</p>
         <button type="button" className="btn primary big" disabled={!connected} onClick={() => void newProject()}><FilePlus2 size={18} />New project</button>
         <button type="button" className="btn big" disabled={!connected} onClick={() => void openProject()}><FolderOpen size={18} />Open project…</button>
+        <button type="button" className="btn big" onClick={() => useUi.setState({ dialog: 'join' })}><Users size={18} />Join session…</button>
         {doc && (doc.path || doc.canUndo) && <button type="button" className="btn big" onClick={back}>Back to {projectTitle(doc.path)}</button>}
         {!connected && <p className="muted small">Starting the engine…</p>}
         <p className="eyebrow">Start here</p>
@@ -74,6 +77,7 @@ export function StartScreen() {
           {' · '}Ctrl+N new · Ctrl+O open · Ctrl+S save
         </span>
       </footer>
+      {joining && <JoinDialog />}
     </div>
   );
 }

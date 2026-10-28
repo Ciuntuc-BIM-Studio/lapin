@@ -58,7 +58,7 @@ async function takePictures() {
   const temp = mkdtempSync(join(tmpdir(), 'lapin-user-docs-'));
   const manifest = join(temp, 'product.json');
   writeFileSync(manifest, JSON.stringify(product, null, 2));
-  const [enginePort, uiPort] = [await free(), await free()];
+  const [enginePort, uiPort, relayPort] = [await free(), await free(), await free()];
   const children = [];
   const stop = () => { for (const c of children) c.kill('SIGTERM'); };
   process.on('exit', stop);
@@ -70,7 +70,12 @@ async function takePictures() {
     setTimeout(() => reject(new Error(`${name} did not start: ${seen.slice(-800)}`)), 90_000);
   });
   const hostDll = join(root, 'engine/src/Host/Lapin.Host/bin/Debug/net10.0/Lapin.Host.dll');
-  const engine = spawn('dotnet', [hostDll, '--product', manifest, '--modules-dir', join(root, 'engine/artifacts/modules'), '--user-dir', join(temp, 'user'), '--port', String(enginePort), '--parent-pid', String(process.pid)]);
+  // A relay of its own for the shared session's pictures (docs/plan-multiplayer.md): the engine shares through it, the invitation opens this UI.
+  const relay = spawn('dotnet', [join(root, 'engine/src/Relay/Lapin.Relay/bin/Debug/net10.0/Lapin.Relay.dll'), '--urls', `http://127.0.0.1:${relayPort}`]);
+  children.push(relay);
+  const engine = spawn('dotnet', [hostDll, '--product', manifest, '--modules-dir', join(root, 'engine/artifacts/modules'), '--user-dir', join(temp, 'user'), '--port', String(enginePort), '--parent-pid', String(process.pid)], {
+    env: { ...process.env, LAPIN_RELAY: `ws://127.0.0.1:${relayPort}/relay`, LAPIN_JOIN_PAGE: `http://localhost:${uiPort}/` },
+  });
   children.push(engine);
   const ui = spawn('pnpm', ['--filter', 'ui', 'exec', 'vite', '--port', String(uiPort), '--strictPort'], {
     cwd: root, env: { ...process.env, VITE_ENGINE_URL: `ws://127.0.0.1:${enginePort}/ws`, LAPIN_PRODUCT_FILE: manifest },

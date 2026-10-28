@@ -627,3 +627,22 @@ button.mode-chip:hover { color: var(--accent); }
 .mode-chip button.mode-close:hover { color: var(--accent); }
 .mode-chip button.toggle { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--accent); }
 .mode-chip button.toggle.active { background: var(--accent); color: var(--accent-ink); }
+
+/* Working together (docs/plan-multiplayer.md): the participants, a guest's bar, the others in plan. */
+.participants { display: inline-flex; align-items: center; gap: 2px; margin-right: 8px; }
+.participant { padding: 0; border: 0; background: none; cursor: pointer; border-radius: 50%; }
+.participant.me { cursor: default; outline: 2px solid var(--panel); }
+.avatar { display: inline-grid; place-items: center; border-radius: 50%; color: #fff; font-weight: 600; line-height: 1; letter-spacing: 0.02em; border: 2px solid var(--panel); box-sizing: border-box; }
+.guest-bar { position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%); z-index: 25; display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 14px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); font-size: 12px; }
+.guest-bar .link { display: inline-flex; align-items: center; gap: 3px; }
+.share-dialog { width: min(640px, calc(100vw - 32px)); }
+.share-dialog .fields input { width: 100%; box-sizing: border-box; }
+.share-secret { display: flex; gap: 4px; align-items: center; }
+.share-secret input { flex: 1; min-width: 0; font-family: var(--mono, ui-monospace, monospace); font-size: 11px; }
+.share-people { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; }
+.share-people li { display: flex; align-items: center; gap: 8px; }
+.join-gate .field-line { grid-template-columns: 90px 1fr; margin: 12px 0; }
+.plan-peer path { fill: none; stroke-width: 3; stroke-opacity: 0.55; pointer-events: none; }
+.plan-peer-cursor { pointer-events: none; }
+.plan-peer-cursor path { fill: currentColor; stroke: #fff; stroke-width: 1; }
+.plan-peer-cursor text { fill: currentColor; font-size: 11px; font-weight: 600; paint-order: stroke; stroke: var(--paper, #fff); stroke-width: 3px; }

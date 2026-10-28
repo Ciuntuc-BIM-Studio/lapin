@@ -56,7 +56,7 @@ export function tabKey(t: Pane & { storeyId?: string | null }): string {
 const tabOf = (pane: Pane, storeyId: string | null): ViewTab => ({ ...pane, storeyId: pane.view === 'plan' ? storeyId : null });
 
 export interface UiState extends Pane {
-  screen: 'start' | 'workspace';
+  screen: 'start' | 'workspace' | 'join';
   tab: string | null;
   /** The active tool's id ("architecture.wall"); null: select. */
   tool: string | null;

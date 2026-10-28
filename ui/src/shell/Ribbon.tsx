@@ -7,10 +7,26 @@ import { useUi } from '../app/store';
 import { activate, ribbonTabs } from '../platform/modules';
 import { redo, undo, useSession } from '../engine/session';
 import { exportIfc, importDxf, importIfc, newProject, openProject, saveProject } from '../engine/files';
+import { engineInBrowser } from '../engine/session';
+import { isGuest, leave } from '../engine/share';
+import { Participants } from './Sharing';
 
 function FileMenu() {
   const [open, setOpen] = useState(false);
   const run = (f: () => unknown) => () => { setOpen(false); void f(); };
+  // A guest works in the host's project: the host opens and saves it; a guest exports what they need, or leaves.
+  if (isGuest()) return (
+    <span className="menu-host">
+      <button type="button" className={`tab${open ? ' on' : ''}`} onClick={() => setOpen(!open)}>File</button>
+      {open && (
+        <div className="menu" role="menu" onMouseLeave={() => setOpen(false)}>
+          <button type="button" role="menuitem" onClick={run(() => exportIfc())}>Export IFC…</button>
+          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportMesh' }))}>Export 3D…</button>
+          <button type="button" role="menuitem" onClick={run(leave)}>Leave session</button>
+        </div>
+      )}
+    </span>
+  );
   return (
     <span className="menu-host">
       <button type="button" className={`tab${open ? ' on' : ''}`} onClick={() => setOpen(!open)}>File</button>
@@ -26,6 +42,8 @@ function FileMenu() {
           <button type="button" role="menuitem" onClick={run(() => exportIfc())}>Export IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportMesh' }))}>Export 3D…</button>
           <button type="button" role="menuitem" onClick={run(() => importDxf())}>Import DXF…</button>
+          {!engineInBrowser && <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'share' }))}>Share session…</button>}
+          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'join' }))}>Join session…</button>
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ screen: 'start' }))}>Start screen</button>
         </div>
       )}
@@ -43,12 +61,13 @@ export function Ribbon() {
   return (
     <header className="topbar">
       <div className="tabs-row">
-        <button type="button" className="brand" onClick={() => useUi.setState({ screen: 'start' })} title="Start screen">Lapin</button>
+        <button type="button" className="brand" onClick={() => !isGuest() && useUi.setState({ screen: 'start' })} title="Start screen">Lapin</button>
         <FileMenu />
         {tabs.map((t) => (
           <button type="button" key={t.id} className={`tab${t.id === tab?.id ? ' on' : ''}`} onClick={() => useUi.setState({ tab: t.id })}>{t.label}</button>
         ))}
         <span className="grow" />
+        <Participants />
         <button type="button" className="search"><Search size={14} />Commands… <kbd>Ctrl K</kbd></button>
         <button type="button" className="icon" disabled={!doc?.canUndo} onClick={() => void undo()} title={doc?.undoLabel ? `Undo ${doc.undoLabel} (Ctrl Z)` : 'Undo'}>↶</button>
         <button type="button" className="icon" disabled={!doc?.canRedo} onClick={() => void redo()} title={doc?.redoLabel ? `Redo ${doc.redoLabel} (Ctrl ⇧ Z)` : 'Redo'}>↷</button>

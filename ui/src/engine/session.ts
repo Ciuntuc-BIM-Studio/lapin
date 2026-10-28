@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { EngineClient, engineUrl, LONG_TIMEOUT_MS } from './client';
 import { workerTransport } from './workerTransport';
+import { invitation, relayTransport, savedName, setPresenceSender, useShare, type Participant, type ShareStatus } from './share';
 import { notify } from '../app/store';
 import type { Diff, DocState, NodeDto, RelationDto, RenderItem, SessionInfo } from './protocol';
 import { storeys } from './model';
@@ -34,7 +35,9 @@ export const useSession = create<SessionState>(() => ({
 /** The web build runs the engine in a worker (VITE_ENGINE=worker); the desktop app and pnpm dev reach the local engine over its WebSocket. */
 export const engineInBrowser = import.meta.env.VITE_ENGINE === 'worker';
 
-export const engine = new EngineClient(engineInBrowser ? workerTransport() : engineUrl);
+/** A guest (docs/plan-multiplayer.md) talks to the host's engine through the relay; otherwise this computer's own engine. */
+const guestOf = invitation();
+export const engine = new EngineClient(guestOf ? relayTransport(guestOf, savedName) : engineInBrowser ? workerTransport() : engineUrl);
 
 /** Fold an engine diff into the session (a reset replaces everything). A diff older than what is shown is skipped. */
 export function applyDiff(d: Diff): void {
@@ -108,12 +111,18 @@ const LOST_NOTICE = 'The engine stopped; restarting…';
 /** Connect to the engine and keep the session in step with it. */
 export async function connect(): Promise<void> {
   engine.onDiff(applyDiff);
+  engine.onEvent('presence', (d) => useShare.setState({ participants: (d as { participants: Participant[] }).participants }));
+  engine.onEvent('share', (d) => useShare.setState({ status: d as ShareStatus }));
+  engine.onEvent('ended', (d) => useShare.setState({ ended: String(d) }));
+  setPresenceSender((p) => engine.notify('presence.update', p as Record<string, unknown>));
   let lost: ReturnType<typeof setTimeout> | undefined;
   engine.onStatus((connected) => {
     useSession.setState({ connected });
     clearTimeout(lost);
     if (connected) {
       useSession.setState({ engineProblem: null });
+      // The main window says who works here: it is the host among a shared session's participants.
+      if (!guestOf && useUi.getState().windowRole === 'main') engine.notify('presence.hello', { name: savedName() });
       void resync();
     } else {
       lost = setTimeout(() => { if (!useSession.getState().engineProblem) useSession.setState({ engineProblem: LOST_NOTICE }); }, LOST_NOTICE_MS);

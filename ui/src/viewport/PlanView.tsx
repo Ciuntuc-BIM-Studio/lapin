@@ -35,6 +35,7 @@ import type { Shape } from './cad/shapes';
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelPixels, type Bounds, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { axisLine, riseThrough } from './arc';
+import { others, reportPresence, useShare } from '../engine/share';
 
 /** The radius of the arc from a to b through p (Infinity: in line). */
 function radiusOf(a: Vec2, b: Vec2, p: Vec2): number {
@@ -76,6 +77,10 @@ export function PlanView() {
   useUi((s) => s.storeyId);
   const storey = activeStorey();
   const selected = useUi((s) => s.selected);
+  // The others of a shared session (docs/plan-multiplayer.md): their selections and cursors on this storey.
+  const participants = useShare((s) => s.participants);
+  const welcome = useShare((s) => s.welcome);
+  const peers = participants.length > 1 ? others(participants, welcome) : [];
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
   // The generated drawing of this storey's plan (its own view, else the storey's), the modelling lines over it only where selected.
@@ -305,6 +310,7 @@ export function PlanView() {
     drag.current = { x: e.clientX, y: e.clientY, view, moved: false, carry, copy: e.altKey || e.ctrlKey || e.metaKey };
   };
   const onPointerMove = (e: React.PointerEvent) => {
+    if (peers.length) { const rect = svgRef.current!.getBoundingClientRect(); const w = toWorld(e.clientX - rect.left, e.clientY - rect.top); reportPresence({ cursor: [w.x, w.y] }); }
     if (editor.onPointerMove(e)) return;
     const d = drag.current;
     if (d) {
@@ -528,6 +534,23 @@ export function PlanView() {
             <path key={key} d={d} className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${selected.includes(r.nodeId) ? ' selected' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}`} />
           ))}
         </g>
+        {peers.map((p) => {
+          const theirs = new Set(p.presence.selection ?? []);
+          return theirs.size === 0 ? null : (
+            <g key={`peer:${p.id}`} className="plan-peer" style={{ stroke: p.color }} aria-label={`${p.name}'s selection`}>
+              {drawn.filter((x) => x.kind !== 'label' && theirs.has(x.r.nodeId)).map((x) => <path key={x.key} d={x.d} />)}
+            </g>
+          );
+        })}
+        {peers.filter((p) => p.presence.view === 'plan' && p.presence.storeyId === storey?.id && p.presence.cursor).map((p) => {
+          const c = toScreen({ x: p.presence.cursor![0], y: p.presence.cursor![1] });
+          return (
+            <g key={`cursor:${p.id}`} className="plan-peer-cursor" transform={`translate(${c.x} ${c.y})`} style={{ color: p.color }}>
+              <path d="M0 0L0 14L4 10L7 17L9 16L6 9L11 9Z" />
+              <text x={13} y={22}>{p.name}</text>
+            </g>
+          );
+        })}
         {(drawing?.marks ?? []).filter((m) => selected.includes(m.id)).map((m) => (
           <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });

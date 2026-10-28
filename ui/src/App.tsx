@@ -27,6 +27,9 @@ import { Viewport3D } from './viewport/Viewport3D';
 import { DrawingView } from './viewport/DrawingView';
 import { SheetView } from './viewport/SheetView';
 import { ScheduleView } from './viewport/ScheduleView';
+import { GuestBar, JoinDialog, JoinGate, PresenceReporter, ShareDialog } from './shell/Sharing';
+import { isGuest } from './engine/share';
+import { connect } from './engine/session';
 
 function StatusBar() {
   const units = useStandards((s) => s.units);
@@ -108,7 +111,7 @@ function PaneTabs({ i }: { i: number }) {
           <button type="button" className="icon mini" title="Close this pane" onClick={() => closePane(i)}><X size={13} /></button>
         </>
       )}
-      {role === 'main' && isDesktop() && <button type="button" className="icon mini" title="Open this view in a window of its own (for a second screen)" onClick={() => void openViewWindow(pane, current ? label(current) : 'View')}><AppWindow size={13} /></button>}
+      {role === 'main' && isDesktop() && !isGuest() && <button type="button" className="icon mini" title="Open this view in a window of its own (for a second screen)" onClick={() => void openViewWindow(pane, current ? label(current) : 'View')}><AppWindow size={13} /></button>}
     </div>
   );
 }
@@ -183,9 +186,12 @@ function Rail({ side, label }: { side: 'browser' | 'props'; label: string }) {
   );
 }
 
+/** The dialogs of working together (File → Share session…, Join session…), opened by the store's `dialog`. */
+const shareDialogs: Record<string, () => React.JSX.Element> = { share: ShareDialog, join: JoinDialog };
+
 function Workspace() {
   const open = useUi((s) => s.dialog);
-  const Dialog = open ? dialog(open) : null;
+  const Dialog = open ? dialog(open) ?? shareDialogs[open] ?? null : null;
   const panels = usePanels();
   return (
     <div className="workspace">
@@ -199,6 +205,8 @@ function Workspace() {
       </div>
       <StatusBar />
       {Dialog && <Dialog />}
+      <GuestBar />
+      <PresenceReporter />
       {backgrounds().map((B, i) => <B key={i} />)}
     </div>
   );
@@ -223,5 +231,6 @@ export function App() {
   useShortcuts();
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   const role = useUi((s) => s.windowRole);
+  if (screen === 'join') return <JoinGate onJoin={() => void connect()} />;
   return <>{screen === 'start' ? <StartScreen /> : role === 'view' ? <ViewWindow /> : <Workspace />}<EngineNotice /><ContextMenuHost /></>;
 }

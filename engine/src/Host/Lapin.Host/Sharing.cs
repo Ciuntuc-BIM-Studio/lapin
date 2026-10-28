@@ -136,10 +136,12 @@ public sealed class Sharing(EngineHub hub)
 
     public async Task Stop(string why)
     {
+        // The guests told first, while the relay still carries it.
+        foreach (var g in Guests()) await Leave(g, why);
         var ws = _relay;
         _relay = null;
         _stop?.Cancel();
-        foreach (var g in Guests()) await Leave(g, why);
+        lock (_guests) _guests.Clear();
         if (ws != null)
         {
             try { if (ws.State == WebSocketState.Open) await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None); }

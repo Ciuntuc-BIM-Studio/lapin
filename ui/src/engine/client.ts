@@ -57,6 +57,7 @@ export class EngineClient {
   private seq = 0;
   private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   private diffListeners = new Set<(d: Diff) => void>();
+  private eventListeners = new Map<string, Set<(data: unknown) => void>>();
   private statusListeners = new Set<(connected: boolean) => void>();
   private closed = false;
   private readonly transport: EngineTransport;
@@ -101,6 +102,7 @@ export class EngineClient {
 
   private receive(msg: Message): void {
     if (msg.event === 'diff') { this.diffListeners.forEach((l) => l(msg.data as Diff)); return; }
+    if (msg.event) { this.eventListeners.get(msg.event)?.forEach((l) => l(msg.data)); return; }
     if (typeof msg.id !== 'number') return;
     const p = this.pending.get(msg.id);
     if (!p) return;
@@ -122,6 +124,19 @@ export class EngineClient {
       this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject, timer });
       link.send(JSON.stringify({ id, method, params }));
     });
+  }
+
+  /** A call that wants no answer (presence): sent if connected, else dropped. */
+  notify(method: string, params: Record<string, unknown> = {}): void {
+    this.link?.send(JSON.stringify({ method, params }));
+  }
+
+  /** The engine's other events (presence, the sharing's state, a shared session ended). */
+  onEvent(name: string, l: (data: unknown) => void): () => void {
+    let set = this.eventListeners.get(name);
+    if (!set) this.eventListeners.set(name, set = new Set());
+    set.add(l);
+    return () => set!.delete(l);
   }
 
   /** How many calls are waiting for an answer. */

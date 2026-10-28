@@ -2,6 +2,19 @@
 
 Întrebarea (28.10.2026): „Ar fi interesant de gândit ideea aplicației pe principiul client–server framework — ca în jocuri, cineva să poată face server și să invite multiple players.” Documentul acesta e **analiza și planul**, nu implementarea: pornește de la ce face Lapin azi, compară cu ce fac Revit, ArchiCAD, Figma și ceilalți, și se termină cu o arhitectură recomandată, etape, riscuri și întrebările la care trebuie răspuns înainte de primul commit.
 
+## Decizia și ce e făcut (28.10.2026)
+
+Utilizatorul: „implementăm așa deocamdată — în versiunea premium o să facem ceva mai bun cu server cloud”. În ediția deschisă gazda e desktopul (listen server), oaspeții intră ca **clienți subțiri** din desktop sau din **browser**, **prin releu**, criptat cap la cap; serverul cloud (motorul autoritar în cloud) e pentru premium. Celelalte întrebări de la sfârșit au primit răspunsurile implicite (decizia 153a din `docs/decisions-pending.md`).
+
+Făcut, față de etape:
+
+- **Etapa 1**, fără LAN direct: `Author` pe `Transaction` (și în jurnalul de recuperare), undo/redo pe participant prin tranzacții compensatoare, refuzate întregi la conflict; o relație care doar a câștigat sau pierdut membri (conținerea pe etaj) se compensează pe membri, ca peretele altuia pe același etaj să nu blocheze undo-ul (riscul 4). Lista albă din `EngineDispatcher.AllowedRemote` (testată metodă cu metodă), roluri editor/vizitator, `Sharing` în `Lapin.Host`, codul de invitație și link-ul, strângerea de mână (protocolul, un token pentru reconectare), File → Share session… / Join session…, participanții în bara de sus, cursoarele și selecțiile celorlalți în plan, „du-mă unde e”, salvarea automată la 5 minute.
+- **Din etapa 3**: releul (`engine/src/Relay/Lapin.Relay`, `deploy/relay`), care face din prima zi și drumul de pe internet, și pe cel din browser.
+- **Securitatea**, altfel decât în plan: în loc de TLS cu amprenta certificatului, fiecare cadru e criptat cu AES-256-GCM, cu o cheie trasă (HKDF-SHA256) din secretul invitației și din sarea conexiunii oaspetelui; nonce-ul poartă direcția și numărul cadrului, deci un cadru nu se poate repeta sau întoarce. Merge la fel în .NET și în WebCrypto, deci și în browser, iar releul nu vede nimic.
+- **Oaspetele din browser**, înainte de replici: link-ul `…/web/#join=<cod>` deschide versiunea web ca client subțire al gazdei (fără motorul din worker).
+
+Rămase: releul pus pe serverul nostru, LAN direct, prezența în 3D, rezervările (etapa 2), chatul, replicile (etapa 4), WebRTC (etapa 5).
+
 ## Regula: local first și fără abonament
 
 Ca la motorul din browser (`docs/plan-browser-engine.md`), întâi regula, pentru că restul se îndoaie după ea:
