@@ -33,3 +33,6 @@ windows builds/
 # The feedback reports: the server (deploy/feedback/.env) and the screenshots pulled from it are local.
 deploy/feedback/.env
 deploy/feedback/feedback-screenshots/
+
+# Proposals sent to us (not ours to publish)
+lapin-litestep-proposal.pdf
