@@ -6,7 +6,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Layers, Maximize, PenLine } from 'lucide-react';
+import { Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
+import { openContextMenu } from '../shell/ContextMenu';
+import { num } from '../engine/model';
+import { useWalk, walkInto } from './walk';
 import { select, setTool, useUi } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { activeStorey, execute, useSession } from '../engine/session';
@@ -44,6 +47,18 @@ type View = View2; // scale = px per metre
 const clampScale = (s: number) => Math.max(2, Math.min(s, 2000));
 
 const KIND_ORDER: Record<string, number> = { grid: 0, overhead: 1, ridge: 2, hip: 2, valley: 2, break: 2, outline: 3, cut: 4, symbol: 5, heavy: 5, label: 6 };
+
+/** Into a room in 3D: the eye over its floor (its body's foot, else the storey's level), inside its outline (walk.ts). */
+function walkIntoRoom(room: NodeDto, item: RenderItem, storeyElevation: number) {
+  const outline = item.plan.find((p) => p.kind === 'room')?.points;
+  if (!outline) return;
+  let floor = Infinity;
+  for (let k = 2; k < item.positions.length; k += 3) floor = Math.min(floor, item.positions[k]);
+  const start = walkInto(room.name, outline, item.plan.filter((p) => p.kind === 'roomIsland').map((p) => p.points), Number.isFinite(floor) ? floor : storeyElevation);
+  if (!start) return;
+  useWalk.setState({ start });
+  useUi.setState({ view: '3d' });
+}
 
 export function PlanView() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -334,9 +349,21 @@ export function PlanView() {
         return;
       }
     }
+    if (d && !d.moved && e.button === 2 && !tool?.gesture && !useCad.getState().step) { roomMenu(e.clientX, e.clientY); return; }
     if (!d || d.moved || e.button !== 0) return;
     const rect = svgRef.current!.getBoundingClientRect();
     click(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey);
+  };
+  /** A right-click (not a drag) on a room: walk into it in 3D, or select it. */
+  const roomMenu = (x: number, y: number) => {
+    const rect = svgRef.current!.getBoundingClientRect();
+    const room = pick(toWorld(x - rect.left, y - rect.top), ['IfcSpace']);
+    const item = room ? render.get(room.id) : undefined;
+    if (!room || !item) return;
+    openContextMenu(x, y, [
+      { label: 'Walk in 3D', icon: <Footprints size={13} />, onSelect: () => walkIntoRoom(room, item, num(storey ?? undefined, 'elevation')) },
+      { label: 'Select', icon: <MousePointer2 size={13} />, onSelect: () => select(room.id) },
+    ]);
   };
   /** What a selection box takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
   const selectBox = (b: { a: Vec2; b: Vec2 }, add: boolean) => {

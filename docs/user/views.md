@@ -26,6 +26,31 @@ Select the section in the browser to set its scale, its depth, its discipline an
 
 Double-click **{3D}** to open the 3D view. Drag with the left button to orbit around the model. The key plan at the top right shows where you are looking from. **Plan**, **Persp** and **Fit** change the camera. To keep a camera, duplicate the 3D view.
 
+### A section in 3D
+
+Right-click a section in the browser and choose **Show in 3D**. The 3D view cuts the model along the section's line. It keeps the side the section looks at, up to the section's depth if it has one. The section's own drawing lies on the cut, with the same cut fills and hatches a sheet prints. An elevation's **Show in 3D** turns the camera to look the way the elevation does.
+
+![The section's right-click menu in the browser](shots/section-3d-menu.webp)
+
+![Section B-B seen in 3D](shots/section-3d.webp)
+
+To see the whole model again, click the **Section** chip at the bottom of the 3D view, or choose **Show in 3D** again.
+
+### Walking into a room
+
+In a plan, right-click inside a room and choose **Walk in 3D**. The 3D view puts you inside the room, 1.60 m above its floor, looking along its longest side.
+
+![A room's right-click menu in the plan](shots/room-walk-menu.webp)
+
+![Standing in the living room](shots/room-walk.webp)
+
+- Drag with the left button to look around.
+- <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or the arrow keys walk. <kbd>E</kbd> and <kbd>Q</kbd> go up and down. Hold <kbd>Shift</kbd> to run.
+- The mouse wheel steps forward and back.
+- Walls do not stop you.
+
+<kbd>Esc</kbd> or **Exit walk** brings back the camera you had before.
+
 ## What a view shows
 
 The **View** tab sets what the view in front shows and how it looks.

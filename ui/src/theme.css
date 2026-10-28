@@ -606,3 +606,19 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .spec-grid input { width: 84px; }
 .spec-grid th { font-size: 11px; font-weight: 600; text-align: left; white-space: nowrap; }
 .spec-grid input:not(.num) { width: 140px; }
+
+/* The right-click menu (shell/ContextMenu.tsx). */
+.context-menu { position: fixed; z-index: 60; min-width: 170px; padding: 4px; background: var(--raised); border: 1px solid var(--rule-strong); border-radius: 4px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18); display: flex; flex-direction: column; }
+.context-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 0; border-radius: 3px; background: none; color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
+.context-item:hover:not(:disabled) { background: var(--accent-wash); color: var(--accent); }
+.context-item:disabled { color: var(--ink-muted); cursor: default; }
+.context-icon { width: 14px; display: inline-flex; justify-content: center; color: var(--accent); }
+
+/* A section shown in 3D, a walk: what is on, and how to leave it (Viewport3D). */
+.view3d-modes { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); display: flex; gap: 8px; z-index: 6; pointer-events: none; }
+.mode-chip { pointer-events: auto; display: inline-flex; align-items: center; gap: 8px; padding: 5px 8px 5px 12px; background: var(--hud); border: 1px solid var(--accent); border-radius: 999px; color: var(--ink); font: inherit; font-weight: 600; backdrop-filter: blur(4px); white-space: nowrap; }
+button.mode-chip { cursor: pointer; }
+button.mode-chip:hover { color: var(--accent); }
+.mode-chip > span:first-child { color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
+.mode-chip .mode-hint { font-weight: 400; color: var(--ink-muted); font-size: 11.5px; }
+.mode-chip button { border: 0; border-radius: 999px; padding: 3px 10px; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; }

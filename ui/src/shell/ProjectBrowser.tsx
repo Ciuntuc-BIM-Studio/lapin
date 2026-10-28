@@ -15,6 +15,8 @@ import { projectTitle } from '../engine/files';
 import { useCamera } from '../viewport/camera';
 import { disciplineOf, groupItems, implicitPlan, itemOf, setsOf, THREE_D, type BrowserItem, type BrowserSet } from './browserSets';
 import { IfcTree } from './IfcTree';
+import { openContextMenu } from './ContextMenu';
+import { toggleSection3d, useSection3d } from '../viewport/section3d';
 
 const TAB_KEY = 'lapin.browser.tab';
 
@@ -90,9 +92,18 @@ export function ProjectBrowser() {
   };
 
   const isPlanOn = (item: BrowserItem) => view === 'plan' && active?.id === item.storeyId && (item.node ? ui.planViewId === item.id : !ui.planViewId);
+  // A section's or an elevation's right-click: open it, or show it in 3D (the model cut by it, its drawing on the cut; again: stop).
+  const drawingMenu = (item: BrowserItem) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    const on = useSection3d.getState().viewId === item.id;
+    openContextMenu(e.clientX, e.clientY, [
+      { label: 'Open', icon: item.kind === 'section' ? <Scissors size={13} /> : <SquareStack size={13} />, onSelect: () => showDrawing(item.id) },
+      { label: 'Show in 3D', icon: <Box size={13} />, checked: on, onSelect: () => { toggleSection3d(item.id); if (!on && useUi.getState().view !== '3d') useUi.setState({ view: '3d' }); } },
+    ]);
+  };
   const Row = ({ item, on, open, children }: { item: BrowserItem; on: boolean; open: () => void; children?: React.ReactNode }) => (
     <span className="tree-row">
-      <button type="button" className={`tree-item${on ? ' on' : ''}`} onClick={open}>{item.kind === 'sheet' ? `${String(item.node?.props.number ?? '')} · ${item.name}` : item.name}</button>
+      <button type="button" className={`tree-item${on ? ' on' : ''}`} onClick={open} onContextMenu={item.kind === 'section' || item.kind === 'elevation' ? drawingMenu(item) : undefined}>{item.kind === 'sheet' ? `${String(item.node?.props.number ?? '')} · ${item.name}` : item.name}</button>
       {children}
       {item.node && <button type="button" className="icon mini" title={item.kind === 'sheet' ? 'Delete the sheet' : item.kind === 'schedule' ? 'Delete the schedule' : 'Delete the view'} onClick={() => remove(item.id)}><Trash2 size={11} /></button>}
     </span>

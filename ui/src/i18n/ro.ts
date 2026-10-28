@@ -57,6 +57,10 @@ export const RO: Record<string, string> = {
 
   // Project browser
   'Levels': 'Niveluri', 'Floor plans': 'Planuri', 'Sections': 'Secțiuni', '3D views': 'Vederi 3D', 'Schedules': 'Extrase', 'New level above': 'Nivel nou deasupra',
+  // A section seen in 3D, walking into a room (right-click menus)
+  'Open': 'Deschide', 'Show in 3D': 'Arată în 3D', 'Stop showing the section in 3D': 'Nu mai arăta secțiunea în 3D', 'Walk in 3D': 'Plimbă-te în 3D', 'Walking': 'Plimbare',
+  'Drag to look · W A S D to walk · E/Q up and down · Shift runs': 'Trage ca să privești · W A S D ca să mergi · E/Q sus și jos · Shift aleargă',
+  'Exit walk': 'Ieși din plimbare', 'Back to the camera there was (Esc)': 'Înapoi la camera de dinainte (Esc)',
   'A foundation plan of this level': 'Un plan de fundații al acestui nivel', 'Draw a section line in the plan': 'Desenează linia secțiunii în plan',
   'The four elevations': 'Cele patru fațade', 'New sheet': 'Planșă nouă', 'New schedule': 'Extras nou', 'Delete the view': 'Șterge vederea', 'Delete the sheet': 'Șterge planșa',
   'Delete the schedule': 'Șterge extrasul', 'Joinery': 'Tâmplărie', 'Lintels': 'Buiandrugi', 'Doors': 'Uși', 'Windows': 'Ferestre',

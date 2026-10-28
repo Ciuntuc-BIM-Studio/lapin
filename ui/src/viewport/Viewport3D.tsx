@@ -10,6 +10,7 @@ import { useLooks, type Look } from '../platform/looks';
 import { pickable } from '../platform/scope';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { X } from 'lucide-react';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import { activeStorey, engine, useSession } from '../engine/session';
 import { num } from '../engine/model';
@@ -21,6 +22,9 @@ import { boxUv, boxUvSized, imageOf, imageTexture, splitByFace, textureFor, text
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
+import { useDrawing, type DrawingDto } from './drawing';
+import { cssColor, drawingPoint, evenOddShapes, sectionPlanes, sectionPose, CUT_LAYERS, useSection3d } from './section3d';
+import { clampPitch, exitWalk, lookVector, useWalk, walkStep, WALK_KEYS, type WalkStart } from './walk';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
@@ -163,6 +167,53 @@ function faceMesh(face: FaceDto): THREE.Object3D {
   return group;
 }
 
+/**
+ * A section's drawing laid on its cut (section3d.ts): its fills a few
+ * millimetres into the kept side, so they close the cut solids, its lines
+ * just over them; what is seen beyond is left to the model, and the
+ * annotations to the drawing.
+ */
+function sectionOverlay(d: DrawingDto): THREE.Group {
+  const f = d.frame!;
+  const group = new THREE.Group();
+  group.name = 'section-overlay';
+  const basis = (lift: number) => {
+    const o = drawingPoint(f, 0, 0, lift);
+    return new THREE.Matrix4().makeBasis(new THREE.Vector3(...f.right), new THREE.Vector3(...f.up), new THREE.Vector3(...f.dir)).setPosition(o.x, o.y, o.z);
+  };
+  const fillAt = basis(0.004), lineAt = basis(0.002);
+  for (const pen of d.pens) {
+    if (!CUT_LAYERS.has(pen.layer)) continue;
+    const fill = cssColor(pen.fill);
+    if (fill && pen.loops?.length) {
+      const shapes = evenOddShapes(pen.loops).map(({ outer, holes }) => {
+        const s = new THREE.Shape();
+        const path = (p: THREE.Path, l: number[]) => { p.moveTo(l[0], l[1]); for (let k = 2; k + 1 < l.length; k += 2) p.lineTo(l[k], l[k + 1]); p.closePath(); };
+        path(s, outer);
+        for (const h of holes) { const hp = new THREE.Path(); path(hp, h); s.holes.push(hp); }
+        return s;
+      });
+      const geo = new THREE.ShapeGeometry(shapes);
+      geo.applyMatrix4(fillAt);
+      group.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+        color: new THREE.Color(fill.hex), transparent: fill.opacity < 1, opacity: fill.opacity, side: THREE.DoubleSide,
+        polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2,
+      })));
+    }
+    const stroke = cssColor(pen.stroke);
+    const segs = pen.segments ?? [];
+    if (stroke && segs.length >= 4) {
+      const pos = new Float32Array((segs.length / 2) * 3);
+      for (let k = 0; k + 1 < segs.length; k += 2) pos.set([segs[k], segs[k + 1], 0], (k / 2) * 3);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.applyMatrix4(lineAt);
+      group.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: new THREE.Color(stroke.hex), transparent: stroke.opacity < 1, opacity: stroke.opacity })));
+    }
+  }
+  return group;
+}
+
 const gridsOf = (nodes: Map<string, NodeDto>) => [...nodes.values()].filter((n) => n.type === 'IfcGrid');
 
 export function Viewport3D() {
@@ -183,6 +234,10 @@ export function Viewport3D() {
   const faceTypes = useRef<string[] | null>(null);
   const clearFace = useRef<() => void>(() => undefined);
   const [faceLabel, setFaceLabel] = useState<{ text: string; x: number; y: number } | null>(null);
+  /** Walking: started and stopped by the walk's store (set up with the scene). */
+  const walkApi = useRef<{ start(w: WalkStart): void; stop(): void }>({ start: () => undefined, stop: () => undefined });
+  /** The section the camera was last turned to, so it turns once per showing, not on every edit. */
+  const framedSection = useRef<string | null>(null);
   const elevationRef = useRef(0);
   useUi((s) => s.storeyId);
   useSession((s) => s.nodes);
@@ -377,6 +432,101 @@ export function Viewport3D() {
       });
     };
     renderer.domElement.addEventListener('pointermove', onMove);
+    // Walking (walk.ts): the orbit controls off, the perspective camera at the eye, turned by a drag, moved by keys and the wheel.
+    let walk: { pos: THREE.Vector3; yaw: number; pitch: number; back: CameraPose; wasOrtho: boolean; keys: Set<string>; run: boolean; loop: number; last: number; drag: { x: number; y: number } | null } | null = null;
+    const placeWalk = () => {
+      if (!walk) return;
+      const l = lookVector(walk.yaw, walk.pitch);
+      const t = new THREE.Vector3(walk.pos.x + l.x, walk.pos.y + l.y, walk.pos.z + l.z);
+      cam.position.copy(walk.pos);
+      controls.target.copy(t);
+      cam.lookAt(t);
+      publish();
+      invalidate.current();
+    };
+    const stepWalk = (now: number) => {
+      if (!walk) return;
+      const dt = Math.min(0.1, (now - walk.last) / 1000);
+      walk.last = now;
+      const p = walkStep(walk.pos, walk.yaw, walk.keys, dt, walk.run);
+      walk.pos.set(p.x, p.y, p.z);
+      placeWalk();
+      walk.loop = walk.keys.size ? requestAnimationFrame(stepWalk) : 0;
+    };
+    walkApi.current = {
+      start: (w) => {
+        cancelAnimationFrame(flight);
+        // A walk into another room keeps the camera there was before the first.
+        const back = walk ? walk.back : pose();
+        const wasOrtho = walk ? walk.wasOrtho : cam === orthoCam;
+        if (walk) cancelAnimationFrame(walk.loop);
+        if (cam === orthoCam) api.setOrtho(false);
+        controls.enabled = false;
+        // A wider view inside a room, and nothing near the eye cut off.
+        persp.near = 0.05;
+        persp.fov = 65;
+        persp.updateProjectionMatrix();
+        walk = { pos: new THREE.Vector3(w.eye.x, w.eye.y, w.eye.z), yaw: w.yaw, pitch: clampPitch(w.pitch), back, wasOrtho, keys: new Set(), run: false, loop: 0, last: 0, drag: null };
+        placeWalk();
+      },
+      stop: () => {
+        if (!walk) return;
+        cancelAnimationFrame(walk.loop);
+        const { back, wasOrtho } = walk;
+        walk = null;
+        controls.enabled = true;
+        persp.near = 0.1;
+        persp.fov = 45;
+        persp.updateProjectionMatrix();
+        applyPose(back);
+        if (wasOrtho) api.setOrtho(true);
+        publish();
+        invalidate.current();
+      },
+    };
+    const onWalkDown = (e: PointerEvent) => {
+      if (!walk || e.button !== 0) return;
+      walk.drag = { x: e.clientX, y: e.clientY };
+      renderer.domElement.setPointerCapture?.(e.pointerId);
+    };
+    const onWalkMove = (e: PointerEvent) => {
+      if (!walk?.drag) return;
+      walk.yaw -= (e.clientX - walk.drag.x) * 0.004;
+      walk.pitch = clampPitch(walk.pitch - (e.clientY - walk.drag.y) * 0.004);
+      walk.drag = { x: e.clientX, y: e.clientY };
+      placeWalk();
+    };
+    const onWalkUp = () => { if (walk) walk.drag = null; };
+    const onWalkWheel = (e: WheelEvent) => {
+      if (!walk) return;
+      e.preventDefault();
+      const l = lookVector(walk.yaw, 0);
+      const by = -Math.sign(e.deltaY) * (e.shiftKey ? 1.5 : 0.5);
+      walk.pos.x += l.x * by;
+      walk.pos.y += l.y * by;
+      placeWalk();
+    };
+    // Before the shortcuts (capture on the window): while walking, the letters walk instead of starting tools.
+    const onWalkKey = (e: KeyboardEvent) => {
+      if (!walk || e.ctrlKey || e.metaKey || (e.target as HTMLElement | null)?.closest?.('input, select, textarea, [role="dialog"]')) return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      if (e.type === 'keydown' && e.key === 'Escape') { exitWalk(); return; }
+      walk.run = e.shiftKey;
+      if (!WALK_KEYS.has(e.code)) return;
+      if (e.type === 'keyup') { walk.keys.delete(e.code); return; }
+      walk.keys.add(e.code);
+      if (!walk.loop) { walk.last = performance.now(); walk.loop = requestAnimationFrame(stepWalk); }
+    };
+    const onWalkBlur = () => walk?.keys.clear();
+    renderer.domElement.addEventListener('pointerdown', onWalkDown);
+    renderer.domElement.addEventListener('pointermove', onWalkMove);
+    renderer.domElement.addEventListener('pointerup', onWalkUp);
+    renderer.domElement.addEventListener('wheel', onWalkWheel, { passive: false });
+    window.addEventListener('keydown', onWalkKey, true);
+    window.addEventListener('keyup', onWalkKey, true);
+    window.addEventListener('blur', onWalkBlur);
+
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setPending(null); if (!(e.target as HTMLElement)?.closest('input, select, textarea')) setTool(null); } };
     renderer.domElement.addEventListener('pointerdown', onDown);
     renderer.domElement.addEventListener('pointerup', onUp);
@@ -395,6 +545,15 @@ export function Viewport3D() {
       cancelAnimationFrame(hoverFrame);
       clearFace.current = () => undefined;
       window.removeEventListener('keydown', onKey);
+      if (walk) cancelAnimationFrame(walk.loop);
+      walkApi.current = { start: () => undefined, stop: () => undefined };
+      renderer.domElement.removeEventListener('pointerdown', onWalkDown);
+      renderer.domElement.removeEventListener('pointermove', onWalkMove);
+      renderer.domElement.removeEventListener('pointerup', onWalkUp);
+      renderer.domElement.removeEventListener('wheel', onWalkWheel);
+      window.removeEventListener('keydown', onWalkKey, true);
+      window.removeEventListener('keyup', onWalkKey, true);
+      window.removeEventListener('blur', onWalkBlur);
       // The elements, the lights, the ground grid and the grid's axes.
       dispose(s);
       s.clear();
@@ -468,6 +627,8 @@ export function Viewport3D() {
   }, [view3dId]);
 
   const selected = useUi((st) => st.selected);
+  const walkStart = useWalk((st) => st.start);
+  const walking = walkStart != null;
   const looks = useLooks((st) => st.looks);
   const visualStyle = useUi((st) => st.visualStyle);
   const fog = useUi((st) => st.fog);
@@ -489,9 +650,11 @@ export function Viewport3D() {
       s.add(object);
       live.set(id, { item, object });
     }
-    for (const [id, { object }] of live) {
+    for (const [id, { item, object }] of live) {
       highlight(object, selected.includes(id));
       look(object, looks[id]);
+      // Inside a room, its own volume is not drawn round the eye.
+      if (walking && item.type === 'IfcSpace') object.visible = false;
       // The visual style: faces, edges, or both.
       object.traverse((c) => {
         if ((c as THREE.Mesh).isMesh) c.visible = visualStyle !== 'wireframe';
@@ -499,11 +662,60 @@ export function Viewport3D() {
       });
     }
     invalidate.current();
-  }, [render, selected, looks, visualStyle]);
+  }, [render, selected, looks, visualStyle, walking]);
+
+  // A walk asked for (a plan's right-click on a room), or ended.
+  useEffect(() => { if (walkStart) walkApi.current.start(walkStart); else walkApi.current.stop(); }, [walkStart]);
+
+  // A section shown in 3D: the model cut by its plane (and its depth), its drawing on the cut; an elevation only turns the camera.
+  const sectionId = useSection3d((st) => st.viewId);
+  const sectionNode = useSession((st) => (sectionId ? st.nodes.get(sectionId) : undefined));
+  const sectionDrawing = useDrawing(sectionId);
+  useEffect(() => {
+    // The view deleted: nothing to show any more.
+    if (sectionId && !sectionNode) useSection3d.setState({ viewId: null });
+  }, [sectionId, sectionNode]);
+  useEffect(() => {
+    const s = scene.current, renderer = rendererRef.current;
+    if (!s || !renderer) return;
+    const old = s.getObjectByName('section-overlay');
+    if (old) { s.remove(old); dispose(old); }
+    renderer.clippingPlanes = [];
+    const d = sectionId ? sectionDrawing : null;
+    if (d?.frame && d.kind === 'section') {
+      renderer.clippingPlanes = sectionPlanes(d.frame, d.depth).map((p) => new THREE.Plane(new THREE.Vector3(...p.normal), p.constant));
+      s.add(sectionOverlay(d));
+    }
+    if (!sectionId) framedSection.current = null;
+    else if (d?.frame && framedSection.current !== sectionId && !useWalk.getState().start) {
+      framedSection.current = sectionId;
+      const api = useCamera.getState().api;
+      if (api && d.kind === 'section') { api.setOrtho(false); api.orbitTo(sectionPose(d.frame, d.bounds, useCamera.getState().fov)); }
+      // An elevation: looking its way, level, the whole model framed.
+      else if (api) { api.setOrtho(false); api.orbitTo({ azimuth: Math.atan2(d.frame.dir[1], d.frame.dir[0]), pitch: -0.05 }, false); api.fit(); }
+    }
+    invalidate.current();
+  }, [sectionId, sectionDrawing]);
 
   return (
     <>
       <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />
+      {(sectionId || walkStart) && (
+        <div className="view3d-modes">
+          {sectionId && (
+            <button type="button" className="mode-chip" title="Stop showing the section in 3D" onClick={() => useSection3d.setState({ viewId: null })}>
+              <span>{sectionNode?.props.kind === 'elevation' ? 'Elevation' : 'Section'}</span><span data-no-i18n>{sectionNode?.name ?? ''}</span><X size={12} />
+            </button>
+          )}
+          {walkStart && (
+            <span className="mode-chip walk">
+              <span>Walking</span><span data-no-i18n>{walkStart.name}</span>
+              <span className="mode-hint">Drag to look · W A S D to walk · E/Q up and down · Shift runs</span>
+              <button type="button" onClick={exitWalk} title="Back to the camera there was (Esc)">Exit walk</button>
+            </span>
+          )}
+        </div>
+      )}
       {faceLabel && <div className="face-label" style={{ left: faceLabel.x + 14, top: faceLabel.y + 14 }}>{faceLabel.text}</div>}
       <Grips3D camera={camRef} canvas={host} />
       <KeyPlan mode="3d" />

@@ -290,6 +290,73 @@ export const scenes = [
     },
   },
   {
+    // A section seen in 3D (the browser's right-click), and a walk into a room (the plan's right-click).
+    id: 'views-3d',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t);
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4, name: 'Living room', function: 'Living' });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 9.5, y: 4, name: 'Bedroom', function: 'Bedroom' });
+      await t.cmd('view.create', { kind: 'section', name: 'B-B', start: [-2, 5], end: [14, 5], scale: 50 });
+      await t.wait(800);
+      const { page } = t;
+      await page.locator('nav.browser').getByText('B-B', { exact: true }).first().click({ button: 'right' });
+      await t.wait(300);
+      t.expect(await page.locator('.context-menu').count() === 1, 'the section\'s right-click menu opens');
+      const nav = await page.locator('nav.browser').boundingBox();
+      const menu = await page.locator('.context-menu').boundingBox();
+      await t.shot('section-3d-menu', { clip: { x: nav.x, y: Math.max(0, menu.y - 120), width: Math.max(nav.width, menu.x + menu.width - nav.x) + 12, height: menu.height + 180 } });
+      await page.locator('.context-menu').getByRole('menuitem', { name: 'Show in 3D' }).click();
+      await page.waitForSelector('canvas', { timeout: 20_000 });
+      await t.wait(3500);
+      t.expect(await page.locator('.view3d-modes').getByText('B-B').count() === 1, 'the 3D view says which section it shows');
+      await t.shot('section-3d', { of: '[data-testid=view3d]', pad: 0 });
+      // Off again from its chip.
+      await page.locator('.view3d-modes button.mode-chip').click();
+      await t.wait(400);
+      t.expect(await page.locator('.view3d-modes').count() === 0, 'the section goes off from its chip');
+      // An elevation: the camera turns to look its way; the same entry turns it off.
+      await t.cmd('view.create', { kind: 'elevation', direction: 'north' });
+      await t.wait(600);
+      const elevation = (await t.nodes()).find((n) => n.type === 'LapinView' && n.props.kind === 'elevation');
+      await page.locator('nav.browser').getByText(elevation.name, { exact: true }).first().click({ button: 'right' });
+      await page.locator('.context-menu').getByRole('menuitem', { name: 'Show in 3D' }).click();
+      await t.wait(1500);
+      t.expect(await page.locator('.view3d-modes').getByText(elevation.name, { exact: true }).count() === 1, 'an elevation shows in 3D');
+      await page.locator('nav.browser').getByText(elevation.name, { exact: true }).first().click({ button: 'right' });
+      await page.locator('.context-menu').getByRole('menuitem', { name: 'Show in 3D' }).click();
+      await t.wait(400);
+      t.expect(await page.locator('.view3d-modes').count() === 0, 'Show in 3D again turns it off');
+
+      // The ground floor's plan, a right-click in the living room: walk in 3D.
+      await t.ui({ view: 'plan', storeyId: storey, planViewId: null });
+      await t.wait(1200);
+      await t.fit();
+      const [x, y] = await t.planPoint(3, 4);
+      await page.mouse.click(x, y, { button: 'right' });
+      await t.wait(300);
+      t.expect(await page.locator('.context-menu').getByRole('menuitem', { name: 'Walk in 3D' }).count() === 1, 'a room\'s right-click offers a walk');
+      await t.shot('room-walk-menu', { clip: { x: x - 320, y: y - 200, width: 680, height: 400 } });
+      await page.locator('.context-menu').getByRole('menuitem', { name: 'Walk in 3D' }).click();
+      await page.waitForSelector('canvas', { timeout: 20_000 });
+      await t.wait(3000);
+      t.expect(await page.locator('.mode-chip.walk').count() === 1, 'the walk is on');
+      await t.shot('room-walk', { of: '[data-testid=view3d]', pad: 0 });
+      // A few steps forward and a look to the left: the camera moves, the walk goes on.
+      const before = await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().position);
+      await page.keyboard.down('w'); await t.wait(400); await page.keyboard.up('w');
+      const c = await page.locator('[data-testid=view3d]').boundingBox();
+      await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2);
+      await page.mouse.down(); await page.mouse.move(c.x + c.width / 2 - 120, c.y + c.height / 2, { steps: 6 }); await page.mouse.up();
+      const after = await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().position);
+      t.expect(Math.hypot(after.x - before.x, after.y - before.y) > 0.2 && Math.abs(after.z - before.z) < 1e-6, 'W walks forward, level');
+      await t.keys('Escape');
+      t.expect(await page.locator('.mode-chip.walk').count() === 0, 'Esc ends the walk');
+      const back = await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().position);
+      t.expect(back.z > 5, `the camera there was comes back (z ${back.z.toFixed(2)})`);
+    },
+  },
+  {
     id: 'drafting',
     async run(t) {
       await t.fresh();

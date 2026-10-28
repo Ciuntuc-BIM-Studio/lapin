@@ -21,6 +21,7 @@ import { PropertiesPanel } from './shell/PropertiesPanel';
 import { Ribbon } from './shell/Ribbon';
 import { StartScreen } from './shell/StartScreen';
 import { ViewportHud } from './shell/ViewportHud';
+import { ContextMenuHost } from './shell/ContextMenu';
 import { PlanView } from './viewport/PlanView';
 import { Viewport3D } from './viewport/Viewport3D';
 import { DrawingView } from './viewport/DrawingView';
@@ -222,5 +223,5 @@ export function App() {
   useShortcuts();
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   const role = useUi((s) => s.windowRole);
-  return <>{screen === 'start' ? <StartScreen /> : role === 'view' ? <ViewWindow /> : <Workspace />}<EngineNotice /></>;
+  return <>{screen === 'start' ? <StartScreen /> : role === 'view' ? <ViewWindow /> : <Workspace />}<EngineNotice /><ContextMenuHost /></>;
 }
