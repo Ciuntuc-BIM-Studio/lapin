@@ -70,7 +70,13 @@ function ReportDialog({ onClose, start }: { onClose: () => void; start?: ReportS
           {kind === 'bug' && <label className="field-line"><span className="eyebrow">What you expected</span><textarea rows={2} value={expected} onChange={(e) => setExpected(e.target.value)} /></label>}
           <label className="field-line"><span className="eyebrow">E-mail (optional)</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
           <label className="field-line"><span className="eyebrow">Screenshot (optional)</span>
-            <input type="file" accept="image/png,image/jpeg" onChange={(e) => { const f = e.target.files?.[0]; if (f) void shrink(f).then(setScreenshot); else setScreenshot(null); }} /></label>
+            <input type="file" accept="image/png,image/jpeg" onChange={(e) => {
+              const f = e.target.files?.[0];
+              setProblem(null);
+              // A file the browser cannot decode (not really a PNG or JPEG) is said here, not left as an error.
+              if (f) void shrink(f).then(setScreenshot, () => { setScreenshot(null); setProblem(`${f.name} could not be read as a picture: attach a PNG or JPEG screenshot (or send the report without one).`); });
+              else setScreenshot(null);
+            }} /></label>
           <p className="muted small">The app's version and its last {RECENT.length} error message(s) go with the report.</p>
           {problem && <p className="error-text" role="alert">{problem}</p>}
           <div className="row">

@@ -356,4 +356,186 @@ public sealed class RoomTests : IDisposable
         Assert.Equal(20, Rooms.OfGeometry(f.Session.Geometry(room.Id))!.NetArea, 6);
         Assert.Equal(2.7, room.Num("height"), 6);
     }
+
+    /// <summary>
+    /// A file as Revit or ArchiCAD write one (IFC2X3, millimetres, a storey at
+    /// +3.00, the spaces aggregated into it): an extrusion with Pset_SpaceCommon,
+    /// Revit's identity set and base quantities; a faceted B-rep whose floor
+    /// has nearly collinear points (as ArchiCAD writes them); a space with only
+    /// its FootPrint curve; one raised 45 cm on its storey; one whose Name is
+    /// its LongName; one with no shape at all, only its properties.
+    /// </summary>
+    string ForeignSpaces()
+    {
+        var x = new Step();
+        string G(string key) => S(Guid("room-test", key));
+        var origin = x.Add("IFCCARTESIANPOINT", "(0.,0.,0.)");
+        var world = x.Add("IFCAXIS2PLACEMENT3D", origin, Null, Null);
+        var ctx = x.Add("IFCGEOMETRICREPRESENTATIONCONTEXT", Null, S("Model"), "3", "1.E-05", world, Null);
+        var mm = x.Add("IFCSIUNIT", Derived, E("LENGTHUNIT"), E("MILLI"), E("METRE"));
+        var project = x.Add("IFCPROJECT", G("project"), Null, S("Foreign"), Null, Null, Null, Null, L([ctx]), x.Add("IFCUNITASSIGNMENT", L([mm])));
+        var sitePl = x.Add("IFCLOCALPLACEMENT", Null, world);
+        var site = x.Add("IFCSITE", G("site"), Null, S("Site"), Null, Null, sitePl, Null, Null, E("ELEMENT"), Null, Null, Null, Null, Null);
+        var bPl = x.Add("IFCLOCALPLACEMENT", sitePl, world);
+        var building = x.Add("IFCBUILDING", G("building"), Null, S("Building"), Null, Null, bPl, Null, Null, E("ELEMENT"), Null, Null, Null);
+        var sPl = x.Add("IFCLOCALPLACEMENT", bPl, x.Add("IFCAXIS2PLACEMENT3D", x.Add("IFCCARTESIANPOINT", "(0.,0.,3000.)"), Null, Null));
+        var storey = x.Add("IFCBUILDINGSTOREY", G("storey"), Null, S("Level 1"), Null, Null, sPl, Null, Null, E("ELEMENT"), "3000.");
+        x.Add("IFCRELAGGREGATES", G("a1"), Null, Null, Null, project, L([site]));
+        x.Add("IFCRELAGGREGATES", G("a2"), Null, Null, Null, site, L([building]));
+        x.Add("IFCRELAGGREGATES", G("a3"), Null, Null, Null, building, L([storey]));
+        string Pt(double px, double py, double? pz = null) => x.Add("IFCCARTESIANPOINT", pz is { } z ? L([R(px), R(py), R(z)]) : L([R(px), R(py)]));
+        string Rep(string id, string kind, string item) => x.Add("IFCSHAPEREPRESENTATION", ctx, S(id), S(kind), L([item]));
+        string Shape(params string[] reps) => x.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(reps));
+        string Extrusion((double X, double Y)[] pts, double depth, double z = 0) =>
+            x.Add("IFCEXTRUDEDAREASOLID", x.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, x.Add("IFCPOLYLINE", L(pts.Append(pts[0]).Select(p => Pt(p.X, p.Y))))),
+                x.Add("IFCAXIS2PLACEMENT3D", Pt(0, 0, z), Null, Null), x.Add("IFCDIRECTION", "(0.,0.,1.)"), R(depth));
+        var spaces = new List<string>();
+        string Space(string key, string? name, string? longName, string? shape)
+        {
+            // IFC2X3: …, LongName, CompositionType, InteriorOrExteriorSpace, ElevationWithFlooring.
+            var id = x.Add("IFCSPACE", G(key), Null, S(name), Null, Null, x.Add("IFCLOCALPLACEMENT", sPl, world), shape ?? Null, S(longName), E("ELEMENT"), E("INTERNAL"), Null);
+            spaces.Add(id);
+            return id;
+        }
+        string Label(string n, string v) => x.Add("IFCPROPERTYSINGLEVALUE", S(n), Null, Typed("IFCLABEL", S(v)), Null);
+        void Define(string obj, string key, string set) => x.Add("IFCRELDEFINESBYPROPERTIES", G(key), Null, Null, Null, L([obj]), set);
+
+        // 101 Office: a 5 × 4 m extrusion, 2.60 m high.
+        var office = Space("office", "101", "Office", Shape(Rep("Body", "SweptSolid", Extrusion([(0, 0), (5000, 0), (5000, 4000), (0, 4000)], 2600))));
+        Define(office, "office-common", x.Add("IFCPROPERTYSET", G("office-common-set"), Null, S("Pset_SpaceCommon"), Null, L([Label("Reference", "101"), Label("Category", "Office work"), Label("FloorCovering", "Oak parquet")])));
+        Define(office, "office-revit", x.Add("IFCPROPERTYSET", G("office-revit-set"), Null, S("PSet_Revit_Identity Data"), Null, L([Label("Department", "Administration"), Label("Occupant", "ACME")])));
+        Define(office, "office-qto", x.Add("IFCELEMENTQUANTITY", G("office-qto-set"), Null, S("BaseQuantities"), Null, Null, L([x.Add("IFCQUANTITYAREA", S("NetFloorArea"), Null, Null, "20.")])));
+        // 102 Corridor: a faceted B-rep 10.20 × 3.00 m, its long side in nearly collinear points, no FootPrint.
+        (double X, double Y)[] floor = [(0, 6000), (10200, 6000), (10200, 9000.007), (5760.5, 8999.99999), (1410.25763, 8999.99314), (1410.25762, 8999.80921), (0, 8999.69526)];
+        string Face(IEnumerable<string> pts) => x.Add("IFCFACE", L([x.Add("IFCFACEOUTERBOUND", x.Add("IFCPOLYLOOP", L(pts)), True)]));
+        var bottom = floor.Select(p => Pt(p.X, p.Y, 0)).ToArray();
+        var top = floor.Select(p => Pt(p.X, p.Y, 2480)).ToArray();
+        var faces = new List<string> { Face(bottom.Reverse()), Face(top) };
+        for (var i = 0; i < floor.Length; i++) faces.Add(Face([bottom[i], bottom[(i + 1) % floor.Length], top[(i + 1) % floor.Length], top[i]]));
+        Space("corridor", "102", "Corridor", Shape(Rep("Body", "Brep", x.Add("IFCFACETEDBREP", x.Add("IFCCLOSEDSHELL", L(faces))))));
+        // 103 Store: only its FootPrint, an L of 7 m².
+        var footprint = x.Add("IFCGEOMETRICCURVESET", L([x.Add("IFCPOLYLINE", L(new (double X, double Y)[] { (6000, 0), (9000, 0), (9000, 2000), (7000, 2000), (7000, 3000), (6000, 3000), (6000, 0) }.Select(p => Pt(p.X, p.Y))))]));
+        Space("store", "103", "Store", Shape(Rep("FootPrint", "GeometricCurveSet", footprint)));
+        // 104 Gallery: raised 45 cm on its storey, 2.10 m high.
+        Space("gallery", "104", "Gallery", Shape(Rep("Body", "SweptSolid", Extrusion([(12000, 0), (16000, 0), (16000, 2000), (12000, 2000)], 2100, 450))));
+        // Hall: its Name is its LongName.
+        Space("hall", "Hall", "Hall", Shape(Rep("Body", "SweptSolid", Extrusion([(12000, 3000), (15000, 3000), (15000, 5000), (12000, 5000)], 2600))));
+        // 105 Shaft: no shape, its properties only.
+        var shaft = Space("shaft", "105", "Shaft", null);
+        Define(shaft, "shaft-common", x.Add("IFCPROPERTYSET", G("shaft-common-set"), Null, S("Pset_SpaceCommon"), Null, L([Label("Reference", "105"), Label("Category", "Technical")])));
+        x.Add("IFCRELAGGREGATES", G("a4"), Null, Null, Null, storey, L(spaces));
+        var path = Path.Combine(_dir, "revit-spaces.ifc");
+        x.Write(path, "revit-spaces.ifc", "ViewDefinition [CoordinationView_V2.0]", "IFC2X3");
+        return path;
+    }
+
+    [Fact]
+    public void Foreign_spaces_come_in_as_rooms_with_their_outlines_names_heights_and_properties()
+    {
+        var f = New();
+        f.Session.New(plain: true);
+        var result = IfcImport.Run(f.Session, ForeignSpaces(), null, out _);
+        Entity Room(string key) => f.Model.Get(Guid("room-test", key)) ?? throw new Xunit.Sdk.XunitException($"no room {key}");
+        double Area(string key) => Rooms.OfGeometry(f.Session.Geometry(Room(key).Id))?.NetArea ?? double.NaN;
+        Assert.Equal(6, f.Model.OfClass(IfcClass.Space).Count());
+        Assert.Equal(6, result.Recognized);
+
+        // The office: its number and name, its function, department and floor finish from its sets, its outline and height.
+        var office = Room("office");
+        Assert.Equal("Office", office.Name);
+        Assert.Equal("101", office.Str("number"));
+        Assert.Equal("Office work", office.Str("function"));
+        Assert.Equal("Administration", office.Str("department"));
+        Assert.Equal("Oak parquet", office.Str("finishFloor"));
+        Assert.Equal("Level 1", Spatial.StoreyOf(f.Model, office.Id)!.Name);
+        Assert.Equal(20, Area("office"), 6);
+        Assert.Equal(2.6, Rooms.HeightOf(office, f.Model), 6);
+        Assert.Null(office.NumOrNull("baseOffset"));
+        // Every set it had, kept for the properties panel.
+        var sets = (JsonObject)office.Attrs["imported"]!["properties"]!;
+        Assert.Equal("ACME", (string?)sets["PSet_Revit_Identity Data"]!["Occupant"]);
+        Assert.Equal("20", (string?)sets["BaseQuantities"]!["NetFloorArea"]);
+        Assert.Equal("101", (string?)sets["Pset_SpaceCommon"]!["Reference"]);
+        // A colour scheme by department reads it.
+        Assert.Equal("Administration", ColorSchemes.ValueOf(office, "department"));
+
+        // The B-rep corridor: the outline of its floor, nearly collinear points and all.
+        Assert.Equal(10.2 * 3, Area("corridor"), 2);
+        Assert.Equal(2.48, Rooms.HeightOf(Room("corridor"), f.Model), 6);
+        // The store: its FootPrint curve; the storey's height.
+        Assert.Equal(7, Area("store"), 6);
+        // The gallery stands 45 cm above its storey, 2.10 m high.
+        var gallery = Room("gallery");
+        Assert.Equal(0.45, gallery.Num("baseOffset"), 6);
+        Assert.Equal(2.1, Rooms.HeightOf(gallery, f.Model), 6);
+        var (min, max) = f.Bounds(gallery.Id);
+        Assert.Equal(3.45, min.Z, 6); Assert.Equal(5.55, max.Z, 6);
+        // The hall's Name is its name, not a number: it takes the storey's next one.
+        var hall = Room("hall");
+        Assert.Equal("Hall", hall.Name);
+        Assert.NotEqual("Hall", hall.Str("number"));
+        Assert.False(string.IsNullOrEmpty(hall.Str("number")));
+        // The shaft has no shape: a room without an outline, with its properties, listed in the schedule, the import says so.
+        var shaft = Room("shaft");
+        Assert.Equal("Shaft", shaft.Name);
+        Assert.Equal("105", shaft.Str("number"));
+        Assert.Equal("Technical", shaft.Str("function"));
+        Assert.True(double.IsNaN(Area("shaft")));
+        Assert.Contains(new RoomSchedule().Grid(new Q(f)).Rows, r => r[2] == "Shaft" && r[5] == "");
+        Assert.Contains(result.Notes, n => n.Contains("without an outline", StringComparison.Ordinal));
+        // Where the rooms are, for whoever looks for them in 3D.
+        Assert.Contains(result.Notes, n => n.StartsWith("6 room(s) from the file's spaces", StringComparison.Ordinal));
+        // Given an outline afterwards (its properties' Draw outline), it is measured like any other.
+        f.Run("architecture.updateRoom", new JsonObject { ["id"] = shaft.Id, ["points"] = new JsonArray(new JsonArray(20, 0), new JsonArray(22, 0), new JsonArray(22, 1), new JsonArray(20, 1)) });
+        Assert.Equal(2, Area("shaft"), 6);
+        Assert.Equal("Technical", Room("shaft").Str("function"));
+
+        // Out again: the gallery's IfcSpace starts 45 cm above its storey.
+        var path = Path.Combine(_dir, "rooms-again.ifc");
+        IfcExport.Write(f.Session, path);
+        var g = New();
+        g.Session.New(plain: true);
+        IfcImport.Run(g.Session, path, null, out _);
+        // On its own storey (the project's ground floor is another), raised as it was.
+        Assert.Equal("Level 1", Spatial.StoreyOf(g.Model, gallery.Id)!.Name);
+        Assert.Equal(0.45, g.Model.Get(gallery.Id)!.Num("baseOffset"), 6);
+        Assert.Equal(3.45, g.Bounds(gallery.Id).Min.Z, 6);
+    }
+}
+
+/// <summary>A real file's spaces, when one is given (LAPIN_IFC_SAMPLE=/path/to/file.ifc): how many came in as rooms, with what, for the eye.</summary>
+public class RoomSampleTests(Xunit.Abstractions.ITestOutputHelper output)
+{
+    [Fact]
+    public void A_sample_files_spaces_when_given()
+    {
+        var path = Environment.GetEnvironmentVariable("LAPIN_IFC_SAMPLE");
+        if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
+        var file = StepFile.Read(File.ReadAllBytes(path));
+        var spaces = file.OfType("IFCSPACE").ToList();
+        var f = new Fixture(new ArchitectureModule(), new StructureModule(), new DraftingModule());
+        f.Session.New(plain: true);
+        var r = IfcImport.Run(f.Session, path, null, out _);
+        var rooms = f.Model.OfClass(IfcClass.Space).ToList();
+        var outlined = rooms.Count(x => Rooms.OfGeometry(f.Session.Geometry(x.Id)) != null);
+        output.WriteLine($"{Path.GetFileName(path)}: {spaces.Count} IfcSpace, {rooms.Count} rooms, {outlined} with an outline");
+        // Each on the storey the file puts it in (aggregated, or contained).
+        var fileStorey = new Dictionary<int, string?>();
+        foreach (var rel in file.OfType("IFCRELAGGREGATES").Concat(file.OfType("IFCRELCONTAINEDINSPATIALSTRUCTURE")))
+        {
+            var agg = rel.Type == "IFCRELAGGREGATES";
+            if (file.Get(rel[agg ? 4 : 5]) is not { Type: "IFCBUILDINGSTOREY" } st) continue;
+            foreach (var o in (List<object?>)rel[agg ? 5 : 4]!) if (o is StepRef sr) fileStorey[sr.Id] = (string?)st[2];
+        }
+        var onTheirs = spaces.Count(sp => f.Model.Get((string)sp[0]!) is { } rm && fileStorey.GetValueOrDefault(sp.Id) is { } want && Spatial.StoreyOf(f.Model, rm.Id)?.Name == want);
+        output.WriteLine($"  on the file's storey: {onTheirs}; by storey: {string.Join(", ", rooms.GroupBy(x => Spatial.StoreyOf(f.Model, x.Id)?.Name).Select(g => $"{g.Key} {g.Count()}"))}");
+        foreach (var n in r.Notes) output.WriteLine("  note: " + n);
+        foreach (var x in rooms.Take(Environment.GetEnvironmentVariable("LAPIN_ROOMS_ALL") != null ? int.MaxValue : 4))
+        {
+            var props = x.Attrs["imported"]?["properties"] as JsonObject;
+            output.WriteLine($"  {x.Str("number")} | {x.Name} | fn={x.Str("function")} | dep={x.Str("department")} | floor={x.Str("finishFloor")} | h={x.NumOrNull("height")} | off={x.NumOrNull("baseOffset")} | storey={Spatial.StoreyOf(f.Model, x.Id)?.Name} | area={Rooms.OfGeometry(f.Session.Geometry(x.Id))?.NetArea:0.00} | sets={string.Join(",", props?.Select(p => $"{p.Key}({(p.Value as JsonObject)?.Count})") ?? [])}");
+        }
+        foreach (var s in spaces.Where(s => f.Model.Get((string)s[0]!) == null).Take(10))
+            output.WriteLine($"  missing #{s.Id} {s[2]} {s[7]}: {new IfcModel(file).Describe(s.Id).ToJsonString()[..Math.Min(300, new IfcModel(file).Describe(s.Id).ToJsonString().Length)]}");
+    }
 }

@@ -6,7 +6,11 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Palette, RefreshCw, X } from 'lucide-react';
+import { Palette, RefreshCw, SquareDashed, X } from 'lucide-react';
+import { RoomIcon } from '../../icons';
+import { activate } from '../../platform/modules';
+import type { ToolDef } from '../../platform/module';
+import { outlineFor, room, roomOutline } from './roomTools';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
@@ -37,6 +41,9 @@ export function RoomSection({ node }: { node: NodeDto }) {
   const hatch = str('fillHatch');
   // A room found from its walls that nothing closes round any more keeps its last outline, and says so.
   const lost = useSession((x) => x.render.get(node.id)?.diagnostics.some((d) => d.startsWith('Nothing closes round')) ?? false);
+  // A room imported without a shape: the next Room click (or outline) on its storey's plan gives it one.
+  const none = !node.props.auto && !(Array.isArray(node.props.contour) && node.props.contour.length >= 3);
+  const give = (tool: ToolDef) => { outlineFor.id = node.id; activate(tool); };
   return (
     <div className="room-section">
       <dl className="fields">
@@ -49,6 +56,8 @@ export function RoomSection({ node }: { node: NodeDto }) {
         <dd><Suggest id={`ff-${node.id}`} value={str('finishFloor')} options={known('finishFloor')} onCommit={(v) => update('finishFloor', v.trim())} /></dd>
         <dt title="Empty: the storey's height">Height</dt>
         <dd><LengthCell metres={typeof node.props.height === 'number' ? node.props.height : null} placeholder="the storey's" onCommit={(m) => update('height', m)} /></dd>
+        <dt title="How far above its storey's level the room starts (a gallery, a raised floor)">Base offset</dt>
+        <dd><LengthCell metres={typeof node.props.baseOffset === 'number' ? node.props.baseOffset : null} placeholder="0" onCommit={(m) => update('baseOffset', m)} /></dd>
         <dt title="The room's own colour, over its colour scheme's">Own colour</dt>
         <dd>
           <input type="color" value={str('fillColor') || '#ffffff'} onChange={(e) => update('fillColor', e.target.value)} />
@@ -64,10 +73,12 @@ export function RoomSection({ node }: { node: NodeDto }) {
           {hatch && <HatchSwatch hatch={hatch} scale={typeof node.props.hatchScale === 'number' ? node.props.hatchScale : 1} fill={str('fillColor') || null} size={24} />}
         </dd>
         <dt>Outline</dt>
-        <dd className={lost ? 'small warn' : 'muted small'}>{node.props.auto ? (lost ? 'no longer enclosed: it keeps its last outline' : 'found from the walls round its point') : 'drawn'}</dd>
+        <dd className={lost || none ? 'small warn' : 'muted small'}>{node.props.auto ? (lost ? 'no longer enclosed: it keeps its last outline' : 'found from the walls round its point') : none ? 'none: its IFC file gave it no shape' : node.props.imported ? 'from its IFC file' : 'drawn'}</dd>
       </dl>
       <div className="row">
         <button type="button" className="btn small" onClick={() => useUi.setState({ dialog: 'roomColors' })}><Palette size={12} />Room colours…</button>
+        {none && <button type="button" className="btn small" title="Then click inside its walls on its storey's plan" onClick={() => give(room)}><RoomIcon size={12} />Find by a click</button>}
+        {none && <button type="button" className="btn small" title="Then draw its corners on its storey's plan" onClick={() => give(roomOutline)}><SquareDashed size={12} />Draw outline</button>}
         {Boolean(node.props.auto) && <button type="button" className="btn small" title="Store the outline the room finds now: what it keeps should its walls go" onClick={() => void execute('architecture.updateRooms', { ids: [node.id] })}><RefreshCw size={12} />Update outline</button>}
       </div>
     </div>

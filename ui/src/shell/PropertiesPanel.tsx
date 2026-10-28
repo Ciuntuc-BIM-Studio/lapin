@@ -5,7 +5,7 @@
  * command (element.rename, element.update, or the module's own).
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AlignHorizontalJustifyCenter, ChevronRight, Plus, Search, Trash2, X } from 'lucide-react';
 import { Cell, LengthCell } from './cells';
 import { panelFocus, panelKeys, parseNumber } from './cellKeys';
@@ -17,6 +17,7 @@ import type { FieldDescriptor, NodeDto } from '../engine/protocol';
 import type { PropertySectionDef } from '../platform/module';
 import { propertySections, typeFieldsOf } from '../platform/modules';
 import { QuantitiesSection } from './QuantitiesSection';
+import { filterSets, importedSets } from './ifcProperties';
 
 /** An input that commits on Enter or when it loses focus, not on every key. */
 function Commit({ value, onCommit, suffix, className }: { value: string; onCommit: (v: string) => void; suffix?: string; className?: string }) {
@@ -89,6 +90,35 @@ function Group({ id, label, children }: { id: string; label: string; children: R
       <button type="button" className="sect-head" onClick={toggle} aria-expanded={open}><ChevronRight size={12} className="chev" /><span className="eyebrow">{label}</span></button>
       {open && <div className="sect-body">{children}</div>}
     </section>
+  );
+}
+
+// ─── What an imported element brought from its IFC file ─────────────────────
+
+/**
+ * The property sets and quantities an element brought from an IFC file, as
+ * the file had them, read-only: a set per fold (open while there are few), a
+ * filter when there are many (ArchiCAD writes hundreds for a zone).
+ */
+function IfcPropertiesSection({ node }: { node: NodeDto }) {
+  const [filter, setFilter] = useState('');
+  const sets = importedSets(node);
+  if (sets.length === 0) return null;
+  const total = sets.reduce((n, s) => n + s.props.length, 0);
+  const shown = filterSets(sets, filter);
+  return (
+    <Group id="ifcProperties" label={`IFC properties · ${total}`}>
+      {total > 20 && <input className="filter ifc-props-filter" placeholder="Filter by set, name or value" value={filter} onChange={(e) => setFilter(e.target.value)} />}
+      {shown.map((s) => (
+        <details key={s.name} className="advanced ifc-set" open={sets.length <= 3 || filter.trim() !== ''}>
+          <summary><ChevronRight size={12} /> <span>{s.name}</span> <span className="muted small">{s.props.length}</span></summary>
+          <dl className="fields ifc-fields">
+            {s.props.map(([k, v]) => <Fragment key={k}><dt title={k}>{k}</dt><dd title={v}>{v || '—'}</dd></Fragment>)}
+          </dl>
+        </details>
+      ))}
+      {shown.length === 0 && <p className="muted small pad">Nothing matches.</p>}
+    </Group>
   );
 }
 
@@ -304,6 +334,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
         </Group>
       )}
       <QuantitiesSection node={node} />
+      <IfcPropertiesSection node={node} />
       {node.editable && node.type !== 'IfcProject' && node.type !== 'IfcSite' && node.type !== 'IfcBuilding' && (
         <section className="sect actions">
           <button type="button" className="btn" onClick={() => void execute('element.delete', { id: node.id })}><Trash2 size={14} />Delete</button>

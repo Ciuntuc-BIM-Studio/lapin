@@ -213,6 +213,11 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .advanced summary { display: flex; align-items: center; gap: 4px; cursor: pointer; list-style: none; }
 .advanced[open] summary svg { transform: rotate(90deg); }
 .advanced .fields { margin-top: 8px; }
+.ifc-set + .ifc-set { margin-top: 6px; }
+.ifc-set summary span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ifc-fields { margin-bottom: 4px; }
+.ifc-fields dt, .ifc-fields dd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ifc-props-filter { width: calc(100% - 24px); margin: 0 0 8px; }
 
 /* Status */
 .status { display: flex; gap: 18px; padding: 4px 12px; background: var(--panel); border-top: 1px solid var(--rule); color: var(--ink-muted); font-size: 11.5px; }

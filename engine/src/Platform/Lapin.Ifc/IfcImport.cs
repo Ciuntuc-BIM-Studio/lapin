@@ -107,7 +107,7 @@ public static partial class IfcImport
             // Rooms are aggregated into their storey, not contained.
             foreach (var r in f.OfType("IFCRELAGGREGATES"))
                 if (f.Get(r[4]) is { Type: "IFCBUILDINGSTOREY" } storey)
-                    foreach (var p in Refs(r[5])) if (f.Get(p) is { Type: "IFCSPACE" }) containedIn[p] = storey.Id;
+                    foreach (var p in Refs(r[5])) if (f.Entities.GetValueOrDefault(p) is { Type: "IFCSPACE" }) containedIn[p] = storey.Id;
             Project(edit);
             Storeys(edit);
             if (!o.ReferenceOnly)
@@ -410,12 +410,16 @@ public static partial class IfcImport
         void Spaces(IEdit edit)
         {
             if (o.ReferenceOnly) return;
+            var rooms = 0;
             foreach (var e in f.OfType("IFCSPACE").OrderBy(x => x.Id))
             {
                 if (e[0] is not string { Length: 22 }) continue;
-                if (IntentOf(e.Id) is { } intent) { Native(edit, e, intent); continue; }
-                Recognize(edit, e);
+                if (IntentOf(e.Id) is { } intent) { Native(edit, e, intent); rooms++; continue; }
+                if (Recognize(edit, e)) rooms++;
             }
+            // Where to find them: a room is air, drawn in plans only.
+            if (rooms > 0)
+                notes.Add($"{rooms} room(s) from the file's spaces, each on its storey: its plan shows their stamps (View → Room colours fills them; a Rooms schedule, + under Schedules in the browser, lists them); the 3D view leaves rooms out until its Visibility/Graphics shows them.");
         }
 
         void Native(IEdit edit, StepEntity e, Intent intent)

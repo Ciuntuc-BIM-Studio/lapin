@@ -95,12 +95,12 @@ public static class Rooms
 
     // ─── Geometry and quantities ─────────────────────────────────────────
 
-    /// <summary>The room's body (its outline up its height, from its storey's level), its outline and its stamp's point as plan items.</summary>
+    /// <summary>The room's body (its outline up its height, from its storey's level and its base offset above it), its outline and its stamp's point as plan items.</summary>
     public static ElementGeometry? Geometry(Entity room, IModelView m, IServices services)
     {
         var o = Live(room, m, services);
         if (o == null) return new ElementGeometry([], Diagnostics: ["The room has no outline: place it inside walls, or draw it."]);
-        var z = Spatial.StoreyOf(m, room.Id)?.Num("elevation") ?? 0;
+        var z = (Spatial.StoreyOf(m, room.Id)?.Num("elevation") ?? 0) + room.Num("baseOffset");
         var h = HeightOf(room, m);
         var solid = Prism.Extrude(o.Outer.Select(p => p.At(z)).ToArray(), o.Islands.Select(i => (IReadOnlyList<Vec3>)i.Select(p => p.At(z)).ToArray()).ToList(), new Vec3(0, 0, h), "room");
         var plan = new List<PlanItem> { new("room", true, o.Outer) };
@@ -390,10 +390,12 @@ public sealed class RoomSchedule : IScheduleSource
                      .OrderBy(x => x.Storey == null ? int.MaxValue : storeys.GetValueOrDefault(x.Storey.Id))
                      .ThenBy(x => x.Room.Str("number") ?? "", StringComparer.OrdinalIgnoreCase))
         {
-            if (Rooms.Of(r.Room, m, q.Geometry) is not { } o) continue;
             var h = Rooms.HeightOf(r.Room, m);
+            string[] named = [r.Storey?.Name ?? "", r.Room.Str("number") ?? "", r.Room.Name, r.Room.Str("function") ?? "", r.Room.Str("department") ?? ""];
+            // A room without an outline yet (a space imported without a shape) is listed, unmeasured.
+            if (Rooms.Of(r.Room, m, q.Geometry) is not { } o) { rows.Add([.. named, "", "", N(h), ""]); continue; }
             total += o.NetArea;
-            rows.Add([r.Storey?.Name ?? "", r.Room.Str("number") ?? "", r.Room.Name, r.Room.Str("function") ?? "", r.Room.Str("department") ?? "", N(o.NetArea), N(o.Perimeter), N(h), N(o.NetArea * h)]);
+            rows.Add([.. named, N(o.NetArea), N(o.Perimeter), N(h), N(o.NetArea * h)]);
         }
         if (rows.Count > 0) rows.Add(["Total", "", "", "", "", N(total), "", "", ""]);
         return new ScheduleGrid(Label, ["Storey", "Number", "Name", "Function", "Department", "Area (m²)", "Perimeter (m)", "Height (m)", "Volume (m³)"], rows);

@@ -132,6 +132,8 @@ public static partial class IfcImport
             // IfcSpace: LongName [7], CompositionType [8], PredefinedType [9].
             var space = e.Type == "IFCSPACE";
             var predefined = space ? (e.Args.Count > 9 ? Enum(e[9]) : null) : e.Args.Count > 8 && e.Type is not ("IFCDOOR" or "IFCWINDOW") ? Enum(e[8]) : null;
+            // A space with no vertical prism (a B-rep whose floor did not read as one, only its FootPrint, no shape): its outline from its curve or its floor.
+            var unswept = space && !prisms.Any(p => p.Vertical && p.Height > 1e-3);
             var axis = model.AxisCurve(e.Id);
             Vec2? origin = null, dir = null;
             if (axis is { Count: >= 2 } && new Vec2(axis[^1].X - axis[0].X, axis[^1].Y - axis[0].Y) is { Length: > 1e-3 } d)
@@ -147,16 +149,17 @@ public static partial class IfcImport
             }
             return new ForeignElement(Str(e[0]) ?? "", cls, predefined, Str(e[2]), Str(e[4]), storey, prisms, why, openings,
                 type == null ? null : Str(type[2]), type == null ? null : Str(type[0]), layers, material, PropertiesJson(e.Id),
-                Axis: axis, Box: prisms.Count == 0 ? model.Bounds(e.Id) : null, Usage: usage, Parts: parts,
+                Axis: axis, Box: prisms.Count == 0 || unswept ? model.Bounds(e.Id) : null, Usage: usage, Parts: parts,
                 Extents: origin is { } o2 && dir is { } d2 ? model.Extents(e.Id, o2, d2) : null,
                 LongName: space && e.Args.Count > 7 ? Str(e[7]) : null,
-                Footprint: space && prisms.Count == 0 ? Footprint(e.Id) : null);
+                Footprint: unswept ? model.FootprintLoops(e.Id) ?? Footprint(e.Id) : null);
         }
 
         /// <summary>
         /// A body's outline in plan from its triangles, when it is no prism: the
-        /// edges of its downward faces at its lowest level that only one such
-        /// triangle has, chained into loops (the outline and its holes).
+        /// edges of its triangles lying at its lowest level (its floor; slivers
+        /// of nearly collinear points too, so their edges pair up) that only one
+        /// such triangle has, chained into loops (the outline and its holes).
         /// </summary>
         List<List<Vec2>>? Footprint(int product)
         {
@@ -169,8 +172,7 @@ public static partial class IfcImport
                 foreach (var (a, b, c) in mesh.T)
                 {
                     var (pa, pb, pc) = (mesh.V[a], mesh.V[b], mesh.V[c]);
-                    var n = Vec3.Cross(pb - pa, pc - pa);
-                    if (n.Length < 1e-12 || n.Z / n.Length > -0.99 || Math.Max(pa.Z, Math.Max(pb.Z, pc.Z)) > low + 0.01) continue;
+                    if (Math.Max(pa.Z, Math.Max(pb.Z, pc.Z)) > low + 0.01) continue;
                     foreach (var (p, q) in new[] { (pa, pb), (pb, pc), (pc, pa) })
                     {
                         var (u, w) = (new Vec2(p.X, p.Y), new Vec2(q.X, q.Y));

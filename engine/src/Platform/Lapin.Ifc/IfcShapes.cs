@@ -33,6 +33,44 @@ public sealed partial class IfcModel
         return null;
     }
 
+    /// <summary>
+    /// The product's 'FootPrint' representation (a space's or a slab's outline
+    /// in plan, as Revit and ArchiCAD write it beside the body) as closed loops
+    /// in world plan coordinates, the largest first; null when it has none.
+    /// </summary>
+    public List<List<Vec2>>? FootprintLoops(int product)
+    {
+        var e = File.Entities.GetValueOrDefault(product);
+        if (e == null) return null;
+        var place = Placement(e[5]);
+        var loops = new List<List<Vec2>>();
+        void Item(StepEntity item, Xf at)
+        {
+            switch (item.Type)
+            {
+                case "IFCGEOMETRICCURVESET" or "IFCGEOMETRICSET":
+                    foreach (var sub in Items(item[0])) Item(sub, at);
+                    return;
+                case "IFCMAPPEDITEM":
+                {
+                    var map = File.Get(item[0]);
+                    var xf = at.Then(Operator(File.Get(item[1]))).Then(Axis2(map?[0]));
+                    foreach (var sub in Items(File.Get(map?[1])?[3])) Item(sub, xf);
+                    return;
+                }
+            }
+            var pts = Curve(item).Select(p => { var w = at.Apply(p); return new Vec2(w.X, w.Y); }).ToList();
+            if (pts.Count >= 3 && (pts[0] - pts[^1]).Length < 1e-6) pts.RemoveAt(pts.Count - 1);
+            if (pts.Count >= 3 && Math.Abs(Footprints.Area(pts)) > 1e-6) loops.Add(Footprints.Clean(pts));
+        }
+        foreach (var rep in Items(File.Get(e[6])?[2]))
+        {
+            if (rep[1] is not string id || !string.Equals(id, "FootPrint", StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var item in Items(rep[3])) Item(item, place);
+        }
+        return loops.Count > 0 ? [.. loops.OrderByDescending(l => Math.Abs(Footprints.Area(l)))] : null;
+    }
+
     /// <summary>The body's extents in the frame of a line in plan (from <paramref name="origin"/> along <paramref name="dir"/>, a unit vector), from its triangles; null without a body.</summary>
     public AxisExtents? Extents(int product, Vec2 origin, Vec2 dir)
     {

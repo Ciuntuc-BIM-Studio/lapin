@@ -49,4 +49,18 @@ The colours are drawn under the walls, the furniture and the door swings, so the
 
 Rooms are hidden in the 3D view, so they do not cover the building. **Visibility / Graphics** in the 3D view can show them.
 
-In an IFC export each room is an IfcSpace, with its number, name, function, areas and volume. Rooms from another program's IFC file come back as rooms.
+In an IFC export each room is an IfcSpace, with its number, name, function, areas and volume.
+
+## Rooms from an IFC file
+
+**File → Import IFC…** brings the file's spaces in as rooms, whichever program wrote them (Revit, ArchiCAD, Allplan, Bonsai…):
+
+- each goes on **its own level**, the one the file puts it in;
+- its **outline** comes from its shape (an extrusion, a B-rep or a mesh, or the footprint drawn beside it); it keeps that outline, it does not follow walls;
+- its **name** is the space's long name and its **number** its name (as Revit and ArchiCAD write them); its **height**, and its **base offset** when it starts above its level (a gallery, a raised floor), come from its shape;
+- its **function**, **department** and **floor finish** come from the file where it says them (the object type or the space category, a Department property, the floor covering), so a colour scheme by function or by department colours them at once;
+- everything else the space had in the file, its property sets and quantities (Pset_SpaceCommon, BaseQuantities, the program's own sets), is kept and listed, read-only, under **IFC properties** in its properties, with a filter when there are many.
+
+The import's message says how many rooms came in. Look for them on their levels' plans (each shows its stamp), in a **Rooms** schedule (**+** under Schedules in the browser) or in the browser's IFC tab; the 3D view hides rooms.
+
+A space whose shape gives no outline still comes in, with its name and properties, as a room without an outline: it is listed in the schedule but drawn nowhere. Select it (the browser's IFC tab), open its level's plan, then **Find by a click** (click inside its walls) or **Draw outline** in its properties.

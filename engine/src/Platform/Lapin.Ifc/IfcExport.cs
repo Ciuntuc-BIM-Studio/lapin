@@ -476,7 +476,7 @@ public static class IfcExport
             var solid = f.Add("IFCEXTRUDEDAREASOLID", profile, origin, f.Add("IFCDIRECTION", "(0.,0.,1.)"), R(height));
             f.Add("IFCSTYLEDITEM", solid, L(new[] { Style(geo.Parts.FirstOrDefault()?.Color ?? "#9ec5e8") }), Null);
             var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("SweptSolid"), L(new[] { solid })) }));
-            var place = Place(relTo, 0);
+            var place = Place(relTo, e.Num("baseOffset"));
             var number = e.Str("number") is { Length: > 0 } n ? n : null;
             var function = e.Str("function") is { Length: > 0 } fn ? fn : null;
             var entity = f.Add("IFCSPACE", Gid(e.Id), Null, S(number ?? e.Name), Null, S(function), place, shape, S(e.Name), E("ELEMENT"), E("SPACE"), Null);

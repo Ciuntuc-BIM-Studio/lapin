@@ -238,6 +238,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("department", "Department", "text"),
             new("finishFloor", "Floor finish", "text"),
             new("height", "Height", "length", Min: 0.1),
+            new("baseOffset", "Base offset", "length"),
             new("fillColor", "Own colour", "color"),
             new("fillHatch", "Own hatch", "text"),
             new("hatchScale", "Hatch scale", "number", Min: 0.01, Max: 100),

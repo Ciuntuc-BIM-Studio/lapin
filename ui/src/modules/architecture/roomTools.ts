@@ -7,12 +7,26 @@ import { notify, useUi } from '../../app/store';
 import { activeStorey, execute } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 
+/**
+ * A room the next Room or Room by outline gives its outline to instead of
+ * making a new one (a room imported from IFC without a shape): set from its
+ * properties, used while it is still the one selected, then forgotten.
+ */
+export const outlineFor: { id: string | null } = { id: null };
+function target(): string | null {
+  const id = outlineFor.id;
+  outlineFor.id = null;
+  return id && useUi.getState().selected.includes(id) ? id : null;
+}
+
 /** A room: a click inside the walls, curtain walls or columns that enclose it; its outline follows them. */
 export const room: ToolDef = {
   id: 'architecture.room', label: 'Room', icon: RoomIcon, shortcut: 'RM',
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => {
-    await ctx.execute('architecture.addRoom', { storeyId: ctx.storeyId, x: p.x, y: p.y });
+    const id = target();
+    if (id) await ctx.execute('architecture.updateRoom', { id, x: p.x, y: p.y });
+    else await ctx.execute('architecture.addRoom', { storeyId: ctx.storeyId, x: p.x, y: p.y });
   },
 };
 
@@ -21,7 +35,9 @@ export const roomOutline: ToolDef = {
   id: 'architecture.roomOutline', label: 'Room by outline', icon: SquareDashed,
   gesture: { kind: 'polygon' },
   complete: async ({ points }, ctx) => {
-    await ctx.execute('architecture.addRoom', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]) });
+    const id = target();
+    if (id) await ctx.execute('architecture.updateRoom', { id, points: points.map((p) => [p.x, p.y]) });
+    else await ctx.execute('architecture.addRoom', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]) });
   },
 };
 

@@ -31,50 +31,89 @@ public sealed class ForeignElements : IIfcRecognizer
 
     /// <summary>
     /// A room from a foreign space: its outline from its body (the base of its
-    /// largest vertical prism, its holes as islands; else the outline of its
-    /// downward faces), its height from the prism; its name from LongName and
-    /// its number from Name (as most tools write them; Name alone is its
-    /// name), its function from ObjectType. It keeps its outline.
+    /// largest vertical prism, its holes as islands; else its FootPrint curve;
+    /// else the outline of its floor's faces), its height and its base above
+    /// the storey from the body; its name from LongName and its number from
+    /// Name (as most tools write them; Name alone, or Name the same as
+    /// LongName, is its name, and its number is Pset_SpaceCommon's Reference
+    /// or the storey's next one); its function from ObjectType or the file's
+    /// category or occupancy, its department and floor finish from its
+    /// property sets. A space whose shape gives no outline still comes in,
+    /// with its properties, as a room without an outline (drawn nowhere until
+    /// it is given one). It keeps its outline.
     /// </summary>
     string? Room(IEdit edit, ForeignElement e, RecognitionContext ctx)
     {
         var storey = edit.Model.Get(e.StoreyId);
         if (storey == null) { ctx.Skip("a space without a storey"); return null; }
-        IReadOnlyList<Vec2> outer;
-        List<IReadOnlyList<Vec2>> islands;
-        double? height = null;
+        IReadOnlyList<Vec2>? outer = null;
+        List<IReadOnlyList<Vec2>> islands = [];
+        double? height = null, baseZ = null;
         if (e.Prisms.Where(p => p.Vertical && p.Height > 1e-3).MaxBy(p => Math.Abs(Footprints.Area(Footprints.Plan(p.Outer)))) is { } prism)
         {
             outer = Footprints.Plan(prism.Outer);
             islands = prism.Holes.Select(h => (IReadOnlyList<Vec2>)Footprints.Plan(h)).Where(h => h.Count >= 3).ToList();
             height = prism.Height;
+            baseZ = Math.Min(prism.BaseZ, prism.BaseZ + prism.Sweep.Z);
         }
-        else if (e.Footprint is { Count: > 0 } fp)
+        else
         {
-            outer = fp[0];
-            islands = fp.Skip(1).Where(h => h.Count >= 3).ToList();
-            height = e.Box is { } b ? b.Max.Z - b.Min.Z : null;
+            if (e.Footprint is { Count: > 0 } fp)
+            {
+                outer = fp[0];
+                islands = fp.Skip(1).Where(h => h.Count >= 3 && Polygon2.Contains(fp[0], h[0])).ToList();
+            }
+            if (e.Box is { } b) { height = b.Max.Z - b.Min.Z; baseZ = b.Min.Z; }
         }
-        else { ctx.Skip("a space without a readable outline"); return null; }
-        if (outer.Count < 3 || Math.Abs(Footprints.Area(outer)) < 1e-3) { ctx.Skip("a space without a readable outline"); return null; }
-        var attrs = new JsonObject
+        if (outer != null && (outer.Count < 3 || Math.Abs(Footprints.Area(outer)) < 1e-3)) outer = null;
+        var attrs = new JsonObject { ["auto"] = false };
+        if (outer != null)
         {
-            ["contour"] = Rooms.Json2(Polygon2.EnsureCcw(outer)),
-            ["auto"] = false,
-        };
-        if (islands.Count > 0) attrs["islands"] = new JsonArray(islands.Select(i => (JsonNode)Rooms.Json2(i)).ToArray());
+            attrs["contour"] = Rooms.Json2(Polygon2.EnsureCcw(outer));
+            if (islands.Count > 0) attrs["islands"] = new JsonArray(islands.Select(i => (JsonNode)Rooms.Json2(i)).ToArray());
+        }
+        else ctx.Notes.Add("a space whose shape gives no outline came in as a room without an outline, with its properties: select it (the browser's IFC tab) and give it one in its properties");
         var longName = e.LongName?.Trim() is { Length: > 0 } ln ? ln : null;
-        var plainName = e.Name?.Trim() is { Length: > 0 } nm ? nm : null;
+        var plainName = e.Name?.Trim() is { Length: > 0 } nm && !Placeholder(nm) ? nm : null;
         var name = longName ?? plainName ?? "Room";
-        if (longName != null && e.Name?.Trim() is { Length: > 0 } number) attrs["number"] = number;
-        if (e.ObjectType?.Trim() is { Length: > 0 } fn) attrs["function"] = fn;
+        var number = longName != null && plainName != null && !string.Equals(plainName, longName, StringComparison.OrdinalIgnoreCase) ? plainName
+            : Property(e, ("Pset_SpaceCommon", "Reference"), (null, "Number")) is { } reference && !string.Equals(reference, name, StringComparison.OrdinalIgnoreCase) ? reference
+            : Rooms.NextNumber(edit.Model, storey.Id);
+        attrs["number"] = number;
+        if ((e.ObjectType?.Trim() is { Length: > 0 } ot ? ot : Property(e, ("Pset_SpaceCommon", "Category"), ("Pset_SpaceOccupancyRequirements", "OccupancyType"), (null, "Occupancy"), (null, "Function"))) is { } fn)
+            attrs["function"] = fn;
+        if (Property(e, (null, "Department")) is { } department) attrs["department"] = department;
+        if (Property(e, ("Pset_SpaceCoveringRequirements", "FloorCovering"), ("Pset_SpaceCommon", "FloorCovering"), (null, "Floor Finish"), (null, "FloorFinish")) is { } floor) attrs["finishFloor"] = floor;
         if (height is { } h && h > 0.1 && Math.Abs(h - storey.Num("height", 3)) > 1e-3) attrs["height"] = Math.Round(h, 6);
+        if (baseZ is { } z && Math.Round(z - storey.Num("elevation"), 6) is var offset && Math.Abs(offset) > 1e-3) attrs["baseOffset"] = offset;
         var id = GlobalId.IsValid(e.GlobalId) && edit.Model.Get(e.GlobalId) == null ? e.GlobalId : edit.NewId();
         edit.Add(new Entity(id, Rooms.Class, name, attrs));
         edit.Relate(IfcClass.RelContainedInSpatialStructure, storey.Id, id);
         ctx.Made.Add(id);
         return id;
     }
+
+    /// <summary>
+    /// The first of these properties the element has, as text (a set of null:
+    /// the property in any of its sets); empty values, and values that are
+    /// only a placeholder such as ArchiCAD's „&lt;Raumnummer&gt;”, are none.
+    /// </summary>
+    static string? Property(ForeignElement e, params (string? Set, string Name)[] wanted)
+    {
+        foreach (var (set, name) in wanted)
+            foreach (var (setName, props) in e.Properties)
+            {
+                if (set != null && !string.Equals(setName, set, StringComparison.OrdinalIgnoreCase) || props is not JsonObject o) continue;
+                foreach (var (k, v) in o)
+                    if (string.Equals(k, name, StringComparison.OrdinalIgnoreCase) && v is JsonValue jv && jv.TryGetValue<string>(out var text)
+                        && text.Trim() is { Length: > 0 } t && !Placeholder(t))
+                        return t;
+            }
+        return null;
+    }
+
+    /// <summary>A text that only stands for a value not filled in („&lt;Raumnummer&gt;”, as ArchiCAD writes an empty zone number).</summary>
+    static bool Placeholder(string t) => t.Length > 2 && t[0] == '<' && t[^1] == '>';
 
     /// <summary>Every wall made this import is joined to its neighbours, as a drawn wall is.</summary>
     public void Finish(IEdit edit, RecognitionContext ctx)
