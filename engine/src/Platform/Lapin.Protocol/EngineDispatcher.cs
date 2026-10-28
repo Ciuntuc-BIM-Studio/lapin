@@ -501,14 +501,14 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
         }
     }
 
-    /// <summary>A section's planes as the 3D view sends them: [{normal: [x, y, z], constant}], kept where normal·p + constant ≥ 0; at most six.</summary>
+    /// <summary>A section's planes as the 3D view sends them: [{normal: [x, y, z], constant}], kept where normal·p + constant ≥ 0 (a section and its depth with a box: eight); at most twelve.</summary>
     static List<ClipPlane> ClipPlanes(JsonNode? n)
     {
         var o = new List<ClipPlane>();
         if (n is not JsonArray list) return o;
         foreach (var item in list)
         {
-            if (o.Count == 6) break;
+            if (o.Count == 12) break;
             if (item is not JsonObject p || p["normal"] is not JsonArray { Count: 3 } v || p["constant"] is not JsonValue c) continue;
             double At(int k) => v[k] is JsonValue x && x.TryGetValue<double>(out var d) && double.IsFinite(d) ? d : 0;
             if (!c.TryGetValue<double>(out var k0) || !double.IsFinite(k0)) continue;
