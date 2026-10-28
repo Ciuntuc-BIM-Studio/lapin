@@ -8,6 +8,7 @@
 import type { Vec2 } from '../platform/module';
 import { formatAngle, formatLength, liveCommit, liveMeasure, useLive, type LiveField } from './liveInput';
 import { unitLabel } from '../engine/unitsStore';
+import { useInterface } from '../app/interface';
 
 type ToScreen = (p: Vec2) => { x: number; y: number };
 
@@ -29,10 +30,12 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
   );
 }
 
-export function LiveBar() {
+/** The bar over the view, or (`inline`) the same fields in the command line when the interface puts the prompt there. */
+export function LiveBar({ inline }: { inline?: boolean }) {
   const live = useLive();
+  const here = useInterface((s) => (s.parts.prompt === 'commandLine') === !!inline);
   const m = live.owner ? liveMeasure(live) : null;
-  if (!live.owner || !m) return null;
+  if (!live.owner || !m || !here) return null;
   const field = (f: LiveField, label: string, shown: string) => (
     <label className={`live-field${live.focus === f ? ' on' : ''}`}>
       <span>{label}</span>
@@ -47,7 +50,7 @@ export function LiveBar() {
     </label>
   );
   return (
-    <div className="live-bar" role="group" aria-label="Segment">
+    <div className={`live-bar${inline ? ' inline' : ''}`} role="group" aria-label="Segment">
       {field('len', `Length${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.len))}
       {field('ang', 'Angle (°)', formatAngle(m.ang))}
       <span className="live-ro"><span>Δx</span>{formatLength(m.dx)}</span>

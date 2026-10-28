@@ -1,8 +1,11 @@
 /**
  * The side panels of the workspace: the project browser on the left, the
  * properties on the right. Each has a width the user drags, and can be
- * docked away to a narrow rail and brought back. Kept in the browser's
- * storage, a convenience for this computer.
+ * folded to a narrow rail and unfolded (its header's button, the rail's, a
+ * double-click on its separator, Ctrl+B and Ctrl+Shift+B), in every
+ * interface mode. A folded panel opens for a moment over the view from its
+ * rail (`overlay`), without unfolding. Focus hides the rails too. Kept in
+ * the browser's storage, a convenience for this computer.
  */
 
 import { create } from 'zustand';
@@ -12,10 +15,14 @@ export interface PanelsState {
   propsWidth: number;
   browserOpen: boolean;
   propsOpen: boolean;
+  /** A folded panel shown over the view for a moment (not kept), on its tab when it has tabs. */
+  overlay?: { side: 'browser' | 'props'; tab?: 'project' | 'levels' | 'ifc' } | null;
+  /** Folded panels show no rail (Focus): Tab or the shortcuts bring them back. */
+  railsHidden?: boolean;
 }
 
 const KEY = 'lapin.panels';
-export const MIN_WIDTH = 180, MAX_WIDTH = 640, RAIL = 30;
+export const MIN_WIDTH = 180, MAX_WIDTH = 640, RAIL = 36;
 const DEFAULTS: PanelsState = { browserWidth: 250, propsWidth: 300, browserOpen: true, propsOpen: true };
 
 function load(): PanelsState {
@@ -37,7 +44,8 @@ export const clamp = (w: number) => Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Math
 export const usePanels = create<PanelsState>(() => load());
 
 function save(): void {
-  try { localStorage.setItem(KEY, JSON.stringify(usePanels.getState())); } catch { /* a convenience only */ }
+  const { browserWidth, propsWidth, browserOpen, propsOpen } = usePanels.getState();
+  try { localStorage.setItem(KEY, JSON.stringify({ browserWidth, propsWidth, browserOpen, propsOpen })); } catch { /* a convenience only */ }
 }
 
 export function setPanelWidth(side: 'browser' | 'props', width: number): void {
@@ -47,13 +55,38 @@ export function setPanelWidth(side: 'browser' | 'props', width: number): void {
 
 export function togglePanel(side: 'browser' | 'props'): void {
   const s = usePanels.getState();
-  usePanels.setState(side === 'browser' ? { browserOpen: !s.browserOpen } : { propsOpen: !s.propsOpen });
+  usePanels.setState({ ...(side === 'browser' ? { browserOpen: !s.browserOpen } : { propsOpen: !s.propsOpen }), overlay: null });
   save();
 }
 
+/** Both panels folded when either is open, else both open (Tab). */
+export function toggleBothPanels(): void {
+  const s = usePanels.getState();
+  const open = !(s.browserOpen || s.propsOpen);
+  usePanels.setState({ browserOpen: open, propsOpen: open, overlay: null });
+  save();
+}
+
+/** A folded panel over the view for a moment; again: closed. */
+export function showOverlay(side: 'browser' | 'props', tab?: 'project' | 'levels' | 'ifc'): void {
+  const cur = usePanels.getState().overlay;
+  usePanels.setState({ overlay: cur && cur.side === side && cur.tab === tab ? null : { side, tab } });
+}
+export const closeOverlay = () => { if (usePanels.getState().overlay) usePanels.setState({ overlay: null }); };
+
+/** The interface's panels part: what is open, and whether the folded ones keep a rail. */
+export function applyPanelsPart(part: 'docked' | 'browserRail' | 'bothRail' | 'hidden', propsWidth?: number): void {
+  usePanels.setState({
+    browserOpen: part === 'docked', propsOpen: part === 'docked' || part === 'browserRail',
+    railsHidden: part === 'hidden', overlay: null,
+    ...(propsWidth ? { propsWidth: clamp(propsWidth) } : {}),
+  });
+  save();
+}
 /** The grid's columns: each panel's width (or its rail), a separator beside each open panel, the views between. */
 export function columns(s: PanelsState): string {
-  const left = s.browserOpen ? `${s.browserWidth}px 6px` : `${RAIL}px 0px`;
-  const right = s.propsOpen ? `6px ${s.propsWidth}px` : `0px ${RAIL}px`;
+  const rail = s.railsHidden ? 0 : RAIL;
+  const left = s.browserOpen ? `${s.browserWidth}px 6px` : `${rail}px 0px`;
+  const right = s.propsOpen ? `6px ${s.propsWidth}px` : `0px ${rail}px`;
   return `${left} minmax(0, 1fr) ${right}`;
 }

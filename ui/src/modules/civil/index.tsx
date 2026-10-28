@@ -179,7 +179,7 @@ const civil: LapinModule = {
     id: 'site', label: 'Site', order: 40,
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainFromLandXml, landXmlOut, spot] },
-      { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SR'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [sculpt('flatten', 'Flatten', Mountain, 'SF'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
+      { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SR'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, road, retainingWall, plant, plantingZone], small: [corridor] },
     ],
   }],

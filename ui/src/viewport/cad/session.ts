@@ -352,6 +352,10 @@ export const COMMANDS: { names: string[]; label: string; start: Starter }[] = [
   { names: ['LAYER', 'LA'], label: 'Layer', start: layer },
 ];
 
+/** What a word no command knows may still be (a keyboard shortcut's letters, ZF ↵): true when it ran something. */
+let fallback: (text: string) => boolean = () => false;
+export const setCommandFallback = (f: (text: string) => boolean) => { fallback = f; };
+
 export const findCommand = (name: string) => COMMANDS.find((c) => c.names.includes(name.trim().toUpperCase()));
 
 /** A module's own command for the command line (Studio's EXTRUDE…). */
@@ -422,7 +426,7 @@ export const submit = serial(async (raw: string): Promise<void> => {
   useCad.setState({ buffer: '' });
   if (!s.step) {
     if (!text) { if (s.last) await runCommand(s.last); return; }
-    if (!(await runCommand(text))) log(`Unknown command „${text}”.`);
+    if (!(await runCommand(text)) && !fallback(text)) log(`Unknown command „${text}”.`);
     return;
   }
   const step = s.step;

@@ -35,7 +35,7 @@ const strip: ToolDef = {
 };
 /** A curved strip foundation: its ends, then a point the arc passes through. */
 const curvedStrip: ToolDef = {
-  id: 'structure.curvedStrip', label: 'Curved strip footing', icon: StripFootingIcon, shortcut: 'SC',
+  id: 'structure.curvedStrip', label: 'Curved strip footing', icon: StripFootingIcon, shortcut: 'CF',
   gesture: { kind: 'threePoints', arc: true },
   complete: async ({ points: [a, b, p] }, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y }); },
 };

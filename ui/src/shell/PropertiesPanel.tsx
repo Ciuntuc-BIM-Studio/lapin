@@ -46,7 +46,7 @@ function fieldsShown(fields: FieldDescriptor[], sections: PropertySectionDef[], 
   return keys ? fields.filter((f) => keys.includes(f.key)) : fields;
 }
 
-function FieldRow({ node, field }: { node: NodeDto; field: FieldDescriptor }) {
+export function FieldRow({ node, field }: { node: NodeDto; field: FieldDescriptor }) {
   const nodes = useSession((s) => s.nodes);
   useUi((s) => s.selected);
   const v = node.props[field.key];

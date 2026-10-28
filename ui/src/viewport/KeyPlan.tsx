@@ -10,8 +10,9 @@
  * section or elevation: where it is cut from and where it looks.
  */
 
-import { useCallback, useMemo, useRef } from 'react';
-import { X } from 'lucide-react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Compass, X } from 'lucide-react';
+import { useInterface } from '../app/interface';
 import { useUi } from '../app/store';
 import { activeStorey, useSession } from '../engine/session';
 import { num, storeys } from '../engine/model';
@@ -28,6 +29,20 @@ interface Props {
   onLookAt?: (p: Vec2) => void;
   /** A section or elevation: the view shown. */
   viewId?: string | null;
+  /** Folded to its button instead of hidden (View → Interface: Key plan as a button). */
+  onFold?: () => void;
+}
+
+/** The key plan, or (View → Interface) a button at the view's top right that opens it. */
+export function KeyPlan(props: Props) {
+  const on = useUi((s) => s.keyPlan);
+  const button = useInterface((s) => s.parts.keyPlan === 'button');
+  const [open, setOpen] = useState(false);
+  if (!on) return null;
+  if (button && !open) return (
+    <button type="button" className={`icon key-plan-button${props.mode !== '3d' ? ' under' : ''}`} title="Key plan" aria-label="Key plan" onClick={() => setOpen(true)}><Compass size={15} /></button>
+  );
+  return <KeyPlanMap {...props} onFold={button ? () => setOpen(false) : undefined} />;
 }
 
 /** The storey's footprint: one path of every plan line of its elements, and their bounds. */
@@ -51,7 +66,7 @@ function useFootprint(storeyId: string | null) {
   }, [render, storeyId]);
 }
 
-export function KeyPlan({ mode, frame, onLookAt, viewId }: Props) {
+function KeyPlanMap({ mode, frame, onLookAt, viewId, onFold }: Props) {
   const on = useUi((s) => s.keyPlan);
   useUi((s) => s.storeyId);
   const nodes = useSession((s) => s.nodes);
@@ -141,7 +156,9 @@ export function KeyPlan({ mode, frame, onLookAt, viewId }: Props) {
       <div className="row">
         <span className="eyebrow">{title} · {storey?.name ?? '—'}</span>
         <span className="grow" />
-        <button type="button" className="icon mini" title="Hide the key plan (View › Key plan brings it back)" onClick={() => useUi.setState({ keyPlan: false })}><X size={11} /></button>
+        {onFold
+          ? <button type="button" className="icon mini" title="Fold the key plan to its button" onClick={onFold}><X size={11} /></button>
+          : <button type="button" className="icon mini" title="Hide the key plan (View › Key plan brings it back)" onClick={() => useUi.setState({ keyPlan: false })}><X size={11} /></button>}
       </div>
       <svg ref={svg} viewBox={`0 0 160 ${H}`} data-wheel-zoom onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
         onWheel={mode === '3d' ? (e) => api?.orbitTo({ distance: Math.max(0.5, cam.distance * Math.exp(wheelPixels(e, H) * 0.002)) }, false) : undefined}

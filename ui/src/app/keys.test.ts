@@ -1,10 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { keyIntent, type KeyPress, type KeySnapshot } from './keys';
+import { resolveKeymap, type CommandDef } from './shortcuts';
+
+const cmd = (id: string, defaults: string[], same?: string): CommandDef => ({ id, label: id, category: 'test', defaults, same, run: () => undefined });
+const COMMANDS = [
+  cmd('app.undo', ['Ctrl+Z']), cmd('app.redo', ['Ctrl+Y', 'Ctrl+Shift+Z']), cmd('app.new', ['Ctrl+N']), cmd('app.open', ['Ctrl+O']),
+  cmd('app.save', ['Ctrl+S']), cmd('app.saveAs', ['Ctrl+Shift+S']), cmd('app.delete', ['Delete', 'Backspace']),
+  cmd('app.ortho', ['F8']), cmd('app.zoomIn', ['Plus', '=']), cmd('app.zoomOut', ['-']), cmd('app.zoomSelection', ['Shift+Z']),
+  ...Array.from({ length: 9 }, (_, i) => cmd(`hotbar.${i + 1}`, [String(i + 1)])),
+  cmd('architecture.wall', ['WA']), cmd('view.layers', ['VV']), cmd('drafting.dimension', ['DI'], 'DIMALIGNED'), cmd('modify.copy', ['CO'], 'COPY'),
+];
+const bindings = Object.fromEntries(COMMANDS.map((c) => [c.id, c.defaults ?? []]));
+const KEYMAP = resolveKeymap(COMMANDS, bindings, [
+  { name: 'DIMALIGNED', command: 'DIMALIGNED' }, { name: 'DIMADD', command: 'DIMADD' }, { name: 'COPY', command: 'COPY' }, { name: 'CO', command: 'COPY' },
+]);
 
 const press = (key: string, more: Partial<KeyPress> = {}): KeyPress => ({ key, ctrlKey: false, metaKey: false, shiftKey: false, inField: false, inDialog: false, ...more });
 const state = (more: Partial<KeySnapshot> = {}): KeySnapshot => ({
   screen: 'workspace', dialog: null, tool: null, selected: [], buffer: '', step: null, hasLast: false, hotbar: 5,
-  shortcuts: { wa: 'architecture.wall', vv: 'view.layers' }, ...more,
+  keymap: KEYMAP, ...more,
 });
 
 describe('keyIntent', () => {
@@ -22,7 +36,7 @@ describe('keyIntent', () => {
     expect(keyIntent(press('Backspace'), open)).toBeNull();
     expect(keyIntent(press('w'), open)).toBeNull();
     expect(keyIntent(press('Enter'), open)).toBeNull();
-    expect(keyIntent(press('s', { metaKey: true }), open)).toEqual({ kind: 'save', as: false });
+    expect(keyIntent(press('s', { metaKey: true }), open)).toEqual({ kind: 'command', id: 'app.save' });
     expect(keyIntent(press('z', { metaKey: true }), open)).toBeNull();
     // A dialog that keeps its own state (not the store's): the keys still stay with it.
     expect(keyIntent(press('Delete', { inDialog: true }), state({ selected: ['w1'] }))).toBeNull();
@@ -30,32 +44,42 @@ describe('keyIntent', () => {
   });
 
   it('runs the Ctrl/Cmd shortcuts', () => {
-    expect(keyIntent(press('z', { ctrlKey: true }), state())).toEqual({ kind: 'undo' });
-    expect(keyIntent(press('Z', { metaKey: true, shiftKey: true }), state())).toEqual({ kind: 'redo' });
-    expect(keyIntent(press('y', { ctrlKey: true }), state())).toEqual({ kind: 'redo' });
-    expect(keyIntent(press('n', { metaKey: true }), state())).toEqual({ kind: 'new' });
-    expect(keyIntent(press('o', { metaKey: true }), state())).toEqual({ kind: 'open' });
-    expect(keyIntent(press('s', { metaKey: true, shiftKey: true }), state())).toEqual({ kind: 'save', as: true });
+    expect(keyIntent(press('z', { ctrlKey: true }), state())).toEqual({ kind: 'command', id: 'app.undo' });
+    expect(keyIntent(press('Z', { metaKey: true, shiftKey: true }), state())).toEqual({ kind: 'command', id: 'app.redo' });
+    expect(keyIntent(press('y', { ctrlKey: true }), state())).toEqual({ kind: 'command', id: 'app.redo' });
+    expect(keyIntent(press('n', { metaKey: true }), state())).toEqual({ kind: 'command', id: 'app.new' });
+    expect(keyIntent(press('o', { metaKey: true }), state())).toEqual({ kind: 'command', id: 'app.open' });
+    expect(keyIntent(press('s', { metaKey: true, shiftKey: true }), state())).toEqual({ kind: 'command', id: 'app.saveAs' });
     expect(keyIntent(press('k', { metaKey: true }), state())).toBeNull();
   });
 
   it('deletes the selection, but Backspace edits the command line first', () => {
-    expect(keyIntent(press('Delete'), state({ selected: ['w1', 'w2'] }))).toEqual({ kind: 'delete', ids: ['w1', 'w2'] });
+    expect(keyIntent(press('Delete'), state({ selected: ['w1', 'w2'] }))).toEqual({ kind: 'command', id: 'app.delete' });
     expect(keyIntent(press('Delete'), state())).toBeNull();
-    expect(keyIntent(press('Backspace'), state({ selected: ['w1'] }))).toEqual({ kind: 'delete', ids: ['w1'] });
+    expect(keyIntent(press('Backspace'), state({ selected: ['w1'] }))).toEqual({ kind: 'command', id: 'app.delete' });
     expect(keyIntent(press('Backspace'), state({ selected: ['w1'], buffer: '12' }))).toEqual({ kind: 'backspace' });
   });
 
   it('types into the command line and starts a tool on its two letters', () => {
     expect(keyIntent(press('w'), state())).toEqual({ kind: 'type', buffer: 'w' });
-    expect(keyIntent(press('a'), state({ buffer: 'w' }))).toEqual({ kind: 'tool', id: 'architecture.wall' });
-    expect(keyIntent(press('A'), state({ buffer: 'W' }))).toEqual({ kind: 'tool', id: 'architecture.wall' });
+    expect(keyIntent(press('a'), state({ buffer: 'w' }))).toEqual({ kind: 'command', id: 'architecture.wall' });
+    expect(keyIntent(press('A'), state({ buffer: 'W' }))).toEqual({ kind: 'command', id: 'architecture.wall' });
     expect(keyIntent(press('x'), state({ buffer: 'w' }))).toEqual({ kind: 'type', buffer: 'wx' });
     // While a command runs, its letters are input, not shortcuts.
     expect(keyIntent(press('a'), state({ buffer: 'w', step: { want: 'point' } }))).toEqual({ kind: 'type', buffer: 'wa' });
     expect(keyIntent(press('@'), state({ step: { want: 'point' } }))).toEqual({ kind: 'type', buffer: '@' });
     expect(keyIntent(press(' '), state({ step: { want: 'text' }, buffer: 'ab' }))).toEqual({ kind: 'type', buffer: 'ab ' });
     expect(keyIntent(press('!'), state())).toBeNull();
+  });
+
+  it('waits on letters a longer command starts with, and runs at once when only its own command does', () => {
+    // DI: DIMADD starts with it too, so it waits (typing on writes DIMADD).
+    expect(keyIntent(press('i'), state({ buffer: 'd' }))).toEqual({ kind: 'pending', id: 'drafting.dimension', buffer: 'di' });
+    expect(keyIntent(press('m'), state({ buffer: 'di' }))).toEqual({ kind: 'type', buffer: 'dim' });
+    // CO: only COPY, which is the command itself.
+    expect(keyIntent(press('o'), state({ buffer: 'c' }))).toEqual({ kind: 'command', id: 'modify.copy' });
+    // After something else was typed, the letters are not a shortcut.
+    expect(keyIntent(press('a'), state({ buffer: '2w' }))).toEqual({ kind: 'type', buffer: '2wa' });
   });
 
   it('submits with Enter or Space, except when a plan gesture or nothing is waiting', () => {
@@ -67,10 +91,10 @@ describe('keyIntent', () => {
   });
 
   it('zooms the view in front with + and −, and to the selection with Shift+Z, only while nothing is typed', () => {
-    expect(keyIntent(press('+'), state())).toEqual({ kind: 'zoom', factor: 1.25 });
-    expect(keyIntent(press('='), state())).toEqual({ kind: 'zoom', factor: 1.25 });
-    expect(keyIntent(press('-'), state())).toEqual({ kind: 'zoom', factor: 0.8 });
-    expect(keyIntent(press('Z', { shiftKey: true }), state({ selected: ['w1'] }))).toEqual({ kind: 'zoomSelection' });
+    expect(keyIntent(press('+'), state())).toEqual({ kind: 'command', id: 'app.zoomIn' });
+    expect(keyIntent(press('='), state())).toEqual({ kind: 'command', id: 'app.zoomIn' });
+    expect(keyIntent(press('-'), state())).toEqual({ kind: 'command', id: 'app.zoomOut' });
+    expect(keyIntent(press('Z', { shiftKey: true }), state({ selected: ['w1'] }))).toEqual({ kind: 'command', id: 'app.zoomSelection' });
     // A minus inside a running command is the start of a coordinate; a Z is typed.
     expect(keyIntent(press('-'), state({ step: { want: 'point' } }))).toEqual({ kind: 'type', buffer: '-' });
     expect(keyIntent(press('+'), state({ buffer: '@2' }))).toEqual({ kind: 'type', buffer: '@2+' });
@@ -83,7 +107,7 @@ describe('keyIntent', () => {
     expect(keyIntent(press('.'), live('3'))).toEqual({ kind: 'liveType', key: '.' });
     expect(keyIntent(press('m'), live('3'))).toEqual({ kind: 'liveType', key: 'm' });
     expect(keyIntent(press('m'), live())).toEqual({ kind: 'type', buffer: 'm' });
-    expect(keyIntent(press('-'), live())).toEqual({ kind: 'zoom', factor: 0.8 });
+    expect(keyIntent(press('-'), live())).toEqual({ kind: 'command', id: 'app.zoomOut' });
     expect(keyIntent(press('Tab'), live())).toEqual({ kind: 'liveFocus' });
     expect(keyIntent(press('<'), live('2400'))).toEqual({ kind: 'liveFocus', field: 'ang' });
     expect(keyIntent(press('Enter'), live('2400', true))).toEqual({ kind: 'liveCommit' });
@@ -96,8 +120,8 @@ describe('keyIntent', () => {
   it('cancels a running command with Escape, toggles with the F keys, picks the hotbar with digits', () => {
     expect(keyIntent(press('Escape'), state({ step: { want: 'point' } }))).toEqual({ kind: 'cancel' });
     expect(keyIntent(press('Escape'), state())).toBeNull();
-    expect(keyIntent(press('F8'), state())).toEqual({ kind: 'toggle', what: 'ortho' });
-    expect(keyIntent(press('3'), state())).toEqual({ kind: 'hotbar', slot: 3 });
+    expect(keyIntent(press('F8'), state())).toEqual({ kind: 'command', id: 'app.ortho' });
+    expect(keyIntent(press('3'), state())).toEqual({ kind: 'command', id: 'hotbar.3' });
     expect(keyIntent(press('9'), state())).toBeNull();
     expect(keyIntent(press('3'), state({ buffer: '1' }))).toEqual({ kind: 'type', buffer: '13' });
   });

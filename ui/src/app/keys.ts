@@ -1,10 +1,12 @@
 /**
- * The keyboard: Ctrl/Cmd shortcuts (undo, redo, new, open, save); typing goes
- * to the command line (CAD commands and coordinates, Enter or Space to run,
- * Escape to cancel), where Revit's two-letter shortcuts (WA for Wall…) start
- * their tool at once; Delete for the selection; 1–9 for the hotbar when
- * nothing is being typed; F3 object snap, F8 ortho, F10 polar tracking;
- * + and − zoom the 2D view in front, Shift+Z zooms to the selection.
+ * The keyboard. Which key runs which command is the shortcuts' registry's
+ * (shortcuts.ts, commands.ts): chords (Ctrl+S, F3, Delete, 1–9) and the
+ * letters typed while nothing is in a field (WA for Wall). What is not a
+ * binding is the command line's: typing goes to it (CAD commands and
+ * coordinates, Enter or Space to run, Escape to cancel); a sequence is
+ * matched against what it holds since it was empty, and only while no
+ * command asks for input (the rule is in shortcuts.ts). While a segment is
+ * drawn its length and angle are typed at the cursor.
  *
  * While a dialog is open the keys belong to it: Escape closes it, Ctrl/Cmd+S
  * still saves, and nothing else reaches the model (no Delete on the selection
@@ -13,20 +15,21 @@
  */
 
 import { useEffect } from 'react';
-import { select, useUi } from './store';
-import { activate, allTools, hotbarTools } from '../platform/modules';
-import { execute, redo, undo } from '../engine/session';
-import { newProject, openProject, saveProject } from '../engine/files';
+import { useUi } from './store';
+import { hotbarTools } from '../platform/modules';
 import { cancel, submit, useCad } from '../viewport/cad/session';
-import { zoomHost } from '../viewport/zoom';
 import { liveCommit, useLive } from '../viewport/liveInput';
+import { chordOf, isBareKey, matchSequence, PendingSequence, type Keymap } from './shortcuts';
+import { keymap, runCommand } from './commands';
 
 /** What `keyIntent` needs to know about the key press. */
 export interface KeyPress {
   key: string;
+  code?: string;
   ctrlKey: boolean;
   metaKey: boolean;
   shiftKey: boolean;
+  altKey?: boolean;
   /** The target is an input, select or textarea: the key is theirs. */
   inField: boolean;
   /** The target sits inside an element with role="dialog". */
@@ -49,44 +52,36 @@ export interface KeySnapshot {
   hasLast: boolean;
   /** How many hotbar slots there are. */
   hotbar: number;
-  /** Two-letter shortcuts, lower case, to the tool they start. */
-  shortcuts: Record<string, string>;
+  /** The bindings in force (shortcuts.ts). */
+  keymap: Keymap;
   /** A segment being drawn from a base: its length and angle can be typed (the focused field's text). */
   live?: { active: boolean; text: string; typed: boolean };
 }
 
 export type KeyIntent =
-  | { kind: 'undo' } | { kind: 'redo' } | { kind: 'new' } | { kind: 'open' } | { kind: 'save'; as: boolean }
-  | { kind: 'toggle'; what: 'osnap' | 'ortho' | 'polar' }
+  | { kind: 'command'; id: string }
+  /** Letters that are a sequence something longer starts with: typed, and run if nothing more comes. */
+  | { kind: 'pending'; id: string; buffer: string }
   | { kind: 'closeDialog' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
-  | { kind: 'delete'; ids: string[] } | { kind: 'hotbar'; slot: number }
-  | { kind: 'type'; buffer: string } | { kind: 'tool'; id: string }
-  | { kind: 'zoom'; factor: number } | { kind: 'zoomSelection' }
+  | { kind: 'type'; buffer: string }
   | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' } | { kind: 'liveClear' } | { kind: 'liveCommit' };
 
-const TOGGLES: Record<string, 'osnap' | 'ortho' | 'polar'> = { F3: 'osnap', F8: 'ortho', F10: 'polar' };
+/** The commands a chord still runs while a dialog is open. */
+const IN_DIALOG = new Set(['app.save', 'app.saveAs']);
 
 /** What a key press means, given the interface's state; null when it means nothing here. */
 export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   if (e.inField || s.screen !== 'workspace') return null;
-  const mod = e.ctrlKey || e.metaKey;
-  const k = e.key.toLowerCase();
+  const chord = chordOf(e);
+  if (!chord) return null;
+  const mod = e.ctrlKey || e.metaKey || !!e.altKey;
+  const bound = s.keymap.chords[chord];
   if (s.dialog || e.inDialog) {
     if (e.key === 'Escape') return s.dialog ? { kind: 'closeDialog' } : null;
-    if (mod && k === 's') return { kind: 'save', as: e.shiftKey };
-    return null;
+    return bound && IN_DIALOG.has(bound) ? { kind: 'command', id: bound } : null;
   }
-  if (mod) {
-    switch (k) {
-      case 'z': return e.shiftKey ? { kind: 'redo' } : { kind: 'undo' };
-      case 'y': return { kind: 'redo' };
-      case 'n': return { kind: 'new' };
-      case 'o': return { kind: 'open' };
-      case 's': return { kind: 'save', as: e.shiftKey };
-      default: return null;
-    }
-  }
-  if (TOGGLES[e.key]) return { kind: 'toggle', what: TOGGLES[e.key] };
+  // Chords with Ctrl, Alt or Cmd, and the function keys: whatever is typed.
+  if (mod || /^(Shift\+)?F\d+$/.test(chord)) return bound ? { kind: 'command', id: bound } : null;
   // Drawing a segment, nothing on the command line: its length and angle are typed at the cursor.
   if (s.live?.active && !s.buffer) {
     if (e.key === 'Tab') return { kind: 'liveFocus' };
@@ -106,67 +101,75 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
     return { kind: 'submit' };
   }
   if (e.key === 'Backspace' && s.buffer) return { kind: 'backspace' };
-  if (e.key === 'Delete' || e.key === 'Backspace') return s.selected.length ? { kind: 'delete', ids: s.selected } : null;
-  const n = Number(e.key);
-  if (!typing && e.key.length === 1 && n >= 1 && n <= 9) return n <= s.hotbar ? { kind: 'hotbar', slot: n } : null;
-  // Zoom keys, when nothing is being typed (a − may otherwise start a coordinate).
-  if (!typing && (e.key === '+' || e.key === '=')) return { kind: 'zoom', factor: 1.25 };
-  if (!typing && e.key === '-') return { kind: 'zoom', factor: 0.8 };
-  if (!typing && e.key === 'Z' && e.shiftKey) return { kind: 'zoomSelection' };
+  // Delete (or Backspace with nothing typed): the selection, when there is one.
+  if (bound === 'app.delete') return s.selected.length && !s.buffer ? { kind: 'command', id: bound } : null;
+  // Named keys (Tab, the arrows…) and the bare keys (1–9, +, −, Shift+Z): only while nothing is typed.
+  if (bound && !typing && (isBareKey(chord) || e.key.length > 1)) {
+    const slot = /^hotbar\.(\d)$/.exec(bound);
+    if (slot && Number(slot[1]) > s.hotbar) return null;
+    return { kind: 'command', id: bound };
+  }
   // A text step takes any character; otherwise letters, digits and the coordinate signs.
   const allowed = s.step?.want === 'text' ? e.key.length === 1 : /^[\w@<.,\-+]$/.test(e.key);
   if (!allowed) return null;
   const buffer = s.buffer + e.key;
-  // Two letters that are a tool's shortcut start it at once (when no command is running).
-  if (!s.step && /^[a-z]{2}$/i.test(buffer) && s.shortcuts[buffer.toLowerCase()]) return { kind: 'tool', id: s.shortcuts[buffer.toLowerCase()] };
+  // Letters that are a shortcut's sequence start its command (when no command is running).
+  if (!s.step) {
+    const m = matchSequence(buffer, s.keymap);
+    if (m.kind === 'fire') return { kind: 'command', id: m.id };
+    if (m.kind === 'wait') return { kind: 'pending', id: m.id, buffer };
+  }
   return { kind: 'type', buffer };
 }
 
 function snapshot(): KeySnapshot {
   const ui = useUi.getState();
   const cad = useCad.getState();
-  const shortcuts: Record<string, string> = {};
-  for (const t of allTools()) if (t.shortcut) shortcuts[t.shortcut.toLowerCase()] = t.id;
   return {
     screen: ui.screen, dialog: ui.dialog, tool: ui.tool, selected: ui.selected,
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want } : null, hasLast: !!cad.last,
-    hotbar: hotbarTools().length, shortcuts,
+    hotbar: hotbarTools().length, keymap: keymap(),
     live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang) }; })(),
   };
 }
 
+const pending = new PendingSequence();
+
 function carryOut(intent: KeyIntent): void {
+  if (intent.kind !== 'pending') pending.clear();
   switch (intent.kind) {
-    case 'undo': void undo(); break;
-    case 'redo': void redo(); break;
-    case 'new': void newProject(); break;
-    case 'open': void openProject(); break;
-    case 'save': void saveProject(intent.as); break;
-    case 'toggle': useCad.setState((s) => ({ [intent.what]: !s[intent.what] })); break;
+    case 'command': useCad.setState({ buffer: '' }); runCommand(intent.id); break;
+    case 'pending': {
+      useCad.setState({ buffer: intent.buffer });
+      pending.arm(intent.id, intent.buffer, Date.now());
+      setTimeout(() => {
+        const cad = useCad.getState();
+        const id = pending.due(Date.now(), cad.buffer, !!cad.step);
+        if (id) { useCad.setState({ buffer: '' }); runCommand(id); }
+      }, pending.delay + 10);
+      break;
+    }
     case 'closeDialog': useUi.setState({ dialog: null }); break;
     case 'cancel': cancel(); break;
     case 'submit': void submit(useCad.getState().buffer); break;
     case 'backspace': useCad.setState((s) => ({ buffer: s.buffer.slice(0, -1) })); break;
-    case 'delete': void execute('element.delete', { ids: intent.ids }); select(null); break;
-    case 'hotbar': { const t = hotbarTools()[intent.slot - 1]; if (t) activate(t); break; }
     case 'type': useCad.setState({ buffer: intent.buffer }); break;
-    case 'tool': { useCad.setState({ buffer: '' }); const t = allTools().find((x) => x.id === intent.id); if (t) activate(t); break; }
-    case 'zoom': zoomHost()?.zoomBy(intent.factor); break;
     case 'liveType': useLive.setState((l) => ({ [l.focus]: l[l.focus] + intent.key })); break;
     case 'liveBack': useLive.setState((l) => ({ [l.focus]: l[l.focus].slice(0, -1) })); break;
     case 'liveFocus': useLive.setState((l) => ({ focus: intent.field ?? (l.focus === 'len' ? 'ang' : 'len') })); break;
     case 'liveClear': useLive.setState({ len: '', ang: '' }); break;
     case 'liveCommit': liveCommit(); break;
-    case 'zoomSelection': zoomHost()?.fitSelection(); break;
   }
 }
 
 export function useShortcuts(): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // A view or a panel that took the key first (Tab over a shared grip) keeps it.
+      if (e.defaultPrevented) return;
       const target = e.target as HTMLElement | null;
       const press: KeyPress = {
-        key: e.key, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
+        key: e.key, code: e.code, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey, altKey: e.altKey,
         inField: !!target?.closest?.('input, select, textarea'),
         inDialog: !!target?.closest?.('[role="dialog"]'),
       };

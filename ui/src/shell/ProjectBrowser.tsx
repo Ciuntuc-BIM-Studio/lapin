@@ -35,7 +35,8 @@ function cameraNow(): Record<string, unknown> {
 
 const made = (r: unknown): string | null => (r as { id?: string } | null)?.id ?? null;
 
-export function ProjectBrowser() {
+/** `show`: a folded browser opened over the view on one of its parts (the rail's icons): the project, its levels alone, or the IFC tree. */
+export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' } = {}) {
   const view = useUi((s) => s.view);
   useUi((s) => s.storeyId);
   const nodes = useSession((s) => s.nodes);
@@ -45,8 +46,11 @@ export function ProjectBrowser() {
   const levels = storeys({ nodes, relations }).slice().reverse();
   const active = activeStorey();
   const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed);
-  const [tab, setTab] = useState<'project' | 'ifc'>(() => { try { return localStorage.getItem(TAB_KEY) === 'ifc' ? 'ifc' : 'project'; } catch { return 'project'; } });
-  const pickTab = (t: 'project' | 'ifc') => { setTab(t); try { localStorage.setItem(TAB_KEY, t); } catch { /* a convenience only */ } };
+  const [kept, setTab] = useState<'project' | 'ifc'>(() => { try { return localStorage.getItem(TAB_KEY) === 'ifc' ? 'ifc' : 'project'; } catch { return 'project'; } });
+  const [shown, setShown] = useState(show);
+  const tab = shown === 'ifc' ? 'ifc' : shown ? 'project' : kept;
+  const levelsOnly = shown === 'levels';
+  const pickTab = (t: 'project' | 'ifc') => { setShown(undefined); setTab(t); try { localStorage.setItem(TAB_KEY, t); } catch { /* a convenience only */ } };
   const toggle = (id: string) => {
     const next = new Set(collapsed);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -206,7 +210,7 @@ export function ProjectBrowser() {
           </span>
         ))}
       </div>}
-      {tab === 'project' && groups.map((g) => <SetGroup key={g.set?.id ?? 'other'} set={g.set} list={g.items} />)}
+      {tab === 'project' && !levelsOnly && groups.map((g) => <SetGroup key={g.set?.id ?? 'other'} set={g.set} list={g.items} />)}
     </nav>
   );
 }
