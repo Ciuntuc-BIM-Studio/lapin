@@ -7,7 +7,7 @@ Lapin is a desktop application and a classic modeller on the IFC schema. Its int
 Lapin's engine (C#, .NET 10, `engine/`), which holds the IFC model and derives its geometry
 with its own B-rep kernel (`engine/src/Geometry`) and manifold for the booleans.
 
-> Private repository. Licensed under the MIT licence (see `LICENSE`).
+> Open source under the MIT licence (see `LICENSE`), and helpware (below).
 > The geometry kernel was taken from BubbleBIM Pro (the author's own engine) on
 > 25.10.2026 and is Lapin's own code since, under the same licence. manifold
 > (Apache-2.0) and Clipper2 (BSL-1.0) are described in `engine/native/README.md`.
@@ -41,6 +41,15 @@ pnpm products                                   # what every edition resolves to
 LAPIN_PRODUCT=lapin-architecture pnpm dev       # Core + Architecture + Drafting only
 pnpm build:product lapin-architecture           # → build/lapin-architecture/bundle
 ```
+
+## Helpware
+
+Lapin is free, and it stays free. If it helps you in some way, we encourage you
+(we do not require it) to help someone else who needs help, in whatever way you
+can: your time, your skills, a hand to a neighbour, a gift to people or a cause
+you trust. Lapin asks nothing for itself and takes no donations.
+
+This is a request, not a condition: the licence is MIT, and nothing here limits it.
 
 ## Licences
 
