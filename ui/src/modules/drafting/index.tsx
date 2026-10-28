@@ -1,6 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, ListPlus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag, Tags } from 'lucide-react';
+import { ArrowRightToLine, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag, Tags } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
@@ -136,6 +136,36 @@ function dimAddCommand(): Step {
   return pick();
 }
 registerCommand({ names: ['DIMADD', 'DAP'], label: 'Add dimension points', start: dimAddCommand });
+
+/**
+ * DIMDEL: a dimension string (the one selected, else one clicked), then each
+ * click takes out the string's point nearest it (the segments either side
+ * become one); a string keeps two points. Enter or Esc to finish.
+ */
+function dimDelCommand(): Step {
+  const del = (id: string): Step => ({
+    prompt: 'Click near a point to take it out of the string (Enter to finish)', want: 'point',
+    point: async (p) => {
+      const n = useSession.getState().nodes.get(id);
+      const pts = (Array.isArray(n?.props.pts) ? (n!.props.pts as unknown[]) : []).map(pt).filter((q): q is Vec2 => !!q);
+      if (pts.length <= 2) { notify('A dimension keeps two points at least.'); return null; }
+      let best = 0;
+      pts.forEach((q, i) => { if (Math.hypot(q.x - p.x, q.y - p.y) < Math.hypot(pts[best].x - p.x, pts[best].y - p.y)) best = i; });
+      await execute('drafting.removeDimensionPoint', { id, index: best });
+      return del(id);
+    },
+    enter: () => null,
+  });
+  const sel = useUi.getState().selected.filter(isString);
+  if (sel.length === 1) return del(sel[0]);
+  const pick = (): Step => ({
+    prompt: 'Select the dimension string', want: 'select',
+    point: (p) => { const id = cadHost()?.pickAny(p); if (!isString(id)) return pick(); select(id); return del(id); },
+    enter: () => null,
+  });
+  return pick();
+}
+registerCommand({ names: ['DIMDEL', 'DRP'], label: 'Remove dimension points', start: dimDelCommand });
 
 /** TAG: click an element, then where its tag goes [MARK/NAME/CLASS/TYPE]. */
 let tagField = 'mark';
@@ -425,6 +455,17 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
       insert: () => ({ command: 'drafting.insertDimensionPoint', args: { id, index: i + 1, point: [half.x, half.y] } }),
     });
   }
+  // Each segment's value: dragged, it moves off its place (to stand clear of a neighbour's); Ctrl/⌘-click: back on its line.
+  const texts = Array.isArray((data as { texts?: unknown[] } | undefined)?.texts) ? ((data as { texts: unknown[] }).texts) : [];
+  texts.forEach((raw, i) => {
+    const at = pt(raw);
+    if (!at) return;
+    grips.push({
+      key: `t${i}`, kind: 'move', at, title: 'Drag: move the value · Ctrl/⌘-click: back on its line',
+      step: (to: Vec2) => ({ command: 'drafting.moveDimensionText', args: { id, segment: i, by: [to.x - at.x, to.y - at.y] } }),
+      remove: () => ({ command: 'drafting.moveDimensionText', args: { id, segment: i, reset: true } }),
+    });
+  });
   // The dimension line's ends: dragged, the line goes through the point.
   const t = line.map((q) => (q.x - line[0].x) * u.x + (q.y - line[0].y) * u.y);
   for (const [key, s] of [['l0', Math.min(...t)], ['l1', Math.max(...t)]] as const) {
@@ -474,7 +515,7 @@ const drafting: LapinModule = {
       groups: [
         { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR')],
           // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
-          small: [cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE')] },
+          small: [cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimDel', 'Remove points', ListMinus, 'DIMDEL'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE')] },
         { label: 'Text', tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
           id: 'tagOpenings', label: 'Door & window tags', icon: Tags,
           run: () => void (async () => {

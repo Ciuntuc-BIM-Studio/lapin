@@ -55,6 +55,8 @@ public sealed class AnnotationPlacement : IElementPlacement
                 Dimensions.Write(attrs, stations);
                 if (attrs["at"] is JsonArray) attrs["at"] = J(t.Point(P(attrs["at"])));
                 if (attrs["dir"] is JsonArray) attrs["dir"] = J(t.Dir(P(attrs["dir"])));
+                // Texts moved by hand turn and mirror with the string.
+                Dimensions.WriteOffsets(attrs, Dimensions.OffsetsOf(attrs, stations.Count - 1).Select(o => o is { } v ? t.Dir(v) : (Vec2?)null).ToList());
                 break;
             }
             case "DIMENSION":

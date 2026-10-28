@@ -19,24 +19,25 @@ public static class DimensionStrings
     /// <summary>Directions this close (sine of the angle) are parallel; dimension lines this close (m) are one line.</summary>
     const double Parallel = 1e-4;
 
-    /// <summary>A dimension's points (with what each holds on) and its segments' texts.</summary>
-    public sealed record Piece(Entity Dim, List<(Vec2 P, DimEndRef? Ref)> Stations, List<string?> Texts)
+    /// <summary>A dimension's points (with what each holds on), its segments' texts and how far each text is moved.</summary>
+    public sealed record Piece(Entity Dim, List<(Vec2 P, DimEndRef? Ref)> Stations, List<string?> Texts, List<Vec2?> Offsets)
     {
-        public Piece Reversed() => this with { Stations = Enumerable.Reverse(Stations).ToList(), Texts = Enumerable.Reverse(Texts).ToList() };
+        public Piece Reversed() => this with { Stations = Enumerable.Reverse(Stations).ToList(), Texts = Enumerable.Reverse(Texts).ToList(), Offsets = Enumerable.Reverse(Offsets).ToList() };
     }
 
     public static Piece PieceOf(Entity dim)
     {
         var st = Dimensions.Stations(dim);
-        return new Piece(dim, st, Dimensions.TextsOf(dim.Attrs, st.Count - 1));
+        return new Piece(dim, st, Dimensions.TextsOf(dim.Attrs, st.Count - 1), Dimensions.OffsetsOf(dim.Attrs, st.Count - 1));
     }
 
     /// <summary><paramref name="next"/> after <paramref name="string"/>, sharing its first point with the string's last (what that point holds on: either's).</summary>
-    static void Append(List<(Vec2 P, DimEndRef? Ref)> stations, List<string?> texts, Piece next)
+    static void Append(List<(Vec2 P, DimEndRef? Ref)> stations, List<string?> texts, List<Vec2?> offsets, Piece next)
     {
         stations[^1] = (stations[^1].P, stations[^1].Ref ?? next.Stations[0].Ref);
         stations.AddRange(next.Stations.Skip(1));
         texts.AddRange(next.Texts);
+        offsets.AddRange(next.Offsets);
     }
 
     static bool Near(Vec2 a, Vec2 b, double tol) => (a - b).Length <= tol;
@@ -46,11 +47,12 @@ public static class DimensionStrings
     /// it goes on from an end of what is laid; null when one does not continue
     /// the others.
     /// </summary>
-    public static (List<(Vec2 P, DimEndRef? Ref)> Stations, List<string?> Texts)? Chain(IReadOnlyList<Piece> pieces, double tol = Same)
+    public static (List<(Vec2 P, DimEndRef? Ref)> Stations, List<string?> Texts, List<Vec2?> Offsets)? Chain(IReadOnlyList<Piece> pieces, double tol = Same)
     {
         if (pieces.Count == 0) return null;
         var stations = pieces[0].Stations.ToList();
         var texts = pieces[0].Texts.ToList();
+        var offsets = pieces[0].Offsets.ToList();
         var left = pieces.Skip(1).ToList();
         while (left.Count > 0)
         {
@@ -59,21 +61,22 @@ public static class DimensionStrings
             {
                 var p = left[k];
                 Piece? after = Near(p.Stations[0].P, stations[^1].P, tol) ? p : Near(p.Stations[^1].P, stations[^1].P, tol) ? p.Reversed() : null;
-                if (after != null) { Append(stations, texts, after); left.RemoveAt(k); found = true; continue; }
+                if (after != null) { Append(stations, texts, offsets, after); left.RemoveAt(k); found = true; continue; }
                 Piece? before = Near(p.Stations[^1].P, stations[0].P, tol) ? p : Near(p.Stations[0].P, stations[0].P, tol) ? p.Reversed() : null;
                 if (before != null)
                 {
                     var s2 = before.Stations.ToList();
                     var t2 = before.Texts.ToList();
-                    Append(s2, t2, new Piece(pieces[0].Dim, stations, texts));
-                    (stations, texts) = (s2, t2);
+                    var o2 = before.Offsets.ToList();
+                    Append(s2, t2, o2, new Piece(pieces[0].Dim, stations, texts, offsets));
+                    (stations, texts, offsets) = (s2, t2, o2);
                     left.RemoveAt(k);
                     found = true;
                 }
             }
             if (!found) return null;
         }
-        return (stations, texts);
+        return (stations, texts, offsets);
     }
 
     /// <summary>The direction a piece measures along (its <c>dir</c>, else end to end), as stored.</summary>
@@ -100,6 +103,7 @@ public static class DimensionStrings
         if (Chain(pieces, tol) is not { } chained) return null;
         var attrs = first.CloneAttrs();
         Dimensions.Write(attrs, chained.Stations, chained.Texts);
+        Dimensions.WriteOffsets(attrs, chained.Offsets);
         // An aligned string whose points do not lie along its first segment measures along that segment's direction.
         if (attrs["dir"] is not JsonArray && Dimensions.Along(attrs, chained.Stations[0].P, chained.Stations[^1].P) is { } w && Math.Abs(Vec2.Cross(u, w)) > Parallel)
             attrs["dir"] = new JsonArray(u.X, u.Y);
@@ -117,6 +121,7 @@ public static class DimensionStrings
             var attrs = dim.CloneAttrs();
             attrs.Remove("texts"); attrs.Remove("text");
             Dimensions.Write(attrs, [piece.Stations[i], piece.Stations[i + 1]], [piece.Texts[i]]);
+            Dimensions.WriteOffsets(attrs, [piece.Offsets[i]]);
             // An aligned segment not along the string keeps measuring what it measured in it.
             if (attrs["dir"] is not JsonArray && u is { } su && Dimensions.Along(attrs, piece.Stations[i].P, piece.Stations[i + 1].P) is { } w && Math.Abs(Vec2.Cross(su, w)) > Parallel)
                 attrs["dir"] = new JsonArray(su.X, su.Y);
@@ -191,7 +196,8 @@ public static class DimensionStrings
     {
         var stations = run[0].Stations.ToList();
         var texts = run[0].Texts.ToList();
-        foreach (var p in run.Skip(1)) Append(stations, texts, p);
+        var offsets = run[0].Offsets.ToList();
+        foreach (var p in run.Skip(1)) Append(stations, texts, offsets, p);
         var attrs = run[0].Dim.CloneAttrs();
         Dimensions.Write(attrs, stations, texts);
         if (attrs["dir"] is not JsonArray && Along(run[0]) is { } u) attrs["dir"] = new JsonArray(u.X, u.Y);

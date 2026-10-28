@@ -228,6 +228,24 @@ public static class Dimensions
         else attrs.Remove("texts");
     }
 
+    /// <summary>
+    /// How far each segment's value is moved from where the style puts it
+    /// (<c>textAt</c>, plan metres, null: not moved), so close values can stand
+    /// clear of one another; it moves with its segment.
+    /// </summary>
+    public static List<Vec2?> OffsetsOf(JsonObject attrs, int segments)
+    {
+        var a = attrs["textAt"] as JsonArray;
+        return Enumerable.Range(0, segments).Select(i => a != null && i < a.Count && a[i] is JsonArray v && v.Count >= 2 ? P(v) : (Vec2?)null).ToList();
+    }
+
+    /// <summary>The segments' text offsets written into <paramref name="attrs"/> (none moved: the attribute goes).</summary>
+    public static void WriteOffsets(JsonObject attrs, IReadOnlyList<Vec2?> offsets)
+    {
+        if (offsets.Any(o => o is { } v && v.Length > 1e-9)) attrs["textAt"] = new JsonArray(offsets.Select(o => o is { } v && v.Length > 1e-9 ? (JsonNode)new JsonArray(Math.Round(v.X, 6), Math.Round(v.Y, 6)) : null).ToArray());
+        else attrs.Remove("textAt");
+    }
+
     static JsonArray J(Vec2 p) => new(p.X, p.Y);
 
     /// <summary>A linear or aligned dimension (not one of <see cref="DimensionKinds"/>).</summary>
@@ -309,6 +327,8 @@ public static class Dimensions
             var style = Standards.ResolveDim(c.Book, ParamsOf(dim));
             var text = Standards.ResolveText(c.Book, ParamsOf(dim));
             var texts = TextsOf(dim.Attrs, pts.Count - 1);
+            var moved = OffsetsOf(dim.Attrs, pts.Count - 1);
+            var textAt = new JsonArray();
             var color = orphan ? "#c0392b" : style.Color ?? "#000000";
             var mm = c.Mm;
             var mk = new ViewMark(dim.Id);
@@ -330,7 +350,7 @@ public static class Dimensions
             }
             for (var i = 0; i + 1 < pts.Count; i++)
             {
-                if (values[i] < 1e-6) continue;
+                if (values[i] < 1e-6) { textAt.Add((JsonNode?)null); continue; }
                 var (qa, qb) = (line[i], line[i + 1]);
                 var su = Vec2.Dot(qb - qa, u) >= 0 ? u : -u;
                 // Arrows: each segment's, at both its ends, pointing in.
@@ -349,7 +369,21 @@ public static class Dimensions
                     "below" => (mid - up * (style.TextGap * mm + text.Height * mm), "bottom"),
                     _ => (mid + up * (style.TextGap * mm), "bottom"),
                 };
+                // Moved by hand (close values kept clear of one another): a leader back to its segment once it stands off it.
+                if (moved[i] is { } by)
+                {
+                    tat += by;
+                    var h = text.Height * mm;
+                    var across = Vec2.Dot(by, up);
+                    var along = Math.Abs(Vec2.Dot(by, su)) - (qb - qa).Length / 2;
+                    if (across < -h * 0.5 || across > h * 1.5 || along > 0)
+                    {
+                        var foot = baseline == "middle" ? tat - up * (h * 0.6) : tat - up * (h * 0.15);
+                        mk.Line(mid, foot, "DIMENSION", Pens.Default.Hatch, color);
+                    }
+                }
                 mk.Text(new PenText(tat, value, text.Height, readable, "middle", baseline, text.Bold, text.Font), color);
+                textAt.Add((JsonNode)J(tat));
             }
             mk.Snaps.AddRange(line);
             // For the grips: the points as drawn now, and where each lands on the dimension line.
@@ -357,6 +391,8 @@ public static class Dimensions
             {
                 ["points"] = new JsonArray(pts.Select(p => (JsonNode)J(p)).ToArray()),
                 ["line"] = new JsonArray(line.Select(p => (JsonNode)J(p)).ToArray()),
+                // Where each segment's value stands (null: a segment of no length draws none), for its grip.
+                ["texts"] = textAt,
             };
             yield return mk;
         }

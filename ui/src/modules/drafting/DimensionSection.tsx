@@ -1,9 +1,10 @@
 /**
  * A dimension in the inspector: what it measures, a value typed to drive it,
  * and, when it lost its element, freeing it. A string shows each segment's
- * value (typed: what follows moves too) and the text written over it, and
- * splits into single dimensions; several selected that go on from one another
- * join into one string.
+ * value (typed: what follows moves too) and the text written over it, takes
+ * points in and out, puts values moved by hand back on the line, and splits
+ * into single dimensions; several selected that go on from one another join
+ * into one string.
  */
 
 import { useEffect, useState } from 'react';
@@ -30,6 +31,8 @@ export function DimensionSection({ node }: { node: NodeDto }) {
   const texts = Array.isArray(node.props.texts) ? (node.props.texts as unknown[]) : [];
   const textOf = (i: number) => String((values.length > 1 ? texts[i] : texts[i] ?? node.props.text) ?? '');
   const string = !d.kind && values.length > 1;
+  // The segments whose value was moved by hand (dragged by its grip).
+  const moved = (Array.isArray(node.props.textAt) ? (node.props.textAt as unknown[]) : []).flatMap((o, i) => (Array.isArray(o) ? [i] : []));
   // Other linear dimensions selected with this one: offered to join into one string.
   const others = selected.filter((id) => id !== node.id && nodes.get(id)?.props.predefinedType === 'DIMENSION' && !nodes.get(id)?.props.dimKind);
   const title = d.driving ? 'Type a value: the element it measures moves (and, in a string, what follows)' : 'Neither end holds on an element';
@@ -48,6 +51,9 @@ export function DimensionSection({ node }: { node: NodeDto }) {
         <dt />
         <dd>
           <button type="button" title="Click points to put into the string, each where it falls along its line (DIMADD)" onClick={() => { select(node.id); void startCommand('DIMADD'); }}>Add points</button>
+          {string && <button type="button" title="Click near points to take them out of the string; Ctrl/⌘-click on a point's grip does the same (DIMDEL)" onClick={() => { select(node.id); void startCommand('DIMDEL'); }}>Remove points</button>}
+          {moved.length > 0 && <button type="button" title="Every value moved by hand back on its line (one: Ctrl/⌘-click its grip)"
+            onClick={() => void Promise.all(moved.map((i) => execute('drafting.moveDimensionText', { id: node.id, segment: i, reset: true })))}>Texts back on the line</button>}
           {string && <button type="button" title="One single dimension per segment" onClick={() => void execute('drafting.splitDimension', { id: node.id }).then((r) => {
             const ids = (r as { ids?: string[] } | null)?.ids;
             if (ids?.length) select(ids[0]);

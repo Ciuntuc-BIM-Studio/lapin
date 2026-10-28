@@ -374,6 +374,15 @@ export const RO: Record<string, string> = {
   'Nodes and runs take the system\'s defaults unless a value is set on them.': 'Nodurile și traseele iau valorile implicite ale sistemului dacă nu au o valoare proprie.',
   'Heating, water, drainage, ventilation and electrical systems drawn as schematics on the plan.': 'Instalații de încălzire, apă, canalizare, ventilație și electrice desenate ca scheme pe plan.',
   'No system yet: make one below, or place a node and its system is made for it.': 'Niciun sistem încă: fă unul mai jos, sau plasează un nod și sistemul lui se face singur.',
+  // Dimension strings: points out, values moved by hand
+  'Remove points': 'Scoate puncte',
+  'Remove dimension points': 'Scoate puncte de cotă',
+  'Click near points to take them out of the string; Ctrl/⌘-click on a point\'s grip does the same (DIMDEL)': 'Clic lângă punctele de scos din lanț; Ctrl/⌘-clic pe grip-ul unui punct face același lucru (DIMDEL)',
+  'Click near a point to take it out of the string (Enter to finish)': 'Clic lângă un punct ca să-l scoți din lanț (Enter ca să termini)',
+  'A dimension keeps two points at least.': 'O cotă păstrează cel puțin două puncte.',
+  'Texts back on the line': 'Textele înapoi pe linie',
+  'Every value moved by hand back on its line (one: Ctrl/⌘-click its grip)': 'Toate valorile mutate de mână înapoi pe linia lor (una singură: Ctrl/⌘-clic pe grip-ul ei)',
+  'Drag: move the value · Ctrl/⌘-click: back on its line': 'Trage: mută valoarea · Ctrl/⌘-clic: înapoi pe linie',
 };
 
 /** Phrases with a number or a name in them. */

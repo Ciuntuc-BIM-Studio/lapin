@@ -58,6 +58,38 @@ public class DimensionStringTests
     }
 
     [Fact]
+    public void A_value_moved_by_hand_stands_off_its_line_with_a_leader_and_stays_with_its_segment()
+    {
+        var f = F();
+        var id = String(f, Pts((0, 0), (0.12, 0), (3, 0)), (0, 2));
+        static Vec2 At(JsonObject mark, int i) => new((double)mark["data"]!["texts"]![i]![0]!, (double)mark["data"]!["texts"]![i]![1]!);
+        var before = Assert.Single(Marks(Draw(f, Plan(f)), id));
+        var lines = before["segments"]?.AsArray().Count;
+        var was = At(before, 0);
+        // The 120 mm segment's value dragged up and to the left, clear of its neighbour's.
+        f.Run("drafting.moveDimensionText", new JsonObject { ["id"] = id, ["segment"] = 0, ["by"] = new JsonArray(-0.4, 0.5) });
+        var after = Assert.Single(Marks(Draw(f, Plan(f)), id));
+        Assert.Equal(was.X - 0.4, At(after, 0).X, 6);
+        Assert.Equal(was.Y + 0.5, At(after, 0).Y, 6);
+        Assert.Equal(At(before, 1), At(after, 1));
+        if (lines is { } n) Assert.True(after["segments"]!.AsArray().Count > n, "a leader back to its segment");
+        // A point put into the other segment leaves it where it was moved; one into this segment measures it anew, its text back on the line.
+        f.Run("drafting.insertDimensionPoint", new JsonObject { ["id"] = id, ["point"] = new JsonArray(2, 0) });
+        Assert.NotNull(Dimensions.OffsetsOf(f.Model.Get(id)!.Attrs, 3)[0]);
+        // Turned with the string, the offset turns too; split, each piece keeps its own.
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(id), ["op"] = "rotate", ["center"] = new JsonArray(0, 0), ["angle"] = 90 });
+        var turned = Dimensions.OffsetsOf(f.Model.Get(id)!.Attrs, 3)[0]!.Value;
+        Assert.Equal(-0.5, turned.X, 6);
+        Assert.Equal(-0.4, turned.Y, 6);
+        var ids = f.Run("drafting.splitDimension", new JsonObject { ["id"] = id })!["ids"]!.AsArray().Select(x => (string)x!).ToList();
+        Assert.NotNull(Dimensions.OffsetsOf(f.Model.Get(ids[0])!.Attrs, 1)[0]);
+        Assert.Null(Dimensions.OffsetsOf(f.Model.Get(ids[1])!.Attrs, 1)[0]);
+        // Back on its line.
+        f.Run("drafting.moveDimensionText", new JsonObject { ["id"] = ids[0], ["reset"] = true });
+        Assert.Null(f.Model.Get(ids[0])!.Attrs["textAt"]);
+    }
+
+    [Fact]
     public void Driving_a_middle_segment_pushes_what_follows_and_one_undo_puts_it_back()
     {
         var f = F();

@@ -148,6 +148,21 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        // A segment's value moved by hand, to stand clear of its neighbours (by: plan metres, added to where it stands; reset: back on its line).
+        r.Command("moveDimensionText", "Move dimension text", (ctx, a) =>
+        {
+            var dim = Linear(ctx.Model, a);
+            var st = Dimensions.Stations(dim);
+            var offsets = Dimensions.OffsetsOf(dim.Attrs, st.Count - 1);
+            var i = a["segment"] == null ? 0 : Json.Number(a["segment"]) is { } sg && sg >= 0 && sg < offsets.Count ? (int)sg : throw new CommandException("The dimension has no such segment.");
+            if (a["reset"] is JsonValue rv && rv.TryGetValue<bool>(out var reset) && reset) offsets[i] = null;
+            else offsets[i] = (offsets[i] ?? default) + P(a["by"]);
+            var attrs = dim.CloneAttrs();
+            Dimensions.WriteOffsets(attrs, offsets);
+            ctx.Replace(dim.With(attrs: attrs));
+            return null;
+        });
+
         // A string's point moved: it holds on what it lands on.
         r.Command("moveDimensionPoint", "Move dimension point", (ctx, a) =>
         {
@@ -167,6 +182,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             var dim = Linear(ctx.Model, a);
             var st = Current(ctx.Query, dim);
             var texts = Dimensions.TextsOf(dim.Attrs, st.Count - 1);
+            var offsets = Dimensions.OffsetsOf(dim.Attrs, st.Count - 1);
             var hold = Associator(ctx, View(ctx.Model, dim));
             var pts = a["points"] is JsonArray pa ? pa.Select(P).ToList() : [P(a["point"])];
             var u = Dimensions.Along(dim.Attrs, st[0].P, st[^1].P);
@@ -191,9 +207,9 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
                 var r = hold(p);
                 st.Insert(i, (p, r));
                 // The segment split in two measures anew; one added at an end has no text of its own.
-                if (i == 0) texts.Insert(0, null);
-                else if (i == st.Count - 1) texts.Add(null);
-                else { texts.RemoveAt(i - 1); texts.InsertRange(i - 1, [null, null]); }
+                if (i == 0) { texts.Insert(0, null); offsets.Insert(0, null); }
+                else if (i == st.Count - 1) { texts.Add(null); offsets.Add(null); }
+                else { texts.RemoveAt(i - 1); texts.InsertRange(i - 1, [null, null]); offsets.RemoveAt(i - 1); offsets.InsertRange(i - 1, [null, null]); }
                 added.Add((JsonNode)(r != null));
             }
             if (added.Count == 0) throw new CommandException("The string measures that point already.");
@@ -204,7 +220,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
                 attrs["dir"] = J(keep);
                 dim = dim.With(attrs: attrs);
             }
-            Save(ctx, dim, st, texts);
+            Save(ctx, dim, st, texts, offsets);
             return new JsonObject { ["associated"] = added };
         });
 
@@ -216,11 +232,12 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             var i = Index(a, st.Count);
             if (st.Count <= 2) throw new CommandException("A dimension keeps two points at least.");
             var texts = Dimensions.TextsOf(dim.Attrs, st.Count - 1);
+            var offsets = Dimensions.OffsetsOf(dim.Attrs, st.Count - 1);
             st.RemoveAt(i);
-            if (i == 0) texts.RemoveAt(0);
-            else if (i == texts.Count) texts.RemoveAt(texts.Count - 1);
-            else { texts.RemoveAt(i); texts[i - 1] = null; }
-            Save(ctx, dim, st, texts);
+            if (i == 0) { texts.RemoveAt(0); offsets.RemoveAt(0); }
+            else if (i == texts.Count) { texts.RemoveAt(texts.Count - 1); offsets.RemoveAt(offsets.Count - 1); }
+            else { texts.RemoveAt(i); texts[i - 1] = null; offsets.RemoveAt(i); offsets[i - 1] = null; }
+            Save(ctx, dim, st, texts, offsets);
             return null;
         });
 
@@ -385,10 +402,11 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         return st.Select(s => s.Ref != null && Dimensions.Resolve(q.Model, spec.Kind, drawing, s.Ref) is { } p ? (p, s.Ref) : s).ToList();
     }
 
-    static void Save(ICommandContext ctx, Entity dim, List<(Vec2 P, DimEndRef? Ref)> stations, List<string?> texts)
+    static void Save(ICommandContext ctx, Entity dim, List<(Vec2 P, DimEndRef? Ref)> stations, List<string?> texts, List<Vec2?>? offsets = null)
     {
         var attrs = dim.CloneAttrs();
         Dimensions.Write(attrs, stations, texts);
+        if (offsets != null) Dimensions.WriteOffsets(attrs, offsets);
         ctx.Replace(dim.With(attrs: attrs));
     }
 
