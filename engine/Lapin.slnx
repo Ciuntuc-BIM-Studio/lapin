@@ -7,6 +7,9 @@
   <Folder Name="/src/Host/">
     <Project Path="src/Host/Lapin.Host/Lapin.Host.csproj" />
   </Folder>
+  <Folder Name="/src/Relay/">
+    <Project Path="src/Relay/Lapin.Relay/Lapin.Relay.csproj" />
+  </Folder>
   <Folder Name="/src/Model/">
     <Project Path="src/Model/Lapin.Model/Lapin.Model.csproj" />
   </Folder>

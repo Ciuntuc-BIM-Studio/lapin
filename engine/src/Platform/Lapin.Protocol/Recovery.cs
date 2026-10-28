@@ -53,7 +53,7 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
             case "saved": Start(keep: false); return;        // the file holds everything the journal held
             case "start": Start(keep: _edits > 0); return;   // another project over unsaved edits: their journal is the only trace of them
         }
-        var line = e.Kind == "tx" ? TxLine(e.Transaction!) : new JsonObject { ["op"] = e.Kind };
+        var line = e.Kind == "tx" ? TxLine(e.Transaction!) : new JsonObject { ["op"] = e.Kind, ["author"] = e.Author };
         Write(line);
         _edits++;
     }
@@ -195,6 +195,10 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         ["op"] = "tx",
         ["label"] = t.Label,
         ["at"] = t.At,
+        ["seq"] = t.Seq,
+        ["author"] = t.Author == History.Me ? null : t.Author,
+        ["reverts"] = t.Reverts,
+        ["redoes"] = t.Redoes,
         ["entities"] = new JsonArray(t.Entities.Select(c => (JsonNode)new JsonObject
         {
             ["id"] = c.Id, ["order"] = c.Order,
@@ -212,11 +216,12 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
     static HistoryEvent ReadEvent(JsonObject o)
     {
         var op = (string?)o["op"] ?? "";
-        if (op != "tx") return new HistoryEvent(op);
+        if (op != "tx") return new HistoryEvent(op, null, (string?)o["author"]);
         var entities = (o["entities"] as JsonArray ?? []).Select(n => n!.AsObject()).Select(c => new Change<Entity>(
             (string)c["id"]!, c["before"] is JsonObject b ? ReadEntity(b) : null, c["after"] is JsonObject a ? ReadEntity(a) : null, (int)c["order"]!)).ToList();
         var relations = (o["relations"] as JsonArray ?? []).Select(n => n!.AsObject()).Select(c => new Change<Relation>(
             (string)c["id"]!, c["before"].Deserialize(ModelJson.Default.Relation), c["after"].Deserialize(ModelJson.Default.Relation), (int)c["order"]!)).ToList();
-        return new HistoryEvent("tx", new Transaction(0, (string?)o["label"] ?? "", entities, relations, o["at"]?.GetValue<DateTimeOffset>() ?? DateTimeOffset.UtcNow));
+        return new HistoryEvent("tx", new Transaction((long?)o["seq"] ?? 0, (string?)o["label"] ?? "", entities, relations, o["at"]?.GetValue<DateTimeOffset>() ?? DateTimeOffset.UtcNow,
+            (string?)o["author"] ?? History.Me, (long?)o["reverts"], (long?)o["redoes"]));
     }
 }

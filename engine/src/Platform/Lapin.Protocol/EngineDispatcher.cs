@@ -222,6 +222,18 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     }
 }
 
+/// <summary>
+/// Who a call is from: the computer's own interfaces (the window, its
+/// detached views, the MCP bridge), which may do anything, or a guest of a
+/// shared session (docs/plan-multiplayer.md), an editor or a viewer, who may
+/// only do what <see cref="EngineDispatcher.AllowedRemote"/> lets through.
+/// </summary>
+public sealed record Caller(string Author, string Role)
+{
+    public static readonly Caller Local = new(History.Me, "owner");
+    public bool Remote => Author != History.Me;
+}
+
 /// <summary>A reply to one call: its id, and its result or why it failed.</summary>
 public sealed record Reply(JsonNode? Id, object? Result, string? Error = null);
 
@@ -247,7 +259,10 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
     public bool ContractsOnly { get; init; }
 
     /// <summary>One call: its reply frame, and the diff it caused (null: nothing changed).</summary>
-    public (byte[] Reply, Diff? Diff) Handle(string text)
+    public (byte[] Reply, Diff? Diff) Handle(string text) => Handle(text, Caller.Local);
+
+    /// <summary>One call from <paramref name="caller"/>: refused unless they may make it; their edits are theirs (their own undo).</summary>
+    public (byte[] Reply, Diff? Diff) Handle(string text, Caller caller)
     {
         JsonNode? id = null;
         try
@@ -256,8 +271,14 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             id = msg["id"]?.DeepClone();
             var method = (string?)msg["method"] ?? throw new CommandException("No method.");
             var p = msg["params"] as JsonObject ?? [];
-            var (result, diff) = Dispatch(method, p);
-            return (BinaryFrame.Encode(new Reply(id, result), ContractsOnly), diff);
+            if (caller.Remote && AllowedRemote(method, p, caller.Role) is { } refused) throw new CommandException(refused);
+            session.Author = caller.Author;
+            try
+            {
+                var (result, diff) = Dispatch(method, p);
+                return (BinaryFrame.Encode(new Reply(id, result), ContractsOnly), diff);
+            }
+            finally { session.Author = History.Me; }
         }
         catch (Exception ex) when (ex is ModelException or JsonException or InvalidOperationException or IOException or UnauthorizedAccessException or FormatException or InvalidDataException)
         {
@@ -273,6 +294,41 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
 
     /// <summary>A diff as the frame the host pushes.</summary>
     public byte[] DiffFrame(Diff diff) => BinaryFrame.Encode(new DiffEvent("diff", diff), ContractsOnly);
+
+    /// <summary>A diff as <paramref name="author"/> gets it: with their own undo and redo.</summary>
+    public byte[] DiffFrame(Diff diff, string author) => author == History.Me ? DiffFrame(diff) : DiffFrame(diff with { State = session.StateFor(author) });
+
+    /// <summary>
+    /// What a guest may call (null), else why not. A list of what is let
+    /// through, not of what is kept out: a method added later is refused from
+    /// the network until it is named here. Nothing that reads or writes a
+    /// file on the host's disk, changes which project is open, or speaks for
+    /// the host (reports, links opened, the recovery journal); exports come
+    /// back as bytes, imports bring theirs. A viewer looks; an editor edits.
+    /// </summary>
+    public static string? AllowedRemote(string method, JsonObject p, string role)
+    {
+        static bool HasPath(JsonObject o) => o["path"] is JsonValue v && v.TryGetValue<string>(out var s) && s.Length > 0;
+        if (HasPath(p)) return "A guest cannot reach files on the host's computer.";
+        var editor = role is "editor" or "owner";
+        switch (method)
+        {
+            case "session.info" or "doc.snapshot" or "doc.query" or "quantities.of"
+                or "project.versions" or "project.compareVersions"
+                or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh":
+                return null;
+            case "doc.execute":
+                if (!editor) return "You joined to look: ask the host to let you edit.";
+                return p["args"] is JsonObject args && HasPath(args) ? "A guest cannot reach files on the host's computer." : null;
+            case "doc.undo" or "doc.redo":
+                return editor ? null : "You joined to look: ask the host to let you edit.";
+            case "project.importIfc":
+                if (!editor) return "You joined to look: ask the host to let you edit.";
+                return p["data"] is JsonValue ? null : "A guest imports a file from their own computer.";
+            default:
+                return "Only the host can do that.";
+        }
+    }
 
     (object? Result, Diff? Diff) Dispatch(string method, JsonObject p)
     {
@@ -300,8 +356,8 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 var diff = session.Execute(command, p["args"] as JsonObject ?? [], out var result);
                 return (result?.DeepClone(), diff);
             }
-            case "doc.undo": return (null, session.Undo());
-            case "doc.redo": return (null, session.Redo());
+            case "doc.undo": return (null, session.Undo(session.Author));
+            case "doc.redo": return (null, session.Redo(session.Author));
             case "doc.query":
                 return (session.Query((string?)p["name"] ?? throw new CommandException("The query is missing."), p["args"] as JsonObject ?? [])?.DeepClone(), null);
             case "quantities.of": return (session.Quantities((string?)p["id"] ?? throw new CommandException("Which element?")), null);

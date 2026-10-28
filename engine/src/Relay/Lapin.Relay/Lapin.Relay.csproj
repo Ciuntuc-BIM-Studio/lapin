@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    The relay of shared sessions (docs/plan-multiplayer.md): pairs a host and
+    its guests by room and moves their frames, end-to-end encrypted, without
+    reading them. No project, no engine, no state beyond the open sockets.
+    Self-hostable; references nothing of Lapin's.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>Lapin.Relay</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+</Project>

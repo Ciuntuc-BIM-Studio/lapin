@@ -20,7 +20,7 @@ public class ProtocolTests
         var expected = f.Session.Snapshot().Render.Single(r => r.NodeId == wall);
         var hub = new EngineHub(f.Session, PackageFiles.Create());
 
-        var frame = await hub.Handle("""{"id":7,"method":"doc.snapshot"}""");
+        var frame = (await hub.Handle("""{"id":7,"method":"doc.snapshot"}"""))!;
         var (header, buffers) = BinaryFrame.Decode(frame);
         var root = header.RootElement;
         Assert.Equal(7, root.GetProperty("id").GetInt32());
@@ -44,10 +44,10 @@ public class ProtocolTests
     public async Task An_error_comes_back_with_its_call_id()
     {
         var hub = new EngineHub(new Fixture().Session, PackageFiles.Create());
-        var (header, _) = BinaryFrame.Decode(await hub.Handle("""{"id":3,"method":"doc.execute","params":{"command":"architecture.flipWall","args":{"id":"nope"}}}"""));
+        var (header, _) = BinaryFrame.Decode((await hub.Handle("""{"id":3,"method":"doc.execute","params":{"command":"architecture.flipWall","args":{"id":"nope"}}}"""))!);
         Assert.Equal(3, header.RootElement.GetProperty("id").GetInt32());
         Assert.Contains("no IfcWall", header.RootElement.GetProperty("error").GetString());
-        (header, _) = BinaryFrame.Decode(await hub.Handle("""{"id":4,"method":"nothing"}"""));
+        (header, _) = BinaryFrame.Decode((await hub.Handle("""{"id":4,"method":"nothing"}"""))!);
         Assert.Contains("Unknown method", header.RootElement.GetProperty("error").GetString());
     }
 

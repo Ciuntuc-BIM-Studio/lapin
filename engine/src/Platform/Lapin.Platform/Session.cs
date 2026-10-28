@@ -38,9 +38,9 @@ public sealed class Session
     public event Action<HistoryEvent>? HistoryChanged;
     bool _quiet;
 
-    void Emit(string kind, Transaction? t = null)
+    void Emit(string kind, Transaction? t = null, string? author = null)
     {
-        if (!_quiet) HistoryChanged?.Invoke(new HistoryEvent(kind, t));
+        if (!_quiet) HistoryChanged?.Invoke(new HistoryEvent(kind, t, author == History.Me ? null : author));
     }
 
     public Session(ModuleCatalog catalog, ProductManifest product)
@@ -172,8 +172,8 @@ public sealed class Session
                 switch (e.Kind)
                 {
                     case "tx": _history.Replay(e.Transaction ?? throw new InvalidDataException("A journal edit without its changes.")); break;
-                    case "undo": _history.Undo(); break;
-                    case "redo": _history.Redo(); break;
+                    case "undo": _history.Undo(e.Author ?? History.Me); break;
+                    case "redo": _history.Redo(e.Author ?? History.Me); break;
                 }
         }
         finally { _quiet = false; }
@@ -195,13 +195,19 @@ public sealed class Session
     /// <summary>The model and its geometry as queries see them.</summary>
     public IQueryContext Reader => new QueryContext(this);
 
-    public Diff Execute(string command, JsonObject args, out JsonNode? result)
+    public Diff Execute(string command, JsonObject args, out JsonNode? result) => Execute(command, args, Author, out result);
+
+    /// <summary>Who the edits being made now are by: the computer's own user, or the shared session's guest whose call this is (the host sets it per call).</summary>
+    public string Author { get; set; } = History.Me;
+
+    /// <summary>A command made by <paramref name="author"/> (a guest of a shared session: their participant id).</summary>
+    public Diff Execute(string command, JsonObject args, string author, out JsonNode? result)
     {
         var entry = _catalog.Command(command) ?? throw new CommandException($"Unknown command „{command}”.");
         JsonNode? r = null;
         // What a link brought in is read-only, except to the link commands and to the imports that make links.
         var allowLinked = command.StartsWith("link.", StringComparison.Ordinal) || command.EndsWith(".importDxf", StringComparison.Ordinal);
-        var t = _history.Execute(entry.Label, edit => r = entry.Handler(new CommandContext(edit, _catalog, new QueryContext(this), allowLinked), args));
+        var t = _history.Execute(entry.Label, edit => r = entry.Handler(new CommandContext(edit, _catalog, new QueryContext(this), allowLinked), args), author);
         result = r;
         if (t == null) return Empty();
         Emit("tx", t);
@@ -211,25 +217,39 @@ public sealed class Session
     /// <summary>One edit made outside a module's commands (an IFC import): one undo step, journalled and diffed like a command.</summary>
     public Diff Edit(string label, Action<IEdit> edit)
     {
-        var t = _history.Execute(label, edit);
+        var t = _history.Execute(label, edit, Author);
         if (t == null) return Empty();
         Emit("tx", t);
         return DiffAfter(t);
     }
 
-    public Diff Undo()
+    /// <summary>
+    /// <paramref name="author"/>'s last edit undone (docs/plan-multiplayer.md:
+    /// in a shared history only their own, as a new transaction, which the
+    /// journal keeps as one).
+    /// </summary>
+    public Diff Undo(string? author = null)
     {
-        if (_history.Undo() is not { } t) return Empty();
-        Emit("undo");
+        author ??= Author;
+        if (_history.Undo(author) is not { } t) return Empty();
+        if (t.Reverts != null) Emit("tx", t); else Emit("undo", null, author);
         return DiffAfter(t);
     }
 
-    public Diff Redo()
+    public Diff Redo(string? author = null)
     {
-        if (_history.Redo() is not { } t) return Empty();
-        Emit("redo");
+        author ??= Author;
+        if (_history.Redo(author) is not { } t) return Empty();
+        if (t.Redoes != null) Emit("tx", t); else Emit("redo", null, author);
         return DiffAfter(t);
     }
+
+    /// <summary>The document's state as <paramref name="author"/> sees it: their own undo and redo.</summary>
+    public DocState StateFor(string author) => State() with
+    {
+        CanUndo = _history.CanUndoOf(author), CanRedo = _history.CanRedoOf(author),
+        UndoLabel = _history.UndoLabelOf(author), RedoLabel = _history.RedoLabelOf(author),
+    };
 
     public JsonNode? Query(string name, JsonObject args)
     {
@@ -503,7 +523,7 @@ public sealed class Session
 }
 
 /// <summary>A change of the project's history (<see cref="Session.HistoryChanged"/>).</summary>
-public sealed record HistoryEvent(string Kind, Transaction? Transaction = null);
+public sealed record HistoryEvent(string Kind, Transaction? Transaction = null, string? Author = null);
 
 /// <summary>A command's view of the edit: the model, the services, and a refusal for what this product cannot change.</summary>
 sealed class CommandContext(IEdit edit, ModuleCatalog catalog, IQueryContext query, bool allowLinked = false) : ICommandContext
