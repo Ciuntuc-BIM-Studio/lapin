@@ -1,4 +1,4 @@
-/** The project's location: the base point (its elevation, the angle to true north) and the survey point (its site coordinates), shown in plans or not. */
+/** The project's location: the base point (its elevation, the angle to true north), the survey point (its site coordinates) and the coordinate system they are in, shown in plans or not. */
 
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
@@ -6,13 +6,15 @@ import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 
 type P = Record<string, number>;
-interface Loc { base?: P; survey?: P; show?: boolean }
+interface Loc { base?: P; survey?: P; show?: boolean; crs?: string }
+interface CrsInfo { id: string; name: string }
 
 export function LocationDialog() {
   const nodes = useSession((s) => s.nodes);
   const [l, setL] = useState<Loc | null>(null);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => { void query<Loc>('project.location').then((r) => setL(r ?? {})); }, [nodes]);
+  const systems = (useSession.getState().info?.catalogs['core.crs'] as unknown as CrsInfo[] | undefined) ?? [];
   if (!l) return null;
   const field = (point: 'base' | 'survey', key: string, label: string) => (
     <label key={key} className="row"><span className="muted small loc-label">{label}</span>
@@ -26,6 +28,13 @@ export function LocationDialog() {
         <header className="dialog-head"><span className="panel-title">Location</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body loc">
           <label className="row"><input type="checkbox" checked={!!l.show} onChange={(e) => void execute('project.location', { show: e.target.checked })} /> Show the base and survey points in plans</label>
+          <label className="row"><span className="muted small loc-label">Coordinate system</span>
+            <select value={l.crs ?? ''} title="What the survey point's eastings and northings are in; imports in another system are converted to it"
+              onChange={(e) => void execute('project.location', { crs: e.target.value || null })}>
+              <option value="">None (local)</option>
+              {systems.map((c) => <option key={c.id} value={c.id}>{c.id} · {c.name}</option>)}
+            </select>
+          </label>
           <h4>Base point</h4>
           {field('base', 'x', 'x (m)')}{field('base', 'y', 'y (m)')}{field('base', 'elevation', '±0.00 at (m)')}{field('base', 'northAngle', 'True north (°)')}
           <h4>Survey point</h4>

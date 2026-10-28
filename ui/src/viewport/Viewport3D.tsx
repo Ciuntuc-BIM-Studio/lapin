@@ -24,7 +24,7 @@ import { select, setTool, useUi } from '../app/store';
 import { findTool } from '../platform/modules';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { completeTool } from './tools';
-import { boxUv, boxUvSized, imageOf, imageTexture, splitByFace, textureFor, textureOf, whenImagesLoad, type Face, type TextureKind } from './textures';
+import { boxUv, boxUvSized, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, splitByFace, textureFor, textureOf, whenImagesLoad, type Face, type TextureKind } from './textures';
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
@@ -58,6 +58,32 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
   {
     if (positions.length) {
       const mat = material ? nodes.get(material) : undefined;
+      // A terrain under an orthophoto wears it, laid by the photo's corners in plan.
+      const owner = nodes.get(nodeId);
+      const ortho = owner?.type === 'IfcGeographicElement' && owner.props.predefinedType === 'TERRAIN' ? orthophotos(nodes)[0] : undefined;
+      if (ortho) {
+        // The photo on the ground's top only; its sides and bottom keep the terrain's colour.
+        const top: number[] = [], rest: number[] = [];
+        for (let k = 0; k + 2 < indices.length; k += 3) {
+          const [a, b, c] = [indices[k], indices[k + 1], indices[k + 2]];
+          const ux = positions[3 * b] - positions[3 * a], uy = positions[3 * b + 1] - positions[3 * a + 1], uz = positions[3 * b + 2] - positions[3 * a + 2];
+          const vx = positions[3 * c] - positions[3 * a], vy = positions[3 * c + 1] - positions[3 * a + 1], vz = positions[3 * c + 2] - positions[3 * a + 2];
+          const nz = ux * vy - uy * vx, len = Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, nz);
+          (len > 0 && nz / len > 0.3 ? top : rest).push(a, b, c);
+        }
+        indices = Int32Array.from(rest);
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        if (normals.length === positions.length) g.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+        else g.computeVertexNormals();
+        g.setIndex(new THREE.BufferAttribute(Uint32Array.from(top), 1));
+        const uv = new Float32Array((positions.length / 3) * 2);
+        for (let i = 0; i < positions.length / 3; i++) { const [u, v] = orthoUv(ortho, positions[3 * i], positions[3 * i + 1]); uv[2 * i] = u; uv[2 * i + 1] = v; }
+        g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+        const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0xffffff, map: orthoTexture(ortho), roughness: 0.95, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
+        mesh.userData.nodeId = nodeId;
+        group.add(mesh);
+      }
       // The material's own image: on every face, untinted, at its size in metres.
       const own = imageOf(mat, nodes);
       if (own) {

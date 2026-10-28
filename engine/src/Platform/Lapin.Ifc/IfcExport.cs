@@ -332,7 +332,11 @@ public static class IfcExport
             var (c, sn) = (Math.Cos(th), -Math.Sin(th));
             var e0 = (sv.Easting ?? 0) - (c * sv.At.X - sn * sv.At.Y);
             var n0 = (sv.Northing ?? 0) - (sn * sv.At.X + c * sv.At.Y);
-            var crs = f.Add("IFCPROJECTEDCRS", S(project.Str("crs") ?? "Site grid"), Null, Null, Null, Null, Null, metre);
+            // The system by its EPSG name, its datum and projection when Lapin knows it; else the site's own grid.
+            var known = GeoRef.Get(Location.Crs(m));
+            var crs = known != null
+                ? f.Add("IFCPROJECTEDCRS", S(known.Id), S(known.Name), S(known.Datum), Null, S(known.Projection), Null, metre)
+                : f.Add("IFCPROJECTEDCRS", S(Location.Crs(m) ?? "Site grid"), Null, Null, Null, Null, Null, metre);
             f.Add("IFCMAPCONVERSION", model, crs, R(e0), R(n0), R(Location.Base(m).Elevation), R(c), R(sn), Null);
         }
 

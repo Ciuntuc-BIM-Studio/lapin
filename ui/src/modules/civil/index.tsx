@@ -5,7 +5,7 @@
  * plantings that stand on it (docs/spec-site.md).
  */
 
-import { BrickWall, Crosshair, FileDown, FileUp, Fence, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, Waves } from 'lucide-react';
+import { BrickWall, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -13,7 +13,7 @@ import { outlineGrips, outlineRef, toPairs } from '../../viewport/gripKit';
 import { edgeMiddles, fromPairs, insertVertex, moveVertex, removeVertex } from '../../viewport/contour';
 import { notify, useUi } from '../../app/store';
 import { execute } from '../../engine/session';
-import { SURVEY, downloadLandXml, pickText } from './survey';
+import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './survey';
 import { TerrainSection } from './TerrainSection';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
 import { BrushDialog } from './BrushDialog';
@@ -61,6 +61,73 @@ const terrainFromLandXml: ToolDef = {
     if (r) notify(`${r.ids.length} terrain(s) from ${file.name}.`);
   }),
 };
+
+/** Where an import landed, said once: the system and how many elements. */
+const landed = (what: string, n: number) => notify(`${n} ${what} imported, in the project's coordinates (Manage → Location shows its system and survey point).`);
+
+/** Survey points from a DXF drawing (POINTs with heights, blocks, heights written beside points, contour lines): a terrain. */
+const terrainFromDxf: ToolDef = {
+  id: 'civil.dxfPoints', label: 'Points from DXF', icon: MapPin,
+  run: () => void pickBinary('.dxf').then(async (file) => {
+    if (!file) return;
+    const layers = await execute('civil.dxfPointLayers', { data: file.data }).catch(() => null) as { layer: string; points: number }[] | null;
+    let chosen: string[] | undefined;
+    if (layers && layers.length > 1) {
+      const answer = window.prompt(`Layers with surveyed points: ${layers.map((l) => `${l.layer} (${l.points})`).join(', ')}.\nWhich to take (comma separated; empty: all)?`, '');
+      if (answer == null) return;
+      chosen = answer.split(',').map((x) => x.trim()).filter(Boolean);
+    }
+    const storeyId = useUi.getState().storeyId;
+    const r = await execute('civil.importDxfPoints', { data: file.data, name: file.name, ...(chosen?.length ? { layers: chosen } : {}), ...(storeyId ? { storeyId } : {}) }) as { points: number } | null;
+    if (r) landed('survey points', r.points);
+  }),
+};
+
+/** GeoJSON: parcels (one polygon alone becomes the parcel), lines and points, converted to the project's coordinates. */
+const geoJson: ToolDef = {
+  id: 'civil.geojson', label: 'GeoJSON', icon: MapIcon,
+  run: () => void pickText('.geojson,.json').then(async (file) => {
+    if (!file) return;
+    const storeyId = useUi.getState().storeyId;
+    const r = await execute('civil.importGeoJson', { text: file.text, ...(storeyId ? { storeyId } : {}) }) as { ids: string[] } | null;
+    if (r) landed('feature(s)', r.ids.length);
+  }),
+};
+
+/** CityJSON: the neighbouring buildings with their surfaces, at their place and height. */
+const cityJson: ToolDef = {
+  id: 'civil.cityjson', label: 'CityJSON', icon: Building2,
+  run: () => void pickText('.json,.city.json').then(async (file) => {
+    if (!file) return;
+    const storeyId = useUi.getState().storeyId;
+    const r = await execute('civil.importCityJson', { text: file.text, ...(storeyId ? { storeyId } : {}) }) as { ids: string[] } | null;
+    if (r) landed('building(s)', r.ids.length);
+  }),
+};
+
+/** An orthophoto: a JPEG or PNG and its world file (.jgw, .pgw, .wld), picked together. */
+const orthophoto: ToolDef = {
+  id: 'civil.orthophoto', label: 'Orthophoto', icon: ImageIcon,
+  run: () => void pickFiles('.jpg,.jpeg,.png,.jgw,.pgw,.wld,.jpgw,.pngw').then(async (files) => {
+    if (!files.length) return;
+    const image = files.find((f) => /\.(jpe?g|png)$/i.test(f.file.name));
+    const world = files.find((f) => /\.(jgw|pgw|wld|jpgw|pngw)$/i.test(f.file.name));
+    if (!image) { notify('Pick the image (JPEG or PNG) and its world file together.'); return; }
+    if (!world) { notify('Pick the image together with its world file (.jgw, .pgw or .wld): it says where the image lies.'); return; }
+    const data = await toBase64(image.file);
+    const mime = /png$/i.test(image.file.name) ? 'image/png' : 'image/jpeg';
+    const storeyId = useUi.getState().storeyId;
+    const r = await execute('civil.addOrthophoto', { data, mime, name: image.file.name.replace(/\.[^.]+$/, ''), worldFile: await world.file.text(), ...(storeyId ? { storeyId } : {}) });
+    if (r) notify('Orthophoto laid under the site.');
+  }),
+};
+
+async function toBase64(f: File): Promise<string> {
+  const bytes = new Uint8Array(await f.arrayBuffer());
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
 
 /** Level ground where there is no survey: a rectangle in plan at an elevation. */
 const flatTerrain: ToolDef = {
@@ -179,6 +246,7 @@ const civil: LapinModule = {
     id: 'site', label: 'Site', order: 40,
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainFromLandXml, landXmlOut, spot] },
+      { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SR'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, road, retainingWall, plant, plantingZone], small: [corridor] },
     ],

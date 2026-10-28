@@ -62,6 +62,40 @@ const PAT = `*LAPIN_HERRINGBONE, Herringbone 45°
 135, 0.1414,0.1414, 0,0.2828, 0.2,-0.2
 `;
 
+/** A small survey in Stereo 70 for the site scenes: a DXF of points on a gentle slope, a parcel as GeoJSON, a neighbour as CityJSON, an aerial photo drawn on a canvas. */
+const E0 = 587900, N0 = 325820;
+function surveyDxf() {
+  let body = '';
+  for (let i = 0; i <= 8; i++) for (let j = 0; j <= 8; j++) {
+    const z = 80 + i * 0.25 + Math.sin(j / 2) * 0.4;
+    body += `0\nPOINT\n8\nPUNCTE\n10\n${E0 - 10 + i * 6}\n20\n${N0 - 10 + j * 6}\n30\n${z.toFixed(2)}\n`;
+  }
+  return `0\nSECTION\n2\nENTITIES\n${body}0\nENDSEC\n0\nEOF\n`;
+}
+const parcelGeoJson = () => JSON.stringify({
+  type: 'FeatureCollection', crs: { type: 'name', properties: { name: 'urn:ogc:def:crs:EPSG::3844' } },
+  features: [{ type: 'Feature', properties: { nr_cad: '50731' }, geometry: { type: 'Polygon', coordinates: [[[E0 - 4, N0 - 6], [E0 + 26, N0 - 4], [E0 + 28, N0 + 30], [E0 - 2, N0 + 32], [E0 - 4, N0 - 6]]] } }],
+});
+const neighbourCityJson = () => JSON.stringify({
+  type: 'CityJSON', version: '2.0', metadata: { referenceSystem: 'https://www.opengis.net/def/crs/EPSG/0/3844' },
+  transform: { scale: [0.01, 0.01, 0.01], translate: [E0 + 28, N0 + 15, 80] },
+  vertices: [[0, 0, 0], [1000, 0, 0], [1000, 1400, 0], [0, 1400, 0], [0, 0, 900], [1000, 0, 900], [1000, 1400, 900], [0, 1400, 900]],
+  CityObjects: { n1: { type: 'Building', attributes: { name: 'Neighbour' }, geometry: [{ type: 'Solid', lod: '2', boundaries: [[[[0, 3, 2, 1]], [[4, 5, 6, 7]], [[0, 1, 5, 4]], [[1, 2, 6, 5]], [[2, 3, 7, 6]], [[3, 0, 4, 7]]]] }] } },
+});
+/** An aerial photo, as an orthophoto looks: fields, a road, roofs (drawn in the page, 600 × 600 px at 0.1 m). */
+const aerialJpeg = (t) => t.page.evaluate(() => {
+  const c = document.createElement('canvas'); c.width = 600; c.height = 600;
+  const g = c.getContext('2d');
+  g.fillStyle = '#8fa66a'; g.fillRect(0, 0, 600, 600);
+  for (let i = 0; i < 2000; i++) { g.fillStyle = `rgba(${90 + (i * 37) % 60}, ${120 + (i * 53) % 50}, ${60 + (i * 17) % 40}, 0.35)`; g.fillRect((i * 97) % 600, (i * 151) % 600, 6, 6); }
+  g.fillStyle = '#b7b1a3'; g.fillRect(0, 470, 600, 70);
+  g.fillStyle = '#d9d2c2'; g.fillRect(0, 500, 600, 6);
+  g.fillStyle = '#9c5b45'; g.fillRect(430, 160, 100, 140);
+  g.fillStyle = '#7f4a39'; g.fillRect(430, 160, 100, 70);
+  g.fillStyle = '#6f8f55'; for (const [x, y] of [[80, 90], [140, 60], [330, 400], [60, 380]]) { g.beginPath(); g.arc(x, y, 26, 0, 7); g.fill(); }
+  return c.toDataURL('image/jpeg', 0.85).split(',')[1];
+});
+
 export const scenes = [
   {
     id: 'start',
@@ -204,6 +238,36 @@ export const scenes = [
       await open3d(t);
       await t.shot('structure-3d', { of: 'canvas', pad: 0 });
       t.expect((await t.nodes()).filter((n) => n.type === 'IfcColumn').length === 6, 'six columns');
+    },
+  },
+  {
+    id: 'site',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.cmd('project.location', { crs: 'EPSG:3844' });
+      // The survey points from DXF, the parcel from GeoJSON, a neighbour from CityJSON, the orthophoto with its world file: all in Stereo 70.
+      const dxf = Buffer.from(surveyDxf()).toString('base64');
+      const terrain = await t.cmd('civil.importDxfPoints', { data: dxf, storeyId: s, name: 'Survey' });
+      t.expect(terrain?.points === 81, `81 survey points, found ${terrain?.points}`);
+      const geo = await t.cmd('civil.importGeoJson', { text: parcelGeoJson(), storeyId: s });
+      t.expect(!!geo?.parcel, 'a parcel from the GeoJSON');
+      await t.cmd('civil.importCityJson', { text: neighbourCityJson(), storeyId: s });
+      await t.cmd('civil.addOrthophoto', { data: await aerialJpeg(t), mime: 'image/jpeg', name: 'Orthophoto', worldFile: `0.1\n0\n0\n-0.1\n${E0 - 15}\n${N0 + 45}\n`, storeyId: s });
+      await t.button('Site', { exact: true });
+      await t.shot('ribbon-site', { of: '.topbar', pad: 0 });
+      await t.ui({ keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      await t.shot('site-plan', { of: '[data-testid=plan]', pad: 0 });
+      await t.tool('manage.location');
+      t.expect(await t.page.locator('[aria-label="Location"]').count() > 0, 'the Location dialog opens');
+      await t.shot('site-location', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null, keyPlan: true });
+      await open3d(t);
+      await t.page.locator('button[title="Frame everything"]').first().click();
+      await t.wait(800);
+      await t.shot('site-3d', { of: 'canvas', pad: 0 });
     },
   },
   {

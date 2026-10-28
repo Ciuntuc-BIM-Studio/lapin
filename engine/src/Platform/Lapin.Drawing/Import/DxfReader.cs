@@ -38,7 +38,13 @@ public abstract record DxfEntity
 
 public sealed record DxfLine(Vec2 A, Vec2 B) : DxfEntity;
 /// <summary>A polyline: vertices with the bulge of the segment leaving each (0: straight).</summary>
-public sealed record DxfPolyline(List<(Vec2 P, double Bulge)> Vertices, bool Closed) : DxfEntity;
+public sealed record DxfPolyline(List<(Vec2 P, double Bulge)> Vertices, bool Closed) : DxfEntity
+{
+    /// <summary>A 2D polyline's elevation (LWPOLYLINE 38, POLYLINE 30): a contour line's height.</summary>
+    public double? Elevation { get; init; }
+    /// <summary>A 3D polyline's vertices' heights, one a vertex.</summary>
+    public List<double>? Zs { get; init; }
+}
 public sealed record DxfCircle(Vec2 C, double R) : DxfEntity;
 /// <summary>An arc counter-clockwise from <see cref="StartDeg"/> to <see cref="EndDeg"/>.</summary>
 public sealed record DxfArc(Vec2 C, double R, double StartDeg, double EndDeg) : DxfEntity;
@@ -46,12 +52,22 @@ public sealed record DxfArc(Vec2 C, double R, double StartDeg, double EndDeg) : 
 public sealed record DxfEllipse(Vec2 C, Vec2 Major, double Ratio, double Start, double End) : DxfEntity;
 public sealed record DxfSpline(int Degree, List<double> Knots, List<Vec2> Controls, List<double> Weights, List<Vec2> Fits, bool Closed) : DxfEntity;
 /// <summary>A text (TEXT, or MTEXT already stripped of its formatting): where it is anchored, its height and rotation, how it is aligned (0 left/1 centre/2 right; 0 baseline/1 bottom/2 middle/3 top).</summary>
-public sealed record DxfText(Vec2 At, double Height, double RotationDeg, string Value, int HAlign, int VAlign) : DxfEntity;
+public sealed record DxfText(Vec2 At, double Height, double RotationDeg, string Value, int HAlign, int VAlign) : DxfEntity
+{
+    /// <summary>The insertion point's height, when the file gives one.</summary>
+    public double? Z { get; init; }
+}
 /// <summary>A hatch: its pattern's name, whether solid, its loops (tessellated, drawing units), and the pattern lines the file carries.</summary>
 public sealed record DxfHatch(string Pattern, bool Solid, double Scale, double AngleDeg, List<Vec2[]> Loops, List<DxfPatternLine> Definition) : DxfEntity;
-public sealed record DxfInsert(string Block, Vec2 At, double Sx, double Sy, double RotationDeg, int Cols, int Rows, double ColSpacing, double RowSpacing, List<DxfText> Attribs) : DxfEntity;
+public sealed record DxfInsert(string Block, Vec2 At, double Sx, double Sy, double RotationDeg, int Cols, int Rows, double ColSpacing, double RowSpacing, List<DxfText> Attribs) : DxfEntity
+{
+    /// <summary>The insertion point's height (a survey point's block standing at it).</summary>
+    public double? Z { get; init; }
+}
 /// <summary>A filled quad (SOLID, TRACE), its corners in drawing order.</summary>
 public sealed record DxfSolid(Vec2[] Pts) : DxfEntity;
+/// <summary>A POINT: a surveyed point, with its height.</summary>
+public sealed record DxfPoint(Vec3 P) : DxfEntity;
 /// <summary>A dimension: its kind (0 rotated, 1 aligned, 2 angular, 3 diameter, 4 radius, 5 angular 3-point, 6 ordinate), its definition points, the rendered block's name.</summary>
 public sealed record DxfDimension(int Kind, Vec2 DefPoint, Vec2 TextMid, Vec2 P13, Vec2 P14, Vec2 P15, Vec2 P16, double RotationDeg, string? Text, string? Block) : DxfEntity;
 public sealed record DxfLeader(List<Vec2> Pts) : DxfEntity;
@@ -320,20 +336,21 @@ public static class DxfReader
                     Flush();
                     var closed = ((Int(r, 70) ?? 0) & 1) != 0;
                     if (Mirrored(r)) verts = verts.Select(v => (v.Item1 with { X = -v.Item1.X }, -v.Item2)).ToList();
-                    if (verts.Count >= 2) o.Add(With(r, new DxfPolyline(verts, closed)));
+                    if (verts.Count >= 2) o.Add(With(r, new DxfPolyline(verts, closed) { Elevation = Num(r, 38) }));
                     break;
                 }
                 case "POLYLINE":
                 {
                     var flags = Int(r, 70) ?? 0;
                     var verts = new List<(Vec2, double)>();
+                    var zs = new List<double>();
                     var j = i + 1;
                     for (; j < raws.Count && raws[j].Type != "SEQEND"; j++)
-                        if (raws[j].Type == "VERTEX" && ((Int(raws[j], 70) ?? 0) & (16 | 64)) == 0) verts.Add((Pt(raws[j], 10), Num(raws[j], 42) ?? 0));
+                        if (raws[j].Type == "VERTEX" && ((Int(raws[j], 70) ?? 0) & (16 | 64)) == 0) { verts.Add((Pt(raws[j], 10), Num(raws[j], 42) ?? 0)); zs.Add(Num(raws[j], 30) ?? 0); }
                     i = j;
                     if ((flags & (16 | 64)) != 0) { o.Add(With(r, new DxfOther("polygon mesh"))); break; }
                     if (Mirrored(r)) verts = verts.Select(v => (v.Item1 with { X = -v.Item1.X }, -v.Item2)).ToList();
-                    if (verts.Count >= 2) o.Add(With(r, new DxfPolyline(verts, (flags & 1) != 0)));
+                    if (verts.Count >= 2) o.Add(With(r, new DxfPolyline(verts, (flags & 1) != 0) { Elevation = (flags & 8) == 0 ? Num(r, 30) : null, Zs = (flags & 8) != 0 ? zs : null }));
                     break;
                 }
                 case "CIRCLE":
@@ -396,7 +413,7 @@ public static class DxfReader
                     var at = Pt(r, 10);
                     var (sx, sy, rot) = (Num(r, 41) ?? 1, Num(r, 42) ?? 1, Num(r, 50) ?? 0);
                     if (Mirrored(r)) { at = at with { X = -at.X }; rot = -rot; sx = -sx; }
-                    o.Add(With(r, new DxfInsert(Str(r, 2) ?? "", at, sx == 0 ? 1 : sx, sy == 0 ? 1 : sy, rot, Math.Max(1, Int(r, 70) ?? 1), Math.Max(1, Int(r, 71) ?? 1), Num(r, 44) ?? 0, Num(r, 45) ?? 0, attribs)));
+                    o.Add(With(r, new DxfInsert(Str(r, 2) ?? "", at, sx == 0 ? 1 : sx, sy == 0 ? 1 : sy, rot, Math.Max(1, Int(r, 70) ?? 1), Math.Max(1, Int(r, 71) ?? 1), Num(r, 44) ?? 0, Num(r, 45) ?? 0, attribs) { Z = Num(r, 30) }));
                     break;
                 }
                 case "SOLID":
@@ -423,6 +440,9 @@ public static class DxfReader
                     if (pts.Count >= 2) o.Add(With(r, new DxfLeader(pts)));
                     break;
                 }
+                case "POINT":
+                    o.Add(With(r, new DxfPoint(new Vec3(Num(r, 10) ?? 0, Num(r, 20) ?? 0, Num(r, 30) ?? 0))));
+                    break;
                 case "VERTEX" or "SEQEND" or "ENDBLK": break;
                 default:
                     o.Add(With(r, new DxfOther(r.Type)));
@@ -465,7 +485,7 @@ public static class DxfReader
         if (ha is 3 or 5) ha = 0;
         var rot = Num(r, 50) ?? 0;
         if (Mirrored(r)) { at = at with { X = -at.X }; rot = 180 - rot; }
-        return With(r, new DxfText(at, h, rot, value, Math.Clamp(ha, 0, 2), Math.Clamp(va, 0, 3)));
+        return With(r, new DxfText(at, h, rot, value, Math.Clamp(ha, 0, 2), Math.Clamp(va, 0, 3)) { Z = Num(r, 30) });
     }
 
     /// <summary>An MTEXT as one text per line, its paragraph anchored by its attachment point; each line below the last.</summary>

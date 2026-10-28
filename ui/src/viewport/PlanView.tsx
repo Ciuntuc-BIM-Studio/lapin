@@ -5,6 +5,7 @@
  * engine command. Hold Shift to square a line; Esc drops the gesture.
  */
 
+import { orthophotos } from './textures';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
 import { openContextMenu } from '../shell/ContextMenu';
@@ -525,6 +526,12 @@ export function PlanView() {
           if (n) void editDimension(n.id, w);
         }}>
         <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>
+        {orthophotos(nodes).filter((o) => !o.storeyId || o.storeyId === storey?.id).map((o) => {
+          // The image's unit square onto its corners on screen: (1, 0) to the top right, (0, 1) to the bottom left.
+          const [tl, tr, , bl] = o.corners.map(([x, y]) => toScreen({ x, y }));
+          return <image key={`ortho:${o.id}`} href={o.image.url} x={0} y={0} width={1} height={1} preserveAspectRatio="none" opacity={o.opacity} className="plan-orthophoto"
+            transform={`matrix(${tr.x - tl.x} ${tr.y - tl.y} ${bl.x - tl.x} ${bl.y - tl.y} ${tl.x} ${tl.y})`} />;
+        })}
         {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} /></g>}
         {drawing && planDrawing && <g className={scope ? 'scoped-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} /></g>}
         <g className={`plan-items${drawing && planDrawing ? ' ghost' : ''}${scope ? ' scoped' : ''}`}>

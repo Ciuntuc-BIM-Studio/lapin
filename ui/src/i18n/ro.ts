@@ -383,6 +383,25 @@ export const RO: Record<string, string> = {
   'Texts back on the line': 'Textele înapoi pe linie',
   'Every value moved by hand back on its line (one: Ctrl/⌘-click its grip)': 'Toate valorile mutate de mână înapoi pe linia lor (una singură: Ctrl/⌘-clic pe grip-ul ei)',
   'Drag: move the value · Ctrl/⌘-click: back on its line': 'Trage: mută valoarea · Ctrl/⌘-clic: înapoi pe linie',
+  // Site imports in real coordinates (docs/plan-urban.md)
+  'Import': 'Import',
+  'Points from DXF': 'Puncte din DXF',
+  'GeoJSON': 'GeoJSON',
+  'CityJSON': 'CityJSON',
+  'Orthophoto': 'Ortofotoplan',
+  'Pick the image (JPEG or PNG) and its world file together.': 'Alege imaginea (JPEG sau PNG) împreună cu fișierul ei de georeferențiere.',
+  'Pick the image together with its world file (.jgw, .pgw or .wld): it says where the image lies.': 'Alege imaginea împreună cu fișierul ei de georeferențiere (.jgw, .pgw sau .wld): el spune unde stă imaginea.',
+  'Orthophoto laid under the site.': 'Ortofotoplanul e așezat sub amplasament.',
+  'Coordinate system': 'Sistem de coordonate',
+  'None (local)': 'Niciunul (local)',
+  'What the survey point\'s eastings and northings are in; imports in another system are converted to it': 'În ce sistem sunt coordonatele punctului de referință topo; importurile din alt sistem se convertesc în el',
+  'Site feature': 'Element de amplasament',
+  'parcel': 'parcelă',
+  'area': 'suprafață',
+  'line': 'linie',
+  'point': 'punct',
+  'building': 'clădire',
+  'Opacity': 'Opacitate',
 };
 
 /** Phrases with a number or a name in them. */
@@ -408,6 +427,7 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(\d+) of (\d+) storeys$/, (m) => `${m[1]} din ${m[2]} etaje`],
   [/^cut at (.+) m$/, (m) => `secționat la ${m[1]} m`],
   [/^Underlay: (.+)$/, (m) => `Fundal: ${m[1]}`],
+  [/^(\d+) (survey points|feature\(s\)|building\(s\)) imported, in the project's coordinates \(Manage → Location shows its system and survey point\)\.$/, (m) => `${m[1]} ${({ 'survey points': 'puncte topo', 'feature(s)': 'elemente', 'building(s)': 'clădiri' } as Record<string, string>)[m[2]]} importate, în coordonatele proiectului (Gestionare → Amplasament arată sistemul și punctul de referință).`],
   [/^(\d+) to check$/, (m) => `${m[1]} de verificat`],
   [/^Plan · (.+)$/, (m) => `Plan · ${m[1]}`],
   [/^(\d+) line edit\(s\) lost their edge · clean$/, (m) => `${m[1]} editări de linii și-au pierdut muchia · curăță`],

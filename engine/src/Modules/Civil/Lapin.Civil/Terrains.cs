@@ -22,6 +22,9 @@ public static class Terrains
     public const string Predefined = "TERRAIN";
     public const string Color = "#7a9a5a";
 
+    /// <summary>Whether an element is a terrain (not another geographic element).</summary>
+    public static bool IsTerrain(Entity e) => e.Class == IfcClass.GeographicElement && e.PredefinedType == Predefined;
+
     public static List<Vec3> Points(Entity e) =>
         e.Attrs["points"] is JsonArray arr
             ? arr.OfType<JsonArray>().Where(p => p.Count >= 3).Select(p => new Vec3(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0, Json.Number(p[2]) ?? 0)).ToList()

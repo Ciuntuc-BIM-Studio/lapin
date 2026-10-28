@@ -28,3 +28,27 @@ export async function downloadLandXml(ids?: string[]): Promise<void> {
   a.href = url; a.download = r.name; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
+
+/** A binary file the user picks, as base64 (a DXF: its code page is read by the engine), or null when cancelled. */
+export function pickBinary(accept: string): Promise<{ name: string; data: string } | null> {
+  return pickFiles(accept, false).then(async (files) => {
+    const f = files[0]?.file;
+    if (!f) return null;
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    let s = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return { name: f.name.replace(/\.[^.]+$/, ''), data: btoa(s) };
+  });
+}
+
+/** Files the user picks (several when `multiple`: an image and its world file). */
+export function pickFiles(accept: string, multiple = true): Promise<{ file: File }[]> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    input.multiple = multiple;
+    input.onchange = () => resolve([...(input.files ?? [])].map((file) => ({ file })));
+    input.click();
+  });
+}

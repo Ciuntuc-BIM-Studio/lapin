@@ -255,3 +255,41 @@ export function boxUvSized(geometry: THREE.BufferGeometry, width: number, height
   }
   geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
 }
+
+// ─── An orthophoto (Site → Import → Orthophoto): an image laid on the plan by its four corners ───
+
+/** An orthophoto: its image and its corners in plan (top left, top right, bottom right, bottom left), its opacity. */
+export interface Ortho { id: string; image: OwnImage; corners: [number, number][]; opacity: number; storeyId: string | null }
+
+/** The project's orthophotos whose image is there. */
+export function orthophotos(nodes: Map<string, NodeDto>): Ortho[] {
+  const o: Ortho[] = [];
+  for (const n of nodes.values()) {
+    if (n.type !== 'LapinOrthophoto') continue;
+    const img = typeof n.props.image === 'string' ? nodes.get(n.props.image) : undefined;
+    const data = img?.props.data, mime = img?.props.mime;
+    const corners = Array.isArray(n.props.corners) ? (n.props.corners as unknown[]).filter((c): c is [number, number] => Array.isArray(c) && c.length >= 2).map((c) => [Number(c[0]), Number(c[1])] as [number, number]) : [];
+    if (typeof data !== 'string' || typeof mime !== 'string' || corners.length !== 4) continue;
+    o.push({ id: n.id, image: { id: img!.id, url: `data:${mime};base64,${data}`, width: 1, height: 1 }, corners, opacity: Number(n.props.opacity ?? 1), storeyId: n.parentId ?? null });
+  }
+  return o;
+}
+
+/** Where a plan point falls on an orthophoto, as texture coordinates (0–1 inside it). */
+export function orthoUv(o: Ortho, x: number, y: number): [number, number] {
+  const [tl, tr, , bl] = o.corners;
+  const [ux, uy, vx, vy] = [tr[0] - tl[0], tr[1] - tl[1], bl[0] - tl[0], bl[1] - tl[1]];
+  const det = ux * vy - uy * vx;
+  if (Math.abs(det) < 1e-12) return [0, 0];
+  const [dx, dy] = [x - tl[0], y - tl[1]];
+  // p = tl + s·(tr − tl) + t·(bl − tl); the image's top row is v = 1.
+  const s = (dx * vy - dy * vx) / det, t = (ux * dy - uy * dx) / det;
+  return [s, 1 - t];
+}
+
+/** The orthophoto's texture: clamped at its edges, loaded once. */
+export function orthoTexture(o: Ortho): THREE.Texture {
+  const t = imageTexture(o.image);
+  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+  return t;
+}
