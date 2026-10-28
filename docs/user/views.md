@@ -24,7 +24,7 @@ Select the section in the browser to set its scale, its depth, its discipline an
 
 ## 3D views
 
-Double-click **{3D}** to open the 3D view. Drag with the left button to orbit around the model. The key plan at the top right shows where you are looking from. **Plan**, **Persp** and **Fit** change the camera. To keep a camera, duplicate the 3D view.
+Double-click **3D** to open the 3D view. Drag with the left button to orbit around the model. The key plan at the top right shows where you are looking from. **Plan**, **Persp** and **Fit** change the camera. To keep a camera, duplicate the 3D view.
 
 ### A section in 3D
 

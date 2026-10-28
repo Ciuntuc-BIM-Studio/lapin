@@ -97,7 +97,7 @@ function PaneTabs({ i }: { i: number }) {
   const label = (t: ViewTab): string => {
     switch (t.view) {
       case 'plan': return t.planViewId ? nodes.get(t.planViewId)?.name ?? 'Plan' : t.storeyId ? nodes.get(t.storeyId)?.name ?? 'Plan' : 'Plan';
-      case '3d': return t.view3dId ? nodes.get(t.view3dId)?.name ?? '3D' : '{3D}';
+      case '3d': return t.view3dId ? nodes.get(t.view3dId)?.name ?? '3D' : '3D';
       case 'drawing': return (t.drawingViewId && nodes.get(t.drawingViewId)?.name) || 'Drawing';
       case 'sheet': return (t.sheetId && nodes.get(t.sheetId)?.name) || 'Sheet';
       default: return (t.scheduleId && nodes.get(t.scheduleId)?.name) || 'Schedule';

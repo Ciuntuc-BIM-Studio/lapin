@@ -363,9 +363,12 @@ public sealed class Session
             var v = Math.Abs(n.Z) < 0.9 ? Vec3.Cross(u, n).Normalized() : Vec3.Cross(n, u).Normalized();
             var d = Vec3.Dot(f.Origin, n) + 0.0002;
             var loops = f.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(p => { var w = f.At(p); return new Vec2(Vec3.Dot(w, u), Vec3.Dot(w, v)); }).ToList()).ToList();
+            // Along the layer on a level cut (a wall's courses follow the wall, however it is turned), and wherever the
+            // material asks for it; else level, as the section's drawing has it.
+            var (angle, origin) = Math.Abs(n.Z) >= 0.9 || look.HatchAlign == Lapin.Drawing.HatchAlign.Layer ? AlongLayer(loops) : (0.0, (Vec2?)null);
             var segs = Lapin.Drawing.Hatch.BattHatch.Is(pattern)
                 ? Lapin.Drawing.Hatch.BattHatch.Segments(loops, 1.2 * scale / 1000, 20_000)
-                : Lapin.Drawing.Hatch.HatchFill.Segments(loops, pattern, new Lapin.Drawing.Hatch.HatchOptions(look.HatchScale * scale / 1000, look.HatchAngle, null, 20_000)).Segments;
+                : Lapin.Drawing.Hatch.HatchFill.Segments(loops, pattern, new Lapin.Drawing.Hatch.HatchOptions(look.HatchScale * scale / 1000, angle + look.HatchAngle, origin, 20_000)).Segments;
             foreach (var s in segs)
                 foreach (var p in new[] { s.A, s.B })
                 {
@@ -374,6 +377,28 @@ public sealed class Session
                 }
         }
         return (fill, [.. hatch]);
+    }
+
+    /// <summary>
+    /// A cap's layer direction, as the 2D drawings' "layer" alignment reads a band (<c>MaterialHatch.Aligned</c>):
+    /// the longest edge of its largest loop, by direction not sense (degrees), the hatch starting at that edge's start.
+    /// </summary>
+    static (double Angle, Vec2? Origin) AlongLayer(List<IReadOnlyList<Vec2>> loops)
+    {
+        IReadOnlyList<Vec2>? outer = null;
+        var area = -1.0;
+        foreach (var l in loops) { var a = Math.Abs(Polygon2.SignedArea(l)); if (a > area) { area = a; outer = l; } }
+        if (outer is not { Count: >= 2 }) return (0, null);
+        var best = 0; var bestLen = -1.0;
+        for (var i = 0; i < outer.Count; i++)
+        {
+            var len = (outer[(i + 1) % outer.Count] - outer[i]).Length;
+            if (len > bestLen) { bestLen = len; best = i; }
+        }
+        var d = outer[(best + 1) % outer.Count] - outer[best];
+        var along = Math.Atan2(d.Y, d.X) * 180 / Math.PI;
+        if (along > 90 + 1e-9 || along <= -90 + 1e-9) along += along > 0 ? -180 : 180;
+        return (along, outer[best]);
     }
 
     // ------------------------------------------------------------ diffs

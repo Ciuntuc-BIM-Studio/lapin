@@ -89,7 +89,7 @@ export function PlanStoreysDialog() {
     })();
   }, []);
   const view = id ? nodes.get(id) : undefined;
-  const name = in3d ? (view?.name ?? '{3D}') : view?.name;
+  const name = in3d ? (view?.name ?? '3D') : view?.name;
   return (
     <div className="dialog-backdrop" onClick={close}>
       <div className="dialog" role="dialog" aria-label="Storeys shown" onClick={(e) => e.stopPropagation()}>

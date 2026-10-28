@@ -649,7 +649,7 @@ public static class Views
         r.Command("view.setCamera", "View camera", (ctx, a) =>
         {
             var id = (string?)a["id"] ?? "";
-            if (id == GraphicsSets.View3d) throw new CommandException("{3D} keeps no camera: save the view as a 3D view first.");
+            if (id == GraphicsSets.View3d) throw new CommandException("The project's 3D view keeps no camera: save it as a 3D view of its own first.");
             var v = ctx.Model.Get(id) is { Class: Class } x && x.Str("kind") == "3d" ? x : throw new CommandException("Not a 3D view.");
             var attrs = v.CloneAttrs();
             attrs["camera"] = Camera(a["camera"]);
@@ -661,7 +661,7 @@ public static class Views
         r.Command("view.setSectionBox", "Section box", (ctx, a) =>
         {
             var id = (string?)a["id"] ?? "";
-            if (id == GraphicsSets.View3d) throw new CommandException("{3D} keeps no section box: save the view as a 3D view first.");
+            if (id == GraphicsSets.View3d) throw new CommandException("The project's 3D view keeps no section box: save it as a 3D view of its own first.");
             var v = ctx.Model.Get(id) is { Class: Class } x && x.Str("kind") == "3d" ? x : throw new CommandException("Not a 3D view.");
             var attrs = v.CloneAttrs();
             if (a["box"] is JsonObject) attrs["sectionBox"] = SectionBox(a["box"]); else attrs.Remove("sectionBox");

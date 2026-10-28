@@ -18,7 +18,7 @@ A new project already has three levels: **Foundations** (−1.50), **Ground floo
 
 1. **The ribbon tabs.** Draft, Architecture, Structure, Site, Studio, Annotate, Manage, Quantities and View each group their tools. **File** opens, saves, imports and exports.
 2. **The ribbon.** It holds the current tab's tools. Hover over a tool to see its name and its keyboard letters.
-3. **The project browser.** It lists the levels, plans, sections, elevations, 3D views, sheets and schedules. Double-click one to open it in a tab.
+3. **The project browser.** It lists the levels, plans, sections, elevations, 3D views, sheets and schedules. Double-click one to open it in a tab. A project opens on the ground floor's plan, with the 3D view in a tab beside it.
 4. **The view.** This is where you draw: a plan, a section, a 3D view or a sheet. You can open several views side by side with the two buttons at the top right of the view.
 5. **The hotbar.** It gives the most used tools on the number keys <kbd>1</kbd>–<kbd>9</kbd>.
 6. **The command line.** Type a tool's letters here and press <kbd>Enter</kbd>. While a tool runs, the line tells you what it needs next. See [Drafting and the command line](drafting.md).

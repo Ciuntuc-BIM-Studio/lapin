@@ -106,7 +106,7 @@ export const implicitPlan = (storey: NodeDto): BrowserItem => ({
 });
 
 /** The 3D view the project always has. */
-export const THREE_D: BrowserItem = { id: '3d', name: '{3D}', kind: '3d', discipline: DEFAULT_DISCIPLINE, storeyId: null, scale: null, phaseId: null, params: {}, node: null };
+export const THREE_D: BrowserItem = { id: '3d', name: '3D', kind: '3d', discipline: DEFAULT_DISCIPLINE, storeyId: null, scale: null, phaseId: null, params: {}, node: null };
 
 /** Each set with what it takes, in order, then "Other" (a null set) with what none took, when there is any. */
 export function groupItems(sets: BrowserSet[], items: BrowserItem[]): SetGroup[] {

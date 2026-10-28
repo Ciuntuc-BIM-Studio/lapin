@@ -18,7 +18,7 @@ Un proiect nou are deja trei niveluri: **Foundations** (−1,50), **Ground floor
 
 1. **Taburile panglicii.** Desen, Arhitectură, Structură, Teren, Studio, Adnotări, Gestionare, Cantități și Vedere își grupează fiecare uneltele. **Fișier** deschide, salvează, importă și exportă.
 2. **Panglica.** Are uneltele tabului curent. Ține mouse-ul peste o unealtă ca să vezi numele și literele ei de la tastatură.
-3. **Navigatorul proiectului.** Listează nivelurile, planurile, secțiunile, fațadele, vederile 3D, planșele și extrasele. Dublu clic pe una o deschide într-un tab.
+3. **Navigatorul proiectului.** Listează nivelurile, planurile, secțiunile, fațadele, vederile 3D, planșele și extrasele. Dublu clic pe una o deschide într-un tab. Un proiect se deschide pe planul parterului, cu vederea 3D într-un tab alături.
 4. **Vederea.** Aici desenezi: un plan, o secțiune, o vedere 3D sau o planșă. Poți deschide mai multe vederi alăturate cu cele două butoane din dreapta sus a vederii.
 5. **Bara rapidă.** Are uneltele cele mai folosite pe tastele <kbd>1</kbd>–<kbd>9</kbd>.
 6. **Linia de comandă.** Scrie aici literele unei unelte și apasă <kbd>Enter</kbd>. Cât lucrează o unealtă, linia îți spune ce îi trebuie mai departe. Vezi [Desen și linia de comandă](drafting.md).

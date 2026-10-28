@@ -35,7 +35,7 @@ async function openFromBrowser(t, name, wait = 2000) {
 
 /** The 3D view, from its tab in the project browser. */
 async function open3d(t) {
-  await openFromBrowser(t, '{3D}', 0);
+  await openFromBrowser(t, '3D', 0);
   await t.page.waitForSelector('canvas', { timeout: 20_000 });
   await t.wait(2500);
 }

@@ -8,7 +8,7 @@
 
 import { engine, engineInBrowser, useSession } from './session';
 import { LONG_TIMEOUT_MS } from './client';
-import { notify, select, useUi } from '../app/store';
+import { emptyPane, notify, select, useUi } from '../app/store';
 
 const FILTERS = [{ name: 'Lapin project', extensions: ['lapin'] }];
 
@@ -123,9 +123,12 @@ function remember(path: string): void {
   try { localStorage.setItem(RECENT_KEY, JSON.stringify([path, ...recentProjects().filter((p) => p !== path)].slice(0, 8))); } catch { /* no storage: no list */ }
 }
 
+/** Into the project: the ground floor's plan in front, the 3D open in a tab beside it. */
 function enter(): void {
   select(null);
-  useUi.setState({ screen: 'workspace', storeyId: null, tool: null });
+  const plan = emptyPane('plan');
+  useUi.setState({ screen: 'workspace', storeyId: null, tool: null, panes: [plan], pane: 0, ...plan });
+  useUi.setState((s) => ({ viewTabs: [...s.viewTabs, { ...emptyPane('3d'), storeyId: null }] }));
 }
 
 export async function newProject(): Promise<void> {

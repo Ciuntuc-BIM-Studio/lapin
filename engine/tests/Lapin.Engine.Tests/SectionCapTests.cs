@@ -92,4 +92,21 @@ public class SectionCapTests
         f.Run("view.setSectionBox", new JsonObject { ["id"] = view, ["box"] = null });
         Assert.Null(f.Model.Get(view)!.Attrs["sectionBox"]);
     }
+
+    [Fact]
+    public void On_a_level_cut_the_hatch_runs_along_the_layer_however_the_wall_is_turned()
+    {
+        // A brick wall turned 30°, cut at 1.2 m: its courses (the pattern's lines) run the wall's way.
+        var f = new Fixture();
+        var type = f.Type("Brick", ("Brick", 0.25, true));
+        double c = Math.Cos(Math.PI / 6), s = Math.Sin(Math.PI / 6);
+        var wall = f.Wall(0, 0, 6 * c, 6 * s, type);
+        var core = f.Session.Caps([ClipPlane.Through(new Vec3(0, 0, 1.2), new Vec3(0, 0, -1))], drawing: true).Single(x => x.NodeId == wall).Parts.Single();
+        var h = core.Hatch!;
+        Assert.NotEmpty(h);
+        // The longest hatch segments are the courses: parallel to the wall.
+        var longest = Enumerable.Range(0, h.Length / 6).Select(k => (dx: h[6 * k + 3] - h[6 * k], dy: h[6 * k + 4] - h[6 * k + 1])).OrderByDescending(d => d.dx * d.dx + d.dy * d.dy).First();
+        var len = Math.Sqrt(longest.dx * longest.dx + longest.dy * longest.dy);
+        Assert.Equal(1, Math.Abs(longest.dx / len * c + longest.dy / len * s), 3);
+    }
 }
