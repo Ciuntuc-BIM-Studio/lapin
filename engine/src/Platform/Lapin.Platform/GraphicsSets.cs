@@ -62,7 +62,7 @@ public static class GraphicsSets
     }
 
     /// <summary>The view (or "3d") a command names, and how to write its attributes back.</summary>
-    static (Entity View, Action<JsonObject> Write) Target(ICommandContext ctx, string? id)
+    internal static (Entity View, Action<JsonObject> Write) Target(ICommandContext ctx, string? id)
     {
         if (id == View3d)
             return (As3dView(ctx.Model), attrs =>

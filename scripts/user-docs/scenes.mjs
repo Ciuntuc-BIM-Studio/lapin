@@ -482,6 +482,66 @@ export const scenes = [
     },
   },
   {
+    // One storey at a time in 3D (report #29): a level's right-click in the browser, the chip, and back to every storey.
+    id: 'views-3d-storeys',
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      await t.cmd('architecture.addDoor', { wallId: walls.inner, x: 7, y: 2 });
+      // The first floor over it: the same outline, its floor and the roof.
+      const first = await t.storey('First floor');
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+      const upper = [];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        upper.push((await t.cmd('architecture.addWall', { storeyId: first, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id);
+      }
+      await t.cmd('architecture.addWindow', { wallId: upper[0], x: 3, y: 0 });
+      await t.cmd('architecture.addWindow', { wallId: upper[0], x: 9.5, y: 0 });
+      await t.cmd('architecture.addSlab', { storeyId: first, points: outline });
+      const roof = await t.cmd('architecture.addRoof', { storeyId: first, points: outline });
+      await t.cmd('architecture.roofStyle', { id: roof.id, style: 'ro_saxon' });
+      await t.wait(800);
+      await open3d(t);
+      await t.fit();
+      const { page } = t;
+      const hidden = () => page.evaluate(async () => Object.keys((await import('/src/platform/looks.ts')).useLooks.getState().bySource.storeys3d ?? {}));
+      const level = (name) => page.locator('nav.browser .tree-item', { hasText: `${name} ·` }).first();
+      await level('Ground floor').click({ button: 'right' });
+      await t.wait(300);
+      t.expect(await page.locator('.context-menu').getByRole('menuitem', { name: 'Show only this level in 3D' }).count() === 1, 'a level\'s right-click offers to show it alone in 3D');
+      const nav = await page.locator('nav.browser').boundingBox();
+      const menu = await page.locator('.context-menu').boundingBox();
+      // (Wider than the menu: its Romanian is longer.)
+      await t.shot('storeys-3d-menu', { clip: { x: nav.x, y: Math.max(0, menu.y - 80), width: Math.max(nav.width, menu.x + menu.width * 1.35 - nav.x) + 12, height: menu.height + 120 } });
+      await page.locator('.context-menu').getByRole('menuitem', { name: 'Show only this level in 3D' }).click();
+      await t.wait(1200);
+      let off = await hidden();
+      t.expect(upper.every((id) => off.includes(id)) && !off.includes(walls[0]), 'the first floor is hidden, the ground floor shown');
+      t.expect(await page.locator('.mode-chip.storeys').getByText('Ground floor', { exact: true }).count() === 1, 'the chip says which storey is shown');
+      await t.fit();
+      await t.shot('storeys-3d', { of: '[data-testid=view3d]', pad: 0 });
+      // The 3D follows the active level: the first floor and those below it.
+      await level('First floor').click({ button: 'right' });
+      await page.locator('.context-menu').getByRole('menuitem', { name: 'Show this level and below in 3D' }).click();
+      await t.wait(800);
+      off = await hidden();
+      t.expect(!upper.some((id) => off.includes(id)) && !off.includes(walls[0]), 'the first floor and those below are shown');
+      await level('Ground floor').click();
+      await t.wait(800);
+      off = await hidden();
+      t.expect(upper.every((id) => off.includes(id)), 'picking another level, the 3D follows it');
+      // The cut above the level, set in the 3D view's properties, says so on the chip.
+      await t.cmd('view.setStoreys', { id: '3d', cut: 1.2 });
+      await t.wait(500);
+      t.expect(await page.locator('.mode-chip.storeys').getByText('cut at 1.20 m').count() === 1, 'the chip says where the model is cut');
+      // × shows every storey again.
+      await page.locator('.mode-chip.storeys button.mode-close').click();
+      await t.wait(800);
+      t.expect(await page.locator('.mode-chip.storeys').count() === 0 && (await hidden()).length === 0, 'the chip\'s × shows every storey');
+    },
+  },
+  {
     id: 'drafting',
     async run(t) {
       await t.fresh();

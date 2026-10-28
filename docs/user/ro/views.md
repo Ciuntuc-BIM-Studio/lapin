@@ -44,6 +44,22 @@ Ca să vezi din nou tot modelul, apasă **×** pe eticheta **Secțiune** din jos
 
 ![Cutia de secțiune tăiată la planul parterului, cu fața de est trasă înăuntru](shots/section-box.webp)
 
+### Câte un etaj
+
+Ca să te uiți în interiorul clădirii, arată doar unele dintre etajele ei. Clic dreapta pe un nivel în navigator și alege **Arată doar acest nivel în 3D** sau **Arată acest nivel și cele de dedesubt în 3D**, ca să vezi clădirea tăiată la acel nivel. Nivelul devine cel activ, iar vederea 3D urmează nivelul activ: dă clic pe alt nivel în navigator ca să urci sau să cobori un etaj.
+
+![Meniul de clic dreapta al unui nivel în navigator](shots/storeys-3d-menu.webp)
+
+![Doar parterul în 3D](shots/storeys-3d.webp)
+
+**Vedere → Etaje afișate** sau proprietățile vederii 3D stabilesc restul:
+
+- **Arată**: toate etajele, etajele bifate, doar etajul activ sau etajul activ și cele de dedesubt.
+- **Fără etaj**: ce nu stă pe niciun etaj (amplasamentul, terenul, fișierele legate) se arată sau se ascunde.
+- **Secționat deasupra nivelului**: modelul e tăiat la atât deasupra celui mai înalt etaj afișat, la început 1,20 m, cum îl taie un plan.
+
+Etajele ascunse nu se desenează și nu le poți selecta, încadra sau călca pe ele. O vedere 3D salvată își păstrează propria alegere. Eticheta **Etaje** din josul vederii 3D spune ce se vede; **×** de pe ea arată din nou toate etajele.
+
 ### Plimbare printr-o încăpere
 
 Într-un plan, clic dreapta într-o încăpere și alege **Plimbă-te în 3D**. Vederea 3D te pune în încăpere, la 1,60 m deasupra pardoselii, privind de-a lungul laturii ei celei mai lungi.

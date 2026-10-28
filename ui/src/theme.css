@@ -575,6 +575,9 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .plan-storeys-list { list-style: none; margin: 8px 0 4px; padding: 0; }
 .plan-storeys-list li { padding: 2px 0; }
 .plan-storeys-list li.own { font-weight: 500; }
+/* A 3D view's (report #29): the cut's height beside its tick */
+.storeys-3d-cut { display: flex; align-items: center; gap: 6px; }
+.storeys-3d-cut input[type="number"] { width: 64px; }
 
 /* View settings and view styles (docs/view-styles.md) */
 .view-settings .fields dd { display: flex; align-items: center; gap: 6px; }

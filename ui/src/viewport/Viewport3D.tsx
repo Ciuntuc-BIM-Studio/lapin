@@ -16,7 +16,9 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { X } from 'lucide-react';
 import type { CapItem, NodeDto, RenderItem } from '../engine/protocol';
 import { activeStorey, engine, useSession } from '../engine/session';
-import { num } from '../engine/model';
+import { num, storeys as storeysOf } from '../engine/model';
+import { chipText, cutZ, settingOf } from './storeys3d';
+import { showAllStoreys3d } from './storeys3dActions';
 import { select, setTool, useUi } from '../app/store';
 import { findTool } from '../platform/modules';
 import type { FaceHit, Vec2 } from '../platform/module';
@@ -342,6 +344,12 @@ export function Viewport3D() {
   /** The section the camera was last turned to, so it turns once per showing, not on every edit. */
   const framedSection = useRef<string | null>(null);
   const elevationRef = useRef(0);
+  /** The clipping planes: a section's shown in 3D, and the cut above the storeys shown; the renderer takes both. */
+  const sectionClip = useRef<THREE.Plane[]>([]);
+  const storeyClip = useRef<THREE.Plane[]>([]);
+  /** Where the storeys shown are cut (a height), so a click above it picks nothing cut away. */
+  const cutRef = useRef<number | null>(null);
+  const applyClip = () => { if (rendererRef.current) rendererRef.current.clippingPlanes = [...sectionClip.current, ...storeyClip.current]; };
   useUi((s) => s.storeyId);
   useSession((s) => s.nodes);
   const storey = activeStorey();
@@ -479,6 +487,13 @@ export function Viewport3D() {
 
     // A click (not a drag): the element under it, and the point on the active storey's plane.
     const ray = new THREE.Raycaster();
+    // What the ray meets first among the elements shown (not those hidden, nor what the storeys' cut takes away).
+    const pickAt = () => {
+      const meshes: THREE.Object3D[] = [];
+      for (const { object } of live.values()) if (object.visible) meshes.push(object);
+      const cut = cutRef.current;
+      return ray.intersectObjects(meshes, true).find((h) => h.object.userData.nodeId && (cut === null || h.point.z <= cut + 1e-3));
+    };
     let down: { x: number; y: number } | null = null;
     const onDown = (e: PointerEvent) => { down = { x: e.clientX, y: e.clientY }; };
     const onUp = (e: PointerEvent) => {
@@ -487,9 +502,7 @@ export function Viewport3D() {
       if (!start || e.button !== 0 || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 4) return;
       const r = renderer.domElement.getBoundingClientRect();
       ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), cam);
-      const meshes: THREE.Object3D[] = [];
-      for (const { object } of live.values()) meshes.push(object);
-      const hit = ray.intersectObjects(meshes, true).find((h) => h.object.userData.nodeId);
+      const hit = pickAt();
       const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -elevationRef.current);
       const g = ray.ray.intersectPlane(plane, new THREE.Vector3());
       clickRef.current({
@@ -519,9 +532,7 @@ export function Viewport3D() {
         hoverFrame = 0;
         const r = renderer.domElement.getBoundingClientRect();
         ray.setFromCamera(new THREE.Vector2(((at.x - r.left) / r.width) * 2 - 1, -((at.y - r.top) / r.height) * 2 + 1), cam);
-        const meshes: THREE.Object3D[] = [];
-        for (const { object } of live.values()) meshes.push(object);
-        const hit = ray.intersectObjects(meshes, true).find((h) => h.object.userData.nodeId);
+        const hit = pickAt();
         const id = hit?.object.userData.nodeId as string | undefined;
         const node = id ? useSession.getState().nodes.get(id) : undefined;
         if (!hit || !node || !types.includes(node.type)) { if (hoverKey) { hoverKey = ''; showFace(null); setFaceLabel(null); } return; }
@@ -866,9 +877,10 @@ export function Viewport3D() {
     if (!s || !renderer) return;
     const old = s.getObjectByName('section-overlay');
     if (old) { s.remove(old); dispose(old); }
-    renderer.clippingPlanes = planes.map((p) => new THREE.Plane(new THREE.Vector3(...p.normal), p.constant));
+    sectionClip.current = planes.map((p) => new THREE.Plane(new THREE.Vector3(...p.normal), p.constant));
     const d = sectionId ? sectionDrawing : null;
     if (d?.frame && d.kind === 'section') s.add(sectionOverlay(d, sectionNotes, Math.min(8, renderer.capabilities.getMaxAnisotropy()), capStyle === 'drawing'));
+    applyClip();
     if (!sectionId) framedSection.current = null;
     else if (d?.frame && framedSection.current !== sectionId && !useWalk.getState().start) {
       framedSection.current = sectionId;
@@ -881,10 +893,26 @@ export function Viewport3D() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- clipKey stands for planes
   }, [sectionId, sectionDrawing, sectionNotes, capStyle, clipKey]);
 
+  // The storeys the 3D view shows (report #29): the others hidden by their looks (Storeys3DLooks); here the cut above them, and the chip.
+  const nodes = useSession((st) => st.nodes);
+  const storeySetting = settingOf(nodes, view3dId);
+  const storeyList = storeysOf({ nodes, relations: useSession.getState().relations });
+  const activeId = storey?.id ?? null;
+  const cut = cutZ(storeySetting, storeyList, activeId);
+  const storeysChip = chipText(storeySetting, storeyList, activeId);
+  useEffect(() => {
+    cutRef.current = cut;
+    // Keeps what lies under the height: −z + cut ≥ 0.
+    storeyClip.current = cut === null ? [] : [new THREE.Plane(new THREE.Vector3(0, 0, -1), cut)];
+    applyClip();
+    walkApi.current.changed();
+    invalidate.current();
+  }, [cut]);
+
   return (
     <>
       <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />
-      {(sectionId || walkStart || box) && (
+      {(sectionId || walkStart || box || storeysChip) && (
         <div className="view3d-modes">
           {sectionId && (
             <span className="mode-chip section">
@@ -907,6 +935,15 @@ export function Viewport3D() {
               <button type="button" onClick={fitSectionBox} title="The box round the whole model">Fit</button>
               <button type="button" onClick={() => void cutAtPlan()} title="The box's top at the active storey's plan cut">Cut at plan</button>
               <button type="button" className="mode-close" title="Section box off" aria-label="Section box off" onClick={() => useSectionBox.setState({ box: null })}><X size={12} /></button>
+            </span>
+          )}
+          {storeysChip && (
+            <span className="mode-chip storeys" title="Which storeys this 3D view shows: View → Storeys shown, or its properties">
+              <span>Storeys</span>
+              {storeysChip.name && <span data-no-i18n>{storeysChip.name}</span>}
+              <span>{storeysChip.text}</span>
+              {storeysChip.cut && <span className="mode-hint">{storeysChip.cut}</span>}
+              <button type="button" className="mode-close" title="Show every storey" aria-label="Show every storey" onClick={() => void showAllStoreys3d(view3dId ?? '3d')}><X size={12} /></button>
             </span>
           )}
           {walkStart && (

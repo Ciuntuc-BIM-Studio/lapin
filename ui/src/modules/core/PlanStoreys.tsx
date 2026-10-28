@@ -14,6 +14,7 @@ import { execute, useSession } from '../../engine/session';
 import { storeys } from '../../engine/model';
 import { frontView } from '../../viewport/frontView';
 import type { NodeDto } from '../../engine/protocol';
+import { Storeys3DEditor } from './Storeys3D';
 
 interface Display { mode: 'home' | 'some' | 'all'; ids: string[]; halftone: boolean }
 
@@ -74,23 +75,26 @@ export function PlanStoreysSection({ node }: { node: NodeDto }) {
   return <PlanStoreysEditor view={node} />;
 }
 
-/** View → Storeys: the editor for the plan in front (its own view is made when the storey has none). */
+/** View → Storeys: the editor for the plan in front (its own view is made when the storey has none), or for the 3D view in front. */
 export function PlanStoreysDialog() {
   const nodes = useSession((s) => s.nodes);
   const [id, setId] = useState<string | null>(null);
   const close = () => useUi.setState({ dialog: null });
+  const in3d = useUi((s) => s.view) === '3d';
   useEffect(() => {
     void (async () => {
-      if (useUi.getState().view !== 'plan') { useUi.setState({ notice: 'Which storeys a plan shows is set on a plan: open one.' }); close(); return; }
+      const v = useUi.getState().view;
+      if (v !== 'plan' && v !== '3d') { useUi.setState({ notice: 'Which storeys a view shows is set on a plan or a 3D view: open one.' }); close(); return; }
       setId(await frontView());
     })();
   }, []);
   const view = id ? nodes.get(id) : undefined;
+  const name = in3d ? (view?.name ?? '{3D}') : view?.name;
   return (
     <div className="dialog-backdrop" onClick={close}>
       <div className="dialog" role="dialog" aria-label="Storeys shown" onClick={(e) => e.stopPropagation()}>
-        <header className="dialog-head"><span className="panel-title">Storeys shown{view ? ` · ${view.name}` : ''}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
-        <div className="dialog-body">{view ? <PlanStoreysEditor view={view} /> : <p className="muted">…</p>}</div>
+        <header className="dialog-head"><span className="panel-title">Storeys shown{name ? ` · ${name}` : ''}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
+        <div className="dialog-body">{in3d && id ? <Storeys3DEditor viewId={id} /> : view ? <PlanStoreysEditor view={view} /> : <p className="muted">…</p>}</div>
         <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>

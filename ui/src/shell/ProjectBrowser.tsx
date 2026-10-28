@@ -17,6 +17,7 @@ import { disciplineOf, groupItems, implicitPlan, itemOf, setsOf, THREE_D, type B
 import { IfcTree } from './IfcTree';
 import { openContextMenu } from './ContextMenu';
 import { toggleSection3d, useSection3d } from '../viewport/section3d';
+import { showLevelIn3d } from '../viewport/storeys3dActions';
 
 const TAB_KEY = 'lapin.browser.tab';
 
@@ -103,6 +104,14 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
     openContextMenu(e.clientX, e.clientY, [
       { label: 'Open', icon: item.kind === 'section' ? <Scissors size={13} /> : <SquareStack size={13} />, onSelect: () => showDrawing(item.id) },
       { label: 'Show in 3D', icon: <Box size={13} />, checked: on, onSelect: () => { toggleSection3d(item.id); if (!on && useUi.getState().view !== '3d') useUi.setState({ view: '3d' }); } },
+    ]);
+  };
+  // A level's right-click: the 3D in front shows it alone, or with the levels below (report #29); it becomes the active level, which the 3D then follows.
+  const levelMenu = (id: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    openContextMenu(e.clientX, e.clientY, [
+      { label: 'Show only this level in 3D', icon: <Layers size={13} />, onSelect: () => void showLevelIn3d(id, 'active') },
+      { label: 'Show this level and below in 3D', icon: <Layers size={13} />, onSelect: () => void showLevelIn3d(id, 'below') },
     ]);
   };
   const Row = ({ item, on, open, children }: { item: BrowserItem; on: boolean; open: () => void; children?: React.ReactNode }) => (
@@ -203,7 +212,7 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
         </div>
         {levels.map((s) => (
           <span key={s.id} className="tree-row">
-            <button type="button" className={`tree-item${active?.id === s.id ? ' on' : ''}`} onClick={() => useUi.setState({ storeyId: s.id, selection: s.id })}>
+            <button type="button" className={`tree-item${active?.id === s.id ? ' on' : ''}`} onClick={() => useUi.setState({ storeyId: s.id, selection: s.id })} onContextMenu={levelMenu(s.id)}>
               {s.name} · {level(num(s, 'elevation'))}
             </button>
             <button type="button" className="icon mini" title="Duplicate the level with everything on it (Alt: an empty level)" onClick={(e) => duplicateLevel(s.id, !e.altKey)}><Copy size={11} /></button>

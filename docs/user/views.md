@@ -44,6 +44,22 @@ To see the whole model again, click the **×** on the **Section** chip at the bo
 
 ![The section box cut at the ground floor's plan, its east face dragged in](shots/section-box.webp)
 
+### One storey at a time
+
+To look inside the building, show only some of its storeys. Right-click a level in the project browser and choose **Show only this level in 3D**, or **Show this level and below in 3D** to see the building cut at that level. The level becomes the active one, and the 3D view follows the active level: click another level in the browser to go up or down a floor.
+
+![The level's right-click menu in the browser](shots/storeys-3d-menu.webp)
+
+![The ground floor alone in 3D](shots/storeys-3d.webp)
+
+**View → Storeys shown**, or the 3D view's properties, sets the rest:
+
+- **Show**: every storey, the storeys ticked, the active storey only, or the active storey and those below.
+- **On no storey**: what stands on no storey (the site, the terrain, linked files) is shown or hidden.
+- **Cut above its level**: the model is cut that far above the highest storey shown, 1.20 m at first, as a plan cuts it.
+
+The storeys hidden are not drawn, and you cannot select them, fit to them or walk on them. A saved 3D view keeps its own choice. The **Storeys** chip at the bottom of the 3D view says what is shown; its **×** shows every storey again.
+
 ### Walking into a room
 
 In a plan, right-click inside a room and choose **Walk in 3D**. The 3D view puts you inside the room, 1.60 m above its floor, looking along its longest side.

@@ -26,6 +26,8 @@ import { LinksDialog, LinksLook } from './LinksDialog';
 import { VersionsDialog } from './VersionsDialog';
 import { ExportMeshDialog } from './ExportMeshDialog';
 import { PlanStoreysDialog } from './PlanStoreys';
+import { Storeys3DLooks } from './Storeys3D';
+import { setStoreys3d, showAllStoreys3d } from '../../viewport/storeys3dActions';
 import { ViewSettingsDialog, ViewSettingsSection, ViewStylesDialog } from './ViewSettings';
 import { cutAtPlan, toggleSectionBox } from '../../viewport/sectionBoxTools';
 
@@ -77,8 +79,8 @@ const frontDiscipline = (): string | undefined => {
   return typeof d === 'string' && d.trim() ? d : undefined;
 };
 
-/** What the core keeps running while the workspace is open: the 3D's visibility, the links' looks. */
-function CoreBackground() { return <><Visibility3D /><LinksLook /></>; }
+/** What the core keeps running while the workspace is open: the 3D's visibility and storeys shown, the links' looks. */
+function CoreBackground() { return <><Visibility3D /><Storeys3DLooks /><LinksLook /></>; }
 
 const core: LapinModule = {
   id: 'core',
@@ -145,6 +147,10 @@ const core: LapinModule = {
         { id: 'view.fog', label: 'Fog', icon: CloudFog, run: () => useUi.setState((s) => ({ fog: !s.fog })) },
       ], small: [
         { id: 'view.graphicsVg', label: 'Graphics (VG)', icon: Layers3, shortcut: 'VG', run: () => useUi.setState({ dialog: 'visibility' }) },
+        // The 3D view in front's storeys (report #29): the active storey alone, with those below, or every storey again.
+        { id: 'view.3dActiveStorey', label: 'Active storey only in 3D', icon: Layers, run: () => void setStoreys3d({ mode: 'active' }) },
+        { id: 'view.3dStoreyAndBelow', label: 'Active storey and below in 3D', icon: Layers, run: () => void setStoreys3d({ mode: 'below' }) },
+        { id: 'view.3dAllStoreys', label: 'All storeys in 3D', icon: Layers, run: () => void showAllStoreys3d() },
       ] },
       // The same ids as the app's own commands (app/commands.ts): one entry in the shortcuts, its keys in the tooltip.
       { label: 'Interface', tools: [

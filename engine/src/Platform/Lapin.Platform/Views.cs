@@ -169,6 +169,60 @@ public static class Views
         }
     }
 
+    /// <summary>
+    /// Which storeys a 3D view shows (report #29): every storey ("all", the
+    /// default), those listed ("some"), the active storey alone ("active") or
+    /// the active storey and those below it ("below", a building cut at a
+    /// level). The active storey is the interface's, so the view follows it.
+    /// <see cref="Unplaced"/>: what stands on no storey (the site, the terrain,
+    /// links) shows too. <see cref="Cut"/>: the model cut above the highest
+    /// storey shown, that far over its level (1.20 m: like a plan), or not cut.
+    /// A saved 3D view keeps it in <c>storeys</c>; {3D} in the project's <c>view3d</c>.
+    /// </summary>
+    public sealed record Storeys3d(string Mode, IReadOnlySet<string> Storeys, bool Unplaced, double? Cut)
+    {
+        public static readonly Storeys3d All = new("all", new HashSet<string>(), true, null);
+        public static readonly string[] Modes = ["all", "some", "active", "below"];
+
+        public static Storeys3d Of(Entity view)
+        {
+            if (view.Attrs["storeys"] is not JsonObject o) return All;
+            var mode = (string?)o["mode"] is { } md && Modes.Contains(md) ? md : "all";
+            var ids = (o["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+            var unplaced = !(o["unplaced"] is JsonValue uv && uv.TryGetValue<bool>(out var u) && !u);
+            return new Storeys3d(mode, ids, unplaced, Json.Number(o["cut"]));
+        }
+
+        public bool IsDefault => Mode == "all" && Unplaced && Cut == null;
+
+        public JsonObject ToJson()
+        {
+            var o = new JsonObject { ["mode"] = Mode, ["ids"] = new JsonArray(Storeys.Order(StringComparer.Ordinal).Select(x => (JsonNode)x).ToArray()), ["unplaced"] = Unplaced };
+            if (Cut is { } c) o["cut"] = c;
+            return o;
+        }
+    }
+
+    /// <summary>A 3D view's storeys shown set: {id ("3d" or a saved 3D view), mode?, ids?, unplaced?, cut? (metres; null: no cut)}.</summary>
+    static void SetStoreys3d(ICommandContext ctx, JsonObject a, Entity view, Action<JsonObject> write)
+    {
+        var old = Storeys3d.Of(view);
+        var mode = (string?)a["mode"] ?? old.Mode;
+        if (!Storeys3d.Modes.Contains(mode)) throw new CommandException($"„{mode}” is not all, some, active or below.");
+        var ids = a["ids"] is JsonArray arr ? arr.Select(n => (string?)n).OfType<string>().ToHashSet() : old.Storeys.ToHashSet();
+        foreach (var id in ids) Spatial.Require(ctx.Model, id, IfcClass.BuildingStorey);
+        if (mode == "some" && ids.Count == 0) throw new CommandException("Tick at least one storey.");
+        var unplaced = a["unplaced"] is JsonValue uv && uv.TryGetValue<bool>(out var u) ? u : old.Unplaced;
+        var cut = a.ContainsKey("cut") ? Json.Number(a["cut"]) : old.Cut;
+        if (cut is { } c && (c < -5 || c > 50)) throw new CommandException("The cut is between −5 and 50 m above the storey's level.");
+        var next = new Storeys3d(mode, ids, unplaced, cut);
+        var attrs = view.CloneAttrs();
+        if (next.IsDefault) attrs.Remove("storeys"); else attrs["storeys"] = next.ToJson();
+        // {3D}'s settings live on the project, without a kind; a saved view keeps its own.
+        if (view.Id == GraphicsSets.View3d) attrs.Remove("kind");
+        write(attrs);
+    }
+
     /// <summary>How a view shows an element by its storey (null: hidden; true: halftone); every element shows in a section, an elevation or a 3D view.</summary>
     public static bool? ShowsByStorey(IModelView m, Entity view, Entity element) =>
         view.Str("kind") is "plan" or null ? StoreyDisplay.Of(view).Shows(view.Str("storeyId"), Spatial.StoreyOf(m, element.Id)?.Id) : false;
@@ -634,9 +688,17 @@ public static class Views
         });
 
         // What a plan shows of the other storeys: {id, mode: home|some|all, ids?: [storey ids], halftone?}; the plan's own storey is always shown.
+        // A 3D view's ({3D}'s, id "3d", or a saved one's): {id, mode: all|some|active|below, ids?, unplaced?, cut?} (Storeys3d).
         r.Command("view.setStoreys", "Storeys shown", (ctx, a) =>
         {
-            var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == "plan" ? x : throw new CommandException("Not a plan view.");
+            var vid = (string?)a["id"] ?? "";
+            if (vid == GraphicsSets.View3d || ctx.Model.Get(vid) is { Class: Class } v3 && v3.Str("kind") == "3d")
+            {
+                var (view3d, write) = GraphicsSets.Target(ctx, vid);
+                SetStoreys3d(ctx, a, view3d, write);
+                return null;
+            }
+            var v = ctx.Model.Get(vid) is { Class: Class } x && x.Str("kind") == "plan" ? x : throw new CommandException("Not a plan or a 3D view.");
             var old = StoreyDisplay.Of(v);
             var mode = (string?)a["mode"] ?? old.Mode;
             if (!StoreyDisplay.Modes.Contains(mode)) throw new CommandException($"„{mode}” is not home, some or all.");

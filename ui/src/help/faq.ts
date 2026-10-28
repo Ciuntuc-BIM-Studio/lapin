@@ -186,6 +186,16 @@ export const FAQ: Entry[] = [
     source: 'faq',
   },
   {
+    id: 'storeys-3d',
+    q: ['How do I hide levels in the 3D view?', 'How do I see one storey alone in 3D?', 'How do I look inside the building in 3D, floor by floor?'],
+    qRo: ['Cum ascund nivelurile în vederea 3D?', 'Cum văd un singur etaj în 3D?', 'Cum mă uit în interiorul clădirii în 3D, etaj cu etaj?'],
+    keywords: ['level', 'levels', 'storey', 'storeys', 'story', 'stories', 'floor', 'floors', 'invisible', 'hide', 'hidden', 'isolate', 'alone', 'only', 'whole', 'building', 'inside', '3d', 'nivel', 'niveluri', 'etaj', 'etaje', 'ascund', 'ascunde', 'invizibil', 'izolez', 'singur', 'interior', 'cladire', 'cladirii'],
+    a: 'Right-click a level in the project browser and choose Show only this level in 3D, or Show this level and below in 3D (the building cut at that level). The 3D view then follows the active level: click another level in the browser to move up or down. View → Storeys shown (or the 3D view\'s properties) also lets you tick the storeys, show or hide what stands on no storey (the site, the terrain), and cut the model 1.20 m above the level, as a plan does. The chip at the bottom of the 3D view says what is shown; its × shows every storey again. A saved 3D view keeps its own choice.',
+    aRo: 'Clic dreapta pe un nivel în browserul proiectului și alege Show only this level in 3D sau Show this level and below in 3D (clădirea tăiată la acel nivel). Vederea 3D urmează apoi nivelul activ: dă clic pe alt nivel în browser ca să urci sau să cobori. View → Storeys shown (sau proprietățile vederii 3D) îți permite și să bifezi etajele, să arăți sau să ascunzi ce nu e pe niciun etaj (amplasamentul, terenul) și să secționezi modelul la 1,20 m deasupra nivelului, ca un plan. Eticheta din josul vederii 3D spune ce se vede; × de pe ea arată din nou toate etajele. O vedere 3D salvată își păstrează propria alegere.',
+    action: { label: 'Show the active level only', labelRo: 'Arată doar nivelul activ', run: { kind: 'tool', id: 'view.3dActiveStorey' } },
+    source: 'report #29',
+  },
+  {
     id: 'updates',
     q: ['How do I update Lapin?', 'Which version do I have?', 'Is the web version slower?'],
     qRo: ['Cum actualizez Lapin?', 'Ce versiune am?', 'Versiunea web e mai lentă?'],

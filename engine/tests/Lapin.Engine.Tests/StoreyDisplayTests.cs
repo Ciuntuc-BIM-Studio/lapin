@@ -123,6 +123,36 @@ public sealed class StoreyDisplayTests
     }
 
     [Fact]
+    public void A_3d_view_keeps_the_storeys_it_shows_and_a_saved_copy_takes_them()
+    {
+        var (f, ground, below, _, _, _) = Project();
+        // {3D}: on the project, all storeys by default.
+        Assert.True(Views.Storeys3d.Of(GraphicsSets.As3dView(f.Model)).IsDefault);
+        f.Run("view.setStoreys", new JsonObject { ["id"] = "3d", ["mode"] = "below", ["cut"] = 1.2 });
+        var s = Views.Storeys3d.Of(GraphicsSets.As3dView(f.Model));
+        Assert.Equal(("below", true, (double?)1.2), (s.Mode, s.Unplaced, s.Cut));
+        Assert.Null(Spatial.Project(f.Model)!.Attrs["view3d"]!["kind"]);
+        // A saved 3D view made from {3D} takes its setting, and keeps its own after.
+        var saved = (string)f.Run("view.duplicate", new JsonObject { ["id"] = "3d" })!["id"]!;
+        Assert.Equal("below", Views.Storeys3d.Of(f.Model.Get(saved)!).Mode);
+        f.Run("view.setStoreys", new JsonObject { ["id"] = saved, ["mode"] = "some", ["ids"] = new JsonArray(below, ground), ["unplaced"] = false, ["cut"] = null });
+        var own = Views.Storeys3d.Of(f.Model.Get(saved)!);
+        Assert.Equal(("some", false, (double?)null), (own.Mode, own.Unplaced, own.Cut));
+        Assert.Equal(new[] { below, ground }.Order(StringComparer.Ordinal), own.Storeys.Order(StringComparer.Ordinal));
+        Assert.Equal("3d", f.Model.Get(saved)!.Str("kind"));
+        Assert.Equal("below", Views.Storeys3d.Of(GraphicsSets.As3dView(f.Model)).Mode);
+        // Everything shown again: the setting goes from the view; undo brings it back.
+        f.Run("view.setStoreys", new JsonObject { ["id"] = "3d", ["mode"] = "all", ["cut"] = null });
+        Assert.Null(Spatial.Project(f.Model)!.Attrs["view3d"]?["storeys"]);
+        f.Session.Undo();
+        Assert.Equal("below", Views.Storeys3d.Of(GraphicsSets.As3dView(f.Model)).Mode);
+        // A plan's modes are not a 3D view's, nor are an element or an empty pick storeys.
+        Assert.Throws<CommandException>(() => f.Run("view.setStoreys", new JsonObject { ["id"] = "3d", ["mode"] = "home" }));
+        Assert.Throws<CommandException>(() => f.Run("view.setStoreys", new JsonObject { ["id"] = saved, ["mode"] = "some", ["ids"] = new JsonArray() }));
+        Assert.Throws<CommandException>(() => f.Run("view.setStoreys", new JsonObject { ["id"] = "3d", ["cut"] = 80 }));
+    }
+
+    [Fact]
     public void A_plan_keeps_its_reference_level()
     {
         var (f, ground, below, _, _, plan) = Project();

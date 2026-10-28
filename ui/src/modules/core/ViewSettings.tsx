@@ -20,6 +20,7 @@ import { frontView } from '../../viewport/frontView';
 import { storeys } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { PlanStoreysEditor } from './PlanStoreys';
+import { Storeys3DEditor } from './Storeys3D';
 
 interface ViewStyleState { style: ViewStyle; named: boolean; resolved: ViewStyle; overrides: string[] }
 
@@ -100,9 +101,10 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
   );
 }
 
-/** In a view's properties (a plan, a section, an elevation). */
+/** In a view's properties (a plan, a section, an elevation; a 3D view's storeys shown). */
 export function ViewSettingsSection({ node }: { node: NodeDto }) {
-  if (node.props.kind === '3d') return null;
+  // A 3D view: the storeys it shows (report #29).
+  if (node.props.kind === '3d') return <><p className="eyebrow">Storeys shown</p><Storeys3DEditor viewId={node.id} /></>;
   return <ViewSettingsEditor view={node} />;
 }
 
