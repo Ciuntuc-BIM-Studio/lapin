@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useLooks, type Look } from '../platform/looks';
+import { useSunlight } from '../platform/sunlight';
 import { pickable } from '../platform/scope';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -82,6 +83,7 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
         g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
         const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0xffffff, map: orthoTexture(ortho), roughness: 0.95, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
         mesh.userData.nodeId = nodeId;
+        mesh.castShadow = mesh.receiveShadow = true;
         group.add(mesh);
       }
       // The material's own image: on every face, untinted, at its size in metres.
@@ -95,6 +97,7 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
         boxUvSized(g, own.width, own.height);
         const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0xffffff, map: imageTexture(own), roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
         mesh.userData.nodeId = nodeId;
+        mesh.castShadow = mesh.receiveShadow = true;
         group.add(mesh);
       }
       const kinds: Record<Face, TextureKind | null> = { side: textureOf(mat, 'side'), end: textureOf(mat, 'end'), top: textureOf(mat, 'top') };
@@ -116,6 +119,7 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
           roughness: kind === 'metal' ? 0.45 : 0.85, metalness: kind === 'metal' ? 0.3 : 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
         }));
         mesh.userData.nodeId = nodeId;
+        mesh.castShadow = mesh.receiveShadow = true;
         group.add(mesh);
       }
     }
@@ -204,6 +208,8 @@ function look(group: THREE.Object3D, l: Look | undefined) {
     m.transparent = opacity < 1;
     m.opacity = opacity;
     m.depthWrite = opacity >= 1;
+    // What is seen through casts no shadow (a buildable volume, a phase shown faded).
+    (c as THREE.Mesh).castShadow = opacity >= 1;
   });
 }
 
@@ -512,9 +518,49 @@ export function Viewport3D() {
     };
     useCamera.setState({ api });
     s.add(new THREE.HemisphereLight(0xffffff, 0xd6cebf, 2.2));
+    const hemi = s.children[s.children.length - 1] as THREE.HemisphereLight;
     const sun = new THREE.DirectionalLight(0xffffff, 1.6);
     sun.position.set(20, -30, 40);
     s.add(sun);
+    s.add(sun.target);
+    // A module's sun (the sun study): aimed from its direction over the model, casting shadows; none: the fixed light back.
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // The ground the shadows fall on where there is no terrain: invisible but for them.
+    const shadowGround = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.ShadowMaterial({ opacity: 0.28 }));
+    shadowGround.receiveShadow = true;
+    shadowGround.visible = false;
+    s.add(shadowGround);
+    const aimSun = () => {
+      const { dir } = useSunlight.getState();
+      shadowGround.visible = !!dir && dir[2] > 0.005;
+      shadowGround.position.z = elevationRef.current - 0.002;
+      if (!dir) {
+        sun.castShadow = false; sun.intensity = 1.6; hemi.intensity = 2.2;
+        sun.position.set(20, -30, 40); sun.target.position.set(0, 0, 0);
+        invalidate.current();
+        return;
+      }
+      const box = new THREE.Box3();
+      for (const { object } of items.current.values()) if (object.visible) box.expandByObject(object);
+      if (box.isEmpty()) box.set(new THREE.Vector3(-10, -10, 0), new THREE.Vector3(10, 10, 10));
+      const centre = box.getCenter(new THREE.Vector3());
+      const radius = Math.max(box.getSize(new THREE.Vector3()).length() / 2, 5);
+      const up = dir[2] > 0.005;
+      sun.target.position.copy(centre);
+      sun.position.set(centre.x + dir[0] * radius * 2, centre.y + dir[1] * radius * 2, centre.z + dir[2] * radius * 2);
+      sun.intensity = up ? 2.6 : 0;
+      hemi.intensity = up ? 1.1 : 0.6;
+      sun.castShadow = up;
+      const c = sun.shadow.camera;
+      c.left = -radius; c.right = radius; c.top = radius; c.bottom = -radius; c.near = 0.1; c.far = radius * 4;
+      c.updateProjectionMatrix();
+      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.bias = -0.0005;
+      sun.shadow.normalBias = 0.02;
+      invalidate.current();
+    };
+    const unsunlight = useSunlight.subscribe(aimSun);
     s.add(groundGrid(useUi.getState().theme, elevationRef.current));
 
     let frame = 0;
@@ -757,6 +803,7 @@ export function Viewport3D() {
     renderer.domElement.addEventListener('pointerup', onUp);
     window.addEventListener('keydown', onKey);
     return () => {
+      unsunlight();
       cancelAnimationFrame(frame);
       cancelAnimationFrame(flight);
       if (useCamera.getState().api === api) useCamera.setState({ api: null });

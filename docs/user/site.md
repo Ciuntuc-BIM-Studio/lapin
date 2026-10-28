@@ -29,3 +29,7 @@ A survey comes in map coordinates: eastings and northings, hundreds of kilometre
 ![The same site in 3D: the photo on the ground, the neighbour at its height](shots/site-3d.webp)
 
 Everything imported is kept in the project file. A feature takes its name from the file (a parcel's cadastral number, when the file has one) and keeps the file's other properties with it; select it to see its area or length.
+
+## Planning rules and the sun (Lapin Urban)
+
+The **Lapin Urban** edition adds a **Planning** group to this tab: the parcel's planning rules (POT, CUT, the maximum heights, the setbacks from the street, the sides, the rear and the road's axis), the **buildable volume** they leave, the indicators the model reaches against them, and the **sun study**: the sun and its shadows in 3D for any day and hour at the project's place, and shadow plans for the equinox and the solstices.
