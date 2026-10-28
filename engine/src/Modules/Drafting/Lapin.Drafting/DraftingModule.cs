@@ -23,6 +23,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         Cad.DxfImport.Register(r);
         r.Service<IElementPlacement>(new Cad.AnnotationPlacement());
         r.Service<IDeletion>(new AxisDeletion());
+        r.Service<IPartPlacement>(new AxisPlacement());
         r.Service<IProjectUpgrade>(new DimensionUpgrade());
         Tags.Register(r);
 
@@ -415,6 +416,36 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
     static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y
         ? new Vec2(x, y) : throw new CommandException("A point is [x, y].");
     static JsonArray J(Vec2 p) => new(p.X, p.Y);
+}
+
+/// <summary>
+/// One grid axis (selected as grid#tag) moved, turned or mirrored on its own;
+/// a copy is a new axis on the same grid, labelled after the last one that
+/// runs its way (1, 2, 3 → 4; A, B → C), never a label the grid has.
+/// </summary>
+sealed class AxisPlacement : IPartPlacement
+{
+    public string? Transform(ICommandContext ctx, string id, Placement2D t, bool copy)
+    {
+        if (Grids.ParseAxisId(id) is not var (gridId, tag) || ctx.Model.Get(gridId) is not { Class: IfcClass.Grid } grid) return null;
+        var axes = Grids.Axes(grid);
+        var i = axes.FindIndex(x => x.Tag == tag);
+        if (i < 0) return null;
+        var moved = axes[i] with { A = t.Point(axes[i].A), B = t.Point(axes[i].B) };
+        if (copy)
+        {
+            var book = DraftingResources.Book(ctx.Model);
+            var newTag = Grids.NextTag(axes, moved.Dir, Standards.AxisOf(book, book.DefaultAxisStyle).FirstLabel);
+            while (axes.Any(x => x.Tag == newTag)) newTag = Grids.Next(newTag);
+            moved = moved with { Tag = newTag };
+            axes.Add(moved);
+        }
+        else axes[i] = moved;
+        var attrs = grid.CloneAttrs();
+        attrs["axes"] = new JsonArray(axes.Select(x => (JsonNode)x.ToJson()).ToArray());
+        ctx.Replace(grid.With(attrs: attrs));
+        return Grids.AxisId(grid.Id, moved.Tag);
+    }
 }
 
 /// <summary>Deleting one grid axis (selected as grid#tag): the grid goes with its last one.</summary>

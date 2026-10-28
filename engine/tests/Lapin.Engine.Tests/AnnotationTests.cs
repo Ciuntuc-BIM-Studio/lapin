@@ -316,6 +316,58 @@ public class AnnotationTests
     }
 
     [Fact]
+    public void A_grid_axis_moves_copies_rotates_mirrors_and_scales_on_its_own_and_with_other_elements()
+    {
+        // Report #28: Move and Copy left a selected axis where it was.
+        var f = F();
+        var g = (string)f.Run("drafting.addAxis", new JsonObject { ["x1"] = 0, ["y1"] = 0, ["x2"] = 0, ["y2"] = 10, ["tag"] = "1" })!["gridId"]!;
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = 5, ["y1"] = 0, ["x2"] = 5, ["y2"] = 10, ["tag"] = "2" });
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = -1, ["y1"] = 0, ["x2"] = 9, ["y2"] = 0, ["tag"] = "A" });
+        Dictionary<string, Axis> Axes() => Grids.Axes(f.Model.Get(g)!).ToDictionary(a => a.Tag);
+
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray($"{g}#2"), ["op"] = "move", ["by"] = new JsonArray(1, 0) });
+        Assert.Equal(6, Axes()["2"].A.X, 9);
+        Assert.Equal(0, Axes()["1"].A.X, 9);
+
+        // A copy is the grid's next axis of its family: after 1, 2 comes 3; after A, B.
+        var made = f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray($"{g}#2", $"{g}#A"), ["op"] = "copy", ["by"] = new JsonArray(0, 4) })!["ids"]!.AsArray().Select(x => (string)x!).ToList();
+        Assert.Equal([$"{g}#3", $"{g}#B"], made);
+        Assert.Equal(4, Axes()["3"].A.Y, 9);
+        Assert.Equal(6, Axes()["3"].A.X, 9);
+        Assert.Equal(4, Axes()["B"].A.Y, 9);
+        Assert.Contains($"{g}#3", Draw(f, "plan:" + f.Storey)["marks"]!.AsArray().Select(m => (string)m!["id"]!));
+
+        // With a wall in the selection, both go.
+        var type = f.Type("Block 30", ("Concrete", 0.3, true));
+        var w = f.Wall(0, 2, 4, 2, type);
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(w, $"{g}#1"), ["op"] = "move", ["by"] = new JsonArray(-2, 0) });
+        Assert.Equal(-2, Axes()["1"].A.X, 9);
+        Assert.Equal(-2, Json.Number(f.Model.Get(w)!.Attrs["start"]![0]) ?? 0, 9);
+        // Copied with a wall, the axis gets the next free label.
+        var both = f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(w, $"{g}#1"), ["op"] = "copy", ["by"] = new JsonArray(0, 1) })!["ids"]!.AsArray().Select(x => (string)x!).ToList();
+        Assert.Equal(2, both.Count);
+        Assert.Contains($"{g}#4", both);
+
+        // Rotated a quarter turn about its start, axis 1 runs along X.
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray($"{g}#1"), ["op"] = "rotate", ["center"] = new JsonArray(-2, 0), ["angle"] = -90 });
+        Assert.Equal(8, Axes()["1"].B.X, 9);
+        Assert.Equal(0, Axes()["1"].B.Y, 9);
+        // Mirrored as a copy about x = 10: a new label, the original stays.
+        var mirrored = f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray($"{g}#2"), ["op"] = "mirror", ["a"] = new JsonArray(10, 0), ["b"] = new JsonArray(10, 1), ["copy"] = true })!["ids"]!.AsArray();
+        Assert.Equal($"{g}#5", (string)mirrored[0]!);
+        Assert.Equal(14, Axes()["5"].A.X, 9);
+        Assert.Equal(6, Axes()["2"].A.X, 9);
+        // Scaled from the origin.
+        f.Run("drafting.transform", new JsonObject { ["ids"] = new JsonArray($"{g}#2"), ["op"] = "scale", ["center"] = new JsonArray(0, 0), ["factor"] = 2 });
+        Assert.Equal(12, Axes()["2"].A.X, 9);
+        Assert.Equal(20, Axes()["2"].B.Y, 9);
+
+        // The whole grid and one of its axes: the axis goes once.
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(g, $"{g}#2"), ["op"] = "move", ["by"] = new JsonArray(1, 0) });
+        Assert.Equal(13, Axes()["2"].A.X, 9);
+    }
+
+    [Fact]
     public void An_axis_cannot_be_changed_to_a_single_point()
     {
         var f = F();

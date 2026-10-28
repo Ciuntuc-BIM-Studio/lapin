@@ -51,6 +51,17 @@ public interface IElementPlacement
 }
 
 /// <summary>
+/// A part of an element selected on its own, by an id that is not an
+/// entity's (a grid's axis, <c>grid#tag</c>): how its module moves, turns,
+/// mirrors or copies it.
+/// </summary>
+public interface IPartPlacement
+{
+    /// <summary>The part carried by <paramref name="t"/>, or (<paramref name="copy"/>) a copy of it carried: the part's id afterwards (the copy's), null when the id is not this module's.</summary>
+    string? Transform(ICommandContext ctx, string id, Placement2D t, bool copy);
+}
+
+/// <summary>
 /// The platform's own placement: the plan attributes elements share
 /// (<c>start</c>, <c>end</c>, <c>at</c> with <c>rotation</c>, <c>contour</c>,
 /// survey <c>points</c>, a <c>ridgeDirection</c>), carried by the

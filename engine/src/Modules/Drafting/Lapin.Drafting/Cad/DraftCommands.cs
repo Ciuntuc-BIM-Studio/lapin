@@ -111,6 +111,12 @@ public static class DraftCommands
             var made = new JsonArray();
             foreach (var id in Ids(a))
             {
+                // A grid axis (grid#tag): its two ends; a copy is the grid's next axis.
+                if (ctx.Model.Get(id) == null && new AxisPlacement().Transform(ctx, id, new Placement2D(point, turn, false), copy) is { } axis)
+                {
+                    if (copy) made.Add((JsonNode)axis);
+                    continue;
+                }
                 var e = ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.");
                 if (e.Class != IfcClass.Annotation) continue; // model elements move by their own tools
                 var attrs = e.CloneAttrs();

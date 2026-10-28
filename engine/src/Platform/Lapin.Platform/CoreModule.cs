@@ -204,6 +204,15 @@ public sealed class CoreModule : ILapinModule
                 if (copy) made.Add((JsonNode)Placement.Copy(ctx, now, t));
                 else Placement.Transform(ctx, now, t, moving);
             }
+            // Parts selected on their own (a grid's axis): their module carries them.
+            // One whose element goes as a whole goes with it, once.
+            foreach (var id in ids.Distinct().Where(id => ctx.Model.Get(id) == null && !(id.IndexOf('#') is var h and > 0 && moving.Contains(id[..h]))))
+                foreach (var part in ctx.Services.All<IPartPlacement>())
+                    if (part.Transform(ctx, id, t, copy) is { } after)
+                    {
+                        if (copy) made.Add((JsonNode)after);
+                        break;
+                    }
             return new JsonObject { ["ids"] = made };
         });
 
