@@ -97,7 +97,7 @@ export const RO: Record<string, string> = {
   'Rotation': 'Rotire', 'Angle': 'Unghi', 'Angle (°)': 'Unghi (°)', 'Cut priority': 'Prioritate la tăiere', 'Elevation': 'Cotă', 'Kind': 'Fel', 'Style': 'Stil', 'Shape': 'Formă',
   'Pitch (eaves)': 'Pantă (la streașină)', 'Eave overhang': 'Streașină', 'Gable overhang': 'Streașină la fronton', 'Gutters': 'Jgheaburi', 'Gutter material': 'Materialul jgheaburilor',
   'Snow guards': 'Parazăpezi', 'Rafter spacing': 'Distanța între căpriori', 'Rafters (cm)': 'Căpriori (cm)', 'Purlins per slope': 'Pane pe versant', 'Covering': 'Învelitoare',
-  'Ridge (gable roof)': 'Coamă (acoperiș în două ape)', 'Mansard: break inset': 'Mansardă: retragerea frângerii', 'Mansard: upper pitch': 'Mansardă: panta de sus',
+  'Ridge (gable roof)': 'Coamă (acoperiș în două ape)', 'Mansard: break inset': 'Mansardă: retragerea frângerii', 'Mansard: upper pitch': 'Mansardă: panta de sus', 'Barrel: rise at the crown': 'Boltă: săgeata la cheie', 'Barrel vault': 'Acoperiș boltit',
   "Wall plate over the storey's top": 'Cosoroaba peste nivel', 'Scale 1:': 'Scara 1:', 'Cut height': 'Înălțimea tăieturii', 'Hidden lines': 'Linii ascunse', 'Looking': 'Privind',
   'Paper': 'Format', 'Orientation': 'Orientare', 'Number': 'Număr', 'Title block': 'Cartuș', 'Datum (±0.00 =)': 'Datum (±0.00 =)', 'Contour interval': 'Echidistanța curbelor',
   'Major contour every': 'Curbă principală la fiecare', 'Depth below the lowest point': 'Adâncime sub punctul cel mai jos', 'Points': 'Puncte', 'Platforms': 'Platforme',

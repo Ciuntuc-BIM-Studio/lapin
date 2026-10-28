@@ -29,8 +29,8 @@ public static class RoofCatalog
 
     public static Covering CoveringOf(string? id) => Coverings.FirstOrDefault(c => c.Id == id) ?? Coverings[0];
 
-    public static readonly string[] Shapes = ["hip", "gable", "shed", "mansard", "flat"];
-    public static readonly string[] ShapeLabels = ["Hip", "Gable", "Shed", "Mansard", "Flat"];
+    public static readonly string[] Shapes = ["hip", "gable", "shed", "mansard", "barrel", "flat"];
+    public static readonly string[] ShapeLabels = ["Hip", "Gable", "Shed", "Mansard", "Barrel", "Flat"];
 
     public static readonly string[] GutterProfiles = ["half_round", "box", "none"];
     public static readonly string[] GutterProfileLabels = ["Half-round", "Box", "No gutters"];
@@ -42,7 +42,9 @@ public static class RoofCatalog
         string Id, string Label, string Family, string Region,
         string Shape, double Pitch, double Overhang, string Covering,
         string GutterProfile = "half_round", string GutterMaterial = "galvanized", string GutterColor = "",
-        double GableOverhang = 0.3, bool? SnowGuards = null, string Description = "", double UpperPitch = 30, double MansardInset = 1.0);
+        double GableOverhang = 0.3, bool? SnowGuards = null, string Description = "", double UpperPitch = 30, double MansardInset = 1.0,
+        /// <summary>A barrel vault's rise at the crown, as a share of its span.</summary>
+        double BarrelRise = 0.3);
 
     /// <summary>The houses' styles of Standalone (packs.ts): their roof parameters, base hip 35° / 600 mm / ceramic tile where a pack keeps the base.</summary>
     public static readonly IReadOnlyList<Style> Styles =
@@ -58,6 +60,7 @@ public static class RoofCatalog
         new("ro_neoromanesc", "Neo-Romanian", "traditional", "Romania", "hip", 40, 0.9, "Clay tile", Description: "Very wide eaves on brackets."),
         new("modern_minimalist", "Minimalist", "modern", "International", "flat", 2, 0, "Bitumen membrane", "none"),
         new("modern_barn", "Barn house", "modern", "International", "gable", 42, 0, "Metal sheet", "box", "painted", "#2E3236", GableOverhang: 0, Description: "No eaves: a clean volume, standing-seam metal."),
+        new("modern_barrel", "Barrel vault", "modern", "International", "barrel", 30, 0.15, "Metal sheet", "box", "painted", "#2E3236", Description: "A curved roof between two gable ends, standing-seam metal, rising 0.3 of its span; the eaves go on round the curve a little past the walls."),
         new("modern_monopitch", "Contemporary mono-pitch", "modern", "International", "shed", 10, 0.5, "Metal sheet", "box", "painted", "#2E3236"),
         new("nordic_modern", "Nordic modern", "modern", "Scandinavia", "gable", 35, 0.15, "Metal sheet", "box", "painted", "#25282B", GableOverhang: 0.1),
         new("de_bauhaus", "Bauhaus", "modern", "Germany", "flat", 2, 0, "Bitumen membrane", "none"),

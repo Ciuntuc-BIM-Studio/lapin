@@ -507,7 +507,7 @@ public static class IfcExport
             if (allowed == null) return new(cls, "", null);
             var pre = e.PredefinedType?.ToUpperInvariant();
             if (pre == null && cls == IfcClass.Roof)
-                pre = e.Str("shape") switch { "flat" => "FLAT_ROOF", "gable" => "GABLE_ROOF", "hip" => "HIP_ROOF", "mansard" => "MANSARD_ROOF", "shed" => "SHED_ROOF", _ => null };
+                pre = e.Str("shape") switch { "flat" => "FLAT_ROOF", "gable" => "GABLE_ROOF", "hip" => "HIP_ROOF", "mansard" => "MANSARD_ROOF", "shed" => "SHED_ROOF", "barrel" => "BARREL_ROOF", _ => null };
             if (pre == null && cls == IfcClass.GeographicElement) pre = "TERRAIN";
             if (pre == null) return new(cls, "NOTDEFINED", null);
             if (allowed.Contains(pre) || pre is "USERDEFINED" or "NOTDEFINED") return new(cls, pre, null);

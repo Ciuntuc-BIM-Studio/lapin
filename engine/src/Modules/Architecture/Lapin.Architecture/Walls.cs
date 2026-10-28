@@ -140,9 +140,9 @@ public static class Walls
         var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
         var parts = new List<GeometryPart>();
         var plan = new List<PlanItem>();
-        // Under a roof of its storey: the wall is built up to the highest point of its top, then cut along it.
+        // Under a roof of its storey, or a body it is attached to: the wall is built up to the highest point of its top, then cut along it.
         var axisDir = (End(wall) - Start(wall)).Normalized();
-        var roofTop = RoofTop.Profile(wall, new RoofTop.WallAxis(Start(wall), axisDir, (End(wall) - Start(wall)).Length, z, height, yMax - yMin), m);
+        var roofTop = WallTops.Profile(wall, new RoofTop.WallAxis(Start(wall), axisDir, (End(wall) - Start(wall)).Length, z, height, yMax - yMin), m, services);
         var built = roofTop == null ? height : Math.Max(height, roofTop.Max(p => p.V));
 
         // Openings take their boxes out of every part they reach; the plan shows the gaps where they cross the cut.
@@ -272,7 +272,7 @@ public static class Walls
             var len = (b - a).Length;
             if (len < 1e-9) continue;
             var dir = (b - a) * (1 / len);
-            steps.Add((a, dir, len, RoofTop.Profile(wall, new RoofTop.WallAxis(a, dir, len, z, height, yMax - yMin), m)));
+            steps.Add((a, dir, len, WallTops.Profile(wall, new RoofTop.WallAxis(a, dir, len, z, height, yMax - yMin), m, services)));
         }
         var roofed = steps.Any(x => x.Top != null);
         var built = roofed ? Math.Max(height, steps.Where(x => x.Top != null).Max(x => x.Top!.Max(p => p.V))) : height;

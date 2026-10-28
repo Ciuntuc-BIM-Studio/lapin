@@ -18,6 +18,26 @@ public enum LineKind { Ridge, Hip, Valley, Eave, Verge, Break }
 /// <summary>A mansard's upper tier: its pitch, starting at the break height above the wall plate.</summary>
 public sealed record Mansard(double UpperPitch, double BreakHeight);
 
+/// <summary>
+/// A barrel vault's circle, in the roof's frame: the first eave's start <see cref="A"/>,
+/// the ridge direction <see cref="Dir"/> along that eave, <see cref="In"/> across the
+/// span towards the other eave; the centre at <see cref="SMid"/> across and <see cref="Zc"/>
+/// under the wall plate, radius <see cref="R"/>. A point's place across is s = (p − A) · In.
+/// </summary>
+public sealed record BarrelArc(Vec2 A, Vec2 Dir, Vec2 In, double SMid, double Zc, double R)
+{
+    public double S(Vec2 p) => Vec2.Dot(p - A, In);
+    /// <summary>The circle's height over the plate at s across (the lower half of the circle is never a roof).</summary>
+    public double Z(double s) => Zc + Math.Sqrt(Math.Max(0, R * R - (s - SMid) * (s - SMid)));
+    /// <summary>A point of the vault's underside moved out along the radius by t: the covering's outer face.</summary>
+    public Vec3 Out(Vec3 p, double t)
+    {
+        var s = S(p.Xy);
+        var (ds, dz) = ((s - SMid) / R, (p.Z - Zc) / R);
+        return new Vec3(p.X + In.X * ds * t, p.Y + In.Y * ds * t, p.Z + dz * t);
+    }
+}
+
 public sealed record RoofLine(LineKind Kind, Vec3 A, Vec3 B)
 {
     public double Length => (B - A).Length;
@@ -32,7 +52,8 @@ public sealed record RoofShape(
     IReadOnlyList<(int Edge, Vec3[] Points)> Gables,
     IReadOnlyList<RoofLine> Lines,
     IReadOnlyList<Vec2> Outline,
-    IReadOnlyList<EdgeRule> Rules)
+    IReadOnlyList<EdgeRule> Rules,
+    BarrelArc? Arc = null)
 {
     /// <summary>The highest point (the ridge) above the wall plate.</summary>
     public double Height => Planes.Count == 0 ? 0 : Planes.Max(p => p.Points.Max(q => q.Z));
@@ -194,6 +215,104 @@ public static class RoofSolver
             if (clipped.Count >= 3) planes.Add(new RoofPlane(i, clipped, rs[i].Pitch));
         }
         return new RoofShape(planes, gables, Lines(planes), pts, rs);
+    }
+
+    /// <summary>Why a barrel vault cannot be built over the outline (shown to the user), or null.</summary>
+    public static string? BarrelProblem(IReadOnlyList<Vec2> outline, IReadOnlyList<EdgeRule> rules, double? rise)
+    {
+        var (pts, rs) = Orient(outline, rules);
+        if (pts.Count != 4) return "A barrel roof needs four corners: two parallel eaves with a gable end at each side.";
+        var eaves = Enumerable.Range(0, 4).Where(i => rs[i].Kind == EdgeKind.Eave).ToList();
+        if (eaves.Count != 2 || eaves[1] - eaves[0] != 2) return "A barrel roof spans between two opposite eaves; the other two edges are its gable ends.";
+        Vec2 E(int i) => (pts[(i + 1) % 4] - pts[i]).Normalized();
+        if (Math.Abs(Vec2.Cross(E(eaves[0]), E(eaves[1]))) > 0.02) return "A barrel roof's two eaves must be parallel.";
+        if (Math.Abs(Vec2.Cross(E(eaves[0]), E(eaves[0] + 1))) < 0.1 || Math.Abs(Vec2.Cross(E(eaves[0]), E(eaves[0] + 3))) < 0.1) return "A barrel roof's gable ends must cross its eaves.";
+        var span = Vec2.Dot(pts[eaves[1]] - pts[eaves[0]], E(eaves[0]).Perp);
+        if (span < 0.2) return "A barrel roof's eaves are too close to span between.";
+        if (rise is { } h && (h <= 0.01 || h > span / 2 + 1e-9)) return $"A barrel roof rises between 0 and half its span ({span / 2:0.00} m).";
+        foreach (var r in rs) if (!(r.Overhang >= 0) || r.Overhang > 5) return "An overhang is between 0 and 5 m.";
+        return null;
+    }
+
+    /// <summary>
+    /// A barrel vault: a circular arc across the span between the two eaves,
+    /// <paramref name="rise"/> high at the crown (a quarter of the span when
+    /// not said), in planar strips of at most <paramref name="stepDeg"/> each,
+    /// the crown and both plate lines on strip boundaries. An eave's overhang
+    /// goes on round the circle, so past the wall it dips under the plate; a
+    /// gable's rake lengthens the vault at that end. Throws <see cref="ArgumentException"/>
+    /// with <see cref="BarrelProblem"/>'s message.
+    /// </summary>
+    public static RoofShape SolveBarrel(IReadOnlyList<Vec2> outline, IReadOnlyList<EdgeRule> rules, double? rise, double stepDeg = 7.5)
+    {
+        if (BarrelProblem(outline, rules, rise) is { } problem) throw new ArgumentException(problem);
+        var (pts, rs) = Orient(outline, rules);
+        var i0 = Enumerable.Range(0, 4).First(i => rs[i].Kind == EdgeKind.Eave);
+        var i1 = i0 + 2;
+        var (a, b, c, d) = (pts[i0], pts[(i0 + 1) % 4], pts[i1 % 4], pts[(i1 + 1) % 4]);
+        var dir = (b - a).Normalized();
+        var nIn = dir.Perp;
+        var span = Vec2.Dot(c - a, nIn);
+        var h = rise ?? span / 4;
+        var R = (span * span / 4 + h * h) / (2 * h);
+        var arc = new BarrelArc(a, dir, nIn, span / 2, h - R, R);
+        var sLo = Math.Max(-rs[i0].Overhang, arc.SMid - R + 1e-6);
+        var sHi = Math.Min(span + rs[i1 % 4].Overhang, arc.SMid + R - 1e-6);
+        double Ang(double s) => Math.Asin(Math.Clamp((s - arc.SMid) / R, -1, 1));
+        // Strip boundaries across: equal angles between the marks (the eave edges, the plate lines, the crown).
+        var step = stepDeg * Math.PI / 180;
+        var ss = new List<double>();
+        void Fill(double from, double to)
+        {
+            var (a0, a1) = (Ang(from), Ang(to));
+            var k = Math.Max(1, (int)Math.Ceiling(Math.Abs(a1 - a0) / step - 1e-9));
+            for (var j = 0; j < k; j++)
+            {
+                var s = arc.SMid + R * Math.Sin(a0 + (a1 - a0) * j / k);
+                if (ss.Count == 0 || s - ss[^1] > 1e-9) ss.Add(s);
+            }
+        }
+        Fill(sLo, 0); Fill(0, arc.SMid); Fill(arc.SMid, span); Fill(span, sHi);
+        if (sHi - ss[^1] > 1e-9) ss.Add(sHi);
+        // Where a line across the vault at s meets each gable end (pushed out by its rake): t along dir from a.
+        Func<double, double> TOf(Vec2 g0, Vec2 g1, double rake)
+        {
+            var gd = (g1 - g0).Normalized();
+            var p0 = g0 + new Vec2(gd.Y, -gd.X) * rake;
+            var den = Vec2.Cross(dir, gd);
+            return s => -Vec2.Cross(a - p0 + nIn * s, gd) / den;
+        }
+        var tStart = TOf(d, a, rs[(i0 + 3) % 4].Overhang);
+        var tEnd = TOf(b, c, rs[(i0 + 1) % 4].Overhang);
+        Vec3 P(double s, double t) { var q = a + nIn * s + dir * t; return new Vec3(q.X, q.Y, arc.Z(s)); }
+
+        var planes = new List<RoofPlane>();
+        var lines = new List<RoofLine>();
+        for (var j = 0; j + 1 < ss.Count; j++)
+        {
+            var (s0, s1) = (ss[j], ss[j + 1]);
+            var quad = new[] { P(s0, tStart(s0)), P(s0, tEnd(s0)), P(s1, tEnd(s1)), P(s1, tStart(s1)) };
+            if (Polygon2.SignedArea(quad.Select(q => q.Xy).ToList()) < 0) Array.Reverse(quad);
+            var pitch = Math.Atan2(Math.Abs(arc.Z(s1) - arc.Z(s0)), s1 - s0) * 180 / Math.PI;
+            planes.Add(new RoofPlane((s0 + s1) / 2 < arc.SMid ? i0 : i1 % 4, quad, pitch));
+            lines.Add(new RoofLine(LineKind.Verge, P(s0, tStart(s0)), P(s1, tStart(s1))));
+            lines.Add(new RoofLine(LineKind.Verge, P(s0, tEnd(s0)), P(s1, tEnd(s1))));
+        }
+        lines.Insert(0, new RoofLine(LineKind.Eave, P(sLo, tStart(sLo)), P(sLo, tEnd(sLo))));
+        lines.Insert(1, new RoofLine(LineKind.Eave, P(sHi, tStart(sHi)), P(sHi, tEnd(sHi))));
+        lines.Insert(2, new RoofLine(LineKind.Ridge, P(arc.SMid, tStart(arc.SMid)), P(arc.SMid, tEnd(arc.SMid))));
+        // The gable ends: the wall line at the plate, the vault's underside over it.
+        var gables = new List<(int, Vec3[])>();
+        foreach (var gi in new[] { (i0 + 1) % 4, (i0 + 3) % 4 })
+        {
+            var (g0, g1) = (pts[gi], pts[(gi + 1) % 4]);
+            var on = TOf(g0, g1, 0);
+            var (sg0, sg1) = (arc.S(g0), arc.S(g1));
+            var between = ss.Where(s => s > Math.Min(sg0, sg1) + 1e-9 && s < Math.Max(sg0, sg1) - 1e-9);
+            var over = (sg1 > sg0 ? between.Reverse() : between).Select(s => P(s, on(s))).ToList();
+            gables.Add((gi, [g0.At(0), g1.At(0), .. over]));
+        }
+        return new RoofShape(planes, gables, lines, pts, rs, arc);
     }
 
     /// <summary>Keep the part of a planar loop where inside(p) ≥ 0 (Sutherland–Hodgman, one half-plane).</summary>

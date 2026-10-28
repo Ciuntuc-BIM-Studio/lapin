@@ -18,13 +18,13 @@ Alege **Arhitectură → Acoperiș** (<kbd>RF</kbd>) și dă clic pe conturul pe
 
 Selectează acoperișul ca să-l schimbi în panoul de proprietăți:
 
-- **Formă.** În patru ape, în două ape, într-o apă, mansardă sau terasă.
+- **Formă.** În patru ape, în două ape, într-o apă, mansardă, boltă sau terasă. Acoperișul boltit e un arc între două frontoane; **Boltă: săgeata la cheie** spune cât urcă la mijloc, cel mult jumătate din deschidere.
 - **Panta și consola streașinii**, pentru tot acoperișul.
 - **Fiecare latură** cu felul ei (streașină sau fronton), panta și consola ei. O mansardă cu laturi fronton dă un acoperiș frânt.
 - **Stil.** Stilurile de acoperiș dau tot aspectul dintr-o alegere: învelitoarea, streașinile, jgheaburile și burlanele.
 
 ![Proprietățile unui acoperiș](shots/roof-properties.webp)
 
-Pereții de pe nivelul acoperișului se opresc singuri sub el și urcă la frontoane. Un perete de pe alt nivel urmează acoperișul după **Arhitectură → Atașează la acoperiș** (<kbd>AR</kbd>). **Detașează de acoperiș** anulează asta.
+Pereții de pe nivelul acoperișului se opresc singuri sub el și urcă la frontoane, și sub un acoperiș boltit. Un perete de pe alt nivel urmează acoperișul după **Arhitectură → Atașează la acoperiș** (<kbd>AR</kbd>): selectezi pereții, apoi dai clic pe acoperiș. Aceeași unealtă primește orice alt corp de deasupra pereților: un solid din Studio, o placă, o grindă, un element importat din IFC. Pereții urcă până la fața lui de jos și sunt tăiați după ea, oricare i-ar fi forma. **Detașează de acoperiș** anulează asta.
 
 **Roof window** (fereastră de mansardă) și **Dormer** (lucarnă) adaugă goluri în acoperiș.

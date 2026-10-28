@@ -18,13 +18,13 @@ Choose **Architecture → Roof** (<kbd>RF</kbd>) and click the outline of the wa
 
 Select the roof to change it in the properties panel:
 
-- **Shape.** Hip, gable, shed, mansard or flat.
+- **Shape.** Hip, gable, shed, mansard, barrel or flat. A barrel roof is a curved vault between two gable ends; **Barrel: rise** sets how high it rises at the crown, at most half its span.
 - **Pitch and overhang** for the whole roof.
 - **Each edge** with its own kind (eave or gable), pitch and overhang. A mansard with gable edges is a gambrel.
 - **Style.** The roof styles give a whole look in one choice: the covering, the eaves, the gutters and downpipes.
 
 ![A roof's properties](shots/roof-properties.webp)
 
-The walls on the roof's level stop under it and rise to its gables by themselves. A wall on another level follows the roof after **Architecture → Attach to roof** (<kbd>AR</kbd>). **Detach from roof** undoes it.
+The walls on the roof's level stop under it and rise to its gables by themselves, under a curved roof too. A wall on another level follows the roof after **Architecture → Attach to roof** (<kbd>AR</kbd>): select the walls, then click the roof. The same tool takes any other body over the walls: a Studio solid, a slab, a beam, an element imported from IFC. The walls rise to its underside and are cut along it, whatever its shape. **Detach from roof** undoes it.
 
 **Roof window** and **Dormer** add openings to a roof.

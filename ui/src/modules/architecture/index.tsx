@@ -150,16 +150,20 @@ function contourGrips(command: string, withEdges = false) {
 }
 const contourRefs = (node: NodeDto): RefLine[] => { const pts = fromPairs(node.props.contour); return pts.length >= 3 ? [outlineRef(pts)] : []; };
 
-/** The selected walls rise to the underside of the roof clicked (from any storey), cut along its slopes. */
+/**
+ * The selected walls rise to the underside of the element clicked, from any
+ * storey, cut along it: a roof by its slopes, and any other body (a Studio
+ * solid, a slab, a beam, an element imported from IFC) by its underside.
+ */
 const attachRoof: ToolDef = {
   id: 'architecture.attachRoof', label: 'Attach to roof', icon: AttachRoofIcon, shortcut: 'AR',
-  gesture: { kind: 'pick', types: ['IfcRoof'] },
+  gesture: { kind: 'pick', types: ['IfcRoof', 'IfcSlab', 'IfcBeam', 'IfcBuildingElementProxy', 'IfcCovering', 'IfcPlate', 'IfcMember', 'IfcBuildingElementPart', 'IfcStair', 'IfcFooting', 'IfcColumn', 'IfcRailing'] },
   complete: async ({ entity }) => {
     const ids = useUi.getState().selected.filter((id) => useSession.getState().nodes.get(id)?.type === 'IfcWall');
     if (!entity) return;
-    if (!ids.length) { notify('Select the walls first, then click the roof they go up to.'); return; }
+    if (!ids.length) { notify('Select the walls first, then click the roof, or any body over them, they go up to.'); return; }
     await execute('architecture.attachToRoof', { ids, roofIds: [entity.id] });
-    notify(`${ids.length} wall(s) attached to the roof.`);
+    notify(entity.type === 'IfcRoof' ? `${ids.length} wall(s) attached to the roof.` : `${ids.length} wall(s) rise to the underside of ${entity.name}.`);
   },
 };
 /** The selected walls keep their own height, whatever roof is over them. */

@@ -8,7 +8,7 @@ namespace Lapin.Architecture.Roofs;
 /// <summary>
 /// A roof (adapted from BubbleBIM Pro's): an IfcRoof is its outline (the wall
 /// line, storey-local, counter-clockwise) at the top of its storey, and its
-/// rules. A shape (hip, gable, shed, mansard, flat) gives each edge its kind;
+/// rules. A shape (hip, gable, shed, mansard, barrel, flat) gives each edge its kind;
 /// the roof's pitch and overhang apply to every eave; <c>edges</c> (one entry
 /// per edge, optional) overrides an edge's kind, pitch or overhang. A style
 /// from the catalogue fills them all in. Everything else (planes, ridges,
@@ -33,12 +33,15 @@ public static class Roof
     public sealed record Resolved(Entity Roof, IReadOnlyList<Vec2> Outline, IReadOnlyList<EdgeRule> Rules, double PlateZ)
     {
         public bool Flat => Roof.Str("shape") == "flat";
+        /// <summary>A barrel vault: a circular arc between its two eaves, <see cref="Rise"/> high at the crown (a quarter of the span when not said).</summary>
+        public bool Barrel => Roof.Str("shape") == "barrel";
+        public double? Rise => Roof.NumOrNull("rise");
         /// <summary>A mansard's upper tier: from where the steep eaves have come in by the inset, at the upper pitch.</summary>
         public Mansard? Mansard => Roof.Str("shape") != "mansard" ? null : new Mansard(
             Roof.NumOrNull("upperPitch") ?? 30,
             (Roof.NumOrNull("mansardInset") ?? 1.0) * Math.Tan((Roof.NumOrNull("pitch") ?? 30) * Math.PI / 180));
-        /// <summary>Whether it has a timber structure (rafters on plates); otherwise a deck under the covering.</summary>
-        public bool Framed => !Flat && Roof.Str("structure") != "none";
+        /// <summary>Whether it has a timber structure (rafters on plates); otherwise a deck under the covering (a vault is always a deck).</summary>
+        public bool Framed => !Flat && !Barrel && Roof.Str("structure") != "none";
         public RoofCatalog.Covering Covering => RoofCatalog.CoveringOf(Roof.Str("covering"));
         public (double W, double D) Rafter
         {
@@ -105,6 +108,7 @@ public static class Roof
                 for (var i = 0; i < n; i++) if (i != low) kinds[i] = EdgeKind.Gable;
                 break;
             case "gable":
+            case "barrel":
                 var ccw = Polygon2.SignedArea(outline) > 0;
                 bool Convex(int v)
                 {
@@ -131,21 +135,34 @@ public static class Roof
         return kinds;
     }
 
+    /// <summary>Why the roof's rules do not build (the solver's reason), or null.</summary>
+    public static string? Problem(Resolved r) =>
+        r.Flat ? null : r.Barrel ? RoofSolver.BarrelProblem(r.Outline, r.Rules, r.Rise) : RoofSolver.Problem(r.Outline, r.Rules);
+
     /// <summary>The solved roof in the world: planes, gables and lines lifted to the wall plate. Null with a problem when the rules do not build.</summary>
     public static (RoofShape? Shape, string? Problem) Solve(Resolved r)
     {
         if (r.Flat) return (null, null);
         try
         {
-            var s = RoofSolver.Solve(r.Outline, r.Rules, r.Mansard);
+            var s = r.Barrel ? RoofSolver.SolveBarrel(r.Outline, r.Rules, r.Rise) : RoofSolver.Solve(r.Outline, r.Rules, r.Mansard);
             Vec3 Up(Vec3 p) => p with { Z = p.Z + r.BaseZ };
             return (new RoofShape(
                 s.Planes.Select(p => p with { Points = p.Points.Select(Up).ToArray() }).ToList(),
                 s.Gables.Select(x => (x.Edge, x.Points.Select(Up).ToArray())).ToList(),
                 s.Lines.Select(l => l with { A = Up(l.A), B = Up(l.B) }).ToList(),
-                s.Outline, s.Rules), null);
+                s.Outline, s.Rules, s.Arc is { } arc ? arc with { Zc = arc.Zc + r.BaseZ } : null), null);
         }
         catch (ArgumentException e) { return (null, e.Message); }
+    }
+
+    /// <summary>A barrel roof's span: between the two eaves the shape gives the outline; null when it has no such pair.</summary>
+    public static double? BarrelSpan(IReadOnlyList<Vec2> outline)
+    {
+        var (pts, rs) = RoofSolver.Orient(outline, Kinds("barrel", outline).Select(k => new EdgeRule(k, 30, 0)).ToList());
+        if (RoofSolver.BarrelProblem(pts, rs, null) != null) return null;
+        var i = Enumerable.Range(0, 4).First(k => rs[k].Kind == EdgeKind.Eave);
+        return Vec2.Dot(pts[i + 2] - pts[i], (pts[i + 1] - pts[i]).Normalized().Perp);
     }
 
     /// <summary>Where the roof stops in plan: each eave at its overhang, each gable at its rake (counter-clockwise).</summary>
@@ -180,13 +197,18 @@ public static class Roof
         }
         var (shape, problem) = Solve(r);
         if (shape == null) return new ElementGeometry([], plan, r.Outline, [problem ?? "The roof cannot be solved."]);
-        if (r.Rules.Any(x => x.Kind == EdgeKind.Eave && x.Pitch < r.Covering.MinPitch))
+        if (!r.Barrel && r.Rules.Any(x => x.Kind == EdgeKind.Eave && x.Pitch < r.Covering.MinPitch))
             diags.Add($"{r.Covering.Id} needs a pitch of at least {r.Covering.MinPitch:0}°.");
 
         // Each plane as the covering's body, over the rafters and battens (or the deck), vertically, so planes of one pitch share their hips and ridges.
-        var openings = RoofOpenings.Place(roof, shape, m, diags);
+        // A vault's strips go out along the circle's radius instead, so they meet on their shared edges.
+        var openings = r.Barrel ? [] : RoofOpenings.Place(roof, shape, m, diags);
+        if (r.Barrel && RoofOpenings.Of(roof).Any()) diags.Add("A barrel roof takes no roof windows or dormers yet: they are left out.");
         var covering = new List<Solid>();
-        for (var i = 0; i < shape.Planes.Count; i++)
+        if (r.Barrel && shape.Arc is { } arc)
+            foreach (var p in shape.Planes)
+                if (Shell(p.Points, p.Points.Select(q => arc.Out(q, r.Thickness)).ToList(), "covering") is { } s) covering.Add(s);
+        for (var i = 0; !r.Barrel && i < shape.Planes.Count; i++)
         {
             var p = shape.Planes[i];
             var cos = Math.Cos(p.Pitch * Math.PI / 180);
@@ -307,6 +329,20 @@ public static class Roof
         if (rows.Count > 0) yield return new QuantitySet("Lapin_RoofSnowGuardQuantities", [new("Length", rows.Sum(x => (x.B - x.A).Length), "LENGTH", "Snow guards")], "snow", "Snow guards");
     }
 
+    /// <summary>The body between a strip of the vault's underside and the same strip moved out: 8 corners, 6 faces.</summary>
+    static Solid? Shell(IReadOnlyList<Vec3> inner, IReadOnlyList<Vec3> outer, string tag)
+    {
+        var n = inner.Count;
+        var v = inner.Concat(outer).ToList();
+        var t = new List<(int A, int B, int C)>();
+        for (var i = 1; i + 1 < n; i++) { t.Add((0, i + 1, i)); t.Add((n, n + i, n + i + 1)); }
+        for (var i = 0; i < n; i++) { var j = (i + 1) % n; t.Add((i, j, n + j)); t.Add((i, n + j, n + i)); }
+        double vol = 0;
+        foreach (var (a, b, c) in t) vol += Vec3.Dot(v[a], Vec3.Cross(v[b], v[c])) / 6;
+        if (Math.Abs(vol) < 1e-12) return null;
+        return SolidFromMesh.Build(v, vol < 0 ? t.Select(x => (x.A, x.C, x.B)).ToList() : t, tag);
+    }
+
     /// <summary>A new roof's attributes in a style (the structure is the project's: the usual one).</summary>
     public static JsonObject Attrs(RoofCatalog.Style s, IEnumerable<Vec2> contour)
     {
@@ -319,6 +355,7 @@ public static class Roof
         };
         if (s.GutterColor.Length > 0) o["gutterColor"] = s.GutterColor;
         if (s.Shape == "mansard") { o["upperPitch"] = s.UpperPitch; o["mansardInset"] = s.MansardInset; }
+        if (s.Shape == "barrel" && BarrelSpan(contour.ToList()) is { } span) o["rise"] = Math.Round(span * s.BarrelRise, 3);
         return o;
     }
 }

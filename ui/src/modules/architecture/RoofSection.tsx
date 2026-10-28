@@ -30,7 +30,7 @@ export function RoofSection({ node }: { node: NodeDto }) {
         <select value={(node.props.style as string | undefined) ?? ''} disabled={!node.editable}
           onChange={(e) => void execute('architecture.roofStyle', { id: node.id, style: e.target.value })}>
           {!node.props.style && <option value="">Shaped by hand</option>}
-          {styles.map((s) => <option key={s.id} value={s.id}>{s.label} · {s.shape} {s.pitch}°</option>)}
+          {styles.map((s) => <option key={s.id} value={s.id}>{s.label} · {s.shape}{s.shape === 'barrel' ? '' : ` ${s.pitch}°`}</option>)}
         </select>
       </label>
       <table className="roof-edges">

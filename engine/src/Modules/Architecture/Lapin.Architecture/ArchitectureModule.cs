@@ -277,6 +277,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("gableOverhang", "Gable overhang", "length", Min: 0, Max: 5),
             new("upperPitch", "Mansard: upper pitch", "angle", Min: 1, Max: 60),
             new("mansardInset", "Mansard: break inset", "length", Min: 0.2, Max: 5),
+            new("rise", "Barrel: rise at the crown", "length", Min: 0.05, Max: 30),
             new("ridgeDirection", "Ridge (gable roof)", "choice", Choices: ["auto", "x", "y"]),
             new("eaveOffset", "Wall plate over the storey's top", "length"),
             new("covering", "Covering", "choice", Choices: [.. RoofCatalog.Coverings.Select(c => c.Id)]),
@@ -360,6 +361,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             string[] own = ["structure", "rafterSection", "rafterSpacing", "purlins", "eaveOffset"];
             foreach (var (k, v) in Roof.Attrs(style, Roof.Contour(roof))) if (!own.Contains(k) || attrs[k] == null) attrs[k] = v?.DeepClone();
             if (style.Shape != "mansard") { attrs.Remove("upperPitch"); attrs.Remove("mansardInset"); }
+            if (style.Shape != "barrel") attrs.Remove("rise");
             if (style.GutterColor.Length == 0) attrs.Remove("gutterColor");
             var next = roof.With(attrs: attrs);
             CheckRoof(ctx.Model, next);
@@ -504,12 +506,19 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return new JsonObject { ["corners"] = n };
         });
 
-        // A wall's top under roofs: attached rises to the slopes' underside (from any storey), detached ignores roofs.
+        // A wall's top under roofs: attached rises to the slopes' underside (from any storey), detached ignores roofs. The roofs named may be
+        // any body over the wall instead (a Studio solid, a slab, a beam, an element imported from IFC): the wall rises to its underside.
         r.Command("attachToRoof", "Attach to roof", (ctx, a) =>
         {
             var ids = Args.Ids(a);
             var roofIds = a["roofIds"] is JsonArray rs ? rs.Select(x => (string?)x).OfType<string>().ToList() : [];
-            foreach (var rid in roofIds) Spatial.Require(ctx.Model, rid, IfcClass.Roof);
+            foreach (var rid in roofIds)
+            {
+                var t = ctx.Model.Get(rid) ?? throw new CommandException($"There is no element {rid}.");
+                if (t.Class == IfcClass.Wall) throw new CommandException("A wall rises to a roof or to a body over it, not to another wall.");
+                if (t.Class != IfcClass.Roof && !StoredBodies.Has(t) && ctx.Services.Get<IGeometryProducers>()?.Geometry(t.Class) == null)
+                    throw new CommandException($"„{t.Name}” has no body a wall could rise to.");
+            }
             foreach (var id in ids)
             {
                 var wall = Spatial.Require(ctx.Model, id, IfcClass.Wall);
@@ -585,7 +594,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     /// <summary>A contour: <c>points</c> as [[x, y], …], or the rectangle between (x1, y1) and (x2, y2).</summary>
     static void CheckRoof(IModelView m, Entity roof)
     {
-        if (Roof.Resolve(roof, m) is { Flat: false } r && RoofSolver.Problem(r.Outline, r.Rules) is { } problem) throw new CommandException(problem);
+        if (Roof.Resolve(roof, m) is { } r && Roof.Problem(r) is { } problem) throw new CommandException(problem);
     }
 
     static IReadOnlyList<Vec2> Points(JsonObject a) => Args.Points(a);
@@ -597,6 +606,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         var openings = RoofOpenings.Of(next).ToList();
         if (openings.Count == 0) return;
         if (RoofTop.ShapeOf(next, m) is not { } shape) throw new CommandException("The roof holds roof windows or dormers, which a flat roof cannot take; remove them first.");
+        if (next.Str("shape") == "barrel") throw new CommandException("The roof holds roof windows or dormers, which a barrel roof cannot take yet; remove them first.");
         var diags = new List<string>();
         var placed = RoofOpenings.Place(next, shape, m, diags);
         if (openings.FirstOrDefault(o => placed.All(p => p.Opening.Id != o.Id)) is { } lost)

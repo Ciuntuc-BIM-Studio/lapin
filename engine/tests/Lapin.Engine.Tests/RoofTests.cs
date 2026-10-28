@@ -1,8 +1,11 @@
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
+using Lapin.Architecture;
 using Lapin.Architecture.Roofs;
+using Lapin.Drafting;
 using Lapin.Model;
 using Lapin.Platform;
+using Lapin.Studio;
 
 namespace Lapin.Engine.Tests;
 
@@ -353,5 +356,112 @@ public class RoofTests
         Assert.Throws<CommandException>(() => f.Run("architecture.addRoofOpening", new JsonObject { ["roofId"] = roof, ["x"] = 0.1, ["y"] = 1.5 }));
         f.Run("architecture.removeRoofOpening", new JsonObject { ["roofId"] = roof, ["id"] = w });
         Assert.Equal(0, Q(f, roof, "RoofWindows", "openings"));
+    }
+
+    // ------------------------------------------------------------ a barrel vault
+
+    [Fact]
+    public void A_barrel_roof_is_a_vault_between_two_gable_ends()
+    {
+        // A 6 m span rising 1.5 m: a circle of R = (3² + 1.5²) / 3 = 3.75, its centre 2.25 m under the wall plates.
+        EdgeRule[] rules = [Eave(), Gable(), Eave(), Gable()];
+        var s = RoofSolver.SolveBarrel(Rect, rules, 1.5);
+        Planar(s);
+        Assert.Equal(1.5, s.Height, 9);
+        Assert.Equal(2, s.Gables.Count);
+        Assert.Equal(20, Len(s, LineKind.Eave), 9);
+        Assert.Equal(10, Len(s, LineKind.Ridge), 9);
+        Assert.Equal(1.5, s.Lines.Single(l => l.Kind == LineKind.Ridge).A.Z, 9);
+        Assert.Equal(0, s.HeightAt(new Vec2(5, 0))!.Value, 6);
+        Assert.Equal(1.5, s.HeightAt(new Vec2(5, 3))!.Value, 9);
+        // Between, the vault in facets: a chord within a centimetre of the circle, never above it.
+        var arc = -2.25 + Math.Sqrt(3.75 * 3.75 - 1.5 * 1.5);
+        Assert.InRange(s.HeightAt(new Vec2(5, 1.5))!.Value, arc - 0.01, arc + 1e-9);
+        Assert.All(s.Planes, p => Assert.Equal(4, p.Points.Count));
+        Assert.True(s.Planes.Count >= 12);
+        Assert.Equal(0, Len(s, LineKind.Hip) + Len(s, LineKind.Break), 9);
+        // Overhanging eaves go on round the circle, under the plate; the rakes lengthen the ridge.
+        var o = RoofSolver.SolveBarrel(Rect, [Eave(30, 0.5), Gable(0.3), Eave(30, 0.5), Gable(0.3)], 1.5);
+        Assert.Equal(10.6, Len(o, LineKind.Ridge), 9);
+        var eaves = o.Lines.Where(l => l.Kind == LineKind.Eave).ToList();
+        Assert.Equal(2, eaves.Count);
+        Assert.All(eaves, l => Assert.True(l.A.Z < -0.5 && (Math.Abs(l.A.Y + 0.5) < 1e-9 || Math.Abs(l.A.Y - 6.5) < 1e-9)));
+        // Higher than half the span it is no vault; an L has no two parallel eaves to span between.
+        Assert.Throws<ArgumentException>(() => RoofSolver.SolveBarrel(Rect, rules, 3.2));
+        Assert.Throws<ArgumentException>(() => RoofSolver.SolveBarrel([new(0, 0), new(10, 0), new(10, 6), new(5, 6), new(5, 3), new(0, 3)], [Eave(), Gable(), Eave(), Gable(), Eave(), Gable()], 1));
+    }
+
+    [Fact]
+    public void A_barrel_roof_over_the_house_and_its_gable_walls_rise_to_the_curve()
+    {
+        var (f, roof, walls) = House("modern_barrel");                  // a vault across the 6 m, rising 0.3 · 6 = 1.8 m
+        Assert.Equal("barrel", f.Model.Get(roof)!.Str("shape"));
+        Assert.Equal(1.8, f.Model.Get(roof)!.Num("rise"), 9);
+        // The eave walls keep their 3 m; the gable walls rise to the crown of the vault (a deck on the walls, no wall plate).
+        Assert.Equal(3, f.Bounds(walls[0]).Max.Z, 6);
+        Assert.Equal(3, f.Bounds(walls[2]).Max.Z, 6);
+        Assert.Equal(4.8, f.Bounds(walls[1]).Max.Z, 3);
+        Assert.Equal(4.8, f.Bounds(walls[3]).Max.Z, 3);
+        // The gable's top follows the circle: low near the eaves, and over the storey about the circular segment's worth of masonry.
+        var east = f.Session.Geometry(walls[1])!;
+        Assert.True(east.Parts.SelectMany(p => p.Solid.Vertices).Where(v => v.Y < 0.3).Max(v => v.Z) < 3.5);
+        var width = f.Bounds(walls[1]).Max.X - f.Bounds(walls[1]).Min.X;
+        var R = (9 + 1.8 * 1.8) / 3.6;
+        var segment = R * R / 2 * (2 * Math.Asin(3 / R) - Math.Sin(2 * Math.Asin(3 / R)));
+        Assert.InRange(east.Parts.Sum(p => Measure.Volume(p.Solid)), width * (6 * 3 + segment * 0.9), width * (6.5 * 3 + segment * 1.02));
+        // One ridge in plan and no hips; the covering's area is the vault's, over the rakes; a deck, so no timber; gutters on both eaves.
+        var g = f.Session.Geometry(roof)!;
+        Assert.Contains(g.Plan!, p => p.Kind == "ridge");
+        Assert.DoesNotContain(g.Plan!, p => p.Kind is "hip" or "break");
+        // (the 0.15 m overhangs go on round the circle, so the covering is the arc over 3.15 m each side of the crown)
+        Assert.InRange(Q(f, roof, "GrossArea"), 2 * R * Math.Asin(3.15 / R) * 10.6 * 0.995, 2 * R * Math.Asin(3.15 / R) * 10.6);
+        Assert.DoesNotContain("timber", g.Parts.Select(p => p.Key));
+        Assert.Contains("drainage", g.Parts.Select(p => p.Key));
+        Assert.Contains("covering", g.Parts.Select(p => p.Key));
+        // Its rise is a field of its own; past half the span the change is refused.
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["rise"] = 3 } });
+        Assert.Equal(6, f.Bounds(walls[1]).Max.Z, 3);
+        Assert.Throws<CommandException>(() => f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["rise"] = 3.5 } }));
+    }
+
+    // ------------------------------------------------------------ a wall under any body
+
+    static double Vol(Fixture f, string id) => f.Session.Geometry(id)!.Parts.Sum(p => Measure.Volume(p.Solid));
+
+    [Fact]
+    public void A_wall_attached_to_any_body_rises_to_its_underside()
+    {
+        var f = new Fixture(new ArchitectureModule(), new DraftingModule(), new StudioModule());
+        var upper = (string)f.Run("storey.create", [])!["id"]!;            // +3.00
+        var top = (string)f.Run("storey.create", [])!["id"]!;              // +6.00
+        string Plan(string storey) => (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = storey })!["id"]!;
+        string Draw(string view, double x0, double x1) => (string)f.Run("drafting.draw", new JsonObject
+        {
+            ["viewId"] = view,
+            ["shape"] = new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(new JsonArray(x0, 0), new JsonArray(x1, 0), new JsonArray(x1, 1), new JsonArray(x0, 1)), ["closed"] = true },
+        })!["ids"]![0]!;
+        // A Studio loft from a 2 × 1 square at +3.00 to the same square 8 m on at +6.00: its underside climbs 3 m over 8.
+        var a = Draw(Plan(upper), 0, 2);
+        var b = Draw(Plan(top), 8, 10);
+        var body = (string)f.Run("studio.loft", new JsonObject { ["profileId"] = a, ["profileIds"] = new JsonArray(a, b) })!["id"]!;
+        // A ground-floor wall along it, 3 m: attached to the body it rises under the slope, to 6 m where the body ends, and is its own 3 m past it.
+        var wall = f.Wall(-1, 0.5, 12, 0.5);
+        var plain = Vol(f, wall);
+        f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(wall), ["roofIds"] = new JsonArray(body) });
+        Assert.Equal(6, f.Bounds(wall).Max.Z, 2);
+        var vs = f.Session.Geometry(wall)!.Parts.SelectMany(p => p.Solid.Vertices).ToList();
+        Assert.Equal(3, vs.Where(v => v.X > 10.05).Max(v => v.Z), 2);
+        Assert.Equal(3, vs.Where(v => v.X < 1.95).Max(v => v.Z), 2);
+        // The slope's triangle, 8 · 3 / 2, on top of the plain wall's 13 · 3.
+        Assert.Equal(plain * (39 + 12) / 39, Vol(f, wall), 1);
+        // The sketch moved: the body changed, the wall follows (its underside now climbs from 2 to 8).
+        f.Run("drafting.updateDraft", new JsonObject { ["id"] = b, ["shape"] = new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(new JsonArray(6, 0), new JsonArray(8, 0), new JsonArray(8, 1), new JsonArray(6, 1)), ["closed"] = true } });
+        vs = f.Session.Geometry(wall)!.Parts.SelectMany(p => p.Solid.Vertices).ToList();
+        Assert.Equal(3, vs.Where(v => v.X > 8.05).Max(v => v.Z), 2);
+        Assert.Equal(6, f.Bounds(wall).Max.Z, 2);
+        // Detached, its own 3 m again; a wall is no body to rise to.
+        f.Run("architecture.detachFromRoof", new JsonObject { ["ids"] = new JsonArray(wall) });
+        Assert.Equal(3, f.Bounds(wall).Max.Z, 6);
+        Assert.Throws<CommandException>(() => f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(wall), ["roofIds"] = new JsonArray(f.Wall(0, 5, 5, 5)) }));
     }
 }
