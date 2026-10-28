@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Lapin.Geometry;
 using Lapin.Ifc;
 using Lapin.Model;
 using Lapin.Package;
@@ -313,7 +314,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
         var editor = role is "editor" or "owner";
         switch (method)
         {
-            case "session.info" or "doc.snapshot" or "doc.query" or "quantities.of"
+            case "session.info" or "doc.snapshot" or "doc.query" or "quantities.of" or "view.caps"
                 or "project.versions" or "project.compareVersions"
                 or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh":
                 return null;
@@ -360,6 +361,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             case "doc.redo": return (null, session.Redo(session.Author));
             case "doc.query":
                 return (session.Query((string?)p["name"] ?? throw new CommandException("The query is missing."), p["args"] as JsonObject ?? [])?.DeepClone(), null);
+            case "view.caps": return (session.Caps(ClipPlanes(p["planes"])), null);
             case "quantities.of": return (session.Quantities((string?)p["id"] ?? throw new CommandException("Which element?")), null);
             // A new project with the default storeys; `plain`: one ground floor, for a file that fills it (an IFC opened as a project).
             case "project.new": return (null, session.New(p["plain"]?.GetValue<bool>() == true));
@@ -497,5 +499,21 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return (null, null);
             default: throw new CommandException($"Unknown method „{method}”.");
         }
+    }
+
+    /// <summary>A section's planes as the 3D view sends them: [{normal: [x, y, z], constant}], kept where normal·p + constant ≥ 0; at most six.</summary>
+    static List<ClipPlane> ClipPlanes(JsonNode? n)
+    {
+        var o = new List<ClipPlane>();
+        if (n is not JsonArray list) return o;
+        foreach (var item in list)
+        {
+            if (o.Count == 6) break;
+            if (item is not JsonObject p || p["normal"] is not JsonArray { Count: 3 } v || p["constant"] is not JsonValue c) continue;
+            double At(int k) => v[k] is JsonValue x && x.TryGetValue<double>(out var d) && double.IsFinite(d) ? d : 0;
+            if (!c.TryGetValue<double>(out var k0) || !double.IsFinite(k0)) continue;
+            o.Add(new ClipPlane(new Vec3(At(0), At(1), At(2)), k0));
+        }
+        return o;
     }
 }

@@ -19,6 +19,12 @@ public sealed record PlanItemDto(string Kind, bool Closed, double[] Points, stri
 
 public sealed record RenderPart(string Name, string Color, float[] Positions, float[] Normals, int[] Indices, float[] Edges, string? Material = null);
 
+/// <summary>A part's caps where a section cuts it in 3D (<see cref="Session.Caps"/>): <see cref="Part"/> is its index in the element's parts.</summary>
+public sealed record CapPart(int Part, string Color, string? Material, float[] Positions, float[] Normals, int[] Indices, float[] Edges);
+
+/// <summary>An element's caps, part by part.</summary>
+public sealed record CapItem(string NodeId, IReadOnlyList<CapPart> Parts);
+
 public sealed record RenderItem(
     string NodeId,
     string Type,

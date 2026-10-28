@@ -96,6 +96,8 @@ Then (#153) working together (`docs/plan-multiplayer.md`): the desktop shares th
 
 Then (#155) the barrel roof (`shape: barrel`, `rise`; `RoofSolver.SolveBarrel`, planar strips on a circle) and `WallTops`: a wall attached to any body (a Studio solid, a slab, an imported element, a foreign roof) rises to its underside, read by vertical rays along its axis.
 
+Then (#157) sections in 3D read as solids: each cut layer closed by its caps in its own material (`SectionCaps` in the core, bubble-core's `BubbleBim.Geometry` and Lapin.Geometry's copy; `view.caps`), the section's drawing (Hatches) on request; View → Section box (BX) with face handles, Fit and Cut at plan; the same caps in BubbleBIM Pro.
+
 The `mep` module (premium, `docs/plan-mep.md`) lives in the private sibling repo `../lapin-mep`, built through `products/lapin-mep.json` (`"external"`); its stages 1–3 (network core, IFC export, the MEP tab, the engineering estimates and schedules) are done.
 
 Next: the user reviews `docs/decisions-pending.md` (#1–111). Open items needing the user: signing and notarization, Windows (manifold), and what the review changes. Milestones are in `docs/plan.md`.

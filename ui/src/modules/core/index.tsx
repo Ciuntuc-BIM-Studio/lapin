@@ -1,7 +1,7 @@
 /** Core: always there — selecting, measuring, the views and how they look, materials and drafting standards. */
 
 import { StoreySection } from './StoreySection';
-import { AppWindow, Box, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2, CloudFog, Link2, History, Layers, SlidersHorizontal } from 'lucide-react';
+import { AppWindow, Box, BoxSelect, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2, CloudFog, Link2, History, Layers, SlidersHorizontal } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -27,6 +27,7 @@ import { VersionsDialog } from './VersionsDialog';
 import { ExportMeshDialog } from './ExportMeshDialog';
 import { PlanStoreysDialog } from './PlanStoreys';
 import { ViewSettingsDialog, ViewSettingsSection, ViewStylesDialog } from './ViewSettings';
+import { cutAtPlan, toggleSectionBox } from '../../viewport/sectionBoxTools';
 
 /** Create Similar: the selected element's tool, set up like it. */
 function createSimilar() {
@@ -127,6 +128,10 @@ const core: LapinModule = {
         { id: 'view.elevations', label: 'Elevations', icon: ElevationIcon, run: () => void (async () => {
           for (const direction of ['south', 'east', 'north', 'west']) await execute('view.create', { kind: 'elevation', direction, discipline: frontDiscipline() });
         })() },
+      ] },
+      { label: 'Cut', tools: [
+        { id: 'view.sectionBox', label: 'Section box', icon: BoxSelect, shortcut: 'BX', run: toggleSectionBox },
+        { id: 'view.cutAtPlan', label: 'Cut at plan', icon: Scissors, run: () => void cutAtPlan() },
       ] },
       { label: 'Graphics', tools: [
         { id: 'view.layers', label: 'Visibility', icon: Layers3, shortcut: 'VV', run: () => useUi.setState({ dialog: 'visibility' }) },

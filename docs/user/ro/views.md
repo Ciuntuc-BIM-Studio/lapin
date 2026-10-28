@@ -28,13 +28,21 @@ Dublu clic pe **{3D}** deschide vederea 3D. Trage cu butonul stâng ca să te ro
 
 ### O secțiune în 3D
 
-Clic dreapta pe o secțiune în navigator și alege **Arată în 3D**. Vederea 3D taie modelul după linia secțiunii. Păstrează partea spre care privește secțiunea, până la adâncimea ei, dacă are una. Pe tăietură stă desenul secțiunii, cu aceleași umpluturi și hașuri de secțiune pe care le tipărește o planșă. Cotele, semnele de nivel, etichetele și textele ei stau în același plan, la fel de mari și în același loc ca în secțiune. Liniile își păstrează grosimea peniței și modelul complet de linie întreruptă. Cele desenate lângă clădire stau în aer, lângă tăietură. **Adnotări**, pe eticheta din josul vederii 3D, le ascunde sau le arată din nou. La o fațadă, **Arată în 3D** întoarce camera să privească în direcția fațadei.
+Clic dreapta pe o secțiune în navigator și alege **Arată în 3D**. Vederea 3D taie modelul după linia secțiunii. Păstrează partea spre care privește secțiunea, până la adâncimea ei, dacă are una. Fiecare element tăiat e închis acolo unde e tăiat, strat cu strat, fiecare strat în materialul lui: un perete își arată miezul de cărămidă și tencuielile, plin, cum e peretele. **Hașuri**, pe eticheta din josul vederii 3D, pune în schimb pe tăietură desenul secțiunii, cu umpluturile și hașurile de secțiune pe care le tipărește o planșă. Cotele, semnele de nivel, etichetele și textele ei stau în același plan, la fel de mari și în același loc ca în secțiune. Liniile își păstrează grosimea peniței și modelul complet de linie întreruptă. Cele desenate lângă clădire stau în aer, lângă tăietură. **Adnotări**, pe eticheta din josul vederii 3D, le ascunde sau le arată din nou. La o fațadă, **Arată în 3D** întoarce camera să privească în direcția fațadei.
 
 ![Meniul de clic dreapta al secțiunii în navigator](shots/section-3d-menu.webp)
 
 ![Secțiunea B-B văzută în 3D](shots/section-3d.webp)
 
 Ca să vezi din nou tot modelul, apasă **×** pe eticheta **Secțiune** din josul vederii 3D sau alege din nou **Arată în 3D**.
+
+![Secțiunea B-B cu Hașuri: tăietura cum o tipărește planșa](shots/section-3d-hatches.webp)
+
+### Cutia de secțiune
+
+**Vedere → Cutie de secțiune** (scurtătura BX) taie vederea 3D după o cutie. Cutia pornește în jurul întregului model. Fiecare față are o săgeată la mijloc: trage de ea ca să muți fața. Fiecare element tăiat de cutie e închis pe fața aceea, strat cu strat, în materialele lui, iar fețele se întâlnesc curat la muchiile cutiei. **Taie la plan** pune capacul cutiei la tăietura planului nivelului activ (din domeniul lui de vedere), ca nivelul să se citească în 3D cum îl taie planul. **Încadrează** pune cutia din nou în jurul întregului model. **×** pe eticheta **Cutie de secțiune** oprește cutia.
+
+![Cutia de secțiune tăiată la planul parterului, cu fața de est trasă înăuntru](shots/section-box.webp)
 
 ### Plimbare printr-o încăpere
 

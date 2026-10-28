@@ -38,6 +38,10 @@ export interface RenderPart {
   edges: Float32Array;
 }
 
+/** A part's caps where a section cuts it in 3D (view.caps): `part` is its index in the element's parts. */
+export interface CapPart { part: number; color: string; material?: string | null; positions: Float32Array; normals: Float32Array; indices: Int32Array; edges: Float32Array }
+export interface CapItem { nodeId: string; parts: CapPart[] }
+
 export interface RenderItem {
   nodeId: string;
   type: string;

@@ -15,8 +15,12 @@ import type { PenDto } from './drawing';
 
 export interface ViewFrameDto { origin: number[]; right: number[]; up: number[]; dir: number[] }
 
-/** The section (or elevation) the 3D view shows, by its view's id (null: none), and whether its annotations show. */
-export const useSection3d = create<{ viewId: string | null; annotations: boolean }>(() => ({ viewId: null, annotations: true }));
+/**
+ * The section (or elevation) the 3D view shows, by its view's id (null: none), whether its annotations show,
+ * and how the cut is closed: by caps in the cut elements' own materials (the default), or by the section's
+ * drawing (its cut fills and hatches, as sheets print it).
+ */
+export const useSection3d = create<{ viewId: string | null; annotations: boolean; caps: 'material' | 'drawing' }>(() => ({ viewId: null, annotations: true, caps: 'material' }));
 
 /** Show a view in 3D, or stop showing it when it already is. */
 export function toggleSection3d(viewId: string): void {

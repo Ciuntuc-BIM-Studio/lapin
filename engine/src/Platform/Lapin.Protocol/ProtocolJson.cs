@@ -21,6 +21,7 @@ namespace Lapin.Protocol;
 [JsonSerializable(typeof(IReadOnlyList<RecoverableWork>))]
 [JsonSerializable(typeof(List<RecoverableWork>))]
 [JsonSerializable(typeof(RecoverableWork[]))]
+[JsonSerializable(typeof(List<CapItem>))]
 [JsonSerializable(typeof(JsonNode))]
 [JsonSerializable(typeof(JsonObject))]
 [JsonSerializable(typeof(JsonArray))]

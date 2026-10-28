@@ -14,7 +14,7 @@ import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { X } from 'lucide-react';
-import type { NodeDto, RenderItem } from '../engine/protocol';
+import type { CapItem, NodeDto, RenderItem } from '../engine/protocol';
 import { activeStorey, engine, useSession } from '../engine/session';
 import { num } from '../engine/model';
 import { select, setTool, useUi } from '../app/store';
@@ -25,8 +25,11 @@ import { boxUv, boxUvSized, imageOf, imageTexture, splitByFace, textureFor, text
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
+import { SectionBox3D } from './SectionBox3D';
+import { boxPlanes, planesKey, useSectionBox } from './sectionBox';
+import { cutAtPlan, fitSectionBox } from './sectionBoxTools';
 import { useDrawing, type DrawingDto } from './drawing';
-import { cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPlanes, sectionPose, textFont, textQuad, useSection3d, type DrawingText, type ViewFrameDto } from './section3d';
+import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPlanes, sectionPose, textFont, textQuad, useSection3d, type ClipPlane, type DrawingText, type ViewFrameDto } from './section3d';
 import { clampPitch, easeEye, exitWalk, lookVector, toggleFly, useWalk, walkStep, walkWish, EYE_HEIGHT, WALK_KEYS, type WalkStart } from './walk';
 import { TICK, Walker, worldOf } from './walkPhysics';
 
@@ -46,11 +49,10 @@ function groundGrid(theme: keyof typeof GRID, z: number): THREE.GridHelper {
   return grid;
 }
 
-function meshOf(item: RenderItem): THREE.Group {
-  const group = new THREE.Group();
-  group.userData.nodeId = item.nodeId;
+/** A surface's meshes in its material (its own image, or its texture tinted by its colour, per face when they differ) added to `group`. */
+function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array, normals: Float32Array, indices: Int32Array, color: string, material?: string | null) {
   const nodes = useSession.getState().nodes;
-  const add = (positions: Float32Array, normals: Float32Array, indices: Int32Array, edges: Float32Array, color: string, material?: string | null) => {
+  {
     if (positions.length) {
       const mat = material ? nodes.get(material) : undefined;
       // The material's own image: on every face, untinted, at its size in metres.
@@ -63,7 +65,7 @@ function meshOf(item: RenderItem): THREE.Group {
         g.setIndex(new THREE.BufferAttribute(new Uint32Array(indices.buffer, indices.byteOffset, indices.length), 1));
         boxUvSized(g, own.width, own.height);
         const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0xffffff, map: imageTexture(own), roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
-        mesh.userData.nodeId = item.nodeId;
+        mesh.userData.nodeId = nodeId;
         group.add(mesh);
       }
       const kinds: Record<Face, TextureKind | null> = { side: textureOf(mat, 'side'), end: textureOf(mat, 'end'), top: textureOf(mat, 'top') };
@@ -84,10 +86,18 @@ function meshOf(item: RenderItem): THREE.Group {
           color: kind ? 0xffffff : new THREE.Color(color), map: kind ? textureFor(kind, color) : null,
           roughness: kind === 'metal' ? 0.45 : 0.85, metalness: kind === 'metal' ? 0.3 : 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
         }));
-        mesh.userData.nodeId = item.nodeId;
+        mesh.userData.nodeId = nodeId;
         group.add(mesh);
       }
     }
+  }
+}
+
+function meshOf(item: RenderItem): THREE.Group {
+  const group = new THREE.Group();
+  group.userData.nodeId = item.nodeId;
+  const add = (positions: Float32Array, normals: Float32Array, indices: Int32Array, edges: Float32Array, color: string, material?: string | null) => {
+    addSurface(group, item.nodeId, positions, normals, indices, color, material);
     if (edges.length) {
       const e = new THREE.BufferGeometry();
       e.setAttribute('position', new THREE.BufferAttribute(edges, 3));
@@ -96,6 +106,31 @@ function meshOf(item: RenderItem): THREE.Group {
   };
   add(item.positions, item.normals, item.indices, item.edges, item.color);
   for (const p of item.parts ?? []) add(p.positions, p.normals, p.indices, p.edges, p.color, p.material);
+  return group;
+}
+
+/** Cut outlines on the caps: a little heavier than the model's edges, so the cut reads first. */
+const CAP_EDGE_PX = 1.6;
+
+/**
+ * An element's caps where the section cuts it (view.caps): each part's in
+ * its own material, as its faces are, outlined in the cut's line.
+ */
+function capsOf(item: CapItem): THREE.Group {
+  const group = new THREE.Group();
+  group.userData.nodeId = item.nodeId;
+  group.userData.caps = true;
+  const edges: number[] = [];
+  for (const p of item.parts) {
+    addSurface(group, item.nodeId, p.positions, p.normals, p.indices, p.color, p.material);
+    for (const v of p.edges) edges.push(v);
+  }
+  if (edges.length) {
+    const mat = new LineMaterial({ color: 0x1e2a3a, linewidth: CAP_EDGE_PX });
+    const lines = new LineSegments2(new LineSegmentsGeometry().setPositions(edges), mat);
+    lines.onBeforeRender = (renderer) => { renderer.getSize(mat.resolution); };
+    group.add(lines);
+  }
   return group;
 }
 
@@ -178,8 +213,9 @@ function faceMesh(face: FaceDto): THREE.Object3D {
  * clipping plane leaves them); what is seen beyond is left to the model.
  * With `annotations`, the dimensions, levels, tags and texts too, where the
  * drawing has them: those beside the building stand in the air on the plane.
+ * Without `cut` (the caps drawn in their materials), only those.
  */
-function sectionOverlay(d: DrawingDto, annotations: boolean, anisotropy: number): THREE.Group {
+function sectionOverlay(d: DrawingDto, annotations: boolean, anisotropy: number, cut = true): THREE.Group {
   const f = d.frame!;
   const group = new THREE.Group();
   group.name = 'section-overlay';
@@ -190,6 +226,8 @@ function sectionOverlay(d: DrawingDto, annotations: boolean, anisotropy: number)
   const fillAt = basis(0.004), lineAt = basis(0.002);
   for (const pen of d.pens) {
     if (!onCut(pen.layer, annotations)) continue;
+    // With the caps in their materials, the drawing's own cut (fills, hatches, outlines) is not laid over them.
+    if (!cut && CUT_LAYERS.has(pen.layer)) continue;
     if (pen.texts?.length) {
       for (const t of pen.texts) { const m = textMesh(t, d.scale, f, pen.stroke, anisotropy); if (m) group.add(m); }
       continue;
@@ -287,6 +325,9 @@ export function Viewport3D() {
   // Frames are drawn on demand: when the camera moves, the view resizes or the scene changes.
   const invalidate = useRef<() => void>(() => undefined);
   const items = useRef(new Map<string, { item: RenderItem; object: THREE.Group }>());
+  /** The cut elements' caps, by element (a section or the section box shown). */
+  const caps = useRef(new Map<string, THREE.Group>());
+  const [capsShown, setCapsShown] = useState(0);
   const [pending, setPending] = useState<Vec2 | null>(null);
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
@@ -760,6 +801,11 @@ export function Viewport3D() {
       s.add(object);
       live.set(id, { item, object });
     }
+    for (const [id, object] of caps.current) {
+      highlight(object, selected.includes(id));
+      look(object, looks[id]);
+      object.visible = object.visible && visualStyle !== 'wireframe' && !(walking && live.get(id)?.item.type === 'IfcSpace');
+    }
     for (const [id, { item, object }] of live) {
       highlight(object, selected.includes(id));
       look(object, looks[id]);
@@ -772,7 +818,7 @@ export function Viewport3D() {
       });
     }
     invalidate.current();
-  }, [render, selected, looks, visualStyle, walking]);
+  }, [render, selected, looks, visualStyle, walking, capsShown]);
 
   // A walk asked for (a plan's right-click on a room), or ended; the model changed or shown otherwise under a walker.
   useEffect(() => { if (walkStart) walkApi.current.start(walkStart); else walkApi.current.stop(); }, [walkStart]);
@@ -783,21 +829,46 @@ export function Viewport3D() {
   const sectionNode = useSession((st) => (sectionId ? st.nodes.get(sectionId) : undefined));
   const sectionDrawing = useDrawing(sectionId);
   const sectionNotes = useSection3d((st) => st.annotations);
+  const capStyle = useSection3d((st) => st.caps);
+  const box = useSectionBox((st) => st.box);
+  const shown = sectionId && sectionDrawing?.frame && sectionDrawing.kind === 'section' ? sectionDrawing : null;
+  // What cuts the model: the section shown (its plane, and its depth) and the section box's faces.
+  const planes: ClipPlane[] = [...(shown ? sectionPlanes(shown.frame!, shown.depth) : []), ...(box ? boxPlanes(box) : [])];
+  const clipKey = planesKey(planes);
+  // Closed by caps in their materials; with the drawing's hatches instead, only the box's faces are capped.
+  const capPlanes = capStyle === 'drawing' ? (box ? boxPlanes(box) : []) : planes;
+  const capKey = planesKey(capPlanes);
   useEffect(() => {
     // The view deleted: nothing to show any more.
     if (sectionId && !sectionNode) useSection3d.setState({ viewId: null });
   }, [sectionId, sectionNode]);
   useEffect(() => {
+    const s = scene.current;
+    if (!s) return;
+    let stale = false;
+    const put = (items: CapItem[]) => {
+      for (const g of caps.current.values()) { s.remove(g); dispose(g); }
+      caps.current.clear();
+      for (const it of items) { const g = capsOf(it); s.add(g); caps.current.set(it.nodeId, g); }
+      setCapsShown((v) => v + 1);
+      invalidate.current();
+    };
+    if (!capPlanes.length) { put([]); return; }
+    // Asked a moment after the last change (a face dragged asks once it rests), the newest answer kept.
+    const timer = setTimeout(() => {
+      void engine.call<CapItem[]>('view.caps', { planes: capPlanes }).then((items) => { if (!stale) put(items ?? []); }).catch(() => undefined);
+    }, 60);
+    return () => { stale = true; clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- capKey stands for capPlanes
+  }, [capKey, render]);
+  useEffect(() => {
     const s = scene.current, renderer = rendererRef.current;
     if (!s || !renderer) return;
     const old = s.getObjectByName('section-overlay');
     if (old) { s.remove(old); dispose(old); }
-    renderer.clippingPlanes = [];
+    renderer.clippingPlanes = planes.map((p) => new THREE.Plane(new THREE.Vector3(...p.normal), p.constant));
     const d = sectionId ? sectionDrawing : null;
-    if (d?.frame && d.kind === 'section') {
-      renderer.clippingPlanes = sectionPlanes(d.frame, d.depth).map((p) => new THREE.Plane(new THREE.Vector3(...p.normal), p.constant));
-      s.add(sectionOverlay(d, sectionNotes, Math.min(8, renderer.capabilities.getMaxAnisotropy())));
-    }
+    if (d?.frame && d.kind === 'section') s.add(sectionOverlay(d, sectionNotes, Math.min(8, renderer.capabilities.getMaxAnisotropy()), capStyle === 'drawing'));
     if (!sectionId) framedSection.current = null;
     else if (d?.frame && framedSection.current !== sectionId && !useWalk.getState().start) {
       framedSection.current = sectionId;
@@ -807,12 +878,13 @@ export function Viewport3D() {
       else if (api) { api.setOrtho(false); api.orbitTo({ azimuth: Math.atan2(d.frame.dir[1], d.frame.dir[0]), pitch: -0.05 }, false); api.fit(); }
     }
     invalidate.current();
-  }, [sectionId, sectionDrawing, sectionNotes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- clipKey stands for planes
+  }, [sectionId, sectionDrawing, sectionNotes, capStyle, clipKey]);
 
   return (
     <>
       <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />
-      {(sectionId || walkStart) && (
+      {(sectionId || walkStart || box) && (
         <div className="view3d-modes">
           {sectionId && (
             <span className="mode-chip section">
@@ -821,7 +893,20 @@ export function Viewport3D() {
                 <button type="button" className="mode-toggle" aria-pressed={sectionNotes} title="Show the section's dimensions, levels, tags and texts on the cut"
                   onClick={() => useSection3d.setState({ annotations: !sectionNotes })}>Annotations</button>
               )}
+              {sectionNode?.props.kind !== 'elevation' && (
+                <button type="button" className="mode-toggle" aria-pressed={capStyle === 'drawing'} title="Close the cut with the section's drawing (its cut fills and hatches, as sheets print it) instead of the materials"
+                  onClick={() => useSection3d.setState({ caps: capStyle === 'drawing' ? 'material' : 'drawing' })}>Hatches</button>
+              )}
               <button type="button" className="mode-close" title="Stop showing the section in 3D" aria-label="Stop showing the section in 3D" onClick={() => useSection3d.setState({ viewId: null })}><X size={12} /></button>
+            </span>
+          )}
+          {box && !walkStart && (
+            <span className="mode-chip section">
+              <span>Section box</span>
+              <span className="mode-hint">Drag a face's arrow to move it</span>
+              <button type="button" onClick={fitSectionBox} title="The box round the whole model">Fit</button>
+              <button type="button" onClick={() => void cutAtPlan()} title="The box's top at the active storey's plan cut">Cut at plan</button>
+              <button type="button" className="mode-close" title="Section box off" aria-label="Section box off" onClick={() => useSectionBox.setState({ box: null })}><X size={12} /></button>
             </span>
           )}
           {walkStart && (
@@ -836,6 +921,7 @@ export function Viewport3D() {
       )}
       {faceLabel && <div className="face-label" style={{ left: faceLabel.x + 14, top: faceLabel.y + 14 }}>{faceLabel.text}</div>}
       <Grips3D camera={camRef} canvas={host} />
+      {!walkStart && <SectionBox3D camera={camRef} canvas={host} />}
       <KeyPlan mode="3d" />
     </>
   );

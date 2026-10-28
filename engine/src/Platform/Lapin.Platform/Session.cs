@@ -281,6 +281,61 @@ public sealed class Session
         return producer(e, Geometry(id), _store).ToList();
     }
 
+    /// <summary>
+    /// The caps a section seen in 3D closes the cut elements with
+    /// (<see cref="SectionCaps"/>): for every built part the planes cut, the
+    /// faces on the planes inside what they all keep, in the part's material,
+    /// their outlines less the seams where one material goes on from one
+    /// element into another (the 2D sections' rule). <paramref name="lift"/>
+    /// moves them into the kept side, so the renderer's own clipping keeps them.
+    /// </summary>
+    public List<CapItem> Caps(IReadOnlyList<ClipPlane> planes, double lift = 0.0005)
+    {
+        var result = new List<CapItem>();
+        if (planes.Count == 0) return result;
+        var solids = new List<Solid>();
+        var owners = new List<(string Id, int Part, GeometryPart Geometry)>();
+        var seamKeys = new List<string?>();
+        var keys = new Dictionary<string, string?>();
+        foreach (var (id, b) in _built)
+        {
+            if (b.Geometry is not { } g || b.Bounds is not { } box || b.Item == null) continue;
+            // Only what a plane crosses and none cuts wholly away.
+            var crossed = false;
+            var gone = false;
+            foreach (var p in planes)
+            {
+                double lo = double.MaxValue, hi = double.MinValue;
+                for (var c = 0; c < 8; c++)
+                {
+                    var d = p.Distance(new Vec3((c & 1) == 0 ? box.Min.X : box.Max.X, (c & 2) == 0 ? box.Min.Y : box.Max.Y, (c & 4) == 0 ? box.Min.Z : box.Max.Z));
+                    lo = Math.Min(lo, d); hi = Math.Max(hi, d);
+                }
+                if (hi < 0) { gone = true; break; }
+                if (lo < 0) crossed = true;
+            }
+            if (gone || !crossed) continue;
+            var cls = _store.Get(id)?.Class ?? b.Item.Type;
+            for (var i = 0; i < g.Parts.Count; i++)
+            {
+                solids.Add(g.Parts[i].Solid);
+                owners.Add((id, i, g.Parts[i]));
+                seamKeys.Add(Views.SeamKeyOf(_store, g.Parts[i].Material, cls, keys));
+            }
+        }
+        var caps = SectionCaps.Make(solids, planes, seamKeys, lift);
+        var byNode = new Dictionary<string, List<CapPart>>();
+        for (var k = 0; k < caps.Length; k++)
+        {
+            var m = caps[k];
+            if (m.Indices.Length == 0) continue;
+            var (id, part, gp) = owners[k];
+            if (!byNode.TryGetValue(id, out var list)) { byNode[id] = list = []; result.Add(new CapItem(id, list)); }
+            list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges));
+        }
+        return result;
+    }
+
     // ------------------------------------------------------------ diffs
 
     public Diff Snapshot()

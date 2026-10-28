@@ -660,3 +660,10 @@ button.mode-chip:hover { color: var(--accent); }
 .plan-peer-cursor { pointer-events: none; }
 .plan-peer-cursor path { fill: currentColor; stroke: #fff; stroke-width: 1; }
 .plan-peer-cursor text { fill: currentColor; font-size: 11px; font-weight: 600; paint-order: stroke; stroke: var(--paper, #fff); stroke-width: 3px; }
+
+/* The section box over the 3D view: its edges and its face handles. */
+.section-box-edge { stroke: var(--accent, #b5532d); stroke-width: 1.2; stroke-dasharray: 6 4; opacity: 0.8; }
+.section-box-handle { pointer-events: all; cursor: grab; fill: var(--accent, #b5532d); stroke: #fff; stroke-width: 1.2; }
+.section-box-handle .section-box-hit { fill: transparent; stroke: none; }
+.section-box-handle.active, .section-box-handle:hover { filter: brightness(1.15); }
+.section-box-handle.active { cursor: grabbing; }

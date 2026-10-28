@@ -371,12 +371,20 @@ export const scenes = [
       t.expect(await page.locator('.view3d-modes').getByText('B-B').count() === 1, 'the 3D view says which section it shows');
       await t.shot('section-3d', { of: '[data-testid=view3d]', pad: 0 });
       // Its annotations on the cut, on by default, off and on again from the chip.
-      const notes = page.locator('.view3d-modes button.mode-toggle');
+      const notes = page.locator('.view3d-modes button.mode-toggle', { hasText: 'Annotations' });
       t.expect(await notes.getAttribute('aria-pressed') === 'true', 'the section\'s annotations show by default');
       await notes.click();
       await t.wait(300);
       t.expect(await notes.getAttribute('aria-pressed') === 'false', 'the chip hides the annotations');
       await notes.click();
+      // The cut closed by caps in the elements' materials; Hatches lays the section's drawing on it instead.
+      const hatches = page.locator('.view3d-modes button.mode-toggle', { hasText: 'Hatches' });
+      t.expect(await hatches.getAttribute('aria-pressed') === 'false', 'the cut shows the materials by default');
+      t.expect((await t.call('view.caps', { planes: [{ normal: [0, 1, 0], constant: -5 }] })).length > 0, 'the engine caps what the section cuts');
+      await hatches.click();
+      await t.wait(800);
+      await t.shot('section-3d-hatches', { of: '[data-testid=view3d]', pad: 0 });
+      await hatches.click();
       // Off again from its chip.
       await page.locator('.view3d-modes button.mode-close').click();
       await t.wait(400);
@@ -393,6 +401,28 @@ export const scenes = [
       await page.locator('.context-menu').getByRole('menuitem', { name: 'Show in 3D' }).click();
       await t.wait(400);
       t.expect(await page.locator('.view3d-modes').count() === 0, 'Show in 3D again turns it off');
+
+      // The section box: on from the View tab, its top at the ground floor's plan cut, its east face dragged in.
+      await page.locator('.tabs-row button.tab').getByText('View', { exact: true }).click();
+      await page.locator('.band').getByRole('button', { name: 'Section box' }).click();
+      await t.wait(800);
+      t.expect(await page.locator('.section-box-handle').count() === 6, 'the section box has a handle on each face');
+      await page.locator('.view3d-modes').getByRole('button', { name: 'Cut at plan' }).click();
+      await t.wait(800);
+      await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.2, pitch: -0.6, distance: 24, target: { x: 6, y: 4, z: 0.5 } }, false));
+      await t.wait(600);
+      const east = await page.locator('.section-box-handle[data-face="x1"] circle').last().boundingBox();
+      const west = await page.locator('.section-box-handle[data-face="x0"] circle').last().boundingBox();
+      await page.mouse.move(east.x + east.width / 2, east.y + east.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(east.x + (west.x - east.x) * 0.45, east.y + (west.y - east.y) * 0.45, { steps: 8 });
+      await page.mouse.up();
+      await t.wait(1500);
+      const box = await page.evaluate(async () => (await import('/src/viewport/sectionBox.ts')).useSectionBox.getState().box);
+      t.expect(box.max[0] < 11 && box.max[2] < 2, 'the box is cut at the plan and its face dragged in');
+      await t.shot('section-box', { of: '[data-testid=view3d]', pad: 0 });
+      await page.locator('.view3d-modes button.mode-close').click();
+      await t.wait(300);
 
       // The ground floor's plan, a right-click in the living room: walk in 3D.
       await t.ui({ view: 'plan', storeyId: storey, planViewId: null });

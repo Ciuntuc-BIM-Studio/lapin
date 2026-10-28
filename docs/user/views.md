@@ -28,13 +28,21 @@ Double-click **{3D}** to open the 3D view. Drag with the left button to orbit ar
 
 ### A section in 3D
 
-Right-click a section in the browser and choose **Show in 3D**. The 3D view cuts the model along the section's line. It keeps the side the section looks at, up to the section's depth if it has one. The section's own drawing lies on the cut, with the same cut fills and hatches a sheet prints. Its dimensions, level marks, tags and texts lie on the same plane, the same size and in the same place as in the section. Lines keep their pen weights and their full dash patterns. Those drawn beside the building stand in the air beside the cut. **Annotations** on the chip at the bottom of the 3D view hides them or shows them again. An elevation's **Show in 3D** turns the camera to look the way the elevation does.
+Right-click a section in the browser and choose **Show in 3D**. The 3D view cuts the model along the section's line. It keeps the side the section looks at, up to the section's depth if it has one. Every cut element is closed where it is cut, layer by layer, each layer in its own material: a wall shows its brick core and its plaster, as solid as the wall is. **Hatches** on the chip at the bottom of the 3D view lays the section's drawing on the cut instead, with the cut fills and hatches a sheet prints. The section's dimensions, level marks, tags and texts lie on the same plane, the same size and in the same place as in the section. Lines keep their pen weights and their full dash patterns. Those drawn beside the building stand in the air beside the cut. **Annotations** on the chip at the bottom of the 3D view hides them or shows them again. An elevation's **Show in 3D** turns the camera to look the way the elevation does.
 
 ![The section's right-click menu in the browser](shots/section-3d-menu.webp)
 
 ![Section B-B seen in 3D](shots/section-3d.webp)
 
 To see the whole model again, click the **×** on the **Section** chip at the bottom of the 3D view, or choose **Show in 3D** again.
+
+![Section B-B with Hatches on: the cut as the sheet prints it](shots/section-3d-hatches.webp)
+
+### The section box
+
+**View → Section box** (shortcut BX) cuts the 3D view to a box. The box starts round the whole model. Each face has an arrow in its middle: drag it to move that face. Every element the box cuts is closed on that face, layer by layer, in its materials, and the faces meet cleanly at the box's edges. **Cut at plan** sets the box's top at the active level's plan cut (its view range), so the level reads in 3D as its plan cuts it. **Fit** puts the box back round the whole model. The **×** on the **Section box** chip turns the box off.
+
+![The section box cut at the ground floor's plan, its east face dragged in](shots/section-box.webp)
 
 ### Walking into a room
 
