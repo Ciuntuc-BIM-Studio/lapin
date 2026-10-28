@@ -32,7 +32,7 @@ import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
 import type { Shape } from './cad/shapes';
-import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelPixels, type Bounds, type View2, type ZoomHost } from './zoom';
+import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelZoom, type Bounds, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { axisLine, riseThrough } from './arc';
 import { others, reportPresence, useShare } from '../engine/share';
@@ -388,7 +388,7 @@ export function PlanView() {
     }
     const rect = svgRef.current!.getBoundingClientRect();
     const at = toWorld(e.clientX - rect.left, e.clientY - rect.top);
-    const scale = clampScale(view.scale * Math.exp(-wheelPixels(e, size.h) * 0.0015));
+    const scale = clampScale(view.scale * wheelZoom(e, size.h));
     // Zoom about the cursor; a burst of wheel steps is one zoom for ZP.
     const now = performance.now();
     if (now - wheelBurst.current > 400) pushHistory(key, view);

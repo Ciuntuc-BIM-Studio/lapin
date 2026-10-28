@@ -16,7 +16,7 @@ import { execute, query, useSession } from '../engine/session';
 import { exportFile } from '../engine/files';
 import { DrawingLayer } from './DrawingLayer';
 import type { PenDto } from './drawing';
-import { PX_PER_MM, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPixels, type ZoomHost } from './zoom';
+import { PX_PER_MM, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
 
 interface Vp { id: string; viewId: string; x0: number; y0: number; x1: number; y1: number; scale: number; content: boolean; page: number; pages: number; width?: number; warnings: string[] }
 interface SheetDrawing { w: number; h: number; pens: PenDto[]; frame: number[]; titleBlock: number[]; viewports: Vp[] }
@@ -181,7 +181,7 @@ export function SheetView() {
           const now = performance.now();
           if (now - wheelBurst.current > 400) pushHistory(key, v);
           wheelBurst.current = now;
-          setZ(zoomAbout(v.k * Math.exp(-wheelPixels(e, size.h) * 0.0015), e.clientX - r.left, e.clientY - r.top));
+          setZ(zoomAbout(v.k * wheelZoom(e, size.h), e.clientX - r.left, e.clientY - r.top));
         }}
         onPointerDown={(e) => {
           if (middleTwice.current(e)) { fit(); return; }

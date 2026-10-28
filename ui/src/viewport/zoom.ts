@@ -84,6 +84,20 @@ export const wheelPans = (e: { deltaX: number; deltaY: number; ctrlKey: boolean;
 export const wheelPixels = (e: { deltaY: number; deltaMode: number }, pageHeight: number) =>
   e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * pageHeight : e.deltaY;
 
+/**
+ * How much a wheel event zooms (the factor the view's scale is multiplied by),
+ * in proportion to how far it turns, so a trackpad's many small events zoom
+ * smoothly and a mouse's notch is one step. A pinch (Ctrl, as the browsers
+ * report it, Safari's gestures included: pageGuards.ts) stands for a zoom by
+ * exp(−deltaY / 100), followed one to one under the fingers; Ctrl with a
+ * mouse wheel (100 or 120 a notch) is held to about a quarter a notch.
+ */
+export function wheelZoom(e: { deltaY: number; deltaMode: number; ctrlKey: boolean }, pageHeight: number): number {
+  const px = wheelPixels(e, pageHeight);
+  const k = e.ctrlKey ? Math.max(-0.25, Math.min(0.25, px * 0.01)) : px * 0.0015;
+  return Math.exp(-k);
+}
+
 /** The view framing some bounds in a box of pixels. */
 export function framing(b: Bounds, size: { w: number; h: number }, pad = 0.85, min = 2, max = 4000): View2 {
   const w = Math.max(b[2] - b[0], 1e-3), h = Math.max(b[3] - b[1], 1e-3);

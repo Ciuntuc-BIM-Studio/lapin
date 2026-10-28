@@ -24,7 +24,7 @@ import { boxTest, segsOf } from './selectBox';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveCursor } from './liveInput';
-import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelPixels, type View2, type ZoomHost } from './zoom';
+import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelZoom, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
 
@@ -155,7 +155,7 @@ export function DrawingView() {
           if (wheelPans(e)) { setView({ ...v, cx: v.cx + e.deltaX / v.scale, cy: v.cy - e.deltaY / v.scale }); return; }
           const r = ref.current!.getBoundingClientRect();
           const p = toWorld(e.clientX - r.left, e.clientY - r.top);
-          const scale = clampScale(v.scale * Math.exp(-wheelPixels(e, size.h) * 0.0015));
+          const scale = clampScale(v.scale * wheelZoom(e, size.h));
           const now = performance.now();
           if (now - wheelBurst.current > 400) pushHistory(key, v);
           wheelBurst.current = now;

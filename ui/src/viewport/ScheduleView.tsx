@@ -13,7 +13,7 @@ import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, query, useSession } from '../engine/session';
 import { DrawingLayer } from './DrawingLayer';
 import type { PenDto } from './drawing';
-import { PX_PER_MM, middleDouble, popHistory, pushHistory, useZoomHost, wheelPixels, type ZoomHost } from './zoom';
+import { PX_PER_MM, middleDouble, popHistory, pushHistory, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
 
 interface Layout {
   w: number; h: number; pens: PenDto[];
@@ -114,7 +114,7 @@ export function ScheduleView() {
           const now = performance.now();
           if (now - wheelBurst.current > 400) pushHistory(key, v);
           wheelBurst.current = now;
-          setZ(zoomAbout(v.k * Math.exp(-wheelPixels(e, size.h) * 0.0015), e.clientX - r.left, e.clientY - r.top));
+          setZ(zoomAbout(v.k * wheelZoom(e, size.h), e.clientX - r.left, e.clientY - r.top));
         }}
         onPointerDown={(e) => { if (middleTwice.current(e)) { fit(); return; } drag.current = { x: e.clientX, y: e.clientY, start: v }; (e.target as Element).setPointerCapture?.(e.pointerId); }}
         onPointerMove={(e) => { const g = drag.current; if (g) setZ({ ...g.start, ox: g.start.ox + e.clientX - g.x, oy: g.start.oy + e.clientY - g.y }); }}

@@ -17,6 +17,7 @@ import { activeStorey, useSession } from '../engine/session';
 import { num, storeys } from '../engine/model';
 import type { Vec2 } from '../platform/module';
 import { STANDARD, lookOf, useCamera, type CameraPose } from './camera';
+import { wheelPixels } from './zoom';
 
 const W = 136, H = 104, STRIP = 150;
 
@@ -142,8 +143,8 @@ export function KeyPlan({ mode, frame, onLookAt, viewId }: Props) {
         <span className="grow" />
         <button type="button" className="icon mini" title="Hide the key plan (View › Key plan brings it back)" onClick={() => useUi.setState({ keyPlan: false })}><X size={11} /></button>
       </div>
-      <svg ref={svg} viewBox={`0 0 160 ${H}`} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
-        onWheel={mode === '3d' ? (e) => api?.orbitTo({ distance: Math.max(0.5, cam.distance * Math.exp(e.deltaY * 0.002)) }, false) : undefined}
+      <svg ref={svg} viewBox={`0 0 160 ${H}`} data-wheel-zoom onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+        onWheel={mode === '3d' ? (e) => api?.orbitTo({ distance: Math.max(0.5, cam.distance * Math.exp(wheelPixels(e, H) * 0.002)) }, false) : undefined}
         onDoubleClick={mode === '3d' ? () => api?.fit(true) : undefined}>
         <rect className="map-box" x={0.5} y={0.5} width={W - 1} height={H - 1} />
         {path ? <path className="footprint" d={path} /> : <rect className="footprint empty" x={W / 2 - 20} y={H / 2 - 14} width={40} height={28} />}

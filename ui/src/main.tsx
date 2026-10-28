@@ -1,4 +1,5 @@
 import { installRecentErrors } from './shell/support';
+import { installPageGuards } from './app/pageGuards';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
@@ -29,3 +30,5 @@ createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictM
 startTranslator(document.getElementById('root')!);
 
 installRecentErrors();
+// The page stays still under the views: the wheel and a pinch zoom the view, not the page.
+installPageGuards();
