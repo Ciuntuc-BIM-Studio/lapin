@@ -1,6 +1,6 @@
 # Urban planning: the buildable volume and the sun study (plan)
 
-Asked on 28.10.2026 (decision 161): a premium module that draws the parcel (or takes it from survey data) in real coordinates, holds the planning rules in a configurator — POT, CUT, maximum height, the least distances from the property lines and from the road's axis — and generates from them a volume named the **buildable volume**; with it, a **sun study** (BimGo's, the MIT-0 Revit walkthrough add-on, as the reference: sun and shadows by date and time, time-lapses, direct sun hours as an early indicator). The site's data come in through imports that belong to the free Site tab: an orthophoto, GeoJSON, CityJSON, points from DXF, CSV from surveys.
+Asked on 28.10.2026 (decision 163): a premium module that draws the parcel (or takes it from survey data) in real coordinates, holds the planning rules in a configurator — POT, CUT, maximum height, the least distances from the property lines and from the road's axis — and generates from them a volume named the **buildable volume**; with it, a **sun study** (BimGo's, the MIT-0 Revit walkthrough add-on, as the reference: sun and shadows by date and time, time-lapses, direct sun hours as an early indicator). The site's data come in through imports that belong to the free Site tab: an orthophoto, GeoJSON, CityJSON, points from DXF, CSV from surveys.
 
 ## The split
 
