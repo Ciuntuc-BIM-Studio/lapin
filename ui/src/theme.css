@@ -622,3 +622,6 @@ button.mode-chip:hover { color: var(--accent); }
 .mode-chip > span:first-child { color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
 .mode-chip .mode-hint { font-weight: 400; color: var(--ink-muted); font-size: 11.5px; }
 .mode-chip button { border: 0; border-radius: 999px; padding: 3px 10px; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; }
+.mode-chip button.mode-toggle[aria-pressed="false"] { background: transparent; color: var(--ink-muted); box-shadow: inset 0 0 0 1px var(--ink-muted); }
+.mode-chip button.mode-close { display: inline-flex; padding: 3px; background: transparent; color: var(--ink); }
+.mode-chip button.mode-close:hover { color: var(--accent); }

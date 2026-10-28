@@ -3,18 +3,20 @@
  * between the viewer and the cut taken away, and past the section's depth
  * when it has one), with the section's own drawing (the engine's, the one
  * sheets print: its cut fills, hatches and lines) laid on the cut, so its
- * fills close the cut solids. An elevation only turns the camera to look
- * the way it does. The drawing says where it lies (`frame`): a drawing point
+ * fills close the cut solids, and its annotations (dimensions, levels, tags,
+ * texts) on the same plane, where the drawing has them, beside the building
+ * too. An elevation only turns the camera to look the way it does. The drawing says where it lies (`frame`): a drawing point
  * (x, y) is origin + right·x + up·y, and `dir` looks into the scene.
  */
 
 import { create } from 'zustand';
 import type { CameraPose, Vec3 } from './camera';
+import type { PenDto } from './drawing';
 
 export interface ViewFrameDto { origin: number[]; right: number[]; up: number[]; dir: number[] }
 
-/** The section (or elevation) the 3D view shows, by its view's id; null: none. */
-export const useSection3d = create<{ viewId: string | null }>(() => ({ viewId: null }));
+/** The section (or elevation) the 3D view shows, by its view's id (null: none), and whether its annotations show. */
+export const useSection3d = create<{ viewId: string | null; annotations: boolean }>(() => ({ viewId: null, annotations: true }));
 
 /** Show a view in 3D, or stop showing it when it already is. */
 export function toggleSection3d(viewId: string): void {
@@ -42,12 +44,50 @@ export function sectionPlanes(f: ViewFrameDto, depth?: number | null): ClipPlane
   return planes;
 }
 
-/**
- * Pens of a drawing laid on the cut: what is cut, its fills, hatches and
- * membranes. Not what is seen beyond (the model itself shows it), nor the
- * annotations (levels, dimensions, texts), which would float in the air.
- */
+/** Pens of a drawing that are the cut itself: what is cut, its fills, hatches and membranes. */
 export const CUT_LAYERS = new Set(['CUT', 'FILL', 'HATCH', 'MEMBRANE']);
+
+/**
+ * Pens never laid on the cut: what is seen beyond it, hidden or overhead (the
+ * model itself shows it, in depth) and the rooms' fills (they would hide it).
+ */
+export const MODEL_LAYERS = new Set(['SEEN', 'BEYOND', 'HIDDEN', 'OVERHEAD', 'ROOM-FILL']);
+
+/** Whether a pen is laid on the cut: the cut's always, every other (dimensions, levels, tags, texts) with the annotations. */
+export function onCut(layer: string, annotations: boolean): boolean {
+  if (MODEL_LAYERS.has(layer)) return false;
+  return CUT_LAYERS.has(layer) || annotations;
+}
+
+/** Paper millimetres in the model's metres at a drawing's scale: 2.5 mm at 1:100 is 0.25 m. */
+export const paperToModel = (mm: number, scale: number | undefined) => (mm * (scale ?? 100)) / 1000;
+
+export type DrawingText = NonNullable<PenDto['texts']>[number];
+
+/**
+ * Where a drawing's text lies on its plane, as the 2D drawing sets it
+ * (DrawingLayer): its height is the font's size on paper, its anchor the
+ * start, middle or end of its line, on its baseline or (baseline "middle")
+ * its middle, turned by its angle (degrees, anticlockwise) round the anchor.
+ * `width` and the font's box are in ems (`ascent` over the anchor's line,
+ * `descent` under it, `pad` round it all); the corners come bottom-left,
+ * bottom-right, top-right, top-left in drawing metres: read left to right
+ * along the text's way.
+ */
+export function textQuad(t: DrawingText, scale: number | undefined, width: number, ascent: number, descent: number, pad = 0): { x: number; y: number }[] {
+  const em = paperToModel(t.height, scale);
+  const x0 = (t.anchor === 'start' ? 0 : t.anchor === 'end' ? -width : -width / 2) - pad;
+  const x1 = x0 + width + 2 * pad;
+  const a = ((t.angle ?? 0) * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+  const at = (u: number, v: number) => ({ x: t.x + (u * c - v * s) * em, y: t.y + (u * s + v * c) * em });
+  return [at(x0, -descent - pad), at(x1, -descent - pad), at(x1, ascent + pad), at(x0, ascent + pad)];
+}
+
+/** A text's font on the canvas, as the 2D drawing's (DrawingLayer) at `px` pixels to the em. */
+export function textFont(t: DrawingText, px: number): string {
+  const family = t.font === 'serif' ? 'ui-serif, Georgia, serif' : t.font === 'mono' ? 'ui-monospace, Menlo, monospace' : 'ui-sans-serif, system-ui, sans-serif';
+  return `${t.bold ? 700 : 400} ${px}px ${family}`;
+}
 
 /** A loop's x y pairs as points. */
 const ptsOf = (loop: number[]) => Array.from({ length: loop.length >> 1 }, (_, i) => ({ x: loop[2 * i], y: loop[2 * i + 1] }));

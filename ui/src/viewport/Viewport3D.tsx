@@ -23,7 +23,7 @@ import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
 import { useDrawing, type DrawingDto } from './drawing';
-import { cssColor, drawingPoint, evenOddShapes, sectionPlanes, sectionPose, CUT_LAYERS, useSection3d } from './section3d';
+import { cssColor, drawingPoint, evenOddShapes, onCut, paperToModel, sectionPlanes, sectionPose, textFont, textQuad, useSection3d, type DrawingText, type ViewFrameDto } from './section3d';
 import { clampPitch, exitWalk, lookVector, useWalk, walkStep, WALK_KEYS, type WalkStart } from './walk';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
@@ -170,10 +170,12 @@ function faceMesh(face: FaceDto): THREE.Object3D {
 /**
  * A section's drawing laid on its cut (section3d.ts): its fills a few
  * millimetres into the kept side, so they close the cut solids, its lines
- * just over them; what is seen beyond is left to the model, and the
- * annotations to the drawing.
+ * and texts just over them (inside the kept side, so the section's own
+ * clipping plane leaves them); what is seen beyond is left to the model.
+ * With `annotations`, the dimensions, levels, tags and texts too, where the
+ * drawing has them: those beside the building stand in the air on the plane.
  */
-function sectionOverlay(d: DrawingDto): THREE.Group {
+function sectionOverlay(d: DrawingDto, annotations: boolean, anisotropy: number): THREE.Group {
   const f = d.frame!;
   const group = new THREE.Group();
   group.name = 'section-overlay';
@@ -183,7 +185,11 @@ function sectionOverlay(d: DrawingDto): THREE.Group {
   };
   const fillAt = basis(0.004), lineAt = basis(0.002);
   for (const pen of d.pens) {
-    if (!CUT_LAYERS.has(pen.layer)) continue;
+    if (!onCut(pen.layer, annotations)) continue;
+    if (pen.texts?.length) {
+      for (const t of pen.texts) { const m = textMesh(t, d.scale, f, pen.stroke, anisotropy); if (m) group.add(m); }
+      continue;
+    }
     const fill = cssColor(pen.fill);
     if (fill && pen.loops?.length) {
       const shapes = evenOddShapes(pen.loops).map(({ outer, holes }) => {
@@ -208,10 +214,63 @@ function sectionOverlay(d: DrawingDto): THREE.Group {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       geo.applyMatrix4(lineAt);
-      group.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: new THREE.Color(stroke.hex), transparent: stroke.opacity < 1, opacity: stroke.opacity })));
+      const look = { color: new THREE.Color(stroke.hex), transparent: stroke.opacity < 1, opacity: stroke.opacity };
+      // Dashed as on paper (a pattern's first dash and gap), in the model's metres at the view's scale.
+      const dash = pen.dash && pen.dash.length >= 2 ? pen.dash : null;
+      const lines = new THREE.LineSegments(geo, dash
+        ? new THREE.LineDashedMaterial({ ...look, dashSize: paperToModel(dash[0], d.scale), gapSize: paperToModel(dash[1], d.scale) })
+        : new THREE.LineBasicMaterial(look));
+      if (dash) lines.computeLineDistances();
+      group.add(lines);
     }
   }
   return group;
+}
+
+/** Pixels to a text's em on its canvas: sharp up close, mipmapped further off. */
+const TEXT_PX = 64;
+
+/**
+ * A drawing's text on the section's plane: a quad as large as the 2D drawing
+ * sets it (section3d.textQuad, at the view's scale), its words drawn on a
+ * canvas in the same font; facing the viewer and reading left to right from
+ * the side the section looks from (from behind, it is not drawn).
+ */
+function textMesh(t: DrawingText, scale: number | undefined, f: ViewFrameDto, color: string | null, anisotropy: number): THREE.Mesh | null {
+  if (!t.text.trim() || !(t.height > 0)) return null;
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  const middle = t.baseline === 'middle';
+  const setup = () => { ctx.font = textFont(t, TEXT_PX); ctx.textBaseline = middle ? 'middle' : 'alphabetic'; ctx.textAlign = 'left'; };
+  setup();
+  const m = ctx.measureText(t.text);
+  // The font's box over and under the line the text stands on (or is centred on).
+  const ascent = m.fontBoundingBoxAscent ?? TEXT_PX * (middle ? 0.6 : 0.95);
+  const descent = m.fontBoundingBoxDescent ?? TEXT_PX * (middle ? 0.6 : 0.25);
+  const pad = 2;
+  canvas.width = Math.ceil(m.width + 2 * pad);
+  canvas.height = Math.ceil(ascent + descent + 2 * pad);
+  setup();
+  ctx.fillStyle = cssColor(color)?.hex ?? '#000000';
+  ctx.fillText(t.text, pad, pad + ascent);
+  // The quad as large as the canvas (its rounding up, under a pixel, taken in), the anchor where the text stands.
+  const q = textQuad(t, scale, (canvas.width - 2 * pad) / TEXT_PX, ascent / TEXT_PX, (canvas.height - 2 * pad - ascent) / TEXT_PX, pad / TEXT_PX);
+  const pos = new Float32Array(12);
+  q.forEach((p, i) => { const w = drawingPoint(f, p.x, p.y, 0.001); pos.set([w.x, w.y, w.z], i * 3); });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
+  geo.setIndex([0, 1, 2, 0, 2, 3]);
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.anisotropy = anisotropy;
+  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+    map, transparent: true, depthWrite: false, side: THREE.FrontSide,
+    polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4,
+  }));
+  mesh.renderOrder = 2;
+  return mesh;
 }
 
 const gridsOf = (nodes: Map<string, NodeDto>) => [...nodes.values()].filter((n) => n.type === 'IfcGrid');
@@ -671,6 +730,7 @@ export function Viewport3D() {
   const sectionId = useSection3d((st) => st.viewId);
   const sectionNode = useSession((st) => (sectionId ? st.nodes.get(sectionId) : undefined));
   const sectionDrawing = useDrawing(sectionId);
+  const sectionNotes = useSection3d((st) => st.annotations);
   useEffect(() => {
     // The view deleted: nothing to show any more.
     if (sectionId && !sectionNode) useSection3d.setState({ viewId: null });
@@ -684,7 +744,7 @@ export function Viewport3D() {
     const d = sectionId ? sectionDrawing : null;
     if (d?.frame && d.kind === 'section') {
       renderer.clippingPlanes = sectionPlanes(d.frame, d.depth).map((p) => new THREE.Plane(new THREE.Vector3(...p.normal), p.constant));
-      s.add(sectionOverlay(d));
+      s.add(sectionOverlay(d, sectionNotes, Math.min(8, renderer.capabilities.getMaxAnisotropy())));
     }
     if (!sectionId) framedSection.current = null;
     else if (d?.frame && framedSection.current !== sectionId && !useWalk.getState().start) {
@@ -695,7 +755,7 @@ export function Viewport3D() {
       else if (api) { api.setOrtho(false); api.orbitTo({ azimuth: Math.atan2(d.frame.dir[1], d.frame.dir[0]), pitch: -0.05 }, false); api.fit(); }
     }
     invalidate.current();
-  }, [sectionId, sectionDrawing]);
+  }, [sectionId, sectionDrawing, sectionNotes]);
 
   return (
     <>
@@ -703,9 +763,14 @@ export function Viewport3D() {
       {(sectionId || walkStart) && (
         <div className="view3d-modes">
           {sectionId && (
-            <button type="button" className="mode-chip" title="Stop showing the section in 3D" onClick={() => useSection3d.setState({ viewId: null })}>
-              <span>{sectionNode?.props.kind === 'elevation' ? 'Elevation' : 'Section'}</span><span data-no-i18n>{sectionNode?.name ?? ''}</span><X size={12} />
-            </button>
+            <span className="mode-chip section">
+              <span>{sectionNode?.props.kind === 'elevation' ? 'Elevation' : 'Section'}</span><span data-no-i18n>{sectionNode?.name ?? ''}</span>
+              {sectionNode?.props.kind !== 'elevation' && (
+                <button type="button" className="mode-toggle" aria-pressed={sectionNotes} title="Show the section's dimensions, levels, tags and texts on the cut"
+                  onClick={() => useSection3d.setState({ annotations: !sectionNotes })}>Annotations</button>
+              )}
+              <button type="button" className="mode-close" title="Stop showing the section in 3D" aria-label="Stop showing the section in 3D" onClick={() => useSection3d.setState({ viewId: null })}><X size={12} /></button>
+            </span>
           )}
           {walkStart && (
             <span className="mode-chip walk">

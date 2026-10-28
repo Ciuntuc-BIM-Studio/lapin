@@ -61,6 +61,7 @@ export const RO: Record<string, string> = {
   'Open': 'Deschide', 'Show in 3D': 'Arată în 3D', 'Stop showing the section in 3D': 'Nu mai arăta secțiunea în 3D', 'Walk in 3D': 'Plimbă-te în 3D', 'Walking': 'Plimbare',
   'Drag to look · W A S D to walk · E/Q up and down · Shift runs': 'Trage ca să privești · W A S D ca să mergi · E/Q sus și jos · Shift aleargă',
   'Exit walk': 'Ieși din plimbare', 'Back to the camera there was (Esc)': 'Înapoi la camera de dinainte (Esc)',
+  'Annotations': 'Adnotări', "Show the section's dimensions, levels, tags and texts on the cut": 'Arată pe tăietură cotele, nivelurile, etichetele și textele secțiunii',
   'A foundation plan of this level': 'Un plan de fundații al acestui nivel', 'Draw a section line in the plan': 'Desenează linia secțiunii în plan',
   'The four elevations': 'Cele patru fațade', 'New sheet': 'Planșă nouă', 'New schedule': 'Extras nou', 'Delete the view': 'Șterge vederea', 'Delete the sheet': 'Șterge planșa',
   'Delete the schedule': 'Șterge extrasul', 'Joinery': 'Tâmplărie', 'Lintels': 'Buiandrugi', 'Doors': 'Uși', 'Windows': 'Ferestre',

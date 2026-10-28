@@ -297,7 +297,11 @@ export const scenes = [
       const { storey } = await house(t);
       await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4, name: 'Living room', function: 'Living' });
       await t.cmd('architecture.addRoom', { storeyId: storey, x: 9.5, y: 4, name: 'Bedroom', function: 'Bedroom' });
-      await t.cmd('view.create', { kind: 'section', name: 'B-B', start: [-2, 5], end: [14, 5], scale: 50 });
+      const bb = await t.cmd('view.create', { kind: 'section', name: 'B-B', start: [-2, 5], end: [14, 5], scale: 50 });
+      // Its annotations (the drawing's x runs from the line's start: the walls at 2, 9 and 14): the walls dimensioned under the cut, the storey's height beside it, a text.
+      await t.cmd('drafting.addDimension', { viewId: bb.id, pts: [[2, 0], [9, 0], [14, 0]], at: [8, -1.2], dir: [1, 0] });
+      await t.cmd('drafting.addDimension', { viewId: bb.id, pts: [[2, 0], [2, 3]], at: [0.6, 1.5], dir: [0, 1] });
+      await t.cmd('drafting.addText', { viewId: bb.id, at: [4.2, 1.2], text: 'Living room' });
       await t.wait(800);
       const { page } = t;
       await page.locator('nav.browser').getByText('B-B', { exact: true }).first().click({ button: 'right' });
@@ -311,8 +315,15 @@ export const scenes = [
       await t.wait(3500);
       t.expect(await page.locator('.view3d-modes').getByText('B-B').count() === 1, 'the 3D view says which section it shows');
       await t.shot('section-3d', { of: '[data-testid=view3d]', pad: 0 });
+      // Its annotations on the cut, on by default, off and on again from the chip.
+      const notes = page.locator('.view3d-modes button.mode-toggle');
+      t.expect(await notes.getAttribute('aria-pressed') === 'true', 'the section\'s annotations show by default');
+      await notes.click();
+      await t.wait(300);
+      t.expect(await notes.getAttribute('aria-pressed') === 'false', 'the chip hides the annotations');
+      await notes.click();
       // Off again from its chip.
-      await page.locator('.view3d-modes button.mode-chip').click();
+      await page.locator('.view3d-modes button.mode-close').click();
       await t.wait(400);
       t.expect(await page.locator('.view3d-modes').count() === 0, 'the section goes off from its chip');
       // An elevation: the camera turns to look its way; the same entry turns it off.
