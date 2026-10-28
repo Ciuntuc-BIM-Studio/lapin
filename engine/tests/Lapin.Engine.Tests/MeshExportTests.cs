@@ -174,6 +174,96 @@ public sealed class MeshExportTests
         Assert.NotNull(layered + upper);
     }
 
+    /// <summary>An element's exported volume and lowest and highest Z (glTF: Y up), over its primitives.</summary>
+    static (double Volume, double MinZ, double MaxZ) Exported(JsonElement root, byte[] bin, string id)
+    {
+        var mesh = Arr(root, "meshes").ElementAt(NodeOf(root, id).GetProperty("mesh").GetInt32());
+        double volume = 0, lo = double.MaxValue, hi = double.MinValue;
+        foreach (var p in Arr(mesh, "primitives").Where(p => p.GetProperty("mode").GetInt32() == 4))
+        {
+            var pos = Floats(root, bin, p.GetProperty("attributes").GetProperty("POSITION").GetInt32());
+            volume += Volume(pos, Ints(root, bin, p.GetProperty("indices").GetInt32()));
+            for (var i = 1; i < pos.Length; i += 3) { lo = Math.Min(lo, pos[i]); hi = Math.Max(hi, pos[i]); }
+        }
+        return (volume, lo, hi);
+    }
+
+    [Fact]
+    public void As_the_view_shows_it_the_elements_the_interface_does_not_draw_stay_out()
+    {
+        // The interface sends what it does not draw: the storeys it does not show (storeys3d.ts), what is hidden for now.
+        var (f, layered, plain, upper) = Project();
+        var scene = MeshScene.Build(f.Session, new MeshExportOptions(ViewId: "3d", Hidden: new HashSet<string> { upper, plain }));
+        Assert.Equal([layered], scene.Groups.SelectMany(g => g.Elements).Select(e => e.GlobalId));
+        // Through the protocol: its ids and planes read from the request.
+        var o = MeshExportOptions.From(new JsonObject
+        {
+            ["format"] = "glb", ["viewId"] = "3d", ["hidden"] = new JsonArray(upper), ["caps"] = false,
+            ["planes"] = new JsonArray(new JsonObject { ["normal"] = new JsonArray(0, 0, -2), ["constant"] = 2.4 }, new JsonObject { ["normal"] = new JsonArray(0, 0), ["constant"] = 1 }),
+        });
+        Assert.Equal(new HashSet<string> { upper }, o.Hidden);
+        Assert.Single(o.Planes!);
+        Assert.False(o.Caps);
+        Assert.True(MeshExportOptions.From(new JsonObject()).Caps);
+        Assert.Null(MeshExportOptions.From(new JsonObject()).Planes);
+    }
+
+    [Fact]
+    public void As_the_view_cuts_it_the_planes_cut_the_elements_and_caps_close_them()
+    {
+        var (f, layered, plain, upper) = Project();
+        // The cut above the ground floor at 1.20 m (keeps z ≤ 1.2; the normal need not be a unit one).
+        ClipPlane[] cut = [new(new Vec3(0, 0, -2), 2.4)];
+        var (root, bin) = Glb(f, new MeshExportOptions(Origin: "internal", Planes: cut));
+        // The first floor's wall stands wholly above the cut: gone.
+        Assert.DoesNotContain(Arr(root, "nodes"), n => n.TryGetProperty("extras", out var x) && x.TryGetProperty("globalId", out var g) && g.GetString() == upper);
+        foreach (var id in new[] { layered, plain })
+        {
+            var parts = f.Session.Geometry(id)!.Parts;
+            double z0 = parts.Min(p => p.Solid.Vertices.Min(v => v.Z)), z1 = parts.Max(p => p.Solid.Vertices.Max(v => v.Z));
+            var whole = parts.Sum(p => Measure.Volume(p.Solid));
+            var (volume, lo, hi) = Exported(root, bin, id);
+            // A prism cut level: its volume to the cut, closed (the divergence theorem holds only on a closed mesh).
+            Assert.Equal(whole * (1.2 - z0) / (z1 - z0), volume, 4);
+            Assert.Equal(z0, lo, 4);
+            Assert.Equal(1.2, hi, 4);
+        }
+        // Without caps the cut stays open: the same height, a smaller (meaningless) volume.
+        var (open, openBin) = Glb(f, new MeshExportOptions(Origin: "internal", Planes: cut, Caps: false));
+        var (v2, _, h2) = Exported(open, openBin, plain);
+        Assert.Equal(1.2, h2, 4);
+        Assert.NotEqual(Exported(root, bin, plain).Volume, v2, 3);
+        // A section box (here two vertical faces, x 1..2) and the storey cut together: a closed 1 m piece of each ground floor wall along X.
+        ClipPlane[] box = [new(new Vec3(1, 0, 0), -1), new(new Vec3(-1, 0, 0), 2), .. cut];
+        var (br, bb) = Glb(f, new MeshExportOptions(Origin: "internal", Planes: box));
+        var layer = f.Session.Geometry(plain)!.Parts;
+        double pz0 = layer.Min(p => p.Solid.Vertices.Min(v => v.Z)), pz1 = layer.Max(p => p.Solid.Vertices.Max(v => v.Z));
+        Assert.Equal(layer.Sum(p => Measure.Volume(p.Solid)) / 5 * (1.2 - pz0) / (pz1 - pz0), Exported(br, bb, plain).Volume, 4);
+        var notes = MeshExport.Write(f.Session, new MeshExportOptions(Planes: cut)).Result.Notes;
+        Assert.Contains(notes, n => n.StartsWith("Cut as the 3D view cuts it"));
+    }
+
+    [Fact]
+    public void A_mesh_is_clipped_triangle_by_triangle_and_its_edges_with_it()
+    {
+        // A 2 × 3 face upright on x 0..2, z 0..3, cut at z 1.2: a 2 × 1.2 piece, its normal kept.
+        var face = new TriMesh([0, 0, 0, 2, 0, 0, 2, 0, 3, 0, 0, 3], [0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0], [0, 1, 2, 0, 2, 3], [0, 0, 0, 0, 0, 3]);
+        var kept = MeshClip.Clip(face, MeshClip.Unit([new ClipPlane(new Vec3(0, 0, -1), 1.2)]));
+        double area = 0;
+        for (var t = 0; t + 2 < kept.Indices.Length; t += 3)
+        {
+            Vec3 P(int i) => new(kept.Positions[3 * i], kept.Positions[3 * i + 1], kept.Positions[3 * i + 2]);
+            var (a, b, c) = (P(kept.Indices[t]), P(kept.Indices[t + 1]), P(kept.Indices[t + 2]));
+            area += Vec3.Cross(b - a, c - a).Length / 2;
+        }
+        Assert.Equal(2.4, area, 5);
+        Assert.All(Enumerable.Range(0, kept.Normals.Length / 3), i => Assert.Equal(-1, kept.Normals[3 * i + 1]));
+        Assert.Equal([0, 0, 0, 0, 0, 1.2f], kept.Edges);
+        // Wholly kept: the same mesh; wholly cut away: nothing.
+        Assert.Same(face.Indices, MeshClip.Clip(face, [new ClipPlane(new Vec3(0, 0, 1), 1)]).Indices);
+        Assert.Empty(MeshClip.Clip(face, [new ClipPlane(new Vec3(0, 0, 1), -5)]).Indices);
+    }
+
     [Fact]
     public void Edges_go_as_lines_when_asked_and_gltf_keeps_its_buffer_inside()
     {

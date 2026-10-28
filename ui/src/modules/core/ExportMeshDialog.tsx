@@ -3,9 +3,15 @@
  * rendering, visualisation and AR, not as a model (IFC is that). GLB (one
  * glTF file, the default), glTF, USDZ (OpenUSD packed, for Apple's AR Quick
  * Look and the USD tools), USDA (OpenUSD text) or DAE (COLLADA 1.4.1, which
- * SketchUp imports). The whole model or what the
- * 3D view shows, at the end of a phase, with or without edges, from the
- * project's base point, its internal origin or the survey point's coordinates.
+ * SketchUp imports). Everything, or the model as the 3D view in front shows
+ * it (the default when the view leaves anything out): its hidden elements and
+ * categories (the engine reads them off the view), and what only the
+ * interface knows: the elements it does not draw (the storeys it does not
+ * show, by storeys3d.ts, and what is hidden for now, all through the looks)
+ * and the planes it cuts by (the cut above the storeys shown, a section, the
+ * section box), cut in the export too and closed by caps in the materials.
+ * At the end of a phase, with or without edges, from the project's base
+ * point, its internal origin or the survey point's coordinates.
  */
 
 import { useEffect, useState } from 'react';
@@ -13,6 +19,9 @@ import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { query, useSession } from '../../engine/session';
 import { exportFile, projectTitle } from '../../engine/files';
+import { useLooks } from '../../platform/looks';
+import { useClip3d } from '../../viewport/section3d';
+import { view3dProps } from '../../viewport/storeys3d';
 
 const FORMATS: [string, string][] = [
   ['glb', 'GLB: glTF in one binary file (Blender, three.js, viewers)'],
@@ -26,8 +35,17 @@ const ORIGINS: [string, string][] = [['base', 'the project base point'], ['inter
 export function ExportMeshDialog() {
   const path = useSession((s) => s.doc?.path ?? null);
   const view3dId = useUi((s) => s.view3dId);
+  // What the 3D view leaves out: what it does not draw (by the looks: the storeys not shown, what is hidden for now),
+  // what its own settings hide, and the planes it cuts by.
+  const [hidden] = useState(() => Object.entries(useLooks.getState().looks).filter(([, l]) => l.hidden).map(([id]) => id));
+  const [planes] = useState(() => useClip3d.getState().planes);
+  const [hidesAny] = useState(() => {
+    const own = view3dProps(useSession.getState().nodes, view3dId)?.hiddenElements;
+    return hidden.length > 0 || planes.length > 0 || (Array.isArray(own) && own.length > 0);
+  });
   const [format, setFormat] = useState('glb');
-  const [what, setWhat] = useState<'model' | 'view'>('model');
+  const [what, setWhat] = useState<'model' | 'view'>(hidesAny ? 'view' : 'model');
+  const [cuts, setCuts] = useState(true);
   const [phase, setPhase] = useState('');
   const [phases, setPhases] = useState<{ id: string; name: string }[]>([]);
   const [edges, setEdges] = useState(false);
@@ -37,7 +55,8 @@ export function ExportMeshDialog() {
   useEffect(() => { void query<{ phases: { id: string; name: string }[] }>('phases.settings').then((r) => setPhases(r?.phases ?? [])); }, []);
   const run = async () => {
     setBusy(true);
-    await exportFile('project.exportMesh', { format, edges, origin, ...(what === 'view' ? { viewId: view3dId ?? '3d' } : {}), ...(phase ? { phase } : {}) }, `${projectTitle(path)}.${format}`, format);
+    const view = what === 'view' ? { viewId: view3dId ?? '3d', hidden, ...(cuts && planes.length ? { planes } : {}) } : {};
+    await exportFile('project.exportMesh', { format, edges, origin, ...view, ...(phase ? { phase } : {}) }, `${projectTitle(path)}.${format}`, format);
     setBusy(false);
     close();
   };
@@ -50,10 +69,17 @@ export function ExportMeshDialog() {
             <dt>Format</dt>
             <dd><select value={format} onChange={(e) => setFormat(e.target.value)}>{FORMATS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></dd>
             <dt>What</dt>
-            <dd><select value={what} onChange={(e) => setWhat(e.target.value as 'model' | 'view')}>
-              <option value="model">the whole model</option>
-              <option value="view">what the 3D view shows (its hidden elements and categories left out)</option>
+            <dd><select className="export-what" value={what} onChange={(e) => setWhat(e.target.value as 'model' | 'view')}
+              title="As the view shows it: its storeys shown, its hidden elements and categories left out, cut as it is cut">
+              <option value="model">everything</option>
+              <option value="view">as the view shows it</option>
             </select></dd>
+            {what === 'view' && planes.length > 0 && (
+              <>
+                <dt title="The cut above the storeys shown, a section shown in 3D, the section box: the model cut there and closed in its materials, as on the screen">Cut</dt>
+                <dd><label><input type="checkbox" className="export-cuts" style={{ width: 'auto', marginRight: 6 }} checked={cuts} onChange={(e) => setCuts(e.target.checked)} /> cut as the view is cut, closed in the materials</label></dd>
+              </>
+            )}
             {phases.length > 0 && (
               <>
                 <dt title="The elements that stand at the end of this phase">Phase</dt>

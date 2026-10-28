@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RenderItem } from '../engine/protocol';
-import { RADIUS, STEP_HEIGHT, TICK, TriangleWorld, Walker, worldOf } from './walkPhysics';
+import { clipTriangles, RADIUS, STEP_HEIGHT, TICK, TriangleWorld, Walker, worldOf } from './walkPhysics';
 
 /** A box's 12 triangles. */
 function box(x0: number, y0: number, z0: number, x1: number, y1: number, z1: number): number[] {
@@ -132,5 +132,75 @@ describe('walking with a body', () => {
     const hidden = new Walker(worldOf(items, (i) => i.type !== 'IfcWall'), { x: 0, y: 2, z: 0 });
     hidden.drop();
     expect(walk(hidden, { x: 1.4, y: 0 }, 3).x).toBeGreaterThan(3);
+  });
+});
+
+describe('what the view cuts away', () => {
+  const area = (t: Float32Array) => {
+    let a = 0;
+    for (let i = 0; i + 8 < t.length; i += 9) {
+      const ux = t[i + 3] - t[i], uy = t[i + 4] - t[i + 1], uz = t[i + 5] - t[i + 2];
+      const vx = t[i + 6] - t[i], vy = t[i + 7] - t[i + 1], vz = t[i + 8] - t[i + 2];
+      a += Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) / 2;
+    }
+    return a;
+  };
+  const zs = (t: Float32Array) => Array.from(t).filter((_, i) => i % 3 === 2);
+  // Keeps z <= 1.2, as the cut above the storeys shown does.
+  const cut = { normal: [0, 0, -1] as const, constant: 1.2 };
+
+  it('keeps what lies on the kept side and drops what lies wholly cut away', () => {
+    const below = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const above = new Float32Array([0, 0, 2, 1, 0, 2, 0, 1, 2]);
+    expect(Array.from(clipTriangles(below, [cut]))).toEqual(Array.from(below));
+    expect(clipTriangles(above, [cut]).length).toBe(0);
+    // A face lying on the plane stays.
+    expect(clipTriangles(new Float32Array([0, 0, 1.2, 1, 0, 1.2, 0, 1, 1.2]), [cut]).length).toBe(9);
+  });
+
+  it('splits a triangle crossing a plane along it, its kept part whole', () => {
+    // A wall's face from z 0 to 3 over x 0..2: cut at 1.2, a 2 x 1.2 rectangle is left.
+    const face = new Float32Array([0, 0, 0, 2, 0, 0, 2, 0, 3, 0, 0, 0, 2, 0, 3, 0, 0, 3]);
+    const kept = clipTriangles(face, [cut]);
+    expect(area(kept)).toBeCloseTo(2.4, 5);
+    expect(Math.max(...zs(kept))).toBeCloseTo(1.2, 5);
+    // One corner kept: a triangle; two kept: a quadrilateral, two triangles.
+    const one = clipTriangles(new Float32Array([0, 0, 0, 1, 0, 2, 0, 1, 2]), [cut]);
+    expect(one.length).toBe(9);
+    expect(area(one)).toBeCloseTo(1.5 * 0.6 * 0.6, 5); // the whole is 1.5 m², scaled by 0.6 each way
+    const two = clipTriangles(new Float32Array([0, 0, 0, 1, 0, 0, 0, 0, 2]), [cut]);
+    expect(two.length).toBe(18);
+    expect(area(two)).toBeCloseTo(1 - 0.5 * 0.4 * 0.8, 5);
+  });
+
+  it('clips by every plane, as a box\'s faces do', () => {
+    // A 4 x 4 floor at z 0 inside a box x 1..2 (two planes): a 1 x 4 strip.
+    const floorTris = new Float32Array([-2, -2, 0, 2, -2, 0, 2, 2, 0, -2, -2, 0, 2, 2, 0, -2, 2, 0]);
+    const kept = clipTriangles(floorTris, [{ normal: [1, 0, 0], constant: -1 }, { normal: [-1, 0, 0], constant: 2 }]);
+    expect(area(kept)).toBeCloseTo(4, 5);
+    for (let i = 0; i < kept.length; i += 3) { expect(kept[i]).toBeGreaterThanOrEqual(1 - 1e-6); expect(kept[i]).toBeLessThanOrEqual(2 + 1e-6); }
+  });
+
+  it('walks past what the cut takes away, and still stands on the floor', () => {
+    // A beam across the way at 0.6-1.0 m stops the walker; under a cut at 0.5 m it is gone.
+    const beam = box(2, -5, 0.6, 2.4, 5, 1.0);
+    const items = [item('IfcSlab', floor), item('IfcBeam', beam)];
+    const blocked = new Walker(worldOf(items), { x: 0, y: 0, z: 0 });
+    blocked.drop();
+    expect(walk(blocked, { x: 1.4, y: 0 }, 3).x).toBeLessThan(2);
+    const low = { normal: [0, 0, -1] as const, constant: 0.5 };
+    const free = new Walker(worldOf(items, undefined, { planes: [low] }), { x: 0, y: 0, z: 0 });
+    free.drop();
+    expect(free.feet.z).toBeCloseTo(0, 2);
+    expect(walk(free, { x: 1.4, y: 0 }, 3).x).toBeGreaterThan(3);
+    expect(free.grounded).toBe(true);
+  });
+
+  it('meets the caps that close a cut', () => {
+    const cap = { positions: new Float32Array([-20, -20, 0, 20, -20, 0, 20, 20, 0, -20, 20, 0]), indices: new Int32Array([0, 1, 2, 0, 2, 3]) };
+    const w = new Walker(worldOf([], undefined, { extra: [cap] }), { x: 0, y: 0, z: 1 });
+    w.drop();
+    expect(w.feet.z).toBeCloseTo(0, 2);
+    expect(w.grounded).toBe(true);
   });
 });

@@ -49,7 +49,11 @@ export const RO: Record<string, string> = {
   'Which storeys a view shows is set on a plan or a 3D view: open one.': 'Etajele pe care le arată o vedere se aleg pe un plan sau pe o vedere 3D: deschide una.',
   'Other…': 'Alta…', 'in front': 'în față', 'Make its own view': 'Fă-i o vedere proprie', 'Floor plan · in front': 'Plan de nivel · în față',
   'Reference level': 'Nivel de referință', 'Visibility / Graphics…': 'Vizibilitate / Grafică…',
-  'Export 3D…': 'Exportă 3D…', 'Export 3D': 'Export 3D', 'Format': 'Format', 'What': 'Ce', 'the whole model': 'tot modelul', 'Origin': 'Origine', 'Edges': 'Muchii', 'every phase': 'toate fazele', 'Exporting…': 'Se exportă…', 'Export': 'Exportă',
+  'Export 3D…': 'Exportă 3D…', 'Export 3D': 'Export 3D', 'Format': 'Format', 'What': 'Ce', 'the whole model': 'tot modelul', 'everything': 'tot', 'as the view shows it': 'cum îl arată vederea',
+  'cut as the view is cut, closed in the materials': 'tăiat cum e tăiată vederea, închis în materiale',
+  'As the view shows it: its storeys shown, its hidden elements and categories left out, cut as it is cut': 'Cum îl arată vederea: nivelurile ei afișate, fără elementele și categoriile ascunse, tăiat cum e tăiată',
+  'The cut above the storeys shown, a section shown in 3D, the section box: the model cut there and closed in its materials, as on the screen': 'Tăietura de deasupra nivelurilor afișate, o secțiune arătată în 3D, cutia de secțiune: modelul tăiat acolo și închis în materialele lui, ca pe ecran',
+  'Origin': 'Origine', 'Edges': 'Muchii', 'every phase': 'toate fazele', 'Exporting…': 'Se exportă…', 'Export': 'Exportă',
   'Door & window tags': 'Etichete uși și ferestre', 'Tags': 'Etichete', 'Text (outside)': 'Text (exterior)', 'Inside': 'Interior', 'Past faces mm': 'Peste fețe mm', 'Classes': 'Clase',
   // View settings and styles
   'View settings': 'Setările vederii', 'View styles': 'Stiluri de vedere', 'Join materials': 'Unește materialele', 'IFC 2D symbols': 'Simboluri 2D din IFC',

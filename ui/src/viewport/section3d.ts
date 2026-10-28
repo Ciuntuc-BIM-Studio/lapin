@@ -36,6 +36,13 @@ export function drawingPoint(f: ViewFrameDto, x: number, y: number, lift = 0): V
 /** A clipping plane as three.js takes it: what lies where normal·p + constant < 0 is cut away. */
 export interface ClipPlane { normal: [number, number, number]; constant: number }
 
+/**
+ * The planes the 3D view cuts the model by right now: the section shown, the
+ * section box's faces and the cut above the storeys shown (what the renderer
+ * clips by), for what works on the model as the view shows it (the 3D exports).
+ */
+export const useClip3d = create<{ planes: ClipPlane[] }>(() => ({ planes: [] }));
+
 /** Depths at or past this are no limit (the engine's ViewRanges.Unlimited). */
 const UNLIMITED = 1e4;
 

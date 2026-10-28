@@ -62,7 +62,7 @@ To look inside the building, show only some of its storeys. Right-click a level 
 
 ![The ground floor cut at 1.20 m: its walls closed, layer by layer](shots/storeys-3d-cut.webp)
 
-The storeys hidden are not drawn, and you cannot select them, fit to them or walk on them. A saved 3D view keeps its own choice. The **Storeys** chip at the bottom of the 3D view says what is shown; its **×** shows every storey again.
+The storeys hidden are not drawn, and you cannot select them, fit to them or walk on them. What a cut takes away (the cut above the storeys shown, a section shown in 3D, the section box) is not there for a walk either: you walk past a wall's upper part the cut has removed, and the caps on the cut close what it opens. **File → Export 3D…** takes the 3D view as it shows it (see [Import and export](import-export.md)). A saved 3D view keeps its own choice. The **Storeys** chip at the bottom of the 3D view says what is shown; its **×** shows every storey again.
 
 ### Walking into a room
 
@@ -76,7 +76,7 @@ In a plan, right-click inside a room and choose **Walk in 3D**. The 3D view puts
 - <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> or the arrow keys walk. Hold <kbd>Shift</kbd> to run. <kbd>Space</kbd> jumps.
 - The mouse wheel steps forward and back.
 
-You walk as a person would. Walls, columns, furniture and closed windows stop you, and you slide along them. You stand on floors, walk up and down stairs and ramps, and fall if you walk off an edge. Doors are open for you: walk through their openings.
+You walk as a person would. Walls, columns, furniture and closed windows stop you, and you slide along them. You stand on floors, walk up and down stairs and ramps, and fall if you walk off an edge. Doors are open for you: walk through their openings. Only what the 3D view draws stops you: hidden elements, the storeys it does not show and what its cuts take away are not in your way.
 
 ![Walking to the bedroom's door](shots/room-walk-door.webp)
 

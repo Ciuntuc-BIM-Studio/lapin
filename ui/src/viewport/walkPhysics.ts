@@ -10,7 +10,9 @@
  * straight up (it rolls over nosings and riser tops), and a riser too tall
  * for that is stepped up by probing a radius ahead at step height for a
  * floor to land on. Doors do not collide (their leaves would close the
- * opening), nor rooms' volumes.
+ * opening), nor rooms' volumes. What the view cuts away (the cut above the
+ * storeys shown, a section, the section box) is clipped off the triangles
+ * first, so the walker meets only what is drawn.
  */
 
 import type { RenderItem } from '../engine/protocol';
@@ -232,21 +234,96 @@ function nthElement(order: Int32Array, cen: Float32Array, axis: number, left: nu
   }
 }
 
-/** The world the walker collides with: the triangles of every element that stops it (`shown` leaves out what is hidden). */
-export function worldOf(items: Iterable<RenderItem>, shown: (item: RenderItem) => boolean = () => true): TriangleWorld {
+/** A plane that cuts the model, as three.js clips: what has normal·p + constant ≥ 0 is kept. */
+export interface CutPlane { normal: readonly [number, number, number]; constant: number }
+
+/** Points this little outside a plane still count as on it (a face lying on the cut stays). */
+const CUT_EPS = 1e-5;
+
+/**
+ * The triangles (9 numbers each) clipped by `planes` as the 3D view clips
+ * what it draws: what lies on the kept side of every plane stays, a triangle
+ * crossing a plane is cut along it (Sutherland–Hodgman, the polygon left
+ * fanned back into triangles), what lies wholly cut away is gone.
+ */
+export function clipTriangles(tris: Float32Array, planes: readonly CutPlane[]): Float32Array {
+  if (!planes.length) return tris;
+  const out: number[] = [];
+  let poly: number[] = [], next: number[] = [];
+  const count = Math.floor(tris.length / 9);
+  outer: for (let t = 0; t < count; t++) {
+    const o = 9 * t;
+    // Wholly kept by every plane (the usual case): as it is.
+    let inside = true;
+    for (const pl of planes) {
+      const [nx, ny, nz] = pl.normal;
+      for (let k = 0; k < 9; k += 3) if (nx * tris[o + k] + ny * tris[o + k + 1] + nz * tris[o + k + 2] + pl.constant < -CUT_EPS) { inside = false; break; }
+      if (!inside) break;
+    }
+    if (inside) { for (let k = 0; k < 9; k++) out.push(tris[o + k]); continue; }
+    poly = Array.from(tris.subarray(o, o + 9));
+    for (const pl of planes) {
+      const [nx, ny, nz] = pl.normal;
+      const n = poly.length / 3;
+      next = [];
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        const ax = poly[3 * i], ay = poly[3 * i + 1], az = poly[3 * i + 2];
+        const bx = poly[3 * j], by = poly[3 * j + 1], bz = poly[3 * j + 2];
+        const da = nx * ax + ny * ay + nz * az + pl.constant, db = nx * bx + ny * by + nz * bz + pl.constant;
+        const ina = da >= -CUT_EPS, inb = db >= -CUT_EPS;
+        if (ina) next.push(ax, ay, az);
+        if (ina !== inb) {
+          const s = da / (da - db);
+          next.push(ax + (bx - ax) * s, ay + (by - ay) * s, az + (bz - az) * s);
+        }
+      }
+      if (next.length < 9) continue outer;
+      poly = next;
+    }
+    for (let i = 1; i + 1 < poly.length / 3; i++) {
+      out.push(poly[0], poly[1], poly[2], poly[3 * i], poly[3 * i + 1], poly[3 * i + 2], poly[3 * i + 3], poly[3 * i + 4], poly[3 * i + 5]);
+    }
+  }
+  return new Float32Array(out);
+}
+
+/** What else the walker collides with, and where the model is cut. */
+export interface WorldOptions {
+  /** The planes the view cuts the model by (the cut above the storeys shown, a section, the section box): what they cut away does not stop the walker. */
+  planes?: readonly CutPlane[];
+  /** Meshes taken as they are (the cuts' caps, which close what the planes open). */
+  extra?: Iterable<{ positions: Float32Array; indices: Int32Array }>;
+}
+
+/**
+ * The world the walker collides with: the triangles of every element that
+ * stops it (`shown` leaves out what is hidden), clipped by the view's planes
+ * so that it stops at what is drawn, and the caps on the cuts.
+ */
+export function worldOf(items: Iterable<RenderItem>, shown: (item: RenderItem) => boolean = () => true, opts: WorldOptions = {}): TriangleWorld {
   const meshes: [Float32Array, Int32Array][] = [];
   for (const item of items) {
     if (PASSABLE.has(item.type) || !shown(item)) continue;
     meshes.push([item.positions, item.indices]);
     for (const p of item.parts ?? []) meshes.push([p.positions, p.indices]);
   }
-  const out = new Float32Array(meshes.reduce((n, [, idx]) => n + Math.floor(idx.length / 3) * 9, 0));
-  let o = 0;
-  for (const [positions, indices] of meshes) for (let i = 0; i + 2 < indices.length; i += 3) for (let k = 0; k < 3; k++) {
-    const at = 3 * indices[i + k];
-    out[o++] = positions[at]; out[o++] = positions[at + 1]; out[o++] = positions[at + 2];
-  }
-  return new TriangleWorld(out);
+  const soup = (list: [Float32Array, Int32Array][]) => {
+    const out = new Float32Array(list.reduce((n, [, idx]) => n + Math.floor(idx.length / 3) * 9, 0));
+    let o = 0;
+    for (const [positions, indices] of list) for (let i = 0; i + 2 < indices.length; i += 3) for (let k = 0; k < 3; k++) {
+      const at = 3 * indices[i + k];
+      out[o++] = positions[at]; out[o++] = positions[at + 1]; out[o++] = positions[at + 2];
+    }
+    return out;
+  };
+  const model = clipTriangles(soup(meshes), opts.planes ?? []);
+  const extra = opts.extra ? soup(Array.from(opts.extra, (m) => [m.positions, m.indices] as [Float32Array, Int32Array])) : new Float32Array();
+  if (!extra.length) return new TriangleWorld(model);
+  const all = new Float32Array(model.length + extra.length);
+  all.set(model);
+  all.set(extra, model.length);
+  return new TriangleWorld(all);
 }
 
 // ---------------------------------------------------------------- the body

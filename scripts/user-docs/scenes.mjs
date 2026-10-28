@@ -667,11 +667,22 @@ export const scenes = [
     async run(t) {
       await t.fresh();
       await house(t);
+      // The 3D view in front shows the ground floor alone, cut at 1.20 m: the export takes it as the view shows it.
+      const ground = await t.storey('Ground floor');
+      await t.cmd('view.setStoreys', { id: '3d', mode: 'some', ids: [ground], cut: 1.2 });
+      await open3d(t);
       await t.button('File', { exact: true });
       await t.shot('file-menu', { of: '[role=menu]', pad: 6 });
       await t.page.getByRole('menuitem', { name: /Export 3D/ }).click();
       await t.wait(500);
+      const dialog = t.page.locator('[aria-label="Export 3D"]');
+      t.expect(await dialog.locator('select.export-what').inputValue() === 'view', 'a 3D view that leaves something out is exported as it shows it');
+      t.expect(await dialog.locator('input.export-cuts').isChecked(), 'the export is cut as the view is cut');
       await t.shot('export-3d', { of: '[aria-label="Export 3D"]', pad: 0 });
+      // The engine cuts the model at the view's planes and closes the cuts.
+      const out = await t.call('project.exportMesh', { format: 'glb', viewId: '3d', planes: [{ normal: [0, 0, -1], constant: 1.2 }] });
+      t.expect((out?.notes ?? []).some((n) => n.startsWith('Cut as the 3D view cuts it')), 'the exported model is cut as the view is');
+      await dialog.getByRole('button', { name: 'Cancel' }).click();
     },
   },
   {

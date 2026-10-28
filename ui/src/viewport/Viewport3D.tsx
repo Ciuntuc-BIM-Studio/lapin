@@ -31,7 +31,7 @@ import { SectionBox3D } from './SectionBox3D';
 import { boxPlanes, planesKey, useSectionBox, type SectionBox } from './sectionBox';
 import { alignSectionBox, commitBox, cutAtPlan, fitSectionBox } from './sectionBoxTools';
 import { useDrawing, type DrawingDto } from './drawing';
-import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPlanes, sectionPose, textFont, textQuad, useSection3d, type ClipPlane, type DrawingText, type ViewFrameDto } from './section3d';
+import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPlanes, sectionPose, textFont, textQuad, useClip3d, useSection3d, type ClipPlane, type DrawingText, type ViewFrameDto } from './section3d';
 import { clampPitch, easeEye, exitWalk, lookVector, toggleFly, useWalk, walkStep, walkWish, EYE_HEIGHT, WALK_KEYS, type WalkStart } from './walk';
 import { TICK, Walker, worldOf } from './walkPhysics';
 
@@ -350,6 +350,8 @@ export function Viewport3D() {
   const items = useRef(new Map<string, { item: RenderItem; object: THREE.Group }>());
   /** The cut elements' caps, by element (a section or the section box shown). */
   const caps = useRef(new Map<string, THREE.Group>());
+  /** The caps' meshes as the engine sent them, for the walker to collide with. */
+  const capItems = useRef<CapItem[]>([]);
   const [capsShown, setCapsShown] = useState(0);
   const [pending, setPending] = useState<Vec2 | null>(null);
   const toolId = useUi((s) => s.tool);
@@ -370,7 +372,11 @@ export function Viewport3D() {
   const storeyClip = useRef<THREE.Plane[]>([]);
   /** Where the storeys shown are cut (a height), so a click above it picks nothing cut away. */
   const cutRef = useRef<number | null>(null);
-  const applyClip = () => { if (rendererRef.current) rendererRef.current.clippingPlanes = [...sectionClip.current, ...storeyClip.current]; };
+  const applyClip = () => {
+    const all = [...sectionClip.current, ...storeyClip.current];
+    if (rendererRef.current) rendererRef.current.clippingPlanes = all;
+    useClip3d.setState({ planes: all.map((p) => ({ normal: [p.normal.x, p.normal.y, p.normal.z], constant: p.constant })) });
+  };
   useUi((s) => s.storeyId);
   useSession((s) => s.nodes);
   const storey = activeStorey();
@@ -568,7 +574,9 @@ export function Viewport3D() {
     };
     renderer.domElement.addEventListener('pointermove', onMove);
     // Walking (walk.ts): the orbit controls off, the perspective camera at the eye, turned by a drag, moved by keys and the wheel;
-    // a body (walkPhysics.ts) against the shown elements' triangles, built on the walk's first step and again when the model changes.
+    // a body (walkPhysics.ts) against the shown elements' triangles, built on the walk's first step and again when the model changes;
+    // clipped by the planes the renderer cuts by (the storeys' cut, a section, the section box) and closed by their caps, so what is
+    // cut away stops nobody.
     let walk: {
       pos: THREE.Vector3; yaw: number; pitch: number; back: CameraPose; wasOrtho: boolean; keys: Set<string>; run: boolean; jump: boolean; loop: number; last: number; drag: { x: number; y: number } | null;
       body: Walker | null; stale: boolean; acc: number;
@@ -577,7 +585,10 @@ export function Viewport3D() {
     const bodyOf = (w: NonNullable<typeof walk>): Walker | null => {
       if (!w.stale) return w.body;
       w.stale = false;
-      const world = worldOf(Array.from(items.current.values()).filter((e) => e.object.visible).map((e) => e.item));
+      const planes = (renderer.clippingPlanes ?? []).map((p) => ({ normal: [p.normal.x, p.normal.y, p.normal.z] as const, constant: p.constant }));
+      const world = worldOf(Array.from(items.current.values()).filter((e) => e.object.visible).map((e) => e.item), undefined, {
+        planes, extra: capItems.current.flatMap((c) => c.parts),
+      });
       if (w.body) { w.body.world = world; return w.body; }
       if (!world.count) return null;
       // Dropped onto the floor under the eye; the ground (where the model has none) at ±0.00, or lower under a basement.
@@ -623,6 +634,7 @@ export function Viewport3D() {
       if (!st.fly && walk.body) { walk.body.feet = { x: walk.pos.x, y: walk.pos.y, z: walk.pos.z - EYE_HEIGHT }; walk.body.vel = { x: 0, y: 0, z: 0 }; walk.body.grounded = false; }
       kickWalk();
     });
+    let rebuild = 0;
     walkApi.current = {
       start: (w) => {
         cancelAnimationFrame(flight);
@@ -640,10 +652,15 @@ export function Viewport3D() {
         bodyOf(walk);
         placeWalk();
       },
-      changed: () => { if (walk) { walk.stale = true; kickWalk(); } },
+      // Rebuilt a moment after the last change (planes moved, caps come in after them), not on every one.
+      changed: () => {
+        clearTimeout(rebuild);
+        rebuild = window.setTimeout(() => { if (walk) { walk.stale = true; kickWalk(); } }, 120);
+      },
       stop: () => {
         if (!walk) return;
         cancelAnimationFrame(walk.loop);
+        clearTimeout(rebuild);
         const { back, wasOrtho } = walk;
         walk = null;
         controls.enabled = true;
@@ -727,7 +744,9 @@ export function Viewport3D() {
       clearFace.current = () => undefined;
       window.removeEventListener('keydown', onKey);
       if (walk) cancelAnimationFrame(walk.loop);
+      clearTimeout(rebuild);
       unFly();
+      useClip3d.setState({ planes: [] });
       walkApi.current = { start: () => undefined, stop: () => undefined, changed: () => undefined };
       renderer.domElement.removeEventListener('pointerdown', onWalkDown);
       renderer.domElement.removeEventListener('pointermove', onWalkMove);
@@ -904,6 +923,8 @@ export function Viewport3D() {
     const put = (items: CapItem[]) => {
       for (const g of caps.current.values()) { s.remove(g); dispose(g); }
       caps.current.clear();
+      capItems.current = items;
+      walkApi.current.changed();
       for (const it of items) { const g = capsOf(it); s.add(g); caps.current.set(it.nodeId, g); }
       setCapsShown((v) => v + 1);
       invalidate.current();
@@ -925,6 +946,7 @@ export function Viewport3D() {
     const d = sectionId ? sectionDrawing : null;
     if (d?.frame && d.kind === 'section') s.add(sectionOverlay(d, sectionNotes, Math.min(8, renderer.capabilities.getMaxAnisotropy()), capStyle === 'drawing'));
     applyClip();
+    walkApi.current.changed();
     if (!sectionId) framedSection.current = null;
     else if (d?.frame && framedSection.current !== sectionId && !useWalk.getState().start) {
       framedSection.current = sectionId;

@@ -12,8 +12,16 @@ namespace Lapin.Mesh;
 /// phase, whether the elements' edges go too, and where the origin is: the
 /// project's base point (the default), its internal origin, or the survey
 /// point's real coordinates (on the root, never in the vertices).
+/// "As the view shows it", the interface adds what only it knows of the view in
+/// front: <see cref="Hidden"/>, the elements it does not draw (the storeys it does
+/// not show, by the rule of ui/src/viewport/storeys3d.ts, and what is hidden or
+/// isolated for now), and <see cref="Planes"/>, the planes it cuts the model by
+/// (the cut above the storeys shown, a section shown in 3D, the section box),
+/// which cut the export too, closed by <see cref="SectionCaps"/> in the parts'
+/// materials unless <see cref="Caps"/> is off.
 /// </summary>
-public sealed record MeshExportOptions(string Format = "glb", string? ViewId = null, string? Phase = null, bool Edges = false, string Origin = "base")
+public sealed record MeshExportOptions(string Format = "glb", string? ViewId = null, string? Phase = null, bool Edges = false, string Origin = "base",
+    IReadOnlySet<string>? Hidden = null, IReadOnlyList<ClipPlane>? Planes = null, bool Caps = true)
 {
     public static readonly string[] Formats = ["glb", "gltf", "usdz", "usda", "dae"];
     public static readonly string[] Origins = ["base", "internal", "survey"];
@@ -24,8 +32,27 @@ public sealed record MeshExportOptions(string Format = "glb", string? ViewId = n
         if (!Formats.Contains(format)) throw new CommandException($"„{format}” is not a 3D format: {string.Join(", ", Formats)}.");
         var origin = (string?)p["origin"] ?? "base";
         if (!Origins.Contains(origin)) throw new CommandException($"„{origin}” is not base, internal or survey.");
+        var hidden = (p["hidden"] as JsonArray)?.Select(x => x is JsonValue jv && jv.TryGetValue<string>(out var s) ? s : null).OfType<string>().ToHashSet();
         return new(format, (string?)p["viewId"] is { Length: > 0 } v ? v : null, (string?)p["phase"] is { Length: > 0 } ph ? ph : null,
-            p["edges"] is JsonValue ev && ev.TryGetValue<bool>(out var e) && e, origin);
+            p["edges"] is JsonValue ev && ev.TryGetValue<bool>(out var e) && e, origin,
+            hidden is { Count: > 0 } ? hidden : null, PlanesOf(p["planes"]) is { Count: > 0 } planes ? planes : null,
+            !(p["caps"] is JsonValue cv && cv.TryGetValue<bool>(out var c) && !c));
+    }
+
+    /// <summary>Clipping planes as the 3D view gives them: [{normal: [x, y, z], constant}] (at most twelve; a malformed one is skipped).</summary>
+    public static List<ClipPlane> PlanesOf(JsonNode? n)
+    {
+        var o = new List<ClipPlane>();
+        if (n is not JsonArray list) return o;
+        foreach (var item in list)
+        {
+            if (o.Count == 12) break;
+            if (item is not JsonObject p || p["normal"] is not JsonArray { Count: 3 } v || Json.Number(p["constant"]) is not { } k || !double.IsFinite(k)) continue;
+            if (Json.Number(v[0]) is not { } x || Json.Number(v[1]) is not { } y || Json.Number(v[2]) is not { } z) continue;
+            var normal = new Vec3(x, y, z);
+            if (double.IsFinite(normal.Length) && normal.Length > 1e-12) o.Add(new ClipPlane(normal, k));
+        }
+        return o;
     }
 
     public string Extension => Format;
@@ -73,6 +100,8 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             : m.Get(o.ViewId) is { Class: Views.Class } v && v.Str("kind") == "3d" ? v : throw new CommandException("A 3D export takes a 3D view, or the whole model.");
         var graphics = view == null ? null : GraphicsSets.Of(m, view);
         var hidden = (view?.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        if (o.Hidden != null) hidden.UnionWith(o.Hidden);
+        var planes = MeshClip.Unit(o.Planes ?? []);
         var filters = session.Catalog.All<IViewElementFilter>();
 
         // Where the export's origin is in the model, and what the root adds back to reach real coordinates.
@@ -131,12 +160,16 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException) { notes.Add($"„{e.Name}” was left out: {ex.Message}"); continue; }
             var parts = geo?.Parts.Where(p => p.Solid.Faces.Length > 0).ToList() ?? [];
             if (parts.Count == 0) continue;
+            // Cut as the view cuts it: each part's cap (in its material) closes what the planes open.
+            var caps = planes.Length > 0 && o.Caps ? SectionCaps.Make(parts.Select(p => p.Solid).ToList(), planes) : null;
 
             var byMaterial = new Dictionary<int, List<TriMesh>>();
             var edges = new List<float>();
-            foreach (var p in parts)
+            for (var i = 0; i < parts.Count; i++)
             {
-                var mesh = Tessellator.Tessellate(p.Solid);
+                var p = parts[i];
+                var mesh = MeshClip.Clip(Tessellator.Tessellate(p.Solid), planes);
+                if (caps?[i] is { Indices.Length: > 0 } cap) mesh = TriMesh.Merge([mesh, cap]);
                 if (mesh.Indices.Length == 0) continue;
                 var k = MaterialOf(p);
                 (byMaterial.TryGetValue(k, out var meshes) ? meshes : byMaterial[k] = []).Add(mesh);
@@ -156,6 +189,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             (storey != null && groups.TryGetValue(storey.Id, out var gr) ? gr : siteGroup).Elements.Add(element);
         }
 
+        if (planes.Length > 0) notes.Add($"Cut as the 3D view cuts it ({planes.Length} plane{(planes.Length == 1 ? "" : "s")}){(o.Caps ? ", the cuts closed in their materials" : "")}.");
         var list = groups.Values.Where(g => g.Elements.Count > 0).ToList();
         if (siteGroup.Elements.Count > 0) list.Insert(0, siteGroup);
         return new MeshScene(project?.Name ?? "Project", Spatial.Building(m)?.Name ?? "Building", list, materials, root, notes);

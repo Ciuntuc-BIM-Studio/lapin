@@ -62,7 +62,7 @@ Ca să te uiți în interiorul clădirii, arată doar unele dintre etajele ei. C
 
 ![Parterul tăiat la 1,20 m: pereții închiși, strat cu strat](shots/storeys-3d-cut.webp)
 
-Etajele ascunse nu se desenează și nu le poți selecta, încadra sau călca pe ele. O vedere 3D salvată își păstrează propria alegere. Eticheta **Etaje** din josul vederii 3D spune ce se vede; **×** de pe ea arată din nou toate etajele.
+Etajele ascunse nu se desenează și nu le poți selecta, încadra sau călca pe ele. Ce taie o tăietură (cea de deasupra etajelor afișate, o secțiune arătată în 3D, cutia de secțiune) nu mai e nici în calea plimbării: treci pe lângă partea de sus a unui perete pe care tăietura a înlăturat-o, iar capacele de pe tăietură închid ce deschide ea. **Fișier → Exportă 3D…** ia vederea 3D așa cum o arată (vezi [Import și export](import-export.md)). O vedere 3D salvată își păstrează propria alegere. Eticheta **Etaje** din josul vederii 3D spune ce se vede; **×** de pe ea arată din nou toate etajele.
 
 ### Plimbare printr-o încăpere
 
@@ -76,7 +76,7 @@ Etajele ascunse nu se desenează și nu le poți selecta, încadra sau călca pe
 - <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> sau săgețile te poartă înainte, înapoi și în lateral. Ține <kbd>Shift</kbd> ca să alergi. <kbd>Spațiu</kbd> sare.
 - Rotița mouse-ului face un pas înainte sau înapoi.
 
-Mergi cum ar merge un om. Pereții, stâlpii, mobilierul și ferestrele închise te opresc, iar tu aluneci de-a lungul lor. Stai pe pardoseli, urci și cobori scări și rampe și cazi dacă pășești peste o margine. Ușile îți sunt deschise: treci prin golurile lor.
+Mergi cum ar merge un om. Pereții, stâlpii, mobilierul și ferestrele închise te opresc, iar tu aluneci de-a lungul lor. Stai pe pardoseli, urci și cobori scări și rampe și cazi dacă pășești peste o margine. Ușile îți sunt deschise: treci prin golurile lor. Te oprește doar ce desenează vederea 3D: elementele ascunse, etajele pe care nu le arată și ce taie tăieturile ei nu-ți stau în cale.
 
 ![Spre ușa dormitorului](shots/room-walk-door.webp)
 
