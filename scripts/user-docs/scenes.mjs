@@ -542,6 +542,12 @@ export const scenes = [
       await t.cmd('view.setStoreys', { id: '3d', cut: 1.2 });
       await t.wait(500);
       t.expect(await page.locator('.mode-chip.storeys').getByText('cut at 1.20 m').count() === 1, 'the chip says where the model is cut');
+      // The cut is closed like a section's: each cut layer capped in its material.
+      const capped = await t.call('view.caps', { planes: [{ normal: [0, 0, -1], constant: 1.2 }] });
+      t.expect(Array.isArray(capped) && capped.length > 0, 'the walls cut above the level are closed by caps');
+      await t.wait(1000);
+      await t.fit();
+      await t.shot('storeys-3d-cut', { of: '[data-testid=view3d]', pad: 0 });
       // × shows every storey again.
       await page.locator('.mode-chip.storeys button.mode-close').click();
       await t.wait(800);

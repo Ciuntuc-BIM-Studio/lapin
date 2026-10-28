@@ -58,7 +58,9 @@ Ca să te uiți în interiorul clădirii, arată doar unele dintre etajele ei. C
 
 - **Arată**: toate etajele, etajele bifate, doar etajul activ sau etajul activ și cele de dedesubt.
 - **Fără etaj**: ce nu stă pe niciun etaj (amplasamentul, terenul, fișierele legate) se arată sau se ascunde.
-- **Secționat deasupra nivelului**: modelul e tăiat la atât deasupra celui mai înalt etaj afișat, la început 1,20 m, cum îl taie un plan.
+- **Secționat deasupra nivelului**: modelul e tăiat la atât deasupra celui mai înalt etaj afișat, la început 1,20 m, cum îl taie un plan. Fiecare element tăiat acolo e închis pe tăietură, strat cu strat, în materialele lui, ca o secțiune arătată în 3D.
+
+![Parterul tăiat la 1,20 m: pereții închiși, strat cu strat](shots/storeys-3d-cut.webp)
 
 Etajele ascunse nu se desenează și nu le poți selecta, încadra sau călca pe ele. O vedere 3D salvată își păstrează propria alegere. Eticheta **Etaje** din josul vederii 3D spune ce se vede; **×** de pe ea arată din nou toate etajele.
 

@@ -58,7 +58,9 @@ To look inside the building, show only some of its storeys. Right-click a level 
 
 - **Show**: every storey, the storeys ticked, the active storey only, or the active storey and those below.
 - **On no storey**: what stands on no storey (the site, the terrain, linked files) is shown or hidden.
-- **Cut above its level**: the model is cut that far above the highest storey shown, 1.20 m at first, as a plan cuts it.
+- **Cut above its level**: the model is cut that far above the highest storey shown, 1.20 m at first, as a plan cuts it. Every element cut there is closed on the cut, layer by layer, in its materials, as a section shown in 3D is.
+
+![The ground floor cut at 1.20 m: its walls closed, layer by layer](shots/storeys-3d-cut.webp)
 
 The storeys hidden are not drawn, and you cannot select them, fit to them or walk on them. A saved 3D view keeps its own choice. The **Storeys** chip at the bottom of the 3D view says what is shown; its **×** shows every storey again.
 
