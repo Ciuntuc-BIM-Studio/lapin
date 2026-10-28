@@ -1,0 +1,6 @@
+{
+  "id": "lapin-urban",
+  "name": "Lapin Urban",
+  "modules": ["architecture", "structure", "drafting", "studio", "phases", "civil", "sitework", "cost", "mep", "urban"],
+  "external": { "urban": "../lapin-urban" }
+}

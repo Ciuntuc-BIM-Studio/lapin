@@ -17,11 +17,11 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, join, resolve as resolvePath } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright-core';
 import { resolveProduct } from '../product.mjs';
-import { scenes } from './scenes.mjs';
+import { scenes as ownScenes } from './scenes.mjs';
 import { render } from './render.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -30,6 +30,10 @@ const shots = join(out, 'shots');
 const args = process.argv.slice(2);
 const only = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
 const LANGS = ['en', 'ro'];
+// Another edition (a premium module's pictures, taken with its own scenes from its repository): --product lapin-urban --scenes ../lapin-urban/docs/scenes.mjs
+const productId = args.includes('--product') ? args[args.indexOf('--product') + 1] : 'lapin';
+const extra = args.includes('--scenes') ? (await import(pathToFileURL(resolvePath(args[args.indexOf('--scenes') + 1])).href)).scenes ?? [] : [];
+const scenes = [...ownScenes, ...extra];
 const langs = args.includes('--lang') ? [args[args.indexOf('--lang') + 1]] : LANGS;
 if (!langs.every((l) => LANGS.includes(l))) { console.error(`✗ --lang: one of ${LANGS.join(', ')}`); process.exit(1); }
 /** A language's pictures: shots/ for English, shots/ro/ for Romanian. */
@@ -54,7 +58,9 @@ async function takePictures() {
   const free = () => new Promise((r) => { const s = createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => r(p)); }); });
   console.log('▸ building the engine…');
   if (spawnSync('dotnet', ['build', join(root, 'engine/Lapin.slnx'), '-v', 'q', '-nologo'], { stdio: 'inherit' }).status !== 0) process.exit(1);
-  const product = resolveProduct(root, 'lapin');
+  const product = resolveProduct(root, productId);
+  // A module outside this repository is not in the solution: built on its own.
+  for (const csproj of product.engineProjects ?? []) if (spawnSync('dotnet', ['build', csproj, '-v', 'q', '-nologo'], { stdio: 'inherit' }).status !== 0) process.exit(1);
   const temp = mkdtempSync(join(tmpdir(), 'lapin-user-docs-'));
   const manifest = join(temp, 'product.json');
   writeFileSync(manifest, JSON.stringify(product, null, 2));
