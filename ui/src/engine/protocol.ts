@@ -39,7 +39,8 @@ export interface RenderPart {
 }
 
 /** A part's caps where a section cuts it in 3D (view.caps): `part` is its index in the element's parts. */
-export interface CapPart { part: number; color: string; material?: string | null; positions: Float32Array; normals: Float32Array; indices: Int32Array; edges: Float32Array }
+/** Drawn as on a sheet (style "drawing"): `fill`, the cut's fill, and `hatch`, its hatch as x y z segment pairs. */
+export interface CapPart { part: number; color: string; material?: string | null; positions: Float32Array; normals: Float32Array; indices: Int32Array; edges: Float32Array; fill?: string | null; hatch?: Float32Array | null }
 export interface CapItem { nodeId: string; parts: CapPart[] }
 
 export interface RenderItem {

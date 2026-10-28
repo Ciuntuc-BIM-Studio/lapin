@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
+using Lapin.Drawing;
 using Lapin.Drawing.Views;
 using Lapin.Model;
 
@@ -288,8 +289,10 @@ public sealed class Session
     /// their outlines less the seams where one material goes on from one
     /// element into another (the 2D sections' rule). <paramref name="lift"/>
     /// moves them into the kept side, so the renderer's own clipping keeps them.
+    /// <paramref name="drawing"/>: as a sheet draws the cut, each cap with its material's section
+    /// fill and hatch, the hatch at 1:<paramref name="scale"/>.
     /// </summary>
-    public List<CapItem> Caps(IReadOnlyList<ClipPlane> planes, double lift = 0.0005)
+    public List<CapItem> Caps(IReadOnlyList<ClipPlane> planes, double lift = 0.0005, bool drawing = false, double scale = 50)
     {
         var result = new List<CapItem>();
         if (planes.Count == 0) return result;
@@ -323,17 +326,54 @@ public sealed class Session
                 seamKeys.Add(Views.SeamKeyOf(_store, g.Parts[i].Material, cls, keys));
             }
         }
-        var caps = SectionCaps.Make(solids, planes, seamKeys, lift);
+        var (caps, faces) = SectionCaps.MakeWithFaces(solids, planes, seamKeys, lift);
         var byNode = new Dictionary<string, List<CapPart>>();
+        var patterns = drawing ? DraftingResources.Patterns(_store) : null;
         for (var k = 0; k < caps.Length; k++)
         {
             var m = caps[k];
             if (m.Indices.Length == 0) continue;
             var (id, part, gp) = owners[k];
             if (!byNode.TryGetValue(id, out var list)) { byNode[id] = list = []; result.Add(new CapItem(id, list)); }
-            list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges));
+            if (!drawing) { list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges)); continue; }
+            var look = MaterialGraphics.Resolve(gp.Material == null ? null : _store.Get(gp.Material), "section");
+            var (fill, hatch) = CapHatch(faces[k], look, patterns!, scale);
+            list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges, fill, hatch));
         }
         return result;
+    }
+
+    /// <summary>
+    /// A cap drawn as a sheet draws the cut: its fill (white without one; a solid pattern fills it) and its
+    /// hatch's segments on its faces, lifted a little off them towards the viewer. The hatch lies in axes of the
+    /// face's plane through the world's origin, so neighbouring caps on one plane hatch as one; on an upright
+    /// plane its X runs level, its Y up, as the section's drawing has them.
+    /// </summary>
+    static (string Fill, float[] Hatch) CapHatch(List<CapFace> faces, Lapin.Drawing.ResolvedMaterial look, IReadOnlyList<Lapin.Drawing.Hatch.HatchPattern> patterns, double scale)
+    {
+        var fill = look.Fill ?? "#ffffff";
+        var pattern = look.Hatch is { } h ? Lapin.Drawing.Hatch.HatchLibrary.Find(h, patterns) : null;
+        var hatch = new List<float>();
+        if (pattern == null) return (fill, []);
+        if (pattern.Solid) return ("#2b2b2b", []);
+        foreach (var f in faces)
+        {
+            var n = f.Normal;
+            var u = Math.Abs(n.Z) < 0.9 ? Vec3.Cross(n, Vec3.UnitZ).Normalized() : new Vec3(1, 0, 0);
+            var v = Math.Abs(n.Z) < 0.9 ? Vec3.Cross(u, n).Normalized() : Vec3.Cross(n, u).Normalized();
+            var d = Vec3.Dot(f.Origin, n) + 0.0002;
+            var loops = f.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(p => { var w = f.At(p); return new Vec2(Vec3.Dot(w, u), Vec3.Dot(w, v)); }).ToList()).ToList();
+            var segs = Lapin.Drawing.Hatch.BattHatch.Is(pattern)
+                ? Lapin.Drawing.Hatch.BattHatch.Segments(loops, 1.2 * scale / 1000, 20_000)
+                : Lapin.Drawing.Hatch.HatchFill.Segments(loops, pattern, new Lapin.Drawing.Hatch.HatchOptions(look.HatchScale * scale / 1000, look.HatchAngle, null, 20_000)).Segments;
+            foreach (var s in segs)
+                foreach (var p in new[] { s.A, s.B })
+                {
+                    var w = u * p.X + v * p.Y + n * d;
+                    hatch.Add((float)w.X); hatch.Add((float)w.Y); hatch.Add((float)w.Z);
+                }
+        }
+        return (fill, [.. hatch]);
     }
 
     // ------------------------------------------------------------ diffs

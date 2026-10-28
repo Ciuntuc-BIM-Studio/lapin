@@ -40,9 +40,11 @@ To see the whole model again, click the **×** on the **Section** chip at the bo
 
 ### The section box
 
-**View → Section box** (shortcut BX) cuts the 3D view to a box. The box starts round the whole model. Each face has an arrow in its middle: drag it to move that face. Every element the box cuts is closed on that face, layer by layer, in its materials, and the faces meet cleanly at the box's edges. **Cut at plan** sets the box's top at the active level's plan cut (its view range), so the level reads in 3D as its plan cuts it. **Fit** puts the box back round the whole model. The **×** on the **Section box** chip turns the box off.
+**View → Section box** (shortcut BX) cuts the 3D view to a box. The box starts round the whole model. Each face has an arrow in its middle: drag it to move that face. Every element the box cuts is closed on that face, layer by layer, in its materials, and the faces meet cleanly at the box's edges. **Cut at plan** sets the box's top at the active level's plan cut (its view range), so the level reads in 3D as its plan cuts it. **Fit** puts the box back round the whole model. To turn the box, drag the round handle past its top corner (by the degree; hold Shift for 15° steps), or select a wall and click **Align**: the box turns the way the wall runs. **Hatches** draws the box's cuts as a sheet does, each material with its cut fill and hatch, instead of the materials. A saved 3D view keeps its section box: save the view with the box on, or open a saved view and set its box, and the box is there each time the view opens. The **×** on the **Section box** chip turns the box off.
 
 ![The section box cut at the ground floor's plan, its east face dragged in](shots/section-box.webp)
+
+![The same box with Hatches on: the cuts as a sheet draws them](shots/section-box-hatches.webp)
 
 ### One storey at a time
 

@@ -19,8 +19,12 @@ public sealed record PlanItemDto(string Kind, bool Closed, double[] Points, stri
 
 public sealed record RenderPart(string Name, string Color, float[] Positions, float[] Normals, int[] Indices, float[] Edges, string? Material = null);
 
-/// <summary>A part's caps where a section cuts it in 3D (<see cref="Session.Caps"/>): <see cref="Part"/> is its index in the element's parts.</summary>
-public sealed record CapPart(int Part, string Color, string? Material, float[] Positions, float[] Normals, int[] Indices, float[] Edges);
+/// <summary>
+/// A part's caps where a section cuts it in 3D (<see cref="Session.Caps"/>): <see cref="Part"/> is its index in the element's parts.
+/// Drawn as on a sheet (the section's style), its cut <see cref="Fill"/> (white when the material has none) and its
+/// <see cref="Hatch"/> as segments on the caps (x y z pairs), the material's section hatch at the drawing's scale.
+/// </summary>
+public sealed record CapPart(int Part, string Color, string? Material, float[] Positions, float[] Normals, int[] Indices, float[] Edges, string? Fill = null, float[]? Hatch = null);
 
 /// <summary>An element's caps, part by part.</summary>
 public sealed record CapItem(string NodeId, IReadOnlyList<CapPart> Parts);

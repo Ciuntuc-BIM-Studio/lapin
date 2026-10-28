@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { alongAxis, boxEdges, boxPlanes, faceHandle, moveFace, MIN_SIZE, type SectionBox } from './sectionBox';
+import type { RenderItem } from '../engine/protocol';
+import { alongAxis, boxCentre, boxEdges, boxPlanes, faceHandle, modelBounds, moveFace, MIN_SIZE, rotateBox, runOf, toBox, type SectionBox } from './sectionBox';
 
 const box: SectionBox = { min: [0, 0, 0], max: [10, 6, 3] };
-const keeps = (b: SectionBox, p: number[]) => boxPlanes(b).every((pl) => pl.normal[0] * p[0] + pl.normal[1] * p[1] + pl.normal[2] * p[2] + pl.constant >= 0);
+const keeps = (b: SectionBox, p: number[]) => boxPlanes(b).every((pl) => pl.normal[0] * p[0] + pl.normal[1] * p[1] + pl.normal[2] * p[2] + pl.constant >= -1e-9);
+const near = (a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) => {
+  expect(a.x).toBeCloseTo(b.x); expect(a.y).toBeCloseTo(b.y); expect(a.z).toBeCloseTo(b.z);
+};
 
 describe('the section box', () => {
   it('keeps what is inside it and cuts the rest, on each of its six faces', () => {
@@ -21,16 +25,38 @@ describe('the section box', () => {
 
   it('has its handles on its faces\' middles, pointing out', () => {
     const h = faceHandle(box, 'y1');
-    expect(h.at).toEqual({ x: 5, y: 6, z: 1.5 });
-    expect(h.out).toEqual({ x: 0, y: 1, z: 0 });
+    near(h.at, { x: 5, y: 6, z: 1.5 });
+    near(h.out, { x: 0, y: 1, z: 0 });
     expect(boxEdges(box)).toHaveLength(12);
   });
 
   it('drags a face to where the pointer\'s ray passes nearest its axis', () => {
     // Looking down the y axis at x = 7: the x face's handle follows to 7.
-    const v = alongAxis({ x: 10, y: 3, z: 1.5 }, 0, { x: 7, y: -20, z: 1.5 }, { x: 0, y: 1, z: 0 });
-    expect(v).toBeCloseTo(7);
+    expect(alongAxis(box, { x: 10, y: 3, z: 1.5 }, 0, { x: 7, y: -20, z: 1.5 }, { x: 0, y: 1, z: 0 })).toBeCloseTo(7);
     // Along the axis itself: no answer.
-    expect(alongAxis({ x: 10, y: 3, z: 1.5 }, 0, { x: -20, y: 3, z: 1.5 }, { x: 1, y: 0, z: 0 })).toBeNull();
+    expect(alongAxis(box, { x: 10, y: 3, z: 1.5 }, 0, { x: -20, y: 3, z: 1.5 }, { x: 1, y: 0, z: 0 })).toBeNull();
+  });
+
+  it('turns about its middle, its size kept, and cuts along its turned faces', () => {
+    const turned = rotateBox(box, Math.PI / 2);
+    near(boxCentre(turned), boxCentre(box));
+    expect(turned.max[0] - turned.min[0]).toBeCloseTo(10);
+    // A quarter turn: its long side now runs along the world's y.
+    expect(keeps(turned, [5, 7, 1.5])).toBe(true);
+    expect(keeps(turned, [0.5, 3, 1.5])).toBe(false);
+    // Its x face's handle points the turned x way, and a drag along it is read in the box's axes.
+    near(faceHandle(turned, 'x1').out, { x: 0, y: 1, z: 0 });
+    const at = faceHandle(turned, 'x1').at;
+    const v = alongAxis(turned, at, 0, { x: -20, y: at.y - 2, z: 1.5 }, { x: 1, y: 0, z: 0 });
+    expect(v).toBeCloseTo(toBox(turned, { x: at.x, y: at.y - 2, z: 1.5 })[0]);
+  });
+
+  it('fits round the model in its own turned axes, and takes the way an element runs', () => {
+    const wall = { positions: new Float32Array([0, 0, 0, 10, 10, 0, 10, 10, 3]), parts: [], plan: [{ kind: 'cut', closed: false, points: [0, 0, 10, 10] }] } as unknown as RenderItem;
+    const along = runOf(wall)!;
+    expect(along).toBeCloseTo(Math.PI / 4);
+    const b = modelBounds([wall], 0, along)!;
+    expect(b.max[0] - b.min[0]).toBeCloseTo(Math.hypot(10, 10));
+    expect(b.max[1] - b.min[1]).toBeCloseTo(0);
   });
 });

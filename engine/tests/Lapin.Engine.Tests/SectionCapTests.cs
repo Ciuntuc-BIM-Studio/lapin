@@ -60,4 +60,36 @@ public class SectionCapTests
         Assert.NotEmpty(BinaryFrame.Ints(part.GetProperty("indices"), buffers));
         Assert.Null(EngineDispatcher.AllowedRemote("view.caps", new JsonObject(), "viewer"));
     }
+
+    [Fact]
+    public void Drawn_as_a_sheet_a_cap_takes_its_materials_section_fill_and_hatch()
+    {
+        var f = new Fixture();
+        var type = f.Type("Brick and plaster", ("Plaster", 0.02, false), ("Brick", 0.25, true), ("Plaster", 0.02, false));
+        var wall = f.Wall(0, 0, 5, 0, type);
+        var item = f.Session.Caps([ClipPlane.Through(new Vec3(2.5, 0, 0), new Vec3(-1, 0, 0))], drawing: true).Single(c => c.NodeId == wall);
+        Assert.All(item.Parts, p => Assert.NotNull(p.Fill));
+        // The brick core is hatched (its name says brick), its segments on the cap's plane, a hair towards the viewer.
+        var core = item.Parts.Single(p => f.Model.Get(p.Material!)!.Name == "Brick");
+        Assert.NotEmpty(core.Hatch!);
+        for (var i = 0; i < core.Hatch!.Length; i += 3) Assert.Equal(2.5 - 0.0005 + 0.0002, core.Hatch[i], 4);
+        // In the materials' look, none of that.
+        Assert.All(f.Session.Caps([ClipPlane.Through(new Vec3(2.5, 0, 0), new Vec3(-1, 0, 0))]).Single(c => c.NodeId == wall).Parts, p => Assert.Null(p.Hatch));
+    }
+
+    [Fact]
+    public void A_saved_3D_view_keeps_its_section_box()
+    {
+        var f = new Fixture();
+        var view = (string)f.Run("view.create", new JsonObject { ["kind"] = "3d", ["name"] = "Cut" })!["id"]!;
+        f.Run("view.setSectionBox", new JsonObject { ["id"] = view, ["box"] = new JsonObject { ["min"] = new JsonArray(0, 0, 0), ["max"] = new JsonArray(5, 4, 1.2), ["rot"] = 0.5 } });
+        var box = f.Model.Get(view)!.Attrs["sectionBox"]!.AsObject();
+        Assert.Equal(1.2, (double)box["max"]![2]!, 9);
+        Assert.Equal(0.5, (double)box["rot"]!, 9);
+        f.Session.Undo();
+        Assert.Null(f.Model.Get(view)!.Attrs["sectionBox"]);
+        f.Run("view.setSectionBox", new JsonObject { ["id"] = view, ["box"] = new JsonObject { ["min"] = new JsonArray(0, 0, 0), ["max"] = new JsonArray(5, 4, 1.2) } });
+        f.Run("view.setSectionBox", new JsonObject { ["id"] = view, ["box"] = null });
+        Assert.Null(f.Model.Get(view)!.Attrs["sectionBox"]);
+    }
 }

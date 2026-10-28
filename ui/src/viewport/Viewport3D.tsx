@@ -28,8 +28,8 @@ import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
 import { SectionBox3D } from './SectionBox3D';
-import { boxPlanes, planesKey, useSectionBox } from './sectionBox';
-import { cutAtPlan, fitSectionBox } from './sectionBoxTools';
+import { boxPlanes, planesKey, useSectionBox, type SectionBox } from './sectionBox';
+import { alignSectionBox, commitBox, cutAtPlan, fitSectionBox } from './sectionBoxTools';
 import { useDrawing, type DrawingDto } from './drawing';
 import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPlanes, sectionPose, textFont, textQuad, useSection3d, type ClipPlane, type DrawingText, type ViewFrameDto } from './section3d';
 import { clampPitch, easeEye, exitWalk, lookVector, toggleFly, useWalk, walkStep, walkWish, EYE_HEIGHT, WALK_KEYS, type WalkStart } from './walk';
@@ -111,6 +111,10 @@ function meshOf(item: RenderItem): THREE.Group {
   return group;
 }
 
+/** The caps' hatch lines, as thin as a sheet's (one material, shared). */
+const HATCH = new THREE.LineBasicMaterial({ color: 0x2b2b2b });
+HATCH.userData.shared = true;
+
 /** Cut outlines on the caps: a little heavier than the model's edges, so the cut reads first. */
 const CAP_EDGE_PX = 1.6;
 
@@ -123,9 +127,26 @@ function capsOf(item: CapItem): THREE.Group {
   group.userData.nodeId = item.nodeId;
   group.userData.caps = true;
   const edges: number[] = [];
+  const hatch: number[] = [];
   for (const p of item.parts) {
-    addSurface(group, item.nodeId, p.positions, p.normals, p.indices, p.color, p.material);
+    if (p.fill) {
+      // As a sheet draws the cut: the material's section fill, flat, and its hatch over it.
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(p.positions, 3));
+      g.setAttribute('normal', new THREE.BufferAttribute(p.normals, 3));
+      g.setIndex(new THREE.BufferAttribute(new Uint32Array(p.indices.buffer, p.indices.byteOffset, p.indices.length), 1));
+      const fill = cssColor(p.fill);
+      const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: new THREE.Color(fill?.hex ?? '#ffffff') }));
+      mesh.userData.nodeId = item.nodeId;
+      group.add(mesh);
+      if (p.hatch) for (const v of p.hatch) hatch.push(v);
+    } else addSurface(group, item.nodeId, p.positions, p.normals, p.indices, p.color, p.material);
     for (const v of p.edges) edges.push(v);
+  }
+  if (hatch.length) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(hatch), 3));
+    group.add(new THREE.LineSegments(g, HATCH));
   }
   if (edges.length) {
     const mat = new LineMaterial({ color: 0x1e2a3a, linewidth: CAP_EDGE_PX });
@@ -787,6 +808,17 @@ export function Viewport3D() {
     api.orbitTo({ azimuth: cam.azimuth ?? 0, pitch: cam.pitch ?? -0.5, distance: cam.distance ?? 30, target: { x: cam.target?.[0] ?? 0, y: cam.target?.[1] ?? 0, z: cam.target?.[2] ?? 0 } }, false);
   }, [view3dId]);
 
+  // A saved 3D view's section box: shown when the view opens, and again when an undo brings it back; {3D} starts without one.
+  const keptBox = useSession((st) => (view3dId && view3dId !== '3d' ? JSON.stringify(st.nodes.get(view3dId)?.props.sectionBox ?? null) : 'none'));
+  const lastView3d = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const changed = lastView3d.current !== view3dId;
+    lastView3d.current = view3dId;
+    if (keptBox === 'none') { if (changed) useSectionBox.setState({ box: null }); return; }
+    const kept = JSON.parse(keptBox) as SectionBox | null;
+    if (JSON.stringify(useSectionBox.getState().box) !== keptBox) useSectionBox.setState({ box: kept });
+  }, [view3dId, keptBox]);
+
   const selected = useUi((st) => st.selected);
   const walkStart = useWalk((st) => st.start);
   const walking = walkStart != null;
@@ -835,6 +867,14 @@ export function Viewport3D() {
   useEffect(() => { if (walkStart) walkApi.current.start(walkStart); else walkApi.current.stop(); }, [walkStart]);
   useEffect(() => walkApi.current.changed(), [render, looks]);
 
+  // The storeys the 3D view shows: where they are cut (capped with the section's caps below).
+  const nodes = useSession((st) => st.nodes);
+  const storeySetting = settingOf(nodes, view3dId);
+  const storeyList = storeysOf({ nodes, relations: useSession.getState().relations });
+  const activeId = storey?.id ?? null;
+  const cut = cutZ(storeySetting, storeyList, activeId);
+  const storeysChip = chipText(storeySetting, storeyList, activeId);
+
   // A section shown in 3D: the model cut by its plane (and its depth), its drawing on the cut; an elevation only turns the camera.
   const sectionId = useSection3d((st) => st.viewId);
   const sectionNode = useSession((st) => (sectionId ? st.nodes.get(sectionId) : undefined));
@@ -846,9 +886,13 @@ export function Viewport3D() {
   // What cuts the model: the section shown (its plane, and its depth) and the section box's faces.
   const planes: ClipPlane[] = [...(shown ? sectionPlanes(shown.frame!, shown.depth) : []), ...(box ? boxPlanes(box) : [])];
   const clipKey = planesKey(planes);
-  // Closed by caps in their materials; with the drawing's hatches instead, only the box's faces are capped.
-  const capPlanes = capStyle === 'drawing' ? (box ? boxPlanes(box) : []) : planes;
-  const capKey = planesKey(capPlanes);
+  // Closed by caps in their materials; with the drawing's hatches instead, the section's own drawing closes its cut
+  // and the box's faces are capped as a sheet draws a cut, at the section's scale (1:50 without one).
+  // The cut above the storeys shown is capped too, so a storey seen alone reads as its plan cuts it.
+  const storeyCap: ClipPlane[] = cut === null ? [] : [{ normal: [0, 0, -1], constant: cut }];
+  const capPlanes = [...(capStyle === 'drawing' ? (box ? boxPlanes(box) : []) : planes), ...storeyCap];
+  const capScale = shown?.scale ?? 50;
+  const capKey = `${planesKey(capPlanes)}|${capStyle}|${capScale}`;
   useEffect(() => {
     // The view deleted: nothing to show any more.
     if (sectionId && !sectionNode) useSection3d.setState({ viewId: null });
@@ -867,7 +911,7 @@ export function Viewport3D() {
     if (!capPlanes.length) { put([]); return; }
     // Asked a moment after the last change (a face dragged asks once it rests), the newest answer kept.
     const timer = setTimeout(() => {
-      void engine.call<CapItem[]>('view.caps', { planes: capPlanes }).then((items) => { if (!stale) put(items ?? []); }).catch(() => undefined);
+      void engine.call<CapItem[]>('view.caps', { planes: capPlanes, style: capStyle, scale: capScale }).then((items) => { if (!stale) put(items ?? []); }).catch(() => undefined);
     }, 60);
     return () => { stale = true; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- capKey stands for capPlanes
@@ -894,12 +938,6 @@ export function Viewport3D() {
   }, [sectionId, sectionDrawing, sectionNotes, capStyle, clipKey]);
 
   // The storeys the 3D view shows (report #29): the others hidden by their looks (Storeys3DLooks); here the cut above them, and the chip.
-  const nodes = useSession((st) => st.nodes);
-  const storeySetting = settingOf(nodes, view3dId);
-  const storeyList = storeysOf({ nodes, relations: useSession.getState().relations });
-  const activeId = storey?.id ?? null;
-  const cut = cutZ(storeySetting, storeyList, activeId);
-  const storeysChip = chipText(storeySetting, storeyList, activeId);
   useEffect(() => {
     cutRef.current = cut;
     // Keeps what lies under the height: −z + cut ≥ 0.
@@ -934,7 +972,10 @@ export function Viewport3D() {
               <span className="mode-hint">Drag a face's arrow to move it</span>
               <button type="button" onClick={fitSectionBox} title="The box round the whole model">Fit</button>
               <button type="button" onClick={() => void cutAtPlan()} title="The box's top at the active storey's plan cut">Cut at plan</button>
-              <button type="button" className="mode-close" title="Section box off" aria-label="Section box off" onClick={() => useSectionBox.setState({ box: null })}><X size={12} /></button>
+              <button type="button" onClick={alignSectionBox} title="Turn the box the way the selected element runs (a wall's axis)">Align</button>
+              <button type="button" className="mode-toggle" aria-pressed={capStyle === 'drawing'} title="Draw the box's cuts as a sheet does (each material's cut fill and hatch) instead of the materials"
+                onClick={() => useSection3d.setState({ caps: capStyle === 'drawing' ? 'material' : 'drawing' })}>Hatches</button>
+              <button type="button" className="mode-close" title="Section box off" aria-label="Section box off" onClick={() => { useSectionBox.setState({ box: null }); commitBox(); }}><X size={12} /></button>
             </span>
           )}
           {storeysChip && (

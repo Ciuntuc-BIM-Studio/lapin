@@ -118,6 +118,28 @@ public static class Views
         return candidate;
     }
 
+    /// <summary>
+    /// A 3D view's section box as a command gives it: {min: [x, y, z], max: [x, y, z], rot?} (metres; rot,
+    /// radians, turns the box about the vertical through the world's origin: min and max are in its turned axes).
+    /// </summary>
+    public static JsonObject SectionBox(JsonNode? n)
+    {
+        const string Shape = "A section box is {min: [x, y, z], max: [x, y, z], rot}.";
+        if (n is not JsonObject o || o["min"] is not JsonArray lo || o["max"] is not JsonArray hi || lo.Count < 3 || hi.Count < 3) throw new CommandException(Shape);
+        double At(JsonArray v, int k) => Json.Number(v[k]) is { } d && double.IsFinite(d) ? d : throw new CommandException(Shape);
+        var min = new double[3];
+        var max = new double[3];
+        for (var k = 0; k < 3; k++)
+        {
+            double p = At(lo, k), q = At(hi, k);
+            min[k] = Math.Min(p, q);
+            max[k] = Math.Max(Math.Max(p, q), Math.Min(p, q) + 0.05);
+        }
+        var box = new JsonObject { ["min"] = new JsonArray(min[0], min[1], min[2]), ["max"] = new JsonArray(max[0], max[1], max[2]) };
+        if (Json.Number(o["rot"]) is { } rot && double.IsFinite(rot) && Math.Abs(rot) > 1e-9) box["rot"] = Math.IEEERemainder(rot, 2 * Math.PI);
+        return box;
+    }
+
     /// <summary>A 3D view's camera as a command gives it: {azimuth, pitch, distance, target: [x, y, z], ortho?} (radians, metres).</summary>
     public static JsonObject Camera(JsonNode? n)
     {
@@ -587,6 +609,7 @@ public static class Views
                     // A saved 3D view: its camera (when given), its own hidden elements and graphics; {3D} itself stays on the project.
                     attrs.Remove("scale");
                     if (a["camera"] != null) attrs["camera"] = Camera(a["camera"]);
+                    if (a["sectionBox"] is JsonObject) attrs["sectionBox"] = SectionBox(a["sectionBox"]);
                     name = (string?)a["name"] ?? $"3D view {ctx.Model.OfClass(Class).Count(v => v.Str("kind") == "3d") + 1}";
                     break;
                 case "plan":
@@ -630,6 +653,18 @@ public static class Views
             var v = ctx.Model.Get(id) is { Class: Class } x && x.Str("kind") == "3d" ? x : throw new CommandException("Not a 3D view.");
             var attrs = v.CloneAttrs();
             attrs["camera"] = Camera(a["camera"]);
+            ctx.Replace(v.With(attrs: attrs));
+            return null;
+        });
+
+        // A saved 3D view's section box: what of the model it shows, cut ({min, max, rot}; null: none).
+        r.Command("view.setSectionBox", "Section box", (ctx, a) =>
+        {
+            var id = (string?)a["id"] ?? "";
+            if (id == GraphicsSets.View3d) throw new CommandException("{3D} keeps no section box: save the view as a 3D view first.");
+            var v = ctx.Model.Get(id) is { Class: Class } x && x.Str("kind") == "3d" ? x : throw new CommandException("Not a 3D view.");
+            var attrs = v.CloneAttrs();
+            if (a["box"] is JsonObject) attrs["sectionBox"] = SectionBox(a["box"]); else attrs.Remove("sectionBox");
             ctx.Replace(v.With(attrs: attrs));
             return null;
         });

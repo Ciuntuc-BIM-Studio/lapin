@@ -40,9 +40,11 @@ Ca să vezi din nou tot modelul, apasă **×** pe eticheta **Secțiune** din jos
 
 ### Cutia de secțiune
 
-**Vedere → Cutie de secțiune** (scurtătura BX) taie vederea 3D după o cutie. Cutia pornește în jurul întregului model. Fiecare față are o săgeată la mijloc: trage de ea ca să muți fața. Fiecare element tăiat de cutie e închis pe fața aceea, strat cu strat, în materialele lui, iar fețele se întâlnesc curat la muchiile cutiei. **Taie la plan** pune capacul cutiei la tăietura planului nivelului activ (din domeniul lui de vedere), ca nivelul să se citească în 3D cum îl taie planul. **Încadrează** pune cutia din nou în jurul întregului model. **×** pe eticheta **Cutie de secțiune** oprește cutia.
+**Vedere → Cutie de secțiune** (scurtătura BX) taie vederea 3D după o cutie. Cutia pornește în jurul întregului model. Fiecare față are o săgeată la mijloc: trage de ea ca să muți fața. Fiecare element tăiat de cutie e închis pe fața aceea, strat cu strat, în materialele lui, iar fețele se întâlnesc curat la muchiile cutiei. **Taie la plan** pune capacul cutiei la tăietura planului nivelului activ (din domeniul lui de vedere), ca nivelul să se citească în 3D cum îl taie planul. **Încadrează** pune cutia din nou în jurul întregului model. Ca să rotești cutia, trage de mânerul rotund de lângă colțul ei de sus (din grad în grad; cu Shift, din 15° în 15°), sau selectează un perete și apasă **Aliniază**: cutia se rotește pe direcția peretelui. **Hașuri** desenează tăieturile cutiei ca pe planșă, fiecare material cu umplutura și hașura lui de secțiune, în locul materialelor. O vedere 3D salvată își păstrează cutia de secțiune: salvează vederea cu cutia pornită, sau deschide o vedere salvată și pune-i cutia, iar cutia e acolo de fiecare dată când deschizi vederea. **×** pe eticheta **Cutie de secțiune** oprește cutia.
 
 ![Cutia de secțiune tăiată la planul parterului, cu fața de est trasă înăuntru](shots/section-box.webp)
+
+![Aceeași cutie cu Hașuri: tăieturile cum le desenează planșa](shots/section-box-hatches.webp)
 
 ### Câte un etaj
 

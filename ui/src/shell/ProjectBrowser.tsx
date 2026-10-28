@@ -18,6 +18,7 @@ import { IfcTree } from './IfcTree';
 import { openContextMenu } from './ContextMenu';
 import { toggleSection3d, useSection3d } from '../viewport/section3d';
 import { showLevelIn3d } from '../viewport/storeys3dActions';
+import { useSectionBox } from '../viewport/sectionBox';
 
 const TAB_KEY = 'lapin.browser.tab';
 
@@ -89,6 +90,9 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
     const id = made(r);
     if (!id) return;
     await execute('view.setCamera', { id, camera: cameraNow() });
+    // The section box as it is now goes with the camera.
+    const box = useSectionBox.getState().box;
+    if (box) await execute('view.setSectionBox', { id, box });
     show3d(id);
   });
   const updateCamera = (id: string) => void execute('view.setCamera', { id, camera: cameraNow() }).then(() => notify('The view keeps the camera as it is now.'));

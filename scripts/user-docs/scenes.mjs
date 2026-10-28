@@ -406,7 +406,7 @@ export const scenes = [
       await page.locator('.tabs-row button.tab').getByText('View', { exact: true }).click();
       await page.locator('.band').getByRole('button', { name: 'Section box' }).click();
       await t.wait(800);
-      t.expect(await page.locator('.section-box-handle').count() === 6, 'the section box has a handle on each face');
+      t.expect(await page.locator('.section-box-handle:not(.section-box-turn)').count() === 6, 'the section box has a handle on each face');
       await page.locator('.view3d-modes').getByRole('button', { name: 'Cut at plan' }).click();
       await t.wait(800);
       await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.2, pitch: -0.6, distance: 24, target: { x: 6, y: 4, z: 0.5 } }, false));
@@ -421,6 +421,13 @@ export const scenes = [
       const box = await page.evaluate(async () => (await import('/src/viewport/sectionBox.ts')).useSectionBox.getState().box);
       t.expect(box.max[0] < 11 && box.max[2] < 2, 'the box is cut at the plan and its face dragged in');
       await t.shot('section-box', { of: '[data-testid=view3d]', pad: 0 });
+      // Its cuts drawn as a sheet draws them; turned the way a wall runs.
+      await page.locator('.view3d-modes').getByRole('button', { name: 'Hatches' }).click();
+      await t.wait(1500);
+      t.expect((await t.call('view.caps', { planes: [{ normal: [0, 0, -1], constant: 1.2 }], style: 'drawing' })).some((c) => c.parts.some((p) => p.hatch?.length)), 'the box\'s caps are hatched as on a sheet');
+      await t.shot('section-box-hatches', { of: '[data-testid=view3d]', pad: 0 });
+      await page.locator('.view3d-modes').getByRole('button', { name: 'Hatches' }).click();
+      t.expect(await page.locator('.section-box-turn').count() === 1, 'the box has a handle to turn it');
       await page.locator('.view3d-modes button.mode-close').click();
       await t.wait(300);
 

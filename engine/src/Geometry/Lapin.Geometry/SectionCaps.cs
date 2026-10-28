@@ -13,6 +13,16 @@ public readonly record struct ClipPlane(Vec3 Normal, double Constant)
 }
 
 /// <summary>
+/// One cap of a solid as a planar face: a point <see cref="Origin"/> of its plane and the
+/// plane's axes <see cref="U"/>, <see cref="V"/>; <see cref="Normal"/> faces out of what is kept.
+/// A loop point (x, y) is Origin + U·x + V·y. Loops nest even-odd (inside an odd number of others: a hole).
+/// </summary>
+public sealed record CapFace(Vec3 Origin, Vec3 U, Vec3 V, Vec3 Normal, Vec2[][] Loops)
+{
+    public Vec3 At(Vec2 p) => Origin + U * p.X + V * p.Y;
+}
+
+/// <summary>
 /// The caps of a section seen in 3D: where the planes of a section (one
 /// plane, two for a depth, six for a box) cut a closed solid, the faces that
 /// close it, so a cut wall reads as a solid and not as a hollow shell. Each
@@ -35,7 +45,14 @@ public static class SectionCaps
     /// clipping at the planes keeps them. <paramref name="keys"/>: what each solid's caps join by
     /// (null joins nothing); without keys, no seams are taken out.
     /// </summary>
-    public static TriMesh[] Make(IReadOnlyList<Solid> solids, IReadOnlyList<ClipPlane> planes, IReadOnlyList<string?>? keys = null, double lift = 0)
+    public static TriMesh[] Make(IReadOnlyList<Solid> solids, IReadOnlyList<ClipPlane> planes, IReadOnlyList<string?>? keys = null, double lift = 0) =>
+        MakeWithFaces(solids, planes, keys, lift).Meshes;
+
+    /// <summary>
+    /// As <see cref="Make"/>, with each solid's caps also as faces: their plane's axes and their
+    /// loops in it (outlines and holes, even-odd), for what is laid on a cap in its plane (a hatch).
+    /// </summary>
+    public static (TriMesh[] Meshes, List<CapFace>[] Faces) MakeWithFaces(IReadOnlyList<Solid> solids, IReadOnlyList<ClipPlane> planes, IReadOnlyList<string?>? keys = null, double lift = 0)
     {
         var n = solids.Count;
         var parts = new List<Piece>[n];
@@ -83,8 +100,18 @@ public static class SectionCaps
         }
 
         var result = new TriMesh[n];
-        for (var s = 0; s < n; s++) result[s] = parts[s].Count == 0 ? TriMesh.Empty : Mesh(parts[s], lift);
-        return result;
+        var faces = new List<CapFace>[n];
+        for (var s = 0; s < n; s++)
+        {
+            result[s] = parts[s].Count == 0 ? TriMesh.Empty : Mesh(parts[s], lift);
+            faces[s] = [];
+            foreach (var piece in parts[s])
+            {
+                var f = piece.Plane;
+                faces[s].Add(new CapFace(f.O + f.N * lift, f.U, f.V, -f.N, [.. piece.Loops]));
+            }
+        }
+        return (result, faces);
     }
 
     /// <summary>A cutting plane's own axes: its origin (the point nearest the world's), U and V in it, N its kept side's normal.</summary>
