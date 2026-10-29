@@ -159,3 +159,29 @@ In the app (dev, engine in Debug, Chrome; `pnpm dev`, a Playwright script):
 - **Files written in world coordinates** (no shared representation) are not shared yet. BubbleBIM's hash of the centred mesh would catch translated copies.
 - Tiles, streaming by distance, an LRU budget and a persistent cache (BubbleBIM's `TileStreamingManager`) are for files beyond a few million elements.
 
+## A real model: the 1.2 GB Revit export (29.10.2026)
+
+`02767_0_IDP_EJE_ARQ+EST+MEP.ifc`, 20.9 million entities (5.3 million faces), 2,857 products; one of them, a dryer
+exported as a mesh, 6.8 million triangles (78 % of the model's geometry). At first the file could not be read at all:
+a .NET string holds at most a gigabyte. What each step gave (M1 Max, Release, server GC; the same 549 elements
+recognised and 2,255 references throughout):
+
+| step | import | after import | open `.lapin` |
+|---|---|---|---|
+| the parser on bytes, in parallel; elements built on every core | 233 s | 21 GB | 140 s |
+| the edges' hash (a long's own hash is a ^ b), holes to their innermost outer, triangle faces straight, a stored body's parts cached, no coplanar merge above 100,000 triangles | 251 s | 21 GB | 140 s |
+| references prepared on every core; no seams for a reference's body nor a part over 20,000 faces | 111 s | 18.5 GB | 6.8 s |
+| what the recognisers get prepared on every core; a B-rep over 4,000 faces is no prism | 72 s | 16 GB | 2.9 s |
+| a product's shape evaluated once (bounds, extents, footprint and body asked it four times) | 45 s | 15.7 GB | 3.1 s |
+| the file kept as bytes with an index, entities parsed when asked for; a shell over 20,000 faces built in parts on every core | **30 s** | **7.2 GB** | 3.1 s |
+
+### Still open for such a file
+- **The giant mesh as a mesh, not a solid of faces.** The dryer becomes 6.8 million `Face` objects (~0.7 GB), tessellated with its
+  vertices repeated per face (~580 MB of positions and normals) and every triangle edge (~240 MB): the 856 MB diff frame is the
+  dryer. Above a threshold, draw from the stored arrays with shared vertices and averaged normals, only the crease edges
+  (`TessellateMany`'s `creaseDeg`), and build the `Solid` only for a consumer that asks (plans, sections, exports). Expected: the
+  dryer ~1.5 GB → ~200 MB in the engine, the frame and the page alike.
+- **The recovery journal** copies an import's every entity (the dryer's body, 230 MB of base64, among them); a large import should
+  be recorded by its source file and options, and made again on recovery.
+- **Decimation for display** (a 10 % mesh for the 3D view, the full one kept), and tiles streamed by distance, for bigger files still.
+
