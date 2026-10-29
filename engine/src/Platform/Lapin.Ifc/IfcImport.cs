@@ -397,6 +397,9 @@ public static partial class IfcImport
             // parts of a native element (its body is its own), nor a door or window made with its wall.
             var native = new HashSet<int>();
             var rest = new List<StepEntity>();
+            // What the recognisers will be offered, read from the file on every core first.
+            if (!o.ReferenceOnly)
+                PrepareForeign(edit, [.. products.Where(e => !fills.Contains(e.Id) && !parentOf.ContainsKey(e.Id) && IntentOf(e.Id) == null)]);
             foreach (var e in products)
             {
                 var intent = o.ReferenceOnly ? null : IntentOf(e.Id);

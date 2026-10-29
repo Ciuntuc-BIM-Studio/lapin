@@ -105,6 +105,9 @@ public sealed partial class IfcModel
         return any ? (min, max) : null;
     }
 
+    /// <summary>The most faces a B-rep read as prisms may have.</summary>
+    const int MaxPrismFaces = 4000;
+
     /// <summary>The product's body as prisms; empty with <paramref name="why"/> set when it is not made of prisms.</summary>
     public IReadOnlyList<ShapePrism> Prisms(int product, out string? why)
     {
@@ -159,6 +162,8 @@ public sealed partial class IfcModel
             case "IFCFACETEDBREP":
             case "IFCFACETEDBREPWITHVOIDS":
             {
+                // A wall's or a slab's B-rep has tens or hundreds of faces; one of thousands (a machine's mesh) is no prism, and reading it as one took minutes.
+                if (File.Get(item[0])?[0] is List<object?> { Count: > MaxPrismFaces }) { reasons.Add("a B-rep of too many faces to be a prism"); return; }
                 var faces = BrepFaces(Items(File.Get(item[0])?[0]), at);
                 var found = PrismsOfFaces(faces, clipped);
                 if (found.Count == 0) reasons.Add("a B-rep that is not a prism"); else o.AddRange(found);

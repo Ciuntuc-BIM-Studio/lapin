@@ -63,7 +63,7 @@ public static partial class IfcImport
                 edit.Remove(gid);
                 again = true;
             }
-            var foreign = Foreign(edit, e);
+            var foreign = foreignReady.TryRemove(e.Id, out var ready) ? ready : Foreign(e, DefaultStorey(edit));
             foreach (var r in recognizers)
             {
                 string? id;
@@ -104,7 +104,29 @@ public static partial class IfcImport
                 notes.Add(g.Count() > 1 ? $"{g.Count()} × {g.Key}" : g.Key);
         }
 
-        ForeignElement Foreign(IEdit edit, StepEntity e)
+        readonly System.Collections.Concurrent.ConcurrentDictionary<int, ForeignElement> foreignReady = [];
+
+        string DefaultStorey(IEdit edit) => Spatial.Storeys(edit.Model).FirstOrDefault()?.Id ?? "";
+
+        /// <summary>
+        /// The elements the recognisers will be offered read from the file on every core (their prisms,
+        /// openings, fills, materials, parts): the heavy part of recognising, which reads only the file.
+        /// The recognisers then make them one by one, in order.
+        /// </summary>
+        void PrepareForeign(IEdit edit, IReadOnlyList<StepEntity> candidates)
+        {
+            if (recognition == null) PrepareRecognition();
+            if (recognizers.Count == 0 || candidates.Count < 8) return;
+            model.Warm();
+            var storey = DefaultStorey(edit);
+            Parallel.ForEach(candidates, e =>
+            {
+                if (e.Type is "IFCOPENINGELEMENT" || !GlobalId.IsValid(Str(e[0]) ?? "")) return;
+                foreignReady[e.Id] = Foreign(e, storey);
+            });
+        }
+
+        ForeignElement Foreign(StepEntity e, string defaultStorey)
         {
             var cls = ClassName(e.Type);
             var prisms = model.Prisms(e.Id, out var why);
@@ -128,7 +150,7 @@ public static partial class IfcImport
             }
             var type = typeOf?.GetValueOrDefault(e.Id);
             var (layers, material, usage) = MaterialOf(e.Id, type?.Id);
-            var storey = StoreyFor(e.Id) ?? Spatial.Storeys(edit.Model).FirstOrDefault()?.Id ?? "";
+            var storey = StoreyFor(e.Id) ?? defaultStorey;
             // IfcSpace: LongName [7], CompositionType [8], PredefinedType [9].
             var space = e.Type == "IFCSPACE";
             var predefined = space ? (e.Args.Count > 9 ? Enum(e[9]) : null) : e.Args.Count > 8 && e.Type is not ("IFCDOOR" or "IFCWINDOW") ? Enum(e[8]) : null;
