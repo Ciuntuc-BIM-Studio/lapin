@@ -10,8 +10,15 @@ namespace Lapin.Geometry;
 /// </summary>
 public static class MeshShading
 {
-    /// <summary>A mesh's render: shared vertices, averaged normals, crease edges (a fold of more than <paramref name="creaseDeg"/>, or an open edge).</summary>
-    public static TriMesh Smooth(ReadOnlySpan<double> xyz, ReadOnlySpan<int> tris, double creaseDeg = 30)
+    /// <summary>The most edge segments a mesh is drawn with: past it, the fold is raised, and past that the edges are left out (a mesh of millions of facets is a black blob with them).</summary>
+    public const int EdgeBudget = 500_000;
+
+    /// <summary>
+    /// A mesh's render: shared vertices, averaged normals, crease edges (a fold of more than <paramref name="creaseDeg"/>,
+    /// or an open edge). Within <paramref name="edgeBudget"/> segments: a fold of 60° or 85° instead when the crease
+    /// edges are more, and none when even those are.
+    /// </summary>
+    public static TriMesh Smooth(ReadOnlySpan<double> xyz, ReadOnlySpan<int> tris, double creaseDeg = 30, int edgeBudget = EdgeBudget)
     {
         var n = xyz.Length / 3;
         var positions = new float[n * 3];
@@ -49,21 +56,32 @@ public static class MeshShading
                 if (onEdge.TryGetValue(key, out var had)) { if (had.Second < 0) onEdge[key] = (had.First, t); }
                 else onEdge[key] = (t, -1);
             }
-        var cos = (float)Math.Cos(creaseDeg * Math.PI / 180);
-        var edges = new List<float>();
+        // Each edge's fold (the cosine between its triangles; −2 for an open edge, always drawn), then the fold drawn: the one asked, or a sharper one that fits the budget.
+        var folds = new (long Key, float Cos)[onEdge.Count];
+        var filled = 0;
         foreach (var (key, (first, second)) in onEdge)
         {
-            var crease = second < 0;
-            if (!crease)
-            {
-                var (p, q) = (faceNormal[first], faceNormal[second]);
-                crease = p.X * q.X + p.Y * q.Y + p.Z * q.Z < cos;
-            }
-            if (!crease) continue;
-            var (a, b) = EdgeKeys.Ends(key);
-            edges.Add(positions[3 * a]); edges.Add(positions[3 * a + 1]); edges.Add(positions[3 * a + 2]);
-            edges.Add(positions[3 * b]); edges.Add(positions[3 * b + 1]); edges.Add(positions[3 * b + 2]);
+            float c = -2;
+            if (second >= 0) { var (p, q) = (faceNormal[first], faceNormal[second]); c = p.X * q.X + p.Y * q.Y + p.Z * q.Z; }
+            folds[filled++] = (key, c);
         }
+        var cos = float.NaN;
+        foreach (var deg in new[] { creaseDeg, 60, 85 })
+        {
+            var at = (float)Math.Cos(deg * Math.PI / 180);
+            var count = 0;
+            foreach (var f in folds) if (f.Cos < at) count++;
+            if (count <= edgeBudget) { cos = at; break; }
+        }
+        var edges = new List<float>();
+        if (!float.IsNaN(cos))
+            foreach (var (key, c) in folds)
+            {
+                if (c >= cos) continue;
+                var (a, b) = EdgeKeys.Ends(key);
+                edges.Add(positions[3 * a]); edges.Add(positions[3 * a + 1]); edges.Add(positions[3 * a + 2]);
+                edges.Add(positions[3 * b]); edges.Add(positions[3 * b + 1]); edges.Add(positions[3 * b + 2]);
+            }
         var indices = new int[tris.Length];
         tris.CopyTo(indices);
         return new TriMesh(positions, normals, indices, [.. edges]);

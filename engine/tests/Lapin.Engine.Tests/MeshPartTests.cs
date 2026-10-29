@@ -87,4 +87,29 @@ public class MeshPartTests
         var (sv, st) = Fold(20);
         Assert.Equal(800, Assert.Single(StoredBodies.Geometry(Body(sv, st), new ModelStore(), null!)!.Parts).FaceCount);
     }
+
+    [Fact]
+    public void A_noisy_mesh_keeps_its_edges_within_a_budget_or_draws_none()
+    {
+        // A grid whose every vertex is raised at random: nearly every edge is a fold past 30°.
+        const int n = 60;
+        var rnd = new Random(7);
+        var v = new List<Vec3>();
+        var t = new List<(int, int, int)>();
+        for (var j = 0; j <= n; j++) for (var i = 0; i <= n; i++) v.Add(new Vec3(i, j, rnd.NextDouble() * 3));
+        for (var j = 0; j < n; j++) for (var i = 0; i < n; i++) { int a = j * (n + 1) + i, b = a + 1, c = a + n + 1, d = c + 1; t.Add((a, b, d)); t.Add((a, d, c)); }
+        var xyz = v.SelectMany(p => new[] { p.X, p.Y, p.Z }).ToArray();
+        var tris = t.SelectMany(x => new[] { x.Item1, x.Item2, x.Item3 }).ToArray();
+        var all = MeshShading.Smooth(xyz, tris, 30, int.MaxValue).Edges.Length / 6;
+        Assert.True(all > n * n, $"{all} creases");
+        // A budget below the creases at 30°: a sharper fold that fits, fewer edges, the open ones (the rim) always among them.
+        var budget = all / 2;
+        var some = MeshShading.Smooth(xyz, tris, 30, budget).Edges.Length / 6;
+        Assert.InRange(some, 4 * n, budget);
+        // A budget under even the rim: no edges at all.
+        Assert.Empty(MeshShading.Smooth(xyz, tris, 30, 4 * n - 1).Edges);
+        // Its normals and triangles are the same whatever the edges.
+        Assert.Equal(v.Count * 3, MeshShading.Smooth(xyz, tris, 30, 0).Positions.Length);
+    }
 }
+
