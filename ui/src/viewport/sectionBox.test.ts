@@ -60,3 +60,14 @@ describe('the section box', () => {
     expect(b.max[1] - b.min[1]).toBeCloseTo(0);
   });
 });
+
+describe('the model\'s bounds with instances (docs/plan-instancing.md)', () => {
+  it('an instance counts by its mesh\'s box, placed', () => {
+    const mesh = { id: 'm', parts: [], box: new Float32Array([-0.5, -0.5, 0, 0.5, 0.5, 1]) };
+    const inst = { nodeId: 'a', positions: new Float32Array(), parts: [], instance: { mesh: 'm', matrix: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 4, 0]) } } as unknown as RenderItem;
+    const b = modelBounds([inst], 0, 0, new Map([['m', mesh]]))!;
+    expect(b.min).toEqual([19.5, 3.5, 0]);
+    expect(b.max).toEqual([20.5, 4.5, 1]);
+  });
+});
+

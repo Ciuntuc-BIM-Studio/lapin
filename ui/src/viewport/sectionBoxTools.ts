@@ -26,7 +26,7 @@ const set = (box: SectionBox | null) => { useSectionBox.setState({ box }); commi
 
 /** The box round everything drawn (turned as it is). */
 export function fitSectionBox(): void {
-  const box = modelBounds(useSession.getState().render.values(), 0.5, useSectionBox.getState().box?.rot ?? 0);
+  const box = modelBounds(useSession.getState().render.values(), 0.5, useSectionBox.getState().box?.rot ?? 0, useSession.getState().meshes);
   if (box) set(box);
 }
 
@@ -64,7 +64,7 @@ export async function cutAtPlan(): Promise<void> {
     ?? [...nodes.values()].find((n) => n.type === 'LapinView' && n.props.kind === 'plan' && n.props.storeyId === storey.id);
   const range = plan ? await query<{ resolved: { cut: number } }>('view.range', { id: plan.id }) : null;
   const cut = range?.resolved.cut ?? num(storey, 'elevation') + 1.2;
-  const box = useSectionBox.getState().box ?? modelBounds(useSession.getState().render.values());
+  const box = useSectionBox.getState().box ?? modelBounds(useSession.getState().render.values(), 0.5, 0, useSession.getState().meshes);
   if (!box) return;
   useUi.setState({ view: '3d' });
   set({ ...box, min: [...box.min], max: [box.max[0], box.max[1], Math.max(cut, box.min[2] + 0.05)] });

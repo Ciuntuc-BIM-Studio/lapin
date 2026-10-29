@@ -36,6 +36,8 @@ import { useDrawing, type DrawingDto } from './drawing';
 import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPlanes, sectionPose, textFont, textQuad, useClip3d, useSection3d, type ClipPlane, type DrawingText, type ViewFrameDto } from './section3d';
 import { clampPitch, easeEye, exitWalk, lookVector, toggleFly, useWalk, walkStep, walkWish, EYE_HEIGHT, WALK_KEYS, type WalkStart } from './walk';
 import { TICK, Walker, worldOf } from './walkPhysics';
+import { InstanceLayer } from './instancing';
+import { inWorld } from '../engine/instances';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
@@ -239,9 +241,12 @@ const gridBase = (nodes: Map<string, NodeDto>) => {
 /** A named face as the engine gives it (core.faceAt). */
 interface FaceDto { role: string; label: string; normal: number[]; outline: number[][] }
 
-/** Where a ray hit: the point, and the hit triangle's normal in the world. */
+/** Where a ray hit: the point, and the hit triangle's normal in the world (an instance's turned by its matrix first). */
 function faceHit(hit: THREE.Intersection): FaceHit {
-  const n = hit.face ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld) : null;
+  const n = hit.face ? hit.face.normal.clone() : null;
+  const inst = hit.object as THREE.InstancedMesh;
+  if (n && inst.isInstancedMesh && hit.instanceId !== undefined) { const m = new THREE.Matrix4(); inst.getMatrixAt(hit.instanceId, m); n.transformDirection(m); }
+  n?.transformDirection(hit.object.matrixWorld);
   return { point: [hit.point.x, hit.point.y, hit.point.z], ...(n ? { normal: [n.x, n.y, n.z] } : {}) };
 }
 
@@ -381,6 +386,8 @@ export function Viewport3D() {
   // Frames are drawn on demand: when the camera moves, the view resizes or the scene changes.
   const invalidate = useRef<() => void>(() => undefined);
   const items = useRef(new Map<string, { item: RenderItem; object: THREE.Group }>());
+  /** The elements drawn as instances of shared meshes (instancing.ts). */
+  const instances = useRef<InstanceLayer | null>(null);
   /** The cut elements' caps, by element (a section or the section box shown). */
   const caps = useRef(new Map<string, THREE.Group>());
   /** The caps' meshes as the engine sent them, for the walker to collide with. */
@@ -499,6 +506,7 @@ export function Viewport3D() {
       fit: (animate = true) => {
         const box = new THREE.Box3();
         for (const { object } of live.values()) if (object.visible) box.expandByObject(object);
+        layer.expand(box, useLooks.getState().looks);
         if (box.isEmpty()) box.set(new THREE.Vector3(-5, -5, 0), new THREE.Vector3(5, 5, 3));
         const centre = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
         const radius = Math.max(size.length() / 2, 1);
@@ -543,6 +551,7 @@ export function Viewport3D() {
       }
       const box = new THREE.Box3();
       for (const { object } of items.current.values()) if (object.visible) box.expandByObject(object);
+      instances.current?.expand(box, useLooks.getState().looks);
       if (box.isEmpty()) box.set(new THREE.Vector3(-10, -10, 0), new THREE.Vector3(10, 10, 10));
       const centre = box.getCenter(new THREE.Vector3());
       const radius = Math.max(box.getSize(new THREE.Vector3()).length() / 2, 5);
@@ -562,6 +571,9 @@ export function Viewport3D() {
     };
     const unsunlight = useSunlight.subscribe(aimSun);
     s.add(groundGrid(useUi.getState().theme, elevationRef.current));
+    const layer = new InstanceLayer(EDGES);
+    s.add(layer.group);
+    instances.current = layer;
 
     let frame = 0;
     invalidate.current = () => {
@@ -591,9 +603,12 @@ export function Viewport3D() {
     const pickAt = () => {
       const meshes: THREE.Object3D[] = [];
       for (const { object } of live.values()) if (object.visible) meshes.push(object);
+      meshes.push(...layer.pickables());
       const cut = cutRef.current;
-      return ray.intersectObjects(meshes, true).find((h) => h.object.userData.nodeId && (cut === null || h.point.z <= cut + 1e-3));
+      return ray.intersectObjects(meshes, true).find((h) => nodeOfHit(h) && (cut === null || h.point.z <= cut + 1e-3));
     };
+    /** The element a hit is on: its own mesh's, or the instance's. */
+    const nodeOfHit = (h: THREE.Intersection | undefined) => (h ? (h.object.userData.nodeId as string | undefined) ?? layer.nodeOf(h) : undefined);
     let down: { x: number; y: number } | null = null;
     const onDown = (e: PointerEvent) => { down = { x: e.clientX, y: e.clientY }; };
     const onUp = (e: PointerEvent) => {
@@ -606,7 +621,7 @@ export function Viewport3D() {
       const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -elevationRef.current);
       const g = ray.ray.intersectPlane(plane, new THREE.Vector3());
       clickRef.current({
-        nodeId: (hit?.object.userData.nodeId as string | undefined) ?? null,
+        nodeId: nodeOfHit(hit) ?? null,
         ground: g ? { x: Math.round(g.x * 20) / 20, y: Math.round(g.y * 20) / 20 } : null,
         add: e.shiftKey,
         face: hit ? faceHit(hit) : undefined,
@@ -633,7 +648,7 @@ export function Viewport3D() {
         const r = renderer.domElement.getBoundingClientRect();
         ray.setFromCamera(new THREE.Vector2(((at.x - r.left) / r.width) * 2 - 1, -((at.y - r.top) / r.height) * 2 + 1), cam);
         const hit = pickAt();
-        const id = hit?.object.userData.nodeId as string | undefined;
+        const id = nodeOfHit(hit);
         const node = id ? useSession.getState().nodes.get(id) : undefined;
         if (!hit || !node || !types.includes(node.type)) { if (hoverKey) { hoverKey = ''; showFace(null); setFaceLabel(null); } return; }
         const f = faceHit(hit);
@@ -659,7 +674,13 @@ export function Viewport3D() {
       if (!w.stale) return w.body;
       w.stale = false;
       const planes = (renderer.clippingPlanes ?? []).map((p) => ({ normal: [p.normal.x, p.normal.y, p.normal.z] as const, constant: p.constant }));
-      const world = worldOf(Array.from(items.current.values()).filter((e) => e.object.visible).map((e) => e.item), undefined, {
+      // The instances too, placed: all of them in a small model, those within 60 m of the walker in a big one.
+      const looks = useLooks.getState().looks, meshes = useSession.getState().meshes;
+      const few = layer.count() <= 5000;
+      const near = [...layer.placed()]
+        .filter(({ item, at }) => !looks[item.nodeId]?.hidden && (few || Math.hypot(at[0] - w.pos.x, at[1] - w.pos.y) < 60))
+        .map(({ item }) => inWorld(item, meshes));
+      const world = worldOf([...Array.from(items.current.values()).filter((e) => e.object.visible).map((e) => e.item), ...near], undefined, {
         planes, extra: capItems.current.flatMap((c) => c.parts),
       });
       if (w.body) { w.body.world = world; return w.body; }
@@ -833,6 +854,9 @@ export function Viewport3D() {
       dispose(s);
       s.clear();
       live.clear();
+      layer.batches.clear();
+      layer.known.clear();
+      instances.current = null;
       scene.current = null;
       rendererRef.current = null;
       renderer.dispose();
@@ -890,6 +914,7 @@ export function Viewport3D() {
 
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);
+  const meshes = useSession((st) => st.meshes);
   // A saved 3D view opened: its camera (where it looks from, perspective or orthographic).
   const view3dId = useUi((st) => st.view3dId);
   useEffect(() => {
@@ -929,13 +954,13 @@ export function Viewport3D() {
     const live = items.current;
     for (const [id, entry] of live) {
       const now = render.get(id);
-      if (now && shownIn(now, layers) === entry.item) continue;
+      if (now && !now.instance && shownIn(now, layers) === entry.item) continue;
       s.remove(entry.object);
       dispose(entry.object);
       live.delete(id);
     }
     for (const [id, whole] of render) {
-      if (live.has(id)) continue;
+      if (live.has(id) || whole.instance) continue;
       const item = shownIn(whole, layers);
       const object = meshOf(item);
       s.add(object);
@@ -957,8 +982,11 @@ export function Viewport3D() {
         else if ((c as THREE.LineSegments).isLineSegments) c.visible = visualStyle !== 'shaded';
       });
     }
+    // The instances of shared meshes: added, moved, taken out; drawn as their looks and the selection say.
+    const layer = instances.current;
+    if (layer) { layer.sync(render, meshes); layer.restyle(looks, selected, visualStyle, layers); }
     invalidate.current();
-  }, [render, layers, selected, looks, visualStyle, walking, capsShown]);
+  }, [render, meshes, layers, selected, looks, visualStyle, walking, capsShown]);
 
   // A walk asked for (a plan's right-click on a room), or ended; the model changed or shown otherwise under a walker.
   useEffect(() => { if (walkStart) walkApi.current.start(walkStart); else walkApi.current.stop(); }, [walkStart]);

@@ -10,7 +10,7 @@ import { EngineClient, engineUrl, LONG_TIMEOUT_MS } from './client';
 import { workerTransport } from './workerTransport';
 import { invitation, relayTransport, savedName, setPresenceSender, useShare, type Participant, type ShareStatus } from './share';
 import { notify } from '../app/store';
-import type { Diff, DocState, NodeDto, RelationDto, RenderItem, SessionInfo } from './protocol';
+import type { Diff, DocState, NodeDto, RelationDto, RenderItem, SessionInfo, SharedMesh } from './protocol';
 import { storeys } from './model';
 import { useUi } from '../app/store';
 import { useStandards, type Unit } from './unitsStore';
@@ -21,6 +21,8 @@ export interface SessionState {
   nodes: Map<string, NodeDto>;
   relations: Map<string, RelationDto>;
   render: Map<string, RenderItem>;
+  /** The shared meshes the render's instances use, by id. */
+  meshes: Map<string, SharedMesh>;
   doc: DocState | null;
   version: number;
   error: string | null;
@@ -29,7 +31,7 @@ export interface SessionState {
 }
 
 export const useSession = create<SessionState>(() => ({
-  connected: false, info: null, nodes: new Map(), relations: new Map(), render: new Map(), doc: null, version: -1, error: null, engineProblem: null,
+  connected: false, info: null, nodes: new Map(), relations: new Map(), render: new Map(), meshes: new Map(), doc: null, version: -1, error: null, engineProblem: null,
 }));
 
 /** The web build runs the engine in a worker (VITE_ENGINE=worker); the desktop app and pnpm dev reach the local engine over its WebSocket. */
@@ -52,7 +54,13 @@ export function applyDiff(d: Diff): void {
   for (const r of d.relations) relations.set(r.id, r);
   for (const id of d.renderRemoved) render.delete(id);
   for (const r of d.render) render.set(r.nodeId, r);
-  useSession.setState({ nodes, relations, render, doc: d.state, version: d.version });
+  let meshes = s.meshes;
+  if (d.reset || d.meshes?.length || d.meshesRemoved?.length) {
+    meshes = d.reset ? new Map() : new Map(s.meshes);
+    for (const id of d.meshesRemoved ?? []) meshes.delete(id);
+    for (const m of d.meshes ?? []) meshes.set(m.id, m);
+  }
+  useSession.setState({ nodes, relations, render, meshes, doc: d.state, version: d.version });
   void refreshStandards();
   // A selection the edit took away goes too.
   const { selection: sel, selected } = useUi.getState();

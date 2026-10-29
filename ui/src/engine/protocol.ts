@@ -60,7 +60,15 @@ export interface RenderItem {
   snaps: number[];
   diagnostics: string[];
   parts?: RenderPart[] | null;
+  /** Drawn as an instance of a shared mesh (docs/plan-instancing.md): its parts are the mesh's, placed by the matrix. */
+  instance?: RenderInstance | null;
 }
+
+/** A shared mesh's placement: 12 numbers, the images of X, Y and Z and of the origin (p ↦ O + X·x + Y·y + Z·z). */
+export interface RenderInstance { mesh: string; matrix: Float32Array }
+
+/** A mesh many elements are drawn with, in its own coordinates; `box`: min x y z, max x y z. */
+export interface SharedMesh { id: string; parts: RenderPart[]; box: Float32Array }
 
 export interface DocState {
   canUndo: boolean; canRedo: boolean;
@@ -78,6 +86,9 @@ export interface Diff {
   state: DocState;
   relations: RelationDto[];
   removedRelations: string[];
+  /** Shared meshes new or changed (all of them on a reset), and those gone. */
+  meshes?: SharedMesh[] | null;
+  meshesRemoved?: string[] | null;
 }
 
 export interface FieldDescriptor {

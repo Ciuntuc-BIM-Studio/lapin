@@ -12,7 +12,8 @@
  */
 
 import { create } from 'zustand';
-import type { RenderItem } from '../engine/protocol';
+import type { RenderItem, SharedMesh } from '../engine/protocol';
+import { placedBox } from '../engine/instances';
 import type { Vec3 } from './camera';
 import type { ClipPlane } from './section3d';
 
@@ -53,8 +54,8 @@ export function boxPlanes(b: SectionBox): ClipPlane[] {
   return planes;
 }
 
-/** Everything drawn, as a box (turned by `rot`) a little larger than it (null: nothing drawn). */
-export function modelBounds(items: Iterable<RenderItem>, pad = 0.5, rot = 0): SectionBox | null {
+/** Everything drawn, as a box (turned by `rot`) a little larger than it (null: nothing drawn); an instance by its mesh's box, placed. */
+export function modelBounds(items: Iterable<RenderItem>, pad = 0.5, rot = 0, meshes?: ReadonlyMap<string, SharedMesh>): SectionBox | null {
   const frame: SectionBox = { min: [0, 0, 0], max: [0, 0, 0], rot };
   const min: Triple = [Infinity, Infinity, Infinity], max: Triple = [-Infinity, -Infinity, -Infinity];
   const take = (p: ArrayLike<number>) => {
@@ -63,7 +64,16 @@ export function modelBounds(items: Iterable<RenderItem>, pad = 0.5, rot = 0): Se
       for (let k = 0; k < 3; k++) { min[k] = Math.min(min[k], q[k]); max[k] = Math.max(max[k], q[k]); }
     }
   };
-  for (const item of items) { take(item.positions); for (const p of item.parts ?? []) take(p.positions); }
+  for (const item of items) {
+    const mesh = item.instance ? meshes?.get(item.instance.mesh) : undefined;
+    if (item.instance && mesh) {
+      const q = placedBox(mesh.box, item.instance.matrix);
+      for (let k = 0; k < 8; k++) take([q[k & 1 ? 3 : 0], q[k & 2 ? 4 : 1], q[k & 4 ? 5 : 2]]);
+      continue;
+    }
+    take(item.positions);
+    for (const p of item.parts ?? []) take(p.positions);
+  }
   if (!(min[0] <= max[0])) return null;
   const box: SectionBox = { min: [min[0] - pad, min[1] - pad, min[2] - pad], max: [max[0] + pad, max[1] + pad, max[2] + pad] };
   if (rot) box.rot = rot;

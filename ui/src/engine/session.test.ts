@@ -23,7 +23,7 @@ const diff = (d: Partial<Diff>): Diff => ({
 const ids = (m: Map<string, unknown>) => [...m.keys()].sort();
 
 beforeEach(() => {
-  useSession.setState({ nodes: new Map(), relations: new Map(), render: new Map(), doc: null, version: -1 });
+  useSession.setState({ nodes: new Map(), relations: new Map(), render: new Map(), meshes: new Map(), doc: null, version: -1 });
   useUi.setState({ selection: null, selected: [], storeyId: null, wallTypeId: null, slabTypeId: null, doorTypeId: null, windowTypeId: null });
 });
 
@@ -86,5 +86,34 @@ describe('applyDiff', () => {
     applyDiff(diff({ version: 3, removedNodes: ['s', 'st', 'wn'] }));
     ui = useUi.getState();
     expect([ui.storeyId, ui.slabTypeId, ui.windowTypeId]).toEqual([null, null, null]);
+  });
+});
+
+describe('applyDiff over parts and shared meshes (docs/plan-instancing.md)', () => {
+  const mesh = (id: string) => ({ id, parts: [], box: new Float32Array(6) });
+  const inst = (nodeId: string, m: string): RenderItem => ({ nodeId, instance: { mesh: m, matrix: new Float32Array(12) } } as unknown as RenderItem);
+  it('a big snapshot in parts: the first resets, the next ones add, in order', () => {
+    applyDiff(diff({ version: 1, reset: true, nodes: [node('old')], render: [item('old')] }));
+    applyDiff(diff({ version: 5, reset: true, nodes: [node('a')], render: [inst('a', 'm')], meshes: [mesh('m')] }));
+    applyDiff(diff({ version: 6, nodes: [node('b')], render: [inst('b', 'm')] }));
+    applyDiff(diff({ version: 7, nodes: [node('c')], render: [inst('c', 'm')] }));
+    const s = useSession.getState();
+    expect(ids(s.nodes)).toEqual(['a', 'b', 'c']);
+    expect(ids(s.render)).toEqual(['a', 'b', 'c']);
+    expect(ids(s.meshes)).toEqual(['m']);
+    expect(s.version).toBe(7);
+    // A part arriving late (an older version) is skipped.
+    applyDiff(diff({ version: 6, nodes: [node('late')] }));
+    expect(useSession.getState().nodes.has('late')).toBe(false);
+  });
+  it('meshes come and go with their diffs; a diff without them keeps the map as it is', () => {
+    applyDiff(diff({ version: 1, reset: true, meshes: [mesh('m'), mesh('n')] }));
+    const before = useSession.getState().meshes;
+    applyDiff(diff({ version: 2, nodes: [node('a')] }));
+    expect(useSession.getState().meshes).toBe(before);
+    applyDiff(diff({ version: 3, meshesRemoved: ['n'] }));
+    expect(ids(useSession.getState().meshes)).toEqual(['m']);
+    applyDiff(diff({ version: 4, reset: true }));
+    expect(useSession.getState().meshes.size).toBe(0);
   });
 });
