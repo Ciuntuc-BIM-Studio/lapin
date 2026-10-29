@@ -19,12 +19,14 @@ const productId = process.env.LAPIN_PRODUCT ?? 'lapin';
 let product;
 try { product = resolveProduct(root, productId); } catch (e) { console.error(e.message); process.exit(1); }
 
-console.log('▸ building the engine…');
-const build = spawnSync('dotnet', ['build', join(engine, 'Lapin.slnx'), '-v', 'q', '-nologo'], { cwd: root, stdio: 'inherit' });
+// LAPIN_ENGINE_CONFIG=Release: the engine as a build ships it, for timing a big model as the user would see it (Debug by default: it builds faster).
+const config = process.env.LAPIN_ENGINE_CONFIG ?? 'Debug';
+console.log(`▸ building the engine (${config})…`);
+const build = spawnSync('dotnet', ['build', join(engine, 'Lapin.slnx'), '-c', config, '-v', 'q', '-nologo'], { cwd: root, stdio: 'inherit' });
 if (build.status !== 0) process.exit(build.status ?? 1);
 // A module from a sibling repository (a private one) is not in the solution: built on its own, it lands in artifacts/modules like the others.
 for (const csproj of product.engineProjects ?? []) {
-  const b = spawnSync('dotnet', ['build', csproj, '-v', 'q', '-nologo'], { cwd: root, stdio: 'inherit' });
+  const b = spawnSync('dotnet', ['build', csproj, '-c', config, '-v', 'q', '-nologo'], { cwd: root, stdio: 'inherit' });
   if (b.status !== 0) process.exit(b.status ?? 1);
 }
 
@@ -53,7 +55,7 @@ const run = (name, cmd, args, opts = {}) => {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-const hostDll = join(engine, 'src/Host/Lapin.Host/bin/Debug/net10.0/Lapin.Host.dll');
+const hostDll = join(engine, `src/Host/Lapin.Host/bin/${config}/net10.0/Lapin.Host.dll`);
 console.log(`▸ ${product.name}: ${product.modules.join(' + ')} on ws://127.0.0.1:${PORT}/ws`);
 // The dev engine keeps its user data (recovery journals) in the repository, apart from an installed Lapin's.
 run('engine', 'dotnet', [hostDll, '--product', manifest, '--modules-dir', join(engine, 'artifacts/modules'), '--user-dir', join(root, '.artifacts/user'), '--port', String(PORT), '--parent-pid', String(process.pid)]);

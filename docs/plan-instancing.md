@@ -178,6 +178,11 @@ recognised and 2,255 references throughout):
 
 The diff frame of this model went from 856 MB to 349 MB with the mesh parts.
 
+In the app (`LAPIN_ENGINE_CONFIG=Release pnpm dev`, Chrome): from the import call until every element is in the page, 30 s
+(62 s with the Debug engine `pnpm dev` builds by default); 1,151 of its 2,846 elements are instances of 84 shared meshes;
+the 3D view fitted in 3.5 s, 60 fps turning, a pick 0.8 s, the page 1.1 GB. The ~11 s past the engine's import are the
+349 MB frame encoded, sent, decoded and applied.
+
 ### Still open for such a file
 - **A mesh part's solid, once a consumer asked for it, stays** in the stored bodies' cache (6.8 million `Face` objects for the dryer,
   ~0.7 GB): the plan, a section or an export brings it back. Making it for the consumer alone and letting it go is the next step.
