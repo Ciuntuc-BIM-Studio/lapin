@@ -24,6 +24,13 @@ public sealed class MeshBuilder
     public void Polygon(int[] outer, int[][] holes)
     {
         if (outer.Length < 3) return;
+        // A triangle (a mesh exported face by face): as it is, unless it has no area.
+        if (outer.Length == 3 && holes.Length == 0)
+        {
+            var (a, b, c) = (V[outer[0]], V[outer[1]], V[outer[2]]);
+            if (Vec3.Cross(b - a, c - a).Length >= 1e-12) T.Add((outer[0], outer[1], outer[2]));
+            return;
+        }
         var n = VecMath.NewellNormal([.. outer.Select(i => V[i])]);
         if (n.Length < 1e-12) return;
         foreach (var t in Triangulator.Face(V, outer, holes.Where(h => h.Length >= 3).ToArray(), n.Normalized())) T.Add(t);
@@ -304,12 +311,33 @@ public sealed partial class IfcModel
 
     static readonly HashSet<string> NotBody = ["AXIS", "FOOTPRINT", "BOX", "ANNOTATION", "PROFILE", "SURFACE", "REFERENCE", "LIGHTSOURCE"];
 
+    readonly System.Collections.Concurrent.ConcurrentDictionary<(int, bool), Lazy<(List<(MeshBuilder Mesh, string? Colour)> Body, List<MeshBuilder> Openings)>> _shapes = [];
+
     /// <summary>
     /// A product's body as meshes in world coordinates, each with its colour;
     /// the openings that void it, as meshes too. With booleans, a clipped or
-    /// subtracted body is cut; without, it is its first operand.
+    /// subtracted body is cut; without, it is its first operand. Evaluated once
+    /// per product (with booleans or without, only where it has any): its bounds,
+    /// extents, footprint and body asked it up to four times, and a machine's
+    /// mesh of millions of faces took tens of seconds each. The meshes are
+    /// shared: callers read them, or weld copies.
     /// </summary>
     public (List<(MeshBuilder Mesh, string? Colour)> Body, List<MeshBuilder> Openings) Shape(int product, ISolidBooleans? booleans = null)
+    {
+        var cut = booleans != null && HasBooleans(product);
+        return _shapes.GetOrAdd((product, cut), _ => new(() => Evaluate(product, cut ? booleans : null))).Value;
+    }
+
+    /// <summary>Whether a product's body (or an opening's) has a boolean anywhere in it: only then do booleans change its shape.</summary>
+    bool HasBooleans(int product)
+    {
+        bool In(StepEntity? item, int depth) => item != null && depth < 32 && (item.Type is "IFCBOOLEANRESULT" or "IFCBOOLEANCLIPPINGRESULT"
+            || item.Type == "IFCMAPPEDITEM" && Items(File.Get(File.Get(item[0])?[1])?[3]).Any(x => In(x, depth + 1)));
+        bool Of(StepEntity? e) => e != null && Items(File.Get(e[6])?[2]).Any(rep => Items(rep[3]).Any(x => In(x, 0)));
+        return Of(File.Entities.GetValueOrDefault(product)) || (_openings.GetValueOrDefault(product) ?? []).Any(o => Of(File.Entities.GetValueOrDefault(o)));
+    }
+
+    (List<(MeshBuilder Mesh, string? Colour)> Body, List<MeshBuilder> Openings) Evaluate(int product, ISolidBooleans? booleans)
     {
         var e = File.Entities[product];
         var body = Body(e, booleans);
