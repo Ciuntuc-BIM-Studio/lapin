@@ -1,6 +1,8 @@
-# Large models: shared bodies and instancing (decision 164)
+# Large models: shared bodies and instancing (decision 166)
 
 Branch `perf/instancing`. Merged into `main` when every stage below passes its tests.
+
+**Status (29.10.2026): stages 1–4 done, and stage 5 for IFC.** Results are under "Measured after", and what is left under "Still open".
 
 ## Why
 
@@ -123,3 +125,37 @@ These are BubbleBIM's own techniques, rewritten here (MIT). No MPL code is used:
 5. **Exports** (IFC map and glTF nodes), if stages 1–4 are in.
 
 Merged into `main` when the engine's tests (xUnit), the UI's tests (vitest) and typecheck pass, and the 100k file works in the app.
+
+## Measured after (29.10.2026, M1 Max, Release; `LAPIN_IFC_BENCH`)
+
+| | 10k | 100k | 1M (before) |
+|---|---|---|---|
+| import | 0.76 s | 4.8 s | **61 s** (113 s) |
+| managed memory after import | 0.2 GB | 1.1 GB | **9.7 GB** (21 GB) |
+| the import's diff | 9 MB | 91 MB | 913 MB, sent in parts of 20,000 (failed: over 2 GB) |
+| snapshot | 0.2 s | 1.0 s | **12 s** (49 s) |
+| plan drawing | 0.7 s | 2.8 s | 62 s (70 s) |
+| save / open `.lapin` | 0.17 / 0.34 s | 1.2 / 2.0 s | **9 / 23 s** (18 / 88 s) |
+
+In the app (dev, engine in Debug, Chrome; `pnpm dev`, a Playwright script):
+
+| | 10k | 100k | 1M |
+|---|---|---|---|
+| import, until every element is in the page | 1 s | 7.6 s | 130 s |
+| the 3D view shown and fitted | – | 3.5 s | 7.8 s |
+| a frame while turning, median / p95 | 17 / 17 ms | 17 / 17 ms | 17 / 150 ms |
+| a pick | 0.8 s | 0.9 s | 1.8 s |
+| the page's memory: JS heap after GC / renderer RSS | – | 123 MB / 476 MB | 1.07 GB / 1.64 GB |
+
+- **Small arrays copied out of frames** (an instance's matrix; one shared object for every empty list). A typed array view kept its whole 20 MB frame alive. At 100k this took the renderer from 566 to 476 MB, and at 1M the JS heap from 4.2 GB to 1.07 GB.
+
+## Still open
+- **glTF/GLB, USD and COLLADA with real instancing** (one mesh, a node per instance; `EXT_mesh_gpu_instancing`). Today the export bakes every instance; the scene model (`MeshScene`) and its three writers need a shared mesh.
+- **The plan at 1M** (62 s): every instance's solid goes through the hidden-line drawing. The fix is to draw a shared body's plan once and place it.
+- **Picking at 1M** (1.8 s): the InstancedMesh raycast tries every instance. The fix is a BVH over the instances' boxes.
+- **Hitches while turning at 1M** (p95 150 ms), likely the garbage collector. Restyling only what changed is in; checking the rest is open.
+- **The walker** takes instances within 60 m of where the walk starts, not of where it is now.
+- **One opacity per batch** for the faded instances: the first faded instance's. Mixed fades in one mesh (a phase's and a link's halftone) show the same.
+- **Files written in world coordinates** (no shared representation) are not shared yet. BubbleBIM's hash of the centred mesh would catch translated copies.
+- Tiles, streaming by distance, an LRU budget and a persistent cache (BubbleBIM's `TileStreamingManager`) are for files beyond a few million elements.
+
