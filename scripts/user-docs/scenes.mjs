@@ -173,6 +173,40 @@ export const scenes = [
     },
   },
   {
+    id: 'stairs',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      // The porch: a floor outside the front wall, in front of the door, its top at ±0.00.
+      await t.cmd('architecture.addSlab', { storeyId: storey, points: [[1.8, -1.6], [4.2, -1.6], [4.2, 0], [1.8, 0]] });
+      await t.ui({ keyPlan: false });
+      await t.wait(800);
+      await t.fit();
+      // Zoomed out a little, about the house, so the porch and the way down stand clear of the quick tools.
+      { const [px, py] = await t.planPoint(6, 4); await t.page.mouse.move(px, py); await t.page.mouse.wheel(0, 400); await t.wait(600); }
+      // Entrance steps with the tool: the middle of the porch's edge, then the way down.
+      await t.tool('architecture.entranceSteps');
+      for (const [x, y] of [[3, -1.6], [3, -3]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(500); }
+      await t.keys('Escape');
+      const stair = (await t.nodes()).find((n) => n.type === 'IfcStair');
+      t.expect(stair, 'entrance steps placed in front of the porch');
+      t.expect(Math.abs((stair.props.baseOffset ?? 0) + 0.45) < 1e-6, `the steps start 450 mm below the storey (base offset ${stair.props.baseOffset})`);
+      await t.wait(800);
+      await t.shot('entrance-steps-plan', { of: '[data-testid=plan]', pad: 0 });
+      await select(t, stair.id);
+      await t.wait(800);
+      await t.shot('entrance-steps-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+      await t.tool('architecture.stairTypes');
+      t.expect(await t.page.locator('[aria-label="Stair types"]').count() > 0, 'the Stair types dialog opens');
+      await t.page.locator('.dialog .type-list').getByText('Entrance steps', { exact: false }).first().click();
+      await t.wait(1500);
+      await t.shot('stair-types', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null, keyPlan: true });
+      await open3d(t);
+      await t.shot('entrance-steps-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'rooms',
     async run(t) {
       await t.fresh();

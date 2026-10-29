@@ -10,6 +10,8 @@ Choose **Architecture → Floor** (<kbd>SB</kbd>), then click the corners of its
 
 To change the outline, select the floor and drag its corners. **Floor opening** (<kbd>SH</kbd>) cuts a hole in a floor, for a stair or a shaft.
 
+A floor drawn outside the walls, in front of a door, is a porch. For the steps up to it, see [Stairs](stairs.md).
+
 ## Roofs
 
 Choose **Architecture → Roof** (<kbd>RF</kbd>) and click the outline of the walls under it. Lapin builds the roof over that outline, at the top of its level.
