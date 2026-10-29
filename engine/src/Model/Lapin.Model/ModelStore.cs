@@ -11,6 +11,8 @@ public interface IModelView
     IEnumerable<Entity> OfClass(string @class);
     /// <summary>The relationships <paramref name="id"/> takes part in, relating or related, in creation order.</summary>
     IEnumerable<Relation> RelationsOf(string id, string? relationClass = null);
+    /// <summary>The relationships <paramref name="id"/> is related by (among their related, not relating), in creation order: an element's storey's, its type's.</summary>
+    IEnumerable<Relation> RelatedBy(string id, string? relationClass = null) => RelationsOf(id, relationClass).Where(r => r.Related.Contains(id));
     /// <summary>Position in the document: creation order, where "older" decides.</summary>
     int Order(string id);
     /// <summary>Changes with every edit: what a derived value is cached against.</summary>
@@ -21,7 +23,7 @@ public static class ModelViewExtensions
 {
     /// <summary>The entity relating <paramref name="id"/> through a relationship of <paramref name="relationClass"/>: a wall's storey, its type.</summary>
     public static Entity? RelatingOf(this IModelView m, string id, string relationClass) =>
-        m.RelationsOf(id, relationClass).Where(r => r.Related.Contains(id)).Select(r => m.Get(r.Relating)).FirstOrDefault(e => e != null);
+        m.RelatedBy(id, relationClass).Select(r => m.Get(r.Relating)).FirstOrDefault(e => e != null);
 
     /// <summary>The entities <paramref name="id"/> relates through relationships of <paramref name="relationClass"/>, in order: a storey's elements.</summary>
     public static IEnumerable<Entity> RelatedOf(this IModelView m, string id, string relationClass) =>
@@ -29,7 +31,7 @@ public static class ModelViewExtensions
 
     /// <summary>The relationship of <paramref name="relationClass"/> that <paramref name="id"/> is related by, if any.</summary>
     public static Relation? RelationRelating(this IModelView m, string id, string relationClass) =>
-        m.RelationsOf(id, relationClass).FirstOrDefault(r => r.Related.Contains(id));
+        m.RelatedBy(id, relationClass).FirstOrDefault();
 }
 
 /// <summary>
@@ -44,6 +46,8 @@ public sealed class ModelStore : IModelView
     readonly Dictionary<string, int> _order = [];
     readonly Dictionary<string, HashSet<string>> _byClass = [];
     readonly Dictionary<string, HashSet<string>> _touching = [];
+    // Each id's relationships where it is among the related: a storey's containment holds every element on it, too long to search for each one.
+    readonly Dictionary<string, HashSet<string>> _relatedIn = [];
     int _next;
 
     public long Revision { get; private set; }
@@ -60,6 +64,11 @@ public sealed class ModelStore : IModelView
 
     public IEnumerable<Relation> RelationsOf(string id, string? relationClass = null) =>
         _touching.TryGetValue(id, out var ids)
+            ? ids.Select(r => _relations[r]).Where(r => relationClass == null || r.Class == relationClass).OrderBy(r => _order[r.Id])
+            : [];
+
+    public IEnumerable<Relation> RelatedBy(string id, string? relationClass = null) =>
+        _relatedIn.TryGetValue(id, out var ids)
             ? ids.Select(r => _relations[r]).Where(r => relationClass == null || r.Class == relationClass).OrderBy(r => _order[r.Id])
             : [];
 
@@ -90,6 +99,8 @@ public sealed class ModelStore : IModelView
         Place(r.Id, order);
         foreach (var id in r.Related.Prepend(r.Relating))
             (_touching.TryGetValue(id, out var set) ? set : _touching[id] = []).Add(r.Id);
+        foreach (var id in r.Related)
+            (_relatedIn.TryGetValue(id, out var set) ? set : _relatedIn[id] = []).Add(r.Id);
         Revision++;
     }
 
@@ -105,6 +116,8 @@ public sealed class ModelStore : IModelView
     {
         foreach (var id in r.Related.Prepend(r.Relating))
             if (_touching.TryGetValue(id, out var set)) { set.Remove(r.Id); if (set.Count == 0) _touching.Remove(id); }
+        foreach (var id in r.Related)
+            if (_relatedIn.TryGetValue(id, out var set)) { set.Remove(r.Id); if (set.Count == 0) _relatedIn.Remove(id); }
     }
 
     void Place(string id, int? order)
@@ -115,7 +128,7 @@ public sealed class ModelStore : IModelView
 
     internal void Clear()
     {
-        _entities.Clear(); _relations.Clear(); _order.Clear(); _byClass.Clear(); _touching.Clear();
+        _entities.Clear(); _relations.Clear(); _order.Clear(); _byClass.Clear(); _touching.Clear(); _relatedIn.Clear();
         _next = 0;
         Revision++;
     }

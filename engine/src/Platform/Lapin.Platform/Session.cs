@@ -414,7 +414,8 @@ public sealed class Session
             if (ProducerOf(e) != null && Build(e) is { Item: not null }) ids.Add(e.Id);
         // Every element built first: each one's edges are trimmed against its neighbours.
         var keys = new Dictionary<string, string?>();
-        var render = ids.Select(id => Emitted(id, keys)).OfType<RenderItem>().ToList();
+        var grid = new BoxGrid(_built);
+        var render = ids.Select(id => Emitted(id, keys, grid)).OfType<RenderItem>().ToList();
         return new Diff(++_version, true,
             _store.Entities.Select(Dto).ToList(), [], [], [],
             render, [], State(),
@@ -488,9 +489,10 @@ public sealed class Session
             }
             else if (hadItem) renderRemoved.Add(id);
         }
-        emit.AddRange(Neighbours(boxes, rebuild.ToHashSet()));
+        var grid = new BoxGrid(_built);
+        emit.AddRange(Neighbours(grid, boxes, rebuild.ToHashSet()));
         var keys = new Dictionary<string, string?>();
-        var render = emit.Select(id => Emitted(id, keys)).OfType<RenderItem>().ToList();
+        var render = emit.Select(id => Emitted(id, keys, grid)).OfType<RenderItem>().ToList();
         return new Diff(++_version, false, nodes, removedNodes, [], [], render, renderRemoved, State(), relations, removedRelations);
     }
 
@@ -559,11 +561,69 @@ public sealed class Session
         a.Min.X <= b.Max.X + tol && b.Min.X <= a.Max.X + tol && a.Min.Y <= b.Max.Y + tol && b.Min.Y <= a.Max.Y + tol && a.Min.Z <= b.Max.Z + tol && b.Min.Z <= a.Max.Z + tol;
 
     /// <summary>The built elements whose box touches one of <paramref name="boxes"/>, other than <paramref name="except"/>.</summary>
-    IEnumerable<string> Neighbours(IReadOnlyList<(Vec3 Min, Vec3 Max)> boxes, ICollection<string> except)
+    static IEnumerable<string> Neighbours(BoxGrid grid, IReadOnlyList<(Vec3 Min, Vec3 Max)> boxes, ICollection<string> except) =>
+        grid.Near(boxes).Where(n => n.Built.Item != null && !except.Contains(n.Id)).Select(n => n.Id);
+
+    /// <summary>
+    /// The built elements' boxes on a grid in plan, so the elements near a box are found
+    /// without going through every element (each one against all was quadratic: a hundred
+    /// thousand references imported at once took minutes). What it finds comes in the
+    /// order of <see cref="_built"/>, as the plain search gave it.
+    /// </summary>
+    sealed class BoxGrid
     {
-        if (boxes.Count == 0) yield break;
-        foreach (var (id, b) in _built)
-            if (b.Bounds is { } box && b.Item != null && !except.Contains(id) && boxes.Any(x => Overlaps(x, box))) yield return id;
+        const int MaxCells = 256;   // a box over more cells (a terrain, a site) is kept apart and always tried
+        readonly List<(string Id, Built Built, (Vec3 Min, Vec3 Max) Box)> _items = [];
+        readonly Dictionary<(int X, int Y), List<int>> _cells = [];
+        readonly List<int> _large = [];
+        readonly double _cell;
+
+        public BoxGrid(IEnumerable<KeyValuePair<string, Built>> built)
+        {
+            foreach (var (id, b) in built) if (b.Bounds is { } box) _items.Add((id, b, box));
+            // Twice the median element's larger side in plan: most fall in one to four cells.
+            var sides = _items.Select(i => Math.Max(i.Box.Max.X - i.Box.Min.X, i.Box.Max.Y - i.Box.Min.Y)).Where(double.IsFinite).Order().ToList();
+            _cell = sides.Count == 0 ? 1 : Math.Max(2 * sides[sides.Count / 2], 0.05);
+            for (var k = 0; k < _items.Count; k++)
+            {
+                if (Range(_items[k].Box) is not { } r) { _large.Add(k); continue; }
+                var (x0, y0, x1, y1) = r;
+                for (var x = x0; x <= x1; x++)
+                    for (var y = y0; y <= y1; y++)
+                        (_cells.TryGetValue((x, y), out var l) ? l : _cells[(x, y)] = []).Add(k);
+            }
+        }
+
+        /// <summary>The cells a box (with the overlap's tolerance) falls in; null when too many, or not finite.</summary>
+        (int, int, int, int)? Range((Vec3 Min, Vec3 Max) b)
+        {
+            const double tol = 1e-3;
+            double x0 = Math.Floor((b.Min.X - tol) / _cell), y0 = Math.Floor((b.Min.Y - tol) / _cell);
+            double x1 = Math.Floor((b.Max.X + tol) / _cell), y1 = Math.Floor((b.Max.Y + tol) / _cell);
+            if (!double.IsFinite(x0 + y0 + x1 + y1) || Math.Abs(x0) > 1e9 || Math.Abs(y0) > 1e9 || Math.Abs(x1) > 1e9 || Math.Abs(y1) > 1e9) return null;
+            if ((x1 - x0 + 1) * (y1 - y0 + 1) > MaxCells) return null;
+            return ((int)x0, (int)y0, (int)x1, (int)y1);
+        }
+
+        /// <summary>The elements whose box touches one of <paramref name="boxes"/>.</summary>
+        public IEnumerable<(string Id, Built Built)> Near(IReadOnlyList<(Vec3 Min, Vec3 Max)> boxes)
+        {
+            if (boxes.Count == 0) return [];
+            var found = new HashSet<int>();
+            void Try(int k, (Vec3 Min, Vec3 Max) box) { if (!found.Contains(k) && Overlaps(box, _items[k].Box)) found.Add(k); }
+            foreach (var box in boxes)
+            {
+                // A box over many cells is rare: tried against everything, as before.
+                if (Range(box) is not { } r) { for (var k = 0; k < _items.Count; k++) Try(k, box); continue; }
+                var (x0, y0, x1, y1) = r;
+                foreach (var k in _large) Try(k, box);
+                for (var x = x0; x <= x1; x++)
+                    for (var y = y0; y <= y1; y++)
+                        if (_cells.TryGetValue((x, y), out var l))
+                            foreach (var k in l) Try(k, box);
+            }
+            return found.Order().Select(k => (_items[k].Id, _items[k].Built));
+        }
     }
 
     /// <summary>
@@ -573,14 +633,14 @@ public sealed class Session
     /// <see cref="Seams"/>). The same rule as the elevations' and the plan's:
     /// the elements stay apart, the material reads as one.
     /// </summary>
-    RenderItem? Emitted(string id, Dictionary<string, string?> keys)
+    RenderItem? Emitted(string id, Dictionary<string, string?> keys, BoxGrid grid)
     {
         if (!_built.TryGetValue(id, out var b) || b.Item is not { } item) return null;
         if (b.Geometry is not { } g || b.Bounds is not { } box || item.Parts is not { Count: > 0 } parts || parts.Count != g.Parts.Count) return item;
         var cls = _store.Get(id)?.Class ?? item.Type;
         var near = new List<(Built Built, string Class)>();
-        foreach (var (nid, nb) in _built)
-            if (nid != id && nb.Geometry != null && nb.Bounds is { } nbox && Overlaps(box, nbox)) near.Add((nb, _store.Get(nid)?.Class ?? nb.Item?.Type ?? ""));
+        foreach (var (nid, nb) in grid.Near([box]))
+            if (nid != id && nb.Geometry != null) near.Add((nb, _store.Get(nid)?.Class ?? nb.Item?.Type ?? ""));
         if (near.Count == 0) return item;
         List<Seams.Plane> PlanesOf(Solid s) => _planes.TryGetValue(s, out var p) ? p : _planes[s] = Seams.Planes(s);
         List<RenderPart>? trimmed = null;

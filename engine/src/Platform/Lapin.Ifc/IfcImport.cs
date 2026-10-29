@@ -93,6 +93,7 @@ public static partial class IfcImport
         readonly Dictionary<int, string> typeIds = [], layerSets = [], materialIds = [];
         readonly HashSet<string> seen = [];
         readonly List<Action<IEdit>> relations = [];               // written after every entity is there
+        readonly Dictionary<string, string> contained = [];        // element → the storey it joins (WriteContainment)
 
         static readonly Dictionary<string, string> ProperNames = BuildNames();
 
@@ -117,6 +118,7 @@ public static partial class IfcImport
             }
             Elements(edit);
             foreach (var r in relations) r(edit);
+            WriteContainment(edit);
             var left = edit.Model.Entities.Count(e => s.Catalog.Geometry(e.Class) != null && !seen.Contains(e.Id) && e.Class is not (IfcClass.OpeningElement or IfcClass.Annotation or IfcClass.Grid));
             if (left > 0 && elements + updated > 0) notes.Add($"{left} element(s) of the project are not in the file; they stay as they are.");
         }
@@ -237,7 +239,23 @@ public static partial class IfcImport
             var now = Spatial.StoreyOf(edit.Model, elementId);
             if (now?.Id == storeyId) return;
             if (now != null) edit.Unrelate(IfcClass.RelContainedInSpatialStructure, elementId);
-            edit.Relate(IfcClass.RelContainedInSpatialStructure, storeyId, elementId);
+            contained[elementId] = storeyId;
+        }
+
+        /// <summary>
+        /// The elements gathered by <see cref="Contain"/> joined to their storeys, each storey's
+        /// relationship written once: one at a time, it was copied and indexed again for every
+        /// element (quadratic: a million elements never finished).
+        /// </summary>
+        void WriteContainment(IEdit edit)
+        {
+            foreach (var group in contained.GroupBy(c => c.Value, c => c.Key))
+            {
+                var own = edit.Model.RelationsOf(group.Key, IfcClass.RelContainedInSpatialStructure).FirstOrDefault(r => r.Relating == group.Key);
+                if (own == null) edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelContainedInSpatialStructure, group.Key, group.ToList()));
+                else edit.ReplaceRelation(own with { Related = [.. own.Related, .. group] });
+            }
+            contained.Clear();
         }
 
         string? StoreyFor(int product) => containedIn.TryGetValue(product, out var sp) && storeyOf.TryGetValue(sp, out var id) ? id : null;

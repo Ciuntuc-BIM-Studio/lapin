@@ -154,7 +154,7 @@ sealed class TransactionBuilder(ModelStore store, Func<string> newId) : IEdit
 
     public void Unrelate(string relationClass, string related)
     {
-        foreach (var r in store.RelationsOf(related, relationClass).Where(r => r.Related.Contains(related)).ToList())
+        foreach (var r in store.RelatedBy(related, relationClass).ToList())
         {
             var rest = r.Related.Where(x => x != related).ToList();
             if (rest.Count == 0) RemoveRelation(r.Id);

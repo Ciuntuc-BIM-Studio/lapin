@@ -27,6 +27,7 @@ sealed class TrackingView(IModelView inner) : IModelView
     /// <summary>The key touched when an element of a class gets, changes or loses its own cut priority.</summary>
     public static string CutKey(string ifcClass) => "cut:" + ifcClass;
     public IEnumerable<Relation> RelationsOf(string id, string? relationClass = null) { Read.Add(RelationsKey(id)); return inner.RelationsOf(id, relationClass); }
+    public IEnumerable<Relation> RelatedBy(string id, string? relationClass = null) { Read.Add(RelationsKey(id)); return inner.RelatedBy(id, relationClass); }
     public int Order(string id) => inner.Order(id);
     public long Revision => inner.Revision;
 }
