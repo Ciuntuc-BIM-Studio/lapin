@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Moon, Search, Sun } from 'lucide-react';
+import { Moon, Redo2, Search, Sun, Undo2 } from 'lucide-react';
 import { HelpMenu } from './HelpMenu';
 import { useUi } from '../app/store';
 import { activate, ribbonTabs } from '../platform/modules';
@@ -27,6 +27,23 @@ function Keys({ id }: { id: string }) {
   return k ? <kbd data-no-i18n>{k}</kbd> : null;
 }
 
+/** The undo button's tooltip: what it undoes, and its keys. */
+function undoTitle(verb: 'Undo' | 'Redo', label: string | null | undefined, keys: string): string {
+  return `${verb}${label ? ` ${label}` : ''}${keys ? ` (${keys})` : ''}`;
+}
+
+/** Undo and Redo at the top of the File menu, with their keys. */
+function UndoItems({ run }: { run: (f: () => unknown) => () => void }) {
+  const doc = useSession((s) => s.doc);
+  return (
+    <>
+      <button type="button" role="menuitem" disabled={!doc?.canUndo} onClick={run(undo)}>Undo<Keys id="app.undo" /></button>
+      <button type="button" role="menuitem" disabled={!doc?.canRedo} onClick={run(redo)}>Redo<Keys id="app.redo" /></button>
+      <div className="menu-sep" role="separator" />
+    </>
+  );
+}
+
 function FileMenu() {
   const [open, setOpen] = useState(false);
   const run = (f: () => unknown) => () => { setOpen(false); void f(); };
@@ -36,6 +53,7 @@ function FileMenu() {
       <button type="button" className={`tab${open ? ' on' : ''}`} onClick={() => setOpen(!open)}>File</button>
       {open && (
         <div className="menu" role="menu" onMouseLeave={() => setOpen(false)}>
+          <UndoItems run={run} />
           <button type="button" role="menuitem" onClick={run(() => exportIfc())}>Export IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportMesh' }))}>Export 3D…</button>
           <button type="button" role="menuitem" onClick={run(leave)}>Leave session</button>
@@ -48,6 +66,7 @@ function FileMenu() {
       <button type="button" className={`tab${open ? ' on' : ''}`} onClick={() => setOpen(!open)}>File</button>
       {open && (
         <div className="menu" role="menu" onMouseLeave={() => setOpen(false)}>
+          <UndoItems run={run} />
           <button type="button" role="menuitem" onClick={run(newProject)}>New project<Keys id="app.new" /></button>
           <button type="button" role="menuitem" onClick={run(() => openProject())}>Open…<Keys id="app.open" /></button>
           <button type="button" role="menuitem" onClick={run(() => saveProject())}>Save<Keys id="app.save" /></button>
@@ -153,8 +172,10 @@ export function Ribbon() {
         <span className="grow" />
         <Participants />
         <button type="button" className="search" onClick={() => useUi.setState({ dialog: 'palette' })}><Search size={14} />Commands… {paletteKeys && <kbd data-no-i18n>{paletteKeys.split(', ')[0]}</kbd>}</button>
-        <button type="button" className="icon" disabled={!doc?.canUndo} onClick={() => void undo()} title={doc?.undoLabel ? `Undo ${doc.undoLabel}${undoKeys ? ` (${undoKeys})` : ''}` : 'Undo'}>↶</button>
-        <button type="button" className="icon" disabled={!doc?.canRedo} onClick={() => void redo()} title={doc?.redoLabel ? `Redo ${doc.redoLabel}${redoKeys ? ` (${redoKeys})` : ''}` : 'Redo'}>↷</button>
+        <span className="undo-redo" role="group" aria-label="Undo and redo">
+          <button type="button" className="undo-btn" disabled={!doc?.canUndo} onClick={() => void undo()} title={undoTitle('Undo', doc?.undoLabel, undoKeys)} aria-label="Undo"><Undo2 size={16} strokeWidth={1.8} /><span className="undo-text">Undo</span></button>
+          <button type="button" className="undo-btn" disabled={!doc?.canRedo} onClick={() => void redo()} title={undoTitle('Redo', doc?.redoLabel, redoKeys)} aria-label="Redo"><Redo2 size={16} strokeWidth={1.8} /><span className="undo-text">Redo</span></button>
+        </span>
         <button type="button" className="icon" title="Theme" onClick={() => useUi.setState({ theme: theme === 'paper' ? 'graphite' : 'paper' })}>{theme === 'paper' ? <Moon size={15} /> : <Sun size={15} />}</button>
         <HelpMenu />
       </div>

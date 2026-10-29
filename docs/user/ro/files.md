@@ -37,4 +37,4 @@ Versiunile stau în fișierul proiectului, iar părțile pe care o versiune le a
 
 ## Anulare
 
-<kbd>Ctrl</kbd> <kbd>Z</kbd> anulează, iar <kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>Z</kbd> reface. Săgețile din dreapta sus fac același lucru, iar indicația lor spune ce anulează.
+<kbd>Ctrl</kbd> <kbd>Z</kbd> anulează, iar <kbd>Ctrl</kbd> <kbd>Y</kbd> sau <kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>Z</kbd> reface. Butoanele **Anulează** și **Refă** din bara de sus, în dreapta lui **Comenzi…**, fac același lucru în orice mod al interfeței, iar indicația lor spune ce anulează; la fel **Fișier → Anulează** și **Fișier → Refă**, și paleta de comenzi (<kbd>Ctrl</kbd> <kbd>K</kbd>, scrie „anulează”).

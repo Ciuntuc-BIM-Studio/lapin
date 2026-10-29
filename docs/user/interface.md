@@ -27,6 +27,8 @@ summary: Comfortable, Compact and Focus modes, folding the side panels, and the 
 
 ![Focus: the selection in a card](shots/interface-focus.webp)
 
+In every mode the top bar keeps **Undo** and **Redo** at its right end: with their names in Comfortable, as two arrows in Compact and Focus (<kbd>Ctrl</kbd> <kbd>Z</kbd> and <kbd>Ctrl</kbd> <kbd>Y</kbd>; their tooltip says what they undo).
+
 Below the modes, each part can be set on its own: the ribbon, the quick tools (or none: the number keys still work), the command line, the HUD, the tool's prompt and fields, the key plan, the panels and the height of the property rows. Changing one part makes the choice **Custom**.
 
 Lapin keeps your choice on this computer, for you. The desktop app and the browser keep theirs apart. In the browser, Lapin starts in Compact when the window is less than 800 pixels tall, until you choose.

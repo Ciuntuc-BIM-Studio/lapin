@@ -71,6 +71,17 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .icon { display: grid; place-items: center; width: 28px; height: 28px; margin-bottom: 4px; border: 0; border-radius: 3px; background: none; cursor: pointer; }
 .icon:hover:not(:disabled) { background: var(--wash); }
 .icon:disabled { opacity: 0.35; }
+/* Undo and Redo in the top bar: one framed pair, the icons at full ink; their names beside them in Comfortable. */
+.undo-redo { display: flex; margin: 0 6px 4px; border: 1px solid var(--rule); border-radius: 3px; background: var(--bg); overflow: hidden; }
+.undo-btn { display: flex; align-items: center; gap: 5px; height: 26px; padding: 0 8px; border: 0; background: none; color: var(--ink); cursor: pointer; font-size: 12px; }
+.undo-btn + .undo-btn { border-left: 1px solid var(--rule); }
+.undo-btn:hover:not(:disabled) { background: var(--wash); }
+.undo-btn:disabled { color: var(--ink-muted); opacity: 0.5; cursor: default; }
+.topbar.ribbon-icons .undo-redo, .topbar.ribbon-dropdown .undo-redo { margin: 0 4px; }
+.topbar.ribbon-icons .undo-btn, .topbar.ribbon-dropdown .undo-btn { height: 22px; padding: 0 6px; }
+.topbar.ribbon-icons .undo-text, .topbar.ribbon-dropdown .undo-text { display: none; }
+@media (max-width: 900px) { .undo-text { display: none; } }
+.menu-sep { height: 1px; margin: 4px 0; background: var(--rule); }
 /* A tab wider than the window scrolls sideways; its groups never squeeze below their tools (their labels would run into each other). */
 .band { display: flex; height: 86px; padding: 4px 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
 .group { display: flex; flex-direction: column; flex-shrink: 0; padding: 0 8px; border-right: 1px solid var(--rule); }

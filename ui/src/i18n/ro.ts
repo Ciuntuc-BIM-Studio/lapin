@@ -66,7 +66,7 @@ export const RO: Record<string, string> = {
   'Cut plane and depth': 'Planul de secționare și adâncimea', 'View range…': 'Intervalul vederii…', 'Edit styles…': 'Editează stilurile…',
   'every layer': 'toate straturile', 'without finishes': 'fără finisaje', 'the core only': 'doar miezul', 'New style': 'Stil nou',   'by its name': 'după nume', 'Finish': 'Finisaj', 'Insulation': 'Izolație', 'Membrane': 'Membrană',   // Drafting properties
   'Drafting': 'Desen', 'by layer': 'după layer', 'Line type': 'Tip de linie', 'Start': 'Început', 'End': 'Sfârșit', 'Centre': 'Centru', 'Radius': 'Rază', 'Diameter': 'Diametru', 'Circumference': 'Circumferință', 'Vertices': 'Vârfuri', 'Closed': 'Închis', 'Start angle': 'Unghi de început', 'End angle': 'Unghi de sfârșit', 'Pattern': 'Model', 'Position': 'Poziție', 'Tagged element': 'Element etichetat', 'Field': 'Câmp',
-  'Start screen': 'Ecranul de start', 'Commands…': 'Comenzi…', 'Theme': 'Temă', 'Undo': 'Anulează', 'Redo': 'Refă',
+  'Start screen': 'Ecranul de start', 'Commands…': 'Comenzi…', 'Theme': 'Temă', 'Undo': 'Anulează', 'Redo': 'Refă', 'Undo and redo': 'Anulează și refă',
   'Help, report an issue, community': 'Ajutor, raportează o problemă, comunitate', 'Report an issue': 'Raportează o problemă', 'Report an issue…': 'Raportează o problemă…', 'User guide': 'Ghidul utilizatorului', 'Check for updates…': 'Caută actualizări…', 'Lapin is up to date.': 'Lapin este la zi.',
   'Community (Skool)': 'Comunitatea (Skool)', 'Community on Skool': 'Comunitatea pe Skool', 'What happened': 'Ce s-a întâmplat', 'What you expected': 'Ce te așteptai să se întâmple',
   'E-mail (optional)': 'E-mail (opțional)', 'Screenshot (optional)': 'Captură de ecran (opțional)', 'Cancel': 'Renunță', 'Send': 'Trimite', 'Close': 'Închide', 'Done': 'Gata',
@@ -450,4 +450,7 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(.+) could not be read as a picture: attach a PNG or JPEG screenshot \(or send the report without one\)\.$/, (m) => `${m[1]} nu poate fi citit ca imagine: atașează o captură PNG sau JPEG (sau trimite raportul fără ea).`],
   [/^(\d+) room\(s\) updated; (\d+) no longer enclosed \(they keep their last outline\)\.$/, (m) => `${m[1]} încăperi actualizate; ${m[2]} nu mai sunt închise (își păstrează ultimul contur).`],
   [/^No room has a value for this field yet\. Give rooms a (.+) in their properties\.$/, (m) => `Nicio încăpere nu are încă o valoare pentru acest câmp. Dă încăperilor o valoare (${m[1]}) în proprietăți.`],
+  // The undo buttons' tooltips: "Undo Move (Ctrl+Z)", "Redo (Ctrl+Y, Ctrl+Shift+Z)"
+  [/^(Undo|Redo) \(([^()]+)\)$/, (m) => `${m[1] === 'Undo' ? 'Anulează' : 'Refă'} (${m[2]})`],
+  [/^(Undo|Redo) (.+?)(?: \(([^()]+)\))?$/, (m) => `${m[1] === 'Undo' ? 'Anulează' : 'Refă'} ${RO[m[2]] ?? m[2]}${m[3] ? ` (${m[3]})` : ''}`],
 ];

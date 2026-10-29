@@ -37,4 +37,4 @@ Versions live inside the project's file, and the parts a version shares with the
 
 ## Undo
 
-<kbd>Ctrl</kbd> <kbd>Z</kbd> undoes, and <kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>Z</kbd> redoes. The arrows at the top right do the same, and their tooltip says what they undo.
+<kbd>Ctrl</kbd> <kbd>Z</kbd> undoes, and <kbd>Ctrl</kbd> <kbd>Y</kbd> or <kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>Z</kbd> redoes. The **Undo** and **Redo** buttons in the top bar, right of **Commands…**, do the same in every interface mode, and their tooltip says what they undo; **File → Undo** and **File → Redo**, and the command palette (<kbd>Ctrl</kbd> <kbd>K</kbd>, type "undo"), too.

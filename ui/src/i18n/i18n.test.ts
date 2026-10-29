@@ -9,4 +9,11 @@ describe('the Romanian interface', () => {
     expect(translate('My own wall name')).toBeNull();
     expect(translate('')).toBeNull();
   });
+
+  it('translates the undo buttons\' tooltips with what they undo and their keys', () => {
+    expect(translate('Undo (Ctrl+Z)')).toBe('Anulează (Ctrl+Z)');
+    expect(translate('Undo Move (Ctrl+Z)')).toBe('Anulează Mută (Ctrl+Z)');
+    expect(translate('Redo My wall (Ctrl+Y, Ctrl+Shift+Z)')).toBe('Refă My wall (Ctrl+Y, Ctrl+Shift+Z)');
+    expect(translate('Redo')).toBe('Refă');
+  });
 });
