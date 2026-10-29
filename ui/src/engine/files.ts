@@ -8,6 +8,7 @@
 
 import { engine, engineInBrowser, useSession } from './session';
 import { LONG_TIMEOUT_MS } from './client';
+import { surveyIfc } from './ifcImport';
 import { emptyPane, notify, select, useUi } from '../app/store';
 
 const FILTERS = [{ name: 'Lapin project', extensions: ['lapin'] }];
@@ -335,8 +336,8 @@ export async function openStartupFile(): Promise<void> {
     await engine.call('project.new', { plain: !/\.dxf$/i.test(name) });
     enter();
     if (/\.dxf$/i.test(name)) { dxfFile.current = { name, path }; useUi.setState({ dialog: 'importDxf' }); return; }
-    const r = await engine.call<{ elements: number; recognized?: number; references: number }>('project.importIfc', { path, mode: 'auto' }, { timeoutMs: LONG_TIMEOUT_MS });
-    notify(`Opened ${name} on its own: ${r.elements + (r.recognized ?? 0)} native, ${r.references} as reference. Save it as a project of its own.`);
+    // An IFC opened on its own: what of it comes in chosen first, as for an import.
+    await surveyIfc({ name, path }, 'auto');
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }
@@ -354,28 +355,17 @@ export async function importDxf(): Promise<void> {
   useUi.setState({ dialog: 'importDxf' });
 }
 
-/** An IFC file into the open project: Lapin's own files come back native, others as references (mode 'reference' keeps everything as it is). */
+/**
+ * An IFC file into the open project, in two steps (ifcImport.ts): the file looked at, the Import IFC dialog to choose
+ * what of it comes in (by discipline, kind and storey) and how (recognised, as references, linked), then the import
+ * with its stages shown.
+ */
 export async function importIfc(mode: 'auto' | 'reference' | 'link' = 'auto'): Promise<void> {
   // By path on the desktop (the native dialog); in a browser, the file's bytes from the browser's own
   // picker, whether the engine runs in the page or as the local process of pnpm dev: a page never knows a path.
   const picked = isDesktop() ? null : await pickFile('IFC', 'ifc');
   const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'IFC', extensions: ['ifc'] }]) : picked?.name ?? null;
   if (!path) return;
-  try {
-    const args = picked ? { name: picked.name, data: toBase64(picked.bytes), mode } : { path, mode };
-    const r = await engine.call<{ elements: number; updated: number; references: number; recognized?: number; recognizedByClass?: Record<string, number>; notes: string[] }>('project.importIfc', args, { timeoutMs: LONG_TIMEOUT_MS });
-    // What came in natively (Lapin's own files, and foreign elements recognised into native ones), and what stays a reference.
-    const recognised = r.recognizedByClass && Object.keys(r.recognizedByClass).length
-      ? ` (${Object.entries(r.recognizedByClass).map(([cls, n]) => `${n} ${cls.replace(/^Ifc/, '').replace(/OpeningElement/, 'opening').toLowerCase()}${n === 1 ? '' : 's'}`).join(', ')})`
-      : '';
-    const parts = [
-      r.elements ? `${r.elements} native` : '',
-      r.recognized ? `${r.recognized} recognised${recognised}` : '',
-      r.updated ? `${r.updated} updated` : '',
-      r.references ? `${r.references} as reference` : '',
-    ].filter(Boolean);
-    notify(`${mode === 'link' ? 'Linked' : 'Imported'} ${path.split(/[\\/]/).pop()}: ${parts.join(', ') || 'nothing to bring in'}.${mode === 'link' ? ' Read-only: Manage → Links.' : ''}${r.notes?.length ? ` ${r.notes.slice(0, 4).join(' ')}` : ''}`);
-  } catch (e) {
-    notify(e instanceof Error ? e.message : String(e));
-  }
+  const source = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path };
+  await surveyIfc(source, mode);
 }

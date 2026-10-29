@@ -230,7 +230,8 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes));
         if ((string?)source["sha256"] is { } sha && sha != hash) throw new CommandException($"{System.IO.Path.GetFileName(path)} changed since it was imported: the unsaved work cannot be brought back.");
         var mode = (string?)source["mode"] ?? "auto";
-        var options = new IfcImportOptions(mode == "link" ? "auto" : mode);
+        IReadOnlySet<string>? Chosen(JsonNode? n) => n is JsonArray a ? a.Select(x => (string?)x ?? "").ToHashSet() : null;
+        var options = new IfcImportOptions(mode == "link" ? "auto" : mode, Chosen(source["kinds"]), Chosen(source["storeys"]));
         using (s.SeededIds((long?)source["seed"] ?? 0))
         {
             if (mode == "link") IfcImport.Link(s, bytes, System.IO.Path.GetFileName(path), path, options, out _);

@@ -8,9 +8,16 @@ using Lapin.Platform;
 namespace Lapin.Ifc;
 
 /// <summary>How a file is read: "auto", what carries Lapin's intent is rebuilt natively and the rest comes as reference; "reference", everything as reference.</summary>
-public sealed record IfcImportOptions(string Mode = "auto")
+/// <summary>
+/// How a file is imported: <see cref="Mode"/> auto (Lapin's own natively, the rest recognised or referenced), reference
+/// (everything as it is) or link; and what of it, as the user chose in the survey (<see cref="IfcSurvey"/>): the
+/// <see cref="Kinds"/> (a class, or a class with its category) and the <see cref="Storeys"/> (their GlobalIds, "" for
+/// elements on no storey) to bring, null for all.
+/// </summary>
+public sealed record IfcImportOptions(string Mode = "auto", IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null)
 {
     public bool ReferenceOnly => string.Equals(Mode, "reference", StringComparison.OrdinalIgnoreCase);
+    public bool Filtered => Kinds != null || Storeys != null;
 }
 
 public sealed record IfcImportResult(int Elements, int Updated, int References, int Storeys, IReadOnlyList<string> Notes, int Recognized = 0, IReadOnlyDictionary<string, int>? RecognizedByClass = null, IReadOnlyDictionary<string, int>? ReferencesByClass = null, IReadOnlyDictionary<string, int>? Skipped = null, string? LinkId = null)
@@ -48,7 +55,13 @@ public static partial class IfcImport
     /// <summary>An IFC file's bytes into the open project (<paramref name="name"/>: the file's name, for the undo label).</summary>
     public static IfcImportResult Run(Session session, byte[] bytes, string name, IfcImportOptions? options, out Diff diff)
     {
-        var file = StepFile.Read(bytes);
+        session.Progress?.Invoke("Indexing the file", 0, 0);
+        return Run(session, StepFile.Read(bytes), name, options, out diff);
+    }
+
+    /// <summary>A read IFC file into the open project (the survey read it already).</summary>
+    public static IfcImportResult Run(Session session, StepFile file, string name, IfcImportOptions? options, out Diff diff)
+    {
         var reader = new Reader(session, file, options ?? new IfcImportOptions());
         diff = session.Edit($"Import {name}", reader.Apply);
         return reader.Result();
@@ -62,7 +75,13 @@ public static partial class IfcImport
     /// </summary>
     public static IfcImportResult Link(Session session, byte[] bytes, string name, string? path, IfcImportOptions? options, out Diff diff, string? existing = null)
     {
-        var file = StepFile.Read(bytes);
+        session.Progress?.Invoke("Indexing the file", 0, 0);
+        return Link(session, StepFile.Read(bytes), name, path, options, out diff, existing);
+    }
+
+    /// <summary>A read IFC file as a link (the survey read it already).</summary>
+    public static IfcImportResult Link(Session session, StepFile file, string name, string? path, IfcImportOptions? options, out Diff diff, string? existing = null)
+    {
         var reader = new Reader(session, file, options ?? new IfcImportOptions());
         string? linkId = null;
         diff = session.Edit(existing != null ? $"Reload {name}" : $"Link {name}", edit =>
@@ -81,6 +100,12 @@ public static partial class IfcImport
 
     /// <summary>What an intent set says: the attributes, and the Lapin class, predefined type and host it names.</summary>
     sealed record Intent(JsonObject Attrs, string? Class, string? Predefined, string? Host, string? LapinId);
+
+    /// <summary>An element of the file: a rooted product with a placement or a shape, not the spatial structure, an opening, an annotation or a space (those are read apart).</summary>
+    public static bool IsProductEntity(StepEntity e) =>
+        e.Args.Count >= 7 && e[0] is string { Length: 22 } && !e.Type.StartsWith("IFCREL", StringComparison.Ordinal) && !e.Type.EndsWith("TYPE", StringComparison.Ordinal)
+        && (e[5] is StepRef || e[6] is StepRef)
+        && e.Type is not ("IFCPROJECT" or "IFCSITE" or "IFCBUILDING" or "IFCBUILDINGSTOREY" or "IFCOPENINGELEMENT" or "IFCANNOTATION" or "IFCSPACE");
 
     sealed partial class Reader(Session s, StepFile f, IfcImportOptions o)
     {
@@ -194,10 +219,25 @@ public static partial class IfcImport
             catch (JsonException) { return text; }
         }
 
-        bool IsProduct(StepEntity e) =>
-            e.Args.Count >= 7 && e[0] is string { Length: 22 } && !e.Type.StartsWith("IFCREL", StringComparison.Ordinal) && !e.Type.EndsWith("TYPE", StringComparison.Ordinal)
-            && (e[5] is StepRef || e[6] is StepRef)
-            && e.Type is not ("IFCPROJECT" or "IFCSITE" or "IFCBUILDING" or "IFCBUILDINGSTOREY" or "IFCOPENINGELEMENT" or "IFCANNOTATION" or "IFCSPACE");
+        static bool IsProduct(StepEntity e) => IsProductEntity(e);
+
+        Func<int, int>? storeyOfProduct;
+
+        /// <summary>What the user chose to bring (the import's options): this element's kind and the storey it stands on (up its space or its whole, <see cref="IfcSurvey.StoreyResolver"/>); everything without a choice.</summary>
+        bool Takes(StepEntity e, IReadOnlyDictionary<int, int>? parentOf = null)
+        {
+            if (!o.Filtered) return true;
+            if (o.Kinds != null && !o.Kinds.Contains(IfcSurvey.KindOf(e))) return false;
+            if (o.Storeys == null) return true;
+            var sp = (storeyOfProduct ??= IfcSurvey.StoreyResolver(f))(e.Id);
+            var gid = sp != 0 && f.Entities.TryGetValue(sp, out var storey) ? Str(storey[0]) ?? "" : "";
+            return o.Storeys.Contains(gid);
+        }
+
+        void Report(string stage, int done, int total) => s.Progress?.Invoke(stage, done, total);
+
+        /// <summary>Progress told every hundredth of <paramref name="total"/>, and at the end.</summary>
+        static bool Due(int done, int total) => total > 0 && (done == total || done % Math.Max(1, total / 100) == 0);
 
         // ─── Writing ────────────────────────────────────────────────────────
 
@@ -392,7 +432,7 @@ public static partial class IfcImport
                     foreach (var part in Refs(r[5])) parentOf[part] = whole.Id;
             var booleans = s.Catalog.Get<ISolidBooleans>();
             var fills = new HashSet<int>(f.OfType("IFCRELFILLSELEMENT").Select(r => Ref(r[5])));
-            var products = f.Rooted.Where(IsProduct).OrderBy(e => e.Id).ToList();
+            var products = f.Rooted.Where(IsProduct).Where(e => Takes(e, parentOf)).OrderBy(e => e.Id).ToList();
             // First what is rebuilt natively (Lapin's intent, or recognised); then, as references, the rest: not the
             // parts of a native element (its body is its own), nor a door or window made with its wall.
             var native = new HashSet<int>();
@@ -400,8 +440,10 @@ public static partial class IfcImport
             // What the recognisers will be offered, read from the file on every core first.
             if (!o.ReferenceOnly)
                 PrepareForeign(edit, [.. products.Where(e => !fills.Contains(e.Id) && !parentOf.ContainsKey(e.Id) && IntentOf(e.Id) == null)]);
+            var seenProducts = 0;
             foreach (var e in products)
             {
+                if (Due(++seenProducts, products.Count)) Report("Recognising the elements", seenProducts, products.Count);
                 var intent = o.ReferenceOnly ? null : IntentOf(e.Id);
                 // A reference Lapin wrote is one again, from the body the file gives it (its intent carries no body).
                 if (intent != null && (bool?)intent.Attrs["reference"] == true) { rest.Add(e); continue; }
@@ -413,8 +455,10 @@ public static partial class IfcImport
             // The references to come, read from the file on every core before they are put in the model in order.
             PrepareAll([.. rest.Where(e => !(parentOf.TryGetValue(e.Id, out var parent) && (native.Contains(parent) || (!o.ReferenceOnly && IntentOf(parent) != null)))
                 && !recognizedFills.Contains(e.Id) && (o.ReferenceOnly || !parentOf.ContainsKey(e.Id) || fills.Contains(e.Id)))], booleans);
+            var seenRest = 0;
             foreach (var e in rest)
             {
+                if (Due(++seenRest, rest.Count)) Report("Bringing the references", seenRest, rest.Count);
                 if (parentOf.TryGetValue(e.Id, out var parent) && (native.Contains(parent) || (!o.ReferenceOnly && IntentOf(parent) != null))) continue;
                 if (recognizedFills.Contains(e.Id)) continue;
                 if (!o.ReferenceOnly && parentOf.ContainsKey(e.Id) && !fills.Contains(e.Id) && Recognize(edit, e)) continue;
@@ -439,7 +483,7 @@ public static partial class IfcImport
             var rooms = 0;
             foreach (var e in f.OfType("IFCSPACE").OrderBy(x => x.Id))
             {
-                if (e[0] is not string { Length: 22 }) continue;
+                if (e[0] is not string { Length: 22 } || !Takes(e)) continue;
                 if (IntentOf(e.Id) is { } intent) { Native(edit, e, intent); rooms++; continue; }
                 if (Recognize(edit, e)) rooms++;
             }
@@ -524,7 +568,13 @@ public static partial class IfcImport
         {
             if (references.Count < 8) return;
             model.Warm();
-            Parallel.ForEach(references, e => prepared[e.Id] = Prepare(e, booleans));
+            var done = 0;
+            Parallel.ForEach(references, e =>
+            {
+                prepared[e.Id] = Prepare(e, booleans);
+                var n = Interlocked.Increment(ref done);
+                if (Due(n, references.Count)) Report("Reading the references", n, references.Count);
+            });
         }
 
         Prepared Prepare(StepEntity e, ISolidBooleans? booleans)

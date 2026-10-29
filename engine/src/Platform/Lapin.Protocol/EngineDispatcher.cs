@@ -259,6 +259,47 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
     /// <summary>Frames written by the generated contracts alone, as a trimmed engine writes them (for tests).</summary>
     public bool ContractsOnly { get; init; }
 
+    /// <summary>Where a long call's progress goes (the host sends it to the caller); null: nobody listens.</summary>
+    public Action<JsonObject>? Progress { get; set; }
+
+    readonly object _progressLock = new();
+    string? _progressStage;
+    long _progressAt;
+
+    /// <summary>A stage's progress, at most ten times a second (its end always).</summary>
+    void ReportProgress(string stage, int done, int total)
+    {
+        var sink = Progress;
+        if (sink == null) return;
+        lock (_progressLock)
+        {
+            var now = Environment.TickCount64;
+            if (stage == _progressStage && done < total && now - _progressAt < 100) return;
+            _progressStage = stage; _progressAt = now;
+        }
+        sink(new JsonObject { ["stage"] = stage, ["done"] = done, ["total"] = total });
+    }
+
+    /// <summary>The last file surveyed (project.ifcSurvey), read and indexed, for the import that follows to take as it is.</summary>
+    (string Key, byte[] Bytes, StepFile File, string Hash)? _surveyed;
+
+    /// <summary>An IFC file as a call gives it: by path (the desktop) or as base64 in data (the browser); its name and a key that tells the same file again.</summary>
+    (byte[] Bytes, string Name, string? Path, string Key) IfcBytes(JsonObject p)
+    {
+        if ((string?)p["data"] is { } data)
+        {
+            var bytes = Convert.FromBase64String(data);
+            var name = (string?)p["name"] ?? "file.ifc";
+            return (bytes, name, null, $"data:{name}:{bytes.Length}");
+        }
+        var path = (string?)p["path"] ?? throw new CommandException("The file's path is missing.");
+        var info = new FileInfo(path);
+        if (!info.Exists) throw new CommandException($"There is no file at {path}.");
+        return (File.ReadAllBytes(path), info.Name, path, $"{path}:{info.Length}:{info.LastWriteTimeUtc.Ticks}");
+    }
+
+    static IReadOnlySet<string>? Chosen(JsonNode? n) => n is JsonArray a ? a.Select(x => (string?)x ?? "").ToHashSet() : null;
+
     /// <summary>The most nodes, render items or relationships one frame carries (<see cref="Session.Parts"/>).</summary>
     public int PartSize { get; init; } = 20_000;
 
@@ -290,6 +331,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             var p = msg["params"] as JsonObject ?? [];
             if (caller.Remote && AllowedRemote(method, p, caller.Role) is { } refused) throw new CommandException(refused);
             session.Author = caller.Author;
+            session.Progress = ReportProgress;
             try
             {
                 var (result, diff) = Dispatch(method, p);
@@ -300,7 +342,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 }
                 return (BinaryFrame.Encode(new Reply(id, result), ContractsOnly), diff);
             }
-            finally { session.Author = History.Me; }
+            finally { session.Author = History.Me; session.Progress = null; }
         }
         catch (Exception ex) when (ex is ModelException or JsonException or InvalidOperationException or IOException or UnauthorizedAccessException or FormatException or InvalidDataException)
         {
@@ -458,31 +500,47 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 foreach (var (k, v) in result.ToJson()) delivered[k] = v?.DeepClone();
                 return (delivered, null);
             }
+            case "project.ifcSurvey":
+            {
+                // What a file holds, for the user to choose from before it is imported: read and indexed here, kept for the import that follows.
+                var (bytes, name, _, key) = IfcBytes(p);
+                ReportProgress("Indexing the file", 0, 0);
+                var file = StepFile.Read(bytes);
+                _surveyed = (key, bytes, file, Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)));
+                return (IfcSurvey.Of(file, name, bytes.Length), null);
+            }
             case "project.importIfc":
             {
                 // An IFC file into the open project (docs/spec-ifc.md): Lapin's own files natively, others as references; "reference" keeps everything as it is;
                 // "link" brings it in read-only, as a link (Manage → Links).
                 var modeName = (string?)p["mode"] ?? "auto";
-                var mode = new IfcImportOptions(modeName == "link" ? "auto" : modeName);
-                // By path (the desktop), or its bytes, base64 in `data` (the browser).
+                var kinds = Chosen(p["kinds"]);
+                var storeys = Chosen(p["storeys"]);
+                var mode = new IfcImportOptions(modeName == "link" ? "auto" : modeName, kinds, storeys);
+                // By path (the desktop), or its bytes, base64 in `data` (the browser); the file as the survey read it, when it is the same.
+                ReportProgress("Reading the file", 0, 0);
+                var (bytes, name, path, key) = IfcBytes(p);
+                (string Key, byte[] Bytes, StepFile File, string Hash)? surveyed = _surveyed is { } sv && sv.Key == key ? sv : null;
+                _surveyed = null;
+                StepFile file;
+                if (surveyed != null) file = surveyed.Value.File;
+                else { ReportProgress("Indexing the file", 0, 0); file = StepFile.Read(bytes); }
                 IfcImportResult result;
                 Diff imported;
-                if ((string?)p["data"] is { } data)
-                {
-                    var bytes = Convert.FromBase64String(data);
-                    result = modeName == "link" ? IfcImport.Link(session, bytes, (string?)p["name"] ?? "file.ifc", null, mode, out imported) : IfcImport.Run(session, bytes, (string?)p["name"] ?? "file.ifc", mode, out imported);
-                }
+                if (path == null)
+                    result = modeName == "link" ? IfcImport.Link(session, file, name, null, mode, out imported) : IfcImport.Run(session, file, name, mode, out imported);
                 else
                 {
-                    // From a file on this computer: the journal records the import by the file (its hash) and the seed of its ids, not by its every entity.
-                    var path = PathParam();
-                    var bytes = File.ReadAllBytes(path);
+                    // From a file on this computer: the journal records the import by the file (its hash), its choices and the seed of its ids, not by its every entity.
                     var seed = Random.Shared.NextInt64();
-                    session.EditSource = new JsonObject { ["import"] = path, ["sha256"] = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)), ["mode"] = modeName, ["seed"] = seed };
+                    var hash = surveyed?.Hash ?? Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes));
+                    session.EditSource = new JsonObject { ["import"] = path, ["sha256"] = hash, ["mode"] = modeName, ["seed"] = seed };
+                    if (kinds != null) session.EditSource["kinds"] = new JsonArray(kinds.Select(k => (JsonNode)k).ToArray());
+                    if (storeys != null) session.EditSource["storeys"] = new JsonArray(storeys.Select(k => (JsonNode)k).ToArray());
                     try
                     {
                         using var seeded = session.SeededIds(seed);
-                        result = modeName == "link" ? IfcImport.Link(session, bytes, Path.GetFileName(path), path, mode, out imported) : IfcImport.Run(session, bytes, Path.GetFileName(path), mode, out imported);
+                        result = modeName == "link" ? IfcImport.Link(session, file, name, path, mode, out imported) : IfcImport.Run(session, file, name, mode, out imported);
                     }
                     finally { session.EditSource = null; }
                 }

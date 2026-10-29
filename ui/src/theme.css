@@ -794,3 +794,22 @@ button.mode-chip:hover { color: var(--accent); }
 .palette-list li.on { background: var(--accent-wash); }
 .section-box-turn .section-box-turn-arc { fill: none; stroke: var(--accent, #b5532d); stroke-width: 2.4; }
 .section-box-turn { cursor: grab; }
+
+/* Import IFC: what the file holds, to choose from (ImportIfcDialog). */
+.dialog.import-ifc .dialog-body.split { grid-template-columns: minmax(300px, 1.2fr) minmax(260px, 1fr); }
+.import-tree { list-style: none; margin: 8px 0 0; padding: 0; max-height: 46vh; overflow-y: auto; }
+.import-tree ul { list-style: none; margin: 0 0 4px; padding: 0 0 0 26px; }
+.import-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.import-row label { display: flex; align-items: center; gap: 6px; }
+.import-count { color: var(--accent); }
+
+/* A long engine call (BusyOverlay): its stage, a bar, the time so far. */
+.busy-backdrop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(20, 18, 15, 0.28); }
+.busy-card { width: min(420px, calc(100vw - 32px)); padding: 18px 20px; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 3px; box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2); display: grid; gap: 10px; }
+.busy-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.busy-stage { display: flex; justify-content: space-between; gap: 12px; }
+.busy-bar { height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; position: relative; }
+.busy-bar > span { display: block; height: 100%; background: var(--accent); transition: width 0.2s ease; }
+.busy-bar.indeterminate > span { position: absolute; width: 35%; animation: busy-slide 1.2s ease-in-out infinite; }
+@keyframes busy-slide { from { left: -35%; } to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .busy-bar.indeterminate > span { animation: none; left: 0; width: 100%; opacity: 0.4; } }

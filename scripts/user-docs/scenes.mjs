@@ -861,6 +861,42 @@ export const scenes = [
     },
   },
   {
+    id: 'import-ifc',
+    async run(t) {
+      // A file to import: the guide's house with a structure, exported as IFC.
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      for (const x of [0, 12]) await t.cmd('structure.addColumn', { storeyId: storey, x, y: 0 });
+      await t.cmd('structure.addBeam', { storeyId: storey, x1: 0, y1: 0, x2: 12, y2: 0 });
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const file = join(tmpdir(), 'lapin-guide-house.ifc');
+      await t.call('project.exportIfc', { path: file });
+      // Into a new project, as a user does: File → Import IFC…, the file picked, the dialog.
+      await t.fresh();
+      await t.page.evaluate(() => { delete window.showOpenFilePicker; });
+      await t.button('File', { exact: true });
+      const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
+      await t.page.getByRole('menuitem', { name: 'Import IFC…' }).click();
+      await (await chooser).setFiles(file);
+      const dialog = t.page.locator('[aria-label="Import IFC"]');
+      await dialog.waitFor({ timeout: 60_000 });
+      const disciplines = await dialog.locator('[data-discipline]').evaluateAll((els) => els.map((e) => e.getAttribute('data-discipline')));
+      t.expect(disciplines.includes('architecture') && disciplines.includes('structure'), 'the file\'s elements by discipline: architecture and structure');
+      await dialog.locator('[data-discipline=structure] button').first().click();
+      await t.wait(300);
+      await t.shot('import-ifc', { of: '[aria-label="Import IFC"]', pad: 0 });
+      // The structure left out: only the architecture comes in.
+      await dialog.locator('[data-discipline=structure] input[type=checkbox]').first().uncheck();
+      await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+      await t.page.waitForSelector('[data-testid=busy]', { state: 'detached', timeout: 120_000 });
+      await t.wait(500);
+      const kinds = (await t.nodes()).map((n) => n.type);
+      t.expect(kinds.includes('IfcWall') || kinds.includes('IfcWallStandardCase'), 'the walls came in');
+      t.expect(!kinds.includes('IfcColumn') && !kinds.includes('IfcBeam'), 'the structure left out stayed out');
+    },
+  },
+  {
     id: 'export',
     async run(t) {
       await t.fresh();

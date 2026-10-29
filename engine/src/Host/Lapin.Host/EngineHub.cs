@@ -146,7 +146,10 @@ public sealed class EngineHub
         await _gate.WaitAsync();
         try
         {
+            // A long call's progress (an import's stages) goes to the local interface that asked, as text events, while the call runs.
+            _dispatcher.Progress = client is SocketClient asking ? o => _ = Safe(asking.SendText(new JsonObject { ["event"] = "progress", ["data"] = o }.ToJsonString())) : null;
             var (reply, diff) = _dispatcher.Handle(text, caller);
+            _dispatcher.Progress = null;
             // A big snapshot's first parts, to the one who asked, before the reply that carries its last.
             foreach (var frame in _dispatcher.TakeCallerFrames()) if (client != null) await Safe(client.SendBinary(frame));
             if (diff != null) await Broadcast(diff);

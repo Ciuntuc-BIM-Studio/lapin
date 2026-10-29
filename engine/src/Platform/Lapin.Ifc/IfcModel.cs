@@ -176,6 +176,21 @@ public sealed partial class IfcModel
     static IEnumerable<int> Refs(object? v) => v is List<object?> l ? l.OfType<StepRef>().Select(r => r.Id) : [];
     List<StepEntity> Items(object? v) => v is List<object?> l ? [.. l.Select(File.Get).OfType<StepEntity>()] : [];
 
+    /// <summary>Metres per length unit of a file (its project's units), for a look at the file before it is read as a model.</summary>
+    public static double LengthUnit(StepFile f)
+    {
+        var project = f.OfType("IFCPROJECT").FirstOrDefault();
+        var units = f.Get(project?[8]);
+        if (units?[0] is not List<object?> list) return 1;
+        foreach (var u in list.Select(f.Get).OfType<StepEntity>())
+        {
+            if ((u[1] as StepEnum)?.Value != "LENGTHUNIT") continue;
+            if (u.Type == "IFCSIUNIT") return (u[2] as StepEnum)?.Value switch { "MILLI" => 1e-3, "CENTI" => 1e-2, "DECI" => 0.1, "KILO" => 1e3, _ => 1 };
+            if (u.Type == "IFCCONVERSIONBASEDUNIT" && f.Get(u[3]) is { } m) return Num(m[0]) * (f.Get(m[1]) is { Type: "IFCSIUNIT" } si && (si[2] as StepEnum)?.Value == "MILLI" ? 1e-3 : 1);
+        }
+        return 1;
+    }
+
     (double Len, double Angle) Units(StepEntity? project)
     {
         double len = 1, angle = 1;

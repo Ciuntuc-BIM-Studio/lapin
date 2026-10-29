@@ -119,10 +119,13 @@ public static partial class IfcImport
             if (recognizers.Count == 0 || candidates.Count < 8) return;
             model.Warm();
             var storey = DefaultStorey(edit);
+            var done = 0;
             Parallel.ForEach(candidates, e =>
             {
                 if (e.Type is "IFCOPENINGELEMENT" || !GlobalId.IsValid(Str(e[0]) ?? "")) return;
                 foreignReady[e.Id] = Foreign(e, storey);
+                var n = Interlocked.Increment(ref done);
+                if (Due(n, candidates.Count)) Report("Reading the elements", n, candidates.Count);
             });
         }
 
@@ -135,7 +138,7 @@ public static partial class IfcImport
             {
                 var opPrisms = model.Prisms(op.Id, out _);
                 ForeignFill? fill = null;
-                if (fillOf != null && fillOf.TryGetValue(op.Id, out var filler) && filler.Type is "IFCDOOR" or "IFCWINDOW" or "IFCDOORSTANDARDCASE" or "IFCWINDOWSTANDARDCASE")
+                if (fillOf != null && fillOf.TryGetValue(op.Id, out var filler) && filler.Type is "IFCDOOR" or "IFCWINDOW" or "IFCDOORSTANDARDCASE" or "IFCWINDOWSTANDARDCASE" && Takes(filler))
                 {
                     var style = typeOf?.GetValueOrDefault(filler.Id);
                     var (operation, userDefined) = Operation(filler, style);

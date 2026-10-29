@@ -26,6 +26,7 @@ import { useHudFacts, ViewportHud } from './shell/ViewportHud';
 import { CadPrompt } from './viewport/cad/CommandLine';
 import { InterfaceDialog } from './shell/InterfaceDialog';
 import { ShortcutsDialog } from './shell/ShortcutsDialog';
+import { BusyOverlay } from './shell/BusyOverlay';
 import { CommandPalette } from './shell/CommandPalette';
 import { SelectionCard } from './shell/SelectionCard';
 import { PanelFold } from './shell/PanelFold';
@@ -295,5 +296,5 @@ export function App() {
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   const role = useUi((s) => s.windowRole);
   if (screen === 'join') return <JoinGate onJoin={() => void connect()} />;
-  return <>{screen === 'start' ? <StartScreen /> : role === 'view' ? <ViewWindow /> : <Workspace />}<EngineNotice /><ContextMenuHost /></>;
+  return <>{screen === 'start' ? <StartScreen /> : role === 'view' ? <ViewWindow /> : <Workspace />}<EngineNotice /><BusyOverlay /><ContextMenuHost /></>;
 }

@@ -193,6 +193,9 @@ public sealed class Session
     /// </summary>
     public JsonObject? EditSource { get; set; }
 
+    /// <summary>Told how a long edit goes (an import: its stage, how much of it is done): the host shows it. May be called from any thread.</summary>
+    public Action<string, int, int>? Progress { get; set; }
+
     /// <summary>
     /// New ids from <paramref name="seed"/> until disposed, one after the other, so an edit done again from its source
     /// (a recovered import) makes the same ids as the first time, and the journal's later edits find them.
@@ -602,8 +605,11 @@ public sealed class Session
     Built?[] BuildMany(IReadOnlyList<Entity> es)
     {
         var o = new Built?[es.Count];
-        if (OneCore || es.Count < ParallelFrom) for (var i = 0; i < es.Count; i++) o[i] = Compute(es[i]);
-        else Parallel.For(0, es.Count, i => o[i] = Compute(es[i]));
+        var done = 0;
+        var step = Math.Max(1, es.Count / 100);
+        void Did() { var n = Interlocked.Increment(ref done); if (Progress != null && es.Count >= ParallelFrom && (n == es.Count || n % step == 0)) Progress("Building the model", n, es.Count); }
+        if (OneCore || es.Count < ParallelFrom) for (var i = 0; i < es.Count; i++) { o[i] = Compute(es[i]); Did(); }
+        else Parallel.For(0, es.Count, i => { o[i] = Compute(es[i]); Did(); });
         for (var i = 0; i < es.Count; i++) if (o[i] is { } b) o[i] = Register(es[i], b);
         return o;
     }

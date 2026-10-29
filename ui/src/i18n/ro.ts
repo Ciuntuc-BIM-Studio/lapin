@@ -416,10 +416,27 @@ export const RO: Record<string, string> = {
   'point': 'punct',
   'building': 'clădire',
   'Opacity': 'Opacitate',
+  // Import IFC: the dialog to choose what of a file comes in, and the overlay of a long call (ImportIfcDialog, BusyOverlay)
+  'Import IFC': 'Import IFC', 'What to bring': 'Ce se aduce', 'All': 'Toate', 'How': 'Cum',
+  'Fold': 'Restrânge', 'Show its kinds': 'Arată tipurile', 'How it comes in': 'Cum intră',
+  'Recognised as Lapin elements where it can, the rest as references': 'Recunoscut ca elemente Lapin unde se poate, restul ca referințe',
+  'Everything as references, as the file draws it': 'Totul ca referințe, cum îl desenează fișierul',
+  'Linked, read-only (Manage → Links)': 'Legat, doar pentru citire (Gestionare → Legături)',
+  'elements in the file; about': 'elemente în fișier; aproximativ', 'chosen.': 'alese.',
+  'Furniture and equipment': 'Mobilier și echipamente',
+  'Working': 'Se lucrează', 'Indexing the file': 'Se indexează fișierul', 'Reading the file': 'Se citește fișierul',
+  'Reading the elements': 'Se citesc elementele', 'Recognising the elements': 'Se recunosc elementele',
+  'Reading the references': 'Se citesc referințele', 'Bringing the references': 'Se aduc referințele', 'Building the model': 'Se construiește modelul',
+  'Slab': 'Placă', 'Proxy': 'Proxy', 'Furnishing': 'Mobilier', 'Member': 'Element de structură', 'Plate': 'Placă metalică', 'Stair flight': 'Rampă de scară',
+  'Footing': 'Fundație', 'Space': 'Spațiu', 'Opening': 'Gol', 'Flow segment': 'Segment de instalație', 'Flow fitting': 'Fiting', 'Flow terminal': 'Terminal',
+  'Distribution port': 'Port de distribuție', 'Building element part': 'Parte de element', 'Wall standard case': 'Perete',
 };
 
 /** Phrases with a number or a name in them. */
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Importing (.+)$/, (m) => `Se importă ${m[1]}`],
+  [/^Linking (.+)$/, (m) => `Se leagă ${m[1]}`],
+  [/^Reading (.+\.ifc)$/i, (m) => `Se citește ${m[1]}`],
   [/^(.+) — ([^·]+?)(?: · (.+))?$/, (m) => `${RO[m[1]] ?? m[1]} — ${m[2]}${m[3] ? ` · ${RO[m[3]] ?? m[3]}` : ''}`],
   [/^(Fold|Unfold) the (project browser|properties)(?: \((.+)\))?$/, (m) => `${m[1] === 'Fold' ? 'Pliază' : 'Depliază'} ${m[2] === 'properties' ? 'proprietățile' : 'browserul proiectului'}${m[3] ? ` (${m[3]})` : ''}`],
   [/^Keep the (project browser|properties) open(?: \((.+)\))?$/, (m) => `Ține ${m[1] === 'properties' ? 'proprietățile' : 'browserul proiectului'} deschis${m[1] === 'properties' ? 'e' : ''}${m[2] ? ` (${m[2]})` : ''}`],

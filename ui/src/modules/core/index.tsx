@@ -1,6 +1,7 @@
 /** Core: always there — selecting, measuring, the views and how they look, materials and drafting standards. */
 
 import { StoreySection } from './StoreySection';
+import { ImportIfcDialog } from './ImportIfcDialog';
 import { AppWindow, Box, BoxSelect, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2, CloudFog, Link2, History, Layers, SlidersHorizontal, PanelsTopLeft, Keyboard } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
@@ -159,7 +160,7 @@ const core: LapinModule = {
       ] },
     ],
   }],
-  dialogs: { materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog },
+  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection, fieldKeys: butDiscipline('LapinSheet') },

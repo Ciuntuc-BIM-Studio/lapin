@@ -72,6 +72,18 @@ public sealed class StepFile
         }
     }
 
+    /// <summary>A header entry's arguments (FILE_NAME, FILE_DESCRIPTION), or null.</summary>
+    public List<object?>? Header(string keyword)
+    {
+        var data = IndexOf(_bytes, "DATA;"u8, 0);
+        var at = IndexOf(_bytes, Encoding.ASCII.GetBytes(keyword + "("), 0);
+        if (at < 0 || (data >= 0 && at > data)) return null;
+        try { return new Parser(_bytes, at + keyword.Length, _bytes.Length, _scratch ??= new Scratch()).ParseValue() as List<object?>; }
+        catch (Exception ex) when (ex is FormatException or IndexOutOfRangeException or ArgumentOutOfRangeException) { return null; }
+    }
+
+    [ThreadStatic] static Scratch? _scratch;
+
     /// <summary>Reads a file: ASCII as the standard says; a string in UTF-8 as some programs write it, Latin-1 else.</summary>
     public static StepFile Read(string path) => Read(File.ReadAllBytes(path));
 
@@ -283,11 +295,9 @@ public sealed class StepFile
         public StepEntity? Parse(int id)
         {
             if (!file._index.TryGet(id, out var offset, out var type)) return null;
-            var scratch = _scratch ??= new Scratch();
+            var scratch = StepFile._scratch ??= new Scratch();
             return new Parser(file._bytes, offset, file._bytes.Length, scratch).NextEntity(type);
         }
-
-        [ThreadStatic] static Scratch? _scratch;
 
         public StepEntity this[int id] => Parse(id) ?? throw new KeyNotFoundException($"No entity #{id}.");
         public bool ContainsKey(int id) => file._index.TryGet(id, out _, out _);
@@ -319,6 +329,9 @@ public sealed class StepFile
                 else break;
             }
         }
+
+        /// <summary>The value at the parser's start (a header entry's list).</summary>
+        public object? ParseValue() => Value();
 
         /// <summary>The entity at the parser's start; <paramref name="type"/>, the file's interned name of its type, when known.</summary>
         public StepEntity? NextEntity(string? type = null)
