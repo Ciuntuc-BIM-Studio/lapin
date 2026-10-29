@@ -27,49 +27,111 @@ public sealed class StepFile
 {
     public string Schema { get; private set; } = "";
     public Dictionary<int, StepEntity> Entities { get; } = [];
+    Dictionary<string, List<StepEntity>>? _byType;
 
     public StepEntity? Get(object? r) => r is StepRef x && Entities.TryGetValue(x.Id, out var e) ? e : null;
-    public IEnumerable<StepEntity> OfType(string type) => Entities.Values.Where(e => e.Type == type);
 
-    /// <summary>Reads a file: ASCII as the standard says, UTF-8 as some programs write it, Latin-1 else.</summary>
-    public static StepFile Read(string path) => Read(File.ReadAllBytes(path));
-
-    /// <summary>Reads a file's bytes: ASCII as the standard says, UTF-8 as some programs write it, Latin-1 else.</summary>
-    public static StepFile Read(byte[] bytes)
+    /// <summary>The entities of a type, in the file's order (indexed once: a large file has tens of millions).</summary>
+    public IEnumerable<StepEntity> OfType(string type)
     {
-        string text;
-        try { text = new UTF8Encoding(false, true).GetString(bytes); }
-        catch (DecoderFallbackException) { text = Encoding.Latin1.GetString(bytes); }
-        return Parse(text);
+        if (_byType == null)
+        {
+            var index = new Dictionary<string, List<StepEntity>>();
+            foreach (var e in Entities.Values) (index.TryGetValue(e.Type, out var l) ? l : index[e.Type] = []).Add(e);
+            _byType = index;
+        }
+        return _byType.TryGetValue(type, out var list) ? list : [];
     }
 
-    public static StepFile Parse(string text)
+    /// <summary>Reads a file: ASCII as the standard says; a string in UTF-8 as some programs write it, Latin-1 else.</summary>
+    public static StepFile Read(string path) => Read(File.ReadAllBytes(path));
+
+    /// <summary>
+    /// Reads a file's bytes, as they are: no text of the whole file is made (a string holds at
+    /// most a gigabyte, and would double the memory); only strings are decoded. A large DATA
+    /// section is parsed on every core, cut where an entity starts on a new line.
+    /// </summary>
+    public static StepFile Read(byte[] bytes)
     {
         var f = new StepFile();
-        var schema = text.IndexOf("FILE_SCHEMA", StringComparison.Ordinal);
+        var schema = IndexOf(bytes, "FILE_SCHEMA"u8, 0);
         if (schema >= 0)
         {
-            var q = text.IndexOf('\'', schema);
-            var q2 = q >= 0 ? text.IndexOf('\'', q + 1) : -1;
-            if (q2 > q) f.Schema = text[(q + 1)..q2].ToUpperInvariant();
+            var q = Array.IndexOf(bytes, (byte)'\'', schema);
+            var q2 = q >= 0 ? Array.IndexOf(bytes, (byte)'\'', q + 1) : -1;
+            if (q2 > q) f.Schema = Encoding.ASCII.GetString(bytes, q + 1, q2 - q - 1).ToUpperInvariant();
         }
-        var data = text.IndexOf("DATA;", StringComparison.Ordinal);
+        var data = IndexOf(bytes, "DATA;"u8, 0);
         if (data < 0) throw new FormatException("The file has no DATA section.");
-        var p = new Parser(text, data + 5);
-        while (p.NextEntity() is { } e) f.Entities[e.Id] = e;
+        var from = data + 5;
+        var cuts = Cuts(bytes, from, bytes.Length < 8 << 20 ? 1 : Environment.ProcessorCount * 4);
+        var parts = new List<StepEntity>[cuts.Count - 1];
+        if (parts.Length == 1) parts[0] = new Parser(bytes, cuts[0], cuts[1]).All();
+        else Parallel.For(0, parts.Length, k => parts[k] = new Parser(bytes, cuts[k], cuts[k + 1]).All());
+        f.Entities.EnsureCapacity(parts.Sum(x => x.Count));
+        foreach (var part in parts) foreach (var e in part) f.Entities[e.Id] = e;
         return f;
     }
 
-    sealed class Parser(string s, int i)
+    /// <summary>A text, as its UTF-8 bytes.</summary>
+    public static StepFile Parse(string text) => Read(Encoding.UTF8.GetBytes(text));
+
+    static int IndexOf(byte[] b, ReadOnlySpan<byte> what, int from)
+    {
+        var k = b.AsSpan(from).IndexOf(what);
+        return k < 0 ? -1 : from + k;
+    }
+
+    /// <summary>Where the DATA section is cut into <paramref name="n"/> parts: each at a line that starts an entity (#…) after one that ended (…;).</summary>
+    static List<int> Cuts(byte[] b, int from, int n)
+    {
+        var cuts = new List<int> { from };
+        var size = (b.Length - from) / Math.Max(n, 1);
+        for (var k = 1; k < n; k++)
+        {
+            var at = Math.Max(from + k * size, cuts[^1] + 1);
+            while (at < b.Length)
+            {
+                var nl = Array.IndexOf(b, (byte)'\n', at);
+                if (nl < 0) { at = b.Length; break; }
+                var next = nl + 1;
+                while (next < b.Length && b[next] is (byte)' ' or (byte)'\t' or (byte)'\r') next++;
+                var before = nl - 1;
+                while (before > from && b[before] is (byte)' ' or (byte)'\t' or (byte)'\r') before--;
+                if (next < b.Length && b[next] == '#' && b[before] == ';') { at = next; break; }
+                at = nl + 1;
+            }
+            if (at >= b.Length) break;
+            cuts.Add(at);
+        }
+        cuts.Add(b.Length);
+        return cuts;
+    }
+
+    sealed class Parser(byte[] s, int i, int end)
     {
         int _i = i;
+        // Each type's name and each enumeration made once: a large file repeats a few dozen of them millions of times.
+        readonly Dictionary<string, string> _names = [];
+        readonly Dictionary<string, StepEnum> _enums = [];
+
+        public List<StepEntity> All()
+        {
+            var o = new List<StepEntity>();
+            while (NextEntity() is { } e) o.Add(e);
+            return o;
+        }
+
+        static bool Space(byte c) => c is (byte)' ' or (byte)'\t' or (byte)'\r' or (byte)'\n';
+        static bool Digit(byte c) => c is >= (byte)'0' and <= (byte)'9';
+        static bool Letter(byte c) => c is >= (byte)'A' and <= (byte)'Z' or >= (byte)'a' and <= (byte)'z';
 
         void Skip()
         {
             while (_i < s.Length)
             {
-                if (char.IsWhiteSpace(s[_i])) _i++;
-                else if (s[_i] == '/' && _i + 1 < s.Length && s[_i + 1] == '*') { var end = s.IndexOf("*/", _i + 2, StringComparison.Ordinal); _i = end < 0 ? s.Length : end + 2; }
+                if (Space(s[_i])) _i++;
+                else if (s[_i] == '/' && _i + 1 < s.Length && s[_i + 1] == '*') { var e = IndexOf(s, "*/"u8, _i + 2); _i = e < 0 ? s.Length : e + 2; }
                 else break;
             }
         }
@@ -79,8 +141,8 @@ public sealed class StepFile
             while (true)
             {
                 Skip();
-                if (_i >= s.Length || s.AsSpan(_i).StartsWith("ENDSEC")) return null;
-                if (s[_i] != '#') { _i = s.IndexOf(';', _i) is var k && k < 0 ? s.Length : k + 1; continue; }
+                if (_i >= end || s.AsSpan(_i).StartsWith("ENDSEC"u8)) return null;
+                if (s[_i] != '#') { var k = Array.IndexOf(s, (byte)';', _i); _i = k < 0 ? s.Length : k + 1; continue; }
                 _i++;
                 var id = (int)Integer();
                 Skip(); Expect('='); Skip();
@@ -101,15 +163,27 @@ public sealed class StepFile
         long Integer()
         {
             var st = _i;
-            while (_i < s.Length && (char.IsDigit(s[_i]) || s[_i] == '-')) _i++;
+            while (_i < s.Length && (Digit(s[_i]) || s[_i] == '-')) _i++;
             return long.Parse(s.AsSpan(st, _i - st), CultureInfo.InvariantCulture);
         }
 
         string Keyword()
         {
             var st = _i;
-            while (_i < s.Length && (char.IsLetterOrDigit(s[_i]) || s[_i] == '_')) _i++;
-            return s[st.._i].ToUpperInvariant();
+            while (_i < s.Length && (Letter(s[_i]) || Digit(s[_i]) || s[_i] == '_')) _i++;
+            return Name(s.AsSpan(st, _i - st), _names);
+        }
+
+        static string Name(ReadOnlySpan<byte> b, Dictionary<string, string> names)
+        {
+            Span<char> c = stackalloc char[Math.Min(b.Length, 256)];
+            if (b.Length > c.Length) return Encoding.ASCII.GetString(b).ToUpperInvariant();
+            for (var k = 0; k < b.Length; k++) c[k] = char.ToUpperInvariant((char)b[k]);
+            var lookup = names.GetAlternateLookup<ReadOnlySpan<char>>();
+            if (lookup.TryGetValue(c, out var known)) return known;
+            var made = new string(c);
+            names[made] = made;
+            return made;
         }
 
         object? Value()
@@ -118,7 +192,7 @@ public sealed class StepFile
             var c = s[_i];
             switch (c)
             {
-                case '(':
+                case (byte)'(':
                 {
                     _i++;
                     var list = new List<object?>();
@@ -133,19 +207,20 @@ public sealed class StepFile
                         return list;
                     }
                 }
-                case '$': case '*': _i++; return null;
-                case '#': _i++; return new StepRef((int)Integer());
-                case '\'': return Str();
-                case '.':
+                case (byte)'$': case (byte)'*': _i++; return null;
+                case (byte)'#': _i++; return new StepRef((int)Integer());
+                case (byte)'\'': return Str();
+                case (byte)'.':
                 {
-                    var end = s.IndexOf('.', _i + 1);
-                    var v = s[(_i + 1)..end];
-                    _i = end + 1;
-                    return new StepEnum(v.ToUpperInvariant());
+                    var e = Array.IndexOf(s, (byte)'.', _i + 1);
+                    var name = Name(s.AsSpan(_i + 1, e - _i - 1), _names);
+                    _i = e + 1;
+                    if (!_enums.TryGetValue(name, out var en)) _enums[name] = en = new StepEnum(name);
+                    return en;
                 }
-                case '"': { var end = s.IndexOf('"', _i + 1); var v = s[(_i + 1)..end]; _i = end + 1; return v; } // binary: kept as text
+                case (byte)'"': { var e = Array.IndexOf(s, (byte)'"', _i + 1); var v = Encoding.ASCII.GetString(s, _i + 1, e - _i - 1); _i = e + 1; return v; } // binary: kept as text
                 default:
-                    if (char.IsLetter(c))
+                    if (Letter(c))
                     {
                         var type = Keyword();
                         Skip();
@@ -162,23 +237,33 @@ public sealed class StepFile
         object Number()
         {
             var st = _i;
-            while (_i < s.Length && (char.IsDigit(s[_i]) || s[_i] is '-' or '+' or '.' or 'E' or 'e')) _i++;
+            while (_i < s.Length && (Digit(s[_i]) || s[_i] is (byte)'-' or (byte)'+' or (byte)'.' or (byte)'E' or (byte)'e')) _i++;
             var t = s.AsSpan(st, _i - st);
-            if (t.IndexOfAny(".Ee") < 0 && long.TryParse(t, NumberStyles.Integer, CultureInfo.InvariantCulture, out var l)) return l;
+            if (t.IndexOfAny(".Ee"u8) < 0 && long.TryParse(t, NumberStyles.Integer, CultureInfo.InvariantCulture, out var l)) return l;
             return double.Parse(t, NumberStyles.Float, CultureInfo.InvariantCulture);
         }
 
+        static readonly UTF8Encoding Strict = new(false, true);
+
+        /// <summary>A quoted string: its bytes (a doubled quote one quote) as UTF-8, or Latin-1 when they are not; then its escapes.</summary>
         string Str()
         {
             _i++;
-            var raw = new StringBuilder();
+            var st = _i;
+            var doubled = false;
             while (true)
             {
-                var c = s[_i++];
-                if (c == '\'') { if (_i < s.Length && s[_i] == '\'') { raw.Append('\''); _i++; continue; } break; }
-                raw.Append(c);
+                if (_i >= s.Length) throw new FormatException("STEP: a string runs to the end of the file.");
+                if (s[_i] == '\'') { if (_i + 1 < s.Length && s[_i + 1] == '\'') { doubled = true; _i += 2; continue; } break; }
+                _i++;
             }
-            return Decode(raw.ToString());
+            var raw = s.AsSpan(st, _i - st);
+            _i++;
+            string text;
+            try { text = Strict.GetString(raw); }
+            catch (DecoderFallbackException) { text = Encoding.Latin1.GetString(raw); }
+            if (doubled) text = text.Replace("''", "'");
+            return Decode(text);
         }
     }
 
