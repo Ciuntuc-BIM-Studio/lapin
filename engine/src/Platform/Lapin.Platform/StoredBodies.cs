@@ -68,10 +68,17 @@ public static class StoredBodies
             return new ElementGeometry(placed, Plan2d.Has(e) ? Plan2d.PlanItems(e) : null, Instance: new SharedInstance(bodyId, xf));
         }
         if (e.Attrs[Key] is not JsonObject body) return null;
-        return new ElementGeometry(Parts(body), Plan2d.Has(e) ? Plan2d.PlanItems(e) : null);
+        return new ElementGeometry(_shared.GetValue(body, b => Parts(b)), Plan2d.Has(e) ? Plan2d.PlanItems(e) : null);
     }
 
+    /// <summary>
+    /// The parts of every stored body, built once for as long as it is the same body: a snapshot, an opened
+    /// project and every rebuild took them again from the triangles (a 6.8 million triangle Revit body, 40 s each time).
+    /// </summary>
     static readonly ConditionalWeakTable<JsonObject, List<GeometryPart>> _shared = [];
+
+    /// <summary>Above this many triangles a part is read face by face as it is: merging coplanar ones costs more than it gives on a curved mesh that big.</summary>
+    const int MergeUpTo = 100_000;
 
     /// <summary>A shared body's parts in its own coordinates, built once for as long as the body is the same.</summary>
     public static IReadOnlyList<GeometryPart> SharedParts(Entity shared) =>
@@ -113,7 +120,8 @@ public static class StoredBodies
             for (var k = 0; k + 2 < t.Length; k += 3)
                 if (t[k] >= 0 && t[k + 1] >= 0 && t[k + 2] >= 0 && t[k] < vertices.Length && t[k + 1] < vertices.Length && t[k + 2] < vertices.Length) tris.Add((t[k], t[k + 1], t[k + 2]));
             Solid? merged = null;
-            try { merged = SolidFromMesh.Build(vertices, tris); } catch (InvalidOperationException) { merged = null; }
+            if (tris.Count <= MergeUpTo)
+                try { merged = SolidFromMesh.Build(vertices, tris); } catch (InvalidOperationException) { merged = null; }
             if (merged != null && merged.Faces.Length > 0)
             {
                 list.Add(new GeometryPart((string?)p["name"] ?? "Body", (string?)p["color"] ?? "#c9ced6", merged, null, $"part:{list.Count}"));

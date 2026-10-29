@@ -37,7 +37,7 @@ public static class SolidFromMesh
         }
 
         // Triangles sharing an edge, by the undirected edge.
-        var byEdge = new Dictionary<long, List<int>>();
+        var byEdge = new Dictionary<long, List<int>>(EdgeComparer.Instance);
         for (int i = 0; i < tris.Length; i++)
             for (int e = 0; e < 3; e++)
             {
@@ -86,7 +86,7 @@ public static class SolidFromMesh
             foreach (var t in group) sum += normals[t];
             var n = sum.Normalized();
             // The group's boundary: directed edges whose reverse is not in the group.
-            var inGroup = new HashSet<long>();
+            var inGroup = new HashSet<long>(EdgeComparer.Instance);
             foreach (var t in group) for (int e = 0; e < 3; e++) inGroup.Add(Edge(tris[t], e));
             var boundary = new List<long>();
             foreach (var e in inGroup) if (!inGroup.Contains(Pack(To(e), From(e)))) boundary.Add(e);
@@ -97,26 +97,48 @@ public static class SolidFromMesh
             foreach (var l in loops) flat.Add(plane.Of(l));
             var outers = new List<int>();
             var holes = new List<int>();
-            for (int i = 0; i < loops.Count; i++) (Polygon2.SignedArea(flat[i]) > 0 ? outers : holes).Add(i);
-            foreach (var outer in outers)
+            var area = new double[loops.Count];
+            for (int i = 0; i < loops.Count; i++) { area[i] = Polygon2.SignedArea(flat[i]); (area[i] > 0 ? outers : holes).Add(i); }
+            // Each hole belongs to the innermost outer round it: the smallest that holds a point just inside it.
+            // Smallest first, each outer's box tried before its polygon: a face of thousands of holes (a grating,
+            // a mesh exported whole) was every outer against every hole against every outer again.
+            outers.Sort((x, y) => area[x].CompareTo(area[y]));
+            var boxes = new (Vec2 Min, Vec2 Max)[loops.Count];
+            foreach (var o in outers) boxes[o] = BoxOf(flat[o]);
+            var mine = new Dictionary<int, List<int[]>>();
+            foreach (var h in holes)
             {
-                var poly = flat[outer];
-                var mine = new List<int[]>();
-                foreach (var h in holes)
+                var inside = Inside(flat[h]);
+                foreach (var o in outers)
                 {
-                    var inside = Inside(flat[h]);
-                    if (!Polygon2.Contains(poly, inside)) continue;
-                    // A hole inside a nested outer belongs to the innermost one.
-                    var nested = false;
-                    foreach (var o2 in outers)
-                        if (o2 != outer && Polygon2.Contains(poly, flat[o2][0]) && Polygon2.Contains(flat[o2], inside)) { nested = true; break; }
-                    if (!nested) mine.Add([.. loops[h]]);
+                    var (lo, hi) = boxes[o];
+                    if (inside.X < lo.X || inside.X > hi.X || inside.Y < lo.Y || inside.Y > hi.Y || !Polygon2.Contains(flat[o], inside)) continue;
+                    (mine.TryGetValue(o, out var l) ? l : mine[o] = []).Add([.. loops[h]]);
+                    break;
                 }
-                faces.Add(new FaceInput([.. loops[outer]], [.. mine], n));
             }
+            // In the loops' order, as before.
+            foreach (var outer in outers.Order())
+                faces.Add(new FaceInput([.. loops[outer]], [.. mine.GetValueOrDefault(outer) ?? []], n));
         }
         if (faces.Count < 4) return null;
         return SolidBuilder.Make(vertices, faces, tag, 1e-9);
+    }
+
+    /// <summary>
+    /// Edges hashed by both ends, mixed. A long's own hash XORs its halves, which for an edge is a ^ b: two
+    /// nearby vertex numbers make a small number, so a mesh's edges crowded into a few buckets and every
+    /// lookup walked them (a Revit fan of 92,000 triangles took 4 s, one of 6.8 million would have taken hours).
+    /// </summary>
+    sealed class EdgeComparer : IEqualityComparer<long>
+    {
+        public static readonly EdgeComparer Instance = new();
+        public bool Equals(long a, long b) => a == b;
+        public int GetHashCode(long e)
+        {
+            var h = (ulong)e * 0x9E3779B97F4A7C15UL;
+            return (int)(h >> 32) ^ (int)h;
+        }
     }
 
     /// <summary>A directed edge as one number: its start in the high half, its end in the low.</summary>
@@ -139,6 +161,13 @@ public static class SolidFromMesh
         }
     }
 
+    static (Vec2 Min, Vec2 Max) BoxOf(Vec2[] loop)
+    {
+        double x0 = double.MaxValue, y0 = double.MaxValue, x1 = double.MinValue, y1 = double.MinValue;
+        foreach (var p in loop) { x0 = Math.Min(x0, p.X); y0 = Math.Min(y0, p.Y); x1 = Math.Max(x1, p.X); y1 = Math.Max(y1, p.Y); }
+        return (new Vec2(x0, y0), new Vec2(x1, y1));
+    }
+
     /// <summary>A point just inside a loop's first edge, on its left (holes run the other way: inside the hole).</summary>
     static Vec2 Inside(Vec2[] loop)
     {
@@ -156,7 +185,7 @@ public static class SolidFromMesh
     {
         var from = new Dictionary<int, List<int>>();
         foreach (var e in edges) { if (!from.TryGetValue(From(e), out var l)) from[From(e)] = l = []; l.Add(To(e)); }
-        var used = new HashSet<long>();
+        var used = new HashSet<long>(EdgeComparer.Instance);
         var loops = new List<List<int>>();
         var options = new List<int>();
         foreach (var start in edges)
@@ -169,7 +198,9 @@ public static class SolidFromMesh
             {
                 loop.Add(cur);
                 options.Clear();
-                foreach (var n in from[cur]) if (!used.Contains(Pack(cur, n))) options.Add(n);
+                // An open mesh (a shell with gaps): a boundary may end where no edge goes on; that loop is left open, and dropped.
+                if (!from.TryGetValue(cur, out var outs)) break;
+                foreach (var n in outs) if (!used.Contains(Pack(cur, n))) options.Add(n);
                 if (options.Count == 0) break;
                 var next = options[0];
                 if (options.Count > 1)

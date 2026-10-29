@@ -25,10 +25,30 @@ public static class Tessellator
 {
     public static TriMesh Tessellate(Solid s)
     {
-        var pos = new List<float>(); var nor = new List<float>(); var idx = new List<int>(); var edges = new List<float>();
+        var pos = new List<float>(s.Faces.Length * 9); var nor = new List<float>(s.Faces.Length * 9); var idx = new List<int>(s.Faces.Length * 3); var edges = new List<float>(s.Faces.Length * 9);
+        var local = new Dictionary<int, int>();
+        void Edge(Vec3 p, Vec3 q) { edges.Add((float)p.X); edges.Add((float)p.Y); edges.Add((float)p.Z); edges.Add((float)q.X); edges.Add((float)q.Y); edges.Add((float)q.Z); }
         foreach (var f in s.Faces)
         {
-            var local = new Dictionary<int, int>();
+            // A triangle (a mesh read as it is, face by face): its three corners straight in, no triangulation.
+            if (f.Outer.Length == 3 && f.Holes.Length == 0)
+            {
+                var k0 = pos.Count / 3;
+                for (var c = 0; c < 3; c++)
+                {
+                    var p = s.Vertices[f.Outer[c]];
+                    pos.Add((float)p.X); pos.Add((float)p.Y); pos.Add((float)p.Z);
+                    nor.Add((float)f.Normal.X); nor.Add((float)f.Normal.Y); nor.Add((float)f.Normal.Z);
+                    idx.Add(k0 + c);
+                }
+                for (var c = 0; c < 3; c++)
+                {
+                    int a = f.Outer[c], b = f.Outer[(c + 1) % 3];
+                    if (a < b) Edge(s.Vertices[a], s.Vertices[b]);
+                }
+                continue;
+            }
+            local.Clear();
             int Vi(int id)
             {
                 if (local.TryGetValue(id, out var k)) return k;
@@ -43,15 +63,17 @@ public static class Tessellator
             {
                 idx.Add(Vi(a)); idx.Add(Vi(b)); idx.Add(Vi(c));
             }
-            foreach (var loop in new[] { f.Outer }.Concat(f.Holes))
+            for (int h = -1; h < f.Holes.Length; h++)
+            {
+                var loop = h < 0 ? f.Outer : f.Holes[h];
                 for (int i = 0; i < loop.Length; i++)
                 {
                     // Each edge is shared by two faces: emit it from one side only.
                     int a = loop[i], b = loop[(i + 1) % loop.Length];
                     if (a > b) continue;
-                    var p = s.Vertices[a]; var q = s.Vertices[b];
-                    edges.AddRange([(float)p.X, (float)p.Y, (float)p.Z, (float)q.X, (float)q.Y, (float)q.Z]);
+                    Edge(s.Vertices[a], s.Vertices[b]);
                 }
+            }
         }
         return new TriMesh([.. pos], [.. nor], [.. idx], [.. edges]);
     }
