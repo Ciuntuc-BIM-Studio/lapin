@@ -19,9 +19,6 @@ namespace Lapin.Civil;
 /// </summary>
 public static class GeoImport
 {
-    /// <summary>Coordinates this far from zero (m) are map coordinates, not a local survey.</summary>
-    const double MapLike = 20000;
-
     /// <summary>
     /// How the file's coordinates land in the plan: converted from the file's
     /// system to the project's, then through the survey point; small local
@@ -31,7 +28,7 @@ public static class GeoImport
     {
         if (sample.Count == 0) return (x, y) => new Vec2(x, y);
         var known = GeoRef.Get(fileCrs);
-        var local = known == null && sample.All(p => Math.Abs(p.X) < MapLike && Math.Abs(p.Y) < MapLike);
+        var local = known == null && !GeoRef.LooksLikeMap(sample);
         if (local) return (x, y) => new Vec2(x, y);
         var from = known?.Id ?? Guess(sample) ?? Location.Crs(ctx.Model);
         var project = Location.Crs(ctx.Model) ?? from;
@@ -46,16 +43,8 @@ public static class GeoImport
         return (x, y) => { var (e, n) = ToProject(x, y); return GeoRef.ToPlan(m, e, n); };
     }
 
-    /// <summary>The system map coordinates look like: Stereo 70's range over Romania, else UTM's, else longitude and latitude.</summary>
-    public static string? Guess(IReadOnlyList<(double X, double Y)> pts)
-    {
-        var (x, y) = (pts.Average(p => p.X), pts.Average(p => p.Y));
-        if (Math.Abs(x) <= 180 && Math.Abs(y) <= 90) return GeoRef.Wgs84;
-        if (x is > 100000 and < 900000 && y is > 150000 and < 800000) return GeoRef.Stereo70;
-        // UTM: zone 35 covers most of Romania (zone 34 is named in the file or the project).
-        if (x is > 160000 and < 840000 && y is > 4000000 and < 6000000) return "EPSG:32635";
-        return null;
-    }
+    /// <summary>The system map coordinates look like (<see cref="GeoRef.Guess"/>).</summary>
+    public static string? Guess(IReadOnlyList<(double X, double Y)> pts) => GeoRef.Guess(pts);
 
     // ─── Survey points from DXF ───
 

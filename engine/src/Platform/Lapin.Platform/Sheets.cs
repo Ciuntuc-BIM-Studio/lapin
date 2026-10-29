@@ -177,7 +177,10 @@ public static class Sheets
                     var at = pl.ToPaper(t.At);
                     if (at.X >= pl.X0 && at.X <= pl.X1 && at.Y >= pl.Y0 && at.Y <= pl.Y1) o.Texts.Add(t with { At = at });
                 }
-                if (o.Segments.Count + o.Loops.Count + o.Texts.Count > 0) pens.Add(o);
+                // A picture keeps its corners and is clipped to the box where it is printed.
+                foreach (var img in pen.Images) o.Images.Add(img with { Corners = [.. img.Corners.Select(pl.ToPaper)] });
+                if (o.Images.Count > 0) o.Clip = (pl.X0, pl.Y0, pl.X1, pl.Y1);
+                if (o.Segments.Count + o.Loops.Count + o.Texts.Count + o.Images.Count > 0) pens.Add(o);
             }
 
         var frame = new Pen("FRAME", "#000000", FramePen, null, null);
@@ -256,7 +259,8 @@ public static class Sheets
         };
     }
 
-    public static byte[] Pdf(IQueryContext q, IEnumerable<Entity> sheets) => PdfWriter.Write(sheets.Select(s => Compose(q, s)).ToList());
+    public static byte[] Pdf(IQueryContext q, IEnumerable<Entity> sheets) =>
+        PdfWriter.Write(sheets.Select(s => Compose(q, s)).ToList(), id => q.Model.Get(id) is { Class: Images.Class } image ? Images.Bytes(image) : null);
 
     public static byte[] Dxf(IQueryContext q, Entity sheet) => DxfWriter.Page(Compose(q, sheet), $"Lapin · {sheet.Str("number")} {sheet.Name}");
 

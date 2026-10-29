@@ -28,10 +28,13 @@ public readonly record struct Affine(double A, double B, double C, double D, dou
     public double AngleDeg => Math.Atan2(C, A) * 180 / Math.PI;
 }
 
-/// <summary>What an import asks for: the view, metres per drawing unit (null: the file's, or a guess), where the origin lands, the turn, whether to mirror (null: by the view), an extra factor, which layers, and what to bring.</summary>
+/// <summary>
+/// What an import asks for: the view, metres per drawing unit (null: the file's, or a guess), where the origin lands, the turn, whether to mirror (null: by the view), an extra factor, which layers, and what to bring.
+/// <see cref="Map"/>: the file's x and y are the map's eastings and northings (a cadastral plan in Stereo 70), laid through the project's survey point and its angle to true north, in metres unless told; the origin, the turn and the factor do not apply.
+/// </summary>
 public sealed record DxfImportOptions(string ViewId, double? UnitFactor = null, Vec2 At = default, double RotationDeg = 0, bool? Flip = null, double Scale = 1,
     HashSet<string>? Layers = null, string? LayerPrefix = null, bool Texts = true, bool Hatches = true, string Dimensions = "native",
-    bool Link = false, string? LinkId = null, string? Path = null, JsonObject? Raw = null, bool JoinDimensions = true);
+    bool Link = false, string? LinkId = null, string? Path = null, JsonObject? Raw = null, bool JoinDimensions = true, bool Map = false);
 
 /// <summary>
 /// A DXF brought into a view as Lapin's own drafting: its layers as drafting
@@ -83,9 +86,9 @@ public static class DxfImport
         if (!(scale > 0)) throw new CommandException("The scale factor must be positive.");
         // As a link (Manage → Links): read-only, kept with the options it came with so it can be read again from its path.
         var raw = new JsonObject();
-        foreach (var k in new[] { "units", "at", "rotation", "flip", "scale", "layers", "layerPrefix", "texts", "hatches", "dimensions", "joinDimensions" }) if (a[k] != null) raw[k] = a[k]!.DeepClone();
+        foreach (var k in new[] { "units", "at", "rotation", "flip", "scale", "layers", "layerPrefix", "texts", "hatches", "dimensions", "joinDimensions", "map" }) if (a[k] != null) raw[k] = a[k]!.DeepClone();
         return new DxfImportOptions(viewId, units, at, Json.Number(a["rotation"]) ?? 0, flip, scale, layers, ((string?)a["layerPrefix"])?.Trim() is { Length: > 0 } pre ? pre : null, B(a["texts"], true), B(a["hatches"], true), dims,
-            B(a["link"], false) || (string?)a["linkId"] != null, (string?)a["linkId"], (string?)a["path"], raw, B(a["joinDimensions"], true));
+            B(a["link"], false) || (string?)a["linkId"] != null, (string?)a["linkId"], (string?)a["path"], raw, B(a["joinDimensions"], true), B(a["map"], false));
     }
 
     /// <summary>Whether a view mirrors an imported drawing: a section or elevation looking towards −X or −Y does; a plan never.</summary>
@@ -212,6 +215,12 @@ public static class DxfImport
             ["layers"] = layers,
             ["blocks"] = doc.Blocks.Count,
             ["view"] = view == null ? null : new JsonObject { ["kind"] = view.Str("kind") ?? "plan", ["scale"] = view.NumOrNull("scale") ?? 100, ["flip"] = FlipFor(view) },
+            // Whether it is in map coordinates (a cadastral plan): its corner far from zero, as metres; and whether the project is tied to the map.
+            ["map"] = new JsonObject
+            {
+                ["likely"] = ext is { } me && GeoRef.LooksLikeMap([(me.Min.X, me.Min.Y), (me.Max.X, me.Max.Y)]),
+                ["georeferenced"] = GeoRef.Georeferenced(m), ["crs"] = Location.Crs(m),
+            },
         };
     }
 
@@ -416,13 +425,38 @@ public static class DxfImport
         }
     }
 
+    /// <summary>
+    /// A drawing in map coordinates into a plan: its units to metres, then eastings and northings through the
+    /// survey point and the angle to true north (<see cref="GeoRef.ToPlan"/>). A project not yet tied to the map
+    /// is tied by it: the survey point at the plan's origin, on the drawing's lower-left corner rounded to the metre,
+    /// in the system its coordinates look like when the project has none.
+    /// </summary>
+    static Affine MapFrame(ICommandContext ctx, DxfDocument doc, Entity view, double factor)
+    {
+        if (view.Str("kind") is not (null or "plan")) throw new CommandException("A drawing in map coordinates goes into a plan.");
+        if (!GeoRef.Georeferenced(ctx.Model))
+        {
+            var ext = Extents(doc) ?? throw new CommandException("The drawing is empty.");
+            var (e0, n0) = (ext.Min.X * factor, ext.Min.Y * factor);
+            if (!GeoRef.LooksLikeMap([(e0, n0)])) throw new CommandException("The drawing's coordinates are not a map's (eastings and northings): place it by its origin instead, or tie the project to the map first (Manage → Location).");
+            Location.Georeference(ctx, Location.Crs(ctx.Model) ?? GeoRef.Guess([(e0, n0)]), Math.Round(e0), Math.Round(n0));
+        }
+        // plan = survey + R·(e − E0, n − N0), R the turn from the map's axes to the plan's (GeoRef.ToPlan).
+        var o = GeoRef.ToPlan(ctx.Model, 0, 0);
+        var ex = GeoRef.ToPlan(ctx.Model, 1, 0) - o;
+        var ny = GeoRef.ToPlan(ctx.Model, 0, 1) - o;
+        return Affine.Scale(factor, factor).Then(new Affine(ex.X, ny.X, ex.Y, ny.Y, o.X, o.Y));
+    }
+
     public static JsonObject Import(ICommandContext ctx, DxfDocument doc, DxfImportOptions o, string fileName)
     {
         var view = Views.Find(ctx.Model, o.ViewId) ?? throw new CommandException("There is no such view.");
         if (view.Str("kind") == "3d") throw new CommandException("A DXF is imported into a plan, a section or an elevation.");
-        var (factor, guessed) = o.UnitFactor is { } uf ? (uf, false) : Units(doc);
-        var flip = o.Flip ?? FlipFor(view);
-        var root = Affine.Scale(flip ? -factor * o.Scale : factor * o.Scale, factor * o.Scale).Then(Affine.Rotate(o.RotationDeg)).Then(Affine.Translate(o.At));
+        // In map coordinates a drawing is in metres unless told (a cadastral plan's kilometres would read as millimetres).
+        var (factor, guessed) = o.UnitFactor is { } uf ? (uf, false) : o.Map ? (1, false) : Units(doc);
+        var flip = !o.Map && (o.Flip ?? FlipFor(view));
+        var root = o.Map ? MapFrame(ctx, doc, view, factor)
+            : Affine.Scale(flip ? -factor * o.Scale : factor * o.Scale, factor * o.Scale).Then(Affine.Rotate(o.RotationDeg)).Then(Affine.Translate(o.At));
         // A link: made now, or (a reload) emptied of what it held.
         Entity? link = null;
         if (o.Link)

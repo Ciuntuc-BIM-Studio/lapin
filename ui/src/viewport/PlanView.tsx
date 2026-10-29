@@ -572,7 +572,8 @@ export function PlanView() {
           if (n) void editDimension(n.id, w);
         }}>
         <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>
-        {orthophotos(nodes).filter((o) => !o.storeyId || o.storeyId === storey?.id).map((o) => {
+        {/* The drawing lays the orthophotos itself (CivilModule's marks, so sheets print them); the modelling lines lie over them here. */}
+        {!(drawing && (planDrawing || siteView)) && orthophotos(nodes).filter((o) => !o.storeyId || o.storeyId === storey?.id).map((o) => {
           // The image's unit square onto its corners on screen: (1, 0) to the top right, (0, 1) to the bottom left.
           const [tl, tr, , bl] = o.corners.map(([x, y]) => toScreen({ x, y }));
           return <image key={`ortho:${o.id}`} href={o.image.url} x={0} y={0} width={1} height={1} preserveAspectRatio="none" opacity={o.opacity} className="plan-orthophoto"

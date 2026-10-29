@@ -4,8 +4,9 @@
  * 1:100 zoomed to paper size looks as it prints.
  */
 
-import { memo, useMemo } from 'react';
-import { screenInk, type DrawingDto } from './drawing';
+import { memo, useId, useMemo } from 'react';
+import { useSession } from '../engine/session';
+import { screenInk, type DrawingDto, type PenDto } from './drawing';
 
 type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
 
@@ -29,6 +30,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
     }
     // True to paper, within what a screen shows well when zoomed far in or out.
     const width = p.stroke ? Math.min(4, Math.max(0.5, p.width * pxPerMm)) : 0;
+    if (p.images?.length) return <PenImages key={i} pen={p} toScreen={toScreen} />;
     if (p.texts?.length) {
       return (
         <g key={i} className="pen-text" fill={stroke ?? '#000'}>
@@ -55,3 +57,28 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
   }), [drawing, toScreen, pxPerMm, onDark]);
   return <g className="drawing-layer">{paths}</g>;
 });
+
+/** A pen's pictures, each its image's unit square laid onto its corners, clipped to the pen's box when it has one. */
+function PenImages({ pen, toScreen }: { pen: PenDto; toScreen: ToScreen }) {
+  const nodes = useSession((s) => s.nodes);
+  const clipId = `pen-clip${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const clip = pen.clip && pen.clip.length === 4 ? [toScreen({ x: pen.clip[0], y: pen.clip[1] }), toScreen({ x: pen.clip[2], y: pen.clip[3] })] : null;
+  return (
+    <g className="pen-image" clipPath={clip ? `url(#${clipId})` : undefined}>
+      {clip && (
+        <clipPath id={clipId}>
+          <rect x={Math.min(clip[0].x, clip[1].x)} y={Math.min(clip[0].y, clip[1].y)} width={Math.abs(clip[1].x - clip[0].x)} height={Math.abs(clip[1].y - clip[0].y)} />
+        </clipPath>
+      )}
+      {(pen.images ?? []).map((img, k) => {
+        const n = nodes.get(img.id);
+        const data = n?.props.data, mime = n?.props.mime;
+        if (typeof data !== 'string' || typeof mime !== 'string' || img.corners.length < 8) return null;
+        const c = img.corners;
+        const [tl, tr, bl] = [toScreen({ x: c[0], y: c[1] }), toScreen({ x: c[2], y: c[3] }), toScreen({ x: c[6], y: c[7] })];
+        return <image key={k} href={`data:${mime};base64,${data}`} x={0} y={0} width={1} height={1} preserveAspectRatio="none" opacity={img.opacity} className="plan-orthophoto"
+          transform={`matrix(${tr.x - tl.x} ${tr.y - tl.y} ${bl.x - tl.x} ${bl.y - tl.y} ${tl.x} ${tl.y})`} />;
+      })}
+    </g>
+  );
+}

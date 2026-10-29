@@ -67,6 +67,8 @@ public sealed class ViewMark(string? owner)
     public List<Vec2> Snaps { get; } = [];
     /// <summary>Filled areas (even-odd loops) and their colour, under the lines.</summary>
     public List<(IReadOnlyList<IReadOnlyList<Vec2>> Loops, string Color)> Fills { get; } = [];
+    /// <summary>Pictures under everything (an orthophoto), by their corners in the view's coordinates; not counted in the view's extent.</summary>
+    public List<PenImage> Images { get; } = [];
     /// <summary>The exact shapes a click or a snap uses (drafted lines, arcs, circles), as their JSON.</summary>
     public List<System.Text.Json.Nodes.JsonObject> Shapes { get; } = [];
     /// <summary>What the mark tells the interface of itself (a dimension string: its points as drawn now, for its grips).</summary>

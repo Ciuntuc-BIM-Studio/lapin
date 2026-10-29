@@ -212,11 +212,20 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
 
     static IReadOnlyList<Vec2> Outline(JsonObject a) => Args.Points(a);
 
-    /// <summary>In plans, the major contours' elevations (relative to ±0.00), along them; the platforms' elevations inside them.</summary>
+    /// <summary>In plans, the orthophotos; the major contours' elevations (relative to ±0.00), along them; the platforms' elevations inside them.</summary>
     public IEnumerable<ViewMark> Marks(ViewContext c)
     {
         if (c.Kind != "plan") yield break;
         var storey = c.View.Str("storeyId");
+        // The orthophotos under it all, laid by their corners: a site view shows every one, any other plan those of its storey (or of none).
+        foreach (var o in c.Model.OfClass(Orthophotos.Class))
+        {
+            if (SitePlans.Of(c.View) == null && Spatial.StoreyOf(c.Model, o.Id) is { } on && on.Id != storey) continue;
+            if (o.Str("image") is not { } image || Orthophotos.Corners(o) is not { Count: 4 } corners) continue;
+            var mk = new ViewMark(o.Id);
+            mk.Images.Add(new PenImage(image, [.. corners.Select(p => c.Map(p))], Math.Clamp(o.NumOrNull("opacity") ?? 1, 0.05, 1)));
+            yield return mk;
+        }
         var text = Standards.ResolveText(c.Book, new JsonObject());
         foreach (var e in c.Model.OfClass(IfcClass.GeographicElement))
         {

@@ -557,6 +557,36 @@ public class DxfImportTests
         Assert.Equal("dashed", layer.LineType);
         Assert.Equal(0.35, layer.Weight);
     }
+
+    [Fact]
+    public void A_drawing_in_map_coordinates_lies_where_the_map_puts_it()
+    {
+        // A cadastral line in Stereo 70, in metres (the file says nothing of its units).
+        var line = "0\nLINE\n8\nCADASTRU\n10\n587010\n20\n326020\n11\n587030\n21\n326020";
+        var f = F();
+        var plan = Plan(f);
+        var info = (JsonObject)f.Session.Query("drafting.dxfInfo", Args(plan, Dxf(line, units: 0)))!;
+        Assert.True((bool)info["map"]!["likely"]!);
+        Assert.False((bool)info["map"]!["georeferenced"]!);
+        // The project not yet tied to the map: the drawing ties it, on its lower-left corner.
+        f.Run("drafting.importDxf", Args(plan, Dxf(line, units: 0), a => a["map"] = true));
+        Assert.Equal((587010.0, 326020.0), GeoRef.ToMap(f.Model, new Vec2(0, 0)));
+        Assert.Equal("EPSG:3844", Location.Crs(f.Model));
+        // Tied, with the project turned 90° from true north: the line runs along the plan's y.
+        var g = F();
+        var plan2 = Plan(g);
+        g.Run("project.location", new JsonObject { ["crs"] = "EPSG:3844", ["base"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["elevation"] = 0, ["northAngle"] = 90 }, ["survey"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["easting"] = 587000, ["northing"] = 326000 } });
+        var a0 = GeoRef.ToPlan(g.Model, 587010, 326020);
+        var a1 = GeoRef.ToPlan(g.Model, 587030, 326020);
+        g.Run("drafting.importDxf", Args(plan2, Dxf(line, units: 0), a => { a["map"] = true; a["at"] = new JsonArray(99, 99); a["rotation"] = 45; }));
+        var drawn = Views.Render(g.Session.Reader, g.Model.Get(plan2)!).Marks.SelectMany(m => m.Lines).Where(l => l.Layer != "PICK").ToList();
+        Assert.Contains(drawn, l => (l.A - a0).Length < 1e-6 && (l.B - a1).Length < 1e-6 || (l.A - a1).Length < 1e-6 && (l.B - a0).Length < 1e-6);
+        Assert.Equal(20, (a1 - a0).Length, 6);
+        // Only into a plan, and only coordinates that are a map's.
+        Assert.Throws<CommandException>(() => g.Run("drafting.importDxf", Args(Section(g, 0, 0, 10, 0), Dxf(line, units: 0), a => a["map"] = true)));
+        var h = F();
+        Assert.Throws<CommandException>(() => h.Run("drafting.importDxf", Args(Plan(h), Dxf("0\nLINE\n8\n0\n10\n0\n20\n0\n11\n10\n21\n0", units: 6), a => a["map"] = true)));
+    }
 }
 
 /// <summary>A real DXF brought into a plan, its summary and the plan as SVG, for the eye (LAPIN_DXF_SAMPLE=/path/file.dxf and LAPIN_DXF_SVG_DIR).</summary>
@@ -626,4 +656,5 @@ public class DxfImportSvgTests
         var svg = string.Create(System.Globalization.CultureInfo.InvariantCulture, $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{minX - 1:0.###} {-(maxY + 1):0.###} {w + 2:0.###} {h2 + 2:0.###}\" width=\"{(w + 2) * 70:0}\" height=\"{(h2 + 2) * 70:0}\" style=\"background:#fff\"><g transform=\"scale(1,-1)\">{sb}</g></svg>");
         File.WriteAllText(file, svg, Encoding.UTF8);
     }
+
 }

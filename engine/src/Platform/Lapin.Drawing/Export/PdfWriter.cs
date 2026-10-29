@@ -7,18 +7,41 @@ using Lapin.Drawing.Views;
 namespace Lapin.Drawing.Export;
 
 /// <summary>
-/// Pages as a PDF (after BubbleBIM Pro's writer): vector only, no library.
+/// Pages as a PDF (after BubbleBIM Pro's writer): vectors, no library.
 /// Fills even-odd, lines with their colour, paper width and dashes, texts in
-/// the PDF standard Helvetica with the Romanian letters added to its encoding.
+/// the PDF standard Helvetica with the Romanian letters added to its encoding;
+/// pictures (an orthophoto) as image XObjects laid by their corners, clipped
+/// to their pen's box, as transparent as they are drawn.
 /// </summary>
 public static class PdfWriter
 {
     const double Pt = 72 / 25.4;
 
-    public static byte[] Write(IReadOnlyList<PaperPage> pages)
+    /// <summary>The pages; <paramref name="image"/> gives a picture's file (PNG or JPEG) by its id, and a picture without one is left out.</summary>
+    public static byte[] Write(IReadOnlyList<PaperPage> pages, Func<string, byte[]?>? image = null)
     {
-        var streams = pages.Select(p => Deflate(Encoding.Latin1.GetBytes(Content(p)))).ToList();
-        return File(pages, streams);
+        var pictures = new List<Raster>();
+        var index = new Dictionary<string, int>();
+        var alphas = new List<double>();
+        int? Picture(string id)
+        {
+            if (!index.TryGetValue(id, out var k))
+            {
+                var r = image?.Invoke(id) is { } bytes ? Raster.Read(bytes) : null;
+                k = r != null ? pictures.Count : -1;
+                if (r != null) pictures.Add(r);
+                index[id] = k;
+            }
+            return k >= 0 ? k : null;
+        }
+        int Alpha(double a)
+        {
+            var k = alphas.FindIndex(x => Math.Abs(x - a) < 1e-3);
+            if (k < 0) { alphas.Add(a); k = alphas.Count - 1; }
+            return k;
+        }
+        var streams = pages.Select(p => Deflate(Encoding.Latin1.GetBytes(Content(p, Picture, Alpha)))).ToList();
+        return File(pages, streams, pictures, alphas);
     }
 
     static string F(double v) => double.IsFinite(v) ? v.ToString("0.###", CultureInfo.InvariantCulture) : "0";
@@ -30,7 +53,7 @@ public static class PdfWriter
         return (0, 0, 0);
     }
 
-    static string Content(PaperPage page)
+    static string Content(PaperPage page, Func<string, int?> picture, Func<double, int> alpha)
     {
         // Paper y runs down; PDF's runs up.
         string X(double mm) => F(mm * Pt);
@@ -39,6 +62,22 @@ public static class PdfWriter
         var c = new StringBuilder(page.LineCap == "square" ? "2 J 0 j\n" : "1 J 1 j\n");
         foreach (var pen in page.Pens)
         {
+            if (pen.Images.Count > 0)
+            {
+                c.Append("q\n");
+                if (pen.Clip is { } box) c.Append(X(box.X0)).Append(' ').Append(Y(box.Y1)).Append(' ').Append(F((box.X1 - box.X0) * Pt)).Append(' ').Append(F((box.Y1 - box.Y0) * Pt)).Append(" re W n\n");
+                foreach (var img in pen.Images)
+                {
+                    if (img.Corners.Length != 4 || picture(img.ImageId) is not { } k) continue;
+                    // The image's unit square: (0, 0) its bottom left, (1, 0) its bottom right, (0, 1) its top left.
+                    var (tl, br, bl) = (img.Corners[0], img.Corners[2], img.Corners[3]);
+                    c.Append("q ");
+                    if (img.Opacity < 0.999) c.Append("/GS").Append(alpha(img.Opacity)).Append(" gs ");
+                    c.Append(F((br.X - bl.X) * Pt)).Append(' ').Append(F(-(br.Y - bl.Y) * Pt)).Append(' ').Append(F((tl.X - bl.X) * Pt)).Append(' ').Append(F(-(tl.Y - bl.Y) * Pt)).Append(' ')
+                     .Append(X(bl.X)).Append(' ').Append(Y(bl.Y)).Append(" cm /Im").Append(k).Append(" Do Q\n");
+                }
+                c.Append("Q\n");
+            }
             if (pen.Fill != null && pen.Loops.Count > 0)
             {
                 var (r, g, b) = Rgb(pen.Fill);
@@ -132,9 +171,9 @@ public static class PdfWriter
         return ms.ToArray();
     }
 
-    static byte[] File(IReadOnlyList<PaperPage> pages, List<byte[]> streams)
+    static byte[] File(IReadOnlyList<PaperPage> pages, List<byte[]> streams, List<Raster> pictures, List<double> alphas)
     {
-        // 1 catalog, 2 pages, 3 and 4 the fonts, then a page and its content for each.
+        // 1 catalog, 2 pages, 3 and 4 the fonts, then a page and its content for each, then the pictures (each with its alpha, if any).
         var objects = new List<byte[]>();
         void Obj(string s) => objects.Add(Encoding.ASCII.GetBytes(s));
         var encoding = $"<< /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences {Differences} >>";
@@ -142,10 +181,27 @@ public static class PdfWriter
         Obj($"<< /Type /Pages /Kids [{string.Join(' ', pages.Select((_, i) => $"{5 + 2 * i} 0 R"))}] /Count {pages.Count} >>");
         Obj($"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding {encoding} >>");
         Obj($"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding {encoding} >>");
+        var first = 5 + 2 * pages.Count;
+        var pictureIds = new List<int>();
+        for (int k = 0, next = first; k < pictures.Count; k++) { pictureIds.Add(next); next += pictures[k].Alpha != null ? 2 : 1; }
+        var xobjects = pictures.Count == 0 ? "" : $" /XObject << {string.Join(' ', pictureIds.Select((id, k) => $"/Im{k} {id} 0 R"))} >>";
+        var states = alphas.Count == 0 ? "" : $" /ExtGState << {string.Join(' ', alphas.Select((a, k) => $"/GS{k} << /ca {F(a)} /CA {F(a)} >>"))} >>";
+        byte[] Stream(string dict, byte[] data) => [.. Encoding.ASCII.GetBytes($"<< /Length {data.Length} {dict} >>\nstream\n"), .. data, .. Encoding.ASCII.GetBytes("\nendstream")];
         for (var i = 0; i < pages.Count; i++)
         {
-            Obj($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {F(pages[i].W * Pt)} {F(pages[i].H * Pt)}] /Contents {6 + 2 * i} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> >>");
-            objects.Add([.. Encoding.ASCII.GetBytes($"<< /Length {streams[i].Length} /Filter /FlateDecode >>\nstream\n"), .. streams[i], .. Encoding.ASCII.GetBytes("\nendstream")]);
+            Obj($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {F(pages[i].W * Pt)} {F(pages[i].H * Pt)}] /Contents {6 + 2 * i} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >>{xobjects}{states} >> >>");
+            objects.Add(Stream("/Filter /FlateDecode", streams[i]));
+        }
+        for (var k = 0; k < pictures.Count; k++)
+        {
+            var r = pictures[k];
+            var image = $"/Type /XObject /Subtype /Image /Width {r.W} /Height {r.H} /ColorSpace /{r.ColorSpace} /BitsPerComponent 8";
+            if (r.Jpeg) objects.Add(Stream(image + " /Filter /DCTDecode", r.Data));
+            else
+            {
+                objects.Add(Stream(image + (r.Alpha != null ? $" /SMask {pictureIds[k] + 1} 0 R" : "") + " /Filter /FlateDecode", Deflate(r.Data)));
+                if (r.Alpha != null) objects.Add(Stream($"/Type /XObject /Subtype /Image /Width {r.W} /Height {r.H} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode", Deflate(r.Alpha)));
+            }
         }
         using var f = new MemoryStream();
         void W(string s) => f.Write(Encoding.ASCII.GetBytes(s));

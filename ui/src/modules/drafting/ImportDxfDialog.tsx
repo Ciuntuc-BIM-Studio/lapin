@@ -3,7 +3,9 @@
  * a guess from its extents), where its origin lands, a turn, whether the view
  * mirrors it (a section or elevation looking towards −X or −Y does, so what
  * the file drew from the left still reads from the left), an extra factor,
- * which layers, and whether texts, hatches and dimensions come along.
+ * which layers, and whether texts, hatches and dimensions come along. Into a
+ * plan, a drawing in map coordinates (a cadastral plan in Stereo 70) is laid by
+ * them, through the project's survey point (Manage → Location).
  */
 
 import { useEffect, useState } from 'react';
@@ -22,6 +24,8 @@ interface Info {
   layers: { name: string; color: string; visible: boolean; locked: boolean; count: number; lineType: string }[];
   blocks: number;
   view: { kind: string; scale: number; flip: boolean } | null;
+  /** Whether the drawing looks like map coordinates, and whether the project is tied to the map. */
+  map?: { likely: boolean; georeferenced: boolean; crs: string | null };
 }
 
 interface Result { file: string; entities: number; shapes: number; hatches: number; texts: number; dimensions: number; layers: string[]; patterns: string[]; skipped: Record<string, number>; units: string; unitsGuessed: boolean; flipped: boolean }
@@ -45,6 +49,7 @@ export function ImportDxfDialog() {
   const [dimensions, setDimensions] = useState('native');
   const [joinDimensions, setJoinDimensions] = useState(true);
   const [link, setLink] = useState(false);
+  const [place, setPlace] = useState<'origin' | 'map'>('origin');
   const [off, setOff] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const close = () => { dxfFile.current = null; useUi.setState({ dialog: null }); };
@@ -59,7 +64,7 @@ export function ImportDxfDialog() {
       setViewId(id);
       try {
         const r = await query<Info>('drafting.dxfInfo', { ...file, viewId: id });
-        if (alive && r) setInfo(r);
+        if (alive && r) { setInfo(r); if (r.map?.likely && r.view?.kind === 'plan') setPlace('map'); }
       } catch (e) {
         if (alive) setProblem(e instanceof Error ? e.message : String(e));
       }
@@ -69,7 +74,8 @@ export function ImportDxfDialog() {
 
   if (!file) return null;
   const view = viewId ? nodes.get(viewId) : undefined;
-  const willFlip = flip === 'auto' ? Boolean(info?.view?.flip) : flip === 'yes';
+  const byMap = place === 'map' && info?.view?.kind === 'plan';
+  const willFlip = !byMap && (flip === 'auto' ? Boolean(info?.view?.flip) : flip === 'yes');
   const extent = info?.extents ? `${fmt(info.extents.max[0] - info.extents.min[0])} × ${fmt(info.extents.max[1] - info.extents.min[1])} units` : null;
   const run = async () => {
     if (!viewId || busy) return;
@@ -84,7 +90,7 @@ export function ImportDxfDialog() {
         ...(flip === 'auto' ? {} : { flip: flip === 'yes' }),
         scale: Number(scale.replace(',', '.')) || 1,
         ...(layers && off.size ? { layers } : {}),
-        texts, hatches, dimensions, joinDimensions, link,
+        texts, hatches, dimensions, joinDimensions, link, ...(byMap ? { map: true } : {}),
       }) as Result | null;
       if (r) {
         const parts = [r.shapes ? `${r.shapes} shapes` : '', r.hatches ? `${r.hatches} hatches` : '', r.texts ? `${r.texts} texts` : '', r.dimensions ? `${r.dimensions} dimensions` : ''].filter(Boolean);
@@ -109,16 +115,29 @@ export function ImportDxfDialog() {
               <dl className="fields">
                 <dt>Into</dt><dd>{view ? `${view.name} (${info.view?.kind ?? 'view'}, 1:${info.view?.scale ?? 100})` : '…'}</dd>
                 <dt>File</dt><dd className="muted small">{info.version || 'DXF'}{extent ? ` · ${extent}` : ''}{info.blocks ? ` · ${info.blocks} blocks` : ''}</dd>
+                {info.view?.kind === 'plan' && (
+                  <>
+                    <dt title="By the map's coordinates: the file's x and y are eastings and northings (a cadastral plan in Stereo 70), laid through the project's survey point and its angle to true north (Manage → Location)">Placed</dt>
+                    <dd>
+                      <select value={place} onChange={(e) => setPlace(e.target.value as 'origin' | 'map')} aria-label="Placed">
+                        <option value="origin">by its origin</option>
+                        <option value="map">by the map's coordinates</option>
+                      </select>
+                    </dd>
+                  </>
+                )}
                 <dt>Units</dt>
                 <dd>
                   <select value={units} onChange={(e) => setUnits(e.target.value)}>
-                    {UNITS.map(([v, l]) => <option key={v} value={v}>{v === 'auto' ? `${info.units.guessed ? 'guessed' : 'the file says'}: ${info.units.name}` : l}</option>)}
+                    {UNITS.map(([v, l]) => <option key={v} value={v}>{v === 'auto' ? (byMap ? 'metres (map coordinates)' : `${info.units.guessed ? 'guessed' : 'the file says'}: ${info.units.name}`) : l}</option>)}
                   </select>
                 </dd>
-                <dt title="Where the drawing's origin lands, in the view (mm)">Origin at</dt>
-                <dd className="pair"><input className="num" value={at.x} onChange={(e) => setAt({ ...at, x: e.target.value })} /><input className="num" value={at.y} onChange={(e) => setAt({ ...at, y: e.target.value })} /><span className="muted"> mm</span></dd>
-                <dt>Rotation</dt><dd className="pair"><input className="num" value={rotation} onChange={(e) => setRotation(e.target.value)} /><span className="muted"> °</span></dd>
-                <dt>Scale factor</dt><dd className="pair"><input className="num" value={scale} onChange={(e) => setScale(e.target.value)} /></dd>
+                {!byMap && <>
+                  <dt title="Where the drawing's origin lands, in the view (mm)">Origin at</dt>
+                  <dd className="pair"><input className="num" value={at.x} onChange={(e) => setAt({ ...at, x: e.target.value })} /><input className="num" value={at.y} onChange={(e) => setAt({ ...at, y: e.target.value })} /><span className="muted"> mm</span></dd>
+                  <dt>Rotation</dt><dd className="pair"><input className="num" value={rotation} onChange={(e) => setRotation(e.target.value)} /><span className="muted"> °</span></dd>
+                  <dt>Scale factor</dt><dd className="pair"><input className="num" value={scale} onChange={(e) => setScale(e.target.value)} /></dd>
+                </>}
                 {info.view && info.view.kind !== 'plan' && (
                   <>
                     <dt title="A section or elevation looking towards −X or −Y mirrors the drawing about its y axis, so what the file drew from the left still reads from the left">Mirror</dt>
@@ -151,7 +170,7 @@ export function ImportDxfDialog() {
                   <dd><label><input type="checkbox" checked={joinDimensions} onChange={(e) => setJoinDimensions(e.target.checked)} /> joined into strings</label></dd>
                 </>}
               </dl>
-              <p className="muted small">{willFlip ? 'The drawing will be mirrored for this view.' : 'The drawing keeps its orientation.'} {Object.keys(info.unsupported).length ? `Not brought in: ${Object.entries(info.unsupported).map(([k, n]) => `${n} ${k.toLowerCase()}`).join(', ')}.` : ''}</p>
+              <p className="muted small">{byMap ? (info.map?.georeferenced ? `Laid by the project's map coordinates${info.map.crs ? ` (${info.map.crs})` : ''}.` : 'The project is not tied to the map yet: the drawing ties it, its survey point on the drawing\'s lower-left corner (Manage → Location).') : willFlip ? 'The drawing will be mirrored for this view.' : 'The drawing keeps its orientation.'} {Object.keys(info.unsupported).length ? `Not brought in: ${Object.entries(info.unsupported).map(([k, n]) => `${n} ${k.toLowerCase()}`).join(', ')}.` : ''}</p>
               <table className="layer-table dxf-layers">
                 <thead><tr><th>Import</th><th>Layer</th><th>Colour</th><th>Line</th><th>Shown</th><th>Entities</th></tr></thead>
                 <tbody>

@@ -420,6 +420,8 @@ export const RO: Record<string, string> = {
   'Pick the image (JPEG or PNG) and its world file together.': 'Alege imaginea (JPEG sau PNG) împreună cu fișierul ei de georeferențiere.',
   'Pick the image together with its world file (.jgw, .pgw or .wld): it says where the image lies.': 'Alege imaginea împreună cu fișierul ei de georeferențiere (.jgw, .pgw sau .wld): el spune unde stă imaginea.',
   'Orthophoto laid under the site.': 'Ortofotoplanul e așezat sub amplasament.',
+  // Import DXF by the map's coordinates (decision 172)
+  "Placed": "Așezat", "by its origin": "după originea lui", "by the map's coordinates": "după coordonatele hărții", "metres (map coordinates)": "metri (coordonatele hărții)", "As a link": "Ca legătură", "read-only, kept with the file": "doar în citire, ținut cu fișierul",
   'Coordinate system': 'Sistem de coordonate',
   'None (local)': 'Niciunul (local)',
   'What the survey point\'s eastings and northings are in; imports in another system are converted to it': 'În ce sistem sunt coordonatele punctului de referință topo; importurile din alt sistem se convertesc în el',

@@ -458,6 +458,13 @@ public static class Views
             }
         }
         pens.InsertRange(0, underPens.Values.OrderBy(p => p.Fill != null ? 0 : 1));
+        // Pictures (an orthophoto) under all of it.
+        if (marks.SelectMany(mk => mk.Images).ToList() is { Count: > 0 } images)
+        {
+            var pictures = new Pen("IMAGE", null, 0, null, null);
+            pictures.Images.AddRange(images);
+            pens.Insert(0, pictures);
+        }
         pens.AddRange(markPens.Values.OrderBy(p => p.Fill != null ? 0 : 1));
         // What the view shows: the drawing and its annotations (a text counted by its anchor and height).
         var pts = new List<Vec2>();

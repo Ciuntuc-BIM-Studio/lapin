@@ -16,6 +16,10 @@ export interface PenDto {
   /** Closed loops, x y x y … each. */
   loops?: number[][];
   texts?: { x: number; y: number; text: string; height: number; angle: number; anchor: string; baseline: string; bold: boolean; font: string }[];
+  /** Pictures (an orthophoto): a LapinImage's id, its corners (top left, top right, bottom right, bottom left: x y …), its opacity. */
+  images?: { id: string; corners: number[]; opacity: number }[];
+  /** The box the pen is clipped to: x0 y0 x1 y1 (a sheet's viewport). */
+  clip?: number[];
 }
 
 /** What a dark plan shows for black: the graphite theme's ink. */

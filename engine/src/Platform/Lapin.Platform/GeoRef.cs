@@ -320,6 +320,23 @@ public static class GeoRef
     /// <summary>Whether the project is tied to map coordinates (it has a survey point).</summary>
     public static bool Georeferenced(IModelView m) => Location.Survey(m) != null;
 
+    /// <summary>Coordinates this far from zero (m) are map coordinates, not a local survey.</summary>
+    public const double MapLike = 20000;
+
+    /// <summary>Whether points look like map coordinates (eastings and northings, not a local survey).</summary>
+    public static bool LooksLikeMap(IEnumerable<(double X, double Y)> pts) => pts.Any(p => Math.Abs(p.X) >= MapLike || Math.Abs(p.Y) >= MapLike);
+
+    /// <summary>The system map coordinates look like: Stereo 70's range over Romania, else UTM's, else longitude and latitude.</summary>
+    public static string? Guess(IReadOnlyList<(double X, double Y)> pts)
+    {
+        var (x, y) = (pts.Average(p => p.X), pts.Average(p => p.Y));
+        if (Math.Abs(x) <= 180 && Math.Abs(y) <= 90) return Wgs84;
+        if (x is > 100000 and < 900000 && y is > 150000 and < 800000) return Stereo70;
+        // UTM: zone 35 covers most of Romania (zone 34 is named in the file or the project).
+        if (x is > 160000 and < 840000 && y is > 4000000 and < 6000000) return "EPSG:32635";
+        return null;
+    }
+
     /// <summary>A plan point in the project's map coordinates (eastings, northings) through the survey point and the angle to true north.</summary>
     public static (double E, double N) ToMap(IModelView m, Vec2 p)
     {

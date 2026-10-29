@@ -2,6 +2,8 @@ using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Civil;
 using Lapin.Drawing;
+using Lapin.Geometry;
+using Lapin.Drawing.Export;
 using Lapin.Drawing.Views;
 using Lapin.Model;
 using Lapin.Platform;
@@ -136,5 +138,56 @@ public sealed class SitePlanTests
         g.Session.New();
         g.Run("civil.importGeoJson", new JsonObject { ["storeyId"] = Storey(g, "Ground floor"), ["text"] = """{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[0,0],[10,0],[10,10],[0,0]]]}}]}""", ["crs"] = "EPSG:3844" });
         Assert.False(Filled(g, SiteView(g, SitePlans.LocationPlan)));
+    }
+
+    // A 4 × 2 pixel RGB PNG.
+    const string Png = "iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAIAAADwyuo0AAAAEElEQVR4nGP4z8AARwzIHABvqgf5gNwAKAAAAABJRU5ErkJggg==";
+
+    [Fact]
+    public void An_orthophoto_lies_under_the_site_plans_drawing_and_prints_on_its_sheet()
+    {
+        var f = Project();
+        f.Run("project.location", new JsonObject { ["crs"] = "EPSG:3844", ["survey"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["easting"] = 587900, ["northing"] = 325820 } });
+        var ortho = (string)f.Run("civil.addOrthophoto", new JsonObject
+        {
+            ["data"] = Png, ["mime"] = "image/png", ["name"] = "ortho", ["worldFile"] = "0.5\n0\n0\n-0.5\n587900.25\n325830.75\n", ["storeyId"] = Storey(f, "Foundations"),
+        })!["id"]!;
+        f.Run("architecture.addWall", new JsonObject { ["storeyId"] = Storey(f, "Ground floor"), ["x1"] = 0, ["y1"] = 0, ["x2"] = 8, ["y2"] = 0 });
+        var image = f.Model.Get(ortho)!.Str("image")!;
+        static PenImage? Picture(Views.Rendered r) => r.Pens.FirstOrDefault(p => p.Images.Count > 0)?.Images[0];
+        // Under everything in the site plan, whatever storey it is on, laid by its corners.
+        var site = SiteView(f, SitePlans.Situation);
+        var drawn = Views.Render(f.Session.Reader, site);
+        Assert.Equal(0, drawn.Pens.FindIndex(p => p.Images.Count > 0));
+        Assert.Equal(image, Picture(drawn)!.ImageId);
+        Assert.Equal([new Vec2(0, 11), new Vec2(2, 11), new Vec2(2, 10), new Vec2(0, 10)], Picture(drawn)!.Corners);
+        // A floor plan shows its own storey's alone.
+        Assert.Null(Picture(Views.Render(f.Session.Reader, Views.Find(f.Model, "plan:" + Storey(f, "Ground floor"))!)));
+        Assert.NotNull(Picture(Views.Render(f.Session.Reader, Views.Find(f.Model, "plan:" + Storey(f, "Foundations"))!)));
+        // On a sheet: in paper millimetres (1 m is 2 mm at 1:500), clipped to its viewport; the PDF carries the image.
+        var sheet = (string)f.Run("sheet.create", new JsonObject { ["name"] = "Site" })!["id"]!;
+        f.Run("sheet.addViewport", new JsonObject { ["id"] = sheet, ["viewId"] = site.Id, ["x"] = 200, ["y"] = 150 });
+        var page = Sheets.Compose(f.Session.Reader, f.Model.Get(sheet)!);
+        var pen = page.Pens.Single(p => p.Images.Count > 0);
+        Assert.NotNull(pen.Clip);
+        var c = pen.Images[0].Corners;
+        Assert.Equal(4, (c[1] - c[0]).Length, 6);
+        Assert.Equal(2, (c[3] - c[0]).Length, 6);
+        var pdf = System.Text.Encoding.Latin1.GetString(Sheets.Pdf(f.Session.Reader, [f.Model.Get(sheet)!]));
+        Assert.Contains("/Subtype /Image /Width 4 /Height 2 /ColorSpace /DeviceRGB", pdf);
+        Assert.Contains("/XObject << /Im0", pdf);
+    }
+
+    [Fact]
+    public void A_png_is_read_to_its_samples_and_a_jpeg_kept_as_it_is()
+    {
+        var png = Raster.Read(Convert.FromBase64String(Png))!;
+        Assert.Equal((4, 2, "DeviceRGB", 24, false), (png.W, png.H, png.ColorSpace, png.Data.Length, png.Jpeg));
+        Assert.Null(png.Alpha);
+        // A JPEG's frame header: 3 × 2 pixels, three components.
+        byte[] jpg = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x04, 0x00, 0x00, 0xFF, 0xC0, 0x00, 0x11, 0x08, 0x00, 0x02, 0x00, 0x03, 0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xD9];
+        var j = Raster.Read(jpg)!;
+        Assert.Equal((3, 2, "DeviceRGB", true), (j.W, j.H, j.ColorSpace, j.Jpeg));
+        Assert.Null(Raster.Read([1, 2, 3, 4, 5]));
     }
 }

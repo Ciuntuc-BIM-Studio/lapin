@@ -21,16 +21,35 @@ public sealed class Pen(string layer, string? stroke, double width, string? fill
     public List<(Vec2 A, Vec2 B)> Segments { get; } = [];
     public List<IReadOnlyList<Vec2>> Loops { get; } = [];
     public List<PenText> Texts { get; } = [];
+    /// <summary>Pictures laid on the drawing by their corners (an orthophoto under a site plan).</summary>
+    public List<PenImage> Images { get; } = [];
+    /// <summary>The box the pen is clipped to (x0, y0, x1, y1), as a sheet's viewport clips its view; null: none.</summary>
+    public (double X0, double Y0, double X1, double Y1)? Clip { get; set; }
 
     public JsonObject ToJson()
     {
         var o = new JsonObject { ["layer"] = Layer, ["stroke"] = Stroke, ["width"] = Width, ["fill"] = Fill };
+        if (Images.Count > 0) o["images"] = new JsonArray(Images.Select(i => (JsonNode)i.ToJson()).ToArray());
+        if (Clip is { } c) o["clip"] = new JsonArray(Math.Round(c.X0, 4), Math.Round(c.Y0, 4), Math.Round(c.X1, 4), Math.Round(c.Y1, 4));
         if (Dash is { Length: > 0 }) o["dash"] = new JsonArray(Dash.Select(x => (JsonNode)x).ToArray());
         if (Segments.Count > 0) o["segments"] = new JsonArray(Segments.SelectMany(s => new[] { s.A.X, s.A.Y, s.B.X, s.B.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray());
         if (Texts.Count > 0) o["texts"] = new JsonArray(Texts.Select(t => (JsonNode)t.ToJson()).ToArray());
         if (Loops.Count > 0) o["loops"] = new JsonArray(Loops.Select(l => (JsonNode)new JsonArray(l.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray())).ToArray());
         return o;
     }
+}
+
+/// <summary>
+/// A picture on a drawing: the image (a LapinImage's id) and where its corners
+/// fall (top left, top right, bottom right, bottom left; view m, or paper mm on
+/// a sheet), how opaque it is.
+/// </summary>
+public sealed record PenImage(string ImageId, Vec2[] Corners, double Opacity = 1)
+{
+    public JsonObject ToJson() => new()
+    {
+        ["id"] = ImageId, ["corners"] = new JsonArray(Corners.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()), ["opacity"] = Opacity,
+    };
 }
 
 /// <summary>A text on a drawing: where (view coordinates, m), its height (paper mm), angle (°, counter-clockwise), anchor (start, middle, end) and baseline (bottom, middle).</summary>
