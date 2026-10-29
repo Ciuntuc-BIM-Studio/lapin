@@ -102,8 +102,11 @@ public static class StoredBodies
     /// </summary>
     static readonly ConditionalWeakTable<JsonObject, List<GeometryPart>> _shared = [];
 
-    /// <summary>Above this many triangles a part is read face by face as it is: merging coplanar ones costs more than it gives on a curved mesh that big.</summary>
-    const int MergeUpTo = 100_000;
+    /// <summary>
+    /// Above this many triangles a part is a mesh part (<see cref="GeometryPart.Mesh"/>): drawn as a mesh, its solid (a face
+    /// per triangle, no coplanar ones merged, which costs more than it gives on a curved mesh that big) made when asked for.
+    /// </summary>
+    const int MeshFrom = 100_000;
 
     /// <summary>A shared body's parts in its own coordinates, built once for as long as the body is the same.</summary>
     public static IReadOnlyList<GeometryPart> SharedParts(Entity shared) =>
@@ -129,6 +132,23 @@ public static class StoredBodies
         return SolidBuilder.Transform(s, p => Apply(m, p));
     }
 
+    /// <summary>A mesh as a solid with a face per triangle (those with no area left out).</summary>
+    static Solid FaceSolid(double[] v, int[] t)
+    {
+        var vertices = new Vec3[v.Length / 3];
+        for (var k = 0; k < vertices.Length; k++) vertices[k] = new Vec3(v[3 * k], v[3 * k + 1], v[3 * k + 2]);
+        var faces = new List<Face>(t.Length / 3);
+        for (var k = 0; k + 2 < t.Length; k += 3)
+        {
+            int a = t[k], b = t[k + 1], c = t[k + 2];
+            if (a < 0 || b < 0 || c < 0 || a >= vertices.Length || b >= vertices.Length || c >= vertices.Length) continue;
+            var n = Vec3.Cross(vertices[b] - vertices[a], vertices[c] - vertices[a]);
+            if (n.Length < 1e-14) continue;
+            faces.Add(new Face([a, b, c], [], n.Normalized()));
+        }
+        return new Solid(vertices, [.. faces]);
+    }
+
     static List<GeometryPart> Parts(JsonObject body)
     {
         var list = new List<GeometryPart>();
@@ -136,6 +156,12 @@ public static class StoredBodies
         foreach (var p in parts.OfType<JsonObject>())
         {
             var (v, t) = ReadPart(p);
+            if (t.Length / 3 > MeshFrom)
+            {
+                var (name, color) = ((string?)p["name"] ?? "Body", (string?)p["color"] ?? "#c9ced6");
+                list.Add(new GeometryPart(name, color, (v, t), () => FaceSolid(v, t), null, $"part:{list.Count}"));
+                continue;
+            }
             var vertices = new Vec3[v.Length / 3];
             for (var k = 0; k < vertices.Length; k++) vertices[k] = new Vec3(v[3 * k], v[3 * k + 1], v[3 * k + 2]);
             // Coplanar triangles merged into faces where the mesh is a closed solid, so the drawings show the body's
@@ -144,8 +170,7 @@ public static class StoredBodies
             for (var k = 0; k + 2 < t.Length; k += 3)
                 if (t[k] >= 0 && t[k + 1] >= 0 && t[k + 2] >= 0 && t[k] < vertices.Length && t[k + 1] < vertices.Length && t[k + 2] < vertices.Length) tris.Add((t[k], t[k + 1], t[k + 2]));
             Solid? merged = null;
-            if (tris.Count <= MergeUpTo)
-                try { merged = SolidFromMesh.Build(vertices, tris); } catch (InvalidOperationException) { merged = null; }
+            try { merged = SolidFromMesh.Build(vertices, tris); } catch (InvalidOperationException) { merged = null; }
             if (merged != null && merged.Faces.Length > 0)
             {
                 list.Add(new GeometryPart((string?)p["name"] ?? "Body", (string?)p["color"] ?? "#c9ced6", merged, null, $"part:{list.Count}"));

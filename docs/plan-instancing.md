@@ -173,14 +173,14 @@ recognised and 2,255 references throughout):
 | references prepared on every core; no seams for a reference's body nor a part over 20,000 faces | 111 s | 18.5 GB | 6.8 s |
 | what the recognisers get prepared on every core; a B-rep over 4,000 faces is no prism | 72 s | 16 GB | 2.9 s |
 | a product's shape evaluated once (bounds, extents, footprint and body asked it four times) | 45 s | 15.7 GB | 3.1 s |
-| the file kept as bytes with an index, entities parsed when asked for; a shell over 20,000 faces built in parts on every core | **30 s** | **7.2 GB** | 3.1 s |
+| the file kept as bytes with an index, entities parsed when asked for; a shell over 20,000 faces built in parts on every core | 30 s | 7.2 GB | 3.1 s |
+| a body over 100,000 triangles a mesh part: drawn with shared vertices, smooth normals and its crease edges, its solid made only for a consumer that asks (`GeometryPart.Mesh`, `MeshShading`) | **19 s** | 7.6 GB | 3.9 s |
+
+The diff frame of this model went from 856 MB to 349 MB with the mesh parts.
 
 ### Still open for such a file
-- **The giant mesh as a mesh, not a solid of faces.** The dryer becomes 6.8 million `Face` objects (~0.7 GB), tessellated with its
-  vertices repeated per face (~580 MB of positions and normals) and every triangle edge (~240 MB): the 856 MB diff frame is the
-  dryer. Above a threshold, draw from the stored arrays with shared vertices and averaged normals, only the crease edges
-  (`TessellateMany`'s `creaseDeg`), and build the `Solid` only for a consumer that asks (plans, sections, exports). Expected: the
-  dryer ~1.5 GB → ~200 MB in the engine, the frame and the page alike.
+- **A mesh part's solid, once a consumer asked for it, stays** in the stored bodies' cache (6.8 million `Face` objects for the dryer,
+  ~0.7 GB): the plan, a section or an export brings it back. Making it for the consumer alone and letting it go is the next step.
 - **The recovery journal** copies an import's every entity (the dryer's body, 230 MB of base64, among them); a large import should
   be recorded by its source file and options, and made again on recovery.
 - **Decimation for display** (a 10 % mesh for the 3D view, the full one kept), and tiles streamed by distance, for bigger files still.

@@ -37,7 +37,7 @@ public static class SolidFromMesh
         }
 
         // Triangles sharing an edge, by the undirected edge.
-        var byEdge = new Dictionary<long, List<int>>(EdgeComparer.Instance);
+        var byEdge = new Dictionary<long, List<int>>(EdgeKeys.Comparer);
         for (int i = 0; i < tris.Length; i++)
             for (int e = 0; e < 3; e++)
             {
@@ -86,7 +86,7 @@ public static class SolidFromMesh
             foreach (var t in group) sum += normals[t];
             var n = sum.Normalized();
             // The group's boundary: directed edges whose reverse is not in the group.
-            var inGroup = new HashSet<long>(EdgeComparer.Instance);
+            var inGroup = new HashSet<long>(EdgeKeys.Comparer);
             foreach (var t in group) for (int e = 0; e < 3; e++) inGroup.Add(Edge(tris[t], e));
             var boundary = new List<long>();
             foreach (var e in inGroup) if (!inGroup.Contains(Pack(To(e), From(e)))) boundary.Add(e);
@@ -123,22 +123,6 @@ public static class SolidFromMesh
         }
         if (faces.Count < 4) return null;
         return SolidBuilder.Make(vertices, faces, tag, 1e-9);
-    }
-
-    /// <summary>
-    /// Edges hashed by both ends, mixed. A long's own hash XORs its halves, which for an edge is a ^ b: two
-    /// nearby vertex numbers make a small number, so a mesh's edges crowded into a few buckets and every
-    /// lookup walked them (a Revit fan of 92,000 triangles took 4 s, one of 6.8 million would have taken hours).
-    /// </summary>
-    sealed class EdgeComparer : IEqualityComparer<long>
-    {
-        public static readonly EdgeComparer Instance = new();
-        public bool Equals(long a, long b) => a == b;
-        public int GetHashCode(long e)
-        {
-            var h = (ulong)e * 0x9E3779B97F4A7C15UL;
-            return (int)(h >> 32) ^ (int)h;
-        }
     }
 
     /// <summary>A directed edge as one number: its start in the high half, its end in the low.</summary>
@@ -185,7 +169,7 @@ public static class SolidFromMesh
     {
         var from = new Dictionary<int, List<int>>();
         foreach (var e in edges) { if (!from.TryGetValue(From(e), out var l)) from[From(e)] = l = []; l.Add(To(e)); }
-        var used = new HashSet<long>(EdgeComparer.Instance);
+        var used = new HashSet<long>(EdgeKeys.Comparer);
         var loops = new List<List<int>>();
         var options = new List<int>();
         foreach (var start in edges)

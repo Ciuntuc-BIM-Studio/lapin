@@ -628,7 +628,7 @@ public sealed class Session
         (Vec3 Min, Vec3 Max)? box = null;
         foreach (var p in g?.Parts ?? [])
         {
-            if (Measure.Bounds(p.Solid) is not { } b) continue;
+            if (p.Bounds() is not { } b) continue;
             box = box is { } o
                 ? (new Vec3(Math.Min(o.Min.X, b.Min.X), Math.Min(o.Min.Y, b.Min.Y), Math.Min(o.Min.Z, b.Min.Z)), new Vec3(Math.Max(o.Max.X, b.Max.X), Math.Max(o.Max.Y, b.Max.Y), Math.Max(o.Max.Z, b.Max.Z)))
                 : b;
@@ -736,13 +736,13 @@ public sealed class Session
         for (var i = 0; i < parts.Count; i++)
         {
             var part = g.Parts[i];
-            if (part.Solid.Faces.Length > SeamedUpTo) continue;
+            if (part.Mesh != null || part.FaceCount > SeamedUpTo) continue;
             var key = Views.SeamKeyOf(_store, part.Material, cls, keys);
-            if (key == null || Measure.Bounds(part.Solid) is not { } pbox) continue;
+            if (key == null || part.Bounds() is not { } pbox) continue;
             var onward = new List<Seams.Plane>();
             foreach (var (nb, ncls) in near)
                 foreach (var q in nb.Geometry!.Parts)
-                    if (q.Solid.Faces.Length <= SeamedUpTo && Views.SeamKeyOf(_store, q.Material, ncls, keys) == key && Measure.Bounds(q.Solid) is { } qbox && Overlaps(pbox, qbox)) onward.AddRange(PlanesOf(q.Solid));
+                    if (q.Mesh == null && q.FaceCount <= SeamedUpTo && Views.SeamKeyOf(_store, q.Material, ncls, keys) == key && q.Bounds() is { } qbox && Overlaps(pbox, qbox)) onward.AddRange(PlanesOf(q.Solid));
             if (onward.Count == 0) continue;
             trimmed ??= [.. parts];
             trimmed[i] = parts[i] with { Edges = Seams.Flat(Seams.Edges(part.Solid, onward)) };
@@ -772,9 +772,9 @@ public sealed class Session
         (Vec3 Min, Vec3 Max)? box = null;
         foreach (var p in StoredBodies.SharedParts(shared))
         {
-            var m = Tessellator.Tessellate(p.Solid);
+            var m = p.Tessellate();
             parts.Add(new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(read, e.Id, p, bands)));
-            if (Measure.Bounds(p.Solid) is { } b) box = box is { } o ? (new Vec3(Math.Min(o.Min.X, b.Min.X), Math.Min(o.Min.Y, b.Min.Y), Math.Min(o.Min.Z, b.Min.Z)), new Vec3(Math.Max(o.Max.X, b.Max.X), Math.Max(o.Max.Y, b.Max.Y), Math.Max(o.Max.Z, b.Max.Z))) : b;
+            if (p.Bounds() is { } b) box = box is { } o ? (new Vec3(Math.Min(o.Min.X, b.Min.X), Math.Min(o.Min.Y, b.Min.Y), Math.Min(o.Min.Z, b.Min.Z)), new Vec3(Math.Max(o.Max.X, b.Max.X), Math.Max(o.Max.Y, b.Max.Y), Math.Max(o.Max.Z, b.Max.Z))) : b;
         }
         var (lo, hi) = box ?? (Vec3.Zero, Vec3.Zero);
         var mesh = new SharedMesh(bodyId, parts, [(float)lo.X, (float)lo.Y, (float)lo.Z, (float)hi.X, (float)hi.Y, (float)hi.Z]);
@@ -817,7 +817,7 @@ public sealed class Session
         }
         foreach (var p in g?.Parts ?? [])
         {
-            var m = Tessellator.Tessellate(p.Solid);
+            var m = p.Tessellate();
             parts.Add(new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(read, e.Id, p, bands)));
         }
         var plan = (g?.Plan ?? []).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray())).ToList();

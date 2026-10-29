@@ -168,8 +168,59 @@ public sealed record ClassDescriptor(
     /// <summary>"element" (placed on a storey), "type", "resource".</summary>
     string Kind = "element");
 
-/// <summary>One coloured part of an element: a wall's layer or zone, a window's frame. <see cref="Key"/> is stable within the element ("layer:0", "zone:ring-beam").</summary>
-public sealed record GeometryPart(string Name, string Color, Solid Solid, string? Material = null, string? Key = null);
+/// <summary>
+/// One coloured part of an element: a wall's layer or zone, a window's frame. <see cref="Key"/> is stable within the element ("layer:0", "zone:ring-beam").
+/// <para>
+/// A part read from a file as a big triangle mesh keeps it as <see cref="Mesh"/> (its coordinates and triangles, world) and
+/// makes its <see cref="Solid"/> only when a consumer asks for it (a plan, a section, an export): the 3D view draws the mesh
+/// (docs/plan-instancing.md, "A real model"). A solid given anew (a boolean's cut) stands on its own: the mesh goes.
+/// </para>
+/// </summary>
+public sealed record GeometryPart
+{
+    public string Name { get; init; }
+    public string Color { get; init; }
+    public string? Material { get; init; }
+    public string? Key { get; init; }
+    /// <summary>The part as a triangle mesh (x y z …; a b c …), when it came as one: drawn as such, its solid made on demand.</summary>
+    public (double[] Xyz, int[] Tris)? Mesh { get; private init; }
+
+    Solid? _solid;
+    Func<Solid>? _make;
+
+    public GeometryPart(string Name, string Color, Solid Solid, string? Material = null, string? Key = null)
+    {
+        this.Name = Name; this.Color = Color; _solid = Solid; this.Material = Material; this.Key = Key;
+    }
+
+    /// <summary>A part that is a triangle mesh: its solid made by <paramref name="solid"/> the first time it is asked for.</summary>
+    public GeometryPart(string Name, string Color, (double[] Xyz, int[] Tris) mesh, Func<Solid> solid, string? Material = null, string? Key = null)
+    {
+        this.Name = Name; this.Color = Color; Mesh = mesh; _make = solid; this.Material = Material; this.Key = Key;
+    }
+
+    public Solid Solid
+    {
+        get
+        {
+            if (_solid != null) return _solid;
+            lock (_make!) return _solid ??= _make();
+        }
+        init { _solid = value; _make = null; Mesh = null; }
+    }
+
+    /// <summary>Whether the solid is there (made, or given): a mesh part's is not until asked for.</summary>
+    public bool HasSolid => _solid != null;
+
+    /// <summary>The part's box: from its mesh, or its solid.</summary>
+    public (Vec3 Min, Vec3 Max)? Bounds() => Mesh is { } m ? MeshShading.Bounds(m.Xyz) : Measure.Bounds(Solid);
+
+    /// <summary>How many faces the part has, without making a mesh part's solid: its triangles.</summary>
+    public int FaceCount => Mesh is { } m ? m.Tris.Length / 3 : Solid.Faces.Length;
+
+    /// <summary>The part's render: a mesh drawn as one (shared vertices, smooth, crease edges), a solid tessellated face by face.</summary>
+    public TriMesh Tessellate() => Mesh is { } m ? MeshShading.Smooth(m.Xyz, m.Tris) : Tessellator.Tessellate(Solid);
+}
 
 /// <summary>Plan linework of an element: its cut outline, a symbol.</summary>
 public sealed record PlanItem(string Kind, bool Closed, IReadOnlyList<Vec2> Points);
