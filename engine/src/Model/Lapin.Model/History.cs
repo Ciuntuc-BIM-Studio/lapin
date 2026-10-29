@@ -241,6 +241,9 @@ public sealed class History(ModelStore store)
     /// <summary>The computer's own user: the author of every edit made on it.</summary>
     public const string Me = "me";
 
+    /// <summary>Where an edit's new ids come from: random, unless a replay seeds them (<see cref="Lapin.Platform.Session.SeededIds"/>).</summary>
+    public Func<string> NewId { get; set; } = GlobalId.New;
+
     readonly List<Transaction> _undo = [];
     readonly List<Transaction> _redo = [];
     /// <summary>In a shared history, the transactions undone by a later one (their <see cref="Transaction.Reverts"/>).</summary>
@@ -284,7 +287,7 @@ public sealed class History(ModelStore store)
     /// <summary>Runs <paramref name="edit"/> as one transaction; nothing changed means no transaction (null). A throw leaves the model as it was.</summary>
     public Transaction? Execute(string label, Action<IEdit> edit, string author = Me)
     {
-        var b = new TransactionBuilder(store, GlobalId.New);
+        var b = new TransactionBuilder(store, NewId);
         try { edit(b); }
         catch { b.Rollback(); throw; }
         if (b.EntityChanges.Count == 0 && b.RelationChanges.Count == 0) return null;

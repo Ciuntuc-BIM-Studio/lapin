@@ -208,4 +208,69 @@ public sealed class RecoveryTests : IDisposable
             Assert.Equal(1, work.Edits);
         }
     }
+
+    /// <summary>A session with its journal and the host's dispatcher (imports by path go through it), ended as a crash ends it.</summary>
+    T CrashedHost<T>(Func<Fixture, EngineDispatcher, T> work)
+    {
+        var result = Run(work);
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        return result;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        T Run(Func<Fixture, EngineDispatcher, T> w)
+        {
+            var f = new Fixture();
+            var d = new EngineDispatcher(f.Session, PackageFiles.Create(), new Recovery(_dir, f.Session));
+            return w(f, d);
+        }
+    }
+
+    [Fact]
+    public void An_import_from_a_file_is_journalled_by_the_file_and_done_again_on_recovery()
+    {
+        var ifc = Path.Combine(_dir, "cubes.ifc");
+        File.WriteAllText(ifc, SharedBodyTests.Cubes(3));
+        var model = CrashedHost((f, d) =>
+        {
+            var (reply, diff) = d.Handle(new JsonObject { ["id"] = 1, ["method"] = "project.importIfc", ["params"] = new JsonObject { ["path"] = ifc } }.ToJsonString());
+            Assert.NotNull(diff);
+            Assert.Null(JsonNode.Parse(BinaryFrame.HeaderText(reply))!["error"]);
+            f.Wall(0, 10, 5, 10);
+            return f.Model;
+        });
+        // The journal holds the import as one small line, not its every entity and body.
+        var journal = Assert.Single(Journals);
+        var lines = File.ReadAllLines(journal);
+        var import = Assert.Single(lines, l => l.Contains("\"op\":\"import\""));
+        Assert.DoesNotContain("v64", import);
+        Assert.True(new FileInfo(journal).Length < 20_000, $"{new FileInfo(journal).Length} bytes");
+
+        var g = new Fixture();
+        using var next = new Recovery(_dir, g.Session);
+        var work = Assert.Single(next.List());
+        Assert.Equal(2, work.Edits);
+        next.Restore(work.File);
+        // Done again from the file, with the same ids (the shared body's, the containment's), the wall after it on top.
+        Same(model, g.Model);
+        Assert.Equal(3, g.Model.OfClass("IfcBuildingElementProxy").Count());
+        Assert.Single(g.Model.OfClass(StoredBodies.SharedClass));
+        Assert.True(g.Session.History.CanUndo);
+    }
+
+    [Fact]
+    public void An_import_whose_file_changed_since_cannot_be_brought_back()
+    {
+        var ifc = Path.Combine(_dir, "cubes.ifc");
+        File.WriteAllText(ifc, SharedBodyTests.Cubes(2));
+        CrashedHost((f, d) => { d.Handle(new JsonObject { ["id"] = 1, ["method"] = "project.importIfc", ["params"] = new JsonObject { ["path"] = ifc } }.ToJsonString()); return 0; });
+        File.WriteAllText(ifc, SharedBodyTests.Cubes(4));
+        var g = new Fixture();
+        using var next = new Recovery(_dir, g.Session);
+        var work = Assert.Single(next.List());
+        var ex = Assert.Throws<CommandException>(() => next.Restore(work.File));
+        Assert.Contains("changed since", ex.Message);
+    }
 }
+

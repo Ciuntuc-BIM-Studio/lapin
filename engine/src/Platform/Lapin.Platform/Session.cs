@@ -177,6 +177,7 @@ public sealed class Session
                 switch (e.Kind)
                 {
                     case "tx": _history.Replay(e.Transaction ?? throw new InvalidDataException("A journal edit without its changes.")); break;
+                    case "replay": (e.Replay ?? throw new InvalidDataException("A journal edit without a way to do it again."))(this); break;
                     case "undo": _history.Undo(e.Author ?? History.Me); break;
                     case "redo": _history.Redo(e.Author ?? History.Me); break;
                 }
@@ -185,6 +186,34 @@ public sealed class Session
         ForgetAll();
         return Snapshot();
     }
+
+    /// <summary>
+    /// What the edit in progress can be done again from (an import: its file, hash, mode and seed), for the recovery
+    /// journal to record instead of the edit's every change; null for an ordinary edit. Set by the host round the edit.
+    /// </summary>
+    public JsonObject? EditSource { get; set; }
+
+    /// <summary>
+    /// New ids from <paramref name="seed"/> until disposed, one after the other, so an edit done again from its source
+    /// (a recovered import) makes the same ids as the first time, and the journal's later edits find them.
+    /// </summary>
+    public IDisposable SeededIds(long seed)
+    {
+        var was = _history.NewId;
+        var n = 0L;
+        _history.NewId = () =>
+        {
+            Span<byte> input = stackalloc byte[16];
+            BitConverter.TryWriteBytes(input, seed);
+            BitConverter.TryWriteBytes(input[8..], n++);
+            Span<byte> hash = stackalloc byte[32];
+            System.Security.Cryptography.SHA256.HashData(input, hash);
+            return GlobalId.FromGuid(new Guid(hash[..16]));
+        };
+        return new Restore(() => _history.NewId = was);
+    }
+
+    sealed class Restore(Action back) : IDisposable { public void Dispose() => back(); }
 
     /// <summary>The project was written to <paramref name="path"/>: nothing left to save.</summary>
     public Diff Saved(string path)
@@ -225,7 +254,8 @@ public sealed class Session
         var t = _history.Execute(label, edit, Author);
         if (t == null) return Empty();
         Emit("tx", t);
-        return DiffAfter(t);
+        // Being recovered (an import done again): the snapshot at the end draws everything once.
+        return _quiet ? Empty() : DiffAfter(t);
     }
 
     /// <summary>
@@ -843,7 +873,11 @@ public sealed class Session
 }
 
 /// <summary>A change of the project's history (<see cref="Session.HistoryChanged"/>).</summary>
-public sealed record HistoryEvent(string Kind, Transaction? Transaction = null, string? Author = null);
+/// <summary>
+/// A change of the project's history. <see cref="Replay"/>: an edit the journal recorded by its source rather than its changes (an
+/// import from a file), done again from it on recovery.
+/// </summary>
+public sealed record HistoryEvent(string Kind, Transaction? Transaction = null, string? Author = null, Action<Session>? Replay = null);
 
 /// <summary>A command's view of the edit: the model, the services, and a refusal for what this product cannot change.</summary>
 sealed class CommandContext(IEdit edit, ModuleCatalog catalog, IQueryContext query, bool allowLinked = false) : ICommandContext

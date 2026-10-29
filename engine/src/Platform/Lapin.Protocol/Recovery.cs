@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Lapin.Ifc;
 using Lapin.Model;
 using Lapin.Package;
 using Lapin.Platform;
@@ -14,6 +15,7 @@ namespace Lapin.Protocol;
 /// {"op":"start","at":…,"product":…,"path":"/x.lapin","sha256":"…"}            an opened (or saved) file
 /// {"op":"start","at":…,"product":…,"path":null,"base":{"entities":[…],"relations":[…]}}   a new project
 /// {"op":"tx","label":…,"entities":[{id,before,after,order}],"relations":[…]}
+/// {"op":"import","label":…,"source":{"import":"/x.ifc","sha256":…,"mode":…,"seed":…}}   an import from a file, done again on recovery (its every entity, a big model's bodies among them, is not copied)
 /// {"op":"undo"}  {"op":"redo"}
 /// </code>
 /// Saving starts the journal again (the file now holds everything). A
@@ -53,7 +55,7 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
             case "saved": Start(keep: false); return;        // the file holds everything the journal held
             case "start": Start(keep: _edits > 0); return;   // another project over unsaved edits: their journal is the only trace of them
         }
-        var line = e.Kind == "tx" ? TxLine(e.Transaction!) : new JsonObject { ["op"] = e.Kind, ["author"] = e.Author };
+        var line = e.Kind == "tx" ? (_session.EditSource is { } source ? ImportLine(e.Transaction!, source) : TxLine(e.Transaction!)) : new JsonObject { ["op"] = e.Kind, ["author"] = e.Author };
         Write(line);
         _edits++;
     }
@@ -213,9 +215,37 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         }).ToArray()),
     };
 
+    /// <summary>An import recorded by its source: the file and its hash, the mode and the seed of its ids.</summary>
+    static JsonObject ImportLine(Transaction t, JsonObject source) => new()
+    {
+        ["op"] = "import", ["label"] = t.Label, ["at"] = t.At, ["seq"] = t.Seq, ["author"] = t.Author == History.Me ? null : t.Author, ["source"] = source.DeepClone(),
+    };
+
+    /// <summary>The import a journal line records, done again: the same file (its hash checked), the same mode, the same ids.</summary>
+    static void Reimport(Session s, JsonObject source)
+    {
+        var path = (string?)source["import"] ?? throw new InvalidDataException("An import without its file.");
+        if (!File.Exists(path)) throw new CommandException($"The file that was imported is gone: {path}.");
+        var bytes = File.ReadAllBytes(path);
+        var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes));
+        if ((string?)source["sha256"] is { } sha && sha != hash) throw new CommandException($"{System.IO.Path.GetFileName(path)} changed since it was imported: the unsaved work cannot be brought back.");
+        var mode = (string?)source["mode"] ?? "auto";
+        var options = new IfcImportOptions(mode == "link" ? "auto" : mode);
+        using (s.SeededIds((long?)source["seed"] ?? 0))
+        {
+            if (mode == "link") IfcImport.Link(s, bytes, System.IO.Path.GetFileName(path), path, options, out _);
+            else IfcImport.Run(s, bytes, System.IO.Path.GetFileName(path), options, out _);
+        }
+    }
+
     static HistoryEvent ReadEvent(JsonObject o)
     {
         var op = (string?)o["op"] ?? "";
+        if (op == "import")
+        {
+            var source = o["source"] as JsonObject ?? throw new InvalidDataException("An import without its source.");
+            return new HistoryEvent("replay", null, (string?)o["author"], s => Reimport(s, source));
+        }
         if (op != "tx") return new HistoryEvent(op, null, (string?)o["author"]);
         var entities = (o["entities"] as JsonArray ?? []).Select(n => n!.AsObject()).Select(c => new Change<Entity>(
             (string)c["id"]!, c["before"] is JsonObject b ? ReadEntity(b) : null, c["after"] is JsonObject a ? ReadEntity(a) : null, (int)c["order"]!)).ToList();

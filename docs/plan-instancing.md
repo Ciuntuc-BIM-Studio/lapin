@@ -181,7 +181,7 @@ The diff frame of this model went from 856 MB to 349 MB with the mesh parts.
 ### Still open for such a file
 - **A mesh part's solid, once a consumer asked for it, stays** in the stored bodies' cache (6.8 million `Face` objects for the dryer,
   ~0.7 GB): the plan, a section or an export brings it back. Making it for the consumer alone and letting it go is the next step.
-- **The recovery journal** copies an import's every entity (the dryer's body, 230 MB of base64, among them); a large import should
-  be recorded by its source file and options, and made again on recovery.
+- ~~The recovery journal copies an import's every entity~~ Done: an import from a file on this computer is journalled as one line
+  (the file, its SHA-256, the mode, the seed of its new ids) and done again on recovery, refused when the file changed since.
 - **Decimation for display** (a 10 % mesh for the 3D view, the full one kept), and tiles streamed by distance, for bigger files still.
 

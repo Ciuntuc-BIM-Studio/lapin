@@ -467,13 +467,25 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 // By path (the desktop), or its bytes, base64 in `data` (the browser).
                 IfcImportResult result;
                 Diff imported;
-                if (modeName == "link")
+                if ((string?)p["data"] is { } data)
                 {
-                    if ((string?)p["data"] is { } linkData) result = IfcImport.Link(session, Convert.FromBase64String(linkData), (string?)p["name"] ?? "file.ifc", null, mode, out imported);
-                    else { var path = PathParam(); result = IfcImport.Link(session, File.ReadAllBytes(path), Path.GetFileName(path), path, mode, out imported); }
+                    var bytes = Convert.FromBase64String(data);
+                    result = modeName == "link" ? IfcImport.Link(session, bytes, (string?)p["name"] ?? "file.ifc", null, mode, out imported) : IfcImport.Run(session, bytes, (string?)p["name"] ?? "file.ifc", mode, out imported);
                 }
-                else if ((string?)p["data"] is { } data) result = IfcImport.Run(session, Convert.FromBase64String(data), (string?)p["name"] ?? "file.ifc", mode, out imported);
-                else result = IfcImport.Run(session, PathParam(), mode, out imported);
+                else
+                {
+                    // From a file on this computer: the journal records the import by the file (its hash) and the seed of its ids, not by its every entity.
+                    var path = PathParam();
+                    var bytes = File.ReadAllBytes(path);
+                    var seed = Random.Shared.NextInt64();
+                    session.EditSource = new JsonObject { ["import"] = path, ["sha256"] = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)), ["mode"] = modeName, ["seed"] = seed };
+                    try
+                    {
+                        using var seeded = session.SeededIds(seed);
+                        result = modeName == "link" ? IfcImport.Link(session, bytes, Path.GetFileName(path), path, mode, out imported) : IfcImport.Run(session, bytes, Path.GetFileName(path), mode, out imported);
+                    }
+                    finally { session.EditSource = null; }
+                }
                 return (result.ToJson(), imported);
             }
             case "project.reloadLink":

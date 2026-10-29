@@ -29,7 +29,7 @@ public class SharedBodyTests : IDisposable
     /// second), and with <paramref name="opening"/> one more cube of the shared shape,
     /// voided by an opening.
     /// </summary>
-    static string Cubes(int shared, bool turned = false, bool mapped = false, bool opening = false)
+    internal static string Cubes(int shared, bool turned = false, bool mapped = false, bool opening = false)
     {
         var s = new StringBuilder("""
             ISO-10303-21;
