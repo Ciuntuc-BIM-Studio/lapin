@@ -4,9 +4,10 @@
  * Atrium's HUD, the properties panel, the status bar.
  */
 
-import { useEffect, useRef, useState } from 'react';
-import { AppWindow, Columns2, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
-import { closeOverlay, columns, setPanelWidth, showOverlay, togglePanel, usePanels } from './app/panels';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { AppWindow, Bot, Columns2, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
+import { closeOverlay, columns, setPanelWidth, showOverlay, showPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
+import { assistantAvailable } from './assistant/available';
 import { useInterface } from './app/interface';
 import { bindingText } from './app/commands';
 import { closePane, closeTab, focusPane, notify, openTab, splitPane, tabKey, useUi, type ViewTab } from './app/store';
@@ -39,6 +40,28 @@ import { ScheduleView } from './viewport/ScheduleView';
 import { GuestBar, JoinDialog, JoinGate, PresenceReporter, ShareDialog } from './shell/Sharing';
 import { isGuest } from './engine/share';
 import { connect } from './engine/session';
+
+/**
+ * The model assistant's panel (docs/plan-assistant.md): loaded when first
+ * shown, and not in the web build at all (VITE_ENGINE is "worker" there, so
+ * the bundler drops the import with the branch).
+ */
+const AssistantPanel = import.meta.env.VITE_ENGINE !== 'worker' ? lazy(() => import('./assistant/AssistantPanel')) : null;
+
+/** The right side: the properties, and on the desktop a tab for the assistant beside them. */
+function RightPanel() {
+  const tab = usePanels((p) => p.propsTab ?? 'properties');
+  if (!AssistantPanel || !assistantAvailable()) return <PropertiesPanel />;
+  return (
+    <div className="side-tabbed">
+      <div className="side-tabs" role="tablist">
+        <button type="button" role="tab" className={`browser-tab${tab === 'properties' ? ' on' : ''}`} aria-selected={tab === 'properties'} onClick={() => showPropsTab('properties')}>Properties</button>
+        <button type="button" role="tab" className={`browser-tab${tab === 'assistant' ? ' on' : ''}`} aria-selected={tab === 'assistant'} onClick={() => showPropsTab('assistant')}>Assistant</button>
+      </div>
+      {tab === 'assistant' ? <Suspense fallback={null}><AssistantPanel /></Suspense> : <PropertiesPanel />}
+    </div>
+  );
+}
 
 /**
  * The status bar: the engine, the project, its elements and units. With the
@@ -204,7 +227,7 @@ function Rail({ side, label }: { side: 'browser' | 'props'; label: string }) {
   const overlay = usePanels((p) => p.overlay);
   if (hidden) return <span />;
   const keys = bindingText(side === 'browser' ? 'app.toggleBrowser' : 'app.toggleProps').split(', ')[0];
-  const pick = (tab?: 'project' | 'levels' | 'ifc') => (e: React.MouseEvent) => { e.stopPropagation(); showOverlay(side, tab); };
+  const pick = (tab?: PanelTab) => (e: React.MouseEvent) => { e.stopPropagation(); showOverlay(side, tab); };
   const on = (tab?: string) => (overlay?.side === side && overlay.tab === tab ? ' on' : '');
   return (
     <aside className={`panel rail ${side}`} aria-label={label} data-rail={side}>
@@ -213,7 +236,10 @@ function Rail({ side, label }: { side: 'browser' | 'props'; label: string }) {
         <button type="button" className={`icon rail-icon${on('project')}`} title="Project: views, sheets and schedules" onClick={pick('project')}><FolderTree size={16} /></button>
         <button type="button" className={`icon rail-icon${on('levels')}`} title="Levels" onClick={pick('levels')}><Layers size={16} /></button>
         <button type="button" className={`icon rail-icon${on('ifc')}`} title="IFC tree" onClick={pick('ifc')}><ListTree size={16} /></button>
-      </> : <button type="button" className={`icon rail-icon${on(undefined)}`} title="Properties" onClick={pick()}><SlidersHorizontal size={16} /></button>}
+      </> : <>
+        <button type="button" className={`icon rail-icon${on(undefined)}`} title="Properties" onClick={pick()}><SlidersHorizontal size={16} /></button>
+        {AssistantPanel && assistantAvailable() && <button type="button" className="icon rail-icon" title="Assistant" onClick={(e) => { e.stopPropagation(); showPropsTab('assistant'); }}><Bot size={16} /></button>}
+      </>}
       <span className="rail-label">{label}</span>
     </aside>
   );
@@ -243,7 +269,7 @@ function PanelOverlay() {
   return (
     <div ref={ref} className={`panel-overlay side ${browser ? 'left' : 'right'}`} style={browser ? { left: inset, width: browserWidth } : { right: inset, width: propsWidth }}>
       <PanelFold side={overlay.side} overlay />
-      {browser ? <ProjectBrowser key={overlay.tab ?? "project"} show={overlay.tab} /> : <PropertiesPanel />}
+      {browser ? <ProjectBrowser key={overlay.tab ?? "project"} show={overlay.tab === 'assistant' ? undefined : overlay.tab} /> : <PropertiesPanel />}
     </div>
   );
 }
@@ -264,7 +290,7 @@ function Workspace() {
         {panels.browserOpen ? <SideSep side="browser" /> : <span />}
         <main className="views"><Panes /></main>
         {panels.propsOpen ? <SideSep side="props" /> : <span />}
-        {panels.propsOpen ? <div className="side props-side"><PanelFold side="props" /><PropertiesPanel /></div> : <Rail side="props" label="Properties" />}
+        {panels.propsOpen ? <div className="side props-side"><PanelFold side="props" /><RightPanel /></div> : <Rail side="props" label="Properties" />}
         <PanelOverlay />
       </div>
       <StatusBar />

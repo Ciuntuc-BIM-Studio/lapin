@@ -16,10 +16,15 @@ export interface PanelsState {
   browserOpen: boolean;
   propsOpen: boolean;
   /** A folded panel shown over the view for a moment (not kept), on its tab when it has tabs. */
-  overlay?: { side: 'browser' | 'props'; tab?: 'project' | 'levels' | 'ifc' } | null;
+  overlay?: { side: 'browser' | 'props'; tab?: PanelTab } | null;
   /** Folded panels show no rail (Focus): Tab or the shortcuts bring them back. */
   railsHidden?: boolean;
+  /** What the right panel shows: the properties, or the assistant (desktop only, docs/plan-assistant.md). */
+  propsTab?: 'properties' | 'assistant';
 }
+
+/** A panel's tab: the browser's project, levels and IFC tree; the right panel's assistant. */
+export type PanelTab = 'project' | 'levels' | 'ifc' | 'assistant';
 
 const KEY = 'lapin.panels';
 export const MIN_WIDTH = 180, MAX_WIDTH = 640, RAIL = 36;
@@ -68,9 +73,15 @@ export function toggleBothPanels(): void {
 }
 
 /** A folded panel over the view for a moment; again: closed. */
-export function showOverlay(side: 'browser' | 'props', tab?: 'project' | 'levels' | 'ifc'): void {
+export function showOverlay(side: 'browser' | 'props', tab?: PanelTab): void {
   const cur = usePanels.getState().overlay;
   usePanels.setState({ overlay: cur && cur.side === side && cur.tab === tab ? null : { side, tab } });
+}
+
+/** The right panel on the assistant (unfolded if it was folded), or back on the properties. */
+export function showPropsTab(tab: 'properties' | 'assistant'): void {
+  usePanels.setState({ propsTab: tab, propsOpen: true, overlay: null });
+  save();
 }
 export const closeOverlay = () => { if (usePanels.getState().overlay) usePanels.setState({ overlay: null }); };
 

@@ -2,7 +2,7 @@
 
 import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
-import { AppWindow, Box, BoxSelect, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2, CloudFog, Link2, History, Layers, SlidersHorizontal, PanelsTopLeft, Keyboard } from 'lucide-react';
+import { AppWindow, Box, BoxSelect, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2, CloudFog, Link2, History, Layers, SlidersHorizontal, PanelsTopLeft, Keyboard, Bot } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -13,6 +13,8 @@ import type { LapinModule } from '../../platform/module';
 import { closePane, setTool, splitPane, useUi } from '../../app/store';
 import { isDesktop } from '../../engine/files';
 import { openViewWindow } from '../../app/windows';
+import { assistantAvailable } from '../../assistant/available';
+import { showPropsTab } from '../../app/panels';
 import { MaterialsDialog } from './MaterialsDialog';
 import { StandardsDialog } from './StandardsDialog';
 import { SheetSection } from './SheetSection';
@@ -157,6 +159,9 @@ const core: LapinModule = {
       { label: 'Interface', tools: [
         { id: 'app.interface', label: 'Interface…', icon: PanelsTopLeft, run: () => useUi.setState({ dialog: 'interface' }) },
         { id: 'app.shortcuts', label: 'Keyboard shortcuts…', icon: Keyboard, run: () => useUi.setState({ dialog: 'shortcuts' }) },
+        // The model assistant (docs/plan-assistant.md): the desktop's only, absent from the web build.
+        ...(import.meta.env.VITE_ENGINE !== 'worker' && assistantAvailable()
+          ? [{ id: 'app.assistant', label: 'Assistant', icon: Bot, run: () => showPropsTab('assistant') }] : []),
       ] },
     ],
   }],

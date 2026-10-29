@@ -8,7 +8,8 @@
 
 import { useMemo } from 'react';
 import { select, useUi } from './store';
-import { toggleBothPanels, togglePanel, showOverlay, usePanels, applyPanelsPart } from './panels';
+import { toggleBothPanels, togglePanel, showOverlay, showPropsTab, usePanels, applyPanelsPart } from './panels';
+import { assistantAvailable } from '../assistant/available';
 import { onInterfaceChange, useInterface } from './interface';
 import { effectiveBindings, formatBinding, resolveKeymap, useKeymap, type Binding, type CommandDef, type Keymap } from './shortcuts';
 import { activate, allTools, hotbarTools, ribbonTabs } from '../platform/modules';
@@ -50,6 +51,9 @@ function appCommands(): CommandDef[] {
     { id: 'app.toggleProps', label: 'Properties: fold or unfold', category: panels, defaults: ['Ctrl+Shift+B'], run: () => togglePanel('props') },
     { id: 'app.togglePanels', label: 'Both panels: fold or unfold', category: panels, defaults: ['Tab'], run: toggleBothPanels },
     { id: 'app.propsOverlay', label: 'All properties (over the view)', category: panels, defaults: [], run: () => { if (usePanels.getState().propsOpen) return; showOverlay('props'); } },
+    // The model assistant: the desktop's only (docs/plan-assistant.md); not in the web build at all.
+    ...(import.meta.env.VITE_ENGINE !== 'worker' && assistantAvailable()
+      ? [{ id: 'app.assistant', label: 'Assistant', category: panels, defaults: [], run: () => showPropsTab('assistant') }] : []),
   ];
 }
 

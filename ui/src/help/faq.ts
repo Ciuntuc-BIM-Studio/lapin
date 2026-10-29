@@ -244,6 +244,16 @@ export const FAQ: Entry[] = [
     action: { label: 'Room colours', labelRo: 'Culorile încăperilor', run: { kind: 'tool', id: 'architecture.roomColors' } },
     source: 'faq',
   },
+  {
+    id: 'assistant',
+    q: ['Can I ask an AI about my model?', 'Is there an AI assistant in Lapin?', 'How do I count the walls per storey or set a property on many elements at once?'],
+    qRo: ['Pot întreba un AI despre model?', 'Are Lapin un asistent AI?', 'Cum număr pereții pe etaje sau pun o proprietate pe multe elemente odată?'],
+    keywords: ['ai', 'assistant', 'chat', 'llm', 'ollama', 'gpt', 'model', 'report', 'firerating', 'asistent', 'raport', 'intreb', 'inteligenta'],
+    a: 'In the desktop app: the Assistant tab beside Properties (View → Assistant). It runs a local model through Ollama on your computer (install Ollama and `ollama pull qwen3-coder:30b`); nothing leaves the machine. It reads the project, counts and sums (Lapin computes the numbers), makes tables you can export as CSV, and proposes property values you tick and apply as one undo step. It never changes geometry or deletes anything. The browser version has no assistant.',
+    aRo: 'În aplicația desktop: fila Assistant de lângă Properties (View → Assistant). Folosește un model local prin Ollama, pe calculatorul tău (instalezi Ollama și `ollama pull qwen3-coder:30b`); nimic nu pleacă de pe calculator. Citește proiectul, numără și adună (numerele le calculează Lapin), face tabele pe care le exporți ca CSV și propune valori de proprietăți pe care le bifezi și le aplici ca un singur pas de anulare. Nu schimbă niciodată geometria și nu șterge nimic. Versiunea din browser nu are asistent.',
+    action: { label: 'Open the user guide', labelRo: 'Deschide ghidul', run: { kind: 'guide' } },
+    source: 'faq',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

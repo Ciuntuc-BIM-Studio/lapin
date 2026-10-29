@@ -87,6 +87,17 @@ describe('the languages', () => {
     'shot.gif could not be read as a picture: attach a PNG or JPEG screenshot (or send the report without one).',
     '6 room(s) updated; 2 no longer enclosed (they keep their last outline).',
     'No room has a value for this field yet. Give rooms a Department in their properties.',
+    'Listed 3 of 12 · IfcDoor',
+    'Computed 2 group(s) over 5 element(s)',
+    'Read element D1',
+    'Read schedule Doors',
+    'Proposed 3 change(s)',
+    'Proposed 3 change(s), 1 refused',
+    'Tool failed: aggregate',
+    '12 row(s)',
+    '3 value(s) applied: one step to undo.',
+    'Grouped by storey, type',
+    '2 of 3 ticked',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

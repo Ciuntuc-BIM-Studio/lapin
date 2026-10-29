@@ -43,6 +43,35 @@ async function open3d(t) {
 /** Selects an element, as a click on it does. */
 const select = (t, id) => t.ui({ selection: id, selected: [id] });
 
+/**
+ * A stand-in for Ollama on this computer, for the assistant's scene: its model list, and a chat that
+ * answers as a model does — a tool call for a question, words for a tool's result (from the result itself).
+ */
+async function fakeOllama(page, ro) {
+  const line = (message) => JSON.stringify({ message: { role: 'assistant', ...message }, done: false }) + '\n' + JSON.stringify({ done: true, eval_count: 40, eval_duration: 7e8 }) + '\n';
+  const call = (name, args) => line({ content: '', tool_calls: [{ function: { name, arguments: args } }] });
+  await page.route('http://127.0.0.1:11434/**', async (route) => {
+    const url = route.request().url();
+    const json = (body) => route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: typeof body === 'string' ? body : JSON.stringify(body) });
+    if (url.endsWith('/api/tags')) return json({ models: [{ name: 'qwen3-coder:30b' }, { name: 'gemma4:12b' }] });
+    if (url.endsWith('/api/show')) return json({ capabilities: ['completion', 'tools'] });
+    const { messages } = JSON.parse(route.request().postData() ?? '{}');
+    const last = messages.at(-1);
+    if (last.role === 'user') {
+      return json(/fire/i.test(last.content)
+        ? call('list_elements', { class: 'IfcDoor' })
+        : call('aggregate', { class: 'IfcWall', group_by: ['storey'], metrics: [{ op: 'count' }, { op: 'sum', field: 'Length' }] }));
+    }
+    const result = JSON.parse(last.content);
+    if (last.tool_name === 'list_elements') return json(call('propose_properties', { changes: result.rows.map((r) => ({ id: r.id, pset: 'Pset_DoorCommon', name: 'FireRating', value: 'EI30' })) }));
+    if (last.tool_name === 'propose_properties') return json(line({ content: ro ? `Am propus EI30 pentru ${result.proposed} ușă. Verifică și aplică mai jos.` : `I proposed EI30 for ${result.proposed} door. Review and apply it below.` }));
+    const g = result.groups[0];
+    return json(line({ content: ro
+      ? `Pe **${g.storey}** sunt **${g.count} pereți**, în total **${g['sum(Length)']} m**.`
+      : `**${g.storey}** has **${g.count} walls**, **${g['sum(Length)']} m** in all.` }));
+  });
+}
+
 /** A brick texture, drawn on a canvas in the page: a user's own image to put on a material. */
 const brickPng = (t) => t.page.evaluate(() => {
   const c = document.createElement('canvas'); c.width = 512; c.height = 512;
@@ -978,6 +1007,33 @@ export const scenes = [
       await t.wait(200);
       t.expect(await t.page.getByText('Helpware', { exact: true }).count() > 0, 'About Lapin says what helpware means');
       await t.shot('about', { of: '.dialog.about', pad: 0 });
+    },
+  },
+  {
+    // The model assistant (docs/plan-assistant.md) is the desktop app's: the guide's browser run opens it with the
+    // development switch, and a stand-in for Ollama answers with the tool calls a model makes (the tools themselves are Lapin's).
+    id: 'assistant',
+    async run(t) {
+      const ro = t.lang === 'ro';
+      await t.page.addInitScript(() => { localStorage.setItem('lapin.assistant.dev', '1'); localStorage.setItem('lapin.assistant', JSON.stringify({ url: 'http://127.0.0.1:11434', model: 'qwen3-coder:30b' })); });
+      await fakeOllama(t.page, ro);
+      await t.fresh();
+      await house(t);
+      await t.page.locator('.side-tabs').getByRole('tab', { name: 'Assistant' }).click();
+      const input = t.page.locator('[data-testid=assistant-panel] textarea');
+      await input.waitFor({ state: 'visible' });
+      await t.page.waitForSelector('[data-testid=assistant-panel] textarea:not([disabled])', { timeout: 10_000 });
+      for (const q of ro ? ['Câți pereți sunt pe etaj și ce lungime au?', 'Dă ușilor FireRating EI30.'] : ['How many walls per storey, and how long?', 'Give the doors FireRating EI30.']) {
+        await input.fill(q);
+        await input.press('Enter');
+        await t.page.waitForSelector('[data-testid=assistant-panel] button[title=Send]', { timeout: 20_000 });
+      }
+      t.expect(await t.page.locator('[data-testid=assistant-changes] tbody tr').count() === 1, 'the assistant proposes a value for the door, waiting for approval');
+      await t.shot('assistant', { of: '.props-side', pad: 0 });
+      await t.page.locator('[data-testid=assistant-changes]').getByRole('button', { name: 'Apply' }).click();
+      await t.wait(400);
+      const door = (await t.nodes()).find((n) => n.type === 'IfcDoor');
+      t.expect(door?.props.params?.[0]?.pset === 'Pset_DoorCommon' && door.props.params[0].value === 'EI30', 'Apply writes Pset_DoorCommon.FireRating on the door');
     },
   },
   {
