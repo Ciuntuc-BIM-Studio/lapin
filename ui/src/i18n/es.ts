@@ -418,12 +418,29 @@ export const ES: Record<string, string> = {
   'Solid, cast on the ground': 'Maciza, hormigonada sobre el terreno', 'Preview at its own rise of': 'Vista previa con su desnivel propio de',
   'One riser: the step is the edge of the floor it climbs to. Give it two risers or more for treads in front.': 'Una sola contrahuella: el escalón es el propio borde de la losa a la que sube. Asígnele dos contrahuellas o más para tener huellas delante.',
   'Stair type from the library': 'Tipo de escalera de la biblioteca', 'Risers': 'Contrahuellas',
+  // Import IFC: the dialog to choose what of a file comes in, and the overlay of a long call (ImportIfcDialog, BusyOverlay)
+  'Import IFC': 'Importar IFC', 'What to bring': 'Qué traer', 'All': 'Todo', 'How': 'Cómo',
+  'Fold': 'Plegar', 'Show its kinds': 'Mostrar sus tipos', 'How it comes in': 'Cómo entra',
+  'Recognised as Lapin elements where it can, the rest as references': 'Reconocido como elementos de Lapin donde se pueda, el resto como referencias',
+  'Everything as references, as the file draws it': 'Todo como referencias, como lo dibuja el archivo',
+  'Linked, read-only (Manage → Links)': 'Vinculado, solo lectura (Gestionar → Vínculos)',
+  'elements in the file; about': 'elementos en el archivo; unos', 'chosen.': 'elegidos.',
+  'Furniture and equipment': 'Mobiliario y equipos',
+  'Working': 'Trabajando', 'Indexing the file': 'Indexando el archivo', 'Reading the file': 'Leyendo el archivo',
+  'Reading the elements': 'Leyendo los elementos', 'Recognising the elements': 'Reconociendo los elementos',
+  'Reading the references': 'Leyendo las referencias', 'Bringing the references': 'Trayendo las referencias', 'Building the model': 'Construyendo el modelo',
+  'Slab': 'Losa', 'Proxy': 'Proxy', 'Furnishing': 'Mobiliario', 'Member': 'Elemento estructural', 'Plate': 'Placa', 'Stair flight': 'Tramo de escalera',
+  'Footing': 'Zapata', 'Space': 'Espacio', 'Opening': 'Hueco', 'Flow segment': 'Segmento de instalación', 'Flow fitting': 'Accesorio', 'Flow terminal': 'Terminal',
+  'Distribution port': 'Puerto de distribución', 'Building element part': 'Parte de elemento', 'Wall standard case': 'Muro',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
 /** Phrases with a number or a name in them. */
 export const ES_PATTERNS: Language['patterns'] = [
+  [/^Importing (.+)$/, (m) => `Importando ${m[1]}`],
+  [/^Linking (.+)$/, (m) => `Vinculando ${m[1]}`],
+  [/^Reading (.+\.ifc)$/i, (m) => `Leyendo ${m[1]}`],
   [/^(.+) — ([^·]+?)(?: · (.+))?$/, (m) => `${ES[m[1]] ?? m[1]} — ${m[2]}${m[3] ? ` · ${ES[m[3]] ?? m[3]}` : ''}`],
   [/^(Fold|Unfold) the (project browser|properties)(?: \((.+)\))?$/, (m) => `${m[1] === 'Fold' ? 'Plegar' : 'Desplegar'} ${m[2] === 'properties' ? 'las propiedades' : 'el navegador de proyectos'}${m[3] ? ` (${m[3]})` : ''}`],
   [/^Keep the (project browser|properties) open(?: \((.+)\))?$/, (m) => `Mantener ${m[1] === 'properties' ? 'abiertas las propiedades' : 'abierto el navegador de proyectos'}${m[2] ? ` (${m[2]})` : ''}`],
