@@ -523,11 +523,12 @@ public static class IfcExport
             placeOf[e.Id] = (place, z0);
             (spaces.TryGetValue(spatial, out var l) ? l : spaces[spatial] = []).Add(entity);
             Elements++;
-            var common = new List<string> { Single("IsExternal", Typed("IFCBOOLEAN", False)) };
-            if (number != null) common.Insert(0, Single("Reference", Typed("IFCIDENTIFIER", S(number))));
-            Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "common"), Null, S("Pset_SpaceCommon"), Null, L(common)), Gid(e.Id, "common-rel"));
+            var common = new List<(string Name, string Value)> { ("IsExternal", Typed("IFCBOOLEAN", False)) };
+            if (number != null) common.Insert(0, ("Reference", Typed("IFCIDENTIFIER", S(number))));
+            Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "common"), Null, S("Pset_SpaceCommon"), Null, L(CommonWith(e, "Pset_SpaceCommon", common))), Gid(e.Id, "common-rel"));
             Define(entity, IntentOf(e, Gid(e.Id, IntentKey), new Kind(IfcClass.Space, "SPACE", null)), Gid(e.Id, "intent-rel"));
             if (ParamsOf(e, Gid(e.Id, ParamsKey)) is { } set) Define(entity, set, Gid(e.Id, "params-rel"));
+            NamedSets(e, entity, "Pset_SpaceCommon");
             Quantities(e, entity, false);
         }
 
@@ -643,6 +644,8 @@ public static class IfcExport
                 // The type's parameters, which every element of the type has.
                 var sets = new List<string> { intent };
                 if (ParamsOf(type, Gid(key, ParamsKey)) is { } ps) sets.Add(ps);
+                foreach (var (setName, props) in NamedParams(type))
+                    sets.Add(f.Add("IFCPROPERTYSET", Gid(key, "params:" + setName), Null, S(setName), Null, L(props.Select(p => Single(p.Name, p.Value)).ToArray())));
                 if (terms != null) sets.AddRange(JoinerySets(key, terms));
                 var pre = E(kind.Predefined.Length == 0 ? "NOTDEFINED" : kind.Predefined);
                 var name = mirrored ? $"{type.Name} (mirrored)" : type.Name;
@@ -802,23 +805,27 @@ public static class IfcExport
 
         void Properties(Entity e, Kind kind, string entity, Entity? type, IReadOnlyList<(string Name, string Value)>? extra = null)
         {
-            var common = new List<string>();
-            if (type != null) common.Add(Single("Reference", Typed("IFCIDENTIFIER", S(type.Name))));
-            if (kind.Class is IfcClass.Column or IfcClass.Beam or IfcClass.Footing) common.Add(Single("LoadBearing", Typed("IFCBOOLEAN", True)));
+            var common = new List<(string Name, string Value)>();
+            if (type != null) common.Add(("Reference", Typed("IFCIDENTIFIER", S(type.Name))));
+            if (kind.Class is IfcClass.Column or IfcClass.Beam or IfcClass.Footing) common.Add(("LoadBearing", Typed("IFCBOOLEAN", True)));
             if (e.Class is IfcClass.Door or IfcClass.Window && type?.Attrs["spec"] is JsonObject spec && spec["isExternal"] is JsonValue ext && ext.TryGetValue<bool>(out var isExternal))
-                common.Add(Single("IsExternal", Typed("IFCBOOLEAN", isExternal ? True : False)));
+                common.Add(("IsExternal", Typed("IFCBOOLEAN", isExternal ? True : False)));
             // A stair's numbers, as Pset_StairCommon names them: the whole stair's risers and treads, its riser and tread.
             if (kind.Class == IfcClass.Stair && s.Quantities(e.Id).FirstOrDefault(q => q.Name == "Lapin_StairQuantities") is { } sq)
             {
                 double? Q(string n) => sq.Quantities.FirstOrDefault(x => x.Name == n)?.Value;
                 var treads = s.Quantities(e.Id).Where(q => q.Name == "Qto_StairFlightBaseQuantities").Sum(q => q.Quantities.FirstOrDefault(x => x.Name == "NumberOfTreads")?.Value ?? 0);
-                if (Q("NumberOfRiser") is { } nr) common.Add(Single("NumberOfRiser", Typed("IFCCOUNTMEASURE", ((int)nr).ToString(System.Globalization.CultureInfo.InvariantCulture))));
-                common.Add(Single("NumberOfTreads", Typed("IFCCOUNTMEASURE", ((int)treads).ToString(System.Globalization.CultureInfo.InvariantCulture))));
-                if (Q("RiserHeight") is { } rh && rh > 0) common.Add(Single("RiserHeight", Typed("IFCPOSITIVELENGTHMEASURE", R(rh))));
-                if (Q("TreadLength") is { } tl && tl > 0) common.Add(Single("TreadLength", Typed("IFCPOSITIVELENGTHMEASURE", R(tl))));
+                if (Q("NumberOfRiser") is { } nr) common.Add(("NumberOfRiser", Typed("IFCCOUNTMEASURE", ((int)nr).ToString(System.Globalization.CultureInfo.InvariantCulture))));
+                common.Add(("NumberOfTreads", Typed("IFCCOUNTMEASURE", ((int)treads).ToString(System.Globalization.CultureInfo.InvariantCulture))));
+                if (Q("RiserHeight") is { } rh && rh > 0) common.Add(("RiserHeight", Typed("IFCPOSITIVELENGTHMEASURE", R(rh))));
+                if (Q("TreadLength") is { } tl && tl > 0) common.Add(("TreadLength", Typed("IFCPOSITIVELENGTHMEASURE", R(tl))));
             }
-            if (common.Count > 0 && CommonSets.Contains(kind.Class))
-                Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "common"), Null, S($"Pset_{kind.Class[3..]}Common"), Null, L(common)), Gid(e.Id, "common-rel"));
+            // The common set: what Lapin knows, and what the user wrote into it (their value over Lapin's of the same name).
+            var commonName = CommonSets.Contains(kind.Class) ? $"Pset_{kind.Class[3..]}Common" : null;
+            var commonProps = commonName != null ? CommonWith(e, commonName, common) : [];
+            if (commonProps.Count > 0)
+                Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "common"), Null, S(commonName), Null, L(commonProps)), Gid(e.Id, "common-rel"));
+            NamedSets(e, entity, commonName);
             Define(entity, IntentOf(e, Gid(e.Id, IntentKey), kind, extra), Gid(e.Id, "intent-rel"));
             var phase = new List<string>();
             if (e.Str("phaseCreated") is { } created) phase.Add(Single("Created", Typed("IFCLABEL", S(PhaseName(created)))));
@@ -830,25 +837,59 @@ public static class IfcExport
             if (ParamsOf(e, Gid(e.Id, ParamsKey)) is { } set) Define(entity, set, Gid(e.Id, "params-rel"));
         }
 
-        /// <summary>An entity's own parameters as a typed property set; null when it has none.</summary>
+        /// <summary>An entity's own parameters (those in no named set) as a typed property set; null when it has none.</summary>
         string? ParamsOf(Entity e, string gid)
         {
             var own = new List<string>();
             foreach (var p in (e.Attrs["params"] as JsonArray)?.OfType<JsonObject>() ?? [])
             {
-                if ((string?)p["name"] is not { } pname || p["value"] is not { } pv) continue;
-                var value = (string?)p["kind"] switch
-                {
-                    "length" => Json.Number(pv) is { } l ? Typed("IFCLENGTHMEASURE", R(l)) : null,
-                    "area" => Json.Number(pv) is { } ar ? Typed("IFCAREAMEASURE", R(ar)) : null,
-                    "number" or "angle" => Json.Number(pv) is { } nm ? Typed("IFCREAL", R(nm)) : null,
-                    "bool" => pv is JsonValue bv && bv.TryGetValue<bool>(out var yes) ? Typed("IFCBOOLEAN", yes ? True : False) : null,
-                    "choice" => Typed("IFCLABEL", S(pv.ToString())),
-                    _ => Typed("IFCTEXT", S(pv.ToString())),
-                };
-                if (value != null) own.Add(Single(pname, value));
+                if (Params.SetOf(p) != null || (string?)p["name"] is not { } pname || ParamValue(p, false) is not { } value) continue;
+                own.Add(Single(pname, value));
             }
             return own.Count > 0 ? f.Add("IFCPROPERTYSET", gid, Null, S(ParamsSetName), Null, L(own)) : null;
+        }
+
+        /// <summary>A parameter's value as IFC types it; a text in a standard set is a label, as IFC's Pset_…Common have them.</summary>
+        static string? ParamValue(JsonObject p, bool standard) => p["value"] is not { } pv ? null : (string?)p["kind"] switch
+        {
+            "length" => Json.Number(pv) is { } l ? Typed("IFCLENGTHMEASURE", R(l)) : null,
+            "area" => Json.Number(pv) is { } ar ? Typed("IFCAREAMEASURE", R(ar)) : null,
+            "angle" => Json.Number(pv) is { } an ? Typed(standard ? "IFCPLANEANGLEMEASURE" : "IFCREAL", R(an)) : null,
+            "number" => Json.Number(pv) is { } nm ? Typed("IFCREAL", R(nm)) : null,
+            "bool" => pv is JsonValue bv && bv.TryGetValue<bool>(out var yes) ? Typed("IFCBOOLEAN", yes ? True : False) : null,
+            "choice" => Typed("IFCLABEL", S(pv.ToString())),
+            _ => Typed(standard ? "IFCLABEL" : "IFCTEXT", S(pv.ToString())),
+        };
+
+        /// <summary>The user's parameters in named sets (Pset_DoorCommon, a set of their own), set by set.</summary>
+        static List<(string Set, List<(string Name, string Value)> Props)> NamedParams(Entity e)
+        {
+            var sets = new List<(string Set, List<(string Name, string Value)> Props)>();
+            foreach (var p in (e.Attrs["params"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            {
+                if (Params.SetOf(p) is not { } set || (string?)p["name"] is not { } name || ParamValue(p, StandardPsets.IsStandard(set)) is not { } value) continue;
+                var i = sets.FindIndex(x => string.Equals(x.Set, set, StringComparison.OrdinalIgnoreCase));
+                if (i < 0) sets.Add((set, [(name, value)])); else sets[i].Props.Add((name, value));
+            }
+            return sets;
+        }
+
+        /// <summary>A common set's properties: Lapin's, each replaced by the user's value of the same name, then the user's others.</summary>
+        List<string> CommonWith(Entity e, string setName, List<(string Name, string Value)> computed)
+        {
+            var user = NamedParams(e).FirstOrDefault(x => x.Set == setName).Props ?? [];
+            var merged = computed.Where(c => !user.Any(u => u.Name == c.Name)).Concat(user);
+            return merged.Select(p => Single(p.Name, p.Value)).ToList();
+        }
+
+        /// <summary>The user's named sets other than <paramref name="except"/> (the common set, written with Lapin's), each as its own property set.</summary>
+        void NamedSets(Entity e, string entity, string? except)
+        {
+            foreach (var (set, props) in NamedParams(e))
+            {
+                if (set == except) continue;
+                Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "params:" + set), Null, S(set), Null, L(props.Select(p => Single(p.Name, p.Value)).ToArray())), Gid(e.Id, "params-rel:" + set));
+            }
         }
 
         /// <summary>

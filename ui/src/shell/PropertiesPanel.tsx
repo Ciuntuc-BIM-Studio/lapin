@@ -125,8 +125,11 @@ function IfcPropertiesSection({ node }: { node: NodeDto }) {
 
 // ─── The user's own parameters ──────────────────────────────────────────────
 
-interface Param { name: string; kind: string; value: unknown; options?: string[] }
+/** `pset`: the property set it goes to in IFC (Pset_DoorCommon, a set of the user's); none: Lapin_Parameters. */
+interface Param { name: string; kind: string; value: unknown; options?: string[]; pset?: string }
 const KINDS = ['text', 'number', 'length', 'area', 'angle', 'bool', 'choice'] as const;
+/** A parameter's identity: its set and its name, case aside. */
+const paramKey = (p: Param) => `${(p.pset ?? '').toLowerCase()}/${p.name.toLowerCase()}`;
 
 /**
  * The user's parameters of `node` (an element, or the type it shows the
@@ -138,7 +141,7 @@ function ParamsSection({ node, ids: who, shadowed }: { node: NodeDto; ids?: () =
   const [name, setName] = useState('');
   const [kind, setKind] = useState<string>('text');
   const ids = who ?? (() => sameKind(node));
-  const set = (p: Param, value: unknown) => void execute('element.setParam', { ids: ids(), name: p.name, value });
+  const set = (p: Param, value: unknown) => void execute('element.setParam', { ids: ids(), name: p.name, value, ...(p.pset ? { pset: p.pset } : {}) });
   const add = () => {
     const n = name.trim();
     if (!n) return;
@@ -150,8 +153,8 @@ function ParamsSection({ node, ids: who, shadowed }: { node: NodeDto; ids?: () =
       {params.length > 0 && (
         <dl className="fields">
           {params.map((p) => (
-            <span key={p.name} className="qrow">
-              <dt title={shadowed?.has(p.name.toLowerCase()) ? `${p.kind} · this element has its own value` : p.kind} className={shadowed?.has(p.name.toLowerCase()) ? 'shadowed' : undefined}>{p.name}<button type="button" className="icon mini row-x" title="Remove the parameter" onClick={() => void execute('element.removeParam', { ids: ids(), name: p.name })}><X size={10} /></button></dt>
+            <span key={paramKey(p)} className="qrow">
+              <dt title={`${p.pset ? `${p.pset} · ` : ''}${shadowed?.has(paramKey(p)) ? `${p.kind} · this element has its own value` : p.kind}`} className={shadowed?.has(paramKey(p)) ? 'shadowed' : undefined}>{p.pset && <span className="muted small" data-no-i18n>{p.pset} · </span>}{p.name}<button type="button" className="icon mini row-x" title="Remove the parameter" onClick={() => void execute('element.removeParam', { ids: ids(), name: p.name, ...(p.pset ? { pset: p.pset } : {}) })}><X size={10} /></button></dt>
               <dd>
                 {p.kind === 'length' ? <LengthCell metres={p.value as number} onCommit={(m) => set(p, m)} />
                   : p.kind === 'bool' ? <input type="checkbox" checked={p.value === true} onChange={(e) => set(p, e.target.checked)} />
@@ -341,7 +344,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
         <Group id="typeParams" label={`Type parameters · ${type.name}`}>
           <p className="muted small pad">Every element of the type has these; a change here changes them all ({relatedOf(model, type.id, 'IfcRelDefinesByType').length}).</p>
           {TypeFields && <TypeFields type={type} node={node} />}
-          <ParamsSection node={type} ids={() => [type.id]} shadowed={new Set(((Array.isArray(node.props.params) ? node.props.params : []) as unknown as Param[]).map((p) => p.name.toLowerCase()))} />
+          <ParamsSection node={type} ids={() => [type.id]} shadowed={new Set(((Array.isArray(node.props.params) ? node.props.params : []) as unknown as Param[]).map(paramKey))} />
         </Group>
       )}
       <QuantitiesSection node={node} />

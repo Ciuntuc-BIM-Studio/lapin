@@ -101,6 +101,8 @@ public sealed class CoreModule : ILapinModule
         });
 
         // The user's own parameters on any element, drafted shape or Studio solid: a name, a kind, a value (exported as Lapin_Parameters).
+        // With `pset`, in that property set: a standard one (Pset_DoorCommon) only with its own property names, held as their kind;
+        // one of the user's never „Pset_…” (StandardPsets).
         r.Command("element.setParam", "Set parameter", (ctx, a) =>
         {
             var ids = Args.Ids(a).ToList();
@@ -109,12 +111,14 @@ public sealed class CoreModule : ILapinModule
             foreach (var id in ids)
             {
                 var e = ctx.Model.Get(id) ?? throw new CommandException("Which element?");
+                var (pset, standardKind) = StandardPsets.Check(e.Class, (string?)a["pset"], name);
                 var list = e.Attrs["params"] is JsonArray old ? (JsonArray)old.DeepClone() : new JsonArray();
-                var existing = list.OfType<JsonObject>().FirstOrDefault(p => string.Equals((string?)p["name"], name, StringComparison.OrdinalIgnoreCase));
-                var kind = (string?)a["kind"] ?? (string?)existing?["kind"] ?? throw new CommandException($"A new parameter needs its kind ({string.Join(", ", Params.Kinds)}).");
+                var existing = list.OfType<JsonObject>().FirstOrDefault(p => Params.Same(p, pset, name));
+                var kind = standardKind ?? (string?)a["kind"] ?? (string?)existing?["kind"] ?? throw new CommandException($"A new parameter needs its kind ({string.Join(", ", Params.Kinds)}).");
                 var options = a["options"] as JsonArray ?? existing?["options"] as JsonArray;
                 var value = Params.Check(kind, a["value"], options);
                 var entry = new JsonObject { ["name"] = name, ["kind"] = kind, ["value"] = value };
+                if (pset != null) entry["pset"] = pset;
                 if (kind == "choice" && options != null) entry["options"] = options.DeepClone();
                 if (existing != null) list[list.IndexOf(existing)] = entry; else list.Add((JsonNode)entry);
                 var attrs = e.CloneAttrs();
@@ -126,17 +130,21 @@ public sealed class CoreModule : ILapinModule
         r.Command("element.removeParam", "Remove parameter", (ctx, a) =>
         {
             var name = (string?)a["name"] ?? throw new CommandException("Which parameter?");
+            var pset = (string?)a["pset"] is { Length: > 0 } ps && ps != StandardPsets.Own ? ps : null;
             foreach (var id in Args.Ids(a))
             {
                 var e = ctx.Model.Get(id) ?? throw new CommandException("Which element?");
                 if (e.Attrs["params"] is not JsonArray old) continue;
-                var list = new JsonArray(old.OfType<JsonObject>().Where(p => !string.Equals((string?)p["name"], name, StringComparison.OrdinalIgnoreCase)).Select(p => (JsonNode)p.DeepClone()).ToArray());
+                var list = new JsonArray(old.OfType<JsonObject>().Where(p => !Params.Same(p, pset, name)).Select(p => (JsonNode)p.DeepClone()).ToArray());
                 var attrs = e.CloneAttrs();
                 if (list.Count == 0) attrs.Remove("params"); else attrs["params"] = list;
                 ctx.Replace(e.With(attrs: attrs));
             }
             return null;
         });
+
+        // The standard property sets the user's parameters may go into, with their properties (StandardPsets).
+        r.Query("params.standardSets", (_, _) => StandardPsets.ToJson());
 
         r.Command("element.update", "Change", (ctx, a) =>
         {

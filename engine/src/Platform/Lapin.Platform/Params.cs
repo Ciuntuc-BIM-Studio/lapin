@@ -8,6 +8,13 @@ public static class Params
 {
     public static readonly string[] Kinds = ["text", "number", "length", "area", "angle", "bool", "choice"];
 
+    /// <summary>A stored parameter's set: null for the user's own (Lapin_Parameters).</summary>
+    public static string? SetOf(JsonObject p) => (string?)p["pset"] is { Length: > 0 } s && s != StandardPsets.Own ? s : null;
+
+    /// <summary>Whether a stored parameter is the one named: the same name (case aside) in the same set.</summary>
+    public static bool Same(JsonObject p, string? pset, string name) =>
+        string.Equals((string?)p["name"], name, StringComparison.OrdinalIgnoreCase) && string.Equals(SetOf(p), pset, StringComparison.OrdinalIgnoreCase);
+
     public static JsonNode? Check(string kind, JsonNode? value, JsonArray? options)
     {
         if (!Kinds.Contains(kind)) throw new CommandException($"„{kind}” is not a kind of parameter ({string.Join(", ", Kinds)}).");

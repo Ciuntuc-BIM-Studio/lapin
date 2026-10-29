@@ -203,6 +203,30 @@ public class IfcExportTests : IDisposable
     }
 
     [Fact]
+    public void Values_in_a_standard_set_join_its_common_set_and_a_users_set_goes_out_on_its_own()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var wall = f.Wall(0, 0, 4, 0);
+        var door = (string)f.Run("architecture.addDoor", new JsonObject { ["wallId"] = wall, ["along"] = 2 })!["id"]!;
+        f.Run("element.setParam", new JsonObject { ["id"] = door, ["pset"] = "Pset_DoorCommon", ["name"] = "FireRating", ["value"] = "EI30" });
+        f.Run("element.setParam", new JsonObject { ["id"] = door, ["pset"] = "Pset_DoorCommon", ["name"] = "IsExternal", ["value"] = true });
+        f.Run("element.setParam", new JsonObject { ["id"] = door, ["pset"] = "Acme_Checks", ["name"] = "Checked by", ["kind"] = "text", ["value"] = "IC" });
+        var file = StepFile.Read(Export(f, "door-sets.ifc"));
+        var sets = SetsOf(file, One(file, "IFCDOOR"));
+        // One common set: Lapin's Reference, the user's IsExternal over Lapin's, their FireRating as a label.
+        var common = Assert.Single(sets, s => (string?)s[2] == "Pset_DoorCommon");
+        var names = PropertyNames(file, common);
+        Assert.Equal(1, names.Count(n => n == "IsExternal"));
+        Assert.Contains("Reference", names);
+        Assert.Contains("FireRating", names);
+        var text = File.ReadAllText(Path.Combine(_dir, "door-sets.ifc"));
+        Assert.Contains("IFCPROPERTYSINGLEVALUE('FireRating',$,IFCLABEL('EI30'),$)", text);
+        Assert.Contains("IFCPROPERTYSINGLEVALUE('IsExternal',$,IFCBOOLEAN(.T.),$)", text);
+        Assert.Equal(["Checked by"], PropertyNames(file, Assert.Single(sets, s => (string?)s[2] == "Acme_Checks")));
+        Assert.DoesNotContain(sets, s => (string?)s[2] == IfcExport.ParamsSetName);
+    }
+
+    [Fact]
     public void A_types_parameters_go_out_on_the_type_and_an_elements_own_on_it()
     {
         var f = new Fixture(new ArchitectureModule());

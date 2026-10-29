@@ -377,7 +377,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
         var editor = role is "editor" or "owner";
         switch (method)
         {
-            case "session.info" or "doc.snapshot" or "doc.query" or "quantities.of" or "view.caps"
+            case "session.info" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps"
                 or "project.versions" or "project.compareVersions"
                 or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh":
                 return null;
@@ -426,6 +426,12 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return (session.Query((string?)p["name"] ?? throw new CommandException("The query is missing."), p["args"] as JsonObject ?? [])?.DeepClone(), null);
             case "view.caps": return (session.Caps(ClipPlanes(p["planes"]), drawing: (string?)p["style"] == "drawing", scale: Json.Number(p["scale"]) is { } sc && sc > 0 ? sc : 50, layers: ViewStyles.LayersOf(p["layers"])), null);
             case "quantities.of": return (session.Quantities((string?)p["id"] ?? throw new CommandException("Which element?")), null);
+            // Several elements' quantity sets in one call (the model assistant's lists and sums): id → sets; an id the model lacks is left out.
+            case "quantities.many":
+            {
+                var ids = (p["ids"] as JsonArray ?? throw new CommandException("Which elements?")).Select(x => (string?)x).OfType<string>().Distinct().Take(5000);
+                return (ids.Where(id => session.Model.Get(id) != null).ToDictionary(id => id, id => session.Quantities(id)), null);
+            }
             // A new project with the default storeys; `plain`: one ground floor, for a file that fills it (an IFC opened as a project).
             case "project.new": return (null, session.New(p["plain"]?.GetValue<bool>() == true));
             case "project.open":
