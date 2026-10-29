@@ -48,6 +48,10 @@ public sealed class AnnotationPlacement : IElementPlacement
                 var deg = Json.Number(attrs["angle"]) ?? 0;
                 attrs["angle"] = t.Angle(deg * Math.PI / 180) * 180 / Math.PI;
                 break;
+            case "DIMENSION" when Dimensions.IsLinear(e) && Held(e, t, moving) is { } shift:
+                // Moved on its own while it measures elements that stay: it keeps measuring them, and only its line slides square to it (report #37).
+                attrs["at"] = J(P(attrs["at"]) + shift);
+                break;
             case "DIMENSION" when Dimensions.IsLinear(e):
             {
                 // The whole string: every point, its line, its direction; a point whose element stays behind measures where it is now.
@@ -64,6 +68,21 @@ public sealed class AnnotationPlacement : IElementPlacement
                 break;
         }
         return attrs;
+    }
+
+    /// <summary>
+    /// A move of a string some of whose points hang on elements that are not moving with it: the part of the move
+    /// square to the string, which is all that moving it may do; null for a turn, a mirror, a copy or a free string.
+    /// </summary>
+    static Vec2? Held(Entity e, Placement2D t, IReadOnlySet<string> moving)
+    {
+        if (t.Turn != 0 || t.Mirrored || moving.Count == 0 || e.Attrs["at"] is not JsonArray) return null;
+        var stations = Dimensions.Stations(e);
+        if (stations.Count < 2 || !stations.Any(s => s.Ref is { } r && !moving.Contains(r.Element))) return null;
+        if (Dimensions.Along(e.Attrs, stations[0].P, stations[^1].P) is not { } u) return null;
+        var by = t.Point(default);
+        var n = u.Perp;
+        return n * Vec2.Dot(by, n);
     }
 
     public void Transform(ICommandContext ctx, Entity e, Placement2D t, IReadOnlySet<string> moving)

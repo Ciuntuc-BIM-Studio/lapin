@@ -18,6 +18,24 @@ export interface PenDto {
   texts?: { x: number; y: number; text: string; height: number; angle: number; anchor: string; baseline: string; bold: boolean; font: string }[];
 }
 
+/** What a dark plan shows for black: the graphite theme's ink. */
+export const DARK_INK = '#e9e4da';
+
+/**
+ * A pen's colour on screen. On a dark background black and near-black pens
+ * (luminance under 4 %) are drawn in the theme's ink, as CAD shows its black
+ * on a dark model space; colours keep their own. Paper (sheets, PDF) keeps black.
+ */
+export function screenInk(color: string | null | undefined, onDark: boolean): string | null {
+  if (!color || !onDark) return color ?? null;
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim());
+  if (!m) return /^(black|rgb\(\s*0\s*,\s*0\s*,\s*0\s*\))$/i.test(color.trim()) ? DARK_INK : color;
+  const h = m[1].length === 3 ? m[1].replace(/./g, (c) => c + c) : m[1];
+  const lin = (k: number) => { const v = parseInt(h.slice(k, k + 2), 16) / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  const lum = 0.2126 * lin(0) + 0.7152 * lin(2) + 0.0722 * lin(4);
+  return lum < 0.04 ? DARK_INK : color;
+}
+
 export interface DrawingDto {
   kind?: string;
   scale?: number;

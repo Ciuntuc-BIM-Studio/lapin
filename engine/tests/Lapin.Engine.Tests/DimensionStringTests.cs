@@ -107,6 +107,31 @@ public class DimensionStringTests
     }
 
     [Fact]
+    public void A_string_that_measures_elements_stays_on_them_when_dragged_and_only_its_line_moves()
+    {
+        // Report #37: a dimension dragged by mistake must not leave what it measures.
+        var f = F();
+        var walls = new[] { 0.0, 3, 7 }.Select(x => f.Wall(x, 0, x, 4)).ToList();
+        var id = String(f, Pts((0, 2), (3, 2), (7, 2)), (0, 6));
+        Assert.NotNull(f.Model.Get(id)!.Attrs["refs"]);
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(id), ["op"] = "move", ["by"] = new JsonArray(1.5, 1) });
+        var dim = f.Model.Get(id)!;
+        Assert.Equal([new Vec2(0, 2), new Vec2(3, 2), new Vec2(7, 2)], Stored(f, id));
+        Assert.Equal(3, dim.Attrs["refs"]!.AsArray().Count(r => r is not null));
+        // Only the part of the drag square to the string: the line goes up 1, not sideways.
+        Assert.Equal(0, (double)dim.Attrs["at"]![0]!, 6);
+        Assert.Equal(7, (double)dim.Attrs["at"]![1]!, 6);
+        Assert.Equal([3.0, 4.0], Values(f, id));
+        // Still associated: a wall moved afterwards changes what it measures.
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(walls[2]), ["op"] = "move", ["by"] = new JsonArray(1, 0) });
+        Assert.Equal([3.0, 5.0], Values(f, id));
+        // Moved together with everything it measures, it goes as a whole.
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray([id, .. walls]), ["op"] = "move", ["by"] = new JsonArray(2, 0) });
+        Assert.Equal(2, (double)f.Model.Get(id)!.Attrs["at"]![0]!, 6);
+        Assert.Equal([3.0, 5.0], Values(f, id));
+    }
+
+    [Fact]
     public void A_string_moves_copies_and_goes_as_a_whole()
     {
         var f = F();

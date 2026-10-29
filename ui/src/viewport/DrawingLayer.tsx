@@ -5,15 +5,17 @@
  */
 
 import { memo, useMemo } from 'react';
-import type { DrawingDto } from './drawing';
+import { screenInk, type DrawingDto } from './drawing';
 
 type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
 
-export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPerMetre }: { drawing: DrawingDto; toScreen: ToScreen; pxPerMetre: number }) {
+/** `onDark`: drawn straight on a dark background (a plan in the graphite theme), so black pens show in the theme's ink. */
+export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPerMetre, onDark = false }: { drawing: DrawingDto; toScreen: ToScreen; pxPerMetre: number; onDark?: boolean }) {
   // Pixels per paper millimetre: a paper mm is scale/1000 m of the model.
   const pxPerMm = pxPerMetre * (drawing.scale ?? 100) / 1000;
   const cap = drawing.lineCap === 'square' ? 'square' : 'round';
   const paths = useMemo(() => drawing.pens.map((p, i) => {
+    const stroke = screenInk(p.stroke, onDark), fill = screenInk(p.fill, onDark);
     let d = '';
     const pt = (x: number, y: number) => { const s = toScreen({ x, y }); return `${s.x.toFixed(1)} ${s.y.toFixed(1)}`; };
     for (const loop of p.loops ?? []) {
@@ -29,7 +31,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
     const width = p.stroke ? Math.min(4, Math.max(0.5, p.width * pxPerMm)) : 0;
     if (p.texts?.length) {
       return (
-        <g key={i} className="pen-text" fill={p.stroke ?? '#000'}>
+        <g key={i} className="pen-text" fill={stroke ?? '#000'}>
           {p.texts.map((t, k) => {
             const at = toScreen({ x: t.x, y: t.y });
             const size = t.height * pxPerMm;
@@ -46,10 +48,10 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
       );
     }
     return (
-      <path key={i} d={d} className={`pen pen-${p.layer.toLowerCase()}`} fill={p.fill ?? 'none'} fillRule="evenodd"
-        stroke={p.stroke ?? 'none'} strokeWidth={width} strokeLinecap={cap} strokeLinejoin={cap === 'square' ? 'miter' : 'round'}
+      <path key={i} d={d} className={`pen pen-${p.layer.toLowerCase()}`} fill={fill ?? 'none'} fillRule="evenodd"
+        stroke={stroke ?? 'none'} strokeWidth={width} strokeLinecap={cap} strokeLinejoin={cap === 'square' ? 'miter' : 'round'}
         strokeDasharray={p.dash ? p.dash.map((v) => Math.max(1, Math.min(v * pxPerMm, v * 8)).toFixed(1)).join(' ') : undefined} />
     );
-  }), [drawing, toScreen, pxPerMm]);
+  }), [drawing, toScreen, pxPerMm, onDark]);
   return <g className="drawing-layer">{paths}</g>;
 });

@@ -89,6 +89,7 @@ export function PlanView() {
   const planViewId = usePaneField('planViewId');
   const active = usePaneActive();
   const planDrawing = useUi((s) => s.planDrawing);
+  const onDark = useUi((s) => s.theme) === 'graphite';
   const ownPlan = planViewId && nodes.get(planViewId)?.props.storeyId === storey?.id ? planViewId : null;
   const drawing = useDrawing(storey ? ownPlan ?? `plan:${storey.id}` : null, planDrawing);
   // A site plan or a location plan (docs/site-plans.md): the whole model from above, so no reference level or view range of its own.
@@ -577,8 +578,8 @@ export function PlanView() {
           return <image key={`ortho:${o.id}`} href={o.image.url} x={0} y={0} width={1} height={1} preserveAspectRatio="none" opacity={o.opacity} className="plan-orthophoto"
             transform={`matrix(${tr.x - tl.x} ${tr.y - tl.y} ${bl.x - tl.x} ${bl.y - tl.y} ${tl.x} ${tl.y})`} />;
         })}
-        {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} /></g>}
-        {drawing && (planDrawing || siteView) && <g className={scope ? 'scoped-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} /></g>}
+        {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} /></g>}
+        {drawing && (planDrawing || siteView) && <g className={scope ? 'scoped-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} /></g>}
         <g className={`plan-items${drawing && (planDrawing || siteView) ? ' ghost' : ''}${scope ? ' scoped' : ''}`}>
           {drawn.map(({ key, r, kind, d, closed, text, at }) => kind === 'label' ? (
             <text key={key} x={at.x} y={at.y} className="plan-label">{text}</text>
