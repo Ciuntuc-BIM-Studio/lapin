@@ -34,7 +34,7 @@ The old Lapin (ifc-lite fork, MPL-2.0) lives in `~/Documents/GitHub/Lapin/ifc-li
 
 ```sh
 pnpm setup                     # packages, engine build
-pnpm dev                       # engine ws://127.0.0.1:47810/ws + UI http://localhost:5180 (LAPIN_PRODUCT=<id>, default lapin)
+pnpm dev                       # engine ws://127.0.0.1:47810/ws + UI http://localhost:5180 (LAPIN_PRODUCT=<id>, default lapin; LAPIN_ENGINE_CONFIG=Release for timing a big model as a build would)
 pnpm dev:desktop               # the same in the Tauri window
 pnpm typecheck && pnpm test    # UI (vitest) and engine (xUnit); pnpm test:engine for the engine alone
 pnpm products                  # what every product resolves to

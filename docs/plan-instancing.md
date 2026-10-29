@@ -180,8 +180,11 @@ The diff frame of this model went from 856 MB to 349 MB with the mesh parts.
 
 In the app (`LAPIN_ENGINE_CONFIG=Release pnpm dev`, Chrome): from the import call until every element is in the page, 30 s
 (62 s with the Debug engine `pnpm dev` builds by default); 1,151 of its 2,846 elements are instances of 84 shared meshes;
-the 3D view fitted in 3.5 s, 60 fps turning, a pick 0.8 s, the page 1.1 GB. The ~11 s past the engine's import are the
-349 MB frame encoded, sent, decoded and applied.
+the 3D view fitted in 3.5 s, 60 fps turning, a pick 0.8 s, the page 1.1 GB. The ~11 s past the engine's import were the
+349 MB frame encoded, sent, decoded and applied. Of it, the dryer's crease edges were 109 MB (4.7 million segments at 30°,
+a black blob): with the edge budget (`MeshShading.EdgeBudget`, 500,000 segments; a sharper fold, else none) the frame's
+edges are 12 MB and the model reaches the page in 23 s. What is left of the frame is the dryer's own mesh: 85 MB of
+positions and normals, 82 MB of indices, which only decimation would cut.
 
 ### Still open for such a file
 - **A mesh part's solid, once a consumer asked for it, stays** in the stored bodies' cache (6.8 million `Face` objects for the dryer,
