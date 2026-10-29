@@ -106,9 +106,11 @@ describe('the languages', () => {
   });
 
   it('translates the undo buttons\' tooltips with what they undo and their keys', () => {
-    expect(translate('Undo (Ctrl+Z)')).toBe('Anulează (Ctrl+Z)');
-    expect(translate('Undo Move (Ctrl+Z)')).toBe('Anulează Mută (Ctrl+Z)');
-    expect(translate('Redo My wall (Ctrl+Y, Ctrl+Shift+Z)')).toBe('Refă My wall (Ctrl+Y, Ctrl+Shift+Z)');
-    expect(translate('Redo')).toBe('Refă');
+    expect(translate('Undo (Ctrl+Z)', 'ro')).toBe('Anulează (Ctrl+Z)');
+    expect(translate('Undo Move (Ctrl+Z)', 'ro')).toBe('Anulează Mută (Ctrl+Z)');
+    expect(translate('Redo My wall (Ctrl+Y, Ctrl+Shift+Z)', 'ro')).toBe('Refă My wall (Ctrl+Y, Ctrl+Shift+Z)');
+    expect(translate('Redo', 'ro')).toBe('Refă');
+    expect(translate('Undo Move (Ctrl+Z)', 'es')).toBe('Deshacer Desplazar (Ctrl+Z)');
+    expect(translate('Redo (Ctrl+Y)', 'es')).toBe('Rehacer (Ctrl+Y)');
   });
 });

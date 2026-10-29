@@ -68,7 +68,7 @@ export const ES: Record<string, string> = {
   'Cut plane and depth': 'Plano de corte y profundidad', 'View range…': 'Rango de vista…', 'Edit styles…': 'Editar estilos…',
   'every layer': 'todas las capas', 'without finishes': 'sin acabados', 'the core only': 'solo el núcleo', 'New style': 'Estilo nuevo', 'by its name': 'por su nombre', 'Finish': 'Acabado', 'Insulation': 'Aislamiento', 'Membrane': 'Membrana',
   'Drafting': 'Dibujo', 'by layer': 'por capa', 'Line type': 'Tipo de línea', 'Start': 'Inicio', 'End': 'Fin', 'Centre': 'Centro', 'Radius': 'Radio', 'Diameter': 'Diámetro', 'Circumference': 'Circunferencia', 'Vertices': 'Vértices', 'Closed': 'Cerrado', 'Start angle': 'Ángulo inicial', 'End angle': 'Ángulo final', 'Pattern': 'Patrón', 'Position': 'Posición', 'Tagged element': 'Elemento etiquetado', 'Field': 'Campo',
-  'Start screen': 'Pantalla de inicio', 'Commands…': 'Comandos…', 'Theme': 'Tema', 'Undo': 'Deshacer', 'Redo': 'Rehacer',
+  'Start screen': 'Pantalla de inicio', 'Commands…': 'Comandos…', 'Theme': 'Tema', 'Undo': 'Deshacer', 'Redo': 'Rehacer', 'Undo and redo': 'Deshacer y rehacer',
   'Help, report an issue, community': 'Ayuda, informar de un problema, comunidad', 'Report an issue': 'Informar de un problema', 'Report an issue…': 'Informar de un problema…', 'User guide': 'Guía del usuario', 'Check for updates…': 'Buscar actualizaciones…', 'Lapin is up to date.': 'Lapin está actualizado.',
   'Community (Skool)': 'Comunidad (Skool)', 'Community on Skool': 'Comunidad en Skool', 'What happened': 'Qué ocurrió', 'What you expected': 'Qué esperaba',
   'E-mail (optional)': 'Correo electrónico (opcional)', 'Screenshot (optional)': 'Captura de pantalla (opcional)', 'Cancel': 'Cancelar', 'Send': 'Enviar', 'Close': 'Cerrar', 'Done': 'Hecho',
@@ -454,4 +454,7 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^(.+) could not be read as a picture: attach a PNG or JPEG screenshot \(or send the report without one\)\.$/, (m) => `${m[1]} no se pudo leer como imagen: adjunte una captura PNG o JPEG (o envíe el informe sin ella).`],
   [/^(\d+) room\(s\) updated; (\d+) no longer enclosed \(they keep their last outline\)\.$/, (m) => `${m[1]} habitación(es) actualizada(s); ${m[2]} ya no cerrada(s) (conservan su último contorno).`],
   [/^No room has a value for this field yet\. Give rooms a (.+) in their properties\.$/, (m) => `Ninguna habitación tiene aún un valor para este campo. Asigne a las habitaciones un valor (${m[1]}) en sus propiedades.`],
+  // The undo buttons' tooltips: "Undo Move (Ctrl+Z)", "Redo (Ctrl+Y, Ctrl+Shift+Z)"
+  [/^(Undo|Redo) \(([^()]+)\)$/, (m) => `${m[1] === 'Undo' ? 'Deshacer' : 'Rehacer'} (${m[2]})`],
+  [/^(Undo|Redo) (.+?)(?: \(([^()]+)\))?$/, (m) => `${m[1] === 'Undo' ? 'Deshacer' : 'Rehacer'} ${ES[m[2]] ?? m[2]}${m[3] ? ` (${m[3]})` : ''}`],
 ];
