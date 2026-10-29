@@ -874,6 +874,7 @@ export const scenes = [
       await t.page.locator('.help-menu > button').click();
       await t.wait(300);
       await t.shot('help-menu', { clip: { x: 1100, y: 0, width: 340, height: 340 } });
+      t.expect((await t.page.locator('.menu-langs button').allTextContents()).join(' ') === 'English Română Español', 'the help menu offers the interface in English, Romanian and Spanish');
       await t.page.getByRole('menuitem', { name: 'About Lapin…' }).click();
       await t.wait(200);
       t.expect(await t.page.getByText('Helpware', { exact: true }).count() > 0, 'About Lapin says what helpware means');
@@ -892,7 +893,7 @@ export const scenes = [
         const { commands, current } = await import('/src/app/commands.ts');
         const { formatBinding } = await import('/src/app/shortcuts.ts');
         const { translate } = await import('/src/i18n/index.ts');
-        const say = (s) => (lang === 'en' ? s : translate(s) ?? s);
+        const say = (s) => (lang === 'en' ? s : translate(s, lang) ?? s);
         const { bindings } = current();
         return commands().filter((c) => !c.id.startsWith('hotbar.') && (bindings[c.id] ?? []).length)
           .map((c) => ({ category: say(c.category), command: say(c.label), keys: bindings[c.id].map((b) => formatBinding(b, false)) }));

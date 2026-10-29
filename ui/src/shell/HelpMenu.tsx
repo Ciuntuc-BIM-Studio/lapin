@@ -13,7 +13,7 @@ import { useSession } from '../engine/session';
 import { RECENT, openLink, sendReport } from './support';
 import { isDesktop } from '../engine/files';
 import { checkForUpdates } from '../app/updates';
-import { setLang, useLang } from '../i18n';
+import { LANGUAGES, setLang, useLang } from '../i18n';
 import { AskDialog } from '../help/AskDialog';
 import { BunnyIcon } from '../icons';
 
@@ -96,6 +96,7 @@ export function HelpMenu() {
   const [asking, setAsking] = useState(false);
   const [about, setAbout] = useState(false);
   const info = useSession((s) => s.info);
+  const lang = useLang((s) => s.lang);
   // F1: Ask Lapin, from anywhere.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'F1') { e.preventDefault(); setAsking(true); } };
@@ -122,9 +123,12 @@ export function HelpMenu() {
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('community'); }}>Community (Skool)</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('site'); }}>ciuntucbimstudio.ro</button>
           {isDesktop() && <button type="button" role="menuitem" onClick={() => { setOpen(false); void checkForUpdates(true); }}>Check for updates…</button>}
-          <button type="button" role="menuitem" data-no-i18n onClick={() => { setOpen(false); setLang(useLang.getState().lang === 'ro' ? 'en' : 'ro'); }}>
-            {useLang.getState().lang === 'ro' ? 'Interfața: română → English' : 'Interface: English → română'}
-          </button>
+          <div className="menu-langs" role="group" aria-label="Language" data-no-i18n>
+            {LANGUAGES.map((l) => (
+              <button key={l.id} type="button" role="menuitemradio" aria-checked={lang === l.id} className={lang === l.id ? 'on' : ''}
+                onClick={() => { setOpen(false); setLang(l.id); }}>{l.name}</button>
+            ))}
+          </div>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setAbout(true); }}>About Lapin…</button>
           <span className="muted small menu-note">Lapin {info?.engineVersion ?? ''}</span>
         </div>

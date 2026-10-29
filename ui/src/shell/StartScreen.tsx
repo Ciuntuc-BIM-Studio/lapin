@@ -8,7 +8,7 @@ import { engineInBrowser, useSession } from '../engine/session';
 import { discardWork, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
 import { useUi } from '../app/store';
 import { openLink } from './support';
-import { setLang, useLang } from '../i18n';
+import { LANGUAGES, setLang, useLang } from '../i18n';
 
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
@@ -73,8 +73,9 @@ export function StartScreen() {
       <footer className="start-foot muted small">
         <span>Lapin · Ciuntuc BIM Studio · <button type="button" className="link" onClick={() => openLink('community')}>Community on Skool</button> · <button type="button" className="link" onClick={() => openLink('site')}>ciuntucbimstudio.ro</button></span>
         <span>
-          <button type="button" className="link" data-no-i18n onClick={() => setLang(lang === 'ro' ? 'en' : 'ro')}>{lang === 'ro' ? 'English' : 'Română'}</button>
-          {' · '}Ctrl+N new · Ctrl+O open · Ctrl+S save
+          {LANGUAGES.filter((l) => l.id !== lang).map((l) => (
+            <span key={l.id}><button type="button" className="link" data-no-i18n onClick={() => setLang(l.id)}>{l.name}</button>{' · '}</span>
+          ))}Ctrl+N new · Ctrl+O open · Ctrl+S save
         </span>
       </footer>
       {joining && <JoinDialog />}

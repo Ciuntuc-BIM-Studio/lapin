@@ -160,11 +160,11 @@ export const FAQ: Entry[] = [
   },
   {
     id: 'language',
-    q: ['How do I switch to Romanian?', 'Can I change the language?'],
+    q: ['How do I switch to Romanian or Spanish?', 'Can I change the language?'],
     qRo: ['Cum trec interfața în engleză?', 'Pot schimba limba?'],
-    keywords: ['language', 'romanian', 'english', 'translate', 'limba', 'romana', 'engleza', 'traducere'],
-    a: 'Help (?) → Română / English switches the interface; it is remembered on this computer.',
-    aRo: 'Help (?) → Română / English schimbă limba interfeței; alegerea se ține minte pe acest calculator.',
+    keywords: ['language', 'romanian', 'english', 'spanish', 'translate', 'limba', 'romana', 'engleza', 'spaniola', 'traducere', 'espanol', 'idioma'],
+    a: 'Help (?) → English · Română · Español switches the interface; it is remembered on this computer. The user guide is in English and Romanian.',
+    aRo: 'Help (?) → English · Română · Español schimbă limba interfeței; alegerea se ține minte pe acest calculator. Ghidul utilizatorului e în engleză și română.',
     source: 'faq',
   },
   {

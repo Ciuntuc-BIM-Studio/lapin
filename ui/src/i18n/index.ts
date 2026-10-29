@@ -1,18 +1,40 @@
 /**
- * The interface's language (English or Romanian). The interface is written
- * in English; in Romanian a translator walks what it shows (texts, titles,
- * placeholders) and puts each phrase it knows into Romanian, keeping the
- * English to put back. Drawings (SVG) and what the user types are left as
- * they are. The phrase list is `ro.ts`; a phrase not in it stays English.
+ * The interface's language (English, Romanian or Spanish). The interface is
+ * written in English; in another language a translator walks what it shows
+ * (texts, titles, placeholders) and puts each phrase it knows into that
+ * language, keeping the English to put back. Drawings (SVG) and what the user
+ * types are left as they are. Each language is one file (`ro.ts`, `es.ts`):
+ * its phrase list and its patterns; a phrase not in it stays English.
  */
 
 import { create } from 'zustand';
+import { ES, ES_PATTERNS } from './es';
 import { RO, RO_PATTERNS } from './ro';
 
-export type Lang = 'en' | 'ro';
+/** A language's phrases: the exact ones, and those with a number or a name in them. */
+export interface Language {
+  dict: Record<string, string>;
+  patterns: [RegExp, (m: RegExpExecArray) => string][];
+}
+
+const TABLES = {
+  ro: { dict: RO, patterns: RO_PATTERNS },
+  es: { dict: ES, patterns: ES_PATTERNS },
+} satisfies Record<string, Language>;
+
+export type Lang = 'en' | keyof typeof TABLES;
+
+/** The languages offered, each named in itself. */
+export const LANGUAGES: { id: Lang; name: string }[] = [
+  { id: 'en', name: 'English' },
+  { id: 'ro', name: 'Română' },
+  { id: 'es', name: 'Español' },
+];
+
+const isLang = (x: unknown): x is Lang => LANGUAGES.some((l) => l.id === x);
 
 function stored(): Lang {
-  try { return localStorage.getItem('lapin.lang') === 'ro' ? 'ro' : 'en'; } catch { return 'en'; }
+  try { const v = localStorage.getItem('lapin.lang'); return isLang(v) ? v : 'en'; } catch { return 'en'; }
 }
 
 export const useLang = create<{ lang: Lang }>(() => ({ lang: stored() }));
@@ -23,13 +45,15 @@ export function setLang(lang: Lang): void {
   retranslate();
 }
 
-/** A phrase in the language chosen (null: it stays as it is). */
-export function translate(text: string): string | null {
+/** A phrase in a language, the one chosen unless given (null: it stays as it is). */
+export function translate(text: string, lang: Lang = useLang.getState().lang): string | null {
+  if (lang === 'en') return null;
   const core = text.trim();
   if (!core) return null;
-  const exact = RO[core];
+  const { dict, patterns } = TABLES[lang];
+  const exact = dict[core];
   if (exact != null) return text.replace(core, exact);
-  for (const [re, f] of RO_PATTERNS) {
+  for (const [re, f] of patterns) {
     const m = re.exec(core);
     if (m) return text.replace(core, f(m));
   }
@@ -38,7 +62,7 @@ export function translate(text: string): string | null {
 
 /** For code that builds a phrase itself (a notice): the phrase in the language chosen. */
 export function t(text: string): string {
-  return useLang.getState().lang === 'ro' ? translate(text) ?? text : text;
+  return translate(text) ?? text;
 }
 
 const ATTRS = ['title', 'placeholder', 'aria-label'];
@@ -48,30 +72,31 @@ let root: HTMLElement | null = null;
 let observer: MutationObserver | null = null;
 let busy = false;
 
+/** Whether `now` is `english` or its translation in a language (the one shown before a switch, too). */
+const shows = (now: string, english: string) => now === english || LANGUAGES.some((l) => now === translate(english, l.id));
+
 const skip = (el: Element | null) => !!el?.closest('svg, textarea, [contenteditable], [data-no-i18n]');
 
 function textNode(n: Text) {
   if (skip(n.parentElement)) return;
-  const ro = useLang.getState().lang === 'ro';
   const now = n.nodeValue ?? '';
   const known = originals.get(n);
   // The English it shows now (React may have written new English since).
-  const english = known != null && (now === known || now === translate(known)) ? known : now;
+  const english = known != null && shows(now, known) ? known : now;
   originals.set(n, english);
-  const want = ro ? translate(english) ?? english : english;
+  const want = translate(english) ?? english;
   if (want !== now) n.nodeValue = want;
 }
 
 function attributes(el: Element) {
   if (skip(el)) return;
-  const ro = useLang.getState().lang === 'ro';
   const saved = attrOriginals.get(el) ?? {};
   for (const a of ATTRS) {
     const now = el.getAttribute(a);
     if (now == null) continue;
-    const english = saved[a] != null && (now === saved[a] || now === translate(saved[a])) ? saved[a] : now;
+    const english = saved[a] != null && shows(now, saved[a]) ? saved[a] : now;
     saved[a] = english;
-    const want = ro ? translate(english) ?? english : english;
+    const want = translate(english) ?? english;
     if (want !== now) el.setAttribute(a, want);
   }
   attrOriginals.set(el, saved);

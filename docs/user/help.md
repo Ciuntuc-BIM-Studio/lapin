@@ -26,7 +26,7 @@ The **?** button next to Ask Me opens the help menu:
 - **About Lapin…** shows the version, the licence, a link to the source code, and what helpware means.
 
   ![About Lapin](shots/about.webp)
-- **Interface: English → română** switches the language. Your choice is remembered on this computer.
+- **English · Română · Español** chooses the interface's language. Your choice is remembered on this computer. This guide is in English and Romanian: with the interface in Spanish, **User guide** opens it in English.
 
 ## Updates
 

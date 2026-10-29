@@ -411,6 +411,9 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .menu-pop button { text-align: left; padding: 6px 12px; background: none; border: none; cursor: pointer; color: var(--ink); }
 .menu-pop button:hover { background: var(--accent-wash); }
 .menu-note { padding: 6px 12px; border-top: 1px solid var(--rule); }
+.menu-langs { display: flex; gap: 2px; padding: 2px 8px; }
+.menu-pop .menu-langs button { padding: 4px 6px; border-radius: 3px; color: var(--ink-muted); }
+.menu-pop .menu-langs button.on { color: var(--ink); font-weight: 600; background: var(--accent-wash); }
 .dialog-body.report textarea { width: 100%; box-sizing: border-box; font: inherit; }
 button.link { background: none; border: none; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
 .dialog.about { max-width: min(520px, calc(100vw - 32px)); }
