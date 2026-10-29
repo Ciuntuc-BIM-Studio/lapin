@@ -407,6 +407,9 @@ public static partial class IfcImport
                 if (!o.ReferenceOnly && !parentOf.ContainsKey(e.Id) && Recognize(edit, e)) { native.Add(e.Id); continue; }
                 rest.Add(e);
             }
+            // The references to come, read from the file on every core before they are put in the model in order.
+            PrepareAll([.. rest.Where(e => !(parentOf.TryGetValue(e.Id, out var parent) && (native.Contains(parent) || (!o.ReferenceOnly && IntentOf(parent) != null)))
+                && !recognizedFills.Contains(e.Id) && (o.ReferenceOnly || !parentOf.ContainsKey(e.Id) || fills.Contains(e.Id)))], booleans);
             foreach (var e in rest)
             {
                 if (parentOf.TryGetValue(e.Id, out var parent) && (native.Contains(parent) || (!o.ReferenceOnly && IntentOf(parent) != null))) continue;
@@ -503,23 +506,56 @@ public static partial class IfcImport
         /// An element the file describes only by its body: kept as it is, its openings cut where the booleans are;
         /// with the 2D the file drew for its plans (<see cref="Plan2d"/>), and kept for that alone when it has no body.
         /// </summary>
+        /// <summary>What a reference needs from the file, read before it is put in the model: its 2D, its shared key or else its own body, its description and properties.</summary>
+        sealed record Prepared((string Key, Xf At)? Shared, List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)>? Parts,
+            List<Plan2dItem> Plan2d, int Sections2d, int Elevations2d, JsonNode? Shape, JsonObject Properties);
+
+        readonly System.Collections.Concurrent.ConcurrentDictionary<int, Prepared> prepared = [];
+
+        /// <summary>
+        /// The references to come read from the file on every core (the model warmed first, then only read):
+        /// each one's body evaluated, welded and cut, its 2D, description and properties. Putting them in the
+        /// model stays in order, one by one.
+        /// </summary>
+        void PrepareAll(IReadOnlyList<StepEntity> references, ISolidBooleans? booleans)
+        {
+            if (references.Count < 8) return;
+            model.Warm();
+            Parallel.ForEach(references, e => prepared[e.Id] = Prepare(e, booleans));
+        }
+
+        Prepared Prepare(StepEntity e, ISolidBooleans? booleans)
+        {
+            var (plan2d, sections2d, elevations2d) = model.Drawing2d(e.Id);
+            var shared = model.SharedKey(e.Id);
+            return new Prepared(shared, shared == null ? OwnBody(e, booleans) : null, plan2d, sections2d, elevations2d, model.Describe(e.Id), PropertiesJson(e.Id));
+        }
+
         void Reference(IEdit edit, StepEntity e, ISolidBooleans? booleans)
         {
             var gid = Str(e[0])!;
-            var (plan2d, sections2d, elevations2d) = model.Drawing2d(e.Id);
+            var p = prepared.TryRemove(e.Id, out var ready) ? ready : Prepare(e, booleans);
+            var (plan2d, sections2d, elevations2d) = (p.Plan2d, p.Sections2d, p.Elevations2d);
             // A body many products share: kept once, each product an instance of it (docs/plan-instancing.md).
-            if (model.SharedKey(e.Id) is var (key, at) && SharedBody(edit, key, e, booleans) is { } bodyId)
+            if (p.Shared is var (key, at) && SharedBody(edit, key, e, booleans) is { } bodyId)
             {
                 var instance = new JsonObject
                 {
                     [StoredBodies.BodyOf] = bodyId,
                     [StoredBodies.XfKey] = StoredBodies.WriteXf([at.X.X, at.X.Y, at.X.Z, at.Y.X, at.Y.Y, at.Y.Z, at.Z.X, at.Z.Y, at.Z.Z, at.O.X, at.O.Y, at.O.Z]),
                 };
-                Referenced(edit, e, gid, instance, plan2d, sections2d, elevations2d);
+                Referenced(edit, e, gid, instance, p);
                 return;
             }
+            var parts = p.Parts ?? OwnBody(e, booleans);
+            if (parts.Count == 0 && plan2d.Count == 0) return;
+            Referenced(edit, e, gid, new JsonObject { [StoredBodies.Key] = StoredBodies.Write(parts) }, p);
+        }
+
+        /// <summary>A product's own body: its meshes welded, cut by its openings where the booleans are.</summary>
+        List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)> OwnBody(StepEntity e, ISolidBooleans? booleans)
+        {
             var (body, openings) = model.Shape(e.Id, booleans);
-            if (body.Count == 0 && plan2d.Count == 0) return;
             List<Solid>? cutters = null;
             if (openings.Count > 0 && booleans != null)
                 cutters = openings.Select(m => { var w = m.Welded(); return SolidFromMesh.Build(w.V, w.T); }).OfType<Solid>().ToList();
@@ -537,20 +573,19 @@ public static partial class IfcImport
                 }
                 if (m.T.Count > 0) parts.Add(("Body", colour ?? "#c9ced6", m.V, m.T));
             }
-            if (parts.Count == 0 && plan2d.Count == 0) return;
-            Referenced(edit, e, gid, new JsonObject { [StoredBodies.Key] = StoredBodies.Write(parts) }, plan2d, sections2d, elevations2d);
+            return parts;
         }
 
         /// <summary>A reference put in the model: its body (its own, or an instance's) in <paramref name="attrs"/>, what the file says of it added.</summary>
-        void Referenced(IEdit edit, StepEntity e, string gid, JsonObject attrs, List<Plan2dItem> plan2d, int sections2d, int elevations2d)
+        void Referenced(IEdit edit, StepEntity e, string gid, JsonObject attrs, Prepared p)
         {
             var cls = ClassName(e.Type);
             attrs["reference"] = true;
             attrs["ifcClass"] = cls;
             attrs["objectType"] = Str(e[4]);
-            attrs["properties"] = PropertiesJson(e.Id);
-            attrs["shape"] = model.Describe(e.Id);
-            if (plan2d.Count > 0) { attrs[Plan2d.Key] = Plan2d.Write(plan2d, sections2d, elevations2d); with2d++; }
+            attrs["properties"] = p.Properties;
+            attrs["shape"] = p.Shape;
+            if (p.Plan2d.Count > 0) { attrs[Plan2d.Key] = Plan2d.Write(p.Plan2d, p.Sections2d, p.Elevations2d); with2d++; }
             Put(edit, gid, cls, Str(e[2]) ?? cls[3..], attrs, null, counts: false);
             references++;
             referencesByClass[cls] = referencesByClass.GetValueOrDefault(cls) + 1;

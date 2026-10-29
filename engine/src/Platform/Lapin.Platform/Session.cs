@@ -712,26 +712,37 @@ public sealed class Session
     /// <see cref="Seams"/>). The same rule as the elevations' and the plan's:
     /// the elements stay apart, the material reads as one.
     /// </summary>
+    /// <summary>
+    /// The seams join Lapin's own elements (a render going on from one storey's wall into the next):
+    /// not a reference's body, read from a file as triangles (a Revit body of millions tried every
+    /// neighbour's edges against its planes: minutes), nor a part of more faces than this.
+    /// </summary>
+    const int SeamedUpTo = 20_000;
+
+    static bool Seamed(Entity? e) => e != null && !StoredBodies.Has(e);
+
     RenderItem? Emitted(string id, Dictionary<string, string?> keys, BoxGrid grid)
     {
         if (!_built.TryGetValue(id, out var b) || b.Item is not { } item) return null;
         if (b.Geometry is not { } g || b.Bounds is not { } box || item.Parts is not { Count: > 0 } parts || parts.Count != g.Parts.Count) return item;
+        if (!Seamed(_store.Get(id))) return item;
         var cls = _store.Get(id)?.Class ?? item.Type;
         var near = new List<(Built Built, string Class)>();
         foreach (var (nid, nb) in grid.Near([box]))
-            if (nid != id && nb.Geometry != null) near.Add((nb, _store.Get(nid)?.Class ?? nb.Item?.Type ?? ""));
+            if (nid != id && nb.Geometry != null && Seamed(_store.Get(nid))) near.Add((nb, _store.Get(nid)?.Class ?? nb.Item?.Type ?? ""));
         if (near.Count == 0) return item;
         List<Seams.Plane> PlanesOf(Solid s) => _planes.GetOrAdd(s, Seams.Planes);
         List<RenderPart>? trimmed = null;
         for (var i = 0; i < parts.Count; i++)
         {
             var part = g.Parts[i];
+            if (part.Solid.Faces.Length > SeamedUpTo) continue;
             var key = Views.SeamKeyOf(_store, part.Material, cls, keys);
             if (key == null || Measure.Bounds(part.Solid) is not { } pbox) continue;
             var onward = new List<Seams.Plane>();
             foreach (var (nb, ncls) in near)
                 foreach (var q in nb.Geometry!.Parts)
-                    if (Views.SeamKeyOf(_store, q.Material, ncls, keys) == key && Measure.Bounds(q.Solid) is { } qbox && Overlaps(pbox, qbox)) onward.AddRange(PlanesOf(q.Solid));
+                    if (q.Solid.Faces.Length <= SeamedUpTo && Views.SeamKeyOf(_store, q.Material, ncls, keys) == key && Measure.Bounds(q.Solid) is { } qbox && Overlaps(pbox, qbox)) onward.AddRange(PlanesOf(q.Solid));
             if (onward.Count == 0) continue;
             trimmed ??= [.. parts];
             trimmed[i] = parts[i] with { Edges = Seams.Flat(Seams.Edges(part.Solid, onward)) };

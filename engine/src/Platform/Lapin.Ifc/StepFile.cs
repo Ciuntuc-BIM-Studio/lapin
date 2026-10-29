@@ -34,13 +34,19 @@ public sealed class StepFile
     /// <summary>The entities of a type, in the file's order (indexed once: a large file has tens of millions).</summary>
     public IEnumerable<StepEntity> OfType(string type)
     {
-        if (_byType == null)
-        {
-            var index = new Dictionary<string, List<StepEntity>>();
-            foreach (var e in Entities.Values) (index.TryGetValue(e.Type, out var l) ? l : index[e.Type] = []).Add(e);
-            _byType = index;
-        }
-        return _byType.TryGetValue(type, out var list) ? list : [];
+        var byType = _byType;
+        if (byType == null)
+            lock (Entities)
+            {
+                if (_byType == null)
+                {
+                    var index = new Dictionary<string, List<StepEntity>>();
+                    foreach (var e in Entities.Values) (index.TryGetValue(e.Type, out var l) ? l : index[e.Type] = []).Add(e);
+                    _byType = index;
+                }
+                byType = _byType;
+            }
+        return byType.TryGetValue(type, out var list) ? list : [];
     }
 
     /// <summary>Reads a file: ASCII as the standard says; a string in UTF-8 as some programs write it, Latin-1 else.</summary>

@@ -145,7 +145,7 @@ public sealed partial class IfcModel
         return o;
     }
 
-    readonly Dictionary<int, List<Vec3>> _edges = [];
+    readonly System.Collections.Concurrent.ConcurrentDictionary<int, List<Vec3>> _edges = [];
 
     /// <summary>An edge from its start vertex to its end, along its curve: the same points whichever face asks.</summary>
     List<Vec3> EdgePoints(StepEntity edge)

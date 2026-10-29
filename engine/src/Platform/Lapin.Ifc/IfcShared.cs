@@ -62,6 +62,20 @@ public sealed partial class IfcModel
         }
     }
 
+    /// <summary>
+    /// Every table the model fills as it is asked filled now (the placements, the shapes' uses, the 2D
+    /// styles, the types), so that from here on it is only read: an import prepares its references on
+    /// every core.
+    /// </summary>
+    public void Warm()
+    {
+        foreach (var p in File.OfType("IFCLOCALPLACEMENT")) Placement(new StepRef(p.Id));
+        foreach (var p in Products) Placement(File.Entities[p.Id][5]);
+        _uses ??= CountUses();
+        Styles2d();
+        TypeOf(0);
+    }
+
     /// <summary>The body a <see cref="SharedKey"/> names, in its own coordinates, each mesh with its colour.</summary>
     public List<(MeshBuilder Mesh, string? Colour)> SharedBody(string key, ISolidBooleans? booleans = null)
     {

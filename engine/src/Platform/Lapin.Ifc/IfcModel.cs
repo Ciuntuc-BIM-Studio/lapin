@@ -89,7 +89,7 @@ public sealed partial class IfcModel
     public string ProjectName { get; }
     readonly double _len = 1;   // metres per length unit
     readonly double _angle = 1; // radians per plane angle unit
-    readonly Dictionary<int, Xf> _placements = [];
+    readonly System.Collections.Concurrent.ConcurrentDictionary<int, Xf> _placements = [];
     readonly Dictionary<int, (string? Name, double Elevation)> _container = []; // product → its storey
     readonly Dictionary<int, List<int>> _openings = [];                          // element → its openings
     readonly Dictionary<int, List<int>> _definitions = [];                       // product → its property sets / quantities
