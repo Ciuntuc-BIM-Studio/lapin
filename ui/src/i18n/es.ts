@@ -408,6 +408,16 @@ export const ES: Record<string, string> = {
   'point': 'punto',
   'building': 'edificio',
   'Opacity': 'Opacidad',
+  // Entrance steps (report #33: a step at the porch)
+  'Entrance steps': 'Escalones de entrada', 'Top of the steps: click the middle of the porch edge (or the door sill)': 'Parte superior de los escalones: haga clic en el centro del borde del porche (o en el umbral de la puerta)',
+  'The way down: click on the side the steps go out to': 'Sentido de bajada: haga clic en el lado hacia el que salen los escalones', 'Rise': 'Desnivel', 'Rise (own)': 'Desnivel (propio)',
+  'to the storey': 'hasta la planta', 'a rise of its own': 'un desnivel propio', 'Add this ready-made type to the project': 'Añadir este tipo predefinido al proyecto', '· library': '· biblioteca',
+  'A rise of its own (entrance steps), not up to the storey above': 'Un desnivel propio (escalones de entrada), no hasta la planta superior',
+  "Placed, the steps end at their storey's level and start the rise below it.": 'Una vez colocados, los escalones terminan en el nivel de su planta y empiezan el desnivel por debajo.',
+  'entrance steps': 'escalones de entrada', 'at least': 'como mínimo', 'at most': 'como máximo', 'Built as': 'Construcción', 'Waist slab under the steps': 'Losa inclinada bajo los peldaños',
+  'Solid, cast on the ground': 'Maciza, hormigonada sobre el terreno', 'Preview at its own rise of': 'Vista previa con su desnivel propio de',
+  'One riser: the step is the edge of the floor it climbs to. Give it two risers or more for treads in front.': 'Una sola contrahuella: el escalón es el propio borde de la losa a la que sube. Asígnele dos contrahuellas o más para tener huellas delante.',
+  'Stair type from the library': 'Tipo de escalera de la biblioteca', 'Risers': 'Contrahuellas',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
