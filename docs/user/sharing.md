@@ -4,6 +4,8 @@ order: 125
 summary: Share the open project and work in it live with others, from Lapin or from a browser.
 ---
 
+<!-- video sharing -->
+
 Several people can work in the same project at the same time, as players join a game's server. One of you shares the project from Lapin on their computer: they are the **host**. The others join as **guests**, from Lapin on their own computer or from a browser, with the link the host sends them.
 
 The project stays on the host's computer, and the host's Lapin decides every edit. Guests see the model as it changes, draw with the same tools, and see where the others are.

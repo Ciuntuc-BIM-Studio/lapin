@@ -4,6 +4,8 @@ order: 120
 summary: Salvezi și deschizi proiecte, recuperezi lucrul nesalvat după o cădere și păstrezi versiuni în fișierul proiectului.
 ---
 
+<!-- video files -->
+
 ## Salvare și deschidere
 
 **Fișier → Salvează** (<kbd>Ctrl</kbd> <kbd>S</kbd>) scrie un fișier `.lapin`, iar **Fișier → Deschide…** (<kbd>Ctrl</kbd> <kbd>O</kbd>) deschide unul.

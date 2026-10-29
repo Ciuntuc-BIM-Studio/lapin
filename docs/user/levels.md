@@ -4,6 +4,8 @@ order: 60
 summary: Add levels, set their heights, and see another level under the plan you draw on.
 ---
 
+<!-- video levels -->
+
 ## Levels
 
 The project browser lists the levels at the top, the highest first. **+** next to **Levels** adds a level above the highest one.

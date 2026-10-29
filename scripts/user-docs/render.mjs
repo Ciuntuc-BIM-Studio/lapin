@@ -11,8 +11,12 @@
 // English pages are docs/user/*.md (→ build/user-docs), Romanian ones
 // docs/user/ro/*.md (→ build/user-docs/ro, their pictures from shots/ro); a
 // page with the same name in the other language is linked from the header.
+// A video tutorial is written <!-- video walls -->, its id one of
+// docs/user/videos/videos.json (its YouTube id, length, titles); the page shows
+// its poster (docs/user/videos/<id>.webp) and loads YouTube's player
+// (youtube-nocookie.com) only when it is played. <!-- videos --> is all of them.
 import { execSync } from 'node:child_process';
-import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Marked } from 'marked';
 
@@ -39,9 +43,9 @@ function parse(file) {
 
 /** The guide's own words, in each language. */
 const WORDS = {
-  en: { command: 'Command', keys: 'Keys', guide: 'Lapin user guide', brand: 'user guide', eyebrow: 'User guide', search: 'Search the guide', theme: 'Light or dark', open: 'Open Lapin', pages: 'Pages', onPage: 'On this page', prev: 'Previous', next: 'Next', none: 'Nothing found. Try Ask Me in the app.', other: 'Română', otherTitle: 'Ghidul în română',
+  en: { video: 'Video', play: 'Play', watch: 'Watch on YouTube', command: 'Command', keys: 'Keys', guide: 'Lapin user guide', brand: 'user guide', eyebrow: 'User guide', search: 'Search the guide', theme: 'Light or dark', open: 'Open Lapin', pages: 'Pages', onPage: 'On this page', prev: 'Previous', next: 'Next', none: 'Nothing found. Try Ask Me in the app.', other: 'Română', otherTitle: 'Ghidul în română',
     footer: (date, commit) => `Pictures taken from Lapin itself on ${date}${commit ? ` (build ${commit})` : ''}. Something missing or wrong? Ask in the app: <b>Ask Me</b>, or <b>?</b> → Report an issue.` },
-  ro: { command: 'Comandă', keys: 'Taste', guide: 'Ghidul utilizatorului Lapin', brand: 'ghidul utilizatorului', eyebrow: 'Ghidul utilizatorului', search: 'Caută în ghid', theme: 'Luminos sau întunecat', open: 'Deschide Lapin', pages: 'Pagini', onPage: 'Pe această pagină', prev: 'Înapoi', next: 'Înainte', none: 'Nimic găsit. Întreabă Ask Me în aplicație.', other: 'English', otherTitle: 'The guide in English',
+  ro: { video: 'Video în engleză', play: 'Pornește', watch: 'Vezi pe YouTube', command: 'Comandă', keys: 'Taste', guide: 'Ghidul utilizatorului Lapin', brand: 'ghidul utilizatorului', eyebrow: 'Ghidul utilizatorului', search: 'Caută în ghid', theme: 'Luminos sau întunecat', open: 'Deschide Lapin', pages: 'Pagini', onPage: 'Pe această pagină', prev: 'Înapoi', next: 'Înainte', none: 'Nimic găsit. Întreabă Ask Me în aplicație.', other: 'English', otherTitle: 'The guide in English',
     footer: (date, commit) => `Imagini luate din Lapin pe ${date.split('-').reverse().join('.')}${commit ? ` (build ${commit})` : ''}. Lipsește ceva sau e greșit? Întreabă în aplicație: <b>Ask Me</b>, sau <b>?</b> → Raportează o problemă.` },
 };
 
@@ -51,6 +55,22 @@ function shortcutsTable(rows, W) {
   const body = cats.map((c) => `<tr><th colspan="2">${esc(c)}</th></tr>` + rows.filter((r) => r.category === c)
     .map((r) => `<tr><td>${esc(r.command)}</td><td>${r.keys.map((k) => `<kbd>${esc(k)}</kbd>`).join(' ')}</td></tr>`).join('')).join('');
   return `<table class="shortcuts"><thead><tr><th>${W.command}</th><th>${W.keys}</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+/** The video tutorials, as docs/user/videos/videos.json lists them. */
+function videosOf(root) {
+  const file = join(root, 'docs/user/videos/videos.json');
+  return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : [];
+}
+
+/** A video as its poster, YouTube's player loaded only when it is played (guide.js). */
+function videoFigure(v, W, lang, up, small = false) {
+  const title = lang === 'ro' ? v.titleRo ?? v.title : v.title;
+  const summary = lang === 'ro' ? v.summaryRo ?? v.summary : v.summary;
+  const url = `https://youtu.be/${v.youtube}`;
+  return `<figure class="video${small ? ' small' : ''}"><button type="button" class="video-play" data-yt="${esc(v.youtube)}" data-title="${esc(title)}" aria-label="${esc(`${W.play}: ${title} (${v.length})`)}">`
+    + `<img src="${up}videos/${esc(v.id)}.webp" alt="" width="1280" height="720" loading="lazy" decoding="async"><span class="video-icon" aria-hidden="true"></span><span class="video-len">${esc(v.length)}</span></button>`
+    + `<figcaption><b>${esc(title)}</b> · ${W.video} · ${esc(summary)} <a href="${url}" target="_blank" rel="noopener">${W.watch}</a></figcaption></figure>`;
 }
 
 export function render(root, out, lang = 'en') {
@@ -64,6 +84,13 @@ export function render(root, out, lang = 'en') {
   const shotsHref = `${up}shots/${sub ? `${sub}/` : ''}`;
   const otherHref = lang === 'en' ? 'ro/' : '../';
   if (!existsSync(src)) return { pages: 0, missing: [], unused: [] };
+  // The videos' posters, shared by both languages.
+  const videos = videosOf(root);
+  mkdirSync(join(out, 'videos'), { recursive: true });
+  for (const v of videos) {
+    const poster = join(root, 'docs/user/videos', `${v.id}.webp`);
+    if (existsSync(poster)) copyFileSync(poster, join(out, 'videos', `${v.id}.webp`));
+  }
   out = join(out, sub);
   mkdirSync(out, { recursive: true });
   const pages = readdirSync(src).filter((f) => f.endsWith('.md')).map((f) => ({ file: f, slug: f.replace(/\.md$/, ''), ...parse(join(src, f)) }))
@@ -110,13 +137,22 @@ export function render(root, out, lang = 'en') {
     // A paragraph that is only a picture is a figure, not a paragraph around one; <!-- pages --> is every other page, as cards.
     const cards = `<ul class="cards">${pages.filter((p) => p.slug !== 'index').map((p) => `<li><a href="${p.slug}.html"><b>${esc(p.title)}</b><span>${esc(p.summary ?? '')}</span></a></li>`).join('')}</ul>`;
     let article = marked.parse(page.body).replace(/<p>(<figure>[\s\S]*?<\/figure>)<\/p>/g, '$1').replace('<!-- pages -->', cards);
+    // <!-- video id -->: one video tutorial; <!-- videos -->: every one.
+    article = article.replace(/(?:<p>)?<!-- video ([a-z0-9-]+) -->(?:<\/p>)?/g, (_, id) => {
+      const v = videos.find((x) => x.id === id);
+      if (!v) { missing.push(`${page.file}: video ${id}`); return ''; }
+      if (!existsSync(join(root, 'docs/user/videos', `${id}.webp`))) missing.push(`${page.file}: videos/${id}.webp`);
+      return videoFigure(v, W, lang, up);
+    });
+    if (article.includes('<!-- videos -->')) article = article.replace('<!-- videos -->', `<div class="videos">${videos.map((v) => videoFigure(v, W, lang, up, true)).join('')}</div>`);
     // <!-- shortcuts -->: the default keyboard shortcuts, as the app's registry has them (the interface scene writes them).
     if (article.includes('<!-- shortcuts -->')) {
       const file = join(shotsDir, 'shortcuts.json');
       if (!existsSync(file)) missing.push(`${page.file}: shortcuts.json`);
       else article = article.replace('<!-- shortcuts -->', shortcutsTable(JSON.parse(readFileSync(file, 'utf8')), W));
     }
-    const plain = page.body.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/[#*_`>|[\]()-]/g, ' ').replace(/\s+/g, ' ');
+    const videoText = page.body.includes('<!-- videos -->') ? videos.map((v) => (lang === 'ro' ? `${v.titleRo} ${v.summaryRo}` : `${v.title} ${v.summary}`)).join(' ') : '';
+    const plain = (page.body.replace(/<!--[\s\S]*?-->/g, ' ') + ' ' + videoText).replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/[#*_`>|[\]()-]/g, ' ').replace(/\s+/g, ' ');
     search.push({ slug: page.slug, title: page.title, summary: page.summary ?? '', headings: toc.map((h) => ({ id: h.id, text: h.html.replace(/<[^>]+>/g, '') })), text: plain });
 
     const i = pages.indexOf(page);
@@ -260,6 +296,22 @@ th { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: 
 .cards a:hover { border-color: var(--accent); }
 .cards b { display: block; margin-bottom: 4px; }
 .cards span { font-size: 14px; color: var(--muted); line-height: 1.45; display: block; }
+.video { margin: 22px 0 28px; }
+.video-play { position: relative; display: block; width: 100%; padding: 0; border: 1px solid var(--rule-strong); border-radius: 6px; overflow: hidden; background: #000; cursor: pointer; box-shadow: 0 6px 24px var(--shadow); aspect-ratio: 16 / 9; }
+.video-play img { display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0.92; transition: opacity 0.2s; }
+.video-play:hover img, .video-play:focus-visible img { opacity: 1; }
+.video-play:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.video-icon { position: absolute; left: 50%; top: 50%; width: 72px; height: 72px; margin: -36px 0 0 -36px; border-radius: 50%; background: var(--accent); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); transition: transform 0.15s; }
+.video-icon::after { content: ""; position: absolute; left: 29px; top: 22px; border-style: solid; border-width: 14px 0 14px 22px; border-color: transparent transparent transparent #fff; }
+.video-play:hover .video-icon { transform: scale(1.08); }
+.video-len { position: absolute; right: 10px; bottom: 10px; padding: 2px 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.72); color: #fff; font: 600 13px var(--font); }
+.video iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 1px solid var(--rule-strong); border-radius: 6px; background: #000; }
+.video figcaption { margin-top: 8px; font-size: 14px; color: var(--muted); }
+.video figcaption b { color: var(--ink); }
+.videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px 20px; }
+.videos .video { margin: 12px 0; }
+.videos .video-icon { width: 56px; height: 56px; margin: -28px 0 0 -28px; }
+.videos .video-icon::after { left: 22px; top: 17px; border-width: 11px 0 11px 17px; }
 .pager { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 56px; }
 .pager a { padding: 14px 16px; border: 1px solid var(--rule-strong); border-radius: 6px; text-decoration: none; color: var(--ink); font-weight: 600; }
 .pager a:hover { border-color: var(--accent); }
@@ -302,6 +354,19 @@ const JS = `(() => {
     }, { rootMargin: '-60px 0px -60% 0px' });
     links.forEach((a) => { const h = document.getElementById(a.hash.slice(1)); if (h) io.observe(h); });
   }
+
+  // A video's poster becomes YouTube's player (youtube-nocookie.com) only when it is played.
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.video-play');
+    if (!b) return;
+    const f = document.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(b.dataset.yt) + '?autoplay=1&rel=0&modestbranding=1';
+    f.title = b.dataset.title || 'Video';
+    f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    f.allowFullscreen = true;
+    f.referrerPolicy = 'strict-origin-when-cross-origin';
+    b.replaceWith(f);
+  });
 
   // Search: every page's title, sections and words.
   const q = document.getElementById('q'), hits = document.getElementById('hits');

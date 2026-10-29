@@ -4,6 +4,8 @@ order: 30
 summary: Place doors and windows in walls, move them, and design their types in the configurator.
 ---
 
+<!-- video doors-windows -->
+
 ## Placing a door or a window
 
 Choose **Architecture → Door** (<kbd>DR</kbd>) or **Window** (<kbd>WN</kbd>), then click a wall where you want the opening. Lapin cuts the opening in every layer of the wall and adds the lintel the wall type asks for.

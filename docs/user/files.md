@@ -4,6 +4,8 @@ order: 120
 summary: Save and open projects, get back unsaved work after a crash, and keep versions inside the project file.
 ---
 
+<!-- video files -->
+
 ## Saving and opening
 
 **File → Save** (<kbd>Ctrl</kbd> <kbd>S</kbd>) writes a `.lapin` file, and **File → Open…** (<kbd>Ctrl</kbd> <kbd>O</kbd>) opens one.

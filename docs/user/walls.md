@@ -4,6 +4,8 @@ order: 20
 summary: Draw walls corner by corner, change them in the properties panel, and set up wall types with their layers.
 ---
 
+<!-- video walls -->
+
 ## Drawing walls
 
 Open the **Architecture** tab and choose **Wall**, or type <kbd>WA</kbd>.

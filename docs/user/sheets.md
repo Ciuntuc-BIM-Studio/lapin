@@ -4,6 +4,8 @@ order: 100
 summary: Lay views out on sheets with a title block, and print them to PDF or DXF.
 ---
 
+<!-- video sheets -->
+
 ## Making a sheet
 
 Click **+** next to **Sheets** in the project browser. To place a view, drag it from the browser onto the sheet, or choose it in **Place view…** in the sheet's bar. Each view keeps its own scale and stays linked to the model, so the sheet changes when the model does.

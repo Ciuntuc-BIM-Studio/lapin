@@ -4,6 +4,8 @@ order: 15
 summary: Comfortable, Compact and Focus modes, folding the side panels, and the keyboard shortcuts you can change.
 ---
 
+<!-- video interface -->
+
 ## Three modes
 
 **View → Interface…** (<kbd>Ctrl</kbd> <kbd>.</kbd>) chooses how much stands around the view. Pick one of the three modes at the top of the dialog; the change shows at once.

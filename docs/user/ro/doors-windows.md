@@ -4,6 +4,8 @@ order: 30
 summary: Pui uși și ferestre în pereți, le muți și le proiectezi tipurile în configurator.
 ---
 
+<!-- video doors-windows -->
+
 ## Cum pui o ușă sau o fereastră
 
 Alege **Arhitectură → Ușă** (<kbd>DR</kbd>) sau **Fereastră** (<kbd>WN</kbd>), apoi dă clic pe perete unde vrei golul. Lapin taie golul în toate straturile peretelui și adaugă buiandrugul cerut de tipul peretelui.

@@ -4,6 +4,8 @@ order: 60
 summary: Adaugi niveluri, le setezi cotele și vezi alt nivel sub planul pe care desenezi.
 ---
 
+<!-- video levels -->
+
 ## Niveluri
 
 Navigatorul proiectului listează nivelurile sus, cel mai înalt primul. **+** de lângă **Niveluri** adaugă un nivel peste cel mai înalt.

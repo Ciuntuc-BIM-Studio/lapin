@@ -4,6 +4,8 @@ order: 125
 summary: Partajezi proiectul deschis și lucrați în el în timp real, din Lapin sau din browser.
 ---
 
+<!-- video sharing -->
+
 Mai mulți oameni pot lucra în același proiect în același timp, cum intră jucătorii pe serverul unui joc. Unul dintre voi partajează proiectul din Lapin, de pe calculatorul lui: el e **gazda**. Ceilalți intră ca **oaspeți**, din Lapin de pe calculatorul lor sau din browser, cu link-ul trimis de gazdă.
 
 Proiectul rămâne pe calculatorul gazdei, iar Lapin-ul gazdei hotărăște fiecare modificare. Oaspeții văd modelul cum se schimbă, desenează cu aceleași unelte și văd unde sunt ceilalți.

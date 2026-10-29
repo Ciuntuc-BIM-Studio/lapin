@@ -4,6 +4,8 @@ order: 20
 summary: Desenezi pereții colț cu colț, îi modifici în panoul de proprietăți și îți faci tipuri de pereți cu straturile lor.
 ---
 
+<!-- video walls -->
+
 ## Desenarea pereților
 
 Deschide tabul **Arhitectură** și alege **Perete**, sau scrie <kbd>WA</kbd>.

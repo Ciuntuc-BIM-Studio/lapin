@@ -24,6 +24,8 @@ Selectează secțiunea în navigator ca să-i setezi scara, adâncimea, discipli
 
 ## Vederi 3D
 
+<!-- video section-3d -->
+
 Dublu clic pe **3D** deschide vederea 3D. Trage cu butonul stâng ca să te rotești în jurul modelului. Planul-cheie din dreapta sus arată de unde privești. **Plan**, **Persp** și **Încadrează** schimbă camera. Ca să păstrezi o cameră, duplică vederea 3D.
 
 ### O secțiune în 3D
