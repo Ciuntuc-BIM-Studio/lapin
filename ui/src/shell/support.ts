@@ -8,14 +8,24 @@ import { useLang } from '../i18n';
 export const RECENT: string[] = [];
 let installed = false;
 
+/** Browser messages that are not errors of the app: a ResizeObserver whose callback resized something again (benign, the browser delivers it next frame). */
+const BENIGN = [/ResizeObserver loop completed with undelivered notifications/i, /ResizeObserver loop limit exceeded/i];
+
+/** Whether a message is noise a report need not carry. */
+export const benignError = (text: string): boolean => BENIGN.some((re) => re.test(text));
+
+/** Add an error to the recent ones, newest last (at most 20), leaving out the benign ones. */
+export function keepRecentError(text: string, now = new Date()): void {
+  if (benignError(text)) return;
+  RECENT.push(`${now.toISOString().slice(11, 19)} ${text}`.slice(0, 400));
+  if (RECENT.length > 20) RECENT.shift();
+}
+
 /** Keep the app's last errors (uncaught, rejected, console.error), for the next report. */
 export function installRecentErrors(): void {
   if (installed || typeof window === 'undefined') return;
   installed = true;
-  const keep = (text: string) => {
-    RECENT.push(`${new Date().toISOString().slice(11, 19)} ${text}`.slice(0, 400));
-    if (RECENT.length > 20) RECENT.shift();
-  };
+  const keep = (text: string) => keepRecentError(text);
   window.addEventListener('error', (e) => keep(`error: ${e.message} @ ${e.filename}:${e.lineno}`));
   window.addEventListener('unhandledrejection', (e) => keep(`rejection: ${e.reason instanceof Error ? e.reason.message : String(e.reason)}`));
   const original = console.error.bind(console);
