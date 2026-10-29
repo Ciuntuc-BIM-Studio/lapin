@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Model;
@@ -10,12 +11,37 @@ namespace Lapin.Platform;
 /// coordinates, and drawn as they are. Such an element is shown, measured and
 /// snapped to, never edited; its class stays what the file said. An element
 /// the file gave only a 2D representation has no parts (<see cref="Plan2d"/>).
+/// <para>
+/// Or its body is shared (docs/plan-instancing.md): a <see cref="SharedClass"/>
+/// holds it once, in its own coordinates, and the element names it
+/// (<see cref="BodyOf"/>) with where it stands (<see cref="XfKey"/>: 12
+/// numbers, the images of the X, Y and Z axes and of the origin).
+/// </para>
 /// </summary>
 public static class StoredBodies
 {
     public const string Key = "body";
+    public const string SharedClass = "LapinSharedBody";
+    public const string BodyOf = "bodyOf";
+    public const string XfKey = "xf";
 
-    public static bool Has(Entity e) => e.Attrs[Key] is JsonObject;
+    /// <summary>An element drawn from a stored body: its own, or a shared one.</summary>
+    public static bool Has(Entity e) => e.Class != SharedClass && (e.Attrs[Key] is JsonObject || e.Attrs[BodyOf] is JsonValue);
+
+    /// <summary>The shared body an element is an instance of, and where it stands.</summary>
+    public static (string Body, double[] Xf)? InstanceOf(Entity e)
+    {
+        if ((string?)e.Attrs[BodyOf] is not { } body || e.Attrs[XfKey] is not JsonArray a || a.Count != 12) return null;
+        var xf = new double[12];
+        for (var i = 0; i < 12; i++) xf[i] = Json.Number(a[i]) ?? 0;
+        return (body, xf);
+    }
+
+    public static JsonArray WriteXf(IReadOnlyList<double> xf) => new([.. xf.Select(v => (JsonNode)Math.Round(v, 9))]);
+
+    /// <summary>A point placed by an instance's 12 numbers.</summary>
+    public static Vec3 Apply(double[] m, Vec3 p) =>
+        new(m[9] + m[0] * p.X + m[3] * p.Y + m[6] * p.Z, m[10] + m[1] * p.X + m[4] * p.Y + m[7] * p.Z, m[11] + m[2] * p.X + m[5] * p.Y + m[8] * p.Z);
 
     /// <summary>The parts as the attribute holds them: coordinates to 0,1 mm, triangles by vertex index.</summary>
     public static JsonObject Write(IEnumerable<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)> parts)
@@ -32,11 +58,49 @@ public static class StoredBodies
         return new JsonObject { ["parts"] = list };
     }
 
-    /// <summary>The stored body as geometry: a solid of triangles per part.</summary>
+    /// <summary>The stored body as geometry: a solid of triangles per part; an instance's, the shared parts placed.</summary>
     public static ElementGeometry? Geometry(Entity e, IModelView model, IServices services)
     {
-        if (e.Attrs[Key] is not JsonObject body || body["parts"] is not JsonArray parts) return null;
+        if (InstanceOf(e) is var (bodyId, xf))
+        {
+            if (model.Get(bodyId) is not { Class: SharedClass } shared) return new ElementGeometry([], null, null, [$"The shared body {bodyId} is missing."]);
+            var placed = SharedParts(shared).Select(p => p with { Solid = Place(p.Solid, xf) }).ToList();
+            return new ElementGeometry(placed, Plan2d.Has(e) ? Plan2d.PlanItems(e) : null, Instance: new SharedInstance(bodyId, xf));
+        }
+        if (e.Attrs[Key] is not JsonObject body) return null;
+        return new ElementGeometry(Parts(body), Plan2d.Has(e) ? Plan2d.PlanItems(e) : null);
+    }
+
+    static readonly ConditionalWeakTable<JsonObject, List<GeometryPart>> _shared = [];
+
+    /// <summary>A shared body's parts in its own coordinates, built once for as long as the body is the same.</summary>
+    public static IReadOnlyList<GeometryPart> SharedParts(Entity shared) =>
+        shared.Attrs[Key] is JsonObject body ? _shared.GetValue(body, b => Parts(b)) : [];
+
+    /// <summary>
+    /// A solid placed by an instance's numbers. A move alone keeps its faces; a turn
+    /// turns their normals; any other map (a scale) derives them again.
+    /// </summary>
+    public static Solid Place(Solid s, double[] m)
+    {
+        var verts = new Vec3[s.Vertices.Length];
+        for (var i = 0; i < verts.Length; i++) verts[i] = Apply(m, s.Vertices[i]);
+        Vec3 x = new(m[0], m[1], m[2]), y = new(m[3], m[4], m[5]), z = new(m[6], m[7], m[8]);
+        const double eps = 1e-9;
+        if ((x - new Vec3(1, 0, 0)).Length < eps && (y - new Vec3(0, 1, 0)).Length < eps && (z - new Vec3(0, 0, 1)).Length < eps)
+            return s with { Vertices = verts };
+        var rigid = Math.Abs(x.Length - 1) < 1e-6 && Math.Abs(y.Length - 1) < 1e-6 && Math.Abs(z.Length - 1) < 1e-6
+            && Math.Abs(Vec3.Dot(x, y)) < 1e-6 && Math.Abs(Vec3.Dot(y, z)) < 1e-6 && Math.Abs(Vec3.Dot(x, z)) < 1e-6
+            && Vec3.Dot(Vec3.Cross(x, y), z) > 0;
+        if (rigid)
+            return s with { Vertices = verts, Faces = [.. s.Faces.Select(f => f with { Normal = x * f.Normal.X + y * f.Normal.Y + z * f.Normal.Z })] };
+        return SolidBuilder.Transform(s, p => Apply(m, p));
+    }
+
+    static List<GeometryPart> Parts(JsonObject body)
+    {
         var list = new List<GeometryPart>();
+        if (body["parts"] is not JsonArray parts) return list;
         foreach (var p in parts.OfType<JsonObject>())
         {
             var v = (p["v"] as JsonArray)?.Select(x => Json.Number(x) ?? 0).ToArray() ?? [];
@@ -67,7 +131,6 @@ public static class StoredBodies
             if (faces.Count == 0) continue;
             list.Add(new GeometryPart((string?)p["name"] ?? "Body", (string?)p["color"] ?? "#c9ced6", new Solid(vertices, [.. faces]), null, $"part:{list.Count}"));
         }
-        // Its own 2D (a door's swing, a footprint), for picking and snapping in a plan.
-        return new ElementGeometry(list, Plan2d.Has(e) ? Plan2d.PlanItems(e) : null);
+        return list;
     }
 }

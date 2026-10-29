@@ -30,6 +30,10 @@ public sealed class Session
     /// <summary>Each solid's faces ready for the seams, once per solid (solids are immutable; an element rebuilt brings new ones).</summary>
     readonly Dictionary<Solid, List<Seams.Plane>> _planes = new(ReferenceEqualityComparer.Instance);
 
+    /// <summary>The shared bodies' meshes (docs/plan-instancing.md), each with the body it was tessellated from; and those the interface has.</summary>
+    readonly Dictionary<string, (JsonObject Body, SharedMesh Mesh)> _meshes = [];
+    readonly HashSet<string> _meshesSent = [];
+
     /// <summary>
     /// Everything that changes the project's history, as it happens: what the
     /// recovery journal writes. "start": a new or opened project (what came
@@ -416,10 +420,11 @@ public sealed class Session
         var keys = new Dictionary<string, string?>();
         var grid = new BoxGrid(_built);
         var render = ids.Select(id => Emitted(id, keys, grid)).OfType<RenderItem>().ToList();
+        _meshesSent.Clear();
         return new Diff(++_version, true,
             _store.Entities.Select(Dto).ToList(), [], [], [],
             render, [], State(),
-            _store.Relations.Select(Dto).ToList(), []);
+            _store.Relations.Select(Dto).ToList(), [], MeshesFor(render), []);
     }
 
     Diff Empty() => new(++_version, false, [], [], [], [], [], [], State(), [], []);
@@ -493,7 +498,11 @@ public sealed class Session
         emit.AddRange(Neighbours(grid, boxes, rebuild.ToHashSet()));
         var keys = new Dictionary<string, string?>();
         var render = emit.Select(id => Emitted(id, keys, grid)).OfType<RenderItem>().ToList();
-        return new Diff(++_version, false, nodes, removedNodes, [], [], render, renderRemoved, State(), relations, removedRelations);
+        // A shared body gone: its mesh too (its instances went with it, or were rebuilt without it).
+        var meshesRemoved = new List<string>();
+        foreach (var c in t.Entities)
+            if (c.Before?.Class == StoredBodies.SharedClass && _store.Get(c.Id) == null && _meshes.Remove(c.Id)) { _meshesSent.Remove(c.Id); meshesRemoved.Add(c.Id); }
+        return new Diff(++_version, false, nodes, removedNodes, [], [], render, renderRemoved, State(), relations, removedRelations, MeshesFor(render), meshesRemoved);
     }
 
     DocState State() => new(_history.CanUndo, _history.CanRedo, _history.UndoLabel, _history.RedoLabel, _history.Dirty, Path, _store.EntityCount, _store.RelationCount);
@@ -501,6 +510,8 @@ public sealed class Session
     NodeDto Dto(Entity e)
     {
         var props = e.CloneAttrs();
+        // A stored body's triangles travel as its render; as props they were the biggest part of an imported model's diff.
+        props.Remove(StoredBodies.Key);
         if (e.PredefinedType != null) props["predefinedType"] = e.PredefinedType;
         var owner = _catalog.OwnerOf(e.Class);
         var storey = e.Class == IfcClass.BuildingStorey ? null : Spatial.StoreyOf(_store, e.Id)?.Id;
@@ -668,6 +679,35 @@ public sealed class Session
             if (_readers.TryGetValue(r, out var set)) { set.Remove(id); if (set.Count == 0) _readers.Remove(r); }
     }
 
+    /// <summary>A shared body's mesh: tessellated once for as long as the body is the same.</summary>
+    SharedMesh? MeshOf(string bodyId, Entity e, IModelView read, Dictionary<string, IReadOnlyList<LayerBand>?> bands)
+    {
+        if (read.Get(bodyId) is not { Class: StoredBodies.SharedClass } shared || shared.Attrs[StoredBodies.Key] is not JsonObject body) return null;
+        if (_meshes.TryGetValue(bodyId, out var known) && ReferenceEquals(known.Body, body)) return known.Mesh;
+        var parts = new List<RenderPart>();
+        (Vec3 Min, Vec3 Max)? box = null;
+        foreach (var p in StoredBodies.SharedParts(shared))
+        {
+            var m = Tessellator.Tessellate(p.Solid);
+            parts.Add(new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(read, e.Id, p, bands)));
+            if (Measure.Bounds(p.Solid) is { } b) box = box is { } o ? (new Vec3(Math.Min(o.Min.X, b.Min.X), Math.Min(o.Min.Y, b.Min.Y), Math.Min(o.Min.Z, b.Min.Z)), new Vec3(Math.Max(o.Max.X, b.Max.X), Math.Max(o.Max.Y, b.Max.Y), Math.Max(o.Max.Z, b.Max.Z))) : b;
+        }
+        var (lo, hi) = box ?? (Vec3.Zero, Vec3.Zero);
+        var mesh = new SharedMesh(bodyId, parts, [(float)lo.X, (float)lo.Y, (float)lo.Z, (float)hi.X, (float)hi.Y, (float)hi.Z]);
+        _meshes[bodyId] = (body, mesh);
+        _meshesSent.Remove(bodyId);
+        return mesh;
+    }
+
+    /// <summary>The meshes <paramref name="render"/>'s instances use that the interface does not have yet; marked as sent.</summary>
+    List<SharedMesh> MeshesFor(IEnumerable<RenderItem> render)
+    {
+        var o = new List<SharedMesh>();
+        foreach (var r in render)
+            if (r.Instance is { } i && !_meshesSent.Contains(i.Mesh) && _meshes.TryGetValue(i.Mesh, out var m)) { o.Add(m.Mesh); _meshesSent.Add(i.Mesh); }
+        return o;
+    }
+
     void ForgetAll()
     {
         _built.Clear();
@@ -684,6 +724,13 @@ public sealed class Session
     {
         var parts = new List<RenderPart>();
         var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
+        if (g?.Instance is { } inst && MeshOf(inst.Body, e, read, bands) is { } mesh)
+        {
+            var plan2d = (g.Plan ?? []).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray())).ToList();
+            return new RenderItem(e.Id, e.Class, Spatial.StoreyOf(_store, e.Id)?.Id, _catalog.OwnerOf(e.Class) != null,
+                mesh.Parts.FirstOrDefault()?.Color ?? "#c9ced6", [], [], [], [], plan2d, [],
+                [.. problems, .. g.Diagnostics ?? []], [], new RenderInstance(inst.Body, [.. inst.Xf.Select(v => (float)v)]));
+        }
         foreach (var p in g?.Parts ?? [])
         {
             var m = Tessellator.Tessellate(p.Solid);

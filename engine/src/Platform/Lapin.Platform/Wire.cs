@@ -48,7 +48,17 @@ public sealed record RenderItem(
     IReadOnlyList<PlanItemDto> Plan,
     double[] Snaps,
     IReadOnlyList<string> Diagnostics,
-    IReadOnlyList<RenderPart>? Parts = null);
+    IReadOnlyList<RenderPart>? Parts = null,
+    RenderInstance? Instance = null);
+
+/// <summary>
+/// An element drawn as an instance of a shared mesh (<see cref="SharedMesh"/>, docs/plan-instancing.md):
+/// its item has no parts of its own; <see cref="Matrix"/> places the mesh, 12 numbers (the images of X, Y, Z and the origin).
+/// </summary>
+public sealed record RenderInstance(string Mesh, float[] Matrix);
+
+/// <summary>A mesh many elements are drawn with, in its own coordinates, part by part.</summary>
+public sealed record SharedMesh(string Id, IReadOnlyList<RenderPart> Parts, float[] Box);
 
 public sealed record DocState(bool CanUndo, bool CanRedo, string? UndoLabel, string? RedoLabel, bool Dirty, string? Path, int NodeCount, int EdgeCount);
 
@@ -63,7 +73,9 @@ public sealed record Diff(
     IReadOnlyList<string> RenderRemoved,
     DocState State,
     IReadOnlyList<RelationDto> Relations,
-    IReadOnlyList<string> RemovedRelations);
+    IReadOnlyList<string> RemovedRelations,
+    IReadOnlyList<SharedMesh>? Meshes = null,
+    IReadOnlyList<string>? MeshesRemoved = null);
 
 public sealed record ModuleInfo(string Id, string Name, int SchemaVersion);
 

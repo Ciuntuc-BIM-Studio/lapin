@@ -400,6 +400,8 @@ public static partial class IfcImport
             foreach (var e in products)
             {
                 var intent = o.ReferenceOnly ? null : IntentOf(e.Id);
+                // A reference Lapin wrote is one again, from the body the file gives it (its intent carries no body).
+                if (intent != null && (bool?)intent.Attrs["reference"] == true) { rest.Add(e); continue; }
                 if (intent != null) { Native(edit, e, intent); native.Add(e.Id); continue; }
                 if (fills.Contains(e.Id)) { rest.Add(e); continue; } // decided by its wall, below
                 if (!o.ReferenceOnly && !parentOf.ContainsKey(e.Id) && Recognize(edit, e)) { native.Add(e.Id); continue; }
@@ -504,8 +506,19 @@ public static partial class IfcImport
         void Reference(IEdit edit, StepEntity e, ISolidBooleans? booleans)
         {
             var gid = Str(e[0])!;
-            var (body, openings) = model.Shape(e.Id, booleans);
             var (plan2d, sections2d, elevations2d) = model.Drawing2d(e.Id);
+            // A body many products share: kept once, each product an instance of it (docs/plan-instancing.md).
+            if (model.SharedKey(e.Id) is var (key, at) && SharedBody(edit, key, e, booleans) is { } bodyId)
+            {
+                var instance = new JsonObject
+                {
+                    [StoredBodies.BodyOf] = bodyId,
+                    [StoredBodies.XfKey] = StoredBodies.WriteXf([at.X.X, at.X.Y, at.X.Z, at.Y.X, at.Y.Y, at.Y.Z, at.Z.X, at.Z.Y, at.Z.Z, at.O.X, at.O.Y, at.O.Z]),
+                };
+                Referenced(edit, e, gid, instance, plan2d, sections2d, elevations2d);
+                return;
+            }
+            var (body, openings) = model.Shape(e.Id, booleans);
             if (body.Count == 0 && plan2d.Count == 0) return;
             List<Solid>? cutters = null;
             if (openings.Count > 0 && booleans != null)
@@ -525,22 +538,45 @@ public static partial class IfcImport
                 if (m.T.Count > 0) parts.Add(("Body", colour ?? "#c9ced6", m.V, m.T));
             }
             if (parts.Count == 0 && plan2d.Count == 0) return;
+            Referenced(edit, e, gid, new JsonObject { [StoredBodies.Key] = StoredBodies.Write(parts) }, plan2d, sections2d, elevations2d);
+        }
+
+        /// <summary>A reference put in the model: its body (its own, or an instance's) in <paramref name="attrs"/>, what the file says of it added.</summary>
+        void Referenced(IEdit edit, StepEntity e, string gid, JsonObject attrs, List<Plan2dItem> plan2d, int sections2d, int elevations2d)
+        {
             var cls = ClassName(e.Type);
-            var attrs = new JsonObject
-            {
-                [StoredBodies.Key] = StoredBodies.Write(parts),
-                ["reference"] = true,
-                ["ifcClass"] = cls,
-                ["objectType"] = Str(e[4]),
-                ["properties"] = PropertiesJson(e.Id),
-                ["shape"] = model.Describe(e.Id),
-            };
+            attrs["reference"] = true;
+            attrs["ifcClass"] = cls;
+            attrs["objectType"] = Str(e[4]);
+            attrs["properties"] = PropertiesJson(e.Id);
+            attrs["shape"] = model.Describe(e.Id);
             if (plan2d.Count > 0) { attrs[Plan2d.Key] = Plan2d.Write(plan2d, sections2d, elevations2d); with2d++; }
             Put(edit, gid, cls, Str(e[2]) ?? cls[3..], attrs, null, counts: false);
             references++;
             referencesByClass[cls] = referencesByClass.GetValueOrDefault(cls) + 1;
             var storey = StoreyFor(e.Id);
             relations.Add(x => Contain(x, gid, storey));
+        }
+
+        readonly Dictionary<string, string?> sharedBodies = [];
+
+        /// <summary>The shared body a key names, made the first time (its id from the file and the key, so importing again finds it); null when it has no triangles.</summary>
+        string? SharedBody(IEdit edit, string key, StepEntity first, ISolidBooleans? booleans)
+        {
+            if (sharedBodies.TryGetValue(key, out var known)) return known;
+            var parts = new List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)>();
+            foreach (var (mesh, colour) in model.SharedBody(key, booleans))
+            {
+                var m = mesh.Welded();
+                if (m.T.Count > 0) parts.Add(("Body", colour ?? "#c9ced6", m.V, m.T));
+            }
+            string? id = null;
+            if (parts.Count > 0)
+            {
+                id = Step.Guid(Str(f.OfType("IFCPROJECT").FirstOrDefault()?[0]) ?? "ifc", "shared-body\n" + key);
+                Put(edit, id, StoredBodies.SharedClass, $"{Str(first[2]) ?? ClassName(first.Type)[3..]} (shared)", new JsonObject { [StoredBodies.Key] = StoredBodies.Write(parts), ["source"] = key }, null, counts: false);
+            }
+            return sharedBodies[key] = id;
         }
 
         JsonObject PropertiesJson(int product)

@@ -21,7 +21,7 @@ public sealed class CoreModule : ILapinModule
     static readonly HashSet<string> PlatformClasses =
     [
         IfcClass.Project, IfcClass.Site, IfcClass.Building, IfcClass.BuildingStorey,
-        IfcClass.Material, IfcClass.MaterialLayerSet, IfcClass.MaterialLayerSetUsage, Views.Class, Sheets.Class, Links.Class,
+        IfcClass.Material, IfcClass.MaterialLayerSet, IfcClass.MaterialLayerSetUsage, Views.Class, Sheets.Class, Links.Class, StoredBodies.SharedClass,
     ];
 
     public static bool Owns(string ifcClass) => PlatformClasses.Contains(ifcClass) || ifcClass.StartsWith("IfcRel", StringComparison.Ordinal);
@@ -45,6 +45,8 @@ public sealed class CoreModule : ILapinModule
         CutOrder.Register(r);
         StoreyMove.Register(r);
         Links.Register(r);
+        // A body many references share (docs/plan-instancing.md): drawn by its instances, never on its own.
+        r.Class(new(StoredBodies.SharedClass, "Shared body", [], "#888888", Kind: "resource"));
         ViewStyles.Register(r);
         ElementFaces.Register(r);
 
@@ -222,6 +224,7 @@ public sealed class CoreModule : ILapinModule
         {
             var ids = Args.Ids(a).ToList();
             if ((string?)a["id"] is { } one) ids.Add(one);
+            var bodies = new HashSet<string>();
             foreach (var id in ids.Distinct())
             {
                 if (ctx.Model.Get(id) is not { } e)
@@ -237,7 +240,15 @@ public sealed class CoreModule : ILapinModule
                     throw new CommandException($"„{e.Name}” is used by {n} element(s): give them another type first.");
                 // A module may take its own element down with what hangs on it (a stair with the opening it asked of the floor above).
                 if (ctx.Services.All<IDeletion>().Any(d => d.Delete(ctx, id))) continue;
+                if (StoredBodies.InstanceOf(e) is var (body, _)) bodies.Add(body);
                 ctx.Remove(id);
+            }
+            // A shared body its last instance left goes with it (docs/plan-instancing.md).
+            if (bodies.Count > 0)
+            {
+                foreach (var e in ctx.Model.Entities)
+                    if ((string?)e.Attrs[StoredBodies.BodyOf] is { } body) bodies.Remove(body);
+                foreach (var body in bodies) ctx.Remove(body);
             }
             return null;
         });

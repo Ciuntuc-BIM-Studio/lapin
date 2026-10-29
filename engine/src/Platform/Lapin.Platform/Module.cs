@@ -174,7 +174,13 @@ public sealed record GeometryPart(string Name, string Color, Solid Solid, string
 /// <summary>Plan linework of an element: its cut outline, a symbol.</summary>
 public sealed record PlanItem(string Kind, bool Closed, IReadOnlyList<Vec2> Points);
 
-public sealed record ElementGeometry(IReadOnlyList<GeometryPart> Parts, IReadOnlyList<PlanItem>? Plan = null, IReadOnlyList<Vec2>? Snaps = null, IReadOnlyList<string>? Diagnostics = null);
+public sealed record ElementGeometry(IReadOnlyList<GeometryPart> Parts, IReadOnlyList<PlanItem>? Plan = null, IReadOnlyList<Vec2>? Snaps = null, IReadOnlyList<string>? Diagnostics = null, SharedInstance? Instance = null);
+
+/// <summary>
+/// An element's parts are a shared body's (<see cref="StoredBodies"/>), placed by
+/// <see cref="Xf"/>: the interface draws one mesh for all of them (docs/plan-instancing.md).
+/// </summary>
+public sealed record SharedInstance(string Body, double[] Xf);
 
 /// <summary>A command refused for a reason the user should read.</summary>
 public sealed class CommandException(string message) : ModelException(message);
