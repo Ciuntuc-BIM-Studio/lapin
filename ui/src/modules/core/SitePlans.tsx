@@ -2,8 +2,8 @@
  * The site's drawings (docs/site-plans.md): a site plan (1:500) and a
  * location plan (1:2000), plan views the engine draws as the whole model from
  * above, with a north arrow, the map's coordinate grid and a scale bar. In a
- * site view's settings: what it is, the grid's step, and whether the arrow
- * and the bar are drawn.
+ * site view's settings: what it is, the grid's step, whether the arrow and
+ * the bar are drawn, and whether the project stands out in red.
  */
 
 import { execute } from '../../engine/session';
@@ -40,6 +40,8 @@ export function SitePlanFields({ view }: { view: NodeDto }) {
           onBlur={(e) => { const v = e.target.value.trim(); if (v !== (step == null ? '' : String(step))) set({ gridStep: v === '' ? null : Number(v) }); }}
           onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />
       </dd>
+      <dt title="The project's buildings filled in red and the parcel outlined in red, so the site stands out from its neighbours: on by default in a location plan">Highlight the project</dt>
+      <dd><input type="checkbox" checked={typeof view.props.highlight === 'boolean' ? view.props.highlight : view.props.site === 'location'} onChange={(e) => set({ highlight: e.target.checked })} /></dd>
       <dt title="Drawn at the top right, pointing to true north (Manage → Location: the angle to true north)">North arrow</dt>
       <dd><input type="checkbox" checked={view.props.northArrow !== false} onChange={(e) => set({ northArrow: e.target.checked })} /></dd>
       <dt title="Drawn at the bottom left, about 60 mm on paper, with the scale">Scale bar</dt>

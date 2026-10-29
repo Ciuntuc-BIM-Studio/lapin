@@ -331,6 +331,22 @@ export const scenes = [
       await t.shot('site-drawings', { of: '[data-testid=plan]', pad: 0 });
       await quiet.evaluate((el) => el.remove());
       await t.shot('site-browser', { of: '[data-testid=browser-site]', pad: 6 });
+      // The location plan: a house on the parcel, filled in red with the parcel's outline, the neighbour left as it is.
+      for (const [x1, y1, x2, y2] of [[8, 8, 18, 8], [18, 8, 18, 16], [18, 16, 8, 16], [8, 16, 8, 8]]) await t.cmd('architecture.addWall', { storeyId: await t.storey(), x1, y1, x2, y2 });
+      await t.cmd('architecture.addRoof', { storeyId: await t.storey(), points: [[8, 8], [18, 8], [18, 16], [8, 16]] });
+      await t.page.locator('[data-testid=browser-site] button.tree-item').nth(1).click();
+      await t.wait(1500);
+      await t.fit();
+      // Near paper size (1:2000 as it prints), closer in on the site.
+      await t.page.locator('.chip.scale').first().click();
+      await t.wait(500);
+      const box = await t.page.locator('[data-testid=plan]').boundingBox();
+      await t.page.mouse.move(box.x + box.width * 0.55, box.y + box.height * 0.55);
+      for (let k = 0; k < 4; k++) { await t.page.mouse.wheel(0, -120); await t.wait(120); }
+      await t.wait(800);
+      const quiet2 = await t.page.addStyleTag({ content: '.hotbar { display: none !important }' });
+      await t.shot('site-location-plan', { of: '[data-testid=plan]', pad: 0 });
+      await quiet2.evaluate((el) => el.remove());
       await t.ui({ keyPlan: true });
     },
   },

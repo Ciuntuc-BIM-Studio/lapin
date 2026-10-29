@@ -46,6 +46,12 @@ public static class SitePlans
     public static bool NorthArrow(Entity view) => Flag(view, "northArrow");
     public static bool ScaleBar(Entity view) => Flag(view, "scaleBar");
 
+    /// <summary>Whether the project stands out (its buildings filled, the parcel in red): a location plan's default, a site plan's on request.</summary>
+    public static bool Highlight(Entity view) => view.Attrs["highlight"] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : Of(view) == LocationPlan;
+
+    /// <summary>The project's colour on a site view that highlights it.</summary>
+    public const string ProjectColor = "#c62828";
+
     /// <summary>The coordinate grid's step (m of the map): the view's own (0: none), else a tenth of the scale (100 mm on paper).</summary>
     public static double GridStep(Entity view) => view.NumOrNull("gridStep") ?? (view.NumOrNull("scale") ?? 500) / 10;
 
@@ -56,7 +62,7 @@ public static class SitePlans
         return (attrs, name ?? DefaultName(purpose));
     }
 
-    /// <summary>A site view's settings: {id, site?, gridStep? (0: none; null: by the scale), northArrow?, scaleBar?}.</summary>
+    /// <summary>A site view's settings: {id, site?, gridStep? (0: none; null: by the scale), northArrow?, scaleBar?, highlight? (null: by the purpose)}.</summary>
     public static void Set(ICommandContext ctx, JsonObject a)
     {
         var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Views.Class } x && Of(x) != null ? x : throw new CommandException("Not a site plan.");
@@ -67,6 +73,10 @@ public static class SitePlans
         {
             if (Json.Number(a["gridStep"]) is { } g) attrs["gridStep"] = g >= 0 && double.IsFinite(g) ? g : throw new CommandException("The grid's step is 0 (none) or more.");
             else attrs.Remove("gridStep");
+        }
+        if (a.ContainsKey("highlight"))
+        {
+            if (a["highlight"] is JsonValue hv && hv.TryGetValue<bool>(out var h)) attrs["highlight"] = h; else attrs.Remove("highlight");
         }
         foreach (var k in new[] { "northArrow", "scaleBar" })
             if (a[k] is JsonValue fv && fv.TryGetValue<bool>(out var on)) { if (on) attrs.Remove(k); else attrs[k] = false; }
@@ -95,6 +105,8 @@ public static class SitePlans
         var text = Standards.ResolveText(c.Book, []);
         var mm = c.Mm;
         var (lo, hi) = (box.Min - new Vec2(8 * mm, 8 * mm), box.Max + new Vec2(8 * mm, 8 * mm));
+
+        if (Highlight(c.View) && Footprints(c) is { } project) yield return project;
 
         if (SitePlans.GridStep(c.View) is var step && step > 0 && GeoRef.Georeferenced(c.Model) && Grid(c, lo, hi, step, text) is { } grid) yield return grid;
 
@@ -138,6 +150,37 @@ public static class SitePlans
             mk.Text(new PenText(o + new Vec2(0, -2.5 * mm), $"1:{F0(c.Scale)}", text.Height * 0.8, 0, "start", "top", false, text.Font), Ink);
             yield return mk;
         }
+    }
+
+    /// <summary>What a site view draws by its symbols, not as the project's buildings: the terrain, paths, plants and the site's features (the neighbours among them).</summary>
+    public static readonly HashSet<string> SiteClasses = [IfcClass.GeographicElement, "IfcPavement", "LapinPlanting", "LapinSiteFeature"];
+
+    /// <summary>
+    /// The project's buildings filled in its colour, under the drawing's lines: every face turned up of every element
+    /// on a storey above the ground (filled together they make the footprint seen from above), the site's own left out.
+    /// </summary>
+    static ViewMark? Footprints(ViewContext c)
+    {
+        if (c.Geometry == null) return null;
+        var mk = new ViewMark(null) { Under = true };
+        foreach (var e in c.Model.Entities)
+        {
+            if (e.Class is IfcClass.OpeningElement or IfcClass.Space || SiteClasses.Contains(e.Class) || Spatial.StoreyOf(c.Model, e.Id) == null) continue;
+            if (c.Geometry(e.Id) is not { } g) continue;
+            foreach (var part in g.Parts)
+            {
+                var solid = part.Solid;
+                if (Measure.Bounds(solid) is not { } b || b.Max.Z <= Underground) continue;
+                foreach (var f in solid.Faces)
+                {
+                    if (f.Normal.Z < 0.05 || f.Outer.Length < 3) continue;
+                    var loops = new List<IReadOnlyList<Vec2>>(1 + f.Holes.Length) { f.Outer.Select(i => solid.Vertices[i].Xy).ToArray() };
+                    foreach (var h in f.Holes) loops.Add(h.Select(i => solid.Vertices[i].Xy).ToArray());
+                    mk.Fills.Add((loops, ProjectColor));
+                }
+            }
+        }
+        return mk.Fills.Count > 0 ? mk : null;
     }
 
     /// <summary>The map's grid as crosses where its lines meet, round eastings and northings, the values on the bottom row and the left column.</summary>

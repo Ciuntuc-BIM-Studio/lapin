@@ -319,7 +319,7 @@ public static class Views
     }
 
     /// <summary>What a site plan draws by its symbols rather than its body: the terrain, paths, plants and the site's features (parcels, neighbours); the roofs and the rest by their bodies, seen from above.</summary>
-    static readonly HashSet<string> SiteSymbols = [IfcClass.GeographicElement, "IfcPavement", "LapinPlanting", "LapinSiteFeature"];
+    static readonly HashSet<string> SiteSymbols = SitePlans.SiteClasses;
 
     /// <summary>
     /// An element's own 2D in a plan (docs/spec-ifc.md, Reprezentările 2D): its lines with the file's colour and pattern, its

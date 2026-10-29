@@ -118,4 +118,23 @@ public sealed class SitePlanTests
         Assert.Equal(["2", "326000.000", "587030.000", "20.00"], grid.Rows[1]);
         Assert.Equal("600.00 m²", grid.Rows[4][3]);
     }
+
+    static bool Filled(Fixture f, Entity view) => Views.Render(f.Session.Reader, view).Marks.Any(m => m.Under && m.Fills.Any(x => x.Color == SitePlans.ProjectColor));
+
+    [Fact]
+    public void A_location_plan_fills_the_projects_buildings_and_a_site_plan_does_when_asked()
+    {
+        var f = Project();
+        f.Run("architecture.addWall", new JsonObject { ["storeyId"] = Storey(f, "Ground floor"), ["x1"] = 0, ["y1"] = 0, ["x2"] = 8, ["y2"] = 0 });
+        Assert.True(Filled(f, SiteView(f, SitePlans.LocationPlan)));
+        var site = SiteView(f, SitePlans.Situation);
+        Assert.False(Filled(f, site));
+        f.Run("view.setSite", new JsonObject { ["id"] = site.Id, ["highlight"] = true });
+        Assert.True(Filled(f, f.Model.Get(site.Id)!));
+        // A neighbour imported as a site feature is the site's, never filled as the project.
+        var g = new Fixture(new ArchitectureModule(), new CivilModule());
+        g.Session.New();
+        g.Run("civil.importGeoJson", new JsonObject { ["storeyId"] = Storey(g, "Ground floor"), ["text"] = """{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[0,0],[10,0],[10,10],[0,0]]]}}]}""", ["crs"] = "EPSG:3844" });
+        Assert.False(Filled(g, SiteView(g, SitePlans.LocationPlan)));
+    }
 }

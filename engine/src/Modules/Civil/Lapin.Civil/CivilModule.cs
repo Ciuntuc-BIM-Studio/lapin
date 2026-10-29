@@ -257,7 +257,9 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             // The parcel: its boundary, dash-dotted, and its area.
             if (Terrains.Contour(e, "parcel") is { Count: >= 3 } parcel)
             {
-                mk.Polyline(parcel, true, "PARCEL", Pens.Default.Cut, "#6b4e2e", [6, 2, 1, 2]);
+                // A site view that highlights the project draws the parcel in its colour, heavier.
+                if (site != null && SitePlans.Highlight(c.View)) mk.Polyline(parcel, true, "PARCEL", Pens.Default.Cut * 2, SitePlans.ProjectColor, [6, 2, 1, 2]);
+                else mk.Polyline(parcel, true, "PARCEL", Pens.Default.Cut, "#6b4e2e", [6, 2, 1, 2]);
                 var centre = new Vec2(parcel.Average(p => p.X), parcel.Average(p => p.Y));
                 mk.Text(new PenText(centre, $"S = {Math.Abs(Polygon2.SignedArea(parcel)):0.0} m²", text.Height, 0, "middle", "middle", true, text.Font), "#6b4e2e");
                 // On a site plan its corners are numbered, as the coordinate inventory lists them (ParcelCoordinates).
