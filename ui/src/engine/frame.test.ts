@@ -15,6 +15,17 @@ describe('engine frames', () => {
     expect(msg.result.list).toEqual([1, 2]);
   });
 
+  it('copies small arrays out of the frame, so they do not keep it alive; big ones stay views on it', () => {
+    const matrix = new Float32Array(12).fill(1);
+    const big = new Float32Array(300);
+    const frame = encodeFrame({ m: { $buf: 0, n: 12, t: 'f32' }, big: { $buf: 48, n: 300, t: 'f32' }, none: { $buf: 1248, n: 0, t: 'i32' } }, [matrix, big]);
+    const msg = decodeFrame<{ m: Float32Array; big: Float32Array; none: Int32Array }>(frame);
+    expect(msg.m.buffer).not.toBe(frame);
+    expect([...msg.m]).toEqual([...matrix]);
+    expect(msg.none.buffer).not.toBe(frame);
+    expect(msg.big.buffer).toBe(frame);
+  });
+
   it('refuses what is not a frame', () => {
     expect(() => decodeFrame(new TextEncoder().encode('{"id":1}').buffer)).toThrow(/Not a Lapin frame/);
   });

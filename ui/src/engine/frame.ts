@@ -2,10 +2,18 @@
  * The engine's binary frames (engine/src/Host/Lapin.Host/BinaryFrame.cs):
  * "LPF1", the JSON header's length (uint32 LE), the header, then the buffers.
  * An array in the header is `{"$buf":offset,"n":count,"t":"f32"|"i32"}`; it
- * becomes a typed-array view on the frame, no copy.
+ * becomes a typed-array view on the frame, no copy. A small one is copied: a
+ * view keeps its whole frame alive, and an instance's matrix (12 numbers) or
+ * an empty list would keep a 20 MB part of a big import for as long as the
+ * element lasts (docs/plan-instancing.md).
  */
 
 const MARK = [0x4c, 0x50, 0x46, 0x31]; // "LPF1"
+/** Arrays up to this many numbers are copied out of the frame. */
+const COPY_UP_TO = 64;
+/** Every empty array, one for all (nothing is written into an engine's array). */
+const NO_FLOATS = new Float32Array(0);
+const NO_INTS = new Int32Array(0);
 
 interface BufRef { $buf: number; n: number; t: 'f32' | 'i32' }
 
@@ -20,8 +28,9 @@ export function decodeFrame<T = unknown>(frame: ArrayBuffer): T {
   const text = new TextDecoder().decode(bytes.subarray(8, base));
   return JSON.parse(text, (_key, value: unknown) => {
     if (!isRef(value)) return value;
-    if (value.t === 'f32') return new Float32Array(frame, base + value.$buf, value.n);
-    if (value.t === 'i32') return new Int32Array(frame, base + value.$buf, value.n);
+    if (value.n === 0 && COPY_UP_TO >= 0) return value.t === 'f32' ? NO_FLOATS : NO_INTS;
+    if (value.t === 'f32') { const v = new Float32Array(frame, base + value.$buf, value.n); return value.n <= COPY_UP_TO ? v.slice() : v; }
+    if (value.t === 'i32') { const v = new Int32Array(frame, base + value.$buf, value.n); return value.n <= COPY_UP_TO ? v.slice() : v; }
     throw new Error(`Unknown buffer type ${String(value.t)}.`);
   }) as T;
 }

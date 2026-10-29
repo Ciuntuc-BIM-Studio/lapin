@@ -533,6 +533,9 @@ public sealed class Session
         var props = e.CloneAttrs();
         // A stored body's triangles travel as its render; as props they were the biggest part of an imported model's diff.
         props.Remove(StoredBodies.Key);
+        // An instance's mesh and placement travel as its render's (RenderItem.Instance).
+        props.Remove(StoredBodies.BodyOf);
+        props.Remove(StoredBodies.XfKey);
         if (e.PredefinedType != null) props["predefinedType"] = e.PredefinedType;
         var owner = _catalog.OwnerOf(e.Class);
         var storey = e.Class == IfcClass.BuildingStorey ? null : Spatial.StoreyOf(_store, e.Id)?.Id;
