@@ -1,5 +1,6 @@
 /**
- * The project browser: the levels; then the sets (docs/plan-views-and-joinery.md §1),
+ * The project browser: the levels; the Site (its site and location plans,
+ * docs/site-plans.md); then the sets (docs/plan-views-and-joinery.md §1),
  * each with its floor plans, sections, elevations, 3D views, sheets and
  * schedules; "Other" for what no set takes. Views, sheets and levels
  * duplicate from here; "Organize…" edits the sets. No IFC tree: the model is
@@ -7,7 +8,7 @@
  */
 
 import { useState } from 'react';
-import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, Layers, Plus, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
+import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, Layers, Map as MapIcon, Plus, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
 import { notify, useUi } from '../app/store';
 import { execute, activeStorey, useSession } from '../engine/session';
 import { num, storeys } from '../engine/model';
@@ -19,6 +20,7 @@ import { openContextMenu } from './ContextMenu';
 import { toggleSection3d, useSection3d } from '../viewport/section3d';
 import { showLevelIn3d } from '../viewport/storeys3dActions';
 import { useSectionBox } from '../viewport/sectionBox';
+import { createSiteView, SITE_PURPOSES, type SitePurpose } from '../modules/core/SitePlans';
 
 const TAB_KEY = 'lapin.browser.tab';
 
@@ -62,7 +64,9 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
 
   const sets = setsOf(nodes);
   const items: BrowserItem[] = [...levels.map(implicitPlan), THREE_D, ...[...nodes.values()].map(itemOf).filter((i): i is BrowserItem => i !== null)];
-  const groups = groupItems(sets, items);
+  // The site's drawings are the Site's, not the sets'.
+  const siteItems = items.filter((i) => i.kind === 'site');
+  const groups = groupItems(sets, items.filter((i) => i.kind !== 'site'));
 
   // A plan's own view is selected too, so its properties (discipline, style, range, storeys shown, reference level) come to the panel; a level's default plan has no entity to select.
   const showPlan = (id: string, planViewId: string | null = null) => useUi.setState({ view: 'plan', storeyId: id, planViewId, selection: planViewId, selected: planViewId ? [planViewId] : [] });
@@ -80,7 +84,7 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   const duplicateView = (item: BrowserItem, withDetailing: boolean) => void execute('view.duplicate', { id: item.id, withDetailing }).then((r) => {
     const id = made(r);
     if (!id) return;
-    if (item.kind === 'plan') showPlan(item.storeyId ?? active?.id ?? '', id);
+    if (item.kind === 'plan' || item.kind === 'site') showPlan(item.storeyId ?? active?.id ?? '', id);
     else if (item.kind === '3d') show3d(id);
     else showDrawing(id);
   });
@@ -188,7 +192,7 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
           <Kind id={`${id}:schedules`} icon={<Table2 size={13} />} label="Schedules" list={of('schedule')}
             plus={set && (
               <select className="mini-select" value="" title="New schedule" onChange={(e) => { const kind = e.target.value; if (kind) void execute('architecture.createSchedule', { kind }).then((r) => { const n = made(r); if (n) showSchedule(n); }); }}>
-                <option value="">+</option><option value="all">Joinery</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option><option value="rooms">Rooms</option><option value="planting">Planting</option>
+                <option value="">+</option><option value="all">Joinery</option><option value="parcel">Parcel coordinates</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option><option value="rooms">Rooms</option><option value="planting">Planting</option>
               </select>
             )}>
             {(item) => <Row item={item} on={view === 'schedule' && ui.scheduleId === item.id} open={() => showSchedule(item.id)} />}
@@ -223,6 +227,23 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
           </span>
         ))}
       </div>}
+      {tab === 'project' && !levelsOnly && (
+        <div className="tree-group" data-testid="browser-site">
+          <div className="tree-label">
+            <button type="button" className="icon mini fold" title={collapsed.has('site') ? 'Expand' : 'Collapse'} onClick={() => toggle('site')}>{collapsed.has('site') ? <ChevronRight size={12} /> : <ChevronDown size={12} />}</button>
+            <MapIcon size={13} />Site<span className="count">{siteItems.length}</span>
+            <select className="mini-select" value="" title="New site plan or location plan" aria-label="New site drawing"
+              onChange={(e) => { const p = e.target.value as SitePurpose; if (p) void createSiteView(p).then((id) => { const n = id ? nodes.get(id) ?? useSession.getState().nodes.get(id) : undefined; if (id) showPlan(String(n?.props.storeyId ?? active?.id ?? ''), id); }); }}>
+              <option value="">+</option>
+              {SITE_PURPOSES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          </div>
+          {!collapsed.has('site') && siteItems.map((item) => (
+            <span key={item.id}><Row item={item} on={isPlanOn(item)} open={() => showPlan(item.storeyId ?? '', item.id)}><Dup item={item} /></Row></span>
+          ))}
+          {!collapsed.has('site') && siteItems.length === 0 && <p className="muted small pad">No site drawings yet: + makes a site plan or a location plan.</p>}
+        </div>
+      )}
       {tab === 'project' && !levelsOnly && groups.map((g) => <SetGroup key={g.set?.id ?? 'other'} set={g.set} list={g.items} />)}
     </nav>
   );

@@ -68,6 +68,8 @@ public static class Views
             case "plan":
             {
                 if (m.Get(view.Str("storeyId") ?? "") is not { Class: IfcClass.BuildingStorey }) return (null, "The plan's storey is gone.");
+                // A site plan: cut over the highest point, so everything is seen from above, and no hidden lines.
+                if (SitePlans.Of(view) != null) return (ViewSpec.Plan((Bounds(parts)?.Max.Z ?? 0) + 1, new RangeBands(ViewRanges.Unlimited, 0, null), false), null);
                 var r = Range(m, view);
                 var bands = ViewRanges.Bands(r);
                 // A view style may leave out what lies above the cut (its overhead).
@@ -170,6 +172,8 @@ public static class Views
 
         public static StoreyDisplay Of(Entity view)
         {
+            // A site plan shows every storey as it is.
+            if (SitePlans.Of(view) != null) return new StoreyDisplay("all", new HashSet<string>(), false);
             if (view.Attrs["storeys"] is not JsonObject o) return Home;
             var mode = (string?)o["mode"] is { } md && Modes.Contains(md) ? md : "home";
             var ids = (o["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
@@ -265,11 +269,13 @@ public static class Views
         var hiddenElements = (view.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         var filters = q.Services.All<IViewElementFilter>();
         var plan = view.Str("kind") is "plan" or null;
+        // A site plan: the model from above, what lies under the ground left out, the site's own symbols from every storey.
+        var site = plan && SitePlans.Of(view) != null;
         var display = StoreyDisplay.Of(view);
         // The view's style: which layers of layered elements draw (all, all but the finishes, the cores).
         var style = ViewStyles.Of(m, view);
         var bandCache = new Dictionary<string, IReadOnlyList<LayerBand>?>();
-        double? cutZ = plan && style.Ifc2d && m.Get(storey ?? "") is { Class: IfcClass.BuildingStorey } ? Range(m, view).Cut : null;
+        double? cutZ = plan && !site && style.Ifc2d && m.Get(storey ?? "") is { Class: IfcClass.BuildingStorey } ? Range(m, view).Cut : null;
         foreach (var e in m.Entities)
         {
             // Rooms draw as their fills and stamps (their module's marks), never as a body cut or seen.
@@ -285,6 +291,21 @@ public static class Views
                 OwnPlan(e, g, own, cz, symbols, fills, texts);
                 continue;
             }
+            if (site)
+            {
+                // By its symbols when it has them (a stored terrain from an IFC file has only its body).
+                var bySymbol = SiteSymbols.Contains(e.Class) && g.Plan is { Count: > 0 };
+                foreach (var p in g.Parts)
+                    if (!bySymbol && Measure.Bounds(p.Solid) is { } b && b.Max.Z > SitePlans.Underground && ViewStyles.Draws(m, style, e.Id, p.Key, bandCache))
+                        parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material, CutInPlan: true));
+                if (bySymbol)
+                    foreach (var item in g.Plan!)
+                    {
+                        var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" or "heavy" => LineRole.Cut, _ => null };
+                        if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role));
+                    }
+                continue;
+            }
             foreach (var p in g.Parts)
                 if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material, CutInPlan: stored));
             if (view.Str("kind") == "plan" && !stored && Generator.SymbolicInPlan.Contains(e.Class) && g.Plan != null && Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey)
@@ -296,6 +317,9 @@ public static class Views
         }
         return (parts, symbols, fills, texts);
     }
+
+    /// <summary>What a site plan draws by its symbols rather than its body: the terrain, paths, plants and the site's features (parcels, neighbours); the roofs and the rest by their bodies, seen from above.</summary>
+    static readonly HashSet<string> SiteSymbols = [IfcClass.GeographicElement, "IfcPavement", "LapinPlanting", "LapinSiteFeature"];
 
     /// <summary>
     /// An element's own 2D in a plan (docs/spec-ifc.md, Reprezentările 2D): its lines with the file's colour and pattern, its
@@ -399,7 +423,7 @@ public static class Views
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry);
-        var marks = Marks(ctx).Concat(Location.Marks(ctx)).ToList();
+        var marks = Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).ToList();
         foreach (var source in q.Services.All<IViewAnnotations>())
             try { marks.AddRange(source.Marks(ctx)); }
             catch (CommandException) { }
@@ -612,6 +636,16 @@ public static class Views
                     if (a["sectionBox"] is JsonObject) attrs["sectionBox"] = SectionBox(a["sectionBox"]);
                     name = (string?)a["name"] ?? $"3D view {ctx.Model.OfClass(Class).Count(v => v.Str("kind") == "3d") + 1}";
                     break;
+                case "plan" when (string?)a["site"] is { } purpose:
+                {
+                    if (!SitePlans.Purposes.Contains(purpose)) throw new CommandException("A site view is a site plan (situation) or a location plan (location).");
+                    var host = (string?)a["storeyId"] is { Length: > 0 } sid ? Spatial.Require(ctx.Model, sid, IfcClass.BuildingStorey) : SitePlans.Host(ctx.Model) ?? throw new CommandException("The project has no storey.");
+                    var (siteAttrs, siteName) = SitePlans.New(purpose, host.Id, Json.Number(a["scale"]), (string?)a["name"]);
+                    foreach (var (k, val) in attrs) if (!siteAttrs.ContainsKey(k)) siteAttrs[k] = val?.DeepClone();
+                    attrs = siteAttrs;
+                    name = siteName;
+                    break;
+                }
                 case "plan":
                 {
                     var storey = Spatial.Require(ctx.Model, (string?)a["storeyId"], IfcClass.BuildingStorey);
@@ -644,6 +678,9 @@ public static class Views
             ctx.Add(v);
             return new JsonObject { ["id"] = v.Id };
         });
+
+        // A site plan's or a location plan's settings: {id, site?, gridStep?, northArrow?, scaleBar?} (SitePlans).
+        r.Command("view.setSite", "Site plan", (ctx, a) => { SitePlans.Set(ctx, a); return null; });
 
         // A saved 3D view's camera: where it looks from.
         r.Command("view.setCamera", "View camera", (ctx, a) =>
@@ -734,6 +771,7 @@ public static class Views
                 return null;
             }
             var v = ctx.Model.Get(vid) is { Class: Class } x && x.Str("kind") == "plan" ? x : throw new CommandException("Not a plan or a 3D view.");
+            if (SitePlans.Of(v) != null) throw new CommandException("A site plan shows every storey.");
             var old = StoreyDisplay.Of(v);
             var mode = (string?)a["mode"] ?? old.Mode;
             if (!StoreyDisplay.Modes.Contains(mode)) throw new CommandException($"„{mode}” is not home, some or all.");
@@ -767,6 +805,7 @@ public static class Views
         r.Command("view.setRange", "View range", (ctx, a) =>
         {
             var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == "plan" ? x : throw new CommandException("Not a plan.");
+            if (SitePlans.Of(v) != null) throw new CommandException("A site plan sees the whole model from above: it has no view range.");
             var attrs = v.CloneAttrs();
             if (a["reset"] is JsonValue rv && rv.TryGetValue<bool>(out var reset) && reset) attrs.Remove("viewRange");
             else

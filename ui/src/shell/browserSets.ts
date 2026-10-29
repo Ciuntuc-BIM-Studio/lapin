@@ -9,7 +9,8 @@
 
 import type { NodeDto } from '../engine/protocol';
 
-export type ItemKind = 'plan' | 'section' | 'elevation' | '3d' | 'sheet' | 'schedule';
+/** `site`: a site plan or a location plan, listed under the browser's Site rather than in the sets. */
+export type ItemKind = 'plan' | 'section' | 'elevation' | '3d' | 'sheet' | 'schedule' | 'site';
 
 export interface SetFilter {
   disciplines?: string[];
@@ -91,7 +92,8 @@ const number = (v: unknown): number | null => (typeof v === 'number' ? v : typeo
 
 /** A view, sheet or schedule entity as an item; null for any other entity. */
 export function itemOf(node: NodeDto): BrowserItem | null {
-  const kind: ItemKind | null = node.type === 'LapinView' ? (['plan', 'section', 'elevation', '3d'].includes(String(node.props.kind)) ? (node.props.kind as ItemKind) : null)
+  const kind: ItemKind | null = node.type === 'LapinView' ? (node.props.kind === 'plan' && typeof node.props.site === 'string' ? 'site'
+    : ['plan', 'section', 'elevation', '3d'].includes(String(node.props.kind)) ? (node.props.kind as ItemKind) : null)
     : node.type === 'LapinSheet' ? 'sheet' : node.type === 'LapinSchedule' ? 'schedule' : null;
   if (!kind) return null;
   return {

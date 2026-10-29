@@ -30,6 +30,21 @@ O ridicare topo vine în coordonate de hartă: estică și nordică, la sute de 
 
 Tot ce importi se păstrează în fișierul proiectului. Un element își ia numele din fișier (numărul cadastral al parcelei, când fișierul îl are) și păstrează celelalte proprietăți din fișier; selectează-l ca să-i vezi aria sau lungimea.
 
+## Planul de situație și planul de încadrare
+
+Browserul proiectului are, sub niveluri, **Terenul** (*Site*): desenele amplasamentului, care nu țin de niciun etaj. Un proiect nou pornește cu două:
+
+- **Planul de situație**, la 1:500: tot modelul văzut de sus, toate etajele deodată, cu acoperișuri cu tot, cu terenul, aleile, plantele, parcela și vecinii. Ce stă în întregime sub ±0,00 (fundațiile) rămâne pe dinafară, nimic nu e secționat și nu se desenează linii ascunse. Colțurile parcelei sunt numerotate;
+- **Planul de încadrare în zonă**, la 1:2000: același desen pentru amplasament în zona lui, peste ortofotoplan, fără numerele colțurilor.
+
+**+** de lângă Teren face încă unul din oricare; butoanele de copiere le duplică. Amândouă au **săgeata nordului**, spre nordul geografic (Gestionare → Amplasament: unghiul față de nordul geografic), **scara grafică** și, când proiectul e legat de hartă, **rețeaua de coordonate**: cruci unde se întâlnesc valori rotunde ale coordonatelor E și N, din zecime în zecime de scară (50 m la 1:500, 200 m la 1:2000), cu valorile lor. Selectează vederea în browser și le alegi în proprietățile ei, la **Setările vederii**: ce este (plan de situație sau de încadrare), pasul rețelei (0: deloc), săgeata și scara.
+
+![Un plan de situație: casa văzută de sus pe parcela ei, colțurile numerotate, rețeaua hărții, săgeata nordului și scara grafică](shots/site-drawings.webp)
+
+![Terenul în browserul proiectului](shots/site-browser.webp)
+
+Extrasul **Inventar de coordonate** (Extrase → + → Inventar de coordonate) listează colțurile parcelei așa cum le numerotează planul de situație, cu coordonatele N și E în sistemul proiectului, latura până la colțul următor și aria. Ca orice extras, se pune pe planșă lângă planul de situație și se exportă CSV sau XLSX.
+
 ## Reglementări urbanistice și însorire (Lapin Urban)
 
 Ediția **Lapin Urban** adaugă în această filă grupul **Urbanism**: reglementările parcelei (POT, CUT, înălțimile maxime, retragerile față de stradă, laterale, limita posterioară și axul drumului), **volumul construibil** pe care îl lasă, indicatorii pe care îi atinge modelul față de ele și **studiul de însorire**: soarele și umbrele lui în 3D pentru orice zi și oră în locul proiectului, și planuri de umbre pentru echinocțiu și solstiții.

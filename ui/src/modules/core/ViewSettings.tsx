@@ -24,6 +24,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { PlanStoreysEditor } from './PlanStoreys';
 import { Storeys3DEditor } from './Storeys3D';
 import { view3dNode } from '../../viewport/storeys3d';
+import { SitePlanFields } from './SitePlans';
 
 interface ViewStyleState { style: ViewStyle; named: boolean; resolved: ViewStyle; overrides: string[] }
 
@@ -40,7 +41,9 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
   if (!state) return <p className="muted">…</p>;
   const set = (patch: Record<string, unknown>) => void execute('view.setStyle', { id: view.id, ...patch });
   const own = (f: string) => state.overrides.includes(f);
-  const plan = view.props.kind === 'plan';
+  // A site plan sees the whole model from above: no cut, range, reference level or storeys of its own; its north arrow, grid and scale bar instead.
+  const site = view.props.kind === 'plan' && typeof view.props.site === 'string';
+  const plan = view.props.kind === 'plan' && !site;
   const threeD = view.props.kind === '3d';
   const Reset = ({ field }: { field: string }) => own(field)
     ? <button type="button" className="icon mini" title="Back to the style's" onClick={() => set({ [field]: null })}><RotateCcw size={11} /></button>
@@ -96,6 +99,7 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
             </dd>
           </>
         )}
+        {site && <SitePlanFields view={view} />}
         <dt title="What this view shows and how, by category, class and element (VV)">Graphics</dt>
         <dd><button type="button" className="btn small" onClick={() => useUi.setState({ dialog: 'visibility' })}>Visibility / Graphics…</button></dd>
       </dl>

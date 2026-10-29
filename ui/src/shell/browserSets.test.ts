@@ -28,6 +28,13 @@ describe('the browser sets', () => {
     expect(implicitPlan(node('st', 'IfcBuildingStorey', 'Ground floor')).id).toBe('plan:st');
   });
 
+  it('read a site plan or a location plan as the Site\'s, not a floor plan', () => {
+    const site = itemOf(node('v2', 'LapinView', 'Site plan', { kind: 'plan', site: 'situation', storeyId: 'st', scale: 500 }))!;
+    expect(site).toMatchObject({ kind: 'site', storeyId: 'st', scale: 500 });
+    expect(matches({ kinds: ['plan'] }, site)).toBe(false);
+    expect(itemOf(node('v3', 'LapinView', 'Ground floor', { kind: 'plan', storeyId: 'st' }))!.kind).toBe('plan');
+  });
+
   it('group by the defaults when the project has no sets, and put what none takes under Other', () => {
     const nodes = new Map([['p', node('p', 'IfcProject', 'P')]]);
     expect(setsOf(nodes)).toBe(DEFAULT_SETS);

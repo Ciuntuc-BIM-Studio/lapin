@@ -53,6 +53,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Service<IViewAnnotations>(this);
         r.Service<IGround>(new Ground());
         r.Service<IScheduleSource>(new PlantingSchedule());
+        r.Service<IScheduleSource>(new ParcelCoordinates());
         r.Catalog("plants", Plantings.SpeciesJson(Plantings.Catalog));
         r.Catalog("sculptKinds", new JsonArray(SculptDab.Kinds.Select(k => (JsonNode)k).ToArray()));
         SiteCommands.Register(r);
@@ -219,7 +220,9 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         var text = Standards.ResolveText(c.Book, new JsonObject());
         foreach (var e in c.Model.OfClass(IfcClass.GeographicElement))
         {
-            if (Spatial.StoreyOf(c.Model, e.Id)?.Id != storey) continue;
+            // A site plan shows every terrain; any other plan its own storey's.
+            var site = SitePlans.Of(c.View);
+            if (site == null && Spatial.StoreyOf(c.Model, e.Id)?.Id != storey) continue;
             var t = Terrains.Of(e);
             var interval = e.NumOrNull("interval") ?? 0.5;
             var major = Math.Max(1, (int)Math.Round(e.NumOrNull("majorEvery") ?? 5));
@@ -257,6 +260,14 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 mk.Polyline(parcel, true, "PARCEL", Pens.Default.Cut, "#6b4e2e", [6, 2, 1, 2]);
                 var centre = new Vec2(parcel.Average(p => p.X), parcel.Average(p => p.Y));
                 mk.Text(new PenText(centre, $"S = {Math.Abs(Polygon2.SignedArea(parcel)):0.0} m²", text.Height, 0, "middle", "middle", true, text.Font), "#6b4e2e");
+                // On a site plan its corners are numbered, as the coordinate inventory lists them (ParcelCoordinates).
+                if (site == SitePlans.Situation)
+                    for (var k = 0; k < parcel.Count; k++)
+                    {
+                        var away = parcel[k] - centre;
+                        var at = parcel[k] + (away.Length > 1e-9 ? away.Normalized() : new Vec2(1, 0)) * (2.5 * c.Mm);
+                        mk.Text(new PenText(at, (k + 1).ToString(System.Globalization.CultureInfo.InvariantCulture), text.Height * 0.8, 0, "middle", "middle", false, text.Font), "#6b4e2e");
+                    }
             }
             // The analysis, as fills under the lines.
             if (e.Str("analysis") is { } kind && kind != "none" && Analysis.Of(c.Model, e, kind) is { } analysis)

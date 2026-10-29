@@ -91,12 +91,14 @@ export function PlanView() {
   const planDrawing = useUi((s) => s.planDrawing);
   const ownPlan = planViewId && nodes.get(planViewId)?.props.storeyId === storey?.id ? planViewId : null;
   const drawing = useDrawing(storey ? ownPlan ?? `plan:${storey.id}` : null, planDrawing);
+  // A site plan or a location plan (docs/site-plans.md): the whole model from above, so no reference level or view range of its own.
+  const siteView = ownPlan && typeof nodes.get(ownPlan)?.props.site === 'string' ? nodes.get(ownPlan)! : null;
   // Another storey beneath this one, faded: seen and snapped to, never picked.
   // The reference level: the plan's own view's (kept with the project), else the one remembered in this browser for the level.
   const remembered = useUnderlay((u) => (storey ? u.of[storey.id] : undefined));
   const ownUnder = ownPlan ? nodes.get(ownPlan)?.props.underlay : undefined;
   const underId = typeof ownUnder === 'string' ? ownUnder : ownPlan ? undefined : remembered;
-  const under = underId && underId !== storey?.id && nodes.get(underId) ? underId : null;
+  const under = underId && underId !== storey?.id && nodes.get(underId) && !(ownPlan && typeof nodes.get(ownPlan)?.props.site === 'string') ? underId : null;
   const underDrawing = useDrawing(under ? `plan:${under}` : null);
   // The view (centre, zoom) is remembered per plan for the session, so the tab comes back as it was left.
   const key = ownPlan ?? (storey ? `plan:${storey.id}` : 'plan:none');
@@ -535,7 +537,7 @@ export function PlanView() {
   return (
     <div className="view-pane">
       <div className="view-toolbar">
-        <span className="view-title">Plan · {storey?.name ?? '—'}</span>
+        <span className="view-title">{siteView ? <>Site · <span data-no-i18n>{siteView.name}</span></> : <>Plan · {storey?.name ?? '—'}</>}</span>
 {(drawing?.lineworkOrphans?.length ?? 0) > 0 && ownPlan && (
           <button type="button" className="chip warn" title="The edges they were on are gone: remove them" onClick={() => void execute('view.lineworkReset', { id: ownPlan, orphans: true })}>
             {drawing!.lineworkOrphans!.length} line edit(s) lost their edge · clean
@@ -544,14 +546,14 @@ export function PlanView() {
                 {(drawing?.problems?.length ?? 0) > 0 && (
           <button type="button" className="chip warn" title="The view range is out of order" onClick={() => useUi.setState({ dialog: 'viewRange' })}>view range: {drawing!.problems!.length} problem(s)</button>
         )}
-        {storey && <select className={`chip underlay-pick${under ? ' on' : ''}`} title="Underlay: another level's plan beneath this one, faded, to snap to" aria-label="Underlay"
+        {storey && !siteView && <select className={`chip underlay-pick${under ? ' on' : ''}`} title="Underlay: another level's plan beneath this one, faded, to snap to" aria-label="Underlay"
           value={under ?? ''} onChange={(e) => { if (ownPlan) void execute('view.setUnderlay', { id: ownPlan, storeyId: e.target.value || null }); else setUnderlay(storey.id, e.target.value || null); }}>
           <option value="">No underlay</option>
           {[...nodes.values()].filter((n) => n.type === 'IfcBuildingStorey' && n.id !== storey.id)
             .sort((a, b) => Number(a.props.elevation ?? 0) - Number(b.props.elevation ?? 0))
             .map((n) => <option key={n.id} value={n.id}>Underlay: {n.name}</option>)}
         </select>}
-        <button type="button" className="icon" title="View range" onClick={() => useUi.setState({ dialog: 'viewRange' })}><Layers size={14} /></button>
+        {!siteView && <button type="button" className="icon" title="View range" onClick={() => useUi.setState({ dialog: 'viewRange' })}><Layers size={14} /></button>}
         <button type="button" className={`icon${planDrawing ? ' on' : ''}`} title={planDrawing ? 'Drawing: hatches and pens (click for modelling lines)' : 'Modelling lines (click for the drawing)'}
           onClick={() => useUi.setState({ planDrawing: !planDrawing })}><PenLine size={14} /></button>
         <ScaleChip pxPerMetre={view.scale} scale={drawing?.scale ?? 100} onActual={host.actual} />
@@ -576,8 +578,8 @@ export function PlanView() {
             transform={`matrix(${tr.x - tl.x} ${tr.y - tl.y} ${bl.x - tl.x} ${bl.y - tl.y} ${tl.x} ${tl.y})`} />;
         })}
         {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} /></g>}
-        {drawing && planDrawing && <g className={scope ? 'scoped-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} /></g>}
-        <g className={`plan-items${drawing && planDrawing ? ' ghost' : ''}${scope ? ' scoped' : ''}`}>
+        {drawing && (planDrawing || siteView) && <g className={scope ? 'scoped-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} /></g>}
+        <g className={`plan-items${drawing && (planDrawing || siteView) ? ' ghost' : ''}${scope ? ' scoped' : ''}`}>
           {drawn.map(({ key, r, kind, d, closed, text, at }) => kind === 'label' ? (
             <text key={key} x={at.x} y={at.y} className="plan-label">{text}</text>
           ) : (

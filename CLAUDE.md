@@ -102,6 +102,8 @@ Then (#163, `docs/plan-urban.md`) real coordinates and the site's imports in the
 
 Then (#166, `docs/plan-instancing.md`, 29.10.2026) large models: references that share an IFC body (a type's map, one product definition shape) are instances of one `LapinSharedBody` (`bodyOf`, `xf`), sent to the interface once (`Diff.Meshes`) and drawn by `InstancedMesh` (`ui/src/viewport/instancing.ts`); a big diff goes in parts (`Session.Parts`, 20,000 a frame); IFC export writes them as mapped items. 1,000,000 cubes import in 61 s and turn at 60 fps; `LAPIN_IFC_BENCH=<file>` runs the optional benchmark (`IfcBenchmarkTests`).
 
+Then (#169) the browser's **Site** (`docs/site-plans.md`): site plans (1:500) and location plans (1:2000) as plan views with `site`, the whole model from above on every storey, a north arrow, the map's coordinate grid and a scale bar (`SitePlans`); the parcel's corners numbered and its coordinate inventory (`ParcelCoordinates`); a new project starts with one of each.
+
 MEP (`docs/plan-mep.md`) is two modules since 28.10.2026 (#160): `mep`, open, in this repo and in the `lapin` edition — the network core (systems, nodes with ports, runs, connections, the layout workflow, IFC network, lists); and `mep-pro`, premium, in the private sibling repo `../lapin-mep` (`requires: mep`, commands `mep-pro.…`), built through `products/lapin-mep.json` (`"external"`) — the engineering (sizing, checks, assistants, laying rules by material, resolve), hooked into the open one through `MepHooks` (engine) and `mepHooks` (UI).
 
 Next: the user reviews `docs/decisions-pending.md` (#1–111). Open items needing the user: signing and notarization, Windows (manifold), and what the review changes. Milestones are in `docs/plan.md`.

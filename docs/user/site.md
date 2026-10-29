@@ -30,6 +30,21 @@ A survey comes in map coordinates: eastings and northings, hundreds of kilometre
 
 Everything imported is kept in the project file. A feature takes its name from the file (a parcel's cadastral number, when the file has one) and keeps the file's other properties with it; select it to see its area or length.
 
+## Site plans and location plans
+
+The project browser has a **Site** under the levels: the site's own drawings, which belong to no storey. A new project starts with two:
+
+- the **Site plan** (Romanian *plan de situație*), at 1:500: the whole model seen from above, every storey at once, roofs and all, with the terrain, the paths, the plants, the parcel and the neighbours. What lies wholly under ±0.00 (the foundations) is left out, nothing is cut and nothing hidden is drawn. The parcel's corners are numbered;
+- the **Location plan** (*plan de încadrare în zonă*), at 1:2000: the same drawing for the site in its area, over the orthophoto, without the corners' numbers.
+
+**+** beside Site makes another of either; the copy buttons duplicate one. Both carry a **north arrow** pointing to true north (Manage → Location: the angle to true north), a **scale bar** and, when the project is tied to the map, the **coordinate grid**: crosses where round eastings and northings meet, every tenth of the scale (50 m at 1:500, 200 m at 1:2000), with their values. Select the view in the browser and set them in its properties, under **View settings**: what it is (site plan or location plan), the grid's step (0: none), the arrow and the bar.
+
+![A site plan: the house from above on its parcel, the corners numbered, the map's grid, the north arrow and the scale bar](shots/site-drawings.webp)
+
+![The Site in the project browser](shots/site-browser.webp)
+
+The **Parcel coordinates** schedule (Schedules → + → Parcel coordinates) is the parcel's coordinate inventory: each corner as the site plan numbers it, its northing and easting in the project's system, the side to the next corner, and the area. Like any schedule it goes on a sheet beside the site plan, and out as CSV or XLSX.
+
 ## Planning rules and the sun (Lapin Urban)
 
 The **Lapin Urban** edition adds a **Planning** group to this tab: the parcel's planning rules (POT, CUT, the maximum heights, the setbacks from the street, the sides, the rear and the road's axis), the **buildable volume** they leave, the indicators the model reaches against them, and the **sun study**: the sun and its shadows in 3D for any day and hour at the project's place, and shadow plans for the equinox and the solstices.

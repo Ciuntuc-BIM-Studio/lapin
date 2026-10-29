@@ -319,6 +319,19 @@ export const scenes = [
       await t.page.locator('button[title="Frame everything"]').first().click();
       await t.wait(800);
       await t.shot('site-3d', { of: 'canvas', pad: 0 });
+      // The browser's Site: the site plan, the whole model from above with the parcel's corners numbered, the map's grid, the north arrow and the scale bar.
+      await t.ui({ keyPlan: false });
+      await t.page.locator('[data-testid=browser-site] button.tree-item').first().click();
+      await t.wait(1500);
+      await t.fit();
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-testid=browser-site] .tree-item.on').count() === 1, 'the site plan opens from the Site');
+      // The quick tools would hide the scale bar at the bottom.
+      const quiet = await t.page.addStyleTag({ content: '.hotbar { display: none !important }' });
+      await t.shot('site-drawings', { of: '[data-testid=plan]', pad: 0 });
+      await quiet.evaluate((el) => el.remove());
+      await t.shot('site-browser', { of: '[data-testid=browser-site]', pad: 6 });
+      await t.ui({ keyPlan: true });
     },
   },
   {

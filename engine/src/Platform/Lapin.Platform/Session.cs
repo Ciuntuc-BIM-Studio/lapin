@@ -119,6 +119,13 @@ public sealed class Session
                 edit.Add(storey);
                 edit.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
             }
+            // A new project's Site: its site plan and its location plan, on the ground floor.
+            if (storeys.Count > 1 && SitePlans.Host(edit.Model) is { } host)
+                foreach (var purpose in SitePlans.Purposes)
+                {
+                    var (attrs, name) = SitePlans.New(purpose, host.Id, null, null);
+                    edit.Add(new Entity(edit.NewId(), Views.Class, name, attrs));
+                }
         });
         _history.Reset();
         ForgetAll();
