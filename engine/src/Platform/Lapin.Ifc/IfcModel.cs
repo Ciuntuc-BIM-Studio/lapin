@@ -142,7 +142,7 @@ public sealed partial class IfcModel
             if (s[0] is StepRef item && Colour(s[1]) is { } c) _colours[item.Id] = c;
 
         Storeys.AddRange(file.OfType("IFCBUILDINGSTOREY").Select(s => (Str(s[2]) ?? Str(s[7]) ?? "Level", Num(s[9]) * _len)).OrderBy(s => s.Item2));
-        foreach (var e in file.Entities.Values)
+        foreach (var e in file.Rooted)
         {
             if (NotElements.Contains(e.Type) || e.Args.Count < 7 || e[0] is not string gid || gid.Length != 22 || file.Get(e[6]) is not { Type: "IFCPRODUCTDEFINITIONSHAPE" } shape) continue;
             // Only an axis or a footprint (a layered wall whose body is in its parts): nothing to show.
@@ -449,7 +449,28 @@ public sealed partial class IfcModel
         return m;
     }
 
+    /// <summary>From this many faces, a shell is built in parts on every core.</summary>
+    const int FacesInParts = 20_000;
+
+    /// <summary>
+    /// A shell's faces as one mesh. A big one (a machine exported as millions of triangles) is
+    /// built in parts, one per core, each with its own vertex index, then appended: a point two
+    /// parts share comes twice, which <see cref="MeshBuilder.Welded"/> makes one again.
+    /// </summary>
     MeshBuilder Faces(IEnumerable<StepEntity> faces)
+    {
+        var all = faces as IReadOnlyList<StepEntity> ?? faces.ToList();
+        if (all.Count < FacesInParts) return FacesOf(all);
+        var parts = Environment.ProcessorCount * 2;
+        var size = (all.Count + parts - 1) / parts;
+        var meshes = new MeshBuilder[(all.Count + size - 1) / size];
+        Parallel.For(0, meshes.Length, k => meshes[k] = FacesOf(all.Skip(k * size).Take(size).ToList()));
+        var m = meshes[0];
+        for (var k = 1; k < meshes.Length; k++) m.Append(meshes[k]);
+        return m;
+    }
+
+    MeshBuilder FacesOf(IReadOnlyList<StepEntity> faces)
     {
         var m = new MeshBuilder();
         var index = new Dictionary<int, int>();

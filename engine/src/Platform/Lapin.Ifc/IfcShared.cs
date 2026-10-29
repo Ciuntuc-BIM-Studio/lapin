@@ -47,7 +47,7 @@ public sealed partial class IfcModel
     Dictionary<string, int> CountUses()
     {
         var uses = new Dictionary<string, int>();
-        foreach (var e in File.Entities.Values)
+        foreach (var e in File.Rooted)
             if (e.Args.Count >= 7 && e[0] is string { Length: 22 } && File.Get(e[6]) is { Type: "IFCPRODUCTDEFINITIONSHAPE" } && KeyOf(e) is { } k)
                 uses[k.Key] = uses.GetValueOrDefault(k.Key) + 1;
         return uses;

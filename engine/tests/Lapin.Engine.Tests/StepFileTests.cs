@@ -49,4 +49,31 @@ public class StepFileTests
         // Each type's name made once.
         Assert.Same(f.Entities[1].Type, f.Entities[2].Type);
     }
+
+    [Fact]
+    public void Entities_are_parsed_when_asked_for_and_the_rooted_ones_are_those_with_a_GlobalId()
+    {
+        var text = Head
+            + "#1=IFCCARTESIANPOINT((1.,2.,3.));\n"
+            + "#2=IFCWALL('0123456789ABCDEFGHIJKL',$,'w',$,$,$,$,$,.NOTDEFINED.);\n"
+            + "#3=IFCPROPERTYSINGLEVALUE('a name of 22 characte',$,$,$);\n"
+            + "#4=IFCRELAGGREGATES('0123456789ABCDEFGHIJKM',$,$,$,#2,(#1));\n"
+            + "#5=IFCLABEL('x''y');\n"
+            + "#7=IFCDIRECTION((0.,0.,1.));\n"
+            + "ENDSEC;\nEND-ISO-10303-21;\n";
+        var f = StepFile.Read(Encoding.UTF8.GetBytes(text));
+        Assert.Equal(6, f.Entities.Count);
+        Assert.Equal([1, 2, 3, 4, 5, 7], f.Entities.Keys);
+        Assert.False(f.Entities.ContainsKey(6));
+        Assert.Null(f.Get(new StepRef(6)));
+        // Rooted: a 22-character string first; the 21-character name is not one.
+        Assert.Equal([2, 4], f.Rooted.Select(e => e.Id));
+        // Each parse is its own entity, with the same content and the one type name.
+        var a = f.Entities[2]; var b = f.Entities[2];
+        Assert.NotSame(a, b);
+        Assert.Equal(a.Args.Count, b.Args.Count);
+        Assert.Same(a.Type, f.OfType("IFCWALL").Single().Type);
+        Assert.Equal("x'y", f.Entities[5][0]);
+        Assert.Equal(new List<object?> { 1.0, 2.0, 3.0 }, (List<object?>)f.Entities[1][0]!);
+    }
 }

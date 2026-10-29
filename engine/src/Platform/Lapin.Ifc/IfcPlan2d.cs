@@ -167,9 +167,8 @@ public sealed partial class IfcModel
     {
         if (_styles2d != null) return _styles2d;
         _styles2d = [];
-        foreach (var s in File.Entities.Values)
+        foreach (var s in new[] { "IFCSTYLEDITEM", "IFCANNOTATIONCURVEOCCURRENCE", "IFCANNOTATIONFILLAREAOCCURRENCE", "IFCANNOTATIONTEXTOCCURRENCE" }.SelectMany(File.OfType).OrderBy(x => x.Id))
         {
-            if (s.Type is not ("IFCSTYLEDITEM" or "IFCANNOTATIONCURVEOCCURRENCE" or "IFCANNOTATIONFILLAREAOCCURRENCE" or "IFCANNOTATIONTEXTOCCURRENCE")) continue;
             if (s[0] is not StepRef item) continue;
             var st = ParseStyle(s[1]);
             _styles2d[item.Id] = _styles2d.TryGetValue(item.Id, out var had) ? st.Over(had) : st;

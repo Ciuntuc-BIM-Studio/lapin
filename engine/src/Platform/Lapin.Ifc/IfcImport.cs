@@ -362,7 +362,7 @@ public static partial class IfcImport
 
         void Types(IEdit edit)
         {
-            foreach (var t in f.Entities.Values.Where(e => e.Type.EndsWith("TYPE", StringComparison.Ordinal) && e.Args.Count >= 9 && e[0] is string { Length: 22 }))
+            foreach (var t in f.Rooted.Where(e => e.Type.EndsWith("TYPE", StringComparison.Ordinal) && e.Args.Count >= 9 && e[0] is string { Length: 22 }))
             {
                 if (IntentOf(t.Id, t[5]) is not { } intent) continue;
                 // A door's or window's mirrored type (written for elements flipped on one axis) is the type itself.
@@ -392,7 +392,7 @@ public static partial class IfcImport
                     foreach (var part in Refs(r[5])) parentOf[part] = whole.Id;
             var booleans = s.Catalog.Get<ISolidBooleans>();
             var fills = new HashSet<int>(f.OfType("IFCRELFILLSELEMENT").Select(r => Ref(r[5])));
-            var products = f.Entities.Values.Where(IsProduct).OrderBy(e => e.Id).ToList();
+            var products = f.Rooted.Where(IsProduct).OrderBy(e => e.Id).ToList();
             // First what is rebuilt natively (Lapin's intent, or recognised); then, as references, the rest: not the
             // parts of a native element (its body is its own), nor a door or window made with its wall.
             var native = new HashSet<int>();
