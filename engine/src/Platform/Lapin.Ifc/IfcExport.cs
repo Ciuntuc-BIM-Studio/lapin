@@ -267,6 +267,36 @@ public static class IfcExport
                     Offset(l.TransomOffsets, 0), Offset(l.TransomOffsets, 1), Offset(l.MullionOffsets, 0), Offset(l.MullionOffsets, 1), Null, Null, Null, Null);
         }
 
+        readonly Dictionary<string, string?> maps = [];
+
+        /// <summary>
+        /// An instance's body as IFC shares one (docs/plan-instancing.md): its shared body written once as an
+        /// IfcRepresentationMap, and here an IfcMappedItem placing it (relative to the storey, at <paramref name="z0"/>).
+        /// Null when the placement is not a rotation and a uniform scale, which IFC's operator cannot say: then its own B-rep.
+        /// </summary>
+        string? Mapped(SharedInstance inst, double z0)
+        {
+            var x = inst.Xf;
+            Vec3 ax = new(x[0], x[1], x[2]), ay = new(x[3], x[4], x[5]), az = new(x[6], x[7], x[8]);
+            var scale = ax.Length;
+            if (scale < 1e-12 || Math.Abs(ay.Length - scale) > 1e-9 * scale || Math.Abs(az.Length - scale) > 1e-9 * scale
+                || Math.Abs(Vec3.Dot(ax, ay)) > 1e-9 * scale * scale || Math.Abs(Vec3.Dot(ay, az)) > 1e-9 * scale * scale || Math.Abs(Vec3.Dot(ax, az)) > 1e-9 * scale * scale
+                || Vec3.Dot(Vec3.Cross(ax, ay), az) <= 0) return null;
+            if (!maps.TryGetValue(inst.Body, out var map))
+            {
+                map = m.Get(inst.Body) is { } shared && StoredBodies.SharedParts(shared) is { Count: > 0 } parts
+                    ? f.Add("IFCREPRESENTATIONMAP", f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), Null, Null),
+                        BodyOf(parts.Select(p => Brep(p.Solid, p.Color, 0))))
+                    : null;
+                maps[inst.Body] = map;
+            }
+            if (map == null) return null;
+            string Dir(Vec3 d) { var n = d * (1 / scale); return f.Add("IFCDIRECTION", L(new[] { R(n.X), R(n.Y), R(n.Z) })); }
+            var op = f.Add("IFCCARTESIANTRANSFORMATIONOPERATOR3D", Dir(ax), Dir(ay), f.Add("IFCCARTESIANPOINT", L(new[] { R(x[9]), R(x[10]), R(x[11] - z0) })),
+                Math.Abs(scale - 1) < 1e-12 ? Null : R(scale), Dir(az));
+            return f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("MappedRepresentation"), L(new[] { f.Add("IFCMAPPEDITEM", map, op) }));
+        }
+
         string BodyOf(IEnumerable<string> breps) => f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("Brep"), L(breps));
 
         // ─── Contexts, units, the spatial tree ──────────────────────────────
@@ -429,7 +459,9 @@ public static class IfcExport
             var at = joinery?.Place(m, e);
             var place = at is { } jp ? JoineryPlace(relTo, jp, z0) : Place(relTo, 0);
             var reps = new List<string>();
-            if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, p.Color, v => Local(jp2, v)) : Brep(p.Solid, p.Color, z0))));
+            // An instance of a shared body: the body once, as a representation map, each instance mapping it where it stands.
+            if (!grouped && at == null && geo!.Instance is { } inst && Mapped(inst, z0) is { } mapped) reps.Add(mapped);
+            else if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, p.Color, v => Local(jp2, v)) : Brep(p.Solid, p.Color, z0))));
             if (AxisOf(e) is { } ax) reps.Add(ax);
             reps.AddRange(Plan2dOf(e));
             var shape = reps.Count > 0 ? f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(reps)) : Null;

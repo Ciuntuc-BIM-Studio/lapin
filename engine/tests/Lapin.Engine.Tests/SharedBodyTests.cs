@@ -286,11 +286,18 @@ public class SharedBodyTests : IDisposable
         IfcExport.Write(f.Session, path, null);
         var text = File.ReadAllText(path);
         Assert.DoesNotContain("bodyOf", text);
+        // Each shared body written once, as a representation map; each instance maps it.
+        Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(text, "=IFCREPRESENTATIONMAP\\(").Count);
+        Assert.Equal(6, System.Text.RegularExpressions.Regex.Matches(text, "=IFCMAPPEDITEM\\(").Count);
+        Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(text, "=IFCFACETEDBREP\\(").Count);
         // Read again by Lapin, a reference it wrote is a reference again, with the body the file gives it.
         var g = Make();
         var r = IfcImport.Run(g.Session, path, null, out _);
         Assert.Equal(6, r.References);
         Assert.Equal(6, Proxies(g.Model).Count);
+        // Read again, the instances share their bodies again.
+        Assert.Equal(2, Shared(g.Model).Count);
+        Assert.All(Proxies(g.Model), c => Assert.NotNull(c.Attrs[StoredBodies.BodyOf]));
         var (lo, hi) = Box(g, Proxies(g.Model).Single(c => c.Name == "cube-5").Id);
         Assert.Equal(1.5, lo.X, 6); Assert.Equal(2.5, hi.X, 6);
         Assert.Equal(3.5, lo.Y, 6); Assert.Equal(4.5, hi.Y, 6);
