@@ -8,6 +8,10 @@
     <AssemblyName>Lapin.Host</AssemblyName>
     <!-- Modules are found by reflection: trimming would cut what they need. -->
     <PublishTrimmed>false</PublishTrimmed>
+    <!-- Elements are built on every core (Session.BuildMany): a collector per core keeps up with them
+         (a large IFC's snapshot 2.6 s → 1.5 s); .NET's dynamic adaptation (DATAS) gives memory back when idle. -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../Platform/Lapin.Platform/Lapin.Platform.csproj" />

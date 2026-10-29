@@ -28,7 +28,7 @@ public sealed class Session
     sealed record Built(ElementGeometry? Geometry, HashSet<string> Reads, RenderItem? Item, (Vec3 Min, Vec3 Max)? Bounds);
 
     /// <summary>Each solid's faces ready for the seams, once per solid (solids are immutable; an element rebuilt brings new ones).</summary>
-    readonly Dictionary<Solid, List<Seams.Plane>> _planes = new(ReferenceEqualityComparer.Instance);
+    readonly System.Collections.Concurrent.ConcurrentDictionary<Solid, List<Seams.Plane>> _planes = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>The shared bodies' meshes (docs/plan-instancing.md), each with the body it was tessellated from; and those the interface has.</summary>
     readonly Dictionary<string, (JsonObject Body, SharedMesh Mesh)> _meshes = [];
@@ -413,13 +413,13 @@ public sealed class Session
     public Diff Snapshot()
     {
         ForgetAll();
+        var todo = _store.Entities.Where(e => ProducerOf(e) != null).ToList();
+        var built = BuildMany(todo);
         var ids = new List<string>();
-        foreach (var e in _store.Entities)
-            if (ProducerOf(e) != null && Build(e) is { Item: not null }) ids.Add(e.Id);
+        for (var i = 0; i < todo.Count; i++) if (built[i] is { Item: not null }) ids.Add(todo[i].Id);
         // Every element built first: each one's edges are trimmed against its neighbours.
-        var keys = new Dictionary<string, string?>();
         var grid = new BoxGrid(_built);
-        var render = ids.Select(id => Emitted(id, keys, grid)).OfType<RenderItem>().ToList();
+        var render = EmitMany(ids, grid);
         _meshesSent.Clear();
         return new Diff(++_version, true,
             _store.Entities.Select(Dto).ToList(), [], [], [],
@@ -503,22 +503,30 @@ public sealed class Session
         var emit = new List<string>();
         // Where the rebuilt elements were and are: the neighbours there get their seams again, or lose them.
         var boxes = new List<(Vec3 Min, Vec3 Max)>();
+        var hadItems = new HashSet<string>();
         foreach (var id in rebuild)
         {
-            var hadItem = _built.TryGetValue(id, out var old) && old.Item != null;
+            if (_built.TryGetValue(id, out var old) && old.Item != null) hadItems.Add(id);
             if (old?.Bounds is { } was) boxes.Add(was);
             Forget(id);
-            if (_store.Get(id) is { } e && Build(e) is { Item: not null } built)
+        }
+        // Built on every core, then taken in the order they came.
+        var live = rebuild.Select(_store.Get).OfType<Entity>().ToList();
+        var made = BuildMany(live);
+        var byId = new Dictionary<string, Built?>();
+        for (var i = 0; i < live.Count; i++) byId[live[i].Id] = made[i];
+        foreach (var id in rebuild)
+        {
+            if (byId.GetValueOrDefault(id) is { Item: not null } built)
             {
                 emit.Add(id);
                 if (built.Bounds is { } now) boxes.Add(now);
             }
-            else if (hadItem) renderRemoved.Add(id);
+            else if (hadItems.Contains(id)) renderRemoved.Add(id);
         }
         var grid = new BoxGrid(_built);
         emit.AddRange(Neighbours(grid, boxes, rebuild.ToHashSet()));
-        var keys = new Dictionary<string, string?>();
-        var render = emit.Select(id => Emitted(id, keys, grid)).OfType<RenderItem>().ToList();
+        var render = EmitMany(emit, grid);
         // A shared body gone: its mesh too (its instances went with it, or were rebuilt without it).
         var meshesRemoved = new List<string>();
         foreach (var c in t.Entities)
@@ -549,7 +557,47 @@ public sealed class Session
     /// <summary>What builds an entity's geometry: a body that came with it (a reference from IFC), else its class's producer.</summary>
     GeometryProducer? ProducerOf(Entity e) => StoredBodies.Has(e) ? StoredBodies.Geometry : _catalog.Geometry(e.Class);
 
-    Built? Build(Entity e)
+    Built? Build(Entity e) => Compute(e) is { } b ? Register(e, b) : null;
+
+    /// <summary>Below this many, elements are built one after the other: a thread's start costs more than a small edit's builds.</summary>
+    const int ParallelFrom = 16;
+
+    /// <summary>Every element built on one core (for tests, and to rule the cores out when something looks wrong).</summary>
+    public bool OneCore { get; set; }
+
+    /// <summary>
+    /// Elements built on every core (<see cref="Compute"/>: each reads the model through a view of its own,
+    /// and nothing edits it meanwhile), then registered in their order. Null where an element has no producer.
+    /// </summary>
+    Built?[] BuildMany(IReadOnlyList<Entity> es)
+    {
+        var o = new Built?[es.Count];
+        if (OneCore || es.Count < ParallelFrom) for (var i = 0; i < es.Count; i++) o[i] = Compute(es[i]);
+        else Parallel.For(0, es.Count, i => o[i] = Compute(es[i]));
+        for (var i = 0; i < es.Count; i++) if (o[i] is { } b) o[i] = Register(es[i], b);
+        return o;
+    }
+
+    /// <summary>The render items of <paramref name="ids"/> with their seams, on every core (each element's against its neighbours, read only), in order.</summary>
+    List<RenderItem> EmitMany(IReadOnlyList<string> ids, BoxGrid grid)
+    {
+        var o = new RenderItem?[ids.Count];
+        if (OneCore || ids.Count < ParallelFrom) { var keys = new Dictionary<string, string?>(); for (var i = 0; i < ids.Count; i++) o[i] = Emitted(ids[i], keys, grid); }
+        else Parallel.For(0, ids.Count, () => new Dictionary<string, string?>(), (i, _, keys) => { o[i] = Emitted(ids[i], keys, grid); return keys; }, _ => { });
+        return [.. o.OfType<RenderItem>()];
+    }
+
+    /// <summary>The session's caches take a built element: what it read, so an edit there builds it again.</summary>
+    Built Register(Entity e, Built built)
+    {
+        Forget(e.Id);
+        _built[e.Id] = built;
+        foreach (var id in built.Reads) (_readers.TryGetValue(id, out var set) ? set : _readers[id] = []).Add(e.Id);
+        return built;
+    }
+
+    /// <summary>An element's geometry, filters and render, without touching the session's caches (the shared meshes' aside, under their lock): safe on any thread while nothing edits the model.</summary>
+    Built? Compute(Entity e)
     {
         var producer = ProducerOf(e);
         if (producer == null) return null;
@@ -572,11 +620,7 @@ public sealed class Session
             problems.Add(ex is ModelException or InvalidOperationException or ArgumentException ? ex.Message : $"{ex.GetType().Name}: {ex.Message}");
             item = Render(e, null, problems, view);
         }
-        var built = new Built(g, view.Read, item, BoundsOf(g));
-        Forget(e.Id);
-        _built[e.Id] = built;
-        foreach (var id in built.Reads) (_readers.TryGetValue(id, out var set) ? set : _readers[id] = []).Add(e.Id);
-        return built;
+        return new Built(g, view.Read, item, BoundsOf(g));
     }
 
     static (Vec3 Min, Vec3 Max)? BoundsOf(ElementGeometry? g)
@@ -677,7 +721,7 @@ public sealed class Session
         foreach (var (nid, nb) in grid.Near([box]))
             if (nid != id && nb.Geometry != null) near.Add((nb, _store.Get(nid)?.Class ?? nb.Item?.Type ?? ""));
         if (near.Count == 0) return item;
-        List<Seams.Plane> PlanesOf(Solid s) => _planes.TryGetValue(s, out var p) ? p : _planes[s] = Seams.Planes(s);
+        List<Seams.Plane> PlanesOf(Solid s) => _planes.GetOrAdd(s, Seams.Planes);
         List<RenderPart>? trimmed = null;
         for (var i = 0; i < parts.Count; i++)
         {
@@ -698,7 +742,7 @@ public sealed class Session
     void Forget(string id)
     {
         if (!_built.Remove(id, out var old)) return;
-        foreach (var p in old.Geometry?.Parts ?? []) _planes.Remove(p.Solid);
+        foreach (var p in old.Geometry?.Parts ?? []) _planes.TryRemove(p.Solid, out _);
         foreach (var r in old.Reads)
             if (_readers.TryGetValue(r, out var set)) { set.Remove(id); if (set.Count == 0) _readers.Remove(r); }
     }
@@ -707,6 +751,11 @@ public sealed class Session
     SharedMesh? MeshOf(string bodyId, Entity e, IModelView read, Dictionary<string, IReadOnlyList<LayerBand>?> bands)
     {
         if (read.Get(bodyId) is not { Class: StoredBodies.SharedClass } shared || shared.Attrs[StoredBodies.Key] is not JsonObject body) return null;
+        lock (_meshes) return MeshOfLocked(bodyId, shared, body, e, read, bands);
+    }
+
+    SharedMesh MeshOfLocked(string bodyId, Entity shared, JsonObject body, Entity e, IModelView read, Dictionary<string, IReadOnlyList<LayerBand>?> bands)
+    {
         if (_meshes.TryGetValue(bodyId, out var known) && ReferenceEquals(known.Body, body)) return known.Mesh;
         var parts = new List<RenderPart>();
         (Vec3 Min, Vec3 Max)? box = null;
