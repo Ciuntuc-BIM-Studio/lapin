@@ -119,12 +119,15 @@ public sealed class EngineHub
     async Task Broadcast(Diff diff)
     {
         // Each author's own undo and redo in their frame; one frame per author.
-        var frames = new Dictionary<string, byte[]>();
-        foreach (var c in Clients())
+        foreach (var part in _dispatcher.Parts(diff))
         {
-            var author = c.Caller.Author;
-            if (!frames.TryGetValue(author, out var frame)) frames[author] = frame = _dispatcher.DiffFrame(diff, author);
-            await Safe(c.SendBinary(frame));
+            var frames = new Dictionary<string, byte[]>();
+            foreach (var c in Clients())
+            {
+                var author = c.Caller.Author;
+                if (!frames.TryGetValue(author, out var frame)) frames[author] = frame = _dispatcher.DiffFrame(part, author);
+                await Safe(c.SendBinary(frame));
+            }
         }
     }
 
@@ -144,6 +147,8 @@ public sealed class EngineHub
         try
         {
             var (reply, diff) = _dispatcher.Handle(text, caller);
+            // A big snapshot's first parts, to the one who asked, before the reply that carries its last.
+            foreach (var frame in _dispatcher.TakeCallerFrames()) if (client != null) await Safe(client.SendBinary(frame));
             if (diff != null) await Broadcast(diff);
             return reply;
         }

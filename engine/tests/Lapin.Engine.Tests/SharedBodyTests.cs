@@ -295,4 +295,77 @@ public class SharedBodyTests : IDisposable
         Assert.Equal(1.5, lo.X, 6); Assert.Equal(2.5, hi.X, 6);
         Assert.Equal(3.5, lo.Y, 6); Assert.Equal(4.5, hi.Y, 6);
     }
+
+    /// <summary>A diff header's lists folded as the interface folds them: removals, then additions; a reset starts over.</summary>
+    sealed class Folded
+    {
+        public readonly HashSet<string> Nodes = [], Render = [], Relations = [], Meshes = [];
+        public readonly List<(long Version, bool Reset)> Seen = [];
+        public void Apply(JsonObject d)
+        {
+            Seen.Add(((long)d["version"]!, (bool)d["reset"]!));
+            if ((bool)d["reset"]!) { Nodes.Clear(); Render.Clear(); Relations.Clear(); Meshes.Clear(); }
+            void Fold(HashSet<string> set, string removed, string added, string key)
+            {
+                foreach (var id in d[removed]?.AsArray() ?? []) set.Remove((string)id!);
+                foreach (var x in d[added]?.AsArray() ?? []) set.Add((string)x![key]!);
+            }
+            Fold(Nodes, "removedNodes", "nodes", "id");
+            Fold(Render, "renderRemoved", "render", "nodeId");
+            Fold(Relations, "removedRelations", "relations", "id");
+            Fold(Meshes, "meshesRemoved", "meshes", "id");
+        }
+    }
+
+    [Fact]
+    public void A_big_snapshot_goes_in_parts_the_reply_carrying_the_last()
+    {
+        var f = Make();
+        IfcImport.Run(f.Session, Write(Cubes(45)), null, out _);
+        var whole = f.Session.Snapshot();
+        var d = new EngineDispatcher(f.Session, PackageFiles.Create()) { PartSize = 10 };
+        var (reply, diff) = d.Handle("""{"id":1,"method":"doc.snapshot","params":{}}""");
+        Assert.Null(diff);
+        var before = d.TakeCallerFrames();
+        Assert.Empty(d.TakeCallerFrames());
+        Assert.True(before.Count >= 4);
+        var folded = new Folded();
+        foreach (var frame in before)
+        {
+            var e = JsonNode.Parse(BinaryFrame.HeaderText(frame))!;
+            Assert.Equal("diff", (string?)e["event"]);
+            folded.Apply((JsonObject)e["data"]!);
+        }
+        folded.Apply((JsonObject)JsonNode.Parse(BinaryFrame.HeaderText(reply))!["result"]!);
+        // Only the first resets; the versions go up, the reply's last.
+        Assert.True(folded.Seen[0].Reset);
+        Assert.All(folded.Seen.Skip(1), x => Assert.False(x.Reset));
+        Assert.Equal(folded.Seen.Select(x => x.Version).Order(), folded.Seen.Select(x => x.Version));
+        Assert.Equal(folded.Seen.Count, folded.Seen.Select(x => x.Version).Distinct().Count());
+        // Folded, the parts are the snapshot.
+        Assert.Equal(whole.Nodes.Select(n => n.Id).ToHashSet(), folded.Nodes);
+        Assert.Equal(whole.Render.Select(r => r.NodeId).ToHashSet(), folded.Render);
+        Assert.Equal(whole.Relations.Select(r => r.Id).ToHashSet(), folded.Relations);
+        Assert.Single(folded.Meshes);
+        // The next edit's diff comes after every part.
+        var next = f.Session.Execute("element.rename", new JsonObject { ["id"] = Proxies(f.Model)[0].Id, ["name"] = "first" }, out _);
+        Assert.True(next.Version > folded.Seen[^1].Version);
+    }
+
+    [Fact]
+    public void A_big_edit_is_pushed_in_parts_in_order()
+    {
+        var f = Make();
+        var d = new EngineDispatcher(f.Session, PackageFiles.Create()) { PartSize = 10 };
+        IfcImport.Run(f.Session, Write(Cubes(35)), null, out var diff);
+        var parts = d.Parts(diff);
+        Assert.Equal(4, parts.Count);
+        Assert.Equal(diff.Version, parts[0].Version);
+        Assert.Equal(35, parts.Sum(p => p.Render.Count(r => r.Instance != null)));
+        Assert.Single(parts[0].Meshes!);
+        Assert.All(parts.Skip(1), p => Assert.Empty(p.Meshes!));
+        Assert.All(parts, p => Assert.True(p.Nodes.Count <= 10 && p.Render.Count <= 10 && p.Relations.Count <= 10));
+        // Small diffs go whole.
+        Assert.Single(d.Parts(f.Session.Execute("element.rename", new JsonObject { ["id"] = Proxies(f.Model)[0].Id, ["name"] = "first" }, out _)));
+    }
 }

@@ -427,6 +427,27 @@ public sealed class Session
             _store.Relations.Select(Dto).ToList(), [], MeshesFor(render), []);
     }
 
+    /// <summary>
+    /// A diff in parts of at most <paramref name="max"/> nodes, render items and relationships each, so
+    /// no frame outgrows what one message carries (a million references imported at once). The first part
+    /// keeps the reset, the removals and the meshes; each part after it has a version of its own, in order,
+    /// so the interface applies them one after the other as ordinary diffs.
+    /// </summary>
+    public IReadOnlyList<Diff> Parts(Diff d, int max)
+    {
+        var n = Math.Max(d.Nodes.Count, Math.Max(d.Render.Count, d.Relations.Count));
+        if (max <= 0 || n <= max) return [d];
+        var o = new List<Diff>();
+        for (var k = 0; k * max < n; k++)
+        {
+            var first = k == 0;
+            List<T> Slice<T>(IReadOnlyList<T> l) => [.. l.Skip(k * max).Take(max)];
+            o.Add(new Diff(first ? d.Version : ++_version, first && d.Reset, Slice(d.Nodes), first ? d.RemovedNodes : [], first ? d.Edges : [], first ? d.RemovedEdges : [],
+                Slice(d.Render), first ? d.RenderRemoved : [], d.State, Slice(d.Relations), first ? d.RemovedRelations : [], first ? d.Meshes : [], first ? d.MeshesRemoved : []));
+        }
+        return o;
+    }
+
     Diff Empty() => new(++_version, false, [], [], [], [], [], [], State(), [], []);
 
     /// <summary>

@@ -259,6 +259,22 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
     /// <summary>Frames written by the generated contracts alone, as a trimmed engine writes them (for tests).</summary>
     public bool ContractsOnly { get; init; }
 
+    /// <summary>The most nodes, render items or relationships one frame carries (<see cref="Session.Parts"/>).</summary>
+    public int PartSize { get; init; } = 20_000;
+
+    readonly List<byte[]> _callerFrames = [];
+
+    /// <summary>A diff as the parts the host pushes, one frame each.</summary>
+    public IReadOnlyList<Diff> Parts(Diff diff) => session.Parts(diff, PartSize);
+
+    /// <summary>The frames due to the caller alone before the reply just handled (a big snapshot's parts but its last, which the reply carries); taken once.</summary>
+    public IReadOnlyList<byte[]> TakeCallerFrames()
+    {
+        var o = _callerFrames.ToList();
+        _callerFrames.Clear();
+        return o;
+    }
+
     /// <summary>One call: its reply frame, and the diff it caused (null: nothing changed).</summary>
     public (byte[] Reply, Diff? Diff) Handle(string text) => Handle(text, Caller.Local);
 
@@ -277,6 +293,11 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             try
             {
                 var (result, diff) = Dispatch(method, p);
+                if (result is Diff { Reset: true } snapshot && Parts(snapshot) is { Count: > 1 } parts)
+                {
+                    foreach (var part in parts.SkipLast(1)) _callerFrames.Add(DiffFrame(part, caller.Author));
+                    result = parts[^1];
+                }
                 return (BinaryFrame.Encode(new Reply(id, result), ContractsOnly), diff);
             }
             finally { session.Author = History.Me; }

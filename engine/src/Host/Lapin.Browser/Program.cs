@@ -42,7 +42,8 @@ static partial class Engine
     {
         var d = _dispatcher ?? throw new InvalidOperationException("The engine has not started.");
         var (reply, diff) = d.Handle(message);
-        if (diff != null) Frame(d.DiffFrame(diff));
+        foreach (var f in d.TakeCallerFrames()) Frame(f);
+        if (diff != null) foreach (var part in d.Parts(diff)) Frame(d.DiffFrame(part));
         return reply;
     }
 }
