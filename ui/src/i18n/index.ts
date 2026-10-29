@@ -1,14 +1,19 @@
 /**
- * The interface's language (English, Romanian or Spanish). The interface is
+ * The interface's language (English, Romanian, Spanish, German, French or
+ * Danish). The interface is
  * written in English; in another language a translator walks what it shows
  * (texts, titles, placeholders) and puts each phrase it knows into that
  * language, keeping the English to put back. Drawings (SVG) and what the user
- * types are left as they are. Each language is one file (`ro.ts`, `es.ts`):
+ * types are left as they are. Each language is one file (`ro.ts`, `es.ts`,
+ * `de.ts`, `fr.ts`, `da.ts`):
  * its phrase list and its patterns; a phrase not in it stays English.
  */
 
 import { create } from 'zustand';
+import { DA, DA_PATTERNS } from './da';
+import { DE, DE_PATTERNS } from './de';
 import { ES, ES_PATTERNS } from './es';
+import { FR, FR_PATTERNS } from './fr';
 import { RO, RO_PATTERNS } from './ro';
 
 /** A language's phrases: the exact ones, and those with a number or a name in them. */
@@ -20,6 +25,9 @@ export interface Language {
 const TABLES = {
   ro: { dict: RO, patterns: RO_PATTERNS },
   es: { dict: ES, patterns: ES_PATTERNS },
+  de: { dict: DE, patterns: DE_PATTERNS },
+  fr: { dict: FR, patterns: FR_PATTERNS },
+  da: { dict: DA, patterns: DA_PATTERNS },
 } satisfies Record<string, Language>;
 
 export type Lang = 'en' | keyof typeof TABLES;
@@ -29,6 +37,9 @@ export const LANGUAGES: { id: Lang; name: string }[] = [
   { id: 'en', name: 'English' },
   { id: 'ro', name: 'Română' },
   { id: 'es', name: 'Español' },
+  { id: 'de', name: 'Deutsch' },
+  { id: 'fr', name: 'Français' },
+  { id: 'da', name: 'Dansk' },
 ];
 
 const isLang = (x: unknown): x is Lang => LANGUAGES.some((l) => l.id === x);
@@ -39,9 +50,13 @@ function stored(): Lang {
 
 export const useLang = create<{ lang: Lang }>(() => ({ lang: stored() }));
 
+/** The page says its language, so the browser hyphenates and reads it as such. */
+const mark = (lang: Lang) => { if (typeof document !== 'undefined') document.documentElement.lang = lang; };
+
 export function setLang(lang: Lang): void {
   try { localStorage.setItem('lapin.lang', lang); } catch { /* the choice lasts this session */ }
   useLang.setState({ lang });
+  mark(lang);
   retranslate();
 }
 
@@ -120,6 +135,7 @@ function retranslate() {
 /** Keeps everything under `el` in the language chosen, as it changes. */
 export function startTranslator(el: HTMLElement): void {
   root = el;
+  mark(useLang.getState().lang);
   observer?.disconnect();
   observer = new MutationObserver((records) => {
     if (busy) return;

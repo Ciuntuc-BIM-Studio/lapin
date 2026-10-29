@@ -170,11 +170,11 @@ export const FAQ: Entry[] = [
   },
   {
     id: 'language',
-    q: ['How do I switch to Romanian or Spanish?', 'Can I change the language?'],
+    q: ['How do I switch to Romanian or Spanish?', 'How do I switch to German, French or Danish?', 'Can I change the language?'],
     qRo: ['Cum trec interfața în engleză?', 'Pot schimba limba?'],
-    keywords: ['language', 'romanian', 'english', 'spanish', 'translate', 'limba', 'romana', 'engleza', 'spaniola', 'traducere', 'espanol', 'idioma'],
-    a: 'Help (?) → English · Română · Español switches the interface; it is remembered on this computer. The user guide is in English and Romanian.',
-    aRo: 'Help (?) → English · Română · Español schimbă limba interfeței; alegerea se ține minte pe acest calculator. Ghidul utilizatorului e în engleză și română.',
+    keywords: ['language', 'romanian', 'english', 'spanish', 'translate', 'limba', 'romana', 'engleza', 'spaniola', 'traducere', 'espanol', 'idioma', 'german', 'deutsch', 'french', 'francais', 'danish', 'dansk', 'germana', 'franceza', 'daneza', 'sprache', 'langue', 'sprog'],
+    a: 'Help (?) → English · Română · Español · Deutsch · Français · Dansk switches the interface; it is remembered on this computer. The user guide is in English and Romanian; in the other languages it opens in English.',
+    aRo: 'Help (?) → English · Română · Español · Deutsch · Français · Dansk schimbă limba interfeței; alegerea se ține minte pe acest calculator. Ghidul utilizatorului e în engleză și română; în celelalte limbi se deschide în engleză.',
     source: 'faq',
   },
   {

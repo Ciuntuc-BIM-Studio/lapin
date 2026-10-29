@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { DA, DA_PATTERNS } from './da';
+import { DE, DE_PATTERNS } from './de';
 import { ES, ES_PATTERNS } from './es';
-import { LANGUAGES, translate } from './index';
+import { FR, FR_PATTERNS } from './fr';
+import { LANGUAGES, translate, type Lang, type Language } from './index';
 import { RO, RO_PATTERNS } from './ro';
 
 describe('the Romanian interface', () => {
@@ -38,7 +41,7 @@ describe('the Spanish interface', () => {
 
 describe('the languages', () => {
   it('are offered each named in itself, English first', () => {
-    expect(LANGUAGES.map((l) => l.name)).toEqual(['English', 'Română', 'Español']);
+    expect(LANGUAGES.map((l) => l.name)).toEqual(['English', 'Română', 'Español', 'Deutsch', 'Français', 'Dansk']);
   });
 
   it('English is the interface as written', () => {
@@ -109,6 +112,31 @@ describe('the languages', () => {
       expect(translate(s, 'es'), s).not.toBe(s);
     }
   });
+
+  // German, French and Danish: the same phrases and patterns as Romanian and Spanish.
+  const others: [Lang, string, Language['dict'], Language['patterns']][] = [['de', 'German', DE, DE_PATTERNS], ['fr', 'French', FR, FR_PATTERNS], ['da', 'Danish', DA, DA_PATTERNS]];
+  const ends = (s: string) => s.trim().match(/[…:.?]$/)?.[0] ?? '';
+  for (const [lang, name, dict, patterns] of others) {
+    it(`${name} has every phrase Romanian has, and no other, each ending as the English does`, () => {
+      expect(Object.keys(RO).filter((k) => !(k in dict))).toEqual([]);
+      expect(Object.keys(dict).filter((k) => !(k in RO))).toEqual([]);
+      expect(Object.entries(dict).filter(([, v]) => !v.trim())).toEqual([]);
+      expect(Object.entries(dict).filter(([k, v]) => ends(k) && ends(k) !== ends(v)).map(([k]) => k)).toEqual([]);
+    });
+
+    it(`${name} has the same patterns, each matching the same phrases and keeping their numbers`, () => {
+      expect(patterns.map(([re]) => re.source)).toEqual(RO_PATTERNS.map(([re]) => re.source));
+      for (const s of samples) {
+        expect(first(patterns, s), s).toBe(first(RO_PATTERNS, s));
+        // A pattern's phrase may read the same (French „Plan · …”), but it is never left untranslated.
+        const out = translate(s, lang);
+        expect(out, s).not.toBeNull();
+        for (const num of s.match(/\d+(?:\.\d+)?/g) ?? []) expect(out, `${s} → ${out}`).toContain(num);
+      }
+      expect(translate('My own wall name', lang)).toBeNull();
+      expect(translate(' Floor plans ', lang)).toMatch(/^ \S.*\S $/);
+    });
+  }
 
   it('put a pattern into Spanish with its numbers and names', () => {
     expect(translate('Fold the project browser (B)', 'es')).toBe('Plegar el navegador de proyectos (B)');

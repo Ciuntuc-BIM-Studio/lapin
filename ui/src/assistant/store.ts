@@ -76,7 +76,7 @@ export async function send(text: string, deps: { transport?: OllamaTransport; ct
   const { url, model } = useAssistantSettings.getState();
   if (!question || useAssistant.getState().busy || !model) return;
   const s = useAssistant.getState();
-  const language = ({ en: 'English', ro: 'Romanian', es: 'Spanish' } as const)[useLang.getState().lang];
+  const language = ({ en: 'English', ro: 'Romanian', es: 'Spanish', de: 'German', fr: 'French', da: 'Danish' } as const)[useLang.getState().lang];
   const history: OllamaMessage[] = s.history.length ? s.history : [{ role: 'system', content: systemPrompt(language) }];
   const asked: OllamaMessage = { role: 'user', content: question };
   useAssistant.setState({
