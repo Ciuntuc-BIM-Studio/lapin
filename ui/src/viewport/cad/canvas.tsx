@@ -18,11 +18,9 @@ const pointsOf = (s: Shape, toScreen: ToScreen) => polylines(s).map((pl) => pl.m
  */
 function MoveTrace({ aimed, to, toScreen }: { aimed: Aimed; to: Vec2; toScreen: ToScreen }) {
   const trace = useTrace((s) => s.trace);
-  const ortho = useCad((s) => s.ortho);
   if (!trace) return null;
   const { base } = trace;
-  const square = Math.abs(to.x - base.x) < 1e-9 !== Math.abs(to.y - base.y) < 1e-9;
-  const cls = traceClass(traceState(aimed, ortho || square));
+  const cls = traceClass(traceState(aimed));
   const a = toScreen(base), b = toScreen(to);
   const d = { x: to.x - base.x, y: to.y - base.y };
   return (

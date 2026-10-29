@@ -749,6 +749,20 @@ export const scenes = [
       t.expect(await t.page.locator('.move-trace.trace-locked').count() === 1, 'ortho gives the line its locked colour');
       await t.keys('Escape', 'Escape', 'F8');
       t.expect(await t.page.locator('.move-trace').count() === 0, 'Esc takes the trace away');
+      // Dragging the selected wall by its body (not a grip): the same trace from the press; Esc before letting go leaves it.
+      await select(t, walls.inner);
+      const [wx, wy] = await t.planPoint(7, 2.2);
+      await t.page.mouse.move(wx, wy, { steps: 3 });
+      await t.page.mouse.down();
+      const [vx, vy] = await t.planPoint(8.4, 2.6);
+      await t.page.mouse.move(vx, vy, { steps: 10 });
+      await t.wait(300);
+      t.expect(await t.page.locator('.move-trace .move-ghost').count() > 0, 'dragging the selected wall itself leaves its ghost where it was');
+      t.expect(await t.page.locator('.move-trace .move-base').count() === 1, 'and keeps a marker where it was pressed');
+      t.expect(await t.page.locator('.live-box .live-label', { hasText: 'Δx' }).count() === 1, 'and shows the offset at the mouse');
+      await t.keys('Escape');
+      t.expect(await t.page.locator('.move-trace').count() === 0, 'Esc ends the drag');
+      await t.page.mouse.up();
       await t.button('Draft', { exact: true });
       await t.shot('ribbon-draft', { of: '.topbar', pad: 0 });
       await t.button('Annotate', { exact: true });

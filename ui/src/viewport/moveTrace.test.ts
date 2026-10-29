@@ -6,9 +6,10 @@ import type { Vec2 } from '../platform/module';
 const engine = vi.hoisted(() => ({ execute: vi.fn(), undo: vi.fn(), query: vi.fn() }));
 vi.mock('../engine/session', () => engine);
 
-import { traceBegin, traceClass, traceEnd, traceOffset, traceReadout, traceState, useTrace } from './moveTrace';
+import { carryBegin, carryBy, carryEnd, carrying, traceBegin, traceClass, traceEnd, traceOffset, traceReadout, traceState, useTrace } from './moveTrace';
+import { resolveAim } from './cad/aim';
 import { cancel, feedPoint, startCommand, submit, useCad } from './cad/session';
-import { useLive } from './liveInput';
+import { liveBegin, liveEnd, useLive } from './liveInput';
 import { useStandards } from '../engine/unitsStore';
 import { useUi } from '../app/store';
 import type { Shape } from './cad/shapes';
@@ -40,17 +41,46 @@ describe('the readout', () => {
 });
 
 describe('the aim’s state and its colour', () => {
-  const free = { kind: 'free' as const, guides: [] };
-  it('reads a snap, a polar or tracking guide, ortho, or free', () => {
-    expect(traceState({ kind: 'point', mode: 'endpoint', guides: [] }, false)).toBe('snap');
-    expect(traceState({ kind: 'point', mode: 'nearest', guides: [] }, true)).toBe('snap');
-    expect(traceState({ kind: 'point', guides: [{ kind: 'polar' }] }, false)).toBe('polar');
-    expect(traceState({ kind: 'point', guides: [{ kind: 'h' }] }, false)).toBe('tracking');
-    expect(traceState({ kind: 'point', guides: [{ kind: 'v' }] }, true)).toBe('ortho');
-    expect(traceState(free, true)).toBe('ortho');
-    expect(traceState(free, false)).toBe('free');
-    expect(traceState({ kind: 'grid', guides: [] }, false)).toBe('free');
-    expect(traceState(null, true)).toBe('free');
+  it('reads a snap, the constraint the aim says holds, or free', () => {
+    expect(traceState({ kind: 'point', mode: 'endpoint' })).toBe('snap');
+    expect(traceState({ kind: 'point', mode: 'nearest', lock: 'ortho' })).toBe('snap');
+    expect(traceState({ kind: 'point', lock: 'polar' })).toBe('polar');
+    expect(traceState({ kind: 'point', lock: 'tracking' })).toBe('tracking');
+    expect(traceState({ kind: 'free', lock: 'ortho' })).toBe('ortho');
+    expect(traceState({ kind: 'grid', lock: 'ortho' })).toBe('ortho');
+    expect(traceState({ kind: 'free' })).toBe('free');
+    expect(traceState({ kind: 'grid' })).toBe('free');
+    expect(traceState(null)).toBe('free');
+  });
+
+  // The aim's rule, as the views resolve it: what holds the point is said, not guessed from where it lands.
+  const aimAt = (raw: Vec2, o: Partial<Parameters<typeof resolveAim>[1]> = {}) =>
+    resolveAim(raw, { base: P(0, 0), ortho: false, polar: false, snap: null, acquired: [], tol: 0.1, ...o });
+  it('says ortho only while ortho is on or Shift is held, and only from a base', () => {
+    const on = aimAt(P(3, 0.7), { ortho: true });
+    expect(on.point).toEqual(P(3, 0));
+    expect(traceState(on)).toBe('ortho');
+    // A grid point that happens to be square to the base, ortho off: free, not blue.
+    const grid = aimAt(P(2.9, 0.2), { grid: 0.5 });
+    expect(grid.point).toEqual(P(3, 0));
+    expect(traceState(grid)).toBe('free');
+    expect(traceState(aimAt(P(2.9, 0.2), { grid: 0.5, ortho: true }))).toBe('ortho');
+    // Close to the base's own horizontal, ortho off: held by that tracking guide, so the tracking colour.
+    expect(traceState(aimAt(P(2.98, 0.02), { grid: 0.5 }))).toBe('tracking');
+    // No base: nothing to be square to.
+    expect(traceState(aimAt(P(3, 0.7), { ortho: true, base: null }))).toBe('free');
+  });
+  it('says polar on a polar angle, tracking on a guide through an acquired point, snap over both', () => {
+    const polar = aimAt(P(2, 2.05), { polar: true });
+    expect(traceState(polar)).toBe('polar');
+    expect(polar.point.x).toBeCloseTo(polar.point.y, 9);
+    expect(traceState(aimAt(P(2, 2.3), { polar: true }))).toBe('free');
+    expect(traceState(aimAt(P(5.03, 2.3), { acquired: [P(5, 9)] }))).toBe('tracking');
+    // Ortho with a guide crossing its line: the ortho line holds.
+    expect(traceState(aimAt(P(5.03, 0.4), { ortho: true, acquired: [P(5, 9)] }))).toBe('ortho');
+    expect(traceState(aimAt(P(2, 2.05), { polar: true, snap: { point: P(2, 2), mode: 'endpoint' } }))).toBe('snap');
+    // The nearest snap gives way to a guide.
+    expect(traceState(aimAt(P(2, 2.05), { polar: true, snap: { point: P(2, 2.04), mode: 'nearest' } }))).toBe('polar');
   });
   it('gives ortho and polar the locked colour', () => {
     expect(traceClass('snap')).toBe('trace-snap');
@@ -118,5 +148,46 @@ describe('the trace’s lifecycle', () => {
     expect(useTrace.getState().trace?.owner).toBe('grip');
     traceEnd('grip');
     expect(useTrace.getState().trace).toBeNull();
+  });
+});
+
+describe('dragging a selection by its body', () => {
+  const square: Shape = { type: 'polyline', pts: [P(0, 0), P(1, 0), P(1, 1), P(0, 1)], closed: true };
+  beforeEach(() => { traceEnd(); liveEnd(); });
+
+  it('shows the trace from the press point, carrying the ghost, with the readout’s Δx and Δy', () => {
+    const commit = vi.fn();
+    carryBegin(P(1, 1), [square], commit);
+    const t = useTrace.getState().trace!;
+    expect([t.owner, t.base, t.ghost, t.carry]).toEqual(['drag', P(1, 1), [square], true]);
+    expect(carrying()).toBe(true);
+    expect(useLive.getState()).toMatchObject({ owner: 'drag', base: P(1, 1), delta: true });
+    // Enter with a typed length: the live input's commit is the drag's.
+    useLive.getState().commit!(P(3, 1));
+    expect(commit).toHaveBeenCalledWith(P(3, 1));
+  });
+
+  it('lets go at the cursor, or at the typed length along the cursor’s direction; nothing when it did not move', () => {
+    carryBegin(P(1, 1), [square], () => {});
+    expect(carryBy(P(1, 1), P(4, 5))).toEqual([3, 4]);
+    expect(carryBy(P(1, 1), P(1, 1))).toBeNull();
+    useLive.setState({ len: '2000' });
+    const by = carryBy(P(1, 1), P(4, 1))!;
+    expect(by[0]).toBeCloseTo(2, 9);
+    expect(by[1]).toBeCloseTo(0, 9);
+  });
+
+  it('ends (release or Esc) without touching another owner’s live input', () => {
+    carryBegin(P(0, 0), [square], () => {});
+    carryEnd();
+    expect(useTrace.getState().trace).toBeNull();
+    expect(carrying()).toBe(false);
+    expect(useLive.getState().owner).toBeNull();
+    liveBegin('tool', P(0, 0), () => {});
+    useLive.setState({ len: '500' });
+    // A tool's typed length is not the drag's.
+    expect(carryBy(P(0, 0), P(3, 0))).toEqual([3, 0]);
+    carryEnd();
+    expect(useLive.getState().owner).toBe('tool');
   });
 });

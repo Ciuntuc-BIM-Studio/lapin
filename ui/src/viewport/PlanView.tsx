@@ -32,6 +32,7 @@ import { CadOverlay } from './cad/canvas';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
+import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelZoom, type Bounds, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
@@ -68,8 +69,8 @@ export function PlanView() {
   const [pts, setPts] = useState<Vec2[]>([]);
   const [hover, setHover] = useState<Aimed | null>(null);
   const [ortho, setOrtho] = useState(false);
-  /** A press: where, the view then, whether it moved; `carry`: the selection it was pressed on (a drag moves it, or copies it with Ctrl). */
-  const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean } | null>(null);
+  /** A press: where, the view then, whether it moved; `carry`: the selection it was pressed on (a drag moves it, or copies it with Ctrl), from `base` (the press, snapped). */
+  const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean; base?: Vec2 } | null>(null);
   /** A selection box being dragged (screen px): left to right a window, right to left crossing. */
   const [box, setBox] = useState<{ a: Vec2; b: Vec2 } | null>(null);
 
@@ -202,6 +203,8 @@ export function PlanView() {
   }, [items]);
   const { aim, acquire } = useCadCanvas({ viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null, outlines });
   const cadStep = useCad((s) => s.step);
+  /** The selection dragged by its body (its trace shows over the plan). */
+  const dragTrace = useTrace((s) => s.trace?.owner === 'drag');
 
   const snapAt = useCallback((clientX: number, clientY: number, from?: Vec2): Aimed => {
     const rect = svgRef.current!.getBoundingClientRect();
@@ -217,7 +220,7 @@ export function PlanView() {
     const g = tool?.gesture;
     if ((g?.kind !== 'polyline' && g?.kind !== 'threePoints') || !g.constrain || pts.length === 0) return a;
     const p = g.constrain(pts, a.point);
-    return p.x === a.point.x && p.y === a.point.y ? a : { ...a, point: p, kind: 'free', guides: [] };
+    return p.x === a.point.x && p.y === a.point.y ? a : { ...a, point: p, kind: 'free', guides: [], lock: undefined };
   };
 
   const complete = useCallback(async (points: Vec2[], entity?: NodeDto, face?: FaceHit) => {
@@ -278,6 +281,8 @@ export function PlanView() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.closest('input, select, textarea')) return;
+      // Esc while the selection is dragged by its body: nothing moves.
+      if (e.key === 'Escape' && carrying()) { drag.current = null; carryEnd(); return; }
       if (e.key === 'Escape') { if (pts.length) setPts([]); else setTool(null); }
       if (e.key === 'Enter' && tool?.gesture?.kind === 'polygon' && pts.length >= 3) void complete(pts);
       if (e.key === 'Enter' && tool?.gesture?.kind === 'polyline' && pts.length >= 2) void complete(pts);
@@ -300,6 +305,8 @@ export function PlanView() {
     else liveEnd('tool');
   }, [last, tool]);
   useEffect(() => () => liveEnd('tool'), []);
+  // A plan that goes while the selection is dragged takes the drag's trace with it.
+  useEffect(() => () => { if (carrying()) carryEnd(); }, []);
 
   // Direct editing: the selection's axes, outlines and grips (none while a tool or a command is busy).
   const editor = useGripEditor({
@@ -320,7 +327,8 @@ export function PlanView() {
       const sel = useUi.getState().selected;
       if (hit && sel.includes(hit.id)) carry = sel;
     }
-    drag.current = { x: e.clientX, y: e.clientY, view, moved: false, carry, copy: e.altKey || e.ctrlKey || e.metaKey };
+    const base = carry ? snapAt(e.clientX, e.clientY).point : undefined;
+    drag.current = { x: e.clientX, y: e.clientY, view, moved: false, carry, copy: e.altKey || e.ctrlKey || e.metaKey, base };
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (peers.length) { const rect = svgRef.current!.getBoundingClientRect(); const w = toWorld(e.clientX - rect.left, e.clientY - rect.top); reportPresence({ cursor: [w.x, w.y] }); }
@@ -336,6 +344,22 @@ export function PlanView() {
         setBox({ a: { x: d.x - rect.left, y: d.y - rect.top }, b: { x: e.clientX - rect.left, y: e.clientY - rect.top } });
         return;
       }
+      // Left drag on the selection: carried as a move grip carries it (the trace from the press, the readout, snaps from the base).
+      if (d.moved && e.buttons === 1 && d.carry && d.base) {
+        if (!carrying()) {
+          const host = useCad.getState().host;
+          const { carry: ids, base, copy } = d;
+          carryBegin(base, ids.flatMap((id) => host?.outlinesOf?.(id) ?? []), (p) => {
+            // A typed length or angle, then Enter: put there, as on release.
+            drag.current = null;
+            carryEnd();
+            const by = [p.x - base.x, p.y - base.y];
+            if (Math.hypot(by[0], by[1]) > 1e-9) void execute('element.transform', { ids, op: copy ? 'copy' : 'move', by });
+          });
+        }
+        setHover(snapAt(e.clientX, e.clientY, d.base));
+        return;
+      }
       if (d.moved && e.buttons !== 1) setView({ ...d.view, cx: d.view.cx - dx / d.view.scale, cy: d.view.cy + dy / d.view.scale });
     }
     setHover(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)));
@@ -349,9 +373,10 @@ export function PlanView() {
       // A drag is two points: where it was pressed and where it was let go, both snapped.
       const step = useCad.getState().step;
       if (d.carry) {
-        const a = snapAt(d.x, d.y).point;
-        const b = snapAt(e.clientX, e.clientY, a).point;
-        if (Math.hypot(b.x - a.x, b.y - a.y) > 1e-9) void execute('element.transform', { ids: d.carry, op: d.copy || e.ctrlKey || e.metaKey || e.altKey ? 'copy' : 'move', by: [b.x - a.x, b.y - a.y] });
+        const a = d.base ?? snapAt(d.x, d.y).point;
+        const by = carryBy(a, snapAt(e.clientX, e.clientY, a).point);
+        carryEnd();
+        if (by) void execute('element.transform', { ids: d.carry, op: d.copy || e.ctrlKey || e.metaKey || e.altKey ? 'copy' : 'move', by });
         return;
       }
       if (step?.want === 'point' && !tool?.gesture) {
@@ -505,7 +530,7 @@ export function PlanView() {
     return null;
   })();
 
-  const marker = hover && (tool?.gesture || editor.dragging || cadStep) ? toScreen(hover.point) : null;
+  const marker = hover && (tool?.gesture || editor.dragging || cadStep || dragTrace) ? toScreen(hover.point) : null;
 
   return (
     <div className="view-pane">

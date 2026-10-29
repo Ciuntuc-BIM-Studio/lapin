@@ -14,7 +14,42 @@ import { applyOrtho } from './input';
 import { track, trackOnOrtho, type Guide } from './tracking';
 import { useCad, type CadHost } from './session';
 
-export interface Aimed { point: Vec2; kind: 'point' | 'grid' | 'free'; mode?: SnapMode; guides: Guide[] }
+/** What holds an aimed point that no object snap took: the ortho line from the base (on, or Shift held), a polar angle from the base, or a tracking guide through an acquired point. */
+export type AimLock = 'ortho' | 'polar' | 'tracking';
+
+export interface Aimed { point: Vec2; kind: 'point' | 'grid' | 'free'; mode?: SnapMode; guides: Guide[]; lock?: AimLock }
+
+/**
+ * The aim's rule, with the snap already found: an object snap (other than
+ * nearest) wins; then, with ortho on (or Shift held) and a base, the ortho
+ * line, held where a guide crosses it; else a tracking guide or a polar
+ * angle; then the nearest snap; then the grid or the raw point (squared to
+ * the base with ortho). `lock` says which constraint actually holds the point.
+ */
+export function resolveAim(raw: Vec2, c: { base: Vec2 | null; ortho: boolean; polar: boolean; snap: { point: Vec2; mode: SnapMode } | null; acquired: readonly Vec2[]; tol: number; grid?: number }): Aimed {
+  const { base, snap: s, tol } = c;
+  const ortho = c.ortho && !!base;
+  if (s && s.mode !== 'nearest') return { point: s.point, kind: 'point', mode: s.mode, guides: [] };
+  // Guide lines: the orthogonal lines through acquired points (and the base), the polar angles.
+  const pool = base ? [...c.acquired, base] : c.acquired;
+  if (ortho && base) {
+    const t = trackOnOrtho(applyOrtho(base, raw), base, pool, tol);
+    if (t) return { point: t.point, kind: 'point', guides: t.guides, lock: 'ortho' };
+  } else {
+    const t = track(raw, pool, tol, { base, polarStep: c.polar ? 45 : null });
+    if (t) return { point: t.point, kind: 'point', guides: t.guides, lock: t.guides.some((g) => g.kind === 'polar') ? 'polar' : 'tracking' };
+  }
+  if (s) return { point: s.point, kind: 'point', mode: s.mode, guides: [] };
+  let q = ortho && base ? applyOrtho(base, raw) : raw;
+  const lock: AimLock | undefined = ortho ? 'ortho' : undefined;
+  if (c.grid && c.grid > 0) {
+    const g = c.grid;
+    const r = (v: number) => Math.round(v / g) * g;
+    q = ortho && base ? (q.y === base.y ? { x: r(q.x), y: base.y } : { x: base.x, y: r(q.y) }) : { x: r(q.x), y: r(q.y) };
+    return { point: q, kind: 'grid', guides: [], lock };
+  }
+  return { point: q, kind: 'free', guides: [], lock };
+}
 
 /** The drawing's lines a cursor can snap to (no hatches, fills or texts). */
 const SNAP_LAYERS = new Set(['CUT', 'SEEN', 'HIDDEN', 'OVERHEAD', 'BEYOND', 'MEMBRANE']);
@@ -105,7 +140,6 @@ export function useCadCanvas(o: {
     const cad = useCad.getState();
     const tol = 10 / scaleRef.current;
     const base = from ?? cad.step?.base ?? null;
-    const ortho = (cad.ortho || !!o2.orthoHeld) && !!base;
     const s = cad.osnap ? findSnap(raw, shapes, index, { tolerance: tol, modes: ALL_MODES, from: base }) : null;
     if (s && s.mode !== 'nearest') {
       // Resting on a snap acquires it for the guide lines.
@@ -116,27 +150,8 @@ export function useCadCanvas(o: {
           if (!acquired.current.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < 1e-9)) acquired.current = [...acquired.current, p].slice(-7);
         }, 350) };
       }
-      return { point: s.point, kind: 'point', mode: s.mode, guides: [] };
-    }
-    if (hold.current) { clearTimeout(hold.current.timer); hold.current = null; }
-    // Guide lines: the orthogonal lines through acquired points (and the base), the polar angles.
-    const pool = base ? [...acquired.current, base] : acquired.current;
-    if (ortho && base) {
-      const t = trackOnOrtho(applyOrtho(base, raw), base, pool, tol);
-      if (t) return { point: t.point, kind: 'point', guides: t.guides };
-    } else {
-      const t = track(raw, pool, tol, { base, polarStep: cad.polar ? 45 : null });
-      if (t) return { point: t.point, kind: 'point', guides: t.guides };
-    }
-    if (s) return { point: s.point, kind: 'point', mode: s.mode, guides: [] };
-    let q = ortho && base ? applyOrtho(base, raw) : raw;
-    if (o2.grid && o2.grid > 0) {
-      const g = o2.grid;
-      const r = (v: number) => Math.round(v / g) * g;
-      q = ortho && base ? (q.y === base.y ? { x: r(q.x), y: base.y } : { x: base.x, y: r(q.y) }) : { x: r(q.x), y: r(q.y) };
-      return { point: q, kind: 'grid', guides: [] };
-    }
-    return { point: q, kind: 'free', guides: [] };
+    } else if (hold.current) { clearTimeout(hold.current.timer); hold.current = null; }
+    return resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, snap: s, acquired: acquired.current, tol, grid: o2.grid });
   }, [shapes, index]);
 
   /** A point the gesture placed: acquired for the guides. */

@@ -11,7 +11,7 @@
 import { create } from 'zustand';
 import type { Vec2 } from '../platform/module';
 import type { Shape } from './cad/shapes';
-import { formatAngle, formatLength } from './liveInput';
+import { formatAngle, formatLength, liveBegin, liveEnd, livePoint, useLive } from './liveInput';
 
 export interface Trace {
   /** Who started it ("cad", "grip"); one at a time. */
@@ -58,16 +58,46 @@ export function traceReadout(base: Vec2, to: Vec2): { dx: string; dy: string; di
 /** How the moved point is held. */
 export type TraceState = 'snap' | 'ortho' | 'polar' | 'tracking' | 'free';
 
-/** The aim's state: a snapped point (any object snap), a polar or tracking guide, the ortho line (`ortho`: on, held, or the point square to the base), or free (the grid counts as free). */
-export function traceState(aimed: { kind: 'point' | 'grid' | 'free'; mode?: string; guides: { kind: 'h' | 'v' | 'polar' }[] } | null, ortho: boolean): TraceState {
+/**
+ * The aim's state, from what the aim says held the point (Aimed.lock): an
+ * object snap; the ortho line, a polar angle or a tracking guide actually
+ * holding it; or free (the grid counts as free). A point that only happens
+ * to be square to the base is free: blue means the constraint holds.
+ */
+export function traceState(aimed: { kind: 'point' | 'grid' | 'free'; mode?: string; lock?: 'ortho' | 'polar' | 'tracking' } | null): TraceState {
   if (!aimed) return 'free';
   if (aimed.mode) return 'snap';
-  if (aimed.guides.some((g) => g.kind === 'polar')) return 'polar';
-  if (aimed.guides.length) return ortho ? 'ortho' : 'tracking';
-  if (aimed.kind === 'point' && !aimed.mode) return 'snap';
-  if (ortho) return 'ortho';
+  if (aimed.lock) return aimed.lock;
   return 'free';
 }
 
 /** The class the line and the marker take for a state (colours in theme.css: ortho and polar share the locked colour). */
 export const traceClass = (s: TraceState): string => `trace-${s === 'ortho' || s === 'polar' ? 'locked' : s}`;
+
+/**
+ * Dragging a selection by its body (a plan): from the press point, the same
+ * trace as a move grip (the ghost left and carried, the marker, the line,
+ * the readout with Δx and Δy); a typed length or angle, then Enter, puts it
+ * there (`commit`). Owned by "drag".
+ */
+export function carryBegin(base: Vec2, ghost: Shape[], commit: (p: Vec2) => void): void {
+  traceBegin('drag', base, ghost, true);
+  liveBegin('drag', base, commit, { delta: true });
+}
+
+/** The drag is let go, cancelled (Esc) or its view goes. */
+export function carryEnd(): void {
+  traceEnd('drag');
+  liveEnd('drag');
+}
+
+/** True while a selection is dragged by its body. */
+export const carrying = (): boolean => useTrace.getState().trace?.owner === 'drag';
+
+/** Where a body drag lets go: the cursor's point, or the typed length and angle from the base; the offset, or null when nothing moved. */
+export function carryBy(base: Vec2, cursor: Vec2): [number, number] | null {
+  const l = useLive.getState();
+  const to = (l.owner === 'drag' ? livePoint({ ...l, base, cursor }) : null) ?? cursor;
+  const dx = to.x - base.x, dy = to.y - base.y;
+  return Math.hypot(dx, dy) > 1e-9 ? [dx, dy] : null;
+}
