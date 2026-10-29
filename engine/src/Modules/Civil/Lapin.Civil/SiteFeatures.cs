@@ -83,13 +83,17 @@ public static class SiteFeatures
             var hasZ = (e.Attrs["pts"] as JsonArray)?.OfType<JsonArray>().Any(p => p.Count > 2) ?? false;
             attrs["pts"] = Json3(Points(e).Select(p => { var q = t.Point(p.Xy); return new Vec3(q.X, q.Y, p.Z); }), hasZ);
             if (attrs[StoredBodies.Key] is JsonObject body && body["parts"] is JsonArray parts)
-                foreach (var part in parts.OfType<JsonObject>())
-                    if (part["v"] is JsonArray v)
-                        for (var i = 0; i + 2 < v.Count; i += 3)
+                for (var k = 0; k < parts.Count; k++)
+                    if (parts[k] is JsonObject part)
+                    {
+                        var (v, tris) = StoredBodies.ReadPart(part);
+                        for (var i = 0; i + 2 < v.Length; i += 3)
                         {
-                            var q = t.Point(new Vec2(Json.Number(v[i]) ?? 0, Json.Number(v[i + 1]) ?? 0));
+                            var q = t.Point(new Vec2(v[i], v[i + 1]));
                             v[i] = Math.Round(q.X, 4); v[i + 1] = Math.Round(q.Y, 4);
                         }
+                        parts[k] = StoredBodies.WritePart((string?)part["name"] ?? "Body", (string?)part["color"] ?? "#c9ced6", v, tris);
+                    }
             ctx.Replace(e.With(attrs: attrs));
         }
     }

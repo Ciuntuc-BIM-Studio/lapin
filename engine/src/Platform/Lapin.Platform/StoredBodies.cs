@@ -43,19 +43,44 @@ public static class StoredBodies
     public static Vec3 Apply(double[] m, Vec3 p) =>
         new(m[9] + m[0] * p.X + m[3] * p.Y + m[6] * p.Z, m[10] + m[1] * p.X + m[4] * p.Y + m[7] * p.Z, m[11] + m[2] * p.X + m[5] * p.Y + m[8] * p.Z);
 
-    /// <summary>The parts as the attribute holds them: coordinates to 0,1 mm, triangles by vertex index.</summary>
+    /// <summary>
+    /// The parts as the attribute holds them: coordinates to 0,1 mm, triangles by vertex index, each list
+    /// one base64 string (<c>v64</c>: doubles, <c>t64</c>: ints, little-endian). A number per JSON node
+    /// was some fifty bytes: a 6.8 million triangle body was 31 million nodes. Bodies written before
+    /// (<c>v</c>, <c>t</c> as arrays) are read as they are (<see cref="ReadPart"/>).
+    /// </summary>
     public static JsonObject Write(IEnumerable<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)> parts)
     {
         var list = new JsonArray();
         foreach (var p in parts)
         {
-            var v = new JsonArray();
-            foreach (var q in p.Vertices) { v.Add((JsonNode)Math.Round(q.X, 4)); v.Add((JsonNode)Math.Round(q.Y, 4)); v.Add((JsonNode)Math.Round(q.Z, 4)); }
-            var t = new JsonArray();
-            foreach (var (a, b, c) in p.Triangles) { t.Add((JsonNode)a); t.Add((JsonNode)b); t.Add((JsonNode)c); }
-            list.Add((JsonNode)new JsonObject { ["name"] = p.Name, ["color"] = p.Color, ["v"] = v, ["t"] = t });
+            var v = new double[p.Vertices.Count * 3];
+            for (var i = 0; i < p.Vertices.Count; i++) { var q = p.Vertices[i]; v[3 * i] = Math.Round(q.X, 4); v[3 * i + 1] = Math.Round(q.Y, 4); v[3 * i + 2] = Math.Round(q.Z, 4); }
+            var t = new int[p.Triangles.Count * 3];
+            for (var i = 0; i < p.Triangles.Count; i++) { var (a, b, c) = p.Triangles[i]; t[3 * i] = a; t[3 * i + 1] = b; t[3 * i + 2] = c; }
+            list.Add((JsonNode)WritePart(p.Name, p.Color, v, t));
         }
         return new JsonObject { ["parts"] = list };
+    }
+
+    /// <summary>One part: its name, colour, coordinates (x y z …) and triangles (a b c …).</summary>
+    public static JsonObject WritePart(string name, string color, double[] v, int[] t) => new()
+    {
+        ["name"] = name, ["color"] = color,
+        ["v64"] = Convert.ToBase64String(System.Runtime.InteropServices.MemoryMarshal.AsBytes(v.AsSpan())),
+        ["t64"] = Convert.ToBase64String(System.Runtime.InteropServices.MemoryMarshal.AsBytes(t.AsSpan())),
+    };
+
+    /// <summary>A part's coordinates and triangles, as written now (base64) or before (arrays).</summary>
+    public static (double[] V, int[] T) ReadPart(JsonObject p)
+    {
+        double[] v;
+        if ((string?)p["v64"] is { } v64) v = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, double>(Convert.FromBase64String(v64)).ToArray();
+        else v = (p["v"] as JsonArray)?.Select(x => Json.Number(x) ?? 0).ToArray() ?? [];
+        int[] t;
+        if ((string?)p["t64"] is { } t64) t = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, int>(Convert.FromBase64String(t64)).ToArray();
+        else t = (p["t"] as JsonArray)?.Select(x => (int)(Json.Number(x) ?? -1)).ToArray() ?? [];
+        return (v, t);
     }
 
     /// <summary>The stored body as geometry: a solid of triangles per part; an instance's, the shared parts placed.</summary>
@@ -110,8 +135,7 @@ public static class StoredBodies
         if (body["parts"] is not JsonArray parts) return list;
         foreach (var p in parts.OfType<JsonObject>())
         {
-            var v = (p["v"] as JsonArray)?.Select(x => Json.Number(x) ?? 0).ToArray() ?? [];
-            var t = (p["t"] as JsonArray)?.Select(x => (int)(Json.Number(x) ?? -1)).ToArray() ?? [];
+            var (v, t) = ReadPart(p);
             var vertices = new Vec3[v.Length / 3];
             for (var k = 0; k < vertices.Length; k++) vertices[k] = new Vec3(v[3 * k], v[3 * k + 1], v[3 * k + 2]);
             // Coplanar triangles merged into faces where the mesh is a closed solid, so the drawings show the body's
