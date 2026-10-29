@@ -168,4 +168,151 @@ public class StairTests
         }
         finally { File.Delete(path); }
     }
+
+    // ─── Entrance steps (feedback report #33: a step at the porch) ─────────
+
+    [Fact]
+    public void Entrance_steps_take_a_rise_of_their_own_in_few_risers()
+    {
+        var spec = StairSpec.Entrance();
+        Assert.Equal(0.45, spec.Rise);
+        Assert.Equal("solid", spec.Construction.Kind);
+        var r = StairSolver.Resolve(spec, spec.Rise!.Value);
+        Assert.Equal(3, r.Risers);
+        Assert.Equal(0.15, r.RiserHeight, 9);
+        Assert.Equal(0.35, r.Tread, 9);
+        Assert.Equal(2.0, r.Width, 9);
+        Assert.True(r.Ok, string.Join("; ", r.Checks.Where(c => !c.Ok).Select(c => c.Label)));
+        // One step of 150 mm: a single riser, within the entrance rules.
+        var one = StairSolver.Resolve(spec, 0.15);
+        Assert.Equal(1, one.Risers);
+        Assert.True(one.Ok, string.Join("; ", one.Checks.Where(c => !c.Ok).Select(c => c.Label)));
+        // Fixed to two risers over 300 mm.
+        Assert.Equal(2, StairSolver.Resolve(spec, 0.30, new StairInputs(Risers: 2)).Risers);
+        // A stair between storeys keeps at least two risers and three to a flight in its checks.
+        var low = StairSolver.Resolve(StairSpec.Default(), 0.15);
+        Assert.Equal(2, low.Risers);
+        Assert.Contains(low.Checks, c => c.Key == "flight" && !c.Ok);
+        // The spec survives its JSON, with the rule set's minimum.
+        var back = StairSpec.From(spec.ToJson())!;
+        Assert.Equal(0.45, back.Rise);
+        Assert.Equal(1, back.Rules.MinRisers);
+        Assert.Equal(3, StairSpec.From(StairSpec.Default().ToJson())!.Rules.MinRisers);
+        Assert.Null(StairSpec.From(StairSpec.Default().ToJson())!.Rise);
+    }
+
+    [Fact]
+    public void Entrance_steps_come_up_from_below_the_storey_to_its_level_as_solid_concrete()
+    {
+        var f = TwoStoreys(out var upper);
+        // A floor above over the steps: they climb no storey, so they ask it for no opening.
+        f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = upper, ["points"] = new JsonArray(new JsonArray(-3, -3), new JsonArray(3, -3), new JsonArray(3, 3), new JsonArray(-3, 3)) });
+        var id = (string)f.Run("architecture.addStair", new JsonObject { ["storeyId"] = f.Storey, ["library"] = "entrance", ["x"] = 0, ["y"] = -1, ["x2"] = 0, ["y2"] = 0 })!["id"]!;
+        var stair = f.Model.Get(id)!;
+        Assert.Equal(-0.45, stair.Num("baseOffset"), 9);
+        Assert.Null(StairBuilder.OpeningOf(f.Model, id));
+        var type = f.Model.RelatingOf(id, IfcClass.RelDefinesByType)!;
+        Assert.Equal("Entrance steps", type.Name);
+        Assert.Equal("entrance", type.Str("library"));
+        // Asked again, the library gives the project's copy, not a second one; a plain stair still takes a storey type.
+        Assert.Equal(type.Id, (string)f.Run("architecture.stairTypeFromLibrary", new JsonObject { ["key"] = "entrance" })!["id"]!);
+        var plain = (string)f.Run("architecture.addStair", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 10, ["y"] = 0, ["x2"] = 11, ["y2"] = 0 })!["id"]!;
+        Assert.NotEqual(type.Id, f.Model.RelatingOf(plain, IfcClass.RelDefinesByType)!.Id);
+        Assert.Equal(18, (int)((JsonObject)f.Session.Query("architecture.stairCheck", new JsonObject { ["id"] = plain })!)["risers"]!);
+
+        var check = (JsonObject)f.Session.Query("architecture.stairCheck", new JsonObject { ["id"] = id })!;
+        Assert.Equal(3, (int)check["risers"]!);
+        Assert.Equal(-0.45, (double)check["fromLevel"]!, 9);
+        Assert.Equal(0.0, (double)check["toLevel"]!, 9);
+        Assert.Null(check["topStorey"]);
+        Assert.True((bool)check["ok"]!);
+        // One solid of concrete from the ground (−0.45, a finish under) to a finish under ±0.00, 2 m wide, climbing +Y.
+        var g = f.Session.Geometry(id)!;
+        var flight = g.Parts.Single(p => p.Key == "flight:0");
+        var (min, max) = Measure.Bounds(flight.Solid)!.Value;
+        Assert.Equal(-0.45 - 0.03, min.Z, 6);
+        Assert.Equal(-0.03, max.Z, 6);
+        Assert.Equal(-1.0, min.X, 6);
+        Assert.Equal(1.0, max.X, 6);
+        Assert.Equal(-1.0, min.Y, 6);
+        Assert.Equal(-1.0 + 2 * 0.35, max.Y, 6);
+        Assert.Equal(2.0 * 3 * 0.35 * 0.15, Measure.Volume(flight.Solid), 6);
+        Assert.DoesNotContain(g.Parts, p => p.Key!.StartsWith("railing", StringComparison.Ordinal));
+
+        // A lower rise keeps the top at ±0.00 and moves the foot up.
+        f.Run("architecture.updateStair", new JsonObject { ["id"] = id, ["rise"] = 0.30 });
+        check = (JsonObject)f.Session.Query("architecture.stairCheck", new JsonObject { ["id"] = id })!;
+        Assert.Equal(2, (int)check["risers"]!);
+        Assert.Equal(-0.30, (double)check["fromLevel"]!, 9);
+        Assert.Equal(0.0, (double)check["toLevel"]!, 9);
+        // One riser: no tread to build, the step is the porch's edge, said so.
+        f.Run("architecture.updateStair", new JsonObject { ["id"] = id, ["rise"] = 0.15 });
+        g = f.Session.Geometry(id)!;
+        Assert.DoesNotContain(g.Parts, p => p.Key!.StartsWith("flight:", StringComparison.Ordinal));
+        Assert.NotNull(g.Diagnostics);
+        Assert.Single(g.Plan!, i => i.Kind == "symbol");
+    }
+
+    [Fact]
+    public void A_stair_of_any_type_can_climb_a_rise_of_its_own_from_a_base_offset()
+    {
+        var f = TwoStoreys(out _);
+        var id = Stair(f, "straight");
+        f.Run("architecture.updateStair", new JsonObject { ["id"] = id, ["rise"] = 0.6, ["baseOffset"] = -0.6 });
+        var check = (JsonObject)f.Session.Query("architecture.stairCheck", new JsonObject { ["id"] = id })!;
+        Assert.Equal(0.6, (double)check["height"]!, 9);
+        Assert.Equal(-0.6, (double)check["fromLevel"]!, 9);
+        Assert.Null(check["topStorey"]);
+        // Freed, it climbs to the storey above again, from its base offset.
+        f.Run("architecture.updateStair", new JsonObject { ["id"] = id, ["rise"] = null, ["baseOffset"] = 0 });
+        check = (JsonObject)f.Session.Query("architecture.stairCheck", new JsonObject { ["id"] = id })!;
+        Assert.Equal(3.0, (double)check["height"]!, 9);
+        Assert.NotNull(check["topStorey"]);
+        // Its type changed to entrance steps: its top comes to the storey's level.
+        var entrance = (string)f.Run("architecture.stairTypeFromLibrary", new JsonObject { ["key"] = "entrance" })!["id"]!;
+        f.Run("architecture.updateStair", new JsonObject { ["id"] = id, ["typeId"] = entrance });
+        Assert.Equal(-0.45, f.Model.Get(id)!.Num("baseOffset"), 9);
+        // The type's rise changed: its stairs keep their tops.
+        var spec = StairSpec.From(f.Model.Get(entrance)!.Attrs["spec"])! with { Rise = 0.60 };
+        f.Run("architecture.updateStairType", new JsonObject { ["id"] = entrance, ["spec"] = spec.ToJson() });
+        Assert.Equal(-0.60, f.Model.Get(id)!.Num("baseOffset"), 9);
+    }
+
+    [Fact]
+    public void A_porch_is_a_floor_outside_the_walls_with_its_top_at_the_storey_level()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 6, ["y2"] = 0 });
+        var porch = (string)f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = f.Storey, ["points"] = new JsonArray(new JsonArray(2, -0.2), new JsonArray(4, -0.2), new JsonArray(4, -1.7), new JsonArray(2, -1.7)) })!["id"]!;
+        Assert.Equal(0.0, Slabs.Top(f.Model, f.Model.Get(porch)!), 9);
+        var (min, max) = Measure.Bounds(f.Session.Geometry(porch)!.Parts[0].Solid)!.Value;
+        Assert.True(max.Z <= 1e-6 && max.Z > -0.05, $"{max.Z}");
+        // The steps in front of it, coming up to its edge.
+        var steps = (string)f.Run("architecture.addStair", new JsonObject { ["storeyId"] = f.Storey, ["library"] = "entrance", ["x"] = 3, ["y"] = -1.7 - 0.7, ["x2"] = 3, ["y2"] = 0 })!["id"]!;
+        var top = (JsonArray)((JsonObject)f.Session.Query("architecture.stairCheck", new JsonObject { ["id"] = steps })!)["top"]!;
+        Assert.Equal(-1.7, (double)top[1]!, 6);
+    }
+
+    [Fact]
+    public void Entrance_steps_export_their_flight_numbers_to_IFC()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        f.Run("architecture.addStair", new JsonObject { ["storeyId"] = f.Storey, ["library"] = "entrance", ["x"] = 0, ["y"] = 0, ["x2"] = 1, ["y2"] = 0 });
+        var path = Path.Combine(Path.GetTempPath(), $"lapin-steps-{Guid.NewGuid():N}.ifc");
+        try
+        {
+            IfcExport.Write(f.Session, path);
+            var step = StepFile.Read(path);
+            Assert.Equal(new StepEnum("STRAIGHT_RUN_STAIR"), Assert.Single(step.OfType("IFCSTAIR"))[8]);
+            var flight = Assert.Single(step.OfType("IFCSTAIRFLIGHT"));
+            Assert.Equal(3L, flight[8]);
+            Assert.Equal(2L, flight[9]);
+            Assert.Equal(0.15, Convert.ToDouble(flight[10]), 6);
+            Assert.Equal(0.35, Convert.ToDouble(flight[11]), 6);
+            var text = File.ReadAllText(path);
+            Assert.Contains("'Pset_StairCommon'", text);
+            Assert.Contains("IFCPROPERTYSINGLEVALUE('NumberOfRiser',$,IFCCOUNTMEASURE(3),$)", text);
+        }
+        finally { File.Delete(path); }
+    }
 }

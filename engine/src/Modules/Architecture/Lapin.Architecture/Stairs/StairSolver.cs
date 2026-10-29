@@ -61,17 +61,19 @@ public static class StairSolver
         var r = spec.Rules;
         var width = inputs.Width ?? spec.Width;
         var landing = inputs.Landing ?? (spec.LandingLength > 0 ? spec.LandingLength : width);
-        height = Math.Max(height, 0.3);
+        // A step outside a door may be a single riser of a few centimetres; a stair between storeys has many.
+        height = Math.Max(height, 0.05);
+        var least = Math.Clamp(r.MinRisers, 1, 2);
 
         // The risers: as fixed, else as many as the target riser gives, pushed into the bounds.
         int n;
-        if (inputs.Risers is { } fixedN) n = Math.Max(2, fixedN);
-        else if (inputs.RiserHeight is { } fixedH && fixedH > 0.01) n = Math.Max(2, (int)Math.Round(height / fixedH));
+        if (inputs.Risers is { } fixedN) n = Math.Max(1, fixedN);
+        else if (inputs.RiserHeight is { } fixedH && fixedH > 0.01) n = Math.Max(1, (int)Math.Round(height / fixedH));
         else
         {
-            n = Math.Max(2, (int)Math.Round(height / r.RiserTarget));
+            n = Math.Max(least, (int)Math.Round(height / r.RiserTarget));
             if (height / n > r.RiserMax + 1e-9) n = (int)Math.Ceiling(height / r.RiserMax);
-            if (height / n < r.RiserMin - 1e-9) n = Math.Max(2, (int)Math.Floor(height / r.RiserMin));
+            if (height / n < r.RiserMin - 1e-9) n = Math.Max(least, (int)Math.Floor(height / r.RiserMin));
         }
         var h = height / n;
         // The tread: as fixed, else from the step rule, to the half centimetre, within the bounds.
@@ -144,7 +146,7 @@ public static class StairSolver
             new("tread", "Tread", b, r.TreadMin, r.TreadMax, b >= r.TreadMin - 1e-6 && b <= r.TreadMax + 1e-6),
             new("step", "2h + b", 2 * h + b, r.StepMin, r.StepMax, 2 * h + b >= r.StepMin - 1e-6 && 2 * h + b <= r.StepMax + 1e-6),
             new("width", "Width", width, r.MinWidth, null, width >= r.MinWidth - 1e-6),
-            new("flight", "Risers in a flight", flights.Max(f => f.Risers), 3, r.MaxRisers, flights.All(f => f.Risers >= 3 && f.Risers <= r.MaxRisers)),
+            new("flight", "Risers in a flight", flights.Max(f => f.Risers), r.MinRisers, r.MaxRisers, flights.All(f => f.Risers >= r.MinRisers && f.Risers <= r.MaxRisers)),
         };
         if (landings.Count > 0) checks.Add(new("landing", "Landing", landing, width, null, landing >= width - 1e-6));
         return new Resolved(spec, height, n, h, b, width, landing, flights, landings, winderSteps, checks);

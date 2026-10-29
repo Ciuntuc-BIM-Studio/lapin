@@ -8,7 +8,7 @@ import { arcOf, project } from '../../viewport/arc';
 import { fromPairs } from '../../viewport/contour';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
-import { execute, query, useSession } from '../../engine/session';
+import { activeStorey, execute, query, useSession } from '../../engine/session';
 import { registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import type { Shape } from '../../viewport/cad/shapes';
 import { num, relatingOf, typeOf, usageOf } from '../../engine/model';
@@ -23,6 +23,7 @@ import { SlabTypesDialog } from './SlabTypesDialog';
 import { RoofSection } from './RoofSection';
 import { StairSection, type StairNumbers } from './StairSection';
 import { StairTypesDialog } from './StairTypesDialog';
+import { dirOf, footFromTop } from './stairPlacement';
 import { CurtainWallDialog } from './CurtainWallDialog';
 import { CurtainWallSection } from './CurtainWallSection';
 import { RoomColorsDialog } from './RoomColorsDialog';
@@ -227,12 +228,15 @@ const roofOpening = (kind: 'window' | 'dormer'): ToolDef => ({
  * picked (else the project's first). The footprint the engine works out
  * follows the cursor.
  */
-function stairCommand(): Step {
-  const storeyId = useUi.getState().storeyId;
+function stairCommand(library?: string): Step {
+  // The plan's storey: the one chosen, else the one a new project's plan shows (the ground floor).
+  const storeyId = useUi.getState().storeyId ?? activeStorey()?.id ?? null;
   if (!storeyId) { notify('Open a plan to place a stair.'); return { prompt: '', want: 'none' }; }
-  const typeId = useUi.getState().stairTypeId ?? undefined;
+  // Entrance steps come from the library (the project gets its copy of the type with the first one placed); a stair, from the type picked.
+  const typeId = library ? undefined : useUi.getState().stairTypeId ?? undefined;
+  const which = library ? { library } : typeId ? { typeId } : {};
   const plans: Record<string, StairNumbers | null> = { left: null, right: null };
-  for (const turn of ['left', 'right']) void query<StairNumbers>('architecture.stairPlan', { storeyId, typeId, turn }).then((p) => { plans[turn] = p; });
+  for (const turn of ['left', 'right']) void query<StairNumbers>('architecture.stairPlan', { storeyId, ...which, turn }).then((p) => { plans[turn] = p; });
   const footprint = (turn: string, at: Vec2, dir: Vec2): Shape[] => {
     const p = plans[turn] ?? plans.left;
     if (!p) return [];
@@ -241,11 +245,23 @@ function stairCommand(): Step {
     for (const l of p.risersLines) shapes.push({ type: 'line', a: px(l[0], l[1]), b: px(l[2], l[3]) });
     return shapes;
   };
-  const dirOf = (a: Vec2, c: Vec2): Vec2 => { const d = Math.hypot(c.x - a.x, c.y - a.y); return d < 1e-9 ? { x: 1, y: 0 } : { x: (c.x - a.x) / d, y: (c.y - a.y) / d }; };
   const place = async (at: Vec2, dir: Vec2, turn: string) => {
-    await execute('architecture.addStair', { storeyId, ...(typeId ? { typeId } : {}), x: at.x, y: at.y, x2: at.x + dir.x, y2: at.y + dir.y, turn });
+    const r = await execute('architecture.addStair', { storeyId, ...which, x: at.x, y: at.y, x2: at.x + dir.x, y2: at.y + dir.y, turn }) as { id?: string } | null;
+    if (r?.id) useUi.setState({ selection: r.id, selected: [r.id] });
     return null;
   };
+  if (library) {
+    // By the top: the middle of the porch's edge, then the way down; the foot is a run away.
+    const run = () => (plans.left ?? plans.right)?.run ?? 0;
+    return {
+      prompt: 'Top of the steps: click the middle of the porch edge (or the door sill)', want: 'point',
+      point: (top) => ({
+        prompt: 'The way down: click on the side the steps go out to', want: 'point', base: top,
+        preview: (c) => { const { foot, up } = footFromTop(top, c, run()); return footprint('left', foot, up); },
+        point: (c) => { const { foot, up } = footFromTop(top, c, run()); return place(foot, up, 'left'); },
+      }),
+    };
+  }
   return {
     prompt: 'Foot of the stair: click the centre of the first riser', want: 'point',
     point: (a) => ({
@@ -265,8 +281,10 @@ function stairCommand(): Step {
     }),
   };
 }
-registerCommand({ names: ['STAIR', 'ST'], label: 'Stair', start: stairCommand });
+registerCommand({ names: ['STAIR', 'ST'], label: 'Stair', start: () => stairCommand() });
+registerCommand({ names: ['STEPS'], label: 'Entrance steps', start: () => stairCommand('entrance') });
 const stair: ToolDef = { id: 'architecture.stair', label: 'Stair', icon: StairIcon, shortcut: 'ST', run: () => void startCommand('STAIR') };
+const entranceSteps: ToolDef = { id: 'architecture.entranceSteps', label: 'Entrance steps', icon: StairIcon, run: () => void startCommand('STEPS') };
 const stairTypes: ToolDef = { id: 'architecture.stairTypes', label: 'Stair types', icon: Settings2, run: () => useUi.setState({ dialog: 'stairTypes' }) };
 const slabTypes: ToolDef = { id: 'architecture.slabTypes', label: 'Floor types', icon: Layers3, run: () => useUi.setState({ dialog: 'slabTypes' }) };
 
@@ -281,7 +299,7 @@ const architecture: LapinModule = {
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [room, roomColors], small: [roomOutline, updateRooms] },
-      { label: 'Circulation', tools: [stair, stairTypes] },
+      { label: 'Circulation', tools: [stair, stairTypes], small: [entranceSteps] },
     ],
   }, {
     // Into View: the room colours by the other graphics.

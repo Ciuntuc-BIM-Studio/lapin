@@ -30,14 +30,29 @@ public static class StairBuilder
     public static StairInputs InputsOf(Entity e) => new(
         e.NumOrNull("width"), e.NumOrNull("risers") is { } n ? (int)Math.Round(n) : null, e.NumOrNull("riserHeight"), e.NumOrNull("tread"), e.NumOrNull("landing"));
 
-    /// <summary>The storey the stair climbs to: the one named, else the first above its own; null when none.</summary>
+    /// <summary>
+    /// The rise of its own the stair climbs, whatever the storeys: the
+    /// instance's <c>rise</c>, else its type's (entrance steps); null when it
+    /// climbs to a storey.
+    /// </summary>
+    public static double? OwnRise(IModelView m, Entity stair) =>
+        stair.NumOrNull("rise") is { } r && r > 0 ? Math.Max(r, 0.05) : SpecOf(m, stair).Rise;
+
+    /// <summary>The storey the stair climbs to: the one named, else the first above its own; null when none, or when it has a rise of its own.</summary>
     public static Entity? TopStorey(IModelView m, Entity stair, Entity storey) =>
-        stair.Str("topStoreyId") is { } id && m.Get(id) is { Class: IfcClass.BuildingStorey } named ? named
+        OwnRise(m, stair) != null ? null
+        : stair.Str("topStoreyId") is { } id && m.Get(id) is { Class: IfcClass.BuildingStorey } named ? named
         : Spatial.Storeys(m).FirstOrDefault(s => s.Num("elevation") > storey.Num("elevation") + 1e-6);
 
-    /// <summary>The height to climb: finished floor to finished floor, with the offsets; without a storey above, the stair's own height, else the storey's.</summary>
+    /// <summary>
+    /// The height to climb: its own rise when it has one (from its base, the
+    /// storey's level and the base offset, up); else finished floor to
+    /// finished floor with the offsets; without a storey above, the stair's
+    /// own height, else the storey's.
+    /// </summary>
     public static double Height(IModelView m, Entity stair, Entity storey)
     {
+        if (OwnRise(m, stair) is { } rise) return rise;
         var top = TopStorey(m, stair, storey)?.Num("elevation") ?? storey.Num("elevation") + (stair.NumOrNull("height") ?? storey.Num("height", 3));
         return top + stair.Num("topOffset") - (storey.Num("elevation") + stair.Num("baseOffset"));
     }
@@ -72,11 +87,14 @@ public static class StairBuilder
         var problems = new List<string>();
         var finish = new List<Solid>();
         var w = r.Width;
+        var solidKind = spec.Construction.Kind == "solid";
 
         for (var i = 0; i < r.Flights.Count; i++)
         {
             var fl = r.Flights[i];
-            if (FlightSolid(r, fl, place, f, waist) is { } solid) parts.Add(new GeometryPart($"Flight {i + 1}", concreteColor, solid, concrete, $"flight:{i}"));
+            // A flight of one riser has no tread: its step is the edge of what it climbs to (a porch, a landing).
+            if (fl.Risers < 2) { if (r.Flights.Count == 1) problems.Add("One riser: the step is the edge of the floor it climbs to. Give it two risers or more for treads in front."); continue; }
+            if (FlightSolid(r, fl, place, f, waist, solidKind) is { } solid) parts.Add(new GeometryPart($"Flight {i + 1}", concreteColor, solid, concrete, $"flight:{i}"));
             else problems.Add($"Flight {i + 1} could not be built.");
             if (f > 0)
                 for (var j = 1; j < fl.Risers; j++)
@@ -105,8 +123,9 @@ public static class StairBuilder
             if (f > 0 && Prism.ExtrudeFootprint(outline, place.Z0 + ld.Z - f, f, "finish") is { } fs) finish.Add(fs);
         }
         if (finish.Count > 0) parts.Add(new GeometryPart("Tread finish", finishColor, Openings.Combine(finish, "finish"), finishMat, "finish"));
+        var treads = r.Flights.Sum(x => x.Risers - 1);
         foreach (var side in new[] { "left", "right" })
-            if (spec.Railing.Sides == side || spec.Railing.Sides == "both")
+            if (treads > 0 && (spec.Railing.Sides == side || spec.Railing.Sides == "both"))
             {
                 var solids = Railing(r, place, spec.Railing, side == "left");
                 if (solids.Count > 0) parts.Add(new GeometryPart($"Railing ({side})", "#4a4a4a", Openings.Combine(solids, "railing"), null, $"railing:{side}"));
@@ -125,11 +144,14 @@ public static class StairBuilder
     /// A flight as one solid: the stepped top, the vertical cut where it meets
     /// the landing (or the floor above), the soffit a waist under the step
     /// corners, the bearing on the floor; the concrete a finish below the
-    /// finished surfaces. The profile in the flight's plane, extruded across.
+    /// finished surfaces. Solid, the steps are filled down to the flight's
+    /// base instead (steps cast on the ground). The profile in the flight's
+    /// plane, extruded across.
     /// </summary>
-    public static Solid? FlightSolid(Resolved r, Flight fl, StairPlacement place, double finish, double waist)
+    public static Solid? FlightSolid(Resolved r, Flight fl, StairPlacement place, double finish, double waist, bool solid = false)
     {
         var (k, h, b) = (fl.Risers, r.RiserHeight, r.Tread);
+        if (k < 2) return null;
         var wv = waist * Math.Sqrt(h * h + b * b) / b;
         var profile = new List<(double U, double Z)> { (0, -finish) };
         for (var i = 1; i <= k; i++)
@@ -138,8 +160,12 @@ public static class StairBuilder
             if (i < k) profile.Add((i * b, i * h - finish));
         }
         var uEnd = (k - 1) * b;
-        profile.Add((uEnd, (k - 1) * h - wv - finish));
-        profile.Add((Math.Min(wv * b / h, Math.Max(uEnd - 0.01, 0)), -finish));
+        if (solid) profile.Add((uEnd, -finish));
+        else
+        {
+            profile.Add((uEnd, (k - 1) * h - wv - finish));
+            profile.Add((Math.Min(wv * b / h, Math.Max(uEnd - 0.01, 0)), -finish));
+        }
         var right = fl.Start - fl.Left * (r.Width / 2);
         var ring = profile.Select(p => place.World(right + fl.Dir * p.U, fl.Z0 + p.Z)).ToList();
         var across = place.World(fl.Left * r.Width, 0) - place.World(new Vec2(0, 0), 0);
@@ -234,9 +260,10 @@ public static class StairBuilder
                 var u = (i - 1) * r.Tread;
                 items.Add(new PlanItem("symbol", false, [place.World(fl.Start + fl.Dir * u - l), place.World(fl.Start + fl.Dir * u + l)]));
             }
+            if (run < 1e-9) continue;
             items.Add(new PlanItem("symbol", false, [place.World(fl.Start - l), place.World(fl.Start + fl.Dir * run - l)]));
             items.Add(new PlanItem("symbol", false, [place.World(fl.Start + l), place.World(fl.Start + fl.Dir * run + l)]));
-            arrow.Add(place.World(arrow.Count == 0 ? fl.Start + fl.Dir * (r.Tread / 2) : fl.Start));
+            arrow.Add(place.World(arrow.Count == 0 ? fl.Start + fl.Dir * Math.Min(r.Tread / 2, run / 2) : fl.Start));
             arrow.Add(place.World(fl.Start + fl.Dir * run));
         }
         foreach (var ld in r.Landings) items.Add(new PlanItem("symbol", true, ld.Outline.Select(p => place.World(p)).ToArray()));
@@ -268,7 +295,8 @@ public static class StairBuilder
             var fl = r.Flights[i];
             var length = (fl.Risers - 1) * r.Tread;
             run += length;
-            soffit += w * length * Math.Sqrt(1 + r.RiserHeight * r.RiserHeight / (r.Tread * r.Tread));
+            // Solid on the ground, a flight has no soffit to form: its two sides instead.
+            soffit += spec.Construction.Kind == "solid" ? 2 * length * fl.Risers * r.RiserHeight / 2 : w * length * Math.Sqrt(1 + r.RiserHeight * r.RiserHeight / (r.Tread * r.Tread));
             treads += (fl.Risers - 1) * r.Tread * w;
             yield return new QuantitySet("Qto_StairFlightBaseQuantities",
             [

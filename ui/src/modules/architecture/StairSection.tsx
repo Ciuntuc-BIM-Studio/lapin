@@ -11,12 +11,13 @@ import { execute, query, useSession } from '../../engine/session';
 import { ofClass, relatingOf } from '../../engine/model';
 import { useUi } from '../../app/store';
 import { lengthText } from '../../engine/unitsStore';
+import { levelText } from './stairPlacement';
 
 export interface StairCheck { key: string; label: string; value: number; min: number | null; max: number | null; ok: boolean }
 export interface StairNumbers {
   risers: number; riserHeight: number; tread: number; step: number; width: number; height: number; landing: number; flights: number[]; winders: number; run: number; ok: boolean;
   checks: StairCheck[]; outlines: { kind: string; points: number[]; risers?: number }[]; risersLines: number[][]; profile: number[]; top: number[]; predefinedType: string; shape?: string;
-  opening?: string | null; topStorey?: string | null;
+  opening?: string | null; topStorey?: string | null; ownRise?: number | null; fromLevel?: number; toLevel?: number;
 }
 
 const mm = (v: number) => Math.round(v * 1000);
@@ -75,13 +76,16 @@ export function StairSection({ node }: { node: NodeDto }) {
         <dt>Turn</dt>
         <dd><select value={(node.props.turn as string | undefined) ?? 'left'} onChange={(e) => set({ turn: e.target.value })}><option value="left">left</option><option value="right">right</option></select></dd>
         <dt>Base offset</dt><dd><MmInput value={num('baseOffset') ?? 0} onCommit={(v) => set({ baseOffset: v ?? 0 })} /> <span className="muted">mm</span></dd>
-        <dt>Top offset</dt><dd><MmInput value={num('topOffset') ?? 0} onCommit={(v) => set({ topOffset: v ?? 0 })} /> <span className="muted">mm</span></dd>
-        <dt>Height</dt><dd><span className="num">{n ? fmtMm(n.height) : '—'}</span> <span className="muted small">{topStorey ? `climbs to ${topStorey.name}` : 'no storey above'}</span></dd>
+        <dt>Rise</dt>
+        <dd><MmInput value={num('rise')} placeholder={n?.ownRise != null ? String(mm(n.ownRise)) : 'to the storey'} onCommit={(v) => set({ rise: v })} /> <span className="muted">mm</span></dd>
+        {n?.ownRise == null && <><dt>Top offset</dt><dd><MmInput value={num('topOffset') ?? 0} onCommit={(v) => set({ topOffset: v ?? 0 })} /> <span className="muted">mm</span></dd></>}
+        <dt>Height</dt><dd><span className="num">{n ? fmtMm(n.height) : '—'}</span> <span className="muted small">{topStorey ? `climbs to ${topStorey.name}` : n?.ownRise != null ? 'a rise of its own' : 'no storey above'}</span></dd>
+        {n?.fromLevel != null && n.toLevel != null && <><dt>Levels</dt><dd><span className="num">{levelText(n.fromLevel)} → {levelText(n.toLevel)}</span></dd></>}
       </dl>
       <p className="eyebrow">Fixed</p>
       <dl className="fields">
         <dt>Risers</dt>
-        <dd><input className="num" type="number" min={2} max={60} value={num('risers') ?? ''} placeholder={n ? String(n.risers) : ''} onChange={(e) => set({ risers: e.target.value === '' ? null : Number(e.target.value) })} /> <span className="muted small">{n ? `${n.flights.join(' + ')}${n.winders ? ` + ${n.winders} winders` : ''}` : ''}</span></dd>
+        <dd><input className="num" type="number" min={1} max={60} value={num('risers') ?? ''} placeholder={n ? String(n.risers) : ''} onChange={(e) => set({ risers: e.target.value === '' ? null : Number(e.target.value) })} /> <span className="muted small">{n ? `${n.flights.join(' + ')}${n.winders ? ` + ${n.winders} winders` : ''}` : ''}</span></dd>
         <dt>Riser</dt><dd><MmInput value={num('riserHeight')} placeholder={n ? String(mm(n.riserHeight)) : ''} onCommit={(v) => set({ riserHeight: v })} /> <span className="muted">mm</span></dd>
         <dt>Tread</dt><dd><MmInput value={num('tread')} placeholder={n ? String(mm(n.tread)) : ''} onCommit={(v) => set({ tread: v })} /> <span className="muted">mm</span></dd>
         <dt>Landing length</dt><dd><MmInput value={num('landing')} placeholder={n ? String(mm(n.landing)) : ''} onCommit={(v) => set({ landing: v })} /> <span className="muted">mm</span></dd>

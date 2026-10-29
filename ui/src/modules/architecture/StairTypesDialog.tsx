@@ -14,7 +14,7 @@ import { ChecksList, type StairNumbers } from './StairSection';
 import { DrawingLayer } from '../../viewport/DrawingLayer';
 import type { DrawingDto } from '../../viewport/drawing';
 
-interface Rules { set: string; riserMin: number; riserMax: number; riserTarget: number; treadMin: number; treadMax: number; treadTarget: number; stepMin: number; stepMax: number; minWidth: number; maxRisers: number; headroom: number; maxSlope: number }
+interface Rules { set: string; riserMin: number; riserMax: number; riserTarget: number; treadMin: number; treadMax: number; treadTarget: number; stepMin: number; stepMax: number; minWidth: number; maxRisers: number; headroom: number; maxSlope: number; minRisers?: number }
 interface Spec {
   kind: string; name: string; shape: string; turn: string; winders: number; width: number; gap: number; landingLength: number;
   rules: Rules;
@@ -22,10 +22,13 @@ interface Spec {
   finish: { treadThickness: number; treadMaterial: string; nosing: number };
   railing: { sides: string; height: number; barSize: number; postSize: number; postSpacing: number };
   slope: number;
+  /** A rise of its own (entrance steps); null: up to the storey above. */
+  rise?: number | null;
 }
-interface Defaults { spec: Spec; rules: Record<string, Rules>; shapes: string[]; turns: string[]; sides: string[] }
+interface Defaults { spec: Spec; rules: Record<string, Rules>; shapes: string[]; turns: string[]; sides: string[]; constructions?: string[]; library?: { key: string; spec: Spec }[] }
 
 const SHAPES: Record<string, string> = { straight: 'Straight', 'straight-landing': 'Straight with landing', l: 'L shape', u: 'U shape' };
+const CONSTRUCTIONS: Record<string, string> = { rc: 'Waist slab under the steps', solid: 'Solid, cast on the ground' };
 
 function Mm({ label, value, onChange, step = 5 }: { label: string; value: number; onChange: (m: number) => void; step?: number }) {
   return (
@@ -115,6 +118,15 @@ export function StairTypesDialog() {
               </li>
             ))}
             <li><button type="button" className="tree-item" onClick={fresh}><Plus size={12} /> New stair type</button></li>
+            {/* Ready-made types the project has no copy of yet: Entrance steps. */}
+            {(defaults.library ?? []).filter((l) => !types.some((t) => t.props.library === l.key)).map((l) => (
+              <li key={l.key}>
+                <button type="button" className="tree-item" title="Add this ready-made type to the project"
+                  onClick={() => void execute('architecture.stairTypeFromLibrary', { key: l.key }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) setEditing(id); })}>
+                  <Plus size={12} /> {l.spec.name} <span className="muted small">· library</span>
+                </button>
+              </li>
+            ))}
           </ul>
           <div className="joinery-edit">
             <div className="joinery-form">
@@ -138,11 +150,19 @@ export function StairTypesDialog() {
                 <Mm label="Width" value={spec.width} onChange={(v) => set({ width: Math.max(0.5, v) })} />
                 {spec.shape !== 'straight' && <Mm label="Landing length" value={spec.landingLength} onChange={(v) => set({ landingLength: Math.max(0, v) })} />}
                 {spec.shape !== 'straight' && spec.landingLength === 0 && <p className="muted small">Landing length 0: as the width.</p>}
+                <label className="row small">
+                  <input type="checkbox" checked={spec.rise != null} onChange={(e) => set({ rise: e.target.checked ? 0.45 : null })} />
+                  A rise of its own (entrance steps), not up to the storey above
+                </label>
+                {spec.rise != null && <>
+                  <Mm label="Rise" value={spec.rise} onChange={(v) => set({ rise: Math.max(0.05, v) })} step={10} />
+                  <p className="muted small">Placed, the steps end at their storey's level and start the rise below it.</p>
+                </>}
               </>}
               {tab === 'rules' && <>
                 <label className="field-line"><span className="eyebrow">Rule set</span>
                   <select value={spec.rules.set} onChange={(e) => set({ rules: structuredClone(defaults.rules[e.target.value] ?? spec.rules) })}>
-                    <option value="residential">residential</option><option value="public">public</option>
+                    <option value="residential">residential</option><option value="public">public</option><option value="entrance">entrance steps</option>
                   </select>
                 </label>
                 <p className="eyebrow">Riser · min, target, max</p>
@@ -163,12 +183,18 @@ export function StairTypesDialog() {
                   <Mm label="max" value={spec.rules.stepMax} onChange={(v) => set({ rules: { ...spec.rules, stepMax: v } })} />
                 </div>
                 <Mm label="Minimum width" value={spec.rules.minWidth} onChange={(v) => set({ rules: { ...spec.rules, minWidth: v } })} />
-                <label className="field-line"><span className="eyebrow">Risers in a flight</span><input type="number" min={3} max={30} value={spec.rules.maxRisers} onChange={(e) => set({ rules: { ...spec.rules, maxRisers: Number(e.target.value) || 18 } })} /><span className="muted small"> at most</span></label>
+                <label className="field-line"><span className="eyebrow">Risers in a flight</span><input type="number" min={1} max={30} value={spec.rules.minRisers ?? 3} onChange={(e) => set({ rules: { ...spec.rules, minRisers: Math.max(1, Number(e.target.value) || 3) } })} /><span className="muted small"> at least</span></label>
+                <label className="field-line"><span className="eyebrow">Risers in a flight</span><input type="number" min={1} max={30} value={spec.rules.maxRisers} onChange={(e) => set({ rules: { ...spec.rules, maxRisers: Number(e.target.value) || 18 } })} /><span className="muted small"> at most</span></label>
                 <Mm label="Headroom" value={spec.rules.headroom} onChange={(v) => set({ rules: { ...spec.rules, headroom: v } })} />
               </>}
               {tab === 'construction' && <>
                 <p className="eyebrow">Reinforced concrete, monolithic</p>
-                <Mm label="Waist" value={spec.construction.waist} onChange={(v) => set({ construction: { ...spec.construction, waist: Math.max(0.05, v) } })} />
+                <label className="field-line"><span className="eyebrow">Built as</span>
+                  <select value={spec.construction.kind} onChange={(e) => set({ construction: { ...spec.construction, kind: e.target.value } })}>
+                    {(defaults.constructions ?? ['rc']).map((k) => <option key={k} value={k}>{CONSTRUCTIONS[k] ?? k}</option>)}
+                  </select>
+                </label>
+                {spec.construction.kind !== 'solid' && <Mm label="Waist" value={spec.construction.waist} onChange={(v) => set({ construction: { ...spec.construction, waist: Math.max(0.05, v) } })} />}
                 <Mm label="Landing slab" value={spec.construction.landingThickness} onChange={(v) => set({ construction: { ...spec.construction, landingThickness: Math.max(0.05, v) } })} />
                 <label className="field-line"><span className="eyebrow">Concrete</span><input value={spec.construction.concrete} onChange={(e) => set({ construction: { ...spec.construction, concrete: e.target.value } })} /></label>
                 <p className="eyebrow">Tread finish</p>
@@ -186,7 +212,9 @@ export function StairTypesDialog() {
               </>}
             </div>
             <div className="joinery-preview stair-preview">
-              <label className="field-line"><span className="eyebrow">Preview at a height of</span><input type="number" step={10} value={Math.round(height * 1000)} onChange={(e) => { const n = Number(e.target.value); if (n > 300) setHeight(n / 1000); }} /><span className="muted small"> mm</span></label>
+              {spec.rise != null
+                ? <p className="small caption">Preview at its own rise of <b>{Math.round(spec.rise * 1000)}</b> mm</p>
+                : <label className="field-line"><span className="eyebrow">Preview at a height of</span><input type="number" step={10} value={Math.round(height * 1000)} onChange={(e) => { const n = Number(e.target.value); if (n > 300) setHeight(n / 1000); }} /><span className="muted small"> mm</span></label>}
               <Drawn drawing={drawn?.plan ?? null} width={W} label="Plan" />
               <Drawn drawing={drawn?.section ?? null} width={W} label="Section along the first flight" />
               {preview && (

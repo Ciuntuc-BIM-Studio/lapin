@@ -20,6 +20,9 @@ public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "g
     public string SchemaName => Ifc43 ? "IFC4X3_ADD2" : "IFC4";
 }
 
+/// <summary>What IfcStairFlight says of itself: NumberOfRisers, NumberOfTreads, RiserHeight, TreadLength.</summary>
+public sealed record StairFlightNumbers(int? Risers, int? Treads, double? RiserHeight, double? TreadLength);
+
 public sealed record IfcExportResult(string Path, string Schema, int Elements, int Parts, int Storeys, IReadOnlyList<string> Notes)
 {
     public JsonObject ToJson() => new()
@@ -550,8 +553,17 @@ public static class IfcExport
             return new(cls, "USERDEFINED", pre);
         }
 
+        /// <summary>A stair flight's numbers as its module counts them (Qto_StairFlightBaseQuantities of that part): risers, treads, riser height, tread length.</summary>
+        StairFlightNumbers? FlightOf(Entity e, string key)
+        {
+            var set = s.Quantities(e.Id).FirstOrDefault(q => q.Name == "Qto_StairFlightBaseQuantities" && q.Part == key);
+            if (set == null) return null;
+            double? Q(string n) => set.Quantities.FirstOrDefault(x => x.Name == n)?.Value;
+            return new StairFlightNumbers((int?)Q("NumberOfRiser"), (int?)Q("NumberOfTreads"), Q("RiserHeight"), Q("TreadLength"));
+        }
+
         /// <summary>The product entity with the attributes its class has: the eight every element shares, then what the class adds.</summary>
-        string Product(Kind k, string gid, string? name, string? objectType, string place, string shape, string tag, double? height = null, double? width = null, IfcJoineryType? terms = null)
+        string Product(Kind k, string gid, string? name, string? objectType, string place, string shape, string tag, double? height = null, double? width = null, IfcJoineryType? terms = null, StairFlightNumbers? flight = null)
         {
             string[] common = [gid, Null, S(name), Null, S(objectType), place, shape, S(tag)];
             var up = k.Class.ToUpperInvariant();
@@ -562,7 +574,7 @@ public static class IfcExport
                 IfcClass.Door => f.Add(up, [.. common, Opt(height), Opt(width), E(k.Predefined), operation, userDefined]),
                 IfcClass.Window => f.Add(up, [.. common, Opt(height), Opt(width), E(k.Predefined), operation, userDefined]),
                 "IfcElementAssembly" => f.Add(up, [.. common, Null, E(k.Predefined)]),
-                IfcClass.StairFlight => f.Add(up, [.. common, Null, Null, Null, Null, E(k.Predefined)]),
+                IfcClass.StairFlight => f.Add(up, [.. common, flight?.Risers is { } nr ? nr.ToString(System.Globalization.CultureInfo.InvariantCulture) : Null, flight?.Treads is { } nt ? nt.ToString(System.Globalization.CultureInfo.InvariantCulture) : Null, Opt(flight?.RiserHeight), Opt(flight?.TreadLength), E(k.Predefined)]),
                 _ when k.Predefined.Length == 0 => f.Add(up, common),
                 _ => f.Add(up, [.. common, E(k.Predefined)]),
             };
@@ -707,7 +719,7 @@ public static class IfcExport
                 var key = p.Key ?? $"part:{i}";
                 var pk = PartKind(kind.Class, key, p, zones);
                 var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { BodyOf([Brep(p.Solid, p.Color, z0)]) }));
-                var r = Product(pk, Gid(e.Id, key), p.Name, pk.ObjectType, Place(place, 0), shape, $"{e.Id}/{key}");
+                var r = Product(pk, Gid(e.Id, key), p.Name, pk.ObjectType, Place(place, 0), shape, $"{e.Id}/{key}", flight: pk.Class == IfcClass.StairFlight ? FlightOf(e, key) : null);
                 if (p.Material != null) UseMaterial(p.Material, r);
                 partRefs[(e.Id, key)] = r;
                 refs.Add(r);
@@ -795,6 +807,16 @@ public static class IfcExport
             if (kind.Class is IfcClass.Column or IfcClass.Beam or IfcClass.Footing) common.Add(Single("LoadBearing", Typed("IFCBOOLEAN", True)));
             if (e.Class is IfcClass.Door or IfcClass.Window && type?.Attrs["spec"] is JsonObject spec && spec["isExternal"] is JsonValue ext && ext.TryGetValue<bool>(out var isExternal))
                 common.Add(Single("IsExternal", Typed("IFCBOOLEAN", isExternal ? True : False)));
+            // A stair's numbers, as Pset_StairCommon names them: the whole stair's risers and treads, its riser and tread.
+            if (kind.Class == IfcClass.Stair && s.Quantities(e.Id).FirstOrDefault(q => q.Name == "Lapin_StairQuantities") is { } sq)
+            {
+                double? Q(string n) => sq.Quantities.FirstOrDefault(x => x.Name == n)?.Value;
+                var treads = s.Quantities(e.Id).Where(q => q.Name == "Qto_StairFlightBaseQuantities").Sum(q => q.Quantities.FirstOrDefault(x => x.Name == "NumberOfTreads")?.Value ?? 0);
+                if (Q("NumberOfRiser") is { } nr) common.Add(Single("NumberOfRiser", Typed("IFCCOUNTMEASURE", ((int)nr).ToString(System.Globalization.CultureInfo.InvariantCulture))));
+                common.Add(Single("NumberOfTreads", Typed("IFCCOUNTMEASURE", ((int)treads).ToString(System.Globalization.CultureInfo.InvariantCulture))));
+                if (Q("RiserHeight") is { } rh && rh > 0) common.Add(Single("RiserHeight", Typed("IFCPOSITIVELENGTHMEASURE", R(rh))));
+                if (Q("TreadLength") is { } tl && tl > 0) common.Add(Single("TreadLength", Typed("IFCPOSITIVELENGTHMEASURE", R(tl))));
+            }
             if (common.Count > 0 && CommonSets.Contains(kind.Class))
                 Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "common"), Null, S($"Pset_{kind.Class[3..]}Common"), Null, L(common)), Gid(e.Id, "common-rel"));
             Define(entity, IntentOf(e, Gid(e.Id, IntentKey), kind, extra), Gid(e.Id, "intent-rel"));

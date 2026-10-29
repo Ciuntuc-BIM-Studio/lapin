@@ -22,8 +22,9 @@ public static class StairsModule
             new("width", "Width", "length", Min: 0.5, Max: 5),
             new("baseOffset", "Base offset", "length", Min: -5, Max: 5),
             new("topOffset", "Top offset", "length", Min: -5, Max: 5),
+            new("rise", "Rise (own)", "length", Min: 0.05, Max: 10),
             new("turn", "Turn", "choice", Choices: ["left", "right"]),
-            new("risers", "Risers (fixed)", "number", Min: 2, Max: 60),
+            new("risers", "Risers (fixed)", "number", Min: 1, Max: 60),
             new("riserHeight", "Riser (fixed)", "length", Min: 0.1, Max: 0.25),
             new("tread", "Tread (fixed)", "length", Min: 0.2, Max: 0.5),
             new("landing", "Landing (fixed)", "length", Min: 0.3, Max: 5),
@@ -42,7 +43,10 @@ public static class StairsModule
             {
                 ["residential"] = JsonSerializer.SerializeToNode(StairRules.Residential, ArchitectureCatalogJson.Default.StairRules),
                 ["public"] = JsonSerializer.SerializeToNode(StairRules.Public, ArchitectureCatalogJson.Default.StairRules),
+                ["entrance"] = JsonSerializer.SerializeToNode(StairRules.Entrance, ArchitectureCatalogJson.Default.StairRules),
             },
+            ["library"] = new JsonArray(StairSpec.Library.Select(x => (JsonNode)new JsonObject { ["key"] = x.Key, ["spec"] = x.Value().ToJson() }).ToArray()),
+            ["constructions"] = new JsonArray(StairSpec.Constructions.Select(x => (JsonNode)x).ToArray()),
             ["shapes"] = new JsonArray(StairSpec.Shapes.Select(x => (JsonNode)x).ToArray()),
             ["turns"] = new JsonArray(StairSpec.Turns.Select(x => (JsonNode)x).ToArray()),
             ["sides"] = new JsonArray(StairSpec.Sides.Select(x => (JsonNode)x).ToArray()),
@@ -54,18 +58,31 @@ public static class StairsModule
             return new JsonObject { ["id"] = CreateType(ctx, spec).Id };
         });
 
+        // A ready-made type (Entrance steps): the project's copy, made the first time it is asked for.
+        r.Command("stairTypeFromLibrary", "Stair type from the library", (ctx, a) =>
+            new JsonObject { ["id"] = LibraryType(ctx, (string?)a["key"]).Id });
+
         r.Command("updateStairType", "Change stair type", (ctx, a) =>
         {
             var type = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.StairType);
             var spec = StairSpec.From(a["spec"]) ?? throw new CommandException("The stair type's specification cannot be read.");
             EnsureMaterials(ctx, spec);
+            var riseBefore = StairSpec.From(type.Attrs["spec"])?.Rise;
             var attrs = type.CloneAttrs();
             attrs["spec"] = spec.ToJson();
             ctx.Replace(type.With(name: spec.Name, attrs: attrs, predefinedType: spec.PredefinedType));
-            // Its stairs take the shape's IFC name and ask the floor above again.
+            // Its stairs take the shape's IFC name and ask the floor above again; those climbing the type's own rise keep their tops where they were.
             foreach (var stair in ctx.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).ToList())
             {
-                var renamed = stair.With(predefinedType: spec.PredefinedType);
+                var own = stair.CloneAttrs();
+                if (stair.NumOrNull("rise") == null && riseBefore != spec.Rise)
+                    own["baseOffset"] = (riseBefore, spec.Rise) switch
+                    {
+                        ({ } b, { } n) => stair.Num("baseOffset") + b - n,
+                        (null, { } n) => -n,
+                        _ => 0.0,
+                    };
+                var renamed = stair.With(attrs: own, predefinedType: spec.PredefinedType);
                 ctx.Replace(renamed);
                 StairBuilder.EnsureOpening(ctx, renamed);
             }
@@ -73,11 +90,13 @@ public static class StairsModule
         });
 
         // A stair: its foot (the centre of the first riser), the way it climbs (a second point, or an angle), which way it turns.
+        // A stair with a rise of its own (entrance steps) arrives at its storey's level unless a base offset is given: from −rise up to ±0.00.
         r.Command("addStair", "Stair", (ctx, a) =>
         {
             var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
             Spatial.Require(ctx.Model, storeyId, IfcClass.BuildingStorey);
-            var type = (string?)a["typeId"] is { } tid ? Spatial.Require(ctx.Model, tid, IfcClass.StairType) : DefaultType(ctx);
+            var type = (string?)a["typeId"] is { } tid ? Spatial.Require(ctx.Model, tid, IfcClass.StairType)
+                : (string?)a["library"] is { } key ? LibraryType(ctx, key) : DefaultType(ctx);
             var at = Args.Point(a, "x", "y");
             var rotation = Json.Number(a["rotation"]);
             if (rotation == null && a["x2"] != null)
@@ -91,9 +110,11 @@ public static class StairsModule
                 ["at"] = new JsonArray(at.X, at.Y), ["rotation"] = rotation ?? 0, ["turn"] = (string?)a["turn"] == "right" ? "right" : "left",
                 ["baseOffset"] = 0.0, ["topOffset"] = 0.0,
             };
-            foreach (var k in new[] { "width", "risers", "riserHeight", "tread", "landing", "height" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
+            foreach (var k in new[] { "width", "risers", "riserHeight", "tread", "landing", "height", "rise", "topOffset" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
             if ((string?)a["topStoreyId"] is { } top) attrs["topStoreyId"] = Spatial.Require(ctx.Model, top, IfcClass.BuildingStorey).Id;
             var spec = StairSpec.From(type.Attrs["spec"]) ?? StairSpec.Default();
+            var ownRise = Json.Number(a["rise"]) is { } ar && ar > 0 ? ar : spec.Rise;
+            attrs["baseOffset"] = Json.Number(a["baseOffset"]) ?? (ownRise is { } rise ? -rise : 0.0);
             var stair = new Entity(ctx.NewId(), IfcClass.Stair, Name(ctx.Model, spec), attrs, spec.PredefinedType);
             ctx.Add(stair);
             Spatial.Contain(ctx, storeyId, stair.Id);
@@ -107,8 +128,12 @@ public static class StairsModule
         {
             var stair = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Stair);
             var attrs = stair.CloneAttrs();
-            foreach (var k in new[] { "width", "baseOffset", "topOffset", "risers", "riserHeight", "tread", "landing", "height", "rotation" })
+            var riseBefore = StairBuilder.OwnRise(ctx.Model, stair);
+            foreach (var k in new[] { "width", "baseOffset", "topOffset", "risers", "riserHeight", "tread", "landing", "height", "rotation", "rise" })
                 if (a.ContainsKey(k)) { if (Json.Number(a[k]) is { } v) attrs[k] = v; else attrs.Remove(k); }
+            // A rise of its own changed (and no base offset with it): the top stays where it was, at the porch or the door, and the foot moves.
+            if (a.ContainsKey("rise") && !a.ContainsKey("baseOffset") && riseBefore is { } before && Json.Number(a["rise"]) is { } after && after > 0)
+                attrs["baseOffset"] = stair.Num("baseOffset") + before - Math.Max(after, 0.05);
             if (a.ContainsKey("x") && a.ContainsKey("y")) { var at = Args.Point(a, "x", "y"); attrs["at"] = new JsonArray(at.X, at.Y); }
             if ((string?)a["turn"] is { } turn) attrs["turn"] = turn == "right" ? "right" : "left";
             if (a.ContainsKey("noOpening")) { if (a["noOpening"] is JsonValue nv && nv.TryGetValue<bool>(out var no) && no) attrs["noOpening"] = true; else attrs.Remove("noOpening"); }
@@ -118,7 +143,11 @@ public static class StairsModule
             {
                 var type = Spatial.Require(ctx.Model, tid, IfcClass.StairType);
                 ctx.Relate(IfcClass.RelDefinesByType, type.Id, stair.Id);
-                predefined = (StairSpec.From(type.Attrs["spec"]) ?? StairSpec.Default()).PredefinedType;
+                var typeSpec = StairSpec.From(type.Attrs["spec"]) ?? StairSpec.Default();
+                predefined = typeSpec.PredefinedType;
+                // Into entrance steps (a rise of their own) or out of them: the stair keeps its top at its storey's level, or starts from it again.
+                if (!a.ContainsKey("baseOffset") && !attrs.ContainsKey("rise") && (riseBefore == null) != (typeSpec.Rise == null))
+                    attrs["baseOffset"] = typeSpec.Rise is { } typeRise ? -typeRise : 0.0;
             }
             var updated = stair.With(attrs: attrs, predefinedType: predefined);
             ctx.Replace(updated);
@@ -130,7 +159,7 @@ public static class StairsModule
         r.Query("stairPreview", (q, a) =>
         {
             var spec = StairSpec.From(a["spec"]) ?? throw new CommandException("The stair type's specification cannot be read.");
-            var height = Json.Number(a["height"]) ?? Spatial.Storeys(q.Model).FirstOrDefault()?.Num("height", 3) ?? 3;
+            var height = spec.Rise ?? Json.Number(a["height"]) ?? Spatial.Storeys(q.Model).FirstOrDefault()?.Num("height", 3) ?? 3;
             var r = StairSolver.Resolve(spec, height, new StairInputs(Json.Number(a["width"])), (string?)a["turn"] != "right");
             return Describe(r, new StairPlacement(new Vec2(0, 0), new Vec2(1, 0), (string?)a["turn"] != "right", 0), spec);
         });
@@ -139,10 +168,15 @@ public static class StairsModule
         r.Query("stairPlan", (q, a) =>
         {
             var storey = Spatial.Require(q.Model, (string?)a["storeyId"] ?? Spatial.Storeys(q.Model).FirstOrDefault()?.Id, IfcClass.BuildingStorey);
-            var type = (string?)a["typeId"] is { } tid ? q.Model.Get(tid) : q.Model.OfClass(IfcClass.StairType).FirstOrDefault();
-            var spec = (type != null ? StairSpec.From(type.Attrs["spec"]) : null) ?? StairSpec.Default();
+            // A library type (the Entrance steps tool): the project's copy when it has one, else the library's own spec.
+            var key = (string?)a["library"];
+            var type = (string?)a["typeId"] is { } tid ? q.Model.Get(tid)
+                : key != null ? q.Model.OfClass(IfcClass.StairType).FirstOrDefault(t => t.Str("library") == key)
+                : FirstStoreyType(q.Model);
+            var spec = (type != null ? StairSpec.From(type.Attrs["spec"]) : null)
+                ?? (key != null && StairSpec.Library.TryGetValue(key, out var make) ? make() : StairSpec.Default());
             var above = Spatial.Storeys(q.Model).FirstOrDefault(s => s.Num("elevation") > storey.Num("elevation") + 1e-6);
-            var height = (above?.Num("elevation") ?? storey.Num("elevation") + storey.Num("height", 3)) - storey.Num("elevation");
+            var height = spec.Rise ?? (above?.Num("elevation") ?? storey.Num("elevation") + storey.Num("height", 3)) - storey.Num("elevation");
             var left = (string?)a["turn"] != "right";
             var r = StairSolver.Resolve(spec, height, new StairInputs(Json.Number(a["width"])), left);
             return Describe(r, new StairPlacement(new Vec2(0, 0), new Vec2(1, 0), left, 0), spec);
@@ -153,21 +187,26 @@ public static class StairsModule
         r.Query("stairDrawing", (q, a) =>
         {
             var spec = StairSpec.From(a["spec"]) ?? throw new CommandException("The stair type's specification cannot be read.");
-            var height = Math.Max(0.3, Json.Number(a["height"]) ?? Spatial.Storeys(q.Model).FirstOrDefault()?.Num("height", 3) ?? 3);
+            // Entrance steps (a rise of their own) are drawn standing on the ground, with no floor above to open.
+            var height = spec.Rise ?? Math.Max(0.3, Json.Number(a["height"]) ?? Spatial.Storeys(q.Model).FirstOrDefault()?.Num("height", 3) ?? 3);
             var turn = (string?)a["turn"] == "right" ? "right" : "left";
             var scale = Json.Number(a["scale"]) ?? 50;
             var catalog = q.Services as ModuleCatalog ?? throw new CommandException("No modules to draw with.");
             var s = new Session(catalog, new ProductManifest("stair-preview", "Stair preview", ["core", .. catalog.Modules.Select(m => m.Id)]));
-            s.New();
+            // One ground floor at ±0.00 (a new project's foundations would be the first storey, and its first floor the one climbed to).
+            s.New(plain: true);
             JsonNode? Run(string command, JsonObject args) { s.Execute(command, args, out var result); return result; }
             var ground = Spatial.Storeys(s.Model).First();
-            var upper = (string)Run("storey.create", new JsonObject { ["name"] = "Above", ["elevation"] = height, ["height"] = 3.0 })!["id"]!;
             var type = (string)Run("architecture.createStairType", new JsonObject { ["spec"] = spec.ToJson() })!["id"]!;
             var r0 = StairSolver.Resolve(spec, height, new StairInputs(Json.Number(a["width"])), turn == "left");
             var pts = r0.Footprint().SelectMany(x => x).ToList();
             double x0 = pts.Min(p => p.X) - 1.5, x1 = pts.Max(p => p.X) + 1.5, y0 = pts.Min(p => p.Y) - 1.5, y1 = pts.Max(p => p.Y) + 1.5;
-            Run("architecture.addSlab", new JsonObject { ["storeyId"] = upper, ["points"] = new JsonArray(new JsonArray(x0, y0), new JsonArray(x1, y0), new JsonArray(x1, y1), new JsonArray(x0, y1)) });
-            var stair = new JsonObject { ["storeyId"] = ground.Id, ["typeId"] = type, ["x"] = 0, ["y"] = 0, ["x2"] = 1, ["y2"] = 0, ["turn"] = turn };
+            if (spec.Rise == null)
+            {
+                var upper = (string)Run("storey.create", new JsonObject { ["name"] = "Above", ["elevation"] = height, ["height"] = 3.0 })!["id"]!;
+                Run("architecture.addSlab", new JsonObject { ["storeyId"] = upper, ["points"] = new JsonArray(new JsonArray(x0, y0), new JsonArray(x1, y0), new JsonArray(x1, y1), new JsonArray(x0, y1)) });
+            }
+            var stair = new JsonObject { ["storeyId"] = ground.Id, ["typeId"] = type, ["x"] = 0, ["y"] = 0, ["x2"] = 1, ["y2"] = 0, ["turn"] = turn, ["baseOffset"] = 0.0 };
             if (Json.Number(a["width"]) is { } width) stair["width"] = width;
             Run("architecture.addStair", stair);
             var plan = (string)Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = ground.Id, ["scale"] = scale })!["id"]!;
@@ -182,7 +221,11 @@ public static class StairsModule
             if (StairBuilder.Resolve(q.Model, stair) is not var (r, place, spec)) return null;
             var o = Describe(r, place, spec);
             o["opening"] = StairBuilder.OpeningOf(q.Model, stair.Id)?.Id;
-            o["topStorey"] = Spatial.StoreyOf(q.Model, stair.Id) is { } st ? StairBuilder.TopStorey(q.Model, stair, st)?.Id : null;
+            var st = Spatial.StoreyOf(q.Model, stair.Id);
+            o["topStorey"] = st != null ? StairBuilder.TopStorey(q.Model, stair, st)?.Id : null;
+            o["ownRise"] = StairBuilder.OwnRise(q.Model, stair);
+            o["fromLevel"] = place.Z0;
+            o["toLevel"] = place.Z0 + r.Height;
             return o;
         });
     }
@@ -228,9 +271,26 @@ public static class StairsModule
         return type;
     }
 
-    /// <summary>The project's first stair type, made from the default when it has none.</summary>
+    /// <summary>The project's copy of a ready-made type (marked <c>library</c> with its key), made from the library the first time.</summary>
+    public static Entity LibraryType(ICommandContext ctx, string? key)
+    {
+        if (key == null || !StairSpec.Library.TryGetValue(key, out var make)) throw new CommandException($"No stair type „{key}” in the library.");
+        if (ctx.Model.OfClass(IfcClass.StairType).FirstOrDefault(t => t.Str("library") == key) is { } existing) return existing;
+        var type = CreateType(ctx, make());
+        var attrs = type.CloneAttrs();
+        attrs["library"] = key;
+        var marked = type.With(attrs: attrs);
+        ctx.Replace(marked);
+        return marked;
+    }
+
+    /// <summary>The project's first stair type that climbs to a storey (not entrance steps), null when it has none.</summary>
+    public static Entity? FirstStoreyType(IModelView m) =>
+        m.OfClass(IfcClass.StairType).FirstOrDefault(t => StairSpec.From(t.Attrs["spec"])?.Rise == null);
+
+    /// <summary>The project's first stair type that climbs to a storey, made from the default when it has none.</summary>
     public static Entity DefaultType(ICommandContext ctx) =>
-        ctx.Model.OfClass(IfcClass.StairType).FirstOrDefault() ?? CreateType(ctx, StairSpec.Default());
+        FirstStoreyType(ctx.Model) ?? CreateType(ctx, StairSpec.Default());
 
     static void EnsureMaterials(ICommandContext ctx, StairSpec spec)
     {
