@@ -113,7 +113,7 @@ export function RoomColorsDialog() {
                     <td>
                       <select value={entry?.hatch ?? ''} onChange={(e) => set(value, { hatch: e.target.value || null })}>
                         <option value="">none</option>
-                        {hatches.map((h) => <option key={h}>{h}</option>)}
+                        {hatches.map((h) => <option key={h} value={h}>{h}</option>)}
                       </select>
                     </td>
                     <td><input className="num narrow" type="number" min={0.1} step={0.1} disabled={!entry?.hatch} value={entry?.hatchScale ?? 1}

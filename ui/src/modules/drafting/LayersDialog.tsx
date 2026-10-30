@@ -31,7 +31,7 @@ export function LayersDialog() {
                 <td><input defaultValue={l.name} disabled={l.name === '0'} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== l.name) set(l.name, { newName: v }); }} /></td>
                 <td><input type="color" value={l.color} onChange={(e) => set(l.name, { color: e.target.value })} /></td>
                 <td><input type="number" step={0.05} min={0.05} max={2} defaultValue={l.weight} onBlur={(e) => set(l.name, { weight: Number(e.target.value) })} /></td>
-                <td><select value={l.lineType} onChange={(e) => set(l.name, { lineType: e.target.value })}>{TYPES.map((t) => <option key={t}>{t}</option>)}</select></td>
+                <td><select value={l.lineType} onChange={(e) => set(l.name, { lineType: e.target.value })}>{TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</select></td>
                 <td><input type="checkbox" checked={l.visible} onChange={(e) => set(l.name, { visible: e.target.checked })} /></td>
                 <td><input type="checkbox" checked={l.locked} onChange={(e) => set(l.name, { locked: e.target.checked })} /></td>
                 <td>{l.name !== '0' && <button type="button" className="icon" title="Remove (its shapes go to layer 0)" onClick={() => void execute('drafting.removeLayer', { name: l.name })}><X size={13} /></button>}</td>

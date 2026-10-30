@@ -87,7 +87,7 @@ export function VisibilityDialog() {
                       <td><input type="color" value={r.lineColor ?? '#000000'} onChange={(e) => set('categories', c, { lineColor: e.target.value })} />{r.lineColor && <button type="button" className="icon mini" title="As the object styles" onClick={() => set('categories', c, { lineColor: '' })}><X size={10} /></button>}</td>
                       <td><select value={r.lineWeight ?? ''} onChange={(e) => set('categories', c, { lineWeight: e.target.value })}>{(r.lineWeight && !WEIGHTS.includes(r.lineWeight) ? [...WEIGHTS, r.lineWeight] : WEIGHTS).map((w) => <option key={w} value={w}>{w === '' ? 'as styled' : LEGACY[w] ? `${w} (${LEGACY[w]} mm)` : `${w} mm`}</option>)}</select></td>
                       <td><input type="color" value={r.fillColor ?? '#ffffff'} onChange={(e) => set('categories', c, { fillColor: e.target.value })} />{r.fillColor && <button type="button" className="icon mini" title="No fill of its own" onClick={() => set('categories', c, { fillColor: '' })}><X size={10} /></button>}</td>
-                      <td><select value={r.cutHatch ?? ''} onChange={(e) => set('categories', c, { cutHatch: e.target.value })}><option value="">the materials'</option>{hatches.map((h) => <option key={h}>{h}</option>)}</select></td>
+                      <td><select value={r.cutHatch ?? ''} onChange={(e) => set('categories', c, { cutHatch: e.target.value })}><option value="">the materials'</option>{hatches.map((h) => <option key={h} value={h}>{h}</option>)}</select></td>
                     </tr>
                   );
                 })}

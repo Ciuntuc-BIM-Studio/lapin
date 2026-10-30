@@ -451,6 +451,25 @@ export const DA: Record<string, string> = {
   // Import DXF placed by the map's coordinates (decision 172)
   "Placed": "Placeret", "by its origin": "efter sit nulpunkt", "by the map's coordinates": "efter kortets koordinater", "metres (map coordinates)": "meter (kortkoordinater)", "As a link": "Som link", "read-only, kept with the file": "skrivebeskyttet, knyttet til filen",
   'Columns of panes': 'Kolonner af rammer', 'Rows of panes': 'Rækker af rammer',
+  // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
+  "session|Join": "Deltag", "element|Layers": "Lag", "cad|Layer": "Lag", "edge|gable": "gavl",
+  "eave": "tagfod", "Import DXF": "Importér DXF", "Import DXF…": "Importér DXF…", "Import DXF ·": "Importér DXF ·",
+  "Link IFC": "Tilknyt IFC", "Link IFC…": "Tilknyt IFC…", "Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.": "Intet er tilknyttet. Fil → Tilknyt IFC… eller Importér DXF… med „Som link“ henter en fil skrivebeskyttet ind; den vises her.", "IFC properties": "IFC-egenskaber",
+  "Units": "Enheder", "Units:": "Enheder:", "The project's units: change them in Drafting standards → Project": "Projektets enheder: skift dem i Tegningsstandarder → Projekt", "Lengths are shown and typed in this unit everywhere; the engine keeps metres": "Længder vises og indtastes overalt i denne enhed; motoren gemmer meter",
+  "Roof window": "Ovenlysvindue", "Dormer": "Kvist", "dormer": "kvist", "Shaped by hand": "Formet i hånden",
+  "Hip": "Valmtag", "Gable": "Sadeltag", "Shed": "Pulttag", "Mansard": "Mansardtag",
+  "Barrel": "Buetag", "Flat": "Fladt tag", "hip": "valmtag", "gable": "sadeltag",
+  "shed": "pulttag", "mansard": "mansardtag", "barrel": "buetag", "flat": "fladt tag",
+  "Hand": "Hængsling", "Side": "Side", "Hinges on the other side": "Hængsler i den anden side", "Opens to the other side of the wall": "Åbner mod den anden side af væggen",
+  "Reassign": "Flyt", "Underlay": "Underlag", "Underlay: another level's plan beneath this one, faded, to snap to": "Underlag: en anden etages plan under denne, nedtonet, til at fange", "Architectural": "Arkitektonisk",
+  "Structural": "Konstruktiv", "Custom": "Tilpasset", "Existing": "Eksisterende", "New construction": "Nybyggeri",
+  "Execution": "Udførelse", "existing": "eksisterende", "phase|construction": "nybyggeri", "execution": "udførelse",
+  "wall(s), round their outer faces": "væg(ge), rundt om deres ydersider", "detach": "frigør", "Keep the line as it is now, no longer following the walls": "Behold linjen som den er nu, uden at følge væggene længere", "Ends": "Ender",
+  "Top and bottom": "Top og bund", "Width: how wide one copy of the picture lies on the model": "Bredde: hvor bred én kopi af billedet ligger på modellen", "Height: how high one copy of the picture lies on the model": "Højde: hvor høj én kopi af billedet ligger på modellen", "Urban planning": "Byplanlægning",
+  "Planning": "Byplanlægning", "Buildable volume": "Tilladt bygningsvolumen", "Sun study": "Solstudie", "Engineering": "Dimensionering",
+  "Assist": "Assistenter", "Ask Me": "Spørg mig", "Ask Lapin how to do something (F1)": "Spørg Lapin, hvordan man gør noget (F1)", "Help: ask Lapin (F1), report an issue, community": "Hjælp: spørg Lapin (F1), rapportér et problem, fællesskab",
+  "Ask Lapin": "Spørg Lapin", "Type a question in your own words, for example “how do I change the units”. Or pick one:": "Skriv et spørgsmål med dine egne ord, for eksempel „hvordan skifter jeg enhederne“. Eller vælg et:", "Or perhaps:": "Eller måske:", "I don't have an answer to that yet. Send us the question: we'll answer it and add it here.": "Det har jeg ikke et svar på endnu. Send os spørgsmålet: vi svarer på det og tilføjer det her.",
+  "Send the question": "Send spørgsmålet", "Your question…": "Dit spørgsmål…", "Your question": "Dit spørgsmål", "Ask": "Spørg",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

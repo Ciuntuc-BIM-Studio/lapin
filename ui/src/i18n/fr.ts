@@ -451,6 +451,25 @@ export const FR: Record<string, string> = {
   // Import DXF placed by the map's coordinates (decision 172)
   "Placed": "Placé", "by its origin": "par son origine", "by the map's coordinates": "par les coordonnées de la carte", "metres (map coordinates)": "mètres (coordonnées de la carte)", "As a link": "Comme lien", "read-only, kept with the file": "en lecture seule, lié au fichier",
   'Columns of panes': 'Colonnes de vantaux', 'Rows of panes': 'Rangées de vantaux',
+  // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
+  "session|Join": "Rejoindre", "element|Layers": "Couches", "cad|Layer": "Calque", "edge|gable": "pignon",
+  "eave": "égout", "Import DXF": "Importer DXF", "Import DXF…": "Importer DXF…", "Import DXF ·": "Importer DXF ·",
+  "Link IFC": "Lier IFC", "Link IFC…": "Lier IFC…", "Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.": "Rien n’est lié. Fichier → Lier IFC…, ou Importer DXF… avec « Comme lien », apporte un fichier en lecture seule ; il est listé ici.", "IFC properties": "Propriétés IFC",
+  "Units": "Unités", "Units:": "Unités :", "The project's units: change them in Drafting standards → Project": "Les unités du projet : à changer dans Normes de dessin → Projet", "Lengths are shown and typed in this unit everywhere; the engine keeps metres": "Les longueurs sont affichées et saisies partout dans cette unité ; le moteur garde des mètres",
+  "Roof window": "Fenêtre de toit", "Dormer": "Lucarne", "dormer": "lucarne", "Shaped by hand": "Formé à la main",
+  "Hip": "À quatre pans", "Gable": "À deux pans", "Shed": "Monopente", "Mansard": "Mansardé",
+  "Barrel": "En berceau", "Flat": "Plat", "hip": "à quatre pans", "gable": "à deux pans",
+  "shed": "monopente", "mansard": "mansardé", "barrel": "en berceau", "flat": "plat",
+  "Hand": "Main", "Side": "Côté", "Hinges on the other side": "Paumelles de l’autre côté", "Opens to the other side of the wall": "S’ouvre de l’autre côté du mur",
+  "Reassign": "Réaffecter", "Underlay": "Calque de fond", "Underlay: another level's plan beneath this one, faded, to snap to": "Calque de fond : le plan d’un autre niveau sous celui-ci, estompé, pour s’y accrocher", "Architectural": "Architectural",
+  "Structural": "Structurel", "Custom": "Personnalisé", "Existing": "Existant", "New construction": "Construction neuve",
+  "Execution": "Exécution", "existing": "existant", "phase|construction": "construction", "execution": "exécution",
+  "wall(s), round their outer faces": "mur(s), autour de leurs faces extérieures", "detach": "détacher", "Keep the line as it is now, no longer following the walls": "Garder la ligne telle qu’elle est, sans plus suivre les murs", "Ends": "Extrémités",
+  "Top and bottom": "Dessus et dessous", "Width: how wide one copy of the picture lies on the model": "Largeur : la largeur d’une copie de l’image posée sur le modèle", "Height: how high one copy of the picture lies on the model": "Hauteur : la hauteur d’une copie de l’image posée sur le modèle", "Urban planning": "Urbanisme",
+  "Planning": "Urbanisme", "Buildable volume": "Gabarit constructible", "Sun study": "Étude d’ensoleillement", "Engineering": "Ingénierie",
+  "Assist": "Assistants", "Ask Me": "Demandez-moi", "Ask Lapin how to do something (F1)": "Demander à Lapin comment faire quelque chose (F1)", "Help: ask Lapin (F1), report an issue, community": "Aide : demander à Lapin (F1), signaler un problème, communauté",
+  "Ask Lapin": "Demander à Lapin", "Type a question in your own words, for example “how do I change the units”. Or pick one:": "Posez une question avec vos propres mots, par exemple « comment changer les unités ». Ou choisissez-en une :", "Or perhaps:": "Ou peut-être :", "I don't have an answer to that yet. Send us the question: we'll answer it and add it here.": "Je n’ai pas encore de réponse à cela. Envoyez-nous la question : nous y répondrons et l’ajouterons ici.",
+  "Send the question": "Envoyer la question", "Your question…": "Votre question…", "Your question": "Votre question", "Ask": "Demander",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

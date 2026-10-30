@@ -61,7 +61,7 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
           </select>
           <button type="button" className="link small" onClick={() => useUi.setState({ dialog: 'viewStyles' })}>Edit styles…</button>
         </dd>
-        <dt title={threeD ? 'Which layers of walls, floors and footings the 3D view shows (each kept layer a solid of its own); the finishes are the layers of materials whose category is Finish' : 'Which layers of walls, floors and footings draw: the finishes are the layers of materials whose category is Finish'}>Layers</dt>
+        <dt title={threeD ? 'Which layers of walls, floors and footings the 3D view shows (each kept layer a solid of its own); the finishes are the layers of materials whose category is Finish' : 'Which layers of walls, floors and footings draw: the finishes are the layers of materials whose category is Finish'} data-i18n-ctx="element">Layers</dt>
         <dd>
           <select value={state.resolved.layers} onChange={(e) => set({ layers: e.target.value })}>
             {LAYER_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
@@ -160,7 +160,7 @@ export function ViewStylesDialog() {
         <header className="dialog-head"><span className="panel-title">View styles</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
           <table className="layer-table view-styles">
-            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th>Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th /></tr></thead>
+            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th data-i18n-ctx="element">Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th /></tr></thead>
             <tbody>
               {styles.map((s) => (
                 <tr key={s.id}>

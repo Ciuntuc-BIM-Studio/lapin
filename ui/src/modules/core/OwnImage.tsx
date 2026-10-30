@@ -70,9 +70,9 @@ export function OwnImage({ materialId }: { materialId: string }) {
           : <span className="own-image-thumb empty muted small">none</span>}
         <button type="button" className="btn compact" onClick={choose}><ImagePlus size={13} />{image ? 'Replace…' : 'Import image…'}</button>
         {image && <>
-          <label className="small" title="How wide the picture lies on the model">W <input className="num" type="number" step={0.05} min={0.01} defaultValue={size[0]} key={`w${size[0]}`}
+          <label className="small" title="Width: how wide one copy of the picture lies on the model">W <input className="num" type="number" step={0.05} min={0.01} defaultValue={size[0]} key={`w${size[0]}`}
             onBlur={(e) => { const v = num(e.target.value); if (v > 0 && v !== size[0]) set({ textureSize: [v, size[1]] }); }} /> m</label>
-          <label className="small" title="How high the picture lies on the model">H <input className="num" type="number" step={0.05} min={0.01} defaultValue={size[1]} key={`h${size[1]}`}
+          <label className="small" title="Height: how high one copy of the picture lies on the model">H <input className="num" type="number" step={0.05} min={0.01} defaultValue={size[1]} key={`h${size[1]}`}
             onBlur={(e) => { const v = num(e.target.value); if (v > 0 && v !== size[1]) set({ textureSize: [size[0], v] }); }} /> m</label>
           <button type="button" className="icon" title="Take the image off" onClick={() => set({ textureImage: null })}><Trash2 size={13} /></button>
         </>}

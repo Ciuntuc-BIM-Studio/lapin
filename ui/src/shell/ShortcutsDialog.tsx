@@ -114,7 +114,7 @@ export function ShortcutsDialog() {
           <div className="shortcut-clash" role="alert">
             <span><kbd data-no-i18n>{formatBinding(clash.binding)}</kbd> <span>is already used by</span> <b>{clash.users.map(name).join(', ')}</b>.</span>
             <span className="grow" />
-            <button type="button" className="btn primary" onClick={() => { setKeymap(withBinding(commands(), state, clash.id, clash.binding, true)); setClash(null); }}>Reassign to {name(clash.id)}</button>
+            <button type="button" className="btn primary" onClick={() => { setKeymap(withBinding(commands(), state, clash.id, clash.binding, true)); setClash(null); }}>{`Reassign to ${name(clash.id)}`}</button>
             <button type="button" className="btn" onClick={() => { setKeymap(withBinding(commands(), state, clash.id, clash.binding)); setClash(null); }}>Keep both</button>
             <button type="button" className="btn" onClick={() => setClash(null)}>Cancel</button>
           </div>

@@ -430,7 +430,7 @@ export const ES: Record<string, string> = {
   'to the storey': 'hasta la planta', 'a rise of its own': 'un desnivel propio', 'Add this ready-made type to the project': 'Añadir este tipo predefinido al proyecto', '· library': '· biblioteca',
   'A rise of its own (entrance steps), not up to the storey above': 'Un desnivel propio (escalones de entrada), no hasta la planta superior',
   "Placed, the steps end at their storey's level and start the rise below it.": 'Una vez colocados, los escalones terminan en el nivel de su planta y empiezan el desnivel por debajo.',
-  'entrance steps': 'escalones de entrada', 'at least': 'como mínimo', 'at most': 'como máximo', 'Built as': 'Construcción', 'Waist slab under the steps': 'Losa inclinada bajo los peldaños',
+  'entrance steps': 'escalones de entrada', 'at least': 'como mínimo', 'at most': 'como máximo', 'Built as': 'Tipo de construcción', 'Waist slab under the steps': 'Losa inclinada bajo los peldaños',
   'Solid, cast on the ground': 'Maciza, hormigonada sobre el terreno', 'Preview at its own rise of': 'Vista previa con su desnivel propio de',
   'One riser: the step is the edge of the floor it climbs to. Give it two risers or more for treads in front.': 'Una sola contrahuella: el escalón es el propio borde de la losa a la que sube. Asígnele dos contrahuellas o más para tener huellas delante.',
   'Stair type from the library': 'Tipo de escalera de la biblioteca', 'Risers': 'Contrahuellas',
@@ -451,6 +451,25 @@ export const ES: Record<string, string> = {
   // The facade's dressings in the joinery configurator: shutters, grille, window box, canopy (reports #38, #39)
   'On the facade': 'En la fachada', 'Shutters': 'Contraventanas', 'Louvred': 'De lamas', 'Planks': 'De tablas', 'Leaves': 'Hojas', 'One leaf': 'Una hoja', 'Two leaves': 'Dos hojas', 'Shown open': 'Mostradas abiertas', 'Louvre pitch': 'Paso de las lamas', 'From the wall face': 'Desde la cara del muro', 'From the window\'s axis': 'Desde el eje de la ventana', 'Up or down': 'Arriba o abajo', 'Safety grille': 'Reja de seguridad', 'In the reveal': 'En el derrame', 'On the interior face': 'En la cara interior', 'Bars': 'Barrotes', 'Horizontal': 'Horizontales', 'Vertical': 'Verticales', 'Both ways': 'En ambos sentidos', 'Bar size': 'Sección del barrote', 'Bar spacing': 'Separación de barrotes', 'Frame width': 'Ancho del marco', 'Past the opening': 'Más allá del hueco', 'Set back from the face': 'Retranqueada desde la cara', 'Window box': 'Jardinera', 'Below the opening': 'Bajo el hueco', 'Canopy': 'Marquesina', 'Above the head': 'Sobre el dintel',
   'Columns of panes': 'Columnas de hojas', 'Rows of panes': 'Filas de hojas',
+  // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
+  "session|Join": "Unirse", "element|Layers": "Capas", "cad|Layer": "Capa", "edge|gable": "hastial",
+  "eave": "alero", "Import DXF": "Importar DXF", "Import DXF…": "Importar DXF…", "Import DXF ·": "Importar DXF ·",
+  "Link IFC": "Vincular IFC", "Link IFC…": "Vincular IFC…", "Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.": "No hay nada vinculado. Archivo → Vincular IFC…, o Importar DXF… con «Como vínculo», trae un archivo en solo lectura; aparece aquí.", "IFC properties": "Propiedades IFC",
+  "Units": "Unidades", "Units:": "Unidades:", "The project's units: change them in Drafting standards → Project": "Las unidades del proyecto: se cambian en Normas de dibujo → Proyecto", "Lengths are shown and typed in this unit everywhere; the engine keeps metres": "Las longitudes se muestran y se escriben en esta unidad en todas partes; el motor guarda metros",
+  "Roof window": "Ventana de cubierta", "Dormer": "Buhardilla", "dormer": "buhardilla", "Shaped by hand": "Con forma a mano",
+  "Hip": "A cuatro aguas", "Gable": "A dos aguas", "Shed": "A un agua", "Mansard": "Mansarda",
+  "Barrel": "Bóveda", "Flat": "Plana", "hip": "a cuatro aguas", "gable": "a dos aguas",
+  "shed": "a un agua", "mansard": "mansarda", "barrel": "bóveda", "flat": "plana",
+  "Hand": "Mano", "Side": "Lado", "Hinges on the other side": "Bisagras al otro lado", "Opens to the other side of the wall": "Abre hacia el otro lado del muro",
+  "Reassign": "Reasignar", "Underlay": "Calco", "Underlay: another level's plan beneath this one, faded, to snap to": "Calco: la planta de otro nivel debajo de esta, atenuada, para referenciar", "Architectural": "Arquitectónico",
+  "Structural": "Estructural", "Custom": "Personalizado", "Existing": "Existente", "New construction": "Nueva construcción",
+  "Execution": "Ejecución", "existing": "existente", "phase|construction": "construcción", "execution": "ejecución",
+  "wall(s), round their outer faces": "muro(s), alrededor de sus caras exteriores", "detach": "separar", "Keep the line as it is now, no longer following the walls": "Mantener la línea como está ahora, sin seguir ya los muros", "Ends": "Extremos",
+  "Top and bottom": "Superior e inferior", "Width: how wide one copy of the picture lies on the model": "Ancho: cuánto mide de ancho en el modelo una copia de la imagen", "Height: how high one copy of the picture lies on the model": "Alto: cuánto mide de alto en el modelo una copia de la imagen", "Urban planning": "Urbanismo",
+  "Planning": "Urbanismo", "Buildable volume": "Volumen edificable", "Sun study": "Estudio de soleamiento", "Engineering": "Ingeniería",
+  "Assist": "Asistentes", "Ask Me": "Pregúntame", "Ask Lapin how to do something (F1)": "Preguntar a Lapin cómo hacer algo (F1)", "Help: ask Lapin (F1), report an issue, community": "Ayuda: preguntar a Lapin (F1), informar de un problema, comunidad",
+  "Ask Lapin": "Preguntar a Lapin", "Type a question in your own words, for example “how do I change the units”. Or pick one:": "Escriba una pregunta con sus propias palabras, por ejemplo «cómo cambio las unidades». O elija una:", "Or perhaps:": "O quizás:", "I don't have an answer to that yet. Send us the question: we'll answer it and add it here.": "Todavía no tengo respuesta para eso. Envíenos la pregunta: la responderemos y la añadiremos aquí.",
+  "Send the question": "Enviar la pregunta", "Your question…": "Su pregunta…", "Your question": "Su pregunta", "Ask": "Preguntar",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

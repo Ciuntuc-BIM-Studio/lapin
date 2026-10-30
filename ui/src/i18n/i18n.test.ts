@@ -153,3 +153,48 @@ describe('the languages', () => {
     expect(translate('Redo (Ctrl+Y)', 'es')).toBe('Rehacer (Ctrl+Y)');
   });
 });
+
+describe('labels the guide found in English', () => {
+  const langs: Lang[] = ['ro', 'es', 'de', 'fr', 'da'];
+  const labels = [
+    'Import DXF', 'Import DXF…', 'Link IFC…', 'IFC properties', 'Placed', "by the map's coordinates", 'As a link', 'Units', 'Units:',
+    'Roof window', 'Dormer', 'Side', 'Hand', 'Reassign', 'Underlay', 'Execution', 'detach', 'Planning', 'Engineering', 'Assist',
+    'Buildable volume', 'Sun study', 'Send the question', 'Ask Me', 'Ask Lapin', 'Your question…', 'Ask', 'Custom', 'Ends', 'Top and bottom',
+    'Radiator', 'Wash basin', 'Layer', 'Architectural', 'Structural', 'hip', 'gable', 'shed', 'mansard', 'barrel', 'flat',
+    'Width: how wide one copy of the picture lies on the model', 'Height: how high one copy of the picture lies on the model',
+  ];
+  for (const lang of langs) {
+    it(`are translated into ${lang}`, () => {
+      expect(labels.filter((k) => translate(k, lang) == null)).toEqual([]);
+    });
+  }
+
+  it('keep a phrase split by a name, and an exact phrase before a pattern', () => {
+    expect(translate('Import DXF ·', 'de')).toBe('DXF importieren ·');
+    expect(translate("Underlay: another level's plan beneath this one, faded, to snap to", 'es')).toMatch(/^Calco: la planta/);
+  });
+});
+
+describe('a word with two meanings', () => {
+  it('takes its context first (data-i18n-ctx), else its common meaning', () => {
+    expect(translate('Join', 'es')).toBe('Unir');
+    expect(translate('Join', 'es', 'session')).toBe('Unirse');
+    expect(translate('Join', 'de', 'session')).toBe('Beitreten');
+    expect(translate('Join', 'fr', 'session')).toBe('Rejoindre');
+    expect(translate('Join', 'da', 'session')).toBe('Deltag');
+    expect(translate('Join', 'ro', 'session')).toBe('Intră');
+    expect(translate('Layers', 'de', 'element')).toBe('Schichten');
+    expect(translate('Layers', 'fr', 'element')).toBe('Couches');
+    expect(translate('Layers', 'ro', 'element')).toBe('Straturi');
+    expect(translate('Layers', 'fr')).toBe('Calques');
+    expect(translate('Layer', 'fr', 'cad')).toBe('Calque');
+    expect(translate('gable', 'de', 'edge')).toBe('Giebel');
+    expect(translate('gable', 'de')).toBe('Satteldach');
+    // A context with no phrase of its own falls back to the common one.
+    expect(translate('Wall', 'es', 'session')).toBe('Muro');
+  });
+
+  it('Spanish tells the stair\'s Built as from its Construction tab', () => {
+    expect(translate('Built as', 'es')).not.toBe(translate('Construction', 'es'));
+  });
+});

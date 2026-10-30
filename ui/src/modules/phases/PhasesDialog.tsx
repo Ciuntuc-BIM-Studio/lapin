@@ -27,7 +27,7 @@ export function PhasesDialog() {
                 <tr key={p.id}>
                   <td><input type="radio" name="active-phase" checked={active === p.id} onChange={() => void execute('phases.setActive', { phase: p.id })} /></td>
                   <td><input key={p.id + p.name} defaultValue={p.name} onBlur={(e) => e.target.value.trim() && e.target.value !== p.name && void execute('phases.updatePhase', { id: p.id, name: e.target.value })} /></td>
-                  <td><select value={p.kind} onChange={(e) => void execute('phases.updatePhase', { id: p.id, kind: e.target.value })}>{['existing', 'construction', 'execution'].map((k) => <option key={k}>{k}</option>)}</select></td>
+                  <td><select value={p.kind} data-i18n-ctx="phase" onChange={(e) => void execute('phases.updatePhase', { id: p.id, kind: e.target.value })}>{['existing', 'construction', 'execution'].map((k) => <option key={k} value={k}>{k}</option>)}</select></td>
                   <td className="row-tools"><button type="button" className="icon mini" title="Remove" onClick={() => void execute('phases.removePhase', { id: p.id })}><Trash2 size={12} /></button></td>
                 </tr>
               ))}

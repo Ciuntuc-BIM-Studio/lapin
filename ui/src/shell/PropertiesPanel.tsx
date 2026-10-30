@@ -65,7 +65,7 @@ export function FieldRow({ node, field }: { node: NodeDto; field: FieldDescripto
   } else if (field.kind === 'bool') {
     input = <input type="checkbox" checked={v === true} ref={(el) => { if (el) el.indeterminate = varies; }} onChange={(e) => update(e.target.checked)} />;
   } else if (field.kind === 'choice') {
-    input = <select className="cell" value={!varies && typeof v === 'string' ? v : ''} onChange={(e) => update(e.target.value)}>{varies && <option value="">varies</option>}{!varies && typeof v !== 'string' && <option value="" disabled>—</option>}{(field.choices ?? []).map((c) => <option key={c}>{c}</option>)}</select>;
+    input = <select className="cell" value={!varies && typeof v === 'string' ? v : ''} onChange={(e) => update(e.target.value)}>{varies && <option value="">varies</option>}{!varies && typeof v !== 'string' && <option value="" disabled>—</option>}{(field.choices ?? []).map((c) => <option key={c} value={c}>{c}</option>)}</select>;
   } else if (field.kind === 'color') {
     input = <input type="color" value={typeof v === 'string' ? v : '#c9ced6'} onChange={(e) => update(e.target.value)} />;
   } else {
@@ -158,7 +158,7 @@ function ParamsSection({ node, ids: who, shadowed }: { node: NodeDto; ids?: () =
               <dd>
                 {p.kind === 'length' ? <LengthCell metres={p.value as number} onCommit={(m) => set(p, m)} />
                   : p.kind === 'bool' ? <input type="checkbox" checked={p.value === true} onChange={(e) => set(p, e.target.checked)} />
-                  : p.kind === 'choice' ? <select className="cell" value={String(p.value ?? '')} onChange={(e) => set(p, e.target.value)}>{(p.options ?? []).map((o) => <option key={o}>{o}</option>)}</select>
+                  : p.kind === 'choice' ? <select className="cell" value={String(p.value ?? '')} onChange={(e) => set(p, e.target.value)}>{(p.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}</select>
                   : p.kind === 'text' ? <Cell value={String(p.value ?? '')} onCommit={(t) => set(p, t)} />
                   : <Cell className="num" value={p.value == null ? '' : String(p.value)} suffix={p.kind === 'area' ? 'm²' : p.kind === 'angle' ? '°' : undefined}
                       onCommit={(t) => { const n = parseNumber(t); if (n != null) set(p, n); }} />}
@@ -169,7 +169,7 @@ function ParamsSection({ node, ids: who, shadowed }: { node: NodeDto; ids?: () =
       )}
       <div className="param-add">
         <input placeholder="New parameter" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') add(); }} />
-        <select value={kind} onChange={(e) => setKind(e.target.value)} title="Kind">{KINDS.map((k) => <option key={k}>{k}</option>)}</select>
+        <select value={kind} onChange={(e) => setKind(e.target.value)} title="Kind">{KINDS.map((k) => <option key={k} value={k}>{k}</option>)}</select>
         <button type="button" className="icon" title="Add the parameter" onClick={add} disabled={!name.trim()}><Plus size={14} /></button>
       </div>
     </>

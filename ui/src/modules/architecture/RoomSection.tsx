@@ -67,7 +67,7 @@ export function RoomSection({ node }: { node: NodeDto }) {
         <dd className="row">
           <select value={hatch} onChange={(e) => update('fillHatch', e.target.value)}>
             <option value="">as its scheme</option>
-            {hatches.map((h) => <option key={h}>{h}</option>)}
+            {hatches.map((h) => <option key={h} value={h}>{h}</option>)}
           </select>
           {hatch && <input className="num narrow" type="number" min={0.1} step={0.1} title="Hatch scale" value={typeof node.props.hatchScale === 'number' ? node.props.hatchScale : 1} onChange={(e) => { const v = Number(e.target.value); if (v > 0) update('hatchScale', v); }} />}
           {hatch && <HatchSwatch hatch={hatch} scale={typeof node.props.hatchScale === 'number' ? node.props.hatchScale : 1} fill={str('fillColor') || null} size={24} />}

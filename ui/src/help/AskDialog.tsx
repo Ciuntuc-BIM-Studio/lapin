@@ -1,8 +1,9 @@
 /**
  * Ask Lapin (Help → Ask Lapin, F1): a question typed in your own words gets
- * the answer from the FAQ (help/faq.ts) in the interface's language, with a
+ * the answer from the FAQ (help/faq.ts), in Romanian or else in English, with a
  * button to where it is; a question it cannot answer goes to us as a report,
- * and its answer comes back here.
+ * and its answer comes back here. The dialog's own words go through the
+ * interface's translator, in every language; the FAQ's are marked to be left.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -21,6 +22,7 @@ interface Message { from: 'you' | 'lapin'; text?: string; entry?: Entry; related
 const STARTERS = ['units', 'copy-move', 'import-dwg-pdf', 'roof-gables', 'levels', 'sheets-pdf'];
 
 export function AskDialog({ onClose, onReport }: { onClose: () => void; onReport: (question: string) => void }) {
+  // The FAQ is written in English and Romanian; the dialog around it is in every language (the translator).
   const ro = useLang((s) => s.lang) === 'ro';
   const [text, setText] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -52,45 +54,45 @@ export function AskDialog({ onClose, onReport }: { onClose: () => void; onReport
 
   return (
     <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog ask-dialog" role="dialog" aria-label="Ask Lapin" data-no-i18n onClick={(e) => e.stopPropagation()}>
+      <div className="dialog ask-dialog" role="dialog" aria-label="Ask Lapin" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
-          <span className="panel-title"><BunnyIcon size={16} /> {ro ? 'Întreabă Lapin' : 'Ask Lapin'}</span>
-          <button type="button" className="icon" onClick={onClose} title={ro ? 'Închide' : 'Close'}><X size={15} /></button>
+          <span className="panel-title"><BunnyIcon size={16} /> Ask Lapin</span>
+          <button type="button" className="icon" onClick={onClose} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body ask-body">
           <div className="ask-msg lapin">
-            <p>{ro ? 'Scrie o întrebare cu cuvintele tale, de exemplu „cum schimb unitățile”. Sau alege una:' : 'Type a question in your own words, for example “how do I change the units”. Or pick one:'}</p>
-            <div className="ask-chips">
+            <p>Type a question in your own words, for example “how do I change the units”. Or pick one:</p>
+            <div className="ask-chips" data-no-i18n>
               {STARTERS.map((id) => FAQ.find((e) => e.id === id)).filter((e): e is Entry => !!e).map((e) => (
                 <button key={e.id} type="button" className="chip" onClick={() => show(e)}>{title(e)}</button>
               ))}
             </div>
           </div>
           {messages.map((m, i) => m.from === 'you' ? (
-            <div key={i} className="ask-msg you">{m.text}</div>
+            <div key={i} className="ask-msg you" data-no-i18n>{m.text}</div>
           ) : m.entry ? (
             <div key={i} className="ask-msg lapin">
-              <p className="ask-title">{title(m.entry)}</p>
-              <p>{ro ? m.entry.aRo : m.entry.a}</p>
-              {m.entry.action && <button type="button" className="btn compact" onClick={() => run(m.entry!)}>{ro ? m.entry.action.labelRo : m.entry.action.label}</button>}
+              <p className="ask-title" data-no-i18n>{title(m.entry)}</p>
+              <p data-no-i18n>{ro ? m.entry.aRo : m.entry.a}</p>
+              {m.entry.action && <button type="button" className="btn compact" data-no-i18n={ro || undefined} onClick={() => run(m.entry!)}>{ro ? m.entry.action.labelRo : m.entry.action.label}</button>}
               {(m.related?.length ?? 0) > 0 && (
-                <div className="ask-chips"><span className="muted small">{ro ? 'Poate și:' : 'Or perhaps:'}</span>
-                  {m.related!.map((e) => <button key={e.id} type="button" className="chip" onClick={() => show(e)}>{title(e)}</button>)}
+                <div className="ask-chips"><span className="muted small">Or perhaps:</span>
+                  {m.related!.map((e) => <button key={e.id} type="button" className="chip" data-no-i18n onClick={() => show(e)}>{title(e)}</button>)}
                 </div>
               )}
             </div>
           ) : (
             <div key={i} className="ask-msg lapin">
-              <p>{ro ? 'Nu am încă un răspuns la asta. Trimite-ne întrebarea: îți răspundem și o adăugăm aici.' : "I don't have an answer to that yet. Send us the question: we'll answer it and add it here."}</p>
-              <button type="button" className="btn compact" onClick={() => onReport(m.unknown ?? '')}>{ro ? 'Trimite întrebarea' : 'Send the question'}</button>
+              <p>I don't have an answer to that yet. Send us the question: we'll answer it and add it here.</p>
+              <button type="button" className="btn compact" onClick={() => onReport(m.unknown ?? '')}>Send the question</button>
             </div>
           ))}
           <div ref={end} />
         </div>
         <footer className="dialog-foot ask-foot">
-          <input className="grow" autoFocus value={text} placeholder={ro ? 'Întrebarea ta…' : 'Your question…'} aria-label={ro ? 'Întrebarea ta' : 'Your question'}
+          <input className="grow" autoFocus value={text} placeholder="Your question…" aria-label="Your question"
             onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') send(); }} />
-          <button type="button" className="btn primary" onClick={send} disabled={!text.trim()}><Send size={13} /> {ro ? 'Întreabă' : 'Ask'}</button>
+          <button type="button" className="btn primary" onClick={send} disabled={!text.trim()}><Send size={13} /> Ask</button>
         </footer>
       </div>
     </div>

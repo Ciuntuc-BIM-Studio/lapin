@@ -112,7 +112,7 @@ export function HelpMenu() {
   }, [open]);
   return (
     <>
-    <button type="button" className="ask-me" data-no-i18n title="Ask Lapin how to do something (F1)" onClick={() => setAsking(true)}><BunnyIcon size={17} />Ask Me</button>
+    <button type="button" className="ask-me" title="Ask Lapin how to do something (F1)" onClick={() => setAsking(true)}><BunnyIcon size={17} />Ask Me</button>
     <div className="help-menu" ref={ref}>
        <button type="button" className="icon" title="Help: ask Lapin (F1), report an issue, community" onClick={() => setOpen(!open)}><HelpCircle size={15} /></button>
       {open && (

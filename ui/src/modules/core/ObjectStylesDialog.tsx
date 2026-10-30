@@ -59,7 +59,7 @@ export function ObjectStylesDialog() {
                             <option value="">pen —</option>{Array.from({ length: 16 }, (_, i) => <option key={i + 1} value={i + 1}>pen {i + 1}</option>)}
                           </select>
                           <select title="Pattern" value={s.pattern ?? ''} onChange={(e) => set(c, r, { pattern: e.target.value || undefined })}>
-                            <option value="">—</option>{d.patterns.map((p) => <option key={p}>{p}</option>)}
+                            <option value="">—</option>{d.patterns.map((p) => <option key={p} value={p}>{p}</option>)}
                           </select>
                           <input type="color" title="Colour" value={s.color ?? '#000000'} onChange={(e) => set(c, r, { color: e.target.value })} />
                         </td>

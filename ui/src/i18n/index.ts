@@ -7,6 +7,10 @@
  * types are left as they are. Each language is one file (`ro.ts`, `es.ts`,
  * `de.ts`, `fr.ts`, `da.ts`):
  * its phrase list and its patterns; a phrase not in it stays English.
+ *
+ * One English word with two meanings (Join: a shared session or the wall-join
+ * tool) gets a context: an element marked `data-i18n-ctx="session"` looks up
+ * `session|Join` before `Join`.
  */
 
 import { create } from 'zustand';
@@ -60,13 +64,13 @@ export function setLang(lang: Lang): void {
   retranslate();
 }
 
-/** A phrase in a language, the one chosen unless given (null: it stays as it is). */
-export function translate(text: string, lang: Lang = useLang.getState().lang): string | null {
+/** A phrase in a language, the one chosen unless given (null: it stays as it is); `ctx` picks a meaning (`ctx|phrase`) first. */
+export function translate(text: string, lang: Lang = useLang.getState().lang, ctx?: string | null): string | null {
   if (lang === 'en') return null;
   const core = text.trim();
   if (!core) return null;
   const { dict, patterns } = TABLES[lang];
-  const exact = dict[core];
+  const exact = (ctx ? dict[`${ctx}|${core}`] : undefined) ?? dict[core];
   if (exact != null) return text.replace(core, exact);
   for (const [re, f] of patterns) {
     const m = re.exec(core);
@@ -76,8 +80,8 @@ export function translate(text: string, lang: Lang = useLang.getState().lang): s
 }
 
 /** For code that builds a phrase itself (a notice): the phrase in the language chosen. */
-export function t(text: string): string {
-  return translate(text) ?? text;
+export function t(text: string, ctx?: string): string {
+  return translate(text, undefined, ctx) ?? text;
 }
 
 const ATTRS = ['title', 'placeholder', 'aria-label'];
@@ -88,7 +92,10 @@ let observer: MutationObserver | null = null;
 let busy = false;
 
 /** Whether `now` is `english` or its translation in a language (the one shown before a switch, too). */
-const shows = (now: string, english: string) => now === english || LANGUAGES.some((l) => now === translate(english, l.id));
+const shows = (now: string, english: string, ctx?: string | null) => now === english || LANGUAGES.some((l) => now === translate(english, l.id, ctx));
+
+/** The meaning an element's phrases take (`data-i18n-ctx` on it or around it). */
+const ctxOf = (el: Element | null) => el?.closest('[data-i18n-ctx]')?.getAttribute('data-i18n-ctx') ?? null;
 
 const skip = (el: Element | null) => !!el?.closest('svg, textarea, [contenteditable], [data-no-i18n]');
 
@@ -96,22 +103,24 @@ function textNode(n: Text) {
   if (skip(n.parentElement)) return;
   const now = n.nodeValue ?? '';
   const known = originals.get(n);
+  const ctx = ctxOf(n.parentElement);
   // The English it shows now (React may have written new English since).
-  const english = known != null && shows(now, known) ? known : now;
+  const english = known != null && shows(now, known, ctx) ? known : now;
   originals.set(n, english);
-  const want = translate(english) ?? english;
+  const want = translate(english, undefined, ctx) ?? english;
   if (want !== now) n.nodeValue = want;
 }
 
 function attributes(el: Element) {
   if (skip(el)) return;
   const saved = attrOriginals.get(el) ?? {};
+  const ctx = ctxOf(el);
   for (const a of ATTRS) {
     const now = el.getAttribute(a);
     if (now == null) continue;
-    const english = saved[a] != null && shows(now, saved[a]) ? saved[a] : now;
+    const english = saved[a] != null && shows(now, saved[a], ctx) ? saved[a] : now;
     saved[a] = english;
-    const want = translate(english) ?? english;
+    const want = translate(english, undefined, ctx) ?? english;
     if (want !== now) el.setAttribute(a, want);
   }
   attrOriginals.set(el, saved);

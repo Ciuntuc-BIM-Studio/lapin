@@ -552,7 +552,7 @@ export function PlanView() {
           <option value="">No underlay</option>
           {[...nodes.values()].filter((n) => n.type === 'IfcBuildingStorey' && n.id !== storey.id)
             .sort((a, b) => Number(a.props.elevation ?? 0) - Number(b.props.elevation ?? 0))
-            .map((n) => <option key={n.id} value={n.id}>Underlay: {n.name}</option>)}
+            .map((n) => <option key={n.id} value={n.id}>{`Underlay: ${n.name}`}</option>)}
         </select>}
         {!siteView && <button type="button" className="icon" title="View range" onClick={() => useUi.setState({ dialog: 'viewRange' })}><Layers size={14} /></button>}
         <button type="button" className={`icon${planDrawing ? ' on' : ''}`} title={planDrawing ? 'Drawing: hatches and pens (click for modelling lines)' : 'Modelling lines (click for the drawing)'}

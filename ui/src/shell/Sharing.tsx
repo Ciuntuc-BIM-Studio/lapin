@@ -110,7 +110,7 @@ export function JoinDialog() {
           {text && !inv && <p className="error-text">That is not an invitation: ask the host for the link again.</p>}
         </div>
         <footer className="dialog-foot">
-          <button type="button" className="btn primary" disabled={!inv || !name.trim()} onClick={() => inv && join(inv, name)}>Join</button>
+          <button type="button" className="btn primary" disabled={!inv || !name.trim()} onClick={() => inv && join(inv, name)} data-i18n-ctx="session">Join</button>
           <button type="button" className="btn" onClick={close}>Cancel</button>
         </footer>
       </div>
@@ -128,7 +128,7 @@ export function JoinGate({ onJoin }: { onJoin: () => void }) {
         <h1 className="start-brand">Lapin</h1>
         <p className="muted">You are invited to work in a project together.</p>
         <label className="field-line"><span className="eyebrow">Your name</span><input value={name} autoFocus placeholder="as the others see you" onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && name.trim()) go(); }} /></label>
-        <button type="button" className="btn primary big" disabled={!name.trim()} onClick={go}><Users size={18} />Join</button>
+        <button type="button" className="btn primary big" disabled={!name.trim()} onClick={go} data-i18n-ctx="session"><Users size={18} />Join</button>
         <p className="muted small">The project stays on the host's computer; what you see comes from it, encrypted on the way.</p>
         <button type="button" className="link small" onClick={leave}>Open Lapin on its own instead</button>
       </section>

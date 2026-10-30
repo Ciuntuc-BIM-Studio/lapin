@@ -172,7 +172,7 @@ export function ImportDxfDialog() {
               </dl>
               <p className="muted small">{byMap ? (info.map?.georeferenced ? `Laid by the project's map coordinates${info.map.crs ? ` (${info.map.crs})` : ''}.` : 'The project is not tied to the map yet: the drawing ties it, its survey point on the drawing\'s lower-left corner (Manage → Location).') : willFlip ? 'The drawing will be mirrored for this view.' : 'The drawing keeps its orientation.'} {Object.keys(info.unsupported).length ? `Not brought in: ${Object.entries(info.unsupported).map(([k, n]) => `${n} ${k.toLowerCase()}`).join(', ')}.` : ''}</p>
               <table className="layer-table dxf-layers">
-                <thead><tr><th>Import</th><th>Layer</th><th>Colour</th><th>Line</th><th>Shown</th><th>Entities</th></tr></thead>
+                <thead><tr><th>Import</th><th data-i18n-ctx="cad">Layer</th><th>Colour</th><th>Line</th><th>Shown</th><th>Entities</th></tr></thead>
                 <tbody>
                   {info.layers.map((l) => (
                     <tr key={l.name}>

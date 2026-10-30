@@ -449,6 +449,25 @@ export const RO: Record<string, string> = {
   // The facade's dressings in the joinery configurator: shutters, grille, window box, canopy (reports #38, #39)
   'On the facade': 'Pe fațadă', 'Shutters': 'Obloane', 'Louvred': 'Cu lamele', 'Planks': 'Din scânduri', 'Leaves': 'Canate', 'One leaf': 'Un canat', 'Two leaves': 'Două canate', 'Shown open': 'Arătate deschise', 'Louvre pitch': 'Pasul lamelelor', 'From the wall face': 'De la fața peretelui', 'From the window\'s axis': 'De la axul ferestrei', 'Up or down': 'Sus sau jos', 'Safety grille': 'Grilaj de siguranță', 'In the reveal': 'În glaf', 'On the interior face': 'Pe fața interioară', 'Bars': 'Bare', 'Horizontal': 'Orizontale', 'Vertical': 'Verticale', 'Both ways': 'În ambele direcții', 'Bar size': 'Grosimea barei', 'Bar spacing': 'Distanța între bare', 'Frame width': 'Lățimea ramei', 'Past the opening': 'Dincolo de gol', 'Set back from the face': 'Retras de la față', 'Window box': 'Jardinieră', 'Below the opening': 'Sub gol', 'Canopy': 'Copertină', 'Above the head': 'Deasupra golului',
   'Columns of panes': 'Coloane de canate', 'Rows of panes': 'Rânduri de canate',
+  // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
+  "session|Join": "Intră", "element|Layers": "Straturi", "cad|Layer": "Layer", "edge|gable": "fronton",
+  "eave": "streașină", "Import DXF": "Importă DXF", "Import DXF…": "Importă DXF…", "Import DXF ·": "Importă DXF ·",
+  "Link IFC": "Leagă IFC", "Link IFC…": "Leagă IFC…", "Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.": "Nimic nu e legat. Fișier → Leagă IFC… sau Importă DXF… cu „Ca legătură” aduce un fișier doar în citire; el apare aici.", "IFC properties": "Proprietăți IFC",
+  "Units": "Unități", "Units:": "Unități:", "The project's units: change them in Drafting standards → Project": "Unitățile proiectului: se schimbă în Standarde de desen → Proiect", "Lengths are shown and typed in this unit everywhere; the engine keeps metres": "Lungimile se arată și se introduc peste tot în această unitate; motorul ține metri",
+  "Roof window": "Fereastră de acoperiș", "Dormer": "Lucarnă", "dormer": "lucarnă", "Shaped by hand": "Formă liberă",
+  "Hip": "În patru ape", "Gable": "În două ape", "Shed": "Într-o apă", "Mansard": "Mansardă",
+  "Barrel": "Boltit", "Flat": "Terasă", "hip": "în patru ape", "gable": "în două ape",
+  "shed": "într-o apă", "mansard": "mansardă", "barrel": "boltit", "flat": "terasă",
+  "Hand": "Balamale", "Side": "Parte", "Hinges on the other side": "Balamalele pe cealaltă parte", "Opens to the other side of the wall": "Se deschide spre cealaltă parte a peretelui",
+  "Reassign": "Mut-o", "Underlay": "Fundal", "Underlay: another level's plan beneath this one, faded, to snap to": "Fundal: planul altui nivel sub acesta, estompat, pentru snap", "Architectural": "Arhitectural",
+  "Structural": "Structural", "Custom": "Personalizat", "Existing": "Existent", "New construction": "Construcție nouă",
+  "Execution": "Execuție", "existing": "existent", "phase|construction": "construcție", "execution": "execuție",
+  "wall(s), round their outer faces": "perete(ți), pe după fețele lor exterioare", "detach": "desprinde", "Keep the line as it is now, no longer following the walls": "Păstrează linia cum e acum, fără să mai urmeze pereții", "Ends": "Capete",
+  "Top and bottom": "Sus și jos", "Width: how wide one copy of the picture lies on the model": "Lățime: cât de lată stă pe model o copie a imaginii", "Height: how high one copy of the picture lies on the model": "Înălțime: cât de înaltă stă pe model o copie a imaginii", "Urban planning": "Urbanism",
+  "Planning": "Urbanism", "Buildable volume": "Volum construibil", "Sun study": "Studiu de însorire", "Engineering": "Inginerie",
+  "Assist": "Asistenți", "Ask Me": "Întreabă-mă", "Ask Lapin how to do something (F1)": "Întreabă Lapin cum faci ceva (F1)", "Help: ask Lapin (F1), report an issue, community": "Ajutor: întreabă Lapin (F1), raportează o problemă, comunitate",
+  "Ask Lapin": "Întreabă Lapin", "Type a question in your own words, for example “how do I change the units”. Or pick one:": "Scrie o întrebare cu cuvintele tale, de exemplu „cum schimb unitățile”. Sau alege una:", "Or perhaps:": "Poate și:", "I don't have an answer to that yet. Send us the question: we'll answer it and add it here.": "Nu am încă un răspuns la asta. Trimite-ne întrebarea: îți răspundem și o adăugăm aici.",
+  "Send the question": "Trimite întrebarea", "Your question…": "Întrebarea ta…", "Your question": "Întrebarea ta", "Ask": "Întreabă",
 };
 
 /** Phrases with a number or a name in them. */

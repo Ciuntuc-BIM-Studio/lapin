@@ -6,12 +6,14 @@
 
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
+import { t, useLang } from '../../i18n';
 
 type Style = { id: string; label: string; family: string; shape: string; pitch: number; covering: string };
 type Edge = { kind?: 'eave' | 'gable'; pitch?: number; overhang?: number } | null;
 
 export function RoofSection({ node }: { node: NodeDto }) {
   const info = useSession((s) => s.info);
+  useLang((s) => s.lang); // a style's option names its shape in the language chosen
   const styles = (info?.catalogs['architecture.roofStyles'] as unknown as Style[] | undefined) ?? [];
   const contour = (node.props.contour as number[][] | undefined) ?? [];
   const edges = (node.props.edges as Edge[] | undefined) ?? [];
@@ -30,7 +32,7 @@ export function RoofSection({ node }: { node: NodeDto }) {
         <select value={(node.props.style as string | undefined) ?? ''} disabled={!node.editable}
           onChange={(e) => void execute('architecture.roofStyle', { id: node.id, style: e.target.value })}>
           {!node.props.style && <option value="">Shaped by hand</option>}
-          {styles.map((s) => <option key={s.id} value={s.id}>{s.label} · {s.shape}{s.shape === 'barrel' ? '' : ` ${s.pitch}°`}</option>)}
+          {styles.map((s) => <option key={s.id} value={s.id}>{`${s.label} · ${t(s.shape)}${s.shape === 'barrel' ? '' : ` ${s.pitch}°`}`}</option>)}
         </select>
       </label>
       <table className="roof-edges">
@@ -44,7 +46,7 @@ export function RoofSection({ node }: { node: NodeDto }) {
               <tr key={i}>
                 <td className="num" title={`${len.toFixed(2)} m`}>{i + 1}</td>
                 <td>
-                  <select value={e?.kind ?? ''} disabled={!node.editable} onChange={(ev) => setEdge(i, { kind: (ev.target.value || undefined) as 'eave' | 'gable' | undefined })}>
+                  <select value={e?.kind ?? ''} disabled={!node.editable} data-i18n-ctx="edge" onChange={(ev) => setEdge(i, { kind: (ev.target.value || undefined) as 'eave' | 'gable' | undefined })}>
                     <option value="">auto</option><option value="eave">eave</option><option value="gable">gable</option>
                   </select>
                 </td>

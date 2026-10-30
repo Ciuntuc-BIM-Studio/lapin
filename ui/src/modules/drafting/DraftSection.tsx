@@ -119,7 +119,7 @@ function HatchFields({ node, hatch }: { node: NodeDto; hatch: Record<string, unk
   return (
     <>
       <dt>Pattern</dt>
-      <dd><select value={pattern} onChange={(e) => set({ pattern: e.target.value })}>{(patterns.includes(pattern) ? patterns : [pattern, ...patterns]).map((p) => <option key={p}>{p}</option>)}</select></dd>
+      <dd><select value={pattern} onChange={(e) => set({ pattern: e.target.value })}>{(patterns.includes(pattern) ? patterns : [pattern, ...patterns]).map((p) => <option key={p} value={p}>{p}</option>)}</select></dd>
       <dt>Scale</dt><dd><Num value={String(hatch.scale ?? 1)} onCommit={(s) => { if (s > 0) set({ scale: s }); }} /></dd>
       <dt>Angle</dt><dd><Num value={String(hatch.angle ?? 0)} onCommit={(a) => set({ angle: a })} suffix="°" /></dd>
       <dt title="Where the pattern starts; empty: the view's origin">Origin</dt>
@@ -146,7 +146,7 @@ function Drafted({ node }: { node: NodeDto }) {
   return (
     <dl className="fields">
       <Row label="Kind" value={kind} />
-      <dt>Layer</dt>
+      <dt data-i18n-ctx="cad">Layer</dt>
       <dd><select value={layerName} onChange={(e) => void execute('drafting.updateDraft', { id: node.id, layer: e.target.value })}>
         {(layers.length ? layers : [{ name: layerName } as Layer]).map((l) => <option key={l.name} value={l.name}>{l.name}</option>)}
       </select></dd>
