@@ -28,7 +28,7 @@ Desenează fundațiile pe nivelul **Foundations** sau dă-le un plan propriu.
 
 **Tipuri structurale** setează secțiunile stâlpilor, grinzilor și fundațiilor: secțiuni de beton și profile metalice.
 
-**La 45°**, **Cap la cap** și **Inversează** schimbă cum se întâlnesc două grinzi sau două fundații. **Preia tipul** (<kbd>MA</kbd>) copiază tipul unui element pe altele, iar **Creează similar** (<kbd>CS</kbd>) începe desenarea unui alt element de același tip.
+Grinzile și fundațiile se îmbină singure unde se întâlnesc, un colț la 45°. **La 45°**, **Cap la cap** și **Inversează** schimbă cum se întâlnesc două grinzi sau două fundații. **Preia tipul** (<kbd>MA</kbd>) copiază tipul unui element pe altele, iar **Creează similar** (<kbd>CS</kbd>) începe desenarea unui alt element de același tip.
 
 ## O vedere de structură
 

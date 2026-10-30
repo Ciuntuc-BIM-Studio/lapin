@@ -412,6 +412,8 @@ export const DA: Record<string, string> = {
   'Pick the image (JPEG or PNG) and its world file together.': 'Vælg billedet (JPEG eller PNG) og dets world-fil sammen.',
   'Pick the image together with its world file (.jgw, .pgw or .wld): it says where the image lies.': 'Vælg billedet sammen med dets world-fil (.jgw, .pgw eller .wld): den angiver, hvor billedet ligger.',
   'Orthophoto laid under the site.': 'Ortofoto lagt under grunden.',
+  // Import DXF by the map's coordinates (decision 172)
+  "Placed": "Placeret", "by its origin": "efter sit udgangspunkt", "by the map's coordinates": "efter kortets koordinater", "metres (map coordinates)": "meter (kortkoordinater)", "As a link": "Som link", "read-only, kept with the file": "skrivebeskyttet, knyttet til filen",
   'Coordinate system': 'Koordinatsystem',
   'None (local)': 'Intet (lokalt)',
   'What the survey point\'s eastings and northings are in; imports in another system are converted to it': 'Hvilket system opmålingspunktets øst- og nordkoordinater er i; importer i et andet system omregnes til det',

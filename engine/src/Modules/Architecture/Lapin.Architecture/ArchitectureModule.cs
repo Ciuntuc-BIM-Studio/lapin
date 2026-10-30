@@ -480,7 +480,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var wall = Walls.AddUnjoined(ctx, storeyId, p1, p2, Json.Number(a["height"]) ?? Walls.DefaultHeight, Json.Number(a["baseOffset"]) ?? 0, type);
             // A curved wall: the arc through its ends, rising off the chord (or through a third point), before it joins.
             if (rise != 0) { var attrs = wall.CloneAttrs(); attrs[PathCurve.Key] = rise; ctx.Replace(wall.With(attrs: attrs)); }
-            if (!unjoined) Joins.Auto(ctx, Paths(ctx), wall.Id, Style(a["joinStyle"]) ?? JoinStyle.Butt);
+            if (!unjoined) Joins.Auto(ctx, Paths(ctx), wall.Id, Style(a["joinStyle"]) ?? JoinStyle.Mitre);
             return new JsonObject { ["id"] = wall.Id };
         });
 

@@ -1,4 +1,4 @@
-/** The style new corners get when walls are drawn: butt or mitre, remembered on this computer (as in the old Lapin). */
+/** The style new corners get when walls are drawn: mitre (the default), or butt, remembered on this computer. */
 
 import { create } from 'zustand';
 
@@ -6,7 +6,7 @@ export type JoinStyle = 'butt' | 'mitre';
 const KEY = 'lapin.wallJoinStyle';
 
 function stored(): JoinStyle {
-  try { return localStorage.getItem(KEY) === 'mitre' ? 'mitre' : 'butt'; } catch { return 'butt'; }
+  try { return localStorage.getItem(KEY) === 'butt' ? 'butt' : 'mitre'; } catch { return 'mitre'; }
 }
 
 export const useWallPrefs = create<{ joinStyle: JoinStyle }>(() => ({ joinStyle: stored() }));

@@ -89,7 +89,7 @@ public class CurveTests
         var f = new Fixture();
         var arc = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 4, ["y2"] = 0, ["arc"] = 2 })!["id"]!;
         // At (4, 0) the arc runs down (−Y): a wall going on along +X makes a square corner with it.
-        var straight = f.Wall(4, 0, 8, 0);
+        var straight = f.Wall(4, 0, 8, 0, joinStyle: "butt");
         var join = Assert.Single(f.Model.Relations, r => r.Class == Joins.Class);
         Assert.True(join.Touches(arc) && join.Touches(straight));
         Assert.Equal("L", (string?)join.Attrs?["kind"]);

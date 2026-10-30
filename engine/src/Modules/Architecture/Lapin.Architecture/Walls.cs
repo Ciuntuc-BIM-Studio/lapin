@@ -40,7 +40,7 @@ public static class Walls
     public static Entity? UsageOf(IModelView m, string wallId) => LayerSets.UsageOf(m, wallId);
 
     /// <summary>A new wall on the storey, of the type (the project's default when none), joined where it meets the walls already there.</summary>
-    public static Entity Add(IEdit edit, IPathElements paths, string storeyId, Vec2 start, Vec2 end, double height, double baseOffset, Entity? type, JoinStyle joinStyle = JoinStyle.Butt)
+    public static Entity Add(IEdit edit, IPathElements paths, string storeyId, Vec2 start, Vec2 end, double height, double baseOffset, Entity? type, JoinStyle joinStyle = JoinStyle.Mitre)
     {
         var wall = AddUnjoined(edit, storeyId, start, end, height, baseOffset, type);
         Joins.Auto(edit, paths, wall.Id, joinStyle);

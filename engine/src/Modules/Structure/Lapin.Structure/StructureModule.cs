@@ -232,7 +232,7 @@ public sealed class StructureModule : ILapinModule
 
     static IPathElements Paths(ICommandContext ctx) => ctx.Services.Get<IPathElements>()!;
 
-    static JoinStyle Style(JsonNode? n) => Args.JoinStyle(n) ?? JoinStyle.Butt;
+    static JoinStyle Style(JsonNode? n) => Args.JoinStyle(n) ?? JoinStyle.Mitre;
 }
 
 /// <summary>Heights over the storey: a column's base, a beam's top (under the storey's top).</summary>

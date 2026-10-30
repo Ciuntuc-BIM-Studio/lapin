@@ -28,7 +28,7 @@ Zeichnen Sie die Gründung auf der Ebene **Foundations**, oder geben Sie ihr ein
 
 **Tragwerkstypen** legt die Querschnitte von Stützen, Trägern und Fundamenten fest: Betonquerschnitte und Stahlprofile.
 
-**Gehrung**, **Stumpf** und **Tauschen** ändern, wie zwei Träger oder zwei Fundamente aufeinandertreffen. **Typ übertragen** (<kbd>MA</kbd>) überträgt den Typ eines Elements auf andere, und **Ähnliches erstellen** (<kbd>CS</kbd>) beginnt, ein weiteres Element desselben Typs zu zeichnen.
+Träger und Fundamente verbinden sich von selbst, wo sie aufeinandertreffen, eine Ecke als Gehrung. **Gehrung**, **Stumpf** und **Tauschen** ändern, wie zwei Träger oder zwei Fundamente aufeinandertreffen. **Typ übertragen** (<kbd>MA</kbd>) überträgt den Typ eines Elements auf andere, und **Ähnliches erstellen** (<kbd>CS</kbd>) beginnt, ein weiteres Element desselben Typs zu zeichnen.
 
 ## Eine Tragwerksansicht
 

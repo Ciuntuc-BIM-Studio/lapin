@@ -20,7 +20,7 @@ Hvor to vægge mødes, samler Lapin dem selv. Deres lag løber ind i hinanden, s
 
 - **Buet væg** (<kbd>WC</kbd>) tegner en væg langs en bue.
 - **Facadeglasvæg** (<kbd>CW</kbd>) tegner en glasvæg med sprosser og paneler.
-- **Sammenføj** (<kbd>JW</kbd>), **Geringssamling** og **Stødsamling** ændrer, hvordan to vægge mødes.
+- Vægge sammenføjes af sig selv, hvor de mødes: et hjørne som geringssamling, en væg, der ender på en anden, som T. **Sammenføj** (<kbd>JW</kbd>), **Geringssamling** og **Stødsamling** ændrer, hvordan to vægge mødes, når det ikke er det, du vil; **Nye hjørner som gering** gør stødsamling til standard på denne computer.
 - **Byt om** ændrer, hvilken af de to vægge der løber igennem.
 
 ## At ændre en væg

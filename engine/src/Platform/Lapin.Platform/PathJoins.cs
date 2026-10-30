@@ -212,7 +212,7 @@ public static class Joins
     /// corner, an in-line element, or another's path), and the free ends of
     /// others that end on its path. A corner already joined is left as it is.
     /// </summary>
-    public static void Auto(IEdit edit, IPathElements paths, string id, JoinStyle style = JoinStyle.Butt)
+    public static void Auto(IEdit edit, IPathElements paths, string id, JoinStyle style = JoinStyle.Mitre)
     {
         var m = edit.Model;
         if (m.Get(id) is not { } e || !paths.IsPath(e.Class)) return;

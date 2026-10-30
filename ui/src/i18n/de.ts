@@ -412,6 +412,8 @@ export const DE: Record<string, string> = {
   'Pick the image (JPEG or PNG) and its world file together.': 'Wählen Sie das Bild (JPEG oder PNG) zusammen mit seiner World-Datei.',
   'Pick the image together with its world file (.jgw, .pgw or .wld): it says where the image lies.': 'Wählen Sie das Bild zusammen mit seiner World-Datei (.jgw, .pgw oder .wld): sie gibt an, wo das Bild liegt.',
   'Orthophoto laid under the site.': 'Orthofoto unter das Gelände gelegt.',
+  // Import DXF by the map's coordinates (decision 172)
+  "Placed": "Platziert", "by its origin": "nach seinem Ursprung", "by the map's coordinates": "nach den Kartenkoordinaten", "metres (map coordinates)": "Meter (Kartenkoordinaten)", "As a link": "Als Verknüpfung", "read-only, kept with the file": "schreibgeschützt, mit der Datei verbunden",
   'Coordinate system': 'Koordinatensystem',
   'None (local)': 'Keines (lokal)',
   'What the survey point\'s eastings and northings are in; imports in another system are converted to it': 'In welchem System Rechts- und Hochwert des Vermessungspunkts angegeben sind; Importe in einem anderen System werden darin umgerechnet',

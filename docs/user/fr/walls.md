@@ -20,7 +20,7 @@ Là où deux murs se rencontrent, Lapin les joint de lui-même. Leurs couches se
 
 - **Mur courbe** (<kbd>WC</kbd>) dessine un mur le long d’un arc.
 - **Mur-rideau** (<kbd>CW</kbd>) dessine un mur vitré avec des meneaux et des panneaux.
-- **Joindre** (<kbd>JW</kbd>), **Onglet** et **Bout à bout** changent la façon dont deux murs se rencontrent.
+- Les murs se joignent d’eux-mêmes là où ils se rencontrent : un angle en onglet, un mur qui finit sur un autre en T. **Joindre** (<kbd>JW</kbd>), **Onglet** et **Bout à bout** changent la façon dont deux murs se rencontrent quand ce n’est pas ce que vous voulez ; **Nouveaux angles en onglet** fait du bout à bout le réglage par défaut sur cet ordinateur.
 - **Permuter** change lequel des deux murs passe à travers l’autre.
 
 ## Modifier un mur

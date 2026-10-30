@@ -28,7 +28,7 @@ Draw foundations on the **Foundations** level, or give them a plan of their own.
 
 **Structure types** sets the sections of columns, beams and footings: concrete sections and steel profiles.
 
-**Mitre**, **Butt** and **Swap** change how two beams or two footings meet. **Match type** (<kbd>MA</kbd>) copies one element's type to others, and **Create similar** (<kbd>CS</kbd>) starts drawing another element of the same type.
+Beams and footings join by themselves where they meet, a corner as a mitre. **Mitre**, **Butt** and **Swap** change how two beams or two footings meet. **Match type** (<kbd>MA</kbd>) copies one element's type to others, and **Create similar** (<kbd>CS</kbd>) starts drawing another element of the same type.
 
 ## A structural view
 

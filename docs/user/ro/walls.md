@@ -20,7 +20,7 @@ Unde se întâlnesc doi pereți, Lapin îi îmbină singur. Straturile lor intr�
 
 - **Perete curb** (<kbd>WC</kbd>) desenează un perete pe un arc.
 - **Perete cortină** (<kbd>CW</kbd>) desenează un perete vitrat cu montanți și panouri.
-- **Îmbină** (<kbd>JW</kbd>), **La 45°** și **Cap la cap** schimbă felul în care se întâlnesc doi pereți.
+- Pereții se îmbină singuri unde se întâlnesc: un colț la 45°, un perete care se termină pe altul în T. **Îmbină** (<kbd>JW</kbd>), **La 45°** și **Cap la cap** schimbă felul în care se întâlnesc doi pereți când nu e ce vrei; **Colțuri noi la 45°** face cap la cap implicitul pe acest calculator.
 - **Inversează** schimbă care dintre cei doi pereți trece prin colț.
 
 ## Modificarea unui perete

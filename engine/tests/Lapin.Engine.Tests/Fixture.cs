@@ -30,10 +30,11 @@ sealed class Fixture
             ["layers"] = new JsonArray(layers.Select(l => (JsonNode)new JsonObject { ["material"] = l.Material, ["thickness"] = l.Thickness, ["core"] = l.Core }).ToArray()),
         })!["id"]!;
 
-    public string Wall(double x1, double y1, double x2, double y2, string? typeId = null)
+    public string Wall(double x1, double y1, double x2, double y2, string? typeId = null, string? joinStyle = null)
     {
         var a = new JsonObject { ["storeyId"] = Storey, ["x1"] = x1, ["y1"] = y1, ["x2"] = x2, ["y2"] = y2 };
         if (typeId != null) a["typeId"] = typeId;
+        if (joinStyle != null) a["joinStyle"] = joinStyle;
         return (string)Run("architecture.addWall", a)!["id"]!;
     }
 

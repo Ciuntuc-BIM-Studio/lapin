@@ -74,8 +74,8 @@ public class StructureTests
     public void A_butt_corner_the_through_footing_reaches_the_outer_corner_the_other_stops_at_its_face()
     {
         var f = Both();
-        var a = Strip(f, 0, 0, 5, 0);
-        var c = Strip(f, 5, 0, 5, 4);
+        var a = Strip(f, 0, 0, 5, 0, "butt");
+        var c = Strip(f, 5, 0, 5, 4, "butt");
         Assert.Single(f.Model.Relations, r => r.Class == Joins.Class);
         var fa = Bounds(f, a, "footing");
         var fc = Bounds(f, c, "footing");

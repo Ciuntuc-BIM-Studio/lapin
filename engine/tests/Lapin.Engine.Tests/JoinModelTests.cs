@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Architecture;
+using Lapin.Structure;
 using Lapin.Model;
 using Lapin.Platform;
 
@@ -54,12 +55,29 @@ public class JoinModelTests
     [Fact]
     public void Walls_drawn_around_a_room_join_at_every_corner_and_their_bodies_tile_the_ring()
     {
-        var (f, ids) = ClockwiseRoom();
+        var (f, ids) = ClockwiseRoom("butt");
         var rels = JoinRels(f);
         Assert.Equal(4, rels.Count);
         Assert.All(rels, r => Assert.Equal("L", Kind(r)));
         Assert.All(rels, r => Assert.Equal("butt", Style(r)));
         Assert.Equal(RingVolume(), ids.Sum(id => Volume(f, id)), 6);
+    }
+
+    [Fact]
+    public void Walls_drawn_with_no_style_asked_meet_mitred_at_the_corners_and_butt_at_a_T()
+    {
+        // Decision 175: a corner joins by itself as a mitre; Butt is for when the mitre is not wanted. A T is always butt.
+        var (f, ids) = ClockwiseRoom();
+        Assert.All(JoinRels(f), r => Assert.Equal(("L", "mitre"), (Kind(r), Style(r))));
+        Assert.Equal(RingVolume(), ids.Sum(id => Volume(f, id)), 6);
+        var t = f.Wall(2, 3, 7, 3);
+        var tee = JoinRels(f).Where(r => r.Touches(t)).ToList();
+        Assert.Equal(2, tee.Count);
+        Assert.All(tee, r => Assert.Equal(("T", "butt"), (Kind(r), Style(r))));
+        var beam = new Fixture(new ArchitectureModule(), new StructureModule());
+        beam.Run("structure.addBeam", new JsonObject { ["storeyId"] = beam.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 5, ["y2"] = 0 });
+        beam.Run("structure.addBeam", new JsonObject { ["storeyId"] = beam.Storey, ["x1"] = 5, ["y1"] = 0, ["x2"] = 5, ["y2"] = 4 });
+        Assert.Equal("mitre", Style(Assert.Single(JoinRels(beam))));
     }
 
     [Fact]

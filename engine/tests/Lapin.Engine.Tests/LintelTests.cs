@@ -144,8 +144,8 @@ public class LintelTests
     {
         // The old Lapin's wall-zones.e2e case: windows close to the corner, both lintels bear into it.
         var f = new Fixture();
-        var a = f.Wall(0, 0, 5, 0);
-        var b = f.Wall(0, 0, 0, 5);
+        var a = f.Wall(0, 0, 5, 0, joinStyle: "butt");
+        var b = f.Wall(0, 0, 0, 5, joinStyle: "butt");
         string Type(string name, double width) => (string)f.Run("architecture.createJoineryType", new JsonObject
         {
             ["spec"] = (JoinerySpec.DefaultWindow(name) with { Width = width, Height = 1.2, Lintel = new LintelRule("cast", 0.4, 0.2) }).ToJson(),

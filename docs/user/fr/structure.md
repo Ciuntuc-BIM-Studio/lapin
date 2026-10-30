@@ -28,7 +28,7 @@ Dessinez les fondations sur le niveau **Foundations**, ou donnez-leur un plan à
 
 **Types structurels** définit les sections des poteaux, des poutres et des semelles : sections en béton et profilés en acier.
 
-**Onglet**, **Bout à bout** et **Permuter** changent la façon dont deux poutres ou deux semelles se rencontrent. **Appliquer le type** (<kbd>MA</kbd>) copie le type d’un élément vers d’autres, et **Créer un similaire** (<kbd>CS</kbd>) commence le dessin d’un autre élément du même type.
+Les poutres et les semelles se joignent d’elles-mêmes là où elles se rencontrent, un angle en onglet. **Onglet**, **Bout à bout** et **Permuter** changent la façon dont deux poutres ou deux semelles se rencontrent. **Appliquer le type** (<kbd>MA</kbd>) copie le type d’un élément vers d’autres, et **Créer un similaire** (<kbd>CS</kbd>) commence le dessin d’un autre élément du même type.
 
 ## Une vue structurelle
 
