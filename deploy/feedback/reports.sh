@@ -3,11 +3,15 @@ set -euo pipefail
 
 # The reports sent from Lapin's "Report an issue" form, kept on the server
 # (/opt/lapin/feedback-data), read from here over SSH:
-#   ./reports.sh                      the open ones
+#   ./reports.sh                      the open ones (✉ <nickname>: replies accepted;
+#                                     ●: the sender wrote and it is unread)
 #   ./reports.sh list closed|all
-#   ./reports.sh show <n>             the whole report; its screenshot is
-#                                     copied to ./feedback-screenshots/
+#   ./reports.sh show <n>             the whole report and its thread; its screenshot
+#                                     is copied to ./feedback-screenshots/
+#   ./reports.sh reply <n> "<text>"   a reply, shown in the sender's Help → Messages
 #   ./reports.sh close <n> | reopen <n>
+#   ./reports.sh prune [months]       anonymise threads idle that long (default 12)
+# The service itself: server/ (server/README.md).
 
 # The server comes from deploy/feedback/.env (not committed; see .env.example) or the environment.
 [[ -f "$(dirname "$0")/.env" ]] && source "$(dirname "$0")/.env"
