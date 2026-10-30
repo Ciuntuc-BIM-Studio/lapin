@@ -447,6 +447,7 @@ export const DA: Record<string, string> = {
   'Stair type from the library': 'Trappetype fra biblioteket', 'Risers': 'Stigninger',
   // Import IFC: the dialog to choose what of a file comes in, and the overlay of a long call (ImportIfcDialog, BusyOverlay)
   'Import IFC': 'Importér IFC', 'What to bring': 'Hvad skal med', 'All': 'Alle', 'How': 'Hvordan',
+  'Drawn in 2D': 'Tegnet i 2D', 'The elements\' own 2D: plan symbols, footprints, texts': 'Elementernes egen 2D: plansymboler, fodaftryk, tekster', 'Elements drawn only in 2D: lines, texts, symbols': 'Elementer, der kun er tegnet i 2D: linjer, tekster, symboler', 'Without it, a plan draws these elements by their cut': 'Uden den tegner planen disse elementer ved deres snit',
   'Fold': 'Fold sammen', 'Show its kinds': 'Vis dets arter', 'How it comes in': 'Hvordan det kommer ind',
   'Recognised as Lapin elements where it can, the rest as references': 'Genkendt som Lapin-elementer, hvor det er muligt, resten som referencer',
   'Everything as references, as the file draws it': 'Alt som referencer, som filen tegner det',

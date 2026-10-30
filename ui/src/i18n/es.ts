@@ -447,6 +447,7 @@ export const ES: Record<string, string> = {
   'Stair type from the library': 'Tipo de escalera de la biblioteca', 'Risers': 'Contrahuellas',
   // Import IFC: the dialog to choose what of a file comes in, and the overlay of a long call (ImportIfcDialog, BusyOverlay)
   'Import IFC': 'Importar IFC', 'What to bring': 'Qué traer', 'All': 'Todo', 'How': 'Cómo',
+  'Drawn in 2D': 'Dibujado en 2D', 'The elements\' own 2D: plan symbols, footprints, texts': 'El 2D propio de los elementos: símbolos de planta, huellas, textos', 'Elements drawn only in 2D: lines, texts, symbols': 'Elementos dibujados solo en 2D: líneas, textos, símbolos', 'Without it, a plan draws these elements by their cut': 'Sin él, la planta dibuja estos elementos por su corte',
   'Fold': 'Plegar', 'Show its kinds': 'Mostrar sus tipos', 'How it comes in': 'Cómo entra',
   'Recognised as Lapin elements where it can, the rest as references': 'Reconocido como elementos de Lapin donde se pueda, el resto como referencias',
   'Everything as references, as the file draws it': 'Todo como referencias, como lo dibuja el archivo',

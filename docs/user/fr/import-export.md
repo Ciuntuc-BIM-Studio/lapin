@@ -20,6 +20,10 @@ L’export demande le schéma (**IFC4**, lu partout, ou **IFC4X3**), le détail 
 
 ![Importer IFC](shots/import-ifc.webp)
 
+Certains fichiers portent de la 2D en plus de leur modèle : symboles de plan, emprises, hachures et textes dessinés pour un élément, ou éléments dessinés seulement en 2D (lignes, textes, symboles sans corps). Quand un fichier en a, la boîte de dialogue les compte sous **Dessiné en 2D**. Décochez **la 2D propre des éléments** et le plan dessine ces éléments par leur coupe, comme ceux de Lapin ; décochez **éléments dessinés seulement en 2D** et ils restent dehors. Les deux entrent si vous ne les décochez pas.
+
+![Dessiné en 2D](shots/import-ifc-2d.webp)
+
 Lapin reconnaît les murs, les dalles, les poteaux, les poutres, les semelles, les portes et les fenêtres, et les transforme en éléments Lapin que vous pouvez modifier. Ce qu’il ne peut pas reconnaître entre comme référence, dessinée mais non modifiable. Les portes et les fenêtres arrivent avec l’ouverture que le fichier indique : leur sens, le côté vers lequel elles s’ouvrent et, pour les fenêtres, la façon dont s’ouvre chaque panneau.
 
 Les espaces du fichier (de Revit, ArchiCAD et autres) entrent comme pièces Lapin, chacune sur son propre niveau, avec leur contour, leur numéro, leur nom, leur hauteur, leur fonction, leur service et leur revêtement de sol : voir [Pièces et couleurs des pièces](rooms.md#pieces-depuis-un-fichier-ifc). Tout ce qu’un élément importé avait dans le fichier (ses jeux de propriétés et ses quantités) est conservé et affiché sous **Propriétés IFC** dans ses propriétés. Une référence sort d’**Exporter IFC…** telle qu’elle est entrée : avec le même GlobalId, la même classe et les mêmes attributs (description, repère, type prédéfini), ses jeux de propriétés et ses quantités avec chaque valeur du type qu’elle avait dans le fichier, et son type, son matériau, ses ports, ses connexions et son système, chacun avec son GlobalId. N’importez que les réseaux (CVC, plomberie, électricité) d’un fichier et exportez-les : le nouveau fichier les contient en entier.

@@ -96,6 +96,32 @@ public sealed partial class IfcModel
         return (plan, section, elevation);
     }
 
+    /// <summary>
+    /// Whether a product has a plan's 2D (its own, what it maps, or its type's maps) and whether it has a body besides,
+    /// read from its representations' identifiers and contexts, not from their geometry: what a file's survey counts.
+    /// </summary>
+    public (bool Plan, bool Body) Has2d(int product)
+    {
+        var e = File.Entities.GetValueOrDefault(product);
+        if (e == null || e.Args.Count < 7) return (false, false);
+        bool plan = false, body = false;
+        void Look(StepEntity? rep)
+        {
+            if (rep == null) return;
+            var v = View2d(rep);
+            if (v == "plan") { plan = true; return; }
+            if (v != null) return;
+            var mapped = false;
+            foreach (var item in Items(rep[3]))
+                if (item.Type == "IFCMAPPEDITEM" && File.Get(item[0]) is { } map) { mapped = true; Look(File.Get(map[1])); }
+            if (!mapped && !NotBody.Contains((Str(rep[1]) ?? "").ToUpperInvariant())) body = true;
+        }
+        foreach (var rep in Items(File.Get(e[6])?[2])) Look(rep);
+        if (!plan && TypeOf(product) is { } type && type.Args.Count > 6)
+            foreach (var map in Items(type[6])) if (View2d(File.Get(map[1])) == "plan") plan = true;
+        return (plan, body);
+    }
+
     static bool IsFootprint(StepEntity? rep) => string.Equals(Str(rep?[1]), "FootPrint", StringComparison.OrdinalIgnoreCase);
 
     StepEntity? TypeOf(int product)

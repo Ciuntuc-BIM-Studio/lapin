@@ -3,8 +3,10 @@
  * before anything is read in. Its elements by discipline (architecture,
  * structure, MEP, furniture and equipment, site, other), each discipline by
  * kind with how many there are; its storeys with how many elements each
- * carries; and how it comes in (recognised, as references, linked). A
- * structural engineer leaves MEP and the furniture out, or brings two storeys.
+ * carries; the 2D it carries (the elements' own plan symbols, footprints and
+ * texts; the elements drawn only in 2D), each left out on request; and how it
+ * comes in (recognised, as references, linked). A structural engineer leaves
+ * MEP and the furniture out, or brings two storeys without the 2D.
  */
 
 import { useMemo, useState } from 'react';
@@ -29,6 +31,8 @@ export function ImportIfcDialog() {
   const [offKinds, setOffKinds] = useState<Set<string>>(new Set());
   const [offStoreys, setOffStoreys] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<Set<string>>(new Set());
+  const [plan2d, setPlan2d] = useState(true);
+  const [only2d, setOnly2d] = useState(true);
   const close = () => { useIfcImport.setState({ survey: null, source: null }); useUi.setState({ dialog: null }); };
   const count = useMemo(() => (survey ? chosenCount(survey, offKinds, offStoreys) : 0), [survey, offKinds, offStoreys]);
   if (!survey || !source) return null;
@@ -119,6 +123,25 @@ export function ImportIfcDialog() {
                 </li>
               )}
             </ul>
+            {survey.twoD && survey.twoD.elements + survey.twoD.only > 0 && (
+              <>
+                <h4 className="eyebrow" style={{ marginTop: 14 }}>Drawn in 2D</h4>
+                <ul className="import-tree import-2d">
+                  {survey.twoD.elements > 0 && (
+                    <li className="import-row" title="Without it, a plan draws these elements by their cut">
+                      <label><input type="checkbox" className="import-plan2d" checked={plan2d} onChange={(e) => setPlan2d(e.target.checked)} /> <span>The elements' own 2D: plan symbols, footprints, texts</span></label>
+                      <span className="grow" /><span className="num muted">{survey.twoD.elements}</span>
+                    </li>
+                  )}
+                  {survey.twoD.only > 0 && (
+                    <li className="import-row">
+                      <label><input type="checkbox" className="import-only2d" checked={only2d} onChange={(e) => setOnly2d(e.target.checked)} /> <span>Elements drawn only in 2D: lines, texts, symbols</span></label>
+                      <span className="grow" /><span className="num muted">{survey.twoD.only}</span>
+                    </li>
+                  )}
+                </ul>
+              </>
+            )}
             <h4 className="eyebrow" style={{ marginTop: 14 }}>How</h4>
             <select value={mode} onChange={(e) => setMode(e.target.value as ImportMode)} aria-label="How it comes in">
               <option value="auto">Recognised as Lapin elements where it can, the rest as references</option>
@@ -135,7 +158,7 @@ export function ImportIfcDialog() {
           <span className="grow" />
           <button type="button" className="btn" onClick={close}>Cancel</button>
           <button type="button" className="btn primary" disabled={nothing}
-            onClick={() => void runIfcImport({ ...choiceOf(survey, offKinds, offStoreys), mode })}>{mode === 'link' ? 'Link' : 'Import'}</button>
+            onClick={() => void runIfcImport({ ...choiceOf(survey, offKinds, offStoreys), mode, plan2d, only2d })}>{mode === 'link' ? 'Link' : 'Import'}</button>
         </footer>
       </div>
     </div>

@@ -12,9 +12,11 @@ namespace Lapin.Ifc;
 /// How a file is imported: <see cref="Mode"/> auto (Lapin's own natively, the rest recognised or referenced), reference
 /// (everything as it is) or link; and what of it, as the user chose in the survey (<see cref="IfcSurvey"/>): the
 /// <see cref="Kinds"/> (a class, or a class with its category) and the <see cref="Storeys"/> (their GlobalIds, "" for
-/// elements on no storey) to bring, null for all.
+/// elements on no storey) to bring, null for all; and the 2D: <see cref="Plan2d"/>, the elements' own 2D for plans
+/// (their symbols, footprints, fills and texts; without it a plan shows their cut), and <see cref="Only2d"/>, the
+/// elements the file draws only in 2D (lines, texts, symbols with no body), both brought unless the user unticks them.
 /// </summary>
-public sealed record IfcImportOptions(string Mode = "auto", IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null)
+public sealed record IfcImportOptions(string Mode = "auto", IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Plan2d = true, bool Only2d = true)
 {
     public bool ReferenceOnly => string.Equals(Mode, "reference", StringComparison.OrdinalIgnoreCase);
     public bool Filtered => Kinds != null || Storeys != null;
@@ -466,12 +468,14 @@ public static partial class IfcImport
             }
             Spaces(edit);
             FinishRecognition(edit);
+            if (left2d > 0) notes.Add($"{left2d} element(s) drawn only in 2D left out, as chosen.");
+            if (without2d > 0) notes.Add($"{without2d} element(s) brought without their own 2D, as chosen: plans draw their cut.");
             foreach (var (cls, n) in bodiless.OrderByDescending(kv => kv.Value))
                 notes.Add($"{n} × {cls} left out: no body Lapin can read (nor 2D for plans).");
             if (with2d > 0) notes.Add($"{with2d} reference(s) brought their own 2D for plans; plans draw it instead of their cut (a view's style can turn it off).");
         }
 
-        int with2d;
+        int with2d, left2d, without2d;
 
         /// <summary>
         /// The file's rooms (IfcSpace): Lapin's own rebuilt from their intent,
@@ -601,9 +605,17 @@ public static partial class IfcImport
         {
             var gid = Str(e[0])!;
             var p = prepared.TryRemove(e.Id, out var ready) ? ready : Prepare(e, booleans);
+            // The 2D the user left out: an element's own (it is drawn by its cut), or an element that is nothing but 2D.
+            var sharedId = p.Shared is var (k0, _) ? SharedBody(edit, k0, e, booleans) : null;
+            if (p.Plan2d.Count > 0 || p.Sections2d + p.Elevations2d > 0)
+            {
+                var bodied = sharedId != null || (p = p with { Parts = p.Parts ?? OwnBody(e, booleans) }).Parts!.Count > 0;
+                if (!bodied && !o.Only2d) { left2d++; return; }
+                if (bodied && !o.Plan2d) { p = p with { Plan2d = [], Sections2d = 0, Elevations2d = 0 }; without2d++; }
+            }
             var (plan2d, sections2d, elevations2d) = (p.Plan2d, p.Sections2d, p.Elevations2d);
             // A body many products share: kept once, each product an instance of it (docs/plan-instancing.md).
-            if (p.Shared is var (key, at) && SharedBody(edit, key, e, booleans) is { } bodyId)
+            if (p.Shared is var (key, at) && sharedId is { } bodyId)
             {
                 var instance = new JsonObject
                 {

@@ -20,6 +20,10 @@ La exportación pregunta el esquema (**IFC4**, que se lee en todas partes, o **I
 
 ![Importar IFC](shots/import-ifc.webp)
 
+Algunos archivos llevan 2D además de su modelo: símbolos de planta, huellas, rayados y textos dibujados para un elemento, o elementos dibujados solo en 2D (líneas, textos, símbolos sin cuerpo). Cuando un archivo los tiene, el diálogo los cuenta en **Dibujado en 2D**. Desmarque **el 2D propio de los elementos** y la planta dibuja esos elementos por su corte, como los de Lapin; desmarque **elementos dibujados solo en 2D** y se quedan fuera. Ambos entran si no los desmarca.
+
+![Dibujado en 2D](shots/import-ifc-2d.webp)
+
 Lapin reconoce los muros, losas, pilares, vigas, zapatas, puertas y ventanas y los convierte en elementos de Lapin que puede editar. Lo que no puede reconocer entra como referencia, dibujada pero no editable. Las puertas y ventanas entran abriéndose como dice el archivo: su mano, el lado hacia el que abren y, en las ventanas, cómo se abre cada panel.
 
 Los espacios del archivo (de Revit, ArchiCAD y otros) entran como habitaciones de Lapin, cada una en su propio nivel, con su contorno, número, nombre, altura, función, departamento y acabado de suelo: consulte [Habitaciones y colores de habitación](rooms.md#habitaciones-desde-un-archivo-ifc). Todo lo que un elemento importado tenía en el archivo (sus conjuntos de propiedades y cantidades) se conserva y se muestra en **Propiedades IFC**, en sus propiedades. Una referencia sale de **Exportar IFC…** tal como entró: con el mismo GlobalId, la misma clase y los mismos atributos (descripción, etiqueta, tipo predefinido), sus conjuntos de propiedades y cantidades con cada valor del tipo que tenía en el archivo, y su tipo, material, puertos, conexiones y sistema, cada uno con su GlobalId. Si trae solo las instalaciones de un archivo y las exporta, el archivo nuevo las lleva enteras.

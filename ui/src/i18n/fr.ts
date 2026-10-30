@@ -447,6 +447,7 @@ export const FR: Record<string, string> = {
   'Stair type from the library': 'Type d’escalier de la bibliothèque', 'Risers': 'Contremarches',
   // Import IFC: the dialog to choose what of a file comes in, and the overlay of a long call (ImportIfcDialog, BusyOverlay)
   'Import IFC': 'Importer IFC', 'What to bring': 'Quoi importer', 'All': 'Tout', 'How': 'Comment',
+  'Drawn in 2D': 'Dessiné en 2D', 'The elements\' own 2D: plan symbols, footprints, texts': 'La 2D propre des éléments : symboles de plan, emprises, textes', 'Elements drawn only in 2D: lines, texts, symbols': 'Éléments dessinés seulement en 2D : lignes, textes, symboles', 'Without it, a plan draws these elements by their cut': 'Sans elle, le plan dessine ces éléments par leur coupe',
   'Fold': 'Replier', 'Show its kinds': 'Afficher ses types', 'How it comes in': 'Mode d’import',
   'Recognised as Lapin elements where it can, the rest as references': 'Reconnu en éléments Lapin quand c’est possible, le reste en références',
   'Everything as references, as the file draws it': 'Tout en références, tel que le fichier le dessine',

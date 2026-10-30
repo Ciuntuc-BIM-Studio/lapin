@@ -524,11 +524,13 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             case "project.importIfc":
             {
                 // An IFC file into the open project (docs/spec-ifc.md): Lapin's own files natively, others as references; "reference" keeps everything as it is;
-                // "link" brings it in read-only, as a link (Manage → Links).
+                // "link" brings it in read-only, as a link (Manage → Links); `plan2d: false` leaves the elements' own 2D out, `only2d: false` the elements drawn only in 2D.
                 var modeName = (string?)p["mode"] ?? "auto";
                 var kinds = Chosen(p["kinds"]);
                 var storeys = Chosen(p["storeys"]);
-                var mode = new IfcImportOptions(modeName == "link" ? "auto" : modeName, kinds, storeys);
+                var plan2d = (bool?)p["plan2d"] ?? true;
+                var only2d = (bool?)p["only2d"] ?? true;
+                var mode = new IfcImportOptions(modeName == "link" ? "auto" : modeName, kinds, storeys, plan2d, only2d);
                 // By path (the desktop), or its bytes, base64 in `data` (the browser); the file as the survey read it, when it is the same.
                 ReportProgress("Reading the file", 0, 0);
                 var (bytes, name, path, key) = IfcBytes(p);
@@ -549,6 +551,8 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                     session.EditSource = new JsonObject { ["import"] = path, ["sha256"] = hash, ["mode"] = modeName, ["seed"] = seed };
                     if (kinds != null) session.EditSource["kinds"] = new JsonArray(kinds.Select(k => (JsonNode)k).ToArray());
                     if (storeys != null) session.EditSource["storeys"] = new JsonArray(storeys.Select(k => (JsonNode)k).ToArray());
+                    if (!plan2d) session.EditSource["plan2d"] = false;
+                    if (!only2d) session.EditSource["only2d"] = false;
                     try
                     {
                         using var seeded = session.SeededIds(seed);

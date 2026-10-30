@@ -131,11 +131,17 @@ public static class IfcSurvey
         var noStorey = 0;
         var kinds = new Dictionary<string, (string Class, string? Category, int Count)>();
         var products = 0;
+        // The 2D the elements carry: how many have their own plan 2D besides a body, how many are nothing but 2D.
+        var model = new IfcModel(f);
+        int with2d = 0, only2d = 0;
         // The elements, and the rooms (spaces: chosen as one more kind); not the virtual elements (space boundaries, no body).
         foreach (var e in f.Rooted)
         {
             if (!(IfcImport.IsProductEntity(e) || e.Type == "IFCSPACE") || e.Type == "IFCVIRTUALELEMENT") continue;
             products++;
+            var (plan, body) = e.Type == "IFCSPACE" ? (false, true) : model.Has2d(e.Id);
+            if (plan && body) with2d++;
+            else if (plan) only2d++;
             var kind = KindOf(e);
             var (cls, category) = Split(kind);
             kinds[kind] = (cls, category, kinds.TryGetValue(kind, out var k) ? k.Count + 1 : 1);
@@ -160,6 +166,7 @@ public static class IfcSurvey
             ["storeys"] = new JsonArray(storeys.Select(s => (JsonNode)new JsonObject { ["id"] = s.Gid, ["name"] = s.Name, ["elevation"] = Math.Round(s.Elevation, 3), ["count"] = perStorey[s.Id] }).ToArray()),
             ["noStorey"] = noStorey,
             ["groups"] = groups,
+            ["twoD"] = new JsonObject { ["elements"] = with2d, ["only"] = only2d },
         };
     }
 

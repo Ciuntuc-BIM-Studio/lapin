@@ -445,6 +445,7 @@ export const RO: Record<string, string> = {
   'Opacity': 'Opacitate',
   // Import IFC: the dialog to choose what of a file comes in, and the overlay of a long call (ImportIfcDialog, BusyOverlay)
   'Import IFC': 'Import IFC', 'What to bring': 'Ce se aduce', 'All': 'Toate', 'How': 'Cum',
+  'Drawn in 2D': 'Desenat în 2D', 'The elements\' own 2D: plan symbols, footprints, texts': '2D-ul propriu al elementelor: simboluri de plan, amprente, texte', 'Elements drawn only in 2D: lines, texts, symbols': 'Elemente desenate doar în 2D: linii, texte, simboluri', 'Without it, a plan draws these elements by their cut': 'Fără el, planul desenează aceste elemente prin secțiunea lor',
   'Fold': 'Restrânge', 'Show its kinds': 'Arată tipurile', 'How it comes in': 'Cum intră',
   'Recognised as Lapin elements where it can, the rest as references': 'Recunoscut ca elemente Lapin unde se poate, restul ca referințe',
   'Everything as references, as the file draws it': 'Totul ca referințe, cum îl desenează fișierul',

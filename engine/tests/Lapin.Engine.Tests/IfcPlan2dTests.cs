@@ -216,6 +216,62 @@ public class IfcPlan2dTests
         Assert.Contains(Views.Render(f.Session.Reader, Plan(f, id)).Marks, m => m.Owner == id && m.Lines.Count == 4);
     }
 
+    /// <summary>A proxy with a body and its footprint, and a chair drawn only in 2D.</summary>
+    static File2d WithAndOnly2d()
+    {
+        var x = new File2d();
+        x.Element("IFCBUILDINGELEMENTPROXY", "proxy", x.Place(10, 5),
+            x.Rep(x.Model, "Body", "SweptSolid", x.Box(0, 0, 2, 1, 3)), x.Rep(x.Model, "FootPrint", "Curve2D", x.Polyline((0, 0), (2, 0), (1, 1), (0, 0))));
+        x.Element("IFCFURNITURE", "chair", x.Place(3, 3), x.Rep(x.PlanBody, "Annotation", "Annotation2D", x.Polyline((0, 0), (0.5, 0), (0.5, 0.5), (0, 0.5), (0, 0))));
+        x.Element("IFCBUILDINGELEMENTPROXY", "plain", x.Place(0, 0), x.Rep(x.Model, "Body", "SweptSolid", x.Box(0, 0, 1, 1, 1)));
+        return x;
+    }
+
+    /// <summary>The survey tells how many elements carry their own 2D and how many are nothing but 2D, before anything comes in.</summary>
+    [Fact]
+    public void The_survey_counts_the_2d_a_file_carries()
+    {
+        var s = IfcSurvey.Of(StepFile.Read(WithAndOnly2d().Bytes()), "plan2d.ifc", 0);
+        Assert.Equal(1, (int)s["twoD"]!["elements"]!);
+        Assert.Equal(1, (int)s["twoD"]!["only"]!);
+    }
+
+    /// <summary>
+    /// The 2D left out as the user chose: without the elements' own 2D the proxy comes with its body alone (a plan cuts
+    /// it); without the elements drawn only in 2D the chair stays out; the element with neither is untouched.
+    /// </summary>
+    [Fact]
+    public void The_2d_comes_in_only_as_chosen()
+    {
+        var bytes = WithAndOnly2d().Bytes();
+        string proxy = File2d.Gid("proxy"), chair = File2d.Gid("chair"), plain = File2d.Gid("plain");
+
+        var all = New();
+        IfcImport.Run(all.Session, bytes, "plan2d.ifc", new IfcImportOptions(), out _);
+        Assert.True(Plan2d.Has(all.Model.Get(proxy)!));
+        Assert.NotNull(all.Model.Get(chair));
+
+        var no2d = New();
+        var r = IfcImport.Run(no2d.Session, bytes, "plan2d.ifc", new IfcImportOptions(Plan2d: false), out _);
+        Assert.False(Plan2d.Has(no2d.Model.Get(proxy)!));
+        Assert.True(StoredBodies.Has(no2d.Model.Get(proxy)!));
+        Assert.NotNull(no2d.Model.Get(chair));
+        Assert.Contains(r.Notes, n => n.Contains("1 element(s) brought without their own 2D"));
+        Assert.Contains(Drawing(no2d, Plan(no2d, proxy)).Cuts, c => c.Element == proxy);
+
+        var noOnly = New();
+        r = IfcImport.Run(noOnly.Session, bytes, "plan2d.ifc", new IfcImportOptions(Only2d: false), out _);
+        Assert.Null(noOnly.Model.Get(chair));
+        Assert.True(Plan2d.Has(noOnly.Model.Get(proxy)!));
+        Assert.Contains(r.Notes, n => n.Contains("1 element(s) drawn only in 2D left out"));
+
+        var none = New();
+        IfcImport.Run(none.Session, bytes, "plan2d.ifc", new IfcImportOptions(Plan2d: false, Only2d: false), out _);
+        Assert.Null(none.Model.Get(chair));
+        Assert.False(Plan2d.Has(none.Model.Get(proxy)!));
+        Assert.NotNull(none.Model.Get(plain));
+    }
+
     /// <summary>A curve's colour and font from its styled item; a fill area's colour from its fill area style; a text literal with its height.</summary>
     [Fact]
     public void Styles_fills_and_texts_are_read_and_drawn()

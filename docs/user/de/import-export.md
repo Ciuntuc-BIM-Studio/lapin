@@ -20,6 +20,10 @@ Der Export fragt nach dem Schema (**IFC4**, überall lesbar, oder **IFC4X3**), d
 
 ![IFC importieren](shots/import-ifc.webp)
 
+Manche Dateien enthalten neben dem Modell auch 2D: Grundrisssymbole, Grundflächen, Schraffuren und Texte, die für ein Element gezeichnet sind, oder Elemente, die nur in 2D gezeichnet sind (Linien, Texte, Symbole ohne Körper). Hat eine Datei solche, zählt der Dialog sie unter **In 2D gezeichnet**. Entfernen Sie den Haken bei **das eigene 2D der Elemente**, zeichnet der Grundriss diese Elemente durch ihren Schnitt, wie die von Lapin; entfernen Sie ihn bei **nur in 2D gezeichnete Elemente**, bleiben diese draußen. Beides kommt herein, solange Sie den Haken nicht entfernen.
+
+![In 2D gezeichnet](shots/import-ifc-2d.webp)
+
 Lapin erkennt Wände, Decken, Stützen, Träger, Fundamente, Türen und Fenster und wandelt sie in Lapin-Elemente um, die Sie bearbeiten können. Was es nicht erkennen kann, kommt als Referenz herein: gezeichnet, aber nicht bearbeitbar. Türen und Fenster öffnen sich nach dem Import so, wie die Datei es angibt: ihr Anschlag, die Seite, zu der sie aufgehen, und bei Fenstern, wie sich jeder Flügel öffnet.
 
 Die Räume der Datei (aus Revit, ArchiCAD und anderen) kommen als Lapin-Räume herein, jeder auf seiner eigenen Ebene, mit Umriss, Nummer, Name, Höhe, Funktion, Abteilung und Bodenbelag: siehe [Räume und Raumfarben](rooms.md#raume-aus-einer-ifc-datei). Alles, was ein importiertes Element in der Datei hatte (seine Eigenschaftssätze und Mengen), bleibt erhalten und wird in seinen Eigenschaften unter **IFC-Eigenschaften** angezeigt. Eine Referenz verlässt **IFC exportieren…** so, wie sie hereinkam: mit derselben GlobalId, Klasse und denselben Attributen (Beschreibung, Kennzeichen, vordefinierter Typ), ihren Eigenschafts- und Mengensätzen mit jedem Wert im Typ der Datei, und mit ihrem Typ, Material, ihren Anschlüssen, Verbindungen und ihrem System, jeweils mit ihrer GlobalId. Holen Sie nur die Haustechnik einer Datei herein und exportieren Sie sie, enthält die neue Datei sie vollständig.

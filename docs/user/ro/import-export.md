@@ -20,6 +20,10 @@ Exportul întreabă schema (**IFC4**, citit peste tot, sau **IFC4X3**), detaliul
 
 ![Import IFC](shots/import-ifc.webp)
 
+Unele fișiere au și 2D pe lângă model: simboluri de plan, amprente, hașuri și texte desenate pentru un element, sau elemente desenate doar în 2D (linii, texte, simboluri fără corp). Când un fișier le are, dialogul le numără la **Desenat în 2D**. Debifează **2D-ul propriu al elementelor** și planul desenează acele elemente prin secțiunea lor, ca pe ale lui Lapin; debifează **elementele desenate doar în 2D** și ele rămân afară. Ambele intră dacă nu le debifezi.
+
+![Desenat în 2D](shots/import-ifc-2d.webp)
+
 Lapin recunoaște pereții, plăcile, stâlpii, grinzile, fundațiile, ușile și ferestrele și le face elemente Lapin pe care le poți edita. Ce nu poate recunoaște intră ca referință, desenată, dar needitabilă. Ușile și ferestrele intră deschizându-se cum spune fișierul: mâna, partea în care se deschid și, la ferestre, cum se deschide fiecare panou.
 
 Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapin, fiecare pe nivelul ei, cu conturul, numărul, numele, înălțimea, funcțiunea, departamentul și finisajul pardoselii. Tot ce avea în fișier un element importat (seturile de proprietăți și cantitățile) se păstrează și apare la **Proprietăți IFC** în proprietățile lui. Încăperile se văd în planurile nivelurilor lor (eticheta; o schemă de culori din **Vedere → Culorile încăperilor** le umple); în 3D sunt ascunse până le arată **Vizibilitate / Grafică**. O referință iese din **Exportă IFC…** cum a intrat: cu același GlobalId, aceeași clasă și aceleași atribute (descriere, tag, tip predefinit), cu seturile de proprietăți și cantitățile, fiecare valoare cu tipul din fișier, și cu tipul, materialul, porturile, conexiunile și sistemul ei, fiecare cu GlobalId-ul lui. Dacă aduci doar instalațiile dintr-un fișier și le exporți, fișierul nou le are întregi.

@@ -167,6 +167,62 @@ const aerialJpeg = (t) => t.page.evaluate(() => {
   return c.toDataURL('image/jpeg', 0.85).split(',')[1];
 });
 
+/** A small foreign IFC that carries 2D: a cabinet (a box) with its footprint, and a chair drawn only in 2D in a plan context. */
+const IFC_2D = `ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('ViewDefinition [ReferenceView_V1.2]'),'2;1');
+FILE_NAME('2d.ifc','2026-10-30T12:00:00',(''),(''),'guide','guide','');
+FILE_SCHEMA(('IFC4'));
+ENDSEC;
+DATA;
+#1=IFCCARTESIANPOINT((0.,0.,0.));
+#2=IFCAXIS2PLACEMENT3D(#1,$,$);
+#3=IFCGEOMETRICREPRESENTATIONCONTEXT($,'Model',3,1.E-05,#2,$);
+#4=IFCGEOMETRICREPRESENTATIONCONTEXT($,'Plan',2,1.E-05,#2,$);
+#5=IFCGEOMETRICREPRESENTATIONSUBCONTEXT('Annotation','Plan',*,*,*,*,#4,$,.PLAN_VIEW.,$);
+#6=IFCSIUNIT(*,.LENGTHUNIT.,$,.METRE.);
+#7=IFCUNITASSIGNMENT((#6));
+#8=IFCPROJECT('0GuideProj000000000001',$,'2D',$,$,$,$,(#3,#4),#7);
+#9=IFCLOCALPLACEMENT($,#2);
+#10=IFCSITE('0GuideSite000000000001',$,'Site',$,$,#9,$,$,.ELEMENT.,$,$,$,$,$);
+#11=IFCLOCALPLACEMENT(#9,#2);
+#12=IFCBUILDING('0GuideBldg000000000001',$,'Building',$,$,#11,$,$,.ELEMENT.,$,$,$);
+#13=IFCLOCALPLACEMENT(#11,#2);
+#14=IFCBUILDINGSTOREY('0GuideStry000000000001',$,'Ground',$,$,#13,$,$,.ELEMENT.,0.);
+#15=IFCRELAGGREGATES('0GuideAgg1000000000001',$,$,$,#8,(#10));
+#16=IFCRELAGGREGATES('0GuideAgg2000000000001',$,$,$,#10,(#12));
+#17=IFCRELAGGREGATES('0GuideAgg3000000000001',$,$,$,#12,(#14));
+#20=IFCCARTESIANPOINT((0.3,0.2));
+#21=IFCAXIS2PLACEMENT2D(#20,$);
+#22=IFCRECTANGLEPROFILEDEF(.AREA.,$,#21,0.6,0.4);
+#23=IFCDIRECTION((0.,0.,1.));
+#24=IFCEXTRUDEDAREASOLID(#22,#2,#23,0.9);
+#25=IFCSHAPEREPRESENTATION(#3,'Body','SweptSolid',(#24));
+#26=IFCPOLYLINE((#27,#28,#29,#30,#27));
+#27=IFCCARTESIANPOINT((0.,0.));
+#28=IFCCARTESIANPOINT((0.6,0.));
+#29=IFCCARTESIANPOINT((0.6,0.4));
+#30=IFCCARTESIANPOINT((0.,0.4));
+#31=IFCSHAPEREPRESENTATION(#3,'FootPrint','Curve2D',(#26));
+#32=IFCPRODUCTDEFINITIONSHAPE($,$,(#25,#31));
+#35=IFCCARTESIANPOINT((2.,1.,0.));
+#36=IFCAXIS2PLACEMENT3D(#35,$,$);
+#33=IFCLOCALPLACEMENT(#13,#36);
+#34=IFCFURNITURE('0GuideCabinet000000001',$,'Cabinet',$,$,#33,#32,$,$);
+#40=IFCPOLYLINE((#41,#42,#43,#44,#41));
+#41=IFCCARTESIANPOINT((0.,0.));
+#42=IFCCARTESIANPOINT((0.5,0.));
+#43=IFCCARTESIANPOINT((0.5,0.5));
+#44=IFCCARTESIANPOINT((0.,0.5));
+#45=IFCSHAPEREPRESENTATION(#5,'Annotation','Annotation2D',(#40));
+#46=IFCPRODUCTDEFINITIONSHAPE($,$,(#45));
+#47=IFCLOCALPLACEMENT(#13,#2);
+#48=IFCFURNITURE('0GuideChair00000000001',$,'Chair',$,$,#47,#46,$,$);
+#50=IFCRELCONTAINEDINSPATIALSTRUCTURE('0GuideCont000000000001',$,$,$,(#34,#48),#14);
+ENDSEC;
+END-ISO-10303-21;
+`;
+
 export const scenes = [
   {
     id: 'start',
@@ -1026,6 +1082,26 @@ export const scenes = [
       const kinds = (await t.nodes()).map((n) => n.type);
       t.expect(kinds.includes('IfcWall') || kinds.includes('IfcWallStandardCase'), 'the walls came in');
       t.expect(!kinds.includes('IfcColumn') && !kinds.includes('IfcBeam'), 'the structure left out stayed out');
+
+      // A file that carries 2D: a cabinet with its footprint, a chair drawn only in 2D. The chair left out.
+      const file2d = join(tmpdir(), 'lapin-guide-2d.ifc');
+      const { writeFileSync } = await import('node:fs');
+      writeFileSync(file2d, IFC_2D);
+      await t.fresh();
+      await t.page.evaluate(() => { delete window.showOpenFilePicker; });
+      await t.button('File', { exact: true });
+      const chooser2d = t.page.waitForEvent('filechooser', { timeout: 10_000 });
+      await t.page.getByRole('menuitem', { name: 'Import IFC…' }).click();
+      await (await chooser2d).setFiles(file2d);
+      await dialog.waitFor({ timeout: 60_000 });
+      t.expect(await dialog.locator('.import-plan2d').count() === 1 && await dialog.locator('.import-only2d').count() === 1, 'the dialog offers the file\'s 2D');
+      await dialog.locator('.import-only2d').uncheck();
+      await t.shot('import-ifc-2d', { of: '.import-2d', pad: 8 });
+      await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+      await t.page.waitForSelector('[data-testid=busy]', { state: 'detached', timeout: 120_000 });
+      await t.wait(400);
+      const names = (await t.nodes()).map((n) => n.name);
+      t.expect(names.includes('Cabinet') && !names.includes('Chair'), 'the chair drawn only in 2D stayed out, the cabinet came in');
     },
   },
   {

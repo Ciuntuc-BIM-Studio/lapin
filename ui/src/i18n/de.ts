@@ -447,6 +447,7 @@ export const DE: Record<string, string> = {
   'Stair type from the library': 'Treppentyp aus der Bibliothek', 'Risers': 'Steigungen',
   // Import IFC: the dialog to choose what of a file comes in, and the overlay of a long call (ImportIfcDialog, BusyOverlay)
   'Import IFC': 'IFC importieren', 'What to bring': 'Was übernommen wird', 'All': 'Alle', 'How': 'Wie',
+  'Drawn in 2D': 'In 2D gezeichnet', 'The elements\' own 2D: plan symbols, footprints, texts': 'Das eigene 2D der Elemente: Grundrisssymbole, Grundflächen, Texte', 'Elements drawn only in 2D: lines, texts, symbols': 'Nur in 2D gezeichnete Elemente: Linien, Texte, Symbole', 'Without it, a plan draws these elements by their cut': 'Ohne es zeichnet der Grundriss diese Elemente durch ihren Schnitt',
   'Fold': 'Einklappen', 'Show its kinds': 'Seine Arten anzeigen', 'How it comes in': 'Wie es übernommen wird',
   'Recognised as Lapin elements where it can, the rest as references': 'Wo möglich als Lapin-Elemente erkannt, der Rest als Referenzen',
   'Everything as references, as the file draws it': 'Alles als Referenzen, wie die Datei es zeichnet',

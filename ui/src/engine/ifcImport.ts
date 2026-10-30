@@ -17,6 +17,8 @@ export interface SurveyStorey { id: string; name: string; elevation: number; cou
 export interface Survey {
   name: string; size: number; schema: string; application?: string | null; products: number;
   storeys: SurveyStorey[]; noStorey: number; groups: SurveyGroup[];
+  /** The 2D its elements carry: how many have their own plan 2D besides a body, how many are nothing but 2D. */
+  twoD?: { elements: number; only: number };
 }
 
 export type ImportMode = 'auto' | 'reference' | 'link';
@@ -70,7 +72,7 @@ export async function surveyIfc(source: IfcSource, mode: ImportMode): Promise<vo
 export interface ImportResult { elements: number; updated: number; references: number; recognized?: number; recognizedByClass?: Record<string, number>; notes: string[] }
 
 /** Step two: what was chosen (null: everything) brought in, its stages shown; the outcome said. */
-export async function runIfcImport(choice: { kinds: string[] | null; storeys: string[] | null; mode: ImportMode }): Promise<void> {
+export async function runIfcImport(choice: { kinds: string[] | null; storeys: string[] | null; mode: ImportMode; plan2d?: boolean; only2d?: boolean }): Promise<void> {
   const { source } = useIfcImport.getState();
   if (!source) return;
   useUi.setState({ dialog: null });
@@ -81,6 +83,8 @@ export async function runIfcImport(choice: { kinds: string[] | null; storeys: st
       ...args(source), mode: choice.mode,
       ...(choice.kinds ? { kinds: choice.kinds } : {}),
       ...(choice.storeys ? { storeys: choice.storeys } : {}),
+      ...(choice.plan2d === false ? { plan2d: false } : {}),
+      ...(choice.only2d === false ? { only2d: false } : {}),
     }, { timeoutMs: LONG_TIMEOUT_MS });
     notify(outcome(source.name, choice.mode, r));
   } catch (e) {

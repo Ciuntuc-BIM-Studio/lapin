@@ -20,6 +20,10 @@ Eksporten spørger om skemaet (**IFC4**, der læses overalt, eller **IFC4X3**), 
 
 ![Importér IFC](shots/import-ifc.webp)
 
+Nogle filer har også 2D ud over modellen: plansymboler, fodaftryk, skraveringer og tekster tegnet til et element, eller elementer, der kun er tegnet i 2D (linjer, tekster, symboler uden legeme). Når en fil har dem, tæller dialogen dem under **Tegnet i 2D**. Fjern fluebenet ved **elementernes egen 2D**, og planen tegner disse elementer ved deres snit, som Lapins egne; fjern det ved **elementer, der kun er tegnet i 2D**, og de bliver ude. Begge kommer ind, medmindre du fjerner fluebenet.
+
+![Tegnet i 2D](shots/import-ifc-2d.webp)
+
 Lapin genkender vægge, dæk, søjler, bjælker, fundamenter, døre og vinduer og gør dem til Lapin-elementer, du kan redigere. Det, det ikke kan genkende, kommer ind som en reference, tegnet men ikke redigerbar. Døre og vinduer kommer ind og åbner, som filen siger: deres hængsling, den side de åbner mod og, for vinduer, hvordan hver ramme åbner.
 
 Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på sit eget niveau, med deres omrids, nummer, navn, højde, funktion, afdeling og gulvbelægning: se [Rum og rumfarver](rooms.md#rum-fra-en-ifc-fil). Alt, hvad et importeret element havde i filen (dets egenskabssæt og mængder), bevares og vises under **IFC-egenskaber** i dets egenskaber. En reference forlader **Eksportér IFC…**, som den kom ind: med samme GlobalId, klasse og attributter (beskrivelse, mærke, foruddefineret type), dens egenskabs- og mængdesæt med hver værdi af den type, filen gav den, og dens type, materiale, porte, forbindelser og system, hver med sit GlobalId. Henter du kun installationerne fra en fil og eksporterer dem, har den nye fil dem hele.
