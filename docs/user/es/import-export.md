@@ -1,0 +1,44 @@
+---
+title: Importar y exportar
+order: 110
+summary: Intercambie el modelo como IFC, traiga dibujos DXF, vincule archivos y exporte modelos 3D para renderizado y RA.
+---
+
+Todo lo que entra o sale está en el menú **Archivo**.
+
+![El menú Archivo](shots/file-menu.webp)
+
+## IFC
+
+**Exportar IFC…** escribe el modelo como IFC. Cada muro, losa, puerta y cubierta es un elemento IFC real con sus capas, su tipo y sus propiedades, de modo que el archivo se abre como un modelo en otras herramientas BIM. Las puertas y ventanas indican cómo se abren: la mano de cada hoja, hacia dónde gira y los paneles, tal como los define IFC, para que otros programas dibujen las mismas aperturas.
+
+**Importar IFC…** lee el IFC de otro programa. Antes de que entre nada, Lapin lee el archivo y muestra lo que contiene: sus elementos por disciplina (arquitectura, estructura, MEP, mobiliario y equipamiento, emplazamiento), cada disciplina por clase con cuántos hay, y sus plantas con cuántos elementos hay en cada una. Desmarque lo que no necesite, por ejemplo MEP y mobiliario cuando trabaje en la estructura, o conserve solo las plantas en las que trabaja. **Cómo** trae los elementos reconocidos como elementos de Lapin, todos como referencias, o vinculados. Mientras el archivo se lee y se importa, Lapin muestra lo que está haciendo y cuánto lleva; un archivo grande tarda un poco.
+
+![Importar IFC](shots/import-ifc.webp)
+
+Lapin reconoce los muros, losas, pilares, vigas, zapatas, puertas y ventanas y los convierte en elementos de Lapin que puede editar. Lo que no puede reconocer entra como referencia, dibujada pero no editable. Las puertas y ventanas entran abriéndose como dice el archivo: su mano, el lado hacia el que abren y, en las ventanas, cómo se abre cada panel.
+
+Los espacios del archivo (de Revit, ArchiCAD y otros) entran como habitaciones de Lapin, cada una en su propio nivel, con su contorno, número, nombre, altura, función, departamento y acabado de suelo: consulte [Habitaciones](rooms.md#habitaciones-desde-un-archivo-ifc). Todo lo que un elemento importado tenía en el archivo (sus conjuntos de propiedades y cantidades) se conserva y se muestra en **IFC properties**, en sus propiedades.
+
+## DXF y DWG
+
+**Import DXF…** trae un dibujo CAD a la vista que tiene delante, con sus capas, sombreados, textos y cotas. Entra como dibujo que puede editar y al que se puede forzar el cursor. Para usar un DWG, guárdelo primero como DXF desde su programa CAD (AutoCAD, BricsCAD o DraftSight: **Save As → DXF**). La importación de PDF aún no está disponible. En una planta, **Colocado: por las coordenadas del mapa** sitúa un dibujo en coordenadas reales (un plano catastral en Stereo 70) donde lo pone el mapa (consulte [Emplazamiento](site.md)).
+
+## Vínculos
+
+**Link IFC…** mantiene otro archivo vinculado en lugar de importarlo. Es de solo lectura y se vuelve a cargar cuando cambia. Esto también funciona con un DXF. **Gestionar → Vínculos** muestra, recarga, convierte o elimina los vínculos.
+
+## Modelos 3D
+
+**Exportar 3D…** escribe el modelo como superficies para renderizado, visualización y realidad aumentada (RA):
+
+| Formato | Para |
+|---|---|
+| GLB, glTF | Blender, three.js, visores web. Se incluyen las imágenes propias de sus materiales. |
+| USDZ | AR Quick Look de Apple, Reality Composer, Omniverse. Imágenes incluidas. |
+| USDA | OpenUSD como texto, un solo archivo. |
+| DAE | COLLADA, para SketchUp y herramientas más antiguas. |
+
+![Exportar 3D](shots/export-3d.webp)
+
+Usted elige qué exportar, qué fase y el origen. **Qué** es **todo**, o el modelo **tal como lo muestra la vista**: la vista 3D que tiene delante, sin sus elementos y categorías ocultos ni las plantas que no muestra, con las capas que muestra (sin acabados, o solo los núcleos). Cuando esa vista está cortada (el corte por encima de las plantas mostradas, una sección mostrada en 3D, la caja de sección), **Corte** corta también la exportación ahí y cierra cada corte con sus materiales, para que el archivo se vea como la pantalla. Una vista 3D que deja algo fuera se exporta tal como lo muestra, salvo que elija otra cosa. Cada elemento conserva su clase IFC, su tipo y su GlobalId. Para intercambiar el modelo en sí y no sus superficies, use **Exportar IFC…**.
