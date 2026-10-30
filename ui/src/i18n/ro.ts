@@ -446,6 +446,9 @@ export const RO: Record<string, string> = {
   'Slab': 'Placă', 'Proxy': 'Proxy', 'Furnishing': 'Mobilier', 'Member': 'Element de structură', 'Plate': 'Placă metalică', 'Stair flight': 'Rampă de scară',
   'Footing': 'Fundație', 'Space': 'Spațiu', 'Opening': 'Gol', 'Flow segment': 'Segment de instalație', 'Flow fitting': 'Fiting', 'Flow terminal': 'Terminal',
   'Distribution port': 'Port de distribuție', 'Building element part': 'Parte de element', 'Wall standard case': 'Perete',
+  // The facade's dressings in the joinery configurator: shutters, grille, window box, canopy (reports #38, #39)
+  'On the facade': 'Pe fațadă', 'Shutters': 'Obloane', 'Louvred': 'Cu lamele', 'Planks': 'Din scânduri', 'Leaves': 'Canate', 'One leaf': 'Un canat', 'Two leaves': 'Două canate', 'Shown open': 'Arătate deschise', 'Louvre pitch': 'Pasul lamelelor', 'From the wall face': 'De la fața peretelui', 'From the window\'s axis': 'De la axul ferestrei', 'Up or down': 'Sus sau jos', 'Safety grille': 'Grilaj de siguranță', 'In the reveal': 'În glaf', 'On the interior face': 'Pe fața interioară', 'Bars': 'Bare', 'Horizontal': 'Orizontale', 'Vertical': 'Verticale', 'Both ways': 'În ambele direcții', 'Bar size': 'Grosimea barei', 'Bar spacing': 'Distanța între bare', 'Frame width': 'Lățimea ramei', 'Past the opening': 'Dincolo de gol', 'Set back from the face': 'Retras de la față', 'Window box': 'Jardinieră', 'Below the opening': 'Sub gol', 'Canopy': 'Copertină', 'Above the head': 'Deasupra golului',
+  'Columns of panes': 'Coloane de canate', 'Rows of panes': 'Rânduri de canate',
 };
 
 /** Phrases with a number or a name in them. */

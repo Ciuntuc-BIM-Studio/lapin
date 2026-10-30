@@ -263,7 +263,7 @@ public static class Openings
             parts.Add(new GeometryPart(group.Key, color, Combine(solids, group.Key), null, group.Key));
         }
         if (dressing != null) parts.AddRange(dressing.Parts());
-        return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy), [f.At(p.Along, f.Centre, 0).Xy]);
+        return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, dressing != null), [f.At(p.Along, f.Centre, 0).Xy]);
     }
 
     /// <summary>
@@ -393,6 +393,14 @@ public static class Openings
                 if (Box(-W / 2, W / 2, YInt, YExt, 0, Math.Max(0.005, th.Height), "threshold") is { } b)
                     yield return new GeometryPart("Threshold", ColorOf(id, th.Material, "#8a8a8a"), b, id, "threshold");
             }
+            // The dressings on the facade (shutters, a grille, a window box, a canopy), by the wall's faces here.
+            foreach (var piece in WindowDressings.Pieces(_spec, WindowDressings.Of(_spec, _t)))
+            {
+                var id = MaterialNamed(_m, piece.Material);
+                var solids = piece.Boxes.Select(x => Openings.Box(x, _map)).OfType<Solid>().ToList();
+                if (piece.Swept is { } sw && Swept(sw.X0, sw.X1, sw.Profile, piece.Key) is { } swept) solids.Add(swept);
+                if (solids.Count > 0) yield return new GeometryPart(piece.Name, ColorOf(id, piece.Material, piece.Color), Combine(solids, piece.Key), id, piece.Key);
+            }
         }
 
         /// <summary>What the wall gives up for the details inside it, each with the height it reaches.</summary>
@@ -430,7 +438,7 @@ public static class Openings
         if (SpecOf(m, fill.Id) is not { } spec || OpeningOf(m, fill.Id) is not { } opening || WallOf(m, opening.Id) is not { } wall) yield break;
         var p = Place(m, opening);
         var f = FrameOf(m, wall, p.Along);
-        foreach (var part in (FillGeometry(fill, m)?.Parts ?? []).Where(x => x.Key != null && (x.Key.StartsWith("reveal", StringComparison.Ordinal) || x.Key.StartsWith("sill", StringComparison.Ordinal) || x.Key is "surround" or "threshold")))
+        foreach (var part in (FillGeometry(fill, m)?.Parts ?? []).Where(x => x.Key != null && (x.Key.StartsWith("reveal", StringComparison.Ordinal) || x.Key.StartsWith("sill", StringComparison.Ordinal) || x.Key is "surround" or "threshold" or "shutters" or "grille" or "windowbox" or "canopy")))
         {
             var (w, h, t) = (spec.Width, spec.Height, f.YMax - f.YMin);
             var d = spec.Details ?? new JoineryDetails();
@@ -448,6 +456,15 @@ public static class Openings
                     break;
                 }
                 case "threshold": yield return ("ThresholdLength", w, "LENGTH"); break;
+                case "shutters": yield return ("ShutterArea", (w + 2 * (d.Shutters?.Overlap ?? 0)) * (d.Shutters?.Height ?? h), "AREA"); break;
+                case "grille":
+                {
+                    var lap = d.Grille?.Side is "outside" or "inside" ? d.Grille.Overlap : 0;
+                    yield return ("GrilleArea", (w + 2 * lap) * (h + 2 * lap), "AREA");
+                    break;
+                }
+                case "windowbox": yield return ("WindowBoxLength", d.WindowBox?.Width ?? w, "LENGTH"); break;
+                case "canopy": yield return ("CanopyArea", (w + 2 * (d.Canopy?.Overhang ?? 0)) * (d.Canopy?.Projection ?? 0), "AREA"); break;
             }
         }
     }
@@ -493,12 +510,45 @@ public static class Openings
     }
 
     /// <summary>
+    /// The dressings' outlines in plan, in the type's frame: each piece's footprint (its boxes' bounds per leaf or
+    /// frame side), "heavy" where it spans the cut height <paramref name="cutZ"/> (over the opening's bottom), "symbol" below, "overhead" above.
+    /// </summary>
+    public static IEnumerable<(string Kind, double X0, double X1, double Y0, double Y1)> DressingPlan(JoinerySpec spec, double thickness, double cutZ)
+    {
+        foreach (var piece in WindowDressings.Pieces(spec, WindowDressings.Of(spec, thickness)))
+        {
+            var boxes = piece.Boxes.Select(b => (b.Min.X, b.Max.X, b.Min.Y, b.Max.Y, b.Min.Z, b.Max.Z)).ToList();
+            if (piece.Swept is { } sw) boxes.Add((sw.X0, sw.X1, sw.Profile.Min(q => q.Y), sw.Profile.Max(q => q.Y), sw.Profile.Min(q => q.Z), sw.Profile.Max(q => q.Z)));
+            if (boxes.Count == 0) continue;
+            // One outline per run of boxes side by side along the wall (a leaf, a frame side), so open leaves stay apart.
+            foreach (var g in Runs(boxes))
+            {
+                var (z0, z1) = (g.Min(b => b.Item5), g.Max(b => b.Item6));
+                var kind = z0 <= cutZ && z1 >= cutZ ? "heavy" : z1 < cutZ ? "symbol" : "overhead";
+                yield return (kind, g.Min(b => b.Item1), g.Max(b => b.Item2), g.Min(b => b.Item3), g.Max(b => b.Item4));
+            }
+        }
+
+        static List<List<(double, double, double, double, double, double)>> Runs(List<(double, double, double, double, double, double)> boxes)
+        {
+            var runs = new List<List<(double, double, double, double, double, double)>>();
+            foreach (var b in boxes.OrderBy(b => b.Item1))
+            {
+                var last = runs.LastOrDefault();
+                if (last != null && b.Item1 <= last.Max(x => x.Item2) + 0.02) last.Add(b);
+                else runs.Add([b]);
+            }
+            return runs;
+        }
+    }
+
+    /// <summary>
     /// The plan symbol: the jambs across the wall, then the symbol engine's plan
     /// (<see cref="JoinerySymbols.Plan"/>: the frame cut, the glass, a door's
     /// leaves open at 90° with their arcs), in the wall's frame, mirrored with
     /// the occurrence.
     /// </summary>
-    static List<PlanItem> Symbol(JoinerySpec spec, WallFrame f, Placed p, int sx, int sy)
+    static List<PlanItem> Symbol(JoinerySpec spec, WallFrame f, Placed p, int sx, int sy, bool dressed)
     {
         var o = new List<PlanItem>();
         Vec2 P(double x, double y) => f.Start + f.Dir * (p.Along + sx * x) + f.Left * (f.Centre - sy * y);
@@ -511,6 +561,10 @@ public static class Openings
         // The symbol engine's plan (docs/simboluri-tamplarie.md): the frame cut, the glass, a door's leaves and their arcs.
         foreach (var st in JoinerySymbols.Plan(spec))
             o.Add(new PlanItem(st.Weight == "cut" ? "heavy" : st.Dashed ? "dashed" : "symbol", st.Closed, st.Pts.Select(q => P(q.X, q.Y)).ToList()));
+        // The dressings seen in plan: what crosses the cut (shutters, a grille) cut, a window box below it seen, a canopy above it overhead.
+        if (dressed)
+            foreach (var (kind, x0, x1, y0, y1) in DressingPlan(spec, depth, PlanCut - p.Sill))
+            o.Add(new PlanItem(kind, true, [P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1)]));
         return o;
     }
 }

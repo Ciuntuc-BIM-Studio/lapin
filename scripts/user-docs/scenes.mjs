@@ -187,6 +187,34 @@ export const scenes = [
     },
   },
   {
+    id: 'window-dressings',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      // The window type: three panes, then shutters, a grille in the reveal, a window box and a canopy (reports #38, #39).
+      await t.tool('architecture.joineryTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('.tree-item').filter({ hasText: /^Window/ }).first().click();
+      await t.wait(300);
+      await dialog.locator('input[data-field=columns]').fill('1 1 1');
+      for (const d of ['shutters', 'grille', 'windowBox', 'canopy']) await dialog.locator(`input[data-dressing=${d}]`).check();
+      await dialog.locator('input[data-field=outside]').check();
+      await t.wait(800);
+      t.expect(await dialog.locator('input[data-dressing=shutters-open]').count() === 1, 'the shutters are set up in the configurator');
+      // The form at its facade dressings, the preview (kept in view) drawing them from outside.
+      await dialog.locator('input[data-dressing=shutters]').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await t.wait(300);
+      await t.shot('joinery-dressings', { of: '.dialog', pad: 0 });
+      await dialog.locator('.btn.primary').first().click();
+      await t.wait(800);
+      await t.keys('Escape');
+      const type = (await t.nodes()).find((n) => n.type === 'IfcWindowType' && n.props?.spec?.details?.shutters?.on);
+      t.expect(type, 'the window type keeps its shutters');
+      await open3d(t);
+      await t.shot('window-dressings-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     id: 'floors-roofs',
     async run(t) {
       await t.fresh();

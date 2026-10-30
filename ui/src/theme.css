@@ -342,7 +342,7 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .joinery-form { display: flex; flex-direction: column; gap: 6px; }
 .joinery-form .field-line { grid-template-columns: 110px 1fr; }
 .joinery-form .field-line input.num { text-align: right; }
-.joinery-preview { display: flex; flex-direction: column; gap: 6px; }
+.joinery-preview { display: flex; flex-direction: column; gap: 6px; position: sticky; top: 0; } /* stays in view while the long form scrolls */
 .joinery-preview svg { background: var(--raised); border: 1px solid var(--rule); }
 .joinery-actions { grid-column: 1 / -1; }
 .panel-grid { border-collapse: collapse; }

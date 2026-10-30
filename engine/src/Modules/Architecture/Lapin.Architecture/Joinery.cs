@@ -36,8 +36,9 @@ public sealed record JoinerySurround(bool On = false, double Width = 0.08, doubl
 /// <summary>A door's threshold across the wall, its height and material.</summary>
 public sealed record JoineryThreshold(bool On = false, double Height = 0.02, string? Material = null);
 
-/// <summary>The details of a door or window type; a null field keeps the default (the reveal from the wall, the boards as before, no surround, the frame's threshold).</summary>
-public sealed record JoineryDetails(JoineryReveal? Reveal = null, JoinerySill? SillInside = null, JoinerySill? SillOutside = null, JoinerySurround? Surround = null, JoineryThreshold? Threshold = null);
+/// <summary>The details of a door or window type; a null field keeps the default (the reveal from the wall, the boards as before, no surround, the frame's threshold, no dressings: shutters, grille, window box, canopy).</summary>
+public sealed record JoineryDetails(JoineryReveal? Reveal = null, JoinerySill? SillInside = null, JoinerySill? SillOutside = null, JoinerySurround? Surround = null, JoineryThreshold? Threshold = null,
+    JoineryShutters? Shutters = null, JoineryGrille? Grille = null, JoineryWindowBox? WindowBox = null, JoineryCanopy? Canopy = null);
 
 /// <summary>
 /// A door or window type as the configurator edits it (the old Lapin's

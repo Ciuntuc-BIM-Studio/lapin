@@ -201,12 +201,53 @@ public static class JoinerySymbols
         return exterior ? o.Select(x => x with { Pts = x.Pts.Select(q => new Vec2(-q.X, q.Y)).ToList() }).ToList() : o;
     }
 
+    // ─── Dressings ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The dressings (shutters, grille, window box, canopy) in one of the configurator's drawings, for a wall
+    /// <paramref name="thickness"/> thick: "elevation" (from inside: only what is on the interior face), "exterior"
+    /// (from outside, mirrored like its elevation), "plan" (their outlines, cut where they cross the cut), "section" (cut at <paramref name="cutX"/>).
+    /// </summary>
+    public static List<JStroke> Dressings(JoinerySpec s, double thickness, string view, double cutX = 0)
+    {
+        var o = new List<JStroke>();
+        var faces = WindowDressings.Of(s, thickness);
+        if (view == "plan")
+        {
+            foreach (var (kind, x0, x1, y0, y1) in Openings.DressingPlan(s, thickness, Openings.PlanCut - s.SillHeight))
+                o.Add(Rect(x0, y0, x1, y1, kind == "heavy" ? "cut" : "thin", kind == "overhead"));
+            return o;
+        }
+        foreach (var piece in WindowDressings.Pieces(s, faces))
+        {
+            foreach (var b in piece.Boxes)
+            {
+                if (view == "section") { if (b.Min.X <= cutX && b.Max.X >= cutX) o.Add(Rect(b.Min.Y, b.Min.Z, b.Max.Y, b.Max.Z, "cut")); continue; }
+                // From inside, only what stands on the interior face shows (the rest is behind the glass or the wall).
+                if (view == "elevation" && b.Max.Y > faces.In + 1e-6) continue;
+                o.Add(view == "exterior" ? Rect(-b.Max.X, b.Min.Z, -b.Min.X, b.Max.Z, "thin") : Rect(b.Min.X, b.Min.Z, b.Max.X, b.Max.Z, "thin"));
+            }
+            if (piece.Swept is { } sw)
+            {
+                if (view == "section" && sw.X0 <= cutX && sw.X1 >= cutX) o.Add(new(sw.Profile.Select(q => new Vec2(q.Y, q.Z)).ToList(), "cut", true));
+                else if (view == "exterior") o.Add(Rect(-sw.X1, sw.Profile.Min(q => q.Z), -sw.X0, sw.Profile.Max(q => q.Z), "outline"));
+            }
+        }
+        return o;
+    }
+
     // ─── Section ───────────────────────────────────────────────────────────
+
+    /// <summary>Where the section is cut by default: through the middle of the first column's panel.</summary>
+    public static double SectionCut(JoinerySpec s)
+    {
+        var first = Joinery.Normalised(s).FirstOrDefault(p => p.Col == 0);
+        return first != null ? (Joinery.PanelRect(s, first).X0 + Joinery.PanelRect(s, first).X1) / 2 : 0;
+    }
 
     public static List<JStroke> Section(JoinerySpec s, double? cutX = null)
     {
-        var first = Joinery.Normalised(s).FirstOrDefault(p => p.Col == 0);
-        var x = cutX ?? (first != null ? (Joinery.PanelRect(s, first).X0 + Joinery.PanelRect(s, first).X1) / 2 : 0);
+        var x = cutX ?? SectionCut(s);
         return Joinery.Boxes(s).Where(b => b.Role != "handle" && b.Min.X <= x && b.Max.X >= x)
             .Select(b => Rect(b.Min.Y, b.Min.Z, b.Max.Y, b.Max.Z, b.Role == "glass" ? "thin" : "cut")).ToList();
     }

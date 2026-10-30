@@ -118,6 +118,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var (convention, hardware) = Joinery.SymbolSettings(q.Model);
             var problem = Joinery.Problem(spec);
             var boxes = problem == null ? Joinery.Boxes(spec) : [];
+            // The drawings show the dressings on a wall this thick (the type's own walls vary: 300 mm unless asked).
+            var wall = Math.Clamp(Json.Number(a["wall"]) ?? 0.3, 0.05, 2);
             return new JsonObject
             {
                 ["problem"] = problem,
@@ -134,10 +136,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 // The drawings (the symbol engine's): the elevation from inside and from outside, the plan, the section.
                 ["drawings"] = problem != null ? null : new JsonObject
                 {
-                    ["elevation"] = Strokes(JoinerySymbols.Elevation(spec, false, convention, hardware)),
-                    ["exterior"] = Strokes(JoinerySymbols.Elevation(spec, true, convention, hardware)),
-                    ["plan"] = Strokes(JoinerySymbols.Plan(spec)),
-                    ["section"] = Strokes(JoinerySymbols.Section(spec)),
+                    ["elevation"] = Strokes([.. JoinerySymbols.Elevation(spec, false, convention, hardware), .. JoinerySymbols.Dressings(spec, wall, "elevation")]),
+                    ["exterior"] = Strokes([.. JoinerySymbols.Elevation(spec, true, convention, hardware), .. JoinerySymbols.Dressings(spec, wall, "exterior")]),
+                    ["plan"] = Strokes([.. JoinerySymbols.Plan(spec), .. JoinerySymbols.Dressings(spec, wall, "plan")]),
+                    ["section"] = Strokes([.. JoinerySymbols.Section(spec), .. JoinerySymbols.Dressings(spec, wall, "section", JoinerySymbols.SectionCut(spec))]),
                 },
                 ["symbols"] = new JsonObject { ["convention"] = convention, ["hardware"] = hardware },
             };

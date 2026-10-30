@@ -32,11 +32,19 @@ interface Reveal { mode: 'wall' | 'material' | 'none'; material?: string | null;
 interface Sill { on: boolean; projection: number; thickness: number; overhang: number; slope: number; material?: string | null }
 interface Surround { on: boolean; width: number; projection: number; sill: boolean; material?: string | null }
 interface Threshold { on: boolean; height: number; material?: string | null }
-interface Details { reveal?: Reveal | null; sillInside?: Sill | null; sillOutside?: Sill | null; surround?: Surround | null; threshold?: Threshold | null }
+interface Shutters { on: boolean; style: 'louvred' | 'panel' | 'planks'; leaves: number; open: boolean; thickness: number; gap: number; overlap: number; along: number; rise: number; height?: number | null; pitch: number; material?: string | null; color: string }
+interface Grille { on: boolean; side: 'reveal' | 'outside' | 'inside'; pattern: 'horizontal' | 'vertical' | 'grid'; bar: number; spacing: number; frameWidth: number; gap: number; overlap: number; along: number; rise: number; material?: string | null; color: string }
+interface WindowBox { on: boolean; width?: number | null; depth: number; height: number; gap: number; drop: number; along: number; material?: string | null; color: string }
+interface Canopy { on: boolean; projection: number; thickness: number; overhang: number; rise: number; slope: number; gap: number; along: number; material?: string | null; color: string }
+interface Details { reveal?: Reveal | null; sillInside?: Sill | null; sillOutside?: Sill | null; surround?: Surround | null; threshold?: Threshold | null; shutters?: Shutters | null; grille?: Grille | null; windowBox?: WindowBox | null; canopy?: Canopy | null }
 const SILL_IN: Sill = { on: true, projection: 0.03, thickness: 0.02, overhang: 0.02, slope: 0 };
 const SILL_OUT: Sill = { on: true, projection: 0.04, thickness: 0.02, overhang: 0.03, slope: 5 };
 const SURROUND: Surround = { on: true, width: 0.08, projection: 0.02, sill: true };
 const THRESHOLD: Threshold = { on: true, height: 0.02 };
+const SHUTTERS: Shutters = { on: true, style: 'louvred', leaves: 2, open: true, thickness: 0.03, gap: 0.01, overlap: 0.03, along: 0, rise: 0, height: null, pitch: 0.05, color: '#4f6f52' };
+const GRILLE: Grille = { on: true, side: 'reveal', pattern: 'horizontal', bar: 0.012, spacing: 0.1, frameWidth: 0.03, gap: 0.03, overlap: 0.05, along: 0, rise: 0, color: '#2f2f2f' };
+const WINDOW_BOX: WindowBox = { on: true, width: null, depth: 0.2, height: 0.18, gap: 0, drop: 0.06, along: 0, color: '#8a5a3c' };
+const CANOPY: Canopy = { on: true, projection: 0.6, thickness: 0.06, overhang: 0.15, rise: 0.15, slope: 5, gap: 0, along: 0, color: '#6b6b6b' };
 interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number }[]; ifcType: string }
 interface Stroke { pts: [number, number][]; weight: string; closed: boolean; dashed: boolean }
 interface Drawing { strokes: Stroke[] }
@@ -75,6 +83,94 @@ function Mm({ label, value, onChange }: { label: string; value: number; onChange
     <label className="field-line"><span className="eyebrow">{label}</span>
       <input className="num" value={text} onChange={(e) => { setText(e.target.value); const v = Number(e.target.value.replace(',', '.')); if (Number.isFinite(v)) onChange(v / 1000); }} />
     </label>
+  );
+}
+
+/** A material and a colour (the colour when the material is not in the project). */
+function Look({ material, color, onChange }: { material?: string | null; color: string; onChange: (patch: { material?: string; color?: string }) => void }) {
+  return (
+    <>
+      <label className="field-line"><span className="eyebrow">Material</span><input list="lapin-materials" value={material ?? ''} onChange={(e) => onChange({ material: e.target.value })} /></label>
+      <label className="field-line"><span className="eyebrow">Colour</span><input type="color" value={color} onChange={(e) => onChange({ color: e.target.value })} /></label>
+    </>
+  );
+}
+
+/** Where a dressing sits, set by hand: along the wall from the window's axis, up, and off the wall's face. */
+function Place({ along, rise, gap, gapLabel = 'From the wall face', onChange }: { along: number; rise?: number; gap: number; gapLabel?: string; onChange: (patch: { along?: number; rise?: number; gap?: number }) => void }) {
+  return (
+    <>
+      <Mm label={gapLabel} value={gap} onChange={(v) => onChange({ gap: v })} />
+      <Mm label="From the window's axis" value={along} onChange={(v) => onChange({ along: v })} />
+      {rise !== undefined && <Mm label="Up or down" value={rise} onChange={(v) => onChange({ rise: v })} />}
+    </>
+  );
+}
+
+/**
+ * The dressings on the facade (reports #38, #39): shutters, a safety grille, a window box, a canopy. Each sits by
+ * the wall's faces where the window is (or the surround's face), and may be moved by hand from the window's axis and off the face.
+ */
+function DressingFields({ kind, height, details, onChange }: { kind: 'door' | 'window'; height: number; details: Details; onChange: (patch: Partial<Details>) => void }) {
+  const sh = details.shutters, g = details.grille, wb = details.windowBox, c = details.canopy;
+  return (
+    <>
+      <p className="eyebrow">On the facade</p>
+      <label className="field-line check"><input type="checkbox" data-dressing="shutters" checked={sh?.on ?? false} onChange={(e) => onChange({ shutters: { ...(sh ?? SHUTTERS), on: e.target.checked } })} /><span>Shutters</span></label>
+      {sh?.on && <>
+        <label className="field-line"><span className="eyebrow">Style</span>
+          <select value={sh.style} onChange={(e) => onChange({ shutters: { ...sh, style: e.target.value as Shutters['style'] } })}>
+            <option value="louvred">Louvred</option><option value="panel">Panel</option><option value="planks">Planks</option>
+          </select></label>
+        <label className="field-line"><span className="eyebrow">Leaves</span>
+          <select value={sh.leaves} onChange={(e) => onChange({ shutters: { ...sh, leaves: Number(e.target.value) } })}>
+            <option value={1}>One leaf</option><option value={2}>Two leaves</option>
+          </select></label>
+        <label className="field-line check"><input type="checkbox" data-dressing="shutters-open" checked={sh.open} onChange={(e) => onChange({ shutters: { ...sh, open: e.target.checked } })} /><span>Shown open</span></label>
+        <Mm label="Thickness" value={sh.thickness} onChange={(v) => onChange({ shutters: { ...sh, thickness: v } })} />
+        <Mm label="Past the jambs" value={sh.overlap} onChange={(v) => onChange({ shutters: { ...sh, overlap: v } })} />
+        <Mm label="Height" value={sh.height ?? height} onChange={(v) => onChange({ shutters: { ...sh, height: v } })} />
+        {sh.style === 'louvred' && <Mm label="Louvre pitch" value={sh.pitch} onChange={(v) => onChange({ shutters: { ...sh, pitch: v } })} />}
+        <Place along={sh.along} rise={sh.rise} gap={sh.gap} onChange={(p) => onChange({ shutters: { ...sh, ...p } })} />
+        <Look material={sh.material} color={sh.color} onChange={(p) => onChange({ shutters: { ...sh, ...p } })} />
+      </>}
+      <label className="field-line check"><input type="checkbox" data-dressing="grille" checked={g?.on ?? false} onChange={(e) => onChange({ grille: { ...(g ?? GRILLE), on: e.target.checked } })} /><span>Safety grille</span></label>
+      {g?.on && <>
+        <label className="field-line"><span className="eyebrow">Fixed</span>
+          <select value={g.side} onChange={(e) => onChange({ grille: { ...g, side: e.target.value as Grille['side'] } })}>
+            <option value="reveal">In the reveal</option><option value="outside">On the facade</option><option value="inside">On the interior face</option>
+          </select></label>
+        <label className="field-line"><span className="eyebrow">Bars</span>
+          <select value={g.pattern} onChange={(e) => onChange({ grille: { ...g, pattern: e.target.value as Grille['pattern'] } })}>
+            <option value="horizontal">Horizontal</option><option value="vertical">Vertical</option><option value="grid">Both ways</option>
+          </select></label>
+        <Mm label="Bar size" value={g.bar} onChange={(v) => onChange({ grille: { ...g, bar: v } })} />
+        <Mm label="Bar spacing" value={g.spacing} onChange={(v) => onChange({ grille: { ...g, spacing: v } })} />
+        <Mm label="Frame width" value={g.frameWidth} onChange={(v) => onChange({ grille: { ...g, frameWidth: v } })} />
+        {g.side !== 'reveal' && <Mm label="Past the opening" value={g.overlap} onChange={(v) => onChange({ grille: { ...g, overlap: v } })} />}
+        <Place along={g.along} rise={g.rise} gap={g.gap} gapLabel={g.side === 'reveal' ? 'Set back from the face' : 'From the wall face'} onChange={(p) => onChange({ grille: { ...g, ...p } })} />
+        <Look material={g.material} color={g.color} onChange={(p) => onChange({ grille: { ...g, ...p } })} />
+      </>}
+      {kind === 'window' && <label className="field-line check"><input type="checkbox" data-dressing="windowBox" checked={wb?.on ?? false} onChange={(e) => onChange({ windowBox: { ...(wb ?? WINDOW_BOX), on: e.target.checked } })} /><span>Window box</span></label>}
+      {kind === 'window' && wb?.on && <>
+        <Mm label="Width" value={wb.width ?? 0} onChange={(v) => onChange({ windowBox: { ...wb, width: v > 0 ? v : null } })} />
+        <Mm label="Depth" value={wb.depth} onChange={(v) => onChange({ windowBox: { ...wb, depth: v } })} />
+        <Mm label="Height" value={wb.height} onChange={(v) => onChange({ windowBox: { ...wb, height: v } })} />
+        <Mm label="Below the opening" value={wb.drop} onChange={(v) => onChange({ windowBox: { ...wb, drop: v } })} />
+        <Place along={wb.along} gap={wb.gap} onChange={(p) => onChange({ windowBox: { ...wb, ...p } })} />
+        <Look material={wb.material} color={wb.color} onChange={(p) => onChange({ windowBox: { ...wb, ...p } })} />
+      </>}
+      <label className="field-line check"><input type="checkbox" data-dressing="canopy" checked={c?.on ?? false} onChange={(e) => onChange({ canopy: { ...(c ?? CANOPY), on: e.target.checked } })} /><span>Canopy</span></label>
+      {c?.on && <>
+        <Mm label="Projection" value={c.projection} onChange={(v) => onChange({ canopy: { ...c, projection: v } })} />
+        <Mm label="Thickness" value={c.thickness} onChange={(v) => onChange({ canopy: { ...c, thickness: v } })} />
+        <Mm label="Past the jambs" value={c.overhang} onChange={(v) => onChange({ canopy: { ...c, overhang: v } })} />
+        <Mm label="Above the head" value={c.rise} onChange={(v) => onChange({ canopy: { ...c, rise: v } })} />
+        <label className="field-line"><span className="eyebrow">Slope (°)</span><input className="num" value={c.slope} onChange={(e) => { const v = Number(e.target.value); if (Number.isFinite(v)) onChange({ canopy: { ...c, slope: v } }); }} /></label>
+        <Place along={c.along} gap={c.gap} onChange={(p) => onChange({ canopy: { ...c, ...p } })} />
+        <Look material={c.material} color={c.color} onChange={(p) => onChange({ canopy: { ...c, ...p } })} />
+      </>}
+    </>
   );
 }
 
@@ -189,8 +285,8 @@ export function JoineryDialog() {
               {spec.kind === 'window' && <Mm label="Sill" value={spec.sillHeight} onChange={(v) => set({ sillHeight: v })} />}
               <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v } })} />
               <Mm label="Frame width" value={spec.frame.width} onChange={(v) => set({ frame: { ...spec.frame, width: v } })} />
-              <label className="field-line"><span className="eyebrow">Columns</span><input value={cols} title="Relative widths, e.g. 1 1 or 2 1" onChange={(e) => setGrid(e.target.value, rows)} /></label>
-              <label className="field-line"><span className="eyebrow">Rows</span><input value={rows} title="Relative heights, bottom to top" onChange={(e) => setGrid(cols, e.target.value)} /></label>
+              <label className="field-line"><span className="eyebrow">Columns of panes</span><input data-field="columns" value={cols} title="Relative widths, e.g. 1 1 or 2 1" onChange={(e) => setGrid(e.target.value, rows)} /></label>
+              <label className="field-line"><span className="eyebrow">Rows of panes</span><input value={rows} title="Relative heights, bottom to top" onChange={(e) => setGrid(cols, e.target.value)} /></label>
               <p className="eyebrow">Panels · seen from inside</p>
               <table className="panel-grid">
                 <tbody>
@@ -234,6 +330,7 @@ export function JoineryDialog() {
                 <Mm label="Threshold height" value={details.threshold.height} onChange={(v) => setDetails({ threshold: { ...details.threshold!, height: v } })} />
                 <label className="field-line"><span className="eyebrow">Threshold material</span><input list="lapin-materials" value={details.threshold.material ?? ''} onChange={(e) => setDetails({ threshold: { ...details.threshold!, material: e.target.value } })} /></label>
               </>}
+              <DressingFields kind={spec.kind} height={spec.height} details={details} onChange={setDetails} />
               {spec.kind === 'door' && <label className="field-line"><span className="eyebrow">Leaf</span><input type="color" value={spec.colors.leaf} onChange={(e) => set({ colors: { ...spec.colors, leaf: e.target.value } })} /></label>}
             </div>
             <div className="joinery-preview">
@@ -245,7 +342,7 @@ export function JoineryDialog() {
                 <figure><Strokes drawing={preview?.drawings?.section} w={90} h={150} label="Section" /><figcaption className="muted small">Section</figcaption></figure>
               </div>
               <div className="row joinery-symbols">
-                <label className="small"><input type="checkbox" checked={outside} onChange={(e) => setOutside(e.target.checked)} /> From outside</label>
+                <label className="small"><input type="checkbox" data-field="outside" checked={outside} onChange={(e) => setOutside(e.target.checked)} /> From outside</label>
                 <select className="mini-select" title="Opening symbols in elevation" value={preview?.symbols?.convention ?? 'handle'} onChange={(e) => void execute('architecture.joinerySymbols', { convention: e.target.value }).then(() => setSpec({ ...spec }))}>
                   <option value="handle">Apex at the handle (makers)</option><option value="hinge">Apex at the hinges (DIN 1356)</option>
                 </select>

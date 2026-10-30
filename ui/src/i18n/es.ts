@@ -448,6 +448,9 @@ export const ES: Record<string, string> = {
   'Slab': 'Losa', 'Proxy': 'Proxy', 'Furnishing': 'Mobiliario', 'Member': 'Elemento estructural', 'Plate': 'Placa', 'Stair flight': 'Tramo de escalera',
   'Footing': 'Zapata', 'Space': 'Espacio', 'Opening': 'Hueco', 'Flow segment': 'Segmento de instalación', 'Flow fitting': 'Accesorio', 'Flow terminal': 'Terminal',
   'Distribution port': 'Puerto de distribución', 'Building element part': 'Parte de elemento', 'Wall standard case': 'Muro',
+  // The facade's dressings in the joinery configurator: shutters, grille, window box, canopy (reports #38, #39)
+  'On the facade': 'En la fachada', 'Shutters': 'Contraventanas', 'Louvred': 'De lamas', 'Planks': 'De tablas', 'Leaves': 'Hojas', 'One leaf': 'Una hoja', 'Two leaves': 'Dos hojas', 'Shown open': 'Mostradas abiertas', 'Louvre pitch': 'Paso de las lamas', 'From the wall face': 'Desde la cara del muro', 'From the window\'s axis': 'Desde el eje de la ventana', 'Up or down': 'Arriba o abajo', 'Safety grille': 'Reja de seguridad', 'In the reveal': 'En el derrame', 'On the interior face': 'En la cara interior', 'Bars': 'Barrotes', 'Horizontal': 'Horizontales', 'Vertical': 'Verticales', 'Both ways': 'En ambos sentidos', 'Bar size': 'Sección del barrote', 'Bar spacing': 'Separación de barrotes', 'Frame width': 'Ancho del marco', 'Past the opening': 'Más allá del hueco', 'Set back from the face': 'Retranqueada desde la cara', 'Window box': 'Jardinera', 'Below the opening': 'Bajo el hueco', 'Canopy': 'Marquesina', 'Above the head': 'Sobre el dintel',
+  'Columns of panes': 'Columnas de hojas', 'Rows of panes': 'Filas de hojas',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
