@@ -1281,6 +1281,9 @@ export const scenes = [
       await t.button('Show in 3D', { exact: true, wait: 1200 });
       t.expect((await t.page.locator('[data-testid=view3d]').count()) === 1, 'the remark opens the 3D view at its viewpoint');
       await t.shot('remark-viewpoint', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     // Remarks on sheets (docs/plan-cde.md, stage 3): the sheet's PDF as the engine prints it, annotated here the way a
     // reviewer's program saves it (an incremental update carrying the annotations), read back and shown over the sheet.
     id: 'cde-remarks',
@@ -1330,6 +1333,8 @@ export function bcfZip(entries) {
   const directory = Buffer.concat(centrals);
   const end = Buffer.concat([u32(0x06054b50), u16(0), u16(0), u16(entries.length), u16(entries.length), u32(directory.length), u32(offset), u16(0)]);
   return Buffer.concat([...locals, directory, end]);
+}
+
 /** The marks a reviewer leaves on the A3 sheet of the remarks scene: PDF annotation dictionaries, in points, y up. */
 const PT = 72 / 25.4;
 const ptX = (mm) => (mm * PT).toFixed(3);
