@@ -23,7 +23,7 @@ Un proyecto nuevo ya tiene tres niveles: **Foundations** (−1.50), **Ground flo
 5. **La barra rápida.** Ofrece las herramientas más usadas en las teclas numéricas <kbd>1</kbd>–<kbd>9</kbd>.
 6. **La línea de comandos.** Escriba aquí las letras de una herramienta y pulse <kbd>Enter</kbd>. Mientras una herramienta está en marcha, la línea le indica lo que necesita a continuación. Consulte [Dibujo y línea de comandos](drafting.md).
 7. **El panel de propiedades.** Muestra lo que esté seleccionado. Sin nada seleccionado, muestra la vista que está delante.
-8. **Pregúntame.** Es el asistente de ayuda de Lapin. Consulte [Ayuda y comentarios](help.md).
+8. **Ask Me.** Es el asistente de ayuda de Lapin. Consulte [Ayuda y comentarios](help.md).
 
 ¿Quiere más espacio para el dibujo? **Vista → Interfaz…** elige una ventana más compacta, y los paneles laterales se pliegan. Consulte [La interfaz y los métodos abreviados](interface.md).
 

@@ -29,4 +29,4 @@ Lapin e gratuit și are cod deschis, sub licența MIT; codul e pe [GitHub](https
 
 ## Când te blochezi
 
-Apasă **Întreabă-mă**, iepurașul din dreapta sus, sau tasta <kbd>F1</kbd>, și scrie întrebarea cu cuvintele tale. Dacă nu are răspuns, îți trimite întrebarea la noi. Vezi [Ajutor și feedback](help.md).
+Apasă **Ask Me**, iepurașul din dreapta sus, sau tasta <kbd>F1</kbd>, și scrie întrebarea cu cuvintele tale. Dacă nu are răspuns, îți trimite întrebarea la noi. Vezi [Ajutor și feedback](help.md).

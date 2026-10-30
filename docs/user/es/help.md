@@ -1,24 +1,24 @@
 ---
 title: Ayuda y comentarios
 order: 130
-summary: Pregúntame, las preguntas que responde, cómo informar de un problema, el idioma y las actualizaciones.
+summary: Ask Me, las preguntas que responde, cómo informar de un problema, el idioma y las actualizaciones.
 ---
 
-## Pregúntame
+## Ask Me
 
-Haga clic en **Pregúntame**, el conejo de arriba a la derecha, o pulse <kbd>F1</kbd> en cualquier lugar. Escriba su pregunta con sus propias palabras, en inglés o en rumano. Pregúntame responde a partir de las preguntas que los usuarios han hecho antes, y un botón le lleva directamente al lugar adecuado de la aplicación.
+Haga clic en **Ask Me**, el conejo de arriba a la derecha, o pulse <kbd>F1</kbd> en cualquier lugar. Escriba su pregunta con sus propias palabras, en inglés o en rumano. Ask Me responde a partir de las preguntas que los usuarios han hecho antes, y un botón le lleva directamente al lugar adecuado de la aplicación.
 
-![Pregúntame responde cómo copiar un muro](shots/ask-me.webp)
+![Ask Me responde cómo copiar un muro](shots/ask-me.webp)
 
-Si Pregúntame no tiene respuesta, **Enviar la pregunta** nos la envía. La respondemos y la respuesta se añade a Pregúntame para todos.
+Si Ask Me no tiene respuesta, **Enviar la pregunta** nos la envía. La respondemos y la respuesta se añade a Ask Me para todos.
 
 ## El menú de ayuda
 
-El botón **?** junto a Pregúntame abre el menú de ayuda:
+El botón **?** junto a Ask Me abre el menú de ayuda:
 
 ![El menú de ayuda](shots/help-menu.webp)
 
-- **Preguntar a Lapin…** abre Pregúntame.
+- **Preguntar a Lapin…** abre Ask Me.
 - **Guía del usuario** abre esta guía, en el idioma de la interfaz.
 - **Informar de un problema…** nos cuenta qué ha fallado, o nos envía una idea o una pregunta. Diga qué ocurrió y qué esperaba, y añada una captura de pantalla si ayuda. La versión de la aplicación y sus últimos mensajes de error acompañan al informe.
 - **Comunidad (Skool)** es donde hablan los usuarios y el equipo.

@@ -468,7 +468,7 @@ export const RO: Record<string, string> = {
   "wall(s), round their outer faces": "perete(ți), pe după fețele lor exterioare", "detach": "desprinde", "Keep the line as it is now, no longer following the walls": "Păstrează linia cum e acum, fără să mai urmeze pereții", "Ends": "Capete",
   "Top and bottom": "Sus și jos", "Width: how wide one copy of the picture lies on the model": "Lățime: cât de lată stă pe model o copie a imaginii", "Height: how high one copy of the picture lies on the model": "Înălțime: cât de înaltă stă pe model o copie a imaginii", "Urban planning": "Urbanism",
   "Planning": "Urbanism", "Buildable volume": "Volum construibil", "Sun study": "Studiu de însorire", "Engineering": "Inginerie",
-  "Assist": "Asistenți", "Ask Me": "Întreabă-mă", "Ask Lapin how to do something (F1)": "Întreabă Lapin cum faci ceva (F1)", "Help: ask Lapin (F1), report an issue, community": "Ajutor: întreabă Lapin (F1), raportează o problemă, comunitate",
+  "Assist": "Asistenți", "Ask Lapin how to do something (F1)": "Întreabă Lapin cum faci ceva (F1)", "Help: ask Lapin (F1), report an issue, community": "Ajutor: întreabă Lapin (F1), raportează o problemă, comunitate",
   "Ask Lapin": "Întreabă Lapin", "Type a question in your own words, for example “how do I change the units”. Or pick one:": "Scrie o întrebare cu cuvintele tale, de exemplu „cum schimb unitățile”. Sau alege una:", "Or perhaps:": "Poate și:", "I don't have an answer to that yet. Send us the question: we'll answer it and add it here.": "Nu am încă un răspuns la asta. Trimite-ne întrebarea: îți răspundem și o adăugăm aici.",
   "Send the question": "Trimite întrebarea", "Your question…": "Întrebarea ta…", "Your question": "Întrebarea ta", "Ask": "Întreabă",
 };

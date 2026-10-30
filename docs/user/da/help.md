@@ -1,24 +1,24 @@
 ---
 title: Hjælp og feedback
 order: 130
-summary: Spørg mig, de spørgsmål den besvarer, at rapportere et problem, sproget og opdateringer.
+summary: Ask Me, de spørgsmål den besvarer, at rapportere et problem, sproget og opdateringer.
 ---
 
-## Spørg mig
+## Ask Me
 
-Klik på **Spørg mig**, kaninen øverst til højre, eller tryk på <kbd>F1</kbd> hvor som helst. Skriv dit spørgsmål med dine egne ord, på engelsk eller rumænsk. Spørg mig svarer ud fra de spørgsmål, brugerne har stillet før, og en knap fører dig direkte til det rigtige sted i programmet.
+Klik på **Ask Me**, kaninen øverst til højre, eller tryk på <kbd>F1</kbd> hvor som helst. Skriv dit spørgsmål med dine egne ord, på engelsk eller rumænsk. Ask Me svarer ud fra de spørgsmål, brugerne har stillet før, og en knap fører dig direkte til det rigtige sted i programmet.
 
-![Spørg mig der svarer på, hvordan man kopierer en væg](shots/ask-me.webp)
+![Ask Me der svarer på, hvordan man kopierer en væg](shots/ask-me.webp)
 
-Hvis Spørg mig ikke har et svar, sender **Send spørgsmålet** det til os. Vi besvarer det, og svaret føjes til Spørg mig for alle.
+Hvis Ask Me ikke har et svar, sender **Send spørgsmålet** det til os. Vi besvarer det, og svaret føjes til Ask Me for alle.
 
 ## Hjælpemenuen
 
-Knappen **?** ved siden af Spørg mig åbner hjælpemenuen:
+Knappen **?** ved siden af Ask Me åbner hjælpemenuen:
 
 ![Hjælpemenuen](shots/help-menu.webp)
 
-- **Spørg Lapin…** åbner Spørg mig.
+- **Spørg Lapin…** åbner Ask Me.
 - **Brugervejledning** åbner denne vejledning på brugerfladens sprog.
 - **Rapportér et problem…** fortæller os, hvad der gik galt, eller sender en idé eller et spørgsmål. Sig, hvad der skete, og hvad du forventede, og vedhæft et skærmbillede, hvis det hjælper. Programmets version og dets seneste fejlmeddelelser følger med rapporten.
 - **Fællesskab (Skool)** er stedet, hvor brugerne og holdet taler sammen.

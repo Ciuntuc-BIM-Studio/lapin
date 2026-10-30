@@ -23,7 +23,7 @@ Ein neues Projekt hat bereits drei Ebenen: **Foundations** (−1.50), **Ground f
 5. **Die Schnellwerkzeuge.** Sie legen die meistgenutzten Werkzeuge auf die Zifferntasten <kbd>1</kbd>–<kbd>9</kbd>.
 6. **Die Befehlszeile.** Geben Sie hier die Buchstaben eines Werkzeugs ein und drücken Sie <kbd>Enter</kbd>. Während ein Werkzeug läuft, sagt Ihnen die Zeile, was es als Nächstes braucht. Siehe [Zeichnen und die Befehlszeile](drafting.md).
 7. **Der Eigenschaftenbereich.** Er zeigt, was gerade ausgewählt ist. Ist nichts ausgewählt, zeigt er die vorne liegende Ansicht.
-8. **Frag mich.** Das ist der Hilfeassistent von Lapin. Siehe [Hilfe und Feedback](help.md).
+8. **Ask Me.** Das ist der Hilfeassistent von Lapin. Siehe [Hilfe und Feedback](help.md).
 
 Sie möchten mehr Platz für die Zeichnung? **Ansicht → Oberfläche…** wählt ein kompakteres Fenster, und die Seitenbereiche lassen sich einklappen. Siehe [Die Oberfläche und Tastenkürzel](interface.md).
 

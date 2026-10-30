@@ -159,7 +159,7 @@ describe('labels the guide found in English', () => {
   const labels = [
     'Import DXF', 'Import DXF…', 'Link IFC…', 'IFC properties', 'Placed', "by the map's coordinates", 'As a link', 'Units', 'Units:',
     'Roof window', 'Dormer', 'Side', 'Hand', 'Reassign', 'Underlay', 'Execution', 'detach', 'Planning', 'Engineering', 'Assist',
-    'Buildable volume', 'Sun study', 'Send the question', 'Ask Me', 'Ask Lapin', 'Your question…', 'Ask', 'Custom', 'Ends', 'Top and bottom',
+    'Buildable volume', 'Sun study', 'Send the question', 'Ask Lapin', 'Your question…', 'Ask', 'Custom', 'Ends', 'Top and bottom',
     'Radiator', 'Wash basin', 'Layer', 'Architectural', 'Structural', 'hip', 'gable', 'shed', 'mansard', 'barrel', 'flat',
     'Width: how wide one copy of the picture lies on the model', 'Height: how high one copy of the picture lies on the model',
   ];

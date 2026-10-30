@@ -29,4 +29,4 @@ Lapin er gratis og open source under MIT-licensen; koden ligger på [GitHub](htt
 
 ## Når du sidder fast
 
-Klik på **Spørg mig**, kaninen øverst til højre i programmet, eller tryk på <kbd>F1</kbd>, og skriv dit spørgsmål med dine egne ord. Hvis den ikke har et svar, sender den dit spørgsmål til os. Se [Hjælp og feedback](help.md).
+Klik på **Ask Me**, kaninen øverst til højre i programmet, eller tryk på <kbd>F1</kbd>, og skriv dit spørgsmål med dine egne ord. Hvis den ikke har et svar, sender den dit spørgsmål til os. Se [Hjælp og feedback](help.md).

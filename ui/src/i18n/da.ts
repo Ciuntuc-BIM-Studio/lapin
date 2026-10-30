@@ -470,7 +470,7 @@ export const DA: Record<string, string> = {
   "wall(s), round their outer faces": "væg(ge), rundt om deres ydersider", "detach": "frigør", "Keep the line as it is now, no longer following the walls": "Behold linjen som den er nu, uden at følge væggene længere", "Ends": "Ender",
   "Top and bottom": "Top og bund", "Width: how wide one copy of the picture lies on the model": "Bredde: hvor bred én kopi af billedet ligger på modellen", "Height: how high one copy of the picture lies on the model": "Højde: hvor høj én kopi af billedet ligger på modellen", "Urban planning": "Byplanlægning",
   "Planning": "Byplanlægning", "Buildable volume": "Tilladt bygningsvolumen", "Sun study": "Solstudie", "Engineering": "Dimensionering",
-  "Assist": "Assistenter", "Ask Me": "Spørg mig", "Ask Lapin how to do something (F1)": "Spørg Lapin, hvordan man gør noget (F1)", "Help: ask Lapin (F1), report an issue, community": "Hjælp: spørg Lapin (F1), rapportér et problem, fællesskab",
+  "Assist": "Assistenter", "Ask Lapin how to do something (F1)": "Spørg Lapin, hvordan man gør noget (F1)", "Help: ask Lapin (F1), report an issue, community": "Hjælp: spørg Lapin (F1), rapportér et problem, fællesskab",
   "Ask Lapin": "Spørg Lapin", "Type a question in your own words, for example “how do I change the units”. Or pick one:": "Skriv et spørgsmål med dine egne ord, for eksempel „hvordan skifter jeg enhederne“. Eller vælg et:", "Or perhaps:": "Eller måske:", "I don't have an answer to that yet. Send us the question: we'll answer it and add it here.": "Det har jeg ikke et svar på endnu. Send os spørgsmålet: vi svarer på det og tilføjer det her.",
   "Send the question": "Send spørgsmålet", "Your question…": "Dit spørgsmål…", "Your question": "Dit spørgsmål", "Ask": "Spørg",
 };
