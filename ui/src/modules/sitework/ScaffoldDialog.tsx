@@ -15,6 +15,7 @@ import { engine, execute, useSession } from '../../engine/session';
 import { ofClass, relatedOf } from '../../engine/model';
 import { Mm, MmList, Num } from './fields';
 import { setSiteWorks, useSiteWorks } from './prefs';
+import { openingType } from './typeChoice';
 
 export interface ScaffoldSpec {
   system: 'modular' | 'frame'; bays: number[]; width: number; lift: number; wallGap: number; decks: 'every' | 'top'; guardrail: number; toeBoard: boolean;
@@ -37,7 +38,8 @@ export function ScaffoldDialog() {
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = ofClass(model, 'LapinScaffoldType');
   const fallback = info?.catalogs['sitework.scaffoldDefault'] as unknown as ScaffoldSpec | undefined;
-  const [editing, setEditing] = useState<string | null>(useSiteWorks.getState().scaffoldTypeId ?? types[0]?.id ?? null);
+  // The selected scaffold's type first: what the user is looking at is what they mean to change.
+  const [editing, setEditing] = useState<string | null>(() => openingType(model, useUi.getState().selected, 'LapinScaffold', useSiteWorks.getState().scaffoldTypeId, types));
   const [name, setName] = useState('');
   const [spec, setSpec] = useState<ScaffoldSpec | null>(null);
   const [size, setSize] = useState({ length: 10, height: 6 });

@@ -25,7 +25,7 @@ Dans ses propriétés, vous pouvez régler le **haut de l’ouvrage** : laisse
 
 Chaque échafaudage et chaque coffrage a un **type**. Vous le choisissez en haut des propriétés, ou vous donnez le type d’un élément à d’autres avec Appliquer le type (MA). Sous **Paramètres de type** se trouvent les valeurs que fixe le configurateur : le système, les longueurs de travée, la largeur, la hauteur de niveau, le contreplaqué, les entraxes, l’article. Vous pouvez aussi les modifier à cet endroit. Une modification appartient au type : tous les éléments de ce type la suivent. Créer un similaire (CS) en dessine un nouveau du même type. Un type que vous créez dans le configurateur est celui que prend le prochain échafaudage ou coffrage.
 
-**Types d’échafaudage…** ouvre le configurateur. Il règle le système (multidirectionnel ou à cadres), les longueurs de travée, la largeur et la hauteur de niveau, la distance au mur, les planchers, les garde-corps et les plinthes, les ancrages, les vérins de pied, les travées d’accès et le filet de protection. L’élévation montre un tronçon de la longueur et de la hauteur que vous choisissez, avec ce qu’il compte.
+**Types d’échafaudage…** ouvre le configurateur. Il règle le système (multidirectionnel ou à cadres), les longueurs de travée, la largeur et la hauteur de niveau, la distance au mur, les planchers, les garde-corps et les plinthes, les ancrages, les vérins de pied, les travées d’accès et le filet de protection. L’élévation montre un tronçon de la longueur et de la hauteur que vous choisissez, avec ce qu’il compte. Avec un échafaudage sélectionné, le configurateur s’ouvre sur son type ; cliquez sur un autre type dans la liste pour modifier celui-là. La liste indique combien d’échafaudages a chaque type. **Enregistrer le type** applique le changement à tous les échafaudages du type.
 
 ![Le configurateur d’échafaudage](shots/scaffold-configurator.webp)
 
@@ -38,7 +38,7 @@ Le **coffrage d’une dalle** couvre sa sous-face de contreplaqué sur des poutr
 
 Le **coffrage d’une poutre** comprend son fond, sur des traverses et des étais, et ses joues. Chaque joue a la hauteur de la poutre sous la dalle coulée avec elle. Les poteaux et les poutres plus hautes l’interrompent. Vous pouvez ajouter des baguettes de chanfrein le long des arêtes inférieures.
 
-**Types de coffrage…** ouvre le configurateur, pour les dalles et pour les poutres. Pour les dalles, il règle le système (poutrelles bois et étais, ou panneaux), le contreplaqué, les poutrelles et leurs longueurs de catalogue, le tableau des entraxes, les rives, les étais et les réemplois. Pour les poutres, il règle les traverses, les étais, les serre-joints selon la hauteur de la poutre, le chanfrein et les réemplois. La coupe montre les couches et l’étai que le moteur choisit pour la hauteur que vous indiquez.
+**Types de coffrage…** ouvre le configurateur, pour les dalles et pour les poutres. Pour les dalles, il règle le système (poutrelles bois et étais, ou panneaux), le contreplaqué, les poutrelles et leurs longueurs de catalogue, le tableau des entraxes, les rives, les étais et les réemplois. Pour les poutres, il règle les traverses, les étais, les serre-joints selon la hauteur de la poutre, le chanfrein et les réemplois. La coupe montre les couches et l’étai que le moteur choisit pour la hauteur que vous indiquez. Avec un coffrage sélectionné, il s’ouvre sur le type et la sorte de ce coffrage.
 
 ![Le configurateur de coffrage](shots/formwork-configurator.webp)
 

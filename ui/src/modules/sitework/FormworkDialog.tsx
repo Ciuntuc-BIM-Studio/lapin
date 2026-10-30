@@ -17,6 +17,7 @@ import { engine, execute, useSession } from '../../engine/session';
 import { ofClass, relatedOf } from '../../engine/model';
 import { Mm, MmList, Num } from './fields';
 import { setSiteWorks, useSiteWorks, type FormworkKind } from './prefs';
+import { openingType } from './typeChoice';
 
 interface PropSize { name: string; min: number; max: number }
 interface Row { thickness: number; secondary: number; primary: number; prop: number }
@@ -69,11 +70,14 @@ export function FormworkDialog() {
   const info = useSession((s) => s.info);
   const error = useSession((s) => s.error);
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
-  const [kind, setKind] = useState<FormworkKind>(useSiteWorks.getState().formworkKind);
+  // The selected formwork's type (and its kind) first: what the user is looking at is what they mean to change.
+  const [kind, setKind] = useState<FormworkKind>(() => {
+    const t = openingType(model, useUi.getState().selected, 'LapinFormwork', null, ofClass(model, 'LapinFormworkType'));
+    return t ? ((nodes.get(t)?.props.kind as FormworkKind | undefined) ?? 'slab') : useSiteWorks.getState().formworkKind;
+  });
   const types = ofClass(model, 'LapinFormworkType').filter((t) => (t.props.kind ?? 'slab') === kind);
   const fallback = info?.catalogs[CATALOG[kind]] as unknown as Spec | undefined;
-  const chosen = useSiteWorks.getState().formworkTypeId;
-  const [editing, setEditing] = useState<string | null>(chosen && nodes.get(chosen)?.props.kind === kind ? chosen : types[0]?.id ?? null);
+  const [editing, setEditing] = useState<string | null>(() => openingType(model, useUi.getState().selected, 'LapinFormwork', useSiteWorks.getState().formworkTypeId, types));
   const [name, setName] = useState('');
   const [spec, setSpec] = useState<Spec | null>(null);
   /** The kind the spec was loaded for: until it is the kind shown, the form waits (a floor's spec has no panels). */

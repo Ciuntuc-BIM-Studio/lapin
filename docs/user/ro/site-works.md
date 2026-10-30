@@ -25,7 +25,7 @@ Fiecare tronson drept e împărțit în traveile tipului, cât mai puține câte
 
 Fiecare schelă și fiecare cofraj are un **tip**. Îl alegi sus în proprietăți sau dai tipul unui element altora cu Match Type (MA). La **Parametrii tipului** sunt valorile din configurator: sistemul, lungimile de travee, lățimea, nivelul de lucru, placajul, distanțele, articolul. Le poți schimba și acolo. Schimbarea e a tipului, deci o urmează toate elementele acelui tip. Create Similar (CS) desenează unul nou de același tip. Un tip creat în configurator e cel pe care îl ia următoarea schelă sau următorul cofraj.
 
-**Tipuri de schelă…** deschide configuratorul. În el alegi sistemul (modular sau cu cadre), lungimile de travee, lățimea și înălțimea nivelului, distanța de perete, podinele, parapetele și bordurile, ancorele, tălpile reglabile, traveile de acces și plasa de protecție. Vederea arată un tronson de lungimea și înălțimea alese, cu ce numără.
+**Tipuri de schelă…** deschide configuratorul. În el alegi sistemul (modular sau cu cadre), lungimile de travee, lățimea și înălțimea nivelului, distanța de perete, podinele, parapetele și bordurile, ancorele, tălpile reglabile, traveile de acces și plasa de protecție. Vederea arată un tronson de lungimea și înălțimea alese, cu ce numără. Cu o schelă selectată, configuratorul se deschide pe tipul ei; dă clic pe alt tip din listă ca să-l modifici pe acela. Lista spune câte schele are fiecare tip. **Salvează tipul** aplică schimbarea la toate schelele de acel tip.
 
 ![Configuratorul de schele](shots/scaffold-configurator.webp)
 
@@ -38,7 +38,7 @@ Fiecare schelă și fiecare cofraj are un **tip**. Îl alegi sus în proprietă�
 
 **Cofrajul grinzii** e fața de jos, pe grinzi de rezemare și popi, plus fețele laterale. Fiecare față laterală e cât grinda sub placa turnată odată cu ea. Stâlpii și grinzile mai înalte o întrerup. Poți pune baghete de șanfren pe muchiile de jos.
 
-**Tipuri de cofraj…** deschide configuratorul, pentru plăci și pentru grinzi. Pentru plăci alegi sistemul (grinzi de lemn și popi, sau panouri), placajul, grinzile și lungimile lor din catalog, tabelul de distanțe, marginile, popii și refolosirile. Pentru grinzi alegi grinzile de rezemare, popii, jugurile după înălțimea grinzii, șanfrenul și refolosirile. Secțiunea arată straturile și popul ales de motor pentru înălțimea dată.
+**Tipuri de cofraj…** deschide configuratorul, pentru plăci și pentru grinzi. Pentru plăci alegi sistemul (grinzi de lemn și popi, sau panouri), placajul, grinzile și lungimile lor din catalog, tabelul de distanțe, marginile, popii și refolosirile. Pentru grinzi alegi grinzile de rezemare, popii, jugurile după înălțimea grinzii, șanfrenul și refolosirile. Secțiunea arată straturile și popul ales de motor pentru înălțimea dată. Cu un cofraj selectat, se deschide pe tipul și felul acelui cofraj.
 
 ![Configuratorul de cofraje](shots/formwork-configurator.webp)
 

@@ -25,7 +25,7 @@ In its properties you can set the **work top**: leave it empty for the walls' to
 
 Every scaffold and formwork has a **type**. You choose it at the top of the properties, or give one element's type to others with Match Type (MA). Under **Type parameters** are the values the configurator sets: the system, the bay lengths, the width, the lift, the plywood, the spacings, the article. You can change them there too. A change is the type's, so every element of that type follows it. Create Similar (CS) draws a new one of the same type. A type you create in the configurator is the one the next scaffold or formwork takes.
 
-**Scaffold types…** opens the configurator. It sets the system (modular or frames), the bay lengths, the width and the lift, the distance from the wall, the decks, guardrails and toe boards, the anchors, the base jacks, the access bays and the protective net. The elevation shows a run of the length and height you choose, with what it counts.
+**Scaffold types…** opens the configurator. It sets the system (modular or frames), the bay lengths, the width and the lift, the distance from the wall, the decks, guardrails and toe boards, the anchors, the base jacks, the access bays and the protective net. The elevation shows a run of the length and height you choose, with what it counts. With a scaffold selected, the configurator opens on its type; click another in the list to change that one instead. The list says how many scaffolds each type has. **Save type** applies the change to every scaffold of the type.
 
 ![The scaffold configurator](shots/scaffold-configurator.webp)
 
@@ -38,7 +38,7 @@ A **floor's formwork** covers its soffit with plywood on secondary beams, on pri
 
 A **beam's formwork** is its bottom, on bearers and props, and its sides. Each side is as high as the beam below the floor cast with it. Columns and deeper beams interrupt it. You can add chamfer fillets along the bottom edges.
 
-**Formwork types…** opens the configurator, for floors and for beams. For floors it sets the system (timber beams and props, or panels), the plywood, the beams and their catalogue lengths, the spacing table, the edges, the props and the reuses. For beams it sets the bearers, the props, the yokes by the beam's depth, the chamfer and the reuses. The section shows the layers and the prop the engine picks for the height you choose.
+**Formwork types…** opens the configurator, for floors and for beams. For floors it sets the system (timber beams and props, or panels), the plywood, the beams and their catalogue lengths, the spacing table, the edges, the props and the reuses. For beams it sets the bearers, the props, the yokes by the beam's depth, the chamfer and the reuses. The section shows the layers and the prop the engine picks for the height you choose. With a formwork selected, it opens on that formwork's type and kind.
 
 ![The formwork configurator](shots/formwork-configurator.webp)
 

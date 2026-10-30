@@ -25,7 +25,7 @@ I dets egenskaber kan du indstille **arbejdshøjde**: lad den stå tom for vægg
 
 Hvert stillads og hver forskalling har en **Type**. Du vælger den øverst i egenskaberne eller giver ét elements type til andre med Matchtype (MA). Under **Typeparametre** står de værdier, konfiguratoren indstiller: systemet, faglængderne, bredden, etagehøjden, krydsfinéren, afstandene, varen. Du kan også ændre dem der. En ændring hører til typen, så alle elementer af den type følger den. Opret lignende (CS) tegner et nyt af samme type. En type, du opretter i konfiguratoren, er den, det næste stillads eller den næste forskalling tager.
 
-**Stilladstyper…** åbner konfiguratoren. Den indstiller systemet (modulært eller rammer), faglængderne, bredden og etagehøjden, afstanden fra væggen, dækkene, rækværkerne og fodlisterne, forankringerne, fodspindlerne, adgangsfagene og beskyttelsesnettet. Opstalten viser et stykke af den længde og højde, du vælger, med det, den tæller.
+**Stilladstyper…** åbner konfiguratoren. Den indstiller systemet (modulært eller rammer), faglængderne, bredden og etagehøjden, afstanden fra væggen, dækkene, rækværkerne og fodlisterne, forankringerne, fodspindlerne, adgangsfagene og beskyttelsesnettet. Opstalten viser et stykke af den længde og højde, du vælger, med det, den tæller. Med et stillads valgt åbner konfiguratoren på dets type; klik på en anden i listen for at ændre den i stedet. Listen viser, hvor mange stilladser hver type har. **Gem type** anvender ændringen på alle stilladser af typen.
 
 ![Stilladskonfiguratoren](shots/scaffold-configurator.webp)
 
@@ -38,7 +38,7 @@ Et **dæks forskalling** dækker dets underside med krydsfinér på sekundære b
 
 En **bjælkes forskalling** er dens bund, på bærebjælker og stempler, og dens sider. Hver side er lige så høj som bjælken under det dæk, der støbes sammen med den. Søjler og dybere bjælker afbryder den. Du kan tilføje trekantlister langs bundkanterne.
 
-**Forskallingstyper…** åbner konfiguratoren, til dæk og til bjælker. Til dæk indstiller den systemet (træbjælker og stempler, eller paneler), krydsfinéren, bjælkerne og deres kataloglængder, afstandstabellen, kanterne, stemplerne og genbrugene. Til bjælker indstiller den bærebjælkerne, stemplerne, åggene efter bjælkens dybde, affasningen og genbrugene. Snittet viser lagene og det stempel, motoren vælger til den højde, du vælger.
+**Forskallingstyper…** åbner konfiguratoren, til dæk og til bjælker. Til dæk indstiller den systemet (træbjælker og stempler, eller paneler), krydsfinéren, bjælkerne og deres kataloglængder, afstandstabellen, kanterne, stemplerne og genbrugene. Til bjælker indstiller den bærebjælkerne, stemplerne, åggene efter bjælkens dybde, affasningen og genbrugene. Snittet viser lagene og det stempel, motoren vælger til den højde, du vælger. Med en forskalling valgt åbner den på den forskallings type og slags.
 
 ![Forskallingskonfiguratoren](shots/formwork-configurator.webp)
 

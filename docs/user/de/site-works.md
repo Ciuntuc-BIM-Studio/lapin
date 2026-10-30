@@ -25,7 +25,7 @@ In seinen Eigenschaften können Sie die **Arbeitshöhe** einstellen: Lassen Sie 
 
 Jedes Gerüst und jede Schalung hat einen **Typ**. Sie wählen ihn oben in den Eigenschaften oder übertragen den Typ eines Elements mit Typ übertragen (MA) auf andere. Unter **Typparameter** stehen die Werte, die der Konfigurator festlegt: das System, die Feldlängen, die Breite, die Lagenhöhe, das Sperrholz, die Abstände, die Position. Sie können sie dort auch ändern. Eine Änderung betrifft den Typ, sodass ihr jedes Element dieses Typs folgt. Ähnliches erstellen (CS) zeichnet ein neues Element desselben Typs. Ein Typ, den Sie im Konfigurator erstellen, ist derjenige, den das nächste Gerüst oder die nächste Schalung erhält.
 
-**Gerüsttypen…** öffnet den Konfigurator. Er legt das System fest (Modulgerüst oder Rahmen), die Feldlängen, die Breite und die Lagenhöhe, den Abstand von der Wand, die Beläge, den Seitenschutz und die Bordbretter, die Verankerungen, die Fußspindeln, die Aufstiegsfelder und das Schutznetz. Die Ansicht zeigt einen Abschnitt der von Ihnen gewählten Länge und Höhe, mit dem, was er zählt.
+**Gerüsttypen…** öffnet den Konfigurator. Er legt das System fest (Modulgerüst oder Rahmen), die Feldlängen, die Breite und die Lagenhöhe, den Abstand von der Wand, die Beläge, den Seitenschutz und die Bordbretter, die Verankerungen, die Fußspindeln, die Aufstiegsfelder und das Schutznetz. Die Ansicht zeigt einen Abschnitt der von Ihnen gewählten Länge und Höhe, mit dem, was er zählt. Ist ein Gerüst ausgewählt, öffnet sich der Konfigurator auf dessen Typ; klicken Sie in der Liste auf einen anderen, um stattdessen diesen zu ändern. Die Liste nennt, wie viele Gerüste jeder Typ hat. **Typ speichern** wendet die Änderung auf jedes Gerüst des Typs an.
 
 ![Der Gerüstkonfigurator](shots/scaffold-configurator.webp)
 
@@ -38,7 +38,7 @@ Die **Schalung einer Decke** bedeckt ihre Untersicht mit Sperrholz auf Querträg
 
 Die **Schalung eines Trägers** besteht aus seiner Unterseite, auf Jochen und Stützen, und seinen Seiten. Jede Seite ist so hoch wie der Träger unterhalb der mit ihm betonierten Decke. Stützen und höhere Träger unterbrechen sie. Sie können entlang der unteren Kanten Dreikantleisten hinzufügen.
 
-**Schalungstypen…** öffnet den Konfigurator, für Decken und für Träger. Für Decken legt er das System fest (Holzträger und Stützen, oder Paneele), das Sperrholz, die Träger und ihre Kataloglängen, die Abstandstabelle, die Ränder, die Stützen und die Einsätze. Für Träger legt er die Joche fest, die Stützen, die Zwingen nach Trägerhöhe, die Fase und die Einsätze. Der Schnitt zeigt die Lagen und die Stütze, die die Engine für die von Ihnen gewählte Höhe auswählt.
+**Schalungstypen…** öffnet den Konfigurator, für Decken und für Träger. Für Decken legt er das System fest (Holzträger und Stützen, oder Paneele), das Sperrholz, die Träger und ihre Kataloglängen, die Abstandstabelle, die Ränder, die Stützen und die Einsätze. Für Träger legt er die Joche fest, die Stützen, die Zwingen nach Trägerhöhe, die Fase und die Einsätze. Der Schnitt zeigt die Lagen und die Stütze, die die Engine für die von Ihnen gewählte Höhe auswählt. Ist eine Schalung ausgewählt, öffnet er sich auf deren Typ und Art.
 
 ![Der Schalungskonfigurator](shots/formwork-configurator.webp)
 
