@@ -45,7 +45,7 @@ Emiterile sunt listate în josul dialogului Project folder, fiecare cu fișierel
 
 ## Observații (BCF)
 
-**Manage → Remarks…** păstrează observațiile făcute pe model — ale tale și ale unui verificator — ca subiecte BCF (formatul BIM Collaboration Format pe care îl schimbă BIMcollab, Solibri, Navisworks și Revit), în proiect, niciodată în IFC. O observație are un titlu, o descriere, un tip, o stare (Open, In progress, Resolved, Closed), o prioritate, un responsabil, un termen și etichete; comentariile ei; și punctele ei de vedere — camera 3D, elementele selectate, cutia de secțiune ca planuri de tăiere și o captură.
+**Manage → Observații pe model…** păstrează observațiile făcute pe model — ale tale și ale unui verificator — ca subiecte BCF (formatul BIM Collaboration Format pe care îl schimbă BIMcollab, Solibri, Navisworks și Revit), în proiect, niciodată în IFC. O observație are un titlu, o descriere, un tip, o stare (Open, In progress, Resolved, Closed), o prioritate, un responsabil, un termen și etichete; comentariile ei; și punctele ei de vedere — camera 3D, elementele selectate, cutia de secțiune ca planuri de tăiere și o captură.
 
 ![Observații: lista cu filtrele ei, o observație cu captura și comentariile ei](shots/remarks.webp)
 
@@ -58,3 +58,18 @@ Emiterile sunt listate în josul dialogului Project folder, fiecare cu fișierel
 ![O observație deschisă la punctul ei de vedere în vederea 3D](shots/remark-viewpoint.webp)
 
 Numele tău pe ce scrii se pune în caseta **Numele tău** a dialogului (se păstrează pe acest calculator).
+## Observații pe planșe
+
+Un verificator deschide un PDF emis în Acrobat, Bluebeam, Preview sau Drawboard și îl marchează: note lipite, text, evidențieri și tăieri, trasee cu creionul, dreptunghiuri, cercuri, săgeți, nori, ștampile, măsurători, răspunsuri. **Manage → Observații pe planșe…** citește aceste marcaje înapoi în proiect, ca observații pe planșă:
+
+![Observații: lista pe planșe, un PDF citit](shots/cde-remarks.webp)
+
+- **Citește observațiile din PDF…** alege fișierul. Planșa căreia îi aparține vine din emitere (manifestul de lângă fișier sau emiterile înregistrate în proiect), altfel din convenția de denumire a fișierului; când nimic nu se potrivește, alegi tu planșa. Paginile unui set PDF merg pe planșele lui, în ordine. Ce s-a găsit e arătat — pagini, adnotări, cum s-a potrivit planșa, eventualele avertismente — iar **Import** aduce observațiile. Citirea aceluiași fișier din nou actualizează observațiile în loc să le dubleze; o observație pe care ai rezolvat-o rămâne rezolvată.
+- **Scanează folderul proiectului** (aplicația desktop) listează PDF-urile emise din Shared și Published, care dintre ele s-au schimbat după emitere și dacă observațiile lor au fost citite de atunci.
+- Lista e grupată pe planșe și filtrată după stare: **deschise**, **rezolvate**, **închise**. Un click deschide planșa cu observația în față. Fiecare observație poate fi rezolvată, închisă, redeschisă sau ștearsă; starea „Completed” sau „Accepted” pusă de verificator sosește ca rezolvată.
+
+![O planșă cu observațiile ei deasupra](shots/cde-remarks-sheet.webp)
+
+Pe planșă, observațiile sunt desenate peste hârtie la locul lor: conturul în culoarea de revizuire, un marcaj cu inițialele autorului, textul într-un tooltip; cea din față are cardul ei cu textul, cine și când, răspunsurile și starea. Butonul din bara planșei le ascunde sau le arată, iar browserul proiectului numără observațiile deschise lângă planșă. Sunt o suprapunere doar pentru ecran: planșa se tipărește și se emite fără observații.
+
+Lapin citește PDF-ul singur, fără alt program: fișiere clasice și fișiere salvate cu fluxuri de referințe încrucișate, salvări incrementale (ce adaugă programul verificatorului), text în orice codificare. Un fișier pe care nu-l poate citi întreg dă ce se poate, cu un avertisment. Lapin nu scrie niciodată în PDF.

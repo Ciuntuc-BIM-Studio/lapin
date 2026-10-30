@@ -45,7 +45,7 @@ Las emisiones se listan al final del diálogo Project folder, cada una con sus a
 
 ## Observaciones (BCF)
 
-**Manage → Remarks…** guarda las observaciones hechas sobre el modelo —las tuyas y las de un revisor— como temas BCF (el BIM Collaboration Format que intercambian BIMcollab, Solibri, Navisworks y Revit), en el proyecto, nunca en el IFC. Una observación tiene un título, una descripción, un tipo, un estado (Open, In progress, Resolved, Closed), una prioridad, un responsable, una fecha límite y etiquetas; sus comentarios; y sus puntos de vista: la cámara 3D, los elementos seleccionados, la caja de sección como planos de corte y una captura.
+**Manage → Observaciones en el modelo…** guarda las observaciones hechas sobre el modelo —las tuyas y las de un revisor— como temas BCF (el BIM Collaboration Format que intercambian BIMcollab, Solibri, Navisworks y Revit), en el proyecto, nunca en el IFC. Una observación tiene un título, una descripción, un tipo, un estado (Open, In progress, Resolved, Closed), una prioridad, un responsable, una fecha límite y etiquetas; sus comentarios; y sus puntos de vista: la cámara 3D, los elementos seleccionados, la caja de sección como planos de corte y una captura.
 
 ![Observaciones: la lista con sus filtros, una observación con su captura y sus comentarios](shots/remarks.webp)
 
@@ -58,3 +58,18 @@ Las emisiones se listan al final del diálogo Project folder, cada una con sus a
 ![Una observación abierta en su punto de vista en la vista 3D](shots/remark-viewpoint.webp)
 
 Tu nombre en lo que escribes se pone en la caja **Tu nombre** del diálogo (se guarda en este ordenador).
+## Observaciones en las láminas
+
+Un revisor abre un PDF emitido en Acrobat, Bluebeam, Preview o Drawboard y lo marca: notas adhesivas, texto, resaltados y tachados, trazos a lápiz, rectángulos, círculos, flechas, nubes, sellos, mediciones, respuestas. **Manage → Observaciones en los planos…** lee esas marcas de vuelta al proyecto como observaciones en la lámina:
+
+![Observaciones: la lista por lámina, un PDF leído](shots/cde-remarks.webp)
+
+- **Leer observaciones del PDF…** elige el archivo. La lámina a la que pertenece viene de la emisión (el manifiesto junto al archivo, o el registro de emisiones del propio proyecto), si no, de la convención del nombre del archivo; cuando nada encaja, usted elige la lámina. Las páginas de un PDF de conjunto van a sus láminas en orden. Se muestra lo encontrado — páginas, anotaciones, cómo se emparejó la lámina, cualquier aviso — e **Importar** trae las observaciones. Leer el mismo archivo otra vez actualiza sus observaciones en lugar de duplicarlas; una observación que usted resolvió sigue resuelta.
+- **Explorar la carpeta del proyecto** (la aplicación de escritorio) lista los PDF emitidos en Shared y Published, cuáles cambiaron después de su emisión y si sus observaciones se leyeron desde entonces.
+- La lista se agrupa por lámina y se filtra por estado: **abiertas**, **resueltas**, **cerradas**. Un clic abre la lámina con la observación delante. Cada observación puede resolverse, cerrarse, reabrirse o eliminarse; el estado «Completed» o «Accepted» del revisor llega como resuelta.
+
+![Una lámina con sus observaciones encima](shots/cde-remarks-sheet.webp)
+
+En la lámina, las observaciones se dibujan sobre el papel en su sitio: el contorno en el color de revisión, un marcador con las iniciales del autor, el texto en una descripción emergente; la que está delante tiene su tarjeta con el texto, quién y cuándo, las respuestas y el estado. El botón de la barra de la lámina las oculta o las muestra, y el navegador del proyecto cuenta las abiertas junto a la lámina. Son una capa solo para la pantalla: una lámina se imprime y se emite sin sus observaciones.
+
+Lapin lee el PDF por sí mismo, sin otro programa: archivos clásicos y archivos guardados con flujos de referencias cruzadas, guardados incrementales (lo que añade el programa del revisor), texto en cualquier codificación. Un archivo que no puede leer entero da lo que puede, con un aviso. Lapin nunca escribe en el PDF.

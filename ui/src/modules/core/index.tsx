@@ -2,7 +2,7 @@
 
 import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
-import { AppWindow, Box, BoxSelect, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2, CloudFog, Link2, History, Layers, SlidersHorizontal, PanelsTopLeft, Keyboard, Bot, FolderOpen, ClipboardCheck, Send, MessageSquareText } from 'lucide-react';
+import { AppWindow, Bot, Box, BoxSelect, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, FolderOpen, Hash, History, Keyboard, Layers, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, MousePointer2, Move, Palette, PanelsTopLeft, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareSplitHorizontal, Trash2 } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -33,6 +33,7 @@ import { IssueDialog } from './cde/IssueDialog';
 import { CheckDialog } from './cde/CheckDialog';
 import { ExportIfcDialog } from './ExportIfcDialog';
 import { RemarksDialog } from './remarks/RemarksDialog';
+import { RemarksDialog as SheetRemarksDialog } from './cde/pdfRemarks/RemarksDialog';
 import { PlanStoreysDialog } from './PlanStoreys';
 import { Storeys3DLooks } from './Storeys3D';
 import { setStoreys3d, showAllStoreys3d } from '../../viewport/storeys3dActions';
@@ -122,7 +123,9 @@ const core: LapinModule = {
         { id: 'manage.check', label: 'Check', icon: ClipboardCheck, run: () => useUi.setState({ dialog: 'cdeCheck' }) },
         { id: 'manage.issue', label: 'Issue…', icon: Send, run: () => useUi.setState({ dialog: 'cdeIssue' }) },
         // The remarks on the model, exchanged as BCF (docs/plan-cde.md, stage 2).
-        { id: 'manage.remarks', label: 'Remarks…', icon: MessageSquareText, run: () => useUi.setState({ dialog: 'remarks' }) },
+        { id: 'manage.remarks', label: 'Model remarks…', icon: MessageSquareText, run: () => useUi.setState({ dialog: 'remarks' }) },
+        // The reviewers' PDF annotations read back as remarks on the sheets (stage 3).
+        { id: 'manage.sheetRemarks', label: 'Sheet remarks…', icon: MessageSquare, run: () => useUi.setState({ dialog: 'cdeRemarks' }) },
       ] },
     ],
   }, {
@@ -175,7 +178,7 @@ const core: LapinModule = {
   }],
   grips: { LapinView: sectionGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, exportIfc: ExportIfcDialog, remarks: RemarksDialog },
+  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, exportIfc: ExportIfcDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection, fieldKeys: butDiscipline('LapinSheet') },

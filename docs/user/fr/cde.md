@@ -45,7 +45,7 @@ Les émissions sont listées au bas du dialogue Project folder, chacune avec ses
 
 ## Remarques (BCF)
 
-**Manage → Remarks…** garde les remarques faites sur le modèle — les vôtres et celles d’un relecteur — comme sujets BCF (le BIM Collaboration Format qu’échangent BIMcollab, Solibri, Navisworks et Revit), dans le projet, jamais dans l’IFC. Une remarque a un titre, une description, un type, un statut (Open, In progress, Resolved, Closed), une priorité, un responsable, une échéance et des étiquettes ; ses commentaires ; et ses points de vue — la caméra 3D, les éléments sélectionnés, la boîte de coupe en plans de coupe, et une capture.
+**Manage → Remarques sur le modèle…** garde les remarques faites sur le modèle — les vôtres et celles d’un relecteur — comme sujets BCF (le BIM Collaboration Format qu’échangent BIMcollab, Solibri, Navisworks et Revit), dans le projet, jamais dans l’IFC. Une remarque a un titre, une description, un type, un statut (Open, In progress, Resolved, Closed), une priorité, un responsable, une échéance et des étiquettes ; ses commentaires ; et ses points de vue — la caméra 3D, les éléments sélectionnés, la boîte de coupe en plans de coupe, et une capture.
 
 ![Remarques : la liste avec ses filtres, une remarque avec sa capture et ses commentaires](shots/remarks.webp)
 
@@ -58,3 +58,18 @@ Les émissions sont listées au bas du dialogue Project folder, chacune avec ses
 ![Une remarque ouverte à son point de vue dans la vue 3D](shots/remark-viewpoint.webp)
 
 Votre nom sur ce que vous écrivez se règle dans la case **Votre nom** du dialogue (il reste sur cet ordinateur).
+## Remarques sur les feuilles
+
+Un vérificateur ouvre un PDF émis dans Acrobat, Bluebeam, Aperçu ou Drawboard et l’annote : notes, texte, surlignages et barrés, traits au crayon, rectangles, cercles, flèches, nuages, tampons, mesures, réponses. **Manage → Remarques sur les planches…** relit ces marques dans le projet comme remarques sur la feuille :
+
+![Remarques : la liste par feuille, un PDF lu](shots/cde-remarks.webp)
+
+- **Lire les remarques du PDF…** choisit le fichier. La feuille à laquelle il appartient vient de l’émission (le manifeste à côté du fichier, ou le registre des émissions du projet), sinon de la convention de nom du fichier ; quand rien ne correspond, vous choisissez la feuille. Les pages d’un PDF de jeu vont à ses feuilles dans l’ordre. Ce qui a été trouvé est affiché — pages, annotations, comment la feuille a été associée, les avertissements — et **Importer** fait entrer les remarques. Relire le même fichier met à jour ses remarques au lieu de les doubler ; une remarque que vous avez résolue reste résolue.
+- **Parcourir le dossier du projet** (l’application de bureau) liste les PDF émis dans Shared et Published, lesquels ont changé après leur émission et si leurs remarques ont été lues depuis.
+- La liste est groupée par feuille et filtrée par état : **ouvertes**, **résolues**, **fermées**. Un clic ouvre la feuille avec la remarque devant. Chaque remarque peut être résolue, fermée, rouverte ou supprimée ; l’état « Completed » ou « Accepted » du vérificateur arrive comme résolue.
+
+![Une feuille avec ses remarques par-dessus](shots/cde-remarks-sheet.webp)
+
+Sur la feuille, les remarques sont dessinées sur le papier à leur place : le contour dans la couleur de révision, un repère avec les initiales de l’auteur, le texte dans une infobulle ; celle de devant a sa fiche avec le texte, qui et quand, les réponses et l’état. Le bouton de la barre de la feuille les masque ou les affiche, et le navigateur du projet compte les ouvertes à côté de la feuille. C’est une superposition pour l’écran seulement : une feuille s’imprime et s’émet sans ses remarques.
+
+Lapin lit le PDF lui-même, sans autre programme : fichiers classiques et fichiers enregistrés avec des flux de références croisées, enregistrements incrémentaux (ce que le programme du vérificateur ajoute), texte dans tout encodage. Un fichier qu’il ne peut pas lire en entier donne ce qu’il peut, avec un avertissement. Lapin n’écrit jamais dans le PDF.

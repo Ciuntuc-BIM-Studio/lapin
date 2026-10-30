@@ -640,6 +640,40 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .cde-block { color: var(--err); }
 .cde-warn { color: var(--warn, #b7791f); }
 .cde-ok { color: var(--ok); }
+
+/* Remarks on sheets read from PDFs (docs/plan-cde.md, stage 3): the overlay over the sheet, its card, the list in Manage → Remarks */
+:root { --remark: #d6452a; }
+.sheet-remarks .remark { cursor: pointer; }
+.sheet-remarks .remark rect, .sheet-remarks .remark ellipse, .sheet-remarks .remark polyline, .sheet-remarks .remark polygon { fill: none; stroke: var(--remark); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.sheet-remarks .remark.highlight polygon, .sheet-remarks .remark.underline polygon, .sheet-remarks .remark.strike polygon, .sheet-remarks .remark.squiggly polygon { fill: var(--remark); fill-opacity: 0.18; stroke-width: 0.75; }
+.sheet-remarks .remark.cloud polygon { stroke-dasharray: 3 2; }
+.sheet-remarks .remark.on rect, .sheet-remarks .remark.on ellipse, .sheet-remarks .remark.on polyline, .sheet-remarks .remark.on polygon { stroke-width: 2.5; }
+.sheet-remarks .remark.resolved rect, .sheet-remarks .remark.resolved ellipse, .sheet-remarks .remark.resolved polyline, .sheet-remarks .remark.resolved polygon { stroke: #7a8a99; }
+.sheet-remarks .remark.resolved.highlight polygon { fill: #7a8a99; }
+.sheet-remarks .remark-marker circle { fill: var(--remark); stroke: #fff; stroke-width: 1.5; }
+.sheet-remarks .remark.resolved .remark-marker circle { fill: #7a8a99; }
+.sheet-remarks .remark.on .remark-marker circle { stroke: var(--accent); stroke-width: 2; }
+.sheet-remarks .remark-marker text { fill: #fff; font-size: 9px; font-weight: 600; text-anchor: middle; dominant-baseline: central; pointer-events: none; user-select: none; }
+.remark-card { position: absolute; right: 12px; top: 44px; width: 300px; max-height: calc(100% - 60px); overflow-y: auto; background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--remark); border-radius: 6px; padding: 8px 10px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18); font-size: 12px; z-index: 5; }
+.remark-card.resolved { border-left-color: #7a8a99; }
+.remark-card header.row { gap: 6px; align-items: center; }
+.remark-card .remark-text { white-space: pre-wrap; margin: 6px 0; }
+.remark-card .remark-reply { border-left: 2px solid var(--rule); padding-left: 8px; margin: 4px 0; }
+.remark-initials { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: var(--remark); color: #fff; font-size: 9px; font-weight: 600; align-items: center; justify-content: center; flex: none; }
+.remark-row.resolved .remark-initials, .remark-card.resolved .remark-initials { background: #7a8a99; }
+.remark-row.closed .remark-initials { background: #b0b8c0; }
+.remark-actions { gap: 4px; margin-top: 4px; }
+.remark-actions .btn.small, .remarks-scan .btn.small { padding: 1px 6px; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; }
+.remarks-list .remark-row { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0; border-top: 1px solid var(--rule); font-size: 12px; }
+.remarks-list .remark-row .grow { flex: 1; min-width: 0; }
+.remarks-list .version-group > span { font-weight: 500; }
+.remarks-dialog .chips { display: inline-flex; gap: 2px; }
+.remarks-dialog .chip { cursor: pointer; background: transparent; }
+.remarks-dialog .chip.on { background: var(--accent); color: #fff; }
+.remarks-read, .remarks-scan { border: 1px solid var(--rule); border-radius: 6px; padding: 6px 10px; margin: 8px 0; }
+.remarks-scan tr.unread td { font-weight: 500; }
+.count.remarks { color: var(--remark); font-weight: 600; }
+.view-toolbar .icon.on { color: var(--remark); }
 input.invalid { outline: 1px solid var(--err); }
 
 /* A plan's underlay: another level's drawing beneath, faded and grey, never picked (it is still snapped to). */

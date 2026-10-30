@@ -10,11 +10,13 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FileDown, Maximize } from 'lucide-react';
+import { FileDown, Maximize, MessageSquare } from 'lucide-react';
 import { notify, select, useUi } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, query, useSession } from '../engine/session';
 import { exportFile } from '../engine/files';
+import { RemarkCard, RemarksOverlay } from '../modules/core/cde/pdfRemarks/RemarksOverlay';
+import { countOpen, useRemarkUi } from '../modules/core/cde/pdfRemarks/remarks';
 import { DrawingLayer } from './DrawingLayer';
 import type { PenDto } from './drawing';
 import { PX_PER_MM, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
@@ -45,6 +47,9 @@ export function SheetView() {
   const [moved, setMoved] = useState<{ id: string; dx: number; dy: number; guides: number[][] } | null>(null);
   const [widened, setWidened] = useState<{ id: string; w: number } | null>(null);
   const [active, setActive] = useState<string | null>(null);
+  // The remarks read from reviewed PDFs: shown over the paper (the screen alone; the sheet prints without them).
+  const showRemarks = useRemarkUi((s) => s.show);
+  const remarkCount = id ? countOpen(nodes, id) : 0;
 
   useEffect(() => {
     if (!id) return;
@@ -166,6 +171,10 @@ export function SheetView() {
         </select>
         <button type="button" className="icon" title="Export PDF" onClick={() => void exportAs('pdf')}><FileDown size={14} /><span className="small">PDF</span></button>
         <button type="button" className="icon" title="Export DXF" onClick={() => void exportAs('dxf')}><FileDown size={14} /><span className="small">DXF</span></button>
+        {remarkCount > 0 && (
+          <button type="button" className={`icon${showRemarks ? ' on' : ''}`} title="Remarks read from PDFs: show or hide (they never print)" data-testid="sheet-remarks-toggle"
+            onClick={() => useRemarkUi.setState({ show: !showRemarks, highlight: null })}><MessageSquare size={14} /><span className="small">{remarkCount}</span></button>
+        )}
         <button type="button" className="chip scale" title="The sheet's size on screen against paper · click for paper size (ZA)" onClick={host.actual}>{Math.round((v.k / PX_PER_MM) * 100)} %</button>
         <button type="button" className="icon" title="Fit (ZE)" onClick={fit}><Maximize size={14} /></button>
       </div>
@@ -248,9 +257,11 @@ export function SheetView() {
               );
             })}
             {moved?.guides.map((g, i) => { const p = toScreen({ x: g[0], y: g[1] }), q = toScreen({ x: g[2], y: g[3] }); return <line key={i} className="sheet-guide" x1={p.x} y1={p.y} x2={q.x} y2={q.y} />; })}
+            {showRemarks && <RemarksOverlay sheetId={sheet.id} toScreen={toScreen} k={v.k} />}
           </>
         )}
       </svg>
+      {showRemarks && <RemarkCard sheetId={sheet.id} />}
     </div>
   );
 }

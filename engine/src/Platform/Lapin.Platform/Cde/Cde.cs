@@ -74,6 +74,8 @@ public static class Cde
     public static void Register(IModuleRegistry r)
     {
         r.Class(new(CdeIssues.Class, "Issue", [], "#888888", Kind: "resource"));
+        // Remarks on sheets, read back from issued PDFs (stage 3).
+        PdfRemarks.CdeRemarks.Register(r);
 
         // The project folder: a path on this computer (or a share, or a synced cloud folder); empty clears it. Kept in the project, so it travels with the file.
         r.Command("cde.setFolder", "Project folder", (ctx, a) =>

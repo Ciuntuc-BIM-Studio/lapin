@@ -45,7 +45,7 @@ The issues are listed at the bottom of the Project folder dialog, each with its 
 
 ## Remarks (BCF)
 
-**Manage → Remarks…** keeps the remarks made on the model — yours and a reviewer's — as BCF topics (the BIM Collaboration Format BIMcollab, Solibri, Navisworks and Revit exchange), in the project, never in the IFC. A remark has a title, a description, a type, a status (Open, In progress, Resolved, Closed), a priority, who it is assigned to, a due date and labels; its comments; and its viewpoints — the 3D camera, the elements selected, the section box as clipping planes, and a snapshot.
+**Manage → Model remarks…** keeps the remarks made on the model — yours and a reviewer's — as BCF topics (the BIM Collaboration Format BIMcollab, Solibri, Navisworks and Revit exchange), in the project, never in the IFC. A remark has a title, a description, a type, a status (Open, In progress, Resolved, Closed), a priority, who it is assigned to, a due date and labels; its comments; and its viewpoints — the 3D camera, the elements selected, the section box as clipping planes, and a snapshot.
 
 ![Remarks: the list with its filters, a remark with its snapshot and comments](shots/remarks.webp)
 
@@ -58,3 +58,18 @@ The issues are listed at the bottom of the Project folder dialog, each with its 
 ![A remark opened at its viewpoint in the 3D view](shots/remark-viewpoint.webp)
 
 Your name on what you write is set in the dialog's **Your name** box (it is kept on this computer).
+## Remarks on sheets
+
+A reviewer opens an issued PDF in Acrobat, Bluebeam, Preview or Drawboard and marks it: sticky notes, text, highlights and strike-outs, pen strokes, rectangles, circles, arrows, clouds, stamps, measurements, replies. **Manage → Sheet remarks…** reads those marks back into the project as remarks on the sheet:
+
+![Remarks: the list by sheet, a PDF read](shots/cde-remarks.webp)
+
+- **Read PDF remarks…** picks the file. The sheet it belongs to comes from the issue (the manifest beside the file, or the project's own record of its issues), else from the file name's convention; when nothing fits, you choose the sheet. The pages of a set PDF go to its sheets in order. What was found is shown — pages, annotations, how the sheet was matched, any warning — and **Import** brings the remarks in. Reading the same file again updates its remarks instead of doubling them; a remark you resolved stays resolved.
+- **Scan the project folder** (the desktop app) lists the issued PDFs in Shared and Published, which of them changed after their issue, and whether their remarks were read since.
+- The list is grouped by sheet and filtered by status: **open**, **resolved**, **closed**. A click opens the sheet with the remark in front. Each remark can be resolved, closed, reopened or deleted; a reviewer's "Completed" or "Accepted" state arrives as resolved.
+
+![A sheet with its remarks over it](shots/cde-remarks-sheet.webp)
+
+On the sheet the remarks are drawn over the paper at their place: the outline in the review colour, a marker with the author's initials, the text in a tooltip; the one in front has its card with the text, who and when, the replies and the status. The button in the sheet's toolbar hides or shows them, and the project browser counts the open ones beside the sheet. They are an overlay for the screen alone: a sheet prints and issues without its remarks.
+
+Lapin reads the PDF itself, with no other program: classic files and those saved with cross-reference streams, incremental saves (what the reviewer's program appends), text in any encoding. A file it cannot read whole yields what it can, with a warning. Lapin never writes into the PDF.

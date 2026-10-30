@@ -626,6 +626,9 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 var (r, d) = CdeIssue.Run(session, p);
                 return (r, d);
             }
+            // A reviewer's PDF read for its remarks (by path, or its bytes), and the project folder scanned for the issued PDFs touched since (stage 3).
+            case "cde.readPdf": return (CdePdfRemarks.Read(session, p), null);
+            case "cde.scanRemarks": return (CdePdfRemarks.Scan(session, p), null);
             case "support.report": return ((support ?? throw new CommandException("Reports are sent from the app.")).Report(p), null);
             case "support.messages": return ((support ?? throw new CommandException("Messages are read from the app.")).Messages(p), null);
             case "support.open":

@@ -1281,6 +1281,33 @@ export const scenes = [
       await t.button('Show in 3D', { exact: true, wait: 1200 });
       t.expect((await t.page.locator('[data-testid=view3d]').count()) === 1, 'the remark opens the 3D view at its viewpoint');
       await t.shot('remark-viewpoint', { of: '[data-testid=view3d]', pad: 0 });
+    // Remarks on sheets (docs/plan-cde.md, stage 3): the sheet's PDF as the engine prints it, annotated here the way a
+    // reviewer's program saves it (an incremental update carrying the annotations), read back and shown over the sheet.
+    id: 'cde-remarks',
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: await t.storey(), name: 'Ground floor plan', scale: 100 });
+      const sheet = await t.cmd('sheet.create', { name: 'Ground floor plan', number: 'A-101', paper: 'A3' });
+      await t.cmd('sheet.addViewport', { id: sheet.id, viewId: plan.id, x: 150, y: 120 });
+      await t.cmd('cde.setNaming', { project: 'HOUSE', originator: 'CBS' });
+      const printed = await t.call('export.pdf', { sheets: [sheet.id] });
+      const reviewed = annotatePdf(printed.data, REVIEW_MARKS);
+      // The file named by the convention (as an issue would write it), so the sheet is found by its name alone.
+      const read = await t.call('cde.readPdf', { data: reviewed, name: 'HOUSE-CBS-ZZ-00-DR-A-0101_S2_P01.pdf' });
+      t.expect(read.by === 'name' && read.remarks.length === REVIEW_MARKS.length, 'the PDF is matched to the sheet by its name and every mark becomes a remark');
+      await t.cmd('cde.importRemarks', { remarks: read.remarks });
+      await t.wait(400);
+      await t.tool('manage.sheetRemarks');
+      await t.page.waitForSelector('[data-testid=remarks-list] .remark-row', { timeout: 10_000 });
+      t.expect(await t.page.locator('[data-testid=remarks-list] .remark-row').count() === REVIEW_MARKS.length, 'the remarks are listed under their sheet');
+      await t.shot('cde-remarks', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-testid=remarks-list] .remark-row .link').first().click();
+      await t.page.waitForSelector('[data-testid=sheet-remarks] .remark', { timeout: 10_000 });
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-testid=remark-card]').count() === 1, 'the remark clicked is in front, with its card');
+      t.expect(await t.page.locator('[data-testid=sheet-remark-count]').count() === 1, 'the project browser counts the open remarks beside the sheet');
+      await t.shot('cde-remarks-sheet');
     },
   },
 ];
@@ -1303,4 +1330,40 @@ export function bcfZip(entries) {
   const directory = Buffer.concat(centrals);
   const end = Buffer.concat([u32(0x06054b50), u16(0), u16(0), u16(entries.length), u16(entries.length), u32(directory.length), u32(offset), u16(0)]);
   return Buffer.concat([...locals, directory, end]);
+/** The marks a reviewer leaves on the A3 sheet of the remarks scene: PDF annotation dictionaries, in points, y up. */
+const PT = 72 / 25.4;
+const ptX = (mm) => (mm * PT).toFixed(3);
+const ptY = (mm) => ((297 - mm) * PT).toFixed(3);
+const REVIEW_MARKS = [
+  `<< /Type /Annot /Subtype /Square /Rect [${ptX(150)} ${ptY(170)} ${ptX(215)} ${ptY(120)}] /Contents (Check the kitchen door swing) /T (Ana Pop) /M (D:20261030101500+02'00') /C [0.85 0.2 0.1] /NM (review-1) >>`,
+  `<< /Type /Annot /Subtype /Text /Rect [${ptX(240)} ${ptY(66)} ${ptX(246)} ${ptY(60)}] /Contents (Add the section mark here) /T (Ana Pop) /M (D:20261030102000+02'00') /NM (review-2) >>`,
+  `<< /Type /Annot /Subtype /Ink /Rect [${ptX(60)} ${ptY(230)} ${ptX(120)} ${ptY(190)}] /InkList [[${ptX(60)} ${ptY(190)} ${ptX(80)} ${ptY(215)} ${ptX(100)} ${ptY(200)} ${ptX(120)} ${ptY(230)}]] /Contents (Move the window 300 mm) /T (Mihai) /M (D:20261030104500+02'00') /NM (review-3) >>`,
+  `<< /Type /Annot /Subtype /FreeText /Rect [${ptX(260)} ${ptY(210)} ${ptX(360)} ${ptY(196)}] /Contents (12.40 m) /T (Mihai) /Subj (Length Measurement) /M (D:20261030105000+02'00') /NM (review-4) >>`,
+];
+
+/**
+ * A reviewer's annotations appended to a PDF (base64 in, base64 out) as an incremental update, the way Acrobat saves
+ * them: the first page written again with its /Annots, the annotations as new objects, a new xref section with /Prev.
+ */
+function annotatePdf(base64, annots) {
+  const text = Buffer.from(base64, 'base64').toString('latin1');
+  const prev = Number(text.slice(text.lastIndexOf('startxref') + 9).trim().split('\n')[0]);
+  const size = Number(/\/Size (\d+)/.exec(text)[1]);
+  const page = /(\d+) 0 obj\n(<< \/Type \/Page .*?>>)\nendobj/s.exec(text);
+  const first = size;
+  const objects = [
+    [Number(page[1]), `${page[2].slice(0, -2)} /Annots [${annots.map((_, i) => `${first + i} 0 R`).join(' ')}] >>`],
+    ...annots.map((a, i) => [first + i, a]),
+  ];
+  let out = text.endsWith('\n') ? text : `${text}\n`;
+  const offsets = [];
+  for (const [num, body] of objects) {
+    offsets.push([num, Buffer.byteLength(out, 'latin1')]);
+    out += `${num} 0 obj\n${body}\nendobj\n`;
+  }
+  const xref = Buffer.byteLength(out, 'latin1');
+  out += 'xref\n';
+  for (const [num, off] of offsets.sort((a, b) => a[0] - b[0])) out += `${num} 1\n${String(off).padStart(10, '0')} 00000 n \n`;
+  out += `trailer\n<< /Size ${first + annots.length} /Root 1 0 R /Prev ${prev} >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(out, 'latin1').toString('base64');
 }

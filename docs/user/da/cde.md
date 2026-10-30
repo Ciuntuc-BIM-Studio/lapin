@@ -45,7 +45,7 @@ Udgivelserne står nederst i dialogen Project folder, hver med sine filer og **�
 
 ## Bemærkninger (BCF)
 
-**Manage → Remarks…** gemmer bemærkningerne til modellen – dine og en kontrollants – som BCF-emner (BIM Collaboration Format, som BIMcollab, Solibri, Navisworks og Revit udveksler), i projektet, aldrig i IFC’en. En bemærkning har en titel, en beskrivelse, en type, en status (Open, In progress, Resolved, Closed), en prioritet, en ansvarlig, en frist og mærkater; sine kommentarer; og sine synspunkter – 3D-kameraet, de markerede elementer, snitboksen som snitplaner og et øjebliksbillede.
+**Manage → Bemærkninger til modellen…** gemmer bemærkningerne til modellen – dine og en kontrollants – som BCF-emner (BIM Collaboration Format, som BIMcollab, Solibri, Navisworks og Revit udveksler), i projektet, aldrig i IFC’en. En bemærkning har en titel, en beskrivelse, en type, en status (Open, In progress, Resolved, Closed), en prioritet, en ansvarlig, en frist og mærkater; sine kommentarer; og sine synspunkter – 3D-kameraet, de markerede elementer, snitboksen som snitplaner og et øjebliksbillede.
 
 ![Bemærkninger: listen med sine filtre, en bemærkning med øjebliksbillede og kommentarer](shots/remarks.webp)
 
@@ -58,3 +58,18 @@ Udgivelserne står nederst i dialogen Project folder, hver med sine filer og **�
 ![En bemærkning åbnet ved sit synspunkt i 3D-visningen](shots/remark-viewpoint.webp)
 
 Dit navn på det, du skriver, sættes i dialogens felt **Dit navn** (det bliver på denne computer).
+## Bemærkninger på tegningsark
+
+En kontrollant åbner en udgivet PDF i Acrobat, Bluebeam, Preview eller Drawboard og markerer den: noter, tekst, fremhævninger og gennemstregninger, penstrøg, rektangler, cirkler, pile, skyer, stempler, mål, svar. **Manage → Bemærkninger på tegninger…** læser disse markeringer tilbage i projektet som bemærkninger på arket:
+
+![Bemærkninger: listen pr. ark, en læst PDF](shots/cde-remarks.webp)
+
+- **Læs PDF-bemærkninger…** vælger filen. Det ark, den hører til, kommer fra udgivelsen (manifestet ved siden af filen eller projektets egen fortegnelse over udgivelser), ellers fra filnavnets konvention; passer intet, vælger du arket. Siderne i en sæt-PDF går til dens ark i rækkefølge. Det fundne vises — sider, annotationer, hvordan arket blev matchet, eventuelle advarsler — og **Importér** henter bemærkningerne ind. Læses samme fil igen, opdateres dens bemærkninger i stedet for at blive fordoblet; en bemærkning, du har løst, forbliver løst.
+- **Gennemsøg projektmappen** (desktop-appen) lister de udgivne PDF’er i Shared og Published, hvilke af dem der er ændret efter udgivelsen, og om deres bemærkninger er læst siden.
+- Listen er grupperet pr. ark og filtreret efter status: **åbne**, **løste**, **lukkede**. Et klik åbner arket med bemærkningen forrest. Hver bemærkning kan løses, lukkes, genåbnes eller slettes; kontrollantens status „Completed“ eller „Accepted“ ankommer som løst.
+
+![Et ark med sine bemærkninger ovenpå](shots/cde-remarks-sheet.webp)
+
+På arket tegnes bemærkningerne over papiret på deres plads: omridset i kontrolfarven, et mærke med forfatterens initialer, teksten i et værktøjstip; den forreste har sit kort med teksten, hvem og hvornår, svarene og status. Knappen i arkets værktøjslinje skjuler eller viser dem, og projektbrowseren tæller de åbne ved siden af arket. De er et lag kun for skærmen: et ark udskrives og udgives uden sine bemærkninger.
+
+Lapin læser PDF’en selv, uden andet program: klassiske filer og filer gemt med krydsreferencestrømme, inkrementelle gemninger (det, kontrollantens program tilføjer), tekst i enhver kodning. En fil, den ikke kan læse helt, giver, hvad den kan, med en advarsel. Lapin skriver aldrig i PDF’en.
