@@ -8,7 +8,7 @@ namespace Lapin.Host;
 /// <summary>
 /// Reaching Ciuntuc BIM Studio from the app: a report of an issue (posted to
 /// the Lapin server's feedback endpoint, where reports are kept as files), and
-/// the links the help menu opens (the user guide in English or Romanian, the community on Skool, the site, the source code). Through
+/// the links the help menu opens (the user guide in the interface's language, the community on Skool, the site, the source code). Through
 /// the host, so the desktop app needs no browser rights of its own.
 /// </summary>
 public static class Support
@@ -16,7 +16,13 @@ public static class Support
     public const string CommunityUrl = "https://www.skool.com/bubblebim-club-1376/about";
     public const string SiteUrl = "https://ciuntucbimstudio.ro";
     public const string GuideUrl = "https://lapin.ciuntucbimstudio.ro/docs/";
-    public const string GuideRoUrl = "https://lapin.ciuntucbimstudio.ro/docs/ro/";
+    /// <summary>The guide's languages besides English (scripts/user-docs/languages.mjs), each at /docs/&lt;lang&gt;/ and opened as guideRo, guideEs…</summary>
+    public static readonly string[] GuideLanguages = ["ro", "es", "de", "fr", "da"];
+
+    /// <summary>The guide's link names and addresses: guide → /docs/, guideRo → /docs/ro/, and so on for each language.</summary>
+    public static readonly IReadOnlyDictionary<string, string> Guides = new[] { KeyValuePair.Create("guide", GuideUrl) }
+        .Concat(GuideLanguages.Select(l => KeyValuePair.Create($"guide{char.ToUpperInvariant(l[0])}{l[1..]}", $"{GuideUrl}{l}/")))
+        .ToDictionary();
     public const string SourceUrl = "https://github.com/Ciuntuc-BIM-Studio/lapin-pro";
 
     /// <summary>Where reports go: LAPIN_FEEDBACK_URL when set (tests, a staging server), else the Lapin server.</summary>
@@ -43,7 +49,8 @@ public static class Support
     /// <summary>Open one of the help menu's links in the browser (only these: nothing else is opened on the host's say).</summary>
     public static void Open(string? which)
     {
-        var url = which switch { "guide" => GuideUrl, "guideRo" => GuideRoUrl, "community" => CommunityUrl, "site" => SiteUrl, "source" => SourceUrl, _ => throw new CommandException("Nothing to open.") };
+        var url = which is not null && Guides.TryGetValue(which, out var guide) ? guide
+            : which switch { "community" => CommunityUrl, "site" => SiteUrl, "source" => SourceUrl, _ => throw new CommandException("Nothing to open.") };
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 }

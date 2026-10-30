@@ -8,17 +8,22 @@
 //   summary: One sentence for the list of pages and the search.
 //   ---
 // A picture is written ![What it shows](shots/<name>.webp); the scenes take it.
-// English pages are docs/user/*.md (→ build/user-docs), Romanian ones
-// docs/user/ro/*.md (→ build/user-docs/ro, their pictures from shots/ro); a
-// page with the same name in the other language is linked from the header.
+// English pages are docs/user/*.md (→ build/user-docs); another language's
+// (languages.mjs) are docs/user/<id>/*.md (→ build/user-docs/<id>, their
+// pictures from shots/<id>), each with the same file name as its English
+// page. A page a language does not have yet is the English one, with its
+// English pictures and a note saying so; a page with no English twin is an
+// error. The header's language menu leads to the same page in every language.
 // A video tutorial is written <!-- video walls -->, its id one of
-// docs/user/videos/videos.json (its YouTube id, length, titles); the page shows
+// docs/user/videos/videos.json (its YouTube id, length, and its title and
+// summary in each language: { "en": …, "ro": …, … }); the page shows
 // its poster (docs/user/videos/<id>.webp) and loads YouTube's player
 // (youtube-nocookie.com) only when it is played. <!-- videos --> is all of them.
 import { execSync } from 'node:child_process';
 import { copyFileSync, readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Marked } from 'marked';
+import { LANGS, LANGUAGES } from './languages.mjs';
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const slugify = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/<[^>]+>/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -43,11 +48,35 @@ function parse(file) {
 
 /** The guide's own words, in each language. */
 const WORDS = {
-  en: { video: 'Video', play: 'Play', watch: 'Watch on YouTube', command: 'Command', keys: 'Keys', guide: 'Lapin user guide', brand: 'user guide', eyebrow: 'User guide', search: 'Search the guide', theme: 'Light or dark', open: 'Open Lapin', pages: 'Pages', onPage: 'On this page', prev: 'Previous', next: 'Next', none: 'Nothing found. Try Ask Me in the app.', other: 'Română', otherTitle: 'Ghidul în română',
+  en: { video: 'Video', play: 'Play', watch: 'Watch on YouTube', command: 'Command', keys: 'Keys', guide: 'Lapin user guide', brand: 'user guide', eyebrow: 'User guide', search: 'Search the guide', theme: 'Light or dark', open: 'Open Lapin', pages: 'Pages', onPage: 'On this page', prev: 'Previous', next: 'Next', none: 'Nothing found. Try Ask Me in the app.', language: 'Language', english: '',
     footer: (date, commit) => `Pictures taken from Lapin itself on ${date}${commit ? ` (build ${commit})` : ''}. Something missing or wrong? Ask in the app: <b>Ask Me</b>, or <b>?</b> → Report an issue.` },
-  ro: { video: 'Video în engleză', play: 'Pornește', watch: 'Vezi pe YouTube', command: 'Comandă', keys: 'Taste', guide: 'Ghidul utilizatorului Lapin', brand: 'ghidul utilizatorului', eyebrow: 'Ghidul utilizatorului', search: 'Caută în ghid', theme: 'Luminos sau întunecat', open: 'Deschide Lapin', pages: 'Pagini', onPage: 'Pe această pagină', prev: 'Înapoi', next: 'Înainte', none: 'Nimic găsit. Întreabă Ask Me în aplicație.', other: 'English', otherTitle: 'The guide in English',
-    footer: (date, commit) => `Imagini luate din Lapin pe ${date.split('-').reverse().join('.')}${commit ? ` (build ${commit})` : ''}. Lipsește ceva sau e greșit? Întreabă în aplicație: <b>Ask Me</b>, sau <b>?</b> → Raportează o problemă.` },
+  ro: { video: 'Video în engleză', play: 'Pornește', watch: 'Vezi pe YouTube', command: 'Comandă', keys: 'Taste', guide: 'Ghidul utilizatorului Lapin', brand: 'ghidul utilizatorului', eyebrow: 'Ghidul utilizatorului', search: 'Caută în ghid', theme: 'Luminos sau întunecat', open: 'Deschide Lapin', pages: 'Pagini', onPage: 'Pe această pagină', prev: 'Înapoi', next: 'Înainte', none: 'Nimic găsit. Întreabă Ask Me în aplicație.', language: 'Limba',
+    english: 'Această pagină nu e tradusă încă: o vezi în engleză.',
+    footer: (date, commit) => `Imagini luate din Lapin pe ${dmy(date, '.')}${commit ? ` (build ${commit})` : ''}. Lipsește ceva sau e greșit? Întreabă în aplicație: <b>Ask Me</b>, sau <b>?</b> → Raportează o problemă.` },
+  es: { video: 'Vídeo en inglés', play: 'Reproducir', watch: 'Ver en YouTube', command: 'Comando', keys: 'Teclas', guide: 'Guía del usuario de Lapin', brand: 'guía del usuario', eyebrow: 'Guía del usuario', search: 'Buscar en la guía', theme: 'Claro u oscuro', open: 'Abrir Lapin', pages: 'Páginas', onPage: 'En esta página', prev: 'Anterior', next: 'Siguiente', none: 'No se ha encontrado nada. Prueba Ask Me en la aplicación.', language: 'Idioma',
+    english: 'Esta página aún no está traducida: se muestra en inglés.',
+    footer: (date, commit) => `Imágenes tomadas del propio Lapin el ${dmy(date, '/')}${commit ? ` (build ${commit})` : ''}. ¿Falta algo o hay un error? Pregunta en la aplicación: <b>Ask Me</b>, o <b>?</b> → Informar de un problema.` },
+  de: { video: 'Video auf Englisch', play: 'Abspielen', watch: 'Auf YouTube ansehen', command: 'Befehl', keys: 'Tasten', guide: 'Lapin-Benutzerhandbuch', brand: 'Benutzerhandbuch', eyebrow: 'Benutzerhandbuch', search: 'Im Handbuch suchen', theme: 'Hell oder dunkel', open: 'Lapin öffnen', pages: 'Seiten', onPage: 'Auf dieser Seite', prev: 'Zurück', next: 'Weiter', none: 'Nichts gefunden. Versuchen Sie Ask Me in der App.', language: 'Sprache',
+    english: 'Diese Seite ist noch nicht übersetzt: Sie sehen sie auf Englisch.',
+    footer: (date, commit) => `Bilder aus Lapin selbst, aufgenommen am ${dmy(date, '.')}${commit ? ` (Build ${commit})` : ''}. Fehlt etwas oder stimmt etwas nicht? Fragen Sie in der App: <b>Ask Me</b>, oder <b>?</b> → Problem melden.` },
+  fr: { video: 'Vidéo en anglais', play: 'Lire', watch: 'Voir sur YouTube', command: 'Commande', keys: 'Touches', guide: 'Guide de l’utilisateur de Lapin', brand: 'guide de l’utilisateur', eyebrow: 'Guide de l’utilisateur', search: 'Rechercher dans le guide', theme: 'Clair ou sombre', open: 'Ouvrir Lapin', pages: 'Pages', onPage: 'Sur cette page', prev: 'Précédent', next: 'Suivant', none: 'Rien trouvé. Essayez Ask Me dans l’application.', language: 'Langue',
+    english: 'Cette page n’est pas encore traduite : elle est affichée en anglais.',
+    footer: (date, commit) => `Images prises dans Lapin lui-même le ${dmy(date, '/')}${commit ? ` (build ${commit})` : ''}. Il manque quelque chose ou c’est faux ? Demandez dans l’application : <b>Ask Me</b>, ou <b>?</b> → Signaler un problème.` },
+  da: { video: 'Video på engelsk', play: 'Afspil', watch: 'Se på YouTube', command: 'Kommando', keys: 'Taster', guide: 'Lapin brugervejledning', brand: 'brugervejledning', eyebrow: 'Brugervejledning', search: 'Søg i vejledningen', theme: 'Lyst eller mørkt', open: 'Åbn Lapin', pages: 'Sider', onPage: 'På denne side', prev: 'Forrige', next: 'Næste', none: 'Intet fundet. Prøv Ask Me i appen.', language: 'Sprog',
+    english: 'Denne side er ikke oversat endnu: den vises på engelsk.',
+    footer: (date, commit) => `Billeder taget fra Lapin selv den ${dmy(date, '.')}${commit ? ` (build ${commit})` : ''}. Mangler der noget, eller er noget forkert? Spørg i appen: <b>Ask Me</b>, eller <b>?</b> → Rapportér et problem.` },
 };
+for (const l of LANGS) if (!WORDS[l]) throw new Error(`render.mjs: the guide's words in ${l} are missing (WORDS)`);
+
+/** 2026-10-30 → 30.10.2026 (or 30/10/2026). */
+function dmy(date, sep) { return date.split('-').reverse().join(sep); }
+
+/** Where the guide is published: the alternates name each language's page by its full address. */
+const SITE = 'https://lapin.ciuntucbimstudio.ro/docs/';
+/** A language's folder under the guide: none for English. */
+const folderOf = (lang) => (lang === 'en' ? '' : `${lang}/`);
+/** A video's title or summary in a language (English when it has none in it). */
+const inLang = (field, lang) => (typeof field === 'string' ? field : field?.[lang] ?? field?.en ?? '');
 
 /** The shortcuts' table: one row per command, under its tab. */
 function shortcutsTable(rows, W) {
@@ -65,26 +94,36 @@ function videosOf(root) {
 
 /** A video as its poster, YouTube's player loaded only when it is played (guide.js). */
 function videoFigure(v, W, lang, up, small = false) {
-  const title = lang === 'ro' ? v.titleRo ?? v.title : v.title;
-  const summary = lang === 'ro' ? v.summaryRo ?? v.summary : v.summary;
+  const title = inLang(v.title, lang);
+  const summary = inLang(v.summary, lang);
   const url = `https://youtu.be/${v.youtube}`;
   return `<figure class="video${small ? ' small' : ''}"><button type="button" class="video-play" data-yt="${esc(v.youtube)}" data-title="${esc(title)}" aria-label="${esc(`${W.play}: ${title} (${v.length})`)}">`
     + `<img src="${up}videos/${esc(v.id)}.webp" alt="" width="1280" height="720" loading="lazy" decoding="async"><span class="video-icon" aria-hidden="true"></span><span class="video-len">${esc(v.length)}</span></button>`
     + `<figcaption><b>${esc(title)}</b> · ${W.video} · ${esc(summary)} <a href="${url}" target="_blank" rel="noopener">${W.watch}</a></figcaption></figure>`;
 }
 
+/**
+ * One language's pages → out/<language>/: its own pages, and the English one
+ * for each page it does not have yet (`english` lists those).
+ */
 export function render(root, out, lang = 'en') {
+  if (!WORDS[lang]) throw new Error(`no such language: ${lang} (languages.mjs)`);
   const W = WORDS[lang];
   const sub = lang === 'en' ? '' : lang;
-  const src = join(root, 'docs/user', sub);
-  const otherSrc = join(root, 'docs/user', lang === 'en' ? 'ro' : '');
-  const shotsDir = join(out, 'shots', sub);
-  // Where this language's pages point to the shared files and to the other language.
+  const enSrc = join(root, 'docs/user');
+  const src = join(enSrc, sub);
+  const mdIn = (dir) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md')) : []);
+  const enFiles = mdIn(enSrc);
+  const ownFiles = new Set(mdIn(src));
+  const orphans = [...ownFiles].filter((f) => !enFiles.includes(f));
+  if (orphans.length) throw new Error(`pages with no English page of the same name: ${orphans.map((f) => `docs/user/${sub}/${f}`).join(', ')}`);
+  // Where this language's pages point to the shared files: its own pictures, and English ones for a page not translated yet.
   const up = sub ? '../' : '';
-  const shotsHref = `${up}shots/${sub ? `${sub}/` : ''}`;
-  const otherHref = lang === 'en' ? 'ro/' : '../';
-  if (!existsSync(src)) return { pages: 0, missing: [], unused: [] };
-  // The videos' posters, shared by both languages.
+  const base = out;
+  const shotsOf = (english) => ({ dir: join(base, 'shots', english ? '' : sub), href: `${up}shots/${english || !sub ? '' : `${sub}/`}` });
+  // Which languages have a page of their own: the alternates name only those.
+  const translated = (file, l) => (l === 'en' ? enFiles.includes(file) : existsSync(join(enSrc, l, file)));
+  // The videos' posters, shared by every language.
   const videos = videosOf(root);
   mkdirSync(join(out, 'videos'), { recursive: true });
   for (const v of videos) {
@@ -93,9 +132,13 @@ export function render(root, out, lang = 'en') {
   }
   out = join(out, sub);
   mkdirSync(out, { recursive: true });
-  const pages = readdirSync(src).filter((f) => f.endsWith('.md')).map((f) => ({ file: f, slug: f.replace(/\.md$/, ''), ...parse(join(src, f)) }))
-    .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
+  const pages = enFiles.map((f) => {
+    const english = lang !== 'en' && !ownFiles.has(f);
+    return { file: f, slug: f.replace(/\.md$/, ''), english, ...parse(join(english ? enSrc : src, f)) };
+  }).sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
+  // The pictures this language's own pages show, and those an English page shows in its place (not to be called unused).
   const used = new Set();
+  const usedInEnglish = new Set();
   const missing = [];
   let commit = '';
   try { commit = execSync('git rev-parse --short HEAD', { cwd: root }).toString().trim(); } catch { /* not a checkout */ }
@@ -104,6 +147,10 @@ export function render(root, out, lang = 'en') {
 
   for (const page of pages) {
     const toc = [];
+    // A page not translated yet speaks English: its words, its pictures, its videos' titles.
+    const shots = shotsOf(page.english);
+    const said = page.english ? 'en' : lang;
+    const Ws = WORDS[said];
     const marked = new Marked({
       gfm: true,
       renderer: {
@@ -115,10 +162,10 @@ export function render(root, out, lang = 'en') {
         },
         image({ href, text }) {
           const name = href.replace(/^shots\//, '');
-          const src = shotsHref + name;
-          used.add(name);
-          const file = join(shotsDir, name);
-          if (!existsSync(file)) { missing.push(`${page.file}: ${href}`); return ''; }
+          const src = shots.href + name;
+          (page.english ? usedInEnglish : used).add(name);
+          const file = join(shots.dir, name);
+          if (!existsSync(file)) { if (!page.english) missing.push(`${page.file}: ${href}`); return ''; }
           const [w, h] = webpSize(file) ?? [];
           // The pictures are taken at twice the screen's density: shown at half their pixels.
           const size = w ? ` width="${Math.round(w / 2)}" height="${Math.round(h / 2)}"` : '';
@@ -142,16 +189,17 @@ export function render(root, out, lang = 'en') {
       const v = videos.find((x) => x.id === id);
       if (!v) { missing.push(`${page.file}: video ${id}`); return ''; }
       if (!existsSync(join(root, 'docs/user/videos', `${id}.webp`))) missing.push(`${page.file}: videos/${id}.webp`);
-      return videoFigure(v, W, lang, up);
+      return videoFigure(v, Ws, said, up);
     });
-    if (article.includes('<!-- videos -->')) article = article.replace('<!-- videos -->', `<div class="videos">${videos.map((v) => videoFigure(v, W, lang, up, true)).join('')}</div>`);
+    if (article.includes('<!-- videos -->')) article = article.replace('<!-- videos -->', `<div class="videos">${videos.map((v) => videoFigure(v, Ws, said, up, true)).join('')}</div>`);
     // <!-- shortcuts -->: the default keyboard shortcuts, as the app's registry has them (the interface scene writes them).
     if (article.includes('<!-- shortcuts -->')) {
-      const file = join(shotsDir, 'shortcuts.json');
-      if (!existsSync(file)) missing.push(`${page.file}: shortcuts.json`);
-      else article = article.replace('<!-- shortcuts -->', shortcutsTable(JSON.parse(readFileSync(file, 'utf8')), W));
+      const file = join(shots.dir, 'shortcuts.json');
+      if (!existsSync(file)) { if (!page.english) missing.push(`${page.file}: shortcuts.json`); }
+      else article = article.replace('<!-- shortcuts -->', shortcutsTable(JSON.parse(readFileSync(file, 'utf8')), Ws));
     }
-    const videoText = page.body.includes('<!-- videos -->') ? videos.map((v) => (lang === 'ro' ? `${v.titleRo} ${v.summaryRo}` : `${v.title} ${v.summary}`)).join(' ') : '';
+    if (page.english) article = `<aside class="note untranslated" lang="${lang}"><p>${esc(W.english)}</p></aside>\n${article}`;
+    const videoText = page.body.includes('<!-- videos -->') ? videos.map((v) => `${inLang(v.title, said)} ${inLang(v.summary, said)}`).join(' ') : '';
     const plain = (page.body.replace(/<!--[\s\S]*?-->/g, ' ') + ' ' + videoText).replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/[#*_`>|[\]()-]/g, ' ').replace(/\s+/g, ' ');
     search.push({ slug: page.slug, title: page.title, summary: page.summary ?? '', headings: toc.map((h) => ({ id: h.id, text: h.html.replace(/<[^>]+>/g, '') })), text: plain });
 
@@ -159,17 +207,28 @@ export function render(root, out, lang = 'en') {
     const prev = pages[i - 1], next = pages[i + 1];
     const nav = pages.map((p) => `<li><a href="${p.slug}.html"${p === page ? ' aria-current="page"' : ''}>${esc(p.title)}</a></li>`).join('');
     const onPage = toc.length > 1 ? `<nav class="toc" aria-label="${W.onPage}"><p class="eyebrow">${W.onPage}</p><ul>${toc.map((h) => `<li><a href="#${h.id}">${h.html}</a></li>`).join('')}</ul></nav>` : '<div></div>';
-    const other = existsSync(join(otherSrc, page.file)) ? `${otherHref}${page.slug}.html` : null;
-    writeFileSync(join(out, `${page.slug}.html`), template({ page, article, nav, onPage, prev, next, date, commit, lang, W, up, other }));
+    // The same page in every language (the English one where a language has none yet); the alternates only where it is translated.
+    const langs = LANGUAGES.map((l) => ({ ...l, href: `${up}${folderOf(l.id)}${page.slug}.html`, own: translated(page.file, l.id) }));
+    writeFileSync(join(out, `${page.slug}.html`), template({ page, article, nav, onPage, prev, next, date, commit, lang, W, up, langs }));
   }
   writeFileSync(join(out, 'search.json'), JSON.stringify(search));
   writeFileSync(join(out, up || '.', 'guide.css'), CSS);
   writeFileSync(join(out, up || '.', 'guide.js'), JS);
-  const taken = existsSync(shotsDir) ? readdirSync(shotsDir).filter((f) => f.endsWith('.webp')) : [];
-  return { pages: pages.length, missing, unused: taken.filter((f) => !used.has(f)) };
+  const own = shotsOf(false).dir;
+  const taken = existsSync(own) ? readdirSync(own).filter((f) => f.endsWith('.webp')) : [];
+  return { pages: pages.length, missing, unused: taken.filter((f) => !used.has(f) && !usedInEnglish.has(f)), english: pages.filter((p) => p.english).map((p) => p.file) };
 }
 
-function template({ page, article, nav, onPage, prev, next, date, commit, lang, W, up, other }) {
+/** The header's language menu: the language read now, and the same page in each of the others. */
+function languageMenu(lang, W, langs) {
+  const now = langs.find((l) => l.id === lang);
+  const items = langs.map((l) => `<li><a href="${esc(l.href)}" hreflang="${l.id}" lang="${l.id}"${l.id === lang ? ' aria-current="true"' : ''}>${esc(l.name)}</a></li>`).join('');
+  return `<details class="langs"><summary title="${esc(W.language)}" aria-label="${esc(`${W.language}: ${now.name}`)}"><span class="long">${esc(now.name)}</span><span class="short">${lang.toUpperCase()}</span></summary><ul>${items}</ul></details>`;
+}
+
+function template({ page, article, nav, onPage, prev, next, date, commit, lang, W, up, langs }) {
+  const alternates = langs.filter((l) => l.own).map((l) => `\n<link rel="alternate" hreflang="${l.id}" href="${SITE}${folderOf(l.id)}${page.slug}.html">`).join('')
+    + `\n<link rel="alternate" hreflang="x-default" href="${SITE}${page.slug}.html">`;
   const title = page.slug === 'index' ? W.guide : `${page.title} · ${W.guide}`;
   return `<!doctype html>
 <html lang="${lang}">
@@ -179,7 +238,7 @@ function template({ page, article, nav, onPage, prev, next, date, commit, lang, 
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(page.summary ?? '')}">
 <link rel="icon" href="/web/favicon.png">
-<link rel="stylesheet" href="${up}guide.css">${other ? `\n<link rel="alternate" hreflang="${lang === 'en' ? 'ro' : 'en'}" href="${other}">` : ''}
+<link rel="stylesheet" href="${up}guide.css">${alternates}
 <script>try { const t = localStorage.getItem('lapin-guide-theme'); if (t) document.documentElement.dataset.theme = t; } catch {}</script>
 </head>
 <body>
@@ -189,7 +248,7 @@ function template({ page, article, nav, onPage, prev, next, date, commit, lang, 
     <input type="search" id="q" placeholder="${W.search}" aria-label="${W.search}" autocomplete="off">
     <ul id="hits" hidden data-none="${esc(W.none)}"></ul>
   </div>
-  ${other ? `<a class="lang" href="${other}" hreflang="${lang === 'en' ? 'ro' : 'en'}" title="${W.otherTitle}">${W.other}</a>` : ''}
+  ${languageMenu(lang, W, langs)}
   <button type="button" class="theme" id="theme" title="${W.theme}" aria-label="${W.theme}">◐</button>
   <a class="open" href="/web/">${W.open}</a>
 </header>
@@ -198,7 +257,7 @@ function template({ page, article, nav, onPage, prev, next, date, commit, lang, 
     <details open><summary>${W.pages}</summary><ol>${nav}</ol></details>
   </nav>
   <main>
-    <article>
+    <article${page.english ? ' lang="en"' : ''}>
       ${page.slug === 'index' ? '' : `<p class="eyebrow">${W.eyebrow}</p><h1>${esc(page.title)}</h1>${page.summary ? `<p class="lead">${esc(page.summary)}</p>` : ''}`}
       ${article}
     </article>
@@ -254,8 +313,17 @@ code { font: 0.9em var(--mono); background: var(--wash); padding: 1px 5px; borde
 #hits small { display: block; color: var(--muted); }
 #hits .none { padding: 8px 12px; color: var(--muted); font-size: 14px; }
 .theme { width: 34px; height: 34px; border: 1px solid var(--rule-strong); border-radius: 4px; background: none; color: var(--ink); cursor: pointer; font-size: 16px; }
-.lang { padding: 6px 10px; border: 1px solid var(--rule-strong); border-radius: 4px; color: var(--ink); font-size: 13px; text-decoration: none; white-space: nowrap; }
-.lang:hover { border-color: var(--accent); color: var(--accent); }
+.langs { position: relative; }
+.langs summary { list-style: none; padding: 6px 10px; border: 1px solid var(--rule-strong); border-radius: 4px; color: var(--ink); font-size: 13px; white-space: nowrap; cursor: pointer; user-select: none; }
+.langs summary::-webkit-details-marker { display: none; }
+.langs summary::after { content: "▾"; margin-left: 6px; color: var(--muted); }
+.langs summary:hover, .langs[open] summary { border-color: var(--accent); color: var(--accent); }
+.langs .short { display: none; }
+.langs ul { position: absolute; right: 0; top: 40px; z-index: 20; min-width: 150px; margin: 0; padding: 4px 0; list-style: none; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 4px; box-shadow: 0 10px 30px var(--shadow); }
+.langs a { display: block; padding: 7px 14px; color: var(--ink); text-decoration: none; font-size: 14px; }
+.langs a:hover { background: var(--wash); }
+.langs a[aria-current] { color: var(--accent); font-weight: 600; background: var(--accent-wash); }
+.untranslated { margin-top: 0; }
 .open { padding: 7px 14px; border-radius: 4px; background: var(--accent); color: #fff; font-weight: 600; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none; white-space: nowrap; }
 
 .layout { display: grid; grid-template-columns: 240px minmax(0, 760px) 220px; gap: 48px; justify-content: center; padding: 0 24px; }
@@ -322,6 +390,8 @@ main > footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(-
 @media (max-width: 820px) {
   .top { padding: 0 16px; gap: 10px; }
   .brand span, .open { display: none; }
+  .langs .long { display: none; }
+  .langs .short { display: inline; }
   .layout { display: block; padding: 0 16px; }
   .pages { position: static; max-height: none; padding: 12px 0 0; }
   .pages summary { display: list-item; cursor: pointer; font-weight: 600; padding: 8px 0; }
@@ -398,6 +468,12 @@ const JS = `(() => {
     else if (e.key === 'Escape') { hits.hidden = true; q.blur(); }
   });
   document.addEventListener('click', (e) => { if (!e.target.closest('.search')) hits.hidden = true; });
+  // The language menu closes on a click elsewhere and on Escape.
+  const langs = document.querySelector('.langs');
+  if (langs) {
+    document.addEventListener('click', (e) => { if (!e.target.closest('.langs')) langs.removeAttribute('open'); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') langs.removeAttribute('open'); });
+  }
   document.addEventListener('keydown', (e) => { if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); } });
 })();
 `;

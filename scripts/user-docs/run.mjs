@@ -4,12 +4,14 @@
 // scenes (scenes.mjs) that drive the real app the way a user does, in Chrome,
 // and check what they see on the way. A scene that no longer finds its button
 // or its result fails the run: the guide never shows an interface that is gone.
-// The guide is in English (docs/user) and Romanian (docs/user/ro): each scene
-// runs once per language, the pictures taken with the interface in it.
+// The guide's languages are languages.mjs's (English in docs/user, the others
+// in docs/user/<id>): each scene runs once per language, the pictures taken
+// with the interface in it. A page a language has not translated yet is
+// rendered from English, with English pictures, and the run says which.
 //
 //   pnpm docs:user                 the engine and the UI started for the run, every scene, then the pages → build/user-docs
 //   pnpm docs:user --only walls    the scenes whose id starts with "walls" (the other pictures stay as they were)
-//   pnpm docs:user --lang ro       one language's pictures (en or ro; the other's stay as they were)
+//   pnpm docs:user --lang ro       one language's pictures (or several: --lang ro,de; the others' stay as they were)
 //   pnpm docs:user --pages         the pages alone, from the pictures already taken
 //
 // CHROME: the browser to drive (default: the installed Google Chrome).
@@ -23,20 +25,21 @@ import { chromium } from 'playwright-core';
 import { resolveProduct } from '../product.mjs';
 import { scenes as ownScenes } from './scenes.mjs';
 import { render } from './render.mjs';
+import { LANGS, checkInterfaceLanguages } from './languages.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const out = join(root, 'build', 'user-docs');
 const shots = join(out, 'shots');
 const args = process.argv.slice(2);
 const only = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
-const LANGS = ['en', 'ro'];
+checkInterfaceLanguages(root);
 // Another edition (a premium module's pictures, taken with its own scenes from its repository): --product lapin-urban --scenes ../lapin-urban/docs/scenes.mjs
 const productId = args.includes('--product') ? args[args.indexOf('--product') + 1] : 'lapin';
 const extra = args.includes('--scenes') ? (await import(pathToFileURL(resolvePath(args[args.indexOf('--scenes') + 1])).href)).scenes ?? [] : [];
 const scenes = [...ownScenes, ...extra];
-const langs = args.includes('--lang') ? [args[args.indexOf('--lang') + 1]] : LANGS;
-if (!langs.every((l) => LANGS.includes(l))) { console.error(`✗ --lang: one of ${LANGS.join(', ')}`); process.exit(1); }
-/** A language's pictures: shots/ for English, shots/ro/ for Romanian. */
+const langs = args.includes('--lang') ? String(args[args.indexOf('--lang') + 1]).split(',') : LANGS;
+if (!langs.every((l) => LANGS.includes(l))) { console.error(`✗ --lang: one or more of ${LANGS.join(', ')}`); process.exit(1); }
+/** A language's pictures: shots/ for English, shots/<id>/ for the others. */
 const shotsOf = (lang) => (lang === 'en' ? shots : join(shots, lang));
 // Every scene again: the pictures start from nothing, so none outlives the scene that took it.
 for (const lang of langs) {
@@ -47,9 +50,12 @@ for (const lang of langs) {
 if (!args.includes('--pages')) await takePictures();
 let failed = false;
 for (const lang of LANGS) {
-  const { pages, missing, unused } = render(root, out, lang);
+  let r;
+  try { r = render(root, out, lang); } catch (e) { console.error(`✗ ${lang}: ${e instanceof Error ? e.message : e}`); failed = true; continue; }
+  const { pages, missing, unused, english } = r;
   for (const u of unused) console.warn(`▸ ${lang}: a picture no page shows: ${u}`);
   if (missing.length) { console.error(`✗ ${lang}: pictures the pages show but no scene takes: ${missing.join(', ')}`); failed = true; }
+  if (english.length) console.log(`▸ ${lang}: ${english.length} page(s) not translated yet, rendered from English: ${english.length === pages ? 'all' : english.join(', ')}`);
   console.log(`✓ ${lang}: ${pages} pages → build/user-docs${lang === 'en' ? '' : `/${lang}`}`);
 }
 if (failed) process.exit(1);
@@ -227,8 +233,16 @@ function tools(page, url, folder, lang) {
      * (a CSS selector or a locator, with `pad` pixels around it).
      */
     async shot(name, opts = {}) {
-      if (lang !== 'en') await speak(lang);
-      try { await photograph(name, opts); } finally { if (lang !== 'en') await speak('en'); }
+      if (lang === 'en') { await photograph(name, opts); return; }
+      // The part to photograph is found while the interface is in English (its selector may name an English label or title, which the
+      // language turns), and marked so it is found again in the picture's language.
+      const target = typeof opts.of === 'string' ? page.locator(opts.of).first() : opts.of;
+      if (target) await target.evaluate((e) => e.setAttribute('data-user-docs-shot', '')).catch(() => {});
+      await speak(lang);
+      try { await photograph(name, target ? { ...opts, of: '[data-user-docs-shot]' } : opts); } finally {
+        await page.evaluate(() => document.querySelectorAll('[data-user-docs-shot]').forEach((e) => e.removeAttribute('data-user-docs-shot')));
+        await speak('en');
+      }
     },
   };
   /** The picture itself: the window, or a part of it. */

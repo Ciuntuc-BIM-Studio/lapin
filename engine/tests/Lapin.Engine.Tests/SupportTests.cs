@@ -38,4 +38,13 @@ public class SupportTests
         }
         finally { Environment.SetEnvironmentVariable("LAPIN_FEEDBACK_URL", null); }
     }
+
+    [Fact]
+    public void The_guide_opens_in_each_interface_language()
+    {
+        Assert.Equal("https://lapin.ciuntucbimstudio.ro/docs/", Support.Guides["guide"]);
+        Assert.Equal("https://lapin.ciuntucbimstudio.ro/docs/ro/", Support.Guides["guideRo"]);
+        Assert.Equal("https://lapin.ciuntucbimstudio.ro/docs/da/", Support.Guides["guideDa"]);
+        Assert.Equal(["guide", "guideDa", "guideDe", "guideEs", "guideFr", "guideRo"], Support.Guides.Keys.Order());
+    }
 }

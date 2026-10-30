@@ -51,3 +51,12 @@ describe('the recent errors a report carries', () => {
     expect(RECENT[0]).toMatch(/console: 5$/);
   });
 });
+
+describe('the user guide', () => {
+  it('opens in each interface language: /docs/ for English, /docs/<lang>/ for the others, by the names the engine knows', async () => {
+    const { guideUrl, guideLink } = await import('./support');
+    const { LANGUAGES } = await import('../i18n');
+    expect(LANGUAGES.map((l) => guideUrl(l.id))).toEqual(['', 'ro/', 'es/', 'de/', 'fr/', 'da/'].map((s) => `https://lapin.ciuntucbimstudio.ro/docs/${s}`));
+    expect(LANGUAGES.map((l) => guideLink(l.id))).toEqual(['guide', 'guideRo', 'guideEs', 'guideDe', 'guideFr', 'guideDa']);
+  });
+});

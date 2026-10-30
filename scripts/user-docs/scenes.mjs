@@ -2,6 +2,48 @@
 // what it sees, and takes the pictures its page shows (shots/<name>.webp).
 // A scene starts from the start screen; `house` gives it a small model to
 // work on, built through the same commands the interface sends.
+// A scene drives the interface in English; what a user types (a question)
+// is in the run's language (t.lang, one of languages.mjs), from the tables
+// below: a language missing from a table types the English.
+import { say } from './languages.mjs';
+
+/** Ask Me's question in the help scene: each language's way of asking how to copy a wall. */
+const ASK_COPY = {
+  en: 'how do I copy a wall',
+  ro: 'cum copiez un perete',
+  es: 'cómo copio un muro',
+  de: 'wie kopiere ich eine Wand',
+  fr: 'comment copier un mur',
+  da: 'hvordan kopierer jeg en væg',
+};
+
+/** The assistant's scene: the two questions asked, and the answers the stand-in model gives. */
+const ASSISTANT = {
+  questions: {
+    en: ['How many walls per storey, and how long?', 'Give the doors FireRating EI30.'],
+    ro: ['Câți pereți sunt pe etaj și ce lungime au?', 'Dă ușilor FireRating EI30.'],
+    es: ['¿Cuántos muros hay por planta y cuánto miden?', 'Pon FireRating EI30 a las puertas.'],
+    de: ['Wie viele Wände gibt es je Geschoss, und wie lang sind sie?', 'Gib den Türen FireRating EI30.'],
+    fr: ['Combien de murs par niveau, et quelle longueur ?', 'Donne aux portes FireRating EI30.'],
+    da: ['Hvor mange vægge er der pr. etage, og hvor lange er de?', 'Giv dørene FireRating EI30.'],
+  },
+  proposed: {
+    en: (n) => `I proposed EI30 for ${n} door. Review and apply it below.`,
+    ro: (n) => `Am propus EI30 pentru ${n} ușă. Verifică și aplică mai jos.`,
+    es: (n) => `He propuesto EI30 para ${n} puerta. Revísalo y aplícalo abajo.`,
+    de: (n) => `Ich habe EI30 für ${n} Tür vorgeschlagen. Prüfen und unten anwenden.`,
+    fr: (n) => `J’ai proposé EI30 pour ${n} porte. Vérifiez et appliquez ci-dessous.`,
+    da: (n) => `Jeg har foreslået EI30 til ${n} dør. Gennemse og anvend nedenfor.`,
+  },
+  walls: {
+    en: (s, n, m) => `**${s}** has **${n} walls**, **${m} m** in all.`,
+    ro: (s, n, m) => `Pe **${s}** sunt **${n} pereți**, în total **${m} m**.`,
+    es: (s, n, m) => `En **${s}** hay **${n} muros**, **${m} m** en total.`,
+    de: (s, n, m) => `**${s}**: **${n} Wände**, insgesamt **${m} m**.`,
+    fr: (s, n, m) => `**${s}** compte **${n} murs**, **${m} m** au total.`,
+    da: (s, n, m) => `**${s}** har **${n} vægge**, i alt **${m} m**.`,
+  },
+};
 
 /** A small house on the ground floor: 12 × 8 m, two rooms, a door, windows, a floor and a gable roof. */
 async function house(t, { roof = true } = {}) {
@@ -47,7 +89,7 @@ const select = (t, id) => t.ui({ selection: id, selected: [id] });
  * A stand-in for Ollama on this computer, for the assistant's scene: its model list, and a chat that
  * answers as a model does — a tool call for a question, words for a tool's result (from the result itself).
  */
-async function fakeOllama(page, ro) {
+async function fakeOllama(page, lang) {
   const line = (message) => JSON.stringify({ message: { role: 'assistant', ...message }, done: false }) + '\n' + JSON.stringify({ done: true, eval_count: 40, eval_duration: 7e8 }) + '\n';
   const call = (name, args) => line({ content: '', tool_calls: [{ function: { name, arguments: args } }] });
   await page.route('http://127.0.0.1:11434/**', async (route) => {
@@ -64,11 +106,9 @@ async function fakeOllama(page, ro) {
     }
     const result = JSON.parse(last.content);
     if (last.tool_name === 'list_elements') return json(call('propose_properties', { changes: result.rows.map((r) => ({ id: r.id, pset: 'Pset_DoorCommon', name: 'FireRating', value: 'EI30' })) }));
-    if (last.tool_name === 'propose_properties') return json(line({ content: ro ? `Am propus EI30 pentru ${result.proposed} ușă. Verifică și aplică mai jos.` : `I proposed EI30 for ${result.proposed} door. Review and apply it below.` }));
+    if (last.tool_name === 'propose_properties') return json(line({ content: say(ASSISTANT.proposed, lang)(result.proposed) }));
     const g = result.groups[0];
-    return json(line({ content: ro
-      ? `Pe **${g.storey}** sunt **${g.count} pereți**, în total **${g['sum(Length)']} m**.`
-      : `**${g.storey}** has **${g.count} walls**, **${g['sum(Length)']} m** in all.` }));
+    return json(line({ content: say(ASSISTANT.walls, lang)(g.storey, g.count, g['sum(Length)']) }));
   });
 }
 
@@ -1020,7 +1060,7 @@ export const scenes = [
       await t.fresh();
       await t.button('Ask Me', { exact: true });
       const input = t.page.getByRole('textbox', { name: 'Your question' });
-      await input.fill(t.lang === 'ro' ? 'cum copiez un perete' : 'how do I copy a wall');
+      await input.fill(say(ASK_COPY, t.lang));
       await input.press('Enter');
       await t.wait(400);
       t.expect(await t.page.getByText('How do I copy a wall?').count() > 0, 'Ask Lapin answers how to copy a wall');
@@ -1042,16 +1082,15 @@ export const scenes = [
     // development switch, and a stand-in for Ollama answers with the tool calls a model makes (the tools themselves are Lapin's).
     id: 'assistant',
     async run(t) {
-      const ro = t.lang === 'ro';
       await t.page.addInitScript(() => { localStorage.setItem('lapin.assistant.dev', '1'); localStorage.setItem('lapin.assistant', JSON.stringify({ url: 'http://127.0.0.1:11434', model: 'qwen3-coder:30b' })); });
-      await fakeOllama(t.page, ro);
+      await fakeOllama(t.page, t.lang);
       await t.fresh();
       await house(t);
       await t.page.locator('.side-tabs').getByRole('tab', { name: 'Assistant' }).click();
       const input = t.page.locator('[data-testid=assistant-panel] textarea');
       await input.waitFor({ state: 'visible' });
       await t.page.waitForSelector('[data-testid=assistant-panel] textarea:not([disabled])', { timeout: 10_000 });
-      for (const q of ro ? ['Câți pereți sunt pe etaj și ce lungime au?', 'Dă ușilor FireRating EI30.'] : ['How many walls per storey, and how long?', 'Give the doors FireRating EI30.']) {
+      for (const q of say(ASSISTANT.questions, t.lang)) {
         await input.fill(q);
         await input.press('Enter');
         await t.page.waitForSelector('[data-testid=assistant-panel] button[title=Send]', { timeout: 20_000 });

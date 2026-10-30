@@ -2,7 +2,7 @@
 
 import { notify } from '../app/store';
 import { engine, engineInBrowser } from '../engine/session';
-import { useLang } from '../i18n';
+import { type Lang, useLang } from '../i18n';
 
 /** The app's last errors, newest last (at most 20). */
 export const RECENT: string[] = [];
@@ -33,13 +33,19 @@ export function installRecentErrors(): void {
 }
 
 /** Open the community or the site in the system's browser (the engine does it). */
-export const LINKS = { guide: 'https://lapin.ciuntucbimstudio.ro/docs/', guideRo: 'https://lapin.ciuntucbimstudio.ro/docs/ro/', community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://ciuntucbimstudio.ro', source: 'https://github.com/Ciuntuc-BIM-Studio/lapin-pro' } as const;
+export const LINKS = { guide: 'https://lapin.ciuntucbimstudio.ro/docs/', community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://ciuntucbimstudio.ro', source: 'https://github.com/Ciuntuc-BIM-Studio/lapin-pro' } as const;
 
-/** Open the community or the site: in the system's browser (the engine does it on the desktop), in a new tab on the web. The guide opens in the interface's language (English or Romanian; English for the others). */
+/** The user guide in a language: /docs/ for English, /docs/<lang>/ for the others (every interface language has one, scripts/user-docs/languages.mjs). */
+export const guideUrl = (lang: Lang): string => (lang === 'en' ? LINKS.guide : `${LINKS.guide}${lang}/`);
+
+/** The engine's name for the guide in a language (Support.cs): guide, guideRo, guideEs, guideDe, guideFr, guideDa. */
+export const guideLink = (lang: Lang): string => (lang === 'en' ? 'guide' : `guide${lang[0].toUpperCase()}${lang.slice(1)}`);
+
+/** Open the community or the site: in the system's browser (the engine does it on the desktop), in a new tab on the web. The guide opens in the interface's language. */
 export const openLink = (which: keyof typeof LINKS) => {
-  const link = which === 'guide' && useLang.getState().lang === 'ro' ? 'guideRo' : which;
-  if (engineInBrowser) { window.open(LINKS[link], '_blank', 'noopener'); return; }
-  void engine.call('support.open', { link }).catch(() => notify('The link could not be opened.'));
+  const lang = useLang.getState().lang;
+  if (engineInBrowser) { window.open(which === 'guide' ? guideUrl(lang) : LINKS[which], '_blank', 'noopener'); return; }
+  void engine.call('support.open', { link: which === 'guide' ? guideLink(lang) : which }).catch(() => notify('The link could not be opened.'));
 };
 
 /** Where the web build posts reports: the Lapin server it is served from. */
