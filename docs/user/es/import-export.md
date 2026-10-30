@@ -18,7 +18,7 @@ Todo lo que entra o sale está en el menú **Archivo**.
 
 Lapin reconoce los muros, losas, pilares, vigas, zapatas, puertas y ventanas y los convierte en elementos de Lapin que puede editar. Lo que no puede reconocer entra como referencia, dibujada pero no editable. Las puertas y ventanas entran abriéndose como dice el archivo: su mano, el lado hacia el que abren y, en las ventanas, cómo se abre cada panel.
 
-Los espacios del archivo (de Revit, ArchiCAD y otros) entran como habitaciones de Lapin, cada una en su propio nivel, con su contorno, número, nombre, altura, función, departamento y acabado de suelo: consulte [Habitaciones y colores de habitación](rooms.md#habitaciones-desde-un-archivo-ifc). Todo lo que un elemento importado tenía en el archivo (sus conjuntos de propiedades y cantidades) se conserva y se muestra en **Propiedades IFC**, en sus propiedades.
+Los espacios del archivo (de Revit, ArchiCAD y otros) entran como habitaciones de Lapin, cada una en su propio nivel, con su contorno, número, nombre, altura, función, departamento y acabado de suelo: consulte [Habitaciones y colores de habitación](rooms.md#habitaciones-desde-un-archivo-ifc). Todo lo que un elemento importado tenía en el archivo (sus conjuntos de propiedades y cantidades) se conserva y se muestra en **Propiedades IFC**, en sus propiedades. Una referencia sale de **Exportar IFC…** tal como entró: con el mismo GlobalId, la misma clase y los mismos atributos (descripción, etiqueta, tipo predefinido), sus conjuntos de propiedades y cantidades con cada valor del tipo que tenía en el archivo, y su tipo, material, puertos, conexiones y sistema, cada uno con su GlobalId. Si trae solo las instalaciones de un archivo y las exporta, el archivo nuevo las lleva enteras.
 
 ## DXF y DWG
 

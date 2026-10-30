@@ -155,9 +155,31 @@ public sealed partial class IfcModel
     /// <summary>IFCWALLSTANDARDCASE → IfcWallStandardCase, as IFC writes its names.</summary>
     public static string ClassName(string upper)
     {
-        foreach (var known in Known) if (string.Equals(known, upper, StringComparison.OrdinalIgnoreCase)) return known;
+        if (KnownByUpper.TryGetValue(upper, out var known)) return known;
+        // A type of a known class: the class's name and Type (IFCPIPEFITTINGTYPE, IfcPipeFittingType).
+        if (upper.EndsWith("TYPE", StringComparison.Ordinal) && KnownByUpper.TryGetValue(upper[..^4], out var of)) return of + "Type";
         return "Ifc" + upper[3..4] + upper[4..].ToLowerInvariant();
     }
+
+    // Made when first asked for: the lists below are not yet there while the class's statics are made in order.
+    static Dictionary<string, string>? knownByUpper;
+    static Dictionary<string, string> KnownByUpper => knownByUpper ??= Known.Concat(Distribution).Distinct().ToDictionary(n => n.ToUpperInvariant(), n => n);
+
+    /// <summary>IFC4's distribution elements (and IFC2X3's that a file may still have), named as the schema names them.</summary>
+    static readonly string[] Distribution =
+    [
+        "IfcDistributionFlowElement", "IfcDistributionControlElement", "IfcDistributionChamberElement", "IfcDistributionPort", "IfcDistributionSystem", "IfcDistributionCircuit",
+        "IfcFlowStorageDevice", "IfcFlowTreatmentDevice", "IfcFlowMovingDevice", "IfcFlowInstrument", "IfcFlowMeter", "IfcEnergyConversionDevice",
+        "IfcPipeSegment", "IfcPipeFitting", "IfcDuctSegment", "IfcDuctFitting", "IfcCableSegment", "IfcCableFitting", "IfcCableCarrierSegment", "IfcCableCarrierFitting",
+        "IfcAirTerminal", "IfcAirTerminalBox", "IfcAirToAirHeatRecovery", "IfcActuator", "IfcAlarm", "IfcAudioVisualAppliance", "IfcBoiler", "IfcBurner",
+        "IfcChiller", "IfcCoil", "IfcCommunicationsAppliance", "IfcCompressor", "IfcCondenser", "IfcController", "IfcCooledBeam", "IfcCoolingTower",
+        "IfcDamper", "IfcDuctSilencer", "IfcElectricAppliance", "IfcElectricDistributionBoard", "IfcElectricFlowStorageDevice", "IfcElectricGenerator",
+        "IfcElectricMotor", "IfcElectricTimeControl", "IfcEngine", "IfcEvaporativeCooler", "IfcEvaporator", "IfcFan", "IfcFilter", "IfcFireSuppressionTerminal",
+        "IfcHeatExchanger", "IfcHumidifier", "IfcInterceptor", "IfcJunctionBox", "IfcLamp", "IfcLightFixture", "IfcMedicalDevice", "IfcMotorConnection",
+        "IfcOutlet", "IfcProtectiveDevice", "IfcProtectiveDeviceTrippingUnit", "IfcPump", "IfcSanitaryTerminal", "IfcSensor", "IfcSolarDevice", "IfcSpaceHeater",
+        "IfcStackTerminal", "IfcSwitchingDevice", "IfcTank", "IfcTransformer", "IfcTubeBundle", "IfcUnitaryControlElement", "IfcUnitaryEquipment", "IfcValve",
+        "IfcWasteTerminal", "IfcElectricalElement", "IfcEquipmentElement", "IfcSystemFurnitureElement", "IfcVirtualElement", "IfcReinforcingMesh", "IfcTendon",
+    ];
 
     static readonly string[] Known =
     [
@@ -259,7 +281,8 @@ public sealed partial class IfcModel
         StepTyped { Value: StepEnum e } => e.Value switch { "T" => "yes", "F" => "no", _ => e.Value.ToLowerInvariant() },
         StepTyped t => Text(t.Value),
         StepEnum e => e.Value,
-        double d => Math.Round(d, 4).ToString(System.Globalization.CultureInfo.InvariantCulture),
+        // Four decimals, as a value is read; one smaller than that by its first significant digits, not as 0.
+        double d => (d != 0 && Math.Abs(d) < 1e-3 ? d.ToString("G4", System.Globalization.CultureInfo.InvariantCulture) : Math.Round(d, 4).ToString(System.Globalization.CultureInfo.InvariantCulture)),
         long l => l.ToString(System.Globalization.CultureInfo.InvariantCulture),
         string s => s,
         null => "",

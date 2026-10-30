@@ -90,7 +90,8 @@ public sealed class Step
         w.Write($"FILE_DESCRIPTION(({S(description)}),'2;1');\n");
         w.Write($"FILE_NAME({S(name)},'{now}',(''),(''),'Lapin','Lapin','');\n");
         w.Write($"FILE_SCHEMA(('{schema}'));\nENDSEC;\nDATA;\n");
-        w.Write(_data.ToString());
+        // In its chunks: a big model's data is more than one string can hold.
+        foreach (var chunk in _data.GetChunks()) w.Write(chunk.Span);
         w.Write("ENDSEC;\nEND-ISO-10303-21;\n");
     }
 }

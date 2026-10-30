@@ -131,6 +131,10 @@ public static class IfcExport
         ["IfcSwitchingDevice"] = ["CONTACTOR", "DIMMERSWITCH", "EMERGENCYSTOP", "KEYPAD", "MOMENTARYSWITCH", "SELECTORSWITCH", "STARTER", "SWITCHDISCONNECTOR", "TOGGLESWITCH"],
     };
 
+    /// <summary>Whether IFC4 gives the class (upper case, as a file writes it) a PredefinedType after the eight attributes every element has.</summary>
+    internal static bool HasPredefined(string upper) => UpperClasses.TryGetValue(upper, out var allowed) && allowed != null;
+    static readonly Dictionary<string, string[]?> UpperClasses = Classes.ToDictionary(kv => kv.Key.ToUpperInvariant(), kv => kv.Value);
+
     /// <summary>The classes with a Pset_…Common the export can answer.</summary>
     static readonly HashSet<string> CommonSets =
     [
@@ -163,6 +167,9 @@ public static class IfcExport
         readonly List<(Relation Rel, string Host, string Void)> pendingVoids = [];
 
         Step f => File;
+        IfcCarry.Writer? carry;
+        /// <summary>What foreign elements carry from their file (<see cref="IfcSource"/>), written back as it came.</summary>
+        IfcCarry.Writer Carry => carry ??= new IfcCarry.Writer(File);
 
         public void Run()
         {
@@ -172,6 +179,7 @@ public static class IfcExport
             Grids();
             WriteElements();
             Network();
+            carry?.Finish(buildingRef);
             Finish();
         }
 
@@ -472,13 +480,15 @@ public static class IfcExport
             // Its type in IFC's terms (the mirrored type for an element that is its type's mirror image), which the element repeats.
             var mirrored = at?.Mirrored == true;
             var terms = type != null && joinery != null ? joinery.Type(m, type, mirrored) : null;
-            var entity = Product(kind, Gid(e.Id), e.Name, kind.ObjectType ?? type?.Name, place, shape, e.Id, height, width, terms);
+            // A foreign element: its class and attributes as its file wrote them.
+            var src = e.Attrs[IfcSource.Key] as JsonObject;
+            var entity = (src != null ? Carried(src, e, place, shape) : null) ?? Product(kind, Gid(e.Id), e.Name, kind.ObjectType ?? type?.Name, place, shape, e.Id, height, width, terms);
             written[e.Id] = entity;
             if (at == null) placeOf[e.Id] = (place, z0);
             Contain(spatial, entity);
             Elements++;
             if (type != null) TypeOf(type, kind, entity, mirrored, terms);
-            MaterialsOf(e, entity, parts, grouped);
+            if (src?["material"] == null) MaterialsOf(e, entity, parts, grouped);
             if (grouped) Parts(e, kind, parts, place, z0, entity);
             Openings(e, entity, place, z0, voids);
             Properties(e, kind, entity, type);
@@ -528,7 +538,7 @@ public static class IfcExport
             Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "common"), Null, S("Pset_SpaceCommon"), Null, L(CommonWith(e, "Pset_SpaceCommon", common))), Gid(e.Id, "common-rel"));
             Define(entity, IntentOf(e, Gid(e.Id, IntentKey), new Kind(IfcClass.Space, "SPACE", null)), Gid(e.Id, "intent-rel"));
             if (ParamsOf(e, Gid(e.Id, ParamsKey)) is { } set) Define(entity, set, Gid(e.Id, "params-rel"));
-            NamedSets(e, entity, "Pset_SpaceCommon");
+            NamedSets(e, entity, "Pset_SpaceCommon", new HashSet<string>());
             Quantities(e, entity, false);
         }
 
@@ -561,6 +571,20 @@ public static class IfcExport
             if (set == null) return null;
             double? Q(string n) => set.Quantities.FirstOrDefault(x => x.Name == n)?.Value;
             return new StairFlightNumbers((int?)Q("NumberOfRiser"), (int?)Q("NumberOfTreads"), Q("RiserHeight"), Q("TreadLength"));
+        }
+
+        /// <summary>
+        /// A foreign element as its file wrote it: its class, Description, ObjectType, Tag and what its class adds
+        /// (a PredefinedType), with its GlobalId and name as the model has them and its placement and body as
+        /// written here; null when nothing of it was kept.
+        /// </summary>
+        string? Carried(JsonObject src, Entity e, string place, string shape)
+        {
+            if (IfcCarry.Writer.ClassOf(src) is not var (type, count) || count < 8) return null;
+            var args = new string[count];
+            for (var i = 0; i < count; i++)
+                args[i] = i switch { 0 => Gid(e.Id), 1 => Null, 2 => S(e.Name), 5 => place, 6 => shape, _ => IfcCarry.Writer.ArgOf(src, i) ?? Null };
+            return f.Add(type, args);
         }
 
         /// <summary>The product entity with the attributes its class has: the eight every element shares, then what the class adds.</summary>
@@ -820,12 +844,15 @@ public static class IfcExport
                 if (Q("RiserHeight") is { } rh && rh > 0) common.Add(("RiserHeight", Typed("IFCPOSITIVELENGTHMEASURE", R(rh))));
                 if (Q("TreadLength") is { } tl && tl > 0) common.Add(("TreadLength", Typed("IFCPOSITIVELENGTHMEASURE", R(tl))));
             }
+            // A foreign element's own sets, as its file wrote them, stand for what Lapin would answer.
+            var src = e.Attrs[IfcSource.Key] as JsonObject;
+            var carried = src != null ? IfcCarry.Writer.SetNames(src).ToHashSet() : [];
             // The common set: what Lapin knows, and what the user wrote into it (their value over Lapin's of the same name).
-            var commonName = CommonSets.Contains(kind.Class) ? $"Pset_{kind.Class[3..]}Common" : null;
+            var commonName = src == null && CommonSets.Contains(kind.Class) ? $"Pset_{kind.Class[3..]}Common" : null;
             var commonProps = commonName != null ? CommonWith(e, commonName, common) : [];
             if (commonProps.Count > 0)
                 Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "common"), Null, S(commonName), Null, L(commonProps)), Gid(e.Id, "common-rel"));
-            NamedSets(e, entity, commonName);
+            NamedSets(e, entity, commonName, carried);
             Define(entity, IntentOf(e, Gid(e.Id, IntentKey), kind, extra), Gid(e.Id, "intent-rel"));
             var phase = new List<string>();
             if (e.Str("phaseCreated") is { } created) phase.Add(Single("Created", Typed("IFCLABEL", S(PhaseName(created)))));
@@ -834,7 +861,15 @@ public static class IfcExport
             if (e.Str("phaseCreated") is { } c0 && c0 == e.Str("phaseDemolished")) phase.Add(Single("Status", Typed("IFCLABEL", S("TEMPORARY"))));
             if (phase.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, PhaseKey), Null, S(PhaseSetName), Null, L(phase)), Gid(e.Id, "phase-rel"));
             // The user's own parameters (those of its type are on the type, which IFC readers pass on to it).
-            if (ParamsOf(e, Gid(e.Id, ParamsKey)) is { } set) Define(entity, set, Gid(e.Id, "params-rel"));
+            var own = ParamsOf(e, Gid(e.Id, ParamsKey));
+            if (own != null) Define(entity, own, Gid(e.Id, "params-rel"));
+            if (src == null) return;
+            // The file's sets, with the user's values in the sets of the same name; a set of Lapin's that was written above, Lapin's.
+            HashSet<string> lapins = [IntentSetName, OldIntentSetName];
+            if (phase.Count > 0) lapins.Add(PhaseSetName);
+            if (own != null) lapins.Add(ParamsSetName);
+            var user = NamedParams(e).Where(x => carried.Contains(x.Set)).ToDictionary(x => x.Set, x => x.Props);
+            Carry.Element(m, src, entity, GlobalIdOf(e.Id), user, lapins, (n, v) => Single(n, v));
         }
 
         /// <summary>An entity's own parameters (those in no named set) as a typed property set; null when it has none.</summary>
@@ -882,12 +917,12 @@ public static class IfcExport
             return merged.Select(p => Single(p.Name, p.Value)).ToList();
         }
 
-        /// <summary>The user's named sets other than <paramref name="except"/> (the common set, written with Lapin's), each as its own property set.</summary>
-        void NamedSets(Entity e, string entity, string? except)
+        /// <summary>The user's named sets other than <paramref name="except"/> (the common set, written with Lapin's) and the <paramref name="carried"/> (written with the file's), each as its own property set.</summary>
+        void NamedSets(Entity e, string entity, string? except, IReadOnlySet<string> carried)
         {
             foreach (var (set, props) in NamedParams(e))
             {
-                if (set == except) continue;
+                if (set == except || carried.Contains(set)) continue;
                 Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "params:" + set), Null, S(set), Null, L(props.Select(p => Single(p.Name, p.Value)).ToArray())), Gid(e.Id, "params-rel:" + set));
             }
         }
@@ -910,7 +945,9 @@ public static class IfcExport
             foreach (var (key, v) in e.Attrs)
             {
                 // A stored body (a reference from IFC) is written as geometry, not as text; the project's standards stay in .lapin.
-                if (v == null || key == StoredBodies.Key || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || key == Plan2d.Key || (only != null && !only.Contains(key))) continue;
+                if (v == null || key == StoredBodies.Key || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || key == Plan2d.Key || key == IfcSource.Key || (only != null && !only.Contains(key))) continue;
+                // A foreign element's properties go as the sets its file had, not as text.
+                if (key == "properties" && e.Attrs[IfcSource.Key] != null) continue;
                 var field = fields.GetValueOrDefault(key);
                 var value = v switch
                 {
@@ -931,8 +968,10 @@ public static class IfcExport
         /// <summary>The element's quantity sets, by the kind IFC measures; a part's set goes on the part when it is an element of its own, else on the element, named after the part.</summary>
         void Quantities(Entity e, string entity, bool grouped)
         {
+            var carried = e.Attrs[IfcSource.Key] is JsonObject src ? IfcCarry.Writer.SetNames(src).ToHashSet() : [];
             foreach (var set in s.Quantities(e.Id))
             {
+                if (carried.Contains(set.Name)) continue;
                 var target = set.Part != null && grouped && partRefs.TryGetValue((e.Id, set.Part), out var pr) ? pr : entity;
                 var seen = new Dictionary<string, int>();
                 var q = new List<string>();

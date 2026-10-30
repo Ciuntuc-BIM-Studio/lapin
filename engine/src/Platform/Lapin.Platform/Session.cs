@@ -584,6 +584,8 @@ public sealed class Session
         // An instance's mesh and placement travel as its render's (RenderItem.Instance).
         props.Remove(StoredBodies.BodyOf);
         props.Remove(StoredBodies.XfKey);
+        // What the file said of a foreign element, kept for the export only.
+        props.Remove(IfcSource.Key);
         if (e.PredefinedType != null) props["predefinedType"] = e.PredefinedType;
         var owner = _catalog.OwnerOf(e.Class);
         var storey = e.Class == IfcClass.BuildingStorey ? null : Spatial.StoreyOf(_store, e.Id)?.Id;

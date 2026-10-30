@@ -21,7 +21,7 @@ public sealed class CoreModule : ILapinModule
     static readonly HashSet<string> PlatformClasses =
     [
         IfcClass.Project, IfcClass.Site, IfcClass.Building, IfcClass.BuildingStorey,
-        IfcClass.Material, IfcClass.MaterialLayerSet, IfcClass.MaterialLayerSetUsage, Views.Class, Sheets.Class, Links.Class, StoredBodies.SharedClass,
+        IfcClass.Material, IfcClass.MaterialLayerSet, IfcClass.MaterialLayerSetUsage, Views.Class, Sheets.Class, Links.Class, StoredBodies.SharedClass, IfcSource.RecordClass,
     ];
 
     public static bool Owns(string ifcClass) => PlatformClasses.Contains(ifcClass) || ifcClass.StartsWith("IfcRel", StringComparison.Ordinal);
@@ -47,6 +47,8 @@ public sealed class CoreModule : ILapinModule
         Links.Register(r);
         // A body many references share (docs/plan-instancing.md): drawn by its instances, never on its own.
         r.Class(new(StoredBodies.SharedClass, "Shared body", [], "#888888", Kind: "resource"));
+        // What foreign elements share in their file (a type, a system, a material), kept for the export.
+        r.Class(new(IfcSource.RecordClass, "IFC record", [], "#888888", Kind: "resource"));
         ViewStyles.Register(r);
         ElementFaces.Register(r);
 

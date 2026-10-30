@@ -101,11 +101,11 @@ public static partial class IfcImport
     /// <summary>What an intent set says: the attributes, and the Lapin class, predefined type and host it names.</summary>
     sealed record Intent(JsonObject Attrs, string? Class, string? Predefined, string? Host, string? LapinId);
 
-    /// <summary>An element of the file: a rooted product with a placement or a shape, not the spatial structure, an opening, an annotation or a space (those are read apart).</summary>
+    /// <summary>An element of the file: a rooted product with a placement or a shape, not the spatial structure, an opening, an annotation, a space (those are read apart) or a port (carried with its element).</summary>
     public static bool IsProductEntity(StepEntity e) =>
         e.Args.Count >= 7 && e[0] is string { Length: 22 } && !e.Type.StartsWith("IFCREL", StringComparison.Ordinal) && !e.Type.EndsWith("TYPE", StringComparison.Ordinal)
         && (e[5] is StepRef || e[6] is StepRef)
-        && e.Type is not ("IFCPROJECT" or "IFCSITE" or "IFCBUILDING" or "IFCBUILDINGSTOREY" or "IFCOPENINGELEMENT" or "IFCANNOTATION" or "IFCSPACE");
+        && e.Type is not ("IFCPROJECT" or "IFCSITE" or "IFCBUILDING" or "IFCBUILDINGSTOREY" or "IFCOPENINGELEMENT" or "IFCANNOTATION" or "IFCSPACE" or "IFCDISTRIBUTIONPORT");
 
     sealed partial class Reader(Session s, StepFile f, IfcImportOptions o)
     {
@@ -466,6 +466,8 @@ public static partial class IfcImport
             }
             Spaces(edit);
             FinishRecognition(edit);
+            foreach (var (cls, n) in bodiless.OrderByDescending(kv => kv.Value))
+                notes.Add($"{n} × {cls} left out: no body Lapin can read (nor 2D for plans).");
             if (with2d > 0) notes.Add($"{with2d} reference(s) brought their own 2D for plans; plans draw it instead of their cut (a view's style can turn it off).");
         }
 
@@ -555,7 +557,7 @@ public static partial class IfcImport
         /// </summary>
         /// <summary>What a reference needs from the file, read before it is put in the model: its 2D, its shared key or else its own body, its description and properties.</summary>
         sealed record Prepared((string Key, Xf At)? Shared, List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)>? Parts,
-            List<Plan2dItem> Plan2d, int Sections2d, int Elevations2d, JsonNode? Shape, JsonObject Properties);
+            List<Plan2dItem> Plan2d, int Sections2d, int Elevations2d, JsonNode? Shape, JsonObject Properties, (JsonObject Own, List<IfcCarry.Shared> Shared) Carried);
 
         readonly System.Collections.Concurrent.ConcurrentDictionary<int, Prepared> prepared = [];
 
@@ -581,8 +583,19 @@ public static partial class IfcImport
         {
             var (plan2d, sections2d, elevations2d) = model.Drawing2d(e.Id);
             var shared = model.SharedKey(e.Id);
-            return new Prepared(shared, shared == null ? OwnBody(e, booleans) : null, plan2d, sections2d, elevations2d, model.Describe(e.Id), PropertiesJson(e.Id));
+            return new Prepared(shared, shared == null ? OwnBody(e, booleans) : null, plan2d, sections2d, elevations2d, model.Describe(e.Id), PropertiesJson(e.Id),
+                IfcCarry.Capture(f, carryIndex.Value, e, Seed));
         }
+
+        /// <summary>The relationships the carried IFC is read through, indexed once (on the first core that asks).</summary>
+        readonly Lazy<IfcCarry.Index> carryIndex = new(() => new IfcCarry.Index(f), LazyThreadSafetyMode.ExecutionAndPublication);
+
+        /// <summary>What the records' ids derive from: the file's project, so importing again finds them.</summary>
+        string Seed => seed ??= Str(f.OfType("IFCPROJECT").FirstOrDefault()?[0]) ?? "ifc";
+        string? seed;
+
+        readonly HashSet<string> recordsPut = [];
+        readonly Dictionary<string, int> bodiless = [];
 
         void Reference(IEdit edit, StepEntity e, ISolidBooleans? booleans)
         {
@@ -601,7 +614,12 @@ public static partial class IfcImport
                 return;
             }
             var parts = p.Parts ?? OwnBody(e, booleans);
-            if (parts.Count == 0 && plan2d.Count == 0) return;
+            if (parts.Count == 0 && plan2d.Count == 0)
+            {
+                var cls = ClassName(e.Type);
+                bodiless[cls] = bodiless.GetValueOrDefault(cls) + 1;
+                return;
+            }
             Referenced(edit, e, gid, new JsonObject { [StoredBodies.Key] = StoredBodies.Write(parts) }, p);
         }
 
@@ -639,6 +657,10 @@ public static partial class IfcImport
             attrs["properties"] = p.Properties;
             attrs["shape"] = p.Shape;
             if (p.Plan2d.Count > 0) { attrs[Plan2d.Key] = Plan2d.Write(p.Plan2d, p.Sections2d, p.Elevations2d); with2d++; }
+            // What the file says of it that Lapin does not model, for the export to write back as it came.
+            attrs[IfcSource.Key] = p.Carried.Own;
+            foreach (var r in p.Carried.Shared)
+                if (recordsPut.Add(r.Id)) Put(edit, r.Id, IfcSource.RecordClass, "IFC record", r.Attrs, null, counts: false);
             Put(edit, gid, cls, Str(e[2]) ?? cls[3..], attrs, null, counts: false);
             references++;
             referencesByClass[cls] = referencesByClass.GetValueOrDefault(cls) + 1;
