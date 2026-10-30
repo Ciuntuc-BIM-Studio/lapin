@@ -26,7 +26,7 @@ Tegn fundamenter på niveauet **Foundations**, eller giv dem deres egen plan.
 
 ## Typer og hjørner
 
-**Konstruktionstyper** angiver tværsnittene for søjler, bjælker og fundamenter: betontværsnit og stålprofiler.
+**Konstruktionstyper** angiver tværsnittene for søjler, bjælker og fundamenter: betontværsnit og stålprofiler. Klik på en type i listen for at ændre dens størrelse eller navn, og derefter **Gem type**: alle elementer af den type følger med; **Ny type** går tilbage til at oprette en.
 
 Bjælker og fundamenter sammenføjes af sig selv, hvor de mødes, et hjørne som geringssamling. **Geringssamling**, **Stødsamling** og **Byt om** ændrer, hvordan to bjælker eller to fundamenter mødes. **Matchtype** (<kbd>MA</kbd>) kopierer ét elements type til andre, og **Opret lignende** (<kbd>CS</kbd>) begynder at tegne et nyt element af samme type.
 

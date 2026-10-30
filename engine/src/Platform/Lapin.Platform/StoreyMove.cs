@@ -14,6 +14,17 @@ public interface IStoreyLevels
 }
 
 /// <summary>
+/// An element whose heights are not its storey's but absolute, measured down
+/// from a datum it keeps (a terrain: its points' heights less its datum).
+/// Moved with the storey, the datum changes by the difference, so it rises or
+/// falls with the level as the rest do (report #43); kept in place, it stays.
+/// </summary>
+public interface IStoreyDatum
+{
+    IEnumerable<string> DatumsOf(Entity e);
+}
+
+/// <summary>
 /// Moving elements to another storey (the old Lapin's Move to storey): each
 /// leaves its storey for the target, with what it hosts (its openings' doors
 /// and windows) and the parts it aggregates. Kept with the storey (the
@@ -123,6 +134,12 @@ public static class StoreyMove
                         changed = true;
                     }
                     if (changed) ctx.Replace(e.With(attrs: attrs));
+                }
+                else if (ctx.Services.All<IStoreyDatum>().SelectMany(d => d.DatumsOf(e)).Distinct().ToList() is { Count: > 0 } datums)
+                {
+                    var attrs = e.CloneAttrs();
+                    foreach (var key in datums) attrs[key] = e.Num(key) + from.Num("elevation") - target.Num("elevation");
+                    ctx.Replace(e.With(attrs: attrs));
                 }
                 Spatial.Contain(ctx, target.Id, e.Id);
                 moved.Add((JsonNode)e.Id);

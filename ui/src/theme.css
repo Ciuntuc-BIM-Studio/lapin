@@ -297,6 +297,10 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .dialog-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--rule); }
 .dialog-body { padding: 16px; overflow-y: auto; overflow-x: visible; }
 .dialog-body.split { display: grid; grid-template-columns: 240px 1fr; gap: 16px; }
+/* A types dialog's kinds over its list (report #41: four tabs in a narrow column, wrapped rather than run over the fields). */
+.tabs-mini { flex-wrap: wrap; gap: 2px; margin-bottom: 6px; }
+.tabs-mini .tree-item { width: auto; padding: 4px 10px; }
+.dialog-body.split > * { min-width: 0; }
 .type-list { list-style: none; margin: 0; padding: 0; border-right: 1px solid var(--rule); }
 .type-list .tree-item { display: flex; align-items: center; gap: 4px; width: 100%; }
 .type-edit { display: flex; flex-direction: column; gap: 10px; }

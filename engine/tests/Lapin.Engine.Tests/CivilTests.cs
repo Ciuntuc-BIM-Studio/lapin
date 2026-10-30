@@ -99,6 +99,21 @@ public class CivilTests
         return (string)f.Run("civil.addTerrain", new JsonObject { ["text"] = string.Join("\n", lines), ["datum"] = 100, ["interval"] = 0.5, ["majorEvery"] = 2, ["depth"] = 1 })!["id"]!;
     }
 
+    /// <summary>Report #43: "I can't move the ground from one level to another, even though I changed its placement".</summary>
+    [Fact]
+    public void A_terrain_moved_to_another_storey_rises_or_falls_with_the_level()
+    {
+        var f = F();
+        var t = (string)f.Run("civil.addTerrain", new JsonObject { ["storeyId"] = f.Storey, ["points"] = new JsonArray(new JsonArray(0, 0, 0), new JsonArray(10, 0, 0), new JsonArray(0, 10, 0), new JsonArray(10, 10, 0)) })!["id"]!;
+        var top = f.Bounds(t).Max.Z;
+        var cts = (string)f.Run("storey.create", new JsonObject { ["name"] = "CTS", ["elevation"] = Spatial.Storeys(f.Model).First(s => s.Id == f.Storey).Num("elevation") - 0.5 })!["id"]!;
+        f.Run("element.moveToStorey", new JsonObject { ["ids"] = new JsonArray(t), ["storeyId"] = cts });
+        Assert.Equal(top - 0.5, f.Bounds(t).Max.Z, 6);
+        // Kept where it is, it stays.
+        f.Run("element.moveToStorey", new JsonObject { ["ids"] = new JsonArray(t), ["storeyId"] = f.Storey, ["keep"] = "world" });
+        Assert.Equal(top - 0.5, f.Bounds(t).Max.Z, 6);
+    }
+
     [Fact]
     public void A_terrain_is_the_ground_as_a_solid_down_to_its_base_with_its_contours_in_plan()
     {

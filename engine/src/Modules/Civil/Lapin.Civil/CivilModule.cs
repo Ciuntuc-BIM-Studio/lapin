@@ -15,6 +15,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
 
     public void Register(IModuleRegistry r)
     {
+        // A terrain moved to another storey with it rises or falls by the levels' difference (its heights are absolute, below its datum).
+        r.Service<IStoreyDatum>(new TerrainDatum());
         r.Class(new(IfcClass.GeographicElement, "Terrain",
         [
             new("datum", "Datum (±0.00 =)", "length"),
@@ -309,4 +311,9 @@ sealed class CivilSectionPaths : ISectionPaths
         if (e.Class == SiteFeatures.Class && SiteFeatures.Kind(e) is "line" or "parcel" or "area") return new FollowedPath(SiteFeatures.Points(e).Select(p => p.Xy).ToList());
         return null;
     }
+}
+
+sealed class TerrainDatum : IStoreyDatum
+{
+    public IEnumerable<string> DatumsOf(Entity e) => Terrains.IsTerrain(e) ? ["datum"] : [];
 }

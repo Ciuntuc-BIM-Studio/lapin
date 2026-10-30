@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  chordOf, conflicts, effectiveBindings, exportKeymap, formatBinding, importKeymap, isBareKey, isSequence, matchSequence, normalizeBinding,
+  captureKey, chordOf, conflicts, effectiveBindings, exportKeymap, formatBinding, importKeymap, isBareKey, isSequence, matchSequence, normalizeBinding,
   PendingSequence, presetBindings, resetAll, resetCommand, resolveKeymap, usersOf, withBinding, withoutBinding, withPreset, type CommandDef,
 } from './shortcuts';
 import { keyIntent, type KeyPress, type KeySnapshot } from './keys';
@@ -129,5 +129,30 @@ describe('the keymap', () => {
     expect(importKeymap('not json')).toBeNull();
     expect(importKeymap(JSON.stringify({ format: 'lapin-shortcuts', preset: 'revit', overrides: { 'architecture.wall': ['ctrl+w', 'nonsense+key+x', 'wa'] } })))
       .toEqual({ preset: 'revit', overrides: { 'architecture.wall': ['Ctrl+W', 'WA'] } });
+  });
+});
+
+/** Report #40: "Not all keys are recognized when trying to assign them to functions. At least Shift, Ctrl, Alt." */
+describe('listening for a new shortcut', () => {
+  const press = (key: string, more: Partial<Parameters<typeof captureKey>[1]> = {}) => ({ key, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, ...more });
+  it('keeps Shift with a letter: a chord, not the letter alone', () => {
+    expect(captureKey('', press('W', { shiftKey: true, code: 'KeyW' }))).toEqual({ kind: 'done', binding: 'Shift+W' });
+  });
+  it('takes Ctrl, Alt and Shift together, the key by its place', () => {
+    expect(captureKey('', press('W', { ctrlKey: true, shiftKey: true, code: 'KeyW' }))).toEqual({ kind: 'done', binding: 'Ctrl+Shift+W' });
+    expect(captureKey('', press('∫', { altKey: true, code: 'KeyB' }))).toEqual({ kind: 'done', binding: 'Alt+B' });
+    expect(captureKey('', press('1', { altKey: true, code: 'Digit1' }))).toEqual({ kind: 'done', binding: 'Alt+1' });
+  });
+  it('shows a modifier held alone and waits for its key', () => {
+    expect(captureKey('', press('Control', { ctrlKey: true }))).toEqual({ kind: 'held', text: 'Ctrl+…' });
+    expect(captureKey('', press('Shift', { ctrlKey: true, shiftKey: true }))).toEqual({ kind: 'held', text: 'Ctrl+Shift+…' });
+    expect(captureKey('', press('Alt', { altKey: true }))).toEqual({ kind: 'held', text: 'Alt+…' });
+  });
+  it('still makes sequences of plain letters, ended by Enter or the third', () => {
+    expect(captureKey('', press('w'))).toEqual({ kind: 'letters', letters: 'W' });
+    expect(captureKey('W', press('Enter'))).toEqual({ kind: 'done', binding: 'W' });
+    expect(captureKey('WA', press('x'))).toEqual({ kind: 'done', binding: 'WAX' });
+    expect(captureKey('', press('Escape'))).toEqual({ kind: 'done', binding: null });
+    expect(captureKey('', press('F4'))).toEqual({ kind: 'done', binding: 'F4' });
   });
 });

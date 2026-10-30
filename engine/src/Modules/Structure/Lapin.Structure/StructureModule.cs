@@ -43,6 +43,13 @@ public sealed class StructureModule : ILapinModule
         r.Command("createColumnType", "New column type", (ctx, a) =>
             Section.Parse(a["section"]) is var cs ? new JsonObject { ["id"] = Columns.CreateType(ctx, (string?)a["name"], cs, Json.Number(a["height"]), (string?)a["material"] ?? (cs.IsProfile ? "Steel" : "Reinforced concrete")).Id } : null);
 
+        // A column, beam or footing type changed after it was made: its size, its name; its elements follow.
+        r.Command("updateType", "Change type", (ctx, a) =>
+        {
+            StructureTypes.Update(ctx, ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("There is no such type."), a);
+            return null;
+        });
+
         r.Command("addColumn", "Column", (ctx, a) =>
         {
             var storey = Place.Storey(ctx, a);

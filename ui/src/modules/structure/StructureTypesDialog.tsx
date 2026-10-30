@@ -1,25 +1,31 @@
 /**
  * Structure types: columns and beams (their section), strip foundations
  * (the stem's layers, the footing's size, its level) and pad footings (the
- * steps, bottom up). A new type is made here; the inspector gives an element
- * another one.
+ * steps, bottom up). A new type is made here, and a type clicked in the list
+ * is changed here (report #42), its elements following it; the inspector
+ * gives an element another one.
  */
 
 import { useState } from 'react';
 import { Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { ofClass } from '../../engine/model';
+import { ofClass, typeLayers } from '../../engine/model';
+import type { NodeDto } from '../../engine/protocol';
 import { describeType } from './describe';
 
 const mmToM = (t: string) => Number(t.replace(',', '.')) / 1000;
+const mToMm = (m: unknown) => String(Math.round(Number(m ?? 0) * 10000) / 10);
+type Kind = 'column' | 'beam' | 'strip' | 'pad';
 
 export function StructureTypesDialog() {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
   const error = useSession((s) => s.error);
   const model = { nodes, relations };
-  const [kind, setKind] = useState<'column' | 'beam' | 'strip' | 'pad'>('column');
+  const [kind, setKind] = useState<Kind>('column');
+  // The type being changed; null: a new one is made.
+  const [editing, setEditing] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [shape, setShape] = useState<'rectangle' | 'circle'>('rectangle');
   const [w, setW] = useState('300');
@@ -32,6 +38,44 @@ export function StructureTypesDialog() {
   const [steps, setSteps] = useState('1800 × 1800 × 500, 1000 × 1000 × 400');
   const list = kind === 'column' ? ofClass(model, 'IfcColumnType') : kind === 'beam' ? ofClass(model, 'IfcBeamType')
     : ofClass(model, 'IfcFootingType').filter((t) => t.props.kind === kind);
+
+  const edited = editing ? nodes.get(editing) ?? null : null;
+
+  /** A type clicked: its values in the fields, to be changed. */
+  const pick = (t: NodeDto) => {
+    setEditing(t.id);
+    setName(t.name);
+    const sec = t.props.section as { kind?: string; width?: number; depth?: number } | undefined;
+    if (sec) { setShape(sec.kind === 'circle' ? 'circle' : 'rectangle'); setW(mToMm(sec.width)); setD(mToMm(sec.depth)); }
+    if (t.props.kind === 'strip') {
+      setStem(mToMm(t.props.stemHeight)); setFw(mToMm(t.props.footingWidth)); setFh(mToMm(t.props.footingHeight)); setBottom(mToMm(t.props.bottom));
+      const layers = typeLayers(model, t.id);
+      const core = layers.find((l) => l.core) ?? layers.reduce<(typeof layers)[number] | undefined>((a, l) => (!a || l.thickness > a.thickness ? l : a), undefined);
+      if (core) setCore(mToMm(core.thickness));
+    }
+    if (t.props.kind === 'pad') {
+      setBottom(mToMm(t.props.bottom));
+      const st = (t.props.steps as { length: number; width: number; height: number }[] | undefined) ?? [];
+      setSteps(st.map((x) => `${mToMm(x.length)} × ${mToMm(x.width)} × ${mToMm(x.height)}`).join(', '));
+    }
+  };
+  const fresh = () => { setEditing(null); setName(''); };
+  const switchKind = (k: Kind) => { setKind(k); fresh(); };
+
+  const parsedSteps = () => steps.split(',').map((s) => s.match(/[\d.]+/g)?.map((n) => Number(n) / 1000) ?? []).filter((n) => n.length === 3)
+    .map(([length, width, height]) => ({ length, width, height }));
+
+  const save = async () => {
+    if (!edited) return;
+    const section = { kind: shape, width: mmToM(w), depth: shape === 'circle' ? mmToM(w) : mmToM(d) };
+    const args: Record<string, unknown> = { id: edited.id, name };
+    if (kind === 'column' || kind === 'beam') args.section = section;
+    else if (kind === 'strip') Object.assign(args, { stemHeight: mmToM(stem), footingWidth: mmToM(fw), footingHeight: mmToM(fh), bottom: mmToM(bottom), core: mmToM(core) });
+    else Object.assign(args, { bottom: mmToM(bottom), steps: parsedSteps() });
+    // The name as it was: left to the engine, which renames a type still named after its size.
+    if (name.trim() === edited.name) delete args.name;
+    await execute('structure.updateType', args);
+  };
 
   const create = async () => {
     const section = { kind: shape, width: mmToM(w), depth: shape === 'circle' ? mmToM(w) : mmToM(d) };
@@ -46,8 +90,7 @@ export function StructureTypesDialog() {
         ],
       });
     } else {
-      const parsed = steps.split(',').map((s) => s.match(/[\d.]+/g)?.map((n) => Number(n) / 1000) ?? []).filter((n) => n.length === 3);
-      await execute('structure.createPadType', { name, bottom: mmToM(bottom), steps: parsed.map(([length, width, height]) => ({ length, width, height })) });
+      await execute('structure.createPadType', { name, bottom: mmToM(bottom), steps: parsedSteps() });
     }
   };
 
@@ -62,19 +105,22 @@ export function StructureTypesDialog() {
           <div>
             <div className="row tabs-mini">
               {(['column', 'beam', 'strip', 'pad'] as const).map((k) => (
-                <button type="button" key={k} className={`tree-item${kind === k ? ' on' : ''}`} onClick={() => setKind(k)}>{{ column: 'Columns', beam: 'Beams', strip: 'Strip', pad: 'Pad' }[k]}</button>
+                <button type="button" key={k} className={`tree-item${kind === k ? ' on' : ''}`} onClick={() => switchKind(k)}>{{ column: 'Columns', beam: 'Beams', strip: 'Strip', pad: 'Pad' }[k]}</button>
               ))}
             </div>
             <ul className="type-list">
               {list.map((t) => (
-                <li key={t.id} className="tree-item">{t.name}<span className="muted small"> · {describeType(t)}</span>
-                  <button type="button" className="icon mini" title="Delete the type (refused while elements use it)" onClick={() => void execute('element.delete', { id: t.id })}><Trash2 size={11} /></button>
+                <li key={t.id} className={`tree-item${editing === t.id ? ' on' : ''}`} title="Click to change the type; its elements follow." onClick={() => pick(t)}>{t.name}<span className="muted small"> · {describeType(t)}</span>
+                  <button type="button" className="icon mini" title="Delete the type (refused while elements use it)" onClick={(e) => { e.stopPropagation(); if (editing === t.id) fresh(); void execute('element.delete', { id: t.id }); }}><Trash2 size={11} /></button>
                 </li>
               ))}
             </ul>
           </div>
           <div className="type-edit">
-            <p className="eyebrow">New {kind} type</p>
+            <div className="row">
+              <p className="eyebrow grow">{edited ? <span data-no-i18n>{edited.name}</span> : `New ${kind} type`}</p>
+              {edited && <button type="button" className="btn small" onClick={fresh}>New type</button>}
+            </div>
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its size)" onChange={(e) => setName(e.target.value)} /></label>
             {(kind === 'column' || kind === 'beam') && <>
               <label className="field-line"><span className="eyebrow">Section</span>
@@ -91,7 +137,9 @@ export function StructureTypesDialog() {
             </>}
             {kind === 'pad' && <label className="field-line"><span className="eyebrow">Steps L × W × H</span><input value={steps} onChange={(e) => setSteps(e.target.value)} /></label>}
             {(kind === 'strip' || kind === 'pad') && <label className="field-line"><span className="eyebrow">Bottom mm</span><input value={bottom} onChange={(e) => setBottom(e.target.value)} /></label>}
-            <div className="row"><span className="grow" /><button type="button" className="btn primary" onClick={() => void create()}>Create type</button></div>
+            <div className="row"><span className="grow" />{edited
+              ? <button type="button" className="btn primary" title="Its elements follow the type" onClick={() => void save()}>Save type</button>
+              : <button type="button" className="btn primary" onClick={() => void create()}>Create type</button>}</div>
             {error && <p className="error-text" role="alert">{error}</p>}
           </div>
         </div>

@@ -114,6 +114,39 @@ export function chordOf(e: { key: string; code?: string; ctrlKey: boolean; metaK
   return [...mods, key].join('+');
 }
 
+/** The modifiers held, as the capture shows them before the key comes ("Ctrl+Shift+…"); empty when none. */
+export function heldOf(e: { ctrlKey: boolean; metaKey: boolean; altKey?: boolean; shiftKey: boolean }): string {
+  const mods = [(e.ctrlKey || e.metaKey) && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift'].filter(Boolean) as string[];
+  return mods.length ? `${mods.join('+')}+…` : '';
+}
+
+export type CaptureStep =
+  | { kind: 'done'; binding: Binding | null }
+  | { kind: 'letters'; letters: string }
+  | { kind: 'held'; text: string }
+  | null;
+
+/**
+ * One key press while a binding is listened for (Keyboard shortcuts → +): Esc
+ * cancels, letters without a modifier make a sequence (Enter ends it, the
+ * third ends it at once), anything else is a chord (Ctrl+Shift+W, Shift+W,
+ * Alt+1, F4). A modifier alone is shown held and waits for its key (report
+ * #40: Shift with a letter was taken for the letter alone).
+ */
+export function captureKey(letters: string, e: { key: string; code?: string; ctrlKey: boolean; metaKey: boolean; altKey?: boolean; shiftKey: boolean }): CaptureStep {
+  if (e.key === 'Escape') return { kind: 'done', binding: null };
+  if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) return { kind: 'done', binding: letters || null };
+  if (e.key === 'Backspace' && letters) return { kind: 'letters', letters: letters.slice(0, -1) };
+  if (/^[a-z]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+    const next = (letters + e.key.toUpperCase()).slice(0, 3);
+    return next.length === 3 ? { kind: 'done', binding: next } : { kind: 'letters', letters: next };
+  }
+  if (letters) return null;
+  const chord = chordOf(e);
+  if (!chord) return { kind: 'held', text: heldOf(e) };
+  return { kind: 'done', binding: chord };
+}
+
 const MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform ?? '');
 
 /** A binding as the interface shows it: "Ctrl ⇧ S" (⌘⇧S on a Mac), "WA", "F3". */

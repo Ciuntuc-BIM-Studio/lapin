@@ -11,10 +11,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, Plus, RotateCcw, Search, Upload, X } from 'lucide-react';
 import { useUi, notify } from '../app/store';
 import {
-  chordOf, conflicts, exportKeymap, formatBinding, importKeymap, isSequence, PRESETS, resetAll, resetCommand, setKeymap, useKeymap,
+  captureKey, conflicts, exportKeymap, formatBinding, importKeymap, isSequence, PRESETS, resetAll, resetCommand, setKeymap, useKeymap,
   usersOf, withBinding, withoutBinding, withPreset, type Binding, type PresetId,
 } from '../app/shortcuts';
 import { commands, findCommandDef, useBindings } from '../app/commands';
+import { isDesktop } from '../engine/files';
 
 /** Listening for a binding: a chord at once, or letters ended by Enter. */
 function useCapture(active: boolean, onDone: (b: Binding | null) => void): string {
@@ -27,22 +28,17 @@ function useCapture(active: boolean, onDone: (b: Binding | null) => void): strin
     const onKey = (e: KeyboardEvent) => {
       e.preventDefault();
       e.stopImmediatePropagation();
-      if (e.key === 'Escape') { done.current(null); return; }
-      if (e.key === 'Enter') { done.current(letters ? letters : null); return; }
-      if (e.key === 'Backspace' && letters) { letters = letters.slice(0, -1); setTyped(letters); return; }
-      const plainLetter = /^[a-z]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey;
-      if (plainLetter) {
-        letters = (letters + e.key.toUpperCase()).slice(0, 3);
-        setTyped(letters);
-        if (letters.length === 3) done.current(letters);
-        return;
-      }
-      if (letters) return;
-      const chord = chordOf(e);
-      if (chord) done.current(chord);
+      const step = captureKey(letters, e);
+      if (!step) return;
+      if (step.kind === 'done') done.current(step.binding);
+      else if (step.kind === 'letters') { letters = step.letters; setTyped(letters); }
+      else if (!letters) setTyped(step.text);
     };
+    // A modifier let go before its key: nothing held is shown any more.
+    const onUp = () => { if (!letters) setTyped(''); };
+    window.addEventListener('keyup', onUp, true);
     window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
+    return () => { window.removeEventListener('keydown', onKey, true); window.removeEventListener('keyup', onUp, true); };
   }, [active]);
   return typed;
 }
@@ -143,7 +139,7 @@ export function ShortcutsDialog() {
                           {adding === c.id
                             ? <span className="key-chip capture" data-no-i18n>{typed || '…'}</span>
                             : <button type="button" className="icon mini add-key" title="Add a shortcut: press the keys, or type letters and Enter" onClick={() => { setClash(null); setAdding(c.id); }}><Plus size={12} /></button>}
-                          {adding === c.id && <span className="muted small"><span>Press the keys, or type letters and Enter · Esc cancels</span></span>}
+                          {adding === c.id && <span className="muted small"><span>Press the keys, or type letters and Enter · Esc cancels</span>{!isDesktop() && <> <span>In a browser, the keys the browser keeps (Ctrl+W, Ctrl+T, Ctrl+N) never reach Lapin.</span></>}</span>}
                         </div></td>
                         <td className="cmd-reset">{mine && <button type="button" className="icon mini" title="Back to the preset's shortcuts" onClick={() => setKeymap(resetCommand(state, c.id))}><RotateCcw size={11} /></button>}</td>
                       </tr>
