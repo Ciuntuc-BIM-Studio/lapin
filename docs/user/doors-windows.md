@@ -38,6 +38,8 @@ The drawings on the right show the type as it will be drawn in elevation, plan a
 
 ### Shutters, grilles, window boxes and canopies
 
+<!-- video window-dressings -->
+
 Under **On the facade**, a window type can have:
 
 - **Shutters**: louvred, panel or planks, one or two leaves, shown open (folded against the wall beside the window) or closed over it;

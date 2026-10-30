@@ -38,6 +38,8 @@ Desenele din dreapta arată tipul așa cum va fi desenat în fațadă, plan și 
 
 ### Obloane, grilaje, jardiniere și copertine
 
+<!-- video window-dressings -->
+
 La **Pe fațadă**, un tip de fereastră poate avea:
 
 - **Obloane**: cu lamele, pline sau din scânduri, cu unul sau două canate, arătate deschise (lipite de perete lângă fereastră) sau închise peste ea;
