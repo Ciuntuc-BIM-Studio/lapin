@@ -3,7 +3,13 @@
 import { notify, useUi } from '../../app/store';
 import { query, useSession } from '../../engine/session';
 
-export interface Feature { operation: string; view?: string; viewId?: string; holes: number; sketch: string[]; area?: number; guide?: string | null }
+/** A step of a solid as the engine lists it: its kind, its numbers, whether it is off, and its label. */
+export interface FeatureStep { op: string; label: string; off?: boolean; [key: string]: unknown }
+
+export interface Feature {
+  operation: string; view?: string; viewId?: string; viewKind?: string; holes: number; sketch: string[]; area?: number; guide?: string | null;
+  upTo?: string | null; features?: FeatureStep[]; volume?: number | null; problems?: string[] | null;
+}
 
 /** The sketch of a solid opened on its view, selected for editing. */
 export async function editSketch(id?: string): Promise<void> {

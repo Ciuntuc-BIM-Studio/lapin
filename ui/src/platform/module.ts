@@ -29,8 +29,11 @@ export type Gesture =
   /** `constrain`: where the next point may go, given the points placed (a pipe of copper turns only by 45°): the aimed point moved onto what is allowed. */
   | { kind: 'polyline'; constrain?: (placed: Vec2[], aimed: Vec2) => Vec2 }
   | { kind: 'pick'; /** IFC classes it can be used on. */ types: string[] }
-  /** A face of an element (a floor's soffit, a beam's side): in 3D the face under the cursor lights up; in plan, an edge or the outline picked. */
-  | { kind: 'face'; /** IFC classes it can be used on; '*' any element. */ types: string[] };
+  /**
+   * A face of an element (a floor's soffit, a beam's side): in 3D the face under the cursor lights up; in plan, an edge or the outline picked.
+   * `query`: the engine query that names the face under the cursor (default core.faceAt, the named faces; Studio's studio.faceAt, any flat face of the body).
+   */
+  | { kind: 'face'; /** IFC classes it can be used on; '*': any element. */ types: string[]; query?: string };
 
 /** Where a face pick landed: the point (model x, y, z; in plan x, y only) and, in 3D, the normal of the triangle hit. */
 export interface FaceHit { point: number[]; normal?: number[] }
@@ -114,7 +117,10 @@ export interface RefLine { points: Vec2[]; closed: boolean; kind: 'axis' | 'outl
 export interface PropertySectionDef {
   id: string;
   label: string;
+  /** The IFC classes it is for; '*': any (with `shows` to say for which). */
   classes: string[];
+  /** Whether it shows for this entity at all (a section for any class that only some entities need). */
+  shows?: (node: NodeDto) => boolean;
   component: ComponentType<{ node: NodeDto }>;
   /** True when the section shows this node's own fields itself, so the panel leaves out the class's generic ones. */
   replacesFields?: (node: NodeDto) => boolean;

@@ -581,6 +581,7 @@ public sealed class Session
         var props = e.CloneAttrs();
         // A stored body's triangles travel as its render; as props they were the biggest part of an imported model's diff.
         props.Remove(StoredBodies.Key);
+        props.Remove(StoredBodies.SolidBodyKey);
         // An instance's mesh and placement travel as its render's (RenderItem.Instance).
         props.Remove(StoredBodies.BodyOf);
         props.Remove(StoredBodies.XfKey);

@@ -115,6 +115,15 @@ describe('the languages', () => {
     "The app's version and its last 3 error message(s) go with the report.",
     'Thank you: report #12 is on its way.',
     'Thank you: report #12 is on its way. Replies will appear in Help → Messages.',
+    'Push/pull 0.5 m',
+    'Fillet r 0.2 m',
+    'Polar array × 6',
+    'Rotate 90°',
+    'Side 3',
+    'Select the Studio solids first, then Shell.',
+    '2 Studio solid(s): push/pull, fillet, shell and the rest work on them now.',
+    'Import chair.obj',
+    'Imported chair.obj: 3 references, 1200 triangles. Select one and use Studio → Make Studio solid to edit it.',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

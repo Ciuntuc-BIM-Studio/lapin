@@ -7,12 +7,13 @@
  * Lengths in mm, angles in degrees, areas in m².
  */
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import type { Vec2 } from '../../platform/module';
 import { fromJson, toJson, type Shape } from '../../viewport/cad/shapes';
 import { ROLES, roleLabel } from '../../viewport/cad/session';
+import { sideLengths, withSideLength } from '../../viewport/cad/sides';
 import { formatLength, lengthText, parseLength, unitLabel, useStandards } from '../../engine/unitsStore';
 
 interface Layer { name: string; color: string; weight: number; lineType: string; visible: boolean; locked: boolean }
@@ -78,6 +79,13 @@ function ShapeFields({ node, shape }: { node: NodeDto; shape: Shape }) {
           <dt>Closed</dt><dd><input type="checkbox" checked={shape.closed} onChange={(e) => set({ ...shape, closed: e.target.checked })} /></dd>
           <Row label="Length" value={lengthText(polylineLength(shape.pts, shape.closed))} />
           {shape.closed && shape.pts.length > 2 && <Row label="Area" value={m2(polygonArea(shape.pts))} />}
+          {/* Each side's length, typed: its end moves along it and the vertices after it follow, up to the next side running the same way (a Studio solid on it follows). */}
+          {shape.pts.length <= 24 && sideLengths(shape.pts, shape.closed).map((l, i) => (
+            <Fragment key={i}>
+              <dt title="Type a length: the side's end moves along it, the sides after it follow up to the next one running the same way">Side {i + 1}</dt>
+              <dd><Num length value={formatLength(l)} onCommit={(v) => { const next = withSideLength(shape.pts, shape.closed, i, v); if (next) set({ ...shape, pts: next }); }} suffix={unitLabel()} /></dd>
+            </Fragment>
+          ))}
         </>
       );
     case 'circle':

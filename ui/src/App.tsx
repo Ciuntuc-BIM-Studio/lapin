@@ -40,6 +40,7 @@ import { ScheduleView } from './viewport/ScheduleView';
 import { GuestBar, JoinDialog, JoinGate, PresenceReporter, ShareDialog } from './shell/Sharing';
 import { isGuest } from './engine/share';
 import { connect } from './engine/session';
+import { AskBox } from './shell/AskBox';
 
 /**
  * The model assistant's panel (docs/plan-assistant.md): loaded when first
@@ -297,6 +298,7 @@ function Workspace() {
       {Dialog && <Dialog />}
       <GuestBar />
       <PresenceReporter />
+      <AskBox />
       {backgrounds().map((B, i) => <B key={i} />)}
     </div>
   );
@@ -310,6 +312,7 @@ function ViewWindow() {
     <div className="workspace view-window">
       <main className="views"><PaneBody i={0} /></main>
       {Dialog && <Dialog />}
+      <AskBox />
       {backgrounds().map((B, i) => <B key={i} />)}
     </div>
   );

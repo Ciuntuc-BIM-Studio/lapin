@@ -1,21 +1,29 @@
 /**
- * Studio (the old Lapin's): solids from sketches drawn on a plan or a
- * section, an extrusion, a sweep or a revolution, each following its sketch;
- * live booleans between elements. EXTRUDE, SWEEP and REVOLVE are also
- * command-line commands.
+ * Studio (the old Lapin's, grown into a geometry editor: docs/plan-studio-editor.md):
+ * solids from sketches drawn on a plan, a section, an elevation or a work
+ * plane (any face picked in 3D), an extrusion, a sweep, a loft or a
+ * revolution, each following its sketch; primitives placed with a click;
+ * the steps a solid takes (push/pull, chamfer, fillet, shell, split, arrays,
+ * 3D placement); live booleans between elements. EXTRUDE, SWEEP, REVOLVE and
+ * LOFT are also command-line commands.
  */
 
-import { Box, BrickWall, Container, Cylinder, Eye, Frame, Layers2, PenTool, RefreshCcw, SquareMinus, SquarePlus, SquareSplitHorizontal, SquareSquare, SquareStack, Unlink, Waypoints } from 'lucide-react';
-import type { Grip, LapinModule, RefLine, ToolDef } from '../../platform/module';
+import {
+  ArrowUpDown, ArrowUpToLine, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
+  RefreshCcw, Rotate3d, RotateCw, Scissors, Slice, SquareMinus, SquarePlus, SquareRoundCorner, SquareSplitHorizontal, SquareSquare, SquareStack, Torus, TriangleRight, Unlink, Waypoints,
+} from 'lucide-react';
+import type { Grip, LapinModule, RefLine, ToolDef, ToolInput } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { gripsOf } from '../../platform/modules';
 import { fromJson } from '../../viewport/cad/shapes';
 import { notify, useUi } from '../../app/store';
-import { activeStorey, execute, useSession } from '../../engine/session';
+import { activeStorey, execute, query, useSession } from '../../engine/session';
+import { ask, askLength, choiceField, lengthField, numberField } from '../../shell/AskBox';
 import { editSketch } from './sketch';
-import { FeatureCard } from './FeatureCard';
+import { FeatureCard, featureFieldKeys, takeUpTo } from './FeatureCard';
+import { OperationsCard, hasTools } from './OperationsCard';
 import { RefPlaneSection } from './RefPlaneSection';
-import { COMMAND, DEFAULT_JUSTIFY, JUSTIFY, frontViewId, makesNative, nativeArgs, shapeFits, solidArgs, solidFieldKeys, threePoints, viewOf, type ThickChoice, type ThickOp } from './thick';
+import { COMMAND, DEFAULT_JUSTIFY, JUSTIFY, frontViewId, makesNative, nativeArgs, shapeFits, solidArgs, threePoints, viewOf, type ThickChoice, type ThickOp } from './thick';
 import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 
 /** The thickness and height last used, the next command's defaults. */
@@ -102,17 +110,17 @@ const planeOnFace: ToolDef = {
 };
 
 /** A reference plane through three points picked on the model in 3D. */
-let picked: number[][] = [];
+let threePicked: number[][] = [];
 const planeBy3: ToolDef = {
   id: 'studio.planeBy3', label: 'Plane by 3 points', icon: Frame,
   gesture: { kind: 'face', types: ['*'] },
   complete: async ({ face }) => {
     if (!face || face.point.length < 3) { notify('Pick the points in the 3D view, on the model.'); return; }
-    picked = [...picked, face.point].slice(-3);
-    if (picked.length < 3) { notify(picked.length === 1 ? 'First point picked: pick the second.' : 'Second point picked: pick the third.'); return; }
-    const problem = threePoints(picked);
-    const pts = picked;
-    picked = [];
+    threePicked = [...threePicked, face.point].slice(-3);
+    if (threePicked.length < 3) { notify(threePicked.length === 1 ? 'First point threePicked: pick the second.' : 'Second point threePicked: pick the third.'); return; }
+    const problem = threePoints(threePicked);
+    const pts = threePicked;
+    threePicked = [];
     if (problem) { notify(problem); return; }
     openPlane(await execute('view.create', { kind: 'plane', points: pts }));
   },
@@ -120,17 +128,43 @@ const planeBy3: ToolDef = {
 
 const CLASSES = ['PROXY', 'MEMBER', 'PLATE', 'COVERING', 'RAILING', 'STAIR', 'RAMP', 'CHIMNEY', 'FURNITURE', 'WALL', 'SLAB', 'COLUMN', 'BEAM', 'ROOF', 'FOOTING'];
 
-/** EXTRUDE: pick a closed outline, then a depth (a class word at any step: SLAB, WALL…). */
+/** The elements selected that are not drafted shapes (what an extrusion made to cut cuts). */
+const selectedElements = (): string[] => {
+  const nodes = useSession.getState().nodes;
+  return useUi.getState().selected.filter((id) => { const n = nodes.get(id); return n && n.props.predefinedType !== 'DRAFT' && n.storeyId; });
+};
+
+/**
+ * EXTRUDE: pick a closed outline, then a depth. At any step a class word (SLAB, WALL…), Symmetric (both ways
+ * from the sketch), Taper (the sides lean in by an angle), Cut (the solid cuts the elements selected before
+ * EXTRUDE and is not drawn itself).
+ */
 function extrude(): Step {
   let cls = 'PROXY';
-  const kw = (next: () => Step) => Object.fromEntries(CLASSES.map((c) => [c, () => { cls = c; cadLog(`Class ${c}.`); return next(); }]));
+  let symmetric = false;
+  let taper = 0;
+  const cut = selectedElements();
+  let cutting = false;
+  const opts = () => [`class ${cls}`, symmetric ? 'symmetric' : null, taper ? `taper ${taper}°` : null, cutting ? `cuts ${cut.length}` : null].filter(Boolean).join(', ');
+  const kw = (next: () => Step): Record<string, () => Step> => ({
+    ...Object.fromEntries(CLASSES.map((c) => [c, () => { cls = c; cadLog(`Class ${c}.`); return next(); }])),
+    S: () => { symmetric = !symmetric; cadLog(symmetric ? 'Both ways from the sketch.' : 'One way from the sketch.'); return next(); },
+    T: () => ({ prompt: 'Taper angle (°; positive leans in)', want: 'none', value: (v) => { taper = v; return next(); } }),
+    CUT: () => {
+      if (!cut.length) { cadLog('Select the elements to cut before EXTRUDE, then Cut.'); return next(); }
+      cutting = !cutting; cadLog(cutting ? `It cuts the ${cut.length} element(s) selected, and is not drawn.` : 'It is a solid of its own.'); return next();
+    },
+  });
+  const run = (profileId: string, depth: number) => execute('studio.extrude', {
+    profileId, depth, class: cls, ...(symmetric ? { symmetric: true } : {}), ...(taper ? { taper } : {}), ...(cutting ? { cut } : {}),
+  });
   const pick = (): Step => ({
-    prompt: `Pick a closed outline [class ${cls}]`, want: 'pick', keywords: kw(pick),
+    prompt: `Pick a closed outline [${opts()}; Symmetric/Taper${cut.length ? '/Cut' : ''}]`, want: 'pick', keywords: kw(pick),
     pick: (hit) => {
       const depth = (): Step => ({
-        prompt: `Depth (m; negative: away from you) [class ${cls}] <1>`, want: 'none', keywords: kw(depth),
-        value: async (d) => { await execute('studio.extrude', { profileId: hit.id, depth: d, class: cls }); return null; },
-        enter: async () => { await execute('studio.extrude', { profileId: hit.id, depth: 1, class: cls }); return null; },
+        prompt: `Depth (m; negative: away from you) [${opts()}] <1>`, want: 'none', keywords: kw(depth),
+        value: async (d) => { await run(hit.id, d); return null; },
+        enter: async () => { await run(hit.id, 1); return null; },
       });
       return depth();
     },
@@ -143,9 +177,10 @@ function extrude(): Step {
  * the profile sits on the path is a keyword (Centre, Right, Left, Outside,
  * Inside: outside a closed outline for a pavement), the gap from the path a
  * typed value; End picks a profile it becomes on the way, Rail a second rail
- * it stretches to. Corners are mitred; a closed path makes one ring. With
- * shapes selected that carry roles (path, profile, end profile, rail), it runs
- * on them at once.
+ * it stretches to; TWist turns the section along the way, SCale grows it,
+ * RIse lifts it (a circle that rises is a helix, TUrns times round). Corners
+ * are mitred; a closed path makes one ring. With shapes selected that carry
+ * roles (path, profile, end profile, rail), it runs on them at once.
  */
 const PLACES: Record<string, string> = { C: 'centre', R: 'right', L: 'left', O: 'outside', I: 'inside' };
 function byRole(): Record<string, string> {
@@ -164,16 +199,23 @@ function sweep(): Step | null | Promise<null> {
   let gap = 0;
   let endId: string | null = null;
   let railId: string | null = null;
+  const shape: Record<string, number> = {};
   const run = async (path: { id: string }, profile: { id: string }) => {
-    await execute('studio.sweep', { profileId: profile.id, pathId: path.id, place, placeOffset: gap, ...(endId ? { endProfileId: endId } : {}), ...(railId ? { railId } : {}) });
+    await execute('studio.sweep', { profileId: profile.id, pathId: path.id, place, placeOffset: gap, ...shape, ...(endId ? { endProfileId: endId } : {}), ...(railId ? { railId } : {}) });
     return null;
   };
+  const number = (key: string, prompt: string, path: { id: string }): Step => ({ prompt, want: 'none', value: (v) => { shape[key] = v; return pickProfile(path); } });
+  const extras = () => Object.entries(shape).map(([k, v]) => `${k} ${v}`).join(', ');
   const pickProfile = (path: { id: string }): Step => ({
-    prompt: `Pick the closed profile [Centre/Right/Left/Outside/Inside: ${place}; gap ${gap} m; End profile${endId ? ' ✓' : ''}; Rail${railId ? ' ✓' : ''}]`, want: 'pick',
+    prompt: `Pick the closed profile [Centre/Right/Left/Outside/Inside: ${place}; gap ${gap} m; End profile${endId ? ' ✓' : ''}; RAil${railId ? ' ✓' : ''}; TWist/SCale/RIse/TUrns${extras() ? ': ' + extras() : ''}]`, want: 'pick',
     keywords: {
       ...Object.fromEntries(Object.entries(PLACES).map(([k, v]) => [k, () => { place = v; return pickProfile(path); }])),
       E: () => ({ prompt: 'Pick the profile it ends with', want: 'pick', pick: (h) => { endId = h.id; railId = null; return pickProfile(path); } }),
       RA: () => ({ prompt: 'Pick the second rail', want: 'pick', pick: (h) => { railId = h.id; endId = null; return pickProfile(path); } }),
+      TW: () => number('twist', 'Twist by the end of the path (°)', path),
+      SC: () => number('scaleEnd', 'Scale at the end (1: as drawn)', path),
+      RI: () => number('rise', 'Rise by the end of the path (m)', path),
+      TU: () => number('turns', 'Turns round a closed path that rises', path),
     },
     value: (v) => { gap = v; return pickProfile(path); },
     pick: (profile) => run(path, profile),
@@ -181,12 +223,20 @@ function sweep(): Step | null | Promise<null> {
   return { prompt: 'Pick the path (a line, polyline, arc or circle)', want: 'pick', pick: (path) => pickProfile(path) };
 }
 
-/** LOFT: through the closed shapes selected, in the order they were selected (each on its own view: a plan of another level, a section further on). */
-function loft(): null | Promise<null> {
+/**
+ * LOFT: through the closed shapes selected, in the order they were selected (each on its own view: a plan of
+ * another level, a section further on); a shape selected with the role rail bends it as a guide. Enter lofts
+ * straight from one profile to the next, Smooth on a curve through them.
+ */
+function loft(): Step | null {
   const nodes = useSession.getState().nodes;
-  const ids = useUi.getState().selected.filter((id) => nodes.get(id)?.props.predefinedType === 'DRAFT');
-  if (ids.length < 2) { cadLog('Select two closed shapes at least, one on each view (a plan of each level, or sections), in order; then LOFT.'); return null; }
-  return execute('studio.loft', { profileId: ids[0], profileIds: ids }).then((r) => { if (r) cadLog(`Lofted through ${ids.length} profiles.`); return null; });
+  const sel = useUi.getState().selected.filter((id) => nodes.get(id)?.props.predefinedType === 'DRAFT');
+  const rail = sel.find((id) => nodes.get(id)?.props.role === 'rail');
+  const ids = sel.filter((id) => id !== rail);
+  if (ids.length < 2) { cadLog('Select two closed shapes at least, one on each view (a plan of each level, or sections), in order; a line with the role rail bends it; then LOFT.'); return null; }
+  const run = (smooth: boolean) => execute('studio.loft', { profileId: ids[0], profileIds: ids, ...(rail ? { railId: rail } : {}), ...(smooth ? { smooth: true } : {}) })
+    .then((r) => { if (r) cadLog(`Lofted through ${ids.length} profiles${rail ? ' along the guide' : ''}${smooth ? ', smooth' : ''}.`); return null; });
+  return { prompt: `Loft through ${ids.length} profiles${rail ? ' along the guide' : ''} [Smooth] <straight>`, want: 'none', keywords: { S: () => run(true) }, enter: () => run(false) };
 }
 registerCommand({ names: ['LOFT', 'LO'], label: 'Loft', start: loft });
 
@@ -224,6 +274,13 @@ const boolean = (op: 'subtract' | 'union' | 'intersect'): ToolDef['run'] => () =
 const cmd = (id: string, label: string, icon: ToolDef['icon'], command: string): ToolDef => ({ id: `studio.${id}`, label, icon, run: () => void startCommand(command) });
 
 const SOLID_CLASSES = ['IfcBuildingElementProxy', 'IfcMember', 'IfcPlate', 'IfcCovering', 'IfcRailing', 'IfcStair', 'IfcRamp', 'IfcChimney', 'IfcFurnishingElement'];
+const isSolid = (n?: NodeDto) => !!n && SOLID_CLASSES.includes(n.type) && typeof n.props.operation === 'string';
+/** The Studio solids selected. */
+const selectedSolids = (): string[] => {
+  const nodes = useSession.getState().nodes;
+  return useUi.getState().selected.filter((id) => isSolid(nodes.get(id)));
+};
+
 /** The drafted shapes a solid is made from: its profile, and its path or axis. */
 const sources = (n: NodeDto): NodeDto[] => {
   const nodes = useSession.getState().nodes;
@@ -239,20 +296,211 @@ const solidRefs = (n: NodeDto): RefLine[] => (n.props.operation ? sources(n).fla
   if (sh.type === 'line') return [{ points: [sh.a, sh.b], closed: false, kind: 'sketch' as const, view }];
   if (sh.type === 'polyline') return [{ points: sh.pts, closed: sh.closed, kind: 'sketch' as const, view }];
   if (sh.type === 'circle') return [{ points: Array.from({ length: 48 }, (_, i) => ({ x: sh.c.x + Math.cos((i * Math.PI) / 24) * sh.r, y: sh.c.y + Math.sin((i * Math.PI) / 24) * sh.r })), closed: true, kind: 'sketch' as const, view }];
-  const sweep = (((sh.end - sh.start) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) || 2 * Math.PI;
-  return [{ points: Array.from({ length: 25 }, (_, i) => ({ x: sh.c.x + Math.cos(sh.start + (sweep * i) / 24) * sh.r, y: sh.c.y + Math.sin(sh.start + (sweep * i) / 24) * sh.r })), closed: false, kind: 'sketch' as const, view }];
+  const sweepAngle = (((sh.end - sh.start) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) || 2 * Math.PI;
+  return [{ points: Array.from({ length: 25 }, (_, i) => ({ x: sh.c.x + Math.cos(sh.start + (sweepAngle * i) / 24) * sh.r, y: sh.c.y + Math.sin(sh.start + (sweepAngle * i) / 24) * sh.r })), closed: false, kind: 'sketch' as const, view }];
 }) : []);
+
+// ─── Tools on faces and edges, in 3D ───────────────────────────────────────
+
+/** A face pick for the engine: the element, the point and the normal of the triangle hit (3D only). */
+function picked(input: ToolInput): { id: string; point: number[]; normal: number[] } | null {
+  const { entity, face } = input;
+  if (!entity || !face?.normal) { notify('Pick the face in a 3D view: Studio works on the faces the body has.'); return null; }
+  return { id: entity.id, point: face.point, normal: face.normal };
+}
+const faceGesture = (types: string[] = ['*']): ToolDef['gesture'] => ({ kind: 'face', types, query: 'studio.faceAt' });
+
+/** Push/pull: the face picked moved out (adding) or in (taking away) by the distance typed. */
+const pushPull: ToolDef = {
+  id: 'studio.pushPull', label: 'Push/Pull', icon: ArrowUpDown, shortcut: 'PU',
+  gesture: faceGesture(),
+  complete: async (input) => {
+    const p = picked(input);
+    if (!p) return;
+    const d = await askLength('Push/Pull', 'Distance (negative pushes in)', 0.1);
+    if (d == null || Math.abs(d) < 1e-9) return;
+    const r = await execute('studio.pushPull', { ...p, distance: d }) as { how?: string } | null;
+    if (!r) return;
+    notify({
+      depth: 'The extrusion is deeper or shallower: its depth changed.',
+      sketch: 'The side moved: the sketch\'s edge under it went with it.',
+      step: 'Done as a step of the solid: it is in its Studio steps, and redone when the sketch changes.',
+      solid: 'A solid stands on the face, in its material: edit its distance in its properties.',
+      cut: 'The face is pushed in: a cut the element is less, kept live.',
+    }[r.how ?? ''] ?? 'Pushed or pulled.');
+  },
+};
+
+/** Chamfer or fillet: the edge nearest the pick on the face picked (Shift: every edge round that face). */
+const roundTool = (op: 'chamfer' | 'fillet'): ToolDef => ({
+  id: `studio.${op}`, label: op === 'chamfer' ? 'Chamfer edge' : 'Fillet edge', icon: op === 'chamfer' ? Octagon : SquareRoundCorner, shortcut: op === 'chamfer' ? 'CE' : 'FE',
+  gesture: faceGesture(SOLID_CLASSES),
+  complete: async (input) => {
+    const p = picked(input);
+    if (!p) return;
+    const n = useSession.getState().nodes.get(p.id);
+    if (!isSolid(n)) { notify('Chamfers and fillets go on Studio solids: make the element one first (Make Studio solid).'); return; }
+    const r = await ask(op === 'chamfer' ? 'Chamfer' : 'Fillet', [
+      lengthField('size', op === 'chamfer' ? 'Distance' : 'Radius', 0.05),
+      choiceField('which', 'Edges', 'edge', [{ value: 'edge', label: 'the edge picked' }, { value: 'face', label: 'all round the face' }]),
+    ]);
+    if (!r || !(Number(r.size) > 0)) return;
+    await execute('studio.addFeature', { id: p.id, feature: { op, [op === 'chamfer' ? 'distance' : 'radius']: r.size, point: p.point, normal: p.normal, ...(r.which === 'face' ? { face: true } : {}) } });
+  },
+});
+
+/** Split or slice by a plane parallel to the face picked, so far into the solid (0: the face's own plane). */
+const splitTool = (keep: 'split' | 'slice'): ToolDef => ({
+  id: `studio.${keep}`, label: keep === 'split' ? 'Split' : 'Slice', icon: keep === 'split' ? Scissors : Slice,
+  gesture: faceGesture(),
+  complete: async (input) => {
+    const p = picked(input);
+    if (!p) return;
+    const target = selectedSolids()[0] ?? (isSolid(useSession.getState().nodes.get(p.id)) ? p.id : null);
+    if (!target) { notify('Select the Studio solid first, then pick the face whose plane cuts it (a face of the solid itself, or of any element).'); return; }
+    const r = await ask(keep === 'split' ? 'Split' : 'Slice', [
+      lengthField('d', 'Plane into the face by', target === p.id ? 0.5 : 0),
+      ...(keep === 'slice' ? [choiceField('keep', 'Keep', 'back', [{ value: 'back', label: 'behind the plane' }, { value: 'front', label: 'in front of it' }])] : []),
+    ]);
+    if (!r) return;
+    const face = await query<{ normal: number[]; outline: number[][] }>('studio.faceAt', p);
+    if (!face) { notify('There is no flat face there.'); return; }
+    const d = Number(r.d) || 0;
+    const point = face.outline[0].map((v, i) => v - face.normal[i] * d);
+    if (keep === 'split') {
+      const s = await execute('studio.split', { id: target, point, normal: face.normal }) as { ids?: string[] } | null;
+      if (s?.ids) { useUi.setState({ selected: s.ids, selection: s.ids[1] }); notify('Split in two: both keep the sketch, so changing it changes both.'); }
+    } else await execute('studio.addFeature', { id: target, feature: { op: 'slice', point, normal: face.normal, keep: r.keep } });
+  },
+});
+
+/** Turned in 3D about the edge picked. */
+const rotate3d: ToolDef = {
+  id: 'studio.rotate3d', label: 'Rotate 3D', icon: Rotate3d,
+  gesture: faceGesture(SOLID_CLASSES),
+  complete: async (input) => {
+    const p = picked(input);
+    if (!p) return;
+    const r = await ask('Rotate about the edge picked', [numberField('angle', 'Angle (°)', 90)]);
+    if (!r) return;
+    await execute('studio.addFeature', { id: p.id, feature: { op: 'rotate', angle: r.angle, point: p.point, normal: p.normal } });
+  },
+};
+
+/** Mirrored in the plane of the face picked (of the solid, or of any element). */
+const mirror3d: ToolDef = {
+  id: 'studio.mirror3d', label: 'Mirror 3D', icon: FlipHorizontal2,
+  gesture: faceGesture(),
+  complete: async (input) => {
+    const p = picked(input);
+    if (!p) return;
+    const target = selectedSolids()[0] ?? (isSolid(useSession.getState().nodes.get(p.id)) ? p.id : null);
+    if (!target) { notify('Select the Studio solid first, then pick the face it is mirrored in.'); return; }
+    await execute('studio.addFeature', { id: target, feature: { op: 'mirror', point: p.point, normal: p.normal, onId: p.id } });
+  },
+};
+
+/** The selected Studio solids, each a step: a shell, an array, a move. */
+const onSolids = (label: string, run: (ids: string[]) => Promise<void>): (() => void) => () => {
+  const ids = selectedSolids();
+  if (!ids.length) { notify(`Select the Studio solids first, then ${label}.`); return; }
+  void run(ids);
+};
+
+const shell: ToolDef = {
+  id: 'studio.shell', label: 'Shell', icon: PackageOpen,
+  run: onSolids('Shell', async (ids) => {
+    const r = await ask('Shell', [
+      lengthField('t', 'Wall thickness', 0.05),
+      choiceField('open', 'Left open', 'end', [{ value: 'end', label: 'at its end (the top of one drawn in plan)' }, { value: 'start', label: 'at its sketch' }, { value: 'both', label: 'at both ends' }, { value: 'none', label: 'nowhere (closed)' }]),
+    ]);
+    if (r && Number(r.t) > 0) await execute('studio.addFeature', { ids, feature: { op: 'shell', thickness: r.t, open: r.open } });
+  }),
+};
+
+const array: ToolDef = {
+  id: 'studio.array', label: 'Array', icon: Grid3x3,
+  run: onSolids('Array', async (ids) => {
+    const r = await ask('Array in a row', [numberField('count', 'Copies (with the first)', 3), lengthField('dx', 'Step x', 1), lengthField('dy', 'Step y', 0), lengthField('dz', 'Step z', 0)]);
+    if (r) await execute('studio.addFeature', { ids, feature: { op: 'array', count: r.count, step: [r.dx, r.dy, r.dz] } });
+  }),
+};
+
+const polarArray: ToolDef = {
+  id: 'studio.polarArray', label: 'Polar array', icon: RotateCw,
+  run: onSolids('Polar array', async (ids) => {
+    const r = await ask('Array round an upright', [numberField('count', 'Copies (with the first)', 6), numberField('angle', 'Angle filled (°)', 360), lengthField('cx', 'Centre x', 0), lengthField('cy', 'Centre y', 0)]);
+    if (r) await execute('studio.addFeature', { ids, feature: { op: 'array', kind: 'polar', count: r.count, angle: r.angle, centre: [r.cx, r.cy, 0], axis: [0, 0, 1] } });
+  }),
+};
+
+const move3d: ToolDef = {
+  id: 'studio.move3d', label: 'Move 3D', icon: Move3d,
+  run: onSolids('Move 3D', async (ids) => {
+    const r = await ask('Move in 3D', [lengthField('dx', 'x', 0), lengthField('dy', 'y', 0), lengthField('dz', 'z (up)', 1)]);
+    if (r) await execute('studio.addFeature', { ids, feature: { op: 'move', by: [r.dx, r.dy, r.dz] } });
+  }),
+};
+
+/** The selected elements (walls, references, imported meshes…) made into Studio solids that take steps. */
+const makeSolid: ToolDef = {
+  id: 'studio.fromElement', label: 'Make Studio solid', icon: Blocks,
+  run: () => {
+    const nodes = useSession.getState().nodes;
+    const ids = useUi.getState().selected.filter((id) => { const n = nodes.get(id); return n && n.storeyId && n.props.predefinedType !== 'DRAFT' && !isSolid(n); });
+    if (!ids.length) { notify('Select the elements to make into Studio solids (a reference from IFC, an imported mesh, a wall…).'); return; }
+    if (!window.confirm(`Make ${ids.length} element(s) into Studio solids? Each takes the element's place, name and IFC class, its body as it is now; what made it (a wall's type and layers, a reference's file) is not kept.`)) return;
+    void execute('studio.fromElement', { ids }).then((r) => { const made = (r as { ids?: string[] } | null)?.ids; if (made?.length) { useUi.setState({ selected: made, selection: made[0] }); notify(`${made.length} Studio solid(s): push/pull, fillet, shell and the rest work on them now.`); } });
+  },
+};
+
+/** An extrusion run up to the face picked (of another element): it follows that face as it moves. */
+const upTo: ToolDef = {
+  id: 'studio.upTo', label: 'Extrude up to face', icon: ArrowUpToLine,
+  gesture: faceGesture(),
+  complete: async (input) => {
+    const p = picked(input);
+    if (!p) return;
+    const nodes = useSession.getState().nodes;
+    const id = takeUpTo() ?? selectedSolids().find((x) => nodes.get(x)?.props.operation === 'extrude');
+    if (!id) { notify('Select the extrusion first, then pick the face it runs up to.'); return; }
+    if (id === p.id) { notify('Pick a face of another element.'); return; }
+    if (await execute('studio.setUpTo', { id, upTo: p })) { useUi.setState({ tool: null, selection: id, selected: [id] }); notify('The extrusion runs up to that face, and follows it.'); }
+  },
+};
+
+/** A primitive placed with a click (in plan or on the ground in 3D), on the active storey; its sizes are in its properties. */
+const primitive = (shape: string, label: string, icon: ToolDef['icon']): ToolDef => ({
+  id: `studio.primitive.${shape}`, label, icon,
+  gesture: { kind: 'point' },
+  complete: async ({ points }, ctx) => {
+    const at = points[0];
+    if (!at) return;
+    const r = await ctx.execute('studio.primitive', { shape, at: [at.x, at.y], storeyId: ctx.storeyId || activeStorey()?.id }) as { id?: string } | null;
+    if (r?.id) useUi.setState({ selection: r.id, selected: [r.id] });
+  },
+});
 
 const studio: LapinModule = {
   id: 'studio',
   name: 'Studio',
-  summary: 'Free-form solids from sketches (extrude, sweep, revolve) and live booleans.',
+  summary: 'Free-form solids: sketches on any face, extrude, sweep, loft, revolve, primitives, push/pull, fillets, shells, arrays and live booleans.',
   tabs: [{
     id: 'studio', label: 'Studio', order: 50,
     groups: [
       { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), cmd('loft', 'Loft', Layers2, 'LOFT'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
       { label: 'Thick', tools: [cmd('ring', 'Ring', Cylinder, 'RING'), cmd('box', 'Box', Container, 'BOX'), cmd('wallStrip', 'Wall strip', BrickWall, 'TWALL')] },
       { label: 'Work planes', tools: [cmd('refPlane', 'Plane from view', SquareStack, 'REFPLANE'), planeOnFace, planeBy3] },
+      {
+        label: 'Primitives',
+        tools: [primitive('box', 'Cuboid', Box), primitive('cylinder', 'Cylinder', Cylinder)],
+        small: [primitive('sphere', 'Sphere', CircleDot), primitive('cone', 'Cone', Cone), primitive('torus', 'Torus', Torus), primitive('wedge', 'Wedge', TriangleRight), primitive('pyramid', 'Pyramid', Pyramid)],
+      },
+      {
+        label: 'Modify',
+        tools: [pushPull, roundTool('fillet'), roundTool('chamfer'), shell],
+        small: [upTo, splitTool('split'), splitTool('slice'), array, polarArray, rotate3d, mirror3d, move3d, makeSolid],
+      },
       {
         label: 'Boolean',
         tools: [
@@ -268,8 +516,10 @@ const studio: LapinModule = {
     ],
   }],
   propertySections: [
-    { id: 'studioFeature', label: 'Studio', classes: SOLID_CLASSES, component: FeatureCard, fieldKeys: solidFieldKeys },
+    { id: 'studioFeature', label: 'Studio', classes: SOLID_CLASSES, component: FeatureCard, fieldKeys: featureFieldKeys },
     { id: 'studioRefPlane', label: 'Reference plane', classes: ['LapinView'], component: RefPlaneSection },
+    // Any element some solid cuts, unites or intersects: those solids listed, selectable even when never drawn.
+    { id: 'studioOperations', label: 'Boolean', classes: ['*'], shows: hasTools, component: OperationsCard },
   ],
   grips: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidGrips])),
   references: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidRefs])),

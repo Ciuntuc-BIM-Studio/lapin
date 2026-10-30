@@ -303,6 +303,33 @@ export const FAQ: Entry[] = [
     aRo: 'Într-un plan, o secțiune, o elevație sau un desen, trage cu butonul stâng, fără nimic selectat sub cursor. Tras spre dreapta, chenarul e albastru și ia ce e cuprins în întregime în el (fereastră); spre stânga e verde și punctat și ia tot ce atinge (crossing). Apasă Space în timp ce tragi și chenarul devine un lasou care urmează mouse-ul, cu modul pe care îl avea; Space din nou revine la chenar. Shift adaugă la ce e selectat. Pe linia de comandă, când o comandă cere să selectezi obiecte, scrie WP sau CP și dă clic pe colțurile unui poligon, apoi Enter.',
     source: 'faq',
   },
+  {
+    id: 'studio-sketch-on-face',
+    q: ['How do I sketch on a face or a wall?', 'Can I draw on an elevation or on any plane?', 'What is a reference plane?'],
+    qRo: ['Cum schițez pe o față sau pe un perete?', 'Pot desena pe o elevație sau pe orice plan?', 'Ce e un plan de referință?'],
+    keywords: ['work', 'plane', 'workplane', 'reference', 'face', 'sketch', 'elevation', 'facade', 'draw', 'plan', 'lucru', 'fata', 'schita', 'elevatie', 'fatada', 'desenez'],
+    a: 'Studio → Plane on face, then click a face in 3D: a reference plane opens as a view on that face. Draft a closed outline on it and Extrude, Sweep or Revolve it: the solid stands on the face. Plane from view and Plane by 3 points make one elsewhere. Plans, sections and elevations take sketches too. Reference planes are listed under Reference planes in the project browser; their properties move and turn them.',
+    aRo: 'Studio → Plan pe față, apoi clic pe o față în 3D: un plan de referință se deschide ca vedere pe fața aceea. Desenează un contur închis pe el și Extrudează, Mătură sau Rotește-l: solidul stă pe față. Plan din vedere și Plan prin 3 puncte fac unul în altă parte. Planurile, secțiunile și elevațiile primesc și ele schițe. Planurile de referință sunt sub Planuri de referință în navigatorul proiectului; proprietățile lor le mută și le rotesc.',
+    source: 'faq',
+  },
+  {
+    id: 'studio-push-pull',
+    q: ['Is there push/pull like in SketchUp?', 'How do I fillet or chamfer an edge?', 'How do I hollow a solid?'],
+    qRo: ['Există push/pull ca în SketchUp?', 'Cum racordez sau teșesc o muchie?', 'Cum golesc un solid?'],
+    keywords: ['push', 'pull', 'pushpull', 'fillet', 'chamfer', 'round', 'bevel', 'edge', 'shell', 'hollow', 'split', 'array', 'sketchup', 'impinge', 'trage', 'racordare', 'tesire', 'muchie', 'coaja', 'golesc', 'imparte', 'matrice'],
+    a: 'In 3D, on the Studio tab: Push/Pull (PU) moves the face you click out or in by the distance you type beside the cursor; Fillet edge (FE) and Chamfer edge (CE) round or bevel the edge nearest your click (or every edge round the face); Shell hollows the selected solids; Split, Slice, Array, Polar array, Rotate 3D, Mirror 3D and Move 3D do the rest. Each is a step listed in the solid\'s properties, where it can be switched off, moved, changed or removed, and redone when the sketch changes. On walls and other elements, Push/Pull adds a solid or cuts into them; Make Studio solid lets them take every step.',
+    aRo: 'În 3D, în fila Studio: Împinge/Trage (PU) mută fața pe care dai clic în afară sau înăuntru cu distanța scrisă lângă cursor; Racordează muchia (FE) și Teșește muchia (CE) rotunjesc sau teșesc muchia cea mai apropiată de clic (sau toate muchiile feței); Coajă golește solidele selectate; Împarte, Retează, Matrice, Matrice polară, Rotește 3D, Oglindește 3D și Mută 3D fac restul. Fiecare e un pas din proprietățile solidului, unde poate fi oprit, mutat, schimbat sau scos, și se reface când se schimbă schița. Pe pereți și alte elemente, Împinge/Trage adaugă un solid sau taie în ele; Fă solid Studio le face să primească toți pașii.',
+    source: 'faq',
+  },
+  {
+    id: 'import-mesh',
+    q: ['Can I import an OBJ, STL or glTF file?', 'How do I bring a SketchUp or Blender model in?'],
+    qRo: ['Pot importa un fișier OBJ, STL sau glTF?', 'Cum aduc un model din SketchUp sau Blender?'],
+    keywords: ['obj', 'stl', 'gltf', 'glb', 'mesh', 'import', 'blender', 'sketchup', 'model', 'retea', 'importa', 'fisier'],
+    a: 'File → Import mesh (OBJ, STL, glTF)… brings it in as references on the active level (export it from SketchUp or Blender as one of those). An OBJ or STL does not say its unit or which way is up, so Lapin asks. Select a reference and use Studio → Make Studio solid to edit it with push/pull, fillets and booleans.',
+    aRo: 'Fișier → Importă rețea (OBJ, STL, glTF)… îl aduce ca referințe pe nivelul activ (din SketchUp sau Blender exportă-l într-unul din formatele acestea). Un OBJ sau STL nu spune unitatea și ce axă e în sus, așa că Lapin întreabă. Selectează o referință și folosește Studio → Fă solid Studio ca s-o editezi cu împinge/trage, racordări și booleene.',
+    source: 'faq',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

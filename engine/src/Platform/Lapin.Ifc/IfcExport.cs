@@ -1043,7 +1043,7 @@ public static class IfcExport
             foreach (var (key, v) in e.Attrs)
             {
                 // A stored body (a reference from IFC) is written as geometry, not as text; the project's standards stay in .lapin.
-                if (v == null || key == StoredBodies.Key || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || key == Plan2d.Key || key == IfcSource.Key || (only != null && !only.Contains(key))) continue;
+                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || key == Plan2d.Key || key == IfcSource.Key || (only != null && !only.Contains(key))) continue;
                 // A foreign element's properties go as the sets its file had, not as text.
                 if (key == "properties" && e.Attrs[IfcSource.Key] != null) continue;
                 var field = fields.GetValueOrDefault(key);

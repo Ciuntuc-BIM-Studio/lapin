@@ -54,6 +54,8 @@ Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på si
 
 **Importér Fragments…** henter en `.frag`-fil ind: hvert element med geometri bliver en reference tegnet fra sin krop, i den klasse filen nævner, på den etage filen sætter det på (matchet på navn med dine, oprettet når den mangler), med filens attributter under **IFC-egenskaber**. Elementer med samme krop (samme form sat mange steder) deler den. Importeres samme fil igen, opdateres det, den bragte før. Intet genkendes som væg eller dæk: en `.frag` rummer trekanter.
 
+**Importér mesh (OBJ, STL, glTF)…** henter et mesh fra et andet 3D-program (OBJ, STL, glTF eller GLB) ind som referencer på den aktive etage. glTF siger sin enhed og hvilken akse der vender op; for OBJ og STL spørger Lapin. **Gør til Studio-legeme** i Studio gør en reference redigerbar (se [Studio](studio.md)).
+
 ![Eksportér 3D](shots/export-3d.webp)
 
 Du vælger, hvad der skal eksporteres, hvilken fase og origo. **Hvad** er **alt**, eller modellen **som visningen viser det**: 3D-visningen forrest, uden dens skjulte elementer og kategorier og de etager, den ikke viser, med de lag den viser (uden overflader, eller kun kernerne). Når den visning er skåret (snittet over de viste etager, et snit vist i 3D, snitboksen), skærer **Snit** også eksporten der og lukker hvert snit i sine materialer, så filen ser ud som skærmen. En 3D-visning, der udelader noget, eksporteres, som den viser det, medmindre du vælger andet. Hvert element beholder sin IFC-klasse, type og GlobalId. Vil du udveksle selve modellen frem for dens flader, så brug **Eksportér IFC…**.

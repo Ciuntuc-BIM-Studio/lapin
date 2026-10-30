@@ -102,7 +102,9 @@ public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Bel
     {
         var d = dir.Normalized();
         var right = new Vec2(d.Y, -d.X); // looking along d, right is d turned clockwise
-        // Origin outside the bounds, against the view.
+        // Origin outside the bounds, against the view, on the line through the world's origin along the view: the
+        // drawing's x is the model's own (along right), whatever the model's extent, so what is drafted on an elevation
+        // stays where it was drawn when the model grows (Studio's sketches on it among them).
         var c = (bounds.Min + bounds.Max) * 0.5;
         var r = (bounds.Max - bounds.Min).Length;
         var o = new Vec3(c.X - d.X * r, c.Y - d.Y * r, 0);

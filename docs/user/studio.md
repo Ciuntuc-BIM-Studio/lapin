@@ -1,17 +1,36 @@
 ---
-title: Studio solids and work planes
+title: Studio
 order: 85
-summary: Turn drafted shapes into solids, give a shape a thickness with Ring, Box and Wall strip, and draw on reference planes anywhere in the model.
+summary: Model free-form solids, sketched on any face or plane, then push, pull, round, hollow, split and repeat them in 3D.
 ---
 
-## Solids from a sketch
+## The Studio tab
 
-The **Studio** tab turns shapes you draft into solids. Draw the shape with **Draft** in a plan, a section, an elevation or a reference plane, then pick it with a Studio tool:
-
-- **Extrude** (<kbd>EXT</kbd>) pushes a closed shape out by a depth. Closed shapes inside it become holes.
-- **Sweep** (<kbd>SW</kbd>) moves a closed profile along a path, **Revolve** (<kbd>REV</kbd>) turns it about an axis and **Loft** (<kbd>LO</kbd>) joins profiles drawn on different views.
+The **Studio** tab makes solids that no other tab builds: a bench, a canopy, a handrail, a fountain, a plinth on a facade. Each solid starts from a sketch or a primitive. You then change it in 3D with steps, and every step stays editable.
 
 ![The Studio tab](shots/ribbon-studio.webp)
+
+A Studio solid has an IFC class, like any element. Choose it in its properties: a member, a plate, a covering, a railing, a slab or any other. Its quantities and its export follow that class.
+
+## Where you sketch
+
+You sketch a solid's outline with the **Draft** tools, as closed polylines, rectangles and circles. Lines and arcs that meet end to end also make a closed outline. A closed shape inside the outline is a hole.
+
+You can sketch on four kinds of view:
+
+- **A plan** draws on its storey's level.
+- **A section** draws on its cut line, upright.
+- **An elevation** or **a reference plane**: see *Reference planes* below.
+
+## Making a solid
+
+- **Extrude** (EXTRUDE) pushes the outline straight out. Type S for both ways from the sketch, T for a taper that leans the sides in, and Cut to make it cut the elements you selected before. To run it up to another element's face, use **Up to → a face…** in its properties, or **Extrude up to face**.
+- **Sweep** (SWEEP) runs a profile along a path. TWist turns the section on the way, SCale grows it, and RIse lifts it. A circle that rises becomes a helix, going round TUrns times.
+- **Loft** (LOFT) joins profiles drawn on different views. Type S to make it smooth through them. A line selected with the role *rail* bends it as a guide.
+- **Revolve** (REVOLVE) turns a profile about an axis line.
+- **Primitives** place a box, cylinder, sphere, cone, torus, wedge or pyramid with one click. Change their sizes and position in their properties.
+
+![A handrail swept along a circle that rises 3 m in two turns](shots/studio-helix.webp)
 
 Each solid stays tied to its sketch. Change the shape and the solid follows, with the same GlobalId. Select a solid to change its IFC class, its predefined type and its type in the properties panel. **Edit sketch** opens the view the sketch lies on.
 
@@ -58,3 +77,33 @@ Sections and elevations are planes too. A solid sketched on a section stands on 
 ![The house with its Studio solids in 3D](shots/studio-3d.webp)
 
 In IFC, a ring, a box's walls and a wall strip are IfcWall elements, a box's bottom and top IfcSlab elements, and a box with them an IfcElementAssembly with IfcRelAggregates; their types are written as IfcWallType and IfcSlabType. Every 3D export (IFC, Fragments, glTF, USD, COLLADA) writes a Studio solid where it stands in the model, whichever plane it was sketched on, with its holes; an assembly is a group node over its parts. Opening Lapin's own IFC again brings the solids back as references, in place, under their class, type and assembly, but no longer editable (their sketches are not in the file). The history of each solid is kept in Lapin's own property set, Lapin_Intent. Studio solids take simple types only, without layers: that is the loose modelling they are for; walls with layers are Lapin's native walls.
+## Changing a solid in 3D
+
+These tools work on the faces and edges of the body as it is built now. The face under the mouse lights up. When a tool needs a value, a small box opens beside the cursor. Type the value and press <kbd>Enter</kbd>, or press <kbd>Esc</kbd> to drop it.
+
+- **Push/Pull** (PU) moves a face out by a distance, or in when the distance is negative. On an extrusion, its end changes the depth and its side moves the sketch's edge under it. On a wall or any other element, pulling adds a solid in the face's material, and pushing cuts into the element.
+- **Fillet edge** (FE) rounds the edge nearest your click, and **Chamfer edge** (CE) bevels it. Choose *all round the face* to do every edge of the face at once.
+- **Shell** hollows the selected solids, with walls as thick as you type. It can stay closed, or be left open at its end, at its sketch or at both.
+- **Split** cuts a solid in two by the plane of the face you pick, as far into the face as you type. Both parts keep the sketch. **Slice** keeps one side only.
+- **Array** repeats the solid in a row, and **Polar array** repeats it round an upright.
+- **Rotate 3D** turns the solid about an edge you pick. **Mirror 3D** mirrors it in a face's plane. **Move 3D** moves it by x, y and z.
+
+![Push/pull: the top face lit up, and the distance typed beside the cursor](shots/studio-push-pull.webp)
+
+![The edge filleted: the round follows the block when its depth changes](shots/studio-fillet.webp)
+
+## The steps
+
+The properties of a Studio solid list its steps in order. Each step can be switched off, moved earlier or later, changed or removed. Change the sketch, and each step is done again on the new body. A step that can no longer find its face or edge says so under **Problems**.
+
+![A cylinder hollowed into a pipe and repeated three times: its two steps in its properties](shots/studio-steps.webp)
+
+A polyline's properties list its sides. Type a side's length, and its end moves along it. The sides after it follow, up to the next side that runs the same way, so a rectangle stays a rectangle. A solid drawn on it follows too.
+
+## Meshes from other programs
+
+**File → Import mesh (OBJ, STL, glTF)…** brings in a mesh as references you can see and snap to. An OBJ or STL file does not say its unit or which way is up, so Lapin asks. Select a reference and click **Make Studio solid** to make it editable. It then takes push/pull, fillets, booleans and the other steps. The same tool works on walls, slabs and elements from IFC files.
+
+## Booleans
+
+**Subtract**, **Union** and **Intersect** combine any elements, with the first one selected as the target. The tools stay editable, and the result follows them. **Show operands** shows the hidden tools of a union for editing. **Remove operation** separates the elements again.

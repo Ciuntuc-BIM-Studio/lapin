@@ -306,7 +306,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
   const model = { nodes, relations };
   const type = typeOf(model, node.id);
   const storey = relatingOf(model, node.id, 'IfcRelContainedInSpatialStructure');
-  const sections = propertySections(node.type);
+  const sections = propertySections(node.type).filter((s) => !s.shows || s.shows(node));
   const TypeFields = type ? typeFieldsOf(type.type) : null;
   return (
     <aside className="panel props" aria-label="Properties" ref={body} onKeyDown={panelKeys} onFocus={panelFocus}>

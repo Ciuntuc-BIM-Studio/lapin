@@ -54,6 +54,8 @@ Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapi
 
 **Importă Fragments…** aduce un fișier `.frag`: fiecare element cu geometrie devine o referință desenată din corpul lui, în clasa pe care o spune fișierul, pe nivelul pe care îl pune fișierul (potrivit după nume cu ale tale, creat când lipsește), cu atributele fișierului la **Proprietăți IFC**. Elementele cu același corp (aceeași formă, așezată în mai multe locuri) îl împart. Importat din nou, același fișier actualizează ce a adus înainte. Nimic nu e recunoscut ca perete sau placă: un `.frag` ține triunghiuri.
 
+**Importă rețea (OBJ, STL, glTF)…** aduce o rețea dintr-un alt program 3D (OBJ, STL, glTF sau GLB) ca referințe pe nivelul activ. glTF își spune unitatea și care axă e în sus; pentru OBJ și STL, Lapin întreabă. **Fă solid Studio** din Studio face o referință editabilă (vezi [Studio](studio.md)).
+
 ![Export 3D](shots/export-3d.webp)
 
 Alegi ce exporți, ce fază și originea. **Ce** este **tot**, sau modelul **cum îl arată vederea**: vederea 3D din față, fără elementele și categoriile ei ascunse și fără etajele pe care nu le arată, cu straturile pe care le arată (fără finisaje sau doar miezurile). Când vederea e tăiată (tăietura de deasupra etajelor afișate, o secțiune arătată în 3D, cutia de secțiune), **Tăietură** taie și exportul acolo și închide fiecare tăietură în materialele ei, ca fișierul să arate ca ecranul. O vedere 3D care lasă ceva deoparte se exportă cum o arată, dacă nu alegi altfel. Fiecare element își păstrează clasa IFC, tipul și GlobalId-ul. Ca să schimbi modelul în sine, nu suprafețele lui, folosește **Exportă IFC**.

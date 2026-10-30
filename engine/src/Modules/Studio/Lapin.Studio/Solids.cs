@@ -83,6 +83,16 @@ public static class Solids
     /// <summary>Where a sweep's profile sits on its path, looking along the path.</summary>
     public static readonly string[] Places = ["centre", "right", "left", "outside", "inside"];
 
+    /// <summary>
+    /// How a placed sweep changes along its path: turned by <see cref="Twist"/> degrees by the end, grown to
+    /// <see cref="ScaleEnd"/> times, risen by <see cref="Rise"/> metres (a closed path that rises goes round
+    /// <see cref="Turns"/> times: a helix); <see cref="Box"/> places the profile by another box than its own (a shell's inset profile, placed as the outline).
+    /// </summary>
+    public sealed record SweepShape(double Twist = 0, double ScaleEnd = 1, double Rise = 0, double Turns = 1, (double MinX, double MaxX, double MinY)? Box = null)
+    {
+        public static readonly SweepShape Plain = new();
+    }
+
     /// <summary>A sweep that could not be built, and why (a side too short for its mitres…).</summary>
     public sealed record SweepResult(Solid? Solid, string? Problem);
 
@@ -99,14 +109,46 @@ public static class Solids
     /// Corners are mitred; a closed path (its last point on its first) gives
     /// one ring, every corner mitred, without end faces.
     /// </summary>
-    public static SweepResult SweepPlaced(IReadOnlyList<Vec2> outer, IReadOnlyList<IReadOnlyList<Vec2>> holes, IReadOnlyList<Vec3> path, Vec3 up, string place = "centre", double offset = 0)
+    public static SweepResult SweepPlaced(IReadOnlyList<Vec2> outer, IReadOnlyList<IReadOnlyList<Vec2>> holes, IReadOnlyList<Vec3> path, Vec3 up, string place = "centre", double offset = 0, SweepShape? shape = null)
     {
         if (outer.Count < 3) return new(null, "The profile needs three points at least.");
+        shape ??= SweepShape.Plain;
         var pts = new List<Vec3>();
         foreach (var p in path) if (pts.Count == 0 || (p - pts[^1]).Length > 1e-9) pts.Add(p);
         var closed = pts.Count >= 4 && (pts[^1] - pts[0]).Length < 1e-6;
+        // A path that rises (a helix from a circle) is open, however it was drawn: round as many times as it turns.
+        if (closed && Math.Abs(shape.Rise) > 1e-9)
+        {
+            var once = pts.Take(pts.Count - 1).ToList();
+            var turns = Math.Max(1, shape.Turns);
+            var whole = (int)Math.Floor(turns);
+            pts = [];
+            for (var k = 0; k < whole; k++) pts.AddRange(once);
+            var part = (int)Math.Round((turns - whole) * once.Count);
+            pts.AddRange(once.Take(part));
+            pts.Add(part < once.Count ? once[part % once.Count] : once[0]);
+            closed = false;
+        }
+        if (closed && (Math.Abs(shape.Twist % 360) > 1e-9 || Math.Abs(shape.ScaleEnd - 1) > 1e-9))
+            return new(null, "A ring meets itself again: its section may twist by whole turns only, and keeps its size.");
         if (closed) pts.RemoveAt(pts.Count - 1);
         if (pts.Count < 2 || (closed && pts.Count < 3)) return new(null, "The path needs two points at least.");
+        // A section that turns or grows takes a station at least every 5° of its turn and every 5 % of its growth, so its sides stay true between them.
+        var stepsWanted = (int)Math.Ceiling(Math.Max(Math.Abs(shape.Twist) / 5, Math.Abs(shape.ScaleEnd - 1) / 0.05));
+        if (stepsWanted > pts.Count - 1 && !closed)
+        {
+            var total = 0.0;
+            for (var i = 0; i + 1 < pts.Count; i++) total += (pts[i + 1] - pts[i]).Length;
+            var piece = total / Math.Min(stepsWanted, 720);
+            var fine = new List<Vec3> { pts[0] };
+            for (var i = 0; i + 1 < pts.Count; i++)
+            {
+                var seg = (pts[i + 1] - pts[i]).Length;
+                var k = Math.Max(1, (int)Math.Ceiling(seg / piece - 1e-9));
+                for (var j = 1; j <= k; j++) fine.Add(pts[i] + (pts[i + 1] - pts[i]) * ((double)j / k));
+            }
+            pts = fine;
+        }
         var n = pts.Count;
         var segs = closed ? n : n - 1;
         var tangents = Enumerable.Range(0, segs).Select(i => (pts[(i + 1) % n] - pts[i]).Normalized()).ToList();
@@ -124,7 +166,7 @@ public static class Solids
             "inside" => ccw || !closed ? -1 : 1,
             _ => 0,
         };
-        var (minX, maxX, minY) = (outer.Min(p => p.X), outer.Max(p => p.X), outer.Min(p => p.Y));
+        var (minX, maxX, minY) = shape.Box ?? (outer.Min(p => p.X), outer.Max(p => p.X), outer.Min(p => p.Y));
         var cx = (minX + maxX) / 2;
         Vec2 L(Vec2 p) => side == 0
             ? new(p.X - cx + offset, p.Y - minY)
@@ -154,13 +196,22 @@ public static class Solids
                 return new(null, $"Side {i + 1} of the path ({len:0.###} m) is too short for its mitred corners: the section would fold. Lengthen it or narrow the profile.");
         }
 
+        var cum = new double[n];
+        for (var i = 1; i < n; i++) cum[i] = cum[i - 1] + (pts[i] - pts[i - 1]).Length;
         var stations = new List<List<IReadOnlyList<Vec3>>>();
         for (var i = 0; i < n; i++)
         {
             var at = pts[i];
             var dir = closed ? (tangents[(i - 1 + segs) % segs] + tangents[i % segs]).Normalized() : i < n - 1 ? tangents[i] : tangents[^1];
             if (dir.Length < 1e-9) dir = tangents[i % segs];
-            Vec3 W(Vec2 p) { var q = L(p); return at + mitres[i] * q.X + u * q.Y; }
+            // Along the path: the section turned by its share of the twist, grown to its share of the end's scale, raised by its share of the rise.
+            var f = cum[^1] < 1e-12 ? 0 : cum[i] / cum[^1];
+            var (scale, spin, lift) = (1 + (shape.ScaleEnd - 1) * f, shape.Twist * f * Math.PI / 180, shape.Rise * f);
+            var (tc, ts) = (Math.Cos(spin), Math.Sin(spin));
+            // Turned about the middle of the section's box, as it stands on the path.
+            var pivot = new Vec2(0, (L(new Vec2(minX, minY)).Y + L(new Vec2(maxX, outer.Max(p => p.Y))).Y) / 2);
+            Vec2 S(Vec2 q) { var v = (q - pivot) * scale; return pivot + new Vec2(v.X * tc - v.Y * ts, v.X * ts + v.Y * tc); }
+            Vec3 W(Vec2 p) { var q = S(L(p)); return at + mitres[i] * q.X + u * (q.Y + lift); }
             var rings = new List<IReadOnlyList<Vec3>> { Orient(outer.Select(W).ToList(), dir, false) };
             rings.AddRange(holes.Select(h => Orient(h.Select(W).ToList(), dir, true)));
             stations.Add(rings);
@@ -264,14 +315,15 @@ public static class Solids
     /// end, the points matched and blended by the distance along the path;
     /// mitred at corners. Holes are not carried (their counts rarely agree).
     /// </summary>
-    public static SweepResult SweepMorph(IReadOnlyList<Vec2> start, IReadOnlyList<Vec2> end, IReadOnlyList<Vec3> path, Vec3 up)
+    public static SweepResult SweepMorph(IReadOnlyList<Vec2> start, IReadOnlyList<Vec2> end, IReadOnlyList<Vec3> path, Vec3 up, IReadOnlyList<Vec2>? startRef = null, IReadOnlyList<Vec2>? endRef = null)
     {
         if (start.Count < 3 || end.Count < 3) return new(null, "Both profiles need three points at least.");
         var pts = new List<Vec3>();
         foreach (var p in path) if (pts.Count == 0 || (p - pts[^1]).Length > 1e-9) pts.Add(p);
         if (pts.Count < 2) return new(null, "The path needs two points at least.");
-        static List<Vec2> Local(IReadOnlyList<Vec2> r) { var (cx, minY) = ((r.Min(p => p.X) + r.Max(p => p.X)) / 2, r.Min(p => p.Y)); return r.Select(p => new Vec2(p.X - cx, p.Y - minY)).ToList(); }
-        var m = Matched([Local(start), Local(end)]);
+        // Each profile placed by its box's bottom middle (or the box of the outline it was inset from).
+        static List<Vec2> Local(IReadOnlyList<Vec2> r, IReadOnlyList<Vec2> by) { var (cx, minY) = ((by.Min(p => p.X) + by.Max(p => p.X)) / 2, by.Min(p => p.Y)); return r.Select(p => new Vec2(p.X - cx, p.Y - minY)).ToList(); }
+        var m = Matched([Local(start, startRef ?? start), Local(end, endRef ?? end)]);
         var u = up.Normalized();
         var n = pts.Count;
         var tangents = Enumerable.Range(0, n - 1).Select(i => (pts[i + 1] - pts[i]).Normalized()).ToList();
@@ -298,12 +350,12 @@ public static class Solids
     /// its right edge on the second, stretched across to meet both (its height
     /// kept), the rails taken at the same fractions of their lengths.
     /// </summary>
-    public static SweepResult SweepRails(IReadOnlyList<Vec2> outer, IReadOnlyList<IReadOnlyList<Vec2>> holes, IReadOnlyList<Vec3> rail1, IReadOnlyList<Vec3> rail2, Vec3 up)
+    public static SweepResult SweepRails(IReadOnlyList<Vec2> outer, IReadOnlyList<IReadOnlyList<Vec2>> holes, IReadOnlyList<Vec3> rail1, IReadOnlyList<Vec3> rail2, Vec3 up, (double MinX, double MaxX, double MinY)? box = null)
     {
         if (outer.Count < 3) return new(null, "The profile needs three points at least.");
         if (rail1.Count < 2 || rail2.Count < 2) return new(null, "Each rail needs two points at least.");
         var u = up.Normalized();
-        var (minX, maxX, minY) = (outer.Min(p => p.X), outer.Max(p => p.X), outer.Min(p => p.Y));
+        var (minX, maxX, minY) = box ?? (outer.Min(p => p.X), outer.Max(p => p.X), outer.Min(p => p.Y));
         var pw = maxX - minX;
         if (pw < 1e-9) return new(null, "The profile has no width to stretch.");
         var fs = RailFractions(rail1, rail2);
@@ -329,8 +381,13 @@ public static class Solids
         return new(solid, solid == null ? "The solid between the rails could not be built." : null);
     }
 
-    /// <summary>A loft through profiles in space (each on its own plane), their points matched; capped at both ends.</summary>
-    public static SweepResult LoftThrough(IReadOnlyList<IReadOnlyList<Vec2>> profiles2D, IReadOnlyList<Func<Vec2, Vec3>> world)
+    /// <summary>
+    /// A loft through profiles in space (each on its own plane), their points matched; capped at both ends.
+    /// <paramref name="smooth"/>: through them on a smooth curve (Catmull-Rom) rather than straight from one to the
+    /// next; <paramref name="rail"/>: bent the way a guide line bends (how far the line strays from the straight line
+    /// between its ends, added along the loft), so two profiles can follow an arch or a swan neck.
+    /// </summary>
+    public static SweepResult LoftThrough(IReadOnlyList<IReadOnlyList<Vec2>> profiles2D, IReadOnlyList<Func<Vec2, Vec3>> world, IReadOnlyList<Vec3>? rail = null, bool smooth = false)
     {
         if (profiles2D.Count < 2) return new(null, "A loft needs two profiles at least.");
         var m = Matched(profiles2D);
@@ -339,8 +396,46 @@ public static class Solids
         var mids = rings.Select(Mid).ToList();
         for (var i = 0; i + 1 < mids.Count; i++)
             if ((mids[i + 1] - mids[i]).Length < 1e-6) return new(null, "Two profiles of the loft lie in the same place: draw them on different views or levels.");
+        if (rail is { Count: < 2 }) rail = null;
+        if (rail != null || (smooth && rings.Count > 2))
+        {
+            const int k = 12;
+            var n = rings.Count;
+            var stations = new List<List<Vec3>>();
+            for (var i = 0; i < n - 1; i++)
+                for (var j = 0; j <= k; j++)
+                {
+                    if (j == k && i < n - 2) continue;
+                    var t = (double)j / k;
+                    var g = i + t;
+                    var ring = new List<Vec3>(rings[i].Count);
+                    for (var q = 0; q < rings[i].Count; q++)
+                    {
+                        Vec3 R(int at) => rings[Math.Clamp(at, 0, n - 1)][q];
+                        ring.Add(smooth ? CatmullRom(R(i - 1), R(i), R(i + 1), R(i + 2), t) : R(i) + (R(i + 1) - R(i)) * t);
+                    }
+                    if (rail != null)
+                    {
+                        var f = g / (n - 1);
+                        var delta = At(rail, f) - (rail[0] + (rail[^1] - rail[0]) * f);
+                        for (var q = 0; q < ring.Count; q++) ring[q] += delta;
+                    }
+                    stations.Add(ring);
+                }
+            var sm = stations.Select(Mid).ToList();
+            var (d0, d1) = ((sm[1] - sm[0]).Normalized(), (sm[^1] - sm[^2]).Normalized());
+            var bent = Loft(OrientAll(stations, d0), false, d0, d1);
+            return new(bent, bent == null ? "The loft could not be built." : null);
+        }
         var solid = Loft(OrientAll(rings, (mids[1] - mids[0]).Normalized()), false, (mids[1] - mids[0]).Normalized(), (mids[^1] - mids[^2]).Normalized());
         return new(solid, solid == null ? "The loft could not be built." : null);
+    }
+
+    /// <summary>The centripetal-free (uniform) Catmull-Rom point between b and c.</summary>
+    static Vec3 CatmullRom(Vec3 a, Vec3 b, Vec3 c, Vec3 d, double t)
+    {
+        var (t2, t3) = (t * t, t * t * t);
+        return (b * 2 + (c - a) * t + (a * 2 - b * 5 + c * 4 - d) * t2 + (b * 3 - a - c * 3 + d) * t3) * 0.5;
     }
 
     /// <summary>The profile (3D: its outline and holes) turned about an axis by an angle (degrees; 360 closes it).</summary>
@@ -373,5 +468,188 @@ public static class Solids
         }
         var endTurn = Vec3.Cross(d, Rot(mid, angle) - axisAt) * Math.Sign(angle);
         return Loft(stations, full, turn.Normalized(), endTurn.Normalized());
+    }
+
+    // ------------------------------------------------------------ extrusions that lean or run to a face
+
+    /// <summary>
+    /// A ring moved in by <paramref name="by"/> (out when negative), each side parallel to itself and the corners
+    /// mitred; null when it would fold over itself (a side turned round, or sides crossing).
+    /// </summary>
+    public static IReadOnlyList<Vec2>? Inset(IReadOnlyList<Vec2> ring, double by)
+    {
+        var ccw = Polygon2.EnsureCcw(ring);
+        if (Math.Abs(by) < 1e-12) return ccw;
+        var o = Polygon2.Offset(ccw, [-by]);
+        var n = o.Length;
+        for (var i = 0; i < n; i++)
+        {
+            var (a, b) = (ccw[i], ccw[(i + 1) % n]);
+            var (p, q) = (o[i], o[(i + 1) % n]);
+            if (Vec2.Dot(b - a, q - p) <= 1e-12) return null;
+        }
+        if (Polygon2.SignedArea(o) <= 1e-12) return null;
+        for (var i = 0; i < n; i++)
+            for (var j = i + 2; j < n; j++)
+            {
+                if (i == 0 && j == n - 1) continue;
+                if (Crosses(o[i], o[(i + 1) % n], o[j], o[(j + 1) % n])) return null;
+            }
+        return o;
+    }
+
+    static bool Crosses(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
+    {
+        double S(Vec2 p, Vec2 q, Vec2 r) => Vec2.Cross(q - p, r - p);
+        var (d1, d2, d3, d4) = (S(c, d, a), S(c, d, b), S(a, b, c), S(a, b, d));
+        return ((d1 > 1e-12 && d2 < -1e-12) || (d1 < -1e-12 && d2 > 1e-12)) && ((d3 > 1e-12 && d4 < -1e-12) || (d3 < -1e-12 && d4 > 1e-12));
+    }
+
+    /// <summary>
+    /// An extrusion whose sides lean in by <paramref name="taperDeg"/> (out when negative) over its depth: the end
+    /// face the outline moved in by depth · tan(angle), the holes out by as much.
+    /// </summary>
+    public static SweepResult ExtrudeTapered(IReadOnlyList<Vec2> outer, IReadOnlyList<IReadOnlyList<Vec2>> holes, Func<Vec2, Vec3> world, Vec3 d, double taperDeg)
+    {
+        if (Math.Abs(taperDeg) >= 89) return new(null, "A taper is less than 89°.");
+        var by = d.Length * Math.Tan(taperDeg * Math.PI / 180);
+        var o0 = Polygon2.EnsureCcw(outer);
+        if (Inset(o0, by) is not { } o1) return new(null, "The taper is too steep for this outline over this depth: its end would fold.");
+        var h0 = holes.Select(Polygon2.EnsureCcw).ToList();
+        var h1 = new List<IReadOnlyList<Vec2>>();
+        foreach (var h in h0)
+        {
+            if (Inset(h, -by) is not { } x) return new(null, "The taper is too steep for a hole over this depth.");
+            h1.Add(x);
+        }
+        var dir = d.Normalized();
+        List<IReadOnlyList<Vec3>> Station(IReadOnlyList<Vec2> o, IReadOnlyList<IReadOnlyList<Vec2>> hs, Vec3 shift)
+        {
+            var rings = new List<IReadOnlyList<Vec3>> { Orient(o.Select(p => world(p) + shift).ToList(), dir, false) };
+            rings.AddRange(hs.Select(h => Orient(h.Select(p => world(p) + shift).ToList(), dir, true)));
+            return rings;
+        }
+        var solid = Loft([Station(o0, h0, Vec3.Zero), Station(o1, h1, d)], false, dir, dir);
+        return new(solid, solid == null ? "The tapered solid could not be built." : null);
+    }
+
+    /// <summary>
+    /// An extrusion along <paramref name="dir"/> from the sketch to a plane (a face of another element): each point
+    /// runs until it meets the plane, so the end face lies on it (a column up to a sloping soffit).
+    /// </summary>
+    public static SweepResult ExtrudeToPlane(IReadOnlyList<Vec3> outer, IReadOnlyList<IReadOnlyList<Vec3>> holes, Vec3 dir, Vec3 at, Vec3 normal)
+    {
+        var u = dir.Normalized();
+        var n = normal.Normalized();
+        var den = Vec3.Dot(u, n);
+        if (Math.Abs(den) < 1e-6) return new(null, "The face runs along the extrusion: it is never reached.");
+        Vec3? To(Vec3 p) { var s = Vec3.Dot(at - p, n) / den; return s > 1e-6 ? p + u * s : null; }
+        var top = outer.Select(To).ToList();
+        var hs = holes.Select(h => h.Select(To).ToList()).ToList();
+        if (top.Any(p => p == null) || hs.Any(h => h.Any(p => p == null))) return new(null, "The face is not ahead of the whole sketch: the extrusion would run back.");
+        List<IReadOnlyList<Vec3>> Station(IReadOnlyList<Vec3> o, IEnumerable<IReadOnlyList<Vec3>> hh)
+        {
+            var rings = new List<IReadOnlyList<Vec3>> { Orient(o, u, false) };
+            rings.AddRange(hh.Select(h => Orient(h, u, true)));
+            return rings;
+        }
+        // The rings oriented by the sketch's own (the end ring may lean, its winding follows the start's).
+        var start = Station(outer, holes);
+        var flipO = !ReferenceEquals(start[0], outer);
+        IReadOnlyList<Vec3> Like(IReadOnlyList<Vec3> ring, bool flip) => flip ? ring.Reverse().ToList() : ring;
+        var end = new List<IReadOnlyList<Vec3>> { Like(top.Select(p => p!.Value).ToList(), flipO) };
+        for (var i = 0; i < hs.Count; i++)
+        {
+            var flipH = !ReferenceEquals(start[i + 1], holes[i]);
+            end.Add(Like(hs[i].Select(p => p!.Value).ToList(), flipH));
+        }
+        var solid = Loft([start, end], false, u, n * Math.Sign(den));
+        return new(solid, solid == null ? "The solid up to the face could not be built." : null);
+    }
+
+    // ------------------------------------------------------------ primitives
+
+    /// <summary>The primitives Studio places without a sketch, standing on their point (its base's middle).</summary>
+    public static readonly string[] Primitives = ["box", "cylinder", "cone", "sphere", "torus", "wedge", "pyramid"];
+
+    /// <summary>
+    /// A primitive at <paramref name="at"/> (the middle of its base), turned <paramref name="rotDeg"/> about the
+    /// upright through it: a box (width along x, length along y, height), a cylinder or a cone (radius, top radius,
+    /// height), a sphere (radius), a torus lying flat (radius to the tube's middle, tube radius), a wedge (rising
+    /// along y to its height), a pyramid (width, length, height). Null with a reason when its sizes are wrong.
+    /// </summary>
+    public static SweepResult Primitive(string shape, Vec3 at, double rotDeg, double width, double length, double height, double radius, double radius2, int sides = 32)
+    {
+        sides = Math.Clamp(sides, 3, 256);
+        var (rc, rs) = (Math.Cos(rotDeg * Math.PI / 180), Math.Sin(rotDeg * Math.PI / 180));
+        Vec3 Pl(double x, double y, double z) => new(at.X + x * rc - y * rs, at.Y + x * rs + y * rc, at.Z + z);
+        List<Vec3> Circle(double r, double z) => Enumerable.Range(0, sides).Select(i => Pl(r * Math.Cos(2 * Math.PI * i / sides), r * Math.Sin(2 * Math.PI * i / sides), z)).ToList();
+        SweepResult Of(Solid? x, string what) => new(x, x == null ? $"The {what} could not be built." : null);
+        switch (shape)
+        {
+            case "box":
+                if (width <= 0 || length <= 0 || height <= 0) return new(null, "A box needs a width, a length and a height.");
+                return Of(Prism.Extrude([Pl(-width / 2, -length / 2, 0), Pl(width / 2, -length / 2, 0), Pl(width / 2, length / 2, 0), Pl(-width / 2, length / 2, 0)], null, new Vec3(0, 0, height), "studio"), "box");
+            case "cylinder":
+                if (radius <= 0 || height <= 0) return new(null, "A cylinder needs a radius and a height.");
+                return Of(Prism.Extrude(Circle(radius, 0), null, new Vec3(0, 0, height), "studio"), "cylinder");
+            case "cone":
+            {
+                if (radius <= 0 || height <= 0 || radius2 < 0) return new(null, "A cone needs a radius, a height and a top radius of 0 or more.");
+                if (radius2 > 1e-9)
+                    return Of(Loft([[Orient(Circle(radius, 0), Vec3.UnitZ, false)], [Orient(Circle(radius2, height), Vec3.UnitZ, false)]], false, Vec3.UnitZ, Vec3.UnitZ), "cone");
+                var mesh = new Mesh();
+                var ring = mesh.Add(Orient(Circle(radius, 0), Vec3.UnitZ, false));
+                var apex = mesh.Add([Pl(0, 0, height)])[0];
+                for (var i = 0; i < ring.Length; i++) mesh.T.Add((ring[i], ring[(i + 1) % ring.Length], apex));
+                mesh.Cap(ring, [], -Vec3.UnitZ, false);
+                return Of(mesh.Build(), "cone");
+            }
+            case "pyramid":
+            {
+                if (width <= 0 || length <= 0 || height <= 0) return new(null, "A pyramid needs a width, a length and a height.");
+                var mesh = new Mesh();
+                var ring = mesh.Add([Pl(-width / 2, -length / 2, 0), Pl(width / 2, -length / 2, 0), Pl(width / 2, length / 2, 0), Pl(-width / 2, length / 2, 0)]);
+                var apex = mesh.Add([Pl(0, 0, height)])[0];
+                for (var i = 0; i < 4; i++) mesh.T.Add((ring[i], ring[(i + 1) % 4], apex));
+                mesh.Cap(ring, [], -Vec3.UnitZ, false);
+                return Of(mesh.Build(), "pyramid");
+            }
+            case "sphere":
+            {
+                if (radius <= 0) return new(null, "A sphere needs a radius.");
+                var mesh = new Mesh();
+                var lat = Math.Max(4, sides / 2);
+                var bottom = mesh.Add([Pl(0, 0, 0)])[0];
+                var top = mesh.Add([Pl(0, 0, 2 * radius)])[0];
+                var rings = new List<int[]>();
+                for (var j = 1; j < lat; j++)
+                {
+                    var phi = Math.PI * j / lat - Math.PI / 2;
+                    rings.Add(mesh.Add(Circle(radius * Math.Cos(phi), radius + radius * Math.Sin(phi))));
+                }
+                for (var i = 0; i < sides; i++)
+                {
+                    var i2 = (i + 1) % sides;
+                    mesh.T.Add((bottom, rings[0][i2], rings[0][i]));
+                    mesh.T.Add((top, rings[^1][i], rings[^1][i2]));
+                    for (var j = 0; j + 1 < rings.Count; j++) mesh.Quad(rings[j][i], rings[j][i2], rings[j + 1][i2], rings[j + 1][i]);
+                }
+                return Of(mesh.Build(), "sphere");
+            }
+            case "torus":
+            {
+                if (radius <= 0 || radius2 <= 0 || radius2 >= radius) return new(null, "A torus needs a radius to its tube's middle and a smaller tube radius.");
+                var tube = Enumerable.Range(0, Math.Max(8, sides / 2)).Select(i => { var a = 2 * Math.PI * i / Math.Max(8, sides / 2); return Pl(radius + radius2 * Math.Cos(a), 0, radius2 + radius2 * Math.Sin(a)); }).ToList();
+                return Of(Revolve(tube, [], at, Vec3.UnitZ, 360), "torus");
+            }
+            case "wedge":
+            {
+                if (width <= 0 || length <= 0 || height <= 0) return new(null, "A wedge needs a width, a length and a height.");
+                var side = new List<Vec3> { Pl(-width / 2, -length / 2, 0), Pl(-width / 2, length / 2, 0), Pl(-width / 2, length / 2, height) };
+                return Of(Prism.Extrude(side, null, Pl(width / 2, 0, 0) - Pl(-width / 2, 0, 0), "studio"), "wedge");
+            }
+        }
+        return new(null, $"„{shape}” is not a primitive ({string.Join(", ", Primitives)}).");
     }
 }

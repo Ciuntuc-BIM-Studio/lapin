@@ -7,13 +7,18 @@ using Lapin.Platform;
 namespace Lapin.Studio;
 
 /// <summary>
-/// Studio (the old Lapin's): solids from sketches drawn on a plan or a
-/// section, an extrusion, a sweep along a path or a revolution about an
-/// axis, each rebuilt whenever its sketch changes; and live booleans between
-/// any elements (IfcRelInterferesElements): a target less its tools, or united
-/// or intersected with them (the tools then hidden, kept editable).
+/// Studio (the old Lapin's, grown into a geometry editor: docs/plan-studio-editor.md):
+/// solids from sketches drawn on a plan, a section, an elevation or a work
+/// plane (any face picked in 3D), an extrusion (straight, symmetric, tapered,
+/// or up to a face), a sweep along a path (twisted, scaled, rising into a
+/// helix), a loft, a revolution, or a primitive placed with a click; each
+/// rebuilt whenever its sketch changes, then the steps it was given done in
+/// order (push/pull, chamfer, fillet, shell, slice, arrays, 3D placement:
+/// <see cref="Features"/>); and live booleans between any elements
+/// (IfcRelInterferesElements): a target less its tools, or united or
+/// intersected with them (the tools then hidden, kept editable).
 /// </summary>
-public sealed class StudioModule : ILapinModule, IGeometryFilter
+public sealed partial class StudioModule : ILapinModule, IGeometryFilter
 {
     public string Id => "studio";
     public string Name => "Studio";
@@ -54,7 +59,12 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         ["ROOF"] = IfcClass.Roof, ["FOOTING"] = IfcClass.Footing,
     };
 
-    public static readonly string[] Operations = ["extrude", "sweep", "revolve", "loft"];
+    /// <summary>
+    /// The operations a solid is made by: from a sketch (extrude, sweep, revolve, loft), without one (a primitive;
+    /// a prism, a face pushed or pulled on an element Studio does not build; a body, an element's or a mesh file's
+    /// triangles made into a Studio solid).
+    /// </summary>
+    public static readonly string[] Operations = ["extrude", "sweep", "revolve", "loft", "primitive", "prism", "body"];
 
     public void Register(IModuleRegistry r)
     {
@@ -67,6 +77,19 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
                 new("offset", "Offset from the sketch", "length"),
                 new("place", "Profile on the path", "choice", Choices: Solids.Places),
                 new("placeOffset", "Gap from the path", "length"),
+                new("symmetric", "Both ways from the sketch", "bool"),
+                new("taper", "Taper (°)", "number", Min: -89, Max: 89),
+                new("twist", "Twist along the path (°)", "number", Min: -3600, Max: 3600),
+                new("scaleEnd", "Scale at the end", "number", Min: 0.01, Max: 100),
+                new("rise", "Rise along the path", "length"),
+                new("turns", "Turns (a rising ring)", "number", Min: 0.1, Max: 100),
+                new("smooth", "Smooth through the profiles", "bool"),
+                new("shape", "Primitive", "choice", Choices: Solids.Primitives, ReadOnly: true),
+                new("width", "Width", "length", Min: 0),
+                new("length", "Length", "length", Min: 0),
+                new("radius", "Radius", "length", Min: 0),
+                new("radius2", "Second radius", "length", Min: 0),
+                new("rotation", "Rotation (°)", "number", Min: -360, Max: 360),
                 new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
                 new("exportAs", "Export as", "text"),
                 // Rings, boxes and wall strips (Thick).
@@ -81,7 +104,7 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
             r.Geometry(cls, Geometry);
             r.Quantities(cls, Quantities);
             // Studio solids give way to the building's elements; furniture to everything.
-            r.Cutter(cls, cls == "IfcFurnishingElement" ? 10 : 40, (e, m) => Geometry(e, m, null)?.Parts is [{ } only] ? only.Solid : null);
+            r.Cutter(cls, cls == "IfcFurnishingElement" ? 10 : 40, (e, m) => !IsVoid(e) && Geometry(e, m, null)?.Parts is [{ } only] ? only.Solid : null);
         }
         r.Class(new(TypeClass, "Solid type", [new("description", "Description", "text")], "#b9b2a6", Kind: "type"));
         // A box's walls with its bottom and top: an assembly (IfcElementAssembly) of separate elements, without a body of its own.
@@ -99,6 +122,8 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         r.Command("ring", "Ring", (ctx, a) => CreateThick(ctx, a, Thick.Ring));
         r.Command("box", "Box", (ctx, a) => CreateThick(ctx, a, Thick.Box));
         r.Command("wall", "Wall strip", (ctx, a) => CreateThick(ctx, a, Thick.Wall));
+        r.Command("primitive", "Primitive", Primitive);
+        RegisterEdits(r);
 
         // A solid's class (and its predefined type) changed: written again under the new class, same id, same sketch, same type and booleans.
         r.Command("setClass", "Change class", (ctx, a) =>
@@ -202,7 +227,7 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
             return new JsonObject { ["shown"] = show };
         });
 
-        // What the properties card shows of a Studio solid.
+        // What the properties card shows of a Studio solid: its operation, sketch and steps.
         r.Query("studio.feature", (q, a) =>
         {
             if (q.Model.Get((string?)a["id"] ?? "") is not { } e || e.Str("operation") is not { } op) return null;
@@ -210,14 +235,28 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
             var source = op == Thick.BoxSlab ? q.Model.Get(e.Str("box") ?? "") : e;
             var profile = q.Model.Get(source?.Str("profile") ?? "");
             var view = profile != null ? Views.Find(q.Model, profile.Str("viewId") ?? "") : null;
-            var holes = profile != null ? Sketches.Holes(q.Model, profile, ProfileIds(q.Model)) : [];
-            var outer = Sketches.Loop(profile != null ? Drafts.ShapeOf(profile) : null);
+            var outline = profile != null ? Sketches.OutlineOf(q.Model, profile) : null;
+            var holes = profile != null ? Sketches.HoleOutlines(q.Model, profile, ProfileIds(q.Model)) : [];
+            var sketch = (outline?.Ids ?? (profile != null ? [profile.Id] : [])).Concat(new[] { e.Str("guide"), e.Str("endProfile"), e.Str("rail") }.OfType<string>())
+                .Concat(holes.SelectMany(h => h.Ids)).Distinct().Select(x => (JsonNode)x).ToArray();
+            var steps = new JsonArray();
+            foreach (var f in (e.Attrs["features"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            {
+                var step = (JsonObject)f.DeepClone();
+                step["label"] = Features.Label(f);
+                steps.Add((JsonNode)step);
+            }
+            var built = q.Geometry(e.Id);
             return new JsonObject
             {
-                ["operation"] = op, ["view"] = view?.Name, ["viewId"] = view?.Id, ["profile"] = profile?.Id, ["holes"] = holes.Count,
-                ["sketch"] = new JsonArray(new[] { profile?.Id, e.Str("guide") }.Concat(holes.Select(h => h.Id)).OfType<string>().Select(x => (JsonNode)x).ToArray()),
-                ["area"] = outer == null ? null : Math.Abs(Polygon2.SignedArea(outer)) - holes.Sum(h => Math.Abs(Polygon2.SignedArea(h.Loop))),
+                ["operation"] = op, ["view"] = view?.Name, ["viewId"] = view?.Id, ["viewKind"] = view?.Str("kind"), ["profile"] = profile?.Id, ["holes"] = holes.Count,
+                ["sketch"] = new JsonArray(sketch),
+                ["area"] = outline == null ? null : Math.Abs(Polygon2.SignedArea(outline.Loop)) - holes.Sum(h => Math.Abs(Polygon2.SignedArea(h.Loop))),
                 ["guide"] = e.Str("guide") is { } g ? (q.Model.Get(g) is { } ge ? ge.Name : "missing") : null,
+                ["upTo"] = e.Attrs["upTo"] is JsonObject ut && q.Model.Get((string?)ut["id"] ?? "") is { } target ? target.Name : e.Attrs["upTo"] is JsonObject ? "missing" : null,
+                ["features"] = steps,
+                ["volume"] = built?.Parts.Sum(pt => Measure.Volume(pt.Solid)),
+                ["problems"] = built?.Diagnostics is { Count: > 0 } d ? new JsonArray(d.Select(x => (JsonNode)x).ToArray()) : null,
             };
         });
     }
@@ -243,89 +282,9 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
     static Entity ClosedDraft(IModelView m, string? id, string what)
     {
         var d = Drafts.Require(m, id, editable: false);
-        if (Sketches.Loop(Drafts.ShapeOf(d)) == null) throw new CommandException($"The {what} must be a closed polyline or a circle.");
-        if (ProfileIds(m).Contains(d.Id)) throw new CommandException($"That outline is a solid's profile already.");
+        if (Sketches.OutlineOf(m, d) is not { } outline) throw new CommandException($"The {what} must be closed: a closed polyline, a circle, or lines and arcs meeting end to end.");
+        if (outline.Ids.Any(ProfileIds(m).Contains)) throw new CommandException($"That outline is a solid's profile already.");
         return d;
-    }
-
-    static JsonNode? Create(ICommandContext ctx, JsonObject a, string op)
-    {
-        var profile = Drafts.Require(ctx.Model, (string?)a["profileId"], editable: false);
-        if (Sketches.Loop(Drafts.ShapeOf(profile)) == null) throw new CommandException("The profile must be a closed polyline or a circle.");
-        if (ProfileIds(ctx.Model).Contains(profile.Id)) throw new CommandException("That outline is a solid's profile already.");
-        var plane = PlaneFor(ctx, profile);
-        var (cls, exportAs) = ClassOf((string?)a["class"]);
-        var attrs = new JsonObject { ["operation"] = op, ["profile"] = profile.Id };
-        if (exportAs != null) attrs["exportAs"] = exportAs;
-        switch (op)
-        {
-            case "extrude":
-            {
-                var depth = Json.Number(a["depth"]) ?? 1;
-                if (Math.Abs(depth) < 1e-6) throw new CommandException("An extrusion needs a depth.");
-                attrs["depth"] = depth;
-                if (Json.Number(a["offset"]) is { } off) attrs["offset"] = off;
-                break;
-            }
-            case "sweep":
-            {
-                var path = Drafts.Require(ctx.Model, (string?)a["pathId"], editable: false);
-                if (Drafts.ShapeOf(path) is not (Line or Polyline or Arc or Circle)) throw new CommandException("A path is a line, a polyline, an arc or a circle.");
-                if (path.Str("viewId") != profile.Str("viewId")) throw new CommandException("The path is drawn on the profile's view.");
-                attrs["guide"] = path.Id;
-                // A profile it ends with (the profile becomes it on the way), or a second rail it stretches to.
-                if ((string?)a["endProfileId"] is { } endId)
-                {
-                    var end = ClosedDraft(ctx.Model, endId, "end profile");
-                    if (end.Id == profile.Id) throw new CommandException("The end profile is another outline than the start one.");
-                    if (end.Str("viewId") != profile.Str("viewId")) throw new CommandException("The end profile is drawn on the profile's view.");
-                    attrs["endProfile"] = end.Id;
-                }
-                if ((string?)a["railId"] is { } railId)
-                {
-                    var rail = Drafts.Require(ctx.Model, railId, editable: false);
-                    if (Drafts.ShapeOf(rail) is not (Line or Polyline or Arc)) throw new CommandException("A rail is a line, a polyline or an arc.");
-                    if (rail.Id == path.Id) throw new CommandException("The second rail is another line than the path.");
-                    if (rail.Str("viewId") != profile.Str("viewId")) throw new CommandException("The rail is drawn on the profile's view.");
-                    attrs["rail"] = rail.Id;
-                }
-                if (attrs["endProfile"] != null && attrs["rail"] != null) throw new CommandException("A sweep ends with another profile or follows a second rail, not both.");
-                if ((string?)a["place"] is { } place)
-                {
-                    if (!Solids.Places.Contains(place)) throw new CommandException($"„{place}” is not a place on the path ({string.Join(", ", Solids.Places)}).");
-                    attrs["place"] = place;
-                }
-                if (Json.Number(a["placeOffset"]) is { } gap) attrs["placeOffset"] = gap;
-                break;
-            }
-            case "loft":
-            {
-                // The profiles in order, each on its own view (a plan of another level, a section further on).
-                var ids = (a["profileIds"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList() ?? [];
-                if (ids.Count < 2) throw new CommandException("A loft needs two profiles at least.");
-                if (ids[0] != profile.Id) ids.Insert(0, profile.Id);
-                var all = ids.Select((id, i) => i == 0 ? profile : ClosedDraft(ctx.Model, id, "profile")).ToList();
-                if (all.Select(x => x.Id).Distinct().Count() != all.Count) throw new CommandException("A profile comes once in a loft.");
-                foreach (var d in all.Skip(1)) PlaneFor(ctx, d);
-                attrs["profiles"] = new JsonArray(all.Select(x => (JsonNode)x.Id).ToArray());
-                break;
-            }
-            case "revolve":
-            {
-                var axis = Drafts.Require(ctx.Model, (string?)a["axisId"], editable: false);
-                if (Drafts.ShapeOf(axis) is not Line) throw new CommandException("The axis is a line.");
-                if (axis.Str("viewId") != profile.Str("viewId")) throw new CommandException("The axis is drawn on the profile's view.");
-                attrs["guide"] = axis.Id;
-                attrs["angle"] = Json.Number(a["angle"]) ?? 360;
-                break;
-            }
-        }
-        var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : $"{char.ToUpperInvariant(op[0])}{op[1..]} {ctx.Model.OfClass(cls).Count() + 1}";
-        var e = new Entity(ctx.NewId(), cls, name, attrs);
-        ctx.Add(e);
-        var storey = (string?)a["storeyId"] ?? plane.StoreyId ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
-        Spatial.Contain(ctx, storey, e.Id);
-        return new JsonObject { ["id"] = e.Id };
     }
 
     /// <summary>The plane a drafted shape lies on, for a new solid: an elevation drawn on for the first time takes a plane of its own here.</summary>
@@ -442,87 +401,6 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         return new ElementGeometry(parts, plan, plan.SelectMany(p => p.Points).ToList(), problems.Count > 0 ? problems : null);
     }
 
-    public static ElementGeometry? Geometry(Entity e, IModelView m, IServices? services)
-    {
-        var problems = new List<string>();
-        ElementGeometry Fail(string why) => new([], Diagnostics: [why]);
-        if (Thick.Is(e.Str("operation")) || e.Str("operation") == Thick.BoxSlab) return ThickGeometry(e, m, services);
-        var profile = m.Get(e.Str("profile") ?? "");
-        if (profile == null) return Fail("The solid's sketch is gone: draw its outline again.");
-        var outer2 = Sketches.Loop(Drafts.ShapeOf(profile));
-        if (outer2 == null) return Fail("The solid's outline is no longer closed.");
-        var (plane, planeProblem) = PlaneOfSketch(m, services, profile);
-        if (plane == null) return Fail(planeProblem!);
-        var holes2 = Sketches.Holes(m, profile, ProfileIds(m)).Select(h => h.Loop).ToList();
-        var shift = plane.Normal * e.Num("offset");
-        List<Vec3> W(IReadOnlyList<Vec2> l) => l.Select(p => plane.World(p) + shift).ToList();
-        Solid? solid = null;
-        switch (e.Str("operation"))
-        {
-            case "extrude":
-                solid = Solids.Extrude(W(outer2), holes2.Select(h => (IReadOnlyList<Vec3>)W(h)).ToList(), plane.Normal * (e.NumOrNull("depth") ?? 1));
-                break;
-            case "sweep":
-            {
-                if (m.Get(e.Str("guide") ?? "") is not { } g || Drafts.ShapeOf(g) is not { } gs) return Fail("The path is missing: draw it again to rebuild.");
-                var path = Geo.Polylines(gs, Math.PI / 24)[0].Select(p => plane.World(p) + shift).ToList();
-                Solids.SweepResult swept;
-                if (e.Str("endProfile") is { } endId)
-                {
-                    if (m.Get(endId) is not { } endDraft || Sketches.Loop(Drafts.ShapeOf(endDraft)) is not { } endLoop) return Fail("The end profile is missing or no longer closed: draw it again to rebuild.");
-                    swept = Solids.SweepMorph(outer2, endLoop, path, plane.Normal);
-                }
-                else if (e.Str("rail") is { } railId)
-                {
-                    if (m.Get(railId) is not { } railDraft || Drafts.ShapeOf(railDraft) is not { } rs) return Fail("The second rail is missing: draw it again to rebuild.");
-                    var rail = Geo.Polylines(rs, Math.PI / 24)[0].Select(p => plane.World(p) + shift).ToList();
-                    swept = Solids.SweepRails(outer2, holes2, path, rail, plane.Normal);
-                }
-                else swept = Solids.SweepPlaced(outer2, holes2, path, plane.Normal, e.Str("place") ?? "centre", e.Num("placeOffset"));
-                if (swept.Problem != null) return Fail(swept.Problem);
-                solid = swept.Solid;
-                break;
-            }
-            case "loft":
-            {
-                var loops = new List<IReadOnlyList<Vec2>>();
-                var worlds = new List<Func<Vec2, Vec3>>();
-                foreach (var id in (e.Attrs["profiles"] as JsonArray)?.Select(x => (string?)x).OfType<string>() ?? [])
-                {
-                    if (m.Get(id) is not { } d || Sketches.Loop(Drafts.ShapeOf(d)) is not { } loop) return Fail("A profile of the loft is missing or no longer closed.");
-                    if (PlaneOfSketch(m, services, d).Plane is not { } pl) return Fail("A profile's view is gone, or lies on no plane.");
-                    loops.Add(loop);
-                    worlds.Add(q => pl.World(q) + shift);
-                }
-                var lofted = Solids.LoftThrough(loops, worlds);
-                if (lofted.Problem != null) return Fail(lofted.Problem);
-                solid = lofted.Solid;
-                break;
-            }
-            case "revolve":
-            {
-                if (m.Get(e.Str("guide") ?? "") is not { } g || Drafts.ShapeOf(g) is not Line ax) return Fail("The axis is missing: draw it again to rebuild.");
-                var (a3, b3) = (plane.World(ax.A) + shift, plane.World(ax.B) + shift);
-                solid = Solids.Revolve(W(outer2), holes2.Select(h => (IReadOnlyList<Vec3>)W(h)).ToList(), a3, b3 - a3, e.NumOrNull("angle") ?? 360);
-                break;
-            }
-        }
-        if (solid == null) return Fail("The solid could not be built from its sketch.");
-        var material = e.Str("material");
-        // In plan: the outline of what it covers (its sketch when drawn in plan, else its shadow's hull).
-        var plan = new List<PlanItem>();
-        if (e.Str("operation") == "extrude" && Math.Abs(plane.Normal.Z) > 0.999)
-        {
-            plan.Add(new PlanItem("outline", true, outer2));
-            plan.AddRange(holes2.Select(h => new PlanItem("outline", true, h)));
-        }
-        else if (Polygon2.ConvexHull(solid.Vertices.Select(v => new Vec2(v.X, v.Y))) is { Length: >= 3 } hull) plan.Add(new PlanItem("outline", true, hull));
-        var parts = new List<GeometryPart> { new(e.Name, material != null ? Materials.ColorOf(m, material) : "#b9b2a6", solid, material, "body") };
-        // Cut by what ranks above it (walls through a pavement…); its envelope for others is the uncut solid.
-        parts = CutPriorities.Apply(e, m, services, parts, problems);
-        return new ElementGeometry(parts, plan, plan.SelectMany(p => p.Points).ToList(), problems.Count > 0 ? problems : null);
-    }
-
     /// <summary>
     /// A solid measured as the class it is written as: always its volume and
     /// surface; a member, beam or column its length (along its path, or its
@@ -587,7 +465,9 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         }
         if (e.Str("operation") == Thick.BoxSlab) return (0, 0, 0, SlabThickness(e, m));
         var profile = m.Get(e.Str("profile") ?? "");
-        var outer = Sketches.Loop(profile != null ? Drafts.ShapeOf(profile) : null);
+        if (e.Str("operation") == "primitive")
+            return (0, e.Num("height"), Math.Max(e.Num("width"), 2 * e.Num("radius")), e.Num("height"));
+        var outer = profile != null ? Sketches.OutlineOf(m, profile)?.Loop : null;
         if (outer == null) return (0, 0, 0, 0);
         var holes = Sketches.Holes(m, profile!, ProfileIds(m));
         var section = Math.Abs(Polygon2.SignedArea(outer)) - holes.Sum(h => Math.Abs(Polygon2.SignedArea(h.Loop)));
@@ -606,9 +486,13 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
     static IEnumerable<Relation> Rels(IModelView m) => m.Relations.Where(x => x.Class == IfcClass.RelInterferesElements);
     static string TypeOf(Relation r) => (string?)r.Attrs?["interferenceType"] ?? "Subtract";
 
+    /// <summary>A Studio solid that only cuts (an extrusion made to cut, a face pushed into an element): never drawn itself.</summary>
+    public static bool IsVoid(Entity e) => e.Str("operation") != null && e.Attrs["void"] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
+
     public ElementGeometry? Apply(Entity e, ElementGeometry g, IModelView m, IServices services)
     {
         var rels = m.RelationsOf(e.Id).Where(x => x.Class == IfcClass.RelInterferesElements).ToList();
+        if (IsVoid(e)) return g with { Parts = [], Plan = null };
         if (rels.Count == 0) return null;
         // A union's or intersection's tool is drawn inside its target, unless the target shows its operands.
         var asTool = rels.FirstOrDefault(x => x.Related.Contains(e.Id) && TypeOf(x) != "Subtract");

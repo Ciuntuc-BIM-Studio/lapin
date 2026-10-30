@@ -240,8 +240,11 @@ const gridBase = (nodes: Map<string, NodeDto>) => {
   for (const n of nodes.values()) if (n.type === 'IfcBuildingStorey') base = Math.min(base, Number(n.props.elevation ?? 0));
   return base;
 };
-/** A named face as the engine gives it (core.faceAt). */
-interface FaceDto { role: string; label: string; normal: number[]; outline: number[][] }
+/** A named face as the engine gives it (core.faceAt), or a body's flat face (studio.faceAt: no role, no label). */
+interface FaceDto { role?: string; label?: string; normal: number[]; outline: number[][] }
+
+/** Whether a face or pick tool takes an element of this class ('*': any). */
+const takesType = (types: string[], type: string) => types.includes('*') || types.includes(type);
 
 /** Where a ray hit: the point, and the hit triangle's normal in the world (an instance's turned by its matrix first). */
 function faceHit(hit: THREE.Intersection): FaceHit {
@@ -405,6 +408,8 @@ export function Viewport3D() {
   const clickRef = useRef<(hit: { nodeId: string | null; ground: Vec2 | null; add: boolean; face?: FaceHit }) => void>(() => undefined);
   /** The classes a face tool works on (null: no face tool on), for the hover that lights up the face under the cursor. */
   const faceTypes = useRef<string[] | null>(null);
+  /** The query that names the face under the cursor for the face tool on. */
+  const faceQuery = useRef('core.faceAt');
   const clearFace = useRef<() => void>(() => undefined);
   const [faceLabel, setFaceLabel] = useState<{ text: string; x: number; y: number } | null>(null);
   /** The reference plane under the cursor (no tool on), drawn stronger. */
@@ -432,13 +437,14 @@ export function Viewport3D() {
 
   useEffect(() => { setPending(null); clearFace.current(); setFaceLabel(null); }, [toolId]);
   faceTypes.current = tool?.gesture?.kind === 'face' ? tool.gesture.types : null;
+  faceQuery.current = tool?.gesture?.kind === 'face' ? tool.gesture.query ?? 'core.faceAt' : 'core.faceAt';
 
   clickRef.current = ({ nodeId, ground, add, face }) => {
     const g = tool?.gesture;
     if (!g) { select(nodeId && pickable(useSession.getState().nodes.get(nodeId)) ? nodeId : null, add); return; }
     if (g.kind === 'face' || g.kind === 'pick') {
       const node = nodeId ? useSession.getState().nodes.get(nodeId) : undefined;
-      if (!node || (!g.types.includes('*') && !g.types.includes(node.type))) { useSession.setState({ error: 'Pick an element this tool works on.' }); return; }
+      if (!node || !takesType(g.types, node.type)) { useSession.setState({ error: 'Pick an element this tool works on.' }); return; }
       void completeTool(tool!, { points: ground ? [ground] : [], entity: node, face });
       return;
     }
@@ -700,13 +706,14 @@ export function Viewport3D() {
         const hit = pickAt();
         const id = nodeOfHit(hit);
         const node = id ? useSession.getState().nodes.get(id) : undefined;
-        if (!hit || !node || (!types.includes('*') && !types.includes(node.type))) { if (hoverKey) { hoverKey = ''; showFace(null); setFaceLabel(null); } return; }
+        if (!hit || !node || !takesType(types, node.type)) { if (hoverKey) { hoverKey = ''; showFace(null); setFaceLabel(null); } return; }
         const f = faceHit(hit);
-        void engine.call<FaceDto | null>('doc.query', { name: 'core.faceAt', args: { id: node.id, point: f.point, normal: f.normal } }).then((face) => {
+        void engine.call<FaceDto | null>('doc.query', { name: faceQuery.current, args: { id: node.id, point: f.point, normal: f.normal } }).then((face) => {
           if (faceTypes.current !== types) return;
-          const key = face ? `${node.id}/${face.role}` : '';
+          // A named face keys by its role; a body's flat face (no role) by its plane and outline.
+          const key = face ? `${node.id}/${face.role ?? `${face.normal.map((v) => v.toFixed(4)).join(',')}:${face.outline.length}:${face.outline[0]?.map((v) => v.toFixed(4)).join(',')}`}` : '';
           if (key !== hoverKey) { hoverKey = key; showFace(face); }
-          setFaceLabel(face ? { text: `${node.name} · ${face.label}`, x: at.x, y: at.y } : null);
+          setFaceLabel(face ? { text: face.label ? `${node.name} · ${face.label}` : node.name, x: at.x, y: at.y } : null);
         }).catch(() => undefined);
       });
     };

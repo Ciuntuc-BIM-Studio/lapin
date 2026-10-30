@@ -1620,6 +1620,80 @@ export const scenes = [
       t.expect((await t.nodes()).filter((n) => n.type === 'LapinRebar').length === 2, 'two bars');
     },
   },
+  {
+    // Studio as a geometry editor (docs/plan-studio-editor.md): push/pull and a fillet in 3D, a pipe's steps, a rising handrail.
+    id: 'studio-editor',
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      const plan = 'plan:' + storey;
+      const rect = (x0, y0, x1, y1) => ({ type: 'polyline', pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], closed: true });
+      const draw = async (viewId, shape) => (await t.cmd('drafting.draw', { viewId, shape })).ids[0];
+      // A 3 × 2 m block, 1 m high, extruded from a rectangle on the plan.
+      const block = (await t.cmd('studio.extrude', { profileId: await draw(plan, rect(0, 0, 3, 2)), depth: 1 })).id;
+      const solid = async (id) => (await t.nodes()).find((n) => n.id === id);
+      const length = (m) => page.evaluate(async (m) => (await import('/src/engine/unitsStore.ts')).formatLength(m), m);
+      /** The 3D camera looking at a point from a side (azimuth: the way it looks; pitch below 0 looks down), the point at the view's middle. */
+      const look = async (target, azimuth, pitch, distance = 9) => {
+        await page.evaluate(async ([target, azimuth, pitch, distance]) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ target, azimuth, pitch, distance }, false), [target, azimuth, pitch, distance]);
+        await t.wait(700);
+      };
+      const middle = async () => { const b = await page.locator('[data-testid=view3d]').boundingBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
+      /** A face tool used where the camera looks: the face lights up under the mouse, a click asks for its value. */
+      const pickMiddle = async () => {
+        const [x, y] = await middle();
+        await page.mouse.move(x - 40, y - 30); await page.mouse.move(x, y, { steps: 6 });
+        await t.wait(900);
+        await page.mouse.click(x, y);
+        await t.wait(600);
+      };
+      await t.ui({ view: '3d', selection: null, selected: [] });
+      await page.waitForSelector('[data-testid=view3d] canvas', { timeout: 20_000 });
+      await t.wait(1500);
+
+      // Push/pull: the top pulled up half a metre, typed in the box beside the cursor; the extrusion's depth takes it.
+      await look({ x: 1.5, y: 1, z: 1 }, Math.PI / 4, -0.55);
+      await t.tool('studio.pushPull');
+      await pickMiddle();
+      t.expect(await page.locator('.ask-box').count() === 1, 'push/pull asks how far beside the cursor');
+      await page.locator('.ask-box input').first().fill(await length(0.5));
+      await t.shot('studio-push-pull', { of: '[data-testid=view3d]', pad: 0 });
+      await t.keys('Enter');
+      await t.wait(800);
+      t.expect(Math.abs(Number((await solid(block)).props.depth) - 1.5) < 1e-6, 'the top pulled 0.5 m makes the extrusion 1.5 m deep');
+
+      // A fillet on the top's east edge, picked on the top near it: a step of the solid.
+      await look({ x: 2.92, y: 1, z: 1.5 }, Math.PI * 0.85, -0.6, 6);
+      await t.tool('studio.fillet');
+      await pickMiddle();
+      t.expect(await page.locator('.ask-box').count() === 1, 'a fillet asks for its radius');
+      await page.locator('.ask-box input').first().fill(await length(0.3));
+      await t.keys('Enter');
+      await t.wait(1000);
+      t.expect(((await solid(block)).props.features ?? []).length === 1, 'the fillet is a step of the solid');
+      await t.keys('Escape');
+      await look({ x: 1.5, y: 1, z: 0.7 }, Math.PI * 0.8, -0.45, 8);
+      await t.shot('studio-fillet', { of: '[data-testid=view3d]', pad: 0 });
+
+      // A cylinder placed from the ribbon, hollowed into a pipe: its steps in its properties.
+      const pipe = (await t.cmd('studio.primitive', { shape: 'cylinder', at: [6, 1], radius: 0.6, height: 1.2, storeyId: storey })).id;
+      await t.cmd('studio.addFeature', { id: pipe, feature: { op: 'shell', thickness: 0.08, open: 'end' } });
+      await t.cmd('studio.addFeature', { id: pipe, feature: { op: 'array', count: 3, step: [0, 2, 0] } });
+      await t.ui({ view: '3d', selection: pipe, selected: [pipe] });
+      await t.wait(1500);
+      t.expect(await page.locator('.studio-steps li').count() === 2, 'the pipe lists its two steps');
+      await t.shot('studio-steps', { of: 'aside.props', pad: 0 });
+
+      // A handrail that rises round a circle: a sweep whose path climbs 3 m in two turns.
+      const tube = await draw(plan, { type: 'circle', c: [20, 0], r: 0.04 });
+      const round = await draw(plan, { type: 'circle', c: [10, 6], r: 1.2 });
+      await t.cmd('studio.sweep', { profileId: tube, pathId: round, rise: 3, turns: 2, name: 'Handrail' });
+      await t.ui({ selection: null, selected: [] });
+      await look({ x: 6, y: 3, z: 1.2 }, Math.PI * 0.3, -0.35, 15);
+      await t.shot('studio-helix', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */

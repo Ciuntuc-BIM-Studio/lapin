@@ -994,3 +994,23 @@ button.mode-chip:hover { color: var(--accent); }
 
 /* A wall layer's own height (report #44): narrow From / Up to fields. */
 .layer-edit .layer-height { width: 56px; }
+/* A value asked for beside the cursor (Studio's face tools in 3D, a mesh's units). */
+.ask-box { position: fixed; z-index: 60; min-width: 220px; max-width: 280px; padding: 8px 10px; background: var(--raised); color: var(--ink); border: 1px solid var(--rule-strong); border-radius: 6px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); font-size: 12px; }
+.ask-box .ask-title { font-weight: 600; margin-bottom: 6px; }
+.ask-box .ask-row { display: grid; grid-template-columns: 1fr 96px auto; align-items: center; gap: 6px; margin: 3px 0; }
+.ask-box .ask-row input, .ask-box .ask-row select { width: 100%; }
+.ask-box .ask-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+
+/* Studio's steps in the inspector, the panel's whole width: each its switch, label and moves, then its number and choice. */
+.studio-steps-block { margin: 8px 0 4px; }
+.studio-steps-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px; }
+.studio-steps { list-style: none; margin: 0; padding: 0; }
+.studio-steps li { padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.studio-steps .step-head { display: flex; align-items: center; gap: 4px; }
+.studio-steps .step-edit { display: flex; align-items: center; gap: 6px; padding: 3px 0 0 22px; flex-wrap: wrap; }
+.studio-steps .step-edit label { display: flex; align-items: center; gap: 4px; }
+.studio-steps li.off .step-label { color: var(--ink-muted); text-decoration: line-through; }
+.studio-steps .step-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.studio-steps input.num { width: 72px; }
+.studio-xyz { display: flex; align-items: center; gap: 4px; }
+.studio-xyz input.num { width: 0; flex: 1; min-width: 0; }

@@ -731,7 +731,8 @@ public static class Views
         {
             if (c.Kind == "section" && SectionMarks(c, bounds, k, text) is { } section) yield return section;
             var (x0, x1) = (bounds.Min.X - 1.0 * k, bounds.Max.X + 1.5 * k);
-            foreach (var storey in Spatial.Storeys(m))
+            // The levels across a drawing whose up is the model's (not on a level or a leaning work plane).
+            foreach (var storey in Math.Abs(c.Frame.Up.Z) > 0.999 ? Spatial.Storeys(m) : [])
             {
                 var z = storey.Num("elevation");
                 var y = c.Frame.Map(new Vec3(c.Frame.Origin.X, c.Frame.Origin.Y, z)).Y;

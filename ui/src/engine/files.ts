@@ -6,7 +6,7 @@
  * and goes back to it (or to a download), as bytes.
  */
 
-import { engine, engineInBrowser, useSession } from './session';
+import { activeStorey, engine, engineInBrowser, useSession } from './session';
 import { LONG_TIMEOUT_MS } from './client';
 import { surveyIfc } from './ifcImport';
 import { emptyPane, notify, select, useUi } from '../app/store';
@@ -386,6 +386,37 @@ export async function importFragments(): Promise<void> {
     if (r.storeys) parts.push(`${r.storeys} storey${r.storeys === 1 ? '' : 's'} made`);
     if (r.skipped) parts.push(`${r.skipped} left out`);
     notify(`Imported ${source.name}: ${parts.join(', ')}.${r.notes.length ? ' ' + r.notes.join(' ') : ''}`);
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+  }
+}
+
+/**
+ * A mesh from another program into the open project as references (OBJ, STL, glTF, GLB: docs/plan-studio-editor.md);
+ * Studio's Make Studio solid makes one editable. OBJ and STL say neither their unit nor which way is up: asked for.
+ */
+export async function importMesh(): Promise<void> {
+  const exts = ['obj', 'stl', 'gltf', 'glb'];
+  const picked = isDesktop() ? null : await pickFile('Meshes', exts);
+  const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'Meshes (OBJ, STL, glTF)', extensions: exts }]) : picked?.name ?? null;
+  if (!path) return;
+  const name = path.split(/[\\/]/).pop() ?? path;
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  let options: Record<string, unknown> = {};
+  if (ext === 'obj' || ext === 'stl') {
+    const { ask, choiceField } = await import('../shell/AskBox');
+    const r = await ask(`Import ${name}`, [
+      choiceField('scale', 'Its unit', ext === 'stl' ? '0.001' : '1', [{ value: '1', label: 'metres' }, { value: '0.01', label: 'centimetres' }, { value: '0.001', label: 'millimetres' }, { value: '0.0254', label: 'inches' }]),
+      choiceField('up', 'Up is its', ext === 'obj' ? 'y' : 'z', [{ value: 'z', label: 'z (CAD, BIM)' }, { value: 'y', label: 'y (most 3D programs)' }]),
+    ]);
+    if (!r) return;
+    options = { scale: Number(r.scale), up: r.up };
+  }
+  const storeyId = activeStorey()?.id;
+  const source = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name, path };
+  try {
+    const r = await engine.call<{ elements: number; triangles: number; notes: string[] }>('project.importMesh', { ...source, ...options, ...(storeyId ? { storeyId } : {}) }, { timeoutMs: LONG_TIMEOUT_MS });
+    notify(`Imported ${name}: ${r.elements} reference${r.elements === 1 ? '' : 's'}, ${r.triangles} triangles. Select one and use Studio → Make Studio solid to edit it.${r.notes.length ? ' ' + r.notes.join(' ') : ''}`);
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }

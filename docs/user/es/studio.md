@@ -1,17 +1,36 @@
 ---
-title: Sólidos de Studio y planos de trabajo
+title: Studio
 order: 85
-summary: Convierta formas dibujadas en sólidos, dé espesor a una forma con Anillo, Caja y Franja de muro, y dibuje sobre planos de referencia en cualquier lugar del modelo.
+summary: Modele sólidos libres, dibujados en cualquier cara o plano, y empuje, tire, redondee, vacíe, divida y repita en 3D.
 ---
 
-## Sólidos a partir de un boceto
+## La ficha Studio
 
-La ficha **Studio** convierte en sólidos las formas que usted dibuja. Dibuje la forma con **Dibujo** en una planta, una sección, un alzado o un plano de referencia, y después selecciónela con una herramienta de Studio:
-
-- **Extrusión** (<kbd>EXT</kbd>) empuja una forma cerrada una profundidad. Las formas cerradas que hay dentro se convierten en huecos.
-- **Barrido** (<kbd>SW</kbd>) desplaza un perfil cerrado a lo largo de un recorrido, **Revolución** (<kbd>REV</kbd>) lo gira alrededor de un eje y **Solevado** (<kbd>LO</kbd>) une perfiles dibujados en vistas distintas.
+La ficha **Studio** crea sólidos que ninguna otra ficha construye: un banco, una marquesina, un pasamanos, una fuente, un zócalo en una fachada. Cada sólido parte de un croquis o de una primitiva. Después lo cambia en 3D con pasos, y cada paso sigue siendo editable.
 
 ![La ficha Studio](shots/ribbon-studio.webp)
+
+Un sólido Studio tiene una clase IFC, como cualquier elemento. Elíjala en sus propiedades: una barra, una placa, un revestimiento, una barandilla, una losa u otra. Sus cantidades y su exportación siguen esa clase.
+
+## Dónde se dibuja
+
+El contorno de un sólido se dibuja con las herramientas de **Dibujo**, como polilíneas cerradas, rectángulos y círculos. Las líneas y los arcos que se unen extremo con extremo también forman un contorno cerrado. Una forma cerrada dentro del contorno es un hueco.
+
+Puede dibujar en cuatro clases de vista:
+
+- **Una planta** dibuja a la cota de su planta.
+- **Una sección** dibuja sobre su línea de corte, en vertical.
+- **Un alzado** o **un plano de referencia**: vea *Planos de referencia* más abajo.
+
+## Crear un sólido
+
+- **Extrusión** (EXTRUDE) empuja el contorno en línea recta. Escriba S para ambos sentidos desde el croquis, T para una conicidad que inclina los lados hacia dentro, y Cut para que corte los elementos seleccionados antes. Para llevarlo hasta la cara de otro elemento, use **Hasta → una cara…** en sus propiedades, o **Extruir hasta cara**.
+- **Barrido** (SWEEP) lleva un perfil a lo largo de un recorrido. TWist gira la sección por el camino, SCale la agranda y RIse la eleva. Un círculo que sube se convierte en una hélice y da TUrns vueltas.
+- **Solevado** (LOFT) une perfiles dibujados en vistas distintas. Escriba S para que pase suavemente por ellos. Una línea seleccionada con el papel de *segunda trayectoria* lo curva como guía.
+- **Revolución** (REVOLVE) gira un perfil alrededor de una línea de eje.
+- **Las primitivas** colocan con un clic una caja, un cilindro, una esfera, un cono, un toro, una cuña o una pirámide. Sus medidas y su posición se cambian en sus propiedades.
+
+![Un pasamanos barrido a lo largo de un círculo que sube 3 m en dos vueltas](shots/studio-helix.webp)
 
 Cada sólido queda ligado a su boceto. Cambie la forma y el sólido la sigue, con el mismo GlobalId. Seleccione un sólido para cambiar su clase IFC, su tipo predefinido y su tipo en el panel de propiedades. **Editar boceto** abre la vista en la que está el boceto.
 
@@ -58,3 +77,33 @@ Las secciones y los alzados también son planos. Un sólido bocetado en una secc
 ![La casa con sus sólidos de Studio en 3D](shots/studio-3d.webp)
 
 En IFC, un anillo, los muros de una caja y una franja de muro son elementos IfcWall, el fondo y la tapa de una caja elementos IfcSlab, y una caja con ellos un IfcElementAssembly con IfcRelAggregates; sus tipos se escriben como IfcWallType e IfcSlabType. Toda exportación 3D (IFC, Fragments, glTF, USD, COLLADA) escribe un sólido de Studio donde está en el modelo, sea cual sea el plano en el que se bocetó, con sus huecos; un conjunto es un nodo de grupo sobre sus partes. Al abrir de nuevo el IFC propio de Lapin, los sólidos vuelven como referencias, en su sitio, con su clase, su tipo y su conjunto, pero ya no se pueden editar (sus bocetos no están en el archivo). El historial de cada sólido se guarda en el conjunto de propiedades propio de Lapin, Lapin_Intent. Los sólidos de Studio solo admiten tipos simples, sin capas: ese es el modelado libre para el que existen; los muros con capas son los muros nativos de Lapin.
+## Cambiar un sólido en 3D
+
+Estas herramientas trabajan sobre las caras y aristas del cuerpo tal como está construido ahora. La cara bajo el ratón se ilumina. Cuando una herramienta necesita un valor, se abre una pequeña casilla junto al cursor. Escriba el valor y pulse <kbd>Intro</kbd>, o <kbd>Esc</kbd> para dejarlo.
+
+- **Empujar/Tirar** (PU) mueve una cara hacia fuera una distancia, o hacia dentro cuando la distancia es negativa. En una extrusión, su extremo cambia la profundidad y su lado mueve el borde del croquis bajo él. En un muro o cualquier otro elemento, tirar añade un sólido en el material de la cara, y empujar corta el elemento.
+- **Redondear arista** (FE) redondea la arista más cercana al clic, y **Achaflanar arista** (CE) la achaflana. Elija *alrededor de la cara* para tratar todas las aristas de la cara a la vez.
+- **Vaciado** vacía los sólidos seleccionados, con paredes tan gruesas como escriba. Puede quedar cerrado, o abierto en su extremo, en su croquis o en ambos.
+- **Dividir** corta un sólido en dos por el plano de la cara elegida, tan adentro de la cara como escriba. Las dos partes conservan el croquis. **Cortar** conserva solo un lado.
+- **Matriz** repite el sólido en fila, y **Matriz polar** lo repite alrededor de una vertical.
+- **Girar 3D** gira el sólido alrededor de una arista que elija. **Simetría 3D** lo refleja en el plano de una cara. **Desplazar 3D** lo mueve en x, y y z.
+
+![Empujar/Tirar: la cara superior iluminada y la distancia escrita junto al cursor](shots/studio-push-pull.webp)
+
+![La arista redondeada: el redondeo sigue al bloque cuando cambia su profundidad](shots/studio-fillet.webp)
+
+## Los pasos
+
+Las propiedades de un sólido Studio enumeran sus pasos en orden. Cada paso se puede desactivar, adelantar o retrasar, cambiar o quitar. Cambie el croquis, y cada paso se rehace sobre el cuerpo nuevo. Un paso que ya no encuentra su cara o su arista lo dice en **Problemas**.
+
+![Un cilindro vaciado en un tubo y repetido tres veces: sus dos pasos en sus propiedades](shots/studio-steps.webp)
+
+Las propiedades de una polilínea enumeran sus lados. Escriba la longitud de un lado, y su extremo se mueve a lo largo de él. Los lados siguientes lo siguen hasta el próximo lado que va en la misma dirección, así que un rectángulo sigue siendo un rectángulo. Un sólido dibujado en ella también la sigue.
+
+## Mallas de otros programas
+
+**Archivo → Importar malla (OBJ, STL, glTF)…** trae una malla como referencias que puede ver y a las que puede forzar el cursor. Un archivo OBJ o STL no dice su unidad ni qué eje va hacia arriba, así que Lapin lo pregunta. Seleccione una referencia y haga clic en **Convertir en sólido Studio** para poder editarla. Entonces admite empujar/tirar, redondeos, booleanas y los demás pasos. La misma herramienta funciona con muros, losas y elementos de archivos IFC.
+
+## Booleanas
+
+**Restar**, **Unión** e **Intersección** combinan cualesquiera elementos, siendo el primero seleccionado el objetivo. Las herramientas siguen siendo editables, y el resultado las sigue. **Mostrar operandos** muestra las herramientas ocultas de una unión para editarlas. **Quitar la operación** vuelve a separar los elementos.

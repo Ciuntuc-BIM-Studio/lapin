@@ -1,17 +1,36 @@
 ---
-title: Solide Studio și planuri de lucru
+title: Studio
 order: 85
-summary: Transformi formele desenate în solide, dai unei forme o grosime cu Inel, Cutie și Fâșie de perete, și desenezi pe planuri de referință oriunde în model.
+summary: Modelează solide libere, schițate pe orice față sau plan, apoi împinge, trage, racordează, golește, împarte și repetă-le în 3D.
 ---
 
-## Solide dintr-o schiță
+## Fila Studio
 
-Tabul **Studio** transformă în solide formele pe care le desenezi. Desenează forma cu **Desen** într-un plan, o secțiune, o fațadă sau un plan de referință, apoi alege-o cu o unealtă Studio:
+Fila **Studio** face solide pe care nu le construiește nicio altă filă: o bancă, o copertină, o mână curentă, o fântână, un soclu pe o fațadă. Fiecare solid pornește de la o schiță sau de la o primitivă. Apoi îl schimbi în 3D prin pași, și fiecare pas rămâne editabil.
 
-- **Extrudare** (<kbd>EXT</kbd>) împinge o formă închisă pe o adâncime. Formele închise din interiorul ei devin goluri.
-- **Măturare** (<kbd>SW</kbd>) mută un profil închis de-a lungul unui traseu, **Revoluție** (<kbd>REV</kbd>) îl rotește în jurul unei axe, iar **Loft** (<kbd>LO</kbd>) unește profile desenate în vederi diferite.
+![Fila Studio](shots/ribbon-studio.webp)
 
-![Tabul Studio](shots/ribbon-studio.webp)
+Un solid Studio are o clasă IFC, ca orice element. O alegi în proprietățile lui: element de structură, placă, finisaj, balustradă, placă de planșeu sau oricare alta. Cantitățile și exportul lui urmează clasa aleasă.
+
+## Unde schițezi
+
+Conturul unui solid îl desenezi cu uneltele din **Desen**, ca polilinii închise, dreptunghiuri și cercuri. Liniile și arcele care se întâlnesc cap la cap fac și ele un contur închis. O formă închisă aflată în interiorul conturului e un gol.
+
+Poți schița pe patru feluri de vederi:
+
+- **Un plan** desenează la cota etajului lui.
+- **O secțiune** desenează pe linia ei de tăiere, vertical.
+- **O elevație** sau **un plan de referință**: vezi *Planuri de referință* mai jos.
+
+## Cum faci un solid
+
+- **Extrudare** (EXTRUDE) împinge conturul drept în afară. Scrie S pentru ambele sensuri față de schiță, T pentru o înclinare care strânge laturile spre interior, și Cut ca să taie elementele selectate înainte. Ca să meargă până la fața altui element, folosește **Până la → o față…** din proprietățile lui, sau **Extrudează până la față**.
+- **Măturare** (SWEEP) duce un profil de-a lungul unui traseu. TWist rotește secțiunea pe drum, SCale o crește, iar RIse o ridică. Un cerc care urcă devine elice și face TUrns ture.
+- **Loft** (LOFT) unește profile desenate pe vederi diferite. Scrie S ca să treacă neted prin ele. O linie selectată cu rolul *al doilea traseu* îl îndoaie, ca ghidaj.
+- **Revoluție** (REVOLVE) rotește un profil în jurul unei linii-axă.
+- **Primitivele** așază cu un clic un cub, un cilindru, o sferă, un con, un tor, o pană sau o piramidă. Dimensiunile și poziția lor le schimbi în proprietăți.
+
+![O mână curentă măturată pe un cerc care urcă 3 m în două ture](shots/studio-helix.webp)
 
 Fiecare solid rămâne legat de schița lui. Schimbi forma și solidul o urmează, cu același GlobalId. Selectează un solid ca să-i schimbi clasa IFC, tipul predefinit și tipul în panoul de proprietăți. **Editează schița** deschide vederea pe care stă schița.
 
@@ -58,3 +77,33 @@ Selectează planul în navigator ca să-l muți. **Origine x**, **y** și **z** 
 ![Casa cu solidele ei Studio în 3D](shots/studio-3d.webp)
 
 În IFC, un inel, pereții unei cutii și o fâșie de perete sunt elemente IfcWall, fundul și capacul unei cutii elemente IfcSlab, iar o cutie cu ele un IfcElementAssembly cu IfcRelAggregates; tipurile lor se scriu ca IfcWallType și IfcSlabType. Fiecare export 3D (IFC, Fragments, glTF, USD, COLLADA) scrie un solid Studio acolo unde stă în model, oricare ar fi planul pe care a fost schițat, cu golurile lui; un ansamblu e un nod-grup peste părțile lui. Deschis din nou, IFC-ul propriu al lui Lapin aduce solidele înapoi ca referințe, la locul lor, cu clasa, tipul și ansamblul lor, dar nu mai pot fi editate (schițele lor nu sunt în fișier). Istoria fiecărui solid e păstrată în setul de proprietăți al lui Lapin, Lapin_Intent. Solidele Studio iau doar tipuri simple, fără straturi: asta e modelarea liberă pentru care sunt făcute; pereții cu straturi sunt pereții nativi ai lui Lapin.
+## Cum schimbi un solid în 3D
+
+Uneltele acestea lucrează pe fețele și muchiile corpului așa cum e construit acum. Fața de sub mouse se luminează. Când o unealtă are nevoie de o valoare, lângă cursor se deschide o casetă mică. Scrie valoarea și apasă <kbd>Enter</kbd>, sau <kbd>Esc</kbd> ca să renunți.
+
+- **Împinge/Trage** (PU) mută o față în afară cu o distanță, sau înăuntru când distanța e negativă. La o extrudare, capătul îi schimbă adâncimea, iar latura mută muchia schiței de sub ea. La un perete sau la orice alt element, tragerea adaugă un solid în materialul feței, iar împingerea taie în element.
+- **Racordează muchia** (FE) rotunjește muchia cea mai apropiată de clic, iar **Teșește muchia** (CE) o teșește. Alege *de jur împrejurul feței* ca să faci toate muchiile feței deodată.
+- **Coajă** golește solidele selectate, cu pereți groși cât scrii. Poate rămâne închisă sau poate fi lăsată deschisă la capăt, la schiță sau la ambele.
+- **Împarte** taie un solid în două după planul feței alese, cât de adânc în față scrii. Ambele părți păstrează schița. **Retează** păstrează doar o parte.
+- **Matrice** repetă solidul pe un rând, iar **Matrice polară** îl repetă în jurul unei verticale.
+- **Rotește 3D** rotește solidul în jurul unei muchii alese. **Oglindește 3D** îl oglindește în planul unei fețe. **Mută 3D** îl mută cu x, y și z.
+
+![Împinge/Trage: fața de sus luminată și distanța scrisă lângă cursor](shots/studio-push-pull.webp)
+
+![Muchia racordată: rotunjirea urmează blocul când i se schimbă adâncimea](shots/studio-fillet.webp)
+
+## Pașii
+
+Proprietățile unui solid Studio îi arată pașii în ordine. Fiecare pas poate fi oprit, mutat mai devreme sau mai târziu, schimbat sau scos. Schimbă schița, și fiecare pas se face din nou pe corpul nou. Un pas care nu-și mai găsește fața sau muchia spune asta la **Probleme**.
+
+![Un cilindru golit într-o țeavă și repetat de trei ori: cei doi pași ai lui în proprietăți](shots/studio-steps.webp)
+
+Proprietățile unei polilinii îi arată laturile. Scrie lungimea unei laturi, și capătul ei se mută de-a lungul ei. Laturile de după o urmează, până la următoarea latură paralelă cu ea, așa că un dreptunghi rămâne dreptunghi. Un solid desenat pe ea urmează și el.
+
+## Rețele din alte programe
+
+**Fișier → Importă rețea (OBJ, STL, glTF)…** aduce o rețea ca referințe pe care le vezi și la care te prinzi. Un fișier OBJ sau STL nu spune în ce unitate e și care axă e în sus, așa că Lapin întreabă. Selectează o referință și apasă **Fă solid Studio** ca s-o poți edita. Primește apoi împinge/trage, racordări, booleene și ceilalți pași. Aceeași unealtă merge pe pereți, plăci și elemente din fișiere IFC.
+
+## Booleene
+
+**Scade**, **Unește** și **Intersectează** combină orice elemente, primul selectat fiind ținta. Uneltele rămân editabile, iar rezultatul le urmează. **Arată operanzii** arată uneltele ascunse ale unei uniri, ca să le editezi. **Anulează operația** separă din nou elementele.

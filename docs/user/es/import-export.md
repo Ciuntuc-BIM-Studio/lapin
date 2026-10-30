@@ -50,6 +50,11 @@ Los espacios del archivo (de Revit, ArchiCAD y otros) entran como habitaciones d
 | USDZ | AR Quick Look de Apple, Reality Composer, Omniverse. Imágenes incluidas. |
 | USDA | OpenUSD como texto, un solo archivo. |
 | DAE | COLLADA, para SketchUp y herramientas más antiguas. |
+| Fragments | `.frag`, el formato de That Open Engine, para los visores BIM web construidos sobre él (That Open Components, Bubbles). Un solo archivo; los cuerpos idénticos se guardan una vez. |
+
+**Importar Fragments…** trae un archivo `.frag`: cada elemento con geometría se convierte en una referencia dibujada a partir de su cuerpo, en la clase que indica el archivo, en la planta donde el archivo lo coloca (emparejada por nombre con las suyas, creada si falta), con los atributos del archivo en **Propiedades IFC**. Los elementos con el mismo cuerpo (la misma forma colocada en muchos sitios) lo comparten. Importar de nuevo el mismo archivo actualiza lo que trajo antes. Nada se reconoce como muro o losa: un `.frag` contiene triángulos.
+
+**Importar malla (OBJ, STL, glTF)…** trae una malla de otro programa 3D (OBJ, STL, glTF o GLB) como referencias en la planta activa. glTF indica su unidad y qué eje va hacia arriba; para OBJ y STL, Lapin lo pregunta. **Convertir en sólido Studio** en Studio hace editable una referencia (consulte [Studio](studio.md)).
 
 ![Exportar 3D](shots/export-3d.webp)
 

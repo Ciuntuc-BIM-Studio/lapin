@@ -24,6 +24,8 @@ public static class StoredBodies
     public const string SharedClass = "LapinSharedBody";
     public const string BodyOf = "bodyOf";
     public const string XfKey = "xf";
+    /// <summary>Where a Studio solid made from a body keeps its triangles (its own geometry, not a stored body's): like a stored body, never sent as props.</summary>
+    public const string SolidBodyKey = "solidBody";
 
     /// <summary>An element drawn from a stored body: its own, or a shared one.</summary>
     public static bool Has(Entity e) => e.Class != SharedClass && (e.Attrs[Key] is JsonObject || e.Attrs[BodyOf] is JsonValue);

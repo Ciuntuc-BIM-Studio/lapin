@@ -44,20 +44,58 @@ public static class Sketches
         _ => null,
     };
 
+    /// <summary>A closed outline on a view: the drafted shapes it is made of (one closed shape, or lines, arcs and polylines end to end), its points.</summary>
+    public sealed record Outline(IReadOnlyList<string> Ids, IReadOnlyList<Vec2> Loop);
+
     /// <summary>
-    /// A profile's holes: the closed shapes on its view lying inside it, the
+    /// Every closed outline on a view: each closed polyline and circle, and each
+    /// loop of open shapes (lines, arcs, open polylines) meeting end to end, an
+    /// arc in steps of at most 5.6° (as a circle is); a loop stops where three
+    /// shapes meet. Construction lines take no part.
+    /// </summary>
+    public static List<Outline> Closed(IModelView m, string viewId)
+    {
+        var o = new List<Outline>();
+        var open = new List<(string Id, List<Vec2> Pts)>();
+        foreach (var e in Drafts.On(m, viewId))
+        {
+            if (e.Str("role") == "draft" || e.Attrs["hatch"] != null) continue;
+            var shape = Drafts.ShapeOf(e);
+            if (Loop(shape) is { } loop) { o.Add(new([e.Id], loop)); continue; }
+            if (shape is Line or Arc or Polyline { Closed: false }) open.Add((e.Id, Geo.Polylines(shape, Math.PI / 32)[0]));
+        }
+        if (open.Count < 2) return o;
+        foreach (var chain in Lapin.Drafting.Cad.Joins.Chains(open.Select(x => (IReadOnlyList<Vec2>)x.Pts).ToList(), 1e-6))
+        {
+            if (!chain.Closed) continue;
+            var pts = chain.Pts.ToList();
+            if (pts.Count > 1 && (pts[^1] - pts[0]).Length < 1e-6) pts.RemoveAt(pts.Count - 1);
+            if (pts.Count >= 3) o.Add(new(chain.Members.Select(i => open[i].Id).ToList(), pts));
+        }
+        return o;
+    }
+
+    /// <summary>The closed outline a drafted shape is (or is a piece of); null when it closes nothing.</summary>
+    public static Outline? OutlineOf(IModelView m, Entity draft)
+    {
+        if (Loop(Drafts.ShapeOf(draft)) is { } loop) return new([draft.Id], loop);
+        return Closed(m, draft.Str("viewId") ?? "").FirstOrDefault(x => x.Ids.Contains(draft.Id));
+    }
+
+    /// <summary>
+    /// A profile's holes: the closed outlines on its view lying inside it, the
     /// first level only (an island inside a hole is a profile of its own), not
     /// themselves the profile of a solid.
     /// </summary>
-    public static List<(string Id, IReadOnlyList<Vec2> Loop)> Holes(IModelView m, Entity profile, IReadOnlyCollection<string> profiles)
+    public static List<(string Id, IReadOnlyList<Vec2> Loop)> Holes(IModelView m, Entity profile, IReadOnlyCollection<string> profiles) =>
+        HoleOutlines(m, profile, profiles).Select(h => (h.Ids[0], h.Loop)).ToList();
+
+    public static List<Outline> HoleOutlines(IModelView m, Entity profile, IReadOnlyCollection<string> profiles)
     {
-        var outer = Loop(Drafts.ShapeOf(profile));
+        var all = Closed(m, profile.Str("viewId") ?? "");
+        var outer = all.FirstOrDefault(x => x.Ids.Contains(profile.Id));
         if (outer == null) return [];
-        var candidates = Drafts.On(m, profile.Str("viewId") ?? "")
-            .Where(e => e.Id != profile.Id && !profiles.Contains(e.Id))
-            .Select(e => (e.Id, Loop: Loop(Drafts.ShapeOf(e))))
-            .Where(x => x.Loop != null && x.Loop.All(p => Polygon2.Contains(outer, p)))
-            .Select(x => (x.Id, Loop: x.Loop!)).ToList();
-        return candidates.Where(c => !candidates.Any(o => o.Id != c.Id && Math.Abs(Polygon2.SignedArea(o.Loop)) > Math.Abs(Polygon2.SignedArea(c.Loop)) && c.Loop.All(p => Polygon2.Contains(o.Loop, p)))).ToList();
+        var candidates = all.Where(x => x != outer && !x.Ids.Any(profiles.Contains) && x.Loop.All(p => Polygon2.Contains(outer.Loop, p))).ToList();
+        return candidates.Where(c => !candidates.Any(o => o != c && Math.Abs(Polygon2.SignedArea(o.Loop)) > Math.Abs(Polygon2.SignedArea(c.Loop)) && c.Loop.All(p => Polygon2.Contains(o.Loop, p)))).ToList();
     }
 }

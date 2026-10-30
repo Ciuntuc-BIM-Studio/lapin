@@ -461,7 +461,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return p["args"] is JsonObject args && HasPath(args) ? "A guest cannot reach files on the host's computer." : null;
             case "doc.undo" or "doc.redo":
                 return editor ? null : "You joined to look: ask the host to let you edit.";
-            case "project.importIfc" or "project.importFragments" or "project.importBcf":
+            case "project.importIfc" or "project.importFragments" or "project.importBcf" or "project.importMesh":
                 if (!editor) return "You joined to look: ask the host to let you edit.";
                 return p["data"] is JsonValue ? null : "A guest imports a file from their own computer.";
             case "project.exportBcf":
@@ -665,6 +665,14 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 delivered["topics"] = file.Topics.Count;
                 delivered["version"] = file.Version;
                 return (delivered, null);
+            }
+            case "project.importMesh":
+            {
+                // A mesh from another program (OBJ, STL, glTF, GLB) into the open project as references (MeshImport); a .gltf's buffers beside it read from its folder.
+                ReportProgress("Reading the file", 0, 0);
+                var (bytes, name, path, _) = IfcBytes(p);
+                var r = Lapin.Mesh.MeshImport.Run(session, bytes, name, p, path != null ? Path.GetDirectoryName(path) : null, out var imported);
+                return (r.ToJson(), imported);
             }
             case "project.reloadLink":
             {
