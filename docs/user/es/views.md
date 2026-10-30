@@ -64,7 +64,7 @@ Para mirar dentro del edificio, muestre solo algunas de sus plantas. Haga clic c
 
 ![La planta baja cortada a 1,20 m: sus muros cerrados, capa por capa](shots/storeys-3d-cut.webp)
 
-Las plantas ocultas no se dibujan, y no puede seleccionarlas, ajustar la vista a ellas ni caminar sobre ellas. Lo que un corte elimina (el corte por encima de las plantas mostradas, una sección mostrada en 3D, la caja de sección) tampoco está ahí para un recorrido: usted pasa junto a la parte superior de un muro que el corte ha eliminado, y las tapas del corte cierran lo que este abre. **Archivo → Exportar 3D…** toma la vista 3D tal como la muestra (consulte [Importación y exportación](import-export.md)). Una vista 3D guardada conserva su propia elección. El indicador **Plantas** de la parte inferior de la vista 3D indica lo que se muestra; su **×** vuelve a mostrar todas las plantas.
+Las plantas ocultas no se dibujan, y no puede seleccionarlas, ajustar la vista a ellas ni caminar sobre ellas. Lo que un corte elimina (el corte por encima de las plantas mostradas, una sección mostrada en 3D, la caja de sección) tampoco está ahí para un recorrido: usted pasa junto a la parte superior de un muro que el corte ha eliminado, y las tapas del corte cierran lo que este abre. **Archivo → Exportar 3D…** toma la vista 3D tal como la muestra (consulte [Importar y exportar](import-export.md)). Una vista 3D guardada conserva su propia elección. El indicador **Plantas** de la parte inferior de la vista 3D indica lo que se muestra; su **×** vuelve a mostrar todas las plantas.
 
 ### Sin acabados, o solo los núcleos
 

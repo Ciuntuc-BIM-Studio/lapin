@@ -27,7 +27,7 @@ Mens projektet er delt og har en fil, gemmer Lapin det hvert 5. minut. Kun vært
 
 ## Deltag i en session
 
-- **Fra en browser**: åbn linket, angiv dit navn, og tryk på **Sammenføj**. Intet at installere.
+- **Fra en browser**: åbn linket, angiv dit navn, og tryk på **Deltag**. Intet at installere.
 - **Fra Lapin**: på startskærmen, eller under **Filer**, vælg **Deltag i session…**, indsæt linket eller koden, og angiv dit navn.
 
 ![At deltage fra Lapin](shots/join-dialog.webp)

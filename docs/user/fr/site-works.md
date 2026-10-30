@@ -8,7 +8,7 @@ L’onglet **Installations de chantier** modélise les ouvrages provisoires du c
 
 ![L’onglet Installations de chantier](shots/ribbon-site-works.webp)
 
-Les échafaudages et les coffrages sont **temporaires** : ils sont montés et démontés dans la phase **Execution**. Le premier que vous placez ajoute cette phase si le projet n’en a pas, et en fait la phase active. Les vues des phases antérieures les omettent. Voir **Gérer → Phases**.
+Les échafaudages et les coffrages sont **temporaires** : ils sont montés et démontés dans la phase **Exécution**. Le premier que vous placez ajoute cette phase si le projet n’en a pas, et en fait la phase active. Les vues des phases antérieures les omettent. Voir **Gérer → Phases**.
 
 ![Un échafaudage autour de la maison, le coffrage du premier étage sur ses étais](shots/site-works-3d.webp)
 
@@ -56,7 +56,7 @@ Tout ce qui s’appuie contre une face est exclu : un autre mur, un poteau. Un
 
 ## Plan de coffrage
 
-**Plan de coffrage** crée un plan du niveau actif dans la phase Execution, coupé à un mètre au-dessus du sol, **vu de dessous** : un plan de plafond. Les étais sont coupés. Le coffrage au-dessus d’eux est dessiné tel que vous le verriez en levant les yeux : les poutrelles primaires et secondaires, le contreplaqué et les rives. Il est orienté comme le plan, de sorte que les deux concordent.
+**Plan de coffrage** crée un plan du niveau actif dans la phase Exécution, coupé à un mètre au-dessus du sol, **vu de dessous** : un plan de plafond. Les étais sont coupés. Le coffrage au-dessus d’eux est dessiné tel que vous le verriez en levant les yeux : les poutrelles primaires et secondaires, le contreplaqué et les rives. Il est orienté comme le plan, de sorte que les deux concordent.
 
 **Plan de coffrage vu de dessus** crée le même plan vu de dessus, avec le coffrage dessiné en tirets par-dessus la coupe. Tout plan peut passer de l’un à l’autre dans ses propriétés (**Vu depuis**) ou dans **Plage de vue**.
 

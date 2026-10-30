@@ -27,7 +27,7 @@ Mientras el proyecto está compartido y tiene un archivo, Lapin lo guarda cada 5
 
 ## Unirse a una sesión
 
-- **Desde un navegador**: abra el enlace, indique su nombre y pulse **Unir**. No hay nada que instalar.
+- **Desde un navegador**: abra el enlace, indique su nombre y pulse **Unirse**. No hay nada que instalar.
 - **Desde Lapin**: en la pantalla de inicio, o en **Archivo**, elija **Unirse a una sesión…**, pegue el enlace o el código e indique su nombre.
 
 ![Unirse desde Lapin](shots/join-dialog.webp)

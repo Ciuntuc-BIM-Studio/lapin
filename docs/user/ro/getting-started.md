@@ -23,7 +23,7 @@ Un proiect nou are deja trei niveluri: **Foundations** (−1,50), **Ground floor
 5. **Bara rapidă.** Are uneltele cele mai folosite pe tastele <kbd>1</kbd>–<kbd>9</kbd>.
 6. **Linia de comandă.** Scrie aici literele unei unelte și apasă <kbd>Enter</kbd>. Cât lucrează o unealtă, linia îți spune ce îi trebuie mai departe. Vezi [Desen și linia de comandă](drafting.md).
 7. **Panoul de proprietăți.** Arată ce e selectat. Când nu e nimic selectat, arată vederea din față.
-8. **Ask Me.** Asistentul de ajutor al Lapin. Vezi [Ajutor și feedback](help.md).
+8. **Întreabă-mă.** Asistentul de ajutor al Lapin. Vezi [Ajutor și feedback](help.md).
 
 Vrei mai mult loc pentru desen? **Vedere → Interfață…** alege o fereastră mai compactă, iar panourile laterale se pliază. Vezi [Interfața și scurtăturile](interface.md).
 
@@ -36,7 +36,7 @@ Vrei mai mult loc pentru desen? **Vedere → Interfață…** alege o fereastră
 
 ## Unitățile
 
-Lapin lucrează în milimetri dacă nu alegi altceva. Ca să schimbi unitățile, deschide **Gestionare → Standarde de desen → Proiect → Unități**, sau apasă pe **Units** în bara de stare de jos. Poți alege milimetri, centimetri, metri, picioare și țoli, sau țoli.
+Lapin lucrează în milimetri dacă nu alegi altceva. Ca să schimbi unitățile, deschide **Gestionare → Standarde de desen → Proiect → Unități**, sau apasă pe **Unități** în bara de stare de jos. Poți alege milimetri, centimetri, metri, picioare și țoli, sau țoli.
 
 ![Standarde de desen, tabul Proiect: unitățile proiectului](shots/standards-project.webp)
 

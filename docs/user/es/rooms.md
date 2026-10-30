@@ -59,7 +59,7 @@ En una exportación IFC, cada habitación es un IfcSpace, con su número, nombre
 - su **contorno** procede de su forma (una extrusión, un B-rep o una malla, o la huella dibujada junto a ella); conserva ese contorno y no sigue a los muros;
 - su **nombre** es el nombre largo del espacio y su **número** es su nombre (tal como los escriben Revit y ArchiCAD); su **altura**, y su **desfase de base** cuando empieza por encima de su nivel (una galería, un suelo elevado), proceden de su forma;
 - su **uso**, su **departamento** y su **acabado del suelo** proceden del archivo cuando este los indica (el tipo de objeto o la categoría del espacio, una propiedad Department, el revestimiento del suelo), de modo que un esquema de colores por uso o por departamento las colorea de inmediato;
-- todo lo demás que el espacio tenía en el archivo, sus conjuntos de propiedades y cantidades (Pset_SpaceCommon, BaseQuantities, los conjuntos propios del programa), se conserva y se enumera, de solo lectura, en **IFC properties** dentro de sus propiedades, con un filtro cuando son muchos.
+- todo lo demás que el espacio tenía en el archivo, sus conjuntos de propiedades y cantidades (Pset_SpaceCommon, BaseQuantities, los conjuntos propios del programa), se conserva y se enumera, de solo lectura, en **Propiedades IFC** dentro de sus propiedades, con un filtro cuando son muchos.
 
 El mensaje de la importación indica cuántas habitaciones han entrado. Búsquelas en las plantas de sus niveles (cada una muestra su sello), en una tabla de **Habitaciones** (**+** bajo **Tablas** en el navegador) o en la ficha IFC del navegador; la vista 3D oculta las habitaciones.
 

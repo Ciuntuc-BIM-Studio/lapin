@@ -10,7 +10,7 @@ summary: Setezi culoarea, hașurile și rosturile fiecărui material, pui pe el 
 
 ## Ce setează un material
 
-- **Culoare (3D)** și fețele desenate pe el în 3D. Lapin le ghicește din nume, de exemplu rândurile unei cărămizi sau rosturile unei plăci de faianță. **Capetele** și fețele de **sus și jos** pot arăta altfel decât fețele.
+- **Culoare (3D)** și fețele desenate pe el în 3D. Lapin le ghicește din nume, de exemplu rândurile unei cărămizi sau rosturile unei plăci de faianță. **Capete** și **Sus și jos** pot arăta altfel decât fețele.
 - **Hașura** pentru fiecare loc în care se desenează: secționat într-o secțiune, secționat într-un plan, și văzut într-o fațadă. Fiecare are scara, unghiul, alinierea, umplutura și penița ei.
 - **Categoria**, de exemplu finisaj, izolație sau structură. Stilurile de vedere o folosesc ca să lase finisajele afară dintr-o vedere de structură.
 - **Membrană** desenează un strat subțire ca linie întreruptă în loc de bandă.

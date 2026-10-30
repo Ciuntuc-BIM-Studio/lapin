@@ -20,7 +20,7 @@ Vælg **Arkitektur → Tag** (<kbd>RF</kbd>), og klik på omridset af væggene u
 
 Markér taget for at ændre det i egenskabspanelet:
 
-- **Form.** Valm, sadel, ensidig taghældning, mansard, tønde eller fladt. Et tøndetag er en buet hvælving mellem to gavle; **Tøndetag: pilhøjde ved toppen** angiver, hvor højt det rejser sig ved toppen, højst halvdelen af spændet.
+- **Form.** Valmtag, sadeltag, pulttag, mansardtag, buetag eller fladt tag. Et tøndetag er en buet hvælving mellem to gavle; **Tøndetag: pilhøjde ved toppen** angiver, hvor højt det rejser sig ved toppen, højst halvdelen af spændet.
 - **Hældning og udhæng** for hele taget.
 - **Hver kant** med sin egen art (tagfod eller gavl), hældning og udhæng. Et mansardtag med gavlkanter er et gambreltag.
 - **Stil.** Tagstilene giver et helt udtryk med ét valg: tagdækningen, tagfødderne, tagrenderne og nedløbsrørene.
@@ -29,4 +29,4 @@ Markér taget for at ændre det i egenskabspanelet:
 
 Væggene på tagets niveau stopper under det og går selv op til dets gavle, også under et buet tag. En væg på et andet niveau følger taget efter **Arkitektur → Fastgør til tag** (<kbd>AR</kbd>): markér væggene, og klik derefter på taget. Samme værktøj tager ethvert andet legeme over væggene: et Studio-legeme, en plade, en bjælke, et element importeret fra IFC. Væggene går op til dets underside og skæres langs den, uanset formen. **Frigør fra tag** fortryder det.
 
-**Roof window** og **Dormer** tilføjer åbninger i et tag.
+**Ovenlysvindue** og **Kvist** tilføjer åbninger i et tag.

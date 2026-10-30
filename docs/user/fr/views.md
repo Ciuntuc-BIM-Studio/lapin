@@ -64,11 +64,11 @@ Pour regarder à l’intérieur du bâtiment, n’affichez que certains de ses n
 
 ![Le rez-de-chaussée coupé à 1.20 m : ses murs fermés, couche par couche](shots/storeys-3d-cut.webp)
 
-Les niveaux masqués ne sont pas dessinés, et vous ne pouvez ni les sélectionner, ni cadrer sur eux, ni y marcher. Ce qu’une coupe enlève (la coupe au-dessus des niveaux affichés, une coupe affichée en 3D, la zone de coupe) n’est pas là non plus pour une visite : vous passez à côté de la partie haute d’un mur que la coupe a enlevée, et les fermetures sur la coupe ferment ce qu’elle ouvre. **Fichier → Exporter 3D…** prend la vue 3D telle qu’elle s’affiche (voir [Importer et exporter](import-export.md)). Une vue 3D enregistrée garde son propre choix. La puce **Niveaux** en bas de la vue 3D indique ce qui est affiché ; son **×** affiche de nouveau tous les niveaux.
+Les niveaux masqués ne sont pas dessinés, et vous ne pouvez ni les sélectionner, ni cadrer sur eux, ni y marcher. Ce qu’une coupe enlève (la coupe au-dessus des niveaux affichés, une coupe affichée en 3D, la zone de coupe) n’est pas là non plus pour une visite : vous passez à côté de la partie haute d’un mur que la coupe a enlevée, et les fermetures sur la coupe ferment ce qu’elle ouvre. **Fichier → Exporter 3D…** prend la vue 3D telle qu’elle s’affiche (voir [Import et export](import-export.md)). Une vue 3D enregistrée garde son propre choix. La puce **Niveaux** en bas de la vue 3D indique ce qui est affiché ; son **×** affiche de nouveau tous les niveaux.
 
 ### Sans les finitions, ou les noyaux seulement
 
-Une vue 3D peut montrer la structure du bâtiment seule, comme le fait un plan de structure. Dans les propriétés de la vue 3D (sans rien de sélectionné), ou dans **Vue → Paramètres de vue** avec la vue 3D au premier plan, **Calques** affiche :
+Une vue 3D peut montrer la structure du bâtiment seule, comme le fait un plan de structure. Dans les propriétés de la vue 3D (sans rien de sélectionné), ou dans **Vue → Paramètres de vue** avec la vue 3D au premier plan, **Couches** affiche :
 
 - **toutes les couches** : les murs, les dalles et les semelles tels qu’ils sont construits ;
 - **sans les finitions** : sans les couches dont le matériau est une finition (enduit, crépi, peinture, carrelage, plaques, revêtements de sol, ou un matériau de catégorie Finition dans Gérer → Matériaux) ; l’isolation reste ;
@@ -76,7 +76,7 @@ Une vue 3D peut montrer la structure du bâtiment seule, comme le fait un plan d
 
 ![Une maison en 3D avec le noyau seulement : les murs sont leur brique, les dalles leur dalle en béton](shots/layers-3d-core.webp)
 
-Chaque couche conservée reste un solide fermé dans son propre matériau, si bien qu’une coupe ou la zone de coupe la ferme comme avant. Les portes et les fenêtres restent dans leurs baies ; un tableau habillé d’une finition part avec les finitions du mur. Une vue 3D prend ses couches de son style, comme un plan : réglez sa **Discipline** sur Structure et elle ne montre que les noyaux ; réglez **Calques** pour choisir autrement, et le bouton à côté revient à celles du style. La puce **Couches affichées** en bas de la vue 3D indique ce qui est laissé de côté ; son **×** affiche de nouveau toutes les couches. Les couches masquées ne sont ni sélectionnées ni heurtées pendant une visite, et **Fichier → Exporter 3D…** telle que la vue l’affiche exporte les mêmes couches.
+Chaque couche conservée reste un solide fermé dans son propre matériau, si bien qu’une coupe ou la zone de coupe la ferme comme avant. Les portes et les fenêtres restent dans leurs baies ; un tableau habillé d’une finition part avec les finitions du mur. Une vue 3D prend ses couches de son style, comme un plan : réglez sa **Discipline** sur Structure et elle ne montre que les noyaux ; réglez **Couches** pour choisir autrement, et le bouton à côté revient à celles du style. La puce **Couches affichées** en bas de la vue 3D indique ce qui est laissé de côté ; son **×** affiche de nouveau toutes les couches. Les couches masquées ne sont ni sélectionnées ni heurtées pendant une visite, et **Fichier → Exporter 3D…** telle que la vue l’affiche exporte les mêmes couches.
 
 ### Entrer dans une pièce
 
@@ -107,7 +107,7 @@ L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.
 ![L’onglet Vue](shots/ribbon-view.webp)
 
 - **Paramètres de vue.** La discipline et le style de la vue, sa plage (la hauteur et la profondeur de coupe) et ses graphismes.
-- **Styles de vue.** Architectural, Structural (les noyaux seulement), Fluides ou les vôtres. Chaque style choisit les couches dessinées (toutes, sans les finitions, ou le noyau) et la façon dont les matériaux se joignent.
+- **Styles de vue.** Architectural, Structurel (les noyaux seulement), Fluides ou les vôtres. Chaque style choisit les couches dessinées (toutes, sans les finitions, ou le noyau) et la façon dont les matériaux se joignent.
 - **Symboles 2D IFC.** Les éléments importés ou liés depuis un fichier IFC qui apportent leur propre dessin en plan (une emprise, le débattement d’une porte, le symbole d’un appareil, avec les couleurs, remplissages et textes du fichier) le dessinent dans les plans au lieu de leur coupe. Décochez-le dans Paramètres de vue (ou dans un style de vue) pour dessiner plutôt leur coupe 3D.
 - **Visibilité** (<kbd>VV</kbd>) et **Graphismes** (<kbd>VG</kbd>). Ils affichent ou masquent des catégories et règlent leurs plumes, types de ligne et remplissages.
 - **Scinder** et **Fenêtre.** Ils affichent deux vues côte à côte, ou ouvrent une vue dans une fenêtre séparée.

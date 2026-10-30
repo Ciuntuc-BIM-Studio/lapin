@@ -42,7 +42,7 @@ Un axe de quadrillage se déplace, se copie, pivote et se reflète seul ou avec 
 
 ## Dessin
 
-L’onglet **Dessin** trace des lignes, des polylignes, des rectangles, des cercles et des arcs. Il les modifie par décalage, ajustement, prolongement, raccord, chanfrein et jonction, remplit des surfaces de hachures et les organise sur des **Calques**. **Import DXF** fait entrer un dessin de CAO sous forme de lignes auxquelles vous pouvez vous accrocher et que vous pouvez modifier.
+L’onglet **Dessin** trace des lignes, des polylignes, des rectangles, des cercles et des arcs. Il les modifie par décalage, ajustement, prolongement, raccord, chanfrein et jonction, remplit des surfaces de hachures et les organise sur des **Calques**. **Importer DXF** fait entrer un dessin de CAO sous forme de lignes auxquelles vous pouvez vous accrocher et que vous pouvez modifier.
 
 ![L’onglet Dessin](shots/ribbon-draft.webp)
 

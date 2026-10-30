@@ -53,7 +53,7 @@ Klicken Sie auf ein Symbol auf der Leiste eines eingeklappten Bereichs, um den B
 
 - **Suchen** Sie nach dem Namen eines Befehls oder nach einer Taste.
 - **+** fügt ein Tastenkürzel hinzu: Drücken Sie eine Kombination (<kbd>Strg</kbd> <kbd>⇧</kbd> <kbd>W</kbd>, <kbd>F4</kbd>), oder geben Sie bis zu drei Buchstaben ein und drücken Sie <kbd>Enter</kbd>. <kbd>Esc</kbd> bricht ab.
-- Hat ein anderer Befehl das Tastenkürzel bereits, sagt Lapin, welcher. **Reassign** nimmt es diesem Befehl weg, **Beide behalten** überlässt es beiden (der erste in der Liste gewinnt), **Abbrechen** ändert nichts.
+- Hat ein anderer Befehl das Tastenkürzel bereits, sagt Lapin, welcher. **Neu zuweisen** nimmt es diesem Befehl weg, **Beide behalten** überlässt es beiden (der erste in der Liste gewinnt), **Abbrechen** ändert nichts.
 - **×** entfernt ein Tastenkürzel. Der Pfeil am Ende einer Zeile setzt diesen Befehl so zurück, wie ihn die Vorlage hat, und **Alles zurücksetzen** tut das für jeden Befehl.
 - **Vorlage** wählt den Satz, von dem Sie ausgehen: **Revit-Stil** (die Voreinstellung: die üblichen Buchstaben von Revit, wo Lapin den Befehl hat) oder **Lapin klassisch** (Lapins eigene Buchstaben von früher).
 - **Exportieren…** schreibt Ihre Tastenkürzel in eine Datei, und **Importieren…** liest eine ein, für einen anderen Computer oder einen Kollegen.

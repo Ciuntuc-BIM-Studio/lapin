@@ -8,7 +8,7 @@ Fanen **Byggepladsindretning** modellerer byggepladsens midlertidige arbejder: f
 
 ![Fanen Byggepladsindretning](shots/ribbon-site-works.webp)
 
-Stilladser og forskalling er **Midlertidig**: de opstilles og nedtages i fasen **Execution**. Den første, du placerer, tilføjer den fase, hvis projektet ikke har den, og gør den til den aktive fase. Visninger af tidligere faser udelader dem. Se **Administrer → Faser**.
+Stilladser og forskalling er **Midlertidig**: de opstilles og nedtages i fasen **Udførelse**. Den første, du placerer, tilføjer den fase, hvis projektet ikke har den, og gør den til den aktive fase. Visninger af tidligere faser udelader dem. Se **Administrer → Faser**.
 
 ![Et stillads rundt om huset, første sals forskalling på sine stempler](shots/site-works-3d.webp)
 
@@ -21,7 +21,7 @@ Hvert lige stykke deles op i typens faglængder, med så få fag som muligt for 
 
 ![Et stillads' egenskaber](shots/scaffold-properties.webp)
 
-I dets egenskaber kan du indstille **arbejdshøjde**: lad den stå tom for væggenes top. Du kan også vælge, om fødderne står **på terrænet** eller **på etagen**, eller **frigøre** det fra væggene.
+I dets egenskaber kan du indstille **arbejdshøjde**: lad den stå tom for væggenes top. Du kan også vælge, om fødderne står **på terrænet** eller **på etagen**, eller løsne det fra væggene med **frigør**.
 
 Hvert stillads og hver forskalling har en **Type**. Du vælger den øverst i egenskaberne eller giver ét elements type til andre med Matchtype (MA). Under **Typeparametre** står de værdier, konfiguratoren indstiller: systemet, faglængderne, bredden, etagehøjden, krydsfinéren, afstandene, varen. Du kan også ændre dem der. En ændring hører til typen, så alle elementer af den type følger den. Opret lignende (CS) tegner et nyt af samme type. En type, du opretter i konfiguratoren, er den, det næste stillads eller den næste forskalling tager.
 
@@ -56,7 +56,7 @@ Det, der står op mod en flade, udelades: en anden væg, en søjle. Et dæk stø
 
 ## Forskallingsplan
 
-**Forskallingsplan** laver en plan af den aktive etage i fasen Execution, skåret en meter over gulvet, **set nedefra**: en loftsplan. Stemplerne er skåret. Forskallingen over dem tegnes, som du ville se den, når du kigger op: de primære og sekundære bjælker, krydsfinéren og kanterne. Den ligger, som planen ligger, så de to passer sammen.
+**Forskallingsplan** laver en plan af den aktive etage i fasen Udførelse, skåret en meter over gulvet, **set nedefra**: en loftsplan. Stemplerne er skåret. Forskallingen over dem tegnes, som du ville se den, når du kigger op: de primære og sekundære bjælker, krydsfinéren og kanterne. Den ligger, som planen ligger, så de to passer sammen.
 
 **Forskallingsplan ovenfra** laver samme plan set ovenfra, med forskallingen tegnet stiplet over snittet. Enhver plan kan skiftes mellem de to i dens egenskaber (**Set fra**) eller under **Visningsområde**.
 

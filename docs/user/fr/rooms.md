@@ -59,7 +59,7 @@ Dans un export IFC, chaque pièce est un IfcSpace, avec son numéro, son nom, sa
 - son **contour** vient de sa forme (une extrusion, une B-rep ou un maillage, ou l’emprise dessinée à côté) ; elle garde ce contour, elle ne suit pas les murs ;
 - son **nom** est le nom long de l’espace et son **numéro** son nom (comme Revit et ArchiCAD les écrivent) ; sa **hauteur**, et son **décalage de base** quand elle commence au-dessus de son niveau (une mezzanine, un plancher surélevé), viennent de sa forme ;
 - sa **fonction**, son **service** et son **revêtement de sol** viennent du fichier quand il les indique (le type d’objet ou la catégorie de l’espace, une propriété Department, le revêtement de sol), si bien qu’un jeu de couleurs par fonction ou par service les colore aussitôt ;
-- tout le reste de ce que l’espace avait dans le fichier, ses jeux de propriétés et ses quantités (Pset_SpaceCommon, BaseQuantities, les jeux propres au programme), est conservé et listé, en lecture seule, sous **IFC properties** dans ses propriétés, avec un filtre quand il y en a beaucoup.
+- tout le reste de ce que l’espace avait dans le fichier, ses jeux de propriétés et ses quantités (Pset_SpaceCommon, BaseQuantities, les jeux propres au programme), est conservé et listé, en lecture seule, sous **Propriétés IFC** dans ses propriétés, avec un filtre quand il y en a beaucoup.
 
 Le message de l’import indique combien de pièces sont arrivées. Cherchez-les sur les plans de leurs niveaux (chacune affiche son étiquette), dans une nomenclature **Pièces** (**+** sous Nomenclatures dans l’arborescence) ou dans l’onglet IFC de l’arborescence ; la vue 3D masque les pièces.
 

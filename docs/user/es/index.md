@@ -29,4 +29,4 @@ Lapin es gratuito y de código abierto, bajo la licencia MIT; su código está e
 
 ## Cuando se quede atascado
 
-Haga clic en **Ask Me**, el conejo de arriba a la derecha de la aplicación, o pulse <kbd>F1</kbd>, y escriba su pregunta con sus propias palabras. Si no tiene respuesta, nos envía su pregunta. Consulte [Ayuda y comentarios](help.md).
+Haga clic en **Pregúntame**, el conejo de arriba a la derecha de la aplicación, o pulse <kbd>F1</kbd>, y escriba su pregunta con sus propias palabras. Si no tiene respuesta, nos envía su pregunta. Consulte [Ayuda y comentarios](help.md).

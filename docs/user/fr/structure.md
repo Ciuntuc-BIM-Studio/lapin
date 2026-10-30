@@ -32,4 +32,4 @@ Les poutres et les semelles se joignent d’elles-mêmes là où elles se rencon
 
 ## Une vue structurelle
 
-La discipline d’une vue décide de ce qu’elle montre. Une vue **Structure** ne montre que les noyaux porteurs, sans les finitions. Vous choisissez la discipline dans les propriétés de la vue. Voir [Vues](views.md).
+La discipline d’une vue décide de ce qu’elle montre. Une vue **Structure** ne montre que les noyaux porteurs, sans les finitions. Vous choisissez la discipline dans les propriétés de la vue. Voir [Coupes, élévations et 3D](views.md).

@@ -20,7 +20,7 @@ Choisissez **Architecture → Toit** (<kbd>RF</kbd>) et cliquez le contour des m
 
 Sélectionnez le toit pour le modifier dans le panneau des propriétés :
 
-- **Forme.** À croupes, à deux pans, en appentis, à la Mansart, en voûte ou plat. Un toit en voûte est une voûte courbe entre deux pignons ; **Voûte : flèche à la clé** règle la hauteur à laquelle il monte à la clé, au plus la moitié de sa portée.
+- **Forme.** À quatre pans, à deux pans, monopente, mansardé, en berceau ou plat. Un toit en voûte est une voûte courbe entre deux pignons ; **Voûte : flèche à la clé** règle la hauteur à laquelle il monte à la clé, au plus la moitié de sa portée.
 - **Pente et débord** pour tout le toit.
 - **Chaque rive** avec son propre type (égout ou pignon), sa pente et son débord. Un toit à la Mansart avec des rives en pignon est un comble à la hollandaise.
 - **Style.** Les styles de toit donnent tout un aspect en un seul choix : la couverture, les égouts, les gouttières et les descentes.
@@ -29,4 +29,4 @@ Sélectionnez le toit pour le modifier dans le panneau des propriétés :
 
 Les murs du niveau du toit s’arrêtent dessous et montent d’eux-mêmes jusqu’à ses pignons, sous un toit courbe aussi. Un mur d’un autre niveau suit le toit après **Architecture → Attacher au toit** (<kbd>AR</kbd>) : sélectionnez les murs, puis cliquez le toit. Le même outil accepte tout autre corps au-dessus des murs : un solide Studio, une dalle, une poutre, un élément importé d’IFC. Les murs montent jusqu’à sa sous-face et sont coupés le long de celle-ci, quelle que soit sa forme. **Détacher du toit** l’annule.
 
-**Roof window** et **Dormer** ajoutent des ouvertures à un toit.
+**Fenêtre de toit** et **Lucarne** ajoutent des ouvertures à un toit.

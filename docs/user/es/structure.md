@@ -32,4 +32,4 @@ Dibuje la cimentación en el nivel **Foundations**, o dele una planta propia.
 
 ## Una vista estructural
 
-La disciplina de una vista decide lo que muestra. Una vista **Estructura** muestra solo los núcleos portantes, sin los acabados. La disciplina se elige en las propiedades de la vista. Consulte [Vistas](views.md).
+La disciplina de una vista decide lo que muestra. Una vista **Estructura** muestra solo los núcleos portantes, sin los acabados. La disciplina se elige en las propiedades de la vista. Consulte [Secciones, alzados y 3D](views.md).

@@ -68,7 +68,7 @@ Die ausgeblendeten Geschosse werden nicht gezeichnet, und Sie können sie weder 
 
 ### Ohne Bekleidungen oder nur die Kerne
 
-Eine 3D-Ansicht kann das Tragwerk des Gebäudes allein zeigen, wie ein Tragwerksplan. In den Eigenschaften der 3D-Ansicht (wenn nichts ausgewählt ist) oder in **Ansicht → Ansichtseinstellungen**, während die 3D-Ansicht vorne liegt, zeigt **Layer**:
+Eine 3D-Ansicht kann das Tragwerk des Gebäudes allein zeigen, wie ein Tragwerksplan. In den Eigenschaften der 3D-Ansicht (wenn nichts ausgewählt ist) oder in **Ansicht → Ansichtseinstellungen**, während die 3D-Ansicht vorne liegt, zeigt **Schichten**:
 
 - **alle Schichten**: die Wände, Decken und Fundamente, wie sie gebaut sind;
 - **ohne Bekleidungen**: ohne die Schichten, deren Material eine Bekleidung ist (Putz, Außenputz, Anstrich, Fliesen, Platten, Bodenbeläge oder ein Material, dessen Kategorie in Verwalten → Materialien Bekleidung ist); die Dämmung bleibt;
@@ -76,7 +76,7 @@ Eine 3D-Ansicht kann das Tragwerk des Gebäudes allein zeigen, wie ein Tragwerks
 
 ![Ein Haus in 3D nur mit dem Kern: Die Wände sind ihr Ziegel, die Decken ihre Platte](shots/layers-3d-core.webp)
 
-Jede beibehaltene Schicht bleibt ein geschlossener Körper in ihrem eigenen Material, sodass ein Schnitt oder der Schnittbereich sie wie zuvor schließt. Türen und Fenster bleiben in ihren Öffnungen; eine mit einer Bekleidung ausgekleidete Laibung gehört zu den Bekleidungen der Wand. Eine 3D-Ansicht übernimmt ihre Schichten aus ihrem Stil, wie ein Grundriss: Setzen Sie ihre **Disziplin** auf Tragwerk, und sie zeigt nur die Kerne; stellen Sie **Layer** ein, um anders zu wählen, und die Schaltfläche daneben kehrt zu den Schichten des Stils zurück. Der Chip **Angezeigte Schichten** unten in der 3D-Ansicht sagt, was weggelassen wird; sein **×** zeigt wieder alle Schichten. Die ausgeblendeten Schichten werden nicht ausgewählt und halten Sie bei einer Begehung nicht auf, und **Datei → 3D exportieren…** exportiert, so wie die Ansicht es zeigt, dieselben Schichten.
+Jede beibehaltene Schicht bleibt ein geschlossener Körper in ihrem eigenen Material, sodass ein Schnitt oder der Schnittbereich sie wie zuvor schließt. Türen und Fenster bleiben in ihren Öffnungen; eine mit einer Bekleidung ausgekleidete Laibung gehört zu den Bekleidungen der Wand. Eine 3D-Ansicht übernimmt ihre Schichten aus ihrem Stil, wie ein Grundriss: Setzen Sie ihre **Disziplin** auf Tragwerk, und sie zeigt nur die Kerne; stellen Sie **Schichten** ein, um anders zu wählen, und die Schaltfläche daneben kehrt zu den Schichten des Stils zurück. Der Chip **Angezeigte Schichten** unten in der 3D-Ansicht sagt, was weggelassen wird; sein **×** zeigt wieder alle Schichten. Die ausgeblendeten Schichten werden nicht ausgewählt und halten Sie bei einer Begehung nicht auf, und **Datei → 3D exportieren…** exportiert, so wie die Ansicht es zeigt, dieselben Schichten.
 
 ### In einen Raum gehen
 
@@ -107,7 +107,7 @@ Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt un
 ![Die Registerkarte Ansicht](shots/ribbon-view.webp)
 
 - **Ansichtseinstellungen.** Die Disziplin und der Stil der Ansicht, ihr Bereich (die Schnitthöhe und -tiefe) und ihre Grafiken.
-- **Ansichtsstile.** Architectural, Structural (nur die Kerne), MEP oder Ihr eigener. Jeder Stil wählt die gezeichneten Schichten (alle, ohne Bekleidungen oder den Kern) und wie Materialien sich verbinden.
+- **Ansichtsstile.** Architektur, Tragwerk (nur die Kerne), TGA oder Ihr eigener. Jeder Stil wählt die gezeichneten Schichten (alle, ohne Bekleidungen oder den Kern) und wie Materialien sich verbinden.
 - **IFC-2D-Symbole.** Aus einer IFC-Datei importierte oder verknüpfte Elemente, die ihre eigene Grundrisszeichnung mitbringen (eine Grundfläche, den Aufschlag einer Tür, das Symbol eines Objekts, mit den Farben, Füllungen und Texten der Datei), zeichnen diese in Grundrissen statt ihres Schnitts. Entfernen Sie das Häkchen in den Ansichtseinstellungen (oder in einem Ansichtsstil), um stattdessen ihren 3D-Schnitt zu zeichnen.
 - **Sichtbarkeit** (<kbd>VV</kbd>) und **Grafiken** (<kbd>VG</kbd>). Sie blenden Kategorien ein oder aus und legen ihre Stifte, Linientypen und Füllungen fest.
 - **Teilen** und **Fenster.** Sie zeigen zwei Ansichten nebeneinander oder öffnen eine Ansicht in einem eigenen Fenster.

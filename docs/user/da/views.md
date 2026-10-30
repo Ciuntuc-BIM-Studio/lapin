@@ -107,7 +107,7 @@ Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.
 ![Fanen Vis](shots/ribbon-view.webp)
 
 - **Visningsindstillinger.** Visningens fagområde og stil, dens område (snithøjde og -dybde) og dens grafik.
-- **Visningsstile.** Architectural, Structural (kun kernerne), MEP eller dine egne. Hver stil vælger de lag, der tegnes (alle, uden overflader eller kernen), og hvordan materialer samles.
+- **Visningsstile.** Arkitektonisk, Konstruktiv (kun kernerne), Installationer eller dine egne. Hver stil vælger de lag, der tegnes (alle, uden overflader eller kernen), og hvordan materialer samles.
 - **IFC 2D-symboler.** Elementer importeret eller linket fra en IFC-fil, som har deres egen plantegning med (et fodaftryk, en dørs slag, et inventars symbol, med filens farver, udfyldninger og tekster), tegner den i planer i stedet for deres snit. Fjern fluebenet under Visningsindstillinger (eller i en visningsstil) for i stedet at tegne deres 3D-snit.
 - **Synlighed** (<kbd>VV</kbd>) og **Grafik** (<kbd>VG</kbd>). De viser eller skjuler kategorier og indstiller deres penne, linjetyper og udfyldninger.
 - **Opdel** og **Vindue.** De viser to visninger side om side eller åbner en visning i et separat vindue.

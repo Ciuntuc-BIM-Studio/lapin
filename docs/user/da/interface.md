@@ -53,7 +53,7 @@ Klik på et ikon på et indfoldet panels skinne for at åbne panelet over visnin
 
 - **Søg** efter en kommandos navn eller efter en tast.
 - **+** tilføjer en genvej: tryk på en kombination (<kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>W</kbd>, <kbd>F4</kbd>), eller skriv op til tre bogstaver og tryk på <kbd>Enter</kbd>. <kbd>Esc</kbd> stopper.
-- Hvis en anden kommando allerede har genvejen, siger Lapin hvilken. **Flyt til …** tager den fra den kommando, **Behold begge** lader begge beholde den (den første på listen vinder), **Annuller** ændrer ingenting.
+- Hvis en anden kommando allerede har genvejen, siger Lapin hvilken. **Flyt** tager den fra den kommando, **Behold begge** lader begge beholde den (den første på listen vinder), **Annuller** ændrer ingenting.
 - **×** fjerner en genvej. Pilen for enden af en række sætter kommandoen tilbage, som forudindstillingen har den, og **Nulstil alt** gør det for alle kommandoer.
 - **Forudindstilling** vælger det sæt, du starter fra: **Revit-stil** (standard: Revits sædvanlige bogstaver, hvor Lapin har kommandoen) eller **Lapin klassisk** (Lapins egne bogstaver fra før).
 - **Eksportér…** skriver dine genveje til en fil, og **Importér…** læser en, til en anden computer eller en kollega.

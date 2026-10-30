@@ -32,4 +32,4 @@ Träger und Fundamente verbinden sich von selbst, wo sie aufeinandertreffen, ein
 
 ## Eine Tragwerksansicht
 
-Die Disziplin einer Ansicht entscheidet, was sie zeigt. Eine Ansicht der Disziplin **Tragwerk** zeigt nur die tragenden Kerne, ohne die Bekleidungen. Die Disziplin wählen Sie in den Eigenschaften der Ansicht. Siehe [Ansichten](views.md).
+Die Disziplin einer Ansicht entscheidet, was sie zeigt. Eine Ansicht der Disziplin **Tragwerk** zeigt nur die tragenden Kerne, ohne die Bekleidungen. Die Disziplin wählen Sie in den Eigenschaften der Ansicht. Siehe [Schnitte, Ansichten und 3D](views.md).

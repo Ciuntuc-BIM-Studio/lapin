@@ -18,7 +18,7 @@ Jede Ebene hat ihren eigenen Grundriss unter **Grundrisse**. Doppelklicken Sie a
 
 ## Die Ebene darunter sehen
 
-Um beim Zeichnen eine andere Ebene zu sehen, wählen Sie sie in der Leiste des Grundrisses unter **Underlay**. Der Grundriss dieser Ebene wird darunter gezeichnet, blass und grau. Sie können darauf fangen, sie aber nicht auswählen.
+Um beim Zeichnen eine andere Ebene zu sehen, wählen Sie sie in der Leiste des Grundrisses unter **Unterlage**. Der Grundriss dieser Ebene wird darunter gezeichnet, blass und grau. Sie können darauf fangen, sie aber nicht auswählen.
 
 ![Das Obergeschoss über dem als Unterlage angezeigten Erdgeschoss gezeichnet](shots/underlay.webp)
 

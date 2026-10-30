@@ -42,7 +42,7 @@ En modullinje flyttes, kopieres, roteres og spejles for sig selv eller sammen me
 
 ## Tegning
 
-Fanen **Tegn** tegner linjer, polylinjer, rektangler, cirkler og buer. Den redigerer dem med forskyd, trim, forlæng, afrunding, affasning og sammenføj, fylder områder med skraveringer og organiserer dem på **Lag**. **Import DXF** henter en CAD-tegning ind som linjer, du kan fange til og redigere.
+Fanen **Tegn** tegner linjer, polylinjer, rektangler, cirkler og buer. Den redigerer dem med forskyd, trim, forlæng, afrunding, affasning og sammenføj, fylder områder med skraveringer og organiserer dem på **Lag**. **Importér DXF** henter en CAD-tegning ind som linjer, du kan fange til og redigere.
 
 ![Fanen Tegn](shots/ribbon-draft.webp)
 

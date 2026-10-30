@@ -8,7 +8,7 @@ La ficha **Medios auxiliares** modela las obras provisionales de la obra: los an
 
 ![La ficha Medios auxiliares](shots/ribbon-site-works.webp)
 
-Los andamios y encofrados son **temporales**: se montan y se desmontan en la fase **Execution**. El primero que coloque añade esa fase si el proyecto no la tiene, y la convierte en la fase activa. Las vistas de fases anteriores no los muestran. Consulte **Gestionar → Fases**.
+Los andamios y encofrados son **temporales**: se montan y se desmontan en la fase **Ejecución**. El primero que coloque añade esa fase si el proyecto no la tiene, y la convierte en la fase activa. Las vistas de fases anteriores no los muestran. Consulte **Gestionar → Fases**.
 
 ![Un andamio alrededor de la casa y el encofrado de la primera planta sobre sus puntales](shots/site-works-3d.webp)
 
@@ -21,7 +21,7 @@ Cada tramo recto se divide en las longitudes de módulo del tipo, con los menos 
 
 ![Las propiedades de un andamio](shots/scaffold-properties.webp)
 
-En sus propiedades puede fijar la **cota de trabajo**: déjela vacía para tomar la parte superior de los muros. También puede elegir si los pies se apoyan **sobre el terreno** o **sobre la planta**, o separarlo de los muros con **detach**.
+En sus propiedades puede fijar la **cota de trabajo**: déjela vacía para tomar la parte superior de los muros. También puede elegir si los pies se apoyan **sobre el terreno** o **sobre la planta**, o separarlo de los muros con **separar**.
 
 Cada andamio y cada encofrado tiene un **tipo**. Lo elige en la parte superior de las propiedades, o pasa el tipo de un elemento a otros con Igualar tipo (MA). En **Parámetros de tipo** están los valores que fija el configurador: el sistema, las longitudes de módulo, la anchura, la altura de nivel, el tablero, las separaciones, la partida. También puede cambiarlos ahí. Un cambio es del tipo, así que todos los elementos de ese tipo lo siguen. Crear similar (CS) dibuja uno nuevo del mismo tipo. El tipo que cree en el configurador es el que toma el siguiente andamio o encofrado.
 
@@ -56,7 +56,7 @@ Lo que se apoya contra una cara se omite: otro muro, un pilar. Un forjado hormig
 
 ## Plano de encofrado
 
-**Plano de encofrado** crea una planta de la planta activa en la fase Execution, cortada a un metro sobre el suelo, **vista desde abajo**: un plano de techos. Los puntales quedan cortados. El encofrado por encima de ellos se dibuja como lo vería mirando hacia arriba: las vigas primarias y secundarias, el tablero y los bordes. Está orientado igual que la planta, así que ambos coinciden.
+**Plano de encofrado** crea una planta de la planta activa en la fase Ejecución, cortada a un metro sobre el suelo, **vista desde abajo**: un plano de techos. Los puntales quedan cortados. El encofrado por encima de ellos se dibuja como lo vería mirando hacia arriba: las vigas primarias y secundarias, el tablero y los bordes. Está orientado igual que la planta, así que ambos coinciden.
 
 **Plano de encofrado desde arriba** crea la misma planta vista desde arriba, con el encofrado dibujado a trazos sobre el corte. Cualquier planta puede alternar entre las dos en sus propiedades (**Visto desde**) o en **Rango de vista**.
 

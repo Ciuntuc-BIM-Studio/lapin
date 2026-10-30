@@ -8,7 +8,7 @@ Die Registerkarte **Baustelleneinrichtung** modelliert die temporären Bauwerke 
 
 ![Die Registerkarte Baustelleneinrichtung](shots/ribbon-site-works.webp)
 
-Gerüste und Schalungen sind **Temporär**: Sie werden in der Bauphase **Execution** auf- und abgebaut. Das erste Element, das Sie platzieren, fügt diese Bauphase hinzu, falls das Projekt keine hat, und macht sie zur aktiven Bauphase. Ansichten früherer Bauphasen lassen sie weg. Siehe **Verwalten → Bauphasen**.
+Gerüste und Schalungen sind **Temporär**: Sie werden in der Bauphase **Bauausführung** auf- und abgebaut. Das erste Element, das Sie platzieren, fügt diese Bauphase hinzu, falls das Projekt keine hat, und macht sie zur aktiven Bauphase. Ansichten früherer Bauphasen lassen sie weg. Siehe **Verwalten → Bauphasen**.
 
 ![Ein Gerüst rund um das Haus, die Schalung des Obergeschosses auf ihren Stützen](shots/site-works-3d.webp)
 
@@ -21,7 +21,7 @@ Jeder gerade Abschnitt wird in die Feldlängen des Typs aufgeteilt, mit so wenig
 
 ![Die Eigenschaften eines Gerüsts](shots/scaffold-properties.webp)
 
-In seinen Eigenschaften können Sie die **Arbeitshöhe** einstellen: Lassen Sie sie leer für die Oberkante der Wände. Sie können auch wählen, ob die Fußpunkte **auf dem Gelände** oder **auf dem Geschoss** stehen, oder es mit **detach** von den Wänden lösen.
+In seinen Eigenschaften können Sie die **Arbeitshöhe** einstellen: Lassen Sie sie leer für die Oberkante der Wände. Sie können auch wählen, ob die Fußpunkte **auf dem Gelände** oder **auf dem Geschoss** stehen, oder es mit **lösen** von den Wänden trennen.
 
 Jedes Gerüst und jede Schalung hat einen **Typ**. Sie wählen ihn oben in den Eigenschaften oder übertragen den Typ eines Elements mit Typ übertragen (MA) auf andere. Unter **Typparameter** stehen die Werte, die der Konfigurator festlegt: das System, die Feldlängen, die Breite, die Lagenhöhe, das Sperrholz, die Abstände, die Position. Sie können sie dort auch ändern. Eine Änderung betrifft den Typ, sodass ihr jedes Element dieses Typs folgt. Ähnliches erstellen (CS) zeichnet ein neues Element desselben Typs. Ein Typ, den Sie im Konfigurator erstellen, ist derjenige, den das nächste Gerüst oder die nächste Schalung erhält.
 
@@ -56,7 +56,7 @@ Was an einer Fläche anliegt, wird ausgelassen: eine andere Wand, eine Stütze. 
 
 ## Schalungsplan
 
-**Schalungsplan** erstellt einen Grundriss des aktiven Geschosses in der Bauphase Execution, einen Meter über dem Fußboden geschnitten, **von unten gesehen**: einen Deckenspiegel. Die Stützen werden geschnitten. Die Schalung darüber wird so gezeichnet, wie Sie sie beim Blick nach oben sehen würden: die Joch- und Querträger, das Sperrholz und die Ränder. Sie liegt so, wie der Grundriss liegt, sodass beide übereinstimmen.
+**Schalungsplan** erstellt einen Grundriss des aktiven Geschosses in der Bauphase Bauausführung, einen Meter über dem Fußboden geschnitten, **von unten gesehen**: einen Deckenspiegel. Die Stützen werden geschnitten. Die Schalung darüber wird so gezeichnet, wie Sie sie beim Blick nach oben sehen würden: die Joch- und Querträger, das Sperrholz und die Ränder. Sie liegt so, wie der Grundriss liegt, sodass beide übereinstimmen.
 
 **Schalungsplan von oben** erstellt denselben Plan von oben gesehen, mit der Schalung gestrichelt über dem Schnitt. Jeder Grundriss lässt sich in seinen Eigenschaften (**Gesehen von**) oder im **Ansichtsbereich** zwischen beiden umschalten.
 

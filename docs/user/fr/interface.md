@@ -53,7 +53,7 @@ Cliquez une icône sur la barre d’un panneau replié pour ouvrir le panneau su
 
 - **Recherchez** par le nom d’une commande ou par une touche.
 - **+** ajoute un raccourci : appuyez sur une combinaison (<kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>W</kbd>, <kbd>F4</kbd>), ou tapez jusqu’à trois lettres et appuyez sur <kbd>Enter</kbd>. <kbd>Esc</kbd> interrompt.
-- Si une autre commande a déjà ce raccourci, Lapin indique laquelle. **Reassign** le lui retire, **Garder les deux** le laisse aux deux (la première de la liste l’emporte), **Annuler** ne change rien.
+- Si une autre commande a déjà ce raccourci, Lapin indique laquelle. **Réaffecter** le lui retire, **Garder les deux** le laisse aux deux (la première de la liste l’emporte), **Annuler** ne change rien.
 - **×** supprime un raccourci. La flèche au bout d’une ligne remet cette commande telle que le jeu prédéfini la définit, et **Tout réinitialiser** le fait pour toutes les commandes.
 - **Jeu prédéfini** choisit l’ensemble de départ : **Style Revit** (par défaut : les lettres habituelles de Revit, là où Lapin a la commande) ou **Lapin classique** (les lettres propres à Lapin d’avant).
 - **Exporter…** écrit vos raccourcis dans un fichier, et **Importer…** en lit un, pour un autre ordinateur ou un collègue.

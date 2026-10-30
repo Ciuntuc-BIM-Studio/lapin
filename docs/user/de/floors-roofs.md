@@ -29,4 +29,4 @@ Wählen Sie das Dach aus, um es im Eigenschaftenbereich zu ändern:
 
 Die Wände auf der Ebene des Dachs enden von selbst darunter und steigen bis zu seinen Giebeln, auch unter einem gekrümmten Dach. Eine Wand auf einer anderen Ebene folgt dem Dach nach **Architektur → An Dach anbinden** (<kbd>AR</kbd>): Wählen Sie die Wände aus und klicken Sie dann auf das Dach. Dasselbe Werkzeug nimmt jeden anderen Körper über den Wänden: einen Studio-Volumenkörper, eine Decke, einen Träger, ein aus IFC importiertes Element. Die Wände steigen bis zu seiner Unterseite und werden an ihr entlang geschnitten, welche Form sie auch hat. **Vom Dach lösen** macht dies rückgängig.
 
-**Roof window** und **Dormer** fügen einem Dach Öffnungen hinzu.
+**Dachfenster** und **Gaube** fügen einem Dach Öffnungen hinzu.

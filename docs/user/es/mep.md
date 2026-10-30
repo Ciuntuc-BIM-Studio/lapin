@@ -57,4 +57,4 @@ En una exportación IFC, cada sistema es un IfcDistributionSystem, cada nodo y c
 
 ## MEP Pro
 
-La ingeniería sobre la red —la demanda que lleva cada tramo y el tamaño que la soporta, las comprobaciones (extremos abiertos, codos cerrados, pendientes de saneamiento, fuentes sobrecargadas), las reglas de trazado por material (cobre en pasos de 45°, PVC con giros de 45° como máximo), radiadores propuestos bajo las ventanas, recorridos sugeridos alrededor de los muros, el perfil de un tramo y la isometría de un sistema— está en la edición **Lapin MEP**, que añade a esta ficha los grupos **Engineering** y **Assist**.
+La ingeniería sobre la red —la demanda que lleva cada tramo y el tamaño que la soporta, las comprobaciones (extremos abiertos, codos cerrados, pendientes de saneamiento, fuentes sobrecargadas), las reglas de trazado por material (cobre en pasos de 45°, PVC con giros de 45° como máximo), radiadores propuestos bajo las ventanas, recorridos sugeridos alrededor de los muros, el perfil de un tramo y la isometría de un sistema— está en la edición **Lapin MEP**, que añade a esta ficha los grupos **Ingeniería** y **Asistentes**.

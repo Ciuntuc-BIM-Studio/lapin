@@ -27,7 +27,7 @@ Solange das Projekt geteilt ist und eine Datei hat, speichert Lapin es alle 5 Mi
 
 ## Einer Sitzung beitreten
 
-- **Aus einem Browser**: Öffnen Sie den Link, geben Sie Ihren Namen ein und klicken Sie auf **Verbinden**. Nichts zu installieren.
+- **Aus einem Browser**: Öffnen Sie den Link, geben Sie Ihren Namen ein und klicken Sie auf **Beitreten**. Nichts zu installieren.
 - **Aus Lapin**: Wählen Sie auf dem Startbildschirm oder im Menü **Datei** den Befehl **Sitzung beitreten…**, fügen Sie den Link oder den Code ein und geben Sie Ihren Namen ein.
 
 ![Beitreten aus Lapin](shots/join-dialog.webp)

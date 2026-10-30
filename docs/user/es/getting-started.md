@@ -23,7 +23,7 @@ Un proyecto nuevo ya tiene tres niveles: **Foundations** (−1.50), **Ground flo
 5. **La barra rápida.** Ofrece las herramientas más usadas en las teclas numéricas <kbd>1</kbd>–<kbd>9</kbd>.
 6. **La línea de comandos.** Escriba aquí las letras de una herramienta y pulse <kbd>Enter</kbd>. Mientras una herramienta está en marcha, la línea le indica lo que necesita a continuación. Consulte [Dibujo y línea de comandos](drafting.md).
 7. **El panel de propiedades.** Muestra lo que esté seleccionado. Sin nada seleccionado, muestra la vista que está delante.
-8. **Ask Me.** Es el asistente de ayuda de Lapin. Consulte [Ayuda y comentarios](help.md).
+8. **Pregúntame.** Es el asistente de ayuda de Lapin. Consulte [Ayuda y comentarios](help.md).
 
 ¿Quiere más espacio para el dibujo? **Vista → Interfaz…** elige una ventana más compacta, y los paneles laterales se pliegan. Consulte [La interfaz y los métodos abreviados](interface.md).
 
@@ -36,7 +36,7 @@ Un proyecto nuevo ya tiene tres niveles: **Foundations** (−1.50), **Ground flo
 
 ## Unidades
 
-Lapin trabaja en milímetros, salvo que usted elija otra cosa. Para cambiar las unidades, abra **Gestionar → Normas de dibujo → Proyecto → Units**, o haga clic en **Units** en la barra de estado, en la parte inferior de la ventana. Puede elegir milímetros, centímetros, metros, pies y pulgadas, o pulgadas.
+Lapin trabaja en milímetros, salvo que usted elija otra cosa. Para cambiar las unidades, abra **Gestionar → Normas de dibujo → Proyecto → Unidades**, o haga clic en **Unidades** en la barra de estado, en la parte inferior de la ventana. Puede elegir milímetros, centímetros, metros, pies y pulgadas, o pulgadas.
 
 ![Normas de dibujo, ficha Proyecto: las unidades del proyecto](shots/standards-project.webp)
 

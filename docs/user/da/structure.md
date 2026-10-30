@@ -32,4 +32,4 @@ Bjælker og fundamenter sammenføjes af sig selv, hvor de mødes, et hjørne som
 
 ## En konstruktionsvisning
 
-En visnings fagområde afgør, hvad den viser. En visning med fagområdet **Konstruktion** viser kun de bærende kerner, uden overflader. Du vælger fagområdet i visningens egenskaber. Se [Visninger](views.md).
+En visnings fagområde afgør, hvad den viser. En visning med fagområdet **Konstruktion** viser kun de bærende kerner, uden overflader. Du vælger fagområdet i visningens egenskaber. Se [Snit, facader og 3D](views.md).

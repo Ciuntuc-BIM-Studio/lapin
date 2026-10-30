@@ -32,6 +32,27 @@ Tegningerne til højre viser typen, som den vil blive tegnet i opstalt, plan og 
 
 **Gem type** gemmer dine ændringer. Alle døre eller vinduer af den type følger dem. **Placér med den** lukker konfiguratoren og begynder at placere den type.
 
+### Vinduer med flere rammer
+
+**Kolonner af rammer** tager rammernes relative bredder, ét tal for hver: `1 1` er to lige store rammer, `1 1 1` tre, `1 2 1` en bred mellem to smalle. **Rækker af rammer** deler vinduet i højden på samme måde, nedefra og op: `1 1` giver to rækker. Seks rammer er `1 1 1` i Kolonner af rammer og `1 1` i Rækker af rammer. Vælg derefter under **Panels**, hvordan hver ramme åbner: fast, sidehængt, dreje-kip, bundhængt, tophængt, drejeramme eller skydeparti.
+
+### Skodder, gitre, blomsterkasser og baldakiner
+
+<!-- video window-dressings -->
+
+Under **På facaden** kan en vinduestype have:
+
+- **Skodder**: med lameller, fyldte eller af brædder, med én eller to fløje, vist åbne (slået ind mod væggen ved siden af vinduet) eller lukkede for det;
+- et **Sikkerhedsgitter**: i lysningen, på facaden eller på indersiden, med vandrette eller lodrette tremmer eller begge dele, deres tykkelse og afstand;
+- en **Blomsterkasse** under vinduet;
+- en **Baldakin** over det, med sit udhæng og sin hældning.
+
+Hver af dem sidder efter væggens virkelige flader, hvor vinduet er, ud fra væggens lag, så den sidder rigtigt på enhver vægtype. Når vinduet har en indfatning, står det, der er på facaden, ud fra indfatningen. Du kan flytte hver af dem i hånden: **Fra vægfladen** angiver, hvor langt den står ud fra væggen (for et gitter i lysningen angiver **Trukket tilbage fra fladen**, hvor langt inde det sidder), **Fra vinduets akse** flytter den langs væggen, og **Op eller ned** flytter den i højden. De vises i 3D, i planer, opstalter og snit, og skemaerne måler dem.
+
+![Skodder, et gitter, en blomsterkasse og en baldakin i konfiguratoren](shots/joinery-dressings.webp)
+
+![Vinduerne med skodder og gitre, i 3D](shots/window-dressings-3d.webp)
+
 ## Mærker i plan
 
 **Annotér → Dør- og vinduesmærker** sætter et mærke på hver dør og hvert vindue i en plan: en linje på tværs af væggen, mærket udenfor, og størrelsen og brystningen indenfor. Vil du ændre, hvordan mærkerne ser ud, så gå til **Administrer → Tegningsstandarder → Mærker**.

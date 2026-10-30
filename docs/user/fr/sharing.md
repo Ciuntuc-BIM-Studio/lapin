@@ -27,7 +27,7 @@ Tant que le projet est partagé et qu’il a un fichier, Lapin l’enregistre to
 
 ## Rejoindre une session
 
-- **Depuis un navigateur** : ouvrez le lien, indiquez votre nom et appuyez sur **Joindre**. Rien à installer.
+- **Depuis un navigateur** : ouvrez le lien, indiquez votre nom et appuyez sur **Rejoindre**. Rien à installer.
 - **Depuis Lapin** : sur l’écran d’accueil, ou dans **Fichier**, choisissez **Rejoindre une session…**, collez le lien ou le code et indiquez votre nom.
 
 ![Rejoindre depuis Lapin](shots/join-dialog.webp)

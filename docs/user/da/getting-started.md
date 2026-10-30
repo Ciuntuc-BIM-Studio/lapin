@@ -23,7 +23,7 @@ Et nyt projekt har allerede tre niveauer: **Foundations** (−1.50), **Ground fl
 5. **Hotbaren.** Den lægger de mest brugte værktøjer på taltasterne <kbd>1</kbd>–<kbd>9</kbd>.
 6. **Kommandolinjen.** Skriv et værktøjs bogstaver her, og tryk på <kbd>Enter</kbd>. Mens et værktøj kører, fortæller linjen dig, hvad det har brug for som det næste. Se [Tegning og kommandolinjen](drafting.md).
 7. **Egenskabspanelet.** Det viser det, der er markeret. Når intet er markeret, viser det visningen forrest.
-8. **Ask Me.** Dette er Lapins hjælpeassistent. Se [Hjælp og feedback](help.md).
+8. **Spørg mig.** Dette er Lapins hjælpeassistent. Se [Hjælp og feedback](help.md).
 
 Vil du have mere plads til tegningen? **Vis → Brugerflade…** vælger et mere kompakt vindue, og sidepanelerne kan foldes væk. Se [Brugerfladen og genveje](interface.md).
 
@@ -36,7 +36,7 @@ Vil du have mere plads til tegningen? **Vis → Brugerflade…** vælger et mere
 
 ## Enheder
 
-Lapin arbejder i millimeter, medmindre du vælger andet. Du skifter enhederne under **Administrer → Tegningsstandarder → Projekt → Units**, eller ved at klikke på **Enheder** i statuslinjen nederst i vinduet. Du kan vælge millimeter, centimeter, meter, fod og tommer eller tommer.
+Lapin arbejder i millimeter, medmindre du vælger andet. Du skifter enhederne under **Administrer → Tegningsstandarder → Projekt → Enheder**, eller ved at klikke på **Enheder** i statuslinjen nederst i vinduet. Du kan vælge millimeter, centimeter, meter, fod og tommer eller tommer.
 
 ![Tegningsstandarder, fanen Projekt: projektets enheder](shots/standards-project.webp)
 

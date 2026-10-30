@@ -29,4 +29,4 @@ Seleccione la cubierta para cambiarla en el panel de propiedades:
 
 Los muros del nivel de la cubierta se detienen bajo ella y suben por sí solos hasta sus hastiales, también bajo una cubierta curva. Un muro de otro nivel sigue la cubierta tras **Arquitectura → Enlazar a cubierta** (<kbd>AR</kbd>): seleccione los muros y haga clic en la cubierta. La misma herramienta acepta cualquier otro cuerpo sobre los muros: un sólido de Studio, una losa, una viga, un elemento importado de IFC. Los muros suben hasta su cara inferior y se cortan a lo largo de ella, sea cual sea su forma. **Desenlazar de la cubierta** lo deshace.
 
-**Roof window** (ventana de cubierta) y **Dormer** (buhardilla) añaden huecos a una cubierta.
+**Ventana de cubierta** y **Buhardilla** añaden huecos a una cubierta.

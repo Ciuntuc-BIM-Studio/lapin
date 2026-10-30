@@ -23,7 +23,7 @@ Un nouveau projet a déjà trois niveaux : **Foundations** (−1.50), **Ground
 5. **La barre d’accès rapide.** Elle donne les outils les plus utilisés sur les touches numériques <kbd>1</kbd>–<kbd>9</kbd>.
 6. **La ligne de commande.** Tapez ici les lettres d’un outil et appuyez sur <kbd>Enter</kbd>. Pendant qu’un outil s’exécute, la ligne vous dit ce dont il a besoin ensuite. Voir [Dessin et ligne de commande](drafting.md).
 7. **Le panneau des propriétés.** Il montre ce qui est sélectionné. Quand rien n’est sélectionné, il montre la vue au premier plan.
-8. **Ask Me.** C’est l’assistant d’aide de Lapin. Voir [Aide et retours](help.md).
+8. **Demandez-moi.** C’est l’assistant d’aide de Lapin. Voir [Aide et retours](help.md).
 
 Besoin de plus de place pour le dessin ? **Vue → Interface…** choisit une fenêtre plus compacte, et les panneaux latéraux se replient. Voir [L’interface et les raccourcis](interface.md).
 
@@ -36,7 +36,7 @@ Besoin de plus de place pour le dessin ? **Vue → Interface…** choisit une 
 
 ## Unités
 
-Lapin travaille en millimètres, sauf si vous choisissez autre chose. Pour changer les unités, ouvrez **Gérer → Normes de dessin → Projet → Units**, ou cliquez sur **Unités** dans la barre d’état en bas de la fenêtre. Vous pouvez choisir les millimètres, les centimètres, les mètres, les pieds et pouces, ou les pouces.
+Lapin travaille en millimètres, sauf si vous choisissez autre chose. Pour changer les unités, ouvrez **Gérer → Normes de dessin → Projet → Unités**, ou cliquez sur **Unités** dans la barre d’état en bas de la fenêtre. Vous pouvez choisir les millimètres, les centimètres, les mètres, les pieds et pouces, ou les pouces.
 
 ![Normes de dessin, onglet Projet : les unités du projet](shots/standards-project.webp)
 

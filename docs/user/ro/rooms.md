@@ -59,7 +59,7 @@ La exportul IFC fiecare încăpere e un IfcSpace, cu numărul, numele, funcțiun
 - **conturul** ei vine din forma ei (o extrudare, un B-rep sau o rețea de fețe, ori amprenta desenată lângă ea); îl păstrează, nu urmează pereții;
 - **numele** ei e numele lung al spațiului, iar **numărul** e numele lui (așa le scriu Revit și ArchiCAD); **înălțimea** și, când începe deasupra nivelului (o galerie, o pardoseală înălțată), **decalajul la bază** vin din forma ei;
 - **funcțiunea**, **departamentul** și **finisajul pardoselii** vin din fișier, acolo unde el le spune (tipul obiectului sau categoria spațiului, o proprietate Department, pardoseala), așa că o schemă de culori după funcțiune sau după departament le colorează imediat;
-- tot restul pe care spațiul îl avea în fișier, seturile de proprietăți și cantitățile lui (Pset_SpaceCommon, BaseQuantities, seturile proprii ale programului), se păstrează și e listat, needitabil, la **IFC properties** în proprietățile ei, cu un filtru când sunt multe.
+- tot restul pe care spațiul îl avea în fișier, seturile de proprietăți și cantitățile lui (Pset_SpaceCommon, BaseQuantities, seturile proprii ale programului), se păstrează și e listat, needitabil, la **Proprietăți IFC** în proprietățile ei, cu un filtru când sunt multe.
 
 Mesajul importului spune câte încăperi au intrat. Le găsești pe planurile nivelurilor lor (fiecare își arată eticheta), într-un extras **Încăperi** (**+** de lângă **Extrase** în navigator) sau în tabul IFC al navigatorului; vederea 3D ascunde încăperile.
 

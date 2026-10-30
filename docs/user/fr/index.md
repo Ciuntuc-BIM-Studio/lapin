@@ -29,4 +29,4 @@ Lapin est gratuit et open source, sous licence MIT ; son code est sur [GitHub]
 
 ## Quand vous êtes bloqué
 
-Cliquez sur **Ask Me**, le lapin en haut à droite de l’application, ou appuyez sur <kbd>F1</kbd>, et tapez votre question avec vos propres mots. S’il n’a pas de réponse, il nous envoie votre question. Voir [Aide et retours](help.md).
+Cliquez sur **Demandez-moi**, le lapin en haut à droite de l’application, ou appuyez sur <kbd>F1</kbd>, et tapez votre question avec vos propres mots. S’il n’a pas de réponse, il nous envoie votre question. Voir [Aide et retours](help.md).

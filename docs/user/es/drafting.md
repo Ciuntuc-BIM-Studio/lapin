@@ -42,7 +42,7 @@ Un eje de rejilla se desplaza, se copia, se gira y se refleja por sí solo o jun
 
 ## Dibujo
 
-La ficha **Dibujo** dibuja líneas, polilíneas, rectángulos, círculos y arcos. Los edita con desfase, recortar, alargar, empalme, chaflán y unir, rellena áreas con sombreados y los organiza en **Capas**. **Import DXF** trae un dibujo CAD como líneas a las que puede forzar el cursor y que puede editar.
+La ficha **Dibujo** dibuja líneas, polilíneas, rectángulos, círculos y arcos. Los edita con desfase, recortar, alargar, empalme, chaflán y unir, rellena áreas con sombreados y los organiza en **Capas**. **Importar DXF** trae un dibujo CAD como líneas a las que puede forzar el cursor y que puede editar.
 
 ![La ficha Dibujo](shots/ribbon-draft.webp)
 

@@ -53,7 +53,7 @@ Haga clic en un icono del carril de un panel plegado para abrir el panel sobre l
 
 - **Busque** por el nombre de un comando o por una tecla.
 - **+** añade un método abreviado: pulse una combinación (<kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>W</kbd>, <kbd>F4</kbd>), o escriba hasta tres letras y pulse <kbd>Enter</kbd>. <kbd>Esc</kbd> detiene la captura.
-- Si otro comando ya tiene ese método abreviado, Lapin le dice cuál. **Reasignar a …** se lo quita a ese comando, **Mantener ambos** lo deja a los dos (gana el primero de la lista), **Cancelar** no cambia nada.
+- Si otro comando ya tiene ese método abreviado, Lapin le dice cuál. **Reasignar** se lo quita a ese comando, **Mantener ambos** lo deja a los dos (gana el primero de la lista), **Cancelar** no cambia nada.
 - **×** elimina un método abreviado. La flecha al final de una fila devuelve ese comando a como lo tiene el conjunto, y **Restablecer todo** lo hace para todos los comandos.
 - **Conjunto** elige el juego del que parte: **Estilo Revit** (el predeterminado: las letras habituales de Revit, donde Lapin tiene el comando) o **Lapin clásico** (las letras propias de Lapin de antes).
 - **Exportar…** escribe sus métodos abreviados en un archivo, e **Importar…** lee uno, para otro ordenador o para un colega.

@@ -42,7 +42,7 @@ O axă se mută, se copiază, se rotește și se oglindește singură sau împre
 
 ## Desen
 
-Tabul **Desen** desenează linii, polilinii, dreptunghiuri, cercuri și arce. Le editează cu paralelă, taie, prelungește, racordare, teșire și îmbinare, umple suprafețe cu hașuri și le organizează pe **Layere**. **Import DXF** aduce un desen CAD ca linii de care te poți prinde și pe care le poți edita.
+Tabul **Desen** desenează linii, polilinii, dreptunghiuri, cercuri și arce. Le editează cu paralelă, taie, prelungește, racordare, teșire și îmbinare, umple suprafețe cu hașuri și le organizează pe **Layere**. **Importă DXF** aduce un desen CAD ca linii de care te poți prinde și pe care le poți edita.
 
 ![Tabul Desen](shots/ribbon-draft.webp)
 

@@ -36,7 +36,7 @@ El tipo se añade al proyecto la primera vez que lo usa. Para modificarlo, abra 
 
 - **Forma → Un desnivel propio.** El desnivel del tipo; cada escalera puede cambiarlo igualmente con **Desnivel**.
 - **Reglas → Conjunto de reglas → escalones de entrada.** Contrahuellas de 120–170 mm y huellas de 300–400 mm, con una sola contrahuella permitida.
-- **Construcción → Construcción.** **Maciza, hormigonada sobre el terreno** rellena los escalones hasta su base. **Losa inclinada bajo los peldaños** los construye como una escalera interior.
+- **Construcción → Tipo de construcción.** **Maciza, hormigonada sobre el terreno** rellena los escalones hasta su base. **Losa inclinada bajo los peldaños** los construye como una escalera interior.
 
 ![El tipo Escalones de entrada en el configurador de escaleras](shots/stair-types.webp)
 

@@ -29,4 +29,4 @@ Lapin ist kostenlos und Open Source, unter der MIT-Lizenz; der Code liegt auf [G
 
 ## Wenn Sie nicht weiterkommen
 
-Klicken Sie auf **Ask Me**, das Kaninchen oben rechts in der Anwendung, oder drücken Sie <kbd>F1</kbd>, und stellen Sie Ihre Frage in Ihren eigenen Worten. Wenn es keine Antwort hat, sendet es Ihre Frage an uns. Siehe [Hilfe und Feedback](help.md).
+Klicken Sie auf **Frag mich**, das Kaninchen oben rechts in der Anwendung, oder drücken Sie <kbd>F1</kbd>, und stellen Sie Ihre Frage in Ihren eigenen Worten. Wenn es keine Antwort hat, sendet es Ihre Frage an uns. Siehe [Hilfe und Feedback](help.md).

@@ -18,15 +18,15 @@ Alt, hvad der går ind eller ud, ligger i menuen **Filer**.
 
 Lapin genkender vægge, dæk, søjler, bjælker, fundamenter, døre og vinduer og gør dem til Lapin-elementer, du kan redigere. Det, det ikke kan genkende, kommer ind som en reference, tegnet men ikke redigerbar. Døre og vinduer kommer ind og åbner, som filen siger: deres hængsling, den side de åbner mod og, for vinduer, hvordan hver ramme åbner.
 
-Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på sit eget niveau, med deres omrids, nummer, navn, højde, funktion, afdeling og gulvbelægning: se [Rum](rooms.md#rum-fra-en-ifc-fil). Alt, hvad et importeret element havde i filen (dets egenskabssæt og mængder), bevares og vises under **IFC-egenskaber** i dets egenskaber.
+Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på sit eget niveau, med deres omrids, nummer, navn, højde, funktion, afdeling og gulvbelægning: se [Rum og rumfarver](rooms.md#rum-fra-en-ifc-fil). Alt, hvad et importeret element havde i filen (dets egenskabssæt og mængder), bevares og vises under **IFC-egenskaber** i dets egenskaber.
 
 ## DXF og DWG
 
-**Import DXF…** henter en CAD-tegning ind i visningen forrest, med dens lag, skraveringer, tekster og mål. Den kommer ind som tegning, du kan fange til og redigere. Vil du bruge en DWG, så gem den først som DXF fra dit CAD-program (AutoCAD, BricsCAD eller DraftSight: **Save As → DXF**). Import af PDF er endnu ikke tilgængelig. I en plan lægger **Placed: by the map's coordinates** en tegning i rigtige koordinater (en matrikelplan i Stereo 70) der, hvor kortet placerer den (se [Grund](site.md)).
+**Importér DXF…** henter en CAD-tegning ind i visningen forrest, med dens lag, skraveringer, tekster og mål. Den kommer ind som tegning, du kan fange til og redigere. Vil du bruge en DWG, så gem den først som DXF fra dit CAD-program (AutoCAD, BricsCAD eller DraftSight: **Save As → DXF**). Import af PDF er endnu ikke tilgængelig. I en plan lægger **Placeret: efter kortets koordinater** en tegning i rigtige koordinater (en matrikelplan i Stereo 70) der, hvor kortet placerer den (se [Grunden og dens data](site.md)).
 
 ## Links
 
-**Link IFC…** holder en anden fil linket i stedet for at importere den. Den er skrivebeskyttet og genindlæses, når den ændres. Det virker også for en DXF. **Administrer → Links** viser, genindlæser, konverterer eller fjerner linkene.
+**Tilknyt IFC…** holder en anden fil linket i stedet for at importere den. Den er skrivebeskyttet og genindlæses, når den ændres. Det virker også for en DXF. **Administrer → Links** viser, genindlæser, konverterer eller fjerner linkene.
 
 ## 3D-modeller
 

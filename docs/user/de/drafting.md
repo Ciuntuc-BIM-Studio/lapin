@@ -42,7 +42,7 @@ Eine Rasterachse lässt sich allein oder zusammen mit anderen Elementen verschie
 
 ## Zeichnen
 
-Die Registerkarte **Zeichnen** zeichnet Linien, Polylinien, Rechtecke, Kreise und Bögen. Sie bearbeitet sie mit Versatz, Stutzen, Dehnen, Abrunden, Fase und Verbinden, füllt Flächen mit Schraffuren und ordnet sie auf **Layer** an. **Import DXF** holt eine CAD-Zeichnung als Linien herein, die Sie fangen und bearbeiten können.
+Die Registerkarte **Zeichnen** zeichnet Linien, Polylinien, Rechtecke, Kreise und Bögen. Sie bearbeitet sie mit Versatz, Stutzen, Dehnen, Abrunden, Fase und Verbinden, füllt Flächen mit Schraffuren und ordnet sie auf **Layer** an. **DXF importieren** holt eine CAD-Zeichnung als Linien herein, die Sie fangen und bearbeiten können.
 
 ![Die Registerkarte Zeichnen](shots/ribbon-draft.webp)
 
