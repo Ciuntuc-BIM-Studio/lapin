@@ -10,6 +10,7 @@ import { startTranslator } from './i18n';
 import { useUi } from './app/store';
 import { paneFromUrl, syncWindows } from './app/windows';
 import { checkForUpdates } from './app/updates';
+import { startReplies } from './shell/replies';
 import { isGuest, savedName } from './engine/share';
 
 // A detached view window (desktop): one pane, straight into the workspace, no save prompt (the main window has it).
@@ -24,6 +25,8 @@ if (isGuest()) {
 }
 // A newer build of the desktop app, looked for once the app has settled.
 if (!detached) setTimeout(() => void checkForUpdates(), 8000);
+// Replies to the user's reports, asked for only once they opted in (docs/decisions-pending.md 177).
+if (!detached && !isGuest()) startReplies();
 void syncWindows();
 createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);
 // The interface in the language chosen (English, Romanian, Spanish, German, French or Danish).

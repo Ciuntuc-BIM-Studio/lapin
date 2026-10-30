@@ -129,4 +129,31 @@ public class ProtocolBytesTests
         Assert.Throws<Lapin.Platform.CommandException>(() => SupportReport.Body(new JsonObject { ["title"] = "x" }, "1", "desktop", "mac"));
         Assert.Throws<Lapin.Platform.CommandException>(() => SupportReport.Body(new JsonObject { ["kind"] = "rant", ["title"] = "x", ["description"] = "y" }, "1", "desktop", "mac"));
     }
+
+    [Fact]
+    public void A_report_carries_a_reply_contact_only_when_asked_and_only_a_key_id()
+    {
+        var p = new JsonObject { ["kind"] = "bug", ["title"] = "Roofs", ["description"] = "Gaps" };
+        Assert.Null(SupportReport.Body(p, "1", "desktop", "mac")["contact"]);
+        var keyId = new string('a', 64);
+        p["contact"] = new JsonObject { ["nickname"] = "  Ana  ", ["keyId"] = keyId, ["secret"] = "never-sent" };
+        var contact = SupportReport.Body(p, "1", "desktop", "mac")["contact"]!;
+        Assert.Equal($$"""{"nickname":"Ana","keyId":"{{keyId}}"}""", contact.ToJsonString());
+        p["contact"] = new JsonObject { ["keyId"] = "ABC" };
+        Assert.Throws<Lapin.Platform.CommandException>(() => SupportReport.Body(p, "1", "desktop", "mac"));
+    }
+
+    [Fact]
+    public void A_messages_call_posts_only_what_its_endpoint_takes()
+    {
+        var secret = new string('x', 43);
+        var (endpoint, body) = SupportMessages.Request(new JsonObject { ["endpoint"] = "message", ["secret"] = secret, ["report"] = 12, ["text"] = " Still there ", ["upTo"] = 3 });
+        Assert.Equal("message", endpoint);
+        Assert.Equal($$"""{"secret":"{{secret}}","report":12,"text":"Still there"}""", body.ToJsonString());
+        Assert.Equal($$"""{"secret":"{{secret}}"}""", SupportMessages.Request(new JsonObject { ["endpoint"] = "inbox", ["secret"] = secret, ["text"] = "x" }).Body.ToJsonString());
+        Assert.Throws<Lapin.Platform.CommandException>(() => SupportMessages.Request(new JsonObject { ["endpoint"] = "delete", ["secret"] = secret }));
+        Assert.Throws<Lapin.Platform.CommandException>(() => SupportMessages.Request(new JsonObject { ["endpoint"] = "inbox", ["secret"] = "short" }));
+        Assert.Throws<Lapin.Platform.CommandException>(() => SupportMessages.Request(new JsonObject { ["endpoint"] = "message", ["secret"] = secret, ["report"] = 1, ["text"] = new string('x', 4001) }));
+        Assert.Throws<Lapin.Platform.CommandException>(() => SupportMessages.Request(new JsonObject { ["endpoint"] = "seen", ["secret"] = secret, ["report"] = 1 }));
+    }
 }

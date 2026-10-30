@@ -1,7 +1,8 @@
 /**
  * Ask Me (the rabbit beside the ?) and the help menu (?): Ask Lapin (the FAQ, also on F1), the user guide
  * (lapin.ciuntucbimstudio.ro/docs, docs/user), report an issue (it
- * reaches Ciuntuc BIM Studio with the app's last errors attached), the
+ * reaches Ciuntuc BIM Studio with the app's last errors attached; a reply
+ * only when asked for, read in Messages: replies.ts), the
  * community on Skool, the site, updates (the desktop app), About Lapin
  * (open source, MIT, helpware), the version.
  */
@@ -10,7 +11,10 @@ import { useEffect, useRef, useState } from 'react';
 import { HelpCircle, X } from 'lucide-react';
 import { notify } from '../app/store';
 import { useSession } from '../engine/session';
-import { RECENT, openLink, sendReport } from './support';
+import { RECENT, openLink, reportParams, sendReport } from './support';
+import { contactFor, useReplies } from './replies';
+import { MessagesDialog } from './MessagesDialog';
+import { isGuest } from '../engine/share';
 import { isDesktop } from '../engine/files';
 import { checkForUpdates } from '../app/updates';
 import { LANGUAGES, setLang, useLang } from '../i18n';
@@ -39,16 +43,17 @@ function ReportDialog({ onClose, start }: { onClose: () => void; start?: ReportS
   const [expected, setExpected] = useState('');
   const [email, setEmail] = useState('');
   const [screenshot, setScreenshot] = useState<string | null>(null);
+  // A reply is asked for, never assumed: off by default, the nickname remembered from the last time.
+  const [reply, setReply] = useState(false);
+  const [nickname, setNickname] = useState(() => useReplies.getState().settings?.nickname ?? '');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const send = async () => {
     setBusy(true); setProblem(null);
     try {
-      const number = await sendReport({
-        kind, title, description, expected: expected || undefined, email: email || undefined, consent: Boolean(email), screenshot: screenshot ?? undefined,
-        website: '', errors: [...RECENT], screen: `${window.innerWidth}×${window.innerHeight} @${window.devicePixelRatio}`,
-      });
-      notify(`Thank you: report #${number} is on its way.`);
+      const contact = await contactFor(reply, nickname);
+      const number = await sendReport(reportParams({ kind, title, description, expected, email, screenshot }, RECENT, `${window.innerWidth}×${window.innerHeight} @${window.devicePixelRatio}`, contact));
+      notify(reply ? `Thank you: report #${number} is on its way. Replies will appear in Help → Messages.` : `Thank you: report #${number} is on its way.`);
       onClose();
     } catch (e) {
       setProblem(e instanceof Error ? e.message : String(e));
@@ -77,6 +82,11 @@ function ReportDialog({ onClose, start }: { onClose: () => void; start?: ReportS
               if (f) void shrink(f).then(setScreenshot, () => { setScreenshot(null); setProblem(`${f.name} could not be read as a picture: attach a PNG or JPEG screenshot (or send the report without one).`); });
               else setScreenshot(null);
             }} /></label>
+          {!isGuest() && <label className="check-line"><input type="checkbox" checked={reply} onChange={(e) => setReply(e.target.checked)} /><span>I'd like a reply</span></label>}
+          {reply && <>
+            <label className="field-line"><span className="eyebrow">Nickname (optional)</span><input value={nickname} maxLength={40} onChange={(e) => setNickname(e.target.value)} placeholder="How we greet you" /></label>
+            <p className="muted small reply-note">We keep your nickname and the report. Replies show only in Lapin (Help → Messages); delete them any time; kept 12 months after the last message.</p>
+          </>}
           <p className="muted small">The app's version and its last {RECENT.length} error message(s) go with the report.</p>
           {problem && <p className="error-text" role="alert">{problem}</p>}
           <div className="row">
@@ -95,6 +105,10 @@ export function HelpMenu() {
   const [report, setReport] = useState<ReportStart | true | false>(false);
   const [asking, setAsking] = useState(false);
   const [about, setAbout] = useState(false);
+  const [messages, setMessages] = useState(false);
+  // Messages: offered once this device has a key (a reply was asked for once), never to a guest of a shared session.
+  const hasKey = useReplies((s) => s.settings !== null) && !isGuest();
+  const unread = useReplies((s) => s.unread);
   const info = useSession((s) => s.info);
   const lang = useLang((s) => s.lang);
   // F1: Ask Lapin, from anywhere.
@@ -114,12 +128,13 @@ export function HelpMenu() {
     <>
     <button type="button" className="ask-me" title="Ask Lapin how to do something (F1)" onClick={() => setAsking(true)}><BunnyIcon size={17} /><span data-no-i18n>Ask Me</span></button>
     <div className="help-menu" ref={ref}>
-       <button type="button" className="icon" title="Help: ask Lapin (F1), report an issue, community" onClick={() => setOpen(!open)}><HelpCircle size={15} /></button>
+       <button type="button" className="icon" title="Help: ask Lapin (F1), report an issue, community" onClick={() => setOpen(!open)}><HelpCircle size={15} />{hasKey && unread > 0 && <span className="badge" data-no-i18n>{unread}</span>}</button>
       {open && (
         <div className="menu-pop" role="menu">
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setAsking(true); }}>Ask Lapin…<kbd>F1</kbd></button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('guide'); }}>User guide</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setReport(true); }}>Report an issue…</button>
+          {hasKey && <button type="button" role="menuitem" onClick={() => { setOpen(false); setMessages(true); }}><span>Messages…</span>{unread > 0 && <span className="badge" data-no-i18n>{unread}</span>}</button>}
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('community'); }}>Community (Skool)</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('site'); }}>ciuntucbimstudio.ro</button>
           {isDesktop() && <button type="button" role="menuitem" onClick={() => { setOpen(false); void checkForUpdates(true); }}>Check for updates…</button>}
@@ -135,6 +150,7 @@ export function HelpMenu() {
       )}
       {asking && <AskDialog onClose={() => setAsking(false)}
         onReport={(q) => { setAsking(false); setReport(q ? { kind: 'question', title: q.length > 80 ? `${q.slice(0, 77)}…` : q, description: q } : true); }} />}
+      {messages && <MessagesDialog onClose={() => setMessages(false)} />}
       {about && <AboutDialog version={info?.engineVersion} onClose={() => setAbout(false)} />}
       {report && <ReportDialog onClose={() => setReport(false)} start={report === true ? undefined : report} />}
     </div>

@@ -101,6 +101,9 @@ describe('the languages', () => {
     '3 value(s) applied: one step to undo.',
     'Grouped by storey, type',
     '2 of 3 ticked',
+    "The app's version and its last 3 error message(s) go with the report.",
+    'Thank you: report #12 is on its way.',
+    'Thank you: report #12 is on its way. Replies will appear in Help → Messages.',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 
@@ -142,6 +145,12 @@ describe('the languages', () => {
     expect(translate('Fold the project browser (B)', 'es')).toBe('Plegar el navegador de proyectos (B)');
     expect(translate('Wall — Brick 250 · Floor', 'es')).toBe('Muro — Brick 250 · Losa');
     expect(translate('2 of 3 storeys', 'es')).toBe('2 de 3 plantas');
+  });
+
+  it('says a report is on its way, and where its replies will appear when one was asked for', () => {
+    expect(translate('Thank you: report #12 is on its way.', 'ro')).toBe('Mulțumim: raportul #12 e pe drum.');
+    expect(translate('Thank you: report #12 is on its way. Replies will appear in Help → Messages.', 'de')).toBe('Danke: Meldung #12 ist unterwegs. Antworten erscheinen unter Hilfe → Nachrichten.');
+    expect(translate("The app's version and its last 3 error message(s) go with the report.", 'es')).toBe('La versión de la aplicación y sus últimos 3 mensajes de error acompañan al informe.');
   });
 
   it('translates the undo buttons\' tooltips with what they undo and their keys', () => {

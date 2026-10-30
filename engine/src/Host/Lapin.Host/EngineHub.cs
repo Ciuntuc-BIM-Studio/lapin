@@ -238,6 +238,7 @@ public sealed class EngineHub
     sealed class SupportDesk : ISupportDesk
     {
         public JsonObject Report(JsonObject p) => Support.Report(p, Session.AppVersion).GetAwaiter().GetResult();
+        public JsonObject Messages(JsonObject p) => Support.Messages(p).GetAwaiter().GetResult();
         public void Open(string? link) => Support.Open(link);
     }
 }

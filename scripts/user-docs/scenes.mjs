@@ -1079,6 +1079,17 @@ export const scenes = [
       await t.wait(200);
       t.expect(await t.page.getByText('Helpware', { exact: true }).count() > 0, 'About Lapin says what helpware means');
       await t.shot('about', { of: '.dialog.about', pad: 0 });
+      // The report form with a reply asked for (decision 177): the nickname and what is kept. Nothing is sent: the form is cancelled.
+      await t.keys('Escape');
+      await t.page.locator('.help-menu > button').click();
+      await t.wait(200);
+      await t.page.getByRole('menuitem', { name: 'Report an issue…' }).click();
+      await t.wait(200);
+      await t.page.getByLabel("I'd like a reply").check();
+      await t.page.getByLabel('Nickname (optional)').fill('Ana');
+      t.expect(await t.page.locator('.reply-note').count() === 1, 'the report form says what is kept when a reply is asked for');
+      await t.shot('report-reply', { of: '[aria-label="Report an issue"] .dialog', pad: 0 });
+      await t.button('Cancel', { exact: true });
     },
   },
   {

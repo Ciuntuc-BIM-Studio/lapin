@@ -430,6 +430,31 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .about-name { display: flex; align-items: center; gap: 8px; font-size: 16px; color: var(--accent); }
 .about-name b { color: var(--ink); }
 .dialog.about button.link { color: var(--accent); }
+/* Replies to reports: the form's opt-in, the help menu's badge, Help → Messages. */
+.report .reply-note { margin: 0; }
+.badge { display: inline-block; min-width: 16px; padding: 0 4px; margin-left: 6px; border-radius: 8px; background: var(--accent); color: var(--panel); font-size: 10px; line-height: 16px; text-align: center; font-weight: 600; }
+.help-menu > button.icon { position: relative; }
+.help-menu > button.icon .badge { position: absolute; top: -4px; right: -6px; margin: 0; }
+.dialog.messages { width: min(860px, calc(100vw - 32px)); }
+.messages-split { display: grid; grid-template-columns: 240px 1fr; gap: 16px; min-height: 280px; }
+.messages-split > * { min-width: 0; }
+.messages-list { list-style: none; margin: 0; padding: 0; border-right: 1px solid var(--rule); overflow-y: auto; max-height: 52vh; }
+.messages-list button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 6px 8px; background: none; border: none; text-align: left; cursor: pointer; color: var(--ink); font: inherit; }
+.messages-list button.on, .messages-list button:hover { background: var(--accent-wash); }
+.messages-title { display: flex; align-items: center; width: 100%; }
+.messages-title > span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.messages-thread { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: 52vh; }
+.messages-thread textarea { width: 100%; box-sizing: border-box; font: inherit; }
+.message { max-width: 85%; padding: 6px 10px; border: 1px solid var(--rule); border-radius: 6px; }
+.message p { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.message.user { align-self: flex-end; background: var(--accent-wash); }
+.message.lapin { align-self: flex-start; }
+.messages-settings { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--rule); }
+.messages-settings-body { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.messages-settings-body h4 { margin: 8px 0 0; }
+.messages-settings-body p { margin: 0; }
+.btn.danger { color: var(--err); border-color: var(--err); }
+@media (max-width: 640px) { .messages-split { grid-template-columns: 1fr; } .messages-list { border-right: none; max-height: 30vh; } }
 .plan-item.contour { stroke: #7a9a5a; stroke-width: 0.6; }
 .plan-item.contourMajor { stroke: #5d7a3e; stroke-width: 1.1; }
 .plan-item.terrainEdge { stroke: #5d7a3e; stroke-width: 0.8; stroke-dasharray: 5 3; }

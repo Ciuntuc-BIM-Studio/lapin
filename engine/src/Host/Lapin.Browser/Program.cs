@@ -60,6 +60,12 @@ sealed class BrowserSupportDesk : ISupportDesk
         ["send"] = SupportReport.Body(p, typeof(Engine).Assembly.GetName().Version?.ToString() ?? "0", "browser", (string?)p["userAgent"] ?? "browser"),
     };
 
+    public System.Text.Json.Nodes.JsonObject Messages(System.Text.Json.Nodes.JsonObject p)
+    {
+        var (endpoint, body) = SupportMessages.Request(p);
+        return new() { ["endpoint"] = endpoint, ["send"] = body };
+    }
+
     public void Open(string? link) => throw new CommandException("In the browser the page opens its links.");
 }
 

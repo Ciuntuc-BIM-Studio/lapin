@@ -7,7 +7,8 @@ namespace Lapin.Host;
 
 /// <summary>
 /// Reaching Ciuntuc BIM Studio from the app: a report of an issue (posted to
-/// the Lapin server's feedback endpoint, where reports are kept as files), and
+/// the Lapin server's feedback endpoint, where reports are kept as files), the
+/// replies to it when the sender asked for them (Help → Messages), and
 /// the links the help menu opens (the user guide in the interface's language, the community on Skool, the site, the source code). Through
 /// the host, so the desktop app needs no browser rights of its own.
 /// </summary>
@@ -44,6 +45,25 @@ public static class Support
         catch (HttpRequestException e) { throw new CommandException($"The report could not be sent: {e.Message}"); }
         catch (TaskCanceledException) { throw new CommandException("The report could not be sent: no answer from the server."); }
         catch (System.Text.Json.JsonException) { throw new CommandException("The report could not be sent: the server's answer was unreadable."); }
+    }
+
+    /// <summary>
+    /// One of the replies' calls (Help → Messages): posted to
+    /// &lt;feedback&gt;/&lt;endpoint&gt; with the secret in the body; the server's answer.
+    /// </summary>
+    public static async Task<JsonObject> Messages(JsonObject p)
+    {
+        var (endpoint, body) = Lapin.Protocol.SupportMessages.Request(p);
+        try
+        {
+            using var res = await Http.PostAsJsonAsync($"{FeedbackUrl.TrimEnd('/')}/{endpoint}", body);
+            var answer = await res.Content.ReadFromJsonAsync<JsonObject>().ConfigureAwait(false) ?? [];
+            if (!res.IsSuccessStatusCode) throw new CommandException((string?)answer["error"] ?? $"The messages could not be reached ({(int)res.StatusCode}).");
+            return answer;
+        }
+        catch (HttpRequestException e) { throw new CommandException($"The messages could not be reached: {e.Message}"); }
+        catch (TaskCanceledException) { throw new CommandException("The messages could not be reached: no answer from the server."); }
+        catch (System.Text.Json.JsonException) { throw new CommandException("The messages could not be reached: the server's answer was unreadable."); }
     }
 
     /// <summary>Open one of the help menu's links in the browser (only these: nothing else is opened on the host's say).</summary>

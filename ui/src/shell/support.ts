@@ -49,7 +49,24 @@ export const openLink = (which: keyof typeof LINKS) => {
 };
 
 /** Where the web build posts reports: the Lapin server it is served from. */
-const FEEDBACK_URL: string = import.meta.env.VITE_FEEDBACK_URL ?? '/api/feedback';
+export const FEEDBACK_URL: string = import.meta.env.VITE_FEEDBACK_URL ?? '/api/feedback';
+
+/** What the report form holds. */
+export interface ReportForm {
+  kind: 'bug' | 'idea' | 'question'; title: string; description: string; expected: string; email: string; screenshot: string | null;
+}
+
+/**
+ * The report to send from the form: anonymous unless `contact` is given (the
+ * sender asked for a reply: their nickname and their key's id, never the
+ * secret itself; docs/decisions-pending.md 177).
+ */
+export function reportParams(f: ReportForm, errors: string[], screen: string, contact?: { nickname?: string; keyId: string }): Record<string, unknown> {
+  return {
+    kind: f.kind, title: f.title, description: f.description, expected: f.expected || undefined, email: f.email || undefined, consent: Boolean(f.email),
+    screenshot: f.screenshot ?? undefined, website: '', errors: [...errors], screen, ...(contact ? { contact } : {}),
+  };
+}
 
 /**
  * Send a report; its number back. The desktop's engine posts it; in the

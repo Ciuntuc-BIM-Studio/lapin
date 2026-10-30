@@ -19,10 +19,12 @@ public interface IRecoveryJournal
     void Discard(string file);
 }
 
-/// <summary>What only a host can do for the help menu: send a report, open one of its links.</summary>
+/// <summary>What only a host can do for the help menu: send a report, read and answer its replies, open one of its links.</summary>
 public interface ISupportDesk
 {
     JsonObject Report(JsonObject p);
+    /// <summary>One of the replies' calls (<see cref="SupportMessages"/>): the server's answer, or the body for the page to post.</summary>
+    JsonObject Messages(JsonObject p);
     void Open(string? link);
 }
 
@@ -586,6 +588,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return (Deliver(bytes, "drawing.dxf"), null);
             }
             case "support.report": return ((support ?? throw new CommandException("Reports are sent from the app.")).Report(p), null);
+            case "support.messages": return ((support ?? throw new CommandException("Messages are read from the app.")).Messages(p), null);
             case "support.open":
                 (support ?? throw new CommandException("Nothing to open here.")).Open((string?)p["link"]);
                 return (null, null);

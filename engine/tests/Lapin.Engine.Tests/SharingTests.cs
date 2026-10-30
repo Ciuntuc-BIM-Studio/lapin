@@ -219,7 +219,7 @@ public sealed class SharingTests : IAsyncLifetime
         // The dispatcher's methods, each refused from the network unless named: a new one stays refused.
         var allowed = new[] { "session.info", "doc.snapshot", "doc.query", "quantities.of", "project.versions", "project.compareVersions", "export.pdf", "export.dxf", "project.exportIfc", "project.exportMesh", "doc.execute", "doc.undo", "doc.redo" };
         foreach (var m in allowed) Assert.Null(EngineDispatcher.AllowedRemote(m, new JsonObject(), "editor"));
-        foreach (var m in new[] { "project.open", "project.save", "project.new", "project.openBytes", "project.saveBytes", "project.saveVersion", "project.restoreVersion", "project.deleteVersion", "project.exportVersion", "project.reloadLink", "recovery.restore", "support.report", "something.new" })
+        foreach (var m in new[] { "project.open", "project.save", "project.new", "project.openBytes", "project.saveBytes", "project.saveVersion", "project.restoreVersion", "project.deleteVersion", "project.exportVersion", "project.reloadLink", "recovery.restore", "support.report", "support.messages", "something.new" })
             Assert.NotNull(EngineDispatcher.AllowedRemote(m, new JsonObject(), "editor"));
         Assert.NotNull(EngineDispatcher.AllowedRemote("project.importIfc", new JsonObject(), "editor"));
         Assert.Null(EngineDispatcher.AllowedRemote("project.importIfc", new JsonObject { ["data"] = "AAAA" }, "editor"));
