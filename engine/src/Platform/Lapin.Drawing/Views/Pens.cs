@@ -25,11 +25,14 @@ public sealed class Pen(string layer, string? stroke, double width, string? fill
     public List<PenImage> Images { get; } = [];
     /// <summary>The box the pen is clipped to (x0, y0, x1, y1), as a sheet's viewport clips its view; null: none.</summary>
     public (double X0, double Y0, double X1, double Y1)? Clip { get; set; }
+    /// <summary>On a sheet, the viewport the pen draws for (its id), so the interface moves that view's pens alone while it is dragged; null: the page's own (frame, title block).</summary>
+    public string? Viewport { get; set; }
 
     public JsonObject ToJson()
     {
         var o = new JsonObject { ["layer"] = Layer, ["stroke"] = Stroke, ["width"] = Width, ["fill"] = Fill };
         if (Images.Count > 0) o["images"] = new JsonArray(Images.Select(i => (JsonNode)i.ToJson()).ToArray());
+        if (Viewport != null) o["viewport"] = Viewport;
         if (Clip is { } c) o["clip"] = new JsonArray(Math.Round(c.X0, 4), Math.Round(c.Y0, 4), Math.Round(c.X1, 4), Math.Round(c.Y1, 4));
         if (Dash is { Length: > 0 }) o["dash"] = new JsonArray(Dash.Select(x => (JsonNode)x).ToArray());
         if (Segments.Count > 0) o["segments"] = new JsonArray(Segments.SelectMany(s => new[] { s.A.X, s.A.Y, s.B.X, s.B.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray());

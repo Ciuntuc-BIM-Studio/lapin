@@ -164,7 +164,7 @@ public static class Sheets
         foreach (var pl in placements)
             foreach (var pen in pl.Drawing.Pens)
             {
-                var o = new Pen(pen.Layer, pen.Stroke, pen.Width, pen.Fill, pen.Dash);
+                var o = new Pen(pen.Layer, pen.Stroke, pen.Width, pen.Fill, pen.Dash) { Viewport = pl.Viewport.Id };
                 foreach (var (a, b) in pen.Segments)
                 {
                     var (pa, pb) = (pl.ToPaper(a), pl.ToPaper(b));
@@ -190,14 +190,17 @@ public static class Sheets
             p.Segments.AddRange([(new(x0, y0), new(x1, y0)), (new(x1, y0), new(x1, y1)), (new(x1, y1), new(x0, y1)), (new(x0, y1), new(x0, y0))]);
         Rect(frame, Margin, Margin, W - Margin, H - Margin);
 
-        // View titles: the view's name over a rule, its scale beside, under the box's lower-left corner.
+        // View titles: the view's name over a rule, its scale beside, under the box's lower-left corner; the view's own pens, so they move with it.
         foreach (var pl in placements.Where(p => !p.Content))
         {
             var y = pl.Y1 + 7;
-            text.Texts.Add(new PenText(new Vec2(pl.X0, y), pl.View.Name, 3.5, Anchor: "start", Bold: true));
+            var title = new Pen("TEXT", "#000000", 0, null, null) { Viewport = pl.Viewport.Id };
+            var rule = new Pen("TITLE", "#000000", RulePen, null, null) { Viewport = pl.Viewport.Id };
+            title.Texts.Add(new PenText(new Vec2(pl.X0, y), pl.View.Name, 3.5, Anchor: "start", Bold: true));
             var nameWidth = PdfWriter.Advance(pl.View.Name, true) * 3.5 / 0.718;
-            rules.Segments.Add((new(pl.X0, y + 1.5), new(pl.X0 + Math.Max(nameWidth, 30) + 4, y + 1.5)));
-            text.Texts.Add(new PenText(new Vec2(pl.X0 + nameWidth + 4, y), $"1:{pl.Drawing.Scale:0}", 2.5, Anchor: "start"));
+            rule.Segments.Add((new(pl.X0, y + 1.5), new(pl.X0 + Math.Max(nameWidth, 30) + 4, y + 1.5)));
+            title.Texts.Add(new PenText(new Vec2(pl.X0 + nameWidth + 4, y), $"1:{pl.Drawing.Scale:0}", 2.5, Anchor: "start"));
+            pens.AddRange([rule, title]);
         }
 
         // The title block: project, sheet, then number, scale, date and drawn by.

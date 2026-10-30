@@ -8,7 +8,7 @@ summary: Așezi vederile pe planșe cu cartuș și le scoți în PDF sau DXF.
 
 ## Cum faci o planșă
 
-Apasă **+** lângă **Planșe** în navigatorul proiectului. Ca să pui o vedere, trage-o din navigator pe planșă sau alege-o în **Pune o vedere…** din bara planșei. Fiecare vedere își păstrează scara și rămâne legată de model, așa că planșa se schimbă odată cu modelul.
+Apasă **+** lângă **Planșe** în navigatorul proiectului. Ca să pui o vedere, trage-o din navigator pe planșă sau alege-o în **Pune o vedere…** din bara planșei. Fiecare vedere își păstrează scara și rămâne legată de model, așa că planșa se schimbă odată cu modelul. Pe planșă, trage o vedere ca s-o muți: se mută doar ea, cu titlul ei, iar chenarul, cartușul și celelalte vederi rămân pe loc; se prinde de marginile și de mijlocul chenarului și de celelalte vederi, iar săgețile o împing cu 1 mm (10 mm cu Shift).
 
 ![O planșă A3 cu un plan și o secțiune](shots/sheet.webp)
 

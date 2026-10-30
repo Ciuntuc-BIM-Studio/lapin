@@ -8,7 +8,7 @@ summary: Lay views out on sheets with a title block, and print them to PDF or DX
 
 ## Making a sheet
 
-Click **+** next to **Sheets** in the project browser. To place a view, drag it from the browser onto the sheet, or choose it in **Place view…** in the sheet's bar. Each view keeps its own scale and stays linked to the model, so the sheet changes when the model does.
+Click **+** next to **Sheets** in the project browser. To place a view, drag it from the browser onto the sheet, or choose it in **Place view…** in the sheet's bar. Each view keeps its own scale and stays linked to the model, so the sheet changes when the model does. On the sheet, drag a view to move it: the view goes alone, with its title, while the frame, the title block and the other views stay; it snaps to the frame's edges and middle and to the other views, and the arrow keys nudge it by 1 mm (10 mm with Shift).
 
 ![An A3 sheet with a plan and a section](shots/sheet.webp)
 

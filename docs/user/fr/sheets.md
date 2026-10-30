@@ -8,7 +8,7 @@ summary: Disposez les vues sur des feuilles avec un cartouche, et imprimez-les e
 
 ## Créer une feuille
 
-Cliquez sur **+** à côté de **Feuilles** dans l’arborescence du projet. Pour placer une vue, faites-la glisser de l’arborescence sur la feuille, ou choisissez-la dans **Placer une vue…** dans la barre de la feuille. Chaque vue garde sa propre échelle et reste liée au modèle : la feuille change quand le modèle change.
+Cliquez sur **+** à côté de **Feuilles** dans l’arborescence du projet. Pour placer une vue, faites-la glisser de l’arborescence sur la feuille, ou choisissez-la dans **Placer une vue…** dans la barre de la feuille. Chaque vue garde sa propre échelle et reste liée au modèle : la feuille change quand le modèle change. Sur la feuille, faites glisser une vue pour la déplacer : elle seule bouge, avec son titre, tandis que le cadre, le cartouche et les autres vues restent en place ; elle s’accroche aux bords et au milieu du cadre et aux autres vues, et les flèches la décalent de 1 mm (10 mm avec Maj).
 
 ![Une feuille A3 avec un plan et une coupe](shots/sheet.webp)
 

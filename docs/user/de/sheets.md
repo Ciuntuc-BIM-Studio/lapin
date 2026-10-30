@@ -8,7 +8,7 @@ summary: Ordnen Sie Ansichten auf Plänen mit einem Plankopf an und geben Sie si
 
 ## Einen Plan erstellen
 
-Klicken Sie im Projektbrowser auf **+** neben **Pläne**. Um eine Ansicht zu platzieren, ziehen Sie sie aus dem Browser auf den Plan oder wählen Sie sie in der Leiste des Plans unter **Ansicht platzieren…**. Jede Ansicht behält ihren eigenen Maßstab und bleibt mit dem Modell verknüpft, sodass sich der Plan ändert, wenn sich das Modell ändert.
+Klicken Sie im Projektbrowser auf **+** neben **Pläne**. Um eine Ansicht zu platzieren, ziehen Sie sie aus dem Browser auf den Plan oder wählen Sie sie in der Leiste des Plans unter **Ansicht platzieren…**. Jede Ansicht behält ihren eigenen Maßstab und bleibt mit dem Modell verknüpft, sodass sich der Plan ändert, wenn sich das Modell ändert. Auf dem Plan ziehen Sie eine Ansicht, um sie zu verschieben: nur sie bewegt sich, mit ihrem Titel, während Rahmen, Schriftfeld und die anderen Ansichten bleiben; sie rastet an den Kanten und der Mitte des Rahmens und an den anderen Ansichten ein, und die Pfeiltasten rücken sie um 1 mm (10 mm mit Umschalt).
 
 ![Ein A3-Plan mit einem Grundriss und einem Schnitt](shots/sheet.webp)
 

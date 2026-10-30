@@ -1,7 +1,8 @@
 /**
  * A sheet: its paper as it prints (the engine composes it: frame, title
- * block, views at their scale), its views moved by dragging (snapping to the
- * frame and to each other, with guides), nudged with the arrows (1 mm, 10 mm
+ * block, views at their scale), its views moved by dragging (the view's own
+ * pens alone go with the pointer; snapping to the frame and to each other,
+ * with guides), nudged with the arrows (1 mm, 10 mm
  * with Shift), a schedule's width set by its side handles, a double-click
  * opening the view or schedule; warnings for what runs past the frame or over
  * the title block, and a schedule's next page placed on a new sheet. PDF and
@@ -217,9 +218,15 @@ export function SheetView() {
         {d && (
           <>
             <rect x={v.ox} y={v.oy} width={d.w * v.k} height={d.h * v.k} className="paper-sheet" />
-            <g transform={moved ? `translate(${moved.dx * v.k} ${moved.dy * v.k})` : undefined}>
-              <DrawingLayer drawing={{ pens: d.pens, scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />
-            </g>
+            {/* While a view is dragged, its own pens go with the pointer; the frame, the title block and the other views stay. */}
+            {moved ? (
+              <>
+                <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport !== moved.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />
+                <g transform={`translate(${moved.dx * v.k} ${moved.dy * v.k})`}>
+                  <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport === moved.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />
+                </g>
+              </>
+            ) : <DrawingLayer drawing={{ pens: d.pens, scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />}
             {d.viewports.map((b) => {
               const a = toScreen({ x: b.x0, y: b.y0 });
               const dx = moved?.id === b.id ? moved.dx * v.k : 0, dy = moved?.id === b.id ? moved.dy * v.k : 0;

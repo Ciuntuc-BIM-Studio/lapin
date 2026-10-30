@@ -233,6 +233,23 @@ public class SheetTests
         File.WriteAllBytes(Path.Combine(dir, "plan.dxf"), Views.Dxf(f.Session.Reader, Views.Find(f.Model, "plan:" + f.Storey)!));
     }
 
+    /// <summary>A view dragged on the sheet moves alone: its pens (its drawing and its title) say which viewport they draw for; the frame's and the title block's say none.</summary>
+    [Fact]
+    public void A_sheets_pens_say_which_viewport_they_draw_for()
+    {
+        var f = new Fixture();
+        f.Wall(0, 0, 5, 0);
+        var sheet = (string)f.Run("sheet.create", new JsonObject { ["paper"] = "A3" })!["id"]!;
+        var vp = (string)f.Run("sheet.addViewport", new JsonObject { ["id"] = sheet, ["viewId"] = "plan:" + f.Storey, ["x"] = 100, ["y"] = 100 })!["viewportId"]!;
+        var pens = ((JsonObject)f.Session.Query("sheet.drawing", new JsonObject { ["id"] = sheet })!)["pens"]!.AsArray().OfType<JsonObject>().ToList();
+        var mine = pens.Where(p => (string?)p["viewport"] == vp).ToList();
+        Assert.Contains(mine, p => p["segments"] != null);                                        // the wall's lines
+        Assert.Contains(mine, p => p["texts"] is JsonArray t && t.Any(x => ((string?)x!["text"])?.Contains("1:") == true)); // its title's scale
+        var page = pens.Where(p => p["viewport"] == null).ToList();
+        Assert.Contains(page, p => (string?)p["layer"] == "FRAME");
+        Assert.Contains(page, p => p["texts"] is JsonArray t && t.Any(x => (string?)x!["text"] == "PROJECT"));
+    }
+
     [Fact]
     public void A_view_past_the_frame_or_over_the_title_block_is_flagged()
     {
