@@ -34,13 +34,19 @@ public interface ISupportDesk
 /// files of its own (the browser: the user picks a file, keeps a download).
 /// It holds the open project's versions (docs/versions.md): read with the
 /// file, carried into every save, and changed by the version calls, each of
-/// which writes the file (a version lives in the project's file).
+/// which writes the file (a version lives in the project's file). And it
+/// holds the files the project's issues keep (docs/plan-cde.md): made by an
+/// issue, in memory until the next save, then in the file under
+/// <c>issues/blobs/</c>.
 /// </summary>
-public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Session, string, PackageVersions> write)
+public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Session, string, PackageVersions, IssueFiles?> write)
 {
     PackageVersions _versions = PackageVersions.None;
     /// <summary>The session path the versions belong to: another path (a recovered project's) has them read from its file.</summary>
     string? _versionsOf;
+    PackageIssues _issues = PackageIssues.Empty();
+    /// <summary>The session path the issues' files were read from (null: a project not saved yet, its issues' files in memory).</summary>
+    string? _issuesOf;
 
     /// <summary>
     /// A project from its bytes; <paramref name="name"/> is the file's name, its
@@ -60,6 +66,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         var content = LapinPackage.Read(input);
         var diff = session.Load(content.Entities, content.Relations, name, content.Classes);
         Keep(name, PackageVersions.Of(bytes));
+        KeepIssues(name, PackageIssues.Of(bytes));
         return diff;
     }
 
@@ -67,11 +74,13 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     public (byte[] Bytes, Diff Diff) SaveBytes(Session session, string name)
     {
         var versions = Versions(session);
+        var issues = IssueFilesOf(session);
         using var ms = new MemoryStream();
-        ProjectPackage.Write(session, ms, versions);
+        ProjectPackage.Write(session, ms, versions, issues);
         var bytes = ms.ToArray();
         var diff = session.Saved(name);
         Keep(name, versions.From(bytes));
+        KeepIssues(name, issues.Store.From(bytes, issues.Written));
         return (bytes, diff);
     }
 
@@ -82,6 +91,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     {
         var diff = open(session, path);
         Keep(path, PackageVersions.Of(path));
+        KeepIssues(path, PackageIssues.Of(path));
         return diff;
     }
 
@@ -89,10 +99,49 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     {
         var target = path ?? session.Path ?? throw new CommandException("Where to save: the project has no file yet.");
         var versions = Versions(session);
-        write(session, target, versions);
+        var issues = IssueFilesOf(session);
+        write(session, target, versions, issues);
         var diff = session.Saved(target);
         Keep(session.Path ?? target, versions.From(session.Path ?? target));
+        KeepIssues(session.Path ?? target, issues.Store.From(session.Path ?? target, issues.Written));
         return diff;
+    }
+
+    /// <summary>A new project: no issue files of the last one carried over.</summary>
+    public void Reset()
+    {
+        _issues = PackageIssues.Empty();
+        _issuesOf = null;
+    }
+
+    // ------------------------------------------------------------ issues' files
+
+    /// <summary>
+    /// The files the open project's issues keep: those read with its file, plus those made since (in memory until the next save); read again
+    /// from the file when the project's path is not the one they came with (a project recovered), empty for a new project.
+    /// </summary>
+    public PackageIssues Issues(Session session)
+    {
+        if (session.Path is { } path) { if (_issuesOf != path) KeepIssues(path, PackageIssues.Of(path)); }
+        else if (_issuesOf != null) Reset();
+        return _issues;
+    }
+
+    void KeepIssues(string? path, PackageIssues issues)
+    {
+        _issues = issues;
+        _issuesOf = path;
+    }
+
+    /// <summary>What a save writes of the issues: the bytes every record keeps, and the readable index.</summary>
+    public IssueFiles IssueFilesOf(Session session)
+    {
+        var store = Issues(session);
+        var keep = Lapin.Platform.Cde.CdeIssues.StoredHashes(session.Model);
+        var index = keep.Count > 0
+            ? System.Text.Encoding.UTF8.GetBytes(Lapin.Platform.Cde.CdeIssues.Index(session.Model).ToJsonString(new JsonSerializerOptions { WriteIndented = true }))
+            : null;
+        return new IssueFiles(store, keep, index);
     }
 
     // ------------------------------------------------------------ versions
@@ -142,22 +191,25 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     /// <summary>The file written with the project as it is and the versions given; as bytes for a host without files (the browser).</summary>
     (JsonObject Result, Diff Diff) Commit(Session session, PackageBuild build, PackageVersions versions, bool asBytes, JsonObject result)
     {
+        var issues = IssueFilesOf(session);
         if (asBytes)
         {
             var name = session.Path ?? "project.lapin";
             using var ms = new MemoryStream();
-            LapinPackage.Write(ms, build, versions);
+            LapinPackage.Write(ms, build, versions, issues);
             var bytes = ms.ToArray();
             var diff = session.Saved(name);
             Keep(name, versions.From(bytes));
+            KeepIssues(name, issues.Store.From(bytes, issues.Written));
             result["name"] = name;
             result["data"] = Convert.ToBase64String(bytes);
             return (result, diff);
         }
         var path = session.Path ?? throw new CommandException("Save the project first: its versions live in its file.");
-        LapinPackage.Write(path, build, versions);
+        LapinPackage.Write(path, build, versions, issues);
         var saved = session.Saved(path);
         Keep(path, versions.From(path));
+        KeepIssues(path, issues.Store.From(path, issues.Written));
         result["path"] = path;
         return (result, saved);
     }
@@ -437,7 +489,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return (ids.Where(id => session.Model.Get(id) != null).ToDictionary(id => id, id => session.Quantities(id)), null);
             }
             // A new project with the default storeys; `plain`: one ground floor, for a file that fills it (an IFC opened as a project).
-            case "project.new": return (null, session.New(p["plain"]?.GetValue<bool>() == true));
+            case "project.new": files.Reset(); return (null, session.New(p["plain"]?.GetValue<bool>() == true));
             case "project.open":
             {
                 var diff = files.Open(session, PathParam());
@@ -624,11 +676,62 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                     : throw new CommandException("There is no such sheet or view.");
                 return (Deliver(bytes, "drawing.dxf"), null);
             }
-            // An issue into the project folder (docs/plan-cde.md): the files written and hashed, the transmittal, the issue recorded (one undo step).
+            // An issue (docs/plan-cde.md): the files made and hashed, kept in the project's file (and written into the project folder's container
+            // when there is one), the transmittal, the issue recorded (one undo step) and the project saved as a version named after it, in the
+            // same call, so the record names its version and the project is saved after an issue. `bytes`: the file comes back (the browser);
+            // `saveVersion: false` leaves the version out (the project stays unsaved). An unsaved project on the desktop keeps the files in memory
+            // until its first save, without a version.
             case "cde.issue":
             {
-                var (r, d) = CdeIssue.Run(session, p);
-                return (r, d);
+                var asBytes = p["bytes"]?.GetValue<bool>() == true;
+                var withVersion = p["saveVersion"]?.GetValue<bool>() != false && (session.Path != null || asBytes);
+                int? version = withVersion ? files.Versions(session).NextNumber : null;
+                var (r, d) = CdeIssue.Run(session, files.Issues(session), p, version);
+                if (version == null) return (r, d);
+                try
+                {
+                    var (vr, vd) = files.SaveVersion(session, (string?)r["name"], $"Issue {(int?)r["number"]} · {(string?)r["revision"]} {(string?)r["status"]} → {(string?)r["container"]}", asBytes);
+                    if ((string?)vr["data"] is { } data) r["file"] = new JsonObject { ["name"] = (string?)vr["name"], ["data"] = data };
+                    r["saved"] = true;
+                    return (r, d with { Version = vd.Version, State = vd.State });
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or CommandException)
+                {
+                    // The issue stands (its record, its files in memory); the version did not go: the project stays unsaved and says why.
+                    r["version"] = null;
+                    r["versionError"] = e.Message;
+                    return (r, d);
+                }
+            }
+            // An issue's deliverables from the project's file: one file (to a path, to the temporary folder to open it, or as bytes), all of them
+            // as one zip, or written out to a folder (the project folder's container, or a folder picked: `flat`).
+            case "cde.issueFile":
+            {
+                var (name, bytes) = CdeDeliverables.File(session.Model, files.Issues(session), (string?)p["id"], (string?)p["name"]);
+                if (p["temp"]?.GetValue<bool>() == true)
+                {
+                    var dir = Path.Combine(Path.GetTempPath(), "lapin-issues");
+                    Directory.CreateDirectory(dir);
+                    var tempPath = Path.Combine(dir, name);
+                    File.WriteAllBytes(tempPath, bytes);
+                    return (new JsonObject { ["path"] = tempPath, ["bytes"] = bytes.Length }, null);
+                }
+                return (Deliver(bytes, name), null);
+            }
+            case "cde.issueZip":
+            {
+                var (name, bytes, missing) = CdeDeliverables.Zip(session.Model, files.Issues(session), (string?)p["id"]);
+                var delivered = Deliver(bytes, name);
+                delivered["missing"] = new JsonArray(missing.Select(x => (JsonNode)x).ToArray());
+                return (delivered, null);
+            }
+            case "cde.publishIssue":
+                return (CdeDeliverables.Publish(session.Model, files.Issues(session), (string?)p["id"], (string?)p["folder"], p["flat"]?.GetValue<bool>() == true), null);
+            // The hashes an issue record says are kept that the project's file does not hold (a version restored from before they were let go).
+            case "cde.missing":
+            {
+                var store = files.Issues(session);
+                return (new JsonArray(Lapin.Platform.Cde.CdeIssues.StoredHashes(session.Model).Where(h => !store.Has(h)).Select(h => (JsonNode)h).ToArray()), null);
             }
             // A reviewer's PDF read for its remarks (by path, or its bytes), and the project folder scanned for the issued PDFs touched since (stage 3).
             case "cde.readPdf": return (CdePdfRemarks.Read(session, p), null);

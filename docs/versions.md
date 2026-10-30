@@ -9,6 +9,7 @@ O versiune e **un manifest**: lista părților proiectului (`project/document.js
 ```
 versions/index.json          versiunile: număr, nume, notă, momentele (UTC, ISO 8601), numărul de entități, manifestul, reviziile
 versions/blobs/<sha256>      o parte numită de o versiune pe care proiectul viu nu o mai are (o singură dată, oricâte versiuni o împart)
+issues/blobs/<sha256>        fișierele emiterilor (docs/plan-cde.md, decizia 185), după aceeași regulă; o emitere își salvează versiunea în același apel
 ```
 
 Adresarea după conținut face economia de la sine: la fiecare salvare se scriu părțile vii, apoi, dintre părțile numite de versiuni, doar cele al căror hash nu e printre cele vii. O versiune tocmai salvată nu costă nimic (toate părțile ei sunt vii); după editări costă doar chunk-urile care s-au schimbat (de obicei o clasă pe un etaj și relațiile). Părțile pe care nu le mai numește nicio versiune dispar la următoarea salvare.

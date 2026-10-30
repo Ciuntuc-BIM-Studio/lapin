@@ -12,7 +12,7 @@ Haga clic en **+** junto a **Láminas** en el navegador del proyecto. Para coloc
 
 ![Una lámina A3 con una planta y una sección](shots/sheet.webp)
 
-Seleccione la lámina para rellenar su **cajetín** en el panel de propiedades: el proyecto, el cliente, quién la dibujó, quién la revisó, la fecha y la revisión. Allí se fijan también su número, el papel y la orientación.
+Seleccione la lámina para rellenar su **cajetín** en el panel de propiedades: el proyecto, el cliente, quién la dibujó, quién la revisó, la fecha y la revisión. Allí se fijan también su número, el papel y la orientación. Si se deja vacío, el campo del proyecto muestra el nombre del proyecto: el nombre que se le dio, o si no, el nombre de su archivo.
 
 ## Imprimir
 

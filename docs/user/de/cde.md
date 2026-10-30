@@ -1,12 +1,12 @@
 ---
 title: Projektordner und Ausgaben
 order: 125
-summary: Geben Sie Blätter und das Modell in einen Projektordner aus, wie ISO 19650 es verlangt, nach der Konvention benannt, mit Übergabeschein, nach den Prüfungen eines Zeichenbüros.
+summary: Pläne und Modell so ausgeben, wie ISO 19650 es verlangt, in der Projektdatei behalten und, wenn vorhanden, in einem Projektordner, nach der Konvention benannt, mit Übergabeschreiben, nach den Prüfungen eines Planungsbüros.
 ---
 
 ## Der Projektordner
 
-**Manage → Project folder** legt den Ordner fest, in den das Projekt ausgegeben wird: ein Ordner auf Ihrem Rechner, eine Netzwerkfreigabe oder ein auf die Festplatte synchronisierter SharePoint- oder OneDrive-Ordner. Lapin verlangt kein Konto und spricht mit keinem Server: es schreibt Dateien, und was den Ordner synchronisiert, ist Sache Ihres Büros. Der Pfad wird im Projekt gespeichert und reist mit der Datei; ein Ordner, der nicht auf diesem Rechner ist, ist eine Warnung, kein Fehler.
+**Manage → Project folder** legt den Ordner fest, in den das Projekt auch ausgegeben wird: ein Ordner auf Ihrem Computer, eine Netzwerkfreigabe oder ein auf die Festplatte synchronisierter SharePoint- oder OneDrive-Ordner. Der Ordner ist **optional**: jede Ausgabe und ihre Dateien werden in der Projektdatei selbst behalten, so gibt ein Projekt ohne Ordner genauso aus, in der Desktop-App und im Browser. Lapin verlangt kein Konto und spricht mit keinem Server: es schreibt Dateien, und was den Ordner synchronisiert, ist Sache Ihres Büros. Der Pfad wird im Projekt gespeichert und reist mit der Datei; ein Ordner, der nicht auf diesem Computer ist, ist eine Warnung, kein Fehler. Einen Ordner festzulegen braucht die Desktop-App.
 
 ![Projektordner: der Ordner, die Container, die Benennung](shots/project-folder.webp)
 
@@ -31,17 +31,33 @@ Blockierend: ein Schriftfeld ohne Nummer, Titel oder Zeichner; eine Ansicht ohne
 
 ## Ausgeben
 
-**Manage → Issue…** schreibt eine Ausgabe in einen Container (nur in der Desktop-App, da Dateien geschrieben werden):
+**Manage → Issue…** macht eine Ausgabe, in der Projektdatei behalten und, wenn das Projekt einen Ordner auf diesem Computer hat, auch in seinen Container geschrieben:
 
 ![Ausgabe: die Blätter, die Revision, der Status, die Prüfungen](shots/cde-issue.webp)
 
 1. Geben Sie der Ausgabe einen Namen, ihre **Revision** (`P01`, `P02`… solange vorläufig, `C01`… sobald vertraglich; die nächste wird aus der letzten Ausgabe vorgeschlagen), ihren **Status** (`S0`–`S7`, `A1`–`A9`, `B1`–`B9`, `CR`) und den **Container**.
-2. Haken Sie die Blätter an, die gehen, das Modell als IFC, jedes Blatt auch als DXF oder alle Blätter auch in einer PDF. Der Name jeder Datei wird so gezeigt, wie er geschrieben wird.
+2. Haken Sie die Blätter an, die mitgehen, das Modell als IFC, jedes Blatt auch als DXF oder alle Blätter auch in einem PDF. Der Name jeder Datei wird so gezeigt, wie er geschrieben wird. Die IFC wird nur in der Projektdatei behalten, wenn Sie **Die IFC in der Projektdatei behalten** anhaken (ein großes Modell hat Dutzende MB pro Ausgabe); abgewählt geht sie in den Projektordner, und die Projektdatei behält ihren Namen und Hash. **Auch in den Projektordner** schreibt die Dateien zusätzlich in den Container (vorgewählt, wenn das Projekt einen Ordner hat).
 3. Die Prüfungen laufen, während Sie wählen. Mit einem blockierenden Befund kann die Ausgabe nicht gehen; nur mit Warnungen haken Sie **Trotzdem ausgeben** an.
-4. **Ausgeben** schreibt jedes Blatt als PDF, das IFC und den Rest in den Container, nach der Konvention benannt, bildet den Hash (SHA-256) jeder Datei, schreibt den **Übergabeschein** (eine PDF und eine CSV: Projekt, Ausgabe, Datum, Revision, Status, die Dateien) und ein **Manifest** (JSON, mit allen Hashes) daneben, und trägt die Ausgabe im Projekt ein. Jedes gedruckte Blatt übernimmt die Revision und den Status der Ausgabe in sein Schriftfeld, und seine Revisionstabelle listet die Ausgaben, in denen es herausging.
-5. Das Projekt wird danach als nach der Ausgabe benannte **Version** gespeichert (siehe [Dateien, Versionen und Wiederherstellung](files.md)), damit eine Ausgabe wieder geöffnet, wiederhergestellt oder mit dem jetzigen Projekt verglichen werden kann.
+4. **Ausgeben** macht jedes Blatt als PDF, die IFC und den Rest, nach der Konvention benannt, hasht jede Datei (SHA-256), macht das **Übergabeschreiben** (ein PDF und eine CSV: Projekt, Ausgabe, Datum, Revision, Status, die Dateien) und ein **Manifest** (JSON, mit allen Hashes), behält sie alle in der Projektdatei und hält die Ausgabe im Projekt fest. Jedes gedruckte Blatt trägt im Schriftfeld Revision und Status der Ausgabe und in seiner Revisionstabelle die Zeile der Ausgabe, wie ausgegeben.
+5. Im selben Schritt wird das Projekt als nach der Ausgabe benannte **Version** gespeichert (siehe [Dateien, Versionen und Wiederherstellung](files.md)), damit eine Ausgabe wieder geöffnet, wiederhergestellt oder mit dem jetzigen Projekt verglichen werden kann, und das Projekt ist gespeichert, ohne ungespeicherte Änderungen. Der Dialog zeigt dann die Ausgabe, wie sie hinausging — Name, Revision und Dateien, jede zum Öffnen —, bis Sie ihn schließen oder eine **Neue Ausgabe** beginnen.
 
-Die Ausgaben stehen unten im Dialog Project folder, jede mit ihren Dateien und **Ordner öffnen**.
+![Der Dialog Ausgabe nach einer Ausgabe: die Ausgabe, wie sie hinausging, ihre Dateien](shots/cde-issued.webp)
+
+## Die Ausgaben in der Projektdatei
+
+Die Ausgaben stehen unten im Dialog Project folder, mit dem, was sie in der Projektdatei belegen (gleiche Dateien werden einmal behalten, egal wie viele Ausgaben sie teilen). Klicken Sie auf eine Ausgabe, um ihre Dateien zu sehen:
+
+![Die Ausgaben in der Projektdatei: was sie belegen, eine geöffnete Ausgabe mit ihren Dateien](shots/cde-issues.webp)
+
+- ein Klick auf eine Datei **öffnet** sie aus der Projektdatei (der Desktop öffnet sie mit ihrem Programm; der Browser lädt sie herunter), oder **Eine Kopie speichern…**;
+- **Als Zip herunterladen** gibt alle behaltenen Dateien einer Ausgabe in einem Zip, benannt nach ihrem Übergabeschreiben: das, was Sie senden, wenn es keinen gemeinsamen Ordner gibt;
+- **In Ordner veröffentlichen…** (die Desktop-App) schreibt eine früher gemachte Ausgabe in den Container des Projektordners oder in einen beliebigen Ordner: zuerst ausgeben, den Ordner später wählen;
+- **Gespeicherte Dateien löschen** lässt die Dateien einer alten Ausgabe beim nächsten Speichern aus der Projektdatei gehen, damit die Datei klein bleibt; der Eintrag der Ausgabe, ihre Dateinamen und deren Hashes bleiben;
+- **Ordner öffnen** zeigt den Container, in den die Ausgabe geschrieben wurde.
+
+## Im Browser
+
+Das CDE geht auch im Browser: Prüfung, Ausgabe, die Dateien der Ausgaben (öffnen, Als Zip herunterladen) und beide Arten von Anmerkungen. Die Projektdatei hält alles und kommt als die Datei zu Ihnen zurück, die Sie speichern. Ein Projektordner, das Veröffentlichen darin und das Durchsuchen brauchen die Desktop-App.
 
 ## Anmerkungen (BCF)
 
@@ -64,7 +80,7 @@ Ein Prüfer öffnet ein ausgegebenes PDF in Acrobat, Bluebeam, Vorschau oder Dra
 
 ![Anmerkungen: die Liste nach Plan, ein gelesenes PDF](shots/cde-remarks.webp)
 
-- **PDF-Anmerkungen lesen…** wählt die Datei. Der Plan, zu dem sie gehört, kommt aus der Ausgabe (dem Manifest neben der Datei oder dem eigenen Ausgabenverzeichnis des Projekts), sonst aus der Namenskonvention der Datei; passt nichts, wählen Sie den Plan. Die Seiten eines Satz-PDFs gehen der Reihe nach auf seine Pläne. Was gefunden wurde, wird gezeigt — Seiten, Markierungen, wie der Plan zugeordnet wurde, etwaige Warnungen — und **Importieren** holt die Anmerkungen herein. Dieselbe Datei erneut zu lesen aktualisiert ihre Anmerkungen, statt sie zu verdoppeln; eine Anmerkung, die Sie erledigt haben, bleibt erledigt.
+- **PDF-Anmerkungen lesen…** wählt die Datei. Der Plan, zu dem sie gehört, kommt aus der Ausgabe (dem Manifest neben der Datei oder dem eigenen Ausgabenverzeichnis des Projekts), sonst aus der Namenskonvention der Datei; passt nichts, wählen Sie den Plan. Die Seiten eines Satz-PDFs gehen der Reihe nach auf seine Pläne. Was gefunden wurde, wird gezeigt — Seiten, Markierungen, wie der Plan zugeordnet wurde, etwaige Warnungen — und **Importieren** holt die Anmerkungen herein. Dieselbe Datei erneut zu lesen aktualisiert ihre Anmerkungen, statt sie zu verdoppeln; eine Anmerkung, die Sie erledigt haben, bleibt erledigt. Eine unterwegs umbenannte Datei wird trotzdem zugeordnet: die ausgegebenen Bytes stehen am Anfang der Datei des Prüfers.
 - **Projektordner durchsuchen** (die Desktop-App) listet die ausgegebenen PDFs in Shared und Published, welche davon sich nach ihrer Ausgabe geändert haben und ob ihre Anmerkungen seitdem gelesen wurden.
 - Die Liste ist nach Plan gruppiert und nach Status gefiltert: **offen**, **erledigt**, **geschlossen**. Ein Klick öffnet den Plan mit der Anmerkung im Vordergrund. Jede Anmerkung kann erledigt, geschlossen, wieder geöffnet oder gelöscht werden; der Status „Completed“ oder „Accepted“ des Prüfers kommt als erledigt an.
 

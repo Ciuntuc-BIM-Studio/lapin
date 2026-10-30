@@ -12,7 +12,7 @@ Cliquez sur **+** à côté de **Feuilles** dans l’arborescence du projet. Pou
 
 ![Une feuille A3 avec un plan et une coupe](shots/sheet.webp)
 
-Sélectionnez la feuille pour remplir son **cartouche** dans le panneau des propriétés : le projet, le client, qui l’a dessinée, qui l’a vérifiée, la date et l’indice de révision. Son numéro, son format de papier et son orientation se règlent aussi à cet endroit.
+Sélectionnez la feuille pour remplir son **cartouche** dans le panneau des propriétés : le projet, le client, qui l’a dessinée, qui l’a vérifiée, la date et l’indice de révision. Son numéro, son format de papier et son orientation se règlent aussi à cet endroit. Laissé vide, le champ du projet affiche le nom du projet : le nom qui lui a été donné, sinon le nom de son fichier.
 
 ## Imprimer
 

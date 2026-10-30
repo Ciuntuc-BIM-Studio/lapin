@@ -16,7 +16,7 @@ namespace Lapin.Engine.Tests;
 /// rule both ways), the transmittal and the manifest with their hashes, and
 /// an issue end to end into a temporary folder through the protocol.
 /// </summary>
-public sealed class CdeTests : IDisposable
+public sealed partial class CdeTests : IDisposable
 {
     readonly string _dir = Directory.CreateTempSubdirectory("lapin-cde-").FullName;
     public void Dispose() => Directory.Delete(_dir, recursive: true);
@@ -364,10 +364,8 @@ public sealed class CdeTests : IDisposable
         }
         var folder = Path.Combine(_dir, "cde");
 
-        // Without a folder, or an unsaved project: refused before anything is written.
-        Assert.Contains("project folder", (string)((JsonObject)JsonNode.Parse(Call("cde.issue", new JsonObject { ["sheets"] = new JsonArray(s) }))!)["error"]!);
+        // A folder not made yet is made by the issue (the folder itself is optional: CdeStore tests issue without one).
         f.Run("cde.setFolder", new JsonObject { ["path"] = folder });
-        Assert.Contains("Save the project", (string)((JsonObject)JsonNode.Parse(Call("cde.issue", new JsonObject { ["sheets"] = new JsonArray(s) }))!)["error"]!);
         files.Save(f.Session, Path.Combine(_dir, "house.lapin"));
         Assert.False(Directory.Exists(folder));
 
@@ -401,7 +399,7 @@ public sealed class CdeTests : IDisposable
         Assert.Equal("For the client", (string)manifest["note"]!);
         Assert.StartsWith("%PDF", File.ReadAllText(Path.Combine(folder, "Shared", "PRJ-ORG-ZZ-ZZ-IE-A-0001_S2_P01.pdf"))[..4]);
         Assert.Contains("IFCPROJECT", File.ReadAllText(Path.Combine(folder, "Shared", "PRJ-ORG-ZZ-ZZ-M3-A-0001_S2_P01.ifc")));
-        // Recorded: the issue with its files, the sheet at P01 S2, and the project unsaved again (the version is the interface's next call).
+        // Recorded: the issue with its files, the sheet at P01 S2, the version saved in the same call and named after the issue, the project clean.
         var issues = CdeIssues.All(f.Model);
         Assert.Single(issues);
         Assert.Equal(("Stage 2", "P01", "S2", "Shared", 1), (issues[0].Name, issues[0].Revision, issues[0].Status, issues[0].Container, issues[0].Number));
@@ -409,7 +407,13 @@ public sealed class CdeTests : IDisposable
         Assert.Equal(s, issues[0].Files[0].SheetId);
         Assert.NotNull(issues[0].Files[0].DrawingHash);
         Assert.Equal("P01", CdeCheckContext.Field(f.Model.Get(s)!, "revision"));
-        Assert.True(f.Session.StateFor(History.Me).Dirty);
+        Assert.False(f.Session.StateFor(History.Me).Dirty);
+        Assert.Equal(1, issues[0].Version);
+        Assert.Equal(1, (int)r["version"]!);
+        Assert.Equal("Stage 2", files.Versions(f.Session).Require(1).Name);
+        // Kept in the project's file: every file but the IFC (only on request); the IFC's name and hash recorded all the same.
+        Assert.All(issues[0].Files.Where(x => x.Kind != "ifc"), x => Assert.True(x.Stored, x.Name));
+        Assert.False(issues[0].Files.Single(x => x.Kind == "ifc").Stored);
         Assert.Equal("P02", (string)((JsonObject)f.Session.Query("cde.settings", [])!)["nextRevision"]!);
 
         // The same again at P01: nothing changed, so it goes (a re-issue); after a change it is refused until P02.

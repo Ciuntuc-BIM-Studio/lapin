@@ -886,6 +886,7 @@ public sealed class Session
         public IModelView Model => s._store;
         public IServices Services => s._catalog;
         public ElementGeometry? Geometry(string entityId) => s.Geometry(entityId);
+        public string? Title => s.Path is { Length: > 0 } p ? System.IO.Path.GetFileNameWithoutExtension(p.Replace('\\', '/').Split('/')[^1]) : null;
     }
 }
 

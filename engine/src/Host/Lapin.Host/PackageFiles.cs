@@ -10,7 +10,7 @@ public static class PackageFiles
     public static ProjectFiles Create()
     {
         ProjectFiles? files = null;
-        files = new((session, path) => { var d = Open(session, path); files!.LastNotes = LastNotes; return d; }, (session, path, versions) => ProjectPackage.Write(session, path, versions));
+        files = new((session, path) => { var d = Open(session, path); files!.LastNotes = LastNotes; return d; }, (session, path, versions, issues) => ProjectPackage.Write(session, path, versions, issues));
         return files;
     }
 

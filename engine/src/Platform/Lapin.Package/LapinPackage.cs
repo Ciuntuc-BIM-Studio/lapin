@@ -36,7 +36,10 @@ public sealed record PackageBuild(PackageManifest Manifest, IReadOnlyList<(Packa
 /// model/relations.arrow                  every relationship
 /// versions/index.json                    the project's versions: each a manifest of its own (docs/versions.md)
 /// versions/blobs/&lt;sha256&gt;               a version's part the live project no longer has
+/// issues/index.json                      the project's issues and their files, for whoever opens the zip (the record is the model's)
+/// issues/blobs/&lt;sha256&gt;                 a file an issue made, kept in the project (docs/plan-cde.md), once however many issues share it
 /// </code>
+/// A package without <c>issues/</c> (older, or a project never issued) reads as before; an older Lapin skips the folder it does not know.
 /// Writing goes to a temporary file first, then replaces the target: a crash
 /// while saving never leaves half a project.
 /// </summary>
@@ -92,10 +95,10 @@ public static class LapinPackage
     }
 
     /// <summary>A built project written to a file, beside first, then moved over the old one.</summary>
-    public static void Write(string path, PackageBuild build, PackageVersions? versions = null)
+    public static void Write(string path, PackageBuild build, PackageVersions? versions = null, IssueFiles? issues = null)
     {
         var temp = path + ".saving";
-        using (var file = File.Create(temp)) Write(file, build, versions);
+        using (var file = File.Create(temp)) Write(file, build, versions, issues);
         File.Move(temp, path, overwrite: true);
     }
 
@@ -103,9 +106,10 @@ public static class LapinPackage
     /// A built project written as a package, with its versions: each version's
     /// manifest in the index, and the bytes of every part a version names that
     /// the live project does not hold (by hash) under <c>versions/blobs/</c>,
-    /// once however many versions share it.
+    /// once however many versions share it; and the files the project's issues
+    /// keep, under <c>issues/blobs/</c>, once each.
     /// </summary>
-    public static void Write(Stream output, PackageBuild build, PackageVersions? versions = null)
+    public static void Write(Stream output, PackageBuild build, PackageVersions? versions = null, IssueFiles? issues = null)
     {
         using var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true);
         void Entry(string name, byte[] bytes)
@@ -115,11 +119,23 @@ public static class LapinPackage
         }
         Entry(ManifestPath, JsonSerializer.SerializeToUtf8Bytes(build.Manifest, PackageJson.Indented.PackageManifest));
         foreach (var (part, bytes) in build.Parts) Entry(part.Path, bytes);
-        if (versions is not { Versions.Count: > 0 }) return;
-        Entry(VersionsPath, JsonSerializer.SerializeToUtf8Bytes(new PackageVersionIndex(versions.Versions), PackageJson.Indented.PackageVersionIndex));
-        var live = build.Parts.Select(p => p.Part.Sha256).ToHashSet();
-        var needed = versions.Hashes().Where(h => !live.Contains(h)).ToList();
-        foreach (var (sha, bytes) in versions.Blobs(needed)) Entry(BlobsPrefix + sha, bytes);
+        if (versions is { Versions.Count: > 0 })
+        {
+            Entry(VersionsPath, JsonSerializer.SerializeToUtf8Bytes(new PackageVersionIndex(versions.Versions), PackageJson.Indented.PackageVersionIndex));
+            var live = build.Parts.Select(p => p.Part.Sha256).ToHashSet();
+            var needed = versions.Hashes().Where(h => !live.Contains(h)).ToList();
+            foreach (var (sha, bytes) in versions.Blobs(needed)) Entry(BlobsPrefix + sha, bytes);
+        }
+        if (issues is { Keep.Count: > 0 })
+        {
+            if (issues.Index is { } index) Entry(PackageIssues.IndexPath, index);
+            // Compressed quickly: a PDF is compressed already, an IFC (text) shrinks well either way, and a save with many issues stays fast.
+            issues.Store.CopyTo(issues.Written, (sha, bytes) =>
+            {
+                using var s = zip.CreateEntry(PackageIssues.Prefix + sha, CompressionLevel.Fastest).Open();
+                bytes.CopyTo(s);
+            });
+        }
     }
 
     public static PackageContent Read(string path)

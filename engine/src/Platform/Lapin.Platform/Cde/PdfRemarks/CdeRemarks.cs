@@ -33,7 +33,7 @@ public static class CdeRemarks
     /// The sheet of each page of a PDF: by the project's issues (the file's name among an issue's files; the set's pages in the issue's sheet order),
     /// by the folder's manifests the same way, by the file name's convention (the sheet whose name the convention gives), else none; or the sheet given.
     /// </summary>
-    public static SheetMatch Match(IModelView m, string fileName, int pages, IReadOnlyList<ManifestFile>? manifest, string? sheetId)
+    public static SheetMatch Match(IModelView m, string fileName, int pages, IReadOnlyList<ManifestFile>? manifest, string? sheetId, byte[]? pdf = null)
     {
         var name = Path.GetFileName(fileName);
         List<string?> All(string? id) => Enumerable.Repeat(id, Math.Max(pages, 1)).ToList();
@@ -48,6 +48,19 @@ public static class CdeRemarks
             var set = issue.Files.Where(f => f.Kind == "pdf" && f.SheetId != null).Select(f => f.SheetId).ToList();
             if (set.Count > 0) return new SheetMatch(Enumerable.Range(0, Math.Max(pages, 1)).Select(i => i < set.Count ? set[i] : null).ToList(), issue.Revision, issue.Id, "issue");
         }
+        // Renamed on the way: the issued bytes are where the file begins (a reviewer's program saves its marks as an incremental update, after them).
+        if (pdf != null)
+            foreach (var issue in CdeIssues.All(m).AsEnumerable().Reverse())
+            {
+                var file = issue.Files.FirstOrDefault(f => f.Kind == "pdf" && f.Size > 0 && f.Size <= pdf.LongLength && f.Sha256.Length == 64
+                    && Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(pdf.AsSpan(0, (int)f.Size))) == f.Sha256);
+                if (file == null) continue;
+                if (file.SheetId != null) return new SheetMatch(All(file.SheetId), issue.Revision, issue.Id, "issue");
+                // The transmittal (named as its manifest) prints no sheet.
+                if (issue.Files.Any(j => j.Kind == "json" && Path.GetFileNameWithoutExtension(j.Name) == Path.GetFileNameWithoutExtension(file.Name))) break;
+                var set = issue.Files.Where(f => f.Kind == "pdf" && f.SheetId != null).Select(f => f.SheetId).ToList();
+                if (set.Count > 0) return new SheetMatch(Enumerable.Range(0, Math.Max(pages, 1)).Select(i => i < set.Count ? set[i] : null).ToList(), issue.Revision, issue.Id, "issue");
+            }
         if (manifest != null)
         {
             var file = manifest.FirstOrDefault(f => string.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase));
@@ -90,7 +103,7 @@ public static class CdeRemarks
         PdfRead read;
         try { read = PdfAnnotations.Read(pdf); }
         catch (Exception e) { read = new PdfRead([], [], [$"The file could not be read: {e.Message}"], 0); }
-        var match = Match(m, name, read.Pages.Count, manifest, sheetId);
+        var match = Match(m, name, read.Pages.Count, manifest, sheetId, pdf);
         var warnings = new List<string>(read.Warnings);
         var remarks = new JsonArray();
         var unplaced = 0;

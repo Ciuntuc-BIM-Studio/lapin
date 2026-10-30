@@ -16,7 +16,7 @@ import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, query, useSession } from '../engine/session';
 import { exportFile } from '../engine/files';
 import { RemarkCard, RemarksOverlay } from '../modules/core/cde/pdfRemarks/RemarksOverlay';
-import { countOpen, useRemarkUi } from '../modules/core/cde/pdfRemarks/remarks';
+import { countOpen, remarksOf, useRemarkUi } from '../modules/core/cde/pdfRemarks/remarks';
 import { DrawingLayer } from './DrawingLayer';
 import type { PenDto } from './drawing';
 import { PX_PER_MM, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
@@ -50,6 +50,8 @@ export function SheetView() {
   // The remarks read from reviewed PDFs: shown over the paper (the screen alone; the sheet prints without them).
   const showRemarks = useRemarkUi((s) => s.show);
   const remarkCount = id ? countOpen(nodes, id) : 0;
+  // The overlay draws the open and the resolved ones (a closed remark leaves it): the toggle is there while any is drawn, its number the open ones.
+  const remarksDrawn = id ? remarksOf(nodes, id).some((r) => r.status !== 'closed') : false;
 
   useEffect(() => {
     if (!id) return;
@@ -171,9 +173,9 @@ export function SheetView() {
         </select>
         <button type="button" className="icon" title="Export PDF" onClick={() => void exportAs('pdf')}><FileDown size={14} /><span className="small">PDF</span></button>
         <button type="button" className="icon" title="Export DXF" onClick={() => void exportAs('dxf')}><FileDown size={14} /><span className="small">DXF</span></button>
-        {remarkCount > 0 && (
-          <button type="button" className={`icon${showRemarks ? ' on' : ''}`} title="Remarks read from PDFs: show or hide (they never print)" data-testid="sheet-remarks-toggle"
-            onClick={() => useRemarkUi.setState({ show: !showRemarks, highlight: null })}><MessageSquare size={14} /><span className="small">{remarkCount}</span></button>
+        {remarksDrawn && (
+          <button type="button" className={`icon${showRemarks ? ' on' : ''}`} title="Remarks read from PDFs: show or hide (they never print); the number counts the open ones" data-testid="sheet-remarks-toggle"
+            onClick={() => useRemarkUi.setState({ show: !showRemarks, highlight: null })}><MessageSquare size={14} />{remarkCount > 0 && <span className="small">{remarkCount}</span>}</button>
         )}
         <button type="button" className="chip scale" title="The sheet's size on screen against paper · click for paper size (ZA)" onClick={host.actual}>{Math.round((v.k / PX_PER_MM) * 100)} %</button>
         <button type="button" className="icon" title="Fit (ZE)" onClick={fit}><Maximize size={14} /></button>

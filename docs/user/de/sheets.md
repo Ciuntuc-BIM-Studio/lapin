@@ -12,7 +12,7 @@ Klicken Sie im Projektbrowser auf **+** neben **Pläne**. Um eine Ansicht zu pla
 
 ![Ein A3-Plan mit einem Grundriss und einem Schnitt](shots/sheet.webp)
 
-Wählen Sie den Plan aus, um im Eigenschaftenbereich seinen **Plankopf** auszufüllen: das Projekt, den Bauherrn, wer ihn gezeichnet hat, wer ihn geprüft hat, das Datum und den Revisionsstand. Seine Nummer, sein Papierformat und seine Ausrichtung werden dort ebenfalls festgelegt.
+Wählen Sie den Plan aus, um im Eigenschaftenbereich seinen **Plankopf** auszufüllen: das Projekt, den Bauherrn, wer ihn gezeichnet hat, wer ihn geprüft hat, das Datum und den Revisionsstand. Seine Nummer, sein Papierformat und seine Ausrichtung werden dort ebenfalls festgelegt. Leer gelassen zeigt das Projektfeld den Namen des Projekts: den ihm gegebenen Namen, sonst den Namen seiner Datei.
 
 ## Drucken
 

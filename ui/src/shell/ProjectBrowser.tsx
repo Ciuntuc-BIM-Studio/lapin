@@ -126,7 +126,7 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   const Row = ({ item, on, open, children }: { item: BrowserItem; on: boolean; open: () => void; children?: React.ReactNode }) => (
     <span className="tree-row">
       <button type="button" className={`tree-item${on ? ' on' : ''}`} onClick={open} onContextMenu={item.kind === 'section' || item.kind === 'elevation' ? drawingMenu(item) : undefined}>{item.kind === 'sheet' ? `${String(item.node?.props.number ?? '')} · ${item.name}` : item.name}</button>
-      {item.kind === 'sheet' && countOpen(nodes, item.id) > 0 && <span className="count remarks" title="Remarks read from PDFs, not yet closed" data-testid="sheet-remark-count">{countOpen(nodes, item.id)}</span>}
+      {item.kind === 'sheet' && countOpen(nodes, item.id) > 0 && <span className="count remarks" title="Remarks read from PDFs, still open" data-testid="sheet-remark-count">{countOpen(nodes, item.id)}</span>}
       {children}
       {item.node && <button type="button" className="icon mini" title={item.kind === 'sheet' ? 'Delete the sheet' : item.kind === 'schedule' ? 'Delete the schedule' : 'Delete the view'} onClick={() => remove(item.id)}><Trash2 size={11} /></button>}
     </span>

@@ -1,12 +1,12 @@
 ---
 title: Projektmappe og udgivelser
 order: 125
-summary: Udgiv ark og modellen i en projektmappe, som ISO 19650 kræver, navngivet efter konventionen, med følgeseddel, efter de kontroller et tegnekontor gør.
+summary: Udgiv ark og modellen, som ISO 19650 kræver, beholdt i projektfilen og, når du har en, i en projektmappe, navngivet efter konventionen, med følgebrev, efter de kontroller en tegnestue laver.
 ---
 
 ## Projektmappen
 
-**Manage → Project folder** vælger mappen, projektet udgives i: en mappe på din computer, et netværksshare eller en SharePoint- eller OneDrive-mappe synkroniseret til disken. Lapin beder ikke om nogen konto og taler ikke med nogen server: den skriver filer, og hvad der synkroniserer mappen, er dit kontors sag. Stien gemmes i projektet, så den rejser med filen; en mappe, der ikke er på denne computer, er en advarsel, ikke en fejl.
+**Manage → Project folder** angiver den mappe, projektet også udgives til: en mappe på din computer, et netværksdrev eller en SharePoint- eller OneDrive-mappe synkroniseret til disken. Mappen er **valgfri**: hver udgivelse og dens filer beholdes i selve projektfilen, så et projekt uden mappe udgiver lige så godt, i desktop-appen og i browseren. Lapin beder ikke om nogen konto og taler ikke med nogen server: den skriver filer, og hvad der synkroniserer mappen, er dit kontors sag. Stien gemmes i projektet, så den rejser med filen; en mappe, der ikke er på denne computer, er en advarsel, ikke en fejl. At vælge mappen kræver desktop-appen.
 
 ![Projektmappe: mappen, containerne, navngivningen](shots/project-folder.webp)
 
@@ -31,17 +31,33 @@ Blokerende: et tegningshoved uden nummer, titel eller tegner; en visning uden m�
 
 ## Udgivelse
 
-**Manage → Issue…** skriver en udgivelse ind i en container (kun i skrivebordsappen, da den skriver filer):
+**Manage → Issue…** laver en udgivelse, beholdt i projektfilen og, når projektet har en mappe på denne computer, også skrevet i dens container:
 
 ![Udgivelse: arkene, revisionen, status, kontrollerne](shots/cde-issue.webp)
 
 1. Giv udgivelsen et navn, dens **revision** (`P01`, `P02`… mens den er foreløbig, `C01`… når den er kontraktlig; den næste foreslås ud fra sidste udgivelse), dens **status** (`S0`–`S7`, `A1`–`A9`, `B1`–`B9`, `CR`) og **containeren**.
-2. Sæt kryds ved de ark, der sendes, modellen som IFC, hvert ark også som DXF, eller alle ark også i én PDF. Hver fils navn vises, som det bliver skrevet.
+2. Sæt flueben ved de ark, der skal med, modellen som IFC, hvert ark også som DXF eller alle ark også i én PDF. Hver fils navn vises, som det bliver skrevet. IFC’en beholdes kun i projektfilen, når du sætter flueben ved **Behold IFC’en i projektfilen** (en stor model fylder titusinder af MB pr. udgivelse); uden går den til projektmappen, og projektfilen beholder dens navn og hash. **Også i projektmappen** skriver filerne i containeren også (valgt som standard, når projektet har en mappe).
 3. Kontrollerne kører, mens du vælger. Med et blokerende fund kan udgivelsen ikke sendes; med advarsler alene, sæt kryds ved **Udgiv alligevel**.
-4. **Udgiv** skriver hvert ark som PDF, IFC'en og resten ind i containeren, navngivet efter konventionen, beregner hash (SHA-256) for hver fil, skriver **følgesedlen** (en PDF og en CSV: projekt, udgivelse, dato, revision, status, filerne) og et **manifest** (JSON, med alle hashes) ved siden af, og registrerer udgivelsen i projektet. Hvert udskrevet ark får udgivelsens revision og status i sit tegningshoved, og dets revisionstabel viser de udgivelser, det er sendt i.
-5. Projektet gemmes derefter som en **version** opkaldt efter udgivelsen (se [Filer, versioner og gendannelse](files.md)), så en udgivelse kan genåbnes, gendannes eller sammenlignes med projektet, som det er nu.
+4. **Udgiv** laver hvert ark som PDF, IFC’en og resten, navngivet efter konventionen, hasher hver fil (SHA-256), laver **følgebrevet** (en PDF og en CSV: projekt, udgivelse, dato, revision, status, filerne) og et **manifest** (JSON, med alle hashes), beholder dem alle i projektfilen og registrerer udgivelsen i projektet. Hvert udskrevet ark bærer udgivelsens revision og status i sit titelfelt og udgivelsens række i sin revisionstabel, som udgivet.
+5. I samme trin gemmes projektet som en **version** opkaldt efter udgivelsen (se [Filer, versioner og gendannelse](files.md)), så en udgivelse kan genåbnes, gendannes eller sammenlignes med projektet, som det er nu, og projektet er gemt uden ugemte ændringer. Dialogen viser derefter udgivelsen, som den gik ud — navn, revision og filer, hver til at åbne — indtil du lukker den eller starter en **Ny udgivelse**.
 
-Udgivelserne står nederst i dialogen Project folder, hver med sine filer og **Åbn mappe**.
+![Udgivelsesdialogen efter en udgivelse: udgivelsen, som den gik ud, dens filer](shots/cde-issued.webp)
+
+## Udgivelserne i projektfilen
+
+Udgivelserne står nederst i dialogen Project folder, med hvad de fylder i projektfilen (ens filer beholdes én gang, uanset hvor mange udgivelser der deler dem). Klik på en udgivelse for at se dens filer:
+
+![Udgivelserne i projektfilen: hvad de fylder, en udgivelse åbnet med sine filer](shots/cde-issues.webp)
+
+- klik på en fil for at **åbne** den fra projektfilen (desktoppen åbner den med dens program; browseren downloader den), eller **Gem en kopi…**;
+- **Download som zip** giver alle en udgivelses beholdte filer i én zip, opkaldt efter dens følgebrev: det, du sender, når der ikke er en fælles mappe;
+- **Udgiv til mappe…** (desktop-appen) skriver en tidligere udgivelse til projektmappens container eller til en mappe, du vælger: udgiv først, vælg mappen senere;
+- **Slet gemte filer** lader en gammel udgivelses filer forlade projektfilen ved næste gem, så filen forbliver lille; udgivelsens registrering, dens filnavne og deres hashes bliver;
+- **Åbn mappe** viser den container, udgivelsen blev skrevet i.
+
+## I browseren
+
+CDE’en virker også i browseren: Kontrol, Udgivelse, udgivelsernes filer (åbn, Download som zip) og begge slags bemærkninger. Projektfilen rummer det hele og kommer tilbage til dig som den fil, du gemmer. En projektmappe, at udgive til den og at gennemsøge den kræver desktop-appen.
 
 ## Bemærkninger (BCF)
 
@@ -64,7 +80,7 @@ En kontrollant åbner en udgivet PDF i Acrobat, Bluebeam, Preview eller Drawboar
 
 ![Bemærkninger: listen pr. ark, en læst PDF](shots/cde-remarks.webp)
 
-- **Læs PDF-bemærkninger…** vælger filen. Det ark, den hører til, kommer fra udgivelsen (manifestet ved siden af filen eller projektets egen fortegnelse over udgivelser), ellers fra filnavnets konvention; passer intet, vælger du arket. Siderne i en sæt-PDF går til dens ark i rækkefølge. Det fundne vises — sider, annotationer, hvordan arket blev matchet, eventuelle advarsler — og **Importér** henter bemærkningerne ind. Læses samme fil igen, opdateres dens bemærkninger i stedet for at blive fordoblet; en bemærkning, du har løst, forbliver løst.
+- **Læs PDF-bemærkninger…** vælger filen. Det ark, den hører til, kommer fra udgivelsen (manifestet ved siden af filen eller projektets egen fortegnelse over udgivelser), ellers fra filnavnets konvention; passer intet, vælger du arket. Siderne i en sæt-PDF går til dens ark i rækkefølge. Det fundne vises — sider, annotationer, hvordan arket blev matchet, eventuelle advarsler — og **Importér** henter bemærkningerne ind. Læses samme fil igen, opdateres dens bemærkninger i stedet for at blive fordoblet; en bemærkning, du har løst, forbliver løst. En fil, der er omdøbt undervejs, matches alligevel: de udgivne bytes er dem, kontrollantens fil begynder med.
 - **Gennemsøg projektmappen** (desktop-appen) lister de udgivne PDF’er i Shared og Published, hvilke af dem der er ændret efter udgivelsen, og om deres bemærkninger er læst siden.
 - Listen er grupperet pr. ark og filtreret efter status: **åbne**, **løste**, **lukkede**. Et klik åbner arket med bemærkningen forrest. Hver bemærkning kan løses, lukkes, genåbnes eller slettes; kontrollantens status „Completed“ eller „Accepted“ ankommer som løst.
 

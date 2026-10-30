@@ -59,10 +59,10 @@ describe('the list', () => {
     expect(remarkOf(nodes.get('r4')!).rect).toBeUndefined();
   });
 
-  it('lists the remarks of a sheet, counts those not closed, filters by status and groups by sheet in number order', () => {
+  it('lists the remarks of a sheet, counts the open ones (not resolved, not closed), filters by status and groups by sheet in number order', () => {
     expect(remarksOf(nodes).map((r) => r.id)).toEqual(['r2', 'r4', 'r3', 'r1']);   // undated first by name, then by date
     expect(remarksOf(nodes, 's2').map((r) => r.id)).toEqual(['r4', 'r3']);
-    expect(countOpen(nodes, 's1')).toBe(2);
+    expect(countOpen(nodes, 's1')).toBe(1);   // r1 open; r2 resolved is not counted
     expect(countOpen(nodes, 's2')).toBe(1);
     const all = remarksOf(nodes);
     expect(filterRemarks(all, 'open').map((r) => r.id)).toEqual(['r4', 'r1']);

@@ -1,12 +1,12 @@
 ---
 title: Carpeta del proyecto y emisiones
 order: 125
-summary: Emita láminas y el modelo en una carpeta del proyecto como pide ISO 19650, con los nombres de la convención, con un albarán de transmisión, tras las comprobaciones que hace una oficina de proyectos.
+summary: Emita láminas y el modelo como pide ISO 19650, guardados en el archivo del proyecto y, si tiene una, en una carpeta del proyecto, con nombres según la convención, con una transmisión, tras las comprobaciones que hace una oficina técnica.
 ---
 
 ## La carpeta del proyecto
 
-**Manage → Project folder** fija la carpeta en la que se emite el proyecto: una carpeta de su equipo, un recurso compartido de red o una carpeta de SharePoint u OneDrive sincronizada en el disco. Lapin no pide ninguna cuenta ni habla con ningún servidor: escribe archivos, y lo que sincroniza la carpeta es cosa de su oficina. La ruta se guarda en el proyecto, así que viaja con el archivo; una carpeta que no está en este equipo es un aviso, no un error.
+**Manage → Project folder** fija la carpeta en la que el proyecto también se emite: una carpeta de su ordenador, una unidad de red o una carpeta de SharePoint u OneDrive sincronizada en el disco. La carpeta es **opcional**: cada emisión y sus archivos se guardan en el propio archivo del proyecto, así que un proyecto sin carpeta emite igual, en la aplicación de escritorio y en el navegador. Lapin no pide ninguna cuenta ni habla con ningún servidor: escribe archivos, y lo que sincroniza la carpeta es cosa de su oficina. La ruta se guarda en el proyecto, así que viaja con el archivo; una carpeta que no está en este ordenador es un aviso, no un error. Elegir la carpeta requiere la aplicación de escritorio.
 
 ![Carpeta del proyecto: la carpeta, los contenedores, la nomenclatura](shots/project-folder.webp)
 
@@ -31,17 +31,33 @@ Bloqueantes: un cajetín sin número, sin título o sin quién lo dibujó; una v
 
 ## Emitir
 
-**Manage → Issue…** escribe una emisión en un contenedor (solo en la aplicación de escritorio, porque escribe archivos):
+**Manage → Issue…** hace una emisión, guardada en el archivo del proyecto y, cuando el proyecto tiene una carpeta en este ordenador, escrita también en su contenedor:
 
 ![Emisión: las láminas, la revisión, el estado, las comprobaciones](shots/cde-issue.webp)
 
 1. Dé un nombre a la emisión, su **revisión** (`P01`, `P02`… mientras es preliminar, `C01`… una vez contractual; la siguiente se propone a partir de la última emisión), su **estado** (`S0`–`S7`, `A1`–`A9`, `B1`–`B9`, `CR`) y el **contenedor**.
-2. Marque las láminas que van, el modelo como IFC, cada lámina también como DXF, o todas las láminas también en un solo PDF. El nombre de cada archivo se muestra tal como se escribirá.
+2. Marque las láminas que van, el modelo como IFC, cada lámina también como DXF, o todas las láminas también en un solo PDF. El nombre de cada archivo se muestra tal como se escribirá. El IFC se guarda en el archivo del proyecto solo si marca **Guardar el IFC en el archivo del proyecto** (un modelo grande ocupa decenas de MB por emisión); sin marcar, va a la carpeta del proyecto y el archivo del proyecto guarda su nombre y su hash. **También a la carpeta del proyecto** escribe los archivos también en el contenedor (marcado por defecto cuando el proyecto tiene carpeta).
 3. Las comprobaciones se ejecutan mientras elige. Con un hallazgo bloqueante la emisión no puede salir; solo con avisos, marque **Emitir de todos modos**.
-4. **Emitir** escribe cada lámina como PDF, el IFC y el resto en el contenedor, con los nombres de la convención, calcula el hash (SHA-256) de cada archivo, escribe el **albarán de transmisión** (un PDF y un CSV: proyecto, emisión, fecha, revisión, estado, los archivos) y un **manifiesto** (JSON, con todos los hashes) junto a ellos, y registra la emisión en el proyecto. Cada lámina impresa toma la revisión y el estado de la emisión en su cajetín, y su tabla de revisiones lista las emisiones en las que salió.
-5. El proyecto se guarda después como una **versión** con el nombre de la emisión (vea [Archivos, versiones y recuperación](files.md)), para que una emisión pueda reabrirse, restaurarse o compararse con el proyecto tal como está ahora.
+4. **Emitir** hace cada lámina como PDF, el IFC y lo demás, con nombres según la convención, calcula el hash (SHA-256) de cada archivo, hace la **transmisión** (un PDF y un CSV: proyecto, emisión, fecha, revisión, estado, los archivos) y un **manifiesto** (JSON, con todos los hashes), los guarda todos en el archivo del proyecto y registra la emisión en el proyecto. Cada lámina impresa lleva en su cajetín la revisión y el estado de la emisión, y en su tabla de revisiones la fila de la emisión, tal como se emitió.
+5. En el mismo paso el proyecto se guarda como una **versión** con el nombre de la emisión (vea [Archivos, versiones y recuperación](files.md)), para que una emisión pueda reabrirse, restaurarse o compararse con el proyecto tal como está ahora, y el proyecto queda guardado, sin cambios pendientes. El diálogo muestra entonces la emisión tal como salió —su nombre, revisión y archivos, cada uno para abrir— hasta que lo cierre o empiece una **Nueva emisión**.
 
-Las emisiones se listan al final del diálogo Project folder, cada una con sus archivos y **Abrir carpeta**.
+![El diálogo Emitir tras una emisión: la emisión tal como salió, sus archivos](shots/cde-issued.webp)
+
+## Las emisiones en el archivo del proyecto
+
+Las emisiones se listan al pie del diálogo Project folder, con lo que ocupan en el archivo del proyecto (los archivos idénticos se guardan una sola vez, por muchas emisiones que los compartan). Haga clic en una emisión para ver sus archivos:
+
+![Las emisiones en el archivo del proyecto: lo que ocupan, una emisión abierta con sus archivos](shots/cde-issues.webp)
+
+- un clic en un archivo lo **abre** desde el archivo del proyecto (el escritorio lo abre con su programa; el navegador lo descarga), o **Guardar una copia…**;
+- **Descargar como zip** da todos los archivos guardados de una emisión en un zip, con el nombre de su transmisión: lo que envía cuando no hay una carpeta compartida;
+- **Publicar en carpeta…** (la aplicación de escritorio) escribe una emisión hecha antes en el contenedor de la carpeta del proyecto, o en cualquier carpeta que elija: emita primero, elija la carpeta después;
+- **Borrar los archivos guardados** saca los archivos de una emisión antigua del archivo del proyecto al guardar, para que el archivo siga siendo pequeño; el registro de la emisión, los nombres de sus archivos y sus hashes se quedan;
+- **Abrir carpeta** muestra el contenedor en el que se escribió la emisión.
+
+## En el navegador
+
+El CDE funciona también en el navegador: Comprobación, Emisión, los archivos de las emisiones (abrir, Descargar como zip) y los dos tipos de observaciones. El archivo del proyecto lo contiene todo y vuelve a usted como el archivo que guarda. Una carpeta del proyecto, publicar en ella y explorarla requieren la aplicación de escritorio.
 
 ## Observaciones (BCF)
 
@@ -64,7 +80,7 @@ Un revisor abre un PDF emitido en Acrobat, Bluebeam, Preview o Drawboard y lo ma
 
 ![Observaciones: la lista por lámina, un PDF leído](shots/cde-remarks.webp)
 
-- **Leer observaciones del PDF…** elige el archivo. La lámina a la que pertenece viene de la emisión (el manifiesto junto al archivo, o el registro de emisiones del propio proyecto), si no, de la convención del nombre del archivo; cuando nada encaja, usted elige la lámina. Las páginas de un PDF de conjunto van a sus láminas en orden. Se muestra lo encontrado — páginas, anotaciones, cómo se emparejó la lámina, cualquier aviso — e **Importar** trae las observaciones. Leer el mismo archivo otra vez actualiza sus observaciones en lugar de duplicarlas; una observación que usted resolvió sigue resuelta.
+- **Leer observaciones del PDF…** elige el archivo. La lámina a la que pertenece viene de la emisión (el manifiesto junto al archivo, o el registro de emisiones del propio proyecto), si no, de la convención del nombre del archivo; cuando nada encaja, usted elige la lámina. Las páginas de un PDF de conjunto van a sus láminas en orden. Se muestra lo encontrado — páginas, anotaciones, cómo se emparejó la lámina, cualquier aviso — e **Importar** trae las observaciones. Leer el mismo archivo otra vez actualiza sus observaciones en lugar de duplicarlas; una observación que usted resolvió sigue resuelta. Un archivo renombrado por el camino se empareja igual: los bytes emitidos son aquellos con los que empieza el archivo del revisor.
 - **Explorar la carpeta del proyecto** (la aplicación de escritorio) lista los PDF emitidos en Shared y Published, cuáles cambiaron después de su emisión y si sus observaciones se leyeron desde entonces.
 - La lista se agrupa por lámina y se filtra por estado: **abiertas**, **resueltas**, **cerradas**. Un clic abre la lámina con la observación delante. Cada observación puede resolverse, cerrarse, reabrirse o eliminarse; el estado «Completed» o «Accepted» del revisor llega como resuelta.
 

@@ -4,19 +4,25 @@ using Lapin.Model;
 
 namespace Lapin.Platform.Cde;
 
-/// <summary>One file an issue wrote: its name, what it is (pdf, ifc, dxf, csv, json), the sheet it prints, its SHA-256 and size, and the sheet's drawing hash at the time.</summary>
-public sealed record IssuedFile(string Name, string Kind, string? SheetId, string Sha256, long Size, string? DrawingHash = null)
+/// <summary>
+/// One file an issue made: its name, what it is (pdf, ifc, dxf, csv, json), the sheet it prints, its SHA-256 and size, the sheet's drawing hash at
+/// the time, and whether its bytes are kept in the project's file (<see cref="Stored"/>: under <c>issues/blobs/</c> by its hash; the IFC only on
+/// request, and none once the user deletes an old issue's stored files, its name and hash staying in the record).
+/// </summary>
+public sealed record IssuedFile(string Name, string Kind, string? SheetId, string Sha256, long Size, string? DrawingHash = null, bool Stored = false)
 {
     public JsonObject ToJson()
     {
         var o = new JsonObject { ["name"] = Name, ["kind"] = Kind, ["sha256"] = Sha256, ["size"] = Size };
         if (SheetId != null) o["sheetId"] = SheetId;
         if (DrawingHash != null) o["drawingHash"] = DrawingHash;
+        if (Stored) o["stored"] = true;
         return o;
     }
 
     public static IssuedFile? From(JsonNode? n) => n is JsonObject o && (string?)o["name"] is { } name
-        ? new IssuedFile(name, (string?)o["kind"] ?? "", (string?)o["sheetId"], (string?)o["sha256"] ?? "", (long)(Json.Number(o["size"]) ?? 0), (string?)o["drawingHash"])
+        ? new IssuedFile(name, (string?)o["kind"] ?? "", (string?)o["sheetId"], (string?)o["sha256"] ?? "", (long)(Json.Number(o["size"]) ?? 0), (string?)o["drawingHash"],
+            o["stored"] is JsonValue sv && sv.TryGetValue<bool>(out var stored) && stored)
         : null;
 }
 
@@ -92,6 +98,44 @@ public static class CdeIssues
             ctx.Replace(sheet.With(attrs: sa));
         }
         return issue;
+    }
+
+    /// <summary>Every hash the project's issues keep in its file: what a save writes under <c>issues/blobs/</c>, once each.</summary>
+    public static HashSet<string> StoredHashes(IModelView m) =>
+        All(m).SelectMany(i => i.Files).Where(f => f.Stored && f.Sha256.Length == 64).Select(f => f.Sha256).ToHashSet();
+
+    /// <summary>The issues and their files as <c>issues/index.json</c> lists them, for whoever opens the package without Lapin (Lapin reads the records).</summary>
+    public static JsonObject Index(IModelView m) => new()
+    {
+        ["format"] = "lapin-issues/1",
+        ["blobs"] = "issues/blobs/<sha256>",
+        ["issues"] = new JsonArray(All(m).Select(i => (JsonNode)new JsonObject
+        {
+            ["number"] = i.Number, ["name"] = i.Name, ["at"] = i.At, ["revision"] = i.Revision, ["status"] = i.Status, ["container"] = i.Container, ["version"] = i.Version,
+            ["files"] = new JsonArray(i.Files.Select(f => (JsonNode)new JsonObject { ["name"] = f.Name, ["kind"] = f.Kind, ["sha256"] = f.Sha256, ["size"] = f.Size, ["stored"] = f.Stored }).ToArray()),
+        }).ToArray()),
+    };
+
+    /// <summary>
+    /// An issue's stored files let go (all, or those of the kinds given): the record keeps their names and hashes, the next save leaves their bytes
+    /// out of the file unless another issue keeps the same bytes. One undo step.
+    /// </summary>
+    public static int DropStored(ICommandContext ctx, string id, IReadOnlyCollection<string>? kinds)
+    {
+        var e = ctx.Model.Get(id) is { Class: Class } i ? i : throw new CommandException("There is no such issue.");
+        var files = Read(e).Files;
+        var dropped = 0;
+        var kept = files.Select(f =>
+        {
+            if (!f.Stored || (kinds != null && !kinds.Contains(f.Kind))) return f;
+            dropped++;
+            return f with { Stored = false };
+        }).ToList();
+        if (dropped == 0) return 0;
+        var attrs = e.CloneAttrs();
+        attrs["files"] = new JsonArray(kept.Select(f => (JsonNode)f.ToJson()).ToArray());
+        ctx.Replace(e.With(attrs: attrs));
+        return dropped;
     }
 
     /// <summary>The issues a sheet went out in, oldest first: for its revision table.</summary>

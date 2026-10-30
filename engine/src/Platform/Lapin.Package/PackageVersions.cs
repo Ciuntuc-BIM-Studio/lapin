@@ -121,10 +121,13 @@ public sealed class PackageVersions
     /// <summary>When, in UTC, ISO 8601 ("2026-10-26T08:28:11Z"): the interface shows it in the user's time.</summary>
     static string Stamp(DateTime? now) => (now ?? DateTime.UtcNow).ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
+    /// <summary>The number the next version takes (an issue records it before the version is saved, so the two are written together).</summary>
+    public int NextNumber => Versions.Count == 0 ? 1 : Versions.Max(v => v.Number) + 1;
+
     /// <summary>A new version, numbered after the last, named "Version n" when no name is given.</summary>
     public PackageVersions Add(PackageManifest manifest, int entities, string? name, string? note, out PackageVersion version, DateTime? now = null)
     {
-        var number = Versions.Count == 0 ? 1 : Versions.Max(v => v.Number) + 1;
+        var number = NextNumber;
         var at = Stamp(now);
         version = new PackageVersion(number, string.IsNullOrWhiteSpace(name) ? $"Version {number}" : name.Trim(), Clean(note), at, at, entities, manifest, []);
         return new PackageVersions([.. Versions, version], _source);

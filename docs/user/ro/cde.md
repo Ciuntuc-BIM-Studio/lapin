@@ -1,12 +1,12 @@
 ---
 title: Folderul proiectului și emiterile
 order: 125
-summary: Emiți planșele și modelul într-un folder al proiectului așa cum cere ISO 19650, denumite după convenție, cu borderou de transmitere, după verificările pe care le face un birou de proiectare.
+summary: Emiți planșele și modelul așa cum cere ISO 19650, păstrate în fișierul proiectului și, când ai unul, într-un folder al proiectului, denumite după convenție, cu borderou de transmitere, după verificările pe care le face un birou de proiectare.
 ---
 
 ## Folderul proiectului
 
-**Manage → Project folder** alege folderul în care se emite proiectul: un folder de pe calculatorul tău, un share de rețea sau un folder SharePoint ori OneDrive sincronizat pe disc. Lapin nu cere niciun cont și nu vorbește cu niciun server: scrie fișiere, iar ce sincronizează folderul e treaba biroului tău. Calea se păstrează în proiect, deci călătorește cu fișierul; un folder care nu e pe acest calculator e un avertisment, nu o eroare.
+**Manage → Project folder** alege folderul în care proiectul se și emite: un folder de pe calculatorul tău, un share de rețea sau un folder SharePoint ori OneDrive sincronizat pe disc. Folderul e **opțional**: fiecare emitere și fișierele ei se păstrează chiar în fișierul proiectului, deci un proiect fără folder emite la fel, în aplicația desktop și în browser. Lapin nu cere niciun cont și nu vorbește cu niciun server: scrie fișiere, iar ce sincronizează folderul e treaba biroului tău. Calea se păstrează în proiect, deci călătorește cu fișierul; un folder care nu e pe acest calculator e un avertisment, nu o eroare. Alegerea folderului cere aplicația desktop.
 
 ![Folderul proiectului: folderul, containerele, denumirea](shots/project-folder.webp)
 
@@ -31,17 +31,33 @@ Blocante: un cartuș fără număr, fără titlu sau fără cine a desenat; o ve
 
 ## Emiterea
 
-**Manage → Issue…** scrie o emitere într-un container (doar în aplicația desktop, pentru că scrie fișiere):
+**Manage → Issue…** face o emitere, păstrată în fișierul proiectului și, când proiectul are un folder pe acest calculator, scrisă și în containerul lui:
 
 ![Emitere: planșele, revizia, starea, verificările](shots/cde-issue.webp)
 
 1. Dă emiterii un nume, **revizia** (`P01`, `P02`… cât e preliminară, `C01`… odată contractuală; următoarea e propusă din ultima emitere), **starea** (`S0`–`S7`, `A1`–`A9`, `B1`–`B9`, `CR`) și **containerul**.
-2. Bifează planșele care merg, modelul ca IFC, fiecare planșă și ca DXF, sau toate planșele și într-un singur PDF. Numele fiecărui fișier se vede așa cum va fi scris.
+2. Bifează planșele care merg, modelul ca IFC, fiecare planșă și ca DXF, sau toate planșele și într-un singur PDF. Numele fiecărui fișier se vede așa cum va fi scris. IFC-ul se păstrează în fișierul proiectului doar când bifezi **Păstrează IFC-ul în fișierul proiectului** (un model mare are zeci de MB la fiecare emitere); nebifat, merge în folderul proiectului, iar fișierul proiectului îi păstrează numele și hash-ul. **Și în folderul proiectului** scrie fișierele și în container (bifat implicit când proiectul are folder).
 3. Verificările rulează pe măsură ce alegi. Cu o constatare blocantă emiterea nu poate pleca; doar cu avertismente, bifează **Emite oricum**.
-4. **Emite** scrie fiecare planșă ca PDF, IFC-ul și restul în container, denumite după convenție, calculează hash-ul (SHA-256) fiecărui fișier, scrie **borderoul de transmitere** (un PDF și un CSV: proiectul, emiterea, data, revizia, starea, fișierele) și un **manifest** (JSON, cu toate hash-urile) lângă ele, și înregistrează emiterea în proiect. Fiecare planșă tipărită ia revizia și starea emiterii în cartuș, iar tabelul ei de revizii listează emiterile în care a plecat.
-5. Proiectul se salvează apoi ca **versiune** cu numele emiterii (vezi [Fișiere, versiuni și recuperare](files.md)), ca o emitere să poată fi redeschisă, restaurată sau comparată cu proiectul de acum.
+4. **Emite** face fiecare planșă ca PDF, IFC-ul și restul, denumite după convenție, calculează hash-ul (SHA-256) fiecărui fișier, face **borderoul de transmitere** (un PDF și un CSV: proiectul, emiterea, data, revizia, starea, fișierele) și un **manifest** (JSON, cu toate hash-urile), le păstrează pe toate în fișierul proiectului și înregistrează emiterea în proiect. Fiecare planșă tipărită poartă în cartuș revizia și starea emiterii, iar în tabelul de revizii rândul emiterii, așa cum a fost emisă.
+5. În același pas proiectul se salvează ca **versiune** cu numele emiterii (vezi [Fișiere, versiuni și recuperare](files.md)), ca o emitere să poată fi redeschisă, restaurată sau comparată cu proiectul de acum, iar proiectul rămâne salvat, fără modificări nesalvate. Dialogul arată apoi emiterea așa cum a plecat — numele, revizia și fișierele ei, fiecare de deschis — până îl închizi sau începi o **Emitere nouă**.
 
-Emiterile sunt listate în josul dialogului Project folder, fiecare cu fișierele ei și **Deschide folderul**.
+![Dialogul Emitere după o emitere: emiterea așa cum a plecat, fișierele ei](shots/cde-issued.webp)
+
+## Emiterile în fișierul proiectului
+
+Emiterile sunt listate în josul dialogului Project folder, cu cât ocupă în fișierul proiectului (fișierele identice se păstrează o singură dată, oricâte emiteri le împart). Click pe o emitere îi arată fișierele:
+
+![Emiterile în fișierul proiectului: cât ocupă, o emitere deschisă cu fișierele ei](shots/cde-issues.webp)
+
+- click pe un fișier îl **deschide** din fișierul proiectului (desktopul îl deschide cu programul lui; browserul îl descarcă), sau **Salvează o copie…**;
+- **Descarcă ca zip** dă toate fișierele păstrate ale unei emiteri într-un zip, cu numele borderoului: ce trimiți când nu există un folder comun;
+- **Publică în folder…** (aplicația desktop) scrie o emitere făcută mai devreme în containerul folderului proiectului sau în orice folder alegi: emiți întâi, alegi folderul mai târziu;
+- **Șterge fișierele păstrate** scoate fișierele unei emiteri vechi din fișierul proiectului la următoarea salvare, ca fișierul să rămână mic; înregistrarea emiterii, numele fișierelor și hash-urile lor rămân;
+- **Deschide folderul** arată containerul în care a fost scrisă emiterea.
+
+## În browser
+
+CDE-ul merge și în browser: Verificare, Emitere, fișierele emiterilor (deschise, Descarcă ca zip) și ambele feluri de observații. Fișierul proiectului ține totul și îți revine ca fișierul pe care îl salvezi. Folderul proiectului, publicarea în el și scanarea lui cer aplicația desktop.
 
 ## Observații (BCF)
 
@@ -64,7 +80,7 @@ Un verificator deschide un PDF emis în Acrobat, Bluebeam, Preview sau Drawboard
 
 ![Observații: lista pe planșe, un PDF citit](shots/cde-remarks.webp)
 
-- **Citește observațiile din PDF…** alege fișierul. Planșa căreia îi aparține vine din emitere (manifestul de lângă fișier sau emiterile înregistrate în proiect), altfel din convenția de denumire a fișierului; când nimic nu se potrivește, alegi tu planșa. Paginile unui set PDF merg pe planșele lui, în ordine. Ce s-a găsit e arătat — pagini, adnotări, cum s-a potrivit planșa, eventualele avertismente — iar **Import** aduce observațiile. Citirea aceluiași fișier din nou actualizează observațiile în loc să le dubleze; o observație pe care ai rezolvat-o rămâne rezolvată.
+- **Citește observațiile din PDF…** alege fișierul. Planșa căreia îi aparține vine din emitere (manifestul de lângă fișier sau emiterile înregistrate în proiect), altfel din convenția de denumire a fișierului; când nimic nu se potrivește, alegi tu planșa. Paginile unui set PDF merg pe planșele lui, în ordine. Ce s-a găsit e arătat — pagini, adnotări, cum s-a potrivit planșa, eventualele avertismente — iar **Import** aduce observațiile. Citirea aceluiași fișier din nou actualizează observațiile în loc să le dubleze; o observație pe care ai rezolvat-o rămâne rezolvată. Un fișier redenumit pe drum se potrivește totuși: octeții emiși sunt cei cu care începe fișierul verificatorului.
 - **Scanează folderul proiectului** (aplicația desktop) listează PDF-urile emise din Shared și Published, care dintre ele s-au schimbat după emitere și dacă observațiile lor au fost citite de atunci.
 - Lista e grupată pe planșe și filtrată după stare: **deschise**, **rezolvate**, **închise**. Un click deschide planșa cu observația în față. Fiecare observație poate fi rezolvată, închisă, redeschisă sau ștearsă; starea „Completed” sau „Accepted” pusă de verificator sosește ca rezolvată.
 

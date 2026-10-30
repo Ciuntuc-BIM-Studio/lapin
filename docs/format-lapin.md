@@ -78,6 +78,8 @@ journal/ops.jsonl                  operațiile de la ultima compactare: recupera
 derived/<hash kernel+parametri>/   cache de mesh (binar, Arrow), se poate șterge
 versions/index.json                versiunile proiectului: fiecare un manifest al ei, cu număr, nume, notă, moment și revizii (docs/versions.md)
 versions/blobs/<sha256>            o parte numită de o versiune pe care proiectul viu nu o mai are, o singură dată
+issues/index.json                  emiterile și fișierele lor, de citit fără Lapin (sursa e înregistrarea LapinIssue din model)
+issues/blobs/<sha256>              un fișier făcut de o emitere (PDF, borderou, CSV, manifest, DXF, IFC la cerere), o singură dată
 analytics/*.parquet                tabele pentru BI, doar la versiuni sau la export
 ```
 
@@ -119,6 +121,8 @@ Teste-specificație: `package-io.test.ts`, `project-file*.test.ts`, `versions.te
 **Făcut și jurnalul de recuperare** (24.10.2026), dar în afara pachetului: `<app data>/recovery/*.jsonl`, cu fiecare tranzacție, undo și redo, scrise pe disc imediat (`Lapin.Host/Recovery.cs`, teste în `RecoveryTests`).
 
 **Făcut și versiunile** (26.10.2026, `docs/versions.md`): `versions/index.json` ține fiecare versiune ca manifest; la salvare se scriu doar blob-urile părților pe care proiectul viu nu le mai are (adresare după conținut, cum prevedea analiza); restaurare într-un pas de undo, comparare element cu element și parte cu parte, export ca pachet de sine stătător (`PackageVersions`, `ModelCompare`, `VersionTests`).
+
+**Făcute și emiterile în fișier** (31.10.2026, decizia 185, `docs/plan-cde.md`): `issues/blobs/<sha256>` ține fișierele emiterilor, adresate după conținut ca blob-urile versiunilor (aceiași octeți o singură dată, oricâte emiteri îi numesc), iar `issues/index.json` le listează pentru cine deschide zip-ul fără Lapin. Ce se scrie la salvare: hash-urile pe care înregistrările `LapinIssue` din model le țin (`stored: true`); un fișier lăsat (Delete stored files) sau o emitere ștearsă ies la următoarea salvare. Formatul rămâne 3: un fișier mai vechi, fără `issues/`, se deschide ca înainte, iar un Lapin mai vechi ignoră folderul. Blob-urile se citesc la cerere din pachetul din care s-a deschis proiectul (`PackageIssues`), cele noi stau în memorie până la salvare (teste în `CdeStoreTests`).
 
 **Rămâne:**
 - cache-ul `derived/` (geometria afișată pentru modulele lipsă);

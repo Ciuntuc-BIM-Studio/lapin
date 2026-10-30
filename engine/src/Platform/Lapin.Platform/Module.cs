@@ -146,6 +146,8 @@ public interface IQueryContext
     IModelView Model { get; }
     IServices Services { get; }
     ElementGeometry? Geometry(string entityId);
+    /// <summary>The project's file name without its extension ("House"), what the interface calls the project; null before it has a file.</summary>
+    string? Title => null;
 }
 
 /// <summary>How the inspector shows and edits one attribute. Lengths are metres in the engine; the UI shows mm.</summary>

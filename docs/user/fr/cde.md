@@ -1,12 +1,12 @@
 ---
 title: Dossier du projet et émissions
 order: 125
-summary: Émettez les feuilles et le modèle dans un dossier du projet comme le demande l'ISO 19650, nommés selon la convention, avec un bordereau de transmission, après les vérifications qu'un bureau d'études fait.
+summary: Émettez les feuilles et le modèle comme le demande l’ISO 19650, gardés dans le fichier du projet et, si vous en avez un, dans un dossier du projet, nommés selon la convention, avec un bordereau, après les vérifications d’un bureau d’études.
 ---
 
 ## Le dossier du projet
 
-**Manage → Project folder** fixe le dossier dans lequel le projet est émis : un dossier de votre ordinateur, un partage réseau, ou un dossier SharePoint ou OneDrive synchronisé sur le disque. Lapin ne demande aucun compte et ne parle à aucun serveur : il écrit des fichiers, et ce qui synchronise le dossier regarde votre agence. Le chemin est conservé dans le projet, il voyage donc avec le fichier ; un dossier qui n'est pas sur cet ordinateur est un avertissement, pas une erreur.
+**Manage → Project folder** fixe le dossier dans lequel le projet est aussi émis : un dossier de votre ordinateur, un partage réseau, ou un dossier SharePoint ou OneDrive synchronisé sur le disque. Le dossier est **facultatif** : chaque émission et ses fichiers sont gardés dans le fichier du projet lui-même, donc un projet sans dossier émet tout autant, dans l'application de bureau et dans le navigateur. Lapin ne demande aucun compte et ne parle à aucun serveur : il écrit des fichiers, et ce qui synchronise le dossier est l'affaire de votre bureau. Le chemin est gardé dans le projet, il voyage donc avec le fichier ; un dossier absent de cet ordinateur est un avertissement, pas une erreur. Choisir le dossier demande l'application de bureau.
 
 ![Dossier du projet : le dossier, les conteneurs, la nomenclature](shots/project-folder.webp)
 
@@ -31,17 +31,33 @@ Bloquants : un cartouche sans numéro, sans titre ou sans dessinateur ; une vue 
 
 ## Émettre
 
-**Manage → Issue…** écrit une émission dans un conteneur (dans l'application de bureau seulement, puisqu'elle écrit des fichiers) :
+**Manage → Issue…** fait une émission, gardée dans le fichier du projet et, quand le projet a un dossier sur cet ordinateur, écrite aussi dans son conteneur :
 
 ![Émission : les feuilles, la révision, le statut, les vérifications](shots/cde-issue.webp)
 
 1. Donnez un nom à l'émission, sa **révision** (`P01`, `P02`… tant qu'elle est préliminaire, `C01`… une fois contractuelle ; la suivante est proposée d'après la dernière émission), son **statut** (`S0`–`S7`, `A1`–`A9`, `B1`–`B9`, `CR`) et le **conteneur**.
-2. Cochez les feuilles qui partent, le modèle en IFC, chaque feuille aussi en DXF, ou toutes les feuilles aussi dans un seul PDF. Le nom de chaque fichier est montré tel qu'il sera écrit.
+2. Cochez les feuilles qui partent, le modèle en IFC, chaque feuille aussi en DXF, ou toutes les feuilles aussi dans un seul PDF. Le nom de chaque fichier s'affiche tel qu'il sera écrit. L'IFC est gardé dans le fichier du projet seulement si vous cochez **Garder l'IFC dans le fichier du projet** (un gros modèle pèse des dizaines de Mo par émission) ; décoché, il va dans le dossier du projet et le fichier du projet garde son nom et son hash. **Aussi dans le dossier du projet** écrit en plus les fichiers dans le conteneur (coché par défaut quand le projet a un dossier).
 3. Les vérifications s'exécutent à mesure que vous choisissez. Avec un constat bloquant, l'émission ne peut pas partir ; avec des avertissements seuls, cochez **Émettre quand même**.
-4. **Émettre** écrit chaque feuille en PDF, l'IFC et le reste dans le conteneur, nommés selon la convention, calcule le hachage (SHA-256) de chaque fichier, écrit le **bordereau de transmission** (un PDF et un CSV : projet, émission, date, révision, statut, les fichiers) et un **manifeste** (JSON, avec tous les hachages) à côté, et enregistre l'émission dans le projet. Chaque feuille imprimée prend la révision et le statut de l'émission dans son cartouche, et sa table des révisions liste les émissions dans lesquelles elle est partie.
-5. Le projet est ensuite enregistré comme une **version** au nom de l'émission (voir [Fichiers, versions et récupération](files.md)), pour qu'une émission puisse être rouverte, restaurée ou comparée au projet tel qu'il est maintenant.
+4. **Émettre** fait chaque feuille en PDF, l'IFC et le reste, nommés selon la convention, calcule le hash (SHA-256) de chaque fichier, fait le **bordereau** (un PDF et un CSV : projet, émission, date, révision, statut, les fichiers) et un **manifeste** (JSON, avec tous les hashes), les garde tous dans le fichier du projet et enregistre l'émission dans le projet. Chaque feuille imprimée porte dans son cartouche la révision et le statut de l'émission, et dans son tableau des révisions la ligne de l'émission, telle qu'émise.
+5. Dans la même étape le projet est enregistré comme une **version** au nom de l'émission (voir [Fichiers, versions et récupération](files.md)), pour qu'une émission puisse être rouverte, restaurée ou comparée au projet tel qu'il est maintenant, et le projet reste enregistré, sans modifications en attente. Le dialogue montre alors l'émission telle qu'elle est partie — son nom, sa révision et ses fichiers, chacun à ouvrir — jusqu'à ce que vous le fermiez ou commenciez une **Nouvelle émission**.
 
-Les émissions sont listées au bas du dialogue Project folder, chacune avec ses fichiers et **Ouvrir le dossier**.
+![Le dialogue Émettre après une émission : l’émission telle qu’elle est partie, ses fichiers](shots/cde-issued.webp)
+
+## Les émissions dans le fichier du projet
+
+Les émissions sont listées au bas du dialogue Project folder, avec ce qu'elles occupent dans le fichier du projet (les fichiers identiques sont gardés une seule fois, quel que soit le nombre d'émissions qui les partagent). Cliquez sur une émission pour voir ses fichiers :
+
+![Les émissions dans le fichier du projet : ce qu’elles occupent, une émission ouverte avec ses fichiers](shots/cde-issues.webp)
+
+- un clic sur un fichier l'**ouvre** depuis le fichier du projet (le bureau l'ouvre avec son programme ; le navigateur le télécharge), ou **Enregistrer une copie…** ;
+- **Télécharger en zip** donne tous les fichiers gardés d'une émission dans un zip, au nom de son bordereau : ce que vous envoyez quand il n'y a pas de dossier partagé ;
+- **Publier dans un dossier…** (l'application de bureau) écrit une émission faite plus tôt dans le conteneur du dossier du projet, ou dans n'importe quel dossier choisi : émettre d'abord, choisir le dossier ensuite ;
+- **Supprimer les fichiers gardés** fait sortir les fichiers d'une ancienne émission du fichier du projet au prochain enregistrement, pour garder le fichier léger ; l'enregistrement de l'émission, les noms de ses fichiers et leurs hashes restent ;
+- **Ouvrir le dossier** montre le conteneur dans lequel l'émission a été écrite.
+
+## Dans le navigateur
+
+Le CDE fonctionne aussi dans le navigateur : Vérification, Émission, les fichiers des émissions (ouvrir, Télécharger en zip) et les deux sortes de remarques. Le fichier du projet contient tout et vous revient comme le fichier que vous enregistrez. Un dossier du projet, y publier et le parcourir demandent l'application de bureau.
 
 ## Remarques (BCF)
 
@@ -64,7 +80,7 @@ Un vérificateur ouvre un PDF émis dans Acrobat, Bluebeam, Aperçu ou Drawboard
 
 ![Remarques : la liste par feuille, un PDF lu](shots/cde-remarks.webp)
 
-- **Lire les remarques du PDF…** choisit le fichier. La feuille à laquelle il appartient vient de l’émission (le manifeste à côté du fichier, ou le registre des émissions du projet), sinon de la convention de nom du fichier ; quand rien ne correspond, vous choisissez la feuille. Les pages d’un PDF de jeu vont à ses feuilles dans l’ordre. Ce qui a été trouvé est affiché — pages, annotations, comment la feuille a été associée, les avertissements — et **Importer** fait entrer les remarques. Relire le même fichier met à jour ses remarques au lieu de les doubler ; une remarque que vous avez résolue reste résolue.
+- **Lire les remarques du PDF…** choisit le fichier. La feuille à laquelle il appartient vient de l’émission (le manifeste à côté du fichier, ou le registre des émissions du projet), sinon de la convention de nom du fichier ; quand rien ne correspond, vous choisissez la feuille. Les pages d’un PDF de jeu vont à ses feuilles dans l’ordre. Ce qui a été trouvé est affiché — pages, annotations, comment la feuille a été associée, les avertissements — et **Importer** fait entrer les remarques. Relire le même fichier met à jour ses remarques au lieu de les doubler ; une remarque que vous avez résolue reste résolue. Un fichier renommé en route est tout de même associé : les octets émis sont ceux par lesquels commence le fichier du relecteur.
 - **Parcourir le dossier du projet** (l’application de bureau) liste les PDF émis dans Shared et Published, lesquels ont changé après leur émission et si leurs remarques ont été lues depuis.
 - La liste est groupée par feuille et filtrée par état : **ouvertes**, **résolues**, **fermées**. Un clic ouvre la feuille avec la remarque devant. Chaque remarque peut être résolue, fermée, rouverte ou supprimée ; l’état « Completed » ou « Accepted » du vérificateur arrive comme résolue.
 

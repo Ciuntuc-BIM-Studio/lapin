@@ -1,12 +1,12 @@
 ---
 title: Project folder and issues
 order: 125
-summary: Issue sheets and the model into a project folder as ISO 19650 asks, named by the convention, with a transmittal, after the checks a drawing office does.
+summary: Issue sheets and the model as ISO 19650 asks, kept in the project file and, when you have one, a project folder, named by the convention, with a transmittal, after the checks a drawing office does.
 ---
 
 ## The project folder
 
-**Manage → Project folder** sets the folder the project is issued into: a folder on your computer, a network share, or a SharePoint or OneDrive folder synced to disk. Lapin asks for no account and talks to no server: it writes files, and whatever syncs the folder is your office's. The path is kept in the project, so it travels with the file; a folder that is not on this computer is a warning, not an error.
+**Manage → Project folder** sets the folder the project is also issued into: a folder on your computer, a network share, or a SharePoint or OneDrive folder synced to disk. The folder is **optional**: every issue and its files are kept in the project file itself, so a project without a folder issues all the same, in the desktop app and in the browser. Lapin asks for no account and talks to no server: it writes files, and whatever syncs the folder is your office's. The path is kept in the project, so it travels with the file; a folder that is not on this computer is a warning, not an error. Setting a folder needs the desktop app.
 
 ![Project folder: the folder, the containers, the naming](shots/project-folder.webp)
 
@@ -31,17 +31,33 @@ Blocking: a title block without a number, a title or who drew it; a view without
 
 ## Issuing
 
-**Manage → Issue…** writes an issue into a container (the desktop app only, since it writes files):
+**Manage → Issue…** makes an issue, kept in the project file and, when the project has a folder on this computer, written into its container too:
 
 ![Issue: the sheets, the revision, the status, the checks](shots/cde-issue.webp)
 
 1. Give the issue a name, its **revision** (`P01`, `P02`… while preliminary, `C01`… once contractual; the next one is proposed from the last issue), its **status** (`S0`–`S7`, `A1`–`A9`, `B1`–`B9`, `CR`) and the **container**.
-2. Tick the sheets that go, the model as IFC, each sheet as DXF too, or all the sheets in one PDF too. Each file's name is shown as it will be written.
+2. Tick the sheets that go, the model as IFC, each sheet as DXF too, or all the sheets in one PDF too. Each file's name is shown as it will be written. The IFC is kept in the project file only when you tick **Keep the IFC in the project file** (a large model is tens of MB an issue); left unticked, it goes to the project folder and the project file keeps its name and hash. **Also into the project folder** writes the files into the container as well (on by default when the project has a folder).
 3. The checks run as you choose. With a blocking finding the issue cannot go; with warnings alone tick **Issue anyway**.
-4. **Issue** writes each sheet as a PDF, the IFC and the rest into the container, named by the convention, hashes every file (SHA-256), writes the **transmittal** (a PDF and a CSV: project, issue, date, revision, status, the files) and a **manifest** (JSON, with every hash) beside them, and records the issue in the project. Each printed sheet takes the issue's revision and status in its title block, and its revision table lists the issues it went out in.
-5. The project is then saved as a **version** named after the issue (see [Files, versions and recovery](files.md)), so an issue can be reopened, restored or compared with the project as it is now.
+4. **Issue** makes each sheet as a PDF, the IFC and the rest, named by the convention, hashes every file (SHA-256), makes the **transmittal** (a PDF and a CSV: project, issue, date, revision, status, the files) and a **manifest** (JSON, with every hash), keeps them all in the project file and records the issue in the project. Each printed sheet carries the issue's revision and status in its title block and the issue's row in its revision table, as issued.
+5. In the same step the project is saved as a **version** named after the issue (see [Files, versions and recovery](files.md)), so an issue can be reopened, restored or compared with the project as it is now, and the project is saved, not left with unsaved changes. The dialog then shows the issue as it went out — its name, revision and files, each one to open — until you close it or start a **New issue**.
 
-The issues are listed at the bottom of the Project folder dialog, each with its files and **Open folder**.
+![The Issue dialog after an issue: the issue as it went out, its files](shots/cde-issued.webp)
+
+## The issues in the project file
+
+The issues are listed at the bottom of the Project folder dialog, with what they take in the project file (identical files are kept once, however many issues share them). Click an issue to see its files:
+
+![The issues in the project file: what they take, an issue opened with its files](shots/cde-issues.webp)
+
+- click a file to **open** it from the project file (the desktop opens it with its program; the browser downloads it), or **Save a copy…**;
+- **Download as zip** gives all of an issue's kept files in one zip, named after its transmittal: what you send when there is no shared folder;
+- **Publish to folder…** (the desktop app) writes an issue made earlier into the project folder's container, or into any folder you pick: issue first, choose the folder later;
+- **Delete stored files** lets an old issue's files go from the project file at the next save, to keep the file small; the issue's record, its file names and their hashes stay;
+- **Open folder** shows the container the issue was written into.
+
+## In the browser
+
+The CDE works in the browser too: Check, Issue, the issues' files (open, Download as zip) and both kinds of remarks. The project file holds everything, and comes back to you as the file you save. A project folder, publishing to it and scanning it need the desktop app.
 
 ## Remarks (BCF)
 
@@ -64,7 +80,7 @@ A reviewer opens an issued PDF in Acrobat, Bluebeam, Preview or Drawboard and ma
 
 ![Remarks: the list by sheet, a PDF read](shots/cde-remarks.webp)
 
-- **Read PDF remarks…** picks the file. The sheet it belongs to comes from the issue (the manifest beside the file, or the project's own record of its issues), else from the file name's convention; when nothing fits, you choose the sheet. The pages of a set PDF go to its sheets in order. What was found is shown — pages, annotations, how the sheet was matched, any warning — and **Import** brings the remarks in. Reading the same file again updates its remarks instead of doubling them; a remark you resolved stays resolved.
+- **Read PDF remarks…** picks the file. The sheet it belongs to comes from the issue (the manifest beside the file, or the project's own record of its issues), else from the file name's convention; when nothing fits, you choose the sheet. The pages of a set PDF go to its sheets in order. What was found is shown — pages, annotations, how the sheet was matched, any warning — and **Import** brings the remarks in. Reading the same file again updates its remarks instead of doubling them; a remark you resolved stays resolved. A file renamed on the way is still matched: the issued bytes are where the reviewer's file begins.
 - **Scan the project folder** (the desktop app) lists the issued PDFs in Shared and Published, which of them changed after their issue, and whether their remarks were read since.
 - The list is grouped by sheet and filtered by status: **open**, **resolved**, **closed**. A click opens the sheet with the remark in front. Each remark can be resolved, closed, reopened or deleted; a reviewer's "Completed" or "Accepted" state arrives as resolved.
 

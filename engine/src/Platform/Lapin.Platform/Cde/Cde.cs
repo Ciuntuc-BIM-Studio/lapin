@@ -121,6 +121,13 @@ public static class Cde
             return null;
         });
 
+        // An old issue's files no longer kept in the project's file (all, or the kinds given: ["ifc"]); its record, names and hashes stay.
+        r.Command("cde.dropIssueFiles", "Delete stored files", (ctx, a) =>
+        {
+            var kinds = a["kinds"] is JsonArray k ? k.Select(x => (string?)x).OfType<string>().ToHashSet() : null;
+            return new JsonObject { ["dropped"] = CdeIssues.DropStored(ctx, (string?)a["id"] ?? "", kinds) };
+        });
+
         r.Command("cde.deleteIssue", "Delete issue", (ctx, a) =>
         {
             var e = ctx.Model.Get((string?)a["id"] ?? "") is { Class: CdeIssues.Class } i ? i : throw new CommandException("There is no such issue.");
@@ -155,5 +162,25 @@ public static class Cde
         r.Query("cde.check", (q, a) => CdeChecks.ToJson(q, CdeChecks.Run(q, SheetsOf(q.Model, a["sheets"]), (string?)a["revision"] is { Length: > 0 } rev ? rev : null)));
 
         r.Query("cde.issues", (q, _) => new JsonArray(CdeIssues.All(q.Model).Select(i => (JsonNode)i.ToJson()).ToArray()));
+
+        // What the issues keep in the project's file: the bytes once per hash, in all and per issue (a file shared with an earlier issue counted there).
+        r.Query("cde.storage", (q, _) =>
+        {
+            var seen = new HashSet<string>();
+            long total = 0;
+            var per = new JsonArray();
+            foreach (var i in CdeIssues.All(q.Model))
+            {
+                long size = 0, shared = 0;
+                var stored = 0;
+                foreach (var f in i.Files.Where(f => f.Stored))
+                {
+                    stored++;
+                    if (seen.Add(f.Sha256)) { size += f.Size; total += f.Size; } else shared += f.Size;
+                }
+                per.Add((JsonNode)new JsonObject { ["id"] = i.Id, ["number"] = i.Number, ["files"] = stored, ["size"] = size, ["shared"] = shared });
+            }
+            return new JsonObject { ["size"] = total, ["blobs"] = seen.Count, ["issues"] = per };
+        });
     }
 }

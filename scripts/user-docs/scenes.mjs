@@ -5,6 +5,7 @@
 // A scene drives the interface in English; what a user types (a question)
 // is in the run's language (t.lang, one of languages.mjs), from the tables
 // below: a language missing from a table types the English.
+import { mkdirSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { say } from './languages.mjs';
@@ -1278,8 +1279,9 @@ export const scenes = [
     },
   },
   {
-    // The project folder as a CDE (docs/plan-cde.md): issuing is the desktop app's, so the guide's browser run opens the
-    // dialogs with the development switch (the folder typed in) against a temporary folder; nothing is issued here.
+    // The CDE (docs/plan-cde.md, decision 185): the project file holds the issues; the folder is the desktop app's, so the guide's
+    // browser run sets it with the development switch (the folder typed in) in a temporary folder. The project is saved as House.lapin
+    // (an issue is a version in its file), issued for real, and the dialog shows the issue as issued, the project saved after it.
     id: 'cde',
     async run(t) {
       await t.page.addInitScript(() => { localStorage.setItem('lapin.cde.dev', '1'); });
@@ -1290,22 +1292,42 @@ export const scenes = [
       await t.cmd('sheet.addViewport', { id: sheet.id, viewId: plan.id, x: 150, y: 120 });
       await t.cmd('sheet.titleBlock', { id: sheet.id, fields: { drawnBy: 'IC', date: '30.10.2026' } });
       await t.cmd('cde.setNaming', { project: 'HOUSE', originator: 'CBS' });
-      await t.cmd('cde.setFolder', { path: join(tmpdir(), 'lapin-guide-cde') });
+      const dir = mkdtempSync(join(tmpdir(), 'lapin-guide-cde-'));
+      mkdirSync(join(dir, 'CDE'));
+      await t.cmd('cde.setFolder', { path: join(dir, 'CDE') });
+      await t.call('project.save', { path: join(dir, 'House.lapin') });
       await t.wait(400);
       await t.tool('manage.projectFolder');
       t.expect((await t.page.locator('.dialog input[aria-label=Folder]').inputValue()).includes('lapin-guide-cde'), 'the project folder dialog shows the folder kept in the project');
       await t.shot('project-folder', { of: '.dialog', pad: 0 });
-      await t.button('Close', { exact: true });
+      await t.page.locator('.dialog-head button[title=Close]').click(); await t.wait(300);
       await t.tool('manage.check');
       await t.page.waitForSelector('[data-testid=cde-findings]', { timeout: 10_000 });
       t.expect(await t.page.locator('[data-testid=cde-findings] li').count() > 0, 'the check lists what the house still lacks (tags, properties)');
       await t.shot('cde-check', { of: '.dialog', pad: 0 });
-      await t.button('Close', { exact: true });
+      await t.page.locator('.dialog-head button[title=Close]').click(); await t.wait(300);
       await t.tool('manage.issue');
       await t.page.waitForSelector('[data-testid=cde-findings]', { timeout: 10_000 });
       t.expect((await t.page.locator('.dialog input[aria-label=Revision]').inputValue()) === 'P01', 'the first issue is proposed as P01');
+      t.expect(await t.page.locator('.dialog .btn.primary').isDisabled(), 'Issue waits while the warnings are not accepted');
       await t.shot('cde-issue', { of: '.dialog', pad: 0 });
-      await t.button('Cancel', { exact: true });
+      await t.page.getByText('Issue anyway, with the warnings').click();
+      await t.page.locator('.dialog .btn.primary').click();
+      await t.page.waitForSelector('[data-testid=cde-issued]', { timeout: 30_000 });
+      await t.wait(800);
+      const issued = await t.page.locator('[data-testid=cde-issued]').innerText();
+      t.expect(issued.includes('Issue 1 · P01 S2 · Shared') && issued.includes('HOUSE-CBS-ZZ-00-DR-A-0101_S2_P01.pdf'), 'the dialog shows the issue as issued, its own names');
+      t.expect(!issued.includes('0002'), 'not the next issue\'s names');
+      t.expect(!(await t.page.locator('.panel-title', { hasText: 'House' }).first().innerText()).includes('•'), 'the project is saved after the issue');
+      await t.shot('cde-issued', { of: '.dialog', pad: 0 });
+      await t.button('Done', { exact: true });
+      await t.tool('manage.projectFolder');
+      await t.page.waitForSelector('[data-testid=cde-issues]', { timeout: 10_000 });
+      await t.page.locator('[data-testid=cde-issues] tbody tr button.link').first().click();
+      await t.wait(400);
+      t.expect((await t.page.locator('[data-testid=cde-storage]').innerText()).match(/\d/) != null, 'the size the issues take in the project file is shown');
+      await t.shot('cde-issues', { of: '.dialog', pad: 0 });
+      await t.button('Done', { exact: true });
     },
   },
   {

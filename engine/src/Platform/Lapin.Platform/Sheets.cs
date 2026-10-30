@@ -155,9 +155,24 @@ public static class Sheets
 
     // ------------------------------------------------------------ the sheet on paper
 
-    /// <summary>A sheet as paper pens: the views clipped to their boxes with their titles, the frame and the title block (its views placed here unless given).</summary>
-    public static PaperPage Compose(IQueryContext q, Entity sheet, List<Placement>? placed = null)
+    /// <summary>An issue being made (docs/plan-cde.md): its revision, status, name and date, printed on the sheet's title block and revision table as issued.</summary>
+    public sealed record Issuing(string Revision, string Status, string Name, string At);
+
+    /// <summary>
+    /// A sheet as paper pens: the views clipped to their boxes with their titles, the frame and the title block (its views placed here unless
+    /// given); with <paramref name="issuing"/>, as that issue prints it (its revision and status in the title block, its row in the table).
+    /// </summary>
+    public static PaperPage Compose(IQueryContext q, Entity sheet, List<Placement>? placed = null, Issuing? issuing = null)
     {
+        if (issuing != null)
+        {
+            var sa = sheet.CloneAttrs();
+            var tbIssued = (sa["titleBlock"] as JsonObject)?.DeepClone() as JsonObject ?? new JsonObject();
+            tbIssued["revision"] = issuing.Revision;
+            tbIssued["status"] = issuing.Status;
+            sa["titleBlock"] = tbIssued;
+            sheet = sheet.With(attrs: sa);
+        }
         var (W, H) = PaperOf(sheet);
         var pens = new List<Pen>();
         var placements = placed ?? Place(q, sheet);
@@ -213,7 +228,7 @@ public static class Sheets
         for (var i = 1; i < cellCount; i++) rules.Segments.Add((new(bx0 + i * bw / cellCount, by0 + 35), new(bx0 + i * bw / cellCount, by1)));
         var tb = sheet.Attrs["titleBlock"] as JsonObject;
         string Field(string k, string fallback = "") => (string?)tb?[k] is { Length: > 0 } v ? v : fallback;
-        var projectName = Field("project", Spatial.Project(q.Model)?.Name ?? "Project");
+        var projectName = Field("project", ProjectName(q));
         text.Texts.Add(new PenText(new Vec2(bx0 + 3, by0 + 4.5), "PROJECT", 1.8, Anchor: "start"));
         text.Texts.Add(new PenText(new Vec2(bx0 + 3, by0 + 15), projectName, 5, Anchor: "start", Bold: true));
         text.Texts.Add(new PenText(new Vec2(bx0 + 3, by0 + 24.5), "SHEET", 1.8, Anchor: "start"));
@@ -241,7 +256,7 @@ public static class Sheets
             text.Texts.Add(new PenText(new Vec2(x, by0 + 39.5), cells[i].Item1, 1.8, Anchor: "start"));
             text.Texts.Add(new PenText(new Vec2(x, by0 + 46.5), cells[i].Item2, i == 0 ? 4 : 3, Anchor: "start", Bold: i == 0));
         }
-        RevisionTable(q, sheet, frame, rules, text, bx0, by0, bw);
+        RevisionTable(q, sheet, frame, rules, text, bx0, by0, bw, issuing);
         pens.AddRange([frame, rules, text]);
         return new PaperPage(W, H, pens, sheet.Name, DraftingResources.Book(q.Model).LineCap);
     }
@@ -251,9 +266,10 @@ public static class Sheets
     /// in), over the title block, newest last: revision, date, status, the
     /// issue's name. Nothing when the sheet was never issued.
     /// </summary>
-    static void RevisionTable(IQueryContext q, Entity sheet, Pen frame, Pen rules, Pen text, double bx0, double by0, double bw)
+    static void RevisionTable(IQueryContext q, Entity sheet, Pen frame, Pen rules, Pen text, double bx0, double by0, double bw, Issuing? issuing)
     {
-        var issues = Cde.CdeIssues.OfSheet(q.Model, sheet.Id);
+        var issues = Cde.CdeIssues.OfSheet(q.Model, sheet.Id).Select(i => (i.Revision, i.At, i.Status, i.Name)).ToList();
+        if (issuing != null) issues.Add((issuing.Revision, issuing.At, issuing.Status, issuing.Name));
         if (issues.Count == 0) return;
         const double row = 5;
         var top = by0 - (issues.Count + 1) * row;
@@ -289,6 +305,17 @@ public static class Sheets
     }
 
     /// <summary>
+    /// The project's name as a title block shows it when its project field is left empty: the IfcProject's name when the user gave one,
+    /// else the project file's name ("House" for House.lapin), what the interface calls the project; "Project" before either exists.
+    /// </summary>
+    public static string ProjectName(IQueryContext q)
+    {
+        var own = Spatial.Project(q.Model)?.Name;
+        if (own is { Length: > 0 } && own.Trim() != "Project") return own.Trim();
+        return q.Title is { Length: > 0 } title ? title : own is { Length: > 0 } ? own : "Project";
+    }
+
+    /// <summary>
     /// A hash of what the sheet's views draw on the paper (their pens as
     /// placed, with their titles): the same while the drawing is the same,
     /// whatever the date or the title block say. An issue keeps it, so a later
@@ -321,10 +348,10 @@ public static class Sheets
         };
     }
 
-    public static byte[] Pdf(IQueryContext q, IEnumerable<Entity> sheets) =>
-        PdfWriter.Write(sheets.Select(s => Compose(q, s)).ToList(), id => q.Model.Get(id) is { Class: Images.Class } image ? Images.Bytes(image) : null);
+    public static byte[] Pdf(IQueryContext q, IEnumerable<Entity> sheets, Issuing? issuing = null) =>
+        PdfWriter.Write(sheets.Select(s => Compose(q, s, null, issuing)).ToList(), id => q.Model.Get(id) is { Class: Images.Class } image ? Images.Bytes(image) : null);
 
-    public static byte[] Dxf(IQueryContext q, Entity sheet) => DxfWriter.Page(Compose(q, sheet), $"Lapin · {sheet.Str("number")} {sheet.Name}");
+    public static byte[] Dxf(IQueryContext q, Entity sheet, Issuing? issuing = null) => DxfWriter.Page(Compose(q, sheet, null, issuing), $"Lapin · {sheet.Str("number")} {sheet.Name}");
 
     // ------------------------------------------------------------ commands
 

@@ -12,7 +12,7 @@ Klik på **+** ved siden af **Tegningsark** i projektbrowseren. Vil du placere e
 
 ![Et A3-ark med en plan og et snit](shots/sheet.webp)
 
-Markér arket for at udfylde dets **Tegningshoved** i egenskabspanelet: projektet, bygherren, hvem der har tegnet det, hvem der har kontrolleret det, datoen og revisionen. Dets nummer, papir og retning indstilles også der.
+Markér arket for at udfylde dets **Tegningshoved** i egenskabspanelet: projektet, bygherren, hvem der har tegnet det, hvem der har kontrolleret det, datoen og revisionen. Dets nummer, papir og retning indstilles også der. Efterlades projektfeltet tomt, viser det projektets navn: det navn, projektet har fået, ellers dets filnavn.
 
 ## Udskrivning
 

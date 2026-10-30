@@ -12,7 +12,7 @@ Click **+** next to **Sheets** in the project browser. To place a view, drag it 
 
 ![An A3 sheet with a plan and a section](shots/sheet.webp)
 
-Select the sheet to fill in its **title block** in the properties panel: the project, the client, who drew it, who checked it, the date and the revision. Its number, paper and orientation are set there too.
+Select the sheet to fill in its **title block** in the properties panel: the project, the client, who drew it, who checked it, the date and the revision. Its number, paper and orientation are set there too. Left empty, the project field shows the project's name: the name given to the project, else its file's name.
 
 ## Printing
 

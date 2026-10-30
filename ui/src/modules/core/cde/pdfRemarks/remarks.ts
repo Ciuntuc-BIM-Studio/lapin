@@ -59,8 +59,8 @@ export function remarksOf(nodes: Map<string, NodeDto>, sheetId?: string): Remark
   return list.sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '') || a.name.localeCompare(b.name));
 }
 
-/** How many remarks a sheet has that are not closed: the browser's badge, the sheet's toolbar. */
-export const countOpen = (nodes: Map<string, NodeDto>, sheetId: string) => remarksOf(nodes, sheetId).filter((r) => r.status !== 'closed').length;
+/** How many remarks a sheet has that are open (neither resolved nor closed): the browser's badge, the sheet's toolbar. */
+export const countOpen = (nodes: Map<string, NodeDto>, sheetId: string) => remarksOf(nodes, sheetId).filter((r) => r.status === 'open').length;
 
 /** The remarks that pass a status filter. */
 export const filterRemarks = (list: Remark[], filter: StatusFilter) => (filter === 'all' ? list : list.filter((r) => r.status === filter));

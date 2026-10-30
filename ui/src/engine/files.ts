@@ -60,7 +60,7 @@ export function toBase64(bytes: Uint8Array): string {
 const fromBase64 = (data: string) => Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
 
 /** Bytes handed to the user as a download. */
-function download(bytes: Uint8Array, name: string, type = 'application/octet-stream'): void {
+export function download(bytes: Uint8Array, name: string, type = 'application/octet-stream'): void {
   const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type }));
   const a = document.createElement('a');
   a.href = url; a.download = name; a.click();
@@ -236,6 +236,17 @@ export async function writeVersions(method: string, args: Record<string, unknown
   return true;
 }
 
+/**
+ * The project's file as a call that also saved it handed it back (the engine in the browser: an issue, which saves its version): kept
+ * like a save, into the file the project came from where the browser can write back, else as a download. False: the user stepped back.
+ */
+export async function keepProjectFile(file: { name: string; data: string }): Promise<boolean> {
+  const kept = await keep(fromBase64(file.data), file.name, projectHandle, false);
+  if (!kept) return false;
+  projectHandle = kept.handle;
+  return true;
+}
+
 /** A version as a .lapin file of its own, where the user says (the desktop) or as a download. */
 export const exportVersion = (number: number, revision: number | null, name: string) =>
   exportFile('project.exportVersion', { number, ...(revision == null ? {} : { revision }) }, name, 'lapin');
@@ -291,7 +302,7 @@ export async function guardWindowClose(): Promise<void> {
  * An export from the engine (PDF, DXF): to the path the save dialog gives on
  * the desktop, else handed back and downloaded by the browser.
  */
-const MIME: Record<string, string> = { pdf: 'application/pdf', dxf: 'application/dxf', ifc: 'application/x-step', glb: 'model/gltf-binary', gltf: 'model/gltf+json', usdz: 'model/vnd.usdz+zip', usda: 'model/vnd.usda', dae: 'model/vnd.collada+xml', frag: 'application/octet-stream', bcfzip: 'application/zip', bcf: 'application/zip' };
+const MIME: Record<string, string> = { pdf: 'application/pdf', dxf: 'application/dxf', ifc: 'application/x-step', glb: 'model/gltf-binary', gltf: 'model/gltf+json', usdz: 'model/vnd.usdz+zip', usda: 'model/vnd.usda', dae: 'model/vnd.collada+xml', frag: 'application/octet-stream', bcfzip: 'application/zip', bcf: 'application/zip', zip: 'application/zip', csv: 'text/csv', json: 'application/json' };
 
 export async function exportFile(method: string, args: Record<string, unknown>, name: string, ext: string): Promise<void> {
   try {

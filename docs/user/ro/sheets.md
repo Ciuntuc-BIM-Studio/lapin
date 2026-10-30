@@ -12,7 +12,7 @@ Apasă **+** lângă **Planșe** în navigatorul proiectului. Ca să pui o veder
 
 ![O planșă A3 cu un plan și o secțiune](shots/sheet.webp)
 
-Selectează planșa ca să-i completezi **cartușul** în panoul de proprietăți: proiectul, beneficiarul, cine a desenat, cine a verificat, data și revizia. Tot acolo se setează numărul, formatul și orientarea.
+Selectează planșa ca să-i completezi **cartușul** în panoul de proprietăți: proiectul, beneficiarul, cine a desenat, cine a verificat, data și revizia. Tot acolo se setează numărul, formatul și orientarea. Lăsat gol, câmpul proiectului arată numele proiectului: numele dat proiectului, altfel numele fișierului lui.
 
 ## Tipărirea
 

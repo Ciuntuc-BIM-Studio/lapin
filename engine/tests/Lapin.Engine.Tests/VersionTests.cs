@@ -228,7 +228,7 @@ public sealed class VersionTests : IDisposable
     public void In_the_browser_the_versions_travel_in_the_bytes()
     {
         var f = Project();
-        var files = new ProjectFiles((_, _) => throw new InvalidOperationException("no files"), (_, _, _) => throw new InvalidOperationException("no files"));
+        var files = new ProjectFiles((_, _) => throw new InvalidOperationException("no files"), (_, _, _, _) => throw new InvalidOperationException("no files"));
         var (bytes0, _) = files.SaveBytes(f.Session, "house.lapin");
         files.OpenBytes(f.Session, "house.lapin", bytes0);
         var (r1, _) = files.SaveVersion(f.Session, "v1", null, asBytes: true);
@@ -245,7 +245,7 @@ public sealed class VersionTests : IDisposable
 
         // Opened from those bytes in another session, the version restores.
         var g = new Fixture();
-        var other = new ProjectFiles((_, _) => throw new InvalidOperationException("no files"), (_, _, _) => throw new InvalidOperationException("no files"));
+        var other = new ProjectFiles((_, _) => throw new InvalidOperationException("no files"), (_, _, _, _) => throw new InvalidOperationException("no files"));
         other.OpenBytes(g.Session, "house.lapin", bytes2);
         other.RestoreVersion(g.Session, 1, null);
         Same(was, g.Model.Entities, g.Model.Relations);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { containerFor, groupFindings, isRevision, nextRevision, type Finding } from './cde';
+import { containerFor, formatSize, groupFindings, isRevision, issuedSummary, issuePhase, nextRevision, type Finding, type IssuePhase, type IssueResult } from './cde';
 
 describe('revisions as ISO 19650-2 has them', () => {
   it('go P01, P02… and C01, C02…, a contractual issue starting at C01', () => {
@@ -52,5 +52,47 @@ describe('the findings list', () => {
 
   it('is empty for no findings', () => {
     expect(groupFindings([], rules)).toEqual([]);
+  });
+});
+
+describe('the Issue dialog after an issue', () => {
+  const result: IssueResult = {
+    id: 'i1', number: 1, name: 'Issue 1', at: '2026-10-31T09:00:00Z', revision: 'P01', status: 'S2', container: 'Shared', folder: null, note: null, version: 1,
+    files: [
+      { name: 'HOUSE-CBS-ZZ-00-DR-A-0101_S2_P01.pdf', kind: 'pdf', sheetId: 's1', sha256: 'a'.repeat(64), size: 2048, stored: true },
+      { name: 'HOUSE-CBS-ZZ-ZZ-M3-A-0001_S2_P01.ifc', kind: 'ifc', sha256: 'b'.repeat(64), size: 9_000_000 },
+      { name: 'HOUSE-CBS-ZZ-ZZ-IE-A-0001_S2_P01.json', kind: 'json', sha256: 'c'.repeat(64), size: 400, stored: true },
+    ],
+    path: null, warnings: [], saved: true,
+  };
+
+  it('shows the issue made, as issued, until a new one is started', () => {
+    let phase: IssuePhase = { kind: 'form' };
+    phase = issuePhase(phase, { type: 'start' });
+    expect(phase.kind).toBe('issuing');
+    phase = issuePhase(phase, { type: 'issued', result });
+    expect(phase).toEqual({ kind: 'done', result });
+    // The project changing after the issue (its record, the next number) does not move what is shown: only a new issue would.
+    expect(issuePhase(phase, { type: 'start' })).toBe(phase);
+    expect(issuePhase(phase, { type: 'failed' })).toBe(phase);
+    expect(issuePhase(phase, { type: 'new' })).toEqual({ kind: 'form' });
+    // A refused issue brings the form back.
+    expect(issuePhase({ kind: 'issuing' }, { type: 'failed' })).toEqual({ kind: 'form' });
+  });
+
+  it('names the issue by its own number, revision and files, the kept ones told apart', () => {
+    const s = issuedSummary(result);
+    expect(s.title).toBe('Issue 1 · P01 S2 · Shared');
+    expect(s.files.map((f) => f.name)).toEqual(result.files.map((f) => f.name));
+    expect(s.files.map((f) => f.kept)).toEqual([true, false, true]);
+    expect(s.kept).toBe(2);
+    expect(s.where).toBe('');
+    expect(issuedSummary({ ...result, path: '/cde/Shared' }).where).toBe('/cde/Shared');
+  });
+
+  it('gives sizes as people read them', () => {
+    expect(formatSize(512)).toBe('512 B');
+    expect(formatSize(2048)).toBe('2 kB');
+    expect(formatSize(9_000_000)).toBe('8.6 MB');
   });
 });
