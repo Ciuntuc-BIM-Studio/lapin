@@ -2,7 +2,7 @@
 
 The Help menu's "Report an issue" posts to `https://lapin.ciuntucbimstudio.ro/api/feedback`. The desktop app posts through its engine (`engine/src/Host/Lapin.Host/Support.cs`); the browser build posts from the page. The `lapin-feedback` container on the server keeps each report as a file, `/opt/lapin/feedback-data/open/<n>.json`, with its screenshot beside it. Closed reports go under `closed/`. Nothing goes to GitHub.
 
-A sender who ticks "I'd like a reply" can be answered: the reply appears in their Help → Messages (decision 177). Anonymous reports stay as they were.
+A sender who ticks "I'd like a reply" can be answered: the reply appears in their Help → Messages (decision 178). Anonymous reports stay as they were.
 
 ```sh
 ./reports.sh              # the open ones (✉ <nickname>: replies accepted; ●: an unread answer from the sender)

@@ -1,6 +1,6 @@
 # The feedback service
 
-The server side of Help → Report an issue and Help → Messages (decision 177 in `docs/decisions-pending.md`). It is a small Node 22 service with no dependencies. It runs on the Hetzner server as the `lapin-feedback` container, behind the `lapin-web` nginx and the Cloudflare tunnel. It was written for Lapin in the old fork (`deploy/lapin/feedback/`, listed in `lapin-own-files.txt`) and rewritten here under MIT. From now on it is maintained here; the old repository's copy is no longer used.
+The server side of Help → Report an issue and Help → Messages (decision 178 in `docs/decisions-pending.md`). It is a small Node 22 service with no dependencies. It runs on the Hetzner server as the `lapin-feedback` container, behind the `lapin-web` nginx and the Cloudflare tunnel. It was written for Lapin in the old fork (`deploy/lapin/feedback/`, listed in `lapin-own-files.txt`) and rewritten here under MIT. From now on it is maintained here; the old repository's copy is no longer used.
 
 | File | What it is |
 |---|---|
