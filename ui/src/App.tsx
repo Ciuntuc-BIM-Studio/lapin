@@ -105,7 +105,7 @@ function Notice() {
     const t = setTimeout(() => notify(null), 4000);
     return () => clearTimeout(t);
   }, [notice]);
-  return notice ? <div className="notice" role="status">{notice}</div> : null;
+  return notice ? <div className="notice notice-status" role="status">{notice}</div> : null;
 }
 
 /** A pane's tabs: every view opened so far (one list for the workspace), the pane's own marked; split, close, or open it in a window of its own (desktop). */
