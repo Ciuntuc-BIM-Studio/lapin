@@ -145,13 +145,12 @@ function IssueRows({ issue, size, missing, projectFolder, open, onToggle }: { is
         return (
           <tr key={f.name} className="version-revision">
             <td />
-            <td colSpan={5} className="muted">
+            <td colSpan={6} className="muted">
               {here
                 ? <button type="button" className="link" title="Open the file kept in the project" onClick={() => void openIssued(issue.id, f.name)}><code>{f.name}</code></button>
                 : <code title={f.kind === 'ifc' ? 'The IFC is kept in the project file only when asked; its name and hash are recorded' : 'Not kept in the project file; its name and hash are recorded'}>{f.name}</code>}
             </td>
-            <td className="num muted">{formatSize(f.size)}</td>
-            <td className="muted small" title={f.sha256}>{here ? 'kept' : 'listed'}</td>
+            <td className="num muted" title={f.sha256}>{formatSize(f.size)} <span className="small">{here ? 'kept' : 'listed'}</span></td>
             <td className="row-tools">{here && <button type="button" className="icon mini" title="Save a copy…" onClick={() => void saveIssued(issue.id, f.name)}><Download size={12} /></button>}</td>
           </tr>
         );
