@@ -14,6 +14,10 @@ Vælg **Vis → Snit** (<kbd>SE</kbd>), eller klik på **+** ved siden af **Snit
 
 ![Snit A-A gennem huset](shots/section-view.webp)
 
+Et snit behøver ikke være én lige linje. **Knækket snit** (<kbd>SJ</kbd>) tegner det som en polylinje, klik efter klik, og <kbd>Enter</kbd> afslutter: hvert lige stykke er et plant snit, der kun ser mellem sine egne ender, og stykkerne tegnes side om side i deres sande længde, en fin stiplet linje markerer hvert knæk. **Buet snit** (<kbd>SC</kbd>) tegner en bue gennem tre punkter (start, slutning, et punkt på den) og ruller den ud på samme måde, så en buet facade læses i sin sande længde. **Snit langs** (<kbd>SA</kbd>) vælger et element med en linje i planen, en vej eller sti, en grøft, en støttemur, en væg, en bjælke, et fundament eller en tegnet polylinje, og følger det, som det er nu; det skriver stationerne forneden (0+020, for hver tiendedel af målestokken, eller den afstand du sætter under **Stationer** i visningens indstillinger). I planen er et snits punkter greb: træk et, træk midten af et stykke for at tilføje et knæk, Ctrl/⌘-klik på et punkt for at fjerne det. Vist i 3D skærer et udfoldet snit modellen langs sit første stykke og lægger sin tegning stykke for stykke.
+
+![Et knækket snit gennem huset: tre stykker side om side, knækkene markeret](shots/section-jogged.webp)
+
 Markér snittet i browseren for at indstille dets skala, dybde, fagområde og stil i egenskabspanelet.
 
 ## Facader

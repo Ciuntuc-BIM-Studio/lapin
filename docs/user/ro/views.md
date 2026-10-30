@@ -14,6 +14,10 @@ Alege **Vedere → Secțiune** (<kbd>SE</kbd>) sau apasă **+** lângă **Secți
 
 ![Secțiunea A-A prin casă](shots/section-view.webp)
 
+O secțiune nu trebuie să fie o singură linie dreaptă. **Secțiune în trepte** (<kbd>SJ</kbd>) o desenează ca polilinie, clic după clic, iar <kbd>Enter</kbd> încheie: fiecare bucată dreaptă e o tăietură plană care vede doar între capetele ei, iar bucățile se desenează una lângă alta, la lungimile lor reale, cu o linie subțire întreruptă la fiecare treaptă. **Secțiune curbă** (<kbd>SC</kbd>) desenează un arc prin trei puncte (începutul, sfârșitul, un punct de pe el) și îl desfășoară la fel, ca o fațadă curbă să se citească la lungimea ei adevărată. **Secțiune pe lungul** (<kbd>SA</kbd>) alege un element cu o linie în plan, un drum sau o alee, un șanț, un zid de sprijin, un perete, o grindă, o fundație sau o polilinie desenată, și îl urmărește așa cum e acum; scrie pichetajul jos (0+020, din zecime în zecime de scară, sau pasul pe care îl pui la **Pichetaj** în setările vederii). În plan, punctele unei secțiuni sunt grip-uri: trage unul, trage mijlocul unei bucăți ca să adaugi o treaptă, Ctrl/⌘-clic pe un punct ca să-l scoți. Arătată în 3D, o secțiune desfășurată taie modelul pe prima ei bucată și își așază desenul bucată cu bucată.
+
+![O secțiune în trepte prin casă: trei bucăți una lângă alta, treptele marcate](shots/section-jogged.webp)
+
 Selectează secțiunea în navigator ca să-i setezi scara, adâncimea, disciplina și stilul în panoul de proprietăți.
 
 ## Fațade

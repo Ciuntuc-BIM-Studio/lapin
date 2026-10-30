@@ -19,6 +19,7 @@ import { num, storeys } from '../engine/model';
 import type { Vec2 } from '../platform/module';
 import { STANDARD, lookOf, useCamera, type CameraPose } from './camera';
 import { wheelPixels } from './zoom';
+import { sectionPoints } from '../modules/core/sections';
 
 const W = 136, H = 104, STRIP = 150;
 
@@ -95,7 +96,7 @@ function KeyPlanMap({ mode, frame, onLookAt, viewId, onFold }: Props) {
   const zMin = Math.min(0, ...levels.map((l) => l.z)) - 1, zMax = Math.max(6, ...levels.map((l) => l.z)) + 5;
   const zToY = (z: number) => H - ((z - zMin) / (zMax - zMin)) * H;
   const yToZ = (y: number) => zMin + ((H - y) / H) * (zMax - zMin);
-  const sections = [...nodes.values()].filter((n) => n.type === 'LapinView' && n.props.kind === 'section' && Array.isArray(n.props.start) && Array.isArray(n.props.end));
+  const sections = [...nodes.values()].filter((n) => n.type === 'LapinView' && n.props.kind === 'section' && sectionPoints(n).length >= 2);
 
   if (!on) return null;
   const local = (e: React.PointerEvent | React.MouseEvent | React.WheelEvent) => {
@@ -140,13 +141,12 @@ function KeyPlanMap({ mode, frame, onLookAt, viewId, onFold }: Props) {
 
   // ─── A section or elevation: its line and its look ─────────────────────
   const view = viewId ? nodes.get(viewId) : undefined;
-  let cut: { a: { x: number; y: number }; b: { x: number; y: number }; look: { x: number; y: number } } | null = null;
-  if (view?.props.kind === 'section' && Array.isArray(view.props.start) && Array.isArray(view.props.end)) {
-    const s = view.props.start as number[], e = view.props.end as number[];
-    const a = toMap({ x: s[0], y: s[1] }), bb = toMap({ x: e[0], y: e[1] });
-    const dx = bb.x - a.x, dy = bb.y - a.y, l = Math.hypot(dx, dy) || 1;
-    // The section looks left of its line (on screen y runs down: left of (dx, dy) is (dy, -dx)).
-    cut = { a, b: bb, look: { x: dy / l, y: -dx / l } };
+  let cut: { pts: { x: number; y: number }[]; looks: [{ x: number; y: number }, { x: number; y: number }] } | null = null;
+  if (view?.props.kind === 'section' && sectionPoints(view).length >= 2) {
+    const pts = sectionPoints(view).map(toMap);
+    // The section looks left of its line (on screen y runs down: left of (dx, dy) is (dy, -dx)); a jogged one, left of each end piece.
+    const left = (p: { x: number; y: number }, q: { x: number; y: number }) => { const dx = q.x - p.x, dy = q.y - p.y, l = Math.hypot(dx, dy) || 1; return { x: dy / l, y: -dx / l }; };
+    cut = { pts, looks: [left(pts[0], pts[1]), left(pts[pts.length - 2], pts[pts.length - 1])] };
   }
   const elevationLook = view?.props.kind === 'elevation' ? ({ south: { x: 0, y: -1 }, north: { x: 0, y: 1 }, east: { x: 1, y: 0 }, west: { x: -1, y: 0 } } as Record<string, { x: number; y: number }>)[String(view.props.direction ?? 'south')] : null;
 
@@ -175,8 +175,8 @@ function KeyPlanMap({ mode, frame, onLookAt, viewId, onFold }: Props) {
 
         {cut && (
           <g className="section-mark">
-            <line x1={cut.a.x} y1={cut.a.y} x2={cut.b.x} y2={cut.b.y} />
-            {[cut.a, cut.b].map((p, i) => <path key={i} d={`M${p.x} ${p.y}l${cut!.look.x * 9} ${cut!.look.y * 9}`} markerEnd="url(#kp-arrow)" />)}
+            <polyline fill="none" points={cut.pts.map((p) => `${p.x},${p.y}`).join(' ')} />
+            {[cut.pts[0], cut.pts[cut.pts.length - 1]].map((p, i) => <path key={i} d={`M${p.x} ${p.y}l${cut!.looks[i].x * 9} ${cut!.looks[i].y * 9}`} markerEnd="url(#kp-arrow)" />)}
           </g>
         )}
         {elevationLook && (() => {
@@ -217,7 +217,8 @@ function KeyPlanMap({ mode, frame, onLookAt, viewId, onFold }: Props) {
             <select className="mini-select" value="" title="Stand at a section's line, looking its way" onChange={(e) => {
               const n = nodes.get(e.target.value);
               if (!n || !api) return;
-              const s = n.props.start as number[], en = n.props.end as number[];
+              const [s0, e0] = sectionPoints(n);
+              const s = [s0.x, s0.y], en = [e0.x, e0.y];
               const dx = en[0] - s[0], dy = en[1] - s[1], l = Math.hypot(dx, dy) || 1;
               const lookDir = { x: -dy / l, y: dx / l };
               const mid = { x: (s[0] + en[0]) / 2, y: (s[1] + en[1]) / 2 };

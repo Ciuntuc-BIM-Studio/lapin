@@ -54,6 +54,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Service<IGround>(new Ground());
         r.Service<IScheduleSource>(new PlantingSchedule());
         r.Service<IScheduleSource>(new ParcelCoordinates());
+        r.Service<ISectionPaths>(new CivilSectionPaths());
         r.Catalog("plants", Plantings.SpeciesJson(Plantings.Catalog));
         r.Catalog("sculptKinds", new JsonArray(SculptDab.Kinds.Select(k => (JsonNode)k).ToArray()));
         SiteCommands.Register(r);
@@ -295,6 +296,17 @@ sealed class Ground : IGround
     {
         foreach (var t in model.OfClass(IfcClass.GeographicElement))
             if (t.PredefinedType == Terrains.Predefined && Terrains.Of(t).ElevationAt(x, y) is { } z) return z;
+        return null;
+    }
+}
+
+/// <summary>What a section can follow on the site: a path's, a retaining wall's or a ditch's axis (from the station it starts at), a site feature's line.</summary>
+sealed class CivilSectionPaths : ISectionPaths
+{
+    public FollowedPath? PathOf(IModelView m, Entity e)
+    {
+        if (Corridors.Is(e)) return new FollowedPath(Corridors.ChainOf(e).Path, CorridorSpec.Of(e).StationStart);
+        if (e.Class == SiteFeatures.Class && SiteFeatures.Kind(e) is "line" or "parcel" or "area") return new FollowedPath(SiteFeatures.Points(e).Select(p => p.Xy).ToList());
         return null;
     }
 }

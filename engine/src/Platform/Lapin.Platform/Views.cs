@@ -58,7 +58,7 @@ public static class Views
     }
 
     /// <summary>The view's spec: where it looks from and how deep; null with a reason when it cannot be drawn.</summary>
-    public static (ViewSpec? Spec, string? Problem) Spec(IModelView m, Entity view, IReadOnlyList<DrawPart> parts)
+    public static (ViewSpec? Spec, string? Problem) Spec(IModelView m, Entity view, IReadOnlyList<DrawPart> parts, IServices? services = null)
     {
         var project = Spatial.Project(m);
         var kind = view.Str("kind") ?? "plan";
@@ -79,10 +79,12 @@ public static class Views
             }
             case "section":
             {
-                if (view.Attrs["start"] is not JsonArray s || view.Attrs["end"] is not JsonArray e) return (null, "A section needs its line.");
-                var (a, b) = (new Vec2(Json.Number(s[0]) ?? 0, Json.Number(s[1]) ?? 0), new Vec2(Json.Number(e[0]) ?? 0, Json.Number(e[1]) ?? 0));
-                if ((b - a).Length < 1e-3) return (null, "A section needs two different points.");
-                return (ViewSpec.Section(a, b, view.NumOrNull("depth") ?? ViewRanges.Unlimited, hidden), null);
+                // The first piece of its line; a developed section (more pieces) is drawn piece by piece (Generate).
+                var (path, _, problem) = SectionPaths.Resolve(m, services, view);
+                if (path == null) return (null, problem);
+                var pieces = SectionPaths.Pieces(path);
+                if (pieces.Count == 0) return (null, "A section needs two different points.");
+                return (ViewSpec.Section(pieces[0].A, pieces[0].B, view.NumOrNull("depth") ?? ViewRanges.Unlimited, hidden, spanned: pieces.Count > 1), null);
             }
             case "elevation":
             {
@@ -95,14 +97,15 @@ public static class Views
         return (null, $"„{kind}” is not a kind of view.");
     }
 
-    /// <summary>The plan direction a section or an elevation looks along (a section looks left of its line, drawn from start to end); null for a plan or a 3D view.</summary>
+    /// <summary>The plan direction a section or an elevation looks along (a section looks left of its line, drawn from start to end; a developed one, of its first piece); null for a plan or a 3D view.</summary>
     public static Vec2? Look(Entity view)
     {
         switch (view.Str("kind"))
         {
             case "section":
-                if (view.Attrs["start"] is not JsonArray s || view.Attrs["end"] is not JsonArray e) return null;
-                var along = new Vec2((Json.Number(e[0]) ?? 0) - (Json.Number(s[0]) ?? 0), (Json.Number(e[1]) ?? 0) - (Json.Number(s[1]) ?? 0));
+                var pts = SectionPaths.Points(view);
+                if (pts.Count < 2) return null;
+                var along = pts[1] - pts[0];
                 return along.Length < 1e-9 ? null : along.Normalized().Perp;
             case "elevation":
                 return view.Str("direction") switch { "south" => new(0, 1), "east" => new(-1, 0), "west" => new(1, 0), _ => new(0, -1) };
@@ -351,14 +354,37 @@ public static class Views
     public static (ViewDrawing? Drawing, ViewSpec? Spec, string? Problem) Generate(IQueryContext q, Entity view)
     {
         var (parts, symbols, fills, texts) = Gather(q, view);
-        var (spec, problem) = Spec(q.Model, view, parts);
+        var (spec, problem) = Spec(q.Model, view, parts, q.Services);
         if (spec == null) return (null, null, problem);
         var keys = new Dictionary<string, string?>();
         // Without the view style's joins, a surface goes on only within its own element.
         var joins = ViewStyles.Of(q.Model, view).Joins;
-        var drawing = Generator.Draw(parts, spec, symbols, p => SeamKeyOf(q.Model, p.Material, p.Class, keys) is { } k ? (joins ? k : k + "\u0000" + p.Element) : null);
+        string? Key(DrawPart p) => SeamKeyOf(q.Model, p.Material, p.Class, keys) is { } k ? (joins ? k : k + "\u0000" + p.Element) : null;
+        ViewDrawing drawing;
+        if (spec.Kind == "section" && Pieces(q, view) is { Count: > 1 } pieces)
+        {
+            // A developed section: each piece a planar cut seen between its ends, laid at its station.
+            var drawn = new List<ViewDrawing>(pieces.Count);
+            foreach (var (piece, station) in pieces) drawn.Add(Generator.Draw(parts, piece, symbols, Key).Shifted(station));
+            drawing = ViewDrawing.Join(drawn);
+        }
+        else drawing = Generator.Draw(parts, spec, symbols, Key);
         if (spec.Kind == "plan" && (fills.Count > 0 || texts.Count > 0)) drawing = drawing with { Fills = fills, Texts = texts };
         return (drawing, spec, null);
+    }
+
+    /// <summary>A developed section's pieces: each straight piece's spec (seeing only between its ends) and the station it is laid at; one piece (or none) for a plain section.</summary>
+    public static List<(ViewSpec Spec, double Station)> Pieces(IQueryContext q, Entity view)
+    {
+        var o = new List<(ViewSpec, double)>();
+        if (view.Str("kind") != "section") return o;
+        var (path, _, _) = SectionPaths.Resolve(q.Model, q.Services, view);
+        if (path == null) return o;
+        var pieces = SectionPaths.Pieces(path);
+        var hidden = ShowsHidden(Spatial.Project(q.Model), "section", view.Str("hiddenLines"));
+        var depth = view.NumOrNull("depth") ?? ViewRanges.Unlimited;
+        foreach (var p in pieces) o.Add((ViewSpec.Section(p.A, p.B, depth, hidden, spanned: pieces.Count > 1), p.Station));
+        return o;
     }
 
     /// <summary>
@@ -378,7 +404,7 @@ public static class Views
     /// A view rendered: its pens (view coordinates, m; widths paper mm), annotations, bounds and scale, or why it cannot be drawn;
     /// where it looks from (its frame, so the drawing can be laid back into the model) and, for a section, how deep it sees (null: unlimited).
     /// </summary>
-    public sealed record Rendered(List<Pen> Pens, List<ViewMark> Marks, (Vec2 Min, Vec2 Max)? Bounds, double Scale, string Kind, string? Problem, List<string> RangeProblems, List<string>? LineworkOrphans = null, ViewFrame? Frame = null, double? Depth = null);
+    public sealed record Rendered(List<Pen> Pens, List<ViewMark> Marks, (Vec2 Min, Vec2 Max)? Bounds, double Scale, string Kind, string? Problem, List<string> RangeProblems, List<string>? LineworkOrphans = null, ViewFrame? Frame = null, double? Depth = null, List<(ViewFrame Frame, double X0, double X1)>? Frames = null);
 
     /// <summary>The mark layer of construction lines (drafted shapes whose role is draft): on screen, never printed.</summary>
     public const string ConstructionLayer = "CONSTRUCTION";
@@ -422,7 +448,7 @@ public static class Views
         var pens = Pens.Of(drawing, materials, new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table));
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
-        var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry);
+        var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services };
         var marks = Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).ToList();
         foreach (var source in q.Services.All<IViewAnnotations>())
             try { marks.AddRange(source.Marks(ctx)); }
@@ -476,7 +502,9 @@ public static class Views
         }
         (Vec2, Vec2)? bounds = pts.Count > 0 ? (new Vec2(pts.Min(p => p.X), pts.Min(p => p.Y)), new Vec2(pts.Max(p => p.X), pts.Max(p => p.Y))) : null;
         double? depth = spec.Kind == "section" && spec.Below < ViewRanges.Unlimited ? spec.Below : null;
-        return new Rendered(pens, marks, bounds, scale, spec.Kind, null, spec.Kind == "plan" ? ViewRanges.Problems(Range(m, view)) : [], lineworkOrphans, spec.Frame, depth);
+        // A developed section: where each piece lies in the model, and the stations (developed x) it covers.
+        var frames = spec.Kind == "section" && Pieces(q, view) is { Count: > 1 } ps ? ps.Select(p => (p.Spec.Frame, p.Station, p.Station + p.Spec.Span!.Value.Max)).ToList() : null;
+        return new Rendered(pens, marks, bounds, scale, spec.Kind, null, spec.Kind == "plan" ? ViewRanges.Problems(Range(m, view)) : [], lineworkOrphans, spec.Frame, depth, frames);
     }
 
     /// <summary>The view drawn, for the interface: its pens, annotations, bounds and problems.</summary>
@@ -511,6 +539,12 @@ public static class Views
             static JsonArray V(Vec3 v) => new(Math.Round(v.X, 9), Math.Round(v.Y, 9), Math.Round(v.Z, 9));
             o["frame"] = new JsonObject { ["origin"] = V(fr.Origin), ["right"] = V(fr.Right), ["up"] = V(fr.Up), ["dir"] = V(fr.Dir) };
             if (r.Depth is { } dp) o["depth"] = dp;
+            // A developed section: each piece's frame and the stretch of x (its stations) it covers; a drawing point (x, y) lies on the piece whose stretch holds x, at x − x0.
+            if (r.Frames is { Count: > 1 } frames)
+                o["frames"] = new JsonArray(frames.Select(f => (JsonNode)new JsonObject
+                {
+                    ["origin"] = V(f.Frame.Origin), ["right"] = V(f.Frame.Right), ["up"] = V(f.Frame.Up), ["dir"] = V(f.Frame.Dir), ["x0"] = Math.Round(f.X0, 6), ["x1"] = Math.Round(f.X1, 6),
+                }).ToArray());
         }
         return o;
     }
@@ -555,17 +589,19 @@ public static class Views
         {
             foreach (var v in m.OfClass(Class).Where(v => v.Str("kind") == "section"))
             {
-                if (v.Attrs["start"] is not JsonArray s || v.Attrs["end"] is not JsonArray e) continue;
-                var (a, b) = (new Vec2(Json.Number(s[0]) ?? 0, Json.Number(s[1]) ?? 0), new Vec2(Json.Number(e[0]) ?? 0, Json.Number(e[1]) ?? 0));
-                var len = (b - a).Length;
-                if (len < 1e-6) continue;
-                var u = (b - a) * (1 / len);
-                var look = u.Perp;
+                // Its line (a jogged or curved one as drawn, an alignment as it is now), the strokes and arrows at its ends, each arrow looking left of its piece.
+                var (path, _, _) = SectionPaths.Resolve(m, c.Services, v);
+                if (path == null) continue;
+                var pieces = SectionPaths.Pieces(path);
+                if (pieces.Count == 0) continue;
+                var (first, last) = (pieces[0], pieces[^1]);
                 var mk = new ViewMark(v.Id);
-                var (stroke, arrow, head) = (Math.Min(0.8 * k, len / 3), 0.7 * k, 0.25 * k);
-                mk.Line(a, b, "SECTION", Pens.Default.Hatch, dash: LineStyles.DashOf("center"));
-                mk.Line(a, a + u * stroke, "SECTION", Pens.Default.Cut).Line(b, b - u * stroke, "SECTION", Pens.Default.Cut);
-                foreach (var end in new[] { a, b })
+                var (arrow, head) = (0.7 * k, 0.25 * k);
+                mk.Polyline(path, false, "SECTION", Pens.Default.Hatch, dash: LineStyles.DashOf("center"));
+                var u0 = (first.B - first.A) * (1 / first.Length);
+                var u1 = (last.B - last.A) * (1 / last.Length);
+                mk.Line(first.A, first.A + u0 * Math.Min(0.8 * k, first.Length / 3), "SECTION", Pens.Default.Cut).Line(last.B, last.B - u1 * Math.Min(0.8 * k, last.Length / 3), "SECTION", Pens.Default.Cut);
+                foreach (var (end, look) in new[] { (first.A, u0.Perp), (last.B, u1.Perp) })
                 {
                     var tip = end + look * arrow;
                     mk.Line(end, tip, "SECTION", Pens.Default.Seen)
@@ -573,12 +609,13 @@ public static class Views
                       .Line(tip, tip - look * head - look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
                       .Text(new PenText(tip + look * (0.35 * k), v.Name, text.Height, Baseline: "middle", Font: text.Font));
                 }
-                mk.Snaps.AddRange([a, b]);
+                mk.Snaps.AddRange(path);
                 yield return mk;
             }
         }
         else if (c.Drawing.Bounds is { } bounds)
         {
+            if (c.Kind == "section" && SectionMarks(c, bounds, k, text) is { } section) yield return section;
             var (x0, x1) = (bounds.Min.X - 1.0 * k, bounds.Max.X + 1.5 * k);
             foreach (var storey in Spatial.Storeys(m))
             {
@@ -593,6 +630,40 @@ public static class Views
                 yield return mk;
             }
         }
+    }
+
+    /// <summary>
+    /// What a developed section writes over itself: a fine dashed line down each jog (where one piece ends and the next
+    /// begins), and the stations along the bottom when it has them (a tick and "0+020" every step, from the station its
+    /// line starts at). Null when it is a plain section with no stations.
+    /// </summary>
+    static ViewMark? SectionMarks(ViewContext c, (Vec2 Min, Vec2 Max) bounds, double k, TextStyle text)
+    {
+        var (path, station0, _) = SectionPaths.Resolve(c.Model, c.Services, c.View);
+        if (path == null) return null;
+        var pieces = SectionPaths.Pieces(path);
+        var step = SectionPaths.Stations(c.View, c.Scale);
+        if (pieces.Count < 2 && step == null) return null;
+        var mk = new ViewMark(null);
+        var (y0, y1) = (bounds.Min.Y - 0.5 * k, bounds.Max.Y + 0.5 * k);
+        foreach (var p in pieces.Skip(1))
+            mk.Line(new Vec2(p.Station, y0), new Vec2(p.Station, y1), "SECTION", Pens.Default.Hidden, "#777777", LineStyles.DashOf("dashed"));
+        if (step is { } st)
+        {
+            var length = pieces.Count == 0 ? 0 : pieces[^1].Station + pieces[^1].Length;
+            var tick = 1.0 * k;
+            // Every round station from the line's start, and its two ends.
+            var at = new SortedSet<double> { 0, length };
+            for (var s = Math.Ceiling(station0 / st) * st; s <= station0 + length + 1e-9; s += st) at.Add(Math.Round(s - station0, 6));
+            foreach (var x in at)
+            {
+                if (x < -1e-9 || x > length + 1e-9) continue;
+                mk.Line(new Vec2(x, y0), new Vec2(x, y0 - tick), "SECTION", Pens.Default.Seen, "#333333");
+                mk.Text(new PenText(new Vec2(x, y0 - tick - 0.4 * k), SectionPaths.Station(station0 + x), text.Height * 0.8, 0, "middle", "bottom", false, text.Font), "#333333");
+            }
+            mk.Line(new Vec2(0, y0), new Vec2(length, y0), "SECTION", Pens.Default.Seen, "#333333");
+        }
+        return mk;
     }
 
     /// <summary>A mark per element from its cut loops and seen lines, so a section or an elevation picks what it draws.</summary>
@@ -668,8 +739,8 @@ public static class Views
                     break;
                 }
                 case "section":
-                    attrs["start"] = P2(a["start"], "start");
-                    attrs["end"] = P2(a["end"], "end");
+                    // Its line: start and end, or pts (jogged), an arc through three points (curve), or an element it follows (along: a road, a wall, a drafted polyline); its depth.
+                    SectionPaths.Set(ctx.Model, ctx.Services, attrs, a, create: true);
                     if (Json.Number(a["depth"]) is { } d) attrs["depth"] = d;
                     name = (string?)a["name"] ?? $"Section {ctx.Model.OfClass(Class).Count(v => v.Str("kind") == "section") + 1}";
                     break;
@@ -739,13 +810,12 @@ public static class Views
             return new JsonObject { ["id"] = copy.Id, ["annotations"] = annotations };
         });
 
-        // Move a section's line.
+        // A section's line moved or redrawn: {id, start?, end?} or {id, pts}, {curve: "arc" | null}, {along: element | null}, {stations: m | null}.
         r.Command("view.setLine", "Move section", (ctx, a) =>
         {
             var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == "section" ? x : throw new CommandException("Not a section.");
             var attrs = v.CloneAttrs();
-            if (a["start"] != null) attrs["start"] = P2(a["start"], "start");
-            if (a["end"] != null) attrs["end"] = P2(a["end"], "end");
+            SectionPaths.Set(ctx.Model, ctx.Services, attrs, a, create: false);
             ctx.Replace(v.With(attrs: attrs));
             return null;
         });

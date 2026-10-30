@@ -25,6 +25,7 @@ import { PlanStoreysEditor } from './PlanStoreys';
 import { Storeys3DEditor } from './Storeys3D';
 import { view3dNode } from '../../viewport/storeys3d';
 import { SitePlanFields } from './SitePlans';
+import { SectionFields } from './sections';
 
 interface ViewStyleState { style: ViewStyle; named: boolean; resolved: ViewStyle; overrides: string[] }
 
@@ -45,6 +46,7 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
   const site = view.props.kind === 'plan' && typeof view.props.site === 'string';
   const plan = view.props.kind === 'plan' && !site;
   const threeD = view.props.kind === '3d';
+  const section = view.props.kind === 'section';
   const Reset = ({ field }: { field: string }) => own(field)
     ? <button type="button" className="icon mini" title="Back to the style's" onClick={() => set({ [field]: null })}><RotateCcw size={11} /></button>
     : <span className="muted small"> style</span>;
@@ -100,6 +102,7 @@ export function ViewSettingsEditor({ view }: { view: NodeDto }) {
           </>
         )}
         {site && <SitePlanFields view={view} />}
+        {section && <SectionFields view={view} />}
         <dt title="What this view shows and how, by category, class and element (VV)">Graphics</dt>
         <dd><button type="button" className="btn small" onClick={() => useUi.setState({ dialog: 'visibility' })}>Visibility / Graphics…</button></dd>
       </dl>

@@ -58,6 +58,8 @@ export interface DrawingDto {
   frame?: { origin: number[]; right: number[]; up: number[]; dir: number[] };
   /** A section's depth past its line (none: unlimited). */
   depth?: number;
+  /** A developed section (jogged, curved, along an element): each piece's frame and the stretch of x (its stations) it covers; a point (x, y) lies on the piece whose stretch holds x, at x − x0. */
+  frames?: { origin: number[]; right: number[]; up: number[]; dir: number[]; x0: number; x1: number }[];
 }
 
 /** The drawing of a view, fetched again (debounced) after every edit. */

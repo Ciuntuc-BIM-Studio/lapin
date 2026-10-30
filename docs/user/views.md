@@ -14,6 +14,10 @@ Choose **View → Section** (<kbd>SE</kbd>), or click **+** next to **Sections**
 
 ![Section A-A through the house](shots/section-view.webp)
 
+A section need not be one straight line. **Jogged section** (<kbd>SJ</kbd>) draws it as a polyline, click after click, and <kbd>Enter</kbd> finishes: each straight piece is a planar cut that sees only between its own ends, and the pieces are drawn side by side at their real lengths, a fine dashed line marking each jog. **Curved section** (<kbd>SC</kbd>) draws an arc through three points (its start, its end, a point on it) and unrolls it the same way, so a curved facade reads at its true length. **Section along** (<kbd>SA</kbd>) picks an element with a line in plan, a road or a path, a ditch, a retaining wall, a wall, a beam, a footing or a drafted polyline, and follows it as it is now; it writes the stations along the bottom (0+020, every tenth of the scale, or the step you set under **Stations** in the view's settings). In the plan, a section's points are grips: drag one, drag a piece's middle to add a jog, Ctrl/⌘-click a point to take it out. Shown in 3D, a developed section cuts the model along its first piece and lays its drawing piece by piece.
+
+![A jogged section through the house: three pieces side by side, the jogs marked](shots/section-jogged.webp)
+
 Select the section in the browser to set its scale, its depth, its discipline and its style in the properties panel.
 
 ## Elevations

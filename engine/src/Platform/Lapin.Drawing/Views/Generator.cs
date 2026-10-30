@@ -29,6 +29,27 @@ public sealed record DPolygon(IReadOnlyList<Vec2[]> Loops, string Element, strin
 /// <summary>A view's drawing in its own coordinates (metres): the cut areas and the lines; the fills and texts of elements' own 2D.</summary>
 public sealed record ViewDrawing(List<DPolygon> Cuts, List<DLine> Lines, List<DFill>? Fills = null, List<DText>? Texts = null)
 {
+    /// <summary>The drawing moved <paramref name="dx"/> along x (a piece of a developed section laid at its station).</summary>
+    public ViewDrawing Shifted(double dx)
+    {
+        if (Math.Abs(dx) < 1e-12) return this;
+        var d = new Vec2(dx, 0);
+        return new ViewDrawing(
+            Cuts.Select(c => c with { Loops = c.Loops.Select(l => l.Select(p => p + d).ToArray()).ToList() }).ToList(),
+            Lines.Select(l => l with { A = l.A + d, B = l.B + d }).ToList(),
+            Fills?.Select(f => f with { Loops = f.Loops.Select(l => l.Select(p => p + d).ToArray()).ToList() }).ToList(),
+            Texts?.Select(t => t with { At = t.At + d }).ToList());
+    }
+
+    /// <summary>Several pieces as one drawing.</summary>
+    public static ViewDrawing Join(IReadOnlyList<ViewDrawing> pieces)
+    {
+        if (pieces.Count == 1) return pieces[0];
+        var fills = pieces.Any(p => p.Fills != null) ? pieces.SelectMany(p => p.Fills ?? []).ToList() : null;
+        var texts = pieces.Any(p => p.Texts != null) ? pieces.SelectMany(p => p.Texts ?? []).ToList() : null;
+        return new ViewDrawing(pieces.SelectMany(p => p.Cuts).ToList(), pieces.SelectMany(p => p.Lines).ToList(), fills, texts);
+    }
+
     public (Vec2 Min, Vec2 Max)? Bounds
     {
         get
@@ -47,6 +68,9 @@ public sealed record ViewDrawing(List<DPolygon> Cuts, List<DLine> Lines, List<DF
 /// </summary>
 public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Below, double? BeyondFrom = null, double Above = 0, bool Hidden = true, bool Up = false)
 {
+    /// <summary>How far the drawing reaches sideways (along the frame's Right, from its origin); null: without end. One piece of a section developed along a polyline sees only between its ends.</summary>
+    public (double Min, double Max)? Span { get; init; }
+
     /// <summary>
     /// A plan cut at <paramref name="cutZ"/>, looking down; or, <paramref name="up"/>, looking up
     /// (a reflected ceiling plan: what is above the cut up to the range's top, seen from below,
@@ -55,13 +79,16 @@ public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Bel
     public static ViewSpec Plan(double cutZ, RangeBands bands, bool hidden = true, bool up = false) =>
         new("plan", new ViewFrame(new Vec3(0, 0, cutZ), new Vec3(1, 0, 0), new Vec3(0, 1, 0), -Vec3.UnitZ), true, bands.Below, bands.BeyondFrom, bands.Above, hidden, up);
 
-    /// <summary>A section along a line in plan, looking to its left-hand side (as drawn from <paramref name="a"/> to <paramref name="b"/>), as deep as asked.</summary>
-    public static ViewSpec Section(Vec2 a, Vec2 b, double depth, bool hidden = true)
+    /// <summary>
+    /// A section along a line in plan, looking to its left-hand side (as drawn from <paramref name="a"/> to <paramref name="b"/>), as deep as asked;
+    /// <paramref name="spanned"/>: seeing only between its two ends (a piece of a developed section).
+    /// </summary>
+    public static ViewSpec Section(Vec2 a, Vec2 b, double depth, bool hidden = true, bool spanned = false)
     {
         var along = (b - a).Normalized();
         var look = along.Perp; // left of the line
         var frame = new ViewFrame(new Vec3(a.X, a.Y, 0), new Vec3(along.X, along.Y, 0), Vec3.UnitZ, new Vec3(look.X, look.Y, 0));
-        return new("section", frame, true, depth, Hidden: hidden);
+        return new ViewSpec("section", frame, true, depth, Hidden: hidden) { Span = spanned ? (0, (b - a).Length) : null };
     }
 
     /// <summary>An elevation looking along <paramref name="dir"/> (a plan direction) from outside the model: nothing cut.</summary>
@@ -119,7 +146,7 @@ public static class Generator
             var (z0, z1) = Z(p.Solid);
             return z0 < cutZ - 1e-9 && z1 > cutZ - v.Below - 1e-9;
         }).ToList();
-        var (seen, areas, behind) = HiddenLines.Draw(primary.Select((p, i) => (p.Solid, i)).ToList(), v.Frame, v.Cut, v.Below, v.Hidden, primary.Select(seamKey).ToList());
+        var (seen, areas, behind) = HiddenLines.Draw(primary.Select((p, i) => (p.Solid, i)).ToList(), v.Frame, v.Cut, v.Below, v.Hidden, primary.Select(seamKey).ToList(), v.Span);
         foreach (var a in areas)
         {
             var p = primary[a.Owner];
@@ -157,6 +184,7 @@ public static class Generator
         (Vec2, Vec2)? Box(IEnumerable<Vec2> ps) { var l = ps.ToList(); return l.Count == 0 ? null : (new Vec2(l.Min(p => p.X), l.Min(p => p.Y)), new Vec2(l.Max(p => p.X), l.Max(p => p.Y))); }
         var cutBox = Box(cuts.SelectMany(c => c.Loops).SelectMany(l => l));
         var modelBox = Box(primary.SelectMany(p => p.Solid.Vertices).Select(v.Frame.Map));
+        if (modelBox is { } mb && v.Span is { } span) modelBox = (new Vec2(Math.Max(mb.Item1.X, span.Min), mb.Item1.Y), new Vec2(Math.Min(mb.Item2.X, span.Max), mb.Item2.Y));
         lines = DropStray(lines, cutBox, modelBox);
         if (plan && symbols != null)
             foreach (var sym in symbols)

@@ -595,10 +595,14 @@ export const scenes = [
       await house(t);
       await t.cmd('view.create', { kind: 'section', name: 'A-A', start: [6, -2], end: [6, 10], depth: 0.5, scale: 50 });
       await t.cmd('view.create', { kind: 'elevation', direction: 'south' });
+      // A jogged section (decision 176): up through the south wall, across through the inner wall, up through the north wall and its window.
+      await t.cmd('view.create', { kind: 'section', name: 'B-B', pts: [[2, -1], [2, 4], [9.5, 4], [9.5, 9]], scale: 50 });
       await t.wait(800);
       await t.shot('browser', { of: 'nav.browser', pad: 0, maxHeight: 640 });
       await openFromBrowser(t, 'A-A', 2500);
       await t.shot('section-view');
+      await openFromBrowser(t, 'B-B', 2500);
+      await t.shot('section-jogged', { of: '[data-testid=drawing]', pad: 0 });
       const elevation = (await t.nodes()).find((n) => n.type === 'LapinView' && /elevation/i.test(n.name));
       t.expect(elevation, 'an elevation in the project');
       await openFromBrowser(t, elevation.name, 2500);

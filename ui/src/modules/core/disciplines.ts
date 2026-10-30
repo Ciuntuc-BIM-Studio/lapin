@@ -6,7 +6,17 @@
  */
 
 import type { NodeDto } from '../../engine/protocol';
+import { useSession } from '../../engine/session';
+import { useUi } from '../../app/store';
 import { DISCIPLINES, setsOf } from '../../shell/browserSets';
+
+/** The discipline of the view in front (its own plan view, the section or elevation): what a view made from it takes. */
+export const frontDiscipline = (): string | undefined => {
+  const s = useUi.getState();
+  const id = s.view === 'plan' ? s.planViewId : s.view === 'drawing' ? s.drawingViewId : null;
+  const d = id ? useSession.getState().nodes.get(id)?.props.discipline : undefined;
+  return typeof d === 'string' && d.trim() ? d : undefined;
+};
 
 export function knownDisciplines(nodes: Map<string, NodeDto>, styles: { discipline: string | null }[] = []): string[] {
   const seen = new Map<string, string>();

@@ -33,6 +33,55 @@ export function drawingPoint(f: ViewFrameDto, x: number, y: number, lift = 0): V
   return { x: at(0), y: at(1), z: at(2) };
 }
 
+/** A piece of a drawing laid in 3D: where it lies, and the pens (in the piece's own x, from its start) that fall on it. */
+export interface SectionPiece { frame: ViewFrameDto; pens: PenDto[] }
+
+/**
+ * A drawing as pieces: one, as it is, for a plain section; for a developed
+ * section (`frames`) each piece's frame with the drawing's pens cut to the
+ * stretch of x the piece covers (a segment split where it crosses, a loop
+ * clipped, a text by its anchor) and moved to start at 0.
+ */
+export function sectionPieces(d: { frame?: ViewFrameDto; frames?: (ViewFrameDto & { x0: number; x1: number })[]; pens: PenDto[] }): SectionPiece[] {
+  if (!d.frames || d.frames.length < 2) return d.frame ? [{ frame: d.frame, pens: d.pens }] : [];
+  return d.frames.map((f) => {
+    const { x0, x1 } = f;
+    const pens: PenDto[] = [];
+    for (const pen of d.pens) {
+      const segments: number[] = [];
+      const s = pen.segments ?? [];
+      for (let k = 0; k + 3 < s.length; k += 4) {
+        let [ax, ay, bx, by] = [s[k], s[k + 1], s[k + 2], s[k + 3]];
+        if (Math.max(ax, bx) < x0 || Math.min(ax, bx) > x1) continue;
+        const at = (x: number) => ay + ((by - ay) * (x - ax)) / (bx - ax || 1e-12);
+        if (ax < x0) { ay = at(x0); ax = x0; } else if (ax > x1) { ay = at(x1); ax = x1; }
+        if (bx < x0) { by = at(x0); bx = x0; } else if (bx > x1) { by = at(x1); bx = x1; }
+        segments.push(ax - x0, ay, bx - x0, by);
+      }
+      const loops = (pen.loops ?? []).map((l) => clipLoopX(l, x0, x1).map((v, i) => (i % 2 === 0 ? v - x0 : v))).filter((l) => l.length >= 6);
+      const texts = (pen.texts ?? []).filter((t) => t.x >= x0 - 1e-9 && t.x <= x1 + 1e-9).map((t) => ({ ...t, x: t.x - x0 }));
+      if (segments.length || loops.length || texts.length) pens.push({ ...pen, segments, loops, texts });
+    }
+    return { frame: f, pens };
+  });
+}
+
+/** A loop (x y x y …) kept between x0 and x1, Sutherland–Hodgman. */
+function clipLoopX(loop: number[], x0: number, x1: number): number[] {
+  const half = (pts: number[], inside: (x: number) => number): number[] => {
+    const o: number[] = [];
+    const n = pts.length / 2;
+    for (let i = 0; i < n; i++) {
+      const [px, py] = [pts[2 * i], pts[2 * i + 1]], [qx, qy] = [pts[(2 * (i + 1)) % pts.length], pts[(2 * (i + 1) + 1) % pts.length]];
+      const dp = inside(px), dq = inside(qx);
+      if (dp >= 0) o.push(px, py);
+      if ((dp >= 0) !== (dq >= 0)) { const t = dp / (dp - dq); o.push(px + (qx - px) * t, py + (qy - py) * t); }
+    }
+    return o;
+  };
+  return half(half(loop, (x) => x - x0), (x) => x1 - x);
+}
+
 /** A clipping plane as three.js takes it: what lies where normal·p + constant < 0 is cut away. */
 export interface ClipPlane { normal: [number, number, number]; constant: number }
 

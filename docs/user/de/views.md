@@ -14,6 +14,10 @@ Wählen Sie **Ansicht → Schnitt** (<kbd>SE</kbd>) oder klicken Sie im Browser 
 
 ![Schnitt A-A durch das Haus](shots/section-view.webp)
 
+Ein Schnitt muss keine einzelne gerade Linie sein. **Versetzter Schnitt** (<kbd>SJ</kbd>) zeichnet ihn als Polylinie, Klick für Klick, <kbd>Enter</kbd> schließt ab: jedes gerade Stück ist ein ebener Schnitt, der nur zwischen seinen eigenen Enden sieht, und die Stücke werden nebeneinander in ihrer wahren Länge gezeichnet, eine feine gestrichelte Linie markiert jeden Versatz. **Gekrümmter Schnitt** (<kbd>SC</kbd>) zeichnet einen Bogen durch drei Punkte (Anfang, Ende, ein Punkt darauf) und wickelt ihn genauso ab, sodass eine gekrümmte Fassade in ihrer wahren Länge zu lesen ist. **Schnitt entlang** (<kbd>SA</kbd>) wählt ein Element mit einer Linie im Grundriss, eine Straße oder einen Weg, einen Graben, eine Stützwand, eine Wand, einen Träger, ein Fundament oder eine gezeichnete Polylinie, und folgt ihm, wie es jetzt ist; unten schreibt er die Stationen (0+020, alle Zehntel des Maßstabs, oder den Abstand, den Sie unter **Stationen** in den Einstellungen der Ansicht setzen). Im Grundriss sind die Punkte eines Schnitts Griffe: einen ziehen, die Mitte eines Stücks ziehen, um einen Versatz einzufügen, Strg/⌘-Klick auf einen Punkt, um ihn zu entfernen. In 3D gezeigt, schneidet ein abgewickelter Schnitt das Modell entlang seines ersten Stücks und legt seine Zeichnung Stück für Stück.
+
+![Ein versetzter Schnitt durch das Haus: drei Stücke nebeneinander, die Versätze markiert](shots/section-jogged.webp)
+
 Wählen Sie den Schnitt im Browser aus, um im Eigenschaftenbereich seinen Maßstab, seine Tiefe, seine Disziplin und seinen Stil festzulegen.
 
 ## Ansichten

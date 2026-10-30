@@ -19,6 +19,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             [new("text", "Text", "text"), new("textStyle", "Text style", "text"), new("dimStyle", "Dimension style", "text"), new("angle", "Angle", "angle"),
              new("format", "Slope written as", "choice", Choices: DimensionKinds.SlopeFormats), new("z", "Level written", "length")], "#555555", Kind: "annotation"));
         r.Service<IViewAnnotations>(this);
+        r.Service<ISectionPaths>(new ShapeSectionPaths());
         Cad.DraftCommands.Register(r);
         Cad.DxfImport.Register(r);
         r.Service<IElementPlacement>(new Cad.AnnotationPlacement());
@@ -483,4 +484,11 @@ sealed class AxisDeletion : IDeletion
         }
         return true;
     }
+}
+
+/// <summary>A drafted line, polyline or arc can be followed by a section (a circle as its polyline).</summary>
+sealed class ShapeSectionPaths : ISectionPaths
+{
+    public FollowedPath? PathOf(IModelView m, Entity e) =>
+        e.Class == IfcClass.Annotation && Cad.Drafts.ShapeOf(e) is { } shape && Cad.Geo.Polylines(shape) is { Count: > 0 } lines && lines[0].Count >= 2 ? new FollowedPath(lines[0]) : null;
 }

@@ -33,6 +33,8 @@ import { Storeys3DLooks } from './Storeys3D';
 import { setStoreys3d, showAllStoreys3d } from '../../viewport/storeys3dActions';
 import { ViewSettingsDialog, ViewSettingsSection, ViewStylesDialog } from './ViewSettings';
 import { cutAtPlan, toggleSectionBox } from '../../viewport/sectionBoxTools';
+import { frontDiscipline } from './disciplines';
+import { sectionGrips, sectionRefs, sectionTools } from './sections';
 
 /** Create Similar: the selected element's tool, set up like it. */
 function createSimilar() {
@@ -73,14 +75,6 @@ registerCommand({ names: ['MATCHTYPE', 'MA'], label: 'Match type', start: matchT
 
 /** The class's generic fields less the discipline, which the section shows as a choice of the known disciplines. */
 const butDiscipline = (cls: string) => () => (useSession.getState().info?.nodeTypes.find((t) => t.type === cls)?.fields ?? []).map((f) => f.key).filter((k) => k !== 'discipline');
-
-/** The discipline of the view in front (its own plan view, the section or elevation): what a view made from it takes. */
-const frontDiscipline = (): string | undefined => {
-  const s = useUi.getState();
-  const id = s.view === 'plan' ? s.planViewId : s.view === 'drawing' ? s.drawingViewId : null;
-  const d = id ? useSession.getState().nodes.get(id)?.props.discipline : undefined;
-  return typeof d === 'string' && d.trim() ? d : undefined;
-};
 
 /** What the core keeps running while the workspace is open: the 3D's visibility and storeys shown, the links' looks. */
 function CoreBackground() { return <><Visibility3D /><Storeys3DLooks /><LinksLook /></>; }
@@ -130,6 +124,7 @@ const core: LapinModule = {
             const r = await ctx.execute('view.create', { kind: 'section', start: [a.x, a.y], end: [b.x, b.y], discipline: frontDiscipline() }) as { id?: string } | null;
             if (r?.id) useUi.setState({ view: 'drawing', drawingViewId: r.id, tool: null });
           } },
+        ...sectionTools,
         { id: 'view.elevations', label: 'Elevations', icon: ElevationIcon, run: () => void (async () => {
           for (const direction of ['south', 'east', 'north', 'west']) await execute('view.create', { kind: 'elevation', direction, discipline: frontDiscipline() });
         })() },
@@ -165,6 +160,8 @@ const core: LapinModule = {
       ] },
     ],
   }],
+  grips: { LapinView: sectionGrips },
+  references: { LapinView: sectionRefs },
   dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog },
   background: CoreBackground,
   propertySections: [

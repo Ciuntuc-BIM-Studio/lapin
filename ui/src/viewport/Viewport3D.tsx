@@ -33,7 +33,7 @@ import { SectionBox3D } from './SectionBox3D';
 import { boxPlanes, planesKey, useSectionBox, type SectionBox } from './sectionBox';
 import { alignSectionBox, commitBox, cutAtPlan, fitSectionBox } from './sectionBoxTools';
 import { useDrawing, type DrawingDto } from './drawing';
-import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPlanes, sectionPose, textFont, textQuad, useClip3d, useSection3d, type ClipPlane, type DrawingText, type ViewFrameDto } from './section3d';
+import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPieces, sectionPlanes, sectionPose, textFont, textQuad, useClip3d, useSection3d, type ClipPlane, type DrawingText, type ViewFrameDto } from './section3d';
 import { clampPitch, easeEye, exitWalk, lookVector, toggleFly, useWalk, walkStep, walkWish, EYE_HEIGHT, WALK_KEYS, type WalkStart } from './walk';
 import { TICK, Walker, worldOf } from './walkPhysics';
 import { InstanceLayer } from './instancing';
@@ -277,15 +277,17 @@ function faceMesh(face: FaceDto): THREE.Object3D {
  * Without `cut` (the caps drawn in their materials), only those.
  */
 function sectionOverlay(d: DrawingDto, annotations: boolean, anisotropy: number, cut = true): THREE.Group {
-  const f = d.frame!;
   const group = new THREE.Group();
   group.name = 'section-overlay';
+  // A developed section (jogged, curved, along an element) piece by piece, each on its own plane.
+  for (const piece of sectionPieces(d)) {
+  const f = piece.frame;
   const basis = (lift: number) => {
     const o = drawingPoint(f, 0, 0, lift);
     return new THREE.Matrix4().makeBasis(new THREE.Vector3(...f.right), new THREE.Vector3(...f.up), new THREE.Vector3(...f.dir)).setPosition(o.x, o.y, o.z);
   };
   const fillAt = basis(0.004), lineAt = basis(0.002);
-  for (const pen of d.pens) {
+  for (const pen of piece.pens) {
     if (!onCut(pen.layer, annotations)) continue;
     // With the caps in their materials, the drawing's own cut (fills, hatches, outlines) is not laid over them.
     if (!cut && CUT_LAYERS.has(pen.layer)) continue;
@@ -325,6 +327,7 @@ function sectionOverlay(d: DrawingDto, annotations: boolean, anisotropy: number,
       lines.onBeforeRender = (renderer) => { renderer.getSize(mat.resolution); };
       group.add(lines);
     }
+  }
   }
   return group;
 }

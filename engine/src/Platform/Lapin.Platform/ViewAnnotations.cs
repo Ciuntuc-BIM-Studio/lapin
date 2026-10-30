@@ -12,6 +12,9 @@ namespace Lapin.Platform;
 /// </summary>
 public sealed record ViewContext(IModelView Model, Entity View, string Kind, ViewFrame Frame, double Scale, StyleBook Book, ViewDrawing Drawing, Func<string, ElementGeometry?>? Geometry = null)
 {
+    /// <summary>The modules' services (a section's line along an element is read through them); null when a caller has none.</summary>
+    public IServices? Services { get; init; }
+
     /// <summary>
     /// Whether something stands between the eye and <paramref name="point"/>: a face of
     /// another element, turned to the eye, nearer, with the point inside its outline.

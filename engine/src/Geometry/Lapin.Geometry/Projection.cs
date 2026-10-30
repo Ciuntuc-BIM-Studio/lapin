@@ -51,21 +51,34 @@ public static class HiddenLines
     /// What each solid's surface joins by (its material): a face going on in the same plane into another solid's face is
     /// a seam, no line, only when both join by one key (null joins nothing). Without keys, every coplanar continuation is a seam.
     /// </param>
+    /// <param name="span">
+    /// How far the drawing reaches sideways (along <see cref="ViewFrame.Right"/>, from the origin): one piece of a
+    /// section developed along a polyline sees only between its two ends. Lines and cut areas are clipped there,
+    /// nothing is drawn at the clip, and a solid wholly outside is left out.
+    /// </param>
     public static (List<Seg2> Lines, List<CutArea> Cuts, List<Seg2> Hidden) Draw(IReadOnlyList<(Solid Solid, int Owner)> solids, ViewFrame view, bool cut = false,
-        double maxDepth = double.PositiveInfinity, bool hidden = false, IReadOnlyList<string?>? keys = null)
+        double maxDepth = double.PositiveInfinity, bool hidden = false, IReadOnlyList<string?>? keys = null, (double Min, double Max)? span = null)
     {
         bool Joins(int i, int j) => i == j || keys == null || keys[i] != null && keys[i] == keys[j];
         var occluders = new List<Occluder>();
         var cuts = new List<CutArea>();
         var edges = new List<(Vec3 A, Vec3 B, int Solid, int FaceA, int FaceB, int Owner)>();
         var front = new Dictionary<(int Solid, int Face), Occluder>();
+        double X(Vec3 p) => Vec3.Dot(p - view.Origin, view.Right);
 
         for (var si = 0; si < solids.Count; si++)
         {
             var (s, owner) = solids[si];
+            if (span is { } sp && s.Vertices.Length > 0)
+            {
+                double lo = double.PositiveInfinity, hi = double.NegativeInfinity;
+                foreach (var p in s.Vertices) { var x = X(p); lo = Math.Min(lo, x); hi = Math.Max(hi, x); }
+                if (hi < sp.Min - 1e-9 || lo > sp.Max + 1e-9) continue;
+            }
             if (cut)
             {
                 var loops = Section(s, view);
+                if (span is { } sx) loops = ClipX(loops, sx.Min, sx.Max);
                 if (loops.Count > 0)
                 {
                     cuts.Add(new CutArea(loops, owner));
@@ -119,6 +132,11 @@ public static class HiddenLines
             var (t0, t1) = (0.0, 1.0);
             if (cut && !ClipInterval(da, db, 0, ref t0, ref t1)) continue;
             if (!double.IsPositiveInfinity(maxDepth) && !ClipInterval(-da, -db, -maxDepth, ref t0, ref t1)) continue;
+            if (span is { } sr)
+            {
+                double xa = X(e.A), xb = X(e.B);
+                if (!ClipInterval(xa, xb, sr.Min, ref t0, ref t1) || !ClipInterval(-xa, -xb, -sr.Max, ref t0, ref t1)) continue;
+            }
             Vec3 A = Lerp(e.A, e.B, t0), B = Lerp(e.A, e.B, t1);
             double dA = view.Depth(A), dB = view.Depth(B);
             Vec2 a = view.Map(A), b = view.Map(B);
@@ -231,6 +249,32 @@ public static class HiddenLines
             at = Math.Max(at, h1);
         }
         if (at < 1) yield return (at, 1);
+    }
+
+    /// <summary>The loops' parts between x = <paramref name="min"/> and x = <paramref name="max"/> (each loop clipped on its own: even-odd stays even-odd under a convex clip).</summary>
+    static List<Vec2[]> ClipX(List<Vec2[]> loops, double min, double max)
+    {
+        var o = new List<Vec2[]>(loops.Count);
+        foreach (var loop in loops)
+        {
+            var kept = ClipHalf(ClipHalf(loop, p => p.X - min), p => max - p.X);
+            if (kept.Count >= 3) o.Add([.. kept]);
+        }
+        return o;
+    }
+
+    /// <summary>A polygon's part where <paramref name="inside"/> ≥ 0, Sutherland–Hodgman.</summary>
+    static List<Vec2> ClipHalf(IReadOnlyList<Vec2> ring, Func<Vec2, double> inside)
+    {
+        var o = new List<Vec2>();
+        for (var i = 0; i < ring.Count; i++)
+        {
+            Vec2 p = ring[i], q = ring[(i + 1) % ring.Count];
+            double dp = inside(p), dq = inside(q);
+            if (dp >= 0) o.Add(p);
+            if ((dp >= 0) != (dq >= 0)) o.Add(p + (q - p) * (dp / (dp - dq)));
+        }
+        return o;
     }
 
     /// <summary>A polygon's part at or beyond the view's plane (depth ≥ 0), Sutherland–Hodgman.</summary>

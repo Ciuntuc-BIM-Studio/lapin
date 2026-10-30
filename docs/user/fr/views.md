@@ -14,6 +14,10 @@ Choisissez **Vue → Coupe** (<kbd>SE</kbd>), ou cliquez sur le **+** à côté 
 
 ![La coupe A-A à travers la maison](shots/section-view.webp)
 
+Une coupe n’est pas forcément une seule ligne droite. **Coupe brisée** (<kbd>SJ</kbd>) la dessine comme une polyligne, clic après clic, et <kbd>Entrée</kbd> termine : chaque tronçon droit est une coupe plane qui ne voit qu’entre ses propres extrémités, et les tronçons sont dessinés côte à côte à leur longueur réelle, un trait fin en pointillé marquant chaque décrochement. **Coupe courbe** (<kbd>SC</kbd>) dessine un arc par trois points (son début, sa fin, un point dessus) et le développe de la même façon, pour qu’une façade courbe se lise à sa vraie longueur. **Coupe le long de** (<kbd>SA</kbd>) choisit un élément ayant une ligne en plan, une route ou une allée, un fossé, un mur de soutènement, un mur, une poutre, une semelle ou une polyligne dessinée, et le suit tel qu’il est ; elle écrit les stations en bas (0+020, tous les dixièmes de l’échelle, ou le pas que vous fixez sous **Stations** dans les réglages de la vue). En plan, les points d’une coupe sont des poignées : glissez-en un, glissez le milieu d’un tronçon pour ajouter un décrochement, Ctrl/⌘-clic sur un point pour le retirer. Montrée en 3D, une coupe développée coupe le modèle le long de son premier tronçon et pose son dessin tronçon par tronçon.
+
+![Une coupe brisée à travers la maison : trois tronçons côte à côte, les décrochements marqués](shots/section-jogged.webp)
+
 Sélectionnez la coupe dans l’arborescence pour régler son échelle, sa profondeur, sa discipline et son style dans le panneau des propriétés.
 
 ## Élévations
