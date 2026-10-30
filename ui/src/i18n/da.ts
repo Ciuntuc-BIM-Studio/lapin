@@ -451,8 +451,8 @@ export const DA: Record<string, string> = {
   // The facade's dressings in the joinery configurator: shutters, grille, window box, canopy (reports #38, #39)
   'On the facade': 'På facaden', 'Shutters': 'Skodder', 'Louvred': 'Med lameller', 'Planks': 'Af brædder', 'Leaves': 'Fløje', 'One leaf': 'Én fløj', 'Two leaves': 'To fløje', 'Shown open': 'Vist åbne', 'Louvre pitch': 'Lamelafstand', 'From the wall face': 'Fra vægfladen', 'From the window\'s axis': 'Fra vinduets akse', 'Up or down': 'Op eller ned', 'Safety grille': 'Sikkerhedsgitter', 'In the reveal': 'I lysningen', 'On the interior face': 'På indersiden', 'Bars': 'Tremmer', 'Horizontal': 'Vandrette', 'Vertical': 'Lodrette', 'Both ways': 'Begge veje', 'Bar size': 'Tremmetykkelse', 'Bar spacing': 'Tremmeafstand', 'Frame width': 'Rammebredde', 'Past the opening': 'Ud over åbningen', 'Set back from the face': 'Trukket tilbage fra fladen', 'Window box': 'Blomsterkasse', 'Below the opening': 'Under åbningen', 'Canopy': 'Baldakin', 'Above the head': 'Over overliggeren',
   // Import DXF placed by the map's coordinates (decision 172)
-  "Placed": "Placeret", "by its origin": "efter sit nulpunkt", "by the map's coordinates": "efter kortets koordinater", "metres (map coordinates)": "meter (kortkoordinater)", "As a link": "Som link", "read-only, kept with the file": "skrivebeskyttet, knyttet til filen",
   'Columns of panes': 'Kolonner af rammer', 'Rows of panes': 'Rækker af rammer',
+  'Panels · seen from inside': 'Rammer · set indefra',
   // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)
   "session|Join": "Deltag", "element|Layers": "Lag", "cad|Layer": "Lag", "edge|gable": "gavl",
   "eave": "tagfod", "Import DXF": "Importér DXF", "Import DXF…": "Importér DXF…", "Import DXF ·": "Importér DXF ·",

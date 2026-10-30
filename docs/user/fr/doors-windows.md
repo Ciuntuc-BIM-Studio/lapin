@@ -34,7 +34,7 @@ Les dessins à droite montrent le type tel qu’il sera dessiné en élévation,
 
 ### Fenêtres à plusieurs vantaux
 
-**Colonnes de vantaux** reçoit les largeurs relatives des vantaux, un nombre pour chacun : `1 1` donne deux vantaux égaux, `1 1 1` trois, `1 2 1` un large entre deux étroits. **Rangées de vantaux** divise la fenêtre en hauteur de la même façon, de bas en haut : `1 1` donne deux rangées. Six vantaux, c’est `1 1 1` dans Colonnes de vantaux et `1 1` dans Rangées de vantaux. Ensuite, dans **Panels**, choisissez comment s’ouvre chaque vantail : fixe, à la française, oscillo-battant, à soufflet, à l’italienne, pivotant ou coulissant.
+**Colonnes de vantaux** reçoit les largeurs relatives des vantaux, un nombre pour chacun : `1 1` donne deux vantaux égaux, `1 1 1` trois, `1 2 1` un large entre deux étroits. **Rangées de vantaux** divise la fenêtre en hauteur de la même façon, de bas en haut : `1 1` donne deux rangées. Six vantaux, c’est `1 1 1` dans Colonnes de vantaux et `1 1` dans Rangées de vantaux. Ensuite, dans **Vantaux**, choisissez comment s’ouvre chaque vantail : fixe, à la française, oscillo-battant, à soufflet, à l’italienne, pivotant ou coulissant.
 
 ### Volets, grilles, jardinières et auvents
 

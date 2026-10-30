@@ -34,7 +34,7 @@ Die Zeichnungen rechts zeigen den Typ so, wie er in Ansicht, Grundriss und Schni
 
 ### Fenster mit mehreren Flügeln
 
-**Flügelspalten** nimmt die relativen Breiten der Flügel auf, eine Zahl für jeden: `1 1` sind zwei gleiche Flügel, `1 1 1` drei, `1 2 1` ein breiter zwischen zwei schmalen. **Flügelreihen** teilt das Fenster auf dieselbe Weise in der Höhe, von unten nach oben: `1 1` ergibt zwei Reihen. Sechs Flügel sind `1 1 1` in Flügelspalten und `1 1` in Flügelreihen. Wählen Sie dann unter **Panels**, wie sich jeder Flügel öffnet: fest, Dreh, Dreh-Kipp, Kipp, Klapp, Schwing oder Schiebe.
+**Flügelspalten** nimmt die relativen Breiten der Flügel auf, eine Zahl für jeden: `1 1` sind zwei gleiche Flügel, `1 1 1` drei, `1 2 1` ein breiter zwischen zwei schmalen. **Flügelreihen** teilt das Fenster auf dieselbe Weise in der Höhe, von unten nach oben: `1 1` ergibt zwei Reihen. Sechs Flügel sind `1 1 1` in Flügelspalten und `1 1` in Flügelreihen. Wählen Sie dann unter **Flügel**, wie sich jeder Flügel öffnet: fest, Dreh, Dreh-Kipp, Kipp, Klapp, Schwing oder Schiebe.
 
 ### Fensterläden, Gitter, Blumenkästen und Vordächer
 

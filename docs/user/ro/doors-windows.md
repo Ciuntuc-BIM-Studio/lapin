@@ -34,7 +34,7 @@ Desenele din dreapta arată tipul așa cum va fi desenat în fațadă, plan și 
 
 ### Ferestre cu mai multe canate
 
-**Coloane de canate** primește lățimile relative ale canatelor, câte un număr pentru fiecare: `1 1` înseamnă două canate egale, `1 1 1` trei, `1 2 1` unul lat între două înguste. **Rânduri de canate** împarte fereastra la fel pe înălțime, de jos în sus: `1 1` dă două rânduri. Șase canate înseamnă `1 1 1` la Coloane de canate și `1 1` la Rânduri de canate. Apoi, în **Panels**, alege cum se deschide fiecare canat: fix, batant, oscilobatant, rabatabil, pe sus, pivotant sau culisant.
+**Coloane de canate** primește lățimile relative ale canatelor, câte un număr pentru fiecare: `1 1` înseamnă două canate egale, `1 1 1` trei, `1 2 1` unul lat între două înguste. **Rânduri de canate** împarte fereastra la fel pe înălțime, de jos în sus: `1 1` dă două rânduri. Șase canate înseamnă `1 1 1` la Coloane de canate și `1 1` la Rânduri de canate. Apoi, în **Canate**, alege cum se deschide fiecare canat: fix, batant, oscilobatant, rabatabil, pe sus, pivotant sau culisant.
 
 ### Obloane, grilaje, jardiniere și copertine
 

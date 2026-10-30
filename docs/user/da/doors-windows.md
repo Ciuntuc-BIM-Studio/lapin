@@ -34,7 +34,7 @@ Tegningerne til højre viser typen, som den vil blive tegnet i opstalt, plan og 
 
 ### Vinduer med flere rammer
 
-**Kolonner af rammer** tager rammernes relative bredder, ét tal for hver: `1 1` er to lige store rammer, `1 1 1` tre, `1 2 1` en bred mellem to smalle. **Rækker af rammer** deler vinduet i højden på samme måde, nedefra og op: `1 1` giver to rækker. Seks rammer er `1 1 1` i Kolonner af rammer og `1 1` i Rækker af rammer. Vælg derefter under **Panels**, hvordan hver ramme åbner: fast, sidehængt, dreje-kip, bundhængt, tophængt, drejeramme eller skydeparti.
+**Kolonner af rammer** tager rammernes relative bredder, ét tal for hver: `1 1` er to lige store rammer, `1 1 1` tre, `1 2 1` en bred mellem to smalle. **Rækker af rammer** deler vinduet i højden på samme måde, nedefra og op: `1 1` giver to rækker. Seks rammer er `1 1 1` i Kolonner af rammer og `1 1` i Rækker af rammer. Vælg derefter under **Rammer**, hvordan hver ramme åbner: fast, sidehængt, dreje-kip, bundhængt, tophængt, drejeramme eller skydeparti.
 
 ### Skodder, gitre, blomsterkasser og baldakiner
 

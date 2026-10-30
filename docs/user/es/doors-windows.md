@@ -34,7 +34,7 @@ Los dibujos de la derecha muestran el tipo tal como se dibujará en alzado, plan
 
 ### Ventanas con más hojas
 
-**Columnas de hojas** recibe las anchuras relativas de las hojas, un número para cada una: `1 1` son dos hojas iguales, `1 1 1` tres, `1 2 1` una ancha entre dos estrechas. **Filas de hojas** divide la ventana en altura de la misma manera, de abajo arriba: `1 1` da dos filas. Seis hojas son `1 1 1` en Columnas de hojas y `1 1` en Filas de hojas. Después, en **Panels**, elija cómo abre cada hoja: fija, practicable, oscilobatiente, abatible, proyectante, pivotante o corredera.
+**Columnas de hojas** recibe las anchuras relativas de las hojas, un número para cada una: `1 1` son dos hojas iguales, `1 1 1` tres, `1 2 1` una ancha entre dos estrechas. **Filas de hojas** divide la ventana en altura de la misma manera, de abajo arriba: `1 1` da dos filas. Seis hojas son `1 1 1` en Columnas de hojas y `1 1` en Filas de hojas. Después, en **Hojas**, elija cómo abre cada hoja: fija, practicable, oscilobatiente, abatible, proyectante, pivotante o corredera.
 
 ### Contraventanas, rejas, jardineras y marquesinas
 
