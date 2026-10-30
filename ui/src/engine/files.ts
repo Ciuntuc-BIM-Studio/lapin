@@ -26,12 +26,13 @@ const picker = () => window as unknown as PickerWindow;
 /** The file the project came from or was last saved to, where the browser lets a page write back to it (Chrome, Edge). */
 let projectHandle: FileSystemFileHandle | null = null;
 
-/** A file the user picks: its name and bytes (null: none picked). */
-async function pickFile(description: string, ext: string): Promise<{ name: string; bytes: Uint8Array; handle: FileSystemFileHandle | null } | null> {
+/** A file the user picks: its name and bytes (null: none picked); `ext` one extension or several (bcfzip, bcf). */
+export async function pickFile(description: string, ext: string | string[]): Promise<{ name: string; bytes: Uint8Array; handle: FileSystemFileHandle | null } | null> {
+  const exts = Array.isArray(ext) ? ext : [ext];
   const open = picker().showOpenFilePicker;
   if (open) {
     try {
-      const [handle] = await open({ types: [{ description, accept: { 'application/octet-stream': [`.${ext}`] } }] });
+      const [handle] = await open({ types: [{ description, accept: { 'application/octet-stream': exts.map((e) => `.${e}`) } }] });
       const file = await handle.getFile();
       return { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()), handle };
     } catch { return null; }   // cancelled
@@ -39,7 +40,7 @@ async function pickFile(description: string, ext: string): Promise<{ name: strin
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = `.${ext}`;
+    input.accept = exts.map((e) => `.${e}`).join(',');
     input.onchange = async () => {
       const file = input.files?.[0];
       resolve(file ? { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()), handle: null } : null);
@@ -85,7 +86,7 @@ async function keep(bytes: Uint8Array, name: string, handle: FileSystemFileHandl
 
 export interface RecoverableWork { file: string; path: string | null; at: string; edits: number; lastEdit: string | null }
 
-async function pickPath(mode: 'open' | 'save', defaultName?: string, filters = FILTERS): Promise<string | null> {
+export async function pickPath(mode: 'open' | 'save', defaultName?: string, filters = FILTERS): Promise<string | null> {
   if (isDesktop()) {
     const dialog = await import('@tauri-apps/plugin-dialog');
     const r = mode === 'open'
@@ -290,7 +291,7 @@ export async function guardWindowClose(): Promise<void> {
  * An export from the engine (PDF, DXF): to the path the save dialog gives on
  * the desktop, else handed back and downloaded by the browser.
  */
-const MIME: Record<string, string> = { pdf: 'application/pdf', dxf: 'application/dxf', ifc: 'application/x-step', glb: 'model/gltf-binary', gltf: 'model/gltf+json', usdz: 'model/vnd.usdz+zip', usda: 'model/vnd.usda', dae: 'model/vnd.collada+xml', frag: 'application/octet-stream' };
+const MIME: Record<string, string> = { pdf: 'application/pdf', dxf: 'application/dxf', ifc: 'application/x-step', glb: 'model/gltf-binary', gltf: 'model/gltf+json', usdz: 'model/vnd.usdz+zip', usda: 'model/vnd.usda', dae: 'model/vnd.collada+xml', frag: 'application/octet-stream', bcfzip: 'application/zip', bcf: 'application/zip' };
 
 export async function exportFile(method: string, args: Record<string, unknown>, name: string, ext: string): Promise<void> {
   try {

@@ -483,7 +483,7 @@ export function Viewport3D() {
     };
     const publish = () => {
       const p = pose();
-      useCamera.setState({ ...p, position: { x: cam.position.x, y: cam.position.y, z: cam.position.z }, fov: (persp.fov * Math.PI) / 180, ortho: cam === orthoCam });
+      useCamera.setState({ ...p, position: { x: cam.position.x, y: cam.position.y, z: cam.position.z }, fov: (persp.fov * Math.PI) / 180, ortho: cam === orthoCam, zoom: cam === orthoCam ? orthoCam.zoom : 1, aspect: persp.aspect });
     };
     let flight = 0;
     const flyTo = (goal: CameraPose, animate = true) => {
@@ -525,6 +525,20 @@ export function Viewport3D() {
         applyPose(p);
         publish();
         invalidate.current();
+      },
+      // Drawn once more right before it is read: the drawing buffer is not kept between frames.
+      snapshot: (maxWidth = 1280) => {
+        try {
+          renderer.render(s, cam);
+          const src = renderer.domElement;
+          const scale = Math.min(1, maxWidth / Math.max(src.width, 1));
+          if (scale >= 1) return src.toDataURL('image/png');
+          const c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(src.width * scale));
+          c.height = Math.max(1, Math.round(src.height * scale));
+          c.getContext('2d')?.drawImage(src, 0, 0, c.width, c.height);
+          return c.toDataURL('image/png');
+        } catch { return null; }
       },
     };
     useCamera.setState({ api });

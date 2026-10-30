@@ -42,3 +42,19 @@ Bloquants : un cartouche sans numéro, sans titre ou sans dessinateur ; une vue 
 5. Le projet est ensuite enregistré comme une **version** au nom de l'émission (voir [Fichiers, versions et récupération](files.md)), pour qu'une émission puisse être rouverte, restaurée ou comparée au projet tel qu'il est maintenant.
 
 Les émissions sont listées au bas du dialogue Project folder, chacune avec ses fichiers et **Ouvrir le dossier**.
+
+## Remarques (BCF)
+
+**Manage → Remarks…** garde les remarques faites sur le modèle — les vôtres et celles d’un relecteur — comme sujets BCF (le BIM Collaboration Format qu’échangent BIMcollab, Solibri, Navisworks et Revit), dans le projet, jamais dans l’IFC. Une remarque a un titre, une description, un type, un statut (Open, In progress, Resolved, Closed), une priorité, un responsable, une échéance et des étiquettes ; ses commentaires ; et ses points de vue — la caméra 3D, les éléments sélectionnés, la boîte de coupe en plans de coupe, et une capture.
+
+![Remarques : la liste avec ses filtres, une remarque avec sa capture et ses commentaires](shots/remarks.webp)
+
+- **Nouvelle remarque** en crée une depuis la vue 3D affichée : la caméra telle qu’elle est, les éléments sélectionnés, la boîte de coupe et une image prise de la vue. Remplissez les champs et **Créer**.
+- La liste se filtre par un texte, un statut, une priorité, le responsable et **Ouvertes seulement**. Choisissez une remarque pour voir et changer ses champs, lire ses commentaires et répondre dans la case (**Commenter** ; cochez **Avec la vue 3D** pour joindre la vue telle qu’elle est à la réponse).
+- **Afficher en 3D** ouvre le point de vue de la remarque : la vue 3D va à sa caméra, ses éléments sont sélectionnés (ceux que le projet a, par leur GlobalId IFC), et ses plans de coupe deviennent la boîte de coupe. Un commentaire avec sa propre vue a **Afficher** à côté.
+- **Reprendre depuis la vue 3D** remplace le point de vue de la remarque par la vue telle qu’elle est maintenant.
+- **Importer BCF…** lit un fichier `.bcfzip` (BCF 2.1) ou `.bcf` (BCF 3.0) : un sujet que le projet a déjà (le même GUID) est mis à jour — les champs du fichier l’emportent, et les commentaires faits ici que le fichier n’a pas restent —, les autres sont ajoutés. **Exporter tout**, **Exporter les ouvertes** ou **Exporter la sélection** écrivent un fichier BCF, 2.1 sauf si vous choisissez 3.0, à remettre au relecteur ou à déposer dans le conteneur Shared du dossier du projet. Les sujets gardent leurs GUID, donc un aller-retour par un autre outil revient aux mêmes remarques.
+
+![Une remarque ouverte à son point de vue dans la vue 3D](shots/remark-viewpoint.webp)
+
+Votre nom sur ce que vous écrivez se règle dans la case **Votre nom** du dialogue (il reste sur cet ordinateur).

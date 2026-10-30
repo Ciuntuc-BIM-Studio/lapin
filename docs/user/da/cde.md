@@ -42,3 +42,19 @@ Blokerende: et tegningshoved uden nummer, titel eller tegner; en visning uden m�
 5. Projektet gemmes derefter som en **version** opkaldt efter udgivelsen (se [Filer, versioner og gendannelse](files.md)), så en udgivelse kan genåbnes, gendannes eller sammenlignes med projektet, som det er nu.
 
 Udgivelserne står nederst i dialogen Project folder, hver med sine filer og **Åbn mappe**.
+
+## Bemærkninger (BCF)
+
+**Manage → Remarks…** gemmer bemærkningerne til modellen – dine og en kontrollants – som BCF-emner (BIM Collaboration Format, som BIMcollab, Solibri, Navisworks og Revit udveksler), i projektet, aldrig i IFC’en. En bemærkning har en titel, en beskrivelse, en type, en status (Open, In progress, Resolved, Closed), en prioritet, en ansvarlig, en frist og mærkater; sine kommentarer; og sine synspunkter – 3D-kameraet, de markerede elementer, snitboksen som snitplaner og et øjebliksbillede.
+
+![Bemærkninger: listen med sine filtre, en bemærkning med øjebliksbillede og kommentarer](shots/remarks.webp)
+
+- **Ny bemærkning** laver en fra 3D-visningen forrest: kameraet som det er, de markerede elementer, snitboksen og et billede taget fra visningen. Udfyld felterne og **Opret**.
+- Listen filtreres efter en tekst, en status, en prioritet, den ansvarlige og **Kun åbne**. Vælg en bemærkning for at se og ændre dens felter, læse dens kommentarer og svare i feltet (**Kommentér**; sæt kryds ved **Med 3D-visningen** for at vedhæfte visningen, som den er, til svaret).
+- **Vis i 3D** åbner bemærkningens synspunkt: 3D-visningen går til dens kamera, dens elementer markeres (dem projektet har, efter deres IFC-GlobalId), og dens snitplaner bliver snitboksen. En kommentar med sin egen visning har **Vis** ved siden af.
+- **Tag igen fra 3D-visningen** erstatter bemærkningens synspunkt med visningen, som den er nu.
+- **Importér BCF…** læser en `.bcfzip`- (BCF 2.1) eller `.bcf`-fil (BCF 3.0): et emne, projektet allerede har (samme GUID), opdateres – filens felter vinder, og kommentarer lavet her, som filen ikke har, bliver –, de andre tilføjes. **Eksportér alle**, **Eksportér åbne** eller **Eksportér valgt** skriver en BCF-fil, 2.1 medmindre du vælger 3.0, til at give kontrollanten eller lægge i projektmappens container Shared. Emnerne beholder deres GUID’er, så en tur gennem et andet værktøj kommer tilbage til de samme bemærkninger.
+
+![En bemærkning åbnet ved sit synspunkt i 3D-visningen](shots/remark-viewpoint.webp)
+
+Dit navn på det, du skriver, sættes i dialogens felt **Dit navn** (det bliver på denne computer).

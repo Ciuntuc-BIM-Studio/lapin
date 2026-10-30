@@ -1232,4 +1232,75 @@ export const scenes = [
       await t.button('Cancel', { exact: true });
     },
   },
+  {
+    // Remarks on the model as BCF (docs/plan-cde.md, stage 2): a tiny BCF 2.1 file made here (a topic on a wall, a comment, a viewpoint
+    // looking at the house) is imported, the list shown, and the remark opened at its viewpoint in the 3D view.
+    id: 'remarks',
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t);
+      const guid = '3f0c1a3e-8e4a-4b57-9e1a-5b1f0c2d7e91', vp = '9a9b8c7d-aaaa-4bbb-8ccc-dddd00001111';
+      const markup = `<?xml version="1.0" encoding="utf-8"?>
+<Markup>
+  <Topic Guid="${guid}" TopicType="Issue" TopicStatus="Open">
+    <Title>Window too close to the corner</Title>
+    <Priority>High</Priority>
+    <Labels>facade</Labels>
+    <CreationDate>2026-10-30T09:00:00Z</CreationDate>
+    <CreationAuthor>reviewer</CreationAuthor>
+    <AssignedTo>architect</AssignedTo>
+    <Description>Keep at least 600 mm between the window and the corner.</Description>
+  </Topic>
+  <Comment Guid="7c7d2a10-1111-4222-8333-444455556666"><Date>2026-10-30T09:30:00Z</Date><Author>reviewer</Author><Comment>See the viewpoint.</Comment><Viewpoint Guid="${vp}" /></Comment>
+  <Viewpoints Guid="${vp}"><Viewpoint>viewpoint.bcfv</Viewpoint></Viewpoints>
+</Markup>`;
+      const viewpoint = `<?xml version="1.0" encoding="utf-8"?>
+<VisualizationInfo Guid="${vp}">
+  <Components><Selection><Component IfcGuid="${walls[0]}" /></Selection><Visibility DefaultVisibility="true" /></Components>
+  <PerspectiveCamera>
+    <CameraViewPoint><X>20</X><Y>-14</Y><Z>8</Z></CameraViewPoint>
+    <CameraDirection><X>-0.62</X><Y>0.72</Y><Z>-0.31</Z></CameraDirection>
+    <CameraUpVector><X>-0.2</X><Y>0.23</Y><Z>0.95</Z></CameraUpVector>
+    <FieldOfView>45</FieldOfView>
+  </PerspectiveCamera>
+</VisualizationInfo>`;
+      const data = bcfZip([
+        ['bcf.version', '<?xml version="1.0" encoding="utf-8"?><Version VersionId="2.1"><DetailedVersion>2.1</DetailedVersion></Version>'],
+        [`${guid}/markup.bcf`, markup],
+        [`${guid}/viewpoint.bcfv`, viewpoint],
+      ]).toString('base64');
+      const r = await t.call('project.importBcf', { name: 'review.bcfzip', data });
+      t.expect(r.topics === 1 && r.added === 1, 'the BCF file brings one remark');
+      await t.wait(400);
+      await t.tool('manage.remarks');
+      await t.page.waitForSelector('[data-testid=remarks-list] li button', { timeout: 10_000 });
+      await t.page.locator('[data-testid=remarks-list] li button').first().click();
+      await t.wait(300);
+      t.expect((await t.page.locator('[data-testid=remarks-detail] input[aria-label=Title]').inputValue()) === 'Window too close to the corner', 'the remark opens with its title');
+      await t.shot('remarks', { of: '.dialog', pad: 0 });
+      await t.button('Show in 3D', { exact: true, wait: 1200 });
+      t.expect((await t.page.locator('[data-testid=view3d]').count()) === 1, 'the remark opens the 3D view at its viewpoint');
+      await t.shot('remark-viewpoint', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
 ];
+
+/** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */
+export function bcfZip(entries) {
+  const crcTable = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc32 = (buf) => { let c = 0xffffffff; for (const b of buf) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  const u16 = (v) => { const b = Buffer.alloc(2); b.writeUInt16LE(v); return b; };
+  const u32 = (v) => { const b = Buffer.alloc(4); b.writeUInt32LE(v >>> 0); return b; };
+  const locals = [], centrals = [];
+  let offset = 0;
+  for (const [name, text] of entries) {
+    const nameBytes = Buffer.from(name, 'utf8'), data = Buffer.from(text, 'utf8'), crc = crc32(data);
+    const local = Buffer.concat([u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(nameBytes.length), u16(0), nameBytes, data]);
+    centrals.push(Buffer.concat([u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(nameBytes.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset), nameBytes]));
+    locals.push(local);
+    offset += local.length;
+  }
+  const directory = Buffer.concat(centrals);
+  const end = Buffer.concat([u32(0x06054b50), u16(0), u16(0), u16(entries.length), u16(entries.length), u32(directory.length), u32(offset), u16(0)]);
+  return Buffer.concat([...locals, directory, end]);
+}

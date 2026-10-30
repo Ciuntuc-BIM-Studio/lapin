@@ -917,3 +917,30 @@ button.mode-chip:hover { color: var(--accent); }
 .assistant-text .md-table th { background: var(--wash); font-weight: 600; }
 .assistant-change { white-space: normal !important; }
 .assistant-change > span { display: block; }
+
+/* Remarks on the model as BCF (Manage → Remarks…): the bar, the filters, the list and a remark's fields, snapshot and comments. */
+.dialog.remarks { min-width: min(960px, calc(100vw - 32px)); }
+.remarks-bar, .remarks-filters { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+.remarks-export { display: inline-flex; align-items: center; gap: 8px; }
+.remarks-filters input[type=text], .remarks-filters input:not([type]) { flex: 1; min-width: 120px; }
+.dialog-body.remarks-body { grid-template-columns: 280px 1fr; min-height: 360px; }
+.remarks-list { margin: 0; padding: 0; list-style: none; overflow-y: auto; max-height: 60vh; }
+.remarks-list li button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; padding: 6px 8px; background: none; border: none; border-bottom: 1px solid var(--rule); color: inherit; font: inherit; cursor: pointer; }
+.remarks-list li.current button { background: var(--wash); }
+.remarks-list .remark-title { font-weight: 500; }
+.remark-status { color: var(--ok); }
+.remark-status.closed { color: var(--muted); }
+.remarks-detail { overflow-y: auto; max-height: 60vh; }
+.remarks-detail h4 { margin: 12px 0 4px; }
+.remark-heading { font: inherit; font-size: 15px; font-weight: 600; width: 100%; box-sizing: border-box; border: 1px solid transparent; background: none; color: inherit; padding: 2px 4px; }
+.remark-heading:hover, .remark-heading:focus { border-color: var(--rule); }
+.remark-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px 12px; margin: 6px 0; }
+.remark-fields .row input, .remark-fields .row select { flex: 1; min-width: 0; }
+.remark-description, .remark-reply textarea, .remark-form textarea { width: 100%; box-sizing: border-box; font: inherit; }
+.remark-snapshot { display: block; max-width: 100%; max-height: 260px; border: 1px solid var(--rule); margin: 6px 0; }
+.remark-view .row { gap: 8px; align-items: center; }
+.remark-comments { margin: 0; padding: 0; list-style: none; }
+.remark-comments li { display: flex; flex-direction: column; gap: 1px; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.remark-comments li .link { align-self: flex-start; display: inline-flex; align-items: center; gap: 3px; }
+.remark-reply { margin-top: 8px; }
+.remark-form .row, .remark-form label.row { gap: 8px; }

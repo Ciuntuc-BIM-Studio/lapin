@@ -42,3 +42,19 @@ Bloqueantes: un cajetín sin número, sin título o sin quién lo dibujó; una v
 5. El proyecto se guarda después como una **versión** con el nombre de la emisión (vea [Archivos, versiones y recuperación](files.md)), para que una emisión pueda reabrirse, restaurarse o compararse con el proyecto tal como está ahora.
 
 Las emisiones se listan al final del diálogo Project folder, cada una con sus archivos y **Abrir carpeta**.
+
+## Observaciones (BCF)
+
+**Manage → Remarks…** guarda las observaciones hechas sobre el modelo —las tuyas y las de un revisor— como temas BCF (el BIM Collaboration Format que intercambian BIMcollab, Solibri, Navisworks y Revit), en el proyecto, nunca en el IFC. Una observación tiene un título, una descripción, un tipo, un estado (Open, In progress, Resolved, Closed), una prioridad, un responsable, una fecha límite y etiquetas; sus comentarios; y sus puntos de vista: la cámara 3D, los elementos seleccionados, la caja de sección como planos de corte y una captura.
+
+![Observaciones: la lista con sus filtros, una observación con su captura y sus comentarios](shots/remarks.webp)
+
+- **Nueva observación** crea una desde la vista 3D de delante: la cámara tal como está, los elementos seleccionados, la caja de sección y una imagen tomada de la vista. Rellena los campos y **Crear**.
+- La lista se filtra por un texto, un estado, una prioridad, el responsable y **Solo abiertas**. Elige una observación para ver y cambiar sus campos, leer sus comentarios y responder en la caja (**Comentar**; marca **Con la vista 3D** para adjuntar la vista tal como está a la respuesta).
+- **Mostrar en 3D** abre el punto de vista de la observación: la vista 3D va a su cámara, sus elementos quedan seleccionados (los que el proyecto tiene, por su GlobalId IFC) y sus planos de corte pasan a ser la caja de sección. Un comentario con vista propia tiene **Mostrar** al lado.
+- **Volver a tomar de la vista 3D** sustituye el punto de vista de la observación por la vista tal como está ahora.
+- **Importar BCF…** lee un archivo `.bcfzip` (BCF 2.1) o `.bcf` (BCF 3.0): un tema que el proyecto ya tiene (el mismo GUID) se actualiza —ganan los campos del archivo, y los comentarios hechos aquí que el archivo no tiene se quedan—, los demás se añaden. **Exportar todas**, **Exportar abiertas** o **Exportar seleccionada** escriben un archivo BCF, 2.1 salvo que elijas 3.0, para entregar al revisor o dejar en el contenedor Shared de la carpeta del proyecto. Los temas conservan sus GUID, así que un viaje de ida y vuelta por otra herramienta vuelve a las mismas observaciones.
+
+![Una observación abierta en su punto de vista en la vista 3D](shots/remark-viewpoint.webp)
+
+Tu nombre en lo que escribes se pone en la caja **Tu nombre** del diálogo (se guarda en este ordenador).

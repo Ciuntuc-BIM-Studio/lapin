@@ -388,9 +388,11 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return p["args"] is JsonObject args && HasPath(args) ? "A guest cannot reach files on the host's computer." : null;
             case "doc.undo" or "doc.redo":
                 return editor ? null : "You joined to look: ask the host to let you edit.";
-            case "project.importIfc" or "project.importFragments":
+            case "project.importIfc" or "project.importFragments" or "project.importBcf":
                 if (!editor) return "You joined to look: ask the host to let you edit.";
                 return p["data"] is JsonValue ? null : "A guest imports a file from their own computer.";
+            case "project.exportBcf":
+                return null;
             default:
                 return "Only the host can do that.";
         }
@@ -563,6 +565,27 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 var (bytes, name, _, _) = IfcBytes(p);
                 var r = Lapin.Mesh.Fragments.FragImport.Run(session, bytes, name, out var imported);
                 return (r.ToJson(), imported);
+            }
+            case "project.importBcf":
+            {
+                // A BCF file (2.1 or 3.0, docs/plan-cde.md stage 2) into the project's remarks: topics by GUID, updated when known, added when new; by path or by its bytes.
+                var (bytes, name, _, _) = IfcBytes(p);
+                var file = Lapin.Platform.Cde.Remarks.BcfReader.Read(bytes);
+                Lapin.Platform.Cde.Remarks.Remarks.ImportResult r = null!;
+                var diff = session.Edit($"Import {name}", edit => r = Lapin.Platform.Cde.Remarks.Remarks.Import(edit, file));
+                var result = r.ToJson();
+                result["name"] = name;
+                return (result, diff);
+            }
+            case "project.exportBcf":
+            {
+                // The remarks as a BCF file: all, the open ones, or those asked (ids); 2.1 unless version is 3.0. To a path (the desktop) or as bytes.
+                var file = Lapin.Platform.Cde.Remarks.Remarks.Export(session.Model, p);
+                var bytes = Lapin.Platform.Cde.Remarks.BcfWriter.Write(file);
+                var delivered = Deliver(bytes, "remarks.bcfzip");
+                delivered["topics"] = file.Topics.Count;
+                delivered["version"] = file.Version;
+                return (delivered, null);
             }
             case "project.reloadLink":
             {

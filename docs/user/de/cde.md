@@ -42,3 +42,19 @@ Blockierend: ein Schriftfeld ohne Nummer, Titel oder Zeichner; eine Ansicht ohne
 5. Das Projekt wird danach als nach der Ausgabe benannte **Version** gespeichert (siehe [Dateien, Versionen und Wiederherstellung](files.md)), damit eine Ausgabe wieder geöffnet, wiederhergestellt oder mit dem jetzigen Projekt verglichen werden kann.
 
 Die Ausgaben stehen unten im Dialog Project folder, jede mit ihren Dateien und **Ordner öffnen**.
+
+## Anmerkungen (BCF)
+
+**Manage → Remarks…** hält die Anmerkungen am Modell – deine und die eines Prüfers – als BCF-Themen (das BIM Collaboration Format, das BIMcollab, Solibri, Navisworks und Revit austauschen), im Projekt, nie in der IFC. Eine Anmerkung hat einen Titel, eine Beschreibung, einen Typ, einen Status (Open, In progress, Resolved, Closed), eine Priorität, einen Zuständigen, ein Fälligkeitsdatum und Schlagwörter; ihre Kommentare; und ihre Blickpunkte – die 3D-Kamera, die ausgewählten Elemente, den Schnittkasten als Schnittebenen und einen Schnappschuss.
+
+![Anmerkungen: die Liste mit ihren Filtern, eine Anmerkung mit Schnappschuss und Kommentaren](shots/remarks.webp)
+
+- **Neue Anmerkung** macht eine aus der 3D-Ansicht vorne: die Kamera wie sie ist, die ausgewählten Elemente, der Schnittkasten und ein Bild aus der Ansicht. Felder ausfüllen und **Erstellen**.
+- Die Liste wird nach einem Text, einem Status, einer Priorität, dem Zuständigen und **Nur offene** gefiltert. Wähle eine Anmerkung, um ihre Felder zu sehen und zu ändern, ihre Kommentare zu lesen und im Feld zu antworten (**Kommentieren**; **Mit der 3D-Ansicht** hängt die Ansicht wie sie ist an die Antwort).
+- **In 3D zeigen** öffnet den Blickpunkt der Anmerkung: die 3D-Ansicht geht an ihre Kamera, ihre Elemente werden ausgewählt (die das Projekt hat, nach ihrer IFC-GlobalId), und ihre Schnittebenen werden der Schnittkasten. Ein Kommentar mit eigener Ansicht hat **Zeigen** daneben.
+- **Aus der 3D-Ansicht neu aufnehmen** ersetzt den Blickpunkt der Anmerkung durch die Ansicht wie sie jetzt ist.
+- **BCF importieren…** liest eine `.bcfzip`- (BCF 2.1) oder `.bcf`-Datei (BCF 3.0): ein Thema, das das Projekt schon hat (dieselbe GUID), wird aktualisiert – die Felder der Datei gewinnen, und hier gemachte Kommentare, die die Datei nicht hat, bleiben –, die anderen kommen hinzu. **Alle exportieren**, **Offene exportieren** oder **Ausgewählte exportieren** schreiben eine BCF-Datei, 2.1, sofern du nicht 3.0 wählst, zum Übergeben an den Prüfer oder zum Ablegen im Container Shared des Projektordners. Die Themen behalten ihre GUIDs, so kommt ein Weg durch ein anderes Werkzeug zu denselben Anmerkungen zurück.
+
+![Eine Anmerkung, an ihrem Blickpunkt in der 3D-Ansicht geöffnet](shots/remark-viewpoint.webp)
+
+Dein Name an dem, was du schreibst, wird im Feld **Dein Name** des Dialogs gesetzt (er bleibt auf diesem Rechner).

@@ -42,3 +42,19 @@ Blocking: a title block without a number, a title or who drew it; a view without
 5. The project is then saved as a **version** named after the issue (see [Files, versions and recovery](files.md)), so an issue can be reopened, restored or compared with the project as it is now.
 
 The issues are listed at the bottom of the Project folder dialog, each with its files and **Open folder**.
+
+## Remarks (BCF)
+
+**Manage → Remarks…** keeps the remarks made on the model — yours and a reviewer's — as BCF topics (the BIM Collaboration Format BIMcollab, Solibri, Navisworks and Revit exchange), in the project, never in the IFC. A remark has a title, a description, a type, a status (Open, In progress, Resolved, Closed), a priority, who it is assigned to, a due date and labels; its comments; and its viewpoints — the 3D camera, the elements selected, the section box as clipping planes, and a snapshot.
+
+![Remarks: the list with its filters, a remark with its snapshot and comments](shots/remarks.webp)
+
+- **New remark** makes one from the 3D view in front: the camera as it is, the elements selected, the section box, and a picture taken from the view. Fill the fields and **Create**.
+- The list is filtered by a text, a status, a priority, who it is assigned to, and **Open only**. Pick a remark to see and change its fields, read its comments, and answer in the box (**Comment**; tick **With the 3D view** to attach the view as it is to the answer).
+- **Show in 3D** opens the remark's viewpoint: the 3D view goes to its camera, its elements are selected (those the project has, by their IFC GlobalId), and its clipping planes become the section box. A comment with a view of its own has **Show** beside it.
+- **Retake from the 3D view** replaces the remark's viewpoint with the view as it is now.
+- **Import BCF…** reads a `.bcfzip` (BCF 2.1) or `.bcf` (BCF 3.0) file: a topic the project already has (the same GUID) is updated — the file's fields win, and the comments made here that the file lacks stay — the others are added. **Export all**, **Export open** or **Export selected** write a BCF file, 2.1 unless you pick 3.0, to hand to the reviewer or drop into the project folder's Shared container. The topics keep their GUIDs, so a round trip through another tool comes back to the same remarks.
+
+![A remark opened at its viewpoint in the 3D view](shots/remark-viewpoint.webp)
+
+Your name on what you write is set in the dialog's **Your name** box (it is kept on this computer).

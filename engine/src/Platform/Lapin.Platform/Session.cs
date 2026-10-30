@@ -586,6 +586,8 @@ public sealed class Session
         props.Remove(StoredBodies.XfKey);
         // What the file said of a foreign element, kept for the export only.
         props.Remove(IfcSource.Key);
+        // A remark's snapshots (a PNG each) are asked for when shown.
+        Cde.Remarks.Remarks.Strip(e, props);
         if (e.PredefinedType != null) props["predefinedType"] = e.PredefinedType;
         var owner = _catalog.OwnerOf(e.Class);
         var storey = e.Class == IfcClass.BuildingStorey ? null : Spatial.StoreyOf(_store, e.Id)?.Id;

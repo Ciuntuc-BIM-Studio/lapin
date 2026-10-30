@@ -42,3 +42,19 @@ Blocante: un cartuș fără număr, fără titlu sau fără cine a desenat; o ve
 5. Proiectul se salvează apoi ca **versiune** cu numele emiterii (vezi [Fișiere, versiuni și recuperare](files.md)), ca o emitere să poată fi redeschisă, restaurată sau comparată cu proiectul de acum.
 
 Emiterile sunt listate în josul dialogului Project folder, fiecare cu fișierele ei și **Deschide folderul**.
+
+## Observații (BCF)
+
+**Manage → Remarks…** păstrează observațiile făcute pe model — ale tale și ale unui verificator — ca subiecte BCF (formatul BIM Collaboration Format pe care îl schimbă BIMcollab, Solibri, Navisworks și Revit), în proiect, niciodată în IFC. O observație are un titlu, o descriere, un tip, o stare (Open, In progress, Resolved, Closed), o prioritate, un responsabil, un termen și etichete; comentariile ei; și punctele ei de vedere — camera 3D, elementele selectate, cutia de secțiune ca planuri de tăiere și o captură.
+
+![Observații: lista cu filtrele ei, o observație cu captura și comentariile ei](shots/remarks.webp)
+
+- **Observație nouă** face una din vederea 3D din față: camera așa cum e, elementele selectate, cutia de secțiune și o imagine luată din vedere. Completezi câmpurile și **Creează**.
+- Lista se filtrează după un text, o stare, o prioritate, responsabil și **Doar deschise**. Alegi o observație ca să-i vezi și să-i schimbi câmpurile, să-i citești comentariile și să răspunzi în casetă (**Comentează**; bifezi **Cu vederea 3D** ca răspunsul să ia vederea așa cum e).
+- **Arată în 3D** deschide punctul de vedere al observației: vederea 3D merge la camera ei, elementele ei sunt selectate (cele pe care proiectul le are, după GlobalId-ul IFC), iar planurile ei de tăiere devin cutia de secțiune. Un comentariu cu vederea lui are **Arată** lângă el.
+- **Reia din vederea 3D** înlocuiește punctul de vedere al observației cu vederea așa cum e acum.
+- **Importă BCF…** citește un fișier `.bcfzip` (BCF 2.1) sau `.bcf` (BCF 3.0): un subiect pe care proiectul îl are deja (același GUID) se actualizează — câmpurile fișierului câștigă, iar comentariile făcute aici pe care fișierul nu le are rămân — celelalte se adaugă. **Exportă toate**, **Exportă deschise** sau **Exportă selectată** scriu un fișier BCF, 2.1 dacă nu alegi 3.0, de dat verificatorului sau de pus în containerul Shared al folderului proiectului. Subiectele își păstrează GUID-urile, deci un drum dus-întors printr-un alt program se întoarce la aceleași observații.
+
+![O observație deschisă la punctul ei de vedere în vederea 3D](shots/remark-viewpoint.webp)
+
+Numele tău pe ce scrii se pune în caseta **Numele tău** a dialogului (se păstrează pe acest calculator).

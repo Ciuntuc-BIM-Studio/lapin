@@ -17,6 +17,10 @@ export interface CameraState extends CameraPose {
   /** Vertical field of view, radians. */
   fov: number;
   ortho: boolean;
+  /** The orthogonal camera's zoom (1 in perspective): its view is 2·distance·tan(fov/2)/zoom high. */
+  zoom: number;
+  /** Width over height of the view. */
+  aspect: number;
 }
 
 export interface CameraApi {
@@ -31,10 +35,12 @@ export interface CameraApi {
   /** Frame everything. */
   fit(animate?: boolean): void;
   setOrtho(on: boolean): void;
+  /** The view as drawn now, a PNG data URL at most `maxWidth` wide (a remark's snapshot); null when it cannot be read. */
+  snapshot(maxWidth?: number): string | null;
 }
 
 export const useCamera = create<CameraState & { api: CameraApi | null }>(() => ({
-  azimuth: Math.PI / 4, pitch: -0.5, distance: 30, target: { x: 0, y: 0, z: 0 }, position: { x: -20, y: -20, z: 15 }, fov: (45 * Math.PI) / 180, ortho: false, api: null,
+  azimuth: Math.PI / 4, pitch: -0.5, distance: 30, target: { x: 0, y: 0, z: 0 }, position: { x: -20, y: -20, z: 15 }, fov: (45 * Math.PI) / 180, ortho: false, zoom: 1, aspect: 16 / 9, api: null,
 }));
 
 /** The look direction of a pose (unit). */
