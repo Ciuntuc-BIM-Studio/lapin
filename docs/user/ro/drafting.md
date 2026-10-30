@@ -28,6 +28,12 @@ Fiecare unealtă își arată literele când ții mouse-ul peste ea; le poți sc
 
 Lapin se prinde de capetele, mijloacele și intersecțiile a ce e desenat, și de grilă. <kbd>F3</kbd> pornește sau oprește snap-ul, <kbd>F8</kbd> ortho și <kbd>F10</kbd> urmărirea polară. Starea lor se vede în dreapta jos a vederii.
 
+## Selectare
+
+Dă clic pe un element ca să-l selectezi; <kbd>Shift</kbd>-clic adaugă la selecție. Ca să selectezi mai multe deodată, trage cu butonul stâng de unde nu e nimic selectat. Tras spre dreapta, chenarul e albastru și ia ce e cuprins în întregime în el (fereastră); tras spre stânga, e verde și punctat și ia tot ce atinge (crossing), ca în AutoCAD. Apasă <kbd>Space</kbd> în timp ce tragi și chenarul devine un lasou care urmează mouse-ul, cu modul pe care îl avea chenarul; <kbd>Space</kbd> din nou revine la chenar. Pe linia de comandă, când o comandă cere să selectezi obiecte, scrie **WP** sau **CP** și dă clic pe colțurile unui poligon, apoi <kbd>Enter</kbd>: un poligon fereastră sau un poligon crossing.
+
+![Un lasou în plan: chenarul tras spre dreapta, apoi Space, și bucla în jurul celor doi pereți pe care îi ia](shots/select-lasso.webp)
+
 ## Copiere și mutare
 
 Ca să copiezi, selectează elementul și scrie <kbd>CO</kbd>. Dă clic pe un punct de bază, apoi pe un al doilea punct. Lapin copiază mai departe până apeși <kbd>Enter</kbd> sau <kbd>Esc</kbd>. **Mută** (<kbd>M</kbd>) merge la fel.

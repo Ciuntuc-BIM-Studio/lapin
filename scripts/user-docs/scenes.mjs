@@ -1070,6 +1070,30 @@ export const scenes = [
       await t.keys('Escape');
       t.expect(await t.page.locator('.move-trace').count() === 0, 'Esc ends the drag');
       await t.page.mouse.up();
+      // A lasso: a window box dragged to the right, Space turns it into a lasso that goes round the left wall and the inner wall only.
+      await t.ui({ selection: null, selected: [] });
+      // Zoomed out, so the lasso's corners round the house fall clear of the HUD and the key plan over the view.
+      await t.keys('-', '-');
+      await t.wait(400);
+      const lasso = [[-1, 9], [8, 9], [8, -1], [6, -1], [6, 8.5], [1, 8.5], [1, -1], [-1, -1]];
+      const [lx, ly] = await t.planPoint(...lasso[0]);
+      await t.page.mouse.move(lx, ly, { steps: 3 });
+      await t.page.mouse.down();
+      const [bx2, by2] = await t.planPoint(...lasso[1]);
+      await t.page.mouse.move(bx2, by2, { steps: 8 });
+      await t.wait(200);
+      t.expect(await t.page.locator('rect.select-box.window').count() === 1, 'a drag to the right is a window box');
+      await t.page.keyboard.press('Space');
+      for (const [x, y] of lasso.slice(2)) { const [sx, sy] = await t.planPoint(x, y); await t.page.mouse.move(sx, sy, { steps: 8 }); }
+      await t.wait(300);
+      t.expect(await t.page.locator('polygon.select-box.lasso.window').count() === 1, 'Space turns the box into a lasso, still a window');
+      await t.shot('select-lasso', { clip: { x: 250, y: 120, width: 920, height: 730 } });
+      await t.page.mouse.up();
+      await t.wait(300);
+      const taken = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selected);
+      t.expect(taken.length === 2 && taken.includes(walls[3]) && taken.includes(walls.inner), `the lasso takes the two walls wholly inside it (took ${taken.length})`);
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
       await t.button('Draft', { exact: true });
       await t.shot('ribbon-draft', { of: '.topbar', pad: 0 });
       await t.button('Annotate', { exact: true });

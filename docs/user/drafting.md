@@ -28,6 +28,12 @@ Every tool shows its letters in its tooltip; you can change them in **View → K
 
 Lapin snaps to the ends, middles and intersections of what is drawn, and to the grid. <kbd>F3</kbd> turns snapping on or off, <kbd>F8</kbd> ortho and <kbd>F10</kbd> polar tracking. Their state shows at the bottom right of the view.
 
+## Selecting
+
+Click an element to select it; <kbd>Shift</kbd>-click adds to the selection. To select several at once, drag with the left button where nothing is selected. Dragged to the right, the box is blue and takes what lies wholly inside it (a window); dragged to the left, it is green and dashed and takes everything it touches (crossing), as in AutoCAD. Press <kbd>Space</kbd> while you drag and the box becomes a lasso that follows the mouse, keeping the mode the box had; <kbd>Space</kbd> again goes back to the box. On the command line, while a command asks you to select objects, type **WP** or **CP** and click the corners of a polygon, then <kbd>Enter</kbd>: a window polygon or a crossing polygon.
+
+![A lasso in the plan: the box dragged to the right, then Space, and the loop round the two walls it takes](shots/select-lasso.webp)
+
 ## Copying and moving
 
 To copy, select the element and type <kbd>CO</kbd>. Click a base point, then a second point. Lapin keeps copying until you press <kbd>Enter</kbd> or <kbd>Esc</kbd>. **Move** (<kbd>M</kbd>) works the same way.

@@ -28,6 +28,12 @@ Cada herramienta muestra sus letras en su información sobre herramientas; puede
 
 Lapin fuerza el cursor a los extremos, los puntos medios y las intersecciones de lo dibujado, y a la rejilla. <kbd>F3</kbd> activa o desactiva las referencias, <kbd>F8</kbd> el modo orto y <kbd>F10</kbd> el rastreo polar. Su estado se muestra en la parte inferior derecha de la vista.
 
+## Seleccionar
+
+Haga clic en un elemento para seleccionarlo; <kbd>Mayús</kbd>-clic lo añade a la selección. Para seleccionar varios a la vez, arrastre con el botón izquierdo donde no haya nada seleccionado. Arrastrado hacia la derecha, el recuadro es azul y toma lo que queda entero dentro (ventana); hacia la izquierda, es verde y discontinuo y toma todo lo que toca (captura), como en AutoCAD. Pulse <kbd>Espacio</kbd> mientras arrastra y el recuadro se convierte en un lazo que sigue al ratón, con el modo que tenía el recuadro; <kbd>Espacio</kbd> de nuevo vuelve al recuadro. En la línea de comandos, cuando un comando pide seleccionar objetos, escriba **WP** o **CP** y haga clic en los vértices de un polígono, luego <kbd>Intro</kbd>: un polígono ventana o un polígono captura.
+
+![Un lazo en la planta: el recuadro arrastrado a la derecha, luego Espacio, y el lazo alrededor de los dos muros que toma](shots/select-lasso.webp)
+
 ## Copiar y desplazar
 
 Para copiar, seleccione el elemento y escriba <kbd>CO</kbd>. Haga clic en un punto base y luego en un segundo punto. Lapin sigue copiando hasta que pulse <kbd>Enter</kbd> o <kbd>Esc</kbd>. **Desplazar** (<kbd>M</kbd>) funciona igual.

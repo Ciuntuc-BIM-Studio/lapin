@@ -13,6 +13,7 @@ import { fromJson, nearestOnShape, type Shape } from './shapes';
 import { applyOrtho } from './input';
 import { track, trackOnOrtho, type Guide } from './tracking';
 import { useCad, type CadHost } from './session';
+import type { RegionTest } from '../selectBox';
 
 /** What holds an aimed point that no object snap took: the ortho line from the base (on, or Shift held), a polar angle from the base, or a tracking guide through an acquired point. */
 export type AimLock = 'ortho' | 'polar' | 'tracking';
@@ -86,6 +87,8 @@ export function useCadCanvas(o: {
   pickAny: (p: Vec2) => string | null;
   /** An element's outline in this view (a plan's modelling lines), for previews and the move's ghost. */
   outlines?: (id: string) => Shape[];
+  /** Everything selectable a region takes (the command line's WP and CP). */
+  inRegion?: (takes: RegionTest) => string[];
 }) {
   const { shapes, drafts } = useMemo(() => snapShapes(o.drawing, o.extra), [o.drawing, o.extra]);
   const index = useMemo(() => new SnapIndex(shapes), [shapes]);
@@ -97,6 +100,8 @@ export function useCadCanvas(o: {
   pickRef.current = o.pickAny;
   const outlinesRef = useRef(o.outlines);
   outlinesRef.current = o.outlines;
+  const regionRef = useRef(o.inRegion);
+  regionRef.current = o.inRegion;
   const marks = o.drawing?.marks;
 
   // The command line works on this view while it is shown.
@@ -126,6 +131,7 @@ export function useCadCanvas(o: {
         for (let k = 0; k + 3 < s.length; k += 4) out.push({ type: 'line', a: { x: s[k], y: s[k + 1] }, b: { x: s[k + 2], y: s[k + 3] } });
         return out;
       },
+      inRegion: (takes) => regionRef.current?.(takes) ?? [],
     };
     useCad.setState({ host });
     return () => { if (useCad.getState().host === host) useCad.setState({ host: null }); };

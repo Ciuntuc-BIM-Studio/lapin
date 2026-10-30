@@ -7,7 +7,7 @@
 
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { Vec2 } from '../platform/module';
-import { boxTest, segsOf, type Seg } from './selectBox';
+import { boxTest, segsOf, type RegionTest, type Seg } from './selectBox';
 import { distToSegment, pairs, pointInPolygon } from './snap';
 
 /** A drawing's annotations: their ids and segments (x1, y1, x2, y2, …). */
@@ -50,7 +50,11 @@ export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<str
 
 /** What a selection box from world corner `p` to `q` takes (see boxTest): elements by their lines, then annotations. */
 export function boxIds(p: Vec2, q: Vec2, windowMode: boolean, items: RenderItem[], nodes: Map<string, NodeDto>, marks: Mark[] | undefined): string[] {
-  const takes = boxTest(p, q, windowMode);
+  return regionIds(boxTest(p, q, windowMode), items, nodes, marks);
+}
+
+/** What a selection region (a box or a lasso) takes: elements by their lines, then annotations. */
+export function regionIds(takes: RegionTest, items: RenderItem[], nodes: Map<string, NodeDto>, marks: Mark[] | undefined): string[] {
   const ids: string[] = [];
   for (const r of items) {
     const segs: Seg[] = [];
@@ -61,10 +65,14 @@ export function boxIds(p: Vec2, q: Vec2, windowMode: boolean, items: RenderItem[
     }
     if (nodes.get(r.nodeId) && takes(segs)) ids.push(r.nodeId);
   }
+  return markIds(takes, nodes, marks, ids);
+}
+
+/** The annotations and drafted shapes a region takes (a grid's axis on its own), added to `ids`. */
+export function markIds(takes: RegionTest, nodes: Map<string, NodeDto>, marks: Mark[] | undefined, ids: string[] = []): string[] {
   for (const m of marks ?? []) {
-    const segs = segsOf(m.segments);
     const owner = m.id.includes('#') ? m.id.slice(0, m.id.indexOf('#')) : m.id;
-    if (nodes.get(owner) && takes(segs) && !ids.includes(m.id)) ids.push(m.id);
+    if (nodes.get(owner) && takes(segsOf(m.segments)) && !ids.includes(m.id)) ids.push(m.id);
   }
   return ids;
 }

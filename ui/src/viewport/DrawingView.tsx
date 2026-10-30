@@ -21,7 +21,8 @@ import { CadOverlay } from './cad/canvas';
 import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
-import { boxTest, segsOf } from './selectBox';
+import { markIds } from './planPick';
+import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveCursor } from './liveInput';
@@ -48,8 +49,9 @@ export function DrawingView() {
   const go = useCallback((v: View) => { setView((old) => { if (old) pushHistory(key, old); return v; }); }, [key]);
   const [hover, setHover] = useState<Aimed | null>(null);
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null);
-  /** A selection box being dragged (screen px). */
-  const [box, setBox] = useState<{ a: Vec2; b: Vec2 } | null>(null);
+  /** A selection box or lasso being dragged (screen px); Space turns the box into a lasso. */
+  const [box, setBox] = useState<SelectDrag | null>(null);
+  useLassoKey(!!box, setBox);
   const cadStep = useCad((s) => s.step);
 
   useEffect(() => {
@@ -102,19 +104,14 @@ export function DrawingView() {
   }, [drawing, nodes, v.scale]);
 
   /** The annotations and drafted shapes a box takes, added to the selection with shift (or while a command asks for a selection). */
-  const selectBox = (b: { a: Vec2; b: Vec2 }, add: boolean) => {
-    const takes = boxTest(toWorld(b.a.x, b.a.y), toWorld(b.b.x, b.b.y), b.b.x >= b.a.x);
-    const ids: string[] = [];
-    for (const m of drawing?.marks ?? []) {
-      const owner = m.id.includes('#') ? m.id.slice(0, m.id.indexOf('#')) : m.id;
-      if (nodes.get(owner) && takes(segsOf(m.segments)) && !ids.includes(m.id)) ids.push(m.id);
-    }
+  const selectBox = (b: SelectDrag, add: boolean) => {
+    const ids = markIds(regionTestOf(b, toWorld), nodes, drawing?.marks);
     const before = add || useCad.getState().step ? useUi.getState().selected : [];
     const next = [...new Set([...before, ...ids])];
     useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
   };
 
-  const { aim, acquire } = useCadCanvas({ viewId: id, drawing, scale: v.scale, pickAny });
+  const { aim, acquire } = useCadCanvas({ viewId: id, drawing, scale: v.scale, pickAny, inRegion: (takes) => markIds(takes, nodes, drawing?.marks) });
 
   const at = (e: React.PointerEvent): { raw: Vec2; aimed: Aimed } => {
     const r = ref.current!.getBoundingClientRect();
@@ -171,7 +168,8 @@ export function DrawingView() {
             const step = useCad.getState().step;
             if (d.moved && e.buttons === 1 && (!step || step.want === 'select')) {
               const r = ref.current!.getBoundingClientRect();
-              setBox({ a: { x: d.x - r.left, y: d.y - r.top }, b: { x: e.clientX - r.left, y: e.clientY - r.top } });
+              const to = { x: e.clientX - r.left, y: e.clientY - r.top };
+              setBox((cur) => dragTo(cur ?? { a: { x: d.x - r.left, y: d.y - r.top }, b: to }, to));
               return;
             }
             if (d.moved) { setView({ ...d.view, cx: d.view.cx - (e.clientX - d.x) / d.view.scale, cy: d.view.cy + (e.clientY - d.y) / d.view.scale }); return; }
@@ -205,7 +203,7 @@ export function DrawingView() {
             return `M${a.x} ${a.y}L${b.x} ${b.y}`;
           }).join('')} />
         ))}
-        {box && <rect className={`select-box${box.b.x >= box.a.x ? ' window' : ' crossing'}`} x={Math.min(box.a.x, box.b.x)} y={Math.min(box.a.y, box.b.y)} width={Math.abs(box.b.x - box.a.x)} height={Math.abs(box.b.y - box.a.y)} />}
+        {box && <SelectRegion d={box} />}
         {editor.render}
         {(cadStep || editor.dragging) && <CadOverlay aimed={hover} toScreen={toScreen} />}
       </svg>

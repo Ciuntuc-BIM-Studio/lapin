@@ -28,6 +28,12 @@ Hvert værktøj viser sine bogstaver i sit værktøjstip; du kan ændre dem unde
 
 Lapin fanger til enderne, midtpunkterne og skæringerne af det, der er tegnet, og til gitteret. <kbd>F3</kbd> slår fang til eller fra, <kbd>F8</kbd> ortho og <kbd>F10</kbd> polær sporing. Deres tilstand vises nederst til højre i visningen.
 
+## At vælge
+
+Klik på et element for at vælge det; <kbd>Shift</kbd>-klik føjer til valget. For at vælge flere på én gang trækker du med venstre knap, hvor intet er valgt. Trukket mod højre er rammen blå og tager det, der ligger helt inden i den (vindue); trukket mod venstre er den grøn og stiplet og tager alt, hvad den rører (krydsning), som i AutoCAD. Tryk på <kbd>Mellemrum</kbd>, mens du trækker, og rammen bliver til en lasso, der følger musen og beholder rammens tilstand; <kbd>Mellemrum</kbd> igen går tilbage til rammen. På kommandolinjen, når en kommando beder dig vælge objekter, skriver du **WP** eller **CP** og klikker på hjørnerne af en polygon, derefter <kbd>Enter</kbd>: en vinduespolygon eller en krydsningspolygon.
+
+![En lasso i planen: rammen trukket mod højre, så Mellemrum, og løkken rundt om de to vægge, den tager](shots/select-lasso.webp)
+
 ## At kopiere og flytte
 
 Vil du kopiere, så markér elementet og skriv <kbd>CO</kbd>. Klik på et basispunkt og derefter på et andet punkt. Lapin bliver ved med at kopiere, indtil du trykker på <kbd>Enter</kbd> eller <kbd>Esc</kbd>. **Flyt** (<kbd>M</kbd>) virker på samme måde.

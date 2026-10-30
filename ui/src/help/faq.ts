@@ -294,6 +294,15 @@ export const FAQ: Entry[] = [
     action: { label: 'Open the user guide', labelRo: 'Deschide ghidul', run: { kind: 'guide' } },
     source: 'faq',
   },
+  {
+    id: 'lasso-select',
+    q: ['Is there a lasso selection like in AutoCAD?', 'How do I select with a box or a lasso?', 'What is the difference between the blue and the green selection box?'],
+    qRo: ['Există selecție lasso ca în AutoCAD?', 'Cum selectez cu o fereastră sau cu un lasou?', 'Care e diferența între chenarul albastru și cel verde?'],
+    keywords: ['lasso', 'select', 'selection', 'box', 'window', 'crossing', 'polygon', 'drag', 'marquee', 'wp', 'cp', 'lasou', 'selectie', 'selectez', 'fereastra', 'chenar', 'poligon', 'trag'],
+    a: 'In a plan, section, elevation or drafting view, drag with the left button and nothing selected under it. Dragged to the right the box is blue and takes what lies wholly inside it (a window); to the left it is green and dashed and takes everything it touches (crossing). Press Space while you drag and the box becomes a lasso that follows the mouse, keeping the mode it had; Space again goes back to the box. Shift adds to what is selected. On the command line, while a command asks you to select objects, type WP or CP and click the corners of a polygon, then Enter.',
+    aRo: 'Într-un plan, o secțiune, o elevație sau un desen, trage cu butonul stâng, fără nimic selectat sub cursor. Tras spre dreapta, chenarul e albastru și ia ce e cuprins în întregime în el (fereastră); spre stânga e verde și punctat și ia tot ce atinge (crossing). Apasă Space în timp ce tragi și chenarul devine un lasou care urmează mouse-ul, cu modul pe care îl avea; Space din nou revine la chenar. Shift adaugă la ce e selectat. Pe linia de comandă, când o comandă cere să selectezi obiecte, scrie WP sau CP și dă clic pe colțurile unui poligon, apoi Enter.',
+    source: 'faq',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

@@ -28,6 +28,12 @@ Chaque outil affiche ses lettres dans son info-bulle ; vous pouvez les modifie
 
 Lapin s’accroche aux extrémités, aux milieux et aux intersections de ce qui est dessiné, ainsi qu’à la grille. <kbd>F3</kbd> active ou désactive l’accrochage, <kbd>F8</kbd> le mode ortho et <kbd>F10</kbd> le repérage polaire. Leur état s’affiche en bas à droite de la vue.
 
+## Sélectionner
+
+Cliquez sur un élément pour le sélectionner ; <kbd>Maj</kbd>-clic l’ajoute à la sélection. Pour en sélectionner plusieurs à la fois, faites glisser avec le bouton gauche là où rien n’est sélectionné. Tiré vers la droite, le cadre est bleu et prend ce qui est entièrement à l’intérieur (fenêtre) ; tiré vers la gauche, il est vert et pointillé et prend tout ce qu’il touche (capture), comme dans AutoCAD. Appuyez sur <kbd>Espace</kbd> pendant le glissement et le cadre devient un lasso qui suit la souris, en gardant le mode du cadre ; <kbd>Espace</kbd> à nouveau revient au cadre. Sur la ligne de commande, quand une commande demande de sélectionner des objets, tapez **WP** ou **CP** et cliquez les sommets d’un polygone, puis <kbd>Entrée</kbd> : un polygone fenêtre ou un polygone capture.
+
+![Un lasso dans le plan : le cadre tiré vers la droite, puis Espace, et la boucle autour des deux murs qu’il prend](shots/select-lasso.webp)
+
 ## Copier et déplacer
 
 Pour copier, sélectionnez l’élément et tapez <kbd>CO</kbd>. Cliquez un point de base, puis un second point. Lapin continue de copier jusqu’à ce que vous appuyiez sur <kbd>Enter</kbd> ou <kbd>Esc</kbd>. **Déplacer** (<kbd>M</kbd>) fonctionne de la même façon.

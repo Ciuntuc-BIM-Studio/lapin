@@ -14,6 +14,7 @@ import { applyOrtho, parseCoordinateInput, pointAlong } from './input';
 import { arcThrough, dist, toJson, type Shape } from './shapes';
 import { liveBegin, liveEnd } from '../liveInput';
 import { traceBegin, traceEnd } from '../moveTrace';
+import { lassoTest, type RegionTest } from '../selectBox';
 
 /** What a 2D view lends the command line: its view, and what lies under a point. */
 export interface CadHost {
@@ -26,6 +27,8 @@ export interface CadHost {
   shapeOf(id: string): Shape | null;
   /** What anything selectable looks like in this view (a drafted shape, an annotation's lines, an element's outline in plan), for previews and the move's ghost. */
   outlinesOf?(id: string): Shape[];
+  /** Everything selectable a region takes (a window or crossing polygon). */
+  inRegion?(takes: RegionTest): string[];
 }
 
 type Next = Step | null | void | Promise<Step | null | void>;
@@ -182,11 +185,38 @@ export function withSelection(then: (ids: string[]) => Next): Step | Promise<Ste
   const sel = useUi.getState().selected;
   if (sel.length) return then(sel);
   const collect = (): Step => ({
-    prompt: `Select objects (${useUi.getState().selected.length} selected), Enter when done`, want: 'select',
+    prompt: `Select objects (${useUi.getState().selected.length} selected) [WPolygon/CPolygon], Enter when done`, want: 'select',
     point: (p) => { const id = useCad.getState().host?.pickAny(p); if (id) select(id, true); return collect(); },
+    keywords: { WP: () => selectPolygon(true, collect), CP: () => selectPolygon(false, collect) },
     enter: () => { const ids = useUi.getState().selected; if (!ids.length) return null; return then(ids); },
   });
   return collect();
+}
+
+/**
+ * AutoCAD's WP and CP: the corners of a polygon clicked one by one, Enter
+ * closes it and adds what it takes to the selection: wholly inside (window)
+ * or touching it (crossing); then back to selecting.
+ */
+function selectPolygon(windowMode: boolean, back: () => Step): Step {
+  const pts: Vec2[] = [];
+  const name = windowMode ? 'Window polygon' : 'Crossing polygon';
+  const next = (): Step => ({
+    prompt: `${name}: next corner [Undo], Enter to close`, want: 'point', base: pts[pts.length - 1],
+    preview: (c) => [{ type: 'polyline', pts: [...pts, c], closed: pts.length >= 2 }],
+    point: (p) => { pts.push(p); return next(); },
+    keywords: { U: () => { pts.pop(); return pts.length ? next() : back(); } },
+    enter: () => {
+      if (pts.length < 3) { log('A polygon needs three corners.'); return back(); }
+      const ids = useCad.getState().host?.inRegion?.(lassoTest(pts, windowMode)) ?? [];
+      const before = useUi.getState().selected;
+      const all = [...new Set([...before, ...ids])];
+      useUi.setState({ selected: all, selection: all[all.length - 1] ?? null });
+      log(`${all.length - before.length} added.`);
+      return back();
+    },
+  });
+  return { prompt: `${name}: first corner`, want: 'point', point: (p) => { pts.push(p); return next(); } };
 }
 
 /** What the ids look like in the view: every shape of each (an element's outline in plan), else a drafted shape's first. */

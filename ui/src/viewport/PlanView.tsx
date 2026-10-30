@@ -20,7 +20,8 @@ import { findTool } from '../platform/modules';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
-import { boxIds, pickAt } from './planPick';
+import { pickAt, regionIds } from './planPick';
+import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
 import { pairs, toMm } from './snap';
 import { completeTool } from './tools';
@@ -72,8 +73,9 @@ export function PlanView() {
   const [ortho, setOrtho] = useState(false);
   /** A press: where, the view then, whether it moved; `carry`: the selection it was pressed on (a drag moves it, or copies it with Ctrl), from `base` (the press, snapped). */
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean; base?: Vec2 } | null>(null);
-  /** A selection box being dragged (screen px): left to right a window, right to left crossing. */
-  const [box, setBox] = useState<{ a: Vec2; b: Vec2 } | null>(null);
+  /** A selection box or lasso being dragged (screen px): left to right a window, right to left crossing; Space turns the box into a lasso. */
+  const [box, setBox] = useState<SelectDrag | null>(null);
+  useLassoKey(!!box, setBox);
 
   const render = useSession((s) => s.render);
   const nodes = useSession((s) => s.nodes);
@@ -205,7 +207,10 @@ export function PlanView() {
     }
     return o;
   }, [items]);
-  const { aim, acquire } = useCadCanvas({ viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null, outlines });
+  const { aim, acquire } = useCadCanvas({
+    viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null, outlines,
+    inRegion: (takes) => regionIds(takes, pickItems, nodes, scope ? undefined : drawing?.marks),
+  });
   const cadStep = useCad((s) => s.step);
   /** The selection dragged by its body (its trace shows over the plan). */
   const dragTrace = useTrace((s) => s.trace?.owner === 'drag');
@@ -345,7 +350,8 @@ export function PlanView() {
       // Left drag with no tool: a selection box; middle or right: pan.
       if (d.moved && e.buttons === 1 && !tool?.gesture && !d.carry && (!step || step.want === 'select')) {
         const rect = svgRef.current!.getBoundingClientRect();
-        setBox({ a: { x: d.x - rect.left, y: d.y - rect.top }, b: { x: e.clientX - rect.left, y: e.clientY - rect.top } });
+        const to = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        setBox((cur) => dragTo(cur ?? { a: { x: d.x - rect.left, y: d.y - rect.top }, b: to }, to));
         return;
       }
       // Left drag on the selection: carried as a move grip carries it (the trace from the press, the readout, snaps from the base).
@@ -413,10 +419,9 @@ export function PlanView() {
       { label: 'Select', icon: <MousePointer2 size={13} />, onSelect: () => select(room.id) },
     ]);
   };
-  /** What a selection box takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
-  const selectBox = (b: { a: Vec2; b: Vec2 }, add: boolean) => {
-    const p = toWorld(b.a.x, b.a.y), q = toWorld(b.b.x, b.b.y);
-    const ids = boxIds(p, q, b.b.x >= b.a.x, pickItems, nodes, scope ? undefined : drawing?.marks);
+  /** What a selection box or lasso takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
+  const selectBox = (b: SelectDrag, add: boolean) => {
+    const ids = regionIds(regionTestOf(b, toWorld), pickItems, nodes, scope ? undefined : drawing?.marks);
     const before = add || useCad.getState().step ? useUi.getState().selected : [];
     const next = [...new Set([...before, ...ids])];
     useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
@@ -619,7 +624,7 @@ export function PlanView() {
           ? <rect x={marker.x - 5} y={marker.y - 5} width={10} height={10} className="plan-snap point" />
           : <path d={`M${marker.x - 6},${marker.y}H${marker.x + 6}M${marker.x},${marker.y - 6}V${marker.y + 6}`} className="plan-snap" />)}
         {marker && <CadOverlay aimed={hover} toScreen={toScreen} />}
-        {box && <rect className={`select-box${box.b.x >= box.a.x ? ' window' : ' crossing'}`} x={Math.min(box.a.x, box.b.x)} y={Math.min(box.a.y, box.b.y)} width={Math.abs(box.b.x - box.a.x)} height={Math.abs(box.b.y - box.a.y)} />}
+        {box && <SelectRegion d={box} />}
       </svg>
       {active && <LiveBox toScreen={toScreen} />}
       {active && <LiveBar />}

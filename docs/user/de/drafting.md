@@ -28,6 +28,12 @@ Jedes Werkzeug zeigt seine Buchstaben in seinem Tooltip; Sie können sie unter *
 
 Lapin fängt Endpunkte, Mittelpunkte und Schnittpunkte des Gezeichneten sowie das Raster. <kbd>F3</kbd> schaltet den Fang ein oder aus, <kbd>F8</kbd> Ortho und <kbd>F10</kbd> den polaren Spurfang. Ihr Zustand wird unten rechts in der Ansicht angezeigt.
 
+## Auswählen
+
+Klicken Sie auf ein Element, um es auszuwählen; <kbd>Umschalt</kbd>-Klick fügt zur Auswahl hinzu. Um mehrere auf einmal auszuwählen, ziehen Sie mit der linken Maustaste, wo nichts ausgewählt ist. Nach rechts gezogen ist der Rahmen blau und nimmt, was ganz in ihm liegt (Fenster); nach links gezogen ist er grün und gestrichelt und nimmt alles, was er berührt (Kreuzen), wie in AutoCAD. Drücken Sie <kbd>Leertaste</kbd> während des Ziehens, und der Rahmen wird zu einem Lasso, das der Maus folgt und den Modus des Rahmens behält; <kbd>Leertaste</kbd> erneut kehrt zum Rahmen zurück. In der Befehlszeile, wenn ein Befehl nach Objekten fragt, tippen Sie **WP** oder **CP** und klicken die Ecken eines Polygons, dann <kbd>Eingabe</kbd>: ein Fenster- oder ein Kreuzen-Polygon.
+
+![Ein Lasso im Grundriss: der Rahmen nach rechts gezogen, dann Leertaste, und die Schleife um die zwei Wände, die es nimmt](shots/select-lasso.webp)
+
 ## Kopieren und Verschieben
 
 Zum Kopieren wählen Sie das Element aus und geben <kbd>CO</kbd> ein. Klicken Sie einen Basispunkt an, dann einen zweiten Punkt. Lapin kopiert weiter, bis Sie <kbd>Enter</kbd> oder <kbd>Esc</kbd> drücken. **Verschieben** (<kbd>M</kbd>) funktioniert genauso.
