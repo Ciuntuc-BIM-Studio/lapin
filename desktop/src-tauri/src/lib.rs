@@ -122,6 +122,24 @@ fn startup_file() -> Option<String> {
     std::env::var("LAPIN_OPEN").ok().filter(|p| !p.is_empty())
 }
 
+/// A folder (or file) shown in the system's file manager: the project folder an issue went into (Manage → Project folder).
+/// Only a path that exists on disk is handed to the system, never a URL or a command.
+#[tauri::command]
+fn open_path(path: String) -> Result<(), String> {
+    let p = PathBuf::from(&path);
+    if !p.exists() {
+        return Err(format!("There is nothing at {path}."));
+    }
+    #[cfg(target_os = "macos")]
+    let mut cmd = { let mut c = Command::new("open"); c.arg(&p); c };
+    #[cfg(target_os = "windows")]
+    let mut cmd = { let mut c = Command::new("explorer"); c.arg(&p); c };
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let mut cmd = { let mut c = Command::new("xdg-open"); c.arg(&p); c };
+    cmd.spawn().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 /// Stop the engine for good, before an update is installed (the app restarts after it).
 #[tauri::command]
 fn stop_engine(engine: State<'_, Arc<Engine>>) {
@@ -380,7 +398,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .manage(engine.clone())
         .manage(Arc::new(OllamaCalls::default()))
-        .invoke_handler(tauri::generate_handler![engine_url, open_separately, startup_file, stop_engine, ollama_request, ollama_cancel])
+        .invoke_handler(tauri::generate_handler![engine_url, open_separately, startup_file, open_path, stop_engine, ollama_request, ollama_cancel])
         .setup({
             let engine = engine.clone();
             move |app| {

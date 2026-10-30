@@ -5,6 +5,8 @@
 // A scene drives the interface in English; what a user types (a question)
 // is in the run's language (t.lang, one of languages.mjs), from the tables
 // below: a language missing from a table types the English.
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { say } from './languages.mjs';
 
 /** Ask Me's question in the help scene: each language's way of asking how to copy a wall. */
@@ -1184,6 +1186,37 @@ export const scenes = [
       await t.page.locator('.shortcuts-dialog input').first().fill('wall');
       await t.wait(300);
       await t.shot('shortcuts-dialog', { of: '.shortcuts-dialog', pad: 0 });
+    },
+  },
+  {
+    // The project folder as a CDE (docs/plan-cde.md): issuing is the desktop app's, so the guide's browser run opens the
+    // dialogs with the development switch (the folder typed in) against a temporary folder; nothing is issued here.
+    id: 'cde',
+    async run(t) {
+      await t.page.addInitScript(() => { localStorage.setItem('lapin.cde.dev', '1'); });
+      await t.fresh();
+      await house(t);
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: await t.storey(), name: 'Ground floor plan', scale: 100 });
+      const sheet = await t.cmd('sheet.create', { name: 'Ground floor plan', number: 'A-101', paper: 'A3' });
+      await t.cmd('sheet.addViewport', { id: sheet.id, viewId: plan.id, x: 150, y: 120 });
+      await t.cmd('sheet.titleBlock', { id: sheet.id, fields: { drawnBy: 'IC', date: '30.10.2026' } });
+      await t.cmd('cde.setNaming', { project: 'HOUSE', originator: 'CBS' });
+      await t.cmd('cde.setFolder', { path: join(tmpdir(), 'lapin-guide-cde') });
+      await t.wait(400);
+      await t.tool('manage.projectFolder');
+      t.expect((await t.page.locator('.dialog input[aria-label=Folder]').inputValue()).includes('lapin-guide-cde'), 'the project folder dialog shows the folder kept in the project');
+      await t.shot('project-folder', { of: '.dialog', pad: 0 });
+      await t.button('Close', { exact: true });
+      await t.tool('manage.check');
+      await t.page.waitForSelector('[data-testid=cde-findings]', { timeout: 10_000 });
+      t.expect(await t.page.locator('[data-testid=cde-findings] li').count() > 0, 'the check lists what the house still lacks (tags, properties)');
+      await t.shot('cde-check', { of: '.dialog', pad: 0 });
+      await t.button('Close', { exact: true });
+      await t.tool('manage.issue');
+      await t.page.waitForSelector('[data-testid=cde-findings]', { timeout: 10_000 });
+      t.expect((await t.page.locator('.dialog input[aria-label=Revision]').inputValue()) === 'P01', 'the first issue is proposed as P01');
+      await t.shot('cde-issue', { of: '.dialog', pad: 0 });
+      await t.button('Cancel', { exact: true });
     },
   },
 ];

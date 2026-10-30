@@ -2,7 +2,7 @@
 
 import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
-import { AppWindow, Box, BoxSelect, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2, CloudFog, Link2, History, Layers, SlidersHorizontal, PanelsTopLeft, Keyboard, Bot } from 'lucide-react';
+import { AppWindow, Box, BoxSelect, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, Hash, Layers3, MapPin, Move, MousePointer2, Palette, PenTool, Pipette, RotateCw, Ruler, Scissors, Square, SquareSplitHorizontal, Trash2, CloudFog, Link2, History, Layers, SlidersHorizontal, PanelsTopLeft, Keyboard, Bot, FolderOpen, ClipboardCheck, Send } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -28,6 +28,9 @@ import { MoveToStoreyDialog } from './MoveToStoreyDialog';
 import { LinksDialog, LinksLook } from './LinksDialog';
 import { VersionsDialog } from './VersionsDialog';
 import { ExportMeshDialog } from './ExportMeshDialog';
+import { ProjectFolderDialog } from './cde/ProjectFolderDialog';
+import { IssueDialog } from './cde/IssueDialog';
+import { CheckDialog } from './cde/CheckDialog';
 import { PlanStoreysDialog } from './PlanStoreys';
 import { Storeys3DLooks } from './Storeys3D';
 import { setStoreys3d, showAllStoreys3d } from '../../viewport/storeys3dActions';
@@ -111,6 +114,12 @@ const core: LapinModule = {
         { id: 'manage.links', label: 'Links', icon: Link2, run: () => useUi.setState({ dialog: 'links' }) },
         { id: 'manage.versions', label: 'Versions', icon: History, run: () => useUi.setState({ dialog: 'versions' }) },
       ] },
+      // The project folder as a CDE (docs/plan-cde.md): the folder and its naming, the pre-issue checks, the issue.
+      { label: 'Issue', tools: [
+        { id: 'manage.projectFolder', label: 'Project folder', icon: FolderOpen, run: () => useUi.setState({ dialog: 'projectFolder' }) },
+        { id: 'manage.check', label: 'Check', icon: ClipboardCheck, run: () => useUi.setState({ dialog: 'cdeCheck' }) },
+        { id: 'manage.issue', label: 'Issue…', icon: Send, run: () => useUi.setState({ dialog: 'cdeIssue' }) },
+      ] },
     ],
   }, {
     id: 'view', label: 'View', order: 90,
@@ -162,7 +171,7 @@ const core: LapinModule = {
   }],
   grips: { LapinView: sectionGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog },
+  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection, fieldKeys: butDiscipline('LapinSheet') },

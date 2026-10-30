@@ -627,6 +627,21 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .version-group ul { margin: 2px 0 0 12px; padding: 0; list-style: none; columns: 2; }
 .version-group li { break-inside: avoid; line-height: 1.5; }
 
+/* The project folder as a CDE (Manage → Project folder, Check, Issue…): the naming fields, the sheets to issue, the findings. */
+.dialog-body.cde h4 { margin: 12px 0 4px; }
+.cde-naming { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; }
+.cde-naming .row input, .cde-naming .row select { flex: 1; }
+.cde-issue-grid .row { gap: 8px; }
+.cde-issue-grid .row label.small { display: inline-flex; align-items: center; gap: 4px; }
+.cde-sheets .row code { margin-left: auto; font-size: 11px; }
+.cde-findings { max-height: 260px; overflow-y: auto; }
+.cde-findings .version-group ul { columns: 1; }
+.cde-findings .version-group > span { font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
+.cde-block { color: var(--err); }
+.cde-warn { color: var(--warn, #b7791f); }
+.cde-ok { color: var(--ok); }
+input.invalid { outline: 1px solid var(--err); }
+
 /* A plan's underlay: another level's drawing beneath, faded and grey, never picked (it is still snapped to). */
 .plan-underlay { opacity: 0.32; filter: grayscale(1); pointer-events: none; }
 .underlay-pick { max-width: 170px; }

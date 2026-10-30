@@ -203,13 +203,14 @@ public static class Sheets
             pens.AddRange([rule, title]);
         }
 
-        // The title block: project, sheet, then number, scale, date and drawn by.
+        // The title block: project; sheet with its revision and status; then number, scale, date, drawn by and checked by.
         var (bw, bh) = TitleBlock;
         double bx0 = W - Margin - bw, by0 = H - Margin - bh, bx1 = W - Margin, by1 = H - Margin;
         Rect(frame, bx0, by0, bx1, by1);
         rules.Segments.Add((new(bx0, by0 + 20), new(bx1, by0 + 20)));
         rules.Segments.Add((new(bx0, by0 + 35), new(bx1, by0 + 35)));
-        for (var i = 1; i < 4; i++) rules.Segments.Add((new(bx0 + i * bw / 4, by0 + 35), new(bx0 + i * bw / 4, by1)));
+        const int cellCount = 5;
+        for (var i = 1; i < cellCount; i++) rules.Segments.Add((new(bx0 + i * bw / cellCount, by0 + 35), new(bx0 + i * bw / cellCount, by1)));
         var tb = sheet.Attrs["titleBlock"] as JsonObject;
         string Field(string k, string fallback = "") => (string?)tb?[k] is { Length: > 0 } v ? v : fallback;
         var projectName = Field("project", Spatial.Project(q.Model)?.Name ?? "Project");
@@ -217,6 +218,14 @@ public static class Sheets
         text.Texts.Add(new PenText(new Vec2(bx0 + 3, by0 + 15), projectName, 5, Anchor: "start", Bold: true));
         text.Texts.Add(new PenText(new Vec2(bx0 + 3, by0 + 24.5), "SHEET", 1.8, Anchor: "start"));
         text.Texts.Add(new PenText(new Vec2(bx0 + 3, by0 + 32), sheet.Name, 4, Anchor: "start", Bold: true));
+        // The revision and the status (ISO 19650: P01…, S2…) at the right of the sheet's row, as the last issue set them.
+        double rx = bx0 + bw - 54, sx = bx0 + bw - 27;
+        rules.Segments.Add((new(rx, by0 + 20), new(rx, by0 + 35)));
+        rules.Segments.Add((new(sx, by0 + 20), new(sx, by0 + 35)));
+        text.Texts.Add(new PenText(new Vec2(rx + 3, by0 + 24.5), "REV", 1.8, Anchor: "start"));
+        text.Texts.Add(new PenText(new Vec2(rx + 3, by0 + 32), Field("revision", "—"), 4, Anchor: "start", Bold: true));
+        text.Texts.Add(new PenText(new Vec2(sx + 3, by0 + 24.5), "STATUS", 1.8, Anchor: "start"));
+        text.Texts.Add(new PenText(new Vec2(sx + 3, by0 + 32), Field("status", "—"), 4, Anchor: "start", Bold: true));
         var scales = placements.Where(p => !p.Content).Select(p => p.Drawing.Scale).Distinct().OrderBy(x => x).Select(s => $"1:{s:0}").ToList();
         var cells = new[]
         {
@@ -224,30 +233,79 @@ public static class Sheets
             ("SCALE", scales.Count == 0 ? "—" : string.Join(", ", scales)),
             ("DATE", Field("date", DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture))),
             ("DRAWN BY", Field("drawnBy")),
+            ("CHECKED BY", Field("checkedBy")),
         };
-        for (var i = 0; i < 4; i++)
+        for (var i = 0; i < cellCount; i++)
         {
-            var x = bx0 + i * bw / 4 + 3;
+            var x = bx0 + i * bw / cellCount + 3;
             text.Texts.Add(new PenText(new Vec2(x, by0 + 39.5), cells[i].Item1, 1.8, Anchor: "start"));
             text.Texts.Add(new PenText(new Vec2(x, by0 + 46.5), cells[i].Item2, i == 0 ? 4 : 3, Anchor: "start", Bold: i == 0));
         }
+        RevisionTable(q, sheet, frame, rules, text, bx0, by0, bw);
         pens.AddRange([frame, rules, text]);
         return new PaperPage(W, H, pens, sheet.Name, DraftingResources.Book(q.Model).LineCap);
     }
 
-    static JsonObject PageJson(PaperPage page, List<Placement> placements)
+    /// <summary>
+    /// The sheet's revision table (ISO 19650: the issues the sheet went out
+    /// in), over the title block, newest last: revision, date, status, the
+    /// issue's name. Nothing when the sheet was never issued.
+    /// </summary>
+    static void RevisionTable(IQueryContext q, Entity sheet, Pen frame, Pen rules, Pen text, double bx0, double by0, double bw)
+    {
+        var issues = Cde.CdeIssues.OfSheet(q.Model, sheet.Id);
+        if (issues.Count == 0) return;
+        const double row = 5;
+        var top = by0 - (issues.Count + 1) * row;
+        frame.Segments.AddRange([(new(bx0, top), new(bx0 + bw, top)), (new(bx0, top), new(bx0, by0)), (new(bx0 + bw, top), new(bx0 + bw, by0))]);
+        double[] cols = [bx0 + 3, bx0 + 18, bx0 + 42, bx0 + 60];
+        void Row(double y, string rev, string date, string status, string name, bool head)
+        {
+            text.Texts.Add(new PenText(new Vec2(cols[0], y), rev, head ? 1.8 : 2.5, Anchor: "start", Bold: !head));
+            text.Texts.Add(new PenText(new Vec2(cols[1], y), date, head ? 1.8 : 2.5, Anchor: "start"));
+            text.Texts.Add(new PenText(new Vec2(cols[2], y), status, head ? 1.8 : 2.5, Anchor: "start"));
+            text.Texts.Add(new PenText(new Vec2(cols[3], y), name, head ? 1.8 : 2.5, Anchor: "start"));
+        }
+        Row(top + row - 1.3, "REV", "DATE", "STATUS", "DESCRIPTION", true);
+        rules.Segments.Add((new(bx0, top + row), new(bx0 + bw, top + row)));
+        for (var i = 0; i < issues.Count; i++)
+        {
+            var it = issues[i];
+            var date = DateTime.TryParse(it.At, CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out var d) ? d.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture) : it.At;
+            Row(top + (i + 2) * row - 1.3, it.Revision, date, it.Status, it.Name, false);
+        }
+    }
+
+    /// <summary>What a placed view breaks on the paper: "outside" (past the frame), "titleBlock" (over it); empty when it sits well (a little slack).</summary>
+    public static List<string> Problems(Entity sheet, Placement p)
+    {
+        var (W, H) = PaperOf(sheet);
+        var (bw, bh) = TitleBlock;
+        double bx0 = W - Margin - bw, by0 = H - Margin - bh, bx1 = W - Margin, by1 = H - Margin;
+        var o = new List<string>();
+        if (p.X0 < Margin - 0.5 || p.Y0 < Margin - 0.5 || p.X1 > W - Margin + 0.5 || p.Y1 > H - Margin + 0.5) o.Add("outside");
+        if (p.X1 > bx0 + 0.5 && p.X0 < bx1 - 0.5 && p.Y1 > by0 + 0.5 && p.Y0 < by1 - 0.5) o.Add("titleBlock");
+        return o;
+    }
+
+    /// <summary>
+    /// A hash of what the sheet's views draw on the paper (their pens as
+    /// placed, with their titles): the same while the drawing is the same,
+    /// whatever the date or the title block say. An issue keeps it, so a later
+    /// check tells a sheet changed since it went out (docs/plan-cde.md).
+    /// </summary>
+    public static string DrawingHash(IQueryContext q, Entity sheet)
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (var pen in Compose(q, sheet).Pens.Where(p => p.Viewport != null)) sb.Append(pen.ToJson().ToJsonString()).Append('\n');
+        return Cde.CdeTransmittal.Sha256(sb.ToString());
+    }
+
+    static JsonObject PageJson(PaperPage page, Entity sheet, List<Placement> placements)
     {
         var (W, H) = (page.W, page.H);
         var (bw, bh) = TitleBlock;
         double bx0 = W - Margin - bw, by0 = H - Margin - bh, bx1 = W - Margin, by1 = H - Margin;
-        // What runs past the frame or over the title block (paper mm, a little slack).
-        JsonArray Warnings(Placement p)
-        {
-            var o = new JsonArray();
-            if (p.X0 < Margin - 0.5 || p.Y0 < Margin - 0.5 || p.X1 > W - Margin + 0.5 || p.Y1 > H - Margin + 0.5) o.Add((JsonNode)"outside");
-            if (p.X1 > bx0 + 0.5 && p.X0 < bx1 - 0.5 && p.Y1 > by0 + 0.5 && p.Y0 < by1 - 0.5) o.Add((JsonNode)"titleBlock");
-            return o;
-        }
         return new JsonObject
         {
             ["w"] = W, ["h"] = H,
@@ -257,7 +315,8 @@ public static class Sheets
             ["viewports"] = new JsonArray(placements.Select(p => (JsonNode)new JsonObject
             {
                 ["id"] = p.Viewport.Id, ["viewId"] = p.Viewport.ViewId, ["x0"] = p.X0, ["y0"] = p.Y0, ["x1"] = p.X1, ["y1"] = p.Y1, ["scale"] = p.Drawing.Scale,
-                ["content"] = p.Content, ["page"] = p.Viewport.Page, ["pages"] = p.Pages, ["width"] = p.Viewport.Width, ["warnings"] = Warnings(p),
+                ["content"] = p.Content, ["page"] = p.Viewport.Page, ["pages"] = p.Pages, ["width"] = p.Viewport.Width,
+                ["warnings"] = new JsonArray(Problems(sheet, p).Select(w => (JsonNode)w).ToArray()),
             }).ToArray()),
         };
     }
@@ -386,7 +445,7 @@ public static class Sheets
             var sheet = Require(q.Model, (string?)a["id"]);
             // Every view rendered once, for the page and its viewports both.
             var placements = Place(q, sheet);
-            return PageJson(Compose(q, sheet, placements), placements);
+            return PageJson(Compose(q, sheet, placements), sheet, placements);
         });
     }
 }

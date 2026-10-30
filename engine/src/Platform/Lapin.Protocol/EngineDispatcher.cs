@@ -595,6 +595,12 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                     : throw new CommandException("There is no such sheet or view.");
                 return (Deliver(bytes, "drawing.dxf"), null);
             }
+            // An issue into the project folder (docs/plan-cde.md): the files written and hashed, the transmittal, the issue recorded (one undo step).
+            case "cde.issue":
+            {
+                var (r, d) = CdeIssue.Run(session, p);
+                return (r, d);
+            }
             case "support.report": return ((support ?? throw new CommandException("Reports are sent from the app.")).Report(p), null);
             case "support.messages": return ((support ?? throw new CommandException("Messages are read from the app.")).Messages(p), null);
             case "support.open":
