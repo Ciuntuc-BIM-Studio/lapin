@@ -10,13 +10,19 @@ namespace Lapin.Ifc;
 /// What an export writes: the schema (IFC4, read everywhere; IFC4X3 for the
 /// terrain and the platforms as 4.3 names them), the detail ("group": an
 /// element with parts of its own, zones and lintels, roof planes and timber,
-/// is a parent over elements of their own; "simple": one body per element)
-/// and a phase (what exists at its end; null: the whole project).
+/// is a parent over elements of their own; "simple": one body per element),
+/// a phase (what exists at its end; null: the whole project) and how bodies
+/// are written: "brep" (a faceted B-rep, a face entity per face, as always) or
+/// "faceset" (the same faces as one IfcTriangulatedFaceSet or
+/// IfcPolygonalFaceSet over a shared point list, a much smaller file; coplanar
+/// triangles merged into one face), and a tolerance (metres; 0: exact) within
+/// which a body's triangles are simplified (<see cref="Simplifier"/>).
 /// </summary>
-public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null)
+public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0)
 {
     public bool Ifc43 => Schema.StartsWith("IFC4X3", StringComparison.OrdinalIgnoreCase);
     public bool Grouped => !string.Equals(Detail, "simple", StringComparison.OrdinalIgnoreCase);
+    public bool FaceSet => string.Equals(Geometry, "faceset", StringComparison.OrdinalIgnoreCase);
     public string SchemaName => Ifc43 ? "IFC4X3_ADD2" : "IFC4";
 }
 
@@ -224,17 +230,56 @@ public static class IfcExport
         /// <summary>A solid as a faceted B-rep, its vertices relative to the placement's height, in its colour.</summary>
         string Brep(Solid solid, string? hex, double z0) => Brep(solid, hex, v => new Vec3(v.X, v.Y, v.Z - z0));
 
-        /// <summary>A solid as a faceted B-rep, its vertices taken into the placement's frame by <paramref name="local"/>, in its colour.</summary>
+        /// <summary>
+        /// A solid as the export writes bodies (<see cref="IfcExportOptions.Geometry"/>), simplified within the tolerance asked,
+        /// its vertices taken into the placement's frame by <paramref name="local"/>, in its colour.
+        /// </summary>
         string Brep(Solid solid, string? hex, Func<Vec3, Vec3> local)
+        {
+            // A body of few faces (what Lapin builds) is written as it is; a mesh's many triangles are merged where they are
+            // coplanar (for a face set, which loses nothing by it) and simplified when a tolerance is asked.
+            if (solid.Faces.Length > SimplifyFrom && (o.Tolerance > 0 || o.FaceSet))
+                solid = simplified.TryGetValue(solid, out var ready) ? ready : Simplifier.Simplify(solid, Math.Max(0, o.Tolerance));
+            var item = o.FaceSet ? FaceSet(solid, local) : FacetedBrep(solid, local);
+            if (hex != null) f.Add("IFCSTYLEDITEM", item, L(new[] { Style(hex) }), Null);
+            return item;
+        }
+
+        /// <summary>How many faces a body has before it is worth merging or simplifying.</summary>
+        const int SimplifyFrom = 24;
+
+        /// <summary>
+        /// The faces over one point list: an IfcTriangulatedFaceSet when they are all triangles, else an
+        /// IfcPolygonalFaceSet (a face with holes an IfcIndexedPolygonalFaceWithVoids); indices from 1.
+        /// </summary>
+        string FaceSet(Solid solid, Func<Vec3, Vec3> local)
+        {
+            var faces = solid.Faces.Where(x => x.Outer.Length >= 3).ToList();
+            var used = new int[solid.Vertices.Length];
+            var points = new List<string>();
+            int Index(int i) { if (used[i] == 0) { var v = local(solid.Vertices[i]); points.Add(L(new[] { R(v.X), R(v.Y), R(v.Z) })); used[i] = points.Count; } return used[i]; }
+            string Ring(int[] ring) => L(ring.Select(i => I(Index(i))));
+            if (faces.All(x => x.Outer.Length == 3 && (x.Holes?.Length ?? 0) == 0))
+            {
+                var tris = faces.Select(x => Ring(x.Outer)).ToList();
+                return f.Add("IFCTRIANGULATEDFACESET", f.Add("IFCCARTESIANPOINTLIST3D", L(points), Null), Null, Null, L(tris), Null);
+            }
+            var items = faces.Select(x => (x.Holes ?? []).Where(h => h.Length >= 3).ToList() is { Count: > 0 } holes
+                ? (Outer: Ring(x.Outer), Holes: L(holes.Select(Ring)))
+                : (Outer: Ring(x.Outer), Holes: (string?)null)).ToList();
+            var refs = items.Select(x => x.Holes != null ? f.Add("IFCINDEXEDPOLYGONALFACEWITHVOIDS", x.Outer, x.Holes) : f.Add("IFCINDEXEDPOLYGONALFACE", x.Outer)).ToList();
+            return f.Add("IFCPOLYGONALFACESET", f.Add("IFCCARTESIANPOINTLIST3D", L(points), Null), Null, L(refs), Null);
+        }
+
+        /// <summary>A solid as a faceted B-rep: a face, a bound and a loop for each of its faces.</summary>
+        string FacetedBrep(Solid solid, Func<Vec3, Vec3> local)
         {
             var pts = solid.Vertices.Select(local).Select(v => f.Add("IFCCARTESIANPOINT", L(new[] { R(v.X), R(v.Y), R(v.Z) }))).ToArray();
             string Loop(int[] ring) => f.Add("IFCPOLYLOOP", L(ring.Select(i => pts[i])));
             var faces = solid.Faces.Where(x => x.Outer.Length >= 3).Select(face => f.Add("IFCFACE", L(
                 new[] { f.Add("IFCFACEOUTERBOUND", Loop(face.Outer), True) }
                     .Concat((face.Holes ?? []).Where(h => h.Length >= 3).Select(h => f.Add("IFCFACEBOUND", Loop(h), True)))))).ToList();
-            var brep = f.Add("IFCFACETEDBREP", f.Add("IFCCLOSEDSHELL", L(faces)));
-            if (hex != null) f.Add("IFCSTYLEDITEM", brep, L(new[] { Style(hex) }), Null);
-            return brep;
+            return f.Add("IFCFACETEDBREP", f.Add("IFCCLOSEDSHELL", L(faces)));
         }
 
         /// <summary>A door's or window's placement: its origin and axes (world) under the storey's, which stands at <paramref name="z0"/>.</summary>
@@ -308,7 +353,7 @@ public static class IfcExport
             return f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("MappedRepresentation"), L(new[] { f.Add("IFCMAPPEDITEM", map, op) }));
         }
 
-        string BodyOf(IEnumerable<string> breps) => f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("Brep"), L(breps));
+        string BodyOf(IEnumerable<string> breps) => f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S(o.FaceSet ? "Tessellation" : "Brep"), L(breps));
 
         // ─── Contexts, units, the spatial tree ──────────────────────────────
 
@@ -435,21 +480,43 @@ public static class IfcExport
         void WriteElements()
         {
             var voids = s.Catalog.Get<IVoidShapes>();
-            foreach (var e in m.Entities.ToList())
+            var elements = m.Entities.Where(e => IsElement(e) && InPhase(e)).ToList();
+            // Bodies to merge or simplify are prepared a batch at a time on every core, then written in order.
+            var prepare = o.Tolerance > 0 || o.FaceSet;
+            const int batch = 1000;
+            for (var from = 0; from < elements.Count; from += batch)
             {
-                if (!IsElement(e) || !InPhase(e)) continue;
-                try { Element(e, voids); }
-                catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException)
+                var some = elements.GetRange(from, Math.Min(batch, elements.Count - from));
+                var geos = new ElementGeometry?[some.Count];
+                if (prepare)
                 {
-                    Notes.Add($"„{e.Name}” was not exported: {ex.Message}");
+                    for (var i = 0; i < some.Count; i++)
+                        if (some[i].Class != IfcClass.Space)
+                            try { geos[i] = s.Geometry(some[i].Id, new GeometryOptions(CutOpenings: false)); }
+                            catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException) { geos[i] = null; }
+                    var solids = geos.SelectMany(g => g?.Parts ?? []).Select(p => p.Solid).Where(x => x.Faces.Length > SimplifyFrom).Distinct(ReferenceEqualityComparer.Instance).Cast<Solid>().ToList();
+                    Parallel.ForEach(solids, x => simplified[x] = Simplifier.Simplify(x, Math.Max(0, o.Tolerance)));
                 }
+                for (var i = 0; i < some.Count; i++)
+                {
+                    var e = some[i];
+                    try { Element(e, voids, geos[i]); }
+                    catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException)
+                    {
+                        Notes.Add($"„{e.Name}” was not exported: {ex.Message}");
+                    }
+                }
+                simplified.Clear();
             }
         }
 
-        void Element(Entity e, IVoidShapes? voids)
+        /// <summary>The bodies of the batch being written, merged or simplified ahead (<see cref="WriteElements"/>).</summary>
+        readonly System.Collections.Concurrent.ConcurrentDictionary<Solid, Solid> simplified = new(ReferenceEqualityComparer.Instance);
+
+        void Element(Entity e, IVoidShapes? voids, ElementGeometry? prepared = null)
         {
             if (e.Class == IfcClass.Space) { Space(e); return; }
-            var geo = s.Geometry(e.Id, new GeometryOptions(CutOpenings: false));
+            var geo = prepared ?? s.Geometry(e.Id, new GeometryOptions(CutOpenings: false));
             var parts = geo?.Parts.Where(p => p.Solid.Faces.Length > 0).ToList() ?? [];
             if (parts.Count == 0)
             {

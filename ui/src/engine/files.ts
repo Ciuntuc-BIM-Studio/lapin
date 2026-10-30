@@ -314,8 +314,11 @@ export async function exportFile(method: string, args: Record<string, unknown>, 
   }
 }
 
-/** The project as IFC (docs/spec-ifc.md): IFC4 by default, IFC4X3 on request; parts grouped under their element unless `detail` is 'simple'. */
-export async function exportIfc(options: { schema?: string; detail?: string; phase?: string } = {}): Promise<void> {
+/**
+ * The project as IFC (docs/spec-ifc.md): IFC4 by default, IFC4X3 on request; parts grouped under their element unless `detail` is 'simple';
+ * bodies as faceted B-reps, or as face sets (`geometry: 'faceset'`), simplified within `tolerance` (metres) when one is given.
+ */
+export async function exportIfc(options: { schema?: string; detail?: string; phase?: string; geometry?: string; tolerance?: number } = {}): Promise<void> {
   const path = useSession.getState().doc?.path ?? null;
   await exportFile('project.exportIfc', options, `${projectTitle(path)}.ifc`, 'ifc');
 }

@@ -12,6 +12,10 @@ Tout ce qui entre ou sort se trouve dans le menu **Fichier**.
 
 **Exporter IFC…** écrit le modèle en IFC. Chaque mur, dalle, porte et toit est un véritable élément IFC avec ses couches, son type et ses propriétés, si bien que le fichier s’ouvre comme un modèle dans d’autres outils BIM. Les portes et les fenêtres indiquent comment elles s’ouvrent : le sens de chaque vantail et de chaque ouvrant, le côté vers lequel il pivote, et les panneaux, de la manière dont IFC les définit, pour que les autres logiciels dessinent les mêmes ouvertures.
 
+L’export demande le schéma (**IFC4**, lu partout, ou **IFC4X3**), le détail (les pièces comme éléments à part entière ou un corps par élément), la phase et la façon d’écrire les corps. **Géométrie** est un **B-rep à facettes** (exact, ce qu’attendent le plus souvent les autres logiciels) ou des **ensembles de faces** : les mêmes faces dans un fichier bien plus petit. **Simplifier** écrit moins de triangles là où un corps est un maillage fin, comme les gaines et les tuyaux du fichier d’un autre logiciel, jamais plus loin de lui que la **tolérance** que vous saisissez (2 mm au départ). Les corps que Lapin construit lui-même (murs, dalles, portes) gardent leurs faces exactes, et simplifier ne change que la forme d’un corps, jamais ses propriétés.
+
+![Exporter IFC](shots/export-ifc.webp)
+
 **Importer IFC…** lit le fichier IFC d’un autre logiciel. Avant que quoi que ce soit n’entre, Lapin lit le fichier et montre ce qu’il contient : ses éléments par discipline (architecture, structure, fluides, mobilier et équipements, site), chaque discipline par catégorie avec leur nombre, et ses niveaux avec le nombre d’éléments sur chacun. Décochez ce dont vous n’avez pas besoin, par exemple les fluides et le mobilier quand vous travaillez sur la structure, ou ne gardez que les niveaux sur lesquels vous travaillez. **Comment** importe les éléments reconnus comme éléments Lapin, tous comme références, ou liés. Pendant la lecture et l’import du fichier, Lapin montre ce qu’il fait et où il en est ; un gros fichier prend un certain temps.
 
 ![Importer IFC](shots/import-ifc.webp)

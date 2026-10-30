@@ -491,8 +491,10 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             case "project.compareVersions": return (files.CompareVersions(session, p["a"], p["b"]), null);
             case "project.exportIfc":
             {
-                // The project as IFC (docs/spec-ifc.md): IFC4, or IFC4X3; parts grouped under their element, or one body each; a phase, or everything.
-                var options = new IfcExportOptions((string?)p["schema"] ?? "IFC4", (string?)p["detail"] ?? "group", (string?)p["phase"]);
+                // The project as IFC (docs/spec-ifc.md): IFC4, or IFC4X3; parts grouped under their element, or one body each; a phase, or everything;
+                // bodies as B-reps or face sets, simplified within a tolerance (metres) or exact.
+                var options = new IfcExportOptions((string?)p["schema"] ?? "IFC4", (string?)p["detail"] ?? "group", (string?)p["phase"],
+                    (string?)p["geometry"] ?? "brep", Math.Clamp(Json.Number(p["tolerance"]) ?? 0, 0, 0.1));
                 if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, ifcPath, options).ToJson(), null);
                 using var ms = new MemoryStream();
                 IfcExport.Write(session, ms, "project.ifc", options);

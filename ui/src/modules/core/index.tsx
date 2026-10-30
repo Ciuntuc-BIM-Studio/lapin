@@ -31,6 +31,7 @@ import { ExportMeshDialog } from './ExportMeshDialog';
 import { ProjectFolderDialog } from './cde/ProjectFolderDialog';
 import { IssueDialog } from './cde/IssueDialog';
 import { CheckDialog } from './cde/CheckDialog';
+import { ExportIfcDialog } from './ExportIfcDialog';
 import { PlanStoreysDialog } from './PlanStoreys';
 import { Storeys3DLooks } from './Storeys3D';
 import { setStoreys3d, showAllStoreys3d } from '../../viewport/storeys3dActions';
@@ -171,7 +172,7 @@ const core: LapinModule = {
   }],
   grips: { LapinView: sectionGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog },
+  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, exportIfc: ExportIfcDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection, fieldKeys: butDiscipline('LapinSheet') },

@@ -1049,6 +1049,19 @@ export const scenes = [
       const out = await t.call('project.exportMesh', { format: 'glb', viewId: '3d', planes: [{ normal: [0, 0, -1], constant: 1.2 }] });
       t.expect((out?.notes ?? []).some((n) => n.startsWith('Cut as the 3D view cuts it')), 'the exported model is cut as the view is');
       await dialog.getByRole('button', { name: 'Cancel' }).click();
+      // Export IFC: face sets, simplified within 2 mm.
+      await t.button('File', { exact: true });
+      await t.page.getByRole('menuitem', { name: /Export IFC/ }).click();
+      await t.wait(400);
+      const ifc = t.page.locator('[aria-label="Export IFC"]');
+      t.expect(await ifc.locator('select.export-geometry').inputValue() === 'brep', 'the IFC export writes B-reps unless asked otherwise');
+      await ifc.locator('select.export-geometry').selectOption('faceset');
+      await ifc.locator('input.export-simplify').check();
+      t.expect(await ifc.locator('input.export-tolerance').inputValue() === '2', 'the tolerance starts at 2 mm');
+      await t.shot('export-ifc', { of: '[aria-label="Export IFC"]', pad: 0 });
+      const written = await t.call('project.exportIfc', { geometry: 'faceset', tolerance: 0.002 });
+      t.expect(typeof written?.data === 'string' && atob(written.data).includes('IFCPOLYGONALFACESET'), 'the IFC export writes face sets when asked');
+      await ifc.getByRole('button', { name: 'Cancel' }).click();
     },
   },
   {

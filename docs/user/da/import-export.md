@@ -12,6 +12,10 @@ Alt, hvad der går ind eller ud, ligger i menuen **Filer**.
 
 **Eksportér IFC…** skriver modellen som IFC. Hver væg, hvert dæk, hver dør og hvert tag er et rigtigt IFC-element med sine lag, sin type og sine egenskaber, så filen åbner som en model i andre BIM-værktøjer. Døre og vinduer siger, hvordan de åbner: hængslingen af hver dørfløj og vinduesramme, hvilken vej den slår, og rammerne, sådan som IFC definerer dem, så andre programmer tegner de samme slag.
 
+Eksporten spørger om skemaet (**IFC4**, der læses overalt, eller **IFC4X3**), detaljen (dele som selvstændige elementer eller ét legeme pr. element), fasen og hvordan legemerne skrives. **Geometri** er **facetteret B-rep** (nøjagtig, det andre programmer oftest forventer) eller **fladesæt**: de samme flader i en meget mindre fil. **Forenkl** skriver færre trekanter, hvor et legeme er et fint net, som kanalerne og rørene i et andet programs fil, aldrig længere fra det end den **tolerance**, du skriver (2 mm til at begynde med). Legemer, Lapin selv bygger (vægge, dæk, døre), beholder deres nøjagtige flader, og forenkling ændrer kun et legemes form, aldrig dets egenskaber.
+
+![Eksportér IFC](shots/export-ifc.webp)
+
 **Importér IFC…** læser et andet programs IFC. Før noget kommer ind, læser Lapin filen og viser, hvad den indeholder: dens elementer efter fagområde (arkitektur, konstruktion, installationer, møbler og udstyr, grund), hvert fagområde efter art med antal, og dens etager med hvor mange elementer der står på hver. Fjern fluebenet ved det, du ikke har brug for, for eksempel installationer og møbler, når du arbejder med konstruktionen, eller behold kun de etager, du arbejder på. **Hvordan** henter elementerne genkendt som Lapin-elementer, dem alle som referencer, eller linket. Mens filen læses og importeres, viser Lapin, hvad det laver, og hvor langt det er nået; en stor fil tager et stykke tid.
 
 ![Importér IFC](shots/import-ifc.webp)

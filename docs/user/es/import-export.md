@@ -12,6 +12,10 @@ Todo lo que entra o sale está en el menú **Archivo**.
 
 **Exportar IFC…** escribe el modelo como IFC. Cada muro, losa, puerta y cubierta es un elemento IFC real con sus capas, su tipo y sus propiedades, de modo que el archivo se abre como un modelo en otras herramientas BIM. Las puertas y ventanas indican cómo se abren: la mano de cada hoja, hacia dónde gira y los paneles, tal como los define IFC, para que otros programas dibujen las mismas aperturas.
 
+La exportación pregunta el esquema (**IFC4**, que se lee en todas partes, o **IFC4X3**), el detalle (las piezas como elementos propios o un cuerpo por elemento), la fase y cómo se escriben los cuerpos. **Geometría** es **B-rep facetado** (exacto, lo que más a menudo esperan otros programas) o **conjuntos de caras**: las mismas caras en un archivo mucho más pequeño. **Simplificar** escribe menos triángulos donde un cuerpo es una malla fina, como los conductos y tuberías del archivo de otro programa, nunca más lejos de él que la **tolerancia** que escriba (2 mm al principio). Los cuerpos que construye Lapin (muros, losas, puertas) conservan sus caras exactas, y simplificar cambia solo la forma de un cuerpo, nunca sus propiedades.
+
+![Exportar IFC](shots/export-ifc.webp)
+
 **Importar IFC…** lee el IFC de otro programa. Antes de que entre nada, Lapin lee el archivo y muestra lo que contiene: sus elementos por disciplina (arquitectura, estructura, MEP, mobiliario y equipamiento, emplazamiento), cada disciplina por clase con cuántos hay, y sus plantas con cuántos elementos hay en cada una. Desmarque lo que no necesite, por ejemplo MEP y mobiliario cuando trabaje en la estructura, o conserve solo las plantas en las que trabaja. **Cómo** trae los elementos reconocidos como elementos de Lapin, todos como referencias, o vinculados. Mientras el archivo se lee y se importa, Lapin muestra lo que está haciendo y cuánto lleva; un archivo grande tarda un poco.
 
 ![Importar IFC](shots/import-ifc.webp)

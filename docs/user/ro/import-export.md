@@ -12,6 +12,10 @@ Tot ce intră sau iese e în meniul **Fișier**.
 
 **Exportă IFC…** scrie modelul ca IFC. Fiecare perete, placă, ușă și acoperiș e un element IFC adevărat, cu straturile, tipul și proprietățile lui, așa că fișierul se deschide ca model în alte programe BIM. Ușile și ferestrele spun cum se deschid: mâna fiecărei foi și cercevele, în ce parte se deschid și panourile, cum le definește IFC, așa că alte programe desenează aceleași deschideri.
 
+Exportul întreabă schema (**IFC4**, citit peste tot, sau **IFC4X3**), detaliul (piesele ca elemente de sine stătătoare sau un corp pe element), faza și cum se scriu corpurile. **Geometrie** e **B-rep fațetat** (exact, ce așteaptă cel mai des alte programe) sau **seturi de fețe**: aceleași fețe, într-un fișier mult mai mic. **Simplifică** scrie mai puține triunghiuri unde un corp e o rețea fină, cum sunt tubulaturile și țevile din fișierul altui program, niciodată mai departe de el decât **toleranța** pe care o scrii (2 mm la început). Corpurile pe care le construiește Lapin (pereți, plăci, uși) își păstrează fețele exacte, iar simplificarea schimbă doar forma corpului, niciodată proprietățile lui.
+
+![Exportă IFC](shots/export-ifc.webp)
+
 **Importă IFC…** citește IFC-ul altui program. Înainte să intre ceva, Lapin citește fișierul și îți arată ce conține: elementele pe discipline (arhitectură, structură, instalații, mobilier și echipamente, sit), fiecare disciplină pe tipuri, cu câte sunt din fiecare, și etajele, cu câte elemente stau pe fiecare. Debifează ce nu-ți trebuie, de exemplu instalațiile și mobilierul când lucrezi la structură, sau păstrează doar etajele la care lucrezi. **Cum** aduce elementele recunoscute ca elemente Lapin, pe toate ca referințe sau legate. Cât timp fișierul se citește și se importă, Lapin arată ce face și cât a mai rămas; un fișier mare durează.
 
 ![Import IFC](shots/import-ifc.webp)

@@ -12,7 +12,7 @@ import { HelpMenu } from './HelpMenu';
 import { useUi } from '../app/store';
 import { activate, ribbonTabs } from '../platform/modules';
 import { redo, undo, useSession } from '../engine/session';
-import { exportIfc, importDxf, importIfc, newProject, openProject, saveProject, importFragments } from '../engine/files';
+import { importDxf, importIfc, newProject, openProject, saveProject, importFragments } from '../engine/files';
 import { engineInBrowser } from '../engine/session';
 import { isGuest, leave } from '../engine/share';
 import { Participants } from './Sharing';
@@ -54,7 +54,7 @@ function FileMenu() {
       {open && (
         <div className="menu" role="menu" onMouseLeave={() => setOpen(false)}>
           <UndoItems run={run} />
-          <button type="button" role="menuitem" onClick={run(() => exportIfc())}>Export IFC…</button>
+          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportIfc' }))}>Export IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportMesh' }))}>Export 3D…</button>
           <button type="button" role="menuitem" onClick={run(leave)}>Leave session</button>
         </div>
@@ -74,7 +74,7 @@ function FileMenu() {
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'versions' }))}>Save version…</button>
           <button type="button" role="menuitem" onClick={run(() => importIfc())}>Import IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => importIfc('link'))}>Link IFC…</button>
-          <button type="button" role="menuitem" onClick={run(() => exportIfc())}>Export IFC…</button>
+          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportIfc' }))}>Export IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportMesh' }))}>Export 3D…</button>
           <button type="button" role="menuitem" onClick={run(() => importDxf())}>Import DXF…</button>
           <button type="button" role="menuitem" onClick={run(() => importFragments())}>Import Fragments…</button>

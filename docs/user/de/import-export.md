@@ -12,6 +12,10 @@ Alles, was hinein- oder hinausgeht, finden Sie im Menü **Datei**.
 
 **IFC exportieren…** schreibt das Modell als IFC. Jede Wand, Decke, Tür und jedes Dach ist ein echtes IFC-Element mit seinen Schichten, seinem Typ und seinen Eigenschaften, sodass sich die Datei in anderen BIM-Werkzeugen als Modell öffnet. Türen und Fenster geben an, wie sie sich öffnen: den Anschlag jedes Tür- und Fensterflügels, in welche Richtung er aufschlägt, und die Felder, so wie IFC sie definiert, damit andere Programme dieselben Aufschläge zeichnen.
 
+Der Export fragt nach dem Schema (**IFC4**, überall lesbar, oder **IFC4X3**), dem Detail (Teile als eigene Elemente oder ein Körper je Element), der Bauphase und danach, wie die Körper geschrieben werden. **Geometrie** ist ein **facettiertes B-Rep** (exakt, was andere Programme meist erwarten) oder **Flächenmengen**: dieselben Flächen in einer viel kleineren Datei. **Vereinfachen** schreibt weniger Dreiecke, wo ein Körper ein feines Netz ist, etwa die Kanäle und Rohre aus der Datei eines anderen Programms, nie weiter von ihm entfernt als die **Toleranz**, die Sie eingeben (anfangs 2 mm). Körper, die Lapin selbst baut (Wände, Decken, Türen), behalten ihre exakten Flächen, und Vereinfachen ändert nur die Form eines Körpers, nie seine Eigenschaften.
+
+![IFC exportieren](shots/export-ifc.webp)
+
 **IFC importieren…** liest die IFC-Datei eines anderen Programms. Bevor etwas hereinkommt, liest Lapin die Datei und zeigt, was sie enthält: ihre Elemente nach Disziplin (Architektur, Tragwerk, TGA, Möbel und Ausstattung, Gelände), jede Disziplin nach Art mit der jeweiligen Anzahl, und ihre Geschosse mit der Anzahl der Elemente auf jedem. Deaktivieren Sie, was Sie nicht brauchen, zum Beispiel TGA und Möbel, wenn Sie am Tragwerk arbeiten, oder behalten Sie nur die Geschosse, an denen Sie arbeiten. **Wie** holt die erkannten Elemente als Lapin-Elemente, alle als Referenzen oder verknüpft herein. Während die Datei gelesen und importiert wird, zeigt Lapin, was es gerade tut und wie weit es ist; eine große Datei braucht eine Weile.
 
 ![IFC importieren](shots/import-ifc.webp)
