@@ -14,6 +14,7 @@ import { DA, DA_PATTERNS } from './da';
 import { DE, DE_PATTERNS } from './de';
 import { ES, ES_PATTERNS } from './es';
 import { FR, FR_PATTERNS } from './fr';
+import { LO, LO_PATTERNS } from './lo';
 import { RO, RO_PATTERNS } from './ro';
 
 /** A language's phrases: the exact ones, and those with a number or a name in them. */
@@ -28,6 +29,7 @@ const TABLES = {
   de: { dict: DE, patterns: DE_PATTERNS },
   fr: { dict: FR, patterns: FR_PATTERNS },
   da: { dict: DA, patterns: DA_PATTERNS },
+  lo: { dict: LO, patterns: LO_PATTERNS },
 } satisfies Record<string, Language>;
 
 export type Lang = 'en' | keyof typeof TABLES;
@@ -40,6 +42,7 @@ export const LANGUAGES: { id: Lang; name: string }[] = [
   { id: 'de', name: 'Deutsch' },
   { id: 'fr', name: 'Français' },
   { id: 'da', name: 'Dansk' },
+  { id: 'lo', name: 'ພາສາລາວ' },
 ];
 
 const isLang = (x: unknown): x is Lang => LANGUAGES.some((l) => l.id === x);
