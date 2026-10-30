@@ -13,7 +13,7 @@ namespace Lapin.Platform.Cde.Remarks;
 /// </summary>
 public sealed record BcfPoint(double X, double Y, double Z)
 {
-    public JsonArray ToJson() => [X, Y, Z];
+    public JsonArray ToJson() => new((JsonNode)X, (JsonNode)Y, (JsonNode)Z);
     public static BcfPoint? From(JsonNode? n) => n is JsonArray a && a.Count == 3 ? new(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0, Json.Number(a[2]) ?? 0) : null;
 }
 

@@ -128,7 +128,7 @@ public static class Remarks
 
         r.Command("remarks.delete", "Delete remark", (ctx, a) =>
         {
-            foreach (var id in (a["ids"] as JsonArray ?? [(string?)a["id"]]).Select(x => (string?)x).OfType<string>())
+            foreach (var id in (a["ids"] as JsonArray ?? new JsonArray((JsonNode?)(string?)a["id"])).Select(x => (string?)x).OfType<string>())
                 ctx.Remove(Require(ctx.Model, id).Id);
             return null;
         });
