@@ -38,6 +38,9 @@ The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each
 | USDZ | Apple's AR Quick Look, Reality Composer, Omniverse. Images included. |
 | USDA | OpenUSD as text, one file. |
 | DAE | COLLADA, for SketchUp and older tools. |
+| Fragments | That Open Engine's `.frag`, for BIM web viewers built on it (That Open Components, Bubbles). One file; identical bodies stored once. |
+
+**Import Fragments…** brings a `.frag` file in: every item with geometry becomes a reference drawn from its body, in the class the file names, on the storey the file puts it (matched by name to yours, made when missing), with the file's attributes under **IFC properties**. Items with the same body (the same shape, placed in many places) share it. Importing the same file again updates what it brought before. Nothing is recognised into walls or floors: a `.frag` holds triangles.
 
 ![Export 3D](shots/export-3d.webp)
 

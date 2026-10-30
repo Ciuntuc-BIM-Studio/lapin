@@ -13,7 +13,7 @@ public sealed record MeshExportResult(string Format, int Elements, int Triangles
     };
 }
 
-/// <summary>A session as a 3D mesh file (docs/plan-mesh-export.md): glTF 2.0 / GLB, OpenUSD (USDA, USDZ) or COLLADA 1.4.1.</summary>
+/// <summary>A session as a 3D mesh file (docs/plan-mesh-export.md): glTF 2.0 / GLB, OpenUSD (USDA, USDZ), COLLADA 1.4.1 or That Open Fragments (docs/fragments.md).</summary>
 public static class MeshExport
 {
     public static (byte[] Bytes, MeshExportResult Result) Write(Session session, MeshExportOptions o)
@@ -27,11 +27,12 @@ public static class MeshExport
             "usdz" => UsdWriter.Usdz(scene),
             "usda" => UsdWriter.Usda(scene),
             "dae" => ColladaWriter.Dae(scene),
+            "frag" => Fragments.FragWriter.Write(scene),
             _ => throw new CommandException($"„{o.Format}” is not a 3D format."),
         };
         // One file with no room for an image: the materials' own textures go out in GLB, glTF and USDZ.
-        if (o.Format is "usda" or "dae" && scene.Materials.Any(m => m.Texture != null))
-            scene.Notes.Add($"{(o.Format == "dae" ? "DAE" : "USDA")} is one file without the materials' own images: their textures go out in GLB, glTF and USDZ.");
+        if (o.Format is "usda" or "dae" or "frag" && scene.Materials.Any(m => m.Texture != null))
+            scene.Notes.Add($"{o.Format.ToUpperInvariant()} is one file without the materials' own images: their textures go out in GLB, glTF and USDZ.");
                 return (bytes, new MeshExportResult(o.Format, scene.ElementCount, scene.TriangleCount, scene.Materials.Count, scene.Notes));
     }
 }

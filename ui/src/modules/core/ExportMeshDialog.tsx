@@ -10,6 +10,7 @@
  * show, by storeys3d.ts, and what is hidden for now, all through the looks)
  * and the planes it cuts by (the cut above the storeys shown, a section, the
  * section box), cut in the export too and closed by caps in the materials.
+ * Fragments (.frag, That Open Engine's format, docs/fragments.md) goes out the same way.
  * The layers the view shows (without finishes, the cores only) the engine reads
  * off the view too, so the export has the same layers as the screen.
  * At the end of a phase, with or without edges, from the project's base
@@ -32,6 +33,7 @@ const FORMATS: [string, string][] = [
   ['usdz', 'USDZ: OpenUSD packed (AR Quick Look, Omniverse, USD tools)'],
   ['usda', 'USDA: OpenUSD as text'],
   ['dae', 'DAE: COLLADA 1.4.1 (SketchUp, Rhino, 3ds Max, Blender)'],
+  ['frag', 'Fragments: That Open Engine (.frag, BIM web viewers)'],
 ];
 const ORIGINS: [string, string][] = [['base', 'the project base point'], ['internal', 'the internal origin'], ['survey', 'the survey point (real coordinates)']];
 

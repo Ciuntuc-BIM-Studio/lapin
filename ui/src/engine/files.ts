@@ -290,7 +290,7 @@ export async function guardWindowClose(): Promise<void> {
  * An export from the engine (PDF, DXF): to the path the save dialog gives on
  * the desktop, else handed back and downloaded by the browser.
  */
-const MIME: Record<string, string> = { pdf: 'application/pdf', dxf: 'application/dxf', ifc: 'application/x-step', glb: 'model/gltf-binary', gltf: 'model/gltf+json', usdz: 'model/vnd.usdz+zip', usda: 'model/vnd.usda', dae: 'model/vnd.collada+xml' };
+const MIME: Record<string, string> = { pdf: 'application/pdf', dxf: 'application/dxf', ifc: 'application/x-step', glb: 'model/gltf-binary', gltf: 'model/gltf+json', usdz: 'model/vnd.usdz+zip', usda: 'model/vnd.usda', dae: 'model/vnd.collada+xml', frag: 'application/octet-stream' };
 
 export async function exportFile(method: string, args: Record<string, unknown>, name: string, ext: string): Promise<void> {
   try {
@@ -353,6 +353,27 @@ export async function importDxf(): Promise<void> {
   if (!path) return;
   dxfFile.current = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path };
   useUi.setState({ dialog: 'importDxf' });
+}
+
+/**
+ * A That Open Fragments file (.frag, docs/fragments.md) into the open project: its items as references with their
+ * bodies, on their storeys, identical bodies shared. By path on the desktop, by its bytes in a browser.
+ */
+export async function importFragments(): Promise<void> {
+  const picked = isDesktop() ? null : await pickFile('Fragments', 'frag');
+  const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'Fragments', extensions: ['frag'] }]) : picked?.name ?? null;
+  if (!path) return;
+  const source = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path };
+  try {
+    const r = await engine.call<{ elements: number; shared: number; storeys: number; skipped: number; notes: string[] }>('project.importFragments', source, { timeoutMs: LONG_TIMEOUT_MS });
+    const parts = [`${r.elements} element${r.elements === 1 ? '' : 's'} as references`];
+    if (r.shared) parts.push(`${r.shared} shared bod${r.shared === 1 ? 'y' : 'ies'}`);
+    if (r.storeys) parts.push(`${r.storeys} storey${r.storeys === 1 ? '' : 's'} made`);
+    if (r.skipped) parts.push(`${r.skipped} left out`);
+    notify(`Imported ${source.name}: ${parts.join(', ')}.${r.notes.length ? ' ' + r.notes.join(' ') : ''}`);
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+  }
 }
 
 /**

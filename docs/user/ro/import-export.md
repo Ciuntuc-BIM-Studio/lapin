@@ -38,6 +38,9 @@ Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapi
 | USDZ | AR Quick Look de la Apple, Reality Composer, Omniverse. Imagini incluse. |
 | USDA | OpenUSD ca text, un singur fișier. |
 | DAE | COLLADA, pentru SketchUp și programe mai vechi. |
+| Fragments | `.frag`, formatul That Open Engine, pentru vizualizatoarele BIM web construite pe el (That Open Components, Bubbles). Un singur fișier; corpurile identice o singură dată. |
+
+**Importă Fragments…** aduce un fișier `.frag`: fiecare element cu geometrie devine o referință desenată din corpul lui, în clasa pe care o spune fișierul, pe nivelul pe care îl pune fișierul (potrivit după nume cu ale tale, creat când lipsește), cu atributele fișierului la **Proprietăți IFC**. Elementele cu același corp (aceeași formă, așezată în mai multe locuri) îl împart. Importat din nou, același fișier actualizează ce a adus înainte. Nimic nu e recunoscut ca perete sau placă: un `.frag` ține triunghiuri.
 
 ![Export 3D](shots/export-3d.webp)
 

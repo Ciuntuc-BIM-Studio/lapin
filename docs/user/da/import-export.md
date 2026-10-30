@@ -38,6 +38,9 @@ Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på si
 | USDZ | Apples AR Quick Look, Reality Composer, Omniverse. Billeder kommer med. |
 | USDA | OpenUSD som tekst, én fil. |
 | DAE | COLLADA, til SketchUp og ældre værktøjer. |
+| Fragments | `.frag`, That Open Engines format, til BIM-webvisere bygget på den (That Open Components, Bubbles). Én fil; ens kroppe gemmes én gang. |
+
+**Importér Fragments…** henter en `.frag`-fil ind: hvert element med geometri bliver en reference tegnet fra sin krop, i den klasse filen nævner, på den etage filen sætter det på (matchet på navn med dine, oprettet når den mangler), med filens attributter under **IFC-egenskaber**. Elementer med samme krop (samme form sat mange steder) deler den. Importeres samme fil igen, opdateres det, den bragte før. Intet genkendes som væg eller dæk: en `.frag` rummer trekanter.
 
 ![Eksportér 3D](shots/export-3d.webp)
 

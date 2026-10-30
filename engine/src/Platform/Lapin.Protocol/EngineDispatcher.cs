@@ -388,7 +388,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return p["args"] is JsonObject args && HasPath(args) ? "A guest cannot reach files on the host's computer." : null;
             case "doc.undo" or "doc.redo":
                 return editor ? null : "You joined to look: ask the host to let you edit.";
-            case "project.importIfc":
+            case "project.importIfc" or "project.importFragments":
                 if (!editor) return "You joined to look: ask the host to let you edit.";
                 return p["data"] is JsonValue ? null : "A guest imports a file from their own computer.";
             default:
@@ -553,6 +553,14 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                     finally { session.EditSource = null; }
                 }
                 return (result.ToJson(), imported);
+            }
+            case "project.importFragments":
+            {
+                // A That Open Fragments file (.frag, docs/fragments.md) into the open project: its items as references with their bodies, by path or by its bytes.
+                ReportProgress("Reading the file", 0, 0);
+                var (bytes, name, _, _) = IfcBytes(p);
+                var r = Lapin.Mesh.Fragments.FragImport.Run(session, bytes, name, out var imported);
+                return (r.ToJson(), imported);
             }
             case "project.reloadLink":
             {

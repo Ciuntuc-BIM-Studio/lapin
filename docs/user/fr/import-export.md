@@ -38,6 +38,9 @@ Les espaces du fichier (de Revit, ArchiCAD et autres) entrent comme pièces Lapi
 | USDZ | AR Quick Look d’Apple, Reality Composer, Omniverse. Images incluses. |
 | USDA | OpenUSD en texte, un seul fichier. |
 | DAE | COLLADA, pour SketchUp et des outils plus anciens. |
+| Fragments | `.frag`, le format de That Open Engine, pour les visionneuses BIM web bâties dessus (That Open Components, Bubbles). Un seul fichier ; les corps identiques une seule fois. |
+
+**Importer Fragments…** fait entrer un fichier `.frag` : chaque élément avec géométrie devient une référence dessinée d’après son corps, dans la classe que nomme le fichier, sur le niveau où le fichier le place (apparié par nom aux vôtres, créé s’il manque), avec les attributs du fichier sous **Propriétés IFC**. Les éléments au même corps (la même forme posée en plusieurs endroits) le partagent. Importé de nouveau, le même fichier met à jour ce qu’il avait apporté. Rien n’est reconnu comme mur ou dalle : un `.frag` contient des triangles.
 
 ![Exporter 3D](shots/export-3d.webp)
 

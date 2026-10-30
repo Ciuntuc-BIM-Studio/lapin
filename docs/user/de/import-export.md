@@ -38,6 +38,9 @@ Die Räume der Datei (aus Revit, ArchiCAD und anderen) kommen als Lapin-Räume h
 | USDZ | Apples AR Quick Look, Reality Composer, Omniverse. Bilder enthalten. |
 | USDA | OpenUSD als Text, eine Datei. |
 | DAE | COLLADA, für SketchUp und ältere Werkzeuge. |
+| Fragments | `.frag`, das Format der That Open Engine, für darauf gebaute BIM-Webviewer (That Open Components, Bubbles). Eine Datei; gleiche Körper nur einmal. |
+
+**Fragments importieren…** holt eine `.frag`-Datei herein: jedes Element mit Geometrie wird eine Referenz, gezeichnet aus seinem Körper, in der Klasse, die die Datei nennt, auf dem Geschoss, auf das die Datei es stellt (nach Namen mit Ihren abgeglichen, angelegt, wenn es fehlt), mit den Attributen der Datei unter **IFC-Eigenschaften**. Elemente mit demselben Körper (dieselbe Form an vielen Stellen) teilen ihn. Dieselbe Datei erneut importiert aktualisiert, was sie zuvor brachte. Nichts wird als Wand oder Decke erkannt: eine `.frag` enthält Dreiecke.
 
 ![3D exportieren](shots/export-3d.webp)
 

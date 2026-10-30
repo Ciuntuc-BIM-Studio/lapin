@@ -2,10 +2,12 @@
   <!--
     The 3D mesh exports (docs/plan-mesh-export.md): a session's visible
     elements as one scene of triangles, written as glTF 2.0 / GLB, as
-    OpenUSD (USDA, packed as USDZ) and as COLLADA 1.4.1, each after its public specification, with
-    no library of their own. Managed only, so it runs in the browser's engine too.
+    OpenUSD (USDA, packed as USDZ), as COLLADA 1.4.1 and as That Open Fragments
+    (.frag, read back too: docs/fragments.md), each after its public specification,
+    with no library of their own. Managed only, so it runs in the browser's engine too.
   -->
   <ItemGroup>
     <ProjectReference Include="../Lapin.Platform/Lapin.Platform.csproj" />
+    <ProjectReference Include="../Lapin.Ifc/Lapin.Ifc.csproj" />
   </ItemGroup>
 </Project>
