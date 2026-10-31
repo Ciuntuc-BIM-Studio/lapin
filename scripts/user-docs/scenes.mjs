@@ -972,6 +972,57 @@ export const scenes = [
     },
   },
   {
+    // Groups and clearing up in 3D (decision 204, docs/groups.md): a region selected in 3D, made a group, opened by a double-click.
+    id: 'groups',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await open3d(t);
+      await t.fit();
+      const { page } = t;
+      const view = await page.locator('[data-testid=view3d]').boundingBox();
+      const state = () => page.evaluate(async () => {
+        const { useUi } = await import('/src/app/store.ts');
+        const { useSession } = await import('/src/engine/session.ts');
+        const { useScope } = await import('/src/platform/scope.ts');
+        const nodes = useSession.getState().nodes;
+        return { selected: useUi.getState().selected, groups: [...nodes.values()].filter((n) => n.type === 'IfcGroup').map((n) => n.id), scope: useScope.getState().scope?.id ?? null };
+      });
+      // View → Select region, a crossing dragged right to left over the house (shot while it is dragged).
+      await t.tool('view.selectRegion');
+      const at = (fx, fy) => [view.x + view.width * fx, view.y + view.height * fy];
+      const [x0, y0] = at(0.78, 0.78), [x1, y1] = at(0.22, 0.25);
+      await page.mouse.move(x0, y0);
+      await page.mouse.down();
+      await page.mouse.move(x1, y1, { steps: 14 });
+      await t.wait(300);
+      await t.shot('select-region-3d', { clip: view });
+      await page.mouse.up();
+      await t.wait(600);
+      let st = await state();
+      t.expect(st.selected.length >= 5, `the crossing takes the house's elements, took ${st.selected.length}`);
+      // Grouped (GP): one group, selected, its members lit.
+      await t.tool('modify.group');
+      await t.wait(800);
+      st = await state();
+      t.expect(st.groups.length === 1 && st.selected[0] === st.groups[0], 'the selection made one group, selected');
+      await t.tool('view.selectRegion');
+      await t.shot('group-selected', { clip: { x: view.x, y: view.y, width: view.width + 360, height: view.height } });
+      // A garden wall outside the group, to be seen faded while the group is open.
+      await t.cmd('architecture.addWall', { storeyId: await t.storey(), x1: -3, y1: -4, x2: 15, y2: -4 });
+      await t.wait(800);
+      // A double-click on a member opens the group: the rest faded, its members picked one by one.
+      const [cx, cy] = at(0.5, 0.55);
+      await page.mouse.dblclick(cx, cy);
+      await t.wait(800);
+      st = await state();
+      t.expect(st.scope === st.groups[0], 'a double-click on a member opens its group');
+      await t.shot('group-edit', { clip: view });
+      await page.keyboard.press('Escape');
+      await t.wait(400);
+    },
+  },
+  {
     id: 'views-3d-layers',
     async run(t) {
       await t.fresh();

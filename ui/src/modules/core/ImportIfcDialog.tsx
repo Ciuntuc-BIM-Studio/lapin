@@ -45,6 +45,8 @@ export function ImportIfcDialog() {
   const sets = survey?.sets ?? [];
   const skipped = offSets ?? new Set(rules.technical ? sets.filter((x) => x.technical).map((x) => x.name) : []);
   const [setsOpen, setSetsOpen] = useState(false);
+  // What the file places comes in as one group named after it (docs/groups.md); a link is a unit of its own.
+  const [group, setGroup] = useState(true);
   const close = () => { useIfcImport.setState({ survey: null, source: null }); useUi.setState({ dialog: null }); };
   const count = useMemo(() => (survey ? chosenCount(survey, offKinds, offStoreys) : 0), [survey, offKinds, offStoreys]);
   if (!survey || !source) return null;
@@ -219,6 +221,11 @@ export function ImportIfcDialog() {
               <option value="reference">Everything as references, as the file draws it</option>
               <option value="link">Linked, read-only (Manage → Links)</option>
             </select>
+            {mode !== 'link' && (
+              <label className="field-line" style={{ marginTop: 8 }}>
+                <input type="checkbox" checked={group} onChange={(e) => setGroup(e.target.checked)} /> As one group, named after the file (double-click it to edit)
+              </label>
+            )}
             <p className="muted small" style={{ marginTop: 14 }}>
               <span data-no-i18n>{mb(survey.size)} · {survey.schema}{survey.application ? ` · ${survey.application}` : ''}</span><br />
               {survey.products} elements in the file; about <strong className="import-count">{count}</strong> chosen.
@@ -229,7 +236,7 @@ export function ImportIfcDialog() {
           <span className="grow" />
           <button type="button" className="btn" onClick={close}>Cancel</button>
           <button type="button" className="btn primary" disabled={nothing}
-            onClick={() => { rememberRules(rules); void runIfcImport({ ...choiceOf(survey, offKinds, offStoreys), mode, plan2d, only2d, rules: rulesOf(rules, [...skipped]) }); }}>{mode === 'link' ? 'Link' : 'Import'}</button>
+            onClick={() => { rememberRules(rules); void runIfcImport({ ...choiceOf(survey, offKinds, offStoreys), mode, plan2d, only2d, rules: rulesOf(rules, [...skipped]), group }); }}>{mode === 'link' ? 'Link' : 'Import'}</button>
         </footer>
       </div>
     </div>

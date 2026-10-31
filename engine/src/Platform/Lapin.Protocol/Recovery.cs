@@ -231,8 +231,9 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         if ((string?)source["sha256"] is { } sha && sha != hash) throw new CommandException($"{System.IO.Path.GetFileName(path)} changed since it was imported: the unsaved work cannot be brought back.");
         var mode = (string?)source["mode"] ?? "auto";
         IReadOnlySet<string>? Chosen(JsonNode? n) => n is JsonArray a ? a.Select(x => (string?)x ?? "").ToHashSet() : null;
+        // An import recorded before groups were (no "group") is done again without one.
         var options = EngineDispatcher.Rules(new IfcImportOptions(mode == "link" ? "auto" : mode, Chosen(source["kinds"]), Chosen(source["storeys"]),
-            (bool?)source["plan2d"] ?? true, (bool?)source["only2d"] ?? true), source["rules"] as JsonObject);
+            (bool?)source["plan2d"] ?? true, (bool?)source["only2d"] ?? true, Group: (bool?)source["group"] ?? false), source["rules"] as JsonObject);
         using (s.SeededIds((long?)source["seed"] ?? 0))
         {
             if (mode == "link") IfcImport.Link(s, bytes, System.IO.Path.GetFileName(path), path, options, out _);

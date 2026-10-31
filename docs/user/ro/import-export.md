@@ -28,6 +28,8 @@ Unele fișiere au și 2D pe lângă model: simboluri de plan, amprente, hașuri 
 
 ![Curățare și optimizare](shots/import-ifc-rules.webp)
 
+Ce pune fișierul intră ca un singur grup, cu numele lui, pe care îl poți deschide și curăța, sau îl aduci liber debifând **Ca un singur grup** (vezi [Grupuri și curățare](groups.md)).
+
 Lapin recunoaște pereții, plăcile, stâlpii, grinzile, fundațiile, ușile și ferestrele și le face elemente Lapin pe care le poți edita. Ce nu poate recunoaște intră ca referință, desenată, dar needitabilă. Ușile și ferestrele intră deschizându-se cum spune fișierul: mâna, partea în care se deschid și, la ferestre, cum se deschide fiecare panou.
 
 Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapin, fiecare pe nivelul ei, cu conturul, numărul, numele, înălțimea, funcțiunea, departamentul și finisajul pardoselii. Tot ce avea în fișier un element importat (seturile de proprietăți și cantitățile) se păstrează și apare la **Proprietăți IFC** în proprietățile lui. Încăperile se văd în planurile nivelurilor lor (eticheta; o schemă de culori din **Vedere → Culorile încăperilor** le umple); în 3D sunt ascunse până le arată **Vizibilitate / Grafică**. O referință iese din **Exportă IFC…** cum a intrat: cu același GlobalId, aceeași clasă și aceleași atribute (descriere, tag, tip predefinit), cu seturile de proprietăți și cantitățile, fiecare valoare cu tipul din fișier, și cu tipul, materialul, porturile, conexiunile și sistemul ei, fiecare cu GlobalId-ul lui. Dacă aduci doar instalațiile dintr-un fișier și le exporți, fișierul nou le are întregi.

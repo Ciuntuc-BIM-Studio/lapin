@@ -77,7 +77,8 @@ public static class MeshImport
             pieces = [all];
         }
         var elements = 0;
-        diff = session.Edit($"Import {name}", edit =>
+        // The pieces come in as one group named after the file (docs/groups.md).
+        diff = session.Edit($"Import {name}", outer => Groups.Around(outer, Path.GetFileNameWithoutExtension(name), edit =>
         {
             var storey = (string?)options["storeyId"] is { Length: > 0 } sid && edit.Model.Get(sid) is { Class: IfcClass.BuildingStorey } given ? given
                 : Spatial.Storeys(edit.Model).OrderBy(s => s.Num("elevation")).FirstOrDefault();
@@ -100,7 +101,7 @@ public static class MeshImport
                 Spatial.Contain(edit, storey.Id, e.Id);
                 elements++;
             }
-        });
+        }));
         return new MeshImportResult(elements, pieces.Sum(p => p.Triangles.Count), notes);
     }
 

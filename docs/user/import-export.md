@@ -28,6 +28,8 @@ Some files carry 2D besides their model: plan symbols, footprints, hatches and t
 
 ![Clean-up and optimisation](shots/import-ifc-rules.webp)
 
+What the file places comes in as one group named after it, which you can open and clear up, or bring in loose by unticking **As one group** (see [Groups and clearing up](groups.md)).
+
 Lapin recognises the walls, floors, columns, beams, footings, doors and windows and turns them into Lapin elements you can edit. Whatever it cannot recognise comes in as a reference, drawn but not editable. Doors and windows come in opening the way the file says: their hand, the side they open to and, for windows, how each panel opens.
 
 The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each on its own level, with their outline, number, name, height, function, department and floor finish: see [Rooms](rooms.md#rooms-from-an-ifc-file). Everything an imported element had in the file (its property sets and quantities) is kept and shown under **IFC properties** in its properties. A reference leaves **Export IFC…** as it came in: with the same GlobalId, class and attributes (description, tag, predefined type), its property sets and quantities with every value typed as the file had it, and its type, material, ports, connections and system, each with its GlobalId. Bring only the MEP of a file and export it, and the new file carries it whole.

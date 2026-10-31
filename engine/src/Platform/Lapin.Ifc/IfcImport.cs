@@ -27,8 +27,9 @@ namespace Lapin.Ifc;
 /// (<see cref="IfcValueText"/>); <see cref="SkipSets"/> are the property and quantity sets left out by name.
 /// </para>
 /// </summary>
+/// <summary><paramref name="Group"/>: what the file places comes in as one group named after it (docs/groups.md); false for a link, and for an import the journal recorded before groups were.</summary>
 public sealed record IfcImportOptions(string Mode = "auto", IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Plan2d = true, bool Only2d = true,
-    bool Dedupe = true, bool Flat = false, double? FarAway = null, bool Duplicates = false, bool Pseudo = false, double Simplify = 0, bool Numbers = false, IReadOnlySet<string>? SkipSets = null)
+    bool Dedupe = true, bool Flat = false, double? FarAway = null, bool Duplicates = false, bool Pseudo = false, double Simplify = 0, bool Numbers = false, IReadOnlySet<string>? SkipSets = null, bool Group = false)
 {
     public bool ReferenceOnly => string.Equals(Mode, "reference", StringComparison.OrdinalIgnoreCase);
     public bool Filtered => Kinds != null || Storeys != null;
@@ -78,8 +79,13 @@ public static partial class IfcImport
     /// <summary>A read IFC file into the open project (the survey read it already).</summary>
     public static IfcImportResult Run(Session session, StepFile file, string name, IfcImportOptions? options, out Diff diff)
     {
-        var reader = new Reader(session, file, options ?? new IfcImportOptions());
-        diff = session.Edit($"Import {name}", reader.Apply);
+        var o = options ?? new IfcImportOptions();
+        var reader = new Reader(session, file, o);
+        diff = session.Edit($"Import {name}", edit =>
+        {
+            if (o.Group) Groups.Around(edit, System.IO.Path.GetFileNameWithoutExtension(name), reader.Apply);
+            else reader.Apply(edit);
+        });
         return reader.Result();
     }
 

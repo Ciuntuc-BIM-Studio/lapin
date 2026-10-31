@@ -604,7 +604,9 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 var plan2d = (bool?)p["plan2d"] ?? true;
                 var only2d = (bool?)p["only2d"] ?? true;
                 // The import's rules (docs/spec-ifc.md, Regulile importului), as the dialog sends them; their defaults when it does not.
-                var mode = Rules(new IfcImportOptions(modeName == "link" ? "auto" : modeName, kinds, storeys, plan2d, only2d), p["rules"] as JsonObject);
+                // What the file places comes in as one group (docs/groups.md), unless asked otherwise; never a link's.
+                var group = modeName != "link" && (p["group"] is not JsonValue gv || !gv.TryGetValue<bool>(out var gb) || gb);
+                var mode = Rules(new IfcImportOptions(modeName == "link" ? "auto" : modeName, kinds, storeys, plan2d, only2d, Group: group), p["rules"] as JsonObject);
                 // By path (the desktop), or its bytes, base64 in `data` (the browser); the file as the survey read it, when it is the same.
                 ReportProgress("Reading the file", 0, 0);
                 var (bytes, name, path, key) = IfcBytes(p);
@@ -622,7 +624,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                     // From a file on this computer: the journal records the import by the file (its hash), its choices and the seed of its ids, not by its every entity.
                     var seed = Random.Shared.NextInt64();
                     var hash = surveyed?.Hash ?? Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes));
-                    session.EditSource = new JsonObject { ["import"] = path, ["sha256"] = hash, ["mode"] = modeName, ["seed"] = seed };
+                    session.EditSource = new JsonObject { ["import"] = path, ["sha256"] = hash, ["mode"] = modeName, ["seed"] = seed, ["group"] = group };
                     if (kinds != null) session.EditSource["kinds"] = new JsonArray(kinds.Select(k => (JsonNode)k).ToArray());
                     if (storeys != null) session.EditSource["storeys"] = new JsonArray(storeys.Select(k => (JsonNode)k).ToArray());
                     if (!plan2d) session.EditSource["plan2d"] = false;

@@ -118,7 +118,7 @@ export async function surveyIfc(source: IfcSource, mode: ImportMode): Promise<vo
 export interface ImportResult { elements: number; updated: number; references: number; recognized?: number; recognizedByClass?: Record<string, number>; notes: string[] }
 
 /** Step two: what was chosen (null: everything) brought in, its stages shown; the outcome said. */
-export async function runIfcImport(choice: { kinds: string[] | null; storeys: string[] | null; mode: ImportMode; plan2d?: boolean; only2d?: boolean; rules?: ImportRules }): Promise<void> {
+export async function runIfcImport(choice: { kinds: string[] | null; storeys: string[] | null; mode: ImportMode; plan2d?: boolean; only2d?: boolean; rules?: ImportRules; group?: boolean }): Promise<void> {
   const { source } = useIfcImport.getState();
   if (!source) return;
   useUi.setState({ dialog: null });
@@ -126,7 +126,7 @@ export async function runIfcImport(choice: { kinds: string[] | null; storeys: st
   begin(`${choice.mode === 'link' ? 'Linking' : 'Importing'} ${source.name}`, 'Reading the file');
   try {
     const r = await engine.call<ImportResult>('project.importIfc', {
-      ...args(source), mode: choice.mode,
+      ...args(source), mode: choice.mode, group: choice.group ?? true,
       ...(choice.kinds ? { kinds: choice.kinds } : {}),
       ...(choice.storeys ? { storeys: choice.storeys } : {}),
       ...(choice.plan2d === false ? { plan2d: false } : {}),

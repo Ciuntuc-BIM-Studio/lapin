@@ -1144,6 +1144,14 @@ public static class IfcExport
 
         void Finish()
         {
+            // Lapin's groups (docs/groups.md) as IFC's: an IfcGroup assigned the members written.
+            foreach (var g in Groups.All(m))
+            {
+                var members = Groups.MembersOf(m, g.Id).Where(written.ContainsKey).Select(x => written[x]).ToList();
+                if (members.Count == 0) continue;
+                var group = f.Add("IFCGROUP", Gid(g.Id), Null, S(g.Name), Null, Null);
+                f.Add("IFCRELASSIGNSTOGROUP", Gid(g.Id, "members"), Null, Null, Null, L(members), Null, group);
+            }
             foreach (var (typeId, t) in types) f.Add("IFCRELDEFINESBYTYPE", Gid(typeId, "defines"), Null, Null, Null, L(t.Occurrences), t.Ref);
             foreach (var (materialId, list) in materialUses) f.Add("IFCRELASSOCIATESMATERIAL", Gid(materialId, "associates"), Null, Null, Null, L(list), Material(materialId));
             foreach (var fill in pendingFills)

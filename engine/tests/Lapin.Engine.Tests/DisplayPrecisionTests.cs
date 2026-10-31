@@ -178,4 +178,25 @@ public class DisplayPrecisionTests
         f.Session.Undo();
         Assert.Equal("balanced", DisplayQuality.Of(f.Session.Model));
     }
+
+    [Fact]
+    public void An_imported_mesh_gets_its_copies_too()
+    {
+        // A wavy sheet of 40 × 40 squares from an OBJ: a reference with stored triangles, drawn through the same render as Lapin's own.
+        var sb = new System.Text.StringBuilder();
+        const int n = 40;
+        for (var j = 0; j <= n; j++) for (var i = 0; i <= n; i++) sb.Append(System.FormattableString.Invariant($"v {i * 0.1} {j * 0.1} {0.2 * Math.Sin(i * 0.3) * Math.Cos(j * 0.3)}\n"));
+        for (var j = 0; j < n; j++)
+            for (var i = 0; i < n; i++)
+            {
+                int a = j * (n + 1) + i + 1, b = a + 1, c = a + n + 1, d = c + 1;
+                sb.Append(System.FormattableString.Invariant($"f {a} {b} {d}\nf {a} {d} {c}\n"));
+            }
+        var f = new Fixture(new ArchitectureModule());
+        Lapin.Mesh.MeshImport.Run(f.Session, System.Text.Encoding.UTF8.GetBytes(sb.ToString()), "wave.obj", new JsonObject(), null, out _);
+        var item = f.Session.Snapshot().Render.Single(r => f.Model.Get(r.NodeId)?.Class == Lapin.Model.IfcClass.BuildingElementProxy);
+        var lods = item.Parts is { Count: > 0 } parts ? parts[0].Lods : item.Instance is { } inst ? (f.Session.Snapshot().Meshes ?? []).Single(m => m.Id == inst.Mesh).Parts[0].Lods : null;
+        Assert.NotNull(lods);
+        Assert.True(lods![^1].Positions.Length / 9 < 3200 / 4);
+    }
 }

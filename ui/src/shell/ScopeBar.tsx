@@ -29,7 +29,8 @@ export function ScopeBar() {
   if (!scope) return null;
   return (
     <div className="scope-bar" role="status">
-      <span>EDITING {scope.kind ? `${scope.kind.toUpperCase()} · ` : ''}{scope.label.toUpperCase()}</span>
+      {/* Each word its own text, so the interface's language takes it; capitals by the style. */}
+      <span className="scope-what"><span>Editing</span>{scope.kind && <><span>{scope.kind}</span><span>·</span></>}<span data-no-i18n>{scope.label}</span></span>
       <button type="button" onClick={() => void exitScope()} title="Leave the edit mode (Esc)">Done</button>
     </div>
   );

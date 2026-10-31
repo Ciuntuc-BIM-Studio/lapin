@@ -28,6 +28,8 @@ Manche Dateien enthalten neben dem Modell auch 2D: Grundrisssymbole, Grundfläch
 
 ![Bereinigung und Optimierung](shots/import-ifc-rules.webp)
 
+Was die Datei platziert, kommt als eine Gruppe mit ihrem Namen, die Sie öffnen und aufräumen können, oder lose, wenn Sie **Als eine Gruppe** abwählen (siehe [Gruppen und Aufräumen](groups.md)).
+
 Lapin erkennt Wände, Decken, Stützen, Träger, Fundamente, Türen und Fenster und wandelt sie in Lapin-Elemente um, die Sie bearbeiten können. Was es nicht erkennen kann, kommt als Referenz herein: gezeichnet, aber nicht bearbeitbar. Türen und Fenster öffnen sich nach dem Import so, wie die Datei es angibt: ihr Anschlag, die Seite, zu der sie aufgehen, und bei Fenstern, wie sich jeder Flügel öffnet.
 
 Die Räume der Datei (aus Revit, ArchiCAD und anderen) kommen als Lapin-Räume herein, jeder auf seiner eigenen Ebene, mit Umriss, Nummer, Name, Höhe, Funktion, Abteilung und Bodenbelag: siehe [Räume und Raumfarben](rooms.md#raume-aus-einer-ifc-datei). Alles, was ein importiertes Element in der Datei hatte (seine Eigenschaftssätze und Mengen), bleibt erhalten und wird in seinen Eigenschaften unter **IFC-Eigenschaften** angezeigt. Eine Referenz verlässt **IFC exportieren…** so, wie sie hereinkam: mit derselben GlobalId, Klasse und denselben Attributen (Beschreibung, Kennzeichen, vordefinierter Typ), ihren Eigenschafts- und Mengensätzen mit jedem Wert im Typ der Datei, und mit ihrem Typ, Material, ihren Anschlüssen, Verbindungen und ihrem System, jeweils mit ihrer GlobalId. Holen Sie nur die Haustechnik einer Datei herein und exportieren Sie sie, enthält die neue Datei sie vollständig.

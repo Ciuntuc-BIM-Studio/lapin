@@ -2,7 +2,7 @@
 
 import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
-import { AppWindow, Bot, Box, BoxSelect, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, FolderOpen, Frame, Gauge, Hash, History, Keyboard, Layers, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, MousePointer2, Move, Palette, PanelsTopLeft, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareSplitHorizontal, Trash2 } from 'lucide-react';
+import { AppWindow, Bot, Box, BoxSelect, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Group, Hash, History, Keyboard, Layers, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareMinus, SquareSplitHorizontal, Trash2, Ungroup } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -37,6 +37,10 @@ import { ExportIfcDialog } from './ExportIfcDialog';
 import { RemarksDialog } from './remarks/RemarksDialog';
 import { RemarksDialog as SheetRemarksDialog } from './cde/pdfRemarks/RemarksDialog';
 import { DisplayQualityDialog } from './DisplayQualityDialog';
+import { GroupSection } from './GroupSection';
+import { editSelectedGroup, groupSelection, removeFromGroup, ungroupSelection } from './groupTools';
+import { toggleRegion3d } from '../../viewport/select3d';
+import { hideSelection, isolateSelection, resetTemporary } from '../../viewport/temporary';
 import { PlanStoreysDialog } from './PlanStoreys';
 import { Storeys3DLooks } from './Storeys3D';
 import { setStoreys3d, showAllStoreys3d } from '../../viewport/storeys3dActions';
@@ -104,6 +108,11 @@ const core: LapinModule = {
       { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', run: createSimilar },
       { id: 'modify.match', label: 'Match type', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHTYPE') },
       { id: 'modify.moveToStorey', label: 'Move to storey', icon: MoveToStoreyIcon, run: () => useUi.setState({ dialog: 'moveToStorey' }) },
+      // Groups (docs/groups.md), with Revit's keys.
+      { id: 'modify.group', label: 'Create group', icon: Group, shortcut: 'GP', run: () => void groupSelection() },
+      { id: 'modify.ungroup', label: 'Ungroup', icon: Ungroup, shortcut: 'UG', run: () => void ungroupSelection() },
+      { id: 'modify.editGroup', label: 'Edit group', icon: PencilRuler, shortcut: 'EG', run: editSelectedGroup },
+      { id: 'modify.removeFromGroup', label: 'Remove from group', icon: SquareMinus, run: () => void removeFromGroup() },
     ] },
   },
   tabs: [{
@@ -166,6 +175,13 @@ const core: LapinModule = {
         // The reference planes' quads in 3D (docs/plan-studio-thick.md); their marks in plans and sections stay.
         { id: 'view.refPlanes', label: 'Reference planes', icon: Frame, run: () => useUi.setState((s) => ({ refPlanes: !s.refPlanes })) },
         { id: 'view.displayQuality', label: 'Display quality', icon: Gauge, run: () => useUi.setState({ dialog: 'displayQuality' }) },
+      ] },
+      // Selecting and clearing up in 3D (docs/groups.md): a region, and hiding for now, with Revit's keys.
+      { label: 'Select', tools: [
+        { id: 'view.selectRegion', label: 'Select region', icon: BoxSelect, shortcut: 'SR', run: () => { if (useUi.getState().view !== '3d') useUi.setState({ view: '3d' }); toggleRegion3d(); } },
+        { id: 'view.hide', label: 'Hide', icon: EyeOff, shortcut: 'HH', run: hideSelection },
+        { id: 'view.isolate', label: 'Isolate', icon: Focus, shortcut: 'HI', run: isolateSelection },
+        { id: 'view.unhide', label: 'Show all', icon: Eye, shortcut: 'HR', run: resetTemporary },
       ], small: [
         { id: 'view.graphicsVg', label: 'Graphics (VG)', icon: Layers3, shortcut: 'VG', run: () => useUi.setState({ dialog: 'visibility' }) },
         // The 3D view in front's storeys (report #29): the active storey alone, with those below, or every storey again.
@@ -188,6 +204,7 @@ const core: LapinModule = {
   dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, exportIfc: ExportIfcDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog },
   background: CoreBackground,
   propertySections: [
+    { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },
     { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection, fieldKeys: butDiscipline('LapinSheet') },
     { id: 'storeyLevels', label: 'Levels', classes: ['IfcBuildingStorey'], component: StoreySection, replacesFields: () => true },
     { id: 'viewSettings', label: 'View settings', classes: ['LapinView'], component: ViewSettingsSection, fieldKeys: viewFields },

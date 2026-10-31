@@ -124,6 +124,7 @@ describe('the languages', () => {
     '2 Studio solid(s): push/pull, fillet, shell and the rest work on them now.',
     'Import chair.obj',
     'Imported chair.obj: 3 references, 1200 triangles. Select one and use Studio → Make Studio solid to edit it.',
+    'Grouped 12 element(s).',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

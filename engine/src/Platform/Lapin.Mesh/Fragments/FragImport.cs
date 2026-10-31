@@ -48,7 +48,8 @@ public static class FragImport
             throw new CommandException($"„{name}” is not a Fragments file Lapin can read: {ex.Message}");
         }
         var reader = new Reader(session, model, name);
-        diff = session.Edit($"Import {name}", reader.Apply);
+        // What the file places anew comes in as one group named after it (docs/groups.md).
+        diff = session.Edit($"Import {name}", edit => Groups.Around(edit, Path.GetFileNameWithoutExtension(name), reader.Apply));
         return reader.Result;
     }
 

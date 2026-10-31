@@ -5,6 +5,7 @@
  * engine command. Hold Shift to square a line; Esc drops the gesture.
  */
 
+import { openGroupOf, pickTarget, pickTargets, shownSelection } from '../platform/groups';
 import { orthophotos } from './textures';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
@@ -79,6 +80,7 @@ export function PlanView() {
 
   const render = useSession((s) => s.render);
   const nodes = useSession((s) => s.nodes);
+  const relations = useSession((s) => s.relations);
   useUi((s) => s.storeyId);
   const storey = activeStorey();
   const selected = useUi((s) => s.selected);
@@ -176,6 +178,8 @@ export function PlanView() {
 
   // In an edit scope only its elements are picked (the rest stays to snap to).
   const scope = useScope((s) => s.scope);
+  // What the selection draws highlighted: a group's members with it.
+  const shown = useMemo(() => shownSelection(selected, nodes, relations), [selected, nodes, relations]);
   const pickItems = useMemo(() => (scope ? items.filter((r) => pickable(nodes.get(r.nodeId))) : items), [scope, items, nodes]);
   const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null =>
     pickAt(p, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks, types), [pickItems, nodes, view.scale, drawing, scope]);
@@ -245,7 +249,8 @@ export function PlanView() {
     if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : p); acquire(p); return; }
     if (tool?.gesture) acquire(p);
     if (!tool?.gesture) {
-      select(pick(raw)?.id ?? null, add);
+      // A member of a group picks the group (docs/groups.md).
+      select(pickTarget(pick(raw)?.id), add);
       return;
     }
     const g = tool.gesture;
@@ -421,7 +426,7 @@ export function PlanView() {
   };
   /** What a selection box or lasso takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
   const selectBox = (b: SelectDrag, add: boolean) => {
-    const ids = regionIds(regionTestOf(b, toWorld), pickItems, nodes, scope ? undefined : drawing?.marks);
+    const ids = pickTargets(regionIds(regionTestOf(b, toWorld), pickItems, nodes, scope ? undefined : drawing?.marks));
     const before = add || useCad.getState().step ? useUi.getState().selected : [];
     const next = [...new Set([...before, ...ids])];
     useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
@@ -575,7 +580,8 @@ export function PlanView() {
           const rect = svgRef.current!.getBoundingClientRect();
           const w = toWorld(e.clientX - rect.left, e.clientY - rect.top);
           const n = pick(w);
-          if (n && !openPickedView(n.id)) void editDimension(n.id, w);
+          // A group's member opens the group for editing; a view's mark its view; anything else, its dimension.
+          if (n && !openGroupOf(n.id) && !openPickedView(n.id)) void editDimension(n.id, w);
         }}>
         <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>
         {/* The drawing lays the orthophotos itself (CivilModule's marks, so sheets print them); the modelling lines lie over them here. */}
@@ -591,7 +597,7 @@ export function PlanView() {
           {drawn.map(({ key, r, kind, d, closed, text, at }) => kind === 'label' ? (
             <text key={key} x={at.x} y={at.y} className="plan-label">{text}</text>
           ) : (
-            <path key={key} d={d} className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${selected.includes(r.nodeId) ? ' selected' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}`} />
+            <path key={key} d={d} className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${shown.has(r.nodeId) ? ' selected' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}`} />
           ))}
         </g>
         {peers.map((p) => {

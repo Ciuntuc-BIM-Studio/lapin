@@ -42,6 +42,7 @@ public sealed class CoreModule : ILapinModule
         ViewLinework.Register(r);
         Location.Register(r);
         DisplayQuality.Register(r);
+        Groups.Register(r);
         Sheets.Register(r);
         CutOrder.Register(r);
         StoreyMove.Register(r);
@@ -198,7 +199,8 @@ public sealed class CoreModule : ILapinModule
         r.Command("element.transform", "Transform", (ctx, a) =>
         {
             static Lapin.Geometry.Vec2 V(JsonNode? n, string what) => Args.Point(n, what);
-            var ids = Args.Ids(a).ToList();
+            // A group selected is its members (docs/groups.md).
+            var (ids, groups) = Groups.Expand(ctx.Model, Args.Ids(a));
             var op = (string?)a["op"] ?? "move";
             var t = op switch
             {
@@ -216,12 +218,18 @@ public sealed class CoreModule : ILapinModule
             if (entities.FirstOrDefault(StoredBodies.Has) is { } fixedOne) throw new CommandException($"„{fixedOne.Name}” is a reference from an IFC file: it stays where the file put it.");
             var moving = entities.Select(e => e.Id).ToHashSet();
             var made = new JsonArray();
+            var copies = new Dictionary<string, string>();
             foreach (var e in entities)
             {
                 if (ctx.Model.Get(e.Id) is not { } now) continue;
-                if (copy) made.Add((JsonNode)Placement.Copy(ctx, now, t));
+                if (copy) { var c = Placement.Copy(ctx, now, t); made.Add((JsonNode)c); copies[e.Id] = c; }
                 else Placement.Transform(ctx, now, t, moving);
             }
+            // A group copied: its members' copies make a group of their own, with its name.
+            if (copy)
+                foreach (var g in groups)
+                    if (ctx.Model.Get(g) is { } group && Groups.Make(ctx, group.Name, Groups.MembersOf(ctx.Model, g).Where(copies.ContainsKey).Select(x => copies[x]).ToList()) is { } twin)
+                        made.Add((JsonNode)twin.Id);
             // Parts selected on their own (a grid's axis): their module carries them.
             // One whose element goes as a whole goes with it, once.
             foreach (var id in ids.Distinct().Where(id => ctx.Model.Get(id) == null && !(id.IndexOf('#') is var h and > 0 && moving.Contains(id[..h]))))
@@ -236,8 +244,11 @@ public sealed class CoreModule : ILapinModule
 
         r.Command("element.delete", "Delete", (ctx, a) =>
         {
-            var ids = Args.Ids(a).ToList();
-            if ((string?)a["id"] is { } one) ids.Add(one);
+            var given = Args.Ids(a).ToList();
+            if ((string?)a["id"] is { } one) given.Add(one);
+            // A group deleted goes with its members; a group its last member left goes too (docs/groups.md).
+            var (ids, groups) = Groups.Expand(ctx.Model, given);
+            var groupsTouched = groups.Concat(ids.Select(id => Groups.Of(ctx.Model, id)?.Id).OfType<string>()).Distinct().ToList();
             var bodies = new HashSet<string>();
             foreach (var id in ids.Distinct())
             {
@@ -264,6 +275,8 @@ public sealed class CoreModule : ILapinModule
                     if ((string?)e.Attrs[StoredBodies.BodyOf] is { } body) bodies.Remove(body);
                 foreach (var body in bodies) ctx.Remove(body);
             }
+            foreach (var g in groups) if (ctx.Model.Get(g) != null) ctx.Remove(g);
+            Groups.DropEmpty(ctx, groupsTouched);
             return null;
         });
     }

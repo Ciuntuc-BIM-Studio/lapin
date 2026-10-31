@@ -39,6 +39,12 @@ import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddSha
 import { clampPitch, easeEye, exitWalk, lookVector, toggleFly, useWalk, walkStep, walkWish, EYE_HEIGHT, WALK_KEYS, type WalkStart } from './walk';
 import { TICK, Walker, worldOf } from './walkPhysics';
 import { InstanceLayer } from './instancing';
+import { openGroupOf, pickTarget, pickTargets, shownSelection } from '../platform/groups';
+import { boxEdges, boxOf, projectSegments, takes, toggleRegion3d, useRegion3d, type Project } from './select3d';
+import { dragTo, isWindow, regionTestOf, SelectRegion, toggleLasso, type SelectDrag } from './selectDrag';
+import type { Seg } from './selectBox';
+import { resetTemporary, temporaryOn, useTemporary } from './temporary';
+import { place } from '../engine/instances';
 import { copyArrays, displayQualityOf, levelFor, pixelsPerMetre, type DisplayQuality, type LodCamera } from './lod';
 import { inWorld } from '../engine/instances';
 
@@ -240,6 +246,8 @@ function look(group: THREE.Object3D, l: Look | undefined) {
     if (m.userData.own === undefined) m.userData.own = m.color.getHex();
     m.color.setHex(l?.color ? new THREE.Color(l.color).getHex() : m.userData.own as number);
     const opacity = l?.opacity ?? 1;
+    // Turning see-through, or back, changes the shader three.js compiled: it must be told.
+    if (m.transparent !== opacity < 1) m.needsUpdate = true;
     m.transparent = opacity < 1;
     m.opacity = opacity;
     m.depthWrite = opacity >= 1;
@@ -477,7 +485,8 @@ export function Viewport3D() {
 
   clickRef.current = ({ nodeId, ground, add, face }) => {
     const g = tool?.gesture;
-    if (!g) { select(nodeId && pickable(useSession.getState().nodes.get(nodeId)) ? nodeId : null, add); return; }
+    // A member of a group picks the group (docs/groups.md).
+    if (!g) { select(nodeId && pickable(useSession.getState().nodes.get(nodeId)) ? pickTarget(nodeId) : null, add); return; }
     if (g.kind === 'face' || g.kind === 'pick') {
       const node = nodeId ? useSession.getState().nodes.get(nodeId) : undefined;
       if (!node || !takesType(g.types, node.type)) { useSession.setState({ error: 'Pick an element this tool works on.' }); return; }
@@ -777,14 +786,15 @@ export function Viewport3D() {
       });
     };
     renderer.domElement.addEventListener('pointermove', onMove);
-    // A double click on a reference plane opens its view.
+    // A double click on a reference plane opens its view; on a group's member, the group for editing (docs/groups.md).
     const onDouble = (e: MouseEvent) => {
-      if (e.button !== 0 || useUi.getState().tool) return;
+      if (e.button !== 0 || useUi.getState().tool || faceTypes.current) return;
       const r = renderer.domElement.getBoundingClientRect();
       ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), cam);
       const hit = pickAt();
       const id = hit?.object.userData.refPlane ? nodeOfHit(hit) : undefined;
       if (id) useUi.setState({ view: 'drawing', drawingViewId: id, selection: id, selected: [id] });
+      else openGroupOf(nodeOfHit(hit));
     };
     renderer.domElement.addEventListener('dblclick', onDouble);
     // Walking (walk.ts): the orbit controls off, the perspective camera at the eye, turned by a drag, moved by keys and the wheel;
@@ -948,6 +958,91 @@ export function Viewport3D() {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setPending(null); if (!(e.target as HTMLElement)?.closest('input, select, textarea')) setTool(null); } };
     renderer.domElement.addEventListener('pointerdown', onDown);
     renderer.domElement.addEventListener('pointerup', onUp);
+
+    // Selecting by a region (select3d.ts): with Select region on, a left drag draws it (Space: a lasso);
+    // the right button turns the view, the middle one moves it.
+    const buttons = () => {
+      const on = useRegion3d.getState().on;
+      controls.mouseButtons = on
+        ? { LEFT: -1 as THREE.MOUSE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE }
+        : { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+    };
+    buttons();
+    const unregion = useRegion3d.subscribe(buttons);
+    const local = (e: MouseEvent) => { const r = renderer.domElement.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    let regionFrom: { x: number; y: number } | null = null;
+    /** What a region takes: elements by their edges on the screen (their box when they have none), instances by their placed box. */
+    const regionSelect = (d: SelectDrag): string[] => {
+      const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
+      cam.updateMatrixWorld();
+      const v = new THREE.Vector3();
+      const project: Project = (x, y, z) => {
+        v.set(x, y, z).applyMatrix4(cam.matrixWorldInverse);
+        if (cam === persp && v.z > -persp.near) return null;
+        v.applyMatrix4(cam.projectionMatrix);
+        return { x: ((v.x + 1) / 2) * w, y: ((1 - v.y) / 2) * h };
+      };
+      const test = regionTestOf(d, (x, y) => ({ x, y }));
+      const win = isWindow(d);
+      const nodes = useSession.getState().nodes;
+      const looks = useLooks.getState().looks;
+      const ids: string[] = [];
+      for (const [id, { item, object }] of items.current) {
+        if (!object.visible || !pickable(nodes.get(id))) continue;
+        const segs: Seg[] = [];
+        let behind = false;
+        const add = (flat: ArrayLike<number>) => { if (projectSegments(flat, project, segs).behind) behind = true; };
+        add(item.edges);
+        for (const p of item.parts ?? []) add(p.edges);
+        if (!segs.length && !behind) {
+          const all = [item.positions, ...(item.parts ?? []).map((p) => p.positions)].flatMap((a) => Array.from(a));
+          const b = boxOf(all);
+          if (b) add(boxEdges(b));
+        }
+        if (takes(test, win, { segs, behind })) ids.push(id);
+      }
+      for (const { item } of layer.placed()) {
+        const id = item.nodeId;
+        const mesh = useSession.getState().meshes.get(item.instance!.mesh);
+        if (!mesh || looks[id]?.hidden || !pickable(nodes.get(id))) continue;
+        const m = item.instance!.matrix;
+        const seen = projectSegments(boxEdges(mesh.box, (x, y, z) => place(m, x, y, z)), project);
+        if (takes(test, win, seen)) ids.push(id);
+      }
+      return pickTargets(ids);
+    };
+    const onRegionDown = (e: PointerEvent) => {
+      if (e.button !== 0 || !useRegion3d.getState().on || useUi.getState().tool || faceTypes.current) return;
+      regionFrom = local(e);
+      renderer.domElement.setPointerCapture(e.pointerId);
+    };
+    const onRegionMove = (e: PointerEvent) => {
+      if (!regionFrom) return;
+      const p = local(e);
+      const d = useRegion3d.getState().drag;
+      if (!d && Math.hypot(p.x - regionFrom.x, p.y - regionFrom.y) < 4) return;
+      useRegion3d.setState({ drag: d ? dragTo(d, p) : { a: regionFrom, b: p } });
+    };
+    const onRegionUp = (e: PointerEvent) => {
+      const d = useRegion3d.getState().drag;
+      regionFrom = null;
+      if (!d) return;
+      useRegion3d.setState({ drag: null });
+      const ids = regionSelect(d);
+      const before = e.shiftKey ? useUi.getState().selected : [];
+      const next = [...new Set([...before, ...ids])];
+      useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
+    };
+    const onRegionKey = (e: KeyboardEvent) => {
+      if (e.key !== ' ' || e.repeat || !useRegion3d.getState().drag) return;
+      e.preventDefault();
+      e.stopPropagation();
+      useRegion3d.setState((st) => ({ drag: st.drag ? toggleLasso(st.drag) : null }));
+    };
+    renderer.domElement.addEventListener('pointerdown', onRegionDown);
+    renderer.domElement.addEventListener('pointermove', onRegionMove);
+    renderer.domElement.addEventListener('pointerup', onRegionUp);
+    window.addEventListener('keydown', onRegionKey, true);
     window.addEventListener('keydown', onKey);
     return () => {
       unsunlight();
@@ -961,8 +1056,13 @@ export function Viewport3D() {
       controls.dispose();
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('pointerup', onUp);
-      renderer.domElement.removeEventListener('pointermove', onMove);
       renderer.domElement.removeEventListener('dblclick', onDouble);
+      renderer.domElement.removeEventListener('pointerdown', onRegionDown);
+      renderer.domElement.removeEventListener('pointermove', onRegionMove);
+      renderer.domElement.removeEventListener('pointerup', onRegionUp);
+      window.removeEventListener('keydown', onRegionKey, true);
+      unregion();
+      renderer.domElement.removeEventListener('pointermove', onMove);
       cancelAnimationFrame(hoverFrame);
       clearFace.current = () => undefined;
       window.removeEventListener('keydown', onKey);
@@ -1086,6 +1186,9 @@ export function Viewport3D() {
   }, [view3dId, keptBox]);
 
   const selected = useUi((st) => st.selected);
+  const regionOn = useRegion3d((st) => st.on);
+  const regionDrag = useRegion3d((st) => st.drag);
+  const hiding = useTemporary(temporaryOn);
   const walkStart = useWalk((st) => st.start);
   const walking = walkStart != null;
   const flying = useWalk((st) => st.fly);
@@ -1114,13 +1217,15 @@ export function Viewport3D() {
       s.add(object);
       live.set(id, { item, object });
     }
+    // What the selection draws highlighted: a group's members with it.
+    const shown = shownSelection(selected);
     for (const [id, object] of caps.current) {
-      highlight(object, selected.includes(id));
+      highlight(object, shown.has(id));
       look(object, looks[id]);
       object.visible = object.visible && visualStyle !== 'wireframe' && !(walking && live.get(id)?.item.type === 'IfcSpace');
     }
     for (const [id, { item, object }] of live) {
-      highlight(object, selected.includes(id));
+      highlight(object, shown.has(id));
       look(object, looks[id]);
       // Inside a room, its own volume is not drawn round the eye.
       if (walking && item.type === 'IfcSpace') object.visible = false;
@@ -1132,7 +1237,7 @@ export function Viewport3D() {
     }
     // The instances of shared meshes: added, moved, taken out; drawn as their looks and the selection say.
     const layer = instances.current;
-    if (layer) { layer.sync(render, meshes); layer.restyle(looks, selected, visualStyle, layers); }
+    if (layer) { layer.sync(render, meshes); layer.restyle(looks, [...shown], visualStyle, layers); }
     invalidate.current();
   }, [render, meshes, layers, selected, looks, visualStyle, walking, capsShown]);
 
@@ -1228,8 +1333,22 @@ export function Viewport3D() {
   return (
     <>
       <div ref={host} className={`viewport${tool?.gesture ? ' picking' : ''}`} data-testid="view3d" />
-      {(sectionId || walkStart || box || storeysChip || layersText) && (
+      {regionDrag && <svg className="region-3d">{<SelectRegion d={regionDrag} />}</svg>}
+      {(sectionId || walkStart || box || storeysChip || layersText || regionOn || hiding) && (
         <div className="view3d-modes">
+          {regionOn && (
+            <span className="mode-chip select-region">
+              <span>Select region</span>
+              <span className="mode-hint">Drag: right a window, left crossing · Space a lasso · right button turns, middle moves</span>
+              <button type="button" className="mode-close" title="Select region off (SR)" aria-label="Select region off" onClick={toggleRegion3d}><X size={12} /></button>
+            </span>
+          )}
+          {hiding && (
+            <span className="mode-chip hidden-temp">
+              <span>Temporary hide/isolate</span>
+              <button type="button" className="mode-close" title="Show everything again (HR)" aria-label="Show everything again" onClick={resetTemporary}><X size={12} /></button>
+            </span>
+          )}
           {sectionId && (
             <span className="mode-chip section">
               <span>{sectionNode?.props.kind === 'elevation' ? 'Elevation' : 'Section'}</span><span data-no-i18n>{sectionNode?.name ?? ''}</span>
