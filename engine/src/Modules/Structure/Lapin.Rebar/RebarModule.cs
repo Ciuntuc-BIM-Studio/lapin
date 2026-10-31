@@ -359,6 +359,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             return o;
         });
         r.Query("settings", (q, _) => RebarSettings.Of(q.Model).ToJson());
+        RebarBodies.Register(r);
     }
 
     static Entity Require(IModelView m, string? id, string cls) => m.Get(id ?? "") is { } e && e.Class == cls ? e : throw new CommandException(cls == Rebars.Class ? "Not a bar." : "Not a bar distribution.");
