@@ -54,7 +54,7 @@ export function StirrupsFields({ type, kind }: { type: NodeDto; kind: string }) 
         <label className="field-line"><span className="eyebrow">Mark</span><input className="num" type="number" min={1} value={s.mark || ''} onChange={(e) => { const v = Number(e.target.value); if (v >= 1) set({ mark: v }); }} /></label>
         <p className="muted small">Drawn in sections as they lie to the axis, in structural plans and elevations, and counted in the bar schedule. The longitudinal bars are drawn by hand (Rebar 2D).</p>
         <p className="eyebrow">Label</p>
-        <LabelStyleFields style={s.label} base={settings?.labels.stirrups} onChange={(label) => set({ label })} onReset={() => void execute('rebar.setTypeStirrups', { id: type.id, label: null })} testId="type-stirrups-label" />
+        <LabelStyleFields style={s.label} base={settings?.labels.stirrups} onChange={(label) => set({ label })} onReset={() => void execute('rebar.setTypeStirrups', { id: type.id, label: null })} testId="type-stirrups-label" withLine />
       </>}
       {kind === 'column' && <ColumnBarsFields type={type} />}
     </div>

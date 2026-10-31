@@ -42,8 +42,8 @@ export function RebarSettingsDialog() {
           <label className="field-line"><span className="eyebrow">For</span>
             <select value={kind} onChange={(e) => setKind(e.target.value as LabelKind)}>{KINDS.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}</select>
           </label>
-          <LabelStyleFields key={kind} style={s.labels[kind]} onChange={setLabel} testId="rebar-settings-label" />
-          <p className="muted small">A type and a bar may change any field of theirs; a mark's balloon is never drawn empty. Drag a label by its grip; a dragged one keeps its place on that view.</p>
+          <LabelStyleFields key={kind} style={s.labels[kind]} onChange={setLabel} testId="rebar-settings-label" withLine={kind === 'stirrups' || kind === 'runs'} />
+          <p className="muted small">A type and a bar may change any field of theirs; a mark's balloon is never drawn empty. Drag a label by its grip; a dragged one keeps its place on that view. Drag the leader's middle to bend it, a string's middle to move it off the bars.</p>
         </div>
       </div>
     </div>

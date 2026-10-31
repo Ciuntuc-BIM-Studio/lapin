@@ -58,16 +58,17 @@ function HookFields({ label, hook, diameter, onChange }: { label: string; hook: 
   );
 }
 
-/** A bar's or a distribution's own label style, over the project's for its kind; its place is dragged by its grip. */
+/** A bar's or a distribution's own label style, over the project's for its kind; its place (the balloon, the elbow, the string) is dragged by its grips. */
 function LabelBlock({ node, kind, command }: { node: NodeDto; kind: 'bars' | 'runs'; command: string }) {
   const settings = useRebarSettings();
-  const label = node.props.label as { at?: number[]; style?: LabelStylePatch } | undefined;
+  const label = node.props.label as { at?: number[]; elbow?: number[]; offset?: number; style?: LabelStylePatch } | undefined;
+  const placed = !!(label?.at || label?.elbow || label?.offset != null);
   return (
     <>
       <p className="eyebrow">Label</p>
       <LabelStyleFields style={label?.style} base={settings?.labels[kind]} onChange={(style) => void execute(command, { id: node.id, label: { style } })}
-        onReset={() => void execute(command, { id: node.id, label: { style: null } })} testId="rebar-label" />
-      {label?.at && <button type="button" className="link small" onClick={() => void execute(command, { id: node.id, label: { at: null } })}>Put the label back</button>}
+        onReset={() => void execute(command, { id: node.id, label: { style: null } })} testId="rebar-label" withLine={kind === 'runs'} />
+      {placed && <button type="button" className="link small" onClick={() => void execute(command, { id: node.id, label: { at: null, elbow: null, offset: null } })}>Put the label back</button>}
     </>
   );
 }
