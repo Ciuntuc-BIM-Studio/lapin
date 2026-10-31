@@ -1364,6 +1364,7 @@ export const scenes = [
       const disciplines = await dialog.locator('[data-discipline]').evaluateAll((els) => els.map((e) => e.getAttribute('data-discipline')));
       t.expect(disciplines.includes('architecture') && disciplines.includes('structure'), 'the Fragments file\'s elements by discipline');
       await t.shot('import-frag', { of: '[aria-label="Import Fragments"]', pad: 0 });
+      t.expect(await dialog.locator('option[value=editable]').count() === 1 && await dialog.locator('option[value=auto]').count() === 1, 'How: recognised from their triangles, or everything editable');
       await dialog.locator('[data-discipline=structure] input[type=checkbox]').first().uncheck();
       await dialog.getByRole('button', { name: 'Import', exact: true }).click();
       await t.page.waitForSelector('[data-testid=busy]', { state: 'detached', timeout: 120_000 });

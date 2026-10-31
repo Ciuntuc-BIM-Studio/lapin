@@ -262,6 +262,10 @@ public sealed partial class IfcModel
         return o;
     }
 
+    /// <summary>The prisms a solid's planar faces describe (a body read from triangles, its coplanar ones merged: MeshRecognition).</summary>
+    public static IReadOnlyList<ShapePrism> PrismsOfSolid(Solid s) =>
+        PrismsOfFaces([.. s.Faces.Select(f => new PolyFace([.. f.Outer.Select(i => s.Vertices[i])], [.. f.Holes.Select(h => h.Select(i => s.Vertices[i]).ToList())]))], false);
+
     static List<ShapePrism> PrismsOfFaces(List<PolyFace> faces, bool clipped)
     {
         var o = new List<ShapePrism>();

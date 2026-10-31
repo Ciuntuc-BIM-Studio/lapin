@@ -169,12 +169,14 @@ public class StudioExportTests
             var result = IfcImport.Run(g.Session, path, null, out _);
             Assert.DoesNotContain(result.Notes, n => n.Contains("left out"));
             SameInModel(sc, g, "IFC " + geometry);
-            // Back as references (their sketches are not in the file), typed, grouped as they were.
+            // Back as references (their sketches are not in the file), or recognised from their triangles (a box's bottom, a
+            // slab: decision 207), typed, grouped as they were.
             foreach (var s in sc.Sources)
             {
                 var e = g.Model.Get(s.Id)!;
-                Assert.True(StoredBodies.Has(e) || StoredBodies.InstanceOf(e) != null, $"{s.Name} is a reference");
-                Assert.Equal(s.Type, g.Model.RelatingOf(s.Id, IfcClass.RelDefinesByType)?.Name);
+                Assert.True(StoredBodies.Has(e) || StoredBodies.InstanceOf(e) != null || e.Attrs["imported"] != null, $"{s.Name} is a reference or recognised");
+                // A recognised element takes the type recognition makes when the file named none.
+                if (s.Type != null || e.Attrs["imported"] == null) Assert.Equal(s.Type, g.Model.RelatingOf(s.Id, IfcClass.RelDefinesByType)?.Name);
                 var asm = g.Model.RelatingOf(s.Id, IfcClass.RelAggregates);
                 Assert.Equal(s.Assembly, asm?.Id);
                 if (asm != null)

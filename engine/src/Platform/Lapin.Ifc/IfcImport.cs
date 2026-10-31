@@ -84,13 +84,30 @@ public static partial class IfcImport
         var reader = new Reader(session, file, o);
         // Everything editable (the import's third way): what stays a reference after recognition made a Studio solid where it can be.
         EditableReport? editable = null;
-        void Apply(IEdit edit) { if (o.Editable) editable = EditableReferences.Around(edit, session.Catalog, reader.Apply); else reader.Apply(edit); }
+        // And what recognition could not read from the file's representations tried again from its triangles (a wall whose
+        // openings are cut into its body, a slab given as a B-rep): decision 207.
+        MeshRecognitionReport? fromTriangles = null;
+        void Apply(IEdit edit)
+        {
+            var before = edit.Model.Entities.Select(e => e.Id).ToHashSet();
+            reader.Apply(edit);
+            var brought = edit.Model.Entities.Where(e => !before.Contains(e.Id)).Select(e => e.Id).ToList();
+            if (o.Mode == "auto") fromTriangles = MeshRecognition.Recognize(edit, session.Catalog, brought);
+            if (o.Editable) editable = EditableReferences.Make(edit, session.Catalog, brought);
+        }
         diff = session.Edit($"Import {name}", edit =>
         {
             if (o.Group) Groups.Around(edit, System.IO.Path.GetFileNameWithoutExtension(name), Apply);
             else Apply(edit);
         });
-        return reader.Result() with { Editable = editable };
+        var result = reader.Result() with { Editable = editable };
+        if (fromTriangles is { Recognized: > 0 } t)
+            result = result with
+            {
+                Recognized = result.Recognized + t.Recognized, References = Math.Max(0, result.References - t.Recognized),
+                Notes = [.. result.Notes, $"{t.Recognized} more recognised from their triangles ({string.Join(", ", t.ByClass.Select(kv => $"{kv.Value} {kv.Key}"))})."],
+            };
+        return result;
     }
 
     /// <summary>

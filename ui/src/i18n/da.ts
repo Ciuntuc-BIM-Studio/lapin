@@ -730,6 +730,8 @@ export const DA: Record<string, string> = {
   'Ask Me': "Spørg mig", 'Road from linework': "Vej fra CAD-linjer", 'Breakline from linework': "Brudlinje fra CAD-linjer", 'Road': "Vej", 'Corridor…': "Korridor…", 'Terrain from LandXML': "Terræn fra LandXML", 'Curves': "Kurver",
   // An import made editable (decision 207)
   'Everything editable: recognised where it can, the rest as Studio solids': 'Alt redigerbart: genkendt hvor det kan, resten som Studio-legemer', 'Make them editable (Studio solids)': 'Gør dem redigerbare (Studio-legemer)', 'Push/pull, fillets, booleans and the rest take them; a body of more than 5,000 triangles stays a reference': 'Skub/træk, afrundinger, boolske operationer og resten virker på dem; et legeme med over 5.000 trekanter forbliver en reference', 'As': 'Som', 'references': 'referencer', 'editable (Studio solids)': 'redigerbare (Studio-legemer)',
+  // Recognition from triangles, Convert to native (decision 207)
+  'Recognised from their triangles where it can (walls with their doors and windows, slabs, columns), the rest as references': 'Genkendt ud fra trekanterne, hvor det kan (vægge med døre og vinduer, dæk, søjler), resten som referencer', 'Convert to native': 'Konvertér til native', 'Select the imported elements (or their group) to convert.': 'Vælg de importerede elementer (eller deres gruppe) for at konvertere dem.', 'Nothing to convert: select imported references.': 'Intet at konvertere: vælg importerede referencer.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

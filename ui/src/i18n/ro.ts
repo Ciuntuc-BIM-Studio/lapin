@@ -728,6 +728,8 @@ export const RO: Record<string, string> = {
   'Road from linework': "Drum din desen CAD", 'Breakline from linework': "Linie de rupere din desen CAD", 'Road': 'Drum', 'Corridor…': 'Coridor…', 'Terrain from LandXML': 'Teren din LandXML', 'Ask Me': "Întreabă-mă", 'Curves': "Curbe",
   // An import made editable (decision 207)
   'Everything editable: recognised where it can, the rest as Studio solids': 'Totul editabil: recunoscut unde se poate, restul ca solide Studio', 'Make them editable (Studio solids)': 'Fă-le editabile (solide Studio)', 'Push/pull, fillets, booleans and the rest take them; a body of more than 5,000 triangles stays a reference': 'Împinge/trage, racordările, operațiile booleene și restul merg pe ele; un corp de peste 5.000 de triunghiuri rămâne referință', 'As': 'Ca', 'references': 'referințe', 'editable (Studio solids)': 'editabile (solide Studio)',
+  // Recognition from triangles, Convert to native (decision 207)
+  'Recognised from their triangles where it can (walls with their doors and windows, slabs, columns), the rest as references': 'Recunoscut din triunghiuri unde se poate (pereți cu ușile și ferestrele lor, plăci, stâlpi), restul ca referințe', 'Convert to native': 'Convertește la nativ', 'Select the imported elements (or their group) to convert.': 'Selectează elementele importate (sau grupul lor) de convertit.', 'Nothing to convert: select imported references.': 'Nimic de convertit: selectează referințe importate.',
 };
 
 /** Phrases with a number or a name in them. */

@@ -123,7 +123,7 @@ export async function surveyIfc(source: IfcSource, mode: ImportMode, format: Exc
 /** What an import made editable (Studio solids of its references) and why the rest stayed references. */
 export interface EditableReport { made: number; kept: Record<string, number> }
 export interface ImportResult { elements: number; updated: number; references: number; recognized?: number; recognizedByClass?: Record<string, number>; editable?: EditableReport | null; notes: string[] }
-export interface FragResult { elements: number; shared: number; storeys: number; skipped: number; native?: number; leftOut?: number; editable?: EditableReport | null; notes: string[] }
+export interface FragResult { elements: number; shared: number; storeys: number; skipped: number; native?: number; leftOut?: number; editable?: EditableReport | null; recognition?: { recognized: number; byClass: Record<string, number> } | null; notes: string[] }
 
 /** The editable part of an import's outcome: how many were made Studio solids, and why the others stayed references. */
 export function editableText(e: EditableReport | null | undefined): string {
@@ -136,7 +136,9 @@ export function editableText(e: EditableReport | null | undefined): string {
 /** What a Fragments import brought, said plainly: a file of this very project brings nothing new. */
 export function fragOutcome(name: string, r: FragResult): string {
   if (!r.elements && r.native) return `Nothing new from ${name}: its ${r.native} element${r.native === 1 ? ' is' : 's are'} already in this project (the file was exported from it). Import it into another project, or a new one.`;
-  const parts = [`${r.elements} element${r.elements === 1 ? '' : 's'} as references`];
+  const rec = r.recognition?.recognized ?? 0;
+  const parts = [`${r.elements} element${r.elements === 1 ? '' : 's'}`];
+  if (rec) parts.push(`${rec} recognised as Lapin elements (${Object.entries(r.recognition!.byClass).map(([cls, n]) => `${n} ${cls.replace(/^Ifc/, '').toLowerCase()}`).join(', ')})`);
   if (r.shared) parts.push(`${r.shared} shared bod${r.shared === 1 ? 'y' : 'ies'}`);
   if (r.storeys) parts.push(`${r.storeys} storey${r.storeys === 1 ? '' : 's'} made`);
   if (r.native) parts.push(`${r.native} already in this project`);
@@ -155,7 +157,7 @@ export async function runIfcImport(choice: { kinds: string[] | null; storeys: st
   try {
     const params = {
       ...args(source), group: choice.group ?? true,
-      ...(frag ? (choice.editable ? { editable: true } : {}) : { mode: choice.mode }),
+      mode: choice.mode,
       ...(choice.kinds ? { kinds: choice.kinds } : {}),
       ...(choice.storeys ? { storeys: choice.storeys } : {}),
       ...(choice.plan2d === false ? { plan2d: false } : {}),

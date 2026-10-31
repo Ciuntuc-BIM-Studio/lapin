@@ -2,7 +2,7 @@
 
 import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
-import { AppWindow, Bot, Box, BoxSelect, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Group, Hash, History, Keyboard, Layers, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareMinus, SquareSplitHorizontal, Trash2, Ungroup } from 'lucide-react';
+import { AppWindow, Bot, Box, BoxSelect, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Group, Hash, History, Keyboard, Layers, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareMinus, SquareSplitHorizontal, Trash2, Ungroup, Wand2 } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -36,6 +36,7 @@ import { CheckDialog } from './cde/CheckDialog';
 import { RemarksDialog } from './remarks/RemarksDialog';
 import { RemarksDialog as SheetRemarksDialog } from './cde/pdfRemarks/RemarksDialog';
 import { DisplayQualityDialog } from './DisplayQualityDialog';
+import { convertToNative } from './convertTools';
 import { GroupSection } from './GroupSection';
 import { ExchangeExportDialog } from './ExchangeExportDialog';
 import { editSelectedGroup, groupSelection, removeFromGroup, ungroupSelection } from './groupTools';
@@ -113,6 +114,8 @@ const core: LapinModule = {
       { id: 'modify.ungroup', label: 'Ungroup', icon: Ungroup, shortcut: 'UG', run: () => void ungroupSelection() },
       { id: 'modify.editGroup', label: 'Edit group', icon: PencilRuler, shortcut: 'EG', run: editSelectedGroup },
       { id: 'modify.removeFromGroup', label: 'Remove from group', icon: SquareMinus, run: () => void removeFromGroup() },
+      // Imported references made Lapin elements, or Studio solids (decision 207).
+      { id: 'modify.convertToNative', label: 'Convert to native', icon: Wand2, shortcut: 'NV', run: () => void convertToNative() },
     ] },
   },
   tabs: [{

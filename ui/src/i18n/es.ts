@@ -730,6 +730,8 @@ export const ES: Record<string, string> = {
   'Ask Me': "Pregúntame", 'Road from linework': "Carretera desde líneas CAD", 'Breakline from linework': "Línea de quiebre desde líneas CAD", 'Road': "Carretera", 'Corridor…': "Corredor…", 'Terrain from LandXML': "Terreno desde LandXML", 'Curves': "Curvas",
   // An import made editable (decision 207)
   'Everything editable: recognised where it can, the rest as Studio solids': 'Todo editable: reconocido donde se puede, el resto como sólidos de Studio', 'Make them editable (Studio solids)': 'Hacerlos editables (sólidos de Studio)', 'Push/pull, fillets, booleans and the rest take them; a body of more than 5,000 triangles stays a reference': 'Empujar/tirar, redondeos, booleanas y el resto se aplican a ellos; un cuerpo de más de 5.000 triángulos queda como referencia', 'As': 'Como', 'references': 'referencias', 'editable (Studio solids)': 'editables (sólidos de Studio)',
+  // Recognition from triangles, Convert to native (decision 207)
+  'Recognised from their triangles where it can (walls with their doors and windows, slabs, columns), the rest as references': 'Reconocido a partir de los triángulos donde se puede (muros con sus puertas y ventanas, losas, pilares), el resto como referencias', 'Convert to native': 'Convertir a nativo', 'Select the imported elements (or their group) to convert.': 'Seleccione los elementos importados (o su grupo) para convertirlos.', 'Nothing to convert: select imported references.': 'Nada que convertir: seleccione referencias importadas.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

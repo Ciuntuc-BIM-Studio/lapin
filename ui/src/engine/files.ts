@@ -380,7 +380,7 @@ export async function importFragments(): Promise<void> {
   const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'Fragments', extensions: ['frag'] }]) : picked?.name ?? null;
   if (!path) return;
   // Looked at first, then chosen from, as an IFC is (docs/fragments.md, Exchange).
-  await surveyIfc(picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path }, 'reference', 'frag');
+  await surveyIfc(picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path }, 'auto', 'frag');
 }
 
 /**

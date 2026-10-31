@@ -460,7 +460,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             case "doc.execute":
                 if (!editor) return "You joined to look: ask the host to let you edit.";
                 return p["args"] is JsonObject args && HasPath(args) ? "A guest cannot reach files on the host's computer." : null;
-            case "doc.undo" or "doc.redo":
+            case "doc.undo" or "doc.redo" or "project.convertToNative":
                 return editor ? null : "You joined to look: ask the host to let you edit.";
             case "project.importIfc" or "project.importFragments" or "project.importBcf" or "project.importMesh":
                 if (!editor) return "You joined to look: ask the host to let you edit.";
@@ -664,7 +664,9 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 ReportProgress("Reading the file", 0, 0);
                 var (bytes, name, _, key) = IfcBytes(p);
                 var options = new Lapin.Mesh.Fragments.FragImportOptions(Chosen(p["kinds"]), Chosen(p["storeys"]), p["group"] is not JsonValue gv || !gv.TryGetValue<bool>(out var gb) || gb,
-                    Editable: p["editable"] is JsonValue ev && ev.TryGetValue<bool>(out var eb) && eb);
+                    Editable: (string?)p["mode"] == "editable" || p["editable"] is JsonValue ev && ev.TryGetValue<bool>(out var eb) && eb,
+                    // "auto" and "editable": recognised from their triangles where a module takes them; "reference" (the default): as the file draws them.
+                    Recognize: (string?)p["mode"] is "auto" or "editable");
                 var model = _fragSurveyed is { } fs && fs.Key == key ? fs.Model : Lapin.Mesh.Fragments.FragImport.Read(bytes, name);
                 _fragSurveyed = null;
                 var r = Lapin.Mesh.Fragments.FragImport.Run(session, model, name, out var imported, options);
@@ -690,6 +692,22 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 delivered["topics"] = file.Topics.Count;
                 delivered["version"] = file.Version;
                 return (delivered, null);
+            }
+            case "project.convertToNative":
+            {
+                // References made native (decision 207): recognised from their triangles where a module takes them (a wall with its
+                // doors and windows, a slab, a column), the rest made Studio solids when editable is asked; one undo step.
+                var ids = (p["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList() ?? [];
+                if (ids.Count == 0) throw new CommandException("Select the references to convert.");
+                var editable = p["editable"] is not JsonValue ev || !ev.TryGetValue<bool>(out var eb) || eb;
+                MeshRecognitionReport rec = MeshRecognitionReport.None;
+                EditableReport made = EditableReport.None;
+                var diff = session.Edit("Convert to native", edit =>
+                {
+                    rec = MeshRecognition.Recognize(edit, session.Catalog, ids);
+                    if (editable) made = EditableReferences.Make(edit, session.Catalog, ids);
+                });
+                return (new JsonObject { ["recognition"] = rec.ToJson(), ["editable"] = made.ToJson() }, diff);
             }
             case "project.importMesh":
             {
