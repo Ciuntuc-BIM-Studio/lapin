@@ -33,11 +33,11 @@ public class TypeStirrupsTests
         Assert.Equal(0.192, laid.A, 9);
         Assert.Equal(0.342, laid.B, 9);
         Assert.True(laid.Spec.Mark >= 1);
-        var loop = laid.LoopAt(3);
+        var loop = laid.LoopsAt(3)[0].Corners;
         Assert.All(loop, p => Assert.Equal(3, p.X, 9));
         Assert.Equal(0.192, loop.Max(p => p.Y) - loop.Min(p => p.Y), 9);
         Assert.Equal(0.342, loop.Max(p => p.Z) - loop.Min(p => p.Z), 9);
-        Assert.Equal(2 * (0.192 + 0.342) + 2 * 0.08, laid.BarLength, 9);
+        Assert.Equal(2 * (0.192 + 0.342) + 2 * 0.08, laid.BarLength(laid.LoopsAt(3)[0]), 9);
         // Three zones, a third each: 100 at the ends, 200 in the middle: 20 + 10 + 20 + 1.
         f.Run("rebar.setTypeStirrups", new JsonObject { ["id"] = type.Id, ["mode"] = "zones", ["zones"] = new JsonArray(new JsonObject { ["share"] = 1.0 / 3, ["step"] = 0.1 }, new JsonObject { ["share"] = 1.0 / 3, ["step"] = 0.2 }, new JsonObject { ["share"] = 1.0 / 3, ["step"] = 0.1 }) });
         laid = TypeStirrups.Of(f.Model, f.Model.Get(beam)!)!;
@@ -79,7 +79,7 @@ public class TypeStirrupsTests
         var laid = TypeStirrups.Of(f.Model, f.Model.Get(column)!)!;
         var height = Columns.Spec(f.Model, f.Model.Get(column)!).Height;
         Assert.Equal((int)Math.Ceiling(height / 0.2 + 1 - 1e-9), laid.Stations.Count);
-        var loop = laid.LoopAt(1.0);
+        var loop = laid.LoopsAt(1.0)[0].Corners;
         Assert.All(loop, p => Assert.Equal(loop[0].Z, p.Z, 9));
         Assert.Equal(0.242, loop.Max(p => p.X) - loop.Min(p => p.X), 9);
         // Cut horizontally at 1 m: the rectangle; in a vertical section through it: a line per stirrup.

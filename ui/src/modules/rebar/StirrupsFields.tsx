@@ -8,7 +8,9 @@ import { execute } from '../../engine/session';
 import { useRebarCatalog } from './RebarSection';
 
 interface Zone { share: number; step: number }
-interface Spec { enabled: boolean; diameter: number; cover: number; mode: 'uniform' | 'zones'; step: number; zones: Zone[]; mark: number }
+interface Spec { enabled: boolean; diameter: number; cover: number; mode: 'uniform' | 'zones'; step: number; zones: Zone[]; mark: number; pattern?: 'single' | 'diamond' | 'cross' }
+interface ColumnBars { enabled: boolean; perFace: number; diameter: number; lap: number; mark: number }
+const COLUMN_BARS: ColumnBars = { enabled: false, perFace: 3, diameter: 0.016, lap: 1.0, mark: 0 };
 
 const DEFAULT: Spec = { enabled: false, diameter: 0.008, cover: 0.025, mode: 'uniform', step: 0.15, zones: [{ share: 1 / 3, step: 0.1 }, { share: 1 / 3, step: 0.2 }, { share: 1 / 3, step: 0.1 }], mark: 0 };
 export function StirrupsFields({ type, kind }: { type: NodeDto; kind: string }) {
@@ -42,8 +44,38 @@ export function StirrupsFields({ type, kind }: { type: NodeDto; kind: string }) 
               <input className="num" type="number" style={{ width: 56 }} step={10} min={10} value={Math.round(z.step * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 10) setZone(i, { step: v / 1000 }); }} /><span className="muted small">mm</span>
             </div>
           ))}
+        {kind === 'column' && <label className="field-line"><span className="eyebrow">Arrangement</span>
+          <select value={s.pattern ?? 'single'} onChange={(e) => set({ pattern: e.target.value as Spec['pattern'] })}>
+            <option value="single">Round the perimeter only</option><option value="diamond">With a diamond inside</option><option value="cross">With two inside, one each way</option>
+          </select>
+        </label>}
         <label className="field-line"><span className="eyebrow">Mark</span><input className="num" type="number" min={1} value={s.mark || ''} onChange={(e) => { const v = Number(e.target.value); if (v >= 1) set({ mark: v }); }} /></label>
         <p className="muted small">Drawn in sections as they lie to the axis, in structural plans and elevations, and counted in the bar schedule. The longitudinal bars are drawn by hand (Rebar 2D).</p>
+      </>}
+      {kind === 'column' && <ColumnBarsFields type={type} />}
+    </div>
+  );
+}
+
+/** A column type's longitudinal bars: so many on each face, their diameter, the starter bars past the top. */
+function ColumnBarsFields({ type }: { type: NodeDto }) {
+  const catalog = useRebarCatalog();
+  const b: ColumnBars = { ...COLUMN_BARS, ...((type.props.bars as Partial<ColumnBars> | undefined) ?? {}) };
+  const set = (patch: Partial<ColumnBars>) => void execute('rebar.setColumnBars', { id: type.id, ...patch });
+  if (!catalog) return null;
+  return (
+    <div className="layers" data-field="column-bars">
+      <label className="field-line check"><input type="checkbox" checked={b.enabled} onChange={(e) => set({ enabled: e.target.checked })} /><span>Longitudinal bars on this type</span></label>
+      {b.enabled && <>
+        <div className="row small">
+          <span className="eyebrow">Each face</span>
+          <input className="num" type="number" style={{ width: 44 }} min={2} max={20} value={b.perFace} onChange={(e) => set({ perFace: Math.max(2, Number(e.target.value) || 2) })} />
+          <span>×</span>
+          <select value={b.diameter} onChange={(e) => set({ diameter: Number(e.target.value) })}>{catalog.diameters.map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000)}</option>)}</select>
+          {b.mark ? <span className="muted small">mark {b.mark}</span> : null}
+        </div>
+        <label className="field-line"><span className="eyebrow">Starter bars past the top</span><input className="num" type="number" step={50} min={0} max={5000} value={Math.round(b.lap * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 0 && v <= 5000) set({ lap: v / 1000 }); }} /><span className="muted small"> mm</span></label>
+        <p className="muted small">The corners shared, the rest of each face spread evenly, inside the stirrups; from the base to the top and on by the lap, storey by storey.</p>
       </>}
     </div>
   );

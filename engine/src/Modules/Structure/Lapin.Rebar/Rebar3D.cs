@@ -101,19 +101,83 @@ public static class Rebar3D
         return o;
     }
 
+    /// <summary>Whether a view shows bars in space at all (sections; plans and elevations only the structure's), how deep it sees, and whether it is a plan (no depth: its storey's).</summary>
+    public static bool Shows(ViewContext c, out double limit, out bool plan)
+    {
+        var kind = c.View.Str("kind") ?? "plan";
+        plan = kind == "plan";
+        limit = kind == "section" ? c.View.NumOrNull("depth") ?? (AcrossSections.Is(c.View) ? c.View.NumOrNull("margin") ?? AcrossSections.DefaultMargin : double.PositiveInfinity) : double.PositiveInfinity;
+        if (kind is "plan" or "elevation" && !string.Equals(c.View.Str("discipline"), "Structure", StringComparison.OrdinalIgnoreCase)) return false;
+        return kind is "plan" or "elevation" or "section";
+    }
+
     /// <summary>
-    /// The bars drawn on other views, as this view sees them: each segment within the view's depth drawn along, the point
-    /// where a bar pierces the view's plane a dot of its diameter; a label with the count and the mark's balloon beside.
-    /// Plans and elevations only when the view is the structure's; a bar's own view draws it itself.
+    /// Bars in space as a view sees them: each segment within the view's depth drawn along; the point where a segment
+    /// pierces the view's plane a dot; a segment that comes to a point (seen end on) a dot too.
+    /// </summary>
+    public static (List<Vec2> Dots, List<(Vec2 A, Vec2 B)> Lines) Project(ViewContext c, IEnumerable<Vec3[]> bars, double limit, bool plan)
+    {
+        var dots = new List<Vec2>();
+        var lines = new List<(Vec2 A, Vec2 B)>();
+        foreach (var bar in bars)
+            for (var i = 0; i + 1 < bar.Length; i++)
+            {
+                var (p, q) = (bar[i], bar[i + 1]);
+                var (dp, dq) = (c.Frame.Depth(p), c.Frame.Depth(q));
+                if (!plan && (dp < -1e-9) != (dq < -1e-9) && Math.Abs(dq - dp) > 1e-12)
+                {
+                    var t = dp / (dp - dq);
+                    dots.Add(c.Map(p + (q - p) * t));
+                    continue;
+                }
+                if (!plan && (dp < -1e-9 || dp > limit + 1e-9) && (dq < -1e-9 || dq > limit + 1e-9)) continue;
+                var (a, b) = (c.Map(p), c.Map(q));
+                if ((b - a).Length < 1e-6) dots.Add(a); else lines.Add((a, b));
+            }
+        return (dots, lines);
+    }
+
+    /// <summary>The dots and lines of one group of bars drawn, with its label beside the dots (to the right) or over the lines, and the mark's balloon.</summary>
+    public static void Draw(ViewMark mk, ViewContext c, RebarSettings st, List<Vec2> dots, List<(Vec2 A, Vec2 B)> lines, double d, string layer, string label, int mark)
+    {
+        var color = st.ColorByDiameter ? RebarShapes.ColorOf(d) : "#000000";
+        var width = Math.Max(0.25, d * 1000 / c.Scale);
+        foreach (var p in dots)
+        {
+            var circle = ViewMark.Circle(p, Math.Max(d / 2, 0.6 * c.Mm), 24);
+            mk.Fills.Add(([circle], color));
+            mk.Polyline(circle, true, layer, 0.18, color);
+        }
+        foreach (var (a, b) in lines) mk.Line(a, b, layer, width, color);
+        mk.Snaps.AddRange(dots);
+        var r = st.Balloon / 2 * c.Mm;
+        Vec2 lab, target;
+        if (dots.Count > 0)
+        {
+            var right = dots.MaxBy(p => p.X);
+            lab = right + new Vec2(10 * c.Mm, 0);
+            target = right;
+        }
+        else
+        {
+            var all = lines.SelectMany(l => new[] { l.A, l.B }).ToList();
+            var mid = new Vec2((all.Min(p => p.X) + all.Max(p => p.X)) / 2, all.Max(p => p.Y));
+            lab = mid + new Vec2(0, 8 * c.Mm);
+            target = lines.Select(l => RebarModule.Nearest([l.A, l.B], lab, l.A)).MinBy(p => (p - lab).Length);
+        }
+        mk.Polyline(ViewMark.Circle(lab, r, 32), true, RebarShapes.AnnotationLayer, 0.35, color);
+        if (mark > 0) mk.Text(new PenText(lab, mark.ToString(CultureInfo.InvariantCulture), st.TextHeight, 0, "middle", "middle", true), color);
+        if ((target - lab).Length > r) mk.Line(lab + (target - lab).Normalized() * r, target, RebarShapes.AnnotationLayer, 0.25, color);
+        mk.Text(new PenText(lab + new Vec2(r + 1.0 * c.Mm, 0), label, st.TextHeight, 0, "start", "middle"), color);
+    }
+
+    /// <summary>
+    /// The bars drawn on other views, as this view sees them (<see cref="Project"/>), each with its label and mark; a bar's own view draws it itself.
     /// </summary>
     public static IEnumerable<ViewMark> Marks(ViewContext c, RebarSettings st)
     {
         var m = c.Model;
-        var kind = c.View.Str("kind") ?? "plan";
-        if (kind is "plan" or "elevation" && !string.Equals(c.View.Str("discipline"), "Structure", StringComparison.OrdinalIgnoreCase)) yield break;
-        if (kind is not ("plan" or "elevation" or "section")) yield break;
-        var limit = kind == "section" ? c.View.NumOrNull("depth") ?? (AcrossSections.Is(c.View) ? c.View.NumOrNull("margin") ?? AcrossSections.DefaultMargin : double.PositiveInfinity) : double.PositiveInfinity;
-        var plan = kind == "plan";
+        if (!Shows(c, out var limit, out var plan)) yield break;
         var hidden = (c.View.Attrs["hiddenLayers"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         foreach (var e in m.OfClass(Rebars.Class))
         {
@@ -123,58 +187,10 @@ public static class Rebar3D
             if (hidden.Contains(layer)) continue;
             var bars = Bars(m, c.Services, c.Geometry, e, st);
             if (bars.Count == 0) continue;
-            var color = st.ColorByDiameter ? RebarShapes.ColorOf(s.Diameter) : "#000000";
-            var width = Math.Max(0.25, s.Diameter * 1000 / c.Scale);
-            var mk = new ViewMark(e.Id);
-            var dots = new List<Vec2>();
-            var lines = new List<(Vec2 A, Vec2 B)>();
-            foreach (var bar in bars)
-                for (var i = 0; i + 1 < bar.Length; i++)
-                {
-                    var (p, q) = (bar[i], bar[i + 1]);
-                    var (dp, dq) = (c.Frame.Depth(p), c.Frame.Depth(q));
-                    // A segment through the plane: the point where it pierces it. One in front of the eye and within the depth: drawn, clipped there.
-                    if (!plan && (dp < -1e-9) != (dq < -1e-9) && Math.Abs(dq - dp) > 1e-12)
-                    {
-                        var t = dp / (dp - dq);
-                        dots.Add(c.Map(p + (q - p) * t));
-                        continue;
-                    }
-                    if (!plan && (dp < -1e-9 || dp > limit + 1e-9) && (dq < -1e-9 || dq > limit + 1e-9)) continue;
-                    var (a, b) = (c.Map(p), c.Map(q));
-                    if ((b - a).Length < 1e-6) dots.Add(a); else lines.Add((a, b));
-                }
+            var (dots, lines) = Project(c, bars, limit, plan);
             if (dots.Count == 0 && lines.Count == 0) continue;
-            foreach (var p in dots)
-            {
-                var circle = ViewMark.Circle(p, Math.Max(s.Diameter / 2, 0.6 * c.Mm), 24);
-                mk.Fills.Add(([circle], color));
-                mk.Polyline(circle, true, layer, 0.18, color);
-            }
-            foreach (var (a, b) in lines) mk.Line(a, b, layer, width, color);
-            mk.Snaps.AddRange(dots);
-            // The label with the count: beside the dots (to the right, up for the upper ones), over the lines.
-            var r = st.Balloon / 2 * c.Mm;
-            var label = Rebars.Label(e, s);
-            Vec2 lab, target;
-            if (dots.Count > 0)
-            {
-                var right = dots.MaxBy(p => p.X);
-                lab = right + new Vec2(10 * c.Mm, 0);
-                target = right;
-            }
-            else
-            {
-                var all = lines.SelectMany(l => new[] { l.A, l.B }).ToList();
-                var mid = new Vec2((all.Min(p => p.X) + all.Max(p => p.X)) / 2, all.Max(p => p.Y));
-                lab = mid + new Vec2(0, 8 * c.Mm);
-                target = lines.Select(l => RebarModule.Nearest([l.A, l.B], lab, l.A)).MinBy(p => (p - lab).Length);
-            }
-            if (Rebars.LabelAt(e) is { } own && e.Str("viewId") != c.View.Id) { /* the label's own place belongs to its view */ }
-            mk.Polyline(ViewMark.Circle(lab, r, 32), true, RebarShapes.AnnotationLayer, 0.35, color);
-            mk.Text(new PenText(lab, Rebars.Mark(e).ToString(CultureInfo.InvariantCulture), st.TextHeight, 0, "middle", "middle", true), color);
-            if ((target - lab).Length > r) mk.Line(lab + (target - lab).Normalized() * r, target, RebarShapes.AnnotationLayer, 0.25, color);
-            mk.Text(new PenText(lab + new Vec2(r + 1.0 * c.Mm, 0), label, st.TextHeight, 0, "start", "middle"), color);
+            var mk = new ViewMark(e.Id);
+            Draw(mk, c, st, dots, lines, s.Diameter, layer, Rebars.Label(e, s), Rebars.Mark(e));
             yield return mk;
         }
     }
