@@ -64,6 +64,8 @@ public static class SectionPaths
     /// </summary>
     public static (List<Vec2>? Path, double Station0, string? Problem) Resolve(IModelView m, IServices? services, Entity view)
     {
+        // Across an element: its line stands across the axis at the station, as the element is now (none for a horizontal cut).
+        if (AcrossSections.Is(view)) return AcrossSections.Line(m, services, view) is { } across ? (across, 0, null) : (null, 0, "A horizontal cut has no line in plan.");
         if (Along(view) is { } id)
         {
             if (m.Get(id) is { } e && PathOfElement(m, services, e) is { } followed)

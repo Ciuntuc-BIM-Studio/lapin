@@ -1,0 +1,1 @@
+{ "id": "rebar", "name": "Rebar 2D", "assembly": "Lapin.Rebar.dll", "requires": ["core", "structure", "drafting", "architecture"] }

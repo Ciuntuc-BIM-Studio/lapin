@@ -1,5 +1,5 @@
 {
   "id": "lapin-architecture-structure",
   "name": "Lapin Architecture + Structure",
-  "modules": ["architecture", "structure", "drafting"]
+  "modules": ["architecture", "structure", "rebar", "drafting"]
 }

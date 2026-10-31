@@ -1568,6 +1568,34 @@ export const scenes = [
       await t.shot('cde-remarks-sheet');
     },
   },
+  {
+    id: 'rebar',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const beam = (await t.cmd('structure.addBeam', { storeyId: s, x1: 0, y1: 0, x2: 6, y2: 0 })).id;
+      for (const x of [0.3, 5.7]) await t.cmd('structure.addColumn', { storeyId: s, x, y: 0 });
+      // A longitudinal section in front of the beam, looking at it; its x is the model's x + 1, its y the level.
+      const host = (await t.cmd('view.create', { kind: 'section', start: [-1, -1.5], end: [7, -1.5], scale: 50, name: 'Beam B1' })).id;
+      await t.ui({ view: 'drawing', drawingViewId: host, selection: null, selected: [], keyPlan: false });
+      await t.button('Rebar 2D', { exact: true });
+      await t.shot('ribbon-rebar', { of: '.topbar', pad: 0 });
+      const top = (await t.nodes()).find((n) => n.id === s)?.props.elevation ?? 0;
+      const z = (dz) => Number(top) + 3 + dz;
+      // Section here: the cross-section at mid-span, inset to the right, with the stirrups and bars drawn on the longitudinal one.
+      const r = await t.cmd('rebar.sectionHere', { viewId: host, id: beam, point: [4, z(-0.2)], at: [11.4, z(-0.3)] });
+      t.expect(!!r?.insetId, 'the section is inset');
+      await t.cmd('rebar.add', { viewId: host, shape: 'straight', at: [1.05, z(-0.36)], params: { length: 5.9 }, diameter: 0.016, count: 3, hooks: { start: { angle: 90, length: 0.25 }, end: { angle: 90, length: 0.25 } }, label: { at: [2.2, z(-0.9)] } });
+      await t.cmd('rebar.add', { viewId: host, shape: 'straight', at: [1.05, z(-0.04)], params: { length: 5.9 }, diameter: 0.012, count: 2, label: { at: [4, z(0.35)] } });
+      await t.cmd('rebar.addRun', { viewId: host, start: [1.35, z(-0.2)], end: [6.65, z(-0.2)], step: 0.2, zones: [{ length: 1.8, step: 0.1 }, { length: 1.8, step: 0.2 }, { length: 1.7, step: 0.1 }], params: { a: 0.19, b: 0.34 }, size: 0.34, label: { at: [5.6, z(-0.9)] } });
+      await t.wait(1500);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('rebar-section', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ keyPlan: true });
+      t.expect((await t.nodes()).filter((n) => n.type === 'LapinRebar').length === 2, 'two bars');
+    },
+  },
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */

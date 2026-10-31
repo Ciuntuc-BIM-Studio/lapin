@@ -23,6 +23,7 @@
     <ProjectReference Include="../../src/Platform/Lapin.Mesh/Lapin.Mesh.csproj" />
     <ProjectReference Include="../../src/Modules/Architecture/Lapin.Architecture/Lapin.Architecture.csproj" />
     <ProjectReference Include="../../src/Modules/Structure/Lapin.Structure/Lapin.Structure.csproj" />
+    <ProjectReference Include="../../src/Modules/Structure/Lapin.Rebar/Lapin.Rebar.csproj" />
     <ProjectReference Include="../../src/Modules/Drafting/Lapin.Drafting/Lapin.Drafting.csproj" />
     <ProjectReference Include="../../src/Modules/Phases/Lapin.Phases/Lapin.Phases.csproj" />
     <ProjectReference Include="../../src/Modules/Civil/Lapin.Civil/Lapin.Civil.csproj" />

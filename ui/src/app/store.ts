@@ -87,6 +87,8 @@ export interface UiState extends Pane {
   stairTypeId: string | null;
   /** The ceiling type the ceiling tools place; null: the project's first. */
   ceilingTypeId: string | null;
+  /** Where the Inset view tool was clicked (its view and point), while the view to show is chosen. */
+  insetAt: { viewId: string; x: number; y: number } | null;
   /** The curtain wall type the curtain wall tool draws with; null: the project's first. */
   curtainTypeId: string | null;
   /** The style a new roof takes (the catalogue's first when null). */
@@ -107,7 +109,7 @@ export interface UiState extends Pane {
 
 const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, ceilingTypeId: null, curtainTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
+  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, ceilingTypeId: null, insetAt: null, curtainTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
 }));
 
 /**

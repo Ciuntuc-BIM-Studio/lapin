@@ -4,6 +4,7 @@
   "modules": [
     "architecture",
     "structure",
+    "rebar",
     "drafting",
     "studio",
     "phases",

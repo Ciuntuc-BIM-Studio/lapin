@@ -79,6 +79,8 @@ public static class Views
             }
             case "section":
             {
+                // Across an element at a station: the plane perpendicular to its axis, the window round its section.
+                if (AcrossSections.Is(view)) return AcrossSections.Spec(m, view, parts, services, hidden);
                 // The first piece of its line; a developed section (more pieces) is drawn piece by piece (Generate).
                 var (path, _, problem) = SectionPaths.Resolve(m, services, view);
                 if (path == null) return (null, problem);
@@ -519,7 +521,8 @@ public static class Views
     public const string ConstructionLayer = "CONSTRUCTION";
 
     /// <summary>A view's drawing with its annotations; for print (sheets, PDF, DXF) construction lines are left out.</summary>
-    public static Rendered Render(IQueryContext q, Entity view, bool print = false)
+    /// <param name="insets">Whether the views inset in this one are drawn (an inset does not draw its source's own insets).</param>
+    public static Rendered Render(IQueryContext q, Entity view, bool print = false, bool insets = true)
     {
         var m = q.Model;
         var scale = view.NumOrNull("scale") ?? 100;
@@ -558,7 +561,7 @@ public static class Views
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services };
-        var marks = Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).ToList();
+        var marks = Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).Concat(insets ? Insets.Marks(q, ctx) : []).ToList();
         // The reference planes where they cut this view, on the screen only: never on a sheet.
         if (!print) marks.AddRange(RefPlaneMarks(ctx));
         foreach (var source in q.Services.All<IViewAnnotations>())
@@ -732,6 +735,8 @@ public static class Views
             {
                 var z = storey.Num("elevation");
                 var y = c.Frame.Map(new Vec3(c.Frame.Origin.X, c.Frame.Origin.Y, z)).Y;
+                // A section across an element is a window: only the levels within it, and none on a horizontal cut.
+                if (AcrossSections.Is(c.View) && (Math.Abs(c.Frame.Dir.Z) > 0.5 || y < bounds.Min.Y - 1.0 * k || y > bounds.Max.Y + 1.0 * k)) continue;
                 var mk = new ViewMark(storey.Id);
                 mk.Line(new Vec2(x0, y), new Vec2(x1, y), "LEVEL", Pens.Default.Hidden, "#555555", LineStyles.DashOf("center"));
                 // The marker: a small triangle standing on the line, the level's name and elevation above it.
@@ -933,6 +938,11 @@ public static class Views
                     name = (string?)a["name"] ?? storey.Name;
                     break;
                 }
+                case "section" when a[AcrossSections.Key] != null:
+                    // Across an element at a station (across, station, flip, margin, depth), drawn at 1:20 unless asked otherwise.
+                    if (a["scale"] == null) attrs["scale"] = 20;
+                    name = AcrossSections.Set(ctx, attrs, a);
+                    break;
                 case "section":
                     // Its line: start and end, or pts (jogged), an arc through three points (curve), or an element it follows (along: a road, a wall, a drafted polyline); its depth.
                     SectionPaths.Set(ctx.Model, ctx.Services, attrs, a, create: true);
@@ -958,6 +968,8 @@ public static class Views
             ctx.Add(v);
             return new JsonObject { ["id"] = v.Id };
         });
+
+        Insets.Register(r);
 
         // A site plan's or a location plan's settings: {id, site?, gridStep?, northArrow?, scaleBar?} (SitePlans).
         r.Command("view.setSite", "Site plan", (ctx, a) => { SitePlans.Set(ctx, a); return null; });

@@ -70,6 +70,8 @@ public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Bel
 {
     /// <summary>How far the drawing reaches sideways (along the frame's Right, from its origin); null: without end. One piece of a section developed along a polyline sees only between its ends.</summary>
     public (double Min, double Max)? Span { get; init; }
+    /// <summary>How far the drawing reaches up and down (along the frame's Up, from its origin); null: without end. A section across an element sees only its window.</summary>
+    public (double Min, double Max)? Rise { get; init; }
 
     /// <summary>
     /// A plan cut at <paramref name="cutZ"/>, looking down; or, <paramref name="up"/>, looking up
@@ -151,7 +153,7 @@ public static class Generator
             var (z0, z1) = Z(p.Solid);
             return z0 < cutZ - 1e-9 && z1 > cutZ - v.Below - 1e-9;
         }).ToList();
-        var (seen, areas, behind) = HiddenLines.Draw(primary.Select((p, i) => (p.Solid, i)).ToList(), v.Frame, v.Cut, v.Below, v.Hidden, primary.Select(seamKey).ToList(), v.Span);
+        var (seen, areas, behind) = HiddenLines.Draw(primary.Select((p, i) => (p.Solid, i)).ToList(), v.Frame, v.Cut, v.Below, v.Hidden, primary.Select(seamKey).ToList(), v.Span, v.Rise);
         foreach (var a in areas)
         {
             var p = primary[a.Owner];

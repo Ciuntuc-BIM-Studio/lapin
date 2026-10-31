@@ -37,6 +37,7 @@
   </Folder>
   <Folder Name="/src/Modules/Structure/">
     <Project Path="src/Modules/Structure/Lapin.Structure/Lapin.Structure.csproj" />
+    <Project Path="src/Modules/Structure/Lapin.Rebar/Lapin.Rebar.csproj" />
   </Folder>
   <Folder Name="/src/Platform/">
     <Project Path="src/Platform/Lapin.Drawing/Lapin.Drawing.csproj" />

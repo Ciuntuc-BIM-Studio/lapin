@@ -56,8 +56,9 @@ public static class HiddenLines
     /// section developed along a polyline sees only between its two ends. Lines and cut areas are clipped there,
     /// nothing is drawn at the clip, and a solid wholly outside is left out.
     /// </param>
+    /// <param name="rise">The same up and down (along <see cref="ViewFrame.Up"/>): a section across an element sees only its window.</param>
     public static (List<Seg2> Lines, List<CutArea> Cuts, List<Seg2> Hidden) Draw(IReadOnlyList<(Solid Solid, int Owner)> solids, ViewFrame view, bool cut = false,
-        double maxDepth = double.PositiveInfinity, bool hidden = false, IReadOnlyList<string?>? keys = null, (double Min, double Max)? span = null)
+        double maxDepth = double.PositiveInfinity, bool hidden = false, IReadOnlyList<string?>? keys = null, (double Min, double Max)? span = null, (double Min, double Max)? rise = null)
     {
         bool Joins(int i, int j) => i == j || keys == null || keys[i] != null && keys[i] == keys[j];
         var occluders = new List<Occluder>();
@@ -65,6 +66,7 @@ public static class HiddenLines
         var edges = new List<(Vec3 A, Vec3 B, int Solid, int FaceA, int FaceB, int Owner)>();
         var front = new Dictionary<(int Solid, int Face), Occluder>();
         double X(Vec3 p) => Vec3.Dot(p - view.Origin, view.Right);
+        double Y(Vec3 p) => Vec3.Dot(p - view.Origin, view.Up);
 
         for (var si = 0; si < solids.Count; si++)
         {
@@ -75,10 +77,17 @@ public static class HiddenLines
                 foreach (var p in s.Vertices) { var x = X(p); lo = Math.Min(lo, x); hi = Math.Max(hi, x); }
                 if (hi < sp.Min - 1e-9 || lo > sp.Max + 1e-9) continue;
             }
+            if (rise is { } ry && s.Vertices.Length > 0)
+            {
+                double lo = double.PositiveInfinity, hi = double.NegativeInfinity;
+                foreach (var p in s.Vertices) { var y = Y(p); lo = Math.Min(lo, y); hi = Math.Max(hi, y); }
+                if (hi < ry.Min - 1e-9 || lo > ry.Max + 1e-9) continue;
+            }
             if (cut)
             {
                 var loops = Section(s, view);
                 if (span is { } sx) loops = ClipX(loops, sx.Min, sx.Max);
+                if (rise is { } sy) loops = ClipY(loops, sy.Min, sy.Max);
                 if (loops.Count > 0)
                 {
                     cuts.Add(new CutArea(loops, owner));
@@ -136,6 +145,11 @@ public static class HiddenLines
             {
                 double xa = X(e.A), xb = X(e.B);
                 if (!ClipInterval(xa, xb, sr.Min, ref t0, ref t1) || !ClipInterval(-xa, -xb, -sr.Max, ref t0, ref t1)) continue;
+            }
+            if (rise is { } rr)
+            {
+                double ya = Y(e.A), yb = Y(e.B);
+                if (!ClipInterval(ya, yb, rr.Min, ref t0, ref t1) || !ClipInterval(-ya, -yb, -rr.Max, ref t0, ref t1)) continue;
             }
             Vec3 A = Lerp(e.A, e.B, t0), B = Lerp(e.A, e.B, t1);
             double dA = view.Depth(A), dB = view.Depth(B);
@@ -258,6 +272,18 @@ public static class HiddenLines
         foreach (var loop in loops)
         {
             var kept = ClipHalf(ClipHalf(loop, p => p.X - min), p => max - p.X);
+            if (kept.Count >= 3) o.Add([.. kept]);
+        }
+        return o;
+    }
+
+    /// <summary>The loops' parts between y = <paramref name="min"/> and y = <paramref name="max"/>.</summary>
+    static List<Vec2[]> ClipY(List<Vec2[]> loops, double min, double max)
+    {
+        var o = new List<Vec2[]>(loops.Count);
+        foreach (var loop in loops)
+        {
+            var kept = ClipHalf(ClipHalf(loop, p => p.Y - min), p => max - p.Y);
             if (kept.Count >= 3) o.Add([.. kept]);
         }
         return o;
