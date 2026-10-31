@@ -10,7 +10,7 @@
 import type { NodeDto } from '../engine/protocol';
 
 /** `site`: a site plan or a location plan, listed under the browser's Site rather than in the sets. */
-export type ItemKind = 'plan' | 'section' | 'elevation' | '3d' | 'sheet' | 'schedule' | 'site';
+export type ItemKind = 'plan' | 'section' | 'elevation' | 'plane' | '3d' | 'sheet' | 'schedule' | 'site';
 
 export interface SetFilter {
   disciplines?: string[];
@@ -42,7 +42,7 @@ export interface SetGroup { set: BrowserSet | null; items: BrowserItem[] }
 
 export const DISCIPLINES = ['Architecture', 'Structure', 'MEP'];
 export const DEFAULT_DISCIPLINE = 'Architecture';
-export const KINDS: ItemKind[] = ['plan', 'section', 'elevation', '3d', 'sheet', 'schedule'];
+export const KINDS: ItemKind[] = ['plan', 'section', 'elevation', 'plane', '3d', 'sheet', 'schedule'];
 export const DEFAULT_SETS: BrowserSet[] = DISCIPLINES.map((d) => ({ id: d.toLowerCase(), name: d, filter: { disciplines: [d] } }));
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
@@ -93,7 +93,7 @@ const number = (v: unknown): number | null => (typeof v === 'number' ? v : typeo
 /** A view, sheet or schedule entity as an item; null for any other entity. */
 export function itemOf(node: NodeDto): BrowserItem | null {
   const kind: ItemKind | null = node.type === 'LapinView' ? (node.props.kind === 'plan' && typeof node.props.site === 'string' ? 'site'
-    : ['plan', 'section', 'elevation', '3d'].includes(String(node.props.kind)) ? (node.props.kind as ItemKind) : null)
+    : ['plan', 'section', 'elevation', 'plane', '3d'].includes(String(node.props.kind)) ? (node.props.kind as ItemKind) : null)
     : node.type === 'LapinSheet' ? 'sheet' : node.type === 'LapinSchedule' ? 'schedule' : null;
   if (!kind) return null;
   return {

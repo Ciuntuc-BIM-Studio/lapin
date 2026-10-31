@@ -10,6 +10,8 @@ import { notify } from '../../app/store';
 import { setTypeOf, similarOf } from '../../platform/modules';
 import { registerCommand, startCommand, useCad, cadLog, type Step } from '../../viewport/cad/session';
 import type { LapinModule } from '../../platform/module';
+import type { NodeDto } from '../../engine/protocol';
+import { viewShowsField } from './planeFields';
 import { closePane, setTool, splitPane, useUi } from '../../app/store';
 import { isDesktop } from '../../engine/files';
 import { openViewWindow } from '../../app/windows';
@@ -81,6 +83,7 @@ registerCommand({ names: ['MATCHTYPE', 'MA'], label: 'Match type', start: matchT
 
 /** The class's generic fields less the discipline, which the section shows as a choice of the known disciplines. */
 const butDiscipline = (cls: string) => () => (useSession.getState().info?.nodeTypes.find((t) => t.type === cls)?.fields ?? []).map((f) => f.key).filter((k) => k !== 'discipline');
+const viewFields = (node: NodeDto) => butDiscipline('LapinView')().filter((k) => viewShowsField(node.props.kind, k));
 
 /** What the core keeps running while the workspace is open: the 3D's visibility and storeys shown, the links' looks. */
 function CoreBackground() { return <><Visibility3D /><Storeys3DLooks /><LinksLook /></>; }
@@ -183,7 +186,7 @@ const core: LapinModule = {
   propertySections: [
     { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection, fieldKeys: butDiscipline('LapinSheet') },
     { id: 'storeyLevels', label: 'Levels', classes: ['IfcBuildingStorey'], component: StoreySection, replacesFields: () => true },
-    { id: 'viewSettings', label: 'View settings', classes: ['LapinView'], component: ViewSettingsSection, fieldKeys: butDiscipline('LapinView') },
+    { id: 'viewSettings', label: 'View settings', classes: ['LapinView'], component: ViewSettingsSection, fieldKeys: viewFields },
   ],
   hotbar: [
     { id: 'select', label: 'Select', icon: MousePointer2, shortcut: 'Esc', run: () => setTool(null) },

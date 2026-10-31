@@ -15,30 +15,25 @@ public sealed record SketchPlane(Vec3 Origin, Vec3 Right, Vec3 Up, Vec3 Normal, 
 public static class Sketches
 {
     /// <summary>
-    /// The plane of a view a sketch can lie on: a plan's is its storey's level
-    /// (the normal up), a section's its cut line, standing (the normal toward
-    /// the viewer). Elevations have no fixed plane: null.
+    /// The plane of a view a sketch can lie on (<see cref="Views.PlaneOf"/>): a plan's is its storey's level (the normal up),
+    /// a section's its cut line, standing (the normal toward the viewer; a developed section's piece the sketch lies on, by
+    /// <paramref name="atX"/>), an elevation's once it has one (Studio gives it one when it is first sketched on), a reference
+    /// plane's. A sketch off a plan stands on the highest storey at or below the plane's origin.
     /// </summary>
-    public static SketchPlane? PlaneOf(IModelView m, Entity view)
+    public static SketchPlane? PlaneOf(IModelView m, Entity view, IServices? services = null, double? atX = null)
     {
-        switch (view.Str("kind") ?? "plan")
-        {
-            case "plan":
-            {
-                var storey = m.Get(view.Str("storeyId") ?? "");
-                return new SketchPlane(new Vec3(0, 0, storey?.Num("elevation") ?? 0), new Vec3(1, 0, 0), new Vec3(0, 1, 0), Vec3.UnitZ, storey?.Id);
-            }
-            case "section":
-            {
-                if (view.Attrs["start"] is not System.Text.Json.Nodes.JsonArray s || view.Attrs["end"] is not System.Text.Json.Nodes.JsonArray e) return null;
-                var (a, b) = (new Vec2(Json.Number(s[0]) ?? 0, Json.Number(s[1]) ?? 0), new Vec2(Json.Number(e[0]) ?? 0, Json.Number(e[1]) ?? 0));
-                if ((b - a).Length < 1e-6) return null;
-                var spec = Lapin.Drawing.Views.ViewSpec.Section(a, b, 1);
-                var f = spec.Frame;
-                return new SketchPlane(f.Origin, f.Right, f.Up, -f.Dir, Spatial.Storeys(m).FirstOrDefault()?.Id);
-            }
-        }
-        return null;
+        if (Views.PlaneOf(m, services, view, atX) is not { } p) return null;
+        var storey = view.Str("kind") is "plan" or null ? m.Get(view.Str("storeyId") ?? "")?.Id
+            : (Spatial.Storeys(m).LastOrDefault(s => s.Num("elevation") <= p.Origin.Z + 1e-6) ?? Spatial.Storeys(m).FirstOrDefault())?.Id;
+        return new SketchPlane(p.Origin, p.Right, p.Up, p.Normal, storey);
+    }
+
+    /// <summary>The middle of a shape's box along the view's x: which piece of a developed section it is drawn on.</summary>
+    public static double? MidX(Shape? s)
+    {
+        if (s == null) return null;
+        var (lo, hi) = Geo.Bounds(s);
+        return (lo.X + hi.X) / 2;
     }
 
     /// <summary>A closed shape's points (a circle as 64 sides); null for an open one.</summary>

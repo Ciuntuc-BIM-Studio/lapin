@@ -433,7 +433,7 @@ export function Viewport3D() {
     if (!g) { select(nodeId && pickable(useSession.getState().nodes.get(nodeId)) ? nodeId : null, add); return; }
     if (g.kind === 'face' || g.kind === 'pick') {
       const node = nodeId ? useSession.getState().nodes.get(nodeId) : undefined;
-      if (!node || !g.types.includes(node.type)) { useSession.setState({ error: 'Pick an element this tool works on.' }); return; }
+      if (!node || (!g.types.includes('*') && !g.types.includes(node.type))) { useSession.setState({ error: 'Pick an element this tool works on.' }); return; }
       void completeTool(tool!, { points: ground ? [ground] : [], entity: node, face });
       return;
     }
@@ -667,7 +667,7 @@ export function Viewport3D() {
         const hit = pickAt();
         const id = nodeOfHit(hit);
         const node = id ? useSession.getState().nodes.get(id) : undefined;
-        if (!hit || !node || !types.includes(node.type)) { if (hoverKey) { hoverKey = ''; showFace(null); setFaceLabel(null); } return; }
+        if (!hit || !node || (!types.includes('*') && !types.includes(node.type))) { if (hoverKey) { hoverKey = ''; showFace(null); setFaceLabel(null); } return; }
         const f = faceHit(hit);
         void engine.call<FaceDto | null>('doc.query', { name: 'core.faceAt', args: { id: node.id, point: f.point, normal: f.normal } }).then((face) => {
           if (faceTypes.current !== types) return;

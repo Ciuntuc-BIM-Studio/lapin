@@ -91,8 +91,12 @@ public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Bel
         return new ViewSpec("section", frame, true, depth, Hidden: hidden) { Span = spanned ? (0, (b - a).Length) : null };
     }
 
-    /// <summary>An elevation looking along <paramref name="dir"/> (a plan direction) from outside the model: nothing cut.</summary>
-    public static ViewSpec Elevation(Vec2 dir, (Vec3 Min, Vec3 Max) bounds, bool hidden = false)
+    /// <summary>
+    /// An elevation looking along <paramref name="dir"/> (a plan direction) from outside the model: nothing cut.
+    /// <paramref name="originX"/>: where its x is measured from (along its Right, from the model's origin), so that what is
+    /// drawn on it stays put when the model grows; without, from the model's middle as it is now.
+    /// </summary>
+    public static ViewSpec Elevation(Vec2 dir, (Vec3 Min, Vec3 Max) bounds, bool hidden = false, double? originX = null)
     {
         var d = dir.Normalized();
         var right = new Vec2(d.Y, -d.X); // looking along d, right is d turned clockwise
@@ -100,6 +104,7 @@ public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Bel
         var c = (bounds.Min + bounds.Max) * 0.5;
         var r = (bounds.Max - bounds.Min).Length;
         var o = new Vec3(c.X - d.X * r, c.Y - d.Y * r, 0);
+        if (originX is { } ox) { var rv = new Vec3(right.X, right.Y, 0); o += rv * (ox - Vec3.Dot(o, rv)); }
         return new("elevation", new ViewFrame(o, new Vec3(right.X, right.Y, 0), Vec3.UnitZ, new Vec3(d.X, d.Y, 0)), false, double.PositiveInfinity, Hidden: hidden);
     }
 }

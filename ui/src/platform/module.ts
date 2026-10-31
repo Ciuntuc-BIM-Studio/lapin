@@ -30,7 +30,7 @@ export type Gesture =
   | { kind: 'polyline'; constrain?: (placed: Vec2[], aimed: Vec2) => Vec2 }
   | { kind: 'pick'; /** IFC classes it can be used on. */ types: string[] }
   /** A face of an element (a floor's soffit, a beam's side): in 3D the face under the cursor lights up; in plan, an edge or the outline picked. */
-  | { kind: 'face'; /** IFC classes it can be used on. */ types: string[] };
+  | { kind: 'face'; /** IFC classes it can be used on; '*' any element. */ types: string[] };
 
 /** Where a face pick landed: the point (model x, y, z; in plan x, y only) and, in 3D, the normal of the triangle hit. */
 export interface FaceHit { point: number[]; normal?: number[] }

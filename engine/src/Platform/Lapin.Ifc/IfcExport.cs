@@ -184,6 +184,7 @@ public static class IfcExport
             foreach (var mat in m.OfClass(IfcClass.Material)) Material(mat.Id);
             Grids();
             WriteElements();
+            Assemblies();
             Network();
             carry?.Finish(buildingRef);
             Finish();
@@ -507,6 +508,29 @@ public static class IfcExport
                     }
                 }
                 simplified.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Assemblies of separate elements (a Studio box with its bottom and top, docs/plan-studio-thick.md): an
+        /// IfcElementAssembly without a body of its own, in the storey, aggregating its parts (IfcRelAggregates); the parts,
+        /// written as elements already, are then no longer contained in the storey themselves, as IFC has parts.
+        /// </summary>
+        void Assemblies()
+        {
+            foreach (var asm in m.OfClass("IfcElementAssembly").Where(e => !written.ContainsKey(e.Id) && !StoredBodies.Has(e) && InPhase(e)).ToList())
+            {
+                var parts = m.RelatedOf(asm.Id, IfcClass.RelAggregates).Select(p => written.GetValueOrDefault(p.Id)).OfType<string>().ToList();
+                if (parts.Count == 0) continue;
+                var storey = Spatial.StoreyOf(m, asm.Id) ?? m.RelatedOf(asm.Id, IfcClass.RelAggregates).Select(p => Spatial.StoreyOf(m, p.Id)).FirstOrDefault(s => s != null);
+                var (spatial, relTo) = storey != null && storeyRef.TryGetValue(storey.Id, out var sr) ? (sr, storeyPlace[storey.Id]) : (siteRef, sitePlace);
+                var kind = new Kind("IfcElementAssembly", asm.PredefinedType ?? "USERDEFINED", asm.Str("objectType"));
+                var entity = Product(kind, Gid(asm.Id), asm.Name, kind.ObjectType, Place(relTo, 0), Null, asm.Id);
+                written[asm.Id] = entity;
+                foreach (var list in contained.Values) list.RemoveAll(parts.Contains);
+                Contain(spatial, entity);
+                Elements++;
+                f.Add("IFCRELAGGREGATES", Gid(asm.Id, "parts"), Null, Null, Null, entity, L(parts));
             }
         }
 

@@ -5,16 +5,118 @@
  * command-line commands.
  */
 
-import { Box, Eye, Layers2, PenTool, RefreshCcw, SquareMinus, SquarePlus, SquareSplitHorizontal, Unlink, Waypoints } from 'lucide-react';
+import { Box, BrickWall, Container, Cylinder, Eye, Frame, Layers2, PenTool, RefreshCcw, SquareMinus, SquarePlus, SquareSplitHorizontal, SquareSquare, SquareStack, Unlink, Waypoints } from 'lucide-react';
 import type { Grip, LapinModule, RefLine, ToolDef } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { gripsOf } from '../../platform/modules';
 import { fromJson } from '../../viewport/cad/shapes';
 import { notify, useUi } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
+import { activeStorey, execute, useSession } from '../../engine/session';
 import { editSketch } from './sketch';
 import { FeatureCard } from './FeatureCard';
+import { RefPlaneSection } from './RefPlaneSection';
+import { COMMAND, DEFAULT_JUSTIFY, JUSTIFY, frontViewId, makesNative, nativeArgs, shapeFits, solidArgs, solidFieldKeys, threePoints, viewOf, type ThickChoice, type ThickOp } from './thick';
 import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
+
+/** The thickness and height last used, the next command's defaults. */
+const last = { thickness: 0.2, height: 3 };
+
+/**
+ * RING, BOX and TWALL: pick the drafted shape, then (on a plan, native walls of the current wall type by default: their
+ * height; a Studio solid, Solid keyword, or off a plan) the thickness and the height. Keywords set where the thickness lies
+ * (Inside/Outside/Centre, or Left/Right/Centre), a box's Bottom and Top, and Native or Solid on a plan.
+ */
+function thick(op: ThickOp): Step {
+  const words = JUSTIFY[op];
+  let justify = DEFAULT_JUSTIFY[op];
+  let solid = false;
+  let bottom = false;
+  let top = false;
+  const what = op === 'ring' ? 'a circle, an arc or a closed outline' : op === 'box' ? 'a rectangle, a closed polyline or a circle' : 'a line, a polyline or an arc';
+  const choice = (thickness: number, height: number): ThickChoice => ({ op, justify, thickness, height, bottom, top });
+  const run = async (command: string, args: Record<string, unknown>, done: string) => {
+    const r = await execute(command, args) as { id?: string; ids?: string[] } | null;
+    if (r) { cadLog(done); useUi.setState({ selected: r.ids ?? (r.id ? [r.id] : []), selection: r.ids?.[0] ?? r.id ?? null }); }
+    return null;
+  };
+  const heightStep = (go: (h: number) => Promise<null>, prompt: string): Step => ({
+    prompt: `${prompt} <${last.height}>`, want: 'none',
+    value: (h) => { if (h !== 0) last.height = h; return go(h); },
+    enter: () => go(last.height),
+  });
+  const pick = (): Step => ({
+    prompt: `Pick ${what} [${Object.entries(words).map(([k, v]) => `${k}${v.slice(k.length)}`).join('/')}: ${justify}${op === 'box' ? `; Bottom ${bottom ? 'on' : 'off'}; Top ${top ? 'on' : 'off'}` : ''}; on a plan Native/Solid: ${solid ? 'solid' : 'native'}]`,
+    want: 'pick',
+    keywords: {
+      ...Object.fromEntries(Object.entries(words).map(([k, v]) => [k, () => { justify = v; return pick(); }])),
+      ...(op === 'box' ? { B: () => { bottom = !bottom; return pick(); }, T: () => { top = !top; return pick(); } } : {}),
+      N: () => { solid = false; return pick(); },
+      S: () => { solid = true; return pick(); },
+    },
+    pick: (hit) => {
+      const nodes = useSession.getState().nodes;
+      const draft = nodes.get(hit.id);
+      const shape = draft?.props.shape as { type?: string; closed?: boolean } | undefined;
+      if (!shapeFits(op, shape)) { cadLog(`That is not ${what}.`); return pick(); }
+      const view = viewOf(typeof draft?.props.viewId === 'string' ? draft.props.viewId : undefined, nodes);
+      if (makesNative(view.kind, solid)) {
+        const typeId = useUi.getState().wallTypeId;
+        return heightStep((h) => run('architecture.wallsAlong', nativeArgs(shape, view.storeyId ?? activeStorey()?.id ?? null, typeId, choice(last.thickness, h)), 'Walls laid along the shape, joined at its corners.'), 'Wall height (m)');
+      }
+      return {
+        prompt: `Thickness (m) <${last.thickness}>`, want: 'none',
+        value: (t) => { if (t > 0) last.thickness = t; return heightStep((h) => run(COMMAND[op], solidArgs(hit.id, choice(last.thickness, h)), 'Made: it follows the shape and its plane.'), 'Height (m; negative: away from you)'); },
+        enter: () => heightStep((h) => run(COMMAND[op], solidArgs(hit.id, choice(last.thickness, h)), 'Made: it follows the shape and its plane.'), 'Height (m; negative: away from you)'),
+      };
+    },
+  });
+  return pick();
+}
+registerCommand({ names: ['RING', 'RNG'], label: 'Ring', start: () => thick('ring') });
+registerCommand({ names: ['BOX', 'BOXWALLS'], label: 'Box', start: () => thick('box') });
+registerCommand({ names: ['TWALL', 'TW'], label: 'Wall strip', start: () => thick('wall') });
+
+/** The new reference plane's view opened, to draw on. */
+const openPlane = (r: unknown) => {
+  const id = (r as { id?: string } | null)?.id;
+  if (id) { useUi.setState({ view: 'drawing', drawingViewId: id, selection: id, selected: [id] }); notify('The reference plane is open: draw on it with Draft, then make solids on it with Studio.'); }
+};
+
+/** REFPLANE: a plane parallel to the view in front, a distance toward you (away when negative). */
+function refPlane(): Step | null {
+  const viewId = frontViewId(useUi.getState(), activeStorey()?.id ?? null);
+  if (!viewId) { cadLog('Open a plan, a section, an elevation or a reference plane first.'); return null; }
+  const make = async (offset: number) => { openPlane(await execute('view.create', { kind: 'plane', fromView: viewId, offset })); return null; };
+  return { prompt: 'Offset from this view\'s plane (m; negative: away from you) <0>', want: 'none', value: make, enter: () => make(0) };
+}
+registerCommand({ names: ['REFPLANE', 'RPLANE'], label: 'Reference plane', start: refPlane });
+
+/** A reference plane on the face picked in 3D: through the point, facing out of the face. */
+const planeOnFace: ToolDef = {
+  id: 'studio.planeOnFace', label: 'Plane on face', icon: SquareSquare,
+  gesture: { kind: 'face', types: ['*'] },
+  complete: async ({ entity, face }) => {
+    if (!face?.normal || face.point.length < 3) { notify('Pick a face in the 3D view.'); return; }
+    openPlane(await execute('view.create', { kind: 'plane', point: face.point, normal: face.normal, ...(entity ? { elementId: entity.id } : {}) }));
+  },
+};
+
+/** A reference plane through three points picked on the model in 3D. */
+let picked: number[][] = [];
+const planeBy3: ToolDef = {
+  id: 'studio.planeBy3', label: 'Plane by 3 points', icon: Frame,
+  gesture: { kind: 'face', types: ['*'] },
+  complete: async ({ face }) => {
+    if (!face || face.point.length < 3) { notify('Pick the points in the 3D view, on the model.'); return; }
+    picked = [...picked, face.point].slice(-3);
+    if (picked.length < 3) { notify(picked.length === 1 ? 'First point picked: pick the second.' : 'Second point picked: pick the third.'); return; }
+    const problem = threePoints(picked);
+    const pts = picked;
+    picked = [];
+    if (problem) { notify(problem); return; }
+    openPlane(await execute('view.create', { kind: 'plane', points: pts }));
+  },
+};
 
 const CLASSES = ['PROXY', 'MEMBER', 'PLATE', 'COVERING', 'RAILING', 'STAIR', 'RAMP', 'CHIMNEY', 'FURNITURE', 'WALL', 'SLAB', 'COLUMN', 'BEAM', 'ROOF', 'FOOTING'];
 
@@ -149,6 +251,8 @@ const studio: LapinModule = {
     id: 'studio', label: 'Studio', order: 50,
     groups: [
       { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), cmd('loft', 'Loft', Layers2, 'LOFT'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
+      { label: 'Thick', tools: [cmd('ring', 'Ring', Cylinder, 'RING'), cmd('box', 'Box', Container, 'BOX'), cmd('wallStrip', 'Wall strip', BrickWall, 'TWALL')] },
+      { label: 'Work planes', tools: [cmd('refPlane', 'Plane from view', SquareStack, 'REFPLANE'), planeOnFace, planeBy3] },
       {
         label: 'Boolean',
         tools: [
@@ -163,7 +267,10 @@ const studio: LapinModule = {
       },
     ],
   }],
-  propertySections: [{ id: 'studioFeature', label: 'Studio', classes: SOLID_CLASSES, component: FeatureCard }],
+  propertySections: [
+    { id: 'studioFeature', label: 'Studio', classes: SOLID_CLASSES, component: FeatureCard, fieldKeys: solidFieldKeys },
+    { id: 'studioRefPlane', label: 'Reference plane', classes: ['LapinView'], component: RefPlaneSection },
+  ],
   grips: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidGrips])),
   references: Object.fromEntries(SOLID_CLASSES.map((c) => [c, solidRefs])),
 };

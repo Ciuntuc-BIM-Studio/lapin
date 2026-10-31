@@ -33,7 +33,7 @@ export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<str
   let best: { e: NodeDto; prio: number } | null = null;
   for (const r of items) {
     const e = nodes.get(r.nodeId);
-    if (!e || (types && !types.includes(e.type))) continue;
+    if (!e || (types && !types.includes('*') && !types.includes(e.type))) continue;
     for (const it of r.plan) {
       if (it.kind === 'label' || it.kind === 'grid') continue;
       const poly = pairs(it.points);

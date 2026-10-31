@@ -491,6 +491,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return new JsonObject { ["id"] = wall.Id };
         });
 
+        // Walls along a drafted shape, joined at its corners: {shape, storeyId, typeId?, height?, baseOffset?, justify, joinStyle?, bottom?, top?} (WallsAlong).
+        r.Command("wallsAlong", "Walls along a shape", (ctx, a) => WallsAlong.Add(ctx, a, Paths(ctx)));
+
         r.Command("joinWalls", "Join walls", (ctx, a) =>
         {
             var w1 = Spatial.Require(ctx.Model, (string?)a["a"], IfcClass.Wall);

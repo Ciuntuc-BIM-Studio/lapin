@@ -24,7 +24,7 @@ public sealed class StudioPlacement : IElementPlacement
     {
         var profile = m.Get(e.Str("profile") ?? "");
         var view = profile == null ? null : Views.Find(m, profile.Str("viewId") ?? "");
-        if (view?.Str("kind") is not (null or "plan")) throw new CommandException($"„{e.Name}” is sketched on a section: move its sketch there.");
+        if (view?.Str("kind") is not (null or "plan")) throw new CommandException($"„{e.Name}” is sketched on a section, an elevation or a reference plane: move its sketch there, or move the plane it lies on.");
     }
 
     public void Transform(ICommandContext ctx, Entity e, Placement2D t, IReadOnlySet<string> moving)
@@ -36,6 +36,8 @@ public sealed class StudioPlacement : IElementPlacement
 
     public string? Copy(ICommandContext ctx, Entity e, Placement2D t)
     {
+        // A box's bottom or top is copied with its box (the copy makes its own).
+        if (e.Str("operation") == Thick.BoxSlab) return e.Id;
         PlanOnly(ctx.Model, e);
         var map = new Dictionary<string, string>();
         foreach (var d in Sketch(ctx.Model, e))
@@ -46,6 +48,7 @@ public sealed class StudioPlacement : IElementPlacement
         var copy = new Entity(ctx.NewId(), e.Class, e.Name, attrs, e.PredefinedType);
         ctx.Add(copy);
         if (Spatial.StoreyOf(ctx.Model, e.Id) is { } st) Spatial.Contain(ctx, st.Id, copy.Id);
+        if (e.Str("operation") == Thick.Box) Boxes.Reconcile(ctx, copy);
         return copy.Id;
     }
 }

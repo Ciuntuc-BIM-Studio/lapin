@@ -17,7 +17,7 @@ namespace Lapin.Platform;
 public static class Views
 {
     public const string Class = "LapinView";
-    public static readonly string[] Kinds = ["plan", "section", "elevation", "3d"];
+    public static readonly string[] Kinds = ["plan", "section", "elevation", "3d", RefPlanes.Kind];
     /// <summary>The disciplines the browser's default sets group by; a view or sheet may name any other.</summary>
     public static readonly string[] Disciplines = ["Architecture", "Structure", "MEP"];
     public static readonly string[] Directions = ["north", "south", "east", "west"];
@@ -88,10 +88,16 @@ public static class Views
             }
             case "elevation":
             {
-                if (Bounds(parts) is not { } bounds) return (null, "There is nothing to see.");
-                Vec2 dir = view.Str("direction") switch { "south" => new(0, 1), "east" => new(-1, 0), "west" => new(1, 0), _ => new(0, -1) };
-                return (ViewSpec.Elevation(dir, bounds, hidden), null);
+                if (Bounds(parts) is not { } bounds)
+                {
+                    // An elevation with its own plane draws on it even with nothing to see yet.
+                    if (view.NumOrNull("originX") == null) return (null, "There is nothing to see.");
+                    bounds = (new Vec3(-1, -1, 0), new Vec3(1, 1, 1));
+                }
+                return (ViewSpec.Elevation(LookOf(view), bounds, hidden, view.NumOrNull("originX")), null);
             }
+            case RefPlanes.Kind:
+                return (RefPlanes.Spec(view, hidden), null);
         }
         if (kind == "3d") return (null, "A 3D view is not a drawing.");
         return (null, $"„{kind}” is not a kind of view.");
@@ -108,9 +114,112 @@ public static class Views
                 var along = pts[1] - pts[0];
                 return along.Length < 1e-9 ? null : along.Normalized().Perp;
             case "elevation":
-                return view.Str("direction") switch { "south" => new(0, 1), "east" => new(-1, 0), "west" => new(1, 0), _ => new(0, -1) };
+                return LookOf(view);
             default: return null;
         }
+    }
+
+    /// <summary>The plan direction an elevation looks along.</summary>
+    static Vec2 LookOf(Entity view) => view.Str("direction") switch { "south" => new(0, 1), "east" => new(-1, 0), "west" => new(1, 0), _ => new(0, -1) };
+
+    /// <summary>
+    /// The plane an elevation's drawing lies on in the model, once it has one (<see cref="FixElevationPlane"/>): standing
+    /// across its look, <c>planeDepth</c> along it from the model's origin, facing the viewer; its x measured from
+    /// <c>originX</c>, its y the height. Null before: an elevation's drawing then moves with the model's bounds.
+    /// </summary>
+    public static WorkPlane? ElevationPlane(Entity view)
+    {
+        if (view.Str("kind") != "elevation" || view.NumOrNull("originX") is not { } ox) return null;
+        var d = LookOf(view);
+        var dir = new Vec3(d.X, d.Y, 0);
+        var right = new Vec3(d.Y, -d.X, 0);
+        return new WorkPlane(right * ox + dir * view.Num("planeDepth"), right, Vec3.UnitZ, -dir);
+    }
+
+    /// <summary>
+    /// Gives an elevation a plane of its own where it is drawn now (its x origin where the model's bounds put it, so
+    /// nothing drawn on it moves), its depth at the front of the model, or <paramref name="depth"/>. Returns the view after.
+    /// </summary>
+    public static Entity FixElevationPlane(ICommandContext ctx, Entity view, double? depth = null)
+    {
+        if (view.Str("kind") != "elevation") throw new CommandException("Only an elevation takes a sketch plane: a plan, a section and a reference plane have theirs.");
+        var attrs = view.CloneAttrs();
+        var d = LookOf(view);
+        var dir = new Vec3(d.X, d.Y, 0);
+        var right = new Vec3(d.Y, -d.X, 0);
+        if (view.NumOrNull("originX") == null || (depth == null && view.NumOrNull("planeDepth") == null))
+        {
+            var (parts, _, _, _) = Gather(ctx.Query, view);
+            var bounds = Bounds(parts);
+            if (view.NumOrNull("originX") == null)
+                attrs["originX"] = bounds is { } b ? Math.Round(Vec3.Dot(ViewSpec.Elevation(d, b).Frame.Origin, right), 9) : 0;
+            // The front of the model as the elevation sees it: the nearest corner of its bounds along the look.
+            depth ??= view.NumOrNull("planeDepth") ?? (bounds is { } bb
+                ? new[] { bb.Min.X, bb.Max.X }.SelectMany(x => new[] { bb.Min.Y, bb.Max.Y }.Select(y => Vec3.Dot(new Vec3(x, y, 0), dir))).Min()
+                : 0);
+        }
+        attrs["planeDepth"] = Math.Round(depth ?? view.Num("planeDepth"), 9);
+        var after = view.With(attrs: attrs);
+        ctx.Replace(after);
+        return after;
+    }
+
+    /// <summary>A reference plane's fields from <c>view.create</c>'s arguments: three <c>points</c>, a <c>point</c> and its <c>normal</c> (a face picked), or a view's plane (<c>fromView</c>) and an <c>offset</c>.</summary>
+    static JsonObject PlaneFrom(ICommandContext ctx, JsonObject a)
+    {
+        static Vec3? V(JsonNode? n) => n is JsonArray { Count: >= 3 } v && Json.Number(v[0]) is { } x && Json.Number(v[1]) is { } y && Json.Number(v[2]) is { } z ? new Vec3(x, y, z) : null;
+        if (a["points"] is JsonArray pts)
+        {
+            var ps = pts.Select(V).ToList();
+            if (ps.Count != 3 || ps.Any(p => p == null)) throw new CommandException("A plane through points takes three [x, y, z].");
+            return RefPlanes.Through(ps[0]!.Value, ps[1]!.Value, ps[2]!.Value);
+        }
+        if (V(a["point"]) is { } at)
+        {
+            var n = V(a["normal"]) ?? throw new CommandException("A plane on a face needs the face's normal [x, y, z].");
+            // On an element's named face: its normal, exactly, rather than the triangle's.
+            if ((string?)a["elementId"] is { } eid && ctx.Model.Get(eid) is { } el && ElementFaces.At(ElementFaces.Of(ctx.Services, el, ctx.Model), at, n) is { IsEdge: false } face)
+                n = face.Normal;
+            return RefPlanes.OnFace(at, n);
+        }
+        if ((string?)a["fromView"] is { } vid)
+        {
+            var v = Find(ctx.Model, vid) ?? throw new CommandException("There is no such view.");
+            var p = PlaneOf(ctx.Model, ctx.Services, v) ?? throw new CommandException(v.Str("kind") == "elevation"
+                ? "The elevation has no sketch plane yet." : "That view lies on no plane (a 3D view).");
+            return RefPlanes.Offset(p, Json.Number(a["offset"]) ?? 0);
+        }
+        throw new CommandException("A reference plane is made through three points, on a face (a point and its normal), or from a view's plane.");
+    }
+
+    /// <summary>
+    /// The plane a view's drawing lies on in the model, what is drawn on it stands on: a plan's its storey's level (facing
+    /// up), a section's its line's first piece (facing the viewer; <paramref name="atX"/>, a developed section's piece at that
+    /// station, its x running on from the station), an elevation's once it has one, a reference plane's. Null for a 3D view.
+    /// </summary>
+    public static WorkPlane? PlaneOf(IModelView m, IServices? services, Entity view, double? atX = null)
+    {
+        switch (view.Str("kind") ?? "plan")
+        {
+            case "plan":
+            {
+                var storey = m.Get(view.Str("storeyId") ?? "");
+                return new WorkPlane(new Vec3(0, 0, storey?.Num("elevation") ?? 0), new Vec3(1, 0, 0), new Vec3(0, 1, 0), Vec3.UnitZ);
+            }
+            case "section":
+            {
+                var (path, _, _) = SectionPaths.Resolve(m, services, view);
+                if (path == null) return null;
+                var pieces = SectionPaths.Pieces(path);
+                if (pieces.Count == 0) return null;
+                var piece = atX is { } x ? pieces.LastOrDefault(p => p.Station <= x + 1e-9) ?? pieces[0] : pieces[0];
+                var f = ViewSpec.Section(piece.A, piece.B, 1).Frame;
+                return new WorkPlane(f.Origin - f.Right * piece.Station, f.Right, f.Up, -f.Dir);
+            }
+            case "elevation": return ElevationPlane(view);
+            case RefPlanes.Kind: return RefPlanes.Of(view);
+        }
+        return null;
     }
 
     /// <summary>"name copy", then "name copy 2", "name copy 3"…, the first not taken by an entity of <paramref name="cls"/>.</summary>
@@ -613,7 +722,7 @@ public static class Views
                 yield return mk;
             }
         }
-        else if (c.Drawing.Bounds is { } bounds)
+        else if (c.Drawing.Bounds is { } bounds && c.View.Str("kind") != RefPlanes.Kind)
         {
             if (c.Kind == "section" && SectionMarks(c, bounds, k, text) is { } section) yield return section;
             var (x0, x1) = (bounds.Min.X - 1.0 * k, bounds.Max.X + 1.5 * k);
@@ -697,6 +806,12 @@ public static class Views
             new("hiddenLines", "Hidden lines", "choice", Choices: ["auto", "show", "hide"]),
             new("discipline", "Discipline", "text"),
             new("openingSymbols", "Opening symbols", "choice", Choices: ["show", "hide"]),
+            // An elevation's sketch plane, along its look; a reference plane's place and turn (docs/plan-studio-thick.md).
+            new("planeDepth", "Sketch plane depth", "length"),
+            new("x", "Origin x", "length"), new("y", "Origin y", "length"), new("z", "Origin z", "length"),
+            new("bearing", "Faces (° from +X)", "number", Min: -360, Max: 360),
+            new("tilt", "Tilt (°)", "number", Min: -90, Max: 90),
+            new("spin", "Spin (°)", "number", Min: -360, Max: 360),
         ], "#555555", Kind: "view"));
 
         r.Command("view.create", "New view", (ctx, a) =>
@@ -750,7 +865,14 @@ public static class Views
                     attrs["direction"] = dir;
                     name = (string?)a["name"] ?? $"{char.ToUpperInvariant(dir[0])}{dir[1..]} elevation";
                     break;
-                default: throw new CommandException("A view is a plan, a section, an elevation or a 3D view.");
+                case RefPlanes.Kind:
+                    // A reference plane: through three points, on a face, or a view's plane moved by an offset.
+                    attrs["scale"] = Json.Number(a["scale"]) ?? 50;
+                    foreach (var (k, val) in PlaneFrom(ctx, a)) attrs[k] = val?.DeepClone();
+                    if (Json.Number(a["depth"]) is { } pd) attrs["depth"] = pd;
+                    name = (string?)a["name"] ?? $"Plane {ctx.Model.OfClass(Class).Count(v => v.Str("kind") == RefPlanes.Kind) + 1}";
+                    break;
+                default: throw new CommandException("A view is a plan, a section, an elevation, a reference plane or a 3D view.");
             }
             var v = new Entity(ctx.NewId(), Class, name, attrs);
             ctx.Add(v);
@@ -759,6 +881,27 @@ public static class Views
 
         // A site plan's or a location plan's settings: {id, site?, gridStep?, northArrow?, scaleBar?} (SitePlans).
         r.Command("view.setSite", "Site plan", (ctx, a) => { SitePlans.Set(ctx, a); return null; });
+
+        // An elevation's sketch plane fixed where it is drawn now ({id, depth?}): what is sketched on it then stands on that plane.
+        r.Command("view.fixPlane", "Sketch plane", (ctx, a) =>
+        {
+            var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x ? x : throw new CommandException("Not a view.");
+            var after = FixElevationPlane(ctx, v, Json.Number(a["depth"]));
+            return new JsonObject { ["originX"] = after.Num("originX"), ["planeDepth"] = after.Num("planeDepth") };
+        });
+
+        // A reference plane moved ({id, by?: [dx, dy, dz], along?: m towards its viewer}) and turned about the vertical ({turn?: °, about?: [x, y, z]}).
+        r.Command("view.movePlane", "Move plane", (ctx, a) =>
+        {
+            var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Str("kind") == RefPlanes.Kind ? x : throw new CommandException("Not a reference plane.");
+            static Vec3 V(JsonNode? n) => n is JsonArray { Count: >= 3 } q ? new Vec3(Json.Number(q[0]) ?? 0, Json.Number(q[1]) ?? 0, Json.Number(q[2]) ?? 0) : default;
+            var by = V(a["by"]) + RefPlanes.Of(v).Normal * (Json.Number(a["along"]) ?? 0);
+            Vec3? about = a["about"] is JsonArray ? V(a["about"]) : null;
+            var attrs = v.CloneAttrs();
+            foreach (var (k, val) in RefPlanes.Moved(v, by, Json.Number(a["turn"]) ?? 0, about)) attrs[k] = val?.DeepClone();
+            ctx.Replace(v.With(attrs: attrs));
+            return null;
+        });
 
         // A saved 3D view's camera: where it looks from.
         r.Command("view.setCamera", "View camera", (ctx, a) =>

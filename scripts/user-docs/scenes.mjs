@@ -1026,6 +1026,67 @@ export const scenes = [
     },
   },
   {
+    // Studio's thick solids and reference planes (docs/plan-studio-thick.md): native walls round a circle with RING on the plan,
+    // a box with its bottom and top, a wall strip, a reference plane on the south facade with a ring drawn on it.
+    id: 'studio',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const plan = `plan:${storey}`;
+      await t.button('Studio', { exact: true });
+      await t.shot('ribbon-studio', { of: '.topbar', pad: 0 });
+      // A circle drafted beside the house; RING from the ribbon picks it and, on a plan, lays native walls round it.
+      const circle = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'circle', c: [15, 4], r: 1.5 } })).ids[0];
+      await t.ui({ keyPlan: false });
+      await t.wait(600);
+      await t.fit();
+      // Zoomed out about the house, so the circle beside it is on the screen.
+      { const [px, py] = await t.planPoint(8, 4); await t.page.mouse.move(px, py); await t.page.mouse.wheel(0, 500); await t.wait(600); }
+      await t.tool('studio.ring');
+      const asks = await t.page.locator('[data-testid=command-line]').innerText();
+      t.expect(/pick a circle/i.test(asks), `RING asks for a circle (it says: ${asks.replace(/\s+/g, ' ').slice(0, 120)})`);
+      const [cx, cy] = await t.planPoint(16.5, 4);
+      await t.page.mouse.move(cx, cy, { steps: 3 }); await t.page.mouse.click(cx, cy);
+      await t.wait(400);
+      await t.keys('Enter');
+      await t.wait(1200);
+      const curved = (await t.nodes()).filter((n) => n.type === 'IfcWall' && typeof n.props.arc === 'number' && n.props.arc < 0);
+      t.expect(curved.length === 4, `four curved walls round the circle, found ${curved.length}`);
+      await t.keys('Escape');
+      // A box 3 × 2 m with its bottom and top, a Studio solid; a wall strip along an L.
+      const rect = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[14, -5], [18, -5], [18, -2], [14, -2]], closed: true } })).ids[0];
+      const box = await t.cmd('studio.box', { profileId: rect, thickness: 0.2, height: 1.2, bottom: true, top: true, bottomThickness: 0.15, topThickness: 0.1 });
+      t.expect(box?.slabs?.length === 2 && box.assembly, 'the box has its bottom and top, grouped in an assembly');
+      const l = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[0, -3], [8, -3], [8, -5]], closed: false } })).ids[0];
+      await t.cmd('studio.wall', { profileId: l, thickness: 0.25, height: 0.9, justify: 'left' });
+      t.expect(circle, 'the circle drawn');
+      await t.ui({ keyPlan: false, selection: null, selected: [] });
+      await t.wait(800);
+      await t.fit();
+      await t.shot('studio-thick-plan', { of: '[data-testid=plan]', pad: 0 });
+      await select(t, box.id);
+      await t.wait(800);
+      await t.shot('studio-box-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
+      // A reference plane on the south facade, facing south; a ring drawn on it stands off the wall.
+      const south = (await t.nodes()).filter((n) => n.type === 'IfcWall' && n.props.start?.[1] === 0 && n.props.end?.[1] === 0)[0];
+      t.expect(south, 'the south wall');
+      const face = await t.cmd('view.create', { kind: 'plane', name: 'South facade', point: [6, -0.2, 0], normal: [0, -1, 0], elementId: south.id });
+      const ringPlane = (await t.cmd('drafting.draw', { viewId: face.id, shape: { type: 'circle', c: [5.3, 2.2], r: 0.45 } })).ids[0];
+      await t.cmd('studio.ring', { profileId: ringPlane, thickness: 0.08, height: 0.15 });
+      await t.ui({ view: 'drawing', drawingViewId: face.id, selection: null, selected: [] });
+      await t.wait(2000);
+      await t.fit();
+      await t.shot('studio-plane', { of: '[data-testid=drawing]', pad: 0 });
+      t.expect(await t.page.locator('nav.browser').getByText('South facade', { exact: true }).count() > 0, 'the browser lists the reference plane');
+      await select(t, face.id);
+      await t.wait(800);
+      await t.shot('studio-plane-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
+      await t.ui({ keyPlan: true });
+      await open3d(t);
+      await t.shot('studio-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'materials',
     async run(t) {
       await t.fresh();

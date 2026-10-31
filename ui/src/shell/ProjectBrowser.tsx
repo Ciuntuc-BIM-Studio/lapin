@@ -8,7 +8,7 @@
  */
 
 import { useState } from 'react';
-import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, Layers, Map as MapIcon, Plus, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
+import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, Frame, Layers, Map as MapIcon, Plus, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
 import { notify, useUi } from '../app/store';
 import { execute, activeStorey, useSession } from '../engine/session';
 import { num, storeys } from '../engine/model';
@@ -175,6 +175,11 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
             plus={set && of('elevation').length === 0 && <button type="button" className="icon mini" title="The four elevations" onClick={() => void addElevations(discipline)}><Plus size={12} /></button>}>
             {(item) => <Row item={item} on={view === 'drawing' && ui.drawingViewId === item.id} open={() => showDrawing(item.id)}><Dup item={item} /></Row>}
           </Kind>
+          {of('plane').length > 0 && (
+            <Kind id={`${id}:planes`} icon={<Frame size={13} />} label="Reference planes" list={of('plane')}>
+              {(item) => <Row item={item} on={view === 'drawing' && ui.drawingViewId === item.id} open={() => showDrawing(item.id)} />}
+            </Kind>
+          )}
           <Kind id={`${id}:3d`} icon={<Box size={13} />} label="3D views" list={of('3d')}>
             {(item) => (
               <Row item={item} on={view === '3d' && (ui.view3dId ?? '3d') === item.id} open={() => show3d(item.node ? item.id : null)}>

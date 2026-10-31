@@ -69,6 +69,14 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
                 new("placeOffset", "Gap from the path", "length"),
                 new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
                 new("exportAs", "Export as", "text"),
+                // Rings, boxes and wall strips (Thick).
+                new("thickness", "Thickness", "length", Min: 0.001),
+                new("height", "Height (negative: away)", "length"),
+                new("justify", "Thickness lies", "choice", Choices: Thick.Justifications),
+                new("bottom", "Bottom", "bool"),
+                new("bottomThickness", "Bottom thickness", "length", Min: 0.001),
+                new("top", "Top", "bool"),
+                new("topThickness", "Top thickness", "length", Min: 0.001),
             ], "#b9b2a6"));
             r.Geometry(cls, Geometry);
             r.Quantities(cls, Quantities);
@@ -76,13 +84,21 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
             r.Cutter(cls, cls == "IfcFurnishingElement" ? 10 : 40, (e, m) => Geometry(e, m, null)?.Parts is [{ } only] ? only.Solid : null);
         }
         r.Class(new(TypeClass, "Solid type", [new("description", "Description", "text")], "#b9b2a6", Kind: "type"));
+        // A box's walls with its bottom and top: an assembly (IfcElementAssembly) of separate elements, without a body of its own.
+        r.Class(new(Boxes.AssemblyClass, "Assembly", [], "#b9b2a6"));
         r.Service<IGeometryFilter>(this);
         r.Service<IElementPlacement>(new StudioPlacement());
+        r.Service<IElementUpdate>(new Boxes());
+        r.Service<IDeletion>(new Boxes());
 
         r.Command("extrude", "Extrude", (ctx, a) => Create(ctx, a, "extrude"));
         r.Command("sweep", "Sweep", (ctx, a) => Create(ctx, a, "sweep"));
         r.Command("revolve", "Revolve", (ctx, a) => Create(ctx, a, "revolve"));
         r.Command("loft", "Loft", (ctx, a) => Create(ctx, a, "loft"));
+        // Thick solids from a drafted shape: {profileId, thickness, height, justify, class?; a box's bottom, top and their thicknesses}.
+        r.Command("ring", "Ring", (ctx, a) => CreateThick(ctx, a, Thick.Ring));
+        r.Command("box", "Box", (ctx, a) => CreateThick(ctx, a, Thick.Box));
+        r.Command("wall", "Wall strip", (ctx, a) => CreateThick(ctx, a, Thick.Wall));
 
         // A solid's class (and its predefined type) changed: written again under the new class, same id, same sketch, same type and booleans.
         r.Command("setClass", "Change class", (ctx, a) =>
@@ -98,13 +114,13 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
                     : (exportAs ?? cls) == (e.Str("exportAs") ?? e.Class) ? e.PredefinedType : null;
                 if (pre != null && !System.Text.RegularExpressions.Regex.IsMatch(pre, "^[A-Z0-9_]+$")) throw new CommandException($"„{pre}” is not a predefined type (capitals, digits and _).");
                 var storey = Spatial.StoreyOf(ctx.Model, e.Id)?.Id;
-                var keep = ctx.Model.Relations.Where(x => x.Touches(e.Id) && x.Class is IfcClass.RelInterferesElements or IfcClass.RelDefinesByType).ToList();
+                var keep = ctx.Model.Relations.Where(x => x.Touches(e.Id) && x.Class is IfcClass.RelInterferesElements or IfcClass.RelDefinesByType or IfcClass.RelAggregates).ToList();
                 ctx.Remove(e.Id);
                 ctx.Add(new Entity(e.Id, cls, e.Name, attrs, pre));
                 if (storey != null) Spatial.Contain(ctx, storey, e.Id);
                 foreach (var x in keep)
                 {
-                    if (x.Class == IfcClass.RelDefinesByType) { if (ctx.Model.Get(x.Relating) != null) ctx.Relate(IfcClass.RelDefinesByType, x.Relating, e.Id); continue; }
+                    if (x.Class is IfcClass.RelDefinesByType or IfcClass.RelAggregates) { if (x.Relating != e.Id && ctx.Model.Get(x.Relating) != null) ctx.Relate(x.Class, x.Relating, e.Id); continue; }
                     if (ctx.Model.Get(x.Relating) != null && x.Related.All(r2 => ctx.Model.Get(r2) != null)) ctx.AddRelation(x with { Id = ctx.NewId() });
                 }
             }
@@ -190,7 +206,9 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         r.Query("studio.feature", (q, a) =>
         {
             if (q.Model.Get((string?)a["id"] ?? "") is not { } e || e.Str("operation") is not { } op) return null;
-            var profile = q.Model.Get(e.Str("profile") ?? "");
+            // A box's bottom or top: its box's sketch.
+            var source = op == Thick.BoxSlab ? q.Model.Get(e.Str("box") ?? "") : e;
+            var profile = q.Model.Get(source?.Str("profile") ?? "");
             var view = profile != null ? Views.Find(q.Model, profile.Str("viewId") ?? "") : null;
             var holes = profile != null ? Sketches.Holes(q.Model, profile, ProfileIds(q.Model)) : [];
             var outer = Sketches.Loop(profile != null ? Drafts.ShapeOf(profile) : null);
@@ -235,8 +253,7 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         var profile = Drafts.Require(ctx.Model, (string?)a["profileId"], editable: false);
         if (Sketches.Loop(Drafts.ShapeOf(profile)) == null) throw new CommandException("The profile must be a closed polyline or a circle.");
         if (ProfileIds(ctx.Model).Contains(profile.Id)) throw new CommandException("That outline is a solid's profile already.");
-        var view = Views.Find(ctx.Model, profile.Str("viewId") ?? "") ?? throw new CommandException("The sketch's view is gone.");
-        var plane = Sketches.PlaneOf(ctx.Model, view) ?? throw new CommandException("Solids are sketched on a plan or a section.");
+        var plane = PlaneFor(ctx, profile);
         var (cls, exportAs) = ClassOf((string?)a["class"]);
         var attrs = new JsonObject { ["operation"] = op, ["profile"] = profile.Id };
         if (exportAs != null) attrs["exportAs"] = exportAs;
@@ -289,7 +306,7 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
                 if (ids[0] != profile.Id) ids.Insert(0, profile.Id);
                 var all = ids.Select((id, i) => i == 0 ? profile : ClosedDraft(ctx.Model, id, "profile")).ToList();
                 if (all.Select(x => x.Id).Distinct().Count() != all.Count) throw new CommandException("A profile comes once in a loft.");
-                foreach (var d in all) if (Views.Find(ctx.Model, d.Str("viewId") ?? "") is not { } v || Sketches.PlaneOf(ctx.Model, v) == null) throw new CommandException("Each profile of a loft is drawn on a plan or a section.");
+                foreach (var d in all.Skip(1)) PlaneFor(ctx, d);
                 attrs["profiles"] = new JsonArray(all.Select(x => (JsonNode)x.Id).ToArray());
                 break;
             }
@@ -311,17 +328,131 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
         return new JsonObject { ["id"] = e.Id };
     }
 
+    /// <summary>The plane a drafted shape lies on, for a new solid: an elevation drawn on for the first time takes a plane of its own here.</summary>
+    static SketchPlane PlaneFor(ICommandContext ctx, Entity draft)
+    {
+        var view = Views.Find(ctx.Model, draft.Str("viewId") ?? "") ?? throw new CommandException("The sketch's view is gone.");
+        if (view.Str("kind") == "elevation" && Views.ElevationPlane(view) == null) view = Views.FixElevationPlane(ctx, view);
+        return Sketches.PlaneOf(ctx.Model, view, ctx.Services, Sketches.MidX(Drafts.ShapeOf(draft)))
+            ?? throw new CommandException("Solids are sketched on a plan, a section, an elevation or a reference plane.");
+    }
+
+    static JsonNode? CreateThick(ICommandContext ctx, JsonObject a, string op)
+    {
+        var profile = Drafts.Require(ctx.Model, (string?)a["profileId"], editable: false);
+        var shape = Drafts.ShapeOf(profile);
+        if (Thick.ShapeProblem(op, shape) is { } bad) throw new CommandException(bad);
+        if (ProfileIds(ctx.Model).Contains(profile.Id)) throw new CommandException("That shape is a solid's sketch already.");
+        var thickness = Json.Number(a["thickness"]) ?? 0.2;
+        var height = Json.Number(a["height"]) ?? 3;
+        if (!(thickness > 0)) throw new CommandException("The thickness must be positive.");
+        if (Math.Abs(height) < 1e-6) throw new CommandException("The solid needs a height (negative: away from you).");
+        var justify = (string?)a["justify"] ?? Thick.DefaultJustify(op);
+        if (Thick.JustifyProblem(op, justify) is { } jp) throw new CommandException(jp);
+        if (Thick.Build(shape!, thickness, justify).Problem is { } problem) throw new CommandException(problem);
+        var plane = PlaneFor(ctx, profile);
+        var (cls, exportAs) = ClassOf((string?)a["class"] ?? "WALL");
+        var attrs = new JsonObject { ["operation"] = op, ["profile"] = profile.Id, ["thickness"] = thickness, ["height"] = height, ["justify"] = justify };
+        if (exportAs != null) attrs["exportAs"] = exportAs;
+        if (Json.Number(a["offset"]) is { } off) attrs["offset"] = off;
+        if (op == Thick.Box)
+        {
+            static bool B(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) && b;
+            attrs["bottom"] = B(a["bottom"]);
+            attrs["top"] = B(a["top"]);
+            attrs["bottomThickness"] = Json.Number(a["bottomThickness"]) ?? thickness;
+            attrs["topThickness"] = Json.Number(a["topThickness"]) ?? thickness;
+            if ((bool)attrs["bottom"]! || (bool)attrs["top"]!) Boxes.CheckSlabs(height, attrs);
+        }
+        var word = op == Thick.Wall ? "Wall strip" : char.ToUpperInvariant(op[0]) + op[1..];
+        var taken = ctx.Model.Entities.Where(x => x.Str("operation") == op).Select(x => x.Name).ToHashSet();
+        var k = 1;
+        while (taken.Contains($"{word} {k}")) k++;
+        var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : $"{word} {k}";
+        var e = new Entity(ctx.NewId(), cls, name, attrs);
+        ctx.Add(e);
+        var storey = (string?)a["storeyId"] ?? plane.StoreyId ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+        Spatial.Contain(ctx, storey, e.Id);
+        if (op == Thick.Box) Boxes.Reconcile(ctx, ctx.Model.Get(e.Id)!);
+        var o = new JsonObject { ["id"] = e.Id };
+        if (op == Thick.Box)
+        {
+            o["slabs"] = new JsonArray(Boxes.SlabsOf(ctx.Model, e.Id).Select(s => (JsonNode)s.Id).ToArray());
+            if (Boxes.AssemblyOf(ctx.Model, e.Id) is { } asm) o["assembly"] = asm.Id;
+        }
+        return o;
+    }
+
+    /// <summary>The plane the solid's sketch lies on now, or why there is none.</summary>
+    static (SketchPlane? Plane, string? Problem) PlaneOfSketch(IModelView m, IServices? services, Entity draft)
+    {
+        var view = Views.Find(m, draft.Str("viewId") ?? "");
+        if (view == null) return (null, "The solid's sketch view is gone.");
+        var plane = Sketches.PlaneOf(m, view, services, Sketches.MidX(Drafts.ShapeOf(draft)));
+        return plane == null ? (null, view.Str("kind") == "elevation" ? "The elevation the solid is sketched on has no sketch plane: give it one (its Sketch plane depth)." : "The solid's sketch view lies on no plane.") : (plane, null);
+    }
+
+    /// <summary>A ring, box, wall strip or a box's bottom or top: the band of the shape, extruded along the plane's normal.</summary>
+    static ElementGeometry? ThickGeometry(Entity e, IModelView m, IServices? services)
+    {
+        ElementGeometry Fail(string why) => new([], Diagnostics: [why]);
+        var op = e.Str("operation")!;
+        var owner = op == Thick.BoxSlab ? m.Get(e.Str("box") ?? "") : e;
+        if (owner == null) return Fail("The box this bottom or top belongs to is gone.");
+        if (m.Get(owner.Str("profile") ?? "") is not { } profile || Drafts.ShapeOf(profile) is not { } shape) return Fail("The solid's sketch is gone: draw its shape again.");
+        if (Thick.ShapeProblem(owner.Str("operation")!, shape) is { } bad) return Fail(bad);
+        var (plane, problem) = PlaneOfSketch(m, services, profile);
+        if (plane == null) return Fail(problem!);
+        var t = owner.NumOrNull("thickness") ?? 0.2;
+        var h = owner.NumOrNull("height") ?? 3;
+        var band = Thick.Build(shape, t, owner.Str("justify") ?? Thick.DefaultJustify(owner.Str("operation")!));
+        if (band.Problem != null) return Fail(band.Problem);
+        var shift = plane.Normal * owner.Num("offset");
+        List<Vec3> W(IReadOnlyList<Vec2> l, double up = 0) => l.Select(p => plane.World(p) + shift + plane.Normal * up).ToList();
+        Solid? solid;
+        IReadOnlyList<Vec2> outline;
+        IReadOnlyList<IReadOnlyList<Vec2>> holes;
+        if (op == Thick.BoxSlab)
+        {
+            if (band.Inner == null) return Fail("The box has no inside for a bottom or top.");
+            var bottom = e.Str("side") != "top";
+            var st = owner.NumOrNull(bottom ? "bottomThickness" : "topThickness") ?? t;
+            var sign = Math.Sign(h);
+            if (!(st > 0) || st >= Math.Abs(h)) return Fail($"The {(bottom ? "bottom" : "top")} ({st:0.###} m) is as thick as the box is high.");
+            solid = Solids.Extrude(W(band.Inner, bottom ? 0 : h - sign * st), [], plane.Normal * (sign * st));
+            (outline, holes) = (band.Inner, []);
+        }
+        else
+        {
+            solid = Solids.Extrude(W(band.Outer), band.Holes.Select(x => (IReadOnlyList<Vec3>)W(x)).ToList(), plane.Normal * h);
+            (outline, holes) = (band.Outer, band.Holes);
+        }
+        if (solid == null) return Fail("The solid could not be built from its sketch.");
+        var plan = new List<PlanItem>();
+        if (Math.Abs(plane.Normal.Z) > 0.999)
+        {
+            plan.Add(new PlanItem("outline", true, outline));
+            plan.AddRange(holes.Select(x => new PlanItem("outline", true, x)));
+        }
+        else if (Polygon2.ConvexHull(solid.Vertices.Select(v => new Vec2(v.X, v.Y))) is { Length: >= 3 } hull) plan.Add(new PlanItem("outline", true, hull));
+        var material = e.Str("material");
+        var parts = new List<GeometryPart> { new(e.Name, material != null ? Materials.ColorOf(m, material) : "#b9b2a6", solid, material, "body") };
+        var problems = new List<string>();
+        parts = CutPriorities.Apply(e, m, services, parts, problems);
+        return new ElementGeometry(parts, plan, plan.SelectMany(p => p.Points).ToList(), problems.Count > 0 ? problems : null);
+    }
+
     public static ElementGeometry? Geometry(Entity e, IModelView m, IServices? services)
     {
         var problems = new List<string>();
         ElementGeometry Fail(string why) => new([], Diagnostics: [why]);
+        if (Thick.Is(e.Str("operation")) || e.Str("operation") == Thick.BoxSlab) return ThickGeometry(e, m, services);
         var profile = m.Get(e.Str("profile") ?? "");
         if (profile == null) return Fail("The solid's sketch is gone: draw its outline again.");
         var outer2 = Sketches.Loop(Drafts.ShapeOf(profile));
         if (outer2 == null) return Fail("The solid's outline is no longer closed.");
-        var view = Views.Find(m, profile.Str("viewId") ?? "");
-        var plane = view == null ? null : Sketches.PlaneOf(m, view);
-        if (plane == null) return Fail("The solid's sketch view is gone.");
+        var (plane, planeProblem) = PlaneOfSketch(m, services, profile);
+        if (plane == null) return Fail(planeProblem!);
         var holes2 = Sketches.Holes(m, profile, ProfileIds(m)).Select(h => h.Loop).ToList();
         var shift = plane.Normal * e.Num("offset");
         List<Vec3> W(IReadOnlyList<Vec2> l) => l.Select(p => plane.World(p) + shift).ToList();
@@ -359,7 +490,7 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
                 foreach (var id in (e.Attrs["profiles"] as JsonArray)?.Select(x => (string?)x).OfType<string>() ?? [])
                 {
                     if (m.Get(id) is not { } d || Sketches.Loop(Drafts.ShapeOf(d)) is not { } loop) return Fail("A profile of the loft is missing or no longer closed.");
-                    if (Views.Find(m, d.Str("viewId") ?? "") is not { } v || Sketches.PlaneOf(m, v) is not { } pl) return Fail("A profile's view is gone.");
+                    if (PlaneOfSketch(m, services, d).Plane is not { } pl) return Fail("A profile's view is gone, or lies on no plane.");
                     loops.Add(loop);
                     worlds.Add(q => pl.World(q) + shift);
                 }
@@ -417,7 +548,12 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
                 break;
             case IfcClass.Slab or "IfcPlate" or "IfcCovering" or IfcClass.Roof:
             {
-                var thick = e.Str("operation") == "extrude" ? Math.Abs(e.Num("depth")) : height;
+                var thick = e.Str("operation") switch
+                {
+                    "extrude" => Math.Abs(e.Num("depth")),
+                    Thick.BoxSlab => SlabThickness(e, m),
+                    _ => height,
+                };
                 if (thick > 0) list.Add(new("Width", thick, "LENGTH", "Thickness"));
                 if (thick > 0) list.Add(new("NetArea", volume / thick, "AREA", "Area"));
                 break;
@@ -435,8 +571,21 @@ public sealed class StudioModule : ILapinModule, IGeometryFilter
     }
 
     /// <summary>A solid's section area, its run (path length, or extrusion depth), and its profile's width and height.</summary>
+    /// <summary>A box's bottom or top: how thick its box says it is.</summary>
+    static double SlabThickness(Entity e, IModelView m) =>
+        m.Get(e.Str("box") ?? "") is { } box ? box.NumOrNull(e.Str("side") == "top" ? "topThickness" : "bottomThickness") ?? box.NumOrNull("thickness") ?? 0.2 : 0;
+
     static (double Section, double Along, double Width, double Height) Measure2(Entity e, IModelView m)
     {
+        // A ring, box or wall strip: along its middle line, its thickness wide, its height high, its band the section.
+        if (Thick.Is(e.Str("operation")))
+        {
+            if (m.Get(e.Str("profile") ?? "") is not { } d || Drafts.ShapeOf(d) is not { } s) return (0, 0, 0, 0);
+            var t = e.NumOrNull("thickness") ?? 0.2;
+            var band = Thick.Build(s, t, e.Str("justify") ?? Thick.DefaultJustify(e.Str("operation")!));
+            return band.Problem != null ? (0, 0, 0, 0) : (t * Math.Abs(e.NumOrNull("height") ?? 3), band.Length, t, Math.Abs(e.NumOrNull("height") ?? 3));
+        }
+        if (e.Str("operation") == Thick.BoxSlab) return (0, 0, 0, SlabThickness(e, m));
         var profile = m.Get(e.Str("profile") ?? "");
         var outer = Sketches.Loop(profile != null ? Drafts.ShapeOf(profile) : null);
         if (outer == null) return (0, 0, 0, 0);

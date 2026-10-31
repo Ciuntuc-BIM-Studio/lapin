@@ -11,6 +11,9 @@ import { editSketch, type Feature } from './sketch';
 interface Offered { class: string; label: string; predefined: string[] }
 let offered: Promise<Offered[] | null> | null = null;
 
+/** What the card calls each operation. */
+const OPS: Record<string, string> = { ring: 'Ring', box: 'Box', wall: 'Wall strip', boxSlab: 'Box bottom or top' };
+
 /** The selected Studio solids (a change goes to all of them). */
 const solidsSelected = (node: NodeDto): string[] => {
   const nodes = useSession.getState().nodes;
@@ -27,7 +30,9 @@ export function FeatureCard({ node }: { node: NodeDto }) {
   useEffect(() => { void query<Feature>('studio.feature', { id: node.id }).then(setF); }, [node.id, nodes]);
   useEffect(() => { offered ??= query<Offered[]>('studio.classes'); void offered.then((c) => setClasses(c ?? [])); }, []);
   if (!f) return null;
-  const op = f.operation[0].toUpperCase() + f.operation.slice(1);
+  const op = OPS[f.operation] ?? f.operation[0].toUpperCase() + f.operation.slice(1);
+  const thick = ['ring', 'box', 'wall', 'boxSlab'].includes(f.operation);
+  const box = f.operation === 'boxSlab' && typeof node.props.box === 'string' ? nodes.get(node.props.box) : undefined;
   const cls = typeof node.props.exportAs === 'string' ? node.props.exportAs : node.type;
   const pre = typeof node.props.predefinedType === 'string' ? node.props.predefinedType : '';
   const preList = classes.find((c) => c.class === cls)?.predefined ?? [];
@@ -62,7 +67,8 @@ export function FeatureCard({ node }: { node: NodeDto }) {
         {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         <option value="__new">new type…</option>
       </select></dd>
-      <dt>Sketch</dt><dd>{f.view ?? '—'} · outline, {f.holes} hole(s)</dd>
+      {box && <><dt>Part of</dt><dd><button type="button" className="link" onClick={() => useUi.setState({ selection: box.id, selected: [box.id] })}>{box.name}</button></dd></>}
+      {thick ? <><dt>Sketch</dt><dd>{f.view ?? '—'}</dd></> : <><dt>Sketch</dt><dd>{f.view ?? '—'} · outline, {f.holes} hole(s)</dd></>}
       {f.area != null && <><dt>Face</dt><dd>{f.area.toFixed(2)} m² net</dd></>}
       {f.guide != null && <><dt>{f.operation === 'sweep' ? 'Path' : 'Axis'}</dt><dd className={f.guide === 'missing' ? 'error-text' : ''}>{f.guide === 'missing' ? 'missing: redraw it to rebuild' : f.guide}</dd></>}
       <dt />
