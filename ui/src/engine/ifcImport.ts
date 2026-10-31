@@ -67,7 +67,8 @@ export function rulesOf(r: RememberedRules, skipSets: string[]): ImportRules {
   };
 }
 
-export type ImportMode = 'auto' | 'reference' | 'link';
+/** How a file comes in: recognised as Lapin elements, the rest references (auto); the rest made Studio solids too (editable); all references; linked. */
+export type ImportMode = 'auto' | 'editable' | 'reference' | 'link';
 
 /** The file the user picked: by path (the desktop) or its bytes as base64 (a browser). */
 export interface IfcSource { name: string; path?: string; data?: string }
@@ -119,8 +120,18 @@ export async function surveyIfc(source: IfcSource, mode: ImportMode, format: Exc
   }
 }
 
-export interface ImportResult { elements: number; updated: number; references: number; recognized?: number; recognizedByClass?: Record<string, number>; notes: string[] }
-export interface FragResult { elements: number; shared: number; storeys: number; skipped: number; native?: number; leftOut?: number; notes: string[] }
+/** What an import made editable (Studio solids of its references) and why the rest stayed references. */
+export interface EditableReport { made: number; kept: Record<string, number> }
+export interface ImportResult { elements: number; updated: number; references: number; recognized?: number; recognizedByClass?: Record<string, number>; editable?: EditableReport | null; notes: string[] }
+export interface FragResult { elements: number; shared: number; storeys: number; skipped: number; native?: number; leftOut?: number; editable?: EditableReport | null; notes: string[] }
+
+/** The editable part of an import's outcome: how many were made Studio solids, and why the others stayed references. */
+export function editableText(e: EditableReport | null | undefined): string {
+  if (!e) return '';
+  const kept = Object.entries(e.kept);
+  const n = kept.reduce((a, [, v]) => a + v, 0);
+  return ` ${e.made} made editable (Studio solids)${n ? `; ${n} kept as references: ${kept.map(([why, v]) => `${why} (${v})`).join(', ')}` : ''}.`;
+}
 
 /** What a Fragments import brought, said plainly: a file of this very project brings nothing new. */
 export function fragOutcome(name: string, r: FragResult): string {
@@ -130,11 +141,11 @@ export function fragOutcome(name: string, r: FragResult): string {
   if (r.storeys) parts.push(`${r.storeys} storey${r.storeys === 1 ? '' : 's'} made`);
   if (r.native) parts.push(`${r.native} already in this project`);
   if (r.skipped) parts.push(`${r.skipped} without a body Lapin reads`);
-  return `Imported ${name}: ${parts.join(', ')}.`;
+  return `Imported ${name}: ${parts.join(', ')}.${editableText(r.editable)}`;
 }
 
 /** Step two: what was chosen (null: everything) brought in, its stages shown; the outcome said. */
-export async function runIfcImport(choice: { kinds: string[] | null; storeys: string[] | null; mode: ImportMode; plan2d?: boolean; only2d?: boolean; rules?: ImportRules; group?: boolean }): Promise<void> {
+export async function runIfcImport(choice: { kinds: string[] | null; storeys: string[] | null; mode: ImportMode; plan2d?: boolean; only2d?: boolean; rules?: ImportRules; group?: boolean; editable?: boolean }): Promise<void> {
   const { source, format } = useIfcImport.getState();
   if (!source) return;
   useUi.setState({ dialog: null });
@@ -144,7 +155,7 @@ export async function runIfcImport(choice: { kinds: string[] | null; storeys: st
   try {
     const params = {
       ...args(source), group: choice.group ?? true,
-      ...(frag ? {} : { mode: choice.mode }),
+      ...(frag ? (choice.editable ? { editable: true } : {}) : { mode: choice.mode }),
       ...(choice.kinds ? { kinds: choice.kinds } : {}),
       ...(choice.storeys ? { storeys: choice.storeys } : {}),
       ...(choice.plan2d === false ? { plan2d: false } : {}),
@@ -172,7 +183,7 @@ export function outcome(name: string, mode: ImportMode, r: ImportResult): string
     r.updated ? `${r.updated} updated` : '',
     r.references ? `${r.references} as reference` : '',
   ].filter(Boolean);
-  return `${mode === 'link' ? 'Linked' : 'Imported'} ${name}: ${parts.join(', ') || 'nothing to bring in'}.${mode === 'link' ? ' Read-only: Manage → Links.' : ''}${r.notes?.length ? ` ${r.notes.join(' ')}` : ''}`;
+  return `${mode === 'link' ? 'Linked' : 'Imported'} ${name}: ${parts.join(', ') || 'nothing to bring in'}.${editableText(r.editable)}${mode === 'link' ? ' Read-only: Manage → Links.' : ''}${r.notes?.length ? ` ${r.notes.join(' ')}` : ''}`;
 }
 
 /** The choice as the engine takes it: null where everything is chosen (no filter at all). */

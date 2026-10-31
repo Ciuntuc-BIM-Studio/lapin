@@ -230,6 +230,12 @@ Concluzia: `Axis` și straturile de material sunt rare. Recunoașterea trebuie s
 - **Referințele** (`StoredBodies`): triunghiurile se adună în fețe plane (`SolidFromMesh`), ca planul să arate muchiile corpului.
 - **Raportul:** `recognized`, `recognizedByClass`, `referencesByClass`, `skipped` (motive numărate) și note; interfața le arată în mesajul de import.
 
+### Totul editabil (31.10.2026, #207)
+
+Al treilea fel de a aduce un fișier, după referințe și recunoaștere: **Totul editabil** (`mode: "editable"` la `project.importIfc`, `editable: true` la `project.importFragments` și `project.importMesh`). Întâi recunoașterea, ca la `auto`; apoi ce a rămas referință devine solid Studio din propriile triunghiuri (`EditableReferences` în platformă, `IReferenceEditor` dat de Studio, `ReferenceSolids`): același element, cu id-ul (GlobalId-ul sursei), numele, clasa (una pe care Studio o desenează, altfel proxy cu `exportAs` clasa sursei), tipul predefinit, atributele și seturile sursei, etajul, grupul, tipul și ansamblul din care face parte; pe el merg imediat împinge/trage, racordările, booleenele și restul pașilor. Un corp de peste 5.000 de triunghiuri (o pompă, un fiting cu rețea fină) rămâne referință, ca proiectul să nu se îngreuneze; un element fără corp (doar 2D) sau fără etaj la fel. Raportul importului (`editable: {made, kept: {motiv: câte}}`) le numără, iar mesajul le spune. Totul într-un singur pas de anulare, în grupul fișierului. O referință adusă înainte se face editabilă cu Studio → **Make Studio solid** (`studio.fromElement`), care acum păstrează și ea toate relațiile. Teste: `ImportEditableTests` (IFC cu corp partajat și o clasă străină, limita, Fragments și OBJ).
+
+Urmează (în ordinea aceasta): recunoașterea din triunghiuri (Fragments, și „Convert to native” pe o referință: fețele plane adunate, prismele refăcute, aceiași recunoscători ca la IFC), apoi restul etapei B.
+
 ### Rămase pentru etapa B
 
 Dialogul de mapare a tipurilor; finisajele exportate ca pereți separați absorbite ca strat; golurile tăiate direct în corp; plăcile și stâlpii B-rep care nu sunt prisme (conturul din fața de sus, întinderile); ușile peste înălțimea peretelui; fundațiile continue; acoperișurile din plane; „Convertește la nativ” pe o referință; actualizarea la reimport păstrând editările.

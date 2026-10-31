@@ -9,7 +9,7 @@
 import { brand } from '../platform/brand';
 import { activeStorey, engine, engineInBrowser, useSession } from './session';
 import { LONG_TIMEOUT_MS } from './client';
-import { surveyIfc } from './ifcImport';
+import { editableText, surveyIfc, type EditableReport } from './ifcImport';
 import { emptyPane, notify, select, useUi } from '../app/store';
 
 const FILTERS = [{ name: 'Lapin project', extensions: ['lapin'] }];
@@ -394,21 +394,25 @@ export async function importMesh(): Promise<void> {
   if (!path) return;
   const name = path.split(/[\\/]/).pop() ?? path;
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
-  let options: Record<string, unknown> = {};
-  if (ext === 'obj' || ext === 'stl') {
-    const { ask, choiceField } = await import('../shell/AskBox');
-    const r = await ask(`Import ${name}`, [
+  // An OBJ or STL says neither its unit nor its up; any mesh comes in as references or, asked, editable (Studio solids).
+  const { ask, choiceField } = await import('../shell/AskBox');
+  const units = ext === 'obj' || ext === 'stl';
+  const r = await ask(`Import ${name}`, [
+    ...(units ? [
       choiceField('scale', 'Its unit', ext === 'stl' ? '0.001' : '1', [{ value: '1', label: 'metres' }, { value: '0.01', label: 'centimetres' }, { value: '0.001', label: 'millimetres' }, { value: '0.0254', label: 'inches' }]),
       choiceField('up', 'Up is its', ext === 'obj' ? 'y' : 'z', [{ value: 'z', label: 'z (CAD, BIM)' }, { value: 'y', label: 'y (most 3D programs)' }]),
-    ]);
-    if (!r) return;
-    options = { scale: Number(r.scale), up: r.up };
-  }
+    ] : []),
+    choiceField('as', 'As', 'reference', [{ value: 'reference', label: 'references' }, { value: 'editable', label: 'editable (Studio solids)' }]),
+  ]);
+  if (!r) return;
+  const options: Record<string, unknown> = { ...(units ? { scale: Number(r.scale), up: r.up } : {}), ...(r.as === 'editable' ? { editable: true } : {}) };
   const storeyId = activeStorey()?.id;
   const source = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name, path };
   try {
-    const r = await engine.call<{ elements: number; triangles: number; notes: string[] }>('project.importMesh', { ...source, ...options, ...(storeyId ? { storeyId } : {}) }, { timeoutMs: LONG_TIMEOUT_MS });
-    notify(`Imported ${name}: ${r.elements} reference${r.elements === 1 ? '' : 's'}, ${r.triangles} triangles. Select one and use Studio → Make Studio solid to edit it.${r.notes.length ? ' ' + r.notes.join(' ') : ''}`);
+    const res = await engine.call<{ elements: number; triangles: number; editable?: EditableReport | null; notes: string[] }>('project.importMesh', { ...source, ...options, ...(storeyId ? { storeyId } : {}) }, { timeoutMs: LONG_TIMEOUT_MS });
+    notify(res.editable
+      ? `Imported ${name}: ${res.elements} piece${res.elements === 1 ? '' : 's'}, ${res.triangles} triangles.${editableText(res.editable)}${res.notes.length ? ' ' + res.notes.join(' ') : ''}`
+      : `Imported ${name}: ${res.elements} reference${res.elements === 1 ? '' : 's'}, ${res.triangles} triangles. Select one and use Studio → Make Studio solid to edit it.${res.notes.length ? ' ' + res.notes.join(' ') : ''}`);
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }
@@ -419,7 +423,7 @@ export async function importMesh(): Promise<void> {
  * what of it comes in (by discipline, kind and storey) and how (recognised, as references, linked), then the import
  * with its stages shown.
  */
-export async function importIfc(mode: 'auto' | 'reference' | 'link' = 'auto'): Promise<void> {
+export async function importIfc(mode: 'auto' | 'editable' | 'reference' | 'link' = 'auto'): Promise<void> {
   // By path on the desktop (the native dialog); in a browser, the file's bytes from the browser's own
   // picker, whether the engine runs in the page or as the local process of pnpm dev: a page never knows a path.
   const picked = isDesktop() ? null : await pickFile('IFC', 'ifc');

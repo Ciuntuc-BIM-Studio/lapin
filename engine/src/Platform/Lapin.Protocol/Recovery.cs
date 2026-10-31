@@ -232,8 +232,8 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         var mode = (string?)source["mode"] ?? "auto";
         IReadOnlySet<string>? Chosen(JsonNode? n) => n is JsonArray a ? a.Select(x => (string?)x ?? "").ToHashSet() : null;
         // An import recorded before groups were (no "group") is done again without one.
-        var options = EngineDispatcher.Rules(new IfcImportOptions(mode == "link" ? "auto" : mode, Chosen(source["kinds"]), Chosen(source["storeys"]),
-            (bool?)source["plan2d"] ?? true, (bool?)source["only2d"] ?? true, Group: (bool?)source["group"] ?? false), source["rules"] as JsonObject);
+        var options = EngineDispatcher.Rules(new IfcImportOptions(mode is "link" or "editable" ? "auto" : mode, Chosen(source["kinds"]), Chosen(source["storeys"]),
+            (bool?)source["plan2d"] ?? true, (bool?)source["only2d"] ?? true, Group: (bool?)source["group"] ?? false, Editable: mode == "editable"), source["rules"] as JsonObject);
         using (s.SeededIds((long?)source["seed"] ?? 0))
         {
             if (mode == "link") IfcImport.Link(s, bytes, System.IO.Path.GetFileName(path), path, options, out _);

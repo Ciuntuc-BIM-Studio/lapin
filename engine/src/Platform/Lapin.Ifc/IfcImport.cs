@@ -29,7 +29,7 @@ namespace Lapin.Ifc;
 /// </summary>
 /// <summary><paramref name="Group"/>: what the file places comes in as one group named after it (docs/groups.md); false for a link, and for an import the journal recorded before groups were.</summary>
 public sealed record IfcImportOptions(string Mode = "auto", IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Plan2d = true, bool Only2d = true,
-    bool Dedupe = true, bool Flat = false, double? FarAway = null, bool Duplicates = false, bool Pseudo = false, double Simplify = 0, bool Numbers = false, IReadOnlySet<string>? SkipSets = null, bool Group = false)
+    bool Dedupe = true, bool Flat = false, double? FarAway = null, bool Duplicates = false, bool Pseudo = false, double Simplify = 0, bool Numbers = false, IReadOnlySet<string>? SkipSets = null, bool Group = false, bool Editable = false)
 {
     public bool ReferenceOnly => string.Equals(Mode, "reference", StringComparison.OrdinalIgnoreCase);
     public bool Filtered => Kinds != null || Storeys != null;
@@ -37,13 +37,14 @@ public sealed record IfcImportOptions(string Mode = "auto", IReadOnlySet<string>
     public bool Keeps(string? set) => SkipSets == null || set == null || !SkipSets.Contains(set);
 }
 
-public sealed record IfcImportResult(int Elements, int Updated, int References, int Storeys, IReadOnlyList<string> Notes, int Recognized = 0, IReadOnlyDictionary<string, int>? RecognizedByClass = null, IReadOnlyDictionary<string, int>? ReferencesByClass = null, IReadOnlyDictionary<string, int>? Skipped = null, string? LinkId = null)
+public sealed record IfcImportResult(int Elements, int Updated, int References, int Storeys, IReadOnlyList<string> Notes, int Recognized = 0, IReadOnlyDictionary<string, int>? RecognizedByClass = null, IReadOnlyDictionary<string, int>? ReferencesByClass = null, IReadOnlyDictionary<string, int>? Skipped = null, string? LinkId = null, EditableReport? Editable = null)
 {
     public JsonObject ToJson() => new()
     {
         ["elements"] = Elements, ["updated"] = Updated, ["references"] = References, ["storeys"] = Storeys, ["recognized"] = Recognized, ["linkId"] = LinkId,
         ["recognizedByClass"] = Counts(RecognizedByClass), ["referencesByClass"] = Counts(ReferencesByClass), ["skipped"] = Counts(Skipped),
         ["notes"] = new JsonArray(Notes.Select(n => (JsonNode)n).ToArray()),
+        ["editable"] = Editable?.ToJson(),
     };
 
     static JsonObject Counts(IReadOnlyDictionary<string, int>? d)
@@ -81,12 +82,15 @@ public static partial class IfcImport
     {
         var o = options ?? new IfcImportOptions();
         var reader = new Reader(session, file, o);
+        // Everything editable (the import's third way): what stays a reference after recognition made a Studio solid where it can be.
+        EditableReport? editable = null;
+        void Apply(IEdit edit) { if (o.Editable) editable = EditableReferences.Around(edit, session.Catalog, reader.Apply); else reader.Apply(edit); }
         diff = session.Edit($"Import {name}", edit =>
         {
-            if (o.Group) Groups.Around(edit, System.IO.Path.GetFileNameWithoutExtension(name), reader.Apply);
-            else reader.Apply(edit);
+            if (o.Group) Groups.Around(edit, System.IO.Path.GetFileNameWithoutExtension(name), Apply);
+            else Apply(edit);
         });
-        return reader.Result();
+        return reader.Result() with { Editable = editable };
     }
 
     /// <summary>

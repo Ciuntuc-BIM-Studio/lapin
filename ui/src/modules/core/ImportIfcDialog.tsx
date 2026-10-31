@@ -43,6 +43,8 @@ export function ImportIfcDialog() {
   const [setsOpen, setSetsOpen] = useState(false);
   // What the file places comes in as one group named after it (docs/groups.md); a link is a unit of its own.
   const [group, setGroup] = useState(true);
+  // A Fragments file's elements made Studio solids on request (an IFC file says it by its How).
+  const [editable, setEditable] = useState(false);
   const close = () => { useIfcImport.setState({ survey: null, source: null }); useUi.setState({ dialog: null }); };
   const count = useMemo(() => (survey ? chosenCount(survey, offKinds, offStoreys) : 0), [survey, offKinds, offStoreys]);
   if (!survey || !source) return null;
@@ -50,7 +52,7 @@ export function ImportIfcDialog() {
   const nothing = count === 0 || nothingChosen(survey, offKinds, offStoreys);
   const title = frag ? 'Import Fragments' : 'Import IFC';
   const run = () => {
-    if (frag) { void runIfcImport({ ...choiceOf(survey, offKinds, offStoreys), mode: 'reference', group }); return; }
+    if (frag) { void runIfcImport({ ...choiceOf(survey, offKinds, offStoreys), mode: 'reference', group, editable }); return; }
     rememberRules(rules);
     void runIfcImport({ ...choiceOf(survey, offKinds, offStoreys), mode, plan2d, only2d, rules: rulesOf(rules, [...skipped]), group });
   };
@@ -140,12 +142,18 @@ export function ImportIfcDialog() {
         <h4 className="eyebrow" style={{ marginTop: 14 }}>How</h4>
         <select value={mode} onChange={(e) => setMode(e.target.value as ImportMode)} aria-label="How it comes in">
           <option value="auto">Recognised as Lapin elements where it can, the rest as references</option>
+          <option value="editable">Everything editable: recognised where it can, the rest as Studio solids</option>
           <option value="reference">Everything as references, as the file draws it</option>
           <option value="link">Linked, read-only (Manage → Links)</option>
         </select>
         </>
       )}
       {frag && <p className="muted small" style={{ marginTop: 14 }}>A Fragments file holds triangles: its elements come in as references, drawn from their bodies, with their attributes.</p>}
+      {frag && (
+        <label className="field-line check-line" style={{ marginTop: 8 }} title="Push/pull, fillets, booleans and the rest take them; a body of more than 5,000 triangles stays a reference">
+          <input type="checkbox" className="import-editable" checked={editable} onChange={(e) => setEditable(e.target.checked)} /> Make them editable (Studio solids)
+        </label>
+      )}
       {(frag || mode !== 'link') && (
         <label className="field-line check-line" style={{ marginTop: 8 }}>
           <input type="checkbox" checked={group} onChange={(e) => setGroup(e.target.checked)} /> As one group, named after the file (double-click it to edit)

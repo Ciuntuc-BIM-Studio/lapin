@@ -477,28 +477,47 @@ public sealed partial class StudioModule
             if (e.Str("operation") != null && e.Str("operation") != "body") throw new CommandException($"„{e.Name}” is a Studio solid already.");
             var parts = ctx.Query.Geometry(e.Id)?.Parts ?? [];
             if (parts.Count == 0) throw new CommandException($"„{e.Name}” has no body to make a solid of.");
-            var storey = Spatial.StoreyOf(ctx.Model, e.Id) ?? throw new CommandException($"„{e.Name}” is not an element.");
-            var all = parts.SelectMany(p => p.Solid.Vertices).ToList();
-            var at = new Vec3((all.Min(p => p.X) + all.Max(p => p.X)) / 2, (all.Min(p => p.Y) + all.Max(p => p.Y)) / 2, all.Min(p => p.Z));
-            var body = StoredBodies.Write(parts.Select(p => (p.Name, p.Color, (IReadOnlyList<Vec3>)p.Solid.Vertices.Select(v => v - at).ToList(), (IReadOnlyList<(int, int, int)>)Measure.Triangles(p.Solid).ToList())));
-            var cls = Classes.Contains(e.Class) ? e.Class : IfcClass.BuildingElementProxy;
-            var attrs = new JsonObject { ["operation"] = "body", [BodyKey] = body, ["at"] = Features.J(at), ["rotation"] = 0 };
-            var exportAs = e.Str("exportAs") ?? (cls == e.Class ? null : e.Class);
-            if (exportAs != null && exportAs != cls) attrs["exportAs"] = exportAs;
-            if (parts.FirstOrDefault(p => p.Material != null)?.Material is { } mat) attrs["material"] = mat;
-            var solid = new Entity(keep ? ctx.NewId() : NewIdFor(ctx, e), cls, e.Name, attrs, e.PredefinedType);
-            if (!keep)
-            {
-                foreach (var x in ctx.Model.Relations.Where(x => x.Touches(e.Id) && x.Class == IfcClass.RelInterferesElements).ToList()) ctx.RemoveRelation(x.Id);
-                ctx.Remove(e.Id);
-            }
-            ctx.Add(solid);
-            Spatial.Contain(ctx, storey.Id, solid.Id);
-            made.Add((JsonNode)solid.Id);
+            if (Spatial.StoreyOf(ctx.Model, e.Id) == null) throw new CommandException($"„{e.Name}” is not an element.");
+            made.Add((JsonNode)MakeSolid(ctx, e, parts, keep));
         }
         return new JsonObject { ["ids"] = made };
     }
 
+    /// <summary>The attributes a body solid does not take from the element it is made of: its own body, the plan a file drew for it.</summary>
+    static readonly string[] NotCarried = [StoredBodies.Key, StoredBodies.BodyOf, StoredBodies.XfKey, "plan2d", "operation", "features", "at", "rotation"];
+
+    /// <summary>
+    /// An element made a Studio solid of its body (<paramref name="parts"/>, world coordinates): its triangles kept in the solid's
+    /// own frame, at the middle of its foot. Replacing it (<paramref name="keep"/> false), the solid keeps its id, name, class (one
+    /// Studio takes, or a proxy exported as it), predefined type, what a file said of it (its attributes, sets, material) and every
+    /// relationship it was in: its storey, its group, its type, the assembly it is a part of.
+    /// </summary>
+    internal static string MakeSolid(IEdit edit, Entity e, IReadOnlyList<GeometryPart> parts, bool keep)
+    {
+        var all = parts.SelectMany(p => p.Solid.Vertices).ToList();
+        var at = new Vec3((all.Min(p => p.X) + all.Max(p => p.X)) / 2, (all.Min(p => p.Y) + all.Max(p => p.Y)) / 2, all.Min(p => p.Z));
+        var body = StoredBodies.Write(parts.Select(p => (p.Name, p.Color, (IReadOnlyList<Vec3>)p.Solid.Vertices.Select(v => v - at).ToList(), (IReadOnlyList<(int, int, int)>)Measure.Triangles(p.Solid).ToList())));
+        var cls = Classes.Contains(e.Class) ? e.Class : IfcClass.BuildingElementProxy;
+        var attrs = keep ? new JsonObject() : e.CloneAttrs();
+        foreach (var k in NotCarried) attrs.Remove(k);
+        attrs["operation"] = "body"; attrs[BodyKey] = body; attrs["at"] = Features.J(at); attrs["rotation"] = 0;
+        var exportAs = e.Str("exportAs") ?? (cls == e.Class ? null : e.Class);
+        if (exportAs != null && exportAs != cls) attrs["exportAs"] = exportAs;
+        if (attrs["material"] == null && parts.FirstOrDefault(p => p.Material != null)?.Material is { } mat) attrs["material"] = mat;
+        var storey = Spatial.StoreyOf(edit.Model, e.Id);
+        // What it is related by (its storey, group, type, assembly), to be related by again; what it relates, again with it.
+        var by = edit.Model.Relations.Where(x => x.Related.Contains(e.Id) && x.Class != IfcClass.RelInterferesElements).Select(x => (x.Class, x.Relating)).ToList();
+        var relating = edit.Model.Relations.Where(x => x.Relating == e.Id && x.Class is not (IfcClass.RelInterferesElements or IfcClass.RelVoidsElement or IfcClass.RelFillsElement)).ToList();
+        var id = keep ? edit.NewId() : NewIdFor(edit, e);
+        if (!keep) edit.Remove(e.Id);
+        edit.Add(new Entity(id, cls, e.Name, attrs, e.PredefinedType));
+        if (keep) { if (storey != null) Spatial.Contain(edit, storey.Id, id); return id; }
+        foreach (var (c, r) in by) if (edit.Model.Get(r) != null) edit.RelateAll(c, r, [id]);
+        foreach (var x in relating) if (x.Related.All(r2 => edit.Model.Get(r2) != null)) edit.AddRelation(x with { Id = edit.NewId(), Relating = id });
+        if (storey != null && Spatial.StoreyOf(edit.Model, id) == null) Spatial.Contain(edit, storey.Id, id);
+        return id;
+    }
+
     /// <summary>The element's own id for the solid that takes its place (its GlobalId kept), when nothing else needs it.</summary>
-    static string NewIdFor(ICommandContext ctx, Entity e) => e.Id;
+    static string NewIdFor(IEdit edit, Entity e) => e.Id;
 }

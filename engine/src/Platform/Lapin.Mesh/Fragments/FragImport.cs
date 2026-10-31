@@ -10,7 +10,7 @@ namespace Lapin.Mesh.Fragments;
 
 /// <summary>What a Fragments import brought: elements (references), shared bodies, storeys made, what it left out, and its notes.</summary>
 /// <summary><paramref name="Native"/>: items already in the project as Lapin elements (the file came from it), left as they are; <paramref name="LeftOut"/>: items the choice left out.</summary>
-public sealed record FragImportResult(int Elements, int Shared, int Storeys, int Skipped, IReadOnlyList<string> Notes, IReadOnlyDictionary<string, int> ByClass, int Native = 0, int LeftOut = 0)
+public sealed record FragImportResult(int Elements, int Shared, int Storeys, int Skipped, IReadOnlyList<string> Notes, IReadOnlyDictionary<string, int> ByClass, int Native = 0, int LeftOut = 0, EditableReport? Editable = null)
 {
     public JsonObject ToJson()
     {
@@ -18,7 +18,7 @@ public sealed record FragImportResult(int Elements, int Shared, int Storeys, int
         foreach (var (k, v) in ByClass.OrderByDescending(kv => kv.Value)) by[k] = v;
         return new JsonObject
         {
-            ["elements"] = Elements, ["shared"] = Shared, ["storeys"] = Storeys, ["skipped"] = Skipped, ["byClass"] = by, ["native"] = Native, ["leftOut"] = LeftOut,
+            ["elements"] = Elements, ["shared"] = Shared, ["storeys"] = Storeys, ["skipped"] = Skipped, ["byClass"] = by, ["native"] = Native, ["leftOut"] = LeftOut, ["editable"] = Editable?.ToJson(),
             ["notes"] = new JsonArray(Notes.Select(n => (JsonNode)n).ToArray()),
         };
     }
@@ -61,12 +61,15 @@ public static class FragImport
         var o = options ?? new FragImportOptions();
         var reader = new Reader(session, model, name, o);
         // What the file places anew comes in as one group named after it (docs/groups.md).
+        // Everything editable on request: the references made Studio solids where they can be.
+        EditableReport? editable = null;
+        void Apply(IEdit edit) { if (o.Editable) editable = EditableReferences.Around(edit, session.Catalog, reader.Apply); else reader.Apply(edit); }
         diff = session.Edit($"Import {name}", edit =>
         {
-            if (o.Group) Groups.Around(edit, Path.GetFileNameWithoutExtension(name), reader.Apply);
-            else reader.Apply(edit);
+            if (o.Group) Groups.Around(edit, Path.GetFileNameWithoutExtension(name), Apply);
+            else Apply(edit);
         });
-        return reader.Result;
+        return reader.Result with { Editable = editable };
     }
 
     /// <summary>Fragments' frame (Y up) to the model's (Z up): (x, y, z) → (x, −z, y).</summary>
@@ -302,4 +305,4 @@ public static class FragImport
 }
 
 /// <summary>What of a Fragments file comes in: its kinds and storeys as <see cref="FragSurvey"/> names them (null: all; "" the items on none), and whether as one group.</summary>
-public sealed record FragImportOptions(IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Group = true);
+public sealed record FragImportOptions(IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Group = true, bool Editable = false);

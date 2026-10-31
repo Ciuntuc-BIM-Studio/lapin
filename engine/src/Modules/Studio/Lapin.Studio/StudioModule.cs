@@ -111,6 +111,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         r.Class(new(Boxes.AssemblyClass, "Assembly", [], "#b9b2a6"));
         r.Service<IGeometryFilter>(this);
         r.Service<IElementPlacement>(new StudioPlacement());
+        // An import's references made editable on request (the import's third way, docs/spec-ifc.md).
+        r.Service<IReferenceEditor>(new ReferenceSolids());
         r.Service<IElementUpdate>(new Boxes());
         r.Service<IDeletion>(new Boxes());
 

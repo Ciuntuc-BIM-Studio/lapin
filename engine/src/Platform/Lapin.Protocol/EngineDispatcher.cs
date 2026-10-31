@@ -611,7 +611,8 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 // The import's rules (docs/spec-ifc.md, Regulile importului), as the dialog sends them; their defaults when it does not.
                 // What the file places comes in as one group (docs/groups.md), unless asked otherwise; never a link's.
                 var group = modeName != "link" && (p["group"] is not JsonValue gv || !gv.TryGetValue<bool>(out var gb) || gb);
-                var mode = Rules(new IfcImportOptions(modeName == "link" ? "auto" : modeName, kinds, storeys, plan2d, only2d, Group: group), p["rules"] as JsonObject);
+                // "editable": recognised as Lapin elements, the rest made Studio solids where they can be (EditableReferences).
+                var mode = Rules(new IfcImportOptions(modeName is "link" or "editable" ? "auto" : modeName, kinds, storeys, plan2d, only2d, Group: group, Editable: modeName == "editable"), p["rules"] as JsonObject);
                 // By path (the desktop), or its bytes, base64 in `data` (the browser); the file as the survey read it, when it is the same.
                 ReportProgress("Reading the file", 0, 0);
                 var (bytes, name, path, key) = IfcBytes(p);
@@ -662,7 +663,8 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 // the kinds and storeys chosen (the survey's), as one group unless asked otherwise.
                 ReportProgress("Reading the file", 0, 0);
                 var (bytes, name, _, key) = IfcBytes(p);
-                var options = new Lapin.Mesh.Fragments.FragImportOptions(Chosen(p["kinds"]), Chosen(p["storeys"]), p["group"] is not JsonValue gv || !gv.TryGetValue<bool>(out var gb) || gb);
+                var options = new Lapin.Mesh.Fragments.FragImportOptions(Chosen(p["kinds"]), Chosen(p["storeys"]), p["group"] is not JsonValue gv || !gv.TryGetValue<bool>(out var gb) || gb,
+                    Editable: p["editable"] is JsonValue ev && ev.TryGetValue<bool>(out var eb) && eb);
                 var model = _fragSurveyed is { } fs && fs.Key == key ? fs.Model : Lapin.Mesh.Fragments.FragImport.Read(bytes, name);
                 _fragSurveyed = null;
                 var r = Lapin.Mesh.Fragments.FragImport.Run(session, model, name, out var imported, options);

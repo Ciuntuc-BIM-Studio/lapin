@@ -23,7 +23,7 @@ public class IfcImportRulesTests : IDisposable
     static Fixture Make() => new(new ArchitectureModule());
 
     /// <summary>A foreign file in metres, one storey; each element its own box (its own shape, as Navisworks writes them), with sets.</summary>
-    sealed class Plant
+    internal sealed class Plant
     {
         readonly StringBuilder _s = new();
         readonly List<int> _contained = [];
@@ -64,7 +64,11 @@ public class IfcImportRulesTests : IDisposable
         static string Gid(string key) => Step.Guid("rules-test", key);
 
         /// <summary>A box of the given size at x, y, z (its low corner), as a triangulated face set in world coordinates; a 2D square when <paramref name="flat"/>.</summary>
-        public string Box(string name, double x, double y, double z, double size = 1, bool flat = false, params (string Set, string Prop, string Value)[] props)
+        public string Box(string name, double x, double y, double z, double size = 1, bool flat = false, params (string Set, string Prop, string Value)[] props) =>
+            Element("IFCBUILDINGELEMENTPROXY", "$", name, x, y, z, size, flat, props);
+
+        /// <summary>A box as an element of another class (its entity name and predefined type, "$" for none).</summary>
+        public string Element(string cls, string predefined, string name, double x, double y, double z, double size = 1, bool flat = false, params (string Set, string Prop, string Value)[] props)
         {
             var dz = flat ? 0 : size;
             var pts = new[] { (0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0), (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1) }
@@ -76,7 +80,7 @@ public class IfcImportRulesTests : IDisposable
             var pds = Add($"IFCPRODUCTDEFINITIONSHAPE($,$,(#{rep}))");
             var place = Add("IFCLOCALPLACEMENT(#11,#2)");
             var gid = Gid(name);
-            var e = Add($"IFCBUILDINGELEMENTPROXY('{gid}',$,'{name}',$,$,#{place},#{pds},$,$)");
+            var e = Add($"{cls}('{gid}',$,'{name}',$,$,#{place},#{pds},$,{predefined})");
             _contained.Add(e);
             foreach (var g in props.GroupBy(p => p.Set))
             {

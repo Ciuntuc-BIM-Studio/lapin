@@ -1305,6 +1305,7 @@ export const scenes = [
       await dialog.locator('[data-discipline=structure] button').first().click();
       await t.wait(300);
       await t.shot('import-ifc', { of: '[aria-label="Import IFC"]', pad: 0 });
+      t.expect(await dialog.locator('option[value=editable]').count() === 1, 'How offers everything editable (Studio solids)');
       // The structure left out: only the architecture comes in.
       await dialog.locator('[data-discipline=structure] input[type=checkbox]').first().uncheck();
       await dialog.getByRole('button', { name: 'Import', exact: true }).click();

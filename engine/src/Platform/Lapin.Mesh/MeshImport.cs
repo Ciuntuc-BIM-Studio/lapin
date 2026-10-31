@@ -12,11 +12,11 @@ namespace Lapin.Mesh;
 public sealed record MeshPiece(string Name, string Color, List<Vec3> Vertices, List<(int A, int B, int C)> Triangles);
 
 /// <summary>What a mesh import brought: the references made, the triangles, and its notes.</summary>
-public sealed record MeshImportResult(int Elements, int Triangles, IReadOnlyList<string> Notes)
+public sealed record MeshImportResult(int Elements, int Triangles, IReadOnlyList<string> Notes, EditableReport? Editable = null)
 {
     public JsonObject ToJson() => new()
     {
-        ["elements"] = Elements, ["triangles"] = Triangles,
+        ["elements"] = Elements, ["triangles"] = Triangles, ["editable"] = Editable?.ToJson(),
         ["notes"] = new JsonArray(Notes.Select(n => (JsonNode)n).ToArray()),
     };
 }
@@ -77,6 +77,10 @@ public static class MeshImport
             pieces = [all];
         }
         var elements = 0;
+        // Made Studio solids on request (the import's third way), so push/pull, fillets and booleans take them at once.
+        var editable = options["editable"] is JsonValue ev && ev.TryGetValue<bool>(out var eb) && eb;
+        EditableReport? report = null;
+        var made = new List<string>();
         // The pieces come in as one group named after the file (docs/groups.md).
         diff = session.Edit($"Import {name}", outer => Groups.Around(outer, Path.GetFileNameWithoutExtension(name), edit =>
         {
@@ -98,11 +102,13 @@ public static class MeshImport
                 };
                 var e = new Entity(edit.NewId(), IfcClass.BuildingElementProxy, p.Name, attrs);
                 edit.Add(e);
+                made.Add(e.Id);
                 Spatial.Contain(edit, storey.Id, e.Id);
                 elements++;
             }
+            if (editable) report = EditableReferences.Make(edit, session.Catalog, made);
         }));
-        return new MeshImportResult(elements, pieces.Sum(p => p.Triangles.Count), notes);
+        return new MeshImportResult(elements, pieces.Sum(p => p.Triangles.Count), notes, report);
     }
 
     static bool Flag(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) && b;
