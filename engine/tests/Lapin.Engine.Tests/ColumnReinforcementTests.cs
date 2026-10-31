@@ -81,7 +81,7 @@ public class ColumnReinforcementTests
         var through = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(0, 2), ["end"] = new JsonArray(4, 2) })!["id"]!;
         var d = Drawing(f, through);
         Assert.Equal(8, Lines(d, RebarShapes.LongitudinalLayer));
-        Assert.Contains($"8Ø16 L={Math.Round((height + 1.0) * 1000)}", Pens(d).SelectMany(p => (p!["texts"] as JsonArray)?.Select(t => (string?)t!["text"]) ?? []));
+        Assert.Contains("8Ø16", Pens(d).SelectMany(p => (p!["texts"] as JsonArray)?.Select(t => (string?)t!["text"]) ?? []));
         Assert.Throws<CommandException>(() => f.Run("rebar.setColumnBars", new JsonObject { ["id"] = f.Model.RelatingOf((string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 6, ["y2"] = 0 })!["id"]!, IfcClass.RelDefinesByType)!.Id, ["enabled"] = true }));
     }
 }

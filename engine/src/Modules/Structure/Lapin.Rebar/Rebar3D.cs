@@ -137,8 +137,8 @@ public static class Rebar3D
         return (dots, lines);
     }
 
-    /// <summary>The dots and lines of one group of bars drawn, with its label beside the dots (to the right) or over the lines, and the mark's balloon.</summary>
-    public static void Draw(ViewMark mk, ViewContext c, RebarSettings st, List<Vec2> dots, List<(Vec2 A, Vec2 B)> lines, double d, string layer, string label, int mark)
+    /// <summary>The dots and lines of one group of bars drawn, in the diameter's colour (returned, for the label drawn later with the view's others).</summary>
+    public static string Draw(ViewMark mk, ViewContext c, RebarSettings st, List<Vec2> dots, List<(Vec2 A, Vec2 B)> lines, double d, string layer)
     {
         var color = st.ColorByDiameter ? RebarShapes.ColorOf(d) : "#000000";
         var width = Math.Max(0.25, d * 1000 / c.Scale);
@@ -150,31 +150,14 @@ public static class Rebar3D
         }
         foreach (var (a, b) in lines) mk.Line(a, b, layer, width, color);
         mk.Snaps.AddRange(dots);
-        var r = st.Balloon / 2 * c.Mm;
-        Vec2 lab, target;
-        if (dots.Count > 0)
-        {
-            var right = dots.MaxBy(p => p.X);
-            lab = right + new Vec2(10 * c.Mm, 0);
-            target = right;
-        }
-        else
-        {
-            var all = lines.SelectMany(l => new[] { l.A, l.B }).ToList();
-            var mid = new Vec2((all.Min(p => p.X) + all.Max(p => p.X)) / 2, all.Max(p => p.Y));
-            lab = mid + new Vec2(0, 8 * c.Mm);
-            target = lines.Select(l => RebarModule.Nearest([l.A, l.B], lab, l.A)).MinBy(p => (p - lab).Length);
-        }
-        mk.Polyline(ViewMark.Circle(lab, r, 32), true, RebarShapes.AnnotationLayer, 0.35, color);
-        if (mark > 0) mk.Text(new PenText(lab, mark.ToString(CultureInfo.InvariantCulture), st.TextHeight, 0, "middle", "middle", true), color);
-        if ((target - lab).Length > r) mk.Line(lab + (target - lab).Normalized() * r, target, RebarShapes.AnnotationLayer, 0.25, color);
-        mk.Text(new PenText(lab + new Vec2(r + 1.0 * c.Mm, 0), label, st.TextHeight, 0, "start", "middle"), color);
+        return color;
     }
 
     /// <summary>
-    /// The bars drawn on other views, as this view sees them (<see cref="Project"/>), each with its label and mark; a bar's own view draws it itself.
+    /// The bars drawn on other views, as this view sees them (<see cref="Project"/>), each with its label and mark asked of the view's labels
+    /// (the mark the bar's, keyed <c>projection</c>); a bar's own view draws it itself.
     /// </summary>
-    public static IEnumerable<ViewMark> Marks(ViewContext c, RebarSettings st)
+    public static IEnumerable<ViewMark> Marks(ViewContext c, RebarSettings st, List<LabelRequest> labels)
     {
         var m = c.Model;
         if (!Shows(c, out var limit, out var plan)) yield break;
@@ -189,8 +172,11 @@ public static class Rebar3D
             if (bars.Count == 0) continue;
             var (dots, lines) = Project(c, bars, limit, plan);
             if (dots.Count == 0 && lines.Count == 0) continue;
-            var mk = new ViewMark(e.Id);
-            Draw(mk, c, st, dots, lines, s.Diameter, layer, Rebars.Label(e, s), Rebars.Mark(e));
+            var mk = new ViewMark($"{e.Id}:projection");
+            var color = Draw(mk, c, st, dots, lines, s.Diameter, layer);
+            var style = LabelStyle.Resolve("bars", st, element: RebarLabels.StyleOf(e));
+            var text = style.Text(RebarLabels.FactsOf(e, s, st, Rebars.Pieces(e).ToString(CultureInfo.InvariantCulture)));
+            labels.Add(new LabelRequest(mk, e.Id, "projection", style, text, Rebars.Mark(e), color, lines, dots, RebarLabels.AlongOf(lines), RebarLabels.PlacedOn(c.View, e.Id, "projection")));
             yield return mk;
         }
     }

@@ -7,25 +7,43 @@ using Lapin.Platform;
 
 namespace Lapin.Rebar;
 
-/// <summary>The project's rebar drawing settings (<c>rebarSettings</c>): colours by diameter, the text and balloon sizes (paper mm), the steel, segment lengths written on the bars, the cover.</summary>
-public sealed record RebarSettings(bool ColorByDiameter = true, double TextHeight = 2.5, double Balloon = 7.5, string Steel = RebarShapes.DefaultSteel, bool SegmentLengths = false, double Cover = 0.025)
+/// <summary>
+/// The project's rebar drawing settings (<c>rebarSettings</c>): colours by diameter, the text and balloon sizes (paper mm), the steel,
+/// segment lengths written on the bars, the cover, and the labels' styles by kind of group (partial, over <see cref="LabelStyle.Default"/>).
+/// </summary>
+public sealed record RebarSettings(bool ColorByDiameter = true, double TextHeight = 2.5, double Balloon = 7.5, string Steel = RebarShapes.DefaultSteel, bool SegmentLengths = false, double Cover = 0.025,
+    IReadOnlyDictionary<string, JsonObject>? Labels = null)
 {
     public const string Key = "rebarSettings";
+
+    public IReadOnlyDictionary<string, JsonObject> Labels { get; init; } = Labels ?? new Dictionary<string, JsonObject>();
 
     public static RebarSettings Of(IModelView m)
     {
         var o = Spatial.Project(m)?.Attrs[Key] as JsonObject;
         if (o == null) return new RebarSettings();
+        var labels = new Dictionary<string, JsonObject>();
+        if (o["labels"] is JsonObject lo)
+            foreach (var (k, v) in lo) if (v is JsonObject so && LabelStyle.Kinds.Contains(k)) labels[k] = so;
         return new RebarSettings(
             !(o["colorByDiameter"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && !cb),
             Json.Number(o["textHeight"]) ?? 2.5, Json.Number(o["balloon"]) ?? 7.5, (string?)o["steel"] ?? RebarShapes.DefaultSteel,
-            o["segmentLengths"] is JsonValue sv && sv.TryGetValue<bool>(out var sl) && sl, Json.Number(o["cover"]) ?? 0.025);
+            o["segmentLengths"] is JsonValue sv && sv.TryGetValue<bool>(out var sl) && sl, Json.Number(o["cover"]) ?? 0.025, labels);
     }
 
     public JsonObject ToJson() => new()
     {
         ["colorByDiameter"] = ColorByDiameter, ["textHeight"] = TextHeight, ["balloon"] = Balloon, ["steel"] = Steel, ["segmentLengths"] = SegmentLengths, ["cover"] = Cover,
+        ["labels"] = new JsonObject(Labels.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.DeepClone()))),
     };
+
+    /// <summary>The settings as the interface reads them: each kind's label style resolved whole.</summary>
+    public JsonObject Resolved()
+    {
+        var o = ToJson();
+        o["labels"] = new JsonObject(LabelStyle.Kinds.Select(k => KeyValuePair.Create(k, (JsonNode?)LabelStyle.Resolve(k, this).ToJson())));
+        return o;
+    }
 }
 
 /// <summary>The bars (<c>LapinRebar</c>) and distributions (<c>LapinRebarRun</c>) drawn on views: reading them, naming them, their labels.</summary>
@@ -179,7 +197,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             ["diameters"] = new JsonArray(RebarShapes.Diameters.Select(d => (JsonNode)d).ToArray()),
             ["steels"] = new JsonArray(RebarShapes.Steels.Select(s => (JsonNode)s).ToArray()),
             ["views"] = new JsonArray(Rebars.Views.Select(s => (JsonNode)s).ToArray()),
-            ["settings"] = new RebarSettings().ToJson(),
+            ["settings"] = new RebarSettings().Resolved(),
+            ["labelTokens"] = new JsonArray(LabelStyle.Tokens.Select(s => (JsonNode)s).ToArray()),
         });
 
         r.Service<IViewAnnotations>(this);
@@ -223,7 +242,11 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var p = Args.Point(a["point"], "the grip's point");
             var attrs = e.CloneAttrs();
             if (key == "at") attrs["at"] = Rebars.J(p);
-            else if (key == "label") attrs["label"] = new JsonObject { ["at"] = Rebars.J(p) };
+            else if (key == "label")
+            {
+                if (attrs["label"] is not JsonObject lo) attrs["label"] = lo = new JsonObject();
+                lo["at"] = Rebars.J(p);
+            }
             else
             {
                 var next = RebarShapes.Apply(s, key, RebarShapes.Local(s, at, p));
@@ -274,7 +297,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             ctx.Replace(e.With(attrs: attrs));
             return null;
         });
-        // The project's rebar drawing settings: {colorByDiameter?, textHeight?, balloon?, steel?, segmentLengths?, cover?}.
+        // The project's rebar drawing settings: {colorByDiameter?, textHeight?, balloon?, steel?, segmentLengths?, cover?, labels?: {bars?, stirrups?, columnBars?, runs?: a style patch | null}}.
         r.Command("setSettings", "Rebar settings", (ctx, a) =>
         {
             var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
@@ -282,12 +305,21 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             bool B(string k, bool d) => a[k] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : d;
             double Nn(string k, double d, double lo, double hi) { var v = Json.Number(a[k]) ?? d; if (v < lo || v > hi) throw new CommandException($"{k} is between {lo} and {hi}."); return v; }
             var steel = (string?)a["steel"] ?? now.Steel;
-            var next = new RebarSettings(B("colorByDiameter", now.ColorByDiameter), Nn("textHeight", now.TextHeight, 1, 10), Nn("balloon", now.Balloon, 3, 20), steel.Trim().Length > 0 ? steel.Trim() : now.Steel, B("segmentLengths", now.SegmentLengths), Nn("cover", now.Cover, 0, 0.2));
+            var labels = new Dictionary<string, JsonObject>(now.Labels);
+            if (a["labels"] is JsonObject lo)
+                foreach (var (k, v) in lo)
+                {
+                    if (!LabelStyle.Kinds.Contains(k)) throw new CommandException($"Labels are styled for bars, stirrups, columnBars and runs, not „{k}”.");
+                    if (LabelStyle.Patch(labels.GetValueOrDefault(k), v) is { } patched) labels[k] = patched; else labels.Remove(k);
+                }
+            var next = new RebarSettings(B("colorByDiameter", now.ColorByDiameter), Nn("textHeight", now.TextHeight, 1, 10), Nn("balloon", now.Balloon, 3, 20), steel.Trim().Length > 0 ? steel.Trim() : now.Steel, B("segmentLengths", now.SegmentLengths), Nn("cover", now.Cover, 0, 0.2), labels);
             var attrs = project.CloneAttrs();
             attrs[RebarSettings.Key] = next.ToJson();
             ctx.Replace(project.With(attrs: attrs));
             return null;
         });
+        // A generated group's label (a type's stirrups, a column's bars, a bar seen in another view) put where the user dragged it, on the view: {viewId, owner, key, at | null}.
+        r.Command("placeLabel", "Place label", (ctx, a) => { RebarLabels.Place(ctx, a); return null; });
 
         // A section across an element where it was clicked, inset beside the click in the same view (docs/plan-rebar.md):
         // {viewId (the host), id (the element), point: [x, y] (host coordinates), at?: [x, y] (where the inset goes), flip?, margin?, inset?: false (the section alone)}.
@@ -358,7 +390,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             }
             return o;
         });
-        r.Query("settings", (q, _) => RebarSettings.Of(q.Model).ToJson());
+        r.Query("settings", (q, _) => RebarSettings.Of(q.Model).Resolved());
         RebarBodies.Register(r);
     }
 
@@ -422,9 +454,16 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             }
             else attrs.Remove("hooks");
         }
+        // The label: where it was put ({at}) and its own style ({style: a patch, null to inherit}); null takes both away.
         if (a.ContainsKey("label"))
         {
-            if (a["label"] is JsonObject lo && lo["at"] is JsonArray) attrs["label"] = new JsonObject { ["at"] = Rebars.J(Args.Point(lo["at"], "the label's point")) };
+            if (a["label"] is JsonObject lo)
+            {
+                if (attrs["label"] is not JsonObject label) attrs["label"] = label = new JsonObject();
+                if (lo.ContainsKey("at")) { if (lo["at"] is JsonArray) label["at"] = Rebars.J(Args.Point(lo["at"], "the label's point")); else label.Remove("at"); }
+                if (lo.ContainsKey("style")) { if (LabelStyle.Patch(label["style"] as JsonObject, lo["style"]) is { } st) label["style"] = st; else label.Remove("style"); }
+                if (label.Count == 0) attrs.Remove("label");
+            }
             else attrs.Remove("label");
         }
         if (!run)
@@ -495,21 +534,26 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
     {
         var st = RebarSettings.Of(c.Model);
         var hidden = (c.View.Attrs["hiddenLayers"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        // Every group's bars first, its label asked for; the labels drawn together at the end, so they stack in the marks' order.
+        var marks = new List<ViewMark>();
+        var labels = new List<LabelRequest>();
         foreach (var e in Rebars.On(c.Model, c.View.Id, Rebars.Class))
-            if (BarMark(c, st, e, hidden) is { } mk) yield return mk;
+            if (BarMark(c, st, e, hidden, labels) is { } mk) marks.Add(mk);
         foreach (var e in Rebars.On(c.Model, c.View.Id, Rebars.RunClass))
-            if (RunMark(c, st, e, hidden) is { } mk) yield return mk;
+            if (RunMark(c, st, e, hidden, labels) is { } mk) marks.Add(mk);
         // The stirrups the beams' and columns' types are configured with, projected as the view lies to each axis.
-        foreach (var mk in TypeStirrups.Marks(c, st)) yield return mk;
+        marks.AddRange(TypeStirrups.Marks(c, st, labels));
         // Bars drawn on other views, where they stand in space: dots where they run into this view, lines along.
-        foreach (var mk in Rebar3D.Marks(c, st)) yield return mk;
-        foreach (var mk in ColumnBars.Marks(c, st)) yield return mk;
+        marks.AddRange(Rebar3D.Marks(c, st, labels));
+        marks.AddRange(ColumnBars.Marks(c, st, labels));
+        RebarLabels.Draw(c, st, labels);
+        return marks;
     }
 
     static double Width(RebarSpec s, ViewContext c) => Math.Max(0.25, s.Diameter * 1000 / c.Scale);
     static string Color(RebarSettings st, RebarSpec s) => st.ColorByDiameter ? RebarShapes.ColorOf(s.Diameter) : "#000000";
 
-    static ViewMark? BarMark(ViewContext c, RebarSettings st, Entity e, HashSet<string> hidden)
+    static ViewMark? BarMark(ViewContext c, RebarSettings st, Entity e, HashSet<string> hidden, List<LabelRequest> labels)
     {
         var s = Rebars.SpecOf(e);
         var layer = e.Str("layer") ?? RebarShapes.Def(s.Shape).Layer;
@@ -559,20 +603,14 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                 if (angle > 90 || angle <= -90) { angle += 180; n = -n; }
                 mk.Text(new PenText((p + q) * 0.5 + n * (1.5 * c.Mm), RebarShapes.Mm((q - p).Length), st.TextHeight * 0.8, angle, "middle", "bottom"), color);
             }
-        // The mark's balloon with its leader, and what the bar is.
-        var centre = RebarShapes.Place(s, at, new Vec2((ext.Min.X + ext.Max.X) / 2, ext.Max.Y));
-        var lab = Rebars.LabelAt(e) ?? centre + new Vec2(0, 10 * c.Mm);
-        var r = st.Balloon / 2 * c.Mm;
-        var balloon = ViewMark.Circle(lab, r, 32);
-        mk.Polyline(balloon, true, RebarShapes.AnnotationLayer, 0.35, color);
-        mk.Text(new PenText(lab, Rebars.Mark(e).ToString(CultureInfo.InvariantCulture), st.TextHeight, 0, "middle", "middle", true), color);
-        var target = Nearest(chain, lab, at);
-        if ((target - lab).Length > r + 1e-6) mk.Line(lab + (target - lab).Normalized() * r, target, RebarShapes.AnnotationLayer, 0.25, color);
-        mk.Text(new PenText(lab + new Vec2(r + 1.0 * c.Mm, 0), Rebars.Label(e, s), st.TextHeight, 0, "start", "middle"), color);
-        mk.Snaps.Add(lab);
+        // The mark's balloon with its leader, and what the bar is: drawn with the view's other labels, beside what was drawn here.
+        var drawn = mk.Lines.Where(l => l.Layer == layer).Select(l => (l.A, l.B)).ToList();
+        var style = LabelStyle.Resolve("bars", st, element: RebarLabels.StyleOf(e));
+        var text = style.Text(RebarLabels.FactsOf(e, s, st, Rebars.Pieces(e).ToString(CultureInfo.InvariantCulture)));
+        labels.Add(new LabelRequest(mk, e.Id, "label", style, text, Rebars.Mark(e), color, drawn, view == "section" ? [at] : [], view == "section" ? null : RebarLabels.AlongOf(drawn), Rebars.LabelAt(e)) { Own = true });
         // What the interface drags: the shape's grips where they stand now, its point and its label.
         var grips = new JsonArray(RebarShapes.Grips(s).Select(g => (JsonNode)new JsonObject { ["key"] = g.Key, ["at"] = Rebars.J(RebarShapes.Place(s, at, g.At)) }).ToArray());
-        mk.Data = new JsonObject { ["grips"] = grips, ["at"] = Rebars.J(at), ["label"] = Rebars.J(lab) };
+        mk.Data = new JsonObject { ["grips"] = grips, ["at"] = Rebars.J(at) };
         return mk;
     }
 
@@ -595,12 +633,12 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         return best;
     }
 
-    static ViewMark? RunMark(ViewContext c, RebarSettings st, Entity e, HashSet<string> hidden)
+    static ViewMark? RunMark(ViewContext c, RebarSettings st, Entity e, HashSet<string> hidden, List<LabelRequest> labels)
     {
         var s = Rebars.SpecOf(e);
         var layer = e.Str("layer") ?? RebarShapes.Def(s.Shape).Layer;
         if (hidden.Contains(layer)) return null;
-        var (path, positions, _, label) = Rebars.RunOf(e, s);
+        var (path, positions, stepText, _) = Rebars.RunOf(e, s);
         if (path.Length < 1e-6) return null;
         var mk = new ViewMark(e.Id);
         var color = Color(st, s);
@@ -629,22 +667,15 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var (p, n) = (path.At(st1, side + offset), path.TangentAt(st1).Perp);
             mk.Line(p - n * (1.5 * c.Mm), p + n * (1.5 * c.Mm), RebarShapes.AnnotationLayer, 0.35, color);
         }
+        // The label along the dimension line, drawn with the view's other labels; the line itself is what it stands beside.
         var mid = path.Length / 2;
         var tangent = path.TangentAt(mid);
-        var angle = Math.Atan2(tangent.Y, tangent.X) * 180 / Math.PI;
-        var up = tangent.Perp;
-        if (angle > 90 || angle <= -90) { angle += 180; up = -up; }
-        var textAt = path.At(mid, side + offset) + up * (1.0 * c.Mm);
-        mk.Text(new PenText(textAt, label, st.TextHeight, angle, "middle", "bottom"), color);
-        // The mark's balloon at the label, or where it was put.
-        var lab = Rebars.LabelAt(e) ?? path.At(mid, side + offset) - up * (st.Balloon * c.Mm);
-        var r = st.Balloon / 2 * c.Mm;
-        mk.Polyline(ViewMark.Circle(lab, r, 32), true, RebarShapes.AnnotationLayer, 0.35, color);
-        mk.Text(new PenText(lab, Rebars.Mark(e).ToString(CultureInfo.InvariantCulture), st.TextHeight, 0, "middle", "middle", true), color);
-        mk.Text(new PenText(lab + new Vec2(r + 1.0 * c.Mm, 0), $"{RebarShapes.Def(s.Shape).Label} {RebarShapes.Dia(s.Diameter)} L={RebarShapes.Mm(RebarShapes.Length(s))}", st.TextHeight, 0, "start", "middle"), color);
+        var style = LabelStyle.Resolve("runs", st, element: RebarLabels.StyleOf(e));
+        var text = style.Text(RebarLabels.FactsOf(e, s, st, (positions.Count * Rebars.Count(e)).ToString(CultureInfo.InvariantCulture), stepText));
+        var beside = Enumerable.Range(0, line.Count - 1).Select(i => (line[i], line[i + 1])).ToList();
+        labels.Add(new LabelRequest(mk, e.Id, "label", style, text, Rebars.Mark(e), color, beside, [], tangent.Normalized(), Rebars.LabelAt(e)) { Own = true, AutoSide = RebarLabels.SideOf(tangent.Perp * Math.Sign(offset)) });
         mk.Snaps.AddRange(positions.Select(p0 => path.PointAt(p0)));
-        mk.Snaps.Add(lab);
-        mk.Data = new JsonObject { ["positions"] = positions.Count, ["label"] = Rebars.J(lab) };
+        mk.Data = new JsonObject { ["positions"] = positions.Count };
         return mk;
     }
 
@@ -683,7 +714,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             attrs["end"] = Rebars.J(t.Point(Rebars.P(e.Attrs["end"])));
             if (t.Mirrored && e.NumOrNull("rise") is { } rise) attrs["rise"] = -rise;
         }
-        if (Rebars.LabelAt(e) is { } lab) attrs["label"] = new JsonObject { ["at"] = Rebars.J(t.Point(lab)) };
+        if (Rebars.LabelAt(e) is { } lab && attrs["label"] is JsonObject lo) lo["at"] = Rebars.J(t.Point(lab));
         return attrs;
     }
 }
