@@ -24,7 +24,11 @@ Kroge sættes i hver ende: 90°, 135° eller 180°, deres lige længde efter pra
 
 **Stang i snit** er en stang set fra enden: en prik i dens diameter, med den længde, den har langs stangen. **Samme stang i snit** sætter den valgte stang som prik et andet sted uden at tælle den to gange. En **Række** i egenskaberne gentager en stang for hver så mange millimeter, som stængerne i et lag i et tværsnit.
 
-Mærkets cirkel viser mærkenummeret, og hvad stangen er: `4Ø12 L=2450`. Træk cirklen, hvor den læses bedst. Længderne er de nominelle, målt på stangens akse mellem dens hjørner, med kroge; den udfoldede længde om bukningerne står i egenskabspanelet.
+Mærkets cirkel viser mærkenummeret, og hvad stangen er: `4Ø12 L=2450`. Træk cirklen, hvor den læses bedst.
+
+**Etikettens** stil siger, hvad den skriver, og hvor den står: dens dele i rækkefølge (antal, diameter, afstand, længde, mærke, stål, fri tekst), cirklen, om teksten løber vandret, langs stængerne eller i en vinkel, på hvilken side af stængerne den står og hvor mange millimeter fra dem, henvisningslinjen. Den sættes i **Armeringsindstillinger** for hver slags (stænger, bøjler på typen, søjlestænger, fordelinger), på en type ved siden af dens bøjler og på en stang i dens egenskaber; det mest specifikke vinder. En cirkel tegnes aldrig uden mærke. Etiketterne for en types bøjler, en søjles stænger og en stang set i en anden visning har også greb: træk i en, og den beholder den plads i den visning (**Sæt etiketten tilbage** i egenskaberne fortryder det); indtil da stables etiketter, der ville mødes, under hinanden i deres mærkers rækkefølge.
+
+Længderne er de nominelle, målt på stangens akse mellem dens hjørner, med kroge; den udfoldede længde om bukningerne står i egenskabspanelet.
 
 ## Bøjler på bjælke- eller søjletypen
 
@@ -42,4 +46,4 @@ En bjælkes **længdestænger** sidder ikke på typen (de løber over flere fag)
 
 **Armeringsliste** laver en liste over hver stang efter mærke: diameter, form, antal, længde af én, samlet længde og masse, med summer pr. diameter. Et mærke, hvis stænger afviger i diameter eller længde, noteres. Det er en liste som de andre: på ark, i CSV og XLSX.
 
-**Armeringsindstillinger** gemmer projektets valg: en farve pr. diameter, tekst- og cirkelstørrelser på papir, stålet, dæklaget og segmentlængderne skrevet langs stængerne.
+**Armeringsindstillinger** gemmer projektets valg: en farve pr. diameter, tekst- og cirkelstørrelser på papir, stålet, dæklaget, segmentlængderne skrevet langs stængerne og etiketternes stil for hver slags.

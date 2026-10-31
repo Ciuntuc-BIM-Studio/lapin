@@ -24,7 +24,11 @@ Hooks are set on each end: 90°, 135° or 180°, their straight length by practi
 
 **Bar in section** is a bar seen end on: a dot of its diameter, with the length it has along the bar. **Same bar in section** puts the selected bar as a dot elsewhere, without counting it twice. An **Array** in the properties repeats a bar every so many millimetres, as the bars of a row in a cross-section.
 
-The mark's balloon shows the mark number and what the bar is: `4Ø12 L=2450`. Drag the balloon where it reads best. Lengths are the nominal ones, measured on the bar's axis between its corners, hooks included; the developed length round the bends is told in the properties panel.
+The mark's balloon shows the mark number and what the bar is: `4Ø12 L=2450`. Drag the balloon where it reads best.
+
+The **label**'s style says what it writes and where it stands: its parts in order (count, diameter, step, length, mark, steel, free text), the balloon, whether the text runs horizontal, along the bars or at an angle, the side of the bars it stands on and how far off them, the leader. It is set in **Rebar settings** for each kind (bars, stirrups on the type, column bars, distributions), on a type beside its stirrups, and on a bar in its properties, the most specific winning. A balloon is never drawn without a mark. The labels of a type's stirrups, of a column's bars and of a bar seen in another view have grips too: drag one and it keeps that place on that view (**Put the label back** in the properties undoes it); until then, labels that would meet stack under one another in the order of their marks.
+
+Lengths are the nominal ones, measured on the bar's axis between its corners, hooks included; the developed length round the bends is told in the properties panel.
 
 ## Stirrups on the beam's or column's type
 
@@ -42,4 +46,4 @@ A beam's **longitudinal bars** are not on the type (they run over several spans)
 
 **Bar schedule** makes a schedule of every bar by mark: diameter, shape, number, length of one, total length and mass, with the totals by diameter. A mark whose bars differ in diameter or length is noted. It is a schedule like the others: on sheets, in CSV and XLSX.
 
-**Rebar settings** holds the project's choices: a colour for each diameter, the text and balloon sizes on paper, the steel, the cover, and the segment lengths written along the bars.
+**Rebar settings** holds the project's choices: a colour for each diameter, the text and balloon sizes on paper, the steel, the cover, the segment lengths written along the bars, and the labels' style for each kind.

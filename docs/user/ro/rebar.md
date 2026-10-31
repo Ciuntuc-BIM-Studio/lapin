@@ -24,7 +24,11 @@ Ciocurile se dau la fiecare capăt: 90°, 135° sau 180°, cu lungimea dreaptă 
 
 **Bară în secțiune** e o bară văzută din capăt: un punct de diametrul ei, cu lungimea pe care o are de-a lungul barei. **Aceeași bară în secțiune** pune bara selectată ca punct în altă parte, fără s-o numere de două ori. **Repetare**, în proprietăți, repetă o bară la câțiva milimetri, ca barele unui rând dintr-o secțiune transversală.
 
-Balonul mărcii arată numărul mărcii și ce e bara: `4Ø12 L=2450`. Tragi balonul unde se citește mai bine. Lungimile sunt cele nominale, măsurate pe axa barei între colțuri, cu ciocurile; lungimea desfășurată, pe îndoituri, e spusă în panoul de proprietăți.
+Balonul mărcii arată numărul mărcii și ce e bara: `4Ø12 L=2450`. Tragi balonul unde se citește mai bine.
+
+Stilul **etichetei** spune ce scrie și unde stă: jetoanele ei în ordine (număr, diametru, pas, lungime, marcă, oțel, text liber), balonul, dacă textul merge orizontal, pe direcția barelor sau la un unghi, pe ce parte a barelor stă și la câți milimetri de ele, linia de indicație. Se dă în **Setări armare** pentru fiecare fel (bare, etrierii de pe tip, barele stâlpului, distribuții), pe un tip lângă etrierii lui și pe o bară în proprietățile ei, cel mai specific câștigând. Un balon nu se desenează niciodată fără marcă. Etichetele etrierilor de pe tip, ale barelor stâlpului și ale unei bare văzute în altă vedere au și ele gripuri: tragi una și își ține locul pe acea vedere (**Pune eticheta la loc** din proprietăți o întoarce); până atunci, etichetele care s-ar întâlni se înșiră una sub alta în ordinea mărcilor.
+
+Lungimile sunt cele nominale, măsurate pe axa barei între colțuri, cu ciocurile; lungimea desfășurată, pe îndoituri, e spusă în panoul de proprietăți.
 
 ## Etrierii pe tipul de grindă sau de stâlp
 
@@ -42,4 +46,4 @@ Etrierii nu se desenează unul câte unul: țin de **tip**. În Structură → T
 
 **Extras de armare** face un tabel cu fiecare bară pe mărci: diametru, formă, număr, lungimea uneia, lungimea totală și masa, cu totalurile pe diametre. O marcă ale cărei bare diferă la diametru sau lungime e notată. E un tabel ca celelalte: pe planșe, în CSV și XLSX.
 
-**Setări armare** ține alegerile proiectului: o culoare pentru fiecare diametru, mărimile textului și ale balonului pe hârtie, oțelul, acoperirea și lungimile segmentelor scrise pe bare.
+**Setări armare** ține alegerile proiectului: o culoare pentru fiecare diametru, mărimile textului și ale balonului pe hârtie, oțelul, acoperirea, lungimile segmentelor scrise pe bare și stilul etichetelor pentru fiecare fel.

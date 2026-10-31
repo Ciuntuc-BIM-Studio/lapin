@@ -24,7 +24,11 @@ Les crochets se règlent à chaque extrémité : 90°, 135° ou 180°, leur long
 
 **Barre en coupe** est une barre vue en bout : un point de son diamètre, avec la longueur qu’elle a le long de la barre. **Même barre en coupe** place la barre sélectionnée comme point ailleurs, sans la compter deux fois. Un **Réseau** dans les propriétés répète une barre tous les tant de millimètres, comme les barres d’un lit dans une coupe transversale.
 
-La bulle du repère montre le numéro du repère et ce qu’est la barre : `4Ø12 L=2450`. Tirez la bulle là où elle se lit le mieux. Les longueurs sont les nominales, mesurées sur l’axe de la barre entre ses angles, crochets compris ; la longueur développée autour des pliages est indiquée dans le panneau des propriétés.
+La bulle du repère montre le numéro du repère et ce qu’est la barre : `4Ø12 L=2450`. Tirez la bulle là où elle se lit le mieux.
+
+Le style de l’**étiquette** dit ce qu’elle écrit et où elle se place : ses parties dans l’ordre (nombre, diamètre, pas, longueur, repère, acier, texte libre), la bulle, si le texte court horizontal, le long des barres ou en angle, de quel côté des barres elle se place et à combien de millimètres, la ligne de rappel. Il se règle dans **Réglages du ferraillage** pour chaque sorte (barres, cadres du type, barres du poteau, répartitions), sur un type à côté de ses cadres et sur une barre dans ses propriétés ; le plus précis l’emporte. Une bulle n’est jamais dessinée sans repère. Les étiquettes des cadres d’un type, des barres d’un poteau et d’une barre vue dans une autre vue ont aussi des poignées : glissez-en une et elle garde cette place dans cette vue (**Remettre l’étiquette en place** dans les propriétés l’annule) ; d’ici là, les étiquettes qui se rencontreraient s’empilent l’une sous l’autre dans l’ordre de leurs repères.
+
+Les longueurs sont les nominales, mesurées sur l’axe de la barre entre ses angles, crochets compris ; la longueur développée autour des pliages est indiquée dans le panneau des propriétés.
 
 ## Cadres sur le type de poutre ou de poteau
 
@@ -42,4 +46,4 @@ Les **barres longitudinales** d’une poutre ne sont pas sur le type (elles cour
 
 **Nomenclature d’acier** fait une nomenclature de chaque barre par repère : diamètre, forme, nombre, longueur d’une barre, longueur totale et masse, avec les totaux par diamètre. Un repère dont les barres diffèrent en diamètre ou en longueur est noté. C’est une nomenclature comme les autres : sur les feuilles, en CSV et XLSX.
 
-**Réglages du ferraillage** garde les choix du projet : une couleur par diamètre, les tailles du texte et de la bulle sur papier, l’acier, l’enrobage et les longueurs des segments écrites le long des barres.
+**Réglages du ferraillage** garde les choix du projet : une couleur par diamètre, les tailles du texte et de la bulle sur papier, l’acier, l’enrobage, les longueurs des segments écrites le long des barres et le style des étiquettes pour chaque sorte.

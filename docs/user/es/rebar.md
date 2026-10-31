@@ -24,7 +24,11 @@ Las patillas se fijan en cada extremo: 90°, 135° o 180°, con la longitud rect
 
 **Barra en sección** es una barra vista de frente: un punto de su diámetro, con la longitud que tiene a lo largo de la barra. **La misma barra en sección** pone la barra seleccionada como punto en otro lugar, sin contarla dos veces. Una **Matriz** en las propiedades repite una barra cada tantos milímetros, como las barras de una fila en una sección transversal.
 
-El globo de la marca muestra el número de marca y qué es la barra: `4Ø12 L=2450`. Arrastra el globo donde mejor se lea. Las longitudes son las nominales, medidas en el eje de la barra entre sus esquinas, con las patillas; la longitud desarrollada por los dobleces se indica en el panel de propiedades.
+El globo de la marca muestra el número de marca y qué es la barra: `4Ø12 L=2450`. Arrastra el globo donde mejor se lea.
+
+El estilo de la **etiqueta** dice qué escribe y dónde se coloca: sus partes en orden (número, diámetro, paso, longitud, marca, acero, texto libre), el globo, si el texto va horizontal, a lo largo de las barras o en ángulo, a qué lado de las barras se coloca y a cuántos milímetros de ellas, la línea de referencia. Se fija en **Ajustes de armado** para cada clase (barras, estribos del tipo, barras del pilar, distribuciones), en un tipo junto a sus estribos y en una barra en sus propiedades; gana el más específico. Un globo nunca se dibuja sin marca. Las etiquetas de los estribos de un tipo, de las barras de un pilar y de una barra vista en otra vista también tienen pinzamientos: arrastra una y conserva ese sitio en esa vista (**Devolver la etiqueta a su sitio** en las propiedades lo deshace); hasta entonces, las etiquetas que coincidirían se apilan una bajo otra en el orden de sus marcas.
+
+Las longitudes son las nominales, medidas en el eje de la barra entre sus esquinas, con las patillas; la longitud desarrollada por los dobleces se indica en el panel de propiedades.
 
 ## Estribos en el tipo de viga o de pilar
 
@@ -42,4 +46,4 @@ Las **barras longitudinales** de una viga no van en el tipo (corren sobre varios
 
 **Cuadro de armado** hace un cuadro con cada barra por marca: diámetro, forma, número, longitud de una, longitud total y masa, con los totales por diámetro. Una marca cuyas barras difieren en diámetro o longitud queda anotada. Es un cuadro como los demás: en planos, en CSV y XLSX.
 
-**Ajustes de armado** guarda las elecciones del proyecto: un color para cada diámetro, los tamaños del texto y del globo en papel, el acero, el recubrimiento y las longitudes de los tramos escritas en las barras.
+**Ajustes de armado** guarda las elecciones del proyecto: un color para cada diámetro, los tamaños del texto y del globo en papel, el acero, el recubrimiento, las longitudes de los tramos escritas en las barras y el estilo de las etiquetas para cada clase.

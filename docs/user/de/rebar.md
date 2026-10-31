@@ -24,7 +24,11 @@ Haken werden an jedem Ende gesetzt: 90°, 135° oder 180°, ihre gerade Länge n
 
 **Stab im Schnitt** ist ein Stab von vorn: ein Punkt in seinem Durchmesser, mit der Länge, die er entlang des Stabs hat. **Derselbe Stab im Schnitt** setzt den gewählten Stab anderswo als Punkt, ohne ihn doppelt zu zählen. Eine **Reihe** in den Eigenschaften wiederholt einen Stab alle so viele Millimeter, wie die Stäbe einer Lage im Querschnitt.
 
-Der Positionskreis zeigt die Positionsnummer und was der Stab ist: `4Ø12 L=2450`. Ziehen Sie den Kreis dorthin, wo er am besten lesbar ist. Die Längen sind die Nennlängen, auf der Stabachse zwischen den Ecken gemessen, mit Haken; die abgewickelte Länge um die Biegungen steht im Eigenschaftenfenster.
+Der Positionskreis zeigt die Positionsnummer und was der Stab ist: `4Ø12 L=2450`. Ziehen Sie den Kreis dorthin, wo er am besten lesbar ist.
+
+Der Stil der **Beschriftung** sagt, was sie schreibt und wo sie steht: ihre Teile der Reihe nach (Anzahl, Durchmesser, Abstand, Länge, Position, Stahl, freier Text), der Positionskreis, ob der Text waagerecht, entlang der Stäbe oder im Winkel läuft, auf welcher Seite der Stäbe sie steht und wie viele Millimeter davon, die Hinweislinie. Er wird in den **Bewehrungseinstellungen** je Art gesetzt (Stäbe, Bügel am Typ, Stützenstäbe, Verteilungen), an einem Typ neben seinen Bügeln und an einem Stab in seinen Eigenschaften; das Genaueste gewinnt. Ein Positionskreis wird nie ohne Position gezeichnet. Die Beschriftungen der Bügel eines Typs, der Stäbe einer Stütze und eines in einer anderen Ansicht gesehenen Stabs haben ebenfalls Griffe: Ziehen Sie eine, und sie behält diesen Platz in dieser Ansicht (**Beschriftung zurücksetzen** in den Eigenschaften macht es rückgängig); bis dahin stapeln sich Beschriftungen, die sich träfen, in der Reihenfolge ihrer Positionen untereinander.
+
+Die Längen sind die Nennlängen, auf der Stabachse zwischen den Ecken gemessen, mit Haken; die abgewickelte Länge um die Biegungen steht im Eigenschaftenfenster.
 
 ## Bügel am Balken- oder Stützentyp
 
@@ -42,4 +46,4 @@ Die **Längsstäbe** eines Balkens liegen nicht am Typ (sie laufen über mehrere
 
 **Stahlliste** macht eine Liste jedes Stabs nach Position: Durchmesser, Form, Anzahl, Länge eines Stabs, Gesamtlänge und Masse, mit den Summen je Durchmesser. Eine Position, deren Stäbe in Durchmesser oder Länge abweichen, wird vermerkt. Es ist eine Liste wie die anderen: auf Plänen, in CSV und XLSX.
 
-**Bewehrungseinstellungen** hält die Wahl des Projekts: eine Farbe je Durchmesser, die Text- und Kreisgrößen auf dem Papier, den Stahl, die Betondeckung und die an den Stäben angeschriebenen Teillängen.
+**Bewehrungseinstellungen** hält die Wahl des Projekts: eine Farbe je Durchmesser, die Text- und Kreisgrößen auf dem Papier, den Stahl, die Betondeckung, die an den Stäben angeschriebenen Teillängen und den Stil der Beschriftungen je Art.
