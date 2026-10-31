@@ -41,15 +41,16 @@ public static class RetainingWalls
         var levels = new List<Level>();
         for (var i = 0; i < c.Segments; i++)
         {
-            var (p, q) = (c.Path[i], c.Path[i + 1]);
-            var left = c.Direction(i).Perp;
+            var (a, b) = (c.StationOf(i), c.StationOf(i + 1));
+            var midStation = (a + b) / 2;
+            var left = c.DirectionAt(midStation).Perp;
             var high = s.HighOnLeft ? 1.0 : -1.0;
-            var mid = (p + q) * 0.5;
+            var mid = c.PointAt(midStation);
             var probe = s.Thickness / 2 + 0.5;
             var zHigh = ground(mid + left * (high * probe)) ?? fallback;
             var zLow = ground(mid - left * (high * probe)) ?? fallback;
             var bottom = Math.Min(zLow, zHigh) - s.Embed - s.FootingThickness;
-            levels.Add(new(s.TopElevation ?? zHigh + s.Height, bottom, zHigh, (q - p).Length));
+            levels.Add(new(s.TopElevation ?? zHigh + s.Height, bottom, zHigh, b - a));
         }
         var spec = CorridorSpec.Of(e);
         Func<double, double>? red = spec.Mode == "design" && s.TopElevation == null ? Corridors.RedLine(m, e, c) : null;
@@ -91,7 +92,7 @@ public static class RetainingWalls
             var (a, b) = Corridors.LineAcross(c, j, s.Thickness / 2, -s.Thickness / 2);
             plan.Add(new("cut", false, [a, b]));
         }
-        return new ElementGeometry(parts, plan, [c.Path[0], c.Path[^1]]);
+        return new ElementGeometry(parts, plan, [c.Path[0], c.Path[^1]], c.Problem is { } why ? [why] : null);
     }
 
     public static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)

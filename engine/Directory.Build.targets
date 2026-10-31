@@ -16,7 +16,7 @@
   -->
   <Target Name="CopyLapinModule" AfterTargets="Build" Condition="'$(LapinModuleId)' != ''">
     <ItemGroup>
-      <_LapinModuleFiles Include="$(OutDir)*.dll;$(OutDir)*.pdb" Exclude="$(OutDir)Lapin.Model.*;$(OutDir)Lapin.Platform.*;$(OutDir)Lapin.Geometry.*;$(OutDir)Lapin.Booleans.*" />
+      <_LapinModuleFiles Include="$(OutDir)*.dll;$(OutDir)*.pdb" Exclude="$(OutDir)Lapin.Model.*;$(OutDir)Lapin.Platform.*;$(OutDir)Lapin.Geometry.*;$(OutDir)Lapin.Booleans.*;$(OutDir)Lapin.Alignments.*" />
     </ItemGroup>
     <RemoveDir Directories="$(LapinModulesDir)$(LapinModuleId)" />
     <Copy SourceFiles="@(_LapinModuleFiles);$(MSBuildProjectDirectory)/module.json"

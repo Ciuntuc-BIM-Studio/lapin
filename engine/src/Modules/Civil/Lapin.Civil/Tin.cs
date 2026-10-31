@@ -106,7 +106,7 @@ public sealed record Tin(IReadOnlyList<Vec3> Points, IReadOnlyList<(int A, int B
     static double Cross(Vec3 a, Vec3 b, Vec3 c) => (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
 
     /// <summary>
-    /// Survey points, one a line, split on spaces, commas, semicolons or tabs;
+    /// Survey points, one a line, split on spaces, commas, semicolons or tabs (with ';' or tabs between them, the commas are decimals);
     /// lines starting with # or // skipped. Four leading numbers are PENZD
     /// (id, northing, easting, elevation, description): x is the easting.
     /// Otherwise three are x, y, z.
@@ -118,7 +118,10 @@ public sealed record Tin(IReadOnlyList<Vec3> Points, IReadOnlyList<(int A, int B
         {
             var line = raw.Trim();
             if (line.Length == 0 || line.StartsWith('#') || line.StartsWith("//")) continue;
-            var f = line.Split([' ', ',', ';', '\t'], StringSplitOptions.RemoveEmptyEntries);
+            // ';' or tabs between the fields: the commas are decimals (a European export).
+            var f = line.Contains(';') || line.Contains('\t')
+                ? line.Split([';', '\t'], StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().Replace(',', '.')).ToArray()
+                : line.Split([' ', ',', ';', '\t'], StringSplitOptions.RemoveEmptyEntries);
             double? N(int i) => i < f.Length && double.TryParse(f[i], NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && double.IsFinite(v) ? v : null;
             if (N(0) is not null && N(1) is { } n && N(2) is { } e && N(3) is { } z) o.Add(new Vec3(e, n, z));
             else if (N(0) is { } x && N(1) is { } y && N(2) is { } zz) o.Add(new Vec3(x, y, zz));

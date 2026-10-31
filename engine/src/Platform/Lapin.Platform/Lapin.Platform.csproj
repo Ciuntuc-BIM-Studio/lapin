@@ -10,5 +10,7 @@
     <ProjectReference Include="$(LapinGeometryDir)Lapin.Geometry/Lapin.Geometry.csproj" />
     <!-- Booleans by manifold (Apache-2.0), its native library beside the engine. -->
     <ProjectReference Include="$(LapinGeometryDir)Lapin.Booleans/Lapin.Booleans.csproj" />
+    <!-- IFC 4.3 alignments: roads' and modules' axes, and the curve segments the IFC export writes (IIfcAlignments). -->
+    <ProjectReference Include="$(LapinGeometryDir)Lapin.Alignments/Lapin.Alignments.csproj" />
   </ItemGroup>
 </Project>

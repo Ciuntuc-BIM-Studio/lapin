@@ -12,14 +12,14 @@ import { useUi } from '../../app/store';
 import { isDitch } from './prefs';
 
 /** Opens the corridor configurator on the element selected. */
-function Configure() {
-  return <><dt /><dd><button type="button" className="btn compact" onClick={() => useUi.setState({ dialog: 'corridor' })}>Configurator…</button> <span className="muted small">section, profile, stations</span></dd></>;
+export function Configure() {
+  return <><dt /><dd><button type="button" className="btn compact" title="section, profile, stations" onClick={() => useUi.setState({ dialog: 'corridor' })}>Configurator…</button></dd></>;
 }
 
 const mm = (v: unknown, d = 0) => (typeof v === 'number' ? Math.round(v * 1000) : Math.round(d * 1000));
 
 /** A length in mm committed on Enter or blur (empty: the fallback goes back). */
-function Mm({ value, fallback = 0, onCommit, min }: { value: unknown; fallback?: number; onCommit: (m: number) => void; min?: number }) {
+export function Mm({ value, fallback = 0, onCommit, min }: { value: unknown; fallback?: number; onCommit: (m: number) => void; min?: number }) {
   const shown = String(mm(value, fallback));
   const [text, setText] = useState(shown);
   useEffect(() => setText(shown), [shown]);

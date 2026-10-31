@@ -50,6 +50,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Quantities(IfcClass.Pavement, Paths.Quantities);
         r.Geometry(RetainingWalls.Class, (e, m, _) => RetainingWalls.Geometry(e, m));
         r.Quantities(RetainingWalls.Class, RetainingWalls.Quantities);
+        LineworkElements.Register(r);
         r.Geometry(Plantings.Class, (e, m, _) => Plantings.Geometry(e, m));
         r.Quantities(Plantings.Class, Plantings.Quantities);
         r.Service<IViewAnnotations>(this);

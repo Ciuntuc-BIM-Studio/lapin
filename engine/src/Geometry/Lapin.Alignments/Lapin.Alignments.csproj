@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Alignments as IFC 4.3 describes them: horizontal, vertical and cant layers
+    of semantic segments evaluated (clothoids, Bloss, Helmert, cosine, sine,
+    Viennese bends, cubics), stationing with station equations, PI alignments,
+    alignments fitted to a survey and realigned within its shifts, and the
+    geometric representation as IFC curve segments. Metres and radians.
+    Roads' and the railway's axes. Written in Lapin, shared through bubble-core
+    from 28.10.2026, back in Lapin on its own kernel on 31.10.2026; the reader of
+    IfcAlignment from a file is in Lapin.Ifc (it needs the STEP reader).
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../Lapin.Geometry/Lapin.Geometry.csproj" />
+  </ItemGroup>
+</Project>

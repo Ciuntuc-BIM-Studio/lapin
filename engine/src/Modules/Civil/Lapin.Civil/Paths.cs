@@ -134,7 +134,7 @@ public static class Paths
             parts.Add(new GeometryPart(name, material != null ? Materials.ColorOf(m, material) : color, Combine(list, key), material, key));
         }
         var t = TemplateOf(e);
-        var plan = new List<PlanItem> { new("heavy", true, Corridors.Outline(c, t.Left, -t.Right)), new("symbol", false, c.Path) };
+        var plan = new List<PlanItem> { new("heavy", true, Corridors.Outline(c, t.Left, -t.Right)), new("symbol", false, c.Axis()) };
         // The carriageway's edges inside the outline, where something stands beside it.
         if (t.L.Extent > 0) plan.Add(new("symbol", false, OffsetLine(c, t.Half)));
         if (t.R.Extent > 0) plan.Add(new("symbol", false, OffsetLine(c, -t.Half)));
@@ -144,11 +144,10 @@ public static class Paths
             var (a, b) = Corridors.LineAcross(c, j, t.Left, -t.Right);
             plan.Add(new("symbol", false, [a, b]));
         }
-        return new ElementGeometry(parts, plan, [c.Path[0], c.Path[^1]]);
+        return new ElementGeometry(parts, plan, [c.Path[0], c.Path[^1]], c.Problem is { } why ? [why] : null);
     }
 
-    static List<Vec2> OffsetLine(Chain c, double offset) =>
-        c.Path.Select((p, i) => p + c.Across(c.StationOf(i), Math.Min(i, c.Segments - 1)) * offset).ToList();
+    static List<Vec2> OffsetLine(Chain c, double offset) => c.Offset(offset);
 
     /// <summary>Several solids as one part (a path's segments, a planting's trees).</summary>
     public static Solid Combine(IReadOnlyList<Solid> solids, string tag)

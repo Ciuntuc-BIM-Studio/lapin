@@ -1,3 +1,4 @@
+using Lapin.Alignments;
 using Lapin.Geometry;
 using Lapin.Model;
 

@@ -16,13 +16,21 @@ public static class CorridorCommands
 {
     public static void Register(IModuleRegistry r)
     {
-        // Any of: stationStart, interval, sections [stations], joints {every, width, at [stations]}, profile {mode: ground|design, ground: existing|proposed, pvis [[station, elevation, curve length]]}.
+        // Any of: stationStart, interval, sections [stations], joints {every, width, at [stations]}, profile {mode: ground|design, ground: existing|proposed, pvis [[station, elevation, curve length]]},
+        // curves [[radius, spiral in, spiral out] per vertex of the path] (an empty list: a plain polyline).
         r.Command("setCorridor", "Change stations and profile", (ctx, a) =>
         {
             var e = Element(ctx.Model, (string?)a["id"]);
             var spec = CorridorSpec.Of(e);
             var o = spec.ToJson();
             if (Json.Number(a["stationStart"]) is { } start) o["stationStart"] = start;
+            if (a["curves"] is JsonArray cv)
+            {
+                var curves = CorridorSpec.ReadCurves(cv);
+                var path = Terrains.Contour(e, "path");
+                if (curves.Any(c => !c.IsCorner) && Lapin.Alignments.PiAlignment.Problem(Lapin.Alignments.PiAlignment.Of(path, curves)) is { } why) throw new CommandException(why);
+                o["curves"] = CorridorSpec.CurvesJson(curves);
+            }
             if (Json.Number(a["interval"]) is { } every)
             {
                 if (!(every >= 0.5)) throw new CommandException("Stations need an interval of 0.5 m at least.");
@@ -57,6 +65,7 @@ public static class CorridorCommands
             var attrs = e.CloneAttrs();
             attrs["corridor"] = o;
             ctx.Replace(e.With(attrs: attrs));
+            CorridorKinds.Of(e)?.AfterChange(ctx, e.Id);
             return null;
         });
 
@@ -96,6 +105,7 @@ public static class CorridorCommands
             return new JsonObject
             {
                 ["kind"] = Corridors.KindOf(e), ["start"] = c.Start, ["end"] = c.End, ["length"] = c.Length,
+                ["curved"] = c.Alignment != null, ["problem"] = c.Problem,
                 ["left"] = left, ["right"] = right,
                 ["stations"] = Nums(c.Segments > 0 ? Corridors.Stations(c, spec) : []),
                 ["vertices"] = Nums(Enumerable.Range(0, c.Path.Count).Select(c.StationOf)),
@@ -115,9 +125,8 @@ public static class CorridorCommands
             var (parts, left, right) = Corridors.Section(q.Model, e, station);
             var margin = Math.Max(1.5, (left - right) * 0.2);
             var (l, r2) = (left + margin, right - margin);
-            var seg = c.SegmentAt(station);
             var p = c.PointAt(station);
-            var d = c.Direction(seg);
+            var d = c.DirectionAt(station);
             var (from, to) = Corridors.LineAcross(c, station, l, r2);
             return new JsonObject
             {
@@ -125,7 +134,7 @@ public static class CorridorCommands
                 ["at"] = new JsonArray(p.X, p.Y), ["dir"] = new JsonArray(d.X, d.Y),
                 ["left"] = left, ["right"] = right,
                 ["line"] = new JsonObject { ["start"] = new JsonArray(from.X, from.Y), ["end"] = new JsonArray(to.X, to.Y) },
-                ["parts"] = new JsonArray(parts.Select(x => (JsonNode)new JsonObject { ["key"] = x.Key, ["polygon"] = Pairs(x.Polygon) }).ToArray()),
+                ["parts"] = new JsonArray(parts.Select(x => { var (material, hatch) = SectionLooks.Of(q.Model, e, x.Key); return (JsonNode)new JsonObject { ["key"] = x.Key, ["polygon"] = Pairs(x.Polygon), ["material"] = material, ["hatch"] = hatch }; }).ToArray()),
                 ["existing"] = Pairs(Corridors.GroundAcross(c, Corridors.GroundOf(q.Model, e, "existing"), station, l, r2)),
                 ["proposed"] = Pairs(Corridors.GroundAcross(c, Corridors.GroundOf(q.Model, e, "proposed"), station, l, r2)),
             };

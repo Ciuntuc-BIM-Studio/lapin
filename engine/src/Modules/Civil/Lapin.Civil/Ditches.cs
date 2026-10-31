@@ -79,10 +79,10 @@ public static class Ditches
     {
         var c = Corridors.ChainOf(e);
         if (c.Segments == 0) yield break;
-        yield return new PlanItem("symbol", false, c.Path);
+        yield return new PlanItem("symbol", false, c.Axis());
         var half = TopWidth(e) / 2;
         foreach (var off in new[] { half, -half })
-            yield return new PlanItem("heavy", false, c.Path.Select((p, i) => p + c.Across(c.StationOf(i), Math.Min(i, c.Segments - 1)) * off).ToList());
+            yield return new PlanItem("heavy", false, c.Offset(off));
     }
 
     public static JsonObject Attrs(IReadOnlyList<Vec2> path, double depth, double bottom, double slope) => new()

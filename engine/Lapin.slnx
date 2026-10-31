@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/" />
   <Folder Name="/src/Geometry/">
+    <Project Path="src/Geometry/Lapin.Alignments/Lapin.Alignments.csproj" />
     <Project Path="src/Geometry/Lapin.Booleans/Lapin.Booleans.csproj" />
     <Project Path="src/Geometry/Lapin.Geometry/Lapin.Geometry.csproj" />
   </Folder>

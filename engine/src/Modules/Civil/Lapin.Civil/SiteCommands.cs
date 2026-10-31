@@ -108,14 +108,16 @@ public static class SiteCommands
             return Analysis.Of(q.Model, t, kind) is { } r ? Analysis.Legend(r) : null;
         });
 
-        // The terrains as LandXML (those named, else all), surveyed elevations.
+        // The terrains and the alignments (the tracks and their branches) as LandXML — those named, else all; surveyed elevations.
         r.Query("landXml", (q, a) =>
         {
             var ids = a["ids"] is JsonArray arr ? arr.Select(x => (string?)x).OfType<string>().ToHashSet() : null;
             var terrains = q.Model.OfClass(IfcClass.GeographicElement).Where(t => t.PredefinedType == Terrains.Predefined && (ids == null || ids.Contains(t.Id))).ToList();
-            if (terrains.Count == 0) throw new CommandException("The project has no terrain to export.");
-            var text = LandXml.Write(terrains.Select(t => (t.Name, Terrains.Of(t).Tin, t.Num("datum"))).ToList());
-            return new JsonObject { ["name"] = (terrains.Count == 1 ? terrains[0].Name : "terrain") + ".xml", ["text"] = text, ["surfaces"] = terrains.Count };
+            var alignments = LandXml.AlignmentSources.SelectMany(s => s(q.Model)).Where(x => ids == null || ids.Contains(x.Id)).ToList();
+            if (terrains.Count == 0 && alignments.Count == 0) throw new CommandException("The project has no terrain or alignment to export.");
+            var text = LandXml.Write(terrains.Select(t => (t.Name, Terrains.Of(t).Tin, t.Num("datum"))).ToList(), alignments);
+            var name = terrains.Count == 1 && alignments.Count == 0 ? terrains[0].Name : alignments.Count == 1 && terrains.Count == 0 ? alignments[0].Name : terrains.Count > 0 && alignments.Count == 0 ? "terrain" : "project";
+            return new JsonObject { ["name"] = name + ".xml", ["text"] = text, ["surfaces"] = terrains.Count, ["alignments"] = alignments.Count };
         });
 
         // A ditch along a path, its bottom a depth under the ground, voiding the terrain it runs in.
@@ -142,22 +144,7 @@ public static class SiteCommands
         });
 
         // A path (an alley, a paved way) along a polyline, in the ground of the terrain under its start.
-        r.Command("addPath", "Path", (ctx, a) =>
-        {
-            var path = Polyline(a);
-            var storeyId = StoreyId(ctx.Model, a);
-            var terrain = ctx.Model.OfClass(IfcClass.GeographicElement).FirstOrDefault(t => t.PredefinedType == Terrains.Predefined && Terrains.Of(t).ElevationAt(path[0].X, path[0].Y) != null);
-            var c = new Paths.Courses(Json.Number(a["width"]) ?? 1.5, Json.Number(a["surfaceThickness"]) ?? 0.06, Json.Number(a["baseThickness"]) ?? 0.2,
-                a["kerb"] is JsonValue kv && kv.TryGetValue<bool>(out var kerb) && kerb, Json.Number(a["kerbHeight"]) ?? 0.1, Json.Number(a["kerbWidth"]) ?? 0.1);
-            var surface = Materials.Ensure(ctx, (string?)a["surfaceMaterial"] ?? "Paving stone", Paths.Color);
-            var @base = Materials.Ensure(ctx, (string?)a["baseMaterial"] ?? "Gravel", "#a39888");
-            var n = ctx.Model.OfClass(IfcClass.Pavement).Count() + 1;
-            var e = new Entity(ctx.NewId(), IfcClass.Pavement, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Path {n}", CorridorCommands.WithTemplate(Paths.Attrs(path, c, surface.Id, @base.Id), a), "FLEXIBLE");
-            ctx.Add(e);
-            Spatial.Contain(ctx, terrain != null ? Spatial.StoreyOf(ctx.Model, terrain.Id)?.Id ?? storeyId : storeyId, e.Id);
-            if (terrain != null) ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelVoidsElement, terrain.Id, [e.Id]));
-            return new JsonObject { ["id"] = e.Id };
-        });
+        r.Command("addPath", "Path", AddPath);
 
         r.Command("updatePath", "Change path", (ctx, a) =>
         {
@@ -262,5 +249,23 @@ public static class SiteCommands
         foreach (var p in pts) if (clean.Count == 0 || (p - clean[^1]).Length > 1e-6) clean.Add(p);
         if (clean.Count < 2) throw new CommandException("The path needs two points at least.");
         return clean;
+    }
+
+    /// <summary>A path along points (a road, by its template): the command, and what the civil linework makes of a line.</summary>
+    internal static JsonNode? AddPath(ICommandContext ctx, JsonObject a)
+    {
+        var path = Polyline(a);
+        var storeyId = StoreyId(ctx.Model, a);
+        var terrain = ctx.Model.OfClass(IfcClass.GeographicElement).FirstOrDefault(t => t.PredefinedType == Terrains.Predefined && Terrains.Of(t).ElevationAt(path[0].X, path[0].Y) != null);
+        var c = new Paths.Courses(Json.Number(a["width"]) ?? 1.5, Json.Number(a["surfaceThickness"]) ?? 0.06, Json.Number(a["baseThickness"]) ?? 0.2,
+            a["kerb"] is JsonValue kv && kv.TryGetValue<bool>(out var kerb) && kerb, Json.Number(a["kerbHeight"]) ?? 0.1, Json.Number(a["kerbWidth"]) ?? 0.1);
+        var surface = Materials.Ensure(ctx, (string?)a["surfaceMaterial"] ?? "Paving stone", Paths.Color);
+        var @base = Materials.Ensure(ctx, (string?)a["baseMaterial"] ?? "Gravel", "#a39888");
+        var n = ctx.Model.OfClass(IfcClass.Pavement).Count() + 1;
+        var e = new Entity(ctx.NewId(), IfcClass.Pavement, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Path {n}", CorridorCommands.WithTemplate(Paths.Attrs(path, c, surface.Id, @base.Id), a), "FLEXIBLE");
+        ctx.Add(e);
+        Spatial.Contain(ctx, terrain != null ? Spatial.StoreyOf(ctx.Model, terrain.Id)?.Id ?? storeyId : storeyId, e.Id);
+        if (terrain != null) ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelVoidsElement, terrain.Id, [e.Id]));
+        return new JsonObject { ["id"] = e.Id };
     }
 }

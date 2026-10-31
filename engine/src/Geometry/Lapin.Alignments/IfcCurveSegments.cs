@@ -1,6 +1,6 @@
 using Lapin.Geometry;
 
-namespace Lapin.Platform;
+namespace Lapin.Alignments;
 
 /// <summary>
 /// A curve segment's parent curve, at its own origin: "line"; "circle" (Radius,

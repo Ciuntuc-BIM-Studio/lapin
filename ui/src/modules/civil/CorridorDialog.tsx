@@ -1,10 +1,12 @@
 /**
  * The corridor configurator of a site path element (a path or road, a
- * retaining wall, a ditch), on the one selected: its cross-section at a
- * station over the natural and proposed ground, its long section with the
- * red line (follow the ground, or PVIs you drag), its stations, the sections
- * to draw and its joints. The engine builds everything (civil.corridor,
- * civil.crossSection, civil.setCorridor); this draws and edits.
+ * retaining wall, a ditch, a railway track), on the one selected: its
+ * cross-section at a station over the natural and proposed ground, its long
+ * section with the red line (follow the ground, or PVIs you drag), the curve
+ * at each vertex of its path (a radius with clothoids, or a corner), its
+ * stations, the sections to draw and its joints. The engine builds
+ * everything (civil.corridor, civil.crossSection, civil.setCorridor); this
+ * draws and edits.
  */
 
 import { ChevronLeft, ChevronRight, Plus, Trash2, X } from 'lucide-react';
@@ -12,25 +14,63 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUi } from '../../app/store';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
+import { fromPairs } from '../../viewport/contour';
+import { stationLabel } from './stations';
 
 type Pair = [number, number];
+type Curve = [number, number, number];
 interface Spec {
   stationStart: number; interval: number; sections: number[];
   joints: { every: number; width: number; at: number[] };
   profile: { mode: 'ground' | 'design'; ground: 'existing' | 'proposed'; pvis: [number, number, number][] };
+  /** [radius, spiral in, spiral out] per vertex of the path; empty: a plain polyline. */
+  curves: Curve[];
 }
-interface CorridorData { kind: 'path' | 'retainingWall' | 'ditch'; start: number; end: number; length: number; left: number; right: number; stations: number[]; vertices: number[]; joints: number[]; spec: Spec; existing: Pair[]; proposed: Pair[]; design: Pair[] }
-interface Section { station: number; label: string; left: number; right: number; line: { start: Pair; end: Pair }; parts: { key: string; polygon: Pair[] }[]; existing: Pair[]; proposed: Pair[] }
+interface CorridorData {
+  kind: 'path' | 'retainingWall' | 'ditch' | 'track'; start: number; end: number; length: number; left: number; right: number;
+  /** The axis runs on arcs and clothoids (some vertex has a radius that fits). */
+  curved: boolean;
+  /** Why the curves given could not be built, when the axis fell back to the polyline. */
+  problem: string | null;
+  stations: number[]; vertices: number[]; joints: number[]; spec: Spec; existing: Pair[]; proposed: Pair[]; design: Pair[];
+}
+interface Section { station: number; label: string; left: number; right: number; line: { start: Pair; end: Pair }; parts: { key: string; polygon: Pair[]; material?: string | null; hatch?: string | null }[]; existing: Pair[]; proposed: Pair[] }
+
+/** The section hatches of the materials, as SVG patterns (8 px tiles, in the current colour): the engine's names (HatchLibrary), lines at 45° for one it does not know. */
+function HatchDefs({ names }: { names: string[] }) {
+  const tile = (name: string) => {
+    switch (name) {
+      case 'SOLID': return <rect width="8" height="8" fill="currentColor" />;
+      case 'HORIZONTAL': return <path d="M0 4H8" />;
+      case 'CROSS': return <path d="M0 8L8 0M0 0L8 8" />;
+      case 'STEEL': return <path d="M0 8L8 0M-1 5L5 -1M3 9L9 3" />;
+      case 'GRAVEL': return <><circle cx="2" cy="2" r="1.1" /><circle cx="6" cy="5" r="1.1" /><circle cx="3" cy="7" r="0.7" /></>;
+      case 'EARTH': return <path d="M0 2H5M3 6H8" />;
+      case 'CONCRETE': return <><path d="M0 8L8 0" /><circle cx="2" cy="2" r="0.6" fill="currentColor" /><circle cx="6" cy="6" r="0.6" fill="currentColor" /></>;
+      case 'BRICK': return <path d="M0 4H8M4 0V4M0 4V8M8 4V8" />;
+      case 'TILES': return <path d="M0 0H8V8" />;
+      case 'INSULATION': case 'BATT': return <path d="M0 4L2 0L4 4L6 8L8 4" />;
+      case 'WOOD': return <path d="M0 2C3 1 5 3 8 2M0 6C3 5 5 7 8 6" />;
+      default: return <path d="M0 8L8 0" />;
+    }
+  };
+  return (
+    <defs>
+      {names.map((n) => (
+        <pattern key={n} id={`cs-hatch-${n}`} width="8" height="8" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="currentColor" strokeWidth={0.6}>{tile(n)}</g>
+        </pattern>
+      ))}
+    </defs>
+  );
+}
 
 const PART_FILL: Record<string, string> = { surface: '#b8ad9c', base: '#a39888', gutter: '#9a9a9a', kerb: '#8f8f8f', sidewalk: '#c9c2b6', wall: '#a8a8a8', ditch: 'rgba(90,150,200,0.35)' };
 const NATURAL = '#8a6a44';
 const PROPOSED = '#3f8a4a';
 const RED = '#c8372d';
 
-/** Station text: 1234.5 → 1+234.50. */
-const stationLabel = (s: number) => { const km = Math.floor(Math.abs(s) / 1000 + 1e-9); return `${s < 0 ? '-' : ''}${km}+${(Math.abs(s) - km * 1000).toFixed(2).padStart(6, '0')}`; };
-
-const commandOf = (n: NodeDto) => (n.type === 'IfcPavement' ? 'civil.updatePath' : n.type === 'LapinRetainingWall' ? 'civil.updateRetainingWall' : 'civil.updateDitch');
+const commandOf = (n: NodeDto) => (n.type === 'IfcPavement' ? 'civil.updatePath' : n.type === 'LapinRetainingWall' ? 'civil.updateRetainingWall' : n.type === 'LapinTrack' ? 'civil.updateTrack' : 'civil.updateDitch');
 
 /** A plot's frame: data bounds to SVG pixels, y up; the vertical scale exaggerated by `exaggerate`. */
 function frame(xs: number[], ys: number[], w: number, h: number, pad: number, equal: boolean) {
@@ -54,7 +94,10 @@ function CrossSectionPlot({ s }: { s: Section }) {
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="corridor-plot" role="img" aria-label={`Cross-section at ${s.label}`}>
       <line x1={f.X(0)} x2={f.X(0)} y1={12} y2={H - 12} stroke="currentColor" strokeOpacity={0.35} strokeDasharray="6 3 1 3" />
-      {s.parts.map((p, i) => <path key={i} d={`${line(p.polygon, f.X, f.Y)}Z`} fill={PART_FILL[p.key] ?? '#bbb'} stroke="currentColor" strokeWidth={1} />)}
+      <HatchDefs names={[...new Set(s.parts.map((p) => p.hatch).filter((h): h is string => Boolean(h)))]} />
+      {s.parts.map((p, i) => <path key={i} d={`${line(p.polygon, f.X, f.Y)}Z`} fill={PART_FILL[p.key] ?? '#bbb'} stroke="currentColor" strokeWidth={1}><title>{p.material ?? p.key}</title></path>)}
+      {/* The material's section hatch over its fill, as a section sheet draws the layer. */}
+      {s.parts.map((p, i) => p.hatch ? <path key={`h${i}`} d={`${line(p.polygon, f.X, f.Y)}Z`} fill={`url(#cs-hatch-${p.hatch})`} stroke="none" pointerEvents="none" /> : null)}
       <path d={line(s.existing, f.X, f.Y)} fill="none" stroke={NATURAL} strokeWidth={1.5} strokeDasharray="5 3" />
       <path d={line(s.proposed, f.X, f.Y)} fill="none" stroke={PROPOSED} strokeWidth={1.5} />
       {Number.isFinite(zAxis) && <text x={f.X(0) + 4} y={f.Y(zAxis) - 6} className="corridor-label">{zAxis.toFixed(2)}</text>}
@@ -106,7 +149,7 @@ function LongSectionPlot({ d, station, onStation, onPvis }: { d: CorridorData; s
 }
 
 /** A number field committed on Enter or blur; empty restores. */
-function Num({ value, onCommit, step = 0.1, min, unit, width = 70 }: { value: number; onCommit: (v: number) => void; step?: number; min?: number; unit?: string; width?: number }) {
+export function Num({ value, onCommit, step = 0.1, min, unit, width = 70 }: { value: number; onCommit: (v: number) => void; step?: number; min?: number; unit?: string; width?: number }) {
   const [text, setText] = useState(String(value));
   useEffect(() => setText(String(value)), [value]);
   const done = () => { const n = Number(text.replace(',', '.')); if (text.trim() !== '' && Number.isFinite(n) && n !== value) onCommit(min != null ? Math.max(min, n) : n); else setText(String(value)); };
@@ -154,6 +197,14 @@ function TemplateEditor({ node }: { node: NodeDto }) {
       </div>
     );
   }
+  if (node.type === 'LapinTrack') {
+    return (
+      <dl className="fields corridor-form">
+        <dt>Kind</dt><dd><select value={(p.kind as string | undefined) ?? 'main'} onChange={(e) => set({ kind: e.target.value })}><option value="main">main line</option><option value="siding">siding</option></select></dd>
+        <dt /><dd><span className="muted small">The rails, sleepers and ballast come from the norm profile and the speed table, set in the inspector; the curves are under “Curves”.</span></dd>
+      </dl>
+    );
+  }
   if (node.type === 'LapinRetainingWall') {
     return (
       <dl className="fields corridor-form">
@@ -174,18 +225,60 @@ function TemplateEditor({ node }: { node: NodeDto }) {
   );
 }
 
+/**
+ * The curve at each vertex of the element's path: a radius (0: a corner) and
+ * a clothoid on each side of the arc; the ends have none. Saved as one list
+ * per vertex (civil.setCorridor {curves}); the engine refuses curves that do
+ * not fit between their neighbours, and says why when a path moved under its
+ * curves (`problem`).
+ */
+function CurvesEditor({ node, d, onSave }: { node: NodeDto; d: CorridorData; onSave: (curves: Curve[]) => void }) {
+  const pts = fromPairs(node.props.path);
+  // An axis generated from another (a parallel track) has no vertices of its own to curve.
+  const generated = !!node.props.reference && typeof node.props.reference === 'object';
+  const curves: Curve[] = pts.map((_, i) => d.spec.curves?.[i] ?? [0, 0, 0]);
+  const any = curves.some((c) => c.some((x) => x > 0));
+  const put = (i: number, k: number, v: number) => onSave(curves.map((c, j) => (j === i ? c.map((x, m) => (m === k ? Math.max(0, v) : x)) as Curve : c)));
+  const cell = (i: number, k: number, step: number) => (generated ? <span className="num">{curves[i][k] || '—'}</span> : <Num value={curves[i][k]} step={step} min={0} width={76} onCommit={(v) => put(i, k, v)} />);
+  return (
+    <div className="corridor-form">
+      {generated
+        ? <p className="muted small">A parallel track's curves come from its reference, offset: edit them on the reference.</p>
+        : <p className="muted small">Give a vertex a radius to round the corner there; the clothoids run into and out of the arc. 0: a plain corner. Metres.</p>}
+      <table className="panel-grid corridor-curves">
+        <thead><tr><th>Vertex</th><th>Station</th><th>Radius</th><th>Spiral in</th><th>Spiral out</th></tr></thead>
+        <tbody>
+          {pts.map((_, i) => {
+            const end = i === 0 || i === pts.length - 1;
+            return (
+              <tr key={i}>
+                <td>{i + 1}</td>
+                <td className="num">{d.vertices[i] != null ? stationLabel(d.vertices[i]) : ''}</td>
+                {end ? <td colSpan={3} className="muted small">an end has no curve</td> : <><td>{cell(i, 0, 50)}</td><td>{cell(i, 1, 10)}</td><td>{cell(i, 2, 10)}</td></>}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="muted small">{d.curved ? 'The axis runs on arcs and clothoids; the stations follow it.' : 'The axis is the polyline.'}</p>
+      {d.problem && <p className="error-text">{d.problem}</p>}
+      {!generated && <div className="row"><button type="button" className="btn compact" disabled={!any} onClick={() => onSave(curves.map(() => [0, 0, 0] as Curve))}>Clear curves</button></div>}
+    </div>
+  );
+}
+
 export function CorridorDialog() {
   const id = useUi((s) => s.selection);
   const nodes = useSession((s) => s.nodes);
   const node = id ? nodes.get(id) : undefined;
-  const [tab, setTab] = useState<'section' | 'long' | 'stations'>('section');
+  const [tab, setTab] = useState<'section' | 'long' | 'curves' | 'stations'>('section');
   const [data, setData] = useState<CorridorData | null>(null);
   const [section, setSection] = useState<Section | null>(null);
   const [station, setStation] = useState<number | null>(null);
   const [newSection, setNewSection] = useState('');
   const [made, setMade] = useState<string | null>(null);
   const close = () => useUi.setState({ dialog: null });
-  const valid = !!node && (node.type === 'IfcPavement' || node.type === 'LapinRetainingWall' || (node.type === 'IfcEarthworksCut' && Array.isArray(node.props.path)));
+  const valid = !!node && (node.type === 'IfcPavement' || node.type === 'LapinRetainingWall' || node.type === 'LapinTrack' || (node.type === 'IfcEarthworksCut' && Array.isArray(node.props.path)));
 
   // The model changes (this element, its terrain): read again.
   useEffect(() => { if (valid && id) void query<CorridorData>('civil.corridor', { id }).then(setData); }, [valid, id, nodes]);
@@ -220,7 +313,7 @@ export function CorridorDialog() {
       <div className="dialog-backdrop" onClick={close}>
         <div className="dialog" role="dialog" aria-label="Corridor" onClick={(e) => e.stopPropagation()}>
           <header className="dialog-head"><span className="panel-title">Corridor</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
-          <div className="dialog-body"><p>Select a path, a retaining wall or a ditch first.</p></div>
+          <div className="dialog-body"><p>Select a path, a retaining wall, a ditch or a track first.</p></div>
         </div>
       </div>
     );
@@ -231,12 +324,12 @@ export function CorridorDialog() {
     <div className="dialog-backdrop" onClick={close}>
       <div className="dialog wide corridor-dialog" role="dialog" aria-label="Corridor" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
-          <span className="panel-title">{node.name} <span className="muted small">· {data ? `${stationLabel(data.start)} → ${stationLabel(data.end)}, ${data.length.toFixed(2)} m` : '…'}</span></span>
+          <span className="panel-title">{node.name} <span className="muted small">· {data ? `${stationLabel(data.start)} → ${stationLabel(data.end)}, ${data.length.toFixed(2)} m${data.curved ? ', curved' : ''}` : '…'}</span>{data?.problem && <span className="chip warn" title={data.problem} onClick={() => setTab('curves')}>curves</span>}</span>
           <button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body">
           <div className="tabs-inline" role="tablist">
-            {([['section', 'Cross-section'], ['long', 'Long section'], ['stations', 'Stations and joints']] as const).map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+            {([['section', 'Cross-section'], ['long', 'Long section'], ['curves', 'Curves'], ['stations', 'Stations and joints']] as const).map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
           </div>
 
           {tab === 'section' && (
@@ -300,6 +393,17 @@ export function CorridorDialog() {
                 {spec.profile.mode === 'design' && pvis.length >= 2 && (
                   <p className="muted small">Grades: {pvis.slice(1).map((p, i) => `${(((p[1] - pvis[i][1]) / (p[0] - pvis[i][0])) * 100).toFixed(2)} %`).join(' · ')}</p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {tab === 'curves' && data && (
+            <div className="corridor-grid even">
+              <CurvesEditor node={node} d={data} onSave={(curves) => setCorridor({ curves })} />
+              <div className="corridor-form">
+                <p className="eyebrow">Horizontal alignment</p>
+                <p className="muted small">Each vertex is a point of intersection (PI): the arc of its radius is fitted between the two straights, with a clothoid of the length given before and after it. The arc and both clothoids must fit on the straights to the neighbouring vertices, else the engine refuses the curve and says why.</p>
+                {node.type === 'LapinTrack' && <p className="muted small">On a track the arcs are the cant's curves: design the cant in the inspector once the radii are set.</p>}
               </div>
             </div>
           )}

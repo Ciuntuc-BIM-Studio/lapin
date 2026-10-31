@@ -1,8 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
     Civil: the terrain (a TIN from survey points, its contours, the platforms
-    cut and filled into it, their earthworks) and, later, roads and bridges.
-    It needs only the platform.
+    cut and filled into it, their earthworks), roads on IFC 4.3 alignments
+    (Lapin.Alignments, with the platform), paths, ditches, retaining walls and
+    CAD linework with heights. It needs only the platform; a railway is a module
+    of its own over it (hooks: CorridorCommands.AfterAxisChange, LandXml.AlignmentSources, LineworkElements.Makers).
   -->
   <PropertyGroup>
     <LapinModuleId>civil</LapinModuleId>
@@ -10,5 +12,8 @@
   <ItemGroup>
     <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
     <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Lapin.Alignments" />
   </ItemGroup>
 </Project>

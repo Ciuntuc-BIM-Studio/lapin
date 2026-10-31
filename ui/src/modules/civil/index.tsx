@@ -5,7 +5,7 @@
  * plantings that stand on it (docs/spec-site.md).
  */
 
-import { BrickWall, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, Waves } from 'lucide-react';
+import { BrickWall, PenLine, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -26,7 +26,8 @@ function lowest(text: string): number | null {
   for (const line of text.split('\n')) {
     const t = line.trim();
     if (!t || t.startsWith('#') || t.startsWith('//')) continue;
-    const f = t.split(/[\s,;]+/).map(Number);
+    // ';' or tabs between the fields: the commas are decimals (a European export).
+    const f = (/[;\t]/.test(t) ? t.split(/[;\t]+/).map((x) => x.trim().replace(',', '.')) : t.split(/[\s,;]+/)).map(Number);
     const z = f.length >= 4 && f.slice(0, 4).every(Number.isFinite) ? f[3] : f.length >= 3 && f.slice(0, 3).every(Number.isFinite) ? f[2] : NaN;
     if (Number.isFinite(z)) min = Math.min(min, z);
   }
@@ -201,6 +202,28 @@ const road: ToolDef = {
 };
 
 /** The corridor configurator of the path, road, retaining wall or ditch selected. */
+/**
+ * CAD linework (a line drafted, or a DXF's, with the heights it brought) made a civil element: the line picked is followed
+ * through what meets it end to end on its layer; its heights give the profile or the breakline's levels. A dense line
+ * (a surveyed axis) is read as a design alignment, a drawn one gives its vertices as PIs.
+ */
+export function fromLinework(id: string, label: string, as: string, shortcut: string): ToolDef {
+  return {
+    id, label, icon: PenLine, shortcut,
+    gesture: { kind: 'pick', types: ['IfcAnnotation'] },
+    complete: async ({ entity }, ctx) => {
+      if (!entity) return;
+      const r = await ctx.execute('civil.fromLinework', { id: entity.id, as, storeyId: ctx.storeyId }) as { kind: string; points: number; pieces: number; heights: boolean; curves?: number; deviation?: number; breaklines?: number } | null;
+      if (!r) return;
+      const what = as === 'track' ? 'A track' : as === 'road' ? 'A road' : 'A breakline';
+      const design = r.curves != null ? `, read as a design: ${r.curves} curve${r.curves === 1 ? '' : 's'}, within ${Math.round((r.deviation ?? 0) * 1000)} mm` : '';
+      notify(`${what} from ${r.pieces} line${r.pieces === 1 ? '' : 's'} joined (${r.points} points${r.heights ? ', with heights' : ''})${design}.`);
+    },
+  };
+}
+const roadFromLinework = fromLinework('civil.roadFromLinework', 'Road from linework', 'road', 'RL');
+const breaklineFromLinework = fromLinework('civil.breaklineFromLinework', 'Breakline from linework', 'breakline', 'BL');
+
 const corridor: ToolDef = { id: 'civil.corridor', label: 'Corridor…', icon: Spline, shortcut: 'CO', run: () => useUi.setState({ dialog: 'corridor' }) };
 
 /** A retaining wall along a polyline, the high ground on its left; its section is set in the inspector. */
@@ -245,10 +268,10 @@ const civil: LapinModule = {
   tabs: [{
     id: 'site', label: 'Site', order: 40,
     groups: [
-      { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainFromLandXml, landXmlOut, spot] },
+      { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SR'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
-      { label: 'Landscape', tools: [path, road, retainingWall, plant, plantingZone], small: [corridor] },
+      { label: 'Landscape', tools: [path, road, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },
     ],
   }],
   grips: {
