@@ -43,6 +43,32 @@ Armarea *configurată* pe tipuri, cum a cerut utilizatorul: etrierii și barele 
 
 În varianta liberă etrierii nu se desenează bară cu bară: se configurează pe tipul de grindă sau de stâlp (secțiune dreptunghiulară), cu diametru, acoperire și modul de distribuție — un pas pe toată lungimea sau trei zone, fiecare cu partea ei din lungime (implicit o treime) și pasul ei. Motorul îi așază pe axă (`TypeStirrups.Of`: dreptunghiul din interiorul acoperirii la fiecare stație) și îi desenează în 2D ca *proiecții* după cum stă vederea față de axă: în secțiunea transversală, dreptunghiul; în cea longitudinală, liniile; în plan, liniile peste grindă (planurile și fațadele doar cu disciplina Structure). Nu există corp 3D în varianta liberă. Intră în extras sub marca tipului. Stâlpii (decizia 218): etrierii pot fi perimetrali, cu romb înscris sau cu doi interiori pe direcții; barele longitudinale ale stâlpului stau pe tip (`ColumnBars`: n pe față, Ø, mustăți peste nivel), fiindcă se armează pe tronson de etaj. Barele longitudinale ale grinzilor nu se pun pe tip (merg peste mai multe deschideri): se desenează de mână în secțiunea longitudinală sau în plan și stau în spațiu (decizia 216, `Rebar3D`), așezate de n ori pe direcția vederii după acoperirea gazdei sau la un pas; secțiunea transversală le arată ca puncte, extrasul le numără. Premiumul adaugă corpurile 3D, optimizatoarele și configuratorul pe secțiuni.
 
+## Etichetele, baloanele și barele în 3D (decizia 221)
+
+Cerute de utilizator (31.10.2026): baloanele mărcilor configurabile dintr-un configurator pe tip, cu gripuri ca să le mute pe planșă, ca în Configurator Armare; ce afișăm din armătură, unde așezăm eticheta și direcția textelor sunt obligatorii; barele în 3D opțional, pornite dintr-un buton ca să nu încarce memoria degeaba.
+
+### Stilul etichetei (`labelStyle`)
+
+Un stil spune ce scrie eticheta și unde stă, pentru un grup de bare (barele unui tip, o bară desenată cu copiile ei, o distribuție):
+
+- `parts`: jetoanele textului, în ordine — `count`, `diameter`, `step`, `length`, `mark`, `steel`, `text:<…>`; implicit `count diameter length` la bare („3Ø16 L=6000”), `count diameter / step` la etrieri și distribuții („41Ø8/150”), `count diameter` la barele stâlpului; lungimile în mm, ca până acum.
+- `balloon`: cu balon (implicit da); **fără marcă nu se desenează niciodată un balon gol**: rămâne textul singur (cercurile goale pe care le-a văzut utilizatorul în secțiunea tăiată erau baloanele grupurilor fără marcă, suprapuse în același punct).
+- `direction`: `horizontal` (implicit la bare și în secțiunile transversale), `along` (pe direcția barelor sau a axei, așa cum le vede vederea; implicit la etrieri și distribuții în vederile longitudinale) sau `angle:<grade>`.
+- `side` și `offset`: pe ce parte a barelor stă eticheta (`above`, `below`, `left`, `right`, față de bare așa cum le vede vederea) și la câți mm hârtie (implicit 4); textul stă în dreapta balonului la orizontală, deasupra liniei cu balonul la început pe direcție.
+- `leader`: linia de indicație de la balon la cea mai apropiată bară (implicit da când balonul nu atinge barele).
+
+De unde vine stilul, cel mai specific câștigă: setările proiectului (`rebarSettings.labels {bars, stirrups, columnBars, runs}`, dialogul Setări armare), tipul (`StirrupSpec.Label`, `ColumnBarsSpec.Label`, în dialogul Tipuri de structură lângă etrieri, prin `typeExtras`), elementul (`label.style` pe `LapinRebar` și `LapinRebarRun`, în panoul de proprietăți).
+
+### Gripuri pe etichetele generate
+
+Etichetele barelor de pe tip (etrieri, barele stâlpului) și ale proiecțiilor (o bară desenată în altă vedere) nu sunt entități; locul lor mutat se ține pe **vedere**: `rebarLabels: { "<owner>:<key>": [x, y] }` în coordonatele vederii, prin `rebar.placeLabel {viewId, owner, key, at}` (`at: null` îl pune la loc). Cheile: `stirrups`, `columnBars`, `bar:<id>` (proiecția unei bare). Semnul desenat (`ViewMark.Data.labels = [{owner, key, at}]`) spune interfeței unde stau, iar modulul `rebar` înregistrează gripuri pentru `IfcBeam`, `IfcColumn` și `LapinRebar` (`gripsOf` adună gripurile tuturor modulelor pentru o clasă); `GripView` primește toate semnele proprietarului, nu doar primul. Printr-o vedere inserată, gripul merge pe sursă (`via`), ca la bare.
+
+Așezarea automată: etichetele mai multor grupuri din aceeași vedere nu stau niciodată în același punct — se înșiră în ordinea mărcilor, la înălțimea textului + 2 mm una sub alta (secțiuni transversale) sau în afara barelor (longitudinale), până le mută utilizatorul.
+
+### Barele în 3D, la cerere
+
+Nu corpuri în model (acelea sunt `IfcReinforcingBar`, ale premiumului), ci un **desen 3D cerut de interfață**: `rebar.bodies` întoarce, pentru barele așezate în spațiu (`Rebar3D`, etrierii pe stații, barele stâlpului), tuburi hexagonale de diametrul barei pe segmentele lor (îndoiturile ca trei segmente pe arc), ca triunghiuri grupate pe culoare (Ø). View → Bare în 3D (`useUi.rebar3d`, oprit implicit, nesalvat): pornit, vederea 3D cere corpurile după fiecare diff care atinge grinzi, stâlpi sau bare (cu o pauză de 300 ms) și desenează un `Mesh` pe culoare în grupul `rebar-3d`, pe care îl scoate și eliberează când e oprit. Nu se taie în secțiuni, nu se selectează, nu se exportă. Peste 2 milioane de triunghiuri, un avertisment și doar primele.
+
 ## Etape
 
 1. Motorul `Lapin.Rebar`: formele, îndoirea, ciocurile, lungimile, distribuția, extrasul; testele cu numerele configuratorului.
