@@ -3,7 +3,7 @@
  * (scripts/product.mjs): what a package of the product ships, engine and UI.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -33,7 +33,9 @@ function fixture(engine: Record<string, string[]>, ui: string[], products: Recor
 
 describe('products', () => {
   it('every product of the repository resolves, core first', () => {
-    for (const id of productIds(repo)) {
+    // An edition with a private module (lapin-mep, lapin-urban, lapin-rail) resolves where its repository is beside this one.
+    const present = (id: string) => Object.values<string>(JSON.parse(readFileSync(join(repo, 'products', `${id}.json`), 'utf8')).external ?? {}).every((d) => existsSync(resolve(repo, d)));
+    for (const id of productIds(repo).filter(present)) {
       const p = resolveProduct(repo, id);
       expect(p.modules[0]).toBe('core');
       expect(p.engine).toContain('core');
