@@ -69,7 +69,14 @@ Așezarea automată: etichetele mai multor grupuri din aceeași vedere nu stau n
 
 Nu corpuri în model (acelea sunt `IfcReinforcingBar`, ale premiumului), ci un **desen 3D cerut de interfață**: `rebar.bodies` întoarce, pentru barele așezate în spațiu (`Rebar3D`, etrierii pe stații, barele stâlpului), tuburi hexagonale de diametrul barei pe segmentele lor (îndoiturile ca trei segmente pe arc), ca triunghiuri grupate pe culoare (Ø). View → Bare în 3D (`useUi.rebar3d`, oprit implicit, nesalvat): pornit, vederea 3D cere corpurile după fiecare diff care atinge grinzi, stâlpi sau bare (cu o pauză de 300 ms) și desenează un `Mesh` pe culoare în grupul `rebar-3d`, pe care îl scoate și eliberează când e oprit. Nu se taie în secțiuni, nu se selectează, nu se exportă. Peste 2 milioane de triunghiuri, un avertisment și doar primele.
 
-## Etape
+### Șirul de cotă al distribuțiilor, cotul liniei de indicație și liniile multiple (decizia 222)
+
+Cerute de utilizator (31.10.2026), după prima rundă:
+
+- **Distribuțiile (etrierii pe tip, `LapinRebarRun`) se marchează ca un șir de cotă aliniat, continuu, fără valori**: o linie paralelă cu direcția distribuției, la `offset` în afara barelor, cu câte o liniuță scurtă (2 mm hârtie, ca la cote) acolo unde o taie fiecare bară și la capete, fără numere; textul etichetei deasupra liniei, pe direcția ei; balonul mărcii la capătul de început al liniei, sau unde l-a tras utilizatorul, legat de linie prin linia de indicație. `LabelStyle.Line` (`string` implicit la etrieri și distribuții, `none` oprește linia și lasă textul cu balonul, ca până acum). Linia are grip pe mijloc (mutarea ei perpendicular schimbă `offset`-ul grupului, ținut cu locul etichetei).
+- **Cotul liniei de indicație**: locul unei etichete ține și un punct de cot opțional — `label: {at, elbow?}` pe bare și distribuții, `rebarLabels["owner:key"] = {at, elbow?}` pe vedere (un tablou `[x, y]` vechi înseamnă doar `at`). Linia merge balon → cot → bare. Gripuri: unul pe cot când există; când nu există, un grip la mijlocul liniei de indicație, care tras face cotul; `rebar.placeLabel {at, elbow}` și `elbow: null` îl scoate.
+- **Linii de indicație multiple**: `LabelStyle.Leader` devine `none` | `one` | `each` (`each` implicit la barele văzute ca puncte, `one` la etrieri, distribuții și bare văzute pe lungime): cu `each`, de la cot (sau de la marginea balonului, fără cot) pleacă o linie spre fiecare bară a grupului văzută în vedere; **când se vede o singură bară, o singură linie**; peste 16 bare, doar câte una la capete și la mijloc.
+
 
 1. Motorul `Lapin.Rebar`: formele, îndoirea, ciocurile, lungimile, distribuția, extrasul; testele cu numerele configuratorului.
 2. Platforma: secțiunea transversală (`across`, `Rise`), vederea inserată, teste.
