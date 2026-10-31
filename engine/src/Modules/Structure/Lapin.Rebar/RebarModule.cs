@@ -84,7 +84,7 @@ public static class Rebars
     }
 
     /// <summary>The next free mark: one over the highest in the model.</summary>
-    public static int NextMark(IModelView m) => 1 + Math.Max(m.OfClass(Class).Concat(m.OfClass(RunClass)).Select(Mark).DefaultIfEmpty(0).Max(), TypeStirrups.HighestMark(m));
+    public static int NextMark(IModelView m) => 1 + Math.Max(m.OfClass(Class).Concat(m.OfClass(RunClass)).Select(Mark).DefaultIfEmpty(0).Max(), Math.Max(TypeStirrups.HighestMark(m), TypeBars.HighestMark(m)));
 }
 
 /// <summary>The bar bending schedule: the bars by mark, their count, length and mass, the totals by diameter.</summary>
@@ -115,6 +115,7 @@ public sealed class RebarSchedule : IScheduleSource
             o.Add(new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, positions.Count * Rebars.Count(e), RebarShapes.Length(s)));
         }
         o.AddRange(TypeStirrups.Entries(m));
+        o.AddRange(TypeBars.Entries(m));
         return o;
     }
 
@@ -315,6 +316,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
 
         // A beam's or a column's type gets its stirrups (decision 215): {id, enabled, diameter, cover, mode, step, zones, mark}.
         r.Command("setTypeStirrups", "Stirrups on type", (ctx, a) => { TypeStirrups.Set(ctx, a); return null; });
+        // Its longitudinal bars (decision 216): {id, enabled, top: {count, diameter}, bottom, side, perFace, extend}.
+        r.Command("setTypeBars", "Bars on type", (ctx, a) => { TypeBars.Set(ctx, a); return null; });
 
         // What a bar or a distribution is: its length, developed length, mass, label, positions.
         r.Query("describe", (q, a) =>
@@ -476,6 +479,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             if (RunMark(c, st, e, hidden) is { } mk) yield return mk;
         // The stirrups the beams' and columns' types are configured with, projected as the view lies to each axis.
         foreach (var mk in TypeStirrups.Marks(c, st)) yield return mk;
+        foreach (var mk in TypeBars.Marks(c, st)) yield return mk;
     }
 
     static double Width(RebarSpec s, ViewContext c) => Math.Max(0.25, s.Diameter * 1000 / c.Scale);

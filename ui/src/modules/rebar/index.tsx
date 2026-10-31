@@ -15,10 +15,10 @@ import { RebarRunSection, RebarSection } from './RebarSection';
 import { InsetPickDialog, RebarSettingsDialog } from './RebarDialogs';
 import { BarDotIcon, LBarIcon, PolylineBarIcon, StirrupIcon, StirrupsIcon, TieIcon, UBarIcon } from './icons';
 import { structureHooks } from '../structure/hooks';
-import { StirrupsFields } from './StirrupsFields';
+import { BarsFields, StirrupsFields } from './StirrupsFields';
 
-// The stirrups of a beam's or a column's type are set in the Structure types dialog (decision 215).
-structureHooks.typeExtras.push(StirrupsFields);
+// The stirrups and bars of a beam's or a column's type are set in the Structure types dialog (decisions 215, 216).
+structureHooks.typeExtras.push(StirrupsFields, BarsFields);
 
 /** What a section can be cut across: anything with an axis, or standing at a point. */
 export const ACROSS = ['IfcBeam', 'IfcColumn', 'IfcWall', 'IfcFooting', 'IfcMember', 'IfcPile'];

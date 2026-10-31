@@ -16,6 +16,8 @@ Wählen Sie eine Ebene aus, um ihre **Basisebene** und ihre **Obere Ebene** zu s
 
 Jede Ebene hat ihren eigenen Grundriss unter **Grundrisse**. Doppelklicken Sie auf einen Grundriss, um auf dieser Ebene zu zeichnen. Die Ebene, auf der Sie zeichnen, wird im Feld oben links in der Ansicht angezeigt.
 
+In Schnitten und Ansichten wird jede Ebene rechts mit Namen und Höhe markiert. **Verwalten → Objektstile → Verdeckte Linien** legt auch die **Höhenmarke** fest: ein offenes Dreieck, ein Dreieck mit schwarzer linker Hälfte (wie die rumänische Norm es zeichnet), ein schwarzes Dreieck oder ein Strich, und ihre Größe auf dem Papier.
+
 ## Die Ebene darunter sehen
 
 Um beim Zeichnen eine andere Ebene zu sehen, wählen Sie sie in der Leiste des Grundrisses unter **Unterlage**. Der Grundriss dieser Ebene wird darunter gezeichnet, blass und grau. Sie können darauf fangen, sie aber nicht auswählen.

@@ -16,6 +16,8 @@ Sélectionnez un niveau pour voir son **niveau de base** et son **niveau supéri
 
 Chaque niveau a son propre plan sous **Vues en plan**. Double-cliquez sur un plan pour dessiner sur ce niveau. Le niveau sur lequel vous dessinez est indiqué dans la case en haut à gauche de la vue.
 
+Dans les coupes et les façades, chaque niveau est repéré à droite par son nom et sa cote. **Gérer → Styles d’objets → Lignes cachées** règle aussi le **repère de niveau** : triangle vide, triangle à moitié gauche noire (comme le dessine la norme roumaine), triangle noir ou trait, et sa taille sur papier.
+
 ## Voir le niveau du dessous
 
 Pour voir un autre niveau pendant que vous dessinez, choisissez-le dans **Calque de fond** dans la barre du plan. Le plan de ce niveau est dessiné en dessous, estompé et gris. Vous pouvez vous y accrocher, mais vous ne pouvez pas le sélectionner.

@@ -16,6 +16,8 @@ Selectează un nivel ca să vezi **cota de bază** și **cota superioară**. Ori
 
 Fiecare nivel are planul lui sub **Planuri**. Dublu clic pe un plan ca să desenezi pe acel nivel. Nivelul pe care desenezi apare în caseta din stânga sus a vederii.
 
+În secțiuni și fațade fiecare nivel e marcat în dreapta cu numele și cota lui. **Gestionare → Stiluri de obiecte → Linii ascunse** stabilește și **semnul cotei de nivel**: triunghi gol, triunghi cu jumătatea stângă neagră (cum îl desenează standardul românesc), triunghi negru sau liniuță, și mărimea lui pe hârtie.
+
 ## Nivelul de dedesubt
 
 Ca să vezi alt nivel în timp ce desenezi, alege-l în lista **Fundal** din bara planului. Planul acelui nivel se desenează dedesubt, estompat și gri. Te poți prinde (snap) de el, dar nu-l poți selecta.

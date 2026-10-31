@@ -16,6 +16,8 @@ Seleccione un nivel para ver su **Nivel de base** y su **Nivel superior**. Cualq
 
 Cada nivel tiene su propia planta en **Plantas**. Haga doble clic en una planta para dibujar en ese nivel. El nivel en el que dibuja aparece en el recuadro de arriba a la izquierda de la vista.
 
+En secciones y alzados cada nivel se marca a la derecha con su nombre y su cota. **Gestionar → Estilos de objeto → Líneas ocultas** fija también la **marca de nivel**: triángulo vacío, triángulo con la mitad izquierda negra (como lo dibuja la norma rumana), triángulo negro o trazo, y su tamaño en papel.
+
 ## Ver el nivel inferior
 
 Para ver otro nivel mientras dibuja, elíjalo en **Calco** en la barra de la planta. La planta de ese nivel se dibuja debajo, atenuada y en gris. Puede forzar el cursor a ella, pero no puede seleccionarla.

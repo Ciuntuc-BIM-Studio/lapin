@@ -17,6 +17,7 @@ interface Dto {
   penTable: { scales: number[]; widths: number[][] };
   customTable: boolean;
   hiddenLines: Record<string, string>;
+  levelMark?: { style: string; size: number };
   categories: string[]; roles: string[]; patterns: string[];
 }
 
@@ -89,7 +90,7 @@ export function ObjectStylesDialog() {
               {d.customTable && <button type="button" className="btn" onClick={() => void execute('view.penTable', { reset: true })}>Back to the ISO widths</button>}
             </>
           )}
-          {tab === 'views' && (
+          {tab === 'views' && (<>
             <table className="layer-table">
               <thead><tr><th>View</th><th>Hidden lines by default</th></tr></thead>
               <tbody>
@@ -103,7 +104,15 @@ export function ObjectStylesDialog() {
                 ))}
               </tbody>
             </table>
-          )}
+            <p className="eyebrow">Level marker</p>
+            <div className="row small">
+              <select value={d.levelMark?.style ?? 'open'} onChange={(e) => void execute('view.objectStyle', { levelMark: { style: e.target.value } })}>
+                <option value="open">Open triangle</option><option value="half">Triangle, half black</option><option value="filled">Black triangle</option><option value="tick">Tick</option>
+              </select>
+              <input className="num" type="number" style={{ width: 56 }} min={1} max={20} step={0.5} value={d.levelMark?.size ?? 5} onChange={(e) => { const v = Number(e.target.value); if (v >= 1 && v <= 20) void execute('view.objectStyle', { levelMark: { size: v } }); }} />
+              <span className="muted small">mm on paper, in sections and elevations</span>
+            </div>
+          </>)}
         </div>
         <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>

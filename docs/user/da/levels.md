@@ -16,6 +16,8 @@ Markér et niveau for at se dets **Basisniveau** og **Topniveau**. Begge kan lig
 
 Hvert niveau har sin egen plan under **Etageplaner**. Dobbeltklik på en plan for at tegne på det niveau. Det niveau, du tegner på, vises i feltet øverst til venstre i visningen.
 
+I snit og facader markeres hvert niveau til højre med navn og kote. **Administrer → Objektstile → Skjulte linjer** sætter også **niveaumærket**: en åben trekant, en trekant med venstre halvdel sort (som den rumænske standard tegner den), en sort trekant eller en streg, og dens størrelse på papir.
+
 ## At se niveauet nedenunder
 
 Vil du se et andet niveau, mens du tegner, så vælg det under **Underlag** i planens bjælke. Det niveaus plan tegnes nedenunder, falmet og gråt. Du kan fange til det, men du kan ikke markere det.

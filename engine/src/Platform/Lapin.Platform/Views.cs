@@ -758,13 +758,36 @@ public static class Views
                 if (AcrossSections.Is(c.View) && (Math.Abs(c.Frame.Dir.Z) > 0.5 || y < bounds.Min.Y - 1.0 * k || y > bounds.Max.Y + 1.0 * k)) continue;
                 var mk = new ViewMark(storey.Id);
                 mk.Line(new Vec2(x0, y), new Vec2(x1, y), "LEVEL", Pens.Default.Hidden, "#555555", LineStyles.DashOf("center"));
-                // The marker: a small triangle standing on the line, the level's name and elevation above it.
-                var t = 1.2 * k;
-                mk.Polyline([new Vec2(x1, y), new Vec2(x1 - t * 0.6, y + t), new Vec2(x1 + t * 0.6, y + t)], true, "LEVEL", Pens.Default.Seen, "#555555");
-                mk.Text(new PenText(new Vec2(x1 + t, y + t * 0.2), $"{storey.Name} {(z >= 0 ? "+" : "−")}{Math.Abs(z):0.00}", text.Height, Anchor: "start", Font: text.Font), "#555555");
+                // The marker standing on the line (its style and size the project's: an open triangle, one half black as the
+                // Romanian standard has it, a black one, or a tick), the level's name and elevation beside it.
+                var (style, size) = LevelMark(Spatial.Project(m));
+                var t = size * c.Mm;
+                var w = t / Math.Sqrt(3);
+                var (apex, left, right, mid) = (new Vec2(x1, y), new Vec2(x1 - w, y + t), new Vec2(x1 + w, y + t), new Vec2(x1, y + t));
+                const string ink = "#222222";
+                switch (style)
+                {
+                    case "tick": mk.Line(apex, mid, "LEVEL", Pens.Default.Cut, ink); break;
+                    case "filled": mk.Fills.Add(([new[] { apex, left, right }], ink)); mk.Polyline([apex, left, right], true, "LEVEL", Pens.Default.Seen, ink); break;
+                    case "half": mk.Fills.Add(([new[] { apex, left, mid }], ink)); mk.Polyline([apex, left, right], true, "LEVEL", Pens.Default.Seen, ink); mk.Line(apex, mid, "LEVEL", Pens.Default.Seen, ink); break;
+                    default: mk.Polyline([apex, left, right], true, "LEVEL", Pens.Default.Seen, ink); break;
+                }
+                mk.Text(new PenText(new Vec2(x1 + w + 1.0 * c.Mm, y + t * 0.2), $"{storey.Name} {(z >= 0 ? "+" : "−")}{Math.Abs(z):0.00}", text.Height, Anchor: "start", Font: text.Font), "#555555");
                 yield return mk;
             }
         }
+    }
+
+    public static readonly string[] LevelMarkStyles = ["open", "half", "filled", "tick"];
+    public const double DefaultLevelMarkSize = 5;
+
+    /// <summary>The level marker's style and size (paper mm) from the project's view defaults (<c>viewDefaults.levelMark</c>): an open triangle of 5 mm unless set.</summary>
+    public static (string Style, double Size) LevelMark(Entity? project)
+    {
+        var o = project?.Attrs["viewDefaults"]?["levelMark"] as JsonObject;
+        var style = (string?)o?["style"] is { } s && LevelMarkStyles.Contains(s) ? s : "open";
+        var size = Json.Number(o?["size"]) is { } n && n >= 1 && n <= 20 ? n : DefaultLevelMarkSize;
+        return (style, size);
     }
 
     /// <summary>The colour reference planes are drawn in, in 2D (the 3D view draws them in the same).</summary>
@@ -1194,6 +1217,7 @@ public static class Views
                 ["penTable"] = LineStyles.ToJson(LineStyles.ReadTable(project?.Attrs["penTable"]) ?? LineStyles.DefaultPenTable()),
                 ["customTable"] = project?.Attrs["penTable"] != null,
                 ["hiddenLines"] = project?.Attrs["viewDefaults"]?["hiddenLines"]?.DeepClone() ?? new JsonObject(),
+                ["levelMark"] = new JsonObject { ["style"] = LevelMark(project).Style, ["size"] = LevelMark(project).Size },
                 ["categories"] = new JsonArray(LineStyles.Categories.Select(c => (JsonNode)c).ToArray()),
                 ["roles"] = new JsonArray(LineStyles.Roles.Select(c => (JsonNode)c).ToArray()),
                 ["patterns"] = new JsonArray(LineStyles.Patterns.Select(c => (JsonNode)c).ToArray()),
@@ -1219,6 +1243,17 @@ public static class Views
                 else c.Remove(role);
                 if (c.Count > 0) styles[cat] = c; else styles.Remove(cat);
                 if (styles.Count > 0) attrs["objectStyles"] = styles; else attrs.Remove("objectStyles");
+            }
+            // The level marker in sections and elevations: {levelMark: {style, size}}.
+            if (a["levelMark"] is JsonObject lm)
+            {
+                var style = (string?)lm["style"] ?? LevelMark(project).Style;
+                if (!LevelMarkStyles.Contains(style)) throw new CommandException("A level marker is an open, half or filled triangle, or a tick.");
+                var size = Json.Number(lm["size"]) ?? LevelMark(project).Size;
+                if (size < 1 || size > 20) throw new CommandException("A level marker is 1 to 20 mm on paper.");
+                var defaults = attrs["viewDefaults"] as JsonObject ?? new JsonObject();
+                defaults["levelMark"] = new JsonObject { ["style"] = style, ["size"] = size };
+                attrs["viewDefaults"] = defaults;
             }
             if ((string?)a["kind"] is { } kind && (string?)a["hiddenLines"] is var hl)
             {

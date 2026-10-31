@@ -1698,6 +1698,8 @@ export const scenes = [
       // The beam type's stirrups: Ø8 in three zones, closer at the ends; drawn in every section as it lies to the axis.
       const beamType = (await t.nodes()).find((n) => n.type === 'IfcBeamType').id;
       await t.cmd('rebar.setTypeStirrups', { id: beamType, enabled: true, mode: 'zones', zones: [{ share: 1 / 3, step: 0.1 }, { share: 1 / 3, step: 0.2 }, { share: 1 / 3, step: 0.1 }] });
+      // Its longitudinal bars too: 2Ø12 on top, 3Ø16 at the bottom, drawn as dots across and lines along, counted in the schedule.
+      await t.cmd('rebar.setTypeBars', { id: beamType, enabled: true, top: { count: 2, diameter: 0.012 }, bottom: { count: 3, diameter: 0.016 } });
       // A longitudinal section in front of the beam, looking at it; its x is the model's x + 1, its y the level.
       const host = (await t.cmd('view.create', { kind: 'section', start: [-1, -1.5], end: [7, -1.5], scale: 50, name: 'Beam B1' })).id;
       await t.ui({ view: 'drawing', drawingViewId: host, selection: null, selected: [], keyPlan: false });
@@ -1708,19 +1710,12 @@ export const scenes = [
       // Section here: the cross-section at mid-span, inset to the right, with the stirrups and bars drawn on the longitudinal one.
       const r = await t.cmd('rebar.sectionHere', { viewId: host, id: beam, point: [4, z(-0.2)], at: [10.6, z(-0.3)] });
       t.expect(!!r?.insetId, 'the section is inset');
-      // On the cross-section itself, in its own coordinates (its beam's middle at x = 0.625, the margin and half its width): the stirrup and the
-      // bars seen end on, each the mark it has in the long section; the inset shows them, and drawing on the inset would put them here.
-      const c = [0.625, z(-0.2)];
-      await t.cmd('rebar.add', { viewId: r.viewId, shape: 'dot', at: [c[0] - 0.07, c[1] - 0.15], params: { length: 6.4 }, diameter: 0.016, mark: 2, excludeSchedule: true, array: { nx: 3, dx: 0.07 }, label: { at: [c[0] + 0.4, c[1] - 0.3] } });
-      await t.cmd('rebar.add', { viewId: r.viewId, shape: 'dot', at: [c[0] - 0.07, c[1] + 0.15], params: { length: 5.9 }, diameter: 0.012, mark: 3, excludeSchedule: true, array: { nx: 2, dx: 0.14 }, label: { at: [c[0] + 0.4, c[1] + 0.05] } });
-      await t.cmd('rebar.add', { viewId: host, shape: 'straight', at: [1.05, z(-0.36)], params: { length: 5.9 }, diameter: 0.016, count: 3, mark: 2, hooks: { start: { angle: 90, length: 0.25 }, end: { angle: 90, length: 0.25 } }, label: { at: [2.2, z(-0.9)] } });
-      await t.cmd('rebar.add', { viewId: host, shape: 'straight', at: [1.05, z(-0.04)], params: { length: 5.9 }, diameter: 0.012, count: 2, mark: 3, label: { at: [6.2, z(0.4)] } });
       await t.wait(1500);
       await t.fit();
       await t.wait(800);
       await t.shot('rebar-section', { of: '[data-testid=drawing]', pad: 0 });
       await t.ui({ keyPlan: true });
-      t.expect((await t.nodes()).filter((n) => n.type === 'LapinRebar').length === 4, 'two bars and their views in section');
+      t.expect((await t.nodes()).some((n) => n.type === 'IfcBeamType' && n.props.bars?.enabled), 'the beam type carries its bars');
     },
   },
   {
