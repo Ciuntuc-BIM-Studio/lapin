@@ -641,7 +641,6 @@ export const LO: Record<string, string> = {
   'Chamfer edge': 'ລົບຫຼ່ຽມຂອບ',
   'Shell': 'ເຮັດເປັນເປືອກ (Shell)',
   'Slice': 'ຕັດແບ່ງດ້ວຍລະນາບ',
-  'Array': 'ອາເຣ (Array)',
   'Polar array': 'ອາເຣແບບວົງ',
   'Rotate 3D': 'ໝຸນ 3D',
   'Mirror 3D': 'ພິກກະຈົກ 3D',
