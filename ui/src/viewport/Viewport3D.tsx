@@ -47,6 +47,7 @@ import { resetTemporary, temporaryOn, useTemporary } from './temporary';
 import { place } from '../engine/instances';
 import { copyArrays, displayQualityOf, levelFor, pixelsPerMetre, type DisplayQuality, type LodCamera } from './lod';
 import { inWorld } from '../engine/instances';
+import { clampWheel } from './zoom';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
 /** How often the instances' copies are chosen again while the camera moves (ms). */
@@ -532,6 +533,8 @@ export function Viewport3D() {
     orthoCam.up.set(0, 0, 1);
     let cam: THREE.PerspectiveCamera | THREE.OrthographicCamera = persp;
     camRef.current = cam;
+    // A wheel step held to about a notch before the orbit controls read it (zoom.ts): macOS's accelerated flicks and a 3D mouse's emulated wheel zoom in steps, not in one jump.
+    renderer.domElement.addEventListener('wheel', clampWheel, { capture: true, passive: false });
     const controls = new OrbitControls(persp, renderer.domElement);
     controls.target.set(4, 3, 0);
     controls.update();
@@ -1088,6 +1091,7 @@ export function Viewport3D() {
       renderer.domElement.removeEventListener('pointermove', onWalkMove);
       renderer.domElement.removeEventListener('pointerup', onWalkUp);
       renderer.domElement.removeEventListener('wheel', onWalkWheel);
+      renderer.domElement.removeEventListener('wheel', clampWheel, { capture: true });
       window.removeEventListener('keydown', onWalkKey, true);
       window.removeEventListener('keyup', onWalkKey, true);
       window.removeEventListener('blur', onWalkBlur);

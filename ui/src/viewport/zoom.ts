@@ -70,32 +70,74 @@ export function popHistory<T>(key: string): T | undefined {
 }
 
 /**
- * Whether a wheel event pans rather than zooms. A mouse wheel zooms, as in
- * every CAD program; so does a trackpad's pinch (the browser reports it with
- * ctrl) and its two fingers moving up and down. Two fingers moving sideways
- * pan, and so does the wheel with Shift held. (Telling a mouse from a trackpad
- * by whole-number deltas does not work: Chrome on macOS reports a mouse
- * wheel as 4.000244…, so the wheel used to pan instead of zooming.)
+ * What a run of wheel events does, pan or zoom, decided once per run. A
+ * mouse wheel zooms, as in every CAD program; so does a trackpad's pinch (the
+ * browser reports it with Ctrl) and its two fingers moving up and down. Two
+ * fingers moving sideways pan, and so does the wheel with Shift held. The
+ * decision is taken on the run's first clear movement (2 px, the deltas
+ * added up) and kept until the run pauses for `gap` ms: a Magic Mouse sends
+ * both deltas at once, and deciding on each event made the view alternate
+ * between zooming and panning. Null: too small to tell yet. (Telling a mouse
+ * from a trackpad by whole-number deltas does not work: Chrome on macOS
+ * reports a mouse wheel as 4.000244…, so the wheel used to pan instead of
+ * zooming.)
  */
-export const wheelPans = (e: { deltaX: number; deltaY: number; ctrlKey: boolean; shiftKey: boolean }) =>
-  !e.ctrlKey && (e.shiftKey || (e.deltaX !== 0 && Math.abs(e.deltaX) >= Math.abs(e.deltaY)));
+export function wheelGesture(gap = 250): (e: { deltaX: number; deltaY: number; deltaMode: number; ctrlKey: boolean; shiftKey: boolean }, now?: number) => 'pan' | 'zoom' | null {
+  let last = -Infinity, mode: 'pan' | 'zoom' | null = null, ax = 0, ay = 0;
+  return (e, now = performance.now()) => {
+    if (now - last > gap) { mode = null; ax = ay = 0; }
+    last = now;
+    if (e.ctrlKey) return 'zoom';
+    if (e.shiftKey) return 'pan';
+    if (mode) return mode;
+    ax += wheelPixels({ deltaY: e.deltaX, deltaMode: e.deltaMode }, 1000);
+    ay += wheelPixels(e, 1000);
+    if (Math.max(Math.abs(ax), Math.abs(ay)) < 2) return null;
+    return (mode = ax !== 0 && Math.abs(ax) >= Math.abs(ay) ? 'pan' : 'zoom');
+  };
+}
 
 /** A wheel's step in pixels, however the device reports it (pixels, lines or pages). */
 export const wheelPixels = (e: { deltaY: number; deltaMode: number }, pageHeight: number) =>
   e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * pageHeight : e.deltaY;
 
 /**
+ * The most one wheel event zooms without Ctrl, as the exponent: exp(0.2) is
+ * 22%, about a notch. macOS accelerates a fast wheel to hundreds of pixels an
+ * event, and a 3D mouse's push is emulated as a wheel with big steps: held to
+ * a notch each, they zoom in several steps instead of one jump (report #50).
+ */
+export const WHEEL_STEP = 0.2;
+
+/**
  * How much a wheel event zooms (the factor the view's scale is multiplied by),
  * in proportion to how far it turns, so a trackpad's many small events zoom
- * smoothly and a mouse's notch is one step. A pinch (Ctrl, as the browsers
- * report it, Safari's gestures included: pageGuards.ts) stands for a zoom by
- * exp(−deltaY / 100), followed one to one under the fingers; Ctrl with a
- * mouse wheel (100 or 120 a notch) is held to about a quarter a notch.
+ * smoothly and a mouse's notch is one step, and no event more than WHEEL_STEP.
+ * A pinch (Ctrl, as the browsers report it, Safari's gestures included:
+ * pageGuards.ts) stands for a zoom by exp(−deltaY / 100), followed one to one
+ * under the fingers; Ctrl with a mouse wheel (100 or 120 a notch) is held to
+ * about a quarter a notch.
  */
 export function wheelZoom(e: { deltaY: number; deltaMode: number; ctrlKey: boolean }, pageHeight: number): number {
   const px = wheelPixels(e, pageHeight);
-  const k = e.ctrlKey ? Math.max(-0.25, Math.min(0.25, px * 0.01)) : px * 0.0015;
+  const k = e.ctrlKey ? Math.max(-0.25, Math.min(0.25, px * 0.01)) : Math.max(-WHEEL_STEP, Math.min(WHEEL_STEP, px * 0.0015));
   return Math.exp(-k);
+}
+
+/** The pixels at which three's orbit controls (0.95 to the hundredth of a pixel) zoom by WHEEL_STEP. */
+const ORBIT_WHEEL_MAX = (WHEEL_STEP / -Math.log(0.95)) * 100;
+
+/**
+ * A wheel event held to WHEEL_STEP for three's orbit controls, which read it
+ * next (a capturing listener on the canvas, added before them): its deltaY is
+ * shadowed on the event when it says more. A pinch (Ctrl) is theirs to scale.
+ */
+export function clampWheel(e: WheelEvent): void {
+  if (e.ctrlKey) return;
+  const px = wheelPixels(e, (e.currentTarget as HTMLElement | null)?.clientHeight || 800);
+  if (Math.abs(px) <= ORBIT_WHEEL_MAX) return;
+  Object.defineProperty(e, 'deltaY', { value: Math.sign(px) * ORBIT_WHEEL_MAX, configurable: true });
+  Object.defineProperty(e, 'deltaMode', { value: 0, configurable: true });
 }
 
 /** The view framing some bounds in a box of pixels. */

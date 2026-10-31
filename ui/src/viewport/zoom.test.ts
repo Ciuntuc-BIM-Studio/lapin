@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, wheelPans, wheelPixels } from './zoom';
+import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, clampWheel, wheelGesture, wheelPixels, wheelZoom, WHEEL_STEP } from './zoom';
 
 describe('zoom', () => {
   it('frames bounds in a box, padded and clamped', () => {
@@ -14,12 +14,53 @@ describe('zoom', () => {
   });
 
   it('zooms on a mouse wheel, also the fractional one Chrome reports on macOS; pans sideways or with Shift', () => {
-    expect(wheelPans({ deltaX: 0, deltaY: 4.000244140625, ctrlKey: false, shiftKey: false })).toBe(false);
-    expect(wheelPans({ deltaX: 0, deltaY: -120, ctrlKey: false, shiftKey: false })).toBe(false);
-    expect(wheelPans({ deltaX: 0, deltaY: 2.5, ctrlKey: true, shiftKey: false })).toBe(false);
-    expect(wheelPans({ deltaX: 12, deltaY: 1, ctrlKey: false, shiftKey: false })).toBe(true);
-    expect(wheelPans({ deltaX: 0, deltaY: 30, ctrlKey: false, shiftKey: true })).toBe(true);
-    expect(wheelPans({ deltaX: 1, deltaY: 30, ctrlKey: false, shiftKey: false })).toBe(false);
+    const w = (deltaX: number, deltaY: number, ctrlKey = false, shiftKey = false) => ({ deltaX, deltaY, deltaMode: 0, ctrlKey, shiftKey });
+    expect(wheelGesture()(w(0, 4.000244140625), 0)).toBe('zoom');
+    expect(wheelGesture()(w(0, -120), 0)).toBe('zoom');
+    expect(wheelGesture()(w(0, 2.5, true), 0)).toBe('zoom');
+    expect(wheelGesture()(w(12, 1), 0)).toBe('pan');
+    expect(wheelGesture()(w(0, 30, false, true), 0)).toBe('pan');
+    expect(wheelGesture()(w(1, 30), 0)).toBe('zoom');
+  });
+
+  it('decides pan or zoom once a run, on its first clear movement, so a Magic Mouse does not alternate (report #50)', () => {
+    const w = (deltaX: number, deltaY: number) => ({ deltaX, deltaY, deltaMode: 0, ctrlKey: false, shiftKey: false });
+    const g = wheelGesture(250);
+    expect(g(w(1, 0), 0)).toBeNull();
+    expect(g(w(0, 3), 10)).toBe('zoom');
+    expect(g(w(9, 2), 20)).toBe('zoom');
+    expect(g(w(0, -1), 100)).toBe('zoom');
+    expect(g(w(9, 2), 400)).toBe('pan');
+    expect(g(w(0, 40), 410)).toBe('pan');
+    expect(g(w(0, 40), 420)).toBe('pan');
+    expect(g({ ...w(0, 40), ctrlKey: true }, 430)).toBe('zoom');
+    expect(g(w(5, 40), 440)).toBe('pan');
+    expect(g({ deltaX: 0, deltaY: 1, deltaMode: 1, ctrlKey: false, shiftKey: false }, 1000)).toBe('zoom');
+  });
+
+  it('holds a wheel event to about a notch: an accelerated flick zooms in steps, not in one jump (report #50)', () => {
+    const z = (deltaY: number, ctrlKey = false) => wheelZoom({ deltaY, deltaMode: 0, ctrlKey }, 800);
+    expect(z(4)).toBeCloseTo(Math.exp(-0.006), 6);
+    expect(z(120)).toBeCloseTo(Math.exp(-0.18), 6);
+    expect(z(600)).toBeCloseTo(Math.exp(-WHEEL_STEP), 6);
+    expect(z(-600)).toBeCloseTo(Math.exp(WHEEL_STEP), 6);
+    expect(z(600, true)).toBeCloseTo(Math.exp(-0.25), 6);
+    // Three's orbit controls read a shadowed deltaY, so 0.95^(px/100) is the same step. (A wheel event's deltas are getters on its prototype, as here.)
+    class Wheel { constructor(private d: number, private m = 0, public ctrlKey = false) {} get deltaY() { return this.d; } get deltaMode() { return this.m; } currentTarget = null; }
+    const wheel = (d: number, m = 0, ctrl = false) => new Wheel(d, m, ctrl) as unknown as WheelEvent;
+    const big = wheel(2000);
+    clampWheel(big);
+    expect(Math.pow(0.95, big.deltaY / 100)).toBeCloseTo(Math.exp(-WHEEL_STEP), 6);
+    const small = wheel(120);
+    clampWheel(small);
+    expect(small.deltaY).toBe(120);
+    const pinch = wheel(2000, 0, true);
+    clampWheel(pinch);
+    expect(pinch.deltaY).toBe(2000);
+    const lines = wheel(60, 1);
+    clampWheel(lines);
+    expect(lines.deltaMode).toBe(0);
+    expect(lines.deltaY).toBeCloseTo(390.1, 0);
   });
 
   it('takes a wheel in pixels, lines or pages', () => {

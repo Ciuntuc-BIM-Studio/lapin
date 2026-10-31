@@ -37,7 +37,7 @@ import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
-import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelZoom, type Bounds, type View2, type ZoomHost } from './zoom';
+import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type Bounds, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { DASHES, planDetail, shownAt } from './planDetail';
 import { axisLine, riseThrough } from './arc';
@@ -180,6 +180,7 @@ export function PlanView() {
   useZoomHost(active, host);
   const middleTwice = useRef(middleDouble());
   const wheelBurst = useRef(0);
+  const wheelMode = useRef(wheelGesture());
 
   // ─── Picking ─────────────────────────────────────────────────────────────
 
@@ -440,8 +441,10 @@ export function PlanView() {
   };
 
   const onWheel = (e: React.WheelEvent) => {
-    // A wheel, a pinch or two fingers up and down zoom; two fingers sideways or Shift pan.
-    if (wheelPans(e)) {
+    // A wheel, a pinch or two fingers up and down zoom; two fingers sideways or Shift pan; one or the other for a whole run.
+    const mode = wheelMode.current(e);
+    if (!mode) return;
+    if (mode === 'pan') {
       setView({ ...view, cx: view.cx + e.deltaX / view.scale, cy: view.cy - e.deltaY / view.scale });
       return;
     }

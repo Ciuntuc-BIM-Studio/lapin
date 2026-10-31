@@ -30,7 +30,7 @@ import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveCursor } from './liveInput';
-import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelZoom, type View2, type ZoomHost } from './zoom';
+import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
 
@@ -98,6 +98,7 @@ export function DrawingView() {
   useZoomHost(active, host);
   const middleTwice = useRef(middleDouble());
   const wheelBurst = useRef(0);
+  const wheelMode = useRef(wheelGesture());
   const toScreen = useCallback((p: Vec2) => ({ x: (p.x - v.cx) * v.scale + size.w / 2, y: size.h / 2 - (p.y - v.cy) * v.scale }), [v.cx, v.cy, v.scale, size]);
   const toWorld = useCallback((x: number, y: number): Vec2 => ({ x: (x - size.w / 2) / v.scale + v.cx, y: (size.h / 2 - y) / v.scale + v.cy }), [v.cx, v.cy, v.scale, size]);
 
@@ -230,8 +231,10 @@ export function DrawingView() {
       <KeyPlan mode="drawing" viewId={id} />
       <svg ref={ref} className={`plan-svg drawing-svg${cadStep || tool?.gesture ? ' tool' : ''}`} data-testid="drawing"
         onWheel={(e) => {
-          // A wheel, a pinch or two fingers up and down zoom; two fingers sideways or Shift pan.
-          if (wheelPans(e)) { setView({ ...v, cx: v.cx + e.deltaX / v.scale, cy: v.cy - e.deltaY / v.scale }); return; }
+          // A wheel, a pinch or two fingers up and down zoom; two fingers sideways or Shift pan; one or the other for a whole run.
+          const mode = wheelMode.current(e);
+          if (!mode) return;
+          if (mode === 'pan') { setView({ ...v, cx: v.cx + e.deltaX / v.scale, cy: v.cy - e.deltaY / v.scale }); return; }
           const r = ref.current!.getBoundingClientRect();
           const p = toWorld(e.clientX - r.left, e.clientY - r.top);
           const scale = clampScale(v.scale * wheelZoom(e, size.h));
