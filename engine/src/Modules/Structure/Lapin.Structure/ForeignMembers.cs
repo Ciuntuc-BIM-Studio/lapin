@@ -97,14 +97,38 @@ public sealed class ForeignMembers : IIfcRecognizer
         return beam.Id;
     }
 
+    /// <summary>
+    /// A long rectangle: a strip foundation along its middle (decision 207). Its section stays the file's rectangle: a core
+    /// as wide as it on a footing of the same width, half its height each, the bottom where the file has it.
+    /// </summary>
+    string? StripFooting(IEdit edit, ForeignElement e, ShapePrism prism, (Vec2 Centre, double Width, double Depth, double RotationDeg) r, Entity storey, RecognitionContext ctx)
+    {
+        var angle = r.RotationDeg * Math.PI / 180;
+        var along = new Vec2(Math.Cos(angle), Math.Sin(angle));
+        var (length, width) = r.Width >= r.Depth ? (r.Width, r.Depth) : (r.Depth, r.Width);
+        if (r.Width < r.Depth) along = along.Perp;
+        var height = Round(prism.Height);
+        var bottom = Math.Round(prism.BaseZ - storey.Num("elevation"), 6);
+        var material = e.Material ?? "Reinforced concrete";
+        var type = Type(edit, ctx, IfcClass.FootingType, e, $"strip:{Round(width)}:{height}:{bottom}", $"SF {width * 100:0}×{height * 100:0}",
+            name => StripFootings.CreateType(edit, name, [new LayerSpec(material, Round(width), Core: true)], height / 2, Round(width), height / 2, bottom, material));
+        var (start, end) = (r.Centre - along * (length / 2), r.Centre + along * (length / 2));
+        var footing = new Entity(e.GlobalId, IfcClass.Footing, e.Name ?? type.Name, new JsonObject { ["start"] = Place.Json2(start), ["end"] = Place.Json2(end) }, "STRIP_FOOTING");
+        edit.Add(footing);
+        Spatial.Contain(edit, storey.Id, footing.Id);
+        StripFootings.SetType(edit, footing, type);
+        ctx.Made.Add(footing.Id);
+        return footing.Id;
+    }
+
     string? Footing(IEdit edit, ForeignElement e, RecognitionContext ctx)
     {
         if (!One(e, ctx, p => p.Vertical, "a footing whose body is not one vertical prism", out var prism)) return null;
         var plan = Footprints.Plan(prism.Outer);
-        if (Footprints.Rectangle(plan) is not { } r) { ctx.Skip("a footing that is not a rectangle (strip footings come later)"); return null; }
-        if (Math.Max(r.Width, r.Depth) > 4 * Math.Min(r.Width, r.Depth)) { ctx.Skip("a strip footing (recognised later)"); return null; }
+        if (Footprints.Rectangle(plan) is not { } r) { ctx.Skip("a footing that is not a rectangle"); return null; }
         var storey = edit.Model.Get(e.StoreyId);
         if (storey == null) { ctx.Skip("a footing without a storey"); return null; }
+        if (Math.Max(r.Width, r.Depth) > 4 * Math.Min(r.Width, r.Depth)) return StripFooting(edit, e, prism, r, storey, ctx);
         var height = Round(prism.Height);
         var bottom = Math.Round(prism.BaseZ - storey.Num("elevation"), 6);
         var step = new PadStep(Round(r.Width), Round(r.Depth), height);

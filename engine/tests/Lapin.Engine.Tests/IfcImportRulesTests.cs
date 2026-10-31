@@ -68,11 +68,15 @@ public class IfcImportRulesTests : IDisposable
             Element("IFCBUILDINGELEMENTPROXY", "$", name, x, y, z, size, flat, props);
 
         /// <summary>A box as an element of another class (its entity name and predefined type, "$" for none).</summary>
-        public string Element(string cls, string predefined, string name, double x, double y, double z, double size = 1, bool flat = false, params (string Set, string Prop, string Value)[] props)
+        public string Element(string cls, string predefined, string name, double x, double y, double z, double size = 1, bool flat = false, params (string Set, string Prop, string Value)[] props) =>
+            Cuboid(cls, predefined, name, x, y, z, size, size, flat ? 0 : size, props);
+
+        /// <summary>A box of three sizes (dz 0: a 2D square) as an element of the class given.</summary>
+        public string Cuboid(string cls, string predefined, string name, double x, double y, double z, double sx, double sy, double sz, params (string Set, string Prop, string Value)[] props)
         {
-            var dz = flat ? 0 : size;
+            var flat = sz == 0;
             var pts = new[] { (0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0), (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1) }
-                .Select(p => $"({R(x + p.Item1 * size)},{R(y + p.Item2 * size)},{R(z + p.Item3 * dz)})");
+                .Select(p => $"({R(x + p.Item1 * sx)},{R(y + p.Item2 * sy)},{R(z + p.Item3 * sz)})");
             var list = Add($"IFCCARTESIANPOINTLIST3D(({string.Join(",", pts)}),$)");
             var tris = flat ? "((1,3,2),(1,4,3))" : "((1,3,2),(1,4,3),(5,6,7),(5,7,8),(1,2,6),(1,6,5),(2,3,7),(2,7,6),(3,4,8),(3,8,7),(4,1,5),(4,5,8))";
             var set = Add($"IFCTRIANGULATEDFACESET(#{list},$,.T.,{tris},$)");

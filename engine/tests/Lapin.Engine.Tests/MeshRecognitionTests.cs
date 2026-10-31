@@ -74,4 +74,53 @@ public class MeshRecognitionTests
         Assert.Contains(gem.Id, Groups.MembersOf(g.Model, group.Id));
         Assert.NotNull(Spatial.StoreyOf(g.Model, gem.Id));
     }
+
+    [Fact]
+    public void A_slab_with_sloping_edges_is_read_by_its_top_face()
+    {
+        // A slab as another program meshes it: a 6 × 4 m top at 0.2, its edges sloping in to a 5.6 × 3.6 m bottom at 0.
+        var top = new[] { (0.0, 0.0), (6, 0), (6, 4), (0, 4) };
+        var bottom = new[] { (0.2, 0.2), (5.8, 0.2), (5.8, 3.8), (0.2, 3.8) };
+        var obj = new System.Text.StringBuilder("o Slab\n");
+        foreach (var (x, y) in bottom) obj.Append($"v {x} {y} 0\n");
+        foreach (var (x, y) in top) obj.Append($"v {x} {y} 0.2\n");
+        foreach (var (a, b, c) in new[] { (1, 3, 2), (1, 4, 3), (5, 6, 7), (5, 7, 8), (1, 2, 6), (1, 6, 5), (2, 3, 7), (2, 7, 6), (3, 4, 8), (3, 8, 7), (4, 1, 5), (4, 5, 8) })
+            obj.Append($"f {a} {b} {c}\n");
+        var g = new Fixture(new ArchitectureModule(), new StructureModule());
+        MeshImport.Run(g.Session, System.Text.Encoding.UTF8.GetBytes(obj.ToString()), "slab.obj", new JsonObject { ["up"] = "z" }, null, out _);
+        var e = g.Model.Entities.Single(x => x.Str("source") == "slab.obj");
+        // A mesh comes as a proxy: told it is a slab (as a Fragments or IFC file says), it is read as one.
+        g.Session.Edit("As a slab", edit => edit.Replace(e.With(attrs: Set(e.CloneAttrs(), "exportAs", IfcClass.Slab))));
+        MeshRecognitionReport report = MeshRecognitionReport.None;
+        g.Session.Edit("Recognise", edit => report = MeshRecognition.Recognize(edit, g.Session.Catalog, [e.Id]));
+        Assert.Equal(1, report.Recognized);
+        var slab = g.Model.Get(e.Id)!;
+        Assert.Equal(IfcClass.Slab, slab.Class);
+        var (lo, hi) = g.Bounds(slab.Id);
+        Assert.Equal(6, hi.X - lo.X, 3); Assert.Equal(4, hi.Y - lo.Y, 3); Assert.Equal(0.2, hi.Z - lo.Z, 3);
+    }
+
+    static JsonObject Set(JsonObject o, string k, string v) { o[k] = v; return o; }
+
+    [Fact]
+    public void A_long_footing_from_a_file_is_a_strip_foundation_along_its_middle()
+    {
+        var dir = Directory.CreateTempSubdirectory("lapin-strip").FullName;
+        try
+        {
+            var x = new IfcImportRulesTests.Plant();
+            var id = x.Cuboid("IFCFOOTING", ".STRIP_FOOTING.", "SF-1", 2, 1, -1, 10, 0.6, 0.5);
+            var path = x.Bytes(dir);
+            var g = new Fixture(new ArchitectureModule(), new StructureModule());
+            var r = IfcImport.Run(g.Session, path, null, out _);
+            Assert.Equal(1, r.Recognized);
+            var f = g.Model.Get(id)!;
+            Assert.Equal("STRIP_FOOTING", f.PredefinedType);
+            var (lo, hi) = g.Bounds(id);
+            Assert.Equal(2, lo.X, 3); Assert.Equal(12, hi.X, 3);
+            Assert.Equal(1, lo.Y, 3); Assert.Equal(1.6, hi.Y, 3);
+            Assert.Equal(-1, lo.Z, 3); Assert.Equal(-0.5, hi.Z, 3);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
 }
