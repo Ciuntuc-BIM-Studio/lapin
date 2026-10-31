@@ -20,7 +20,7 @@ Donde se encuentran dos muros, Lapin los une por sí mismo. Sus capas se encuent
 
 - **Muro curvo** (<kbd>WC</kbd>) dibuja un muro a lo largo de un arco.
 - **Muro cortina** (<kbd>CW</kbd>) dibuja un muro acristalado con montantes y paneles.
-- **Unir** (<kbd>JW</kbd>), **Inglete** y **A tope** cambian cómo se encuentran dos muros.
+- **Unir** (<kbd>JW</kbd>), **Inglete** y **A tope** cambian cómo se encuentran dos muros. En ambos casos, cada capa dobla la esquina por sí sola: los acabados se encuentran con sus iguales y siguen sin cortes, y los núcleos se encuentran en la diagonal (inglete) o un núcleo sigue hasta la cara exterior del otro (a tope), así que la planta de muros multicapa muestra esquinas limpias.
 - **Intercambiar** cambia cuál de los dos muros pasa de largo.
 
 ## Modificar un muro

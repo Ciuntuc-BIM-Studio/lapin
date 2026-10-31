@@ -20,7 +20,7 @@ Wo zwei Wände aufeinandertreffen, verbindet Lapin sie selbst. Ihre Schichten la
 
 - **Gebogene Wand** (<kbd>WC</kbd>) zeichnet eine Wand entlang eines Bogens.
 - **Vorhangfassade** (<kbd>CW</kbd>) zeichnet eine verglaste Wand mit Pfosten, Riegeln und Paneelen.
-- Wände verbinden sich von selbst, wo sie aufeinandertreffen: eine Ecke als Gehrung, eine Wand, die auf einer anderen endet, als T. **Verbinden** (<kbd>JW</kbd>), **Gehrung** und **Stumpf** ändern, wie zwei Wände aufeinandertreffen, wenn das nicht gewollt ist; **Neue Ecken auf Gehrung** macht Stumpf zur Vorgabe auf diesem Rechner.
+- Wände verbinden sich von selbst, wo sie aufeinandertreffen: eine Ecke als Gehrung, eine Wand, die auf einer anderen endet, als T. **Verbinden** (<kbd>JW</kbd>), **Gehrung** und **Stumpf** ändern, wie zwei Wände aufeinandertreffen, wenn das nicht gewollt ist; **Neue Ecken auf Gehrung** macht Stumpf zur Vorgabe auf diesem Rechner. In beiden Fällen läuft jede Schicht für sich um die Ecke: die Bekleidungen treffen auf ihresgleichen und laufen ungebrochen weiter, die Kerne treffen sich auf der Diagonale (Gehrung) oder ein Kern läuft bis zur Außenseite des anderen (Stumpf), so zeigt der Grundriss mehrschichtiger Wände saubere Ecken.
 - **Tauschen** ändert, welche der beiden Wände durchläuft.
 
 ## Eine Wand ändern

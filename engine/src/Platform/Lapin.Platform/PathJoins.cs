@@ -142,7 +142,8 @@ public static class Joins
     /// Joins two elements: the join is worked out (refused with the reason when
     /// they do not meet), their joined axis ends brought to the crossing, and
     /// the relationship written, in place of any the pair already had. Without
-    /// a priority, the element that ran through before still does.
+    /// a priority, the element that ran through before still does; without a style, the pair keeps
+    /// its own, and a new corner is mitred (decision 175; a T is butt whatever is asked).
     /// </summary>
     public static WallJoin Join(IEdit edit, IPathElements paths, Entity a, Entity b, JoinStyle? style = null, char? priority = null)
     {
@@ -153,7 +154,7 @@ public static class Joins
         // A curved element and a straight one: the arc runs through (on along its tangent), the straight one stops at its face.
         if (priority == null && PathCurve.Of(a).IsArc != PathCurve.Of(b).IsArc) priority = PathCurve.Of(a).IsArc ? 'a' : 'b';
         var (fa, fb) = Tangents(a, b, existing, Frame(paths, edit.Model, a), Frame(paths, edit.Model, b));
-        var join = WallJoins.Compute(fa, fb, new JoinOptions(Priority: priority, Style: style ?? (existing != null ? StyleOf(existing) : JoinStyle.Butt)));
+        var join = WallJoins.Compute(fa, fb, new JoinOptions(Priority: priority, Style: style ?? (existing != null ? StyleOf(existing) : JoinStyle.Mitre)));
         MoveAxis(edit, a, join.A);
         MoveAxis(edit, b, join.B);
         var (relating, related, relatingSide, relatedSide) = join.Relating == 'a' ? (a, b, join.A, join.B) : (b, a, join.B, join.A);

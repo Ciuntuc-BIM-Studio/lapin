@@ -136,6 +136,10 @@ public static class Walls
         // A cut at a face: Right at yMin, Left at yMax, straight in between.
         double At(EndCut c, double y) => yMax - yMin < 1e-12 ? c.Right : c.Right + (c.Left - c.Right) * (y - yMin) / (yMax - yMin);
         Vec2 P(double x, double y) => start + dir * x + left * y;
+        // At a corner, each layer turns it on its own (report #49): finishes meet their like, the cores meet as the join's style says.
+        var corners = paths != null ? LayerCorners(m, wall, paths, start, dir, length, bands) : new Func<Band, (double From, double To)>?[2];
+        double Reach(int end, Band b, bool atFrom) =>
+            corners[end] is { } f ? (atFrom ? f(b).From : f(b).To) : At(end == 0 ? startCut : endCut, atFrom ? b.From : b.To);
 
         var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
         var parts = new List<GeometryPart>();
@@ -185,8 +189,8 @@ public static class Walls
             if (!(band.To - band.From > 1e-9)) continue;
             Vec2[] footprint =
             [
-                P(-At(startCut, band.From), band.From), P(length + At(endCut, band.From), band.From),
-                P(length + At(endCut, band.To), band.To), P(-At(startCut, band.To), band.To),
+                P(-Reach(0, band, true), band.From), P(length + Reach(1, band, true), band.From),
+                P(length + Reach(1, band, false), band.To), P(-Reach(0, band, false), band.To),
             ];
             // The core of a zoned wall is its zones, bottom to top; every other layer runs the whole height.
             if (band.Core && zones.Count > 0)
@@ -204,8 +208,8 @@ public static class Walls
             else if (Prism.ExtrudeFootprint(footprint, z, built, band.Name) is { } solid)
                 parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), 0, built, isCore: band.Core));
             // In plan, the band between the gaps the openings leave at the cut.
-            var x0 = -Math.Max(At(startCut, band.From), At(startCut, band.To));
-            var x1 = length + Math.Max(At(endCut, band.From), At(endCut, band.To));
+            var x0 = -Math.Max(Reach(0, band, true), Reach(0, band, false));
+            var x1 = length + Math.Max(Reach(1, band, true), Reach(1, band, false));
             var at = x0;
             foreach (var g in gaps.Append((From: x1, To: x1)))
             {
@@ -239,6 +243,107 @@ public static class Walls
             }
         }
         return new ElementGeometry(parts, plan, [start, end], problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>
+    /// How each layer ends at the wall's corners (L joins with a straight wall), report #49: a layer
+    /// is cut by its own line, not by the one line the join cuts the whole body by, so the corner
+    /// reads as built. The layers are paired from the core outwards on each side of the corner (the
+    /// outer side's first finish with the other wall's first, and so on; one with no partner ends
+    /// on the other wall's last face on that side), and each pair meets on the line between where
+    /// their edges cross: a finish turns the corner unbroken. The cores meet as the join's style
+    /// says: mitred, on their own diagonal; butt, the core of the wall that runs through goes on to
+    /// the other core's outer face and the other core stops at its inner face. A wall of one layer
+    /// ends exactly as the join cuts it. Per end, a band's reach past the joint at its From and To
+    /// edges; null where the end has no such corner.
+    /// </summary>
+    static Func<Band, (double From, double To)>?[] LayerCorners(IModelView m, Entity wall, IPathElements paths, Vec2 start, Vec2 dir, double length, IReadOnlyList<Band> bands)
+    {
+        var o = new Func<Band, (double From, double To)>?[2];
+        foreach (var r in Joins.Of(m, wall.Id))
+        {
+            var join = Joins.Compute(m, r, paths, out _);
+            if (join == null || join.Kind != JoinKind.L) continue;
+            var side = r.Relating == wall.Id ? join.A : join.B;
+            var i = side.Connection switch { Connection.AtStart => 0, Connection.AtEnd => 1, _ => -1 };
+            if (i < 0 || o[i] != null || m.Get(Joins.Other(r, wall.Id)) is not { } other) continue;
+            o[i] = LayerCorner(m, start, dir, length, i == 0, bands, other, join.Style, side.RunsThrough);
+        }
+        return o;
+    }
+
+    /// <summary>One corner's layer ends (see <see cref="LayerCorners"/>); null when the other wall is curved or parallel.</summary>
+    static Func<Band, (double From, double To)>? LayerCorner(IModelView m, Vec2 start, Vec2 dir, double length, bool atStart, IReadOnlyList<Band> bands, Entity other, JoinStyle style, bool runsThrough)
+    {
+        if (PathCurve.Of(other) is { IsArc: true }) return null;
+        var (os, oe) = (Start(other), End(other));
+        if ((oe - os).Length < MinLength) return null;
+        var od = (oe - os).Normalized();
+        var cross = Vec2.Cross(dir, od);
+        if (Math.Abs(cross) < 1e-6) return null;
+        var left = dir.Perp;
+        var joint = atStart ? start : start + dir * length;
+        var myFar = atStart ? start + dir * length : start;
+        var otherFar = (os - joint).Length > (oe - joint).Length ? os : oe;
+        // The side each wall's inner face is on (the other wall's side), in its own frame (+1: its left).
+        var mine = Math.Sign(Vec2.Dot(otherFar - joint, left));
+        var theirs = Math.Sign(Vec2.Dot(myFar - joint, od.Perp));
+        if (mine == 0 || theirs == 0) return null;
+        var me = new CornerEdges(bands, mine);
+        var them = new CornerEdges(Section(m, other), theirs);
+        Vec2 Mine(double y) => start + left * y;
+        Vec2 Theirs(double y) => os + od.Perp * y;
+        double ReachTo(double y, double yOther)
+        {
+            // Where my edge line at y crosses the other wall's at yOther, as a reach past my end.
+            var p = Mine(y);
+            var s = Vec2.Cross(Theirs(yOther) - p, od) / cross;
+            return atStart ? -s : s - length;
+        }
+        return band =>
+        {
+            if (band.To - band.From < 1e-12) return (0, 0);
+            var core = band.From >= me.CoreLo - 1e-9 && band.To <= me.CoreHi + 1e-9;
+            if (core && style == JoinStyle.Butt)
+            {
+                var stop = runsThrough ? them.Outer[0] : them.Inner[0];
+                return (ReachTo(band.From, stop), ReachTo(band.To, stop));
+            }
+            return (ReachTo(band.From, them.Partner(me, band.From)), ReachTo(band.To, them.Partner(me, band.To)));
+        };
+    }
+
+    /// <summary>
+    /// A wall's layer edges seen from a corner: the core's span, and the edges on the corner's outer
+    /// and inner sides, each list from the core's face outwards (<paramref name="inner"/>: the side,
+    /// +1 left or −1 right, its inner face is on). The thickest layer stands for a core when none is marked.
+    /// </summary>
+    sealed class CornerEdges
+    {
+        public readonly double CoreLo, CoreHi;
+        public readonly List<double> Outer, Inner;
+
+        public CornerEdges(IReadOnlyList<Band> bands, int inner)
+        {
+            var cores = bands.Where(b => b.Core && b.To - b.From > 1e-12).ToList();
+            if (cores.Count == 0) cores = [bands.OrderByDescending(b => b.To - b.From).First()];
+            (CoreLo, CoreHi) = (cores.Min(b => b.From), cores.Max(b => b.To));
+            var ys = bands.SelectMany(b => new[] { b.From, b.To }).Distinct().ToList();
+            var below = ys.Where(y => y < CoreLo - 1e-9).OrderByDescending(y => y).Prepend(CoreLo).ToList();
+            var above = ys.Where(y => y > CoreHi + 1e-9).OrderBy(y => y).Prepend(CoreHi).ToList();
+            (Inner, Outer) = inner > 0 ? (above, below) : (below, above);
+        }
+
+        /// <summary>The edge of this wall that pairs with <paramref name="mine"/>'s edge at <paramref name="y"/>: the same rank from the core on the same side of the corner, or the last; inside the core, the same share of it.</summary>
+        public double Partner(CornerEdges mine, double y)
+        {
+            int k;
+            if ((k = mine.Outer.FindIndex(e => Math.Abs(e - y) < 1e-9)) >= 0) return Outer[Math.Min(k, Outer.Count - 1)];
+            if ((k = mine.Inner.FindIndex(e => Math.Abs(e - y) < 1e-9)) >= 0) return Inner[Math.Min(k, Inner.Count - 1)];
+            // An edge between two core layers: as far across the other core, from the outer side.
+            var t = (y - mine.Outer[0]) / (mine.Inner[0] - mine.Outer[0]);
+            return Outer[0] + (Inner[0] - Outer[0]) * t;
+        }
     }
 
     /// <summary>

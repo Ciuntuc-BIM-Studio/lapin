@@ -80,6 +80,26 @@ public class JoinModelTests
         Assert.Equal("mitre", Style(Assert.Single(JoinRels(beam))));
     }
 
+    [Theory]
+    [InlineData("butt")]
+    [InlineData("mitre")]
+    public void At_every_corner_each_layer_turns_it_unbroken_so_each_layer_alone_tiles_its_own_ring(string style)
+    {
+        // Report #49: a corner of layered walls looked unprofessional, the outer finish of one wall stopping against the
+        // other's core. Each layer now meets its like: the render, the core and the plaster each make a closed ring, butt or mitred.
+        var (f, ids) = ClockwiseRoom(style);
+        var bands = Walls.Section(f.Model, Get(f, ids[0]));
+        foreach (var band in bands)
+        {
+            // Clockwise, the left is outside: a band from a to b (left of the axis positive) rings the room between those offsets.
+            double Rect(double d) => (5 + 2 * d) * (3.5 + 2 * d);
+            var ring = (Rect(band.To) - Rect(band.From)) * Height;
+            var layer = ids.Sum(id => f.Session.Geometry(id)!.Parts.Where(p => p.Key == $"layer:{band.Index}").Sum(p => Measure.Volume(p.Solid)));
+            Assert.Equal(ring, layer, 6);
+        }
+        Assert.Equal(RingVolume(), ids.Sum(id => Volume(f, id)), 6);
+    }
+
     [Fact]
     public void Drawn_with_joining_off_the_same_walls_stay_apart_and_double_up_at_the_corners()
     {

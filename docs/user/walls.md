@@ -20,7 +20,7 @@ Where two walls meet, Lapin joins them by itself. Their layers run into each oth
 
 - **Curved wall** (<kbd>WC</kbd>) draws a wall along an arc.
 - **Curtain wall** (<kbd>CW</kbd>) draws a glazed wall with mullions and panels.
-- Walls join by themselves where they meet: a corner as a mitre, a wall ending on another as a T. **Join** (<kbd>JW</kbd>), **Mitre** and **Butt** change how two walls meet when that is not what you want; **Mitre new corners** makes butt the default on this computer.
+- Walls join by themselves where they meet: a corner as a mitre, a wall ending on another as a T. **Join** (<kbd>JW</kbd>), **Mitre** and **Butt** change how two walls meet when that is not what you want; **Mitre new corners** makes butt the default on this computer. Either way, each layer turns the corner on its own: the finishes meet their like and run round unbroken, and the cores meet on the diagonal (mitre) or one core runs on to the other's outer face (butt), so a plan of layered walls shows clean corners.
 - **Swap** changes which of the two walls runs through.
 
 ## Changing a wall
