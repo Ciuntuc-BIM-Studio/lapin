@@ -16,7 +16,7 @@ Un proiect nou are deja trei niveluri: **Foundations** (−1,50), **Ground floor
 
 ![Părțile ferestrei Lapin](shots/workspace.webp)
 
-1. **Taburile panglicii.** Desen, Arhitectură, Structură, Teren, Studio, Adnotări, Gestionare, Cantități și Vedere își grupează fiecare uneltele. **Fișier** deschide, salvează, importă și exportă. **Anulează** și **Refă** sunt la capătul din dreapta al aceleiași bare (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
+1. **Taburile panglicii.** Desen, Arhitectură, Finisaje, Structură, Teren, Studio, Adnotări, Gestionare, Cantități și Vedere își grupează fiecare uneltele. **Fișier** deschide, salvează, importă și exportă. **Anulează** și **Refă** sunt la capătul din dreapta al aceleiași bare (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
 2. **Panglica.** Are uneltele tabului curent. Ține mouse-ul peste o unealtă ca să vezi numele și literele ei de la tastatură.
 3. **Navigatorul proiectului.** Listează nivelurile, planurile, secțiunile, fațadele, vederile 3D, planșele și extrasele. Dublu clic pe una o deschide într-un tab. Un proiect se deschide pe planul parterului, cu vederea 3D într-un tab alături.
 4. **Vederea.** Aici desenezi: un plan, o secțiune, o vedere 3D sau o planșă. Poți deschide mai multe vederi alăturate cu cele două butoane din dreapta sus a vederii.

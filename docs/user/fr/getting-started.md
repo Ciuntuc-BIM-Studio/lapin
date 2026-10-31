@@ -16,7 +16,7 @@ Un nouveau projet a déjà trois niveaux : **Foundations** (−1.50), **Ground
 
 ![Les parties de la fenêtre de Lapin](shots/workspace.webp)
 
-1. **Les onglets du ruban.** Dessin, Architecture, Structure, Site, Studio, Annoter, Gérer, Métrés et Vue regroupent chacun leurs outils. **Fichier** ouvre, enregistre, importe et exporte. **Annuler** et **Rétablir** sont à l’extrémité droite de la même barre (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
+1. **Les onglets du ruban.** Dessin, Architecture, Finitions, Structure, Site, Studio, Annoter, Gérer, Métrés et Vue regroupent chacun leurs outils. **Fichier** ouvre, enregistre, importe et exporte. **Annuler** et **Rétablir** sont à l’extrémité droite de la même barre (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
 2. **Le ruban.** Il contient les outils de l’onglet courant. Survolez un outil pour voir son nom et ses lettres au clavier.
 3. **L’arborescence du projet.** Elle liste les niveaux, les plans, les coupes, les élévations, les vues 3D, les feuilles et les nomenclatures. Double-cliquez sur l’un d’eux pour l’ouvrir dans un onglet. Un projet s’ouvre sur le plan du rez-de-chaussée, avec la vue 3D dans un onglet à côté.
 4. **La vue.** C’est là que vous dessinez : un plan, une coupe, une vue 3D ou une feuille. Vous pouvez ouvrir plusieurs vues côte à côte avec les deux boutons en haut à droite de la vue.

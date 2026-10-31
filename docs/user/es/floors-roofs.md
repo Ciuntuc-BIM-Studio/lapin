@@ -33,9 +33,9 @@ Los muros del nivel de la cubierta se detienen bajo ella y suben por sí solos h
 
 ## Falsos techos
 
-**Arquitectura → Falso techo** (<kbd>CL</kbd>) dibuja un falso techo sobre un contorno que se marca con clics; **Falso techo en un local** llena el local donde se hace clic, siguiendo su contorno. Un falso techo cuelga a su **Altura** sobre la planta (2700 mm salvo que se cambie en sus propiedades).
+**Acabados → Falso techo** (<kbd>CL</kbd>) dibuja un falso techo sobre un contorno que se marca con clics; **Falso techo en un local** llena el local donde se hace clic, siguiendo su contorno. Un falso techo cuelga a su **Altura** sobre la planta (2700 mm salvo que se cambie en sus propiedades).
 
-Su tipo, en **Arquitectura → Tipos de falso techo**, fija el **Sistema**: **Placas sobre perfilería vista** (ancho, largo y espesor de la placa, ancho visto, altura y giro de la perfilería, cuelgues hasta la estructura con su separación) o **Placa de yeso, continuo**. La perfilería se centra en el techo, así que las placas cortadas en los bordes salen iguales.
+Su tipo, en **Acabados → Tipos de falso techo**, fija el **Sistema**: **Placas sobre perfilería vista** (ancho, largo y espesor de la placa, ancho visto, altura y giro de la perfilería, cuelgues hasta la estructura con su separación) o **Placa de yeso, continuo**. La perfilería se centra en el techo, así que las placas cortadas en los bordes salen iguales.
 
 **Panel de luz** y **Difusor de aire** ponen uno en la celda donde se hace clic; un clic en la misma celda con la otra herramienta lo cambia. En el panel de propiedades, **Distribuir** pone paneles de luz o difusores cada tantas celdas, y **Vaciar** los quita. Las tablas cuentan las placas enteras, los paneles de luz y los difusores, y el techo va a IFC como IfcCovering de tipo CEILING.
 

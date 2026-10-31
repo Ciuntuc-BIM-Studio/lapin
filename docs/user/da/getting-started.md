@@ -16,7 +16,7 @@ Et nyt projekt har allerede tre niveauer: **Foundations** (−1.50), **Ground fl
 
 ![Delene af Lapins vindue](shots/workspace.webp)
 
-1. **Båndets faner.** Tegn, Arkitektur, Konstruktion, Grund, Studio, Annotér, Administrer, Mængder og Vis samler hver deres værktøjer. **Filer** åbner, gemmer, importerer og eksporterer. **Fortryd** og **Annuller fortryd** sidder i højre ende af samme bjælke (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
+1. **Båndets faner.** Tegn, Arkitektur, Overflader, Konstruktion, Grund, Studio, Annotér, Administrer, Mængder og Vis samler hver deres værktøjer. **Filer** åbner, gemmer, importerer og eksporterer. **Fortryd** og **Annuller fortryd** sidder i højre ende af samme bjælke (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
 2. **Båndet.** Det rummer den aktuelle fanes værktøjer. Hold musen over et værktøj for at se dets navn og dets tastaturbogstaver.
 3. **Projektbrowseren.** Den viser niveauer, planer, snit, facader, 3D-visninger, ark og skemaer. Dobbeltklik på en for at åbne den i en fane. Et projekt åbner på stueetagens plan med 3D-visningen i en fane ved siden af.
 4. **Visningen.** Her tegner du: en plan, et snit, en 3D-visning eller et ark. Du kan åbne flere visninger side om side med de to knapper øverst til højre i visningen.

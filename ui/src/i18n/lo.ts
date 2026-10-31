@@ -513,7 +513,7 @@ export const LO: Record<string, string> = {
   'Safety grille': 'ເຫຼັກດັດກັນຂະໂມຍ', 'In the reveal': 'ໃນວົງກົບ', 'On the interior face': 'ເທິງໜ້າດ້ານໃນ', 'Bars': 'ເຫຼັກດັດ', 'Horizontal': 'ແນວນອນ', 'Vertical': 'ແນວຕັ້ງ',
   'Both ways': 'ທັງສອງທິດ', 'Bar size': 'ຂະໜາດເຫຼັກດັດ', 'Bar spacing': 'ໄລຍະຫ່າງເຫຼັກດັດ', 'Frame width': 'ຄວາມກວ້າງກອບ', 'Past the opening': 'ຍື່ນກາຍຊ່ອງເປີດ', 'Set back from the face': 'ຖອຍເຂົ້າຈາກໜ້າຝາ',
   'Window box': 'ກະບະປູກດອກໄມ້', 'Below the opening': 'ກ້ອງຊ່ອງເປີດ', 'Canopy': 'ກັນສາດ', 'Above the head': 'ເໜືອທັບຫຼັງ', 'In the reveal, inside': 'ໃນວົງກົບ, ດ້ານໃນ',
-  'In the reveal, outside': 'ໃນວົງກົບ, ດ້ານນອກ', 'Clear': 'ລ້າງອອກ', 'Ceiling': 'ເພດານ', 'Ceiling in a room': 'ເພດານໃນຫ້ອງ', 'Light panel': 'ແຜ່ນໂຄມໄຟ', 'Air diffuser': 'ຫົວຈ່າຍລົມ',
+  'In the reveal, outside': 'ໃນວົງກົບ, ດ້ານນອກ', 'Clear': 'ລ້າງອອກ', 'Finishes': 'ງານຕົກແຕ່ງ', 'Ceiling': 'ເພດານ', 'Ceiling in a room': 'ເພດານໃນຫ້ອງ', 'Light panel': 'ແຜ່ນໂຄມໄຟ', 'Air diffuser': 'ຫົວຈ່າຍລົມ',
   'Ceiling types': 'ປະເພດເພດານ', 'Ceiling types…': 'ປະເພດເພດານ…', 'Ceiling type': 'ປະເພດເພດານ', 'New grid ceiling': 'ເພດານໂຄງຕາໜ່າງໃໝ່', 'New plasterboard ceiling': 'ເພດານແຜ່ນຍິບຊັມໃໝ່',
   'Tiles on an exposed grid': 'ແຜ່ນເທິງໂຄງຕາໜ່າງເປີດເຫັນ', 'Plasterboard, continuous': 'ແຜ່ນຍິບຊັມ, ຕໍ່ເນື່ອງ', 'Tile width': 'ຄວາມກວ້າງແຜ່ນ', 'Tile length': 'ຄວາມຍາວແຜ່ນ',
   'Module width': 'ຄວາມກວ້າງໂມດູນ', 'Module length': 'ຄວາມຍາວໂມດູນ', 'Grid': 'ໂຄງຕາໜ່າງ', 'Face width': 'ຄວາມກວ້າງໜ້າເຫັນ', 'Rotation (°)': 'ການໝຸນ (°)', 'Grid material': 'ວັດສະດຸໂຄງຕາໜ່າງ',

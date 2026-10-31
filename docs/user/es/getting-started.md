@@ -16,7 +16,7 @@ Un proyecto nuevo ya tiene tres niveles: **Foundations** (−1.50), **Ground flo
 
 ![Las partes de la ventana de Lapin](shots/workspace.webp)
 
-1. **Las fichas de la cinta.** Dibujo, Arquitectura, Estructura, Emplazamiento, Studio, Anotar, Gestionar, Cantidades y Vista agrupan cada una sus herramientas. **Archivo** abre, guarda, importa y exporta. **Deshacer** y **Rehacer** están en el extremo derecho de la misma barra (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
+1. **Las fichas de la cinta.** Dibujo, Arquitectura, Acabados, Estructura, Emplazamiento, Studio, Anotar, Gestionar, Cantidades y Vista agrupan cada una sus herramientas. **Archivo** abre, guarda, importa y exporta. **Deshacer** y **Rehacer** están en el extremo derecho de la misma barra (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
 2. **La cinta.** Contiene las herramientas de la ficha actual. Pase el cursor sobre una herramienta para ver su nombre y sus letras de teclado.
 3. **El navegador del proyecto.** Enumera los niveles, las plantas, las secciones, los alzados, las vistas 3D, las láminas y las tablas. Haga doble clic en uno para abrirlo en una pestaña. Un proyecto se abre en la planta de Ground floor, con la vista 3D en una pestaña al lado.
 4. **La vista.** Aquí es donde se dibuja: una planta, una sección, una vista 3D o una lámina. Puede abrir varias vistas una al lado de otra con los dos botones de la parte superior derecha de la vista.

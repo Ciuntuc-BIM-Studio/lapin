@@ -301,6 +301,11 @@ const architecture: LapinModule = {
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [room, roomColors], small: [roomOutline, updateRooms] },
       { label: 'Circulation', tools: [stair, stairTypes], small: [entranceSteps] },
+    ],
+  }, {
+    // Finishes, after Architecture: what lines a room (false ceilings now; floor and wall finishes, skirtings later). Other modules add their groups by this id.
+    id: 'finishes', label: 'Finishes', order: 25, include: ['modify'],
+    groups: [
       { label: 'Ceiling', tools: [ceiling, ceilingInRoom], small: [ceilingLight, ceilingDiffuser, ceilingTypes] },
     ],
   }, {

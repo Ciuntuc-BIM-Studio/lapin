@@ -16,7 +16,7 @@ Ein neues Projekt hat bereits drei Ebenen: **Foundations** (−1.50), **Ground f
 
 ![Die Teile des Lapin-Fensters](shots/workspace.webp)
 
-1. **Die Registerkarten des Menübands.** Zeichnen, Architektur, Tragwerk, Gelände, Studio, Beschriften, Verwalten, Mengen und Ansicht gruppieren jeweils ihre Werkzeuge. **Datei** öffnet, speichert, importiert und exportiert. **Rückgängig** und **Wiederholen** befinden sich am rechten Ende derselben Leiste (<kbd>Strg</kbd> <kbd>Z</kbd>, <kbd>Strg</kbd> <kbd>Y</kbd>).
+1. **Die Registerkarten des Menübands.** Zeichnen, Architektur, Ausbau, Tragwerk, Gelände, Studio, Beschriften, Verwalten, Mengen und Ansicht gruppieren jeweils ihre Werkzeuge. **Datei** öffnet, speichert, importiert und exportiert. **Rückgängig** und **Wiederholen** befinden sich am rechten Ende derselben Leiste (<kbd>Strg</kbd> <kbd>Z</kbd>, <kbd>Strg</kbd> <kbd>Y</kbd>).
 2. **Das Menüband.** Es enthält die Werkzeuge der aktuellen Registerkarte. Fahren Sie mit der Maus über ein Werkzeug, um seinen Namen und seine Tastaturbuchstaben zu sehen.
 3. **Der Projektbrowser.** Er listet die Ebenen, Grundrisse, Schnitte, Ansichten, 3D-Ansichten, Pläne und Bauteillisten auf. Doppelklicken Sie auf einen Eintrag, um ihn in einer Registerkarte zu öffnen. Ein Projekt öffnet sich im Grundriss des Erdgeschosses, mit der 3D-Ansicht in einer Registerkarte daneben.
 4. **Die Ansicht.** Hier zeichnen Sie: in einem Grundriss, einem Schnitt, einer 3D-Ansicht oder auf einem Plan. Mit den beiden Schaltflächen oben rechts in der Ansicht können Sie mehrere Ansichten nebeneinander öffnen.
