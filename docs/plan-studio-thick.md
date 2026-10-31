@@ -1,6 +1,6 @@
 # Studio: thick solids and work planes
 
-Decision 186 (`docs/decisions-pending.md`). Asked for and approved by the user on 31.10.2026.
+Decision 189 (`docs/decisions-pending.md`). Asked for and approved by the user on 31.10.2026.
 
 ## Goal
 
