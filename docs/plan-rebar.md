@@ -39,6 +39,10 @@ Motorul (`RebarShapes`): catalogul formelor cu parametrii și gripurile lor; `No
 
 Armarea *configurată* pe tipuri, cum a cerut utilizatorul: etrierii și barele longitudinale ca parametri ai tipului de grindă (zone de îndesire la capete după regula aleasă), armarea superioară a plăcii pe grinzi, fundațiile din profil cu logica lor, radierul, scările din tipul lor. Motorul generează `IfcReinforcingBar` (corpuri `swept disk`, instanțe), le taie în secțiuni și le desenează automat cu simbolurile de mai sus (marcă, distribuție, extras), regenerate când elementul se schimbă. Se leagă în modulul liber prin `RebarHooks` (motor) și `rebarHooks` (UI), ca `MepHooks`.
 
+## Etrierii pe tip (decizia 215)
+
+În varianta liberă etrierii nu se desenează bară cu bară: se configurează pe tipul de grindă sau de stâlp (secțiune dreptunghiulară), cu diametru, acoperire și modul de distribuție — un pas pe toată lungimea sau trei zone, fiecare cu partea ei din lungime (implicit o treime) și pasul ei. Motorul îi așază pe axă (`TypeStirrups.Of`: dreptunghiul din interiorul acoperirii la fiecare stație) și îi desenează în 2D ca *proiecții* după cum stă vederea față de axă: în secțiunea transversală, dreptunghiul; în cea longitudinală, liniile; în plan, liniile peste grindă (planurile și fațadele doar cu disciplina Structure). Nu există corp 3D în varianta liberă. Intră în extras sub marca tipului. Armarea longitudinală rămâne desenată de mână. Premiumul adaugă 3D-ul, optimizatoarele, configuratorul pe secțiuni și barele longitudinale 3D.
+
 ## Etape
 
 1. Motorul `Lapin.Rebar`: formele, îndoirea, ciocurile, lungimile, distribuția, extrasul; testele cu numerele configuratorului.

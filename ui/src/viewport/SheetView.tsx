@@ -251,9 +251,12 @@ export function SheetView() {
                     <rect key={side} className="sheet-handle" x={(side < 0 ? x : x + w) + dx - 4} y={a.y + dy + h / 2 - 10} width={8} height={20}
                       onPointerDown={(e) => { e.stopPropagation(); drag.current = { kind: 'width', x: e.clientX, y: e.clientY, vp: b, side }; (e.target as Element).setPointerCapture?.(e.pointerId); }}><title>Drag to set the width</title></rect>
                   ))}
-                  <foreignObject x={x + dx + w - 22} y={a.y + dy + 2} width={20} height={20}>
-                    <button type="button" className="icon mini" title="Take the view off the sheet" onPointerDown={(e) => e.stopPropagation()}
-                      onClick={() => void execute('sheet.removeViewport', { id: sheet.id, viewportId: b.id })}>×</button>
+                  <foreignObject x={x + dx + w - 44} y={a.y + dy + 2} width={42} height={20}>
+                    <span className="row" style={{ gap: 2 }}>
+                      <button type="button" className="icon mini" title="Edit: open the view (or double-click it)" onPointerDown={(e) => e.stopPropagation()} onClick={() => open(b)}>✎</button>
+                      <button type="button" className="icon mini" title="Take the view off the sheet" onPointerDown={(e) => e.stopPropagation()}
+                        onClick={() => void execute('sheet.removeViewport', { id: sheet.id, viewportId: b.id })}>×</button>
+                    </span>
                   </foreignObject>
                 </g>
               );

@@ -5,7 +5,8 @@
     radius, with hooks, marks, distributions along a path and the bar bending
     schedule. It draws through the platform's view annotations and needs no
     other module's code; the schedule is read by the architecture module's
-    schedule entity through IScheduleSource.
+    schedule entity through IScheduleSource. The stirrups configured on beam and
+    column types read the structure module's sections.
   -->
   <PropertyGroup>
     <LapinModuleId>rebar</LapinModuleId>
@@ -14,5 +15,6 @@
     <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
     <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
     <ProjectReference Include="../../../Platform/Lapin.Drawing/Lapin.Drawing.csproj" Private="false" />
+    <ProjectReference Include="../Lapin.Structure/Lapin.Structure.csproj" Private="false" />
   </ItemGroup>
 </Project>

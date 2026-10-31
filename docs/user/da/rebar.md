@@ -12,7 +12,7 @@ Fanen **Armering 2D** tegner armering, som en armeringsliste laves: stænger som
 
 Armering har brug for tværsnittet ved siden af længdesnittet. **Snit her** gør begge dele: vælg en bjælke, en søjle eller en væg i den visning, du er i, og hvor du klikker, skæres et snit *på tværs*, vinkelret på dens akse, og tegnes ved siden af dit klik, i samme visning, med en halv meter af omgivelserne (dækket, søjlen). En søjle skæres vandret i den højde, du klikkede.
 
-Den indsatte visning følger elementet: flyt bjælken, og snittet flytter med. Træk den indsatte visning i dens greb; dens egenskaber giver den en skalafaktor og en ramme. **Tværsnit** laver samme snit som sin egen visning, og **Indsat visning** sætter enhver eksisterende visning ind i den, du er i.
+Den indsatte visning følger elementet: flyt bjælken, og snittet flytter med. Træk den indsatte visning i dens greb; dens egenskaber giver den en skalafaktor og en ramme. **Tværsnit** laver samme snit som sin egen visning, og **Indsat visning** sætter enhver eksisterende visning ind i den, du er i, i sand størrelse og i værtsvisningens målestok, så stænger tegnet ovenpå passer til betonen.
 
 ![En bjælkes længdesnit med dens tværsnit indsat og dens armering](shots/rebar-section.webp)
 
@@ -25,6 +25,10 @@ Kroge sættes i hver ende: 90°, 135° eller 180°, deres lige længde efter pra
 **Stang i snit** er en stang set fra enden: en prik i dens diameter, med den længde, den har langs stangen. **Samme stang i snit** sætter den valgte stang som prik et andet sted uden at tælle den to gange. En **Række** i egenskaberne gentager en stang for hver så mange millimeter, som stængerne i et lag i et tværsnit.
 
 Mærkets cirkel viser mærkenummeret, og hvad stangen er: `4Ø12 L=2450`. Træk cirklen, hvor den læses bedst. Længderne er de nominelle, målt på stangens akse mellem dens hjørner, med kroge; den udfoldede længde om bukningerne står i egenskabspanelet.
+
+## Bøjler på bjælke- eller søjletypen
+
+Bøjler tegnes ikke én ad gangen: de hører til **typen**. Under Konstruktion → Konstruktionstyper får en rektangulær bjælke- eller søjletype **Bøjler på denne type**: deres diameter, dæklaget og fordelingen — ét trin hele vejen eller **tre zoner**, hver med sin del af længden (en tredjedel som standard) og sit trin, tættere i enderne. Hvert element af typen viser dem så i ethvert snit, som visningen ligger til aksen: rektanglet inden for dæklaget i tværsnittet, en linje pr. bøjle i længdesnittet, linjer over bjælken i en konstruktionsplan; med etiketten `41Ø8/150` og mærkets cirkel. De tælles med i armeringslisten under typens mærke. I denne udgave har de ingen 3D; længdestængerne tegnes i hånden, som nedenfor.
 
 ## Bøjler langs en bjælke
 

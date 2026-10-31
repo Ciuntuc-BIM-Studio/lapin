@@ -12,7 +12,7 @@ Tabul **Armare 2D** desenează armătura așa cum se face un extras: bare ca for
 
 Armarea are nevoie de secțiunea transversală lângă cea longitudinală. **Secțiune aici** le face pe amândouă: alegi o grindă, un stâlp sau un perete în vederea în care ești, iar acolo unde apeși se taie o secțiune *transversală*, perpendiculară pe axa lui, desenată lângă punctul apăsat, în aceeași vedere, cu o jumătate de metru din ce e în jur (placa, stâlpul). Un stâlp se taie orizontal, la înălțimea apăsată.
 
-Vederea inserată urmărește elementul: muți grinda și secțiunea se mută cu ea. Tragi inserarea de gripul ei; proprietățile îi dau un factor de scară și un chenar. **Secțiune transversală** face aceeași secțiune ca vedere de sine stătătoare, iar **Vedere inserată** pune orice vedere existentă în cea în care ești.
+Vederea inserată urmărește elementul: muți grinda și secțiunea se mută cu ea. Tragi inserarea de gripul ei; proprietățile îi dau un factor de scară și un chenar. **Secțiune transversală** face aceeași secțiune ca vedere de sine stătătoare, iar **Vedere inserată** pune orice vedere existentă în cea în care ești, la mărime reală și la scara gazdei, ca barele desenate peste ea să se potrivească pe beton.
 
 ![Secțiunea longitudinală a unei grinzi cu secțiunea transversală inserată și armătura ei](shots/rebar-section.webp)
 
@@ -25,6 +25,10 @@ Ciocurile se dau la fiecare capăt: 90°, 135° sau 180°, cu lungimea dreaptă 
 **Bară în secțiune** e o bară văzută din capăt: un punct de diametrul ei, cu lungimea pe care o are de-a lungul barei. **Aceeași bară în secțiune** pune bara selectată ca punct în altă parte, fără s-o numere de două ori. **Repetare**, în proprietăți, repetă o bară la câțiva milimetri, ca barele unui rând dintr-o secțiune transversală.
 
 Balonul mărcii arată numărul mărcii și ce e bara: `4Ø12 L=2450`. Tragi balonul unde se citește mai bine. Lungimile sunt cele nominale, măsurate pe axa barei între colțuri, cu ciocurile; lungimea desfășurată, pe îndoituri, e spusă în panoul de proprietăți.
+
+## Etrierii pe tipul de grindă sau de stâlp
+
+Etrierii nu se desenează unul câte unul: țin de **tip**. În Structură → Tipuri de structură, un tip dreptunghiular de grindă sau de stâlp primește **Etrieri pe acest tip**: diametrul, acoperirea de beton și modul de așezare — un pas pe toată lungimea sau **trei zone**, fiecare cu partea ei din lungime (implicit o treime) și pasul ei, mai des la capete. Fiecare element al tipului îi arată apoi în orice secțiune după cum stă vederea față de axă: dreptunghiul din interiorul acoperirii în secțiunea transversală, câte o linie pentru fiecare etrier în cea longitudinală, linii peste grindă în planul de structură; cu eticheta `41Ø8/150` și balonul mărcii. Intră în extras sub marca tipului. În această ediție nu au 3D; barele longitudinale se desenează de mână, ca mai jos.
 
 ## Etrieri pe o grindă
 

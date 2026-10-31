@@ -12,7 +12,7 @@ La pestaña **Armado 2D** dibuja el armado como se hace un cuadro de barras: bar
 
 El armado necesita la sección transversal junto a la longitudinal. **Sección aquí** hace ambas: eliges una viga, un pilar o un muro en la vista en la que estás, y donde haces clic se corta una sección *transversal*, perpendicular a su eje, dibujada junto al clic, en la misma vista, con medio metro de lo que la rodea (la losa, el pilar). Un pilar se corta en horizontal, a la altura del clic.
 
-La vista insertada sigue al elemento: mueve la viga y la sección se mueve con ella. Arrastra la vista insertada por su pinzamiento; sus propiedades le dan un factor de escala y un marco. **Sección transversal** hace la misma sección como vista propia, e **Vista insertada** pone cualquier vista existente en la que estás.
+La vista insertada sigue al elemento: mueve la viga y la sección se mueve con ella. Arrastra la vista insertada por su pinzamiento; sus propiedades le dan un factor de escala y un marco. **Sección transversal** hace la misma sección como vista propia, y **Vista insertada** pone cualquier vista existente en la que estás, a tamaño real y a la escala de la vista anfitriona, para que las barras que dibujes encima encajen en el hormigón.
 
 ![La sección longitudinal de una viga con su sección transversal insertada y su armado](shots/rebar-section.webp)
 
@@ -25,6 +25,10 @@ Las patillas se fijan en cada extremo: 90°, 135° o 180°, con la longitud rect
 **Barra en sección** es una barra vista de frente: un punto de su diámetro, con la longitud que tiene a lo largo de la barra. **La misma barra en sección** pone la barra seleccionada como punto en otro lugar, sin contarla dos veces. Una **Matriz** en las propiedades repite una barra cada tantos milímetros, como las barras de una fila en una sección transversal.
 
 El globo de la marca muestra el número de marca y qué es la barra: `4Ø12 L=2450`. Arrastra el globo donde mejor se lea. Las longitudes son las nominales, medidas en el eje de la barra entre sus esquinas, con las patillas; la longitud desarrollada por los dobleces se indica en el panel de propiedades.
+
+## Estribos en el tipo de viga o de pilar
+
+Los estribos no se dibujan uno a uno: pertenecen al **tipo**. En Estructura → Tipos de estructura, un tipo rectangular de viga o de pilar admite **Estribos en este tipo**: su diámetro, el recubrimiento de hormigón y cómo se colocan: un paso en toda la longitud o **tres zonas**, cada una con su parte de la longitud (un tercio por defecto) y su paso, más cerrado en los extremos. Cada elemento del tipo los muestra entonces en toda sección según la posición de la vista respecto al eje: el rectángulo dentro del recubrimiento en la sección transversal, una línea por estribo en la longitudinal, líneas sobre la viga en una planta de estructura; con la etiqueta `41Ø8/150` y el globo de la marca. Se cuentan en el cuadro de armado bajo la marca del tipo. En esta edición no tienen 3D; las barras longitudinales se dibujan a mano, como sigue.
 
 ## Estribos a lo largo de una viga
 

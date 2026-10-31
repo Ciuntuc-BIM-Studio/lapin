@@ -84,7 +84,7 @@ public static class Rebars
     }
 
     /// <summary>The next free mark: one over the highest in the model.</summary>
-    public static int NextMark(IModelView m) => 1 + m.OfClass(Class).Concat(m.OfClass(RunClass)).Select(Mark).DefaultIfEmpty(0).Max();
+    public static int NextMark(IModelView m) => 1 + Math.Max(m.OfClass(Class).Concat(m.OfClass(RunClass)).Select(Mark).DefaultIfEmpty(0).Max(), TypeStirrups.HighestMark(m));
 }
 
 /// <summary>The bar bending schedule: the bars by mark, their count, length and mass, the totals by diameter.</summary>
@@ -114,6 +114,7 @@ public sealed class RebarSchedule : IScheduleSource
             var (_, positions, _, _) = Rebars.RunOf(e, s);
             o.Add(new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, positions.Count * Rebars.Count(e), RebarShapes.Length(s)));
         }
+        o.AddRange(TypeStirrups.Entries(m));
         return o;
     }
 
@@ -306,12 +307,14 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             if (a["inset"] is JsonValue iv && iv.TryGetValue<bool>(out var withInset) && !withInset) return new JsonObject { ["viewId"] = across.Id };
             // The inset to the right of the click, a window's width away, unless told where.
             var hostScale = host.NumOrNull("scale") ?? 100;
-            var factor = hostScale / 20;
             var margin = Json.Number(a["margin"]) ?? AcrossSections.DefaultMargin;
-            var at = a["at"] != null ? Args.Point(a["at"], "where the inset goes") : p + new Vec2(factor * (2 * margin + 0.5) + hostScale / 1000 * 15, 0);
+            var at = a["at"] != null ? Args.Point(a["at"], "where the inset goes") : p + new Vec2(2 * margin + 0.5 + hostScale / 1000 * 15, 0);
             var inset = Insets.Create(ctx, host.Id, across.Id, at);
             return new JsonObject { ["viewId"] = across.Id, ["insetId"] = inset.Id };
         });
+
+        // A beam's or a column's type gets its stirrups (decision 215): {id, enabled, diameter, cover, mode, step, zones, mark}.
+        r.Command("setTypeStirrups", "Stirrups on type", (ctx, a) => { TypeStirrups.Set(ctx, a); return null; });
 
         // What a bar or a distribution is: its length, developed length, mass, label, positions.
         r.Query("describe", (q, a) =>
@@ -471,6 +474,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             if (BarMark(c, st, e, hidden) is { } mk) yield return mk;
         foreach (var e in Rebars.On(c.Model, c.View.Id, Rebars.RunClass))
             if (RunMark(c, st, e, hidden) is { } mk) yield return mk;
+        // The stirrups the beams' and columns' types are configured with, projected as the view lies to each axis.
+        foreach (var mk in TypeStirrups.Marks(c, st)) yield return mk;
     }
 
     static double Width(RebarSpec s, ViewContext c) => Math.Max(0.25, s.Diameter * 1000 / c.Scale);

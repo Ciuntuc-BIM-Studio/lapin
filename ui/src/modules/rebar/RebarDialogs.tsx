@@ -59,7 +59,7 @@ export function InsetPickDialog() {
           <button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body">
-          <p className="muted small">The view drawn where you clicked, at its paper size.</p>
+          <p className="muted small">The view drawn where you clicked, at real size, so bars drawn over it fit.</p>
           {views.length === 0 && <p className="muted small">There is no other view to show. Make a section first.</p>}
           <ul className="type-list">
             {views.map((v) => <li key={v.id}><button type="button" className="tree-item" onClick={() => void choose(v.id)}><span data-no-i18n>{v.name}</span><span className="muted small"> · {String(v.props.kind)}</span></button></li>)}

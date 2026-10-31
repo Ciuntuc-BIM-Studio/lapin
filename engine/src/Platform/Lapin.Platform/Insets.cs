@@ -8,10 +8,12 @@ namespace Lapin.Platform;
 
 /// <summary>
 /// A view drawn inside another (docs/plan-rebar.md, decision 211): a <c>LapinInset</c> on its host view
-/// (<c>viewId</c>) shows the <c>source</c> view rendered, centred at <c>at</c>, by a <c>factor</c> (host metres per
-/// source metre; by default the one that keeps the source's paper size: host scale / source scale), in a thin frame
-/// with the source's name and scale under it. A cross-section of a beam laid beside its longitudinal section, with
-/// the context round it, in one viewport. An inset never draws the insets of its source.
+/// (<c>viewId</c>) shows the <c>source</c> view rendered, its point <c>at</c> on the source's middle (the element's
+/// section, for a section across one), by a <c>factor</c> (host metres per source metre; by default the one that
+/// keeps the source's paper size: host scale / source scale), in a thin frame with the source's name and scale under
+/// it. The source's own annotations (its bars, dimensions, what picks its elements) come through as marks of their own
+/// owners, mapped into the host, each telling the interface the mapping it came by (<c>via</c>), so what is drawn on
+/// the inset is drawn on the source view, at real size, and is edited there. An inset never draws the insets of its source.
 /// </summary>
 public static class Insets
 {
@@ -64,13 +66,13 @@ public static class Insets
         return e;
     }
 
-    /// <summary>The host view's insets, each its source rendered and laid at its point.</summary>
+    /// <summary>The host view's insets: each its source's drawing laid at its point, and the source's annotations as marks of their own owners, mapped the same way.</summary>
     public static IEnumerable<ViewMark> Marks(IQueryContext q, ViewContext c)
     {
         foreach (var e in c.Model.OfClass(Class).Where(x => x.Str("viewId") == c.View.Id))
         {
             if (Views.Find(c.Model, e.Str("source") ?? "") is not { } source || source.Id == c.View.Id) continue;
-            var r = Views.Render(q, source, print: false, insets: false);
+            var r = Views.Render(q, source, print: false, insets: false, withMarks: false);
             var mk = new ViewMark(e.Id);
             var at = P(e.Attrs["at"]);
             if (r.Problem != null || r.Bounds is not { } b)
@@ -84,8 +86,11 @@ public static class Insets
                 continue;
             }
             var factor = e.NumOrNull("factor") ?? c.Scale / r.Scale;
-            var centre = (b.Min + b.Max) * 0.5;
+            // The point stands at the element's section when the source is a section across one (the middle of its window), else at the drawing's middle.
+            var centre = r.Window is { } w ? (w.Min + w.Max) * 0.5 : (b.Min + b.Max) * 0.5;
             Vec2 Map(Vec2 p) => at + (p - centre) * factor;
+            var via = new JsonObject { ["inset"] = e.Id, ["host"] = c.View.Id, ["source"] = source.Id, ["at"] = J(at), ["centre"] = J(centre), ["factor"] = factor };
+            // The source's drawing: its pens as the inset's own lines, fills and texts.
             foreach (var pen in r.Pens)
             {
                 if (pen.Layer is "PICK" or Views.ConstructionLayer) continue;
@@ -97,16 +102,18 @@ public static class Insets
                     if (pen.Fill != null) mk.Fills.Add((loops, pen.Fill));
                     if (pen.Stroke != null && pen.Width > 0) foreach (var l in loops) mk.Polyline(l, true, pen.Layer, pen.Width, color, pen.Dash);
                 }
-                foreach (var t in pen.Texts) mk.Text(t with { At = Map(t.At), Height = t.Height }, color);
+                foreach (var t in pen.Texts) mk.Text(t with { At = Map(t.At) }, color);
                 // The cut lines' ends snap, so bars are drawn on the concrete's outline.
                 if (pen.Width >= Pens.Default.Cut - 1e-9) foreach (var (p0, p1) in pen.Segments) { mk.Snaps.Add(Map(p0)); mk.Snaps.Add(Map(p1)); }
             }
-            var pad = 3 * c.Mm;
-            var (lo, hi) = (Map(b.Min) - new Vec2(pad, pad), Map(b.Max) + new Vec2(pad, pad));
+            // The window's extent (the drawing's, with the source's annotations) and its frame.
+            var pts = new List<Vec2> { b.Min, b.Max };
+            foreach (var sm in r.Marks) { foreach (var l in sm.Lines) { pts.Add(l.A); pts.Add(l.B); } foreach (var (t, _) in sm.Texts) pts.Add(t.At); }
+            var (lo, hi) = (Map(new Vec2(pts.Min(p => p.X), pts.Min(p => p.Y))) - new Vec2(3 * c.Mm, 3 * c.Mm), Map(new Vec2(pts.Max(p => p.X), pts.Max(p => p.Y))) + new Vec2(3 * c.Mm, 3 * c.Mm));
             if (!(e.Attrs["frame"] is JsonValue fv && fv.TryGetValue<bool>(out var f) && !f))
             {
                 mk.Polyline([lo, new Vec2(hi.X, lo.Y), hi, new Vec2(lo.X, hi.Y)], true, Layer, 0.18, "#555555");
-                var scale = r.Scale / factor * (c.Scale / r.Scale);
+                var scale = c.Scale / factor;
                 mk.Text(new PenText(new Vec2((lo.X + hi.X) / 2, lo.Y - 1.5 * c.Mm), $"{source.Name}  1:{Math.Round(scale).ToString(CultureInfo.InvariantCulture)}", 2.5, 0, "middle", "top"), "#555555");
             }
             else
@@ -116,8 +123,22 @@ public static class Insets
                     mk.Lines.Add((s0, s1, "PICK", 0, "none", null));
             }
             mk.Snaps.Add(at);
-            mk.Data = new JsonObject { ["at"] = J(at), ["source"] = source.Id, ["bounds"] = new JsonArray(Math.Round(lo.X, 5), Math.Round(lo.Y, 5), Math.Round(hi.X, 5), Math.Round(hi.Y, 5)) };
+            mk.Data = new JsonObject { ["at"] = J(at), ["source"] = source.Id, ["centre"] = J(centre), ["factor"] = factor, ["bounds"] = new JsonArray(Math.Round(lo.X, 5), Math.Round(lo.Y, 5), Math.Round(hi.X, 5), Math.Round(hi.Y, 5)) };
             yield return mk;
+            // The source's annotations, each its own owner's, mapped the same way: a bar drawn on the cross-section is picked and edited here.
+            foreach (var sm in r.Marks)
+            {
+                if (sm.Owner == null) continue;
+                var own = new ViewMark(sm.Owner) { Under = sm.Under };
+                foreach (var (la, lb, layer, width, color, dash) in sm.Lines) own.Lines.Add((Map(la), Map(lb), layer, width, color, dash));
+                foreach (var (t, color) in sm.Texts) own.Texts.Add((t with { At = Map(t.At) }, color));
+                foreach (var (loops, color) in sm.Fills) own.Fills.Add((loops.Select(l => (IReadOnlyList<Vec2>)l.Select(Map).ToList()).ToList(), color));
+                own.Snaps.AddRange(sm.Snaps.Select(Map));
+                var data = sm.Data?.DeepClone() as JsonObject ?? new JsonObject();
+                data["via"] = via.DeepClone();
+                own.Data = data;
+                yield return own;
+            }
         }
     }
 }

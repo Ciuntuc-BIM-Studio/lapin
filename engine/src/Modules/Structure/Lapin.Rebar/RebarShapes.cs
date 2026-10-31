@@ -128,12 +128,17 @@ public static class RebarShapes
     /// <summary>The bend radius the bar is bent at: its own (a polyline's parameter) or the Eurocode's for its diameter.</summary>
     public static double RadiusOf(RebarSpec s) => s.BendRadius ?? (s.Shape == "polyline" && s.Params.TryGetValue("bendRadius", out var r) ? r : BendRadius(s.Diameter));
 
-    /// <summary>The bar's nominal vertices in its own frame, hooks included as straight tails (a 180° hook is left to <see cref="Segments"/>).</summary>
-    public static List<Vec2> Nominal(RebarSpec s)
+    /// <summary>
+    /// The bar's nominal vertices in its own frame, hooks included as straight tails (a 180° hook is left to <see cref="Segments"/>).
+    /// <paramref name="drawn"/>: as the bar is drawn, where a stirrup's two hooks, which cross at its corner, stand a bar's diameter apart
+    /// (its start on the top leg moved in by d·√2); the schedule measures the plain rectangle.
+    /// </summary>
+    public static List<Vec2> Nominal(RebarSpec s, bool drawn = false)
     {
         var def = Def(s.Shape);
         var pts = new List<Vec2>(def.FreeVertices && s.Vertices is { Count: >= 2 } ? s.Vertices : def.Vertices(s.Params));
         if (pts.Count < 2) return pts;
+        if (drawn && s.Shape == "stirrup") pts[0] = pts[0] + new Vec2(s.Diameter * Math.Sqrt(2), 0);
         var (start, end) = HooksOf(s);
         if (start is { Angle: < HalfTurn } h0 && h0.Length > 1e-9)
         {
@@ -173,7 +178,7 @@ public static class RebarShapes
     /// <summary>The real geometry in the bar's own frame: the corners bent at the radius, the 180° hooks as half turns with their tails.</summary>
     public static List<Seg> Segments(RebarSpec s)
     {
-        var pts = Nominal(s);
+        var pts = Nominal(s, drawn: true);
         var r = RadiusOf(s);
         if (pts.Count < 2) return [];
         var segs = Fillet(pts, r);

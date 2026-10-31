@@ -14,6 +14,11 @@ import { execute } from '../../engine/session';
 import { RebarRunSection, RebarSection } from './RebarSection';
 import { InsetPickDialog, RebarSettingsDialog } from './RebarDialogs';
 import { BarDotIcon, LBarIcon, PolylineBarIcon, StirrupIcon, StirrupsIcon, TieIcon, UBarIcon } from './icons';
+import { structureHooks } from '../structure/hooks';
+import { StirrupsFields } from './StirrupsFields';
+
+// The stirrups of a beam's or a column's type are set in the Structure types dialog (decision 215).
+structureHooks.typeExtras.push(StirrupsFields);
 
 /** What a section can be cut across: anything with an axis, or standing at a point. */
 export const ACROSS = ['IfcBeam', 'IfcColumn', 'IfcWall', 'IfcFooting', 'IfcMember', 'IfcPile'];
@@ -92,20 +97,33 @@ const asSection: ToolDef = {
   },
 };
 
-/** A bar's grips as the engine drew them: its shape's (each drives a parameter), its point, its label. */
+/** How a mark seen through an inset view maps between its source's coordinates and the host's (`via` in the mark's data). */
+interface Via { inset: string; host: string; source: string; at: number[]; centre: number[]; factor: number }
+function mapping(view?: GripView): { show: (p: Vec2) => Vec2; back: (p: Vec2) => Vec2; host?: string } {
+  const via = (view?.mark?.data as { via?: Via } | undefined)?.via;
+  if (!via) return { show: (p) => p, back: (p) => p };
+  return {
+    show: (p) => ({ x: via.at[0] + (p.x - via.centre[0]) * via.factor, y: via.at[1] + (p.y - via.centre[1]) * via.factor }),
+    back: (p) => ({ x: via.centre[0] + (p.x - via.at[0]) / via.factor, y: via.centre[1] + (p.y - via.at[1]) / via.factor }),
+    host: via.host,
+  };
+}
+
+/** A bar's grips as the engine drew them: its shape's (each drives a parameter), its point, its label; through an inset, where the inset shows them. */
 function barGrips(node: NodeDto, view?: GripView): Grip[] {
   const data = view?.mark?.data as { grips?: { key: string; at: number[] }[]; at?: number[]; label?: number[] } | undefined;
-  const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
-  const step = (key: string) => (to: Vec2) => ({ command: 'rebar.grip', args: { id: node.id, key, point: [to.x, to.y] } });
+  const { show, back, host } = mapping(view);
+  const viewId = host ?? (typeof node.props.viewId === 'string' ? node.props.viewId : undefined);
+  const step = (key: string) => (to: Vec2) => { const p = back(to); return { command: 'rebar.grip', args: { id: node.id, key, point: [p.x, p.y] } }; };
   const grips: Grip[] = [];
   const at = pt(data?.at) ?? pt(node.props.at);
-  if (at) grips.push({ key: 'at', kind: 'move', at, title: 'Drag: move the bar', step: step('at') });
+  if (at) grips.push({ key: 'at', kind: 'move', at: show(at), title: 'Drag: move the bar', step: step('at') });
   for (const g of data?.grips ?? []) {
     const p = pt(g.at);
-    if (p) grips.push({ key: g.key, kind: g.key.startsWith('v') ? 'vertex' : 'end', at: p, title: 'Drag: the bar follows', step: step(g.key) });
+    if (p) grips.push({ key: g.key, kind: g.key.startsWith('v') ? 'vertex' : 'end', at: show(p), title: 'Drag: the bar follows', step: step(g.key) });
   }
   const label = pt(data?.label);
-  if (label) grips.push({ key: 'label', kind: 'move', at: label, title: 'Drag: move the mark', step: step('label') });
+  if (label) grips.push({ key: 'label', kind: 'move', at: show(label), title: 'Drag: move the mark', step: step('label') });
   return grips.map((g) => ({ ...g, view: viewId }));
 }
 
@@ -113,10 +131,11 @@ function barGrips(node: NodeDto, view?: GripView): Grip[] {
 function runGrips(node: NodeDto, view?: GripView): Grip[] {
   const a = pt(node.props.start), b = pt(node.props.end);
   if (!a || !b) return [];
-  const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
-  const grips = axisGrips(a, b, (s, e) => ({ command: 'rebar.updateRun', args: { id: node.id, start: [s.x, s.y], end: [e.x, e.y] } }));
+  const { show, back, host } = mapping(view);
+  const viewId = host ?? (typeof node.props.viewId === 'string' ? node.props.viewId : undefined);
+  const grips = axisGrips(show(a), show(b), (s, e) => { const p = back(s), q = back(e); return { command: 'rebar.updateRun', args: { id: node.id, start: [p.x, p.y], end: [q.x, q.y] } }; });
   const label = pt((view?.mark?.data as { label?: number[] } | undefined)?.label);
-  if (label) grips.push({ key: 'label', kind: 'move', at: label, title: 'Drag: move the mark', step: (to: Vec2) => ({ command: 'rebar.updateRun', args: { id: node.id, label: { at: [to.x, to.y] } } }) });
+  if (label) grips.push({ key: 'label', kind: 'move', at: show(label), title: 'Drag: move the mark', step: (to: Vec2) => { const p = back(to); return { command: 'rebar.updateRun', args: { id: node.id, label: { at: [p.x, p.y] } } }; } });
   return grips.map((g) => ({ ...g, view: viewId }));
 }
 

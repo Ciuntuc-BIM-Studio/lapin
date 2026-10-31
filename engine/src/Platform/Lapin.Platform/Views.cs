@@ -524,14 +524,19 @@ public static class Views
     /// A view rendered: its pens (view coordinates, m; widths paper mm), annotations, bounds and scale, or why it cannot be drawn;
     /// where it looks from (its frame, so the drawing can be laid back into the model) and, for a section, how deep it sees (null: unlimited).
     /// </summary>
-    public sealed record Rendered(List<Pen> Pens, List<ViewMark> Marks, (Vec2 Min, Vec2 Max)? Bounds, double Scale, string Kind, string? Problem, List<string> RangeProblems, List<string>? LineworkOrphans = null, ViewFrame? Frame = null, double? Depth = null, List<(ViewFrame Frame, double X0, double X1)>? Frames = null);
+    public sealed record Rendered(List<Pen> Pens, List<ViewMark> Marks, (Vec2 Min, Vec2 Max)? Bounds, double Scale, string Kind, string? Problem, List<string> RangeProblems, List<string>? LineworkOrphans = null, ViewFrame? Frame = null, double? Depth = null, List<(ViewFrame Frame, double X0, double X1)>? Frames = null)
+    {
+        /// <summary>A section across an element: the window it sees (its span and rise), whose middle is the element's section; null for any other view.</summary>
+        public (Vec2 Min, Vec2 Max)? Window { get; init; }
+    }
 
     /// <summary>The mark layer of construction lines (drafted shapes whose role is draft): on screen, never printed.</summary>
     public const string ConstructionLayer = "CONSTRUCTION";
 
     /// <summary>A view's drawing with its annotations; for print (sheets, PDF, DXF) construction lines are left out.</summary>
     /// <param name="insets">Whether the views inset in this one are drawn (an inset does not draw its source's own insets).</param>
-    public static Rendered Render(IQueryContext q, Entity view, bool print = false, bool insets = true)
+    /// <param name="withMarks">Whether the annotations' pens join the drawing's (an inset takes the drawing alone and lays the marks out itself); the marks are returned either way.</param>
+    public static Rendered Render(IQueryContext q, Entity view, bool print = false, bool insets = true, bool withMarks = true)
     {
         var m = q.Model;
         var scale = view.NumOrNull("scale") ?? 100;
@@ -583,7 +588,7 @@ public static class Views
         // The marks' pens: those drawn under the model (rooms' fills) go first, the others over it; fills before lines in each.
         var underPens = new Dictionary<string, Pen>();
         var markPens = new Dictionary<string, Pen>();
-        foreach (var mk in marks)
+        foreach (var mk in withMarks ? marks : [])
         {
             var into = mk.Under ? underPens : markPens;
             var fillLayer = mk.Under ? "ROOM-FILL" : "DRAFT-FILL";
@@ -609,7 +614,7 @@ public static class Views
         }
         pens.InsertRange(0, underPens.Values.OrderBy(p => p.Fill != null ? 0 : 1));
         // Pictures (an orthophoto) under all of it.
-        if (marks.SelectMany(mk => mk.Images).ToList() is { Count: > 0 } images)
+        if (withMarks && marks.SelectMany(mk => mk.Images).ToList() is { Count: > 0 } images)
         {
             var pictures = new Pen("IMAGE", null, 0, null, null);
             pictures.Images.AddRange(images);
@@ -628,7 +633,10 @@ public static class Views
         double? depth = spec.Kind == "section" && spec.Below < ViewRanges.Unlimited ? spec.Below : null;
         // A developed section: where each piece lies in the model, and the stations (developed x) it covers.
         var frames = spec.Kind == "section" && Pieces(q, view) is { Count: > 1 } ps ? ps.Select(p => (p.Spec.Frame, p.Station, p.Station + p.Spec.Span!.Value.Max)).ToList() : null;
-        return new Rendered(pens, marks, bounds, scale, spec.Kind, null, spec.Kind == "plan" ? ViewRanges.Problems(Range(m, view)) : [], lineworkOrphans, spec.Frame, depth, frames);
+        return new Rendered(pens, marks, bounds, scale, spec.Kind, null, spec.Kind == "plan" ? ViewRanges.Problems(Range(m, view)) : [], lineworkOrphans, spec.Frame, depth, frames)
+        {
+            Window = spec.Span is { } sp && spec.Rise is { } rs ? (new Vec2(sp.Min, rs.Min), new Vec2(sp.Max, rs.Max)) : null,
+        };
     }
 
     /// <summary>The view drawn, for the interface: its pens, annotations, bounds and problems.</summary>

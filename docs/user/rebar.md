@@ -12,7 +12,7 @@ The **Rebar 2D** tab draws reinforcement the way a bar list is made: bars as sha
 
 Reinforcement needs the cross-section beside the longitudinal one. **Section here** does both: pick a beam, a column or a wall in the view you are in, and where you click a section is cut *across* it, perpendicular to its axis, and drawn beside your click, in the same view, with half a metre of what surrounds it (the slab, the column). A column is cut horizontally at the height you clicked.
 
-The inset view follows the element: move the beam and the section moves with it. Drag the inset by its grip; its properties give it a scale factor and a frame. **Section across** makes the same section as a view of its own, and **Inset view** puts any existing view into the one you are in.
+The inset view follows the element: move the beam and the section moves with it. Drag the inset by its grip; its properties give it a scale factor and a frame. **Section across** makes the same section as a view of its own, and **Inset view** puts any existing view into the one you are in, at real size and the host's scale, so the bars you draw over it fit its concrete.
 
 ![A beam's longitudinal section with its cross-section inset and its reinforcement](shots/rebar-section.webp)
 
@@ -25,6 +25,10 @@ Hooks are set on each end: 90°, 135° or 180°, their straight length by practi
 **Bar in section** is a bar seen end on: a dot of its diameter, with the length it has along the bar. **Same bar in section** puts the selected bar as a dot elsewhere, without counting it twice. An **Array** in the properties repeats a bar every so many millimetres, as the bars of a row in a cross-section.
 
 The mark's balloon shows the mark number and what the bar is: `4Ø12 L=2450`. Drag the balloon where it reads best. Lengths are the nominal ones, measured on the bar's axis between its corners, hooks included; the developed length round the bends is told in the properties panel.
+
+## Stirrups on the beam's or column's type
+
+Stirrups are not drawn one by one: they belong to the **type**. In Structure → Structure types, a rectangular beam or column type takes **Stirrups on this type**: their diameter, the concrete cover, and how they are laid — one step throughout, or **three zones**, each a share of the length (a third by default) at its own step, closer at the ends. Every element of the type then shows them in every section as the view lies to the axis: the rectangle inside the cover in a cross-section, a line for each stirrup in a longitudinal one, lines over the beam in a structural plan; with the label `41Ø8/150` and the mark's balloon. They are counted in the bar schedule under the type's mark. There is no 3D of them in this edition; the longitudinal bars are drawn by hand, as below.
 
 ## Stirrups along a beam
 

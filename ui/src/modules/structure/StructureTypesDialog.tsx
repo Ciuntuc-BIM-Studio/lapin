@@ -13,6 +13,7 @@ import { execute, useSession } from '../../engine/session';
 import { ofClass, typeLayers } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { describeType } from './describe';
+import { structureHooks } from './hooks';
 
 const mmToM = (t: string) => Number(t.replace(',', '.')) / 1000;
 const mToMm = (m: unknown) => String(Math.round(Number(m ?? 0) * 10000) / 10);
@@ -129,6 +130,7 @@ export function StructureTypesDialog() {
               <label className="field-line"><span className="eyebrow">{shape === 'circle' ? 'Diameter' : 'Width'} mm</span><input value={w} onChange={(e) => setW(e.target.value)} /></label>
               {shape === 'rectangle' && <label className="field-line"><span className="eyebrow">{kind === 'beam' ? 'Depth' : 'Length'} mm</span><input value={d} onChange={(e) => setD(e.target.value)} /></label>}
             </>}
+            {edited && (kind === 'column' || kind === 'beam') && structureHooks.typeExtras.map((Extra, i) => <Extra key={i} type={edited} kind={kind} />)}
             {kind === 'strip' && <>
               <label className="field-line"><span className="eyebrow">Core mm</span><input value={core} onChange={(e) => setCore(e.target.value)} /></label>
               <label className="field-line"><span className="eyebrow">Stem height</span><input value={stem} onChange={(e) => setStem(e.target.value)} /></label>

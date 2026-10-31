@@ -4,14 +4,18 @@
  * works here as in plans: the command line, snaps, ortho and guide lines; a
  * click selects an annotation or a drafted shape, a left drag selects by a
  * box (window to the right, crossing to the left), a middle or right drag pans.
+ * A tool with a gesture (a bar, a stirrup distribution, a section across an element) draws here as in a plan.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Maximize } from 'lucide-react';
-import { select, useUi } from '../app/store';
+import { select, setTool, useUi } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, useSession } from '../engine/session';
 import type { Vec2 } from '../platform/module';
+import type { NodeDto } from '../engine/protocol';
+import { findTool } from '../platform/modules';
+import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
 import { useDrawing } from './drawing';
 import { editDimension } from './dimensionEdit';
@@ -53,6 +57,11 @@ export function DrawingView() {
   const [box, setBox] = useState<SelectDrag | null>(null);
   useLassoKey(!!box, setBox);
   const cadStep = useCad((s) => s.step);
+  const toolId = useUi((s) => s.tool);
+  const tool = findTool(toolId);
+  /** The points of the gesture being drawn. */
+  const [pts, setPts] = useState<Vec2[]>([]);
+  useEffect(() => { setPts([]); }, [toolId, id]);
 
   useEffect(() => {
     const el = ref.current;
@@ -113,6 +122,78 @@ export function DrawingView() {
 
   const { aim, acquire } = useCadCanvas({ viewId: id, drawing, scale: v.scale, pickAny, inRegion: (takes) => markIds(takes, nodes, drawing?.marks) });
 
+  /** The inset view the points all fall in, with its mapping into its source (host → source: centre + (p − at) / factor); null when none. */
+  const insetUnder = useCallback((points: Vec2[]) => {
+    for (const m of drawing?.marks ?? []) {
+      const d = m.data as { source?: string; at?: number[]; centre?: number[]; factor?: number; bounds?: number[] } | undefined;
+      if (!d?.source || !d.bounds || !d.at || !d.centre || !d.factor) continue;
+      const [x0, y0, x1, y1] = d.bounds;
+      if (points.every((p) => p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1)) {
+        const { at, centre, factor, source } = d;
+        return { source, map: (p: Vec2): Vec2 => ({ x: centre[0] + (p.x - at[0]) / factor, y: centre[1] + (p.y - at[1]) / factor }) };
+      }
+    }
+    return null;
+  }, [drawing]);
+
+  const complete = useCallback(async (points: Vec2[], entity?: NodeDto) => {
+    if (!tool) return;
+    // Drawn on an inset view: it goes on the source view, in its own coordinates, and shows here through the inset.
+    const inset = insetUnder(points);
+    if (inset && tool.id !== 'rebar.inset') await completeTool(tool, { points: points.map(inset.map), entity }, inset.source);
+    else await completeTool(tool, { points, entity });
+    if (tool.gesture?.kind === 'twoPoints' && tool.gesture.repeat) setPts([points[points.length - 1]]);
+    else setPts([]);
+  }, [tool, insetUnder]);
+
+  /** A click for the tool's gesture: the points it takes, or the element under the cursor (picked by what it drew). */
+  const gestureClick = useCallback((p: Vec2, raw: Vec2) => {
+    const g = tool?.gesture;
+    if (!g) return false;
+    acquire(p);
+    switch (g.kind) {
+      case 'point': void complete([p]); break;
+      case 'pick':
+      case 'face': {
+        const hit = pickAny(raw);
+        const owner = hit?.includes('#') ? hit.slice(0, hit.indexOf('#')) : hit;
+        const n = owner ? nodes.get(owner) : undefined;
+        if (n && (g.types.includes('*') || g.types.includes(n.type))) void complete([raw], n);
+        else useSession.setState({ error: 'Pick an element this tool works on.' });
+        break;
+      }
+      case 'twoPoints':
+      case 'rectangle':
+        if (pts.length === 0) setPts([p]); else void complete([pts[0], p]);
+        break;
+      case 'threePoints':
+        if (pts.length < 2) setPts([...pts, p]); else void complete([pts[0], pts[1], p]);
+        break;
+      case 'polygon': {
+        const first = pts[0];
+        if (first && pts.length >= 3 && Math.hypot(first.x - p.x, first.y - p.y) < 8 / v.scale) void complete(pts); else setPts([...pts, p]);
+        break;
+      }
+      case 'polyline': {
+        const last = pts[pts.length - 1];
+        if (last && pts.length >= 2 && Math.hypot(last.x - p.x, last.y - p.y) < 8 / v.scale) void complete(pts); else setPts([...pts, p]);
+        break;
+      }
+    }
+    return true;
+  }, [tool, pts, complete, acquire, pickAny, nodes, v.scale]);
+
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.closest('input, select, textarea') || useCad.getState().step) return;
+      if (e.key === 'Escape' && tool?.gesture) { if (pts.length) setPts([]); else setTool(null); }
+      if (e.key === 'Enter' && tool?.gesture?.kind === 'polyline' && pts.length >= 2) void complete(pts);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [active, tool, pts, complete]);
+
   const at = (e: React.PointerEvent): { raw: Vec2; aimed: Aimed } => {
     const r = ref.current!.getBoundingClientRect();
     const raw = toWorld(e.clientX - r.left, e.clientY - r.top);
@@ -147,7 +228,7 @@ export function DrawingView() {
         <button type="button" className="icon" title="Fit (ZE)" onClick={fit}><Maximize size={14} /></button>
       </div>
       <KeyPlan mode="drawing" viewId={id} />
-      <svg ref={ref} className={`plan-svg drawing-svg${cadStep ? ' tool' : ''}`} data-testid="drawing"
+      <svg ref={ref} className={`plan-svg drawing-svg${cadStep || tool?.gesture ? ' tool' : ''}`} data-testid="drawing"
         onWheel={(e) => {
           // A wheel, a pinch or two fingers up and down zoom; two fingers sideways or Shift pan.
           if (wheelPans(e)) { setView({ ...v, cx: v.cx + e.deltaX / v.scale, cy: v.cy - e.deltaY / v.scale }); return; }
@@ -185,6 +266,7 @@ export function DrawingView() {
           const { raw, aimed } = at(e);
           const step = useCad.getState().step;
           if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : aimed.point); acquire(aimed.point); return; }
+          if (gestureClick(aimed.point, raw)) return;
           select(pickAny(raw), e.shiftKey);
         }}
         onPointerLeave={() => setHover(null)}
@@ -203,6 +285,14 @@ export function DrawingView() {
             return `M${a.x} ${a.y}L${b.x} ${b.y}`;
           }).join('')} />
         ))}
+        {pts.length > 0 && (() => {
+          const chain = [...pts, ...(hover ? [hover.point] : [])].map(toScreen);
+          const closed = tool?.gesture?.kind === 'polygon' || tool?.gesture?.kind === 'rectangle';
+          const d = tool?.gesture?.kind === 'rectangle' && chain.length === 2
+            ? `M${chain[0].x} ${chain[0].y}H${chain[1].x}V${chain[1].y}H${chain[0].x}Z`
+            : chain.map((q, i) => `${i ? 'L' : 'M'}${q.x} ${q.y}`).join('') + (closed && chain.length > 2 ? 'Z' : '');
+          return <path className="plan-preview" d={d} fill="none" stroke="currentColor" strokeDasharray="5 4" opacity={0.7} />;
+        })()}
         {box && <SelectRegion d={box} />}
         {editor.render}
         {(cadStep || editor.dragging) && <CadOverlay aimed={hover} toScreen={toScreen} />}

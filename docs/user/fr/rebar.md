@@ -12,7 +12,7 @@ L’onglet **Ferraillage 2D** dessine le ferraillage comme on fait une nomenclat
 
 Le ferraillage a besoin de la coupe transversale à côté de la longitudinale. **Coupe ici** fait les deux : choisissez une poutre, un poteau ou un mur dans la vue où vous êtes, et là où vous cliquez une coupe est faite *en travers*, perpendiculaire à son axe, et dessinée à côté de votre clic, dans la même vue, avec un demi-mètre de ce qui l’entoure (la dalle, le poteau). Un poteau est coupé horizontalement, à la hauteur cliquée.
 
-La vue insérée suit l’élément : déplacez la poutre et la coupe se déplace avec elle. Déplacez l’insertion par sa poignée ; ses propriétés lui donnent un facteur d’échelle et un cadre. **Coupe transversale** fait la même coupe comme vue à part, et **Vue insérée** place toute vue existante dans celle où vous êtes.
+La vue insérée suit l’élément : déplacez la poutre et la coupe se déplace avec elle. Déplacez l’insertion par sa poignée ; ses propriétés lui donnent un facteur d’échelle et un cadre. **Coupe transversale** fait la même coupe comme vue à part, et **Vue insérée** place toute vue existante dans celle où vous êtes, en vraie grandeur et à l’échelle de la vue hôte, pour que les barres dessinées dessus s’ajustent au béton.
 
 ![La coupe longitudinale d’une poutre avec sa coupe transversale insérée et son ferraillage](shots/rebar-section.webp)
 
@@ -25,6 +25,10 @@ Les crochets se règlent à chaque extrémité : 90°, 135° ou 180°, leur long
 **Barre en coupe** est une barre vue en bout : un point de son diamètre, avec la longueur qu’elle a le long de la barre. **Même barre en coupe** place la barre sélectionnée comme point ailleurs, sans la compter deux fois. Un **Réseau** dans les propriétés répète une barre tous les tant de millimètres, comme les barres d’un lit dans une coupe transversale.
 
 La bulle du repère montre le numéro du repère et ce qu’est la barre : `4Ø12 L=2450`. Tirez la bulle là où elle se lit le mieux. Les longueurs sont les nominales, mesurées sur l’axe de la barre entre ses angles, crochets compris ; la longueur développée autour des pliages est indiquée dans le panneau des propriétés.
+
+## Cadres sur le type de poutre ou de poteau
+
+Les cadres ne se dessinent pas un à un : ils appartiennent au **type**. Dans Structure → Types de structure, un type rectangulaire de poutre ou de poteau reçoit **Cadres sur ce type** : leur diamètre, l’enrobage et leur répartition — un pas sur toute la longueur, ou **trois zones**, chacune avec sa part de la longueur (un tiers par défaut) et son pas, plus serré aux extrémités. Chaque élément du type les montre alors dans toute coupe selon la position de la vue par rapport à l’axe : le rectangle à l’intérieur de l’enrobage en coupe transversale, une ligne par cadre en coupe longitudinale, des lignes sur la poutre dans un plan de structure ; avec l’étiquette `41Ø8/150` et la bulle du repère. Ils sont comptés dans la nomenclature sous le repère du type. Pas de 3D pour eux dans cette édition ; les barres longitudinales se dessinent à la main, comme ci-dessous.
 
 ## Cadres le long d’une poutre
 

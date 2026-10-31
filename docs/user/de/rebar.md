@@ -12,7 +12,7 @@ Der Reiter **Bewehrung 2D** zeichnet Bewehrung so, wie eine Stahlliste entsteht:
 
 Bewehrung braucht den Querschnitt neben dem Längsschnitt. **Schnitt hier** macht beides: Sie wählen einen Balken, eine Stütze oder eine Wand in der Ansicht, in der Sie sind, und wo Sie klicken, wird ein Schnitt *quer* dazu geschnitten, senkrecht zur Achse, und neben Ihrem Klick gezeichnet, in derselben Ansicht, mit einem halben Meter Umgebung (die Decke, die Stütze). Eine Stütze wird waagerecht geschnitten, in der angeklickten Höhe.
 
-Die eingesetzte Ansicht folgt dem Element: Verschieben Sie den Balken, und der Schnitt wandert mit. Ziehen Sie die eingesetzte Ansicht an ihrem Griff; ihre Eigenschaften geben ihr einen Maßstabsfaktor und einen Rahmen. **Querschnitt** macht denselben Schnitt als eigene Ansicht, und **Eingesetzte Ansicht** setzt eine beliebige vorhandene Ansicht in die ein, in der Sie sind.
+Die eingesetzte Ansicht folgt dem Element: Verschieben Sie den Balken, und der Schnitt wandert mit. Ziehen Sie die eingesetzte Ansicht an ihrem Griff; ihre Eigenschaften geben ihr einen Maßstabsfaktor und einen Rahmen. **Querschnitt** macht denselben Schnitt als eigene Ansicht, und **Eingesetzte Ansicht** setzt eine beliebige vorhandene Ansicht in die ein, in der Sie sind, in wahrer Größe und im Maßstab der Gastansicht, damit darüber gezeichnete Stäbe in den Beton passen.
 
 ![Der Längsschnitt eines Balkens mit eingesetztem Querschnitt und seiner Bewehrung](shots/rebar-section.webp)
 
@@ -25,6 +25,10 @@ Haken werden an jedem Ende gesetzt: 90°, 135° oder 180°, ihre gerade Länge n
 **Stab im Schnitt** ist ein Stab von vorn: ein Punkt in seinem Durchmesser, mit der Länge, die er entlang des Stabs hat. **Derselbe Stab im Schnitt** setzt den gewählten Stab anderswo als Punkt, ohne ihn doppelt zu zählen. Eine **Reihe** in den Eigenschaften wiederholt einen Stab alle so viele Millimeter, wie die Stäbe einer Lage im Querschnitt.
 
 Der Positionskreis zeigt die Positionsnummer und was der Stab ist: `4Ø12 L=2450`. Ziehen Sie den Kreis dorthin, wo er am besten lesbar ist. Die Längen sind die Nennlängen, auf der Stabachse zwischen den Ecken gemessen, mit Haken; die abgewickelte Länge um die Biegungen steht im Eigenschaftenfenster.
+
+## Bügel am Balken- oder Stützentyp
+
+Bügel werden nicht einzeln gezeichnet: sie gehören zum **Typ**. Unter Tragwerk → Tragwerkstypen bekommt ein rechteckiger Balken- oder Stützentyp **Bügel an diesem Typ**: ihren Durchmesser, die Betondeckung und ihre Verteilung — ein Abstand durchgehend oder **drei Zonen**, jede mit ihrem Anteil der Länge (ein Drittel voreingestellt) und ihrem Abstand, enger an den Enden. Jedes Element des Typs zeigt sie dann in jedem Schnitt so, wie die Ansicht zur Achse liegt: das Rechteck innerhalb der Deckung im Querschnitt, eine Linie je Bügel im Längsschnitt, Linien über dem Balken im Tragwerksgrundriss; mit der Beschriftung `41Ø8/150` und dem Positionskreis. Sie werden in der Stahlliste unter der Position des Typs gezählt. In dieser Ausgabe gibt es kein 3D von ihnen; die Längsstäbe werden von Hand gezeichnet, wie unten.
 
 ## Bügel entlang eines Balkens
 
