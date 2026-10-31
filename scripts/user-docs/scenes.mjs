@@ -1323,7 +1323,7 @@ export const scenes = [
       await t.page.locator('.help-menu > button').click();
       await t.wait(300);
       await t.shot('help-menu', { clip: { x: 1100, y: 0, width: 340, height: 340 } });
-      t.expect((await t.page.locator('.menu-langs button').allTextContents()).join(' ') === 'English Română Español Deutsch Français Dansk', 'the help menu offers the interface in English, Romanian, Spanish, German, French and Danish');
+      t.expect((await t.page.locator('.menu-langs button').allTextContents()).join(' ') === 'English Română Español Deutsch Français Dansk ພາສາລາວ', 'the help menu offers the interface in English, Romanian, Spanish, German, French, Danish and Lao');
       await t.page.getByRole('menuitem', { name: 'About Lapin…' }).click();
       await t.wait(200);
       t.expect(await t.page.getByText('Helpware', { exact: true }).count() > 0, 'About Lapin says what helpware means');

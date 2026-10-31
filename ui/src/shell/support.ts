@@ -35,11 +35,18 @@ export function installRecentErrors(): void {
 /** Open the community or the site in the system's browser (the engine does it). */
 export const LINKS = { guide: 'https://lapin.ciuntucbimstudio.ro/docs/', community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://ciuntucbimstudio.ro', source: 'https://github.com/Ciuntuc-BIM-Studio/lapin-pro' } as const;
 
-/** The user guide in a language: /docs/ for English, /docs/<lang>/ for the others (every interface language has one, scripts/user-docs/languages.mjs). */
-export const guideUrl = (lang: Lang): string => (lang === 'en' ? LINKS.guide : `${LINKS.guide}${lang}/`);
+/** The languages the user guide is written in (scripts/user-docs/languages.mjs); an interface language not among them (Lao) opens it in English. */
+const GUIDED: readonly Lang[] = ['en', 'ro', 'es', 'de', 'fr', 'da'];
+const guided = (lang: Lang): Lang => (GUIDED.includes(lang) ? lang : 'en');
+
+/** The user guide in a language: /docs/ for English, /docs/<lang>/ for the others. */
+export const guideUrl = (lang: Lang): string => (guided(lang) === 'en' ? LINKS.guide : `${LINKS.guide}${guided(lang)}/`);
 
 /** The engine's name for the guide in a language (Support.cs): guide, guideRo, guideEs, guideDe, guideFr, guideDa. */
-export const guideLink = (lang: Lang): string => (lang === 'en' ? 'guide' : `guide${lang[0].toUpperCase()}${lang.slice(1)}`);
+export const guideLink = (lang: Lang): string => {
+  const g = guided(lang);
+  return g === 'en' ? 'guide' : `guide${g[0].toUpperCase()}${g.slice(1)}`;
+};
 
 /** Open the community or the site: in the system's browser (the engine does it on the desktop), in a new tab on the web. The guide opens in the interface's language. */
 export const openLink = (which: keyof typeof LINKS) => {

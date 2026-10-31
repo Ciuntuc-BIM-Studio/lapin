@@ -4,8 +4,8 @@ import { DE, DE_PATTERNS } from './de';
 import { ES, ES_PATTERNS } from './es';
 import { FR, FR_PATTERNS } from './fr';
 import { LANGUAGES, translate, type Lang, type Language } from './index';
-import { RO, RO_PATTERNS } from './ro';
 import { LO, LO_PATTERNS } from './lo';
+import { RO, RO_PATTERNS } from './ro';
 
 describe('the Romanian interface', () => {
   it('puts known phrases into Romanian, keeping their spaces, and leaves the others', () => {
@@ -18,9 +18,11 @@ describe('the Romanian interface', () => {
 });
 
 describe('the Lao interface', () => {
-  it('puts known phrases into Lao, keeping its spaces, and leaves the others', () => {
-    expect(translate('Wall', 'lo')).toBe('ຝາ'); // (ປ່ຽນຕາມຄຳແປໃນ lo.ts ຂອງອາຈານ)
-    expect(translate('Floor plans', 'lo')).toBe('ແຜນຜັງຊັ້ນ'); 
+  it('puts known phrases into Lao, keeping their spaces, and leaves the others', () => {
+    expect(translate('Wall', 'lo')).toBe('ຝາ');
+    expect(translate(' Floor plans ', 'lo')).toBe(' ແຜນຜັງພື້ນ ');
+    expect(translate('12 elements', 'lo')).toBe('12 ອົງປະກອບ');
+    expect(translate('My own wall name', 'lo')).toBeNull();
     expect(translate('', 'lo')).toBeNull();
   });
 });
@@ -125,8 +127,8 @@ describe('the languages', () => {
     }
   });
 
-  // German, French and Danish: the same phrases and patterns as Romanian and Spanish.
-  const others: [Lang, string, Language['dict'], Language['patterns']][] = [['de', 'German', DE, DE_PATTERNS], ['fr', 'French', FR, FR_PATTERNS], ['da', 'Danish', DA, DA_PATTERNS]];
+  // German, French, Danish and Lao: the same phrases and patterns as Romanian and Spanish.
+  const others: [Lang, string, Language['dict'], Language['patterns']][] = [['de', 'German', DE, DE_PATTERNS], ['fr', 'French', FR, FR_PATTERNS], ['da', 'Danish', DA, DA_PATTERNS], ['lo', 'Lao', LO, LO_PATTERNS]];
   const ends = (s: string) => s.trim().match(/[…:.?]$/)?.[0] ?? '';
   for (const [lang, name, dict, patterns] of others) {
     it(`${name} has every phrase Romanian has, and no other, each ending as the English does`, () => {
@@ -173,7 +175,7 @@ describe('the languages', () => {
 });
 
 describe('labels the guide found in English', () => {
-  const langs: Lang[] = ['ro', 'es', 'de', 'fr', 'da'];
+  const langs: Lang[] = ['ro', 'es', 'de', 'fr', 'da', 'lo'];
   const labels = [
     'Import DXF', 'Import DXF…', 'Link IFC…', 'IFC properties', 'Placed', "by the map's coordinates", 'As a link', 'Units', 'Units:',
     'Roof window', 'Dormer', 'Side', 'Hand', 'Reassign', 'Underlay', 'Execution', 'detach', 'Planning', 'Engineering', 'Assist',

@@ -27,7 +27,7 @@ El botón **?** junto a Ask Me abre el menú de ayuda:
 - **Acerca de Lapin…** muestra la versión, la licencia, un enlace al código fuente y lo que significa helpware.
 
   ![Acerca de Lapin](shots/about.webp)
-- **English · Română · Español · Deutsch · Français · Dansk** elige el idioma de la interfaz. Su elección se recuerda en este ordenador. Esta guía está en los mismos seis idiomas, y **Guía del usuario** la abre en el que haya elegido; el menú de la parte superior de cada página de la guía la cambia a otro.
+- **English · Română · Español · Deutsch · Français · Dansk · ພາສາລາວ** elige el idioma de la interfaz. Su elección se recuerda en este ordenador. Esta guía está en los seis primeros (en lao se abre en inglés), y **Guía del usuario** la abre en el que haya elegido; el menú de la parte superior de cada página de la guía la cambia a otro.
 
 ## Respuestas a sus informes
 

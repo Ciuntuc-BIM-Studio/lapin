@@ -27,7 +27,7 @@ Die Schaltfläche **?** neben Ask Me öffnet das Hilfemenü:
 - **Über Lapin…** zeigt die Version, die Lizenz, einen Link zum Quellcode und was Helpware bedeutet.
 
   ![Über Lapin](shots/about.webp)
-- **English · Română · Español · Deutsch · Français · Dansk** wählt die Sprache der Oberfläche. Ihre Wahl wird auf diesem Computer gespeichert. Dieses Handbuch gibt es in denselben sechs Sprachen, und **Benutzerhandbuch** öffnet es in der gewählten; das Menü oben auf jeder Seite des Handbuchs wechselt in eine andere.
+- **English · Română · Español · Deutsch · Français · Dansk · ພາສາລາວ** wählt die Sprache der Oberfläche. Ihre Wahl wird auf diesem Computer gespeichert. Dieses Handbuch gibt es in den ersten sechs (auf Laotisch öffnet es sich auf Englisch), und **Benutzerhandbuch** öffnet es in der gewählten; das Menü oben auf jeder Seite des Handbuchs wechselt in eine andere.
 
 ## Antworten auf Ihre Meldungen
 

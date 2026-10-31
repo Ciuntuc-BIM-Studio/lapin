@@ -27,7 +27,7 @@ Knappen **?** ved siden af Ask Me åbner hjælpemenuen:
 - **Om Lapin…** viser versionen, licensen, et link til kildekoden og hvad helpware betyder.
 
   ![Om Lapin](shots/about.webp)
-- **English · Română · Español · Deutsch · Français · Dansk** vælger brugerfladens sprog. Dit valg huskes på denne computer. Vejledningen findes på de samme seks sprog, og **Brugervejledning** åbner den på det sprog, du har valgt; menuen øverst på hver side i vejledningen skifter til et andet.
+- **English · Română · Español · Deutsch · Français · Dansk · ພາສາລາວ** vælger brugerfladens sprog. Dit valg huskes på denne computer. Vejledningen findes på de første seks (på laotisk åbner den på engelsk), og **Brugervejledning** åbner den på det sprog, du har valgt; menuen øverst på hver side i vejledningen skifter til et andet.
 
 ## Svar på dine rapporter
 

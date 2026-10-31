@@ -27,7 +27,7 @@ Butonul **?** de lângă Ask Me deschide meniul de ajutor:
 - **Despre Lapin…** arată versiunea, licența, un link spre codul sursă și ce înseamnă helpware.
 
   ![Despre Lapin](shots/about.webp)
-- **English · Română · Español · Deutsch · Français · Dansk** alege limba interfeței. Alegerea ta se ține minte pe acest calculator. Ghidul e în aceleași șase limbi, iar **Ghidul utilizatorului** îl deschide în limba aleasă; meniul din capul fiecărei pagini a ghidului îl trece în altă limbă.
+- **English · Română · Español · Deutsch · Français · Dansk · ພາສາລາວ** alege limba interfeței. Alegerea ta se ține minte pe acest calculator. Ghidul e în primele șase (în laoțiană se deschide în engleză), iar **Ghidul utilizatorului** îl deschide în limba aleasă; meniul din capul fiecărei pagini a ghidului îl trece în altă limbă.
 
 ## Răspunsuri la rapoartele tale
 

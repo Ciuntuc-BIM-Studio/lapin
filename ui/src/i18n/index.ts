@@ -1,11 +1,11 @@
 /**
- * The interface's language (English, Romanian, Spanish, German, French or
- * Danish). The interface is
+ * The interface's language (English, Romanian, Spanish, German, French,
+ * Danish or Lao). The interface is
  * written in English; in another language a translator walks what it shows
  * (texts, titles, placeholders) and puts each phrase it knows into that
  * language, keeping the English to put back. Drawings (SVG) and what the user
  * types are left as they are. Each language is one file (`ro.ts`, `es.ts`,
- * `de.ts`, `fr.ts`, `da.ts`):
+ * `de.ts`, `fr.ts`, `da.ts`, `lo.ts`):
  * its phrase list and its patterns; a phrase not in it stays English.
  *
  * One English word with two meanings (Join: a shared session or the wall-join
