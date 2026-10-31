@@ -10,7 +10,7 @@
 import { emptyPane, useUi, type Pane, type UiState } from './store';
 import { isDesktop } from '../engine/files';
 
-const SHARED = ['storeyId', 'selected', 'selection', 'tool', 'theme', 'visualStyle', 'fog', 'planDrawing', 'wallTypeId', 'doorTypeId', 'windowTypeId', 'slabTypeId', 'roofStyle', 'keyPlan'] as const;
+const SHARED = ['storeyId', 'selected', 'selection', 'tool', 'theme', 'visualStyle', 'fog', 'refPlanes', 'planDrawing', 'wallTypeId', 'doorTypeId', 'windowTypeId', 'slabTypeId', 'roofStyle', 'keyPlan'] as const;
 type Shared = Pick<UiState, (typeof SHARED)[number]>;
 
 /** The pane a window was opened for (`?pane=…`), null for the main window. */

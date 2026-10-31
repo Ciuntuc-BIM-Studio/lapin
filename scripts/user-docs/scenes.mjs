@@ -1111,19 +1111,22 @@ export const scenes = [
       const l = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[0, -3], [8, -3], [8, -5]], closed: false } })).ids[0];
       await t.cmd('studio.wall', { profileId: l, thickness: 0.25, height: 0.9, justify: 'left' });
       t.expect(circle, 'the circle drawn');
-      await t.ui({ keyPlan: false, selection: null, selected: [] });
-      await t.wait(800);
-      await t.fit();
-      await t.shot('studio-thick-plan', { of: '[data-testid=plan]', pad: 0 });
-      await select(t, box.id);
-      await t.wait(800);
-      await t.shot('studio-box-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
-      // A reference plane on the south facade, facing south; a ring drawn on it stands off the wall.
+      // A reference plane on the south facade, facing south; a ring drawn on it stands off the wall. The plan draws the plane
+      // where it cuts it (a dashed line with its name), the 3D view as a translucent pane.
       const south = (await t.nodes()).filter((n) => n.type === 'IfcWall' && n.props.start?.[1] === 0 && n.props.end?.[1] === 0)[0];
       t.expect(south, 'the south wall');
       const face = await t.cmd('view.create', { kind: 'plane', name: 'South facade', point: [6, -0.2, 0], normal: [0, -1, 0], elementId: south.id });
       const ringPlane = (await t.cmd('drafting.draw', { viewId: face.id, shape: { type: 'circle', c: [5.3, 2.2], r: 0.45 } })).ids[0];
       await t.cmd('studio.ring', { profileId: ringPlane, thickness: 0.08, height: 0.15 });
+      await t.ui({ view: 'plan', keyPlan: false, selection: null, selected: [] });
+      await t.wait(800);
+      await t.fit();
+      const planDrawing = await t.call('doc.query', { name: 'view.drawing', args: { id: plan } });
+      t.expect(planDrawing?.marks?.some((m) => m.id === face.id), 'the plan draws the reference plane where it cuts it');
+      await t.shot('studio-thick-plan', { of: '[data-testid=plan]', pad: 0 });
+      await select(t, box.id);
+      await t.wait(800);
+      await t.shot('studio-box-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
       await t.ui({ view: 'drawing', drawingViewId: face.id, selection: null, selected: [] });
       await t.wait(2000);
       await t.fit();
@@ -1132,8 +1135,11 @@ export const scenes = [
       await select(t, face.id);
       await t.wait(800);
       await t.shot('studio-plane-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
+      // In 3D the selected plane shows as a pane with the handle that drags it along its normal.
       await t.ui({ keyPlan: true });
       await open3d(t);
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-testid=ref-plane-handle]').count() === 1, 'the selected reference plane has its handle in 3D');
       await t.shot('studio-3d', { of: 'canvas', pad: 0 });
     },
   },

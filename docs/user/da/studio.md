@@ -45,6 +45,8 @@ Et referenceplan er et plan hvor som helst i modellen, med sin egen visning. Du 
 
 Det nye plan åbner med det samme. Det står under **Referenceplaner** i projektbrowseren. Dets tegning er et snit på planet, set mod den side, det vender mod.
 
+I 3D-visningen tegnes hvert referenceplan som en gennemsigtig flade med dets navn, så stor som modellen er på det (eller som **Tegnet bredde (3D)** og **Tegnet højde (3D)** siger, mindst 2 × 2 m), fremhævet under markøren. Klik på den for at vælge planet, dobbeltklik for at åbne dets visning. Med planet valgt trækker du pilen i dets midte for at flytte det langs dets normal: forskydningen vises ved pilen, og det, der er tegnet på planet, følger med. **Vis → Referenceplaner** skjuler og viser fladerne; de kommer aldrig med i eksporter, renderinger eller billeder. I planer, snit og facader tegnes et plan, der skærer visningen, som en stiplet linje med dets navn hen over hele visningen: et klik vælger planet, et dobbeltklik åbner det. Et plan parallelt med visningen tegnes ikke dér (det skærer intet af den). Disse linjer er kun til skærmen: tegningsark udskriver dem aldrig.
+
 ![Et referenceplan på sydfacaden med en ring tegnet på det](shots/studio-plane.webp)
 
 Markér planet i browseren for at flytte det. **Origo x**, **y** og **z** placerer det. **Vender mod** er den retning i planen, det vender mod, **Hældning**, hvor meget det læner sig bagover (ved 90° ligger det fladt og vender opad), og **Drejning i planet** drejer dets tegning om dets normal. **Flyt langs normalen…** og **Drej om lodret…** gør det samme i ét trin. Det, der er tegnet på planet, og hvert legeme lavet ud fra det, flytter med.
@@ -55,4 +57,4 @@ Snit og facader er også planer. Et legeme skitseret i et snit står på snitlin
 
 ![Huset med dets Studio-legemer i 3D](shots/studio-3d.webp)
 
-I IFC er en ring, en kasses vægge og en vægstrimmel IfcWall-elementer, en kasses bund og låg IfcSlab-elementer, og en kasse med dem en IfcElementAssembly med IfcRelAggregates. Hvert legemes historik gemmes i Lapins eget egenskabssæt, Lapin_Intent.
+I IFC er en ring, en kasses vægge og en vægstrimmel IfcWall-elementer, en kasses bund og låg IfcSlab-elementer, og en kasse med dem en IfcElementAssembly med IfcRelAggregates; deres typer skrives som IfcWallType og IfcSlabType. Hver 3D-eksport (IFC, Fragments, glTF, USD, COLLADA) skriver et Studio-legeme dér, hvor det står i modellen, uanset hvilket plan det blev skitseret på, med dets huller; en samling er en gruppeknude over sine dele. Åbnes Lapins egen IFC igen, kommer legemerne tilbage som referencer, på deres plads, med klasse, type og samling, men de kan ikke længere redigeres (deres skitser er ikke i filen). Hvert legemes historik gemmes i Lapins eget egenskabssæt, Lapin_Intent. Studio-legemer tager kun simple typer uden lag: det er den frie modellering, de er til; vægge med lag er Lapins native vægge.

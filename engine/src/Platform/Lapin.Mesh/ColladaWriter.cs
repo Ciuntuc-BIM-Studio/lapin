@@ -9,7 +9,8 @@ namespace Lapin.Mesh;
 /// and 3ds Max read, written after the specification and valid against its
 /// schema: Z up and metres, as the asset says, so nothing turns. A visual
 /// scene with the project (its offset to real coordinates), the building, a
-/// node per storey and a node per element, each element one geometry whose
+/// node per storey and a node per element (an assembly's parts nodes under
+/// its own), each element one geometry whose
 /// triangles go by material (Lambert effects, the material's colour as it is
 /// shown, its opacity), and its identity in an <c>extra</c> (GlobalId, IFC
 /// class, type, the name as given: COLLADA names are NCNames). Edges, when
@@ -84,8 +85,10 @@ public static class ColladaWriter
             w.WriteStartElement("library_geometries");
             var n = 0;
             foreach (var g in scene.Groups)
-                foreach (var e in g.Elements)
+                foreach (var e in g.Elements.SelectMany(x => x.Flatten()))
                 {
+                    // An assembly has no geometry of its own: it is a node over its parts' nodes.
+                    if (e.Parts.Count == 0 && e.Edges.Length < 6) continue;
                     var id = $"g{n++}";
                     geometryOf[e] = id;
                     Geometry(w, id, e);
@@ -99,13 +102,13 @@ public static class ColladaWriter
             if (rx != 0 || ry != 0 || rz != 0) { w.WriteStartElement("translate"); w.WriteAttributeString("sid", "location"); w.WriteString($"{F(rx)} {F(ry)} {F(rz)}"); w.WriteEndElement(); }
             w.WriteStartElement("node"); w.WriteAttributeString("id", "building"); w.WriteAttributeString("name", Name(scene.Building));
             var s = 0;
-            foreach (var g in scene.Groups)
+            var assemblies = 0;
+            void ElementNode(MeshElement e, MeshGroup g)
             {
-                w.WriteStartElement("node"); w.WriteAttributeString("id", $"s{s++}"); w.WriteAttributeString("name", Name(g.Name));
-                foreach (var e in g.Elements)
+                var nodeId = geometryOf.TryGetValue(e, out var gid) ? gid + "-node" : $"a{assemblies++}-node";
+                w.WriteStartElement("node"); w.WriteAttributeString("id", nodeId); w.WriteAttributeString("name", Name(e.Name));
+                if (gid != null)
                 {
-                    var gid = geometryOf[e];
-                    w.WriteStartElement("node"); w.WriteAttributeString("id", gid + "-node"); w.WriteAttributeString("name", Name(e.Name));
                     w.WriteStartElement("instance_geometry"); w.WriteAttributeString("url", "#" + gid);
                     w.WriteStartElement("bind_material"); w.WriteStartElement("technique_common");
                     foreach (var mi in e.Parts.Select(p => p.Material).Distinct().Select(i => materials[i].Id).Concat(e.Edges.Length >= 6 ? ["medges"] : []))
@@ -114,9 +117,16 @@ public static class ColladaWriter
                     }
                     w.WriteEndElement(); w.WriteEndElement();
                     w.WriteEndElement();
-                    Identity(w, e.GlobalId, e.IfcClass, e.Type, e.Name, g.Name);
-                    w.WriteEndElement();
                 }
+                // An assembly's parts are nodes under its own.
+                foreach (var c in e.Children ?? []) ElementNode(c, g);
+                Identity(w, e.GlobalId, e.IfcClass, e.Type, e.Name, g.Name);
+                w.WriteEndElement();
+            }
+            foreach (var g in scene.Groups)
+            {
+                w.WriteStartElement("node"); w.WriteAttributeString("id", $"s{s++}"); w.WriteAttributeString("name", Name(g.Name));
+                foreach (var e in g.Elements) ElementNode(e, g);
                 Identity(w, g.GlobalId, g.IfcClass, null, g.Name, null);
                 w.WriteEndElement();
             }

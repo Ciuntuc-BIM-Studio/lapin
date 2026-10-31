@@ -99,6 +99,8 @@ export interface UiState extends Pane {
   visualStyle: 'shaded' | 'edges' | 'wireframe';
   /** The 3D view fades with distance. */
   fog: boolean;
+  /** The reference planes drawn in the 3D view (View → Reference planes). */
+  refPlanes: boolean;
   /** The key plan over the views (the camera's place in 3D, the frame in 2D). */
   keyPlan: boolean;
 }

@@ -28,6 +28,7 @@ import { DrawingLayer } from './DrawingLayer';
 import { useDrawing } from './drawing';
 import { setUnderlay, useUnderlay } from './underlay';
 import { editDimension } from './dimensionEdit';
+import { openPickedView } from './openView';
 import { CadOverlay } from './cad/canvas';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
@@ -569,7 +570,7 @@ export function PlanView() {
           const rect = svgRef.current!.getBoundingClientRect();
           const w = toWorld(e.clientX - rect.left, e.clientY - rect.top);
           const n = pick(w);
-          if (n) void editDimension(n.id, w);
+          if (n && !openPickedView(n.id)) void editDimension(n.id, w);
         }}>
         <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>
         {/* The drawing lays the orthophotos itself (CivilModule's marks, so sheets print them); the modelling lines lie over them here. */}

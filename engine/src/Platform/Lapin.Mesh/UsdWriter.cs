@@ -11,7 +11,8 @@ namespace Lapin.Mesh;
 /// offset to real coordinates; under it the materials (UsdPreviewSurface,
 /// linear colours) and the building, an Xform per storey, an Xform per
 /// element carrying its identity (lapin:globalId, lapin:ifcClass,
-/// lapin:type), and a Mesh per material bound to it. Edges, when the scene
+/// lapin:type), an assembly's parts Xforms under its own, and a Mesh per
+/// material bound to each. Edges, when the scene
 /// has them, are linear BasisCurves. Prim names are made valid identifiers
 /// and unique among their siblings; the element's own name is its displayName.
 /// </summary>
@@ -156,81 +157,88 @@ public static class UsdWriter
             o.Append($"            custom string lapin:ifcClass = {Quote(g.IfcClass)}\n");
             o.Append($"            custom double lapin:elevation = {F(g.Elevation)}\n");
             var elements = new Names();
-            foreach (var e in g.Elements)
-            {
-                o.Append($"\n            def Xform {Quote(elements.Of(e.Name))} (\n                displayName = {Quote(e.Name)}\n            )\n            {{\n");
-                o.Append($"                custom string lapin:globalId = {Quote(e.GlobalId)}\n");
-                o.Append($"                custom string lapin:ifcClass = {Quote(e.IfcClass)}\n");
-                if (e.Type != null) o.Append($"                custom string lapin:type = {Quote(e.Type)}\n");
-                var parts = new Names();
-                foreach (var p in e.Parts) Mesh(o, parts.Of(scene.Materials[p.Material].Name), p, materialPaths[p.Material]);
-                if (e.Edges.Length >= 6) Curves(o, parts.Of("Edges"), e.Edges, edgePath);
-                o.Append("            }\n");
-            }
+            foreach (var e in g.Elements) Element(o, scene, e, elements, materialPaths, edgePath, "            ");
             o.Append("        }\n");
         }
         o.Append("    }\n}\n");
         return o.ToString();
     }
 
-    static void Points(StringBuilder o, string type, string name, float[] xyz, string? meta = null)
+    /// <summary>An element as an Xform with its identity and a Mesh per material; an assembly's parts are Xforms under it.</summary>
+    static void Element(StringBuilder o, MeshScene scene, MeshElement e, Names siblings, List<string> materialPaths, string edgePath, string indent)
     {
-        o.Append($"                    {type} {name} = [");
+        o.Append($"\n{indent}def Xform {Quote(siblings.Of(e.Name))} (\n{indent}    displayName = {Quote(e.Name)}\n{indent})\n{indent}{{\n");
+        o.Append($"{indent}    custom string lapin:globalId = {Quote(e.GlobalId)}\n");
+        o.Append($"{indent}    custom string lapin:ifcClass = {Quote(e.IfcClass)}\n");
+        if (e.Type != null) o.Append($"{indent}    custom string lapin:type = {Quote(e.Type)}\n");
+        var parts = new Names();
+        foreach (var p in e.Parts) Mesh(o, parts.Of(scene.Materials[p.Material].Name), p, materialPaths[p.Material], indent + "    ");
+        if (e.Edges.Length >= 6) Curves(o, parts.Of("Edges"), e.Edges, edgePath, indent + "    ");
+        foreach (var c in e.Children ?? []) Element(o, scene, c, parts, materialPaths, edgePath, indent + "    ");
+        o.Append($"{indent}}}\n");
+    }
+
+    static void Points(StringBuilder o, string type, string name, float[] xyz, string indent, string? meta = null)
+    {
+        o.Append($"{indent}{type} {name} = [");
         for (var i = 0; i + 2 < xyz.Length; i += 3)
         {
             if (i > 0) o.Append(", ");
             o.Append('(').Append(F(xyz[i])).Append(", ").Append(F(xyz[i + 1])).Append(", ").Append(F(xyz[i + 2])).Append(')');
         }
         o.Append(']');
-        if (meta != null) o.Append(" (\n                        ").Append(meta).Append("\n                    )");
+        if (meta != null) o.Append(" (\n").Append(indent).Append("    ").Append(meta).Append('\n').Append(indent).Append(')');
         o.Append('\n');
     }
 
-    static void Extent(StringBuilder o, float[] xyz)
+    static void Extent(StringBuilder o, float[] xyz, string indent)
     {
         float[] min = [float.MaxValue, float.MaxValue, float.MaxValue], max = [float.MinValue, float.MinValue, float.MinValue];
         for (var i = 0; i + 2 < xyz.Length; i += 3)
             for (var k = 0; k < 3; k++) { min[k] = Math.Min(min[k], xyz[i + k]); max[k] = Math.Max(max[k], xyz[i + k]); }
-        o.Append($"                    float3[] extent = [({F(min[0])}, {F(min[1])}, {F(min[2])}), ({F(max[0])}, {F(max[1])}, {F(max[2])})]\n");
+        o.Append($"{indent}float3[] extent = [({F(min[0])}, {F(min[1])}, {F(min[2])}), ({F(max[0])}, {F(max[1])}, {F(max[2])})]\n");
     }
 
-    static void Mesh(StringBuilder o, string name, MeshPart p, string material)
+    /// <summary>A part as a Mesh under its element's Xform, which stands at <paramref name="indent"/>.</summary>
+    static void Mesh(StringBuilder o, string name, MeshPart p, string material, string indent)
     {
-        o.Append($"\n                def Mesh {Quote(name)} (\n                    prepend apiSchemas = [\"MaterialBindingAPI\"]\n                )\n                {{\n");
-        Extent(o, p.Positions);
-        o.Append("                    int[] faceVertexCounts = [");
+        var a = indent + "    ";
+        o.Append($"\n{indent}def Mesh {Quote(name)} (\n{a}prepend apiSchemas = [\"MaterialBindingAPI\"]\n{indent})\n{indent}{{\n");
+        Extent(o, p.Positions, a);
+        o.Append($"{a}int[] faceVertexCounts = [");
         for (var i = 0; i < p.Indices.Length / 3; i++) o.Append(i > 0 ? ", 3" : "3");
         o.Append("]\n");
-        o.Append("                    int[] faceVertexIndices = [");
+        o.Append($"{a}int[] faceVertexIndices = [");
         for (var i = 0; i < p.Indices.Length; i++) { if (i > 0) o.Append(", "); o.Append(p.Indices[i]); }
         o.Append("]\n");
-        o.Append($"                    rel material:binding = <{material}>\n");
+        o.Append($"{a}rel material:binding = <{material}>\n");
         // Flat shaded: every vertex belongs to one face, so its normal is per vertex.
-        Points(o, "normal3f[]", "normals", p.Normals, "interpolation = \"vertex\"");
-        o.Append("                    uniform token orientation = \"rightHanded\"\n");
-        Points(o, "point3f[]", "points", p.Positions);
+        Points(o, "normal3f[]", "normals", p.Normals, a, "interpolation = \"vertex\"");
+        o.Append($"{a}uniform token orientation = \"rightHanded\"\n");
+        Points(o, "point3f[]", "points", p.Positions, a);
         if (p.Uvs is { } uv)
         {
-            o.Append("                    texCoord2f[] primvars:st = [");
+            o.Append($"{a}texCoord2f[] primvars:st = [");
             for (var i = 0; i + 1 < uv.Length; i += 2) { if (i > 0) o.Append(", "); o.Append($"({F(uv[i])}, {F(uv[i + 1])})"); }
-            o.Append("] (\n                        interpolation = \"vertex\"\n                    )\n");
+            o.Append($"] (\n{a}    interpolation = \"vertex\"\n{a})\n");
         }
-        o.Append("                    uniform token subdivisionScheme = \"none\"\n");
-        o.Append("                }\n");
+        o.Append($"{a}uniform token subdivisionScheme = \"none\"\n");
+        o.Append($"{indent}}}\n");
     }
 
-    static void Curves(StringBuilder o, string name, float[] segments, string material)
+    static void Curves(StringBuilder o, string name, float[] segments, string material, string indent)
     {
-        o.Append($"\n                def BasisCurves {Quote(name)} (\n                    prepend apiSchemas = [\"MaterialBindingAPI\"]\n                )\n                {{\n");
-        o.Append("                    uniform token type = \"linear\"\n");
-        o.Append("                    int[] curveVertexCounts = [");
+        var a = indent + "    ";
+        o.Append($"\n{indent}def BasisCurves {Quote(name)} (\n{a}prepend apiSchemas = [\"MaterialBindingAPI\"]\n{indent})\n{indent}{{\n");
+        o.Append($"{a}uniform token type = \"linear\"\n");
+        o.Append($"{a}int[] curveVertexCounts = [");
         for (var i = 0; i < segments.Length / 6; i++) o.Append(i > 0 ? ", 2" : "2");
         o.Append("]\n");
-        Extent(o, segments);
-        o.Append($"                    rel material:binding = <{material}>\n");
-        Points(o, "point3f[]", "points", segments);
-        o.Append("                    float[] widths = [0.005] (\n                        interpolation = \"constant\"\n                    )\n");
-        o.Append("                }\n");
+        Extent(o, segments, a);
+        o.Append($"{a}rel material:binding = <{material}>\n");
+        Points(o, "point3f[]", "points", segments, a);
+        o.Append($"{a}float[] widths = [0.005] (\n{a}    interpolation = \"constant\"\n{a})\n");
+        o.Append($"{indent}}}\n");
     }
 
     // ─── USDZ: an uncompressed zip, each file's data aligned to 64 bytes ────

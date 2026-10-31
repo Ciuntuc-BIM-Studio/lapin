@@ -377,4 +377,37 @@ public class StudioThickTests
         }
         finally { Directory.Delete(dir, true); }
     }
+
+    [Fact]
+    public void Reference_planes_are_drawn_where_they_cut_a_plan_or_a_section_and_never_printed()
+    {
+        var f = F();
+        var plan = Plan(f);
+        f.Wall(0, 0, 8, 0);
+        // A standing plane facing south along y = −0.5: a dashed line across the plan at y = −0.5 with its name, picked as the plane.
+        var south = (string)f.Run("view.create", new JsonObject { ["kind"] = "plane", ["name"] = "Facade", ["point"] = J3(4, -0.5, 1), ["normal"] = J3(0, -1, 0) })!["id"]!;
+        // A lying plane 1.2 m over the plan: parallel to it, not drawn there.
+        var over = (string)f.Run("view.create", new JsonObject { ["kind"] = "plane", ["fromView"] = plan, ["offset"] = 1.2 })!["id"]!;
+        var r = Views.Render(f.Session.Reader, f.Model.Get(plan)!);
+        var mk = Assert.Single(r.Marks, x => x.Owner == south);
+        Assert.NotEmpty(mk.Lines);
+        Assert.All(mk.Lines, l => { Assert.Equal(-0.5, l.A.Y, 6); Assert.Equal(-0.5, l.B.Y, 6); Assert.Equal(Views.ConstructionLayer, l.Layer); Assert.NotNull(l.Dash); });
+        Assert.True(Math.Abs(mk.Lines[0].B.X - mk.Lines[0].A.X) > 8, "across the view's extent");
+        Assert.Contains(mk.Texts, t => t.Text.Text == "Facade");
+        Assert.DoesNotContain(r.Marks, x => x.Owner == over);
+        Assert.Contains(r.Pens, p => p.Layer == Views.ConstructionLayer && p.Segments.Count > 0);
+        // Printed (a sheet), the plane is left out.
+        var printed = Views.Render(f.Session.Reader, f.Model.Get(plan)!, print: true);
+        Assert.DoesNotContain(printed.Pens, p => p.Layer == Views.ConstructionLayer);
+        Assert.DoesNotContain(printed.Pens, p => p.Texts.Any(t => t.Text == "Facade"));
+        // A section along x looking north cuts the lying plane at z = 1.2 (a level line) and runs parallel to the standing one.
+        var section = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = J(0, -3), ["end"] = J(8, -3) })!["id"]!;
+        var rs = Views.Render(f.Session.Reader, f.Model.Get(section)!);
+        var lying = Assert.Single(rs.Marks, x => x.Owner == over);
+        Assert.NotEmpty(lying.Lines);
+        Assert.All(lying.Lines, l => { Assert.Equal(1.2, l.A.Y, 6); Assert.Equal(1.2, l.B.Y, 6); });
+        Assert.DoesNotContain(rs.Marks, x => x.Owner == south);
+        // The plane's own view draws no planes.
+        Assert.DoesNotContain(Views.Render(f.Session.Reader, f.Model.Get(south)!).Marks, x => x.Owner == over);
+    }
 }

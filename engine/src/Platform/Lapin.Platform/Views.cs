@@ -559,6 +559,8 @@ public static class Views
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services };
         var marks = Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).ToList();
+        // The reference planes where they cut this view, on the screen only: never on a sheet.
+        if (!print) marks.AddRange(RefPlaneMarks(ctx));
         foreach (var source in q.Services.All<IViewAnnotations>())
             try { marks.AddRange(source.Marks(ctx)); }
             catch (CommandException) { }
@@ -741,6 +743,82 @@ public static class Views
         }
     }
 
+    /// <summary>The colour reference planes are drawn in, in 2D (the 3D view draws them in the same).</summary>
+    public const string RefPlaneColor = "#2b7a9e";
+
+    /// <summary>
+    /// The reference planes (docs/plan-studio-thick.md) where they cut the view's plane: a dashed line across the view's
+    /// extent with the plane's name beyond its end, picked as the plane (the mark's owner), on the construction layer and
+    /// only for the screen, so it is never printed. A plane parallel to the view is not drawn (it cuts nothing of it); a
+    /// developed section shows the cut on each of its pieces; a plane's own view draws no other plane.
+    /// </summary>
+    static IEnumerable<ViewMark> RefPlaneMarks(ViewContext c)
+    {
+        var m = c.Model;
+        if (c.Kind == "3d" || c.View.Str("kind") == RefPlanes.Kind) yield break;
+        var planes = m.OfClass(Class).Where(v => v.Str("kind") == RefPlanes.Kind).ToList();
+        if (planes.Count == 0 || c.Drawing.Bounds is not { } bounds) yield break;
+        var k = c.Scale / 100;
+        var text = Standards.ResolveText(c.Book, []);
+        var margin = 1.0 * k;
+        var (x0, x1, y0, y1) = (bounds.Min.X - margin, bounds.Max.X + margin, bounds.Min.Y - margin, bounds.Max.Y + margin);
+        // The view's plane (its drawing's x and y on it), or a developed section's pieces, each over the x it covers.
+        var frames = new List<(WorkPlane Plane, double X0, double X1)>();
+        var developed = c.Kind == "section" && SectionPaths.Resolve(m, c.Services, c.View).Path is { } path ? SectionPaths.Pieces(path) : null;
+        if (developed is { Count: > 1 })
+        {
+            foreach (var piece in developed)
+                if (PlaneOf(m, c.Services, c.View, piece.Station + piece.Length / 2) is { } wp)
+                    frames.Add((wp, Math.Max(x0, piece.Station), Math.Min(x1, piece.Station + piece.Length)));
+        }
+        else if (c.Kind == "plan") { if (PlaneOf(m, c.Services, c.View) is { } wp) frames.Add((wp, x0, x1)); }
+        else frames.Add((new WorkPlane(c.Frame.Origin, c.Frame.Right, c.Frame.Up, -c.Frame.Dir), x0, x1));
+        foreach (var v in planes)
+        {
+            var plane = RefPlanes.Of(v);
+            var mk = new ViewMark(v.Id);
+            foreach (var (view, fx0, fx1) in frames)
+            {
+                if (fx1 - fx0 < 1e-6 || PlaneCut(view, plane, fx0, fx1, y0, y1) is not var (a, b)) continue;
+                mk.Line(a, b, ConstructionLayer, Pens.Default.Hatch, RefPlaneColor, LineStyles.DashOf("dashed"));
+                // The name past the end that lies up or to the right.
+                var (tail, head) = b.Y > a.Y + 1e-9 || (Math.Abs(b.Y - a.Y) <= 1e-9 && b.X >= a.X) ? (a, b) : (b, a);
+                var u = (head - tail).Normalized();
+                mk.Text(new PenText(head + u * (0.3 * k), v.Name, text.Height, Anchor: u.X < -0.5 ? "end" : "start", Baseline: "middle", Font: text.Font), RefPlaneColor);
+                mk.Snaps.AddRange([a, b]);
+            }
+            if (mk.Lines.Count > 0) yield return mk;
+        }
+    }
+
+    /// <summary>
+    /// Where <paramref name="plane"/> cuts the <paramref name="view"/>'s plane, in the view's drawing coordinates, clipped to the
+    /// rectangle; null when the planes are parallel or the cut misses the rectangle.
+    /// </summary>
+    public static (Vec2 A, Vec2 B)? PlaneCut(WorkPlane view, WorkPlane plane, double x0, double x1, double y0, double y1)
+    {
+        var d = Vec3.Cross(plane.Normal, view.Normal);
+        if (d.Length < 1e-6) return null;
+        // A point on both: from the view's origin, within the view's plane, straight towards the other plane.
+        var n = plane.Normal;
+        var w = n - view.Normal * Vec3.Dot(n, view.Normal);
+        var t = Vec3.Dot(plane.Origin - view.Origin, n) / Vec3.Dot(w, n);
+        var at = view.Local(view.Origin + w * t).At;
+        var dir = new Vec2(Vec3.Dot(d, view.Right), Vec3.Dot(d, view.Up)).Normalized();
+        // Liang–Barsky: the line at + dir·s against the rectangle.
+        double smin = double.NegativeInfinity, smax = double.PositiveInfinity;
+        foreach (var (p0, dd, lo, hi) in new[] { (at.X, dir.X, x0, x1), (at.Y, dir.Y, y0, y1) })
+        {
+            if (Math.Abs(dd) < 1e-12) { if (p0 < lo || p0 > hi) return null; continue; }
+            var (s0, s1) = ((lo - p0) / dd, (hi - p0) / dd);
+            if (s0 > s1) (s0, s1) = (s1, s0);
+            smin = Math.Max(smin, s0);
+            smax = Math.Min(smax, s1);
+        }
+        if (smin >= smax) return null;
+        return (at + dir * smin, at + dir * smax);
+    }
+
     /// <summary>
     /// What a developed section writes over itself: a fine dashed line down each jog (where one piece ends and the next
     /// begins), and the stations along the bottom when it has them (a tick and "0+020" every step, from the station its
@@ -812,6 +890,8 @@ public static class Views
             new("bearing", "Faces (° from +X)", "number", Min: -360, Max: 360),
             new("tilt", "Tilt (°)", "number", Min: -90, Max: 90),
             new("spin", "Spin (°)", "number", Min: -360, Max: 360),
+            // How large the 3D view draws a reference plane (empty: as large as the model, 2 m at least).
+            new("width", "Drawn width (3D)", "length", Min: 0), new("height", "Drawn height (3D)", "length", Min: 0),
         ], "#555555", Kind: "view"));
 
         r.Command("view.create", "New view", (ctx, a) =>

@@ -135,6 +135,7 @@ public static partial class IfcImport
         readonly HashSet<string> seen = [];
         readonly List<Action<IEdit>> relations = [];               // written after every entity is there
         readonly Dictionary<string, string> contained = [];        // element → the storey it joins (WriteContainment)
+        readonly HashSet<int> sketched = [];                       // Studio solids: Lapin's, built from a sketch the file has not (they come as references)
 
         static readonly Dictionary<string, string> ProperNames = BuildNames();
 
@@ -146,6 +147,12 @@ public static partial class IfcImport
                 foreach (var p in Refs(r[4])) (definitions.TryGetValue(p, out var l) ? l : definitions[p] = []).Add(Ref(r[5]));
             foreach (var r in f.OfType("IFCRELCONTAINEDINSPATIALSTRUCTURE"))
                 foreach (var p in Refs(r[4])) containedIn[p] = Ref(r[5]);
+            // A part aggregated under an element (a box's wall under its assembly) stands where its whole does; twice, for a part of a part.
+            var aggregates = f.OfType("IFCRELAGGREGATES").Where(r => f.Get(r[4]) is { } whole && whole.Type is not ("IFCPROJECT" or "IFCSITE" or "IFCBUILDING" or "IFCBUILDINGSTOREY")).ToList();
+            for (var pass = 0; pass < 2; pass++)
+                foreach (var r in aggregates)
+                    if (containedIn.TryGetValue(Ref(r[4]), out var sp))
+                        foreach (var part in Refs(r[5])) containedIn.TryAdd(part, sp);
             // Rooms are aggregated into their storey, not contained.
             foreach (var r in f.OfType("IFCRELAGGREGATES"))
                 if (f.Get(r[4]) is { Type: "IFCBUILDINGSTOREY" } storey)
@@ -463,6 +470,16 @@ public static partial class IfcImport
                 var intent = o.ReferenceOnly ? null : IntentOf(e.Id);
                 // A reference Lapin wrote is one again, from the body the file gives it (its intent carries no body).
                 if (intent != null && (bool?)intent.Attrs["reference"] == true) { rest.Add(e); continue; }
+                // A Studio solid (docs/plan-studio-thick.md) is built from a sketch the file does not carry: it comes back as a
+                // reference with the body the file gives it, under its class, with its type and its assembly; the project it came
+                // from keeps its own, live solid.
+                if (intent != null && Sketched(intent))
+                {
+                    if (edit.Model.Get(Str(e[0]) ?? "") is { } own && own.Str("operation") != null) { seen.Add(own.Id); continue; }
+                    sketched.Add(e.Id);
+                    rest.Add(e);
+                    continue;
+                }
                 if (intent != null) { Native(edit, e, intent); native.Add(e.Id); continue; }
                 if (fills.Contains(e.Id)) { rest.Add(e); continue; } // decided by its wall, below
                 if (!o.ReferenceOnly && !parentOf.ContainsKey(e.Id) && Recognize(edit, e)) { native.Add(e.Id); continue; }
@@ -477,7 +494,7 @@ public static partial class IfcImport
                 if (Due(++seenRest, rest.Count)) Report("Bringing the references", seenRest, rest.Count);
                 if (parentOf.TryGetValue(e.Id, out var parent) && (native.Contains(parent) || (!o.ReferenceOnly && IntentOf(parent) != null))) continue;
                 if (recognizedFills.Contains(e.Id)) continue;
-                if (!o.ReferenceOnly && parentOf.ContainsKey(e.Id) && !fills.Contains(e.Id) && Recognize(edit, e)) continue;
+                if (!o.ReferenceOnly && parentOf.ContainsKey(e.Id) && !fills.Contains(e.Id) && !sketched.Contains(e.Id) && Recognize(edit, e)) continue;
                 Reference(edit, e, booleans);
             }
             Spaces(edit);
@@ -491,6 +508,32 @@ public static partial class IfcImport
         }
 
         int with2d, left2d, without2d;
+
+        /// <summary>Whether the intent is a Studio solid's: an operation on a sketch (its profile, or the box a bottom or top belongs to).</summary>
+        static bool Sketched(Intent intent) =>
+            intent.Attrs["operation"] is JsonValue && (intent.Attrs["profile"] is JsonValue || intent.Attrs["box"] is JsonValue);
+
+        /// <summary>
+        /// An assembly without a body of its own (a Studio box with its bottom and top): an IfcElementAssembly entity in its
+        /// storey, aggregating the parts the file gives it (references by now), so the box reads as one thing again. The project
+        /// it came from keeps its own assembly.
+        /// </summary>
+        bool Assembly(IEdit edit, StepEntity e, string gid)
+        {
+            var parts = f.OfType("IFCRELAGGREGATES").Where(r => Ref(r[4]) == e.Id).SelectMany(r => Refs(r[5]))
+                .Select(id => f.Entities.GetValueOrDefault(id)).OfType<StepEntity>().Select(p => Str(p[0])).OfType<string>().ToList();
+            if (parts.Count == 0) return false;
+            if (edit.Model.Get(gid) is { } own && own.Attrs["reference"] == null) { seen.Add(gid); return true; }
+            var attrs = new JsonObject { ["reference"] = true, ["ifcClass"] = "IfcElementAssembly", ["objectType"] = Str(e[4]) };
+            var predefined = e.Args.Count > 8 ? Enum(e[8]) : null;
+            Put(edit, gid, "IfcElementAssembly", Str(e[2]) ?? "Assembly", attrs, predefined, counts: false);
+            references++;
+            referencesByClass["IfcElementAssembly"] = referencesByClass.GetValueOrDefault("IfcElementAssembly") + 1;
+            var storey = StoreyFor(e.Id);
+            relations.Add(x => Contain(x, gid, storey));
+            foreach (var part in parts) relations.Add(x => Relate(x, null, IfcClass.RelAggregates, gid, part));
+            return true;
+        }
 
         /// <summary>
         /// The file's rooms (IfcSpace): Lapin's own rebuilt from their intent,
@@ -626,6 +669,7 @@ public static partial class IfcImport
             var gid = Str(e[0])!;
             var p = prepared.TryRemove(e.Id, out var ready) ? ready : Prepare(e, booleans);
             var bodied = p.Body.Parts.Count > 0;
+            if (!bodied && e.Type == "IFCELEMENTASSEMBLY" && Assembly(edit, e, gid)) return;
             // The 2D the user left out: an element's own (it is drawn by its cut), or an element that is nothing but 2D.
             if (p.Plan2d.Count > 0 || p.Sections2d + p.Elevations2d > 0)
             {
@@ -706,6 +750,10 @@ public static partial class IfcImport
             referencesByClass[cls] = referencesByClass.GetValueOrDefault(cls) + 1;
             var storey = StoreyFor(e.Id);
             relations.Add(x => Contain(x, gid, storey));
+            // A Studio solid keeps its type (Lapin's, read from its intent), as the native elements do.
+            if (sketched.Contains(e.Id))
+                foreach (var rel in f.OfType("IFCRELDEFINESBYTYPE").Where(r => Refs(r[4]).Contains(e.Id)))
+                    if (typeIds.TryGetValue(Ref(rel[5]), out var typeId)) relations.Add(x => Relate(x, null, IfcClass.RelDefinesByType, typeId, gid));
         }
 
         readonly Dictionary<string, string?> sharedBodies = [];

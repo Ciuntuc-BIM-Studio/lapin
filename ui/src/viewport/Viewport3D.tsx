@@ -30,7 +30,9 @@ import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
 import { SectionBox3D } from './SectionBox3D';
-import { boxPlanes, planesKey, useSectionBox, type SectionBox } from './sectionBox';
+import { RefPlanes3D, useRefPlaneDrag } from './RefPlanes3D';
+import { planePoint, refPlanesGroup, refPlanesKey, refPlanesOf } from './refPlanes';
+import { boxPlanes, modelBounds, planesKey, useSectionBox, type SectionBox } from './sectionBox';
 import { alignSectionBox, commitBox, cutAtPlan, fitSectionBox } from './sectionBoxTools';
 import { useDrawing, type DrawingDto } from './drawing';
 import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPieces, sectionPlanes, sectionPose, textFont, textQuad, useClip3d, useSection3d, type ClipPlane, type DrawingText, type ViewFrameDto } from './section3d';
@@ -405,6 +407,9 @@ export function Viewport3D() {
   const faceTypes = useRef<string[] | null>(null);
   const clearFace = useRef<() => void>(() => undefined);
   const [faceLabel, setFaceLabel] = useState<{ text: string; x: number; y: number } | null>(null);
+  /** The reference plane under the cursor (no tool on), drawn stronger. */
+  const [planeHover, setPlaneHover] = useState<string | null>(null);
+  const planeHoverRef = useRef<string | null>(null);
   /** Walking: started and stopped by the walk's store (set up with the scene). */
   const walkApi = useRef<{ start(w: WalkStart): void; stop(): void; changed(): void }>({ start: () => undefined, stop: () => undefined, changed: () => undefined });
   /** The section the camera was last turned to, so it turns once per showing, not on every edit. */
@@ -529,7 +534,11 @@ export function Viewport3D() {
       // Drawn once more right before it is read: the drawing buffer is not kept between frames.
       snapshot: (maxWidth = 1280) => {
         try {
-          renderer.render(s, cam);
+          // The reference planes are for the screen: a picture (a remark's viewpoint) goes without them.
+          const refPlanes = s.getObjectByName('ref-planes');
+          const shown = refPlanes?.visible ?? false;
+          if (refPlanes) refPlanes.visible = false;
+          try { renderer.render(s, cam); } finally { if (refPlanes) refPlanes.visible = shown; }
           const src = renderer.domElement;
           const scale = Math.min(1, maxWidth / Math.max(src.width, 1));
           if (scale >= 1) return src.toDataURL('image/png');
@@ -621,6 +630,9 @@ export function Viewport3D() {
       const meshes: THREE.Object3D[] = [];
       for (const { object } of live.values()) if (object.visible) meshes.push(object);
       meshes.push(...layer.pickables());
+      // The reference planes' quads pick as elements (a click selects the plane) while no tool is on.
+      const refPlanes = s.getObjectByName('ref-planes');
+      if (refPlanes?.visible && !useUi.getState().tool) for (const c of refPlanes.children) if (c.userData.refPlane) meshes.push(c);
       const cut = cutRef.current;
       return ray.intersectObjects(meshes, true).find((h) => nodeOfHit(h) && (cut === null || h.point.z <= cut + 1e-3));
     };
@@ -658,8 +670,29 @@ export function Viewport3D() {
     clearFace.current = () => { hoverKey = ''; showFace(null); };
     const onMove = (e: PointerEvent) => {
       const types = faceTypes.current;
-      if (!types || down || hoverFrame) return;
+      if (down || hoverFrame) return;
       const at = { x: e.clientX, y: e.clientY };
+      // No face tool: the reference plane under the cursor, if one is nearest, lights up.
+      if (!types) {
+        const planes = s.getObjectByName('ref-planes');
+        if (!planes?.visible || useUi.getState().tool) {
+          if (planeHoverRef.current) { planeHoverRef.current = null; setPlaneHover(null); renderer.domElement.style.cursor = ''; }
+          return;
+        }
+        hoverFrame = requestAnimationFrame(() => {
+          hoverFrame = 0;
+          const r = renderer.domElement.getBoundingClientRect();
+          ray.setFromCamera(new THREE.Vector2(((at.x - r.left) / r.width) * 2 - 1, -((at.y - r.top) / r.height) * 2 + 1), cam);
+          // The quads first (few): only when one is under the cursor is the whole model asked whether it stands in front.
+          const quads = planes.children.filter((c) => c.userData.refPlane);
+          const onQuad = ray.intersectObjects(quads, false).length > 0;
+          const hit = onQuad ? pickAt() : undefined;
+          const id = hit?.object.userData.refPlane ? nodeOfHit(hit) ?? null : null;
+          if (id !== planeHoverRef.current) { planeHoverRef.current = id; setPlaneHover(id); }
+          renderer.domElement.style.cursor = id ? 'pointer' : '';
+        });
+        return;
+      }
       hoverFrame = requestAnimationFrame(() => {
         hoverFrame = 0;
         const r = renderer.domElement.getBoundingClientRect();
@@ -678,6 +711,16 @@ export function Viewport3D() {
       });
     };
     renderer.domElement.addEventListener('pointermove', onMove);
+    // A double click on a reference plane opens its view.
+    const onDouble = (e: MouseEvent) => {
+      if (e.button !== 0 || useUi.getState().tool) return;
+      const r = renderer.domElement.getBoundingClientRect();
+      ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), cam);
+      const hit = pickAt();
+      const id = hit?.object.userData.refPlane ? nodeOfHit(hit) : undefined;
+      if (id) useUi.setState({ view: 'drawing', drawingViewId: id, selection: id, selected: [id] });
+    };
+    renderer.domElement.addEventListener('dblclick', onDouble);
     // Walking (walk.ts): the orbit controls off, the perspective camera at the eye, turned by a drag, moved by keys and the wheel;
     // a body (walkPhysics.ts) against the shown elements' triangles, built on the walk's first step and again when the model changes;
     // clipped by the planes the renderer cuts by (the storeys' cut, a section, the section box) and closed by their caps, so what is
@@ -852,6 +895,7 @@ export function Viewport3D() {
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('pointerup', onUp);
       renderer.domElement.removeEventListener('pointermove', onMove);
+      renderer.domElement.removeEventListener('dblclick', onDouble);
       cancelAnimationFrame(hoverFrame);
       clearFace.current = () => undefined;
       window.removeEventListener('keydown', onKey);
@@ -932,6 +976,26 @@ export function Viewport3D() {
   // Keep the scene in step with the engine's render items (rebuild only what changed).
   const render = useSession((st) => st.render);
   const meshes = useSession((st) => st.meshes);
+
+  // The reference planes (docs/plan-studio-thick.md): a translucent quad each, as large as the model on it, with its name;
+  // the selected ones and the one under the cursor stronger; the one being dragged drawn where it is going. View → Reference planes hides them.
+  const planesKeyNow = useSession((st) => refPlanesKey(st.nodes));
+  const refPlanesShown = useUi((st) => st.refPlanes);
+  const selectedNow = useUi((st) => st.selected);
+  const planeDrag = useRefPlaneDrag();
+  useEffect(() => {
+    const s = scene.current;
+    if (!s) return;
+    const old = s.getObjectByName('ref-planes');
+    if (old) { s.remove(old); dispose(old); }
+    const planes = refPlanesOf(useSession.getState().nodes).map((p) => p.id === planeDrag.id ? { ...p, origin: planePoint(p, 0, 0, planeDrag.along) } : p);
+    if (planes.length > 0) {
+      const group = refPlanesGroup(planes, modelBounds(render.values(), 0.5, 0, meshes), new Set(selectedNow), planeHover);
+      group.visible = refPlanesShown;
+      s.add(group);
+    }
+    invalidate.current();
+  }, [planesKeyNow, render, meshes, selectedNow, planeHover, refPlanesShown, planeDrag]);
   // A saved 3D view opened: its camera (where it looks from, perspective or orthographic).
   const view3dId = useUi((st) => st.view3dId);
   useEffect(() => {
@@ -1155,6 +1219,7 @@ export function Viewport3D() {
       {faceLabel && <div className="face-label" style={{ left: faceLabel.x + 14, top: faceLabel.y + 14 }}>{faceLabel.text}</div>}
       <Grips3D camera={camRef} canvas={host} />
       {!walkStart && <SectionBox3D camera={camRef} canvas={host} />}
+      {!walkStart && <RefPlanes3D camera={camRef} canvas={host} />}
       <KeyPlan mode="3d" />
     </>
   );

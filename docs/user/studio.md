@@ -45,6 +45,8 @@ A reference plane is a plane anywhere in the model with a view of its own. You d
 
 The new plane opens at once. It is listed under **Reference planes** in the project browser. Its drawing is a section on the plane, looking against the side it faces.
 
+In the 3D view every reference plane is drawn as a translucent pane with its name, as large as the model is on it (or its **Drawn width (3D)** and **Drawn height (3D)**, 2 × 2 m at least), lit up under the cursor. Click it to select the plane, double-click it to open its view. With the plane selected, drag the arrow at its middle to move it along its normal: the offset reads beside the arrow, and what is drawn on the plane goes with it. **View → Reference planes** hides and shows the panes; they never go into exports, renders or pictures. In plans, sections and elevations, a plane that cuts the view is drawn as a dashed line with its name, across the view's extent: click it to select the plane, double-click it to open it. A plane parallel to the view is not drawn there (it cuts nothing of it). These lines are for the screen only: sheets never print them.
+
 ![A reference plane on the south facade, with a ring drawn on it](shots/studio-plane.webp)
 
 Select the plane in the browser to move it. **Origin x**, **y** and **z** place it. **Faces** is the plan direction it faces, **Tilt** how far it leans back (90° lies flat, facing up) and **Spin** turns its drawing about its normal. **Move along its normal…** and **Turn about the vertical…** do the same in one step. What is drawn on the plane, and every solid made from it, moves with it.
@@ -55,4 +57,4 @@ Sections and elevations are planes too. A solid sketched on a section stands on 
 
 ![The house with its Studio solids in 3D](shots/studio-3d.webp)
 
-In IFC, a ring, a box's walls and a wall strip are IfcWall elements, a box's bottom and top IfcSlab elements, and a box with them an IfcElementAssembly with IfcRelAggregates. The history of each solid is kept in Lapin's own property set, Lapin_Intent.
+In IFC, a ring, a box's walls and a wall strip are IfcWall elements, a box's bottom and top IfcSlab elements, and a box with them an IfcElementAssembly with IfcRelAggregates; their types are written as IfcWallType and IfcSlabType. Every 3D export (IFC, Fragments, glTF, USD, COLLADA) writes a Studio solid where it stands in the model, whichever plane it was sketched on, with its holes; an assembly is a group node over its parts. Opening Lapin's own IFC again brings the solids back as references, in place, under their class, type and assembly, but no longer editable (their sketches are not in the file). The history of each solid is kept in Lapin's own property set, Lapin_Intent. Studio solids take simple types only, without layers: that is the loose modelling they are for; walls with layers are Lapin's native walls.

@@ -73,8 +73,18 @@ public sealed record MeshMaterial(string Name, float R, float G, float B, float 
 /// </summary>
 public sealed record MeshPart(int Material, float[] Positions, float[] Normals, int[] Indices, float[]? Uvs = null);
 
-/// <summary>An element: its GlobalId, name, IFC class and type, its parts by material, and its edges as segments (when asked for).</summary>
-public sealed record MeshElement(string GlobalId, string Name, string IfcClass, string? Type, List<MeshPart> Parts, float[] Edges);
+/// <summary>
+/// An element: its GlobalId, name, IFC class (the class it is exported as) and type, its parts by material, and its edges as
+/// segments (when asked for). An assembly (a Studio box with its bottom and top, docs/plan-studio-thick.md) has no parts of its
+/// own: its <see cref="Children"/> are the elements it aggregates, which every format writes as a group node containing them.
+/// </summary>
+public sealed record MeshElement(string GlobalId, string Name, string IfcClass, string? Type, List<MeshPart> Parts, float[] Edges, List<MeshElement>? Children = null)
+{
+    public bool IsAssembly => Children is { Count: > 0 };
+
+    /// <summary>The element and, after it, its children, in depth.</summary>
+    public IEnumerable<MeshElement> Flatten() => Children == null ? [this] : new[] { this }.Concat(Children.SelectMany(c => c.Flatten()));
+}
 
 /// <summary>A storey (or the site, for what stands on none) with its elements.</summary>
 public sealed record MeshGroup(string GlobalId, string Name, string IfcClass, double Elevation, List<MeshElement> Elements);
@@ -89,8 +99,9 @@ public sealed record MeshGroup(string GlobalId, string Name, string IfcClass, do
 /// </summary>
 public sealed record MeshScene(string Project, string Building, List<MeshGroup> Groups, List<MeshMaterial> Materials, (double X, double Y, double Z) RootOffset, List<string> Notes)
 {
-    public int ElementCount => Groups.Sum(g => g.Elements.Count);
-    public int TriangleCount => Groups.Sum(g => g.Elements.Sum(e => e.Parts.Sum(p => p.Indices.Length / 3)));
+    /// <summary>The elements with a body (an assembly counts its parts, not itself).</summary>
+    public int ElementCount => Groups.Sum(g => g.Elements.SelectMany(e => e.Flatten()).Count(e => e.Parts.Count > 0));
+    public int TriangleCount => Groups.Sum(g => g.Elements.SelectMany(e => e.Flatten()).Sum(e => e.Parts.Sum(p => p.Indices.Length / 3)));
 
     /// <summary>The session's visible elements as a scene.</summary>
     public static MeshScene Build(Session session, MeshExportOptions o)
@@ -150,6 +161,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
         var site = m.OfClass(IfcClass.Site).FirstOrDefault();
         var siteGroup = new MeshGroup(site?.Id ?? "site", site?.Name ?? "Site", IfcClass.Site, 0, []);
 
+        var elementOf = new Dictionary<string, (MeshGroup Group, MeshElement Element)>();
         foreach (var e in m.Entities.ToList())
         {
             if (!IsElement(session, e) || !InPhase(project, e, o.Phase) || hidden.Contains(e.Id)) continue;
@@ -190,10 +202,13 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
                 return new MeshPart(kv.Key, Shift(merged.Positions, ox, oy, oz), merged.Normals, merged.Indices, uvs);
             }).ToList();
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Name;
-            var element = new MeshElement(e.Id, e.Name, e.Class, type, meshParts, Shift([.. edges], ox, oy, oz));
+            var element = new MeshElement(e.Id, e.Name, ExportClass(e), type, meshParts, Shift([.. edges], ox, oy, oz));
             var storey = Spatial.StoreyOf(m, e.Id) ?? HostStorey(m, e);
-            (storey != null && groups.TryGetValue(storey.Id, out var gr) ? gr : siteGroup).Elements.Add(element);
+            var group = storey != null && groups.TryGetValue(storey.Id, out var gr) ? gr : siteGroup;
+            group.Elements.Add(element);
+            elementOf[e.Id] = (group, element);
         }
+        Assemblies(m, elementOf);
 
         if (layers != "all") notes.Add(layers == "core" ? "The layered elements with their cores only, as the 3D view shows them." : "The layered elements without their finishes, as the 3D view shows them.");
         if (planes.Length > 0) notes.Add($"Cut as the 3D view cuts it ({planes.Length} plane{(planes.Length == 1 ? "" : "s")}){(o.Caps ? ", the cuts closed in their materials" : "")}.");
@@ -233,6 +248,29 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             o[i + 2] = (float)(xyz[i + 2] - oz);
         }
         return o;
+    }
+
+    /// <summary>The class an element is exported as: a Studio solid classed by <c>exportAs</c> is written as that class, as the IFC export writes it.</summary>
+    public static string ExportClass(Entity e) =>
+        e.Str("exportAs") is { Length: > 3 } x && x.StartsWith("Ifc", StringComparison.Ordinal) ? x : e.Class;
+
+    /// <summary>
+    /// Assemblies without a body of their own (a Studio box with its bottom and top, an assembly read from IFC): each becomes an
+    /// element of the scene whose children are the parts it aggregates, in the group of its first part; the parts leave the group's own list.
+    /// </summary>
+    static void Assemblies(IModelView m, Dictionary<string, (MeshGroup Group, MeshElement Element)> elementOf)
+    {
+        foreach (var asm in m.OfClass("IfcElementAssembly"))
+        {
+            if (elementOf.ContainsKey(asm.Id)) continue;
+            var parts = m.RelatedOf(asm.Id, IfcClass.RelAggregates).Select(p => elementOf.GetValueOrDefault(p.Id)).Where(x => x.Element != null).ToList();
+            if (parts.Count == 0) continue;
+            var group = parts[0].Group;
+            foreach (var (g, el) in parts) g.Elements.Remove(el);
+            var node = new MeshElement(asm.Id, asm.Name, "IfcElementAssembly", asm.Str("objectType"), [], [], parts.Select(p => p.Element).ToList());
+            group.Elements.Add(node);
+            elementOf[asm.Id] = (group, node);
+        }
     }
 
     /// <summary>What the IFC export takes as an element: a body of its own, an element's class (no opening, grid or annotation).</summary>

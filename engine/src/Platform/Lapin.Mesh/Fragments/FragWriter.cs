@@ -14,7 +14,8 @@ namespace Lapin.Mesh.Fragments;
 /// the ones read off real files (the ones <c>IfcImporter</c> makes) and are
 /// kept where the schema left a choice:
 /// <list type="bullet">
-/// <item>Items with geometry come first, so <c>meshes_items</c> is the identity.</item>
+/// <item>Items with geometry come first, so <c>meshes_items</c> is the identity; an assembly (a Studio box with its bottom and top) is an
+/// item without geometry after them, <c>IsDecomposedBy</c> its parts, which <c>Decompose</c> it and are contained in the storey too.</item>
 /// <item>Geometry is stored per element near the origin: one global transform holds the element's centre in double precision,
 /// its shells hold points relative to it in float32 (world coordinates would spend the mantissa on the distance to the origin:
 /// at 400,000 m a float32 steps by ~30 mm).</item>
@@ -152,14 +153,27 @@ public static class FragWriter
         var elementIds = new Dictionary<MeshElement, uint>(ReferenceEqualityComparer.Instance);
         // Items with geometry first, in the order their meshes are added.
         foreach (var g in scene.Groups)
-            foreach (var e in g.Elements)
+            foreach (var e in g.Elements.SelectMany(x => x.Flatten()))
             {
+                if (e.IsAssembly) continue;
                 geometry.Add(e, scene.Materials);
                 var attrs = new List<string> { Json("Name", e.Name, "IFCLABEL") };
                 if (e.Type != null) attrs.Add(Json("ObjectType", e.Type, "IFCLABEL"));
                 var item = new Item(next++, e.IfcClass.ToUpperInvariant(), Guid22(e.GlobalId), attrs, []);
                 elementIds[e] = item.LocalId;
                 items.Add(item);
+            }
+        // Then the assemblies (a Studio box with its bottom and top): items without geometry, decomposed by their parts.
+        foreach (var g in scene.Groups)
+            foreach (var e in g.Elements.SelectMany(x => x.Flatten()).Where(x => x.IsAssembly))
+            {
+                var attrs = new List<string> { Json("Name", e.Name, "IFCLABEL") };
+                if (e.Type != null) attrs.Add(Json("ObjectType", e.Type, "IFCLABEL"));
+                var item = new Item(next++, e.IfcClass.ToUpperInvariant(), Guid22(e.GlobalId), attrs, []);
+                elementIds[e] = item.LocalId;
+                items.Add(item);
+                item.Relations.Add(Json(["IsDecomposedBy", .. e.Children!.Select(c => (JsonNode?)elementIds[c])]));
+                foreach (var c in e.Children!) items[(int)elementIds[c] - 1].Relations.Add(Json("Decomposes", item.LocalId));
             }
         // Then the spatial structure: the storeys (and the site, for what stands on none), the building, the site, the project.
         var groupItems = new List<(MeshGroup Group, Item Item)>();
@@ -179,11 +193,13 @@ public static class FragWriter
         items.Add(building);
         items.Add(project);
 
+        // Every element, an assembly and its parts alike, is contained in its storey (so a reader places the parts without following the decomposition).
         foreach (var (g, storey) in groupItems)
         {
-            var contained = g.Elements.Select(el => (JsonNode?)elementIds[el]).ToArray();
+            var all = g.Elements.SelectMany(el => el.Flatten()).ToList();
+            var contained = all.Select(el => (JsonNode?)elementIds[el]).ToArray();
             storey.Relations.Add(Json(["ContainsElements", .. contained]));
-            foreach (var el in g.Elements) items[(int)elementIds[el] - 1].Relations.Add(Json("ContainedInStructure", storey.LocalId));
+            foreach (var el in all) items[(int)elementIds[el] - 1].Relations.Add(Json("ContainedInStructure", storey.LocalId));
             if (g.IfcClass == "IfcBuildingStorey") storey.Relations.Add(Json("Decomposes", building.LocalId));
         }
         var storeys = groupItems.Where(x => x.Group.IfcClass == "IfcBuildingStorey").Select(x => (JsonNode?)x.Item.LocalId).ToArray();
@@ -322,13 +338,13 @@ public static class FragWriter
         var relationNamesVec = b.CreateStringVector([]);
         var indexesVec = b.CreateOffsetVector([]);
 
-        // The spatial tree: entity nodes and category nodes in turn.
-        int EntityNode(Item item, IEnumerable<(string Category, List<Item> Children)> groups)
+        // The spatial tree: entity nodes and category nodes in turn; an assembly's parts under it, by class.
+        int EntityNode(Item item, IEnumerable<(string Category, List<(Item Item, MeshElement? Element)> Children)> groups)
         {
             var categoryOffs = new List<int>();
             foreach (var (category, children) in groups)
             {
-                var childOffs = children.Select(c => EntityNode(c, [])).ToList();
+                var childOffs = children.Select(c => EntityNode(c.Item, c.Element is { IsAssembly: true } a ? ByClass(a.Children!) : [])).ToList();
                 categoryOffs.Add(CategoryNode(category, childOffs));
             }
             return EntityNodeOf(item, categoryOffs);
@@ -350,12 +366,12 @@ public static class FragWriter
             b.AddOffset(FragSchema.Spatial.Children, childrenVec);
             return b.EndObject();
         }
-        IEnumerable<(string, List<Item>)> ByClass(MeshGroup g) =>
-            g.Elements.GroupBy(el => el.IfcClass.ToUpperInvariant()).Select(x => (x.Key, x.Select(el => items[(int)elementIds[el] - 1]).ToList()));
-        var storeyNodes = groupItems.Where(x => x.Group.IfcClass == "IfcBuildingStorey").Select(x => EntityNode(x.Item, ByClass(x.Group))).ToList();
+        IEnumerable<(string, List<(Item Item, MeshElement? Element)>)> ByClass(IEnumerable<MeshElement> elements) =>
+            elements.GroupBy(el => el.IfcClass.ToUpperInvariant()).Select(x => (x.Key, x.Select(el => (items[(int)elementIds[el] - 1], (MeshElement?)el)).ToList()));
+        var storeyNodes = groupItems.Where(x => x.Group.IfcClass == "IfcBuildingStorey").Select(x => EntityNode(x.Item, ByClass(x.Group.Elements))).ToList();
         var buildingNode = EntityNodeOf(building, storeyNodes.Count > 0 ? [CategoryNode("IFCBUILDINGSTOREY", storeyNodes)] : []);
         var siteChildren = new List<int> { CategoryNode("IFCBUILDING", [buildingNode]) };
-        if (siteGroup.Group != null) foreach (var (category, children) in ByClass(siteGroup.Group)) siteChildren.Add(CategoryNode(category, children.Select(c => EntityNodeOf(c, [])).ToList()));
+        if (siteGroup.Group != null) foreach (var (category, children) in ByClass(siteGroup.Group.Elements)) siteChildren.Add(CategoryNode(category, children.Select(c => EntityNode(c.Item, c.Element is { IsAssembly: true } a ? ByClass(a.Children!) : [])).ToList()));
         var siteNode = EntityNodeOf(site, siteChildren);
         var spatialOff = CategoryNode("IFCPROJECT", [EntityNodeOf(project, [CategoryNode("IFCSITE", [siteNode])])]);
 

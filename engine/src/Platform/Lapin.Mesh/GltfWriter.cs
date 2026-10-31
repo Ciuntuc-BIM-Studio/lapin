@@ -7,8 +7,9 @@ namespace Lapin.Mesh;
 /// <summary>
 /// A scene as glTF 2.0 (Khronos), written after the specification: one node
 /// for the project (its offset to real coordinates), the building, a node per
-/// storey, a node per element with its mesh, a primitive per material, and
-/// the element's identity in <c>extras</c> (GlobalId, IFC class, type). Y up
+/// storey, a node per element with its mesh (an assembly a node over its
+/// parts' nodes), a primitive per material, and the element's identity in
+/// <c>extras</c> (GlobalId, IFC class, type). Y up
 /// as glTF asks (the model's Z up turns: x, z, −y), metres; base colours in
 /// linear RGB with metallic 0, rough 0.9, blended where a material is
 /// transparent. Edges, when the scene has them, are a LINES primitive.
@@ -101,8 +102,10 @@ public static class GltfWriter
         var meshOf = new Dictionary<MeshElement, int>();
         var edgeMaterial = scene.Materials.Count;
         foreach (var g in scene.Groups)
-            foreach (var e in g.Elements)
+            foreach (var e in g.Elements.SelectMany(x => x.Flatten()))
             {
+                // An assembly has no mesh of its own: it is a node over its parts' nodes.
+                if (e.Parts.Count == 0 && e.Edges.Length < 6) continue;
                 var prims = e.Parts.Select(p => (buffers.Vec3(p.Positions, true), buffers.Vec3(p.Normals, false), buffers.Indices(p.Indices), p.Material, p.Uvs is { } uv ? buffers.Vec2Flip(uv) : (int?)null)).ToList();
                 int? edges = e.Edges.Length >= 6 ? buffers.Vec3(e.Edges, true) : null;
                 meshes.Add((e.Name, prims, edges));
@@ -127,36 +130,58 @@ public static class GltfWriter
             w.WriteNumber("scene", 0);
             w.WriteStartArray("scenes"); w.WriteStartObject(); w.WriteString("name", scene.Project); w.WriteStartArray("nodes"); w.WriteNumberValue(0); w.WriteEndArray(); w.WriteEndObject(); w.WriteEndArray();
 
-            // Nodes: the project (0), the building (1), then each group and its elements.
-            w.WriteStartArray("nodes");
-            var groupNodes = new List<int>();
-            var next = 2;
-            foreach (var g in scene.Groups) { groupNodes.Add(next); next += 1 + g.Elements.Count; }
-            w.WriteStartObject();
-            w.WriteString("name", scene.Project);
-            var (rx, ry, rz) = scene.RootOffset;
-            if (rx != 0 || ry != 0 || rz != 0) { w.WriteStartArray("translation"); w.WriteNumberValue(rx); w.WriteNumberValue(rz); w.WriteNumberValue(-ry == 0 ? 0 : -ry); w.WriteEndArray(); }
-            w.WriteStartArray("children"); w.WriteNumberValue(1); w.WriteEndArray();
-            w.WriteEndObject();
-            w.WriteStartObject(); w.WriteString("name", scene.Building);
-            w.WriteStartArray("children"); foreach (var n in groupNodes) w.WriteNumberValue(n); w.WriteEndArray();
-            w.WriteStartObject("extras"); w.WriteString("ifcClass", "IfcBuilding"); w.WriteEndObject();
-            w.WriteEndObject();
-            var at = 2;
-            foreach (var g in scene.Groups)
+            // Nodes: the project (0), the building (1), then each group, its elements, and an assembly's parts under it.
+            // Every node takes its index before its children are numbered, then all are written in order.
+            var nodes = new List<Action<Utf8JsonWriter>>();
+            int Node(MeshElement e, MeshGroup g)
             {
-                w.WriteStartObject(); w.WriteString("name", g.Name);
-                w.WriteStartArray("children"); for (var i = 0; i < g.Elements.Count; i++) w.WriteNumberValue(at + 1 + i); w.WriteEndArray();
-                w.WriteStartObject("extras"); w.WriteString("globalId", g.GlobalId); w.WriteString("ifcClass", g.IfcClass); w.WriteNumber("elevation", g.Elevation); w.WriteEndObject();
-                w.WriteEndObject();
-                foreach (var e in g.Elements)
+                var index = nodes.Count;
+                nodes.Add(null!);
+                var children = (e.Children ?? []).Select(c => Node(c, g)).ToList();
+                nodes[index] = w =>
                 {
-                    w.WriteStartObject(); w.WriteString("name", e.Name); w.WriteNumber("mesh", meshOf[e]);
+                    w.WriteStartObject(); w.WriteString("name", e.Name);
+                    if (meshOf.TryGetValue(e, out var mesh)) w.WriteNumber("mesh", mesh);
+                    if (children.Count > 0) { w.WriteStartArray("children"); foreach (var c in children) w.WriteNumberValue(c); w.WriteEndArray(); }
                     w.WriteStartObject("extras"); w.WriteString("globalId", e.GlobalId); w.WriteString("ifcClass", e.IfcClass); if (e.Type != null) w.WriteString("type", e.Type); w.WriteString("storey", g.Name); w.WriteEndObject();
                     w.WriteEndObject();
-                }
-                at += 1 + g.Elements.Count;
+                };
+                return index;
             }
+            nodes.Add(null!); nodes.Add(null!);
+            var groupNodes = new List<int>();
+            foreach (var g in scene.Groups)
+            {
+                var index = nodes.Count;
+                nodes.Add(null!);
+                groupNodes.Add(index);
+                var children = g.Elements.Select(e => Node(e, g)).ToList();
+                nodes[index] = w =>
+                {
+                    w.WriteStartObject(); w.WriteString("name", g.Name);
+                    w.WriteStartArray("children"); foreach (var c in children) w.WriteNumberValue(c); w.WriteEndArray();
+                    w.WriteStartObject("extras"); w.WriteString("globalId", g.GlobalId); w.WriteString("ifcClass", g.IfcClass); w.WriteNumber("elevation", g.Elevation); w.WriteEndObject();
+                    w.WriteEndObject();
+                };
+            }
+            nodes[0] = w =>
+            {
+                w.WriteStartObject();
+                w.WriteString("name", scene.Project);
+                var (rx, ry, rz) = scene.RootOffset;
+                if (rx != 0 || ry != 0 || rz != 0) { w.WriteStartArray("translation"); w.WriteNumberValue(rx); w.WriteNumberValue(rz); w.WriteNumberValue(-ry == 0 ? 0 : -ry); w.WriteEndArray(); }
+                w.WriteStartArray("children"); w.WriteNumberValue(1); w.WriteEndArray();
+                w.WriteEndObject();
+            };
+            nodes[1] = w =>
+            {
+                w.WriteStartObject(); w.WriteString("name", scene.Building);
+                w.WriteStartArray("children"); foreach (var n in groupNodes) w.WriteNumberValue(n); w.WriteEndArray();
+                w.WriteStartObject("extras"); w.WriteString("ifcClass", "IfcBuilding"); w.WriteEndObject();
+                w.WriteEndObject();
+            };
+            w.WriteStartArray("nodes");
+            foreach (var node in nodes) node(w);
             w.WriteEndArray();
 
             w.WriteStartArray("meshes");

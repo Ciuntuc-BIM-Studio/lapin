@@ -2,7 +2,7 @@
 
 import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
-import { AppWindow, Bot, Box, BoxSelect, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, FolderOpen, Hash, History, Keyboard, Layers, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, MousePointer2, Move, Palette, PanelsTopLeft, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareSplitHorizontal, Trash2 } from 'lucide-react';
+import { AppWindow, Bot, Box, BoxSelect, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, FlipHorizontal2, FolderOpen, Hash, History, Keyboard, Layers, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, MousePointer2, Move, Palette, PanelsTopLeft, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareSplitHorizontal, Trash2, Frame } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -162,6 +162,8 @@ const core: LapinModule = {
         { id: 'view.window', label: 'New window', icon: AppWindow, run: () => { const s = useUi.getState(); if (isDesktop()) void openViewWindow(s.panes[s.pane]); else notify('A view in a window of its own needs the desktop app.'); } },
         { id: 'view.style', label: 'Visual style', icon: Eye, run: () => useUi.setState((s) => ({ visualStyle: s.visualStyle === 'shaded' ? 'edges' : s.visualStyle === 'edges' ? 'wireframe' : 'shaded' })) },
         { id: 'view.fog', label: 'Fog', icon: CloudFog, run: () => useUi.setState((s) => ({ fog: !s.fog })) },
+        // The reference planes' quads in 3D (docs/plan-studio-thick.md); their marks in plans and sections stay.
+        { id: 'view.refPlanes', label: 'Reference planes', icon: Frame, run: () => useUi.setState((s) => ({ refPlanes: !s.refPlanes })) },
       ], small: [
         { id: 'view.graphicsVg', label: 'Graphics (VG)', icon: Layers3, shortcut: 'VG', run: () => useUi.setState({ dialog: 'visibility' }) },
         // The 3D view in front's storeys (report #29): the active storey alone, with those below, or every storey again.
