@@ -125,7 +125,7 @@ export function engineModules(root, productId) {
       let cls = null;
       for (const file of readdirSync(dir).filter((x) => x.endsWith('.cs'))) {
         const text = readFileSync(join(dir, file), 'utf8');
-        const c = /public\s+sealed\s+class\s+(\w+)\s*:\s*ILapinModule\b/.exec(text);
+        const c = /public\s+sealed\s+(?:partial\s+)?class\s+(\w+)\s*:\s*ILapinModule\b/.exec(text);
         const ns = /^namespace\s+([\w.]+)\s*;/m.exec(text);
         if (c && ns) { cls = `${ns[1]}.${c[1]}`; break; }
       }
