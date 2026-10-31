@@ -220,7 +220,7 @@ public static class TypeStirrups
             // Seen along its length: the label beside the stirrups, along the axis as seen, with the mark's balloon.
             var p0 = c.Map(laid.Start);
             var p1 = c.Map(laid.Start + laid.Dir * laid.Length);
-            if ((p1 - p0).Length > 4 * laid.Spec.Step)
+            if ((p1 - p0).Length > 4 * laid.Spec.Step && laid.Stations.Count > 0)
             {
                 var style = LabelStyle.Resolve("stirrups", st, laid.Spec.Label);
                 var text = style.Text(new LabelFacts(laid.CountText, d, laid.StepText, laid.BarLength(laid.LoopsAt(laid.Stations[0])[0]), laid.Spec.Mark, st.Steel));
