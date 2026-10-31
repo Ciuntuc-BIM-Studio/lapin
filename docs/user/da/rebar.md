@@ -10,7 +10,7 @@ Fanen **Armering 2D** tegner armering, som en armeringsliste laves: stænger som
 
 ## Et snit, hvor du arbejder
 
-Armering har brug for tværsnittet ved siden af længdesnittet. **Snit her** gør begge dele: vælg en bjælke, en søjle eller en væg i den visning, du er i, og hvor du klikker, skæres et snit *på tværs*, vinkelret på dens akse, og tegnes ved siden af dit klik, i samme visning, med en halv meter af omgivelserne (dækket, søjlen). En søjle skæres vandret i den højde, du klikkede.
+Armering har brug for tværsnittet ved siden af længdesnittet. **Snit her** gør begge dele: vælg en bjælke, en søjle eller en væg i den visning, du er i, og hvor du klikker, skæres et snit *på tværs*, vinkelret på dens akse, og tegnes ved siden af dit klik, i samme visning, med en halv meter af omgivelserne (dækket, søjlen). En søjle skæres vandret i den højde, du klikkede. Klik inde i elementets snit, ikke kun på dets kant: i et snit eller en facade tager klikket, som i en plan, det element, hvis snit rummer det.
 
 Den indsatte visning følger elementet: flyt bjælken, og snittet flytter med. Træk den indsatte visning i dens greb; dens egenskaber giver den en skalafaktor og en ramme. **Tværsnit** laver samme snit som sin egen visning, og **Indsat visning** sætter enhver eksisterende visning ind i den, du er i, i sand størrelse og i værtsvisningens målestok, så stænger tegnet ovenpå passer til betonen.
 

@@ -20,6 +20,16 @@ O secțiune nu trebuie să fie o singură linie dreaptă. **Secțiune în trepte
 
 Selectează secțiunea în navigator ca să-i setezi scara, adâncimea, disciplina și stilul în panoul de proprietăți.
 
+### Unde se marchează o secțiune
+
+Linia unei secțiuni se desenează în fiecare plan, iar secțiunea se marchează în fiecare altă secțiune și fațadă pe care o taie planul ei: o linie subțire întreruptă acolo unde planul taie vederea, cu numele secțiunii și o săgeată care privește încotro privește secțiunea, sus, la aceeași mărime pe hârtie ca în plan. O secțiune nu se marchează niciodată în ea însăși. Clic pe un marcator selectează secțiunea, dublu-clic o deschide.
+
+Fiecare secțiune stă pe un **strat de marcatori** (**Sections** la început; **Strat de marcator** din proprietățile secțiunii îl schimbă), iar fiecare vedere alege ce marchează. **Vedere → Secțiuni…** listează secțiunile proiectului pe straturi, pentru vederea din față, cu o bifă pe strat și pe secțiune doar pentru această vedere, stratul fiecărei secțiuni (unul existent sau **Strat nou…**) și în câte vederi e ascunsă fiecare. O planșă marchează ce marchează vederile ei.
+
+O secțiune tăiată transversal printr-o grindă sau un stâlp (**Secțiune aici**, **Secțiune transversală** din fila Armare 2D) are și ea grip-uri în plan: trage oricare capăt de-a lungul liniei ca să dai părții aceleia mai multă sau mai puțină margine, trage mijlocul de-a lungul elementului ca să muți stația la care taie. Fereastra secțiunii urmează.
+
+![Vedere → Secțiuni… pentru fațada de sud](shots/sections-dialog.webp)
+
 ## Fațade
 
 **+** lângă **Fațade** face dintr-o dată cele patru fațade ale clădirii.

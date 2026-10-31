@@ -10,7 +10,7 @@ L’onglet **Ferraillage 2D** dessine le ferraillage comme on fait une nomenclat
 
 ## Une coupe là où vous travaillez
 
-Le ferraillage a besoin de la coupe transversale à côté de la longitudinale. **Coupe ici** fait les deux : choisissez une poutre, un poteau ou un mur dans la vue où vous êtes, et là où vous cliquez une coupe est faite *en travers*, perpendiculaire à son axe, et dessinée à côté de votre clic, dans la même vue, avec un demi-mètre de ce qui l’entoure (la dalle, le poteau). Un poteau est coupé horizontalement, à la hauteur cliquée.
+Le ferraillage a besoin de la coupe transversale à côté de la longitudinale. **Coupe ici** fait les deux : choisissez une poutre, un poteau ou un mur dans la vue où vous êtes, et là où vous cliquez une coupe est faite *en travers*, perpendiculaire à son axe, et dessinée à côté de votre clic, dans la même vue, avec un demi-mètre de ce qui l’entoure (la dalle, le poteau). Un poteau est coupé horizontalement, à la hauteur cliquée. Cliquez à l’intérieur de la coupe de l’élément, pas seulement sur son bord : dans une coupe ou une élévation, comme dans un plan, le clic prend l’élément dont la coupe le contient.
 
 La vue insérée suit l’élément : déplacez la poutre et la coupe se déplace avec elle. Déplacez l’insertion par sa poignée ; ses propriétés lui donnent un facteur d’échelle et un cadre. **Coupe transversale** fait la même coupe comme vue à part, et **Vue insérée** place toute vue existante dans celle où vous êtes, en vraie grandeur et à l’échelle de la vue hôte, pour que les barres dessinées dessus s’ajustent au béton.
 

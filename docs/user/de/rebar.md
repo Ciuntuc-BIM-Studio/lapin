@@ -10,7 +10,7 @@ Der Reiter **Bewehrung 2D** zeichnet Bewehrung so, wie eine Stahlliste entsteht:
 
 ## Ein Schnitt dort, wo Sie arbeiten
 
-Bewehrung braucht den Querschnitt neben dem Längsschnitt. **Schnitt hier** macht beides: Sie wählen einen Balken, eine Stütze oder eine Wand in der Ansicht, in der Sie sind, und wo Sie klicken, wird ein Schnitt *quer* dazu geschnitten, senkrecht zur Achse, und neben Ihrem Klick gezeichnet, in derselben Ansicht, mit einem halben Meter Umgebung (die Decke, die Stütze). Eine Stütze wird waagerecht geschnitten, in der angeklickten Höhe.
+Bewehrung braucht den Querschnitt neben dem Längsschnitt. **Schnitt hier** macht beides: Sie wählen einen Balken, eine Stütze oder eine Wand in der Ansicht, in der Sie sind, und wo Sie klicken, wird ein Schnitt *quer* dazu geschnitten, senkrecht zur Achse, und neben Ihrem Klick gezeichnet, in derselben Ansicht, mit einem halben Meter Umgebung (die Decke, die Stütze). Eine Stütze wird waagerecht geschnitten, in der angeklickten Höhe. Klicken Sie in den Schnitt des Elements, nicht nur auf seine Kante: in einem Schnitt oder einer Ansicht nimmt der Klick wie im Grundriss das Element, dessen Schnitt ihn enthält.
 
 Die eingesetzte Ansicht folgt dem Element: Verschieben Sie den Balken, und der Schnitt wandert mit. Ziehen Sie die eingesetzte Ansicht an ihrem Griff; ihre Eigenschaften geben ihr einen Maßstabsfaktor und einen Rahmen. **Querschnitt** macht denselben Schnitt als eigene Ansicht, und **Eingesetzte Ansicht** setzt eine beliebige vorhandene Ansicht in die ein, in der Sie sind, in wahrer Größe und im Maßstab der Gastansicht, damit darüber gezeichnete Stäbe in den Beton passen.
 

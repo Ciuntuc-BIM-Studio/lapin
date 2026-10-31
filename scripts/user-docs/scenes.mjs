@@ -752,6 +752,11 @@ export const scenes = [
       await t.shot('elevation-view', { of: '[data-testid=drawing]', pad: 0 });
       await t.button('View', { exact: true });
       await t.shot('ribbon-view', { of: '.topbar', pad: 0 });
+      // View → Sections… (decision 223): the project's sections under their marker layer, what the elevation in front marks.
+      await t.tool('view.sections');
+      t.expect(await t.page.locator('.dialog .layer-table tbody tr').count() >= 3, 'the sections listed under their layer');
+      await t.shot('sections-dialog', { of: '.dialog', pad: 0 });
+      await t.keys('Escape');
       // View → Display quality (decision 203): the project's, Balanced chosen until it is changed.
       await t.tool('view.displayQuality');
       t.expect(await t.page.locator('.dialog input[type=radio]:checked').count() === 1, 'one display quality chosen');

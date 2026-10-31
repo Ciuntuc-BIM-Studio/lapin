@@ -20,6 +20,16 @@ A section need not be one straight line. **Jogged section** (<kbd>SJ</kbd>) draw
 
 Select the section in the browser to set its scale, its depth, its discipline and its style in the properties panel.
 
+### Where a section is marked
+
+A section's line is drawn in every plan, and the section is marked in every other section and elevation its plane crosses: a fine dashed line where the plane cuts the view, with the section's name and an arrow looking the way the section looks at its top, the same size on paper as in a plan. A section is never marked in itself. Click a marker to select the section, double-click it to open it.
+
+Each section sits on a **marker layer** (**Sections** at first; **Marker layer** in the section's properties changes it), and each view chooses what it marks. **View → Sections…** lists the project's sections by layer for the view in front, with a checkbox per layer and per section for this view alone, the layer of each section (an existing one, or **New layer…**), and in how many views each is hidden. A sheet marks what its views mark.
+
+A section cut across a beam or a column (**Section here**, **Section across** on the Rebar 2D tab) has grips in plan too: drag either end along the line to give that side more or less margin, drag the middle along the element to move the station it cuts at. The section's window follows.
+
+![View → Sections… for the south elevation](shots/sections-dialog.webp)
+
 ## Elevations
 
 **+** next to **Elevations** makes the four elevations of the building at once.

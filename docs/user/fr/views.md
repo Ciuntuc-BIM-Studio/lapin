@@ -20,6 +20,16 @@ Une coupe n’est pas forcément une seule ligne droite. **Coupe brisée** (<kbd
 
 Sélectionnez la coupe dans l’arborescence pour régler son échelle, sa profondeur, sa discipline et son style dans le panneau des propriétés.
 
+### Où une coupe est repérée
+
+La ligne d’une coupe est dessinée dans chaque plan, et la coupe est repérée dans chaque autre coupe et élévation que son plan traverse : une fine ligne en tirets là où le plan coupe la vue, avec le nom de la coupe et une flèche dans la direction où elle regarde, en haut, de la même taille sur le papier que dans un plan. Une coupe n’est jamais repérée dans elle-même. Un clic sur un repère sélectionne la coupe, un double-clic l’ouvre.
+
+Chaque coupe est sur un **calque de repères** (**Sections** au départ ; **Calque du repère** dans les propriétés de la coupe le change), et chaque vue choisit ce qu’elle repère. **Vue → Coupes…** liste les coupes du projet par calque pour la vue au premier plan, avec une case par calque et par coupe pour cette vue seulement, le calque de chaque coupe (un calque existant, ou **Nouveau calque…**) et dans combien de vues chacune est masquée. Une feuille repère ce que ses vues repèrent.
+
+Une coupe faite en travers d’une poutre ou d’un poteau (**Coupe ici**, **Coupe transversale** dans l’onglet Ferraillage 2D) a aussi des poignées dans le plan : glissez l’une des extrémités le long de la ligne pour donner à ce côté plus ou moins de marge, et le milieu le long de l’élément pour déplacer la station où elle passe. La fenêtre de la coupe suit.
+
+![Vue → Coupes… pour l’élévation sud](shots/sections-dialog.webp)
+
 ## Élévations
 
 Le **+** à côté de **Élévations** crée d’un coup les quatre élévations du bâtiment.

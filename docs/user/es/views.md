@@ -16,6 +16,16 @@ Elija **Vista → Sección** (<kbd>SE</kbd>), o haga clic en **+** junto a **Sec
 
 Seleccione la sección en el explorador para configurar su escala, su profundidad, su disciplina y su estilo en el panel de propiedades.
 
+### Dónde se marca una sección
+
+La línea de una sección se dibuja en todas las plantas, y la sección se marca en todas las demás secciones y alzados que atraviesa su plano: una línea fina discontinua donde el plano corta la vista, con el nombre de la sección y una flecha que mira hacia donde mira la sección, arriba, del mismo tamaño en papel que en una planta. Una sección nunca se marca en sí misma. Un clic en un marcador selecciona la sección; un doble clic la abre.
+
+Cada sección está en una **capa de marcadores** (**Sections** al principio; **Capa del marcador** en las propiedades de la sección la cambia), y cada vista elige qué marca. **Vista → Secciones…** lista las secciones del proyecto por capa para la vista en primer plano, con una casilla por capa y por sección solo para esta vista, la capa de cada sección (una existente o **Nueva capa…**) y en cuántas vistas está oculta cada una. Una lámina marca lo que marcan sus vistas.
+
+Una sección cortada a través de una viga o un pilar (**Sección aquí**, **Sección transversal** en la pestaña Armado 2D) también tiene pinzamientos en planta: arrastre cualquiera de los extremos a lo largo de la línea para dar a ese lado más o menos margen, y arrastre el centro a lo largo del elemento para mover la estación en la que corta. La ventana de la sección la sigue.
+
+![Vista → Secciones… para el alzado sur](shots/sections-dialog.webp)
+
 ## Alzados
 
 **+** junto a **Alzados** crea de una vez los cuatro alzados del edificio.

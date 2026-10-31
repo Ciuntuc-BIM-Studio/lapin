@@ -10,7 +10,7 @@ La pestaña **Armado 2D** dibuja el armado como se hace un cuadro de barras: bar
 
 ## Una sección donde trabajas
 
-El armado necesita la sección transversal junto a la longitudinal. **Sección aquí** hace ambas: eliges una viga, un pilar o un muro en la vista en la que estás, y donde haces clic se corta una sección *transversal*, perpendicular a su eje, dibujada junto al clic, en la misma vista, con medio metro de lo que la rodea (la losa, el pilar). Un pilar se corta en horizontal, a la altura del clic.
+El armado necesita la sección transversal junto a la longitudinal. **Sección aquí** hace ambas: eliges una viga, un pilar o un muro en la vista en la que estás, y donde haces clic se corta una sección *transversal*, perpendicular a su eje, dibujada junto al clic, en la misma vista, con medio metro de lo que la rodea (la losa, el pilar). Un pilar se corta en horizontal, a la altura del clic. Haga clic dentro del corte del elemento, no solo en su borde: en una sección o un alzado, como en una planta, el clic toma el elemento cuyo corte lo contiene.
 
 La vista insertada sigue al elemento: mueve la viga y la sección se mueve con ella. Arrastra la vista insertada por su pinzamiento; sus propiedades le dan un factor de escala y un marco. **Sección transversal** hace la misma sección como vista propia, y **Vista insertada** pone cualquier vista existente en la que estás, a tamaño real y a la escala de la vista anfitriona, para que las barras que dibujes encima encajen en el hormigón.
 
