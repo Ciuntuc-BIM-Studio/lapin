@@ -28,9 +28,11 @@ public class SharedBodyTests : IDisposable
     /// shape #100, two more each placing the type map #200 (turned a quarter round, the
     /// second), and with <paramref name="opening"/> one more cube of the shared shape,
     /// voided by an opening. With <paramref name="oblique"/> the map is placed as BIMCamel places its own: turned 37° by an
-    /// operator whose axes are written to 11 decimals, scaled by 0.001 (a body in millimetres).
+    /// operator whose axes are written to 11 decimals, scaled by 0.001 (a body in millimetres). <paramref name="stacked"/> more
+    /// at y = 12 are each two mapped items of the map: the cube, and a half cube turned 37° on it, its corner at (0.25, 0, 1)
+    /// (the second of them turned a quarter round).
     /// </summary>
-    internal static string Cubes(int shared, bool turned = false, bool mapped = false, bool opening = false, bool oblique = false)
+    internal static string Cubes(int shared, bool turned = false, bool mapped = false, bool opening = false, bool oblique = false, int stacked = 0)
     {
         var s = new StringBuilder("""
             ISO-10303-21;
@@ -99,6 +101,16 @@ public class SharedBodyTests : IDisposable
                 id += oblique ? 6 : 4;
                 Cube(2 * k, 4, pds, k == 1);
             }
+        for (var k = 0; k < stacked; k++)
+        {
+            s.Append($"#{id}=IFCCARTESIANTRANSFORMATIONOPERATOR3D($,$,#8,$,$);\n#{id + 1}=IFCMAPPEDITEM(#200,#{id});\n");
+            s.Append($"#{id + 2}=IFCCARTESIANPOINT((0.25,0.,1.));\n#{id + 3}=IFCDIRECTION((0.79863551005,0.60181502315,0.0));\n#{id + 4}=IFCDIRECTION((-0.60181502315,0.79863551005,0.0));\n");
+            s.Append($"#{id + 5}=IFCCARTESIANTRANSFORMATIONOPERATOR3D(#{id + 3},#{id + 4},#{id + 2},0.5,#7);\n#{id + 6}=IFCMAPPEDITEM(#200,#{id + 5});\n");
+            s.Append($"#{id + 7}=IFCSHAPEREPRESENTATION(#10,'Body','MappedRepresentation',(#{id + 1},#{id + 6}));\n#{id + 8}=IFCPRODUCTDEFINITIONSHAPE($,$,(#{id + 7}));\n");
+            var pds = id + 8;
+            id += 9;
+            Cube(2 * k, 12, pds, k == 1);
+        }
         if (opening)
         {
             Cube(0, 8, 100, false);
@@ -330,6 +342,33 @@ public class SharedBodyTests : IDisposable
         var (lo, hi) = Box(g, Proxies(g.Model).Single(c => c.Name == "cube-3").Id);
         Assert.Equal(2 + 0.001 * (-0.5 * 0.79863551005 - 0.5 * 0.60181502315), lo.X, 9);
         Assert.Equal(0.001, hi.Z, 9);
+    }
+
+    [Fact]
+    public void Products_of_several_mapped_items_placed_alike_share_one_body()
+    {
+        var f = Make();
+        IfcImport.Run(f.Session, Write(Cubes(0, stacked: 3)), new IfcImportOptions(Dedupe: false), out _);
+        var body = Assert.Single(Shared(f.Model));
+        var stacks = Proxies(f.Model);
+        Assert.Equal(3, stacks.Count);
+        Assert.All(stacks, c => Assert.Equal(body.Id, c.Str(StoredBodies.BodyOf)));
+        // Both cubes in the one body, where the file put them (the body kept to 0.1 mm): the half cube's corner turned out past the cube.
+        var reach = 0.25 + 0.25 * (0.79863551005 + 0.60181502315);
+        var (lo, hi) = Box(f, stacks.Single(c => c.Name == "cube-0").Id);
+        Assert.Equal(-0.5, lo.X, 6); Assert.Equal(reach, hi.X, 4);
+        Assert.Equal(0, lo.Z, 6); Assert.Equal(1.5, hi.Z, 6);
+        var (_, hi2) = Box(f, stacks.Single(c => c.Name == "cube-2").Id);
+        Assert.Equal(4 + reach, hi2.X, 4);
+        // The one turned a quarter round: its reach along y now.
+        var (_, hi1) = Box(f, stacks.Single(c => c.Name == "cube-1").Id);
+        Assert.Equal(12 + reach, hi1.Y, 4);
+        // Exported once and mapped three times.
+        var path = Path.Combine(_dir, "stacked.ifc");
+        IfcExport.Write(f.Session, path, null);
+        var text = File.ReadAllText(path);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(text, "=IFCREPRESENTATIONMAP\\("));
+        Assert.Equal(3, System.Text.RegularExpressions.Regex.Matches(text, "=IFCMAPPEDITEM\\(").Count);
     }
 
     /// <summary>A StoredBodies transform keeps its precision at any scale: a millimetre body's axes are about 0.001 long.</summary>
