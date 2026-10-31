@@ -59,6 +59,7 @@ function HookFields({ label, hook, diameter, onChange }: { label: string; hook: 
 
 export function RebarSection({ node }: { node: NodeDto }) {
   const catalog = useRebarCatalog();
+  const nodes = useSession((s) => s.nodes);
   const d = useDescribed(node.id);
   const shape = catalog?.shapes.find((s) => s.code === node.props.shape) ?? null;
   const params = (node.props.params as Record<string, number> | undefined) ?? {};
@@ -101,6 +102,22 @@ export function RebarSection({ node }: { node: NodeDto }) {
         <input className="num" type="number" style={{ width: 56 }} value={Math.round(array.dy * 1000)} onChange={(e) => set({ array: { ...array, dy: Number(e.target.value) / 1000 } })} />
         <span className="muted small">mm along y</span>
       </div>
+      <p className="eyebrow">Across the drawing</p>
+      {(() => {
+        const across = (node.props.across as { count: number; mode: 'cover' | 'step'; step: number } | undefined) ?? { count: 1, mode: 'cover', step: 0.05 };
+        const host = typeof node.props.host === 'string' ? nodes.get(node.props.host) : undefined;
+        return (
+          <div className="row small" data-field="rebar-across">
+            <input className="num" type="number" min={1} max={40} style={{ width: 44 }} value={across.count} onChange={(e) => set({ across: { ...across, count: Math.max(1, Number(e.target.value) || 1) } })} />
+            <span>×</span>
+            <select value={across.mode} onChange={(e) => set({ across: { ...across, mode: e.target.value as 'cover' | 'step' } })}>
+              <option value="cover">by the cover</option><option value="step">at a step</option>
+            </select>
+            {across.mode === 'step' && <><input className="num" type="number" style={{ width: 56 }} step={5} min={5} value={Math.round(across.step * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 5) set({ across: { ...across, step: v / 1000 } }); }} /><span className="muted small">mm</span></>}
+            {host && <span className="muted small">in <span data-no-i18n>{host.name}</span></span>}
+          </div>
+        );
+      })()}
       {d && (
         <dl className="fields" data-field="rebar-describe">
           <dt>Label</dt><dd><span data-no-i18n>{d.label}</span></dd>

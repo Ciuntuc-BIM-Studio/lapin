@@ -8,49 +8,9 @@ import { execute } from '../../engine/session';
 import { useRebarCatalog } from './RebarSection';
 
 interface Zone { share: number; step: number }
-interface Row { count: number; diameter: number; mark?: number }
-interface Bars { enabled: boolean; top: Row; bottom: Row; side: Row; perFace: Row; extend: number }
-const BARS: Bars = { enabled: false, top: { count: 2, diameter: 0.012 }, bottom: { count: 3, diameter: 0.016 }, side: { count: 0, diameter: 0.01 }, perFace: { count: 3, diameter: 0.016 }, extend: 0 };
-
-/** A row's count and diameter. */
-function RowFields({ label, row, diameters, min = 0, onChange }: { label: string; row: Row; diameters: number[]; min?: number; onChange: (r: Row) => void }) {
-  return (
-    <div className="row small">
-      <span className="eyebrow">{label}</span>
-      <input className="num" type="number" style={{ width: 48 }} min={min} max={40} value={row.count} onChange={(e) => onChange({ ...row, count: Math.max(min, Number(e.target.value) || 0) })} />
-      <span>×</span>
-      <select value={row.diameter} onChange={(e) => onChange({ ...row, diameter: Number(e.target.value) })}>{diameters.map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000)}</option>)}</select>
-      {row.mark ? <span className="muted small">mark {row.mark}</span> : null}
-    </div>
-  );
-}
-
-/** A beam's or a column's longitudinal bars, on its type: the rows, their extension past the ends. */
-export function BarsFields({ type, kind }: { type: NodeDto; kind: string }) {
-  const catalog = useRebarCatalog();
-  const section = type.props.section as { kind?: string } | undefined;
-  const b: Bars = { ...BARS, ...((type.props.bars as Partial<Bars> | undefined) ?? {}) };
-  const set = (patch: Partial<Bars>) => void execute('rebar.setTypeBars', { id: type.id, ...patch });
-  if (!catalog || (kind !== 'beam' && kind !== 'column') || (section?.kind && section.kind !== 'rectangle')) return null;
-  return (
-    <div className="layers" data-field="type-bars">
-      <label className="field-line check"><input type="checkbox" checked={b.enabled} onChange={(e) => set({ enabled: e.target.checked })} /><span>Longitudinal bars on this type</span></label>
-      {b.enabled && <>
-        {kind === 'beam' ? <>
-          <RowFields label="Top row" row={b.top} diameters={catalog.diameters} onChange={(r) => set({ top: r })} />
-          <RowFields label="Bottom row" row={b.bottom} diameters={catalog.diameters} onChange={(r) => set({ bottom: r })} />
-          <RowFields label="Each side" row={b.side} diameters={catalog.diameters} onChange={(r) => set({ side: r })} />
-        </> : <RowFields label="Each face" row={b.perFace} diameters={catalog.diameters} min={2} onChange={(r) => set({ perFace: r })} />}
-        <label className="field-line"><span className="eyebrow">Past each end</span><input className="num" type="number" step={10} min={0} max={2000} value={Math.round(b.extend * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 0 && v <= 2000) set({ extend: v / 1000 }); }} /><span className="muted small"> mm</span></label>
-        <p className="muted small">Laid inside the stirrups, the corners first; dots in a cross-section, lines along; each row a mark in the bar schedule.</p>
-      </>}
-    </div>
-  );
-}
 interface Spec { enabled: boolean; diameter: number; cover: number; mode: 'uniform' | 'zones'; step: number; zones: Zone[]; mark: number }
 
 const DEFAULT: Spec = { enabled: false, diameter: 0.008, cover: 0.025, mode: 'uniform', step: 0.15, zones: [{ share: 1 / 3, step: 0.1 }, { share: 1 / 3, step: 0.2 }, { share: 1 / 3, step: 0.1 }], mark: 0 };
-
 export function StirrupsFields({ type, kind }: { type: NodeDto; kind: string }) {
   const catalog = useRebarCatalog();
   const section = type.props.section as { kind?: string } | undefined;

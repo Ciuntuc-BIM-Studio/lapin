@@ -55,9 +55,9 @@ public class TypeStirrupsTests
         var f = F();
         var beam = (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 6, ["y2"] = 0 })!["id"]!;
         f.Run("rebar.setTypeStirrups", new JsonObject { ["id"] = f.Model.RelatingOf(beam, IfcClass.RelDefinesByType)!.Id, ["enabled"] = true, ["step"] = 0.15 });
-        // Across the beam: the rectangle (four edges), the stirrups behind it within the window drawn on the same lines.
+        // Across the beam: the stirrup as it is bent (its rounded corners and hooks: many short segments), the ones behind it within the window drawn once.
         var across = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["across"] = beam, ["station"] = 3 })!["id"]!;
-        Assert.Equal(4, StirrupSegments(Drawing(f, across)));
+        Assert.InRange(StirrupSegments(Drawing(f, across)), 20, 200);
         // Along it, 2 m in front: a line for each stirrup, and the label.
         var along = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(-1, -2), ["end"] = new JsonArray(7, -2) })!["id"]!;
         var d = Drawing(f, along);
@@ -84,7 +84,7 @@ public class TypeStirrupsTests
         Assert.Equal(0.242, loop.Max(p => p.X) - loop.Min(p => p.X), 9);
         // Cut horizontally at 1 m: the rectangle; in a vertical section through it: a line per stirrup.
         var across = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["across"] = column, ["station"] = 1.0 })!["id"]!;
-        Assert.Equal(4, StirrupSegments(Drawing(f, across)));
+        Assert.InRange(StirrupSegments(Drawing(f, across)), 20, 200);
         var through = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(0, 2), ["end"] = new JsonArray(4, 2) })!["id"]!;
         Assert.Equal(laid.Stations.Count, StirrupSegments(Drawing(f, through)));
     }

@@ -65,7 +65,7 @@ public static class Rebars
         return ((int)Math.Max(1, Json.Number(o["nx"]) ?? 1), Json.Number(o["dx"]) ?? 0, (int)Math.Max(1, Json.Number(o["ny"]) ?? 1), Json.Number(o["dy"]) ?? 0);
     }
 
-    public static int Pieces(Entity e) { var (nx, _, ny, _) = Array(e); return Count(e) * nx * ny; }
+    public static int Pieces(Entity e) { var (nx, _, ny, _) = Array(e); return Count(e) * nx * ny * (Rebar3D.Across.Of(e)?.Count ?? 1); }
 
     public static IEnumerable<Entity> On(IModelView m, string viewId, string cls) => m.OfClass(cls).Where(e => e.Str("viewId") == viewId);
 
@@ -84,7 +84,7 @@ public static class Rebars
     }
 
     /// <summary>The next free mark: one over the highest in the model.</summary>
-    public static int NextMark(IModelView m) => 1 + Math.Max(m.OfClass(Class).Concat(m.OfClass(RunClass)).Select(Mark).DefaultIfEmpty(0).Max(), Math.Max(TypeStirrups.HighestMark(m), TypeBars.HighestMark(m)));
+    public static int NextMark(IModelView m) => 1 + Math.Max(m.OfClass(Class).Concat(m.OfClass(RunClass)).Select(Mark).DefaultIfEmpty(0).Max(), TypeStirrups.HighestMark(m));
 }
 
 /// <summary>The bar bending schedule: the bars by mark, their count, length and mass, the totals by diameter.</summary>
@@ -115,7 +115,6 @@ public sealed class RebarSchedule : IScheduleSource
             o.Add(new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, positions.Count * Rebars.Count(e), RebarShapes.Length(s)));
         }
         o.AddRange(TypeStirrups.Entries(m));
-        o.AddRange(TypeBars.Entries(m));
         return o;
     }
 
@@ -195,6 +194,12 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var attrs = new JsonObject { ["viewId"] = view.Id, ["shape"] = shape, ["at"] = Rebars.J(Args.Point(a["at"], "the bar's point")), ["diameter"] = def.DefaultDiameter, ["mark"] = Rebars.NextMark(ctx.Model), ["count"] = 1 };
             if (def.FreeVertices && a["vertices"] == null) attrs["vertices"] = new JsonArray(def.Vertices(new Dictionary<string, double>()).Select(p => (JsonNode)Rebars.J(p)).ToArray());
             Write(attrs, a, run: false);
+            // Drawn inside an element's cut (a beam in its longitudinal section): the bar lies in that element, one across its width unless told more.
+            if (a["host"] == null && Rebar3D.HostAt(ctx, view, Rebars.At(new Entity("", Rebars.Class, "", attrs))) is { } host)
+            {
+                attrs["host"] = host;
+                if (attrs["across"] == null) attrs["across"] = new Rebar3D.Across(1, "cover", 0.05).ToJson();
+            }
             var e = new Entity(ctx.NewId(), Rebars.Class, $"{def.Label} {Rebars.Mark(new Entity("", Rebars.Class, "", attrs))}", attrs);
             ctx.Add(e);
             return new JsonObject { ["id"] = e.Id };
@@ -316,8 +321,6 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
 
         // A beam's or a column's type gets its stirrups (decision 215): {id, enabled, diameter, cover, mode, step, zones, mark}.
         r.Command("setTypeStirrups", "Stirrups on type", (ctx, a) => { TypeStirrups.Set(ctx, a); return null; });
-        // Its longitudinal bars (decision 216): {id, enabled, top: {count, diameter}, bottom, side, perFace, extend}.
-        r.Command("setTypeBars", "Bars on type", (ctx, a) => { TypeBars.Set(ctx, a); return null; });
 
         // What a bar or a distribution is: its length, developed length, mass, label, positions.
         r.Query("describe", (q, a) =>
@@ -439,6 +442,21 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                 else attrs.Remove("array");
             }
             if (a.ContainsKey("bendRadius")) { if (Json.Number(a["bendRadius"]) is { } br && br >= 0) attrs["bendRadius"] = br; else attrs.Remove("bendRadius"); }
+            if (a.ContainsKey("host")) { if ((string?)a["host"] is { Length: > 0 } h) attrs["host"] = h; else attrs.Remove("host"); }
+            if (a.ContainsKey("across"))
+            {
+                if (a["across"] is JsonObject ao)
+                {
+                    var n = (int)Math.Round(Json.Number(ao["count"]) ?? 1);
+                    if (n < 1 || n > 40) throw new CommandException("A bar is laid 1 to 40 times across the drawing.");
+                    var mode = (string?)ao["mode"] ?? "cover";
+                    if (mode is not ("cover" or "step")) throw new CommandException("Bars across the drawing are laid by the cover or at a step.");
+                    var step = Json.Number(ao["step"]) ?? 0.05;
+                    if (step < 0.005) throw new CommandException("The step across is 5 mm at least.");
+                    attrs["across"] = new Rebar3D.Across(n, mode, step).ToJson();
+                }
+                else attrs.Remove("across");
+            }
         }
         else
         {
@@ -479,7 +497,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             if (RunMark(c, st, e, hidden) is { } mk) yield return mk;
         // The stirrups the beams' and columns' types are configured with, projected as the view lies to each axis.
         foreach (var mk in TypeStirrups.Marks(c, st)) yield return mk;
-        foreach (var mk in TypeBars.Marks(c, st)) yield return mk;
+        // Bars drawn on other views, where they stand in space: dots where they run into this view, lines along.
+        foreach (var mk in Rebar3D.Marks(c, st)) yield return mk;
     }
 
     static double Width(RebarSpec s, ViewContext c) => Math.Max(0.25, s.Diameter * 1000 / c.Scale);

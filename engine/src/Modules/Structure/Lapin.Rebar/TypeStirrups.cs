@@ -143,6 +143,27 @@ public static class TypeStirrups
                 var depths = loop.Select(c.Frame.Depth).ToList();
                 if (!plan && (depths.Max() < -1e-6 || depths.Min() > limit + 1e-6)) continue;
                 var pts = loop.Select(c.Map).ToArray();
+                // Seen across (the loop a rectangle on the view): the stirrup as it is bent, its corners rounded and its two hooks at the top corner, once per place.
+                if (Enumerable.Range(0, 4).All(i => (pts[(i + 1) % 4] - pts[i]).Length > 1e-6) && Math.Abs(Polygon2.SignedArea(pts)) > 1e-8)
+                {
+                    static long K(double x) => (long)Math.Round(x * 1e5);
+                    var lows = Enumerable.Range(0, 4).OrderBy(i => pts[i].Y).Take(2).ToList();
+                    var i0 = pts[lows[0]].X >= pts[lows[1]].X ? lows[0] : lows[1];
+                    var q0 = pts[i0];
+                    var (n1, n2) = (pts[(i0 + 1) % 4], pts[(i0 + 3) % 4]);
+                    var (left, up) = Math.Abs(n1.Y - q0.Y) <= Math.Abs(n2.Y - q0.Y) ? (n1, n2) : (n2, n1);
+                    var key = (K(q0.X), K(q0.Y), K(left.X), K(up.Y));
+                    if (drawn.Contains(key)) continue;
+                    drawn.Add(key);
+                    var (a, b) = ((left - q0).Length, (up - q0).Length);
+                    var (u, v) = ((left - q0) * (1 / a), (up - q0) * (1 / b));
+                    var spec = new RebarSpec("stirrup", new Dictionary<string, double> { ["a"] = a, ["b"] = b }, null, d, null, null);
+                    var chain = RebarShapes.Chain(RebarShapes.Segments(spec)).Select(q => q0 + u * q.X + v * q.Y).ToList();
+                    mk.Polyline(chain, false, RebarShapes.StirrupLayer, width, color);
+                    mk.Snaps.AddRange([q0, left, up, left + (up - q0)]);
+                    any = true;
+                    continue;
+                }
                 for (var i = 0; i < 4; i++)
                 {
                     var (p, q) = (pts[i], pts[(i + 1) % 4]);
