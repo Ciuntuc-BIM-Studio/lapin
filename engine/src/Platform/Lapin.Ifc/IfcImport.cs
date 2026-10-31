@@ -15,11 +15,25 @@ namespace Lapin.Ifc;
 /// elements on no storey) to bring, null for all; and the 2D: <see cref="Plan2d"/>, the elements' own 2D for plans
 /// (their symbols, footprints, fills and texts; without it a plan shows their cut), and <see cref="Only2d"/>, the
 /// elements the file draws only in 2D (lines, texts, symbols with no body), both brought unless the user unticks them.
+/// <para>
+/// And the import's rules (docs/spec-ifc.md, Regulile importului), general, whatever program wrote the file:
+/// <see cref="Dedupe"/> keeps a body the file repeats (the same triangles, wherever it stands) once, its
+/// elements instances of it, nothing lost (on unless unticked); <see cref="Flat"/> leaves out the bodies that lie
+/// in one plane (texts, lines and hatches another program turned into triangles); <see cref="FarAway"/> the
+/// elements further than that many metres from the rest (a drawing's texts, a title block); <see cref="Duplicates"/>
+/// an element with the same body in the same place as one already brought; <see cref="Pseudo"/> the ports,
+/// openings and virtual elements another program wrote as objects; <see cref="Simplify"/> simplifies the meshes
+/// within that many metres (<see cref="Simplifier"/>); <see cref="Numbers"/> reads the numbers written as text
+/// (<see cref="IfcValueText"/>); <see cref="SkipSets"/> are the property and quantity sets left out by name.
+/// </para>
 /// </summary>
-public sealed record IfcImportOptions(string Mode = "auto", IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Plan2d = true, bool Only2d = true)
+public sealed record IfcImportOptions(string Mode = "auto", IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Plan2d = true, bool Only2d = true,
+    bool Dedupe = true, bool Flat = false, double? FarAway = null, bool Duplicates = false, bool Pseudo = false, double Simplify = 0, bool Numbers = false, IReadOnlySet<string>? SkipSets = null)
 {
     public bool ReferenceOnly => string.Equals(Mode, "reference", StringComparison.OrdinalIgnoreCase);
     public bool Filtered => Kinds != null || Storeys != null;
+    /// <summary>Whether a set of this name comes in.</summary>
+    public bool Keeps(string? set) => SkipSets == null || set == null || !SkipSets.Contains(set);
 }
 
 public sealed record IfcImportResult(int Elements, int Updated, int References, int Storeys, IReadOnlyList<string> Notes, int Recognized = 0, IReadOnlyDictionary<string, int>? RecognizedByClass = null, IReadOnlyDictionary<string, int>? ReferencesByClass = null, IReadOnlyDictionary<string, int>? Skipped = null, string? LinkId = null)
@@ -468,6 +482,7 @@ public static partial class IfcImport
             }
             Spaces(edit);
             FinishRecognition(edit);
+            RuleNotes();
             if (left2d > 0) notes.Add($"{left2d} element(s) drawn only in 2D left out, as chosen.");
             if (without2d > 0) notes.Add($"{without2d} element(s) brought without their own 2D, as chosen: plans draw their cut.");
             foreach (var (cls, n) in bodiless.OrderByDescending(kv => kv.Value))
@@ -560,19 +575,20 @@ public static partial class IfcImport
         /// with the 2D the file drew for its plans (<see cref="Plan2d"/>), and kept for that alone when it has no body.
         /// </summary>
         /// <summary>What a reference needs from the file, read before it is put in the model: its 2D, its shared key or else its own body, its description and properties.</summary>
-        sealed record Prepared((string Key, Xf At)? Shared, List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)>? Parts,
+        sealed record Prepared((string Key, Xf At)? Shared, BodyRead Body, Vec3 Centre, bool Pseudo,
             List<Plan2dItem> Plan2d, int Sections2d, int Elevations2d, JsonNode? Shape, JsonObject Properties, (JsonObject Own, List<IfcCarry.Shared> Shared) Carried);
 
         readonly System.Collections.Concurrent.ConcurrentDictionary<int, Prepared> prepared = [];
 
         /// <summary>
         /// The references to come read from the file on every core (the model warmed first, then only read):
-        /// each one's body evaluated, welded and cut, its 2D, description and properties. Putting them in the
-        /// model stays in order, one by one.
+        /// each one's body evaluated, welded, cut and read by the import's rules, its 2D, description and properties.
+        /// Putting them in the model stays in order, one by one. A few are read as they come, unless a rule needs
+        /// them all first (the middle of the model, the bodies the file repeats).
         /// </summary>
         void PrepareAll(IReadOnlyList<StepEntity> references, ISolidBooleans? booleans)
         {
-            if (references.Count < 8) return;
+            if (references.Count < 8 && o.FarAway == null && !o.Dedupe) return;
             model.Warm();
             var done = 0;
             Parallel.ForEach(references, e =>
@@ -581,14 +597,18 @@ public static partial class IfcImport
                 var n = Interlocked.Increment(ref done);
                 if (Due(n, references.Count)) Report("Reading the references", n, references.Count);
             });
+            FindMiddle();
         }
 
         Prepared Prepare(StepEntity e, ISolidBooleans? booleans)
         {
             var (plan2d, sections2d, elevations2d) = model.Drawing2d(e.Id);
             var shared = model.SharedKey(e.Id);
-            return new Prepared(shared, shared == null ? OwnBody(e, booleans) : null, plan2d, sections2d, elevations2d, model.Describe(e.Id), PropertiesJson(e.Id),
-                IfcCarry.Capture(f, carryIndex.Value, e, Seed));
+            var body = shared is var (key, _) ? SharedRead(key, booleans) : Read(OwnBody(e, booleans));
+            var centre = shared is var (_, at) ? at.Apply(body.Centre) : body.Centre;
+            if (body.Hash != null && body.Parts.Count > 0) hashUses.AddOrUpdate(body.Hash, 1, (_, n) => n + 1);
+            return new Prepared(shared, body, centre, o.Pseudo && IsPseudo(e), plan2d, sections2d, elevations2d, model.Describe(e.Id), PropertiesJson(e.Id),
+                IfcCarry.Capture(f, carryIndex.Value, e, Seed, o.Keeps, o.Numbers));
         }
 
         /// <summary>The relationships the carried IFC is read through, indexed once (on the first core that asks).</summary>
@@ -605,34 +625,42 @@ public static partial class IfcImport
         {
             var gid = Str(e[0])!;
             var p = prepared.TryRemove(e.Id, out var ready) ? ready : Prepare(e, booleans);
+            var bodied = p.Body.Parts.Count > 0;
             // The 2D the user left out: an element's own (it is drawn by its cut), or an element that is nothing but 2D.
-            var sharedId = p.Shared is var (k0, _) ? SharedBody(edit, k0, e, booleans) : null;
             if (p.Plan2d.Count > 0 || p.Sections2d + p.Elevations2d > 0)
             {
-                var bodied = sharedId != null || (p = p with { Parts = p.Parts ?? OwnBody(e, booleans) }).Parts!.Count > 0;
                 if (!bodied && !o.Only2d) { left2d++; return; }
                 if (bodied && !o.Plan2d) { p = p with { Plan2d = [], Sections2d = 0, Elevations2d = 0 }; without2d++; }
             }
-            var (plan2d, sections2d, elevations2d) = (p.Plan2d, p.Sections2d, p.Elevations2d);
-            // A body many products share: kept once, each product an instance of it (docs/plan-instancing.md).
-            if (p.Shared is var (key, at) && sharedId is { } bodyId)
+            // The import's rules: what they leave out.
+            if (LeftOutBy(p, p.Plan2d.Count > 0) is { } reason) { Drop(reason); return; }
+            var plan2d = p.Plan2d;
+            // A body many products share: kept once, each product an instance of it (docs/plan-instancing.md); a body
+            // the file repeats under other names, kept once by what it is, each instance placed from its low corner.
+            if (p.Shared is var (key, at) && bodied)
             {
-                var instance = new JsonObject
+                if (o.Dedupe && ContentBody(edit, e, p.Body, fromCorner: false) is var (byContent, kept))
                 {
-                    [StoredBodies.BodyOf] = bodyId,
-                    [StoredBodies.XfKey] = StoredBodies.WriteXf([at.X.X, at.X.Y, at.X.Z, at.Y.X, at.Y.Y, at.Y.Z, at.Z.X, at.Z.Y, at.Z.Z, at.O.X, at.O.Y, at.O.Z]),
-                };
-                Referenced(edit, e, gid, instance, p);
-                return;
+                    // This map's body is the one kept moved by the difference of their corners.
+                    Referenced(edit, e, gid, Instance(byContent, at with { O = at.Apply(p.Body.Lo - kept) }), p);
+                    instancesByContent++;
+                    return;
+                }
+                if (SharedBody(edit, key, e, p.Body.Parts) is { } bodyId) { Referenced(edit, e, gid, Instance(bodyId, at), p); return; }
             }
-            var parts = p.Parts ?? OwnBody(e, booleans);
-            if (parts.Count == 0 && plan2d.Count == 0)
+            if (!bodied && plan2d.Count == 0)
             {
                 var cls = ClassName(e.Type);
                 bodiless[cls] = bodiless.GetValueOrDefault(cls) + 1;
                 return;
             }
-            Referenced(edit, e, gid, new JsonObject { [StoredBodies.Key] = StoredBodies.Write(parts) }, p);
+            if (bodied && o.Dedupe && p.Body.Hash is { } hash && hashUses.GetValueOrDefault(hash) > 1 && ContentBody(edit, e, p.Body, fromCorner: true) is var (shared, keptLo))
+            {
+                Referenced(edit, e, gid, Instance(shared, Xf.Identity with { O = p.Body.Lo - keptLo }), p);
+                instancesByContent++;
+                return;
+            }
+            Referenced(edit, e, gid, new JsonObject { [StoredBodies.Key] = StoredBodies.Write(p.Body.Parts) }, p);
         }
 
         /// <summary>A product's own body: its meshes welded, cut by its openings where the booleans are.</summary>
@@ -683,19 +711,13 @@ public static partial class IfcImport
         readonly Dictionary<string, string?> sharedBodies = [];
 
         /// <summary>The shared body a key names, made the first time (its id from the file and the key, so importing again finds it); null when it has no triangles.</summary>
-        string? SharedBody(IEdit edit, string key, StepEntity first, ISolidBooleans? booleans)
+        string? SharedBody(IEdit edit, string key, StepEntity first, List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)> parts)
         {
             if (sharedBodies.TryGetValue(key, out var known)) return known;
-            var parts = new List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)>();
-            foreach (var (mesh, colour) in model.SharedBody(key, booleans))
-            {
-                var m = mesh.Welded();
-                if (m.T.Count > 0) parts.Add(("Body", colour ?? "#c9ced6", m.V, m.T));
-            }
             string? id = null;
             if (parts.Count > 0)
             {
-                id = Step.Guid(Str(f.OfType("IFCPROJECT").FirstOrDefault()?[0]) ?? "ifc", "shared-body\n" + key);
+                id = Step.Guid(Seed, "shared-body\n" + key);
                 Put(edit, id, StoredBodies.SharedClass, $"{Str(first[2]) ?? ClassName(first.Type)[3..]} (shared)", new JsonObject { [StoredBodies.Key] = StoredBodies.Write(parts), ["source"] = key }, null, counts: false);
             }
             return sharedBodies[key] = id;
@@ -703,14 +725,14 @@ public static partial class IfcImport
 
         JsonObject PropertiesJson(int product)
         {
-            var o = new JsonObject();
-            foreach (var (set, props) in model.Properties(product))
+            var json = new JsonObject();
+            foreach (var (set, props) in model.Properties(product, o.SkipSets == null ? null : name => o.Keeps(name), o.Numbers))
             {
                 var p = new JsonObject();
                 foreach (var (k, v) in props) p[k] = v;
-                o[set] = p;
+                json[set] = p;
             }
-            return o;
+            return json;
         }
     }
 }

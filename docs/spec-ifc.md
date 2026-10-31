@@ -140,6 +140,23 @@ Din IFC2X3, ce are mai multe atribute în IFC4 se completează cu `$` (o cantita
 
 Verificat pe fișierul de probă (`IfcCarryTests`: comparația completă sursă–export, al doilea import și export, salvarea în `.lapin`, valorile utilizatorului, un element dublat, IFC2X3) și pe un model Revit IFC2X3 real de 1,2 GB (02767_0_IDP_EJE_ARQ+EST+MEP): 383 de elemente MEP, toate identice element cu element (atribute, seturi cu fiecare valoare, tip, material, porturi, grupuri, GlobalId-urile relațiilor), niciun GlobalId dublat. Tot acolo s-a văzut că exportul unui model mare depășea ce poate ține un singur șir de caractere; `Step.Write` scrie acum pe bucăți. Rămân în afară, deocamdată: plasarea locală a elementului (corpul iese în coordonatele lumii, ca înainte), hărțile de reprezentare ale tipului și elementele recunoscute ca native (pereți, plăci…), ale căror seturi străine rămân doar în inspector.
 
+### Regulile importului (30.10.2026, #186)
+
+Cerut: ce se poate face automat cu un model greu (un model federat exportat din Navisworks, mii de texte și desene CAD triangulate, porturi scrise ca obiecte, aceleași piese repetate fără instanțe) să fie o regulă generală în dialogul Import IFC, aleasă de utilizator. Dialogul are acum, în coloana din dreapta, **Curățare și optimizare** (bifele se țin minte pe calculator), iar în cea din stânga **Seturi de proprietăți**, cu fiecare set al fișierului și numărul elementelor care îl au.
+
+- **Corpuri identice o singură dată** (implicit pornit). Un corp pe care fișierul îl repetă fără să-l împartă (aceleași triunghiuri, mutate sau nu) se păstrează o dată, ca `LapinSharedBody`, iar elementele devin instanțe ale lui (`bodyOf`, `xf`). Se recunoaște după ce este: două sume FNV de 64 de biți peste culoare, vârfuri față de colțul de jos (la 0,1 mm) și triunghiuri (`IfcImport.Rules`, `Hash`). O hartă împărțită de fișier rămâne în cadrul ei; un corp scris în coordonatele lumii se mută la colțul lui de jos. Id-ul vine din fișier și sumă, deci un al doilea import găsește același corp.
+- **Corpuri plate** (texte, linii, hașuri din triunghiuri): un element ale cărui vârfuri stau toate la cel mult 0,5 mm de planul celui mai mare triunghi al lui. Un element care are 2D propriu nu e atins de regulă (îl desenează 2D-ul lui).
+- **Mai departe de restul modelului decât** o distanță (implicit 1000 m) față de mediana centrelor, axă cu axă: blocuri de text și desene CAD lăsate la coordonatele lor.
+- **Același corp în același loc** ca altul (la milimetru): dubluri, cum scrie Tekla prin Navisworks șuruburile.
+- **Porturi, goluri și elemente virtuale scrise ca obiecte**: după nume, tip de obiect sau proprietatea în care programul își spune clasa (`Tipo`, `IfcClass`, `Category`…).
+- **Simplificarea plaselor** cu o toleranță (implicit 5 mm când e bifată, cel mult 100 mm): același `Simplifier` ca la export, pe părțile cu mai mult de 24 de triunghiuri.
+- **Numere scrise ca text**: `Double:12,5`, `DoubleLength:3`, `12.5 kg`, `0.75`, `-3` devin valori IFC cu tip (`IFCREAL`, `IFCLENGTHMEASURE`, `IFCMASSMEASURE`…), în inspector și la export (`IfcValueText`). Un întreg fără semn rămâne text (coduri, numere de inventar: „001”).
+- **Seturile tehnice** (Transform, Internal, Entity Handle, Geometry, Solid History, DWF Section…, și numele lor în spaniolă: `IfcSurvey.TechnicalSets`) sunt debifate implicit; orice set poate fi debifat. Un set lăsat afară nu e nici în inspector, nici păstrat pentru export.
+
+Notele importului spun câte elemente a lăsat afară fiecare regulă, câte instanțe au ieșit și câte triunghiuri au rămas. Regulile se țin în jurnalul de recuperare (`rules`), deci un import refăcut le aplică din nou. Testele: `IfcImportRulesTests`.
+
+Pe modelul care a cerut regulile (7 fișiere IFC4, ~202.000 de elemente, 61 de milioane de triunghiuri desenate): cu toate regulile pornite (5 mm, 1000 m, seturile tehnice afară), fișierul 004 (44.971 de elemente) iese din import în 111 s, 1.493 de porturi și goluri, 1.339 de corpuri plate și 500 de dubluri rămân afară, 40.113 elemente împart 3.273 de corpuri, triunghiurile scad de la 12,5 la 3,2 milioane, iar fișierul `.lapin` de la 153 MB (fără reguli) la 48 MB; fișierul 005 (38.312 elemente, cu planul CAD triangulat): 3.822 de corpuri plate și 2.643 de dubluri afară, 5,0 → 2,8 milioane de triunghiuri, 86 MB → 44 MB. Ce rămâne de făcut la sursă (desenele CAD ascunse în Navisworks, modelele de context separat, instanțele la export, fișierele native în locul segmentelor DWF) e scris pentru cine exportă, în afara depozitului.
+
 ### Reprezentările 2D ale elementelor (27.10.2026)
 
 Cerut: dacă un IFC importat are și reprezentări 2D pentru elemente, ele desenează elementele în planuri (și secțiuni).

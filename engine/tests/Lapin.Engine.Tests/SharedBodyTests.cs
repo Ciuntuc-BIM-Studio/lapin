@@ -196,7 +196,8 @@ public class SharedBodyTests : IDisposable
     public void Occurrences_of_a_types_map_share_it_and_a_voided_product_keeps_its_own_body()
     {
         var f = Make();
-        var r = IfcImport.Run(f.Session, Write(Cubes(2, mapped: true, opening: true)), null, out _);
+        // By the file's maps and shapes alone (the import's rule that keeps a repeated body once by what it is, off).
+        var r = IfcImport.Run(f.Session, Write(Cubes(2, mapped: true, opening: true)), new IfcImportOptions(Dedupe: false), out _);
         Assert.Equal(5, r.References);
         // Two bodies shared: the shape #100 (two cubes; the voided one is cut, its own) and the map #200 (two occurrences).
         Assert.Equal(2, Shared(f.Model).Count);
@@ -281,7 +282,8 @@ public class SharedBodyTests : IDisposable
     public void Exported_to_IFC_and_read_again_every_instance_comes_back()
     {
         var f = Make();
-        IfcImport.Run(f.Session, Write(Cubes(4, mapped: true)), null, out _);
+        // By the file's maps and shapes alone (the import's rule that keeps a repeated body once by what it is, off).
+        IfcImport.Run(f.Session, Write(Cubes(4, mapped: true)), new IfcImportOptions(Dedupe: false), out _);
         var path = Path.Combine(_dir, "again.ifc");
         IfcExport.Write(f.Session, path, null);
         var text = File.ReadAllText(path);
@@ -292,7 +294,7 @@ public class SharedBodyTests : IDisposable
         Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(text, "=IFCFACETEDBREP\\(").Count);
         // Read again by Lapin, a reference it wrote is a reference again, with the body the file gives it.
         var g = Make();
-        var r = IfcImport.Run(g.Session, path, null, out _);
+        var r = IfcImport.Run(g.Session, path, new IfcImportOptions(Dedupe: false), out _);
         Assert.Equal(6, r.References);
         Assert.Equal(6, Proxies(g.Model).Count);
         // Read again, the instances share their bodies again.

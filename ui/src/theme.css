@@ -891,6 +891,10 @@ button.mode-chip:hover { color: var(--accent); }
 .import-tree ul { list-style: none; margin: 0 0 4px; padding: 0 0 0 26px; }
 .import-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
 .import-row label { display: flex; align-items: center; gap: 6px; }
+.import-sets { margin-top: 12px; }
+.import-sets .import-tree { max-height: 24vh; }
+.import-rules { max-height: none; }
+.import-rule-value { width: 64px; flex: none; text-align: right; }
 .import-count { color: var(--accent); }
 
 /* A long engine call (BusyOverlay): its stage, a bar, the time so far. */

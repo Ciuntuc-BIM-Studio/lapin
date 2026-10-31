@@ -66,7 +66,9 @@ public static class IfcCarry
     /// What an element's file said of it: its own (<paramref name="own"/>, kept on the element) and what it shares
     /// with others (records, by id). Its intent set, Lapin's own, is not carried: an export writes a new one.
     /// </summary>
-    public static (JsonObject Own, List<Shared> Shared) Capture(StepFile f, Index ix, StepEntity e, string seed)
+    /// <param name="keep">Whether a property or quantity set of this name is carried (the import's <see cref="IfcImportOptions.SkipSets"/>).</param>
+    /// <param name="numbers">A number written as text carried as the number it is (<see cref="IfcValueText"/>).</param>
+    public static (JsonObject Own, List<Shared> Shared) Capture(StepFile f, Index ix, StepEntity e, string seed, Func<string?, bool>? keep = null, bool numbers = false)
     {
         var shared = new List<Shared>();
         var own = new JsonObject { ["e"] = Snapshot(f, e.Id, root: true) };
@@ -74,7 +76,8 @@ public static class IfcCarry
         foreach (var (rel, def) in ix.Defs.GetValueOrDefault(e.Id) ?? [])
         {
             if (f.Entities.GetValueOrDefault(def) is not { } set || set.Type == "IFCPROPERTYSET" && IfcExport.IsIntentSet(IfcModel.Str(set[2]))) continue;
-            if (Snapshot(f, def, root: true) is { } snap) defs.Add((JsonNode)new JsonObject { ["rel"] = rel, ["d"] = snap });
+            if (keep != null && !keep(IfcModel.Str(set[2]))) continue;
+            if (Snapshot(f, def, root: true, numbers: numbers) is { } snap) defs.Add((JsonNode)new JsonObject { ["rel"] = rel, ["d"] = snap });
         }
         if (defs.Count > 0) own["defs"] = defs;
         if (ix.TypeOf.TryGetValue(e.Id, out var type) && Record(f, ix, type.Type, seed, "type", shared) is { } typeId)
@@ -139,12 +142,14 @@ public static class IfcCarry
         || type.EndsWith("PROFILEDEF", StringComparison.Ordinal) || type is "IFCCARTESIANPOINT" or "IFCDIRECTION" or "IFCAXIS2PLACEMENT2D" or "IFCPOLYLINE";
 
     /// <summary>An entity as the file wrote it; null when it is not there (or, not the root, not something to follow).</summary>
-    public static JsonObject? Snapshot(StepFile f, int id, bool root = false, int depth = 0)
+    public static JsonObject? Snapshot(StepFile f, int id, bool root = false, int depth = 0, bool numbers = false)
     {
         if (depth > 16 || f.Entities.GetValueOrDefault(id) is not { } e || !root && !Follows(e.Type) || Ifc4Lacks.Contains(e.Type)) return null;
         var a = new JsonArray();
         for (var i = 0; i < e.Args.Count; i++)
-            a.Add(e.Type == "IFCSIUNIT" && i == 0 ? (JsonNode)"*" : Arg(f, e.Args[i], depth));
+            a.Add(e.Type == "IFCSIUNIT" && i == 0 ? (JsonNode)"*"
+                : numbers && i == 2 && e.Type == "IFCPROPERTYSINGLEVALUE" && e.Args[i] is StepTyped { Value: string txt } && IfcValueText.Parse(txt) is { } n ? (JsonNode)n.Step
+                : Arg(f, e.Args[i], depth, numbers));
         if (f.Schema.StartsWith("IFC2X3", StringComparison.OrdinalIgnoreCase))
         {
             // An element IFC4 gave a PredefinedType (a door and a window three attributes more), and what IFC4 describes more fully.
@@ -156,12 +161,12 @@ public static class IfcCarry
         return new JsonObject { ["t"] = e.Type, ["a"] = a };
     }
 
-    static JsonNode Arg(StepFile f, object? v, int depth)
+    static JsonNode Arg(StepFile f, object? v, int depth, bool numbers = false)
     {
-        if (v is StepRef r) return (JsonNode?)Snapshot(f, r.Id, depth: depth + 1) ?? "$";
+        if (v is StepRef r) return (JsonNode?)Snapshot(f, r.Id, depth: depth + 1, numbers: numbers) ?? "$";
         if (v is List<object?> l && l.Any(x => x is StepRef))
         {
-            var items = l.Select(x => x is StepRef xr ? Snapshot(f, xr.Id, depth: depth + 1) : null).ToList();
+            var items = l.Select(x => x is StepRef xr ? Snapshot(f, xr.Id, depth: depth + 1, numbers: numbers) : null).ToList();
             return items.All(x => x != null) ? new JsonArray([.. items]) : "$";
         }
         return Text(v);

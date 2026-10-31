@@ -251,17 +251,25 @@ public sealed partial class IfcModel
     // ─── Properties ──────────────────────────────────────────────────────────
 
     /// <summary>A product's property sets and quantity sets: set name → property → value as text.</summary>
-    public Dictionary<string, Dictionary<string, string>> Properties(int product)
+    public Dictionary<string, Dictionary<string, string>> Properties(int product) => Properties(product, null, false);
+
+    /// <summary>
+    /// The product's property and quantity sets as text, by set: those <paramref name="keep"/> keeps (all without it),
+    /// a number written as text shown as the number it is when <paramref name="numbers"/> (<see cref="IfcValueText"/>).
+    /// </summary>
+    public Dictionary<string, Dictionary<string, string>> Properties(int product, Func<string, bool>? keep, bool numbers)
     {
         var o = new Dictionary<string, Dictionary<string, string>>();
         foreach (var d in _definitions.GetValueOrDefault(product) ?? [])
         {
             if (File.Entities.GetValueOrDefault(d) is not { } set) continue;
+            if (keep != null && !keep(Str(set[2]) ?? set.Type)) continue;
             var props = new Dictionary<string, string>();
             if (set.Type == "IFCPROPERTYSET")
                 foreach (var p in Items(set[4]))
                     props[Str(p[0]) ?? "?"] = p.Type switch
                     {
+                        "IFCPROPERTYSINGLEVALUE" when numbers && p[2] is StepTyped { Value: string txt } && IfcValueText.Parse(txt) is { } parsed => parsed.Display,
                         "IFCPROPERTYSINGLEVALUE" => Text(p[2]),
                         "IFCPROPERTYENUMERATEDVALUE" or "IFCPROPERTYLISTVALUE" => p[2] is List<object?> l ? string.Join(", ", l.Select(Text)) : "",
                         "IFCPROPERTYBOUNDEDVALUE" => $"{Text(p[3])} – {Text(p[2])}",

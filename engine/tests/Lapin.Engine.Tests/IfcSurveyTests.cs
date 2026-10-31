@@ -153,7 +153,8 @@ public class IfcSurveyTests : IDisposable
             ["kinds"] = new JsonArray("IfcBeam", "IfcColumn"),
             ["storeys"] = new JsonArray("2PlantStoreyLow0000000", "2PlantStoreyHigh000000"),
         })!;
-        var names = f.Model.Entities.Where(e => e.Name.Contains(" : ") || e.Name == "anything").Select(e => e.Name).Order().ToList();
+        // The elements (the two beams' identical bodies are kept once, a shared body beside them).
+        var names = f.Model.Entities.Where(e => e.Class != StoredBodies.SharedClass && (e.Name.Contains(" : ") || e.Name == "anything")).Select(e => e.Name).Order().ToList();
         Assert.Equal(["Structural Columns : Column : 1", "Structural Framing : Beam : 1", "Structural Framing : Beam : 2"], names);
         Assert.Contains("Indexing the file", stages);
         Assert.Contains(stages, x => x.StartsWith("Recognising", StringComparison.Ordinal) || x.StartsWith("Bringing", StringComparison.Ordinal));
@@ -164,7 +165,7 @@ public class IfcSurveyTests : IDisposable
         var d2 = new EngineDispatcher(g.Session, PackageFiles.Create());
         Call(d2, "project.importIfc", new JsonObject { ["path"] = path, ["storeys"] = new JsonArray("2PlantStoreyLow0000000") });
         Assert.DoesNotContain(g.Model.Entities, e => e.Name is "Structural Framing : Beam : 2" or "anything" or "Furniture : Table : 1");
-        Assert.Equal(5, g.Model.Entities.Count(e => e.Name.Contains(" : ")));
+        Assert.Equal(5, g.Model.Entities.Count(e => e.Class != StoredBodies.SharedClass && e.Name.Contains(" : ")));
 
         // The high storey alone: the table in its room comes with it.
         var h = Make();
@@ -180,6 +181,6 @@ public class IfcSurveyTests : IDisposable
         var f = Make();
         var d = new EngineDispatcher(f.Session, PackageFiles.Create());
         Call(d, "project.importIfc", new JsonObject { ["path"] = Write() });
-        Assert.Equal(8, f.Model.Entities.Count(e => e.Name.Contains(" : ") || e.Name == "anything"));
+        Assert.Equal(8, f.Model.Entities.Count(e => e.Class != StoredBodies.SharedClass && (e.Name.Contains(" : ") || e.Name == "anything")));
     }
 }

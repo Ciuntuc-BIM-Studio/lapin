@@ -19,6 +19,52 @@ export interface Survey {
   storeys: SurveyStorey[]; noStorey: number; groups: SurveyGroup[];
   /** The 2D its elements carry: how many have their own plan 2D besides a body, how many are nothing but 2D. */
   twoD?: { elements: number; only: number };
+  /** Its property and quantity sets by name, with how many elements carry each; the technical ones (Navisworks' transform, ids, geometry statistics) marked. */
+  sets?: { name: string; count: number; technical: boolean }[];
+}
+
+/**
+ * The import's rules (docs/spec-ifc.md, Regulile importului), general whatever program wrote the file: a body the
+ * file repeats kept once (no loss); flat bodies, elements far from the rest (metres), duplicates in place, and
+ * ports or openings written as objects left out; meshes simplified within a tolerance (metres); numbers written as
+ * text read as numbers; property sets left out by name.
+ */
+export interface ImportRules {
+  dedupe: boolean; flat: boolean; far: number | null; duplicates: boolean; pseudo: boolean; simplify: number; numbers: boolean; skipSets?: string[];
+}
+
+/** The rules a user chose last, kept in this browser as their general rule (the sets aside: they are each file's). */
+export interface RememberedRules {
+  dedupe: boolean; flat: boolean; farOn: boolean; far: string; duplicates: boolean; pseudo: boolean; simplifyOn: boolean; simplify: string; numbers: boolean; technical: boolean;
+}
+
+export const DEFAULT_RULES: RememberedRules = {
+  dedupe: true, flat: false, farOn: false, far: '1000', duplicates: false, pseudo: false, simplifyOn: false, simplify: '5', numbers: false, technical: true,
+};
+
+const RULES_KEY = 'lapin.importIfc.rules';
+
+export function rememberedRules(): RememberedRules {
+  try {
+    const raw = localStorage.getItem(RULES_KEY);
+    return raw ? { ...DEFAULT_RULES, ...(JSON.parse(raw) as Partial<RememberedRules>) } : DEFAULT_RULES;
+  } catch { return DEFAULT_RULES; }
+}
+
+export function rememberRules(r: RememberedRules): void {
+  try { localStorage.setItem(RULES_KEY, JSON.stringify(r)); } catch { /* kept for this import only */ }
+}
+
+const num = (s: string) => { const v = Number(s.replace(',', '.')); return Number.isFinite(v) && v > 0 ? v : null; };
+
+/** The rules as the engine takes them: metres, the sets left out by name. */
+export function rulesOf(r: RememberedRules, skipSets: string[]): ImportRules {
+  const far = r.farOn ? num(r.far) : null;
+  const mm = r.simplifyOn ? num(r.simplify) : null;
+  return {
+    dedupe: r.dedupe, flat: r.flat, far, duplicates: r.duplicates, pseudo: r.pseudo, simplify: mm ? Math.min(mm, 100) / 1000 : 0, numbers: r.numbers,
+    ...(skipSets.length ? { skipSets } : {}),
+  };
 }
 
 export type ImportMode = 'auto' | 'reference' | 'link';
@@ -72,7 +118,7 @@ export async function surveyIfc(source: IfcSource, mode: ImportMode): Promise<vo
 export interface ImportResult { elements: number; updated: number; references: number; recognized?: number; recognizedByClass?: Record<string, number>; notes: string[] }
 
 /** Step two: what was chosen (null: everything) brought in, its stages shown; the outcome said. */
-export async function runIfcImport(choice: { kinds: string[] | null; storeys: string[] | null; mode: ImportMode; plan2d?: boolean; only2d?: boolean }): Promise<void> {
+export async function runIfcImport(choice: { kinds: string[] | null; storeys: string[] | null; mode: ImportMode; plan2d?: boolean; only2d?: boolean; rules?: ImportRules }): Promise<void> {
   const { source } = useIfcImport.getState();
   if (!source) return;
   useUi.setState({ dialog: null });
@@ -85,6 +131,7 @@ export async function runIfcImport(choice: { kinds: string[] | null; storeys: st
       ...(choice.storeys ? { storeys: choice.storeys } : {}),
       ...(choice.plan2d === false ? { plan2d: false } : {}),
       ...(choice.only2d === false ? { only2d: false } : {}),
+      ...(choice.rules ? { rules: choice.rules } : {}),
     }, { timeoutMs: LONG_TIMEOUT_MS });
     notify(outcome(source.name, choice.mode, r));
   } catch (e) {

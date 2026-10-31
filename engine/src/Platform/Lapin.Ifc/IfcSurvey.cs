@@ -119,6 +119,24 @@ public static class IfcSurvey
         });
     }
 
+    /// <summary>
+    /// The property sets that only tell how another program held the element, not what it is: Navisworks'
+    /// transform, internal ids, entity handles and geometry statistics, AutoCAD's solid history and surface
+    /// associativity; in English and Spanish, as Navisworks names them, and their "DWF - " copies. Left out by
+    /// default when a file has them (the import dialog's sets, ticked back on request).
+    /// </summary>
+    public static readonly HashSet<string> TechnicalSets = Technical(
+        "Transform", "Transformar", "Internal", "Interno", "Entity Handle", "Identificador de entidad", "Geometry", "Geometría",
+        "Solid History", "Historial de sólido", "Surface Associativity", "Asociatividad de superficie", "Trims", "Recortes",
+        "AnnotationScaling", "3D Visualization", "Visualización 3D", "DWF Section", "Sección DWF");
+
+    static HashSet<string> Technical(params string[] names)
+    {
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var n in names) { set.Add(n); set.Add("DWF - " + n); }
+        return set;
+    }
+
     /// <summary>The survey of a read file, as the interface shows it.</summary>
     public static JsonObject Of(StepFile f, string name, long size)
     {
@@ -167,7 +185,19 @@ public static class IfcSurvey
             ["noStorey"] = noStorey,
             ["groups"] = groups,
             ["twoD"] = new JsonObject { ["elements"] = with2d, ["only"] = only2d },
+            ["sets"] = Sets(f),
         };
+    }
+
+    /// <summary>The property and quantity sets by name, with how many elements carry each, the most used first; the technical ones marked.</summary>
+    static JsonArray Sets(StepFile f)
+    {
+        var count = new Dictionary<string, int>();
+        foreach (var r in f.OfType("IFCRELDEFINESBYPROPERTIES"))
+            if (f.Get(r[5]) is { Type: "IFCPROPERTYSET" or "IFCELEMENTQUANTITY" } set && set[2] is string name && !IfcExport.IsIntentSet(name))
+                count[name] = count.GetValueOrDefault(name) + (r[4] is List<object?> l ? l.Count : 1);
+        return new JsonArray([.. count.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key, StringComparer.Ordinal)
+            .Select(kv => (JsonNode)new JsonObject { ["name"] = kv.Key, ["count"] = kv.Value, ["technical"] = TechnicalSets.Contains(kv.Key) })]);
     }
 
     static IEnumerable<int> Ids(object? v) => v is List<object?> l ? l.OfType<StepRef>().Select(r => r.Id) : [];

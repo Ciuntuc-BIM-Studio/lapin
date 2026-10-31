@@ -1098,6 +1098,12 @@ export const scenes = [
       t.expect(await dialog.locator('.import-plan2d').count() === 1 && await dialog.locator('.import-only2d').count() === 1, 'the dialog offers the file\'s 2D');
       await dialog.locator('.import-only2d').uncheck();
       await t.shot('import-ifc-2d', { of: '.import-2d', pad: 8 });
+      // The import's rules: a repeated body kept once and the technical sets left out unless unticked; the others on request.
+      t.expect(await dialog.locator('[data-rule=dedupe]').isChecked() && await dialog.locator('[data-rule=technical]').isChecked(), 'a repeated body is kept once and the technical sets are left out by default');
+      for (const r of ['flat', 'far', 'simplify']) await dialog.locator(`[data-rule=${r}]`).check();
+      t.expect(!(await dialog.locator('.import-rule-value').first().isDisabled()), 'the distance can be typed once its rule is ticked');
+      await t.shot('import-ifc-rules', { of: '.import-rules', pad: 8 });
+      for (const r of ['flat', 'far', 'simplify']) await dialog.locator(`[data-rule=${r}]`).uncheck();
       await dialog.getByRole('button', { name: 'Import', exact: true }).click();
       await t.page.waitForSelector('[data-testid=busy]', { state: 'detached', timeout: 120_000 });
       await t.wait(400);

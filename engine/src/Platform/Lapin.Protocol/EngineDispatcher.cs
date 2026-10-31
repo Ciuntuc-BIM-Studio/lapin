@@ -354,6 +354,27 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
 
     static IReadOnlySet<string>? Chosen(JsonNode? n) => n is JsonArray a ? a.Select(x => (string?)x ?? "").ToHashSet() : null;
 
+    /// <summary>
+    /// An import's rules read into its options: dedupe, flat, far (metres, or absent), duplicates, pseudo, simplify
+    /// (metres), numbers, and the sets left out by name; each absent one as the options have it.
+    /// </summary>
+    public static IfcImportOptions Rules(IfcImportOptions o, JsonObject? r)
+    {
+        if (r == null) return o;
+        static bool B(JsonNode? n, bool d) => n is JsonValue v && v.TryGetValue<bool>(out var b) ? b : d;
+        return o with
+        {
+            Dedupe = B(r["dedupe"], o.Dedupe),
+            Flat = B(r["flat"], o.Flat),
+            FarAway = Json.Number(r["far"]) is { } far && far > 0 ? far : null,
+            Duplicates = B(r["duplicates"], o.Duplicates),
+            Pseudo = B(r["pseudo"], o.Pseudo),
+            Simplify = Math.Clamp(Json.Number(r["simplify"]) ?? 0, 0, 0.1),
+            Numbers = B(r["numbers"], o.Numbers),
+            SkipSets = r["skipSets"] is JsonArray skip ? skip.Select(x => (string?)x ?? "").Where(x => x.Length > 0).ToHashSet() : o.SkipSets,
+        };
+    }
+
     /// <summary>The most nodes, render items or relationships one frame carries (<see cref="Session.Parts"/>).</summary>
     public int PartSize { get; init; } = 20_000;
 
@@ -582,7 +603,8 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 var storeys = Chosen(p["storeys"]);
                 var plan2d = (bool?)p["plan2d"] ?? true;
                 var only2d = (bool?)p["only2d"] ?? true;
-                var mode = new IfcImportOptions(modeName == "link" ? "auto" : modeName, kinds, storeys, plan2d, only2d);
+                // The import's rules (docs/spec-ifc.md, Regulile importului), as the dialog sends them; their defaults when it does not.
+                var mode = Rules(new IfcImportOptions(modeName == "link" ? "auto" : modeName, kinds, storeys, plan2d, only2d), p["rules"] as JsonObject);
                 // By path (the desktop), or its bytes, base64 in `data` (the browser); the file as the survey read it, when it is the same.
                 ReportProgress("Reading the file", 0, 0);
                 var (bytes, name, path, key) = IfcBytes(p);
@@ -605,6 +627,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                     if (storeys != null) session.EditSource["storeys"] = new JsonArray(storeys.Select(k => (JsonNode)k).ToArray());
                     if (!plan2d) session.EditSource["plan2d"] = false;
                     if (!only2d) session.EditSource["only2d"] = false;
+                    if (p["rules"] is JsonObject rules) session.EditSource["rules"] = rules.DeepClone();
                     try
                     {
                         using var seeded = session.SeededIds(seed);
