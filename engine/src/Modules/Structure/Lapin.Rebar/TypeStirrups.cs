@@ -217,7 +217,7 @@ public static class TypeStirrups
                     }
                 }
             if (!any) continue;
-            // Seen along its length: the label beside the stirrups, along the axis as seen, with the mark's balloon.
+            // Seen along its length: the label as a dimension string along the axis as seen (a tick at each station), or beside the stirrups, with the mark's balloon.
             var p0 = c.Map(laid.Start);
             var p1 = c.Map(laid.Start + laid.Dir * laid.Length);
             if ((p1 - p0).Length > 4 * laid.Spec.Step && laid.Stations.Count > 0)
@@ -225,7 +225,11 @@ public static class TypeStirrups
                 var style = LabelStyle.Resolve("stirrups", st, laid.Spec.Label);
                 var text = style.Text(new LabelFacts(laid.CountText, d, laid.StepText, laid.BarLength(laid.LoopsAt(laid.Stations[0])[0]), laid.Spec.Mark, st.Steel));
                 var segments = mk.Lines.Select(l => (l.A, l.B)).ToList();
-                labels.Add(new LabelRequest(mk, e.Id, "stirrups", style, text, laid.Spec.Mark, color, segments, [], (p1 - p0).Normalized(), RebarLabels.PlacedOn(c.View, e.Id, "stirrups")));
+                var axis = new PathCurve(p0, p1, 0);
+                var seen = axis.Length / laid.Length;
+                var across = segments.SelectMany(s => new[] { s.A, s.B }).Select(p => Vec2.Dot(p - p0, axis.TangentAt(0).Perp)).ToList();
+                labels.Add(new LabelRequest(mk, e.Id, "stirrups", style, text, laid.Spec.Mark, color, segments, [], (p1 - p0).Normalized(), RebarLabels.PlacedOn(c.View, e.Id, "stirrups"))
+                { String = new LabelString(axis, laid.Stations.Select(s => s * seen).ToList(), across.Min(), across.Max()) });
             }
             yield return mk;
         }

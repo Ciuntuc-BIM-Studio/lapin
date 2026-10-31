@@ -74,7 +74,8 @@ public static class Rebars
     public static Vec2 At(Entity e) => P(e.Attrs["at"]);
     public static int Mark(Entity e) => (int)Math.Max(1, Math.Round(e.Num("mark", 1)));
     public static int Count(Entity e) => (int)Math.Max(1, Math.Round(e.Num("count", 1)));
-    public static Vec2? LabelAt(Entity e) => e.Attrs["label"] is JsonObject o && o["at"] is JsonArray ? P(o["at"]) : null;
+    /// <summary>Where the user put a bar's or a distribution's label (<c>label: {at, elbow, offset}</c>); null when nowhere.</summary>
+    public static LabelPlace? LabelPlaceOf(Entity e) => e.Attrs[LabelStyle.Key] is JsonObject o && LabelPlace.From(o) is { IsEmpty: false } p ? p : null;
 
     /// <summary>A bar's array in its view: how many copies and the step along x and y (one copy: none).</summary>
     public static (int Nx, double Dx, int Ny, double Dy) Array(Entity e)
@@ -233,6 +234,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             return null;
         });
         // A grip dragged: {id, key, point: [x, y]} (the view's coordinates); the parameter it drives follows, or the polyline's vertex.
+        // The label's grips go through update/updateRun ({label: {at, elbow, offset}}), a generated label's through placeLabel.
         r.Command("grip", "Bar grip", (ctx, a) =>
         {
             var e = Require(ctx.Model, (string?)a["id"], Rebars.Class);
@@ -242,11 +244,6 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var p = Args.Point(a["point"], "the grip's point");
             var attrs = e.CloneAttrs();
             if (key == "at") attrs["at"] = Rebars.J(p);
-            else if (key == "label")
-            {
-                if (attrs["label"] is not JsonObject lo) attrs["label"] = lo = new JsonObject();
-                lo["at"] = Rebars.J(p);
-            }
             else
             {
                 var next = RebarShapes.Apply(s, key, RebarShapes.Local(s, at, p));
@@ -318,7 +315,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             ctx.Replace(project.With(attrs: attrs));
             return null;
         });
-        // A generated group's label (a type's stirrups, a column's bars, a bar seen in another view) put where the user dragged it, on the view: {viewId, owner, key, at | null}.
+        // A generated group's label (a type's stirrups, a column's bars, a bar seen in another view) put where the user dragged it, on the view:
+        // {viewId, owner, key, at?: [x, y] | null, elbow?: [x, y] | null, offset?: mm | null} (a bar's or a distribution's own label goes through update/updateRun).
         r.Command("placeLabel", "Place label", (ctx, a) => { RebarLabels.Place(ctx, a); return null; });
 
         // A section across an element where it was clicked, inset beside the click in the same view (docs/plan-rebar.md):
@@ -454,13 +452,13 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             }
             else attrs.Remove("hooks");
         }
-        // The label: where it was put ({at}) and its own style ({style: a patch, null to inherit}); null takes both away.
+        // The label: where it was put ({at, elbow, offset}: each set or, null, taken away) and its own style ({style: a patch, null to inherit}); null takes all away.
         if (a.ContainsKey("label"))
         {
             if (a["label"] is JsonObject lo)
             {
                 if (attrs["label"] is not JsonObject label) attrs["label"] = label = new JsonObject();
-                if (lo.ContainsKey("at")) { if (lo["at"] is JsonArray) label["at"] = Rebars.J(Args.Point(lo["at"], "the label's point")); else label.Remove("at"); }
+                LabelPlace.Write(label, lo);
                 if (lo.ContainsKey("style")) { if (LabelStyle.Patch(label["style"] as JsonObject, lo["style"]) is { } st) label["style"] = st; else label.Remove("style"); }
                 if (label.Count == 0) attrs.Remove("label");
             }
@@ -517,7 +515,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                 var zones = (a["zones"] as JsonArray)?.Select(Runs.Zone.From).OfType<Runs.Zone>().ToList() ?? [];
                 if (zones.Count > 0) attrs["zones"] = new JsonArray(zones.Select(z => (JsonNode)z.ToJson()).ToArray()); else attrs.Remove("zones");
             }
-            foreach (var k in new[] { "size", "offset", "side" })
+            foreach (var k in new[] { "size", "side" })
                 if (a.ContainsKey(k)) { if (Json.Number(a[k]) is { } v && (k != "size" || v > 0)) attrs[k] = Math.Round(v, 6); else attrs.Remove(k); }
             if (a.ContainsKey("show"))
             {
@@ -607,7 +605,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         var drawn = mk.Lines.Where(l => l.Layer == layer).Select(l => (l.A, l.B)).ToList();
         var style = LabelStyle.Resolve("bars", st, element: RebarLabels.StyleOf(e));
         var text = style.Text(RebarLabels.FactsOf(e, s, st, Rebars.Pieces(e).ToString(CultureInfo.InvariantCulture)));
-        labels.Add(new LabelRequest(mk, e.Id, "label", style, text, Rebars.Mark(e), color, drawn, view == "section" ? [at] : [], view == "section" ? null : RebarLabels.AlongOf(drawn), Rebars.LabelAt(e)) { Own = true });
+        labels.Add(new LabelRequest(mk, e.Id, "label", style, text, Rebars.Mark(e), color, drawn, view == "section" ? [at] : [], view == "section" ? null : RebarLabels.AlongOf(drawn), Rebars.LabelPlaceOf(e)) { Own = true });
         // What the interface drags: the shape's grips where they stand now, its point and its label.
         var grips = new JsonArray(RebarShapes.Grips(s).Select(g => (JsonNode)new JsonObject { ["key"] = g.Key, ["at"] = Rebars.J(RebarShapes.Place(s, at, g.At)) }).ToArray());
         mk.Data = new JsonObject { ["grips"] = grips, ["at"] = Rebars.J(at) };
@@ -658,22 +656,12 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         }
         // Fewer drawn than there are: the path dashed through them says the rest.
         if (drawn.Count < positions.Count) mk.Polyline(path.Line(0, path.Length, side), false, layer, 0.25, color, [3, 1.5]);
-        // The dimension line beside the bars, with the ticks at its ends and the label over it.
-        var offset = e.NumOrNull("offset") ?? -(size / 2 + 6 * c.Mm);
-        var line = path.Line(0, path.Length, side + offset);
-        mk.Polyline(line, false, RebarShapes.AnnotationLayer, 0.25, color);
-        foreach (var st1 in new[] { 0.0, path.Length })
-        {
-            var (p, n) = (path.At(st1, side + offset), path.TangentAt(st1).Perp);
-            mk.Line(p - n * (1.5 * c.Mm), p + n * (1.5 * c.Mm), RebarShapes.AnnotationLayer, 0.35, color);
-        }
-        // The label along the dimension line, drawn with the view's other labels; the line itself is what it stands beside.
-        var mid = path.Length / 2;
-        var tangent = path.TangentAt(mid);
+        // The label, drawn with the view's other labels: as a dimension string along the path outside the bars (every position a tick), or beside them.
         var style = LabelStyle.Resolve("runs", st, element: RebarLabels.StyleOf(e));
         var text = style.Text(RebarLabels.FactsOf(e, s, st, (positions.Count * Rebars.Count(e)).ToString(CultureInfo.InvariantCulture), stepText));
-        var beside = Enumerable.Range(0, line.Count - 1).Select(i => (line[i], line[i + 1])).ToList();
-        labels.Add(new LabelRequest(mk, e.Id, "label", style, text, Rebars.Mark(e), color, beside, [], tangent.Normalized(), Rebars.LabelAt(e)) { Own = true, AutoSide = RebarLabels.SideOf(tangent.Perp * Math.Sign(offset)) });
+        var bars = mk.Lines.Where(l => l.Layer == layer).Select(l => (l.A, l.B)).ToList();
+        labels.Add(new LabelRequest(mk, e.Id, "label", style, text, Rebars.Mark(e), color, bars, [], path.TangentAt(path.Length / 2).Normalized(), Rebars.LabelPlaceOf(e))
+        { Own = true, String = new LabelString(path, positions, side - size / 2, side + size / 2) });
         mk.Snaps.AddRange(positions.Select(p0 => path.PointAt(p0)));
         mk.Data = new JsonObject { ["positions"] = positions.Count };
         return mk;
@@ -693,7 +681,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         return copy.Id;
     }
 
-    /// <summary>The bar's attributes carried by a plan transformation: its point, turn and mirror (a mirror flips its y and reflects its turn), a run's ends and rise, the label.</summary>
+    /// <summary>The bar's attributes carried by a plan transformation: its point, turn and mirror (a mirror flips its y and reflects its turn), a run's ends and rise, the label's point and elbow.</summary>
     static JsonObject Carried(Entity e, Placement2D t)
     {
         var attrs = e.CloneAttrs();
@@ -714,7 +702,11 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             attrs["end"] = Rebars.J(t.Point(Rebars.P(e.Attrs["end"])));
             if (t.Mirrored && e.NumOrNull("rise") is { } rise) attrs["rise"] = -rise;
         }
-        if (Rebars.LabelAt(e) is { } lab && attrs["label"] is JsonObject lo) lo["at"] = Rebars.J(t.Point(lab));
+        if (Rebars.LabelPlaceOf(e) is { } place && attrs[LabelStyle.Key] is JsonObject lo)
+        {
+            if (place.At is { } at) lo["at"] = Rebars.J(t.Point(at));
+            if (place.Elbow is { } elbow) lo["elbow"] = Rebars.J(t.Point(elbow));
+        }
         return attrs;
     }
 }
