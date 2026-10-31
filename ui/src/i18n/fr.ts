@@ -737,6 +737,8 @@ export const FR: Record<string, string> = {
   'Everything editable: recognised where it can, the rest as Studio solids': 'Tout modifiable : reconnu où c’est possible, le reste en solides Studio', 'Make them editable (Studio solids)': 'Les rendre modifiables (solides Studio)', 'Push/pull, fillets, booleans and the rest take them; a body of more than 5,000 triangles stays a reference': 'Pousser/tirer, congés, booléens et le reste s’y appliquent ; un corps de plus de 5 000 triangles reste une référence', 'As': 'Comme', 'references': 'références', 'editable (Studio solids)': 'modifiables (solides Studio)',
   // Recognition from triangles, Convert to native (decision 214)
   'Recognised from their triangles where it can (walls with their doors and windows, slabs, columns), the rest as references': 'Reconnu à partir des triangles où c’est possible (murs avec portes et fenêtres, dalles, poteaux), le reste en références', 'Convert to native': 'Convertir en natif', 'Select the imported elements (or their group) to convert.': 'Sélectionnez les éléments importés (ou leur groupe) à convertir.', 'Nothing to convert: select imported references.': 'Rien à convertir : sélectionnez des références importées.',
+  // The bars in 3D (decision 221)
+  'Bars in 3D': 'Barres en 3D', 'The bars in 3D are too many: only the first 2,000,000 triangles are drawn.': 'Les barres en 3D sont trop nombreuses : seuls les 2 000 000 premiers triangles sont dessinés.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

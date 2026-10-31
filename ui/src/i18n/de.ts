@@ -737,6 +737,8 @@ export const DE: Record<string, string> = {
   'Everything editable: recognised where it can, the rest as Studio solids': 'Alles bearbeitbar: erkannt, wo es geht, der Rest als Studio-Körper', 'Make them editable (Studio solids)': 'Bearbeitbar machen (Studio-Körper)', 'Push/pull, fillets, booleans and the rest take them; a body of more than 5,000 triangles stays a reference': 'Drücken/Ziehen, Rundungen, boolesche Operationen und der Rest wirken auf sie; ein Körper mit mehr als 5.000 Dreiecken bleibt eine Referenz', 'As': 'Als', 'references': 'Referenzen', 'editable (Studio solids)': 'bearbeitbar (Studio-Körper)',
   // Recognition from triangles, Convert to native (decision 214)
   'Recognised from their triangles where it can (walls with their doors and windows, slabs, columns), the rest as references': 'Aus den Dreiecken erkannt, wo es geht (Wände mit Türen und Fenstern, Decken, Stützen), der Rest als Referenzen', 'Convert to native': 'In nativ umwandeln', 'Select the imported elements (or their group) to convert.': 'Wählen Sie die importierten Elemente (oder ihre Gruppe) zum Umwandeln.', 'Nothing to convert: select imported references.': 'Nichts umzuwandeln: Wählen Sie importierte Referenzen.',
+  // The bars in 3D (decision 221)
+  'Bars in 3D': 'Stäbe in 3D', 'The bars in 3D are too many: only the first 2,000,000 triangles are drawn.': 'Die Stäbe in 3D sind zu viele: nur die ersten 2.000.000 Dreiecke werden gezeichnet.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

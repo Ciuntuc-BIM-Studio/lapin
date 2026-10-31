@@ -32,6 +32,7 @@ import { Grips3D } from './Grips3D';
 import { SectionBox3D } from './SectionBox3D';
 import { RefPlanes3D, useRefPlaneDrag } from './RefPlanes3D';
 import { planePoint, refPlanesGroup, refPlanesKey, refPlanesOf } from './refPlanes';
+import { useRebar3d } from './rebar3d';
 import { boxPlanes, modelBounds, planesKey, useSectionBox, type SectionBox } from './sectionBox';
 import { alignSectionBox, commitBox, cutAtPlan, fitSectionBox } from './sectionBoxTools';
 import { useDrawing, type DrawingDto } from './drawing';
@@ -1180,6 +1181,8 @@ export function Viewport3D() {
     }
     invalidate.current();
   }, [planesKeyNow, render, meshes, selectedNow, planeHover, refPlanesShown, planeDrag]);
+  // The reinforcement as tubes (docs/plan-rebar.md, decision 221), while View → Bars in 3D is on.
+  useRebar3d(scene, invalidate);
   // A saved 3D view opened: its camera (where it looks from, perspective or orthographic).
   const view3dId = useUi((st) => st.view3dId);
   useEffect(() => {

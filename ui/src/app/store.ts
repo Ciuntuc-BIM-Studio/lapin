@@ -103,13 +103,15 @@ export interface UiState extends Pane {
   fog: boolean;
   /** The reference planes drawn in the 3D view (View → Reference planes). */
   refPlanes: boolean;
+  /** The reinforcement drawn as tubes in the 3D view (View → Bars in 3D); off by default, never saved: it costs memory. */
+  rebar3d: boolean;
   /** The key plan over the views (the camera's place in 3D, the frame in 2D). */
   keyPlan: boolean;
 }
 
 const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, ceilingTypeId: null, insetAt: null, curtainTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
+  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, rebar3d: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, ceilingTypeId: null, insetAt: null, curtainTypeId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
 }));
 
 /**

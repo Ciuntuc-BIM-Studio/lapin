@@ -16,6 +16,7 @@ import { InsetPickDialog, RebarSettingsDialog } from './RebarDialogs';
 import { BarDotIcon, LBarIcon, PolylineBarIcon, StirrupIcon, StirrupsIcon, TieIcon, UBarIcon } from './icons';
 import { structureHooks } from '../structure/hooks';
 import { StirrupsFields } from './StirrupsFields';
+import { bars3d } from './bars3d';
 
 // The stirrups of a beam's or a column's type are set in the Structure types dialog (decision 215).
 structureHooks.typeExtras.push(StirrupsFields);
@@ -157,7 +158,7 @@ export const rebarModule: LapinModule = {
       { label: 'Sections', tools: [sectionHere, sectionAcross, insetView] },
       { label: 'Bars', tools: [straight, lBar, uBar, stirrup, polylineBar], small: [tie, dot, asSection] },
       { label: 'Distribution', tools: [run] },
-      { label: 'Schedule', tools: [schedule, settings] },
+      { label: 'Schedule', tools: [schedule, settings, bars3d] },
     ],
   }],
   hotbar: [straight, stirrup, run, sectionHere],
