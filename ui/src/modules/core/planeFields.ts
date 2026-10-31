@@ -7,5 +7,7 @@ export const PLANE_KEYS = ['x', 'y', 'z', 'bearing', 'tilt', 'spin', 'width', 'h
 export function viewShowsField(kind: unknown, key: string): boolean {
   if (PLANE_KEYS.includes(key)) return kind === 'plane';
   if (key === 'planeDepth') return kind === 'elevation';
+  // The layer a section's marker is on (decision 223): only a section has a marker.
+  if (key === 'markerLayer') return kind === 'section';
   return true;
 }

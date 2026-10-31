@@ -92,6 +92,7 @@ describe('the languages', () => {
     'Key plan · Ground floor',
     'Terrain created from 120 points.',
     '3 element(s) moved to First floor.',
+    'hidden in 3 views',
     '3 element(s) selected, now on First floor.',
     'Type parameters · Brick 250',
     '4 bays along × 2 up · IFC: IfcCurtainWall',

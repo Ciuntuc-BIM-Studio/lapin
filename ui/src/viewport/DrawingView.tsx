@@ -20,12 +20,12 @@ import { DrawingLayer } from './DrawingLayer';
 import { useDrawing } from './drawing';
 import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
-import { distToSegment } from './snap';
+import { pickDrawing } from './drawingPick';
 import { CadOverlay } from './cad/canvas';
 import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
-import { markIds, markOwner, markSelected } from './planPick';
+import { markIds, markSelected } from './planPick';
 import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
@@ -102,16 +102,8 @@ export function DrawingView() {
   const toScreen = useCallback((p: Vec2) => ({ x: (p.x - v.cx) * v.scale + size.w / 2, y: size.h / 2 - (p.y - v.cy) * v.scale }), [v.cx, v.cy, v.scale, size]);
   const toWorld = useCallback((x: number, y: number): Vec2 => ({ x: (x - size.w / 2) / v.scale + v.cx, y: (size.h / 2 - y) / v.scale + v.cy }), [v.cx, v.cy, v.scale, size]);
 
-  /** The annotation or drafted shape under a point. */
-  const pickAny = useCallback((p: Vec2): string | null => {
-    const tol = 6 / v.scale;
-    for (const m of drawing?.marks ?? []) {
-      const s = m.segments;
-      for (let k = 0; k + 3 < s.length; k += 4)
-        if (distToSegment(p, { x: s[k], y: s[k + 1] }, { x: s[k + 2], y: s[k + 3] }) < tol && markOwner(m.id, nodes)) return markOwner(m.id, nodes)!.pick;
-    }
-    return null;
-  }, [drawing, nodes, v.scale]);
+  /** The annotation, drafted shape or element under a point: by a line, else inside its cut (decision 223). */
+  const pickAny = useCallback((p: Vec2): string | null => pickDrawing(p, 6 / v.scale, drawing?.marks, nodes), [drawing, nodes, v.scale]);
 
   /** The annotations and drafted shapes a box takes, added to the selection with shift (or while a command asks for a selection). */
   const selectBox = (b: SelectDrag, add: boolean) => {

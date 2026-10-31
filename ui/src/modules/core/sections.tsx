@@ -65,9 +65,41 @@ export const sectionTools: ToolDef[] = [
   },
 ];
 
-/** A section's grips in plan: its points (dragged, or taken out), a new point on each piece; a curved section its three points; one that follows an element has none of its own. */
+export const isAcross = (n: NodeDto): boolean => typeof n.props.across === 'string';
+const num = (v: unknown, fallback: number): number => (typeof v === 'number' ? v : fallback);
+const r3 = (v: number) => Math.round(v * 1000) / 1000;
+
+/**
+ * A section across an element (decision 223): its line is derived, so its ends set the margin on their side (dragged along
+ * the line, the other end fixed) and its middle slides the station along the element (the drag projected on the element's
+ * tangent, which the line stands across).
+ */
+function acrossGrips(node: NodeDto): Grip[] {
+  const pts = sectionPoints(node);
+  if (pts.length < 2) return [];
+  const [a, b] = [pts[0], pts[pts.length - 1]];
+  const len = Math.hypot(b.x - a.x, b.y - a.y);
+  if (len < 1e-9) return [];
+  const u = { x: (b.x - a.x) / len, y: (b.y - a.y) / len };
+  // The section looks left of its line (flipped: right), along the element towards its end.
+  const t = node.props.flip === true ? { x: u.y, y: -u.x } : { x: -u.y, y: u.x };
+  const along = (p: Vec2, from: Vec2, d: Vec2) => (p.x - from.x) * d.x + (p.y - from.y) * d.y;
+  const margin = num(node.props.margin, 0.5);
+  const [mA, mB, station] = [num(node.props.marginA, margin), num(node.props.marginB, margin), num(node.props.station, 0)];
+  const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  const id = node.id;
+  const set = (args: Record<string, number>) => ({ command: 'view.updateAcross', args: { id, ...args } });
+  return [
+    { key: 'a', kind: 'end', at: a, title: 'Drag along the line: the margin on this side', step: (to) => set({ marginA: r3(Math.max(0, mA - along(to, a, u))) }) },
+    { key: 'b', kind: 'end', at: b, title: 'Drag along the line: the margin on this side', step: (to) => set({ marginB: r3(Math.max(0, mB + along(to, b, u))) }) },
+    { key: 'station', kind: 'centre', at: mid, title: 'Drag along the element: the station the section cuts at', step: (to) => set({ station: r3(Math.max(0, station + along(to, mid, t))) }) },
+  ];
+}
+
+/** A section's grips in plan: its points (dragged, or taken out), a new point on each piece; a curved section its three points; one that follows an element has none of its own; one across an element its margins and station. */
 export function sectionGrips(node: NodeDto): Grip[] {
   if (!isSection(node) || followedBy(node)) return [];
+  if (isAcross(node)) return acrossGrips(node);
   const pts = sectionPoints(node);
   if (pts.length < 2) return [];
   const id = node.id;

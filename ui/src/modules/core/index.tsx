@@ -36,6 +36,7 @@ import { CheckDialog } from './cde/CheckDialog';
 import { RemarksDialog } from './remarks/RemarksDialog';
 import { RemarksDialog as SheetRemarksDialog } from './cde/pdfRemarks/RemarksDialog';
 import { DisplayQualityDialog } from './DisplayQualityDialog';
+import { SectionsDialog } from './SectionsDialog';
 import { convertToNative } from './convertTools';
 import { GroupSection } from './GroupSection';
 import { ExchangeExportDialog } from './ExchangeExportDialog';
@@ -177,6 +178,8 @@ const core: LapinModule = {
         { id: 'view.fog', label: 'Fog', icon: CloudFog, run: () => useUi.setState((s) => ({ fog: !s.fog })) },
         // The reference planes' quads in 3D (docs/plan-studio-thick.md); their marks in plans and sections stay.
         { id: 'view.refPlanes', label: 'Reference planes', icon: Frame, run: () => useUi.setState((s) => ({ refPlanes: !s.refPlanes })) },
+        // Which sections are marked in the view in front, by layer (docs/sections.md, decision 223).
+        { id: 'view.sections', label: 'Sections…', icon: SectionIcon, run: () => useUi.setState({ dialog: 'sections' }) },
         // The reinforcement as tubes in 3D (docs/plan-rebar.md, decision 221): asked of the engine while on, freed when off.
         { id: 'view.rebar3d', label: 'Bars in 3D', icon: Cable, run: () => useUi.setState((s) => ({ rebar3d: !s.rebar3d })) },
         { id: 'view.displayQuality', label: 'Display quality', icon: Gauge, run: () => useUi.setState({ dialog: 'displayQuality' }) },
@@ -206,7 +209,7 @@ const core: LapinModule = {
   }],
   grips: { LapinView: sectionGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, exportIfc: ExchangeExportDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, exportExchange: ExchangeExportDialog, exportFrag: ExchangeExportDialog },
+  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, exportIfc: ExchangeExportDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, exportExchange: ExchangeExportDialog, exportFrag: ExchangeExportDialog, sections: SectionsDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },

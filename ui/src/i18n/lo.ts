@@ -485,6 +485,8 @@ export const LO: Record<string, string> = {
   'Import Fragments…': 'ນຳເຂົ້າ Fragments…', 'Fragments: That Open Engine (.frag, BIM web viewers)': 'Fragments: That Open Engine (.frag, ໂປຣແກຣມເບິ່ງ BIM ເທິງເວັບ)',
   // Developed sections: jogged, curved, along an element (decision 176)
   'Jogged section': 'ຮູບໜ້າຕັດແບບຫັກ', 'Curved section': 'ຮູບໜ້າຕັດແບບໂຄ້ງ', 'Section along': 'ຮູບໜ້າຕັດຕາມແນວ', 'Stop following': 'ຢຸດຕິດຕາມ', 'Stations (m)': 'ສະຖານີ (m)',
+  // View → Sections…, the sections across an element (docs/sections.md, decision 223)
+  "Sections…": "ຮູບໜ້າຕັດ…", "Section markers": "ເຄື່ອງໝາຍຮູບໜ້າຕັດ", "The markers this view shows, by layer. A section sits on a marker layer; this view hides a layer, or a section alone.": "ເຄື່ອງໝາຍທີ່ມຸມມອງນີ້ສະແດງ, ຕາມຊັ້ນ. ຮູບໜ້າຕັດຢູ່ໃນຊັ້ນເຄື່ອງໝາຍ; ມຸມມອງນີ້ເຊື່ອງຊັ້ນໜຶ່ງ ຫຼື ຮູບໜ້າຕັດດຽວ.", "Open a plan, a section or an elevation first.": "ເປີດແຜນຜັງ, ຮູບໜ້າຕັດ ຫຼື ຮູບດ້ານກ່ອນ.", "New layer…": "ຊັ້ນໃໝ່…", "Shown in this view": "ສະແດງໃນມຸມມອງນີ້", "Its layer is hidden in this view": "ຊັ້ນຂອງມັນຖືກເຊື່ອງໃນມຸມມອງນີ້", "No sections yet: draw one in a plan with View → Section.": "ຍັງບໍ່ມີຮູບໜ້າຕັດ: ແຕ້ມໜຶ່ງອັນໃນແຜນຜັງດ້ວຍ ມຸມມອງ → ຮູບໜ້າຕັດ.", "Drag along the line: the margin on this side": "ລາກຕາມເສັ້ນ: ຂອບດ້ານນີ້", "Drag along the element: the station the section cuts at": "ລາກຕາມອົງປະກອບ: ຈຸດທີ່ຮູບໜ້າຕັດຕັດ", "Marker layer": "ຊັ້ນເຄື່ອງໝາຍ", "hidden in 1 view": "ເຊື່ອງໃນ 1 ມຸມມອງ",
   'Stations step': 'ໄລຍະຫ່າງສະຖານີ', 'Straight line': 'ເສັ້ນຊື່', 'Jogged line': 'ເສັ້ນຫັກ', 'Along an element': 'ຕາມແນວອົງປະກອບ', 'Drag: the arc goes through the point': 'ລາກ: ເສັ້ນໂຄ້ງຜ່ານຈຸດ',
   'Drag: move the point; Ctrl/⌘-click: take it out (a jog goes)': 'ລາກ: ຍ້າຍຈຸດ; Ctrl/⌘-ຄລິກ: ເອົາອອກ (ຈຸດຫັກຫາຍໄປ)', 'Drag: a new point here, a jog; Ctrl/⌘-click: one halfway': 'ລາກ: ຈຸດໃໝ່ຢູ່ນີ້, ຈຸດຫັກ; Ctrl/⌘-ຄລິກ: ໜຶ່ງຈຸດຢູ່ເຄິ່ງກາງ',
   'The line the section cuts along: straight, jogged (each piece drawn beside the previous at its length), an arc, or an element\'s': 'ເສັ້ນທີ່ຮູບໜ້າຕັດຕັດຕາມ: ຊື່, ຫັກ (ແຕ່ລະທ່ອນແຕ້ມຕໍ່ຈາກທ່ອນກ່ອນຕາມຄວາມຍາວຂອງມັນ), ເສັ້ນໂຄ້ງ, ຫຼື ເສັ້ນຂອງອົງປະກອບ',
@@ -851,6 +853,7 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^(Key plan|On screen|Seen from|Cut at) · (.+)$/, (m) => `${({ 'Key plan': 'ແຜນຜັງລວມ', 'On screen': 'ເທິງຈໍພາບ', 'Seen from': 'ເບິ່ງຈາກ', 'Cut at': 'ຕັດຢູ່ທີ່' } as Record<string, string>)[m[1]]} · ${m[2]}`],
   [/^Terrain created from (\d+) points\.$/, (m) => `ສ້າງດິນຈາກ ${m[1]} ຈຸດ.`],
   [/^(\d+) element\(s\) moved to (.+)\.$/, (m) => `ຍ້າຍ ${m[1]} ອົງປະກອບ ໄປຫາ ${m[2]} ແລ້ວ.`],
+  [/^hidden in (\d+) views$/, (m) => `ເຊື່ອງໃນ ${m[1]} ມຸມມອງ`],
   [/^(\d+) element\(s\) selected, now on (.+)\.$/, (m) => `ເລືອກ ${m[1]} ອົງປະກອບແລ້ວ, ຕອນນີ້ຢູ່ ${m[2]}.`],
   [/^Type parameters · (.+)$/, (m) => `ພາຣາມິເຕີຂອງປະເພດ · ${m[1]}`],
   [/^(\d+) bays along × (\d+) up · IFC: (.+)$/, (m) => `${m[1]} ຊ່ອງຕາມລວງຍາວ × ${m[2]} ຊ່ອງຕາມລວງຕັ້ງ · IFC: ${m[3]}`],
