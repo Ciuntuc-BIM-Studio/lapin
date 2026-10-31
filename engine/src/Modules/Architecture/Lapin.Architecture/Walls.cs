@@ -87,12 +87,12 @@ public static class Walls
     }
 
     /// <summary>A layer band of the wall's section: across the axis (left of it positive), its material, whether it is the core.</summary>
-    public readonly record struct Band(double From, double To, string? Material, string Name, bool Core = false, int Index = 0);
+    public readonly record struct Band(double From, double To, string? Material, string Name, bool Core = false, int Index = 0, double? Z0 = null, double? Z1 = null);
 
     /// <summary>The wall's section, first layer to last; one centred band for a wall without layers.</summary>
     public static IReadOnlyList<Band> Section(IModelView m, Entity wall)
     {
-        if (LayerSets.BandsOf(m, wall.Id) is { } bands) return bands.Select(b => new Band(b.From, b.To, b.Material, b.Name, b.Core, b.Index)).ToList();
+        if (LayerSets.BandsOf(m, wall.Id) is { } bands) return bands.Select(b => new Band(b.From, b.To, b.Material, b.Name, b.Core, b.Index, b.Z0, b.Z1)).ToList();
         var t = wall.NumOrNull("thickness") ?? DefaultThickness;
         return [new Band(-t / 2, t / 2, null, wall.Name, true)];
     }
@@ -205,8 +205,9 @@ public static class Walls
                     && Prism.ExtrudeFootprint(footprint, z + height, built - height, "gable") is { } gable)
                     parts.Add(Cut(new GeometryPart($"Gable ({gz.Name})", Materials.ColorOf(m, gz.Material), gable, gz.Material, "zone:gable"), height, built, isCore: true));
             }
-            else if (Prism.ExtrudeFootprint(footprint, z, built, band.Name) is { } solid)
-                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), 0, built, isCore: band.Core));
+            // A layer of its own height (report #44): from its bottom to its top over the wall's base, never above the wall.
+            else if (LayerSpan(band, built) is var (lz0, lz1) && Prism.ExtrudeFootprint(footprint, z + lz0, lz1 - lz0, band.Name) is { } solid)
+                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), lz0, lz1, isCore: band.Core));
             // In plan, the band between the gaps the openings leave at the cut.
             var x0 = -Math.Max(Reach(0, band, true), Reach(0, band, false));
             var x1 = length + Math.Max(Reach(1, band, true), Reach(1, band, false));
@@ -243,6 +244,14 @@ public static class Walls
             }
         }
         return new ElementGeometry(parts, plan, [start, end], problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>A layer's height over the wall's base: its own bottom and top, else the whole of what is built; null when nothing of it is left.</summary>
+    static (double Z0, double Z1)? LayerSpan(Band band, double built)
+    {
+        var z0 = Math.Clamp(band.Z0 ?? 0, 0, built);
+        var z1 = Math.Clamp(band.Z1 ?? built, 0, built);
+        return z1 - z0 > 1e-6 ? (z0, z1) : null;
     }
 
     /// <summary>
@@ -435,8 +444,9 @@ public static class Walls
                     && Prism.ExtrudeFootprint(footprint, z + height, built - height, "gable") is { } gable)
                     parts.Add(Cut(new GeometryPart($"Gable ({gz.Name})", Materials.ColorOf(m, gz.Material), gable, gz.Material, "zone:gable"), height, built, isCore: true));
             }
-            else if (Prism.ExtrudeFootprint(footprint, z, built, band.Name) is { } solid)
-                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), 0, built, isCore: band.Core));
+            // A layer of its own height (report #44): from its bottom to its top over the wall's base, never above the wall.
+            else if (LayerSpan(band, built) is var (lz0, lz1) && Prism.ExtrudeFootprint(footprint, z + lz0, lz1 - lz0, band.Name) is { } solid)
+                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), lz0, lz1, isCore: band.Core));
             // In plan, the band between the gaps the openings leave at the cut.
             var at = double.NegativeInfinity;
             foreach (var g in gaps.Append((From: double.PositiveInfinity, To: double.PositiveInfinity)))

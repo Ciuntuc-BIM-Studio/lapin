@@ -5,9 +5,11 @@ namespace Lapin.Model;
 /// <summary>
 /// One layer of an IfcMaterialLayerSet: its material (an IfcMaterial id),
 /// thickness in metres, and whether it is the structural core, which carries
-/// the element's axis (IFC: Category "LoadBearing").
+/// the element's axis (IFC: Category "LoadBearing"); and how high it goes (report #44,
+/// decision 191): <see cref="From"/> and <see cref="To"/> over the element's base, each null for
+/// the whole height (a tiled dado to 1.50 m, a cladding stopping short of the floor).
 /// </summary>
-public sealed record MaterialLayer(string Material, double Thickness, bool Core = false, string? Name = null);
+public sealed record MaterialLayer(string Material, double Thickness, bool Core = false, string? Name = null, double? From = null, double? To = null);
 
 /// <summary>
 /// An IfcMaterialLayerSetUsage: how an occurrence lays its type's layers

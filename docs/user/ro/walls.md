@@ -37,7 +37,7 @@ Panoul de proprietăți arată peretele selectat. Sus sunt tipul și straturile 
 
 ## Tipurile de pereți
 
-Un tip de perete e un set de straturi, de la fața exterioară la cea interioară. Fiecare strat are un material și o grosime, iar unul dintre ele e **miezul**. Linia peretelui merge pe miez. Ca să editezi tipurile, alege **Arhitectură → Tipuri de pereți**.
+Un tip de perete e un set de straturi, de la fața exterioară la cea interioară. Fiecare strat are un material și o grosime, iar unul dintre ele e **miezul**. Linia peretelui merge pe miez. Ca să editezi tipurile, alege **Arhitectură → Tipuri de pereți**. Un strat altul decât miezul poate avea înălțimea lui: **De la** și **Până la** spun cât de sus merge peste baza peretelui (un placaj de faianță până la 1500, un placaj de fațadă de la 300 în sus); gol, merge pe toată înălțimea.
 
 ![Tipuri de pereți: straturile unui perete de cărămidă](shots/wall-types.webp)
 

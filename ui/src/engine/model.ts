@@ -10,7 +10,7 @@ import { formatLength } from './unitsStore';
 
 export interface ModelState { nodes: Map<string, NodeDto>; relations: Map<string, RelationDto> }
 
-export interface Layer { material: string; thickness: number; core?: boolean; name?: string | null }
+export interface Layer { material: string; thickness: number; core?: boolean; name?: string | null; from?: number | null; to?: number | null }
 
 export const num = (n: NodeDto | undefined, key: string, fallback = 0): number => {
   const v = n?.props[key];

@@ -990,3 +990,6 @@ button.mode-chip:hover { color: var(--accent); }
 .remark-comments li .link { align-self: flex-start; display: inline-flex; align-items: center; gap: 3px; }
 .remark-reply { margin-top: 8px; }
 .remark-form .row, .remark-form label.row { gap: 8px; }
+
+/* A wall layer's own height (report #44): narrow From / Up to fields. */
+.layer-edit .layer-height { width: 56px; }

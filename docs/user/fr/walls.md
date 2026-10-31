@@ -37,7 +37,7 @@ Le panneau des propriétés affiche le mur sélectionné. Le haut du panneau con
 
 ## Types de murs
 
-Un type de mur est un ensemble de couches, de la face extérieure à la face intérieure. Chaque couche a un matériau et une épaisseur, et une couche est le **noyau**. La ligne du mur suit le noyau. Pour modifier les types, choisissez **Architecture → Types de murs**.
+Un type de mur est un ensemble de couches, de la face extérieure à la face intérieure. Chaque couche a un matériau et une épaisseur, et une couche est le **noyau**. La ligne du mur suit le noyau. Pour modifier les types, choisissez **Architecture → Types de murs**. Une couche autre que l’âme peut avoir sa propre hauteur : **De** et **Jusqu’à** règlent jusqu’où elle monte au-dessus du pied du mur (une faïence jusqu’à 1500, un bardage à partir de 300) ; vide, elle court sur toute la hauteur.
 
 ![Types de murs : les couches d’un mur en brique](shots/wall-types.webp)
 

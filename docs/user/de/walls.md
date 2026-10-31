@@ -37,7 +37,7 @@ Der Eigenschaftenbereich zeigt die ausgewählte Wand. Oben im Bereich stehen ihr
 
 ## Wandtypen
 
-Ein Wandtyp ist eine Folge von Schichten, von der Außenseite zur Innenseite. Jede Schicht hat ein Material und eine Dicke, und eine Schicht ist der **Kern**. Die Achse der Wand verläuft entlang des Kerns. Um die Typen zu bearbeiten, wählen Sie **Architektur → Wandtypen**.
+Ein Wandtyp ist eine Folge von Schichten, von der Außenseite zur Innenseite. Jede Schicht hat ein Material und eine Dicke, und eine Schicht ist der **Kern**. Die Achse der Wand verläuft entlang des Kerns. Um die Typen zu bearbeiten, wählen Sie **Architektur → Wandtypen**. Eine Schicht außer dem Kern kann eine eigene Höhe haben: **Von** und **Bis** legen fest, wie hoch sie über dem Wandfuß reicht (ein Fliesensockel bis 1500, eine Bekleidung ab 300); leer läuft sie über die ganze Höhe.
 
 ![Wandtypen: die Schichten einer Ziegelwand](shots/wall-types.webp)
 

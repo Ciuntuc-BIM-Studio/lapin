@@ -37,7 +37,7 @@ El panel de propiedades muestra el muro seleccionado. La parte superior del pane
 
 ## Tipos de muro
 
-Un tipo de muro es un conjunto de capas, desde la cara exterior hasta la cara interior. Cada capa tiene un material y un espesor, y una capa es el **núcleo**. La línea del muro va por el núcleo. Para editar los tipos, elija **Arquitectura → Tipos de muro**.
+Un tipo de muro es un conjunto de capas, desde la cara exterior hasta la cara interior. Cada capa tiene un material y un espesor, y una capa es el **núcleo**. La línea del muro va por el núcleo. Para editar los tipos, elija **Arquitectura → Tipos de muro**. Una capa que no sea el núcleo puede tener su propia altura: **Desde** y **Hasta** fijan hasta dónde llega sobre la base del muro (un alicatado hasta 1500, un aplacado desde 300); vacío, ocupa toda la altura.
 
 ![Tipos de muro: las capas de un muro de ladrillo](shots/wall-types.webp)
 

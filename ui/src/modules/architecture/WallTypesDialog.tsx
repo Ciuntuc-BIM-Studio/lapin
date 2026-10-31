@@ -17,7 +17,7 @@ import { LintelRuleEditor } from './LintelRule';
 import { DEFAULT_RULE, type Rule } from './lintels';
 import { MaterialPicker } from '../core/MaterialPicker';
 
-interface Row { material: string; thicknessMm: string; core: boolean }
+interface Row { material: string; thicknessMm: string; core: boolean; fromMm?: string; toMm?: string }
 
 /** A zone as the editor holds it: heights and blocks in mm, as typed. */
 interface ZoneRow { key: string; name: string; role: string; heightMm: string; rest: boolean; material: string; block: string; rebar: string }
@@ -71,7 +71,7 @@ export function WallTypesDialog() {
     if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); return; }
     setLintels((t.props.lintels as unknown as Rule | undefined) ?? DEFAULT_RULE);
     setName(t.name);
-    setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thicknessMm: mm(l.thickness), core: l.core === true })));
+    setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thicknessMm: mm(l.thickness), core: l.core === true, fromMm: l.from ? mm(l.from) : '', toMm: l.to ? mm(l.to) : '' })));
     const stored = Array.isArray(t.props.zones) ? (t.props.zones as unknown as ZoneJson[]) : [];
     setZones(stored.map((z) => toRow(z, (id) => materialName(model, id))));
   }, [editing]);
@@ -86,7 +86,9 @@ export function WallTypesDialog() {
     setRows(next);
   };
   const total = rows.reduce((s, r) => s + (Number(r.thicknessMm.replace(',', '.')) || 0), 0);
-  const layers = rows.map((r) => ({ material: r.material.trim(), thickness: Number(r.thicknessMm.replace(',', '.')) / 1000, core: r.core }));
+  // A layer's own height (report #44): from and up to, over the wall's base; empty, the whole height.
+  const height = (t?: string) => { const v = Number((t ?? '').replace(',', '.')); return t && t.trim() !== '' && v > 0 ? v / 1000 : null; };
+  const layers = rows.map((r) => ({ material: r.material.trim(), thickness: Number(r.thicknessMm.replace(',', '.')) / 1000, core: r.core, from: height(r.fromMm), to: height(r.toMm) }));
 
   const zoneJson = zones.map(fromRow);
   const setZone = (i: number, patch: Partial<ZoneRow>) => setZones(zones.map((z, k) => (k === i ? { ...z, ...patch } : patch.rest ? { ...z, rest: false } : z)));
@@ -127,13 +129,15 @@ export function WallTypesDialog() {
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
             <p className="muted small">Layers from the face right of the drawn direction to the left face. The core carries the wall's axis.</p>
             <table className="layer-edit">
-              <thead><tr><th>Material</th><th>mm</th><th>Core</th><th /></tr></thead>
+              <thead><tr><th>Material</th><th>mm</th><th>Core</th><th title="How high the layer goes over the wall's base; empty: the whole height">From</th><th title="How high the layer goes over the wall's base; empty: the whole height">Up to</th><th /></tr></thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
                     <td><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /></td>
                     <td><input className="num" value={r.thicknessMm} onChange={(e) => set(i, { thicknessMm: e.target.value })} /></td>
                     <td><input type="radio" name="core" checked={r.core} onChange={() => set(i, { core: true })} /></td>
+                    <td><input className="num layer-height" data-field="layer-from" value={r.fromMm ?? ''} placeholder="0" disabled={r.core} onChange={(e) => set(i, { fromMm: e.target.value })} /></td>
+                    <td><input className="num layer-height" data-field="layer-to" value={r.toMm ?? ''} placeholder="top" disabled={r.core} onChange={(e) => set(i, { toMm: e.target.value })} /></td>
                     <td className="row-tools">
                       <button type="button" className="icon mini" title="Up" onClick={() => move(i, -1)}><ArrowUp size={12} /></button>
                       <button type="button" className="icon mini" title="Down" onClick={() => move(i, 1)}><ArrowDown size={12} /></button>
@@ -141,7 +145,7 @@ export function WallTypesDialog() {
                     </td>
                   </tr>
                 ))}
-                <tr className="total"><td>Total</td><td className="num">{Math.round(total)}</td><td colSpan={2} /></tr>
+                <tr className="total"><td>Total</td><td className="num">{Math.round(total)}</td><td colSpan={4} /></tr>
               </tbody>
             </table>
             <div className="row">

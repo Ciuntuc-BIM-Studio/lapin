@@ -37,7 +37,7 @@ The properties panel shows the selected wall. The top of the panel holds its typ
 
 ## Wall types
 
-A wall type is a set of layers, from the outside face to the inside face. Each layer has a material and a thickness, and one layer is the **core**. The wall's line runs along the core. To edit the types, choose **Architecture → Wall types**.
+A wall type is a set of layers, from the outside face to the inside face. Each layer has a material and a thickness, and one layer is the **core**. The wall's line runs along the core. To edit the types, choose **Architecture → Wall types**. A layer other than the core may have a height of its own: **From** and **Up to** set how high it goes over the wall's base (a tiled dado up to 1500, a cladding from 300 up); empty, it runs the whole height.
 
 ![Wall types: the layers of a brick wall](shots/wall-types.webp)
 
