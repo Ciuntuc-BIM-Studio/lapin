@@ -53,6 +53,24 @@ Hver af dem sidder efter væggens virkelige flader, hvor vinduet er, ud fra væg
 
 ![Vinduerne med skodder og gitre, i 3D](shots/window-dressings-3d.webp)
 
+### Former, stilarter og udsmykning
+
+**Form** giver en dør eller et vindue en buet top (**Rundbue**, **Segmentbue**, **Spidsbue**, **Trekantet top**) eller gør det **Rund eller oval** (rund når bredde og højde er ens). En buet type beholder sine rammer under en losholt ved buens vederlag, og derover et fast overvindue, der følger buen, med sprosser hvis du vil: **Vifte**, **Posterne ført op** eller **Kors**. **Buens pilhøjde** angiver, hvor højt en segment-, spids- eller trekantet top rejser sig. Hullet i væggen, karmen, glasset, indfatningen og tegningerne følger omridset.
+
+**Sprosser** deler ruderne: **Gitter (kolonial)** med ruder i bredden og højden, **Prairie** med sprosser nær kanterne, eller et **Rudemønster**.
+
+På facaden kan et vindue ud over indfatningen have en **Slutsten**, en **Krone over åbningen** (et **Gesims**, en **Fronton**, en **Buet fronton** eller en **Vandnæse**, der følger en buet top) og et **Brystningsfelt under sålbænken** med konsoller.
+
+**Anvend en stil…** sætter form, sprosser og udsmykning på én gang: Moderne, Klassisk, Georgiansk, Victoriansk, Romansk, Barok, Gotisk, Tudor, Prairie, Traditionel eller et rundt vindue. Alt kan stadig ændres.
+
+![Et barokvindue: rundbue med vifte, slutsten og buet fronton](shots/joinery-styles.webp)
+
+![Buede vinduer i 3D](shots/window-styles-3d.webp)
+
+### Greb
+
+**Greb** vælger typens greb: **Dørgreb**, **Knop**, **Trækstang**, **Vinduesgreb** eller intet. Som standard har en dør et dørgreb og et vindue et vinduesgreb. En dør har greb på begge sider i den **Grebshøjde**, du angiver; **Grebets farve** sætter farven. Greb vises i 3D, i snit og opstalter og i konfiguratorens tegninger, når **Beslag** er markeret.
+
 ## Mærker i plan
 
 **Annotér → Dør- og vinduesmærker** sætter et mærke på hver dør og hvert vindue i en plan: en linje på tværs af væggen, mærket udenfor, og størrelsen og brystningen indenfor. Vil du ændre, hvordan mærkerne ser ud, så gå til **Administrer → Tegningsstandarder → Mærker**.

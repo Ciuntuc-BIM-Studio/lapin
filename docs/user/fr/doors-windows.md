@@ -53,6 +53,24 @@ Chacun se place d’après les faces réelles du mur à l’endroit de la fenêt
 
 ![Les fenêtres habillées, en 3D](shots/window-dressings-3d.webp)
 
+### Formes, styles et ornements
+
+**Forme** donne à une porte ou une fenêtre une tête cintrée (**Arc en plein cintre**, **Arc segmentaire**, **Arc brisé**, **Tête triangulaire**) ou la rend **Ronde ou ovale** (ronde quand la largeur et la hauteur sont égales). Un type cintré garde ses vantaux sous une traverse à la naissance de l’arc, et au-dessus une imposte fixe qui suit l’arc, avec des petits-bois si on le souhaite : **Éventail**, **Les meneaux prolongés** ou **Croix**. **Flèche de l’arc** règle la montée d’un arc segmentaire, brisé ou triangulaire. La baie dans le mur, le cadre, le vitrage, l’encadrement et les dessins suivent le contour.
+
+**Petits-bois** divisent les vitrages : **Grille (colonial)** avec ses carreaux en largeur et en hauteur, **Prairie** avec des barres près des bords, ou des **Losanges**.
+
+Sur la façade, en plus de l’encadrement, une fenêtre peut avoir une **Clé de voûte**, un **Couronnement au-dessus de la baie** (une **Corniche**, un **Fronton**, un **Fronton cintré** ou un **Larmier** qui suit une tête cintrée) et une **Allège sous l’appui** avec ses consoles.
+
+**Appliquer un style…** règle d’un coup la forme, les petits-bois et les ornements : Moderne, Classique, Géorgien, Victorien, Roman, Baroque, Gothique, Tudor, Prairie, Traditionnel ou une fenêtre ronde. Tout reste modifiable.
+
+![Une fenêtre baroque : plein cintre avec éventail, clé de voûte et fronton cintré](shots/joinery-styles.webp)
+
+![Fenêtres cintrées en 3D](shots/window-styles-3d.webp)
+
+### Poignées
+
+**Poignée** choisit la poignée du type : **Béquille**, **Bouton**, **Barre de tirage**, **Poignée de fenêtre** ou aucune. Par défaut, une porte a une béquille et une fenêtre une poignée de fenêtre. Une porte a sa poignée sur les deux faces, à la **Hauteur de la poignée** indiquée ; **Couleur de la poignée** règle sa couleur. Les poignées se voient en 3D, en coupe et en élévation, et dans les dessins du configurateur quand **Quincaillerie** est cochée.
+
 ## Étiquettes en plan
 
 **Annoter → Étiquettes de portes et fenêtres** place un marqueur sur chaque porte et fenêtre d’un plan : une ligne en travers du mur, le repère à l’extérieur, et les dimensions et l’allège à l’intérieur. Pour changer l’aspect des étiquettes, allez dans **Gérer → Normes de dessin → Étiquettes**.

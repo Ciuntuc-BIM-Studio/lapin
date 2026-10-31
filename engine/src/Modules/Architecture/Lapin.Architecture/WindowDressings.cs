@@ -49,6 +49,21 @@ public sealed record JoineryCanopy(
     bool On = false, double Projection = 0.6, double Thickness = 0.06, double Overhang = 0.15,
     double Rise = 0.15, double Slope = 5, double Gap = 0.0, double Along = 0, string? Material = null, string Color = "#6b6b6b");
 
+/// <summary>A keystone at the top of the opening's head on the facade (decision 188): its width at the bottom (the top a third wider), its height, how far it stands proud of the surround or the wall.</summary>
+public sealed record JoineryKeystone(bool On = false, double Width = 0.14, double Height = 0.24, double Projection = 0.03, string? Material = null, string Color = "#e6dfd0");
+
+/// <summary>
+/// What crowns the opening on the facade (decision 188): <see cref="Style"/> "cornice" (a flat cap
+/// run past the surround by <see cref="Overhang"/>), "pediment" (a triangle of <see cref="Rise"/> on a
+/// cornice), "segmental" (an arc of <see cref="Rise"/> on a cornice) or "hood" (a hood mould following
+/// an arched head, with short returns at the spring line); <see cref="Height"/>: the cornice's or the
+/// mould's band; <see cref="Projection"/>: how far it stands off the facade; <see cref="Gap"/>: over the head.
+/// </summary>
+public sealed record JoineryHead(bool On = false, string Style = "cornice", double Overhang = 0.08, double Height = 0.1, double Projection = 0.1, double Rise = 0.25, double Gap = 0.0, string? Material = null, string Color = "#e6dfd0");
+
+/// <summary>Under a window on the facade (decision 188): an apron panel <see cref="Height"/> deep under the sill, standing <see cref="Projection"/> proud, with a console under each jamb when asked.</summary>
+public sealed record JoineryApron(bool On = false, double Height = 0.2, double Projection = 0.03, bool Consoles = true, string? Material = null, string Color = "#e6dfd0");
+
 /// <summary>
 /// One piece of a dressing in the type's frame (X along the opening, Y to the exterior, Z up
 /// from its bottom): boxes, or a profile in Y–Z swept from X0 to X1 (a sloped canopy).
@@ -99,6 +114,81 @@ public static class WindowDressings
             var th = Math.Max(0.01, c.Thickness);
             var drop = (y1 - y0) * Math.Tan(Math.Clamp(c.Slope, 0, 45) * Math.PI / 180);
             o.Add(new("canopy", "Canopy", [], c.Material, c.Color, (x0, x1, [(y0, z + th), (y1, z + th - drop), (y1, z - drop), (y0, z)])));
+        }
+        if (d.Keystone is { On: true } k) o.Add(new("keystone", "Keystone", Keystone(s, k, f), k.Material, k.Color));
+        if (d.Head is { On: true } hd) o.Add(new("head", hd.Style switch { "pediment" => "Pediment", "segmental" => "Segmental pediment", "hood" => "Hood mould", _ => "Cornice" }, Head(s, hd, f), hd.Material, hd.Color));
+        if (!s.IsDoor && d.Apron is { On: true } ap) o.Add(new("apron", "Apron", Apron(s, ap, f), ap.Material, ap.Color));
+        return o;
+    }
+
+    /// <summary>How far the surround runs out from the opening (0 without one): the ornaments sit beyond it.</summary>
+    static double SurroundWidth(JoinerySpec s) => s.Details?.Surround is { On: true } sur ? Math.Max(0.01, sur.Width) : 0;
+
+    /// <summary>The top of the opening's head at the middle, over its bottom: a rectangle's top, an arch's apex.</summary>
+    static double Apex(JoinerySpec s) => JoineryShapes.Shaped(s) ? (JoineryShapes.Round(s) ? s.Height : JoineryShapes.Top(s, 0, 0)) : s.Height;
+
+    static List<JoineryBox> Keystone(JoinerySpec s, JoineryKeystone k, Faces f)
+    {
+        var (wb, h) = (Math.Max(0.04, k.Width), Math.Max(0.05, k.Height));
+        var wt = wb * 1.35;
+        // Set into the head: a quarter of it below the opening's top, the rest above, over the surround's face.
+        var z0 = Apex(s) - h * 0.25;
+        var y0 = f.Out;
+        var y1 = f.Facade + Math.Max(0.005, k.Projection);
+        return [JoineryShapes.Prism("keystone", [new(wb / 2, z0), new(wt / 2, z0 + h), new(-wt / 2, z0 + h), new(-wb / 2, z0)], y0, y1)];
+    }
+
+    static List<JoineryBox> Head(JoinerySpec s, JoineryHead hd, Faces f)
+    {
+        var o = new List<JoineryBox>();
+        var sw = SurroundWidth(s);
+        var half = s.Width / 2 + sw + Math.Max(0, hd.Overhang);
+        var h = Math.Max(0.02, hd.Height);
+        var y0 = f.Out;
+        var y1 = f.Out + Math.Max(0.02, hd.Projection);
+        if (hd.Style == "hood" && JoineryShapes.Headed(s))
+        {
+            // A band round the head beyond the surround, with a short return at each spring.
+            var inset = -(sw + Math.Max(0, hd.Gap));
+            var inner = JoineryShapes.Head(s, inset);
+            var outer = JoineryShapes.Head(s, inset - h);
+            var ret = h * 1.5;
+            var zs = inner[0].Y;
+            List<Vec2> band = [new(outer[0].X + ret, zs - h), new(outer[0].X + ret, zs), .. outer, new(outer[^1].X - ret, zs), new(outer[^1].X - ret, zs - h), new(inner[^1].X, zs - h), .. Enumerable.Reverse(inner), new(inner[0].X, zs - h)];
+            o.Add(JoineryShapes.Prism("head", band, y0, y1));
+            return o;
+        }
+        // A cornice over the head (a round window's top, an arch's apex), and on it a pediment's triangle or arc.
+        var z = (JoineryShapes.Shaped(s) ? Apex(s) + sw : s.Height + sw) + Math.Max(0, hd.Gap);
+        o.Add(new JoineryBox("head", new Vec3(-half, y0, z), new Vec3(half, y1, z + h)));
+        var rise = Math.Max(0.05, hd.Rise);
+        if (hd.Style == "pediment")
+            o.Add(JoineryShapes.Prism("head", [new(half, z + h), new(0, z + h + rise), new(-half, z + h)], y0, y1 - 0.02));
+        else if (hd.Style == "segmental")
+        {
+            var r = (half * half + rise * rise) / (2 * rise);
+            var arc = Enumerable.Range(0, 25).Select(i => { var x = half * (1 - 2 * i / 24.0); return new Vec2(x, z + h + rise - r + Math.Sqrt(Math.Max(0, r * r - x * x))); }).ToList();
+            o.Add(JoineryShapes.Prism("head", arc, y0, y1 - 0.02));
+        }
+        return o;
+    }
+
+    static List<JoineryBox> Apron(JoinerySpec s, JoineryApron ap, Faces f)
+    {
+        var o = new List<JoineryBox>();
+        var h = Math.Max(0.05, ap.Height);
+        // Under the outside sill, when there is one.
+        var top = -(s.Details?.SillOutside is { On: true } sill ? Math.Max(0.005, sill.Thickness) : 0) - (s.Details?.Surround is { On: true, Sill: true } ? SurroundWidth(s) : 0);
+        var y0 = f.Out;
+        var y1 = f.Out + Math.Max(0.005, ap.Projection);
+        o.Add(new JoineryBox("apron", new Vec3(-s.Width / 2, y0, top - h), new Vec3(s.Width / 2, y1, top)));
+        if (ap.Consoles)
+        {
+            // A console under each jamb, deeper than the apron, tapering down to a third of its depth.
+            var cw = 0.1;
+            var cy = f.Out + Math.Max(0.06, ap.Projection * 2.5);
+            foreach (var x in new[] { -s.Width / 2, s.Width / 2 - cw })
+                o.Add(new JoineryBox("apron", new Vec3(x, y0, top - h * 1.2), new Vec3(x + cw, cy, top)));
         }
         return o;
     }

@@ -314,6 +314,39 @@ export const scenes = [
     },
   },
   {
+    id: 'window-styles',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      // A style sets the outline, the glazing bars and the ornaments at once (decision 188): a baroque window, a round arch with a sunburst.
+      await t.tool('architecture.joineryTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('.tree-item').filter({ hasText: /^Window/ }).first().click();
+      await t.wait(300);
+      await dialog.locator('select[data-field=style]').selectOption('baroque');
+      await dialog.locator('input[data-field=outside]').check();
+      await t.wait(800);
+      t.expect(await dialog.locator('select[data-field=shape]').inputValue() === 'round', 'the style gives the window a round arch');
+      t.expect(await dialog.locator('input[data-dressing=keystone]').isChecked(), 'the style puts a keystone on it');
+      await dialog.locator('select[data-field=shape]').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await t.wait(300);
+      await t.shot('joinery-styles', { of: '.dialog', pad: 0 });
+      await dialog.locator('.btn.primary').first().click();
+      await t.wait(800);
+      // The door gets a knob (report #48).
+      await dialog.locator('.tree-item').filter({ hasText: /^Door/ }).first().click();
+      await t.wait(300);
+      await dialog.locator('select[data-field=handle]').selectOption('knob');
+      await dialog.locator('.btn.primary').first().click();
+      await t.wait(800);
+      await t.keys('Escape');
+      const type = (await t.nodes()).find((n) => n.type === 'IfcWindowType' && n.props?.spec?.shape?.kind === 'round');
+      t.expect(type, 'the window type keeps its arch');
+      await open3d(t);
+      await t.shot('window-styles-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     id: 'floors-roofs',
     async run(t) {
       await t.fresh();

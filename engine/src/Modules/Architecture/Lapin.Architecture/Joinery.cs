@@ -38,7 +38,8 @@ public sealed record JoineryThreshold(bool On = false, double Height = 0.02, str
 
 /// <summary>The details of a door or window type; a null field keeps the default (the reveal from the wall, the boards as before, no surround, the frame's threshold, no dressings: shutters, grille, window box, canopy).</summary>
 public sealed record JoineryDetails(JoineryReveal? Reveal = null, JoinerySill? SillInside = null, JoinerySill? SillOutside = null, JoinerySurround? Surround = null, JoineryThreshold? Threshold = null,
-    JoineryShutters? Shutters = null, JoineryGrille? Grille = null, JoineryWindowBox? WindowBox = null, JoineryCanopy? Canopy = null);
+    JoineryShutters? Shutters = null, JoineryGrille? Grille = null, JoineryWindowBox? WindowBox = null, JoineryCanopy? Canopy = null,
+    JoineryKeystone? Keystone = null, JoineryHead? Head = null, JoineryApron? Apron = null);
 
 /// <summary>
 /// A door or window type as the configurator edits it (the old Lapin's
@@ -75,7 +76,13 @@ public sealed record JoinerySpec(
     /// <summary>The lintel over its openings: null, the wall's rule; mode "none", none.</summary>
     LintelRule? Lintel = null,
     /// <summary>The reveal's finish, the sills, a surround, a threshold; null: the defaults.</summary>
-    JoineryDetails? Details = null)
+    JoineryDetails? Details = null,
+    /// <summary>The outline (an arched head, a round window); null: a rectangle.</summary>
+    JoineryShape? Shape = null,
+    /// <summary>Glazing bars on the rectangular panes; null: none.</summary>
+    JoineryMuntins? Muntins = null,
+    /// <summary>The handles; null: a lever on doors, a window handle on windows.</summary>
+    JoineryHardware? Hardware = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,
@@ -116,11 +123,23 @@ public sealed record JoinerySpec(
     }
 }
 
+/// <summary>
+/// The handles of a type (report #48, decision 188): <see cref="Handle"/> "auto" (a lever on a door,
+/// a window handle on a window), "lever", "knob", "pull" (a bar, both faces of a door), "window"
+/// (a turn handle on a plate), "none"; <see cref="Height"/>: a door handle's over the leaf's bottom;
+/// <see cref="Color"/>: null, the default dark metal.
+/// </summary>
+public sealed record JoineryHardware(string Handle = "auto", double Height = 1.05, string? Color = null);
+
 /// <summary>A rectangle in the type frame's X (along) and Z (up).</summary>
 public readonly record struct CellRect(double X0, double X1, double Z0, double Z1);
 
-/// <summary>One box of the joinery body in the type frame, with its role (frame, sash, glass, leaf, board, handle).</summary>
-public sealed record JoineryBox(string Role, Vec3 Min, Vec3 Max);
+/// <summary>
+/// One box of the joinery body in the type frame, with its role (frame, sash, glass, leaf, board,
+/// handle, muntin); or, with a <see cref="Profile"/> (X along, Z up; and its <see cref="Holes"/>),
+/// that outline through Min.Y..Max.Y, Min and Max its bounds (an arch, a bar on the slant).
+/// </summary>
+public sealed record JoineryBox(string Role, Vec3 Min, Vec3 Max, IReadOnlyList<Vec2>? Profile = null, IReadOnlyList<IReadOnlyList<Vec2>>? Holes = null);
 
 /// <summary>The configurator's rules: the grid, the panels, what IFC calls them, the body.</summary>
 public static class Joinery
@@ -160,7 +179,10 @@ public static class Joinery
     {
         var f = s.Frame.Width;
         var bottom = s.IsDoor ? Math.Max(0, s.Threshold) : f;
-        return new CellRect(-s.Width / 2 + f, s.Width / 2 - f, bottom, s.Height - f);
+        // A headed type's grid stops under the transom on the spring line; a round window's is the square inside its ring.
+        var top = JoineryShapes.Headed(s) ? JoineryShapes.Spring(s) - Math.Max(s.Frame.Transom, 0.02) : s.Height - f;
+        if (JoineryShapes.Round(s)) { var (a, b) = ((s.Width / 2 - f) / Math.Sqrt(2), (s.Height / 2 - f) / Math.Sqrt(2)); return new CellRect(-a, a, s.Height / 2 - b, s.Height / 2 + b); }
+        return new CellRect(-s.Width / 2 + f, s.Width / 2 - f, bottom, top);
     }
 
     static List<(double A, double B)> Splits(double[] weights, double from, double to, double bar)
@@ -226,6 +248,10 @@ public static class Joinery
         if (!Positive(s.Frame.Depth) || !Positive(s.Frame.Width)) return "The frame needs a positive depth and width.";
         if (s.Columns.Length is < 1 or > 12 || s.Rows.Length is < 1 or > 12) return "Use 1 to 12 columns and rows.";
         if (!s.Columns.Concat(s.Rows).All(Positive)) return "Column widths and row heights must be positive.";
+        if (JoineryShapes.Round(s))
+            return s.Width < 2 * s.Frame.Width + 0.1 || s.Height < 2 * s.Frame.Width + 0.1 ? "A round window needs room inside its frame." : null;
+        if (JoineryShapes.Headed(s) && JoineryShapes.Spring(s) - Math.Max(s.Frame.Transom, 0.02) - InnerRect(s).Z0 < 0.1)
+            return "The head leaves no room for the panels under it: make it taller or lower the rise.";
         var (cols, rows) = Grid(s);
         const double minCell = 0.05;
         if (cols.Any(c => c.B - c.A < minCell) || rows.Any(r => r.B - r.A < minCell)) return "The frame, mullions and transoms leave no room for the panels.";
@@ -377,21 +403,80 @@ public static class Joinery
     static JoineryBox Glass(CellRect r, double inset, double y, double t) =>
         new("glass", new(r.X0 + inset, y - t / 2, r.Z0 + inset), new(r.X1 - inset, y + t / 2, r.Z1 - inset));
 
-    static JoineryBox? HandleBox(CellRect r, string op, double interiorFace, bool door)
+    public static readonly string[] HandleStyles = ["auto", "lever", "knob", "pull", "window", "none"];
+
+    /// <summary>The handle's style for a type: its own, or a lever on a door and a window handle on a window.</summary>
+    public static string HandleStyle(JoinerySpec s) => s.Hardware?.Handle is { } h && HandleStyles.Contains(h) && h != "auto" ? h : s.IsDoor ? "lever" : "window";
+
+    /// <summary>Where a panel's handle goes: its centre in X and Z, and whether it lies across (a top- or bottom-hung sash); null for panels without one.</summary>
+    public static (double X, double Z, bool Across)? HandleAt(JoinerySpec s, CellRect r, string op, bool door)
     {
         var side = HandleSide(op);
         if (side == null) return null;
-        var (w, depth, h, inset0) = Handle;
-        double y1 = interiorFace, y0 = interiorFace - depth, inset = inset0 + w / 2;
+        var inset = Handle.Inset + Handle.Width / 2;
         if (side is "left" or "right")
         {
             var x = side == "left" ? r.X0 + inset : r.X1 - inset;
-            var zc = door ? Math.Min(r.Z0 + 1.05, (r.Z0 + r.Z1) / 2 + 0.3) : (r.Z0 + r.Z1) / 2;
-            return new("handle", new(x - w / 2, y0, zc - h / 2), new(x + w / 2, y1, zc + h / 2));
+            var zc = door ? Math.Min(r.Z0 + Math.Clamp(s.Hardware?.Height ?? 1.05, 0.3, 2.2), (r.Z0 + r.Z1) / 2 + 0.3) : (r.Z0 + r.Z1) / 2;
+            return (x, zc, false);
         }
-        var z = side == "top" ? r.Z1 - inset : r.Z0 + inset;
-        var xc = (r.X0 + r.X1) / 2;
-        return new("handle", new(xc - h / 2, y0, z - w / 2), new(xc + h / 2, y1, z + w / 2));
+        return ((r.X0 + r.X1) / 2, side == "top" ? r.Z1 - inset : r.Z0 + inset, true);
+    }
+
+    /// <summary>An octagon about (x, z), <paramref name="r"/> across the flats' circle, for round hardware.</summary>
+    static List<Vec2> Octagon(double x, double z, double r) =>
+        Enumerable.Range(0, 8).Select(i => new Vec2(x + r * Math.Cos(Math.PI * (i + 0.5) / 4), z + r * Math.Sin(Math.PI * (i + 0.5) / 4))).ToList();
+
+    /// <summary>
+    /// A panel's handle on one face (<paramref name="face"/>, the leaf's or sash's face; <paramref name="outwards"/>
+    /// −1 into the room, +1 out): the grip ("handle", one box or prism) and what fixes it ("hardware": a rose, a
+    /// plate, the bar's posts). A lever turns towards the panel's middle; a window handle hangs down.
+    /// </summary>
+    static IEnumerable<JoineryBox> HandleBoxes(JoinerySpec s, CellRect r, string op, double face, int outwards, bool door)
+    {
+        var style = HandleStyle(s);
+        if (style == "none" || HandleAt(s, r, op, door) is not var (x, z, across)) yield break;
+        double Y(double d) => face + outwards * d;
+        JoineryBox Slab(string role, double x0, double x1, double d0, double d1, double z0, double z1) =>
+            new(role, new(Math.Min(x0, x1), Math.Min(Y(d0), Y(d1)), Math.Min(z0, z1)), new(Math.Max(x0, x1), Math.Max(Y(d0), Y(d1)), Math.Max(z0, z1)));
+        // Towards the panel's middle from the handle.
+        var inward = x > (r.X0 + r.X1) / 2 ? -1 : 1;
+        switch (style)
+        {
+            case "lever":
+            {
+                yield return JoineryShapes.Prism("hardware", Octagon(x, z, 0.026), Y(0), Y(0.008));
+                yield return Slab("hardware", x - 0.009, x + 0.009, 0.008, 0.055, z - 0.009, z + 0.009);
+                if (across) yield return Slab("handle", x - 0.065, x + 0.065, 0.04, 0.058, z - 0.009, z + 0.009);
+                else yield return Slab("handle", x - 0.009 * inward, x + inward * 0.13, 0.04, 0.058, z - 0.01, z + 0.01);
+                break;
+            }
+            case "knob":
+                yield return JoineryShapes.Prism("hardware", Octagon(x, z, 0.028), Y(0), Y(0.008));
+                yield return JoineryShapes.Prism("hardware", Octagon(x, z, 0.011), Y(0.008), Y(0.035));
+                yield return JoineryShapes.Prism("handle", Octagon(x, z, 0.03), Y(0.035), Y(0.07));
+                break;
+            case "pull":
+            {
+                // A bar standing off the face on two posts: tall on a door, short on a window.
+                var len = door ? 0.6 : 0.25;
+                var (z0, z1) = across ? (z, z) : (z - len / 2, z + len / 2);
+                var (x0, x1) = across ? (x - len / 2, x + len / 2) : (x, x);
+                foreach (var (px, pz) in new[] { (x0 + (across ? 0.02 : 0), z0 + (across ? 0 : 0.02)), (x1 - (across ? 0.02 : 0), z1 - (across ? 0 : 0.02)) })
+                    yield return Slab("hardware", px - 0.009, px + 0.009, 0, 0.06, pz - 0.009, pz + 0.009);
+                yield return Slab("handle", x0 - 0.0125, x1 + 0.0125, 0.06, 0.085, z0 - 0.0125, z1 + 0.0125);
+                break;
+            }
+            default:
+            {
+                // A window handle: a plate, and the grip hanging down from it (lying along the rail on a top- or bottom-hung sash).
+                yield return Slab("hardware", x - 0.016, x + 0.016, 0, 0.012, z - 0.04, z + 0.04);
+                yield return Slab("hardware", x - 0.009, x + 0.009, 0.012, 0.035, z - 0.009, z + 0.009);
+                if (across) yield return Slab("handle", x - 0.06, x + 0.06, 0.03, 0.05, z - 0.01, z + 0.01);
+                else yield return Slab("handle", x - 0.011, x + 0.011, 0.03, 0.05, z - 0.12, z + 0.01);
+                break;
+            }
+        }
     }
 
     /// <summary>
@@ -404,14 +489,19 @@ public static class Joinery
     {
         var f = s.Frame;
         double y0 = f.Offset - f.Depth / 2, y1 = f.Offset + f.Depth / 2;
+        if (JoineryShapes.Round(s)) return JoineryShapes.RoundBoxes(s, y0, y1);
         var outer = new CellRect(-s.Width / 2, s.Width / 2, 0, s.Height);
         var inner = InnerRect(s);
+        var headed = JoineryShapes.Headed(s);
+        // The jambs run to the head's spring line, and the head is the arch over it; a rectangle's head is its top member.
+        var jambTop = headed ? JoineryShapes.Spring(s) : s.Height;
         var boxes = new List<JoineryBox>
         {
-            new("frame", new(outer.X0, y0, 0), new(inner.X0, y1, s.Height)),
-            new("frame", new(inner.X1, y0, 0), new(outer.X1, y1, s.Height)),
-            new("frame", new(inner.X0, y0, inner.Z1), new(inner.X1, y1, s.Height)),
+            new("frame", new(outer.X0, y0, 0), new(inner.X0, y1, jambTop)),
+            new("frame", new(inner.X1, y0, 0), new(outer.X1, y1, jambTop)),
         };
+        if (headed) boxes.AddRange(JoineryShapes.HeadBoxes(s, y0, y1));
+        else boxes.Add(new("frame", new(inner.X0, y0, inner.Z1), new(inner.X1, y1, s.Height)));
         if (inner.Z0 > 1e-6) boxes.Add(new("frame", new(inner.X0, y0, 0), new(inner.X1, y1, inner.Z0)));
         var panels = Normalised(s);
         boxes.AddRange(Bars(s, panels, y0, y1));
@@ -431,14 +521,17 @@ public static class Joinery
                     boxes.Add(Glass(r, sh.Width, f.Offset, sh.GlassThickness));
                 }
                 else boxes.Add(new("leaf", new(r.X0, ly0, r.Z0), new(r.X1, ly1, r.Z1)));
-                if (HandleBox(r, p.Operation, ly0, true) is { } h) boxes.Add(h);
+                // A door has its handle on both faces.
+                boxes.AddRange(HandleBoxes(s, r, p.Operation, ly0, -1, true));
+                boxes.AddRange(HandleBoxes(s, r, p.Operation, ly1, +1, true));
             }
-            else if (p.Operation == "fixed") boxes.Add(Glass(r, 0, f.Offset, sh.GlassThickness));
+            else if (p.Operation == "fixed") { boxes.Add(Glass(r, 0, f.Offset, sh.GlassThickness)); boxes.AddRange(Muntins(s, r, f.Offset, sh.Depth)); }
             else
             {
                 boxes.AddRange(Ring(r, sh.Width, sy0, sy1, "sash"));
                 boxes.Add(Glass(r, sh.Width, f.Offset, sh.GlassThickness));
-                if (HandleBox(r, p.Operation, sy0, false) is { } h) boxes.Add(h);
+                boxes.AddRange(Muntins(s, new CellRect(r.X0 + sh.Width, r.X1 - sh.Width, r.Z0 + sh.Width, r.Z1 - sh.Width), f.Offset, sh.Depth));
+                boxes.AddRange(HandleBoxes(s, r, p.Operation, sy0, -1, false));
             }
         }
 
@@ -449,5 +542,15 @@ public static class Joinery
             if (s.Board.Exterior > 0) boxes.Add(new("board", new(outer.X0, y1, 0), new(outer.X1, y1 + s.Board.Exterior, t)));
         }
         return boxes.Where(b => b.Max.X - b.Min.X > 1e-6 && b.Max.Y - b.Min.Y > 1e-6 && b.Max.Z - b.Min.Z > 1e-6).ToList();
+    }
+
+    /// <summary>The glazing bars of one pane (its glass's rectangle), each across the glass, standing proud of it both sides.</summary>
+    static IEnumerable<JoineryBox> Muntins(JoinerySpec s, CellRect pane, double y, double depth)
+    {
+        if (s.Muntins is not { Pattern: not "none" } m) yield break;
+        var d = Math.Max(s.Sash.GlassThickness + 0.01, depth * 0.5);
+        var w = Math.Clamp(m.Width, 0.008, 0.1);
+        foreach (var (a, b) in JoineryShapes.MuntinLines(m, pane))
+            if (JoineryShapes.Bar("muntin", a, b, w, y - d / 2, y + d / 2) is { } bar) yield return bar;
     }
 }

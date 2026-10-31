@@ -27,7 +27,16 @@ interface Spec {
   colors: { frame: string; glass: string; leaf: string }; isExternal: boolean; thermalTransmittance?: number | null;
   lintel?: Rule | null;
   details?: Details | null;
+  shape?: Shape | null;
+  muntins?: Muntins | null;
+  hardware?: Hardware | null;
 }
+interface Shape { kind: 'rect' | 'round' | 'segmental' | 'pointed' | 'gable' | 'circle'; rise?: number | null; bars: 'none' | 'sunburst' | 'mullions' | 'cross'; spokes: number }
+interface Muntins { pattern: 'none' | 'grid' | 'prairie' | 'diamond'; across: number; up: number; width: number; margin: number }
+interface Hardware { handle: 'auto' | 'lever' | 'knob' | 'pull' | 'window' | 'none'; height: number; color?: string | null }
+interface Keystone { on: boolean; width: number; height: number; projection: number; material?: string | null; color: string }
+interface Head { on: boolean; style: 'cornice' | 'pediment' | 'segmental' | 'hood'; overhang: number; height: number; projection: number; rise: number; gap: number; material?: string | null; color: string }
+interface Apron { on: boolean; height: number; projection: number; consoles: boolean; material?: string | null; color: string }
 interface Reveal { mode: 'wall' | 'material' | 'none'; material?: string | null; thickness: number }
 interface Sill { on: boolean; projection: number; thickness: number; overhang: number; slope: number; material?: string | null }
 interface Surround { on: boolean; width: number; projection: number; sill: boolean; material?: string | null }
@@ -36,7 +45,7 @@ interface Shutters { on: boolean; style: 'louvred' | 'panel' | 'planks'; leaves:
 interface Grille { on: boolean; side: 'revealInside' | 'reveal' | 'outside' | 'inside'; pattern: 'horizontal' | 'vertical' | 'grid'; bar: number; spacing: number; frameWidth: number; gap: number; overlap: number; along: number; rise: number; material?: string | null; color: string }
 interface WindowBox { on: boolean; width?: number | null; depth: number; height: number; gap: number; drop: number; along: number; material?: string | null; color: string }
 interface Canopy { on: boolean; projection: number; thickness: number; overhang: number; rise: number; slope: number; gap: number; along: number; material?: string | null; color: string }
-interface Details { reveal?: Reveal | null; sillInside?: Sill | null; sillOutside?: Sill | null; surround?: Surround | null; threshold?: Threshold | null; shutters?: Shutters | null; grille?: Grille | null; windowBox?: WindowBox | null; canopy?: Canopy | null }
+interface Details { reveal?: Reveal | null; sillInside?: Sill | null; sillOutside?: Sill | null; surround?: Surround | null; threshold?: Threshold | null; shutters?: Shutters | null; grille?: Grille | null; windowBox?: WindowBox | null; canopy?: Canopy | null; keystone?: Keystone | null; head?: Head | null; apron?: Apron | null }
 const SILL_IN: Sill = { on: true, projection: 0.03, thickness: 0.02, overhang: 0.02, slope: 0 };
 const SILL_OUT: Sill = { on: true, projection: 0.04, thickness: 0.02, overhang: 0.03, slope: 5 };
 const SURROUND: Surround = { on: true, width: 0.08, projection: 0.02, sill: true };
@@ -45,7 +54,50 @@ const SHUTTERS: Shutters = { on: true, style: 'louvred', leaves: 2, open: true, 
 const GRILLE: Grille = { on: true, side: 'revealInside', pattern: 'horizontal', bar: 0.012, spacing: 0.1, frameWidth: 0.03, gap: 0.03, overlap: 0.05, along: 0, rise: 0, color: '#2f2f2f' };
 const WINDOW_BOX: WindowBox = { on: true, width: null, depth: 0.2, height: 0.18, gap: 0, drop: 0.06, along: 0, color: '#8a5a3c' };
 const CANOPY: Canopy = { on: true, projection: 0.6, thickness: 0.06, overhang: 0.15, rise: 0.15, slope: 5, gap: 0, along: 0, color: '#6b6b6b' };
-interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number }[]; ifcType: string }
+const SHAPE: Shape = { kind: 'rect', rise: null, bars: 'none', spokes: 5 };
+const MUNTINS: Muntins = { pattern: 'none', across: 2, up: 3, width: 0.022, margin: 0.1 };
+const HARDWARE: Hardware = { handle: 'auto', height: 1.05, color: null };
+const KEYSTONE: Keystone = { on: true, width: 0.14, height: 0.24, projection: 0.03, color: '#e6dfd0' };
+const HEAD: Head = { on: true, style: 'cornice', overhang: 0.08, height: 0.1, projection: 0.1, rise: 0.25, gap: 0, color: '#e6dfd0' };
+const APRON: Apron = { on: true, height: 0.2, projection: 0.03, consoles: true, color: '#e6dfd0' };
+
+/**
+ * Architectural styles for a door or window (decision 188, after BubbleBIM's style packs): each sets the
+ * outline, the glazing bars and the ornaments of the facade at once; everything stays editable after.
+ */
+export const JOINERY_STYLES: Record<string, { label: string; apply: (s: Spec) => Partial<Spec> }> = {
+  modern: { label: 'Modern', apply: () => ({ shape: null, muntins: null }) },
+  classical: { label: 'Classical', apply: () => ({ shape: null, muntins: { ...MUNTINS, pattern: 'grid', across: 2, up: 3 } }) },
+  georgian: { label: 'Georgian', apply: () => ({ shape: null, muntins: { ...MUNTINS, pattern: 'grid', across: 3, up: 3 } }) },
+  victorian: { label: 'Victorian', apply: (s) => ({ shape: { ...SHAPE, kind: 'segmental', rise: Math.round(s.width / 6 * 1000) / 1000 }, muntins: { ...MUNTINS, pattern: 'grid', across: 1, up: 2 } }) },
+  romanesque: { label: 'Romanesque', apply: () => ({ shape: { ...SHAPE, kind: 'round', bars: 'none' }, muntins: null }) },
+  baroque: { label: 'Baroque', apply: () => ({ shape: { ...SHAPE, kind: 'round', bars: 'sunburst', spokes: 5 }, muntins: { ...MUNTINS, pattern: 'grid', across: 2, up: 3 } }) },
+  gothic: { label: 'Gothic', apply: () => ({ shape: { ...SHAPE, kind: 'pointed', rise: null, bars: 'mullions' }, muntins: null }) },
+  tudor: { label: 'Tudor', apply: (s) => ({ shape: { ...SHAPE, kind: 'pointed', rise: Math.round(s.width * 0.3 * 1000) / 1000, bars: 'mullions' }, muntins: { ...MUNTINS, pattern: 'diamond', across: 4 } }) },
+  prairie: { label: 'Prairie', apply: () => ({ shape: null, muntins: { ...MUNTINS, pattern: 'prairie', margin: 0.1 } }) },
+  traditional: { label: 'Traditional', apply: () => ({ shape: null, muntins: { ...MUNTINS, pattern: 'grid', across: 1, up: 2 } }) },
+  oculus: { label: 'Round window', apply: (s) => ({ shape: { ...SHAPE, kind: 'circle', bars: 'cross' }, muntins: null, height: s.width, columns: [1], rows: [1], panels: [{ col: 0, row: 0, operation: 'fixed' }] }) },
+};
+
+/** The details each style adds on the facade (and takes away: a style's own ornaments replace another's). */
+export function styleDetails(key: string, d: Details): Details {
+  const bare: Details = { ...d, surround: d.surround ? { ...d.surround, on: false } : null, keystone: null, head: null, apron: null };
+  const stone: Sill = { ...SILL_OUT, thickness: 0.04, projection: 0.05 };
+  switch (key) {
+    case 'classical': return { ...bare, surround: { ...SURROUND, width: 0.16, projection: 0.04 }, head: { ...HEAD, style: 'cornice', height: 0.12, projection: 0.12 }, apron: { ...APRON }, sillOutside: stone };
+    case 'georgian': return { ...bare, surround: { ...SURROUND, width: 0.12, projection: 0.03 }, keystone: { ...KEYSTONE }, sillOutside: stone };
+    case 'victorian': return { ...bare, surround: { ...SURROUND, width: 0.1, projection: 0.03 }, keystone: { ...KEYSTONE, height: 0.2 }, apron: { ...APRON, consoles: true }, sillOutside: stone };
+    case 'romanesque': return { ...bare, surround: { ...SURROUND, width: 0.2, projection: 0.04, sill: false }, keystone: { ...KEYSTONE } };
+    case 'baroque': return { ...bare, surround: { ...SURROUND, width: 0.14, projection: 0.04 }, keystone: { ...KEYSTONE }, head: { ...HEAD, style: 'segmental', rise: 0.2 }, apron: { ...APRON }, sillOutside: stone };
+    case 'gothic': return { ...bare, surround: { ...SURROUND, width: 0.1, projection: 0.03, sill: false }, head: { ...HEAD, style: 'hood', height: 0.08, projection: 0.06 } };
+    case 'tudor': return { ...bare, head: { ...HEAD, style: 'hood', height: 0.08, projection: 0.06 } };
+    case 'prairie': return { ...bare, sillOutside: { ...SILL_OUT, projection: 0.06 } };
+    case 'traditional': return { ...bare, surround: { ...SURROUND, width: 0.12, projection: 0.025 }, head: { ...HEAD, style: 'cornice', height: 0.06, overhang: 0.06, projection: 0.07 } };
+    case 'oculus': return { ...bare, surround: { ...SURROUND, width: 0.12, projection: 0.03, sill: false }, keystone: { ...KEYSTONE, height: 0.18 } };
+    default: return bare;
+  }
+}
+interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number; profile?: number[] | null; holes?: number[][] | null }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number }[]; ifcType: string }
 interface Stroke { pts: [number, number][]; weight: string; closed: boolean; dashed: boolean }
 interface Drawing { strokes: Stroke[] }
 interface Drawings { elevation: Drawing; exterior: Drawing; plan: Drawing; section: Drawing }
@@ -72,7 +124,10 @@ function Strokes({ drawing, w, h, flipX = false, label, children }: { drawing: D
   );
 }
 
-const ROLE_ORDER: Record<string, number> = { board: 0, frame: 1, leaf: 2, sash: 3, glass: 4, handle: 5 };
+const ROLE_ORDER: Record<string, number> = { board: 0, frame: 1, leaf: 2, sash: 3, glass: 4, muntin: 5, hardware: 6, handle: 7 };
+/** An outline (X, Z pairs) as an SVG path in the elevation's scale. */
+const loopPath = (pts: number[], sx: (x: number) => number, sy: (y: number) => number) =>
+  pts.length < 6 ? '' : 'M' + Array.from({ length: pts.length / 2 }, (_, i) => `${sx(pts[2 * i]).toFixed(1)},${sy(pts[2 * i + 1]).toFixed(1)}`).join('L') + 'Z';
 const weights = (text: string) => text.split(/[ ,;]+/).map(Number).filter((v) => v > 0);
 
 /** A number field in mm, kept as text while typing. */
@@ -160,6 +215,7 @@ function DressingFields({ kind, height, details, onChange }: { kind: 'door' | 'w
         <Place along={wb.along} gap={wb.gap} onChange={(p) => onChange({ windowBox: { ...wb, ...p } })} />
         <Look material={wb.material} color={wb.color} onChange={(p) => onChange({ windowBox: { ...wb, ...p } })} />
       </>}
+      <OrnamentFields kind={kind} details={details} onChange={onChange} />
       <label className="field-line check"><input type="checkbox" data-dressing="canopy" checked={c?.on ?? false} onChange={(e) => onChange({ canopy: { ...(c ?? CANOPY), on: e.target.checked } })} /><span>Canopy</span></label>
       {c?.on && <>
         <Mm label="Projection" value={c.projection} onChange={(v) => onChange({ canopy: { ...c, projection: v } })} />
@@ -170,6 +226,88 @@ function DressingFields({ kind, height, details, onChange }: { kind: 'door' | 'w
         <Place along={c.along} gap={c.gap} onChange={(p) => onChange({ canopy: { ...c, ...p } })} />
         <Look material={c.material} color={c.color} onChange={(p) => onChange({ canopy: { ...c, ...p } })} />
       </>}
+    </>
+  );
+}
+
+/** The ornaments of the facade (decision 188): a keystone, what crowns the opening, an apron with its consoles under a window. */
+function OrnamentFields({ kind, details, onChange }: { kind: 'door' | 'window'; details: Details; onChange: (patch: Partial<Details>) => void }) {
+  const k = details.keystone, h = details.head, a = details.apron;
+  return (
+    <>
+      <label className="field-line check"><input type="checkbox" data-dressing="keystone" checked={k?.on ?? false} onChange={(e) => onChange({ keystone: { ...(k ?? KEYSTONE), on: e.target.checked } })} /><span>Keystone</span></label>
+      {k?.on && <>
+        <Mm label="Width" value={k.width} onChange={(v) => onChange({ keystone: { ...k, width: v } })} />
+        <Mm label="Height" value={k.height} onChange={(v) => onChange({ keystone: { ...k, height: v } })} />
+        <Mm label="Projection" value={k.projection} onChange={(v) => onChange({ keystone: { ...k, projection: v } })} />
+        <Look material={k.material} color={k.color} onChange={(p) => onChange({ keystone: { ...k, ...p } })} />
+      </>}
+      <label className="field-line check"><input type="checkbox" data-dressing="head" checked={h?.on ?? false} onChange={(e) => onChange({ head: { ...(h ?? HEAD), on: e.target.checked } })} /><span>Crown over the opening</span></label>
+      {h?.on && <>
+        <label className="field-line"><span className="eyebrow">Style</span>
+          <select data-field="head-style" value={h.style} onChange={(e) => onChange({ head: { ...h, style: e.target.value as Head['style'] } })}>
+            <option value="cornice">Cornice</option><option value="pediment">Pediment</option><option value="segmental">Segmental pediment</option><option value="hood">Hood mould</option>
+          </select></label>
+        <Mm label="Height" value={h.height} onChange={(v) => onChange({ head: { ...h, height: v } })} />
+        <Mm label="Projection" value={h.projection} onChange={(v) => onChange({ head: { ...h, projection: v } })} />
+        {h.style !== 'hood' && <Mm label="Past the jambs" value={h.overhang} onChange={(v) => onChange({ head: { ...h, overhang: v } })} />}
+        {(h.style === 'pediment' || h.style === 'segmental') && <Mm label="Rise" value={h.rise} onChange={(v) => onChange({ head: { ...h, rise: v } })} />}
+        <Mm label="Above the head" value={h.gap} onChange={(v) => onChange({ head: { ...h, gap: v } })} />
+        <Look material={h.material} color={h.color} onChange={(p) => onChange({ head: { ...h, ...p } })} />
+      </>}
+      {kind === 'window' && <label className="field-line check"><input type="checkbox" data-dressing="apron" checked={a?.on ?? false} onChange={(e) => onChange({ apron: { ...(a ?? APRON), on: e.target.checked } })} /><span>Apron under the sill</span></label>}
+      {kind === 'window' && a?.on && <>
+        <Mm label="Height" value={a.height} onChange={(v) => onChange({ apron: { ...a, height: v } })} />
+        <Mm label="Projection" value={a.projection} onChange={(v) => onChange({ apron: { ...a, projection: v } })} />
+        <label className="field-line check"><input type="checkbox" checked={a.consoles} onChange={(e) => onChange({ apron: { ...a, consoles: e.target.checked } })} /><span>Consoles</span></label>
+        <Look material={a.material} color={a.color} onChange={(p) => onChange({ apron: { ...a, ...p } })} />
+      </>}
+    </>
+  );
+}
+
+/** The outline, the head's bars and the glazing bars (decision 188). */
+function ShapeFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial<Spec>) => void }) {
+  const sh = spec.shape ?? SHAPE, mu = spec.muntins ?? MUNTINS;
+  const setShape = (p: Partial<Shape>) => onChange({ shape: { ...sh, ...p } });
+  const setMuntins = (p: Partial<Muntins>) => onChange({ muntins: { ...mu, ...p } });
+  return (
+    <>
+      <label className="field-line"><span className="eyebrow">Shape</span>
+        <select data-field="shape" value={sh.kind} onChange={(e) => setShape({ kind: e.target.value as Shape['kind'], rise: null })}>
+          <option value="rect">Rectangle</option><option value="round">Round arch</option><option value="segmental">Segmental arch</option>
+          <option value="pointed">Pointed arch</option><option value="gable">Triangular head</option><option value="circle">Round or oval</option>
+        </select></label>
+      {(sh.kind === 'segmental' || sh.kind === 'pointed' || sh.kind === 'gable') && <Mm label="Rise of the head" value={sh.rise ?? (sh.kind === 'segmental' ? spec.width / 6 : sh.kind === 'pointed' ? spec.width * 0.866 : spec.width / 4)} onChange={(v) => setShape({ rise: v })} />}
+      {sh.kind !== 'rect' && <label className="field-line"><span className="eyebrow">{sh.kind === 'circle' ? 'Bars' : 'Bars in the head'}</span>
+        <select data-field="shape-bars" value={sh.bars} onChange={(e) => setShape({ bars: e.target.value as Shape['bars'] })}>
+          <option value="none">None</option><option value="sunburst">Sunburst</option><option value="mullions">{sh.kind === 'circle' ? 'Upright' : 'The mullions carried up'}</option><option value="cross">Cross</option>
+        </select></label>}
+      {sh.kind !== 'rect' && sh.bars === 'sunburst' && <label className="field-line"><span className="eyebrow">Spokes</span><input className="num" value={sh.spokes} onChange={(e) => { const v = Math.round(Number(e.target.value)); if (v > 0) setShape({ spokes: v }); }} /></label>}
+      {sh.kind !== 'circle' && <label className="field-line"><span className="eyebrow">Glazing bars</span>
+        <select data-field="muntins" value={mu.pattern} onChange={(e) => setMuntins({ pattern: e.target.value as Muntins['pattern'] })}>
+          <option value="none">None</option><option value="grid">Grid (colonial)</option><option value="prairie">Prairie</option><option value="diamond">Diamond lattice</option>
+        </select></label>}
+      {sh.kind !== 'circle' && (mu.pattern === 'grid' || mu.pattern === 'diamond') && <label className="field-line"><span className="eyebrow">Lites across</span><input className="num" value={mu.across} onChange={(e) => { const v = Math.round(Number(e.target.value)); if (v > 0) setMuntins({ across: v }); }} /></label>}
+      {sh.kind !== 'circle' && mu.pattern === 'grid' && <label className="field-line"><span className="eyebrow">Lites up</span><input className="num" value={mu.up} onChange={(e) => { const v = Math.round(Number(e.target.value)); if (v > 0) setMuntins({ up: v }); }} /></label>}
+      {sh.kind !== 'circle' && mu.pattern === 'prairie' && <Mm label="Margin" value={mu.margin} onChange={(v) => setMuntins({ margin: v })} />}
+      {sh.kind !== 'circle' && mu.pattern !== 'none' && <Mm label="Bar width" value={mu.width} onChange={(v) => setMuntins({ width: v })} />}
+    </>
+  );
+}
+
+/** The handles (report #48): their style, a door handle's height, their colour. */
+function HardwareFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial<Spec>) => void }) {
+  const hw = spec.hardware ?? HARDWARE;
+  return (
+    <>
+      <label className="field-line"><span className="eyebrow">Handle</span>
+        <select data-field="handle" value={hw.handle} onChange={(e) => onChange({ hardware: { ...hw, handle: e.target.value as Hardware['handle'] } })}>
+          <option value="auto">{spec.kind === 'door' ? 'Lever (default)' : 'Window handle (default)'}</option>
+          <option value="lever">Lever</option><option value="knob">Knob</option><option value="pull">Pull bar</option><option value="window">Window handle</option><option value="none">None</option>
+        </select></label>
+      {spec.kind === 'door' && hw.handle !== 'none' && <Mm label="Handle height" value={hw.height} onChange={(v) => onChange({ hardware: { ...hw, height: v } })} />}
+      {hw.handle !== 'none' && <label className="field-line"><span className="eyebrow">Handle colour</span><input type="color" value={hw.color ?? '#5a5a5a'} onChange={(e) => onChange({ hardware: { ...hw, color: e.target.value } })} /></label>}
     </>
   );
 }
@@ -255,7 +393,7 @@ export function JoineryDialog() {
   // The elevation's box; the strokes are fitted into it.
   const W = 300, H = 300;
   const boxes = [...(preview?.boxes ?? [])].sort((a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9));
-  const fill = (role: string) => role === 'glass' ? spec.colors.glass : role === 'leaf' ? spec.colors.leaf : role === 'handle' ? '#5a5a5a' : role === 'board' ? '#dcdcdc' : spec.colors.frame;
+  const fill = (role: string) => role === 'glass' ? spec.colors.glass : role === 'leaf' ? spec.colors.leaf : role === 'handle' || role === 'hardware' ? spec.hardware?.color ?? '#5a5a5a' : role === 'board' ? '#dcdcdc' : spec.colors.frame;
 
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Doors and windows">
@@ -283,6 +421,19 @@ export function JoineryDialog() {
               <Mm label="Width" value={spec.width} onChange={(v) => set({ width: v })} />
               <Mm label="Height" value={spec.height} onChange={(v) => set({ height: v })} />
               {spec.kind === 'window' && <Mm label="Sill" value={spec.sillHeight} onChange={(v) => set({ sillHeight: v })} />}
+              <label className="field-line"><span className="eyebrow">Style</span>
+                <select data-field="style" value="" title="Sets the shape, the glazing bars and the ornaments at once; each stays editable" onChange={(e) => {
+                  const st = JOINERY_STYLES[e.target.value];
+                  if (!st) return;
+                  const patch = st.apply(spec);
+                  set({ ...patch, details: styleDetails(e.target.value, spec.details ?? {}) });
+                  if (patch.columns) setCols(patch.columns.join(' '));
+                  if (patch.rows) setRows(patch.rows.join(' '));
+                }}>
+                  <option value="">Apply a style…</option>
+                  {Object.entries(JOINERY_STYLES).filter(([k]) => spec.kind === 'window' || k !== 'oculus').map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select></label>
+              <ShapeFields spec={spec} onChange={set} />
               <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v } })} />
               <Mm label="Frame width" value={spec.frame.width} onChange={(v) => set({ frame: { ...spec.frame, width: v } })} />
               <label className="field-line"><span className="eyebrow">Columns of panes</span><input data-field="columns" value={cols} title="Relative widths, e.g. 1 1 or 2 1" onChange={(e) => setGrid(e.target.value, rows)} /></label>
@@ -331,11 +482,14 @@ export function JoineryDialog() {
                 <label className="field-line"><span className="eyebrow">Threshold material</span><input list="lapin-materials" value={details.threshold.material ?? ''} onChange={(e) => setDetails({ threshold: { ...details.threshold!, material: e.target.value } })} /></label>
               </>}
               <DressingFields kind={spec.kind} height={spec.height} details={details} onChange={setDetails} />
+              <HardwareFields spec={spec} onChange={set} />
               {spec.kind === 'door' && <label className="field-line"><span className="eyebrow">Leaf</span><input type="color" value={spec.colors.leaf} onChange={(e) => set({ colors: { ...spec.colors, leaf: e.target.value } })} /></label>}
             </div>
             <div className="joinery-preview">
               <Strokes drawing={outside ? preview?.drawings?.exterior : preview?.drawings?.elevation} w={W} h={H} label={outside ? 'Elevation from outside' : 'Elevation from inside'}>
-                {(sx, sy, kk) => !outside && boxes.map((b, i) => <rect key={i} x={sx(b.x0)} y={sy(b.z1)} width={(b.x1 - b.x0) * kk} height={(b.z1 - b.z0) * kk} fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />)}
+                {(sx, sy, kk) => !outside && boxes.map((b, i) => b.profile
+                  ? <path key={i} d={[b.profile, ...(b.holes ?? [])].map((l) => loopPath(l, sx, sy)).join(' ')} fillRule="evenodd" fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />
+                  : <rect key={i} x={sx(b.x0)} y={sy(b.z1)} width={(b.x1 - b.x0) * kk} height={(b.z1 - b.z0) * kk} fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />)}
               </Strokes>
               <div className="joinery-small">
                 <figure><Strokes drawing={preview?.drawings?.plan} w={150} h={90} label="Plan" /><figcaption className="muted small">Plan</figcaption></figure>

@@ -53,6 +53,24 @@ Cada una se sitúa según las caras reales del muro donde está la ventana, a pa
 
 ![Las ventanas con sus complementos, en 3D](shots/window-dressings-3d.webp)
 
+### Formas, estilos y ornamentos
+
+**Forma** da a una puerta o ventana un remate en arco (**Arco de medio punto**, **Arco rebajado**, **Arco apuntado**, **Remate triangular**) o la hace **Redonda u oval** (redonda cuando el ancho y el alto son iguales). Un tipo con arco conserva sus hojas bajo un travesaño en el arranque del arco, y encima un fijo que sigue el arco, con barrotillos si se quiere: **Abanico**, **Los montantes prolongados** o **Cruz**. **Flecha del arco** fija cuánto sube un arco rebajado, apuntado o triangular. El hueco del muro, el marco, el vidrio, el recercado y los dibujos siguen el contorno.
+
+**Junquillos** dividen los vidrios: **Cuadrícula (colonial)** con sus vidrios a lo ancho y a lo alto, **Prairie** con barras cerca de los bordes, o **Rombos**.
+
+En la fachada, además del recercado, una ventana puede tener **Clave**, **Remate sobre el hueco** (**Cornisa**, **Frontón**, **Frontón curvo** o un **Guardapolvo** que sigue un remate en arco) y un **Antepecho bajo el vierteaguas** con sus ménsulas.
+
+**Aplicar un estilo…** pone a la vez la forma, los junquillos y los ornamentos: Moderno, Clásico, Georgiano, Victoriano, Románico, Barroco, Gótico, Tudor, Prairie, Tradicional o una ventana redonda. Todo lo que pone sigue editable.
+
+![Una ventana barroca: arco de medio punto con abanico, clave y frontón curvo](shots/joinery-styles.webp)
+
+![Ventanas con arco en 3D](shots/window-styles-3d.webp)
+
+### Manillas
+
+**Manilla** elige la manilla del tipo: **Manilla de palanca**, **Pomo**, **Tirador de barra**, **Manilla de ventana** o ninguna. Por defecto, una puerta lleva manilla de palanca y una ventana manilla de ventana. Una puerta tiene manilla en ambas caras, a la **Altura de la manilla** que se indique; **Color de la manilla** le da su color. Las manillas se ven en 3D, en secciones y alzados, y en los dibujos del configurador cuando está marcado **Herrajes**.
+
 ## Etiquetas en planta
 
 **Anotar → Etiquetas de puertas y ventanas** pone una marca en cada puerta y ventana de una planta: una línea a través del muro, la marca fuera, y el tamaño y el alféizar dentro. Para cambiar el aspecto de las etiquetas, vaya a **Gestionar → Normas de dibujo → Etiquetas**.

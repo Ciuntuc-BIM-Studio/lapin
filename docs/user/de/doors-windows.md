@@ -53,6 +53,24 @@ Jedes Teil richtet sich nach den tatsächlichen Flächen der Wand dort, wo das F
 
 ![Die ausgestatteten Fenster in 3D](shots/window-dressings-3d.webp)
 
+### Formen, Stile und Schmuck
+
+**Form** gibt einer Tür oder einem Fenster einen Bogenabschluss (**Rundbogen**, **Segmentbogen**, **Spitzbogen**, **Dreiecksabschluss**) oder macht es **Rund oder oval** (rund bei gleicher Breite und Höhe). Ein Bogentyp behält seine Flügel unter einem Kämpfer am Bogenansatz, darüber ein festes Oberlicht, das dem Bogen folgt, auf Wunsch mit Sprossen: **Strahlen**, **Die Pfosten weitergeführt** oder **Kreuz**. **Stichhöhe** legt fest, wie hoch ein Segment-, Spitz- oder Dreiecksabschluss steigt. Die Wandöffnung, der Rahmen, das Glas, die Faschen und die Zeichnungen folgen dem Umriss.
+
+**Sprossen** teilen die Scheiben: **Raster (Kolonial)** mit Feldern in der Breite und Höhe, **Prairie** mit Sprossen nahe den Rändern, oder ein **Rautenmuster**.
+
+An der Fassade kann ein Fenster neben der Fasche einen **Schlussstein**, eine **Bekrönung über der Öffnung** (ein **Gesims**, eine **Giebelverdachung**, einen **Segmentgiebel** oder ein **Überschlagsgesims**, das einem Bogen folgt) und ein **Brüstungsfeld unter der Sohlbank** mit Konsolen haben.
+
+**Einen Stil anwenden…** setzt Form, Sprossen und Schmuck auf einmal: Modern, Klassisch, Georgianisch, Viktorianisch, Romanisch, Barock, Gotisch, Tudor, Prairie, Traditionell oder ein Rundfenster. Alles bleibt änderbar.
+
+![Ein barockes Fenster: Rundbogen mit Strahlen, Schlussstein und Segmentgiebel](shots/joinery-styles.webp)
+
+![Bogenfenster in 3D](shots/window-styles-3d.webp)
+
+### Griffe
+
+**Griff** wählt den Griff des Typs: **Drücker**, **Knauf**, **Stoßgriff**, **Fenstergriff** oder keinen. Standardmäßig hat eine Tür einen Drücker und ein Fenster einen Fenstergriff. Eine Tür hat den Griff auf beiden Seiten, in der angegebenen **Griffhöhe**; **Griffarbe** setzt seine Farbe. Griffe erscheinen in 3D, in Schnitten und Ansichten und in den Zeichnungen des Konfigurators, wenn **Beschläge** angehakt ist.
+
 ## Beschriftungen im Grundriss
 
 **Beschriften → Tür- und Fensterbeschriftungen** setzt eine Markierung an jede Tür und jedes Fenster eines Grundrisses: eine Linie quer durch die Wand, das Kennzeichen außen sowie Größe und Brüstung innen. Um das Aussehen der Beschriftungen zu ändern, gehen Sie zu **Verwalten → Zeichnungsstandards → Beschriftungen**.

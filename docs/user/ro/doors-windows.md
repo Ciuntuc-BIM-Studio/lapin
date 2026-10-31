@@ -53,6 +53,24 @@ Fiecare se așază după fețele reale ale peretelui unde e fereastra, din strat
 
 ![Ferestrele cu decorațiuni, în 3D](shots/window-dressings-3d.webp)
 
+### Forme, stiluri și ornamente
+
+**Formă** dă unei uși sau ferestre un cap în arc (**Arc în plin cintru**, **Arc de segment**, **Arc frânt**, **Cap triunghiular**) sau o face **Rotundă sau ovală** (rotundă când lățimea și înălțimea sunt egale). Un tip cu arc își păstrează ochiurile sub un montant orizontal la nașterea arcului, iar deasupra are un ochi fix care urmează arcul, cu bare dacă vrei: **Evantai**, **Montanții continuați în sus** sau **Cruce**. **Înălțimea arcului** spune cât se ridică un arc de segment, frânt sau triunghiular. Golul din perete, rama, sticla, ancadramentul și desenele urmează conturul.
+
+**Baghete** împart ochiurile: **Grilă (colonial)** cu ochiurile pe lățime și pe înălțime, **Prairie** cu bare lângă margini, sau **Romburi**.
+
+Pe fațadă, pe lângă ancadrament, o fereastră poate avea **Cheie de boltă**, **Coronament peste gol** (**Cornișă**, **Fronton**, **Fronton în arc** sau **Ancadrament de ploaie**, care urmează un cap în arc) și **Panou sub glaf** cu consolele lui.
+
+**Aplică un stil…** pune deodată forma, baghetele și ornamentele: Modern, Clasic, Georgian, Victorian, Romanic, Baroc, Gotic, Tudor, Prairie, Tradițional sau o fereastră rotundă. Tot ce pune rămâne de modificat.
+
+![O fereastră barocă: arc în plin cintru cu evantai, cheie de boltă și fronton în arc](shots/joinery-styles.webp)
+
+![Ferestre cu arc, în 3D](shots/window-styles-3d.webp)
+
+### Mânere
+
+**Mâner** alege mânerul tipului: **Clanță**, **Buton**, **Bară de tragere**, **Mâner de fereastră** sau niciunul. Implicit, o ușă are clanță, iar o fereastră mâner de fereastră. O ușă are mâner pe ambele fețe, la **Înălțimea mânerului** pe care o dai; **Culoarea mânerului** îi dă culoarea. Mânerele se văd în 3D, în secțiuni și fațade, și în desenele configuratorului când e bifată **Feronerie**.
+
 ## Etichete în plan
 
 **Adnotări → Etichete uși și ferestre** pune un marcaj pe fiecare ușă și fereastră dintr-un plan: o linie peste perete, marca în afară, dimensiunile și parapetul înăuntru. Cum arată etichetele se setează în **Gestionare → Standarde de desen → Etichete**.

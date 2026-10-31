@@ -186,12 +186,16 @@ public class OpeningTests
         var f = new Fixture();
         var wall = f.Wall(0, 0, 5, 0);
         var door = Door(f, wall, 2.5);
-        Vec3 Handle() => Measure.Bounds(f.Session.Geometry(door)!.Parts.Single(p => p.Name == "handle").Solid)!.Value.Min;
+        // The handles' middle (a door has one on each face, so across the wall it stays put).
+        Vec3 Handle() { var b = Measure.Bounds(f.Session.Geometry(door)!.Parts.Single(p => p.Name == "handle").Solid)!.Value; return (b.Min + b.Max) * 0.5; }
+        // The leaf open at 90° and its swing lie on the side it opens to.
+        double Swing() => f.Session.Geometry(door)!.Plan!.Where(i => i.Kind is "symbol" or "dashed").SelectMany(i => i.Points).Average(q => q.Y);
         var h = Handle();
+        var swing = Swing();
         f.Run("architecture.flipJoinery", new JsonObject { ["id"] = door, ["axis"] = "x" });
         Assert.True(Math.Abs((Handle().X - 2.5) + (h.X - 2.5)) < 0.05);   // the other hand
         f.Run("architecture.flipJoinery", new JsonObject { ["id"] = door, ["axis"] = "y" });
-        Assert.True(Math.Sign(Handle().Y) != Math.Sign(h.Y) || Math.Abs(Handle().Y - h.Y) > 0.03);   // the other side
+        Assert.True(Math.Sign(Swing()) != Math.Sign(swing));   // the other side
     }
 
     [Fact]

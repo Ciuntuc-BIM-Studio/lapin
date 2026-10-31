@@ -105,8 +105,10 @@ public static class JoinerySymbols
         var o = new List<JStroke>();
         foreach (var b in boxes.Where(b => b.Min.Z <= z && b.Max.Z >= z))
         {
-            if (b.Role is "leaf" or "handle") continue;
-            o.Add(Rect(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y, b.Role == "glass" ? "thin" : "cut"));
+            if (b.Role is "leaf" or "handle" or "hardware" or "muntin") continue;
+            // An outline (an arch, a round frame) is cut where the plane crosses it.
+            foreach (var (x0, x1) in JoineryShapes.Spans(b, z))
+                o.Add(Rect(x0, b.Min.Y, x1, b.Max.Y, b.Role == "glass" ? "thin" : "cut"));
         }
         foreach (var b in boxes.Where(b => b.Role == "board" && b.Max.Z < z)) o.Add(Rect(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y, "outline"));
         var view = new JinerySpecView(s);
@@ -174,7 +176,18 @@ public static class JoinerySymbols
         if (op == "top-hung") foreach (var x in new[] { r.X0 + 0.1, r.X1 - 0.1 - hl }) o.Add(Rect(x, r.Z1 - hw, x + hl, r.Z1, "outline"));
         // The handle: a lever on the side opposite the hinges.
         var sw = s.Sash.Width / 2;
-        void HandleAt(double x, double z, double dir) { o.Add(Rect(x - 0.012, z - 0.03, x + 0.012, z + 0.03, "outline")); o.Add(Line(new(x, z), new(x + dir * 0.11, z), "outline")); }
+        var style = Joinery.HandleStyle(s);
+        void HandleAt(double x, double z, double dir)
+        {
+            switch (style)
+            {
+                case "none": return;
+                case "knob": o.Add(Arc(new(x, z), 0.03, 0, 2 * Math.PI, "outline")); o.Add(Arc(new(x, z), 0.012, 0, 2 * Math.PI, "thin")); return;
+                case "pull": { var len = leaf ? 0.6 : 0.25; o.Add(Rect(x - 0.0125, z - len / 2, x + 0.0125, z + len / 2, "outline")); return; }
+                case "window": o.Add(Rect(x - 0.016, z - 0.04, x + 0.016, z + 0.04, "outline")); o.Add(Rect(x - 0.011, z - 0.12, x + 0.011, z + 0.01, "outline")); return;
+                default: o.Add(Arc(new(x, z), 0.026, 0, 2 * Math.PI, "outline")); o.Add(Rect(Math.Min(x, x + dir * 0.13), z - 0.01, Math.Max(x, x + dir * 0.13), z + 0.01, "outline")); return;
+            }
+        }
         var zh = leaf ? Math.Min(r.Z0 + 1.05, r.Z1 - 0.2) : (r.Z0 + r.Z1) / 2;
         var slides = op.StartsWith("sliding") || op.StartsWith("door-sliding");
         if (op.EndsWith("-left") && !slides) HandleAt(r.X1 - sw, zh, -1);
@@ -184,9 +197,29 @@ public static class JoinerySymbols
         return o;
     }
 
+    /// <summary>The outline's strokes and what only a shaped type has: the head's inner curve and transom, a round window's ring, the bars of either, the glazing bars.</summary>
+    static IEnumerable<JStroke> ShapeLines(JoinerySpec s)
+    {
+        yield return new(JoineryShapes.Outline(s, 0, 0), "outline", true);
+        var fw = s.Frame.Width;
+        if (JoineryShapes.Round(s)) yield return new(JoineryShapes.Ellipse(s, fw), "outline", true);
+        else if (JoineryShapes.Headed(s))
+        {
+            var zs = JoineryShapes.Spring(s);
+            var t = Math.Max(s.Frame.Transom, 0.02);
+            List<Vec2> fan = [new(s.Width / 2 - fw, zs), .. JoineryShapes.Head(s, fw).Where(p => p.Y > zs + 1e-6), new(-s.Width / 2 + fw, zs)];
+            yield return new(fan, "outline", true);
+            yield return Line(new(-s.Width / 2 + fw, zs - t), new(s.Width / 2 - fw, zs - t), "outline");
+        }
+        foreach (var b in Joinery.Boxes(s).Where(b => b.Profile != null && b.Role is "frame" or "muntin" && (b.Max.X - b.Min.X < s.Width * 0.9 || b.Role == "muntin")))
+            yield return new(b.Profile!, "thin", true);
+    }
+
     public static List<JStroke> Elevation(JoinerySpec s, bool exterior = false, string convention = "handle", bool hardware = false)
     {
-        var o = new List<JStroke> { Rect(-s.Width / 2, 0, s.Width / 2, s.Height, "outline") };
+        var shaped = JoineryShapes.Shaped(s) || s.Muntins is { Pattern: not "none" };
+        var o = shaped ? ShapeLines(s).ToList() : [Rect(-s.Width / 2, 0, s.Width / 2, s.Height, "outline")];
+        if (JoineryShapes.Round(s)) return exterior ? o.Select(x => x with { Pts = x.Pts.Select(q => new Vec2(-q.X, q.Y)).ToList() }).ToList() : o;
         foreach (var p in Joinery.Normalised(s))
         {
             var r = Joinery.PanelRect(s, p);
@@ -222,9 +255,15 @@ public static class JoinerySymbols
         {
             foreach (var b in piece.Boxes)
             {
-                if (view == "section") { if (b.Min.X <= cutX && b.Max.X >= cutX) o.Add(Rect(b.Min.Y, b.Min.Z, b.Max.Y, b.Max.Z, "cut")); continue; }
+                if (view == "section") { foreach (var (z0, z1) in JoineryShapes.Spans(b, cutX, vertical: true)) o.Add(Rect(b.Min.Y, z0, b.Max.Y, z1, "cut")); continue; }
                 // From inside, only what stands on the interior face shows (the rest is behind the glass or the wall).
                 if (view == "elevation" && b.Max.Y > faces.In + 1e-6) continue;
+                if (b.Profile is { } outline)
+                {
+                    foreach (var loop in (b.Holes ?? []).Prepend(outline))
+                        o.Add(new(view == "exterior" ? loop.Select(q => new Vec2(-q.X, q.Y)).ToList() : loop.ToList(), "thin", true));
+                    continue;
+                }
                 o.Add(view == "exterior" ? Rect(-b.Max.X, b.Min.Z, -b.Min.X, b.Max.Z, "thin") : Rect(b.Min.X, b.Min.Z, b.Max.X, b.Max.Z, "thin"));
             }
             if (piece.Swept is { } sw)
@@ -248,8 +287,13 @@ public static class JoinerySymbols
     public static List<JStroke> Section(JoinerySpec s, double? cutX = null)
     {
         var x = cutX ?? SectionCut(s);
-        return Joinery.Boxes(s).Where(b => b.Role != "handle" && b.Min.X <= x && b.Max.X >= x)
-            .Select(b => Rect(b.Min.Y, b.Min.Z, b.Max.Y, b.Max.Z, b.Role == "glass" ? "thin" : "cut")).ToList();
+        // Cut where the plane crosses; the handles beside it seen (report #48), in front of the panel they turn.
+        var boxes = Joinery.Boxes(s);
+        var o = boxes.Where(b => b.Role is not ("handle" or "hardware" or "muntin") && b.Min.X <= x && b.Max.X >= x)
+            .SelectMany(b => JoineryShapes.Spans(b, x, vertical: true).Select(z => Rect(b.Min.Y, z.A, b.Max.Y, z.B, b.Role == "glass" ? "thin" : "cut"))).ToList();
+        foreach (var b in boxes.Where(b => b.Role is "handle" or "hardware"))
+            o.Add(Rect(b.Min.Y, b.Min.Z, b.Max.Y, b.Max.Z, "outline"));
+        return o;
     }
 
     public static (Vec2 Min, Vec2 Max) Bounds(IEnumerable<JStroke> strokes)

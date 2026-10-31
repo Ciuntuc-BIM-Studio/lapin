@@ -227,6 +227,14 @@ public static class Openings
     /// <summary>The box an opening takes out of its wall, through the whole thickness and a little past it.</summary>
     public static Solid? Cutter(WallFrame f, Placed p)
     {
+        // An arched or round door or window takes its own outline out of the wall.
+        if (p.Spec is { } spec && JoineryShapes.Shaped(spec))
+        {
+            var sized = spec with { Width = p.Width, Height = p.Height };
+            var near = f.YMin - 0.05;
+            var outline = JoineryShapes.Outline(sized, 0, 0).Select(q => f.At(p.Along + q.X, near, p.Sill + q.Y)).ToList();
+            return Prism.Extrude(outline, null, f.At(0, f.YMax + 0.05, 0) - f.At(0, near, 0), "opening");
+        }
         double x0 = p.Along - p.Width / 2, x1 = p.Along + p.Width / 2, y0 = f.YMin - 0.05, y1 = f.YMax + 0.05;
         Vec2[] footprint = [(f.Start + f.Dir * x0 + f.Left * y0), (f.Start + f.Dir * x1 + f.Left * y0), (f.Start + f.Dir * x1 + f.Left * y1), (f.Start + f.Dir * x0 + f.Left * y1)];
         return Prism.ExtrudeFootprint(footprint, f.Base + p.Sill, p.Height, "opening");
@@ -259,7 +267,12 @@ public static class Openings
         {
             var solids = group.Select(b => Box(b, Map)).OfType<Solid>().ToList();
             if (solids.Count == 0) continue;
-            var color = group.Key switch { "glass" => spec.Colors.Glass, "leaf" => spec.Colors.Leaf, _ => HandleColor.GetValueOrDefault(group.Key, spec.Colors.Frame) };
+            var color = group.Key switch
+            {
+                "glass" => spec.Colors.Glass, "leaf" => spec.Colors.Leaf,
+                "handle" or "hardware" => spec.Hardware?.Color ?? HandleColor["handle"],
+                _ => HandleColor.GetValueOrDefault(group.Key, spec.Colors.Frame),
+            };
             parts.Add(new GeometryPart(group.Key, color, Combine(solids, group.Key), null, group.Key));
         }
         if (dressing != null) parts.AddRange(dressing.Parts());
@@ -295,7 +308,8 @@ public static class Openings
             _t = f.YMax - f.YMin;
             _yFE = spec.Frame.Offset + spec.Frame.Depth / 2;
             _yFI = spec.Frame.Offset - spec.Frame.Depth / 2;
-            _finish = Finishes(m, wall, sy, _d.Reveal ?? new JoineryReveal());
+            // A shaped opening's reveal stays the wall's own cut faces: a finish box would square its head again.
+            _finish = JoineryShapes.Shaped(spec) ? [(0, null), (0, null)] : Finishes(m, wall, sy, _d.Reveal ?? new JoineryReveal());
         }
 
         double YExt => _t / 2;
@@ -379,12 +393,22 @@ public static class Openings
                 var (w, dpt) = (Math.Max(0.01, sur.Width), Math.Max(0.005, sur.Projection));
                 var id = MaterialNamed(_m, sur.Material);
                 var z0 = sur.Sill && !_spec.IsDoor ? -w : 0;
+                if (JoineryShapes.Shaped(_spec))
+                {
+                    var shaped = new List<Solid>();
+                    if (Openings.Box(SurroundOutline(_spec, w, YExt, YExt + dpt), _map) is { } arch) shaped.Add(arch);
+                    if (sur.Sill && !_spec.IsDoor && !JoineryShapes.Round(_spec) && Box(-W / 2 - w, W / 2 + w, YExt, YExt + dpt, -w, 0, "surround") is { } band) shaped.Add(band);
+                    if (shaped.Count > 0) yield return new GeometryPart("Surround", ColorOf(id, sur.Material, "#e0d8c8"), Combine(shaped, "surround"), id, "surround");
+                }
+                else
+                {
                 var solids = new[]
                 {
                     Box(-W / 2 - w, -W / 2, YExt, YExt + dpt, z0, H + w, "surround"), Box(W / 2, W / 2 + w, YExt, YExt + dpt, z0, H + w, "surround"),
                     Box(-W / 2, W / 2, YExt, YExt + dpt, H, H + w, "surround"), sur.Sill && !_spec.IsDoor ? Box(-W / 2, W / 2, YExt, YExt + dpt, -w, 0, "surround") : null,
                 }.OfType<Solid>().ToList();
                 if (solids.Count > 0) yield return new GeometryPart("Surround", ColorOf(id, sur.Material, "#e0d8c8"), Combine(solids, "surround"), id, "surround");
+                }
             }
             if (ThresholdOn)
             {
@@ -432,6 +456,15 @@ public static class Openings
         public Dressing WithPlaced(Placed p) { _placed = p; return this; }
     }
 
+    /// <summary>A shaped opening's surround on the facade: a band <paramref name="w"/> wide round its outline (the jambs and the head; a round window's whole ring), from y0 to y1.</summary>
+    public static JoineryBox SurroundOutline(JoinerySpec s, double w, double y0, double y1)
+    {
+        if (JoineryShapes.Round(s)) return JoineryShapes.Prism("surround", JoineryShapes.Ellipse(s, -w), y0, y1) with { Holes = [JoineryShapes.Ellipse(s, 0)] };
+        var half = s.Width / 2;
+        List<Vec2> pts = [new(half + w, 0), .. JoineryShapes.Outline(s, -w, 0).Skip(1).SkipLast(1), new(-half - w, 0), new(-half, 0), .. JoineryShapes.Outline(s, 0, 0).Skip(1).SkipLast(1).Reverse(), new(half, 0)];
+        return JoineryShapes.Prism("surround", pts, y0, y1);
+    }
+
     /// <summary>The details' measures for the schedules and quantities: the reveal's finished area each side, the sills' lengths, the surround's face, the threshold's length.</summary>
     public static IEnumerable<(string Name, double Value, string Unit)> DetailQuantities(IModelView m, Entity fill)
     {
@@ -471,6 +504,13 @@ public static class Openings
 
     static Solid? Box(JoineryBox b, Func<double, double, double, Vec3> map)
     {
+        // An outline (an arch, a slanting bar): its points mapped at the near face, swept to the far one.
+        if (b.Profile is { Count: >= 3 } outline)
+        {
+            var d = map(0, b.Max.Y, 0) - map(0, b.Min.Y, 0);
+            var holes = b.Holes?.Select(h => (IReadOnlyList<Vec3>)h.Select(q => map(q.X, b.Min.Y, q.Y)).ToList()).ToList();
+            return Prism.Extrude(outline.Select(q => map(q.X, b.Min.Y, q.Y)).ToList(), holes, d, b.Role);
+        }
         Vec3[] c =
         [
             map(b.Min.X, b.Min.Y, b.Min.Z), map(b.Max.X, b.Min.Y, b.Min.Z), map(b.Max.X, b.Max.Y, b.Min.Z), map(b.Min.X, b.Max.Y, b.Min.Z),

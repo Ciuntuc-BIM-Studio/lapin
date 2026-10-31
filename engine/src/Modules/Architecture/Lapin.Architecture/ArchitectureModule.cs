@@ -57,7 +57,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             Vec3 W(double x, double z) => f.At(p.Along + sx * x, yExt, p.Sill + z);
             if (c.Occluded(W(0, spec.Height / 2), new HashSet<string> { fill.Id, wall.Id, opening.Id })) continue;
             var mark = new ViewMark(fill.Id);
-            foreach (var panel in Joinery.Normalised(spec))
+            // A round window is one fixed light: no opening symbol.
+            foreach (var panel in JoineryShapes.Round(spec) ? [] : Joinery.Normalised(spec))
             {
                 var r = Joinery.PanelRect(spec, panel);
                 foreach (var st in JoinerySymbols.OpeningMarks(panel.Operation, r, true, convention))
@@ -108,6 +109,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             ["doorOperations"] = new JsonArray(Joinery.DoorOperations.Select(x => (JsonNode)x).ToArray()),
             ["defaultDoor"] = JoinerySpecs.Door.ToJson(),
             ["defaultWindow"] = JoinerySpecs.Window.ToJson(),
+            ["shapes"] = new JsonArray(JoineryShapes.Kinds.Select(x => (JsonNode)x).ToArray()),
+            ["headBars"] = new JsonArray(JoineryShapes.HeadBars.Select(x => (JsonNode)x).ToArray()),
+            ["muntins"] = new JsonArray(JoineryShapes.MuntinPatterns.Select(x => (JsonNode)x).ToArray()),
         });
 
         // The configurator's preview: the body as boxes (front elevation in X–Z), and why the spec cannot be built.
@@ -126,6 +130,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 ["boxes"] = new JsonArray(boxes.Select(b => (JsonNode)new JsonObject
                 {
                     ["role"] = b.Role, ["x0"] = b.Min.X, ["x1"] = b.Max.X, ["y0"] = b.Min.Y, ["y1"] = b.Max.Y, ["z0"] = b.Min.Z, ["z1"] = b.Max.Z,
+                    // An outline (an arch, a round frame, a slanting bar) as X, Z pairs, with its holes.
+                    ["profile"] = b.Profile == null ? null : new JsonArray(b.Profile.SelectMany(q => new JsonNode?[] { q.X, q.Y }).ToArray()),
+                    ["holes"] = b.Holes == null ? null : new JsonArray(b.Holes.Select(h => (JsonNode)new JsonArray(h.SelectMany(q => new JsonNode?[] { q.X, q.Y }).ToArray())).ToArray()),
                 }).ToArray()),
                 ["panels"] = new JsonArray(Joinery.Normalised(spec).Select(p =>
                 {
