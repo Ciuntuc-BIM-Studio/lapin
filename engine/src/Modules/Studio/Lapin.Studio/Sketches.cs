@@ -40,7 +40,7 @@ public static class Sketches
     public static IReadOnlyList<Vec2>? Loop(Shape? s) => s switch
     {
         Polyline { Closed: true } p when p.Pts.Count >= 3 => p.Pts,
-        Circle c => Geo.Polylines(c, Math.PI / 32)[0].SkipLast(1).ToList(),
+        Circle c => Geo.Polylines(c)[0].SkipLast(1).ToList(),
         _ => null,
     };
 
@@ -62,7 +62,7 @@ public static class Sketches
             if (e.Str("role") == "draft" || e.Attrs["hatch"] != null) continue;
             var shape = Drafts.ShapeOf(e);
             if (Loop(shape) is { } loop) { o.Add(new([e.Id], loop)); continue; }
-            if (shape is Line or Arc or Polyline { Closed: false }) open.Add((e.Id, Geo.Polylines(shape, Math.PI / 32)[0]));
+            if (shape is Line or Arc or Polyline { Closed: false }) open.Add((e.Id, Geo.Polylines(shape)[0]));
         }
         if (open.Count < 2) return o;
         foreach (var chain in Lapin.Drafting.Cad.Joins.Chains(open.Select(x => (IReadOnlyList<Vec2>)x.Pts).ToList(), 1e-6))

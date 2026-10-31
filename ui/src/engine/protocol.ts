@@ -38,7 +38,12 @@ export interface RenderPart {
   edges: Float32Array;
   /** The layers modes of a 3D view that leave this part out (a finish layer: both; insulation: core); none: every mode shows it (layers3d.ts). */
   hiddenBy?: ('noFinishes' | 'core')[] | null;
+  /** Coarser copies for the screen, finest first (docs/plan-display-precision.md): only a part of many triangles has them. */
+  lods?: RenderLod[] | null;
 }
+
+/** A coarser copy of a part: flat shaded, with its edges; `error`, the most it strays from the part (m). */
+export interface RenderLod { error: number; positions: Float32Array; normals: Float32Array; indices: Int32Array; edges: Float32Array }
 
 /** A part's caps where a section cuts it in 3D (view.caps): `part` is its index in the element's parts. */
 /** Drawn as on a sheet (style "drawing"): `fill`, the cut's fill, and `hatch`, its hatch as x y z segment pairs. */

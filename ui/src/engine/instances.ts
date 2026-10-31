@@ -50,7 +50,8 @@ export function inWorld(item: RenderItem, meshes: ReadonlyMap<string, SharedMesh
   if (known) return known;
   const mesh = meshes.get(inst.mesh);
   const parts: RenderPart[] = (mesh?.parts ?? []).map((p) => ({
-    ...p, positions: positionsOf(p.positions, inst.matrix), normals: normalsOf(p.normals, inst.matrix), edges: positionsOf(p.edges, inst.matrix),
+    // The coarser copies stay with the mesh: what needs the triangles in the world needs the true ones.
+    ...p, positions: positionsOf(p.positions, inst.matrix), normals: normalsOf(p.normals, inst.matrix), edges: positionsOf(p.edges, inst.matrix), lods: null,
   }));
   const out = { ...item, parts, instance: null };
   placed.set(item, out);

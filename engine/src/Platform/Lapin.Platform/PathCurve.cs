@@ -16,9 +16,6 @@ public readonly record struct PathCurve(Vec2 Start, Vec2 End, double Rise)
     /// <summary>The attribute holding the rise.</summary>
     public const string Key = "arc";
 
-    /// <summary>A step along an arc, at most (about 5°): what its plan, body and IFC axis are drawn with.</summary>
-    const double MaxStep = Math.PI / 36;
-
     public static PathCurve Of(Entity e) => new(Joins.Start(e), Joins.End(e), e.NumOrNull(Key) ?? 0);
 
     public double Chord => (End - Start).Length;
@@ -79,7 +76,7 @@ public readonly record struct PathCurve(Vec2 Start, Vec2 End, double Rise)
     /// <summary>How far <paramref name="p"/> is from the axis between its ends.</summary>
     public double Distance(Vec2 p) => (PointAt(Math.Clamp(Project(p), 0, Length)) - p).Length;
 
-    /// <summary>The distances it is drawn at from <paramref name="s0"/> to <paramref name="s1"/>: the two only, straight; on an arc, steps of at most 5° (straight past the ends).</summary>
+    /// <summary>The distances it is drawn at from <paramref name="s0"/> to <paramref name="s1"/>: the two only, straight; on an arc, by the chord rule (<see cref="Chords"/>: no chord more than a millimetre off the arc; straight past the ends).</summary>
     public List<double> Stations(double s0, double s1)
     {
         if (!IsArc || s1 - s0 < 1e-12) return [s0, s1];
@@ -87,7 +84,7 @@ public readonly record struct PathCurve(Vec2 Start, Vec2 End, double Rise)
         var (a, b) = (Math.Max(s0, 0), Math.Min(s1, Length));
         if (b > a)
         {
-            var n = Math.Max(1, (int)Math.Ceiling((b - a) / Radius / MaxStep));
+            var n = Chords.Count(Radius, (b - a) / Radius);
             for (var i = 0; i <= n; i++)
             {
                 var s = a + (b - a) * i / n;

@@ -127,4 +127,32 @@ describe('InstanceLayer', () => {
     expect(layer.batches.get('m')!.parts.length).toBe(2);
     expect(drawn(layer, 'm', 'b').x).toBe(10);
   });
+
+  it("draws each instance with the copy its distance chooses, nothing in the others, and picks through the copies too", () => {
+    const layer = new InstanceLayer(edges);
+    const m = mesh('m');
+    m.parts[0].lods = [{ error: 0.01, positions: new Float32Array([-0.5, -0.5, 0, 0.5, -0.5, 0, 0, 0.5, 1]), normals: new Float32Array(9), indices: new Int32Array([0, 1, 2]), edges: new Float32Array(0) }];
+    // One instance by the eye, one 2 km off along x.
+    layer.sync(render(inst('near', 'm', 0), inst('far', 'm', 2000)), new Map([['m', m]]));
+    layer.restyle({}, [], 'shaded', 'all');
+    const b = layer.batches.get('m')!;
+    const [part] = b.parts;
+    expect(part.copies.length).toBe(1);
+    const shownIn = (target: THREE.InstancedMesh, id: string) => { const x = new THREE.Matrix4(); target.getMatrixAt(b.index.get(id)!, x); return x.elements[0] !== 0; };
+    // Before any choice: the part itself.
+    expect(shownIn(part.solid, 'far')).toBe(true);
+    expect(shownIn(part.copies[0].solid, 'far')).toBe(false);
+    const cam = { kind: 'perspective' as const, eye: [0, -5, 2] as [number, number, number], fovDeg: 45, heightPx: 1000 };
+    expect(layer.relevel(cam, 'balanced')).toBe(true);
+    expect(shownIn(part.solid, 'near')).toBe(true);
+    expect(shownIn(part.copies[0].solid, 'near')).toBe(false);
+    expect(shownIn(part.solid, 'far')).toBe(false);
+    expect(shownIn(part.copies[0].solid, 'far')).toBe(true);
+    // Nothing moved: nothing to do; precise takes the part itself back.
+    expect(layer.relevel(cam, 'balanced')).toBe(false);
+    expect(layer.relevel(cam, 'precise')).toBe(true);
+    expect(shownIn(part.solid, 'far')).toBe(true);
+    expect(layer.pickables()).toContain(part.copies[0].solid);
+    expect(layer.nodeOf({ object: part.copies[0].solid, instanceId: b.index.get('far') } as unknown as THREE.Intersection)).toBe('far');
+  });
 });

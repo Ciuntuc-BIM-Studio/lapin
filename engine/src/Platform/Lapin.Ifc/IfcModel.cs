@@ -610,9 +610,11 @@ public sealed partial class IfcModel
         var origin = Point(axis?[0]);
         var dir = Direction(axis?[1]) ?? new Vec3(0, 1, 0);
         var angle = Num(s[3]) * _angle;
-        var steps = Math.Max(3, (int)Math.Ceiling(Math.Abs(angle) / (Math.PI / 12)));
-        var m = new MeshBuilder();
         var ring = areas[0].Outer;
+        // By the chord rule at the profile's point farthest from the axis.
+        var far = ring.Count == 0 ? 0 : ring.Max(p => { var v = p - origin; return (v - dir.Normalized() * Vec3.Dot(dir.Normalized(), v)).Length; });
+        var steps = Chords.Count(far, angle, 3);
+        var m = new MeshBuilder();
         var rows = Enumerable.Range(0, steps + 1).Select(k => ring.Select(p => m.Add(Rotate(p, origin, dir, angle * k / steps))).ToArray()).ToList();
         for (var k = 0; k < steps; k++)
             for (var i = 0; i < ring.Count; i++)
@@ -637,7 +639,8 @@ public sealed partial class IfcModel
         var path = Curve(File.Get(s[0]));
         var r = Num(s[1]) * _len;
         if (path.Count < 2 || r <= 0) return null;
-        const int sides = 8;
+        // A bar or a pipe by the chord rule, but never under 8 sides nor finer than needed: a rebar cage is thousands of them.
+        var sides = Chords.Count(r, 2 * Math.PI, 8, Math.PI / 4);
         var m = new MeshBuilder();
         var rings = new List<int[]>();
         for (var i = 0; i < path.Count; i++)
@@ -667,7 +670,7 @@ public sealed partial class IfcModel
         List<(List<Vec3>, List<List<Vec3>>)> One(List<Vec3> outer, params List<Vec3>[] holes) => outer.Count >= 3 ? [(outer, [.. holes.Where(h => h.Count >= 3)])] : [];
         List<Vec3> Placed(List<Vec3> pts) { var xf = Axis2(p[2]); return [.. pts.Select(xf.Apply)]; }
         List<Vec3> Rect(double w, double h) => [new(-w / 2, -h / 2, 0), new(w / 2, -h / 2, 0), new(w / 2, h / 2, 0), new(-w / 2, h / 2, 0)];
-        List<Vec3> Circle(double r, double r2 = -1) => [.. Enumerable.Range(0, 24).Select(k => new Vec3(r * Math.Cos(k * Math.PI / 12), (r2 < 0 ? r : r2) * Math.Sin(k * Math.PI / 12), 0))];
+        List<Vec3> Circle(double r, double r2 = -1) { var n = Chords.Circle(Math.Max(r, r2)); return [.. Enumerable.Range(0, n).Select(k => new Vec3(r * Math.Cos(2 * Math.PI * k / n), (r2 < 0 ? r : r2) * Math.Sin(2 * Math.PI * k / n), 0))]; }
         double L(int i) => Num(p[i]) * _len;
         switch (p.Type)
         {
@@ -743,8 +746,8 @@ public sealed partial class IfcModel
                 break;
             case "IFCTRIMMEDCURVE": o.AddRange(Trimmed(c)); break;
             case "IFCBSPLINECURVEWITHKNOTS" or "IFCRATIONALBSPLINECURVEWITHKNOTS": o.AddRange(SplineCurve(c)); break;
-            case "IFCCIRCLE": { var xf = Axis2(c[0]); var r = Num(c[1]) * _len; o.AddRange(Enumerable.Range(0, 24).Select(k => xf.Apply(new Vec3(r * Math.Cos(k * Math.PI / 12), r * Math.Sin(k * Math.PI / 12), 0)))); break; }
-            case "IFCELLIPSE": { var xf = Axis2(c[0]); double a = Num(c[1]) * _len, b = Num(c[2]) * _len; o.AddRange(Enumerable.Range(0, 24).Select(k => xf.Apply(new Vec3(a * Math.Cos(k * Math.PI / 12), b * Math.Sin(k * Math.PI / 12), 0)))); break; }
+            case "IFCCIRCLE": { var xf = Axis2(c[0]); var r = Num(c[1]) * _len; var n = Chords.Circle(r); o.AddRange(Enumerable.Range(0, n).Select(k => xf.Apply(new Vec3(r * Math.Cos(2 * Math.PI * k / n), r * Math.Sin(2 * Math.PI * k / n), 0)))); break; }
+            case "IFCELLIPSE": { var xf = Axis2(c[0]); double a = Num(c[1]) * _len, b = Num(c[2]) * _len; var n = Chords.Circle(Math.Max(a, b)); o.AddRange(Enumerable.Range(0, n).Select(k => xf.Apply(new Vec3(a * Math.Cos(2 * Math.PI * k / n), b * Math.Sin(2 * Math.PI * k / n), 0)))); break; }
         }
         var clean = new List<Vec3>();
         foreach (var p in o) if (clean.Count == 0 || (clean[^1] - p).Length > 1e-7) clean.Add(p);
@@ -766,14 +769,14 @@ public sealed partial class IfcModel
                 : Cart(trim) is { } p ? Math.Atan2(Vec3.Dot(p - xf.O, xf.Y), Vec3.Dot(p - xf.O, xf.X)) : 0;
             double a1 = Angle(c[1]), a2 = Angle(c[2]);
             if (sense) { while (a2 <= a1) a2 += 2 * Math.PI; } else { while (a2 >= a1) a2 -= 2 * Math.PI; }
-            var n = Math.Max(2, (int)Math.Ceiling(Math.Abs(a2 - a1) / (Math.PI / 12)));
+            var n = Chords.Count(r, a2 - a1, 2);
             return Enumerable.Range(0, n + 1).Select(k => { var a = a1 + (a2 - a1) * k / n; return xf.Apply(new Vec3(r * Math.Cos(a), r * Math.Sin(a), 0)); });
         }
         var ends = new[] { Cart(c[1]), Cart(c[2]) }.OfType<Vec3>().ToList();
         return sense ? ends : Enumerable.Reverse(ends);
     }
 
-    /// <summary>The arc through three points, every 15° or so.</summary>
+    /// <summary>The arc through three points, by the chord rule.</summary>
     static IEnumerable<Vec3> Arc3(Vec3 a, Vec3 b, Vec3 c)
     {
         double d = 2 * (a.X * (b.Y - c.Y) + b.X * (c.Y - a.Y) + c.X * (a.Y - b.Y));
@@ -786,7 +789,7 @@ public sealed partial class IfcModel
         static double Ccw(double from, double to) { var x = to - from; while (x < 0) x += 2 * Math.PI; return x; }
         var ccw = Ccw(t0, t1) < Ccw(t0, t2);
         var sweep = ccw ? Ccw(t0, t2) : -Ccw(t2, t0);
-        var n = Math.Max(2, (int)Math.Ceiling(Math.Abs(sweep) / (Math.PI / 12)));
+        var n = Chords.Count(r, sweep, 2);
         return Enumerable.Range(0, n + 1).Select(k => new Vec3(ux + r * Math.Cos(t0 + sweep * k / n), uy + r * Math.Sin(t0 + sweep * k / n), a.Z));
     }
 }

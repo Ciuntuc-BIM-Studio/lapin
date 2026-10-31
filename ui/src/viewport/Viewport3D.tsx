@@ -39,9 +39,12 @@ import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddSha
 import { clampPitch, easeEye, exitWalk, lookVector, toggleFly, useWalk, walkStep, walkWish, EYE_HEIGHT, WALK_KEYS, type WalkStart } from './walk';
 import { TICK, Walker, worldOf } from './walkPhysics';
 import { InstanceLayer } from './instancing';
+import { copyArrays, displayQualityOf, levelFor, pixelsPerMetre, type DisplayQuality, type LodCamera } from './lod';
 import { inWorld } from '../engine/instances';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
+/** How often the instances' copies are chosen again while the camera moves (ms). */
+const LOD_EVERY = 150;
 /** The ground grid per theme: its axes in the accent, its lines a shade off the paper. */
 const GRID = { paper: [0xb5532d, 0xd6cebf], graphite: [0xe07a4f, 0x34312c] } as const;
 const SELECTED = new THREE.Color(0xb5532d);
@@ -130,19 +133,47 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
   }
 }
 
+/**
+ * A heavy part's copies (lod.ts): the part's own meshes and each coarser copy's, a group each, one shown at a
+ * time by the camera's distance; the copies are never picked (a click and a face tool meet the part itself).
+ */
+interface LodSet { levels: THREE.Group[]; errors: number[]; centre: [number, number, number]; radius: number }
+
+/** The sphere round a part's points: its box's middle and half its diagonal. */
+function sphereOf(positions: Float32Array): { centre: [number, number, number]; radius: number } {
+  const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i + 2 < positions.length; i += 3) for (let a = 0; a < 3; a++) { lo[a] = Math.min(lo[a], positions[i + a]); hi[a] = Math.max(hi[a], positions[i + a]); }
+  return { centre: [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2], radius: Math.hypot(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) / 2 };
+}
+
+const NO_RAYCAST = () => undefined;
+
 function meshOf(item: RenderItem): THREE.Group {
   const group = new THREE.Group();
   group.userData.nodeId = item.nodeId;
-  const add = (positions: Float32Array, normals: Float32Array, indices: Int32Array, edges: Float32Array, color: string, material?: string | null) => {
-    addSurface(group, item.nodeId, positions, normals, indices, color, material);
+  const add = (into: THREE.Group, positions: Float32Array, normals: Float32Array, indices: Int32Array, edges: Float32Array, color: string, material?: string | null) => {
+    addSurface(into, item.nodeId, positions, normals, indices, color, material);
     if (edges.length) {
       const e = new THREE.BufferGeometry();
       e.setAttribute('position', new THREE.BufferAttribute(edges, 3));
-      group.add(new THREE.LineSegments(e, EDGES));
+      into.add(new THREE.LineSegments(e, EDGES));
     }
   };
-  add(item.positions, item.normals, item.indices, item.edges, item.color);
-  for (const p of item.parts ?? []) add(p.positions, p.normals, p.indices, p.edges, p.color, p.material);
+  add(group, item.positions, item.normals, item.indices, item.edges, item.color);
+  const lods: LodSet[] = [];
+  for (const p of item.parts ?? []) {
+    if (!p.lods?.length) { add(group, p.positions, p.normals, p.indices, p.edges, p.color, p.material); continue; }
+    const levels = [p, ...p.lods.map(copyArrays)].map((m, k) => {
+      const g = new THREE.Group();
+      g.visible = k === 0;
+      add(g, m.positions, m.normals, m.indices, m.edges, p.color, p.material);
+      if (k > 0) g.traverse((c) => { c.raycast = NO_RAYCAST; });
+      group.add(g);
+      return g;
+    });
+    lods.push({ levels, errors: p.lods.map((l) => l.error), ...sphereOf(p.positions) });
+  }
+  if (lods.length) group.userData.lods = lods;
   return group;
 }
 
@@ -393,6 +424,8 @@ export function Viewport3D() {
   const camRef = useRef<THREE.Camera | null>(null);
   // Frames are drawn on demand: when the camera moves, the view resizes or the scene changes.
   const invalidate = useRef<() => void>(() => undefined);
+  /** The project's display quality (lod.ts), read by every frame's choice of copies. */
+  const qualityRef = useRef<DisplayQuality>('balanced');
   const items = useRef(new Map<string, { item: RenderItem; object: THREE.Group }>());
   /** The elements drawn as instances of shared meshes (instancing.ts). */
   const instances = useRef<InstanceLayer | null>(null);
@@ -432,6 +465,9 @@ export function Viewport3D() {
   };
   useUi((s) => s.storeyId);
   useSession((s) => s.nodes);
+  const quality = useSession((s) => displayQualityOf(s.nodes));
+  qualityRef.current = quality;
+  useEffect(() => { invalidate.current(); }, [quality]);
   const storey = activeStorey();
   elevationRef.current = num(storey ?? undefined, 'elevation');
 
@@ -607,9 +643,32 @@ export function Viewport3D() {
     s.add(layer.group);
     instances.current = layer;
 
+    // Each frame draws every heavy part's copy its distance chooses (lod.ts); the instances' choice, at most every
+    // LOD_EVERY ms while the camera moves (a pass goes through every instance), and once more when it stops.
+    const lodCamera = (): LodCamera => cam === orthoCam
+      ? { kind: 'ortho', metresHigh: (orthoCam.top - orthoCam.bottom) / orthoCam.zoom, heightPx: renderer.domElement.clientHeight }
+      : { kind: 'perspective', eye: [persp.position.x, persp.position.y, persp.position.z], fovDeg: persp.fov, heightPx: renderer.domElement.clientHeight };
+    let lastInstanceLod = 0;
+    let trailing = 0;
+    const relevel = () => {
+      const c = lodCamera();
+      const q = qualityRef.current;
+      for (const { object } of items.current.values()) {
+        const sets = object.userData.lods as LodSet[] | undefined;
+        if (!sets) continue;
+        for (const set of sets) {
+          const k = levelFor(set.errors, pixelsPerMetre(c, set.centre, set.radius), q);
+          set.levels.forEach((g, i) => { g.visible = i === k; });
+        }
+      }
+      if (!layer.hasCopies()) return;
+      const now = performance.now();
+      if (now - lastInstanceLod >= LOD_EVERY) { lastInstanceLod = now; layer.relevel(c, q); }
+      else if (!trailing) trailing = window.setTimeout(() => { trailing = 0; invalidate.current(); }, LOD_EVERY);
+    };
     let frame = 0;
     invalidate.current = () => {
-      if (!frame) frame = requestAnimationFrame(() => { frame = 0; renderer.render(s, cam); });
+      if (!frame) frame = requestAnimationFrame(() => { frame = 0; relevel(); renderer.render(s, cam); });
     };
     controls.addEventListener('change', invalidate.current);
     controls.addEventListener('change', publish);
@@ -893,6 +952,7 @@ export function Viewport3D() {
     return () => {
       unsunlight();
       cancelAnimationFrame(frame);
+      clearTimeout(trailing);
       cancelAnimationFrame(flight);
       if (useCamera.getState().api === api) useCamera.setState({ api: null });
       unlisten();

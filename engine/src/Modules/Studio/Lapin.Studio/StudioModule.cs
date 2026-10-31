@@ -475,7 +475,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         var along = e.Str("operation") switch
         {
             "extrude" => Math.Abs(e.Num("depth")),
-            "sweep" when m.Get(e.Str("guide") ?? "") is { } gd && Drafts.ShapeOf(gd) is { } gs => Geo.Polylines(gs, Math.PI / 24)[0] is var pl ? pl.Zip(pl.Skip(1), (p, q) => (q - p).Length).Sum() : 0,
+            "sweep" when m.Get(e.Str("guide") ?? "") is { } gd && Drafts.ShapeOf(gd) is { } gs => Geo.Polylines(gs)[0] is var pl ? pl.Zip(pl.Skip(1), (p, q) => (q - p).Length).Sum() : 0,
             _ => 0,
         };
         return (section, along, w, h);

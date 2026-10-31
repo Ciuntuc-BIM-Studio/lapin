@@ -236,8 +236,8 @@ public static class Features
             var bis = (w1 + w2).Normalized();
             var c = bis * (size / Math.Sin(theta / 2));
             var (r1, r2) = (p1 - c, p2 - c);
-            const int steps = 12;
             var phi = Math.Acos(Math.Clamp(Vec3.Dot(r1.Normalized(), r2.Normalized()), -1, 1));
+            var steps = Chords.Count(size, phi, 2);
             var axis = Vec3.Cross(r1, r2).Normalized();
             for (var i = 1; i < steps; i++) curve.Add(c + Turn(r1, Vec3.Zero, axis, phi * i / steps));
         }

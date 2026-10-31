@@ -254,12 +254,12 @@ public static class Roof
             var top = outlet with { Z = outlet.Z - 0.07 };
             var knee = foot.At(top.Z - (outlet.Xy - foot).Length);
             foreach (var (a, b) in new[] { (top, knee), (knee, foot.At(ground)) })
-                if (b.Z < a.Z - 0.01 && RoofParts.Tube(a, b, 0.05, 10, "downpipe") is { } s) drain.Add(s);
+                if (b.Z < a.Z - 0.01 && RoofParts.Tube(a, b, 0.05, 0, "downpipe") is { } s) drain.Add(s);
             plan.Add(new PlanItem("symbol", true, Enumerable.Range(0, 12).Select(k => foot + new Vec2(Math.Cos(k * Math.PI / 6), Math.Sin(k * Math.PI / 6)) * 0.05).ToArray()));
         }
         if (drain.Count > 0) parts.Add(new GeometryPart("Gutters and downpipes", metal, Openings.Combine(drain, "drainage"), null, "drainage"));
 
-        var guards = RoofParts.SnowGuards(r, shape, openings).Select(x => RoofParts.Tube(x.A, x.B, 0.015, 8, "snow")).OfType<Solid>().ToList();
+        var guards = RoofParts.SnowGuards(r, shape, openings).Select(x => RoofParts.Tube(x.A, x.B, 0.015, 0, "snow")).OfType<Solid>().ToList();
         if (guards.Count > 0) parts.Add(new GeometryPart("Snow guards", metal, Openings.Combine(guards, "snow"), null, "snow"));
 
         foreach (var l in shape.Lines.Where(l => l.Kind is LineKind.Ridge or LineKind.Hip or LineKind.Valley or LineKind.Break))

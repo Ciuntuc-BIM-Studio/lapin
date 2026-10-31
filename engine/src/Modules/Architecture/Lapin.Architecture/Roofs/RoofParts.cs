@@ -228,11 +228,12 @@ public static class RoofParts
         return o;
     }
 
-    /// <summary>A round bar from a to b (gutter outlets, downpipes, snow guard tubes): an n-gon swept along the axis.</summary>
-    public static Solid? Tube(Vec3 a, Vec3 b, double radius, int sides = 10, string? tag = null)
+    /// <summary>A round bar from a to b (gutter outlets, downpipes, snow guard tubes): an n-gon (by the chord rule when 0) swept along the axis.</summary>
+    public static Solid? Tube(Vec3 a, Vec3 b, double radius, int sides = 0, string? tag = null)
     {
         var axis = b - a;
         if (axis.Length < 1e-6) return null;
+        if (sides <= 0) sides = Chords.Circle(radius);
         var (u, v) = VecMath.PlaneBasis(axis.Normalized());
         var ring = Enumerable.Range(0, sides).Select(k => { var t = 2 * Math.PI * k / sides; return a + u * (radius * Math.Cos(t)) + v * (radius * Math.Sin(t)); }).ToArray();
         return Prism.Extrude(ring, null, axis, tag);
@@ -255,7 +256,7 @@ public static class RoofParts
         else
         {
             // A half annulus, open at the top.
-            const int k = 10;
+            var k = Chords.Count(R, Math.PI, 2);
             var outer = Enumerable.Range(0, k + 1).Select(i => { var t = Math.PI * i / k; return c + outV * (-R * Math.Cos(t)) + new Vec3(0, 0, -R * Math.Sin(t)); });
             var inner = Enumerable.Range(0, k + 1).Reverse().Select(i => { var t = Math.PI * i / k; return c + outV * (-(R - wall) * Math.Cos(t)) + new Vec3(0, 0, -(R - wall) * Math.Sin(t)); });
             profile = [.. outer, .. inner];

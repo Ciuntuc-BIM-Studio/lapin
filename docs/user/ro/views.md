@@ -114,3 +114,6 @@ Tabul **Vedere** setează ce arată vederea din față și cum arată.
 - **Stiluri de vedere.** Arhitectural, Structural (doar miezurile), Instalații sau al tău. Fiecare stil alege straturile desenate (toate, fără finisaje sau doar miezul) și cum se unesc materialele.
 - **Vizibilitate** (<kbd>VV</kbd>) și **Grafică** (<kbd>VG</kbd>). Arată sau ascund categorii și le setează penițele, tipurile de linie și umpluturile.
 - **Împarte** și **Fereastră.** Arată două vederi alăturate sau deschid o vedere într-o fereastră separată.
+- **Calitate afișare.** Cum desenează vederea 3D piesele cu multe triunghiuri (o instalație importată, mobilier, țevi) când sunt departe. **Echilibrat** desenează mai grosier o piesă îndepărtată doar unde diferența e sub un pixel. **Rapid** o lasă să se abată până la 3 pixeli, pentru modele mari și calculatoare mai lente. **Precis** desenează fiecare piesă așa cum e. Setarea ține de proiect. Modelul, desenele, exporturile și cantitățile nu devin niciodată mai grosiere: o curbă e făcută din bucăți drepte care se abat de la ea cel mult un milimetru.
+
+![Calitate afișare](shots/display-quality.webp)

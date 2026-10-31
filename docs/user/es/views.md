@@ -111,3 +111,6 @@ La ficha **Vista** configura qué muestra la vista que está delante y cómo se 
 - **Símbolos 2D de IFC.** Los elementos importados o vinculados desde un archivo IFC que traen su propio dibujo en planta (una huella, el barrido de una puerta, el símbolo de un aparato, con los colores, rellenos y textos del archivo) lo dibujan en las plantas en lugar de su corte. Desmárquelo en Configuración de vista (o en un estilo de vista) para dibujar en su lugar su corte 3D.
 - **Visibilidad** (<kbd>VV</kbd>) y **Gráficos** (<kbd>VG</kbd>). Muestran u ocultan categorías y configuran sus plumas, tipos de línea y rellenos.
 - **Dividir** y **Ventana.** Muestran dos vistas una al lado de la otra, o abren una vista en una ventana separada.
+- **Calidad de visualización.** Cómo dibuja la vista 3D las piezas de muchos triángulos (una planta importada, mobiliario, tuberías) cuando están lejos. **Equilibrada** dibuja una pieza lejana más basta solo donde la diferencia queda bajo un píxel. **Rápida** la deja desviarse hasta 3 píxeles, para modelos grandes y ordenadores más lentos. **Precisa** dibuja cada pieza tal como es. El ajuste pertenece al proyecto. El modelo, sus dibujos, exportaciones y cantidades nunca se simplifican: una curva está hecha de tramos rectos que se desvían de ella como mucho un milímetro.
+
+![Calidad de visualización](shots/display-quality.webp)

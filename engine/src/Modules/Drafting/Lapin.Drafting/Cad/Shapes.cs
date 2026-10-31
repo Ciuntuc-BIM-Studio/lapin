@@ -333,8 +333,11 @@ public static class Geo
         _ => null,
     };
 
-    /// <summary>A shape as points along it (arcs every few degrees), for drawing.</summary>
-    public static List<List<Vec2>> Polylines(Shape s, double maxAngle = Math.PI / 36)
+    /// <summary>
+    /// A shape as points along it, for drawing and for the solids made on it: arcs by the chord rule
+    /// (<see cref="Chords"/>: no chord strays more than a millimetre), or every <paramref name="maxAngle"/> when one is given.
+    /// </summary>
+    public static List<List<Vec2>> Polylines(Shape s, double maxAngle = 0)
     {
         switch (s)
         {
@@ -342,12 +345,12 @@ public static class Geo
             case Polyline p: return [p.Closed ? [.. p.Pts, p.Pts[0]] : p.Pts.ToList()];
             case Circle c:
             {
-                var n = Math.Max(24, (int)Math.Ceiling(2 * Math.PI / maxAngle));
+                var n = maxAngle > 0 ? Math.Max(24, (int)Math.Ceiling(2 * Math.PI / maxAngle)) : Chords.Circle(c.R);
                 return [Enumerable.Range(0, n + 1).Select(i => c.C + new Vec2(Math.Cos(2 * Math.PI * i / n), Math.Sin(2 * Math.PI * i / n)) * c.R).ToList()];
             }
             case Arc a:
             {
-                var n = Math.Max(4, (int)Math.Ceiling(a.Sweep / maxAngle));
+                var n = maxAngle > 0 ? Math.Max(4, (int)Math.Ceiling(a.Sweep / maxAngle)) : Chords.Count(a.R, a.Sweep, 2);
                 return [Enumerable.Range(0, n + 1).Select(i => a.At(a.Start + a.Sweep * i / n)).ToList()];
             }
         }

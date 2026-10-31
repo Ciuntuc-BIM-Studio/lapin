@@ -312,12 +312,12 @@ public static partial class Runs
             var (legs, bends) = Pipes.Fillet(pts, Math.Max(radius * 2 * s.BendRadius, radius * 2));
             var tubes = new List<Solid>();
             for (var i = 0; i < legs.Count; i++)
-                if ((Services.IsAir(s.Service) && run.NumOrNull("height") is { } h ? Pipes.Box(legs[i].A, legs[i].B, s.Size, h, "pipe") : Pipes.Tube(legs[i].A, legs[i].B, radius, 12, "pipe")) is { } t) tubes.Add(t);
+                if ((Services.IsAir(s.Service) && run.NumOrNull("height") is { } h ? Pipes.Box(legs[i].A, legs[i].B, s.Size, h, "pipe") : Pipes.Tube(legs[i].A, legs[i].B, radius, 0, "pipe")) is { } t) tubes.Add(t);
             if (tubes.Count > 0) parts.Add(new GeometryPart(name == "pipe" ? "Pipe" : name == "supply" ? "Supply" : "Return", name == "return" ? "#2e4a9e" : color, Openings.Combine(tubes, "pipe"), null, name));
             var elbows = new List<Solid>();
             foreach (var bend in bends)
                 for (var i = 1; i < bend.Count; i++)
-                    if (Pipes.Tube(bend[i - 1], bend[i], radius, 12, "bend") is { } t) elbows.Add(t);
+                    if (Pipes.Tube(bend[i - 1], bend[i], radius, 0, "bend") is { } t) elbows.Add(t);
             if (elbows.Count > 0) parts.Add(new GeometryPart("Bends", color, Openings.Combine(elbows, "bend"), null, "bend:" + name));
             plan.Add(new PlanItem("symbol", false, Spots(pts)));
         }
@@ -328,7 +328,7 @@ public static partial class Runs
             var z = ZAt(line, at);
             var across = new Vec3(-dir.Y, dir.X, 0);
             var centre = new Vec3(at.X, at.Y, z);
-            if (Pipes.Tube(centre - across * (radius * 1.6), centre + across * (radius * 1.6), radius * 1.15, 12, "tee") is { } tee) parts.Add(new GeometryPart("Tee", color, tee, null, "tee:" + branch.Id));
+            if (Pipes.Tube(centre - across * (radius * 1.6), centre + across * (radius * 1.6), radius * 1.15, 0, "tee") is { } tee) parts.Add(new GeometryPart("Tee", color, tee, null, "tee:" + branch.Id));
             plan.Add(new PlanItem("heavy", true, [at + across.Xy * 0.03, at - across.Xy * 0.03, at - across.Xy * 0.03 + dir * 0.03, at + across.Xy * 0.03 + dir * 0.03]));
         }
         plan.Add(new PlanItem("hit", false, Spots(line)));

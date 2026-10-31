@@ -87,7 +87,7 @@ public static class Nodes
             var radius = (system != null ? Systems.Of(system).Size : 0.02) / 2;
             var bottom = ToWorld(m, e, role, Vec3.Zero);
             var top = new Vec3(bottom.X, bottom.Y, RiseTop(m, e));
-            if (Pipes.Tube(top.Z > bottom.Z ? bottom : top, top.Z > bottom.Z ? top : bottom, radius, 12, "riser") is { } tube)
+            if (Pipes.Tube(top.Z > bottom.Z ? bottom : top, top.Z > bottom.Z ? top : bottom, radius, 0, "riser") is { } tube)
                 parts.Add(new GeometryPart("Riser", "#6f7f99", tube, null, "riser"));
         }
         else

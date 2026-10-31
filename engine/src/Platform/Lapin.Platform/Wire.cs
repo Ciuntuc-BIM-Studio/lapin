@@ -22,8 +22,17 @@ public sealed record PlanItemDto(string Kind, bool Closed, double[] Points, stri
 /// (docs/view-styles.md) that leave it out, noFinishes and/or core (a wall's plaster: both;
 /// its insulation: core); null when every mode shows it. Every part is a closed solid of its own,
 /// so what is kept stays closed.
+/// <para><see cref="Lods"/>: coarser copies for the screen (docs/plan-display-precision.md), finest first, each with the
+/// most it strays from the part (m); the interface draws one when that is under a pixel or so. Only a part of many triangles has them.</para>
 /// </summary>
-public sealed record RenderPart(string Name, string Color, float[] Positions, float[] Normals, int[] Indices, float[] Edges, string? Material = null, string[]? HiddenBy = null);
+public sealed record RenderPart(string Name, string Color, float[] Positions, float[] Normals, int[] Indices, float[] Edges, string? Material = null, string[]? HiddenBy = null, IReadOnlyList<RenderLod>? Lods = null);
+
+/// <summary>A coarser copy of a part (<see cref="Lapin.Geometry.MeshSimplify"/>): its triangles as three corners each (no normals or indices: shaded flat), its edges, the most it strays (m).</summary>
+public sealed record RenderLod(float Error, float[] Positions, float[] Normals, int[] Indices, float[] Edges)
+{
+    public static IReadOnlyList<RenderLod>? Of(Lapin.Geometry.TriMesh m) =>
+        Lapin.Geometry.MeshSimplify.Levels(m)?.Select(l => new RenderLod(l.Error, l.Mesh.Positions, l.Mesh.Normals, l.Mesh.Indices, l.Mesh.Edges)).ToList();
+}
 
 /// <summary>
 /// A part's caps where a section cuts it in 3D (<see cref="Session.Caps"/>): <see cref="Part"/> is its index in the element's parts.

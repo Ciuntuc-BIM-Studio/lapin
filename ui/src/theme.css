@@ -1014,3 +1014,10 @@ button.mode-chip:hover { color: var(--accent); }
 .studio-steps input.num { width: 72px; }
 .studio-xyz { display: flex; align-items: center; gap: 4px; }
 .studio-xyz input.num { width: 0; flex: 1; min-width: 0; }
+
+/* View → Display quality (docs/plan-display-precision.md): a choice per line, its note under its name. */
+.quality-dialog { width: min(480px, calc(100vw - 32px)); }
+.quality-choice { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; cursor: pointer; }
+.quality-choice input { margin-top: 3px; }
+.quality-choice > span { display: flex; flex-direction: column; gap: 2px; }
+

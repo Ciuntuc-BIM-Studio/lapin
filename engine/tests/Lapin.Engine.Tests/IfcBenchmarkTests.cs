@@ -49,6 +49,16 @@ public class IfcBenchmarkTests(ITestOutputHelper output)
         Console.WriteLine(r.ToJson().ToJsonString());
         var entities = f.Session.Model.Entities.Count();
         Lap($"model: {entities:N0} entities, diff render {diff.Render.Count:N0}");
+        // The triangles sent: each item's own and its parts', each shared mesh once (docs/plan-display-precision.md).
+        long Tris(IEnumerable<RenderPart>? ps) => ps?.Sum(p => (long)p.Indices.Length / 3) ?? 0;
+        var sent = diff.Render.Sum(i => i.Indices.Length / 3 + Tris(i.Parts)) + (diff.Meshes ?? []).Sum(m => Tris(m.Parts));
+        long Coarse(IEnumerable<RenderPart>? ps) => ps?.Sum(p => p.Lods?.Sum(l => (long)l.Positions.Length / 9) ?? 0) ?? 0;
+        var coarse = diff.Render.Sum(i => Coarse(i.Parts)) + (diff.Meshes ?? []).Sum(m => Coarse(m.Parts));
+        // Drawn: every instance its mesh's; from afar, each part's coarsest copy.
+        long Coarsest(IEnumerable<RenderPart>? ps) => ps?.Sum(p => p.Lods is { Count: > 0 } l ? (long)l[^1].Positions.Length / 9 : (long)p.Indices.Length / 3) ?? 0;
+        var byMesh = (diff.Meshes ?? []).ToDictionary(m => m.Id);
+        long Drawn(Func<IEnumerable<RenderPart>?, long> parts) => diff.Render.Sum(i => i.Instance is { } inst && byMesh.TryGetValue(inst.Mesh, out var m) ? parts(m.Parts) : i.Indices.Length / 3 + parts(i.Parts));
+        Lap($"triangles sent {sent:N0}, in coarser copies {coarse:N0}; drawn {Drawn(Tris):N0}, from afar {Drawn(Coarsest):N0}");
         try { var frame = BinaryFrame.Encode(diff); Lap($"diff frame, whole {frame.Length / 1048576.0:0} MB ({f.Session.Parts(diff, 20_000).Count} parts sent)"); }
         catch (Exception ex) { Lap($"diff frame FAILED: {ex.GetType().Name}"); }
         bytes = null; diff = null!;

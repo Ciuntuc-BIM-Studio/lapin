@@ -5,11 +5,12 @@ namespace Lapin.Mep;
 /// <summary>The bodies of runs: tubes along a centreline, its corners rounded.</summary>
 public static class Pipes
 {
-    /// <summary>A tube from a to b: a regular polygon of <paramref name="sides"/> swept along the segment; null when too short.</summary>
-    public static Solid? Tube(Vec3 a, Vec3 b, double radius, int sides = 12, string? tag = null)
+    /// <summary>A tube from a to b: a regular polygon of <paramref name="sides"/> (by the chord rule when 0) swept along the segment; null when too short.</summary>
+    public static Solid? Tube(Vec3 a, Vec3 b, double radius, int sides = 0, string? tag = null)
     {
         var d = b - a;
         if (d.Length < 1e-6 || radius < 1e-6) return null;
+        if (sides <= 0) sides = Chords.Circle(radius);
         var (u, v) = VecMath.PlaneBasis(d);
         var profile = new List<Vec3>(sides);
         for (var i = 0; i < sides; i++)
@@ -35,11 +36,11 @@ public static class Pipes
 
     /// <summary>
     /// The centreline with its corners rounded: at each corner the two legs are
-    /// shortened by the tangent length and an arc of <paramref name="arcSteps"/>
+    /// shortened by the tangent length and an arc of <paramref name="arcSteps"/> (by the chord rule when 0)
     /// segments joins them; a corner too tight for the radius keeps the sharp turn.
     /// Returns the legs (straight stretches) and the bends (point chains), in order.
     /// </summary>
-    public static (List<(Vec3 A, Vec3 B)> Legs, List<List<Vec3>> Bends) Fillet(IReadOnlyList<Vec3> pts, double radius, int arcSteps = 4)
+    public static (List<(Vec3 A, Vec3 B)> Legs, List<List<Vec3>> Bends) Fillet(IReadOnlyList<Vec3> pts, double radius, int arcSteps = 0)
     {
         var legs = new List<(Vec3, Vec3)>();
         var bends = new List<List<Vec3>>();
@@ -62,9 +63,10 @@ public static class Pipes
             legs.Add((cur, t1));
             // The arc: a quadratic bezier through the corner is close to a circle for these turns.
             var arc = new List<Vec3> { t1 };
-            for (var k = 1; k < arcSteps; k++)
+            var steps = arcSteps > 0 ? arcSteps : Chords.Count(radius, angle, 2);
+            for (var k = 1; k < steps; k++)
             {
-                var s = (double)k / arcSteps;
+                var s = (double)k / steps;
                 arc.Add(t1 * ((1 - s) * (1 - s)) + p * (2 * s * (1 - s)) + t2 * (s * s));
             }
             arc.Add(t2);

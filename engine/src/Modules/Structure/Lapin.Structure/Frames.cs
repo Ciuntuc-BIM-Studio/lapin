@@ -23,13 +23,13 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
 
     public double Area => Kind == "circle" ? Math.PI * Width * Width / 4 : Math.Abs(Polygon2.SignedArea(Outline()));
 
-    /// <summary>The outline, counter-clockwise, about the box's centre (a circle as 24 sides; a profile's web vertical, an L and a U open to the right).</summary>
+    /// <summary>The outline, counter-clockwise, about the box's centre (a circle by the chord rule; a profile's web vertical, an L and a U open to the right).</summary>
     public IReadOnlyList<Vec2> Outline()
     {
         double w = Width / 2, d = Depth / 2, tw = Web, tf = Flange;
         return Kind switch
         {
-            "circle" => Enumerable.Range(0, 24).Select(i => new Vec2(w * Math.Cos(i * Math.PI / 12), w * Math.Sin(i * Math.PI / 12))).ToList(),
+            "circle" => Chords.Circle(w) is var n ? Enumerable.Range(0, n).Select(i => new Vec2(w * Math.Cos(2 * Math.PI * i / n), w * Math.Sin(2 * Math.PI * i / n))).ToList() : [],
             "I" => [new(-w, -d), new(w, -d), new(w, -d + tf), new(tw / 2, -d + tf), new(tw / 2, d - tf), new(w, d - tf), new(w, d), new(-w, d), new(-w, d - tf), new(-tw / 2, d - tf), new(-tw / 2, -d + tf), new(-w, -d + tf)],
             "U" => [new(-w, -d), new(w, -d), new(w, -d + tf), new(-w + tw, -d + tf), new(-w + tw, d - tf), new(w, d - tf), new(w, d), new(-w, d)],
             "T" => [new(-tw / 2, -d), new(tw / 2, -d), new(tw / 2, d - tf), new(w, d - tf), new(w, d), new(-w, d), new(-w, d - tf), new(-tw / 2, d - tf)],

@@ -304,6 +304,15 @@ export const FAQ: Entry[] = [
     source: 'faq',
   },
   {
+    id: 'display-quality',
+    q: ['The 3D view is slow with a big model: what can I do?', 'Why does a far object look coarser?', 'How precise are curves in Lapin?'],
+    qRo: ['Vederea 3D merge greu cu un model mare: ce pot face?', 'De ce arată mai grosier un obiect îndepărtat?', 'Cât de precise sunt curbele în Lapin?'],
+    keywords: ['slow', 'fast', 'speed', 'performance', 'lag', 'fps', 'quality', 'precision', 'precise', 'coarse', 'lod', 'detail', 'curve', 'facets', 'greu', 'incet', 'viteza', 'calitate', 'precizie', 'grosier', 'detaliu', 'curba', 'fatete'],
+    a: 'View → Display quality chooses how the 3D view draws parts of many triangles (an imported plant, furniture, pipes) when they are far away: Balanced draws a far part coarser only where the difference is under a pixel, Fast lets it stray up to 3 pixels, Precise draws every part as it is. It is the project\'s setting and changes only the screen: the model, its drawings, exports and quantities keep their full precision, and every curve is made of straight pieces at most a millimetre off it. A model of many small elements gains less from it than one with heavy parts; hiding storeys or categories you do not need (View → Visibility) helps there.',
+    aRo: 'Vedere → Calitate afișare alege cum desenează vederea 3D piesele cu multe triunghiuri (o instalație importată, mobilier, țevi) când sunt departe: Echilibrat desenează mai grosier o piesă îndepărtată doar unde diferența e sub un pixel, Rapid o lasă să se abată până la 3 pixeli, Precis desenează fiecare piesă așa cum e. E o setare a proiectului și schimbă doar ecranul: modelul, desenele, exporturile și cantitățile își păstrează toată precizia, iar fiecare curbă e făcută din bucăți drepte care se abat de la ea cel mult un milimetru. Un model cu multe elemente mici câștigă mai puțin decât unul cu piese grele; acolo ajută să ascunzi nivelurile sau categoriile de care nu ai nevoie (Vedere → Vizibilitate).',
+    source: 'faq',
+  },
+  {
     id: 'studio-sketch-on-face',
     q: ['How do I sketch on a face or a wall?', 'Can I draw on an elevation or on any plane?', 'What is a reference plane?'],
     qRo: ['Cum schițez pe o față sau pe un perete?', 'Pot desena pe o elevație sau pe orice plan?', 'Ce e un plan de referință?'],

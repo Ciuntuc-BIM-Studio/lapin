@@ -439,13 +439,15 @@ public static class Solids
     }
 
     /// <summary>The profile (3D: its outline and holes) turned about an axis by an angle (degrees; 360 closes it).</summary>
-    public static Solid? Revolve(IReadOnlyList<Vec3> outer, IReadOnlyList<IReadOnlyList<Vec3>> holes, Vec3 axisAt, Vec3 axisDir, double angleDeg)
+    public static Solid? Revolve(IReadOnlyList<Vec3> outer, IReadOnlyList<IReadOnlyList<Vec3>> holes, Vec3 axisAt, Vec3 axisDir, double angleDeg, int steps = 0)
     {
         var d = axisDir.Normalized();
         var full = Math.Abs(Math.Abs(angleDeg) - 360) < 1e-6;
         var angle = Math.Clamp(angleDeg, -360, 360) * Math.PI / 180;
         if (Math.Abs(angle) < 1e-6 || outer.Count < 3) return null;
-        var steps = Math.Max(3, (int)Math.Ceiling(Math.Abs(angle) / (Math.PI / 18)));
+        // By the chord rule at the point farthest from the axis.
+        var far = outer.Max(p => { var v = p - axisAt; return (v - d * Vec3.Dot(d, v)).Length; });
+        if (steps < 3) steps = Chords.Count(far, angle, 3);
         Vec3 Rot(Vec3 p, double t)
         {
             var v = p - axisAt;
@@ -572,18 +574,28 @@ public static class Solids
     /// <summary>The primitives Studio places without a sketch, standing on their point (its base's middle).</summary>
     public static readonly string[] Primitives = ["box", "cylinder", "cone", "sphere", "torus", "wedge", "pyramid"];
 
+    /// <summary>A round primitive's sides by the chord rule: round its upright (at its largest radius) and, for a torus, round its tube.</summary>
+    public static (int Sides, int Around) SidesOf(string shape, double radius, double radius2) => shape switch
+    {
+        "torus" => (Chords.Circle(radius + radius2), Chords.Circle(radius2)),
+        "cone" => (Chords.Circle(Math.Max(radius, radius2)), 0),
+        _ => (Chords.Circle(radius), 0),
+    };
+
     /// <summary>
     /// A primitive at <paramref name="at"/> (the middle of its base), turned <paramref name="rotDeg"/> about the
     /// upright through it: a box (width along x, length along y, height), a cylinder or a cone (radius, top radius,
     /// height), a sphere (radius), a torus lying flat (radius to the tube's middle, tube radius), a wedge (rising
     /// along y to its height), a pyramid (width, length, height). Null with a reason when its sizes are wrong.
     /// </summary>
-    public static SweepResult Primitive(string shape, Vec3 at, double rotDeg, double width, double length, double height, double radius, double radius2, int sides = 32)
+    public static SweepResult Primitive(string shape, Vec3 at, double rotDeg, double width, double length, double height, double radius, double radius2, (int Sides, int Around)? sides = null)
     {
-        sides = Math.Clamp(sides, 3, 256);
+        // Round ones by the chord rule at their largest radius unless told (a shell's inside has its outside's sides, so its walls stay even).
+        var (n, around) = sides ?? SidesOf(shape, radius, radius2);
+        var count = Math.Clamp(n, 3, 720);
         var (rc, rs) = (Math.Cos(rotDeg * Math.PI / 180), Math.Sin(rotDeg * Math.PI / 180));
         Vec3 Pl(double x, double y, double z) => new(at.X + x * rc - y * rs, at.Y + x * rs + y * rc, at.Z + z);
-        List<Vec3> Circle(double r, double z) => Enumerable.Range(0, sides).Select(i => Pl(r * Math.Cos(2 * Math.PI * i / sides), r * Math.Sin(2 * Math.PI * i / sides), z)).ToList();
+        List<Vec3> Circle(double r, double z) => Enumerable.Range(0, count).Select(i => Pl(r * Math.Cos(2 * Math.PI * i / count), r * Math.Sin(2 * Math.PI * i / count), z)).ToList();
         SweepResult Of(Solid? x, string what) => new(x, x == null ? $"The {what} could not be built." : null);
         switch (shape)
         {
@@ -619,7 +631,7 @@ public static class Solids
             {
                 if (radius <= 0) return new(null, "A sphere needs a radius.");
                 var mesh = new Mesh();
-                var lat = Math.Max(4, sides / 2);
+                var lat = Math.Max(4, count / 2);
                 var bottom = mesh.Add([Pl(0, 0, 0)])[0];
                 var top = mesh.Add([Pl(0, 0, 2 * radius)])[0];
                 var rings = new List<int[]>();
@@ -628,9 +640,9 @@ public static class Solids
                     var phi = Math.PI * j / lat - Math.PI / 2;
                     rings.Add(mesh.Add(Circle(radius * Math.Cos(phi), radius + radius * Math.Sin(phi))));
                 }
-                for (var i = 0; i < sides; i++)
+                for (var i = 0; i < count; i++)
                 {
-                    var i2 = (i + 1) % sides;
+                    var i2 = (i + 1) % count;
                     mesh.T.Add((bottom, rings[0][i2], rings[0][i]));
                     mesh.T.Add((top, rings[^1][i], rings[^1][i2]));
                     for (var j = 0; j + 1 < rings.Count; j++) mesh.Quad(rings[j][i], rings[j][i2], rings[j + 1][i2], rings[j + 1][i]);
@@ -640,8 +652,8 @@ public static class Solids
             case "torus":
             {
                 if (radius <= 0 || radius2 <= 0 || radius2 >= radius) return new(null, "A torus needs a radius to its tube's middle and a smaller tube radius.");
-                var tube = Enumerable.Range(0, Math.Max(8, sides / 2)).Select(i => { var a = 2 * Math.PI * i / Math.Max(8, sides / 2); return Pl(radius + radius2 * Math.Cos(a), 0, radius2 + radius2 * Math.Sin(a)); }).ToList();
-                return Of(Revolve(tube, [], at, Vec3.UnitZ, 360), "torus");
+                var tube = Enumerable.Range(0, around).Select(i => { var a = 2 * Math.PI * i / around; return Pl(radius + radius2 * Math.Cos(a), 0, radius2 + radius2 * Math.Sin(a)); }).ToList();
+                return Of(Revolve(tube, [], at, Vec3.UnitZ, 360, count), "torus");
             }
             case "wedge":
             {

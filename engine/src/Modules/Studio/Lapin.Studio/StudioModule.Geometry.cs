@@ -181,7 +181,7 @@ public sealed partial class StudioModule
             case "sweep":
             {
                 if (m.Get(e.Str("guide") ?? "") is not { } g || Drafts.ShapeOf(g) is not { } gs) return (null, null, "The path is missing: draw it again to rebuild.");
-                var path = Geo.Polylines(gs, Math.PI / 24)[0].Select(p => plane.World(p) + shift).ToList();
+                var path = Geo.Polylines(gs)[0].Select(p => plane.World(p) + shift).ToList();
                 // The outline's own box places an inner (inset) profile, so it sits where the outline does.
                 var own = Sketches.OutlineOf(m, profile)!.Loop;
                 var box = (own.Min(p => p.X), own.Max(p => p.X), own.Min(p => p.Y));
@@ -202,7 +202,7 @@ public sealed partial class StudioModule
                 else if (e.Str("rail") is { } railId)
                 {
                     if (m.Get(railId) is not { } railDraft || Drafts.ShapeOf(railDraft) is not { } rs) return (null, null, "The second rail is missing: draw it again to rebuild.");
-                    var rail = Geo.Polylines(rs, Math.PI / 24)[0].Select(p => plane.World(p) + shift).ToList();
+                    var rail = Geo.Polylines(rs)[0].Select(p => plane.World(p) + shift).ToList();
                     swept = Solids.SweepRails(outer2, holes2, path, rail, plane.Normal, box);
                 }
                 else swept = Solids.SweepPlaced(outer2, holes2, path, plane.Normal, e.Str("place") ?? "centre", e.Num("placeOffset"),
@@ -237,7 +237,7 @@ public sealed partial class StudioModule
                 {
                     if (m.Get(railId) is not { } rd || Drafts.ShapeOf(rd) is not { } rs || PlaneOfSketch(m, services, rd).Plane is not { } rp)
                         return (null, null, "The loft's guide is missing: draw it again to rebuild.");
-                    guide = Geo.Polylines(rs, Math.PI / 24)[0].Select(p => rp.World(p)).ToList();
+                    guide = Geo.Polylines(rs)[0].Select(p => rp.World(p)).ToList();
                 }
                 var lofted = Solids.LoftThrough(loops, worlds, guide, Flag(e.Attrs["smooth"]));
                 return (lofted.Solid, null, lofted.Problem);
@@ -310,8 +310,10 @@ public sealed partial class StudioModule
         var shape = e.Str("shape") ?? "box";
         var at = Features.P(e.Attrs["at"]) ?? Vec3.Zero;
         var (w, l, h, r, r2) = (e.Num("width"), e.Num("length"), e.Num("height"), e.Num("radius"), e.Num("radius2"));
+        (int, int)? sides = null;
         if (inner != null)
         {
+            sides = Solids.SidesOf(shape, r, r2);
             var t = inner.By;
             var (lo, hi) = (inner.OpenStart ? -Past : t, inner.OpenEnd ? -Past : t);
             switch (shape)
@@ -326,7 +328,7 @@ public sealed partial class StudioModule
             if (w < 0 || l < 0 || h <= 0 && shape is "box" or "cylinder" or "cone" || r <= 0 && shape is "cylinder" or "cone" or "sphere" || r2 <= 0 && shape == "torus")
                 return (null, "the walls are too thick for its size.");
         }
-        var res = Solids.Primitive(shape, at, e.Num("rotation"), w, l, h, r, r2);
+        var res = Solids.Primitive(shape, at, e.Num("rotation"), w, l, h, r, r2, sides);
         return (res.Solid, res.Problem);
     }
 

@@ -115,3 +115,6 @@ Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.
 - **IFC 2D-symboler.** Elementer importeret eller linket fra en IFC-fil, som har deres egen plantegning med (et fodaftryk, en dørs slag, et inventars symbol, med filens farver, udfyldninger og tekster), tegner den i planer i stedet for deres snit. Fjern fluebenet under Visningsindstillinger (eller i en visningsstil) for i stedet at tegne deres 3D-snit.
 - **Synlighed** (<kbd>VV</kbd>) og **Grafik** (<kbd>VG</kbd>). De viser eller skjuler kategorier og indstiller deres penne, linjetyper og udfyldninger.
 - **Opdel** og **Vindue.** De viser to visninger side om side eller åbner en visning i et separat vindue.
+- **Visningskvalitet.** Hvordan 3D-visningen tegner dele med mange trekanter (et importeret anlæg, møbler, rør), når de er langt væk. **Afbalanceret** tegner en fjern del grovere kun, hvor forskellen er under en pixel. **Hurtig** lader den afvige op til 3 pixels, til store modeller og langsommere computere. **Præcis** tegner hver del, som den er. Indstillingen hører til projektet. Modellen, dens tegninger, eksporter og mængder bliver aldrig grovere: en kurve består af lige stykker, der højst afviger en millimeter fra den.
+
+![Visningskvalitet](shots/display-quality.webp)

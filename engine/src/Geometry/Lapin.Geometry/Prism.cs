@@ -95,9 +95,10 @@ public static class Prism
         return Extrude([C(-1, -1), C(1, -1), C(1, 1), C(-1, 1)], null, axis, tag);
     }
 
-    /// <summary>Regular n-gon prism, the stand-in for round columns.</summary>
-    public static Solid? Cylinder(Vec2 center, double baseZ, double radius, double height, int sides = 18, string? tag = null)
+    /// <summary>Regular n-gon prism, the stand-in for round columns (by the chord rule when <paramref name="sides"/> is 0).</summary>
+    public static Solid? Cylinder(Vec2 center, double baseZ, double radius, double height, int sides = 0, string? tag = null)
     {
+        if (sides == 0) sides = Chords.Circle(radius);
         if (!(radius > 0) || !(height > 0) || sides < 3) return null;
         var fp = Enumerable.Range(0, sides).Select(i =>
         {

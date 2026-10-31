@@ -752,6 +752,10 @@ export const scenes = [
       await t.shot('elevation-view', { of: '[data-testid=drawing]', pad: 0 });
       await t.button('View', { exact: true });
       await t.shot('ribbon-view', { of: '.topbar', pad: 0 });
+      // View → Display quality (decision 203): the project's, Balanced chosen until it is changed.
+      await t.tool('view.displayQuality');
+      t.expect(await t.page.locator('.dialog input[type=radio]:checked').count() === 1, 'one display quality chosen');
+      await t.shot('display-quality', { of: '.dialog', pad: 0 });
     },
   },
   {

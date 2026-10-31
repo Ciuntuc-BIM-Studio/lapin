@@ -41,6 +41,7 @@ public sealed class CoreModule : ILapinModule
         BrowserSets.Register(r);
         ViewLinework.Register(r);
         Location.Register(r);
+        DisplayQuality.Register(r);
         Sheets.Register(r);
         CutOrder.Register(r);
         StoreyMove.Register(r);

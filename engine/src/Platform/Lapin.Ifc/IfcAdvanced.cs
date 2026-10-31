@@ -88,7 +88,7 @@ public sealed partial class IfcModel
             return frame.O + frame.Z * f.V + (frame.X * Math.Cos(a) + frame.Y * Math.Sin(a)) * f.R;
         }
         double umin = flat.SelectMany(l => l).Min(f => f.U), umax = flat.SelectMany(l => l).Max(f => f.U);
-        var step = radius * Math.PI / 12;
+        var step = radius * Chords.Step(radius);
         for (var u0 = umin; u0 < umax - 1e-9; u0 += step)
         {
             var pieces = flat.Select(l => Clip(Clip(l, u0, true), Math.Min(u0 + step, umax), false)).ToList();
@@ -168,7 +168,7 @@ public sealed partial class IfcModel
                 var sweep = sense ? t1 - t0 : t0 - t1;
                 while (sweep <= 1e-9) sweep += 2 * Math.PI;
                 if (!sense) sweep = -sweep;
-                var n = Math.Max(2, (int)Math.Ceiling(Math.Abs(sweep) / (Math.PI / 12)));
+                var n = Chords.Count(Math.Max(rx, ry), sweep, 2);
                 pts = [.. Enumerable.Range(0, n + 1).Select(k => { var t = t0 + sweep * k / n; return xf.Apply(new Vec3(rx * Math.Cos(t), ry * Math.Sin(t), 0)); })];
                 pts[0] = a; pts[^1] = b;
                 break;
