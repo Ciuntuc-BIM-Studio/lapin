@@ -695,7 +695,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             }
             case "project.convertToNative":
             {
-                // References made native (decision 207): recognised from their triangles where a module takes them (a wall with its
+                // References made native (decision 210): recognised from their triangles where a module takes them (a wall with its
                 // doors and windows, a slab, a column), the rest made Studio solids when editable is asked; one undo step.
                 var ids = (p["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList() ?? [];
                 if (ids.Count == 0) throw new CommandException("Select the references to convert.");

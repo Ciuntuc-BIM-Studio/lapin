@@ -23,7 +23,7 @@ public sealed record MeshRecognitionReport(int Recognized, IReadOnlyDictionary<s
 }
 
 /// <summary>
-/// Recognition from triangles (docs/spec-ifc.md, Recunoașterea din triunghiuri, decision 207): a reference whose body
+/// Recognition from triangles (docs/spec-ifc.md, Recunoașterea din triunghiuri, decision 210): a reference whose body
 /// is only triangles (a Fragments item, an IFC body no prism could be read from, one imported before) offered to the
 /// same recognisers as an IFC file's elements. Its triangles are merged into planar faces; a prism among them is read
 /// as IFC's would be. A wall with doors and windows is no prism: its envelope (the top cap swept down to the bottom

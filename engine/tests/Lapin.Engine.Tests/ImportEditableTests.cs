@@ -13,7 +13,7 @@ using Lapin.Studio;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// An import's third way (decision 207, docs/spec-ifc.md, Importul): everything editable. What recognition leaves a
+/// An import's third way (decision 210, docs/spec-ifc.md, Importul): everything editable. What recognition leaves a
 /// reference becomes a Studio solid of its triangles, the same element (its id, name, class or the class it exports
 /// as, its sets, its storey, its group), which takes push/pull at once; a body over the limit stays a reference and
 /// the import says why. IFC, Fragments and meshes alike.
