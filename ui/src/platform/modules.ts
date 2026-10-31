@@ -11,7 +11,7 @@ import { cancel, useCad } from '../viewport/cad/session';
 export const modules: readonly LapinModule[] = loaded;
 export const productInfo = product;
 
-export const ribbonTabs = (): RibbonTabDef[] => mergeTabs(modules);
+export const ribbonTabs = (): RibbonTabDef[] => mergeTabs(modules, product.tabs ?? undefined);
 export const hotbarTools = (): ToolDef[] => modules.flatMap((m) => m.hotbar ?? []).slice(0, 9);
 export const propertySections = (ifcClass: string) => modules.flatMap((m) => m.propertySections ?? []).filter((s) => s.classes.includes(ifcClass) || s.classes.includes('*'));
 export const backgrounds = (): ComponentType[] => modules.map((m) => m.background).filter((b): b is ComponentType => Boolean(b));

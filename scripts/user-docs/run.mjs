@@ -66,7 +66,7 @@ async function takePictures() {
   if (spawnSync('dotnet', ['build', join(root, 'engine/Lapin.slnx'), '-v', 'q', '-nologo'], { stdio: 'inherit' }).status !== 0) process.exit(1);
   const product = resolveProduct(root, productId);
   // A module outside this repository is not in the solution: built on its own.
-  for (const csproj of product.engineProjects ?? []) if (spawnSync('dotnet', ['build', csproj, '-v', 'q', '-nologo'], { stdio: 'inherit' }).status !== 0) process.exit(1);
+  for (const csproj of product.engineProjects ?? []) if (spawnSync('dotnet', ['build', csproj, '-v', 'q', '-nologo', `-p:LapinProDir=${root}/`], { stdio: 'inherit' }).status !== 0) process.exit(1);
   const temp = mkdtempSync(join(tmpdir(), 'lapin-user-docs-'));
   const manifest = join(temp, 'product.json');
   writeFileSync(manifest, JSON.stringify(product, null, 2));

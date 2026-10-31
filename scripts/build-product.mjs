@@ -77,7 +77,8 @@ mkdirSync(out, { recursive: true });
 
 // 1. Engine: the modules (Release), then the host as one self-contained file.
 sh('dotnet', ['build', 'engine/Lapin.slnx', '-c', 'Release', '-v', 'q', '-nologo']);
-for (const csproj of product.engineProjects ?? []) sh('dotnet', ['build', csproj, '-c', 'Release', '-v', 'q', '-nologo']);
+// A private module from a sibling repository, built against this checkout (LapinProDir), not a lapin-pro beside it.
+for (const csproj of product.engineProjects ?? []) sh('dotnet', ['build', csproj, '-c', 'Release', '-v', 'q', '-nologo', `-p:LapinProDir=${root}/`]);
 // LapinNativeRid: the native libraries of the platform built for, in every project (the runtime id itself does not reach a referenced library).
 sh('dotnet', ['publish', 'engine/src/Host/Lapin.Host', '-c', 'Release', '-r', rid, '--self-contained', 'true', `-p:LapinNativeRid=${rid}`,
   `-p:InformationalVersion=${version}`, '-p:PublishSingleFile=true', '-p:IncludeNativeLibrariesForSelfExtract=true', '-p:DebugType=none', '-o', join(out, 'host'), '-v', 'q', '-nologo']);

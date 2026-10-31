@@ -17,7 +17,7 @@ export interface Brand {
   /** The line under the name on the start screen, and its first hint. */
   tagline?: string; hint?: string;
 }
-export interface ProductInfo { id: string; name: string; brand: Brand; modules: string[]; disciplines?: string[] | null }
+export interface ProductInfo { id: string; name: string; brand: Brand; modules: string[]; disciplines?: string[] | null; tabs?: Record<string, number> | null }
 
 export const productInfo: ProductInfo = product;
 export const brand: Brand = product.brand;

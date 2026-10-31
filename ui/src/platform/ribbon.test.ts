@@ -24,4 +24,13 @@ describe('the ribbon tabs', () => {
     expect(tabs[0].groups.map((g) => g.label)).toEqual(['Build', 'Modify']);
     expect(tabs[0].groups[1].small?.[0].id).toBe('move');
   });
+
+  it('places the tabs as the product says, its own work first', () => {
+    const modules = [
+      mod({ tabs: [{ id: 'draft', label: 'Draft', order: 10, groups: [] }, { id: 'architecture', label: 'Architecture', order: 20, groups: [] }] }),
+      mod({ tabs: [{ id: 'mep', label: 'MEP', order: 45, groups: [] }] }),
+    ];
+    expect(mergeTabs(modules).map((t) => t.id)).toEqual(['draft', 'architecture', 'mep']);
+    expect(mergeTabs(modules, { mep: 5 }).map((t) => t.id)).toEqual(['mep', 'draft', 'architecture']);
+  });
 });

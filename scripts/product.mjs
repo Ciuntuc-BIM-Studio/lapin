@@ -89,6 +89,8 @@ export function resolveProduct(root, productId) {
       ...(product.brand?.hint ? { hint: product.brand.hint } : {}),
       ...(product.brand?.icons ? { icons: product.brand.icons } : {}),
     },
+    /** The ribbon's tabs placed otherwise (tab id → order, lower first): the product's own work first. */
+    ...(product.tabs ? { tabs: product.tabs } : {}),
     modules: order,
     /** What a new project starts with and the disciplines the browser groups by, when the product says (else the platform's). */
     ...(product.storeys ? { storeys: product.storeys } : {}),

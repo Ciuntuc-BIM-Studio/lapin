@@ -25,9 +25,10 @@ const config = process.env.LAPIN_ENGINE_CONFIG ?? 'Debug';
 console.log(`▸ building the engine (${config})…`);
 const build = spawnSync('dotnet', ['build', join(engine, 'Lapin.slnx'), '-c', config, '-v', 'q', '-nologo'], { cwd: root, stdio: 'inherit' });
 if (build.status !== 0) process.exit(build.status ?? 1);
-// A module from a sibling repository (a private one) is not in the solution: built on its own, it lands in artifacts/modules like the others.
+// A module from a sibling repository (a private one) is not in the solution: built on its own against this checkout
+// (LapinProDir: its sources and settings, not a lapin-pro beside it), it lands in this artifacts/modules like the others.
 for (const csproj of product.engineProjects ?? []) {
-  const b = spawnSync('dotnet', ['build', csproj, '-c', config, '-v', 'q', '-nologo'], { cwd: root, stdio: 'inherit' });
+  const b = spawnSync('dotnet', ['build', csproj, '-c', config, '-v', 'q', '-nologo', `-p:LapinProDir=${root}/`], { cwd: root, stdio: 'inherit' });
   if (b.status !== 0) process.exit(b.status ?? 1);
 }
 

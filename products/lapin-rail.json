@@ -1,0 +1,25 @@
+{
+  "id": "lapin-rail",
+  "name": "Lapin Rail",
+  "modules": [
+    "drafting",
+    "studio",
+    "phases",
+    "civil",
+    "cost",
+    "rail"
+  ],
+  "external": {
+    "rail": "../lapin-rail"
+  },
+  "storeys": [
+    {
+      "name": "Site",
+      "elevation": 0,
+      "height": 3
+    }
+  ],
+  "disciplines": [
+    "Civil"
+  ]
+}

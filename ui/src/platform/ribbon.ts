@@ -7,7 +7,7 @@
 
 import type { LapinModule, RibbonGroupDef, RibbonTabDef } from './module';
 
-export function mergeTabs(modules: readonly LapinModule[]): RibbonTabDef[] {
+export function mergeTabs(modules: readonly LapinModule[], orders: Record<string, number> = {}): RibbonTabDef[] {
   const shared: Record<string, RibbonGroupDef> = {};
   for (const m of modules) Object.assign(shared, m.sharedGroups ?? {});
   const byId = new Map<string, RibbonTabDef>();
@@ -19,6 +19,6 @@ export function mergeTabs(modules: readonly LapinModule[]): RibbonTabDef[] {
     for (const i of t.include ?? []) if (!had.include!.includes(i)) had.include!.push(i);
   }
   return [...byId.values()]
-    .map((t) => ({ ...t, groups: [...t.groups, ...(t.include ?? []).map((i) => shared[i]).filter((g): g is RibbonGroupDef => !!g)] }))
+    .map((t) => ({ ...t, order: orders[t.id] ?? t.order, groups: [...t.groups, ...(t.include ?? []).map((i) => shared[i]).filter((g): g is RibbonGroupDef => !!g)] }))
     .sort((a, b) => a.order - b.order);
 }
