@@ -24,6 +24,9 @@ export default tseslint.config(
       // Module index files export the module definition next to its
       // components; that only costs fast-refresh granularity, so a warning.
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // French typography puts a narrow no-break space before ; : ! ?, in
+      // translated templates and patterns as in plain strings.
+      'no-irregular-whitespace': ['error', { skipStrings: true, skipTemplates: true, skipRegExps: true }],
     },
   },
 );

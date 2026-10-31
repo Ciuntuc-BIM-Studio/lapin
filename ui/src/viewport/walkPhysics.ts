@@ -249,7 +249,7 @@ const CUT_EPS = 1e-5;
 export function clipTriangles(tris: Float32Array, planes: readonly CutPlane[]): Float32Array {
   if (!planes.length) return tris;
   const out: number[] = [];
-  let poly: number[] = [], next: number[] = [];
+  let poly: number[], next: number[];
   const count = Math.floor(tris.length / 9);
   outer: for (let t = 0; t < count; t++) {
     const o = 9 * t;
