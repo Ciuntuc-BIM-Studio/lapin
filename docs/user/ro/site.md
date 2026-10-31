@@ -30,6 +30,12 @@ O ridicare topo vine în coordonate de hartă: estică și nordică, la sute de 
 
 Tot ce importi se păstrează în fișierul proiectului. Un element își ia numele din fișier (numărul cadastral al parcelei, când fișierul îl are) și păstrează celelalte proprietăți din fișier; selectează-l ca să-i vezi aria sau lungimea.
 
+## Drumuri, curbe și liniatură
+
+Un **drum** sau o **alee** își urmează axa. În **Coridor…** (CO), fila **Curbe** dă fiecărui vârf al axei o rază cu clotoidă la intrare și la ieșire, cum trasează un proiectant de drumuri o curbă; un vârf lăsat la 0 rămâne colț, iar curbele care nu încap între vecinele lor sunt refuzate, cu motivul. Kilometrajul, profilul longitudinal și profilurile transversale urmează axa curbă, iar IFC 4.3 o scrie ca aliniament.
+
+Liniatura CAD devine elemente de teren: **Drum din desen CAD** (RL) și **Linie de rupere din desen CAD** (BL) iau o linie sau o polilinie desenată sau adusă dintr-un DXF, urmează toate liniile de pe stratul ei care se leagă cap la cap și fac un drum de-a lungul ei sau o linie de rupere a terenului. Când liniile au cote (liniile 3D ale unui DXF), ele dau profilul drumului sau cotele liniei de rupere. Asemenea linii se păstrează cu cotele lor și se pot arăta în 3D (categoria *liniatură*).
+
 ## Planul de situație și planul de încadrare
 
 Browserul proiectului are, sub niveluri, **Terenul** (*Site*): desenele amplasamentului, care nu țin de niciun etaj. Un proiect nou pornește cu două:

@@ -30,6 +30,12 @@ En opmåling kommer i kortkoordinater: øst- og nordkoordinater, hundredvis af k
 
 Alt, der importeres, gemmes i projektfilen. Et objekt får sit navn fra filen (en matrikels matrikelnummer, når filen har et) og beholder filens øvrige egenskaber; markér det for at se dets areal eller længde.
 
+## Veje, kurver og CAD-linjer
+
+En **vej** eller en **sti** følger sin akse. I **Korridor…** (CO) giver fanen **Kurver** hvert knækpunkt på aksen en radius med klotoide ind og ud, sådan som en vejprojekterende lægger en kurve; et knækpunkt sat til 0 forbliver et hjørne, og kurver, der ikke kan være mellem deres naboer, afvises med begrundelsen. Stationeringen, længdeprofilet og tværprofilerne følger den krumme akse, og IFC 4.3 skriver den som en linjeføring.
+
+CAD-linjer bliver til terrænelementer: **Vej fra CAD-linjer** (RL) og **Brudlinje fra CAD-linjer** (BL) tager en tegnet linje eller polylinje eller en fra en DXF, følger alle linjer på dens lag, der mødes ende mod ende, og laver en vej langs den eller en brudlinje i terrænet. Når linjerne har koter (en DXF's 3D-linjer), giver de vejens længdeprofil eller brudlinjens koter. Sådanne linjer beholder deres koter og kan vises i 3D (kategorien *linjer*).
+
 ## Situationsplaner og oversigtskort
 
 Projektbrowseren har en **Grund** under niveauerne: grundens egne tegninger, som ikke hører til nogen etage. Et nyt projekt starter med to:

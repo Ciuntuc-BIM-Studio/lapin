@@ -30,6 +30,12 @@ Un levantamiento llega en coordenadas de mapa: coordenadas este y norte, a cient
 
 Todo lo importado se guarda en el archivo del proyecto. Un elemento toma su nombre del archivo (el número catastral de una parcela, cuando el archivo lo tiene) y conserva consigo las demás propiedades del archivo; selecciónelo para ver su superficie o su longitud.
 
+## Carreteras, curvas y trazados CAD
+
+Una **carretera** o un **camino** sigue su eje. En **Corredor…** (CO), la pestaña **Curvas** da a cada vértice del eje un radio con clotoide de entrada y de salida, como un proyectista de carreteras traza una curva; un vértice dejado en 0 sigue siendo una esquina, y las curvas que no caben entre sus vecinas se rechazan, con el motivo. El estacionamiento, el perfil longitudinal y las secciones transversales siguen el eje curvo, y IFC 4.3 lo escribe como alineación.
+
+Los trazados CAD se convierten en elementos del sitio: **Carretera desde líneas CAD** (RL) y **Línea de quiebre desde líneas CAD** (BL) toman una línea o polilínea dibujada o traída de un DXF, siguen todas las líneas de su capa que se unen extremo con extremo y hacen una carretera a lo largo de ella o una línea de quiebre del terreno. Cuando las líneas llevan cotas (las líneas 3D de un DXF), dan el perfil de la carretera o las cotas de la línea de quiebre. Esas líneas conservan sus cotas y pueden mostrarse en 3D (la categoría *trazados*).
+
 ## Planos de situación y planos de emplazamiento
 
 El navegador del proyecto tiene un **Emplazamiento** bajo los niveles: los dibujos propios del emplazamiento, que no pertenecen a ninguna planta. Un proyecto nuevo empieza con dos:

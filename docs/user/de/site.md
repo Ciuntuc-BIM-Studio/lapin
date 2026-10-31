@@ -30,6 +30,12 @@ Eine Vermessung kommt in Kartenkoordinaten: Rechts- und Hochwerte, Hunderte von 
 
 Alles Importierte wird in der Projektdatei gespeichert. Ein Objekt erhält seinen Namen aus der Datei (die Katasternummer eines Grundstücks, wenn die Datei eine hat) und behält die übrigen Eigenschaften der Datei bei sich; wählen Sie es aus, um seine Fläche oder Länge zu sehen.
 
+## Straßen, Kurven und Linienzüge
+
+Eine **Straße** oder ein **Weg** folgt ihrer Achse. In **Korridor…** (CO) gibt der Reiter **Bögen** jedem Scheitel der Achse einen Radius mit Klothoide am Anfang und Ende, wie ein Straßenplaner eine Kurve trassiert; ein Scheitel mit 0 bleibt eine Ecke, und Kurven, die nicht zwischen ihre Nachbarn passen, werden mit Begründung abgelehnt. Stationierung, Längsschnitt und Querprofile folgen der gekrümmten Achse, und IFC 4.3 schreibt sie als Alignment.
+
+CAD-Linien werden zu Geländeelementen: **Straße aus CAD-Linien** (RL) und **Bruchkante aus CAD-Linien** (BL) nehmen eine gezeichnete oder aus einer DXF gebrachte Linie oder Polylinie, folgen jeder Linie ihres Layers, die Ende an Ende anschließt, und machen eine Straße entlang ihr oder eine Bruchkante des Geländes. Tragen die Linien Höhen (die 3D-Linien einer DXF), geben sie das Längsprofil der Straße oder die Höhen der Bruchkante. Solche Linien bleiben mit ihren Höhen erhalten und lassen sich in 3D zeigen (Kategorie *Linienzüge*).
+
 ## Lagepläne und Übersichtslagepläne
 
 Der Projektbrowser hat unter den Ebenen einen Eintrag **Gelände**: die eigenen Zeichnungen des Geländes, die zu keinem Geschoss gehören. Ein neues Projekt beginnt mit zweien:

@@ -30,6 +30,12 @@ A survey comes in map coordinates: eastings and northings, hundreds of kilometre
 
 Everything imported is kept in the project file. A feature takes its name from the file (a parcel's cadastral number, when the file has one) and keeps the file's other properties with it; select it to see its area or length.
 
+## Roads, curves and linework
+
+A **road** or a **path** follows its axis. In **Corridor…** (CO), the **Curves** tab gives each vertex of the axis a radius with a clothoid in and out, as a road designer lays a curve; a vertex left at 0 stays a corner, and curves that do not fit between their neighbours are refused with the reason. The stations, the long section and the cross-sections follow the curved axis, and IFC 4.3 writes it as an alignment.
+
+CAD linework becomes site elements: **Road from linework** (RL) and **Breakline from linework** (BL) take a line or polyline drafted or brought in by a DXF, follow every line on its layer that meets it end to end, and make a road along it or a breakline of the terrain. When the lines carry heights (a DXF's 3D lines), they give the road's profile or the breakline's levels. Such lines are kept with their heights and can be shown in 3D (the *linework* category).
+
 ## Site plans and location plans
 
 The project browser has a **Site** under the levels: the site's own drawings, which belong to no storey. A new project starts with two:

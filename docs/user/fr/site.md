@@ -30,6 +30,12 @@ Un levé arrive en coordonnées cartographiques : des abscisses (E) et des ord
 
 Tout ce qui est importé est conservé dans le fichier du projet. Un objet prend son nom du fichier (le numéro cadastral d’une parcelle, quand le fichier en a un) et garde avec lui les autres propriétés du fichier ; sélectionnez-le pour voir sa surface ou sa longueur.
 
+## Routes, courbes et tracés CAO
+
+Une **route** ou une **allée** suit son axe. Dans **Corridor…** (CO), l’onglet **Courbes** donne à chaque sommet de l’axe un rayon avec une clothoïde d’entrée et de sortie, comme un projeteur routier trace une courbe ; un sommet laissé à 0 reste un angle, et les courbes qui ne tiennent pas entre leurs voisines sont refusées, avec la raison. Les abscisses, le profil en long et les profils en travers suivent l’axe courbe, et l’IFC 4.3 l’écrit comme un alignement.
+
+Les tracés CAO deviennent des éléments du site : **Route depuis lignes CAO** (RL) et **Ligne de rupture depuis lignes CAO** (BL) prennent une ligne ou une polyligne dessinée ou venue d’un DXF, suivent toutes les lignes de son calque qui s’y raccordent bout à bout, et en font une route le long d’elle ou une ligne de rupture du terrain. Quand les lignes portent des altitudes (les lignes 3D d’un DXF), elles donnent le profil en long de la route ou les altitudes de la ligne de rupture. Ces lignes gardent leurs altitudes et peuvent s’afficher en 3D (la catégorie *tracés*).
+
 ## Plans de masse et plans de situation
 
 L’arborescence du projet a un **Site** sous les niveaux : les dessins propres au site, qui n’appartiennent à aucun niveau. Un nouveau projet commence avec deux :
