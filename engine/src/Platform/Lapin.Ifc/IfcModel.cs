@@ -337,7 +337,13 @@ public sealed partial class IfcModel
         if (_placements.TryGetValue(id.Id, out var known)) return known;
         _placements[id.Id] = Xf.Identity; // a cycle stops here
         var p = File.Get(r);
-        var xf = p?.Type == "IFCLOCALPLACEMENT" ? Placement(p[0]).Then(Axis2(p[1])) : Xf.Identity;
+        // A linear placement (IFC 4.3) by its CartesianPosition, the absolute frame it carries; without one, where it is placed in.
+        var xf = p?.Type switch
+        {
+            "IFCLOCALPLACEMENT" => Placement(p[0]).Then(Axis2(p[1])),
+            "IFCLINEARPLACEMENT" => p.Args.Count > 2 && p[2] is StepRef ? Placement(p[0]).Then(Axis2(p[2])) : Placement(p[0]),
+            _ => Xf.Identity,
+        };
         return _placements[id.Id] = xf;
     }
 
