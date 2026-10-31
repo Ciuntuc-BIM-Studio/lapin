@@ -11,6 +11,9 @@ on:
       product:
         description: Product (products/<id>.json)
         default: lapin
+      ref:
+        description: Commit, tag or branch to build (the branch run from if empty)
+        required: false
   push:
     tags: ['v*']
 
@@ -21,7 +24,11 @@ jobs:
     env:
       PRODUCT: ${{ inputs.product || 'lapin' }}
     steps:
+      # The whole history: the version is 0.1.<commit count> (scripts/build-product.mjs).
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
