@@ -5,6 +5,7 @@ import { ES, ES_PATTERNS } from './es';
 import { FR, FR_PATTERNS } from './fr';
 import { LANGUAGES, translate, type Lang, type Language } from './index';
 import { RO, RO_PATTERNS } from './ro';
+import { LO, LO_PATTERNS } from './lo';
 
 describe('the Romanian interface', () => {
   it('puts known phrases into Romanian, keeping their spaces, and leaves the others', () => {
@@ -13,6 +14,14 @@ describe('the Romanian interface', () => {
     expect(translate('12 elements', 'ro')).toBe('12 elemente');
     expect(translate('My own wall name', 'ro')).toBeNull();
     expect(translate('', 'ro')).toBeNull();
+  });
+});
+
+describe('the Lao interface', () => {
+  it('puts known phrases into Lao, keeping its spaces, and leaves the others', () => {
+    expect(translate('Wall', 'lo')).toBe('ຝາ'); // (ປ່ຽນຕາມຄຳແປໃນ lo.ts ຂອງອາຈານ)
+    expect(translate('Floor plans', 'lo')).toBe('ແຜນຜັງຊັ້ນ'); 
+    expect(translate('', 'lo')).toBeNull();
   });
 });
 
@@ -41,7 +50,7 @@ describe('the Spanish interface', () => {
 
 describe('the languages', () => {
   it('are offered each named in itself, English first', () => {
-    expect(LANGUAGES.map((l) => l.name)).toEqual(['English', 'Română', 'Español', 'Deutsch', 'Français', 'Dansk']);
+    expect(LANGUAGES.map((l) => l.name)).toEqual(['English', 'Română', 'Español', 'Deutsch', 'Français', 'Dansk', 'ພາສາລາວ']);
   });
 
   it('English is the interface as written', () => {
