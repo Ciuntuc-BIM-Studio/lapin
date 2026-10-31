@@ -24,7 +24,8 @@ export function SectionsDialog() {
 
   useEffect(() => {
     void frontView().then((id) => {
-      const kind = id ? nodes.get(id)?.props.kind : null;
+      // The plan's own view may have been made just now: read the nodes as they are, not as the effect saw them.
+      const kind = id ? useSession.getState().nodes.get(id)?.props.kind : null;
       if (kind !== 'plan' && kind !== 'section' && kind !== 'elevation') { notify('Open a plan, a section or an elevation first.'); close(); } else setTarget(id);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
