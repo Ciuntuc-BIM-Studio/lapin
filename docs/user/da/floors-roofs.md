@@ -30,3 +30,15 @@ Markér taget for at ændre det i egenskabspanelet:
 Væggene på tagets niveau stopper under det og går selv op til dets gavle, også under et buet tag. En væg på et andet niveau følger taget efter **Arkitektur → Fastgør til tag** (<kbd>AR</kbd>): markér væggene, og klik derefter på taget. Samme værktøj tager ethvert andet legeme over væggene: et Studio-legeme, en plade, en bjælke, et element importeret fra IFC. Væggene går op til dets underside og skæres langs den, uanset formen. **Frigør fra tag** fortryder det.
 
 **Ovenlysvindue** og **Kvist** tilføjer åbninger i et tag.
+
+## Nedhængte lofter
+
+**Arkitektur → Loft** (<kbd>CL</kbd>) tegner et nedhængt loft over et omrids, du klikker; **Loft i et rum** fylder det rum, du klikker i, efter dets omrids. Et loft hænger i sin **Højde** over etagen (2700 mm, medmindre du ændrer den i egenskaberne).
+
+Dets type i **Arkitektur → Lofttyper** angiver **Systemet**: **Plader på synligt skinnesystem** (pladens bredde, længde og tykkelse, skinnernes synlige bredde, dybde og drejning, nedhæng op til konstruktionen med deres afstand) eller **Gips, sammenhængende**. Skinnerne centreres på loftet, så de afskårne plader ved kanterne bliver ens.
+
+**Lyspanel** og **Luftindblæsning** sætter et i det felt, du klikker på; et klik på samme felt med det andet værktøj skifter det. I egenskabspanelet sætter **Fordel** lyspaneler eller luftindblæsninger i hvert så mange felt, og **Ryd** fjerner dem. Listerne tæller hele plader, lyspaneler og luftindblæsninger, og loftet går til IFC som IfcCovering af typen CEILING.
+
+![Et lofts egenskaber: type, højde og armaturer](shots/ceiling-properties.webp)
+
+![Systemlofter med lyspaneler og luftindblæsninger i 3D](shots/ceilings-3d.webp)

@@ -424,6 +424,29 @@ export const scenes = [
     },
   },
   {
+    id: 'ceilings',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      // Report #44: a grid ceiling in each room, light panels every third cell and air diffusers between them.
+      for (const [x, y] of [[3.5, 4], [9.5, 4]]) await t.cmd('architecture.addRoom', { storeyId: storey, x, y });
+      const ids = [];
+      for (const [x, y] of [[3.5, 4], [9.5, 4]]) ids.push((await t.cmd('architecture.addCeiling', { storeyId: storey, x, y })).id);
+      for (const id of ids) {
+        await t.cmd('architecture.ceilingLayout', { id, kind: 'light', every: 3 });
+        await t.cmd('architecture.ceilingLayout', { id, kind: 'diffuser', every: 3, offset: 2 });
+      }
+      await t.wait(800);
+      const c = (await t.nodes()).find((n) => n.type === 'LapinCeiling');
+      t.expect(c && (c.props.fixtures ?? []).length > 4, 'the ceiling has its light panels and diffusers');
+      await select(t, ids[0]);
+      await t.wait(800);
+      await t.shot('ceiling-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+      await open3d(t);
+      await t.shot('ceilings-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     id: 'rooms',
     async run(t) {
       await t.fresh();
