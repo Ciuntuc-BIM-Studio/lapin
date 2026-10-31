@@ -553,7 +553,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
     }
 
     /// <summary>The point of the drawn chain nearest to <paramref name="p"/> (on its segments, not only at its vertices); <paramref name="fallback"/> for an empty chain.</summary>
-    static Vec2 Nearest(IReadOnlyList<Vec2> chain, Vec2 p, Vec2 fallback)
+    internal static Vec2 Nearest(IReadOnlyList<Vec2> chain, Vec2 p, Vec2 fallback)
     {
         if (chain.Count == 0) return fallback;
         var best = chain[0];

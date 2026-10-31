@@ -182,18 +182,21 @@ public static class TypeBars
                 Vec2 lab, target;
                 if (dots.Count > 0)
                 {
-                    var right = dots.MaxBy(p => p.X);
-                    lab = right + new Vec2(10 * c.Mm, g.Name == "top" ? 6 * c.Mm : g.Name == "bottom" ? -6 * c.Mm : 0);
-                    target = right;
+                    // Across: the top row's label up and to the left of its dots, the bottom's down and to the right, the sides' to the right.
+                    var up = g.Name == "top";
+                    var edge = up ? dots.MinBy(p => p.X) : dots.MaxBy(p => p.X);
+                    lab = edge + new Vec2(up ? -(10 * c.Mm) : 10 * c.Mm, up ? 6 * c.Mm : g.Name == "bottom" ? -6 * c.Mm : 0);
+                    if (up) lab -= new Vec2(label.Length * st.TextHeight * 0.6 * c.Mm + 2 * r, 0);
+                    target = edge;
                 }
                 else
                 {
                     var all = lines.SelectMany(l => new[] { l.A, l.B }).ToList();
                     var mid = new Vec2((all.Min(p => p.X) + all.Max(p => p.X)) / 2, (all.Min(p => p.Y) + all.Max(p => p.Y)) / 2);
                     var over = g.Name == "bottom" ? -1 : 1;
-                    // The rows' labels a third of the way along, clear of the stirrups' at the middle; the top row's over, the bottom's under.
+                    // The rows' labels a third of the way along, clear of the stirrups' at the middle; the top row's over, the bottom's under; the leader straight to the nearest bar.
                     lab = mid + new Vec2(-(laid.AxisLength / 3), over * (8 * c.Mm));
-                    target = lines.Select(l => l.A + (l.B - l.A) * 0.5).MinBy(p => (p - lab).Length);
+                    target = lines.Select(l => RebarModule.Nearest([l.A, l.B], lab, l.A)).MinBy(p => (p - lab).Length);
                 }
                 mk.Polyline(ViewMark.Circle(lab, r, 32), true, RebarShapes.AnnotationLayer, 0.35, color);
                 if (g.Row.Mark > 0) mk.Text(new PenText(lab, g.Row.Mark.ToString(CultureInfo.InvariantCulture), st.TextHeight, 0, "middle", "middle", true), color);
