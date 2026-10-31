@@ -871,6 +871,9 @@ button.mode-chip:hover { color: var(--accent); }
 .interface-parts { display: flex; flex-direction: column; gap: 8px; margin: 16px 0 12px; }
 .interface-parts .part-row { display: grid; grid-template-columns: 170px 1fr; align-items: center; gap: 12px; }
 .interface-parts .part-label { color: var(--ink-muted); }
+.interface-tabs { display: grid; grid-template-columns: 170px 1fr; align-items: start; gap: 4px 12px; margin-bottom: 12px; }
+.interface-tabs .tab-checks { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.interface-tabs .muted { grid-column: 2; }
 .interface-parts .seg { justify-self: start; }
 /* The keyboard shortcuts. */
 .shortcuts-dialog { width: min(900px, calc(100vw - 32px)); height: min(760px, calc(100vh - 64px)); }

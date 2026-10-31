@@ -31,6 +31,8 @@ En todos los modos, la barra superior mantiene **Deshacer** y **Rehacer** en su 
 
 Debajo de los modos, cada parte se puede configurar por separado: la cinta, las herramientas rápidas (o ninguna: las teclas numéricas siguen funcionando), la línea de comandos, el HUD, el mensaje y los campos de la herramienta, el plano clave, los paneles y la altura de las filas de propiedades. Cambiar una parte convierte la elección en **Personalizado**.
 
+Debajo de las partes, **Pestañas**: desmarca las pestañas de la cinta que no necesitas (un arquitecto puede ocultar Structure, Rebar 2D y MEP; un ingeniero, Architecture y Site). View permanece siempre, porque ahí está Interfaz…. Las herramientas de una pestaña oculta siguen en Comandos… y en los atajos de teclado.
+
 Lapin guarda su elección en este ordenador, para usted. La aplicación de escritorio y el navegador guardan la suya por separado. En el navegador, Lapin empieza en Compacto cuando la ventana mide menos de 800 píxeles de alto, hasta que usted elija.
 
 ## Plegar los paneles laterales

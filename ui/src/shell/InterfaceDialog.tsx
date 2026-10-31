@@ -1,12 +1,15 @@
 /**
  * View → Interface… (Ctrl+.): the three presets as one choice, and each part
  * of the interface on its own; a part changed on its own makes the choice
- * Custom. Applied at once, kept for this user.
+ * Custom. Under them, the ribbon's tabs: each shown or hidden for this user,
+ * the tools of a hidden tab still in the palette and the shortcuts. Applied
+ * at once, kept for this user.
  */
 
 import { X } from 'lucide-react';
 import { useUi } from '../app/store';
-import { CHOICES, choosePart, choosePreset, useInterface, type InterfaceParts, type InterfacePreset } from '../app/interface';
+import { ALWAYS_SHOWN_TABS, CHOICES, choosePart, choosePreset, showTab, useInterface, type InterfaceParts, type InterfacePreset } from '../app/interface';
+import { ribbonTabs } from '../platform/modules';
 import { bindingText } from '../app/commands';
 
 const PRESET_LABELS: Record<InterfacePreset, { label: string; note: string }> = {
@@ -58,6 +61,20 @@ export function InterfaceDialog() {
                 </div>
               </div>
             ))}
+          </div>
+          <div className="interface-tabs">
+            <span className="part-label">Tabs</span>
+            <div className="tab-checks" role="group" aria-label="Tabs">
+              {ribbonTabs().map((t) => {
+                const fixed = ALWAYS_SHOWN_TABS.includes(t.id);
+                return (
+                  <label key={t.id} className="check small" title={fixed ? 'Always shown: Interface… is here' : undefined}>
+                    <input type="checkbox" checked={!s.hiddenTabs.includes(t.id)} disabled={fixed} onChange={(e) => showTab(t.id, e.target.checked)} /> {t.label}
+                  </label>
+                );
+              })}
+            </div>
+            <span className="muted small">A hidden tab's tools stay in Commands… and the keyboard shortcuts.</span>
           </div>
           <p className="muted small"><span>The side panels fold in every mode: the button on their header, a double-click on their edge, or the keyboard.</span> <kbd data-no-i18n>{bindingText('app.toggleBrowser') || '—'}</kbd> <kbd data-no-i18n>{bindingText('app.toggleProps') || '—'}</kbd></p>
         </div>

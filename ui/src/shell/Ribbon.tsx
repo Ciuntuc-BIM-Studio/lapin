@@ -147,7 +147,9 @@ function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolea
 }
 
 export function Ribbon() {
-  const tabs = ribbonTabs();
+  const hiddenTabs = useInterface((s) => s.hiddenTabs);
+  // The tabs this user hid (View → Interface…) are left out; the current one gone, the first stands in.
+  const tabs = ribbonTabs().filter((t) => !hiddenTabs.includes(t.id));
   const tabId = useUi((s) => s.tab) ?? tabs[0]?.id;
   const theme = useUi((s) => s.theme);
   const doc = useSession((s) => s.doc);

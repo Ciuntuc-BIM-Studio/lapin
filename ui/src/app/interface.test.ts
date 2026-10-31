@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { initialSettings, PRESETS, presetOf, withPart, withPreset } from './interface';
+import { initialSettings, PRESETS, presetOf, withPart, withPreset, withTab } from './interface';
 
 describe('the interface modes', () => {
   it('starts comfortable on the desktop, compact in the web build on a short window, until the user chooses', () => {
@@ -27,5 +27,17 @@ describe('the interface modes', () => {
     expect(s.parts.quickTools).toBe('off');
     expect(s.preset).toBe('custom');
     expect(initialSettings('garbage', { web: false, height: 900 }).preset).toBe('comfortable');
+  });
+
+  it('hides tabs for this user, apart from the presets; View always stays; read back, unknown entries left out', () => {
+    const s = withTab(withTab(withPreset('compact'), 'structure', false), 'mep', false);
+    expect(s.hiddenTabs).toEqual(['structure', 'mep']);
+    expect(s.preset).toBe('compact');
+    expect(withTab(s, 'structure', true).hiddenTabs).toEqual(['mep']);
+    expect(withTab(s, 'view', false).hiddenTabs).toEqual(['structure', 'mep']);
+    expect(withPart(s, 'ribbon', 'large').hiddenTabs).toEqual(['structure', 'mep']);
+    expect(withPreset('focus', s.hiddenTabs).hiddenTabs).toEqual(['structure', 'mep']);
+    expect(initialSettings({ chosen: true, parts: PRESETS.compact, hiddenTabs: ['site', 3, 'view'] }, { web: false, height: 900 }).hiddenTabs).toEqual(['site']);
+    expect(initialSettings(null, { web: false, height: 900 }).hiddenTabs).toEqual([]);
   });
 });

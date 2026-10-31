@@ -31,6 +31,8 @@ In jedem Modus behält die obere Leiste **Rückgängig** und **Wiederholen** an 
 
 Unter den Modi lässt sich jeder Teil für sich einstellen: das Menüband, die Schnellwerkzeuge (oder keine: die Zifferntasten funktionieren weiterhin), die Befehlszeile, das HUD, der Hinweis und die Felder des Werkzeugs, der Übersichtsplan, die Bereiche und die Höhe der Eigenschaftszeilen. Wenn Sie einen Teil ändern, wird die Auswahl zu **Benutzerdefiniert**.
 
+Unter den Teilen **Registerkarten**: Entfernen Sie das Häkchen bei den Registerkarten des Menübands, die Sie nicht brauchen (ein Architekt kann Structure, Rebar 2D und MEP ausblenden, ein Ingenieur Architecture und Site). View bleibt immer, denn dort liegt Oberfläche…. Die Werkzeuge einer ausgeblendeten Registerkarte bleiben in Befehle… und in den Tastenkürzeln.
+
 Lapin speichert Ihre Wahl auf diesem Computer, für Sie. Die Desktop-App und der Browser speichern ihre jeweils getrennt. Im Browser startet Lapin im Modus Kompakt, wenn das Fenster weniger als 800 Pixel hoch ist, bis Sie eine Wahl treffen.
 
 ## Die Seitenbereiche einklappen

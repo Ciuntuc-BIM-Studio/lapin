@@ -31,6 +31,8 @@ I alle tilstande har den øverste bjælke **Fortryd** og **Annuller fortryd** i 
 
 Under tilstandene kan hver del indstilles for sig: båndet, hurtigværktøjerne (eller ingen: taltasterne virker stadig), kommandolinjen, HUD'en, værktøjets prompt og felter, oversigtsplanen, panelerne og højden på egenskabsrækkerne. Ændrer du én del, bliver valget **Tilpasset**.
 
+Under delene **Faner**: fjern fluebenet ved de faner i båndet, du ikke bruger (en arkitekt kan skjule Structure, Rebar 2D og MEP, en ingeniør Architecture og Site). View bliver altid, for der ligger Grænseflade…. En skjult fanes værktøjer bliver i Kommandoer… og i tastaturgenvejene.
+
 Lapin husker dit valg på denne computer, for dig. Skrivebordsprogrammet og browseren husker hver deres. I browseren starter Lapin i Kompakt, når vinduet er under 800 pixels højt, indtil du selv vælger.
 
 ## Sidepaneler der foldes ind

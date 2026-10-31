@@ -12,7 +12,7 @@ export const LO: Record<string, string> = {
   'Quick tools': 'ເຄື່ອງມືດ່ວນ', 'Floating at the bottom': 'ລອຍຢູ່ທາງລຸ່ມ', 'Docked on the left edge': 'ປັກໝຸດໄວ້ຂອບຊ້າຍ', 'Off (the number keys still work)': 'ປິດ (ປຸ່ມຕົວເລກຍັງໃຊ້ງານໄດ້)',
   'Command line': 'ແຖວຄຳສັ່ງ', 'Its own line': 'ແຖວສະເພາະ', 'In the status line': 'ໃນແຖວສະຖານະ', 'HUD': 'HUD', 'Over the view': 'ເທິງມຸມມອງ', 'Off': 'ປິດ',
   'Tool prompt and inputs': 'ຂໍ້ຄວາມແນະນຳເຄື່ອງມືແລະຄ່າປ້ອນ', 'Banner over the view': 'ແຖບປ້າຍເທິງມຸມມອງ', 'In the command line': 'ໃນແຖວຄຳສັ່ງ', 'A button': 'ປຸ່ມ',
-  'Docked': 'ປັກໝຸດຕິດຂອບ', 'Browser folds to a rail': 'ແຜງຈັດການພັບເປັນແຖບແຄບ', 'Both fold': 'ພັບທັງສອງ', 'Property rows': 'ແຖວຄຸນສົມບັດ', 'Normal': 'ປົກກະຕິ', 'Dense (22 px)': 'ຖີ່ (22 px)',
+  'Docked': 'ປັກໝຸດຕິດຂອບ', 'Browser folds to a rail': 'ແຜງຈັດການພັບເປັນແຖບແຄບ', 'Both fold': 'ພັບທັງສອງ', 'Property rows': 'ແຖວຄຸນສົມບັດ', 'Normal': 'ປົກກະຕິ', 'Dense (22 px)': 'ຖີ່ (22 px)', 'Tabs': 'ແຖບ', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': 'ເຄື່ອງມືຂອງແຖບທີ່ເຊື່ອງໄວ້ ຍັງຢູ່ໃນ ຄຳສັ່ງ… ແລະ ປຸ່ມລັດແປ້ນພິມ.', 'Always shown: Interface… is here': 'ສະແດງສະເໝີ: ສ່ວນຕິດຕໍ່ຜູ້ໃຊ້… ຢູ່ບ່ອນນີ້',
   'The side panels fold in every mode: the button on their header, a double-click on their edge, or the keyboard.': 'ແຜງດ້ານຂ້າງພັບໄດ້ໃນທຸກໂໝດ: ຜ່ານປຸ່ມຢູ່ຫົວຂໍ້, ກົດສອງຄັ້ງໃສ່ຂອບ, ຫຼື ຜ່ານແປ້ນພິມ.',
   'This dialog:': 'ກ່ອງຂໍ້ຄວາມນີ້:', 'Keyboard shortcuts…': 'ປຸ່ມລັດແປ້ນພິມ…', 'Keyboard shortcuts': 'ປຸ່ມລັດແປ້ນພິມ', 'Find a command or a key': 'ຊອກຫາຄຳສັ່ງ ຫຼື ປຸ່ມ',
   'Preset': 'ຄ່າຕັ້ງໄວ້ລ່ວງໜ້າ', 'Reset all': 'ຣີເຊັດທັງໝົດ', 'Import…': 'ນຳເຂົ້າ…', 'is already used by': 'ຖືກນຳໃຊ້ແລ້ວໂດຍ', 'Keep both': 'ຮັກສາໄວ້ທັງສອງ',

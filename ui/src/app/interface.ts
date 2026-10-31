@@ -5,9 +5,10 @@
  * the prompt, the command line and the HUD, the quick tools docked on the
  * view's edge) and Focus (the tabs and a command line; the ribbon drops
  * down from its tab, the panels hide), and each part chosen on its own,
- * which makes the choice Custom. Kept per user in the browser's storage (the
- * desktop app and the browser apart). The web build starts in Compact on a
- * short window, until the user chooses.
+ * which makes the choice Custom; and the ribbon tabs this user hides, apart
+ * from the presets. Kept per user in the browser's storage (the desktop app
+ * and the browser apart). The web build starts in Compact on a short window,
+ * until the user chooses.
  */
 
 import { create } from 'zustand';
@@ -56,7 +57,12 @@ export interface InterfaceSettings {
   parts: InterfaceParts;
   /** The user chose (a preset or a part): no default by the window's size any more. */
   chosen: boolean;
+  /** The ribbon tabs this user does without (an architect without Structure and MEP, an engineer without Architecture); their tools stay in the palette and the shortcuts. Not part of a preset. */
+  hiddenTabs: string[];
 }
+
+/** Tabs that stay whatever is hidden: the Interface dialog lives in View. */
+export const ALWAYS_SHOWN_TABS = ['view'];
 
 const same = (a: InterfaceParts, b: InterfaceParts) => (Object.keys(CHOICES) as (keyof InterfaceParts)[]).every((k) => a[k] === b[k]);
 
@@ -65,11 +71,18 @@ export function presetOf(parts: InterfaceParts): InterfacePreset | 'custom' {
   return (Object.keys(PRESETS) as InterfacePreset[]).find((p) => same(PRESETS[p], parts)) ?? 'custom';
 }
 
-export const withPreset = (preset: InterfacePreset): InterfaceSettings => ({ preset, parts: { ...PRESETS[preset] }, chosen: true });
+export const withPreset = (preset: InterfacePreset, hiddenTabs: string[] = []): InterfaceSettings => ({ preset, parts: { ...PRESETS[preset] }, chosen: true, hiddenTabs });
 
 export function withPart<K extends keyof InterfaceParts>(s: InterfaceSettings, key: K, value: InterfaceParts[K]): InterfaceSettings {
   const parts = { ...s.parts, [key]: value };
-  return { preset: presetOf(parts), parts, chosen: true };
+  return { ...s, preset: presetOf(parts), parts, chosen: true };
+}
+
+/** The settings with a tab hidden or shown again; a tab that always shows stays. */
+export function withTab(s: InterfaceSettings, tab: string, shown: boolean): InterfaceSettings {
+  if (ALWAYS_SHOWN_TABS.includes(tab)) return s;
+  const hiddenTabs = shown ? s.hiddenTabs.filter((t) => t !== tab) : s.hiddenTabs.includes(tab) ? s.hiddenTabs : [...s.hiddenTabs, tab];
+  return { ...s, hiddenTabs };
 }
 
 /** Where Lapin runs, for the first choice: the web build on a window under 800 px tall starts compact. */
@@ -77,17 +90,18 @@ export interface InterfaceEnv { web: boolean; height: number }
 
 /** The settings from what was kept (anything unreadable left out), else the default for where Lapin runs. */
 export function initialSettings(stored: unknown, env: InterfaceEnv): InterfaceSettings {
-  const o = stored as { parts?: Record<string, unknown>; chosen?: unknown } | null;
+  const o = stored as { parts?: Record<string, unknown>; chosen?: unknown; hiddenTabs?: unknown } | null;
+  const hiddenTabs = o && typeof o === 'object' && Array.isArray(o.hiddenTabs) ? o.hiddenTabs.filter((t): t is string => typeof t === 'string' && !ALWAYS_SHOWN_TABS.includes(t)) : [];
   if (o && typeof o === 'object' && o.chosen === true && o.parts && typeof o.parts === 'object') {
     const parts = { ...PRESETS.comfortable };
     for (const k of Object.keys(CHOICES) as (keyof InterfaceParts)[]) {
       const v = o.parts[k];
       if ((CHOICES[k] as readonly unknown[]).includes(v)) (parts as Record<string, unknown>)[k] = v;
     }
-    return { preset: presetOf(parts), parts, chosen: true };
+    return { preset: presetOf(parts), parts, chosen: true, hiddenTabs };
   }
   const preset: InterfacePreset = env.web && env.height < 800 ? 'compact' : 'comfortable';
-  return { preset, parts: { ...PRESETS[preset] }, chosen: false };
+  return { preset, parts: { ...PRESETS[preset] }, chosen: false, hiddenTabs };
 }
 
 const KEY = 'lapin.interface';
@@ -116,5 +130,6 @@ export function setInterface(s: InterfaceSettings): void {
   for (const f of listeners) f(s, before);
 }
 
-export const choosePreset = (p: InterfacePreset) => setInterface(withPreset(p));
+export const choosePreset = (p: InterfacePreset) => setInterface(withPreset(p, useInterface.getState().hiddenTabs));
+export const showTab = (tab: string, shown: boolean) => setInterface(withTab(useInterface.getState(), tab, shown));
 export const choosePart = <K extends keyof InterfaceParts>(key: K, value: InterfaceParts[K]) => setInterface(withPart(useInterface.getState(), key, value));

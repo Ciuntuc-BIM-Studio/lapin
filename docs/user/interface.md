@@ -31,6 +31,8 @@ In every mode the top bar keeps **Undo** and **Redo** at its right end: with the
 
 Below the modes, each part can be set on its own: the ribbon, the quick tools (or none: the number keys still work), the command line, the HUD, the tool's prompt and fields, the key plan, the panels and the height of the property rows. Changing one part makes the choice **Custom**.
 
+Below the parts, **Tabs**: untick the ribbon tabs you do without (an architect may hide Structure, Rebar 2D and MEP, an engineer Architecture and Site). View always stays, since Interface… is there. The tools of a hidden tab are still in Commands… and in the keyboard shortcuts.
+
 Lapin keeps your choice on this computer, for you. The desktop app and the browser keep theirs apart. In the browser, Lapin starts in Compact when the window is less than 800 pixels tall, until you choose.
 
 ## Folding the side panels

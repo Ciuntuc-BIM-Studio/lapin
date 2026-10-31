@@ -31,6 +31,8 @@ Dans tous les modes, la barre du haut garde **Annuler** et **Rétablir** à son 
 
 Sous les modes, chaque élément se règle séparément : le ruban, les outils rapides (ou aucun : les touches numériques fonctionnent toujours), la ligne de commande, le HUD, l’invite et les champs de l’outil, le plan de repérage, les panneaux et la hauteur des lignes de propriétés. Modifier un élément fait passer le choix à **Personnalisé**.
 
+Sous les éléments, **Onglets** : décochez les onglets du ruban dont vous n’avez pas besoin (un architecte peut masquer Structure, Rebar 2D et MEP, un ingénieur Architecture et Site). View reste toujours, puisque Interface… s’y trouve. Les outils d’un onglet masqué restent dans Commandes… et dans les raccourcis clavier.
+
 Lapin garde votre choix sur cet ordinateur, pour vous. L’application de bureau et le navigateur gardent chacun le leur. Dans le navigateur, Lapin démarre en Compact quand la fenêtre fait moins de 800 pixels de haut, jusqu’à ce que vous choisissiez.
 
 ## Replier les panneaux latéraux
