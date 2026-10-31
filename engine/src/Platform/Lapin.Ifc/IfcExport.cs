@@ -330,15 +330,22 @@ public static class IfcExport
         /// An instance's body as IFC shares one (docs/plan-instancing.md): its shared body written once as an
         /// IfcRepresentationMap, and here an IfcMappedItem placing it (relative to the storey, at <paramref name="z0"/>).
         /// Null when the placement is not a rotation and a uniform scale, which IFC's operator cannot say: then its own B-rep.
+        /// Square within a millionth: what a file wrote its axes to (BIMCamel: 11 decimals) and an instance keeps of them.
         /// </summary>
         string? Mapped(SharedInstance inst, double z0)
         {
             var x = inst.Xf;
             Vec3 ax = new(x[0], x[1], x[2]), ay = new(x[3], x[4], x[5]), az = new(x[6], x[7], x[8]);
             var scale = ax.Length;
-            if (scale < 1e-12 || Math.Abs(ay.Length - scale) > 1e-9 * scale || Math.Abs(az.Length - scale) > 1e-9 * scale
-                || Math.Abs(Vec3.Dot(ax, ay)) > 1e-9 * scale * scale || Math.Abs(Vec3.Dot(ay, az)) > 1e-9 * scale * scale || Math.Abs(Vec3.Dot(ax, az)) > 1e-9 * scale * scale
+            const double tol = 1e-6;
+            if (scale < 1e-12 || Math.Abs(ay.Length - scale) > tol * scale || Math.Abs(az.Length - scale) > tol * scale
+                || Math.Abs(Vec3.Dot(ax, ay)) > tol * scale * scale || Math.Abs(Vec3.Dot(ay, az)) > tol * scale * scale || Math.Abs(Vec3.Dot(ax, az)) > tol * scale * scale
                 || Vec3.Dot(Vec3.Cross(ax, ay), az) <= 0) return null;
+            // Written square: x as it is, y made square to it, z their cross product.
+            var ux = ax * (1 / scale);
+            var uy = ay - ux * Vec3.Dot(ay, ux);
+            uy = uy * (1 / uy.Length);
+            var uz = Vec3.Cross(ux, uy);
             if (!maps.TryGetValue(inst.Body, out var map))
             {
                 map = m.Get(inst.Body) is { } shared && StoredBodies.SharedParts(shared) is { Count: > 0 } parts
@@ -348,9 +355,9 @@ public static class IfcExport
                 maps[inst.Body] = map;
             }
             if (map == null) return null;
-            string Dir(Vec3 d) { var n = d * (1 / scale); return f.Add("IFCDIRECTION", L(new[] { R(n.X), R(n.Y), R(n.Z) })); }
-            var op = f.Add("IFCCARTESIANTRANSFORMATIONOPERATOR3D", Dir(ax), Dir(ay), f.Add("IFCCARTESIANPOINT", L(new[] { R(x[9]), R(x[10]), R(x[11] - z0) })),
-                Math.Abs(scale - 1) < 1e-12 ? Null : R(scale), Dir(az));
+            string Dir(Vec3 n) => f.Add("IFCDIRECTION", L(new[] { R(n.X), R(n.Y), R(n.Z) }));
+            var op = f.Add("IFCCARTESIANTRANSFORMATIONOPERATOR3D", Dir(ux), Dir(uy), f.Add("IFCCARTESIANPOINT", L(new[] { R(x[9]), R(x[10]), R(x[11] - z0) })),
+                Math.Abs(scale - 1) < 1e-12 ? Null : R(scale), Dir(uz));
             return f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("MappedRepresentation"), L(new[] { f.Add("IFCMAPPEDITEM", map, op) }));
         }
 

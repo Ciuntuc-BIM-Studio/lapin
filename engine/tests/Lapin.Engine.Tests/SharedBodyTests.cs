@@ -27,9 +27,10 @@ public class SharedBodyTests : IDisposable
     /// A file of cubes (1 m, centred on their placement in plan, standing on it) on one storey: <paramref name="shared"/> of them using the
     /// shape #100, two more each placing the type map #200 (turned a quarter round, the
     /// second), and with <paramref name="opening"/> one more cube of the shared shape,
-    /// voided by an opening.
+    /// voided by an opening. With <paramref name="oblique"/> the map is placed as BIMCamel places its own: turned 37° by an
+    /// operator whose axes are written to 11 decimals, scaled by 0.001 (a body in millimetres).
     /// </summary>
-    internal static string Cubes(int shared, bool turned = false, bool mapped = false, bool opening = false)
+    internal static string Cubes(int shared, bool turned = false, bool mapped = false, bool opening = false, bool oblique = false)
     {
         var s = new StringBuilder("""
             ISO-10303-21;
@@ -85,12 +86,17 @@ public class SharedBodyTests : IDisposable
         if (mapped)
             for (var k = 0; k < 2; k++)
             {
-                s.Append($"#{id}=IFCCARTESIANTRANSFORMATIONOPERATOR3D($,$,#8,$,$);\n");
+                if (oblique)
+                {
+                    s.Append($"#{id}=IFCCARTESIANTRANSFORMATIONOPERATOR3D(#{id + 4},#{id + 5},#8,0.001,#7);\n");
+                    s.Append($"#{id + 4}=IFCDIRECTION((0.79863551005,0.60181502315,0.0));\n#{id + 5}=IFCDIRECTION((-0.60181502315,0.79863551005,0.0));\n");
+                }
+                else s.Append($"#{id}=IFCCARTESIANTRANSFORMATIONOPERATOR3D($,$,#8,$,$);\n");
                 s.Append($"#{id + 1}=IFCMAPPEDITEM(#200,#{id});\n");
                 s.Append($"#{id + 2}=IFCSHAPEREPRESENTATION(#10,'Body','MappedRepresentation',(#{id + 1}));\n");
                 s.Append($"#{id + 3}=IFCPRODUCTDEFINITIONSHAPE($,$,(#{id + 2}));\n");
                 var pds = id + 3;
-                id += 4;
+                id += oblique ? 6 : 4;
                 Cube(2 * k, 4, pds, k == 1);
             }
         if (opening)
@@ -303,6 +309,37 @@ public class SharedBodyTests : IDisposable
         var (lo, hi) = Box(g, Proxies(g.Model).Single(c => c.Name == "cube-5").Id);
         Assert.Equal(1.5, lo.X, 6); Assert.Equal(2.5, hi.X, 6);
         Assert.Equal(3.5, lo.Y, 6); Assert.Equal(4.5, hi.Y, 6);
+    }
+
+    [Fact]
+    public void A_map_turned_and_scaled_as_BIMCamel_places_it_is_exported_mapped()
+    {
+        var f = Make();
+        IfcImport.Run(f.Session, Write(Cubes(2, mapped: true, oblique: true)), new IfcImportOptions(Dedupe: false), out _);
+        Assert.Equal(4, Proxies(f.Model).Count(c => c.Str(StoredBodies.BodyOf) != null));
+        var path = Path.Combine(_dir, "oblique.ifc");
+        IfcExport.Write(f.Session, path, null);
+        var text = File.ReadAllText(path);
+        // Kept once and mapped four times, not a B-rep of its own for each of the two turned, scaled instances.
+        Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(text, "=IFCREPRESENTATIONMAP\\(").Count);
+        Assert.Equal(4, System.Text.RegularExpressions.Regex.Matches(text, "=IFCMAPPEDITEM\\(").Count);
+        Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(text, "=IFCFACETEDBREP\\(").Count);
+        // Read again, a 1 mm cube turned 37° about its corner, where the file put it.
+        var g = Make();
+        IfcImport.Run(g.Session, path, new IfcImportOptions(Dedupe: false), out _);
+        var (lo, hi) = Box(g, Proxies(g.Model).Single(c => c.Name == "cube-3").Id);
+        Assert.Equal(2 + 0.001 * (-0.5 * 0.79863551005 - 0.5 * 0.60181502315), lo.X, 9);
+        Assert.Equal(0.001, hi.Z, 9);
+    }
+
+    /// <summary>A StoredBodies transform keeps its precision at any scale: a millimetre body's axes are about 0.001 long.</summary>
+    [Fact]
+    public void An_instance_transform_keeps_its_precision_at_a_small_scale()
+    {
+        var xf = StoredBodies.WriteXf([0.00079863551005, 0.00060181502315, 0, -0.00060181502315, 0.00079863551005, 0, 0, 0, 0.001, 12345.678901234, -0.5, 3]);
+        Assert.Equal(0.00079863551005, (double)xf[0]!, 15);
+        Assert.Equal(-0.00060181502315, (double)xf[3]!, 15);
+        Assert.Equal(12345.678901234, (double)xf[9]!, 9);
     }
 
     /// <summary>A diff header's lists folded as the interface folds them: removals, then additions; a reset starts over.</summary>

@@ -37,7 +37,14 @@ public static class StoredBodies
         return (body, xf);
     }
 
-    public static JsonArray WriteXf(IReadOnlyList<double> xf) => new([.. xf.Select(v => (JsonNode)Math.Round(v, 9))]);
+    /// <summary>
+    /// An instance's 12 numbers as the attribute holds them: to 12 significant digits and never fewer than 9 decimals,
+    /// since a body in millimetres has axes some 0.001 long, which 9 decimals alone would leave a millionth out of square.
+    /// </summary>
+    public static JsonArray WriteXf(IReadOnlyList<double> xf) => new([.. xf.Select(v => (JsonNode)Precise(v))]);
+
+    static double Precise(double v) =>
+        v == 0 || !double.IsFinite(v) ? 0 : Math.Round(v, Math.Clamp(Math.Max(9, 11 - (int)Math.Floor(Math.Log10(Math.Abs(v)))), 0, 15));
 
     /// <summary>A point placed by an instance's 12 numbers.</summary>
     public static Vec3 Apply(double[] m, Vec3 p) =>
