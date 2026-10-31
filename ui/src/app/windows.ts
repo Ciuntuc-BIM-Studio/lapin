@@ -7,6 +7,7 @@
  * the view's own state (its zoom, the camera) stays with its window.
  */
 
+import { brand } from '../platform/brand';
 import { emptyPane, useUi, type Pane, type UiState } from './store';
 import { isDesktop } from '../engine/files';
 
@@ -28,7 +29,7 @@ export async function openViewWindow(pane: Pane, title = 'View'): Promise<void> 
   if (!isDesktop()) return;
   const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
   const label = `view-${Date.now().toString(36)}-${++windows}`;
-  const w = new WebviewWindow(label, { url: `index.html?pane=${encodeURIComponent(JSON.stringify(pane))}`, title: `Lapin · ${title}`, width: 1100, height: 760 });
+  const w = new WebviewWindow(label, { url: `index.html?pane=${encodeURIComponent(JSON.stringify(pane))}`, title: `${brand.name} · ${title}`, width: 1100, height: 760 });
   await new Promise<void>((resolve) => {
     void w.once('tauri://created', () => resolve());
     void w.once('tauri://error', (e) => { useUi.setState({ notice: `The window could not open: ${String(e.payload)}` }); resolve(); });

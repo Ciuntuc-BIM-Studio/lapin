@@ -109,7 +109,7 @@ public static class GeoRef
     }
 
     /// <summary>The systems offered for a project.</summary>
-    public static readonly string[] Offered = [Stereo70, "EPSG:32634", "EPSG:32635", Wgs84, WebMercator];
+    public static readonly string[] Offered = [Stereo70, "EPSG:32634", "EPSG:32635", "EPSG:32632", "EPSG:32633", Wgs84, WebMercator];
 
     static int Code(string id)
     {
@@ -332,7 +332,9 @@ public static class GeoRef
         var (x, y) = (pts.Average(p => p.X), pts.Average(p => p.Y));
         if (Math.Abs(x) <= 180 && Math.Abs(y) <= 90) return Wgs84;
         if (x is > 100000 and < 900000 && y is > 150000 and < 800000) return Stereo70;
-        // UTM: zone 35 covers most of Romania (zone 34 is named in the file or the project).
+        // UTM: zone 35 covers most of Romania (zone 34 is named in the file or the project). Farther north (a Nordic
+        // survey, northings over 6 000 000) the zone cannot be told from the numbers: the project is tied without a
+        // system, and Manage → Location names it (zones 32 and 33 are offered).
         if (x is > 160000 and < 840000 && y is > 4000000 and < 6000000) return "EPSG:32635";
         return null;
     }

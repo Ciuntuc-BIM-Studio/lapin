@@ -63,7 +63,7 @@ public static partial class IfcImport
                 edit.Remove(gid);
                 again = true;
             }
-            var foreign = foreignReady.TryRemove(e.Id, out var ready) ? ready : Foreign(e, DefaultStorey(edit));
+            var foreign = foreignReady.TryRemove(e.Id, out var ready) ? ready : Foreign(e, DefaultStorey(edit) ?? "");
             foreach (var r in recognizers)
             {
                 string? id;
@@ -106,8 +106,6 @@ public static partial class IfcImport
 
         readonly System.Collections.Concurrent.ConcurrentDictionary<int, ForeignElement> foreignReady = [];
 
-        string DefaultStorey(IEdit edit) => Spatial.Storeys(edit.Model).FirstOrDefault()?.Id ?? "";
-
         /// <summary>
         /// The elements the recognisers will be offered read from the file on every core (their prisms,
         /// openings, fills, materials, parts): the heavy part of recognising, which reads only the file.
@@ -118,7 +116,7 @@ public static partial class IfcImport
             if (recognition == null) PrepareRecognition();
             if (recognizers.Count == 0 || candidates.Count < 8) return;
             model.Warm();
-            var storey = DefaultStorey(edit);
+            var storey = DefaultStorey(edit) ?? "";
             var done = 0;
             Parallel.ForEach(candidates, e =>
             {

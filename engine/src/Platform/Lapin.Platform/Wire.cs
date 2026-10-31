@@ -15,7 +15,8 @@ public sealed record EdgeDto(string Id, string From, string To, string Type, int
 /// <summary>An IFC relationship: one relating entity, the entities it relates.</summary>
 public sealed record RelationDto(string Id, string Class, string Relating, IReadOnlyList<string> Related);
 
-public sealed record PlanItemDto(string Kind, bool Closed, double[] Points, string? Text = null);
+/// <summary>A plan item for the interface: its kind, points (x, y, …), text; the levels of detail it is drawn at when not all (<see cref="PlanDetail"/>) and its dash pattern when it has one of its own.</summary>
+public sealed record PlanItemDto(string Kind, bool Closed, double[] Points, string? Text = null, int? MinDetail = null, int? MaxDetail = null, string? Pattern = null);
 
 /// <summary>
 /// One part of an element's render. <see cref="HiddenBy"/>: the layers modes of a 3D view
@@ -58,7 +59,9 @@ public sealed record RenderItem(
     double[] Snaps,
     IReadOnlyList<string> Diagnostics,
     IReadOnlyList<RenderPart>? Parts = null,
-    RenderInstance? Instance = null);
+    RenderInstance? Instance = null,
+    /// <summary>Lines in space with no body (CAD linework with heights): x y z pairs, a segment each six numbers, drawn in <see cref="Color"/>.</summary>
+    float[]? Lines = null);
 
 /// <summary>
 /// An element drawn as an instance of a shared mesh (<see cref="SharedMesh"/>, docs/plan-instancing.md):
@@ -92,8 +95,15 @@ public sealed record NodeTypeInfo(string Type, string Label, string Module, stri
 
 public sealed record CommandInfo(string Name, string Label);
 
-/// <summary>A product: an edition, the modules it is made of (UI and engine alike).</summary>
-public sealed record ProductManifest(string Id, string Name, string[] Modules, string[]? Extensions = null);
+/// <summary>
+/// A product: an edition, the modules it is made of (UI and engine alike); what a new project of it starts with
+/// (its storeys; none said: foundations, ground and first floor) and the disciplines its browser groups views by
+/// (none said: architecture, structure, MEP) — a civil edition starts on one site level, its views civil.
+/// </summary>
+public sealed record ProductManifest(string Id, string Name, string[] Modules, string[]? Extensions = null, ProductStorey[]? Storeys = null, string[]? Disciplines = null);
+
+/// <summary>A storey a new project of a product starts with: its name, base level and height (m).</summary>
+public sealed record ProductStorey(string Name, double Elevation, double Height);
 
 public sealed record SessionInfo(
     ProductManifest Product,

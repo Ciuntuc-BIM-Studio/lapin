@@ -76,7 +76,23 @@ export function resolveProduct(root, productId) {
   return {
     id: product.id,
     name: product.name,
+    /** How the product presents itself: its name, the short name that stands for "Lapin" in the interface, its theme, its app identifier. */
+    brand: {
+      name: product.brand?.name ?? product.name,
+      short: product.brand?.short ?? 'Lapin',
+      identifier: product.brand?.identifier ?? `ro.ciuntucbimstudio.${product.id}`,
+      // What an edition under another name says of itself (none for Lapin): its mark's letter, its accent colour
+      // (light and dark), the line under its name, the start screen's first hint, its app icons (a folder, from this repo).
+      ...(product.brand?.mark ? { mark: product.brand.mark } : {}),
+      ...(product.brand?.accent ? { accent: product.brand.accent } : {}),
+      ...(product.brand?.tagline ? { tagline: product.brand.tagline } : {}),
+      ...(product.brand?.hint ? { hint: product.brand.hint } : {}),
+      ...(product.brand?.icons ? { icons: product.brand.icons } : {}),
+    },
     modules: order,
+    /** What a new project starts with and the disciplines the browser groups by, when the product says (else the platform's). */
+    ...(product.storeys ? { storeys: product.storeys } : {}),
+    ...(product.disciplines ? { disciplines: product.disciplines } : {}),
     /** What came only because another module needs it. */
     required: added,
     engine: order.filter((id) => known[id].engine),

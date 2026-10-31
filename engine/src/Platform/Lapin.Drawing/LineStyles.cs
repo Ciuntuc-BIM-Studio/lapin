@@ -83,10 +83,11 @@ public static class LineStyles
         "IFCGEOGRAPHICELEMENT" or "IFCEARTHWORKSCUT" or "IFCEARTHWORKSFILL" => "topography",
         "IFCFURNISHINGELEMENT" or "IFCFURNITURE" => "furniture",
         "IFCBUILDINGELEMENTPROXY" or "IFCCOVERING" or "IFCPLATE" or "IFCFOOTING" => "other",
+        "IFCANNOTATION" => "linework",
         _ => null,
     };
 
-    public static readonly string[] Categories = ["walls", "slabs", "roofs", "columns", "beams", "doors", "windows", "stairs", "railings", "spaces", "furniture", "topography", "other"];
+    public static readonly string[] Categories = ["walls", "slabs", "roofs", "columns", "beams", "doors", "windows", "stairs", "railings", "spaces", "furniture", "topography", "other", "linework"];
 
     public static LineStyleSpec Merge(LineStyleSpec into, LineStyleSpec? from) => from == null ? into
         : new(into.Pen ?? from.Pen, into.Color ?? from.Color, into.Pattern ?? from.Pattern);

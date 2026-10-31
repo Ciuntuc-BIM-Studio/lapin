@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Moon, Redo2, Search, Sun, Undo2 } from 'lucide-react';
 import { HelpMenu } from './HelpMenu';
+import { BrandName } from './BrandMark';
 import { useUi } from '../app/store';
 import { activate, ribbonTabs } from '../platform/modules';
 import { redo, undo, useSession } from '../engine/session';
@@ -172,7 +173,7 @@ export function Ribbon() {
   return (
     <header className={`topbar ribbon-${mode}`} ref={host}>
       <div className="tabs-row">
-        <button type="button" className="brand" onClick={() => !isGuest() && useUi.setState({ screen: 'start' })} title="Start screen">Lapin</button>
+        <button type="button" className="brand" onClick={() => !isGuest() && useUi.setState({ screen: 'start' })} title="Start screen"><BrandName /></button>
         <FileMenu />
         {tabs.map((t) => (
           <button type="button" key={t.id} className={`tab${t.id === tab?.id ? ' on' : ''}${mode === 'dropdown' && dropped && t.id === tab?.id ? ' open' : ''}`} onClick={() => pickTab(t.id)}>{t.label}</button>

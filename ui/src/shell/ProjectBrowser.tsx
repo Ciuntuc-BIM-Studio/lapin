@@ -7,6 +7,7 @@
  * browsed by what you draw on.
  */
 
+import { hasModule } from '../platform/brand';
 import { useState } from 'react';
 import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, Frame, Layers, Map as MapIcon, Plus, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
 import { notify, useUi } from '../app/store';
@@ -64,7 +65,9 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   };
 
   const sets = setsOf(nodes);
-  const items: BrowserItem[] = [...levels.map(implicitPlan), THREE_D, ...[...nodes.values()].map(itemOf).filter((i): i is BrowserItem => i !== null)];
+  // A level's default plan stands in until the level has a plan view of its own (made by the first drafting on it, or by hand): then that one is the level's plan, and the default is not listed beside it under the same name.
+  const ownPlan = new Set([...nodes.values()].filter((n) => n.type === 'LapinView' && n.props.kind === 'plan' && !n.props.foundation && n.props.storeyId).map((n) => String(n.props.storeyId)));
+  const items: BrowserItem[] = [...levels.filter((s) => !ownPlan.has(s.id)).map(implicitPlan), THREE_D, ...[...nodes.values()].map(itemOf).filter((i): i is BrowserItem => i !== null)];
   // The site's drawings are the Site's, not the sets'.
   const siteItems = items.filter((i) => i.kind === 'site');
   const groups = groupItems(sets, items.filter((i) => i.kind !== 'site'));
@@ -196,14 +199,15 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
               </Row>
             )}
           </Kind>
-          <Kind id={`${id}:schedules`} icon={<Table2 size={13} />} label="Schedules" list={of('schedule')}
+          {/* Schedules are the Architecture module's views (a product without it has none). */}
+          {hasModule('architecture') && <Kind id={`${id}:schedules`} icon={<Table2 size={13} />} label="Schedules" list={of('schedule')}
             plus={set && (
               <select className="mini-select" value="" title="New schedule" onChange={(e) => { const kind = e.target.value; if (kind) void execute('architecture.createSchedule', { kind }).then((r) => { const n = made(r); if (n) showSchedule(n); }); }}>
                 <option value="">+</option><option value="all">Joinery</option><option value="parcel">Parcel coordinates</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option><option value="rooms">Rooms</option><option value="planting">Planting</option>
               </select>
             )}>
             {(item) => <Row item={item} on={view === 'schedule' && ui.scheduleId === item.id} open={() => showSchedule(item.id)} />}
-          </Kind>
+          </Kind>}
         </>}
       </div>
     );

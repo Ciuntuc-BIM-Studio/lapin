@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { FilePlus2, FolderOpen, History, Trash2, Users } from 'lucide-react';
 import { JoinDialog } from './Sharing';
 import { modules, productInfo } from '../platform/modules';
+import { brand, tagline } from '../platform/brand';
+import { BrandName } from './BrandMark';
 import { engineInBrowser, useSession } from '../engine/session';
 import { discardWork, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
 import { useUi } from '../app/store';
@@ -24,15 +26,17 @@ export function StartScreen() {
   return (
     <div className="start">
       <section className="start-left">
-        <h1 className="start-brand">Lapin</h1>
-        <p className="muted">BIM authoring for architects and engineers</p>
+        <h1 className="start-brand"><BrandName big /></h1>
+        <p className="muted">{tagline()}</p>
         <button type="button" className="btn primary big" disabled={!connected} onClick={() => void newProject()}><FilePlus2 size={18} />New project</button>
         <button type="button" className="btn big" disabled={!connected} onClick={() => void openProject()}><FolderOpen size={18} />Open project…</button>
         <button type="button" className="btn big" onClick={() => useUi.setState({ dialog: 'join' })}><Users size={18} />Join session…</button>
         {doc && (doc.path || doc.canUndo) && <button type="button" className="btn big" onClick={back}>Back to {projectTitle(doc.path)}</button>}
         {!connected && <p className="muted small">Starting the engine…</p>}
         <p className="eyebrow">Start here</p>
-        <p className="muted small">A new project starts with a ground floor and its plan. Draw walls with <kbd>WA</kbd>; every element is native IFC.</p>
+        {brand.hint
+          ? <p className="muted small">{brand.hint}</p>
+          : <p className="muted small">A new project starts with a ground floor and its plan. Draw walls with <kbd>WA</kbd>; every element is native IFC.</p>}
         <p className="eyebrow">This edition</p>
         <p className="muted small">{productInfo.name}: {modules.map((m) => m.name).join(' · ')}</p>
         {engineInBrowser && <>

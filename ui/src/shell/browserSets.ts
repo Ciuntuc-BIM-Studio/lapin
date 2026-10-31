@@ -8,6 +8,7 @@
  */
 
 import type { NodeDto } from '../engine/protocol';
+import { productInfo } from '../platform/brand';
 
 /** `site`: a site plan or a location plan, listed under the browser's Site rather than in the sets. */
 export type ItemKind = 'plan' | 'section' | 'elevation' | 'plane' | '3d' | 'sheet' | 'schedule' | 'site';
@@ -40,8 +41,9 @@ export interface BrowserItem {
 
 export interface SetGroup { set: BrowserSet | null; items: BrowserItem[] }
 
-export const DISCIPLINES = ['Architecture', 'Structure', 'MEP'];
-export const DEFAULT_DISCIPLINE = 'Architecture';
+/** The product's disciplines (products/<id>.json), else architecture, structure and MEP; the first is a view's when it names none. */
+export const DISCIPLINES: string[] = productInfo.disciplines?.length ? productInfo.disciplines : ['Architecture', 'Structure', 'MEP'];
+export const DEFAULT_DISCIPLINE = DISCIPLINES[0];
 export const KINDS: ItemKind[] = ['plan', 'section', 'elevation', 'plane', '3d', 'sheet', 'schedule'];
 export const DEFAULT_SETS: BrowserSet[] = DISCIPLINES.map((d) => ({ id: d.toLowerCase(), name: d, filter: { disciplines: [d] } }));
 

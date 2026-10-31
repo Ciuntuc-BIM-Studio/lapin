@@ -14,6 +14,7 @@ import { notify, useUi } from '../../app/store';
 import { dxfFile } from '../../engine/files';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
+import { zoomHost } from '../../viewport/zoom';
 
 interface Info {
   version: string;
@@ -98,6 +99,8 @@ export function ImportDxfDialog() {
         notify(`Imported ${r.file} (${r.units}${r.flipped ? ', mirrored' : ''}): ${parts.join(', ') || 'nothing'}${r.layers.length ? `; ${r.layers.length} new layers` : ''}${r.patterns.length ? `; patterns ${r.patterns.join(', ')}` : ''}.${skipped.length ? ` Left out: ${skipped.map(([k, n]) => `${n} ${k}`).join(', ')}.` : ''}`);
       }
       close();
+      // The drawing framed: a map's lies far from where the plan was looking.
+      setTimeout(() => zoomHost()?.fitAll(), 250);
     } catch (e) {
       notify(e instanceof Error ? e.message : String(e));
       setBusy(false);

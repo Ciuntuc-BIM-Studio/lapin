@@ -50,8 +50,8 @@ public static class GraphicsSets
         return classes.Contains(e.Class) || (LineStyles.CategoryOf(e.Class) is { } c && cats.Contains(c));
     }
 
-    /// <summary>The categories a 3D view leaves out until its graphics show them: rooms, whose volumes would hide the building.</summary>
-    public static readonly string[] HiddenIn3d = ["spaces"];
+    /// <summary>The categories a 3D view leaves out until its graphics show them: rooms, whose volumes would hide the building; CAD linework (a DXF's 3D lines), a drawing over the model.</summary>
+    public static readonly string[] HiddenIn3d = ["spaces", "linework"];
 
     /// <summary>What a 3D view hides: what its graphics hide, and the categories hidden in 3D unless its graphics show them.</summary>
     public static bool Hides3d(JsonObject? g, Entity e)

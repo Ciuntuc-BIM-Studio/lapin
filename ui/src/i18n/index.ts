@@ -20,6 +20,7 @@ import { ES, ES_PATTERNS } from './es';
 import { FR, FR_PATTERNS } from './fr';
 import { LO, LO_PATTERNS } from './lo';
 import { RO, RO_PATTERNS } from './ro';
+import { rebrand } from '../platform/brand';
 
 /** A language's phrases: the exact ones, and those with a number or a name in them. */
 export interface Language {
@@ -84,7 +85,7 @@ export function translate(text: string, lang: Lang = useLang.getState().lang, ct
 
 /** For code that builds a phrase itself (a notice): the phrase in the language chosen. */
 export function t(text: string, ctx?: string): string {
-  return translate(text, undefined, ctx) ?? text;
+  return rebrand(translate(text, undefined, ctx) ?? text);
 }
 
 const ATTRS = ['title', 'placeholder', 'aria-label'];
@@ -95,7 +96,10 @@ let observer: MutationObserver | null = null;
 let busy = false;
 
 /** Whether `now` is `english` or its translation in a language (the one shown before a switch, too). */
-const shows = (now: string, english: string, ctx?: string | null) => now === english || LANGUAGES.some((l) => now === translate(english, l.id, ctx));
+const shows = (now: string, english: string, ctx?: string | null) => now === english || now === rebrand(english) || LANGUAGES.some((l) => {
+  const x = translate(english, l.id, ctx);
+  return x != null && (now === x || now === rebrand(x));
+});
 
 /** The meaning an element's phrases take (`data-i18n-ctx` on it or around it). */
 const ctxOf = (el: Element | null) => el?.closest('[data-i18n-ctx]')?.getAttribute('data-i18n-ctx') ?? null;
@@ -110,7 +114,7 @@ function textNode(n: Text) {
   // The English it shows now (React may have written new English since).
   const english = known != null && shows(now, known, ctx) ? known : now;
   originals.set(n, english);
-  const want = translate(english, undefined, ctx) ?? english;
+  const want = rebrand(translate(english, undefined, ctx) ?? english);
   if (want !== now) n.nodeValue = want;
 }
 
@@ -123,7 +127,7 @@ function attributes(el: Element) {
     if (now == null) continue;
     const english = saved[a] != null && shows(now, saved[a], ctx) ? saved[a] : now;
     saved[a] = english;
-    const want = translate(english, undefined, ctx) ?? english;
+    const want = rebrand(translate(english, undefined, ctx) ?? english);
     if (want !== now) el.setAttribute(a, want);
   }
   attrOriginals.set(el, saved);

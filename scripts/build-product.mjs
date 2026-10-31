@@ -116,7 +116,7 @@ if (mac) console.log(identity ? `▸ signing as ${identity}` : '▸ no Developer
 writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   productName: product.name,
   version,
-  identifier: `ro.ciuntucbimstudio.${productId}`,
+  identifier: product.brand?.identifier ?? `ro.ciuntucbimstudio.${productId}`,
   plugins: { updater: { endpoints: [`https://ciuntucbimstudio.ro/downloads/${productId}-update/{{target}}-{{arch}}-{{bundle_type}}.json`] } },
   // Relative to desktop/src-tauri, with forward slashes: Tauri reads an absolute Windows path ("D:\\a\\…") as a URL with the
   // scheme "d:", embeds nothing and the installed app opens on "File not found".
@@ -124,6 +124,8 @@ writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   app: { windows: [{ label: 'main', title: product.name, width: 1440, height: 900, minWidth: 1000, minHeight: 640, center: true }] },
   bundle: {
     externalBin: ['binaries/lapin-host'], resources: ['resources/**/*'],
+    // An edition under its own brand carries its icons (brand.icons: a folder from the repository, with Tauri's five files), Lapin its own (tauri.conf.json's).
+    ...(product.brand?.icons ? { icon: ['32x32.png', '128x128.png', '128x128@2x.png', 'icon.icns', 'icon.ico'].map((f) => relative(join(root, 'desktop/src-tauri'), join(root, product.brand.icons, f))) } : {}),
     ...(!cross && process.platform === 'linux' ? { targets: ['deb', 'appimage'] } : {}),
     // Windows: an NSIS installer for the current user (no admin rights), which fetches WebView2 when it is missing.
     ...(targetWin ? { targets: ['nsis'], windows: { nsis: { installMode: 'currentUser' } } } : {}),

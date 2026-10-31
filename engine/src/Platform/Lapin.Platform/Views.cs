@@ -18,8 +18,14 @@ public static class Views
 {
     public const string Class = "LapinView";
     public static readonly string[] Kinds = ["plan", "section", "elevation", "3d", RefPlanes.Kind];
-    /// <summary>The disciplines the browser's default sets group by; a view or sheet may name any other.</summary>
-    public static readonly string[] Disciplines = ["Architecture", "Structure", "MEP"];
+    /// <summary>The disciplines the browser's default sets group by, the first a view's when it names none; a view or sheet may name any other. The product may say others (<see cref="ProductManifest.Disciplines"/>).</summary>
+    public static string[] Disciplines { get; private set; } = ["Architecture", "Structure", "MEP"];
+
+    /// <summary>The product's own disciplines, said once by the host that runs it (one product per engine process).</summary>
+    public static void UseProduct(ProductManifest product)
+    {
+        if (product.Disciplines is { Length: > 0 } own) Disciplines = own;
+    }
     public static readonly string[] Directions = ["north", "south", "east", "west"];
     public const double DefaultCut = 1.2;
 
@@ -386,6 +392,8 @@ public static class Views
         // A site plan: the model from above, what lies under the ground left out, the site's own symbols from every storey.
         var site = plan && SitePlans.Of(view) != null;
         var display = StoreyDisplay.Of(view);
+        // How much the plan's symbols draw, by its scale.
+        var detail = PlanDetail.Of(view.NumOrNull("scale") ?? 100);
         // The view's style: which layers of layered elements draw (all, all but the finishes, the cores).
         var style = ViewStyles.Of(m, view);
         var bandCache = new Dictionary<string, IReadOnlyList<LayerBand>?>();
@@ -425,8 +433,9 @@ public static class Views
             if (view.Str("kind") == "plan" && !stored && Generator.SymbolicInPlan.Contains(e.Class) && g.Plan != null && Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey)
                 foreach (var item in g.Plan)
                 {
+                    if (!item.At(detail)) continue;
                     var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" => LineRole.Cut, "heavy" => LineRole.Cut, "dashed" => LineRole.Hidden, "overhead" or "ridge" or "hip" or "valley" or "break" => LineRole.Overhead, _ => null };
-                    if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role));
+                    if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role, item.Style));
                 }
         }
         return (parts, symbols, fills, texts);
@@ -533,7 +542,8 @@ public static class Views
         var kind = spec.Kind == "plan" ? "plan" : spec.Kind == "elevation" ? "elevation" : "section";
         var resolved = new Dictionary<string, ResolvedMaterial?>();
         ResolvedMaterial? Resolved(string? id) => id == null ? null
-            : resolved.TryGetValue(id, out var r) ? r : resolved[id] = m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, kind) : null;
+            // A material named rather than kept (a track's ballast, its rails): its look guessed from the name.
+            : resolved.TryGetValue(id, out var r) ? r : resolved[id] = m.Get(id) is { } mat ? MaterialGraphics.Resolve(mat, kind) : GlobalId.IsValid(id) ? null : MaterialGraphics.Resolve(null, kind, id);
         // Each element's layers, so a layer thinner than a membrane (or of a membrane's material) draws as one.
         var layerSets = new Dictionary<string, IReadOnlyList<LayerRef>?>();
         IReadOnlyList<LayerRef>? LayersOf(string element) => layerSets.TryGetValue(element, out var ls) ? ls
@@ -883,7 +893,7 @@ public static class Views
         r.Class(new(Class, "View",
         [
             new("kind", "Kind", "choice", Choices: Kinds, ReadOnly: true),
-            new("scale", "Scale 1:", "number", Min: 1, Max: 1000),
+            new("scale", "Scale 1:", "number", Min: 1, Max: 10000),
             new("cutHeight", "Cut height", "length"),
             new("depth", "Depth", "length", Min: 0),
             new("direction", "Looking", "choice", Choices: Directions),

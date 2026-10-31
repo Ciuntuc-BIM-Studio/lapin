@@ -38,7 +38,8 @@ const phases: LapinModule = {
   background: PhaseLooks,
   propertySections: [
     { id: 'viewPhase', label: 'Phase', classes: ['LapinView'], component: ViewPhaseSection },
-    { id: 'elementPhase', label: 'Phases', classes: ['IfcWall', 'IfcSlab', 'IfcDoor', 'IfcWindow', 'IfcRoof', 'IfcColumn', 'IfcBeam', 'IfcFooting'], component: ElementPhaseSection },
+    // The railway's elements are phased too (a generated route follows its turnout's phases; the node is a resource without a storey).
+    { id: 'elementPhase', label: 'Phases', classes: ['IfcWall', 'IfcSlab', 'IfcDoor', 'IfcWindow', 'IfcRoof', 'IfcColumn', 'IfcBeam', 'IfcFooting', 'LapinTrack', 'LapinPlatform', 'LapinTurnout', 'LapinCrossover', 'LapinCrossing', 'LapinLevelCrossing'], component: ElementPhaseSection },
   ],
 };
 

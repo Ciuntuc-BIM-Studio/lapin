@@ -57,6 +57,13 @@ const SELECTED = new THREE.Color(0xb5532d);
 /** The edges' one material, shared by every element (highlights and looks change only the faces'). */
 const EDGES = new THREE.LineBasicMaterial({ color: 0x1e2a3a });
 EDGES.userData.shared = true;
+/** CAD linework's materials, one a colour (a DXF's lines keep their layer's), shared like the edges'. */
+const LINEWORK = new Map<string, THREE.LineBasicMaterial>();
+function lineworkMaterial(color: string): THREE.LineBasicMaterial {
+  let m = LINEWORK.get(color);
+  if (!m) { m = new THREE.LineBasicMaterial({ color: new THREE.Color(color) }); m.userData.shared = true; LINEWORK.set(color, m); }
+  return m;
+}
 
 function groundGrid(theme: keyof typeof GRID, z: number): THREE.GridHelper {
   const grid = new THREE.GridHelper(60, 60, GRID[theme][0], GRID[theme][1]);
@@ -180,6 +187,12 @@ function meshOf(item: RenderItem): THREE.Group {
     lods.push({ levels, errors: p.lods.map((l) => l.error), ...sphereOf(p.positions) });
   }
   if (lods.length) group.userData.lods = lods;
+  // Linework with heights (a DXF's 3D lines): lines in space, in their own colour.
+  if (item.lines?.length) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(item.lines, 3));
+    group.add(new THREE.LineSegments(g, lineworkMaterial(item.color)));
+  }
   return group;
 }
 

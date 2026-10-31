@@ -19,6 +19,13 @@
   --trace-snap: #4cc27e; --trace-locked: #79aef0; --trace-tracking: var(--accent); --trace-free: #b3ab9c;
   color-scheme: dark;
 }
+/* An edition under its own brand (products/<id>.json "brand"): its square mark before its name. */
+.brand-lockup { display: inline-flex; align-items: center; gap: 7px; }
+.brand-mark { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; background: var(--accent); color: var(--accent-ink); font-weight: 900; font-size: 13px; letter-spacing: 0; }
+.brand-edition { font-weight: 500; color: var(--ink-muted); }
+.brand-lockup.big { gap: 12px; }
+.brand-lockup.big .brand-mark { width: 46px; height: 46px; border-radius: 8px; font-size: 28px; }
+.brand-lockup.big .brand-edition { font-weight: 300; }
 :root { --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Lao", "Noto Sans Lao UI", "Lao Sangam MN", "Leelawadee UI", sans-serif; --mono: ui-monospace, "SF Mono", Menlo, monospace; }
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
@@ -621,6 +628,9 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .corridor-side { border: 1px solid var(--rule); border-radius: 2px; padding: 6px 8px; display: grid; gap: 4px; min-width: 0; }
 .corridor-side legend { padding: 0 4px; color: var(--ink-muted); font-size: 12px; }
 .corridor-pvis td { padding: 2px 4px; }
+.corridor-curves td { padding: 2px 4px; white-space: nowrap; }
+
+.dialog ul.plain { list-style: none; margin: 0; padding: 0; }
 
 /* The DXF import dialog: its layer list scrolls; a layer's colour as a swatch. */
 .dxf-layers { margin-top: 12px; max-height: 240px; overflow-y: auto; display: block; }

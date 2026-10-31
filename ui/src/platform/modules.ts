@@ -9,7 +9,7 @@ import { mergeTabs } from './ribbon';
 import { cancel, useCad } from '../viewport/cad/session';
 
 export const modules: readonly LapinModule[] = loaded;
-export const productInfo: { id: string; name: string } = product;
+export const productInfo = product;
 
 export const ribbonTabs = (): RibbonTabDef[] => mergeTabs(modules);
 export const hotbarTools = (): ToolDef[] => modules.flatMap((m) => m.hotbar ?? []).slice(0, 9);

@@ -106,3 +106,15 @@ public interface IViewElementFilter
 {
     (bool Hide, string? Color)? For(IModelView model, Entity view, Entity element);
 }
+
+/// <summary>
+/// Elements that follow another's phases: generated from it and living with
+/// it (a turnout's routes, a crossover's turnouts and connection, a
+/// crossing's slips). Assigning a phase to the owner assigns it to them too;
+/// the module that generates them keeps the phases on them when it re-makes
+/// them. Offered as a service; the phases work without any.
+/// </summary>
+public interface IPhaseFollowers
+{
+    IEnumerable<string> FollowersOf(IModelView model, Entity element);
+}

@@ -40,6 +40,21 @@ public sealed class PhasesModule : ILapinModule, IViewElementFilter
         return null;
     }
 
+    /// <summary>The elements asked for and, after them, whatever follows their phases, each once.</summary>
+    public static List<string> WithFollowers(IModelView m, IReadOnlyList<IPhaseFollowers> followers, IEnumerable<string> ids)
+    {
+        var o = new List<string>();
+        var seen = new HashSet<string>();
+        var queue = new Queue<string>(ids);
+        while (queue.TryDequeue(out var id))
+        {
+            if (!seen.Add(id)) continue;
+            o.Add(id);
+            if (m.Get(id) is { } e) foreach (var f in followers) foreach (var x in f.FollowersOf(m, e)) queue.Enqueue(x);
+        }
+        return o;
+    }
+
     static void Write(ICommandContext ctx, PhaseSettings s)
     {
         var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
@@ -112,12 +127,14 @@ public sealed class PhasesModule : ILapinModule, IViewElementFilter
             return null;
         });
 
-        // Elements created in a phase, demolished in one (null: not demolished); refused when demolished before built.
+        // Elements created in a phase, demolished in one (null: not demolished); refused when demolished before built. What follows
+        // an element's phases (IPhaseFollowers: a turnout's routes…) is assigned with it.
         r.Command("assign", "Phase", (ctx, a) =>
         {
             var s = Settings(ctx.Model);
-            var ids = Args.Ids(a);
-            if (ids.Count == 0) throw new CommandException("Nothing to assign a phase to.");
+            var asked = Args.Ids(a);
+            if (asked.Count == 0) throw new CommandException("Nothing to assign a phase to.");
+            var ids = WithFollowers(ctx.Model, ctx.Services.All<IPhaseFollowers>(), asked);
             string? Check(string? id) => id == null || s.Phases.Any(p => p.Id == id) ? id : throw new CommandException($"There is no phase „{id}”.");
             int Index(string? id) => s.Phases.ToList().FindIndex(p => p.Id == id);
             foreach (var id in ids)

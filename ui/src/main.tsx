@@ -12,6 +12,15 @@ import { paneFromUrl, syncWindows } from './app/windows';
 import { checkForUpdates } from './app/updates';
 import { startReplies } from './shell/replies';
 import { isGuest, savedName } from './engine/share';
+import { brand } from './platform/brand';
+
+// The product's name in the window and its brand's accent (products/<id>.json), over the theme's.
+document.title = brand.name;
+if (brand.accent) {
+  const style = document.createElement('style');
+  style.textContent = `:root, [data-theme="paper"] { --accent: ${brand.accent.light}; } [data-theme="graphite"] { --accent: ${brand.accent.dark}; }`;
+  document.head.appendChild(style);
+}
 
 // A detached view window (desktop): one pane, straight into the workspace, no save prompt (the main window has it).
 const detached = paneFromUrl();

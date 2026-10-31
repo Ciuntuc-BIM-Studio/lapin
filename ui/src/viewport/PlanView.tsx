@@ -39,6 +39,7 @@ import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelPans, wheelZoom, type Bounds, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
+import { DASHES, planDetail, shownAt } from './planDetail';
 import { axisLine, riseThrough } from './arc';
 import { others, reportPresence, useShare } from '../engine/share';
 
@@ -50,7 +51,10 @@ function radiusOf(a: Vec2, b: Vec2, p: Vec2): number {
 import { KeyPlan } from './KeyPlan';
 
 type View = View2; // scale = px per metre
-const clampScale = (s: number) => Math.max(2, Math.min(s, 2000));
+/** Pixels per metre: from a site of kilometres (a railway, a road) to a detail. */
+const clampScale = (s: number) => Math.max(0.02, Math.min(s, 2000));
+/** The grid's step for a zoom: the first of 1, 5, 25, 100, 500… m that stays 12 px apart or more on screen. */
+const gridStep = (scale: number) => [1, 5, 25, 100, 500, 2500, 10000, 50000].find((st) => st * scale >= 12) ?? 50000;
 
 const KIND_ORDER: Record<string, number> = { grid: 0, overhead: 1, ridge: 2, hip: 2, valley: 2, break: 2, outline: 3, cut: 4, symbol: 5, heavy: 5, label: 6 };
 
@@ -134,7 +138,10 @@ export function PlanView() {
   }), [view, size]);
 
   // The shown storey only.
-  const items = useMemo(() => [...render.values()].filter((r) => r.storeyId === storey?.id), [render, storey?.id]);
+  // The storey's items, each with the plan items its plan's scale draws (a track: its axis at 1:2000, its rails at 1:500, every sleeper at 1:100).
+  const detail = planDetail(drawing?.scale ?? 100);
+  const items = useMemo(() => [...render.values()].filter((r) => r.storeyId === storey?.id)
+    .map((r) => (r.plan.every((it) => shownAt(it, detail)) ? r : { ...r, plan: r.plan.filter((it) => shownAt(it, detail)) })), [render, storey?.id, detail]);
   const snapPoints = useMemo(() => items.flatMap((r) => pairs(r.snaps ?? [])), [items]);
   const markSnaps = useMemo(() => (drawing?.marks ?? []).flatMap((m) => pairs(m.snaps ?? [])), [drawing]);
 
@@ -147,7 +154,7 @@ export function PlanView() {
   }, [items, drawing]);
   const fit = useCallback(() => {
     const b = extent();
-    if (b) go(framing(b, size, 0.8, 5, 400));
+    if (b) go(framing(b, size, 0.8, 0.02, 400));
   }, [extent, size, go]);
 
   // A different storey: its remembered view, else frame it. Only then: an edit or a
@@ -164,8 +171,8 @@ export function PlanView() {
   // The zoom commands and keys, while this pane is in front.
   const host: ZoomHost = {
     fitAll: fit,
-    fitSelection: () => { const b = extent(new Set(selected)); if (!b) return false; go(framing(b, size, 0.6, 5, 1000)); return true; },
-    zoomWindow: (a, b) => go(framing([Math.min(a.x, b.x), Math.min(a.y, b.y), Math.max(a.x, b.x), Math.max(a.y, b.y)], size, 0.95, 2, 2000)),
+    fitSelection: () => { const b = extent(new Set(selected)); if (!b) return false; go(framing(b, size, 0.6, 0.02, 1000)); return true; },
+    zoomWindow: (a, b) => go(framing([Math.min(a.x, b.x), Math.min(a.y, b.y), Math.max(a.x, b.x), Math.max(a.y, b.y)], size, 0.95, 0.02, 2000)),
     actual: () => go({ ...view, scale: clampScale(actualScale(drawing?.scale ?? 100)) }),
     zoomBy: (f) => go({ ...view, scale: clampScale(view.scale * f) }),
     previous: () => { const p = popHistory<View>(key); if (!p) return false; setView(p); return true; },
@@ -459,7 +466,7 @@ export function PlanView() {
   const grid = useMemo(() => {
     const lines: { d: string; major: boolean }[] = [];
     if (!measured) return lines;
-    const step = view.scale > 30 ? 1 : view.scale > 6 ? 5 : 25;
+    const step = gridStep(view.scale);
     const a = toWorld(0, size.h), b = toWorld(size.w, 0);
     for (let x = Math.floor(a.x / step) * step; x <= b.x; x += step) {
       const s = toScreen({ x, y: 0 }).x;
@@ -473,9 +480,9 @@ export function PlanView() {
   }, [view, size, measured, toScreen, toWorld]);
 
   const drawn = useMemo(() => {
-    const out: { key: string; r: RenderItem; kind: string; d: string; closed: boolean; text: string | null; at: Vec2 }[] = [];
+    const out: { key: string; r: RenderItem; kind: string; d: string; closed: boolean; text: string | null; at: Vec2; pattern: string | null }[] = [];
     for (const r of items) r.plan.forEach((it, i) => it.kind !== 'hit' && out.push({
-      key: `${r.nodeId}:${i}`, r, kind: it.kind, closed: it.closed, text: it.text ?? null,
+      key: `${r.nodeId}:${i}`, r, kind: it.kind, closed: it.closed, text: it.text ?? null, pattern: it.pattern ?? null,
       d: it.kind === 'label' ? '' : path(it.points, it.closed), at: toScreen({ x: it.points[0] ?? 0, y: it.points[1] ?? 0 }),
     }));
     return out.sort((a, b) => (KIND_ORDER[a.kind] ?? 5) - (KIND_ORDER[b.kind] ?? 5));
@@ -594,10 +601,11 @@ export function PlanView() {
         {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} /></g>}
         {drawing && (planDrawing || siteView) && <g className={scope ? 'scoped-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} /></g>}
         <g className={`plan-items${drawing && (planDrawing || siteView) ? ' ghost' : ''}${scope ? ' scoped' : ''}`}>
-          {drawn.map(({ key, r, kind, d, closed, text, at }) => kind === 'label' ? (
+          {drawn.map(({ key, r, kind, d, closed, text, at, pattern }) => kind === 'label' ? (
             <text key={key} x={at.x} y={at.y} className="plan-label">{text}</text>
           ) : (
-            <path key={key} d={d} className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${shown.has(r.nodeId) ? ' selected' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}`} />
+            <path key={key} d={d} strokeDasharray={pattern && DASHES[pattern] ? DASHES[pattern].map((mm) => mm * (drawing?.scale ?? 100) / 1000 * view.scale).join(' ') : undefined}
+              className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${shown.has(r.nodeId) ? ' selected' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}`} />
           ))}
         </g>
         {peers.map((p) => {

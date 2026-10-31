@@ -276,10 +276,29 @@ public static class DxfImport
             return name;
         }
 
-        public void Add(Shape shape, string layer, string? color)
+        /// <summary>Metres per drawing unit for the heights (kept as <c>heights</c>, one a vertex), which the plan's frame does not touch.</summary>
+        public double ZScale { get; set; } = 1;
+
+        /// <summary>The heights of a line's ends or a polyline's vertices, in metres; null when the file gave none (or the shape is not the polyline itself).</summary>
+        public IReadOnlyList<double>? Z(DxfEntity entity, Shape shape) => Heights(entity, shape) is { } z && z.Any(v => Math.Abs(v) > 1e-9) ? z.Select(v => v * ZScale).ToList() : null;
+
+        // A flat line's zeros are no heights: a plan drawing stays a drawing, not lines in space at ±0.00.
+        static IReadOnlyList<double>? Heights(DxfEntity entity, Shape shape) => entity switch
+        {
+            DxfLine l when shape is Line && (l.ZA ?? l.ZB) != null => [l.ZA ?? l.ZB ?? 0, l.ZB ?? l.ZA ?? 0],
+            DxfPolyline { Zs: { } zs } when shape is Polyline sp && sp.Pts.Count == zs.Count => zs,
+            DxfPolyline { Zs: { } zs } when shape is Line && zs.Count == 2 => zs,
+            DxfPolyline { Elevation: { } el } pl when shape is Polyline sp && sp.Pts.Count == pl.Vertices.Count => Enumerable.Repeat(el, sp.Pts.Count).ToList(),
+            DxfPolyline { Elevation: { } el } pl when shape is Line && pl.Vertices.Count == 2 => [el, el],
+            _ => null,
+        };
+
+        public void Add(Shape shape, string layer, string? color, IReadOnlyList<double>? z = null)
         {
             var attrs = new JsonObject { ["viewId"] = view.Id, ["layer"] = layer, ["shape"] = shape.ToJson() };
             if (color != null) attrs["color"] = color;
+            // The heights the file gave the line: kept, for the 3D view and for what the civil module makes of the line.
+            if (z is { Count: >= 2 }) attrs["heights"] = new JsonArray(z.Select(v => (JsonNode)Math.Round(v, 4)).ToArray());
             var word = shape switch { Line => "Line", Polyline { Closed: true } => "Polygon", Polyline => "Polyline", Circle => "Circle", Arc => "Arc", _ => "Shape" };
             Put(new Entity(ctx.NewId(), IfcClass.Annotation, _names.Next(word), attrs, Drafts.Predefined));
             Shapes++;
@@ -464,7 +483,7 @@ public static class DxfImport
             if (o.LinkId != null) { link = Links.Require(ctx.Model, o.LinkId); Links.RemoveElements(ctx, link.Id); }
             else link = Links.Create(ctx, "dxf", fileName, o.Path, o.Raw, view.Id);
         }
-        var run = new Run(ctx, view, doc, o, factor, link?.Id);
+        var run = new Run(ctx, view, doc, o, factor, link?.Id) { ZScale = factor * o.Scale };
         var scaleMm = (view.NumOrNull("scale") ?? 100) / 1000; // metres per paper mm
         var total = 0;
         foreach (var p in Walk(doc, root))
@@ -477,11 +496,11 @@ public static class DxfImport
             switch (p.Entity)
             {
                 case DxfLine l:
-                    if ((l.B - l.A).Length > 1e-12) run.Add(Map(f, new Line(l.A, l.B)), layer, p.Color);
+                    if ((l.B - l.A).Length > 1e-12) { var shape = new Line(l.A, l.B); run.Add(Map(f, shape), layer, p.Color, run.Z(l, shape)); }
                     else run.Skip("zero-length line");
                     break;
                 case DxfPolyline pl:
-                    foreach (var s in PolylineShapes(pl)) run.Add(Map(f, s), layer, p.Color);
+                    foreach (var s in PolylineShapes(pl)) run.Add(Map(f, s), layer, p.Color, run.Z(pl, s));
                     break;
                 case DxfCircle c:
                     run.Add(Map(f, new Circle(c.C, c.R)), layer, p.Color);
@@ -543,8 +562,8 @@ public static class DxfImport
                             var ql = run.Layer(q.Layer);
                             switch (q.Entity)
                             {
-                                case DxfLine l when (l.B - l.A).Length > 1e-12: run.Add(Map(q.Frame, new Line(l.A, l.B)), ql, q.Color); break;
-                                case DxfPolyline pl: foreach (var s in PolylineShapes(pl)) run.Add(Map(q.Frame, s), ql, q.Color); break;
+                                case DxfLine l when (l.B - l.A).Length > 1e-12: { var shape = new Line(l.A, l.B); run.Add(Map(q.Frame, shape), ql, q.Color, run.Z(l, shape)); break; }
+                                case DxfPolyline pl: foreach (var s in PolylineShapes(pl)) run.Add(Map(q.Frame, s), ql, q.Color, run.Z(pl, s)); break;
                                 case DxfArc a: run.Add(Map(q.Frame, new Arc(a.C, a.R, a.StartDeg * Math.PI / 180, a.EndDeg * Math.PI / 180)), ql, q.Color); break;
                                 case DxfCircle c: run.Add(Map(q.Frame, new Circle(c.C, c.R)), ql, q.Color); break;
                                 case DxfSolid so: run.AddHatch([so.Pts.Select(q.Frame.Apply).ToList()], "SOLID", 1, 0, ql, q.Color); break;

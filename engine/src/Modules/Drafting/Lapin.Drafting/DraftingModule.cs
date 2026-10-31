@@ -18,6 +18,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Class(new(IfcClass.Annotation, "Annotation",
             [new("text", "Text", "text"), new("textStyle", "Text style", "text"), new("dimStyle", "Dimension style", "text"), new("angle", "Angle", "angle"),
              new("format", "Slope written as", "choice", Choices: DimensionKinds.SlopeFormats), new("z", "Level written", "length")], "#555555", Kind: "annotation"));
+        // A draft with heights (a DXF's 3D lines) shows in 3D as lines; the rest have no geometry.
+        r.Geometry(IfcClass.Annotation, Cad.Drafts.Geometry3d);
         r.Service<IViewAnnotations>(this);
         r.Service<ISectionPaths>(new ShapeSectionPaths());
         Cad.DraftCommands.Register(r);

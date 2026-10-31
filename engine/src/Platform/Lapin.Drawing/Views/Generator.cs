@@ -123,7 +123,7 @@ public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Bel
 public static class Generator
 {
     /// <summary>Classes drawn in plan by their own symbols instead of their cut.</summary>
-    public static readonly HashSet<string> SymbolicInPlan = ["IfcDoor", "IfcWindow", "IfcRoof", "IfcGeographicElement", "IfcStair", "IfcPavement", "LapinPlanting"];
+    public static readonly HashSet<string> SymbolicInPlan = ["IfcDoor", "IfcWindow", "IfcRoof", "IfcGeographicElement", "IfcStair", "IfcPavement", "LapinPlanting", "LapinTrack", "LapinPlatform", "LapinTurnout", "LapinCrossing", "LapinLevelCrossing"];
 
     /// <param name="seamKey">
     /// What a part's surface joins by (<see cref="MaterialDrawing.SeamKey"/>): where it goes on in one plane into a part of the

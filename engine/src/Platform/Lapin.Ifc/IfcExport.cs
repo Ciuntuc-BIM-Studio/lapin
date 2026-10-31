@@ -141,6 +141,19 @@ public static class IfcExport
     /// <summary>Whether IFC4 gives the class (upper case, as a file writes it) a PredefinedType after the eight attributes every element has.</summary>
     internal static bool HasPredefined(string upper) => UpperClasses.TryGetValue(upper, out var allowed) && allowed != null;
     static readonly Dictionary<string, string[]?> UpperClasses = Classes.ToDictionary(kv => kv.Key.ToUpperInvariant(), kv => kv.Value);
+    /// <summary>What IFC 4.3 adds: the railway's classes, and predefined types IFC4 lacks (a platform slab, a track panel).</summary>
+    static readonly Dictionary<string, string[]?> Classes43 = new()
+    {
+        [IfcClass.Slab] = ["FLOOR", "ROOF", "LANDING", "BASESLAB", "APPROACH_SLAB", "PAVING", "WEARING", "SIDEWALK", "TRACKSLAB"],
+        ["IfcElementAssembly"] = ["ACCESSORY_ASSEMBLY", "ARCH", "BEAM_GRID", "BRACED_FRAME", "GIRDER", "REINFORCEMENT_UNIT", "RIGID_FRAME", "SLAB_FIELD", "TRUSS", "ABUTMENT", "PIER", "PYLON", "CROSS_BRACING", "DECK", "MAST", "SIGNALASSEMBLY", "GRID", "SHELTER", "SUPPORTINGASSEMBLY", "SUSPENSIONASSEMBLY", "TRACTION_SWITCHING_ASSEMBLY", "TRACKPANEL", "TURNOUTPANEL", "DILATATIONPANEL", "RAIL_MECHANICAL_EQUIPMENT_ASSEMBLY", "ENTRANCEWORKS", "SUMPBUSTER", "TRAFFIC_CALMING_DEVICE"],
+        ["IfcRail"] = ["RACKRAIL", "BLADE", "GUARDRAIL", "STOCKRAIL", "CHECKRAIL", "RAIL"],
+        ["IfcTrackElement"] = ["TRACKENDOFALIGNMENT", "BLOCKINGDEVICE", "VEHICLESTOP", "SLEEPER", "HALF_SET_OF_BLADES", "SPEEDREGULATOR", "DERAILER", "FROG"],
+        ["IfcCourse"] = ["ARMOUR", "FILTER", "BALLASTBED", "CORE", "PAVEMENT", "PROTECTION"],
+        ["IfcSignal"] = ["VISUAL", "AUDIO", "MIXED"],
+    };
+
+    /// <summary>The element assembly in IFC4: its own enumeration, without the railway's panels.</summary>
+    static readonly string[] AssemblyTypes4 = ["ACCESSORY_ASSEMBLY", "ARCH", "BEAM_GRID", "BRACED_FRAME", "GIRDER", "REINFORCEMENT_UNIT", "RIGID_FRAME", "SLAB_FIELD", "TRUSS"];
 
     /// <summary>The classes with a Pset_…Common the export can answer.</summary>
     static readonly HashSet<string> CommonSets =
@@ -151,17 +164,18 @@ public static class IfcExport
 
     sealed class Writer(Session s, IfcExportOptions o)
     {
-        public readonly Step File = new();
+        // The application that wrote it: the product (Lapin, or an edition under its own name).
+        public readonly Step File = new() { Application = s.Product.Name };
         public IfcExportOptions O => o;
         public int Elements, PartCount, StoreyCount;
         public readonly List<string> Notes = [];
 
         readonly IModelView m = s.Model;
         Entity project = null!;
-        string model = "", body = "", axis = "", metre = "", siteRef = "", sitePlace = "";
+        string model = "", body = "", axis = "", footprint = "", metre = "", siteRef = "", sitePlace = "";
         readonly Dictionary<string, string> storeyRef = [], storeyPlace = [], refIdOf = [];
         readonly Dictionary<string, (string Place, double Z0)> placeOf = [];
-        string buildingRef = "";
+        string buildingRef = "", projectRef = "";
         readonly Dictionary<string, double> storeyZ = [];
         readonly Dictionary<string, List<string>> contained = [];
         /// <summary>The rooms of each storey (by the storey's IFC entity), aggregated into it.</summary>
@@ -184,6 +198,9 @@ public static class IfcExport
             WriteSpatial();
             foreach (var mat in m.OfClass(IfcClass.Material)) Material(mat.Id);
             Grids();
+            Railway();
+            // The alignments before the elements: an element of the railway is placed along its alignment's curve (IfcLinearPlacement).
+            Alignments();
             WriteElements();
             Assemblies();
             Network();
@@ -230,7 +247,26 @@ public static class IfcExport
         }
 
         /// <summary>A solid as a faceted B-rep, its vertices relative to the placement's height, in its colour.</summary>
+        /// <summary>
+        /// The frame a body is written in: the storey's (its level under the world,
+        /// axes along it) or, for an element placed along an alignment, the
+        /// alignment's point there heading along it. World → local: moved to the
+        /// origin, turned back by the heading.
+        /// </summary>
+        readonly record struct Frame(Vec3 Origin, double Heading)
+        {
+            public static Frame AtZ(double z0) => new(new Vec3(0, 0, z0), 0);
+            public Vec3 Local(Vec3 p) => Turn(p - Origin);
+            public Vec3 Turn(Vec3 v)
+            {
+                if (Heading == 0) return v;
+                var (c, s) = (Math.Cos(Heading), Math.Sin(Heading));
+                return new Vec3(v.X * c + v.Y * s, -v.X * s + v.Y * c, v.Z);
+            }
+        }
+
         string Brep(Solid solid, string? hex, double z0) => Brep(solid, hex, v => new Vec3(v.X, v.Y, v.Z - z0));
+        string Brep(Solid solid, string? hex, Frame fr) => Brep(solid, hex, fr.Local);
 
         /// <summary>
         /// A solid as the export writes bodies (<see cref="IfcExportOptions.Geometry"/>), simplified within the tolerance asked,
@@ -364,6 +400,21 @@ public static class IfcExport
 
         string BodyOf(IEnumerable<string> breps) => f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S(o.FaceSet ? "Tessellation" : "Brep"), L(breps));
 
+        /// <summary>
+        /// A part of many copies of one solid (a track's sleepers): the solid
+        /// once, as a representation map at its own origin, and each copy as a
+        /// mapped item — its axes and origin (relative to the placement's height).
+        /// </summary>
+        string Mapped(Solid unit, IReadOnlyList<PartInstance> copies, string? hex, Frame fr)
+        {
+            var source = f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("Brep"), L(new[] { Brep(unit, hex, Frame.AtZ(0)) }));
+            var map = f.Add("IFCREPRESENTATIONMAP", f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), Null, Null), source);
+            string D(Vec3 v) => f.Add("IFCDIRECTION", L(new[] { R(v.X), R(v.Y), R(v.Z) }));
+            var items = copies.Select(c => { var o = fr.Local(c.Origin); return f.Add("IFCMAPPEDITEM", map,
+                f.Add("IFCCARTESIANTRANSFORMATIONOPERATOR3D", D(fr.Turn(c.X)), D(fr.Turn(c.Y)), f.Add("IFCCARTESIANPOINT", L(new[] { R(o.X), R(o.Y), R(o.Z) })), R(1), D(fr.Turn(c.Z)))); }).ToList();
+            return f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("MappedRepresentation"), L(items));
+        }
+
         // ─── Contexts, units, the spatial tree ──────────────────────────────
 
         void WriteSpatial()
@@ -384,7 +435,7 @@ public static class IfcExport
                 f.Add("IFCSIUNIT", Derived, E("VOLUMEUNIT"), Null, E("CUBIC_METRE")),
                 f.Add("IFCSIUNIT", Derived, E("PLANEANGLEUNIT"), Null, E("RADIAN")),
             }));
-            var projectRef = f.Add("IFCPROJECT", Gid(project.Id), Null, S(project.Name), Null, Null, S(project.Str("longName")), S(project.Str("phase")), L(new[] { model }), units);
+            projectRef = f.Add("IFCPROJECT", Gid(project.Id), Null, S(project.Name), Null, Null, S(project.Str("longName")), S(project.Str("phase")), L(new[] { model }), units);
             // What the project itself holds that an import rebuilds: its location and its phases (the drafting standards and views stay in .lapin).
             Define(projectRef, IntentOf(project, Gid(project.Id, IntentKey), null, only: ProjectIntent), Gid(project.Id, "intent-rel"));
 
@@ -559,6 +610,13 @@ public static class IfcExport
             var (spatial, relTo, z0) = storey != null && storeyRef.TryGetValue(storey.Id, out var sr)
                 ? (sr, storeyPlace[storey.Id], storeyZ[storey.Id])
                 : (siteRef, sitePlace, 0.0);
+            // IFC 4.3: a track, a turnout, a platform stand in a railway facility's part, not on a storey (their heights absolute),
+            // placed along their alignment's curve where the module says where (IfcLinearPlacement), their body in that frame.
+            var railPart = o.Ifc43 ? RailwayPart(e) : null;
+            if (railPart is { } part) (spatial, relTo, z0) = (part, sitePlace, 0.0);
+            var fr = Frame.AtZ(z0);
+            string? place = null;
+            if (railPart != null && LinearPlace(e) is { } along) (place, fr) = along;
             var kind = KindOf(e);
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
@@ -567,11 +625,12 @@ public static class IfcExport
             // A door or window: placed with its local +Y the way its panels open, which IFC's left and right are seen along.
             var joinery = e.Class is IfcClass.Door or IfcClass.Window && !grouped ? s.Catalog.Get<IJoineryIfc>() : null;
             var at = joinery?.Place(m, e);
-            var place = at is { } jp ? JoineryPlace(relTo, jp, z0) : Place(relTo, 0);
+            // A railway element already has its linear placement and frame; the rest stand on their storey (or in the joinery's frame).
+            place ??= at is { } jp ? JoineryPlace(relTo, jp, z0) : Place(relTo, 0);
             var reps = new List<string>();
             // An instance of a shared body: the body once, as a representation map, each instance mapping it where it stands.
-            if (!grouped && at == null && geo!.Instance is { } inst && Mapped(inst, z0) is { } mapped) reps.Add(mapped);
-            else if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, p.Color, v => Local(jp2, v)) : Brep(p.Solid, p.Color, z0))));
+            if (!grouped && at == null && railPart == null && geo!.Instance is { } inst && Mapped(inst, z0) is { } mapped) reps.Add(mapped);
+            else if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, p.Color, v => Local(jp2, v)) : Brep(p.Solid, p.Color, fr))));
             if (AxisOf(e) is { } ax) reps.Add(ax);
             reps.AddRange(Plan2dOf(e));
             var shape = reps.Count > 0 ? f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(reps)) : Null;
@@ -588,7 +647,7 @@ public static class IfcExport
             Elements++;
             if (type != null) TypeOf(type, kind, entity, mirrored, terms);
             if (src?["material"] == null) MaterialsOf(e, entity, parts, grouped);
-            if (grouped) Parts(e, kind, parts, place, z0, entity);
+            if (grouped) Parts(e, kind, parts, place, fr, entity);
             Openings(e, entity, place, z0, voids);
             Properties(e, kind, entity, type);
             Quantities(e, entity, grouped);
@@ -652,14 +711,19 @@ public static class IfcExport
             // IFC 4.3's pavement and vegetation; IFC4 has a slab named Pavement and a user-defined geographic element.
             if (cls == IfcClass.Pavement && !o.Ifc43) return new(IfcClass.Slab, "USERDEFINED", "Pavement");
             if (cls == IfcClass.GeographicElement && e.PredefinedType == "VEGETATION" && o.Ifc43) return new(cls, "VEGETATION", null);
-            if (!Classes.TryGetValue(cls, out var allowed)) return new(IfcClass.BuildingElementProxy, "USERDEFINED", cls);
+            string[]? allowed;
+            if (o.Ifc43 && Classes43.TryGetValue(cls, out var allowed43)) allowed = allowed43;
+            else if (cls == "IfcElementAssembly") allowed = AssemblyTypes4;
+            else if (!Classes.TryGetValue(cls, out allowed)) return new(IfcClass.BuildingElementProxy, "USERDEFINED", cls);
             if (allowed == null) return new(cls, "", null);
             var pre = e.PredefinedType?.ToUpperInvariant();
             if (pre == null && cls == IfcClass.Roof)
                 pre = e.Str("shape") switch { "flat" => "FLAT_ROOF", "gable" => "GABLE_ROOF", "hip" => "HIP_ROOF", "mansard" => "MANSARD_ROOF", "shed" => "SHED_ROOF", "barrel" => "BARREL_ROOF", _ => null };
             if (pre == null && cls == IfcClass.GeographicElement) pre = "TERRAIN";
             if (pre == null) return new(cls, "NOTDEFINED", null);
-            if (allowed.Contains(pre) || pre is "USERDEFINED" or "NOTDEFINED") return new(cls, pre, null);
+            // A user-defined type names itself through the element's objectType (a diamond crossing, a level crossing).
+            if (pre == "USERDEFINED") return new(cls, pre, e.Str("objectType"));
+            if (allowed.Contains(pre) || pre == "NOTDEFINED") return new(cls, pre, null);
             return new(cls, "USERDEFINED", pre);
         }
 
@@ -835,7 +899,7 @@ public static class IfcExport
 
         // ─── Parts, openings ────────────────────────────────────────────────
 
-        void Parts(Entity e, Kind kind, List<GeometryPart> parts, string place, double z0, string parent)
+        void Parts(Entity e, Kind kind, List<GeometryPart> parts, string place, Frame fr, string parent)
         {
             var refs = new List<string>();
             var zones = (m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Attrs["zones"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
@@ -844,9 +908,10 @@ public static class IfcExport
                 var p = parts[i];
                 var key = p.Key ?? $"part:{i}";
                 var pk = PartKind(kind.Class, key, p, zones);
-                var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { BodyOf([Brep(p.Solid, p.Color, z0)]) }));
+                var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { p.Unit != null && p.Instances is { Count: > 0 } copies ? Mapped(p.Unit, copies, p.Color, fr) : BodyOf([Brep(p.Solid, p.Color, fr)]) }));
                 var r = Product(pk, Gid(e.Id, key), p.Name, pk.ObjectType, Place(place, 0), shape, $"{e.Id}/{key}", flight: pk.Class == IfcClass.StairFlight ? FlightOf(e, key) : null);
                 if (p.Material != null) UseMaterial(p.Material, r);
+                StandardSets(e, p, r, $"{e.Id}/{key}");
                 partRefs[(e.Id, key)] = r;
                 refs.Add(r);
                 PartCount++;
@@ -855,10 +920,25 @@ public static class IfcExport
         }
 
         /// <summary>What a part is in IFC: a lintel or ring beam a beam, a roof plane a roof slab, the timber members, the sole of a strip footing a footing; else a building element part named as Lapin names it.</summary>
-        static Kind PartKind(string host, string key, GeometryPart p, List<JsonObject> zones)
+        Kind PartKind(string host, string key, GeometryPart p, List<JsonObject> zones)
         {
             var colon = key.IndexOf(':');
             var (prefix, rest) = colon < 0 ? (key, "") : (key[..colon], key[(colon + 1)..]);
+            // The railway (a track, a turnout: an element assembly): rails, sleepers and bearers, the ballast bed and the sub-ballast — IFC 4.3's own classes, IFC4's nearest.
+            if (host == "IfcElementAssembly")
+                switch (prefix)
+                {
+                    case "rail": return o.Ifc43 ? new("IfcRail", "RAIL", null) : new("IfcMember", "USERDEFINED", "Rail");
+                    case "sleeper": return o.Ifc43 ? new("IfcTrackElement", "SLEEPER", null) : new("IfcBuildingElementPart", "USERDEFINED", "Sleeper");
+                    case "bearer": return o.Ifc43 ? new("IfcTrackElement", "SLEEPER", null) : new("IfcBuildingElementPart", "USERDEFINED", "Bearer");
+                    case "ballast": return o.Ifc43 ? new("IfcCourse", "BALLASTBED", null) : new("IfcBuildingElementPart", "USERDEFINED", "Ballast bed");
+                    case "subballast": return o.Ifc43 ? new("IfcCourse", "USERDEFINED", "Sub-ballast") : new("IfcBuildingElementPart", "USERDEFINED", "Sub-ballast");
+                    case "frog": return o.Ifc43 ? new("IfcTrackElement", "FROG", null) : new("IfcBuildingElementPart", "USERDEFINED", "Frog");
+                    // A level crossing: its deck a rigid pavement, its barriers boom barriers, its signals signals — IFC 4.3; IFC4's nearest.
+                    case "deck": return o.Ifc43 ? new(IfcClass.Pavement, "RIGID", null) : new(IfcClass.Slab, "USERDEFINED", "Level crossing deck");
+                    case "barrier": return o.Ifc43 ? new(IfcClass.Door, "BOOM_BARRIER", null) : new("IfcBuildingElementPart", "USERDEFINED", "Barrier");
+                    case "signal": return o.Ifc43 ? new("IfcSignal", "VISUAL", null) : new("IfcBuildingElementPart", "USERDEFINED", "Signal");
+                }
             return (host, prefix) switch
             {
                 (IfcClass.Wall, "lintel") => new(IfcClass.Beam, "LINTEL", null),
@@ -915,7 +995,7 @@ public static class IfcExport
                         continue;
                     }
                     var solid = voids?.Shape(op, m);
-                    var shape = solid != null ? f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { BodyOf([Brep(solid, null, z0)]) })) : Null;
+                    var shape = solid != null ? f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { BodyOf([Brep(solid, null, Frame.AtZ(z0))]) })) : Null;
                     var opening = f.Add("IFCOPENINGELEMENT", Gid(op.Id), Null, S(op.Name), Null, Null, Place(place, 0), shape, S(op.Id), E("OPENING"));
                     written[op.Id] = opening;
                     f.Add("IFCRELVOIDSELEMENT", Gid(rel.Id), Null, Null, Null, entity, opening);
@@ -962,6 +1042,7 @@ public static class IfcExport
             // The user's own parameters (those of its type are on the type, which IFC readers pass on to it).
             var own = ParamsOf(e, Gid(e.Id, ParamsKey));
             if (own != null) Define(entity, own, Gid(e.Id, "params-rel"));
+            StandardSets(e, null, entity, e.Id);
             if (src == null) return;
             // The file's sets, with the user's values in the sets of the same name; a set of Lapin's that was written above, Lapin's.
             HashSet<string> lapins = [IntentSetName, OldIntentSetName];
@@ -969,6 +1050,24 @@ public static class IfcExport
             if (own != null) lapins.Add(ParamsSetName);
             var user = NamedParams(e).Where(x => carried.Contains(x.Set)).ToDictionary(x => x.Set, x => x.Props);
             Carry.Element(m, src, entity, GlobalIdOf(e.Id), user, lapins, (n, v) => Single(n, v));
+        }
+
+        /// <summary>The standard sets the modules give an element or one of its parts (IFC 4.3), each written as it is named.</summary>
+        void StandardSets(Entity e, GeometryPart? part, string entity, string seed)
+        {
+            if (!o.Ifc43) return;
+            foreach (var src in s.Catalog.All<IIfcAlignments>())
+                foreach (var set in src.StandardSets(m, e, part))
+                {
+                    var props = set.Properties.Select(p => Single(p.Name, p.Value switch
+                    {
+                        bool b => Typed(p.Measure, b ? True : False),
+                        double d => Typed(p.Measure, R(d)),
+                        int i => Typed(p.Measure, R(i)),
+                        _ => Typed(p.Measure, S(p.Value.ToString())),
+                    })).ToList();
+                    if (props.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(seed, "pset/" + set.Name), Null, S(set.Name), Null, L(props)), Gid(seed, "pset-rel/" + set.Name));
+                }
         }
 
         /// <summary>An entity's own parameters (those in no named set) as a typed property set; null when it has none.</summary>
@@ -1091,6 +1190,250 @@ public static class IfcExport
                 var description = target == entity && set.Part != null ? set.PartName ?? set.Part : null;
                 Define(target, f.Add("IFCELEMENTQUANTITY", Gid(e.Id, "qto/" + key), Null, S(set.Name), S(description), Null, L(q)), Gid(e.Id, "qto-rel/" + key));
             }
+        }
+
+        // ─── The railway: its facility, its parts, its alignments (IFC 4.3) ──
+
+        readonly Dictionary<string, string> railwayParts = [];
+        string railwayRef = "";
+        /// <summary>Each alignment written: the curve its distances run along (the gradient curve, else the horizontal) and its placement, by the alignment's id.</summary>
+        readonly Dictionary<string, (string Basis, string Place)> alignmentCurves = [];
+
+        /// <summary>
+        /// An element placed along its alignment, as its module says (IIfcAlignments):
+        /// an IfcLinearPlacement at a distance along the alignment's curve, heading
+        /// along it, with the absolute frame as its CartesianPosition — and that
+        /// frame, for the body to be written in. Null: placed by coordinates.
+        /// </summary>
+        (string Place, Frame Frame)? LinearPlace(Entity e)
+        {
+            foreach (var src in s.Catalog.All<IIfcAlignments>())
+            {
+                if (src.LinearPlacementOf(m, e) is not { } lp || !alignmentCurves.TryGetValue(lp.AlignmentId, out var curve)) continue;
+                var point = f.Add("IFCPOINTBYDISTANCEEXPRESSION", Typed("IFCLENGTHMEASURE", R(lp.DistanceAlong)), Null, Null, Null, curve.Basis);
+                var up = f.Add("IFCDIRECTION", "(0.,0.,1.)");
+                var ahead = f.Add("IFCDIRECTION", L(new[] { R(Math.Cos(lp.Heading)), R(Math.Sin(lp.Heading)), R(0) }));
+                var cartesian = f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", L(new[] { R(lp.Origin.X), R(lp.Origin.Y), R(lp.Origin.Z) })), up, ahead);
+                return (f.Add("IFCLINEARPLACEMENT", sitePlace, f.Add("IFCAXIS2PLACEMENTLINEAR", point, up, ahead), cartesian), new Frame(lp.Origin, lp.Heading));
+            }
+            return null;
+        }
+
+        /// <summary>The railway part an element belongs to, as its module says; null: none, or not IFC 4.3.</summary>
+        string? RailwayPart(Entity e)
+        {
+            if (!o.Ifc43) return null;
+            foreach (var src in s.Catalog.All<IIfcAlignments>())
+                if (src.RailwayPartOf(m, e) is { } part)
+                {
+                    if (!railwayParts.TryGetValue(part, out var r)) railwayParts[part] = r = RailwayPartRef(part);
+                    return r;
+                }
+            return null;
+        }
+
+        /// <summary>IfcRailway under the site, once; each part (TRACK, TURNOUTTRACK, LINESIDE…) aggregated in it, once.</summary>
+        string RailwayPartRef(string part)
+        {
+            if (railwayRef.Length == 0)
+            {
+                railwayRef = f.Add("IFCRAILWAY", Gid(project.Id, "railway"), Null, S("Railway"), Null, Null, Place(sitePlace, 0), Null, Null, E("ELEMENT"), E("NOTDEFINED"));
+                refIdOf[railwayRef] = project.Id;
+                f.Add("IFCRELAGGREGATES", Gid(project.Id, "aggregates/railway"), Null, Null, Null, siteRef, L(new[] { railwayRef }));
+            }
+            // IfcRailwayPartTypeEnum: the track as its structure, the turnouts as a superstructure, what stands beside the track as a
+            // lineside structure; the usage along the line. IFC4X3_ADD2 renamed the items (TRACKSTRUCTURE → TRACK, TURNOUTSUPERSTRUCTURE
+            // → TURNOUTTRACK, LINESIDESTRUCTURE → LINESIDE); the first IFC4X3 keeps the long names.
+            var add2 = o.Schema.Contains("ADD", StringComparison.OrdinalIgnoreCase);
+            var (predefined, name) = part switch
+            {
+                "TRACK" => (add2 ? "TRACK" : "TRACKSTRUCTURE", "Track"),
+                "TURNOUTTRACK" => (add2 ? "TURNOUTTRACK" : "TURNOUTSUPERSTRUCTURE", "Turnouts"),
+                "LINESIDE" => (add2 ? "LINESIDE" : "LINESIDESTRUCTURE", "Lineside"),
+                _ => ("USERDEFINED", part),
+            };
+            var r = f.Add("IFCRAILWAYPART", Gid(project.Id, "railway/" + part), Null, S(name), Null, predefined == "USERDEFINED" ? S(part) : Null, Place(sitePlace, 0), Null, Null, E("ELEMENT"), E("LONGITUDINAL"), E(predefined));
+            refIdOf[r] = project.Id + "/" + part;
+            f.Add("IFCRELAGGREGATES", Gid(project.Id, "railway/" + part + "/aggregates"), Null, Null, Null, railwayRef, L(new[] { r }));
+            // Lapin's track is ballasted (its section is a ballast bed on a sub-ballast).
+            if (part == "TRACK")
+                Define(r, f.Add("IFCPROPERTYSET", Gid(project.Id, "railway/" + part + "/pset"), Null, S("Pset_RailwayTrackStructurePart"), Null, L(new[] { Single("HasBallastTrack", Typed("IFCBOOLEAN", True)) })), Gid(project.Id, "railway/" + part + "/pset-rel"));
+            return r;
+        }
+
+        /// <summary>Nothing of the railway's spatial tree is made ahead; the parts come as the elements ask for them.</summary>
+        void Railway() { }
+
+        /// <summary>
+        /// The alignments the modules offer (IIfcAlignments), IFC 4.3 only: each an
+        /// IfcAlignment aggregated by the project and referenced in the site, with
+        /// its horizontal, vertical and cant layers nested in it, each layer's
+        /// segments nested in order and closed by the zero-length segment the
+        /// concept template asks for, every segment's design parameters as the
+        /// module gives them; its plan drawn through as the Axis representation.
+        /// </summary>
+        void Alignments()
+        {
+            if (!o.Ifc43) return;
+            var all = s.Catalog.All<IIfcAlignments>().SelectMany(src => src.Alignments(m)).ToList();
+            if (all.Count == 0) return;
+            var refs = new List<string>();
+            foreach (var a in all)
+            {
+                string Gi(string key) => Gid(a.Id, "alignment/" + key);
+                var reps = new List<string>();
+                // The geometry: the horizontal as IfcCompositeCurve (FootPrint), the vertical as IfcGradientCurve over it and the
+                // cant as IfcSegmentedReferenceCurve over that (Axis, 3D); each layer's segments remember their curve segments
+                // for their own representation. Without the curves, the sampled plan as a polycurve.
+                string? composite = null, gradient = null;
+                var segmentItems = new Dictionary<(string Layer, int Source), List<string>>();
+                if (a.Curves is { } curves)
+                {
+                    string Items(IReadOnlyList<IfcCurveSegmentSpec> specs, string layer)
+                    {
+                        var ids = new List<string>();
+                        foreach (var sp in specs)
+                        {
+                            var cs = CurveSegment(sp);
+                            ids.Add(cs);
+                            (segmentItems.TryGetValue((layer, sp.Source), out var l) ? l : segmentItems[(layer, sp.Source)] = []).Add(cs);
+                        }
+                        return L(ids);
+                    }
+                    composite = f.Add("IFCCOMPOSITECURVE", Items(curves.Horizontal, "horizontal"), False);
+                    if (curves.Vertical != null) gradient = f.Add("IFCGRADIENTCURVE", Items(curves.Vertical, "vertical"), False, composite, Null);
+                    var reference = curves.Cant != null && gradient != null ? f.Add("IFCSEGMENTEDREFERENCECURVE", Items(curves.Cant, "cant"), False, gradient, Null) : null;
+                    if (footprint == "") footprint = f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("FootPrint"), S("Model"), Derived, Derived, Derived, Derived, model, Null, E("PLAN_VIEW"), Null);
+                    reps.Add(f.Add("IFCSHAPEREPRESENTATION", footprint, S("FootPrint"), S("Curve2D"), L(new[] { composite })));
+                    reps.Add((reference ?? gradient) is { } axisCurve
+                        ? f.Add("IFCSHAPEREPRESENTATION", axis, S("Axis"), S("Curve3D"), L(new[] { axisCurve }))
+                        : f.Add("IFCSHAPEREPRESENTATION", axis, S("Axis"), S("Curve2D"), L(new[] { composite })));
+                }
+                else if (a.Plan.Count >= 2)
+                {
+                    var points = f.Add("IFCCARTESIANPOINTLIST2D", L(a.Plan.Select(p => L(new[] { R(p.X), R(p.Y) }))), Null);
+                    reps.Add(f.Add("IFCSHAPEREPRESENTATION", axis, S("Axis"), S("Curve2D"), L(new[] { f.Add("IFCINDEXEDPOLYCURVE", points, Null, False) })));
+                }
+                var shape = reps.Count > 0 ? f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(reps)) : Null;
+                var place = Place(sitePlace, 0);
+                if ((gradient ?? composite) is { } along) alignmentCurves[a.Id] = (along, place);
+                var entity = f.Add("IFCALIGNMENT", Gid(a.Id, "alignment"), Null, S(a.Name), Null, Null, place, shape, Null);
+                refs.Add(entity);
+                var layers = new List<string>();
+
+                var hs = new List<string>();
+                foreach (var (sg, i) in a.Horizontal.Select((x, i) => (x, i)))
+                    hs.Add(Seg(Gi($"h/{i}"), f.Add("IFCALIGNMENTHORIZONTALSEGMENT", Null, Null, P2(sg.Start), R(sg.Direction), R(sg.StartRadius), R(sg.EndRadius), R(sg.Length), sg.GravityCenterLineHeight is { } h ? R(h) : Null, E(sg.Type)), "horizontal", i));
+                if (a.Horizontal.Count > 0)
+                {
+                    var last = a.Horizontal[^1];
+                    hs.Add(Seg(Gi("h/end"), f.Add("IFCALIGNMENTHORIZONTALSEGMENT", Null, Null, P2(EndOf(a.Plan, last)), R(last.Direction), R(last.EndRadius), R(last.EndRadius), R(0), Null, E("LINE")), "horizontal", -1));
+                }
+                var horizontal = f.Add("IFCALIGNMENTHORIZONTAL", Gi("h"), Null, S("Horizontal"), Null, Null, Null, Null);
+                f.Add("IFCRELNESTS", Gi("h/nests"), Null, Null, Null, horizontal, L(hs));
+                layers.Add(horizontal);
+
+                if (a.Vertical is { Count: > 0 } vs)
+                {
+                    var list = new List<string>();
+                    foreach (var (v, i) in vs.Select((x, i) => (x, i)))
+                        list.Add(Seg(Gi($"v/{i}"), f.Add("IFCALIGNMENTVERTICALSEGMENT", Null, Null, R(v.StartDistAlong), R(v.HorizontalLength), R(v.StartHeight), R(v.StartGradient), R(v.EndGradient), v.Radius is { } r ? R(r) : Null, E(v.Type)), "vertical", i));
+                    var lv = vs[^1];
+                    list.Add(Seg(Gi("v/end"), f.Add("IFCALIGNMENTVERTICALSEGMENT", Null, Null, R(lv.StartDistAlong + lv.HorizontalLength), R(0), R(EndHeight(lv)), R(lv.EndGradient), R(lv.EndGradient), Null, E("CONSTANTGRADIENT")), "vertical", -1));
+                    var vertical = f.Add("IFCALIGNMENTVERTICAL", Gi("v"), Null, S("Vertical"), Null, Null, Null, Null);
+                    f.Add("IFCRELNESTS", Gi("v/nests"), Null, Null, Null, vertical, L(list));
+                    layers.Add(vertical);
+                }
+
+                if (a.Cant is { Segments.Count: > 0 } c)
+                {
+                    var list = new List<string>();
+                    foreach (var (cs, i) in c.Segments.Select((x, i) => (x, i)))
+                        list.Add(Seg(Gi($"c/{i}"), f.Add("IFCALIGNMENTCANTSEGMENT", Null, Null, R(cs.StartDistAlong), R(cs.HorizontalLength), R(cs.StartCantLeft), cs.EndCantLeft is { } el ? R(el) : Null, R(cs.StartCantRight), cs.EndCantRight is { } er ? R(er) : Null, E(cs.Type)), "cant", i));
+                    var lc = c.Segments[^1];
+                    list.Add(Seg(Gi("c/end"), f.Add("IFCALIGNMENTCANTSEGMENT", Null, Null, R(lc.StartDistAlong + lc.HorizontalLength), R(0), R(lc.EndCantLeft ?? lc.StartCantLeft), Null, R(lc.EndCantRight ?? lc.StartCantRight), Null, E("CONSTANTCANT")), "cant", -1));
+                    var cant = f.Add("IFCALIGNMENTCANT", Gi("c"), Null, S("Cant"), Null, Null, Null, Null, R(c.RailHeadDistance));
+                    f.Add("IFCRELNESTS", Gi("c/nests"), Null, Null, Null, cant, L(list));
+                    layers.Add(cant);
+                }
+                // The referents (the start station, the kilometre posts), placed linearly on the alignment's curve and
+                // nested in it after the layers, each with its Pset_Stationing.
+                if (a.Referents is { Count: > 0 } referents && (gradient ?? composite) is { } basis)
+                {
+                    foreach (var (r, i) in referents.Select((x, i) => (x, i)))
+                    {
+                        var point = f.Add("IFCPOINTBYDISTANCEEXPRESSION", Typed("IFCLENGTHMEASURE", X(r.DistanceAlong)), Null, Null, Null, basis);
+                        var linear = f.Add("IFCLINEARPLACEMENT", place, f.Add("IFCAXIS2PLACEMENTLINEAR", point, Null, Null), Null);
+                        var referent = f.Add("IFCREFERENT", Gi($"referent/{i}"), Null, S(r.Name), Null, Null, linear, Null, E(r.Type));
+                        var props = new List<string> { Single("Station", Typed("IFCLENGTHMEASURE", R(r.Station))) };
+                        if (r.HasIncreasingStation is { } increasing) props.Add(Single("HasIncreasingStation", Typed("IFCBOOLEAN", increasing ? True : False)));
+                        if (r.IncomingStation is { } incoming) props.Add(Single("IncomingStation", Typed("IFCLENGTHMEASURE", R(incoming))));
+                        Define(referent, f.Add("IFCPROPERTYSET", Gi($"referent/{i}/stationing"), Null, S("Pset_Stationing"), Null, L(props)), Gi($"referent/{i}/stationing-rel"));
+                        layers.Add(referent);
+                    }
+                }
+                f.Add("IFCRELNESTS", Gi("layers"), Null, Null, Null, entity, L(layers));
+                // Where its stationing starts, as the alignment's own property set.
+                Define(entity, f.Add("IFCPROPERTYSET", Gi("stationing"), Null, S("Lapin_Stationing"), Null, L(new[] { Single("StartStation", $"IFCLENGTHMEASURE({R(a.StartStation)})") })), Gi("stationing-rel"));
+
+                // A semantic segment's representation: its curve segment(s), placed as the alignment is (a product with a shape
+                // needs a placement), or nothing without the curves.
+                string Seg(string gid, string design, string layer, int source) =>
+                    segmentItems.TryGetValue((layer, source), out var items)
+                        ? f.Add("IFCALIGNMENTSEGMENT", gid, Null, Null, Null, Null, place,
+                            f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { f.Add("IFCSHAPEREPRESENTATION", axis, S("Axis"), S("Segment"), L(items)) })), design)
+                        : f.Add("IFCALIGNMENTSEGMENT", gid, Null, Null, Null, Null, Null, Null, design);
+            }
+            f.Add("IFCRELAGGREGATES", Gid(project.Id, "aggregates/alignments"), Null, Null, Null, projectRef, L(refs));
+            f.Add("IFCRELREFERENCEDINSPATIALSTRUCTURE", Gid(project.Id, "site/alignments"), Null, Null, Null, L(refs), siteRef);
+
+            // An IfcCurveSegment: its transition, its placement (2D, or 3D with the cant's tilted axis), SegmentStart and
+            // SegmentLength on the parent curve, the parent at its own origin. Full precision: a cubic's A₃ or a parabola's
+            // C are far below the nine decimals the rest of the file keeps.
+            string CurveSegment(IfcCurveSegmentSpec sp)
+            {
+                var location = f.Add("IFCCARTESIANPOINT", L(sp.Location.Select(X)));
+                var refDirection = f.Add("IFCDIRECTION", L(sp.RefDirection.Select(X)));
+                var placement = sp.Location.Count >= 3
+                    ? f.Add("IFCAXIS2PLACEMENT3D", location, sp.Axis != null ? f.Add("IFCDIRECTION", L(sp.Axis.Select(X))) : Null, refDirection)
+                    : f.Add("IFCAXIS2PLACEMENT2D", location, refDirection);
+                return f.Add("IFCCURVESEGMENT", E(sp.Transition), placement, Typed("IFCLENGTHMEASURE", X(sp.Start)), Typed("IFCLENGTHMEASURE", X(sp.Length)), Parent(sp.Parent));
+            }
+
+            string Parent(IfcParentCurve c)
+            {
+                string Origin() => f.Add("IFCAXIS2PLACEMENT2D", f.Add("IFCCARTESIANPOINT", "(0.,0.)"), Null);
+                static string T(double? v) => v is { } x ? X(x) : Null;
+                switch (c.Kind)
+                {
+                    case "circle": return f.Add("IFCCIRCLE", f.Add("IFCAXIS2PLACEMENT2D", f.Add("IFCCARTESIANPOINT", L(new[] { X(c.Centre.X), X(c.Centre.Y) })), Null), X(c.Radius));
+                    case "clothoid": return f.Add("IFCCLOTHOID", Origin(), X(c.A));
+                    case "polynomial": return f.Add("IFCPOLYNOMIALCURVE", Origin(), L(c.X!.Select(X)), L(c.Y!.Select(X)), Null);
+                    case "spiral":
+                    {
+                        // IFC lists the terms from the highest power down.
+                        var terms = c.Terms!;
+                        var attrs = new[] { Origin() }.Concat(terms.Reverse().Select(T)).ToArray();
+                        return f.Add(terms.Count switch { 3 => "IFCSECONDORDERPOLYNOMIALSPIRAL", 4 => "IFCTHIRDORDERPOLYNOMIALSPIRAL", _ => "IFCSEVENTHORDERPOLYNOMIALSPIRAL" }, attrs);
+                    }
+                    case "cosine": return f.Add("IFCCOSINESPIRAL", Origin(), X(c.Trig), T(c.Constant));
+                    case "sine": return f.Add("IFCSINESPIRAL", Origin(), X(c.Trig), T(c.Linear), T(c.Constant));
+                    default: return f.Add("IFCLINE", f.Add("IFCCARTESIANPOINT", "(0.,0.)"), f.Add("IFCVECTOR", f.Add("IFCDIRECTION", "(1.,0.)"), R(1)));
+                }
+            }
+
+            // A real at full precision, in STEP's form (a decimal point in the mantissa, an exponent when short).
+            static string X(double v)
+            {
+                if (!double.IsFinite(v)) v = 0;
+                var t = v.ToString("G17", System.Globalization.CultureInfo.InvariantCulture);
+                var e = t.IndexOf('E');
+                var mantissa = e < 0 ? t : t[..e];
+                if (!mantissa.Contains('.')) mantissa += ".";
+                return e < 0 ? mantissa : mantissa + t[e..];
+            }
+            static double EndHeight(IfcVerticalSegment v) => v.Type == "PARABOLICARC" ? v.StartHeight + (v.StartGradient + v.EndGradient) / 2 * v.HorizontalLength : v.StartHeight + v.StartGradient * v.HorizontalLength;
+            static Vec2 EndOf(IReadOnlyList<Vec2> plan, IfcHorizontalSegment last) => plan.Count > 0 ? plan[^1] : last.Start;
         }
 
         // ─── The relationships gathered on the way ──────────────────────────

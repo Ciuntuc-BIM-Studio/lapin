@@ -97,14 +97,14 @@ public sealed class Session
     /// </summary>
     public Diff New(bool plain = false)
     {
-        if (plain) StartEmpty(); else StartEmpty(NewProjectStoreys);
+        if (plain) StartEmpty(); else StartEmpty(_product.Storeys is { Length: > 0 } own ? [.. own.Select(x => (x.Name, x.Elevation, x.Height))] : NewProjectStoreys);
         Path = null;
         Emit("start");
         return Snapshot();
     }
 
     /// <summary>The session as it starts, before a project is made or opened: one ground floor.</summary>
-    void StartEmpty() => StartEmpty([("Ground floor", 0.0, 3.0)]);
+    void StartEmpty() => StartEmpty(_product.Storeys is { Length: > 0 } own ? [(own[0].Name, own[0].Elevation, own[0].Height)] : [("Ground floor", 0.0, 3.0)]);
 
     void StartEmpty(IReadOnlyList<(string Name, double Elevation, double Height)> storeys)
     {
@@ -383,7 +383,7 @@ public sealed class Session
             var (id, part, gp) = owners[k];
             if (!byNode.TryGetValue(id, out var list)) { byNode[id] = list = []; result.Add(new CapItem(id, list)); }
             if (!drawing) { list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges)); continue; }
-            var look = MaterialGraphics.Resolve(gp.Material == null ? null : _store.Get(gp.Material), "section");
+            var look = MaterialGraphics.Resolve(gp.Material == null ? null : _store.Get(gp.Material), "section", gp.Material != null && _store.Get(gp.Material) == null && !GlobalId.IsValid(gp.Material) ? gp.Material : null);
             var (fill, hatch) = CapHatch(faces[k], look, patterns!, scale);
             list.Add(new CapPart(part, gp.Color, gp.Material, m.Positions, m.Normals, m.Indices, m.Edges, fill, hatch));
         }
@@ -868,11 +868,21 @@ public sealed class Session
             var m = p.Tessellate();
             parts.Add(new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(read, e.Id, p, bands), RenderLod.Of(m)));
         }
-        var plan = (g?.Plan ?? []).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray())).ToList();
+        var plan = (g?.Plan ?? []).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray(), null,
+            i.MinDetail == PlanDetail.Coarse ? null : i.MinDetail, i.MaxDetail == PlanDetail.Fine ? null : i.MaxDetail, i.Style?.Pattern)).ToList();
         var snaps = (g?.Snaps ?? []).SelectMany(v => new[] { v.X, v.Y }).ToArray();
+        // Lines in space (CAD linework with heights): each polyline as segments.
+        float[]? lines = null;
+        if (g?.Lines is { Count: > 0 } polylines)
+        {
+            var seg = new List<float>();
+            foreach (var pl in polylines)
+                for (var i = 0; i + 1 < pl.Count; i++) seg.AddRange([(float)pl[i].X, (float)pl[i].Y, (float)pl[i].Z, (float)pl[i + 1].X, (float)pl[i + 1].Y, (float)pl[i + 1].Z]);
+            if (seg.Count > 0) lines = [.. seg];
+        }
         return new RenderItem(e.Id, e.Class, Spatial.StoreyOf(_store, e.Id)?.Id, _catalog.OwnerOf(e.Class) != null,
-            parts.FirstOrDefault()?.Color ?? "#c9ced6", [], [], [], [], plan, snaps,
-            [.. problems, .. g?.Diagnostics ?? []], parts);
+            g?.LineColor ?? parts.FirstOrDefault()?.Color ?? "#c9ced6", [], [], [], [], plan, snaps,
+            [.. problems, .. g?.Diagnostics ?? []], parts, null, lines);
     }
 
     /// <summary>The catalog's services and one more, for a single build.</summary>

@@ -13,6 +13,9 @@ namespace Lapin.Ifc;
 /// </summary>
 public sealed class Step
 {
+    /// <summary>The application named in the header (the product: Lapin, or an edition under its own name).</summary>
+    public string Application { get; set; } = "Lapin";
+
     readonly StringBuilder _data = new();
     int _next = 1;
 
@@ -88,7 +91,7 @@ public sealed class Step
         var now = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
         w.Write("ISO-10303-21;\nHEADER;\n");
         w.Write($"FILE_DESCRIPTION(({S(description)}),'2;1');\n");
-        w.Write($"FILE_NAME({S(name)},'{now}',(''),(''),'Lapin','Lapin','');\n");
+        w.Write($"FILE_NAME({S(name)},'{now}',(''),(''),{S(Application)},{S(Application)},'');\n");
         w.Write($"FILE_SCHEMA(('{schema}'));\nENDSEC;\nDATA;\n");
         // In its chunks: a big model's data is more than one string can hold.
         foreach (var chunk in _data.GetChunks()) w.Write(chunk.Span);

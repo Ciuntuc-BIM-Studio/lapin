@@ -36,7 +36,12 @@ public abstract record DxfEntity
     public string? Color => TrueColor is { } t ? DxfColors.Css(t) : Aci is > 0 and < 256 ? DxfColors.Aci(Aci) : null;
 }
 
-public sealed record DxfLine(Vec2 A, Vec2 B) : DxfEntity;
+public sealed record DxfLine(Vec2 A, Vec2 B) : DxfEntity
+{
+    /// <summary>The ends' heights (codes 30 and 31), when the file gives them: a surveyed line, a 3D contour.</summary>
+    public double? ZA { get; init; }
+    public double? ZB { get; init; }
+}
 /// <summary>A polyline: vertices with the bulge of the segment leaving each (0: straight).</summary>
 public sealed record DxfPolyline(List<(Vec2 P, double Bulge)> Vertices, bool Closed) : DxfEntity
 {
@@ -319,7 +324,7 @@ public static class DxfReader
                 {
                     var (a, b) = (Pt(r, 10), Pt(r, 11));
                     if (Mirrored(r)) (a, b) = (a with { X = -a.X }, b with { X = -b.X });
-                    o.Add(With(r, new DxfLine(a, b)));
+                    o.Add(With(r, new DxfLine(a, b) { ZA = Num(r, 30), ZB = Num(r, 31) }));
                     break;
                 }
                 case "LWPOLYLINE":

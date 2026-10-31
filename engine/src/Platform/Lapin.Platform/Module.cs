@@ -184,15 +184,18 @@ public sealed record GeometryPart
     public string Color { get; init; }
     public string? Material { get; init; }
     public string? Key { get; init; }
+    /// <summary>A part made of copies of one body (a track's sleepers): the body once, in its own frame, and where each copy stands; IFC writes it as a representation map.</summary>
+    public Solid? Unit { get; init; }
+    public IReadOnlyList<PartInstance>? Instances { get; init; }
     /// <summary>The part as a triangle mesh (x y z …; a b c …), when it came as one: drawn as such, its solid made on demand.</summary>
     public (double[] Xyz, int[] Tris)? Mesh { get; private init; }
 
     Solid? _solid;
     Func<Solid>? _make;
 
-    public GeometryPart(string Name, string Color, Solid Solid, string? Material = null, string? Key = null)
+    public GeometryPart(string Name, string Color, Solid Solid, string? Material = null, string? Key = null, Solid? Unit = null, IReadOnlyList<PartInstance>? Instances = null)
     {
-        this.Name = Name; this.Color = Color; _solid = Solid; this.Material = Material; this.Key = Key;
+        this.Name = Name; this.Color = Color; _solid = Solid; this.Material = Material; this.Key = Key; this.Unit = Unit; this.Instances = Instances;
     }
 
     /// <summary>A part that is a triangle mesh: its solid made by <paramref name="solid"/> the first time it is asked for.</summary>
@@ -224,10 +227,43 @@ public sealed record GeometryPart
     public TriMesh Tessellate() => Mesh is { } m ? MeshShading.Smooth(m.Xyz, m.Tris) : Tessellator.Tessellate(Solid);
 }
 
-/// <summary>Plan linework of an element: its cut outline, a symbol.</summary>
-public sealed record PlanItem(string Kind, bool Closed, IReadOnlyList<Vec2> Points);
+/// <summary>
+/// Where one copy of a part's <see cref="GeometryPart.Unit"/> stands (a
+/// track's sleepers: one box, thousands of poses): its origin and its unit
+/// axes, world metres. The part's <see cref="GeometryPart.Solid"/> stays the
+/// copies joined, for the views; the IFC export writes the unit once
+/// (IfcRepresentationMap) and each copy as an IfcMappedItem.
+/// </summary>
+public sealed record PartInstance(Vec3 Origin, Vec3 X, Vec3 Y, Vec3 Z);
 
-public sealed record ElementGeometry(IReadOnlyList<GeometryPart> Parts, IReadOnlyList<PlanItem>? Plan = null, IReadOnlyList<Vec2>? Snaps = null, IReadOnlyList<string>? Diagnostics = null, SharedInstance? Instance = null);
+/// <summary>
+/// Plan linework of an element: its cut outline, a symbol. It may be drawn only between two levels of detail
+/// (<see cref="PlanDetail"/>: a plan's scale says which — a track is a thick axis at 1:2000, its two rails at 1:500,
+/// every rail edge and sleeper at 1:100) and in a style of its own (a centre line's dash-dot).
+/// </summary>
+public sealed record PlanItem(string Kind, bool Closed, IReadOnlyList<Vec2> Points, int MinDetail = PlanDetail.Coarse, int MaxDetail = PlanDetail.Fine, Lapin.Drawing.LineStyleSpec? Style = null)
+{
+    public bool At(int detail) => detail >= MinDetail && detail <= MaxDetail;
+}
+
+/// <summary>
+/// How much a plan draws, by its scale: coarse at 1:1000 and smaller (an overview: axes), medium down to 1:200
+/// (a site plan: outlines), fine at 1:200 and larger (a detail plan: every piece). Drawn symbols choose by it.
+/// </summary>
+public static class PlanDetail
+{
+    public const int Coarse = 0, Medium = 1, Fine = 2;
+    /// <summary>The scales where the levels change (1 : n).</summary>
+    public const double CoarseFrom = 1000, FineTo = 200;
+
+    public static int Of(double scale) => scale >= CoarseFrom - 1e-9 ? Coarse : scale <= FineTo + 1e-9 ? Fine : Medium;
+}
+
+public sealed record ElementGeometry(IReadOnlyList<GeometryPart> Parts, IReadOnlyList<PlanItem>? Plan = null, IReadOnlyList<Vec2>? Snaps = null, IReadOnlyList<string>? Diagnostics = null, SharedInstance? Instance = null,
+    IReadOnlyList<IReadOnlyList<Vec3>>? Lines = null, string? LineColor = null)
+{
+    // Lines: polylines in space with no body (CAD linework with heights), drawn as such in 3D, in LineColor.
+}
 
 /// <summary>
 /// An element's parts are a shared body's (<see cref="StoredBodies"/>), placed by

@@ -26,6 +26,7 @@ static partial class Engine
     [JSExport]
     internal static string Start()
     {
+        Views.UseProduct(Product.Manifest);
         var session = new Session(ModuleCatalog.Create([.. Product.Modules(), new BrowserModule()]), Product.Manifest);
         var recovery = new Recovery(new BrowserJournalStore(), session);
         // No files of its own: projects come and go as bytes (project.openBytes, project.saveBytes).

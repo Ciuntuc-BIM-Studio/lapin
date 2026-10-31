@@ -6,6 +6,7 @@
  * and goes back to it (or to a download), as bytes.
  */
 
+import { brand } from '../platform/brand';
 import { activeStorey, engine, engineInBrowser, useSession } from './session';
 import { LONG_TIMEOUT_MS } from './client';
 import { surveyIfc } from './ifcImport';
@@ -104,7 +105,7 @@ async function confirmDiscard(what: string): Promise<boolean> {
   const question = `The project has unsaved changes. ${what} anyway?`;
   if (isDesktop()) {
     const dialog = await import('@tauri-apps/plugin-dialog');
-    return dialog.ask(question, { title: 'Lapin', kind: 'warning' });
+    return dialog.ask(question, { title: brand.name, kind: 'warning' });
   }
   return window.confirm(question);
 }
@@ -286,12 +287,12 @@ export async function guardWindowClose(): Promise<void> {
     if (!useSession.getState().doc?.dirty) return;
     e.preventDefault();
     const dialog = await import('@tauri-apps/plugin-dialog');
-    const save = await dialog.ask('Save the changes to the project before closing?', { title: 'Lapin', kind: 'warning', okLabel: 'Save', cancelLabel: "Don't save" });
+    const save = await dialog.ask('Save the changes to the project before closing?', { title: brand.name, kind: 'warning', okLabel: 'Save', cancelLabel: "Don't save" });
     // Saving cancelled in the file dialog: the window stays.
     if (save && !(await saveProject())) return;
     if (!save) {
       // A second thought is still possible; only a confirmed "close" lets the work go (and no recovery is offered next time).
-      if (!(await dialog.confirm('Close without saving? The changes will be lost.', { title: 'Lapin', kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' }))) return;
+      if (!(await dialog.confirm('Close without saving? The changes will be lost.', { title: brand.name, kind: 'warning', okLabel: 'Close', cancelLabel: 'Cancel' }))) return;
       await engine.call('project.new').catch(() => undefined);
     }
     await win.destroy();

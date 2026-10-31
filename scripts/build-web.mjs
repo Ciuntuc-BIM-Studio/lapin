@@ -35,8 +35,7 @@ const dotnetRoot = [process.env.DOTNET_ROOT, join(home, '.dotnet-wasm')].find((d
 if (!dotnetRoot) { console.error('build-web: no .NET with the wasm-tools workload (see engine/src/Host/Lapin.Browser/README.md).'); process.exit(1); }
 const dotnet = join(dotnetRoot, process.platform === 'win32' ? 'dotnet.exe' : 'dotnet');
 
-// 1. manifold for the browser.
-if (!uiOnly && !existsSync(join(root, 'engine/native/browser-wasm/manifoldc.a'))) sh('node', ['scripts/build-manifold.mjs', '--browser-wasm'], { env: { DOTNET_ROOT: dotnetRoot } });
+// 1. manifold for the browser comes with the Lapin.Booleans package, or from the core checked out beside the repo (the engine's build says how to build it there).
 
 // 2. The product's modules, built in (the browser loads nothing from a folder).
 const modules = engineModules(root, id);
@@ -54,7 +53,7 @@ namespace Lapin.Browser;
 
 static class Product
 {
-    public static readonly Lapin.Platform.ProductManifest Manifest = new(${JSON.stringify(product.id)}, ${JSON.stringify(product.name)}, [${product.modules.map((m) => JSON.stringify(m)).join(', ')}]);
+    public static readonly Lapin.Platform.ProductManifest Manifest = new(${JSON.stringify(product.id)}, ${JSON.stringify(product.name)}, [${product.modules.map((m) => JSON.stringify(m)).join(', ')}], null, ${product.storeys ? `[${product.storeys.map((x) => `new(${JSON.stringify(x.name)}, ${Number(x.elevation)}, ${Number(x.height)})`).join(', ')}]` : 'null'}, ${product.disciplines ? `[${product.disciplines.map((d) => JSON.stringify(d)).join(', ')}]` : 'null'});
 
     public static Lapin.Platform.ILapinModule[] Modules() => [${modules.map((m) => `new ${m.cls}()`).join(', ')}];
 }

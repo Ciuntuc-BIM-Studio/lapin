@@ -3,6 +3,7 @@
 // product (products/<id>.json, LAPIN_PRODUCT, default lapin) on Lapin's own
 // port, start the UI with the same product's modules.
 //   pnpm dev           → engine on ws://127.0.0.1:47810/ws, UI on http://localhost:5180
+//   LAPIN_ENGINE_PORT, LAPIN_UI_PORT: other ports, to run two products side by side
 //   pnpm dev:desktop   → the same inside the Lapin window (Tauri)
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';

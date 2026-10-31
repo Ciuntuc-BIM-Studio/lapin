@@ -61,6 +61,23 @@ public static class Drafts
 
     public static Shape? ShapeOf(Entity e) => Shape.From(e.Attrs["shape"]);
 
+    /// <summary>
+    /// A drafted line or polyline with heights (a DXF's 3D lines, kept as <c>heights</c>, one a vertex) as lines in
+    /// space, in its own colour or its layer's: what the 3D view draws of it, under the linework category (hidden
+    /// in 3D until the view's graphics show it). Any other annotation has no geometry.
+    /// </summary>
+    public static ElementGeometry? Geometry3d(Entity e, IModelView m, IServices _)
+    {
+        if (e.PredefinedType != Predefined || e.Attrs["heights"] is not JsonArray za) return null;
+        var pts = ShapeOf(e) switch { Line l => new List<Vec2> { l.A, l.B }, Polyline p => [.. p.Pts, .. p.Closed ? new[] { p.Pts[0] } : []], _ => null };
+        if (pts == null) return null;
+        var zs = za.Select(z => Json.Number(z) ?? 0).ToList();
+        if (zs.Count == pts.Count - 1 && pts.Count >= 3) zs.Add(zs[0]); // a closed polyline's return to its start
+        if (zs.Count != pts.Count) return null;
+        var line = pts.Select((p, i) => new Vec3(p.X, p.Y, zs[i])).ToList();
+        return new ElementGeometry([], Lines: [line], LineColor: e.Str("color") ?? LayerOf(m, e.Str("layer")).Color);
+    }
+
     public static Entity Require(IModelView m, string? id, bool editable = true)
     {
         var e = m.Get(id ?? "") is { Class: IfcClass.Annotation, PredefinedType: Predefined } x ? x : throw new CommandException("Not a drafted shape.");

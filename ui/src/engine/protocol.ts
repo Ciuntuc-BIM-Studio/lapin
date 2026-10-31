@@ -26,7 +26,7 @@ export interface NodeDto {
 
 export interface RelationDto { id: string; class: string; relating: string; related: string[] }
 
-export interface PlanItemDto { kind: 'cut' | 'outline' | 'symbol' | string; closed: boolean; points: number[]; text?: string | null }
+export interface PlanItemDto { kind: 'cut' | 'outline' | 'symbol' | string; closed: boolean; points: number[]; text?: string | null; minDetail?: number | null; maxDetail?: number | null; pattern?: string | null }
 
 export interface RenderPart {
   name: string;
@@ -65,6 +65,8 @@ export interface RenderItem {
   snaps: number[];
   diagnostics: string[];
   parts?: RenderPart[] | null;
+  /** Lines in space with no body (CAD linework with heights): x y z pairs, a segment each six numbers, in `color`. */
+  lines?: Float32Array | null;
   /** Drawn as an instance of a shared mesh (docs/plan-instancing.md): its parts are the mesh's, placed by the matrix. */
   instance?: RenderInstance | null;
 }

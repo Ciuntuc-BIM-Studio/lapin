@@ -20,6 +20,7 @@ var port = int.Parse(Arg("--port", "0"));
 var parentPid = int.Parse(Arg("--parent-pid", "0"));
 // The user's own data on this computer: the recovery journals. The shell passes its app data folder.
 var userDir = Arg("--user-dir", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lapin"));
+Views.UseProduct(product);
 var session = new Session(ModuleCatalog.Create(modules), product);
 using var recovery = new Recovery(userDir, session);
 
