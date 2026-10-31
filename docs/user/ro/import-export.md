@@ -8,9 +8,9 @@ Tot ce intră sau iese e în meniul **Fișier**.
 
 ![Meniul Fișier](shots/file-menu.webp)
 
-## IFC
+## IFC și Fragments
 
-**Exportă IFC…** scrie modelul ca IFC. Fiecare perete, placă, ușă și acoperiș e un element IFC adevărat, cu straturile, tipul și proprietățile lui, așa că fișierul se deschide ca model în alte programe BIM. Ușile și ferestrele spun cum se deschid: mâna fiecărei foi și cercevele, în ce parte se deschid și panourile, cum le definește IFC, așa că alte programe desenează aceleași deschideri.
+**Exportă IFC sau Fragments…** scrie modelul ca IFC. Fiecare perete, placă, ușă și acoperiș e un element IFC adevărat, cu straturile, tipul și proprietățile lui, așa că fișierul se deschide ca model în alte programe BIM. Ușile și ferestrele spun cum se deschid: mâna fiecărei foi și cercevele, în ce parte se deschid și panourile, cum le definește IFC, așa că alte programe desenează aceleași deschideri.
 
 Exportul întreabă schema (**IFC4**, citit peste tot, sau **IFC4X3**), detaliul (piesele ca elemente de sine stătătoare sau un corp pe element), faza și cum se scriu corpurile. **Geometrie** e **B-rep fațetat** (exact, ce așteaptă cel mai des alte programe) sau **seturi de fețe**: aceleași fețe, într-un fișier mult mai mic. **Simplifică** scrie mai puține triunghiuri unde un corp e o rețea fină, cum sunt tubulaturile și țevile din fișierul altui program, niciodată mai departe de el decât **toleranța** pe care o scrii (2 mm la început). Corpurile pe care le construiește Lapin (pereți, plăci, uși) își păstrează fețele exacte, iar simplificarea schimbă doar forma corpului, niciodată proprietățile lui.
 
@@ -34,6 +34,16 @@ Lapin recunoaște pereții, plăcile, stâlpii, grinzile, fundațiile, ușile ș
 
 Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapin, fiecare pe nivelul ei, cu conturul, numărul, numele, înălțimea, funcțiunea, departamentul și finisajul pardoselii. Tot ce avea în fișier un element importat (seturile de proprietăți și cantitățile) se păstrează și apare la **Proprietăți IFC** în proprietățile lui. Încăperile se văd în planurile nivelurilor lor (eticheta; o schemă de culori din **Vedere → Culorile încăperilor** le umple); în 3D sunt ascunse până le arată **Vizibilitate / Grafică**. O referință iese din **Exportă IFC…** cum a intrat: cu același GlobalId, aceeași clasă și aceleași atribute (descriere, tag, tip predefinit), cu seturile de proprietăți și cantitățile, fiecare valoare cu tipul din fișier, și cu tipul, materialul, porturile, conexiunile și sistemul ei, fiecare cu GlobalId-ul lui. Dacă aduci doar instalațiile dintr-un fișier și le exporți, fișierul nou le are întregi.
 
+**Importă Fragments…** deschide același panou pentru un fișier `.frag` That Open: elementele lui pe discipline și tipuri, etajele lui și **Ca un singur grup**. Un fișier exportat chiar din acest proiect nu aduce nimic nou când îl imporți înapoi în el: elementele lui sunt deja aici.
+
+![Importă Fragments](shots/import-frag.webp)
+
+**Importă Fragments…** aduce un fișier `.frag`: fiecare element cu geometrie devine o referință desenată din corpul lui, în clasa pe care o spune fișierul, pe nivelul pe care îl pune fișierul (potrivit după nume cu ale tale, creat când lipsește), cu atributele fișierului la **Proprietăți IFC**. Elementele cu același corp (aceeași formă, așezată în mai multe locuri) îl împart. Importat din nou, același fișier actualizează ce a adus înainte. Nimic nu e recunoscut ca perete sau placă: un `.frag` ține triunghiuri.
+
+**Exportă IFC sau Fragments…** scrie modelul ca IFC sau ca Fragments, ales la fel ca un import: elementele pe discipline și tipuri, etajele, faza și doar ce arată vederea 3D. IFC iese în IFC4 sau IFC4X3, cu părțile unui element stratificat sub el sau câte un corp fiecare; Fragments de la punctul de bază al proiectului, de la originea internă sau de la punctul de topografie.
+
+![Exportă IFC sau Fragments](shots/export-exchange.webp)
+
 ## DXF și DWG
 
 **Importă DXF…** aduce un desen CAD în vederea din față, cu layerele, hașurile, textele și cotele lui. Intră ca desen de care te poți prinde și pe care îl poți edita. Ca să folosești un DWG, salvează-l întâi ca DXF din programul tău CAD (AutoCAD, BricsCAD sau DraftSight: **Save As → DXF**). Importul de PDF nu există încă. Într-un plan, **Așezat: după coordonatele hărții** pune un desen în coordonate reale (un plan cadastral în Stereo 70) unde îl pune harta (vezi [Amplasamentul și datele lui](site.md)).
@@ -44,7 +54,7 @@ Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapi
 
 ## Modele 3D
 
-**Exportă 3D…** scrie modelul ca suprafețe pentru randare, vizualizare și realitate augmentată (AR):
+**Export 3D (glTF, USD, DAE)…** scrie modelul ca suprafețe pentru randare, vizualizare și realitate augmentată (AR):
 
 | Format | Pentru |
 |---|---|
@@ -52,9 +62,6 @@ Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapi
 | USDZ | AR Quick Look de la Apple, Reality Composer, Omniverse. Imagini incluse. |
 | USDA | OpenUSD ca text, un singur fișier. |
 | DAE | COLLADA, pentru SketchUp și programe mai vechi. |
-| Fragments | `.frag`, formatul That Open Engine, pentru vizualizatoarele BIM web construite pe el (That Open Components, Bubbles). Un singur fișier; corpurile identice o singură dată. |
-
-**Importă Fragments…** aduce un fișier `.frag`: fiecare element cu geometrie devine o referință desenată din corpul lui, în clasa pe care o spune fișierul, pe nivelul pe care îl pune fișierul (potrivit după nume cu ale tale, creat când lipsește), cu atributele fișierului la **Proprietăți IFC**. Elementele cu același corp (aceeași formă, așezată în mai multe locuri) îl împart. Importat din nou, același fișier actualizează ce a adus înainte. Nimic nu e recunoscut ca perete sau placă: un `.frag` ține triunghiuri.
 
 **Importă rețea (OBJ, STL, glTF)…** aduce o rețea dintr-un alt program 3D (OBJ, STL, glTF sau GLB) ca referințe pe nivelul activ. glTF își spune unitatea și care axă e în sus; pentru OBJ și STL, Lapin întreabă. **Fă solid Studio** din Studio face o referință editabilă (vezi [Studio](studio.md)).
 

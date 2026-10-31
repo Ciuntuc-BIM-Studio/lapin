@@ -92,6 +92,11 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .topbar.ribbon-icons .undo-text, .topbar.ribbon-dropdown .undo-text { display: none; }
 @media (max-width: 900px) { .undo-text { display: none; } }
 .menu-sep { height: 1px; margin: 4px 0; background: var(--rule); }
+.menu-head { padding: 4px 12px 2px; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted, #888); }
+.exchange-options { border-top: 1px solid var(--rule); padding-top: 10px; }
+.exchange-options .row { display: flex; gap: 22px; flex-wrap: wrap; }
+.check-line { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; cursor: pointer; }
+.check-line input { margin: 0; width: auto; flex: none; }
 /* A tab wider than the window scrolls sideways; its groups never squeeze below their tools (their labels would run into each other). */
 .band { display: flex; height: 86px; padding: 4px 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
 .group { display: flex; flex-direction: column; flex-shrink: 0; padding: 0 8px; border-right: 1px solid var(--rule); }

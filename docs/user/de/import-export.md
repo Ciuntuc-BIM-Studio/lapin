@@ -8,9 +8,9 @@ Alles, was hinein- oder hinausgeht, finden Sie im Menü **Datei**.
 
 ![Das Menü Datei](shots/file-menu.webp)
 
-## IFC
+## IFC und Fragments
 
-**IFC exportieren…** schreibt das Modell als IFC. Jede Wand, Decke, Tür und jedes Dach ist ein echtes IFC-Element mit seinen Schichten, seinem Typ und seinen Eigenschaften, sodass sich die Datei in anderen BIM-Werkzeugen als Modell öffnet. Türen und Fenster geben an, wie sie sich öffnen: den Anschlag jedes Tür- und Fensterflügels, in welche Richtung er aufschlägt, und die Felder, so wie IFC sie definiert, damit andere Programme dieselben Aufschläge zeichnen.
+**IFC oder Fragments exportieren…** schreibt das Modell als IFC. Jede Wand, Decke, Tür und jedes Dach ist ein echtes IFC-Element mit seinen Schichten, seinem Typ und seinen Eigenschaften, sodass sich die Datei in anderen BIM-Werkzeugen als Modell öffnet. Türen und Fenster geben an, wie sie sich öffnen: den Anschlag jedes Tür- und Fensterflügels, in welche Richtung er aufschlägt, und die Felder, so wie IFC sie definiert, damit andere Programme dieselben Aufschläge zeichnen.
 
 Der Export fragt nach dem Schema (**IFC4**, überall lesbar, oder **IFC4X3**), dem Detail (Teile als eigene Elemente oder ein Körper je Element), der Bauphase und danach, wie die Körper geschrieben werden. **Geometrie** ist ein **facettiertes B-Rep** (exakt, was andere Programme meist erwarten) oder **Flächenmengen**: dieselben Flächen in einer viel kleineren Datei. **Vereinfachen** schreibt weniger Dreiecke, wo ein Körper ein feines Netz ist, etwa die Kanäle und Rohre aus der Datei eines anderen Programms, nie weiter von ihm entfernt als die **Toleranz**, die Sie eingeben (anfangs 2 mm). Körper, die Lapin selbst baut (Wände, Decken, Türen), behalten ihre exakten Flächen, und Vereinfachen ändert nur die Form eines Körpers, nie seine Eigenschaften.
 
@@ -34,6 +34,16 @@ Lapin erkennt Wände, Decken, Stützen, Träger, Fundamente, Türen und Fenster 
 
 Die Räume der Datei (aus Revit, ArchiCAD und anderen) kommen als Lapin-Räume herein, jeder auf seiner eigenen Ebene, mit Umriss, Nummer, Name, Höhe, Funktion, Abteilung und Bodenbelag: siehe [Räume und Raumfarben](rooms.md#raume-aus-einer-ifc-datei). Alles, was ein importiertes Element in der Datei hatte (seine Eigenschaftssätze und Mengen), bleibt erhalten und wird in seinen Eigenschaften unter **IFC-Eigenschaften** angezeigt. Eine Referenz verlässt **IFC exportieren…** so, wie sie hereinkam: mit derselben GlobalId, Klasse und denselben Attributen (Beschreibung, Kennzeichen, vordefinierter Typ), ihren Eigenschafts- und Mengensätzen mit jedem Wert im Typ der Datei, und mit ihrem Typ, Material, ihren Anschlüssen, Verbindungen und ihrem System, jeweils mit ihrer GlobalId. Holen Sie nur die Haustechnik einer Datei herein und exportieren Sie sie, enthält die neue Datei sie vollständig.
 
+**Fragments importieren…** öffnet dasselbe Fenster für eine `.frag`-Datei von That Open: ihre Elemente nach Disziplin und Art, ihre Geschosse und **Als eine Gruppe**. Eine aus genau diesem Projekt exportierte Datei bringt nichts Neues, wenn sie wieder hineinimportiert wird: Ihre Elemente sind schon da.
+
+![Fragments importieren](shots/import-frag.webp)
+
+**Fragments importieren…** holt eine `.frag`-Datei herein: jedes Element mit Geometrie wird eine Referenz, gezeichnet aus seinem Körper, in der Klasse, die die Datei nennt, auf dem Geschoss, auf das die Datei es stellt (nach Namen mit Ihren abgeglichen, angelegt, wenn es fehlt), mit den Attributen der Datei unter **IFC-Eigenschaften**. Elemente mit demselben Körper (dieselbe Form an vielen Stellen) teilen ihn. Dieselbe Datei erneut importiert aktualisiert, was sie zuvor brachte. Nichts wird als Wand oder Decke erkannt: eine `.frag` enthält Dreiecke.
+
+**IFC oder Fragments exportieren…** schreibt das Modell als IFC oder als Fragments, ausgewählt wie ein Import: die Elemente nach Disziplin und Art, die Geschosse, die Phase und nur, was die 3D-Ansicht zeigt. IFC geht in IFC4 oder IFC4X3 hinaus, die Teile eines geschichteten Elements darunter oder je ein Körper; Fragments ab dem Projektbasispunkt, dem internen Ursprung oder dem Vermessungspunkt.
+
+![IFC oder Fragments exportieren](shots/export-exchange.webp)
+
 ## DXF und DWG
 
 **DXF importieren…** holt eine CAD-Zeichnung in die vorne liegende Ansicht, mit ihren Layern, Schraffuren, Texten und Bemaßungen. Sie kommt als Zeichnung herein, an der Sie fangen und die Sie bearbeiten können. Um eine DWG zu verwenden, speichern Sie sie zuerst in Ihrem CAD-Programm als DXF (AutoCAD, BricsCAD oder DraftSight: **Save As → DXF**). Ein PDF-Import ist noch nicht verfügbar. In einem Grundriss legt **Platziert: nach den Kartenkoordinaten** eine Zeichnung in echten Koordinaten (einen Katasterplan in Stereo 70) dorthin, wo die Karte sie hinlegt (siehe [Das Gelände und seine Daten](site.md)).
@@ -44,7 +54,7 @@ Die Räume der Datei (aus Revit, ArchiCAD und anderen) kommen als Lapin-Räume h
 
 ## 3D-Modelle
 
-**3D exportieren…** schreibt das Modell als Oberflächen für Rendering, Visualisierung und Augmented Reality (AR):
+**3D-Export (glTF, USD, DAE)…** schreibt das Modell als Oberflächen für Rendering, Visualisierung und Augmented Reality (AR):
 
 | Format | Für |
 |---|---|
@@ -52,9 +62,6 @@ Die Räume der Datei (aus Revit, ArchiCAD und anderen) kommen als Lapin-Räume h
 | USDZ | Apples AR Quick Look, Reality Composer, Omniverse. Bilder enthalten. |
 | USDA | OpenUSD als Text, eine Datei. |
 | DAE | COLLADA, für SketchUp und ältere Werkzeuge. |
-| Fragments | `.frag`, das Format der That Open Engine, für darauf gebaute BIM-Webviewer (That Open Components, Bubbles). Eine Datei; gleiche Körper nur einmal. |
-
-**Fragments importieren…** holt eine `.frag`-Datei herein: jedes Element mit Geometrie wird eine Referenz, gezeichnet aus seinem Körper, in der Klasse, die die Datei nennt, auf dem Geschoss, auf das die Datei es stellt (nach Namen mit Ihren abgeglichen, angelegt, wenn es fehlt), mit den Attributen der Datei unter **IFC-Eigenschaften**. Elemente mit demselben Körper (dieselbe Form an vielen Stellen) teilen ihn. Dieselbe Datei erneut importiert aktualisiert, was sie zuvor brachte. Nichts wird als Wand oder Decke erkannt: eine `.frag` enthält Dreiecke.
 
 **Netz importieren (OBJ, STL, glTF)…** holt ein Netz aus einem anderen 3D-Programm (OBJ, STL, glTF oder GLB) als Referenzen auf das aktive Geschoss. glTF nennt seine Einheit und welche Achse oben ist; bei OBJ und STL fragt Lapin. **Zu Studio-Körper machen** in Studio macht eine Referenz bearbeitbar (siehe [Studio](studio.md)).
 

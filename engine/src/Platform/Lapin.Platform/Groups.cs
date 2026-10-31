@@ -53,7 +53,7 @@ public static class Groups
         var left = members.Select(e => Of(edit.Model, e.Id)?.Id).OfType<string>().Distinct().ToList();
         var group = new Entity(edit.NewId(), Class, name, []);
         edit.Add(group);
-        foreach (var e in members) edit.Relate(Rel, group.Id, e.Id);
+        edit.RelateAll(Rel, group.Id, members.Select(e => e.Id));
         DropEmpty(edit, left);
         return group;
     }
@@ -125,15 +125,15 @@ public static class Groups
         {
             var group = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } g ? g : throw new CommandException("There is no such group.");
             var left = new List<string>();
-            var added = 0;
+            var adding = new List<string>();
             foreach (var id in Args.Ids(a))
             {
                 if (ctx.Model.Get(id) is not { } e || !Groupable(ctx.Model, e)) continue;
                 if (Of(ctx.Model, id) is { } was && was.Id != group.Id) left.Add(was.Id);
-                ctx.Relate(Rel, group.Id, id);
-                added++;
+                adding.Add(id);
             }
-            if (added == 0) throw new CommandException("Select elements placed on a storey to add them.");
+            if (adding.Count == 0) throw new CommandException("Select elements placed on a storey to add them.");
+            ctx.RelateAll(Rel, group.Id, adding);
             DropEmpty(ctx, left);
             return null;
         });

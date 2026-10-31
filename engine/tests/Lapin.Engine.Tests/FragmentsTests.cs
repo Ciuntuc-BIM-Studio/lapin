@@ -197,7 +197,7 @@ public class FragmentsTests
         var bytes = FragWriter.Write(Scene(f));
         var r = FragImport.Run(f.Session, bytes, "house.frag", out _);
         Assert.Equal(0, r.Elements);
-        Assert.Equal(4, r.Skipped);
+        Assert.Equal(4, r.Native);
         Assert.Contains(r.Notes, n => n.Contains("left as they are"));
         var wall = f.Model.OfClass(IfcClass.Wall).Single();
         Assert.False(StoredBodies.Has(wall));
@@ -237,5 +237,32 @@ public class FragmentsTests
             Assert.StartsWith(expected, output.Trim());
         }
         finally { File.Delete(path); }
+    }
+
+    /// <summary>A file surveyed as an IFC is (kinds by discipline, storeys), and imported with a choice of them.</summary>
+    [Fact]
+    public void A_file_is_surveyed_and_imported_by_the_kinds_and_storeys_chosen()
+    {
+        var bytes = FragWriter.Write(Scene(House()));
+        var model = FragImport.Read(bytes, "house.frag");
+        var survey = FragSurvey.Of(model, "house.frag", bytes.Length);
+        Assert.Equal("Fragments", (string?)survey["schema"]);
+        var kinds = survey["groups"]!.AsArray().SelectMany(g => g!["kinds"]!.AsArray()).ToDictionary(k => (string)k!["key"]!, k => (int)k!["count"]!);
+        Assert.Equal(1, kinds["IfcWall"]);
+        Assert.Equal(3, kinds["IfcColumn"]);
+        Assert.Contains(survey["groups"]!.AsArray(), g => (string?)g!["discipline"] == "structure");
+        var storey = survey["storeys"]!.AsArray().Single()!;
+        Assert.Equal(4, (int)storey["count"]!);
+        // The columns alone.
+        var g = new Fixture(new ArchitectureModule(), new StructureModule());
+        g.Session.New(plain: true);
+        var r = FragImport.Run(g.Session, model, "house.frag", out _, new FragImportOptions(Kinds: new HashSet<string> { "IfcColumn" }));
+        Assert.Equal(3, r.Elements);
+        Assert.Equal(1, r.LeftOut);
+        Assert.Equal(3, g.Model.OfClass(IfcClass.Column).Count());
+        // No storey chosen: nothing.
+        var h = new Fixture(new ArchitectureModule(), new StructureModule());
+        h.Session.New(plain: true);
+        Assert.Equal(0, FragImport.Run(h.Session, model, "house.frag", out _, new FragImportOptions(Storeys: new HashSet<string>())).Elements);
     }
 }

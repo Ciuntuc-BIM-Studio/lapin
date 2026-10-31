@@ -38,6 +38,39 @@ public interface IEdit
 }
 
 /// <summary>An entity or relationship before and after a transaction (null: absent), with its place in the order.</summary>
+/// <summary>Relating many at once.</summary>
+public static class EditRelations
+{
+    /// <summary>
+    /// <see cref="IEdit.Relate"/> for many: <paramref name="related"/> leave the other relationships of
+    /// <paramref name="relationClass"/> they are in and join <paramref name="relating"/>'s, each relationship written
+    /// once. One at a time, each write copied the growing list and indexed it again: quadratic for a storey or a
+    /// group of thousands.
+    /// </summary>
+    public static void RelateAll(this IEdit edit, string relationClass, string relating, IEnumerable<string> related)
+    {
+        var set = new HashSet<string>();
+        var order = new List<string>();
+        foreach (var id in related) if (set.Add(id)) order.Add(id);
+        if (order.Count == 0) return;
+        var leaving = new Dictionary<string, Relation>();
+        foreach (var id in order)
+            foreach (var r in edit.Model.RelatedBy(id, relationClass))
+                if (r.Relating != relating) leaving[r.Id] = r;
+        foreach (var r in leaving.Values)
+        {
+            var rest = r.Related.Where(x => !set.Contains(x)).ToList();
+            if (rest.Count == 0) edit.RemoveRelation(r.Id);
+            else edit.ReplaceRelation(r with { Related = rest });
+        }
+        var own = edit.Model.RelationsOf(relating, relationClass).FirstOrDefault(r => r.Relating == relating);
+        var had = own == null ? [] : own.Related.ToHashSet();
+        var add = order.Where(x => !had.Contains(x)).ToList();
+        if (own == null) edit.AddRelation(new Relation(edit.NewId(), relationClass, relating, add));
+        else if (add.Count > 0) edit.ReplaceRelation(own with { Related = [.. own.Related, .. add] });
+    }
+}
+
 public sealed record Change<T>(string Id, T? Before, T? After, int Order) where T : class;
 
 /// <summary>

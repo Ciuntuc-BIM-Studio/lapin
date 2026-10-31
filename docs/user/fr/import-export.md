@@ -8,9 +8,9 @@ Tout ce qui entre ou sort se trouve dans le menu **Fichier**.
 
 ![Le menu Fichier](shots/file-menu.webp)
 
-## IFC
+## IFC et Fragments
 
-**Exporter IFC…** écrit le modèle en IFC. Chaque mur, dalle, porte et toit est un véritable élément IFC avec ses couches, son type et ses propriétés, si bien que le fichier s’ouvre comme un modèle dans d’autres outils BIM. Les portes et les fenêtres indiquent comment elles s’ouvrent : le sens de chaque vantail et de chaque ouvrant, le côté vers lequel il pivote, et les panneaux, de la manière dont IFC les définit, pour que les autres logiciels dessinent les mêmes ouvertures.
+**Exporter IFC ou Fragments…** écrit le modèle en IFC. Chaque mur, dalle, porte et toit est un véritable élément IFC avec ses couches, son type et ses propriétés, si bien que le fichier s’ouvre comme un modèle dans d’autres outils BIM. Les portes et les fenêtres indiquent comment elles s’ouvrent : le sens de chaque vantail et de chaque ouvrant, le côté vers lequel il pivote, et les panneaux, de la manière dont IFC les définit, pour que les autres logiciels dessinent les mêmes ouvertures.
 
 L’export demande le schéma (**IFC4**, lu partout, ou **IFC4X3**), le détail (les pièces comme éléments à part entière ou un corps par élément), la phase et la façon d’écrire les corps. **Géométrie** est un **B-rep à facettes** (exact, ce qu’attendent le plus souvent les autres logiciels) ou des **ensembles de faces** : les mêmes faces dans un fichier bien plus petit. **Simplifier** écrit moins de triangles là où un corps est un maillage fin, comme les gaines et les tuyaux du fichier d’un autre logiciel, jamais plus loin de lui que la **tolérance** que vous saisissez (2 mm au départ). Les corps que Lapin construit lui-même (murs, dalles, portes) gardent leurs faces exactes, et simplifier ne change que la forme d’un corps, jamais ses propriétés.
 
@@ -34,6 +34,16 @@ Lapin reconnaît les murs, les dalles, les poteaux, les poutres, les semelles, l
 
 Les espaces du fichier (de Revit, ArchiCAD et autres) entrent comme pièces Lapin, chacune sur son propre niveau, avec leur contour, leur numéro, leur nom, leur hauteur, leur fonction, leur service et leur revêtement de sol : voir [Pièces et couleurs des pièces](rooms.md#pieces-depuis-un-fichier-ifc). Tout ce qu’un élément importé avait dans le fichier (ses jeux de propriétés et ses quantités) est conservé et affiché sous **Propriétés IFC** dans ses propriétés. Une référence sort d’**Exporter IFC…** telle qu’elle est entrée : avec le même GlobalId, la même classe et les mêmes attributs (description, repère, type prédéfini), ses jeux de propriétés et ses quantités avec chaque valeur du type qu’elle avait dans le fichier, et son type, son matériau, ses ports, ses connexions et son système, chacun avec son GlobalId. N’importez que les réseaux (CVC, plomberie, électricité) d’un fichier et exportez-les : le nouveau fichier les contient en entier.
 
+**Importer Fragments…** ouvre le même panneau pour un fichier `.frag` de That Open : ses éléments par discipline et par type, ses niveaux, et **En un seul groupe**. Un fichier exporté de ce projet même n’apporte rien de nouveau quand on l’y réimporte : ses éléments y sont déjà.
+
+![Importer Fragments](shots/import-frag.webp)
+
+**Importer Fragments…** fait entrer un fichier `.frag` : chaque élément avec géométrie devient une référence dessinée d’après son corps, dans la classe que nomme le fichier, sur le niveau où le fichier le place (apparié par nom aux vôtres, créé s’il manque), avec les attributs du fichier sous **Propriétés IFC**. Les éléments au même corps (la même forme posée en plusieurs endroits) le partagent. Importé de nouveau, le même fichier met à jour ce qu’il avait apporté. Rien n’est reconnu comme mur ou dalle : un `.frag` contient des triangles.
+
+**Exporter IFC ou Fragments…** écrit le modèle en IFC ou en Fragments, choisi comme un import : les éléments par discipline et par type, les niveaux, la phase, et seulement ce que montre la vue 3D. L’IFC sort en IFC4 ou IFC4X3, les parties d’un élément en couches sous lui ou un corps chacune ; Fragments depuis le point de base du projet, l’origine interne ou le point topographique.
+
+![Exporter IFC ou Fragments](shots/export-exchange.webp)
+
 ## DXF et DWG
 
 **Importer DXF…** fait entrer un dessin de CAO dans la vue au premier plan, avec ses calques, ses hachures, ses textes et ses cotes. Il arrive sous forme de dessin auquel vous pouvez vous accrocher et que vous pouvez modifier. Pour utiliser un DWG, enregistrez-le d’abord en DXF depuis votre logiciel de CAO (AutoCAD, BricsCAD ou DraftSight : **Save As → DXF**). L’import de PDF n’est pas encore disponible. Dans un plan, **Placé : par les coordonnées de la carte** pose un dessin en coordonnées réelles (un plan cadastral en Stereo 70) là où la carte le place (voir [Le site et ses données](site.md)).
@@ -44,7 +54,7 @@ Les espaces du fichier (de Revit, ArchiCAD et autres) entrent comme pièces Lapi
 
 ## Modèles 3D
 
-**Exporter 3D…** écrit le modèle sous forme de surfaces pour le rendu, la visualisation et la réalité augmentée (RA) :
+**Export 3D (glTF, USD, DAE)…** écrit le modèle sous forme de surfaces pour le rendu, la visualisation et la réalité augmentée (RA) :
 
 | Format | Pour |
 |---|---|
@@ -52,9 +62,6 @@ Les espaces du fichier (de Revit, ArchiCAD et autres) entrent comme pièces Lapi
 | USDZ | AR Quick Look d’Apple, Reality Composer, Omniverse. Images incluses. |
 | USDA | OpenUSD en texte, un seul fichier. |
 | DAE | COLLADA, pour SketchUp et des outils plus anciens. |
-| Fragments | `.frag`, le format de That Open Engine, pour les visionneuses BIM web bâties dessus (That Open Components, Bubbles). Un seul fichier ; les corps identiques une seule fois. |
-
-**Importer Fragments…** fait entrer un fichier `.frag` : chaque élément avec géométrie devient une référence dessinée d’après son corps, dans la classe que nomme le fichier, sur le niveau où le fichier le place (apparié par nom aux vôtres, créé s’il manque), avec les attributs du fichier sous **Propriétés IFC**. Les éléments au même corps (la même forme posée en plusieurs endroits) le partagent. Importé de nouveau, le même fichier met à jour ce qu’il avait apporté. Rien n’est reconnu comme mur ou dalle : un `.frag` contient des triangles.
 
 **Importer un maillage (OBJ, STL, glTF)…** fait entrer un maillage d’un autre logiciel 3D (OBJ, STL, glTF ou GLB) sous forme de références sur le niveau actif. glTF indique son unité et l’axe vers le haut ; pour OBJ et STL, Lapin le demande. **Faire un solide Studio** dans Studio rend une référence modifiable (voir [Studio](studio.md)).
 

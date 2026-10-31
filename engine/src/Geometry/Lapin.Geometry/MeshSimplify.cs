@@ -206,41 +206,61 @@ public static class MeshSimplify
 
         bool Has(int t, int v) => _f[3 * t] == v || _f[3 * t + 1] == v || _f[3 * t + 2] == v;
 
+        /// <summary>A vertex's triangles without the dead ones.</summary>
+        void Compact(int v)
+        {
+            var list = _faces[v];
+            var k = 0;
+            for (var i = 0; i < list.Count; i++) if (!_dead[list[i]]) list[k++] = list[i];
+            if (k < list.Count) list.RemoveRange(k, list.Count - k);
+        }
+
+        int[]? _mark;
+        int _token;
+
+        /// <summary>Whether no triangle round <paramref name="v"/> (but those on the edge) folds over or loses its area with v at x y z.</summary>
+        bool Keeps(int v, int u, int w, double x, double y, double z)
+        {
+            foreach (var t in _faces[v])
+            {
+                if (Has(t, u) && Has(t, w)) continue;
+                if (Normal(t, -1, 0, 0, 0, -1) is not { } before || Normal(t, u, x, y, z, w) is not { } after
+                    || before.X * after.X + before.Y * after.Y + before.Z * after.Z < 0.3) return false;
+            }
+            return true;
+        }
+
         /// <summary>Collapses edges while the cheapest costs at most <paramref name="limit"/>.</summary>
         public void Run(double limit)
         {
-            var seen = new HashSet<int>();
+            _mark ??= new int[_gone.Length];
             while (_heap.TryPeek(out var top, out var cost) && cost <= limit)
             {
                 _heap.Dequeue();
                 var (u, v, su, sv) = top;
                 if (_gone[u] || _gone[v] || _stamp[u] != su || _stamp[v] != sv) continue;
-                _faces[u].RemoveAll(t => _dead[t]);
-                _faces[v].RemoveAll(t => _dead[t]);
+                Compact(u);
+                Compact(v);
                 // The link condition: u and v share as many neighbours as triangles.
                 var shared = 0;
                 foreach (var t in _faces[u]) if (Has(t, v)) shared++;
                 if (shared == 0) continue;
-                seen.Clear();
-                foreach (var t in _faces[u]) for (var k = 0; k < 3; k++) { var w = _f[3 * t + k]; if (w != u && w != v) seen.Add(w); }
+                if (++_token == int.MaxValue) { Array.Clear(_mark); _token = 1; }
+                foreach (var t in _faces[u]) for (var k = 0; k < 3; k++) { var w = _f[3 * t + k]; if (w != u && w != v) _mark[w] = _token; }
                 var common = 0;
-                foreach (var t in _faces[v]) for (var k = 0; k < 3; k++) { var w = _f[3 * t + k]; if (w != u && w != v && seen.Remove(w)) common++; }
+                if (++_token == int.MaxValue) { Array.Clear(_mark); _token = 1; }
+                var second = _token;
+                foreach (var t in _faces[v])
+                    for (var k = 0; k < 3; k++)
+                    {
+                        var w = _f[3 * t + k];
+                        if (w != u && w != v && _mark[w] == second - 1) { _mark[w] = second; common++; }
+                    }
                 if (common != shared) continue;
                 var (x, y, z, c) = Target(u, v);
                 if (c > limit) continue;
                 // No triangle may fold over or lose its area.
-                var ok = true;
-                foreach (var list in (List<int>[])[_faces[u], _faces[v]])
-                {
-                    foreach (var t in list)
-                    {
-                        if (Has(t, u) && Has(t, v)) continue;
-                        if (Normal(t, -1, 0, 0, 0, -1) is not { } before || Normal(t, u, x, y, z, v) is not { } after
-                            || before.X * after.X + before.Y * after.Y + before.Z * after.Z < 0.3) { ok = false; break; }
-                    }
-                    if (!ok) break;
-                }
-                if (!ok) continue;
+                if (!Keeps(u, u, v, x, y, z) || !Keeps(v, u, v, x, y, z)) continue;
                 // v into u.
                 _p[3 * u] = x; _p[3 * u + 1] = y; _p[3 * u + 2] = z;
                 for (var k = 0; k < 10; k++) _q[10 * u + k] += _q[10 * v + k];
@@ -255,9 +275,9 @@ public static class MeshSimplify
                 _gone[v] = true;
                 _into[v] = u;
                 _stamp[u]++;
-                _faces[u].RemoveAll(t => _dead[t]);
-                seen.Clear();
-                foreach (var t in _faces[u]) for (var k = 0; k < 3; k++) { var w = _f[3 * t + k]; if (w != u && seen.Add(w)) Push(u, w); }
+                Compact(u);
+                if (++_token == int.MaxValue) { Array.Clear(_mark); _token = 1; }
+                foreach (var t in _faces[u]) for (var k = 0; k < 3; k++) { var w = _f[3 * t + k]; if (w != u && _mark[w] != _token) { _mark[w] = _token; Push(u, w); } }
             }
         }
 
@@ -271,23 +291,22 @@ public static class MeshSimplify
 
         /// <summary>
         /// The most an original corner lies from what is left: each measured to the triangles round the vertex it went
-        /// into (and their neighbours'), so a chord's sag across a curve counts, not only the corners' own moves.
+        /// into, so a chord's sag across a curve counts, not only the corners' own moves.
         /// </summary>
         public double Stray()
         {
             var worst = 0.0;
-            var near = new HashSet<int>();
             for (var v = 0; v < _into.Length; v++)
             {
                 var r = Root(v);
-                _faces[r].RemoveAll(t => _dead[t]);
-                near.Clear();
-                foreach (var t in _faces[r])
-                    for (var k = 0; k < 3; k++) { var w = _f[3 * t + k]; _faces[w].RemoveAll(x => _dead[x]); foreach (var x in _faces[w]) near.Add(x); }
-                if (near.Count == 0) continue;
                 var best = double.MaxValue;
-                foreach (var t in near) best = Math.Min(best, PointTriangle(_p0[3 * v], _p0[3 * v + 1], _p0[3 * v + 2], t));
-                worst = Math.Max(worst, best);
+                foreach (var t in _faces[r])
+                {
+                    if (_dead[t]) continue;
+                    best = Math.Min(best, PointTriangle(_p0[3 * v], _p0[3 * v + 1], _p0[3 * v + 2], t));
+                    if (best <= worst) break;
+                }
+                if (best < double.MaxValue) worst = Math.Max(worst, best);
             }
             return worst;
         }

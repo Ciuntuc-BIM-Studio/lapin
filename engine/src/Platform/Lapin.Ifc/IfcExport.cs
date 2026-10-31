@@ -18,7 +18,8 @@ namespace Lapin.Ifc;
 /// triangles merged into one face), and a tolerance (metres; 0: exact) within
 /// which a body's triangles are simplified (<see cref="Simplifier"/>).
 /// </summary>
-public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0)
+/// <summary><paramref name="Exclude"/>: elements left out (the kinds and storeys not chosen, what the 3D view hides: <see cref="ModelSurvey.Excluded"/>).</summary>
+public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null)
 {
     public bool Ifc43 => Schema.StartsWith("IFC4X3", StringComparison.OrdinalIgnoreCase);
     public bool Grouped => !string.Equals(Detail, "simple", StringComparison.OrdinalIgnoreCase);
@@ -488,7 +489,7 @@ public static class IfcExport
         void WriteElements()
         {
             var voids = s.Catalog.Get<IVoidShapes>();
-            var elements = m.Entities.Where(e => IsElement(e) && InPhase(e)).ToList();
+            var elements = m.Entities.Where(e => IsElement(e) && InPhase(e) && o.Exclude?.Contains(e.Id) != true).ToList();
             // Bodies to merge or simplify are prepared a batch at a time on every core, then written in order.
             var prepare = o.Tolerance > 0 || o.FaceSet;
             const int batch = 1000;

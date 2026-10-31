@@ -1,5 +1,5 @@
 /**
- * An IFC import in two steps: the file looked at first (project.ifcSurvey: its
+ * An IFC or Fragments import in two steps (docs/fragments.md, Exchange): the file looked at first (project.ifcSurvey or project.fragSurvey: its
  * storeys and its elements by kind and discipline), for the user to choose what
  * to bring in the Import IFC dialog; then the import of what was chosen, its
  * stages shown as it goes (the engine's progress events). The engine keeps the
@@ -75,14 +75,18 @@ export interface IfcSource { name: string; path?: string; data?: string }
 /** A long engine call in progress (a survey, an import): what it does now, and how far along. */
 export interface Busy { title: string; stage: string; done: number; total: number; started: number }
 
+/** The exchange format: IFC, or That Open's Fragments. */
+export type ExchangeFormat = 'ifc' | 'frag';
+
 interface ImportState {
   source: IfcSource | null;
   survey: Survey | null;
   mode: ImportMode;
+  format: ExchangeFormat;
   busy: Busy | null;
 }
 
-export const useIfcImport = create<ImportState>(() => ({ source: null, survey: null, mode: 'auto', busy: null }));
+export const useIfcImport = create<ImportState>(() => ({ source: null, survey: null, mode: 'auto', format: 'ifc', busy: null }));
 
 /** The engine's progress events, while a call is running: the overlay's stage and bar. Listened to from the first long call on. */
 export function onProgress(d: unknown): void {
@@ -93,20 +97,20 @@ export function onProgress(d: unknown): void {
 }
 
 let listening = false;
-const begin = (title: string, stage: string) => {
+export const begin = (title: string, stage: string) => {
   if (!listening) { engine.onEvent('progress', onProgress); listening = true; }
   useIfcImport.setState({ busy: { title, stage, done: 0, total: 0, started: Date.now() } });
 };
-const end = () => useIfcImport.setState({ busy: null });
+export const end = () => useIfcImport.setState({ busy: null });
 
 const args = (s: IfcSource) => (s.data != null ? { name: s.name, data: s.data } : { path: s.path });
 
 /** Step one: the file looked at, then the dialog to choose what of it comes in. */
-export async function surveyIfc(source: IfcSource, mode: ImportMode): Promise<void> {
-  begin(`Reading ${source.name}`, 'Indexing the file');
+export async function surveyIfc(source: IfcSource, mode: ImportMode, format: ExchangeFormat = 'ifc'): Promise<void> {
+  begin(`Reading ${source.name}`, format === 'frag' ? 'Reading the file' : 'Indexing the file');
   try {
-    const survey = await engine.call<Survey>('project.ifcSurvey', args(source), { timeoutMs: LONG_TIMEOUT_MS });
-    useIfcImport.setState({ source, survey, mode });
+    const survey = await engine.call<Survey>(format === 'frag' ? 'project.fragSurvey' : 'project.ifcSurvey', args(source), { timeoutMs: LONG_TIMEOUT_MS });
+    useIfcImport.setState({ source, survey, mode, format });
     useUi.setState({ dialog: 'importIfc' });
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
@@ -116,24 +120,39 @@ export async function surveyIfc(source: IfcSource, mode: ImportMode): Promise<vo
 }
 
 export interface ImportResult { elements: number; updated: number; references: number; recognized?: number; recognizedByClass?: Record<string, number>; notes: string[] }
+export interface FragResult { elements: number; shared: number; storeys: number; skipped: number; native?: number; leftOut?: number; notes: string[] }
+
+/** What a Fragments import brought, said plainly: a file of this very project brings nothing new. */
+export function fragOutcome(name: string, r: FragResult): string {
+  if (!r.elements && r.native) return `Nothing new from ${name}: its ${r.native} element${r.native === 1 ? ' is' : 's are'} already in this project (the file was exported from it). Import it into another project, or a new one.`;
+  const parts = [`${r.elements} element${r.elements === 1 ? '' : 's'} as references`];
+  if (r.shared) parts.push(`${r.shared} shared bod${r.shared === 1 ? 'y' : 'ies'}`);
+  if (r.storeys) parts.push(`${r.storeys} storey${r.storeys === 1 ? '' : 's'} made`);
+  if (r.native) parts.push(`${r.native} already in this project`);
+  if (r.skipped) parts.push(`${r.skipped} without a body Lapin reads`);
+  return `Imported ${name}: ${parts.join(', ')}.`;
+}
 
 /** Step two: what was chosen (null: everything) brought in, its stages shown; the outcome said. */
 export async function runIfcImport(choice: { kinds: string[] | null; storeys: string[] | null; mode: ImportMode; plan2d?: boolean; only2d?: boolean; rules?: ImportRules; group?: boolean }): Promise<void> {
-  const { source } = useIfcImport.getState();
+  const { source, format } = useIfcImport.getState();
   if (!source) return;
   useUi.setState({ dialog: null });
   useIfcImport.setState({ survey: null });
+  const frag = format === 'frag';
   begin(`${choice.mode === 'link' ? 'Linking' : 'Importing'} ${source.name}`, 'Reading the file');
   try {
-    const r = await engine.call<ImportResult>('project.importIfc', {
-      ...args(source), mode: choice.mode, group: choice.group ?? true,
+    const params = {
+      ...args(source), group: choice.group ?? true,
+      ...(frag ? {} : { mode: choice.mode }),
       ...(choice.kinds ? { kinds: choice.kinds } : {}),
       ...(choice.storeys ? { storeys: choice.storeys } : {}),
       ...(choice.plan2d === false ? { plan2d: false } : {}),
       ...(choice.only2d === false ? { only2d: false } : {}),
       ...(choice.rules ? { rules: choice.rules } : {}),
-    }, { timeoutMs: LONG_TIMEOUT_MS });
-    notify(outcome(source.name, choice.mode, r));
+    };
+    if (frag) notify(fragOutcome(source.name, await engine.call<FragResult>('project.importFragments', params, { timeoutMs: LONG_TIMEOUT_MS })));
+    else notify(outcome(source.name, choice.mode, await engine.call<ImportResult>('project.importIfc', params, { timeoutMs: LONG_TIMEOUT_MS })));
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   } finally {

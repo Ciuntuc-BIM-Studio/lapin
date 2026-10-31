@@ -54,8 +54,8 @@ function FileMenu() {
       {open && (
         <div className="menu" role="menu" onMouseLeave={() => setOpen(false)}>
           <UndoItems run={run} />
-          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportIfc' }))}>Export IFC…</button>
-          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportMesh' }))}>Export 3D…</button>
+          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportExchange' }))}>Export IFC or Fragments…</button>
+          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportMesh' }))}>Export 3D (glTF, USD, DAE)…</button>
           <button type="button" role="menuitem" onClick={run(leave)}>Leave session</button>
         </div>
       )}
@@ -72,13 +72,19 @@ function FileMenu() {
           <button type="button" role="menuitem" onClick={run(() => saveProject())}>Save<Keys id="app.save" /></button>
           <button type="button" role="menuitem" onClick={run(() => saveProject(true))}>Save as…<Keys id="app.saveAs" /></button>
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'versions' }))}>Save version…</button>
+          {/* The model exchanged (docs/fragments.md, Exchange): IFC and Fragments, chosen alike both ways. */}
+          <div className="menu-sep" role="separator" />
+          <div className="menu-head">IFC and Fragments</div>
           <button type="button" role="menuitem" onClick={run(() => importIfc())}>Import IFC…</button>
-          <button type="button" role="menuitem" onClick={run(() => importIfc('link'))}>Link IFC…</button>
-          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportIfc' }))}>Export IFC…</button>
-          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportMesh' }))}>Export 3D…</button>
-          <button type="button" role="menuitem" onClick={run(() => importDxf())}>Import DXF…</button>
           <button type="button" role="menuitem" onClick={run(() => importFragments())}>Import Fragments…</button>
+          <button type="button" role="menuitem" onClick={run(() => importIfc('link'))}>Link IFC…</button>
+          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportExchange' }))}>Export IFC or Fragments…</button>
+          <div className="menu-sep" role="separator" />
+          <div className="menu-head">Other formats</div>
+          <button type="button" role="menuitem" onClick={run(() => importDxf())}>Import DXF…</button>
           <button type="button" role="menuitem" onClick={run(() => importMesh())}>Import mesh (OBJ, STL, glTF)…</button>
+          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportMesh' }))}>Export 3D (glTF, USD, DAE)…</button>
+          <div className="menu-sep" role="separator" />
           {!engineInBrowser && <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'share' }))}>Share session…</button>}
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'join' }))}>Join session…</button>
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ screen: 'start' }))}>Start screen</button>

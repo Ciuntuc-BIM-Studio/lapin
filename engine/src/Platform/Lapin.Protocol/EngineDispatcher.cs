@@ -336,6 +336,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
 
     /// <summary>The last file surveyed (project.ifcSurvey), read and indexed, for the import that follows to take as it is.</summary>
     (string Key, byte[] Bytes, StepFile File, string Hash)? _surveyed;
+    (string Key, Lapin.Mesh.Fragments.FragModel Model)? _fragSurveyed;
 
     /// <summary>An IFC file as a call gives it: by path (the desktop) or as base64 in data (the browser); its name and a key that tells the same file again.</summary>
     (byte[] Bytes, string Name, string? Path, string Key) IfcBytes(JsonObject p)
@@ -454,7 +455,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
         {
             case "session.info" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps"
                 or "project.versions" or "project.compareVersions"
-                or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh":
+                or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh" or "project.exportSurvey":
                 return null;
             case "doc.execute":
                 if (!editor) return "You joined to look: ask the host to let you edit.";
@@ -567,9 +568,10 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             case "project.exportIfc":
             {
                 // The project as IFC (docs/spec-ifc.md): IFC4, or IFC4X3; parts grouped under their element, or one body each; a phase, or everything;
-                // bodies as B-reps or face sets, simplified within a tolerance (metres) or exact.
+                // bodies as B-reps or face sets, simplified within a tolerance (metres) or exact; the kinds, storeys and hidden left out (ModelSurvey).
+                var exclude = Lapin.Ifc.ModelSurvey.Excluded(session, p);
                 var options = new IfcExportOptions((string?)p["schema"] ?? "IFC4", (string?)p["detail"] ?? "group", (string?)p["phase"],
-                    (string?)p["geometry"] ?? "brep", Math.Clamp(Json.Number(p["tolerance"]) ?? 0, 0, 0.1));
+                    (string?)p["geometry"] ?? "brep", Math.Clamp(Json.Number(p["tolerance"]) ?? 0, 0, 0.1), exclude.Count > 0 ? exclude : null);
                 if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, ifcPath, options).ToJson(), null);
                 using var ms = new MemoryStream();
                 IfcExport.Write(session, ms, "project.ifc", options);
@@ -579,6 +581,9 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             {
                 // The model as a 3D mesh (docs/plan-mesh-export.md): glb, gltf, usdz, usda or dae; a 3D view's visible elements, or all; a phase; edges; the origin.
                 var options = Lapin.Mesh.MeshExportOptions.From(p);
+                // The kinds and storeys chosen (the export survey's), left out as the hidden are.
+                if (p["kinds"] is JsonArray || p["storeys"] is JsonArray)
+                    options = options with { Hidden = Lapin.Ifc.ModelSurvey.Excluded(session, p) };
                 var (bytes, result) = Lapin.Mesh.MeshExport.Write(session, options);
                 var name = $"{(session.Path is { } sp ? Path.GetFileNameWithoutExtension(sp) : "project")}.{options.Extension}";
                 var delivered = Deliver(bytes, name);
@@ -639,12 +644,28 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 }
                 return (result.ToJson(), imported);
             }
+            case "project.exportSurvey":
+                // The project's elements and storeys as an import survey shows a file's, for an export's choice.
+                return (Lapin.Ifc.ModelSurvey.Of(session), null);
+            case "project.fragSurvey":
+            {
+                // What a Fragments file holds, in the IFC survey's shape, kept read for the import that follows.
+                var (bytes, name, _, key) = IfcBytes(p);
+                ReportProgress("Reading the file", 0, 0);
+                var model = Lapin.Mesh.Fragments.FragImport.Read(bytes, name);
+                _fragSurveyed = (key, model);
+                return (Lapin.Mesh.Fragments.FragSurvey.Of(model, name, bytes.Length), null);
+            }
             case "project.importFragments":
             {
-                // A That Open Fragments file (.frag, docs/fragments.md) into the open project: its items as references with their bodies, by path or by its bytes.
+                // A That Open Fragments file (.frag, docs/fragments.md) into the open project: its items as references with their bodies, by path or by its bytes;
+                // the kinds and storeys chosen (the survey's), as one group unless asked otherwise.
                 ReportProgress("Reading the file", 0, 0);
-                var (bytes, name, _, _) = IfcBytes(p);
-                var r = Lapin.Mesh.Fragments.FragImport.Run(session, bytes, name, out var imported);
+                var (bytes, name, _, key) = IfcBytes(p);
+                var options = new Lapin.Mesh.Fragments.FragImportOptions(Chosen(p["kinds"]), Chosen(p["storeys"]), p["group"] is not JsonValue gv || !gv.TryGetValue<bool>(out var gb) || gb);
+                var model = _fragSurveyed is { } fs && fs.Key == key ? fs.Model : Lapin.Mesh.Fragments.FragImport.Read(bytes, name);
+                _fragSurveyed = null;
+                var r = Lapin.Mesh.Fragments.FragImport.Run(session, model, name, out var imported, options);
                 return (r.ToJson(), imported);
             }
             case "project.importBcf":

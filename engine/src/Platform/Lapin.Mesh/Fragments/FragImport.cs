@@ -9,7 +9,8 @@ using Lapin.Platform;
 namespace Lapin.Mesh.Fragments;
 
 /// <summary>What a Fragments import brought: elements (references), shared bodies, storeys made, what it left out, and its notes.</summary>
-public sealed record FragImportResult(int Elements, int Shared, int Storeys, int Skipped, IReadOnlyList<string> Notes, IReadOnlyDictionary<string, int> ByClass)
+/// <summary><paramref name="Native"/>: items already in the project as Lapin elements (the file came from it), left as they are; <paramref name="LeftOut"/>: items the choice left out.</summary>
+public sealed record FragImportResult(int Elements, int Shared, int Storeys, int Skipped, IReadOnlyList<string> Notes, IReadOnlyDictionary<string, int> ByClass, int Native = 0, int LeftOut = 0)
 {
     public JsonObject ToJson()
     {
@@ -17,7 +18,7 @@ public sealed record FragImportResult(int Elements, int Shared, int Storeys, int
         foreach (var (k, v) in ByClass.OrderByDescending(kv => kv.Value)) by[k] = v;
         return new JsonObject
         {
-            ["elements"] = Elements, ["shared"] = Shared, ["storeys"] = Storeys, ["skipped"] = Skipped, ["byClass"] = by,
+            ["elements"] = Elements, ["shared"] = Shared, ["storeys"] = Storeys, ["skipped"] = Skipped, ["byClass"] = by, ["native"] = Native, ["leftOut"] = LeftOut,
             ["notes"] = new JsonArray(Notes.Select(n => (JsonNode)n).ToArray()),
         };
     }
@@ -38,18 +39,33 @@ public sealed record FragImportResult(int Elements, int Shared, int Storeys, int
 /// </summary>
 public static class FragImport
 {
-    public static FragImportResult Run(Session session, byte[] bytes, string name, out Diff diff)
+    /// <summary>A file's bytes read as a Fragments model, or why not.</summary>
+    public static FragModel Read(byte[] bytes, string name)
     {
-        session.Progress?.Invoke("Reading the file", 0, 0);
-        FragModel model;
-        try { model = FragReader.Read(bytes); }
+        try { return FragReader.Read(bytes); }
         catch (Exception ex) when (ex is FormatException or IndexOutOfRangeException or ArgumentOutOfRangeException or InvalidDataException)
         {
             throw new CommandException($"„{name}” is not a Fragments file Lapin can read: {ex.Message}");
         }
-        var reader = new Reader(session, model, name);
+    }
+
+    public static FragImportResult Run(Session session, byte[] bytes, string name, out Diff diff, FragImportOptions? options = null)
+    {
+        session.Progress?.Invoke("Reading the file", 0, 0);
+        return Run(session, Read(bytes, name), name, out diff, options);
+    }
+
+    /// <summary>A read file into the open project: what <paramref name="options"/> chose (kinds and storeys as <see cref="FragSurvey"/> names them; null: all), as one group unless told otherwise.</summary>
+    public static FragImportResult Run(Session session, FragModel model, string name, out Diff diff, FragImportOptions? options = null)
+    {
+        var o = options ?? new FragImportOptions();
+        var reader = new Reader(session, model, name, o);
         // What the file places anew comes in as one group named after it (docs/groups.md).
-        diff = session.Edit($"Import {name}", edit => Groups.Around(edit, Path.GetFileNameWithoutExtension(name), reader.Apply));
+        diff = session.Edit($"Import {name}", edit =>
+        {
+            if (o.Group) Groups.Around(edit, Path.GetFileNameWithoutExtension(name), reader.Apply);
+            else reader.Apply(edit);
+        });
         return reader.Result;
     }
 
@@ -58,12 +74,12 @@ public static class FragImport
     /// <summary>The model's frame to Fragments': (x, y, z) → (x, z, −y).</summary>
     static (double X, double Y, double Z) ToFrag(Vec3 p) => (p.X, p.Z, -p.Y);
 
-    sealed class Reader(Session session, FragModel model, string name)
+    sealed class Reader(Session session, FragModel model, string name, FragImportOptions o)
     {
         readonly List<string> notes = [];
         readonly Dictionary<string, int> byClass = [];
-        int elements, shared, storeysMade, skipped, native;
-        public FragImportResult Result => new(elements, shared, storeysMade, skipped + native, notes, byClass);
+        int elements, shared, storeysMade, skipped, native, leftOut;
+        public FragImportResult Result => new(elements, shared, storeysMade, skipped, notes, byClass, native, leftOut);
 
         /// <summary>One item's geometry: its samples (a shell in a material, placed by a local transform) and its global transform.</summary>
         sealed record Piece(int Shell, FragMaterial Material, FragTransform Local);
@@ -117,6 +133,7 @@ public static class FragImport
             foreach (var (local, storeyName, elevation) in storeyItems)
             {
                 if (!storeyOfElement.ContainsValue(local)) continue;
+                if (o.Storeys != null && !o.Storeys.Contains(FragSurvey.KeyOf(model, local))) continue;
                 var existing = Spatial.Storeys(edit.Model).FirstOrDefault(s => string.Equals(s.Name, storeyName, StringComparison.OrdinalIgnoreCase));
                 if (existing != null) { storeyOfLocal[local] = existing.Id; continue; }
                 var z = elevation ?? (lowest.TryGetValue(local, out var lo) && lo < double.MaxValue ? Math.Round(lo, 2) : 0);
@@ -148,12 +165,17 @@ public static class FragImport
             var sharedIds = new Dictionary<string, string?>();
             var modelGuid = model.Guid ?? name;
 
+            // Each element's storey, written once per storey after the loop (one at a time it was quadratic).
+            var joins = new Dictionary<string, List<string>>();
             var total = meshOfLocal.Count;
             var done = 0;
             foreach (var (local, mesh) in meshOfLocal.OrderBy(kv => kv.Value))
             {
                 if (++done % 500 == 0) session.Progress?.Invoke("Bringing the elements in", done, total);
                 if (!pieces.TryGetValue(mesh, out var list) || !itemOfLocal.TryGetValue(local, out var item)) { skipped++; continue; }
+                // What the import's choice leaves out (the kinds and storeys of the survey).
+                if (o.Kinds != null && !o.Kinds.Contains(FragSurvey.KindOf(model, item))) { leftOut++; continue; }
+                if (o.Storeys != null && !o.Storeys.Contains(storeyOfElement.TryGetValue(local, out var chosen) ? FragSurvey.KeyOf(model, chosen) : "")) { leftOut++; continue; }
                 var global = mesh < m.GlobalTransforms.Length ? m.GlobalTransforms[mesh] : FragTransform.Identity;
                 var category = item < model.Categories.Length ? model.Categories[item] : "IFCBUILDINGELEMENTPROXY";
                 var cls = category.StartsWith("IFC", StringComparison.OrdinalIgnoreCase) && category.Length > 3 ? IfcModel.ClassName(category) : IfcClass.BuildingElementProxy;
@@ -196,14 +218,11 @@ public static class FragImport
                 json["fragment"] = new JsonObject { ["localId"] = local, ["category"] = category, ["model"] = modelGuid };
                 Put(edit, new Entity(id, cls, elementName, json, Text(attrs, "PredefinedType")));
                 var storeyId = storeyOfElement.TryGetValue(local, out var sl) && storeyOfLocal.TryGetValue(sl, out var st) ? st : fallback;
-                if (Spatial.StoreyOf(edit.Model, id)?.Id != storeyId)
-                {
-                    if (Spatial.StoreyOf(edit.Model, id) != null) edit.Unrelate(IfcClass.RelContainedInSpatialStructure, id);
-                    Spatial.Contain(edit, storeyId, id);
-                }
+                if (Spatial.StoreyOf(edit.Model, id)?.Id != storeyId) (joins.TryGetValue(storeyId, out var js) ? js : joins[storeyId] = []).Add(id);
                 elements++;
                 byClass[cls] = byClass.GetValueOrDefault(cls) + 1;
             }
+            foreach (var (storeyId, ids) in joins) edit.RelateAll(IfcClass.RelContainedInSpatialStructure, storeyId, ids);
             if (native > 0) notes.Add($"{native} element(s) are already in the project as Lapin elements (the file came from it): they were left as they are.");
             var withoutGeometry = model.LocalIds.Length - meshOfLocal.Count;
             if (withoutGeometry > 0) notes.Add($"{withoutGeometry} item(s) without geometry (types, materials, the spatial structure) were read for their names only.");
@@ -281,3 +300,6 @@ public static class FragImport
             attrs.TryGetValue(key, out var v) && v is JsonValue jv && jv.TryGetValue<double>(out var d) ? d : null;
     }
 }
+
+/// <summary>What of a Fragments file comes in: its kinds and storeys as <see cref="FragSurvey"/> names them (null: all; "" the items on none), and whether as one group.</summary>
+public sealed record FragImportOptions(IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Group = true);

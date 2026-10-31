@@ -50,16 +50,17 @@ public static class IfcSurvey
     ];
 
     /// <summary>The kind an element is counted and chosen by: its class, with its category for a generic one ("IfcBuildingElementProxy|Mechanical Equipment").</summary>
-    public static string KindOf(StepEntity e)
-    {
-        var cls = IfcModel.ClassName(e.Type);
-        return Generic.Contains(cls) && CategoryOf(e) is { } c ? $"{cls}|{c}" : cls;
-    }
+    public static string KindOf(StepEntity e) => KindOf(IfcModel.ClassName(e.Type), e[2] as string);
+
+    /// <summary>The kind of an element of <paramref name="cls"/> named <paramref name="name"/> (a Fragments item's, a Lapin element's).</summary>
+    public static string KindOf(string cls, string? name) => Generic.Contains(cls) && CategoryOfName(name) is { } c ? $"{cls}|{c}" : cls;
 
     /// <summary>What a generic element's name starts with, up to " : " (Revit's category), when it has such a name.</summary>
-    public static string? CategoryOf(StepEntity e)
+    public static string? CategoryOf(StepEntity e) => CategoryOfName(e[2] as string);
+
+    public static string? CategoryOfName(string? name)
     {
-        if (e[2] is not string name) return null;
+        if (name == null) return null;
         var cut = name.IndexOf(" : ", StringComparison.Ordinal);
         if (cut <= 0 || cut > 40) return null;
         var c = name[..cut].Trim();
@@ -208,8 +209,36 @@ public static class IfcSurvey
         return bar < 0 ? (kind, null) : (kind[..bar], kind[(bar + 1)..]);
     }
 
+    /// <summary>
+    /// A survey's elements and storeys as the interface shows them, from what any source counted (a Fragments file, the
+    /// project before an export): <paramref name="kinds"/> by kind, <paramref name="storeys"/> lowest first.
+    /// </summary>
+    public static JsonObject Shape(string name, long size, string schema, string? application, IReadOnlyDictionary<string, int> kinds,
+        IEnumerable<(string Id, string Name, double Elevation, int Count)> storeys, int noStorey)
+    {
+        var groups = new JsonArray();
+        foreach (var (id, label) in Disciplines)
+        {
+            var rows = kinds.Select(k => (Key: k.Key, Split: Split(k.Key), Count: k.Value)).Where(k => DisciplineOf(k.Split.Class, k.Split.Category) == id)
+                .OrderByDescending(k => k.Count).ThenBy(k => k.Key).ToList();
+            if (rows.Count == 0) continue;
+            groups.Add((JsonNode)new JsonObject
+            {
+                ["discipline"] = id, ["label"] = label, ["count"] = rows.Sum(r => r.Count),
+                ["kinds"] = new JsonArray(rows.Select(r => (JsonNode)new JsonObject { ["key"] = r.Key, ["class"] = r.Split.Class, ["category"] = r.Split.Category, ["label"] = Label(r.Split.Class, r.Split.Category), ["count"] = r.Count }).ToArray()),
+            });
+        }
+        return new JsonObject
+        {
+            ["name"] = name, ["size"] = size, ["schema"] = schema, ["application"] = application, ["products"] = kinds.Values.Sum(),
+            ["storeys"] = new JsonArray(storeys.OrderBy(s => s.Elevation).Select(s => (JsonNode)new JsonObject { ["id"] = s.Id, ["name"] = s.Name, ["elevation"] = Math.Round(s.Elevation, 3), ["count"] = s.Count }).ToArray()),
+            ["noStorey"] = noStorey,
+            ["groups"] = groups,
+        };
+    }
+
     /// <summary>A kind as the interface names it: "Wall", "Proxy · Mechanical Equipment".</summary>
-    static string Label(string cls, string? category)
+    public static string Label(string cls, string? category)
     {
         var plain = cls.StartsWith("Ifc", StringComparison.Ordinal) ? cls[3..] : cls;
         plain = plain.Replace("StandardCase", "").Replace("BuildingElementProxy", "Proxy").Replace("FurnishingElement", "Furnishing").Replace("OpeningElement", "Opening");

@@ -378,17 +378,8 @@ export async function importFragments(): Promise<void> {
   const picked = isDesktop() ? null : await pickFile('Fragments', 'frag');
   const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'Fragments', extensions: ['frag'] }]) : picked?.name ?? null;
   if (!path) return;
-  const source = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path };
-  try {
-    const r = await engine.call<{ elements: number; shared: number; storeys: number; skipped: number; notes: string[] }>('project.importFragments', source, { timeoutMs: LONG_TIMEOUT_MS });
-    const parts = [`${r.elements} element${r.elements === 1 ? '' : 's'} as references`];
-    if (r.shared) parts.push(`${r.shared} shared bod${r.shared === 1 ? 'y' : 'ies'}`);
-    if (r.storeys) parts.push(`${r.storeys} storey${r.storeys === 1 ? '' : 's'} made`);
-    if (r.skipped) parts.push(`${r.skipped} left out`);
-    notify(`Imported ${source.name}: ${parts.join(', ')}.${r.notes.length ? ' ' + r.notes.join(' ') : ''}`);
-  } catch (e) {
-    notify(e instanceof Error ? e.message : String(e));
-  }
+  // Looked at first, then chosen from, as an IFC is (docs/fragments.md, Exchange).
+  await surveyIfc(picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path }, 'reference', 'frag');
 }
 
 /**

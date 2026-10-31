@@ -12,11 +12,27 @@ public interface IModelView
     /// <summary>The relationships <paramref name="id"/> takes part in, relating or related, in creation order.</summary>
     IEnumerable<Relation> RelationsOf(string id, string? relationClass = null);
     /// <summary>The relationships <paramref name="id"/> is related by (among their related, not relating), in creation order: an element's storey's, its type's.</summary>
-    IEnumerable<Relation> RelatedBy(string id, string? relationClass = null) => RelationsOf(id, relationClass).Where(r => r.Related.Contains(id));
+    IEnumerable<Relation> RelatedBy(string id, string? relationClass = null) => RelationsOf(id, relationClass).Where(r => RelatedSets.Has(r, id));
     /// <summary>Position in the document: creation order, where "older" decides.</summary>
     int Order(string id);
     /// <summary>Changes with every edit: what a derived value is cached against.</summary>
     long Revision { get; }
+}
+
+/// <summary>
+/// Whether a relationship relates an id, without walking its list each time: a storey of 20,000 elements asked
+/// for each of them was quadratic (a Fragments import of 20,650 items spent 88 s there). A relationship is
+/// immutable, so the set made for it once stays true.
+/// </summary>
+public static class RelatedSets
+{
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Relation, HashSet<string>> _sets = [];
+
+    public static bool Has(Relation r, string id)
+    {
+        if (r.Related.Count < 32) return r.Related.Contains(id);
+        return _sets.GetValue(r, x => [.. x.Related]).Contains(id);
+    }
 }
 
 public static class ModelViewExtensions

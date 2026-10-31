@@ -8,9 +8,9 @@ Everything that goes in or out is in the **File** menu.
 
 ![The File menu](shots/file-menu.webp)
 
-## IFC
+## IFC and Fragments
 
-**Export IFC…** writes the model as IFC. Every wall, floor, door and roof is a real IFC element with its layers, its type and its properties, so the file opens as a model in other BIM tools. Doors and windows say how they open: the hand of each leaf and sash, which way it swings, and the panels, the way IFC defines them, so other programs draw the same swings.
+**Export IFC or Fragments…** writes the model as IFC. Every wall, floor, door and roof is a real IFC element with its layers, its type and its properties, so the file opens as a model in other BIM tools. Doors and windows say how they open: the hand of each leaf and sash, which way it swings, and the panels, the way IFC defines them, so other programs draw the same swings.
 
 The export asks for the schema (**IFC4**, read everywhere, or **IFC4X3**), the detail (parts as elements of their own, or one body per element), the phase, and how the bodies are written. **Geometry** is a **faceted B-rep** (exact, what other programs expect most often) or **face sets**: the same faces in a much smaller file. **Simplify** writes fewer triangles where a body is a fine mesh, such as the ducts and pipes of another program's file, never further from it than the **tolerance** you type (2 mm to start with). Bodies Lapin builds itself (walls, floors, doors) keep their exact faces, and simplifying changes only the shape of a body, never its properties.
 
@@ -34,6 +34,16 @@ Lapin recognises the walls, floors, columns, beams, footings, doors and windows 
 
 The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each on its own level, with their outline, number, name, height, function, department and floor finish: see [Rooms](rooms.md#rooms-from-an-ifc-file). Everything an imported element had in the file (its property sets and quantities) is kept and shown under **IFC properties** in its properties. A reference leaves **Export IFC…** as it came in: with the same GlobalId, class and attributes (description, tag, predefined type), its property sets and quantities with every value typed as the file had it, and its type, material, ports, connections and system, each with its GlobalId. Bring only the MEP of a file and export it, and the new file carries it whole.
 
+**Import Fragments…** opens the same panel for a That Open `.frag` file: its elements by discipline and kind, its storeys, and **As one group**. A file exported from this very project brings nothing new when imported back into it: its elements are already here.
+
+![Import Fragments](shots/import-frag.webp)
+
+**Import Fragments…** brings a `.frag` file in: every item with geometry becomes a reference drawn from its body, in the class the file names, on the storey the file puts it (matched by name to yours, made when missing), with the file's attributes under **IFC properties**. Items with the same body (the same shape, placed in many places) share it. Importing the same file again updates what it brought before. Nothing is recognised into walls or floors: a `.frag` holds triangles.
+
+**Export IFC or Fragments…** writes the model as IFC or as Fragments, chosen as an import is: the elements by discipline and kind, the storeys, the phase, and only what the 3D view shows. IFC goes out in IFC4 or IFC4X3, a layered element's parts under it or one body each; Fragments from the project base point, the internal origin or the survey point.
+
+![Export IFC or Fragments](shots/export-exchange.webp)
+
 ## DXF and DWG
 
 **Import DXF…** brings a CAD drawing into the view in front, with its layers, hatches, texts and dimensions. It comes in as drafting you can snap to and edit. To use a DWG, first save it as DXF from your CAD program (AutoCAD, BricsCAD or DraftSight: **Save As → DXF**). PDF import is not available yet. Into a plan, **Placed: by the map's coordinates** lays a drawing in real coordinates (a cadastral plan in Stereo 70) where the map puts it (see [Site](site.md)).
@@ -44,7 +54,7 @@ The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each
 
 ## 3D models
 
-**Export 3D…** writes the model as surfaces for rendering, visualisation and augmented reality (AR):
+**Export 3D (glTF, USD, DAE)…** writes the model as surfaces for rendering, visualisation and augmented reality (AR):
 
 | Format | For |
 |---|---|
@@ -52,9 +62,6 @@ The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each
 | USDZ | Apple's AR Quick Look, Reality Composer, Omniverse. Images included. |
 | USDA | OpenUSD as text, one file. |
 | DAE | COLLADA, for SketchUp and older tools. |
-| Fragments | That Open Engine's `.frag`, for BIM web viewers built on it (That Open Components, Bubbles). One file; identical bodies stored once. |
-
-**Import Fragments…** brings a `.frag` file in: every item with geometry becomes a reference drawn from its body, in the class the file names, on the storey the file puts it (matched by name to yours, made when missing), with the file's attributes under **IFC properties**. Items with the same body (the same shape, placed in many places) share it. Importing the same file again updates what it brought before. Nothing is recognised into walls or floors: a `.frag` holds triangles.
 
 **Import mesh (OBJ, STL, glTF)…** brings in a mesh from another 3D program (OBJ, STL, glTF or GLB) as references on the active level. glTF says its unit and which way is up; for OBJ and STL Lapin asks. Studio's **Make Studio solid** makes a reference editable (see [Studio](studio.md)).
 

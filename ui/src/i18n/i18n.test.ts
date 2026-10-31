@@ -125,6 +125,7 @@ describe('the languages', () => {
     'Import chair.obj',
     'Imported chair.obj: 3 references, 1200 triangles. Select one and use Studio → Make Studio solid to edit it.',
     'Grouped 12 element(s).',
+    'Nothing new from house.frag: its 8 elements are already in this project (the file was exported from it). Import it into another project, or a new one.',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

@@ -8,9 +8,9 @@ Todo lo que entra o sale está en el menú **Archivo**.
 
 ![El menú Archivo](shots/file-menu.webp)
 
-## IFC
+## IFC y Fragments
 
-**Exportar IFC…** escribe el modelo como IFC. Cada muro, losa, puerta y cubierta es un elemento IFC real con sus capas, su tipo y sus propiedades, de modo que el archivo se abre como un modelo en otras herramientas BIM. Las puertas y ventanas indican cómo se abren: la mano de cada hoja, hacia dónde gira y los paneles, tal como los define IFC, para que otros programas dibujen las mismas aperturas.
+**Exportar IFC o Fragments…** escribe el modelo como IFC. Cada muro, losa, puerta y cubierta es un elemento IFC real con sus capas, su tipo y sus propiedades, de modo que el archivo se abre como un modelo en otras herramientas BIM. Las puertas y ventanas indican cómo se abren: la mano de cada hoja, hacia dónde gira y los paneles, tal como los define IFC, para que otros programas dibujen las mismas aperturas.
 
 La exportación pregunta el esquema (**IFC4**, que se lee en todas partes, o **IFC4X3**), el detalle (las piezas como elementos propios o un cuerpo por elemento), la fase y cómo se escriben los cuerpos. **Geometría** es **B-rep facetado** (exacto, lo que más a menudo esperan otros programas) o **conjuntos de caras**: las mismas caras en un archivo mucho más pequeño. **Simplificar** escribe menos triángulos donde un cuerpo es una malla fina, como los conductos y tuberías del archivo de otro programa, nunca más lejos de él que la **tolerancia** que escriba (2 mm al principio). Los cuerpos que construye Lapin (muros, losas, puertas) conservan sus caras exactas, y simplificar cambia solo la forma de un cuerpo, nunca sus propiedades.
 
@@ -34,6 +34,16 @@ Lapin reconoce los muros, losas, pilares, vigas, zapatas, puertas y ventanas y l
 
 Los espacios del archivo (de Revit, ArchiCAD y otros) entran como habitaciones de Lapin, cada una en su propio nivel, con su contorno, número, nombre, altura, función, departamento y acabado de suelo: consulte [Habitaciones y colores de habitación](rooms.md#habitaciones-desde-un-archivo-ifc). Todo lo que un elemento importado tenía en el archivo (sus conjuntos de propiedades y cantidades) se conserva y se muestra en **Propiedades IFC**, en sus propiedades. Una referencia sale de **Exportar IFC…** tal como entró: con el mismo GlobalId, la misma clase y los mismos atributos (descripción, etiqueta, tipo predefinido), sus conjuntos de propiedades y cantidades con cada valor del tipo que tenía en el archivo, y su tipo, material, puertos, conexiones y sistema, cada uno con su GlobalId. Si trae solo las instalaciones de un archivo y las exporta, el archivo nuevo las lleva enteras.
 
+**Importar Fragments…** abre el mismo panel para un archivo `.frag` de That Open: sus elementos por disciplina y tipo, sus plantas y **Como un solo grupo**. Un archivo exportado de este mismo proyecto no trae nada nuevo al importarlo de vuelta: sus elementos ya están aquí.
+
+![Importar Fragments](shots/import-frag.webp)
+
+**Importar Fragments…** trae un archivo `.frag`: cada elemento con geometría se convierte en una referencia dibujada a partir de su cuerpo, en la clase que indica el archivo, en la planta donde el archivo lo coloca (emparejada por nombre con las suyas, creada si falta), con los atributos del archivo en **Propiedades IFC**. Los elementos con el mismo cuerpo (la misma forma colocada en muchos sitios) lo comparten. Importar de nuevo el mismo archivo actualiza lo que trajo antes. Nada se reconoce como muro o losa: un `.frag` contiene triángulos.
+
+**Exportar IFC o Fragments…** escribe el modelo como IFC o como Fragments, elegido como una importación: los elementos por disciplina y tipo, las plantas, la fase y solo lo que muestra la vista 3D. El IFC sale en IFC4 o IFC4X3, con las partes de un elemento por capas bajo él o un cuerpo cada una; Fragments desde el punto base del proyecto, el origen interno o el punto topográfico.
+
+![Exportar IFC o Fragments](shots/export-exchange.webp)
+
 ## DXF y DWG
 
 **Importar DXF…** trae un dibujo CAD a la vista que tiene delante, con sus capas, sombreados, textos y cotas. Entra como dibujo que puede editar y al que se puede forzar el cursor. Para usar un DWG, guárdelo primero como DXF desde su programa CAD (AutoCAD, BricsCAD o DraftSight: **Save As → DXF**). La importación de PDF aún no está disponible. En una planta, **Colocado: por las coordenadas del mapa** sitúa un dibujo en coordenadas reales (un plano catastral en Stereo 70) donde lo pone el mapa (consulte [El emplazamiento y sus datos](site.md)).
@@ -44,7 +54,7 @@ Los espacios del archivo (de Revit, ArchiCAD y otros) entran como habitaciones d
 
 ## Modelos 3D
 
-**Exportar 3D…** escribe el modelo como superficies para renderizado, visualización y realidad aumentada (RA):
+**Exportar 3D (glTF, USD, DAE)…** escribe el modelo como superficies para renderizado, visualización y realidad aumentada (RA):
 
 | Formato | Para |
 |---|---|
@@ -52,9 +62,6 @@ Los espacios del archivo (de Revit, ArchiCAD y otros) entran como habitaciones d
 | USDZ | AR Quick Look de Apple, Reality Composer, Omniverse. Imágenes incluidas. |
 | USDA | OpenUSD como texto, un solo archivo. |
 | DAE | COLLADA, para SketchUp y herramientas más antiguas. |
-| Fragments | `.frag`, el formato de That Open Engine, para los visores BIM web construidos sobre él (That Open Components, Bubbles). Un solo archivo; los cuerpos idénticos se guardan una vez. |
-
-**Importar Fragments…** trae un archivo `.frag`: cada elemento con geometría se convierte en una referencia dibujada a partir de su cuerpo, en la clase que indica el archivo, en la planta donde el archivo lo coloca (emparejada por nombre con las suyas, creada si falta), con los atributos del archivo en **Propiedades IFC**. Los elementos con el mismo cuerpo (la misma forma colocada en muchos sitios) lo comparten. Importar de nuevo el mismo archivo actualiza lo que trajo antes. Nada se reconoce como muro o losa: un `.frag` contiene triángulos.
 
 **Importar malla (OBJ, STL, glTF)…** trae una malla de otro programa 3D (OBJ, STL, glTF o GLB) como referencias en la planta activa. glTF indica su unidad y qué eje va hacia arriba; para OBJ y STL, Lapin lo pregunta. **Convertir en sólido Studio** en Studio hace editable una referencia (consulte [Studio](studio.md)).
 
