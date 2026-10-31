@@ -62,7 +62,7 @@ public static class FragImport
         var reader = new Reader(session, model, name, o);
         // What the file places anew comes in as one group named after it (docs/groups.md).
         // Everything editable on request: the references made Studio solids where they can be.
-        // Recognised from their triangles where a module takes them (a wall with its openings, a slab, a column: decision 210),
+        // Recognised from their triangles where a module takes them (a wall with its openings, a slab, a column: decision 214),
         // and what stays a reference made editable on request.
         EditableReport? editable = null;
         MeshRecognitionReport? recognition = null;

@@ -170,7 +170,7 @@ public class StudioExportTests
             Assert.DoesNotContain(result.Notes, n => n.Contains("left out"));
             SameInModel(sc, g, "IFC " + geometry);
             // Back as references (their sketches are not in the file), or recognised from their triangles (a box's bottom, a
-            // slab: decision 210), typed, grouped as they were.
+            // slab: decision 214), typed, grouped as they were.
             foreach (var s in sc.Sources)
             {
                 var e = g.Model.Get(s.Id)!;

@@ -85,7 +85,7 @@ public static partial class IfcImport
         // Everything editable (the import's third way): what stays a reference after recognition made a Studio solid where it can be.
         EditableReport? editable = null;
         // And what recognition could not read from the file's representations tried again from its triangles (a wall whose
-        // openings are cut into its body, a slab given as a B-rep): decision 210.
+        // openings are cut into its body, a slab given as a B-rep): decision 214.
         MeshRecognitionReport? fromTriangles = null;
         void Apply(IEdit edit)
         {

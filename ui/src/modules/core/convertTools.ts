@@ -1,5 +1,5 @@
 /**
- * Convert to native (decision 210, docs/spec-ifc.md): the references selected (an imported element drawn from its
+ * Convert to native (decision 214, docs/spec-ifc.md): the references selected (an imported element drawn from its
  * triangles; a group selected being its members) made Lapin elements where a module recognises them from their
  * triangles — a wall with its doors and windows, a slab, a column — and the rest Studio solids, editable at once.
  */

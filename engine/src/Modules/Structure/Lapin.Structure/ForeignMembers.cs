@@ -98,7 +98,7 @@ public sealed class ForeignMembers : IIfcRecognizer
     }
 
     /// <summary>
-    /// A long rectangle: a strip foundation along its middle (decision 210). Its section stays the file's rectangle: a core
+    /// A long rectangle: a strip foundation along its middle (decision 214). Its section stays the file's rectangle: a core
     /// as wide as it on a footing of the same width, half its height each, the bottom where the file has it.
     /// </summary>
     string? StripFooting(IEdit edit, ForeignElement e, ShapePrism prism, (Vec2 Centre, double Width, double Depth, double RotationDeg) r, Entity storey, RecognitionContext ctx)

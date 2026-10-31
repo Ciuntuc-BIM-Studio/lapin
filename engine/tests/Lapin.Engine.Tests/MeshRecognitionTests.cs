@@ -11,7 +11,7 @@ using Lapin.Studio;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Recognition from triangles (decision 210): a Fragments file holds only triangles, yet its walls (with their doors
+/// Recognition from triangles (decision 214): a Fragments file holds only triangles, yet its walls (with their doors
 /// and windows), slabs and columns come back as Lapin elements, by the same recognisers as an IFC file's; what none
 /// takes stays the reference it was, in the file's group.
 /// </summary>
