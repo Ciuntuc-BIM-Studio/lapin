@@ -463,6 +463,7 @@ export const DE: Record<string, string> = {
   'Distribution port': 'Verteilungsanschluss', 'Building element part': 'Bauteilteil', 'Wall standard case': 'Wand',
   // The facade's dressings in the joinery configurator: shutters, grille, window box, canopy (reports #38, #39)
   'On the facade': 'An der Fassade', 'Shutters': 'Fensterläden', 'Louvred': 'Mit Lamellen', 'Planks': 'Aus Brettern', 'Leaves': 'Flügel', 'One leaf': 'Ein Flügel', 'Two leaves': 'Zwei Flügel', 'Shown open': 'Geöffnet dargestellt', 'Louvre pitch': 'Lamellenabstand', 'From the wall face': 'Von der Wandfläche', 'From the window\'s axis': 'Von der Fensterachse', 'Up or down': 'Nach oben oder unten', 'Safety grille': 'Fenstergitter', 'In the reveal': 'In der Laibung', 'On the interior face': 'An der Innenseite', 'Bars': 'Stäbe', 'Horizontal': 'Waagerecht', 'Vertical': 'Senkrecht', 'Both ways': 'In beide Richtungen', 'Bar size': 'Stabquerschnitt', 'Bar spacing': 'Stababstand', 'Frame width': 'Rahmenbreite', 'Past the opening': 'Über die Öffnung hinaus', 'Set back from the face': 'Von der Fläche zurückgesetzt', 'Window box': 'Blumenkasten', 'Below the opening': 'Unter der Öffnung', 'Canopy': 'Vordach', 'Above the head': 'Über dem Sturz',
+  'In the reveal, inside': 'In der Laibung, innen', 'In the reveal, outside': 'In der Laibung, außen',
   'Columns of panes': 'Flügelspalten', 'Rows of panes': 'Flügelreihen',
   'Panels · seen from inside': 'Flügel · von innen gesehen',
   // Labels the guide's translators found in English, and meanings told apart by context (`ctx|phrase`)

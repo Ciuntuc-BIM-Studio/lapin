@@ -43,7 +43,7 @@ Les dessins à droite montrent le type tel qu’il sera dessiné en élévation,
 Sous **Sur la façade**, un type de fenêtre peut avoir :
 
 - des **Volets** : à lames, pleins ou à planches, à un ou deux vantaux, représentés ouverts (rabattus contre le mur à côté de la fenêtre) ou fermés devant elle ;
-- une **Grille de défense** : dans le tableau, sur la façade ou sur la face intérieure, avec des barreaux horizontaux, verticaux ou dans les deux sens, leur section et leur espacement ;
+- une **Grille de défense** : dans le tableau côté intérieur (par défaut, là où se posent d’ordinaire les grilles de défense), dans le tableau côté extérieur, sur la façade ou sur la face intérieure, avec des barreaux horizontaux, verticaux ou dans les deux sens, leur section et leur espacement ;
 - une **Jardinière** sous la fenêtre ;
 - un **Auvent** au-dessus, avec sa saillie et sa pente.
 

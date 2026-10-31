@@ -86,6 +86,19 @@ public class WindowDressingTests
     }
 
     [Fact]
+    public void A_grille_goes_in_the_reveal_on_the_rooms_side_by_default_never_into_the_frame()
+    {
+        // Report #47: safety grilles are fixed inside, in the opening, seen from the room in front of the glass.
+        Assert.Equal("revealInside", new JoineryGrille().Side);
+        var (w, ext, inn, spec) = Window(new JoineryDetails(Grille: new JoineryGrille(true, Gap: 0.04)));
+        var b = Bounds(Part(Current, w, "grille")!);
+        Assert.Equal(3 - spec.Width / 2, b.Min.X, 6);
+        Assert.Equal(3 + spec.Width / 2, b.Max.X, 6);
+        Assert.Equal(inn - 0.04, b.Max.Y, 6);
+        Assert.True(b.Min.Y >= (ext + inn) / 2 - (spec.Frame.Offset - spec.Frame.Depth / 2) - 1e-9);
+    }
+
+    [Fact]
     public void A_window_box_hangs_under_the_window_and_a_canopy_over_it_both_off_the_face()
     {
         var (w, ext, _, spec) = Window(new JoineryDetails(

@@ -27,13 +27,14 @@ public sealed record JoineryShutters(
 
 /// <summary>
 /// A safety grille: bars across the opening, horizontal, vertical or both, in a flat-bar frame.
-/// <see cref="Side"/>: "outside" (fixed on the facade, <see cref="Gap"/> off the exterior face
-/// and <see cref="Overlap"/> past the opening each side), "reveal" (in the opening, set
-/// <see cref="Gap"/> back from the exterior face, never past the frame) or "inside" (on the
-/// interior face). <see cref="Bar"/>: the bars' section; <see cref="Spacing"/>: centre to centre.
+/// <see cref="Side"/>: "revealInside" (in the opening, set <see cref="Gap"/> back from the interior
+/// face, never into the frame: where safety grilles usually go, report #47), "reveal" (in the
+/// opening, set <see cref="Gap"/> back from the exterior face), "outside" (fixed on the facade,
+/// <see cref="Gap"/> off the exterior face and <see cref="Overlap"/> past the opening each side)
+/// or "inside" (on the interior wall face, past the opening likewise). <see cref="Bar"/>: the bars' section; <see cref="Spacing"/>: centre to centre.
 /// </summary>
 public sealed record JoineryGrille(
-    bool On = false, string Side = "reveal", string Pattern = "horizontal",
+    bool On = false, string Side = "revealInside", string Pattern = "horizontal",
     double Bar = 0.012, double Spacing = 0.1, double FrameWidth = 0.03,
     double Gap = 0.03, double Overlap = 0.05, double Along = 0, double Rise = 0,
     string? Material = null, string Color = "#2f2f2f");
@@ -63,14 +64,14 @@ public static class WindowDressings
     /// surround's face outside it when there is one, and the frame's exterior face. Dressings on
     /// the facade stand off <see cref="Facade"/>; one in the reveal is set back from <see cref="Out"/>.
     /// </summary>
-    public readonly record struct Faces(double Out, double In, double Facade, double FrameOut);
+    public readonly record struct Faces(double Out, double In, double Facade, double FrameOut, double FrameIn);
 
     /// <summary>The faces of a wall <paramref name="thickness"/> thick (its outermost layers' faces) for a spec.</summary>
     public static Faces Of(JoinerySpec s, double thickness)
     {
         var d = s.Details ?? new JoineryDetails();
         var surround = d.Surround is { On: true } sur ? Math.Max(0.005, sur.Projection) : 0;
-        return new Faces(thickness / 2, -thickness / 2, thickness / 2 + surround, s.Frame.Offset + s.Frame.Depth / 2);
+        return new Faces(thickness / 2, -thickness / 2, thickness / 2 + surround, s.Frame.Offset + s.Frame.Depth / 2, s.Frame.Offset - s.Frame.Depth / 2);
     }
 
     static JoineryBox B(string role, double x0, double x1, double y0, double y1, double z0, double z1) =>
@@ -158,7 +159,7 @@ public static class WindowDressings
             yield return B("shutters", a + stile, b - stile, ym - depth / 2, ym + depth / 2, z - pitch * 0.35, z + pitch * 0.35);
     }
 
-    /// <summary>The grille's frame and bars, in the reveal (inside the opening, short of the frame), on the facade or on the interior face.</summary>
+    /// <summary>The grille's frame and bars, in the reveal (inside the opening, on the room's or the street's side, short of the frame), on the facade or on the interior face.</summary>
     static List<JoineryBox> Grille(JoinerySpec s, JoineryGrille g, Faces f)
     {
         var o = new List<JoineryBox>();
@@ -175,6 +176,11 @@ public static class WindowDressings
             case "inside":
                 (x0, x1, z0, z1) = (-s.Width / 2 - g.Overlap, s.Width / 2 + g.Overlap, -g.Overlap, s.Height + g.Overlap);
                 y0 = f.In - Math.Max(0, g.Gap) - depth;
+                break;
+            case "revealInside":
+                // In the reveal on the room's side: the clear opening, set back from the interior face, never into the frame.
+                (x0, x1, z0, z1) = (-s.Width / 2, s.Width / 2, 0, s.Height);
+                y0 = Math.Min(f.FrameIn - 0.005 - depth, f.In + Math.Max(0, g.Gap));
                 break;
             default:
                 // In the reveal: the clear opening, set back from the exterior face, never into the frame.

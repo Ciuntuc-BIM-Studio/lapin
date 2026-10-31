@@ -43,7 +43,7 @@ Tegningerne til højre viser typen, som den vil blive tegnet i opstalt, plan og 
 Under **På facaden** kan en vinduestype have:
 
 - **Skodder**: med lameller, fyldte eller af brædder, med én eller to fløje, vist åbne (slået ind mod væggen ved siden af vinduet) eller lukkede for det;
-- et **Sikkerhedsgitter**: i lysningen, på facaden eller på indersiden, med vandrette eller lodrette tremmer eller begge dele, deres tykkelse og afstand;
+- et **Sikkerhedsgitter**: i lysningen indvendigt (standard, hvor sikkerhedsgitre normalt sidder), i lysningen udvendigt, på facaden eller på indersiden, med vandrette eller lodrette tremmer eller begge dele, deres tykkelse og afstand;
 - en **Blomsterkasse** under vinduet;
 - en **Baldakin** over det, med sit udhæng og sin hældning.
 

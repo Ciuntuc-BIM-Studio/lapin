@@ -43,7 +43,7 @@ Desenele din dreapta arată tipul așa cum va fi desenat în fațadă, plan și 
 La **Pe fațadă**, un tip de fereastră poate avea:
 
 - **Obloane**: cu lamele, pline sau din scânduri, cu unul sau două canate, arătate deschise (lipite de perete lângă fereastră) sau închise peste ea;
-- un **Grilaj de siguranță**: în glaf, pe fațadă sau pe fața interioară, cu bare orizontale, verticale sau în ambele direcții, cu grosimea și distanța lor;
+- un **Grilaj de siguranță**: în glaf la interior (implicit, unde se montează de obicei grilajele de siguranță), în glaf la exterior, pe fațadă sau pe fața interioară, cu bare orizontale, verticale sau în ambele direcții, cu grosimea și distanța lor;
 - o **Jardinieră** sub fereastră;
 - o **Copertină** deasupra, cu ieșirea și panta ei.
 

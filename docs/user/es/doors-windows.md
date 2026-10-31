@@ -43,7 +43,7 @@ Los dibujos de la derecha muestran el tipo tal como se dibujará en alzado, plan
 En **En la fachada**, un tipo de ventana puede tener:
 
 - **Contraventanas**: de lamas, ciegas o de tablas, de una o dos hojas, mostradas abiertas (plegadas contra el muro junto a la ventana) o cerradas sobre ella;
-- una **Reja de seguridad**: en el derrame, en la fachada o en la cara interior, con barrotes horizontales, verticales o en ambos sentidos, su sección y su separación;
+- una **Reja de seguridad**: en el derrame por dentro (por defecto, donde suelen ir las rejas de seguridad), en el derrame por fuera, en la fachada o en la cara interior, con barrotes horizontales, verticales o en ambos sentidos, su sección y su separación;
 - una **Jardinera** bajo la ventana;
 - una **Marquesina** encima, con su vuelo y su pendiente.
 

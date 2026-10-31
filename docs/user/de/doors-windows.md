@@ -43,7 +43,7 @@ Die Zeichnungen rechts zeigen den Typ so, wie er in Ansicht, Grundriss und Schni
 Unter **An der Fassade** kann ein Fenstertyp Folgendes haben:
 
 - **Fensterläden**: mit Lamellen, als Füllung oder aus Brettern, ein- oder zweiflügelig, geöffnet dargestellt (neben dem Fenster an die Wand geklappt) oder davor geschlossen;
-- ein **Fenstergitter**: in der Laibung, an der Fassade oder an der Innenseite, mit waagerechten oder senkrechten Stäben oder beidem, deren Querschnitt und Abstand;
+- ein **Fenstergitter**: in der Laibung innen (die Vorgabe, wo Fenstergitter meist sitzen), in der Laibung außen, an der Fassade oder an der Innenseite, mit waagerechten oder senkrechten Stäben oder beidem, deren Querschnitt und Abstand;
 - einen **Blumenkasten** unter dem Fenster;
 - ein **Vordach** darüber, mit seiner Auskragung und Neigung.
 

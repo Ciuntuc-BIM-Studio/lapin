@@ -43,7 +43,7 @@ The drawings on the right show the type as it will be drawn in elevation, plan a
 Under **On the facade**, a window type can have:
 
 - **Shutters**: louvred, panel or planks, one or two leaves, shown open (folded against the wall beside the window) or closed over it;
-- a **Safety grille**: in the reveal, on the facade or on the interior face, with horizontal or vertical bars or both, their size and spacing;
+- a **Safety grille**: in the reveal on the room's side (the default, where safety grilles usually go), in the reveal on the street's side, on the facade or on the interior face, with horizontal or vertical bars or both, their size and spacing;
 - a **Window box** under the window;
 - a **Canopy** over it, with its projection and slope.
 
