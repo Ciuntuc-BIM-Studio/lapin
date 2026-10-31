@@ -128,17 +128,12 @@ public static class RebarShapes
     /// <summary>The bend radius the bar is bent at: its own (a polyline's parameter) or the Eurocode's for its diameter.</summary>
     public static double RadiusOf(RebarSpec s) => s.BendRadius ?? (s.Shape == "polyline" && s.Params.TryGetValue("bendRadius", out var r) ? r : BendRadius(s.Diameter));
 
-    /// <summary>
-    /// The bar's nominal vertices in its own frame, hooks included as straight tails (a 180° hook is left to <see cref="Segments"/>).
-    /// <paramref name="drawn"/>: as the bar is drawn, where a stirrup's two hooks, which cross at its corner, stand a bar's diameter apart
-    /// (its start on the top leg moved in by d·√2); the schedule measures the plain rectangle.
-    /// </summary>
-    public static List<Vec2> Nominal(RebarSpec s, bool drawn = false)
+    /// <summary>The bar's nominal vertices in its own frame, hooks included as straight tails (a 180° hook is left to <see cref="Segments"/>; a stirrup's closure to <see cref="Stirrup"/>).</summary>
+    public static List<Vec2> Nominal(RebarSpec s)
     {
         var def = Def(s.Shape);
         var pts = new List<Vec2>(def.FreeVertices && s.Vertices is { Count: >= 2 } ? s.Vertices : def.Vertices(s.Params));
         if (pts.Count < 2) return pts;
-        if (drawn && s.Shape == "stirrup") pts[0] = pts[0] + new Vec2(s.Diameter * Math.Sqrt(2), 0);
         var (start, end) = HooksOf(s);
         if (start is { Angle: < HalfTurn } h0 && h0.Length > 1e-9)
         {
@@ -178,13 +173,56 @@ public static class RebarShapes
     /// <summary>The real geometry in the bar's own frame: the corners bent at the radius, the 180° hooks as half turns with their tails.</summary>
     public static List<Seg> Segments(RebarSpec s)
     {
-        var pts = Nominal(s, drawn: true);
+        if (s.Shape == "stirrup") return Stirrup(s);
+        var pts = Nominal(s);
         var r = RadiusOf(s);
         if (pts.Count < 2) return [];
         var segs = Fillet(pts, r);
         var (start, end) = HooksOf(s);
         if (end is { Angle: >= HalfTurn } h1) segs.AddRange(HalfTurnHook(pts[^1], (pts[^1] - pts[^2]).Normalized(), r, h1));
         if (start is { Angle: >= HalfTurn } h0) segs.InsertRange(0, HalfTurnHook(pts[0], (pts[0] - pts[1]).Normalized(), r, h0 with { Flip = !h0.Flip }).AsEnumerable().Reverse());
+        return segs;
+    }
+
+    /// <summary>
+    /// A closed stirrup as it is bent: round its four corners at the bend radius; at the top left corner its two ends
+    /// overlap, each coming along its leg, wrapping the corner by 135° and leaving with its tail at 45° into the inside
+    /// (10Ø), the tails parallel, a mandrel apart. Without hooks (angle 0 set on the bar), a closed rounded rectangle.
+    /// </summary>
+    public static List<Seg> Stirrup(RebarSpec s)
+    {
+        var (a, b) = (s["a"], s["b"]);
+        var r = Math.Min(RadiusOf(s), Math.Min(a, b) / 2 - 1e-6);
+        var (start, end) = HooksOf(s);
+        var segs = new List<Seg>();
+        var c = new Vec2(r, b - r);
+        var tail = new Vec2(1, -1) * (1 / Math.Sqrt(2));
+        var hooked = start != null || end != null;
+        var lenA = start?.Length ?? end?.Length ?? 0;
+        var lenB = end?.Length ?? start?.Length ?? 0;
+        var a45 = Math.PI / 4;
+        if (hooked)
+        {
+            // End A: its tail in from the inside to the corner's arc, the arc on round the corner, down the left leg.
+            var tA = c + new Vec2(Math.Cos(a45), Math.Sin(a45)) * r;
+            segs.Add(new SegLine(tA + tail * lenA, tA));
+            segs.Add(new SegArc(c, r, a45, 3 * a45));
+        }
+        else segs.Add(new SegArc(c, r, Math.PI / 2, Math.PI / 2));
+        segs.Add(new SegLine(new Vec2(0, b - r), new Vec2(0, r)));
+        segs.Add(new SegArc(new Vec2(r, r), r, Math.PI, Math.PI / 2));
+        segs.Add(new SegLine(new Vec2(r, 0), new Vec2(a - r, 0)));
+        segs.Add(new SegArc(new Vec2(a - r, r), r, 1.5 * Math.PI, Math.PI / 2));
+        segs.Add(new SegLine(new Vec2(a, r), new Vec2(a, b - r)));
+        segs.Add(new SegArc(new Vec2(a - r, b - r), r, 0, Math.PI / 2));
+        segs.Add(new SegLine(new Vec2(a - r, b), new Vec2(r, b)));
+        if (hooked)
+        {
+            // End B: along the top leg to the corner, round it by 135°, its tail out beside the other.
+            segs.Add(new SegArc(c, r, Math.PI / 2, 3 * a45));
+            var tB = c + new Vec2(Math.Cos(5 * a45), Math.Sin(5 * a45)) * r;
+            segs.Add(new SegLine(tB, tB + tail * lenB));
+        }
         return segs;
     }
 

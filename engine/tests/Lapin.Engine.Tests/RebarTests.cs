@@ -58,10 +58,17 @@ public class RebarTests
         var s = new RebarSpec("stirrup", new Dictionary<string, double> { ["a"] = 0.4, ["b"] = 0.6 }, null, 0.008, null, null);
         Assert.Equal(2.16, RebarShapes.Length(s), 9);
         var segs = RebarShapes.Segments(s);
-        // Three corners and the two hooks' bends (the fourth corner is where the hooks meet), all at r = 16 mm; the real length is shorter than the nominal.
+        // Three corners and, at the fourth, each end's 135° wrap round it, all at r = 16 mm; the two tails parallel at 45° into the inside, a mandrel (2r) apart.
         Assert.Equal(5, segs.Count(x => x is SegArc));
         Assert.All(segs.OfType<SegArc>(), a => Assert.Equal(0.016, a.R, 9));
-        Assert.True(RebarShapes.TrueLength(s) < RebarShapes.Length(s));
+        Assert.Equal(2, segs.OfType<SegArc>().Count(a => Math.Abs(Math.Abs(a.Sweep) - 3 * Math.PI / 4) < 1e-9));
+        var tails = new[] { (SegLine)segs[0], (SegLine)segs[^1] };
+        Assert.All(tails, t => Assert.Equal(0.08, t.Length, 9));
+        Assert.All(tails, t => Assert.Equal(-Math.PI / 4, Math.Atan2(Math.Abs(t.B.Y - t.A.Y) * -1, Math.Abs(t.B.X - t.A.X)), 9));
+        var n = new Vec2(1, 1) * (1 / Math.Sqrt(2));
+        Assert.Equal(0.032, Math.Abs(Vec2.Dot(tails[0].A - tails[1].A, n)), 9);
+        // Wrapping the corner twice makes the bar a little longer than its nominal measure.
+        Assert.Equal(2.183, RebarShapes.TrueLength(s), 3);
         // Both tails run into the inside of the stirrup, towards its bottom right.
         var nominal = RebarShapes.Nominal(s);
         Assert.Equal(7, nominal.Count);

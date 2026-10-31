@@ -147,8 +147,9 @@ public static class TypeStirrups
                 if (Enumerable.Range(0, 4).All(i => (pts[(i + 1) % 4] - pts[i]).Length > 1e-6) && Math.Abs(Polygon2.SignedArea(pts)) > 1e-8)
                 {
                     static long K(double x) => (long)Math.Round(x * 1e5);
+                    // From the bottom left corner, x along the bottom, y up: the shape's hooked corner (its top left) comes top left.
                     var lows = Enumerable.Range(0, 4).OrderBy(i => pts[i].Y).Take(2).ToList();
-                    var i0 = pts[lows[0]].X >= pts[lows[1]].X ? lows[0] : lows[1];
+                    var i0 = pts[lows[0]].X <= pts[lows[1]].X ? lows[0] : lows[1];
                     var q0 = pts[i0];
                     var (n1, n2) = (pts[(i0 + 1) % 4], pts[(i0 + 3) % 4]);
                     var (left, up) = Math.Abs(n1.Y - q0.Y) <= Math.Abs(n2.Y - q0.Y) ? (n1, n2) : (n2, n1);
