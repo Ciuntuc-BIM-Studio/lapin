@@ -16,7 +16,7 @@ import { levelText } from './stairPlacement';
 export interface StairCheck { key: string; label: string; value: number; min: number | null; max: number | null; ok: boolean }
 export interface StairNumbers {
   risers: number; riserHeight: number; tread: number; step: number; width: number; height: number; landing: number; flights: number[]; winders: number; run: number; ok: boolean;
-  checks: StairCheck[]; outlines: { kind: string; points: number[]; risers?: number }[]; risersLines: number[][]; profile: number[]; top: number[]; predefinedType: string; shape?: string;
+  checks: StairCheck[]; outlines: { kind: string; points: number[]; risers?: number }[]; risersLines: number[][]; profile: number[]; top: number[]; predefinedType: string; shape?: string; sweep?: number | null;
   opening?: string | null; topStorey?: string | null; ownRise?: number | null; fromLevel?: number; toLevel?: number;
 }
 
@@ -88,8 +88,16 @@ export function StairSection({ node }: { node: NodeDto }) {
         <dd><input className="num" type="number" min={1} max={60} value={num('risers') ?? ''} placeholder={n ? String(n.risers) : ''} onChange={(e) => set({ risers: e.target.value === '' ? null : Number(e.target.value) })} /> <span className="muted small">{n ? `${n.flights.join(' + ')}${n.winders ? ` + ${n.winders} winders` : ''}` : ''}</span></dd>
         <dt>Riser</dt><dd><MmInput value={num('riserHeight')} placeholder={n ? String(mm(n.riserHeight)) : ''} onCommit={(v) => set({ riserHeight: v })} /> <span className="muted">mm</span></dd>
         <dt>Tread</dt><dd><MmInput value={num('tread')} placeholder={n ? String(mm(n.tread)) : ''} onCommit={(v) => set({ tread: v })} /> <span className="muted">mm</span></dd>
-        <dt>Landing length</dt><dd><MmInput value={num('landing')} placeholder={n ? String(mm(n.landing)) : ''} onCommit={(v) => set({ landing: v })} /> <span className="muted">mm</span></dd>
+        {n?.sweep == null && <><dt>Landing length</dt><dd><MmInput value={num('landing')} placeholder={n ? String(mm(n.landing)) : ''} onCommit={(v) => set({ landing: v })} /> <span className="muted">mm</span></dd></>}
+        {n?.sweep != null && <><dt>Turns through</dt>
+          <dd><input className="num" type="number" step={5} data-field="sweep" value={num('sweep') ?? ''} placeholder={String(Math.round(n.sweep))} onChange={(e) => set({ sweep: e.target.value === '' ? null : Number(e.target.value) })} /> <span className="muted">°</span></dd></>}
         {n && <><dt>Run in plan</dt><dd><span className="num">{fmtMm(n.run)}</span></dd></>}
+      </dl>
+      <dl className="fields">
+        <dt>Railing</dt>
+        <dd><select data-field="railing-sides" value={(node.props.railingSides as string | undefined) ?? ''} onChange={(e) => set({ railingSides: e.target.value === '' ? null : e.target.value })}>
+          <option value="">As the type</option><option value="none">None</option><option value="left">Left</option><option value="right">Right</option><option value="both">Both sides</option>
+        </select></dd>
       </dl>
       {n && <><p className="eyebrow">Checks</p><ChecksList checks={n.checks} /></>}
       <label className="row small">

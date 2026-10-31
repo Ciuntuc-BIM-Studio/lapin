@@ -18,6 +18,26 @@ Seleccione la escalera para modificarla en el panel de propiedades:
 
 Una escalera pide a la losa superior un hueco sobre sí misma. Desmarque **Hueco en la losa superior** si la losa debe quedar entera.
 
+## Formas de escalera y tipos ya hechos
+
+En **Arquitectura → Tipos de escalera**, la pestaña **Forma** ofrece: **Recta**, **Recta con descansillo**, **En L** y **En U** (cada una con descansillo o con **peldaños compensados**; una U sin ojo es una escalera de ida y vuelta), **De caracol** (alrededor de un mástil, con su **Radio del mástil**), **Curva** (con su **Radio interior**) e **Imperial (bifurcada)**: un tramo central hasta un descansillo y luego dos tramos de vuelta, uno a cada lado. En una escalera de caracol o curva, **Gira (°)** fija cuánto gira; vacío, deciden las tabicas y la huella, e indicado, la huella sale de él. Cada escalera también puede cambiarlo en sus propiedades.
+
+La biblioteca añade al proyecto tipos ya hechos: escalera de ida y vuelta, escalera compensada, de caracol, curva, volada e imperial.
+
+En la pestaña **Construcción**, **Tipo de construcción** elige losa bajo los peldaños, peldaños macizos sobre el terreno, **Peldaños volados (flotantes)** (cada peldaño una placa empotrada en el muro) o **Peldaños sobre zancas**.
+
+La **Barandilla** tiene su **Diseño**: **Montantes y pasamanos**, **Balaustres** (como mucho a la **Separación de balaustres**), **Paneles de vidrio**, **Cables** o un **Antepecho macizo**; un **Pasamanos** cuadrado o redondo, su altura, el **Retranqueo del borde**, cuánto **Se prolonga más allá de los extremos** y su color. En el panel de propiedades, **Barandilla** la pone en otros lados que el tipo, para una sola escalera.
+
+![El tipo de la escalera de caracol, con los peldaños numerados](shots/stair-spiral.webp)
+
+### Peldaños numerados
+
+En **En planta**, en la pestaña **Forma**: **Numerar los peldaños** escribe el número de cada peldaño en un círculo, desde la primera tabica; **Rótulo** escribe las tabicas, la contrahuella y la huella, y el ancho junto al arranque; **«UP» al pie de la flecha** marca dónde empieza. Las plantas y los planos los muestran.
+
+![Peldaños numerados en planta, una escalera imperial y una volada](shots/stair-numbers-plan.webp)
+
+![Una escalera de caracol, una imperial y una volada en 3D](shots/stair-shapes-3d.webp)
+
 ## Escalones de entrada (un porche)
 
 Los escalones que suben a una puerta de entrada tienen un desnivel propio: desde el terreno, unos escalones por debajo de la planta baja, hasta ±0.00. Lapin tiene un tipo de escalera listo para ellos, **Escalones de entrada**: 2 m de ancho, tres contrahuellas de 150 mm, de hormigón macizo vertido sobre el terreno, sin barandilla.

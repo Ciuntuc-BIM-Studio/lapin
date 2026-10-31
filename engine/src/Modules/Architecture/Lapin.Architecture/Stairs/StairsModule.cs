@@ -28,6 +28,8 @@ public static class StairsModule
             new("riserHeight", "Riser (fixed)", "length", Min: 0.1, Max: 0.25),
             new("tread", "Tread (fixed)", "length", Min: 0.2, Max: 0.5),
             new("landing", "Landing (fixed)", "length", Min: 0.3, Max: 5),
+            new("sweep", "Turns through (°)", "angle", Min: 10, Max: 1440),
+            new("railingSides", "Railing", "choice", Choices: ["none", "left", "right", "both"]),
             new("rotation", "Rotation (°)", "angle", Min: -360, Max: 360),
             new("noOpening", "No opening in the floor above", "bool"),
         ], "#c9b79c"));
@@ -50,6 +52,7 @@ public static class StairsModule
             ["shapes"] = new JsonArray(StairSpec.Shapes.Select(x => (JsonNode)x).ToArray()),
             ["turns"] = new JsonArray(StairSpec.Turns.Select(x => (JsonNode)x).ToArray()),
             ["sides"] = new JsonArray(StairSpec.Sides.Select(x => (JsonNode)x).ToArray()),
+            ["railingStyles"] = new JsonArray(StairSpec.RailingStyles.Select(x => (JsonNode)x).ToArray()),
         });
 
         r.Command("createStairType", "New stair type", (ctx, a) =>
@@ -110,7 +113,7 @@ public static class StairsModule
                 ["at"] = new JsonArray(at.X, at.Y), ["rotation"] = rotation ?? 0, ["turn"] = (string?)a["turn"] == "right" ? "right" : "left",
                 ["baseOffset"] = 0.0, ["topOffset"] = 0.0,
             };
-            foreach (var k in new[] { "width", "risers", "riserHeight", "tread", "landing", "height", "rise", "topOffset" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
+            foreach (var k in new[] { "width", "risers", "riserHeight", "tread", "landing", "height", "rise", "topOffset", "sweep" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
             if ((string?)a["topStoreyId"] is { } top) attrs["topStoreyId"] = Spatial.Require(ctx.Model, top, IfcClass.BuildingStorey).Id;
             var spec = StairSpec.From(type.Attrs["spec"]) ?? StairSpec.Default();
             var ownRise = Json.Number(a["rise"]) is { } ar && ar > 0 ? ar : spec.Rise;
@@ -129,8 +132,10 @@ public static class StairsModule
             var stair = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Stair);
             var attrs = stair.CloneAttrs();
             var riseBefore = StairBuilder.OwnRise(ctx.Model, stair);
-            foreach (var k in new[] { "width", "baseOffset", "topOffset", "risers", "riserHeight", "tread", "landing", "height", "rotation", "rise" })
+            foreach (var k in new[] { "width", "baseOffset", "topOffset", "risers", "riserHeight", "tread", "landing", "height", "rotation", "rise", "sweep" })
                 if (a.ContainsKey(k)) { if (Json.Number(a[k]) is { } v) attrs[k] = v; else attrs.Remove(k); }
+            // The railing's sides for this stair alone (null: the type's).
+            if (a.ContainsKey("railingSides")) { if ((string?)a["railingSides"] is { } rs && StairSpec.Sides.Contains(rs)) attrs["railingSides"] = rs; else attrs.Remove("railingSides"); }
             // A rise of its own changed (and no base offset with it): the top stays where it was, at the porch or the door, and the foot moves.
             if (a.ContainsKey("rise") && !a.ContainsKey("baseOffset") && riseBefore is { } before && Json.Number(a["rise"]) is { } after && after > 0)
                 attrs["baseOffset"] = stair.Num("baseOffset") + before - Math.Max(after, 0.05);
@@ -242,13 +247,14 @@ public static class StairsModule
         foreach (var fl in r.Flights)
             for (var i = 1; i <= fl.Risers; i++)
             {
-                var l = fl.Left * (r.Width / 2);
+                var l = fl.Left * (r.WidthOf(fl) / 2);
                 var u = (i - 1) * r.Tread;
                 risers.Add((JsonNode)Pts([place.World(fl.Start + fl.Dir * u - l), place.World(fl.Start + fl.Dir * u + l)]));
             }
         // The first flight's profile (u along, z up), finished surfaces.
         var profile = new JsonArray();
-        var f0 = r.Flights[0];
+        // A spiral's or curved stair's profile is unrolled along its walking line.
+        var f0 = r.Flights.Count > 0 ? r.Flights[0] : new Flight(r.Risers, new Vec2(0, 0), new Vec2(1, 0), 0);
         for (var i = 1; i <= f0.Risers; i++) { profile.Add((JsonNode)((i - 1) * r.Tread)); profile.Add((JsonNode)(i * r.RiserHeight)); if (i < f0.Risers) { profile.Add((JsonNode)(i * r.Tread)); profile.Add((JsonNode)(i * r.RiserHeight)); } }
         var checks = new JsonArray(r.Checks.Select(c => (JsonNode)new JsonObject { ["key"] = c.Key, ["label"] = c.Label, ["value"] = c.Value, ["min"] = c.Min, ["max"] = c.Max, ["ok"] = c.Ok }).ToArray());
         var top = place.World(r.Top.At);
@@ -256,7 +262,9 @@ public static class StairsModule
         {
             ["risers"] = r.Risers, ["riserHeight"] = r.RiserHeight, ["tread"] = r.Tread, ["step"] = r.Step, ["width"] = r.Width, ["height"] = r.Height,
             ["landing"] = r.LandingLength, ["flights"] = new JsonArray(r.Flights.Select(f => (JsonNode)f.Risers).ToArray()), ["winders"] = r.Winders.Count,
-            ["run"] = r.Flights.Sum(f => (f.Risers - 1) * r.Tread), ["ok"] = r.Ok, ["checks"] = checks, ["outlines"] = outlines, ["risersLines"] = risers,
+            ["run"] = r.Flights.Sum(f => (f.Risers - 1) * r.Tread) + (r.Arc?.Steps ?? 0) * r.Tread,
+            ["sweep"] = r.Arc is { } arc ? Math.Abs(arc.Step * arc.Steps) * 180 / Math.PI : null,
+            ["numbers"] = new JsonArray(StairMarks.StepCentres(r).Select(x => { var p = place.World(x.At); return (JsonNode)new JsonArray(p.X, p.Y, x.Number); }).ToArray()), ["ok"] = r.Ok, ["checks"] = checks, ["outlines"] = outlines, ["risersLines"] = risers,
             ["profile"] = profile, ["top"] = new JsonArray(top.X, top.Y), ["predefinedType"] = spec.PredefinedType, ["shape"] = spec.Shape,
         };
     }

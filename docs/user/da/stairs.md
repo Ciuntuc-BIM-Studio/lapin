@@ -18,6 +18,26 @@ Markér trappen for at ændre den i egenskabspanelet:
 
 En trappe beder dækket ovenover om en åbning over sig selv. Fjern fluebenet ved **Åbning i dækket ovenover**, hvis dækket skal forblive helt.
 
+## Trappeformer og færdige typer
+
+I **Arkitektur → Trappetyper** tilbyder fanen **Form**: **Lige**, **Lige med repos**, **L-form** og **U-form** (hver med repos eller med **spiraltrin**; en U uden lysning er en trappe med vending), **Spiraltrappe** (om en spindel, med dens **Spindelradius**), **Buet** (med dens **Indre radius**) og **Delt (to arme)**: et hovedløb op ad midten til en repos, derefter to løb tilbage på hver side. For en spiral- eller buet trappe angiver **Drejer (°)**, hvor langt den drejer; tomt bestemmer stigninger og grund, og angivet følger grunden heraf. Hver trappe kan også ændre det i sine egenskaber.
+
+Biblioteket tilføjer færdige typer til projektet: trappe med vending, trappe med spiraltrin, spiraltrappe, buet trappe, frithængende trappe og delt trappe.
+
+På fanen **Konstruktion** vælger **Bygget som** en trappeplade, massive trin på jorden, **Frithængende trin (svævende)** (hvert trin en plade fastgjort i væggen) eller **Trin på vanger**.
+
+**Gelænderet** har sin **Udformning**: **Stolper og håndliste**, **Balustre** (højst **Afstand mellem balustre** fra hinanden), **Glaspaneler**, **Wirer** eller et **Massivt værn**; en firkantet eller rund **Håndliste**, dens højde, **Ind fra kanten**, hvor langt den **Fortsætter forbi enderne**, og dens farve. I egenskabspanelet sætter **Gelænder** det på andre sider end typen for én trappe.
+
+![Spiraltrappens type med nummererede trin](shots/stair-spiral.webp)
+
+### Nummererede trin
+
+Under **I plan** på fanen **Form**: **Nummerér trinene** skriver hvert trins nummer i en cirkel fra første stigning; **Mærke** skriver stigningerne, stigning og grund og bredden ved foden; **„UP“ ved pilens fod** viser, hvor den begynder. Planer og tegninger viser dem.
+
+![Nummererede trin i plan, en delt og en frithængende trappe](shots/stair-numbers-plan.webp)
+
+![En spiral-, en delt og en frithængende trappe i 3D](shots/stair-shapes-3d.webp)
+
 ## Indgangstrin (en trappeafsats)
 
 Trinene op til en hoveddør har en egen stigning: fra terrænet, nogle trin under stueetagen, op til ±0.00. Lapin har en færdig trappetype til dem, **Indgangstrin**: 2 m bred, tre stigninger på 150 mm, massiv beton støbt på terræn, uden gelænder.

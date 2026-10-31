@@ -61,9 +61,12 @@ public class StairTests
         Assert.Equal(1.0, u.Flights[1].Start.Y, 9);                    // one width to the left
         var l = StairSolver.Resolve(StairSpec.Default() with { Shape = "l", Turn = "winders", Winders = 3 }, 3.0, turnLeft: false);
         Assert.Equal(3, l.Winders.Count);
-        Assert.Equal([8, 7], l.Flights.Select(x => x.Risers));
+        // The first flight's last riser lands on the first winder (no double riser where they meet), so the flights keep one riser more.
+        Assert.Equal([8, 8], l.Flights.Select(x => x.Risers));
         Assert.Equal(-1, l.Flights[1].Dir.Y, 9);                       // a right turn climbs on towards -Y
-        Assert.Equal(18, l.Flights.Sum(x => x.Risers) + l.Winders.Count);
+        Assert.Equal(18, l.Flights.Sum(x => x.Risers) + l.Winders.Count - 1);
+        Assert.Equal(l.Flights[0].Risers * l.RiserHeight, l.Winders[0].Z, 9);
+        Assert.Equal(l.Flights[1].Z0, l.Winders[^1].Z, 9);
         Assert.All(l.Winders, w => Assert.True(w.Outline.Length >= 3));
         var sl = StairSolver.Resolve(StairSpec.Default() with { Shape = "straight-landing" }, 3.0, new StairInputs(Landing: 1.5));
         Assert.Equal(1.5, sl.LandingLength, 9);

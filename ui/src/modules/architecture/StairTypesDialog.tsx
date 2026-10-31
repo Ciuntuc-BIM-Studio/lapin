@@ -20,15 +20,20 @@ interface Spec {
   rules: Rules;
   construction: { kind: string; waist: number; landingThickness: number; concrete: string; landingBeamWidth?: number | null; landingBeamDepth?: number | null };
   finish: { treadThickness: number; treadMaterial: string; nosing: number };
-  railing: { sides: string; height: number; barSize: number; postSize: number; postSpacing: number };
+  railing: { sides: string; height: number; barSize: number; postSize: number; postSpacing: number; style?: string; profile?: string; balusterSpacing?: number; inset?: number; extension?: number; color?: string | null };
   slope: number;
   /** A rise of its own (entrance steps); null: up to the storey above. */
   rise?: number | null;
+  /** A spiral's or curved stair's inner radius, the degrees it turns through (null: as the risers and tread make it), a split stair's side flights' width. */
+  innerRadius?: number; sweep?: number | null; sideWidth?: number | null;
+  /** What a plan writes on it (report #46). */
+  symbols?: { numbers: boolean; label: boolean; up: boolean } | null;
 }
-interface Defaults { spec: Spec; rules: Record<string, Rules>; shapes: string[]; turns: string[]; sides: string[]; constructions?: string[]; library?: { key: string; spec: Spec }[] }
+interface Defaults { spec: Spec; rules: Record<string, Rules>; shapes: string[]; turns: string[]; sides: string[]; constructions?: string[]; railingStyles?: string[]; library?: { key: string; spec: Spec }[] }
 
-const SHAPES: Record<string, string> = { straight: 'Straight', 'straight-landing': 'Straight with landing', l: 'L shape', u: 'U shape' };
-const CONSTRUCTIONS: Record<string, string> = { rc: 'Waist slab under the steps', solid: 'Solid, cast on the ground' };
+const SHAPES: Record<string, string> = { straight: 'Straight', 'straight-landing': 'Straight with landing', l: 'L shape', u: 'U shape (dog-leg with no gap)', spiral: 'Spiral', curved: 'Curved', split: 'Split (bifurcated)' };
+const CONSTRUCTIONS: Record<string, string> = { rc: 'Waist slab under the steps', solid: 'Solid, cast on the ground', treads: 'Open treads (cantilevered, floating)', stringers: 'Treads on stringers' };
+const RAILINGS: Record<string, string> = { bar: 'Posts and a handrail', balusters: 'Balusters', glass: 'Glass panels', cable: 'Cables', panel: 'Solid balustrade' };
 
 function Mm({ label, value, onChange, step = 5 }: { label: string; value: number; onChange: (m: number) => void; step?: number }) {
   return (
@@ -146,10 +151,17 @@ export function StairTypesDialog() {
                   </label>
                   {spec.turn === 'winders' && <label className="field-line"><span className="eyebrow">Winders per quarter turn</span><input type="number" min={1} max={6} value={spec.winders} onChange={(e) => set({ winders: Number(e.target.value) || 3 })} /></label>}
                 </>}
-                {spec.shape === 'u' && <Mm label="Gap between flights" value={spec.gap} onChange={(v) => set({ gap: Math.max(0, v) })} />}
-                <Mm label="Width" value={spec.width} onChange={(v) => set({ width: Math.max(0.5, v) })} />
-                {spec.shape !== 'straight' && <Mm label="Landing length" value={spec.landingLength} onChange={(v) => set({ landingLength: Math.max(0, v) })} />}
-                {spec.shape !== 'straight' && spec.landingLength === 0 && <p className="muted small">Landing length 0: as the width.</p>}
+                {(spec.shape === 'u' || spec.shape === 'split') && <Mm label="Gap between flights" value={spec.gap} onChange={(v) => set({ gap: Math.max(0, v) })} />}
+                <Mm label={spec.shape === 'split' ? 'Width of the main flight' : 'Width'} value={spec.width} onChange={(v) => set({ width: Math.max(0.5, v) })} />
+                {spec.shape === 'split' && <Mm label="Width of the side flights" value={spec.sideWidth ?? Math.max(spec.rules.minWidth, Math.round(spec.width * 0.6 / 0.05) * 0.05)} onChange={(v) => set({ sideWidth: Math.max(0.5, v) })} />}
+                {(spec.shape === 'spiral' || spec.shape === 'curved') && <>
+                  <Mm label={spec.shape === 'spiral' ? 'Pole radius' : 'Inner radius'} value={spec.innerRadius ?? 0.1} onChange={(v) => set({ innerRadius: Math.max(0.03, v) })} />
+                  <label className="field-line"><span className="eyebrow">Turns through (°)</span>
+                    <input type="number" data-field="sweep" step={5} placeholder="as the tread makes it" value={spec.sweep ?? ''} onChange={(e) => { const n = Number(e.target.value); set({ sweep: e.target.value === '' || !(n > 0) ? null : n }); }} /></label>
+                  <p className="muted small">Empty: as the risers and the tread make it. Given: the tread follows from it.</p>
+                </>}
+                {spec.shape !== 'straight' && spec.shape !== 'spiral' && spec.shape !== 'curved' && <Mm label="Landing length" value={spec.landingLength} onChange={(v) => set({ landingLength: Math.max(0, v) })} />}
+                {spec.shape !== 'straight' && spec.shape !== 'spiral' && spec.shape !== 'curved' && spec.landingLength === 0 && <p className="muted small">Landing length 0: as the width.</p>}
                 <label className="row small">
                   <input type="checkbox" checked={spec.rise != null} onChange={(e) => set({ rise: e.target.checked ? 0.45 : null })} />
                   A rise of its own (entrance steps), not up to the storey above
@@ -158,6 +170,14 @@ export function StairTypesDialog() {
                   <Mm label="Rise" value={spec.rise} onChange={(v) => set({ rise: Math.max(0.05, v) })} step={10} />
                   <p className="muted small">Placed, the steps end at their storey's level and start the rise below it.</p>
                 </>}
+                <p className="eyebrow">In plan</p>
+                {(['numbers', 'label', 'up'] as const).map((k) => (
+                  <label key={k} className="row small">
+                    <input type="checkbox" data-field={`symbols-${k}`} checked={(spec.symbols ?? { numbers: false, label: false, up: true })[k]}
+                      onChange={(e) => set({ symbols: { ...(spec.symbols ?? { numbers: false, label: false, up: true }), [k]: e.target.checked } })} />
+                    {k === 'numbers' ? 'Number the steps' : k === 'label' ? 'Label: risers, riser and tread, width' : '"UP" at the foot of the arrow'}
+                  </label>
+                ))}
               </>}
               {tab === 'rules' && <>
                 <label className="field-line"><span className="eyebrow">Rule set</span>
@@ -188,13 +208,13 @@ export function StairTypesDialog() {
                 <Mm label="Headroom" value={spec.rules.headroom} onChange={(v) => set({ rules: { ...spec.rules, headroom: v } })} />
               </>}
               {tab === 'construction' && <>
-                <p className="eyebrow">Reinforced concrete, monolithic</p>
+                <p className="eyebrow">{spec.construction.kind === 'treads' || spec.construction.kind === 'stringers' ? 'Open treads' : 'Reinforced concrete, monolithic'}</p>
                 <label className="field-line"><span className="eyebrow">Built as</span>
                   <select value={spec.construction.kind} onChange={(e) => set({ construction: { ...spec.construction, kind: e.target.value } })}>
                     {(defaults.constructions ?? ['rc']).map((k) => <option key={k} value={k}>{CONSTRUCTIONS[k] ?? k}</option>)}
                   </select>
                 </label>
-                {spec.construction.kind !== 'solid' && <Mm label="Waist" value={spec.construction.waist} onChange={(v) => set({ construction: { ...spec.construction, waist: Math.max(0.05, v) } })} />}
+                {spec.construction.kind !== 'solid' && <Mm label={spec.construction.kind === 'treads' || spec.construction.kind === 'stringers' ? 'Tread thickness' : 'Waist'} value={spec.construction.waist} onChange={(v) => set({ construction: { ...spec.construction, waist: Math.max(0.05, v) } })} />}
                 <Mm label="Landing slab" value={spec.construction.landingThickness} onChange={(v) => set({ construction: { ...spec.construction, landingThickness: Math.max(0.05, v) } })} />
                 <label className="field-line"><span className="eyebrow">Concrete</span><input value={spec.construction.concrete} onChange={(e) => set({ construction: { ...spec.construction, concrete: e.target.value } })} /></label>
                 <p className="eyebrow">Tread finish</p>
@@ -205,10 +225,24 @@ export function StairTypesDialog() {
                 <label className="field-line"><span className="eyebrow">Sides</span>
                   <select value={spec.railing.sides} onChange={(e) => set({ railing: { ...spec.railing, sides: e.target.value } })}>{defaults.sides.map((s) => <option key={s} value={s}>{s}</option>)}</select>
                 </label>
+                <label className="field-line"><span className="eyebrow">Design</span>
+                  <select data-field="railing-style" value={spec.railing.style ?? 'bar'} onChange={(e) => set({ railing: { ...spec.railing, style: e.target.value } })}>
+                    {(defaults.railingStyles ?? ['bar']).map((k) => <option key={k} value={k}>{RAILINGS[k] ?? k}</option>)}
+                  </select>
+                </label>
+                <label className="field-line"><span className="eyebrow">Handrail</span>
+                  <select value={spec.railing.profile ?? 'square'} onChange={(e) => set({ railing: { ...spec.railing, profile: e.target.value } })}>
+                    <option value="square">Square</option><option value="round">Round</option>
+                  </select>
+                </label>
                 <Mm label="Height" value={spec.railing.height} onChange={(v) => set({ railing: { ...spec.railing, height: Math.max(0.3, v) } })} />
                 <Mm label="Bar" value={spec.railing.barSize} onChange={(v) => set({ railing: { ...spec.railing, barSize: Math.max(0.01, v) } })} />
                 <Mm label="Post" value={spec.railing.postSize} onChange={(v) => set({ railing: { ...spec.railing, postSize: Math.max(0.01, v) } })} />
-                <Mm label="Post spacing" value={spec.railing.postSpacing} onChange={(v) => set({ railing: { ...spec.railing, postSpacing: Math.max(0.3, v) } })} step={50} />
+                {(spec.railing.style ?? 'bar') !== 'panel' && (spec.railing.style ?? 'bar') !== 'balusters' && <Mm label="Post spacing" value={spec.railing.postSpacing} onChange={(v) => set({ railing: { ...spec.railing, postSpacing: Math.max(0.3, v) } })} step={50} />}
+                {spec.railing.style === 'balusters' && <Mm label="Baluster spacing" value={spec.railing.balusterSpacing ?? 0.11} onChange={(v) => set({ railing: { ...spec.railing, balusterSpacing: Math.max(0.05, v) } })} />}
+                <Mm label="In from the edge" value={spec.railing.inset ?? 0.05} onChange={(v) => set({ railing: { ...spec.railing, inset: Math.max(0, v) } })} />
+                <Mm label="Runs on past the ends" value={spec.railing.extension ?? 0} onChange={(v) => set({ railing: { ...spec.railing, extension: Math.max(0, v) } })} step={50} />
+                <label className="field-line"><span className="eyebrow">Colour</span><input type="color" value={spec.railing.color ?? '#4a4a4a'} onChange={(e) => set({ railing: { ...spec.railing, color: e.target.value } })} /></label>
               </>}
             </div>
             <div className="joinery-preview stair-preview">

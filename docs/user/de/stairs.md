@@ -18,6 +18,26 @@ Wählen Sie die Treppe aus, um sie im Eigenschaftenbereich zu ändern:
 
 Eine Treppe verlangt von der Decke darüber eine Öffnung über sich. Entfernen Sie das Häkchen bei **Öffnung in der Decke darüber**, wenn die Decke geschlossen bleiben soll.
 
+## Treppenformen und fertige Typen
+
+In **Architektur → Treppentypen** bietet die Registerkarte **Form**: **Gerade**, **Gerade mit Podest**, **L-Form** und **U-Form** (jeweils mit Podest oder mit **gewendelten Stufen**; eine U-Form ohne Auge ist eine gegenläufige Treppe), **Wendeltreppe** (um eine Spindel, mit ihrem **Spindelradius**), **Gebogen** (mit ihrem **Innenradius**) und **Zweiarmig (geteilt)**: ein Hauptlauf in der Mitte bis zu einem Podest, dann zwei Rückläufe zu beiden Seiten. Bei einer Wendel- oder gebogenen Treppe legt **Dreht sich um (°)** fest, wie weit sie dreht; leer entscheiden Steigungen und Auftritt, angegeben folgt der Auftritt daraus. Jede Treppe kann es auch in ihren Eigenschaften ändern.
+
+Die Bibliothek fügt dem Projekt fertige Typen hinzu: gegenläufige, viertelgewendelte, Wendel-, gebogene, Kragstufen- und zweiarmige Treppe.
+
+In der Registerkarte **Konstruktion** wählt **Ausführung** eine Laufplatte, massive Stufen auf dem Boden, **Freitragende Stufen (schwebend)** (jede Stufe eine in die Wand eingespannte Platte) oder **Stufen auf Wangen**.
+
+Das **Geländer** hat seine **Gestaltung**: **Pfosten und Handlauf**, **Stäbe** (höchstens im **Stababstand**), **Glasfüllungen**, **Seile** oder eine **Geschlossene Brüstung**; einen eckigen oder runden **Handlauf**, seine Höhe, den **Abstand vom Rand**, wie weit er **Über die Enden hinaus** läuft, und seine Farbe. Im Eigenschaftenbereich setzt **Geländer** es für eine einzelne Treppe auf andere Seiten als der Typ.
+
+![Der Typ der Wendeltreppe, die Stufen nummeriert](shots/stair-spiral.webp)
+
+### Nummerierte Stufen
+
+Unter **Im Grundriss** in der Registerkarte **Form**: **Stufen nummerieren** schreibt die Nummer jeder Stufe in einen Kreis, von der ersten Steigung an; **Beschriftung** schreibt Steigungen, Steigung und Auftritt und die Breite neben den Antritt; **„UP“ am Fuß des Pfeils** zeigt, wo sie beginnt. Grundrisse und Pläne zeigen sie.
+
+![Nummerierte Stufen im Grundriss, eine zweiarmige und eine Kragstufentreppe](shots/stair-numbers-plan.webp)
+
+![Eine Wendel-, eine zweiarmige und eine Kragstufentreppe in 3D](shots/stair-shapes-3d.webp)
+
 ## Eingangsstufen (ein Vorplatz)
 
 Die Stufen hinauf zu einer Haustür haben einen eigenen Höhenunterschied: vom Gelände, einige Stufen unterhalb des Erdgeschosses, hinauf bis ±0.00. Lapin hat dafür einen fertigen Treppentyp, **Eingangsstufen**: 2 m breit, drei Steigungen zu 150 mm, massiver Beton, auf dem Erdreich betoniert, ohne Geländer.

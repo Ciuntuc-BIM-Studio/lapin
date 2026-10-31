@@ -31,8 +31,20 @@ public sealed record StairConstruction(string Kind, double Waist, double Landing
 /// <summary>What the architect sees: the finish on the treads (the riser is measured on the finished surfaces, what people walk on) and the nosing.</summary>
 public sealed record StairFinish(double TreadThickness, string TreadMaterial, double Nosing);
 
-/// <summary>The railing the type proposes: on which sides (left and right as one climbs the first flight), its height over the nosing line, bar and post sizes, post spacing.</summary>
-public sealed record StairRailing(string Sides, double Height, double BarSize, double PostSize, double PostSpacing);
+/// <summary>
+/// The railing the type proposes: on which sides (left and right as one climbs the first flight), its
+/// height over the nosing line, bar and post sizes, post spacing; and its design (report #45, decision
+/// 189): <see cref="Style"/> "bar" (posts and a handrail), "balusters" (upright bars at most
+/// <see cref="BalusterSpacing"/> apart under the handrail), "glass" (panes between the posts), "cable"
+/// (taut cables along the slope), "panel" (a solid balustrade); the handrail's <see cref="Profile"/>
+/// "square" or "round"; how far in from the stair's edge (<see cref="Inset"/>); how far the handrail runs
+/// on level past the first and last steps (<see cref="Extension"/>); its colour.
+/// </summary>
+public sealed record StairRailing(string Sides, double Height, double BarSize, double PostSize, double PostSpacing,
+    string Style = "bar", string Profile = "square", double BalusterSpacing = 0.11, double Inset = 0.05, double Extension = 0, string? Color = null);
+
+/// <summary>What a plan writes on the stair (report #46): each step's number in a circle, the label of its riser, tread and width by its foot, "UP" at the foot of the arrow.</summary>
+public sealed record StairPlanSymbols(bool Numbers = false, bool Label = false, bool Up = true);
 
 /// <summary>
 /// A stair type as the configurator edits it: the shape (a straight run, a
@@ -54,10 +66,19 @@ public sealed record StairSpec(
     StairFinish Finish,
     StairRailing Railing,
     double Slope = 0.06,
-    double? Rise = null)
+    double? Rise = null,
+    /// <summary>A spiral's or curved stair's inner radius (a spiral's round its pole), metres.</summary>
+    double InnerRadius = 0.1,
+    /// <summary>How far round a spiral or curved stair turns, in degrees; null: as the risers and the tread make it.</summary>
+    double? Sweep = null,
+    /// <summary>The width of a split stair's two return flights; null: 60 % of the main flight's, never under the rules' least.</summary>
+    double? SideWidth = null,
+    /// <summary>What the plan writes on it; null: the arrow's "UP" alone.</summary>
+    StairPlanSymbols? Symbols = null)
 {
-    public static readonly string[] Shapes = ["straight", "straight-landing", "l", "u"];
-    public static readonly string[] Constructions = ["rc", "solid"];
+    public static readonly string[] Shapes = ["straight", "straight-landing", "l", "u", "spiral", "curved", "split"];
+    public static readonly string[] Constructions = ["rc", "solid", "treads", "stringers"];
+    public static readonly string[] RailingStyles = ["bar", "balusters", "glass", "cable", "panel"];
     public static readonly string[] Turns = ["landing", "winders"];
     public static readonly string[] Sides = ["none", "left", "right", "both"];
 
@@ -86,6 +107,24 @@ public sealed record StairSpec(
     {
         ["concrete"] = () => Default(),
         ["entrance"] = () => Entrance(),
+        // Report #45: the shapes asked for, each a type to start from.
+        ["dogleg"] = () => Default("Dog-leg stair") with { Shape = "u", Gap = 0 },
+        ["winder"] = () => Default("Winder stair") with { Shape = "l", Turn = "winders", Winders = 3 },
+        ["spiral"] = () => Default("Spiral stair") with
+        {
+            Shape = "spiral", Width = 0.8, InnerRadius = 0.12,
+            Construction = new StairConstruction("treads", 0.05, 0.05, "Steel"),
+            Finish = new StairFinish(0, "Oak", 0.02),
+            Railing = new StairRailing("right", 0.9, 0.04, 0.02, 1.2, "balusters", "round"),
+        },
+        ["curved"] = () => Default("Curved stair") with { Shape = "curved", InnerRadius = 1.5, Width = 1.2, Railing = new StairRailing("both", 0.9, 0.05, 0.03, 1.2, "glass", "round") },
+        ["cantilever"] = () => Default("Cantilever stair") with
+        {
+            Construction = new StairConstruction("treads", 0.08, 0.15, "Oak"),
+            Finish = new StairFinish(0, "Oak", 0),
+            Railing = new StairRailing("right", 0.9, 0.04, 0.03, 1.2, "glass", "round"),
+        },
+        ["split"] = () => Default("Split stair") with { Shape = "split", Width = 1.6, Gap = 0.1, Railing = new StairRailing("both", 0.9, 0.05, 0.04, 1.2, "balusters", "round") },
     };
 
     /// <summary>The IFC predefined type of the shape, as the turn is made.</summary>
@@ -95,10 +134,15 @@ public sealed record StairSpec(
         "straight-landing" => "TWO_STRAIGHT_RUN_STAIR",
         "l" => Turn == "winders" ? "QUARTER_WINDING_STAIR" : "QUARTER_TURN_STAIR",
         "u" => Turn == "winders" ? "HALF_WINDING_STAIR" : "HALF_TURN_STAIR",
+        "spiral" => "SPIRAL_STAIR",
+        "curved" => "CURVED_RUN_STAIR",
+        "split" => "DOUBLE_RETURN_STAIR",
         _ => "NOTDEFINED",
     };
 
     public bool Turns_ => Shape is "l" or "u";
+    /// <summary>A spiral or curved stair: its steps fan round a centre, not along flights.</summary>
+    public bool Round => Shape is "spiral" or "curved";
 
     public JsonObject ToJson() => (JsonObject)JsonSerializer.SerializeToNode(this, ArchitectureJson.Default.StairSpec)!;
 
@@ -112,6 +156,8 @@ public sealed record StairSpec(
             if (!Shapes.Contains(s.Shape)) s = s with { Shape = "straight" };
             if (!Turns.Contains(s.Turn)) s = s with { Turn = "landing" };
             if (!Sides.Contains(s.Railing.Sides)) s = s with { Railing = s.Railing with { Sides = "none" } };
+            if (s.Railing.Style is null || !RailingStyles.Contains(s.Railing.Style)) s = s with { Railing = s.Railing with { Style = "bar" } };
+            if (s.Railing.Profile is not ("square" or "round")) s = s with { Railing = s.Railing with { Profile = "square" } };
             if (!Constructions.Contains(s.Construction.Kind)) s = s with { Construction = s.Construction with { Kind = "rc" } };
             if (s.Rules.MinRisers < 1) s = s with { Rules = s.Rules with { MinRisers = 1 } };
             return s with
@@ -122,6 +168,9 @@ public sealed record StairSpec(
                 Gap = Math.Clamp(s.Gap, 0, 2),
                 LandingLength = Math.Max(0, s.LandingLength),
                 Rise = s.Rise is { } rise && rise > 0 ? Math.Clamp(rise, 0.05, 10) : null,
+                InnerRadius = Math.Clamp(s.InnerRadius, 0.03, 20),
+                Sweep = s.Sweep is { } sw && sw > 0 ? Math.Clamp(sw, 10, 1440) : null,
+                SideWidth = s.SideWidth is { } sd && sd > 0 ? Math.Clamp(sd, 0.5, 5) : null,
             };
         }
         catch (JsonException) { return null; }

@@ -1,4 +1,6 @@
 using System.Text.Json.Nodes;
+using Lapin.Drawing;
+using Lapin.Drawing.Views;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
@@ -28,7 +30,11 @@ public static class StairBuilder
         (m.RelatingOf(stair.Id, IfcClass.RelDefinesByType) is { } type ? StairSpec.From(type.Attrs["spec"]) : null) ?? StairSpec.Default();
 
     public static StairInputs InputsOf(Entity e) => new(
-        e.NumOrNull("width"), e.NumOrNull("risers") is { } n ? (int)Math.Round(n) : null, e.NumOrNull("riserHeight"), e.NumOrNull("tread"), e.NumOrNull("landing"));
+        e.NumOrNull("width"), e.NumOrNull("risers") is { } n ? (int)Math.Round(n) : null, e.NumOrNull("riserHeight"), e.NumOrNull("tread"), e.NumOrNull("landing"), e.NumOrNull("sweep"));
+
+    /// <summary>The railing's sides for an instance: its own (<c>railingSides</c>), else the type's.</summary>
+    public static StairRailing RailingOf(Entity stair, StairSpec spec) =>
+        stair.Str("railingSides") is { } sides && StairSpec.Sides.Contains(sides) ? spec.Railing with { Sides = sides } : spec.Railing;
 
     /// <summary>
     /// The rise of its own the stair climbs, whatever the storeys: the
@@ -88,18 +94,35 @@ public static class StairBuilder
         var finish = new List<Solid>();
         var w = r.Width;
         var solidKind = spec.Construction.Kind == "solid";
+        // Open treads (floating from a wall, or on stringers): each step a plate of the waist's thickness, no slab under them.
+        var plates = spec.Construction.Kind is "treads" or "stringers";
 
         for (var i = 0; i < r.Flights.Count; i++)
         {
             var fl = r.Flights[i];
+            var fw = r.WidthOf(fl);
             // A flight of one riser has no tread: its step is the edge of what it climbs to (a porch, a landing).
             if (fl.Risers < 2) { if (r.Flights.Count == 1) problems.Add("One riser: the step is the edge of the floor it climbs to. Give it two risers or more for treads in front."); continue; }
-            if (FlightSolid(r, fl, place, f, waist, solidKind) is { } solid) parts.Add(new GeometryPart($"Flight {i + 1}", concreteColor, solid, concrete, $"flight:{i}"));
+            if (plates)
+            {
+                var treadSolids = new List<Solid>();
+                for (var j = 1; j < fl.Risers; j++)
+                {
+                    var l = fl.Left * (fw / 2);
+                    Vec2[] tp = [place.World(fl.Start + fl.Dir * ((j - 1) * r.Tread - spec.Finish.Nosing) - l), place.World(fl.Start + fl.Dir * (j * r.Tread) - l), place.World(fl.Start + fl.Dir * (j * r.Tread) + l), place.World(fl.Start + fl.Dir * ((j - 1) * r.Tread - spec.Finish.Nosing) + l)];
+                    if (Prism.ExtrudeFootprint(tp, place.Z0 + fl.Z0 + j * r.RiserHeight - f - waist, waist, "tread") is { } t) treadSolids.Add(t);
+                }
+                if (spec.Construction.Kind == "stringers")
+                    foreach (var sgn in new[] { -1.0, 1.0 })
+                        if (Stringer(r, fl, place, sgn, f) is { } st) treadSolids.Add(st);
+                if (treadSolids.Count > 0) parts.Add(new GeometryPart($"Flight {i + 1}", concreteColor, Openings.Combine(treadSolids, "flight"), concrete, $"flight:{i}"));
+            }
+            else if (FlightSolid(r, fl, place, f, waist, solidKind) is { } solid) parts.Add(new GeometryPart($"Flight {i + 1}", concreteColor, solid, concrete, $"flight:{i}"));
             else problems.Add($"Flight {i + 1} could not be built.");
             if (f > 0)
                 for (var j = 1; j < fl.Risers; j++)
                 {
-                    var l = fl.Left * (w / 2);
+                    var l = fl.Left * (fw / 2);
                     Vec2[] tread = [place.World(fl.Start + fl.Dir * ((j - 1) * r.Tread) - l), place.World(fl.Start + fl.Dir * (j * r.Tread) - l), place.World(fl.Start + fl.Dir * (j * r.Tread) + l), place.World(fl.Start + fl.Dir * ((j - 1) * r.Tread) + l)];
                     if (Prism.ExtrudeFootprint(tread, place.Z0 + fl.Z0 + j * r.RiserHeight - f, f, "finish") is { } s) finish.Add(s);
                 }
@@ -109,11 +132,19 @@ public static class StairBuilder
         {
             var outline = wd.Outline.Select(p => place.World(p)).ToArray();
             var top = place.Z0 + wd.Z - f;
-            var bottom = top - r.RiserHeight - waist;
+            var bottom = plates ? top - waist : top - r.RiserHeight - waist;
             if (Prism.ExtrudeFootprint(outline, bottom, top - bottom, "winder") is { } s) winders.Add(s);
             if (f > 0 && Prism.ExtrudeFootprint(outline, top, f, "finish") is { } fs) finish.Add(fs);
         }
-        if (winders.Count > 0) parts.Add(new GeometryPart("Winders", concreteColor, Openings.Combine(winders, "winders"), concrete, "winders"));
+        if (winders.Count > 0) parts.Add(new GeometryPart(r.Arc != null ? "Treads" : "Winders", concreteColor, Openings.Combine(winders, "winders"), concrete, "winders"));
+        // A spiral turns round a pole from the floor to the handrail's height over its top.
+        if (spec.Shape == "spiral" && r.Arc is { } arc)
+        {
+            var c = place.World(arc.Centre);
+            var radius = Math.Max(0.03, Math.Min(0.08, arc.Inner * 0.8));
+            if (Prism.Cylinder(c, place.Z0, radius, r.Height + spec.Railing.Height, 16, "pole") is { } pole)
+                parts.Add(new GeometryPart("Pole", "#5a5a5a", pole, null, "pole"));
+        }
         for (var i = 0; i < r.Landings.Count; i++)
         {
             var ld = r.Landings[i];
@@ -123,17 +154,19 @@ public static class StairBuilder
             if (f > 0 && Prism.ExtrudeFootprint(outline, place.Z0 + ld.Z - f, f, "finish") is { } fs) finish.Add(fs);
         }
         if (finish.Count > 0) parts.Add(new GeometryPart("Tread finish", finishColor, Openings.Combine(finish, "finish"), finishMat, "finish"));
-        var treads = r.Flights.Sum(x => x.Risers - 1);
+        var treads = r.Flights.Sum(x => x.Risers - 1) + r.Winders.Count;
+        var rail = RailingOf(stair, spec);
         foreach (var side in new[] { "left", "right" })
-            if (treads > 0 && (spec.Railing.Sides == side || spec.Railing.Sides == "both"))
+            if (treads > 0 && (rail.Sides == side || rail.Sides == "both"))
             {
-                var solids = Railing(r, place, spec.Railing, side == "left");
-                if (solids.Count > 0) parts.Add(new GeometryPart($"Railing ({side})", "#4a4a4a", Openings.Combine(solids, "railing"), null, $"railing:{side}"));
+                var (solids, glass) = RailingSolids(r, place, rail, side == "left");
+                if (solids.Count > 0) parts.Add(new GeometryPart($"Railing ({side})", rail.Color ?? "#4a4a4a", Openings.Combine(solids, "railing"), null, $"railing:{side}"));
+                if (glass.Count > 0) parts.Add(new GeometryPart($"Railing glass ({side})", "#9cc8e8", Openings.Combine(glass, "glass"), null, $"railing-glass:{side}"));
             }
 
         var plan = Plan(r, place);
-        var foot = r.Flights[0];
-        Vec2[] snaps = [place.World(foot.Start - foot.Left * (w / 2)), place.World(foot.Start + foot.Left * (w / 2)), place.World(r.Top.At)];
+        var foot = r.Foot;
+        Vec2[] snaps = [place.World(foot.At - foot.Left * (foot.Width / 2)), place.World(foot.At + foot.Left * (foot.Width / 2)), place.World(r.Top.At)];
         foreach (var c in r.Checks.Where(c => !c.Ok)) problems.Add($"{c.Label} {Fmt(c.Value)} is outside {Fmt(c.Min)} … {Fmt(c.Max)}.");
         return new ElementGeometry(parts, plan, snaps, problems.Count > 0 ? problems : null);
     }
@@ -166,10 +199,25 @@ public static class StairBuilder
             profile.Add((uEnd, (k - 1) * h - wv - finish));
             profile.Add((Math.Min(wv * b / h, Math.Max(uEnd - 0.01, 0)), -finish));
         }
-        var right = fl.Start - fl.Left * (r.Width / 2);
+        var right = fl.Start - fl.Left * (r.WidthOf(fl) / 2);
         var ring = profile.Select(p => place.World(right + fl.Dir * p.U, fl.Z0 + p.Z)).ToList();
-        var across = place.World(fl.Left * r.Width, 0) - place.World(new Vec2(0, 0), 0);
+        var across = place.World(fl.Left * r.WidthOf(fl), 0) - place.World(new Vec2(0, 0), 0);
         return Oriented(ring, across, "flight");
+    }
+
+    /// <summary>A stringer along one side of a flight (<paramref name="sign"/> −1 right, +1 left): a plate 40 mm thick, 250 mm deep, under the treads' nosing line.</summary>
+    static Solid? Stringer(Resolved r, Flight fl, StairPlacement place, double sign, double finish)
+    {
+        const double t = 0.04, depth = 0.25;
+        var (k, h, b) = (fl.Risers, r.RiserHeight, r.Tread);
+        var drop = depth * Math.Sqrt(h * h + b * b) / b;
+        var side = fl.Start + fl.Left * (sign * (r.WidthOf(fl) / 2 + (sign > 0 ? 0 : t)));
+        var run = (k - 1) * b;
+        // From the floor at the foot to the top tread, its top along the treads' fronts, its bottom a depth under.
+        List<(double U, double Z)> profile = [(-b * 0.5, 0), (-b * 0.5, h * 0.5), (run, k * h - finish), (run, k * h - finish - drop), (drop * b / h - b * 0.5, 0)];
+        var ring = profile.Select(p => place.World(side + fl.Dir * p.U, fl.Z0 + p.Z)).ToList();
+        var across = place.World(fl.Left * -t, 0) - place.World(new Vec2(0, 0), 0);
+        return Oriented(ring, across, "stringer");
     }
 
     /// <summary>A profile extruded so the solid comes out with positive volume, whichever way the ring runs.</summary>
@@ -182,16 +230,37 @@ public static class StairBuilder
     }
 
     /// <summary>
-    /// The railing on one side: the bar over the nosing line along the flights,
-    /// level over a landing, climbing over winders; around the outer edge of a
-    /// turn, straight across the inner one; posts at the spacing, from the
-    /// surface up to the bar.
+    /// The railing's paths on one side: points along the nosing line with the surface under them, the
+    /// bar over the flights, level over a landing, climbing over winders; around the outer edge of a turn,
+    /// straight across the inner one; a spiral's or curved stair's along its arc, step by step; a split
+    /// stair's on each flight's own side.
     /// </summary>
-    static List<Solid> Railing(Resolved r, StairPlacement place, StairRailing rail, bool left)
+    static List<List<(Vec2 P, double Surface)>> RailingPaths(Resolved r, StairPlacement place, StairRailing rail, bool left)
     {
-        const double inset = 0.05;
-        var w = r.Width;
+        var inset = Math.Clamp(rail.Inset, 0, 0.3);
         var sign = left ? 1 : -1;
+        if (r.Arc is { } arc)
+        {
+            // Left as one climbs is the centre's side when it turns left.
+            var inward = left == (arc.Step > 0);
+            var radius = inward ? arc.Inner + inset : arc.Outer - inset;
+            var p = new List<(Vec2, double)>();
+            for (var k = 0; k <= arc.Steps; k++)
+            {
+                var a = arc.Angle(k);
+                p.Add((arc.At(a, radius), (k + 1) * r.RiserHeight));
+                if (k < arc.Steps) p.Add((arc.At((arc.Angle(k) + arc.Angle(k + 1)) / 2, radius), (k + 1) * r.RiserHeight));
+            }
+            return [p];
+        }
+        if (r.Spec.Shape == "split")
+            return r.Flights.Select(fl =>
+            {
+                var side = fl.Left * (sign * (r.WidthOf(fl) / 2 - inset));
+                var run = (fl.Risers - 1) * r.Tread;
+                return new List<(Vec2, double)> { (fl.Start + side, fl.Z0 + r.RiserHeight), (fl.Start + fl.Dir * run + side, fl.Z0 + fl.Risers * r.RiserHeight) };
+            }).Where(x => (x[1].Item1 - x[0].Item1).Length > 1e-6).ToList();
+        var w = r.Width;
         var path = new List<(Vec2 P, double Surface)>();
         for (var i = 0; i < r.Flights.Count; i++)
         {
@@ -219,23 +288,96 @@ public static class StairBuilder
                 path.Add((start2, zTurn + r.RiserHeight));
             }
         }
-        var solids = new List<Solid>();
-        Vec3 Top((Vec2 P, double Surface) p) => place.World(p.P, p.Surface + rail.Height);
-        for (var i = 0; i + 1 < path.Count; i++)
+        // The handrail runs on level past the first and the last step when asked.
+        if (rail.Extension > 0 && path.Count >= 2)
         {
-            var (a, b) = (path[i], path[i + 1]);
-            var len = (b.P - a.P).Length;
-            if (len > 1e-6 && Prism.SweepBox(Top(a), Top(b), rail.BarSize, rail.BarSize, "rail") is { } bar) solids.Add(bar);
-            var count = Math.Max(1, (int)Math.Ceiling(len / Math.Max(rail.PostSpacing, 0.3)));
-            for (var j = 0; j <= count; j++)
+            var d0 = (path[0].P - path[1].P).Normalized();
+            var d1 = (path[^1].P - path[^2].P).Normalized();
+            path.Insert(0, (path[0].P + d0 * rail.Extension, path[0].Surface - r.RiserHeight));
+            path.Add((path[^1].P + d1 * rail.Extension, path[^1].Surface));
+        }
+        return [path];
+    }
+
+    /// <summary>A round bar from a to b (an octagon swept along), <paramref name="d"/> across.</summary>
+    static Solid? RoundBar(Vec3 a, Vec3 b, double d, string tag)
+    {
+        var axis = b - a;
+        if (axis.Length < 1e-6) return null;
+        var u = axis * (1 / axis.Length);
+        var x = Math.Abs(u.Z) < 0.9 ? Vec3.Cross(u, new Vec3(0, 0, 1)) : Vec3.Cross(u, new Vec3(1, 0, 0));
+        x = x * (1 / x.Length);
+        var y = Vec3.Cross(u, x);
+        var ring = Enumerable.Range(0, 8).Select(i => { var t = Math.PI * (i + 0.5) / 4; return a + x * (Math.Cos(t) * d / 2) + y * (Math.Sin(t) * d / 2); }).ToList();
+        return Prism.Extrude(ring, null, axis, tag);
+    }
+
+    /// <summary>
+    /// A railing's solids on one side, in its style: the handrail (square or round) along each path, then
+    /// posts at their spacing (the bar style, glass and cables between them), balusters at most their
+    /// spacing apart, or a solid panel; glass apart, to be drawn as glass.
+    /// </summary>
+    static (List<Solid> Metal, List<Solid> Glass) RailingSolids(Resolved r, StairPlacement place, StairRailing rail, bool left)
+    {
+        var metal = new List<Solid>();
+        var glass = new List<Solid>();
+        var height = Math.Max(0.3, rail.Height);
+        foreach (var path in RailingPaths(r, place, rail, left))
+        {
+            Vec3 At((Vec2 P, double Surface) p, double up) => place.World(p.P, p.Surface + up);
+            for (var i = 0; i + 1 < path.Count; i++)
             {
-                if (j == count && i + 2 < path.Count) continue;
-                var t = (double)j / count;
-                var bottom = place.World(a.P + (b.P - a.P) * t, a.Surface + (b.Surface - a.Surface) * t);
-                if (Prism.Box(new Vec3(bottom.X, bottom.Y, bottom.Z + rail.Height / 2), rail.PostSize, rail.PostSize, rail.Height, "post") is { } post) solids.Add(post);
+                var (a, b) = (path[i], path[i + 1]);
+                var len = (b.P - a.P).Length;
+                if (len < 1e-6) continue;
+                var bar = rail.Profile == "round" ? RoundBar(At(a, height), At(b, height), rail.BarSize, "rail") : Prism.SweepBox(At(a, height), At(b, height), rail.BarSize, rail.BarSize, "rail");
+                if (bar != null) metal.Add(bar);
+                var across = (place.World(b.P, 0) - place.World(a.P, 0));
+                var flat = new Vec3(-across.Y, across.X, 0);
+                flat = flat * (1 / Math.Max(flat.Length, 1e-9));
+                Solid? Pane(double from, double to, double thick, string tag)
+                {
+                    List<Vec3> ring = [At(a, from), At(b, from), At(b, to), At(a, to)];
+                    var shift = flat * (-thick / 2);
+                    return Prism.Extrude(ring.Select(q => q + shift).ToList(), null, flat * thick, tag);
+                }
+                void Posts(double spacing, double size, string tag, bool last)
+                {
+                    var count = Math.Max(1, (int)Math.Ceiling(len / Math.Max(spacing, 0.05)));
+                    for (var j = 0; j <= count; j++)
+                    {
+                        if (j == count && !last) continue;
+                        var t = (double)j / count;
+                        var bottom = place.World(a.P + (b.P - a.P) * t, a.Surface + (b.Surface - a.Surface) * t);
+                        if (Prism.Box(new Vec3(bottom.X, bottom.Y, bottom.Z + height / 2), size, size, height, tag) is { } post) metal.Add(post);
+                    }
+                }
+                var lastSegment = i + 2 >= path.Count;
+                switch (rail.Style)
+                {
+                    case "balusters":
+                        Posts(Math.Max(rail.BalusterSpacing, 0.05), Math.Max(0.012, rail.PostSize * 0.6), "baluster", lastSegment);
+                        if (Prism.SweepBox(At(a, 0.08), At(b, 0.08), 0.03, 0.03, "rail") is { } bottomRail) metal.Add(bottomRail);
+                        break;
+                    case "glass":
+                        Posts(Math.Max(rail.PostSpacing, 0.3), rail.PostSize, "post", lastSegment);
+                        if (Pane(0.08, height - 0.06, 0.012, "glass") is { } pane) glass.Add(pane);
+                        break;
+                    case "cable":
+                        Posts(Math.Max(rail.PostSpacing, 0.3), rail.PostSize, "post", lastSegment);
+                        for (var c = 1; c <= 6; c++)
+                            if (Prism.SweepBox(At(a, height * c / 7.5), At(b, height * c / 7.5), 0.006, 0.006, "cable") is { } cable) metal.Add(cable);
+                        break;
+                    case "panel":
+                        if (Pane(0, height, Math.Max(0.06, rail.PostSize * 2), "panel") is { } panel) metal.Add(panel);
+                        break;
+                    default:
+                        Posts(Math.Max(rail.PostSpacing, 0.3), rail.PostSize, "post", lastSegment);
+                        break;
+                }
             }
         }
-        return solids;
+        return (metal, glass);
     }
 
     // ─── Plan ───────────────────────────────────────────────────────────────
@@ -253,7 +395,7 @@ public static class StairBuilder
         var arrow = new List<Vec2>();
         foreach (var fl in r.Flights)
         {
-            var l = fl.Left * (w / 2);
+            var l = fl.Left * (r.WidthOf(fl) / 2);
             var run = (fl.Risers - 1) * r.Tread;
             for (var i = 1; i <= fl.Risers; i++)
             {
@@ -268,6 +410,31 @@ public static class StairBuilder
         }
         foreach (var ld in r.Landings) items.Add(new PlanItem("symbol", true, ld.Outline.Select(p => place.World(p)).ToArray()));
         foreach (var wd in r.Winders) items.Add(new PlanItem("symbol", true, wd.Outline.Select(p => place.World(p)).ToArray()));
+        if (r.Arc is { } arc)
+        {
+            // Along the walking line, from half a tread in to the top.
+            var a0 = arc.A0 + arc.Step / 2;
+            var a1 = arc.Angle(arc.Steps);
+            var m = Math.Max(4, (int)Math.Ceiling(Math.Abs(a1 - a0) / (Math.PI / 36)));
+            arrow.AddRange(Enumerable.Range(0, m + 1).Select(i => place.World(arc.At(a0 + (a1 - a0) * i / m, arc.Walk))));
+            if (r.Spec.Shape == "spiral")
+                items.Add(new PlanItem("symbol", true, ViewMark.Circle(place.World(arc.Centre), Math.Max(0.03, Math.Min(0.08, arc.Inner * 0.8)), 16)));
+        }
+        if (r.Spec.Shape == "split" && r.Flights.Count == 3)
+        {
+            // Up the main flight, then up each return: three arrows, no line across the landing.
+            arrow.Clear();
+            foreach (var fl in r.Flights)
+            {
+                var run = (fl.Risers - 1) * r.Tread;
+                if (run < 1e-9) continue;
+                var (a, b) = (place.World(fl.Start + fl.Dir * Math.Min(r.Tread / 2, run / 2)), place.World(fl.Start + fl.Dir * run));
+                items.Add(new PlanItem("symbol", false, [a, b]));
+                var d = (b - a).Normalized();
+                var size = Math.Min(0.25, r.WidthOf(fl) * 0.25);
+                items.Add(new PlanItem("symbol", false, [b - d * size + d.Perp * (size * 0.5), b, b - d * size - d.Perp * (size * 0.5)]));
+            }
+        }
         if (arrow.Count >= 2)
         {
             // Through a turn the arrow goes from the end of one flight to the start of the next, over the landing or the winders.
@@ -296,8 +463,9 @@ public static class StairBuilder
             var length = (fl.Risers - 1) * r.Tread;
             run += length;
             // Solid on the ground, a flight has no soffit to form: its two sides instead.
-            soffit += spec.Construction.Kind == "solid" ? 2 * length * fl.Risers * r.RiserHeight / 2 : w * length * Math.Sqrt(1 + r.RiserHeight * r.RiserHeight / (r.Tread * r.Tread));
-            treads += (fl.Risers - 1) * r.Tread * w;
+            var fw = r.WidthOf(fl);
+            soffit += spec.Construction.Kind == "solid" ? 2 * length * fl.Risers * r.RiserHeight / 2 : fw * length * Math.Sqrt(1 + r.RiserHeight * r.RiserHeight / (r.Tread * r.Tread));
+            treads += (fl.Risers - 1) * r.Tread * fw;
             yield return new QuantitySet("Qto_StairFlightBaseQuantities",
             [
                 new("Length", length, "LENGTH"), new("NumberOfRiser", fl.Risers, "COUNT"), new("NumberOfTreads", fl.Risers - 1, "COUNT"),
@@ -309,7 +477,9 @@ public static class StairBuilder
         var concrete = g.Parts.Where(p => p.Key != null && (p.Key.StartsWith("flight:", StringComparison.Ordinal) || p.Key == "winders" || p.Key.StartsWith("landing:", StringComparison.Ordinal))).Sum(p => Measure.Volume(p.Solid));
         var railing = 0.0;
         foreach (var fl in r.Flights) railing += (fl.Risers - 1) * Math.Sqrt(r.Tread * r.Tread + r.RiserHeight * r.RiserHeight);
-        var sides = spec.Railing.Sides == "both" ? 2 : spec.Railing.Sides == "none" ? 0 : 1;
+        if (r.Arc is { } arc) { run += arc.Steps * r.Tread; railing += arc.Steps * Math.Sqrt(r.Tread * r.Tread + r.RiserHeight * r.RiserHeight); }
+        var rail = RailingOf(stair, spec);
+        var sides = rail.Sides == "both" ? 2 : rail.Sides == "none" ? 0 : 1;
         yield return new QuantitySet("Lapin_StairQuantities",
         [
             new("NumberOfRiser", r.Risers, "COUNT", "Risers"), new("RiserHeight", r.RiserHeight, "LENGTH", "Riser"), new("TreadLength", r.Tread, "LENGTH", "Tread"),
@@ -342,7 +512,7 @@ public static class StairBuilder
             for (var i = 1; i <= fl.Risers; i++)
                 if (fl.Z0 + i * r.RiserHeight > limit)
                 {
-                    var l = fl.Left * (r.Width / 2);
+                    var l = fl.Left * (r.WidthOf(fl) / 2);
                     var u0 = (i - 1) * r.Tread; var u1 = Math.Min(i, fl.Risers - 1) * r.Tread;
                     pts.AddRange([fl.Start + fl.Dir * u0 - l, fl.Start + fl.Dir * u0 + l, fl.Start + fl.Dir * u1 - l, fl.Start + fl.Dir * u1 + l]);
                 }
@@ -381,3 +551,83 @@ public static class StairBuilder
         ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelVoidsElement, slab.Id, [opening.Id]));
     }
 }
+
+/// <summary>
+/// What a plan writes on its storey's stairs (report #46, decision 190), as the type asks
+/// (<see cref="StairPlanSymbols"/>): each step's number in a circle, from the first riser up (the last one
+/// on what it climbs to), "UP" at the foot of the arrow, and a label by the foot with the risers, the
+/// riser and tread, and the width.
+/// </summary>
+public static class StairMarks
+{
+    public static IEnumerable<ViewMark> Marks(ViewContext c)
+    {
+        if (c.Kind != "plan") yield break;
+        var m = c.Model;
+        var storeyId = c.View.Str("storeyId");
+        var hidden = (c.View.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
+        var graphics = GraphicsSets.Of(m, c.View);
+        var style = Standards.TextOf(c.Book, Standards.DefaultRoomTag.TextStyle);
+        foreach (var stair in m.OfClass(IfcClass.Stair))
+        {
+            if (hidden.Contains(stair.Id) || GraphicsSets.Hides(graphics, stair) || Spatial.StoreyOf(m, stair.Id)?.Id != storeyId) continue;
+            if (StairBuilder.Resolve(m, stair) is not var (r, place, spec)) continue;
+            var symbols = spec.Symbols ?? new StairPlanSymbols();
+            if (!symbols.Numbers && !symbols.Label && !symbols.Up) continue;
+            var mark = new ViewMark(stair.Id);
+            var color = style.Color ?? "#000000";
+            var h = Math.Max(1.8, style.Height * 0.8);
+            Vec2 V(Vec2 local) => c.Map(place.World(local), place.Z0);
+            if (symbols.Numbers)
+            {
+                // A circle and figure that fit the step: never wider than four tenths of the tread (a small spiral's are tight).
+                var radius = Math.Min(h * c.Mm * 0.9, 0.4 * Math.Min(r.Tread, r.Width / 2));
+                var nh = radius / (c.Mm * 0.9);
+                foreach (var (at, n) in StepCentres(r))
+                {
+                    var p = V(at);
+                    mark.Polyline(ViewMark.Circle(p, radius, 20), true, "STAIR-NUMBERS", Pens.Default.Hatch, color);
+                    mark.Text(new PenText(p, n.ToString(System.Globalization.CultureInfo.InvariantCulture), nh, 0, "middle", "middle", false, style.Font), color);
+                }
+            }
+            var foot = r.Foot;
+            if (symbols.Up)
+                mark.Text(new PenText(V(foot.At - foot.Dir * (r.Tread * 0.8)), "UP", h, 0, "middle", "middle", true, style.Font), color);
+            if (symbols.Label)
+            {
+                string Mm(double v) => (v * 1000).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+                string[] lines = [$"{r.Risers} × {Mm(r.RiserHeight)}", $"{Mm(r.Tread)}", $"{Mm(r.Width)}"];
+                string[] keys = ["Risers", "Tread", "Width"];
+                var at = V(foot.At - foot.Left * (foot.Width / 2 + 0.25) - foot.Dir * 0.2);
+                for (var i = 0; i < lines.Length; i++)
+                    mark.Text(new PenText(at + new Vec2(0, -h * c.Mm * 1.5 * i), $"{keys[i]} {lines[i]}", h, 0, "end", "middle", i == 0, style.Font), color);
+            }
+            if (mark.Texts.Count > 0) yield return mark;
+        }
+    }
+
+    /// <summary>Where each step's number goes, in the stair's frame: the middle of its tread (a winder's or a spiral's wedge too), numbered by its height; the last riser's on what it climbs to, half a tread on (a split stair's two return flights have the same numbers).</summary>
+    public static List<(Vec2 At, int Number)> StepCentres(Resolved r)
+    {
+        var o = new List<(Vec2, int)>();
+        int N(double z) => (int)Math.Round(z / r.RiserHeight);
+        if (r.Arc is { } arc)
+        {
+            for (var k = 0; k < arc.Steps; k++) o.Add((arc.At((arc.Angle(k) + arc.Angle(k + 1)) / 2, arc.Walk), k + 1));
+            o.Add((arc.At(arc.Angle(arc.Steps) + arc.Step / 2, arc.Walk), arc.Steps + 1));
+            return o;
+        }
+        for (var f = 0; f < r.Flights.Count; f++)
+        {
+            var fl = r.Flights[f];
+            // Before winders the flight's last riser lands on the first winder: its number is the winder's.
+            var last = r.Winders.Count > 0 && f == 0 ? fl.Risers - 1 : fl.Risers;
+            for (var i = 1; i <= last; i++) o.Add((fl.Start + fl.Dir * ((i - 0.5) * r.Tread), N(fl.Z0) + i));
+        }
+        foreach (var wd in r.Winders) o.Add((Centroid(wd.Outline), N(wd.Z)));
+        return o;
+    }
+
+    static Vec2 Centroid(IReadOnlyList<Vec2> pts) => new(pts.Average(p => p.X), pts.Average(p => p.Y));
+}
+

@@ -18,6 +18,26 @@ Selectează scara ca s-o modifici în panoul de proprietăți:
 
 Scara cere un gol în placa de deasupra ei. Debifează **Gol în placa de deasupra** dacă placa trebuie să rămână întreagă.
 
+## Formele scărilor și tipurile gata făcute
+
+În **Arhitectură → Tipuri de scări**, fila **Formă** oferă: **Dreaptă**, **Dreaptă cu podest**, **În L** și **În U** (fiecare cu podest sau cu **trepte balansate**; o scară în U fără gol între rampe e scara „dog-leg”), **În spirală** (în jurul unui stâlp, cu **Raza stâlpului**), **Curbă** (cu **Raza interioară**) și **Bifurcată**: o rampă principală pe mijloc până la un podest, apoi două rampe care se întorc, câte una de fiecare parte. La o scară în spirală sau curbă, **Se rotește cu (°)** spune cât se întoarce; gol, hotărăsc contratreptele și treapta, iar dat, treapta rezultă din el. Fiecare scară îl poate schimba și în proprietățile ei.
+
+Biblioteca adaugă în proiect tipuri gata făcute: scară în U fără gol, scară cu trepte balansate, scară în spirală, scară curbă, scară cu trepte în consolă și scară bifurcată.
+
+În fila **Construcție**, **Alcătuire** alege placa sub trepte, treptele pline pe teren, **Trepte libere (în consolă, „plutitoare”)** (fiecare treaptă o placă prinsă în perete) sau **Trepte pe vange**.
+
+**Balustrada** își are **Modelul**: **Stâlpi și mână curentă**, **Baluștri** (la cel mult **Distanța între baluștri**), **Panouri de sticlă**, **Cabluri** sau **Parapet plin**; **Mâna curentă** pătrată sau rotundă, înălțimea, **Retras de la margine**, cât **Continuă dincolo de capete** și culoarea. În panoul de proprietăți, **Balustradă** o pune pe alte părți decât tipul, pentru o singură scară.
+
+![Tipul scării în spirală, cu treptele numerotate](shots/stair-spiral.webp)
+
+### Treptele numerotate
+
+La **În plan**, în fila **Formă**: **Numerotează treptele** scrie numărul fiecărei trepte într-un cerc, de la prima contratreaptă în sus; **Etichetă** scrie contratreptele, înălțimea și lățimea treptei și lățimea scării lângă picior; **„UP” la piciorul săgeții** arată de unde pornește. Planurile și planșele le arată.
+
+![Trepte numerotate în plan, o scară bifurcată și una cu trepte în consolă](shots/stair-numbers-plan.webp)
+
+![O scară în spirală, una bifurcată și una cu trepte în consolă, în 3D](shots/stair-shapes-3d.webp)
+
 ## Trepte de intrare (o terasă)
 
 Treptele până la ușa de la intrare au o diferență de nivel proprie: urcă de la teren, aflat cu câteva trepte sub parter, până la ±0.00. Lapin are pentru ele un tip de scară gata făcut, **Trepte de intrare**: lat de 2 m, trei contratrepte de 150 mm, din beton plin turnat pe teren, fără balustradă.

@@ -18,6 +18,26 @@ Select the stair to change it in the properties panel:
 
 A stair asks the floor above for an opening over itself. Untick **Opening in the floor above** if the floor should stay whole.
 
+## Stair shapes and ready-made types
+
+In **Architecture → Stair types**, the **Shape** tab offers: **Straight**, **Straight with landing**, **L shape** and **U shape** (each turning on a landing or with **winders**; a U with no gap is a dog-leg stair), **Spiral** (round a pole, with its **Pole radius**), **Curved** (with its **Inner radius**) and **Split (bifurcated)**: a main flight up the middle to a landing, then two return flights on either side. For a spiral or curved stair, **Turns through (°)** sets how far round it goes; left empty, the risers and the tread decide, and given, the tread follows from it. Each stair can change it too in its properties.
+
+The library adds ready-made types to the project: a dog-leg stair, a winder stair, a spiral stair, a curved stair, a cantilever stair and a split stair.
+
+On the **Construction** tab, **Built as** chooses a waist slab, solid steps on the ground, **Open treads (cantilevered, floating)** (each step a plate fixed into the wall) or **Treads on stringers**.
+
+The **Railing** has its **Design**: **Posts and a handrail**, **Balusters** (at most the **Baluster spacing** apart), **Glass panels**, **Cables** or a **Solid balustrade**; a square or round **Handrail**, its height, **In from the edge**, how far it **Runs on past the ends**, and its colour. In the properties panel, **Railing** puts it on other sides than the type for one stair.
+
+![The spiral stair's type, its steps numbered](shots/stair-spiral.webp)
+
+### Numbered steps
+
+Under **In plan** on the **Shape** tab: **Number the steps** writes each step's number in a circle, from the first riser up; **Label** writes the risers, the riser and the tread, and the width by the foot; **"UP" at the foot of the arrow** marks where it starts. Plans and sheets show them.
+
+![Numbered steps in plan, a split stair and a cantilever stair](shots/stair-numbers-plan.webp)
+
+![A spiral, a split and a cantilever stair in 3D](shots/stair-shapes-3d.webp)
+
 ## Entrance steps (a porch)
 
 The steps up to a front door have a rise of their own: from the ground, a few steps below the ground floor, up to ±0.00. Lapin has a ready-made stair type for them, **Entrance steps**: 2 m wide, three risers of 150 mm, solid concrete cast on the ground, with no railing.

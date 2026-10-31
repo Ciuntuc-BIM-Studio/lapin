@@ -396,6 +396,34 @@ export const scenes = [
     },
   },
   {
+    id: 'stair-shapes',
+    async run(t) {
+      await t.fresh();
+      const storey = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').sort((a, b) => (a.props.elevation ?? 0) - (b.props.elevation ?? 0)).find((n) => Math.abs(n.props.elevation ?? 0) < 1e-6) ?? (await t.nodes()).find((n) => n.type === 'IfcBuildingStorey');
+      // The shapes asked for (reports #45, #46): a spiral, a split stair and a cantilever stair, side by side.
+      for (const [key, x] of [['spiral', 0], ['split', 4], ['cantilever', 10]])
+        await t.cmd('architecture.addStair', { storeyId: storey.id, library: key, x, y: 0, x2: x + 1, y2: 0 });
+      await t.tool('architecture.stairTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('.type-list').getByText('Spiral stair', { exact: false }).first().click();
+      await t.wait(800);
+      await dialog.locator('input[data-field=symbols-numbers]').check();
+      await t.wait(1500);
+      t.expect(await dialog.locator('input[data-field=symbols-numbers]').isChecked(), 'the steps are numbered in the type');
+      await t.shot('stair-spiral', { of: '.dialog', pad: 0 });
+      await dialog.locator('.btn.primary').last().evaluate((el) => el.click());
+      await t.wait(800);
+      await t.ui({ dialog: null });
+      const spiral = (await t.nodes()).find((n) => n.type === 'IfcStairType' && n.props?.spec?.shape === 'spiral');
+      t.expect(spiral?.props?.spec?.symbols?.numbers, 'the spiral type numbers its steps');
+      await t.fit();
+      await t.wait(800);
+      await t.shot('stair-numbers-plan', { of: '[data-testid=plan]', pad: 0 });
+      await open3d(t);
+      await t.shot('stair-shapes-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     id: 'rooms',
     async run(t) {
       await t.fresh();

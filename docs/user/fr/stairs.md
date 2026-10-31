@@ -18,6 +18,26 @@ Sélectionnez l’escalier pour le modifier dans le panneau des propriétés :
 
 Un escalier demande à la dalle du dessus une trémie au-dessus de lui. Décochez **Trémie dans la dalle supérieure** si la dalle doit rester entière.
 
+## Formes d’escalier et types tout faits
+
+Dans **Architecture → Types d’escaliers**, l’onglet **Forme** propose : **Droit**, **Droit avec palier**, **En L** et **En U** (chacun avec palier ou avec **marches balancées** ; un U sans jour est un escalier à retour), **Hélicoïdal** (autour d’un noyau, avec son **Rayon du noyau**), **Courbe** (avec son **Rayon intérieur**) et **Impériale (à deux volées)** : une volée centrale jusqu’à un palier, puis deux volées de retour de part et d’autre. Pour un escalier hélicoïdal ou courbe, **Tourne de (°)** règle jusqu’où il tourne ; vide, les contremarches et le giron décident, et indiqué, le giron en découle. Chaque escalier peut aussi le changer dans ses propriétés.
+
+La bibliothèque ajoute au projet des types tout faits : escalier à retour, balancé, hélicoïdal, courbe, en console et impérial.
+
+Dans l’onglet **Construction**, **Construit en** choisit une paillasse, des marches pleines sur le sol, des **Marches en console (flottantes)** (chaque marche une plaque scellée dans le mur) ou des **Marches sur limons**.
+
+Le **Garde-corps** a son **Modèle** : **Poteaux et main courante**, **Barreaux** (au plus à l’**Espacement des barreaux**), **Panneaux de verre**, **Câbles** ou un **Garde-corps plein** ; une **Main courante** carrée ou ronde, sa hauteur, le **Retrait du bord**, de combien elle **Se prolonge au-delà des extrémités**, et sa couleur. Dans le panneau des propriétés, **Garde-corps** le met d’autres côtés que le type, pour un seul escalier.
+
+![Le type de l’escalier hélicoïdal, ses marches numérotées](shots/stair-spiral.webp)
+
+### Marches numérotées
+
+Sous **En plan** dans l’onglet **Forme** : **Numéroter les marches** écrit le numéro de chaque marche dans un cercle, depuis la première contremarche ; **Étiquette** écrit les contremarches, la hauteur et le giron, et la largeur près du départ ; **« UP » au pied de la flèche** marque où il commence. Les plans et les planches les montrent.
+
+![Marches numérotées en plan, un escalier impérial et un escalier en console](shots/stair-numbers-plan.webp)
+
+![Un escalier hélicoïdal, un impérial et un en console en 3D](shots/stair-shapes-3d.webp)
+
 ## Marches d’entrée (un perron)
 
 Les marches qui mènent à une porte d’entrée ont une hauteur propre : depuis le terrain, quelques marches sous le rez-de-chaussée, jusqu’à ±0.00. Lapin a pour elles un type d’escalier tout prêt, **Marches d’entrée** : 2 m de large, trois contremarches de 150 mm, en béton massif coulé sur le terrain, sans garde-corps.
