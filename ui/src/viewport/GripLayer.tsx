@@ -76,7 +76,8 @@ export function useGripEditor(o: GripEditorOptions) {
       const [nodeId, tag] = id.includes('#') ? [id.slice(0, id.indexOf('#')), id.slice(id.indexOf('#') + 1)] : [id, null];
       const n = nodes.get(nodeId);
       if (!n?.editable) continue;
-      for (const g of gripsOf(n, { mark: o.marks?.find((m) => m.id === n.id) })) if ((!tag || g.key.startsWith(`${tag}:`)) && inView(g.view, n.storeyId)) gs.push(g);
+      const marks = o.marks?.filter((m) => m.id === n.id || m.id.startsWith(`${n.id}:`));
+      for (const g of gripsOf(n, { mark: marks?.find((m) => m.id === n.id), marks, view: views[0] })) if ((!tag || g.key.startsWith(`${tag}:`)) && inView(g.view, n.storeyId)) gs.push(g);
       for (const r of referencesOf(n)) if ((!tag || !r.tag || r.tag === tag) && inView(r.view, n.storeyId)) rs.push({ ...r, owner: n.id });
     }
     return { grips: gs, refs: rs };

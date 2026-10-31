@@ -100,20 +100,42 @@ const asSection: ToolDef = {
 
 /** How a mark seen through an inset view maps between its source's coordinates and the host's (`via` in the mark's data). */
 interface Via { inset: string; host: string; source: string; at: number[]; centre: number[]; factor: number }
-function mapping(view?: GripView): { show: (p: Vec2) => Vec2; back: (p: Vec2) => Vec2; host?: string } {
-  const via = (view?.mark?.data as { via?: Via } | undefined)?.via;
+function mapping(mark?: GripView['mark']): { show: (p: Vec2) => Vec2; back: (p: Vec2) => Vec2; host?: string; source?: string } {
+  const via = (mark?.data as { via?: Via } | undefined)?.via;
   if (!via) return { show: (p) => p, back: (p) => p };
   return {
     show: (p) => ({ x: via.at[0] + (p.x - via.centre[0]) * via.factor, y: via.at[1] + (p.y - via.centre[1]) * via.factor }),
     back: (p) => ({ x: via.centre[0] + (p.x - via.at[0]) / via.factor, y: via.centre[1] + (p.y - via.at[1]) / via.factor }),
-    host: via.host,
+    host: via.host, source: via.source,
   };
+}
+
+/**
+ * The labels of what the engine generates for an element (a type's stirrups, a column's bars, a bar seen in another view), each
+ * dragged to a place kept on the view (`rebar.placeLabel`); through an inset, on the inset's source.
+ */
+function labelGrips(_node: NodeDto, view?: GripView): Grip[] {
+  const grips: Grip[] = [];
+  for (const mark of view?.marks ?? []) {
+    const labels = (mark.data as { labels?: { owner: string; key: string; at: number[] }[] } | undefined)?.labels ?? [];
+    const { show, back, source } = mapping(mark);
+    const viewId = source ?? view?.view;
+    for (const l of labels) {
+      const at = pt(l.at);
+      if (!at || !viewId) continue;
+      grips.push({
+        key: `label:${l.key}`, kind: 'move', at: show(at), view: view?.view, title: 'Drag: move the label',
+        step: (to: Vec2) => { const p = back(to); return { command: 'rebar.placeLabel', args: { viewId, owner: l.owner, key: l.key, at: [p.x, p.y] } }; },
+      });
+    }
+  }
+  return grips;
 }
 
 /** A bar's grips as the engine drew them: its shape's (each drives a parameter), its point, its label; through an inset, where the inset shows them. */
 function barGrips(node: NodeDto, view?: GripView): Grip[] {
   const data = view?.mark?.data as { grips?: { key: string; at: number[] }[]; at?: number[]; label?: number[] } | undefined;
-  const { show, back, host } = mapping(view);
+  const { show, back, host } = mapping(view?.mark);
   const viewId = host ?? (typeof node.props.viewId === 'string' ? node.props.viewId : undefined);
   const step = (key: string) => (to: Vec2) => { const p = back(to); return { command: 'rebar.grip', args: { id: node.id, key, point: [p.x, p.y] } }; };
   const grips: Grip[] = [];
@@ -125,14 +147,15 @@ function barGrips(node: NodeDto, view?: GripView): Grip[] {
   }
   const label = pt(data?.label);
   if (label) grips.push({ key: 'label', kind: 'move', at: show(label), title: 'Drag: move the mark', step: step('label') });
-  return grips.map((g) => ({ ...g, view: viewId }));
+  // The same bar seen in other views (dots in the cross-section) has its label there too.
+  return [...grips.map((g) => ({ ...g, view: viewId })), ...labelGrips(node, view)];
 }
 
 /** A distribution's path ends and its label. */
 function runGrips(node: NodeDto, view?: GripView): Grip[] {
   const a = pt(node.props.start), b = pt(node.props.end);
   if (!a || !b) return [];
-  const { show, back, host } = mapping(view);
+  const { show, back, host } = mapping(view?.mark);
   const viewId = host ?? (typeof node.props.viewId === 'string' ? node.props.viewId : undefined);
   const grips = axisGrips(show(a), show(b), (s, e) => { const p = back(s), q = back(e); return { command: 'rebar.updateRun', args: { id: node.id, start: [p.x, p.y], end: [q.x, q.y] } }; });
   const label = pt((view?.mark?.data as { label?: number[] } | undefined)?.label);
@@ -162,7 +185,8 @@ export const rebarModule: LapinModule = {
     ],
   }],
   hotbar: [straight, stirrup, run, sectionHere],
-  grips: { LapinRebar: barGrips, LapinRebarRun: runGrips, LapinInset: insetGrips },
+  // A beam's and a column's grips here are their generated labels' (the stirrups', the column bars'), beside the structure module's own.
+  grips: { LapinRebar: barGrips, LapinRebarRun: runGrips, LapinInset: insetGrips, IfcBeam: labelGrips, IfcColumn: labelGrips },
   propertySections: [
     { id: 'rebar.bar', label: 'Bar', classes: ['LapinRebar'], component: RebarSection },
     { id: 'rebar.run', label: 'Distribution', classes: ['LapinRebarRun'], component: RebarRunSection },

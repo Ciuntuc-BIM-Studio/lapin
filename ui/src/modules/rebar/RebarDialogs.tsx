@@ -3,19 +3,24 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
-import { execute, query, useSession } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
 import { useRebarCatalog } from './RebarSection';
+import { LabelStyleFields, useRebarSettings, type LabelKind, type LabelStylePatch, type RebarSettings as Settings } from './LabelStyleFields';
 
-interface Settings { colorByDiameter: boolean; textHeight: number; balloon: number; steel: string; segmentLengths: boolean; cover: number }
+const KINDS: { id: LabelKind; label: string }[] = [{ id: 'bars', label: 'Bars' }, { id: 'stirrups', label: 'Stirrups on the type' }, { id: 'columnBars', label: 'Column bars' }, { id: 'runs', label: 'Distributions' }];
 
 export function RebarSettingsDialog() {
   const catalog = useRebarCatalog();
-  const nodes = useSession((s) => s.nodes);
-  const [s, setS] = useState<Settings | null>(null);
-  useEffect(() => { let live = true; void query<Settings>('rebar.settings', {}).then((r) => { if (live && r) setS(r); }); return () => { live = false; }; }, [nodes]);
+  const live = useRebarSettings();
+  const [edited, setEdited] = useState<Settings | null>(null);
+  const [kind, setKind] = useState<LabelKind>('bars');
+  // What was typed shows at once; the engine's answer replaces it as soon as it comes.
+  useEffect(() => setEdited(null), [live]);
   const close = () => useUi.setState({ dialog: null });
+  const s = edited ?? live;
   if (!s || !catalog) return null;
-  const set = (patch: Partial<Settings>) => { setS({ ...s, ...patch }); void execute('rebar.setSettings', patch); };
+  const set = (patch: Partial<Settings>) => { setEdited({ ...s, ...patch }); void execute('rebar.setSettings', patch); };
+  const setLabel = (patch: LabelStylePatch) => { setEdited(null); void execute('rebar.setSettings', { labels: { [kind]: patch } }); };
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Rebar settings">
       <div className="dialog narrow">
@@ -33,6 +38,12 @@ export function RebarSettingsDialog() {
           </label>
           <label className="field-line"><span className="eyebrow">Cover</span><input className="num" type="number" step={5} min={0} max={200} value={Math.round(s.cover * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 0 && v <= 200) set({ cover: v / 1000 }); }} /><span className="muted small"> mm</span></label>
           <p className="muted small">Bars are drawn as thick as they are; bend radii follow SR EN 1992-1-1 (a mandrel of 4Ø up to Ø16, 7Ø over). The schedule's lengths are the nominal ones, hooks included.</p>
+          <p className="eyebrow">Labels</p>
+          <label className="field-line"><span className="eyebrow">For</span>
+            <select value={kind} onChange={(e) => setKind(e.target.value as LabelKind)}>{KINDS.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}</select>
+          </label>
+          <LabelStyleFields key={kind} style={s.labels[kind]} onChange={setLabel} testId="rebar-settings-label" />
+          <p className="muted small">A type and a bar may change any field of theirs; a mark's balloon is never drawn empty. Drag a label by its grip; a dragged one keeps its place on that view.</p>
         </div>
       </div>
     </div>

@@ -25,7 +25,7 @@ import { CadOverlay } from './cad/canvas';
 import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
-import { markIds } from './planPick';
+import { markIds, markOwner, markSelected } from './planPick';
 import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
@@ -108,7 +108,7 @@ export function DrawingView() {
     for (const m of drawing?.marks ?? []) {
       const s = m.segments;
       for (let k = 0; k + 3 < s.length; k += 4)
-        if (distToSegment(p, { x: s[k], y: s[k + 1] }, { x: s[k + 2], y: s[k + 3] }) < tol && nodes.get(m.id.includes('#') ? m.id.slice(0, m.id.indexOf('#')) : m.id)) return m.id;
+        if (distToSegment(p, { x: s[k], y: s[k + 1] }, { x: s[k + 2], y: s[k + 3] }) < tol && markOwner(m.id, nodes)) return markOwner(m.id, nodes)!.pick;
     }
     return null;
   }, [drawing, nodes, v.scale]);
@@ -282,7 +282,7 @@ export function DrawingView() {
         }}>
         <rect width="100%" height="100%" className="paper" />
         {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} />}
-        {(drawing?.marks ?? []).filter((m) => selected.includes(m.id)).map((m) => (
+        {(drawing?.marks ?? []).filter((m) => markSelected(m.id, selected)).map((m) => (
           <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
             return `M${a.x} ${a.y}L${b.x} ${b.y}`;

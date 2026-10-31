@@ -107,8 +107,14 @@ export interface Grip {
   remove?: () => GripStep | null;
 }
 
-/** What a 2D view lends an entity's grips: the mark the engine drew it with (an annotation's points as drawn now, in `data`). */
-export interface GripView { mark?: { id: string; segments: number[]; snaps?: number[]; data?: Record<string, unknown> } }
+/** A mark the engine drew: an annotation's points as drawn now, and what it tells of itself in `data`. */
+export interface MarkDto { id: string; segments: number[]; snaps?: number[]; data?: Record<string, unknown> }
+
+/**
+ * What a 2D view lends an entity's grips: the mark the engine drew it with (its own id), every mark of its (the owner's id or
+ * `${owner}:…`: a type's stirrups on a beam, a bar seen in another view), and the view they are drawn in.
+ */
+export interface GripView { mark?: MarkDto; marks?: MarkDto[]; view?: string }
 
 /** A line drawn over a selected element: its axis (walls, beams), its outline (slabs, roofs), its sketch (Studio). */
 export interface RefLine { points: Vec2[]; closed: boolean; kind: 'axis' | 'outline' | 'sketch'; view?: string; /** A grid axis's tag: drawn only when that axis is selected. */ tag?: string }

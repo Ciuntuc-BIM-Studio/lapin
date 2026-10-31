@@ -13,6 +13,23 @@ import { distToSegment, pairs, pointInPolygon } from './snap';
 /** A drawing's annotations: their ids and segments (x1, y1, x2, y2, …). */
 export type Mark = { id: string; segments: number[] };
 
+/**
+ * The element a mark belongs to when its id is not an element's: a grid's axis is `grid#tag` (selected on its own, as that id),
+ * a part drawn for an element is `${owner}:key` (a type's stirrups on a beam, a bar seen in another view: a click takes the owner).
+ */
+export function markOwner(id: string, nodes: Map<string, NodeDto>): { owner: NodeDto; pick: string } | null {
+  const own = nodes.get(id);
+  if (own) return { owner: own, pick: id };
+  const hash = id.indexOf('#');
+  if (hash > 0) { const o = nodes.get(id.slice(0, hash)); return o ? { owner: o, pick: id } : null; }
+  const colon = id.indexOf(':');
+  if (colon > 0) { const o = nodes.get(id.slice(0, colon)); return o ? { owner: o, pick: o.id } : null; }
+  return null;
+}
+
+/** Whether a mark is drawn as selected: its own id is, or its owner's (a part's). */
+export const markSelected = (id: string, selected: string[]): boolean => selected.includes(id) || (id.includes(':') && !id.includes('#') && selected.includes(id.slice(0, id.indexOf(':'))));
+
 const PICK_PRIORITY: Record<string, number> = { hit: 0, symbol: 0, heavy: 0, cut: 1, room: 1.5, outline: 2, overhead: 8, roomIsland: 9 };
 
 /** What lies under `p` within `tol` (metres); with `types`, only elements of those classes (annotations then are not picked). */
@@ -23,10 +40,11 @@ export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<str
       const s = m.segments;
       for (let k = 0; k + 3 < s.length; k += 4) {
         if (distToSegment(p, { x: s[k], y: s[k + 1] }, { x: s[k + 2], y: s[k + 3] }) >= tol) continue;
-        if (nodes.get(m.id)) return nodes.get(m.id)!;
+        const hit = markOwner(m.id, nodes);
+        if (!hit) continue;
+        if (hit.pick === hit.owner.id) return hit.owner;
         // One axis of a grid (grid#tag): selected on its own.
-        const owner = m.id.includes('#') ? nodes.get(m.id.slice(0, m.id.indexOf('#'))) : undefined;
-        if (owner) return { ...owner, id: m.id, name: `Axis ${m.id.slice(m.id.indexOf('#') + 1)}` };
+        return { ...hit.owner, id: m.id, name: `Axis ${m.id.slice(m.id.indexOf('#') + 1)}` };
       }
     }
   }
@@ -71,8 +89,8 @@ export function regionIds(takes: RegionTest, items: RenderItem[], nodes: Map<str
 /** The annotations and drafted shapes a region takes (a grid's axis on its own), added to `ids`. */
 export function markIds(takes: RegionTest, nodes: Map<string, NodeDto>, marks: Mark[] | undefined, ids: string[] = []): string[] {
   for (const m of marks ?? []) {
-    const owner = m.id.includes('#') ? m.id.slice(0, m.id.indexOf('#')) : m.id;
-    if (nodes.get(owner) && takes(segsOf(m.segments)) && !ids.includes(m.id)) ids.push(m.id);
+    const hit = markOwner(m.id, nodes);
+    if (hit && takes(segsOf(m.segments)) && !ids.includes(hit.pick)) ids.push(hit.pick);
   }
   return ids;
 }

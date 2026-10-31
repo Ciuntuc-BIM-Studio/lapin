@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
+import { LabelStyleFields, useRebarSettings, type LabelStylePatch } from './LabelStyleFields';
 
 export interface ShapeInfo { code: string; label: string; layer: string; diameter: number; freeVertices: boolean; hooks: boolean; params: { key: string; label: string; default: number; min: number }[] }
 export interface RebarCatalog { shapes: ShapeInfo[]; diameters: number[]; steels: string[]; views: string[] }
@@ -54,6 +55,20 @@ function HookFields({ label, hook, diameter, onChange }: { label: string; hook: 
         <label className="check small"><input type="checkbox" checked={!!hook.flip} onChange={(e) => onChange({ ...hook, flip: e.target.checked })} /> Other side</label>
       </>}
     </div>
+  );
+}
+
+/** A bar's or a distribution's own label style, over the project's for its kind; its place is dragged by its grip. */
+function LabelBlock({ node, kind, command }: { node: NodeDto; kind: 'bars' | 'runs'; command: string }) {
+  const settings = useRebarSettings();
+  const label = node.props.label as { at?: number[]; style?: LabelStylePatch } | undefined;
+  return (
+    <>
+      <p className="eyebrow">Label</p>
+      <LabelStyleFields style={label?.style} base={settings?.labels[kind]} onChange={(style) => void execute(command, { id: node.id, label: { style } })}
+        onReset={() => void execute(command, { id: node.id, label: { style: null } })} testId="rebar-label" />
+      {label?.at && <button type="button" className="link small" onClick={() => void execute(command, { id: node.id, label: { at: null } })}>Put the label back</button>}
+    </>
   );
 }
 
@@ -129,6 +144,7 @@ export function RebarSection({ node }: { node: NodeDto }) {
           <dt>Per metre</dt><dd><span className="num">{d.massPerMetre.toFixed(3)}</span> <span className="muted">kg/m</span></dd>
         </dl>
       )}
+      <LabelBlock node={node} kind="bars" command="rebar.update" />
       {typeof node.props.original === 'string' && <p className="muted small">A view of another bar: it is not counted in the schedule.</p>}
     </div>
   );
@@ -185,6 +201,7 @@ export function RebarRunSection({ node }: { node: NodeDto }) {
           <dt>Mass</dt><dd><span className="num">{d.mass.toFixed(2)}</span> <span className="muted">kg</span></dd>
         </dl>
       )}
+      <LabelBlock node={node} kind="runs" command="rebar.updateRun" />
     </div>
   );
 }

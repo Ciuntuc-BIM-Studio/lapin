@@ -21,7 +21,7 @@ import { findTool } from '../platform/modules';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
-import { pickAt, regionIds } from './planPick';
+import { markSelected, pickAt, regionIds } from './planPick';
 import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
 import { pairs, toMm } from './snap';
@@ -628,7 +628,7 @@ export function PlanView() {
             </g>
           );
         })}
-        {(drawing?.marks ?? []).filter((m) => selected.includes(m.id)).map((m) => (
+        {(drawing?.marks ?? []).filter((m) => markSelected(m.id, selected)).map((m) => (
           <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
             return `M${a.x} ${a.y}L${b.x} ${b.y}`;
