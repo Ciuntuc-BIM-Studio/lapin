@@ -719,7 +719,7 @@ public static class Views
         var k = c.Scale / 100;
         if (c.Kind == "plan")
         {
-            foreach (var v in m.OfClass(Class).Where(v => v.Str("kind") == "section"))
+            foreach (var v in m.OfClass(Class).Where(v => v.Str("kind") == "section" && SectionMarkers.Shows(c.View, v)))
             {
                 // Its line (a jogged or curved one as drawn, an alignment as it is now), the strokes and arrows at its ends, each arrow looking left of its piece.
                 var (path, _, _) = SectionPaths.Resolve(m, c.Services, v);
@@ -748,6 +748,8 @@ public static class Views
         else if (c.Drawing.Bounds is { } bounds && c.View.Str("kind") != RefPlanes.Kind)
         {
             if (c.Kind == "section" && SectionMarks(c, bounds, k, text) is { } section) yield return section;
+            // The other sections' markers where their planes cut this view (decision 223).
+            foreach (var trace in SectionMarkers.Traces(c)) yield return trace;
             var (x0, x1) = (bounds.Min.X - 1.0 * k, bounds.Max.X + 1.5 * k);
             // The levels across a drawing whose up is the model's (not on a level or a leaning work plane).
             foreach (var storey in Math.Abs(c.Frame.Up.Z) > 0.999 ? Spatial.Storeys(m) : [])
@@ -809,17 +811,7 @@ public static class Views
         var text = Standards.ResolveText(c.Book, []);
         var margin = 1.0 * k;
         var (x0, x1, y0, y1) = (bounds.Min.X - margin, bounds.Max.X + margin, bounds.Min.Y - margin, bounds.Max.Y + margin);
-        // The view's plane (its drawing's x and y on it), or a developed section's pieces, each over the x it covers.
-        var frames = new List<(WorkPlane Plane, double X0, double X1)>();
-        var developed = c.Kind == "section" && SectionPaths.Resolve(m, c.Services, c.View).Path is { } path ? SectionPaths.Pieces(path) : null;
-        if (developed is { Count: > 1 })
-        {
-            foreach (var piece in developed)
-                if (PlaneOf(m, c.Services, c.View, piece.Station + piece.Length / 2) is { } wp)
-                    frames.Add((wp, Math.Max(x0, piece.Station), Math.Min(x1, piece.Station + piece.Length)));
-        }
-        else if (c.Kind == "plan") { if (PlaneOf(m, c.Services, c.View) is { } wp) frames.Add((wp, x0, x1)); }
-        else frames.Add((new WorkPlane(c.Frame.Origin, c.Frame.Right, c.Frame.Up, -c.Frame.Dir), x0, x1));
+        var frames = ViewPlanes(c, x0, x1);
         foreach (var v in planes)
         {
             var plane = RefPlanes.Of(v);
@@ -836,6 +828,26 @@ public static class Views
             }
             if (mk.Lines.Count > 0) yield return mk;
         }
+    }
+
+    /// <summary>
+    /// The view's plane (its drawing's x and y on it), or a developed section's pieces, each over the x it covers within
+    /// <paramref name="x0"/>..<paramref name="x1"/>: what the reference planes' and the sections' traces are cut against.
+    /// </summary>
+    internal static List<(WorkPlane Plane, double X0, double X1)> ViewPlanes(ViewContext c, double x0, double x1)
+    {
+        var m = c.Model;
+        var frames = new List<(WorkPlane Plane, double X0, double X1)>();
+        var developed = c.Kind == "section" && SectionPaths.Resolve(m, c.Services, c.View).Path is { } path ? SectionPaths.Pieces(path) : null;
+        if (developed is { Count: > 1 })
+        {
+            foreach (var piece in developed)
+                if (PlaneOf(m, c.Services, c.View, piece.Station + piece.Length / 2) is { } wp)
+                    frames.Add((wp, Math.Max(x0, piece.Station), Math.Min(x1, piece.Station + piece.Length)));
+        }
+        else if (c.Kind == "plan") { if (PlaneOf(m, c.Services, c.View) is { } wp) frames.Add((wp, x0, x1)); }
+        else frames.Add((new WorkPlane(c.Frame.Origin, c.Frame.Right, c.Frame.Up, -c.Frame.Dir), x0, x1));
+        return frames;
     }
 
     /// <summary>
@@ -900,19 +912,30 @@ public static class Views
         return mk;
     }
 
-    /// <summary>A mark per element from its cut loops and seen lines, so a section or an elevation picks what it draws.</summary>
+    /// <summary>
+    /// A mark per element from its cut loops and seen lines, so a section or an elevation picks what it draws; its cut and
+    /// filled loops go in the mark's data too (<c>loops</c>: x y x y … each), so a click inside a cut takes the element.
+    /// </summary>
     static IEnumerable<ViewMark> PickMarks(Lapin.Drawing.Views.ViewDrawing drawing)
     {
         var byElement = new Dictionary<string, ViewMark>();
+        var loops = new Dictionary<string, JsonArray>();
         ViewMark Of(string id) => byElement.TryGetValue(id, out var mk) ? mk : byElement[id] = new ViewMark(id);
+        void Loop(string id, IReadOnlyList<Vec2> loop)
+        {
+            if (loop.Count < 3) return;
+            if (!loops.TryGetValue(id, out var all)) loops[id] = all = [];
+            all.Add((JsonNode)new JsonArray(loop.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 4)).ToArray()));
+        }
         foreach (var c in drawing.Cuts)
             foreach (var loop in c.Loops)
-                if (loop.Length >= 2) Of(c.Element).Polyline(loop, true, "PICK", 0);
+                if (loop.Length >= 2) { Of(c.Element).Polyline(loop, true, "PICK", 0); Loop(c.Element, loop); }
         foreach (var l in drawing.Lines)
             if (l.Role is not (LineRole.Hidden or LineRole.Overhead)) Of(l.Element).Line(l.A, l.B, "PICK", 0);
         foreach (var f in drawing.Fills ?? [])
             foreach (var loop in f.Loops)
-                if (loop.Length >= 2) Of(f.Element).Polyline(loop, true, "PICK", 0);
+                if (loop.Length >= 2) { Of(f.Element).Polyline(loop, true, "PICK", 0); Loop(f.Element, loop); }
+        foreach (var (id, all) in loops) Of(id).Data = new JsonObject { ["loops"] = all };
         return byElement.Values;
     }
 
@@ -931,6 +954,8 @@ public static class Views
             new("hiddenLines", "Hidden lines", "choice", Choices: ["auto", "show", "hide"]),
             new("discipline", "Discipline", "text"),
             new("openingSymbols", "Opening symbols", "choice", Choices: ["show", "hide"]),
+            // The layer a section's marker is on, so views hide markers by layer (SectionMarkers).
+            new("markerLayer", "Marker layer", "text"),
             // An elevation's sketch plane, along its look; a reference plane's place and turn (docs/plan-studio-thick.md).
             new("planeDepth", "Sketch plane depth", "length"),
             new("x", "Origin x", "length"), new("y", "Origin y", "length"), new("z", "Origin z", "length"),
@@ -1012,6 +1037,21 @@ public static class Views
         });
 
         Insets.Register(r);
+        SectionMarkers.Register(r);
+
+        // A section across an element moved along it or widened: {id, station?, marginA?, marginB?} (AcrossSections).
+        r.Command("view.updateAcross", "Move section", (ctx, a) =>
+        {
+            var v = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && AcrossSections.Is(x) ? x : throw new CommandException("Not a section across an element.");
+            var attrs = v.CloneAttrs();
+            var auto = AcrossSections.Set(ctx, attrs, new JsonObject { [AcrossSections.Key] = v.Str(AcrossSections.Key) });
+            var args = new JsonObject();
+            foreach (var key in new[] { "station", "marginA", "marginB" }) if (a.ContainsKey(key)) args[key] = a[key]?.DeepClone();
+            var name = AcrossSections.Set(ctx, attrs, args);
+            // A name of the engine's own follows the station; the user's stays.
+            ctx.Replace(v.With(name: v.Name == auto ? name : v.Name, attrs: attrs));
+            return null;
+        });
 
         // A site plan's or a location plan's settings: {id, site?, gridStep?, northArrow?, scaleBar?} (SitePlans).
         r.Command("view.setSite", "Site plan", (ctx, a) => { SitePlans.Set(ctx, a); return null; });

@@ -33,6 +33,13 @@ public static class AcrossSections
         return Math.Clamp(s, 0, e.NumOrNull("height") ?? height);
     }
 
+    /// <summary>The margins at the line's two ends (its start, its end): each its own when set, else <c>margin</c>.</summary>
+    public static (double A, double B) Margins(Entity view)
+    {
+        var margin = view.NumOrNull("margin") ?? DefaultMargin;
+        return (view.NumOrNull("marginA") ?? margin, view.NumOrNull("marginB") ?? margin);
+    }
+
     /// <summary>
     /// The section's line in plan for a path element: across the axis at the station, as wide as the element and its
     /// margins, drawn so that it looks along the axis (left of the line); null for a standing element (its cut is horizontal) or one that is gone.
@@ -46,13 +53,13 @@ public static class AcrossSections
         var look = c.TangentAt(s);
         if (view.Bool("flip")) look = -look;
         var along = -look.Perp;
-        var margin = view.NumOrNull("margin") ?? DefaultMargin;
+        var (mA, mB) = Margins(view);
         var frame = services?.Get<IPathElements>()?.FrameOf(e, m);
         var (y0, y1) = frame is { } f ? (f.YMin, f.YMax) : (-0.15, 0.15);
         // The frame's y grows to the left of the axis; along runs the other way when not flipped.
         var (lo, hi) = view.Bool("flip") ? (y0, y1) : (-y1, -y0);
         var p = c.PointAt(s);
-        return [p + along * (lo - margin), p + along * (hi + margin)];
+        return [p + along * (lo - mA), p + along * (hi + mB)];
     }
 
     /// <summary>The view's spec: the plane across the element, the window round its section; null with the reason when the element is gone.</summary>
@@ -60,27 +67,28 @@ public static class AcrossSections
     {
         if (m.Get(view.Str(Key) ?? "") is not { } e) return (null, "The element the section cuts across is gone.");
         var margin = view.NumOrNull("margin") ?? DefaultMargin;
+        var (mA, mB) = Margins(view);
         var depth = view.NumOrNull("depth") ?? margin;
         var own = parts.Where(p => p.Element == e.Id).SelectMany(p => p.Solid.Vertices).ToList();
         if (IsPath(e))
         {
             if (Line(m, services, view) is not { Count: 2 } line) return (null, "The element the section cuts across has no length.");
             var spec = ViewSpec.Section(line[0], line[1], depth, hidden);
-            // The window: the element's own body about the plane, with the margin; without a body, the line's width and the storey's height.
+            // The window: the element's own body about the plane, with the margins (each end its own); without a body, the line's width and the storey's height.
             double x0, x1, z0, z1;
             if (own.Count > 0)
             {
                 var xs = own.Select(v => spec.Frame.Map(v).X).ToList();
-                (x0, x1) = (Math.Min(xs.Min(), margin), Math.Max(xs.Max(), (line[1] - line[0]).Length - margin));
+                (x0, x1) = (Math.Min(xs.Min(), mA), Math.Max(xs.Max(), (line[1] - line[0]).Length - mB));
                 (z0, z1) = (own.Min(v => v.Z), own.Max(v => v.Z));
             }
             else
             {
-                (x0, x1) = (margin, (line[1] - line[0]).Length - margin);
+                (x0, x1) = (mA, (line[1] - line[0]).Length - mB);
                 var storey = Spatial.StoreyOf(m, e.Id);
                 (z0, z1) = (storey?.Num("elevation") ?? 0, (storey?.Num("elevation") ?? 0) + (storey?.Num("height", 3) ?? 3));
             }
-            return (spec with { Span = (x0 - margin, x1 + margin), Rise = (z0 - margin, z1 + margin) }, null);
+            return (spec with { Span = (x0 - mA, x1 + mB), Rise = (z0 - margin, z1 + margin) }, null);
         }
         // A standing element: a horizontal cut over its base, looked at from above, its x along its rotation.
         var baseZ = (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + e.Num("baseOffset");
@@ -94,7 +102,7 @@ public static class AcrossSections
         var pts = own.Count > 0 ? own.Select(frame.Map).ToList() : [new Vec2(-0.15, -0.15), new Vec2(0.15, 0.15)];
         var plane = new ViewSpec("section", frame, true, depth, Hidden: hidden)
         {
-            Span = (pts.Min(p => p.X) - margin, pts.Max(p => p.X) + margin),
+            Span = (pts.Min(p => p.X) - mA, pts.Max(p => p.X) + mB),
             Rise = (pts.Min(p => p.Y) - margin, pts.Max(p => p.Y) + margin),
         };
         return (plane, null);
@@ -102,7 +110,8 @@ public static class AcrossSections
 
     /// <summary>
     /// The view's fields from a command's arguments: <c>across</c> (the element), <c>station</c> (default: the middle),
-    /// <c>flip</c>, <c>margin</c>, <c>depth</c>; its line in plan for what reads a section as one. Returns the view's name.
+    /// <c>flip</c>, <c>margin</c>, <c>marginA</c> and <c>marginB</c> (one end's own; null: as <c>margin</c>), <c>depth</c>;
+    /// its line in plan for what reads a section as one. Returns the view's name (the user's, else the element's and the station).
     /// </summary>
     public static string Set(ICommandContext ctx, JsonObject attrs, JsonObject a)
     {
@@ -120,6 +129,16 @@ public static class AcrossSections
             var margin = Json.Number(a["margin"]) ?? DefaultMargin;
             if (margin < 0 || margin > 20) throw new CommandException("The margin is between 0 and 20 m.");
             attrs["margin"] = margin;
+        }
+        foreach (var side in new[] { "marginA", "marginB" })
+        {
+            if (!a.ContainsKey(side)) continue;
+            if (Json.Number(a[side]) is { } mg)
+            {
+                if (mg < 0 || mg > 20) throw new CommandException("The margin is between 0 and 20 m.");
+                attrs[side] = Math.Round(mg, 4);
+            }
+            else attrs.Remove(side);
         }
         if (a.ContainsKey("depth")) { if (Json.Number(a["depth"]) is { } d && d > 0) attrs["depth"] = d; else attrs.Remove("depth"); }
         var view = new Entity("", Views.Class, "", attrs);
