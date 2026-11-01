@@ -422,8 +422,8 @@ export const scenes = [
       await t.ui({ keyPlan: false });
       await t.wait(800);
       await t.fit();
-      // Zoomed out a little, about the house, so the porch and the way down stand clear of the quick tools.
-      { const [px, py] = await t.planPoint(6, 4); await t.page.mouse.move(px, py); await t.page.mouse.wheel(0, 400); await t.wait(600); }
+      // Zoomed out a little, about the house, so the porch and the way down stand clear of the quick tools: four notches (a wheel event zooms one at most).
+      { const [px, py] = await t.planPoint(6, 4); await t.page.mouse.move(px, py); for (let i = 0; i < 4; i++) { await t.page.mouse.wheel(0, 100); await t.wait(80); } await t.wait(600); }
       // Entrance steps with the tool: the middle of the porch's edge, then the way down.
       await t.tool('architecture.entranceSteps');
       for (const [x, y] of [[3, -1.6], [3, -3]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(500); }
