@@ -387,6 +387,9 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .roof-styles { max-height: 64vh; overflow: auto; padding-right: 6px; }
 .roof-styles .eyebrow { margin: 10px 0 2px; }
 .roof-styles .tree-item { display: flex; gap: 6px; text-align: left; }
+.roof-own { gap: 2px; flex-wrap: nowrap; }
+.roof-own .icon.mini { opacity: 0.55; }
+.roof-own:hover .icon.mini { opacity: 1; }
 .roof-edit { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .roof-field { grid-template-columns: 150px 1fr; }
 .roof-field select, .roof-field input.num { min-width: 0; max-width: 180px; }

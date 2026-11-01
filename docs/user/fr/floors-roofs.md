@@ -28,7 +28,7 @@ Sélectionnez le toit pour le modifier dans le panneau des propriétés :
 
 ![Les propriétés d’un toit](shots/roof-properties.webp)
 
-**Configurateur de toit** (le bouton à côté du style, ou **Architecture → Roof configurator** avec un toit sélectionné) réunit tout : les styles à gauche, puis la forme et ses rives, la couverture et l’évacuation, la charpente et les ouvertures, au-dessus d’un plan du toit (un clic sur une rive la rend auto, égout ou pignon) et, pour la charpente, une coupe en travers du faîtage avec la fermette ou le couple du milieu. Partez d’un style et changez n’importe quel champ à la main ; **Apply** en fait une seule étape d’annulation.
+**Configurateur de toit** (le bouton à côté du style, ou **Architecture → Roof configurator** avec un toit sélectionné) réunit tout : les styles à gauche, puis la forme et ses rives, la couverture et l’évacuation, la charpente et les ouvertures, au-dessus d’un plan du toit (un clic sur une rive la rend auto, égout ou pignon) et, pour la charpente, une coupe en travers du faîtage avec la fermette ou le couple du milieu. Partez d’un style et changez n’importe quel champ à la main ; **Apply** en fait une seule étape d’annulation. **Enregistrer comme style…** garde le toit tel qu’il est configuré comme style du projet, listé sous **Project** au-dessus de ceux du catalogue (et dans la liste du panneau des propriétés) pour d’autres toits et les nouveaux ; **Mettre à jour le style** y enregistre à nouveau les changements, et tous les toits du style suivent. Un style du projet peut être renommé ou supprimé ; ses toits restent tels quels.
 
 ![Le configurateur de toit](shots/roof-configurator.webp)
 

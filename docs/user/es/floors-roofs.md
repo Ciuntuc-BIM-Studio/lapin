@@ -28,7 +28,7 @@ Seleccione la cubierta para cambiarla en el panel de propiedades:
 
 ![Las propiedades de una cubierta](shots/roof-properties.webp)
 
-**Configurador de cubierta** (el botón junto al estilo, o **Architecture → Roof configurator** con una cubierta seleccionada) lo reúne todo: los estilos a la izquierda, luego la forma y sus bordes, la cobertura y el desagüe, la estructura y los huecos, sobre una planta de la cubierta (un clic en un borde lo vuelve auto, alero o hastial) y, para la estructura, una sección transversal a la cumbrera con la cercha o la pareja del centro. Parte de un estilo y cambia a mano cualquier campo; **Apply** lo deja en un solo paso de deshacer.
+**Configurador de cubierta** (el botón junto al estilo, o **Architecture → Roof configurator** con una cubierta seleccionada) lo reúne todo: los estilos a la izquierda, luego la forma y sus bordes, la cobertura y el desagüe, la estructura y los huecos, sobre una planta de la cubierta (un clic en un borde lo vuelve auto, alero o hastial) y, para la estructura, una sección transversal a la cumbrera con la cercha o la pareja del centro. Parte de un estilo y cambia a mano cualquier campo; **Apply** lo deja en un solo paso de deshacer. **Guardar como estilo…** guarda la cubierta tal como está configurada como estilo del proyecto, listado en **Project** sobre los del catálogo (y en la lista del panel de propiedades) para otras cubiertas y las nuevas; **Actualizar el estilo** vuelve a guardar en él los cambios, y todas las cubiertas del estilo los siguen. Un estilo del proyecto se puede renombrar o borrar; sus cubiertas quedan como están.
 
 ![El configurador de cubierta](shots/roof-configurator.webp)
 

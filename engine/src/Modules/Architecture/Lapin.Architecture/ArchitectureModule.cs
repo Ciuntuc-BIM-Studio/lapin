@@ -321,8 +321,12 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         {
             var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
             var contour = Slabs.CheckContour(Points(a));
-            var style = (string?)a["style"] is { } sid ? RoofCatalog.StyleOf(sid) ?? throw new CommandException($"There is no roof style „{sid}”.") : RoofCatalog.Styles[0];
-            var roof = new Entity(ctx.NewId(), IfcClass.Roof, $"Roof {ctx.Model.OfClass(IfcClass.Roof).Count() + 1}", Roof.Attrs(style, contour), "NOTDEFINED");
+            // A project's own style (decision 233) over the catalogue's first, or one of the catalogue's.
+            var own = ProjectRoofStyles.Of(ctx.Model, (string?)a["style"]);
+            var style = own != null ? RoofCatalog.Styles[0] : (string?)a["style"] is { } sid ? RoofCatalog.StyleOf(sid) ?? throw new CommandException($"There is no roof style „{sid}”.") : RoofCatalog.Styles[0];
+            var attrs = Roof.Attrs(style, contour);
+            if (own != null) ProjectRoofStyles.Apply(attrs, own, contour);
+            var roof = new Entity(ctx.NewId(), IfcClass.Roof, $"Roof {ctx.Model.OfClass(IfcClass.Roof).Count() + 1}", attrs, "NOTDEFINED");
             CheckRoof(ctx.Model, roof);
             ctx.Add(roof);
             Spatial.Contain(ctx, storeyId, roof.Id);
@@ -372,8 +376,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Command("roofStyle", "Roof style", (ctx, a) =>
         {
             var roof = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Roof);
-            if (RoofCatalog.StyleOf((string?)a["style"]) == null) throw new CommandException("There is no such roof style.");
-            var next = RoofDraft(roof, new JsonObject { ["style"] = (string?)a["style"] });
+            if (RoofCatalog.StyleOf((string?)a["style"]) == null && ProjectRoofStyles.Of(ctx.Model, (string?)a["style"]) == null) throw new CommandException("There is no such roof style.");
+            var next = RoofDraft(ctx.Model, roof, new JsonObject { ["style"] = (string?)a["style"] });
             CheckRoof(ctx.Model, next);
             CheckRoofOpenings(ctx.Model, next);
             ctx.Replace(next);
@@ -385,19 +389,36 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Command("updateRoof", "Change roof", (ctx, a) =>
         {
             var roof = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Roof);
-            var next = RoofDraft(roof, a);
+            var next = RoofDraft(ctx.Model, roof, a);
             CheckRoof(ctx.Model, next);
             CheckRoofOpenings(ctx.Model, next);
             ctx.Replace(next);
             return null;
         });
 
+        // The project's own roof styles (decision 233): the roof as the draft makes it saved under a name (a new style, or the one
+        // of that name or id saved again, which its roofs take again), the roof taking it; renamed; deleted (its roofs kept as they are).
+        r.Command("saveRoofStyle", "Save roof style", (ctx, a) =>
+        {
+            var roof = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Roof);
+            var draft = RoofDraft(ctx.Model, roof, a);
+            var sid = ProjectRoofStyles.Save(ctx, draft, (string?)a["name"] ?? "", (string?)a["styleId"], next =>
+            {
+                CheckRoof(ctx.Model, next);
+                CheckRoofOpenings(ctx.Model, next);
+                return next;
+            });
+            return new JsonObject { ["styleId"] = sid };
+        });
+        r.Command("renameRoofStyle", "Rename roof style", (ctx, a) => { ProjectRoofStyles.Rename(ctx, (string?)a["styleId"] ?? "", (string?)a["name"] ?? ""); return null; });
+        r.Command("deleteRoofStyle", "Delete roof style", (ctx, a) => { ProjectRoofStyles.Delete(ctx, (string?)a["styleId"] ?? ""); return null; });
+
         // The roof configurator's preview: the roof as the draft would make it (a style, fields, edge rules), its plan, a section
         // through its framing and what it takes; nothing changes in the model.
         r.Query("roofPreview", (q, a) =>
         {
             var roof = Spatial.Require(q.Model, (string?)a["id"], IfcClass.Roof);
-            try { return RoofPreview.Of(RoofDraft(roof, a), q.Model); }
+            try { return RoofPreview.Of(RoofDraft(q.Model, roof, a), q.Model); }
             catch (CommandException e) { return new JsonObject { ["problem"] = e.Message, ["attrs"] = roof.Attrs.DeepClone() }; }
         });
 
@@ -593,10 +614,11 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     /// the outline (<c>points</c>) and the edge rules (<c>edges</c>: one entry per edge, null for "as the roof"; null clears
     /// them all). Fields or edges changed by hand leave the roof no longer exactly its style.
     /// </summary>
-    internal static Entity RoofDraft(Entity roof, JsonObject a)
+    internal static Entity RoofDraft(IModelView m, Entity roof, JsonObject a)
     {
         var attrs = roof.CloneAttrs();
-        if ((string?)a["style"] is { Length: > 0 } sid)
+        if (ProjectRoofStyles.Of(m, (string?)a["style"]) is { } mine) ProjectRoofStyles.Apply(attrs, mine, Roof.Contour(roof));
+        else if ((string?)a["style"] is { Length: > 0 } sid)
         {
             var style = RoofCatalog.StyleOf(sid) ?? throw new CommandException($"There is no roof style „{sid}”.");
             attrs.Remove("edges");

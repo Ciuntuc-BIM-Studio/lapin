@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { RotateCcw, X } from 'lucide-react';
+import { Pencil, RotateCcw, Save, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { FieldDescriptor } from '../../engine/protocol';
@@ -14,6 +14,8 @@ import { t, useLang } from '../../i18n';
 
 type Style = { id: string; label: string; family: string; region: string; shape: string; pitch: number; covering: string; description?: string; structure?: string | null };
 type Covering = { id: string; color: string; minPitch: number };
+/** A project's own style (decision 233), kept on the project. */
+type OwnStyle = { id: string; label: string; shape: string; pitch: number; structure?: string };
 type Edge = { kind?: 'eave' | 'gable'; pitch?: number; overhang?: number } | null;
 type Item = { role: string; pts: number[] };
 interface Preview {
@@ -140,6 +142,8 @@ export function RoofDialog() {
   const info = useSession((s) => s.info);
   const error = useSession((s) => s.error);
   const styles = (info?.catalogs['architecture.roofStyles'] as unknown as Style[] | undefined) ?? [];
+  const project = useSession((s) => [...s.nodes.values()].find((n) => n.type === 'IfcProject'));
+  const own = (project?.props.roofStyles as OwnStyle[] | undefined) ?? [];
   const coverings = (info?.catalogs['architecture.roofCoverings'] as unknown as Covering[] | undefined) ?? [];
   const fields = useMemo(() => new Map((info?.nodeTypes.find((c) => c.type === 'IfcRoof')?.fields ?? []).map((f) => [f.key, f])), [info]);
   const [tab, setTab] = useState<Tab>('shape');
@@ -172,10 +176,24 @@ export function RoofDialog() {
   const cycleEdge = (i: number) => setEdge(i, { kind: edges[i]?.kind === undefined ? 'eave' : edges[i]?.kind === 'eave' ? 'gable' : undefined });
   const pickStyle = (id: string) => setDraft({ style: id, attrs: {} });
   const apply = async () => {
-    await execute('architecture.updateRoof', { id: node.id, ...(draft.style ? { style: draft.style } : {}), attrs: draft.attrs, ...(draft.edges ? { edges: draft.edges } : {}) });
+    await execute('architecture.updateRoof', draftArgs());
     if (!useSession.getState().error) setDraft({ attrs: {} });
   };
   const current = draft.style ?? (dirty ? undefined : (node.props.style as string | undefined));
+  const draftArgs = () => ({ id: node.id, ...(draft.style ? { style: draft.style } : {}), attrs: draft.attrs, ...(draft.edges ? { edges: draft.edges } : {}) });
+  // Saved as the project's own style: a new one under a name, or the one it has saved again (its roofs follow).
+  const saveAs = async () => {
+    const name = window.prompt(t('Name of the roof style'), node.props.style && own.some((s) => s.id === node.props.style) ? '' : `${node.name}`);
+    if (!name?.trim()) return;
+    await execute('architecture.saveRoofStyle', { ...draftArgs(), name });
+    if (!useSession.getState().error) setDraft({ attrs: {} });
+  };
+  const ownStyle = own.find((s) => s.id === (draft.style ?? node.props.style));
+  const update = async () => {
+    if (!ownStyle) return;
+    await execute('architecture.saveRoofStyle', { ...draftArgs(), name: ownStyle.label, styleId: ownStyle.id });
+    if (!useSession.getState().error) setDraft({ attrs: {} });
+  };
   const families = [...new Set(styles.map((s) => s.family))];
   const covering = coverings.find((c) => c.id === value('covering'));
   const pitch = Number(value('pitch'));
@@ -200,6 +218,18 @@ export function RoofDialog() {
         <div className="dialog-body split">
           <div className="type-list roof-styles">
             <button type="button" className={`tree-item${!current ? ' on' : ''}`} onClick={() => setDraft({ attrs: {} })} title="The roof as it is">{node.props.style ? 'As it is' : 'Shaped by hand'}</button>
+            <p className="eyebrow">Project</p>
+            {own.length === 0 && <p className="muted small">Configure a roof, then Save as style.</p>}
+            {own.map((s) => (
+              <div key={s.id} className="row roof-own">
+                <button type="button" className={`tree-item grow${current === s.id ? ' on' : ''}`} onClick={() => pickStyle(s.id)}>
+                  <span className="grow">{s.label}</span>
+                  <span className="muted small">{t(s.shape)}{s.shape === 'barrel' ? '' : ` ${s.pitch}°`}{s.structure && s.structure !== 'rafters' ? ` · ${s.structure}` : ''}</span>
+                </button>
+                <button type="button" className="icon mini" title="Rename" onClick={() => { const n = window.prompt(t('Name of the roof style'), s.label); if (n?.trim()) void execute('architecture.renameRoofStyle', { styleId: s.id, name: n }); }}><Pencil size={12} /></button>
+                <button type="button" className="icon mini" title="Delete the style (its roofs keep how they look)" onClick={() => { if (window.confirm(t('Delete this roof style? Its roofs keep how they look.'))) void execute('architecture.deleteRoofStyle', { styleId: s.id }); }}><Trash2 size={12} /></button>
+              </div>
+            ))}
             {families.map((fam) => (
               <div key={fam}>
                 <p className="eyebrow">{fam}</p>
@@ -291,6 +321,8 @@ export function RoofDialog() {
               <div className="row joinery-actions">
                 <span className="muted small grow">{dirty ? (draft.style ? `${styles.find((s) => s.id === draft.style)?.label ?? draft.style}${Object.keys(draft.attrs).length || draft.edges ? ', changed by hand' : ''}` : 'Changed, not applied yet') : ''}</span>
                 <button type="button" className="btn" disabled={!dirty} onClick={() => setDraft({ attrs: {} })}><RotateCcw size={14} />Reset</button>
+                {ownStyle && <button type="button" className="btn" disabled={Boolean(preview?.problem)} title={`Save the roof as it is configured into ${ownStyle.label}; every roof of the style follows`} onClick={() => void update()}><Save size={14} />Update style</button>}
+                <button type="button" className="btn" disabled={Boolean(preview?.problem)} title="Save the roof as it is configured as a style of the project" onClick={() => void saveAs()}><Save size={14} />Save as style…</button>
                 <button type="button" className="btn primary" disabled={!dirty || Boolean(preview?.problem)} onClick={() => void apply()}>Apply</button>
               </div>
               {error && <p className="error-text" role="alert">{error}</p>}

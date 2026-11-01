@@ -28,7 +28,7 @@ Markér taget for at ændre det i egenskabspanelet:
 
 ![Et tags egenskaber](shots/roof-properties.webp)
 
-**Tagkonfigurator** (knappen ved siden af stilen, eller **Architecture → Roof configurator** med et tag valgt) samler det hele: stilene til venstre, så formen og kanterne, tagdækning og afvanding, konstruktionen og åbningerne, over en plan af taget (et klik på en kant gør den auto, tagfod eller gavl) og, for konstruktionen, et snit på tværs af kippen med gitterspæret eller spærparret på midten. Start fra en stil og ret ethvert felt i hånden; **Apply** gør det til ét fortryd-trin.
+**Tagkonfigurator** (knappen ved siden af stilen, eller **Architecture → Roof configurator** med et tag valgt) samler det hele: stilene til venstre, så formen og kanterne, tagdækning og afvanding, konstruktionen og åbningerne, over en plan af taget (et klik på en kant gør den auto, tagfod eller gavl) og, for konstruktionen, et snit på tværs af kippen med gitterspæret eller spærparret på midten. Start fra en stil og ret ethvert felt i hånden; **Apply** gør det til ét fortryd-trin. **Gem som stil…** gemmer taget, som det er konfigureret, som en stil i projektet, vist under **Project** over katalogets (og i egenskabspanelets liste) til andre og nye tage; **Opdatér stilen** gemmer ændringerne i den igen, og alle tage med stilen følger med. En projektstil kan omdøbes eller slettes; dens tage forbliver, som de er.
 
 ![Tagkonfiguratoren](shots/roof-configurator.webp)
 

@@ -423,6 +423,16 @@ export const scenes = [
       await t.wait(1000);
       const framed = (await t.nodes()).find((n) => n.id === roof.id);
       t.expect(framed?.props?.structure === 'trusses', `the roof takes the trusses (structure ${framed?.props?.structure})`);
+      // Saved as the project's own style (decision 233): Save as style…, a name, and it is listed under Project.
+      const answers = t.page.listeners('dialog');
+      t.page.removeAllListeners('dialog');
+      t.page.once('dialog', (d) => void d.accept('Our truss roof'));
+      await conf.locator('.joinery-actions .btn').nth(1).click();
+      await t.wait(1000);
+      for (const l of answers) t.page.on('dialog', l);
+      const project = (await t.nodes()).find((n) => n.type === 'IfcProject');
+      t.expect(project?.props?.roofStyles?.[0]?.label === 'Our truss roof', `the roof saved as a project style (${project?.props?.roofStyles?.[0]?.label})`);
+      t.expect(await conf.locator('.roof-own').count() === 1, 'the configurator lists the project style');
       await t.ui({ dialog: null });
     },
   },

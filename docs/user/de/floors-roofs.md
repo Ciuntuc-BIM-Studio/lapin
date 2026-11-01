@@ -28,7 +28,7 @@ Wählen Sie das Dach aus, um es im Eigenschaftenbereich zu ändern:
 
 ![Die Eigenschaften eines Dachs](shots/roof-properties.webp)
 
-**Dachkonfigurator** (die Schaltfläche neben dem Stil, oder **Architecture → Roof configurator** bei gewähltem Dach) fasst alles zusammen: links die Stile, dann Form und Kanten, Deckung und Entwässerung, Tragwerk und Öffnungen, über einem Grundriss des Dachs (ein Klick auf eine Kante macht sie auto, Traufe oder Ortgang) und, beim Tragwerk, einem Schnitt quer zum First mit dem Binder oder Sparrenpaar in der Mitte. Von einem Stil ausgehen und jedes Feld von Hand ändern; **Apply** macht daraus einen Rückgängig-Schritt.
+**Dachkonfigurator** (die Schaltfläche neben dem Stil, oder **Architecture → Roof configurator** bei gewähltem Dach) fasst alles zusammen: links die Stile, dann Form und Kanten, Deckung und Entwässerung, Tragwerk und Öffnungen, über einem Grundriss des Dachs (ein Klick auf eine Kante macht sie auto, Traufe oder Ortgang) und, beim Tragwerk, einem Schnitt quer zum First mit dem Binder oder Sparrenpaar in der Mitte. Von einem Stil ausgehen und jedes Feld von Hand ändern; **Apply** macht daraus einen Rückgängig-Schritt. **Als Stil speichern…** behält das Dach, wie es konfiguriert ist, als Stil des Projekts, unter **Project** über denen des Katalogs aufgeführt (und in der Liste der Eigenschaften), für andere und neue Dächer; **Stil aktualisieren** speichert die Änderungen wieder hinein, und jedes Dach des Stils folgt. Ein Projektstil lässt sich umbenennen oder löschen; seine Dächer bleiben, wie sie sind.
 
 ![Der Dachkonfigurator](shots/roof-configurator.webp)
 

@@ -47,6 +47,10 @@ Două stiluri noi în catalog, care își aduc și șarpanta: **Swedish truss ro
 
 Architecture → Roof configurator, sau butonul de lângă stil: stilurile în stânga; Formă, Învelitoare și ape, Șarpantă, Goluri; planul acoperișului cu laturile de clicat și secțiunea peste coamă prin șarpantă, din `architecture.roofPreview`; Apply, un singur pas.
 
+## Stilurile proiectului (decizia 233, făcut)
+
+Salvează ca stil… / Actualizează stilul în configurator: acoperișul configurat devine un stil al proiectului (`roofStyles`), pus pe alte acoperișuri și pe cele noi; rescris, își duce acoperișurile după el; redenumit, șters.
+
 ## Mai târziu
 
 - Ferme de șold și căpriori de colț cu tăieturi compuse (acum căpriorii se opresc în echer la linia de șold).

@@ -17,6 +17,9 @@ export function RoofSection({ node }: { node: NodeDto }) {
   const info = useSession((s) => s.info);
   useLang((s) => s.lang); // a style's option names its shape in the language chosen
   const styles = (info?.catalogs['architecture.roofStyles'] as unknown as Style[] | undefined) ?? [];
+  // The project's own styles (decision 233) first.
+  const project = useSession((s) => [...s.nodes.values()].find((n) => n.type === 'IfcProject'));
+  const own = (project?.props.roofStyles as { id: string; label: string; shape: string; pitch: number }[] | undefined) ?? [];
   const contour = (node.props.contour as number[][] | undefined) ?? [];
   const edges = (node.props.edges as Edge[] | undefined) ?? [];
   const setEdge = (i: number, patch: Partial<NonNullable<Edge>> | null) => {
@@ -35,6 +38,7 @@ export function RoofSection({ node }: { node: NodeDto }) {
         <select value={(node.props.style as string | undefined) ?? ''} disabled={!node.editable}
           onChange={(e) => void execute('architecture.roofStyle', { id: node.id, style: e.target.value })}>
           {!node.props.style && <option value="">Shaped by hand</option>}
+          {own.length > 0 && <optgroup label={t('Project')}>{own.map((s) => <option key={s.id} value={s.id}>{`${s.label} · ${t(s.shape)}${s.shape === 'barrel' ? '' : ` ${s.pitch}°`}`}</option>)}</optgroup>}
           {styles.map((s) => <option key={s.id} value={s.id}>{`${s.label} · ${t(s.shape)}${s.shape === 'barrel' ? '' : ` ${s.pitch}°`}`}</option>)}
         </select>
         <button type="button" className="icon" title="Roof configurator…" disabled={!node.editable} onClick={() => useUi.setState({ dialog: 'roof', roofId: node.id })}><Settings2 size={14} /></button>
