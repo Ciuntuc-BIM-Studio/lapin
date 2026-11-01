@@ -23,7 +23,20 @@ public static class Roof
     public const double Battens = 0.04;
     /// <summary>A roof without a structure: a solid deck under the covering.</summary>
     const double Deck = 0.16;
-    public static readonly string[] RafterSections = ["8x16", "10x16", "10x18", "10x20", "12x22"];
+    /// <summary>Rafter and chord sections: the old ones in cm, the Nordic ones in mm (said so).</summary>
+    public static readonly string[] RafterSections = ["8x16", "10x16", "10x18", "10x20", "12x22", "45x95 mm", "45x120 mm", "45x145 mm", "45x170 mm", "45x195 mm", "45x220 mm", "45x245 mm", "70x220 mm"];
+    /// <summary>The framing systems (decision 229): rafters on purlins, couples with collar ties, prefabricated trusses, or none (a deck).</summary>
+    public static readonly string[] Structures = ["rafters", "collar", "trusses", "none"];
+    public static readonly string[] TimberGrades = ["C14", "C16", "C18", "C24", "C30", "GL24h", "GL28h", "GL30c"];
+
+    /// <summary>A section written "8x16" (cm) or "45x195 mm": its width and depth in metres; the fallback when it reads as neither.</summary>
+    public static (double W, double D) Section(string? text, (double W, double D) fallback)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(text ?? "", @"^(\d+)x(\d+)( mm)?$");
+        if (!m.Success) return fallback;
+        var unit = m.Groups[3].Success ? 0.001 : 0.01;
+        return (int.Parse(m.Groups[1].Value) * unit, int.Parse(m.Groups[2].Value) * unit);
+    }
 
     /// <summary>
     /// A roof read from the model: its outline, its rules, the height of its
@@ -42,15 +55,13 @@ public static class Roof
             (Roof.NumOrNull("mansardInset") ?? 1.0) * Math.Tan((Roof.NumOrNull("pitch") ?? 30) * Math.PI / 180));
         /// <summary>Whether it has a timber structure (rafters on plates); otherwise a deck under the covering (a vault is always a deck).</summary>
         public bool Framed => !Flat && !Barrel && Roof.Str("structure") != "none";
+        /// <summary>The framing system: rafters (on purlins, with a ridge beam), collar (couples with collar ties) or trusses.</summary>
+        public string Scheme => Roof.Str("structure") is "collar" or "trusses" ? Roof.Str("structure")! : "rafters";
+        public string Grade => Roof.Str("timberGrade") is { Length: > 0 } g ? g : "C24";
+        /// <summary>The trusses' webs.</summary>
+        public (double W, double D) Web => Section(Roof.Str("webSection"), (Rafter.W, 0.095));
         public RoofCatalog.Covering Covering => RoofCatalog.CoveringOf(Roof.Str("covering"));
-        public (double W, double D) Rafter
-        {
-            get
-            {
-                var m = System.Text.RegularExpressions.Regex.Match(Roof.Str("rafterSection") ?? "", @"^(\d+)x(\d+)$");
-                return m.Success ? (int.Parse(m.Groups[1].Value) * 0.01, int.Parse(m.Groups[2].Value) * 0.01) : (0.08, 0.16);
-            }
-        }
+        public (double W, double D) Rafter => Section(Roof.Str("rafterSection"), (0.08, 0.16));
         /// <summary>The planes' height over the wall line: on the plates when framed.</summary>
         public double BaseZ => PlateZ + (Framed ? WallPlate.D : 0);
         /// <summary>From the planes to the covering's underside: rafters and battens, or the deck.</summary>
@@ -175,6 +186,9 @@ public static class Roof
         return best;
     }
 
+    /// <summary>A timber member's section as the schedule writes it: width × depth in mm.</summary>
+    public static string TimberSection(RoofParts.Member m) => $"{Math.Round(m.Width * 1000)}x{Math.Round(m.Depth * 1000)} mm";
+
     /// <summary>Why the roof's rules do not build (the solver's reason), or null.</summary>
     public static string? Problem(Resolved r) =>
         r.Flat ? null : r.Barrel ? RoofSolver.BarrelProblem(r.Outline, r.Rules, r.Rise) : RoofSolver.Problem(r.Outline, r.Rules);
@@ -279,8 +293,19 @@ public static class Roof
         if (dormerRoofs.Count > 0) parts.Add(new GeometryPart("Dormer roofs", r.Covering.Color, Openings.Combine(dormerRoofs, "dormer-roofs"), null, "dormer-roofs"));
         if (glass.Count > 0) parts.Add(new GeometryPart("Glass", "#9cc7e6", Openings.Combine(glass, "glass"), null, "glass"));
 
-        var timber = RoofParts.Framing(r, shape, openings).Select(mb => Prism.SweepBox(mb.A, mb.B, mb.Width, mb.Depth, mb.Role)).OfType<Solid>().ToList();
-        if (timber.Count > 0) parts.Add(new GeometryPart("Timber structure", "#b98a5a", Openings.Combine(timber, "timber"), null, "timber"));
+        // Every timber member a part of its own (decision 229): a truss's under "truss:<n>:", the rest under "timber:".
+        var counts = new Dictionary<string, int>();
+        foreach (var mb in RoofParts.Framing(r, shape, openings))
+        {
+            if (mb.Body(mb.Role) is not { } body) continue;
+            var group = mb.Truss >= 0 ? $"truss:{mb.Truss + 1}:{mb.Role}" : $"timber:{mb.Role}";
+            var i = counts[group] = counts.GetValueOrDefault(group) + 1;
+            parts.Add(new GeometryPart($"{RoofParts.RoleLabel(mb.Role)} {TimberSection(mb)}", "#b98a5a", body, null, $"{group}:{i}")
+            {
+                PropertySet = "Lapin_Timber",
+                Properties = [("Role", RoofParts.RoleLabel(mb.Role)), ("Section", TimberSection(mb)), ("Grade", r.Grade), ("Length", Math.Round(mb.Length, 3).ToString(System.Globalization.CultureInfo.InvariantCulture))],
+            });
+        }
 
         var metal = MetalColor(roof);
         var drain = new List<Solid>();
@@ -346,7 +371,10 @@ public static class Roof
                 new("TimberVolume", members.Sum(x => x.Volume), "VOLUME", "Sawn timber"),
                 new("RafterCount", members.Count(x => x.Role == "rafter"), "COUNT", $"Rafters {roof.Str("rafterSection") ?? "8x16"}"),
             };
-            foreach (var (role, name, label) in new[] { ("plate", "WallPlateLength", "Wall plates"), ("ridge", "RidgeBeamLength", "Ridge beam"), ("purlin", "PurlinLength", "Purlins"), ("hip", "HipRafterLength", "Hip rafters"), ("valley", "ValleyRafterLength", "Valley rafters"), ("trimmer", "TrimmerLength", "Trimmers") })
+            if (members.Any(x => x.Truss >= 0)) t.Add(new("TrussCount", members.Where(x => x.Truss >= 0).Select(x => x.Truss).Distinct().Count(), "COUNT", $"Trusses ({r.Grade})"));
+            if (members.Count(x => x.Role == "collar") is > 0 and var collars) t.Add(new("CollarTieCount", collars, "COUNT", "Collar ties"));
+            foreach (var (role, name, label) in new[] { ("plate", "WallPlateLength", "Wall plates"), ("ridge", "RidgeBeamLength", "Ridge beam"), ("purlin", "PurlinLength", "Purlins"), ("hip", "HipRafterLength", "Hip rafters"), ("valley", "ValleyRafterLength", "Valley rafters"), ("trimmer", "TrimmerLength", "Trimmers"),
+                ("rafter", "RafterLength", "Rafters"), ("collar", "CollarTieLength", "Collar ties"), ("topChord", "TopChordLength", "Top chords"), ("bottomChord", "BottomChordLength", "Bottom chords"), ("web", "WebLength", "Truss webs") })
             {
                 var len = members.Where(x => x.Role == role).Sum(x => x.Length);
                 if (len > 1e-6) t.Add(new(name, len, "LENGTH", label));
@@ -391,8 +419,10 @@ public static class Roof
             ["contour"] = Slabs.ContourJson(contour), ["style"] = s.Id, ["shape"] = s.Shape, ["ridgeDirection"] = "auto", ["pitch"] = s.Pitch,
             ["overhang"] = s.Overhang, ["gableOverhang"] = s.GableOverhang, ["covering"] = s.Covering, ["gutterProfile"] = s.GutterProfile,
             ["gutterMaterial"] = s.GutterMaterial, ["snowGuards"] = (s.SnowGuards ?? RoofCatalog.CoveringOf(s.Covering).SnowGuards) ? "True" : "False",
-            ["structure"] = "rafters", ["rafterSection"] = "8x16", ["rafterSpacing"] = 0.8, ["purlins"] = 1, ["eaveOffset"] = 0.0,
+            ["structure"] = s.Structure ?? "rafters", ["rafterSection"] = s.RafterSection ?? "8x16", ["rafterSpacing"] = s.RafterSpacing ?? 0.8,
+            ["purlins"] = s.Structure is null or "rafters" ? 1 : 0, ["eaveOffset"] = 0.0, ["timberGrade"] = s.TimberGrade ?? "C24",
         };
+        if (s.WebSection != null) o["webSection"] = s.WebSection;
         if (s.GutterColor.Length > 0) o["gutterColor"] = s.GutterColor;
         if (s.Shape == "mansard") { o["upperPitch"] = s.UpperPitch; o["mansardInset"] = s.MansardInset; }
         if (s.Shape == "barrel" && BarrelSpan(contour.ToList()) is { } span) o["rise"] = Math.Round(span * s.BarrelRise, 3);

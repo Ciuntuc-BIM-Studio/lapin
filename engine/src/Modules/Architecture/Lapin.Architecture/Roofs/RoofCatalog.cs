@@ -44,7 +44,9 @@ public static class RoofCatalog
         string GutterProfile = "half_round", string GutterMaterial = "galvanized", string GutterColor = "",
         double GableOverhang = 0.3, bool? SnowGuards = null, string Description = "", double UpperPitch = 30, double MansardInset = 1.0,
         /// <summary>A barrel vault's rise at the crown, as a share of its span.</summary>
-        double BarrelRise = 0.3);
+        double BarrelRise = 0.3,
+        /// <summary>The framing the style brings (decision 229), when it brings one: the system, the rafters' or chords' section, the spacing, the webs, the grade.</summary>
+        string? Structure = null, string? RafterSection = null, double? RafterSpacing = null, string? WebSection = null, string? TimberGrade = null);
 
     /// <summary>The houses' styles of Standalone (packs.ts): their roof parameters, base hip 35° / 600 mm / ceramic tile where a pack keeps the base.</summary>
     public static readonly IReadOnlyList<Style> Styles =
@@ -74,6 +76,12 @@ public static class RoofCatalog
         new("dk_parcelhus", "Danish parcelhus", "traditional", "Denmark", "gable", 30, 0.35, "Slate", GutterMaterial: "zinc_titanium"),
         new("dk_thatched", "Danish thatched house", "traditional", "Denmark", "hip", 48, 0.45, "Thatch", "none"),
         new("dk_murermester", "Danish 1930s villa", "traditional", "Denmark", "hip", 45, 0.3, "Clay tile", GutterMaterial: "zinc_titanium"),
+        new("se_truss", "Swedish truss roof", "traditional", "Sweden", "gable", 27, 0.5, "Concrete tile", GutterMaterial: "painted", GutterColor: "#25282B",
+            Structure: "trusses", RafterSection: "45x170 mm", RafterSpacing: 1.2, WebSection: "45x95 mm", TimberGrade: "C24",
+            Description: "Prefabricated trusses (takstolar) at 1200 mm, chords 45×170, webs 45×95, C24."),
+        new("nordic_collar", "Nordic collar-tie roof", "traditional", "Scandinavia", "gable", 38, 0.4, "Metal sheet", GutterMaterial: "painted", GutterColor: "#25282B",
+            Structure: "collar", RafterSection: "45x195 mm", RafterSpacing: 0.6, TimberGrade: "C24",
+            Description: "Rafters 45×195 at 600 mm in couples with collar ties, C24."),
         new("se_falu_red", "Scandinavian red house", "traditional", "Sweden", "gable", 38, 0.4, "Metal sheet", GutterMaterial: "painted", GutterColor: "#25282B"),
         new("no_white_house", "Norwegian white house", "traditional", "Norway", "gable", 40, 0.4, "Slate", GutterMaterial: "painted", GutterColor: "#F2F2EE"),
         new("no_turf_cabin", "Norwegian turf cabin", "traditional", "Norway", "gable", 27, 0.5, "Green roof", "none"),

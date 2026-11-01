@@ -32,6 +32,19 @@ Los muros del nivel de la cubierta se detienen bajo ella y suben por sí solos h
 
 **Ventana de cubierta** y **Buhardilla** añaden huecos a una cubierta.
 
+### Estructura de madera
+
+**Estructura** fija cómo se estructura la cubierta:
+
+- **rafters**: cabios sobre correas, con viga cumbrera.
+- **collar**: parejas de cabios con un tirante alto horizontal en **Tirantes altos: fracción de la altura** (dos tercios por defecto), sin correas.
+- **trusses**: cerchas prefabricadas a lo largo de la cumbrera principal, a la **Separación de cabios**: cordones superiores en los faldones, un cordón inferior sobre las carreras, diagonales en W (cercha de un agua en una cubierta a un agua). Los extremos de una cubierta a cuatro aguas conservan sus cabios.
+- **none**: un tablero, sin madera.
+
+**Cabios y cordones** admite las secciones antiguas en cm o las nórdicas en mm (45×95 a 45×245); con ellas van **Montantes y diagonales de las cerchas** y **Clase resistente de la madera** (C14 a C30, laminada). Los cabios apoyan en la carrera con un rebaje (**Apoyo de los cabios en la carrera**) y terminan en el alero a plomo o a escuadra (**Remate de los cabios en el alero**). Los estilos **Swedish truss roof** y **Nordic collar-tie roof** traen su estructura.
+
+Cada pieza es una parte propia: la tabla **Roof timber** las lista como despiece (pieza, sección, clase, longitud, unidades, volumen), y en IFC cada una es un IfcMember de su tipo, cada cercha un IfcElementAssembly.
+
 ## Falsos techos
 
 **Acabados → Falso techo** (<kbd>CL</kbd>) dibuja un falso techo sobre un contorno que se marca con clics; **Falso techo en un local** llena el local donde se hace clic, siguiendo su contorno. Un falso techo cuelga a su **Altura** sobre la planta (2700 mm salvo que se cambie en sus propiedades).

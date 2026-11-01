@@ -7,7 +7,7 @@ namespace Lapin.Architecture.Roofs;
 /// What a roof carries and drains, all derived from its solved shape — never
 /// nodes in the graph:
 /// <list type="bullet">
-/// <item>the timber structure: wall plates on the eave walls, rafters at a spacing on every plane, purlins under them, a ridge beam under each ridge, hip and valley rafters (port of Standalone's roof system structure);</item>
+/// <item>the timber structure: wall plates on the eave walls, rafters at a spacing on every plane, purlins under them, a ridge beam under each ridge, hip and valley rafters (port of Standalone's roof system structure); or couples with collar ties, or trusses, along the main ridge (decision 229);</item>
 /// <item>gutters along the eaves, downpipes from them down the walls to the ground, one per 10 m of gutter;</item>
 /// <item>snow guards: rows along the eaves, on the covering.</item>
 /// </list>
@@ -15,12 +15,28 @@ namespace Lapin.Architecture.Roofs;
 /// </summary>
 public static class RoofParts
 {
-    /// <summary>A member: a centre line with a width × depth section (depth across the slope, or vertical for a level member).</summary>
+    /// <summary>
+    /// A member: a centre line with a width × depth section (depth across the slope, or vertical for a level member). A rafter
+    /// or a chord is cut to its <see cref="Profile"/> (its face, in the vertical plane it stands in: plumb or square ends, the
+    /// bird's mouth over the wall plate), swept across by <see cref="Side"/>; anything else is a box along its line. A truss's
+    /// members carry its number.
+    /// </summary>
     public sealed record Member(string Role, Vec3 A, Vec3 B, double Width, double Depth)
     {
         public double Length => (B - A).Length;
         public double Volume => Length * Width * Depth;
+        public int Truss { get; init; } = -1;
+        public IReadOnlyList<Vec3>? Profile { get; init; }
+        public Vec3 Side { get; init; }
+        public Solid? Body(string tag) => Profile is { } p ? Prism.Extrude(p, null, Side, tag) : Prism.SweepBox(A, B, Width, Depth, tag);
     }
+
+    /// <summary>The members' roles, as their parts and the schedule name them.</summary>
+    public static string RoleLabel(string role) => role switch
+    {
+        "rafter" => "Rafter", "trimmer" => "Trimmer", "purlin" => "Purlin", "ridge" => "Ridge beam", "hip" => "Hip rafter", "valley" => "Valley rafter",
+        "plate" => "Wall plate", "collar" => "Collar tie", "topChord" => "Top chord", "bottomChord" => "Bottom chord", "web" => "Web", _ => role,
+    };
 
     sealed record Frame(RoofPlane Plane, List<Vec2> Plan, Vec2 D, Vec2 N, Func<Vec2, double> Z, Vec3 Normal, double Tan);
 
@@ -68,37 +84,96 @@ public static class RoofParts
         openings?.Where(o => ReferenceEquals(o.Host.Plane, f.Plane))
             .Select(o => o.Hole.Select(q => q.Xy).ToList()).ToList() ?? [];
 
-    /// <summary>The timber structure (empty when the roof has none); rafters stop at the openings, trimmers frame them.</summary>
+    /// <summary>How a rafter is cut: its section, its tail (plumb or square), and whether it is notched over the wall plate.</summary>
+    sealed record Cut(double W, double D, string Tail, bool Seat, double PlateTop);
+
+    /// <summary>
+    /// A rafter (or a top chord) in the vertical plane through <paramref name="p"/> along <paramref name="u"/>, from k0 to k1,
+    /// its underside on z(k): its high end cut plumb, its low end (the eave) plumb or square, and, when <paramref name="wall"/>
+    /// (the wall line's k) lies on it, a bird's mouth there: a level seat on the plate from the wall line out to the plate's
+    /// outer face and a plumb heel, at most a third of the rafter's depth.
+    /// </summary>
+    static Member Rafter(string role, Vec2 p, Vec2 u, double k0, double k1, Func<double, double> z, Cut c, double? wall, int truss = -1)
+    {
+        var (z0, z1) = (z(k0), z(k1));
+        var g = (z1 - z0) / (k1 - k0);
+        var (low, dir) = z0 <= z1 ? (k0, 1.0) : (k1, -1.0);
+        var run = k1 - k0;
+        var tan = Math.Abs(g);
+        var secant = Math.Sqrt(1 + g * g);
+        var v = c.D * secant;
+        var side = new Vec2(-u.Y, u.X);
+        double Zs(double sv) => z(low + dir * sv);
+        Vec3 P(double sv, double zv) => (p + u * (low + dir * sv) - side * (c.W / 2)).At(zv);
+        var face = new List<Vec3>();
+        var sin = tan / secant;
+        var tail = c.Tail == "square" && c.D * sin < run * 0.5 ? c.D * sin : 0;
+        face.Add(P(tail, Zs(tail)));
+        if (wall is { } kw && c.Seat && tan > 1e-6)
+        {
+            var sw = Math.Abs(kw - low);
+            var so = Math.Max(Math.Max(tail, 0), sw - Roof.WallPlate.W / 2);
+            so = Math.Max(so, sw - v / 3 / tan);
+            if (sw > so + 1e-4 && sw < run - 1e-4)
+            {
+                face.Add(P(so, Zs(so)));
+                face.Add(P(so, Zs(sw)));
+                face.Add(P(sw, Zs(sw)));
+            }
+        }
+        face.Add(P(run, Zs(run)));
+        face.Add(P(run, Zs(run) + v));
+        face.Add(P(0, Zs(0) + v));
+        Vec3 Axis(double k) => (p + u * k).At(z(k) + v / 2);
+        return new Member(role, Axis(k0), Axis(k1), c.W, c.D) { Profile = face, Side = (side * c.W).At(0), Truss = truss };
+    }
+
+    /// <summary>
+    /// The timber structure (empty when the roof has none). Rafters on purlins with a ridge beam; or, along the main ridge,
+    /// couples with collar ties or trusses at the spacing on the slopes that run with it (the hip ends keep rafters, and so does
+    /// a station a hip slope or an opening crosses); hip and valley rafters, trimmers round the openings, wall plates.
+    /// </summary>
     public static List<Member> Framing(Roof.Resolved r, RoofShape s, IReadOnlyList<RoofOpenings.Placed>? openings = null)
     {
         var o = new List<Member>();
         if (!r.Framed) return o;
         var (rw, rd) = r.Rafter;
         var spacing = Math.Max(0.3, r.Roof.NumOrNull("rafterSpacing") ?? 0.8);
-        var purlins = Math.Clamp((int)(r.Roof.NumOrNull("purlins") ?? 1), 0, 3);
+        var purlins = r.Scheme == "rafters" ? Math.Clamp((int)(r.Roof.NumOrNull("purlins") ?? 1), 0, 3) : 0;
+        var cut = new Cut(rw, rd, r.Roof.Str("rafterTail") == "square" ? "square" : "plumb", r.Roof.Str("rafterSeat") != "none", r.BaseZ);
         var frames = Frames(s);
         var minNz = frames.Count == 0 ? 1 : frames.Min(f => f.Normal.Z);
 
+        // The stations' axis: the longest ridge, or a lone slope's eave; the slopes that run with it are the main ones.
+        Vec2? axis = null;
+        if (r.Scheme != "rafters")
+        {
+            var ridge = s.Lines.Where(l => l.Kind == LineKind.Ridge && l.Length > 0.1).MaxBy(l => l.Length);
+            axis = ridge != null ? (ridge.B - ridge.A).Xy.Normalized() : frames.Count == 1 ? frames[0].D : null;
+        }
+        bool Main(Frame f) => axis is { } ax && Math.Abs(Vec2.Dot(f.D, ax)) > Math.Cos(10 * Math.PI / 180);
+
         foreach (var f in frames)
         {
-            // Rafters: across the plane along its eave, every `spacing`, up the slope; their underside on the plane.
             var a = s.Outline[f.Plane.Edge];
-            var along = f.Plan.Select(p => Vec2.Dot(p - a, f.D)).ToList();
-            double lo = along.Min() + rw / 2, hi = along.Max() - rw / 2;
-            int count = Math.Max(1, (int)Math.Round((hi - lo) / spacing));
-            for (int j = 0; j <= count; j++)
+            var holes = HolesOn(f, openings);
+            if (!Main(f))
             {
-                var t = hi > lo ? lo + (hi - lo) * j / count : (lo + hi) / 2;
-                var p = a + f.D * t;
-                var cuts = HolesOn(f, openings).SelectMany(h => Crossings(h, p, f.N)).ToList();
-                foreach (var (t0, t1) in Minus(Crossings(f.Plan, p, f.N), cuts))
+                // Rafters: across the plane along its eave, every `spacing`, up the slope; their underside on the plane.
+                var along = f.Plan.Select(q => Vec2.Dot(q - a, f.D)).ToList();
+                double lo = along.Min() + rw / 2, hi = along.Max() - rw / 2;
+                int count = Math.Max(1, (int)Math.Round((hi - lo) / spacing));
+                for (int j = 0; j <= count; j++)
                 {
-                    Vec3 On(double k) { var q = p + f.N * k; return q.At(f.Z(q)) + f.Normal * (rd / 2); }
-                    o.Add(new Member("rafter", On(t0), On(t1), rw, rd));
+                    var t = hi > lo ? lo + (hi - lo) * j / count : (lo + hi) / 2;
+                    var p = a + f.D * t;
+                    var cuts = holes.SelectMany(h => Crossings(h, p, f.N)).ToList();
+                    foreach (var (t0, t1) in Minus(Crossings(f.Plan, p, f.N), cuts))
+                        o.Add(Rafter("rafter", p, f.N, t0, t1, k => f.Z(p + f.N * k), cut, t0 < 0 && t1 > 0 ? 0 : null));
                 }
             }
             // Trimmers: across each opening, under and over it, carrying the rafters it cut — a spacing past each side.
-            foreach (var h in HolesOn(f, openings))
+            foreach (var h in holes)
             {
                 double u0 = h.Min(q => Vec2.Dot(q - a, f.D)) - spacing, u1 = h.Max(q => Vec2.Dot(q - a, f.D)) + spacing;
                 foreach (var sUp in new[] { h.Min(q => Vec2.Dot(q - a, f.N)) - rw / 2, h.Max(q => Vec2.Dot(q - a, f.N)) + rw / 2 })
@@ -122,10 +197,14 @@ public static class RoofParts
                     o.Add(new Member("purlin", (p + f.D * t0).At(h - Roof.Purlin.D / 2), (p + f.D * t1).At(h - Roof.Purlin.D / 2), Roof.Purlin.W, Roof.Purlin.D));
             }
         }
-        // Ridge beams under the ridges; hip and valley rafters along hips and valleys, flush with the rafters' tops.
+
+        if (axis is { } u && frames.Where(Main).ToList() is { Count: > 0 } main)
+            Stations(r, s, frames, main, u, spacing, cut, openings, o);
+
+        // Ridge beams under the ridges (rafters on purlins only); hip and valley rafters along hips and valleys, flush with the rafters' tops.
         foreach (var l in s.Lines)
         {
-            if (l.Kind == LineKind.Ridge)
+            if (l.Kind == LineKind.Ridge && r.Scheme == "rafters")
                 o.Add(new Member("ridge", l.A with { Z = l.A.Z - Roof.RidgeBeam.D / 2 }, l.B with { Z = l.B.Z - Roof.RidgeBeam.D / 2 }, Roof.RidgeBeam.W, Roof.RidgeBeam.D));
             else if (l.Kind is LineKind.Hip or LineKind.Valley)
             {
@@ -141,6 +220,118 @@ public static class RoofParts
             o.Add(new Member("plate", s.Outline[i].At(z), s.Outline[(i + 1) % s.Outline.Count].At(z), Roof.WallPlate.W, Roof.WallPlate.D));
         }
         return o.Where(m => m.Length > 0.05).ToList();
+    }
+
+    /// <summary>
+    /// Couples or trusses at the spacing along the axis, across the main slopes. A station that also crosses a hip slope or an
+    /// opening, or whose slopes do not meet at a ridge (two) or stand alone (one), gets the main slopes' rafters instead.
+    /// </summary>
+    static void Stations(Roof.Resolved r, RoofShape s, List<Frame> frames, List<Frame> main, Vec2 u, double spacing, Cut cut, IReadOnlyList<RoofOpenings.Placed>? openings, List<Member> o)
+    {
+        var n = new Vec2(-u.Y, u.X);
+        var (rw, rd) = (cut.W, cut.D);
+        var along = main.SelectMany(f => f.Plan).Select(q => Vec2.Dot(q, u)).ToList();
+        double lo = along.Min() + rw / 2, hi = along.Max() - rw / 2;
+        int count = Math.Max(1, (int)Math.Round((hi - lo) / spacing));
+        var others = frames.Where(f => !main.Contains(f)).ToList();
+        var holes = main.ToDictionary(f => f, f => HolesOn(f, openings));
+        var truss = 0;
+        for (int j = 0; j <= count; j++)
+        {
+            var p = u * (hi > lo ? lo + (hi - lo) * j / count : (lo + hi) / 2);
+            var segs = main.SelectMany(f => Crossings(f.Plan, p, n).Select(c => (F: f, K0: c.T0, K1: c.T1))).OrderBy(x => x.K0).ToList();
+            if (segs.Count == 0) continue;
+            double Z(Frame f, double k) => f.Z(p + n * k);
+            var walls = Crossings(s.Outline, p, n).OrderByDescending(w => Math.Min(w.T1, segs[^1].K1) - Math.Max(w.T0, segs[0].K0)).FirstOrDefault();
+            var crossesHip = others.Any(f => Crossings(f.Plan, p, n).Count > 0);
+            var crossesHole = segs.Any(x => holes[x.F].Any(h => Crossings(h, p, n).Count > 0));
+            var duo = segs.Count == 2 && Math.Abs(segs[0].K1 - segs[1].K0) < 1e-4
+                && Z(segs[0].F, segs[0].K1) > Z(segs[0].F, segs[0].K0) && Z(segs[1].F, segs[1].K0) > Z(segs[1].F, segs[1].K1);
+            var mono = segs.Count == 1;
+            var ok = !crossesHip && !crossesHole && walls.T1 > walls.T0 && (duo || mono && r.Scheme == "trusses");
+            if (!ok)
+            {
+                foreach (var x in segs)
+                {
+                    var cuts = holes[x.F].SelectMany(h => Crossings(h, p, n)).ToList();
+                    foreach (var (t0, t1) in Minus([(x.K0, x.K1)], cuts))
+                        o.Add(Rafter("rafter", p, n, t0, t1, k => Z(x.F, k), cut, WallOn(walls, t0, t1, k => Z(x.F, k))));
+                }
+                continue;
+            }
+            var (w0, w1) = walls;
+            if (r.Scheme == "collar")
+            {
+                var (a, b) = (segs[0], segs[1]);
+                o.Add(Rafter("rafter", p, n, a.K0, a.K1, k => Z(a.F, k), cut, WallOn(walls, a.K0, a.K1, k => Z(a.F, k))));
+                o.Add(Rafter("rafter", p, n, b.K0, b.K1, k => Z(b.F, k), cut, WallOn(walls, b.K0, b.K1, k => Z(b.F, k))));
+                // The collar tie: level, beside the couple, at its share of the rise, from the one rafter's centre line to the other's.
+                var peak = Z(a.F, a.K1);
+                var share = Math.Clamp(r.Roof.NumOrNull("collarHeight") ?? 0.66, 0.3, 0.9);
+                var zc = r.BaseZ + (peak - r.BaseZ) * share + rd / 2;
+                var (ga, gb) = ((Z(a.F, a.K1) - Z(a.F, a.K0)) / (a.K1 - a.K0), (Z(b.F, b.K1) - Z(b.F, b.K0)) / (b.K1 - b.K0));
+                var (va, vb) = (rd * Math.Sqrt(1 + ga * ga), rd * Math.Sqrt(1 + gb * gb));
+                var ka = a.K0 + (zc - va / 2 - Z(a.F, a.K0)) / ga;
+                var kb = b.K0 + (zc - vb / 2 - Z(b.F, b.K0)) / gb;
+                if (kb - ka > 0.2)
+                    o.Add(new Member("collar", (p + n * ka).At(zc) + (u * rw).At(0), (p + n * kb).At(zc) + (u * rw).At(0), rw, rd));
+                continue;
+            }
+            // A truss: the top chords on the slopes, the bottom chord on the plates, the webs between.
+            var chord = cut with { Seat = false };
+            var zb = r.BaseZ + rd / 2;
+            var (ww, wd) = r.Web;
+            var (bl, bh) = (w0 - Roof.WallPlate.W / 2, w1 + Roof.WallPlate.W / 2);
+            foreach (var x in segs) o.Add(Rafter("topChord", p, n, x.K0, x.K1, k => Z(x.F, k), chord, null, truss));
+            o.Add(new Member("bottomChord", (p + n * bl).At(zb), (p + n * bh).At(zb), rw, rd) { Truss = truss });
+            Vec3 Bottom(double k) => (p + n * k).At(zb);
+            void Web(Vec3 from, Vec3 to) { if ((to - from).Length > 0.1) o.Add(new Member("web", from, to, ww, wd) { Truss = truss }); }
+            var span = w1 - w0;
+            if (duo)
+            {
+                var (a, b) = (segs[0], segs[1]);
+                var kp = a.K1;
+                var under = Z(a.F, kp);
+                Vec3 TopA(double k) => (p + n * k).At(Z(a.F, k));
+                Vec3 TopB(double k) => (p + n * k).At(Z(b.F, k));
+                if (span < 3) Web(Bottom(kp), (p + n * kp).At(under));
+                else
+                {
+                    // Fink (W): the bottom chord in thirds, the top chords at their middles, two webs to the peak.
+                    var (b1, b2) = (w0 + span / 3, w0 + span * 2 / 3);
+                    Web(Bottom(b1), TopA((w0 + kp) / 2));
+                    Web(Bottom(b1), (p + n * kp).At(under));
+                    Web(Bottom(b2), (p + n * kp).At(under));
+                    Web(Bottom(b2), TopB((kp + w1) / 2));
+                }
+            }
+            else
+            {
+                var x = segs[0];
+                var high = Z(x.F, w1) > Z(x.F, w0) ? w1 - Roof.WallPlate.W / 2 : w0 + Roof.WallPlate.W / 2;
+                var lowEnd = high > (w0 + w1) / 2 ? w0 : w1;
+                Vec3 Top(double k) => (p + n * k).At(Z(x.F, k));
+                // A mono truss: a post at the high end; over 3 m a post at the middle and two diagonals (N).
+                Web(Bottom(high), Top(high));
+                if (span >= 3)
+                {
+                    var mid = (w0 + w1) / 2;
+                    Web(Bottom(mid), Top(mid));
+                    Web(Bottom(mid), Top((mid + high) / 2));
+                    Web(Bottom((lowEnd + mid) / 2), Top(mid));
+                }
+            }
+            truss++;
+        }
+    }
+
+    /// <summary>The wall line's k on a rafter from k0 to k1, when it lies on it at the rafter's low end side (where its bird's mouth goes).</summary>
+    static double? WallOn((double T0, double T1) walls, double k0, double k1, Func<double, double> z)
+    {
+        if (walls.T1 <= walls.T0) return null;
+        var lowAtStart = z(k0) <= z(k1);
+        var w = lowAtStart ? walls.T0 : walls.T1;
+        return w > k0 && w < k1 ? w : null;
     }
 
     /// <summary>A gutter run: one eave line, where the covering ends.</summary>

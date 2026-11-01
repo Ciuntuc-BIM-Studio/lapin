@@ -219,7 +219,12 @@ public class RoofTests
         Assert.Equal(2 * (11.2 + 7.2), Q(f, roof, "GutterLength", "drainage"), 6);
         Assert.Equal(6, Q(f, roof, "DownpipeCount", "drainage"), 9);
         Assert.True(Q(f, roof, "Length", "snow") > 20);
-        Assert.Equal(["Covering", "Timber structure", "Gutters and downpipes", "Snow guards"], f.Session.Geometry(roof)!.Parts.Select(p => p.Name));
+        // The covering first, every timber member a part of its own (decision 229), the drainage and the snow guards last.
+        var parts = f.Session.Geometry(roof)!.Parts;
+        Assert.Equal("Covering", parts[0].Name);
+        Assert.Equal(["Gutters and downpipes", "Snow guards"], parts.TakeLast(2).Select(p => p.Name));
+        Assert.All(parts.Skip(1).SkipLast(2), p => Assert.StartsWith("timber:", p.Key));
+        Assert.Contains(parts, p => p.Name == "Rafter 80x160 mm");
         Assert.Equal(entities, f.Model.Entities.Count());
 
         // A gable roof: plates only under its eaves; no snow guards, no gutters asked.

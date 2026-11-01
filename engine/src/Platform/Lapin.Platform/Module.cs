@@ -189,6 +189,9 @@ public sealed record GeometryPart
     public IReadOnlyList<PartInstance>? Instances { get; init; }
     /// <summary>The part as a triangle mesh (x y z …; a b c …), when it came as one: drawn as such, its solid made on demand.</summary>
     public (double[] Xyz, int[] Tris)? Mesh { get; private init; }
+    /// <summary>The part's own properties (a roof timber member's role, section, grade and length), written to IFC as the set <see cref="PropertySet"/>.</summary>
+    public IReadOnlyList<(string Name, string Value)>? Properties { get; init; }
+    public string? PropertySet { get; init; }
 
     Solid? _solid;
     Func<Solid>? _make;

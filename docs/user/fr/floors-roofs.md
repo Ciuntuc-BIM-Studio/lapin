@@ -32,6 +32,19 @@ Les murs du niveau du toit s’arrêtent dessous et montent d’eux-mêmes jusqu
 
 **Fenêtre de toit** et **Lucarne** ajoutent des ouvertures à un toit.
 
+### Charpente bois
+
+**Structure** fixe la charpente du toit :
+
+- **rafters** : chevrons sur pannes, avec une panne faîtière.
+- **collar** : des couples de chevrons avec un entrait retroussé horizontal à **Entraits retroussés : part de la hauteur** (deux tiers par défaut), sans pannes.
+- **trusses** : des fermettes préfabriquées le long du faîtage principal, à l’**Entraxe des chevrons** : membrures supérieures sur les versants, une membrure inférieure sur les sablières, diagonales en W (fermette monopente sur un toit monopente). Les extrémités d’un toit à quatre pans gardent leurs chevrons.
+- **none** : un plancher, sans bois.
+
+**Chevrons et membrures** accepte les anciennes sections en cm ou les nordiques en mm (45×95 à 45×245) ; avec elles, **Diagonales des fermettes** et **Classe de résistance du bois** (C14 à C30, lamellé-collé). Les chevrons reposent sur la sablière par une entaille (**Appui des chevrons sur la sablière**) et finissent à l’égout d’aplomb ou d’équerre (**About des chevrons à l’égout**). Les styles **Swedish truss roof** et **Nordic collar-tie roof** apportent leur charpente.
+
+Chaque pièce est une partie à part : le tableau **Roof timber** les donne en liste de débit (pièce, section, classe, longueur, nombre, volume), et en IFC chacune est un IfcMember de son type, chaque fermette un IfcElementAssembly.
+
 ## Faux plafonds
 
 **Finitions → Plafond** (<kbd>CL</kbd>) dessine un faux plafond sur un contour cliqué ; **Plafond dans une pièce** remplit la pièce cliquée en suivant son contour. Un plafond est suspendu à sa **Hauteur** au-dessus de l’étage (2700 mm sauf réglage dans ses propriétés).

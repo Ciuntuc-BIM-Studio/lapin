@@ -32,6 +32,19 @@ Die Wände auf der Ebene des Dachs enden von selbst darunter und steigen bis zu 
 
 **Dachfenster** und **Gaube** fügen einem Dach Öffnungen hinzu.
 
+### Holztragwerk
+
+**Tragwerk** legt fest, wie das Dach getragen wird:
+
+- **rafters**: Sparren auf Pfetten, mit Firstpfette.
+- **collar**: Sparrenpaare mit einem waagerechten Kehlbalken bei **Kehlbalken: Anteil der Firsthöhe** (zwei Drittel als Vorgabe), ohne Pfetten.
+- **trusses**: vorgefertigte Binder entlang des Hauptfirsts im **Sparrenabstand**: Obergurte auf den Dachflächen, ein Untergurt auf den Fußpfetten, W-Füllstäbe (ein Pultbinder beim Pultdach). Die Enden eines Walmdachs behalten ihre Sparren.
+- **none**: eine Platte, kein Holz.
+
+**Sparren und Gurte** nimmt die alten Querschnitte in cm oder die nordischen in mm (45×95 bis 45×245); dazu **Füllstäbe der Binder** und **Festigkeitsklasse des Holzes** (C14 bis C30, Brettschichtholz). Die Sparren liegen mit einer Kerve auf der Fußpfette (**Sparrenauflager auf der Fußpfette**) und enden an der Traufe lotrecht oder rechtwinklig (**Sparrenköpfe an der Traufe**). Die Stile **Swedish truss roof** und **Nordic collar-tie roof** bringen ihr Tragwerk mit.
+
+Jedes Bauteil ist ein eigener Teil: die Liste **Roof timber** führt sie als Holzliste (Bauteil, Querschnitt, Klasse, Länge, Stück, Volumen), und in IFC wird jedes ein IfcMember seines Typs, jeder Binder ein IfcElementAssembly.
+
 ## Abgehängte Decken
 
 **Ausbau → Decke** (<kbd>CL</kbd>) zeichnet eine abgehängte Decke über einen angeklickten Umriss; **Decke in einem Raum** füllt den angeklickten Raum entlang seines Umrisses. Eine Decke hängt in ihrer **Höhe** über dem Geschoss (2700 mm, sofern in den Eigenschaften nicht anders eingestellt).

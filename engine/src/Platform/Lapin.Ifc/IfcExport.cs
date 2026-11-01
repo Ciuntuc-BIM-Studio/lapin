@@ -903,6 +903,8 @@ public static class IfcExport
         void Parts(Entity e, Kind kind, List<GeometryPart> parts, string place, Frame fr, string parent)
         {
             var refs = new List<string>();
+            // A roof's trusses: each an element assembly of its members (keys "truss:<n>:<role>:<i>"), under the roof.
+            var trusses = new Dictionary<string, List<string>>();
             var zones = (m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Attrs["zones"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
             for (var i = 0; i < parts.Count; i++)
             {
@@ -913,9 +915,18 @@ public static class IfcExport
                 var r = Product(pk, Gid(e.Id, key), p.Name, pk.ObjectType, Place(place, 0), shape, $"{e.Id}/{key}", flight: pk.Class == IfcClass.StairFlight ? FlightOf(e, key) : null);
                 if (p.Material != null) UseMaterial(p.Material, r);
                 StandardSets(e, p, r, $"{e.Id}/{key}");
+                if (p.Properties is { Count: > 0 } own)
+                    Define(r, f.Add("IFCPROPERTYSET", Gid(e.Id, key + "/pset"), Null, S(p.PropertySet ?? "Lapin_Part"), Null, L(own.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(e.Id, key + "/pset-rel"));
                 partRefs[(e.Id, key)] = r;
-                refs.Add(r);
+                if (kind.Class == IfcClass.Roof && key.Split(':') is ["truss", var n, ..]) { if (!trusses.TryGetValue(n, out var members)) trusses[n] = members = []; members.Add(r); }
+                else refs.Add(r);
                 PartCount++;
+            }
+            foreach (var (n, members) in trusses)
+            {
+                var truss = f.Add("IFCELEMENTASSEMBLY", Gid(e.Id, "truss:" + n), Null, S($"Truss {n}"), Null, Null, Place(place, 0), Null, S($"{e.Id}/truss:{n}"), E("FACTORY"), E("TRUSS"));
+                f.Add("IFCRELAGGREGATES", Gid(e.Id, "truss-parts:" + n), Null, Null, Null, truss, L(members));
+                refs.Add(truss);
             }
             f.Add("IFCRELAGGREGATES", Gid(e.Id, "parts"), Null, Null, Null, parent, L(refs));
         }
@@ -949,7 +960,7 @@ public static class IfcExport
                 (IfcClass.Roof, "roof-windows") => new(IfcClass.Window, "SKYLIGHT", null),
                 (IfcClass.Roof, "glass") => new("IfcPlate", "SHEET", null),
                 (IfcClass.Roof, "dormer-walls") => new(IfcClass.Wall, "NOTDEFINED", null),
-                (IfcClass.Roof, "timber") => new("IfcMember", "MEMBER", null),
+                (IfcClass.Roof, "timber" or "truss") => TimberKind(rest),
                 (IfcClass.Roof, "drainage") => new("IfcPipeSegment", "GUTTER", null),
                 (IfcClass.Roof, "snow") => new("IfcDiscreteAccessory", "USERDEFINED", "Snow guard"),
                 ("IfcElementAssembly", "standards" or "ledgers" or "transoms" or "guardrails") => new("IfcMember", "MEMBER", null),
@@ -969,6 +980,27 @@ public static class IfcExport
                 (IfcClass.Footing, "footing") => new(IfcClass.Footing, "STRIP_FOOTING", null),
                 (IfcClass.Footing, "step") => new(IfcClass.Footing, "PAD_FOOTING", null),
                 _ => new("IfcBuildingElementPart", "NOTDEFINED", p.Name),
+            };
+        }
+
+        /// <summary>A roof's timber member as IFC types it, by its role ("rafter:3", or "1:web:2" in a truss).</summary>
+        static Kind TimberKind(string rest)
+        {
+            var bits = rest.Split(':');
+            var role = bits.Length >= 2 && int.TryParse(bits[0], out _) ? bits[1] : bits[0];
+            return role switch
+            {
+                "rafter" => new("IfcMember", "RAFTER", null),
+                "purlin" => new("IfcMember", "PURLIN", null),
+                "plate" => new("IfcMember", "PLATE", null),
+                "collar" => new("IfcMember", "COLLAR", null),
+                "topChord" or "bottomChord" => new("IfcMember", "CHORD", null),
+                "web" => new("IfcMember", "MEMBER", null),
+                "ridge" => new("IfcMember", "USERDEFINED", "Ridge beam"),
+                "hip" => new("IfcMember", "USERDEFINED", "Hip rafter"),
+                "valley" => new("IfcMember", "USERDEFINED", "Valley rafter"),
+                "trimmer" => new("IfcMember", "USERDEFINED", "Trimmer"),
+                _ => new("IfcMember", "MEMBER", null),
             };
         }
 

@@ -32,6 +32,19 @@ The walls on the roof's level stop under it and rise to its gables by themselves
 
 **Roof window** and **Dormer** add openings to a roof.
 
+### Timber framing
+
+**Structure** sets how the roof is framed:
+
+- **rafters**: rafters on purlins, with a ridge beam.
+- **collar**: couples of rafters with a level collar tie at **Collar ties: share of the rise** (two thirds by default), no purlins.
+- **trusses**: prefabricated trusses along the main ridge, at the **Rafter spacing**: top chords on the slopes, a bottom chord on the wall plates, W webs (a mono truss on a shed roof). A hip roof's ends keep their rafters.
+- **none**: a deck, no timber.
+
+**Rafters and chords** takes the old sections in cm or the Nordic ones in mm (45×95 to 45×245); **Truss webs** and **Timber grade** (C14 to C30, glulam) go with them. The rafters sit on the wall plate by a bird's mouth (**Rafter seat on the wall plate**) and end at the eave plumb or square (**Rafter tails**). The **Swedish truss roof** and **Nordic collar-tie roof** styles bring their framing with them.
+
+Every member is a part of its own: the **Roof timber** schedule lists them as a cutting list (member, section, grade, length, pieces, volume), and IFC gets each as an IfcMember of its type, each truss as an IfcElementAssembly.
+
 ## False ceilings
 
 **Finishes → Ceiling** (<kbd>CL</kbd>) draws a false ceiling over an outline you click; **Ceiling in a room** fills the room you click, following its outline. A ceiling hangs at its **Height** over the storey (2700 mm unless you change it in its properties).

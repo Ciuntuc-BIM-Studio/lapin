@@ -239,6 +239,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // ------------------------------------------------------------ schedules
         new Schedules.ScheduleEntity().Register(r);
         r.Service<IScheduleSource>(new RoomSchedule());
+        r.Service<IScheduleSource>(new Roofs.RoofTimberSchedule());
 
         // ------------------------------------------------------------ rooms
         r.Class(new(Rooms.Class, "Room",
@@ -293,10 +294,15 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("shedFlip", "Shed: flip the slope", "bool"),
             new("eaveOffset", "Wall plate over the storey's top", "length"),
             new("covering", "Covering", "choice", Choices: [.. RoofCatalog.Coverings.Select(c => c.Id)]),
-            new("structure", "Structure", "choice", Choices: ["rafters", "none"]),
+            new("structure", "Structure", "choice", Choices: Roof.Structures),
             new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
-            new("rafterSection", "Rafters (cm)", "choice", Choices: Roof.RafterSections),
+            new("rafterSection", "Rafters and chords (cm, or mm)", "choice", Choices: Roof.RafterSections),
             new("rafterSpacing", "Rafter spacing", "length", Min: 0.3, Max: 2),
+            new("webSection", "Truss webs", "choice", Choices: Roof.RafterSections),
+            new("timberGrade", "Timber grade", "choice", Choices: Roof.TimberGrades),
+            new("collarHeight", "Collar ties: share of the rise", "number", Min: 0.3, Max: 0.9),
+            new("rafterTail", "Rafter tails", "choice", Choices: ["plumb", "square"]),
+            new("rafterSeat", "Rafter seat on the wall plate", "choice", Choices: ["birdsmouth", "none"]),
             new("purlins", "Purlins per slope", "number", Min: 0, Max: 3),
             new("gutterProfile", "Gutters", "choice", Choices: RoofCatalog.GutterProfiles),
             new("gutterMaterial", "Gutter material", "choice", Choices: RoofCatalog.GutterMaterials),
@@ -370,7 +376,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             // (its openings, low edge, structure choices, phase) stays.
             var attrs = roof.CloneAttrs();
             attrs.Remove("edges");
-            string[] own = ["structure", "rafterSection", "rafterSpacing", "purlins", "eaveOffset"];
+            // A style that brings its framing (a Nordic truss roof) puts it on too.
+            string[] own = style.Structure != null ? ["eaveOffset"] : ["structure", "rafterSection", "rafterSpacing", "purlins", "eaveOffset", "webSection", "timberGrade"];
             foreach (var (k, v) in Roof.Attrs(style, Roof.Contour(roof))) if (!own.Contains(k) || attrs[k] == null) attrs[k] = v?.DeepClone();
             if (style.Shape != "mansard") { attrs.Remove("upperPitch"); attrs.Remove("mansardInset"); }
             if (style.Shape != "barrel") attrs.Remove("rise");

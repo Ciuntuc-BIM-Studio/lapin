@@ -32,6 +32,19 @@ Væggene på tagets niveau stopper under det og går selv op til dets gavle, ogs
 
 **Ovenlysvindue** og **Kvist** tilføjer åbninger i et tag.
 
+### Trækonstruktion
+
+**Konstruktion** angiver, hvordan taget bæres:
+
+- **rafters**: spær på åse, med kip-ås.
+- **collar**: spærpar med et vandret hanebånd ved **Hanebånd: andel af højden** (to tredjedele som standard), uden åse.
+- **trusses**: præfabrikerede gitterspær langs hovedkippen med **Spæravstand**: overflanger på tagfladerne, en underflange på remmene, W-gitterstænger (et ensidigt spær på et pulttag). Et valmtags ender beholder deres spær.
+- **none**: et dæk, intet træ.
+
+**Spær og over-/underflanger** tager de gamle tværsnit i cm eller de nordiske i mm (45×95 til 45×245); sammen med dem **Gitterstænger i spærene** og **Trækvalitet** (C14 til C30, limtræ). Spærene ligger på remmen med et hak (**Spærenes vederlag på remmen**) og ender ved tagfoden lodret eller vinkelret (**Spærenderne ved tagfoden**). Stilene **Swedish truss roof** og **Nordic collar-tie roof** har deres konstruktion med.
+
+Hvert element er en del for sig: listen **Roof timber** viser dem som en skæreliste (element, tværsnit, kvalitet, længde, stk., volumen), og i IFC er hvert et IfcMember af sin type, hvert gitterspær et IfcElementAssembly.
+
 ## Nedhængte lofter
 
 **Overflader → Loft** (<kbd>CL</kbd>) tegner et nedhængt loft over et omrids, du klikker; **Loft i et rum** fylder det rum, du klikker i, efter dets omrids. Et loft hænger i sin **Højde** over etagen (2700 mm, medmindre du ændrer den i egenskaberne).
