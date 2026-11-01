@@ -30,6 +30,12 @@ export type Gesture =
   | { kind: 'polyline'; constrain?: (placed: Vec2[], aimed: Vec2) => Vec2 }
   | { kind: 'pick'; /** IFC classes it can be used on. */ types: string[] }
   /**
+   * An element picked, then a point (a bar cut: one end of the lap on the bar, then the other): the first click's point and the
+   * element, then the second point; a length typed after the first click comes as `typed`. Enter or Escape after the first
+   * click completes with that click alone. In 3D the pick alone completes.
+   */
+  | { kind: 'pickThenPoint'; /** IFC classes it can be used on. */ types: string[]; /** What the HUD says the tool asks for. */ hint?: string }
+  /**
    * A face of an element (a floor's soffit, a beam's side): in 3D the face under the cursor lights up; in plan, an edge or the outline picked.
    * `query`: the engine query that names the face under the cursor (default core.faceAt, the named faces; Studio's studio.faceAt, any flat face of the body).
    */
@@ -38,7 +44,11 @@ export type Gesture =
 /** Where a face pick landed: the point (model x, y, z; in plan x, y only) and, in 3D, the normal of the triangle hit. */
 export interface FaceHit { point: number[]; normal?: number[] }
 
-export interface ToolInput { points: Vec2[]; entity?: NodeDto; face?: FaceHit }
+export interface ToolInput {
+  points: Vec2[]; entity?: NodeDto; face?: FaceHit;
+  /** The length typed in the live input (m) when the last point came from it, so a tool may measure along its own path rather than the screen. */
+  typed?: number;
+}
 
 /** What a tool's completion can use: the storey it draws on, and the engine. */
 export interface ToolContext {

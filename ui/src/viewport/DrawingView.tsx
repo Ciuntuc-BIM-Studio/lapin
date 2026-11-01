@@ -29,7 +29,7 @@ import { markIds, markSelected } from './planPick';
 import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
-import { liveCursor } from './liveInput';
+import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
@@ -129,18 +129,31 @@ export function DrawingView() {
     return null;
   }, [drawing]);
 
-  const complete = useCallback(async (points: Vec2[], entity?: NodeDto) => {
+  /** The element a pick-then-point gesture took with its first click. */
+  const picked = useRef<NodeDto | undefined>(undefined);
+  useEffect(() => { picked.current = undefined; }, [toolId, id]);
+
+  const complete = useCallback(async (points: Vec2[], entity?: NodeDto, typed?: number) => {
     if (!tool) return;
+    picked.current = undefined;
     // Drawn on an inset view: it goes on the source view, in its own coordinates, and shows here through the inset.
     const inset = insetUnder(points);
-    if (inset && tool.id !== 'rebar.inset') await completeTool(tool, { points: points.map(inset.map), entity }, inset.source);
-    else await completeTool(tool, { points, entity });
+    if (inset && tool.id !== 'rebar.inset') await completeTool(tool, { points: points.map(inset.map), entity, typed }, inset.source);
+    else await completeTool(tool, { points, entity, typed });
     if (tool.gesture?.kind === 'twoPoints' && tool.gesture.repeat) setPts([points[points.length - 1]]);
     else setPts([]);
   }, [tool, insetUnder]);
 
-  /** A click for the tool's gesture: the points it takes, or the element under the cursor (picked by what it drew). */
-  const gestureClick = useCallback((p: Vec2, raw: Vec2) => {
+  /** The element under the cursor that a tool may work on (picked by what it drew), or null. */
+  const pickFor = useCallback((raw: Vec2, types: string[]): NodeDto | null => {
+    const hit = pickAny(raw);
+    const owner = hit?.includes('#') ? hit.slice(0, hit.indexOf('#')) : hit;
+    const n = owner ? nodes.get(owner) : undefined;
+    return n && (types.includes('*') || types.includes(n.type)) ? n : null;
+  }, [pickAny, nodes]);
+
+  /** A click for the tool's gesture: the points it takes, or the element under the cursor; `typed`: the length typed in the live input, when the point came from it. */
+  const gestureClick = useCallback((p: Vec2, raw: Vec2, typed?: number) => {
     const g = tool?.gesture;
     if (!g) return false;
     acquire(p);
@@ -148,11 +161,18 @@ export function DrawingView() {
       case 'point': void complete([p]); break;
       case 'pick':
       case 'face': {
-        const hit = pickAny(raw);
-        const owner = hit?.includes('#') ? hit.slice(0, hit.indexOf('#')) : hit;
-        const n = owner ? nodes.get(owner) : undefined;
-        if (n && (g.types.includes('*') || g.types.includes(n.type))) void complete([raw], n);
+        const n = pickFor(raw, g.types);
+        if (n) void complete([raw], n);
         else useSession.setState({ error: 'Pick an element this tool works on.' });
+        break;
+      }
+      case 'pickThenPoint': {
+        // The first click picks the element and is the first point; the second is where the cursor is (or the typed length).
+        if (pts.length === 0) {
+          const n = pickFor(raw, g.types);
+          if (n) { picked.current = n; setPts([raw]); }
+          else useSession.setState({ error: 'Pick an element this tool works on.' });
+        } else void complete([pts[0], p], picked.current, typed);
         break;
       }
       case 'twoPoints':
@@ -174,18 +194,36 @@ export function DrawingView() {
       }
     }
     return true;
-  }, [tool, pts, complete, acquire, pickAny, nodes, v.scale]);
+  }, [tool, pts, complete, acquire, pickFor, v.scale]);
 
   useEffect(() => {
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.closest('input, select, textarea') || useCad.getState().step) return;
+      // A pick-then-point gesture ended after its pick (Enter or Esc) completes with the pick alone; a typed length is the key router's (Enter takes it, Esc clears it).
+      if ((e.key === 'Escape' || e.key === 'Enter') && tool?.gesture?.kind === 'pickThenPoint' && pts.length === 1 && picked.current) {
+        const l = useLive.getState();
+        if (l.owner === 'tool' && (l.len || l.ang)) return;
+        void complete([pts[0]], picked.current);
+        return;
+      }
       if (e.key === 'Escape' && tool?.gesture) { if (pts.length) setPts([]); else setTool(null); }
       if (e.key === 'Enter' && tool?.gesture?.kind === 'polyline' && pts.length >= 2) void complete(pts);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [active, tool, pts, complete]);
+
+  // A pick-then-point tool after its pick: the second point's distance can be typed (Enter takes it; the tool measures it along its own path).
+  const live = useLive();
+  const clickRef = useRef(gestureClick);
+  clickRef.current = gestureClick;
+  const first = tool?.gesture?.kind === 'pickThenPoint' && pts.length === 1 && active ? pts[0] : undefined;
+  useEffect(() => {
+    if (first) liveBegin('tool', first, (p, typed) => clickRef.current(p, p, typed));
+    else liveEnd('tool');
+  }, [first]);
+  useEffect(() => () => liveEnd('tool'), []);
 
   const at = (e: React.PointerEvent): { raw: Vec2; aimed: Aimed } => {
     const r = ref.current!.getBoundingClientRect();
@@ -281,7 +319,9 @@ export function DrawingView() {
           }).join('')} />
         ))}
         {pts.length > 0 && (() => {
-          const chain = [...pts, ...(hover ? [hover.point] : [])].map(toScreen);
+          // The next point: the cursor's, or where a typed length puts it.
+          const cur = hover ? (live.owner === 'tool' && (live.len || live.ang) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point : null;
+          const chain = [...pts, ...(cur ? [cur] : [])].map(toScreen);
           const closed = tool?.gesture?.kind === 'polygon' || tool?.gesture?.kind === 'rectangle';
           const d = tool?.gesture?.kind === 'rectangle' && chain.length === 2
             ? `M${chain[0].x} ${chain[0].y}H${chain[1].x}V${chain[1].y}H${chain[0].x}Z`

@@ -15,10 +15,14 @@ import { ScopeBar } from './ScopeBar';
 
 const level = (e: number) => `${e >= 0 ? '+' : '−'}${Math.abs(e).toFixed(2)}`;
 
-/** What the active tool asks for, when it is a two-point tool; null otherwise. */
+/** What the active tool asks for, when it is a two-point or a pick-then-point tool; null otherwise. */
 export function toolHint(tool: string | null): string | null {
   const active = findTool(tool);
-  return active?.gesture?.kind === 'twoPoints' ? `${active.label}: click its start, then its end · Shift squares it · Esc stops` : null;
+  const g = active?.gesture;
+  if (!active || !g) return null;
+  if (g.kind === 'twoPoints') return `${active.label}: click its start, then its end · Shift squares it · Esc stops`;
+  if (g.kind === 'pickThenPoint') return `${active.label}: ${g.hint ?? 'click the element, then a point · Enter or Esc takes the first click alone'}`;
+  return null;
 }
 
 /** The HUD's facts: the mode, the level and its elevation, the view, the snap. */

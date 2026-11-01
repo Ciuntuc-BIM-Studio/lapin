@@ -244,14 +244,19 @@ export function PlanView() {
     return p.x === a.point.x && p.y === a.point.y ? a : { ...a, point: p, kind: 'free', guides: [], lock: undefined };
   };
 
-  const complete = useCallback(async (points: Vec2[], entity?: NodeDto, face?: FaceHit) => {
+  /** The element a pick-then-point gesture took with its first click. */
+  const picked = useRef<NodeDto | undefined>(undefined);
+  useEffect(() => { picked.current = undefined; }, [toolId]);
+
+  const complete = useCallback(async (points: Vec2[], entity?: NodeDto, face?: FaceHit, typed?: number) => {
     if (!tool) return;
-    await completeTool(tool, { points, entity, face });
+    picked.current = undefined;
+    await completeTool(tool, { points, entity, face, typed });
     if (tool.gesture?.kind === 'twoPoints' && tool.gesture.repeat) setPts([points[points.length - 1]]);
     else setPts([]);
   }, [tool]);
 
-  const click = useCallback((p: Vec2, raw: Vec2, add: boolean) => {
+  const click = useCallback((p: Vec2, raw: Vec2, add: boolean, typed?: number) => {
     // A drafting command takes the click: a snapped point, or what lies under the cursor.
     const step = useCad.getState().step;
     if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : p); acquire(p); return; }
@@ -274,6 +279,15 @@ export function PlanView() {
         const e = pick(raw, g.types);
         if (e) void complete([raw], e, { point: [raw.x, raw.y] });
         else useSession.setState({ error: 'Pick an element this tool works on.' });
+        break;
+      }
+      case 'pickThenPoint': {
+        // The first click picks the element and is the first point; the second is where the cursor is (or the typed length).
+        if (pts.length === 0) {
+          const e = pick(raw, g.types);
+          if (e) { picked.current = e; setPts([raw]); }
+          else useSession.setState({ error: 'Pick an element this tool works on.' });
+        } else void complete([pts[0], p], picked.current, undefined, typed);
         break;
       }
       case 'twoPoints':
@@ -305,6 +319,13 @@ export function PlanView() {
       if ((e.target as HTMLElement)?.closest('input, select, textarea')) return;
       // Esc while the selection is dragged by its body: nothing moves.
       if (e.key === 'Escape' && carrying()) { drag.current = null; carryEnd(); return; }
+      // A pick-then-point gesture ended after its pick (Enter or Esc) completes with the pick alone; a typed length is the key router's (Enter takes it, Esc clears it).
+      if ((e.key === 'Escape' || e.key === 'Enter') && tool?.gesture?.kind === 'pickThenPoint' && pts.length === 1 && picked.current) {
+        const l = useLive.getState();
+        if (l.owner === 'tool' && (l.len || l.ang)) return;
+        void complete([pts[0]], picked.current);
+        return;
+      }
       if (e.key === 'Escape') { if (pts.length) setPts([]); else setTool(null); }
       if (e.key === 'Enter' && tool?.gesture?.kind === 'polygon' && pts.length >= 3) void complete(pts);
       if (e.key === 'Enter' && tool?.gesture?.kind === 'polyline' && pts.length >= 2) void complete(pts);
@@ -323,7 +344,7 @@ export function PlanView() {
   const last = pts[pts.length - 1];
   useEffect(() => {
     const k = tool?.gesture?.kind;
-    if (last && (k === 'twoPoints' || k === 'polyline' || k === 'polygon' || k === 'rectangle' || k === 'threePoints')) liveBegin('tool', last, (p) => clickRef.current(p, p, false));
+    if (last && (k === 'twoPoints' || k === 'polyline' || k === 'polygon' || k === 'rectangle' || k === 'threePoints' || k === 'pickThenPoint')) liveBegin('tool', last, (p, typed) => clickRef.current(p, p, false, typed));
     else liveEnd('tool');
   }, [last, tool]);
   useEffect(() => () => liveEnd('tool'), []);
@@ -501,7 +522,7 @@ export function PlanView() {
       const ps = own.map(toScreen);
       return <g className="plan-preview"><polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} /></g>;
     }
-    if (g === 'twoPoints' && pts.length === 1) {
+    if ((g === 'twoPoints' || g === 'pickThenPoint') && pts.length === 1) {
       const a = toScreen(pts[0]), b = toScreen(cur);
       return (
         <g className="plan-preview">

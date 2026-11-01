@@ -502,7 +502,8 @@ export function Viewport3D() {
     const g = tool?.gesture;
     // A member of a group picks the group (docs/groups.md).
     if (!g) { select(nodeId && pickable(useSession.getState().nodes.get(nodeId)) ? pickTarget(nodeId) : null, add); return; }
-    if (g.kind === 'face' || g.kind === 'pick') {
+    // In 3D a pick-then-point tool completes with its pick alone (the tool's default for the second point).
+    if (g.kind === 'face' || g.kind === 'pick' || g.kind === 'pickThenPoint') {
       const node = nodeId ? useSession.getState().nodes.get(nodeId) : undefined;
       if (!node || !takesType(g.types, node.type)) { useSession.setState({ error: 'Pick an element this tool works on.' }); return; }
       void completeTool(tool!, { points: ground ? [ground] : [], entity: node, face });
