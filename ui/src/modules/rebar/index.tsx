@@ -4,7 +4,7 @@
  * or a column at a click, inset beside it in the same view, with the context round it.
  */
 
-import { Crosshair, Minus, PictureInPicture2, Scissors, Settings2, Table2 } from 'lucide-react';
+import { Crosshair, Minus, PictureInPicture2, Scissors, Settings2, Slice, Table2 } from 'lucide-react';
 import { SectionIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -89,6 +89,16 @@ const schedule: ToolDef = {
   run: () => void execute('architecture.createSchedule', { kind: 'rebar' }).then((r) => { if (r) notify('Bar bending schedule made: it is in the project browser, under Schedules.'); }),
 };
 const settings: ToolDef = { id: 'rebar.settings', label: 'Rebar settings', icon: Settings2, run: () => useUi.setState({ dialog: 'rebarSettings' }) };
+/** A longitudinal bar cut in two with a lap where it is clicked (decision 227): the bar is the first piece, a new bar the second; both selected after. */
+const splitBar: ToolDef = {
+  id: 'rebar.split', label: 'Split bar', icon: Slice, shortcut: 'RC',
+  gesture: { kind: 'pick', types: ['LapinRebar'] },
+  complete: async ({ points: [p], entity }, ctx) => {
+    if (!entity) return;
+    const r = await ctx.execute('rebar.split', { id: entity.id, point: [p.x, p.y] }) as { first?: string; second?: string } | null;
+    if (r?.first && r.second) useUi.setState({ selected: [r.first, r.second] });
+  },
+};
 /** The selected bar seen in section (a dot), placed with a click; it stays out of the schedule. */
 const asSection: ToolDef = {
   id: 'rebar.asSection', label: 'Same bar in section', icon: Crosshair,
@@ -177,7 +187,7 @@ export const rebarModule: LapinModule = {
     id: 'rebar', label: 'Rebar 2D', order: 35, include: ['modify'],
     groups: [
       { label: 'Sections', tools: [sectionHere, sectionAcross, insetView] },
-      { label: 'Bars', tools: [straight, lBar, uBar, stirrup, polylineBar], small: [tie, dot, asSection] },
+      { label: 'Bars', tools: [straight, lBar, uBar, stirrup, polylineBar], small: [tie, dot, asSection, splitBar] },
       { label: 'Distribution', tools: [run] },
       { label: 'Schedule', tools: [schedule, settings, bars3d] },
     ],

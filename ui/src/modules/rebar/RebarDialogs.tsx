@@ -9,6 +9,30 @@ import { LabelStyleFields, useRebarSettings, type LabelKind, type LabelStylePatc
 
 const KINDS: { id: LabelKind; label: string }[] = [{ id: 'bars', label: 'Bars' }, { id: 'stirrups', label: 'Stirrups on the type' }, { id: 'columnBars', label: 'Column bars' }, { id: 'runs', label: 'Distributions' }];
 
+/** The stock length bars come in (6 m, 12 m, or any) and the lap a split bar overlaps by (50Ø, or a value), decision 227. */
+function StockAndLapFields({ s, set }: { s: Settings; set: (patch: Partial<Settings>) => void }) {
+  const stock = s.stockLength ?? 12;
+  const standard = stock === 6 || stock === 12;
+  const [custom, setCustom] = useState(!standard);
+  const stockChoice = custom || !standard ? 'custom' : String(stock);
+  return (
+    <div data-field="rebar-stock">
+      <label className="field-line"><span className="eyebrow">Stock length</span>
+        <select value={stockChoice} onChange={(e) => { if (e.target.value === 'custom') setCustom(true); else { setCustom(false); set({ stockLength: Number(e.target.value) }); } }}>
+          <option value="6">6 m</option><option value="12">12 m</option><option value="custom">Another length</option>
+        </select>
+        {stockChoice === 'custom' && <><input className="num" type="number" step={0.5} min={1} max={24} value={stock} onChange={(e) => { const v = Number(e.target.value); if (v >= 1 && v <= 24) set({ stockLength: v }); }} /><span className="muted small"> m</span></>}
+      </label>
+      <label className="field-line"><span className="eyebrow">Lap length</span>
+        <select value={s.lapLength == null ? 'dia' : 'value'} onChange={(e) => set({ lapLength: e.target.value === 'dia' ? null : 0.8 })}>
+          <option value="dia">50Ø</option><option value="value">A length</option>
+        </select>
+        {s.lapLength != null && <><input className="num" type="number" step={10} min={10} max={5000} value={Math.round(s.lapLength * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 10 && v <= 5000) set({ lapLength: v / 1000 }); }} /><span className="muted small"> mm</span></>}
+      </label>
+    </div>
+  );
+}
+
 export function RebarSettingsDialog() {
   const catalog = useRebarCatalog();
   const live = useRebarSettings();
@@ -38,6 +62,8 @@ export function RebarSettingsDialog() {
           </label>
           <label className="field-line"><span className="eyebrow">Cover</span><input className="num" type="number" step={5} min={0} max={200} value={Math.round(s.cover * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 0 && v <= 200) set({ cover: v / 1000 }); }} /><span className="muted small"> mm</span></label>
           <p className="muted small">Bars are drawn as thick as they are; bend radii follow SR EN 1992-1-1 (a mandrel of 4Ø up to Ø16, 7Ø over). The schedule's lengths are the nominal ones, hooks included.</p>
+          <StockAndLapFields s={s} set={set} />
+          <p className="muted small">A bar longer than the stock length is cut in two with Split bar; the pieces overlap by the lap, each with its own mark in the schedule.</p>
           <p className="eyebrow">Labels</p>
           <label className="field-line"><span className="eyebrow">For</span>
             <select value={kind} onChange={(e) => setKind(e.target.value as LabelKind)}>{KINDS.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}</select>

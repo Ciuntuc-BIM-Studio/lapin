@@ -11,7 +11,13 @@ import { query, useSession } from '../../engine/session';
 export interface LabelStyle { parts: string[]; balloon: boolean; direction: string; side: string; offset: number; leader: 'none' | 'one' | 'each'; line: 'none' | 'string' }
 export type LabelStylePatch = Partial<Record<keyof LabelStyle, LabelStyle[keyof LabelStyle] | null>>;
 export type LabelKind = 'bars' | 'stirrups' | 'columnBars' | 'runs';
-export interface RebarSettings { colorByDiameter: boolean; textHeight: number; balloon: number; steel: string; segmentLengths: boolean; cover: number; labels: Record<LabelKind, LabelStyle> }
+export interface RebarSettings {
+  colorByDiameter: boolean; textHeight: number; balloon: number; steel: string; segmentLengths: boolean; cover: number; labels: Record<LabelKind, LabelStyle>;
+  /** The length a bar is delivered in (m): 12 or 6 as a rule; a longer bar is split with a lap (decision 227). */
+  stockLength: number;
+  /** The lap a split bar overlaps by (m); null: 50Ø. */
+  lapLength: number | null;
+}
 
 /** The project's rebar settings as the engine resolves them (each kind's label style whole), read again after every change. */
 export function useRebarSettings(): RebarSettings | null {

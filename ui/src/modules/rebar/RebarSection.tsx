@@ -6,7 +6,9 @@
 import { useEffect, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
+import { useUi } from '../../app/store';
 import { LabelStyleFields, useRebarSettings, type LabelStylePatch } from './LabelStyleFields';
+import { overStock, splitRefusal, stockStation } from './split';
 
 export interface ShapeInfo { code: string; label: string; layer: string; diameter: number; freeVertices: boolean; hooks: boolean; params: { key: string; label: string; default: number; min: number }[] }
 export interface RebarCatalog { shapes: ShapeInfo[]; diameters: number[]; steels: string[]; views: string[] }
@@ -26,7 +28,13 @@ function Mm({ label, value, min, onChange, step = 1 }: { label: string; value: u
   );
 }
 
-interface Described { length: number; trueLength: number; massPerMetre: number; mass: number; bendRadius: number; mandrel: number; label: string; positions?: number; step?: string; pieces?: number; cover?: number; coverSource?: 'own' | 'host' | 'settings' }
+interface Described {
+  length: number; trueLength: number; massPerMetre: number; mass: number; bendRadius: number; mandrel: number; label: string; positions?: number; step?: string; pieces?: number;
+  /** A bar's cover its anchors stand off by and where it comes from (decision 226). */
+  cover?: number; coverSource?: 'own' | 'host' | 'settings';
+  /** A bar: whether it can be cut with a lap, the stock length it is measured against, the lap it would get, and whether it is over the stock (decision 227). */
+  splittable?: boolean; stockLength?: number; lap?: number; overStock?: boolean;
+}
 
 /** What the engine says of the bar now: lengths, mass, bend radius. */
 function useDescribed(id: string): Described | null {
@@ -90,6 +98,63 @@ function LabelBlock({ node, kind, command }: { node: NodeDto; kind: 'bars' | 'ru
         onReset={() => void execute(command, { id: node.id, label: { style: null } })} testId="rebar-label" withLine={kind === 'runs'} />
       {placed && <button type="button" className="link small" onClick={() => void execute(command, { id: node.id, label: { at: null, elbow: null, offset: null } })}>Put the label back</button>}
     </>
+  );
+}
+
+interface SplitPreview { first?: number; second?: number; lap?: number; length?: number; error?: string }
+
+/**
+ * A longitudinal bar cut in two with a lap (decision 227): the station typed in mm from the bar's start (half its length to begin
+ * with), the lap prefilled from the project (50Ø shown as its millimetres), the two lengths the engine foresees, and the cut; a bar
+ * longer than the stock length is warned of, with a cut that makes the first piece exactly the stock length.
+ */
+function SplitBlock({ node, d }: { node: NodeDto; d: Described }) {
+  const length = d.length;
+  const [station, setStation] = useState(Math.round(length * 500));
+  const [lap, setLap] = useState(Math.round((d.lap ?? 0) * 1000));
+  const [preview, setPreview] = useState<SplitPreview | null>(null);
+  // A new bar selected, or its length changed: the fields start over.
+  useEffect(() => { setStation(Math.round(length * 500)); }, [node.id, length]);
+  useEffect(() => { setLap(Math.round((d.lap ?? 0) * 1000)); }, [node.id, d.lap]);
+  const refusal = splitRefusal(length, station / 1000, lap / 1000);
+  useEffect(() => {
+    if (refusal) { setPreview(null); return; }
+    let live = true;
+    void query<SplitPreview>('rebar.splitPreview', { id: node.id, station: station / 1000, lap: lap / 1000 }).then((r) => { if (live) setPreview(r ?? null); });
+    return () => { live = false; };
+  }, [node.id, station, lap, refusal]);
+  const split = async (at: number) => {
+    const r = await execute('rebar.split', { id: node.id, station: at, lap: lap / 1000 }) as { first?: string; second?: string } | null;
+    if (r?.first && r.second) useUi.setState({ selected: [r.first, r.second] });
+  };
+  const stock = d.stockLength ?? 12;
+  const over = d.overStock || overStock(length, stock);
+  const atStock = stockStation(stock, lap / 1000);
+  return (
+    <div data-field="rebar-split" data-i18n-ctx="rebar">
+      <p className="eyebrow">Split with a lap</p>
+      {over && (
+        <div className="row small">
+          <span className="small" style={{ color: '#c2410c' }}>Longer than the stock length</span><span className="muted small" data-no-i18n>({stock} m)</span>
+          {!splitRefusal(length, atStock, lap / 1000) && <button type="button" className="link small" data-action="rebar-split-stock" onClick={() => void split(atStock)}>Cut at the stock length</button>}
+        </div>
+      )}
+      <div className="row small">
+        <label className="field-line"><span className="eyebrow">Station</span>
+          <input className="num" type="number" step={10} min={0} max={Math.round(length * 1000)} value={station} onChange={(e) => setStation(Math.max(0, Number(e.target.value) || 0))} /><span className="muted small"> mm from the start</span>
+        </label>
+        <label className="field-line"><span className="eyebrow">Lap</span>
+          <input className="num" type="number" step={10} min={10} style={{ width: 64 }} value={lap} onChange={(e) => setLap(Math.max(0, Number(e.target.value) || 0))} /><span className="muted small"> mm</span>
+        </label>
+      </div>
+      <div className="row small">
+        {refusal && <span className="muted small">{refusal}</span>}
+        {!refusal && preview?.first != null && preview.second != null && (
+          <span className="muted small"><span>Pieces</span><span data-no-i18n>: {Math.round(preview.first * 1000)} + {Math.round(preview.second * 1000)} mm</span></span>
+        )}
+        <button type="button" className="btn" disabled={!!refusal} data-action="rebar-split" onClick={() => void split(station / 1000)}>Split the bar</button>
+      </div>
+    </div>
   );
 }
 
@@ -166,6 +231,7 @@ export function RebarSection({ node }: { node: NodeDto }) {
           <dt>Per metre</dt><dd><span className="num">{d.massPerMetre.toFixed(3)}</span> <span className="muted">kg/m</span></dd>
         </dl>
       )}
+      {d?.splittable && node.editable !== false && <SplitBlock node={node} d={d} />}
       <LabelBlock node={node} kind="bars" command="rebar.update" />
       {typeof node.props.original === 'string' && <p className="muted small">A view of another bar: it is not counted in the schedule.</p>}
     </div>
