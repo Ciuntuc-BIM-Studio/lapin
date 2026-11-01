@@ -89,13 +89,20 @@ const schedule: ToolDef = {
   run: () => void execute('architecture.createSchedule', { kind: 'rebar' }).then((r) => { if (r) notify('Bar bending schedule made: it is in the project browser, under Schedules.'); }),
 };
 const settings: ToolDef = { id: 'rebar.settings', label: 'Rebar settings', icon: Settings2, run: () => useUi.setState({ dialog: 'rebarSettings' }) };
-/** A longitudinal bar cut in two with a lap where it is clicked (decision 227): the bar is the first piece, a new bar the second; both selected after. */
+/**
+ * A longitudinal bar cut in two with a lap where the engineer puts it (decision 227): a click on the bar at one end of the lap, a
+ * second where the other end is (the engine projects both onto the bar); a lap length typed after the first click is measured
+ * along the bar, the second click only saying which way; Enter or Esc after the first click ends the settings' lap (50Ø) at it.
+ * The bar is the first piece, a new bar the second; both selected after.
+ */
 const splitBar: ToolDef = {
   id: 'rebar.split', label: 'Split bar', icon: Slice, shortcut: 'RC',
-  gesture: { kind: 'pick', types: ['LapinRebar'] },
-  complete: async ({ points: [p], entity }, ctx) => {
+  gesture: { kind: 'pickThenPoint', types: ['LapinRebar'], hint: 'click the bar where the lap starts or ends, then its other end, or type the lap length · Enter or Esc ends the settings\' lap at the click' },
+  complete: async ({ points: [p, q], entity, typed }, ctx) => {
     if (!entity) return;
-    const r = await ctx.execute('rebar.split', { id: entity.id, point: [p.x, p.y] }) as { first?: string; second?: string } | null;
+    const args: Record<string, unknown> = { id: entity.id, point: [p.x, p.y] };
+    if (q) { args.point2 = [q.x, q.y]; if (typed != null && typed > 0) args.lap = typed; }
+    const r = await ctx.execute('rebar.split', args) as { first?: string; second?: string } | null;
     if (r?.first && r.second) useUi.setState({ selected: [r.first, r.second] });
   },
 };

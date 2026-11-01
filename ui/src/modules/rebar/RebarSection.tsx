@@ -8,7 +8,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
 import { LabelStyleFields, useRebarSettings, type LabelStylePatch } from './LabelStyleFields';
-import { overStock, splitRefusal, stockStation } from './split';
+import { lapFromTo, overStock, splitRefusal, stockLap } from './split';
 
 export interface ShapeInfo { code: string; label: string; layer: string; diameter: number; freeVertices: boolean; hooks: boolean; params: { key: string; label: string; default: number; min: number }[] }
 export interface RebarCatalog { shapes: ShapeInfo[]; diameters: number[]; steels: string[]; views: string[] }
@@ -101,58 +101,71 @@ function LabelBlock({ node, kind, command }: { node: NodeDto; kind: 'bars' | 'ru
   );
 }
 
-interface SplitPreview { first?: number; second?: number; lap?: number; length?: number; error?: string }
+interface SplitPreview { first?: number; second?: number; lap?: number; from?: number; to?: number; length?: number; error?: string }
+
+/** The lap zone the block starts with (mm): the project's lap ending at the bar's middle. */
+function startZone(length: number, lap: number | undefined): { from: number; to: number } {
+  const z = lapFromTo(length / 2, lap ?? 0);
+  return { from: Math.round(z.from * 1000), to: Math.round(z.to * 1000) };
+}
 
 /**
- * A longitudinal bar cut in two with a lap (decision 227): the station typed in mm from the bar's start (half its length to begin
- * with), the lap prefilled from the project (50Ø shown as its millimetres), the two lengths the engine foresees, and the cut; a bar
- * longer than the stock length is warned of, with a cut that makes the first piece exactly the stock length.
+ * A longitudinal bar cut in two with a lap (decision 227), the lap zone the engineer's: its two stations typed in mm from the bar's
+ * start, `from` (where the second piece starts) and `to` (where the first piece ends), the lap beside them (editing it keeps `to`
+ * and moves `from`); to begin with, the project's lap (50Ø unless set) ending at the bar's middle. The two lengths the engine
+ * foresees, and the cut; a bar longer than the stock length is warned of, with a cut whose lap ends at the stock length, so the
+ * first piece is exactly that long.
  */
 function SplitBlock({ node, d }: { node: NodeDto; d: Described }) {
   const length = d.length;
-  const [station, setStation] = useState(Math.round(length * 500));
-  const [lap, setLap] = useState(Math.round((d.lap ?? 0) * 1000));
+  const [zone, setZone] = useState(() => startZone(length, d.lap));
   const [preview, setPreview] = useState<SplitPreview | null>(null);
-  // A new bar selected, or its length changed: the fields start over.
-  useEffect(() => { setStation(Math.round(length * 500)); }, [node.id, length]);
-  useEffect(() => { setLap(Math.round((d.lap ?? 0) * 1000)); }, [node.id, d.lap]);
-  const refusal = splitRefusal(length, station / 1000, lap / 1000);
+  // A new bar selected, its length or the project's lap changed: the fields start over.
+  useEffect(() => { setZone(startZone(length, d.lap)); }, [node.id, length, d.lap]);
+  const { from, to } = zone;
+  const lap = to - from;
+  const refusal = splitRefusal(length, from / 1000, to / 1000);
   useEffect(() => {
     if (refusal) { setPreview(null); return; }
     let live = true;
-    void query<SplitPreview>('rebar.splitPreview', { id: node.id, station: station / 1000, lap: lap / 1000 }).then((r) => { if (live) setPreview(r ?? null); });
+    void query<SplitPreview>('rebar.splitPreview', { id: node.id, from: from / 1000, to: to / 1000 }).then((r) => { if (live) setPreview(r ?? null); });
     return () => { live = false; };
-  }, [node.id, station, lap, refusal]);
-  const split = async (at: number) => {
-    const r = await execute('rebar.split', { id: node.id, station: at, lap: lap / 1000 }) as { first?: string; second?: string } | null;
+  }, [node.id, from, to, refusal]);
+  const split = async (z: { from: number; to: number }) => {
+    const r = await execute('rebar.split', { id: node.id, from: z.from, to: z.to }) as { first?: string; second?: string } | null;
     if (r?.first && r.second) useUi.setState({ selected: [r.first, r.second] });
   };
+  const num = (e: React.ChangeEvent<HTMLInputElement>) => Math.max(0, Number(e.target.value) || 0);
   const stock = d.stockLength ?? 12;
   const over = d.overStock || overStock(length, stock);
-  const atStock = stockStation(stock, lap / 1000);
+  const atStock = stockLap(stock, lap / 1000);
   return (
     <div data-field="rebar-split" data-i18n-ctx="rebar">
       <p className="eyebrow">Split with a lap</p>
       {over && (
         <div className="row small">
           <span className="small" style={{ color: '#c2410c' }}>Longer than the stock length</span><span className="muted small" data-no-i18n>({stock} m)</span>
-          {!splitRefusal(length, atStock, lap / 1000) && <button type="button" className="link small" data-action="rebar-split-stock" onClick={() => void split(atStock)}>Cut at the stock length</button>}
+          {!splitRefusal(length, atStock.from, atStock.to) && <button type="button" className="link small" data-action="rebar-split-stock" onClick={() => void split(atStock)}>Cut at the stock length</button>}
         </div>
       )}
       <div className="row small">
-        <label className="field-line"><span className="eyebrow">Station</span>
-          <input className="num" type="number" step={10} min={0} max={Math.round(length * 1000)} value={station} onChange={(e) => setStation(Math.max(0, Number(e.target.value) || 0))} /><span className="muted small"> mm from the start</span>
+        <label className="field-line"><span className="eyebrow">Lap from</span>
+          <input className="num" type="number" step={10} min={0} max={Math.round(length * 1000)} value={from} data-field="rebar-split-from" onChange={(e) => setZone({ from: num(e), to })} />
+        </label>
+        <label className="field-line"><span className="eyebrow">to</span>
+          <input className="num" type="number" step={10} min={0} max={Math.round(length * 1000)} value={to} data-field="rebar-split-to" onChange={(e) => setZone({ from, to: num(e) })} /><span className="muted small"> mm</span>
         </label>
         <label className="field-line"><span className="eyebrow">Lap</span>
-          <input className="num" type="number" step={10} min={10} style={{ width: 64 }} value={lap} onChange={(e) => setLap(Math.max(0, Number(e.target.value) || 0))} /><span className="muted small"> mm</span>
+          <input className="num" type="number" step={10} min={10} style={{ width: 64 }} value={lap} data-field="rebar-split-lap" onChange={(e) => setZone({ from: to - num(e), to })} /><span className="muted small"> mm</span>
         </label>
       </div>
+      <p className="muted small">From the bar's start. The first bar ends at 'to', the second starts at 'from'.</p>
       <div className="row small">
         {refusal && <span className="muted small">{refusal}</span>}
         {!refusal && preview?.first != null && preview.second != null && (
           <span className="muted small"><span>Pieces</span><span data-no-i18n>: {Math.round(preview.first * 1000)} + {Math.round(preview.second * 1000)} mm</span></span>
         )}
-        <button type="button" className="btn" disabled={!!refusal} data-action="rebar-split" onClick={() => void split(station / 1000)}>Split the bar</button>
+        <button type="button" className="btn" disabled={!!refusal} data-action="rebar-split" onClick={() => void split({ from: from / 1000, to: to / 1000 })}>Split the bar</button>
       </div>
     </div>
   );
