@@ -55,6 +55,14 @@ The project browser has a **Site** under the levels: the site's own drawings, wh
 
 The **Parcel coordinates** schedule (Schedules → + → Parcel coordinates) is the parcel's coordinate inventory: each corner as the site plan numbers it, its northing and easting in the project's system, the side to the next corner, and the area. Like any schedule it goes on a sheet beside the site plan, and out as CSV or XLSX.
 
+## Trees and shrubs
+
+**Plant** (PL) sets one plant at a click, **Planting zone** (PZ) sows an outline with a mix of species at a density; select either and choose its species in the properties. The species list is a library of plants native or traditional in Romania, in groups: **fruit trees** (apple, pear, plum, sweet and sour cherry, apricot, quince), **conifers** (silver fir, Norway spruce, Scots and black pine), **deciduous trees** (walnut, lime, birch, maple), **shrubs** (hazel, cornelian cherry, elder, dog rose, lilac, sea buckthorn, redcurrant, thuja, boxwood) and **ground cover**. Each comes with its Latin name, its usual height and crown, and is shown by its Romanian name when the interface is in Romanian. The planting schedule lists the Latin and Romanian names beside each species.
+
+In plan each plant is drawn from above as a landscape drawing shows it, in black, as wide as its crown: a fruit tree as a lobed crown with forked branches, a walnut or a lime as a scalloped crown round a dark core, a fir or a spruce as a star of needle sprays, a pine as a round tuft of needles, a shrub as a small cloud. Lapin draws each symbol itself, so neighbouring trees differ a little and a zone never looks stamped. At 1:1000 and smaller (a location plan) only the crowns' outlines are drawn. In 3D conifers are cones, the other trees have a rounded crown on their trunk and shrubs a low dome.
+
+![A small orchard in plan: fruit trees, a walnut, conifers and shrubs](shots/planting-symbols.webp)
+
 ## Planning rules and the sun (Lapin Urban)
 
 The **Lapin Urban** edition adds a **Planning** group to this tab: the parcel's planning rules (POT, CUT, the maximum heights, the setbacks from the street, the sides, the rear and the road's axis), the **buildable volume** they leave, the indicators the model reaches against them, and the **sun study**: the sun and its shadows in 3D for any day and hour at the project's place, and shadow plans for the equinox and the solstices.

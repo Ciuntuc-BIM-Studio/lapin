@@ -55,6 +55,14 @@ L’arborescence du projet a un **Site** sous les niveaux : les dessins propre
 
 La nomenclature **Coordonnées de la parcelle** (Nomenclatures → + → Coordonnées de la parcelle) est l’inventaire des coordonnées de la parcelle : chaque sommet tel que le plan de masse le numérote, son ordonnée et son abscisse dans le système du projet, le côté jusqu’au sommet suivant, et la surface. Comme toute nomenclature, elle se place sur une feuille à côté du plan de masse, et s’exporte en CSV ou en XLSX.
 
+## Arbres et arbustes
+
+**Plante** (PL) pose une plante d’un clic, **Zone de plantation** (PZ) sème un contour d’un mélange d’espèces à une densité ; sélectionnez-les et choisissez leurs espèces dans les propriétés. Les espèces viennent d’une bibliothèque de plantes indigènes ou traditionnelles en Roumanie, par groupes : **arbres fruitiers** (pommier, poirier, prunier, cerisier, griottier, abricotier, cognassier), **conifères** (sapin pectiné, épicéa, pin sylvestre, pin noir), **feuillus** (noyer, tilleul, bouleau, érable), **arbustes** (noisetier, cornouiller mâle, sureau, églantier, lilas, argousier, groseillier, thuya, buis) et **couvre-sol**. Chacune a son nom latin, sa hauteur et son houppier habituels. Le tableau de plantation montre les noms latin et roumain à côté de chaque espèce.
+
+En plan chaque plante est dessinée vue de dessus, comme dans un plan paysager, en noir et aussi large que son houppier : un fruitier en couronne lobée aux branches fourchues, un noyer ou un tilleul en couronne festonnée autour d’un cœur sombre, un sapin ou un épicéa en étoile de rameaux d’aiguilles, un pin en touffe ronde d’aiguilles, un arbuste en petit nuage. Lapin dessine lui-même chaque symbole : des arbres voisins diffèrent un peu. Au 1:1000 et moins (plan de situation) seuls les contours des houppiers sont dessinés. En 3D les conifères sont des cônes, les autres arbres ont une couronne arrondie sur leur tronc et les arbustes un dôme bas.
+
+![Un petit verger en plan : fruitiers, un noyer, des conifères et des arbustes](shots/planting-symbols.webp)
+
 ## Règles d’urbanisme et soleil (Lapin Urban)
 
 L’édition **Lapin Urban** ajoute un groupe **Urbanisme** à cet onglet : les règles d’urbanisme de la parcelle (POT, CUT, les hauteurs maximales, les reculs par rapport à la rue, aux limites latérales, au fond de parcelle et à l’axe de la voie), le **gabarit constructible** qu’elles laissent, les indicateurs que le modèle atteint par rapport à elles, et l’**étude d’ensoleillement** : le soleil et ses ombres en 3D pour n’importe quel jour et n’importe quelle heure à l’emplacement du projet, et des plans d’ombres pour l’équinoxe et les solstices.

@@ -55,6 +55,14 @@ Projektbrowseren har en **Grund** under niveauerne: grundens egne tegninger, som
 
 Skemaet **Matrikelkoordinater** (Skemaer → + → Matrikelkoordinater) er matriklens koordinatfortegnelse: hvert hjørne, som situationsplanen nummererer det, dets nord- og østkoordinat i projektets system, siden til det næste hjørne og arealet. Som ethvert skema kan det sættes på et ark ved siden af situationsplanen og eksporteres som CSV eller XLSX.
 
+## Træer og buske
+
+**Plante** (PL) sætter en plante med et klik, **Beplantningszone** (PZ) tilsår en omrids med en blanding af arter i en tæthed; markér dem og vælg arterne i egenskaberne. Arterne kommer fra et bibliotek af planter, der er hjemmehørende eller traditionelle i Rumænien, i grupper: **frugttræer** (æble, pære, blomme, sød- og surkirsebær, abrikos, kvæde), **nåletræer** (ædelgran, rødgran, skovfyr, østrigsk fyr), **løvtræer** (valnød, lind, birk, ahorn), **buske** (hassel, kirsebærkornel, hyld, hunderose, syren, havtorn, ribs, thuja, buksbom) og **bunddække**. Hver har sit latinske navn, sin sædvanlige højde og krone. Beplantningslisten viser det latinske og det rumænske navn ved hver art.
+
+I plan tegnes hver plante set fra oven, som på en landskabsplan, i sort og så bred som kronen: et frugttræ som en fliget krone med gaflede grene, en valnød eller en lind som en bølget krone om en mørk kerne, en gran som en stjerne af nålekviste, en fyr som en rund nåletot, en busk som en lille sky. Lapin tegner selv hvert symbol, så nabotræer er lidt forskellige. Ved 1:1000 og mindre (oversigtskort) tegnes kun kronernes omrids. I 3D er nåletræer kegler, de andre træer har en rund krone på stammen og buske en lav kuppel.
+
+![En lille frugthave i plan: frugttræer, en valnød, nåletræer og buske](shots/planting-symbols.webp)
+
 ## Planlægningsregler og solen (Lapin Urban)
 
 Udgaven **Lapin Urban** føjer en gruppe **Byplanlægning** til denne fane: matriklens planlægningsregler (POT, CUT, de maksimale højder, afstandene til vejen, siderne, bagskellet og vejens akse), det **tilladte bygningsvolumen** de efterlader, de nøgletal, modellen når op på i forhold til dem, og **solstudie**: solen og dens skygger i 3D for en hvilken som helst dag og time på projektets placering, og skyggeplaner for jævndøgn og solhverv.

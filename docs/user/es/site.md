@@ -55,6 +55,14 @@ El navegador del proyecto tiene un **Emplazamiento** bajo los niveles: los dibuj
 
 La tabla **Coordenadas de la parcela** (Tablas → + → Coordenadas de la parcela) es el inventario de coordenadas de la parcela: cada esquina tal como la numera el plano de situación, su coordenada norte y este en el sistema del proyecto, el lado hasta la esquina siguiente y la superficie. Como cualquier tabla, se coloca en una lámina junto al plano de situación y se exporta como CSV o XLSX.
 
+## Árboles y arbustos
+
+**Planta** (PL) coloca una planta con un clic y **Zona de plantación** (PZ) siembra un contorno con una mezcla de especies a una densidad; selecciónalas y elige sus especies en las propiedades. Las especies vienen de una biblioteca de plantas nativas o tradicionales de Rumanía, por grupos: **frutales** (manzano, peral, ciruelo, cerezo, guindo, albaricoquero, membrillero), **coníferas** (abeto blanco, pícea, pino silvestre, pino negro), **árboles caducifolios** (nogal, tilo, abedul, arce), **arbustos** (avellano, cornejo macho, saúco, rosal silvestre, lila, espino amarillo, grosellero, tuya, boj) y **cubresuelos**. Cada una lleva su nombre latino, su altura y su copa habituales. El cuadro de plantación muestra los nombres latino y rumano junto a cada especie.
+
+En planta cada planta se dibuja vista desde arriba, como en un plano de paisajismo, en negro y del ancho de su copa: un frutal como una copa lobulada con ramas bifurcadas, un nogal o un tilo como una copa festoneada alrededor de un núcleo oscuro, un abeto o una pícea como una estrella de ramas con agujas, un pino como un penacho redondo de agujas y un arbusto como una pequeña nube. Lapin dibuja cada símbolo, de modo que los árboles vecinos difieren un poco. A 1:1000 y menos (un plano de emplazamiento) solo se dibujan los contornos de las copas. En 3D las coníferas son conos, los demás árboles tienen una copa redondeada sobre el tronco y los arbustos una cúpula baja.
+
+![Un pequeño huerto en planta: frutales, un nogal, coníferas y arbustos](shots/planting-symbols.webp)
+
 ## Normas urbanísticas y el sol (Lapin Urban)
 
 La edición **Lapin Urban** añade a esta ficha un grupo **Urbanismo**: las normas urbanísticas de la parcela (POT, CUT, las alturas máximas, los retranqueos a la calle, a los linderos laterales, al fondo y al eje de la vía), el **volumen edificable** que dejan, los indicadores que alcanza el modelo frente a ellas, y el **estudio de soleamiento**: el sol y sus sombras en 3D para cualquier día y hora en el lugar del proyecto, y planos de sombras para el equinoccio y los solsticios.

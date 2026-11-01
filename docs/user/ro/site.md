@@ -55,6 +55,14 @@ Browserul proiectului are, sub niveluri, **Terenul** (*Site*): desenele amplasam
 
 Extrasul **Inventar de coordonate** (Extrase → + → Inventar de coordonate) listează colțurile parcelei așa cum le numerotează planul de situație, cu coordonatele N și E în sistemul proiectului, latura până la colțul următor și aria. Ca orice extras, se pune pe planșă lângă planul de situație și se exportă CSV sau XLSX.
 
+## Arbori și arbuști
+
+**Plantă** (PL) pune o plantă la un clic, **Zonă de plantare** (PZ) însămânțează un contur cu un amestec de specii la o densitate; selectează-le și alege speciile în proprietăți. Speciile vin dintr-o bibliotecă de plante native sau tradiționale în România, pe grupe: **pomi fructiferi** (măr, păr, prun, cireș, vișin, cais, gutui), **conifere** (brad, molid, pin silvestru, pin negru), **foioase** (nuc, tei, mesteacăn, arțar), **arbuști** (alun, corn, soc, măceș, liliac, cătină, coacăz, tuia, cimișir) și **acoperire de sol**. Fiecare are denumirea latină, înălțimea și coroana obișnuite și apare cu numele românesc când interfața e în română. Extrasul de plantare arată denumirile latină și românească lângă fiecare specie.
+
+În plan fiecare plantă se desenează văzută de sus, ca într-un plan de peisagistică, în negru, cât coroana ei: pomul fructifer o coroană lobată cu ramuri bifurcate, nucul sau teiul o coroană festonată în jurul unui miez închis, bradul și molidul o stea de ramuri cu ace, pinul un smoc rotund de ace, arbustul un mic nor. Lapin desenează singur fiecare simbol, așa că arborii vecini diferă puțin și o zonă nu arată ștampilată. La 1:1000 și mai mic (planul de încadrare) se desenează doar contururile coroanelor. În 3D coniferele sunt conuri, ceilalți arbori au coroana rotunjită pe trunchi, iar arbuștii o cupolă joasă.
+
+![O livadă mică în plan: pomi fructiferi, un nuc, conifere și arbuști](shots/planting-symbols.webp)
+
 ## Reglementări urbanistice și însorire (Lapin Urban)
 
 Ediția **Lapin Urban** adaugă în această filă grupul **Urbanism**: reglementările parcelei (POT, CUT, înălțimile maxime, retragerile față de stradă, laterale, limita posterioară și axul drumului), **volumul construibil** pe care îl lasă, indicatorii pe care îi atinge modelul față de ele și **studiul de însorire**: soarele și umbrele lui în 3D pentru orice zi și oră în locul proiectului, și planuri de umbre pentru echinocțiu și solstiții.

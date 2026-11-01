@@ -666,6 +666,31 @@ export const scenes = [
     },
   },
   {
+    // The planting library (decision 228): a small orchard with a walnut, conifers along the back and shrubs in front, drawn in plan by their families' symbols.
+    id: 'planting-symbols',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const plant = (name, x, y, seed) => t.cmd('civil.addPlanting', { storeyId: s, x, y, seed, species: [{ name }] });
+      let seed = 3;
+      for (const [k, name] of ['Apple', 'Pear', 'Plum', 'Sour cherry', 'Apricot', 'Quince'].entries()) await plant(name, 4 + (k % 3) * 6, 4 + Math.floor(k / 3) * 6, seed++);
+      await plant('Walnut', 28, 7, seed++);
+      for (const [k, name] of ['Silver fir', 'Norway spruce', 'Scots pine', 'Black pine'].entries()) await plant(name, 2 + k * 8, 20, seed++);
+      for (const [k, name] of ['Hazel', 'Elder', 'Dog rose', 'Lilac (Syringa)', 'Sea buckthorn', 'Redcurrant', 'Cornelian cherry'].entries()) await plant(name, 1 + k * 4.5, -4, seed++);
+      t.expect((await t.nodes()).filter((n) => n.type === 'LapinPlanting').length === 18, 'eighteen plants');
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      await t.wait(600);
+      // The quick tools and the HUD's card would lie over the plants.
+      const quiet = await t.page.addStyleTag({ content: '.hotbar, .hud-card { display: none !important }' });
+      await t.shot('planting-symbols', { of: '[data-testid=plan]', pad: 0 });
+      await quiet.evaluate((el) => el.remove());
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     id: 'site-works',
     async run(t) {
       await t.fresh();

@@ -55,6 +55,14 @@ Der Projektbrowser hat unter den Ebenen einen Eintrag **Gelände**: die eigenen 
 
 Die Bauteilliste **Grundstückskoordinaten** (Bauteillisten → + → Grundstückskoordinaten) ist das Koordinatenverzeichnis des Grundstücks: jede Ecke so, wie der Lageplan sie nummeriert, ihr Hoch- und Rechtswert im System des Projekts, die Seite zur nächsten Ecke und die Fläche. Wie jede Bauteilliste kommt sie auf einen Plan neben den Lageplan und lässt sich als CSV oder XLSX ausgeben.
 
+## Bäume und Sträucher
+
+**Pflanze** (PL) setzt eine Pflanze per Klick, **Pflanzfläche** (PZ) besät einen Umriss mit einer Artenmischung in einer Dichte; wähle sie aus und bestimme die Arten in den Eigenschaften. Die Arten stammen aus einer Bibliothek der in Rumänien heimischen oder traditionellen Pflanzen, in Gruppen: **Obstbäume** (Apfel, Birne, Pflaume, Süß- und Sauerkirsche, Aprikose, Quitte), **Nadelbäume** (Weißtanne, Fichte, Wald- und Schwarzkiefer), **Laubbäume** (Walnuss, Linde, Birke, Ahorn), **Sträucher** (Hasel, Kornelkirsche, Holunder, Hundsrose, Flieder, Sanddorn, Johannisbeere, Thuja, Buchsbaum) und **Bodendecker**. Jede hat ihren lateinischen Namen, ihre übliche Höhe und Krone. Die Pflanzliste zeigt den lateinischen und den rumänischen Namen neben jeder Art.
+
+Im Grundriss wird jede Pflanze von oben gezeichnet, wie in einem Freiflächenplan, schwarz und so breit wie ihre Krone: ein Obstbaum als gelappte Krone mit gegabelten Ästen, ein Walnussbaum oder eine Linde als gewellte Krone um einen dunklen Kern, eine Tanne oder Fichte als Stern aus Nadelzweigen, eine Kiefer als runder Nadelbüschel, ein Strauch als kleine Wolke. Lapin zeichnet jedes Symbol selbst, sodass benachbarte Bäume leicht verschieden sind. Bei 1:1000 und kleiner (Übersichtslageplan) werden nur die Umrisse der Kronen gezeichnet. In 3D sind Nadelbäume Kegel, die übrigen Bäume haben eine runde Krone auf dem Stamm und Sträucher eine flache Kuppel.
+
+![Ein kleiner Obstgarten im Grundriss: Obstbäume, ein Walnussbaum, Nadelbäume und Sträucher](shots/planting-symbols.webp)
+
 ## Bauleitplanung und Sonne (Lapin Urban)
 
 Die Edition **Lapin Urban** fügt dieser Registerkarte eine Gruppe **Stadtplanung** hinzu: die Bebauungsvorschriften des Grundstücks (POT, CUT, die maximalen Höhen, die Abstände zur Straße, zu den Seiten, nach hinten und zur Straßenachse), das **zulässige Bauvolumen**, das sie übrig lassen, die Kennwerte, die das Modell im Vergleich dazu erreicht, und die **Besonnungsstudie**: die Sonne und ihre Schatten in 3D für jeden Tag und jede Stunde am Ort des Projekts, sowie Schattenpläne für die Tagundnachtgleiche und die Sonnenwenden.
