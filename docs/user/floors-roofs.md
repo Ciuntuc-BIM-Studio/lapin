@@ -28,6 +28,10 @@ Select the roof to change it in the properties panel:
 
 ![A roof's properties](shots/roof-properties.webp)
 
+**Roof configurator** (the button beside the style, or **Architecture → Roof configurator** with a roof selected) gathers everything in one place: the styles on the left, then the shape and its edges, the covering and drainage, the framing and the openings, over a plan of the roof (click an edge to make it auto, an eave or a gable) and, for the framing, a section across the ridge with the truss or couple at the middle. Pick a style to start from and change any field by hand; **Apply** makes it one undo step.
+
+![The roof configurator](shots/roof-configurator.webp)
+
 The walls on the roof's level stop under it and rise to its gables by themselves, under a curved roof too. A wall on another level follows the roof after **Architecture → Attach to roof** (<kbd>AR</kbd>): select the walls, then click the roof. The same tool takes any other body over the walls: a Studio solid, a slab, a beam, an element imported from IFC. The walls rise to its underside and are cut along it, whatever its shape. **Detach from roof** undoes it.
 
 **Roof window** and **Dormer** add openings to a roof.

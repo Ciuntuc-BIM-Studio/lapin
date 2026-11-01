@@ -43,6 +43,10 @@ Fiecare piesă e o parte a acoperișului, cu rolul ei, astfel că intră în can
 
 Două stiluri noi în catalog, care își aduc și șarpanta: **Swedish truss roof** (ferme la 1,2 m, tălpi 45×170 mm, diagonale 45×95 mm, C24, 27°, țiglă de beton) și **Nordic collar-tie roof** (căpriori cu clește 45×195 mm la 0,6 m, C24, 38°, tablă). Un stil cu șarpantă o aplică și pe un acoperiș existent; celelalte păstrează șarpanta acoperișului.
 
+## Configuratorul (decizia 231, făcut)
+
+Architecture → Roof configurator, sau butonul de lângă stil: stilurile în stânga; Formă, Învelitoare și ape, Șarpantă, Goluri; planul acoperișului cu laturile de clicat și secțiunea peste coamă prin șarpantă, din `architecture.roofPreview`; Apply, un singur pas.
+
 ## Mai târziu
 
 - Ferme de șold și căpriori de colț cu tăieturi compuse (acum căpriorii se opresc în echer la linia de șold).

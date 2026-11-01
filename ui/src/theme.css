@@ -382,6 +382,17 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .plan-item.overhead { stroke: var(--ink-muted); stroke-dasharray: 6 3; fill: none; }
 .plan-item.ridge, .plan-item.hip, .plan-item.valley, .plan-item.break { stroke: var(--ink-muted); stroke-width: 0.7; stroke-dasharray: 2 2; }
 .roof-edges { width: 100%; table-layout: fixed; }
+/* The roof configurator: the styles in a column, the tabs, the form beside its plan or section. */
+.roof-dialog .dialog-body.split { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 14px; }
+.roof-styles { max-height: 64vh; overflow: auto; padding-right: 6px; }
+.roof-styles .eyebrow { margin: 10px 0 2px; }
+.roof-styles .tree-item { display: flex; gap: 6px; text-align: left; }
+.roof-edit { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.roof-field { grid-template-columns: 150px 1fr; }
+.roof-field select, .roof-field input.num { min-width: 0; max-width: 180px; }
+.roof-summary { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
+.roof-summary .contents { display: contents; }
+.roof-dialog .swatch { display: inline-block; width: 10px; height: 10px; border: 1px solid var(--rule-strong); vertical-align: middle; }
 .roof-edges th:first-child, .roof-edges td:first-child { width: 2.2em; }
 .roof-edges th:nth-child(3), .roof-edges td:nth-child(3) { width: 3.4em; }
 .roof-edges th:nth-child(4), .roof-edges td:nth-child(4) { width: 4.2em; }

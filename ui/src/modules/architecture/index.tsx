@@ -21,6 +21,7 @@ import { JoinerySection } from './JoinerySection';
 import { SlabSection } from './SlabSection';
 import { SlabTypesDialog } from './SlabTypesDialog';
 import { RoofSection } from './RoofSection';
+import { RoofDialog } from './RoofDialog';
 import { StairSection, type StairNumbers } from './StairSection';
 import { StairTypesDialog } from './StairTypesDialog';
 import { dirOf, footFromTop } from './stairPlacement';
@@ -217,6 +218,17 @@ const slabOpening: ToolDef = {
     await ctx.execute('architecture.addSlabOpening', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]) });
   },
 };
+/** The roof configurator, on the roof selected (decision 231). */
+const roofConfigurator: ToolDef = {
+  id: 'architecture.roofConfigurator', label: 'Roof configurator', icon: Settings2,
+  run: () => {
+    const { selected } = useUi.getState();
+    const roof = selected.map((id) => useSession.getState().nodes.get(id)).find((n) => n?.type === 'IfcRoof');
+    if (!roof) { notify('Select a roof first, then open the roof configurator.'); return; }
+    useUi.setState({ dialog: 'roof', roofId: roof.id });
+  },
+};
+
 /** A roof window, or a dormer: a click on a slope of a roof (refused where it does not fit). */
 const roofOpening = (kind: 'window' | 'dormer'): ToolDef => ({
   id: `architecture.roof${kind === 'window' ? 'Window' : 'Dormer'}`, label: kind === 'window' ? 'Roof window' : 'Dormer', icon: kind === 'window' ? RoofWindowIcon : DormerIcon,
@@ -296,7 +308,7 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20, include: ['modify'],
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, slabOpening, roofOpening('window'), roofOpening('dormer')] },
+      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [room, roomColors], small: [roomOutline, updateRooms] },
@@ -329,7 +341,7 @@ const architecture: LapinModule = {
     { id: 'room', label: 'Room', classes: ['IfcSpace'], component: RoomSection, replacesFields: () => true },
     { id: 'roomColors', label: 'Room colours', classes: ['LapinView'], component: RoomViewSection },
   ],
-  dialogs: { wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog },
+  dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog },
   grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: contourGrips('architecture.updateRoof', true), IfcSpace: roomGrips },
   references: { IfcWall: pathRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: contourRefs, IfcSpace: roomRefs },
   similar: {

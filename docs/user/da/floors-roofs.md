@@ -28,6 +28,10 @@ Markér taget for at ændre det i egenskabspanelet:
 
 ![Et tags egenskaber](shots/roof-properties.webp)
 
+**Tagkonfigurator** (knappen ved siden af stilen, eller **Architecture → Roof configurator** med et tag valgt) samler det hele: stilene til venstre, så formen og kanterne, tagdækning og afvanding, konstruktionen og åbningerne, over en plan af taget (et klik på en kant gør den auto, tagfod eller gavl) og, for konstruktionen, et snit på tværs af kippen med gitterspæret eller spærparret på midten. Start fra en stil og ret ethvert felt i hånden; **Apply** gør det til ét fortryd-trin.
+
+![Tagkonfiguratoren](shots/roof-configurator.webp)
+
 Væggene på tagets niveau stopper under det og går selv op til dets gavle, også under et buet tag. En væg på et andet niveau følger taget efter **Arkitektur → Fastgør til tag** (<kbd>AR</kbd>): markér væggene, og klik derefter på taget. Samme værktøj tager ethvert andet legeme over væggene: et Studio-legeme, en plade, en bjælke, et element importeret fra IFC. Væggene går op til dets underside og skæres langs den, uanset formen. **Frigør fra tag** fortryder det.
 
 **Ovenlysvindue** og **Kvist** tilføjer åbninger i et tag.

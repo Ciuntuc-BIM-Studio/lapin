@@ -4,6 +4,8 @@
  * as the roof). The roof's other fields are in the class's own list below.
  */
 
+import { Settings2 } from 'lucide-react';
+import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { t, useLang } from '../../i18n';
@@ -29,11 +31,14 @@ export function RoofSection({ node }: { node: NodeDto }) {
     <div className="layers">
       <label className="type-pick">
         <span className="eyebrow">Style</span>
+        <span className="row">
         <select value={(node.props.style as string | undefined) ?? ''} disabled={!node.editable}
           onChange={(e) => void execute('architecture.roofStyle', { id: node.id, style: e.target.value })}>
           {!node.props.style && <option value="">Shaped by hand</option>}
           {styles.map((s) => <option key={s.id} value={s.id}>{`${s.label} · ${t(s.shape)}${s.shape === 'barrel' ? '' : ` ${s.pitch}°`}`}</option>)}
         </select>
+        <button type="button" className="icon" title="Roof configurator…" disabled={!node.editable} onClick={() => useUi.setState({ dialog: 'roof', roofId: node.id })}><Settings2 size={14} /></button>
+        </span>
       </label>
       <table className="roof-edges">
         <thead><tr><th>Edge</th><th>Kind</th><th>°</th><th>mm</th></tr></thead>

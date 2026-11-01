@@ -28,6 +28,10 @@ Seleccione la cubierta para cambiarla en el panel de propiedades:
 
 ![Las propiedades de una cubierta](shots/roof-properties.webp)
 
+**Configurador de cubierta** (el botón junto al estilo, o **Architecture → Roof configurator** con una cubierta seleccionada) lo reúne todo: los estilos a la izquierda, luego la forma y sus bordes, la cobertura y el desagüe, la estructura y los huecos, sobre una planta de la cubierta (un clic en un borde lo vuelve auto, alero o hastial) y, para la estructura, una sección transversal a la cumbrera con la cercha o la pareja del centro. Parte de un estilo y cambia a mano cualquier campo; **Apply** lo deja en un solo paso de deshacer.
+
+![El configurador de cubierta](shots/roof-configurator.webp)
+
 Los muros del nivel de la cubierta se detienen bajo ella y suben por sí solos hasta sus hastiales, también bajo una cubierta curva. Un muro de otro nivel sigue la cubierta tras **Arquitectura → Enlazar a cubierta** (<kbd>AR</kbd>): seleccione los muros y haga clic en la cubierta. La misma herramienta acepta cualquier otro cuerpo sobre los muros: un sólido de Studio, una losa, una viga, un elemento importado de IFC. Los muros suben hasta su cara inferior y se cortan a lo largo de ella, sea cual sea su forma. **Desenlazar de la cubierta** lo deshace.
 
 **Ventana de cubierta** y **Buhardilla** añaden huecos a una cubierta.

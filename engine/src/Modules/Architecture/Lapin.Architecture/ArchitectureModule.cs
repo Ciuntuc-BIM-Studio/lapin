@@ -281,7 +281,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         });
 
         // ------------------------------------------------------------ roofs
-        r.Class(new(IfcClass.Roof, "Roof",
+        r.Class(RoofClass = new(IfcClass.Roof, "Roof",
         [
             new("style", "Style", "choice", Choices: [.. RoofCatalog.Styles.Select(s => s.Id)], ReadOnly: true),
             new("shape", "Shape", "choice", Choices: RoofCatalog.Shapes),
@@ -372,18 +372,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Command("roofStyle", "Roof style", (ctx, a) =>
         {
             var roof = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Roof);
-            var style = RoofCatalog.StyleOf((string?)a["style"]) ?? throw new CommandException("There is no such roof style.");
-            // The style's fields replace the roof's; the per-edge overrides go. Everything else on the roof
-            // (its openings, low edge, structure choices, phase) stays.
-            var attrs = roof.CloneAttrs();
-            attrs.Remove("edges");
-            // A style that brings its framing (a Nordic truss roof) puts it on too.
-            string[] own = style.Structure != null ? ["eaveOffset"] : ["structure", "rafterSection", "rafterSpacing", "purlins", "eaveOffset", "webSection", "timberGrade"];
-            foreach (var (k, v) in Roof.Attrs(style, Roof.Contour(roof))) if (!own.Contains(k) || attrs[k] == null) attrs[k] = v?.DeepClone();
-            if (style.Shape != "mansard") { attrs.Remove("upperPitch"); attrs.Remove("mansardInset"); }
-            if (style.Shape != "barrel") attrs.Remove("rise");
-            if (style.GutterColor.Length == 0) attrs.Remove("gutterColor");
-            var next = roof.With(attrs: attrs);
+            if (RoofCatalog.StyleOf((string?)a["style"]) == null) throw new CommandException("There is no such roof style.");
+            var next = RoofDraft(roof, new JsonObject { ["style"] = (string?)a["style"] });
             CheckRoof(ctx.Model, next);
             CheckRoofOpenings(ctx.Model, next);
             ctx.Replace(next);
@@ -395,40 +385,20 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Command("updateRoof", "Change roof", (ctx, a) =>
         {
             var roof = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Roof);
-            var d = ctx.Describe(IfcClass.Roof)!;
-            var attrs = roof.CloneAttrs();
-            foreach (var (k, v) in a["attrs"] as JsonObject ?? [])
-            {
-                var f = d.Fields.FirstOrDefault(x => x.Key == k && !x.ReadOnly) ?? (k is "lowEdge" or "gutterColor" ? new FieldDescriptor(k, k, k == "lowEdge" ? "number" : "color") : throw new CommandException($"„{k}” is not a roof field."));
-                if (v == null) attrs.Remove(k); else attrs[k] = Fields.Check(f, v);
-            }
-            if (a["points"] != null || a["x1"] != null) attrs["contour"] = Slabs.ContourJson(Slabs.CheckContour(Points(a)));
-            var corners = Slabs.Contour(roof.With(attrs: attrs)).Count;
-            if (a.ContainsKey("edges"))
-            {
-                if (a["edges"] is JsonArray edges)
-                {
-                    if (edges.Count > corners) throw new CommandException($"The roof has {corners} edges, not {edges.Count}.");
-                    var clean = new JsonArray();
-                    foreach (var e in edges)
-                    {
-                        if (e is not JsonObject o) { clean.Add(null); continue; }
-                        var c = new JsonObject();
-                        if ((string?)o["kind"] is { } kind) c["kind"] = kind is "eave" or "gable" ? kind : throw new CommandException("An edge is an eave or a gable.");
-                        if (Json.Number(o["pitch"]) is { } p) c["pitch"] = p;
-                        if (Json.Number(o["overhang"]) is { } oh) c["overhang"] = oh;
-                        clean.Add((JsonNode?)(c.Count > 0 ? c : null));
-                    }
-                    if (clean.Any(x => x != null)) attrs["edges"] = clean; else attrs.Remove("edges");
-                }
-                else attrs.Remove("edges");
-            }
-            // A roof shaped by hand is no longer exactly its style.
-            if (a.ContainsKey("edges") || (a["attrs"] as JsonObject)?.Count > 0) attrs.Remove("style");
-            var next = roof.With(attrs: attrs);
+            var next = RoofDraft(roof, a);
             CheckRoof(ctx.Model, next);
+            CheckRoofOpenings(ctx.Model, next);
             ctx.Replace(next);
             return null;
+        });
+
+        // The roof configurator's preview: the roof as the draft would make it (a style, fields, edge rules), its plan, a section
+        // through its framing and what it takes; nothing changes in the model.
+        r.Query("roofPreview", (q, a) =>
+        {
+            var roof = Spatial.Require(q.Model, (string?)a["id"], IfcClass.Roof);
+            try { return RoofPreview.Of(RoofDraft(roof, a), q.Model); }
+            catch (CommandException e) { return new JsonObject { ["problem"] = e.Message, ["attrs"] = roof.Attrs.DeepClone() }; }
         });
 
         r.Command("addDoor", "Door", (ctx, a) => AddFill(ctx, a, "door"));
@@ -615,6 +585,59 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     }
 
     /// <summary>A contour: <c>points</c> as [[x, y], …], or the rectangle between (x1, y1) and (x2, y2).</summary>
+    static ClassDescriptor? RoofClass;
+
+    /// <summary>
+    /// A roof as a change would make it, one step for the configurator: a <c>style</c> first (its fields replace the roof's, the
+    /// per-edge rules go; the structure stays unless the style brings its own), then the fields (<c>attrs</c>, null clears one),
+    /// the outline (<c>points</c>) and the edge rules (<c>edges</c>: one entry per edge, null for "as the roof"; null clears
+    /// them all). Fields or edges changed by hand leave the roof no longer exactly its style.
+    /// </summary>
+    internal static Entity RoofDraft(Entity roof, JsonObject a)
+    {
+        var attrs = roof.CloneAttrs();
+        if ((string?)a["style"] is { Length: > 0 } sid)
+        {
+            var style = RoofCatalog.StyleOf(sid) ?? throw new CommandException($"There is no roof style „{sid}”.");
+            attrs.Remove("edges");
+            string[] own = style.Structure != null ? ["eaveOffset", "rafterTail", "rafterSeat"] : ["structure", "rafterSection", "rafterSpacing", "purlins", "eaveOffset", "webSection", "timberGrade", "rafterTail", "rafterSeat"];
+            foreach (var (k, v) in Roof.Attrs(style, Roof.Contour(roof))) if (!own.Contains(k) || attrs[k] == null) attrs[k] = v?.DeepClone();
+            if (style.Shape != "mansard") { attrs.Remove("upperPitch"); attrs.Remove("mansardInset"); }
+            if (style.Shape != "barrel") attrs.Remove("rise");
+            if (style.GutterColor.Length == 0) attrs.Remove("gutterColor");
+        }
+        var fields = RoofClass?.Fields ?? [];
+        foreach (var (k, v) in a["attrs"] as JsonObject ?? [])
+        {
+            var f = fields.FirstOrDefault(x => x.Key == k && !x.ReadOnly) ?? (k is "lowEdge" or "gutterColor" ? new FieldDescriptor(k, k, k == "lowEdge" ? "number" : "color") : throw new CommandException($"„{k}” is not a roof field."));
+            if (v == null) attrs.Remove(k); else attrs[k] = Fields.Check(f, v);
+        }
+        if (a["points"] != null || a["x1"] != null) attrs["contour"] = Slabs.ContourJson(Slabs.CheckContour(Points(a)));
+        var corners = Slabs.Contour(roof.With(attrs: attrs)).Count;
+        if (a.ContainsKey("edges"))
+        {
+            if (a["edges"] is JsonArray edges)
+            {
+                if (edges.Count > corners) throw new CommandException($"The roof has {corners} edges, not {edges.Count}.");
+                var clean = new JsonArray();
+                foreach (var e in edges)
+                {
+                    if (e is not JsonObject o) { clean.Add(null); continue; }
+                    var c = new JsonObject();
+                    if ((string?)o["kind"] is { } kind) c["kind"] = kind is "eave" or "gable" ? kind : throw new CommandException("An edge is an eave or a gable.");
+                    if (Json.Number(o["pitch"]) is { } p) c["pitch"] = p;
+                    if (Json.Number(o["overhang"]) is { } oh) c["overhang"] = oh;
+                    clean.Add((JsonNode?)(c.Count > 0 ? c : null));
+                }
+                if (clean.Any(x => x != null)) attrs["edges"] = clean; else attrs.Remove("edges");
+            }
+            else attrs.Remove("edges");
+        }
+        // A roof shaped by hand is no longer exactly its style.
+        if (a.ContainsKey("edges") || (a["attrs"] as JsonObject)?.Count > 0) attrs.Remove("style");
+        return roof.With(attrs: attrs);
+    }
+
     static void CheckRoof(IModelView m, Entity roof)
     {
         if (Roof.Resolve(roof, m) is { } r && Roof.Problem(r) is { } problem) throw new CommandException(problem);

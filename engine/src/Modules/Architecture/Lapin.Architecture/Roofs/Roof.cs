@@ -421,6 +421,7 @@ public static class Roof
             ["gutterMaterial"] = s.GutterMaterial, ["snowGuards"] = (s.SnowGuards ?? RoofCatalog.CoveringOf(s.Covering).SnowGuards) ? "True" : "False",
             ["structure"] = s.Structure ?? "rafters", ["rafterSection"] = s.RafterSection ?? "8x16", ["rafterSpacing"] = s.RafterSpacing ?? 0.8,
             ["purlins"] = s.Structure is null or "rafters" ? 1 : 0, ["eaveOffset"] = 0.0, ["timberGrade"] = s.TimberGrade ?? "C24",
+            ["rafterTail"] = "plumb", ["rafterSeat"] = "birdsmouth",
         };
         if (s.WebSection != null) o["webSection"] = s.WebSection;
         if (s.GutterColor.Length > 0) o["gutterColor"] = s.GutterColor;

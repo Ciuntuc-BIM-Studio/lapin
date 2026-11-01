@@ -28,6 +28,10 @@ Sélectionnez le toit pour le modifier dans le panneau des propriétés :
 
 ![Les propriétés d’un toit](shots/roof-properties.webp)
 
+**Configurateur de toit** (le bouton à côté du style, ou **Architecture → Roof configurator** avec un toit sélectionné) réunit tout : les styles à gauche, puis la forme et ses rives, la couverture et l’évacuation, la charpente et les ouvertures, au-dessus d’un plan du toit (un clic sur une rive la rend auto, égout ou pignon) et, pour la charpente, une coupe en travers du faîtage avec la fermette ou le couple du milieu. Partez d’un style et changez n’importe quel champ à la main ; **Apply** en fait une seule étape d’annulation.
+
+![Le configurateur de toit](shots/roof-configurator.webp)
+
 Les murs du niveau du toit s’arrêtent dessous et montent d’eux-mêmes jusqu’à ses pignons, sous un toit courbe aussi. Un mur d’un autre niveau suit le toit après **Architecture → Attacher au toit** (<kbd>AR</kbd>) : sélectionnez les murs, puis cliquez le toit. Le même outil accepte tout autre corps au-dessus des murs : un solide Studio, une dalle, une poutre, un élément importé d’IFC. Les murs montent jusqu’à sa sous-face et sont coupés le long de celle-ci, quelle que soit sa forme. **Détacher du toit** l’annule.
 
 **Fenêtre de toit** et **Lucarne** ajoutent des ouvertures à un toit.

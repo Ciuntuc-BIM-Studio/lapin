@@ -410,6 +410,20 @@ export const scenes = [
       await t.wait(600);
       await t.shot('roof-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
       t.expect((await t.nodes()).some((n) => n.type === 'IfcSlab'), 'a floor in the house');
+      // The roof configurator (decision 231): the Swedish truss style picked, its framing seen in the section, applied.
+      await t.tool('architecture.roofConfigurator');
+      const conf = t.page.locator('[aria-label="Roof configurator"]');
+      t.expect(await conf.count() > 0, 'the roof configurator opens on the roof selected');
+      await conf.locator('.roof-styles .tree-item').filter({ hasText: 'Swedish truss roof' }).click();
+      await conf.locator('[role=tab]').nth(2).click();
+      await t.wait(800);
+      t.expect(await conf.locator('svg[aria-label="Section"] polygon').count() > 6, 'the section shows a truss');
+      await t.shot('roof-configurator', { of: '.dialog', pad: 0 });
+      await conf.locator('.btn.primary').click();
+      await t.wait(1000);
+      const framed = (await t.nodes()).find((n) => n.id === roof.id);
+      t.expect(framed?.props?.structure === 'trusses', `the roof takes the trusses (structure ${framed?.props?.structure})`);
+      await t.ui({ dialog: null });
     },
   },
   {
