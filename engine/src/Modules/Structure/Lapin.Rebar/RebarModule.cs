@@ -244,6 +244,14 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var p = Args.Point(a["point"], "the grip's point");
             var attrs = e.CloneAttrs();
             if (key == "at") attrs["at"] = Rebars.J(p);
+            else if (RebarAnchors.IsAnchor(key))
+            {
+                // An anchor (decision 226): the formwork's face dragged onto the cut; the bar lands the cover inside it.
+                var (cover, _) = RebarAnchors.CoverOf(ctx.Model, e, RebarSettings.Of(ctx.Model));
+                var (nextAt, next) = RebarAnchors.Drag(s, at, cover, key, p);
+                attrs["at"] = Rebars.J(nextAt);
+                attrs["params"] = new JsonObject(next.Params.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value)));
+            }
             else
             {
                 var next = RebarShapes.Apply(s, key, RebarShapes.Local(s, at, p));
@@ -376,6 +384,11 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                 o["label"] = Rebars.Label(e, s);
                 var at = Rebars.At(e);
                 o["grips"] = new JsonArray(RebarShapes.Grips(s).Select(g => (JsonNode)new JsonObject { ["key"] = g.Key, ["at"] = Rebars.J(RebarShapes.Place(s, at, g.At)) }).ToArray());
+                // The cover its anchors stand off by, where it comes from (own, host, settings), and the anchors themselves (decision 226).
+                var (cover, source) = RebarAnchors.CoverOf(q.Model, e, RebarSettings.Of(q.Model));
+                o["cover"] = Math.Round(cover, 6);
+                o["coverSource"] = source;
+                o["anchors"] = AnchorsJson(s, at, cover);
             }
             else
             {
@@ -393,6 +406,10 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
     }
 
     static Entity Require(IModelView m, string? id, string cls) => m.Get(id ?? "") is { } e && e.Class == cls ? e : throw new CommandException(cls == Rebars.Class ? "Not a bar." : "Not a bar distribution.");
+
+    /// <summary>The bar's anchors as the interface reads them: <c>[{key, at}]</c>.</summary>
+    static JsonArray AnchorsJson(RebarSpec s, Vec2 at, double cover) =>
+        new(RebarAnchors.Anchors(s, at, cover).Select(a => (JsonNode)new JsonObject { ["key"] = a.Key, ["at"] = Rebars.J(a.At) }).ToArray());
 
     /// <summary>The attributes a command may set on a bar or a distribution, checked.</summary>
     static void Write(JsonObject attrs, JsonObject a, bool run)
@@ -483,6 +500,17 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                 else attrs.Remove("array");
             }
             if (a.ContainsKey("bendRadius")) { if (Json.Number(a["bendRadius"]) is { } br && br >= 0) attrs["bendRadius"] = br; else attrs.Remove("bendRadius"); }
+            // The bar's own cover (decision 226): null takes it away, the host's or the settings' standing in again.
+            if (a.ContainsKey("cover"))
+            {
+                if (a["cover"] == null) attrs.Remove("cover");
+                else
+                {
+                    var cv = Json.Number(a["cover"]) ?? throw new CommandException("The cover is a length.");
+                    if (cv < 0 || cv > 0.2) throw new CommandException("The cover is between 0 and 200 mm.");
+                    attrs["cover"] = Math.Round(cv, 6);
+                }
+            }
             if (a.ContainsKey("host")) { if ((string?)a["host"] is { Length: > 0 } h) attrs["host"] = h; else attrs.Remove("host"); }
             if (a.ContainsKey("across"))
             {
@@ -609,6 +637,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         // What the interface drags: the shape's grips where they stand now, its point and its label.
         var grips = new JsonArray(RebarShapes.Grips(s).Select(g => (JsonNode)new JsonObject { ["key"] = g.Key, ["at"] = Rebars.J(RebarShapes.Place(s, at, g.At)) }).ToArray());
         mk.Data = new JsonObject { ["grips"] = grips, ["at"] = Rebars.J(at) };
+        // Seen from the front, the anchors standing the cover outside the bar (decision 226): dragged onto the formwork's face.
+        if (view == "front") mk.Data["anchors"] = AnchorsJson(s, at, RebarAnchors.CoverOf(c.Model, e, st).Cover);
         return mk;
     }
 
