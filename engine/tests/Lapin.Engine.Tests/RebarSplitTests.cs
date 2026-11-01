@@ -10,8 +10,10 @@ using Lapin.Structure;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// A longitudinal bar cut in two with a lap (docs/plan-rebar.md, decision 227): the pieces' lengths, hooks and marks,
-/// both in the schedule; a polyline cut on a segment; the refusals; the cut at a click; the stock length warning; the settings.
+/// A longitudinal bar cut in two with a lap (docs/plan-rebar.md, decision 227), the lap zone given by the engineer as
+/// from–to along the bar: the pieces' lengths, hooks and marks, both in the schedule; the station shortcuts (the lap ending
+/// at the station, or starting there); a polyline cut on a segment; the refusals; the cut at two clicks; the stock length
+/// warning; the settings.
 /// </summary>
 public class RebarSplitTests
 {
@@ -27,15 +29,17 @@ public class RebarSplitTests
     }
 
     [Fact]
-    public void A_14_m_bar_split_at_7_m_with_50_diameters_gives_two_pieces_of_7_4_m_the_second_with_a_new_mark_both_in_the_schedule()
+    public void A_14_m_bar_with_the_lap_from_6_6_to_7_4_m_gives_two_pieces_of_7_4_m_the_second_with_a_new_mark_both_in_the_schedule()
     {
         var f = F();
         var view = Section(f);
         var bar = Straight(f, view, 14, 0.016, new JsonObject { ["count"] = 3, ["layer"] = "Custom", ["array"] = new JsonObject { ["nx"] = 2, ["dx"] = 0.1 }, ["hooks"] = new JsonObject { ["start"] = new JsonObject { ["angle"] = 90, ["length"] = 0.2 }, ["end"] = new JsonObject { ["angle"] = 135, ["length"] = 0.16 } } });
         var mark = Rebars.Mark(f.Model.Get(bar)!);
-        var r = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = bar, ["station"] = 7 })!;
+        var r = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = bar, ["from"] = 6.6, ["to"] = 7.4 })!;
         Assert.Equal(bar, (string?)r["first"]);
         Assert.Equal(0.8, (double)r["lap"]!, 9);
+        Assert.Equal(6.6, (double)r["from"]!, 9);
+        Assert.Equal(7.4, (double)r["to"]!, 9);
         var second = (string)r["second"]!;
         var e1 = f.Model.Get(bar)!;
         var e2 = f.Model.Get(second)!;
@@ -86,9 +90,9 @@ public class RebarSplitTests
     {
         var f = F();
         var view = Section(f);
-        // 0→(6,0)→(6,2)→(10,2): 12 m; cut at 7 m on the vertical leg with a 1 m lap: the first ends at (6, 1.5), the second starts at (6, 0.5).
+        // 0→(6,0)→(6,2)→(10,2): 12 m; the lap from 6.5 to 7.5 m on the vertical leg: the first ends at (6, 1.5), the second starts at (6, 0.5).
         var bar = (string)f.Run("rebar.add", new JsonObject { ["viewId"] = view, ["shape"] = "polyline", ["at"] = new JsonArray(2, 1), ["diameter"] = 0.012, ["vertices"] = new JsonArray(new JsonArray(0, 0), new JsonArray(6, 0), new JsonArray(6, 2), new JsonArray(10, 2)) })!["id"]!;
-        var r = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = bar, ["station"] = 7, ["lap"] = 1 })!;
+        var r = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = bar, ["from"] = 6.5, ["to"] = 7.5 })!;
         var e1 = f.Model.Get(bar)!;
         var e2 = f.Model.Get((string)r["second"]!)!;
         static List<(double X, double Y)> V(Entity e) => ((JsonArray)e.Attrs["vertices"]!).Select(v => (Math.Round((double)v![0]!, 6), Math.Round((double)v[1]!, 6))).ToList();
@@ -100,9 +104,11 @@ public class RebarSplitTests
         Assert.Equal(1 + 0.5, (double)e2.Attrs["at"]![1]!, 9);
         Assert.Equal(7.5, RebarShapes.Length(Rebars.SpecOf(e1)), 9);
         Assert.Equal(5.5, RebarShapes.Length(Rebars.SpecOf(e2)), 9);
-        // An L bar (a = 8, b = 1) cut at 4 m: two polylines, the Eurocode radius kept as the polyline's bend radius.
+        // An L bar (a = 8, b = 1) with the 50Ø lap ending at 4.4 m: two polylines, the Eurocode radius kept as the polyline's bend radius.
         var l = (string)f.Run("rebar.add", new JsonObject { ["viewId"] = view, ["shape"] = "L", ["at"] = new JsonArray(0, 3), ["diameter"] = 0.016, ["params"] = new JsonObject { ["a"] = 8, ["b"] = 1 } })!["id"]!;
-        var rl = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = l, ["station"] = 4 })!;
+        var rl = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = l, ["station"] = 4.4 })!;
+        Assert.Equal(3.6, (double)rl["from"]!, 9);
+        Assert.Equal(4.4, (double)rl["to"]!, 9);
         var l1 = f.Model.Get(l)!;
         var l2 = f.Model.Get((string)rl["second"]!)!;
         Assert.Equal("polyline", l1.Str("shape"));
@@ -114,7 +120,38 @@ public class RebarSplitTests
     }
 
     [Fact]
-    public void A_stirrup_a_cut_too_near_the_end_and_one_outside_are_refused()
+    public void A_station_with_a_lap_ends_the_lap_there_or_starts_it_there_with_side_after()
+    {
+        var f = F();
+        var view = Section(f);
+        // The lap ends at 7 m: the first piece 0 → 7.0, the second 6.2 → 14 (7.8 m).
+        var bar = Straight(f, view, 14, 0.016);
+        var r = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = bar, ["station"] = 7, ["lap"] = 0.8 })!;
+        Assert.Equal(6.2, (double)r["from"]!, 9);
+        Assert.Equal(7.0, (double)r["to"]!, 9);
+        Assert.Equal(7.0, (double)f.Model.Get(bar)!.Attrs["params"]!["length"]!, 9);
+        var second = f.Model.Get((string)r["second"]!)!;
+        Assert.Equal(7.8, (double)second.Attrs["params"]!["length"]!, 9);
+        Assert.Equal(1 + 6.2, (double)second.Attrs["at"]![0]!, 9);
+        // The lap starts at 7 m: the first piece 0 → 7.8, the second 7 → 14 (7 m).
+        var other = Straight(f, view, 14, 0.016);
+        r = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = other, ["station"] = 7, ["lap"] = 0.8, ["side"] = "after" })!;
+        Assert.Equal(7.0, (double)r["from"]!, 9);
+        Assert.Equal(7.8, (double)r["to"]!, 9);
+        Assert.Equal(7.8, (double)f.Model.Get(other)!.Attrs["params"]!["length"]!, 9);
+        second = f.Model.Get((string)r["second"]!)!;
+        Assert.Equal(7.0, (double)second.Attrs["params"]!["length"]!, 9);
+        Assert.Equal(1 + 7, (double)second.Attrs["at"]![0]!, 9);
+        // Without a lap, the settings' (50Ø = 0.8 m) ends at the station.
+        var third = Straight(f, view, 14, 0.016);
+        r = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = third, ["station"] = 7 })!;
+        Assert.Equal(6.2, (double)r["from"]!, 9);
+        Assert.Equal(7.0, (double)r["to"]!, 9);
+        Assert.Equal(0.8, (double)r["lap"]!, 9);
+    }
+
+    [Fact]
+    public void A_stirrup_a_lap_without_length_a_cut_too_near_the_end_and_one_outside_are_refused()
     {
         var f = F();
         var view = Section(f);
@@ -122,39 +159,81 @@ public class RebarSplitTests
         var ex = Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = stirrup, ["station"] = 0.5 }));
         Assert.Equal("Only a longitudinal bar is split.", ex.Message);
         var bar = Straight(f, view, 14);
+        // A piece that would be all lap: the lap running past the start, or past the end.
         ex = Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = bar, ["station"] = 0.3 }));
         Assert.Equal("The cut is too close to the end.", ex.Message);
-        ex = Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = bar, ["station"] = 13.8 }));
+        ex = Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = bar, ["station"] = 14 }));
         Assert.Equal("The cut is too close to the end.", ex.Message);
+        ex = Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = bar, ["from"] = 0, ["to"] = 0.8 }));
+        Assert.Equal("The cut is too close to the end.", ex.Message);
+        ex = Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = bar, ["from"] = 13.2, ["to"] = 14 }));
+        Assert.Equal("The cut is too close to the end.", ex.Message);
+        // A lap under a centimetre, or turned round, is none.
+        ex = Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = bar, ["from"] = 7, ["to"] = 7.005 }));
+        Assert.Equal("The lap needs a length.", ex.Message);
+        ex = Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = bar, ["from"] = 7.4, ["to"] = 6.6 }));
+        Assert.Equal("The lap needs a length.", ex.Message);
+        ex = Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = bar, ["station"] = 7, ["lap"] = 0 }));
+        Assert.Equal("The lap needs a length.", ex.Message);
+        // Stations off the bar.
         ex = Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = bar, ["station"] = 15 }));
         Assert.Equal("The cut is outside the bar.", ex.Message);
+        ex = Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = bar, ["from"] = -1, ["to"] = 1 }));
+        Assert.Equal("The cut is outside the bar.", ex.Message);
+        Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = bar, ["from"] = 6.6 }));
         Assert.Throws<CommandException>(() => f.Run("rebar.split", new JsonObject { ["id"] = bar }));
         Assert.Single(f.Model.OfClass(Rebars.Class), e => e.Str("shape") == "straight");
-        // The preview says the same without throwing, and the lengths when it can be made.
+        // The preview says the same without throwing, and the lengths and stations when it can be made.
         var bad = (JsonObject)f.Session.Query("rebar.splitPreview", new JsonObject { ["id"] = bar, ["station"] = 0.3 })!;
         Assert.Equal("The cut is too close to the end.", (string?)bad["error"]);
+        bad = (JsonObject)f.Session.Query("rebar.splitPreview", new JsonObject { ["id"] = bar, ["from"] = 7, ["to"] = 7 })!;
+        Assert.Equal("The lap needs a length.", (string?)bad["error"]);
         var good = (JsonObject)f.Session.Query("rebar.splitPreview", new JsonObject { ["id"] = bar, ["station"] = 5, ["lap"] = 1 })!;
-        Assert.Equal(5.5, (double)good["first"]!, 9);
-        Assert.Equal(9.5, (double)good["second"]!, 9);
+        Assert.Equal(5.0, (double)good["first"]!, 9);
+        Assert.Equal(10.0, (double)good["second"]!, 9);
         Assert.Equal(1.0, (double)good["lap"]!, 9);
+        Assert.Equal(4.0, (double)good["from"]!, 9);
+        Assert.Equal(5.0, (double)good["to"]!, 9);
+        Assert.Equal(14.0, (double)good["length"]!, 9);
         Assert.Null(good["error"]);
+        good = (JsonObject)f.Session.Query("rebar.splitPreview", new JsonObject { ["id"] = bar, ["from"] = 6.6, ["to"] = 7.4 })!;
+        Assert.Equal(7.4, (double)good["first"]!, 9);
+        Assert.Equal(7.4, (double)good["second"]!, 9);
+        Assert.Equal(0.8, (double)good["lap"]!, 9);
     }
 
     [Fact]
-    public void A_click_cuts_at_the_nearest_point_of_the_bar_through_its_rotation()
+    public void Two_clicks_give_the_laps_ends_at_the_nearest_points_of_the_bar_through_its_rotation_and_one_click_ends_the_settings_lap_there()
     {
         var f = F();
         var view = Section(f);
-        // A 10 m bar from (1, 0.5) turned 90°: it runs up to (1, 10.5); a click at (1.3, 4.5) is 4 m along it.
+        // A 10 m bar from (1, 0.5) turned 90°: it runs up to (1, 10.5); a click at (1.3, 4.5) is 4 m along it, one at (0.8, 4.7) 4.2 m.
         var bar = Straight(f, view, 10, 0.012, new JsonObject { ["rotation"] = 90 });
-        var r = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = bar, ["point"] = new JsonArray(1.3, 4.5) })!;
-        Assert.Equal(4.0, (double)r["station"]!, 6);
-        Assert.Equal(0.6, (double)r["lap"]!, 9);
-        Assert.Equal(4.3, (double)f.Model.Get(bar)!.Attrs["params"]!["length"]!, 9);
+        var r = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = bar, ["point"] = new JsonArray(1.3, 4.5), ["point2"] = new JsonArray(0.8, 4.7) })!;
+        Assert.Equal(4.0, (double)r["from"]!, 6);
+        Assert.Equal(4.2, (double)r["to"]!, 6);
+        Assert.Equal(0.2, (double)r["lap"]!, 6);
+        Assert.Equal(4.2, (double)f.Model.Get(bar)!.Attrs["params"]!["length"]!, 6);
         var second = f.Model.Get((string)r["second"]!)!;
         Assert.Equal(1.0, (double)second.Attrs["at"]![0]!, 9);
-        Assert.Equal(0.5 + 3.7, (double)second.Attrs["at"]![1]!, 9);
+        Assert.Equal(0.5 + 4.0, (double)second.Attrs["at"]![1]!, 6);
         Assert.Equal(90, second.Num("rotation"), 9);
+        // The clicks in the other order give the same lap.
+        var other = Straight(f, view, 10, 0.012, new JsonObject { ["rotation"] = 90 });
+        r = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = other, ["point"] = new JsonArray(0.8, 4.7), ["point2"] = new JsonArray(1.3, 4.5) })!;
+        Assert.Equal(4.0, (double)r["from"]!, 6);
+        Assert.Equal(4.2, (double)r["to"]!, 6);
+        // One click alone: the settings' lap (50Ø = 0.6 m) ends at it.
+        var third = Straight(f, view, 10, 0.012, new JsonObject { ["rotation"] = 90 });
+        r = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = third, ["point"] = new JsonArray(1.3, 4.5) })!;
+        Assert.Equal(3.4, (double)r["from"]!, 6);
+        Assert.Equal(4.0, (double)r["to"]!, 6);
+        Assert.Equal(4.0, (double)f.Model.Get(third)!.Attrs["params"]!["length"]!, 6);
+        // A click with a typed lap: the second click only says on which side of the first the lap lies.
+        var fourth = Straight(f, view, 10, 0.012, new JsonObject { ["rotation"] = 90 });
+        r = (JsonObject)f.Run("rebar.split", new JsonObject { ["id"] = fourth, ["point"] = new JsonArray(1.3, 4.5), ["point2"] = new JsonArray(1, 6), ["lap"] = 0.9 })!;
+        Assert.Equal(4.0, (double)r["from"]!, 6);
+        Assert.Equal(4.9, (double)r["to"]!, 6);
     }
 
     [Fact]

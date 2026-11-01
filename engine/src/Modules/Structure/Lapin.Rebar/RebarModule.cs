@@ -377,8 +377,10 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             return new JsonObject { ["viewId"] = across.Id, ["insetId"] = inset.Id };
         });
 
-        // A longitudinal bar cut in two with a lap (decision 227): {id, station?: m from the bar's start, point?: [x, y] (the view's; the nearest point of the bar gives the station),
-        // lap?: m (else the settings' lap length, 50Ø when none)}. The bar becomes the first piece, a new bar the second, the lap centred on the station → {first, second, lap, station}.
+        // A longitudinal bar cut in two with a lap (decision 227), the lap zone the engineer's: {id, from, to: m along the bar from its start (the second piece starts at from,
+        // the first ends at to)}; or {id, station | point: [x, y] (the view's; the nearest point of the bar), point2?: [x, y] the lap's other end, lap?: m (else the settings'
+        // lap length, 50Ø when none; with a station alone the lap ends there, with side: "after" it starts there; with point2 too, point2 only says the side)}.
+        // The bar becomes the first piece, a new bar the second → {first, second, lap, from, to}.
         r.Command("split", "Split bar", (ctx, a) => RebarSplit.Split(ctx, Require(ctx.Model, (string?)a["id"], Rebars.Class), a));
 
         // A beam's or a column's type gets its stirrups (decision 215): {id, enabled, diameter, cover, mode, step, zones, mark}.
@@ -430,11 +432,12 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             }
             return o;
         });
-        // What a cut would give ({id, station, lap?}): the two pieces' lengths, or why it cannot be made; the interface shows them while the user types.
+        // What a cut would give (the split's arguments: {id, from, to} or {id, station | point, point2?, lap?, side?}): the two pieces' lengths, the lap and its stations
+        // {first, second, lap, from, to, length}, or {error}; the interface shows them while the user types.
         r.Query("splitPreview", (q, a) =>
         {
             var e = q.Model.Get((string?)a["id"] ?? "") is { } x && x.Class == Rebars.Class ? x : throw new CommandException("Not a bar.");
-            return RebarSplit.Preview(RebarSettings.Of(q.Model), e, Json.Number(a["station"]) ?? throw new CommandException("The station is a length from the bar's start."), Json.Number(a["lap"]));
+            return RebarSplit.Preview(RebarSettings.Of(q.Model), e, a);
         });
         r.Query("settings", (q, _) => RebarSettings.Of(q.Model).Resolved());
         RebarBodies.Register(r);
