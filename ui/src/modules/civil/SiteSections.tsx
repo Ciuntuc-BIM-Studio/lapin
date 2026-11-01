@@ -10,6 +10,8 @@ import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
 import { isDitch } from './prefs';
+import { t, useLang } from '../../i18n';
+import { groupedSpecies, speciesName, type Species } from './species';
 
 /** Opens the corridor configurator on the element selected. */
 export function Configure() {
@@ -92,15 +94,17 @@ export function RetainingWallSection({ node }: { node: NodeDto }) {
   );
 }
 
-interface Species { name: string; type: string; height: number; crown: number; color: string; share: number }
-
 export function PlantingSection({ node }: { node: NodeDto }) {
   const info = useSession((s) => s.info);
+  // Names and the picker's groups follow the language (an option's text and a group's label are left by the translator).
+  const lang = useLang((s) => s.lang);
   const catalog = (info?.catalogs['civil.plants'] as unknown as Species[] | undefined) ?? [];
   const species = useMemo(() => (Array.isArray(node.props.species) ? (node.props.species as unknown as Species[]) : []), [node.props.species]);
   const zone = Array.isArray(node.props.contour);
   const set = (args: Record<string, unknown>) => void execute('civil.updatePlanting', { id: node.id, ...args });
   const setSpecies = (next: Species[]) => set({ species: next });
+  // An old project's species has no Latin or Romanian name of its own: the library's, by its name.
+  const named = (s: Species): Species => ({ ...catalog.find((c) => c.name === s.name), ...s });
   const add = (name: string) => { const c = catalog.find((s) => s.name === name); if (c) setSpecies([...species, { ...c, share: 1 }]); };
   return (
     <div className="layers">
@@ -113,7 +117,7 @@ export function PlantingSection({ node }: { node: NodeDto }) {
         <tbody>
           {species.map((s, i) => (
             <tr key={i}>
-              <td><span className="swatch" style={{ background: s.color }} /> {s.name} <span className="muted small">{s.type} · {Math.round(s.height * 10) / 10} m</span></td>
+              <td><span className="swatch" style={{ background: s.color }} /> <span data-no-i18n>{speciesName(named(s), lang)}</span> {named(s).latin && <i className="muted small" data-no-i18n>{named(s).latin}</i>} <span className="muted small" data-no-i18n>{Math.round(s.height * 10) / 10} m · ⌀ {Math.round(s.crown * 10) / 10} m</span></td>
               {zone && <td><input className="num" type="number" step={0.1} min={0} value={s.share} onChange={(e) => setSpecies(species.map((x, k) => (k === i ? { ...x, share: Math.max(0, Number(e.target.value) || 0) } : x)))} /></td>}
               <td><button type="button" className="icon" title="Remove" disabled={species.length <= 1} onClick={() => setSpecies(species.filter((_, k) => k !== i))}>×</button></td>
             </tr>
@@ -122,7 +126,11 @@ export function PlantingSection({ node }: { node: NodeDto }) {
       </table>
       <select value="" onChange={(e) => { if (e.target.value) add(e.target.value); }}>
         <option value="">Add a species…</option>
-        {catalog.map((c) => <option key={c.name} value={c.name}>{c.name} · {c.type}</option>)}
+        {groupedSpecies(catalog).map(([group, list]) => (
+          <optgroup key={group} label={t(group)}>
+            {list.map((c) => <option key={c.name} value={c.name} data-no-i18n>{speciesName(c, lang)}{c.latin ? ` (${c.latin})` : ''}</option>)}
+          </optgroup>
+        ))}
       </select>
     </div>
   );
