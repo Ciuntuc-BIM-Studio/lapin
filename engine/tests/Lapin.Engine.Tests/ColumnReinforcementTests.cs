@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
+using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
 using Lapin.Rebar;
@@ -62,7 +63,8 @@ public class ColumnReinforcementTests
         var column = (string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 2, ["y"] = 3 })!["id"]!;
         var type = f.Model.RelatingOf(column, IfcClass.RelDefinesByType)!.Id;
         f.Run("rebar.setTypeStirrups", new JsonObject { ["id"] = type, ["enabled"] = true });
-        f.Run("rebar.setColumnBars", new JsonObject { ["id"] = type, ["enabled"] = true, ["perFace"] = 3, ["diameter"] = 0.016 });
+        // Starter bars asked for: no column stands on this one yet, so by the column above it would end with hooks.
+        f.Run("rebar.setColumnBars", new JsonObject { ["id"] = type, ["enabled"] = true, ["perFace"] = 3, ["diameter"] = 0.016, ["top"] = "starter" });
         var laid = ColumnBars.Of(f.Model, f.Model.Get(column)!)!;
         var height = Columns.Spec(f.Model, f.Model.Get(column)!).Height;
         // Three a face, the corners shared: eight bars, 25 + 8 + 8 mm in from the faces of the 0.3 × 0.3 column, up to 1 m past the top.
@@ -83,5 +85,49 @@ public class ColumnReinforcementTests
         Assert.Equal(8, Lines(d, RebarShapes.LongitudinalLayer));
         Assert.Contains("8Ø16", Pens(d).SelectMany(p => (p!["texts"] as JsonArray)?.Select(t => (string?)t!["text"]) ?? []));
         Assert.Throws<CommandException>(() => f.Run("rebar.setColumnBars", new JsonObject { ["id"] = f.Model.RelatingOf((string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 6, ["y2"] = 0 })!["id"]!, IfcClass.RelDefinesByType)!.Id, ["enabled"] = true }));
+    }
+
+    [Fact]
+    public void A_column_s_bars_go_past_its_top_where_a_column_stands_on_it_else_end_with_a_hook_inside()
+    {
+        var f = F();
+        var column = (string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 2, ["y"] = 3 })!["id"]!;
+        var type = f.Model.RelatingOf(column, IfcClass.RelDefinesByType)!.Id;
+        f.Run("rebar.setTypeStirrups", new JsonObject { ["id"] = type, ["enabled"] = true });
+        f.Run("rebar.setColumnBars", new JsonObject { ["id"] = type, ["enabled"] = true, ["perFace"] = 3, ["diameter"] = 0.016 });
+        Assert.Equal("auto", ColumnBars.SpecOf(f.Model, f.Model.Get(column)!)!.Top);
+        var height = Columns.Spec(f.Model, f.Model.Get(column)!).Height;
+
+        // Nothing on it: each bar rises to 41 mm under the top (25 cover + 8 stirrup + 8 half the bar), then turns 90° inwards by 12Ø.
+        var laid = ColumnBars.Of(f.Model, f.Model.Get(column)!)!;
+        Assert.True(laid.Hooked);
+        Assert.All(laid.Bars, b =>
+        {
+            Assert.Equal(3, b.Length);
+            Assert.Equal(height - 0.041, b[1].Z - b[0].Z, 9);
+            Assert.Equal(b[1].Z, b[2].Z, 9);
+            var turn = new Vec2(b[2].X - b[1].X, b[2].Y - b[1].Y);
+            Assert.Equal(0.192, turn.Length, 9);
+            // Inwards: the hook's end is nearer the column's axis than its corner.
+            Assert.True(new Vec2(b[2].X - 2, b[2].Y - 3).Length < new Vec2(b[1].X - 2, b[1].Y - 3).Length);
+        });
+        Assert.Equal(height - 0.041 + 0.192, laid.Length, 9);
+        Assert.Contains(RebarSchedule.Entries(f.Model), x => x.Mark == laid.Spec.Mark && x.Shape == "L bar" && x.Count == 8);
+
+        // A column of the same type on the storey above, standing on it: starter bars 1 m past the top again; the upper one ends with hooks.
+        var elevation = Spatial.Storeys(f.Model).First(x => x.Id == f.Storey).Num("elevation");
+        var above = (string)f.Run("storey.create", new JsonObject { ["name"] = "Above", ["elevation"] = elevation + height })!["id"]!;
+        var upper = (string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = above, ["x"] = 2.05, ["y"] = 3 })!["id"]!;
+        laid = ColumnBars.Of(f.Model, f.Model.Get(column)!)!;
+        Assert.False(laid.Hooked);
+        Assert.All(laid.Bars, b => Assert.Equal(height + 1.0, b[1].Z - b[0].Z, 9));
+        Assert.True(ColumnBars.Of(f.Model, f.Model.Get(upper)!)!.Hooked);
+
+        // Asked for, either end is had whatever stands above.
+        f.Run("rebar.setColumnBars", new JsonObject { ["id"] = type, ["top"] = "hooks" });
+        Assert.True(ColumnBars.Of(f.Model, f.Model.Get(column)!)!.Hooked);
+        f.Run("rebar.setColumnBars", new JsonObject { ["id"] = type, ["top"] = "starter" });
+        Assert.False(ColumnBars.Of(f.Model, f.Model.Get(upper)!)!.Hooked);
+        Assert.Throws<CommandException>(() => f.Run("rebar.setColumnBars", new JsonObject { ["id"] = type, ["top"] = "bent" }));
     }
 }

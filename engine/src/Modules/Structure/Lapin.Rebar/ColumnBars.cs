@@ -11,10 +11,13 @@ namespace Lapin.Rebar;
 /// The longitudinal bars a column's type is configured with (decision 218): so many on each face, the corners shared,
 /// of one diameter; a column is reinforced storey by storey, so its bars run from its base to its top and on past it by the
 /// lap (starter bars, 1 m by default) for the column above. Laid inside the stirrups; kept on the type as <c>bars</c>.
+/// <see cref="Top"/> says how they end (decision 232): <c>auto</c> as starter bars where a column stands on this one, else with
+/// a 90° hook inside the top (the top storey's columns); <c>starter</c> or <c>hooks</c> always.
 /// </summary>
-public sealed record ColumnBarsSpec(bool Enabled, int PerFace, double Diameter, double Lap, int Mark, JsonObject? Label = null)
+public sealed record ColumnBarsSpec(bool Enabled, int PerFace, double Diameter, double Lap, int Mark, JsonObject? Label = null, string Top = "auto")
 {
     public const string Key = "bars";
+    public static readonly string[] Tops = ["auto", "starter", "hooks"];
     /// <summary>The type's own label style, partial, over the project's (<see cref="LabelStyle"/>).</summary>
     public JsonObject? Label { get; init; } = Label;
 
@@ -26,12 +29,13 @@ public sealed record ColumnBarsSpec(bool Enabled, int PerFace, double Diameter, 
     {
         var d = Default();
         return new ColumnBarsSpec(o["enabled"] is JsonValue ev && ev.TryGetValue<bool>(out var en) && en, (int)Math.Max(2, Json.Number(o["perFace"]) ?? d.PerFace),
-            Json.Number(o["diameter"]) ?? d.Diameter, Json.Number(o["lap"]) ?? d.Lap, (int)(Json.Number(o["mark"]) ?? 0), o[LabelStyle.Key] as JsonObject);
+            Json.Number(o["diameter"]) ?? d.Diameter, Json.Number(o["lap"]) ?? d.Lap, (int)(Json.Number(o["mark"]) ?? 0), o[LabelStyle.Key] as JsonObject,
+            (string?)o["top"] is { } top && Tops.Contains(top) ? top : d.Top);
     }
 
     public JsonObject ToJson()
     {
-        var o = new JsonObject { ["enabled"] = Enabled, ["perFace"] = PerFace, ["diameter"] = Diameter, ["lap"] = Lap, ["mark"] = Mark };
+        var o = new JsonObject { ["enabled"] = Enabled, ["perFace"] = PerFace, ["diameter"] = Diameter, ["lap"] = Lap, ["mark"] = Mark, ["top"] = Top };
         if (Label != null) o[LabelStyle.Key] = Label.DeepClone();
         return o;
     }
@@ -39,8 +43,11 @@ public sealed record ColumnBarsSpec(bool Enabled, int PerFace, double Diameter, 
 
 public static class ColumnBars
 {
-    /// <summary>A column's bars laid: each a line in space from the base to the top plus the lap; their length for the schedule.</summary>
-    public sealed record Laid(Entity Element, ColumnBarsSpec Spec, List<Vec3[]> Bars, double Length);
+    /// <summary>
+    /// A column's bars laid: each a chain in space from the base, up to the top plus the lap, or up to the cover under the
+    /// top and bent inwards by a 90° hook (<see cref="Hooked"/>); their nominal length for the schedule, the hook's tail included.
+    /// </summary>
+    public sealed record Laid(Entity Element, ColumnBarsSpec Spec, List<Vec3[]> Bars, double Length, bool Hooked = false);
 
     public static ColumnBarsSpec? SpecOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { } type ? ColumnBarsSpec.Of(type) : null;
 
@@ -64,8 +71,39 @@ public static class ColumnBars
         foreach (var y in Rebar3D.Spread(n, -hy, hy).Skip(1)) places.Add(new Vec2(hx, y));
         foreach (var x in Rebar3D.Spread(n, -hx, hx).Reverse<double>().Skip(1)) places.Add(new Vec2(x, hy));
         foreach (var y in Rebar3D.Spread(n, -hy, hy).Reverse<double>().Skip(1).Take(n - 2)) places.Add(new Vec2(-hx, y));
-        var bars = places.Select(p => { var w = at + u * p.X + v * p.Y; return new[] { w.At(baseZ), w.At(baseZ + height + spec.Lap) }; }).ToList();
-        return new Laid(e, spec, bars, height + spec.Lap);
+        var hooked = spec.Top == "hooks" || (spec.Top == "auto" && !Continues(m, e, at, u, v, section.Width / 2, section.Depth / 2, baseZ + height));
+        if (!hooked)
+        {
+            var bars = places.Select(p => { var w = at + u * p.X + v * p.Y; return new[] { w.At(baseZ), w.At(baseZ + height + spec.Lap) }; }).ToList();
+            return new Laid(e, spec, bars, height + spec.Lap);
+        }
+        // The top storey's bars: up to the cover under the top, then a 90° hook (12Ø) inwards, across the face the bar stands on
+        // (a corner's along the width), never past the opposite bars.
+        var top = height - inset;
+        var hook = RebarShapes.HookLength(spec.Diameter, 90);
+        var hooks = places.Select(p =>
+        {
+            var w = at + u * p.X + v * p.Y;
+            var alongX = Math.Abs(p.X) / hx >= Math.Abs(p.Y) / hy - 1e-9;
+            var dir = alongX ? u * -Math.Sign(p.X) : v * -Math.Sign(p.Y);
+            var tail = Math.Min(hook, 2 * (alongX ? hx : hy));
+            return new[] { w.At(baseZ), w.At(baseZ + top), (w + dir * tail).At(baseZ + top) };
+        }).ToList();
+        return new Laid(e, spec, hooks, top + Math.Min(hook, 2 * Math.Min(hx, hy)), true);
+    }
+
+    /// <summary>Whether a column stands on this one: its base at this one's top (within 5 cm) and its point inside this one's section.</summary>
+    static bool Continues(IModelView m, Entity e, Vec2 at, Vec2 u, Vec2 v, double hw, double hd, double topZ)
+    {
+        foreach (var o in m.OfClass(IfcClass.Column))
+        {
+            if (o.Id == e.Id) continue;
+            var z = (Spatial.StoreyOf(m, o.Id)?.Num("elevation") ?? 0) + o.Num("baseOffset");
+            if (Math.Abs(z - topZ) > 0.05) continue;
+            var p = (o.Attrs["at"] is JsonArray q && q.Count >= 2 ? new Vec2(Json.Number(q[0]) ?? 0, Json.Number(q[1]) ?? 0) : default) - at;
+            if (Math.Abs(Vec2.Dot(p, u)) <= hw + 1e-6 && Math.Abs(Vec2.Dot(p, v)) <= hd + 1e-6) return true;
+        }
+        return false;
     }
 
     /// <summary>The columns' bars as a view sees them: dots where they pierce it (a horizontal cut, a structural plan), lines up a vertical section; the label asked of the view's labels, keyed <c>columnBars</c>.</summary>
@@ -94,12 +132,12 @@ public static class ColumnBars
     public static IEnumerable<RebarSchedule.Entry> Entries(IModelView m)
     {
         foreach (var e in m.OfClass(IfcClass.Column))
-            if (Of(m, e) is { } laid) yield return new RebarSchedule.Entry(laid.Spec.Mark, laid.Spec.Diameter, "Straight bar", laid.Bars.Count, laid.Length);
+            if (Of(m, e) is { } laid) yield return new RebarSchedule.Entry(laid.Spec.Mark, laid.Spec.Diameter, laid.Hooked ? "L bar" : "Straight bar", laid.Bars.Count, laid.Length);
     }
 
     public static int HighestMark(IModelView m) => m.OfClass(IfcClass.ColumnType).Select(t => ColumnBarsSpec.Of(t)?.Mark ?? 0).DefaultIfEmpty(0).Max();
 
-    /// <summary>A column type's bars set from a command: {id, enabled?, perFace?, diameter?, lap?, mark?, label?: a style patch | null}.</summary>
+    /// <summary>A column type's bars set from a command: {id, enabled?, perFace?, diameter?, lap?, top? (auto, starter, hooks), mark?, label?: a style patch | null}.</summary>
     public static void Set(ICommandContext ctx, JsonObject a)
     {
         var type = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.ColumnType } t ? t : throw new CommandException("Longitudinal bars are set on a column type (a beam's are drawn by hand).");
@@ -113,9 +151,11 @@ public static class ColumnBars
         if (lap < 0 || lap > 5) throw new CommandException("The starter bars run 0 to 5 m past the top.");
         var mark = (int)(Json.Number(a["mark"]) ?? now.Mark);
         if (enabled && mark <= 0) mark = Math.Max(Rebars.NextMark(ctx.Model), Math.Max(TypeStirrups.HighestMark(ctx.Model), HighestMark(ctx.Model)) + 1);
+        var top = (string?)a["top"] ?? now.Top;
+        if (!ColumnBarsSpec.Tops.Contains(top)) throw new CommandException("A column's bars end as starter bars, with hooks, or by the column above (auto).");
         var label = a.ContainsKey(LabelStyle.Key) ? LabelStyle.Patch(now.Label, a[LabelStyle.Key]) : now.Label;
         var attrs = type.CloneAttrs();
-        attrs[ColumnBarsSpec.Key] = new ColumnBarsSpec(enabled, perFace, d, lap, mark, label).ToJson();
+        attrs[ColumnBarsSpec.Key] = new ColumnBarsSpec(enabled, perFace, d, lap, mark, label, top).ToJson();
         ctx.Replace(type.With(attrs: attrs));
     }
 }

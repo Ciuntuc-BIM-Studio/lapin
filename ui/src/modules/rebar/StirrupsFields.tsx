@@ -10,8 +10,8 @@ import { LabelStyleFields, useRebarSettings, type LabelStylePatch } from './Labe
 
 interface Zone { share: number; step: number }
 interface Spec { enabled: boolean; diameter: number; cover: number; mode: 'uniform' | 'zones'; step: number; zones: Zone[]; mark: number; pattern?: 'single' | 'diamond' | 'cross'; label?: LabelStylePatch }
-interface ColumnBars { enabled: boolean; perFace: number; diameter: number; lap: number; mark: number; label?: LabelStylePatch }
-const COLUMN_BARS: ColumnBars = { enabled: false, perFace: 3, diameter: 0.016, lap: 1.0, mark: 0 };
+interface ColumnBars { enabled: boolean; perFace: number; diameter: number; lap: number; mark: number; top: 'auto' | 'starter' | 'hooks'; label?: LabelStylePatch }
+const COLUMN_BARS: ColumnBars = { enabled: false, perFace: 3, diameter: 0.016, lap: 1.0, mark: 0, top: 'auto' };
 
 const DEFAULT: Spec = { enabled: false, diameter: 0.008, cover: 0.025, mode: 'uniform', step: 0.15, zones: [{ share: 1 / 3, step: 0.1 }, { share: 1 / 3, step: 0.2 }, { share: 1 / 3, step: 0.1 }], mark: 0 };
 export function StirrupsFields({ type, kind }: { type: NodeDto; kind: string }) {
@@ -61,7 +61,7 @@ export function StirrupsFields({ type, kind }: { type: NodeDto; kind: string }) 
   );
 }
 
-/** A column type's longitudinal bars: so many on each face, their diameter, the starter bars past the top. */
+/** A column type's longitudinal bars: so many on each face, their diameter, how they end at the top (decision 232), the starter bars past it. */
 function ColumnBarsFields({ type }: { type: NodeDto }) {
   const catalog = useRebarCatalog();
   const settings = useRebarSettings();
@@ -79,8 +79,13 @@ function ColumnBarsFields({ type }: { type: NodeDto }) {
           <select value={b.diameter} onChange={(e) => set({ diameter: Number(e.target.value) })}>{catalog.diameters.map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000)}</option>)}</select>
           {b.mark ? <span className="muted small">mark {b.mark}</span> : null}
         </div>
-        <label className="field-line"><span className="eyebrow">Starter bars past the top</span><input className="num" type="number" step={50} min={0} max={5000} value={Math.round(b.lap * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 0 && v <= 5000) set({ lap: v / 1000 }); }} /><span className="muted small"> mm</span></label>
-        <p className="muted small">The corners shared, the rest of each face spread evenly, inside the stirrups; from the base to the top and on by the lap, storey by storey.</p>
+        <label className="field-line"><span className="eyebrow">At the top</span>
+          <select value={b.top} data-field="column-bars-top" onChange={(e) => set({ top: e.target.value as ColumnBars['top'] })}>
+            <option value="auto">By the column above</option><option value="starter">Starter bars past the top</option><option value="hooks">90° hooks inside the top</option>
+          </select>
+        </label>
+        {b.top !== 'hooks' && <label className="field-line"><span className="eyebrow">Starter bars past the top</span><input className="num" type="number" step={50} min={0} max={5000} value={Math.round(b.lap * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 0 && v <= 5000) set({ lap: v / 1000 }); }} /><span className="muted small"> mm</span></label>}
+        <p className="muted small">The corners shared, the rest of each face spread evenly, inside the stirrups; from the base to the top and on by the lap, storey by storey. By the column above: where none stands on a column (the top storey), its bars end under the top with a 90° hook inwards.</p>
         <p className="eyebrow">Label</p>
         <LabelStyleFields style={b.label} base={settings?.labels.columnBars} onChange={(label) => set({ label })} onReset={() => void execute('rebar.setColumnBars', { id: type.id, label: null })} testId="column-bars-label" />
       </>}

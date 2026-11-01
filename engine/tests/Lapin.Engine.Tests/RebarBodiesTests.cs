@@ -112,7 +112,7 @@ public class RebarBodiesTests
     {
         var f = F();
         var column = (string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 2, ["y"] = 3 })!["id"]!;
-        f.Run("rebar.setColumnBars", new JsonObject { ["id"] = f.Model.RelatingOf(column, IfcClass.RelDefinesByType)!.Id, ["enabled"] = true, ["perFace"] = 3 });
+        f.Run("rebar.setColumnBars", new JsonObject { ["id"] = f.Model.RelatingOf(column, IfcClass.RelDefinesByType)!.Id, ["enabled"] = true, ["perFace"] = 3, ["top"] = "starter" });
         var laid = ColumnBars.Of(f.Model, f.Model.Get(column)!)!;
         Assert.Equal(8, laid.Bars.Count);
         var b = Bodies(f);
