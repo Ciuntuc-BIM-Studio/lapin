@@ -169,7 +169,7 @@ public static class Roof
             if (j == i) continue;
             var d = outline[(j + 1) % n] - outline[j];
             if (d.Length < 1e-9 || Math.Abs(Vec2.Cross(u, d.Normalized())) > Math.Sin(10 * Math.PI / 180)) continue;
-            var off = Math.Abs(Vec2.Cross(u, outline[j] + d / 2 - a));
+            var off = Math.Abs(Vec2.Cross(u, outline[j] + d * 0.5 - a));
             if (off > far) { far = off; best = j; }
         }
         return best;
