@@ -423,6 +423,8 @@ public static class Views
                 if (bySymbol)
                     foreach (var item in g.Plan!)
                     {
+                        if (!item.At(detail)) continue;
+                        if (SymbolFill(item, e) is { } sf) { fills.Add(sf); continue; }
                         var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" or "heavy" => LineRole.Cut, _ => null };
                         if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role));
                     }
@@ -434,12 +436,17 @@ public static class Views
                 foreach (var item in g.Plan)
                 {
                     if (!item.At(detail)) continue;
+                    if (SymbolFill(item, e) is { } sf) { fills.Add(sf); continue; }
                     var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" => LineRole.Cut, "heavy" => LineRole.Cut, "dashed" => LineRole.Hidden, "overhead" or "ridge" or "hip" or "valley" or "break" => LineRole.Overhead, _ => null };
                     if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role, item.Style));
                 }
         }
         return (parts, symbols, fills, texts);
     }
+
+    /// <summary>A symbol's solid area (a plant's dark core, a trunk's dot): its plan item of kind <c>fill</c>, in its style's colour, black by default.</summary>
+    static DFill? SymbolFill(PlanItem item, Entity e) =>
+        item.Kind == "fill" && item.Points.Count >= 3 ? new DFill([item.Points.ToArray()], e.Id, e.Class, item.Style?.Color ?? "#000000") : null;
 
     /// <summary>What a site plan draws by its symbols rather than its body: the terrain, paths, plants and the site's features (parcels, neighbours); the roofs and the rest by their bodies, seen from above.</summary>
     static readonly HashSet<string> SiteSymbols = SitePlans.SiteClasses;

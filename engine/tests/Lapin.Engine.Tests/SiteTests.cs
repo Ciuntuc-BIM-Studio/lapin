@@ -238,9 +238,11 @@ public class SiteTests
         f.Run("civil.addPlanting", new JsonObject { ["points"] = new JsonArray(new JsonArray(5, 5), new JsonArray(35, 5), new JsonArray(35, 35), new JsonArray(5, 35)), ["density"] = 2, ["seed"] = 7 });
         f.Run("civil.addPlanting", new JsonObject { ["x"] = 2, ["y"] = 2 });
         var grid = new PlantingSchedule().Grid(f.Session.Reader);
-        Assert.Equal(["Species", "Kind", "Height (m)", "Crown (m)", "Count"], grid.Columns);
+        Assert.Equal(["Species", "Latin name", "Romanian name", "Kind", "Height (m)", "Crown (m)", "Count"], grid.Columns);
         Assert.Equal("Total", grid.Rows[^1][0]);
-        Assert.Equal("19", grid.Rows[^1][4]);
+        Assert.Equal("19", grid.Rows[^1][6]);
+        // The library's names beside the species' own (an old project's species resolve by name).
+        Assert.Contains(grid.Rows, r => r[0] == "Lime (Tilia)" && r[1] == "Tilia cordata" && r[2] == "Tei");
         Assert.True(grid.Rows.Count >= 3);
         var s = (string)f.Run("architecture.createSchedule", new JsonObject { ["kind"] = "planting" })!["id"]!;
         Assert.Equal("Planting schedule", f.Model.Get(s)!.Name);
@@ -248,7 +250,7 @@ public class SiteTests
         Assert.True(((JsonArray)layout["pens"]!).Count > 0);
         Assert.Equal(grid.Rows.Count, ((JsonArray)layout["table"]!["rows"]!).Count);
         var csv = (string)f.Session.Query("schedule.csv", new JsonObject { ["id"] = s })!;
-        Assert.StartsWith("Species,Kind,Height (m),Crown (m),Count", csv);
+        Assert.StartsWith("Species,Latin name,Romanian name,Kind,Height (m),Crown (m),Count", csv);
         Assert.Throws<CommandException>(() => f.Run("architecture.createSchedule", new JsonObject { ["kind"] = "furniture" }));
     }
 }
