@@ -203,7 +203,7 @@ export function DrawingView() {
       // A pick-then-point gesture ended after its pick (Enter or Esc) completes with the pick alone; a typed length is the key router's (Enter takes it, Esc clears it).
       if ((e.key === 'Escape' || e.key === 'Enter') && tool?.gesture?.kind === 'pickThenPoint' && pts.length === 1 && picked.current) {
         const l = useLive.getState();
-        if (l.owner === 'tool' && (l.len || l.ang)) return;
+        if (e.defaultPrevented || (l.owner === 'tool' && (l.len || l.ang))) return;
         void complete([pts[0]], picked.current);
         return;
       }
