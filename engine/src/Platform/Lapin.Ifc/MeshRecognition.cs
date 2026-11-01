@@ -59,7 +59,7 @@ public static class MeshRecognition
             // A wall's layers are the parts standing its whole height; a piece inside it (a lintel over an opening) is left to the wall.
             var (pz0, pz1) = (g.Parts.Min(p => p.Solid.Vertices.Min(q => q.Z)), g.Parts.Max(p => p.Solid.Vertices.Max(q => q.Z)));
             var layers = wallLike ? [.. g.Parts.Where(p => p.Solid.Vertices.Min(q => q.Z) < pz0 + 2e-3 && p.Solid.Vertices.Max(q => q.Z) > pz1 - 2e-3)] : g.Parts.ToList();
-            var read = layers.Select(p => PartShape(p.Solid, wallLike, cls == IfcClass.Slab)).ToList();
+            var read = layers.Select(p => PartShape(p.Solid, wallLike, cls == IfcClass.Slab, cls == IfcClass.Column)).ToList();
             var prisms = new List<ShapePrism>();
             var openings = new List<ForeignOpening>();
             var fills = new List<Entity>();
@@ -117,6 +117,7 @@ public static class MeshRecognition
             }
         }
         foreach (var r in recognizers) r.Finish(edit, ctx);
+        TypeMappings.AfterImport(edit, services, ctx.CreatedTypes, null);
         return new(count, byClass, ctx.Skipped);
     }
 
@@ -154,16 +155,54 @@ public static class MeshRecognition
 
     sealed record Hole(ShapePrism Prism, double Width, double Height, (Vec3 Min, Vec3 Max) Box);
 
-    /// <summary>A part's shape: the one prism it is (a vertical one first), or a wall layer's envelope and its openings.</summary>
-    static (ShapePrism Prism, List<Hole> Holes)? PartShape(Solid s, bool wall, bool flat = false)
+    /// <summary>
+    /// A part's shape: the one prism it is (a vertical one first), or a wall layer's envelope and its openings; a slab's by
+    /// its top face (<paramref name="flat"/>), a column's by its bottom one (<paramref name="standing"/>).
+    /// </summary>
+    static (ShapePrism Prism, List<Hole> Holes)? PartShape(Solid s, bool wall, bool flat = false, bool standing = false)
     {
         // A wall's layer is read standing: a vertical prism, else its envelope with its openings (a plaster layer with a window is
         // also a thin prism lying across the wall, which says nothing of where the wall stands).
         var prisms = IfcModel.PrismsOfSolid(s);
         if (prisms.FirstOrDefault(p => p.Vertical) is { } up) return (up, []);
         if (wall) return Envelope(s);
+        // A column cut by a slope is also a prism lying on its side, which says nothing of where it stands.
+        if (standing && StandingOutline(s) is { } column) return (column, []);
         if (prisms.FirstOrDefault() is { } p) return (p, []);
         return flat && TopOutline(s) is { } top ? (top, []) : null;
+    }
+
+    /// <summary>
+    /// A body that is no prism but stands (a column cut at its top by a sloping beam or roof): its one bottom face swept up
+    /// to its highest point, when every vertex stands over that face's edges (its sides rise straight; a tapered column or
+    /// one with a corbel is another shape) and no face looks down but the bottom.
+    /// </summary>
+    static ShapePrism? StandingOutline(Solid s)
+    {
+        const double tol = 2e-3;
+        var v = s.Vertices;
+        var (z0, z1) = (v.Min(p => p.Z), v.Max(p => p.Z));
+        if (z1 - z0 < 0.01) return null;
+        List<Vec3> Loop(int[] idx) => [.. idx.Select(i => v[i])];
+        var bottoms = s.Faces.Where(f => f.Normal.Z < -0.999 && Loop(f.Outer).All(p => Math.Abs(p.Z - z0) < tol)).ToList();
+        if (bottoms.Count != 1 || bottoms[0].Holes.Length > 0) return null;
+        if (s.Faces.Any(f => f != bottoms[0] && f.Normal.Z < -1e-3)) return null;
+        var outline = Footprints.Plan(Loop(bottoms[0].Outer));
+        if (outline.Count < 3 || !v.All(p => OnOutline(outline, new Vec2(p.X, p.Y), tol))) return null;
+        return new ShapePrism([.. outline.Select(q => new Vec3(q.X, q.Y, z0))], [], new Vec3(0, 0, z1 - z0), false, "mesh");
+    }
+
+    /// <summary>Whether a point lies on the polygon's edges, within <paramref name="tol"/>.</summary>
+    static bool OnOutline(IReadOnlyList<Vec2> poly, Vec2 p, double tol)
+    {
+        for (var i = 0; i < poly.Count; i++)
+        {
+            Vec2 a = poly[i], b = poly[(i + 1) % poly.Count];
+            var ab = b - a;
+            var t = Math.Clamp(Vec2.Dot(p - a, ab) / Math.Max(1e-12, Vec2.Dot(ab, ab)), 0, 1);
+            if ((a + ab * t - p).Length <= tol) return true;
+        }
+        return false;
     }
 
     /// <summary>

@@ -743,6 +743,22 @@ export const RO: Record<string, string> = {
   'Recognised from their triangles where it can (walls with their doors and windows, slabs, columns), the rest as references': 'Recunoscut din triunghiuri unde se poate (pereți cu ușile și ferestrele lor, plăci, stâlpi), restul ca referințe', 'Convert to native': 'Convertește la nativ', 'Select the imported elements (or their group) to convert.': 'Selectează elementele importate (sau grupul lor) de convertit.', 'Nothing to convert: select imported references.': 'Nimic de convertit: selectează referințe importate.',
   // The bars in 3D (decision 221)
   'Bars in 3D': 'Bare în 3D', 'The bars in 3D are too many: only the first 2,000,000 triangles are drawn.': 'Barele în 3D sunt prea multe: se desenează doar primele 2.000.000 de triunghiuri.',
+  // Imported types mapped onto the project's (Manage → Map imported types)
+  "Map imported types": "Mapează tipurile importate",
+  "Each type an import made can become one of the project's own: its elements take the project's type, and the imported one goes. A wall keeps its core where it was.": "Fiecare tip adus de un import poate deveni unul al proiectului: elementele lui iau tipul proiectului, iar cel importat dispare. Un perete își păstrează miezul unde era.",
+  "No imported types: an IFC, Fragments or mesh import makes them.": "Niciun tip importat: le aduce un import IFC, Fragments sau mesh.",
+  "Imported type": "Tip importat",
+  "Becomes": "Devine",
+  "keep it": "îl păstrez",
+  "no project type of this kind": "niciun tip de acest fel în proiect",
+  "Remember: a later import of a type of that kind and name takes the project's at once": "Ține minte: un import ulterior al unui tip de acest fel și nume ia direct tipul proiectului",
+  "Remembered": "Ținute minte",
+  "Type in the file": "Tipul din fișier",
+  "a type no longer in the project": "un tip care nu mai e în proiect",
+  "Forget": "Uită",
+  "Map": "Mapează",
+  "Mapping…": "Se mapează…",
+  "Footings": "Fundații",
 };
 
 /** Phrases with a number or a name in them. */

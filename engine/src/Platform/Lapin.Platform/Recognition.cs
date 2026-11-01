@@ -77,6 +77,8 @@ public sealed class RecognitionContext(IServices services)
     public IServices Services { get; } = services;
     public Dictionary<string, string> TypeIds { get; } = [];
     public List<string> Made { get; } = [];
+    /// <summary>The types this import made (not found in the project): a recogniser may take back one it leaves unused.</summary>
+    public HashSet<string> CreatedTypes { get; } = [];
     public List<string> Notes { get; } = [];
     /// <summary>Why an element stays a reference, counted by reason.</summary>
     public Dictionary<string, int> Skipped { get; } = [];

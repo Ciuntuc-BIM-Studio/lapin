@@ -102,6 +102,41 @@ public class MeshRecognitionTests
 
     static JsonObject Set(JsonObject o, string k, string v) { o[k] = v; return o; }
 
+    /// <summary>A box meshed as another program does, its four top corners at their own heights, told it is a column.</summary>
+    static Entity Column(Fixture g, string name, (double X, double Y)[] bottom, (double X, double Y, double Z)[] top)
+    {
+        var obj = new System.Text.StringBuilder($"o {name}\n");
+        foreach (var (x, y) in bottom) obj.Append($"v {x} {y} 0\n");
+        foreach (var (x, y, z) in top) obj.Append($"v {x} {y} {z}\n");
+        foreach (var (a, b, c) in new[] { (1, 3, 2), (1, 4, 3), (5, 6, 7), (5, 7, 8), (1, 2, 6), (1, 6, 5), (2, 3, 7), (2, 7, 6), (3, 4, 8), (3, 8, 7), (4, 1, 5), (4, 5, 8) })
+            obj.Append($"f {a} {b} {c}\n");
+        MeshImport.Run(g.Session, System.Text.Encoding.UTF8.GetBytes(obj.ToString()), name + ".obj", new JsonObject { ["up"] = "z" }, null, out _);
+        var e = g.Model.Entities.Single(x => x.Str("source") == name + ".obj");
+        g.Session.Edit("As a column", edit => edit.Replace(e.With(attrs: Set(e.CloneAttrs(), "exportAs", IfcClass.Column))));
+        return e;
+    }
+
+    [Fact]
+    public void A_column_cut_at_its_top_by_a_slope_is_read_by_its_bottom_face()
+    {
+        var g = new Fixture(new ArchitectureModule(), new StructureModule());
+        // 400 × 300 at (2, 1), its top falling from 3.0 to 2.8 along x (under a sloping beam): no prism standing, one lying.
+        var cut = Column(g, "cut", [(2, 1), (2.4, 1), (2.4, 1.3), (2, 1.3)], [(2, 1, 3.0), (2.4, 1, 2.8), (2.4, 1.3, 2.8), (2, 1.3, 3.0)]);
+        // A tapered one, 400 × 300 at the foot and 200 × 200 at the head: another shape, it stays a reference.
+        var tapered = Column(g, "tapered", [(6, 1), (6.4, 1), (6.4, 1.3), (6, 1.3)], [(6.1, 1.05, 3), (6.3, 1.05, 3), (6.3, 1.25, 3), (6.1, 1.25, 3)]);
+        MeshRecognitionReport report = MeshRecognitionReport.None;
+        g.Session.Edit("Recognise", edit => report = MeshRecognition.Recognize(edit, g.Session.Catalog, [cut.Id, tapered.Id]));
+        Assert.Equal(1, report.Recognized);
+        var column = g.Model.Get(cut.Id)!;
+        Assert.Equal(IfcClass.Column, column.Class);
+        Assert.False(StoredBodies.Has(column));
+        // Its section the bottom's, up to the top's highest point.
+        var (lo, hi) = g.Bounds(column.Id);
+        Assert.Equal(2, lo.X, 3); Assert.Equal(2.4, hi.X, 3); Assert.Equal(1, lo.Y, 3); Assert.Equal(1.3, hi.Y, 3);
+        Assert.Equal(0, lo.Z, 3); Assert.Equal(3, hi.Z, 3);
+        Assert.True(StoredBodies.Has(g.Model.Get(tapered.Id)!));
+    }
+
     [Fact]
     public void A_long_footing_from_a_file_is_a_strip_foundation_along_its_middle()
     {

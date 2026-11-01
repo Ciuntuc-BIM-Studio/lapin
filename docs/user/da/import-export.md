@@ -34,13 +34,19 @@ Det, filen placerer, kommer ind som én gruppe opkaldt efter den, som du kan åb
 
 Lapin genkender vægge, dæk, søjler, bjælker, fundamenter, døre og vinduer og gør dem til Lapin-elementer, du kan redigere. Det, det ikke kan genkende, kommer ind som en reference, tegnet men ikke redigerbar. Døre og vinduer kommer ind og åbner, som filen siger: deres hængsling, den side de åbner mod og, for vinduer, hvordan hver ramme åbner.
 
+Overflader, som et andet program har eksporteret som selvstændige vægge (en 2,5 cm puds på facaden, en indvendig puds), bliver et lag i den væg, de dækker, når de ligger tæt på dens flade, er lige så høje som den og følger den: væggen får en type med det lag (*Masonry 350 + Lime render*), dens egne lag bliver, hvor de var, og importens besked siger hvor mange. En overflade, der står med afstand til væggen eller kun dækker en del af den, forbliver en tynd væg. En søjle, som filen giver som et legeme skåret skråt i toppen (under en skrå bjælke eller et skråt tag), kommer ind som en søjle med sit tværsnit, op til sit højeste punkt.
+
+**Tilknyt importerede typer** (Administrér) viser de typer, en import har oprettet (væg-, dæk-, dør-, vindues-, søjle-, bjælke- og fundamenttyper), hver med sin fil og antallet af elementer. Vælg under **Bliver til** en af projektets egne typer af samme slags, og tryk **Tilknyt**: dens elementer får projektets type, en væg beholder sin kerne, hvor den var, og den importerede type forsvinder. Med **Husk** markeret får en senere import af en type af den slags og med det navn straks projektets, og dens besked siger det. De huskede valg står i dialogen, hver med **Glem**.
+
+![Tilknyt importerede typer](shots/map-types.webp)
+
 Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på sit eget niveau, med deres omrids, nummer, navn, højde, funktion, afdeling og gulvbelægning: se [Rum og rumfarver](rooms.md#rum-fra-en-ifc-fil). Alt, hvad et importeret element havde i filen (dets egenskabssæt og mængder), bevares og vises under **IFC-egenskaber** i dets egenskaber. En reference forlader **Eksportér IFC…**, som den kom ind: med samme GlobalId, klasse og attributter (beskrivelse, mærke, foruddefineret type), dens egenskabs- og mængdesæt med hver værdi af den type, filen gav den, og dens type, materiale, porte, forbindelser og system, hver med sit GlobalId. Henter du kun installationerne fra en fil og eksporterer dem, har den nye fil dem hele.
 
 **Importér Fragments…** åbner det samme panel for en `.frag`-fil fra That Open: dens elementer efter fagområde og type, dens etager og **Som én gruppe**. En fil eksporteret fra netop dette projekt bringer intet nyt, når den importeres tilbage: dens elementer er her allerede.
 
 ![Importér Fragments](shots/import-frag.webp)
 
-**Importér Fragments…** henter en `.frag`-fil ind: hvert element med geometri bliver en reference tegnet fra sin krop, i den klasse filen nævner, på den etage filen sætter det på (matchet på navn med dine, oprettet når den mangler), med filens attributter under **IFC-egenskaber**. Elementer med samme krop (samme form sat mange steder) deler den. Importeres samme fil igen, opdateres det, den bragte før. Intet genkendes som væg eller dæk: en `.frag` rummer trekanter.
+**Importér Fragments…** henter en `.frag`-fil ind: hvert element med geometri bliver en reference tegnet fra sin krop, i den klasse filen nævner, på den etage filen sætter det på (matchet på navn med dine, oprettet når den mangler), med filens attributter under **IFC-egenskaber**. Elementer med samme krop (samme form sat mange steder) deler den. Importeres samme fil igen, opdateres det, den bragte før. Hvad der genkendes ud fra dens trekanter, afgør **Hvordan**, som ovenfor.
 
 **Eksportér IFC eller Fragments…** skriver modellen som IFC eller som Fragments, valgt som en import: elementerne efter fagområde og type, etagerne, fasen og kun det, 3D-visningen viser. IFC går ud i IFC4 eller IFC4X3, et lagdelt elements dele under det eller ét legeme hver; Fragments fra projektets basispunkt, det interne origo eller opmålingspunktet.
 

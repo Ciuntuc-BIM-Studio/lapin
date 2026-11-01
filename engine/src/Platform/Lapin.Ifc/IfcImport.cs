@@ -81,7 +81,7 @@ public static partial class IfcImport
     public static IfcImportResult Run(Session session, StepFile file, string name, IfcImportOptions? options, out Diff diff)
     {
         var o = options ?? new IfcImportOptions();
-        var reader = new Reader(session, file, o);
+        var reader = new Reader(session, file, o) { FileName = name };
         // Everything editable (the import's third way): what stays a reference after recognition made a Studio solid where it can be.
         EditableReport? editable = null;
         // And what recognition could not read from the file's representations tried again from its triangles (a wall whose
@@ -154,6 +154,8 @@ public static partial class IfcImport
     {
         readonly IfcModel model = new(f);
         readonly List<string> notes = [];
+        /// <summary>The file's name, which the types it brings remember (Manage → Map imported types).</summary>
+        public string? FileName;
         int elements, updated, references, storeys;
         readonly Dictionary<int, List<int>> definitions = [];     // product → its property sets
         readonly Dictionary<int, int> containedIn = [];            // product → its spatial structure

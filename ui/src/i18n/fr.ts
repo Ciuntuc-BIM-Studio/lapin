@@ -745,6 +745,22 @@ export const FR: Record<string, string> = {
   'Recognised from their triangles where it can (walls with their doors and windows, slabs, columns), the rest as references': 'Reconnu à partir des triangles où c’est possible (murs avec portes et fenêtres, dalles, poteaux), le reste en références', 'Convert to native': 'Convertir en natif', 'Select the imported elements (or their group) to convert.': 'Sélectionnez les éléments importés (ou leur groupe) à convertir.', 'Nothing to convert: select imported references.': 'Rien à convertir : sélectionnez des références importées.',
   // The bars in 3D (decision 221)
   'Bars in 3D': 'Barres en 3D', 'The bars in 3D are too many: only the first 2,000,000 triangles are drawn.': 'Les barres en 3D sont trop nombreuses : seuls les 2 000 000 premiers triangles sont dessinés.',
+  // Imported types mapped onto the project's (Manage → Map imported types)
+  "Map imported types": "Associer les types importés",
+  "Each type an import made can become one of the project's own: its elements take the project's type, and the imported one goes. A wall keeps its core where it was.": "Chaque type créé par une importation peut devenir un type du projet : ses éléments prennent le type du projet et le type importé disparaît. Un mur garde son noyau là où il était.",
+  "No imported types: an IFC, Fragments or mesh import makes them.": "Aucun type importé : une importation IFC, Fragments ou maillage en crée.",
+  "Imported type": "Type importé",
+  "Becomes": "Devient",
+  "keep it": "le garder",
+  "no project type of this kind": "aucun type de ce genre dans le projet",
+  "Remember: a later import of a type of that kind and name takes the project's at once": "Mémoriser : une importation ultérieure d’un type de ce genre et de ce nom prend aussitôt celui du projet",
+  "Remembered": "Mémorisés",
+  "Type in the file": "Type dans le fichier",
+  "a type no longer in the project": "un type qui n’est plus dans le projet",
+  "Forget": "Oublier",
+  "Map": "Associer",
+  "Mapping…": "Association…",
+  "Footings": "Fondations",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

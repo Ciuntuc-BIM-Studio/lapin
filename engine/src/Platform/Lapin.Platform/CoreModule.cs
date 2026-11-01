@@ -43,6 +43,7 @@ public sealed class CoreModule : ILapinModule
         Location.Register(r);
         DisplayQuality.Register(r);
         Groups.Register(r);
+        TypeMappings.Register(r);
         Sheets.Register(r);
         CutOrder.Register(r);
         StoreyMove.Register(r);

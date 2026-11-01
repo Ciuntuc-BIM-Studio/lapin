@@ -336,6 +336,150 @@ public class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
         Assert.True(r.References >= 8);
     }
 
+    /// <summary>
+    /// Finishes exported as walls of their own (docs/spec-ifc.md, Î7) become a layer of the wall they cover: a render
+    /// on one face wrapping its corners, with the door's opening, and a plaster on the other; the wall's core stays
+    /// where it was, the type made for the bare wall goes. A finish standing off its wall, and one over part of a wall,
+    /// stay thin walls.
+    /// </summary>
+    [Fact]
+    public void Finishes_exported_as_walls_become_layers_of_the_wall_they_cover()
+    {
+        var x = new Foreign();
+        var render = x.F.Add("IFCMATERIAL", S("Lime render"), Null, Null);
+        var plaster = x.F.Add("IFCMATERIAL", S("Plaster"), Null, Null);
+        // A wall 5 m long, 300 thick, from (1, 2) along x; a door opening 900 × 2100 at 2 m.
+        var wallPl = x.Place(1000, 2000, 0);
+        var wall = x.Element("IFCWALL", "wall", "W1", wallPl, x.Shape(x.Box(2500, 0, 0, 5000, 300, 2800)), E("STANDARD"));
+        x.Material(wall, x.Brick);
+        void Opening(string host, string key, double cy) =>
+            x.F.Add("IFCRELVOIDSELEMENT", x.G("v-" + key), Null, Null, Null, host,
+                x.Element("IFCOPENINGELEMENT", key, "Opening", x.Place(0, 0, 0, 0, wallPl), x.Shape(x.Box(2000, cy, 0, 900, 400, 2100)), E("OPENING")));
+        Opening(wall, "op-wall", 0);
+        // The render on the +y face, 25 mm, 25 mm past each end (round the corners); its own opening over the door's.
+        var outside = x.Element("IFCWALL", "render", "Finish — lime render", wallPl, x.Shape(x.Box(2500, 162.5, 0, 5050, 25, 2800)), E("STANDARD"));
+        x.Material(outside, render);
+        Opening(outside, "op-render", 162.5);
+        // The plaster on the −y face, 15 mm, written the other way along.
+        var inside = x.Element("IFCWALL", "plaster", "Finish — plaster", x.Place(6000, 2000 - 157.5, 0, 180), x.Shape(x.Box(2500, 0, 0, 5000, 15, 2800)), E("STANDARD"));
+        x.Material(inside, plaster);
+        // A wall 4 m at y = 8 with a render 25 mm away from its face, and another over only 2 m of it.
+        var w2Pl = x.Place(0, 8000, 0);
+        x.Material(x.Element("IFCWALL", "wall2", "W2", w2Pl, x.Shape(x.Box(2000, 0, 0, 4000, 250, 2800)), E("STANDARD")), x.Brick);
+        x.Material(x.Element("IFCWALL", "standoff", "Finish off the wall", w2Pl, x.Shape(x.Box(2000, 125 + 25 + 12.5, 0, 4000, 25, 2800)), E("STANDARD")), render);
+        x.Material(x.Element("IFCWALL", "partial", "Finish on part", w2Pl, x.Shape(x.Box(1000, -125 - 12.5, 0, 2000, 25, 2800)), E("STANDARD")), render);
+        var path = x.Write(Path.Combine(_dir, "finishes.ifc"));
+
+        var f = Full();
+        var r = IfcImport.Run(f.Session, path, null, out _);
+        Assert.Contains(r.Notes, n => n.StartsWith("2 finishes exported as walls of their own became a layer"));
+        var w = f.Model.Get(x.Gid("wall"))!;
+        Assert.Null(f.Model.Get(x.Gid("render")));
+        Assert.Null(f.Model.Get(x.Gid("plaster")));
+        // The render outside (+y), the plaster inside, the brick where it was: 1.85 to 2.15 across.
+        var bands = Walls.Section(f.Model, w);
+        var start = Walls.Start(w);
+        var left = (Walls.End(w) - start).Normalized().Perp;
+        double Y(double across) => start.Y + left.Y * across;
+        var byName = bands.ToDictionary(b => f.Model.Get(b.Material!)!.Name, b => (Lo: Math.Min(Y(b.From), Y(b.To)), Hi: Math.Max(Y(b.From), Y(b.To))));
+        Assert.Equal(1.85, byName["Brick"].Lo, 6); Assert.Equal(2.15, byName["Brick"].Hi, 6);
+        Assert.Equal(2.15, byName["Lime render"].Lo, 6); Assert.Equal(2.175, byName["Lime render"].Hi, 6);
+        Assert.Equal(1.835, byName["Plaster"].Lo, 6); Assert.Equal(1.85, byName["Plaster"].Hi, 6);
+        Assert.Single(bands, b => b.Core);
+        // One door opening still, through every layer; the finishes' ids kept in the wall's record.
+        Assert.Single(Openings.PlacedOn(f.Model, w.Id));
+        Assert.Contains(x.Gid("render"), w.Attrs["imported"]!["absorbed"]!.ToJsonString());
+        Assert.Equal(3, LayerSets.LayersOf(f.Model, Walls.TypeOf(f.Model, w.Id)!.Id).Count);
+        // What lies off its wall, or over part of it, stays a wall of its own.
+        Assert.NotNull(f.Model.Get(x.Gid("standoff")));
+        Assert.NotNull(f.Model.Get(x.Gid("partial")));
+        Assert.Single(LayerSets.LayersOf(f.Model, Walls.TypeOf(f.Model, x.Gid("wall2"))!.Id));
+        // The bare wall's type, used by W1 alone, is gone; W2 keeps its own.
+        Assert.DoesNotContain(f.Model.OfClass(IfcClass.WallType), t => t.Name == "Brick 300");
+    }
+
+    /// <summary>A file whose walls are of a type named <paramref name="typeName"/>: one 4 m wall, 300 thick, its axis on its −y face (the file's reference line).</summary>
+    string TypedWall(string file, string key, string typeName, double y)
+    {
+        var x = new Foreign();
+        var wall = x.Element("IFCWALL", key, "W", x.Place(0, y * 1000, 0), x.Shape(x.Box(2000, 150, 0, 4000, 300, 2800)), E("STANDARD"));
+        x.Material(wall, x.Brick);
+        var type = x.F.Add("IFCWALLTYPE", x.G("type-" + key), Null, S(typeName), Null, Null, Null, Null, Null, Null, E("STANDARD"));
+        x.F.Add("IFCRELDEFINESBYTYPE", x.G("deftype-" + key), Null, Null, Null, L([wall]), type);
+        return x.Write(Path.Combine(_dir, file));
+    }
+
+    /// <summary>
+    /// An imported type mapped onto the project's (docs/spec-ifc.md, Î9): its walls take the project's type, their core's
+    /// middle where it was; the imported type goes; the choice is remembered, and the next file with a type of that name
+    /// takes the project's at once.
+    /// </summary>
+    [Fact]
+    public void Imported_types_are_mapped_onto_the_projects_and_the_choice_is_remembered()
+    {
+        var f = Full();
+        var own = (string)f.Run("architecture.createWallType", new JsonObject { ["name"] = "Masonry 250 rendered", ["layers"] = new JsonArray(
+            new JsonObject { ["material"] = "Render", ["thickness"] = 0.02 }, new JsonObject { ["material"] = "Brick", ["thickness"] = 0.25, ["core"] = true }, new JsonObject { ["material"] = "Plaster", ["thickness"] = 0.015 }) })!["id"]!;
+        IfcImport.Run(f.Session, TypedWall("a.ifc", "wall-a", "EXT-30", 0), null, out _);
+        var list = (JsonObject)f.Session.Query("types.imported", [])!;
+        var imported = list["types"]!.AsArray().Single(t => (string?)t!["sourceName"] == "EXT-30")!;
+        Assert.Equal("a.ifc", (string?)imported["file"]);
+        Assert.Equal(1, (int)imported["count"]!);
+        Assert.Contains(imported["candidates"]!.AsArray(), c => (string?)c!["id"] == own);
+        var wallA = f.Model.OfClass(IfcClass.Wall).Single();
+        // The core in the middle of the file's 300: 0.15 off the reference line.
+        double CoreMiddle(Entity w) => Walls.Section(f.Model, w).Single(b => b.Core) is var c ? (c.From + c.To) / 2 : 0;
+        var before = CoreMiddle(wallA);
+
+        f.Run("types.map", new JsonObject { ["map"] = new JsonArray(new JsonObject { ["from"] = (string)imported["id"]!, ["to"] = own }) });
+        Assert.Equal(own, Walls.TypeOf(f.Model, wallA.Id)!.Id);
+        Assert.Equal(before, CoreMiddle(f.Model.Get(wallA.Id)!), 6);
+        Assert.Null(f.Model.Get((string)imported["id"]!));
+        var remembered = Assert.Single(((JsonObject)f.Session.Query("types.imported", [])!)["remembered"]!.AsArray())!;
+        Assert.Equal("Masonry 250 rendered", (string?)remembered["toName"]);
+        // Kept in the project's file; an IFC export leaves it out.
+        using (var ms = new MemoryStream())
+        {
+            Lapin.Protocol.ProjectPackage.Write(f.Session, ms);
+            ms.Position = 0;
+            Assert.Contains(Lapin.Package.LapinPackage.Read(ms).Entities, e => e.Class == TypeMappings.Class && e.Attrs["map"]!.ToJsonString().Contains(own));
+        }
+        var ifc = Path.Combine(_dir, "out.ifc");
+        IfcExport.Write(f.Session, ifc);
+        Assert.DoesNotContain(TypeMappings.Class, File.ReadAllText(ifc), StringComparison.OrdinalIgnoreCase);
+
+        // Another file with a type of that name: its wall comes in of the project's type, and says so.
+        var r = IfcImport.Run(f.Session, TypedWall("b.ifc", "wall-b", "EXT-30", 6), null, out _);
+        Assert.Contains(r.Notes, n => n.StartsWith("1 imported type became the project's"));
+        Assert.All(f.Model.OfClass(IfcClass.Wall), w => Assert.Equal(own, Walls.TypeOf(f.Model, w.Id)!.Id));
+        Assert.DoesNotContain(f.Model.OfClass(IfcClass.WallType), t => t.Name == "EXT-30");
+        // Forgotten, the next one keeps its own again.
+        f.Run("types.forget", []);
+        IfcImport.Run(f.Session, TypedWall("c.ifc", "wall-c", "EXT-30", 12), null, out _);
+        Assert.Contains(f.Model.OfClass(IfcClass.WallType), t => t.Name == "EXT-30");
+    }
+
+    /// <summary>A column given as a B-rep cut at its top by a slope (no prism standing): a column of its bottom face, up to its highest point.</summary>
+    [Fact]
+    public void A_B_rep_column_cut_by_a_slope_is_a_column()
+    {
+        var x = new Foreign();
+        var f = x.F;
+        string P(double a, double b, double c) => f.Add("IFCCARTESIANPOINT", $"({R(a)},{R(b)},{R(c)})");
+        var p = new[] { P(0, 0, 0), P(400, 0, 0), P(400, 300, 0), P(0, 300, 0), P(0, 0, 3000), P(400, 0, 2800), P(400, 300, 2800), P(0, 300, 3000) };
+        string Face(params int[] ix) => f.Add("IFCFACE", L([f.Add("IFCFACEOUTERBOUND", f.Add("IFCPOLYLOOP", L(ix.Select(i => p[i]))), True)]));
+        var brep = f.Add("IFCFACETEDBREP", f.Add("IFCCLOSEDSHELL", L([Face(0, 3, 2, 1), Face(4, 5, 6, 7), Face(0, 1, 5, 4), Face(1, 2, 6, 5), Face(2, 3, 7, 6), Face(3, 0, 4, 7)])));
+        x.Element("IFCCOLUMN", "column", "C1", x.Place(2000, 1000, 0), x.Shape(brep, "Brep"), E("COLUMN"));
+        var path = x.Write(Path.Combine(_dir, "column.ifc"));
+        var g = Full();
+        IfcImport.Run(g.Session, path, null, out _);
+        var c = g.Model.Get(x.Gid("column"))!;
+        Assert.Equal(IfcClass.Column, c.Class);
+        Assert.False(StoredBodies.Has(c));
+        var (lo, hi) = g.Bounds(c.Id);
+        Assert.Equal(2, lo.X, 3); Assert.Equal(2.4, hi.X, 3); Assert.Equal(1, lo.Y, 3); Assert.Equal(1.3, hi.Y, 3); Assert.Equal(3, hi.Z, 3);
+    }
+
     /// <summary>A real file, when one is given (LAPIN_IFC_SAMPLE=/path/to/file.ifc): the report, for the eye.</summary>
     [Fact]
     public void A_sample_file_when_given()

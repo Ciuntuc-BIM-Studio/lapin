@@ -816,6 +816,22 @@ export const LO: Record<string, string> = {
   'Everything editable: recognised where it can, the rest as Studio solids': 'ແກ້ໄຂໄດ້ທັງໝົດ: ຮັບຮູ້ບ່ອນທີ່ເຮັດໄດ້, ສ່ວນທີ່ເຫຼືອເປັນຮູບຊົງຕັນ Studio', 'Make them editable (Studio solids)': 'ເຮັດໃຫ້ແກ້ໄຂໄດ້ (ຮູບຊົງຕັນ Studio)', 'Push/pull, fillets, booleans and the rest take them; a body of more than 5,000 triangles stays a reference': 'ດັນ/ດຶງ, ມົນຂອບ, ບູລີນ ແລະ ອື່ນໆ ໃຊ້ກັບພວກມັນໄດ້; ຮູບຮ່າງທີ່ມີຫຼາຍກວ່າ 5,000 ສາມຫຼ່ຽມ ຍັງຄົງເປັນການອ້າງອີງ', 'As': 'ເປັນ', 'references': 'ການອ້າງອີງ', 'editable (Studio solids)': 'ແກ້ໄຂໄດ້ (ຮູບຊົງຕັນ Studio)', 'Recognised from their triangles where it can (walls with their doors and windows, slabs, columns), the rest as references': 'ຮັບຮູ້ຈາກສາມຫຼ່ຽມຂອງພວກມັນບ່ອນທີ່ເຮັດໄດ້ (ຝາພ້ອມປະຕູ ແລະ ປ່ອງຢ້ຽມ, ພື້ນ, ເສົາ), ສ່ວນທີ່ເຫຼືອເປັນການອ້າງອີງ', 'Convert to native': 'ປ່ຽນເປັນອົງປະກອບ Lapin', 'Select the imported elements (or their group) to convert.': 'ເລືອກອົງປະກອບທີ່ນຳເຂົ້າ (ຫຼື ກຸ່ມຂອງພວກມັນ) ເພື່ອປ່ຽນ.', 'Nothing to convert: select imported references.': 'ບໍ່ມີຫຍັງໃຫ້ປ່ຽນ: ເລືອກການອ້າງອີງທີ່ນຳເຂົ້າ.',
   // The bars in 3D (decision 221)
   'Bars in 3D': 'ເສັ້ນເຫຼັກໃນ 3D', 'The bars in 3D are too many: only the first 2,000,000 triangles are drawn.': 'ເສັ້ນເຫຼັກໃນ 3D ມີຫຼາຍເກີນໄປ: ແຕ້ມສະເພາະ 2,000,000 ສາມຫຼ່ຽມທຳອິດເທົ່ານັ້ນ.',
+  // Imported types mapped onto the project's (Manage → Map imported types)
+  "Map imported types": "ຈັບຄູ່ປະເພດທີ່ນຳເຂົ້າ",
+  "Each type an import made can become one of the project's own: its elements take the project's type, and the imported one goes. A wall keeps its core where it was.": "ແຕ່ລະປະເພດທີ່ການນຳເຂົ້າສ້າງຂຶ້ນ ສາມາດກາຍເປັນປະເພດຂອງໂຄງການໄດ້: ອົງປະກອບຂອງມັນຈະໃຊ້ປະເພດຂອງໂຄງການ ແລະ ປະເພດທີ່ນຳເຂົ້າຈະຖືກລຶບອອກ. ກຳແພງຈະຮັກສາແກນຂອງມັນໄວ້ບ່ອນເດີມ.",
+  "No imported types: an IFC, Fragments or mesh import makes them.": "ບໍ່ມີປະເພດທີ່ນຳເຂົ້າ: ການນຳເຂົ້າ IFC, Fragments ຫຼື mesh ຈະສ້າງພວກມັນ.",
+  "Imported type": "ປະເພດທີ່ນຳເຂົ້າ",
+  "Becomes": "ກາຍເປັນ",
+  "keep it": "ຮັກສາໄວ້",
+  "no project type of this kind": "ບໍ່ມີປະເພດແບບນີ້ໃນໂຄງການ",
+  "Remember: a later import of a type of that kind and name takes the project's at once": "ຈື່ໄວ້: ການນຳເຂົ້າຄັ້ງຕໍ່ໄປຂອງປະເພດແບບນີ້ ແລະ ຊື່ນີ້ ຈະໃຊ້ປະເພດຂອງໂຄງການທັນທີ",
+  "Remembered": "ທີ່ຈື່ໄວ້",
+  "Type in the file": "ປະເພດໃນໄຟລ໌",
+  "a type no longer in the project": "ປະເພດທີ່ບໍ່ມີໃນໂຄງການແລ້ວ",
+  "Forget": "ລືມ",
+  "Map": "ຈັບຄູ່",
+  "Mapping…": "ກຳລັງຈັບຄູ່…",
+  "Footings": "ຖານຮາກ",
 };
 
 /** Phrases with a number or a name in them. */

@@ -98,6 +98,10 @@ public static partial class IfcImport
         {
             if (recognition == null) return;
             foreach (var r in recognizers) r.Finish(edit, recognition);
+            if (TypeMappings.AfterImport(edit, s.Catalog, recognition.CreatedTypes, FileName) is > 0 and var mapped)
+                notes.Add($"{mapped} imported type{(mapped == 1 ? "" : "s")} became the project's, as mapped before (Manage → Map imported types).");
+            if (TypeMappings.Mappable(edit.Model, recognition.CreatedTypes) is > 0 and var mappable)
+                notes.Add($"{mappable} type{(mappable == 1 ? "" : "s")} came with the file where the project has its own of the kind: Manage → Map imported types makes them the project's.");
             foreach (var (reason, n) in recognition.Skipped.OrderByDescending(kv => kv.Value).Take(6))
                 notes.Add($"{n} left as reference: {reason}.");
             foreach (var g in recognition.Notes.GroupBy(n => n).OrderByDescending(g => g.Count()).Take(6))

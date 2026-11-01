@@ -745,6 +745,22 @@ export const ES: Record<string, string> = {
   'Recognised from their triangles where it can (walls with their doors and windows, slabs, columns), the rest as references': 'Reconocido a partir de los triángulos donde se puede (muros con sus puertas y ventanas, losas, pilares), el resto como referencias', 'Convert to native': 'Convertir a nativo', 'Select the imported elements (or their group) to convert.': 'Seleccione los elementos importados (o su grupo) para convertirlos.', 'Nothing to convert: select imported references.': 'Nada que convertir: seleccione referencias importadas.',
   // The bars in 3D (decision 221)
   'Bars in 3D': 'Barras en 3D', 'The bars in 3D are too many: only the first 2,000,000 triangles are drawn.': 'Las barras en 3D son demasiadas: solo se dibujan los primeros 2.000.000 de triángulos.',
+  // Imported types mapped onto the project's (Manage → Map imported types)
+  "Map imported types": "Asignar tipos importados",
+  "Each type an import made can become one of the project's own: its elements take the project's type, and the imported one goes. A wall keeps its core where it was.": "Cada tipo creado por una importación puede pasar a ser uno del proyecto: sus elementos toman el tipo del proyecto y el importado desaparece. Un muro conserva su núcleo donde estaba.",
+  "No imported types: an IFC, Fragments or mesh import makes them.": "No hay tipos importados: los crea una importación IFC, Fragments o de malla.",
+  "Imported type": "Tipo importado",
+  "Becomes": "Pasa a ser",
+  "keep it": "conservarlo",
+  "no project type of this kind": "ningún tipo de esta clase en el proyecto",
+  "Remember: a later import of a type of that kind and name takes the project's at once": "Recordar: una importación posterior de un tipo de esta clase y nombre toma enseguida el del proyecto",
+  "Remembered": "Recordados",
+  "Type in the file": "Tipo en el archivo",
+  "a type no longer in the project": "un tipo que ya no está en el proyecto",
+  "Forget": "Olvidar",
+  "Map": "Asignar",
+  "Mapping…": "Asignando…",
+  "Footings": "Cimentaciones",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

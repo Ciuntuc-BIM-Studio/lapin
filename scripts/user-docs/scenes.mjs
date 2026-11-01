@@ -169,6 +169,57 @@ const aerialJpeg = (t) => t.page.evaluate(() => {
 });
 
 /** A small foreign IFC that carries 2D: a cabinet (a box) with its footprint, and a chair drawn only in 2D in a plan context. */
+/**
+ * A foreign IFC with typed walls, as another program writes it (no Lapin intent): four outer walls of type EXT-30,
+ * 300 thick, round an 8 × 6 m outline, and a partition of type INT-12, 125 thick, across it.
+ */
+function ifcTypedWalls() {
+  const lines = [];
+  let n = 100;
+  const add = (text) => { lines.push(`#${n}=${text};`); return `#${n++}`; };
+  const gid = (key, i) => `0Guide${key}${String(i).padStart(16 - key.length, '0')}`;
+  const walls = { 'EXT-30': [], 'INT-12': [] };
+  const at = add('IFCLOCALPLACEMENT(#13,#2)');
+  [[4, 0, 8, 0.3, 'EXT-30'], [8, 3, 0.3, 6, 'EXT-30'], [4, 6, 8, 0.3, 'EXT-30'], [0, 3, 0.3, 6, 'EXT-30'], [4, 3, 0.125, 6, 'INT-12']].forEach(([x, y, dx, dy, type], i) => {
+    const centre = add(`IFCAXIS2PLACEMENT2D(${add(`IFCCARTESIANPOINT((${x.toFixed(3)},${y.toFixed(3)}))`)},$)`);
+    const solid = add(`IFCEXTRUDEDAREASOLID(${add(`IFCRECTANGLEPROFILEDEF(.AREA.,$,${centre},${dx.toFixed(3)},${dy.toFixed(3)})`)},#2,#23,2.8)`);
+    const shape = add(`IFCPRODUCTDEFINITIONSHAPE($,$,(${add(`IFCSHAPEREPRESENTATION(#3,'Body','SweptSolid',(${solid}))`)}))`);
+    walls[type].push(add(`IFCWALL('${gid('Wall', i + 1)}',$,'Wall ${i + 1}',$,$,${at},${shape},$,.STANDARD.)`));
+  });
+  Object.entries(walls).forEach(([name, ids], i) => {
+    const type = add(`IFCWALLTYPE('${gid('WTyp', i + 1)}',$,'${name}',$,$,$,$,$,$,.STANDARD.)`);
+    add(`IFCRELDEFINESBYTYPE('${gid('DTyp', i + 1)}',$,$,$,(${ids.join(',')}),${type})`);
+  });
+  add(`IFCRELCONTAINEDINSPATIALSTRUCTURE('${gid('Cont', 1)}',$,$,$,(${[...walls['EXT-30'], ...walls['INT-12']].join(',')}),#14)`);
+  return `ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('ViewDefinition [ReferenceView_V1.2]'),'2;1');
+FILE_NAME('typed-walls.ifc','2026-11-01T12:00:00',(''),(''),'guide','guide','');
+FILE_SCHEMA(('IFC4'));
+ENDSEC;
+DATA;
+#1=IFCCARTESIANPOINT((0.,0.,0.));
+#2=IFCAXIS2PLACEMENT3D(#1,$,$);
+#3=IFCGEOMETRICREPRESENTATIONCONTEXT($,'Model',3,1.E-05,#2,$);
+#6=IFCSIUNIT(*,.LENGTHUNIT.,$,.METRE.);
+#7=IFCUNITASSIGNMENT((#6));
+#8=IFCPROJECT('0GuideProj000000000002',$,'Typed walls',$,$,$,$,(#3),#7);
+#9=IFCLOCALPLACEMENT($,#2);
+#10=IFCSITE('0GuideSite000000000002',$,'Site',$,$,#9,$,$,.ELEMENT.,$,$,$,$,$);
+#11=IFCLOCALPLACEMENT(#9,#2);
+#12=IFCBUILDING('0GuideBldg000000000002',$,'Building',$,$,#11,$,$,.ELEMENT.,$,$,$);
+#13=IFCLOCALPLACEMENT(#11,#2);
+#14=IFCBUILDINGSTOREY('0GuideStry000000000002',$,'Ground',$,$,#13,$,$,.ELEMENT.,0.);
+#15=IFCRELAGGREGATES('0GuideAgg1000000000002',$,$,$,#8,(#10));
+#16=IFCRELAGGREGATES('0GuideAgg2000000000002',$,$,$,#10,(#12));
+#17=IFCRELAGGREGATES('0GuideAgg3000000000002',$,$,$,#12,(#14));
+#23=IFCDIRECTION((0.,0.,1.));
+${lines.join('\n')}
+ENDSEC;
+END-ISO-10303-21;
+`;
+}
+
 const IFC_2D = `ISO-10303-21;
 HEADER;
 FILE_DESCRIPTION(('ViewDefinition [ReferenceView_V1.2]'),'2;1');
@@ -1421,6 +1472,37 @@ export const scenes = [
       const written = await t.call('project.exportIfc', { geometry: 'faceset', tolerance: 0.002 });
       t.expect(typeof written?.data === 'string' && atob(written.data).includes('IFCPOLYGONALFACESET'), 'the IFC export writes face sets when asked');
       await ifc.getByRole('button', { name: 'Cancel' }).click();
+    },
+  },
+  {
+    // Imported types mapped onto the project's own (docs/spec-ifc.md, Î9): Manage → Map imported types after a foreign file came in.
+    id: 'import-types',
+    async run(t) {
+      await t.fresh();
+      const layers = (core, finish) => [{ material: 'Render', thickness: 0.02 }, { material: 'Brick', thickness: core, core: true }, { material: 'Plaster', thickness: finish }];
+      const own = (await t.cmd('architecture.createWallType', { name: 'Brick 300 rendered', layers: layers(0.25, 0.03) })).id;
+      await t.cmd('architecture.createWallType', { name: 'Partition 125', layers: [{ material: 'Brick', thickness: 0.115, core: true }, { material: 'Plaster', thickness: 0.01 }] });
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const { writeFileSync } = await import('node:fs');
+      const file = join(tmpdir(), 'lapin-guide-typed-walls.ifc');
+      writeFileSync(file, ifcTypedWalls());
+      await t.call('project.importIfc', { path: file });
+      await t.wait(800);
+      await t.tool('manage.mapTypes');
+      const dialog = t.page.locator('[aria-label="Map imported types"]');
+      await dialog.waitFor({ timeout: 20_000 });
+      const row = dialog.locator('tr', { hasText: 'EXT-30' });
+      t.expect(await row.count() === 1, 'the file\'s wall type EXT-30 is listed');
+      await row.locator('select').selectOption(own);
+      await t.wait(300);
+      await t.shot('map-types', { of: '[aria-label="Map imported types"]', pad: 0 });
+      await dialog.getByRole('button', { name: 'Map', exact: true }).click();
+      await t.wait(800);
+      t.expect(await dialog.locator('tr', { hasText: 'EXT-30' }).count() === 1, 'the choice is remembered (listed under Remembered)');
+      const after = await t.call('doc.query', { name: 'types.imported', args: {} });
+      t.expect(!after.types.some((x) => x.sourceName === 'EXT-30') && after.remembered.some((r) => r.name === 'EXT-30' && r.to === own), 'EXT-30 became the project\'s type, the choice remembered');
+      await dialog.locator('.dialog-foot').getByRole('button', { name: 'Close', exact: true }).click();
     },
   },
   {

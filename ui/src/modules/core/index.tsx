@@ -2,7 +2,7 @@
 
 import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
-import { AppWindow, Bot, Box, BoxSelect, Cable, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Group, Hash, History, Keyboard, Layers, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareMinus, SquareSplitHorizontal, Trash2, Ungroup, Wand2 } from 'lucide-react';
+import { AppWindow, Bot, Box, BoxSelect, Cable, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Group, Hash, History, Keyboard, Layers, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareMinus, SquareSplitHorizontal, Trash2, Ungroup, Wand2, ArrowRightLeft } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -28,6 +28,7 @@ import { LocationDialog } from './LocationDialog';
 import { CutOrderDialog } from './CutOrderDialog';
 import { MoveToStoreyDialog } from './MoveToStoreyDialog';
 import { LinksDialog, LinksLook } from './LinksDialog';
+import { MapTypesDialog } from './MapTypesDialog';
 import { VersionsDialog } from './VersionsDialog';
 import { ExportMeshDialog } from './ExportMeshDialog';
 import { ProjectFolderDialog } from './cde/ProjectFolderDialog';
@@ -133,6 +134,8 @@ const core: LapinModule = {
       { label: 'Files', tools: [
         { id: 'manage.links', label: 'Links', icon: Link2, run: () => useUi.setState({ dialog: 'links' }) },
         { id: 'manage.versions', label: 'Versions', icon: History, run: () => useUi.setState({ dialog: 'versions' }) },
+        // The types imports made replaced by the project's own, the choice remembered (docs/spec-ifc.md, Î9).
+        { id: 'manage.mapTypes', label: 'Map imported types', icon: ArrowRightLeft, run: () => useUi.setState({ dialog: 'mapTypes' }) },
       ] },
       // The project folder as a CDE (docs/plan-cde.md): the folder and its naming, the pre-issue checks, the issue.
       { label: 'Issue', tools: [
@@ -209,7 +212,7 @@ const core: LapinModule = {
   }],
   grips: { LapinView: sectionGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, exportIfc: ExchangeExportDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, exportExchange: ExchangeExportDialog, exportFrag: ExchangeExportDialog, sections: SectionsDialog },
+  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, exportIfc: ExchangeExportDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, exportExchange: ExchangeExportDialog, exportFrag: ExchangeExportDialog, sections: SectionsDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },

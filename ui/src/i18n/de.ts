@@ -745,6 +745,22 @@ export const DE: Record<string, string> = {
   'Recognised from their triangles where it can (walls with their doors and windows, slabs, columns), the rest as references': 'Aus den Dreiecken erkannt, wo es geht (Wände mit Türen und Fenstern, Decken, Stützen), der Rest als Referenzen', 'Convert to native': 'In nativ umwandeln', 'Select the imported elements (or their group) to convert.': 'Wählen Sie die importierten Elemente (oder ihre Gruppe) zum Umwandeln.', 'Nothing to convert: select imported references.': 'Nichts umzuwandeln: Wählen Sie importierte Referenzen.',
   // The bars in 3D (decision 221)
   'Bars in 3D': 'Stäbe in 3D', 'The bars in 3D are too many: only the first 2,000,000 triangles are drawn.': 'Die Stäbe in 3D sind zu viele: nur die ersten 2.000.000 Dreiecke werden gezeichnet.',
+  // Imported types mapped onto the project's (Manage → Map imported types)
+  "Map imported types": "Importierte Typen zuordnen",
+  "Each type an import made can become one of the project's own: its elements take the project's type, and the imported one goes. A wall keeps its core where it was.": "Jeder Typ, den ein Import angelegt hat, kann zu einem projekteigenen werden: Seine Elemente erhalten den Typ des Projekts, der importierte entfällt. Eine Wand behält ihren Kern, wo er war.",
+  "No imported types: an IFC, Fragments or mesh import makes them.": "Keine importierten Typen: Ein IFC-, Fragments- oder Mesh-Import legt sie an.",
+  "Imported type": "Importierter Typ",
+  "Becomes": "Wird zu",
+  "keep it": "beibehalten",
+  "no project type of this kind": "kein Projekttyp dieser Art",
+  "Remember: a later import of a type of that kind and name takes the project's at once": "Merken: Ein späterer Import eines Typs dieser Art und dieses Namens erhält sofort den des Projekts",
+  "Remembered": "Gemerkt",
+  "Type in the file": "Typ in der Datei",
+  "a type no longer in the project": "ein Typ, den es im Projekt nicht mehr gibt",
+  "Forget": "Vergessen",
+  "Map": "Zuordnen",
+  "Mapping…": "Wird zugeordnet…",
+  "Footings": "Fundamente",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

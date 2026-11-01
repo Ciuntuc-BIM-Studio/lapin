@@ -148,6 +148,7 @@ public sealed class ForeignMembers : IIfcRecognizer
         if (ctx.TypeIds.TryGetValue(key, out var id) && edit.Model.Get(id) is { } known) return known;
         var name = e.TypeName is { Length: > 0 } n ? n : fallbackName;
         var type = create(name);
+        ctx.CreatedTypes.Add(type.Id);
         ctx.TypeIds[key] = type.Id;
         return type;
     }

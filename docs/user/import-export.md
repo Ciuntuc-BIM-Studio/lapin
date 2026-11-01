@@ -34,13 +34,19 @@ What the file places comes in as one group named after it, which you can open an
 
 Lapin recognises the walls, floors, columns, beams, footings, doors and windows and turns them into Lapin elements you can edit. Whatever it cannot recognise comes in as a reference, drawn but not editable. Doors and windows come in opening the way the file says: their hand, the side they open to and, for windows, how each panel opens.
 
+Finishes another program exported as walls of their own (a 2.5 cm render on a facade, a plaster inside) become a layer of the wall they cover, when they lie against its face, as high as it and along it: the wall gets a type with that layer (*Masonry 350 + Lime render*), its own layers where they were, and the import's message says how many. A finish that stands off its wall, or covers only part of it, stays a thin wall. A column the file gives as a body cut at its top by a slope (under a sloping beam or roof) comes in as a column of its section, up to its highest point.
+
+**Map imported types** (Manage) lists the types an import made (wall, floor, door, window, column, beam and footing types), each with its file and how many elements it has. Choose one of the project's own types of the same kind under **Becomes** and press **Map**: its elements take the project's type, a wall keeping its core where it was, and the imported type goes. With **Remember** ticked, a later import of a type of that kind and name takes the project's at once, and its message says so. The remembered choices are listed in the dialog, each with **Forget**.
+
+![Map imported types](shots/map-types.webp)
+
 The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each on its own level, with their outline, number, name, height, function, department and floor finish: see [Rooms](rooms.md#rooms-from-an-ifc-file). Everything an imported element had in the file (its property sets and quantities) is kept and shown under **IFC properties** in its properties. A reference leaves **Export IFC…** as it came in: with the same GlobalId, class and attributes (description, tag, predefined type), its property sets and quantities with every value typed as the file had it, and its type, material, ports, connections and system, each with its GlobalId. Bring only the MEP of a file and export it, and the new file carries it whole.
 
 **Import Fragments…** opens the same panel for a That Open `.frag` file: its elements by discipline and kind, its storeys, and **As one group**. A file exported from this very project brings nothing new when imported back into it: its elements are already here.
 
 ![Import Fragments](shots/import-frag.webp)
 
-**Import Fragments…** brings a `.frag` file in: every item with geometry becomes a reference drawn from its body, in the class the file names, on the storey the file puts it (matched by name to yours, made when missing), with the file's attributes under **IFC properties**. Items with the same body (the same shape, placed in many places) share it. Importing the same file again updates what it brought before. Nothing is recognised into walls or floors: a `.frag` holds triangles.
+**Import Fragments…** brings a `.frag` file in: every item with geometry becomes a reference drawn from its body, in the class the file names, on the storey the file puts it (matched by name to yours, made when missing), with the file's attributes under **IFC properties**. Items with the same body (the same shape, placed in many places) share it. Importing the same file again updates what it brought before. What is recognised from its triangles is up to **How**, as above.
 
 **Export IFC or Fragments…** writes the model as IFC or as Fragments, chosen as an import is: the elements by discipline and kind, the storeys, the phase, and only what the 3D view shows. IFC goes out in IFC4 or IFC4X3, a layered element's parts under it or one body each; Fragments from the project base point, the internal origin or the survey point.
 

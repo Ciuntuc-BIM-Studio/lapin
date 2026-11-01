@@ -115,9 +115,13 @@ public sealed class ForeignElements : IIfcRecognizer
     /// <summary>A text that only stands for a value not filled in („&lt;Raumnummer&gt;”, as ArchiCAD writes an empty zone number).</summary>
     static bool Placeholder(string t) => t.Length > 2 && t[0] == '<' && t[^1] == '>';
 
-    /// <summary>Every wall made this import is joined to its neighbours, as a drawn wall is.</summary>
+    /// <summary>
+    /// Finishes exported as walls of their own made layers of the walls they cover (<see cref="FinishLayers"/>), then
+    /// every wall made this import joined to its neighbours, as a drawn wall is.
+    /// </summary>
     public void Finish(IEdit edit, RecognitionContext ctx)
     {
+        if (FinishLayers.Absorb(edit, ctx.Made, ctx).Count > 0) ctx.Made.RemoveAll(id => edit.Model.Get(id) == null);
         if (ctx.Services.Get<IPathElements>() is not { } paths) return;
         foreach (var id in ctx.Made.Where(id => edit.Model.Get(id)?.Class == IfcClass.Wall).ToList())
         {
@@ -253,6 +257,7 @@ public sealed class ForeignElements : IIfcRecognizer
         var name = e.TypeName is { Length: > 0 } n ? n : layers.Count == 1 ? $"{layers[0].Material} {thickness * 1000:0}" : $"{string.Join(" + ", layers.Select(l => l.Material))} {thickness * 1000:0}";
         var existing = edit.Model.OfClass(IfcClass.WallType).FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase) && LayerSets.Of(edit.Model, t.Id) is { } set && Math.Abs(Lapin.Model.Layers.Read(set).Sum(l => l.Thickness) - thickness) < 1e-6);
         var type = existing ?? WallTypes.Create(edit, name, layers);
+        if (existing == null) ctx.CreatedTypes.Add(type.Id);
         ctx.TypeIds[key] = type.Id;
         return type;
     }
@@ -319,6 +324,7 @@ public sealed class ForeignElements : IIfcRecognizer
         var spec = (kind == "door" ? JoinerySpec.DefaultDoor(name) : JoinerySpec.DefaultWindow(name)) with { Width = Math.Round(w, 4), Height = Math.Round(h, 4), SillHeight = Math.Round(sill, 4) };
         if (JoineryIfc.FromIfc(spec, fill.Operation, fill.UserDefined, fill.Panels) is { } told && Joinery.Problem(told) == null) spec = told;
         var type = Openings.CreateType(edit, spec);
+        ctx.CreatedTypes.Add(type.Id);
         ctx.TypeIds[key] = type.Id;
         return type;
     }
@@ -360,6 +366,7 @@ public sealed class ForeignElements : IIfcRecognizer
         var name = e.TypeName is { Length: > 0 } n ? n : $"{layers[0].Material} {thickness * 1000:0}";
         var existing = edit.Model.OfClass(IfcClass.SlabType).FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase));
         var type = existing ?? Slabs.CreateType(edit, name, layers);
+        if (existing == null) ctx.CreatedTypes.Add(type.Id);
         ctx.TypeIds[key] = type.Id;
         return type;
     }

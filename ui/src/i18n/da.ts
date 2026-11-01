@@ -745,6 +745,22 @@ export const DA: Record<string, string> = {
   'Recognised from their triangles where it can (walls with their doors and windows, slabs, columns), the rest as references': 'Genkendt ud fra trekanterne, hvor det kan (vægge med døre og vinduer, dæk, søjler), resten som referencer', 'Convert to native': 'Konvertér til native', 'Select the imported elements (or their group) to convert.': 'Vælg de importerede elementer (eller deres gruppe) for at konvertere dem.', 'Nothing to convert: select imported references.': 'Intet at konvertere: vælg importerede referencer.',
   // The bars in 3D (decision 221)
   'Bars in 3D': 'Stænger i 3D', 'The bars in 3D are too many: only the first 2,000,000 triangles are drawn.': 'Stængerne i 3D er for mange: kun de første 2.000.000 trekanter tegnes.',
+  // Imported types mapped onto the project's (Manage → Map imported types)
+  "Map imported types": "Tilknyt importerede typer",
+  "Each type an import made can become one of the project's own: its elements take the project's type, and the imported one goes. A wall keeps its core where it was.": "Hver type, en import har oprettet, kan blive en af projektets egne: dens elementer får projektets type, og den importerede forsvinder. En væg beholder sin kerne, hvor den var.",
+  "No imported types: an IFC, Fragments or mesh import makes them.": "Ingen importerede typer: en IFC-, Fragments- eller mesh-import opretter dem.",
+  "Imported type": "Importeret type",
+  "Becomes": "Bliver til",
+  "keep it": "behold den",
+  "no project type of this kind": "ingen projekttype af denne slags",
+  "Remember: a later import of a type of that kind and name takes the project's at once": "Husk: en senere import af en type af denne slags og med dette navn får straks projektets",
+  "Remembered": "Husket",
+  "Type in the file": "Type i filen",
+  "a type no longer in the project": "en type, der ikke længere findes i projektet",
+  "Forget": "Glem",
+  "Map": "Tilknyt",
+  "Mapping…": "Tilknytter…",
+  "Footings": "Fundamenter",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
