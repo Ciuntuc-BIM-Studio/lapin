@@ -146,11 +146,11 @@ export function DrawingView() {
 
   /** The element under the cursor that a tool may work on (picked by what it drew), or null. */
   const pickFor = useCallback((raw: Vec2, types: string[]): NodeDto | null => {
-    const hit = pickAny(raw);
+    const hit = pickDrawing(raw, 6 / v.scale, drawing?.marks, nodes, (n) => types.includes('*') || types.includes(n.type));
     const owner = hit?.includes('#') ? hit.slice(0, hit.indexOf('#')) : hit;
     const n = owner ? nodes.get(owner) : undefined;
     return n && (types.includes('*') || types.includes(n.type)) ? n : null;
-  }, [pickAny, nodes]);
+  }, [drawing, nodes, v.scale]);
 
   /** A click for the tool's gesture: the points it takes, or the element under the cursor; `typed`: the length typed in the live input, when the point came from it. */
   const gestureClick = useCallback((p: Vec2, raw: Vec2, typed?: number) => {
