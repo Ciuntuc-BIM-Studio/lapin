@@ -23,10 +23,13 @@ public sealed class StructureFaces : IElementFaces
         _ => [],
     };
 
+    /// <summary>A beam's faces between the column faces its ends stand in (its clear span, decision 225): formwork is not measured inside a column.</summary>
     static List<ElementFace> Beam(Entity beam, IModelView m)
     {
         if (Beams.Frame(beam, m) is not { } f) return [];
-        var c = PathCurve.Of(beam);
+        var span = Beams.SpanOf(m, beam);
+        if (span.Empty) return [];
+        var c = span.Curve;
         var zt = Beams.Top(m, beam);
         var zb = zt - Beams.Spec(m, beam).Section.Depth;
         var down = -Vec3.UnitZ;
@@ -34,23 +37,24 @@ public sealed class StructureFaces : IElementFaces
         if (c.IsArc)
         {
             // A curved beam: its bottom and top as bands along the arc, its ends upright; its sides, axis and bottom edges as curves.
-            var L = c.Length;
-            var band = c.Band(_ => 0, _ => L, f.YMin, f.YMax);
-            var (t0, t1) = (c.TangentAt(0), c.TangentAt(L));
-            var mid = c.TangentAt(L / 2).Perp;
+            var (s0, s1) = (span.S0, span.S1);
+            var band = c.Band(_ => s0, _ => s1, f.YMin, f.YMax);
+            var (t0, t1) = (c.TangentAt(s0), c.TangentAt(s1));
+            var mid = c.TangentAt((s0 + s1) / 2).Perp;
             return
             [
                 ElementFaces.Level("Bottom", "Bottom", band, zb, true),
                 ElementFaces.Level("Top", "Top", band, zt, false),
-                ElementFaces.Upright("End.Start", "Start", c.At(0, f.YMin), c.At(0, f.YMax), zb, zt, -t0),
-                ElementFaces.Upright("End.End", "End", c.At(L, f.YMin), c.At(L, f.YMax), zb, zt, t1),
-                ElementFaces.Along("Axis", "Axis", c.Line(0, L, 0), zb, down),
-                ElementFaces.Along("Side.Left", "Left side", c.Line(0, L, f.YMax), zb, Flat(mid)),
-                ElementFaces.Along("Side.Right", "Right side", c.Line(0, L, f.YMin), zb, Flat(-mid)),
-                ElementFaces.Along("Edge.BottomLeft", "Bottom left edge", c.Line(0, L, f.YMax), zb, (Flat(mid) + down).Normalized()),
-                ElementFaces.Along("Edge.BottomRight", "Bottom right edge", c.Line(0, L, f.YMin), zb, (Flat(-mid) + down).Normalized()),
+                ElementFaces.Upright("End.Start", "Start", c.At(s0, f.YMin), c.At(s0, f.YMax), zb, zt, -t0),
+                ElementFaces.Upright("End.End", "End", c.At(s1, f.YMin), c.At(s1, f.YMax), zb, zt, t1),
+                ElementFaces.Along("Axis", "Axis", c.Line(s0, s1, 0), zb, down),
+                ElementFaces.Along("Side.Left", "Left side", c.Line(s0, s1, f.YMax), zb, Flat(mid)),
+                ElementFaces.Along("Side.Right", "Right side", c.Line(s0, s1, f.YMin), zb, Flat(-mid)),
+                ElementFaces.Along("Edge.BottomLeft", "Bottom left edge", c.Line(s0, s1, f.YMax), zb, (Flat(mid) + down).Normalized()),
+                ElementFaces.Along("Edge.BottomRight", "Bottom right edge", c.Line(s0, s1, f.YMin), zb, (Flat(-mid) + down).Normalized()),
             ];
         }
+        if (span.TrimmedStart || span.TrimmedEnd) f = f with { Start = span.Start, End = span.End };
         var dir = (f.End - f.Start).Normalized();
         var left = dir.Perp;
         Vec2 P(Vec2 at, double y) => at + left * y;

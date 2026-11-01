@@ -73,12 +73,18 @@ public static class TypeStirrups
     /// <summary>One stirrup of a station: its four corners in space, its axis sizes, and which it is (0 the perimeter's, then the diamond or the inner ones each way), for the schedule.</summary>
     public sealed record Loop(Vec3[] Corners, double A, double B, int Kind);
 
-    /// <summary>An element's stirrups laid: the stations along its axis, the loops at each, the axis in space.</summary>
-    public sealed record Laid(Entity Element, StirrupSpec Spec, List<double> Stations, Func<double, List<Loop>> LoopsAt, Vec3 Start, Vec3 Dir, double Length, double A, double B)
+    /// <summary>
+    /// An element's stirrups laid: the stations along its axis (from the axis's own start, so a beam's are its
+    /// <see cref="PathCurve"/>'s), the loops at each, the axis in space from <see cref="Start"/>, the station it is at
+    /// (<see cref="S0"/>: a beam's clear span starts at the column's face, decision 225) over <see cref="Length"/>, and
+    /// the length one run of the step is laid over (<see cref="Piece"/>: a beam's first clear piece between columns).
+    /// </summary>
+    public sealed record Laid(Entity Element, StirrupSpec Spec, List<double> Stations, Func<double, List<Loop>> LoopsAt, Vec3 Start, Vec3 Dir, double Length, double A, double B,
+        double S0 = 0, double? Piece = null)
     {
         /// <summary>The schedule's length of a loop: its sides on the bar's axis and its two 135° hooks.</summary>
         public double BarLength(Loop l) => 2 * (l.A + l.B) + 2 * RebarShapes.HookLength(Spec.Diameter, 135);
-        public string StepText => Runs.StepText(Length, Spec.Step, Spec.RunZones(Length));
+        public string StepText => Runs.StepText(Piece ?? Length, Spec.Step, Spec.RunZones(Piece ?? Length));
         /// <summary>How many stirrups the label counts: the stations, "2×" them when two loops stand at each.</summary>
         public string CountText => Spec.LoopsPerStation > 1 ? $"{Spec.LoopsPerStation}×{Stations.Count}" : Stations.Count.ToString(CultureInfo.InvariantCulture);
         public string Label => $"{CountText}{RebarShapes.Dia(Spec.Diameter)}/{StepText}";
@@ -100,15 +106,21 @@ public static class TypeStirrups
             var (a, b) = Inside(section.Width, section.Depth, spec);
             if (a <= 0 || b <= 0) return null;
             var zc = Beams.Top(m, e) - section.Depth / 2;
-            var stations = Runs.Positions(c.Length, spec.Step, spec.RunZones(c.Length));
+            // Laid per clear piece between the column faces (decision 225): each piece its own run, at stations along the whole axis.
+            var span = Beams.SpanOf(m, e);
+            if (span.Empty) return null;
+            var pieces = span.Pieces;
+            var stations = new List<double>();
+            foreach (var (p0, p1) in pieces)
+                stations.AddRange(Runs.Positions(p1 - p0, spec.Step, spec.RunZones(p1 - p0)).Select(s => p0 + s));
             List<Loop> Loops(double s)
             {
                 var p = c.PointAt(s);
                 var n = c.TangentAt(s).Perp * (a / 2);
                 return [new Loop([new Vec3(p.X - n.X, p.Y - n.Y, zc - b / 2), new Vec3(p.X + n.X, p.Y + n.Y, zc - b / 2), new Vec3(p.X + n.X, p.Y + n.Y, zc + b / 2), new Vec3(p.X - n.X, p.Y - n.Y, zc + b / 2)], a, b, 0)];
             }
-            var t0 = c.TangentAt(0);
-            return new Laid(e, spec, stations, Loops, new Vec3(c.Start.X, c.Start.Y, zc), new Vec3(t0.X, t0.Y, 0), c.Length, a, b);
+            var (start, t0) = (span.Start, c.TangentAt(span.S0));
+            return new Laid(e, spec, stations, Loops, new Vec3(start.X, start.Y, zc), new Vec3(t0.X, t0.Y, 0), span.S1 - span.S0, a, b, span.S0, pieces.Count > 0 ? pieces[0].B - pieces[0].A : null);
         }
         if (e.Class == IfcClass.Column)
         {
@@ -229,7 +241,7 @@ public static class TypeStirrups
                 var seen = axis.Length / laid.Length;
                 var across = segments.SelectMany(s => new[] { s.A, s.B }).Select(p => Vec2.Dot(p - p0, axis.TangentAt(0).Perp)).ToList();
                 labels.Add(new LabelRequest(mk, e.Id, "stirrups", style, text, laid.Spec.Mark, color, segments, [], (p1 - p0).Normalized(), RebarLabels.PlacedOn(c.View, e.Id, "stirrups"))
-                { String = new LabelString(axis, laid.Stations.Select(s => s * seen).ToList(), across.Min(), across.Max()) });
+                { String = new LabelString(axis, laid.Stations.Select(s => (s - laid.S0) * seen).ToList(), across.Min(), across.Max()) });
             }
             yield return mk;
         }
