@@ -205,7 +205,9 @@ export function useGripEditor(o: GripEditorOptions) {
         + `M${q.x - ux * 2} ${q.y - uy * 2}L${q.x - ux * 10} ${q.y - uy * 10}`;
       return <g key={`${g.key}:${i}`}><circle cx={q.x} cy={q.y} r={9} className="plan-grip-hit" /><path d={d} className={cls} /><title>{title}</title></g>;
     }
+    // A rebar's anchor: a small orange diamond standing the cover outside the bar, for the formwork's face.
     const body = kind === 'edgeMid' ? <path d={`M${q.x - 4} ${q.y}L${q.x} ${q.y - 4}L${q.x + 4} ${q.y}L${q.x} ${q.y + 4}Z`} className={cls} />
+      : kind === 'anchor' ? <path d={`M${q.x - 5} ${q.y}L${q.x} ${q.y - 5}L${q.x + 5} ${q.y}L${q.x} ${q.y + 5}Z`} className={cls} />
       : kind === 'move' ? <path d={`M${q.x - 6} ${q.y}H${q.x + 6}M${q.x} ${q.y - 6}V${q.y + 6}`} className={`${cls} cross`} />
       : kind === 'rotate' || kind === 'radius' ? <circle cx={q.x} cy={q.y} r={4} className={cls} />
       : <rect x={q.x - 4} y={q.y - 4} width={8} height={8} className={cls} />;

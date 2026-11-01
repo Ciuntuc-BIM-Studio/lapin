@@ -343,6 +343,11 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .plan-grip.edgeMid { fill: var(--panel); stroke-width: 1.2; cursor: grab; }
 .plan-grip.cross { fill: none; stroke-width: 2; }
 .plan-grip.rotate { stroke-dasharray: 2 1.5; cursor: alias; }
+/* A rebar's anchor (decision 226): orange, the configurator's, standing the cover outside the bar for the formwork's face. */
+.plan-grip.anchor { fill: #f59e0b; stroke: #b45309; stroke-width: 1.4; stroke-linejoin: round; cursor: move; }
+.plan-grip.anchor.hot { fill: #fbbf24; stroke: #92400e; }
+[data-theme="graphite"] .plan-grip.anchor { fill: #f59e0b; stroke: #fde68a; }
+[data-theme="graphite"] .plan-grip.anchor.hot { fill: #fbbf24; stroke: #fef3c7; }
 /* A flip arrow: click to flip the element that way. */
 .plan-grip.flip { fill: var(--accent); stroke: var(--accent); stroke-width: 1.4; stroke-linejoin: round; cursor: pointer; }
 .plan-grip.flip.hot { fill: var(--panel); }

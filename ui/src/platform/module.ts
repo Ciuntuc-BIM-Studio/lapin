@@ -86,7 +86,8 @@ export interface Grip {
   /** Unique within its element. */
   key: string;
   at: Vec2;
-  kind?: 'end' | 'vertex' | 'edgeMid' | 'centre' | 'radius' | 'move' | 'rotate' | 'flip';
+  /** `anchor`: a rebar's anchor standing the cover outside the bar, dragged onto the formwork's face (decision 226). */
+  kind?: 'end' | 'vertex' | 'edgeMid' | 'centre' | 'radius' | 'move' | 'rotate' | 'flip' | 'anchor';
   /** A flip arrow's direction (model units); drawn a little way out from `at` along it. */
   dir?: Vec2;
   /** A flip arrow: what a click does. */

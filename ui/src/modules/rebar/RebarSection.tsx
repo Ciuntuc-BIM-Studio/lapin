@@ -26,7 +26,7 @@ function Mm({ label, value, min, onChange, step = 1 }: { label: string; value: u
   );
 }
 
-interface Described { length: number; trueLength: number; massPerMetre: number; mass: number; bendRadius: number; mandrel: number; label: string; positions?: number; step?: string; pieces?: number }
+interface Described { length: number; trueLength: number; massPerMetre: number; mass: number; bendRadius: number; mandrel: number; label: string; positions?: number; step?: string; pieces?: number; cover?: number; coverSource?: 'own' | 'host' | 'settings' }
 
 /** What the engine says of the bar now: lengths, mass, bend radius. */
 function useDescribed(id: string): Described | null {
@@ -54,6 +54,26 @@ function HookFields({ label, hook, diameter, onChange }: { label: string; hook: 
         <input className="num" type="number" style={{ width: 56 }} value={Math.round(hook.length * 1000)} onChange={(e) => onChange({ ...hook, length: Math.max(0, Number(e.target.value)) / 1000 })} /><span className="muted small">mm</span>
         <label className="check small"><input type="checkbox" checked={!!hook.flip} onChange={(e) => onChange({ ...hook, flip: e.target.checked })} /> Other side</label>
       </>}
+    </div>
+  );
+}
+
+/**
+ * The cover the bar's anchors stand off by (decision 226): its own in mm, or, empty, the effective one as a hint
+ * (the host type's stirrup cover plus the stirrup, else the project's settings); Clear gives the bar's own back.
+ */
+function CoverField({ node, d, set }: { node: NodeDto; d: Described | null; set: (args: Record<string, unknown>) => void }) {
+  const own = typeof node.props.cover === 'number' ? node.props.cover : null;
+  return (
+    <div className="row small" data-field="rebar-cover">
+      <span className="eyebrow">Cover</span>
+      <input className="num" type="number" min={0} max={200} step={5} style={{ width: 56 }} value={own != null ? Math.round(own * 1000) : ''} placeholder={d?.cover != null ? String(Math.round(d.cover * 1000)) : ''}
+        title="The cover the anchor grips stand off the bar by: drag an anchor onto the formwork face and the bar stops here inside it"
+        onChange={(e) => { const v = e.target.value; if (v === '') set({ cover: null }); else { const n = Number(v); if (Number.isFinite(n) && n >= 0 && n <= 200) set({ cover: n / 1000 }); } }} />
+      <span className="muted small">mm</span>
+      {own == null && d?.coverSource === 'host' && <span className="muted small">from the host</span>}
+      {own == null && d?.coverSource === 'settings' && <span className="muted small">from the settings</span>}
+      {own != null && <button type="button" className="link small" onClick={() => set({ cover: null })}>Clear</button>}
     </div>
   );
 }
@@ -94,6 +114,7 @@ export function RebarSection({ node }: { node: NodeDto }) {
         </select>
       </label>
       {shape?.params.map((p) => <Mm key={p.key} label={p.label} value={params[p.key] ?? p.default} min={p.min * 1000} onChange={(v) => set({ params: { [p.key]: v } })} />)}
+      {shape && !shape.freeVertices && shape.code !== 'dot' && <CoverField node={node} d={d} set={set} />}
       <label className="field-line"><span className="eyebrow">Diameter</span>
         <select value={diameter} onChange={(e) => set({ diameter: Number(e.target.value) })}>
           {catalog.diameters.map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000)}</option>)}

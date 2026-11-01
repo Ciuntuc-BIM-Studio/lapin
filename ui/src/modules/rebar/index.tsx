@@ -18,6 +18,7 @@ import { structureHooks } from '../structure/hooks';
 import { StirrupsFields } from './StirrupsFields';
 import { bars3d } from './bars3d';
 import { labelPlaceGrips, type LabelData } from './labelGrips';
+import { anchorGrips, type AnchorData } from './anchors';
 
 // The stirrups of a beam's or a column's type are set in the Structure types dialog (decision 215).
 structureHooks.typeExtras.push(StirrupsFields);
@@ -130,7 +131,7 @@ function labelGrips(_node: NodeDto, view?: GripView): Grip[] {
 
 /** A bar's grips as the engine drew them: its shape's (each drives a parameter), its point, its label's place (`rebar.update`); through an inset, where the inset shows them. */
 function barGrips(node: NodeDto, view?: GripView): Grip[] {
-  const data = view?.mark?.data as { grips?: { key: string; at: number[] }[]; at?: number[]; label?: LabelData } | undefined;
+  const data = view?.mark?.data as { grips?: { key: string; at: number[] }[]; anchors?: AnchorData[]; at?: number[]; label?: LabelData } | undefined;
   const { show, back, host } = mapping(view?.mark);
   const viewId = host ?? (typeof node.props.viewId === 'string' ? node.props.viewId : undefined);
   const step = (key: string) => (to: Vec2) => { const p = back(to); return { command: 'rebar.grip', args: { id: node.id, key, point: [p.x, p.y] } }; };
@@ -141,6 +142,8 @@ function barGrips(node: NodeDto, view?: GripView): Grip[] {
     const p = pt(g.at);
     if (p) grips.push({ key: g.key, kind: g.key.startsWith('v') ? 'vertex' : 'end', at: show(p), title: 'Drag: the bar follows', step: step(g.key) });
   }
+  // The anchors standing the cover outside the bar (decision 226): dragged onto the formwork's face, the bar stops the cover inside.
+  grips.push(...anchorGrips(data?.anchors, step, show));
   grips.push(...labelPlaceGrips(data?.label, 'label', (patch) => ({ command: 'rebar.update', args: { id: node.id, label: patch } }), { show, back }));
   // The same bar seen in other views (dots in the cross-section) has its label there too.
   return [...grips.map((g) => ({ ...g, view: viewId })), ...labelGrips(node, view)];
