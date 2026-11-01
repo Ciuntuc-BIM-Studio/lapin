@@ -65,3 +65,7 @@ Vil du have en anden trappetype til at stige en egen stigning, så sæt flueben 
 ![Huset med trappeafsats og indgangstrin i 3D](shots/entrance-steps-3d.webp)
 
 I IFC er trinene en IfcStair af typen STRAIGHT_RUN_STAIR. Dens løb er en IfcStairFlight med sine NumberOfRisers, NumberOfTreads, RiserHeight og TreadLength, og Pset_StairCommon bærer de samme tal. Trappeafsatsen er en IfcSlab.
+
+## Rækværker
+
+**Architecture → Railing** (<kbd>RL</kbd>) tegner et rækværk for sig langs kanten af en altan, en terrasse eller et galleri: klik dets punkter, Enter afslutter. Det har trapperækværkernes udformninger (stolper og håndliste, balustre, glas, wirer eller et lukket panel), sin højde (1 m som standard), basisforskydning, håndlistens profil og størrelser og stolpeafstand i egenskaberne; dets punkter trækkes i deres håndtag (Ctrl/⌘-klik på et styks midte tilføjer ét). I IFC er det et IfcRailing (GUARDRAIL).

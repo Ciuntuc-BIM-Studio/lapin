@@ -322,6 +322,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Cutter(IfcClass.Roof, 55, RoofCuts.Envelope);
         r.Quantities(IfcClass.Roof, (roof, geometry, model) => Roof.Quantities(roof, geometry, model));
         Drainage.Register(r);
+        // A railing of its own along a line in plan (decision 238), in the stair railings' designs.
+        Stairs.Railings.Register(r);
         r.Catalog("roofStyles", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Styles, ArchitectureCatalogJson.Default.IReadOnlyListStyle)!);
         r.Catalog("roofCoverings", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Coverings, ArchitectureCatalogJson.Default.IReadOnlyListCovering)!);
 
@@ -495,6 +497,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var rise = Args.Rise(a, p1, p2);
             var unjoined = a["join"] is JsonValue j && j.TryGetValue<bool>(out var join) && !join;
             var wall = Walls.AddUnjoined(ctx, storeyId, p1, p2, Json.Number(a["height"]) ?? Walls.DefaultHeight, Json.Number(a["baseOffset"]) ?? 0, type);
+            // Drawn on another line than the core's centre (decision 237): the axis set off from it; a straight wall only.
+            if ((string?)a["reference"] is { Length: > 0 } reference && reference != "core" && rise == 0) wall = WallReference.Apply(ctx, wall, reference);
             // A curved wall: the arc through its ends, rising off the chord (or through a third point), before it joins.
             if (rise != 0) { var attrs = wall.CloneAttrs(); attrs[PathCurve.Key] = rise; ctx.Replace(wall.With(attrs: attrs)); }
             if (!unjoined) Joins.Auto(ctx, Paths(ctx), wall.Id, Style(a["joinStyle"]) ?? JoinStyle.Mitre);

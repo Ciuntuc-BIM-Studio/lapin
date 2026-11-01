@@ -310,6 +310,8 @@ export const scenes = [
       await t.page.mouse.move(mx, my, { steps: 12 });
       await t.wait(300);
       await t.shot('wall-drawing');
+      // The line it is drawn on (decision 237): offered in the command line's bar while the tool is on.
+      t.expect(await t.page.locator('[data-testid=wall-line]').count() > 0, 'the Wall tool offers the line it is drawn on');
       await t.keys('Escape', 'Escape');
       const walls = (await t.nodes()).filter((n) => n.type === 'IfcWall');
       t.expect(walls.length === 2, `two walls drawn, found ${walls.length}`);
@@ -472,6 +474,10 @@ export const scenes = [
       await t.ui({ dialog: null, keyPlan: true });
       await open3d(t);
       await t.shot('entrance-steps-3d', { of: 'canvas', pad: 0 });
+      // A balcony railing of its own (decision 238).
+      const rail = await t.cmd('architecture.addRailing', { storeyId: storey, points: [[1.8, -1.6], [4.2, -1.6]] });
+      await t.wait(600);
+      t.expect((await t.nodes()).some((n) => n.id === rail.id && n.type === 'LapinRailing'), 'a railing along the porch');
     },
   },
   {

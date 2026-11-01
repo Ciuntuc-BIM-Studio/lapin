@@ -57,6 +57,22 @@ public class DrainageTests
     }
 
     [Fact]
+    public void A_shed_roof_s_gutter_is_on_its_low_edge_only()
+    {
+        // Testers' report: the shed's high edge got a gutter too.
+        var f = new Fixture();
+        var roof = AddRoof(f, "modern_monopitch");
+        foreach (var dir in new[] { "auto", "x", "y" })
+        {
+            f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["ridgeDirection"] = dir } });
+            var r = Roof.Resolve(f.Model.Get(roof)!, f.Model)!;
+            var shape = Roof.Solve(r).Shape!;
+            var g = Assert.Single(RoofParts.Gutters(r, shape));
+            Assert.True(Math.Abs(g.A.Z - g.B.Z) < 1e-9 && g.A.Z < shape.Height - 0.5, $"{dir}: the gutter at {g.A.Z:0.00}, the roof's top at {shape.Height:0.00}");
+        }
+    }
+
+    [Fact]
     public void A_gutter_falls_to_its_outlet()
     {
         var f = new Fixture();

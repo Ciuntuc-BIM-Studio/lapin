@@ -65,3 +65,7 @@ Para que otro tipo de escalera suba un desnivel propio, marque **Un desnivel pro
 ![La casa con su porche y los escalones de entrada en 3D](shots/entrance-steps-3d.webp)
 
 En IFC, los escalones son un IfcStair de tipo STRAIGHT_RUN_STAIR. Su tramo es un IfcStairFlight con sus NumberOfRisers, NumberOfTreads, RiserHeight y TreadLength, y Pset_StairCommon lleva los mismos valores. El porche es un IfcSlab.
+
+## Barandillas
+
+**Architecture → Railing** (<kbd>RL</kbd>) dibuja una barandilla propia a lo largo del borde de un balcón, una terraza o una galería: haz clic en sus puntos, Enter termina. Toma los diseños de las barandillas de escalera (montantes y pasamanos, balaustres, vidrio, cables o un panel macizo), su altura (1 m por defecto), el desfase de la base, el perfil y los tamaños del pasamanos y la separación de montantes en sus propiedades; sus puntos se arrastran por sus tiradores (Ctrl/⌘-clic en el centro de un tramo añade uno). En IFC es un IfcRailing (GUARDRAIL).

@@ -23,6 +23,8 @@ Wo zwei Wände aufeinandertreffen, verbindet Lapin sie selbst. Ihre Schichten la
 - Wände verbinden sich von selbst, wo sie aufeinandertreffen: eine Ecke als Gehrung, eine Wand, die auf einer anderen endet, als T. **Verbinden** (<kbd>JW</kbd>), **Gehrung** und **Stumpf** ändern, wie zwei Wände aufeinandertreffen, wenn das nicht gewollt ist; **Neue Ecken auf Gehrung** macht Stumpf zur Vorgabe auf diesem Rechner. In beiden Fällen läuft jede Schicht für sich um die Ecke: die Bekleidungen treffen auf ihresgleichen und laufen ungebrochen weiter, die Kerne treffen sich auf der Diagonale (Gehrung) oder ein Kern läuft bis zur Außenseite des anderen (Stumpf), so zeigt der Grundriss mehrschichtiger Wände saubere Ecken.
 - **Tauschen** ändert, welche der beiden Wände durchläuft.
 
+**Die Linie, auf der Sie zeichnen.** Solange das Werkzeug Wall aktiv ist, wählt die Liste in der Leiste der Befehlszeile die Linie, auf die Sie klicken: **Kernmitte** (die Achse, wie bisher), **Kern, Außenseite**, **Kern, Innenseite**, **Außenseite** oder **Innenseite**. Außen ist rechts der Wand in Zeichenrichtung (zeichnen Sie gegen den Uhrzeigersinn um das Gebäude, damit es außen liegt). Die Achse der Wand bleibt auf ihrem Kern, von der Linie versetzt, und nacheinander auf derselben Seite gezeichnete Wände treffen sich an der Ecke dieser Seite.
+
 ## Eine Wand ändern
 
 Klicken Sie auf eine Wand, um sie auszuwählen. Ihre Griffe erscheinen. Ziehen Sie die Enden, um sie zu verlängern oder zu verkürzen, oder ziehen Sie das Kreuz in der Mitte, um sie zu verschieben.

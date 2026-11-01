@@ -349,7 +349,10 @@ public static class RoofParts
         if ((r.Roof.Str("gutterProfile") ?? "half_round") == "none") return [];
         var spec = Drainage.Spec.Of(r.Roof);
         var inside = s.Outline;
-        return s.Lines.Where(l => l.Kind == LineKind.Eave).Select(l =>
+        // Only where the water goes: an eave line that is its slope's lowest edge (a shed roof's high edge is drawn as an eave too, but takes no gutter).
+        bool Low(RoofLine l) => s.Planes.FirstOrDefault(p => p.Points.Any(q => (q - l.A).Length < 1e-6) && p.Points.Any(q => (q - l.B).Length < 1e-6)) is not { } plane
+            || Math.Max(l.A.Z, l.B.Z) <= plane.Points.Min(q => q.Z) + 1e-6;
+        return s.Lines.Where(l => l.Kind == LineKind.Eave && Low(l)).Select(l =>
         {
             var d = (l.B - l.A).Xy.Normalized();
             var outward = d.Perp;

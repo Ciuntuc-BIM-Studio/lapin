@@ -13,7 +13,7 @@ import { registerCommand, startCommand, type Step } from '../../viewport/cad/ses
 import type { Shape } from '../../viewport/cad/shapes';
 import { num, relatingOf, typeOf, usageOf } from '../../engine/model';
 import { activate } from '../../platform/modules';
-import { setJoinStyle, useWallPrefs } from './prefs';
+import { setJoinStyle, setWallLine, useWallPrefs, type WallLine } from './prefs';
 import { WallLayers } from './WallLayers';
 import { WallTypesDialog } from './WallTypesDialog';
 import { JoineryDialog } from './JoineryDialog';
@@ -23,6 +23,7 @@ import { SlabTypesDialog } from './SlabTypesDialog';
 import { RoofSection } from './RoofSection';
 import { RoofDialog } from './RoofDialog';
 import { DownpipeSection, downpipe, downpipeGrips } from './Downpipe';
+import { railing, railingGrips } from './Railing';
 import { StairSection, type StairNumbers } from './StairSection';
 import { StairTypesDialog } from './StairTypesDialog';
 import { dirOf, footFromTop } from './stairPlacement';
@@ -39,9 +40,26 @@ const wall: ToolDef = {
   gesture: { kind: 'twoPoints', repeat: true },
   complete: async ({ points: [a, b] }, ctx) => {
     const typeId = useUi.getState().wallTypeId;
-    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, joinStyle: useWallPrefs.getState().joinStyle, ...(typeId ? { typeId } : {}) });
+    const { joinStyle, line } = useWallPrefs.getState();
+    await ctx.execute('architecture.addWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, joinStyle, ...(line !== 'core' ? { reference: line } : {}), ...(typeId ? { typeId } : {}) });
   },
+  options: WallLineOption,
 };
+
+/** The line a wall is drawn on, chosen in the command line's bar while the Wall tool is on (decision 237). */
+function WallLineOption() {
+  const line = useWallPrefs((s) => s.line);
+  return (
+    <select className={`cad-layer${line !== 'core' ? ' on' : ''}`} value={line} data-testid="wall-line" title="The line you click: the core's centre (the axis), a face of the core, or a finish face; the exterior is the wall's right as you draw"
+      onChange={(e) => setWallLine(e.target.value as WallLine)}>
+      <option value="core">Core centre</option>
+      <option value="coreExterior">Core, exterior face</option>
+      <option value="coreInterior">Core, interior face</option>
+      <option value="exterior">Exterior face</option>
+      <option value="interior">Interior face</option>
+    </select>
+  );
+}
 
 /** A curved wall: its start, its end, then a point the arc passes through. */
 const curvedWall: ToolDef = {
@@ -309,7 +327,7 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20, include: ['modify'],
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe] },
+      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe, railing] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [room, roomColors], small: [roomOutline, updateRooms] },
@@ -344,7 +362,7 @@ const architecture: LapinModule = {
     { id: 'roomColors', label: 'Room colours', classes: ['LapinView'], component: RoomViewSection },
   ],
   dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog },
-  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: contourGrips('architecture.updateRoof', true), IfcSpace: roomGrips, LapinDownpipe: downpipeGrips },
+  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: contourGrips('architecture.updateRoof', true), IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips },
   references: { IfcWall: pathRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: contourRefs, IfcSpace: roomRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },

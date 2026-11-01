@@ -65,3 +65,7 @@ To make another stair type climb a rise of its own, tick **A rise of its own** o
 ![The house with its porch and entrance steps in 3D](shots/entrance-steps-3d.webp)
 
 In IFC, the steps are an IfcStair of type STRAIGHT_RUN_STAIR. Its flight is an IfcStairFlight with its NumberOfRisers, NumberOfTreads, RiserHeight and TreadLength, and Pset_StairCommon carries the same numbers. The porch is an IfcSlab.
+
+## Railings
+
+**Architecture → Railing** (<kbd>RL</kbd>) draws a railing of its own along a balcony's edge, a terrace or a gallery: click its points, Enter finishes. It takes the stair railings' designs (posts and a handrail, balusters, glass, cables or a solid panel), its height (1 m by default), base offset, handrail profile and sizes and post spacing in its properties; its points are dragged by their grips (Ctrl/⌘-click an edge's middle adds one). In IFC it is an IfcRailing (GUARDRAIL).

@@ -23,6 +23,8 @@ Unde se întâlnesc doi pereți, Lapin îi îmbină singur. Straturile lor intr�
 - Pereții se îmbină singuri unde se întâlnesc: un colț la 45°, un perete care se termină pe altul în T. **Îmbină** (<kbd>JW</kbd>), **La 45°** și **Cap la cap** schimbă felul în care se întâlnesc doi pereți când nu e ce vrei; **Colțuri noi la 45°** face cap la cap implicitul pe acest calculator. În ambele cazuri, fiecare strat întoarce colțul singur: finisajele se întâlnesc cu finisajele și merg continuu, iar miezurile se întâlnesc pe diagonală (la 45°) sau un miez merge până la fața exterioară a celuilalt (cap la cap), așa că planul pereților cu straturi arată colțuri curate.
 - **Inversează** schimbă care dintre cei doi pereți trece prin colț.
 
+**Linia pe care desenezi.** Cât timp unealta Wall e activă, lista din bara liniei de comandă alege linia pe care dai clic: **Axul miezului** (axa, ca până acum), **Miez, fața exterioară**, **Miez, fața interioară**, **Fața exterioară** sau **Fața interioară**. Exteriorul e dreapta peretelui în sensul desenării (desenează în jurul clădirii în sens invers acelor de ceasornic ca să fie în afară). Axa peretelui rămâne pe miez, decalată față de linie, iar pereții desenați unul după altul pe aceeași față se întâlnesc în colțul acelei fețe.
+
 ## Modificarea unui perete
 
 Dă clic pe un perete ca să-l selectezi. Apar mânerele lui. Trage de capete ca să-l lungești sau să-l scurtezi, sau de crucea din mijloc ca să-l muți.

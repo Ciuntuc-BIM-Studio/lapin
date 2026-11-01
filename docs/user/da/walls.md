@@ -23,6 +23,8 @@ Hvor to vægge mødes, samler Lapin dem selv. Deres lag løber ind i hinanden, s
 - Vægge sammenføjes af sig selv, hvor de mødes: et hjørne som geringssamling, en væg, der ender på en anden, som T. **Sammenføj** (<kbd>JW</kbd>), **Geringssamling** og **Stødsamling** ændrer, hvordan to vægge mødes, når det ikke er det, du vil; **Nye hjørner som gering** gør stødsamling til standard på denne computer. Uanset hvad går hvert lag selv rundt om hjørnet: overfladerne mødes med deres egne og løber ubrudt videre, og kernerne mødes på diagonalen (gering) eller den ene kerne løber ud til den andens yderside (stød), så en plan af vægge med lag viser rene hjørner.
 - **Byt om** ændrer, hvilken af de to vægge der løber igennem.
 
+**Linjen du tegner på.** Mens værktøjet Wall er aktivt, vælger listen i kommandolinjens bjælke den linje, du klikker på: **Kernens midte** (aksen, som før), **Kerne, yderside**, **Kerne, inderside**, **Yderside** eller **Inderside**. Ydersiden er væggens højre side, som du tegner (tegn mod uret rundt om bygningen, så den vender ud). Væggens akse bliver på kernen, forskudt fra linjen, og vægge tegnet efter hinanden på samme side mødes i den sides hjørne.
+
 ## At ændre en væg
 
 Klik på en væg for at markere den. Dens greb vises. Træk i enderne for at forlænge eller afkorte den, eller træk i krydset i midten for at flytte den.

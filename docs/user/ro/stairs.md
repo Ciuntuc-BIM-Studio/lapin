@@ -65,3 +65,7 @@ Ca un alt tip de scară să urce o diferență de nivel proprie, bifează **O di
 ![Casa cu terasa și treptele de intrare, în 3D](shots/entrance-steps-3d.webp)
 
 În IFC, treptele sunt un IfcStair de tipul STRAIGHT_RUN_STAIR. Rampa lui e un IfcStairFlight cu NumberOfRisers, NumberOfTreads, RiserHeight și TreadLength, iar Pset_StairCommon are aceleași valori. Terasa e un IfcSlab.
+
+## Balustrade
+
+**Architecture → Railing** (<kbd>RL</kbd>) desenează o balustradă de sine stătătoare pe marginea unui balcon, a unei terase sau a unei galerii: dai clic pe punctele ei, Enter termină. Are modelele balustradelor de scară (stâlpișori și mână curentă, baluștri, sticlă, cabluri sau panou plin), înălțimea (implicit 1 m), decalajul bazei, profilul și mărimile mâinii curente și distanța între stâlpișori în proprietăți; punctele se trag de gripuri (Ctrl/⌘-clic pe mijlocul unei laturi adaugă unul). În IFC e un IfcRailing (GUARDRAIL).

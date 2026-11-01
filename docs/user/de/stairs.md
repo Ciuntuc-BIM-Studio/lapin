@@ -65,3 +65,7 @@ Damit ein anderer Treppentyp einen eigenen Höhenunterschied überwindet, setzen
 ![Das Haus mit seinem Vorplatz und den Eingangsstufen in 3D](shots/entrance-steps-3d.webp)
 
 In IFC sind die Stufen eine IfcStair vom Typ STRAIGHT_RUN_STAIR. Ihr Lauf ist ein IfcStairFlight mit NumberOfRisers, NumberOfTreads, RiserHeight und TreadLength, und Pset_StairCommon trägt dieselben Werte. Der Vorplatz ist ein IfcSlab.
+
+## Geländer
+
+**Architecture → Railing** (<kbd>RL</kbd>) zeichnet ein eigenes Geländer an der Kante eines Balkons, einer Terrasse oder einer Galerie: klicken Sie seine Punkte, Enter beendet. Es hat die Formen der Treppengeländer (Pfosten und Handlauf, Stäbe, Glas, Seile oder eine geschlossene Brüstung), seine Höhe (1 m als Vorgabe), den Basisversatz, Profil und Größen des Handlaufs und den Pfostenabstand in den Eigenschaften; seine Punkte werden an ihren Griffen gezogen (Strg/⌘-Klick auf die Mitte eines Abschnitts fügt einen hinzu). In IFC ist es ein IfcRailing (GUARDRAIL).

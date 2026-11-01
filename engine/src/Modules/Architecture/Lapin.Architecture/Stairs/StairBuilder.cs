@@ -300,7 +300,7 @@ public static class StairBuilder
     }
 
     /// <summary>A round bar from a to b (an octagon swept along), <paramref name="d"/> across.</summary>
-    static Solid? RoundBar(Vec3 a, Vec3 b, double d, string tag)
+    internal static Solid? RoundBar(Vec3 a, Vec3 b, double d, string tag)
     {
         var axis = b - a;
         if (axis.Length < 1e-6) return null;
@@ -321,61 +321,12 @@ public static class StairBuilder
     {
         var metal = new List<Solid>();
         var glass = new List<Solid>();
-        var height = Math.Max(0.3, rail.Height);
+        // Each path along its surface, built as any railing is (Railings, shared with the balconies').
         foreach (var path in RailingPaths(r, place, rail, left))
         {
-            Vec3 At((Vec2 P, double Surface) p, double up) => place.World(p.P, p.Surface + up);
-            for (var i = 0; i + 1 < path.Count; i++)
-            {
-                var (a, b) = (path[i], path[i + 1]);
-                var len = (b.P - a.P).Length;
-                if (len < 1e-6) continue;
-                var bar = rail.Profile == "round" ? RoundBar(At(a, height), At(b, height), rail.BarSize, "rail") : Prism.SweepBox(At(a, height), At(b, height), rail.BarSize, rail.BarSize, "rail");
-                if (bar != null) metal.Add(bar);
-                var across = (place.World(b.P, 0) - place.World(a.P, 0));
-                var flat = new Vec3(-across.Y, across.X, 0);
-                flat = flat * (1 / Math.Max(flat.Length, 1e-9));
-                Solid? Pane(double from, double to, double thick, string tag)
-                {
-                    List<Vec3> ring = [At(a, from), At(b, from), At(b, to), At(a, to)];
-                    var shift = flat * (-thick / 2);
-                    return Prism.Extrude(ring.Select(q => q + shift).ToList(), null, flat * thick, tag);
-                }
-                void Posts(double spacing, double size, string tag, bool last)
-                {
-                    var count = Math.Max(1, (int)Math.Ceiling(len / Math.Max(spacing, 0.05)));
-                    for (var j = 0; j <= count; j++)
-                    {
-                        if (j == count && !last) continue;
-                        var t = (double)j / count;
-                        var bottom = place.World(a.P + (b.P - a.P) * t, a.Surface + (b.Surface - a.Surface) * t);
-                        if (Prism.Box(new Vec3(bottom.X, bottom.Y, bottom.Z + height / 2), size, size, height, tag) is { } post) metal.Add(post);
-                    }
-                }
-                var lastSegment = i + 2 >= path.Count;
-                switch (rail.Style)
-                {
-                    case "balusters":
-                        Posts(Math.Max(rail.BalusterSpacing, 0.05), Math.Max(0.012, rail.PostSize * 0.6), "baluster", lastSegment);
-                        if (Prism.SweepBox(At(a, 0.08), At(b, 0.08), 0.03, 0.03, "rail") is { } bottomRail) metal.Add(bottomRail);
-                        break;
-                    case "glass":
-                        Posts(Math.Max(rail.PostSpacing, 0.3), rail.PostSize, "post", lastSegment);
-                        if (Pane(0.08, height - 0.06, 0.012, "glass") is { } pane) glass.Add(pane);
-                        break;
-                    case "cable":
-                        Posts(Math.Max(rail.PostSpacing, 0.3), rail.PostSize, "post", lastSegment);
-                        for (var c = 1; c <= 6; c++)
-                            if (Prism.SweepBox(At(a, height * c / 7.5), At(b, height * c / 7.5), 0.006, 0.006, "cable") is { } cable) metal.Add(cable);
-                        break;
-                    case "panel":
-                        if (Pane(0, height, Math.Max(0.06, rail.PostSize * 2), "panel") is { } panel) metal.Add(panel);
-                        break;
-                    default:
-                        Posts(Math.Max(rail.PostSpacing, 0.3), rail.PostSize, "post", lastSegment);
-                        break;
-                }
-            }
+            var (m, g) = Railings.Solids(path.Select(p => place.World(p.P, p.Surface)).ToList(), rail);
+            metal.AddRange(m);
+            glass.AddRange(g);
         }
         return (metal, glass);
     }

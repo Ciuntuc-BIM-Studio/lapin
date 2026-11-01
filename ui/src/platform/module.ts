@@ -70,6 +70,8 @@ export interface ToolDef {
   complete?: (input: ToolInput, ctx: ToolContext) => Promise<void> | void;
   /** A button: what it does when pressed (a tool with a gesture is switched on instead). */
   run?: () => void;
+  /** What the tool lets one choose while it is on (the line a wall is drawn on), shown in the command line's bar. */
+  options?: ComponentType;
 }
 
 export interface RibbonGroupDef { label: string; tools: ToolDef[]; small?: ToolDef[] }

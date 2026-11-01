@@ -13,6 +13,7 @@ import { useInterface } from '../../app/interface';
 import { bindingText, useBindings } from '../../app/commands';
 import { toolHint } from '../../shell/ViewportHud';
 import { LiveBar } from '../LiveBox';
+import { findTool } from '../../platform/modules';
 import { ROLES, roleLabel, useCad } from './session';
 
 interface LayerDto { name: string; color: string; visible: boolean; locked: boolean }
@@ -36,6 +37,7 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
       <span className="cad-buffer">{buffer}<span className="caret" /></span>
       {promptHere && <LiveBar inline />}
       <span className="grow" />
+      {(() => { const Options = findTool(tool)?.options; return Options ? <Options /> : null; })()}
       <button type="button" className={`cad-toggle${osnap ? ' on' : ''}`} title={`Object snap${key('app.osnap')}`} onClick={() => useCad.setState({ osnap: !osnap })}>SNAP</button>
       <button type="button" className={`cad-toggle${ortho ? ' on' : ''}`} title={bindingText('app.ortho') ? `Ortho (${bindingText('app.ortho').split(', ')[0]}; hold Shift)` : 'Ortho (hold Shift)'} onClick={() => useCad.setState({ ortho: !ortho })}>ORTHO</button>
       <button type="button" className={`cad-toggle${polar ? ' on' : ''}`} title={`Polar tracking every 45°${key('app.polar')}`} onClick={() => useCad.setState({ polar: !polar })}>POLAR</button>

@@ -65,3 +65,7 @@ Pour qu’un autre type d’escalier monte une hauteur propre, cochez **Une haut
 ![La maison avec son perron et ses marches d’entrée en 3D](shots/entrance-steps-3d.webp)
 
 En IFC, les marches sont un IfcStair de type STRAIGHT_RUN_STAIR. Sa volée est un IfcStairFlight avec ses NumberOfRisers, NumberOfTreads, RiserHeight et TreadLength, et Pset_StairCommon porte les mêmes nombres. Le perron est un IfcSlab.
+
+## Garde-corps
+
+**Architecture → Railing** (<kbd>RL</kbd>) dessine un garde-corps à part le long du bord d’un balcon, d’une terrasse ou d’une galerie : cliquez ses points, Entrée termine. Il prend les modèles des garde-corps d’escalier (poteaux et main courante, barreaux, verre, câbles ou panneau plein), sa hauteur (1 m par défaut), le décalage de la base, le profil et les tailles de la main courante et l’entraxe des poteaux dans ses propriétés ; ses points se déplacent par leurs poignées (Ctrl/⌘-clic au milieu d’un tronçon en ajoute un). En IFC c’est un IfcRailing (GUARDRAIL).

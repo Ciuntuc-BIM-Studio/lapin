@@ -23,6 +23,8 @@ Là où deux murs se rencontrent, Lapin les joint de lui-même. Leurs couches se
 - Les murs se joignent d’eux-mêmes là où ils se rencontrent : un angle en onglet, un mur qui finit sur un autre en T. **Joindre** (<kbd>JW</kbd>), **Onglet** et **Bout à bout** changent la façon dont deux murs se rencontrent quand ce n’est pas ce que vous voulez ; **Nouveaux angles en onglet** fait du bout à bout le réglage par défaut sur cet ordinateur. Dans les deux cas, chaque couche tourne l’angle d’elle-même : les finitions rejoignent leurs semblables et continuent sans rupture, et les âmes se rencontrent sur la diagonale (onglet) ou l’une va jusqu’à la face extérieure de l’autre (bout à bout), si bien que le plan des murs multicouches montre des angles nets.
 - **Permuter** change lequel des deux murs passe à travers l’autre.
 
+**La ligne sur laquelle vous dessinez.** Tant que l’outil Wall est actif, la liste dans la barre de la ligne de commande choisit la ligne cliquée : **Axe du noyau** (l’axe, comme avant), **Noyau, face extérieure**, **Noyau, face intérieure**, **Face extérieure** ou **Face intérieure**. L’extérieur est la droite du mur dans le sens du tracé (tournez autour du bâtiment dans le sens antihoraire pour qu’il soit dehors). L’axe du mur reste sur son noyau, décalé de la ligne, et les murs tracés l’un après l’autre sur la même face se rejoignent à l’angle de cette face.
+
 ## Modifier un mur
 
 Cliquez sur un mur pour le sélectionner. Ses poignées apparaissent. Faites glisser les extrémités pour l’allonger ou le raccourcir, ou faites glisser la croix au milieu pour le déplacer.

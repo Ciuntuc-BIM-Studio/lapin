@@ -23,6 +23,8 @@ Donde se encuentran dos muros, Lapin los une por sí mismo. Sus capas se encuent
 - **Unir** (<kbd>JW</kbd>), **Inglete** y **A tope** cambian cómo se encuentran dos muros. En ambos casos, cada capa dobla la esquina por sí sola: los acabados se encuentran con sus iguales y siguen sin cortes, y los núcleos se encuentran en la diagonal (inglete) o un núcleo sigue hasta la cara exterior del otro (a tope), así que la planta de muros multicapa muestra esquinas limpias.
 - **Intercambiar** cambia cuál de los dos muros pasa de largo.
 
+**La línea sobre la que dibujas.** Con la herramienta Wall activa, la lista de la barra de la línea de comandos elige la línea en la que haces clic: **Eje del núcleo** (el eje, como antes), **Núcleo, cara exterior**, **Núcleo, cara interior**, **Cara exterior** o **Cara interior**. El exterior es la derecha del muro según lo dibujas (rodea el edificio en sentido antihorario para que quede fuera). El eje del muro sigue en su núcleo, desplazado de la línea, y los muros dibujados uno tras otro sobre la misma cara se encuentran en la esquina de esa cara.
+
 ## Modificar un muro
 
 Haga clic en un muro para seleccionarlo. Aparecen sus pinzamientos. Arrastre los extremos para alargarlo o acortarlo, o arrastre la cruz del centro para moverlo.
