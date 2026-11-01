@@ -15,6 +15,7 @@ import { DraftSection } from './DraftSection';
 import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
 import { LayersDialog } from './LayersDialog';
 import { frontView } from '../../viewport/frontView';
+import { BoundarySection, boundaryGrips, viewBoundary } from './ViewBoundary';
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string, one object. Points on an element's cut edge, a grid axis or a wall's centre line follow it. */
 const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG']);
@@ -531,7 +532,7 @@ const drafting: LapinModule = {
           axis,
           { id: 'level', label: 'Level', icon: LevelIcon, shortcut: 'LL', run: () => void startCommand('DIMLEVEL') },
         ] },
-        { label: 'Sheets', tools: [{ id: 'sheet', label: 'Sheet', icon: FileText }] },
+        { label: 'Sheets', tools: [{ id: 'sheet', label: 'Sheet', icon: FileText }, viewBoundary] },
       ],
     },
   ],
@@ -541,8 +542,9 @@ const drafting: LapinModule = {
     // The drafted kinds show their own fields (a line its ends, a circle its radius), so the class's generic ones stay out.
     { id: 'draft', label: 'Drafting', classes: ['IfcAnnotation'], component: DraftSection, replacesFields: draftsFields },
     { id: 'dimension', label: 'Dimension', classes: ['IfcAnnotation'], component: DimensionSection },
+    { id: 'viewBoundary', label: 'View boundary', classes: ['LapinViewBoundary'], component: BoundarySection },
   ],
-  grips: { IfcAnnotation: annotationGrips, IfcGrid: gridGrips },
+  grips: { IfcAnnotation: annotationGrips, IfcGrid: gridGrips, LapinViewBoundary: boundaryGrips },
   references: { IfcGrid: gridRefs },
 };
 

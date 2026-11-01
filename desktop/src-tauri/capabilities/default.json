@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "The Lapin window and its detached view windows: core APIs, open/save dialogs, closing with a save prompt, new view windows, the engine address, updates (checked, downloaded, installed, then the app restarted).",
+  "description": "The Lapin window and its detached view windows: core APIs, open/save dialogs, closing with a save prompt, new view windows, printing sheets, the engine address, updates (checked, downloaded, installed, then the app restarted).",
   "windows": [
     "main",
     "view-*"
@@ -12,6 +12,7 @@
     "core:window:allow-close",
     "core:window:allow-set-title",
     "core:webview:allow-create-webview-window",
+    "core:webview:allow-print",
     "dialog:allow-open",
     "dialog:allow-save",
     "dialog:allow-ask",

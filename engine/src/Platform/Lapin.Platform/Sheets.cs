@@ -18,21 +18,27 @@ public interface ISheetContent
     IReadOnlyList<(double W, double H, List<Pen> Pens)> Pages(IQueryContext q, Entity e, double maxWidth, double? maxHeight);
 }
 
-/// <summary>A view on a sheet: where its centre sits on the paper (mm, from the top-left), its box (0 × 0: fits the drawing), the drawing point at its centre (null: the drawing's centre).</summary>
-public sealed record SheetViewport(string Id, string ViewId, double X, double Y, double Width = 0, double Height = 0, Vec2? Center = null, int Page = 1)
+/// <summary>
+/// A view on a sheet: where its centre sits on the paper (mm, from the top-left), its box (0 × 0: fits the drawing), the drawing
+/// point at its centre (null: the drawing's centre); or bound to a named <see cref="Boundary"/> of its view (decision 236), which
+/// gives the box and the middle. A <see cref="Pinned"/> one stays where it is: not moved, nudged or cropped on the sheet.
+/// </summary>
+public sealed record SheetViewport(string Id, string ViewId, double X, double Y, double Width = 0, double Height = 0, Vec2? Center = null, int Page = 1, string? Boundary = null, bool Pinned = false)
 {
     public JsonObject ToJson()
     {
         var o = new JsonObject { ["id"] = Id, ["viewId"] = ViewId, ["x"] = X, ["y"] = Y, ["width"] = Width, ["height"] = Height };
         if (Center is { } c) o["center"] = new JsonArray(c.X, c.Y);
         if (Page > 1) o["page"] = Page;
+        if (Boundary != null) o["boundary"] = Boundary;
+        if (Pinned) o["pinned"] = true;
         return o;
     }
 
     public static SheetViewport? From(JsonNode? n) => n is JsonObject o && (string?)o["id"] is { } id && (string?)o["viewId"] is { } v
         ? new SheetViewport(id, v, Json.Number(o["x"]) ?? 0, Json.Number(o["y"]) ?? 0, Json.Number(o["width"]) ?? 0, Json.Number(o["height"]) ?? 0,
             o["center"] is JsonArray c && c.Count >= 2 ? new Vec2(Json.Number(c[0]) ?? 0, Json.Number(c[1]) ?? 0) : null,
-            (int)(Json.Number(o["page"]) ?? 1))
+            (int)(Json.Number(o["page"]) ?? 1), (string?)o["boundary"], o["pinned"] is JsonValue pv && pv.TryGetValue<bool>(out var pinned) && pinned)
         : null;
 }
 
@@ -73,7 +79,18 @@ public static class Sheets
     }
 
     /// <summary>A sheet's viewport as placed: its box on the paper and the transform from the view's metres.</summary>
-    public sealed record Placement(SheetViewport Viewport, Entity View, Views.Rendered Drawing, double X0, double Y0, double X1, double Y1, Func<Vec2, Vec2> ToPaper, bool Content = false, int Pages = 1);
+    public sealed record Placement(SheetViewport Viewport, Entity View, Views.Rendered Drawing, double X0, double Y0, double X1, double Y1, Func<Vec2, Vec2> ToPaper, bool Content = false, int Pages = 1)
+    {
+        /// <summary>The drawing point at the box's middle, and the named boundary it shows (decision 236), if any.</summary>
+        public Vec2 Middle { get; init; }
+        public Entity? Boundary { get; init; }
+        /// <summary>Paper mm per drawing metre.</summary>
+        public double K => 1000 / Drawing.Scale;
+    }
+
+    /// <summary>A viewport's boundary when it names one of its view's.</summary>
+    static Entity? BoundaryOf(IModelView m, SheetViewport vp) =>
+        vp.Boundary is { } bid && m.Get(bid) is { Class: ViewBoundaries.Class } b && b.Str("viewId") == vp.ViewId ? b : null;
 
     /// <summary>The frame's inner width and height on a sheet, less the title block's height (what a schedule pages into).</summary>
     public static (double W, double H) FrameSize(Entity sheet)
@@ -105,8 +122,15 @@ public static class Sheets
             var k = 1000 / r.Scale;
             var (w, h) = vp.Width > 0 && vp.Height > 0 ? (vp.Width, vp.Height) : r.Bounds is { } b ? Fit(b, r.Scale) : (120, 80);
             var c = vp.Center ?? (r.Bounds is { } bb ? (bb.Min + bb.Max) * 0.5 : new Vec2(0, 0));
+            // Bound to a named boundary of its view: its box and middle are the boundary's.
+            var boundary = BoundaryOf(q.Model, vp);
+            if (boundary != null)
+            {
+                var (bmin, bmax) = ViewBoundaries.Box(boundary);
+                (w, h, c) = ((bmax.X - bmin.X) * k, (bmax.Y - bmin.Y) * k, (bmin + bmax) * 0.5);
+            }
             Vec2 ToPaper(Vec2 p) => new(vp.X + (p.X - c.X) * k, vp.Y - (p.Y - c.Y) * k);
-            o.Add(new Placement(vp, view, r, vp.X - w / 2, vp.Y - h / 2, vp.X + w / 2, vp.Y + h / 2, ToPaper));
+            o.Add(new Placement(vp, view, r, vp.X - w / 2, vp.Y - h / 2, vp.X + w / 2, vp.Y + h / 2, ToPaper) { Middle = c, Boundary = boundary });
         }
         return o;
     }
@@ -211,8 +235,9 @@ public static class Sheets
             var y = pl.Y1 + 7;
             var title = new Pen("TEXT", "#000000", 0, null, null) { Viewport = pl.Viewport.Id };
             var rule = new Pen("TITLE", "#000000", RulePen, null, null) { Viewport = pl.Viewport.Id };
-            title.Texts.Add(new PenText(new Vec2(pl.X0, y), pl.View.Name, 3.5, Anchor: "start", Bold: true));
-            var nameWidth = PdfWriter.Advance(pl.View.Name, true) * 3.5 / 0.718;
+            var name = pl.Boundary != null ? $"{pl.View.Name} · {pl.Boundary.Name}" : pl.View.Name;
+            title.Texts.Add(new PenText(new Vec2(pl.X0, y), name, 3.5, Anchor: "start", Bold: true));
+            var nameWidth = PdfWriter.Advance(name, true) * 3.5 / 0.718;
             rule.Segments.Add((new(pl.X0, y + 1.5), new(pl.X0 + Math.Max(nameWidth, 30) + 4, y + 1.5)));
             title.Texts.Add(new PenText(new Vec2(pl.X0 + nameWidth + 4, y), $"1:{pl.Drawing.Scale:0}", 2.5, Anchor: "start"));
             pens.AddRange([rule, title]);
@@ -343,6 +368,8 @@ public static class Sheets
             {
                 ["id"] = p.Viewport.Id, ["viewId"] = p.Viewport.ViewId, ["x0"] = p.X0, ["y0"] = p.Y0, ["x1"] = p.X1, ["y1"] = p.Y1, ["scale"] = p.Drawing.Scale,
                 ["content"] = p.Content, ["page"] = p.Viewport.Page, ["pages"] = p.Pages, ["width"] = p.Viewport.Width,
+                ["pinned"] = p.Viewport.Pinned, ["boundary"] = p.Boundary?.Id, ["boundaryName"] = p.Boundary?.Name, ["name"] = p.View.Name,
+                ["cx"] = p.Middle.X, ["cy"] = p.Middle.Y,
                 ["warnings"] = new JsonArray(Problems(sheet, p).Select(w => (JsonNode)w).ToArray()),
             }).ToArray()),
         };
@@ -356,6 +383,26 @@ public static class Sheets
     // ------------------------------------------------------------ commands
 
     static Entity Require(IModelView m, string? id) => m.Get(id ?? "") is { Class: Class } s ? s : throw new CommandException("There is no such sheet.");
+
+    /// <summary>A sheet's viewport as placed now (refused when pinned or a schedule).</summary>
+    static (List<SheetViewport> Vps, int I, Placement Pl) Placed(ICommandContext ctx, Entity sheet, string? viewportId)
+    {
+        var vps = Viewports(sheet);
+        var i = vps.FindIndex(v => v.Id == viewportId);
+        if (i < 0) throw new CommandException("The sheet has no such view.");
+        if (vps[i].Pinned) throw new CommandException("The view is pinned to the sheet: unpin it first.");
+        var pl = Place(ctx.Query, sheet).FirstOrDefault(p => p.Viewport.Id == viewportId) ?? throw new CommandException("The view does not draw.");
+        if (pl.Content) throw new CommandException("A schedule is set by its width.");
+        return (vps, i, pl);
+    }
+
+    static void SetBoundary(ICommandContext ctx, Entity b, Vec2 min, Vec2 max)
+    {
+        var attrs = b.CloneAttrs();
+        attrs["min"] = new JsonArray(Math.Round(min.X, 6), Math.Round(min.Y, 6));
+        attrs["max"] = new JsonArray(Math.Round(max.X, 6), Math.Round(max.Y, 6));
+        ctx.Replace(b.With(attrs: attrs));
+    }
 
     static void Write(ICommandContext ctx, Entity sheet, List<SheetViewport> vps)
     {
@@ -431,11 +478,15 @@ public static class Sheets
             var page = (int)(Json.Number(a["page"]) ?? 1);
             var isContent = ctx.Model.Get(viewId) is { } ent && ctx.Services.All<ISheetContent>().Any(c => c.Handles(ent));
             if (Views.Find(ctx.Model, viewId) == null && !isContent) throw new CommandException("There is no such view.");
-            if (ctx.Model.OfClass(Class).FirstOrDefault(s => Viewports(s).Any(v => v.ViewId == viewId && v.Page == page)) is { } on)
-                throw new CommandException($"The view is on sheet {on.Str("number")} already.");
+            // A named boundary of the view (decision 236): the view may go on as many sheets as it has boundaries, once each.
+            var boundary = (string?)a["boundaryId"] is { Length: > 0 } bid
+                ? ctx.Model.Get(bid) is { Class: ViewBoundaries.Class } be && be.Str("viewId") == viewId ? bid : throw new CommandException("The view has no such boundary.")
+                : null;
+            if (ctx.Model.OfClass(Class).FirstOrDefault(s => Viewports(s).Any(v => v.ViewId == viewId && v.Page == page && v.Boundary == boundary)) is { } on)
+                throw new CommandException(boundary != null ? $"That boundary of the view is on sheet {on.Str("number")} already." : $"The view is on sheet {on.Str("number")} already.");
             var (W, H) = PaperOf(sheet);
             var vps = Viewports(sheet);
-            var vp = new SheetViewport(ctx.NewId(), viewId, Json.Number(a["x"]) ?? (W - TitleBlock.W) / 2, Json.Number(a["y"]) ?? H / 2, Page: page);
+            var vp = new SheetViewport(ctx.NewId(), viewId, Json.Number(a["x"]) ?? (W - TitleBlock.W) / 2, Json.Number(a["y"]) ?? H / 2, Page: page, Boundary: boundary);
             vps.Add(vp);
             Write(ctx, sheet, vps);
             return new JsonObject { ["viewportId"] = vp.Id };
@@ -448,13 +499,73 @@ public static class Sheets
             var i = vps.FindIndex(v => v.Id == (string?)a["viewportId"]);
             if (i < 0) throw new CommandException("The sheet has no such view.");
             var v = vps[i];
-            vps[i] = v with
+            var moves = a.ContainsKey("x") || a.ContainsKey("y") || a.ContainsKey("width") || a.ContainsKey("height") || a.ContainsKey("center");
+            if (v.Pinned && moves && !(a["pinned"] is JsonValue up && up.TryGetValue<bool>(out var unpin) && !unpin)) throw new CommandException("The view is pinned to the sheet: unpin it to move it.");
+            var next = v with
             {
                 X = Json.Number(a["x"]) ?? v.X, Y = Json.Number(a["y"]) ?? v.Y,
                 Width = Json.Number(a["width"]) ?? v.Width, Height = Json.Number(a["height"]) ?? v.Height,
                 Center = a.ContainsKey("center") ? a["center"] is JsonArray c && c.Count >= 2 ? new Vec2(Json.Number(c[0]) ?? 0, Json.Number(c[1]) ?? 0) : null : v.Center,
+                Pinned = a["pinned"] is JsonValue pv && pv.TryGetValue<bool>(out var pin) ? pin : v.Pinned,
             };
+            // Bound to a boundary, or set free of it (keeping the box it had, so nothing moves on the paper).
+            if (a.ContainsKey("boundary"))
+            {
+                if ((string?)a["boundary"] is { Length: > 0 } bid)
+                {
+                    if (ctx.Model.Get(bid) is not { Class: ViewBoundaries.Class } be || be.Str("viewId") != v.ViewId) throw new CommandException("The view has no such boundary.");
+                    if (ctx.Model.OfClass(Class).Any(s => Viewports(s).Any(o => o.Id != v.Id && o.ViewId == v.ViewId && o.Page == v.Page && o.Boundary == bid)))
+                        throw new CommandException("That boundary of the view is on a sheet already.");
+                    next = next with { Boundary = bid };
+                }
+                else if (Place(ctx.Query, sheet).FirstOrDefault(p => p.Viewport.Id == v.Id) is { } pl)
+                    next = next with { Boundary = null, Width = pl.X1 - pl.X0, Height = pl.Y1 - pl.Y0, Center = pl.Middle };
+            }
+            vps[i] = next;
             Write(ctx, sheet, vps);
+            return null;
+        });
+
+        // A view's box set on the sheet (paper mm, x0 y0 x1 y1): what it shows stays where it is on the paper, the box takes more or less
+        // of it; a view bound to a boundary resizes the boundary in its view (decision 236).
+        r.Command("sheet.cropViewport", "Crop view", (ctx, a) =>
+        {
+            var sheet = Require(ctx.Model, (string?)a["id"]);
+            var (vps, i, pl) = Placed(ctx, sheet, (string?)a["viewportId"]);
+            var (x0, y0, x1, y1) = (Json.Number(a["x0"]) ?? pl.X0, Json.Number(a["y0"]) ?? pl.Y0, Json.Number(a["x1"]) ?? pl.X1, Json.Number(a["y1"]) ?? pl.Y1);
+            if (x1 < x0) (x0, x1) = (x1, x0);
+            if (y1 < y0) (y0, y1) = (y1, y0);
+            if (x1 - x0 < 10 || y1 - y0 < 10) throw new CommandException("A view on a sheet is 10 mm across at least.");
+            var (cx, cy) = ((x0 + x1) / 2, (y0 + y1) / 2);
+            var k = pl.K;
+            var middle = pl.Middle + new Vec2((cx - pl.Viewport.X) / k, -(cy - pl.Viewport.Y) / k);
+            if (pl.Boundary is { } b)
+            {
+                var half = new Vec2((x1 - x0) / 2 / k, (y1 - y0) / 2 / k);
+                SetBoundary(ctx, b, middle - half, middle + half);
+                vps[i] = vps[i] with { X = cx, Y = cy };
+            }
+            else vps[i] = vps[i] with { X = cx, Y = cy, Width = x1 - x0, Height = y1 - y0, Center = middle };
+            Write(ctx, sheet, vps);
+            return null;
+        });
+
+        // What a view shows slid inside its box by dx, dy paper mm (the box stays); a bound one moves its boundary in its view.
+        r.Command("sheet.panViewport", "Pan view", (ctx, a) =>
+        {
+            var sheet = Require(ctx.Model, (string?)a["id"]);
+            var (vps, i, pl) = Placed(ctx, sheet, (string?)a["viewportId"]);
+            var shift = new Vec2(-(Json.Number(a["dx"]) ?? 0) / pl.K, (Json.Number(a["dy"]) ?? 0) / pl.K);
+            if (pl.Boundary is { } b)
+            {
+                var (min, max) = ViewBoundaries.Box(b);
+                SetBoundary(ctx, b, min + shift, max + shift);
+            }
+            else
+            {
+                vps[i] = vps[i] with { Width = pl.X1 - pl.X0, Height = pl.Y1 - pl.Y0, Center = pl.Middle + shift };
+                Write(ctx, sheet, vps);
+            }
             return null;
         });
 

@@ -586,6 +586,8 @@ public static class Views
         var marks = Marks(ctx).Concat(Location.Marks(ctx)).Concat(SitePlans.Marks(ctx)).Concat(insets ? Insets.Marks(q, ctx) : []).ToList();
         // The reference planes where they cut this view, on the screen only: never on a sheet.
         if (!print) marks.AddRange(RefPlaneMarks(ctx));
+        // The view's named boundaries (decision 236), on the screen only.
+        if (!print) marks.AddRange(ViewBoundaries.Marks(ctx));
         foreach (var source in q.Services.All<IViewAnnotations>())
             try { marks.AddRange(source.Marks(ctx)); }
             catch (CommandException) { }
@@ -1044,6 +1046,7 @@ public static class Views
         });
 
         Insets.Register(r);
+        ViewBoundaries.Register(r);
         SectionMarkers.Register(r);
 
         // A section across an element moved along it or widened: {id, station?, marginA?, marginB?} (AcrossSections).

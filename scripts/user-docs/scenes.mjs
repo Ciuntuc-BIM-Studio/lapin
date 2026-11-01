@@ -1382,6 +1382,24 @@ export const scenes = [
       await openFromBrowser(t, label?.trim() || name, 3000);
       await t.fit();
       await t.shot('sheet', { clip: { x: 250, y: 120, width: 1190, height: 730 } });
+      // What a view shows (decision 236): a named boundary drawn on the plan, the plan's view picked on the sheet (its crop
+      // handles), bound to the boundary from the list on its box; then Print.
+      const boundary = await t.cmd('view.addBoundary', { viewId: plan.id, a: [-1, -1], b: [7, 9], name: 'West wing' });
+      await t.wait(800);
+      const box = await t.page.locator('[data-testid=sheet] .sheet-viewport > rect:first-child').first().boundingBox();
+      await t.page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await t.wait(400);
+      t.expect(await t.page.locator('[data-testid=sheet] .sheet-handle.crop').count() === 8, 'a view picked on the sheet shows its eight crop handles');
+      await t.page.locator('[data-testid=sheet] .sheet-vp-tools select').first().selectOption(boundary.id);
+      await t.wait(1000);
+      const bound = (await t.nodes()).find((n) => n.id === sheet.id)?.props?.viewports?.find((v) => v.viewId === plan.id);
+      t.expect(bound?.boundary === boundary.id, 'the plan on the sheet shows its West wing boundary');
+      { const b2 = await t.page.locator('[data-testid=sheet] .sheet-viewport.active > rect:first-child').first().boundingBox();
+        await t.shot('sheet-view-boundary', { clip: { x: b2.x - 40, y: b2.y - 40, width: b2.width + 80, height: b2.height + 90 } }); }
+      await t.page.evaluate(() => { window.print = () => { window.__printed = true; }; });
+      await t.page.locator('[data-testid=sheet-print]').click();
+      await t.wait(600);
+      t.expect(await t.page.evaluate(() => window.__printed === true && document.querySelectorAll('#lapin-print svg path').length > 0), 'Print draws the sheet for the print dialog');
     },
   },
   {

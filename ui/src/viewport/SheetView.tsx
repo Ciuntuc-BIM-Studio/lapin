@@ -6,11 +6,16 @@
  * with Shift), a schedule's width set by its side handles, a double-click
  * opening the view or schedule; warnings for what runs past the frame or over
  * the title block, and a schedule's next page placed on a new sheet. PDF and
- * DXF out.
+ * DXF out, and Print (decision 236). The frame and the title block are the
+ * paper's, never picked or moved; a click takes the smallest view under it,
+ * a pinned one last. A view's box is cropped by its handles (what it shows
+ * stays put on the paper), what it shows slid inside it with Shift-drag, and
+ * a view may be bound to one of its named boundaries (Annotate → View
+ * boundary), which then gives its box; a pinned view stays where it is.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FileDown, Maximize, MessageSquare } from 'lucide-react';
+import { FileDown, Maximize, MessageSquare, Pin, PinOff, Printer } from 'lucide-react';
 import { notify, select, useUi } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, query, useSession } from '../engine/session';
@@ -19,14 +24,25 @@ import { RemarkCard, RemarksOverlay } from '../modules/core/cde/pdfRemarks/Remar
 import { countOpen, remarksOf, useRemarkUi } from '../modules/core/cde/pdfRemarks/remarks';
 import { DrawingLayer } from './DrawingLayer';
 import type { PenDto } from './drawing';
+import { printSheet } from './printSheet';
 import { PX_PER_MM, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
 
-interface Vp { id: string; viewId: string; x0: number; y0: number; x1: number; y1: number; scale: number; content: boolean; page: number; pages: number; width?: number; warnings: string[] }
+interface Vp {
+  id: string; viewId: string; x0: number; y0: number; x1: number; y1: number; scale: number; content: boolean; page: number; pages: number; width?: number; warnings: string[];
+  pinned?: boolean; boundary?: string | null; boundaryName?: string | null; name?: string;
+}
 interface SheetDrawing { w: number; h: number; pens: PenDto[]; frame: number[]; titleBlock: number[]; viewports: Vp[] }
 type Drag =
   | { kind: 'pan'; x: number; y: number; start: { k: number; ox: number; oy: number } }
   | { kind: 'vp'; x: number; y: number; vp: Vp }
-  | { kind: 'width'; x: number; y: number; vp: Vp; side: -1 | 1 };
+  | { kind: 'width'; x: number; y: number; vp: Vp; side: -1 | 1 }
+  /** A crop handle: which edges it moves (−1 the left or top, 1 the right or bottom, 0 neither). */
+  | { kind: 'crop'; x: number; y: number; vp: Vp; ex: -1 | 0 | 1; ey: -1 | 0 | 1 }
+  /** Shift-drag inside a view: what it shows slides in its box. */
+  | { kind: 'slide'; x: number; y: number; vp: Vp };
+
+/** The crop handles: the corners and the edges' middles. */
+const CROP: [-1 | 0 | 1, -1 | 0 | 1][] = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
 
 const SNAP = 3; // paper mm
 
@@ -46,6 +62,8 @@ export function SheetView() {
   const drag = useRef<Drag | null>(null);
   const [moved, setMoved] = useState<{ id: string; dx: number; dy: number; guides: number[][] } | null>(null);
   const [widened, setWidened] = useState<{ id: string; w: number } | null>(null);
+  const [cropped, setCropped] = useState<{ id: string; x0: number; y0: number; x1: number; y1: number } | null>(null);
+  const [slid, setSlid] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const [active, setActive] = useState<string | null>(null);
   // The remarks read from reviewed PDFs: shown over the paper (the screen alone; the sheet prints without them).
   const showRemarks = useRemarkUi((s) => s.show);
@@ -88,7 +106,7 @@ export function SheetView() {
       const step = e.shiftKey ? 10 : 1;
       const delta = ({ ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] } as Record<string, number[]>)[e.key];
       const vp = d.viewports.find((b) => b.id === active);
-      if (!delta || !vp) return;
+      if (!delta || !vp || vp.pinned) return;
       e.preventDefault();
       e.stopPropagation();
       moveTo(vp, delta[0], delta[1]);
@@ -115,11 +133,19 @@ export function SheetView() {
     const r = ref.current!.getBoundingClientRect();
     return { x: (e.clientX - r.left - v.ox) / v.k, y: (e.clientY - r.top - v.oy) / v.k };
   };
-  const placed = new Set(d?.viewports.map((x) => x.viewId) ?? []);
+  /** The view under a paper point: the smallest box that holds it, a pinned one only when nothing else is there (the frame and title block are never picked). */
+  const pick = (p: { x: number; y: number }) => (d?.viewports ?? [])
+    .filter((b) => p.x >= b.x0 && p.x <= b.x1 && p.y >= b.y0 && p.y <= b.y1)
+    .sort((a, b) => Number(Boolean(a.pinned)) - Number(Boolean(b.pinned)) || (a.x1 - a.x0) * (a.y1 - a.y0) - (b.x1 - b.x0) * (b.y1 - b.y0))[0];
+  const placed = new Set(d?.viewports.map((x) => `${x.viewId}|${x.boundary ?? ''}`) ?? []);
+  const boundariesOf = (viewId: string) => [...nodes.values()].filter((n) => n.type === 'LapinViewBoundary' && n.props.viewId === viewId);
   const views = [...nodes.values()].filter((n) => n.type === 'LapinView');
   const storeyPlans = [...nodes.values()].filter((n) => n.type === 'IfcBuildingStorey').map((s) => ({ id: `plan:${s.id}`, name: `${s.name} (plan)` }));
   const schedules = [...nodes.values()].filter((n) => n.type === 'LapinSchedule').map((x) => ({ id: x.id, name: x.name }));
-  const placeable = [...storeyPlans, ...views.map((x) => ({ id: x.id, name: x.name })), ...schedules].filter((x) => !placed.has(x.id));
+  // Every view, and each of its named boundaries (one view may go on several sheets, a boundary each).
+  const placeable = [...storeyPlans, ...views.map((x) => ({ id: x.id, name: x.name })), ...schedules]
+    .flatMap((x) => [{ id: `${x.id}|`, name: x.name }, ...boundariesOf(x.id).map((b) => ({ id: `${x.id}|${b.id}`, name: `${x.name} › ${b.name}` }))])
+    .filter((x) => !placed.has(x.id));
 
   /** A dragged view snapped: its edges and middle to the frame's and to the other views', with the guides it holds on (paper mm). */
   const snapMove = (vp: Vp, dx: number, dy: number) => {
@@ -167,12 +193,14 @@ export function SheetView() {
     <div className="view-pane">
       <div className="view-toolbar">
         <span className="view-title">{String(sheet.props.number ?? '')} · {sheet.name}</span>
-        <select value="" onChange={(e) => e.target.value && void execute('sheet.addViewport', { id: sheet.id, viewId: e.target.value })} title="Place a view on the sheet">
+        <select value="" onChange={(e) => { const [viewId, boundaryId] = e.target.value.split('|'); if (viewId) void execute('sheet.addViewport', { id: sheet.id, viewId, ...(boundaryId ? { boundaryId } : {}) }); }} title="Place a view on the sheet (or one of its named boundaries)">
           <option value="">Place view…</option>
           {placeable.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
         </select>
         <button type="button" className="icon" title="Export PDF" onClick={() => void exportAs('pdf')}><FileDown size={14} /><span className="small">PDF</span></button>
         <button type="button" className="icon" title="Export DXF" onClick={() => void exportAs('dxf')}><FileDown size={14} /><span className="small">DXF</span></button>
+        <button type="button" className="icon" title="Print the sheet (a plotter at its paper size, 1:1)" data-testid="sheet-print" disabled={!d}
+          onClick={() => d && printSheet(d, `${String(sheet.props.number ?? '')} ${sheet.name}`.trim())}><Printer size={14} /><span className="small">Print</span></button>
         {remarksDrawn && (
           <button type="button" className={`icon${showRemarks ? ' on' : ''}`} title="Remarks read from PDFs: show or hide (they never print); the number counts the open ones" data-testid="sheet-remarks-toggle"
             onClick={() => useRemarkUi.setState({ show: !showRemarks, highlight: null })}><MessageSquare size={14} />{remarkCount > 0 && <span className="small">{remarkCount}</span>}</button>
@@ -198,9 +226,11 @@ export function SheetView() {
         onPointerDown={(e) => {
           if (middleTwice.current(e)) { fit(); return; }
           const p = paperAt(e);
-          const vp = d?.viewports.find((b) => p.x >= b.x0 && p.x <= b.x1 && p.y >= b.y0 && p.y <= b.y1);
-          if (vp && e.button === 0) { drag.current = { kind: 'vp', x: e.clientX, y: e.clientY, vp }; setActive(vp.id); select(sheet.id); }
-          else { drag.current = { kind: 'pan', x: e.clientX, y: e.clientY, start: v }; if (e.button === 0) setActive(null); }
+          const vp = pick(p);
+          // A pinned view is picked, not moved: the drag pans the paper.
+          if (vp && e.button === 0 && e.shiftKey && !vp.pinned && !vp.content) { drag.current = { kind: 'slide', x: e.clientX, y: e.clientY, vp }; setActive(vp.id); }
+          else if (vp && e.button === 0 && !vp.pinned) { drag.current = { kind: 'vp', x: e.clientX, y: e.clientY, vp }; setActive(vp.id); select(sheet.id); }
+          else { drag.current = { kind: 'pan', x: e.clientX, y: e.clientY, start: v }; if (e.button === 0) setActive(vp?.id ?? null); }
           (e.target as Element).setPointerCapture?.(e.pointerId);
         }}
         onPointerMove={(e) => {
@@ -208,6 +238,12 @@ export function SheetView() {
           if (!g) return;
           if (g.kind === 'pan') setZ({ ...g.start, ox: g.start.ox + e.clientX - g.x, oy: g.start.oy + e.clientY - g.y });
           else if (g.kind === 'vp') { const s = snapMove(g.vp, (e.clientX - g.x) / v.k, (e.clientY - g.y) / v.k); setMoved({ id: g.vp.id, ...s }); }
+          else if (g.kind === 'crop') {
+            const dx = (e.clientX - g.x) / v.k, dy = (e.clientY - g.y) / v.k;
+            const b = g.vp;
+            setCropped({ id: b.id, x0: b.x0 + (g.ex < 0 ? dx : 0), x1: b.x1 + (g.ex > 0 ? dx : 0), y0: b.y0 + (g.ey < 0 ? dy : 0), y1: b.y1 + (g.ey > 0 ? dy : 0) });
+          }
+          else if (g.kind === 'slide') setSlid({ id: g.vp.id, dx: (e.clientX - g.x) / v.k, dy: (e.clientY - g.y) / v.k });
           else {
             const dx = (e.clientX - g.x) / v.k * g.side;
             setWidened({ id: g.vp.id, w: Math.max(60, (g.vp.x1 - g.vp.x0) + 2 * dx) });
@@ -218,12 +254,15 @@ export function SheetView() {
           drag.current = null;
           if (g?.kind === 'vp' && moved && Math.hypot(moved.dx, moved.dy) > 0.5) moveTo(g.vp, moved.dx, moved.dy);
           if (g?.kind === 'width' && widened) void execute('sheet.updateViewport', { id: sheet.id, viewportId: g.vp.id, width: Math.round(widened.w) });
+          if (g?.kind === 'crop' && cropped) void execute('sheet.cropViewport', { id: sheet.id, viewportId: g.vp.id, x0: cropped.x0, y0: cropped.y0, x1: cropped.x1, y1: cropped.y1 }).then(() => notify(null));
+          if (g?.kind === 'slide' && slid && Math.hypot(slid.dx, slid.dy) > 0.5) void execute('sheet.panViewport', { id: sheet.id, viewportId: g.vp.id, dx: slid.dx, dy: slid.dy });
           setMoved(null);
           setWidened(null);
+          setCropped(null);
+          setSlid(null);
         }}
         onDoubleClick={(e) => {
-          const p = paperAt(e);
-          const vp = d?.viewports.find((b) => p.x >= b.x0 && p.x <= b.x1 && p.y >= b.y0 && p.y <= b.y1);
+          const vp = pick(paperAt(e));
           if (vp) open(vp);
         }}>
         {d && (
@@ -237,22 +276,54 @@ export function SheetView() {
                   <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport === moved.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />
                 </g>
               </>
-            ) : <DrawingLayer drawing={{ pens: d.pens, scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />}
-            {d.viewports.map((b) => {
+            ) : slid ? (() => {
+              // Sliding what a view shows: its pens go with the pointer, inside its box.
+              const b = d.viewports.find((x) => x.id === slid.id)!;
               const a = toScreen({ x: b.x0, y: b.y0 });
-              const dx = moved?.id === b.id ? moved.dx * v.k : 0, dy = moved?.id === b.id ? moved.dy * v.k : 0;
-              const w = (widened?.id === b.id ? widened.w : b.x1 - b.x0) * v.k;
-              const x = widened?.id === b.id ? a.x + ((b.x1 - b.x0) * v.k - w) / 2 : a.x;
-              const h = (b.y1 - b.y0) * v.k;
               return (
-                <g key={b.id} className={`sheet-viewport${b.warnings.length ? ' warn' : ''}${active === b.id ? ' active' : ''}`}>
+                <>
+                  <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport !== slid.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />
+                  <clipPath id="sheet-slide-clip"><rect x={a.x} y={a.y} width={(b.x1 - b.x0) * v.k} height={(b.y1 - b.y0) * v.k} /></clipPath>
+                  <g clipPath="url(#sheet-slide-clip)"><g transform={`translate(${slid.dx * v.k} ${slid.dy * v.k})`}>
+                    <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport === slid.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />
+                  </g></g>
+                </>
+              );
+            })() : <DrawingLayer drawing={{ pens: d.pens, scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />}
+            {d.viewports.map((b) => {
+              const box = cropped?.id === b.id ? cropped : b;
+              const a = toScreen({ x: box.x0, y: box.y0 });
+              const dx = moved?.id === b.id ? moved.dx * v.k : 0, dy = moved?.id === b.id ? moved.dy * v.k : 0;
+              const w = (widened?.id === b.id ? widened.w : box.x1 - box.x0) * v.k;
+              const x = widened?.id === b.id ? a.x + ((b.x1 - b.x0) * v.k - w) / 2 : a.x;
+              const h = (box.y1 - box.y0) * v.k;
+              const bounds = b.content ? [] : boundariesOf(b.viewId);
+              return (
+                <g key={b.id} className={`sheet-viewport${b.warnings.length ? ' warn' : ''}${active === b.id ? ' active' : ''}${b.pinned ? ' pinned' : ''}`}>
                   <rect x={x + dx} y={a.y + dy} width={w} height={h} />
+                  {/* The crop handles: the corners and the edges' middles; what the view shows stays where it is on the paper. */}
+                  {!b.content && !b.pinned && active === b.id && !moved && CROP.map(([ex, ey]) => (
+                    <rect key={`${ex}${ey}`} className="sheet-handle crop" x={x + (ex + 1) / 2 * w - 4} y={a.y + (ey + 1) / 2 * h - 4} width={8} height={8}
+                      style={{ cursor: ex === 0 ? 'ns-resize' : ey === 0 ? 'ew-resize' : ex === ey ? 'nwse-resize' : 'nesw-resize' }}
+                      onPointerDown={(e) => { e.stopPropagation(); drag.current = { kind: 'crop', x: e.clientX, y: e.clientY, vp: b, ex, ey }; (e.target as Element).setPointerCapture?.(e.pointerId); }}>
+                      <title>{b.boundary ? `Drag to crop: the boundary ${b.boundaryName ?? ''} follows in its view` : 'Drag to crop what the view shows (Shift-drag inside it to slide the drawing)'}</title>
+                    </rect>
+                  ))}
                   {b.content && active === b.id && ([-1, 1] as const).map((side) => (
                     <rect key={side} className="sheet-handle" x={(side < 0 ? x : x + w) + dx - 4} y={a.y + dy + h / 2 - 10} width={8} height={20}
                       onPointerDown={(e) => { e.stopPropagation(); drag.current = { kind: 'width', x: e.clientX, y: e.clientY, vp: b, side }; (e.target as Element).setPointerCapture?.(e.pointerId); }}><title>Drag to set the width</title></rect>
                   ))}
-                  <foreignObject x={x + dx + w - 44} y={a.y + dy + 2} width={42} height={20}>
-                    <span className="row" style={{ gap: 2 }}>
+                  <foreignObject x={x + dx + w - (active === b.id && bounds.length > 0 ? 200 : 66)} y={a.y + dy + 2} width={active === b.id && bounds.length > 0 ? 198 : 64} height={22}>
+                    <span className="row sheet-vp-tools" style={{ gap: 2, justifyContent: 'flex-end' }}>
+                      {active === b.id && bounds.length > 0 && (
+                        <select className="mini" value={b.boundary ?? ''} title="What the view shows: one of its named boundaries, or a box cropped here" onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => void execute('sheet.updateViewport', { id: sheet.id, viewportId: b.id, boundary: e.target.value || null })}>
+                          <option value="">Free crop</option>
+                          {bounds.map((n) => <option key={n.id} value={n.id}>{n.name}</option>)}
+                        </select>
+                      )}
+                      <button type="button" className={`icon mini${b.pinned ? ' on' : ''}`} title={b.pinned ? 'Pinned: it stays where it is. Click to unpin' : 'Pin it to the sheet: not moved, nudged or cropped by mistake'} onPointerDown={(e) => e.stopPropagation()}
+                        onClick={() => void execute('sheet.updateViewport', { id: sheet.id, viewportId: b.id, pinned: !b.pinned })}>{b.pinned ? <Pin size={11} /> : <PinOff size={11} />}</button>
                       <button type="button" className="icon mini" title="Edit: open the view (or double-click it)" onPointerDown={(e) => e.stopPropagation()} onClick={() => open(b)}>✎</button>
                       <button type="button" className="icon mini" title="Take the view off the sheet" onPointerDown={(e) => e.stopPropagation()}
                         onClick={() => void execute('sheet.removeViewport', { id: sheet.id, viewportId: b.id })}>×</button>
