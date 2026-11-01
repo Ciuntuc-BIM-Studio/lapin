@@ -91,6 +91,24 @@ public class RoofTests
     }
 
     [Fact]
+    public void A_shed_roof_takes_the_ridge_direction_and_flips()
+    {
+        // Ridge along y: the low edge is a side running up y, the one at −x of the two; flipped, the one across.
+        Assert.Equal([EdgeKind.Gable, EdgeKind.Gable, EdgeKind.Gable, EdgeKind.Eave], Roof.Kinds("shed", Rect, "y"));
+        Assert.Equal([EdgeKind.Gable, EdgeKind.Eave, EdgeKind.Gable, EdgeKind.Gable], Roof.Kinds("shed", Rect, "y", flip: true));
+        // Ridge along x: the long side at −y; flipped, the one at +y.
+        Assert.Equal([EdgeKind.Eave, EdgeKind.Gable, EdgeKind.Gable, EdgeKind.Gable], Roof.Kinds("shed", Rect, "x"));
+        Assert.Equal([EdgeKind.Gable, EdgeKind.Gable, EdgeKind.Eave, EdgeKind.Gable], Roof.Kinds("shed", Rect, "x", flip: true));
+        // Auto flipped: across from the longest.
+        Assert.Equal([EdgeKind.Gable, EdgeKind.Gable, EdgeKind.Eave, EdgeKind.Gable], Roof.Kinds("shed", Rect, flip: true));
+        // Built along y, the single plane rises over the 10 m run.
+        var kinds = Roof.Kinds("shed", Rect, "y");
+        var s = RoofSolver.Solve(Rect, kinds.Select(k => k == EdgeKind.Eave ? Eave(10) : Gable()).ToList());
+        Assert.Single(s.Planes);
+        Assert.Equal(10 * Tan(10), s.Height, 9);
+    }
+
+    [Fact]
     public void An_L_gets_gables_at_its_arm_ends_and_a_valley_inside()
     {
         Vec2[] l = [new(0, 0), new(12, 0), new(12, 4), new(4, 4), new(4, 10), new(0, 10)];

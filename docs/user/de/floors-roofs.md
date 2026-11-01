@@ -22,6 +22,7 @@ Wählen Sie das Dach aus, um es im Eigenschaftenbereich zu ändern:
 
 - **Form.** Walmdach, Satteldach, Pultdach, Mansarddach, Tonnendach oder Flachdach. Ein Tonnendach ist ein gekrümmtes Gewölbe zwischen zwei Giebelseiten; **Tonne: Stich am Scheitel** legt fest, wie hoch es am Scheitel ansteigt, höchstens die halbe Spannweite.
 - **Neigung und Überstand** für das ganze Dach.
+- **Firstrichtung (Sattel-, Pultdach)**: auto, x oder y. Beim Pultdach ist der First die hohe Seite: auf x fällt es nach −y, auf y nach −x; **Pultdach: Neigung umkehren** lässt es zur anderen Seite fallen.
 - **Jede Kante** mit ihrer eigenen Art (Traufe oder Ortgang), Neigung und ihrem Überstand. Ein Mansarddach mit Giebelkanten ist ein Mansardgiebeldach.
 - **Stil.** Die Dachstile geben mit einer einzigen Wahl ein ganzes Erscheinungsbild vor: die Deckung, die Traufen, die Dachrinnen und Fallrohre.
 

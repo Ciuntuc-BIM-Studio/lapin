@@ -22,6 +22,7 @@ Markér taget for at ændre det i egenskabspanelet:
 
 - **Form.** Valmtag, sadeltag, pulttag, mansardtag, buetag eller fladt tag. Et tøndetag er en buet hvælving mellem to gavle; **Tøndetag: pilhøjde ved toppen** angiver, hvor højt det rejser sig ved toppen, højst halvdelen af spændet.
 - **Hældning og udhæng** for hele taget.
+- **Kiprichtning (sadeltag, pulttag)**: auto, x eller y. På et pulttag er kippen den høje side: på x falder det mod −y, på y mod −x; **Pulttag: vend hældningen** får det til at falde den anden vej.
 - **Hver kant** med sin egen art (tagfod eller gavl), hældning og udhæng. Et mansardtag med gavlkanter er et gambreltag.
 - **Stil.** Tagstilene giver et helt udtryk med ét valg: tagdækningen, tagfødderne, tagrenderne og nedløbsrørene.
 

@@ -166,7 +166,7 @@ export const DA: Record<string, string> = {
   'Rotation': 'Rotation', 'Angle': 'Vinkel', 'Angle (°)': 'Vinkel (°)', 'Cut priority': 'Snitprioritet', 'Elevation': 'Kote', 'Kind': 'Art', 'Style': 'Stil', 'Shape': 'Form',
   'Pitch (eaves)': 'Taghældning (tagfod)', 'Eave overhang': 'Udhæng ved tagfod', 'Gable overhang': 'Udhæng ved gavl', 'Gutters': 'Tagrender', 'Gutter material': 'Tagrendemateriale',
   'Snow guards': 'Snefangere', 'Rafter spacing': 'Spæravstand', 'Rafters (cm)': 'Spær (cm)', 'Purlins per slope': 'Åse pr. tagflade', 'Covering': 'Tagdækning',
-  'Ridge (gable roof)': 'Kip (sadeltag)', 'Mansard: break inset': 'Mansard: knæk indrykning', 'Mansard: upper pitch': 'Mansard: øvre hældning', 'Barrel: rise at the crown': 'Tøndetag: pilhøjde ved toppen', 'Barrel vault': 'Tøndehvælv',
+  'Ridge direction (gable, shed)': 'Kiprichtning (sadeltag, pulttag)', 'Shed: flip the slope': 'Pulttag: vend hældningen', 'Mansard: break inset': 'Mansard: knæk indrykning', 'Mansard: upper pitch': 'Mansard: øvre hældning', 'Barrel: rise at the crown': 'Tøndetag: pilhøjde ved toppen', 'Barrel vault': 'Tøndehvælv',
   'Wall plate over the storey\'s top': 'Murrem over etagens top', 'Scale 1:': 'Målestok 1:', 'Cut height': 'Snithøjde', 'Hidden lines': 'Skjulte linjer', 'Looking': 'Kigger',
   'Paper': 'Papir', 'Orientation': 'Retning', 'Number': 'Nummer', 'Title block': 'Tegningshoved', 'Datum (±0.00 =)': 'Kotenul (±0.00 =)', 'Contour interval': 'Kurveinterval',
   'Major contour every': 'Hovedkurve for hver', 'Depth below the lowest point': 'Dybde under laveste punkt', 'Points': 'Punkter', 'Platforms': 'Plateauer',

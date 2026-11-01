@@ -161,7 +161,7 @@ export const LO: Record<string, string> = {
   'Rotation': 'ການໝຸນ', 'Angle': 'ມຸມ', 'Angle (°)': 'ມຸມ (°)', 'Cut priority': 'ລຳດັບຄວາມສຳຄັນການຕັດ', 'Elevation': 'ລະດັບຄວາມສູງ', 'Kind': 'ຊະນິດ', 'Style': 'ຮູບແບບ', 'Shape': 'ຮູບຊົງ',
   'Pitch (eaves)': 'ຄວາມຄ້ອຍ (ຊາຍຄາ)', 'Eave overhang': 'ໄລຍະຍື່ນຊາຍຄາ', 'Gable overhang': 'ໄລຍະຍື່ນໜ້າຈົ່ວ', 'Gutters': 'ຮາງນ້ຳຝົນ', 'Gutter material': 'ວັດສະດຸຮາງນ້ຳຝົນ',
   'Snow guards': 'ແຜງກັ້ນຫິມະ', 'Rafter spacing': 'ໄລຍະຫ່າງຈັນທັນ', 'Rafters (cm)': 'ຈັນທັນ (ຊມ)', 'Purlins per slope': 'ຈຳນວນແປຕໍ່ດ້ານຄ້ອຍ', 'Covering': 'ວັດສະດຸມຸງ',
-  'Ridge (gable roof)': 'ສັນຫຼັງຄາ (ຫຼັງຄາຈົ່ວ)', 'Mansard: break inset': 'ມັງສາດ: ໄລຍະຫັກມຸມ', 'Mansard: upper pitch': 'ມັງສາດ: ຄວາມຄ້ອຍສ່ວນເທິງ', 'Barrel: rise at the crown': 'ຫຼັງຄາໂຄ້ງ: ຄວາມສູງຍອດໂຄ້ງ', 'Barrel vault': 'ຫຼັງຄາໂຄ້ງຮູບປະທຽນ',
+  'Ridge direction (gable, shed)': 'ທິດທາງສັນຫຼັງຄາ (ຫຼັງຄາຈົ່ວ, ຫຼັງຄາເປີງ)', 'Shed: flip the slope': 'ຫຼັງຄາເປີງ: ປີ້ນຄວາມຄ້ອຍ', 'Mansard: break inset': 'ມັງສາດ: ໄລຍະຫັກມຸມ', 'Mansard: upper pitch': 'ມັງສາດ: ຄວາມຄ້ອຍສ່ວນເທິງ', 'Barrel: rise at the crown': 'ຫຼັງຄາໂຄ້ງ: ຄວາມສູງຍອດໂຄ້ງ', 'Barrel vault': 'ຫຼັງຄາໂຄ້ງຮູບປະທຽນ',
   'Wall plate over the storey\'s top': 'ໄມ້ຮອງຫົວຝາເໜືອສັນຊັ້ນ', 'Scale 1:': 'ມາດຕາສ່ວນ 1:', 'Cut height': 'ຄວາມສູງຮອຍຕັດ', 'Hidden lines': 'ເສັ້ນປະ/ເສັ້ນເຊື່ອງ', 'Looking': 'ທິດທາງການມອງ',
   'Paper': 'ເຈ້ຍ', 'Orientation': 'ແນວນອນ/ແນວຕັ້ງ', 'Number': 'ໝາຍເລກ', 'Title block': 'ຕາຕະລາງລາຍລະອຽດແບບ (Title block)', 'Datum (±0.00 =)': 'ລະດັບອ້າງອີງ (±0.00 =)', 'Contour interval': 'ໄລຍະຫ່າງເສັ້ນຊັ້ນຄວາມສູງ',
   'Major contour every': 'ເສັ້ນຊັ້ນຄວາມສູງຫຼັກທຸກໆ', 'Depth below the lowest point': 'ຄວາມເລິກໃຕ້ຈຸດຕ່ຳສຸດ', 'Points': 'ຈຸດຕ່າງໆ', 'Platforms': 'ລານພື້ນປັບລະດັບ',

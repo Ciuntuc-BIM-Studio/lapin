@@ -22,6 +22,7 @@ Sélectionnez le toit pour le modifier dans le panneau des propriétés :
 
 - **Forme.** À quatre pans, à deux pans, monopente, mansardé, en berceau ou plat. Un toit en voûte est une voûte courbe entre deux pignons ; **Voûte : flèche à la clé** règle la hauteur à laquelle il monte à la clé, au plus la moitié de sa portée.
 - **Pente et débord** pour tout le toit.
+- **Direction du faîtage (deux pans, monopente)** : auto, x ou y. Sur un toit monopente, le faîtage est le côté haut : sur x il descend vers −y, sur y vers −x ; **Monopente : inverser la pente** le fait descendre de l'autre côté.
 - **Chaque rive** avec son propre type (égout ou pignon), sa pente et son débord. Un toit à la Mansart avec des rives en pignon est un comble à la hollandaise.
 - **Style.** Les styles de toit donnent tout un aspect en un seul choix : la couverture, les égouts, les gouttières et les descentes.
 

@@ -77,7 +77,7 @@ public static class Roof
         var pitch = roof.NumOrNull("pitch") ?? 30;
         var overhang = roof.NumOrNull("overhang") ?? 0.5;
         var rake = roof.NumOrNull("gableOverhang") ?? 0.3;
-        var kinds = Kinds(shape, outline, roof.Str("ridgeDirection") ?? "auto", (int)(roof.NumOrNull("lowEdge") ?? -1));
+        var kinds = Kinds(shape, outline, roof.Str("ridgeDirection") ?? "auto", (int)(roof.NumOrNull("lowEdge") ?? -1), roof.Bool("shedFlip"));
         var overrides = roof.Attrs["edges"] as JsonArray;
         return Enumerable.Range(0, n).Select(i =>
         {
@@ -91,12 +91,14 @@ public static class Roof
 
     /// <summary>
     /// The kind of every edge for a shape. Hip: all eaves. Shed: one eave (the
-    /// low edge: chosen, else the longest), gables elsewhere. Gable: an edge is a
+    /// low edge: chosen, else the longest of the edges along the ridge direction
+    /// when it is x or y, else the longest), gables elsewhere; flipped, the edge
+    /// across from it (the parallel one farthest off). Gable: an edge is a
     /// gable when it is an END — both its corners convex and it is no longer than
     /// either neighbour (a rectangle's short sides, an L's arm ends); on a quad
     /// the ridge direction can pick the pair.
     /// </summary>
-    public static EdgeKind[] Kinds(string shape, IReadOnlyList<Vec2> outline, string ridgeDirection = "auto", int lowEdge = -1)
+    public static EdgeKind[] Kinds(string shape, IReadOnlyList<Vec2> outline, string ridgeDirection = "auto", int lowEdge = -1, bool flip = false)
     {
         var n = outline.Count;
         double Len(int i) => (outline[(i + 1) % n] - outline[i]).Length;
@@ -104,7 +106,8 @@ public static class Roof
         switch (shape)
         {
             case "shed":
-                var low = lowEdge >= 0 && lowEdge < n ? lowEdge : Enumerable.Range(0, n).MaxBy(Len);
+                var low = lowEdge >= 0 && lowEdge < n ? lowEdge : ShedLow(outline, ridgeDirection);
+                if (flip) low = Across(outline, low);
                 for (var i = 0; i < n; i++) if (i != low) kinds[i] = EdgeKind.Gable;
                 break;
             case "gable":
@@ -133,6 +136,43 @@ public static class Roof
                 break;
         }
         return kinds;
+    }
+
+    /// <summary>
+    /// A shed's low edge by itself: with the ridge along x (or y), the longest edge running that way, the
+    /// lowest of equals (falling towards −y, or −x); otherwise the longest edge.
+    /// </summary>
+    static int ShedLow(IReadOnlyList<Vec2> outline, string ridgeDirection)
+    {
+        var n = outline.Count;
+        Vec2 D(int i) => outline[(i + 1) % n] - outline[i];
+        var all = Enumerable.Range(0, n).ToList();
+        if (ridgeDirection is not ("x" or "y")) return all.MaxBy(i => D(i).Length);
+        var alongX = ridgeDirection == "x";
+        var along = all.Where(i => alongX ? Math.Abs(D(i).X) > Math.Abs(D(i).Y) : Math.Abs(D(i).Y) > Math.Abs(D(i).X)).ToList();
+        if (along.Count == 0) return all.MaxBy(i => D(i).Length);
+        var longest = along.Max(i => Math.Abs(alongX ? D(i).X : D(i).Y));
+        return along.Where(i => Math.Abs(alongX ? D(i).X : D(i).Y) >= longest - 1e-6)
+            .MinBy(i => alongX ? outline[i].Y + D(i).Y / 2 : outline[i].X + D(i).X / 2);
+    }
+
+    /// <summary>The edge across the outline from edge <paramref name="i"/>: of those parallel to it (within 10°), the one farthest from its line; itself when there is none.</summary>
+    static int Across(IReadOnlyList<Vec2> outline, int i)
+    {
+        var n = outline.Count;
+        var a = outline[i];
+        var u = (outline[(i + 1) % n] - a).Normalized();
+        var best = i;
+        var far = 1e-6;
+        for (var j = 0; j < n; j++)
+        {
+            if (j == i) continue;
+            var d = outline[(j + 1) % n] - outline[j];
+            if (d.Length < 1e-9 || Math.Abs(Vec2.Cross(u, d.Normalized())) > Math.Sin(10 * Math.PI / 180)) continue;
+            var off = Math.Abs(Vec2.Cross(u, outline[j] + d / 2 - a));
+            if (off > far) { far = off; best = j; }
+        }
+        return best;
     }
 
     /// <summary>Why the roof's rules do not build (the solver's reason), or null.</summary>

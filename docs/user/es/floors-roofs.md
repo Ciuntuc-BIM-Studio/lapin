@@ -22,6 +22,7 @@ Seleccione la cubierta para cambiarla en el panel de propiedades:
 
 - **Forma.** A cuatro aguas, a dos aguas, a un agua, mansarda, bóveda o plana. Una cubierta abovedada es una bóveda curva entre dos hastiales; **Bóveda: flecha en la clave** fija cuánto sube en la clave, como máximo la mitad de su luz.
 - **Pendiente y vuelo** de toda la cubierta.
+- **Dirección de la cumbrera (a dos aguas, a un agua)**: auto, x o y. En una cubierta a un agua la cumbrera es el lado alto: en x cae hacia −y, en y hacia −x; **A un agua: invertir la pendiente** la hace caer al otro lado.
 - **Cada borde** con su propio tipo (alero o hastial), pendiente y vuelo. Una mansarda con bordes de hastial es una cubierta holandesa.
 - **Estilo.** Los estilos de cubierta dan un aspecto completo en una sola elección: el material de cobertura, los aleros, los canalones y las bajantes.
 

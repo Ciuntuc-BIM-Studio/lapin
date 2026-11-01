@@ -22,6 +22,7 @@ Select the roof to change it in the properties panel:
 
 - **Shape.** Hip, gable, shed, mansard, barrel or flat. A barrel roof is a curved vault between two gable ends; **Barrel: rise** sets how high it rises at the crown, at most half its span.
 - **Pitch and overhang** for the whole roof.
+- **Ridge direction (gable, shed)**: auto, x or y. A shed roof's ridge is its high side: on x it falls towards −y, on y towards −x; **Shed: flip the slope** makes it fall the other way.
 - **Each edge** with its own kind (eave or gable), pitch and overhang. A mansard with gable edges is a gambrel.
 - **Style.** The roof styles give a whole look in one choice: the covering, the eaves, the gutters and downpipes.
 

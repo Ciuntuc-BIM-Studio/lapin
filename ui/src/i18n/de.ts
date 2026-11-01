@@ -166,7 +166,7 @@ export const DE: Record<string, string> = {
   'Rotation': 'Drehung', 'Angle': 'Winkel', 'Angle (°)': 'Winkel (°)', 'Cut priority': 'Schnittpriorität', 'Elevation': 'Höhe', 'Kind': 'Art', 'Style': 'Stil', 'Shape': 'Form',
   'Pitch (eaves)': 'Neigung (Traufe)', 'Eave overhang': 'Traufüberstand', 'Gable overhang': 'Ortgangüberstand', 'Gutters': 'Dachrinnen', 'Gutter material': 'Rinnenmaterial',
   'Snow guards': 'Schneefanggitter', 'Rafter spacing': 'Sparrenabstand', 'Rafters (cm)': 'Sparren (cm)', 'Purlins per slope': 'Pfetten pro Dachfläche', 'Covering': 'Dachdeckung',
-  'Ridge (gable roof)': 'First (Satteldach)', 'Mansard: break inset': 'Mansarde: Rücksprung des Knicks', 'Mansard: upper pitch': 'Mansarde: obere Neigung', 'Barrel: rise at the crown': 'Tonne: Stich am Scheitel', 'Barrel vault': 'Tonnendach',
+  'Ridge direction (gable, shed)': 'Firstrichtung (Sattel-, Pultdach)', 'Shed: flip the slope': 'Pultdach: Neigung umkehren', 'Mansard: break inset': 'Mansarde: Rücksprung des Knicks', 'Mansard: upper pitch': 'Mansarde: obere Neigung', 'Barrel: rise at the crown': 'Tonne: Stich am Scheitel', 'Barrel vault': 'Tonnendach',
   'Wall plate over the storey\'s top': 'Fußpfette über der Geschossoberkante', 'Scale 1:': 'Maßstab 1:', 'Cut height': 'Schnitthöhe', 'Hidden lines': 'Verdeckte Linien', 'Looking': 'Blickrichtung',
   'Paper': 'Papier', 'Orientation': 'Ausrichtung', 'Number': 'Nummer', 'Title block': 'Plankopf', 'Datum (±0.00 =)': 'Bezugshöhe (±0.00 =)', 'Contour interval': 'Höhenlinienabstand',
   'Major contour every': 'Haupthöhenlinie alle', 'Depth below the lowest point': 'Tiefe unter dem tiefsten Punkt', 'Points': 'Punkte', 'Platforms': 'Plateaus',

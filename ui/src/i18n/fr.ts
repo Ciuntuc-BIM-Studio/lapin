@@ -166,7 +166,7 @@ export const FR: Record<string, string> = {
   'Rotation': 'Rotation', 'Angle': 'Angle', 'Angle (°)': 'Angle (°)', 'Cut priority': 'Priorité de coupe', 'Elevation': 'Altitude', 'Kind': 'Variante', 'Style': 'Style', 'Shape': 'Forme',
   'Pitch (eaves)': 'Pente (égouts)', 'Eave overhang': 'Débord d’égout', 'Gable overhang': 'Débord de rive', 'Gutters': 'Gouttières', 'Gutter material': 'Matériau des gouttières',
   'Snow guards': 'Arrêts de neige', 'Rafter spacing': 'Entraxe des chevrons', 'Rafters (cm)': 'Chevrons (cm)', 'Purlins per slope': 'Pannes par versant', 'Covering': 'Couverture',
-  'Ridge (gable roof)': 'Faîtage (toit à deux pans)', 'Mansard: break inset': 'Mansarde : retrait du brisis', 'Mansard: upper pitch': 'Mansarde : pente du terrasson', 'Barrel: rise at the crown': 'Voûte : flèche à la clé', 'Barrel vault': 'Toit en voûte',
+  'Ridge direction (gable, shed)': 'Direction du faîtage (deux pans, monopente)', 'Shed: flip the slope': 'Monopente : inverser la pente', 'Mansard: break inset': 'Mansarde : retrait du brisis', 'Mansard: upper pitch': 'Mansarde : pente du terrasson', 'Barrel: rise at the crown': 'Voûte : flèche à la clé', 'Barrel vault': 'Toit en voûte',
   'Wall plate over the storey\'s top': 'Sablière au-dessus du haut du niveau', 'Scale 1:': 'Échelle 1:', 'Cut height': 'Hauteur de coupe', 'Hidden lines': 'Lignes cachées', 'Looking': 'Direction',
   'Paper': 'Papier', 'Orientation': 'Orientation', 'Number': 'Numéro', 'Title block': 'Cartouche', 'Datum (±0.00 =)': 'Cote zéro (±0.00 =)', 'Contour interval': 'Équidistance des courbes',
   'Major contour every': 'Courbe maîtresse tous les', 'Depth below the lowest point': 'Profondeur sous le point le plus bas', 'Points': 'Points', 'Platforms': 'Plateformes',
