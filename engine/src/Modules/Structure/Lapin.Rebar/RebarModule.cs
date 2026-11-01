@@ -9,14 +9,21 @@ namespace Lapin.Rebar;
 
 /// <summary>
 /// The project's rebar drawing settings (<c>rebarSettings</c>): colours by diameter, the text and balloon sizes (paper mm), the steel,
-/// segment lengths written on the bars, the cover, and the labels' styles by kind of group (partial, over <see cref="LabelStyle.Default"/>).
+/// segment lengths written on the bars, the cover, the labels' styles by kind of group (partial, over <see cref="LabelStyle.Default"/>),
+/// the stock length a bar is delivered in (12 m, or 6 m) and the lap a split bar overlaps by (null: 50Ø; decision 227).
 /// </summary>
 public sealed record RebarSettings(bool ColorByDiameter = true, double TextHeight = 2.5, double Balloon = 7.5, string Steel = RebarShapes.DefaultSteel, bool SegmentLengths = false, double Cover = 0.025,
-    IReadOnlyDictionary<string, JsonObject>? Labels = null)
+    IReadOnlyDictionary<string, JsonObject>? Labels = null, double StockLength = 12, double? LapLength = null)
 {
     public const string Key = "rebarSettings";
+    public const double DefaultStock = 12;
+    /// <summary>The lap a bar overlaps by when the project names none: 50Ø.</summary>
+    public const double LapDiameters = 50;
 
     public IReadOnlyDictionary<string, JsonObject> Labels { get; init; } = Labels ?? new Dictionary<string, JsonObject>();
+
+    /// <summary>The lap (m) for a bar of this diameter: the project's, or 50Ø.</summary>
+    public double LapOf(double diameter) => LapLength ?? LapDiameters * diameter;
 
     public static RebarSettings Of(IModelView m)
     {
@@ -28,13 +35,15 @@ public sealed record RebarSettings(bool ColorByDiameter = true, double TextHeigh
         return new RebarSettings(
             !(o["colorByDiameter"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && !cb),
             Json.Number(o["textHeight"]) ?? 2.5, Json.Number(o["balloon"]) ?? 7.5, (string?)o["steel"] ?? RebarShapes.DefaultSteel,
-            o["segmentLengths"] is JsonValue sv && sv.TryGetValue<bool>(out var sl) && sl, Json.Number(o["cover"]) ?? 0.025, labels);
+            o["segmentLengths"] is JsonValue sv && sv.TryGetValue<bool>(out var sl) && sl, Json.Number(o["cover"]) ?? 0.025, labels,
+            Json.Number(o["stockLength"]) is { } stock && stock > 0 ? stock : DefaultStock, Json.Number(o["lapLength"]) is { } lap && lap > 0 ? lap : null);
     }
 
     public JsonObject ToJson() => new()
     {
         ["colorByDiameter"] = ColorByDiameter, ["textHeight"] = TextHeight, ["balloon"] = Balloon, ["steel"] = Steel, ["segmentLengths"] = SegmentLengths, ["cover"] = Cover,
         ["labels"] = new JsonObject(Labels.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.DeepClone()))),
+        ["stockLength"] = StockLength, ["lapLength"] = LapLength,
     };
 
     /// <summary>The settings as the interface reads them: each kind's label style resolved whole.</summary>
@@ -181,6 +190,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             new("mark", "Mark", "number", Min: 1), new("count", "Count", "number", Min: 1), new("diameter", "Diameter", "length", Min: 0.004, Max: 0.05),
             new("steel", "Steel", "choice", Choices: RebarShapes.Steels), new("view", "Seen", "choice", Choices: Rebars.Views),
             new("rotation", "Rotation (°)", "angle"), new("excludeSchedule", "Not in the schedule", "bool"), new("layer", "Layer", "text"),
+            new("lapOffset", "Drawn beside its lap", "length"),
         ], "#0f766e", Kind: "annotation"));
         r.Class(new(Rebars.RunClass, "Bar distribution", [
             new("mark", "Mark", "number", Min: 1), new("count", "Bars at each position", "number", Min: 1), new("diameter", "Diameter", "length", Min: 0.004, Max: 0.05),
@@ -302,7 +312,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             ctx.Replace(e.With(attrs: attrs));
             return null;
         });
-        // The project's rebar drawing settings: {colorByDiameter?, textHeight?, balloon?, steel?, segmentLengths?, cover?, labels?: {bars?, stirrups?, columnBars?, runs?: a style patch | null}}.
+        // The project's rebar drawing settings: {colorByDiameter?, textHeight?, balloon?, steel?, segmentLengths?, cover?, labels?: {bars?, stirrups?, columnBars?, runs?: a style patch | null},
+        // stockLength?: m (1..24), lapLength?: m | null (null: 50Ø)}.
         r.Command("setSettings", "Rebar settings", (ctx, a) =>
         {
             var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
@@ -317,7 +328,15 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                     if (!LabelStyle.Kinds.Contains(k)) throw new CommandException($"Labels are styled for bars, stirrups, columnBars and runs, not „{k}”.");
                     if (LabelStyle.Patch(labels.GetValueOrDefault(k), v) is { } patched) labels[k] = patched; else labels.Remove(k);
                 }
-            var next = new RebarSettings(B("colorByDiameter", now.ColorByDiameter), Nn("textHeight", now.TextHeight, 1, 10), Nn("balloon", now.Balloon, 3, 20), steel.Trim().Length > 0 ? steel.Trim() : now.Steel, B("segmentLengths", now.SegmentLengths), Nn("cover", now.Cover, 0, 0.2), labels);
+            var lap = now.LapLength;
+            if (a.ContainsKey("lapLength"))
+            {
+                lap = Json.Number(a["lapLength"]);
+                if (lap is { } l && l <= 0) lap = null;
+                if (lap is { } l2 && l2 > 5) throw new CommandException("The lap length is 5 m at most.");
+            }
+            var next = new RebarSettings(B("colorByDiameter", now.ColorByDiameter), Nn("textHeight", now.TextHeight, 1, 10), Nn("balloon", now.Balloon, 3, 20), steel.Trim().Length > 0 ? steel.Trim() : now.Steel, B("segmentLengths", now.SegmentLengths), Nn("cover", now.Cover, 0, 0.2), labels,
+                Nn("stockLength", now.StockLength, 1, 24), lap);
             var attrs = project.CloneAttrs();
             attrs[RebarSettings.Key] = next.ToJson();
             ctx.Replace(project.With(attrs: attrs));
@@ -358,6 +377,10 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             return new JsonObject { ["viewId"] = across.Id, ["insetId"] = inset.Id };
         });
 
+        // A longitudinal bar cut in two with a lap (decision 227): {id, station?: m from the bar's start, point?: [x, y] (the view's; the nearest point of the bar gives the station),
+        // lap?: m (else the settings' lap length, 50Ø when none)}. The bar becomes the first piece, a new bar the second, the lap centred on the station → {first, second, lap, station}.
+        r.Command("split", "Split bar", (ctx, a) => RebarSplit.Split(ctx, Require(ctx.Model, (string?)a["id"], Rebars.Class), a));
+
         // A beam's or a column's type gets its stirrups (decision 215): {id, enabled, diameter, cover, mode, step, zones, mark}.
         r.Command("setTypeStirrups", "Stirrups on type", (ctx, a) => { TypeStirrups.Set(ctx, a); return null; });
         // A column type's longitudinal bars (decision 218): {id, enabled, perFace, diameter, lap, mark}.
@@ -389,6 +412,12 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                 o["cover"] = Math.Round(cover, 6);
                 o["coverSource"] = source;
                 o["anchors"] = AnchorsJson(s, at, cover);
+                // Whether it can be cut in two with a lap, the stock length it is measured against and the lap it would get (decision 227).
+                var st = RebarSettings.Of(q.Model);
+                o["splittable"] = RebarSplit.IsLongitudinal(s.Shape);
+                o["stockLength"] = st.StockLength;
+                o["lap"] = Math.Round(st.LapOf(s.Diameter), 4);
+                if (RebarSplit.IsLongitudinal(s.Shape) && length > st.StockLength + 1e-6) o["overStock"] = true;
             }
             else
             {
@@ -400,6 +429,12 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                 o["mass"] = Math.Round(length * RebarShapes.MassPerMetre(s.Diameter) * positions.Count * Rebars.Count(e), 3);
             }
             return o;
+        });
+        // What a cut would give ({id, station, lap?}): the two pieces' lengths, or why it cannot be made; the interface shows them while the user types.
+        r.Query("splitPreview", (q, a) =>
+        {
+            var e = q.Model.Get((string?)a["id"] ?? "") is { } x && x.Class == Rebars.Class ? x : throw new CommandException("Not a bar.");
+            return RebarSplit.Preview(RebarSettings.Of(q.Model), e, Json.Number(a["station"]) ?? throw new CommandException("The station is a length from the bar's start."), Json.Number(a["lap"]));
         });
         r.Query("settings", (q, _) => RebarSettings.Of(q.Model).Resolved());
         RebarBodies.Register(r);
@@ -511,6 +546,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
                     attrs["cover"] = Math.Round(cv, 6);
                 }
             }
+            // The second piece of a split bar is drawn beside its lap, this far (m, signed) across the bar; its place in space stays.
+            if (a.ContainsKey("lapOffset")) { if (Json.Number(a["lapOffset"]) is { } lo && Math.Abs(lo) > 1e-9) attrs["lapOffset"] = Math.Round(lo, 6); else attrs.Remove("lapOffset"); }
             if (a.ContainsKey("host")) { if ((string?)a["host"] is { Length: > 0 } h) attrs["host"] = h; else attrs.Remove("host"); }
             if (a.ContainsKey("across"))
             {
@@ -593,10 +630,15 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         var chain = RebarShapes.Chain(RebarShapes.Segments(s).Select(x => RebarShapes.Place(s, at, x)).ToList());
         var ext = RebarShapes.Extent(s);
         var nominal = RebarShapes.Nominal(s).Select(p => RebarShapes.Place(s, at, p)).ToList();
+        // The second piece of a split bar is drawn beside its lap (one diameter and half a millimetre of paper across the bar) so the lap reads;
+        // where it stands in space (its snaps, grips, its copies across) does not move.
+        var lapOffset = new Vec2(0, 0);
+        if (e.NumOrNull("lapOffset") is { } lo && Math.Abs(lo) > 1e-9 && nominal.Count >= 2)
+            lapOffset = (nominal[1] - nominal[0]).Normalized().Perp * (lo + Math.Sign(lo) * 0.5 * c.Mm);
         for (var ix = 0; ix < nx; ix++)
             for (var iy = 0; iy < ny; iy++)
             {
-                var off = new Vec2(ix * dx, iy * dy);
+                var off = new Vec2(ix * dx, iy * dy) + lapOffset;
                 switch (view)
                 {
                     case "top":
