@@ -1,5 +1,5 @@
 /**
- * The planting library as the inspector shows it (decision 228): each
+ * The planting library as the inspector shows it (decision 234): each
  * species under its group, named in the interface's language (the Romanian
  * name when the interface is Romanian), its Latin name beside it.
  */

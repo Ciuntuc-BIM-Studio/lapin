@@ -6,7 +6,7 @@ namespace Lapin.Civil;
 public sealed record SymbolStroke(IReadOnlyList<Vec2> Points, bool Closed, bool Fill = false, bool Detail = false);
 
 /// <summary>
-/// A plant seen from above, as a landscape plan draws it (decision 228): a
+/// A plant seen from above, as a landscape plan draws it (decision 234): a
 /// symbol by the species' family, in the plant's own coordinates (its centre
 /// at the origin), as wide as its crown, made by Lapin from a seed so the same
 /// plant always draws the same way and its neighbours differ a little (turned,

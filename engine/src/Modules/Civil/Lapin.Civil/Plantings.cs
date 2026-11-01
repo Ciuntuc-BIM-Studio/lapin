@@ -29,7 +29,7 @@ public static class Plantings
     public const string Class = "LapinPlanting";
 
     /// <summary>
-    /// The library (decision 228): the first nine are the old generic ones, kept by name so old projects resolve;
+    /// The library (decision 234): the first nine are the old generic ones, kept by name so old projects resolve;
     /// then the fruit trees, conifers and shrubs native or traditional in Romania, each at its typical mature size.
     /// </summary>
     public static readonly IReadOnlyList<Species> Catalog =

@@ -666,7 +666,7 @@ export const scenes = [
     },
   },
   {
-    // The planting library (decision 228): a small orchard with a walnut, conifers along the back and shrubs in front, drawn in plan by their families' symbols.
+    // The planting library (decision 234): a small orchard with a walnut, conifers along the back and shrubs in front, drawn in plan by their families' symbols.
     id: 'planting-symbols',
     async run(t) {
       await t.fresh();

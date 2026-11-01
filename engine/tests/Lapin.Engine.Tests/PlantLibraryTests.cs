@@ -10,7 +10,7 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// The planting library (decision 228, docs/spec-site.md): Romanian fruit
+/// The planting library (decision 234, docs/spec-site.md): Romanian fruit
 /// trees, conifers and shrubs with their Latin and Romanian names, each drawn
 /// in plan by its family's symbol (made by Lapin from a seed, as wide as the
 /// crown) and in 3D by its family's shape; old projects' species still resolve.
@@ -135,7 +135,9 @@ public sealed class PlantLibraryTests
         // A location plan (1:2000) keeps the crowns' outlines alone.
         var location = f.Model.OfClass(Views.Class).Single(v => SitePlans.Of(v) == SitePlans.LocationPlan);
         var (ld, _, _) = Views.Generate(f.Session.Reader, location);
-        Assert.InRange(ld!.Lines.Count(l => l.Element == walnut), 40, 80);
+        // The outline's lobes follow the plant's seed (its id's here, new each run): fewer lines than the site plan's, whatever they are.
+        var full = Views.Generate(f.Session.Reader, site).Drawing!.Lines.Count(l => l.Element == walnut);
+        Assert.InRange(ld!.Lines.Count(l => l.Element == walnut), 30, full - 10);
         Assert.DoesNotContain(ld.Fills ?? [], x => x.Element == walnut);
         WriteSample();
     }
