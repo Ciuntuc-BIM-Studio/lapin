@@ -724,7 +724,8 @@ public static class IfcExport
             if (pre == null) return new(cls, "NOTDEFINED", null);
             // A user-defined type names itself through the element's objectType (a diamond crossing, a level crossing).
             if (pre == "USERDEFINED") return new(cls, pre, e.Str("objectType"));
-            if (allowed.Contains(pre) || pre == "NOTDEFINED") return new(cls, pre, null);
+            // A predefined type may come with the element's own object type too (a downpipe: a rigid segment, "Downpipe").
+            if (allowed.Contains(pre) || pre == "NOTDEFINED") return new(cls, pre, e.Str("objectType"));
             return new(cls, "USERDEFINED", pre);
         }
 
@@ -961,7 +962,8 @@ public static class IfcExport
                 (IfcClass.Roof, "glass") => new("IfcPlate", "SHEET", null),
                 (IfcClass.Roof, "dormer-walls") => new(IfcClass.Wall, "NOTDEFINED", null),
                 (IfcClass.Roof, "timber" or "truss") => TimberKind(rest),
-                (IfcClass.Roof, "drainage") => new("IfcPipeSegment", "GUTTER", null),
+                (IfcClass.Roof, "drainage" or "gutter") => new("IfcPipeSegment", "GUTTER", null),
+                (IfcClass.Roof, "downpipe") => new("IfcPipeSegment", "RIGIDSEGMENT", "Downpipe"),
                 (IfcClass.Roof, "snow") => new("IfcDiscreteAccessory", "USERDEFINED", "Snow guard"),
                 ("IfcElementAssembly", "standards" or "ledgers" or "transoms" or "guardrails") => new("IfcMember", "MEMBER", null),
                 ("IfcElementAssembly", "diagonals") => new("IfcMember", "BRACE", null),

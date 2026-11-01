@@ -32,6 +32,8 @@ Wählen Sie das Dach aus, um es im Eigenschaftenbereich zu ändern:
 
 ![Der Dachkonfigurator](shots/roof-configurator.webp)
 
+**Dachrinnen und Fallrohre.** In **Deckung und Entwässerung** des Konfigurators bekommt die Rinne ihre Größe, wie weit sie vor der Traufe und unter der Deckung hängt, ihr Gefälle zu den Abläufen (mm/m) und ihre Endstücke; die Kantentabelle schaltet die Rinne jeder Traufe ein oder aus. Die Fallrohre sind zunächst die des Dachs, eines je 10 m; **Bearbeitbar machen** macht sie zu Elementen, und **Architecture → Downpipe** setzt eines mit einem Klick auf eine Rinne. Der Griff eines Fallrohrs schiebt es nur an seiner Rinne entlang; in den Eigenschaften stellen Sie Durchmesser, Auslaufbogen und Verlauf ein, eine Kette von Abschnitten mit Länge und Winkel zur Senkrechten (zur Wand), der letzte bis zum Boden. In IFC ist eine Rinne ein IfcPipeSegment GUTTER und ein Fallrohr ein starres Segment namens Downpipe.
+
 Die Wände auf der Ebene des Dachs enden von selbst darunter und steigen bis zu seinen Giebeln, auch unter einem gekrümmten Dach. Eine Wand auf einer anderen Ebene folgt dem Dach nach **Architektur → An Dach anbinden** (<kbd>AR</kbd>): Wählen Sie die Wände aus und klicken Sie dann auf das Dach. Dasselbe Werkzeug nimmt jeden anderen Körper über den Wänden: einen Studio-Volumenkörper, eine Decke, einen Träger, ein aus IFC importiertes Element. Die Wände steigen bis zu seiner Unterseite und werden an ihr entlang geschnitten, welche Form sie auch hat. **Vom Dach lösen** macht dies rückgängig.
 
 **Dachfenster** und **Gaube** fügen einem Dach Öffnungen hinzu.

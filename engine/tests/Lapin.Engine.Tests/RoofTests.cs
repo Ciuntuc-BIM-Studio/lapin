@@ -222,8 +222,11 @@ public class RoofTests
         // The covering first, every timber member a part of its own (decision 229), the drainage and the snow guards last.
         var parts = f.Session.Geometry(roof)!.Parts;
         Assert.Equal("Covering", parts[0].Name);
-        Assert.Equal(["Gutters and downpipes", "Snow guards"], parts.TakeLast(2).Select(p => p.Name));
-        Assert.All(parts.Skip(1).SkipLast(2), p => Assert.StartsWith("timber:", p.Key));
+        // Each gutter and each automatic downpipe a part of its own (decision 235).
+        Assert.Equal("Snow guards", parts[^1].Name);
+        Assert.Equal(4, parts.Count(p => p.Key!.StartsWith("gutter:")));
+        Assert.Equal(6, parts.Count(p => p.Key!.StartsWith("downpipe:")));
+        Assert.All(parts.Where(p => p.Key!.StartsWith("timber")), p => Assert.Contains("mm", p.Name));
         Assert.Contains(parts, p => p.Name == "Rafter 80x160 mm");
         Assert.Equal(entities, f.Model.Entities.Count());
 
@@ -439,7 +442,7 @@ public class RoofTests
         // (the 0.15 m overhangs go on round the circle, so the covering is the arc over 3.15 m each side of the crown)
         Assert.InRange(Q(f, roof, "GrossArea"), 2 * R * Math.Asin(3.15 / R) * 10.6 * 0.995, 2 * R * Math.Asin(3.15 / R) * 10.6);
         Assert.DoesNotContain("timber", g.Parts.Select(p => p.Key));
-        Assert.Contains("drainage", g.Parts.Select(p => p.Key));
+        Assert.Contains(g.Parts, p => p.Key!.StartsWith("gutter:"));
         Assert.Contains("covering", g.Parts.Select(p => p.Key));
         // Its rise is a field of its own; past half the span the change is refused.
         f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["rise"] = 3 } });

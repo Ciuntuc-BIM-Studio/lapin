@@ -53,7 +53,11 @@ public static class RoofPreview
             summary.Add((JsonNode)Row("Timber", $"{N(members.Sum(x => x.Volume), "0.00")} m³ · {r.Grade}"));
         }
         var gutters = RoofParts.Gutters(r, shape);
-        if (gutters.Count > 0) summary.Add((JsonNode)Row("Gutters", $"{N(gutters.Sum(x => x.Length), "0.0")} m · {RoofParts.Downpipes(r, shape, gutters).Count} downpipes"));
+        var outlets = Drainage.Outlets(m, r, gutters);
+        if (gutters.Count > 0) summary.Add((JsonNode)Row("Gutters", $"{N(gutters.Sum(x => x.Length), "0.0")} m · {outlets.Count} downpipes"));
+        // Where the downpipes leave the gutters (decision 235), for the plan.
+        o["outlets"] = new JsonArray([.. outlets.Select(x => { var g = gutters[x.Gutter]; return (JsonNode)Pt((g.A + (g.B - g.A) * (x.Station / g.Length)).Xy + g.Out * Drainage.Spec.Of(roof).R); })]);
+        o["downpipes"] = r.Roof.Str("downpipes") ?? "auto";
         o["summary"] = summary;
         return o;
     }

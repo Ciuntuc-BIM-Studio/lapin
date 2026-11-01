@@ -16,7 +16,7 @@ type Style = { id: string; label: string; family: string; region: string; shape:
 type Covering = { id: string; color: string; minPitch: number };
 /** A project's own style (decision 233), kept on the project. */
 type OwnStyle = { id: string; label: string; shape: string; pitch: number; structure?: string };
-type Edge = { kind?: 'eave' | 'gable'; pitch?: number; overhang?: number } | null;
+type Edge = { kind?: 'eave' | 'gable'; pitch?: number; overhang?: number; gutter?: boolean } | null;
 type Item = { role: string; pts: number[] };
 interface Preview {
   problem?: string | null;
@@ -26,6 +26,9 @@ interface Preview {
   kinds?: ('eave' | 'gable')[];
   lines?: { kind: string; a: [number, number]; b: [number, number] }[];
   section?: { items: Item[]; box: [number, number, number, number]; span?: number | null; plate: number; top: number };
+  /** Where the downpipes leave the gutters (decision 235), and whether they are the roof's automatic ones. */
+  outlets?: [number, number][];
+  downpipes?: string;
   summary?: [string, string][];
 }
 interface Draft { style?: string; attrs: Record<string, unknown>; edges?: Edge[] }
@@ -37,7 +40,9 @@ type Tab = (typeof TABS)[number][0];
 const FIELDS: Record<Tab, [string, ((v: (k: string) => unknown) => boolean)?][]> = {
   shape: [['shape'], ['pitch', (v) => v('shape') !== 'barrel'], ['overhang'], ['gableOverhang'], ['ridgeDirection', (v) => ['gable', 'shed', 'barrel'].includes(String(v('shape')))],
     ['shedFlip', (v) => v('shape') === 'shed'], ['upperPitch', (v) => v('shape') === 'mansard'], ['mansardInset', (v) => v('shape') === 'mansard'], ['rise', (v) => v('shape') === 'barrel'], ['eaveOffset']],
-  covering: [['covering'], ['gutterProfile'], ['gutterMaterial', (v) => v('gutterProfile') !== 'none'], ['snowGuards']],
+  covering: [['covering'], ['gutterProfile'], ['gutterMaterial', (v) => v('gutterProfile') !== 'none'],
+    ['gutterWidth', (v) => v('gutterProfile') !== 'none'], ['gutterOffset', (v) => v('gutterProfile') !== 'none'], ['gutterDrop', (v) => v('gutterProfile') !== 'none'],
+    ['gutterFall', (v) => v('gutterProfile') !== 'none'], ['gutterEnds', (v) => v('gutterProfile') !== 'none'], ['downpipes', (v) => v('gutterProfile') !== 'none'], ['snowGuards']],
   framing: [['structure', (v) => !['flat', 'barrel'].includes(String(v('shape')))],
     ['rafterSection', (v) => !['none'].includes(String(v('structure')))], ['rafterSpacing', (v) => v('structure') !== 'none'],
     ['purlins', (v) => (v('structure') ?? 'rafters') === 'rafters'], ['webSection', (v) => v('structure') === 'trusses'], ['collarHeight', (v) => v('structure') === 'collar'],
@@ -46,7 +51,8 @@ const FIELDS: Record<Tab, [string, ((v: (k: string) => unknown) => boolean)?][]>
 };
 
 /** What the engine takes for a field the roof does not have yet (a roof made before the field was). */
-const DEFAULTS: Record<string, unknown> = { rafterTail: 'plumb', rafterSeat: 'birdsmouth', collarHeight: 0.66, timberGrade: 'C24', webSection: '45x95 mm', ridgeDirection: 'auto', shedFlip: false };
+const DEFAULTS: Record<string, unknown> = { rafterTail: 'plumb', rafterSeat: 'birdsmouth', collarHeight: 0.66, timberGrade: 'C24', webSection: '45x95 mm', ridgeDirection: 'auto', shedFlip: false,
+  gutterWidth: 0.125, gutterOffset: 0, gutterDrop: 0, gutterFall: 0, gutterEnds: 'True', downpipes: 'auto' };
 
 const ROLE_FILL: Record<string, string> = {
   covering: '#b0563d', deck: '#c9b79c', wall: '#d9d4c9', plate: '#8a6a48', rafter: '#c99a64', topChord: '#c99a64', bottomChord: '#b98a5a',
@@ -93,6 +99,7 @@ function PlanPlot({ p, edges, onEdge }: { p: Preview; edges: Edge[]; onEdge: (i:
     <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-label="Plan">
       {p.eaves && <path d={path(p.eaves)} fill="#f3ece2" stroke="#8a8378" strokeDasharray="4 3" strokeWidth={0.8} />}
       <path d={path(outline)} fill="#ffffff" stroke="none" />
+      {(p.outlets ?? []).map((o, i) => <circle key={`o${i}`} cx={X(o[0])} cy={Y(o[1])} r={3} fill="#2b5f9e"><title>Downpipe</title></circle>)}
       {(p.lines ?? []).map((l, i) => (
         <line key={i} x1={X(l.a[0])} y1={Y(l.a[1])} x2={X(l.b[0])} y2={Y(l.b[1])} stroke={l.kind === 'valley' ? '#2b5f9e' : '#5a3a22'} strokeWidth={l.kind === 'ridge' ? 1.6 : 1} />
       ))}
@@ -251,7 +258,7 @@ export function RoofDialog() {
                 {rows}
                 {tab === 'shape' && contour.length > 0 && (
                   <table className="roof-edges">
-                    <thead><tr><th>Edge</th><th>Kind</th><th>°</th><th>mm</th></tr></thead>
+                    <thead><tr><th>Edge</th><th>Kind</th><th>°</th><th>mm</th><th title="Gutter">⌣</th></tr></thead>
                     <tbody>
                       {contour.map((_, i) => {
                         const e = edges[i] ?? null;
@@ -267,6 +274,7 @@ export function RoofDialog() {
                               onBlur={(ev) => { const v = ev.target.value.trim() === '' ? undefined : Number(ev.target.value.replace(',', '.')); if (v !== e?.pitch) setEdge(i, { pitch: v }); }} /></td>
                             <td><input className="num" defaultValue={e?.overhang != null ? Math.round(e.overhang * 1000) : ''} key={`o${i}${e?.overhang}`}
                               onBlur={(ev) => { const v = ev.target.value.trim() === '' ? undefined : Number(ev.target.value.replace(',', '.')) / 1000; if (v !== e?.overhang) setEdge(i, { overhang: v }); }} /></td>
+                            <td>{(preview?.kinds?.[i] ?? 'eave') === 'eave' && <input type="checkbox" title="This eave's gutter" checked={e?.gutter !== false} onChange={(ev) => setEdge(i, { gutter: ev.target.checked ? undefined : false })} />}</td>
                           </tr>
                         );
                       })}
@@ -279,6 +287,10 @@ export function RoofDialog() {
                       <label className="field-line roof-field"><span className="eyebrow">Gutter colour</span>
                         <input type="color" value={typeof value('gutterColor') === 'string' && value('gutterColor') ? String(value('gutterColor')) : '#8a9096'} onChange={(e) => set('gutterColor', e.target.value)} />
                       </label>
+                    )}
+                    {value('gutterProfile') !== 'none' && preview?.downpipes === 'auto' && (
+                      <p className="muted small">Downpipes: one every 10 m, set by the roof. <button type="button" className="link" title="Each downpipe an element of its own: slid along its gutter, its route, diameter and shoe set in its properties"
+                        onClick={() => void execute('architecture.makeDownpipes', { id: node.id })}>Make them editable</button></p>
                     )}
                     {covering && (
                       <p className="muted small"><span className="swatch" style={{ background: covering.color }} /> {covering.id}{Number.isFinite(pitch) && pitch < covering.minPitch ? ` · below its ${covering.minPitch}° the covering does not shed water` : ` · from ${covering.minPitch}°`}</p>

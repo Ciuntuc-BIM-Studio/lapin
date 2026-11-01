@@ -22,6 +22,7 @@ import { SlabSection } from './SlabSection';
 import { SlabTypesDialog } from './SlabTypesDialog';
 import { RoofSection } from './RoofSection';
 import { RoofDialog } from './RoofDialog';
+import { DownpipeSection, downpipe, downpipeGrips } from './Downpipe';
 import { StairSection, type StairNumbers } from './StairSection';
 import { StairTypesDialog } from './StairTypesDialog';
 import { dirOf, footFromTop } from './stairPlacement';
@@ -308,7 +309,7 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20, include: ['modify'],
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator] },
+      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [room, roomColors], small: [roomOutline, updateRooms] },
@@ -334,6 +335,7 @@ const architecture: LapinModule = {
     { id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers },
     { id: 'joinery', label: 'Door or window', classes: ['IfcDoor', 'IfcWindow'], component: JoinerySection },
     { id: 'slab', label: 'Floor', classes: ['IfcSlab'], component: SlabSection },
+    { id: 'downpipe', label: 'Downpipe', classes: ['LapinDownpipe'], component: DownpipeSection },
     { id: 'roof', label: 'Roof', classes: ['IfcRoof'], component: RoofSection },
     { id: 'stair', label: 'Stair', classes: ['IfcStair'], component: StairSection },
     { id: 'ceiling', label: 'Ceiling', classes: ['LapinCeiling'], component: CeilingSection },
@@ -342,7 +344,7 @@ const architecture: LapinModule = {
     { id: 'roomColors', label: 'Room colours', classes: ['LapinView'], component: RoomViewSection },
   ],
   dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog },
-  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: contourGrips('architecture.updateRoof', true), IfcSpace: roomGrips },
+  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: contourGrips('architecture.updateRoof', true), IfcSpace: roomGrips, LapinDownpipe: downpipeGrips },
   references: { IfcWall: pathRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: contourRefs, IfcSpace: roomRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },

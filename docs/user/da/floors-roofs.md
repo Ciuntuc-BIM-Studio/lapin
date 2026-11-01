@@ -32,6 +32,8 @@ Markér taget for at ændre det i egenskabspanelet:
 
 ![Tagkonfiguratoren](shots/roof-configurator.webp)
 
+**Tagrender og nedløbsrør.** Under **Tagdækning og afvanding** i konfiguratoren får tagrenden sin størrelse, hvor langt den sidder ud fra tagfoden og under tagdækningen, sit fald mod afløbene (mm/m) og sine endebunde; kanttabellen slår hver tagfods tagrende til eller fra. Nedløbsrørene er først tagets egne, ét pr. 10 m; **Gør dem redigerbare** gør dem til elementer, og **Architecture → Downpipe** tilføjer ét med et klik på en tagrende. Et nedløbsrørs håndtag skubber det kun langs tagrenden; i egenskaberne sætter du diameter, udløbsbøjning og forløb, en kæde af stykker med længde og vinkel fra lodret (mod væggen), det sidste ned til terræn. I IFC er en tagrende et IfcPipeSegment GUTTER og et nedløbsrør et stift segment kaldet Downpipe.
+
 Væggene på tagets niveau stopper under det og går selv op til dets gavle, også under et buet tag. En væg på et andet niveau følger taget efter **Arkitektur → Fastgør til tag** (<kbd>AR</kbd>): markér væggene, og klik derefter på taget. Samme værktøj tager ethvert andet legeme over væggene: et Studio-legeme, en plade, en bjælke, et element importeret fra IFC. Væggene går op til dets underside og skæres langs den, uanset formen. **Frigør fra tag** fortryder det.
 
 **Ovenlysvindue** og **Kvist** tilføjer åbninger i et tag.

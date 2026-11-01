@@ -8,7 +8,7 @@ namespace Lapin.Architecture.Roofs;
 /// nodes in the graph:
 /// <list type="bullet">
 /// <item>the timber structure: wall plates on the eave walls, rafters at a spacing on every plane, purlins under them, a ridge beam under each ridge, hip and valley rafters (port of Standalone's roof system structure); or couples with collar ties, or trusses, along the main ridge (decision 229);</item>
-/// <item>gutters along the eaves, downpipes from them down the walls to the ground, one per 10 m of gutter;</item>
+/// <item>gutters along the eaves, downpipes from them down the walls to the ground, one per 10 m of gutter (Drainage, decision 235);</item>
 /// <item>snow guards: rows along the eaves, on the covering.</item>
 /// </list>
 /// The planes are the rafters' underside; the covering lies on the rafters and battens.
@@ -334,62 +334,33 @@ public static class RoofParts
         return w > k0 && w < k1 ? w : null;
     }
 
-    /// <summary>A gutter run: one eave line, where the covering ends.</summary>
-    public sealed record Gutter(Vec3 A, Vec3 B, Vec2 Out)
+    /// <summary>A gutter run: one eave line, where the covering ends, outward from the roof; the outline edge it belongs to (decision 235).</summary>
+    public sealed record Gutter(Vec3 A, Vec3 B, Vec2 Out, int Edge = -1)
     {
         public double Length => (B - A).Length;
     }
 
-    /// <summary>Gutters under the eave lines (none when the roof has none), just below the covering's edge.</summary>
+    /// <summary>
+    /// Gutters under the eave lines (none when the roof has none, nor on an eave edge whose gutter is off): just below the
+    /// covering's edge, set out from it by the gutter's offset and down by its drop (decision 235).
+    /// </summary>
     public static List<Gutter> Gutters(Roof.Resolved r, RoofShape s)
     {
         if ((r.Roof.Str("gutterProfile") ?? "half_round") == "none") return [];
+        var spec = Drainage.Spec.Of(r.Roof);
         var inside = s.Outline;
         return s.Lines.Where(l => l.Kind == LineKind.Eave).Select(l =>
         {
             var d = (l.B - l.A).Xy.Normalized();
             var outward = d.Perp;
             var mid = ((l.A + l.B) * 0.5).Xy;
-            if (Polygon2.Contains(inside, mid + outward * 0.01)) outward = -outward;
-            var z = r.StructureDepth;
-            return new Gutter(l.A with { Z = l.A.Z + z }, l.B with { Z = l.B.Z + z }, outward);
-        }).Where(g => g.Length > 0.3).ToList();
-    }
-
-    /// <summary>Downpipe outlets: one per 10 m of gutter, at the run's ends first; where each one meets the wall below.</summary>
-    public static List<(Vec3 Outlet, Vec2 Foot)> Downpipes(Roof.Resolved r, RoofShape s, IReadOnlyList<Gutter> gutters)
-    {
-        var o = new List<(Vec3, Vec2)>();
-        foreach (var g in gutters)
-        {
-            int n = Math.Max(1, (int)Math.Ceiling(g.Length / 10));
-            var d = (g.B - g.A) * (1 / g.Length);
-            for (int k = 0; k < n; k++)
-            {
-                // At the end (water runs to it), the others spread back along the run, 0.3 m in from the corner.
-                var u = n == 1 ? g.Length - 0.3 : 0.3 + (g.Length - 0.6) * (n - 1 - k) / (n - 1);
-                var outlet = g.A + d * u;
-                // Down the wall: the eave line's overhang back toward the building, 0.1 m off the wall line.
-                var foot = Nearest(s.Outline, outlet.Xy) is var w ? w + (outlet.Xy - w).Normalized() * 0.1 : outlet.Xy;
-                o.Add((outlet, foot));
-            }
-        }
-        return o;
-    }
-
-    static Vec2 Nearest(IReadOnlyList<Vec2> poly, Vec2 p)
-    {
-        Vec2 best = poly[0]; double bd = double.PositiveInfinity;
-        for (int i = 0; i < poly.Count; i++)
-        {
-            var (a, b) = (poly[i], poly[(i + 1) % poly.Count]);
-            var e = b - a; var l2 = Vec2.Dot(e, e);
-            var t = l2 < 1e-12 ? 0 : Math.Clamp(Vec2.Dot(p - a, e) / l2, 0, 1);
-            var q = a + e * t;
-            var dd = (p - q).Length;
-            if (dd < bd) { bd = dd; best = q; }
-        }
-        return best;
+            // Outward: away from the walls (the eave line stands its overhang out of them, so look that far past it).
+            var edge = Drainage.EdgeOf(r, l);
+            var reach = (edge >= 0 ? r.Rules[edge].Overhang : 0) + 0.05;
+            if (Polygon2.Contains(inside, mid + outward * reach)) outward = -outward;
+            var shift = new Vec3(outward.X, outward.Y, 0) * spec.Offset + new Vec3(0, 0, r.StructureDepth - spec.Drop);
+            return new Gutter(l.A + shift, l.B + shift, outward, edge);
+        }).Where(g => g.Length > 0.3 && Drainage.HasGutter(r.Roof, g.Edge)).ToList();
     }
 
     /// <summary>Snow guard rows: along every eave plane, 0.6 m up the slope from the eave (a second row on long slopes), on the covering.</summary>
@@ -430,10 +401,10 @@ public static class RoofParts
         return Prism.Extrude(ring, null, axis, tag);
     }
 
-    /// <summary>A gutter's body along its run: a half-round or box channel, its back against the fascia.</summary>
-    public static Solid? Channel(Gutter g, bool box, string? tag = null)
+    /// <summary>A gutter's body along its run: a half-round or box channel, its back against the fascia (a 125 system unless its radius is given).</summary>
+    public static Solid? Channel(Gutter g, bool box, string? tag = null, double R = 0.0625)
     {
-        const double R = 0.0625, wall = 0.006;   // a 125 system
+        const double wall = 0.006;
         var dir = (g.B - g.A).Normalized();
         var outV = new Vec3(g.Out.X, g.Out.Y, 0);
         var c = g.A + outV * R;                   // the channel's axis, at the covering's edge level
@@ -453,5 +424,25 @@ public static class RoofParts
             profile = [.. outer, .. inner];
         }
         return Prism.Extrude(profile, null, g.B - g.A, tag);
+    }
+
+    /// <summary>A gutter's end cap at A, 4 mm thick towards B: its channel's outline filled.</summary>
+    public static Solid? Cap(Gutter g, bool box, double R, string? tag = null)
+    {
+        var outV = new Vec3(g.Out.X, g.Out.Y, 0);
+        var c = g.A + outV * R;
+        List<Vec3> face;
+        if (box)
+        {
+            Vec3 P(double x, double z) => c + outV * (x - R) + new Vec3(0, 0, z);
+            face = [P(0, 0), P(0, -0.09), P(2 * R, -0.09), P(2 * R, 0)];
+        }
+        else
+        {
+            var k = Chords.Count(R, Math.PI, 2);
+            face = [.. Enumerable.Range(0, k + 1).Select(i => { var t = Math.PI * i / k; return c + outV * (-R * Math.Cos(t)) + new Vec3(0, 0, -R * Math.Sin(t)); })];
+        }
+        var dir = (g.B - g.A).Normalized();
+        return Prism.Extrude(face, null, dir * 0.004, tag);
     }
 }

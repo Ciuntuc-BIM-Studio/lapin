@@ -433,6 +433,10 @@ export const scenes = [
       const project = (await t.nodes()).find((n) => n.type === 'IfcProject');
       t.expect(project?.props?.roofStyles?.[0]?.label === 'Our truss roof', `the roof saved as a project style (${project?.props?.roofStyles?.[0]?.label})`);
       t.expect(await conf.locator('.roof-own').count() === 1, 'the configurator lists the project style');
+      // The downpipes made elements of their own (decision 235), each tied to its gutter.
+      await t.cmd('architecture.makeDownpipes', { id: roof.id });
+      await t.wait(800);
+      t.expect((await t.nodes()).filter((n) => n.type === 'LapinDownpipe').length >= 2, 'the roof\'s downpipes are elements');
       await t.ui({ dialog: null });
     },
   },

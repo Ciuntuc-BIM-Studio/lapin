@@ -307,22 +307,31 @@ public static class Roof
             });
         }
 
+        // Gutters with their parameters, each a part (IfcPipeSegment GUTTER); the automatic downpipes, each a part, until they
+        // are made elements of their own (decision 235), which then draw themselves.
         var metal = MetalColor(roof);
-        var drain = new List<Solid>();
         var gutters = RoofParts.Gutters(r, shape);
-        var box = roof.Str("gutterProfile") == "box";
-        foreach (var gt in gutters) if (RoofParts.Channel(gt, box, "gutter") is { } s) drain.Add(s);
-        var ground = Ground(m);
-        foreach (var (outlet, foot) in RoofParts.Downpipes(r, shape, gutters))
+        var spec = Drainage.Spec.Of(roof);
+        var outlets = Drainage.Outlets(m, r, gutters);
+        for (var gi = 0; gi < gutters.Count; gi++)
         {
-            // From the gutter's outlet in to the wall at 45°, then straight down to the ground.
-            var top = outlet with { Z = outlet.Z - 0.07 };
-            var knee = foot.At(top.Z - (outlet.Xy - foot).Length);
-            foreach (var (a, b) in new[] { (top, knee), (knee, foot.At(ground)) })
-                if (b.Z < a.Z - 0.01 && RoofParts.Tube(a, b, 0.05, 0, "downpipe") is { } s) drain.Add(s);
+            var stations = outlets.Where(x => x.Gutter == gi).Select(x => x.Station).ToList();
+            var body = Drainage.Gutter(gutters[gi], spec, stations, "gutter");
+            if (body.Count > 0) parts.Add(new GeometryPart(spec.Box ? "Box gutter" : "Half-round gutter", metal, Openings.Combine(body, "gutter"), null, $"gutter:{gi + 1}"));
+        }
+        var ground = Ground(m);
+        var auto = 0;
+        foreach (var (gi, station, element) in outlets)
+        {
+            if (element != null) continue;
+            var g = gutters[gi];
+            var outlet = Drainage.OutletAt(g, station, outlets.Where(x => x.Gutter == gi).Select(x => x.Station).ToList(), spec);
+            var chain = Drainage.Chain(outlet, g.Out, Drainage.DefaultRoute(Drainage.OutFromWall(r, g, spec)), ground, false, Drainage.DefaultDiameter / 2);
+            var pipe = Drainage.PipeSolids(chain, Drainage.DefaultDiameter / 2, "downpipe");
+            if (pipe.Count > 0) parts.Add(new GeometryPart("Downpipe", metal, Openings.Combine(pipe, "downpipe"), null, $"downpipe:{++auto}"));
+            var foot = chain[^1].Xy;
             plan.Add(new PlanItem("symbol", true, Enumerable.Range(0, 12).Select(k => foot + new Vec2(Math.Cos(k * Math.PI / 6), Math.Sin(k * Math.PI / 6)) * 0.05).ToArray()));
         }
-        if (drain.Count > 0) parts.Add(new GeometryPart("Gutters and downpipes", metal, Openings.Combine(drain, "drainage"), null, "drainage"));
 
         var guards = RoofParts.SnowGuards(r, shape, openings).Select(x => RoofParts.Tube(x.A, x.B, 0.015, 0, "snow")).OfType<Solid>().ToList();
         if (guards.Count > 0) parts.Add(new GeometryPart("Snow guards", metal, Openings.Combine(guards, "snow"), null, "snow"));
@@ -381,17 +390,27 @@ public static class Roof
             }
             yield return new QuantitySet("Lapin_RoofStructureQuantities", t, "timber", "Timber structure");
         }
+        // The gutters, and the automatic downpipes (the elements count themselves): from what is built.
         var gutters = RoofParts.Gutters(r, shape);
         if (gutters.Count > 0)
         {
-            var pipes = RoofParts.Downpipes(r, shape, gutters);
+            var spec = Drainage.Spec.Of(roof);
             var ground = Ground(m);
-            yield return new QuantitySet("Lapin_RoofDrainageQuantities",
-            [
-                new("GutterLength", gutters.Sum(x => x.Length), "LENGTH", roof.Str("gutterProfile") == "box" ? "Box gutter" : "Half-round gutter"),
-                new("DownpipeCount", pipes.Count, "COUNT", "Downpipes"),
-                new("DownpipeLength", pipes.Sum(p => p.Outlet.Z - ground), "LENGTH", "Downpipe Ø100"),
-            ], "drainage", "Gutters and downpipes");
+            var all = Drainage.Outlets(m, r, gutters);
+            var autos = all.Where(x => x.Element == null).Select(x =>
+            {
+                var g = gutters[x.Gutter];
+                var outlet = Drainage.OutletAt(g, x.Station, all.Where(y => y.Gutter == x.Gutter).Select(y => y.Station).ToList(), spec);
+                var chain = Drainage.Chain(outlet, g.Out, Drainage.DefaultRoute(Drainage.OutFromWall(r, g, spec)), ground, false, Drainage.DefaultDiameter / 2);
+                return chain.Zip(chain.Skip(1), (a, b) => (b - a).Length).Sum();
+            }).ToList();
+            var q2 = new List<Quantity>
+            {
+                new("GutterLength", gutters.Sum(x => x.Length), "LENGTH", $"{(spec.Box ? "Box gutter" : "Half-round gutter")} {Math.Round(spec.Width * 1000)}"),
+            };
+            if (spec.Ends) q2.Add(new("GutterEndCount", gutters.Count * 2, "COUNT", "Gutter end caps"));
+            if (autos.Count > 0) { q2.Add(new("DownpipeCount", autos.Count, "COUNT", "Downpipes")); q2.Add(new("DownpipeLength", autos.Sum(), "LENGTH", "Downpipe Ø100")); }
+            yield return new QuantitySet("Lapin_RoofDrainageQuantities", q2, "drainage", "Gutters and downpipes");
         }
         var rows = RoofParts.SnowGuards(r, shape, holes);
         if (rows.Count > 0) yield return new QuantitySet("Lapin_RoofSnowGuardQuantities", [new("Length", rows.Sum(x => (x.B - x.A).Length), "LENGTH", "Snow guards")], "snow", "Snow guards");

@@ -32,6 +32,8 @@ Select the roof to change it in the properties panel:
 
 ![The roof configurator](shots/roof-configurator.webp)
 
+**Gutters and downpipes.** In the configurator's **Covering and drainage** the gutter takes its size, how far out of the eave and how far below the covering it hangs, its fall to the outlets (mm/m) and its end caps; the edges' table switches each eave's gutter on or off. The downpipes start as the roof's own, one every 10 m; **Make them editable** turns them into elements, and **Architecture → Downpipe** adds one with a click on a gutter. A downpipe's grip slides it along its gutter only; its properties set its diameter, the shoe at its foot and its route, a chain of segments each with its length and its angle from the vertical (towards the wall), the last one down to the ground. In IFC a gutter is an IfcPipeSegment GUTTER and a downpipe a rigid segment named Downpipe.
+
 The walls on the roof's level stop under it and rise to its gables by themselves, under a curved roof too. A wall on another level follows the roof after **Architecture → Attach to roof** (<kbd>AR</kbd>): select the walls, then click the roof. The same tool takes any other body over the walls: a Studio solid, a slab, a beam, an element imported from IFC. The walls rise to its underside and are cut along it, whatever its shape. **Detach from roof** undoes it.
 
 **Roof window** and **Dormer** add openings to a roof.

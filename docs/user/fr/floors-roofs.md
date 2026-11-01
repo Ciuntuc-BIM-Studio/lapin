@@ -32,6 +32,8 @@ Sélectionnez le toit pour le modifier dans le panneau des propriétés :
 
 ![Le configurateur de toit](shots/roof-configurator.webp)
 
+**Gouttières et descentes.** Dans **Couverture et évacuation** du configurateur, la gouttière prend sa taille, son avancée devant l’égout et sa hauteur sous la couverture, sa pente vers les naissances (mm/m) et ses fonds ; le tableau des rives active ou coupe la gouttière de chaque égout. Les descentes sont d’abord celles du toit, une tous les 10 m ; **Les rendre modifiables** en fait des éléments, et **Architecture → Downpipe** en ajoute une d’un clic sur une gouttière. La poignée d’une descente la fait glisser le long de sa gouttière seulement ; ses propriétés fixent son diamètre, le dauphin en pied et son tracé, une chaîne de tronçons avec leur longueur et leur angle depuis la verticale (vers le mur), le dernier jusqu’au sol. En IFC une gouttière est un IfcPipeSegment GUTTER et une descente un segment rigide nommé Downpipe.
+
 Les murs du niveau du toit s’arrêtent dessous et montent d’eux-mêmes jusqu’à ses pignons, sous un toit courbe aussi. Un mur d’un autre niveau suit le toit après **Architecture → Attacher au toit** (<kbd>AR</kbd>) : sélectionnez les murs, puis cliquez le toit. Le même outil accepte tout autre corps au-dessus des murs : un solide Studio, une dalle, une poutre, un élément importé d’IFC. Les murs montent jusqu’à sa sous-face et sont coupés le long de celle-ci, quelle que soit sa forme. **Détacher du toit** l’annule.
 
 **Fenêtre de toit** et **Lucarne** ajoutent des ouvertures à un toit.

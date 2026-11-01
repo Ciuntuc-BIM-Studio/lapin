@@ -32,7 +32,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     /// <c>openingSymbols</c> turns them off.
     /// </summary>
     public IEnumerable<ViewMark> Marks(ViewContext c) =>
-        c.Kind == "plan" ? OpeningMarkers.Marks(c).Concat(Rooms.Marks(c)).Concat(Stairs.StairMarks.Marks(c)).Concat(ColorSchemes.Legends(c)) : ElevationSymbols(c).Concat(ColorSchemes.Legends(c));
+        (c.Kind == "plan" ? OpeningMarkers.Marks(c).Concat(Rooms.Marks(c)).Concat(Stairs.StairMarks.Marks(c)).Concat(ColorSchemes.Legends(c)) : ElevationSymbols(c).Concat(ColorSchemes.Legends(c)))
+            .Concat(c.Kind == "3d" ? [] : Drainage.Marks(c));
 
     IEnumerable<ViewMark> ElevationSymbols(ViewContext c)
     {
@@ -308,11 +309,19 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("gutterProfile", "Gutters", "choice", Choices: RoofCatalog.GutterProfiles),
             new("gutterMaterial", "Gutter material", "choice", Choices: RoofCatalog.GutterMaterials),
             new("snowGuards", "Snow guards", "choice", Choices: ["True", "False"]),
+            // The gutters and downpipes made parametric (decision 235).
+            new("gutterWidth", "Gutter size", "length", Min: 0.06, Max: 0.4),
+            new("gutterOffset", "Gutter out from the eave", "length", Min: -0.1, Max: 0.5),
+            new("gutterDrop", "Gutter below the covering", "length", Min: 0, Max: 0.5),
+            new("gutterFall", "Gutter fall (mm/m)", "number", Min: 0, Max: 20),
+            new("gutterEnds", "Gutter end caps", "choice", Choices: ["True", "False"]),
+            new("downpipes", "Downpipes", "choice", Choices: ["auto", "elements", "none"]),
         ], "#b0563d"));
         r.Geometry(IfcClass.Roof, (roof, model, services) => RoofCuts.Geometry(roof, model, services));
         // A roof cuts walls and Studio solids by its covering, and is cut by slabs, beams, columns and footings.
         r.Cutter(IfcClass.Roof, 55, RoofCuts.Envelope);
         r.Quantities(IfcClass.Roof, (roof, geometry, model) => Roof.Quantities(roof, geometry, model));
+        Drainage.Register(r);
         r.Catalog("roofStyles", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Styles, ArchitectureCatalogJson.Default.IReadOnlyListStyle)!);
         r.Catalog("roofCoverings", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Coverings, ArchitectureCatalogJson.Default.IReadOnlyListCovering)!);
 
@@ -649,6 +658,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                     if ((string?)o["kind"] is { } kind) c["kind"] = kind is "eave" or "gable" ? kind : throw new CommandException("An edge is an eave or a gable.");
                     if (Json.Number(o["pitch"]) is { } p) c["pitch"] = p;
                     if (Json.Number(o["overhang"]) is { } oh) c["overhang"] = oh;
+                    // An eave edge without its gutter (decision 235).
+                    if (o["gutter"] is JsonValue gv && gv.TryGetValue<bool>(out var gutter) && !gutter) c["gutter"] = false;
                     clean.Add((JsonNode?)(c.Count > 0 ? c : null));
                 }
                 if (clean.Any(x => x != null)) attrs["edges"] = clean; else attrs.Remove("edges");

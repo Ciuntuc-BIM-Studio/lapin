@@ -399,6 +399,7 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .roof-edges th:first-child, .roof-edges td:first-child { width: 2.2em; }
 .roof-edges th:nth-child(3), .roof-edges td:nth-child(3) { width: 3.4em; }
 .roof-edges th:nth-child(4), .roof-edges td:nth-child(4) { width: 4.2em; }
+.roof-edges th:nth-child(5), .roof-edges td:nth-child(5) { width: 1.8em; text-align: center; }
 .roof-edges select, .roof-edges input { width: 100%; min-width: 0; box-sizing: border-box; }
 .hatch-swatch { display: block; }
 .material-views { width: 100%; border-collapse: collapse; margin: 8px 0; }
