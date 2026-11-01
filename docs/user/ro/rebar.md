@@ -22,6 +22,8 @@ Vederea inserată urmărește elementul: muți grinda și secțiunea se mută cu
 
 Ciocurile se dau la fiecare capăt: 90°, 135° sau 180°, cu lungimea dreaptă din practică (12Ø, 10Ø, 5Ø, niciodată sub 50 mm), pe cealaltă parte când ceri. Un etrier se naște cu două ciocuri de 135° întoarse înăuntru.
 
+**Gripurile de ancoraj.** O bară selectată, văzută din față, arată, pe lângă gripurile ei, romburi portocalii care stau *în afara* ei la distanța **acoperirii**: unul la origine și câte unul la fiecare capăt liber (un capăt cu cioc nu are). Ele țin locul feței cofrajului: trage unul pe tăietura elementului — colțul, fața; desenul prinde acolo — și bara se oprește la acoperire înăuntru. Ancorajul capătului dă lungimea barei, cel al originii mută toată bara. Acoperirea e a barei, scrisă în câmpul **Acoperire** din proprietăți (golește-l ca să revii), altfel acoperirea etrierilor de pe tipul gazdei plus etrierul, altfel cea din Setări armare; câmpul spune de unde vine.
+
 **Bară în secțiune** e o bară văzută din capăt: un punct de diametrul ei, cu lungimea pe care o are de-a lungul barei. **Aceeași bară în secțiune** pune bara selectată ca punct în altă parte, fără s-o numere de două ori. **Repetare**, în proprietăți, repetă o bară la câțiva milimetri, ca barele unui rând dintr-o secțiune transversală.
 
 Balonul mărcii arată numărul mărcii și ce e bara: `4Ø12 L=2450`. Tragi balonul unde se citește mai bine.

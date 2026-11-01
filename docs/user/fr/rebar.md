@@ -22,6 +22,8 @@ La vue insérée suit l’élément : déplacez la poutre et la coupe se déplac
 
 Les crochets se règlent à chaque extrémité : 90°, 135° ou 180°, leur longueur droite selon la pratique (12Ø, 10Ø, 5Ø, jamais moins de 50 mm), de l’autre côté si demandé. Un cadre naît avec deux crochets à 135° tournés vers l’intérieur.
 
+**Poignées d’ancrage.** Une barre sélectionnée, vue de face, montre, à côté de ses poignées, des losanges orange qui se tiennent *en dehors* d’elle à l’**enrobage** : un à son origine et un à chaque extrémité libre (une extrémité à crochet n’en a pas). Ils représentent la face du coffrage : tirez-en un sur la coupe de l’élément — son angle, sa face ; le dessin s’y accroche — et la barre s’arrête à l’enrobage en dedans. L’ancrage de l’extrémité règle la longueur de la barre, celui de l’origine déplace toute la barre. L’enrobage est celui de la barre, tapé dans le champ **Enrobage** de ses propriétés (videz-le pour revenir), sinon l’enrobage des cadres du type de l’hôte plus le cadre, sinon celui des Réglages du ferraillage ; le champ dit lequel en indication.
+
 **Barre en coupe** est une barre vue en bout : un point de son diamètre, avec la longueur qu’elle a le long de la barre. **Même barre en coupe** place la barre sélectionnée comme point ailleurs, sans la compter deux fois. Un **Réseau** dans les propriétés répète une barre tous les tant de millimètres, comme les barres d’un lit dans une coupe transversale.
 
 La bulle du repère montre le numéro du repère et ce qu’est la barre : `4Ø12 L=2450`. Tirez la bulle là où elle se lit le mieux.

@@ -22,6 +22,8 @@ Die eingesetzte Ansicht folgt dem Element: Verschieben Sie den Balken, und der S
 
 Haken werden an jedem Ende gesetzt: 90°, 135° oder 180°, ihre gerade Länge nach der Praxis (12Ø, 10Ø, 5Ø, nie unter 50 mm), auf der anderen Seite, wenn gewünscht. Ein Bügel kommt mit zwei nach innen gedrehten 135°-Haken.
 
+**Ankergriffe.** Ein ausgewählter Stab in der Vorderansicht zeigt neben seinen Griffen orangefarbene Rauten, die um die **Betondeckung** *außerhalb* von ihm stehen: eine am Ursprung und eine an jedem freien Ende (ein Ende mit Haken hat keine). Sie stehen für die Schalungsfläche: Ziehen Sie eine auf den Schnitt des Bauteils — seine Ecke, seine Fläche; die Zeichnung fängt dort — und der Stab endet um die Betondeckung innen. Der Anker des Endes setzt die Stablänge, der des Ursprungs verschiebt den ganzen Stab. Die Betondeckung ist die eigene des Stabs, im Feld **Betondeckung** seiner Eigenschaften eingetippt (leeren, um zurückzugehen), sonst die Bügeldeckung des Bauteiltyps plus Bügel, sonst die aus den Bewehrungseinstellungen; das Feld sagt als Hinweis, welche.
+
 **Stab im Schnitt** ist ein Stab von vorn: ein Punkt in seinem Durchmesser, mit der Länge, die er entlang des Stabs hat. **Derselbe Stab im Schnitt** setzt den gewählten Stab anderswo als Punkt, ohne ihn doppelt zu zählen. Eine **Reihe** in den Eigenschaften wiederholt einen Stab alle so viele Millimeter, wie die Stäbe einer Lage im Querschnitt.
 
 Der Positionskreis zeigt die Positionsnummer und was der Stab ist: `4Ø12 L=2450`. Ziehen Sie den Kreis dorthin, wo er am besten lesbar ist.

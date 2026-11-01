@@ -22,6 +22,8 @@ Den indsatte visning følger elementet: flyt bjælken, og snittet flytter med. T
 
 Kroge sættes i hver ende: 90°, 135° eller 180°, deres lige længde efter praksis (12Ø, 10Ø, 5Ø, aldrig under 50 mm), på den anden side, når du beder om det. En bøjle fødes med to 135°-kroge vendt indad.
 
+**Ankergreb.** En valgt stang set forfra viser ved siden af sine greb orange romber, der står *uden for* den med **dæklaget**: ét ved dens udgangspunkt og ét ved hver fri ende (en ende med krog har intet). De står for forskallingsfladen: træk ét til elementets snit — dets hjørne, dets flade; tegningen snapper dertil — og stangen stopper ved dæklaget indenfor. Endens anker sætter stangens længde, udgangspunktets flytter hele stangen. Dæklaget er stangens eget, skrevet i feltet **Dæklag** i dens egenskaber (ryd det for at gå tilbage), ellers bøjledæklaget på værtens type plus bøjlen, ellers det fra Armeringsindstillinger; feltet siger hvilket som et vink.
+
 **Stang i snit** er en stang set fra enden: en prik i dens diameter, med den længde, den har langs stangen. **Samme stang i snit** sætter den valgte stang som prik et andet sted uden at tælle den to gange. En **Række** i egenskaberne gentager en stang for hver så mange millimeter, som stængerne i et lag i et tværsnit.
 
 Mærkets cirkel viser mærkenummeret, og hvad stangen er: `4Ø12 L=2450`. Træk cirklen, hvor den læses bedst.

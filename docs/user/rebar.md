@@ -22,6 +22,8 @@ The inset view follows the element: move the beam and the section moves with it.
 
 Hooks are set on each end: 90°, 135° or 180°, their straight length by practice (12Ø, 10Ø, 5Ø, never under 50 mm), on the other side when asked. A stirrup is born with two 135° hooks turned inside.
 
+**Anchor grips.** A selected bar seen from the front shows, beside its grips, orange diamonds standing *outside* it by the **cover**: one at its origin and one at each free end (an end with a hook has none). They stand for the formwork face: drag one onto the element's cut — its corner, its face; the drawing snaps there — and the bar stops the cover inside it. The end's anchor sets the bar's length, the origin's moves the whole bar. The cover is the bar's own, typed in the **Cover** field of its properties (clear it to go back), else the stirrup cover of its host's type plus the stirrup, else the one in Rebar settings; the field says which as a hint.
+
 **Bar in section** is a bar seen end on: a dot of its diameter, with the length it has along the bar. **Same bar in section** puts the selected bar as a dot elsewhere, without counting it twice. An **Array** in the properties repeats a bar every so many millimetres, as the bars of a row in a cross-section.
 
 The mark's balloon shows the mark number and what the bar is: `4Ø12 L=2450`. Drag the balloon where it reads best.

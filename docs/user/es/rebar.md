@@ -22,6 +22,8 @@ La vista insertada sigue al elemento: mueve la viga y la sección se mueve con e
 
 Las patillas se fijan en cada extremo: 90°, 135° o 180°, con la longitud recta de la práctica (12Ø, 10Ø, 5Ø, nunca menos de 50 mm), al otro lado cuando lo pides. Un estribo nace con dos patillas de 135° vueltas hacia dentro.
 
+**Anclajes.** Una barra seleccionada, vista de frente, muestra, junto a sus pinzamientos, rombos naranjas que están *fuera* de ella al **recubrimiento**: uno en su origen y uno en cada extremo libre (un extremo con patilla no lo tiene). Representan la cara del encofrado: arrastra uno a la sección del elemento — su esquina, su cara; el dibujo se ajusta allí — y la barra se detiene al recubrimiento por dentro. El anclaje del extremo fija la longitud de la barra, el del origen mueve toda la barra. El recubrimiento es el de la barra, escrito en el campo **Recubrimiento** de sus propiedades (vacíalo para volver), si no el de los estribos del tipo del elemento más el estribo, si no el de los Ajustes de armado; el campo dice de dónde viene.
+
 **Barra en sección** es una barra vista de frente: un punto de su diámetro, con la longitud que tiene a lo largo de la barra. **La misma barra en sección** pone la barra seleccionada como punto en otro lugar, sin contarla dos veces. Una **Matriz** en las propiedades repite una barra cada tantos milímetros, como las barras de una fila en una sección transversal.
 
 El globo de la marca muestra el número de marca y qué es la barra: `4Ø12 L=2450`. Arrastra el globo donde mejor se lea.
