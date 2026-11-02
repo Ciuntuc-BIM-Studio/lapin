@@ -270,6 +270,23 @@ public class SharedBodyTests : IDisposable
     }
 
     [Fact]
+    public void Undoing_an_import_sends_its_meshes_away_and_a_new_project_keeps_none()
+    {
+        var f = Make();
+        IfcImport.Run(f.Session, Write(Cubes(3)), null, out var imported);
+        Assert.Single(imported.Meshes!);
+        var undone = f.Session.Undo();
+        Assert.Empty(Shared(f.Model));
+        Assert.Single(undone.MeshesRemoved!);
+        // Redone, the mesh is made and sent again.
+        Assert.Single(f.Session.Redo().Meshes!);
+        // A new project: the last one's meshes are not kept (a body of the same id would be taken for one already sent).
+        f.Session.New();
+        IfcImport.Run(f.Session, Write(Cubes(3)), null, out var again);
+        Assert.Single(again.Meshes!);
+    }
+
+    [Fact]
     public void The_plan_draws_every_instance()
     {
         var f = Make();

@@ -109,6 +109,7 @@ public sealed class Session
     void StartEmpty(IReadOnlyList<(string Name, double Elevation, double Height)> storeys)
     {
         _foreignClasses.Clear();
+        ForgetMeshes();
         _history.Load([], []);
         _history.Execute("New project", edit =>
         {
@@ -154,6 +155,7 @@ public sealed class Session
         var (es, rs) = Upgraded(entities, relations);
         _history.Load(es, rs);
         ForgetAll();
+        ForgetMeshes();
         Path = path;
         Emit("start");
         return Snapshot();
@@ -573,7 +575,8 @@ public sealed class Session
         // A shared body gone: its mesh too (its instances went with it, or were rebuilt without it).
         var meshesRemoved = new List<string>();
         foreach (var c in t.Entities)
-            if (c.Before?.Class == StoredBodies.SharedClass && _store.Get(c.Id) == null && _meshes.Remove(c.Id)) { _meshesSent.Remove(c.Id); meshesRemoved.Add(c.Id); }
+            // (Before, or After for an undone add: undoing an import diffs the import, whose bodies were added.)
+            if ((c.Before ?? c.After)?.Class == StoredBodies.SharedClass && _store.Get(c.Id) == null && _meshes.Remove(c.Id)) { _meshesSent.Remove(c.Id); meshesRemoved.Add(c.Id); }
         return new Diff(++_version, false, nodes, removedNodes, [], [], render, renderRemoved, State(), relations, removedRelations, MeshesFor(render), meshesRemoved);
     }
 
@@ -841,6 +844,12 @@ public sealed class Session
         foreach (var r in render)
             if (r.Instance is { } i && !_meshesSent.Contains(i.Mesh) && _meshes.TryGetValue(i.Mesh, out var m)) { o.Add(m.Mesh); _meshesSent.Add(i.Mesh); }
         return o;
+    }
+
+    /// <summary>Another project: the shared bodies' meshes of the last one go (the interface is sent a whole snapshot).</summary>
+    void ForgetMeshes()
+    {
+        lock (_meshes) { _meshes.Clear(); _meshesSent.Clear(); }
     }
 
     void ForgetAll()
