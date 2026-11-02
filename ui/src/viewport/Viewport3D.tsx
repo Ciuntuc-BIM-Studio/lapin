@@ -713,6 +713,19 @@ export function Viewport3D() {
     const ro = new ResizeObserver(resize);
     ro.observe(el);
     resize();
+    // The window moved to a screen of another density (a Retina display and a 1× one): drawn at that one's, not blurred or oversampled.
+    let dpr: MediaQueryList | null = null;
+    const onDensity = () => {
+      renderer.setPixelRatio(window.devicePixelRatio);
+      resize();
+      watchDensity();
+    };
+    const watchDensity = () => {
+      dpr?.removeEventListener('change', onDensity);
+      dpr = window.matchMedia?.(`(resolution: ${window.devicePixelRatio}dppx)`) ?? null;
+      dpr?.addEventListener('change', onDensity);
+    };
+    watchDensity();
     publish();
     const live = items.current;
 
@@ -755,6 +768,8 @@ export function Viewport3D() {
     s.add(faceGroup);
     let hoverFrame = 0;
     let hoverKey = '';
+    // Each face asked for is numbered: only the latest answer is shown, and none once the view is gone (-1).
+    let faceAsk = 0;
     const showFace = (face: FaceDto | null) => {
       for (const c of [...faceGroup.children]) { faceGroup.remove(c); dispose(c); }
       if (face) faceGroup.add(faceMesh(face));
@@ -793,10 +808,11 @@ export function Viewport3D() {
         const hit = pickAt();
         const id = nodeOfHit(hit);
         const node = id ? useSession.getState().nodes.get(id) : undefined;
+        const ask = ++faceAsk;
         if (!hit || !node || !takesType(types, node.type)) { if (hoverKey) { hoverKey = ''; showFace(null); setFaceLabel(null); } return; }
         const f = faceHit(hit);
         void engine.call<FaceDto | null>('doc.query', { name: faceQuery.current, args: { id: node.id, point: f.point, normal: f.normal } }).then((face) => {
-          if (faceTypes.current !== types) return;
+          if (ask !== faceAsk || faceTypes.current !== types) return;
           // A named face keys by its role; a body's flat face (no role) by its plane and outline.
           const key = face ? `${node.id}/${face.role ?? `${face.normal.map((v) => v.toFixed(4)).join(',')}:${face.outline.length}:${face.outline[0]?.map((v) => v.toFixed(4)).join(',')}`}` : '';
           if (key !== hoverKey) { hoverKey = key; showFace(face); }
@@ -1072,6 +1088,7 @@ export function Viewport3D() {
       unlisten();
       invalidate.current = () => undefined;
       ro.disconnect();
+      dpr?.removeEventListener('change', onDensity);
       controls.dispose();
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('pointerup', onUp);
@@ -1083,6 +1100,7 @@ export function Viewport3D() {
       unregion();
       renderer.domElement.removeEventListener('pointermove', onMove);
       cancelAnimationFrame(hoverFrame);
+      faceAsk = -1;
       clearFace.current = () => undefined;
       window.removeEventListener('keydown', onKey);
       if (walk) cancelAnimationFrame(walk.loop);
