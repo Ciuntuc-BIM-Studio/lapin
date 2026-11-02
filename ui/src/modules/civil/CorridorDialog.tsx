@@ -16,7 +16,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { fromPairs } from '../../viewport/contour';
 import { parseStationList, stationLabel } from './stations';
-import { Cell, NumberField } from '../../shell/cells';
+import { Cell, LengthField, NumberField } from '../../shell/cells';
 
 type Pair = [number, number];
 type Curve = [number, number, number];
@@ -430,7 +430,7 @@ export function CorridorDialog() {
                   <dt>Start station</dt><dd><Num value={spec.stationStart} step={1} unit="m" onCommit={(v) => setCorridor({ stationStart: v })} /> <span className="muted small">{stationLabel(spec.stationStart)}</span></dd>
                   <dt>Stations every</dt><dd><Num value={spec.interval} step={1} min={0.5} unit="m" onCommit={(v) => setCorridor({ interval: v })} /> <span className="muted small">{data.stations.length} stations</span></dd>
                   <dt>Joints every</dt><dd><Num value={spec.joints.every} step={1} min={0} unit="m" onCommit={(v) => setCorridor({ joints: { every: v } })} /> <span className="muted small">0: unbroken</span></dd>
-                  <dt>Joint width</dt><dd><Num value={Math.round(spec.joints.width * 1000)} step={5} min={1} unit="mm" onCommit={(v) => setCorridor({ joints: { width: v / 1000 } })} /></dd>
+                  <dt>Joint width</dt><dd><LengthField metres={spec.joints.width} min={0.001} style={{ width: 70 }} onCommit={(v) => { if (v != null) setCorridor({ joints: { width: v } }); }} /></dd>
                   <dt>Joints at</dt><dd><Cell value={spec.joints.at.join(', ')} placeholder="stations, comma between" onCommit={(t) => setCorridor({ joints: { at: parseStationList(t) } })} /></dd>
                 </dl>
                 <p className="muted small">Corners are mitred, so the element runs on unbroken; it breaks only at its joints ({data.joints.length}).</p>

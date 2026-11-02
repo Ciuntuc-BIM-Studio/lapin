@@ -297,10 +297,8 @@ export function RoofDialog() {
                           {openings.map((o) => (
                             <tr key={o.id}>
                               <td>{o.name}</td>
-                              <td><input className="num" defaultValue={Math.round((o.width ?? 0.78) * 1000)} key={`w${o.id}${o.width}`} title="Width (mm)"
-                                onBlur={(e) => { const v = Number(e.target.value) / 1000; if (v > 0 && v !== o.width) void execute('architecture.updateRoofOpening', { roofId: node.id, id: o.id, width: v }); }} /></td>
-                              <td><input className="num" defaultValue={Math.round((o.length ?? 1.18) * 1000)} key={`l${o.id}${o.length}`} title="Length up the slope (mm)"
-                                onBlur={(e) => { const v = Number(e.target.value) / 1000; if (v > 0 && v !== o.length) void execute('architecture.updateRoofOpening', { roofId: node.id, id: o.id, length: v }); }} /></td>
+                              <td><LengthField metres={o.width ?? 0.78} min={0.01} noUnit title="Width" onCommit={(v) => { if (v != null) void execute('architecture.updateRoofOpening', { roofId: node.id, id: o.id, width: v }); }} /></td>
+                              <td><LengthField metres={o.length ?? 1.18} min={0.01} title="Length up the slope" onCommit={(v) => { if (v != null) void execute('architecture.updateRoofOpening', { roofId: node.id, id: o.id, length: v }); }} /></td>
                               <td className="muted small">{o.kind}</td>
                               <td><button type="button" className="icon mini" title="Remove" onClick={() => void execute('architecture.removeRoofOpening', { roofId: node.id, id: o.id })}>×</button></td>
                             </tr>

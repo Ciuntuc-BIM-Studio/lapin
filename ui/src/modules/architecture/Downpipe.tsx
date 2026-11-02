@@ -11,6 +11,7 @@ import { execute } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import type { Grip, GripView, ToolDef } from '../../platform/module';
 import { DownpipeIcon } from '../../icons';
+import { LengthField, NumberField } from '../../shell/cells';
 
 export const downpipe: ToolDef = {
   id: 'architecture.downpipe', label: 'Downpipe', icon: DownpipeIcon,
@@ -43,21 +44,18 @@ export function DownpipeSection({ node }: { node: NodeDto }) {
   const [legs, setLegs] = useState<Leg[]>(route);
   useEffect(() => setLegs((node.props.route as Leg[] | undefined) ?? [{ angle: 0 }]), [node.props.route]);
   const send = (next: Leg[]) => { setLegs(next); void execute('architecture.updateDownpipe', { id: node.id, route: next }); };
-  const num = (s: string) => Number(s.replace(',', '.'));
   return (
     <div className="layers">
       <dl className="fields">
         <dt>Station</dt>
-        <dd><input className="cell num" defaultValue={Number(node.props.station ?? 0).toFixed(3)} key={`s${node.props.station}`} disabled={!node.editable}
-          onBlur={(e) => { const v = num(e.target.value); if (Number.isFinite(v) && v !== node.props.station) void execute('architecture.updateDownpipe', { id: node.id, station: v }); }} /></dd>
+        <dd><LengthField metres={Number(node.props.station ?? 0)} min={0} readOnly={!node.editable} onCommit={(v) => { if (v != null) void execute('architecture.updateDownpipe', { id: node.id, station: v }); }} /></dd>
         <dt>Diameter</dt>
-        <dd><input className="cell num" defaultValue={Math.round(Number(node.props.diameter ?? 0.1) * 1000)} key={`d${node.props.diameter}`} disabled={!node.editable} title="mm"
-          onBlur={(e) => { const v = num(e.target.value) / 1000; if (Number.isFinite(v) && v > 0 && v !== node.props.diameter) void execute('architecture.updateDownpipe', { id: node.id, diameter: v }); }} /></dd>
+        <dd><LengthField metres={Number(node.props.diameter ?? 0.1)} min={0.01} readOnly={!node.editable} onCommit={(v) => { if (v != null) void execute('architecture.updateDownpipe', { id: node.id, diameter: v }); }} /></dd>
         <dt>Shoe at the foot</dt>
         <dd><input type="checkbox" checked={node.props.shoe !== 'False'} disabled={!node.editable} onChange={(e) => void execute('architecture.updateDownpipe', { id: node.id, shoe: e.target.checked })} /></dd>
       </dl>
       <table className="roof-edges downpipe-route">
-        <thead><tr><th>#</th><th>mm</th><th>°</th><th /></tr></thead>
+        <thead><tr><th>#</th><th>Length</th><th>°</th><th /></tr></thead>
         <tbody>
           {legs.map((l, i) => (
             <tr key={i}>
@@ -65,11 +63,9 @@ export function DownpipeSection({ node }: { node: NodeDto }) {
               <td>
                 {i === legs.length - 1 && l.length === undefined
                   ? <button type="button" className="link small" title="Down to the ground; click to give it a length" onClick={() => send(legs.map((x, k) => (k === i ? { ...x, length: 1 } : x)))}>to the ground</button>
-                  : <input className="num" defaultValue={Math.round((l.length ?? 1) * 1000)} key={`l${i}${l.length}`} disabled={!node.editable}
-                      onBlur={(e) => { const v = num(e.target.value) / 1000; if (Number.isFinite(v) && v > 0 && v !== l.length) send(legs.map((x, k) => (k === i ? { ...x, length: v } : x))); }} />}
+                  : <LengthField metres={l.length ?? 1} min={0.01} noUnit readOnly={!node.editable} onCommit={(v) => { if (v != null) send(legs.map((x, k) => (k === i ? { ...x, length: v } : x))); }} />}
               </td>
-              <td><input className="num" defaultValue={l.angle} key={`a${i}${l.angle}`} disabled={!node.editable} title="From the vertical, towards the wall"
-                onBlur={(e) => { const v = num(e.target.value); if (Number.isFinite(v) && v !== l.angle) send(legs.map((x, k) => (k === i ? { ...x, angle: v } : x))); }} /></td>
+              <td><NumberField value={l.angle} readOnly={!node.editable} title="From the vertical, towards the wall" onCommit={(v) => { if (v != null) send(legs.map((x, k) => (k === i ? { ...x, angle: v } : x))); }} /></td>
               <td>{legs.length > 1 && <button type="button" className="icon mini" title="Remove the segment" onClick={() => send(legs.filter((_, k) => k !== i))}><Trash2 size={11} /></button>}</td>
             </tr>
           ))}

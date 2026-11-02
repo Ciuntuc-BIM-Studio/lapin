@@ -10,7 +10,7 @@ import { Plus, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { ofClass, relatedOf } from '../../engine/model';
-import { formatLength } from '../../engine/unitsStore';
+import { formatLength, lengthText } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { PendingDialog } from '../core/PendingDialog';
@@ -270,8 +270,8 @@ export function StairTypesDialog() {
               <Drawn drawing={drawn?.section ?? null} width={W} label="Section along the first flight" />
               {preview && (
                 <p className="small caption">
-                  <b>{preview.risers}</b> risers · <b>{Math.round(preview.riserHeight * 1000)}</b> / <b>{Math.round(preview.tread * 1000)}</b> mm · 2h+b {Math.round(preview.step * 1000)} mm
-                  · {preview.flights.join(' + ')} {preview.winders ? `+ ${preview.winders} winders` : ''} · run {Math.round(preview.run * 1000)} mm · {preview.predefinedType}
+                  <b>{preview.risers}</b> risers · <b>{formatLength(preview.riserHeight)}</b> / <b>{lengthText(preview.tread)}</b> · 2h+b {lengthText(preview.step)}
+                  · {preview.flights.join(' + ')} {preview.winders ? `+ ${preview.winders} winders` : ''} · run {lengthText(preview.run)} · {preview.predefinedType}
                 </p>
               )}
               {preview && <ChecksList checks={preview.checks} />}
