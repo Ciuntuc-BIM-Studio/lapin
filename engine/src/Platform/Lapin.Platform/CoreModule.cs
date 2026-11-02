@@ -245,8 +245,7 @@ public sealed class CoreModule : ILapinModule
 
         r.Command("element.delete", "Delete", (ctx, a) =>
         {
-            var given = Args.Ids(a).ToList();
-            if ((string?)a["id"] is { } one) given.Add(one);
+            var given = Args.Ids(a);
             // A group deleted goes with its members; a group its last member left goes too (docs/groups.md).
             var (ids, groups) = Groups.Expand(ctx.Model, given);
             var groupsTouched = groups.Concat(ids.Select(id => Groups.Of(ctx.Model, id)?.Id).OfType<string>()).Distinct().ToList();

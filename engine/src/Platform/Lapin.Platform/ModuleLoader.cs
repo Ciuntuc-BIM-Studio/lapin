@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.Json;
 using Lapin.Model;
@@ -83,7 +82,4 @@ public static class ModuleLoader
             return null;
         };
     }
-
-    public static Assembly[] LoadedModuleAssemblies() =>
-        AppDomain.CurrentDomain.GetAssemblies().Where(a => a.GetName().Name?.StartsWith("Lapin.") == true).ToArray();
 }

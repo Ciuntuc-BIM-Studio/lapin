@@ -284,6 +284,11 @@ public sealed class History(ModelStore store)
 
     readonly List<Transaction> _undo = [];
     readonly List<Transaction> _redo = [];
+    /// <summary>
+    /// Who has a transaction in the history (undone or not): an author once in it stays in it (undo moves a
+    /// transaction to the redo list, a new edit drops only its own author's redos), so this is kept as it goes.
+    /// </summary>
+    readonly HashSet<string> _authors = [];
     /// <summary>In a shared history, the transactions undone by a later one (their <see cref="Transaction.Reverts"/>).</summary>
     readonly HashSet<long> _undone = [];
     long _seq;
@@ -296,7 +301,7 @@ public sealed class History(ModelStore store)
     public string? RedoLabel => RedoLabelOf(Me);
 
     /// <summary>Only <paramref name="author"/> has edited: undo and redo work as a stack.</summary>
-    bool Solo(string author) => _undo.All(t => t.Author == author) && _redo.All(t => t.Author == author);
+    bool Solo(string author) => _authors.Count == 0 || _authors.Count == 1 && _authors.Contains(author);
 
     /// <summary>The transaction <paramref name="author"/>'s undo would undo.</summary>
     Transaction? LastOf(string author)
@@ -331,6 +336,7 @@ public sealed class History(ModelStore store)
         if (b.EntityChanges.Count == 0 && b.RelationChanges.Count == 0) return null;
         var t = new Transaction(++_seq, label, b.EntityChanges, b.RelationChanges, DateTimeOffset.UtcNow, author);
         _undo.Add(t);
+        _authors.Add(author);
         // A new edit ends what its author could redo (and no one else's).
         _redo.RemoveAll(x => x.Author == author);
         return t;
@@ -456,6 +462,7 @@ public sealed class History(ModelStore store)
         _redo.Clear();
         _undone.Clear();
         _replayed.Clear();
+        _authors.Clear();
         _savedAt = 0;
         _seq = 0;
     }
@@ -478,6 +485,7 @@ public sealed class History(ModelStore store)
         else if (t.Redoes is { } redone) _redo.RemoveAll(x => x.Seq == redone);
         else _redo.RemoveAll(x => x.Author == t.Author);
         _undo.Add(t);
+        _authors.Add(t.Author);
         return t;
     }
 
