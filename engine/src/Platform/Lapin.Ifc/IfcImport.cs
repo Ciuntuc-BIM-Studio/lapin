@@ -537,6 +537,7 @@ public static partial class IfcImport
             Spaces(edit);
             FinishRecognition(edit);
             RuleNotes();
+            UnreadableNotes();
             if (left2d > 0) notes.Add($"{left2d} element(s) drawn only in 2D left out, as chosen.");
             if (without2d > 0) notes.Add($"{without2d} element(s) brought without their own 2D, as chosen: plans draw their cut.");
             foreach (var (cls, n) in bodiless.OrderByDescending(kv => kv.Value))
@@ -680,11 +681,36 @@ public static partial class IfcImport
             var done = 0;
             Parallel.ForEach(references, e =>
             {
-                prepared[e.Id] = Prepare(e, booleans);
+                if (Guarded(e, () => Prepare(e, booleans)) is { } p) prepared[e.Id] = p;
                 var n = Interlocked.Increment(ref done);
                 if (Due(n, references.Count)) Report("Reading the references", n, references.Count);
             });
             FindMiddle();
+        }
+
+        /// <summary>
+        /// What reading the file's description of an element throws when the file is malformed there (a loop of
+        /// references, an index past its list, a body the booleans cannot take): that element is left out with a note,
+        /// the import goes on.
+        /// </summary>
+        static bool Unreadable(Exception ex) => ex is FormatException or InvalidOperationException or ArgumentException or IndexOutOfRangeException
+            or KeyNotFoundException or NullReferenceException or ArithmeticException or InvalidCastException;
+
+        /// <summary>The elements left out because the file could not be read there: their id, with why.</summary>
+        readonly System.Collections.Concurrent.ConcurrentDictionary<int, string> unreadable = [];
+
+        /// <summary><paramref name="read"/> of one element, or null (the element noted as unreadable) when the file is malformed there.</summary>
+        T? Guarded<T>(StepEntity e, Func<T> read) where T : class
+        {
+            try { return read(); }
+            catch (Exception ex) when (Unreadable(ex)) { unreadable[e.Id] = ex.Message; return null; }
+        }
+
+        void UnreadableNotes()
+        {
+            if (unreadable.IsEmpty) return;
+            var some = unreadable.OrderBy(kv => kv.Key).Take(3).Select(kv => $"#{kv.Key} {ClassName(f.Entities.GetValueOrDefault(kv.Key)?.Type ?? "")} {Str(f.Entities.GetValueOrDefault(kv.Key)?[2])}: {kv.Value}".Replace("  ", " "));
+            notes.Add($"{unreadable.Count} element(s) left out: the file could not be read there ({string.Join("; ", some)}{(unreadable.Count > 3 ? "; …" : "")}).");
         }
 
         Prepared Prepare(StepEntity e, ISolidBooleans? booleans)
@@ -711,7 +737,9 @@ public static partial class IfcImport
         void Reference(IEdit edit, StepEntity e, ISolidBooleans? booleans)
         {
             var gid = Str(e[0])!;
-            var p = prepared.TryRemove(e.Id, out var ready) ? ready : Prepare(e, booleans);
+            if (unreadable.ContainsKey(e.Id)) return;
+            var p = prepared.TryRemove(e.Id, out var ready) ? ready : Guarded(e, () => Prepare(e, booleans));
+            if (p == null) return;
             var bodied = p.Body.Parts.Count > 0;
             if (!bodied && e.Type == "IFCELEMENTASSEMBLY" && Assembly(edit, e, gid)) return;
             // The 2D the user left out: an element's own (it is drawn by its cut), or an element that is nothing but 2D.

@@ -44,18 +44,19 @@ public sealed partial class IfcModel
         if (e == null) return null;
         var place = Placement(e[5]);
         var loops = new List<List<Vec2>>();
-        void Item(StepEntity item, Xf at)
+        void Item(StepEntity item, Xf at, int depth)
         {
+            Deeper(depth, item);
             switch (item.Type)
             {
                 case "IFCGEOMETRICCURVESET" or "IFCGEOMETRICSET":
-                    foreach (var sub in Items(item[0])) Item(sub, at);
+                    foreach (var sub in Items(item[0])) Item(sub, at, depth + 1);
                     return;
                 case "IFCMAPPEDITEM":
                 {
                     var map = File.Get(item[0]);
                     var xf = at.Then(Operator(File.Get(item[1]))).Then(Axis2(map?[0]));
-                    foreach (var sub in Items(File.Get(map?[1])?[3])) Item(sub, xf);
+                    foreach (var sub in Items(File.Get(map?[1])?[3])) Item(sub, xf, depth + 1);
                     return;
                 }
             }
@@ -66,7 +67,7 @@ public sealed partial class IfcModel
         foreach (var rep in Items(File.Get(e[6])?[2]))
         {
             if (rep[1] is not string id || !string.Equals(id, "FootPrint", StringComparison.OrdinalIgnoreCase)) continue;
-            foreach (var item in Items(rep[3])) Item(item, place);
+            foreach (var item in Items(rep[3])) Item(item, place, 0);
         }
         return loops.Count > 0 ? [.. loops.OrderByDescending(l => Math.Abs(Footprints.Area(l)))] : null;
     }
@@ -128,33 +129,34 @@ public sealed partial class IfcModel
         return o;
     }
 
-    void PrismItem(StepEntity item, Xf at, bool clipped, List<ShapePrism> o, List<string> reasons)
+    void PrismItem(StepEntity item, Xf at, bool clipped, List<ShapePrism> o, List<string> reasons, int depth = 0)
     {
+        Deeper(depth, item);
         switch (item.Type)
         {
             case "IFCMAPPEDITEM":
             {
                 var map = File.Get(item[0]);
                 var xf = at.Then(Operator(File.Get(item[1]))).Then(Axis2(map?[0]));
-                foreach (var sub in Items(File.Get(map?[1])?[3])) PrismItem(sub, xf, clipped, o, reasons);
+                foreach (var sub in Items(File.Get(map?[1])?[3])) PrismItem(sub, xf, clipped, o, reasons, depth + 1);
                 return;
             }
             case "IFCBOOLEANCLIPPINGRESULT":
             case "IFCBOOLEANRESULT":
             {
                 var op = (item[0] as StepEnum)?.Value;
-                if (File.Get(item[1]) is { } a) PrismItem(a, at, clipped || op != "UNION", o, reasons);
-                if (op == "UNION" && File.Get(item[2]) is { } b) PrismItem(b, at, clipped, o, reasons);
+                if (File.Get(item[1]) is { } a) PrismItem(a, at, clipped || op != "UNION", o, reasons, depth + 1);
+                if (op == "UNION" && File.Get(item[2]) is { } b) PrismItem(b, at, clipped, o, reasons, depth + 1);
                 return;
             }
             case "IFCEXTRUDEDAREASOLID":
             {
                 var areas = Profile(File.Get(item[0]));
                 var dir = Direction(item[2]) ?? new Vec3(0, 0, 1);
-                var depth = Num(item[3]) * _len;
-                if (areas.Count == 0 || !(depth > 0)) { reasons.Add("an extrusion without a readable profile"); return; }
+                var length = Num(item[3]) * _len;
+                if (areas.Count == 0 || !(length > 0)) { reasons.Add("an extrusion without a readable profile"); return; }
                 var xf = at.Then(Axis2(item[1]));
-                var sweep = xf.Dir(dir * depth);
+                var sweep = xf.Dir(dir * length);
                 foreach (var (outer, holes) in areas)
                     o.Add(new ShapePrism([.. outer.Select(xf.Apply)], [.. holes.Select(h => (IReadOnlyList<Vec3>)[.. h.Select(xf.Apply)])], sweep, clipped, "extrusion"));
                 return;

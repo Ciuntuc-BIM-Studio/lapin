@@ -105,18 +105,19 @@ public sealed partial class IfcModel
         var e = File.Entities.GetValueOrDefault(product);
         if (e == null || e.Args.Count < 7) return (false, false);
         bool plan = false, body = false;
-        void Look(StepEntity? rep)
+        void Look(StepEntity? rep, int depth)
         {
             if (rep == null) return;
+            Deeper(depth, rep);
             var v = View2d(rep);
             if (v == "plan") { plan = true; return; }
             if (v != null) return;
             var mapped = false;
             foreach (var item in Items(rep[3]))
-                if (item.Type == "IFCMAPPEDITEM" && File.Get(item[0]) is { } map) { mapped = true; Look(File.Get(map[1])); }
+                if (item.Type == "IFCMAPPEDITEM" && File.Get(item[0]) is { } map) { mapped = true; Look(File.Get(map[1]), depth + 1); }
             if (!mapped && !NotBody.Contains((Str(rep[1]) ?? "").ToUpperInvariant())) body = true;
         }
-        foreach (var rep in Items(File.Get(e[6])?[2])) Look(rep);
+        foreach (var rep in Items(File.Get(e[6])?[2])) Look(rep, 0);
         if (!plan && TypeOf(product) is { } type && type.Args.Count > 6)
             foreach (var map in Items(type[6])) if (View2d(File.Get(map[1])) == "plan") plan = true;
         return (plan, body);
@@ -202,7 +203,7 @@ public sealed partial class IfcModel
         return _styles2d;
     }
 
-    Style2d ParseStyle(object? styles)
+    Style2d ParseStyle(object? styles, int depth = 0)
     {
         string? line = null, pattern = null, fill = null;
         double? height = null;
@@ -211,7 +212,8 @@ public sealed partial class IfcModel
             {
                 case "IFCPRESENTATIONSTYLEASSIGNMENT":
                 {
-                    var inner = ParseStyle(s[0]);
+                    Deeper(depth, s);
+                    var inner = ParseStyle(s[0], depth + 1);
                     line ??= inner.Line; pattern ??= inner.Pattern; fill ??= inner.Fill; height ??= inner.TextHeight;
                     break;
                 }

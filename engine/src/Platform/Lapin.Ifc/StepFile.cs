@@ -35,6 +35,13 @@ public sealed record StepEntity(int Id, string Type, List<object?> Args)
 /// </summary>
 public sealed class StepFile
 {
+    /// <summary>
+    /// How deep a value may nest, and how deep a reader may follow references (a mapped item's map, a boolean's
+    /// operands, a composite curve's segments): a file whose references loop is malformed (a FormatException), never
+    /// a stack overflow, which would end the engine.
+    /// </summary>
+    public const int MaxDepth = 64;
+
     public string Schema { get; private set; } = "";
 
     /// <summary>The entities by id, parsed as they are asked for (a dictionary in all but the keeping).</summary>
@@ -174,7 +181,9 @@ public sealed class StepFile
             var cuts = Cuts(b, from, b.Length < 8 << 20 ? 1 : Environment.ProcessorCount * 4);
             var parts = new (List<Entry> Entries, List<string> Types)[cuts.Count - 1];
             if (parts.Length == 1) parts[0] = Scan(b, cuts[0], cuts[1]);
-            else Parallel.For(0, parts.Length, k => parts[k] = Scan(b, cuts[k], cuts[k + 1]));
+            else
+                try { Parallel.For(0, parts.Length, k => parts[k] = Scan(b, cuts[k], cuts[k + 1])); }
+                catch (AggregateException ae) when (ae.InnerExceptions[0] is FormatException fe) { System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(fe); }
             var count = 0; var maxId = 0;
             foreach (var (entries, _) in parts) { count += entries.Count; foreach (var e in entries) maxId = Math.Max(maxId, e.Id); }
             var index = new Index(maxId, count);
@@ -246,8 +255,8 @@ public sealed class StepFile
                 if (b[i] != '#') { var k = Array.IndexOf(b, (byte)';', i); i = k < 0 ? b.Length : k + 1; continue; }
                 var start = i;
                 i++;
-                var id = 0;
-                while (i < b.Length && Digit(b[i])) id = id * 10 + (b[i++] - '0');
+                long id = 0;
+                while (i < b.Length && Digit(b[i])) { id = id * 10 + (b[i++] - '0'); if (id > int.MaxValue) throw new FormatException($"STEP: an entity id too large at byte {start}."); }
                 while (i < b.Length && Space(b[i])) i++;
                 if (i < b.Length && b[i] == '=') i++;
                 while (i < b.Length && Space(b[i])) i++;
@@ -272,7 +281,7 @@ public sealed class StepFile
                     if (c == '\'') inString = !inString;
                     else if (c == ';' && !inString) break;
                 }
-                entries.Add(new Entry(id, start, ti, rooted));
+                entries.Add(new Entry((int)id, start, ti, rooted));
             }
             return (entries, types);
         }
@@ -331,7 +340,7 @@ public sealed class StepFile
         }
 
         /// <summary>The value at the parser's start (a header entry's list).</summary>
-        public object? ParseValue() => Value();
+        public object? ParseValue() => Value(0);
 
         /// <summary>The entity at the parser's start; <paramref name="type"/>, the file's interned name of its type, when known.</summary>
         public StepEntity? NextEntity(string? type = null)
@@ -342,28 +351,38 @@ public sealed class StepFile
                 if (_i >= end || s.AsSpan(_i).StartsWith("ENDSEC"u8)) return null;
                 if (s[_i] != '#') { var k = Array.IndexOf(s, (byte)';', _i); _i = k < 0 ? s.Length : k + 1; continue; }
                 _i++;
-                var id = (int)Integer();
-                Skip(); Expect('='); Skip();
-                var parsedType = Keyword();
-                Skip();
-                var args = (List<object?>)Value()!;
-                Skip(); Expect(';');
-                return new StepEntity(id, type ?? parsedType, args);
+                var id = Id();
+                try
+                {
+                    Skip(); Expect('='); Skip();
+                    var parsedType = Keyword();
+                    Skip();
+                    if (Value(0) is not List<object?> args) throw new FormatException("its attributes are not a list.");
+                    Skip(); Expect(';');
+                    return new StepEntity(id, type ?? parsedType, args);
+                }
+                catch (FormatException ex) { throw new FormatException($"STEP #{id}: {ex.Message}", ex); }
             }
         }
 
         void Expect(char c)
         {
-            if (_i >= s.Length || s[_i] != c) throw new FormatException($"STEP: aștept „{c}” la poziția {_i}.");
+            if (_i >= s.Length || s[_i] != c) throw new FormatException($"'{c}' expected at byte {_i}.");
             _i++;
         }
 
-        long Integer()
+        /// <summary>An entity's id (after its '#'): a whole number an int holds.</summary>
+        int Id()
         {
             var st = _i;
-            while (_i < s.Length && (Digit(s[_i]) || s[_i] == '-')) _i++;
-            return long.Parse(s.AsSpan(st, _i - st), CultureInfo.InvariantCulture);
+            while (_i < s.Length && Digit(s[_i])) _i++;
+            if (!int.TryParse(s.AsSpan(st, _i - st), NumberStyles.None, CultureInfo.InvariantCulture, out var id))
+                throw new FormatException($"STEP: no entity id at byte {st} (or one too large).");
+            return id;
         }
+
+        /// <summary>The byte at the parser, which must be there: a file ending inside an entity is malformed.</summary>
+        byte At() => _i < s.Length ? s[_i] : throw new FormatException("the file ends inside an entity.");
 
         string Keyword()
         {
@@ -384,10 +403,11 @@ public sealed class StepFile
             return made;
         }
 
-        object? Value()
+        object? Value(int depth)
         {
+            if (depth > MaxDepth) throw new FormatException($"values nested deeper than {MaxDepth}.");
             Skip();
-            var c = s[_i];
+            var c = At();
             switch (c)
             {
                 case (byte)'(':
@@ -395,35 +415,44 @@ public sealed class StepFile
                     _i++;
                     var list = new List<object?>();
                     Skip();
-                    if (s[_i] == ')') { _i++; return list; }
+                    if (At() == ')') { _i++; return list; }
                     while (true)
                     {
-                        list.Add(Value());
+                        list.Add(Value(depth + 1));
                         Skip();
-                        if (s[_i] == ',') { _i++; continue; }
+                        if (At() == ',') { _i++; continue; }
                         Expect(')');
                         return list;
                     }
                 }
                 case (byte)'$': case (byte)'*': _i++; return null;
-                case (byte)'#': _i++; return new StepRef((int)Integer());
+                case (byte)'#': _i++; return new StepRef(Id());
                 case (byte)'\'': return Str();
                 case (byte)'.':
                 {
-                    var e = Array.IndexOf(s, (byte)'.', _i + 1);
+                    var e = _i + 1;
+                    while (e < s.Length && (Letter(s[e]) || Digit(s[e]) || s[e] == '_')) e++;
+                    if (e >= s.Length || s[e] != '.') throw new FormatException($"an enumeration at byte {_i} has no closing '.'.");
                     var name = Name(s.AsSpan(_i + 1, e - _i - 1), scratch.Names);
                     _i = e + 1;
                     if (!scratch.Enums.TryGetValue(name, out var en)) scratch.Enums[name] = en = new StepEnum(name);
                     return en;
                 }
-                case (byte)'"': { var e = Array.IndexOf(s, (byte)'"', _i + 1); var v = Encoding.ASCII.GetString(s, _i + 1, e - _i - 1); _i = e + 1; return v; } // binary: kept as text
+                case (byte)'"':
+                {
+                    var e = Array.IndexOf(s, (byte)'"', _i + 1);
+                    if (e < 0 || e > end) throw new FormatException($"a binary at byte {_i} has no closing '\"'.");
+                    var v = Encoding.ASCII.GetString(s, _i + 1, e - _i - 1);
+                    _i = e + 1;
+                    return v; // binary: kept as text
+                }
                 default:
                     if (Letter(c))
                     {
                         var type = Keyword();
                         Skip();
                         Expect('(');
-                        var v = Value();
+                        var v = Value(depth + 1);
                         Skip();
                         Expect(')');
                         return new StepTyped(type, v);
@@ -438,7 +467,8 @@ public sealed class StepFile
             while (_i < s.Length && (Digit(s[_i]) || s[_i] is (byte)'-' or (byte)'+' or (byte)'.' or (byte)'E' or (byte)'e')) _i++;
             var t = s.AsSpan(st, _i - st);
             if (t.IndexOfAny(".Ee"u8) < 0 && long.TryParse(t, NumberStyles.Integer, CultureInfo.InvariantCulture, out var l)) return l;
-            return double.Parse(t, NumberStyles.Float, CultureInfo.InvariantCulture);
+            if (double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out var d)) return d;
+            throw new FormatException($"no value at byte {st}.");
         }
 
         static readonly UTF8Encoding Strict = new(false, true);

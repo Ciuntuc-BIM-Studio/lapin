@@ -235,11 +235,11 @@ public sealed partial class IfcModel
     }
 
     /// <summary>A surface style's colour, through IFC2X3's presentation style assignments.</summary>
-    string? Colour(object? styles)
+    string? Colour(object? styles, int depth = 0)
     {
         foreach (var s in Items(styles))
         {
-            if (s.Type == "IFCPRESENTATIONSTYLEASSIGNMENT") { if (Colour(s[0]) is { } c) return c; continue; }
+            if (s.Type == "IFCPRESENTATIONSTYLEASSIGNMENT") { Deeper(depth, s); if (Colour(s[0], depth + 1) is { } c) return c; continue; }
             if (s.Type != "IFCSURFACESTYLE") continue;
             foreach (var r in Items(s[2]))
                 if (File.Get(r[0]) is { Type: "IFCCOLOURRGB" } rgb)
@@ -410,29 +410,42 @@ public sealed partial class IfcModel
         return o;
     }
 
-    void Item(StepEntity item, Xf at, List<(MeshBuilder Mesh, string? Colour)> o, string? inherited, ISolidBooleans? booleans)
+    /// <summary>
+    /// A file whose references loop (a mapped item whose map holds it, a boolean that is its own operand) or nest past
+    /// <see cref="StepFile.MaxDepth"/>: malformed, read no further (a stack overflow would end the engine).
+    /// </summary>
+    static void Deeper(int depth, StepEntity at)
     {
+        if (depth > StepFile.MaxDepth) throw new FormatException($"IFC #{at.Id}: references nested deeper than {StepFile.MaxDepth} (they loop).");
+    }
+
+    void Item(StepEntity item, Xf at, List<(MeshBuilder Mesh, string? Colour)> o, string? inherited, ISolidBooleans? booleans, int depth = 0)
+    {
+        Deeper(depth, item);
         var colour = _colours.GetValueOrDefault(item.Id) ?? inherited;
         if (item.Type == "IFCMAPPEDITEM")
         {
             var map = File.Get(item[0]);
             var xf = at.Then(Operator(File.Get(item[1]))).Then(Axis2(map?[0]));
-            foreach (var sub in Items(File.Get(map?[1])?[3])) Item(sub, xf, o, colour, booleans);
+            foreach (var sub in Items(File.Get(map?[1])?[3])) Item(sub, xf, o, colour, booleans, depth + 1);
             return;
         }
         if (item.Type is "IFCBOOLEANRESULT" or "IFCBOOLEANCLIPPINGRESULT")
         {
             var op = (item[0] as StepEnum)?.Value;
             var first = new List<(MeshBuilder Mesh, string? Colour)>();
-            if (File.Get(item[1]) is { } a) Item(a, at, first, colour, booleans);
-            if (op == "UNION") { o.AddRange(first); if (File.Get(item[2]) is { } b) Item(b, at, o, colour, booleans); return; }
-            // Cut by the second operand where the booleans are; else the first operand as it is.
-            var cutter = booleans == null || first.Count == 0 ? null : Cutter(File.Get(item[2]), at, first.SelectMany(f => f.Mesh.V).ToList(), booleans);
+            if (File.Get(item[1]) is { } a) Item(a, at, first, colour, booleans, depth + 1);
+            if (op == "UNION") { o.AddRange(first); if (File.Get(item[2]) is { } b) Item(b, at, o, colour, booleans, depth + 1); return; }
+            // Cut by the second operand where the booleans are; else (or where they fail: a body that is not closed) the first operand as it is.
+            var cutter = booleans == null || first.Count == 0 ? null : Cutter(File.Get(item[2]), at, first.SelectMany(f => f.Mesh.V).ToList(), booleans, depth + 1);
             foreach (var (mesh, c) in first)
             {
-                var solid = cutter == null ? null : SolidFromMesh.Build(mesh.Welded().V, mesh.Welded().T);
+                Solid? solid = null;
+                if (cutter != null) { var w = mesh.Welded(); solid = SolidFromMesh.Build(w.V, w.T); }
                 if (solid == null) { o.Add((mesh, c)); continue; }
-                var cut = op == "INTERSECTION" ? booleans!.Intersection(solid, cutter!) : booleans!.Difference(solid, [cutter!]);
+                Solid? cut;
+                try { cut = op == "INTERSECTION" ? booleans!.Intersection(solid, cutter!) : booleans!.Difference(solid, [cutter!]); }
+                catch (InvalidOperationException) { o.Add((mesh, c)); continue; }
                 if (cut != null) o.Add((MeshBuilder.FromSolid(cut), c));
             }
             return;
@@ -449,9 +462,10 @@ public sealed partial class IfcModel
     /// its material: against its plane's normal when it agrees), bounded by its
     /// polygon when it has one; any other solid as it is.
     /// </summary>
-    Solid? Cutter(StepEntity? s, Xf at, List<Vec3> body, ISolidBooleans booleans)
+    Solid? Cutter(StepEntity? s, Xf at, List<Vec3> body, ISolidBooleans booleans, int depth)
     {
         if (s == null) return null;
+        Deeper(depth, s);
         if (s.Type is "IFCHALFSPACESOLID" or "IFCBOXEDHALFSPACE" or "IFCPOLYGONALBOUNDEDHALFSPACE")
         {
             var size = 0.0;
@@ -469,7 +483,9 @@ public sealed partial class IfcModel
             if (outline.Count < 3) return half;
             var prism = Prism(outline, [], new Vec3(0, 0, 2 * big));
             prism.Transform(at.Then(Axis2(s[2])).Then(new Xf(new(1, 0, 0), new(0, 1, 0), new(0, 0, 1), new(0, 0, -big))));
-            return SolidFromMesh.Build(prism.V, prism.T) is { } bound ? booleans.Intersection(half, bound) : half;
+            if (SolidFromMesh.Build(prism.V, prism.T) is not { } bound) return half;
+            try { return booleans.Intersection(half, bound); }
+            catch (InvalidOperationException) { return half; } // unbounded, rather than not cut
         }
         var m = Solid(s);
         if (m == null) return null;
@@ -677,9 +693,10 @@ public sealed partial class IfcModel
     // ─── Profiles and curves ─────────────────────────────────────────────────
 
     /// <summary>A profile as areas (an outer loop and its holes) in its plane, z = 0.</summary>
-    List<(List<Vec3> Outer, List<List<Vec3>> Holes)> Profile(StepEntity? p)
+    List<(List<Vec3> Outer, List<List<Vec3>> Holes)> Profile(StepEntity? p, int depth = 0)
     {
         if (p == null) return [];
+        Deeper(depth, p);
         List<(List<Vec3>, List<List<Vec3>>)> One(List<Vec3> outer, params List<Vec3>[] holes) => outer.Count >= 3 ? [(outer, [.. holes.Where(h => h.Count >= 3)])] : [];
         List<Vec3> Placed(List<Vec3> pts) { var xf = Axis2(p[2]); return [.. pts.Select(xf.Apply)]; }
         List<Vec3> Rect(double w, double h) => [new(-w / 2, -h / 2, 0), new(w / 2, -h / 2, 0), new(w / 2, h / 2, 0), new(-w / 2, h / 2, 0)];
@@ -714,11 +731,11 @@ public sealed partial class IfcModel
             }
             case "IFCARBITRARYCLOSEDPROFILEDEF": return One(Curve(File.Get(p[2])));
             case "IFCARBITRARYPROFILEDEFWITHVOIDS": return One(Curve(File.Get(p[2])), [.. Items(p[3]).Select(Curve)]);
-            case "IFCCOMPOSITEPROFILEDEF": return [.. Items(p[2]).SelectMany(Profile)];
+            case "IFCCOMPOSITEPROFILEDEF": return [.. Items(p[2]).SelectMany(x => Profile(x, depth + 1))];
             case "IFCDERIVEDPROFILEDEF":
             {
                 var t = Operator(File.Get(p[3]));
-                return [.. Profile(File.Get(p[2])).Select(a => (a.Outer.Select(t.Apply).ToList(), a.Holes.Select(h => h.Select(t.Apply).ToList()).ToList()))];
+                return [.. Profile(File.Get(p[2]), depth + 1).Select(a => (a.Outer.Select(t.Apply).ToList(), a.Holes.Select(h => h.Select(t.Apply).ToList()).ToList()))];
             }
             default: return [];
         }
@@ -728,11 +745,12 @@ public sealed partial class IfcModel
     List<Vec3> Curve(StepEntity? c) => Curve(c, out _);
 
     /// <summary>A curve as points, without its closing repeat; <paramref name="closed"/>: it came back to its start (a circle, an ellipse, a loop).</summary>
-    List<Vec3> Curve(StepEntity? c, out bool closed)
+    List<Vec3> Curve(StepEntity? c, out bool closed, int depth = 0)
     {
         closed = false;
         var o = new List<Vec3>();
         if (c == null) return o;
+        Deeper(depth, c);
         if (c.Type is "IFCCIRCLE" or "IFCELLIPSE") closed = true;
         switch (c.Type)
         {
@@ -752,7 +770,7 @@ public sealed partial class IfcModel
             case "IFCCOMPOSITECURVE":
                 foreach (var seg in Items(c[0]))
                 {
-                    var part = Curve(File.Get(seg[2]));
+                    var part = Curve(File.Get(seg[2]), out _, depth + 1);
                     if ((seg[1] as StepEnum)?.Value == "F") part.Reverse();
                     o.AddRange(part);
                 }

@@ -150,4 +150,82 @@ public class IfcRobustnessTests : IDisposable
         Assert.Equal("�", StepFile.Decode("\\X4\\7FFFFFFF\\X0\\"));
         Assert.Equal("é", StepFile.Decode("\\X\\E9"));
     }
+
+    /// <summary>Booleans that fail as manifold does on a body that is not closed.</summary>
+    sealed class FailingBooleans : ISolidBooleans
+    {
+        public Solid? Difference(Solid a, IReadOnlyList<Solid> cutters, string? tag = null) => throw new InvalidOperationException("manifold: error 1");
+        public Solid? Union(IReadOnlyList<Solid> solids, string? tag = null) => throw new InvalidOperationException("manifold: error 1");
+        public Solid? Intersection(Solid a, Solid b, string? tag = null) => throw new InvalidOperationException("manifold: error 1");
+    }
+
+    /// <summary>A box clipped by a half-space whose booleans fail: the body comes uncut, as it would without booleans (the import failed).</summary>
+    [Fact]
+    public void A_boolean_that_fails_leaves_the_body_uncut()
+    {
+        var x = new Tiny();
+        var box = x.Extrusion(0, 0, 0, 1000, 1000, 3000);
+        var plane = x.F.Add("IFCPLANE", x.F.Add("IFCAXIS2PLACEMENT3D", x.F.Add("IFCCARTESIANPOINT", "(0.,0.,2000.)"), Null, Null));
+        var clip = x.F.Add("IFCBOOLEANCLIPPINGRESULT", E("DIFFERENCE"), box, x.F.Add("IFCHALFSPACESOLID", plane, False));
+        var col = x.Element("IFCCOLUMN", "column", "C1", x.Place(0, 0, 0), x.Shape(clip, "Clipping"), E("COLUMN"));
+        var model = new IfcModel(StepFile.Read(x.Write(Path.Combine(_dir, "clip.ifc"))));
+        var (body, _) = model.Shape(Id(col), new FailingBooleans());
+        Assert.Equal(3.0, body.Single().Mesh.V.Max(p => p.Z), 6);
+    }
+
+    /// <summary>
+    /// Elements whose references loop (a mapped item inside its own map, a composite curve its own segment, a style
+    /// assignment holding itself) and values nested past any sense: each a FormatException, never a stack overflow
+    /// (which ends the engine); the import leaves that element out, says so, and brings the rest.
+    /// </summary>
+    [Fact]
+    public void References_that_loop_leave_their_element_out_and_the_import_goes_on()
+    {
+        var x = new Tiny();
+        for (var i = 0; i < 9; i++)
+            x.Element("IFCCOLUMN", $"c{i}", $"C{i}", x.Place(i * 2000, 0, 0), x.Shape(x.Extrusion(0, 0, 0, 300, 300, 3000)), E("COLUMN"));
+        // A mapped item whose map's representation holds the mapped item itself: the ids it will take, written ahead.
+        var op = x.F.Add("IFCCARTESIANTRANSFORMATIONOPERATOR3D", Null, Null, x.F.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), "1.", Null);
+        var axis = x.F.Add("IFCAXIS2PLACEMENT3D", x.F.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), Null, Null);
+        var n = Id(axis);
+        var rep = x.F.Add("IFCSHAPEREPRESENTATION", x.Ctx, S("Body"), S("MappedRepresentation"), $"(#{n + 3})");
+        var map = x.F.Add("IFCREPRESENTATIONMAP", axis, rep);
+        var item = x.F.Add("IFCMAPPEDITEM", map, op);
+        Assert.Equal(n + 3, Id(item));
+        var looped = x.F.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L([x.F.Add("IFCSHAPEREPRESENTATION", x.Ctx, S("Body"), S("MappedRepresentation"), L([item]))]));
+        x.Element("IFCBUILDINGELEMENTPROXY", "looped", "Loop", x.Place(0, 5000, 0), looped, E("ELEMENT"));
+        // A composite curve whose one segment is the curve itself, as a profile.
+        var m = Id(x.F.Add("IFCCARTESIANPOINT", "(0.,0.)"));
+        var segment = x.F.Add("IFCCOMPOSITECURVESEGMENT", E("CONTINUOUS"), True, $"#{m + 2}");
+        var curve = x.F.Add("IFCCOMPOSITECURVE", L([segment]), False);
+        Assert.Equal(m + 2, Id(curve));
+        var prof = x.F.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, curve);
+        var swept = x.F.Add("IFCEXTRUDEDAREASOLID", prof, x.F.Add("IFCAXIS2PLACEMENT3D", x.F.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), Null, Null), x.F.Add("IFCDIRECTION", "(0.,0.,1.)"), "100.");
+        x.Element("IFCSLAB", "curve", "Curve", x.Place(0, 8000, 0), x.Shape(swept), E("FLOOR"));
+        var path = x.Write(Path.Combine(_dir, "loops.ifc"));
+
+        var model = new IfcModel(StepFile.Read(path));
+        var proxy = model.Products.Single(p => p.GlobalId == Tiny.Gid("looped"));
+        Assert.Throws<FormatException>(() => model.Shape(proxy.Id));
+
+        foreach (var mode in new[] { "auto", "reference" })
+        {
+            var fx = Full();
+            var r = IfcImport.Run(fx.Session, path, new IfcImportOptions(mode), out _);
+            for (var i = 0; i < 9; i++) Assert.NotNull(fx.Session.Model.Get(Tiny.Gid($"c{i}")));
+            Assert.Null(fx.Session.Model.Get(Tiny.Gid("looped")));
+            Assert.Null(fx.Session.Model.Get(Tiny.Gid("curve")));
+            Assert.Contains(r.Notes, note => note.StartsWith("2 element(s) left out") && note.Contains("Loop"));
+        }
+
+        // Values nested past the limit, and malformed tokens: a FormatException naming the entity.
+        var deep = new string('(', 200) + new string(')', 200);
+        Assert.Contains("#1", Assert.Throws<FormatException>(() => OneEntity(deep).Entities[1]).Message);
+        Assert.Throws<FormatException>(() => OneEntity(".ELEMENT").Entities[1]);
+        Assert.Throws<FormatException>(() => OneEntity("\"0FF").Entities[1]);
+        Assert.Throws<FormatException>(() => OneEntity("#99999999999").Entities[1]);
+        Assert.Throws<FormatException>(() => StepFile.Parse("ISO-10303-21;\nDATA;\n#99999999999=IFCLABEL('x');\nENDSEC;\n"));
+        Assert.Throws<FormatException>(() => StepFile.Parse("ISO-10303-21;\nDATA;\n#1=IFCLABEL(('x',").Entities[1]);
+        Assert.Equal(".ELEMENT.", "." + ((StepEnum)OneEntity(".ELEMENT.").Entities[1][0]!).Value + ".");
+    }
 }

@@ -63,7 +63,8 @@ public static partial class IfcImport
                 edit.Remove(gid);
                 again = true;
             }
-            var foreign = foreignReady.TryRemove(e.Id, out var ready) ? ready : Foreign(e, DefaultStorey(edit) ?? "");
+            var foreign = foreignReady.TryRemove(e.Id, out var ready) ? ready : ForeignOrNull(e, DefaultStorey(edit) ?? "");
+            if (foreign == null) { recognition!.Skip("a body the file describes in a way that could not be read"); return false; }
             foreach (var r in recognizers)
             {
                 string? id;
@@ -125,10 +126,20 @@ public static partial class IfcImport
             Parallel.ForEach(candidates, e =>
             {
                 if (e.Type is "IFCOPENINGELEMENT" || !GlobalId.IsValid(Str(e[0]) ?? "")) return;
-                foreignReady[e.Id] = Foreign(e, storey);
+                if (ForeignOrNull(e, storey) is { } read) foreignReady[e.Id] = read;
                 var n = Interlocked.Increment(ref done);
                 if (Due(n, candidates.Count)) Report("Reading the elements", n, candidates.Count);
             });
+        }
+
+        readonly System.Collections.Concurrent.ConcurrentDictionary<int, bool> foreignFailed = [];
+
+        /// <summary>The element read for the recognisers, or null when the file is malformed there (it is then tried as a reference, once).</summary>
+        ForeignElement? ForeignOrNull(StepEntity e, string defaultStorey)
+        {
+            if (foreignFailed.ContainsKey(e.Id)) return null;
+            try { return Foreign(e, defaultStorey); }
+            catch (Exception ex) when (Unreadable(ex)) { foreignFailed[e.Id] = true; return null; }
         }
 
         ForeignElement Foreign(StepEntity e, string defaultStorey)
