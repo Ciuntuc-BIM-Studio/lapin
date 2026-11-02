@@ -69,8 +69,8 @@ public sealed class ForeignElements : IIfcRecognizer
         var attrs = new JsonObject { ["auto"] = false };
         if (outer != null)
         {
-            attrs["contour"] = Rooms.Json2(Polygon2.EnsureCcw(outer));
-            if (islands.Count > 0) attrs["islands"] = new JsonArray(islands.Select(i => (JsonNode)Rooms.Json2(i)).ToArray());
+            attrs["contour"] = SectionPaths.PointsJson(Polygon2.EnsureCcw(outer));
+            if (islands.Count > 0) attrs["islands"] = new JsonArray(islands.Select(i => (JsonNode)SectionPaths.PointsJson(i)).ToArray());
         }
         else ctx.Notes.Add("a space whose shape gives no outline came in as a room without an outline, with its properties: select it (the browser's IFC tab) and give it one in its properties");
         var longName = e.LongName?.Trim() is { Length: > 0 } ln ? ln : null;
@@ -154,7 +154,7 @@ public sealed class ForeignElements : IIfcRecognizer
         {
             if (Footprints.Axis(Footprints.Plan(prism.Outer)) is not { } fp) { ctx.Skip("a wall without a readable footprint"); return null; }
             var dir = (fp.End - fp.Start).Normalized();
-            if (axis is { } ax && Math.Abs(Cross((ax.B - ax.A).Normalized(), dir)) < 0.05)
+            if (axis is { } ax && Math.Abs(Vec2.Cross((ax.B - ax.A).Normalized(), dir)) < 0.05)
             {
                 (start, end) = (ax.A, ax.B);
                 dir = (end - start).Normalized();
@@ -230,7 +230,6 @@ public sealed class ForeignElements : IIfcRecognizer
     }
 
     static Vec2 P(Vec3 v) => new(v.X, v.Y);
-    static double Cross(Vec2 a, Vec2 b) => a.X * b.Y - a.Y * b.X;
 
     /// <summary>The polygon's extent across a line: the least and the greatest distance left of it (negative right).</summary>
     static (double Min, double Max) Across(IReadOnlyList<Vec2> plan, Vec2 origin, Vec2 dir)

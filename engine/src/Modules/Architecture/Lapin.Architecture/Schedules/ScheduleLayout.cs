@@ -46,7 +46,7 @@ public static class ScheduleLayout
     public static readonly string[] JoineryRows = ["name", "size", "operation", "sill", "levels", "total", "uValue", "fire", "lintel"];
     public static readonly string[] LintelRows = ["lintelKind", "product", "section", "length", "levels", "total", "openings", "concrete", "steel"];
 
-    static string Mm(double m) => Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture);
+    internal static string Mm(double m) => Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture);
 
     static readonly Dictionary<string, string> OperationLabel = new()
     {

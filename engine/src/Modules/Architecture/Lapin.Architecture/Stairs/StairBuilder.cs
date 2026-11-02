@@ -423,8 +423,8 @@ public static class StairBuilder
                 new("RiserHeight", r.RiserHeight, "LENGTH"), new("TreadLength", r.Tread, "LENGTH"), new("GrossVolume", Vol($"flight:{i}"), "VOLUME"),
             ], $"flight:{i}", $"Flight {i + 1}", spec.Construction.Concrete);
         }
-        var landingArea = r.Landings.Sum(l => Area(l.Outline));
-        var winderArea = r.Winders.Sum(x => Area(x.Outline));
+        var landingArea = r.Landings.Sum(l => Math.Abs(Polygon2.SignedArea(l.Outline)));
+        var winderArea = r.Winders.Sum(x => Math.Abs(Polygon2.SignedArea(x.Outline)));
         var concrete = g.Parts.Where(p => p.Key != null && (p.Key.StartsWith("flight:", StringComparison.Ordinal) || p.Key == "winders" || p.Key.StartsWith("landing:", StringComparison.Ordinal))).Sum(p => Measure.Volume(p.Solid));
         var railing = 0.0;
         foreach (var fl in r.Flights) railing += (fl.Risers - 1) * Math.Sqrt(r.Tread * r.Tread + r.RiserHeight * r.RiserHeight);
@@ -440,13 +440,6 @@ public static class StairBuilder
             new("FinishArea", treads + landingArea + winderArea, "AREA", "Tread finish"),
             new("RailingLength", railing * sides, "LENGTH", "Railing"),
         ]);
-    }
-
-    static double Area(IReadOnlyList<Vec2> poly)
-    {
-        var a = 0.0;
-        for (var i = 0; i < poly.Count; i++) a += Vec2.Cross(poly[i], poly[(i + 1) % poly.Count]);
-        return Math.Abs(a) / 2;
     }
 
     // ─── The opening in the floor above ─────────────────────────────────────
@@ -546,7 +539,7 @@ public static class StairMarks
                 mark.Text(new PenText(V(foot.At - foot.Dir * (r.Tread * 0.8)), "UP", h, 0, "middle", "middle", true, style.Font), color);
             if (symbols.Label)
             {
-                string Mm(double v) => (v * 1000).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+                var Mm = Schedules.ScheduleLayout.Mm;
                 string[] lines = [$"{r.Risers} × {Mm(r.RiserHeight)}", $"{Mm(r.Tread)}", $"{Mm(r.Width)}"];
                 string[] keys = ["Risers", "Tread", "Width"];
                 var at = V(foot.At - foot.Left * (foot.Width / 2 + 0.25) - foot.Dir * 0.2);

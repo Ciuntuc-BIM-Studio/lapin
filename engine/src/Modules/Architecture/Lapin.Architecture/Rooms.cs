@@ -45,8 +45,7 @@ public static class Rooms
 
     static Vec2? Pt(JsonNode? n) => n is JsonArray { Count: >= 2 } a && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y ? new Vec2(x, y) : null;
     static IReadOnlyList<Vec2> Loop(JsonNode? n) => n is JsonArray arr ? arr.Select(Pt).OfType<Vec2>().ToList() : [];
-    public static JsonArray Json2(IEnumerable<Vec2> pts) => new(pts.Select(p => (JsonNode)new JsonArray(Math.Round(p.X, 6), Math.Round(p.Y, 6))).ToArray());
-    static JsonArray Json2(IEnumerable<IReadOnlyList<Vec2>> loops) => new(loops.Select(l => (JsonNode)Json2(l)).ToArray());
+    static JsonArray LoopsJson(IEnumerable<IReadOnlyList<Vec2>> loops) => new(loops.Select(l => (JsonNode)SectionPaths.PointsJson(l)).ToArray());
 
     public static Vec2? Seed(Entity room) => Pt(room.Attrs["seed"]);
     public static Vec2? StampAt(Entity room) => Pt(room.Attrs["stampAt"]);
@@ -210,7 +209,7 @@ public static class Rooms
         var attrs = new JsonObject();
         if (a["points"] != null || a["x1"] != null)
         {
-            attrs["contour"] = Json2(CheckOutline(Args.Points(a)));
+            attrs["contour"] = SectionPaths.PointsJson(CheckOutline(Args.Points(a)));
             attrs["auto"] = false;
         }
         else
@@ -219,8 +218,8 @@ public static class Rooms
             var region = Region(ctx, storeyId, p);
             attrs["auto"] = true;
             attrs["seed"] = new JsonArray(p.X, p.Y);
-            attrs["contour"] = Json2(region.Outer);
-            if (region.Islands.Count > 0) attrs["islands"] = Json2(region.Islands);
+            attrs["contour"] = SectionPaths.PointsJson(region.Outer);
+            if (region.Islands.Count > 0) attrs["islands"] = LoopsJson(region.Islands);
         }
         attrs["number"] = ((string?)a["number"])?.Trim() is { Length: > 0 } num ? num : NextNumber(ctx.Model, storeyId);
         foreach (var k in new[] { "function", "department", "finishFloor" })
@@ -244,7 +243,7 @@ public static class Rooms
         var storeyId = Spatial.StoreyOf(ctx.Model, room.Id)?.Id ?? throw new CommandException("The room stands on no storey.");
         if (a["points"] != null || a["x1"] != null)
         {
-            attrs["contour"] = Json2(CheckOutline(Args.Points(a)));
+            attrs["contour"] = SectionPaths.PointsJson(CheckOutline(Args.Points(a)));
             attrs["auto"] = false;
             attrs.Remove("seed");
             attrs.Remove("islands");
@@ -255,8 +254,8 @@ public static class Rooms
             var region = Region(ctx, storeyId, p, room.Id);
             attrs["auto"] = true;
             attrs["seed"] = new JsonArray(p.X, p.Y);
-            attrs["contour"] = Json2(region.Outer);
-            if (region.Islands.Count > 0) attrs["islands"] = Json2(region.Islands); else attrs.Remove("islands");
+            attrs["contour"] = SectionPaths.PointsJson(region.Outer);
+            if (region.Islands.Count > 0) attrs["islands"] = LoopsJson(region.Islands); else attrs.Remove("islands");
         }
         if (a["stampX"] != null || a["stampY"] != null) attrs["stampAt"] = new JsonArray(Args.Number(a, "stampX"), Args.Number(a, "stampY"));
         else if (a.ContainsKey("stamp") && a["stamp"] == null) attrs.Remove("stampAt");
@@ -273,8 +272,8 @@ public static class Rooms
             var (region, _) = RoomBounds.At(ctx.Model, ctx.Services, storey.Id, seed);
             if (region == null) { lost++; continue; }
             var attrs = room.CloneAttrs();
-            attrs["contour"] = Json2(region.Outer);
-            if (region.Islands.Count > 0) attrs["islands"] = Json2(region.Islands); else attrs.Remove("islands");
+            attrs["contour"] = SectionPaths.PointsJson(region.Outer);
+            if (region.Islands.Count > 0) attrs["islands"] = LoopsJson(region.Islands); else attrs.Remove("islands");
             if (attrs.ToJsonString() != room.Attrs.ToJsonString()) { ctx.Replace(room.With(attrs: attrs)); stored++; }
         }
         return (stored, lost);

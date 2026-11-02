@@ -92,7 +92,6 @@ public static class Railings
 
     public static List<Vec2> Points(Entity e) => (e.Attrs["points"] as JsonArray)?.Select(P).ToList() ?? [];
 
-    static JsonArray PointsJson(IEnumerable<Vec2> pts) => new([.. pts.Select(p => (JsonNode)new JsonArray(Math.Round(p.X, 6), Math.Round(p.Y, 6)))]);
 
     static List<Vec2> CheckPoints(JsonNode? n)
     {
@@ -124,7 +123,7 @@ public static class Railings
         {
             var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
             var pts = CheckPoints(a["points"]);
-            var attrs = new JsonObject { ["exportAs"] = "IfcRailing", ["points"] = PointsJson(pts), ["style"] = (string?)a["style"] is { } st && StairSpec.RailingStyles.Contains(st) ? st : "balusters", ["height"] = Json.Number(a["height"]) ?? 1.0 };
+            var attrs = new JsonObject { ["exportAs"] = "IfcRailing", ["points"] = SectionPaths.PointsJson(pts), ["style"] = (string?)a["style"] is { } st && StairSpec.RailingStyles.Contains(st) ? st : "balusters", ["height"] = Json.Number(a["height"]) ?? 1.0 };
             if (Json.Number(a["baseOffset"]) is { } bo) attrs["baseOffset"] = bo;
             var n = Numbering.Next(ctx.Model.OfClass(Class));
             var e = new Entity(ctx.NewId(), Class, $"Railing {n}", attrs, "GUARDRAIL");
@@ -138,7 +137,7 @@ public static class Railings
         {
             var e = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } x && x.Attrs["points"] != null ? x : throw new CommandException("Not a railing drawn in Lapin.");
             var attrs = e.CloneAttrs();
-            attrs["points"] = PointsJson(CheckPoints(a["points"]));
+            attrs["points"] = SectionPaths.PointsJson(CheckPoints(a["points"]));
             ctx.Replace(e.With(attrs: attrs));
             return null;
         });
