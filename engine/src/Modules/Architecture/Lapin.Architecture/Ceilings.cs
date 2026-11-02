@@ -104,7 +104,7 @@ public static class Ceilings
             }
             var type = (string?)a["typeId"] is { } tid ? Spatial.Require(ctx.Model, tid, TypeClass) : DefaultType(ctx);
             var attrs = new JsonObject { ["contour"] = Slabs.ContourJson(outline), ["height"] = Json.Number(a["height"]) ?? 2.7, ["exportAs"] = "IfcCovering", ["fixtures"] = new JsonArray() };
-            var ceiling = new Entity(ctx.NewId(), Class, $"Ceiling {ctx.Model.OfClass(Class).Count() + 1}", attrs, "CEILING");
+            var ceiling = new Entity(ctx.NewId(), Class, $"Ceiling {Numbering.Next(ctx.Model.OfClass(Class))}", attrs, "CEILING");
             ctx.Add(ceiling);
             Spatial.Contain(ctx, storeyId, ceiling.Id);
             ctx.Relate(IfcClass.RelDefinesByType, type.Id, ceiling.Id);

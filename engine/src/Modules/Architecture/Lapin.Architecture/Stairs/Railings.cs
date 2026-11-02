@@ -126,7 +126,7 @@ public static class Railings
             var pts = CheckPoints(a["points"]);
             var attrs = new JsonObject { ["exportAs"] = "IfcRailing", ["points"] = PointsJson(pts), ["style"] = (string?)a["style"] is { } st && StairSpec.RailingStyles.Contains(st) ? st : "balusters", ["height"] = Json.Number(a["height"]) ?? 1.0 };
             if (Json.Number(a["baseOffset"]) is { } bo) attrs["baseOffset"] = bo;
-            var n = ctx.Model.OfClass(Class).Count() + 1;
+            var n = Numbering.Next(ctx.Model.OfClass(Class));
             var e = new Entity(ctx.NewId(), Class, $"Railing {n}", attrs, "GUARDRAIL");
             ctx.Add(e);
             Spatial.Contain(ctx, storeyId, e.Id);

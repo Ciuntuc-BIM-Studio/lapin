@@ -269,7 +269,7 @@ public static class StairsModule
         };
     }
 
-    static string Name(IModelView m, StairSpec spec) => $"Stair {m.OfClass(IfcClass.Stair).Count() + 1}";
+    static string Name(IModelView m, StairSpec spec) => $"Stair {Numbering.Next(m.OfClass(IfcClass.Stair))}";
 
     static Entity CreateType(ICommandContext ctx, StairSpec spec)
     {

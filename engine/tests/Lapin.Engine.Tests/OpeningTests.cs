@@ -33,6 +33,24 @@ public class OpeningTests
     }
 
     [Fact]
+    public void A_new_door_or_roof_takes_one_past_the_highest_number_not_the_count()
+    {
+        var f = new Fixture();
+        var wall = f.Wall(0, 0, 10, 0);
+        var d1 = Door(f, wall, 1.5);
+        var d2 = Door(f, wall, 4);
+        var prefix = f.Model.Get(d1)!.Name.TrimEnd('1');
+        Assert.Equal(prefix + "2", f.Model.Get(d2)!.Name);
+        f.Run("element.delete", new JsonObject { ["id"] = d1 });
+        Assert.Equal(prefix + "3", f.Model.Get(Door(f, wall, 7))!.Name);
+        string Roof() => (string)f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = f.Storey, ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(4, 0), new JsonArray(4, 4), new JsonArray(0, 4)) })!["id"]!;
+        var r1 = Roof();
+        Roof();
+        f.Run("element.delete", new JsonObject { ["id"] = r1 });
+        Assert.Equal("Roof 3", f.Model.Get(Roof())!.Name);
+    }
+
+    [Fact]
     public void A_wall_cannot_be_shortened_or_lowered_under_its_openings()
     {
         var f = new Fixture();

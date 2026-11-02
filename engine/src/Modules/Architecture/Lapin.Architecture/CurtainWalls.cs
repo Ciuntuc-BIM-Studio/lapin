@@ -175,7 +175,7 @@ public static class CurtainWalls
         r.Command("createCurtainWallType", "New curtain wall type", (ctx, a) =>
         {
             var spec = Checked(a["spec"]);
-            var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : $"Curtain wall {ctx.Model.OfClass(TypeClass).Count() + 1}";
+            var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : $"Curtain wall {Numbering.Next(ctx.Model.OfClass(TypeClass))}";
             var type = new Entity(ctx.NewId(), TypeClass, name, new JsonObject { ["spec"] = spec.ToJson() }, "NOTDEFINED");
             ctx.Add(type);
             return new JsonObject { ["id"] = type.Id };

@@ -339,7 +339,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var style = own != null ? RoofCatalog.Styles[0] : (string?)a["style"] is { } sid ? RoofCatalog.StyleOf(sid) ?? throw new CommandException($"There is no roof style „{sid}”.") : RoofCatalog.Styles[0];
             var attrs = Roof.Attrs(style, contour);
             if (own != null) ProjectRoofStyles.Apply(attrs, own, contour);
-            var roof = new Entity(ctx.NewId(), IfcClass.Roof, $"Roof {ctx.Model.OfClass(IfcClass.Roof).Count() + 1}", attrs, "NOTDEFINED");
+            var roof = new Entity(ctx.NewId(), IfcClass.Roof, $"Roof {Numbering.Next(ctx.Model.OfClass(IfcClass.Roof))}", attrs, "NOTDEFINED");
             CheckRoof(ctx.Model, roof);
             ctx.Add(roof);
             Spatial.Contain(ctx, storeyId, roof.Id);

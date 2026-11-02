@@ -131,7 +131,7 @@ public static class Openings
         edit.Add(opening);
         edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelVoidsElement, wall.Id, [opening.Id]));
         var cls = spec.IsDoor ? IfcClass.Door : IfcClass.Window;
-        var marks = edit.Model.OfClass(cls).Count() + 1;
+        var marks = Numbering.Next(edit.Model.OfClass(cls));
         var fill = new Entity(edit.NewId(), cls, $"{spec.Mark}{marks}", new JsonObject { ["flipHand"] = false, ["flipSide"] = false }, spec.IsDoor ? "DOOR" : "WINDOW");
         edit.Add(fill);
         edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelFillsElement, opening.Id, [fill.Id]));

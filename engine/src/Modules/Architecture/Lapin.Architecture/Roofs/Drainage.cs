@@ -338,7 +338,7 @@ public static class Drainage
 
     static string Add(ICommandContext ctx, Entity roof, int edge, double station, List<Leg> route, double? diameter, bool shoe)
     {
-        var n = ctx.Model.OfClass(DownpipeClass).Count() + 1;
+        var n = Numbering.Next(ctx.Model.OfClass(DownpipeClass));
         var attrs = new JsonObject
         {
             ["roofId"] = roof.Id, ["edge"] = edge, ["station"] = Math.Round(station, 4), ["route"] = RouteJson(route), ["shoe"] = shoe ? "True" : "False",
