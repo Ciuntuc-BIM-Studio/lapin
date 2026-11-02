@@ -10,11 +10,9 @@ public sealed partial class StudioModule
 {
     static void RegisterEdits(IModuleRegistry r)
     {
-        // The face or the edge of an element under a pick in 3D, as its body is built now: what Studio's face tools light up and work on.
+        // The face of an element under a pick in 3D, as its body is built now: what Studio's face tools light up and work on.
         r.Query("studio.faceAt", (q, a) =>
             Pick(q, a) is var (_, solids, p, n) && BrepPick.Face(solids, p, n) is { } f ? f.ToJson() : null);
-        r.Query("studio.edgeAt", (q, a) =>
-            Pick(q, a) is var (_, solids, p, n) && BrepPick.EdgeAt(solids, p, n) is { } edge ? edge.ToJson() : null);
 
         r.Command("pushPull", "Push/pull", PushPull);
         r.Command("setPush", "Push/pull distance", SetPush);

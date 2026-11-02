@@ -82,7 +82,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
 
         // ------------------------------------------------------------ dimensions and texts
         // A linear or aligned dimension is a string of points (two or more), one object: made at once (pts, or a and b),
-        // or one point after another (after, extendDimension); its points moved, inserted and taken out like a polyline's.
+        // or one point after another (after: the points go on that string's end); its points moved, inserted and taken out like a polyline's.
         r.Command("addDimension", "Dimension", (ctx, a) =>
         {
             var viewId = (string?)a["viewId"] ?? throw new CommandException("A dimension is drawn on a view.");
@@ -115,14 +115,6 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             var dim = new Entity(ctx.NewId(), IfcClass.Annotation, "Dimension", attrs, "DIMENSION");
             ctx.Add(dim);
             return new JsonObject { ["id"] = dim.Id, ["associated"] = new JsonArray(stations.Select(s => (JsonNode)(s.Item2 != null)).ToArray()) };
-        });
-
-        // More points on the end of a string.
-        r.Command("extendDimension", "Continue dimension", (ctx, a) =>
-        {
-            var dim = Linear(ctx.Model, a);
-            var pts = a["pts"] is JsonArray pa ? pa.Select(P).ToList() : [P(a["point"])];
-            return new JsonObject { ["id"] = dim.Id, ["associated"] = Extend(ctx, dim, pts) };
         });
 
         // A driving dimension: typing a segment's value moves what it measures (and, in a string, what follows).

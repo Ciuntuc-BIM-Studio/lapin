@@ -146,29 +146,6 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             return null;
         });
 
-        // A point moved, added or taken away (an index past the end adds).
-        r.Command("setTerrainPoint", "Terrain point", (ctx, a) =>
-        {
-            var t = Terrain(ctx.Model, (string?)a["id"]);
-            var pts = Terrains.Points(t);
-            var i = (int)(Json.Number(a["index"]) ?? pts.Count);
-            if (a["remove"] is JsonValue rv && rv.TryGetValue<bool>(out var remove) && remove)
-            {
-                if (i < 0 || i >= pts.Count) throw new CommandException("There is no such point.");
-                pts.RemoveAt(i);
-            }
-            else
-            {
-                var p = new Vec3(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0, Json.Number(a["z"]) ?? 0);
-                if (i >= 0 && i < pts.Count) pts[i] = p; else pts.Add(p);
-            }
-            if (!Tin.Spans(pts)) throw new CommandException("The terrain needs at least three points that are not in a line.");
-            var attrs = t.CloneAttrs();
-            attrs["points"] = Terrains.PointsJson(pts);
-            ctx.Replace(t.With(attrs: attrs));
-            return null;
-        });
-
         // A platform: its outline in plan, levelled at its elevation (model height).
         r.Command("addPlatform", "Platform", (ctx, a) =>
         {

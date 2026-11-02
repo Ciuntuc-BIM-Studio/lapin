@@ -47,10 +47,10 @@ public class DimensionStringTests
         // Every point snaps, where it lands on the dimension line; the grips read the points as drawn.
         Assert.Equal(6, mark["snaps"]!.AsArray().Count);
         Assert.Equal(3, mark["data"]!["points"]!.AsArray().Count);
-        // Built point by point, it stays one: `after` and extendDimension put points on its end.
+        // Built point by point, it stays one: `after` puts points on its end.
         var one = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = Plan(f), ["a"] = new JsonArray(0, 5), ["b"] = new JsonArray(1, 5), ["at"] = new JsonArray(0, 6) })!["id"]!;
         Assert.Equal(one, (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = Plan(f), ["a"] = new JsonArray(1, 5), ["b"] = new JsonArray(3, 5), ["at"] = new JsonArray(0, 6), ["after"] = one })!["id"]!);
-        f.Run("drafting.extendDimension", new JsonObject { ["id"] = one, ["point"] = new JsonArray(6, 5) });
+        f.Run("drafting.addDimension", new JsonObject { ["viewId"] = Plan(f), ["pts"] = new JsonArray(new JsonArray(6, 5)), ["after"] = one });
         Assert.Equal(2, Dims(f).Count);
         Assert.Equal([1.0, 2.0, 3.0], Values(f, one));
         // The segment under a point: the one nearest it on the dimension line.
