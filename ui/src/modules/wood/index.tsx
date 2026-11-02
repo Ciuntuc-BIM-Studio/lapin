@@ -13,6 +13,10 @@ import { FrameDialog } from './FrameDialog';
 import { OpeningWoodSection, WallWoodSection } from './Sections';
 
 const frame: ToolDef = { id: 'wood.frame', label: 'Timber frame', icon: Settings2, run: () => useUi.setState({ dialog: 'woodFrame' }) };
+const boards: ToolDef = {
+  id: 'wood.boards', label: 'Boards schedule', icon: Table2,
+  run: () => void execute('architecture.createSchedule', { kind: 'boards' }).then((r) => { if (r) notify('Boards schedule made: it is in the project browser, under Schedules.'); }),
+};
 const schedule: ToolDef = {
   id: 'wood.schedule', label: 'Timber schedule', icon: Table2,
   run: () => void execute('architecture.createSchedule', { kind: 'timber' }).then((r) => { if (r) notify('Timber schedule made: it is in the project browser, under Schedules.'); }),
@@ -26,7 +30,7 @@ export const woodModule: LapinModule = {
     id: 'wood', label: 'Wood', order: 33, include: ['modify'],
     groups: [
       { label: 'Frame', tools: [frame] },
-      { label: 'Schedule', tools: [schedule] },
+      { label: 'Schedule', tools: [schedule, boards] },
     ],
   }],
   dialogs: { woodFrame: FrameDialog },

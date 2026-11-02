@@ -22,6 +22,13 @@ Cada hueco toma la regla de su **tramo de anchura** (la tabla bajo **Openings**:
 
 Selecciona una puerta o ventana: su sección **Wood** muestra el hueco bruto, la regla que toma y lo que recibe. Marca **Regla propia** para dar solo a ese hueco otros montantes, otro dintel u otro alféizar.
 
+## Esquinas, tableros y alzado del entramado
+
+- **Esquinas**: donde otro muro termina contra el extremo de este (esquina a tope), el muro que pasa lleva **tres montantes** (uno tras la cara interior del otro), una esquina **California** (un montante plano en la cara interior, para el revestimiento) o **solo sus montantes de extremo**. Una esquina a inglete conserva los montantes de extremo de ambos muros.
+- **Encuentros en T**: donde un muro termina contra este en su recorrido, este lleva **un montante a cada lado** o **montantes y travesaños en escalera** entre ellos.
+- **Tableros**: marca una capa (OSB, tablero de fibras, placa de yeso) y da el tamaño de la hoja: la capa se coloca en hojas verticales, con las juntas en el módulo de los montantes, cortadas en los huecos brutos y a lo largo de la coronación. **Wood → Boards schedule** cuenta las hojas de cada muro, su área neta y lo que se recorta.
+- **Alzado del entramado**: en la sección **Wood** de un muro de entramado, el botón crea una sección a lo largo del muro por el centro de su núcleo, a 1:20, con todas las piezas cortadas, una cadena de cotas por los huecos brutos, el módulo de montantes debajo y el tamaño de cada hueco bruto. Se coloca en una lámina como cualquier vista.
+
 ## La lista de madera
 
 **Wood → Timber schedule** hace la lista de despiece de toda la madera del proyecto, las piezas de los muros y las de las cubiertas: pieza, sección, clase, longitud, unidades, longitud total y volumen, con los totales por sección. En IFC cada pieza es un IfcMember (STUD, PLATE, el dintel y el alféizar por su nombre) bajo su muro, y el aislamiento un IfcCovering INSULATION.

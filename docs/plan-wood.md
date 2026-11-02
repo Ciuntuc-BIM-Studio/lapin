@@ -108,7 +108,11 @@ Cerut de utilizator la 02.11.2026: un modul independent, numit `wood`, pentru co
 3. **Planșeele pe grinzi**, cu golurile de scară.
 4. **Panourile prefabricate** și elevațiile de atelier.
 5. **CLT**: alcătuirile, împărțirea în panouri, golurile (regulile 14–15), extrasul de panouri.
-6. **Premium** (de decis): dimensionarea EC5 a buiandrugilor și a montanților, conectorii, exportul CNC (BTLx), optimizarea tăierii.
+6. **Premium**: dimensionarea EC5 a buiandrugilor și a montanților, conectorii, exportul CNC (BTLx), optimizarea tăierii.
+
+## Stadiul (02.11.2026)
+
+Etapa 1 făcută (decizia 239), colțurile, T-urile, plăcile și elevația de cadru (decizia 240). Etapele 3 și 4 trec deocamdată la premium (decizia 240): în ediția liberă planșeele pe grinzi și panourile se fac manual. Următoarea: CLT (etapa 5).
 
 ## De decis
 

@@ -460,6 +460,12 @@ export const scenes = [
       const framed = await t.call('doc.query', { name: 'wood.wall', args: { id: walls[0] } });
       t.expect(framed?.framed && framed.counts.king > 0, `the house's walls are framed (${JSON.stringify(framed?.counts)})`);
       await t.ui({ dialog: null });
+      // The frame elevation of the front wall, from its Wood section (decision 240).
+      await select(t, walls[0]);
+      await t.wait(600);
+      await t.page.locator('[data-testid=wood-frame-view]').click();
+      await t.wait(1500);
+      t.expect((await t.nodes()).some((n) => n.type === 'LapinView' && n.props?.woodFrame === walls[0]), 'the front wall has its frame elevation');
     },
   },
   {

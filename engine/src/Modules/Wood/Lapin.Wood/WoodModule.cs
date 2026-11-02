@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Architecture.Roofs;
+using Lapin.Drawing.Views;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
@@ -15,16 +16,35 @@ namespace Lapin.Wood;
 /// rule or its own (<c>woodFraming</c> on the opening). Commands set a type's frame and an opening's own rule; the
 /// configurator's preview lays out a sample wall; the Timber schedule lists every member, the roofs' timber too.
 /// </summary>
-public sealed class WoodModule : ILapinModule, IGeometryFilter
+public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
 {
     public string Id => "wood";
     public string Name => "Wood";
 
     public const string OpeningKey = "woodFraming";
+    /// <summary>A view that is a wall's frame elevation names the wall.</summary>
+    public const string FrameViewKey = "woodFrame";
 
     public void Register(IModuleRegistry r)
     {
         r.Service<IGeometryFilter>(this);
+        r.Service<IViewAnnotations>(this);
+        r.Service<IScheduleSource>(new BoardSchedule());
+
+        // A timber-frame wall's frame elevation (decision 240): a section along its axis through the middle of its core, every
+        // member cut, at 1:20, with the frame's dimensions; {id (the wall)} → the view.
+        r.Command("frameView", "Frame elevation", (ctx, a) =>
+        {
+            var wall = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Wall } w ? w : throw new CommandException("Pick a wall.");
+            if (FrameSpec.Of(Walls.TypeOf(ctx.Model, wall.Id)) == null) throw new CommandException("The wall is not a timber frame: its type is built of layers.");
+            var core = Walls.Section(ctx.Model, wall).First(b => b.Core);
+            var attrs = new JsonObject { ["kind"] = "section", ["scale"] = 20, ["discipline"] = "Structure", [FrameViewKey] = wall.Id, ["depth"] = Math.Round((core.To - core.From) / 2 + 0.01, 4) };
+            var (s, e) = (Walls.Start(wall), Walls.End(wall));
+            SectionPaths.Set(ctx.Model, ctx.Services, attrs, new JsonObject { ["start"] = new JsonArray(s.X, s.Y), ["end"] = new JsonArray(e.X, e.Y) }, create: true);
+            var v = new Entity(ctx.NewId(), Views.Class, $"Frame · {wall.Name}", attrs);
+            ctx.Add(v);
+            return new JsonObject { ["id"] = v.Id };
+        });
         r.Service<IScheduleSource>(new TimberSchedule());
 
         // A wall type's frame: {id (the wall type), spec (null: not a timber frame)}.
@@ -75,6 +95,18 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter
             var (_, d) = spec.Stud;
             var result = Framing.Layout(spec, 0, length, _ => height, [], -d / 2, d / 2, holes, 0);
             return ToJson(result, length, height);
+        });
+
+        // A wall type's layers, first to last, for the configurator's boards: {id} → [{index, name, thickness, core}].
+        r.Query("layers", (q, a) =>
+        {
+            var type = q.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.WallType } t ? t : throw new CommandException("Not a wall type.");
+            var layers = WallTypes.LayersOf(q.Model, type.Id);
+            var core = Lapin.Model.Layers.CoreIndex(layers);
+            return new JsonArray([.. layers.Select((l, i) => (JsonNode)new JsonObject
+            {
+                ["index"] = i, ["name"] = l.Name ?? q.Model.Get(l.Material)?.Name ?? $"Layer {i + 1}", ["thickness"] = l.Thickness, ["core"] = i == core,
+            })]);
         });
 
         // A wall's frame as built: its members by role, its warnings, its openings' rules.
@@ -135,6 +167,8 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter
     /// </summary>
     public static WallFrame? Of(IModelView m, Entity wall, ElementGeometry? g, IServices? services)
     {
+        // The wall's body as the filter made it: the frame it was made with (its core is gone from it by then).
+        if (g != null && Built.TryGetValue(g, out var made)) return made;
         if (wall.Class != IfcClass.Wall || FrameSpec.Of(Walls.TypeOf(m, wall.Id)) is not { } spec) return null;
         if (PathCurve.Of(wall) is { IsArc: true }) return null;
         var bands = Walls.Section(m, wall);
@@ -181,11 +215,54 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter
             p.Opening.Id, p.Along, p.Sill, p.Width, p.Height, p.Fill?.Class == IfcClass.Door || p.Sill <= 1e-6,
             p.Opening.Attrs[OpeningKey] is JsonObject own ? OpeningRule.From(own, spec.RuleFor(p.Width + 2 * spec.GapSide)) : null)).ToList();
         var origin = spec.LayoutFrom == "project" ? -Vec2.Dot(start, dir) : 0;
-        var result = Framing.Layout(spec, u0, u1, top, bends, core.From, core.To, holes, origin);
+        var result = Framing.Layout(spec, u0, u1, top, bends, core.From, core.To, holes, origin, Junctions(m, wall, start, dir, axis.Length, u0, u1, bands));
         var names = placed.ToDictionary(p => p.Opening.Id, p => p.Fill?.Name ?? "An opening");
         var warnings = result.Warnings.Select(w => names.Aggregate(w, (acc, kv) => acc.Replace(kv.Key + ":", kv.Value + ":"))).ToList();
         return new WallFrame(wall, spec, result with { Warnings = warnings }, start, dir, baseZ, u0, u1, profile is { Count: > 0 } ? profile.Max(p => p.V) : height);
     }
+
+    /// <summary>
+    /// Where the other walls of the storey stop against this one (decision 240): their core's band along it, at a corner
+    /// (where this wall's core runs past the corner point, as its join made it) or in its run (a T), and on which side.
+    /// </summary>
+    static List<Framing.Junction> Junctions(IModelView m, Entity wall, Vec2 start, Vec2 dir, double length, double u0, double u1, IReadOnlyList<Walls.Band> bands)
+    {
+        var o = new List<Framing.Junction>();
+        var storey = Spatial.StoreyOf(m, wall.Id)?.Id;
+        var reach = Math.Max(Math.Abs(bands.Min(b => b.From)), Math.Abs(bands.Max(b => b.To))) + 0.02;
+        foreach (var other in m.OfClass(IfcClass.Wall))
+        {
+            if (other.Id == wall.Id || Spatial.StoreyOf(m, other.Id)?.Id != storey || PathCurve.Of(other) is { IsArc: true }) continue;
+            var (a, b) = (Walls.Start(other), Walls.End(other));
+            var od = b - a;
+            if (od.Length < 1e-6 || Math.Abs(Vec2.Cross(dir, od.Normalized())) < 0.3) continue;
+            var obands = Walls.Section(m, other);
+            if (!obands.Any(x => x.Core)) continue;
+            var oc = obands.First(x => x.Core);
+            var half = (oc.To - oc.From) / 2;
+            foreach (var (p, q) in new[] { (a, b), (b, a) })
+            {
+                var s = Vec2.Dot(p - start, dir);
+                if (Math.Abs(Vec2.Cross(dir, p - start)) > reach || s < -half - 0.05 || s > length + half + 0.05) continue;
+                var left = Vec2.Cross(dir, q - p) > 0;
+                var (j0, j1) = (s - half, s + half);
+                if (s < half + 0.05)
+                {
+                    // At this wall's start: a corner only where this wall's core runs past the other's middle.
+                    if (u0 < s - half / 2) o.Add(new Framing.Junction(j0, j1, true, 1, left));
+                }
+                else if (s > length - half - 0.05)
+                {
+                    if (u1 > s + half / 2) o.Add(new Framing.Junction(j0, j1, true, -1, left));
+                }
+                else o.Add(new Framing.Junction(j0, j1, false, 0, left));
+            }
+        }
+        return o;
+    }
+
+    /// <summary>Each framed body the filter returns, with the frame it was built from (read back by the queries and the schedule).</summary>
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ElementGeometry, WallFrame> Built = new();
 
     /// <summary>The members of a timber-frame wall in place of its core, each a part; the insulation between them; the lintels a masonry rule would put in, gone.</summary>
     public ElementGeometry? Apply(Entity entity, ElementGeometry geometry, IModelView model, IServices services)
@@ -194,6 +271,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter
         var core = Walls.Section(model, entity).First(b => b.Core);
         var parts = geometry.Parts.Where(p => p.Key != $"layer:{core.Index}" && !(p.Key?.StartsWith("lintel", StringComparison.Ordinal) ?? false)).ToList();
         var counts = new Dictionary<string, int>();
+        var timber = model.OfClass(IfcClass.Material).FirstOrDefault(x => x.Name.Contains("timber", StringComparison.OrdinalIgnoreCase) || x.Name.Contains("wood", StringComparison.OrdinalIgnoreCase) || x.Name.Contains("lemn", StringComparison.OrdinalIgnoreCase))?.Id;
         foreach (var mb in f.Result.Members)
         {
             var face = mb.Face.Select(p => f.At(p.U, p.Z, mb.Y0)).ToList();
@@ -201,7 +279,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter
             if (Prism.Extrude(face, null, across, mb.Role) is not { } body) continue;
             var i = counts[mb.Role] = counts.GetValueOrDefault(mb.Role) + 1;
             var (w, d) = FrameSpec.Size(mb.Section, (0, 0));
-            parts.Add(new GeometryPart($"{Label(mb.Role)} {Section(mb.Section)}", Colour(mb.Role), body, null, $"wood:{mb.Role}:{i}")
+            parts.Add(new GeometryPart($"{Label(mb.Role)} {Section(mb.Section)}", Colour(mb.Role), body, timber, $"wood:{mb.Role}:{i}")
             {
                 PropertySet = "Lapin_Timber",
                 Properties = [("Role", Label(mb.Role)), ("Section", Section(mb.Section)), ("Grade", f.Spec.Grade), ("Length", Math.Round(mb.Length, 3).ToString(CultureInfo.InvariantCulture))],
@@ -209,13 +287,85 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter
         }
         var insulation = f.Result.Insulation.Select(c =>
             Prism.Extrude([f.At(c.U0, c.Z0, core.From), f.At(c.U1, c.Z0, core.From), f.At(c.U1, c.Z1Right, core.From), f.At(c.U0, c.Z1Left, core.From)], null, f.At(0, 0, core.To) - f.At(0, 0, core.From), "insulation")).OfType<Solid>().ToList();
-        if (insulation.Count > 0) parts.Add(new GeometryPart("Insulation", "#e8d27a", Openings.Combine(insulation, "insulation"), null, "wood-insulation"));
-        return geometry with { Parts = parts, Diagnostics = f.Result.Warnings.Count > 0 ? [.. geometry.Diagnostics ?? [], .. f.Result.Warnings] : geometry.Diagnostics };
+        // The layers laid as sheets (decision 240): each sheet the layer's own body (its openings, joins and top already cut) within
+        // a sheet's box, the joints upright on the studs' module, the sheets stacked where the wall is taller than one.
+        var booleans = services.Get<ISolidBooleans>();
+        var bands = Walls.Section(model, entity);
+        foreach (var rule in f.Spec.Boards ?? [])
+        {
+            var band = bands.FirstOrDefault(b => b.Index == rule.Layer);
+            var layerPart = parts.FirstOrDefault(p => p.Key == $"layer:{rule.Layer}");
+            if (layerPart == null || booleans == null || band.Core) continue;
+            var pts = layerPart.Solid.Vertices.Select(v => (U: Vec2.Dot(v.Xy - f.Start, f.Dir), Z: v.Z - f.BaseZ)).ToList();
+            var (lu0, lu1, lz0, lz1) = (pts.Min(p => p.U), pts.Max(p => p.U), pts.Min(p => p.Z), pts.Max(p => p.Z));
+            var origin = f.Spec.LayoutFrom == "project" ? -Vec2.Dot(f.Start, f.Dir) : 0;
+            var first = origin + Math.Floor((lu0 - origin) / rule.Width) * rule.Width;
+            var sheets = new List<GeometryPart>();
+            var k = 0;
+            for (var u = first; u < lu1 - 1e-6; u += rule.Width)
+                for (var z = lz0; z < lz1 - 1e-6; z += rule.Height)
+                {
+                    var (a0, a1, z0, z1) = (Math.Max(u, lu0 - 0.01), Math.Min(u + rule.Width, lu1 + 0.01), z, Math.Min(z + rule.Height, lz1 + 0.01));
+                    List<Vec3> face = [f.At(a0, z0, band.From - 0.01), f.At(a1, z0, band.From - 0.01), f.At(a1, z1, band.From - 0.01), f.At(a0, z1, band.From - 0.01)];
+                    if (Prism.Extrude(face, null, f.At(0, 0, band.To + 0.01) - f.At(0, 0, band.From - 0.01), "sheet") is not { } box) continue;
+                    Solid? piece;
+                    try { piece = booleans.Intersection(layerPart.Solid, box, "sheet"); }
+                    catch (InvalidOperationException) { piece = null; }
+                    if (piece == null || Measure.Volume(piece) < 1e-7) continue;
+                    sheets.Add(new GeometryPart($"{band.Name} {Math.Round(rule.Width * 1000)}×{Math.Round(rule.Height * 1000)}", layerPart.Color, piece, layerPart.Material, $"wood-board:{rule.Layer}:{++k}")
+                    {
+                        PropertySet = "Lapin_Board",
+                        Properties = [("Layer", band.Name), ("Sheet", $"{Math.Round(rule.Width * 1000)}x{Math.Round(rule.Height * 1000)} mm"), ("Area", Math.Round(Measure.Volume(piece) / Math.Max(1e-9, band.To - band.From), 3).ToString(CultureInfo.InvariantCulture))],
+                    });
+                }
+            if (sheets.Count == 0) continue;
+            parts.Remove(layerPart);
+            parts.AddRange(sheets);
+        }
+        // The insulation in the core layer's material: the stud zone is where the build-up has it.
+        if (insulation.Count > 0) parts.Add(new GeometryPart("Insulation", "#e8d27a", Openings.Combine(insulation, "insulation"), core.Material, "wood-insulation"));
+        var framed = geometry with { Parts = parts, Diagnostics = f.Result.Warnings.Count > 0 ? [.. geometry.Diagnostics ?? [], .. f.Result.Warnings] : geometry.Diagnostics };
+        Built.AddOrUpdate(framed, f);
+        return framed;
+    }
+
+    /// <summary>
+    /// A frame elevation's dimensions (decision 240): under the wall, a chain from end to end through every rough opening's
+    /// sides and, below it, the studs' module; each rough opening's size inside it.
+    /// </summary>
+    public IEnumerable<ViewMark> Marks(ViewContext c)
+    {
+        if (c.View.Str(FrameViewKey) is not { } wallId || c.Model.Get(wallId) is not { } wall || c.Geometry?.Invoke(wallId) is not { } g) yield break;
+        if (Of(c.Model, wall, g, c.Services) is not { } f) yield break;
+        var core = Walls.Section(c.Model, wall).First(b => b.Core);
+        var y = (core.From + core.To) / 2;
+        Vec2 P(double u, double z) => c.Map(f.At(u, z, y));
+        var k = c.Scale / 1000;
+        var text = Lapin.Drawing.Standards.ResolveText(c.Book, []);
+        var mk = new ViewMark(wallId);
+        void Chain(IReadOnlyList<double> us, double z, string color)
+        {
+            var pts = us.Distinct().OrderBy(u => u).ToList();
+            if (pts.Count < 2) return;
+            mk.Line(P(pts[0], z), P(pts[^1], z), "DIMENSION", 0.18, color);
+            foreach (var u in pts) mk.Line(P(u, z - 1.5 * k * 10), P(u, z + 1.5 * k * 10), "DIMENSION", 0.25, color);
+            for (var i = 0; i + 1 < pts.Count; i++)
+            {
+                var mid = P((pts[i] + pts[i + 1]) / 2, z + 1.2 * k * 10);
+                mk.Text(new PenText(mid, Math.Round((pts[i + 1] - pts[i]) * 1000).ToString(CultureInfo.InvariantCulture), text.Height, Anchor: "middle", Font: text.Font), color);
+            }
+        }
+        var ros = f.Result.Openings.Values.ToList();
+        Chain([f.U0, .. ros.SelectMany(o => new[] { o.U0, o.U1 }), f.U1], -0.25, "#000000");
+        Chain([f.U0, .. f.Result.Members.Where(m => m.Role is "stud" or "cripple" or "king" or "end" or "corner" or "backer").Select(m => Math.Round((m.U0 + m.U1) / 2, 4)), f.U1], -0.5, "#555555");
+        foreach (var o in ros)
+            mk.Text(new PenText(P((o.U0 + o.U1) / 2, (o.Z0 + o.Z1) / 2), $"{Math.Round((o.U1 - o.U0) * 1000)} × {Math.Round((o.Z1 - o.Z0) * 1000)}", text.Height, Anchor: "middle", Font: text.Font), "#000000");
+        yield return mk;
     }
 
     public static string Label(string role) => role switch
     {
-        "plate" => "Plate", "end" => "End stud", "stud" => "Stud", "king" => "King stud", "jack" => "Jack stud", "header" => "Header",
+        "plate" => "Plate", "end" => "End stud", "corner" => "Corner stud", "backer" => "Backer stud", "blocking" => "Blocking", "stud" => "Stud", "king" => "King stud", "jack" => "Jack stud", "header" => "Header",
         "sill" => "Sill", "cripple" => "Cripple", "noggin" => "Noggin", _ => role,
     };
 

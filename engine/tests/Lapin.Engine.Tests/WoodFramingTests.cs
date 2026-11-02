@@ -120,6 +120,61 @@ public class WoodFramingTests
     }
 
     [Fact]
+    public void Corners_and_Ts_get_their_studs_where_the_other_wall_stops_against_this_one()
+    {
+        var f = new Fixture(new ArchitectureModule(), new StudioModule(), new WoodModule());
+        string W(double x1, double y1, double x2, double y2) => (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = x1, ["y1"] = y1, ["x2"] = x2, ["y2"] = y2, ["joinStyle"] = "butt" })!["id"]!;
+        var walls = new[] { W(0, 0, 8, 0), W(8, 0, 8, 6), W(8, 6, 0, 6), W(0, 6, 0, 0) };
+        var inner = W(4, 0, 4, 6);
+        int PlanLines() => ((JsonArray)((JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = "plan:" + f.Storey })!)["pens"]!).Sum(p => ((p!["segments"] as JsonArray)?.Count ?? 0) / 4);
+        var layered = PlanLines();
+        f.Run("wood.setWallFrame", new JsonObject { ["id"] = Walls.TypeOf(f.Model, walls[0])!.Id, ["spec"] = FrameSpec.Nordic.ToJson() });
+        JsonObject Counts(string id) => (JsonObject)((JsonObject)f.Session.Query("wood.wall", new JsonObject { ["id"] = id })!)["counts"]!;
+        int N(string id, string role) => Counts(id)[role] is { } n ? (int)n : 0;
+        // Butt corners: at each corner one wall runs through and takes the corner stud (three studs, rule "three").
+        Assert.Equal(4, walls.Sum(w => N(w, "corner")));
+        // The partition stops against the long walls in their run: a backer stud each side of it, in each.
+        Assert.Equal(2, N(walls[0], "backer"));
+        Assert.Equal(2, N(walls[2], "backer"));
+        Assert.Equal(0, N(inner, "backer"));
+        // California: the corner stud laid flat on the inside face; a ladder at the T.
+        f.Run("wood.setWallFrame", new JsonObject { ["id"] = Walls.TypeOf(f.Model, walls[0])!.Id, ["spec"] = (FrameSpec.Nordic with { Corner = "california", Tee = "ladder" }).ToJson() });
+        var w0 = (JsonObject)f.Session.Query("wood.wall", new JsonObject { ["id"] = walls[0] })!;
+        Assert.True(N(walls[0], "blocking") >= 3);
+        // In plan the studs are cut, each its own little rectangle, the insulation between them: far more lines than the layers'.
+        Assert.True(PlanLines() > layered + 100, $"{PlanLines()} lines framed, {layered} as layers");
+    }
+
+    [Fact]
+    public void Boards_are_laid_as_sheets_on_the_module_and_the_frame_elevation_is_dimensioned()
+    {
+        var (f, wall, window, type) = Wall();
+        var bands = Walls.Section(f.Model, f.Model.Get(wall)!);
+        var outer = bands.First(b => !b.Core).Index;
+        f.Run("wood.setWallFrame", new JsonObject { ["id"] = type, ["spec"] = (FrameSpec.Nordic with { Boards = [new BoardRule(outer, 1.2, 2.7)] }).ToJson() });
+        var parts = f.Session.Geometry(wall)!.Parts;
+        Assert.DoesNotContain(parts, p => p.Key == $"layer:{outer}");
+        var sheets = parts.Where(p => p.Key!.StartsWith($"wood-board:{outer}:")).ToList();
+        // A 6 m wall 3 m high: five or six sheets across (the ends past the module), two high (2.7 m and the rest).
+        Assert.InRange(sheets.Count, 10, 12);
+        // Each sheet within its box: no sheet wider than 1.2 m or higher than 2.7 m.
+        Assert.All(sheets, p => { var v = p.Solid.Vertices; Assert.True(v.Max(q => q.Z) - v.Min(q => q.Z) <= 2.7 + 1e-6); Assert.True(v.Max(q => q.X) - v.Min(q => q.X) <= 1.2 + 1e-6); });
+        var row = Assert.Single(BoardSchedule.Rows(new Q(f)));
+        Assert.Equal(sheets.Count, row.Sheets);
+        Assert.True(row.NetArea > 6 * 3 - 2.5 && row.NetArea < 6.3 * 3, $"{row.NetArea} m²");
+        Assert.True(row.Waste > 0);
+        // The frame elevation: a section along the wall, at 1:20, its members cut, its dimensions and the rough opening's size.
+        var view = (string)f.Run("wood.frameView", new JsonObject { ["id"] = wall })!["id"]!;
+        Assert.Equal(20, f.Model.Get(view)!.Num("scale"));
+        var d = (JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = view })!;
+        var texts = ((JsonArray)d["pens"]!).SelectMany(p => (p!["texts"] as JsonArray)?.Select(t => (string?)t!["text"]) ?? []).ToList();
+        var ro = (JsonObject)f.Session.Query("wood.opening", new JsonObject { ["id"] = window })!;
+        Assert.Contains($"{Math.Round((double)ro["roughWidth"]! * 1000)} × {Math.Round((double)ro["roughHeight"]! * 1000)}", texts);
+        Assert.Contains("600", texts);
+        Assert.Throws<CommandException>(() => f.Run("wood.frameView", new JsonObject { ["id"] = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 5, ["x2"] = 3, ["y2"] = 5, ["typeId"] = f.Run("architecture.createWallType", new JsonObject { ["name"] = "Plain", ["layers"] = new JsonArray(new JsonObject { ["material"] = "Concrete", ["thickness"] = 0.2, ["core"] = true }) })!["id"]!.DeepClone() })!["id"]! }));
+    }
+
+    [Fact]
     public void The_preview_the_timber_schedule_and_IFC()
     {
         var (f, wall, _, _) = Wall();

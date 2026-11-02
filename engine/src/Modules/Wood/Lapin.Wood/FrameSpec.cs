@@ -5,6 +5,14 @@ using Lapin.Platform;
 
 namespace Lapin.Wood;
 
+/// <summary>A layer of the wall type laid as sheets (decision 240): its index in the build-up and the sheet's width and height; the sheets stand upright, their joints on the studs' module.</summary>
+public sealed record BoardRule(int Layer, double Width, double Height)
+{
+    public JsonObject ToJson() => new() { ["layer"] = Layer, ["width"] = Width, ["height"] = Height };
+    public static BoardRule? From(JsonNode? n) => n is JsonObject o && Json.Number(o["layer"]) is { } l
+        ? new BoardRule((int)l, Json.Number(o["width"]) ?? 1.2, Json.Number(o["height"]) ?? 2.7) : null;
+}
+
 /// <summary>A header over an opening: none (a flat member, on a wall carrying nothing), sawn timber, LVL or glulam; its section and how many plies side by side.</summary>
 public sealed record HeaderRule(string Kind, string Section, int Plies);
 
@@ -40,8 +48,17 @@ public sealed record OpeningRule(double MaxWidth, int Kings, int Jacks, HeaderRu
 /// </summary>
 public sealed record FrameSpec(
     string StudSection, double Spacing, string Grade, int BottomPlates, int TopPlates, int EndStuds, double[] Noggins,
-    string LayoutFrom, bool LoadBearing, double GapSide, double GapTop, double GapBottom, double MinGap, double MinPier, OpeningRule[] Openings)
+    string LayoutFrom, bool LoadBearing, double GapSide, double GapTop, double GapBottom, double MinGap, double MinPier, OpeningRule[] Openings,
+    string Corner = "three", string Tee = "double", BoardRule[]? Boards = null)
 {
+    /// <summary>
+    /// How a corner is built where another wall stops against this one's end: "three" (a stud past the other wall's inner
+    /// face, three in all), "california" (a stud laid flat on the inside face, for the lining), "l" (the end studs alone).
+    /// </summary>
+    public static readonly string[] Corners = ["three", "california", "l"];
+    /// <summary>How a wall stopping against this one in its run is backed: "double" (a stud each side of it), "ladder" (studs and flat blocking between them).</summary>
+    public static readonly string[] Tees = ["double", "ladder"];
+
     public const string Key = "wood";
     public static readonly string[] Constructions = ["timberFrame"];
     public static readonly string[] HeaderKinds = ["none", "solid", "lvl", "glulam"];
@@ -96,6 +113,8 @@ public sealed record FrameSpec(
         ["noggins"] = new JsonArray([.. Noggins.Select(x => (JsonNode)x)]), ["layoutFrom"] = LayoutFrom, ["loadBearing"] = LoadBearing,
         ["gapSide"] = GapSide, ["gapTop"] = GapTop, ["gapBottom"] = GapBottom, ["minGap"] = MinGap, ["minPier"] = MinPier,
         ["openings"] = new JsonArray([.. Openings.Select(r => (JsonNode)r.ToJson())]),
+        ["corner"] = Corner, ["tee"] = Tee,
+        ["boards"] = new JsonArray([.. (Boards ?? []).Select(b => (JsonNode)b.ToJson())]),
     };
 
     public static FrameSpec From(JsonNode? n)
@@ -112,7 +131,9 @@ public sealed record FrameSpec(
             (o["noggins"] as JsonArray)?.Select(x => Json.Number(x) ?? 0).Where(x => x > 0).OrderBy(x => x).ToArray() ?? d.Noggins,
             (string?)o["layoutFrom"] == "project" ? "project" : "start", B("loadBearing", d.LoadBearing),
             Json.Number(o["gapSide"]) ?? d.GapSide, Json.Number(o["gapTop"]) ?? d.GapTop, Json.Number(o["gapBottom"]) ?? d.GapBottom,
-            Json.Number(o["minGap"]) ?? d.MinGap, Json.Number(o["minPier"]) ?? d.MinPier, rules);
+            Json.Number(o["minGap"]) ?? d.MinGap, Json.Number(o["minPier"]) ?? d.MinPier, rules,
+            Corners.Contains((string?)o["corner"] ?? "") ? (string)o["corner"]! : d.Corner, Tees.Contains((string?)o["tee"] ?? "") ? (string)o["tee"]! : d.Tee,
+            (o["boards"] as JsonArray)?.Select(BoardRule.From).OfType<BoardRule>().ToArray() ?? []);
     }
 
     /// <summary>Refused when it cannot build: the spacing, the counts, the gaps, the sections.</summary>
@@ -123,6 +144,8 @@ public sealed record FrameSpec(
         if (EndStuds is < 1 or > 3) return "A wall ends in 1 to 3 studs.";
         if (Size(StudSection, (0, 0)).W <= 0) return $"„{StudSection}” is not a section (write it as 45x145 mm).";
         if (new[] { GapSide, GapTop, GapBottom }.Any(g => g < 0 || g > 0.1)) return "A fitting gap is 0 to 100 mm.";
+        foreach (var b in Boards ?? [])
+            if (b.Width < 0.3 || b.Width > 3.5 || b.Height < 0.3 || b.Height > 6) return "A sheet is 300 to 3500 mm wide and 300 to 6000 mm high.";
         foreach (var r in Openings)
         {
             if (r.Kings is < 0 or > 4 || r.Jacks is < 0 or > 4 || r.Sill is < 0 or > 3) return "An opening has 0 to 4 king and jack studs and 0 to 3 sill plies.";

@@ -22,6 +22,13 @@ Each opening takes the rule of its **width band** (the table under **Openings**:
 
 Select a door or window: its **Wood** section shows its rough opening, the rule it takes and what it gets. Tick **Own rule** to give that opening alone other king or jack studs, another header or sill.
 
+## Corners, boards and the frame elevation
+
+- **Corners**: where another wall stops against this one's end (a butt corner), the wall that runs through takes **three studs** (one past the other wall's inside face), a **California** corner (a stud laid flat on the inside face, for the lining) or its **end studs only**. A mitred corner keeps both walls' end studs.
+- **T junctions**: where a wall stops against this one in its run, this one takes **a stud each side** of it, or **studs and ladder blocking** between them.
+- **Boards**: tick a layer of the build-up (OSB, fibreboard, plasterboard) and give its sheet size: the layer is laid as upright sheets, their joints on the studs' module, cut at the rough openings and along the top. **Wood → Boards schedule** counts the sheets each wall takes, their net area and what is cut off.
+- **Frame elevation**: in a framed wall's **Wood** section, the button makes a section along the wall through the middle of its core, at 1:20, every member cut, with a chain of dimensions through the rough openings, the studs' module under it and each rough opening's size. Place it on a sheet like any view.
+
 ## The Timber schedule
 
 **Wood → Timber schedule** makes a cutting list of every piece of timber in the project, the walls' members and the roofs' framing: member, section, grade, length, pieces, total length and volume, with the totals by section. In IFC each member is an IfcMember (STUD, PLATE, a header or sill by name) under its wall, and the insulation an IfcCovering INSULATION.

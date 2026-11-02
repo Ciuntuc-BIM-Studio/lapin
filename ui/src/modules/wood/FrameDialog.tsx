@@ -16,6 +16,8 @@ export type Rule = { maxWidth: number; kings: number; jacks: number; header: Hea
 export interface Spec {
   construction: 'timberFrame'; studSection: string; spacing: number; grade: string; bottomPlates: number; topPlates: number; endStuds: number;
   noggins: number[]; layoutFrom: 'start' | 'project'; loadBearing: boolean; gapSide: number; gapTop: number; gapBottom: number; minGap: number; minPier: number; openings: Rule[];
+  corner?: 'three' | 'california' | 'l'; tee?: 'double' | 'ladder';
+  boards?: { layer: number; width: number; height: number }[];
 }
 export interface Framed {
   problem?: string; length: number; height: number;
@@ -98,6 +100,8 @@ export function FrameDialog() {
   const [spec, setSpec] = useState<Spec>(stored ?? NORDIC);
   const [on, setOn] = useState(Boolean(stored));
   const [preview, setPreview] = useState<Framed | null>(null);
+  const [layers, setLayers] = useState<{ index: number; name: string; thickness: number; core: boolean }[]>([]);
+  useEffect(() => { if (editing) void query<typeof layers>('wood.layers', { id: editing }).then((l) => setLayers(l ?? [])); }, [editing, nodes]);
   // Loaded when the type picked changes, not on every diff (that would throw away what is being typed).
   useEffect(() => { const s = (editing ? useSession.getState().nodes.get(editing)?.props.wood : null) as Spec | undefined | null; setSpec(s ? structuredClone(s) : structuredClone(NORDIC)); setOn(Boolean(s)); }, [editing]);
   useEffect(() => {
@@ -162,9 +166,36 @@ export function FrameDialog() {
                         <option value="start">the wall's start</option><option value="project">the project's origin</option>
                       </select>
                     </label>
+                    <label className="field-line wood-field" title="Where another wall stops against this one's end (a butt corner; a mitred one keeps the end studs)"><span className="eyebrow">Corners</span>
+                      <select value={spec.corner ?? 'three'} onChange={(e) => set({ corner: e.target.value as Spec['corner'] })}>
+                        <option value="three">three studs</option><option value="california">California (a flat stud inside)</option><option value="l">end studs only</option>
+                      </select>
+                    </label>
+                    <label className="field-line wood-field" title="Where another wall stops against this one in its run"><span className="eyebrow">T junctions</span>
+                      <select value={spec.tee ?? 'double'} onChange={(e) => set({ tee: e.target.value as Spec['tee'] })}>
+                        <option value="double">a stud each side</option><option value="ladder">studs and ladder blocking</option>
+                      </select>
+                    </label>
                     <label className="field-line wood-field" title="A partition carries nothing: a flat member over its openings"><span className="eyebrow">Load-bearing</span>
                       <input type="checkbox" checked={spec.loadBearing} onChange={(e) => set({ loadBearing: e.target.checked })} />
                     </label>
+                    <p className="eyebrow">Boards</p>
+                    {layers.filter((l) => !l.core).map((l) => {
+                      const b = (spec.boards ?? []).find((x) => x.layer === l.index);
+                      const setBoard = (patch: Partial<{ width: number; height: number }> | null) => set({ boards: patch === null
+                        ? (spec.boards ?? []).filter((x) => x.layer !== l.index)
+                        : [...(spec.boards ?? []).filter((x) => x.layer !== l.index), { layer: l.index, width: b?.width ?? 1.2, height: b?.height ?? 2.7, ...patch }] });
+                      return (
+                        <div key={l.index} className="row wood-board" title="Laid as sheets: upright, their joints on the studs' module, cut at the rough openings">
+                          <label className="row"><input type="checkbox" checked={Boolean(b)} onChange={(e) => setBoard(e.target.checked ? {} : null)} /> {l.name} <span className="muted small">{Math.round(l.thickness * 1000)} mm</span></label>
+                          {b && <>
+                            <input className="num" defaultValue={Math.round(b.width * 1000)} key={`bw${l.index}${b.width}`} title="Sheet width (mm)" onBlur={(e) => setBoard({ width: Number(e.target.value) / 1000 })} />
+                            <span>×</span>
+                            <input className="num" defaultValue={Math.round(b.height * 1000)} key={`bh${l.index}${b.height}`} title="Sheet height (mm)" onBlur={(e) => setBoard({ height: Number(e.target.value) / 1000 })} />
+                          </>}
+                        </div>
+                      );
+                    })}
                     <p className="eyebrow">Openings</p>
                     <Mm label="Gap at the sides" value={spec.gapSide} onChange={(v) => set({ gapSide: v })} title="The rough opening is the door or window and these gaps" />
                     <Mm label="Gap on top" value={spec.gapTop} onChange={(v) => set({ gapTop: v })} />

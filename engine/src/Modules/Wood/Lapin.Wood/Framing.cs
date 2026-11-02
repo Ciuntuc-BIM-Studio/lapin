@@ -17,7 +17,7 @@ public static class Framing
         public double U1 => Face.Max(p => p.U);
         public double Z0 => Face.Min(p => p.Z);
         public double Z1 => Face.Max(p => p.Z);
-        public bool Upright => Role is "stud" or "end" or "king" or "jack" or "cripple";
+        public bool Upright => Role is "stud" or "end" or "king" or "jack" or "cripple" or "corner" or "backer";
         /// <summary>Its length as it is cut: an upright's height, a plate's or header's run (along its slope).</summary>
         public double Length => Upright ? Z1 - Z0 : Face.Count == 4 ? Math.Sqrt(Math.Pow(Face[1].U - Face[0].U, 2) + Math.Pow(Face[1].Z - Face[0].Z, 2)) : U1 - U0;
         public double Volume => Math.Abs(Area(Face)) * (Y1 - Y0);
@@ -26,12 +26,18 @@ public static class Framing
     /// <summary>An opening in the wall: its centre along the axis, its bottom, the door's or window's size, whether it is a door, and its own rule if it has one.</summary>
     public sealed record Hole(string Id, double Along, double Sill, double Width, double Height, bool Door, OpeningRule? Own = null);
 
+    /// <summary>
+    /// Another wall's core stopping against this one, from <c>U0</c> to <c>U1</c> along it: at one of its ends (a corner,
+    /// <c>Inward</c> pointing along the wall away from that end) or in its run (a T); on its left (+y) or its right.
+    /// </summary>
+    public sealed record Junction(double U0, double U1, bool Corner, int Inward, bool Left);
+
     /// <summary>A rectangle of the stud zone filled with insulation (its top may slant).</summary>
     public sealed record Cavity(double U0, double U1, double Z0, double Z1Left, double Z1Right);
 
     public sealed record Result(List<Member> Members, List<Cavity> Insulation, List<string> Warnings, Dictionary<string, (OpeningRule Rule, double U0, double U1, double Z0, double Z1)> Openings);
 
-    public static readonly string[] Roles = ["plate", "end", "stud", "king", "jack", "header", "sill", "cripple", "noggin"];
+    public static readonly string[] Roles = ["plate", "end", "corner", "backer", "stud", "king", "jack", "header", "sill", "cripple", "noggin", "blocking"];
 
     static double Area(IReadOnlyList<(double U, double Z)> f)
     {
@@ -47,7 +53,7 @@ public static class Framing
     /// (<paramref name="y0"/> to <paramref name="y1"/>); the core's top over its base at any u, with the u where it bends; its
     /// openings; the u the studs' module starts from.
     /// </summary>
-    public static Result Layout(FrameSpec spec, double u0, double u1, Func<double, double> top, IReadOnlyList<double> bends, double y0, double y1, IReadOnlyList<Hole> holes, double origin)
+    public static Result Layout(FrameSpec spec, double u0, double u1, Func<double, double> top, IReadOnlyList<double> bends, double y0, double y1, IReadOnlyList<Hole> holes, double origin, IReadOnlyList<Junction>? junctions = null)
     {
         var members = new List<Member>();
         var warnings = new List<string>();
@@ -111,6 +117,41 @@ public static class Framing
         {
             Add("end", Rect(u0 + i * t, u0 + (i + 1) * t, zA, ZB(u0 + (i + 0.5) * t)), stud);
             Add("end", Rect(u1 - (i + 1) * t, u1 - i * t, zA, ZB(u1 - (i + 0.5) * t)), stud);
+        }
+
+        // Where other walls stop against this one (decision 240): at a corner, the corner's studs past the other wall's inner
+        // face; in the run (a T), a stud each side of it, or those and flat blocking between them.
+        var backing = new List<(double L, double R)>();
+        foreach (var j in junctions ?? [])
+        {
+            var faceY = j.Left ? (y1 - t, y1) : (y0, y0 + t);
+            if (j.Corner)
+            {
+                var inner = j.Inward > 0 ? j.U1 : j.U0;
+                if (spec.Corner == "three")
+                {
+                    var (a, b) = j.Inward > 0 ? (inner, inner + t) : (inner - t, inner);
+                    Add("corner", Rect(a, b, zA, ZB((a + b) / 2)), stud);
+                    backing.Add((Math.Min(a, j.U0), Math.Max(b, j.U1)));
+                }
+                else if (spec.Corner == "california")
+                {
+                    // Laid flat against the inside face: as wide as the stud is deep, as thick as it is wide.
+                    var (a, b) = j.Inward > 0 ? (inner, inner + depth) : (inner - depth, inner);
+                    Add("corner", Rect(a, b, zA, ZB((a + b) / 2)), stud, null, faceY.Item1, faceY.Item2);
+                    backing.Add((Math.Min(a, j.U0), Math.Max(b, j.U1)));
+                }
+                else backing.Add((j.U0, j.U1));
+                continue;
+            }
+            var (l0, l1, r0, r1) = (j.U0, j.U0 + t, j.U1 - t, j.U1);
+            if (spec.Tee == "ladder") (l0, l1, r0, r1) = (j.U0 - t, j.U0, j.U1, j.U1 + t);
+            Add("backer", Rect(l0, l1, zA, ZB((l0 + l1) / 2)), stud);
+            Add("backer", Rect(r0, r1, zA, ZB((r0 + r1) / 2)), stud);
+            if (spec.Tee == "ladder")
+                for (var z = zA + 0.6; z < Math.Min(ZB(l1), ZB(r0)) - t; z += 0.6)
+                    Add("blocking", Rect(l1, r0, z, z + t), stud, null, faceY.Item1, faceY.Item2);
+            backing.Add((l0, r1));
         }
 
         // Round each group of openings: kings at its outer sides, jacks at every rough opening's sides (merged where they meet),
@@ -192,6 +233,7 @@ public static class Framing
             var (a, b) = (g - t / 2, g + t / 2);
             if (a < u0 + endZone + spec.MinGap || b > u1 - endZone - spec.MinGap) continue;
             if (blocked.Any(x => b > x.L && a < x.R)) continue;
+            if (backing.Any(x => b > x.L - spec.MinGap && a < x.R + spec.MinGap)) continue;
             Add("stud", Rect(a, b, zA, ZB(g)), stud);
         }
 
@@ -212,7 +254,7 @@ public static class Framing
         }
 
         // The insulation: the stud zone less every member and every rough opening, strip by strip.
-        var solids = members.Where(m => m.Role != "plate").Select(m => (m.U0, m.U1, m.Z0, m.Z1)).Concat(openingsRects).ToList();
+        var solids = members.Where(m => m.Role is not ("plate" or "blocking")).Select(m => (m.U0, m.U1, m.Z0, m.Z1)).Concat(openingsRects).ToList();
         var cuts = solids.SelectMany(s => new[] { s.Item1, s.Item2 }).Append(u0).Append(u1).Where(u => u >= u0 - 1e-9 && u <= u1 + 1e-9).Concat(knots).Distinct().OrderBy(u => u).ToList();
         var insulation = new List<Cavity>();
         for (var i = 0; i + 1 < cuts.Count; i++)

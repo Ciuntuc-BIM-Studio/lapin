@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { HEADERS, SECTIONS, type Rule } from './FrameDialog';
@@ -22,6 +23,8 @@ export function WallWoodSection({ node }: { node: NodeDto }) {
         {Object.entries(info.counts ?? {}).map(([k, v]) => <div key={k} className="contents"><dt>{k}</dt><dd className="num">{v}</dd></div>)}
       </dl>
       {(info.warnings ?? []).map((w, i) => <p key={i} className="error-text small">{w}</p>)}
+      <button type="button" className="btn compact" data-testid="wood-frame-view" title="A section along the wall through its core, every member cut, at 1:20, dimensioned: place it on a sheet"
+        onClick={() => void execute('wood.frameView', { id: node.id }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'drawing', drawingViewId: id }); })}>Frame elevation</button>
     </div>
   );
 }

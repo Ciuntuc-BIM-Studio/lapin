@@ -396,6 +396,8 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 /* The timber frame configurator (decision 239). */
 .wood-field { grid-template-columns: 150px 1fr; }
 .wood-field select, .wood-field input.num { max-width: 160px; }
+.wood-board { gap: 6px; }
+.wood-board input.num { width: 4.6em; }
 .wood-rules { border-collapse: collapse; table-layout: auto; width: auto; }
 .wood-rules th { font-weight: 500; font-size: 11px; text-align: left; padding: 2px 4px; }
 .wood-rules td { padding: 2px 3px; }

@@ -22,6 +22,13 @@ Fiecare gol ia regula **treptei lui de lățime** (tabelul de sub **Openings**: 
 
 Selectezi o ușă sau o fereastră: secțiunea **Wood** arată golul brut, regula pe care o ia și ce primește. Bifezi **Regulă proprie** ca doar golul acela să aibă alți montanți, alt buiandrug sau alt pervaz.
 
+## Colțuri, plăci și elevația de cadru
+
+- **Colțuri**: unde alt perete se oprește în capătul acestuia (colț cap la cap), peretele care trece primește **trei montanți** (unul după fața interioară a celuilalt), colț **California** (un montant culcat pe fața interioară, pentru placare) sau **doar montanții de capăt**. Un colț la 45° păstrează montanții de capăt ai ambilor pereți.
+- **Îmbinări în T**: unde un perete se oprește în lungul acestuia, acesta primește **câte un montant de fiecare parte** a lui sau **montanți și rigle-scară** între ei.
+- **Plăci**: bifezi un strat al alcătuirii (OSB, plăci fibrolemnoase, gips-carton) și îi dai mărimea foii: stratul se pune din foi verticale, cu rosturile pe modulul montanților, tăiate la golurile brute și de-a lungul coronamentului. **Wood → Boards schedule** numără foile fiecărui perete, aria netă și ce se taie.
+- **Elevația de cadru**: în secțiunea **Wood** a unui perete pe cadre, butonul face o secțiune de-a lungul peretelui prin mijlocul miezului, la 1:20, cu toate piesele tăiate, cu un lanț de cote prin golurile brute, modulul montanților sub el și mărimea fiecărui gol brut. O pui pe planșă ca pe orice vedere.
+
 ## Extrasul de lemn
 
 **Wood → Timber schedule** face lista de debitare a întregului lemn din proiect, piesele pereților și ale șarpantelor: piesa, secțiunea, clasa, lungimea, bucățile, lungimea totală și volumul, cu totalurile pe secțiune. În IFC fiecare piesă e un IfcMember (STUD, PLATE, buiandrugul și pervazul cu numele lor) sub peretele ei, iar izolația un IfcCovering INSULATION.
