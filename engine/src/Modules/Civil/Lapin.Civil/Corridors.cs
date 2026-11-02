@@ -34,12 +34,19 @@ public sealed class Chain
 
     public Chain(IReadOnlyList<Vec2> path, double start = 0) : this(path, null, start) { }
 
-    public Chain(IReadOnlyList<Vec2> path, IReadOnlyList<PiCurve>? curves, double start = 0)
+    /// <summary>A path without its repeated points (within a micrometre), each point kept with its curve: what the chain is built on.</summary>
+    public static (List<Vec2> Path, List<PiCurve> Curves) Clean(IReadOnlyList<Vec2> path, IReadOnlyList<PiCurve>? curves)
     {
         var clean = new List<Vec2>();
         var kept = new List<PiCurve>();
         for (var i = 0; i < path.Count; i++)
             if (clean.Count == 0 || (path[i] - clean[^1]).Length > 1e-6) { clean.Add(path[i]); kept.Add(curves != null && i < curves.Count ? curves[i] : PiCurve.None); }
+        return (clean, kept);
+    }
+
+    public Chain(IReadOnlyList<Vec2> path, IReadOnlyList<PiCurve>? curves, double start = 0)
+    {
+        var (clean, kept) = Clean(path, curves);
         Start = start;
         if (clean.Count >= 2 && kept.Any(c => !c.IsCorner))
         {

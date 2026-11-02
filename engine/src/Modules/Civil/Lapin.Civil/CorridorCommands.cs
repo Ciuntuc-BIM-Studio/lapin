@@ -27,8 +27,9 @@ public static class CorridorCommands
             if (a["curves"] is JsonArray cv)
             {
                 var curves = CorridorSpec.ReadCurves(cv);
-                var path = Terrains.Contour(e, "path");
-                if (curves.Any(c => !c.IsCorner) && Lapin.Alignments.PiAlignment.Problem(Lapin.Alignments.PiAlignment.Of(path, curves)) is { } why) throw new CommandException(why);
+                // Checked on the path the chain is built on (a doubled vertex dropped with its curve), not on the raw one.
+                var (path, kept) = Chain.Clean(Terrains.Contour(e, "path"), curves);
+                if (kept.Any(c => !c.IsCorner) && Lapin.Alignments.PiAlignment.Problem(Lapin.Alignments.PiAlignment.Of(path, kept)) is { } why) throw new CommandException(why);
                 o["curves"] = CorridorSpec.CurvesJson(curves);
             }
             if (Json.Number(a["interval"]) is { } every)

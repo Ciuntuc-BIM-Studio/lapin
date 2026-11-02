@@ -112,6 +112,27 @@ public class ChainTests
     }
 
     [Fact]
+    public void Curves_on_a_path_with_a_doubled_vertex_are_checked_on_the_path_the_axis_is_built_on()
+    {
+        var f = Site();
+        Flat(f);
+        var p = (string)f.Run("civil.addPath", new JsonObject { ["points"] = Pts(L), ["width"] = 2 })!["id"]!;
+        // The corner written twice (a path from linework, an older file): the chain drops the second with its curve.
+        f.Session.History.Execute("doubled", e =>
+        {
+            var path = e.Model.Get(p)!;
+            var attrs = path.CloneAttrs();
+            attrs["path"] = Pts((0, 0), (20, 0), (20, 0), (20, 10));
+            e.Replace(path.With(attrs: attrs));
+        });
+        f.Run("civil.setCorridor", new JsonObject { ["id"] = p, ["curves"] = Curves((0, 0, 0), (5, 0, 0), (0, 0, 0), (0, 0, 0)) });
+        var ls = f.Session.Query("civil.corridor", new JsonObject { ["id"] = p })!;
+        Assert.True((bool)ls["curved"]!);
+        Assert.Equal(RoundedLength, (double)ls["length"]!, 6);
+        Assert.Empty(f.Session.Geometry(p)!.Diagnostics ?? []);
+    }
+
+    [Fact]
     public void A_retaining_wall_follows_a_rounded_corner_unbroken()
     {
         var f = Site();
