@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
+import { label } from './format';
 
 interface Spec { pen?: number; color?: string; pattern?: string }
 interface Dto {
@@ -21,7 +22,6 @@ interface Dto {
   categories: string[]; roles: string[]; patterns: string[];
 }
 
-const label = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 export function ObjectStylesDialog() {
   const nodes = useSession((s) => s.nodes);

@@ -13,12 +13,12 @@ import { Archive, ArchiveX, Download, FolderOpen, FolderOutput, Trash2, X } from
 import { notify, useUi } from '../../../app/store';
 import { execute, useSession } from '../../../engine/session';
 import { isDesktop } from '../../../engine/files';
+import { when } from '../format';
 import {
   canUseFolder, cdeIssues, cdeSettings, devOverride, downloadIssueZip, dropIssueFiles, formatSize, issueStorage, missingHashes, openFolder, openIssued, pickFolder,
   publishIssue, saveIssued, type CdeSettings, type Issue, type IssueStorage,
 } from './cde';
 
-const when = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }); };
 
 const NAMING: [keyof CdeSettings['naming'], string, string][] = [
   ['project', 'Project code', '2–6 letters and digits: the project as the office codes it'],

@@ -15,6 +15,7 @@ import { storeys } from '../../engine/model';
 import { frontView } from '../../viewport/frontView';
 import type { NodeDto } from '../../engine/protocol';
 import { Storeys3DEditor } from './Storeys3D';
+import { level } from './format';
 
 interface Display { mode: 'home' | 'some' | 'all'; ids: string[]; halftone: boolean }
 
@@ -23,7 +24,6 @@ const displayOf = (view: NodeDto): Display => {
   return { mode: s?.mode ?? 'home', ids: s?.ids ?? [], halftone: s?.halftone === true };
 };
 
-const level = (n: NodeDto) => { const z = Number(n.props.elevation ?? 0); return `${z >= 0 ? '+' : '−'}${Math.abs(z).toFixed(2)}`; };
 
 /** The editor: which storeys besides its own a plan shows, and how. */
 export function PlanStoreysEditor({ view }: { view: NodeDto }) {
@@ -58,7 +58,7 @@ export function PlanStoreysEditor({ view }: { view: NodeDto }) {
             <li key={s.id} className={own ? 'own' : undefined}>
               <label>
                 <input type="checkbox" checked={on} disabled={own || d.mode === 'all'} onChange={(e) => toggle(s.id, e.target.checked)} />
-                {' '}{s.name} <span className="muted small">{level(s)}{own ? ' · this plan' : ''}</span>
+                {' '}{s.name} <span className="muted small">{level(Number(s.props.elevation ?? 0))}{own ? ' · this plan' : ''}</span>
               </label>
             </li>
           );

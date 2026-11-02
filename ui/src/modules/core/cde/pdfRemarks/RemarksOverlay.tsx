@@ -11,8 +11,8 @@ import { Check, RotateCcw, Trash2, X, XCircle } from 'lucide-react';
 import { notify } from '../../../../app/store';
 import { useSession } from '../../../../engine/session';
 import { deleteRemarks, initials, KIND_LABELS, remarkShape, remarksOf, setRemarkStatus, useRemarkUi, type Remark } from './remarks';
+import { when } from '../../format';
 
-const when = (iso: string | null) => { if (!iso) return ''; const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }); };
 
 /** The outlines and markers, in the sheet's SVG; `toScreen` maps paper mm to pixels, `k` is pixels per mm. */
 export function RemarksOverlay({ sheetId, toScreen, k }: { sheetId: string; toScreen: (p: { x: number; y: number }) => { x: number; y: number }; k: number }) {

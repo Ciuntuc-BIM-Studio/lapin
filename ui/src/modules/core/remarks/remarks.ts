@@ -45,11 +45,7 @@ export function filterRemarks(list: Remark[], f: Filter): Remark[] {
 export const assigneesOf = (list: Remark[]): string[] => [...new Set(list.map((r) => r.assignedTo).filter((s): s is string => Boolean(s)))].sort();
 
 /** A remark's time, kept as the file gave it (ISO 8601), shown in the user's own. */
-export function when(iso: string | undefined): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-}
+export { when } from '../format';
 
 const AUTHOR_KEY = 'lapin.remarks.author';
 /** Who writes the remarks here: the name kept for them, else the one used in shared sessions. */

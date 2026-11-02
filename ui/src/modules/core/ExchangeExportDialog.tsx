@@ -10,22 +10,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
-import { engine, query, useSession } from '../../engine/session';
+import { engine, useSession } from '../../engine/session';
 import { exportFile, projectTitle } from '../../engine/files';
 import { choiceOf, type ExchangeFormat, type Survey } from '../../engine/ifcImport';
 import { useLooks } from '../../platform/looks';
 import { nothingChosen, SurveyChoice } from './SurveyChoice';
+import { ORIGINS, usePhaseList } from './format';
 
-const ORIGINS: [string, string][] = [['base', 'the project base point'], ['internal', 'the internal origin'], ['survey', 'the survey point (real coordinates)']];
 
 export function ExchangeExportDialog() {
   const path = useSession((s) => s.doc?.path ?? null);
   const view3dId = useUi((s) => s.view3dId);
-  const [format, setFormat] = useState<ExchangeFormat>(useUi.getState().dialog === 'exportFrag' ? 'frag' : 'ifc');
+  const [format, setFormat] = useState<ExchangeFormat>('ifc');
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [offKinds, setOffKinds] = useState<Set<string>>(new Set());
   const [offStoreys, setOffStoreys] = useState<Set<string>>(new Set());
-  const [phases, setPhases] = useState<{ id: string; name: string }[]>([]);
+  const phases = usePhaseList();
   const [phase, setPhase] = useState('');
   // What the 3D view does not draw (the storeys it does not show, what is hidden for now), by the looks.
   const [hidden] = useState(() => Object.entries(useLooks.getState().looks).filter(([, l]) => l.hidden).map(([id]) => id));
@@ -40,7 +40,6 @@ export function ExchangeExportDialog() {
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
     void engine.call<Survey>('project.exportSurvey', {}).then(setSurvey).catch(() => setSurvey(null));
-    void query<{ phases: { id: string; name: string }[] }>('phases.settings').then((r) => setPhases(r?.phases ?? []));
   }, []);
   const choice = useMemo(() => (survey ? choiceOf(survey, offKinds, offStoreys) : { kinds: null, storeys: null }), [survey, offKinds, offStoreys]);
   const mm = Number(tolerance.replace(',', '.'));

@@ -8,6 +8,7 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Survey, SurveyGroup } from '../../engine/ifcImport';
+import { toggle } from './format';
 
 /** A checkbox showing all, none or some of its rows. */
 function Tri({ on, some, onChange, label }: { on: boolean; some: boolean; onChange: (on: boolean) => void; label: string }) {
@@ -17,11 +18,6 @@ function Tri({ on, some, onChange, label }: { on: boolean; some: boolean; onChan
   );
 }
 
-const toggle = (set: ReadonlySet<string>, keys: string[], on: boolean) => {
-  const next = new Set(set);
-  for (const k of keys) { if (on) next.delete(k); else next.add(k); }
-  return next;
-};
 
 /** Every storey key of a survey ('' for the elements on none). */
 export const storeyKeysOf = (survey: Survey) => [...survey.storeys.map((s) => s.id), ...(survey.noStorey ? [''] : [])];

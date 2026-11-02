@@ -10,6 +10,7 @@ import { Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
+import { label } from './format';
 
 interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string }
 interface Visibility { graphics?: { categories?: Record<string, Row>; classes?: Record<string, Row> } | null; graphicsSet?: string | null; sets: { id: string; name: string }[]; categories: string[]; /** Hidden until the graphics show them (rooms, in 3D). */ hiddenByDefault?: string[] }
@@ -17,7 +18,6 @@ interface Visibility { graphics?: { categories?: Record<string, Row>; classes?: 
 /** The ISO 128 pen series (mm), as the engine reads a category's weight; the older names still show when a project has them. */
 const WEIGHTS = ['', '0.13', '0.18', '0.25', '0.35', '0.5', '0.7', '1.0'];
 const LEGACY: Record<string, string> = { heavy: '0.7', medium: '0.5', light: '0.25', hairline: '0.13' };
-const label = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 export function VisibilityDialog() {
   const nodes = useSession((s) => s.nodes);

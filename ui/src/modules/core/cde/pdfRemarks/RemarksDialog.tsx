@@ -16,12 +16,12 @@ import { notify, useUi } from '../../../../app/store';
 import { useSession } from '../../../../engine/session';
 import { isDesktop } from '../../../../engine/files';
 import { RemarkActions } from './RemarksOverlay';
+import { when } from '../../format';
 import {
   filterRemarks, groupBySheet, importRemarks, initials, KIND_LABELS, pickPdf, readPdf, remarksOf, scanRemarks, showRemark,
   type PdfReadResult, type PdfSource, type Remark, type ScannedPdf, type StatusFilter,
 } from './remarks';
 
-const when = (iso: string | null) => { if (!iso) return ''; const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }); };
 const FILTERS: [StatusFilter, string][] = [['open', 'Open'], ['resolved', 'Resolved'], ['closed', 'Closed'], ['all', 'All']];
 const BY: Record<PdfReadResult['by'], string> = {
   issue: 'matched by the project\'s issue record', manifest: 'matched by the manifest beside the file', name: 'matched by the file name', chosen: 'the sheet you chose', none: 'no sheet matched: choose one',

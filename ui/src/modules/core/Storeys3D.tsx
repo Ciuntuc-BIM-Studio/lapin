@@ -12,8 +12,8 @@ import { activeStorey, execute, useSession } from '../../engine/session';
 import { storeys } from '../../engine/model';
 import { setLooks } from '../../platform/looks';
 import { hiddenByStoreys, settingOf, shownStoreys, type Storeys3d } from '../../viewport/storeys3d';
+import { level } from './format';
 
-const level = (z: number) => `${z >= 0 ? '+' : '−'}${Math.abs(z).toFixed(2)}`;
 
 /** The editor: a 3D view's storeys shown ("3d": {3D}). */
 export function Storeys3DEditor({ viewId }: { viewId: string }) {

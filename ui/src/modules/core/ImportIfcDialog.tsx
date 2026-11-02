@@ -16,14 +16,10 @@ import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { choiceOf, chosenCount, rememberRules, rememberedRules, rulesOf, runIfcImport, useIfcImport, type ImportMode, type RememberedRules } from '../../engine/ifcImport';
 import { nothingChosen, SurveyChoice } from './SurveyChoice';
+import { toggle } from './format';
 
 const mb = (bytes: number) => (bytes >= 1 << 30 ? `${(bytes / (1 << 30)).toFixed(1)} GB` : `${Math.max(1, Math.round(bytes / (1 << 20)))} MB`);
 
-const toggle = (set: ReadonlySet<string>, keys: string[], on: boolean) => {
-  const next = new Set(set);
-  for (const k of keys) { if (on) next.delete(k); else next.add(k); }
-  return next;
-};
 
 export function ImportIfcDialog() {
   const survey = useIfcImport((s) => s.survey);

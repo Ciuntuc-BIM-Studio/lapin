@@ -17,15 +17,16 @@
  * point, its internal origin or the survey point's coordinates.
  */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
-import { query, useSession } from '../../engine/session';
+import { useSession } from '../../engine/session';
 import { exportFile, projectTitle } from '../../engine/files';
 import { useLooks } from '../../platform/looks';
 import { useClip3d } from '../../viewport/section3d';
 import { view3dProps } from '../../viewport/storeys3d';
 import { layers3dOf } from '../../viewport/layers3d';
+import { ORIGINS, usePhaseList } from './format';
 
 const FORMATS: [string, string][] = [
   ['glb', 'GLB: glTF in one binary file (Blender, three.js, viewers)'],
@@ -34,7 +35,6 @@ const FORMATS: [string, string][] = [
   ['usda', 'USDA: OpenUSD as text'],
   ['dae', 'DAE: COLLADA 1.4.1 (SketchUp, Rhino, 3ds Max, Blender)'],
 ];
-const ORIGINS: [string, string][] = [['base', 'the project base point'], ['internal', 'the internal origin'], ['survey', 'the survey point (real coordinates)']];
 
 export function ExportMeshDialog() {
   const path = useSession((s) => s.doc?.path ?? null);
@@ -52,12 +52,11 @@ export function ExportMeshDialog() {
   const [what, setWhat] = useState<'model' | 'view'>(hidesAny ? 'view' : 'model');
   const [cuts, setCuts] = useState(true);
   const [phase, setPhase] = useState('');
-  const [phases, setPhases] = useState<{ id: string; name: string }[]>([]);
+  const phases = usePhaseList();
   const [edges, setEdges] = useState(false);
   const [origin, setOrigin] = useState('base');
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
-  useEffect(() => { void query<{ phases: { id: string; name: string }[] }>('phases.settings').then((r) => setPhases(r?.phases ?? [])); }, []);
   const run = async () => {
     setBusy(true);
     const view = what === 'view' ? { viewId: view3dId ?? '3d', hidden, ...(cuts && planes.length ? { planes } : {}) } : {};

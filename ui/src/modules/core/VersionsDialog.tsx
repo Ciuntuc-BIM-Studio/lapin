@@ -15,6 +15,7 @@ import { notify, select, useUi } from '../../app/store';
 import { engine, useSession } from '../../engine/session';
 import { exportVersion, isDesktop, listVersions, openVersionSeparately, projectTitle, writeVersions, type ProjectVersion } from '../../engine/files';
 import { LONG_TIMEOUT_MS } from '../../engine/client';
+import { formatSize, when } from './format';
 
 interface Change { id: string; class: string; name: string; fields?: string[] }
 interface Comparison {
@@ -26,8 +27,6 @@ interface Comparison {
 
 const CURRENT = 'current';
 /** A version's time, kept in UTC, shown in the user's own. */
-const when = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }); };
-const size = (bytes: number) => (bytes >= 1_048_576 ? `${(bytes / 1_048_576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} kB`);
 
 export function VersionsDialog() {
   const path = useSession((s) => s.doc?.path ?? null);
@@ -152,7 +151,7 @@ function VersionRows({ v, busy, path, title, nodesKnown, onRename, onNote, onRes
         <td title={v.updatedAt !== v.at ? `updated ${when(v.updatedAt)}` : undefined}>{when(v.at)}</td>
         <td><input defaultValue={v.note ?? ''} placeholder="—" onBlur={(e) => { const n = e.target.value.trim(); if (n !== (v.note ?? '')) onNote(n); }} /></td>
         <td className="num">{v.entities}</td>
-        <td className="num">{size(v.size)}</td>
+        <td className="num">{formatSize(v.size)}</td>
         <td className="row-tools">
           <button type="button" className="icon mini" title="Restore: the project back to this version, in one undo step" disabled={busy || !nodesKnown} onClick={() => onRestore(null)}><RotateCcw size={12} /></button>
           <button type="button" className="icon mini" title="Compare with the project as it is now" disabled={busy} onClick={onCompare}><GitCompareArrows size={12} /></button>
@@ -169,7 +168,7 @@ function VersionRows({ v, busy, path, title, nodesKnown, onRename, onNote, onRes
           <td className="muted">{when(r.at)}</td>
           <td className="muted">{r.note ?? '—'}</td>
           <td className="num muted">{r.entities}</td>
-          <td className="num muted">{size(r.size)}</td>
+          <td className="num muted">{formatSize(r.size)}</td>
           <td className="row-tools">
             <button type="button" className="icon mini" title="Restore this earlier state" disabled={busy || !nodesKnown} onClick={() => onRestore(i)}><RotateCcw size={12} /></button>
             <button type="button" className="icon mini" title="Export as a .lapin file of its own" disabled={busy} onClick={() => onExport(i)}><Download size={12} /></button>

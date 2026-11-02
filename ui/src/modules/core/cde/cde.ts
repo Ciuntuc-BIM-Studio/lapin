@@ -199,4 +199,4 @@ export async function publishIssue(issue: Issue, folder?: string): Promise<void>
 export const dropIssueFiles = (id: string, kinds?: string[]) => execute('cde.dropIssueFiles', { id, ...(kinds ? { kinds } : {}) });
 
 /** A size as people read it. */
-export const formatSize = (bytes: number) => (bytes >= 1_048_576 ? `${(bytes / 1_048_576).toFixed(1)} MB` : bytes >= 1024 ? `${Math.round(bytes / 1024)} kB` : `${bytes} B`);
+export { formatSize } from '../format';
