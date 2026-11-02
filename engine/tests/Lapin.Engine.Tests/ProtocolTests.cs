@@ -36,7 +36,8 @@ public class ProtocolTests
         }
         Assert.Equal(3, f.Model.OfClass(Lapin.Model.IfcClass.Wall).Count());
         // Its first frame is still being sent; the others wait in its queue, until there are too many.
-        Assert.Equal(1, stalled.Sends);
+        for (var i = 0; i < 100 && Volatile.Read(ref stalled.Sends) == 0; i++) await Task.Delay(20);
+        Assert.Equal(1, Volatile.Read(ref stalled.Sends));
         for (var i = 0; i <= EngineHub.Client.MaxFrames; i++) stalled.Post([0]);
         Assert.True(stalled.WasDropped);
         Assert.True(stalled.Dropped);

@@ -35,11 +35,13 @@ app.Map("/relay/host", async ctx =>
     var id = ctx.Request.Query["room"].ToString();
     if (!ctx.WebSockets.IsWebSocketRequest || !ValidRoom(id)) { ctx.Response.StatusCode = 400; return; }
     if (rooms.Count >= maxRooms) { ctx.Response.StatusCode = 503; return; }
-    var ws = await ctx.WebSockets.AcceptWebSocketAsync();
-    var room = new Room(ws);
-    if (!rooms.TryAdd(id, room)) { await ws.CloseAsync((WebSocketCloseStatus)4009, "room taken", default); return; }
+    // The room is there before the host's connection is: the host may hand out its invitation the moment it is accepted.
+    var room = new Room();
+    if (!rooms.TryAdd(id, room)) { ctx.Response.StatusCode = 409; return; }
     try
     {
+        var ws = await ctx.WebSockets.AcceptWebSocketAsync();
+        room.Open(ws);
         await foreach (var frame in Receive(ws, ctx.RequestAborted))
         {
             if (frame.Length < 5) continue;
@@ -52,6 +54,7 @@ app.Map("/relay/host", async ctx =>
     finally
     {
         rooms.TryRemove(new(id, room));
+        room.End();
         foreach (var g in room.Guests.Values) await g.Close();
     }
 });
@@ -62,24 +65,27 @@ app.Map("/relay/join", async ctx =>
     if (!ctx.WebSockets.IsWebSocketRequest || !ValidRoom(id)) { ctx.Response.StatusCode = 400; return; }
     if (!rooms.TryGetValue(id, out var room)) { ctx.Response.StatusCode = 404; return; }
     if (room.Guests.Count >= maxGuests) { ctx.Response.StatusCode = 503; return; }
+    Peer host;
+    try { host = await room.Host.WaitAsync(TimeSpan.FromSeconds(10)); }
+    catch (Exception ex) when (ex is TimeoutException or OperationCanceledException) { ctx.Response.StatusCode = 404; return; }
     var ws = await ctx.WebSockets.AcceptWebSocketAsync();
     var guest = new Peer(ws);
     var gid = room.Join(guest);
     try
     {
-        await room.Host.Send(Header(1, gid));
+        await host.Send(Header(1, gid));
         await foreach (var frame in Receive(ws, ctx.RequestAborted))
         {
             var message = new byte[frame.Length + 5];
             Header(3, gid).CopyTo(message, 0);
             frame.CopyTo(message, 5);
-            await room.Host.Send(message);
+            await host.Send(message);
         }
     }
     finally
     {
         room.Guests.TryRemove(gid, out _);
-        try { await room.Host.Send(Header(2, gid)); } catch (Exception ex) when (ex is WebSocketException or ObjectDisposedException) { }
+        try { await host.Send(Header(2, gid)); } catch (Exception ex) when (ex is WebSocketException or ObjectDisposedException) { }
     }
 });
 
@@ -154,11 +160,15 @@ sealed class Peer(WebSocket ws)
     }
 }
 
-/// <summary>One shared session: its host and its guests by number.</summary>
-sealed class Room(WebSocket host)
+/// <summary>One shared session: its host (once its connection is accepted) and its guests by number.</summary>
+sealed class Room
 {
     uint _next;
-    public Peer Host { get; } = new(host);
+    readonly TaskCompletionSource<Peer> _host = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public Task<Peer> Host => _host.Task;
+    public void Open(WebSocket ws) => _host.TrySetResult(new Peer(ws));
+    /// <summary>The host gone (or never accepted): a guest waiting for it is turned away.</summary>
+    public void End() => _host.TrySetCanceled();
     public ConcurrentDictionary<uint, Peer> Guests { get; } = new();
 
     public uint Join(Peer guest)
