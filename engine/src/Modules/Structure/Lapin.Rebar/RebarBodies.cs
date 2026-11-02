@@ -64,14 +64,15 @@ public static class RebarBodies
         string Color(double d) => st.ColorByDiameter ? RebarShapes.ColorOf(d) : "#000000";
         foreach (var e in m.OfClass(Rebars.Class))
         {
-            // A bar put in section elsewhere (not in the schedule) stands for one already drawn.
-            if (e.Bool("excludeSchedule") || (ids != null && !ids.Contains(e.Id))) continue;
+            // A bar put in section elsewhere stands for one already drawn.
+            if (Rebar3D.IsCopy(e) || (ids != null && !ids.Contains(e.Id))) continue;
             var s = Rebars.SpecOf(e);
-            foreach (var chain in Placed(m, services, geometry, e, s, st)) yield return new Chain(chain, s.Diameter, Color(s.Diameter));
+            foreach (var chain in Rebar3D.Bars(m, services, geometry, e, st, Sample, dotsAlong: true)) yield return new Chain(chain, s.Diameter, Color(s.Diameter));
         }
-        foreach (var e in m.Entities)
+        var bases = new ColumnBars.Bases(m);
+        foreach (var e in TypeStirrups.Members(m))
         {
-            if (e.Class is not (IfcClass.Beam or IfcClass.Column) || (ids != null && !ids.Contains(e.Id))) continue;
+            if (ids != null && !ids.Contains(e.Id)) continue;
             if (TypeStirrups.Of(m, e) is { } laid)
             {
                 var d = laid.Spec.Diameter;
@@ -80,29 +81,9 @@ public static class RebarBodies
                     foreach (var loop in laid.LoopsAt(station))
                         yield return new Chain(Stirrup(loop, spec), d, Color(d));
             }
-            if (ColumnBars.Of(m, e) is { } bars)
+            if (ColumnBars.Of(m, e, bases) is { } bars)
                 foreach (var bar in bars.Bars) yield return new Chain(bar, bars.Spec.Diameter, Color(bars.Spec.Diameter));
         }
-    }
-
-    /// <summary>A hand-drawn bar's copies in space: its chain on its view's plane, at each depth and array place (as <see cref="Rebar3D.Bars"/>), a dot run along the view's direction.</summary>
-    static IEnumerable<Vec3[]> Placed(IModelView m, IServices? services, Func<string, ElementGeometry?>? geometry, Entity e, RebarSpec s, RebarSettings st)
-    {
-        var view = Views.Find(m, e.Str("viewId") ?? "");
-        if (Rebar3D.FrameOf(m, services, view) is not { } frame) yield break;
-        var at = Rebars.At(e);
-        var chain = s.Shape == "dot" ? [at] : Sample(RebarShapes.Segments(s).Select(x => RebarShapes.Place(s, at, x)).ToList());
-        if (chain.Count == 0) yield break;
-        var half = s.Shape == "dot" ? s["length"] / 2 : 0;
-        var (nx, dx, ny, dy) = Rebars.Array(e);
-        foreach (var depth in Rebar3D.Depths(m, geometry, e, frame, st))
-            for (var ix = 0; ix < nx; ix++)
-                for (var iy = 0; iy < ny; iy++)
-                {
-                    var off = new Vec2(ix * dx, iy * dy);
-                    Vec3 P(Vec2 p, double along) => frame.Origin + frame.Right * (p.X + off.X) + frame.Up * (p.Y + off.Y) + frame.Dir * (depth + along);
-                    yield return half > 0 ? [P(chain[0], -half), P(chain[0], half)] : chain.Select(p => P(p, 0)).ToArray();
-                }
     }
 
     /// <summary>

@@ -179,9 +179,9 @@ public static class TypeStirrups
         var hidden = (c.View.Attrs["hiddenLayers"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         if (hidden.Contains(RebarShapes.StirrupLayer)) yield break;
         var storey = c.View.Str("storeyId");
-        foreach (var e in m.Entities)
+        foreach (var e in Members(m))
         {
-            if (e.Class is not (IfcClass.Beam or IfcClass.Column) || Of(m, e) is not { } laid) continue;
+            if (Of(m, e) is not { } laid) continue;
             // A plan draws its own storey's, above or below its cut (a beam under the slab stands over it); a section what is in front of it, within its depth.
             if (plan && Spatial.StoreyOf(m, e.Id)?.Id != storey) continue;
             var d = laid.Spec.Diameter;
@@ -250,11 +250,14 @@ public static class TypeStirrups
     /// <summary>The schedule's entries for every element's configured stirrups: one per element and loop kind, under its mark.</summary>
     public static IEnumerable<RebarSchedule.Entry> Entries(IModelView m)
     {
-        foreach (var e in m.Entities)
-            if (e.Class is IfcClass.Beam or IfcClass.Column && Of(m, e) is { } laid && laid.Stations.Count > 0)
+        foreach (var e in Members(m))
+            if (Of(m, e) is { } laid && laid.Stations.Count > 0)
                 foreach (var loop in laid.LoopsAt(laid.Stations[0]))
-                    yield return new RebarSchedule.Entry(laid.MarkOf(loop.Kind), laid.Spec.Diameter, loop.Kind == 1 && laid.Spec.Pattern == "diamond" ? "Diamond stirrup" : "Stirrup", laid.Stations.Count, laid.BarLength(loop));
+                    yield return new RebarSchedule.Entry(laid.MarkOf(loop.Kind), laid.Spec.Diameter, loop.Kind == 1 && laid.Spec.Pattern == "diamond" ? "Diamond stirrup" : "Stirrup", laid.Stations.Count, laid.BarLength(loop), Derived: true);
     }
+
+    /// <summary>The elements a type's stirrups go in: the beams and the columns (read by class, not every entity).</summary>
+    public static IEnumerable<Entity> Members(IModelView m) => m.OfClass(IfcClass.Beam).Concat(m.OfClass(IfcClass.Column));
 
     /// <summary>The highest mark a type's stirrups hold, inner ones included.</summary>
     public static int HighestMark(IModelView m) => m.OfClass(IfcClass.BeamType).Concat(m.OfClass(IfcClass.ColumnType)).Select(t => StirrupSpec.Of(t))
@@ -279,6 +282,7 @@ public static class TypeStirrups
         {
             zones = za.OfType<JsonObject>().Select(z => (Math.Max(0, Json.Number(z["share"]) ?? 0), Json.Number(z["step"]) ?? step)).ToList();
             if (zones.Count == 0 || zones.Any(z => z.Item2 < 0.01)) throw new CommandException("Each zone takes a share of the length and a step of 10 mm at least.");
+            if (zones.Sum(z => z.Item1) <= 1e-9) throw new CommandException("The zones' shares are all zero: give one of them a share of the length.");
         }
         var pattern = (string?)a["pattern"] ?? now.Pattern;
         if (!StirrupSpec.Patterns.Contains(pattern)) throw new CommandException("A column's stirrups are the perimeter's alone (single), with a diamond, or with two inside (cross).");
@@ -287,7 +291,7 @@ public static class TypeStirrups
         var inner = new List<int>(now.InnerMarks ?? []);
         if (enabled)
         {
-            var next = Math.Max(Rebars.NextMark(ctx.Model), Math.Max(HighestMark(ctx.Model), ColumnBars.HighestMark(ctx.Model)) + 1);
+            var next = Rebars.NextMark(ctx.Model);
             if (mark <= 0) mark = next++;
             var need = pattern switch { "diamond" => 1, "cross" => 2, _ => 0 };
             while (inner.Count < need) inner.Add(next++);

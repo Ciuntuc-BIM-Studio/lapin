@@ -80,15 +80,21 @@ public static class Rebar3D
         return Enumerable.Range(0, across.Count).Select(k => (k - (across.Count - 1) / 2.0) * across.Step).ToList();
     }
 
-    /// <summary>The bar's copies in space: its drawn chain on its view's plane, each at its depth and in-plane array place.</summary>
-    public static List<Vec3[]> Bars(IModelView m, IServices? services, Func<string, ElementGeometry?>? geometry, Entity e, RebarSettings st)
+    /// <summary>
+    /// The bar's copies in space: its drawn chain on its view's plane, each at its depth and in-plane array place. The
+    /// chain is the drawing's (<paramref name="sample"/> may take the arcs coarser); a dot is a point, or with
+    /// <paramref name="dotsAlong"/> its length run along the view's direction (a bar seen end on, as a body).
+    /// </summary>
+    public static List<Vec3[]> Bars(IModelView m, IServices? services, Func<string, ElementGeometry?>? geometry, Entity e, RebarSettings st,
+        Func<IReadOnlyList<Seg>, List<Vec2>>? sample = null, bool dotsAlong = false)
     {
         var view = Views.Find(m, e.Str("viewId") ?? "");
         if (FrameOf(m, services, view) is not { } frame) return [];
         var s = Rebars.SpecOf(e);
         var at = Rebars.At(e);
-        var chain = s.Shape == "dot" ? [at] : RebarShapes.Chain(RebarShapes.Segments(s).Select(x => RebarShapes.Place(s, at, x)).ToList());
+        var chain = s.Shape == "dot" ? [at] : (sample ?? RebarShapes.Chain)(RebarShapes.Segments(s).Select(x => RebarShapes.Place(s, at, x)).ToList());
         if (chain.Count == 0) return [];
+        var half = dotsAlong && s.Shape == "dot" ? s["length"] / 2 : 0;
         var (nx, dx, ny, dy) = Rebars.Array(e);
         var o = new List<Vec3[]>();
         foreach (var depth in Depths(m, geometry, e, frame, st))
@@ -96,10 +102,14 @@ public static class Rebar3D
                 for (var iy = 0; iy < ny; iy++)
                 {
                     var off = new Vec2(ix * dx, iy * dy);
-                    o.Add(chain.Select(p => frame.Origin + frame.Right * (p.X + off.X) + frame.Up * (p.Y + off.Y) + frame.Dir * depth).ToArray());
+                    Vec3 P(Vec2 p, double along) => frame.Origin + frame.Right * (p.X + off.X) + frame.Up * (p.Y + off.Y) + frame.Dir * (depth + along);
+                    o.Add(half > 0 ? [P(chain[0], -half), P(chain[0], half)] : [.. chain.Select(p => P(p, 0))]);
                 }
         return o;
     }
+
+    /// <summary>A copy of a bar put in another view to show it there (<c>duplicateAs</c>): it stands for its original, already in space.</summary>
+    public static bool IsCopy(Entity e) => e.Str("original") != null;
 
     /// <summary>Whether a view shows bars in space at all (sections; plans and elevations only the structure's), how deep it sees, and whether it is a plan (no depth: its storey's).</summary>
     public static bool Shows(ViewContext c, out double limit, out bool plan)
@@ -164,7 +174,7 @@ public static class Rebar3D
         var hidden = (c.View.Attrs["hiddenLayers"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         foreach (var e in m.OfClass(Rebars.Class))
         {
-            if (e.Str("viewId") == c.View.Id || e.Bool("excludeSchedule")) continue;
+            if (e.Str("viewId") == c.View.Id || IsCopy(e)) continue;
             var s = Rebars.SpecOf(e);
             var layer = e.Str("layer") ?? RebarShapes.Def(s.Shape).Layer;
             if (hidden.Contains(layer)) continue;

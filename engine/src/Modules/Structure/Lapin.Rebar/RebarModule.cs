@@ -124,20 +124,27 @@ public sealed class RebarSchedule : IScheduleSource
 
     static string N(double v, int decimals = 2) => v.ToString(decimals == 2 ? "0.00" : "0.###", CultureInfo.InvariantCulture);
 
-    public sealed record Entry(int Mark, double Diameter, string Shape, int Count, double Length);
+    /// <summary>
+    /// Bars under one mark. <paramref name="Derived"/>: laid from a type's configuration (stirrups, column bars), whose mark is
+    /// the type's while the lengths are each element's (a storey's height, hooks or starter bars): one row per shape and length,
+    /// not a conflict.
+    /// </summary>
+    public sealed record Entry(int Mark, double Diameter, string Shape, int Count, double Length, bool Derived = false);
 
     public static List<Entry> Entries(IModelView m)
     {
         var o = new List<Entry>();
+        // A bar is its view's annotation: one whose view is gone is drawn nowhere and not counted.
+        bool Drawn(Entity e) => !e.Bool("excludeSchedule") && Views.Find(m, e.Str("viewId") ?? "") != null;
         foreach (var e in m.OfClass(Rebars.Class))
         {
-            if (e.Bool("excludeSchedule")) continue;
+            if (!Drawn(e)) continue;
             var s = Rebars.SpecOf(e);
             o.Add(new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, Rebars.Pieces(e), RebarShapes.Length(s)));
         }
         foreach (var e in m.OfClass(Rebars.RunClass))
         {
-            if (e.Bool("excludeSchedule")) continue;
+            if (!Drawn(e)) continue;
             var s = Rebars.SpecOf(e);
             var (_, positions, _, _) = Rebars.RunOf(e, s);
             o.Add(new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, positions.Count * Rebars.Count(e), RebarShapes.Length(s)));
@@ -153,14 +160,15 @@ public sealed class RebarSchedule : IScheduleSource
         var rows = new List<IReadOnlyList<string>>();
         var byDia = new SortedDictionary<int, (double Length, double Mass)>();
         totalMass = 0;
-        foreach (var g in entries.GroupBy(x => x.Mark).OrderBy(g => g.Key))
+        static string? Variant(Entry x) => x.Derived ? FormattableString.Invariant($"{x.Shape}|{Math.Round(x.Diameter * 1000, 1)}|{Math.Round(x.Length, 3)}") : null;
+        foreach (var g in entries.GroupBy(x => (x.Mark, Variant: Variant(x))).OrderBy(g => g.Key.Mark).ThenBy(g => g.First().Length))
         {
             var first = g.First();
             var count = g.Sum(x => x.Count);
             var conflict = g.Any(x => Math.Abs(x.Diameter - first.Diameter) > 1e-9 || Math.Abs(x.Length - first.Length) > 0.0005);
             var total = g.Sum(x => x.Count * x.Length);
             var mass = g.Sum(x => x.Count * x.Length * RebarShapes.MassPerMetre(x.Diameter));
-            rows.Add([g.Key.ToString(CultureInfo.InvariantCulture), N(first.Diameter * 1000, 3), first.Shape, count.ToString(CultureInfo.InvariantCulture), N(first.Length), N(total), N(mass), conflict ? "Ø or length differs" : ""]);
+            rows.Add([g.Key.Mark.ToString(CultureInfo.InvariantCulture), N(first.Diameter * 1000, 3), first.Shape, count.ToString(CultureInfo.InvariantCulture), N(first.Length), N(total), N(mass), conflict ? "Ø or length differs" : ""]);
             var d = (int)Math.Round(first.Diameter * 1000);
             byDia[d] = byDia.TryGetValue(d, out var acc) ? (acc.Length + total, acc.Mass + mass) : (total, mass);
             totalMass += mass;
@@ -179,7 +187,7 @@ public sealed class RebarSchedule : IScheduleSource
 /// its view (its coordinates the view's, metres); it is not a body. The 3D bars configured on the structural types are the
 /// premium module's.
 /// </summary>
-public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacement
+public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacement, IDeletion
 {
     public string Id => "rebar";
     public string Name => "Rebar 2D";
@@ -214,6 +222,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
 
         r.Service<IViewAnnotations>(this);
         r.Service<IElementPlacement>(this);
+        r.Service<IDeletion>(this);
         r.Service<IScheduleSource>(new RebarSchedule());
 
         // A bar on a view: {viewId, shape, at: [x, y], params?: {key: m}, vertices?, diameter?, mark?, count?, rotation?, mirrorX?, mirrorY?, hooks?: {start?: {angle, length, flip}, end?}, view?, steel?, layer?, array?, excludeSchedule?}.
@@ -571,6 +580,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         {
             if (a.ContainsKey("start")) attrs["start"] = Rebars.J(Args.Point(a["start"], "the path's start"));
             if (a.ContainsKey("end")) attrs["end"] = Rebars.J(Args.Point(a["end"], "the path's end"));
+            if ((Rebars.P(attrs["end"]) - Rebars.P(attrs["start"])).Length < 1e-6) throw new CommandException("A distribution needs two different points.");
             if (a.ContainsKey("rise")) { if (Json.Number(a["rise"]) is { } rise && Math.Abs(rise) > 1e-9) attrs["rise"] = rise; else attrs.Remove("rise"); }
             if (a.ContainsKey("step"))
             {
@@ -740,6 +750,18 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         mk.Snaps.AddRange(positions.Select(p0 => path.PointAt(p0)));
         mk.Data = new JsonObject { ["positions"] = positions.Count };
         return mk;
+    }
+
+    // ─── Deletion ──────────────────────────────────────────────────────────
+
+    /// <summary>A view deleted (or a storey, with its plan) takes the bars drawn on it: they are its annotations, drawn nowhere else.</summary>
+    public bool Delete(ICommandContext ctx, string id)
+    {
+        if (ctx.Model.Get(id) is not { Class: Views.Class or IfcClass.BuildingStorey } gone) return false;
+        var views = gone.Class == IfcClass.BuildingStorey ? new[] { "plan:" + id } : [id];
+        foreach (var bar in ctx.Model.OfClass(Rebars.Class).Concat(ctx.Model.OfClass(Rebars.RunClass)).Where(b => views.Contains(b.Str("viewId"))).ToList())
+            ctx.Remove(bar.Id);
+        return false;
     }
 
     // ─── Placement ─────────────────────────────────────────────────────────

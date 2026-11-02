@@ -412,6 +412,8 @@ public static class Runs
             steps.Add(lz / n);
             at += lz;
         }
+        // A path come to a point has no zones to lay.
+        if (steps.Count == 0) return RebarShapes.Mm(step);
         var (lo, hi) = (steps.Min(), steps.Max());
         return Math.Abs(hi - lo) < 1e-6 ? RebarShapes.Mm(lo) : $"{RebarShapes.Mm(lo)}-{RebarShapes.Mm(hi)}";
     }
