@@ -23,7 +23,7 @@ export const editedSystem = (): string | null => {
 };
 
 /** The system an element belongs to (a system is its own). */
-export const systemOfNode = (n: NodeDto | null | undefined): string | null =>
+const systemOfNode = (n: NodeDto | null | undefined): string | null =>
   !n ? null : n.type === 'IfcDistributionSystem' ? n.id : typeof n.props.systemId === 'string' ? n.props.systemId : null;
 
 export function editSystem(systemId: string): void {

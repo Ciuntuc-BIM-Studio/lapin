@@ -49,7 +49,7 @@ let standardTable: Promise<StandardTable> | null = null;
 const transport = (): OllamaTransport => (transportFor(location.origin, isDesktop()) === 'shell' ? shellTransport() : fetchTransport());
 
 /** The tools' view of this session. */
-export function sessionContext(): ToolContext {
+function sessionContext(): ToolContext {
   const s = useSession.getState();
   return {
     model: { nodes: s.nodes, relations: s.relations },

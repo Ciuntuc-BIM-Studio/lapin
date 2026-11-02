@@ -12,9 +12,9 @@
 
 import { create } from 'zustand';
 
-export const DEFAULT_URL = 'http://127.0.0.1:11434';
+const DEFAULT_URL = 'http://127.0.0.1:11434';
 /** The models measured on the assistant's two-step tool test, best first (qwen3-coder:30b 66 tok/s, gemma4:12b 26 tok/s; qwen3.8:27b failed it). */
-export const PREFERRED_MODELS = ['qwen3-coder:30b', 'gemma4:12b'];
+const PREFERRED_MODELS = ['qwen3-coder:30b', 'gemma4:12b'];
 
 /** One message of an Ollama chat. */
 export interface OllamaToolCall { id?: string; function: { name: string; arguments: Record<string, unknown> | string } }
@@ -60,7 +60,7 @@ export interface OllamaTransport {
 }
 
 /** Ollama refused or failed: said so, with its own words when it has some. */
-export class OllamaError extends Error {}
+class OllamaError extends Error {}
 
 const ERR_UNREACHABLE = 'Ollama is not running';
 
@@ -150,7 +150,7 @@ export function transportFor(origin: string, desktop: boolean): 'shell' | 'fetch
 }
 
 /** The models installed, as /api/tags lists them; embedding models (which cannot chat) left out. */
-export async function listModels(t: OllamaTransport, base: string): Promise<string[]> {
+async function listModels(t: OllamaTransport, base: string): Promise<string[]> {
   const r = await t.json(base, '/api/tags') as { models?: { name?: string; model?: string }[] };
   return (r.models ?? []).map((m) => m.name ?? m.model ?? '').filter((n) => n && !/embed/i.test(n)).sort((a, b) => a.localeCompare(b));
 }

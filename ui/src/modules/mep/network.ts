@@ -10,32 +10,32 @@ import { execute, query, useSession } from '../../engine/session';
 import type { Vec2 } from '../../platform/module';
 import { setMep, useMep } from './prefs';
 
-export const SYSTEM_CLASS = 'IfcDistributionSystem';
+const SYSTEM_CLASS = 'IfcDistributionSystem';
 export const RUN_CLASSES = ['IfcPipeSegment', 'IfcDuctSegment', 'IfcCableSegment'];
 /** Every class a node or a run may be, for the tools that pick one and the sections that show one. */
 export const PICKABLE = [...RUN_CLASSES, 'IfcBoiler', 'IfcSpaceHeater', 'IfcPipeFitting', 'IfcFlowMeter', 'IfcValve', 'IfcSanitaryTerminal', 'IfcElectricDistributionBoard', 'IfcOutlet', 'IfcLightFixture', 'IfcSwitchingDevice', 'IfcFan', 'IfcAirTerminal'];
 
-export interface RoleInfo {
+interface RoleInfo {
   id: string; label: string; ifcClass: string; kind: 'source' | 'endpoint' | 'inline' | 'rise'; symbol: string;
   services: string[]; ports: { key: string; service: string; flow: 'in' | 'out' | 'both'; pair: string | null }[];
   size: [number, number, number]; elevation: number; duty: number | null; dutyUnit: string | null;
 }
-export interface ServiceInfo { id: string; label: string; defaults: Defaults }
+interface ServiceInfo { id: string; label: string; defaults: Defaults }
 export interface Defaults {
   size: number; plane: 'floor' | 'ceiling' | 'wall'; floorElevation: number; ceilingElevation: number; wallElevation: number;
   slope: number; pair: boolean; separation: number; material: string | null; insulation: number; bendRadius: number;
 }
 export interface SystemInfo { id: string; name: string; service: string; defaults: Defaults; nodes: number; runs: number }
-export type RunEnd = { nodeId: string; port: string } | { runId: string; station: number } | null;
-export interface NetworkPort { key: string; service: string; flow: string; at: [number, number, number]; taken: boolean }
-export interface NetworkNode { id: string; name: string; role: string; storeyId: string | null; ports: NetworkPort[] }
-export interface NetworkRun { id: string; name: string; storeyId: string | null; points: [number, number][]; start: RunEnd; end: RunEnd }
+type RunEnd = { nodeId: string; port: string } | { runId: string; station: number } | null;
+interface NetworkPort { key: string; service: string; flow: string; at: [number, number, number]; taken: boolean }
+interface NetworkNode { id: string; name: string; role: string; storeyId: string | null; ports: NetworkPort[] }
+interface NetworkRun { id: string; name: string; storeyId: string | null; points: [number, number][]; start: RunEnd; end: RunEnd }
 export interface NetworkSystem { id: string; name: string; service: string; defaults: Defaults; nodes: NetworkNode[]; runs: NetworkRun[] }
-export type OpenItem =
+type OpenItem =
   | { kind: 'port'; id: string; name: string; port: string; at: [number, number, number] }
   | { kind: 'run'; id: string; name: string; end: 'start' | 'end'; at: [number, number] };
 /** A material runs are made of (the engine's RunMaterials): its laying rules, when the product has them, come from mep-pro. */
-export interface MaterialInfo { id: string; label: string; services: string[]; aliases: string[] }
+interface MaterialInfo { id: string; label: string; services: string[]; aliases: string[] }
 
 const catalog = <T,>(name: string): T[] => (useSession.getState().info?.catalogs[`mep.${name}`] as unknown as T[] | undefined) ?? [];
 export const roles = (): RoleInfo[] => catalog<RoleInfo>('roles');
@@ -54,7 +54,7 @@ export function materialOf(service: string, id: string | null | undefined): Mate
   return m && m.services.includes(service) ? m : m ?? all.find((x) => x.services.includes(service)) ?? null;
 }
 
-export const isSystem = (n: NodeDto): boolean => n.type === SYSTEM_CLASS;
+const isSystem = (n: NodeDto): boolean => n.type === SYSTEM_CLASS;
 export const isRun = (n: NodeDto): boolean => RUN_CLASSES.includes(n.type) && Array.isArray(n.props.points) && typeof n.props.systemId === 'string';
 export const isNode = (n: NodeDto): boolean => typeof n.props.role === 'string' && typeof n.props.systemId === 'string' && !isRun(n);
 export const systemsOf = (nodes: Map<string, NodeDto>): NodeDto[] => [...nodes.values()].filter(isSystem).sort((a, b) => a.name.localeCompare(b.name));

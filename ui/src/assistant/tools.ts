@@ -41,10 +41,10 @@ export interface ToolOutcome { content: string; summary: string; table?: Table; 
 
 /** The most JSON a tool result may hand the model. */
 export const MAX_CHARS = 6000;
-export const DEFAULT_LIMIT = 25;
-export const MAX_LIMIT = 50;
+const DEFAULT_LIMIT = 25;
+const MAX_LIMIT = 50;
 /** The most rows a table in the chat keeps. */
-export const MAX_TABLE_ROWS = 5000;
+const MAX_TABLE_ROWS = 5000;
 
 class ToolError extends Error {}
 
@@ -221,7 +221,7 @@ const BUILTIN = ['id', 'class', 'name', 'storey', 'type'];
 const isBuiltin = (f: string) => BUILTIN.includes(lc(f));
 
 /** A field of an element: a built-in (class, storey…), a Set.Name property, a quantity, an attribute or a parameter of its own or its type's. */
-export function fieldValue(model: ModelState, n: NodeDto, field: string, q?: QuantitySet[]): Cell | undefined {
+function fieldValue(model: ModelState, n: NodeDto, field: string, q?: QuantitySet[]): Cell | undefined {
   const f = field.trim();
   switch (lc(f)) {
     case 'id': return n.id;
@@ -370,7 +370,7 @@ export function capped(result: Record<string, unknown>, rowsKey = 'rows'): { tex
 }
 
 /** A page of rows for the model within MAX_CHARS: fewer rows when it would not fit, and where the next page starts. */
-export function paged(head: Record<string, unknown>, rows: unknown[], offset: number, total: number): { text: string; shown: number } {
+function paged(head: Record<string, unknown>, rows: unknown[], offset: number, total: number): { text: string; shown: number } {
   let keep = rows.length;
   for (;;) {
     const next = offset + keep < total ? offset + keep : null;

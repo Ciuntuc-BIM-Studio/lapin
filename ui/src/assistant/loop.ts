@@ -10,7 +10,7 @@ import type { OllamaChunk, OllamaMessage, OllamaToolCall, OllamaTransport } from
 import { runTool, TOOL_DEFS, type ToolContext, type ToolOutcome } from './tools';
 
 /** The most rounds of tool calls one question may take. */
-export const MAX_STEPS = 8;
+const MAX_STEPS = 8;
 
 export const SYSTEM_PROMPT = `You are the model assistant inside Lapin, a BIM modeller built on IFC. You read and analyse the open project, make short reports, and propose property values for its elements.
 Rules:
@@ -53,7 +53,7 @@ export function cleanText(text: string): string {
 }
 
 /** The request body for one round. */
-export function chatBody(model: string, messages: OllamaMessage[]) {
+function chatBody(model: string, messages: OllamaMessage[]) {
   return {
     model,
     messages,

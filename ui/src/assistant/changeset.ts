@@ -52,13 +52,13 @@ const setOf = (pset: string | null | undefined, own: string): string | null => {
   const s = (pset ?? '').trim();
   return !s || s === own ? null : s;
 };
-export const rowKey = (id: string, pset: string | null, name: string) => `${id}/${(pset ?? '').toLowerCase()}/${name.toLowerCase()}`;
+const rowKey = (id: string, pset: string | null, name: string) => `${id}/${(pset ?? '').toLowerCase()}/${name.toLowerCase()}`;
 
 /** Whether a standard set is for an entity of this class (or its type). */
 export const appliesTo = (classes: string[], ifcClass: string) => classes.some((c) => c === ifcClass || `${c}Type` === ifcClass);
 
 /** The value as the kind holds it, or null when it cannot be. */
-export function coerce(kind: ParamKind, v: unknown): Scalar | null {
+function coerce(kind: ParamKind, v: unknown): Scalar | null {
   if (v === null || v === undefined) return null;
   switch (kind) {
     case 'bool':
@@ -80,7 +80,7 @@ export function coerce(kind: ParamKind, v: unknown): Scalar | null {
 const kindOfValue = (v: unknown): ParamKind => (typeof v === 'boolean' ? 'bool' : typeof v === 'number' ? 'number' : 'text');
 
 /** The element's current value of a property: its own parameter, else what its IFC file said. */
-export function currentValue(n: NodeDto, pset: string | null, name: string): Scalar | null {
+function currentValue(n: NodeDto, pset: string | null, name: string): Scalar | null {
   const params = (Array.isArray(n.props.params) ? n.props.params : []) as unknown as StoredParam[];
   const own = params.find((p) => (p.pset ?? null) === pset && p.name.toLowerCase() === name.toLowerCase());
   if (own && own.value != null && typeof own.value !== 'object') return own.value as Scalar;

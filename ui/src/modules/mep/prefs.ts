@@ -4,7 +4,7 @@ import { create } from 'zustand';
 
 export type Plane = 'floor' | 'ceiling' | 'wall';
 
-export interface MepPrefs {
+interface MepPrefs {
   /** The system new nodes and runs go in (null: the first that fits, made if none). */
   systemId: string | null;
   /** New runs: paired or single (null: the system's default). */

@@ -60,7 +60,6 @@ export const RoofWindowIcon = icon('roofWindow');
 export const DormerIcon = icon('dormer');
 export const DownpipeIcon = icon('downpipe');
 export const RailingIcon = icon('railing');
-export const LintelIcon = icon('lintel');
 export const WallTypesIcon = icon('wallTypes');
 export const AttachRoofIcon = icon('attachRoof');
 export const DetachRoofIcon = icon('detachRoof');

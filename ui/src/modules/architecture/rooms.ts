@@ -12,8 +12,8 @@ import { outlineGrips, outlineRef, pt, toPairs } from '../../viewport/gripKit';
 import { fromPairs } from '../../viewport/contour';
 
 export interface SchemeEntry { value: string; color?: string; hatch?: string; hatchScale?: number; hatchColor?: string }
-export interface ColorScheme { id: string; name: string; by: string; entries: SchemeEntry[] }
-export interface SchemeValue { value: string; count: number; area: number }
+interface ColorScheme { id: string; name: string; by: string; entries: SchemeEntry[] }
+interface SchemeValue { value: string; count: number; area: number }
 export interface Schemes {
   schemes: ColorScheme[];
   fields: { key: string; label: string }[];
@@ -42,7 +42,7 @@ export function useSchemes(viewId?: string | null): [Schemes | null, () => void]
 const pairs = (flat: number[]): Vec2[] => Array.from({ length: Math.floor(flat.length / 2) }, (_, i) => ({ x: flat[2 * i], y: flat[2 * i + 1] }));
 
 /** A room's outline and stamp point as its geometry has them (they follow its walls), else as it stores them. */
-export function roomShape(node: NodeDto): { outline: Vec2[]; stamp: Vec2 | null } {
+function roomShape(node: NodeDto): { outline: Vec2[]; stamp: Vec2 | null } {
   const item = useSession.getState().render.get(node.id);
   const outer = item?.plan.find((p) => p.kind === 'room');
   const stamp = item?.plan.find((p) => p.kind === 'roomStamp');

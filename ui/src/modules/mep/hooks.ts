@@ -9,7 +9,7 @@ import type { ComponentType } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import type { Vec2 } from '../../platform/module';
 
-export interface MepHooks {
+interface MepHooks {
   /** Buttons for a run in its MEP section (its profile); null: none. */
   runActions: ComponentType<{ node: NodeDto }> | null;
   /** Where the next point of a run may go, given the points placed, for the material (the engine's laying rules); the aimed point when it has none. */
