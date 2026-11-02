@@ -15,10 +15,17 @@ import type { NodeDto } from '../../engine/protocol';
 import { describeType } from './describe';
 import { structureHooks } from './hooks';
 import { deleteType } from '../core/deleteType';
+import { useStandards } from '../../engine/unitsStore';
+import { formatSteps, parseSteps, type Step } from './steps';
+import { Cell, LengthField } from '../../shell/cells';
 
-const mmToM = (t: string) => Number(t.replace(',', '.')) / 1000;
-const mToMm = (m: unknown) => String(Math.round(Number(m ?? 0) * 10000) / 10);
 type Kind = 'column' | 'beam' | 'strip' | 'pad';
+const num = (m: unknown, fallback: number) => (typeof m === 'number' ? m : fallback);
+
+/** A labelled length of the type (the shared field). */
+const Len = ({ label, value, onChange, min }: { label: string; value: number; onChange: (m: number) => void; min?: number }) => (
+  <label className="field-line"><span className="eyebrow">{label}</span><LengthField metres={value} min={min} onCommit={(m) => { if (m != null) onChange(m); }} /></label>
+);
 
 export function StructureTypesDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -30,14 +37,16 @@ export function StructureTypesDialog() {
   const [editing, setEditing] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [shape, setShape] = useState<'rectangle' | 'circle'>('rectangle');
-  const [w, setW] = useState('300');
-  const [d, setD] = useState('300');
-  const [stem, setStem] = useState('1400');
-  const [fw, setFw] = useState('600');
-  const [fh, setFh] = useState('400');
-  const [bottom, setBottom] = useState('-1800');
-  const [core, setCore] = useState('300');
-  const [steps, setSteps] = useState('1800 × 1800 × 500, 1000 × 1000 × 400');
+  // Lengths in metres; the steps as typed.
+  const units = useStandards((s) => s.units);
+  const [w, setW] = useState(0.3);
+  const [d, setD] = useState(0.3);
+  const [stem, setStem] = useState(1.4);
+  const [fw, setFw] = useState(0.6);
+  const [fh, setFh] = useState(0.4);
+  const [bottom, setBottom] = useState(-1.8);
+  const [core, setCore] = useState(0.3);
+  const [steps, setSteps] = useState<Step[]>([{ length: 1.8, width: 1.8, height: 0.5 }, { length: 1, width: 1, height: 0.4 }]);
   const list = kind === 'column' ? ofClass(model, 'IfcColumnType') : kind === 'beam' ? ofClass(model, 'IfcBeamType')
     : ofClass(model, 'IfcFootingType').filter((t) => t.props.kind === kind);
 
@@ -48,51 +57,47 @@ export function StructureTypesDialog() {
     setEditing(t.id);
     setName(t.name);
     const sec = t.props.section as { kind?: string; width?: number; depth?: number } | undefined;
-    if (sec) { setShape(sec.kind === 'circle' ? 'circle' : 'rectangle'); setW(mToMm(sec.width)); setD(mToMm(sec.depth)); }
+    if (sec) { setShape(sec.kind === 'circle' ? 'circle' : 'rectangle'); setW(num(sec.width, 0.3)); setD(num(sec.depth, 0.3)); }
     if (t.props.kind === 'strip') {
-      setStem(mToMm(t.props.stemHeight)); setFw(mToMm(t.props.footingWidth)); setFh(mToMm(t.props.footingHeight)); setBottom(mToMm(t.props.bottom));
+      setStem(num(t.props.stemHeight, 1.4)); setFw(num(t.props.footingWidth, 0.6)); setFh(num(t.props.footingHeight, 0.4)); setBottom(num(t.props.bottom, -1.8));
       const layers = typeLayers(model, t.id);
       const core = layers.find((l) => l.core) ?? layers.reduce<(typeof layers)[number] | undefined>((a, l) => (!a || l.thickness > a.thickness ? l : a), undefined);
-      if (core) setCore(mToMm(core.thickness));
+      if (core) setCore(core.thickness);
     }
     if (t.props.kind === 'pad') {
-      setBottom(mToMm(t.props.bottom));
-      const st = (t.props.steps as { length: number; width: number; height: number }[] | undefined) ?? [];
-      setSteps(st.map((x) => `${mToMm(x.length)} × ${mToMm(x.width)} × ${mToMm(x.height)}`).join(', '));
+      setBottom(num(t.props.bottom, -1.8));
+      setSteps((t.props.steps as Step[] | undefined) ?? []);
     }
   };
   const fresh = () => { setEditing(null); setName(''); };
   const switchKind = (k: Kind) => { setKind(k); fresh(); };
 
-  const parsedSteps = () => steps.split(',').map((s) => s.match(/[\d.]+/g)?.map((n) => Number(n) / 1000) ?? []).filter((n) => n.length === 3)
-    .map(([length, width, height]) => ({ length, width, height }));
-
   const save = async () => {
     if (!edited) return;
-    const section = { kind: shape, width: mmToM(w), depth: shape === 'circle' ? mmToM(w) : mmToM(d) };
+    const section = { kind: shape, width: w, depth: shape === 'circle' ? w : d };
     const args: Record<string, unknown> = { id: edited.id, name };
     if (kind === 'column' || kind === 'beam') args.section = section;
-    else if (kind === 'strip') Object.assign(args, { stemHeight: mmToM(stem), footingWidth: mmToM(fw), footingHeight: mmToM(fh), bottom: mmToM(bottom), core: mmToM(core) });
-    else Object.assign(args, { bottom: mmToM(bottom), steps: parsedSteps() });
+    else if (kind === 'strip') Object.assign(args, { stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom, core });
+    else Object.assign(args, { bottom, steps });
     // The name as it was: left to the engine, which renames a type still named after its size.
     if (name.trim() === edited.name) delete args.name;
     await execute('structure.updateType', args);
   };
 
   const create = async () => {
-    const section = { kind: shape, width: mmToM(w), depth: shape === 'circle' ? mmToM(w) : mmToM(d) };
+    const section = { kind: shape, width: w, depth: shape === 'circle' ? w : d };
     if (kind === 'column') await execute('structure.createColumnType', { name, section });
     else if (kind === 'beam') await execute('structure.createBeamType', { name, section });
     else if (kind === 'strip') {
       await execute('structure.createStripType', {
-        name, stemHeight: mmToM(stem), footingWidth: mmToM(fw), footingHeight: mmToM(fh), bottom: mmToM(bottom),
+        name, stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom,
         layers: [
           { material: 'Protection board', thickness: 0.02 }, { material: 'XPS insulation', thickness: 0.1 },
-          { material: 'Waterproofing', thickness: 0.005 }, { material: 'Reinforced concrete', thickness: mmToM(core), core: true },
+          { material: 'Waterproofing', thickness: 0.005 }, { material: 'Reinforced concrete', thickness: core, core: true },
         ],
       });
     } else {
-      await execute('structure.createPadType', { name, bottom: mmToM(bottom), steps: parsedSteps() });
+      await execute('structure.createPadType', { name, bottom, steps });
     }
   };
 
@@ -128,18 +133,20 @@ export function StructureTypesDialog() {
               <label className="field-line"><span className="eyebrow">Section</span>
                 <select value={shape} onChange={(e) => setShape(e.target.value as 'rectangle' | 'circle')}><option value="rectangle">Rectangle</option><option value="circle">Circle</option></select>
               </label>
-              <label className="field-line"><span className="eyebrow">{shape === 'circle' ? 'Diameter' : 'Width'} mm</span><input value={w} onChange={(e) => setW(e.target.value)} /></label>
-              {shape === 'rectangle' && <label className="field-line"><span className="eyebrow">{kind === 'beam' ? 'Depth' : 'Length'} mm</span><input value={d} onChange={(e) => setD(e.target.value)} /></label>}
+              <Len label={shape === 'circle' ? 'Diameter' : 'Width'} value={w} min={0.01} onChange={setW} />
+              {shape === 'rectangle' && <Len label={kind === 'beam' ? 'Depth' : 'Length'} value={d} min={0.01} onChange={setD} />}
             </>}
             {edited && (kind === 'column' || kind === 'beam') && structureHooks.typeExtras.map((Extra, i) => <Extra key={i} type={edited} kind={kind} />)}
             {kind === 'strip' && <>
-              <label className="field-line"><span className="eyebrow">Core mm</span><input value={core} onChange={(e) => setCore(e.target.value)} /></label>
-              <label className="field-line"><span className="eyebrow">Stem height</span><input value={stem} onChange={(e) => setStem(e.target.value)} /></label>
-              <label className="field-line"><span className="eyebrow">Footing width</span><input value={fw} onChange={(e) => setFw(e.target.value)} /></label>
-              <label className="field-line"><span className="eyebrow">Footing height</span><input value={fh} onChange={(e) => setFh(e.target.value)} /></label>
+              <Len label="Core" value={core} min={0.01} onChange={setCore} />
+              <Len label="Stem height" value={stem} min={0} onChange={setStem} />
+              <Len label="Footing width" value={fw} min={0.01} onChange={setFw} />
+              <Len label="Footing height" value={fh} min={0.01} onChange={setFh} />
             </>}
-            {kind === 'pad' && <label className="field-line"><span className="eyebrow">Steps L × W × H</span><input value={steps} onChange={(e) => setSteps(e.target.value)} /></label>}
-            {(kind === 'strip' || kind === 'pad') && <label className="field-line"><span className="eyebrow">Bottom mm</span><input value={bottom} onChange={(e) => setBottom(e.target.value)} /></label>}
+            {kind === 'pad' && <label className="field-line"><span className="eyebrow">Steps L × W × H</span>
+              <Cell value={formatSteps(steps, units)} title="Each step length × width × height, bottom up; a semicolon between steps"
+                onCommit={(t) => { const s = parseSteps(t, units); if (!s?.length) return false; setSteps(s); }} /></label>}
+            {(kind === 'strip' || kind === 'pad') && <Len label="Bottom" value={bottom} onChange={setBottom} />}
             <div className="row"><span className="grow" />{edited
               ? <button type="button" className="btn primary" title="Its elements follow the type" onClick={() => void save()}>Save type</button>
               : <button type="button" className="btn primary" onClick={() => void create()}>Create type</button>}</div>

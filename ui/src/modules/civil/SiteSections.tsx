@@ -114,7 +114,7 @@ export function PlantingSection({ node }: { node: NodeDto }) {
         <dt>Plants per 100 m²</dt><dd><NumberField value={typeof node.props.density === 'number' ? node.props.density : 3} min={0.1} onCommit={(v) => { if (v != null) set({ density: v }); }} /></dd>
         <dt>Seed</dt><dd><NumberField value={typeof node.props.seed === 'number' ? node.props.seed : 1} integer onCommit={(v) => { if (v != null) set({ seed: v }); }} /> <button type="button" className="link small" onClick={() => set({ seed: Math.floor(Math.random() * 100000) })}>shuffle</button></dd>
       </dl>}
-      <p className="eyebrow">Species{zone ? ' · share' : ''}</p>
+      <p className="eyebrow">{zone ? 'Species · share' : 'Species'}</p>
       <table className="panel-grid species">
         <tbody>
           {species.map((s, i) => (
