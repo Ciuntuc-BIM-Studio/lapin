@@ -36,13 +36,13 @@ export function installRecentErrors(): void {
 export const LINKS = { guide: 'https://lapin.ciuntucbimstudio.ro/docs/', community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://ciuntucbimstudio.ro', source: 'https://github.com/Ciuntuc-BIM-Studio/lapin-pro' } as const;
 
 /** The languages the user guide is written in (scripts/user-docs/languages.mjs); an interface language not among them (Lao) opens it in English. */
-const GUIDED: readonly Lang[] = ['en', 'ro', 'es', 'de', 'fr', 'da'];
+const GUIDED: readonly Lang[] = ['en', 'ro', 'es', 'de', 'fr', 'da', 'it'];
 const guided = (lang: Lang): Lang => (GUIDED.includes(lang) ? lang : 'en');
 
 /** The user guide in a language: /docs/ for English, /docs/<lang>/ for the others. */
 export const guideUrl = (lang: Lang): string => (guided(lang) === 'en' ? LINKS.guide : `${LINKS.guide}${guided(lang)}/`);
 
-/** The engine's name for the guide in a language (Support.cs): guide, guideRo, guideEs, guideDe, guideFr, guideDa. */
+/** The engine's name for the guide in a language (Support.cs): guide, guideRo, guideEs, guideDe, guideFr, guideDa, guideIt. */
 export const guideLink = (lang: Lang): string => {
   const g = guided(lang);
   return g === 'en' ? 'guide' : `guide${g[0].toUpperCase()}${g.slice(1)}`;

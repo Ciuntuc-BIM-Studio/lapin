@@ -45,6 +45,7 @@ public class SupportTests
         Assert.Equal("https://lapin.ciuntucbimstudio.ro/docs/", Support.Guides["guide"]);
         Assert.Equal("https://lapin.ciuntucbimstudio.ro/docs/ro/", Support.Guides["guideRo"]);
         Assert.Equal("https://lapin.ciuntucbimstudio.ro/docs/da/", Support.Guides["guideDa"]);
-        Assert.Equal(["guide", "guideDa", "guideDe", "guideEs", "guideFr", "guideRo"], Support.Guides.Keys.Order());
+        Assert.Equal("https://lapin.ciuntucbimstudio.ro/docs/it/", Support.Guides["guideIt"]);
+        Assert.Equal(["guide", "guideDa", "guideDe", "guideEs", "guideFr", "guideIt", "guideRo"], Support.Guides.Keys.Order());
     }
 }

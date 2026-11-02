@@ -1,0 +1,83 @@
+---
+title: L’interfaccia e le scorciatoie
+order: 15
+summary: Le modalità Comoda, Compatta e Concentrazione, la riduzione dei pannelli laterali e le scorciatoie da tastiera che puoi modificare.
+---
+
+<!-- video interface -->
+
+## Aree di lavoro
+
+Un’area di lavoro mostra solo le schede della barra multifunzione di cui il tuo lavoro ha bisogno, nell’ordine in cui le usa. Sceglila nella schermata iniziale, in cima a **Vista → Interfaccia…** oppure da **Comandi…** (Area di lavoro: …): **Tutto** (ogni scheda della tua edizione), **Architettura**, **Strutture e armature**, **Impianti**, **Sito e opere provvisionali** o **Disegno 2D**. Il progetto resta uno solo: gli strumenti di una scheda nascosta restano in Comandi… e nelle scorciatoie da tastiera, e un modello creato in un’area di lavoro si apre intero in un’altra.
+
+![Le aree di lavoro in Vista → Interfaccia…](shots/workspaces.webp)
+
+Mostra, nascondi o sposta una scheda sotto **Schede** nella stessa finestra di dialogo e la scelta diventa **La mia area di lavoro**, conservata su questo computer per la volta successiva; le altre aree di lavoro restano disponibili per passarvi. **Vista** resta sempre, perché contiene Interfaccia….
+
+## Tre modalità
+
+**Vista → Interfaccia…** (<kbd>Ctrl</kbd> <kbd>.</kbd>) sceglie quanto sta attorno alla vista. Scegli una delle tre modalità in cima alla finestra di dialogo; la modifica si vede subito.
+
+![La finestra Interfaccia: le tre modalità, e ogni parte da sola](shots/interface-dialog.webp)
+
+- **Comoda** è la finestra come la mostrano le altre pagine: la barra multifunzione con gli strumenti grandi e i loro nomi, una riga di comando sotto ogni disegno, e sopra la vista l’HUD, il suggerimento, i campi di lunghezza e angolo, la pianta chiave e gli strumenti rapidi.
+- **Compatta** dà alla vista la maggior parte della finestra:
+
+![Compatta: più spazio per il disegno](shots/interface-compact.webp)
+
+1. **La barra multifunzione** è un’unica fascia di icone. Sottili linee separano i gruppi. Passa il mouse su uno strumento per vederne il nome, i tasti e il gruppo.
+2. **Il browser di progetto** si riduce a una barra. Le sue icone aprono per un momento il progetto, i livelli o l’albero IFC sopra la vista.
+3. **Gli strumenti rapidi** <kbd>1</kbd>–<kbd>9</kbd> stanno sul bordo sinistro della vista.
+4. **La pianta chiave** è un pulsante. Fai clic per aprire la mappa, e sulla sua × per ridurla di nuovo.
+5. **Un’unica riga di stato** contiene il nome dello strumento e ciò che chiede, ciò che digiti, i campi di lunghezza e angolo mentre disegni, SNAP, ORTHO e POLAR, il livello e la vista, poi il progetto.
+
+- **Concentrazione** mantiene solo le schede e una sottile riga di comando. Fai clic su una scheda e i suoi strumenti si aprono sopra la vista; la fascia si richiude appena scegli uno strumento, oppure con <kbd>Esc</kbd> o un clic altrove. I pannelli si nascondono. Quando qualcosa è selezionato, una piccola scheda mostra che cos’è e le sue prime proprietà; **Tutte le proprietà…** apre il pannello Proprietà sopra la vista. <kbd>Tab</kbd> riporta entrambi i pannelli, e li nasconde di nuovo.
+
+![Concentrazione: la selezione in una scheda](shots/interface-focus.webp)
+
+In ogni modalità la barra superiore mantiene **Annulla** e **Ripeti** alla sua estremità destra: con i loro nomi in Comoda, come due frecce in Compatta e Concentrazione (<kbd>Ctrl</kbd> <kbd>Z</kbd> e <kbd>Ctrl</kbd> <kbd>Y</kbd>; il loro suggerimento dice che cosa annullano).
+
+Sotto le modalità, ogni parte si può impostare da sola: la barra multifunzione, gli strumenti rapidi (o nessuno: i tasti numerici funzionano comunque), la riga di comando, l’HUD, il messaggio e i campi dello strumento, la pianta chiave, i pannelli e l’altezza delle righe delle proprietà. Cambiare una parte rende la scelta **Personalizzato**.
+
+Sotto le parti, **Schede**: togli la spunta alle schede della barra multifunzione di cui fai a meno (un architetto può nascondere Struttura, Armature 2D e Impianti, un ingegnere Architettura e Sito). Vista resta sempre, perché Interfaccia… si trova lì. Gli strumenti di una scheda nascosta restano in Comandi… e nelle scorciatoie da tastiera.
+
+Lapin conserva la tua scelta su questo computer, per te. L’app desktop e il browser conservano ciascuno la propria. Nel browser, Lapin parte in Compatta quando la finestra è alta meno di 800 pixel, finché non scegli.
+
+## Ridurre i pannelli laterali
+
+In ogni modalità, il browser di progetto e il pannello Proprietà si riducono a una sottile barra sul loro lato:
+
+- il pulsante in alto a destra del pannello lo riduce, e la freccia sulla sua barra lo espande;
+- fai doppio clic sul bordo tra il pannello e la vista;
+- <kbd>Ctrl</kbd> <kbd>B</kbd> riduce o espande il browser, <kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>B</kbd> le proprietà, e <kbd>Tab</kbd> entrambi.
+
+Fai clic su un’icona sulla barra di un pannello ridotto per aprire il pannello sopra la vista senza espanderlo. Si chiude con <kbd>Esc</kbd> o un clic altrove; la sua puntina lo tiene aperto. Trascina il bordo di un pannello per allargarlo; Lapin ricorda la larghezza.
+
+![Un browser ridotto aperto sopra la vista dalla sua barra](shots/browser-overlay.webp)
+
+## Scorciatoie da tastiera
+
+**Vista → Scorciatoie da tastiera…** (<kbd>KS</kbd>) elenca ogni comando raggiungibile dalla tastiera, per scheda. Ogni riga mostra le scorciatoie del comando.
+
+![Le scorciatoie da tastiera, cercando "wall"](shots/shortcuts-dialog.webp)
+
+- **Cerca** per nome del comando o per tasto.
+- **+** aggiunge una scorciatoia: premi una combinazione (<kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>W</kbd>, <kbd>F4</kbd>), oppure digita fino a tre lettere e premi <kbd>Enter</kbd>. <kbd>Esc</kbd> interrompe.
+- Se un altro comando ha già la scorciatoia, Lapin dice quale. **Riassegna** la toglie a quel comando, **Mantieni entrambi** la lascia a tutti e due (vince il primo dell’elenco), **Annulla** non cambia nulla.
+- **×** rimuove una scorciatoia. La freccia alla fine di una riga riporta quel comando come lo ha lo schema, e **Ripristina tutto** lo fa per ogni comando.
+- **Schema** sceglie l’insieme da cui parti: **Stile Revit** (il predefinito: le lettere abituali di Revit, dove Lapin ha il comando) o **Lapin classico** (le lettere proprie di Lapin di prima).
+- **Esporta…** scrive le tue scorciatoie in un file, e **Importa…** ne legge uno, per un altro computer o un collega.
+
+I suggerimenti, i menu e la tavolozza dei comandi (<kbd>Ctrl</kbd> <kbd>K</kbd>) mostrano sempre le scorciatoie come sono in quel momento.
+
+### Le lettere e la riga di comando
+
+Le lettere come <kbd>WA</kbd> funzionano quando nessun campo ha il focus e la riga di comando è vuota: digitale sopra la vista. Il comando si esegue subito. Quando un comando della riga di comando inizia con le stesse lettere (<kbd>DI</kbd> e <kbd>DIMADD</kbd>), Lapin attende un attimo: continua a digitare per scrivere il comando più lungo, oppure premi <kbd>Enter</kbd> o <kbd>Space</kbd> per eseguire subito quello più corto. Mentre un comando chiede un punto o un valore, lettere e cifre vanno a esso. I comandi della riga di comando come <kbd>L</kbd>, <kbd>M</kbd> o <kbd>TRIM</kbd> seguiti da <kbd>Enter</kbd> funzionano in ogni schema. <kbd>Esc</kbd> annulla sempre.
+
+### Le scorciatoie predefinite
+
+Queste sono le scorciatoie Stile Revit, come le ha Lapin oggi:
+
+<!-- shortcuts -->
+
+I tasti numerici <kbd>1</kbd>–<kbd>9</kbd> scelgono gli strumenti rapidi.

@@ -18,7 +18,7 @@ public static class Support
     public const string SiteUrl = "https://ciuntucbimstudio.ro";
     public const string GuideUrl = "https://lapin.ciuntucbimstudio.ro/docs/";
     /// <summary>The guide's languages besides English (scripts/user-docs/languages.mjs), each at /docs/&lt;lang&gt;/ and opened as guideRo, guideEs…</summary>
-    public static readonly string[] GuideLanguages = ["ro", "es", "de", "fr", "da"];
+    public static readonly string[] GuideLanguages = ["ro", "es", "de", "fr", "da", "it"];
 
     /// <summary>The guide's link names and addresses: guide → /docs/, guideRo → /docs/ro/, and so on for each language.</summary>
     public static readonly IReadOnlyDictionary<string, string> Guides = new[] { KeyValuePair.Create("guide", GuideUrl) }

@@ -65,6 +65,9 @@ const WORDS = {
   da: { video: 'Video på engelsk', play: 'Afspil', watch: 'Se på YouTube', command: 'Kommando', keys: 'Taster', guide: 'Lapin brugervejledning', brand: 'brugervejledning', eyebrow: 'Brugervejledning', search: 'Søg i vejledningen', theme: 'Lyst eller mørkt', open: 'Åbn Lapin', pages: 'Sider', onPage: 'På denne side', prev: 'Forrige', next: 'Næste', none: 'Intet fundet. Prøv Ask Me i appen.', language: 'Sprog',
     english: 'Denne side er ikke oversat endnu: den vises på engelsk.',
     footer: (date, commit) => `Billeder taget fra Lapin selv den ${dmy(date, '.')}${commit ? ` (build ${commit})` : ''}. Mangler der noget, eller er noget forkert? Spørg i appen: <b>Ask Me</b>, eller <b>?</b> → Rapportér et problem.` },
+  it: { video: 'Video in inglese', play: 'Riproduci', watch: 'Guarda su YouTube', command: 'Comando', keys: 'Tasti', guide: 'Guida utente di Lapin', brand: 'guida utente', eyebrow: 'Guida utente', search: 'Cerca nella guida', theme: 'Chiaro o scuro', open: 'Apri Lapin', pages: 'Pagine', onPage: 'In questa pagina', prev: 'Precedente', next: 'Successivo', none: 'Nessun risultato. Prova Chiedimi nell’app.', language: 'Lingua',
+    english: 'Questa pagina non è ancora tradotta: è mostrata in inglese.',
+    footer: (date, commit) => `Immagini prese da Lapin stesso il ${dmy(date, '/')}${commit ? ` (build ${commit})` : ''}. Manca qualcosa o c’è un errore? Chiedi nell’app: <b>Chiedimi</b>, oppure <b>?</b> → Segnala un problema.` },
 };
 for (const l of LANGS) if (!WORDS[l]) throw new Error(`render.mjs: the guide's words in ${l} are missing (WORDS)`);
 

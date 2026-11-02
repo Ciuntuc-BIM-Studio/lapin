@@ -1,0 +1,64 @@
+---
+title: Solai e tetti
+order: 40
+summary: Disegna solai e tetti dal loro contorno, scegli la forma e i bordi di un tetto e taglia le aperture.
+---
+
+## Solai
+
+Scegli **Architettura → Solaio** (<kbd>SB</kbd>), poi fai clic sugli angoli del suo contorno. Chiudi il contorno sul primo punto, oppure premi <kbd>Enter</kbd>. Anche un solaio è fatto di strati, impostati in **Architettura → Tipi di solaio**.
+
+Per cambiare il contorno, seleziona il solaio e trascinane gli angoli. **Foro nel solaio** (<kbd>SH</kbd>) taglia un foro in un solaio, per una scala o un cavedio.
+
+Un solaio disegnato fuori dai muri, davanti a una porta, è un portico. Per i gradini che vi salgono, vedi [Scale](stairs.md).
+
+## Tetti
+
+Scegli **Architettura → Tetto** (<kbd>RF</kbd>) e fai clic sul contorno dei muri sottostanti. Lapin costruisce il tetto su quel contorno, alla sommità del suo livello.
+
+![Una casa con un tetto a due falde nella vista 3D](shots/house-3d.webp)
+
+Seleziona il tetto per modificarlo nel pannello Proprietà:
+
+- **Forma.** A padiglione, a due falde, a una falda, a mansarda, a botte o piano. Un tetto a botte è una volta curva tra due timpani; **Volta a botte: freccia in chiave** stabilisce quanto sale in chiave, al massimo metà della sua luce.
+- **Pendenza e sporto** per l’intero tetto.
+- **Direzione del colmo (a due falde, a una falda)**: auto, x o y. Il colmo di un tetto a una falda è il suo lato alto: su x scende verso −y, su y verso −x; **Una falda: inverti la pendenza** lo fa scendere dall’altra parte.
+- **Ogni bordo** con il proprio tipo (gronda o timpano), pendenza e sporto. Una mansarda con bordi a timpano è un tetto alla olandese (gambrel).
+- **Stile.** Gli stili di tetto danno un intero aspetto con una sola scelta: la copertura, le gronde, le grondaie e i pluviali.
+
+![Le proprietà di un tetto](shots/roof-properties.webp)
+
+**Configuratore del tetto** (il pulsante accanto allo stile, oppure **Architettura → Configuratore del tetto** con un tetto selezionato) riunisce tutto in un unico posto: gli stili a sinistra, poi la forma e i suoi bordi, la copertura e lo smaltimento delle acque, l’orditura e le aperture, sopra una pianta del tetto (fai clic su un bordo per renderlo auto, gronda o timpano) e, per l’orditura, una sezione trasversale al colmo con la capriata o la coppia di puntoni al centro. Scegli uno stile da cui partire e modifica a mano qualsiasi campo; **Applica** ne fa un unico passo da annullare. **Salva come stile…** conserva il tetto così come è configurato come stile del progetto, elencato sotto **Progetto** sopra quelli del catalogo (e nell’elenco del pannello Proprietà) per altri tetti e per quelli nuovi; **Aggiorna lo stile** vi salva di nuovo le modifiche, e tutti i tetti di quello stile si adeguano. Uno stile del progetto si può rinominare o eliminare; i suoi tetti mantengono il loro aspetto.
+
+![Il configuratore del tetto](shots/roof-configurator.webp)
+
+**Grondaie e pluviali.** In **Copertura e smaltimento acque** del configuratore, la grondaia prende la sua dimensione, quanto sporge dalla gronda e quanto pende sotto la copertura, la sua pendenza verso gli scarichi (mm/m) e i suoi tappi di testata; la tabella dei bordi attiva o disattiva la grondaia di ogni gronda. I pluviali nascono come parte del tetto, uno ogni 10 m; **Rendili modificabili** li trasforma in elementi, e **Architettura → Pluviale** ne aggiunge uno con un clic su una grondaia. La maniglia di un pluviale lo fa scorrere solo lungo la sua grondaia; le sue proprietà impostano il diametro, il gomito di scarico al piede e il percorso, una catena di segmenti ciascuno con la sua lunghezza e il suo angolo dalla verticale (verso il muro), l’ultimo fino a terra. In IFC una grondaia è un IfcPipeSegment GUTTER e un pluviale un segmento rigido chiamato Downpipe.
+
+I muri sul livello del tetto si fermano sotto di esso e salgono da soli fino ai suoi timpani, anche sotto un tetto curvo. Un muro su un altro livello segue il tetto dopo **Architettura → Collega al tetto** (<kbd>AR</kbd>): seleziona i muri, poi fai clic sul tetto. Lo stesso strumento accetta qualsiasi altro corpo sopra i muri: un solido di Studio, una soletta, una trave, un elemento importato da IFC. I muri salgono fino al suo intradosso e vengono tagliati lungo di esso, qualunque sia la sua forma. **Scollega dal tetto** lo annulla.
+
+**Finestra da tetto** e **Abbaino** aggiungono aperture a un tetto.
+
+### Orditura in legno
+
+**Struttura** stabilisce come è realizzata l’orditura del tetto:
+
+- **rafters**: puntoni su arcarecci, con una trave di colmo.
+- **collar**: coppie di puntoni con una catena alta orizzontale a **Catene alte: frazione dell’altezza** (due terzi per impostazione predefinita), senza arcarecci.
+- **trusses**: capriate prefabbricate lungo il colmo principale, all’**Interasse dei puntoni**: correnti superiori sulle falde, un corrente inferiore sui dormienti, aste di parete a W (una capriata a una falda su un tetto a una falda). Le testate di un tetto a padiglione mantengono i loro puntoni.
+- **nessuno**: un tavolato, senza legname.
+
+**Puntoni e correnti** accetta le vecchie sezioni in cm o quelle nordiche in mm (da 45×95 a 45×245); con esse vanno **Aste di parete delle capriate** e **Classe di resistenza del legno** (da C14 a C30, lamellare). I puntoni appoggiano sul dormiente con un intaglio a bocca di lupo (**Appoggio dei puntoni sul dormiente**) e terminano in gronda con un taglio a piombo o a squadra (**Terminazione dei puntoni in gronda**). Gli stili **Swedish truss roof** e **Nordic collar-tie roof** portano con sé la loro orditura.
+
+Ogni elemento è una parte a sé: l’abaco **Roof timber** li elenca come distinta di taglio (elemento, sezione, classe, lunghezza, pezzi, volume), e in IFC ciascuno è un IfcMember del suo tipo, ogni capriata un IfcElementAssembly.
+
+## Controsoffitti
+
+**Finiture → Controsoffitto** (<kbd>CG</kbd>) disegna un controsoffitto su un contorno di cui fai clic sugli angoli; **Controsoffitto in un locale** riempie il locale su cui fai clic, seguendone il contorno. Un controsoffitto è sospeso alla sua **Altezza** sopra il piano (2700 mm, a meno che tu non la cambi nelle sue proprietà).
+
+Il suo tipo, in **Finiture → Tipi di controsoffitto**, imposta il **Sistema**: **Quadrotti su orditura a vista** (larghezza, lunghezza e spessore del quadrotto, larghezza in vista, altezza e rotazione dell’orditura, pendini fino alla struttura con il loro interasse) oppure **Cartongesso, continuo**. L’orditura è centrata sul controsoffitto, così i quadrotti tagliati ai bordi risultano uguali.
+
+**Pannello luminoso** e **Diffusore d’aria** ne mettono uno nella cella su cui fai clic; fai di nuovo clic sulla cella con l’altro strumento per cambiarlo. Nel pannello Proprietà, **Distribuisci** mette pannelli luminosi o diffusori d’aria ogni tot celle, e **Svuota** li toglie. Gli abachi contano i quadrotti interi, i pannelli luminosi e i diffusori, e il controsoffitto va in IFC come un IfcCovering di tipo CEILING.
+
+![Le proprietà di un controsoffitto: il suo tipo, l’altezza e i corpi installati](shots/ceiling-properties.webp)
+
+![Controsoffitti a quadrotti con pannelli luminosi e diffusori d’aria, in 3D](shots/ceilings-3d.webp)
