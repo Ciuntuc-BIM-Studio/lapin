@@ -69,15 +69,7 @@ public sealed class Region(IReadOnlyList<Vec2[]> rings, IReadOnlyList<Vec2[]> ob
     }
 
     /// <summary>The height where two segments cross, if they do (strictly inside both).</summary>
-    static double? Cross(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
-    {
-        var (r, s) = (b - a, d - c);
-        var den = Vec2.Cross(r, s);
-        if (Math.Abs(den) < 1e-15) return null;
-        var t = Vec2.Cross(c - a, s) / den;
-        var u = Vec2.Cross(c - a, r) / den;
-        return t > 1e-9 && t < 1 - 1e-9 && u > 1e-9 && u < 1 - 1e-9 ? a.Y + r.Y * t : null;
-    }
+    static double? Cross(Vec2 a, Vec2 b, Vec2 c, Vec2 d) => Polyline2.Crosses(a, b, c, d, out var t) ? a.Y + (b.Y - a.Y) * t : null;
 
     public bool Contains(Vec2 p) => Polygon2.Inside(Rings, p) && !Obstacles.Any(o => Polygon2.Contains(o, p));
 }

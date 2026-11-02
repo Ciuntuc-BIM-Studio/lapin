@@ -77,25 +77,9 @@ public static class Pipes
         return (legs, bends);
     }
 
-    /// <summary>The plan polyline shifted sideways by <paramref name="offset"/> (left of the drawn direction positive), corners mitred.</summary>
-    public static List<Vec2> Offset(IReadOnlyList<Vec2> pts, double offset)
-    {
-        if (pts.Count < 2 || Math.Abs(offset) < 1e-12) return [.. pts];
-        var o = new List<Vec2>(pts.Count);
-        for (var i = 0; i < pts.Count; i++)
-        {
-            var dIn = i > 0 ? (pts[i] - pts[i - 1]).Normalized() : (pts[i + 1] - pts[i]).Normalized();
-            var dOut = i < pts.Count - 1 ? (pts[i + 1] - pts[i]).Normalized() : dIn;
-            var n = (dIn + dOut).Normalized();
-            if (n.Length < 1e-9) n = dIn;
-            var left = new Vec2(-n.Y, n.X);
-            var cos = Vec2.Dot(dIn, n);
-            o.Add(pts[i] + left * (offset / Math.Max(cos, 0.2)));
-        }
-        return o;
-    }
+    /// <summary>The plan polyline shifted sideways by <paramref name="offset"/> (left of the drawn direction positive), corners mitred, a sharp turn's corner kept within five offsets.</summary>
+    public static List<Vec2> Offset(IReadOnlyList<Vec2> pts, double offset) => Polyline2.Offset(pts, offset, maxMitre: 5);
 
-    /// <summary>Length of a polyline.</summary>
     /// <summary>Where the line through a along u meets the line through b along v (null when they run parallel).</summary>
     public static Vec2? Intersect(Vec2 a, Vec2 u, Vec2 b, Vec2 v)
     {
@@ -105,12 +89,8 @@ public static class Pipes
         return a + u * t;
     }
 
-    public static double Length(IReadOnlyList<Vec2> pts)
-    {
-        double l = 0;
-        for (var i = 1; i < pts.Count; i++) l += (pts[i] - pts[i - 1]).Length;
-        return l;
-    }
+    /// <summary>Length of a polyline.</summary>
+    public static double Length(IReadOnlyList<Vec2> pts) => Polyline2.Length(pts);
 
     /// <summary>The point at a station along a polyline (clamped), and the leg it is on.</summary>
     public static (Vec2 At, int Leg, Vec2 Dir) AtStation(IReadOnlyList<Vec2> pts, double station)

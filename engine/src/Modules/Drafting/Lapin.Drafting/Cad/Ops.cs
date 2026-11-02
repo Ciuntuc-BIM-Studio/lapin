@@ -30,7 +30,7 @@ public static class Ops
             }
             case Polyline p:
             {
-                var pts = Clean(p.Pts, p.Closed);
+                var pts = Polyline2.Dedupe(p.Pts, p.Closed, 1e-9);
                 if (pts.Count < 2) return null;
                 double sign;
                 if (p.Closed)
@@ -46,52 +46,11 @@ public static class Ops
                     var (a, b) = segs.MinBy(x => Geo.NearestOnSegment(side, x.Item1, x.Item2).Dist);
                     sign = Vec2.Cross(b - a, side - a) >= 0 ? 1 : -1;
                 }
-                var off = OffsetPath(pts, p.Closed, d * sign);
-                return off == null ? null : new Polyline(off, p.Closed);
+                var off = Polyline2.Offset(pts, d * sign, p.Closed);
+                return off.All(q => double.IsFinite(q.X) && double.IsFinite(q.Y)) ? new Polyline(off, p.Closed) : null;
             }
         }
         return null;
-    }
-
-    /// <summary>Consecutive duplicate points dropped (and the closing one of a loop).</summary>
-    static List<Vec2> Clean(IReadOnlyList<Vec2> pts, bool closed)
-    {
-        var o = new List<Vec2>();
-        foreach (var q in pts) if (o.Count == 0 || (q - o[^1]).Length > 1e-9) o.Add(q);
-        if (closed && o.Count > 1 && (o[0] - o[^1]).Length <= 1e-9) o.RemoveAt(o.Count - 1);
-        return o;
-    }
-
-    /// <summary>A path offset to its left by <paramref name="d"/> (right when negative), its corners mitred.</summary>
-    static List<Vec2>? OffsetPath(List<Vec2> pts, bool closed, double d)
-    {
-        var n = pts.Count;
-        var segCount = closed ? n : n - 1;
-        var lines = new List<(Vec2 A, Vec2 B)>();
-        for (var i = 0; i < segCount; i++)
-        {
-            var (a, b) = (pts[i], pts[(i + 1) % n]);
-            var nrm = Geo.Norm(b - a).Perp * d;
-            lines.Add((a + nrm, b + nrm));
-        }
-        Vec2 Join((Vec2 A, Vec2 B) l1, (Vec2 A, Vec2 B) l2)
-        {
-            var (d1, d2) = (l1.B - l1.A, l2.B - l2.A);
-            var den = Vec2.Cross(d1, d2);
-            if (Math.Abs(den) < 1e-12 * Math.Max(d1.Length * d2.Length, 1e-18)) return l1.B; // collinear: no corner
-            var t = Vec2.Cross(l2.A - l1.A, d2) / den;
-            return l1.A + d1 * t;
-        }
-        var o = new List<Vec2>();
-        if (closed)
-            for (var i = 0; i < n; i++) o.Add(Join(lines[(i - 1 + n) % n], lines[i]));
-        else
-        {
-            o.Add(lines[0].A);
-            for (var i = 1; i < n - 1; i++) o.Add(Join(lines[i - 1], lines[i]));
-            o.Add(lines[^1].B);
-        }
-        return o.All(q => double.IsFinite(q.X) && double.IsFinite(q.Y)) ? o : null;
     }
 
     // ------------------------------------------------------------ trim

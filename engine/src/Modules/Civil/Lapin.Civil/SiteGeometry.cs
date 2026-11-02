@@ -79,12 +79,7 @@ public static class SiteGeometry
         return o;
     }
 
-    public static double Length(IReadOnlyList<Vec2> path)
-    {
-        var l = 0.0;
-        for (var i = 0; i + 1 < path.Count; i++) l += (path[i + 1] - path[i]).Length;
-        return l;
-    }
+    public static double Length(IReadOnlyList<Vec2> path) => Polyline2.Length(path);
 
     /// <summary>A small, seeded random (xorshift), the same sequence for the same seed on every machine.</summary>
     public sealed class Random(int seed)

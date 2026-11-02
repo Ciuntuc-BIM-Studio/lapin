@@ -88,15 +88,8 @@ public static class BrepPick
     static double SegmentsDistance(IReadOnlyList<Vec2> ring, Vec2 p)
     {
         var best = double.MaxValue;
-        for (var i = 0; i < ring.Count; i++) best = Math.Min(best, SegDistance(ring[i], ring[(i + 1) % ring.Count], p));
+        for (var i = 0; i < ring.Count; i++) best = Math.Min(best, Polyline2.SegmentDistance(p, ring[i], ring[(i + 1) % ring.Count]));
         return best;
-    }
-
-    static double SegDistance(Vec2 a, Vec2 b, Vec2 p)
-    {
-        var d = b - a;
-        var t = Math.Clamp(Vec2.Dot(p - a, d) / Math.Max(Vec2.Dot(d, d), 1e-18), 0, 1);
-        return (a + d * t - p).Length;
     }
 
     public static double SegDistance(Vec3 a, Vec3 b, Vec3 p)

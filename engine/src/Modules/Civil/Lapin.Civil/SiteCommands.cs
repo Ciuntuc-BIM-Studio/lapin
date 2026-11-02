@@ -244,9 +244,7 @@ public static class SiteCommands
 
     static IReadOnlyList<Vec2> Polyline(JsonObject a)
     {
-        var pts = Args.Points(a);
-        var clean = new List<Vec2>();
-        foreach (var p in pts) if (clean.Count == 0 || (p - clean[^1]).Length > 1e-6) clean.Add(p);
+        var clean = Polyline2.Dedupe(Args.Points(a));
         if (clean.Count < 2) throw new CommandException("The path needs two points at least.");
         return clean;
     }

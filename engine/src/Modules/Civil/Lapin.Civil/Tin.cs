@@ -163,7 +163,7 @@ public sealed record Tin(IReadOnlyList<Vec3> Points, IReadOnlyList<(int A, int B
         return new Tin(points, tris);
     }
 
-    static double Cross(Vec3 a, Vec3 b, Vec3 c) => (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
+    static double Cross(Vec3 a, Vec3 b, Vec3 c) => Vec2.Cross(b.Xy - a.Xy, c.Xy - a.Xy);
 
     /// <summary>
     /// Survey points, one a line, split on spaces, commas, semicolons or tabs (with ';' or tabs between them, the commas are decimals);

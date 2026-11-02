@@ -657,13 +657,7 @@ public static class DxfImport
         return o;
     }
 
-    static List<Vec2> Dedupe(List<Vec2> pts, bool closed)
-    {
-        var o = new List<Vec2>();
-        foreach (var p in pts) if (o.Count == 0 || (o[^1] - p).Length > 1e-12) o.Add(p);
-        if (closed && o.Count > 2 && (o[0] - o[^1]).Length <= 1e-12) o.RemoveAt(o.Count - 1);
-        return o;
-    }
+    static List<Vec2> Dedupe(List<Vec2> pts, bool closed) => Polyline2.Dedupe(pts, closed, 1e-12);
 
     /// <summary>A shape through a transform: circles and arcs stay round under a similarity (an arc's ends swap when it mirrors); otherwise they become polylines.</summary>
     public static Shape Map(Affine f, Shape s)

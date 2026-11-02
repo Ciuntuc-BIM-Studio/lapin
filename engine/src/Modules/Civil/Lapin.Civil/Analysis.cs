@@ -66,7 +66,7 @@ public static class Analysis
             var (depth, bottom, _) = Ditches.Section(d);
             for (var i = 0; i + 1 < path.Count; i++)
             {
-                var dist = DistanceToSegment(p, path[i], path[i + 1]);
+                var dist = Polyline2.SegmentDistance(p, path[i], path[i + 1]);
                 if (dist > half) continue;
                 // The trapezoid: flat over the bottom, sloping up to the ground at the edge.
                 var inner = bottom / 2;
@@ -74,14 +74,6 @@ public static class Analysis
             }
         }
         return z;
-    }
-
-    static double DistanceToSegment(Vec2 p, Vec2 a, Vec2 b)
-    {
-        var d = b - a;
-        var l2 = Vec2.Dot(d, d);
-        var t = l2 < 1e-12 ? 0 : Math.Clamp(Vec2.Dot(p - a, d) / l2, 0, 1);
-        return (p - (a + d * t)).Length;
     }
 
     /// <summary>The terrain sampled for a kind of analysis: cells of about a sixtieth of its longer side, those over the ground.</summary>

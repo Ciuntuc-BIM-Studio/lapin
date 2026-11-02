@@ -495,16 +495,9 @@ public static class Solids
             for (var j = i + 2; j < n; j++)
             {
                 if (i == 0 && j == n - 1) continue;
-                if (Crosses(o[i], o[(i + 1) % n], o[j], o[(j + 1) % n])) return null;
+                if (Polyline2.Crosses(o[i], o[(i + 1) % n], o[j], o[(j + 1) % n])) return null;
             }
         return o;
-    }
-
-    static bool Crosses(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
-    {
-        double S(Vec2 p, Vec2 q, Vec2 r) => Vec2.Cross(q - p, r - p);
-        var (d1, d2, d3, d4) = (S(c, d, a), S(c, d, b), S(a, b, c), S(a, b, d));
-        return ((d1 > 1e-12 && d2 < -1e-12) || (d1 < -1e-12 && d2 > 1e-12)) && ((d3 > 1e-12 && d4 < -1e-12) || (d3 < -1e-12 && d4 > 1e-12));
     }
 
     /// <summary>

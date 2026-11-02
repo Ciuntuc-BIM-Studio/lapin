@@ -370,13 +370,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
     static int Index(JsonObject a, int count) =>
         Json.Number(a["index"]) is { } ix && ix >= 0 && ix < count ? (int)ix : throw new CommandException("The dimension has no such point.");
 
-    /// <summary>Consecutive points that are one point, once.</summary>
-    static List<Vec2> Distinct(List<Vec2> pts)
-    {
-        var o = new List<Vec2>();
-        foreach (var p in pts) if (o.Count == 0 || (o[^1] - p).Length >= 1e-4) o.Add(p);
-        return o;
-    }
+    /// <summary>Consecutive points that are one point (within a tenth of a millimetre, what a dimension can tell apart), once.</summary>
+    static List<Vec2> Distinct(List<Vec2> pts) => Polyline2.Dedupe(pts, tolerance: 1e-4);
 
     /// <summary>What a point placed on <paramref name="view"/> holds on: an edge the view cuts (as drawn when the command began), a grid axis, a wall's centre line; null: nothing.</summary>
     static Func<Vec2, DimEndRef?> Associator(ICommandContext ctx, Entity view)
