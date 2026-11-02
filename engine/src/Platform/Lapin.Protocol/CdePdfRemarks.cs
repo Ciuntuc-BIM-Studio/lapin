@@ -30,7 +30,7 @@ public static class CdePdfRemarks
         }
         else
         {
-            var path = (string?)p["path"] ?? throw new CommandException("The file's path is missing.");
+            var path = HostFiles.Check((string?)p["path"] ?? throw new CommandException("The file's path is missing."));
             if (!File.Exists(path)) throw new CommandException($"There is no file at {path}.");
             bytes = File.ReadAllBytes(path);
             name = Path.GetFileName(path);

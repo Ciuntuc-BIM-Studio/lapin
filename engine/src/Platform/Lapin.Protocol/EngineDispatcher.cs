@@ -223,9 +223,10 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         var versions = Versions(session);
         var version = versions.Require(number);
         var content = versions.Content(ManifestOf(version, revision));
-        session.AdoptClasses(content.Classes);
         var (entities, relations) = session.Upgraded(content.Entities, content.Relations);
-        return session.Edit($"Restore version {number}", edit => ModelCompare.Apply(edit, entities, relations));
+        // The classes it brought are adopted only once it is restored (a restore that throws adopts none); undone, they stay
+        // known, which writes nothing while none of them is in the model.
+        return session.Edit($"Restore version {number}", edit => { ModelCompare.Apply(edit, entities, relations); session.AdoptClasses(content.Classes); });
     }
 
     /// <summary>A version as a package of its own, to open elsewhere.</summary>
@@ -347,7 +348,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             var name = (string?)p["name"] ?? "file.ifc";
             return (bytes, name, null, $"data:{name}:{bytes.Length}");
         }
-        var path = (string?)p["path"] ?? throw new CommandException("The file's path is missing.");
+        var path = HostFiles.Check((string?)p["path"] ?? throw new CommandException("The file's path is missing."));
         var info = new FileInfo(path);
         if (!info.Exists) throw new CommandException($"There is no file at {path}.");
         return (File.ReadAllBytes(path), info.Name, path, $"{path}:{info.Length}:{info.LastWriteTimeUtc.Ticks}");
@@ -408,19 +409,27 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             if (caller.Remote && AllowedRemote(method, p, caller.Role) is { } refused) throw new CommandException(refused);
             session.Author = caller.Author;
             session.Progress = ReportProgress;
+            HostFiles.GuestCall = caller.Remote;
             try
             {
                 var (result, diff) = Dispatch(method, p);
-                if (result is Diff { Reset: true } snapshot && Parts(snapshot) is { Count: > 1 } parts)
+                if (result is Diff { Reset: true } snapshot)
                 {
-                    foreach (var part in parts.SkipLast(1)) _callerFrames.Add(DiffFrame(part, caller.Author));
-                    result = parts[^1];
+                    if (Parts(snapshot) is { Count: > 1 } parts)
+                    {
+                        foreach (var part in parts.SkipLast(1)) _callerFrames.Add(DiffFrame(part, caller.Author));
+                        snapshot = parts[^1];
+                    }
+                    // The last part, carried by the reply: with the caller's own undo and redo, as the parts before it.
+                    result = caller.Remote ? snapshot with { State = session.StateFor(caller.Author) } : snapshot;
                 }
                 return (BinaryFrame.Encode(new Reply(id, result), ContractsOnly), diff);
             }
-            finally { session.Author = History.Me; session.Progress = null; }
+            finally { session.Author = History.Me; session.Progress = null; HostFiles.GuestCall = false; }
         }
-        catch (Exception ex) when (ex is ModelException or JsonException or InvalidOperationException or IOException or UnauthorizedAccessException or FormatException or InvalidDataException)
+        // A refusal the user reads. InvalidOperationException is not one: it is what an empty First(), a JsonNode given two parents or a
+        // null Value throws, an engine bug, logged below.
+        catch (Exception ex) when (ex is ModelException or JsonException or IOException or UnauthorizedAccessException or FormatException or InvalidDataException)
         {
             return (BinaryFrame.Encode(new Reply(id, null, ex.Message), ContractsOnly), null);
         }
@@ -448,8 +457,8 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
     /// </summary>
     public static string? AllowedRemote(string method, JsonObject p, string role)
     {
-        static bool HasPath(JsonObject o) => o["path"] is JsonValue v && v.TryGetValue<string>(out var s) && s.Length > 0;
-        if (HasPath(p)) return "A guest cannot reach files on the host's computer.";
+        // Anywhere in the call (a query's args, a batch's steps, an attribute set): a file or folder named by its path.
+        if (NamesHostFile(p)) return HostFiles.Refused;
         var editor = role is "editor" or "owner";
         switch (method)
         {
@@ -458,8 +467,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh" or "project.exportSurvey":
                 return null;
             case "doc.execute":
-                if (!editor) return "You joined to look: ask the host to let you edit.";
-                return p["args"] is JsonObject args && HasPath(args) ? "A guest cannot reach files on the host's computer." : null;
+                return editor ? null : "You joined to look: ask the host to let you edit.";
             case "doc.undo" or "doc.redo" or "project.convertToNative":
                 return editor ? null : "You joined to look: ask the host to let you edit.";
             case "project.importIfc" or "project.importFragments" or "project.importBcf" or "project.importMesh":
@@ -472,8 +480,33 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
         }
     }
 
+    /// <summary>The keys that name a file or a folder on the computer that reads them.</summary>
+    static readonly HashSet<string> PathKeys = new(StringComparer.OrdinalIgnoreCase) { "path", "paths", "folder", "directory", "dir" };
+
+    /// <summary>Whether a string under one of <see cref="PathKeys"/> is anywhere in <paramref name="node"/>, at any depth.</summary>
+    static bool NamesHostFile(JsonNode? node, bool underPathKey = false, int depth = 0)
+    {
+        // Deeper than any call nests: refused rather than walked.
+        if (depth > 64) return true;
+        switch (node)
+        {
+            case JsonObject o:
+                foreach (var (k, v) in o) if (NamesHostFile(v, PathKeys.Contains(k), depth + 1)) return true;
+                return false;
+            case JsonArray a:
+                foreach (var v in a) if (NamesHostFile(v, underPathKey, depth + 1)) return true;
+                return false;
+            case JsonValue v:
+                return underPathKey && v.TryGetValue<string>(out var s) && s.Trim().Length > 0;
+            default:
+                return false;
+        }
+    }
+
     (object? Result, Diff? Diff) Dispatch(string method, JsonObject p)
     {
+        // Another project: a file surveyed for this one (its bytes, its index) is not kept for it.
+        if (method is "project.new" or "project.open" or "project.openBytes" or "recovery.restore") { _surveyed = null; _fragSurveyed = null; }
         // A file written where asked (the desktop's save dialog), else handed back to download (a browser).
         JsonObject Deliver(byte[] bytes, string name)
         {

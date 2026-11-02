@@ -62,7 +62,7 @@ public static class DxfImport
     {
         if ((string?)a["data"] is { Length: > 0 } data)
             return (DxfReader.Read(Convert.FromBase64String(data)), (string?)a["name"] ?? "drawing.dxf");
-        var path = (string?)a["path"] ?? throw new CommandException("Which DXF file?");
+        var path = HostFiles.Check((string?)a["path"] ?? throw new CommandException("Which DXF file?"));
         if (!File.Exists(path)) throw new CommandException($"There is no file at {path}.");
         return (DxfReader.Read(File.ReadAllBytes(path)), Path.GetFileName(path));
     }

@@ -81,6 +81,7 @@ public static class Cde
         r.Command("cde.setFolder", "Project folder", (ctx, a) =>
         {
             var path = ((string?)a["path"])?.Trim();
+            if (path is { Length: > 0 }) HostFiles.Check(path);
             Write(ctx, cde => { if (path is { Length: > 0 }) cde["folder"] = path; else cde.Remove("folder"); });
             return new JsonObject { ["folder"] = path is { Length: > 0 } ? path : null, ["exists"] = Exists(path) };
         });
