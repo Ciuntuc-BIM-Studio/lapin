@@ -227,12 +227,8 @@ public static class MeshRecognition
         return new ShapePrism([.. outline.Select(q => new Vec3(q.X, q.Y, z0))], holes, new Vec3(0, 0, z1 - z0), false, "mesh");
     }
 
-    static double Area(IReadOnlyList<Vec3> loop)
-    {
-        double a = 0;
-        for (var i = 0; i < loop.Count; i++) { var (p, q) = (loop[i], loop[(i + 1) % loop.Count]); a += p.X * q.Y - q.X * p.Y; }
-        return Math.Abs(a) / 2;
-    }
+    /// <summary>A loop's area in plan (Newell's normal's z).</summary>
+    static double Area(IReadOnlyList<Vec3> loop) => Math.Abs(VecMath.NewellNormal(loop).Z);
 
     /// <summary>
     /// The parts' prisms as one: alone, as it is; vertical ones on the same outline one over the other (a slab's layers), from

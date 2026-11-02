@@ -202,12 +202,13 @@ public static partial class IfcImport
 
         // ─── Reading ────────────────────────────────────────────────────────
 
+        // The file's values read as the model reads them.
         static string? Str(object? v) => IfcModel.Str(v);
         static double Num(object? v) => IfcModel.Num(v);
-        static int Ref(object? v) => v is StepRef r ? r.Id : -1;
-        static IEnumerable<int> Refs(object? v) => v is List<object?> l ? l.OfType<StepRef>().Select(r => r.Id) : [];
+        static int Ref(object? v) => IfcModel.Ref(v);
+        static IEnumerable<int> Refs(object? v) => IfcModel.Refs(v);
         static string? Enum(object? v) => (v as StepEnum)?.Value;
-        List<StepEntity> Items(object? v) => v is List<object?> l ? [.. l.Select(f.Get).OfType<StepEntity>()] : [];
+        List<StepEntity> Items(object? v) => model.Items(v);
 
         static Dictionary<string, string> BuildNames()
         {

@@ -26,7 +26,7 @@ public static class BattHatch
         foreach (var raw in loops)
         {
             var poly = Clean(raw);
-            if (poly.Count < 3 || Math.Abs(Area(poly)) < 1e-12) continue;
+            if (poly.Count < 3 || Math.Abs(Polygon2.SignedArea(poly)) < 1e-12) continue;
             // The band: along its longest edge, across it.
             Vec2 dir = default; double best = 0;
             for (var i = 0; i < poly.Count; i++) { var e = poly[(i + 1) % poly.Count] - poly[i]; if (e.Length > best) { best = e.Length; dir = e; } }
@@ -81,13 +81,6 @@ public static class BattHatch
                 if ((a.Y > p.Y) != (b.Y > p.Y) && p.X < (b.X - a.X) * (p.Y - a.Y) / (b.Y - a.Y) + a.X) inside = !inside;
             }
         return inside;
-    }
-
-    static double Area(IReadOnlyList<Vec2> poly)
-    {
-        double a = 0;
-        for (var i = 0; i < poly.Count; i++) { var p = poly[i]; var q = poly[(i + 1) % poly.Count]; a += p.X * q.Y - q.X * p.Y; }
-        return a / 2;
     }
 
     static List<Vec2> Clean(IReadOnlyList<Vec2> pts)

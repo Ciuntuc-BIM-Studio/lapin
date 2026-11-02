@@ -194,9 +194,9 @@ public sealed partial class IfcModel
 
     public static string? Str(object? v) => v switch { string s => s, StepTyped t => Str(t.Value), _ => null };
     public static double Num(object? v) => v switch { double d => d, long l => l, StepTyped t => Num(t.Value), _ => 0 };
-    static int Ref(object? v) => v is StepRef r ? r.Id : -1;
-    static IEnumerable<int> Refs(object? v) => v is List<object?> l ? l.OfType<StepRef>().Select(r => r.Id) : [];
-    List<StepEntity> Items(object? v) => v is List<object?> l ? [.. l.Select(File.Get).OfType<StepEntity>()] : [];
+    internal static int Ref(object? v) => v is StepRef r ? r.Id : -1;
+    internal static IEnumerable<int> Refs(object? v) => v is List<object?> l ? l.OfType<StepRef>().Select(r => r.Id) : [];
+    internal List<StepEntity> Items(object? v) => v is List<object?> l ? [.. l.Select(File.Get).OfType<StepEntity>()] : [];
 
     /// <summary>Metres per length unit of a file (its project's units), for a look at the file before it is read as a model.</summary>
     public static double LengthUnit(StepFile f) => ProjectUnits(f).Length;
@@ -646,7 +646,8 @@ public sealed partial class IfcModel
         return m;
     }
 
-    static double Area(List<Vec3> l) { double a = 0; for (var i = 0; i < l.Count; i++) { var (p, q) = (l[i], l[(i + 1) % l.Count]); a += p.X * q.Y - q.X * p.Y; } return a / 2; }
+    /// <summary>A loop's signed area in plan (Newell's normal's z), positive counter-clockwise.</summary>
+    static double Area(List<Vec3> l) => VecMath.NewellNormal(l).Z;
 
     MeshBuilder? Revolution(StepEntity s)
     {

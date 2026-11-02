@@ -120,6 +120,19 @@ public sealed class StepFile
         return k < 0 ? -1 : from + k;
     }
 
+    /// <summary>A keyword (a type, an enumeration) in upper case, interned in <paramref name="names"/>: a file repeats a few dozen of them millions of times.</summary>
+    static string Name(ReadOnlySpan<byte> b, Dictionary<string, string> names)
+    {
+        Span<char> c = stackalloc char[Math.Min(b.Length, 256)];
+        if (b.Length > c.Length) return Encoding.ASCII.GetString(b).ToUpperInvariant();
+        for (var k = 0; k < b.Length; k++) c[k] = char.ToUpperInvariant((char)b[k]);
+        var lookup = names.GetAlternateLookup<ReadOnlySpan<char>>();
+        if (lookup.TryGetValue(c, out var known)) return known;
+        var made = new string(c);
+        names[made] = made;
+        return made;
+    }
+
     static bool Space(byte c) => c is (byte)' ' or (byte)'\t' or (byte)'\r' or (byte)'\n';
     static bool Digit(byte c) => c is >= (byte)'0' and <= (byte)'9';
     static bool Letter(byte c) => c is >= (byte)'A' and <= (byte)'Z' or >= (byte)'a' and <= (byte)'z';
@@ -245,6 +258,7 @@ public sealed class StepFile
             var entries = new List<Entry>();
             var types = new List<string>();
             var typeIndex = new Dictionary<string, int>();
+            var names = new Dictionary<string, string>();
             var i = from;
             while (i < end)
             {
@@ -262,7 +276,7 @@ public sealed class StepFile
                 while (i < b.Length && Space(b[i])) i++;
                 var t0 = i;
                 while (i < b.Length && (Letter(b[i]) || Digit(b[i]) || b[i] == '_')) i++;
-                var type = Name(b.AsSpan(t0, i - t0));
+                var type = Name(b.AsSpan(t0, i - t0), names);
                 if (!typeIndex.TryGetValue(type, out var ti)) { ti = types.Count; typeIndex[type] = ti; types.Add(type); }
                 while (i < b.Length && Space(b[i])) i++;
                 // Rooted: '(' then a 22-character string with no quote inside.
@@ -286,13 +300,6 @@ public sealed class StepFile
             return (entries, types);
         }
 
-        static string Name(ReadOnlySpan<byte> b)
-        {
-            Span<char> c = stackalloc char[Math.Min(b.Length, 256)];
-            if (b.Length > c.Length) return Encoding.ASCII.GetString(b).ToUpperInvariant();
-            for (var k = 0; k < b.Length; k++) c[k] = char.ToUpperInvariant((char)b[k]);
-            return new string(c);
-        }
     }
 
     // ─── The entities, parsed on demand ──────────────────────────────────────
@@ -391,17 +398,6 @@ public sealed class StepFile
             return Name(s.AsSpan(st, _i - st), scratch.Names);
         }
 
-        static string Name(ReadOnlySpan<byte> b, Dictionary<string, string> names)
-        {
-            Span<char> c = stackalloc char[Math.Min(b.Length, 256)];
-            if (b.Length > c.Length) return Encoding.ASCII.GetString(b).ToUpperInvariant();
-            for (var k = 0; k < b.Length; k++) c[k] = char.ToUpperInvariant((char)b[k]);
-            var lookup = names.GetAlternateLookup<ReadOnlySpan<char>>();
-            if (lookup.TryGetValue(c, out var known)) return known;
-            var made = new string(c);
-            names[made] = made;
-            return made;
-        }
 
         object? Value(int depth)
         {

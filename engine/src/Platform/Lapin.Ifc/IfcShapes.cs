@@ -225,16 +225,11 @@ public sealed partial class IfcModel
         return o;
     }
 
+    /// <summary>A loop's unit normal (Newell's), zero for a loop without area.</summary>
     static Vec3 Newell(List<Vec3> loop)
     {
-        double x = 0, y = 0, z = 0;
-        for (var i = 0; i < loop.Count; i++)
-        {
-            var a = loop[i]; var b = loop[(i + 1) % loop.Count];
-            x += (a.Y - b.Y) * (a.Z + b.Z); y += (a.Z - b.Z) * (a.X + b.X); z += (a.X - b.X) * (a.Y + b.Y);
-        }
-        var n = new Vec3(x, y, z);
-        return n.Length < 1e-14 ? Vec3.Zero : n.Normalized();
+        var n = VecMath.NewellNormal(loop);
+        return n.Length < 5e-15 ? Vec3.Zero : n.Normalized();
     }
 
     /// <summary>
