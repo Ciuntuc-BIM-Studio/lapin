@@ -159,6 +159,26 @@ public class StudioEditorTests
     }
 
     [Fact]
+    public void An_extrusion_up_to_a_face_moved_away_from_under_it_says_its_face_is_gone()
+    {
+        var f = F();
+        var plan = Plan(f);
+        var wedge = Id(f.Run("studio.primitive", new JsonObject { ["shape"] = "wedge", ["at"] = J3(20, 0, 1), ["width"] = 4, ["length"] = 4, ["height"] = 1 }));
+        var column = Id(f.Run("studio.extrude", new JsonObject
+        {
+            ["profileId"] = Draw(f, plan, Rect(19.9, -0.1, 20.1, 0.1)), ["depth"] = 1,
+            ["upTo"] = new JsonObject { ["id"] = wedge, ["point"] = J3(20, 0, 1), ["normal"] = J3(0, 0, -1) },
+        }));
+        Assert.Equal(0.04, Vol(f, column), 6);
+        // Raised, it is still over the column: followed.
+        f.Run("studio.place", new JsonObject { ["id"] = wedge, ["at"] = J3(20, 0, 2) });
+        Assert.Equal(0.08, Vol(f, column), 6);
+        // Moved 10 m aside, its underside faces down still but no longer holds the point: not taken in its place.
+        f.Run("studio.place", new JsonObject { ["id"] = wedge, ["at"] = J3(30, 0, 2) });
+        Assert.Contains(f.Session.Geometry(column)!.Diagnostics!, d => d.Contains("The face it runs up to is gone"));
+    }
+
+    [Fact]
     public void Push_pull_on_a_wall_adds_a_solid_of_its_material_or_cuts_into_it()
     {
         var f = F();

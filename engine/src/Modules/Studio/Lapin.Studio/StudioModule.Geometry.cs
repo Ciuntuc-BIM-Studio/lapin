@@ -135,7 +135,11 @@ public sealed partial class StudioModule
                     var producers = services?.Get<IGeometryProducers>();
                     var parts = producers?.Geometry(target.Class)?.Invoke(target, m, services!)?.Parts.Select(p => p.Solid).ToList() ?? [];
                     if (Features.P(upTo["point"]) is not { } at || Features.P(upTo["normal"]) is not { } fn) return (null, null, "The face it runs up to is not given.");
-                    var face = parts.Count > 0 ? BrepPick.Face(parts, at, fn, double.PositiveInfinity) : null;
+                    // However far the element has moved since (the column follows its face), but only a face whose outline holds the point
+                    // seen along its normal, as push/pull finds its own: a face of the same facing elsewhere on it is not taken in its place.
+                    BrepFace? face = null;
+                    if (parts.Count > 0 && (face = BrepPick.Face(parts, at, fn, double.PositiveInfinity, inside: true)) == null)
+                        return (null, null, "The face it runs up to is gone.");
                     var (q, qn) = face != null ? (face.Outer[0], face.Normal) : (at, fn.Normalized());
                     var dir = Math.Sign(depth == 0 ? 1 : depth) * n;
                     if (Vec3.Dot(q - (plane.Origin + shift), dir) < 0) dir = -dir;
