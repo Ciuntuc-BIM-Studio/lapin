@@ -8,7 +8,7 @@
  * folder is optional: the project file holds the issues.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Archive, ArchiveX, Download, FolderOpen, FolderOutput, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
 import { execute, useSession } from '../../../engine/session';
@@ -18,6 +18,7 @@ import {
   canUseFolder, cdeIssues, cdeSettings, devOverride, downloadIssueZip, dropIssueFiles, formatSize, issueStorage, missingHashes, openFolder, openIssued, pickFolder,
   publishIssue, saveIssued, type CdeSettings, type Issue, type IssueStorage,
 } from './cde';
+import { PendingDialog } from '../PendingDialog';
 
 
 const NAMING: [keyof CdeSettings['naming'], string, string][] = [
@@ -36,11 +37,16 @@ export function ProjectFolderDialog() {
   const [missing, setMissing] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<string | null>(null);
   const close = () => useUi.setState({ dialog: null });
+  // Only the latest read is kept (one started before it, answering late, is dropped).
+  const asked = useRef(0);
   const refresh = useCallback(async () => {
-    setS(await cdeSettings());
-    setIssues(await cdeIssues());
-    setStorage(await issueStorage());
-    setMissing(new Set(await missingHashes()));
+    const n = ++asked.current;
+    const [settings, list, store, hashes] = [await cdeSettings(), await cdeIssues(), await issueStorage(), await missingHashes()];
+    if (n !== asked.current) return;
+    setS(settings);
+    setIssues(list);
+    setStorage(store);
+    setMissing(new Set(hashes));
   }, []);
   useEffect(() => { void refresh(); }, [refresh, nodes]);
   const typed = !isDesktop() || devOverride();
@@ -53,7 +59,7 @@ export function ProjectFolderDialog() {
     try { await execute('cde.setNaming', { [key]: value }); } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
   };
 
-  if (!s) return null;
+  if (!s) return <PendingDialog title="Project folder" />;
   return (
     <div className="dialog-backdrop" onClick={close}>
       <div className="dialog wide" role="dialog" aria-label="Project folder" onClick={(e) => e.stopPropagation()}>

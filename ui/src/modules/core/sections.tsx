@@ -13,8 +13,9 @@ import type { NodeDto } from '../../engine/protocol';
 import type { Grip, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { frontDiscipline } from './disciplines';
-
-const pt = (raw: unknown): Vec2 | null => (Array.isArray(raw) && raw.length >= 2 ? { x: Number(raw[0]), y: Number(raw[1]) } : null);
+import { pt } from '../../platform/vec';
+import { formatLength, lengthText } from '../../engine/unitsStore';
+import { LengthField } from '../../shell/cells';
 
 /** The points a section's line is drawn through: `pts`, else its start and end. */
 export function sectionPoints(node: NodeDto): Vec2[] {
@@ -24,12 +25,12 @@ export function sectionPoints(node: NodeDto): Vec2[] {
   return a && b ? [a, b] : [];
 }
 
-export const isSection = (n: NodeDto | undefined | null): boolean => n?.type === 'LapinView' && n.props.kind === 'section';
-export const isCurvedSection = (n: NodeDto): boolean => n.props.curve === 'arc';
-export const followedBy = (n: NodeDto): string | null => (typeof n.props.along === 'string' ? n.props.along : null);
+const isSection = (n: NodeDto | undefined | null): boolean => n?.type === 'LapinView' && n.props.kind === 'section';
+const isCurvedSection = (n: NodeDto): boolean => n.props.curve === 'arc';
+const followedBy = (n: NodeDto): string | null => (typeof n.props.along === 'string' ? n.props.along : null);
 
 /** What a section can follow: anything with a line in plan the engine knows (roads, ditches, retaining walls, site lines, walls, beams, footings, drafted shapes). */
-export const FOLLOWABLE = ['IfcPavement', 'IfcEarthworksCut', 'LapinRetainingWall', 'LapinSiteFeature', 'IfcWall', 'IfcBeam', 'IfcFooting', 'IfcAnnotation'];
+const FOLLOWABLE = ['IfcPavement', 'IfcEarthworksCut', 'LapinRetainingWall', 'LapinSiteFeature', 'IfcWall', 'IfcBeam', 'IfcFooting', 'IfcAnnotation'];
 
 async function open(r: unknown) {
   const id = (r as { id?: string } | null)?.id;
@@ -65,7 +66,7 @@ export const sectionTools: ToolDef[] = [
   },
 ];
 
-export const isAcross = (n: NodeDto): boolean => typeof n.props.across === 'string';
+const isAcross = (n: NodeDto): boolean => typeof n.props.across === 'string';
 const num = (v: unknown, fallback: number): number => (typeof v === 'number' ? v : fallback);
 const r3 = (v: number) => Math.round(v * 1000) / 1000;
 
@@ -124,8 +125,6 @@ export function sectionGrips(node: NodeDto): Grip[] {
 
 export const sectionRefs = (node: NodeDto): RefLine[] => (isSection(node) && sectionPoints(node).length >= 2 ? [{ points: sectionPoints(node), closed: false, kind: 'axis' }] : []);
 
-const fmt = (v: number) => (Math.abs(v) >= 100 ? Math.round(v).toString() : v.toFixed(2));
-
 /** In a section's settings: its line (how many pieces, how long), what it follows, and the stations written along it. */
 export function SectionFields({ view }: { view: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -140,18 +139,17 @@ export function SectionFields({ view }: { view: NodeDto }) {
   return (
     <>
       <dt title="The line the section cuts along: straight, jogged (each piece drawn beside the previous at its length), an arc, or an element's">Line</dt>
-      <dd className="muted small">{kind}{followed ? <>: <span data-no-i18n>{followed.name}</span></> : null}{pts.length >= 2 ? <span data-no-i18n> · {fmt(length)} m</span> : null}</dd>
+      <dd className="muted small">{kind}{followed ? <>: <span data-no-i18n>{followed.name}</span></> : null}{pts.length >= 2 ? <span data-no-i18n> · {lengthText(length)}</span> : null}</dd>
       {along && (
         <>
           <dt title="The section follows the element's line as it is now; stop following to keep the line as it is and edit it">Follows</dt>
           <dd><button type="button" className="btn small" onClick={() => void execute('view.setLine', { id: view.id, along: null })}>Stop following</button></dd>
         </>
       )}
-      <dt title="Ticks and chainage (0+020) along the bottom every so many metres, from the station the line starts at; empty: a tenth of the scale when the section follows an element, else none; 0: none">Stations (m)</dt>
+      <dt title="Ticks and chainage (0+020) along the bottom every so many metres, from the station the line starts at; empty: a tenth of the scale when the section follows an element, else none; 0: none">Stations</dt>
       <dd>
-        <input key={`${view.id}:${stations}`} className="cell" type="number" min={0} defaultValue={stations == null ? '' : String(stations)} placeholder={along ? String(Math.max(1, scale / 10)) : '0'} aria-label="Stations step"
-          onBlur={(e) => { const v = e.target.value.trim(); if (v !== (stations == null ? '' : String(stations))) void execute('view.setLine', { id: view.id, stations: v === '' ? null : Number(v) }); }}
-          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />
+        <LengthField metres={stations} min={0} blank placeholder={along ? formatLength(Math.max(1, scale / 10)) : '0'} title="Stations step"
+          onCommit={(v) => void execute('view.setLine', { id: view.id, stations: v })} />
       </dd>
     </>
   );

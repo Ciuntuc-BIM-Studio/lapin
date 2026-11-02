@@ -14,6 +14,7 @@ import { execute, query, useSession } from '../../engine/session';
 import { HatchSwatch } from './HatchSwatch';
 import { OwnImage } from './OwnImage';
 import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
+import { forgetHatchPreviews } from './hatchCache';
 
 type Kind = 'section' | 'plan' | 'elevation';
 /** IfcMaterial.Category as the interface offers it (Materials.Categories in the engine). */
@@ -60,6 +61,7 @@ export function MaterialsDialog() {
       const text = await file.text();
       const r = await execute('hatch.import', { text }) as { count: number; errors: string[] } | null;
       if (r) {
+        forgetHatchPreviews();
         keepPatterns(file.name, text);
         setMine(myPatterns());
         notify(`${r.count} hatch pattern${r.count === 1 ? '' : 's'} loaded${r.errors.length ? `, ${r.errors.length} line(s) skipped` : ''}, and kept in My patterns on this computer.`);
@@ -105,6 +107,7 @@ export function MaterialsDialog() {
                   ))}
                 </ul>
                 <button type="button" className="btn compact" onClick={() => void execute('hatch.import', { text: mine.map((f) => f.text).join('\n') }).then((r) => {
+                  forgetHatchPreviews();
                   const n = (r as { count?: number } | null)?.count ?? 0;
                   notify(`${n} pattern${n === 1 ? '' : 's'} from My patterns in this project.`);
                 })}>Add to this project</button>

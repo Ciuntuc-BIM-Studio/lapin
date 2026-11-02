@@ -13,6 +13,7 @@ import { storeys } from '../../engine/model';
 import { setLooks } from '../../platform/looks';
 import { hiddenByStoreys, settingOf, shownStoreys, type Storeys3d } from '../../viewport/storeys3d';
 import { level } from './format';
+import { LengthField } from '../../shell/cells';
 
 
 /** The editor: a 3D view's storeys shown ("3d": {3D}). */
@@ -52,11 +53,8 @@ export function Storeys3DEditor({ viewId }: { viewId: string }) {
         <dd className="storeys-3d-cut">
           <input type="checkbox" checked={s.cut !== null} onChange={(e) => set({ cut: e.target.checked ? 1.2 : null })} />
           {s.cut !== null && (
-            <input type="number" step={0.1} min={-5} max={50} className="cell" defaultValue={s.cut} key={s.cut}
-              onBlur={(e) => { const v = Number(e.target.value); if (Number.isFinite(v) && v !== s.cut) set({ cut: v }); }}
-              onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+            <LengthField metres={s.cut} min={-5} max={50} onCommit={(v) => { if (v != null) set({ cut: v }); }} />
           )}
-          {s.cut !== null && <span className="muted small"> m</span>}
         </dd>
       </dl>
       <ul className="plan-storeys-list">

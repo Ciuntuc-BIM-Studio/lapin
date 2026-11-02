@@ -8,10 +8,9 @@
 
 import { execute } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
+import { NumberField } from '../../shell/cells';
 
 export type SitePurpose = 'situation' | 'location';
-
-export const isSiteView = (n: NodeDto | undefined | null): boolean => n?.type === 'LapinView' && n.props.kind === 'plan' && typeof n.props.site === 'string';
 
 export const SITE_PURPOSES: [SitePurpose, string][] = [['situation', 'Site plan'], ['location', 'Location plan']];
 
@@ -34,11 +33,10 @@ export function SitePlanFields({ view }: { view: NodeDto }) {
           {SITE_PURPOSES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
         </select>
       </dd>
-      <dt title="Crosses where the map's eastings and northings meet, every so many metres, with their values; drawn when the project is tied to the map (Manage → Location). Empty: a tenth of the scale (100 mm on paper); 0: none">Coordinate grid (m)</dt>
+      <dt title="Crosses where the map's eastings and northings meet, every so many metres, with their values; drawn when the project is tied to the map (Manage → Location). Empty: a tenth of the scale (100 mm on paper); 0: none">Coordinate grid</dt>
       <dd>
-        <input key={`${view.id}:${step}`} className="cell" type="number" min={0} defaultValue={step == null ? '' : String(step)} placeholder={String(scale / 10)} aria-label="Coordinate grid step"
-          onBlur={(e) => { const v = e.target.value.trim(); if (v !== (step == null ? '' : String(step))) set({ gridStep: v === '' ? null : Number(v) }); }}
-          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />
+        {/* The map's metres, whatever the project's unit: the grid is the map's. */}
+        <NumberField value={step} min={0} blank suffix="m" placeholder={String(scale / 10)} onCommit={(v) => set({ gridStep: v })} />
       </dd>
       <dt title="The project's buildings filled in red and the parcel outlined in red, so the site stands out from its neighbours: on by default in a location plan">Highlight the project</dt>
       <dd><input type="checkbox" checked={typeof view.props.highlight === 'boolean' ? view.props.highlight : view.props.site === 'location'} onChange={(e) => set({ highlight: e.target.checked })} /></dd>

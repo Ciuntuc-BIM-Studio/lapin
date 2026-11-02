@@ -11,6 +11,7 @@ import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { label } from './format';
+import { PendingDialog } from './PendingDialog';
 
 interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string }
 interface Visibility { graphics?: { categories?: Record<string, Row>; classes?: Record<string, Row> } | null; graphicsSet?: string | null; sets: { id: string; name: string }[]; categories: string[]; /** Hidden until the graphics show them (rooms, in 3D). */ hiddenByDefault?: string[] }
@@ -28,12 +29,17 @@ export function VisibilityDialog() {
   const close = () => useUi.setState({ dialog: null });
 
   useEffect(() => { void frontView().then((id) => { if (!id) { notify('Open a plan, a section, an elevation or the 3D first.'); close(); } else setTarget(id); }); }, []);
-  useEffect(() => { if (target) void query<Visibility>('view.visibility', { id: target }).then(setV); }, [target, nodes]);
+  useEffect(() => {
+    if (!target) return;
+    let live = true;
+    void query<Visibility>('view.visibility', { id: target }).then((x) => { if (live) setV(x); });
+    return () => { live = false; };
+  }, [target, nodes]);
   useEffect(() => { void query<{ name: string }[]>('hatch.list').then((r) => r && setHatches(r.map((h) => h.name))); }, []);
 
   // The IFC classes of the elements on storeys.
   const classes = useMemo(() => [...new Set([...nodes.values()].filter((n) => n.storeyId).map((n) => n.type))].sort(), [nodes]);
-  if (!target || !v) return null;
+  if (!target || !v) return <PendingDialog title="Visibility / Graphics" />;
   const view = target === '3d' ? null : nodes.get(target);
   const row = (bucket: 'categories' | 'classes', key: string): Row => v.graphics?.[bucket]?.[key] ?? {};
   const set = (bucket: 'categories' | 'classes', key: string, patch: Row) => {

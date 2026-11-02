@@ -8,6 +8,7 @@
 import { ImagePlus, Trash2 } from 'lucide-react';
 import { notify } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
+import { LengthField } from '../../shell/cells';
 
 const MAX = 2048;
 
@@ -60,7 +61,6 @@ export function OwnImage({ materialId }: { materialId: string }) {
     input.click();
   };
 
-  const num = (t: string) => Number(t.replace(',', '.'));
   return (
     <div className="own-image">
       <span className="eyebrow" title="Your own picture on the 3D model, kept in the project and carried by the GLB, glTF and USDZ exports">Own image (3D, exports)</span>
@@ -70,10 +70,8 @@ export function OwnImage({ materialId }: { materialId: string }) {
           : <span className="own-image-thumb empty muted small">none</span>}
         <button type="button" className="btn compact" onClick={choose}><ImagePlus size={13} />{image ? 'Replace…' : 'Import image…'}</button>
         {image && <>
-          <label className="small" title="Width: how wide one copy of the picture lies on the model">W <input className="num" type="number" step={0.05} min={0.01} defaultValue={size[0]} key={`w${size[0]}`}
-            onBlur={(e) => { const v = num(e.target.value); if (v > 0 && v !== size[0]) set({ textureSize: [v, size[1]] }); }} /> m</label>
-          <label className="small" title="Height: how high one copy of the picture lies on the model">H <input className="num" type="number" step={0.05} min={0.01} defaultValue={size[1]} key={`h${size[1]}`}
-            onBlur={(e) => { const v = num(e.target.value); if (v > 0 && v !== size[1]) set({ textureSize: [size[0], v] }); }} /> m</label>
+          <label className="small" title="Width: how wide one copy of the picture lies on the model">W <LengthField metres={size[0]} min={0.01} noUnit style={{ width: 64 }} onCommit={(v) => { if (v != null) set({ textureSize: [v, size[1]] }); }} /></label>
+          <label className="small" title="Height: how high one copy of the picture lies on the model">H <LengthField metres={size[1]} min={0.01} style={{ width: 64 }} onCommit={(v) => { if (v != null) set({ textureSize: [size[0], v] }); }} /></label>
           <button type="button" className="icon" title="Take the image off" onClick={() => set({ textureImage: null })}><Trash2 size={13} /></button>
         </>}
       </div>

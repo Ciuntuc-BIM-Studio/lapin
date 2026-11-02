@@ -9,7 +9,7 @@
  * pointing at the part clipped away; axis-aligned planes come back as a box.
  */
 
-import { lookOf, poseOf, positionOf, type CameraPose, type Vec3 } from '../../../viewport/camera';
+import { lookOf, positionOf, type CameraPose, type Vec3 } from '../../../viewport/camera';
 import { boxAxes, boxPlanes, type SectionBox, type Triple } from '../../../viewport/sectionBox';
 
 export type Triplet = [number, number, number];
@@ -121,4 +121,3 @@ export function boxOfPlanes(planes: BcfPlane[], fallback: SectionBox | null, rot
 }
 
 /** The pose that stands where a BCF camera does, looking at a point (for the key plan's sake, when the direction is to be kept exactly). */
-export const poseAt = (viewPoint: Triplet, target: Triplet): CameraPose => poseOf({ x: viewPoint[0], y: viewPoint[1], z: viewPoint[2] }, { x: target[0], y: target[1], z: target[2] });

@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
+import { PendingDialog } from './PendingDialog';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
 type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string };
@@ -51,8 +52,12 @@ export function StandardsDialog() {
   const [group, setGroup] = useState('');
   const [project, setProject] = useState(() => standardsTab() === 'project');
   useEffect(() => { clearStandardsTab(); }, []);
-  useEffect(() => { void query<Book>('standards.get').then((b) => b && setBook(b)); }, [nodes]);
-  if (!book) return null;
+  useEffect(() => {
+    let live = true;
+    void query<Book>('standards.get').then((b) => { if (live && b) setBook(b); });
+    return () => { live = false; };
+  }, [nodes]);
+  if (!book) return <PendingDialog title="Drafting standards" />;
   const set = (entry: Record<string, unknown>, extra: Record<string, unknown> = {}) => void execute('standards.set', { kind: tab.id, entry, ...extra });
   const fixed = (e: Entry) => (tab.id === 'layer' ? e.id === '0' : e.id === 'standard');
 

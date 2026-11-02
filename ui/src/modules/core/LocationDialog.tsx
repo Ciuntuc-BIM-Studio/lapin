@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
+import { LengthField, NumberField } from '../../shell/cells';
+import { PendingDialog } from './PendingDialog';
 
 type P = Record<string, number>;
 interface Loc { base?: P; survey?: P; show?: boolean; crs?: string }
@@ -11,17 +13,26 @@ interface CrsInfo { id: string; name: string }
 
 export function LocationDialog() {
   const nodes = useSession((s) => s.nodes);
+  const error = useSession((s) => s.error);
   const [l, setL] = useState<Loc | null>(null);
   const close = () => useUi.setState({ dialog: null });
-  useEffect(() => { void query<Loc>('project.location').then((r) => setL(r ?? {})); }, [nodes]);
+  useEffect(() => {
+    let live = true;
+    void query<Loc>('project.location').then((r) => { if (live) setL(r ?? {}); });
+    return () => { live = false; };
+  }, [nodes]);
   const systems = (useSession.getState().info?.catalogs['core.crs'] as unknown as CrsInfo[] | undefined) ?? [];
-  if (!l) return null;
-  const field = (point: 'base' | 'survey', key: string, label: string) => (
-    <label key={key} className="row"><span className="muted small loc-label">{label}</span>
-      <input type="number" step={0.001} defaultValue={l[point]?.[key] ?? 0} key={`${point}:${key}:${l[point]?.[key] ?? 0}`}
-        onBlur={(e) => void execute('project.location', { [point]: { [key]: Number(e.target.value) || 0 } })} />
-    </label>
-  );
+  if (!l) return <PendingDialog title="Location" />;
+  // A length in the project's unit; an easting or northing in the coordinate system's metres; an angle in degrees. Sent only when it changes.
+  const field = (point: 'base' | 'survey', key: string, label: string, kind: 'length' | 'map' | 'angle' = 'length') => {
+    const value = l[point]?.[key] ?? 0;
+    const put = (v: number | null) => { if (v != null) void execute('project.location', { [point]: { [key]: v } }); };
+    return (
+      <label key={key} className="row"><span className="muted small loc-label">{label}</span>
+        {kind === 'length' ? <LengthField metres={value} onCommit={put} /> : <NumberField value={value} suffix={kind === 'angle' ? '°' : 'm'} onCommit={put} />}
+      </label>
+    );
+  };
   return (
     <div className="dialog-backdrop" onClick={close}>
       <div className="dialog" role="dialog" aria-label="Location" onClick={(e) => e.stopPropagation()}>
@@ -36,14 +47,14 @@ export function LocationDialog() {
             </select>
           </label>
           <h4>Base point</h4>
-          {field('base', 'x', 'x (m)')}{field('base', 'y', 'y (m)')}{field('base', 'elevation', '±0.00 at (m)')}{field('base', 'northAngle', 'True north (°)')}
+          {field('base', 'x', 'x')}{field('base', 'y', 'y')}{field('base', 'elevation', '±0.00 at')}{field('base', 'northAngle', 'True north', 'angle')}
           <h4>Survey point</h4>
           {l.survey ? <>
-            {field('survey', 'x', 'x (m)')}{field('survey', 'y', 'y (m)')}{field('survey', 'easting', 'Easting (m)')}{field('survey', 'northing', 'Northing (m)')}{field('survey', 'elevation', 'Elevation (m)')}
+            {field('survey', 'x', 'x')}{field('survey', 'y', 'y')}{field('survey', 'easting', 'Easting', 'map')}{field('survey', 'northing', 'Northing', 'map')}{field('survey', 'elevation', 'Elevation')}
             <button type="button" className="btn" onClick={() => void execute('project.location', { survey: null })}>Remove the survey point</button>
           </> : <button type="button" className="btn" onClick={() => void execute('project.location', { survey: { x: 0, y: 0, easting: 0, northing: 0, elevation: 0 } })}>Add a survey point</button>}
         </div>
-        <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
+        <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>
   );

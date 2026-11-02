@@ -10,26 +10,33 @@ import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { KINDS, sortTypes, type ImportedType, type RememberedType } from './mapTypes';
+import { PendingDialog } from './PendingDialog';
 
 interface Listing { types: ImportedType[]; remembered: RememberedType[] }
 
 export function MapTypesDialog() {
   const nodes = useSession((s) => s.nodes);
+  const error = useSession((s) => s.error);
   const [listing, setListing] = useState<Listing | null>(null);
   const [choice, setChoice] = useState<Record<string, string>>({});
   const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
-  useEffect(() => { void query<Listing>('types.imported').then((r) => setListing(r ?? { types: [], remembered: [] })); }, [nodes]);
+  useEffect(() => {
+    let live = true;
+    void query<Listing>('types.imported').then((r) => { if (live) setListing(r ?? { types: [], remembered: [] }); });
+    return () => { live = false; };
+  }, [nodes]);
   const rows = useMemo(() => sortTypes(listing?.types ?? []), [listing]);
   const chosen = Object.entries(choice).filter(([, to]) => to);
   const map = async () => {
     setBusy(true);
     await execute('types.map', { map: chosen.map(([from, to]) => ({ from, to })), remember });
-    setChoice({});
+    // Refused, the choices stay for another try.
+    if (!useSession.getState().error) setChoice({});
     setBusy(false);
   };
-  if (!listing) return null;
+  if (!listing) return <PendingDialog title="Map imported types" />;
   return (
     <div className="dialog-backdrop" onClick={close}>
       <div className="dialog wide" role="dialog" aria-label="Map imported types" onClick={(e) => e.stopPropagation()}>
@@ -77,6 +84,7 @@ export function MapTypesDialog() {
           )}
         </div>
         <footer className="dialog-foot">
+          {error && <p className="error-text" role="alert">{error}</p>}
           <span className="grow" />
           <button type="button" className="btn" onClick={close}>Close</button>
           <button type="button" className="btn primary" disabled={busy || chosen.length === 0} onClick={() => void map()}>{busy ? 'Mapping…' : 'Map'}</button>

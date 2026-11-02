@@ -16,7 +16,7 @@ import { isDesktop, pickFile, pickPath, toBase64 } from '../../../../engine/file
 import { LONG_TIMEOUT_MS } from '../../../../engine/client';
 import type { NodeDto } from '../../../../engine/protocol';
 
-export const REMARK_CLASS = 'LapinSheetRemark';
+const REMARK_CLASS = 'LapinSheetRemark';
 
 export type RemarkStatus = 'open' | 'resolved' | 'closed';
 export type StatusFilter = RemarkStatus | 'all';

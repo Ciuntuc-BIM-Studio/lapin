@@ -10,6 +10,8 @@ import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
+import { LengthField } from '../../shell/cells';
+import { PendingDialog } from './PendingDialog';
 
 interface Edge { level: string; offset: number }
 interface RangeDto { cutHeight: number; range: { top: Edge; bottom: Edge; depth: Edge }; custom: boolean; problems: string[]; resolved: { cut: number; top: number | null; bottom: number | null; depth: number | null } }
@@ -24,6 +26,7 @@ const fmt = (v: number | null) => (v == null ? 'unlimited' : `${v >= 0 ? '+' : '
 
 export function ViewRangeDialog() {
   const nodes = useSession((s) => s.nodes);
+  const error = useSession((s) => s.error);
   const [id, setId] = useState<string | null>(null);
   const [r, setR] = useState<RangeDto | null>(null);
   const close = () => useUi.setState({ dialog: null });
@@ -33,15 +36,19 @@ export function ViewRangeDialog() {
       setId(await frontView());
     })();
   }, []);
-  useEffect(() => { if (id) void query<RangeDto>('view.range', { id }).then(setR); }, [id, nodes]);
-  if (!id || !r) return null;
+  useEffect(() => {
+    if (!id) return;
+    let live = true;
+    void query<RangeDto>('view.range', { id }).then((x) => { if (live) setR(x); });
+    return () => { live = false; };
+  }, [id, nodes]);
+  if (!id || !r) return <PendingDialog title="View range" />;
   const set = (edge: 'top' | 'bottom' | 'depth', patch: Partial<Edge>) => void execute('view.setRange', { id, [edge]: { ...r.range[edge], ...patch } });
   const row = (edge: 'top' | 'bottom' | 'depth', label: string, at: number | null) => (
     <tr key={edge}>
       <td>{label}</td>
       <td><select value={r.range[edge].level} onChange={(e) => set(edge, { level: e.target.value })}>{LEVELS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
-      <td><input type="number" step={0.05} disabled={r.range[edge].level === 'unlimited'} defaultValue={r.range[edge].offset} key={`${edge}:${r.range[edge].offset}`}
-        onBlur={(e) => set(edge, { offset: Number(e.target.value) || 0 })} onKeyDown={(e) => { if (e.key === 'Enter') set(edge, { offset: Number((e.target as HTMLInputElement).value) || 0 }); }} /></td>
+      <td><LengthField metres={r.range[edge].offset} readOnly={r.range[edge].level === 'unlimited'} onCommit={(m) => { if (m != null) set(edge, { offset: m }); }} /></td>
       <td className="muted small">{fmt(at)}</td>
     </tr>
   );
@@ -51,12 +58,12 @@ export function ViewRangeDialog() {
         <header className="dialog-head"><span className="panel-title">View range · {nodes.get(id)?.name ?? 'Plan'}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
           <table className="layer-table">
-            <thead><tr><th /><th>Level</th><th>Offset (m)</th><th>At</th></tr></thead>
+            <thead><tr><th /><th>Level</th><th>Offset</th><th>At</th></tr></thead>
             <tbody>
               {row('top', 'Top', r.resolved.top)}
               <tr>
                 <td>Cut plane</td><td>this level</td>
-                <td><input type="number" step={0.05} defaultValue={r.cutHeight} key={`cut:${r.cutHeight}`} onBlur={(e) => void execute('view.setRange', { id, cutHeight: Number(e.target.value) || r.cutHeight })} /></td>
+                <td><LengthField metres={r.cutHeight} onCommit={(m) => { if (m != null) void execute('view.setRange', { id, cutHeight: m }); }} /></td>
                 <td className="muted small">{fmt(r.resolved.cut)}</td>
               </tr>
               {row('bottom', 'Bottom', r.resolved.bottom)}
@@ -64,6 +71,7 @@ export function ViewRangeDialog() {
             </tbody>
           </table>
           {r.problems.length > 0 && <ul className="error-text">{r.problems.map((p) => <li key={p}>{PROBLEMS[p] ?? p}</li>)}</ul>}
+          {error && <p className="error-text" role="alert">{error}</p>}
           <label className="field-line"><span className="eyebrow">Seen from</span>
             <select value={nodes.get(id)?.props.look === 'up' ? 'up' : 'down'} onChange={(e) => void execute('view.setRange', { id, look: e.target.value })}>
               <option value="down">above (plan)</option><option value="up">below (ceiling plan)</option>

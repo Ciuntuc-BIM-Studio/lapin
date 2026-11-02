@@ -12,7 +12,7 @@
  * front. Manage → View styles edits the styles themselves.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Copy, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
@@ -33,12 +33,17 @@ const LAYER_MODES: [LayerMode, string][] = [['all', 'every layer'], ['noFinishes
 const layerLabel = (m: LayerMode) => LAYER_MODES.find(([k]) => k === m)?.[1] ?? m;
 
 /** The editor of one view's settings. */
-export function ViewSettingsEditor({ view }: { view: NodeDto }) {
+function ViewSettingsEditor({ view }: { view: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
   const styles = useViewStyles();
-  const [state, setState] = useState<ViewStyleState | null>(null);
-  const read = useCallback(() => void query<ViewStyleState>('view.style', { id: view.id }).then(setState), [view.id]);
-  useEffect(read, [read, nodes]);
+  // The settings read for a view, kept with its id: another view's (the panel moved on, an answer late) are never shown or sent.
+  const [read, setRead] = useState<{ id: string; state: ViewStyleState } | null>(null);
+  useEffect(() => {
+    let live = true;
+    void query<ViewStyleState>('view.style', { id: view.id }).then((r) => { if (live) setRead(r ? { id: view.id, state: r } : null); });
+    return () => { live = false; };
+  }, [view.id, nodes]);
+  const state = read?.id === view.id ? read.state : null;
   if (!state) return <p className="muted">…</p>;
   const set = (patch: Record<string, unknown>) => void execute('view.setStyle', { id: view.id, ...patch });
   const own = (f: string) => state.overrides.includes(f);
@@ -130,6 +135,7 @@ export function ViewSettingsSection({ node }: { node: NodeDto }) {
 /** View → View settings: the view in front (a plan's own view is made when its storey has none). */
 export function ViewSettingsDialog() {
   const nodes = useSession((s) => s.nodes);
+  const error = useSession((s) => s.error);
   const [id, setId] = useState<string | null>(null);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
@@ -146,7 +152,7 @@ export function ViewSettingsDialog() {
       <div className="dialog" role="dialog" aria-label="View settings" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">View settings{view ? ` · ${view.name}` : ''}</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">{view ? <ViewSettingsEditor view={view} /> : <p className="muted">…</p>}</div>
-        <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
+        <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>
   );
@@ -155,6 +161,7 @@ export function ViewSettingsDialog() {
 /** Manage → View styles: the project's styles, each a row; a view takes one by name or by its discipline. */
 export function ViewStylesDialog() {
   const styles = useViewStyles();
+  const error = useSession((s) => s.error);
   const close = () => useUi.setState({ dialog: null });
   const update = (id: string, patch: Partial<ViewStyle>) => void execute('viewStyle.update', { id, ...patch });
   return (
@@ -188,7 +195,7 @@ export function ViewStylesDialog() {
             Finishes are the layers whose material's category is Finish (Manage → Materials); without a category, plaster, render, paint, tiles, boards and floor coverings count as finishes.
           </p>
         </div>
-        <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
+        <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>
   );

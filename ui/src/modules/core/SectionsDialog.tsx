@@ -12,6 +12,7 @@ import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { groupByLayer, hiddenInText, type SectionMarker, type SectionMarkers } from './sectionMarkers';
+import { PendingDialog } from './PendingDialog';
 
 const DEFAULT_LAYER = 'Sections';
 const NEW_LAYER = '\u0000new';
@@ -28,10 +29,14 @@ export function SectionsDialog() {
       const kind = id ? useSession.getState().nodes.get(id)?.props.kind : null;
       if (kind !== 'plan' && kind !== 'section' && kind !== 'elevation') { notify('Open a plan, a section or an elevation first.'); close(); } else setTarget(id);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  useEffect(() => { if (target) void query<SectionMarkers>('view.sectionMarkers', { viewId: target }).then(setD); }, [target, nodes]);
-  if (!target || !d) return null;
+  useEffect(() => {
+    if (!target) return;
+    let live = true;
+    void query<SectionMarkers>('view.sectionMarkers', { viewId: target }).then((x) => { if (live) setD(x); });
+    return () => { live = false; };
+  }, [target, nodes]);
+  if (!target || !d) return <PendingDialog title="Section markers" />;
   const view = nodes.get(target);
   const groups = groupByLayer(d);
 

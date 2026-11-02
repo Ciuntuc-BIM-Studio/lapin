@@ -20,7 +20,7 @@ function Tri({ on, some, onChange, label }: { on: boolean; some: boolean; onChan
 
 
 /** Every storey key of a survey ('' for the elements on none). */
-export const storeyKeysOf = (survey: Survey) => [...survey.storeys.map((s) => s.id), ...(survey.noStorey ? [''] : [])];
+const storeyKeysOf = (survey: Survey) => [...survey.storeys.map((s) => s.id), ...(survey.noStorey ? [''] : [])];
 
 /** Whether nothing at all is chosen. */
 export const nothingChosen = (survey: Survey, offKinds: ReadonlySet<string>, offStoreys: ReadonlySet<string>) =>

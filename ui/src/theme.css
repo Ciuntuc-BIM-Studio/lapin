@@ -303,6 +303,7 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .sect.actions { display: flex; gap: 8px; }
 .error { cursor: pointer; }
 .error-text { color: var(--err); margin: 8px 0 0; }
+.dialog > .dialog-error { margin: 0; padding: 0 16px 12px; }
 
 /* A notice over the view (saved, recovered). */
 .notice { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); padding: 8px 14px; background: var(--ink); color: var(--bg); border-radius: 3px; font-size: 12px; }

@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { RotateCcw, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
+import { PendingDialog } from './PendingDialog';
 
 interface Row { class: string; label: string; default: number; priority: number }
 interface MaterialRow { id: string; name: string; priority: number | null }
@@ -19,11 +20,13 @@ export function CutOrderDialog() {
   const [materials, setMaterials] = useState<MaterialRow[]>([]);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
-    void query<Row[]>('cutOrder.list').then((r) => setRows(r ?? []));
-    void query<MaterialRow[]>('cutOrder.materials').then((r) => setMaterials(r ?? []));
+    let live = true;
+    void query<Row[]>('cutOrder.list').then((r) => { if (live) setRows(r ?? []); });
+    void query<MaterialRow[]>('cutOrder.materials').then((r) => { if (live) setMaterials(r ?? []); });
+    return () => { live = false; };
   }, [nodes]);
   const setMaterial = (id: string, value: number | null) => void execute('cutOrder.set', { materials: { [id]: value } });
-  if (!rows) return null;
+  if (!rows) return <PendingDialog title="Cut order" />;
   const sorted = [...rows].sort((a, b) => b.priority - a.priority || a.label.localeCompare(b.label));
   const set = (cls: string, value: number | null) => void execute('cutOrder.set', { priorities: { [cls]: value } });
   return (

@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { query } from '../../engine/session';
-
-type Preview = { solid: boolean; segments: number[] };
-const cache = new Map<string, Preview>();
+import { hatchPreviews as cache, useHatchEpoch, type HatchPreview as Preview } from './hatchCache';
 
 export function HatchSwatch({ hatch, scale = 1, fill, size = 44, membrane = false, revision = 0 }: { hatch: string | null; scale?: number; fill?: string | null; size?: number; membrane?: boolean; revision?: number }) {
-  const key = `${hatch}|${scale}|${revision}`;
+  const epoch = useHatchEpoch((s) => s.epoch);
+  const key = `${hatch}|${scale}|${revision}|${epoch}`;
   const [p, setP] = useState<Preview | null>(cache.get(key) ?? null);
   useEffect(() => {
     if (!hatch) { setP(null); return; }

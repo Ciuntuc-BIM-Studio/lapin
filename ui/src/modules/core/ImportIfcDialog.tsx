@@ -17,6 +17,7 @@ import { useUi } from '../../app/store';
 import { choiceOf, chosenCount, rememberRules, rememberedRules, rulesOf, runIfcImport, useIfcImport, type ImportMode, type RememberedRules } from '../../engine/ifcImport';
 import { nothingChosen, SurveyChoice } from './SurveyChoice';
 import { toggle } from './format';
+import { PendingDialog } from './PendingDialog';
 
 const mb = (bytes: number) => (bytes >= 1 << 30 ? `${(bytes / (1 << 30)).toFixed(1)} GB` : `${Math.max(1, Math.round(bytes / (1 << 20)))} MB`);
 
@@ -42,7 +43,7 @@ export function ImportIfcDialog() {
 
   const close = () => { useIfcImport.setState({ survey: null, source: null }); useUi.setState({ dialog: null }); };
   const count = useMemo(() => (survey ? chosenCount(survey, offKinds, offStoreys) : 0), [survey, offKinds, offStoreys]);
-  if (!survey || !source) return null;
+  if (!survey || !source) return <PendingDialog title={format === 'frag' ? 'Import Fragments' : 'Import IFC'} onClose={close} />;
   const frag = format === 'frag';
   const nothing = count === 0 || nothingChosen(survey, offKinds, offStoreys);
   const title = frag ? 'Import Fragments' : 'Import IFC';

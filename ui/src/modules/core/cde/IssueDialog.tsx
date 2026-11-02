@@ -11,7 +11,7 @@
  * its names, its files — until it is closed or a new issue is started.
  */
 
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useEffect, useMemo, useReducer, useState } from 'react';
 import { FileText, FolderOpen, Plus, Send, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
 import { engineInBrowser, useSession } from '../../../engine/session';
@@ -21,6 +21,7 @@ import {
   canIssue, canUseFolder, cdeCheck, cdeNames, cdeSettings, containerFor, isRevision, issue, issuedSummary, issuePhase, nextRevision, openFolder, openIssued,
   type CdeSettings, type CheckResult, type Names,
 } from './cde';
+import { PendingDialog } from '../PendingDialog';
 
 export function IssueDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -39,7 +40,7 @@ export function IssueDialog() {
   const [status, setStatus] = useState('S2');
   const [container, setContainer] = useState('Shared');
   const [note, setNote] = useState('');
-  const [check, setCheck] = useState<CheckResult | null>(null);
+  const [check, setCheck] = useState<{ key: string; result: CheckResult | null } | null>(null);
   const [names, setNames] = useState<Names | null>(null);
   const [anyway, setAnyway] = useState(false);
   const [phase, dispatch] = useReducer(issuePhase, { kind: 'form' });
@@ -49,33 +50,44 @@ export function IssueDialog() {
 
   // The settings follow the project, but the form's fields are not touched while an issue is shown: it stays as issued.
   useEffect(() => {
+    let live = true;
     void cdeSettings().then((r) => {
-      if (!r) return;
+      if (!r || !live) return;
       setS(r);
       setRevision((cur) => cur || r.nextRevision);
       setName((cur) => cur || `Issue ${r.nextNumber}`);
     });
+    return () => { live = false; };
   }, [nodes]);
   useEffect(() => { setChosen((c) => c ?? new Set(sheets.map((x) => x.id))); }, [sheets]);
   const ids = useMemo(() => sheets.filter((x) => chosen?.has(x.id)).map((x) => x.id), [sheets, chosen]);
 
-  // The checks and the names follow what is chosen (not while the issue made is shown).
+  // The checks and the names follow what is chosen (not while the issue made is shown), a moment after the typing stops;
+  // each answer is kept with what it was asked for, so an issue goes only on the checks of what is chosen now.
   const showing = done != null;
-  const recheck = useCallback(async () => {
+  const asked = JSON.stringify([ids, revision, status]);
+  useEffect(() => {
     if (showing || !chosen || !isRevision(revision)) return;
-    setCheck(await cdeCheck(ids, revision));
-    setNames(await cdeNames({ sheets: ids, revision, status }));
-  }, [showing, chosen, ids, revision, status]);
-  useEffect(() => { void recheck(); }, [recheck, nodes]);
+    let live = true;
+    const t = setTimeout(() => {
+      void (async () => {
+        const c = await cdeCheck(ids, revision);
+        const n = await cdeNames({ sheets: ids, revision, status });
+        if (live) { setCheck({ key: asked, result: c }); setNames(n); }
+      })();
+    }, 300);
+    return () => { live = false; clearTimeout(t); };
+  }, [showing, chosen, ids, revision, status, asked, nodes]);
+  const current = check?.key === asked ? check.result : undefined;
 
   const toggle = (id: string) => setChosen((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const chooseStatus = (code: string) => { setStatus(code); setContainer(containerFor(code)); };
   const chooseKind = (c: boolean) => { setContractual(c); setRevision(nextRevision(s?.lastRevision ?? null, c)); };
 
   const folderHere = canUseFolder() && Boolean(s?.folder);
-  const blocked = (check?.blocking ?? 0) > 0;
-  const warned = (check?.warnings ?? 0) > 0;
-  const ready = canIssue() && chosen && (ids.length > 0 || model) && isRevision(revision) && !blocked && (!warned || anyway) && !busy && !done;
+  const blocked = (current?.blocking ?? 0) > 0;
+  const warned = (current?.warnings ?? 0) > 0;
+  const ready = canIssue() && current != null && chosen && (ids.length > 0 || model) && isRevision(revision) && !blocked && (!warned || anyway) && !busy && !done;
 
   const go = async () => {
     if (!ready) return;
@@ -109,7 +121,7 @@ export function IssueDialog() {
     dispatch({ type: 'new' });
   };
 
-  if (!s) return null;
+  if (!s) return <PendingDialog title="Issue" />;
   const summary = done ? issuedSummary(done) : null;
   return (
     <div className="dialog-backdrop" onClick={close}>
@@ -177,7 +189,7 @@ export function IssueDialog() {
               ? <label className="row small"><input type="checkbox" checked={toFolder} onChange={(e) => setToFolder(e.target.checked)} /> <span>Also into the project folder:</span> <code className="muted">{s.folder}/{container}</code></label>
               : <p className="muted small">{canUseFolder() ? 'No project folder: the issue stays in the project file; publish it to a folder later if needed.' : 'The project folder is the desktop app\'s; here the issue stays in the project file, to download as a zip.'}</p>}
             <h4>Checks</h4>
-            {check ? <FindingsList result={check} /> : <p className="muted">Checking…</p>}
+            {current ? <FindingsList result={current} /> : current === null ? <p className="error-text" role="alert">The checks could not run: an issue waits for them.</p> : <p className="muted">Checking…</p>}
             {blocked && <p className="cde-block">Fix what blocks, then come back: the issue cannot go.</p>}
             {!blocked && warned && <label className="row small"><input type="checkbox" checked={anyway} onChange={(e) => setAnyway(e.target.checked)} /> Issue anyway, with the warnings</label>}
           </div>

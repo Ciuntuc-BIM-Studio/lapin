@@ -13,6 +13,7 @@ import { storeys } from '../../engine/model';
 export function MoveToStoreyDialog() {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
+  const error = useSession((s) => s.error);
   const selected = useUi((s) => s.selected);
   const all = storeys({ nodes, relations });
   // What can move: elements on a storey (a door or window goes with its wall, which the engine checks).
@@ -40,6 +41,7 @@ export function MoveToStoreyDialog() {
           </>}
         </div>
         <footer className="dialog-foot">
+          {error && <p className="error-text" role="alert">{error}</p>}
           <span className="grow" />
           <button type="button" className="btn" onClick={close}>Cancel</button>
           <button type="button" className="btn primary" disabled={!ids.length || !target} onClick={() => void move()}>Move</button>

@@ -16,6 +16,7 @@ import { engine, useSession } from '../../engine/session';
 import { exportVersion, isDesktop, listVersions, openVersionSeparately, projectTitle, writeVersions, type ProjectVersion } from '../../engine/files';
 import { LONG_TIMEOUT_MS } from '../../engine/client';
 import { formatSize, when } from './format';
+import { Cell } from '../../shell/cells';
 
 interface Change { id: string; class: string; name: string; fields?: string[] }
 interface Comparison {
@@ -42,7 +43,9 @@ export function VersionsDialog() {
   const refresh = useCallback(async () => {
     const list = await listVersions();
     setVersions(list);
-    setSides((s) => ({ a: s.a || (list.length ? String(list[list.length - 1].number) : ''), b: s.b }));
+    // A side whose version went (deleted, or another project opened) falls back to the latest one; the other side to the project as it is.
+    const known = (side: string) => side === CURRENT || list.some((v) => String(v.number) === side);
+    setSides((s) => ({ a: s.a && known(s.a) ? s.a : (list.length ? String(list[list.length - 1].number) : ''), b: known(s.b) ? s.b : CURRENT }));
   }, []);
   useEffect(() => { void refresh(); }, [refresh, path]);
 
@@ -147,9 +150,9 @@ function VersionRows({ v, busy, path, title, nodesKnown, onRename, onNote, onRes
     <>
       <tr className={busy ? 'muted' : undefined}>
         <td className="num">{v.number}</td>
-        <td><input defaultValue={v.name} onBlur={(e) => { const n = e.target.value.trim(); if (n && n !== v.name) onRename(n); }} /></td>
+        <td><Cell value={v.name} onCommit={(t) => { const n = t.trim(); if (!n) return false; if (n !== v.name) onRename(n); }} /></td>
         <td title={v.updatedAt !== v.at ? `updated ${when(v.updatedAt)}` : undefined}>{when(v.at)}</td>
-        <td><input defaultValue={v.note ?? ''} placeholder="—" onBlur={(e) => { const n = e.target.value.trim(); if (n !== (v.note ?? '')) onNote(n); }} /></td>
+        <td><Cell value={v.note ?? ''} placeholder="—" onCommit={(t) => { const n = t.trim(); if (n !== (v.note ?? '')) onNote(n); }} /></td>
         <td className="num">{v.entities}</td>
         <td className="num">{formatSize(v.size)}</td>
         <td className="row-tools">

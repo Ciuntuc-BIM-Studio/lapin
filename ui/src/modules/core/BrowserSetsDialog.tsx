@@ -31,6 +31,7 @@ const list = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
 export function BrowserSetsDialog() {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
+  const error = useSession((s) => s.error);
   const sets = setsOf(nodes);
   const levels = storeys({ nodes, relations });
   const [current, setCurrent] = useState<string | null>(sets[0]?.id ?? null);
@@ -64,7 +65,7 @@ export function BrowserSetsDialog() {
     void execute('browser.setSet', { id: set.id, name: name.trim() || set.name, filter: f });
   };
   const add = () => void execute('browser.setSet', { name: 'New set', filter: {} }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) setCurrent(id); });
-  const remove = (s: BrowserSet) => void execute('browser.removeSet', { id: s.id }).then(() => { if (current === s.id) setCurrent(null); });
+  const remove = (s: BrowserSet) => void execute('browser.removeSet', { id: s.id }).then(() => { if (!useSession.getState().error && current === s.id) setCurrent(null); });
   const move = (s: BrowserSet, by: -1 | 1) => {
     const i = sets.findIndex((x) => x.id === s.id);
     const target = sets[i + by];
@@ -113,6 +114,7 @@ export function BrowserSetsDialog() {
             </div>
           )}
         </div>
+        {error && <p className="error-text dialog-error" role="alert">{error}</p>}
       </div>
     </div>
   );

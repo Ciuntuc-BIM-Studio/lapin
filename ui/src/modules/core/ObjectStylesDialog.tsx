@@ -11,6 +11,8 @@ import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { label } from './format';
+import { NumberField } from '../../shell/cells';
+import { PendingDialog } from './PendingDialog';
 
 interface Spec { pen?: number; color?: string; pattern?: string }
 interface Dto {
@@ -25,11 +27,16 @@ interface Dto {
 
 export function ObjectStylesDialog() {
   const nodes = useSession((s) => s.nodes);
+  const error = useSession((s) => s.error);
   const [d, setD] = useState<Dto | null>(null);
   const [tab, setTab] = useState<'styles' | 'pens' | 'views'>('styles');
   const close = () => useUi.setState({ dialog: null });
-  useEffect(() => { void query<Dto>('view.objectStyles').then(setD); }, [nodes]);
-  if (!d) return null;
+  useEffect(() => {
+    let live = true;
+    void query<Dto>('view.objectStyles').then((x) => { if (live) setD(x); });
+    return () => { live = false; };
+  }, [nodes]);
+  if (!d) return <PendingDialog title="Object styles" />;
   const set = (category: string, role: string, patch: Spec) => {
     const next: Spec = { ...(d.objectStyles[category]?.[role] ?? {}), ...patch };
     for (const k of Object.keys(next) as (keyof Spec)[]) if (next[k] === '' || next[k] == null || Number.isNaN(next[k])) delete next[k];
@@ -109,12 +116,12 @@ export function ObjectStylesDialog() {
               <select value={d.levelMark?.style ?? 'open'} onChange={(e) => void execute('view.objectStyle', { levelMark: { style: e.target.value } })}>
                 <option value="open">Open triangle</option><option value="half">Triangle, half black</option><option value="filled">Black triangle</option><option value="tick">Tick</option>
               </select>
-              <input className="num" type="number" style={{ width: 56 }} min={1} max={20} step={0.5} value={d.levelMark?.size ?? 5} onChange={(e) => { const v = Number(e.target.value); if (v >= 1 && v <= 20) void execute('view.objectStyle', { levelMark: { size: v } }); }} />
+              <NumberField style={{ width: 56 }} min={1} max={20} value={d.levelMark?.size ?? 5} onCommit={(v) => { if (v != null) void execute('view.objectStyle', { levelMark: { size: v } }); }} />
               <span className="muted small">mm on paper, in sections and elevations</span>
             </div>
           </>)}
         </div>
-        <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
+        <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>
   );

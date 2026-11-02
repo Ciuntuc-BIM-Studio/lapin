@@ -69,12 +69,6 @@ export function PlanStoreysEditor({ view }: { view: NodeDto }) {
   );
 }
 
-/** In a plan view's properties. */
-export function PlanStoreysSection({ node }: { node: NodeDto }) {
-  if (node.props.kind !== 'plan') return null;
-  return <PlanStoreysEditor view={node} />;
-}
-
 /** View → Storeys: the editor for the plan in front (its own view is made when the storey has none), or for the 3D view in front. */
 export function PlanStoreysDialog() {
   const nodes = useSession((s) => s.nodes);

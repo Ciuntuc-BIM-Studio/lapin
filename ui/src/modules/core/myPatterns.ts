@@ -14,7 +14,7 @@ export function myPatterns(): MyPatternFile[] {
 }
 
 /** The pattern names a .pat file defines (its *NAME lines). */
-export function patternNames(text: string): string[] {
+function patternNames(text: string): string[] {
   return [...text.matchAll(/^\*\s*([^,\r\n]+)/gm)].map((m) => m[1].trim().toUpperCase());
 }
 

@@ -14,11 +14,13 @@ import { engine, execute, useSession } from '../../engine/session';
 import { isDesktop } from '../../engine/files';
 import { setLooks } from '../../platform/looks';
 import type { NodeDto } from '../../engine/protocol';
+import { Cell } from '../../shell/cells';
 
 const isLink = (n: NodeDto) => n.type === 'LapinLink';
 
 export function LinksDialog() {
   const nodes = useSession((s) => s.nodes);
+  const error = useSession((s) => s.error);
   const [busy, setBusy] = useState<string | null>(null);
   const close = () => useUi.setState({ dialog: null });
   const links = [...nodes.values()].filter(isLink).sort((a, b) => a.name.localeCompare(b.name));
@@ -48,7 +50,7 @@ export function LinksDialog() {
                   const file = typeof l.props.file === 'string' ? l.props.file : '';
                   return (
                     <tr key={l.id} className={busy === l.id ? 'muted' : undefined}>
-                      <td><input defaultValue={l.name} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== l.name) void execute('link.update', { id: l.id, name: v }); }} /></td>
+                      <td><Cell value={l.name} onCommit={(t) => { const v = t.trim(); if (!v) return false; if (v !== l.name) void execute('link.update', { id: l.id, name: v }); }} /></td>
                       <td>{String(l.props.kind ?? '').toUpperCase()}</td>
                       <td title={path ?? 'linked from the browser: its bytes were read once'}>{file}{!path && <span className="muted small"> (no path)</span>}</td>
                       <td className="num">{counts.get(l.id) ?? 0}</td>
@@ -67,6 +69,7 @@ export function LinksDialog() {
               </tbody>
             </table>
           )}
+          {error && <p className="error-text" role="alert">{error}</p>}
           <p className="muted small"><Trash2 size={11} /> What a link brought cannot be edited or deleted on its own: unlink it, convert it, or open it on its own.</p>
         </div>
         <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>

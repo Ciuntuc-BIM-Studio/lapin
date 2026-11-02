@@ -9,7 +9,7 @@
  * import and export use.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, Download, Eye, MessageSquare, Plus, Trash2, Upload, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
 import { useSession } from '../../../engine/session';
@@ -18,6 +18,7 @@ import {
   ANY, assigneesOf, author, commentRemark, createRemark, deleteRemarks, exportBcf, filterRemarks, found, importBcf, listRemarks, noFilter, openViewpoint,
   retakeViewpoint, setAuthor, snapshotOf, updateRemark, viewpointNow, when, type Filter, type NewRemark, type RemarkList,
 } from './remarks';
+import { PendingDialog } from '../PendingDialog';
 
 const blank: NewRemark = { title: '', description: '', type: 'Issue', status: 'Open', priority: 'Normal', assignedTo: '', dueDate: '', labels: [] };
 
@@ -51,7 +52,9 @@ export function RemarksDialog() {
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
 
-  const reload = useCallback(async () => { const r = await listRemarks(); if (r) setData(r); }, []);
+  // Only the latest list is kept (one asked before it, answering late, is dropped).
+  const asked = useRef(0);
+  const reload = useCallback(async () => { const n = ++asked.current; const r = await listRemarks(); if (r && n === asked.current) setData(r); }, []);
   useEffect(() => { void reload(); }, [reload, nodes]);
 
   const shown = useMemo(() => (data ? filterRemarks(data.remarks, filter) : []), [data, filter]);
@@ -99,7 +102,7 @@ export function RemarksDialog() {
 
   const nameMe = (v: string) => { setMe(v); setAuthor(v); };
 
-  if (!data) return null;
+  if (!data) return <PendingDialog title="Remarks" />;
   const inThreeD = view === '3d' && hasCamera;
   return (
     <div className="dialog-backdrop" onClick={close}>
@@ -202,7 +205,7 @@ export function RemarksDialog() {
                       <li key={c.guid}>
                         <span className="muted small">{c.author} · {when(c.date)}</span>
                         <span>{c.text}</span>
-                        {vp && <button type="button" className="link small" onClick={() => void openViewpoint(vp)} title="The 3D view as this comment saw it"><Eye size={11} /> Show</button>}
+                        {vp && <button type="button" className="link small" onClick={() => void openViewpoint(vp).catch((e) => notify(e instanceof Error ? e.message : String(e)))} title="The 3D view as this comment saw it"><Eye size={11} /> Show</button>}
                       </li>
                     );
                   })}

@@ -5,7 +5,7 @@
  * shows in Manage → Issue… before an issue goes.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, OctagonAlert, RefreshCw, X } from 'lucide-react';
 import { useUi } from '../../../app/store';
 import { useSession } from '../../../engine/session';
@@ -13,10 +13,18 @@ import { cdeCheck, goTo, groupFindings, type CheckResult } from './cde';
 
 export function CheckDialog() {
   const nodes = useSession((s) => s.nodes);
-  const [r, setR] = useState<CheckResult | null>(null);
+  // undefined while the first run is on its way; null when the checks could not run.
+  const [r, setR] = useState<CheckResult | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
+  const asked = useRef(0);
   const close = () => useUi.setState({ dialog: null });
-  const run = useCallback(async () => { setBusy(true); try { setR(await cdeCheck()); } finally { setBusy(false); } }, []);
+  // Only the latest run's answer is shown (an earlier one arriving late is dropped).
+  const run = useCallback(async () => {
+    const n = ++asked.current;
+    setBusy(true);
+    const res = await cdeCheck();
+    if (n === asked.current) { setR(res); setBusy(false); }
+  }, []);
   useEffect(() => { void run(); }, [run, nodes]);
   return (
     <div className="dialog-backdrop" onClick={close}>
@@ -25,7 +33,8 @@ export function CheckDialog() {
         <div className="dialog-body cde">
           <p className="muted small">What a drawing office checks before an issue: title blocks, legends, scales, views on the paper and on sheets, revisions after a change, file names, and the model's basics. A blocking finding stops an issue; a warning may be overridden.</p>
           {r && <FindingsList result={r} />}
-          {r === null && <p className="muted">Checking…</p>}
+          {r === undefined && <p className="muted">Checking…</p>}
+          {r === null && !busy && <p className="error-text" role="alert">The checks could not run: check again.</p>}
         </div>
         <footer className="dialog-foot">
           <button type="button" className="btn" disabled={busy} onClick={() => void run()}><RefreshCw size={13} /> Check again</button>
