@@ -126,6 +126,22 @@ public class RoofEdgeTests
     }
 
     [Fact]
+    public void A_deleted_roof_takes_its_downpipes_with_it()
+    {
+        var f = new Fixture();
+        var roof = AddRoof(f);
+        var other = (string)f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = f.Storey, ["points"] = Pts((20, 0), (30, 0), (30, 6), (20, 6)), ["style"] = "fr_provence" })!["id"]!;
+        f.Run("architecture.makeDownpipes", new JsonObject { ["id"] = roof });
+        var kept = ((JsonArray)f.Run("architecture.makeDownpipes", new JsonObject { ["id"] = other })!["ids"]!).Count;
+        f.Run("element.delete", new JsonObject { ["id"] = roof });
+        Assert.Null(f.Model.Get(roof));
+        Assert.All(f.Model.OfClass(Drainage.DownpipeClass), p => Assert.Equal(other, p.Str("roofId")));
+        Assert.Equal(kept, f.Model.OfClass(Drainage.DownpipeClass).Count());
+        f.Session.Undo();
+        Assert.Equal(2 * kept, f.Model.OfClass(Drainage.DownpipeClass).Count());
+    }
+
+    [Fact]
     public void A_moved_roof_takes_its_roof_windows_with_it()
     {
         var f = new Fixture();

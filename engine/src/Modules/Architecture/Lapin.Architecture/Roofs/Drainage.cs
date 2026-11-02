@@ -421,3 +421,17 @@ public static class Drainage
     public static double OutFromWall(Roof.Resolved r, RoofParts.Gutter g, Spec spec) =>
         (g.Edge >= 0 ? r.Rules[g.Edge].Overhang : 0.5) + spec.Offset + spec.R - 0.1;
 }
+
+/// <summary>A roof deleted takes its downpipe elements with it: without their gutter they are nowhere.</summary>
+sealed class RoofDeletion : IDeletion
+{
+    public bool Delete(ICommandContext ctx, string id)
+    {
+        if (ctx.Model.Get(id) is not { Class: IfcClass.Roof }) return false;
+        var pipes = ctx.Model.OfClass(Drainage.DownpipeClass).Where(p => p.Str("roofId") == id).Select(p => p.Id).ToList();
+        if (pipes.Count == 0) return false;
+        foreach (var p in pipes) ctx.Remove(p);
+        ctx.Remove(id);
+        return true;
+    }
+}
