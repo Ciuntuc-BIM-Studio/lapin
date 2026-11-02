@@ -20,24 +20,11 @@ public static class RoomBounds
     /// <summary>The plane rooms are found in, over their storey's elevation (m).</summary>
     public const double Height = 1.2;
 
-    sealed record Solved(long Revision, FreeSpace Space, HashSet<string> Reads);
-    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Entity, Solved> Cache = new();
+    static readonly RevisionCache<FreeSpace> Cache = new();
 
     /// <summary>The free space of a storey's plan; null when the storey is not there.</summary>
-    public static FreeSpace? Of(IModelView m, IServices services, string storeyId)
-    {
-        if (m.Get(storeyId) is not { Class: IfcClass.BuildingStorey } storey) return null;
-        if (Cache.TryGetValue(storey, out var hit) && hit.Revision == m.Revision)
-        {
-            if (m is TrackingView tv) tv.Read.UnionWith(hit.Reads);
-            return hit.Space;
-        }
-        var t = new TrackingView(m);
-        t.Get(storeyId);
-        var space = Solve(t, services, storey);
-        Cache.AddOrUpdate(storey, new Solved(m.Revision, space, t.Read));
-        return space;
-    }
+    public static FreeSpace? Of(IModelView m, IServices services, string storeyId) =>
+        m.Get(storeyId) is { Class: IfcClass.BuildingStorey } storey ? Cache.Get(storey, m, t => Solve(t, services, storey)) : null;
 
     static FreeSpace Solve(IModelView m, IServices services, Entity storey)
     {

@@ -209,4 +209,50 @@ public class GeometryFailureTests
             r.Geometry(Class, (e, _, _) => e.Name == "bad" ? throw new NullReferenceException("The producer's bug.") : new ElementGeometry([]));
         }
     }
+
+    [Fact]
+    public void A_cached_value_computed_through_the_cutters_still_reads_them_under_their_narrow_key()
+    {
+        var f = new Fixture(new ArchitectureModule(), new ProbeModule());
+        var wall = f.Wall(0, 0, 4, 0);
+        var p1 = (string)f.Run("probe.add", [])!["id"]!;
+        var p2 = (string)f.Run("probe.add", [])!["id"]!;
+        // One value for both (the second gets the first's reads): no wall ranks over them.
+        Assert.Equal("0", f.Session.Geometry(p1)!.Diagnostics![0]);
+        // The wall moved: neither is rebuilt (they read the walls' cut key, not the class).
+        var diff = f.RunDiff("architecture.updateWall", new JsonObject { ["id"] = wall, ["x2"] = 5 });
+        Assert.DoesNotContain(diff.Render, r => r.NodeId == p1 || r.NodeId == p2);
+        // Raised over them: both are.
+        diff = f.RunDiff("element.update", new JsonObject { ["id"] = wall, ["attrs"] = new JsonObject { ["cutPriority"] = 80 } });
+        Assert.Contains(diff.Render, r => r.NodeId == p1);
+        Assert.Contains(diff.Render, r => r.NodeId == p2);
+        Assert.Equal("1", f.Session.Geometry(p2)!.Diagnostics![0]);
+    }
+
+    /// <summary>A class that takes part in cutting, whose elements share one cached value: how many cutters rank over them.</summary>
+    sealed class ProbeModule : ILapinModule
+    {
+        const string Class = "IfcProbe";
+        static readonly RevisionCache<int> Shared = new();
+        public string Id => "probe";
+        public string Name => "Probe";
+
+        public void Register(IModuleRegistry r)
+        {
+            r.Class(new(Class, "Probe", []));
+            r.Command("add", "Probe", (ctx, args) =>
+            {
+                var e = new Entity(ctx.NewId(), Class, "", []);
+                ctx.Add(e);
+                return new JsonObject { ["id"] = e.Id };
+            });
+            r.Cutter(Class, 70, (_, _) => null);
+            r.Geometry(Class, (e, m, services) =>
+            {
+                var project = Spatial.Project(m)!;
+                var n = Shared.Get(project, m, v => services.Get<ICutters>()!.For(e, v, (new Lapin.Geometry.Vec3(-1e3, -1e3, -1e3), new Lapin.Geometry.Vec3(1e3, 1e3, 1e3))).Count);
+                return new ElementGeometry([], Diagnostics: [n.ToString()]);
+            });
+        }
+    }
 }

@@ -14,6 +14,9 @@ sealed class TrackingView(IModelView inner) : IModelView
 {
     public HashSet<string> Read { get; } = [];
 
+    /// <summary>The model it reads (a view nested in it, as <see cref="RevisionCache{T}"/> records with, reads this, so its reads are its own).</summary>
+    public IModelView Inner => inner;
+
     public static string ClassKey(string ifcClass) => "class:" + ifcClass;
     public static string RelationsKey(string id) => "rel:" + id;
 
