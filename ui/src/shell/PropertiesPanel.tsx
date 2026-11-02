@@ -10,6 +10,7 @@ import { AlignHorizontalJustifyCenter, ChevronRight, Plus, Search, Trash2, X } f
 import { Cell, LengthCell } from './cells';
 import { panelFocus, panelKeys, parseNumber } from './cellKeys';
 import { useUi } from '../app/store';
+import { setPanelWidth, usePanels } from '../app/panels';
 import { activeStorey, execute, useSession } from '../engine/session';
 import { frontView } from '../viewport/frontView';
 import { view3dNode } from '../viewport/storeys3d';
@@ -176,23 +177,14 @@ function ParamsSection({ node, ids: who, shadowed }: { node: NodeDto; ids?: () =
   );
 }
 
-// ─── The panel's width, dragged and remembered ──────────────────────────────
+// ─── The panel's width, dragged by its left edge (the panels' own width, app/panels.ts, as App's separator) ───
 
-const WIDTH_KEY = 'lapin.props.w';
-function useWidth(): [number, (e: React.PointerEvent) => void] {
-  const [w, setW] = useState(() => { try { return Number(localStorage.getItem(WIDTH_KEY)) || 300; } catch { return 300; } });
-  useEffect(() => { document.documentElement.style.setProperty('--props-w', `${w}px`); }, [w]);
-  const start = (e: React.PointerEvent) => {
-    e.preventDefault();
-    const x0 = e.clientX, w0 = w;
-    const move = (ev: PointerEvent) => setW(Math.max(240, Math.min(560, w0 - (ev.clientX - x0))));
-    const up = () => {
-      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
-      setW((cur) => { try { localStorage.setItem(WIDTH_KEY, String(cur)); } catch { /* this session */ } return cur; });
-    };
-    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
-  };
-  return [w, start];
+function startResize(e: React.PointerEvent): void {
+  e.preventDefault();
+  const x0 = e.clientX, w0 = usePanels.getState().propsWidth;
+  const move = (ev: PointerEvent) => setPanelWidth('props', w0 - (ev.clientX - x0));
+  const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
 }
 
 /** Rows whose label does not match the filter are hidden (in every section, the modules' too). */
@@ -299,7 +291,6 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
   const info = useSession((s) => s.info);
   const selectedCount = useUi((s) => s.selected.length);
   const [filter, setFilter] = useState('');
-  const [, startResize] = useWidth();
   const body = useRef<HTMLElement>(null);
   useFilter(body, filter, [node, nodes]);
   const cls = info?.nodeTypes.find((t) => t.type === node.type);
