@@ -32,17 +32,18 @@ public sealed class Step
     public const string True = ".T.";
     public const string False = ".F.";
 
-    /// <summary>A string: quotes doubled, backslashes doubled, anything beyond ASCII as \X2\…\X0\.</summary>
+    /// <summary>A string: quotes doubled, backslashes doubled, anything beyond ASCII as \X2\…\X0\ (beyond the BMP as \X4\…\X0\).</summary>
     public static string S(string? s)
     {
         if (s == null) return Null;
         var b = new StringBuilder("'");
-        foreach (var ch in s)
+        foreach (var r in s.EnumerateRunes())
         {
-            if (ch == '\'') b.Append("''");
-            else if (ch == '\\') b.Append("\\\\");
-            else if (ch >= 32 && ch < 127) b.Append(ch);
-            else b.Append("\\X2\\").Append(((int)ch).ToString("X4", CultureInfo.InvariantCulture)).Append("\\X0\\");
+            if (r.Value == '\'') b.Append("''");
+            else if (r.Value == '\\') b.Append("\\\\");
+            else if (r.Value >= 32 && r.Value < 127) b.Append((char)r.Value);
+            else if (r.IsBmp) b.Append("\\X2\\").Append(r.Value.ToString("X4", CultureInfo.InvariantCulture)).Append("\\X0\\");
+            else b.Append("\\X4\\").Append(r.Value.ToString("X8", CultureInfo.InvariantCulture)).Append("\\X0\\");
         }
         return b.Append('\'').ToString();
     }

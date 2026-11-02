@@ -125,4 +125,29 @@ public class IfcRobustnessTests : IDisposable
         Assert.Equal(0, slab.Num("offset"), 6);
         Assert.Equal(0.2, LayerSets.BandsOf(native.Session.Model, slab.Id)!.Sum(b => b.To - b.From), 6);
     }
+
+    static StepFile OneEntity(string args) => StepFile.Parse($"ISO-10303-21;\nHEADER;\nFILE_SCHEMA(('IFC4'));\nENDSEC;\nDATA;\n#1=IFCLABEL({args});\nENDSEC;\nEND-ISO-10303-21;\n");
+
+    /// <summary>
+    /// A name beyond the Basic Multilingual Plane (an emoji, a mathematical letter) written as \X4\ and read back the same;
+    /// a foreign file's surrogate pair in \X2\ read as the character it makes (it threw, failing the import).
+    /// </summary>
+    [Fact]
+    public void Names_beyond_the_BMP_survive_a_round_trip()
+    {
+        const string name = "Bucătărie 🍳 𝑥 = 'a\\b'";
+        var written = S(name);
+        Assert.Contains("\\X4\\0001F373\\X0\\", written);
+        Assert.Contains("\\X4\\0001D465\\X0\\", written);
+        Assert.Contains("\\X2\\0103\\X0\\", written);
+        Assert.Equal(name, OneEntity(written).Entities[1][0]);
+        // As another program writes them: UTF-16 units, the pair in one \X2\ run.
+        Assert.Equal("🍳 x", OneEntity("'\\X2\\D83CDF73\\X0\\ x'").Entities[1][0]);
+        // Malformed escapes kept as written, never thrown.
+        Assert.Equal("a\\X\\4", StepFile.Decode("a\\X\\4"));
+        Assert.Equal("\\X2\\ZZZZ\\X0\\", StepFile.Decode("\\X2\\ZZZZ\\X0\\"));
+        Assert.Equal("\\X2\\00E\\X0\\", StepFile.Decode("\\X2\\00E\\X0\\"));
+        Assert.Equal("�", StepFile.Decode("\\X4\\7FFFFFFF\\X0\\"));
+        Assert.Equal("é", StepFile.Decode("\\X\\E9"));
+    }
 }
