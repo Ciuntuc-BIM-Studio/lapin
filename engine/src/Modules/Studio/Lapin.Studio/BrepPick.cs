@@ -54,9 +54,10 @@ public static class BrepPick
 
     /// <summary>
     /// The face a point lies on facing the way given (within about 5°): of those, the one whose plane is nearest the
-    /// point and whose outline holds it, else the nearest; null when no face faces that way within <paramref name="reach"/> of its plane.
+    /// point and whose outline holds it, else the nearest; null when no face faces that way within <paramref name="reach"/> of its plane
+    /// (and, <paramref name="inside"/>, holds the point within its outline).
     /// </summary>
-    public static BrepFace? Face(IEnumerable<Solid> solids, Vec3 point, Vec3 normal, double reach = 0.05)
+    public static BrepFace? Face(IEnumerable<Solid> solids, Vec3 point, Vec3 normal, double reach = 0.05, bool inside = false)
     {
         var n = normal.Normalized();
         BrepFace? best = null;
@@ -66,7 +67,9 @@ public static class BrepPick
             if (Vec3.Dot(f.Normal, n) < 0.996) continue;
             var plane = Math.Abs(Vec3.Dot(point - f.Outer[0], f.Normal));
             if (plane > reach) continue;
-            var s = plane + (Inside(f, point) ? 0 : 1 + OutlineDistance(f, point));
+            var holds = Inside(f, point);
+            if (inside && !holds) continue;
+            var s = plane + (holds ? 0 : 1 + OutlineDistance(f, point));
             if (s < score) { score = s; best = f; }
         }
         return best;

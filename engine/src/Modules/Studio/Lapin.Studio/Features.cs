@@ -81,7 +81,9 @@ public static class Features
                 if (P(f["point"]) is not { } at || P(f["normal"]) is not { } n0) return (null, "its face is not given.");
                 var d = Json.Number(f["distance"]) ?? 0;
                 if (Math.Abs(d) < 1e-9) return (null, null);
-                if (BrepPick.Face([cur], at, n0, double.PositiveInfinity) is not { } face) return (null, "its face is gone.");
+                // Its face found again however far the sketch moved it (a path lengthened), but only one whose outline holds the
+                // point seen along its normal: a face of the same facing elsewhere on the body (the other wing of an L) is not taken in its place.
+                if (BrepPick.Face([cur], at, n0, double.PositiveInfinity, inside: true) is not { } face) return (null, "its face is gone.");
                 return PushPull(cur, face, d, c.Booleans!);
             }
             case "chamfer" or "fillet":

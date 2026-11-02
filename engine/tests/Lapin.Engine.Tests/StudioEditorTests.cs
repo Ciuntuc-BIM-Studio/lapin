@@ -141,6 +141,24 @@ public class StudioEditorTests
     }
 
     [Fact]
+    public void A_push_pull_step_whose_face_is_gone_says_so_and_pushes_no_other_face_of_that_facing()
+    {
+        var f = F();
+        var plan = Plan(f);
+        var sq = Draw(f, plan, Rect(10, 0, 11, 1));
+        // An L: 3 m east, then 2.5 m north; its north end (y = 3) pulled 0.5 m.
+        var path = Draw(f, plan, new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(0, 0.5), J(3, 0.5), J(3, 3)), ["closed"] = false });
+        var bar = Id(f.Run("studio.sweep", new JsonObject { ["profileId"] = sq, ["pathId"] = path }));
+        var before = Vol(f, bar);
+        Assert.Equal("step", (string)f.Run("studio.pushPull", With(Pick(bar, new Vec3(3.3, 3, 0.5), new Vec3(0, 1, 0)), "distance", 0.5))!["how"]!);
+        Assert.Equal(before + 0.5, Vol(f, bar), 6);
+        // The path made straight: no face facing north holds the step's point any more (the bar's north side, x 0–3, does not reach x = 3.3).
+        f.Run("drafting.updateDraft", new JsonObject { ["id"] = path, ["shape"] = Line(0, 0.5, 3, 0.5) });
+        Assert.Equal(3, Vol(f, bar), 6);
+        Assert.Contains(f.Session.Geometry(bar)!.Diagnostics!, d => d.Contains("its face is gone"));
+    }
+
+    [Fact]
     public void Push_pull_on_a_wall_adds_a_solid_of_its_material_or_cuts_into_it()
     {
         var f = F();
