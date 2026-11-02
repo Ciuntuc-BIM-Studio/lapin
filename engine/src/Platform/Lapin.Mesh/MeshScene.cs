@@ -257,10 +257,23 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
     /// <summary>
     /// Assemblies without a body of their own (a Studio box with its bottom and top, an assembly read from IFC): each becomes an
     /// element of the scene whose children are the parts it aggregates, in the group of its first part; the parts leave the group's own list.
+    /// Nested assemblies are made innermost first, so an assembly of assemblies holds them whatever order the model lists them in.
     /// </summary>
     static void Assemblies(IModelView m, Dictionary<string, (MeshGroup Group, MeshElement Element)> elementOf)
     {
-        foreach (var asm in m.OfClass("IfcElementAssembly"))
+        var assemblies = m.OfClass("IfcElementAssembly").ToList();
+        var ids = assemblies.Select(a => a.Id).ToHashSet();
+        // An assembly's depth: 0 when it aggregates no assembly, else one more than its deepest; a cycle (a malformed model) stops counting.
+        var depth = new Dictionary<string, int>();
+        int Depth(string id, HashSet<string> path)
+        {
+            if (depth.TryGetValue(id, out var d)) return d;
+            if (!path.Add(id)) return 0;
+            d = m.RelatedOf(id, IfcClass.RelAggregates).Where(p => ids.Contains(p.Id)).Select(p => Depth(p.Id, path) + 1).DefaultIfEmpty(0).Max();
+            path.Remove(id);
+            return depth[id] = d;
+        }
+        foreach (var asm in assemblies.OrderBy(a => Depth(a.Id, [])))
         {
             if (elementOf.ContainsKey(asm.Id)) continue;
             var parts = m.RelatedOf(asm.Id, IfcClass.RelAggregates).Select(p => elementOf.GetValueOrDefault(p.Id)).Where(x => x.Element != null).ToList();

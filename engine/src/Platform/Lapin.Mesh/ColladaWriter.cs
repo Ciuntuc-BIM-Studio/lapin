@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Xml;
+using static Lapin.Mesh.MeshMath;
 
 namespace Lapin.Mesh;
 
@@ -20,8 +21,6 @@ public static class ColladaWriter
 {
     const string Ns = "http://www.collada.org/2005/11/COLLADASchema";
 
-    static string F(float v) => (v == 0 ? 0f : v).ToString("R", CultureInfo.InvariantCulture);
-    static string F(double v) => v.ToString("R", CultureInfo.InvariantCulture);
 
     /// <summary>A name as COLLADA 1.4.1 takes it (an NCName: no spaces, not starting with a digit).</summary>
     static string Name(string name) => UsdWriter.Identifier(name);

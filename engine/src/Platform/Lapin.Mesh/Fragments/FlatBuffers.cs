@@ -56,19 +56,15 @@ public sealed class FlatBuilder
     public void PutByte(byte v) { _buf[--_space] = v; }
     public void PutSbyte(sbyte v) { _buf[--_space] = unchecked((byte)v); }
     public void PutUshort(ushort v) { _space -= 2; BinaryPrimitives.WriteUInt16LittleEndian(_buf.AsSpan(_space), v); }
-    public void PutShort(short v) { _space -= 2; BinaryPrimitives.WriteInt16LittleEndian(_buf.AsSpan(_space), v); }
     public void PutInt(int v) { _space -= 4; BinaryPrimitives.WriteInt32LittleEndian(_buf.AsSpan(_space), v); }
     public void PutUint(uint v) { _space -= 4; BinaryPrimitives.WriteUInt32LittleEndian(_buf.AsSpan(_space), v); }
     public void PutFloat(float v) { _space -= 4; BinaryPrimitives.WriteSingleLittleEndian(_buf.AsSpan(_space), v); }
     public void PutDouble(double v) { _space -= 8; BinaryPrimitives.WriteDoubleLittleEndian(_buf.AsSpan(_space), v); }
 
-    public void PrependByte(byte v) { Prep(1, 0); PutByte(v); }
     public void PrependSbyte(sbyte v) { Prep(1, 0); PutSbyte(v); }
     public void PrependUshort(ushort v) { Prep(2, 0); PutUshort(v); }
     public void PrependInt(int v) { Prep(4, 0); PutInt(v); }
     public void PrependUint(uint v) { Prep(4, 0); PutUint(v); }
-    public void PrependFloat(float v) { Prep(4, 0); PutFloat(v); }
-    public void PrependDouble(double v) { Prep(8, 0); PutDouble(v); }
 
     /// <summary>An offset to something written earlier, relative to where it is written.</summary>
     public void PrependUOffset(int off)
@@ -166,10 +162,24 @@ public sealed class FlatBuilder
             PrependUshort((ushort)(_vtable[i] != 0 ? objectOffset - _vtable[i] : 0));
         PrependUshort((ushort)(objectOffset - _objectStart));
         PrependUshort((ushort)((_vtableInUse + 2) * 2));
-        BinaryPrimitives.WriteInt32LittleEndian(_buf.AsSpan(_buf.Length - objectOffset), Offset() - objectOffset);
+        // A vtable the same as one written before is dropped and the table points at that one, as the official builders
+        // do: a file of thousands of tables of a few shapes carries a few vtables (the soffset may then be negative).
+        var fresh = _buf.AsSpan(_space, (_vtableInUse + 2) * 2);
+        var vtable = -1;
+        foreach (var earlier in _vtables)
+        {
+            var at = _buf.Length - earlier;
+            if (BinaryPrimitives.ReadUInt16LittleEndian(_buf.AsSpan(at)) == fresh.Length && _buf.AsSpan(at, fresh.Length).SequenceEqual(fresh)) { vtable = earlier; break; }
+        }
+        if (vtable >= 0) _space = _buf.Length - objectOffset;
+        else _vtables.Add(vtable = Offset());
+        BinaryPrimitives.WriteInt32LittleEndian(_buf.AsSpan(_buf.Length - objectOffset), vtable - objectOffset);
         _nested = false;
         return objectOffset;
     }
+
+    /// <summary>The vtables written so far, by their offset (from the end of the buffer, so growing keeps them).</summary>
+    readonly List<int> _vtables = [];
 
     public byte[] Finish(int root)
     {

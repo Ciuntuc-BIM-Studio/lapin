@@ -397,4 +397,37 @@ public sealed class MeshExportTests
         Assert.Equal(ids.Count, ids.Distinct().Count());
         Assert.All(root.Descendants().Select(x => (string?)x.Attribute("name")).OfType<string>(), nm => Assert.Matches("^[A-Za-z_][A-Za-z0-9_]*$", nm));
     }
+
+    [Fact]
+    public void An_assembly_of_assemblies_keeps_its_nesting_whatever_order_the_model_lists_them()
+    {
+        var (f, layered, plain, _) = Project();
+        // The outer assembly is made first, so the model lists it before the inner one it holds.
+        string outer = "", inner = "";
+        f.Session.Edit("Assemblies", edit =>
+        {
+            outer = edit.NewId(); edit.Add(new Entity(outer, "IfcElementAssembly", "Outer", []));
+            inner = edit.NewId(); edit.Add(new Entity(inner, "IfcElementAssembly", "Inner", []));
+            edit.Relate(IfcClass.RelAggregates, inner, layered);
+            edit.Relate(IfcClass.RelAggregates, outer, inner);
+            edit.Relate(IfcClass.RelAggregates, outer, plain);
+        });
+        var scene = MeshScene.Build(f.Session, new MeshExportOptions());
+        var top = scene.Groups.SelectMany(g => g.Elements).ToList();
+        Assert.DoesNotContain(top, e => e.GlobalId == inner);
+        var o = top.Single(e => e.GlobalId == outer);
+        Assert.Equal([inner, plain], o.Children!.Select(c => c.GlobalId).OrderBy(id => id == plain).ToList());
+        Assert.Equal(layered, o.Children!.Single(c => c.GlobalId == inner).Children!.Single().GlobalId);
+    }
+
+    [Fact]
+    public void A_glTF_too_large_for_its_32_bit_offsets_is_refused_with_a_reason()
+    {
+        var (f, _, _, _) = Project();
+        var scene = MeshScene.Build(f.Session, new MeshExportOptions());
+        Assert.NotEmpty(GltfWriter.Write(scene, binary: true, GltfWriter.MaxGlbBytes));
+        var ex = Assert.Throws<CommandException>(() => GltfWriter.Write(scene, binary: true, limit: 1000));
+        Assert.Contains("too large", ex.Message);
+        Assert.Throws<CommandException>(() => GltfWriter.Write(scene, binary: false, limit: 1000));
+    }
 }

@@ -10,4 +10,7 @@
     <ProjectReference Include="../Lapin.Platform/Lapin.Platform.csproj" />
     <ProjectReference Include="../Lapin.Ifc/Lapin.Ifc.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lapin.Engine.Tests" />
+  </ItemGroup>
 </Project>

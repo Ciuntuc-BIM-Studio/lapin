@@ -65,17 +65,15 @@ public static class FragWriter
         /// <summary>The element's parts about its centre, each a shell (shared with any identical one) in its material.</summary>
         public void Add(MeshElement e, IReadOnlyList<MeshMaterial> materials)
         {
-            double minX = double.MaxValue, minY = double.MaxValue, minZ = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue, maxZ = double.MinValue;
+            float[] min = [float.MaxValue, float.MaxValue, float.MaxValue], max = [float.MinValue, float.MinValue, float.MinValue];
             foreach (var p in e.Parts)
-                for (var i = 0; i + 2 < p.Positions.Length; i += 3)
-                {
-                    minX = Math.Min(minX, p.Positions[i]); maxX = Math.Max(maxX, p.Positions[i]);
-                    minY = Math.Min(minY, p.Positions[i + 1]); maxY = Math.Max(maxY, p.Positions[i + 1]);
-                    minZ = Math.Min(minZ, p.Positions[i + 2]); maxZ = Math.Max(maxZ, p.Positions[i + 2]);
-                }
-            var (cx, cy, cz) = ((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+            {
+                var (lo, hi) = MeshMath.Bounds(p.Positions);
+                for (var k = 0; k < 3; k++) { min[k] = Math.Min(min[k], lo[k]); max[k] = Math.Max(max[k], hi[k]); }
+            }
+            var (cx, cy, cz) = (((double)min[0] + max[0]) / 2, ((double)min[1] + max[1]) / 2, ((double)min[2] + max[2]) / 2);
             var item = Centres.Count;
-            Centres.Add((cx, cz, -cy)); // Y up
+            Centres.Add(MeshMath.ToYUp(cx, cy, cz));
             foreach (var p in e.Parts)
             {
                 if (p.Indices.Length < 3) continue;
@@ -84,8 +82,7 @@ public static class FragWriter
                 var key = Key(points, tris, faces);
                 if (!_shellIndex.TryGetValue(key, out var shell))
                 {
-                    float[] lo = [float.MaxValue, float.MaxValue, float.MaxValue], hi = [float.MinValue, float.MinValue, float.MinValue];
-                    for (var i = 0; i < points.Length; i++) { lo[i % 3] = Math.Min(lo[i % 3], points[i]); hi[i % 3] = Math.Max(hi[i % 3], points[i]); }
+                    var (lo, hi) = MeshMath.Bounds(points);
                     Shells.Add((points, tris, faces, lo, hi));
                     shell = _shellIndex[key] = Shells.Count - 1;
                 }
@@ -102,8 +99,9 @@ public static class FragWriter
             for (var i = 0; i < map.Length; i++)
             {
                 // To 0,01 mm: two copies of one body differ by float noise about their centres, and must hash to one shell.
-                static float Q(double v) { var r = (float)Math.Round(v, 5); return r == 0 ? 0 : r; }
-                var q = (Q(p.Positions[i * 3] - cx), Q(p.Positions[i * 3 + 2] - cz), Q(-(p.Positions[i * 3 + 1] - cy)));
+                static float Q(double v) => (float)MeshMath.Round(v, MeshMath.WeldDigits);
+                var (x, y, z) = MeshMath.ToYUp(p.Positions[i * 3] - cx, p.Positions[i * 3 + 1] - cy, p.Positions[i * 3 + 2] - cz);
+                var q = (Q(x), Q(y), Q(z));
                 if (!index.TryGetValue(q, out var k)) { k = index[q] = index.Count; points.Add(q.Item1); points.Add(q.Item2); points.Add(q.Item3); }
                 map[i] = k;
             }
@@ -126,7 +124,7 @@ public static class FragWriter
                 var len = Math.Sqrt(nx * nx + ny * ny + nz * nz);
                 if (len > 0) { nx /= len; ny /= len; nz /= len; }
                 var d = nx * pts[a] + ny * pts[a + 1] + nz * pts[a + 2];
-                static double R(double v) { var r = Math.Round(v, 4); return r == 0 ? 0 : r; }
+                static double R(double v) => MeshMath.Round(v, MeshMath.PlaneDigits);
                 var key = (R(nx), R(ny), R(nz), R(d));
                 if (!planes.TryGetValue(key, out var id)) id = planes[key] = planes.Count;
                 o[t] = (ushort)(id % 65536);

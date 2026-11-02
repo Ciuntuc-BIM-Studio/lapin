@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json;
+using Lapin.Platform;
 
 namespace Lapin.Mesh;
 
@@ -22,10 +23,16 @@ public static class GltfWriter
     const int Float = 5126, UnsignedInt = 5125;
     const int Triangles = 4, Lines = 1;
 
-    public static byte[] Glb(MeshScene scene) => Write(scene, binary: true);
-    public static byte[] Gltf(MeshScene scene) => Write(scene, binary: false);
+    /// <summary>
+    /// The most geometry one file holds: a GLB's offsets and lengths are 32-bit and its chunks live in one array (under
+    /// 2 GB); a .gltf's buffer is one base64 string (under a billion characters), three bytes making four.
+    /// </summary>
+    public const long MaxGlbBytes = 1_500_000_000, MaxGltfBytes = 750_000_000;
 
-    sealed class Buffers
+    public static byte[] Glb(MeshScene scene) => Write(scene, binary: true, MaxGlbBytes);
+    public static byte[] Gltf(MeshScene scene) => Write(scene, binary: false, MaxGltfBytes);
+
+    sealed class Buffers(long limit, bool binary)
     {
         public readonly MemoryStream Bin = new();
         public readonly List<(int Offset, int Length, int Target)> Views = [];
@@ -33,6 +40,9 @@ public static class GltfWriter
 
         int View(ReadOnlySpan<byte> bytes, int target)
         {
+            // Refused before an offset wraps past 2 GB (which wrote a file no reader opens) or the array cannot grow.
+            if (Bin.Length + 3 + bytes.Length > limit)
+                throw new CommandException($"The model is too large for one {(binary ? "GLB" : ".gltf")} file (at most {limit / 1_000_000} MB of geometry): export a part of it (a 3D view, some storeys), or as Fragments or USD.");
             while (Bin.Length % 4 != 0) Bin.WriteByte(0);
             var offset = (int)Bin.Length;
             // target 0: not a vertex or index buffer (an image); left out of the view.
@@ -46,13 +56,12 @@ public static class GltfWriter
         {
             var n = zUp.Length / 3;
             var yUp = new float[n * 3];
-            float[] min = [float.MaxValue, float.MaxValue, float.MaxValue], max = [float.MinValue, float.MinValue, float.MinValue];
             for (var i = 0; i < n; i++)
             {
-                var (x, y, z) = (zUp[i * 3], zUp[i * 3 + 2], -zUp[i * 3 + 1]);
-                yUp[i * 3] = x; yUp[i * 3 + 1] = y; yUp[i * 3 + 2] = z == 0 ? 0 : z;
-                for (var k = 0; k < 3; k++) { min[k] = Math.Min(min[k], yUp[i * 3 + k]); max[k] = Math.Max(max[k], yUp[i * 3 + k]); }
+                var (x, y, z) = MeshMath.ToYUp(zUp[i * 3], zUp[i * 3 + 1], zUp[i * 3 + 2]);
+                yUp[i * 3] = (float)x; yUp[i * 3 + 1] = (float)y; yUp[i * 3 + 2] = (float)z;
             }
+            var (min, max) = MeshMath.Bounds(yUp);
             var bytes = new byte[yUp.Length * 4];
             for (var i = 0; i < yUp.Length; i++) BinaryPrimitives.WriteSingleLittleEndian(bytes.AsSpan(i * 4), yUp[i]);
             var view = View(bytes, ArrayBuffer);
@@ -94,9 +103,10 @@ public static class GltfWriter
     /// <summary>sRGB (0–1) to linear, as glTF's base colour factor takes it.</summary>
     public static float Linear(float c) => c <= 0.04045f ? c / 12.92f : MathF.Pow((c + 0.055f) / 1.055f, 2.4f);
 
-    static byte[] Write(MeshScene scene, bool binary)
+    /// <summary>The file, its geometry at most <paramref name="limit"/> bytes (tests take a small one).</summary>
+    internal static byte[] Write(MeshScene scene, bool binary, long limit)
     {
-        var buffers = new Buffers();
+        var buffers = new Buffers(limit, binary);
         // Meshes first: their accessors and views fill the buffer.
         var meshes = new List<(string Name, List<(int Position, int Normal, int Indices, int Material, int? Uv)> Triangles, int? EdgePositions)>();
         var meshOf = new Dictionary<MeshElement, int>();
@@ -168,8 +178,8 @@ public static class GltfWriter
             {
                 w.WriteStartObject();
                 w.WriteString("name", scene.Project);
-                var (rx, ry, rz) = scene.RootOffset;
-                if (rx != 0 || ry != 0 || rz != 0) { w.WriteStartArray("translation"); w.WriteNumberValue(rx); w.WriteNumberValue(rz); w.WriteNumberValue(-ry == 0 ? 0 : -ry); w.WriteEndArray(); }
+                var (rx, ry, rz) = MeshMath.ToYUp(scene.RootOffset.X, scene.RootOffset.Y, scene.RootOffset.Z);
+                if (rx != 0 || ry != 0 || rz != 0) { w.WriteStartArray("translation"); w.WriteNumberValue(rx); w.WriteNumberValue(ry); w.WriteNumberValue(rz); w.WriteEndArray(); }
                 w.WriteStartArray("children"); w.WriteNumberValue(1); w.WriteEndArray();
                 w.WriteEndObject();
             };

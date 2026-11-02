@@ -1,6 +1,6 @@
 using System.Buffers.Binary;
-using System.Globalization;
 using System.Text;
+using static Lapin.Mesh.MeshMath;
 
 namespace Lapin.Mesh;
 
@@ -30,9 +30,6 @@ public static class UsdWriter
     public static List<(int Material, string Path, MeshTexture Texture)> TextureFiles(MeshScene scene) =>
         scene.Materials.Select((m, i) => (m, i)).Where(x => x.m.Texture != null)
             .Select(x => (x.i, $"textures/{Identifier(x.m.Name)}_{x.i}.{(x.m.Texture!.Mime == "image/jpeg" ? "jpg" : "png")}", x.m.Texture!)).ToList();
-
-    static string F(double v) => v.ToString("R", CultureInfo.InvariantCulture);
-    static string F(float v) => (v == 0 ? 0f : v).ToString("R", CultureInfo.InvariantCulture);
 
     static string Quote(string s) => "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "") + "\"";
 
@@ -193,9 +190,7 @@ public static class UsdWriter
 
     static void Extent(StringBuilder o, float[] xyz, string indent)
     {
-        float[] min = [float.MaxValue, float.MaxValue, float.MaxValue], max = [float.MinValue, float.MinValue, float.MinValue];
-        for (var i = 0; i + 2 < xyz.Length; i += 3)
-            for (var k = 0; k < 3; k++) { min[k] = Math.Min(min[k], xyz[i + k]); max[k] = Math.Max(max[k], xyz[i + k]); }
+        var (min, max) = Bounds(xyz);
         o.Append($"{indent}float3[] extent = [({F(min[0])}, {F(min[1])}, {F(min[2])}), ({F(max[0])}, {F(max[1])}, {F(max[2])})]\n");
     }
 

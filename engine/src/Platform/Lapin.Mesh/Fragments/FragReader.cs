@@ -38,7 +38,7 @@ public sealed record FragSpatial(uint? LocalId, string? Category, FragSpatial[] 
 
 /// <summary>A Fragments model as the file holds it, decoded to plain data (docs/fragments.md).</summary>
 public sealed record FragModel(string? Metadata, string[] Guids, uint[] GuidsItems, uint MaxLocalId, uint[] LocalIds, string[] Categories, FragMeshes Meshes,
-    string[][]? Attributes, string[][]? Relations, int[]? RelationsItems, string? Guid, FragSpatial? SpatialStructure, string[]? UniqueAttributes, string[]? RelationNames, int Indexes)
+    string[][]? Attributes, string[][]? Relations, int[]? RelationsItems, string? Guid, FragSpatial? SpatialStructure)
 {
     public JsonObject? MetadataJson
     {
@@ -142,10 +142,7 @@ public static class FragReader
             root.Tables(FragSchema.Model.Relations)?.Select(r => r.Strings(FragSchema.Relation.Data) ?? []).ToArray(),
             root.Ints(FragSchema.Model.RelationsItems),
             root.String(FragSchema.Model.Guid),
-            root.Table(FragSchema.Model.SpatialStructure) is { } sp ? Spatial(sp) : null,
-            root.Strings(FragSchema.Model.UniqueAttributes),
-            root.Strings(FragSchema.Model.RelationNames),
-            root.Tables(FragSchema.Model.Indexes)?.Length ?? 0);
+            root.Table(FragSchema.Model.SpatialStructure) is { } sp ? Spatial(sp) : null);
     }
 
     static FragTransform Transform(byte[] buf, int at)

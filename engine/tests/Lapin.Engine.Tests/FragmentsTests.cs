@@ -262,6 +262,30 @@ public class FragmentsTests
     }
 
     [Fact]
+    public void Identical_vtables_are_written_once_as_the_official_builders_do()
+    {
+        var b = new FlatBuilder();
+        var tables = new List<int>();
+        for (uint i = 0; i < 100; i++)
+        {
+            b.StartObject(FragSchema.Spatial.Fields);
+            b.AddUint(FragSchema.Spatial.LocalId, i + 1);
+            tables.Add(b.EndObject());
+        }
+        var vec = b.CreateOffsetVector(tables);
+        b.StartObject(FragSchema.Spatial.Fields);
+        b.AddOffset(FragSchema.Spatial.Children, vec);
+        var bytes = b.Finish(b.EndObject());
+        var children = FlatTable.Root(bytes).Tables(FragSchema.Spatial.Children)!;
+        Assert.Equal(Enumerable.Range(1, 100).Select(i => (uint)i), children.Select(c => c.Uint(FragSchema.Spatial.LocalId)));
+        // A table of one uint is 8 bytes, its vtable 6: a hundred of them with one vtable, not a hundred.
+        Assert.True(bytes.Length < 100 * 8 + 404 + 64, $"{bytes.Length} bytes");
+        // Lapin's own file still reads as it was written.
+        var m = FragReader.Read(FragWriter.Write(Scene(House()), raw: true));
+        Assert.Equal(4, m.Meshes.MeshesItems.Length);
+    }
+
+    [Fact]
     public void Shells_with_holes_are_noted_once_for_the_whole_import()
     {
         var model = FragReader.Read(FragWriter.Write(Scene(House()), raw: true, modelGuid: "holes"));
