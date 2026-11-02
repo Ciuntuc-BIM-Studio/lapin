@@ -106,7 +106,7 @@ public static class SectionPaths
         return o;
     }
 
-    public static double Length(IReadOnlyList<Vec2> path) => Pieces(path).Sum(p => p.Length);
+    public static double Length(IReadOnlyList<Vec2> path) => Polyline2.Length(path);
 
     /// <summary>
     /// The arc from <paramref name="a"/> through <paramref name="b"/> to <paramref name="c"/> as straight pieces, a step of at most 7.5° (at least 4,

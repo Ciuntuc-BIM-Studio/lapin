@@ -144,20 +144,13 @@ public static class Placement
                     foreach (var k in new[] { "start", "end" })
                     {
                         var q = Args.PointOf(attrs[k]);
-                        if ((curve.IsArc ? curve.Distance(q) : DistToSegment(q, a, b)) < 1e-6) { attrs[k] = J(t.Point(q)); changed = true; }
+                        if ((curve.IsArc ? curve.Distance(q) : Polyline2.SegmentDistance(q, a, b)) < 1e-6) { attrs[k] = J(t.Point(q)); changed = true; }
                     }
                     if (changed) ctx.Replace(partner.With(attrs: attrs));
                 }
         }
         ctx.Replace(e.With(attrs: Carry(e, t)));
         foreach (var r in Riders(m, e).ToList()) ctx.Replace(r.With(attrs: Carry(r, t)));
-    }
-
-    static double DistToSegment(Vec2 p, Vec2 a, Vec2 b)
-    {
-        var d = b - a;
-        var k = Math.Clamp(Vec2.Dot(p - a, d) / Math.Max(Vec2.Dot(d, d), 1e-18), 0, 1);
-        return (p - (a + d * k)).Length;
     }
 
     public static string Copy(ICommandContext ctx, Entity e, Placement2D t)

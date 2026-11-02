@@ -115,7 +115,7 @@ public static class ElementFaces
         if (Polygon2.Contains(ring, at)) return true;
         // On its boundary, within a centimetre.
         for (var i = 0; i < ring.Count; i++)
-            if (SegmentDistance(ring[i], ring[(i + 1) % ring.Count], at) < 0.01) return true;
+            if (Polyline2.SegmentDistance(at, ring[i], ring[(i + 1) % ring.Count]) < 0.01) return true;
         return false;
     }
 
@@ -124,16 +124,8 @@ public static class ElementFaces
     {
         var ring = f.Outline.Select(q => q.Xy).ToList();
         var best = double.MaxValue;
-        for (var i = 0; i < ring.Count; i++) best = Math.Min(best, SegmentDistance(ring[i], ring[(i + 1) % ring.Count], p));
+        for (var i = 0; i < ring.Count; i++) best = Math.Min(best, Polyline2.SegmentDistance(p, ring[i], ring[(i + 1) % ring.Count]));
         return best;
-    }
-
-    public static double SegmentDistance(Vec2 a, Vec2 b, Vec2 p)
-    {
-        var d = b - a;
-        var l2 = Vec2.Dot(d, d);
-        var t = l2 < 1e-18 ? 0 : Math.Clamp(Vec2.Dot(p - a, d) / l2, 0, 1);
-        return (a + d * t - p).Length;
     }
 
     /// <summary>A curve at a height (a curved face's bottom line, an axis, an edge), its outward normal at its middle.</summary>
