@@ -15,7 +15,7 @@ export interface PenDto {
   segments?: number[];
   /** Closed loops, x y x y … each. */
   loops?: number[][];
-  texts?: { x: number; y: number; text: string; height: number; angle: number; anchor: string; baseline: string; bold: boolean; font: string }[];
+  texts?: { x: number; y: number; text: string; height: number; angle: number; anchor: string; baseline: string; bold: boolean; font: string; italic?: boolean }[];
   /** Pictures (an orthophoto): a LapinImage's id, its corners (top left, top right, bottom right, bottom left: x y …), its opacity. */
   images?: { id: string; corners: number[]; opacity: number }[];
   /** On a sheet: the viewport the pen draws for, so the view's pens move alone while it is dragged. */

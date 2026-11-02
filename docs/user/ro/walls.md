@@ -50,6 +50,8 @@ Un tip de perete e un set de straturi, de la fața exterioară la cea interioar�
 
 O schimbare a tipului schimbă toți pereții de acel tip.
 
+**Import…**, **Export CSV** și **Export JSON**, sub lista de tipuri, scot tipurile de pereți și de plăci dintr-un proiect și le duc în altul, sau într-un tabel Excel și înapoi: CSV-ul are câte un rând pe strat (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), rândurile unui tip unul după altul, iar punctul și virgula și virgula zecimală ale Excelului se citesc și ele. La import, un tip cu același nume primește straturile din fișier, iar celelalte se creează, într-un singur pas de anulat; un material pe care proiectul nu-l are se creează după nume. Extrasul **Alcătuirile tipurilor** (Schedules → + → Type assemblies) arată fiecare tip de perete și de placă cu marca, grosimea totală, câte elemente îl folosesc și straturile lui în ordine.
+
 ## Pereți sub acoperiș
 
 Pereții de pe același nivel cu un acoperiș se opresc singuri sub el și urcă până la frontoanele lui. Pentru un perete de pe alt nivel, selectează-l și alege **Arhitectură → Atașează la acoperiș** (<kbd>AR</kbd>), apoi dă clic pe acoperiș, sau pe orice alt corp până la care trebuie să urce peretele: un solid din Studio, un element importat. Vezi [Plăci și acoperișuri](floors-roofs.md).

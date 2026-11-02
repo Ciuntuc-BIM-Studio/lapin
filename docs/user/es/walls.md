@@ -50,6 +50,8 @@ Un tipo de muro es un conjunto de capas, desde la cara exterior hasta la cara in
 
 Un cambio en un tipo cambia todos los muros de ese tipo.
 
+**Import…**, **Export CSV** y **Export JSON**, bajo la lista de tipos, llevan los tipos de muro y de forjado de un proyecto a otro, o a una hoja de cálculo y de vuelta: el CSV tiene una fila por capa (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), las filas de un tipo seguidas, y también se leen el punto y coma y la coma decimal de Excel. Al importar, un tipo del mismo nombre toma las capas del archivo y los demás se crean, en un solo paso que deshacer; un material que el proyecto no tiene se crea por su nombre. La tabla **Composición de los tipos** (Schedules → + → Type assemblies) lista cada tipo de muro y de forjado con su marca, su espesor total, cuántos elementos lo usan y sus capas en orden.
+
 ## Muros bajo una cubierta
 
 Los muros del mismo nivel que una cubierta se detienen bajo ella por sí mismos y suben hasta sus hastiales. Para un muro de otro nivel, selecciónelo y elija **Arquitectura → Enlazar a cubierta** (<kbd>AR</kbd>), y luego haga clic en la cubierta — o en cualquier otro cuerpo hasta el que deba subir el muro: un sólido de Studio, un elemento importado. Consulte [Losas y cubiertas](floors-roofs.md).

@@ -162,7 +162,7 @@ public static class Grids
                         ? new[] { centre + new Vec2(-r, -r), centre + new Vec2(r, -r), centre + new Vec2(r, r), centre + new Vec2(-r, r) }
                         : ViewMark.Circle(centre, r);
                     mk.Polyline(outline, true, "GRID", Pens.Default.Seen, color);
-                    mk.Text(new PenText(centre, axis.Tag, Math.Min(text.Height, axisStyle.Size * 0.55), Baseline: "middle", Bold: text.Bold, Font: text.Font), color);
+                    mk.Text(new PenText(centre, axis.Tag, Math.Min(text.Height, axisStyle.Size * 0.55), Baseline: "middle", Bold: text.Bold, Font: text.Font, Italic: text.Italic), color);
                 }
                 mk.Snaps.AddRange([a, b]);
                 yield return mk;

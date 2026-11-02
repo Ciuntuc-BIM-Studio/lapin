@@ -767,6 +767,8 @@ export const RO: Record<string, string> = {
   "Map": "Mapează",
   "Mapping…": "Se mapează…",
   "Footings": "Fundații",
+  // Layered types in and out of a file (report #52)
+  'Export JSON': 'Exportă JSON', 'Type assemblies': 'Alcătuirile tipurilor', 'The types were exported: one row a layer in the CSV, thicknesses in millimetres.': 'Tipurile au fost exportate: în CSV câte un rând pe strat, grosimile în milimetri.', 'The types were imported: those of the same name changed, the others made, in one step to undo.': 'Tipurile au fost importate: cele cu același nume s-au schimbat, celelalte s-au creat, într-un singur pas de anulat.', 'Wall and floor types from a CSV (Kind, Type, Mark, Layer, Material, Thickness (mm), Core) or a JSON file': 'Tipuri de pereți și de plăci dintr-un CSV (Kind, Type, Mark, Layer, Material, Thickness (mm), Core) sau dintr-un fișier JSON',
 };
 
 /** Phrases with a number or a name in them. */

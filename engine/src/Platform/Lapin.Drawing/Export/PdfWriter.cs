@@ -120,8 +120,10 @@ public static class PdfWriter
         // Along the text and up from its baseline; paper y down, so "up" is −y.
         var x = t.At.X + ox * cos - oy * sin;
         var y = t.At.Y - (ox * sin + oy * cos);
+        // Italic: the text slanted 12° along its baseline (Helvetica-Oblique's lean), the same font's shapes.
+        var k = t.Italic ? Math.Tan(12 * Math.PI / 180) : 0;
         c.Append("BT /").Append(t.Bold ? "F2" : "F1").Append(' ').Append(F(size * Pt)).Append(" Tf ")
-         .Append(F(cos)).Append(' ').Append(F(sin)).Append(' ').Append(F(-sin)).Append(' ').Append(F(cos)).Append(' ')
+         .Append(F(cos)).Append(' ').Append(F(sin)).Append(' ').Append(F(k * cos - sin)).Append(' ').Append(F(k * sin + cos)).Append(' ')
          .Append(X(x)).Append(' ').Append(Y(y)).Append(" Tm (").Append(Encode(t.Text)).Append(") Tj ET\n");
     }
 

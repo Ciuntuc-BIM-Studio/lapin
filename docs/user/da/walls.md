@@ -50,6 +50,8 @@ En vægtype er et sæt lag, fra yderside til inderside. Hvert lag har et materia
 
 En ændring af en type ændrer alle vægge af den type.
 
+**Import…**, **Export CSV** og **Export JSON** under typelisten flytter væg- og dæktyperne fra ét projekt til et andet eller til et regneark og tilbage: CSV-filen har én række pr. lag (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), en types rækker efter hinanden, og Excels semikolonner og decimalkommaer læses også. Ved import får en type med samme navn filens lag, og de øvrige oprettes, i ét trin at fortryde; et materiale, projektet mangler, oprettes ud fra sit navn. Skemaet **Typeopbygninger** (Schedules → + → Type assemblies) viser hver væg- og dæktype med mærke, samlet tykkelse, hvor mange elementer der bruger den, og dens lag i rækkefølge.
+
 ## Vægge under et tag
 
 Vægge på samme niveau som et tag stopper selv under det og går op til dets gavle. For en væg på et andet niveau: markér den og vælg **Arkitektur → Fastgør til tag** (<kbd>AR</kbd>), og klik derefter på taget — eller et hvilket som helst andet legeme, væggen skal gå op til: et Studio-legeme, et importeret element. Se [Dæk og tage](floors-roofs.md).

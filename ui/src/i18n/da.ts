@@ -769,6 +769,8 @@ export const DA: Record<string, string> = {
   "Map": "Tilknyt",
   "Mapping…": "Tilknytter…",
   "Footings": "Fundamenter",
+  // Layered types in and out of a file (report #52)
+  'Export JSON': 'Eksportér JSON', 'Type assemblies': 'Typeopbygninger', 'The types were exported: one row a layer in the CSV, thicknesses in millimetres.': 'Typerne er eksporteret: i CSV-filen én række pr. lag, tykkelserne i millimeter.', 'The types were imported: those of the same name changed, the others made, in one step to undo.': 'Typerne er importeret: dem med samme navn ændret, de øvrige oprettet, i ét trin at fortryde.', 'Wall and floor types from a CSV (Kind, Type, Mark, Layer, Material, Thickness (mm), Core) or a JSON file': 'Væg- og dæktyper fra en CSV (Kind, Type, Mark, Layer, Material, Thickness (mm), Core) eller en JSON-fil',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

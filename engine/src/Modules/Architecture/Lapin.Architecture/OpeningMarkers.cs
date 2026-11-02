@@ -67,7 +67,7 @@ public static class OpeningMarkers
             for (var i = 0; i < lines.Count; i++)
             {
                 var at = end + away * (h * (0.9 + 1.4 * i));
-                mark.Text(new PenText(at, lines[i], style.Height, angle, "middle", "middle", style.Bold, style.Font), color);
+                mark.Text(new PenText(at, lines[i], style.Height, angle, "middle", "middle", style.Bold, style.Font, style.Italic), color);
             }
         }
         Write(b, outward, TagText.Lines(type.Template, c.Model, fill, values));

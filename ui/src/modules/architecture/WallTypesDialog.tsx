@@ -16,6 +16,7 @@ import { materialName, mm, ofClass, relatedOf, typeLayers } from '../../engine/m
 import { LintelRuleEditor } from './LintelRule';
 import { DEFAULT_RULE, type Rule } from './lintels';
 import { MaterialPicker } from '../core/MaterialPicker';
+import { TypeFiles } from './TypeFiles';
 
 interface Row { material: string; thicknessMm: string; core: boolean; fromMm?: string; toMm?: string }
 
@@ -124,6 +125,7 @@ export function WallTypesDialog() {
               </li>
             ))}
             <li><button type="button" className={`tree-item${editing === null ? ' on' : ''}`} onClick={() => setEditing(null)}><Plus size={12} /> New type</button></li>
+            <li><TypeFiles kind="wall" /></li>
           </ul>
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>

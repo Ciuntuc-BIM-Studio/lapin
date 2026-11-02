@@ -50,6 +50,8 @@ Ein Wandtyp ist eine Folge von Schichten, von der Außenseite zur Innenseite. Je
 
 Eine Änderung an einem Typ ändert jede Wand dieses Typs.
 
+**Import…**, **Export CSV** und **Export JSON** unter der Typenliste bringen die Wand- und Deckentypen aus einem Projekt in ein anderes oder in eine Tabellenkalkulation und zurück: die CSV hat eine Zeile je Schicht (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), die Zeilen eines Typs hintereinander, und auch Excels Semikolons und Dezimalkommas werden gelesen. Beim Import bekommt ein gleichnamiger Typ die Schichten der Datei, die übrigen werden angelegt, in einem Schritt rückgängig zu machen; ein Material, das dem Projekt fehlt, wird nach seinem Namen angelegt. Die Liste **Typenaufbauten** (Schedules → + → Type assemblies) zeigt jeden Wand- und Deckentyp mit Kennzeichen, Gesamtdicke, der Zahl der Bauteile, die ihn verwenden, und seinen Schichten der Reihe nach.
+
 ## Wände unter einem Dach
 
 Wände auf derselben Ebene wie ein Dach enden von selbst unter ihm und steigen bis zu seinen Giebeln. Bei einer Wand auf einer anderen Ebene wählen Sie sie aus und wählen **Architektur → An Dach anbinden** (<kbd>AR</kbd>), dann klicken Sie auf das Dach – oder auf einen anderen Körper, bis zu dem die Wand reichen soll: einen Studio-Volumenkörper, ein importiertes Element. Siehe [Decken und Dächer](floors-roofs.md).

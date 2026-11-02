@@ -55,7 +55,7 @@ public static class Tags
             var mk = new ViewMark(t.Id);
             Vec2[] box = [at + new Vec2(-w / 2, -h), at + new Vec2(w / 2, -h), at + new Vec2(w / 2, h), at + new Vec2(-w / 2, h)];
             mk.Polyline(box, true, "TAG", Pens.Default.Hatch, color);
-            mk.Text(new PenText(at, text, style.Height, 0, "middle", "middle", style.Bold, style.Font), color);
+            mk.Text(new PenText(at, text, style.Height, 0, "middle", "middle", style.Bold, style.Font, style.Italic), color);
             if (e != null && Anchor(c.Drawing, e.Id) is { } target && (target - at).Length > h * 1.5)
             {
                 // The leader leaves the box's nearer side.

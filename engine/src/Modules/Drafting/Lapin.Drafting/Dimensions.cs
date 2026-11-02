@@ -382,7 +382,7 @@ public static class Dimensions
                         mk.Line(mid, foot, "DIMENSION", Pens.Default.Hatch, color);
                     }
                 }
-                mk.Text(new PenText(tat, value, text.Height, readable, "middle", baseline, text.Bold, text.Font), color);
+                mk.Text(new PenText(tat, value, text.Height, readable, "middle", baseline, text.Bold, text.Font, text.Italic), color);
                 textAt.Add((JsonNode)J(tat));
             }
             mk.Snaps.AddRange(line);

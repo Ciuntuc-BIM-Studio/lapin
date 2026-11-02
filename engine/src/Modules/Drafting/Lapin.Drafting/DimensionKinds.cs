@@ -120,7 +120,7 @@ public static class DimensionKinds
             var w = Pens.Default.Hatch;
             var mk = new ViewMark(dim.Id);
             void Label(Vec2 at, string s, double angleDeg = 0, string anchor = "middle", string baseline = "bottom") =>
-                mk.Text(new PenText(at, dim.Str("text") is { Length: > 0 } over ? over : s, text.Height, -Standards.ReadableDeg(-angleDeg), anchor, baseline, text.Bold, text.Font), color);
+                mk.Text(new PenText(at, dim.Str("text") is { Length: > 0 } over ? over : s, text.Height, -Standards.ReadableDeg(-angleDeg), anchor, baseline, text.Bold, text.Font, text.Italic), color);
             void Arrow(Vec2 tip, Vec2 dir)
             {
                 var s = style.ArrowSize * mm;

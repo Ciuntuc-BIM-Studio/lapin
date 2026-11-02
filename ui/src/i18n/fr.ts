@@ -769,6 +769,8 @@ export const FR: Record<string, string> = {
   "Map": "Associer",
   "Mapping…": "Association…",
   "Footings": "Fondations",
+  // Layered types in and out of a file (report #52)
+  'Export JSON': 'Exporter en JSON', 'Type assemblies': 'Compositions des types', 'The types were exported: one row a layer in the CSV, thicknesses in millimetres.': 'Les types ont été exportés : dans le CSV une ligne par couche, les épaisseurs en millimètres.', 'The types were imported: those of the same name changed, the others made, in one step to undo.': 'Les types ont été importés : ceux du même nom modifiés, les autres créés, en une seule étape à annuler.', 'Wall and floor types from a CSV (Kind, Type, Mark, Layer, Material, Thickness (mm), Core) or a JSON file': 'Types de murs et de dalles depuis un CSV (Kind, Type, Mark, Layer, Material, Thickness (mm), Core) ou un fichier JSON',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

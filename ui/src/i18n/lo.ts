@@ -840,6 +840,8 @@ export const LO: Record<string, string> = {
   "Map": "ຈັບຄູ່",
   "Mapping…": "ກຳລັງຈັບຄູ່…",
   "Footings": "ຖານຮາກ",
+  // Layered types in and out of a file (report #52)
+  'Export JSON': 'ສົ່ງອອກ JSON', 'Type assemblies': 'ໂຄງສ້າງຂອງປະເພດ', 'The types were exported: one row a layer in the CSV, thicknesses in millimetres.': 'ສົ່ງອອກປະເພດແລ້ວ: ໃນ CSV ໜຶ່ງແຖວຕໍ່ໜຶ່ງຊັ້ນ, ຄວາມໜາເປັນມິນລີແມັດ.', 'The types were imported: those of the same name changed, the others made, in one step to undo.': 'ນຳເຂົ້າປະເພດແລ້ວ: ປະເພດທີ່ມີຊື່ດຽວກັນຖືກປ່ຽນ, ປະເພດອື່ນຖືກສ້າງ, ໃນບາດກ້າວດຽວທີ່ຍົກເລີກໄດ້.', 'Wall and floor types from a CSV (Kind, Type, Mark, Layer, Material, Thickness (mm), Core) or a JSON file': 'ປະເພດຝາ ແລະ ພື້ນຈາກ CSV (Kind, Type, Mark, Layer, Material, Thickness (mm), Core) ຫຼື ໄຟລ໌ JSON',
 };
 
 /** Phrases with a number or a name in them. */

@@ -104,6 +104,16 @@ export const FAQ: Entry[] = [
     source: 'report #42',
   },
   {
+    id: 'tag-text-style',
+    q: ['Can I change the font, size and style of the tags?', 'How do I make the window tags bold or italic?', 'Can the tags match my office text style?'],
+    qRo: ['Pot schimba fontul, mărimea și stilul etichetelor?', 'Cum fac etichetele ferestrelor bold sau italic?', 'Pot pune etichetelor stilul de text al biroului?'],
+    keywords: ['tag', 'tags', 'font', 'size', 'style', 'styles', 'bold', 'italic', 'colour', 'color', 'text', 'marker', 'markers', 'studio', 'eticheta', 'etichete', 'etichetelor', 'marime', 'stil', 'stilul', 'culoare', 'fontul'],
+    a: 'Yes. Manage → Drafting standards → Text: add a text style with its height (paper mm), font (sans, serif or mono), B (bold), I (italic) and colour. Then Tags: choose that style in the Text column of the window\'s or door\'s tag type (its template, the unit and how far the marker reaches are there too). Every tag of that type follows, on screen, on sheets, in the PDF and the DXF.',
+    aRo: 'Da. Manage → Drafting standards → Text: adaugă un stil de text cu înălțimea (mm pe hârtie), fontul (sans, serif sau mono), B (bold), I (italic) și culoarea. Apoi Tags: alege acel stil în coloana Text a tipului de etichetă al ferestrei sau al ușii (tot acolo sunt șablonul, unitatea și cât iese marcajul). Toate etichetele de acel tip îl urmează, pe ecran, pe planșe, în PDF și în DXF.',
+    action: { label: 'Open Drafting standards', labelRo: 'Deschide Drafting standards', run: { kind: 'standards' } },
+    source: 'report #58',
+  },
+  {
     id: 'copy-move',
     q: ['How do I copy a wall?', 'How do I move an element?', 'I drag a wall and nothing happens'],
     qRo: ['Cum copiez un perete?', 'Cum mut un element?', 'Trag de un perete și nu se întâmplă nimic'],

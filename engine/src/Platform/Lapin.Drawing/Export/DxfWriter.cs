@@ -110,13 +110,14 @@ public sealed class DxfWriter(double patternScale = 1)
             "12", Fmt(c.X), "22", Fmt(c.Y), "32", "0", "13", Fmt(c.X), "23", Fmt(c.Y), "33", "0"]);
     }
 
-    /// <summary>A text: its height in drawing units, its rotation (°), aligned left, centre or right.</summary>
-    public void Text(Vec2 at, string value, double height, string layer, double rotation = 0, string align = "left", string? color = null)
+    /// <summary>A text: its height in drawing units, its rotation (°), aligned left, centre or right; slanted (°, italic) when asked.</summary>
+    public void Text(Vec2 at, string value, double height, string layer, double rotation = 0, string align = "left", string? color = null, double oblique = 0)
     {
         var clean = Cp1252(value.Replace("\r", " ").Replace("\n", " ").Trim());
         if (clean.Length == 0 || !(height > 0)) return;
         Head("TEXT", layer, color);
         _out.AddRange(["100", "AcDbText", "10", Fmt(at.X), "20", Fmt(at.Y), "30", "0", "40", Fmt(height), "1", clean, "50", Fmt(rotation), "7", "Standard"]);
+        if (oblique != 0) _out.AddRange(["51", Fmt(oblique)]);
         var h = align == "center" ? 1 : align == "right" ? 2 : 0;
         if (h != 0) _out.AddRange(["72", h.ToString(CultureInfo.InvariantCulture), "11", Fmt(at.X), "21", Fmt(at.Y), "31", "0"]);
         _out.AddRange(["100", "AcDbText"]);
@@ -220,7 +221,7 @@ public sealed class DxfWriter(double patternScale = 1)
                     // DXF texts sit on their baseline; a middle one comes down half its height.
                     var rad = t.Angle * Math.PI / 180;
                     var at = P(t.At) - (t.Baseline == "middle" ? new Vec2(-Math.Sin(rad), Math.Cos(rad)) * (t.Height / 2) : new Vec2(0, 0));
-                    w.Text(at, t.Text, t.Height, layer, t.Angle, t.Anchor switch { "middle" => "center", "end" => "right", _ => "left" }, pen.Stroke);
+                    w.Text(at, t.Text, t.Height, layer, t.Angle, t.Anchor switch { "middle" => "center", "end" => "right", _ => "left" }, pen.Stroke, t.Italic ? 12 : 0);
                 }
             }
         }

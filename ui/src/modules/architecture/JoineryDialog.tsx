@@ -136,7 +136,7 @@ function Mm({ label, value, onChange }: { label: string; value: number; onChange
   useEffect(() => setText(mm(value)), [value]);
   return (
     <label className="field-line"><span className="eyebrow">{label}</span>
-      <input className="num" value={text} onChange={(e) => { setText(e.target.value); const v = Number(e.target.value.replace(',', '.')); if (Number.isFinite(v)) onChange(v / 1000); }} />
+      <input className="num" value={text} onChange={(e) => { setText(e.target.value); const t = e.target.value.trim().replace(',', '.'); const v = Number(t); if (t !== '' && Number.isFinite(v)) onChange(v / 1000); }} />
     </label>
   );
 }
@@ -366,7 +366,13 @@ export function JoineryDialog() {
   }, [spec]);
 
   if (!spec || !catalog) return null;
-  const set = (patch: Partial<Spec>) => setSpec({ ...spec, ...patch });
+  // A name the dialog gave ("Door 900×2100") follows the size as it is typed (report #51); one the user wrote stays.
+  const sizeName = (s: Pick<Spec, 'kind' | 'width' | 'height'>) => `${s.kind === 'door' ? 'Door' : 'Window'} ${Math.round(s.width * 1000)}×${Math.round(s.height * 1000)}`;
+  const set = (patch: Partial<Spec>) => {
+    const next = { ...spec, ...patch };
+    if (('width' in patch || 'height' in patch) && !('name' in patch) && spec.name === sizeName(spec)) next.name = sizeName(next);
+    setSpec(next);
+  };
   const details: Details = spec.details ?? {};
   const setDetails = (patch: Partial<Details>) => set({ details: { ...details, ...patch } });
   const materials = ofClass(model, 'IfcMaterial');

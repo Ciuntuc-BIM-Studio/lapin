@@ -39,7 +39,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
             const size = t.height * pxPerMm;
             if (size < 3) return null;
             return (
-              <text key={k} x={at.x} y={at.y} fontSize={size} fontWeight={t.bold ? 700 : 400}
+              <text key={k} x={at.x} y={at.y} fontSize={size} fontWeight={t.bold ? 700 : 400} fontStyle={t.italic ? 'italic' : undefined}
                 fontFamily={t.font === 'serif' ? 'ui-serif, Georgia, serif' : t.font === 'mono' ? 'ui-monospace, Menlo, monospace' : 'ui-sans-serif, system-ui, sans-serif'}
                 textAnchor={t.anchor === 'start' ? 'start' : t.anchor === 'end' ? 'end' : 'middle'}
                 dominantBaseline={t.baseline === 'middle' ? 'central' : 'alphabetic'}

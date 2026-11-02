@@ -358,7 +358,7 @@ public static class Rooms
         for (var i = 0; i < lines.Count; i++)
         {
             var y = top - step * i;
-            mark.Text(new PenText(new Vec2(at.X, y), lines[i], style.Height, 0, "middle", "middle", style.Bold || i == 0, style.Font), color);
+            mark.Text(new PenText(new Vec2(at.X, y), lines[i], style.Height, 0, "middle", "middle", style.Bold || i == 0, style.Font, style.Italic), color);
             var w = lines[i].Length * h * 0.6;
             width = Math.Max(width, w);
             mark.Line(new Vec2(at.X - w / 2, y), new Vec2(at.X + w / 2, y), "PICK", 0);

@@ -50,6 +50,8 @@ Un type de mur est un ensemble de couches, de la face extérieure à la face int
 
 Un changement apporté à un type change chaque mur de ce type.
 
+**Import…**, **Export CSV** et **Export JSON**, sous la liste des types, font passer les types de murs et de dalles d’un projet à un autre, ou vers un tableur et retour : le CSV a une ligne par couche (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), les lignes d’un type à la suite, et les points-virgules et virgules décimales d’Excel sont lus aussi. À l’import, un type du même nom prend les couches du fichier et les autres sont créés, en une seule étape à annuler ; un matériau que le projet n’a pas est créé d’après son nom. La nomenclature **Compositions des types** (Schedules → + → Type assemblies) liste chaque type de mur et de dalle avec son repère, son épaisseur totale, le nombre d’éléments qui l’utilisent et ses couches dans l’ordre.
+
 ## Murs sous un toit
 
 Les murs du même niveau qu’un toit s’arrêtent d’eux-mêmes dessous et montent jusqu’à ses pignons. Pour un mur d’un autre niveau, sélectionnez-le et choisissez **Architecture → Attacher au toit** (<kbd>AR</kbd>), puis cliquez le toit — ou tout autre corps jusqu’auquel le mur doit monter : un solide Studio, un élément importé. Voir [Dalles et toits](floors-roofs.md).

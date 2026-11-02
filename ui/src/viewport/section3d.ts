@@ -146,7 +146,7 @@ export function textQuad(t: DrawingText, scale: number | undefined, width: numbe
 /** A text's font on the canvas, as the 2D drawing's (DrawingLayer) at `px` pixels to the em. */
 export function textFont(t: DrawingText, px: number): string {
   const family = t.font === 'serif' ? 'ui-serif, Georgia, serif' : t.font === 'mono' ? 'ui-monospace, Menlo, monospace' : 'ui-sans-serif, system-ui, sans-serif';
-  return `${t.bold ? 700 : 400} ${px}px ${family}`;
+  return `${t.italic ? 'italic ' : ''}${t.bold ? 700 : 400} ${px}px ${family}`;
 }
 
 /** A loop's x y pairs as points. */

@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Drawing;
+using Lapin.Drawing.Export;
 using Lapin.Drawing.Views;
 using Lapin.Geometry;
 using Lapin.Model;
@@ -130,5 +131,36 @@ public sealed class OpeningMarkerTests
         Assert.Equal("1200", TagText.Length(1.2, "mm"));
         Assert.Equal("1.20", TagText.Length(1.2, "m"));
         Assert.Equal("87.5", TagText.Length(0.875, "cm"));
+    }
+
+    [Fact]
+    public void A_marker_takes_its_tag_type_s_text_style_italic_included_on_screen_on_paper_and_in_dxf()
+    {
+        // Report #58: the studio's style for tags, bold italic and blue, given to the window's tag type.
+        var (f, _, _, _, plan) = Project();
+        f.Run("standards.set", new JsonObject { ["kind"] = "text", ["entry"] = new JsonObject { ["id"] = "studio", ["name"] = "Studio", ["height"] = 3.5, ["font"] = "serif", ["bold"] = true, ["italic"] = true, ["color"] = "#1f4e9a" } });
+        f.Run("standards.set", new JsonObject { ["kind"] = "tag", ["entry"] = new JsonObject { ["id"] = "window", ["textStyle"] = "studio" } });
+        f.Run("architecture.tagOpenings", new JsonObject { ["viewId"] = plan });
+        var r = Render(f, plan);
+        var styled = r.Pens.Where(p => p.Texts.Count > 0 && p.Stroke == "#1f4e9a").SelectMany(p => p.Texts).ToList();
+        Assert.NotEmpty(styled);
+        Assert.All(styled, t => { Assert.True(t.Bold); Assert.True(t.Italic); Assert.Equal("serif", t.Font); Assert.Equal(3.5, t.Height, 9); });
+        Assert.True((bool)styled[0].ToJson()["italic"]!);
+        // The door's tag keeps the standard style, upright.
+        Assert.Contains(Texts(r), t => !t.Italic);
+        Assert.False(Texts(r).First(t => !t.Italic).ToJson().ContainsKey("italic"));
+
+        // On paper: the italic text slanted 12° in its text matrix; in DXF, its oblique angle (group 51).
+        var pen = new Pen("TEXT", "#000000", 0.18, null, null);
+        pen.Texts.Add(new PenText(new Vec2(10, 10), "1.300", 3, Italic: true));
+        var pdf = PdfWriter.Write([new PaperPage(100, 100, [pen])]);
+        var text = System.Text.Encoding.Latin1.GetString(pdf);
+        var at = text.IndexOf("stream\n", StringComparison.Ordinal) + 7;
+        var length = int.Parse(System.Text.RegularExpressions.Regex.Match(text, @"/Length (\d+) /Filter /FlateDecode").Groups[1].Value);
+        using var z = new System.IO.Compression.ZLibStream(new MemoryStream(pdf, at, length), System.IO.Compression.CompressionMode.Decompress);
+        var content = new StreamReader(z, System.Text.Encoding.Latin1).ReadToEnd();
+        Assert.Matches(@"Tf 1 0 0\.213 1 ", content);
+        var dxf = System.Text.Encoding.Latin1.GetString(DxfWriter.Page(new PaperPage(100, 100, [pen]), "test"));
+        Assert.Matches(@"\n *51\r?\n12(\.0+)?\r?\n", dxf);
     }
 }

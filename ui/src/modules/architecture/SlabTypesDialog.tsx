@@ -6,6 +6,7 @@ import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { materialName, mm, ofClass, relatedOf, typeLayers } from '../../engine/model';
 import { MaterialPicker } from '../core/MaterialPicker';
+import { TypeFiles } from './TypeFiles';
 
 interface Row { material: string; thicknessMm: string; core: boolean }
 const blank = (): Row[] => [{ material: 'Floor finish', thicknessMm: '20', core: false }, { material: 'Screed', thicknessMm: '50', core: false }, { material: 'Reinforced concrete', thicknessMm: '150', core: true }];
@@ -52,6 +53,7 @@ export function SlabTypesDialog() {
               <li key={t.id}><button type="button" className={`tree-item${editing === t.id ? ' on' : ''}`} onClick={() => setEditing(t.id)}>{t.name}<span className="muted small"> · {relatedOf(model, t.id, 'IfcRelDefinesByType').length}</span></button></li>
             ))}
             <li><button type="button" className={`tree-item${editing === null ? ' on' : ''}`} onClick={() => setEditing(null)}><Plus size={12} /> New type</button></li>
+            <li><TypeFiles kind="floor" /></li>
           </ul>
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>

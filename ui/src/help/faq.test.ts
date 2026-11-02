@@ -15,6 +15,7 @@ describe('Ask Lapin', () => {
     expect(best('Mansard roof looks odd, gable walls not cut')).toBe('roof-gables');
     expect(best("I can't seem to move the ground from one level to another, even though I changed it's placement in the properties menu. I also tried to move it manually, and didn't work")).toBe('terrain-height');
     expect(best('I expected to be able to edit the column type that I created. I typed a dimension wrong and wanted to corect the mistake.')).toBe('edit-structure-type');
+    expect(best("is it possible to edit the text font and size and style of the tags ( matching the studio's styles). i have attached an online reference of what i expected.")).toBe('tag-text-style');
     expect(best("I can't figure out how to make Levels invisible in 3D view so that I can navigate around in 3D. At the moment I can only watch the whole building at once.")).toBe('storeys-3d');
   });
 
