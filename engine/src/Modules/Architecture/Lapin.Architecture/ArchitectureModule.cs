@@ -521,12 +521,6 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return new JsonObject { ["kind"] = join.Kind.ToString(), ["style"] = join.Style == JoinStyle.Mitre ? "mitre" : "butt" };
         });
 
-        r.Command("unjoinWalls", "Unjoin walls", (ctx, a) =>
-        {
-            Joins.Unjoin(ctx, (string?)a["a"] ?? "", (string?)a["b"] ?? "");
-            return null;
-        });
-
         r.Command("restyleJoins", "Join style", (ctx, a) =>
         {
             var swap = a["swap"] is JsonValue v && v.TryGetValue<bool>(out var sw) && sw;

@@ -60,15 +60,6 @@ public static class LintelProducts
             return new JsonObject { ["added"] = products.Count, ["skipped"] = new JsonArray(skipped.Select(s => (JsonNode)s).ToArray()) };
         });
 
-        r.Command("removeLintelProduct", "Remove lintel product", (ctx, a) =>
-        {
-            var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
-            var attrs = project.CloneAttrs();
-            attrs["lintelProducts"] = new JsonArray(Of(ctx.Model).Where(p => p.Code != (string?)a["code"]).Select(p => (JsonNode)JsonSerializer(p)).ToArray());
-            ctx.Replace(project.With(attrs: attrs));
-            return null;
-        });
-
         r.Query("architecture.lintelProducts", (q, _) => new JsonArray(Of(q.Model).Select(p => (JsonNode)JsonSerializer(p)).ToArray()));
     }
 
