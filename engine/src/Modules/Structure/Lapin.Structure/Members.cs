@@ -123,7 +123,13 @@ public static class Beams
     /// height reaches the beam's (<see cref="Columns.Spec"/>, its storey's
     /// elevation and its base offset) and whose footprint the axis crosses.
     /// </summary>
-    public static BeamSpan SpanOf(IModelView m, Entity beam)
+    public static BeamSpan SpanOf(IModelView m, Entity beam) => Spans.Get(beam, m, v => Solve(v, beam));
+
+    /// <summary>Every beam's span, once per revision with what it read: its body, its envelope (asked by every element it may cut), its faces, its stirrups and its quantities ask.</summary>
+    static readonly RevisionCache<BeamSpan> Spans = new();
+    static readonly RevisionCache<Solid?> Envelopes = new();
+
+    static BeamSpan Solve(IModelView m, Entity beam)
     {
         var c = PathCurve.Of(beam);
         var length = c.Length;
@@ -223,7 +229,9 @@ public static class Beams
     }
 
     /// <summary>The body a beam cuts with (a wall's head under it): between the column faces, like the body itself.</summary>
-    public static Solid? Envelope(Entity beam, IModelView m)
+    public static Solid? Envelope(Entity beam, IModelView m) => Envelopes.Get(beam, m, v => SolveEnvelope(beam, v));
+
+    static Solid? SolveEnvelope(Entity beam, IModelView m)
     {
         if (Frame(beam, m) is not { } f) return null;
         var span = SpanOf(m, beam);
