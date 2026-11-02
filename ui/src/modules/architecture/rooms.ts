@@ -28,8 +28,14 @@ export interface Schemes {
 export function useSchemes(viewId?: string | null): [Schemes | null, () => void] {
   const nodes = useSession((s) => s.nodes);
   const [s, setS] = useState<Schemes | null>(null);
-  const read = useCallback(() => void query<Schemes>('architecture.colorSchemes', viewId ? { viewId } : {}).then((r) => r && setS(r)), [viewId]);
-  useEffect(read, [read, nodes]);
+  const ask = useCallback(() => query<Schemes>('architecture.colorSchemes', viewId ? { viewId } : {}), [viewId]);
+  const read = useCallback(() => void ask().then((r) => r && setS(r)), [ask]);
+  // Read again on every diff; an answer that arrives after the next question (or for another view) is dropped.
+  useEffect(() => {
+    let live = true;
+    void ask().then((r) => { if (live && r) setS(r); });
+    return () => { live = false; };
+  }, [ask, nodes]);
   return [s, read];
 }
 
@@ -66,5 +72,3 @@ export const roomRefs = (node: NodeDto): RefLine[] => {
   return outline.length >= 3 ? [outlineRef(outline)] : [];
 };
 
-/** The value a room has for a scheme's field. */
-export const valueOf = (node: NodeDto, by: string): string => (by === 'name' ? node.name : typeof node.props[by] === 'string' || typeof node.props[by] === 'number' ? String(node.props[by]).trim() : '');

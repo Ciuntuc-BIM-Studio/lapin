@@ -18,6 +18,7 @@ import { ofClass, relatedOf } from '../../engine/model';
 import { Mm, MmList, Num } from './fields';
 import { setSiteWorks, useSiteWorks, type FormworkKind } from './prefs';
 import { openingType } from './typeChoice';
+import { deleteType } from '../core/deleteType';
 
 interface PropSize { name: string; min: number; max: number }
 interface Row { thickness: number; secondary: number; primary: number; prop: number }
@@ -211,7 +212,7 @@ export function FormworkDialog() {
             </div>
             <div className="row joinery-actions">
               <span className="grow" />
-              {editing && <button type="button" className="btn" title="Delete the type (refused while formwork uses it)" onClick={() => void execute('element.delete', { id: editing }).then((r) => { if (r !== null) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
+              {editing && <button type="button" className="btn" title="Delete the type (refused while formwork uses it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
               {editing && <button type="button" className="btn" onClick={() => setSiteWorks({ formworkTypeId: editing, formworkKind: kind })}>Use it</button>}
               <button type="button" className="btn primary" onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>
             </div>

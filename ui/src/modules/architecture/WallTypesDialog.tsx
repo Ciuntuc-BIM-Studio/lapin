@@ -12,40 +12,45 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { materialName, mm, ofClass, relatedOf, typeLayers } from '../../engine/model';
+import { materialName, ofClass, relatedOf, typeLayers } from '../../engine/model';
+import { formatLength } from '../../engine/unitsStore';
+import { LengthField, NumberField } from '../../shell/cells';
 import { LintelRuleEditor } from './LintelRule';
 import { DEFAULT_RULE, type Rule } from './lintels';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { TypeFiles } from './TypeFiles';
+import { deleteType } from '../core/deleteType';
 
-interface Row { material: string; thicknessMm: string; core: boolean; fromMm?: string; toMm?: string }
+/** A layer as the editor holds it: lengths in metres; from and to null for the whole height. */
+interface Row { material: string; thickness: number; core: boolean; from: number | null; to: number | null }
 
-/** A zone as the editor holds it: heights and blocks in mm, as typed. */
-interface ZoneRow { key: string; name: string; role: string; heightMm: string; rest: boolean; material: string; block: string; rebar: string }
+/** A block's length, height and joint, in metres. */
+type Block = { length: number; height: number; joint: number };
+
+/** A zone as the editor holds it: lengths in metres. */
+interface ZoneRow { key: string; name: string; role: string; height: number; rest: boolean; material: string; block: Block | null; rebar: number | null }
 
 const ROLES = [['masonry', 'Masonry'], ['concrete', 'Concrete'], ['ringBeam', 'Ring beam']] as const;
 
-type ZoneJson = { key?: string; name: string; role: string; height: number | 'rest'; material: string; color?: string; block?: { length: number; height: number; joint: number }; rebar?: number };
+type ZoneJson = { key?: string; name: string; role: string; height: number | 'rest'; material: string; color?: string; block?: Block; rebar?: number };
 
 const toRow = (z: ZoneJson, materialOf: (id: string) => string): ZoneRow => ({
-  key: z.key ?? '', name: z.name, role: z.role, rest: z.height === 'rest', heightMm: z.height === 'rest' ? '' : mm(z.height),
-  material: materialOf(z.material), block: z.block ? `${mm(z.block.length)} × ${mm(z.block.height)} / ${mm(z.block.joint)}` : '', rebar: z.rebar ? String(z.rebar) : '',
+  key: z.key ?? '', name: z.name, role: z.role, rest: z.height === 'rest', height: z.height === 'rest' ? 0 : z.height,
+  material: materialOf(z.material), block: z.block ?? null, rebar: z.rebar ?? null,
 });
 
-/** "375 × 238 / 10" → the block in metres; empty: none. */
-function parseBlock(text: string): { length: number; height: number; joint: number } | undefined {
-  const n = text.match(/[\d.,]+/g)?.map((x) => Number(x.replace(',', '.')) / 1000) ?? [];
-  return n.length >= 2 ? { length: n[0], height: n[1], joint: n[2] ?? 0 } : undefined;
-}
+/** The block a first typed size starts from: the usual length, height and joint. */
+const DEFAULT_BLOCK: Block = { length: 0.375, height: 0.238, joint: 0.01 };
 
 const fromRow = (r: ZoneRow) => ({
   ...(r.key ? { key: r.key } : {}), name: r.name.trim(), role: r.role, material: r.material.trim(),
-  height: r.rest ? 'rest' : Number(r.heightMm.replace(',', '.')) / 1000,
-  ...(r.role === 'masonry' && parseBlock(r.block) ? { block: parseBlock(r.block) } : {}),
-  ...(r.role !== 'masonry' && r.rebar.trim() ? { rebar: Number(r.rebar.replace(',', '.')) } : {}),
+  height: r.rest ? 'rest' : r.height,
+  ...(r.role === 'masonry' && r.block ? { block: r.block } : {}),
+  ...(r.role !== 'masonry' && r.rebar ? { rebar: r.rebar } : {}),
 });
 
-const blank = (): Row[] => [{ material: 'Render', thicknessMm: '20', core: false }, { material: 'Brick', thicknessMm: '250', core: true }, { material: 'Plaster', thicknessMm: '15', core: false }];
+const layer = (material: string, thickness: number, core = false): Row => ({ material, thickness, core, from: null, to: null });
+const blank = (): Row[] => [layer('Render', 0.02), layer('Brick', 0.25, true), layer('Plaster', 0.015)];
 
 export function WallTypesDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -72,7 +77,7 @@ export function WallTypesDialog() {
     if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); return; }
     setLintels((t.props.lintels as unknown as Rule | undefined) ?? DEFAULT_RULE);
     setName(t.name);
-    setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thicknessMm: mm(l.thickness), core: l.core === true, fromMm: l.from ? mm(l.from) : '', toMm: l.to ? mm(l.to) : '' })));
+    setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thickness: l.thickness, core: l.core === true, from: l.from || null, to: l.to || null })));
     const stored = Array.isArray(t.props.zones) ? (t.props.zones as unknown as ZoneJson[]) : [];
     setZones(stored.map((z) => toRow(z, (id) => materialName(model, id))));
   }, [editing]);
@@ -86,10 +91,10 @@ export function WallTypesDialog() {
     [next[i], next[j]] = [next[j], next[i]];
     setRows(next);
   };
-  const total = rows.reduce((s, r) => s + (Number(r.thicknessMm.replace(',', '.')) || 0), 0);
+  const total = rows.reduce((s, r) => s + r.thickness, 0);
   // A layer's own height (report #44): from and up to, over the wall's base; empty, the whole height.
-  const height = (t?: string) => { const v = Number((t ?? '').replace(',', '.')); return t && t.trim() !== '' && v > 0 ? v / 1000 : null; };
-  const layers = rows.map((r) => ({ material: r.material.trim(), thickness: Number(r.thicknessMm.replace(',', '.')) / 1000, core: r.core, from: height(r.fromMm), to: height(r.toMm) }));
+  const height = (v: number | null) => (v != null && v > 0 ? v : null);
+  const layers = rows.map((r) => ({ material: r.material.trim(), thickness: r.thickness, core: r.core, from: height(r.from), to: height(r.to) }));
 
   const zoneJson = zones.map(fromRow);
   const setZone = (i: number, patch: Partial<ZoneRow>) => setZones(zones.map((z, k) => (k === i ? { ...z, ...patch } : patch.rest ? { ...z, rest: false } : z)));
@@ -131,15 +136,15 @@ export function WallTypesDialog() {
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
             <p className="muted small">Layers from the face right of the drawn direction to the left face. The core carries the wall's axis.</p>
             <table className="layer-edit">
-              <thead><tr><th>Material</th><th>mm</th><th>Core</th><th title="How high the layer goes over the wall's base; empty: the whole height">From</th><th title="How high the layer goes over the wall's base; empty: the whole height">Up to</th><th /></tr></thead>
+              <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th title="How high the layer goes over the wall's base; empty: the whole height">From</th><th title="How high the layer goes over the wall's base; empty: the whole height">Up to</th><th /></tr></thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
                     <td><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /></td>
-                    <td><input className="num" value={r.thicknessMm} onChange={(e) => set(i, { thicknessMm: e.target.value })} /></td>
+                    <td className="num"><LengthField metres={r.thickness} min={0} onCommit={(m) => { if (m != null) set(i, { thickness: m }); }} /></td>
                     <td><input type="radio" name="core" checked={r.core} onChange={() => set(i, { core: true })} /></td>
-                    <td><input className="num layer-height" data-field="layer-from" value={r.fromMm ?? ''} placeholder="0" disabled={r.core} onChange={(e) => set(i, { fromMm: e.target.value })} /></td>
-                    <td><input className="num layer-height" data-field="layer-to" value={r.toMm ?? ''} placeholder="top" disabled={r.core} onChange={(e) => set(i, { toMm: e.target.value })} /></td>
+                    <td><LengthField className="layer-height" testId="layer-from" metres={r.from} placeholder="0" readOnly={r.core} noUnit blank min={0} onCommit={(m) => set(i, { from: m })} /></td>
+                    <td><LengthField className="layer-height" testId="layer-to" metres={r.to} placeholder="top" readOnly={r.core} noUnit blank min={0} onCommit={(m) => set(i, { to: m })} /></td>
                     <td className="row-tools">
                       <button type="button" className="icon mini" title="Up" onClick={() => move(i, -1)}><ArrowUp size={12} /></button>
                       <button type="button" className="icon mini" title="Down" onClick={() => move(i, 1)}><ArrowDown size={12} /></button>
@@ -147,7 +152,7 @@ export function WallTypesDialog() {
                     </td>
                   </tr>
                 ))}
-                <tr className="total"><td>Total</td><td className="num">{Math.round(total)}</td><td colSpan={4} /></tr>
+                <tr className="total"><td>Total</td><td className="num">{formatLength(total)}</td><td colSpan={4} /></tr>
               </tbody>
             </table>
             <div className="row">
@@ -160,18 +165,21 @@ export function WallTypesDialog() {
             </div>
             {zones.length > 0 && (
               <table className="layer-edit zones">
-                <thead><tr><th>Zone</th><th>Role</th><th>mm</th><th>Rest</th><th>Material</th><th>Block L × H / joint · kg/m³</th><th /></tr></thead>
+                <thead><tr><th>Zone</th><th>Role</th><th>Height</th><th>Rest</th><th>Material</th><th>Block L × H / joint · kg/m³</th><th /></tr></thead>
                 <tbody>
                   {zones.map((z, i) => (
                     <tr key={i}>
                       <td><input value={z.name} onChange={(e) => setZone(i, { name: e.target.value })} /></td>
                       <td><select value={z.role} onChange={(e) => setZone(i, { role: e.target.value })}>{ROLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></td>
-                      <td><input className="num" disabled={z.rest} value={z.heightMm} onChange={(e) => setZone(i, { heightMm: e.target.value })} /></td>
+                      <td className="num"><LengthField metres={z.rest ? null : z.height} readOnly={z.rest} min={0} onCommit={(m) => { if (m != null) setZone(i, { height: m }); }} /></td>
                       <td><input type="radio" name="rest" checked={z.rest} onChange={() => setZone(i, { rest: true })} /></td>
                       <td><MaterialPicker value={z.material} onChange={(material) => setZone(i, { material })} allowEmpty placeholder="the layer's" /></td>
                       <td>{z.role === 'masonry'
-                        ? <input placeholder="375 × 238 / 10" value={z.block} onChange={(e) => setZone(i, { block: e.target.value })} />
-                        : <input placeholder="100" value={z.rebar} onChange={(e) => setZone(i, { rebar: e.target.value })} />}</td>
+                        ? <span className="block-size">{(['length', 'height', 'joint'] as const).map((k) => (
+                          <LengthField key={k} className="layer-height" metres={z.block?.[k]} placeholder={formatLength(DEFAULT_BLOCK[k])} noUnit={k !== 'joint'} min={0}
+                            title={k === 'length' ? 'Block length' : k === 'height' ? 'Block height' : 'Joint'}
+                            onCommit={(m) => { if (m != null) setZone(i, { block: { ...(z.block ?? DEFAULT_BLOCK), [k]: m } }); }} />))}</span>
+                        : <NumberField value={z.rebar} placeholder="100" suffix="kg/m³" min={0} blank onCommit={(n) => setZone(i, { rebar: n })} />}</td>
                       <td className="row-tools">
                         <button type="button" className="icon mini" title="Remove" onClick={() => setZones(zones.filter((_, k) => k !== i))}><Trash2 size={12} /></button>
                       </td>
@@ -181,11 +189,11 @@ export function WallTypesDialog() {
               </table>
             )}
             <LintelRuleEditor rule={lintels} onChange={(r) => setLintels(r ?? DEFAULT_RULE)} />
-            {zones.length > 0 && <button type="button" className="btn" onClick={() => setZones([...zones, { key: '', name: 'Zone', role: 'masonry', heightMm: '250', rest: false, material: 'Brick', block: '', rebar: '' }])}><Plus size={14} />Zone</button>}
+            {zones.length > 0 && <button type="button" className="btn" onClick={() => setZones([...zones, { key: '', name: 'Zone', role: 'masonry', height: 0.25, rest: false, material: 'Brick', block: null, rebar: null }])}><Plus size={14} />Zone</button>}
             <div className="row">
-              <button type="button" className="btn" onClick={() => setRows([...rows, { material: 'Plaster', thicknessMm: '15', core: false }])}><Plus size={14} />Layer</button>
+              <button type="button" className="btn" onClick={() => setRows([...rows, layer('Plaster', 0.015)])}><Plus size={14} />Layer</button>
               <span className="grow" />
-              {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void execute('element.delete', { id: editing }).then((r) => { if (r !== null) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
+              {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
               {editing && <button type="button" className="btn" onClick={() => use(editing)}>Draw with it</button>}
               <button type="button" className="btn primary" onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>
             </div>

@@ -14,6 +14,7 @@ import { ofClass, typeLayers } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { describeType } from './describe';
 import { structureHooks } from './hooks';
+import { deleteType } from '../core/deleteType';
 
 const mmToM = (t: string) => Number(t.replace(',', '.')) / 1000;
 const mToMm = (m: unknown) => String(Math.round(Number(m ?? 0) * 10000) / 10);
@@ -112,7 +113,7 @@ export function StructureTypesDialog() {
             <ul className="type-list">
               {list.map((t) => (
                 <li key={t.id} className={`tree-item${editing === t.id ? ' on' : ''}`} title="Click to change the type; its elements follow." onClick={() => pick(t)}>{t.name}<span className="muted small"> · {describeType(t)}</span>
-                  <button type="button" className="icon mini" title="Delete the type (refused while elements use it)" onClick={(e) => { e.stopPropagation(); if (editing === t.id) fresh(); void execute('element.delete', { id: t.id }); }}><Trash2 size={11} /></button>
+                  <button type="button" className="icon mini" title="Delete the type (refused while elements use it)" onClick={(e) => { e.stopPropagation(); void deleteType(t.id).then((ok) => { if (ok && editing === t.id) fresh(); }); }}><Trash2 size={11} /></button>
                 </li>
               ))}
             </ul>

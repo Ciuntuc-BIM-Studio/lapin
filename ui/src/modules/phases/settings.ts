@@ -13,7 +13,11 @@ export interface PhaseSettingsDto {
 export function usePhaseSettings(): PhaseSettingsDto | null {
   const nodes = useSession((s) => s.nodes);
   const [s, setS] = useState<PhaseSettingsDto | null>(null);
-  useEffect(() => { void query<PhaseSettingsDto>('phases.settings').then((r) => r && setS(r)); }, [nodes]);
+  useEffect(() => {
+    let live = true;
+    void query<PhaseSettingsDto>('phases.settings').then((r) => { if (live && r) setS(r); });
+    return () => { live = false; };
+  }, [nodes]);
   return s;
 }
 

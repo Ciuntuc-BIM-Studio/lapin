@@ -185,6 +185,7 @@ const attachRoof: ToolDef = {
     if (!entity) return;
     if (!ids.length) { notify('Select the walls first, then click the roof, or any body over them, they go up to.'); return; }
     await execute('architecture.attachToRoof', { ids, roofIds: [entity.id] });
+    if (useSession.getState().error) return;
     notify(entity.type === 'IfcRoof' ? `${ids.length} wall(s) attached to the roof.` : `${ids.length} wall(s) rise to the underside of ${entity.name}.`);
   },
 };
@@ -194,7 +195,7 @@ const detachRoof: ToolDef = {
   run: () => {
     const ids = useUi.getState().selected.filter((id) => useSession.getState().nodes.get(id)?.type === 'IfcWall');
     if (!ids.length) { notify('Select the walls to detach from the roof.'); return; }
-    void execute('architecture.detachFromRoof', { ids }).then(() => notify(`${ids.length} wall(s) keep their own height.`));
+    void execute('architecture.detachFromRoof', { ids }).then(() => { if (!useSession.getState().error) notify(`${ids.length} wall(s) keep their own height.`); });
   },
 };
 const wallTypes: ToolDef = { id: 'architecture.wallTypes', label: 'Wall types', icon: WallTypesIcon, run: () => useUi.setState({ dialog: 'wallTypes' }) };

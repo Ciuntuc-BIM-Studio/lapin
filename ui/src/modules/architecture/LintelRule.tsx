@@ -2,7 +2,7 @@
  * A lintel rule, as the wall types dialog and the configurator edit it:
  * none, precast (a product of the project's catalogue, a catalogue length
  * centred over the bearings) or cast in place, with the bearing past each
- * side and the height (mm); then, opened, the other side's bearing, the
+ * side and the height; then, opened, the other side's bearing, the
  * narrowest opening that gets one, its width across the wall and where it
  * sits, pieces side by side, its material, and a cast lintel's
  * reinforcement. The configurator adds "as the wall" (no rule of its own).
@@ -13,22 +13,18 @@ import { ChevronDown, ChevronRight, FileUp } from 'lucide-react';
 import { mm } from '../../engine/model';
 import { execute, query, useSession } from '../../engine/session';
 import { notify } from '../../app/store';
+import { LengthField, NumberField } from '../../shell/cells';
 import { DEFAULT_RULE, type Product, type Rule } from './lintels';
 import { MaterialPicker } from '../core/MaterialPicker';
 
+/** A length of the rule (the shared field); with `empty`, clearing it means that default (null). */
 function MmInput({ value, onChange, empty }: { value: number | null | undefined; onChange: (m: number | null) => void; empty?: string }) {
-  const [text, setText] = useState(value == null ? '' : mm(value));
-  useEffect(() => setText(value == null ? '' : mm(value)), [value]);
-  return <input className="num" placeholder={empty} value={text} onChange={(e) => {
-    setText(e.target.value);
-    if (e.target.value.trim() === '' && empty) { onChange(null); return; }
-    const v = Number(e.target.value.replace(',', '.'));
-    if (Number.isFinite(v) && v >= 0) onChange(v / 1000);
-  }} />;
+  return <LengthField metres={value} placeholder={empty} blank={empty != null} min={0} style={{ width: 64 }} onCommit={onChange} />;
 }
 
-function NumInput({ value, onChange, step = 1 }: { value: number | null | undefined; onChange: (n: number | null) => void; step?: number }) {
-  return <input className="num" type="number" step={step} min={0} value={value ?? ''} onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))} />;
+/** A count of the rule (the shared field): empty means none. */
+function NumInput({ value, onChange }: { value: number | null | undefined; onChange: (n: number | null) => void }) {
+  return <NumberField value={value} blank integer min={0} style={{ width: 48 }} onCommit={onChange} />;
 }
 
 /** A CSV the user picks: its text. */
@@ -48,7 +44,11 @@ export function LintelRuleEditor({ rule, onChange, inherit }: { rule: Rule | nul
   const [open, setOpen] = useState(false);
   const nodes = useSession((s) => s.nodes);
   const [products, setProducts] = useState<Product[]>([]);
-  useEffect(() => { void query<Product[]>('architecture.lintelProducts').then((p) => p && setProducts(p)); }, [nodes]);
+  useEffect(() => {
+    let live = true;
+    void query<Product[]>('architecture.lintelProducts').then((p) => { if (live && p) setProducts(p); });
+    return () => { live = false; };
+  }, [nodes]);
   const set = (patch: Partial<Rule>) => rule && onChange({ ...rule, ...patch });
   const reinf = rule?.reinforcement ?? {};
   const importCsv = async () => {
@@ -70,7 +70,6 @@ export function LintelRuleEditor({ rule, onChange, inherit }: { rule: Rule | nul
         {rule && rule.mode !== 'none' && <>
           <span className="muted small">bearing</span><MmInput value={rule.bearing} onChange={(v) => set({ bearing: v ?? 0 })} />
           {!(rule.mode === 'precast' && rule.product) && <><span className="muted small">height</span><MmInput value={rule.height} onChange={(v) => set({ height: v ?? 0 })} /></>}
-          <span className="muted small">mm</span>
           <button type="button" className="icon mini" title="More: product, width, pieces, reinforcement" onClick={() => setOpen(!open)}>{open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</button>
         </>}
       </div>
@@ -86,7 +85,7 @@ export function LintelRuleEditor({ rule, onChange, inherit }: { rule: Rule | nul
             </label>
           )}
           <label className="row"><span className="muted small">Bearing, other side</span><MmInput value={rule.bearingEnd} empty="same" onChange={(v) => set({ bearingEnd: v })} /></label>
-          <label className="row"><span className="muted small">Only openings from</span><MmInput value={rule.minWidth} empty="any" onChange={(v) => set({ minWidth: v })} /><span className="muted small">mm wide</span></label>
+          <label className="row"><span className="muted small">Only openings from</span><MmInput value={rule.minWidth} empty="any" onChange={(v) => set({ minWidth: v })} /><span className="muted small">wide</span></label>
           {!(rule.mode === 'precast' && rule.product) && <label className="row"><span className="muted small">Width across</span><MmInput value={rule.width} empty="the core" onChange={(v) => set({ width: v })} /></label>}
           <label className="row"><span className="muted small">Sits</span>
             <select value={rule.placement ?? ''} onChange={(e) => set({ placement: e.target.value || null })}><option value="">centred</option><option value="outer">at the outer face</option><option value="inner">at the inner face</option></select>

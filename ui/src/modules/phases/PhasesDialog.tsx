@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
+import { PendingDialog } from '../core/PendingDialog';
 import { usePhaseSettings } from './settings';
 
 export function PhasesDialog() {
   const s = usePhaseSettings();
   const error = useSession((st) => st.error);
   const [name, setName] = useState('');
-  if (!s) return null;
+  if (!s) return <PendingDialog title="Phases" />;
   const active = s.active ?? s.phases[s.phases.length - 1]?.id;
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Phases">
@@ -35,7 +36,7 @@ export function PhasesDialog() {
           </table>
           <div className="row">
             <input value={name} placeholder="New phase" onChange={(e) => setName(e.target.value)} />
-            <button type="button" className="btn" disabled={!name.trim()} onClick={() => void execute('phases.addPhase', { name: name.trim(), after: active }).then(() => setName(''))}><Plus size={14} />Add after the active one</button>
+            <button type="button" className="btn" disabled={!name.trim()} onClick={() => void execute('phases.addPhase', { name: name.trim(), after: active }).then(() => { if (!useSession.getState().error) setName(''); })}><Plus size={14} />Add after the active one</button>
           </div>
           <label className="field-line"><span className="eyebrow">3D shows</span>
             <select value={s.activeFilter ?? ''} onChange={(e) => void execute('phases.setActive', { filter: e.target.value || null })}>

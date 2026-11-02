@@ -14,7 +14,7 @@ import { outlineFor, room, roomOutline } from './roomTools';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
-import { Cell, LengthCell } from '../../shell/cells';
+import { Cell, LengthCell, NumberField } from '../../shell/cells';
 import { HatchSwatch } from '../core/HatchSwatch';
 import { useSchemes } from './rooms';
 
@@ -69,7 +69,7 @@ export function RoomSection({ node }: { node: NodeDto }) {
             <option value="">as its scheme</option>
             {hatches.map((h) => <option key={h} value={h}>{h}</option>)}
           </select>
-          {hatch && <input className="num narrow" type="number" min={0.1} step={0.1} title="Hatch scale" value={typeof node.props.hatchScale === 'number' ? node.props.hatchScale : 1} onChange={(e) => { const v = Number(e.target.value); if (v > 0) update('hatchScale', v); }} />}
+          {hatch && <NumberField className="narrow" min={0.1} title="Hatch scale" value={typeof node.props.hatchScale === 'number' ? node.props.hatchScale : 1} onCommit={(v) => { if (v != null) update('hatchScale', v); }} />}
           {hatch && <HatchSwatch hatch={hatch} scale={typeof node.props.hatchScale === 'number' ? node.props.hatchScale : 1} fill={str('fillColor') || null} size={24} />}
         </dd>
         <dt>Outline</dt>

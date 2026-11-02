@@ -10,8 +10,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
-import { engine, execute, useSession } from '../../engine/session';
-import { mm, ofClass, relatedOf } from '../../engine/model';
+import { execute, query, useSession } from '../../engine/session';
+import { ofClass, relatedOf } from '../../engine/model';
+import { useStandards } from '../../engine/unitsStore';
+import { Cell, LengthField, NumberField } from '../../shell/cells';
+import { formatLengths, parseLengths } from '../core/format';
+import { PendingDialog } from '../core/PendingDialog';
+import { deleteType } from '../core/deleteType';
 
 interface Grid { mode: 'count' | 'spacing' | 'max' | 'offsets'; count?: number; spacing?: number; justify?: 'start' | 'center' | 'end'; offsets?: number[] }
 interface Section { width: number; depth: number }
@@ -24,21 +29,18 @@ interface Preview { problem: string | null; u?: number[]; v?: number[]; pieces?:
 
 const MODES: [Grid['mode'], string][] = [['max', 'Bays no wider than'], ['count', 'Equal bays'], ['spacing', 'Fixed spacing'], ['offsets', 'At offsets']];
 
-/** A number field in mm, kept as text while typing. */
+/** A labelled length, more than nothing (the shared field: the project's unit, one commit on blur or Enter). */
 function Mm({ label, value, onChange }: { label: string; value: number; onChange: (m: number) => void }) {
-  const [text, setText] = useState(mm(value));
-  useEffect(() => setText(mm(value)), [value]);
   return (
     <label className="field-line"><span className="eyebrow">{label}</span>
-      <input className="num" value={text} onChange={(e) => { setText(e.target.value); const v = Number(e.target.value.replace(',', '.')); if (Number.isFinite(v) && v > 0) onChange(v / 1000); }} />
+      <LengthField metres={value} min={0.001} onCommit={(m) => { if (m != null) onChange(m); }} />
     </label>
   );
 }
 
 /** One direction of the grid: how it divides, and by how much. */
 function GridFields({ label, grid, onChange }: { label: string; grid: Grid; onChange: (g: Grid) => void }) {
-  const [offsets, setOffsets] = useState((grid.offsets ?? []).map(mm).join(' '));
-  useEffect(() => setOffsets((grid.offsets ?? []).map(mm).join(' ')), [grid.offsets]);
+  const units = useStandards((s) => s.units);
   return (
     <>
       <label className="field-line"><span className="eyebrow">{label}</span>
@@ -48,7 +50,7 @@ function GridFields({ label, grid, onChange }: { label: string; grid: Grid; onCh
       </label>
       {grid.mode === 'count' && (
         <label className="field-line"><span className="eyebrow">Bays</span>
-          <input className="num" type="number" min={1} max={200} value={grid.count ?? 1} onChange={(e) => onChange({ ...grid, count: Math.max(1, Math.round(Number(e.target.value) || 1)) })} />
+          <NumberField value={grid.count ?? 1} integer min={1} max={200} onCommit={(n) => { if (n != null) onChange({ ...grid, count: n }); }} />
         </label>
       )}
       {(grid.mode === 'spacing' || grid.mode === 'max') && <Mm label="Spacing" value={grid.spacing ?? 1.5} onChange={(v) => onChange({ ...grid, spacing: v })} />}
@@ -60,9 +62,9 @@ function GridFields({ label, grid, onChange }: { label: string; grid: Grid; onCh
         </label>
       )}
       {grid.mode === 'offsets' && (
-        <label className="field-line"><span className="eyebrow">Offsets (mm)</span>
-          <input value={offsets} title="Distances from the start (or the base), e.g. 1200 2400 3000"
-            onChange={(e) => { setOffsets(e.target.value); onChange({ ...grid, offsets: e.target.value.split(/[ ,;]+/).map(Number).filter((x) => x > 0).map((x) => x / 1000) }); }} />
+        <label className="field-line"><span className="eyebrow">Offsets</span>
+          <Cell value={formatLengths(grid.offsets ?? [], units)} title="Distances from the start (or the base), separated by spaces or semicolons"
+            onCommit={(t) => { const v = parseLengths(t, units); if (!v) return false; onChange({ ...grid, offsets: v.filter((x) => x > 0) }); }} />
         </label>
       )}
     </>
@@ -82,6 +84,8 @@ export function CurtainWallDialog() {
   const [spec, setSpec] = useState<CurtainSpec | null>(null);
   const [size, setSize] = useState({ length: 6, height: 3 });
   const [preview, setPreview] = useState<Preview | null>(null);
+  // Bumped by New curtain wall type, so the editor reloads the default even when no type was picked.
+  const [freshTick, setFreshTick] = useState(0);
 
   // Loaded when the picked type changes, not on every diff (that would throw away what is being typed).
   const modelRef = useRef(model);
@@ -90,20 +94,21 @@ export function CurtainWallDialog() {
     const t = editing ? modelRef.current.nodes.get(editing) : undefined;
     const s = (t?.props.spec as unknown as CurtainSpec | undefined) ?? fallback ?? null;
     setSpec(s ? structuredClone(s) : null);
-    setName(t?.name ?? 'Curtain wall');
-  }, [editing, fallback]);
+    // A new type is named after the ones there are, so a second one is not a copy's name.
+    setName(t?.name ?? `Curtain wall ${ofClass(modelRef.current, 'IfcCurtainWallType').length + 1}`);
+  }, [editing, fallback, freshTick]);
 
   useEffect(() => {
     if (!spec) return;
     let live = true;
-    void engine.call<Preview>('doc.query', { name: 'architecture.curtainWallPreview', args: { spec, ...size } }).then((p) => { if (live) setPreview(p); }).catch(() => undefined);
+    void query<Preview>('architecture.curtainWallPreview', { spec, ...size }).then((p) => { if (live) setPreview(p); });
     return () => { live = false; };
   }, [spec, size]);
 
-  if (!spec) return null;
+  if (!spec) return <PendingDialog title="Curtain walls" />;
   const set = (patch: Partial<CurtainSpec>) => setSpec({ ...spec, ...patch });
   const close = () => useUi.setState({ dialog: null });
-  const fresh = () => { setEditing(null); setSpec(structuredClone(fallback ?? spec)); setName(`Curtain wall ${types.length + 1}`); };
+  const fresh = () => { setEditing(null); setFreshTick((n) => n + 1); };
   const save = async () => {
     if (editing) await execute('architecture.updateCurtainWallType', { id: editing, name, spec });
     else {
@@ -175,7 +180,7 @@ export function CurtainWallDialog() {
             </div>
             <div className="row joinery-actions">
               <span className="grow" />
-              {editing && <button type="button" className="btn" title="Delete the type (refused while curtain walls use it)" onClick={() => void execute('element.delete', { id: editing }).then((r) => { if (r !== null) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
+              {editing && <button type="button" className="btn" title="Delete the type (refused while curtain walls use it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
               {editing && <button type="button" className="btn" onClick={() => useUi.setState({ curtainTypeId: editing })}>Draw with it</button>}
               <button type="button" className="btn primary" disabled={Boolean(preview?.problem)} onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>
             </div>

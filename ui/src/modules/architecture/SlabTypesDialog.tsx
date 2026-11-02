@@ -4,12 +4,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { materialName, mm, ofClass, relatedOf, typeLayers } from '../../engine/model';
+import { materialName, ofClass, relatedOf, typeLayers } from '../../engine/model';
+import { LengthField } from '../../shell/cells';
+import { deleteType } from '../core/deleteType';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { TypeFiles } from './TypeFiles';
 
-interface Row { material: string; thicknessMm: string; core: boolean }
-const blank = (): Row[] => [{ material: 'Floor finish', thicknessMm: '20', core: false }, { material: 'Screed', thicknessMm: '50', core: false }, { material: 'Reinforced concrete', thicknessMm: '150', core: true }];
+/** A layer as the editor holds it: the thickness in metres. */
+interface Row { material: string; thickness: number; core: boolean }
+const blank = (): Row[] => [{ material: 'Floor finish', thickness: 0.02, core: false }, { material: 'Screed', thickness: 0.05, core: false }, { material: 'Reinforced concrete', thickness: 0.15, core: true }];
 
 export function SlabTypesDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -29,10 +32,10 @@ export function SlabTypesDialog() {
     const t = editing ? model.nodes.get(editing) : undefined;
     if (!t) { setName(''); setRows(blank()); return; }
     setName(t.name);
-    setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thicknessMm: mm(l.thickness), core: l.core === true })));
+    setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thickness: l.thickness, core: l.core === true })));
   }, [editing]);
   const set = (i: number, patch: Partial<Row>) => setRows(rows.map((r, k) => (k === i ? { ...r, ...patch } : patch.core ? { ...r, core: false } : r)));
-  const layers = rows.map((r) => ({ material: r.material.trim(), thickness: Number(r.thicknessMm.replace(',', '.')) / 1000, core: r.core }));
+  const layers = rows.map((r) => ({ material: r.material.trim(), thickness: r.thickness, core: r.core }));
   const save = async () => {
     if (editing) await execute('architecture.updateSlabType', { id: editing, name, layers });
     else {
@@ -59,12 +62,12 @@ export function SlabTypesDialog() {
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
             <p className="muted small">Layers from the top down.</p>
             <table className="layer-edit">
-              <thead><tr><th>Material</th><th>mm</th><th>Core</th><th /></tr></thead>
+              <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th /></tr></thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
                     <td><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /></td>
-                    <td><input className="num" value={r.thicknessMm} onChange={(e) => set(i, { thicknessMm: e.target.value })} /></td>
+                    <td className="num"><LengthField metres={r.thickness} min={0} onCommit={(m) => { if (m != null) set(i, { thickness: m }); }} /></td>
                     <td><input type="radio" name="slab-core" checked={r.core} onChange={() => set(i, { core: true })} /></td>
                     <td className="row-tools"><button type="button" className="icon mini" title="Remove" onClick={() => setRows(rows.filter((_, k) => k !== i))}><Trash2 size={12} /></button></td>
                   </tr>
@@ -72,9 +75,9 @@ export function SlabTypesDialog() {
               </tbody>
             </table>
             <div className="row">
-              <button type="button" className="btn" onClick={() => setRows([...rows, { material: 'Insulation', thicknessMm: '50', core: false }])}><Plus size={14} />Layer</button>
+              <button type="button" className="btn" onClick={() => setRows([...rows, { material: 'Insulation', thickness: 0.05, core: false }])}><Plus size={14} />Layer</button>
               <span className="grow" />
-              {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void execute('element.delete', { id: editing }).then((r) => { if (r !== null) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
+              {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
               {editing && <button type="button" className="btn" onClick={() => useUi.setState({ slabTypeId: editing })}>Draw with it</button>}
               <button type="button" className="btn primary" onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>
             </div>

@@ -6,6 +6,10 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { lengthText } from '../../engine/unitsStore';
+import { LengthField, NumberField } from '../../shell/cells';
+import { PendingDialog } from '../core/PendingDialog';
+import { mergeEdge, type Edge } from './roofEdges';
 import { Pencil, RotateCcw, Save, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
@@ -16,7 +20,7 @@ type Style = { id: string; label: string; family: string; region: string; shape:
 type Covering = { id: string; color: string; minPitch: number };
 /** A project's own style (decision 233), kept on the project. */
 type OwnStyle = { id: string; label: string; shape: string; pitch: number; structure?: string };
-type Edge = { kind?: 'eave' | 'gable'; pitch?: number; overhang?: number; gutter?: boolean } | null;
+
 type Item = { role: string; pts: number[] };
 interface Preview {
   problem?: string | null;
@@ -61,9 +65,6 @@ const ROLE_FILL: Record<string, string> = {
 
 /** A field as the engine describes it: a choice, a tick, an angle, a length in mm, a number. */
 function FieldInput({ f, value, onChange }: { f: FieldDescriptor; value: unknown; onChange: (v: unknown) => void }) {
-  const [text, setText] = useState('');
-  const shown = f.kind === 'length' && typeof value === 'number' ? String(Math.round(value * 1000)) : value == null ? '' : String(value);
-  useEffect(() => setText(shown), [shown]);
   if (f.kind === 'choice') {
     return (
       <select value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value)}>
@@ -73,14 +74,10 @@ function FieldInput({ f, value, onChange }: { f: FieldDescriptor; value: unknown
     );
   }
   if (f.kind === 'bool') return <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />;
-  const commit = () => {
-    const n = Number(text.replace(',', '.'));
-    if (text.trim() === '' || !Number.isFinite(n)) { setText(shown); return; }
-    const v = f.kind === 'length' ? n / 1000 : n;
-    if (v !== value) onChange(v);
-  };
-  return <input className="num" value={text} onChange={(e) => setText(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); }}
-    title={f.kind === 'length' ? 'mm' : f.kind === 'angle' ? '°' : undefined} />;
+  const n = typeof value === 'number' ? value : null;
+  return f.kind === 'length'
+    ? <LengthField metres={n} onCommit={(m) => { if (m != null) onChange(m); }} />
+    : <NumberField value={n} suffix={f.kind === 'angle' ? '°' : undefined} onCommit={(v) => { if (v != null) onChange(v); }} />;
 }
 
 /** The plan: the wall line with its edges (thick: eave, dashed: gable; click to go auto → eave → gable), the eaves, ridges, hips and valleys. */
@@ -137,7 +134,7 @@ function SectionPlot({ s }: { s: NonNullable<Preview['section']> }) {
         <polygon key={i} points={it.pts.reduce<string[]>((acc, v, j) => (j % 2 ? [...acc.slice(0, -1), `${acc[acc.length - 1]},${Z(v)}`] : [...acc, `${X(v)}`]), []).join(' ')}
           fill={ROLE_FILL[it.role] ?? '#c99a64'} stroke="#3a2a1a" strokeWidth={0.5} opacity={it.role === 'covering' ? 0.85 : 1}><title>{it.role}</title></polygon>
       ))}
-      {s.span != null && <text x={W / 2} y={H - 4} textAnchor="middle" fontSize={10}>{`${Math.round(s.span * 1000)} mm · ${Math.round((s.top - s.plate) * 1000)} mm`}</text>}
+      {s.span != null && <text x={W / 2} y={H - 4} textAnchor="middle" fontSize={10}>{`${lengthText(s.span)} · ${lengthText(s.top - s.plate)}`}</text>}
     </svg>
   );
 }
@@ -165,21 +162,17 @@ export function RoofDialog() {
       .then((p) => { if (live) setPreview(p); });
     return () => { live = false; };
   }, [roofId, draft, node]);
+  // The roof went (an undo, deleted by someone in the session): the configurator closes.
+  useEffect(() => { if (!node) useUi.setState({ dialog: null }); }, [node]);
 
-  if (!node) return null;
+  if (!node) return <PendingDialog title="Roof" />;
   const close = () => useUi.setState({ dialog: null });
   const dirty = Boolean(draft.style) || Object.keys(draft.attrs).length > 0 || draft.edges !== undefined;
   const value = (k: string): unknown => (k in draft.attrs ? draft.attrs[k] : preview?.attrs?.[k] ?? node.props[k] ?? DEFAULTS[k]);
   const set = (k: string, v: unknown) => setDraft((d) => ({ ...d, attrs: { ...d.attrs, [k]: v } }));
   const contour = (preview?.outline ?? (node.props.contour as [number, number][] | undefined) ?? []);
   const edges: Edge[] = draft.edges ?? ((preview?.attrs?.edges as Edge[] | undefined) ?? (node.props.edges as Edge[] | undefined) ?? []);
-  const setEdge = (i: number, patch: Partial<NonNullable<Edge>> | null) => {
-    const next: Edge[] = contour.map((_, k) => edges[k] ?? null);
-    const merged = patch === null ? null : { ...(next[i] ?? {}), ...patch };
-    if (merged) for (const key of Object.keys(merged) as (keyof typeof merged)[]) if (merged[key] === undefined) delete merged[key];
-    next[i] = merged && Object.keys(merged).length ? merged : null;
-    setDraft((d) => ({ ...d, edges: next }));
-  };
+  const setEdge = (i: number, patch: Partial<NonNullable<Edge>> | null) => setDraft((d) => ({ ...d, edges: mergeEdge(edges, contour.length, i, patch) }));
   const cycleEdge = (i: number) => setEdge(i, { kind: edges[i]?.kind === undefined ? 'eave' : edges[i]?.kind === 'eave' ? 'gable' : undefined });
   const pickStyle = (id: string) => setDraft({ style: id, attrs: {} });
   const apply = async () => {
@@ -258,7 +251,7 @@ export function RoofDialog() {
                 {rows}
                 {tab === 'shape' && contour.length > 0 && (
                   <table className="roof-edges">
-                    <thead><tr><th>Edge</th><th>Kind</th><th>°</th><th>mm</th><th title="Gutter">⌣</th></tr></thead>
+                    <thead><tr><th>Edge</th><th>Kind</th><th>°</th><th>Overhang</th><th title="Gutter">⌣</th></tr></thead>
                     <tbody>
                       {contour.map((_, i) => {
                         const e = edges[i] ?? null;
@@ -270,10 +263,8 @@ export function RoofDialog() {
                                 <option value="">auto</option><option value="eave">eave</option><option value="gable">gable</option>
                               </select>
                             </td>
-                            <td><input className="num" defaultValue={e?.pitch ?? ''} key={`p${i}${e?.pitch}`} placeholder={String(value('pitch') ?? '')}
-                              onBlur={(ev) => { const v = ev.target.value.trim() === '' ? undefined : Number(ev.target.value.replace(',', '.')); if (v !== e?.pitch) setEdge(i, { pitch: v }); }} /></td>
-                            <td><input className="num" defaultValue={e?.overhang != null ? Math.round(e.overhang * 1000) : ''} key={`o${i}${e?.overhang}`}
-                              onBlur={(ev) => { const v = ev.target.value.trim() === '' ? undefined : Number(ev.target.value.replace(',', '.')) / 1000; if (v !== e?.overhang) setEdge(i, { overhang: v }); }} /></td>
+                            <td><NumberField value={e?.pitch} blank placeholder={String(value('pitch') ?? '')} onCommit={(v) => setEdge(i, { pitch: v ?? undefined })} /></td>
+                            <td><LengthField metres={e?.overhang} blank noUnit onCommit={(v) => setEdge(i, { overhang: v ?? undefined })} /></td>
                             <td>{(preview?.kinds?.[i] ?? 'eave') === 'eave' && <input type="checkbox" title="This eave's gutter" checked={e?.gutter !== false} onChange={(ev) => setEdge(i, { gutter: ev.target.checked ? undefined : false })} />}</td>
                           </tr>
                         );

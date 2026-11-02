@@ -11,7 +11,10 @@ import type { NodeDto } from '../../engine/protocol';
 import type { ToolDef } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
-import { mm, ofClass, relatedOf, typeOf } from '../../engine/model';
+import { ofClass, relatedOf, typeOf } from '../../engine/model';
+import { LengthField, NumberField } from '../../shell/cells';
+import { MaterialPicker } from '../core/MaterialPicker';
+import { PendingDialog } from '../core/PendingDialog';
 
 export interface CeilingSpec {
   name: string; system: 'grid' | 'plain'; tileWidth: number; tileLength: number; thickness: number;
@@ -47,10 +50,11 @@ export const ceilingLight = fixture('light');
 export const ceilingDiffuser = fixture('diffuser');
 export const ceilingTypes: ToolDef = { id: 'architecture.ceilingTypes', label: 'Ceiling types', icon: Settings2, run: () => useUi.setState({ dialog: 'ceilingTypes' }) };
 
+/** A labelled length, more than nothing (the shared field: the project's unit, one commit on blur or Enter). */
 function Mm({ label, value, onChange }: { label: string; value: number; onChange: (m: number) => void }) {
   return (
     <label className="field-line"><span className="eyebrow">{label}</span>
-      <input type="number" step={1} value={Math.round(value * 1000)} onChange={(e) => { const n = Number(e.target.value); if (Number.isFinite(n) && n > 0) onChange(n / 1000); }} /><span className="muted small"> mm</span>
+      <LengthField metres={value} min={0.001} onCommit={(m) => { if (m != null) onChange(m); }} />
     </label>
   );
 }
@@ -60,19 +64,22 @@ export function CeilingTypesDialog() {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
   const info = useSession((s) => s.info);
+  const error = useSession((s) => s.error);
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = ofClass(model, 'LapinCeilingType');
   const catalog = info?.catalogs['architecture.ceilings'] as unknown as { spec: CeilingSpec; plain: CeilingSpec } | undefined;
   const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
   const [spec, setSpec] = useState<CeilingSpec | null>(null);
+  // What a new type starts from (a new object on each New…, so the editor reloads).
+  const [fresh, setFresh] = useState<{ system: 'grid' | 'plain' }>({ system: 'grid' });
   const modelRef = useRef(model);
   modelRef.current = model;
   useEffect(() => {
     const t = editing ? modelRef.current.nodes.get(editing) : undefined;
-    const s = (t?.props.spec as unknown as CeilingSpec | undefined) ?? catalog?.spec ?? null;
+    const s = (t?.props.spec as unknown as CeilingSpec | undefined) ?? (fresh.system === 'plain' ? catalog?.plain : catalog?.spec) ?? null;
     setSpec(s ? structuredClone(s) : null);
-  }, [editing, catalog]);
-  if (!spec || !catalog) return null;
+  }, [editing, catalog, fresh]);
+  if (!spec || !catalog) return <PendingDialog title="Ceiling types" />;
   const set = (patch: Partial<CeilingSpec>) => setSpec({ ...spec, ...patch });
   const close = () => useUi.setState({ dialog: null });
   const save = async () => {
@@ -91,8 +98,8 @@ export function CeilingTypesDialog() {
             {types.map((t) => (
               <li key={t.id}><button type="button" className={`tree-item${editing === t.id ? ' on' : ''}`} onClick={() => setEditing(t.id)}>{t.name}<span className="muted small"> · {relatedOf(model, t.id, 'IfcRelDefinesByType').length}</span></button></li>
             ))}
-            <li><button type="button" className="tree-item" onClick={() => { setEditing(null); setSpec(structuredClone(catalog.spec)); }}><Plus size={12} /> New grid ceiling</button></li>
-            <li><button type="button" className="tree-item" onClick={() => { setEditing(null); setSpec(structuredClone(catalog.plain)); }}><Plus size={12} /> New plasterboard ceiling</button></li>
+            <li><button type="button" className="tree-item" onClick={() => { setEditing(null); setFresh({ system: 'grid' }); }}><Plus size={12} /> New grid ceiling</button></li>
+            <li><button type="button" className="tree-item" onClick={() => { setEditing(null); setFresh({ system: 'plain' }); }}><Plus size={12} /> New plasterboard ceiling</button></li>
           </ul>
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={spec.name} onChange={(e) => set({ name: e.target.value })} /></label>
@@ -103,14 +110,14 @@ export function CeilingTypesDialog() {
             <Mm label={spec.system === 'grid' ? 'Tile width' : 'Module width'} value={spec.tileWidth} onChange={(v) => set({ tileWidth: v })} />
             <Mm label={spec.system === 'grid' ? 'Tile length' : 'Module length'} value={spec.tileLength} onChange={(v) => set({ tileLength: v })} />
             <Mm label="Thickness" value={spec.thickness} onChange={(v) => set({ thickness: v })} />
-            <label className="field-line"><span className="eyebrow">Material</span><input value={spec.tileMaterial} onChange={(e) => set({ tileMaterial: e.target.value })} /></label>
+            <label className="field-line"><span className="eyebrow">Material</span><MaterialPicker value={spec.tileMaterial} onChange={(tileMaterial) => set({ tileMaterial })} /></label>
             <label className="field-line"><span className="eyebrow">Colour</span><input type="color" value={spec.tileColor} onChange={(e) => set({ tileColor: e.target.value })} /></label>
             {spec.system === 'grid' && <>
               <p className="eyebrow">Grid</p>
               <Mm label="Face width" value={spec.gridWidth} onChange={(v) => set({ gridWidth: v })} />
               <Mm label="Depth" value={spec.gridDepth} onChange={(v) => set({ gridDepth: v })} />
-              <label className="field-line"><span className="eyebrow">Rotation (°)</span><input type="number" value={spec.rotation} onChange={(e) => set({ rotation: Number(e.target.value) || 0 })} /></label>
-              <label className="field-line"><span className="eyebrow">Grid material</span><input value={spec.gridMaterial} onChange={(e) => set({ gridMaterial: e.target.value })} /></label>
+              <label className="field-line"><span className="eyebrow">Rotation (°)</span><NumberField value={spec.rotation} onCommit={(n) => { if (n != null) set({ rotation: n }); }} /></label>
+              <label className="field-line"><span className="eyebrow">Grid material</span><MaterialPicker value={spec.gridMaterial} onChange={(gridMaterial) => set({ gridMaterial })} /></label>
               <label className="field-line"><span className="eyebrow">Grid colour</span><input type="color" value={spec.gridColor} onChange={(e) => set({ gridColor: e.target.value })} /></label>
               <label className="field-line check"><input type="checkbox" checked={spec.hangers} onChange={(e) => set({ hangers: e.target.checked })} /><span>Hangers up to the structure</span></label>
               {spec.hangers && <Mm label="Hanger spacing" value={spec.hangerSpacing} onChange={(v) => set({ hangerSpacing: v })} />}
@@ -123,6 +130,7 @@ export function CeilingTypesDialog() {
               {editing && <button type="button" className="btn" onClick={() => useUi.setState({ ceilingTypeId: editing })}>Place with it</button>}
               <button type="button" className="btn primary" onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>
             </div>
+            {error && <p className="error-text" role="alert">{error}</p>}
           </div>
         </div>
       </div>
@@ -152,14 +160,14 @@ export function CeilingSection({ node }: { node: NodeDto }) {
       </label>
       <dl className="fields">
         <dt>Height</dt>
-        <dd><input className="num" type="number" step={10} data-field="ceiling-height" value={mm(height)} onChange={(e) => { const v = Number(e.target.value); if (v > 0) set({ height: v / 1000 }); }} /> <span className="muted">mm</span></dd>
+        <dd><LengthField testId="ceiling-height" metres={height} min={0.01} readOnly={!node.editable} onCommit={(m) => { if (m != null) set({ height: m }); }} /></dd>
         <dt>Light panels</dt><dd><span className="num">{fixtures.filter((f) => f.kind === 'light').length}</span></dd>
         <dt>Air diffusers</dt><dd><span className="num">{fixtures.filter((f) => f.kind === 'diffuser').length}</span></dd>
       </dl>
       <p className="eyebrow">Lay out</p>
       <div className="row small">
         <span>Every</span>
-        <input className="num" type="number" min={1} max={20} value={every} style={{ width: 48 }} onChange={(e) => setEvery(Math.max(1, Number(e.target.value) || 1))} />
+        <NumberField value={every} integer min={1} max={20} style={{ width: 48 }} onCommit={(n) => { if (n != null) setEvery(n); }} />
         <span>cells</span>
       </div>
       <div className="row" style={{ flexWrap: 'wrap' }}>

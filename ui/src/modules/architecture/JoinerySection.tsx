@@ -4,19 +4,12 @@
  * or the side (interior ↔ exterior).
  */
 
-import { useEffect, useState } from 'react';
 import { FlipHorizontal2, FlipVertical2, Settings2 } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { mm, num, ofClass, relatedOf, relatingOf, typeOf } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
-
-function Millimetres({ value, onCommit }: { value: number; onCommit: (m: number) => void }) {
-  const [text, setText] = useState(mm(value));
-  useEffect(() => setText(mm(value)), [value]);
-  const done = () => { const v = Number(text.replace(',', '.')); if (Number.isFinite(v) && mm(value) !== text) onCommit(v / 1000); };
-  return <span className="commit"><input value={text} onChange={(e) => setText(e.target.value)} onBlur={done} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} /><span className="muted"> mm</span></span>;
-}
+import { LengthField } from '../../shell/cells';
 
 export function JoinerySection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -42,8 +35,8 @@ export function JoinerySection({ node }: { node: NodeDto }) {
         <dt>Size</dt><dd className="num">{mm(spec?.width ?? 0)} × {mm(spec?.height ?? 0)}</dd>
         <dt>In wall</dt><dd>{wall?.name ?? '—'}</dd>
         {opening && node.editable && <>
-          <dt>Along the wall</dt><dd><Millimetres value={num(opening, 'along')} onCommit={(v) => void execute('architecture.moveOpening', { id: node.id, along: v })} /></dd>
-          <dt>Sill</dt><dd><Millimetres value={num(opening, 'sill')} onCommit={(v) => void execute('architecture.moveOpening', { id: node.id, sill: v })} /></dd>
+          <dt>Along the wall</dt><dd><LengthField metres={num(opening, 'along')} onCommit={(v) => { if (v != null) void execute('architecture.moveOpening', { id: node.id, along: v }); }} /></dd>
+          <dt>Sill</dt><dd><LengthField metres={num(opening, 'sill')} onCommit={(v) => { if (v != null) void execute('architecture.moveOpening', { id: node.id, sill: v }); }} /></dd>
         </>}
         <dt>Of its type</dt><dd className="num">{type ? relatedOf(model, type.id, 'IfcRelDefinesByType').length : 0}</dd>
       </dl>

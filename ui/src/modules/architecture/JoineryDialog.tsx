@@ -12,8 +12,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
-import { engine, execute, useSession } from '../../engine/session';
-import { mm, ofClass, relatedOf } from '../../engine/model';
+import { execute, query, useSession } from '../../engine/session';
+import { ofClass, relatedOf } from '../../engine/model';
+import { LengthField, NumberField } from '../../shell/cells';
+import { MaterialPicker } from '../core/MaterialPicker';
+import { PendingDialog } from '../core/PendingDialog';
+import { deleteType } from '../core/deleteType';
 import { LintelRuleEditor } from './LintelRule';
 import type { Rule } from './lintels';
 
@@ -65,7 +69,7 @@ const APRON: Apron = { on: true, height: 0.2, projection: 0.03, consoles: true, 
  * Architectural styles for a door or window (decision 188, after BubbleBIM's style packs): each sets the
  * outline, the glazing bars and the ornaments of the facade at once; everything stays editable after.
  */
-export const JOINERY_STYLES: Record<string, { label: string; apply: (s: Spec) => Partial<Spec> }> = {
+const JOINERY_STYLES: Record<string, { label: string; apply: (s: Spec) => Partial<Spec> }> = {
   modern: { label: 'Modern', apply: () => ({ shape: null, muntins: null }) },
   classical: { label: 'Classical', apply: () => ({ shape: null, muntins: { ...MUNTINS, pattern: 'grid', across: 2, up: 3 } }) },
   georgian: { label: 'Georgian', apply: () => ({ shape: null, muntins: { ...MUNTINS, pattern: 'grid', across: 3, up: 3 } }) },
@@ -80,7 +84,7 @@ export const JOINERY_STYLES: Record<string, { label: string; apply: (s: Spec) =>
 };
 
 /** The details each style adds on the facade (and takes away: a style's own ornaments replace another's). */
-export function styleDetails(key: string, d: Details): Details {
+function styleDetails(key: string, d: Details): Details {
   const bare: Details = { ...d, surround: d.surround ? { ...d.surround, on: false } : null, keystone: null, head: null, apron: null };
   const stone: Sill = { ...SILL_OUT, thickness: 0.04, projection: 0.05 };
   switch (key) {
@@ -130,22 +134,34 @@ const loopPath = (pts: number[], sx: (x: number) => number, sy: (y: number) => n
   pts.length < 6 ? '' : 'M' + Array.from({ length: pts.length / 2 }, (_, i) => `${sx(pts[2 * i]).toFixed(1)},${sy(pts[2 * i + 1]).toFixed(1)}`).join('L') + 'Z';
 const weights = (text: string) => text.split(/[ ,;]+/).map(Number).filter((v) => v > 0);
 
-/** A number field in mm, kept as text while typing. */
+/** A labelled length (the shared field: the project's unit, one commit on blur or Enter). */
 function Mm({ label, value, onChange }: { label: string; value: number; onChange: (m: number) => void }) {
-  const [text, setText] = useState(mm(value));
-  useEffect(() => setText(mm(value)), [value]);
   return (
     <label className="field-line"><span className="eyebrow">{label}</span>
-      <input className="num" value={text} onChange={(e) => { setText(e.target.value); const t = e.target.value.trim().replace(',', '.'); const v = Number(t); if (t !== '' && Number.isFinite(v)) onChange(v / 1000); }} />
+      <LengthField metres={value} onCommit={(m) => { if (m != null) onChange(m); }} />
     </label>
   );
 }
 
+/** A labelled number (degrees, counts): the shared field. */
+function Num({ label, value, onChange, integer, min }: { label: string; value: number; onChange: (n: number) => void; integer?: boolean; min?: number }) {
+  return (
+    <label className="field-line"><span className="eyebrow">{label}</span>
+      <NumberField value={value} integer={integer} min={min} onCommit={(n) => { if (n != null) onChange(n); }} />
+    </label>
+  );
+}
+
+/** A labelled material of the project's; empty: the default (null). */
+function Material({ label = 'Material', value, onChange }: { label?: string; value?: string | null; onChange: (material: string | null) => void }) {
+  return <label className="field-line"><span className="eyebrow">{label}</span><MaterialPicker value={value ?? ''} allowEmpty onChange={(m) => onChange(m || null)} /></label>;
+}
+
 /** A material and a colour (the colour when the material is not in the project). */
-function Look({ material, color, onChange }: { material?: string | null; color: string; onChange: (patch: { material?: string; color?: string }) => void }) {
+function Look({ material, color, onChange }: { material?: string | null; color: string; onChange: (patch: { material?: string | null; color?: string }) => void }) {
   return (
     <>
-      <label className="field-line"><span className="eyebrow">Material</span><input list="lapin-materials" value={material ?? ''} onChange={(e) => onChange({ material: e.target.value })} /></label>
+      <Material value={material} onChange={(m) => onChange({ material: m })} />
       <label className="field-line"><span className="eyebrow">Colour</span><input type="color" value={color} onChange={(e) => onChange({ color: e.target.value })} /></label>
     </>
   );
@@ -222,7 +238,7 @@ function DressingFields({ kind, height, details, onChange }: { kind: 'door' | 'w
         <Mm label="Thickness" value={c.thickness} onChange={(v) => onChange({ canopy: { ...c, thickness: v } })} />
         <Mm label="Past the jambs" value={c.overhang} onChange={(v) => onChange({ canopy: { ...c, overhang: v } })} />
         <Mm label="Above the head" value={c.rise} onChange={(v) => onChange({ canopy: { ...c, rise: v } })} />
-        <label className="field-line"><span className="eyebrow">Slope (°)</span><input className="num" value={c.slope} onChange={(e) => { const v = Number(e.target.value); if (Number.isFinite(v)) onChange({ canopy: { ...c, slope: v } }); }} /></label>
+        <Num label="Slope (°)" value={c.slope} onChange={(v) => onChange({ canopy: { ...c, slope: v } })} />
         <Place along={c.along} gap={c.gap} onChange={(p) => onChange({ canopy: { ...c, ...p } })} />
         <Look material={c.material} color={c.color} onChange={(p) => onChange({ canopy: { ...c, ...p } })} />
       </>}
@@ -283,13 +299,13 @@ function ShapeFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial
         <select data-field="shape-bars" value={sh.bars} onChange={(e) => setShape({ bars: e.target.value as Shape['bars'] })}>
           <option value="none">None</option><option value="sunburst">Sunburst</option><option value="mullions">{sh.kind === 'circle' ? 'Upright' : 'The mullions carried up'}</option><option value="cross">Cross</option>
         </select></label>}
-      {sh.kind !== 'rect' && sh.bars === 'sunburst' && <label className="field-line"><span className="eyebrow">Spokes</span><input className="num" value={sh.spokes} onChange={(e) => { const v = Math.round(Number(e.target.value)); if (v > 0) setShape({ spokes: v }); }} /></label>}
+      {sh.kind !== 'rect' && sh.bars === 'sunburst' && <Num label="Spokes" value={sh.spokes} integer min={1} onChange={(v) => setShape({ spokes: v })} />}
       {sh.kind !== 'circle' && <label className="field-line"><span className="eyebrow">Glazing bars</span>
         <select data-field="muntins" value={mu.pattern} onChange={(e) => setMuntins({ pattern: e.target.value as Muntins['pattern'] })}>
           <option value="none">None</option><option value="grid">Grid (colonial)</option><option value="prairie">Prairie</option><option value="diamond">Diamond lattice</option>
         </select></label>}
-      {sh.kind !== 'circle' && (mu.pattern === 'grid' || mu.pattern === 'diamond') && <label className="field-line"><span className="eyebrow">Lites across</span><input className="num" value={mu.across} onChange={(e) => { const v = Math.round(Number(e.target.value)); if (v > 0) setMuntins({ across: v }); }} /></label>}
-      {sh.kind !== 'circle' && mu.pattern === 'grid' && <label className="field-line"><span className="eyebrow">Lites up</span><input className="num" value={mu.up} onChange={(e) => { const v = Math.round(Number(e.target.value)); if (v > 0) setMuntins({ up: v }); }} /></label>}
+      {sh.kind !== 'circle' && (mu.pattern === 'grid' || mu.pattern === 'diamond') && <Num label="Lites across" value={mu.across} integer min={1} onChange={(v) => setMuntins({ across: v })} />}
+      {sh.kind !== 'circle' && mu.pattern === 'grid' && <Num label="Lites up" value={mu.up} integer min={1} onChange={(v) => setMuntins({ up: v })} />}
       {sh.kind !== 'circle' && mu.pattern === 'prairie' && <Mm label="Margin" value={mu.margin} onChange={(v) => setMuntins({ margin: v })} />}
       {sh.kind !== 'circle' && mu.pattern !== 'none' && <Mm label="Bar width" value={mu.width} onChange={(v) => setMuntins({ width: v })} />}
     </>
@@ -323,8 +339,8 @@ function SillFields({ label, sill, fallback, slope = false, onChange }: { label:
         <Mm label="Projection" value={cur.projection} onChange={(v) => onChange({ ...cur, projection: v })} />
         <Mm label="Thickness" value={cur.thickness} onChange={(v) => onChange({ ...cur, thickness: v })} />
         <Mm label="Past the jambs" value={cur.overhang} onChange={(v) => onChange({ ...cur, overhang: v })} />
-        {slope && <label className="field-line"><span className="eyebrow">Slope (°)</span><input className="num" value={cur.slope} onChange={(e) => { const v = Number(e.target.value); if (Number.isFinite(v)) onChange({ ...cur, slope: v }); }} /></label>}
-        <label className="field-line"><span className="eyebrow">Material</span><input list="lapin-materials" value={cur.material ?? ''} onChange={(e) => onChange({ ...cur, material: e.target.value })} /></label>
+        {slope && <Num label="Slope (°)" value={cur.slope} onChange={(v) => onChange({ ...cur, slope: v })} />}
+        <Material value={cur.material} onChange={(material) => onChange({ ...cur, material })} />
       </>}
     </>
   );
@@ -339,6 +355,8 @@ export function JoineryDialog() {
   const types = [...ofClass(model, 'IfcDoorType'), ...ofClass(model, 'IfcWindowType')];
   const catalog = info?.catalogs['architecture.joinery'] as unknown as { windowOperations: string[]; doorOperations: string[]; defaultDoor: Spec; defaultWindow: Spec } | undefined;
   const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
+  // What a new type starts from (a new object each time New door or New window is clicked, so the editor reloads).
+  const [fresh, setFresh] = useState<{ kind: 'door' | 'window' }>({ kind: 'window' });
   const [spec, setSpec] = useState<Spec | null>(null);
   const [cols, setCols] = useState('1');
   const [rows, setRows] = useState('1');
@@ -352,20 +370,20 @@ export function JoineryDialog() {
   // Load the picked type (or a fresh default) into the editor.
   useEffect(() => {
     const t = editing ? modelRef.current.nodes.get(editing) : undefined;
-    const s = (t?.props.spec as unknown as Spec | undefined) ?? catalog?.defaultWindow ?? null;
+    const s = (t?.props.spec as unknown as Spec | undefined) ?? (fresh.kind === 'door' ? catalog?.defaultDoor : catalog?.defaultWindow) ?? null;
     setSpec(s ? structuredClone(s) : null);
     if (s) { setCols(s.columns.join(' ')); setRows(s.rows.join(' ')); }
-  }, [editing, catalog]);
+  }, [editing, catalog, fresh]);
 
   // The engine builds the preview from the spec as it is now.
   useEffect(() => {
     if (!spec) return;
     let live = true;
-    void engine.call<Preview2>('doc.query', { name: 'architecture.joineryPreview', args: { spec } }).then((p) => { if (live) setPreview(p); }).catch(() => undefined);
+    void query<Preview2>('architecture.joineryPreview', { spec }).then((p) => { if (live) setPreview(p); });
     return () => { live = false; };
   }, [spec]);
 
-  if (!spec || !catalog) return null;
+  if (!spec || !catalog) return <PendingDialog title="Doors and windows" />;
   // A name the dialog gave ("Door 900×2100") follows the size as it is typed (report #51); one the user wrote stays.
   const sizeName = (s: Pick<Spec, 'kind' | 'width' | 'height'>) => `${s.kind === 'door' ? 'Door' : 'Window'} ${Math.round(s.width * 1000)}×${Math.round(s.height * 1000)}`;
   const set = (patch: Partial<Spec>) => {
@@ -375,10 +393,9 @@ export function JoineryDialog() {
   };
   const details: Details = spec.details ?? {};
   const setDetails = (patch: Partial<Details>) => set({ details: { ...details, ...patch } });
-  const materials = ofClass(model, 'IfcMaterial');
   const operations = spec.kind === 'door' ? [...catalog.doorOperations, 'fixed'] : catalog.windowOperations;
   const close = () => useUi.setState({ dialog: null });
-  const fresh = (kind: 'door' | 'window') => { setEditing(null); const d = structuredClone(kind === 'door' ? catalog.defaultDoor : catalog.defaultWindow); setSpec(d); setCols(d.columns.join(' ')); setRows(d.rows.join(' ')); };
+  const startNew = (kind: 'door' | 'window') => { setEditing(null); setFresh({ kind }); };
   const setGrid = (c: string, r: string) => {
     setCols(c); setRows(r);
     const cw = weights(c), rw = weights(r);
@@ -417,8 +434,8 @@ export function JoineryDialog() {
                 </button>
               </li>
             ))}
-            <li><button type="button" className="tree-item" onClick={() => fresh('door')}><Plus size={12} /> New door</button></li>
-            <li><button type="button" className="tree-item" onClick={() => fresh('window')}><Plus size={12} /> New window</button></li>
+            <li><button type="button" className="tree-item" onClick={() => startNew('door')}><Plus size={12} /> New door</button></li>
+            <li><button type="button" className="tree-item" onClick={() => startNew('window')}><Plus size={12} /> New window</button></li>
           </ul>
           <div className="joinery-edit">
             <div className="joinery-form">
@@ -463,14 +480,14 @@ export function JoineryDialog() {
               <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>
               <LintelRuleEditor inherit rule={spec.lintel ?? null} onChange={(r) => set({ lintel: r })} />
               <p className="eyebrow">Details</p>
-              <datalist id="lapin-materials">{materials.map((m) => <option key={m.id} value={m.name} />)}</datalist>
+
               <label className="field-line"><span className="eyebrow">Reveal finish</span>
                 <select value={details.reveal?.mode ?? 'wall'} onChange={(e) => setDetails({ reveal: { ...(details.reveal ?? { thickness: 0.015 }), mode: e.target.value as Reveal['mode'] } })}>
                   <option value="wall">The wall's finish layers</option><option value="material">A material</option><option value="none">None</option>
                 </select>
               </label>
               {details.reveal?.mode === 'material' && <>
-                <label className="field-line"><span className="eyebrow">Reveal material</span><input list="lapin-materials" value={details.reveal.material ?? ''} onChange={(e) => setDetails({ reveal: { ...details.reveal!, material: e.target.value } })} /></label>
+                <Material label="Reveal material" value={details.reveal.material} onChange={(material) => setDetails({ reveal: { ...details.reveal!, material } })} />
                 <Mm label="Reveal thickness" value={details.reveal.thickness} onChange={(v) => setDetails({ reveal: { ...details.reveal!, thickness: v } })} />
               </>}
               {spec.kind === 'window' && <SillFields label="Interior sill" sill={details.sillInside ?? null} fallback={{ ...SILL_IN, projection: spec.board.interior || SILL_IN.projection }} onChange={(v) => setDetails({ sillInside: v })} />}
@@ -480,12 +497,12 @@ export function JoineryDialog() {
                 <Mm label="Surround width" value={details.surround.width} onChange={(v) => setDetails({ surround: { ...details.surround!, width: v } })} />
                 <Mm label="Surround projection" value={details.surround.projection} onChange={(v) => setDetails({ surround: { ...details.surround!, projection: v } })} />
                 {spec.kind === 'window' && <label className="field-line check"><input type="checkbox" checked={details.surround.sill} onChange={(e) => setDetails({ surround: { ...details.surround!, sill: e.target.checked } })} /><span>Around the sill too</span></label>}
-                <label className="field-line"><span className="eyebrow">Surround material</span><input list="lapin-materials" value={details.surround.material ?? ''} onChange={(e) => setDetails({ surround: { ...details.surround!, material: e.target.value } })} /></label>
+                <Material label="Surround material" value={details.surround.material} onChange={(material) => setDetails({ surround: { ...details.surround!, material } })} />
               </>}
               {spec.kind === 'door' && <label className="field-line check"><input type="checkbox" checked={details.threshold?.on ?? false} onChange={(e) => setDetails({ threshold: { ...(details.threshold ?? THRESHOLD), on: e.target.checked } })} /><span>Threshold</span></label>}
               {spec.kind === 'door' && details.threshold?.on && <>
                 <Mm label="Threshold height" value={details.threshold.height} onChange={(v) => setDetails({ threshold: { ...details.threshold!, height: v } })} />
-                <label className="field-line"><span className="eyebrow">Threshold material</span><input list="lapin-materials" value={details.threshold.material ?? ''} onChange={(e) => setDetails({ threshold: { ...details.threshold!, material: e.target.value } })} /></label>
+                <Material label="Threshold material" value={details.threshold.material} onChange={(material) => setDetails({ threshold: { ...details.threshold!, material } })} />
               </>}
               <DressingFields kind={spec.kind} height={spec.height} details={details} onChange={setDetails} />
               <HardwareFields spec={spec} onChange={set} />
@@ -513,7 +530,7 @@ export function JoineryDialog() {
             </div>
             <div className="row joinery-actions">
               <span className="grow" />
-              {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void execute('element.delete', { id: editing }).then((r) => { if (r !== null) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
+              {editing && <button type="button" className="btn" title="Delete the type (refused while elements use it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}><Trash2 size={14} />Delete type</button>}
               {editing && <button type="button" className="btn" onClick={() => useUi.setState(spec.kind === 'door' ? { doorTypeId: editing } : { windowTypeId: editing })}>Place with it</button>}
               <button type="button" className="btn primary" disabled={Boolean(preview?.problem)} onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>
             </div>

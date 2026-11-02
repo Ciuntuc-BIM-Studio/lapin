@@ -13,6 +13,8 @@ import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { HatchSwatch } from '../core/HatchSwatch';
+import { PendingDialog } from '../core/PendingDialog';
+import { NumberField } from '../../shell/cells';
 import { activate } from '../../platform/modules';
 import { useSchemes, type SchemeEntry } from './rooms';
 import { colorLegend } from './roomTools';
@@ -45,7 +47,7 @@ export function RoomColorsDialog() {
   }, [scheme, values]);
   const unused = rows.filter((r) => !r.used).length;
   const shown = all || rows.length === unused ? rows : rows.filter((r) => r.used);
-  if (!s) return null;
+  if (!s) return <PendingDialog title="Room colours" />;
 
   /** One value's look changed (null clears a field). */
   const set = (value: string, patch: Record<string, string | number | null>) => scheme && void execute('architecture.setColorSchemeEntry', { id: scheme.id, value, ...patch });
@@ -116,8 +118,8 @@ export function RoomColorsDialog() {
                         {hatches.map((h) => <option key={h} value={h}>{h}</option>)}
                       </select>
                     </td>
-                    <td><input className="num narrow" type="number" min={0.1} step={0.1} disabled={!entry?.hatch} value={entry?.hatchScale ?? 1}
-                      onChange={(e) => { const v = Number(e.target.value); if (v > 0) set(value, { hatchScale: v }); }} /></td>
+                    <td><NumberField className="narrow" title="Hatch scale" min={0.1} readOnly={!entry?.hatch} value={entry?.hatchScale ?? 1}
+                      onCommit={(v) => { if (v != null) set(value, { hatchScale: v }); }} /></td>
                     <td><input type="color" disabled={!entry?.hatch} value={entry?.hatchColor ?? '#555555'} onChange={(e) => set(value, { hatchColor: e.target.value })} /></td>
                     <td><HatchSwatch hatch={entry?.hatch ?? null} scale={entry?.hatchScale ?? 1} fill={entry?.color ?? (entry?.hatch ? '#ffffff' : null)} size={28} /></td>
                     <td>{entry && <button type="button" className="icon mini" title="Take the value out of the scheme" onClick={() => void execute('architecture.setColorSchemeEntry', { id: scheme.id, value, remove: true })}><Trash2 size={11} /></button>}</td>

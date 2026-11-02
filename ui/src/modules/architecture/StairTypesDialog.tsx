@@ -2,17 +2,22 @@
  * The stair configurator: the project's stair types, one being edited on
  * three tabs (the shape, the rules, the construction with the finish and the
  * railing), a preview in plan and in section worked out by the engine for a
- * height to try, and the checks against the rules. Lengths in mm.
+ * height to try, and the checks against the rules. Lengths in the project's unit.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useUi } from '../../app/store';
-import { execute, engine, useSession } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
 import { ofClass, relatedOf } from '../../engine/model';
+import { formatLength } from '../../engine/unitsStore';
+import { LengthField, NumberField } from '../../shell/cells';
+import { MaterialPicker } from '../core/MaterialPicker';
+import { PendingDialog } from '../core/PendingDialog';
 import { ChecksList, type StairNumbers } from './StairSection';
 import { DrawingLayer } from '../../viewport/DrawingLayer';
 import type { DrawingDto } from '../../viewport/drawing';
+import { deleteType } from '../core/deleteType';
 
 interface Rules { set: string; riserMin: number; riserMax: number; riserTarget: number; treadMin: number; treadMax: number; treadTarget: number; stepMin: number; stepMax: number; minWidth: number; maxRisers: number; headroom: number; maxSlope: number; minRisers?: number }
 interface Spec {
@@ -35,10 +40,20 @@ const SHAPES: Record<string, string> = { straight: 'Straight', 'straight-landing
 const CONSTRUCTIONS: Record<string, string> = { rc: 'Waist slab under the steps', solid: 'Solid, cast on the ground', treads: 'Open treads (cantilevered, floating)', stringers: 'Treads on stringers' };
 const RAILINGS: Record<string, string> = { bar: 'Posts and a handrail', balusters: 'Balusters', glass: 'Glass panels', cable: 'Cables', panel: 'Solid balustrade' };
 
-function Mm({ label, value, onChange, step = 5 }: { label: string; value: number; onChange: (m: number) => void; step?: number }) {
+/** A labelled length (the shared field: the project's unit, one commit on blur or Enter). */
+function Mm({ label, value, onChange }: { label: string; value: number; onChange: (m: number) => void; step?: number }) {
   return (
     <label className="field-line"><span className="eyebrow">{label}</span>
-      <input type="number" step={step} value={Math.round(value * 1000)} onChange={(e) => { const n = Number(e.target.value); if (Number.isFinite(n)) onChange(n / 1000); }} /><span className="muted small"> mm</span>
+      <LengthField metres={value} onCommit={(m) => { if (m != null) onChange(m); }} />
+    </label>
+  );
+}
+
+/** A labelled whole number (risers, winders): the shared field. */
+function Count({ label, value, min, max, after, onChange }: { label: string; value: number; min: number; max: number; after?: string; onChange: (n: number) => void }) {
+  return (
+    <label className="field-line"><span className="eyebrow">{label}</span>
+      <NumberField value={value} integer min={min} max={max} onCommit={(n) => { if (n != null) onChange(n); }} />{after && <span className="muted small"> {after}</span>}
     </label>
   );
 }
@@ -72,6 +87,8 @@ export function StairTypesDialog() {
   const [height, setHeight] = useState(3.0);
   const [preview, setPreview] = useState<StairNumbers | null>(null);
   const [drawn, setDrawn] = useState<{ plan: DrawingDto; section: DrawingDto } | null>(null);
+  // Bumped by New stair type, so the editor reloads the default even when no type was picked.
+  const [freshTick, setFreshTick] = useState(0);
   const modelRef = useRef(model);
   modelRef.current = model;
 
@@ -79,23 +96,23 @@ export function StairTypesDialog() {
     const t = editing ? modelRef.current.nodes.get(editing) : undefined;
     const s = (t?.props.spec as unknown as Spec | undefined) ?? defaults?.spec ?? null;
     setSpec(s ? structuredClone(s) : null);
-  }, [editing, defaults]);
+  }, [editing, defaults, freshTick]);
 
   useEffect(() => {
     if (!spec) return;
     let live = true;
-    void engine.call<StairNumbers>('doc.query', { name: 'architecture.stairPreview', args: { spec, height } }).then((p) => { if (live) setPreview(p); }).catch(() => undefined);
+    void query<StairNumbers>('architecture.stairPreview', { spec, height }).then((p) => { if (live) setPreview(p); });
     // The drawings take a moment (a session of their own): asked for once the spec has settled.
     const t = setTimeout(() => {
-      void engine.call<{ plan: DrawingDto; section: DrawingDto }>('doc.query', { name: 'architecture.stairDrawing', args: { spec, height } }).then((d) => { if (live) setDrawn(d); }).catch(() => undefined);
+      void query<{ plan: DrawingDto; section: DrawingDto }>('architecture.stairDrawing', { spec, height }).then((d) => { if (live) setDrawn(d); });
     }, 250);
     return () => { live = false; clearTimeout(t); };
   }, [spec, height]);
 
-  if (!spec || !defaults) return null;
+  if (!spec || !defaults) return <PendingDialog title="Stair types" />;
   const set = (patch: Partial<Spec>) => setSpec({ ...spec, ...patch });
   const close = () => useUi.setState({ dialog: null });
-  const fresh = () => { setEditing(null); setSpec(structuredClone(defaults.spec)); };
+  const fresh = () => { setEditing(null); setFreshTick((n) => n + 1); };
   const save = async () => {
     if (editing) await execute('architecture.updateStairType', { id: editing, spec });
     else {
@@ -149,7 +166,7 @@ export function StairTypesDialog() {
                   <label className="field-line"><span className="eyebrow">Turn made as</span>
                     <select value={spec.turn} onChange={(e) => set({ turn: e.target.value })}>{defaults.turns.map((t) => <option key={t} value={t}>{t}</option>)}</select>
                   </label>
-                  {spec.turn === 'winders' && <label className="field-line"><span className="eyebrow">Winders per quarter turn</span><input type="number" min={1} max={6} value={spec.winders} onChange={(e) => set({ winders: Number(e.target.value) || 3 })} /></label>}
+                  {spec.turn === 'winders' && <Count label="Winders per quarter turn" min={1} max={6} value={spec.winders} onChange={(winders) => set({ winders })} />}
                 </>}
                 {(spec.shape === 'u' || spec.shape === 'split') && <Mm label="Gap between flights" value={spec.gap} onChange={(v) => set({ gap: Math.max(0, v) })} />}
                 <Mm label={spec.shape === 'split' ? 'Width of the main flight' : 'Width'} value={spec.width} onChange={(v) => set({ width: Math.max(0.5, v) })} />
@@ -157,7 +174,7 @@ export function StairTypesDialog() {
                 {(spec.shape === 'spiral' || spec.shape === 'curved') && <>
                   <Mm label={spec.shape === 'spiral' ? 'Pole radius' : 'Inner radius'} value={spec.innerRadius ?? 0.1} onChange={(v) => set({ innerRadius: Math.max(0.03, v) })} />
                   <label className="field-line"><span className="eyebrow">Turns through (°)</span>
-                    <input type="number" data-field="sweep" step={5} placeholder="as the tread makes it" value={spec.sweep ?? ''} onChange={(e) => { const n = Number(e.target.value); set({ sweep: e.target.value === '' || !(n > 0) ? null : n }); }} /></label>
+                    <NumberField testId="sweep" placeholder="as the tread makes it" value={spec.sweep ?? null} blank min={1} onCommit={(n) => set({ sweep: n })} /></label>
                   <p className="muted small">Empty: as the risers and the tread make it. Given: the tread follows from it.</p>
                 </>}
                 {spec.shape !== 'straight' && spec.shape !== 'spiral' && spec.shape !== 'curved' && <Mm label="Landing length" value={spec.landingLength} onChange={(v) => set({ landingLength: Math.max(0, v) })} />}
@@ -167,7 +184,7 @@ export function StairTypesDialog() {
                   A rise of its own (entrance steps), not up to the storey above
                 </label>
                 {spec.rise != null && <>
-                  <Mm label="Rise" value={spec.rise} onChange={(v) => set({ rise: Math.max(0.05, v) })} step={10} />
+                  <Mm label="Rise" value={spec.rise} onChange={(v) => set({ rise: Math.max(0.05, v) })} />
                   <p className="muted small">Placed, the steps end at their storey's level and start the rise below it.</p>
                 </>}
                 <p className="eyebrow">In plan</p>
@@ -203,8 +220,8 @@ export function StairTypesDialog() {
                   <Mm label="max" value={spec.rules.stepMax} onChange={(v) => set({ rules: { ...spec.rules, stepMax: v } })} />
                 </div>
                 <Mm label="Minimum width" value={spec.rules.minWidth} onChange={(v) => set({ rules: { ...spec.rules, minWidth: v } })} />
-                <label className="field-line"><span className="eyebrow">Risers in a flight</span><input type="number" min={1} max={30} value={spec.rules.minRisers ?? 3} onChange={(e) => set({ rules: { ...spec.rules, minRisers: Math.max(1, Number(e.target.value) || 3) } })} /><span className="muted small"> at least</span></label>
-                <label className="field-line"><span className="eyebrow">Risers in a flight</span><input type="number" min={1} max={30} value={spec.rules.maxRisers} onChange={(e) => set({ rules: { ...spec.rules, maxRisers: Number(e.target.value) || 18 } })} /><span className="muted small"> at most</span></label>
+                <Count label="Risers in a flight" min={1} max={30} after="at least" value={spec.rules.minRisers ?? 3} onChange={(minRisers) => set({ rules: { ...spec.rules, minRisers } })} />
+                <Count label="Risers in a flight" min={1} max={30} after="at most" value={spec.rules.maxRisers} onChange={(maxRisers) => set({ rules: { ...spec.rules, maxRisers } })} />
                 <Mm label="Headroom" value={spec.rules.headroom} onChange={(v) => set({ rules: { ...spec.rules, headroom: v } })} />
               </>}
               {tab === 'construction' && <>
@@ -216,10 +233,10 @@ export function StairTypesDialog() {
                 </label>
                 {spec.construction.kind !== 'solid' && <Mm label={spec.construction.kind === 'treads' || spec.construction.kind === 'stringers' ? 'Tread thickness' : 'Waist'} value={spec.construction.waist} onChange={(v) => set({ construction: { ...spec.construction, waist: Math.max(0.05, v) } })} />}
                 <Mm label="Landing slab" value={spec.construction.landingThickness} onChange={(v) => set({ construction: { ...spec.construction, landingThickness: Math.max(0.05, v) } })} />
-                <label className="field-line"><span className="eyebrow">Concrete</span><input value={spec.construction.concrete} onChange={(e) => set({ construction: { ...spec.construction, concrete: e.target.value } })} /></label>
+                <label className="field-line"><span className="eyebrow">Concrete</span><MaterialPicker value={spec.construction.concrete} onChange={(concrete) => set({ construction: { ...spec.construction, concrete } })} /></label>
                 <p className="eyebrow">Tread finish</p>
                 <Mm label="Thickness" value={spec.finish.treadThickness} onChange={(v) => set({ finish: { ...spec.finish, treadThickness: Math.max(0, v) } })} />
-                <label className="field-line"><span className="eyebrow">Material</span><input value={spec.finish.treadMaterial} onChange={(e) => set({ finish: { ...spec.finish, treadMaterial: e.target.value } })} /></label>
+                <label className="field-line"><span className="eyebrow">Material</span><MaterialPicker value={spec.finish.treadMaterial} onChange={(treadMaterial) => set({ finish: { ...spec.finish, treadMaterial } })} /></label>
                 <Mm label="Nosing" value={spec.finish.nosing} onChange={(v) => set({ finish: { ...spec.finish, nosing: Math.max(0, v) } })} />
                 <p className="eyebrow">Railing</p>
                 <label className="field-line"><span className="eyebrow">Sides</span>
@@ -238,17 +255,17 @@ export function StairTypesDialog() {
                 <Mm label="Height" value={spec.railing.height} onChange={(v) => set({ railing: { ...spec.railing, height: Math.max(0.3, v) } })} />
                 <Mm label="Bar" value={spec.railing.barSize} onChange={(v) => set({ railing: { ...spec.railing, barSize: Math.max(0.01, v) } })} />
                 <Mm label="Post" value={spec.railing.postSize} onChange={(v) => set({ railing: { ...spec.railing, postSize: Math.max(0.01, v) } })} />
-                {(spec.railing.style ?? 'bar') !== 'panel' && (spec.railing.style ?? 'bar') !== 'balusters' && <Mm label="Post spacing" value={spec.railing.postSpacing} onChange={(v) => set({ railing: { ...spec.railing, postSpacing: Math.max(0.3, v) } })} step={50} />}
+                {(spec.railing.style ?? 'bar') !== 'panel' && (spec.railing.style ?? 'bar') !== 'balusters' && <Mm label="Post spacing" value={spec.railing.postSpacing} onChange={(v) => set({ railing: { ...spec.railing, postSpacing: Math.max(0.3, v) } })} />}
                 {spec.railing.style === 'balusters' && <Mm label="Baluster spacing" value={spec.railing.balusterSpacing ?? 0.11} onChange={(v) => set({ railing: { ...spec.railing, balusterSpacing: Math.max(0.05, v) } })} />}
                 <Mm label="In from the edge" value={spec.railing.inset ?? 0.05} onChange={(v) => set({ railing: { ...spec.railing, inset: Math.max(0, v) } })} />
-                <Mm label="Runs on past the ends" value={spec.railing.extension ?? 0} onChange={(v) => set({ railing: { ...spec.railing, extension: Math.max(0, v) } })} step={50} />
+                <Mm label="Runs on past the ends" value={spec.railing.extension ?? 0} onChange={(v) => set({ railing: { ...spec.railing, extension: Math.max(0, v) } })} />
                 <label className="field-line"><span className="eyebrow">Colour</span><input type="color" value={spec.railing.color ?? '#4a4a4a'} onChange={(e) => set({ railing: { ...spec.railing, color: e.target.value } })} /></label>
               </>}
             </div>
             <div className="joinery-preview stair-preview">
               {spec.rise != null
-                ? <p className="small caption">Preview at its own rise of <b>{Math.round(spec.rise * 1000)}</b> mm</p>
-                : <label className="field-line"><span className="eyebrow">Preview at a height of</span><input type="number" step={10} value={Math.round(height * 1000)} onChange={(e) => { const n = Number(e.target.value); if (n > 300) setHeight(n / 1000); }} /><span className="muted small"> mm</span></label>}
+                ? <p className="small caption">Preview at its own rise of <b>{formatLength(spec.rise)}</b></p>
+                : <label className="field-line"><span className="eyebrow">Preview at a height of</span><LengthField metres={height} min={0.3} onCommit={(m) => { if (m != null) setHeight(m); }} /></label>}
               <Drawn drawing={drawn?.plan ?? null} width={W} label="Plan" />
               <Drawn drawing={drawn?.section ?? null} width={W} label="Section along the first flight" />
               {preview && (
@@ -261,7 +278,7 @@ export function StairTypesDialog() {
             </div>
             <div className="row joinery-actions">
               <span className="grow" />
-              {editing && <button type="button" className="btn" title="Delete the type (refused while stairs use it)" onClick={() => void execute('element.delete', { id: editing }).then((r) => { if (r !== null) setEditing(null); })}>Delete</button>}
+              {editing && <button type="button" className="btn" title="Delete the type (refused while stairs use it)" onClick={() => void deleteType(editing).then((ok) => { if (ok) setEditing(null); })}>Delete</button>}
               {editing && <button type="button" className="btn" onClick={() => useUi.setState({ stairTypeId: editing })}>Place with it</button>}
               <button type="button" className="btn primary" onClick={() => void save()}>{editing ? 'Save type' : 'Create type'}</button>
             </div>

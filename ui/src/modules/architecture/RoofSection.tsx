@@ -9,9 +9,10 @@ import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { t, useLang } from '../../i18n';
+import { LengthField, NumberField } from '../../shell/cells';
+import { mergeEdge, type Edge } from './roofEdges';
 
 type Style = { id: string; label: string; family: string; shape: string; pitch: number; covering: string };
-type Edge = { kind?: 'eave' | 'gable'; pitch?: number; overhang?: number } | null;
 
 export function RoofSection({ node }: { node: NodeDto }) {
   const info = useSession((s) => s.info);
@@ -22,14 +23,7 @@ export function RoofSection({ node }: { node: NodeDto }) {
   const own = (project?.props.roofStyles as { id: string; label: string; shape: string; pitch: number }[] | undefined) ?? [];
   const contour = (node.props.contour as number[][] | undefined) ?? [];
   const edges = (node.props.edges as Edge[] | undefined) ?? [];
-  const setEdge = (i: number, patch: Partial<NonNullable<Edge>> | null) => {
-    const next: Edge[] = contour.map((_, k) => edges[k] ?? null);
-    const merged = patch === null ? null : { ...(next[i] ?? {}), ...patch };
-    if (merged) for (const k of Object.keys(merged) as (keyof typeof merged)[]) if (merged[k] === undefined) delete merged[k];
-    next[i] = merged && Object.keys(merged).length ? merged : null;
-    void execute('architecture.updateRoof', { id: node.id, edges: next });
-  };
-  const num = (t: string) => (t.trim() === '' ? undefined : Number(t.replace(',', '.')));
+  const setEdge = (i: number, patch: Partial<NonNullable<Edge>> | null) => void execute('architecture.updateRoof', { id: node.id, edges: mergeEdge(edges, contour.length, i, patch) });
   return (
     <div className="layers">
       <label className="type-pick">
@@ -45,7 +39,7 @@ export function RoofSection({ node }: { node: NodeDto }) {
         </span>
       </label>
       <table className="roof-edges">
-        <thead><tr><th>Edge</th><th>Kind</th><th>°</th><th>mm</th></tr></thead>
+        <thead><tr><th>Edge</th><th>Kind</th><th>°</th><th>Overhang</th></tr></thead>
         <tbody>
           {contour.map((p, i) => {
             const q = contour[(i + 1) % contour.length];
@@ -59,10 +53,8 @@ export function RoofSection({ node }: { node: NodeDto }) {
                     <option value="">auto</option><option value="eave">eave</option><option value="gable">gable</option>
                   </select>
                 </td>
-                <td><input className="num" defaultValue={e?.pitch ?? ''} key={`p${i}${e?.pitch}`} disabled={!node.editable} placeholder={String(node.props.pitch ?? '')}
-                  onBlur={(ev) => num(ev.target.value) !== e?.pitch && setEdge(i, { pitch: num(ev.target.value) })} /></td>
-                <td><input className="num" defaultValue={e?.overhang != null ? Math.round(e.overhang * 1000) : ''} key={`o${i}${e?.overhang}`} disabled={!node.editable}
-                  onBlur={(ev) => { const v = num(ev.target.value); const m = v === undefined ? undefined : v / 1000; if (m !== e?.overhang) setEdge(i, { overhang: m }); }} /></td>
+                <td><NumberField value={e?.pitch} blank readOnly={!node.editable} placeholder={String(node.props.pitch ?? '')} onCommit={(v) => setEdge(i, { pitch: v ?? undefined })} /></td>
+                <td><LengthField metres={e?.overhang} blank noUnit readOnly={!node.editable} onCommit={(v) => setEdge(i, { overhang: v ?? undefined })} /></td>
               </tr>
             );
           })}
