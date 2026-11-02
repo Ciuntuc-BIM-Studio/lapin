@@ -455,6 +455,13 @@ export const scenes = [
       await t.wait(900);
       t.expect(await dialog.locator('svg[aria-label="Frame elevation"] polygon').count() > 20, 'the sample wall is framed');
       await t.shot('wood-frame', { of: '.dialog', pad: 0 });
+      // Prefabricated panels (decision 245): a longer sample wall, its joints clear of the openings.
+      await dialog.locator('[data-testid=wood-panels]').check();
+      await t.wait(900);
+      t.expect(await dialog.locator('svg[aria-label="Frame elevation"] line').count() >= 1, 'the sample wall is cut into panels');
+      await t.shot('wood-panels', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-testid=wood-panels]').uncheck();
+      await t.wait(600);
       await dialog.locator('.btn.primary').click();
       await t.wait(1200);
       const framed = await t.call('doc.query', { name: 'wood.wall', args: { id: walls[0] } });
@@ -470,7 +477,17 @@ export const scenes = [
       await t.tool('wood.frame');
       await dialog.locator('[data-testid=wood-mode]').selectOption('clt');
       await t.wait(800);
-      t.expect(await dialog.locator('svg[aria-label="CLT panels"] rect').count() > 3, 'the sample wall in CLT panels');
+      t.expect(await dialog.locator('svg[aria-label="CLT panels"] :is(rect, polygon)').count() > 3, 'the sample wall in CLT panels');
+      // A floor type on joists (decision 244): the sample floor with its stairwell.
+      await dialog.locator('button[data-class=IfcSlabType]').first().click();
+      await t.wait(500);
+      await dialog.locator('[data-testid=wood-mode]').selectOption('joists');
+      await t.wait(900);
+      t.expect(await dialog.locator('svg[aria-label="Floor joists"] polygon').count() > 10, 'the sample floor on joists');
+      await t.shot('wood-joists', { of: '.dialog', pad: 0 });
+      await dialog.locator('.btn.primary').click();
+      await t.wait(1000);
+      t.expect((await t.nodes()).some((n) => n.type === 'IfcSlabType' && n.props?.wood?.construction === 'joists'), 'the floor type is on joists');
       await t.ui({ dialog: null });
     },
   },

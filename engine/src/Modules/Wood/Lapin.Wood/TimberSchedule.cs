@@ -25,7 +25,17 @@ public sealed class TimberSchedule : IScheduleSource
                 .OrderBy(g => Array.IndexOf(Framing.Roles, g.Key.Role)).ThenBy(g => g.Key.Section).ThenByDescending(g => g.Key.Length)
                 .Select(g => new RoofTimberSchedule.Row(wall.Name, WoodModule.Label(g.Key.Role), g.Key.Section, f.Spec.Grade, g.Key.Length, g.Count(), g.Sum(m => m.Volume))));
         }
-        o.AddRange(RoofTimberSchedule.Rows(q.Model));
+        // The joisted floors' members (decision 244).
+        foreach (var slab in q.Model.OfClass(IfcClass.Slab).OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase).ThenBy(s => s.Id))
+        {
+            if (Joists.Of(q.Model, slab) is not { } f) continue;
+            o.AddRange(f.Result.Members.GroupBy(m => (m.Role, Section: WoodModule.Section(m.Section), Length: Math.Round(m.Length, 2)))
+                .OrderBy(g => g.Key.Role).ThenByDescending(g => g.Key.Length)
+                .Select(g => new RoofTimberSchedule.Row(slab.Name, Joists.Label(g.Key.Role), g.Key.Section, f.Spec.Grade, g.Key.Length, g.Count(), g.Sum(m => m.Volume))));
+        }
+        // A CLT roof's rafters and trusses are its panels now (decision 246): only its wall plates stay timber.
+        var clt = q.Model.OfClass(IfcClass.Roof).Where(r => CltSpec.OfRoof(r) != null).Select(r => r.Name).ToHashSet();
+        o.AddRange(RoofTimberSchedule.Rows(q.Model).Where(r => !clt.Contains(r.Roof) || r.Role == "Wall plate"));
         return o;
     }
 

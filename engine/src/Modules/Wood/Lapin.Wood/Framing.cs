@@ -11,7 +11,7 @@ namespace Lapin.Wood;
 /// </summary>
 public static class Framing
 {
-    public sealed record Member(string Role, IReadOnlyList<(double U, double Z)> Face, double Y0, double Y1, string Section, string? Opening = null)
+    public sealed record Member(string Role, IReadOnlyList<(double U, double Z)> Face, double Y0, double Y1, string Section, string? Opening = null, int Panel = 0)
     {
         public double U0 => Face.Min(p => p.U);
         public double U1 => Face.Max(p => p.U);
@@ -35,7 +35,67 @@ public static class Framing
     /// <summary>A rectangle of the stud zone filled with insulation (its top may slant).</summary>
     public sealed record Cavity(double U0, double U1, double Z0, double Z1Left, double Z1Right);
 
-    public sealed record Result(List<Member> Members, List<Cavity> Insulation, List<string> Warnings, Dictionary<string, (OpeningRule Rule, double U0, double U1, double Z0, double Z1)> Openings);
+    /// <summary>The frame: its members, the insulation, the warnings, each opening's rule and rough opening; when it is prefabricated (decision 245), its panels along the wall, first to last (a member's <see cref="Member.Panel"/> indexes them from 1).</summary>
+    public sealed record Result(List<Member> Members, List<Cavity> Insulation, List<string> Warnings, Dictionary<string, (OpeningRule Rule, double U0, double U1, double Z0, double Z1)> Openings, List<(double U0, double U1)>? Panels = null);
+
+    /// <summary>
+    /// A wall's frame in prefabricated panels (decision 245): with no panel length, <see cref="Layout"/>. Else the wall is
+    /// framed once to find where a joint may not go (an opening's kings, jacks, header and sill; a T's backing; each with
+    /// room for the end studs the joint brings), then cut at the longest joint within the panel length, on the studs'
+    /// module where it can, at such a zone's edge where it cannot; each panel is framed on its own (its end studs and plates
+    /// at the joints, the module kept from the wall's origin) and its members carry its number.
+    /// </summary>
+    public static Result Panelize(FrameSpec spec, double u0, double u1, Func<double, double> top, IReadOnlyList<double> bends, double y0, double y1, IReadOnlyList<Hole> holes, double origin, IReadOnlyList<Junction>? junctions = null)
+    {
+        var whole = Layout(spec, u0, u1, top, bends, y0, y1, holes, origin, junctions);
+        if (spec.PanelMax <= 0 || u1 - u0 <= spec.PanelMax + 1e-6) return spec.PanelMax > 0 ? whole with { Members = [.. whole.Members.Select(m => m with { Panel = 1 })], Panels = [(u0, u1)] } : whole;
+        var t = spec.Stud.W;
+        var margin = spec.EndStuds * t + spec.MinGap;
+        // Where a joint may not go.
+        var zones = whole.Members.Where(m => m.Opening != null || m.Role is "backer" or "blocking" or "corner")
+            .Select(m => (L: m.U0 - margin, R: m.U1 + margin))
+            .OrderBy(z => z.L).Aggregate(new List<(double L, double R)>(), (acc, z) => { if (acc.Count > 0 && z.L <= acc[^1].R) acc[^1] = (acc[^1].L, Math.Max(acc[^1].R, z.R)); else acc.Add(z); return acc; });
+        bool Free(double u) => !zones.Any(z => u > z.L + 1e-9 && u < z.R - 1e-9);
+        var grid = new List<double>();
+        if (spec.Spacing > 0)
+            for (var g = origin + Math.Ceiling((u0 - origin) / spec.Spacing) * spec.Spacing; g < u1 - 1e-9; g += spec.Spacing) grid.Add(g);
+        var edges = zones.SelectMany(z => new[] { z.L, z.R }).ToList();
+        var least = Math.Max(2 * margin + t, spec.PanelMin);
+        var warnings = new List<string>();
+        var cuts = new List<double> { u0 };
+        while (u1 - cuts[^1] > spec.PanelMax + 1e-6)
+        {
+            var a = cuts[^1];
+            bool Fits(double u) => u >= a + least - 1e-9 && u <= a + spec.PanelMax + 1e-9 && u1 - u >= least - 1e-9 && Free(u);
+            double? cut = grid.Where(Fits).Select(g => (double?)g).LastOrDefault() ?? edges.Where(Fits).Select(g => (double?)g).DefaultIfEmpty().Max();
+            if (cut == null)
+            {
+                // No joint within the length: the first one past it, and a warning.
+                cut = grid.Concat(edges).Where(u => u > a + spec.PanelMax && u1 - u >= least - 1e-9 && Free(u)).Select(u => (double?)u).DefaultIfEmpty().Min();
+                if (cut == null) break;
+                warnings.Add($"A panel is {Math.Round((cut.Value - a) * 1000)} mm long: no joint within {Math.Round(spec.PanelMax * 1000)} mm clears the openings.");
+            }
+            cuts.Add(cut.Value);
+        }
+        cuts.Add(u1);
+        var members = new List<Member>();
+        var insulation = new List<Cavity>();
+        var rules = new Dictionary<string, (OpeningRule, double, double, double, double)>();
+        var panels = new List<(double, double)>();
+        for (var i = 0; i + 1 < cuts.Count; i++)
+        {
+            var (a, b) = (cuts[i], cuts[i + 1]);
+            var mine = holes.Where(h => h.Along > a && h.Along < b).ToList();
+            var joins = (junctions ?? []).Where(j => j.U1 > a && j.U0 < b).ToList();
+            var r = Layout(spec, a, b, top, bends, y0, y1, mine, origin, joins);
+            members.AddRange(r.Members.Select(m => m with { Panel = i + 1 }));
+            insulation.AddRange(r.Insulation);
+            warnings.AddRange(r.Warnings);
+            foreach (var (k, v) in r.Openings) rules[k] = v;
+            panels.Add((a, b));
+        }
+        return new Result(members, insulation, [.. warnings.Distinct()], rules, panels);
+    }
 
     public static readonly string[] Roles = ["plate", "end", "corner", "backer", "stud", "king", "jack", "header", "sill", "cripple", "noggin", "blocking"];
 

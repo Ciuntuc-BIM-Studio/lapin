@@ -29,9 +29,30 @@ Selectezi o ușă sau o fereastră: secțiunea **Wood** arată golul brut, regul
 - **Plăci**: bifezi un strat al alcătuirii (OSB, plăci fibrolemnoase, gips-carton) și îi dai mărimea foii: stratul se pune din foi verticale, cu rosturile pe modulul montanților, tăiate la golurile brute și de-a lungul coronamentului. **Wood → Boards schedule** numără foile fiecărui perete, aria netă și ce se taie.
 - **Elevația de cadru**: în secțiunea **Wood** a unui perete pe cadre, butonul face o secțiune de-a lungul peretelui prin mijlocul miezului, la 1:20, cu toate piesele tăiate, cu un lanț de cote prin golurile brute, modulul montanților sub el și mărimea fiecărui gol brut. O pui pe planșă ca pe orice vedere.
 
+## Panouri prefabricate
+
+Bifează **Prefabricated panels** ca structura să fie făcută în atelier: dă **cel mai lung panou** (cât permit masa atelierului și camionul) și **cel mai scurt**. Fiecare perete e tăiat în panouri la cel mai lung rost care încape în lungimea dată, pe modulul montanților unde se poate, niciodată prin montanții întregi, montanții de sprijin, buiandrugul sau pervazul unui gol și nici prin dublura unei intersecții în T. Fiecare panou e încadrat separat, cu montanții de capăt și tălpile lui la rosturi. Un panou care nu poate rămâne în lungime (un gol prea lat pentru el) rămâne întreg, iar peretele o spune.
+
+![Un perete prefabricat în configurator](shots/wood-panels.webp)
+
+Panourile sunt marcate cu numele peretelui și numărul lor de-a lungul lui (W3-P1, W3-P2…). Secțiunea **Wood** a peretelui le arată lungimile, elevația de cadru desenează rosturile și marcajele deasupra peretelui, iar **Wood → Wall panels** listează fiecare panou cu peretele, lungimea, înălțimea, golurile, piesele, volumul de lemn și masa, ca să poată fi comandate, făcute și ridicate pe rând. Plăcile de pe un panou poartă și ele marcajul lui. În IFC fiecare panou e un IfcElementAssembly (Timber frame panel) cu piesele și plăcile lui.
+
 ## CLT
 
 În același configurator, un tip de perete sau de placă poate fi construit **din panouri CLT**: dai straturile (grosimea fiecăruia, 3, 5, 7 sau 9), clasa, panoul cel mai lung și cel mai înalt (sau cel mai lat) pe care îl face presa, îmbinarea dintre panouri (cap la cap, falț pe jumătate, lambă), cât stă un gol de marginea panoului și jocul de montaj. Peretele se taie în panouri pe lungimea lui, cu rosturile mutate departe de goluri; fiecare panou e chiar corpul miezului, cu golurile brute decupate. Placa se taie în panouri peste deschiderea ei (pe direcția scurtă, pe x sau pe y). **Wood → CLT panels** dă fiecare panou cu marca, dimensiunile, straturile, clasa, îmbinarea, aria și volumul; în IFC fiecare e un IfcBuildingElementPart numit CLT panel.
+
+- **Îmbinări**: la **suprapunere pe jumătate** (half lap) cele două jumătăți se suprapun cu lungimea dată; o îmbinare cu **lamelă** (spline) are un fălțuit pe o față și o fâșie de placaj în el, ca piesă separată. Amândouă sunt modelate în panouri, deci volumele și tabelul sunt ce taie atelierul.
+- **Colțurile golurilor**: o freză nu poate tăia un colț interior drept. **Raza frezei** o lasă în fiecare colț; **degajarea „dog-bone”** taie un cerc în fiecare colț, ca o tâmplărie dreptunghiulară să încapă. Configuratorul desenează conturul tăieturii.
+- **Elevația panourilor**: secțiunea **Wood** a unui perete CLT face o secțiune de-a lungul lui la 1:20, cu rosturile și marcajele panourilor și dimensiunile golurilor brute.
+- **Acoperișuri CLT**: selectează un acoperiș în pante și bifează **CLT panels** în secțiunea lui **Wood**: pantele lui sunt făcute din plăci CLT în locul căpriorilor sau fermelor (cosoroabele și învelitoarea rămân), cu golurile ferestrelor de acoperiș și lucarnelor tăiate, în fâșii late cât panoul de-a lungul streașinii, îmbinate cap la cap unde panta e mai lungă decât un panou.
+
+## Planșee pe grinzișoare
+
+Un tip de planșeu poate fi făcut **pe grinzișoare**: alege-l în configurator și alege **on joists**. Dă secțiunea, distanța și clasa grinzișoarelor, direcția pe care descarcă (pe latura scurtă sau după x ori y), dacă o **grindă de bordură** închide marginile, **rândurile de distanțieri** și, în jurul fiecărui gol din planșeu (un gol de scară, un ghenă), **grinzile de schimb** de fiecare parte și **straturile grinzii de capăt** la capete. Grinzișoarele întrerupte de gol se opresc în grinda de capăt, iar o grinzișoară în plus se pune unde grinzile de schimb lasă un spațiu mai mare decât distanța dată. **Fill the cavities** pune materialul miezului între grinzișoare. Configuratorul arată un planșeu de probă cu un gol de scară.
+
+![Un tip de planșeu pe grinzișoare](shots/wood-joists.webp)
+
+Grinzișoarele înlocuiesc miezul planșeului; straturile de deasupra și de dedesubt rămân. Piesele lor apar în extrasul de lemn, iar în IFC fiecare e un IfcBeam (JOIST, grindă de bordură sau grindă de capăt după nume) sub planșeu.
 
 ## Extrasul de lemn
 

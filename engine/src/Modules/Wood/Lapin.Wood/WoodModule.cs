@@ -31,6 +31,57 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         r.Service<IViewAnnotations>(this);
         r.Service<IScheduleSource>(new BoardSchedule());
         r.Service<IScheduleSource>(new CltSchedule());
+        r.Service<IScheduleSource>(new PanelSchedule());
+
+        // A joisted floor type (decision 244): {id (a floor type), spec (null: built of its layers)}.
+        r.Command("setFloorJoists", "Floor joists", (ctx, a) =>
+        {
+            var type = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.SlabType } t ? t : throw new CommandException("Joists are set on a floor type.");
+            var attrs = type.CloneAttrs();
+            if (a["spec"] is JsonObject o)
+            {
+                var spec = JoistSpec.From(o);
+                if (spec.Problem() is { } problem) throw new CommandException(problem);
+                attrs[FrameSpec.Key] = spec.ToJson();
+            }
+            else attrs.Remove(FrameSpec.Key);
+            ctx.Replace(type.With(attrs: attrs));
+            return null;
+        });
+
+        // The configurator's joist preview: {spec} → a 6 × 4 m floor with a stairwell, its members in plan.
+        r.Query("joistPreview", (q, a) =>
+        {
+            var spec = JoistSpec.From(a["spec"]);
+            if (spec.Problem() is { } problem) return new JsonObject { ["problem"] = problem };
+            Vec2[] outline = [new(0, 0), new(6, 0), new(6, 4), new(0, 4)];
+            Vec2[] well = [new(0.6, 0.6), new(3.4, 0.6), new(3.4, 1.6), new(0.6, 1.6)];
+            var (_, depth) = FrameSpec.Size(spec.Section, (0.045, 0.22));
+            var r = Joists.Layout(spec, outline, [well], -depth, 0);
+            return new JsonObject
+            {
+                ["members"] = new JsonArray([.. r.Members.Select(m => (JsonNode)new JsonObject { ["role"] = m.Role, ["pts"] = new JsonArray([.. m.Outline.SelectMany(p => new[] { (JsonNode)Math.Round(p.X, 4), Math.Round(p.Y, 4) })]) })]),
+                ["counts"] = new JsonObject([.. r.Members.GroupBy(m => m.Role).Select(g => KeyValuePair.Create(g.Key, (JsonNode?)g.Count()))]),
+                ["warnings"] = new JsonArray([.. r.Warnings.Select(w => (JsonNode)w)]),
+            };
+        });
+
+        // A CLT roof (decision 246): {id (the roof), spec (null: its own rafters or trusses)}.
+        r.Command("setRoofClt", "CLT roof", (ctx, a) =>
+        {
+            var roof = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Roof } x ? x : throw new CommandException("Pick a roof.");
+            if (roof.Str("shape") is "flat" or "barrel") throw new CommandException("A CLT roof is laid on sloped planes: a flat roof is a CLT floor's type, a vault is not made of plates.");
+            var attrs = roof.CloneAttrs();
+            if (a["spec"] is JsonObject o)
+            {
+                var spec = CltSpec.From(o, CltSpec.Floor);
+                if (spec.Problem() is { } problem) throw new CommandException(problem);
+                attrs[CltSpec.RoofKey] = spec.ToJson();
+            }
+            else attrs.Remove(CltSpec.RoofKey);
+            ctx.Replace(roof.With(attrs: attrs));
+            return null;
+        });
 
         // A CLT wall or floor type (decision 241): {id (a wall or slab type), spec (null: built of its layers)}.
         r.Command("setClt", "CLT", (ctx, a) =>
@@ -62,6 +113,8 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
                 ["length"] = length, ["height"] = height, ["joints"] = new JsonArray([.. joints.Select(j => (JsonNode)Math.Round(j, 4))]),
                 ["openings"] = new JsonArray([.. ros.Select(o => (JsonNode)new JsonArray(Math.Round(o.L, 4), Math.Round(o.R, 4), Math.Round(o.B, 4), Math.Round(o.T, 4)))]),
                 ["warnings"] = new JsonArray([.. warnings.Select(w => (JsonNode)w)]), ["label"] = spec.Label,
+                // Each opening's cutter as the router makes it (decision 246), (u, z) loops.
+                ["cutters"] = new JsonArray([.. ros.SelectMany(o => Clt.Cutters(spec, o.L, o.R, o.B, o.T)).Select(loop => (JsonNode)new JsonArray([.. loop.SelectMany(p => new[] { (JsonNode)Math.Round(p.U, 4), Math.Round(p.Z, 4) })]))]),
             };
         });
 
@@ -70,7 +123,8 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         r.Command("frameView", "Frame elevation", (ctx, a) =>
         {
             var wall = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Wall } w ? w : throw new CommandException("Pick a wall.");
-            if (FrameSpec.Of(Walls.TypeOf(ctx.Model, wall.Id)) == null) throw new CommandException("The wall is not a timber frame: its type is built of layers.");
+            var wallType = Walls.TypeOf(ctx.Model, wall.Id);
+            if (FrameSpec.Of(wallType) == null && CltSpec.Of(wallType) == null) throw new CommandException("The wall is not a timber frame or CLT: its type is built of layers.");
             var core = Walls.Section(ctx.Model, wall).First(b => b.Core);
             var attrs = new JsonObject { ["kind"] = "section", ["scale"] = 20, ["discipline"] = "Structure", [FrameViewKey] = wall.Id, ["depth"] = Math.Round((core.To - core.From) / 2 + 0.01, 4) };
             var (s, e) = (Walls.Start(wall), Walls.End(wall));
@@ -127,7 +181,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
                 ? arr.OfType<JsonObject>().Select((o, i) => new Framing.Hole($"Opening {i + 1}", Json.Number(o["along"]) ?? 1, Json.Number(o["sill"]) ?? 0.9, Json.Number(o["width"]) ?? 1.2, Json.Number(o["height"]) ?? 1.5, o["door"] is JsonValue dv && dv.TryGetValue<bool>(out var door) && door)).ToList()
                 : [new Framing.Hole("Window", 1.7, 0.9, 1.2, 1.3, false), new Framing.Hole("Door", 4.3, 0, 0.9, 2.1, true)];
             var (_, d) = spec.Stud;
-            var result = Framing.Layout(spec, 0, length, _ => height, [], -d / 2, d / 2, holes, 0);
+            var result = Framing.Panelize(spec, 0, length, _ => height, [], -d / 2, d / 2, holes, 0);
             return ToJson(result, length, height);
         });
 
@@ -147,6 +201,8 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         r.Query("wall", (q, a) =>
         {
             var wall = q.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Wall } w ? w : throw new CommandException("Not a wall.");
+            if (CltSpec.Of(Walls.TypeOf(q.Model, wall.Id)) is { } clt)
+                return new JsonObject { ["framed"] = false, ["clt"] = true, ["label"] = clt.Label, ["panels"] = q.Geometry(wall.Id)?.Parts.Count(p => p.Key?.StartsWith("clt:", StringComparison.Ordinal) == true) ?? 0 };
             if (Of(q.Model, wall, q.Geometry(wall.Id), q.Services) is not { } f) return new JsonObject { ["framed"] = false };
             var o = ToJson(f.Result, f.U1 - f.U0, f.Height);
             o["framed"] = true;
@@ -187,7 +243,11 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         ["insulation"] = new JsonArray([.. r.Insulation.Select(c => (JsonNode)new JsonArray(Math.Round(c.U0, 4), Math.Round(c.U1, 4), Math.Round(c.Z0, 4), Math.Round(c.Z1Left, 4), Math.Round(c.Z1Right, 4)))]),
         ["counts"] = new JsonObject([.. r.Members.GroupBy(m => m.Role).Select(g => KeyValuePair.Create(g.Key, (JsonNode?)g.Count()))]),
         ["warnings"] = new JsonArray([.. r.Warnings.Select(w => (JsonNode)w)]),
+        ["panels"] = new JsonArray([.. (r.Panels ?? []).Select(p => (JsonNode)new JsonArray(Math.Round(p.U0, 4), Math.Round(p.U1, 4)))]),
     };
+
+    /// <summary>A prefabricated panel's mark (decision 245): the wall's name and the panel's number along it, "W3-P2".</summary>
+    public static string PanelMark(Entity wall, int n) => $"{(string.IsNullOrWhiteSpace(wall.Name) ? wall.Id : wall.Name)}-P{n}";
 
     /// <summary>A wall's frame where it is: its spec, the result, and how its elevation maps into the model.</summary>
     public sealed record WallFrame(Entity Wall, FrameSpec Spec, Framing.Result Result, Vec2 Start, Vec2 Dir, double BaseZ, double U0, double U1, double Height)
@@ -249,7 +309,7 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
             p.Opening.Id, p.Along, p.Sill, p.Width, p.Height, p.Fill?.Class == IfcClass.Door || p.Sill <= 1e-6,
             p.Opening.Attrs[OpeningKey] is JsonObject own ? OpeningRule.From(own, spec.RuleFor(p.Width + 2 * spec.GapSide)) : null)).ToList();
         var origin = spec.LayoutFrom == "project" ? -Vec2.Dot(start, dir) : 0;
-        var result = Framing.Layout(spec, u0, u1, top, bends, core.From, core.To, holes, origin, Junctions(m, wall, start, dir, axis.Length, u0, u1, bands));
+        var result = Framing.Panelize(spec, u0, u1, top, bends, core.From, core.To, holes, origin, Junctions(m, wall, start, dir, axis.Length, u0, u1, bands));
         var names = placed.ToDictionary(p => p.Opening.Id, p => p.Fill?.Name ?? "An opening");
         var warnings = result.Warnings.Select(w => names.Aggregate(w, (acc, kv) => acc.Replace(kv.Key + ":", kv.Value + ":"))).ToList();
         return new WallFrame(wall, spec, result with { Warnings = warnings }, start, dir, baseZ, u0, u1, profile is { Count: > 0 } ? profile.Max(p => p.V) : height);
@@ -304,6 +364,9 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         // CLT walls and floors (decision 241): their core in panels.
         if (entity.Class == IfcClass.Wall && CltSpec.Of(Walls.TypeOf(model, entity.Id)) is { } wallClt) return Clt.Wall(entity, geometry, model, services, wallClt) ?? geometry;
         if (entity.Class == IfcClass.Slab && CltSpec.Of(model.RelatingOf(entity.Id, IfcClass.RelDefinesByType)) is { } floorClt) return Clt.Floor(entity, geometry, model, services, floorClt) ?? geometry;
+        if (entity.Class == IfcClass.Roof && CltSpec.OfRoof(entity) is { } roofClt) return Clt.Roof(entity, geometry, model, services, roofClt) ?? geometry;
+        // Joisted floors (decision 244): their core as joists.
+        if (entity.Class == IfcClass.Slab && Joists.Of(model, entity) is { } floor) return Joists.Apply(entity, geometry, model, services, floor);
         if (entity.Class != IfcClass.Wall || Of(model, entity, geometry, services) is not { } f) return geometry;
         var core = Walls.Section(model, entity).First(b => b.Core);
         var parts = geometry.Parts.Where(p => p.Key != $"layer:{core.Index}" && !(p.Key?.StartsWith("lintel", StringComparison.Ordinal) ?? false)).ToList();
@@ -316,10 +379,12 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
             if (Prism.Extrude(face, null, across, mb.Role) is not { } body) continue;
             var i = counts[mb.Role] = counts.GetValueOrDefault(mb.Role) + 1;
             var (w, d) = FrameSpec.Size(mb.Section, (0, 0));
+            List<(string, string)> props = [("Role", Label(mb.Role)), ("Section", Section(mb.Section)), ("Grade", f.Spec.Grade), ("Length", Math.Round(mb.Length, 3).ToString(CultureInfo.InvariantCulture))];
+            if (mb.Panel > 0) props.Add(("Panel", PanelMark(entity, mb.Panel)));
             parts.Add(new GeometryPart($"{Label(mb.Role)} {Section(mb.Section)}", Colour(mb.Role), body, timber, $"wood:{mb.Role}:{i}")
             {
                 PropertySet = "Lapin_Timber",
-                Properties = [("Role", Label(mb.Role)), ("Section", Section(mb.Section)), ("Grade", f.Spec.Grade), ("Length", Math.Round(mb.Length, 3).ToString(CultureInfo.InvariantCulture))],
+                Properties = props,
             });
         }
         var insulation = f.Result.Insulation.Select(c =>
@@ -349,10 +414,14 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
                     try { piece = booleans.Intersection(layerPart.Solid, box, "sheet"); }
                     catch (InvalidOperationException) { piece = null; }
                     if (piece == null || Measure.Volume(piece) < 1e-7) continue;
+                    List<(string, string)> props = [("Layer", band.Name), ("Sheet", $"{Math.Round(rule.Width * 1000)}x{Math.Round(rule.Height * 1000)} mm"), ("Area", Math.Round(Measure.Volume(piece) / Math.Max(1e-9, band.To - band.From), 3).ToString(CultureInfo.InvariantCulture))];
+                    // On a prefabricated wall, the panel the sheet's middle stands on (decision 245).
+                    var mid = (a0 + a1) / 2;
+                    if (f.Result.Panels is { } ps && ps.FindIndex(p => mid >= p.U0 - 1e-9 && mid <= p.U1 + 1e-9) is var pi and >= 0) props.Add(("Panel", PanelMark(entity, pi + 1)));
                     sheets.Add(new GeometryPart($"{band.Name} {Math.Round(rule.Width * 1000)}×{Math.Round(rule.Height * 1000)}", layerPart.Color, piece, layerPart.Material, $"wood-board:{rule.Layer}:{++k}")
                     {
                         PropertySet = "Lapin_Board",
-                        Properties = [("Layer", band.Name), ("Sheet", $"{Math.Round(rule.Width * 1000)}x{Math.Round(rule.Height * 1000)} mm"), ("Area", Math.Round(Measure.Volume(piece) / Math.Max(1e-9, band.To - band.From), 3).ToString(CultureInfo.InvariantCulture))],
+                        Properties = props,
                     });
                 }
             if (sheets.Count == 0) continue;
@@ -373,6 +442,11 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
     public IEnumerable<ViewMark> Marks(ViewContext c)
     {
         if (c.View.Str(FrameViewKey) is not { } wallId || c.Model.Get(wallId) is not { } wall || c.Geometry?.Invoke(wallId) is not { } g) yield break;
+        if (CltSpec.Of(Walls.TypeOf(c.Model, wallId)) is { } clt)
+        {
+            if (CltMarks(c, wall, g, clt) is { } cm) yield return cm;
+            yield break;
+        }
         if (Of(c.Model, wall, g, c.Services) is not { } f) yield break;
         var core = Walls.Section(c.Model, wall).First(b => b.Core);
         var y = (core.From + core.To) / 2;
@@ -397,7 +471,62 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         Chain([f.U0, .. f.Result.Members.Where(m => m.Role is "stud" or "cripple" or "king" or "end" or "corner" or "backer").Select(m => Math.Round((m.U0 + m.U1) / 2, 4)), f.U1], -0.5, "#555555");
         foreach (var o in ros)
             mk.Text(new PenText(P((o.U0 + o.U1) / 2, (o.Z0 + o.Z1) / 2), $"{Math.Round((o.U1 - o.U0) * 1000)} × {Math.Round((o.Z1 - o.Z0) * 1000)}", text.Height, Anchor: "middle", Font: text.Font), "#000000");
+        // A prefabricated wall's panels (decision 245): their lengths in a chain above the wall, a joint line at each, each panel's mark.
+        if (f.Result.Panels is { Count: > 1 } panels)
+        {
+            var over = f.Height + 0.3;
+            Chain([.. panels.Select(p => p.U0), panels[^1].U1], over, "#0b5cad");
+            foreach (var u in panels.Skip(1).Select(p => p.U0)) mk.Line(P(u, -0.1), P(u, f.Height + 0.15), "DIMENSION", 0.35, "#0b5cad");
+            for (var i = 0; i < panels.Count; i++)
+                mk.Text(new PenText(P((panels[i].U0 + panels[i].U1) / 2, over + 0.35), PanelMark(wall, i + 1), text.Height * 1.2, Anchor: "middle", Font: text.Font), "#0b5cad");
+        }
         yield return mk;
+    }
+
+    /// <summary>
+    /// A CLT wall's panel elevation (decision 246): under it, a chain through the panels' joints and, below, one through the
+    /// rough openings' sides; each panel's mark over it; each rough opening's size inside it.
+    /// </summary>
+    static ViewMark? CltMarks(ViewContext c, Entity wall, ElementGeometry g, CltSpec spec)
+    {
+        var panels = g.Parts.Where(p => p.Key?.StartsWith("clt:", StringComparison.Ordinal) == true).ToList();
+        if (panels.Count == 0) return null;
+        var start = Walls.Start(wall);
+        var dir = (Walls.End(wall) - start).Normalized();
+        var core = Walls.Section(c.Model, wall).First(b => b.Core);
+        var baseZ = (Spatial.StoreyOf(c.Model, wall.Id)?.Num("elevation") ?? 0) + wall.Num("baseOffset");
+        var y = (core.From + core.To) / 2;
+        Vec2 P(double u, double z) { var q = start + dir * u + dir.Perp * y; return c.Map(new Vec3(q.X, q.Y, baseZ + z)); }
+        var k = c.Scale / 1000;
+        var text = Lapin.Drawing.Standards.ResolveText(c.Book, []);
+        var mk = new ViewMark(wall.Id);
+        // Each panel's run at its middle ply: a half-lap's two halves overlap, the joint is between them.
+        var runs = panels.Select(p =>
+        {
+            var us = p.Solid.Vertices.Select(v => Vec2.Dot(v.Xy - start, dir)).ToList();
+            return (U0: us.Min(), U1: us.Max(), Z1: p.Solid.Vertices.Max(v => v.Z) - baseZ, Mark: (p.Properties ?? []).FirstOrDefault(x => x.Name == "Mark").Value ?? "");
+        }).OrderBy(r => r.U0).ToList();
+        var joints = new List<double>();
+        for (var i = 0; i + 1 < runs.Count; i++) joints.Add(Math.Round((runs[i].U1 + runs[i + 1].U0) / 2, 4));
+        var (u0, u1, top) = (runs[0].U0, runs[^1].U1, runs.Max(r => r.Z1));
+        void Chain(IReadOnlyList<double> us, double z, string color)
+        {
+            var pts = us.Distinct().OrderBy(u => u).ToList();
+            if (pts.Count < 2) return;
+            mk.Line(P(pts[0], z), P(pts[^1], z), "DIMENSION", 0.18, color);
+            foreach (var u in pts) mk.Line(P(u, z - 1.5 * k * 10), P(u, z + 1.5 * k * 10), "DIMENSION", 0.25, color);
+            for (var i = 0; i + 1 < pts.Count; i++)
+                mk.Text(new PenText(P((pts[i] + pts[i + 1]) / 2, z + 1.2 * k * 10), Math.Round((pts[i + 1] - pts[i]) * 1000).ToString(CultureInfo.InvariantCulture), text.Height, Anchor: "middle", Font: text.Font), color);
+        }
+        var ros = Openings.PlacedOn(c.Model, wall.Id).Select(p => (L: p.Along - p.Width / 2 - spec.Gap, R: p.Along + p.Width / 2 + spec.Gap, B: p.Fill?.Class == IfcClass.Door || p.Sill <= 1e-6 ? 0 : p.Sill - spec.Gap, T: p.Sill + p.Height + spec.Gap)).ToList();
+        Chain([u0, .. joints, u1], -0.25, "#0b5cad");
+        if (ros.Count > 0) Chain([u0, .. ros.SelectMany(o => new[] { o.L, o.R }), u1], -0.5, "#000000");
+        foreach (var j in joints) mk.Line(P(j, -0.1), P(j, top + 0.15), "DIMENSION", 0.35, "#0b5cad");
+        for (var i = 0; i < runs.Count; i++)
+            mk.Text(new PenText(P((runs[i].U0 + runs[i].U1) / 2, top + 0.3), runs[i].Mark, text.Height * 1.2, Anchor: "middle", Font: text.Font), "#0b5cad");
+        foreach (var o in ros)
+            mk.Text(new PenText(P((o.L + o.R) / 2, (o.B + o.T) / 2), $"{Math.Round((o.R - o.L) * 1000)} × {Math.Round((o.T - o.B) * 1000)}", text.Height, Anchor: "middle", Font: text.Font), "#000000");
+        return mk;
     }
 
     public static string Label(string role) => role switch

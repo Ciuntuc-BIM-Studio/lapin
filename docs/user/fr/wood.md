@@ -29,9 +29,30 @@ Sélectionnez une porte ou une fenêtre : sa section **Wood** montre la baie bru
 - **Panneaux** : cochez une couche (OSB, fibre de bois, plaque de plâtre) et donnez le format de la plaque : la couche est posée en plaques verticales, les joints sur la trame des montants, découpées aux baies brutes et le long du haut. **Wood → Boards schedule** compte les plaques de chaque mur, leur surface nette et les chutes.
 - **Élévation d’ossature** : dans la section **Wood** d’un mur à ossature, le bouton crée une coupe le long du mur par le milieu de son noyau, à 1:20, toutes les pièces coupées, avec une chaîne de cotes par les baies brutes, la trame des montants dessous et la taille de chaque baie brute. Elle se place sur une feuille comme toute vue.
 
+## Panneaux préfabriqués
+
+Cochez **Prefabricated panels** pour fabriquer l'ossature en atelier : donnez le **panneau le plus long** (aussi long que la table de l'atelier et le camion le permettent) et le **plus court**. Chaque mur est découpé en panneaux au joint le plus long dans cette longueur, sur la trame des montants quand c'est possible, jamais à travers les montants de rive, les poteaux d'appui, le linteau ou l'appui d'une baie, ni à travers le renfort d'une jonction en T. Chaque panneau est ossaturé seul, avec ses montants d'extrémité et ses lisses aux joints. Un panneau qui ne peut tenir dans la longueur (une baie trop large) reste entier et le mur le signale.
+
+![Un mur préfabriqué dans le configurateur](shots/wood-panels.webp)
+
+Les panneaux portent le nom du mur et leur numéro le long de celui-ci (W3-P1, W3-P2…). La section **Wood** du mur montre leurs longueurs, l'élévation d'ossature dessine les joints et les repères au-dessus du mur, et **Wood → Wall panels** liste chaque panneau avec son mur, sa longueur, sa hauteur, ses baies, ses pièces, son volume de bois et sa masse, pour les commander, les fabriquer et les lever dans l'ordre. Les panneaux de parement d'un panneau portent aussi son repère. En IFC chaque panneau est un IfcElementAssembly (Timber frame panel) avec ses pièces et ses plaques.
+
 ## CLT
 
 Dans le même configurateur, un type de mur ou de plancher peut être construit **en panneaux CLT** : les plis (l’épaisseur de chacun, 3, 5, 7 ou 9), la classe, le panneau le plus long et le plus haut (ou large) que fait la presse, le joint entre panneaux (bout à bout, mi-bois, languette), la distance d’une baie au bord du panneau et le jeu de pose. Un mur est découpé en panneaux sur sa longueur, les joints écartés des baies ; chaque panneau est le corps même du noyau, ses baies brutes découpées. Un plancher est découpé sur sa portée (le sens court, ou selon x ou y). **Wood → CLT panels** liste chaque panneau avec son repère, ses dimensions, ses plis, sa classe, son joint, sa surface et son volume ; en IFC chacun est un IfcBuildingElementPart nommé CLT panel.
+
+- **Joints** : dans un **mi-bois** (half lap) les deux moitiés se recouvrent de la valeur donnée ; un joint à **fausse languette** (spline) a une feuillure sur une face et une bande de contreplaqué dedans, pièce à part. Les deux sont modélisés dans les panneaux : les volumes et la nomenclature sont ce que l'atelier découpe.
+- **Angles des baies** : une fraise ne coupe pas un angle intérieur vif. **Le rayon de la fraise** le laisse dans chaque angle ; le **dégagement en os de chien** coupe un cercle à chaque angle pour qu'un cadre droit entre. Le configurateur dessine la découpe.
+- **Élévation des panneaux** : la section **Wood** d'un mur CLT crée une coupe le long du mur au 1:20, avec les joints et repères des panneaux et les dimensions des baies brutes.
+- **Toitures CLT** : sélectionnez une toiture en pente et cochez **CLT panels** dans sa section **Wood** : ses pans sont faits de plaques CLT à la place des chevrons ou fermes (sablières et couverture restent), fenêtres de toit et lucarnes découpées, en bandes de la largeur d'un panneau le long de l'égout, aboutées là où un pan est plus long qu'un panneau.
+
+## Planchers sur solives
+
+Un type de plancher peut être construit **sur solives** : choisissez-le dans le configurateur puis **on joists**. Donnez la section, l'entraxe et la classe des solives, leur sens de portée (le petit côté, ou selon x ou y), si une **solive de rive** ferme les bords, les **rangs d'entretoises** et, autour de chaque trémie (un escalier, une gaine), les **solives d'enchevêtrure** de chaque côté et les **plis du chevêtre** à ses extrémités. Les solives coupées par la trémie s'arrêtent au chevêtre, et une solive s'ajoute là où les enchevêtrures laissent un vide plus grand que l'entraxe. **Fill the cavities** met le matériau de l'âme entre les solives. Le configurateur montre un plancher d'exemple avec une trémie d'escalier.
+
+![Un type de plancher sur solives](shots/wood-joists.webp)
+
+Les solives remplacent l'âme du plancher ; les couches au-dessus et au-dessous restent. Leurs pièces sont dans la liste de bois, et en IFC chacune est un IfcBeam (JOIST, solive de rive ou chevêtre par son nom) sous le plancher.
 
 ## La liste de bois
 

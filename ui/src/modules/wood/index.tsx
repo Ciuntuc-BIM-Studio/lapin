@@ -10,7 +10,7 @@ import type { LapinModule, ToolDef } from '../../platform/module';
 import { notify, useUi } from '../../app/store';
 import { execute } from '../../engine/session';
 import { FrameDialog } from './FrameDialog';
-import { OpeningWoodSection, WallWoodSection } from './Sections';
+import { OpeningWoodSection, RoofWoodSection, WallWoodSection } from './Sections';
 
 const frame: ToolDef = { id: 'wood.frame', label: 'Timber frame and CLT', icon: Settings2, run: () => useUi.setState({ dialog: 'woodFrame' }) };
 const boards: ToolDef = {
@@ -20,6 +20,10 @@ const boards: ToolDef = {
 const cltSchedule: ToolDef = {
   id: 'wood.clt', label: 'CLT panels', icon: Table2,
   run: () => void execute('architecture.createSchedule', { kind: 'clt' }).then((r) => { if (r) notify('CLT panel schedule made: it is in the project browser, under Schedules.'); }),
+};
+const panels: ToolDef = {
+  id: 'wood.panels', label: 'Wall panels', icon: Table2,
+  run: () => void execute('architecture.createSchedule', { kind: 'panels' }).then((r) => { if (r) notify('Wall panel schedule made: it is in the project browser, under Schedules.'); }),
 };
 const schedule: ToolDef = {
   id: 'wood.schedule', label: 'Timber schedule', icon: Table2,
@@ -34,13 +38,14 @@ export const woodModule: LapinModule = {
     id: 'wood', label: 'Wood', order: 33, include: ['modify'],
     groups: [
       { label: 'Frame', tools: [frame] },
-      { label: 'Schedule', tools: [schedule, boards, cltSchedule] },
+      { label: 'Schedule', tools: [schedule, boards, panels, cltSchedule] },
     ],
   }],
   dialogs: { woodFrame: FrameDialog },
   propertySections: [
     { id: 'woodWall', label: 'Wood', classes: ['IfcWall'], component: WallWoodSection },
     { id: 'woodOpening', label: 'Wood', classes: ['IfcDoor', 'IfcWindow'], component: OpeningWoodSection },
+    { id: 'woodRoof', label: 'Wood', classes: ['IfcRoof'], component: RoofWoodSection },
   ],
 };
 

@@ -49,8 +49,9 @@ public sealed record OpeningRule(double MaxWidth, int Kings, int Jacks, HeaderRu
 public sealed record FrameSpec(
     string StudSection, double Spacing, string Grade, int BottomPlates, int TopPlates, int EndStuds, double[] Noggins,
     string LayoutFrom, bool LoadBearing, double GapSide, double GapTop, double GapBottom, double MinGap, double MinPier, OpeningRule[] Openings,
-    string Corner = "three", string Tee = "double", BoardRule[]? Boards = null)
+    string Corner = "three", string Tee = "double", BoardRule[]? Boards = null, double PanelMax = 0, double PanelMin = 0.6)
 {
+    // PanelMax: the longest prefabricated panel (decision 245), 0 for a frame built on site; PanelMin: the shortest one.
     /// <summary>
     /// How a corner is built where another wall stops against this one's end: "three" (a stud past the other wall's inner
     /// face, three in all), "california" (a stud laid flat on the inside face, for the lining), "l" (the end studs alone).
@@ -115,6 +116,7 @@ public sealed record FrameSpec(
         ["openings"] = new JsonArray([.. Openings.Select(r => (JsonNode)r.ToJson())]),
         ["corner"] = Corner, ["tee"] = Tee,
         ["boards"] = new JsonArray([.. (Boards ?? []).Select(b => (JsonNode)b.ToJson())]),
+        ["panelMax"] = PanelMax, ["panelMin"] = PanelMin,
     };
 
     public static FrameSpec From(JsonNode? n)
@@ -133,7 +135,8 @@ public sealed record FrameSpec(
             Json.Number(o["gapSide"]) ?? d.GapSide, Json.Number(o["gapTop"]) ?? d.GapTop, Json.Number(o["gapBottom"]) ?? d.GapBottom,
             Json.Number(o["minGap"]) ?? d.MinGap, Json.Number(o["minPier"]) ?? d.MinPier, rules,
             Corners.Contains((string?)o["corner"] ?? "") ? (string)o["corner"]! : d.Corner, Tees.Contains((string?)o["tee"] ?? "") ? (string)o["tee"]! : d.Tee,
-            (o["boards"] as JsonArray)?.Select(BoardRule.From).OfType<BoardRule>().ToArray() ?? []);
+            (o["boards"] as JsonArray)?.Select(BoardRule.From).OfType<BoardRule>().ToArray() ?? [],
+            Json.Number(o["panelMax"]) ?? 0, Json.Number(o["panelMin"]) ?? 0.6);
     }
 
     /// <summary>Refused when it cannot build: the spacing, the counts, the gaps, the sections.</summary>
@@ -144,6 +147,8 @@ public sealed record FrameSpec(
         if (EndStuds is < 1 or > 3) return "A wall ends in 1 to 3 studs.";
         if (Size(StudSection, (0, 0)).W <= 0) return $"„{StudSection}” is not a section (write it as 45x145 mm).";
         if (new[] { GapSide, GapTop, GapBottom }.Any(g => g < 0 || g > 0.1)) return "A fitting gap is 0 to 100 mm.";
+        if (PanelMax != 0 && (PanelMax < 1.2 || PanelMax > 16)) return "A prefabricated panel is 1.2 to 16 m long.";
+        if (PanelMin < 0.3 || (PanelMax > 0 && PanelMin > PanelMax / 2)) return "The shortest panel is 300 mm and at most half the longest.";
         foreach (var b in Boards ?? [])
             if (b.Width < 0.3 || b.Width > 3.5 || b.Height < 0.3 || b.Height > 6) return "A sheet is 300 to 3500 mm wide and 300 to 6000 mm high.";
         foreach (var r in Openings)

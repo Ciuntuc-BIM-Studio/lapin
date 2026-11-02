@@ -29,9 +29,30 @@ Vælg en dør eller et vindue: dets afsnit **Wood** viser råhulmålet, reglen o
 - **Plader**: sæt kryds ved et lag (OSB, træfiberplade, gipsplade) og angiv pladens format: laget lægges som stående plader med samlingerne på stolpemodulet, skåret ved råhullerne og langs toppen. **Wood → Boards schedule** tæller pladerne for hver væg, nettoarealet og spildet.
 - **Skeletopstalt**: i en skeletvægs afsnit **Wood** laver knappen et snit langs væggen gennem kernens midte, 1:20, alle dele skåret, med en målkæde gennem råhullerne, stolpemodulet under den og hvert råhuls størrelse. Den placeres på et ark som enhver visning.
 
+## Præfabrikerede elementer
+
+Sæt flueben ved **Prefabricated panels** for at lave skelettet på værkstedet: angiv det **længste element** (så langt som værkstedets bord og lastbilen tillader) og det **korteste**. Hver væg deles i elementer ved den længste samling inden for den længde, i stolpemodulet hvor det kan lade sig gøre, aldrig gennem en åbnings gennemgående stolper, bærestolper, overligger eller bundrem, og aldrig gennem en T-samlings forstærkning. Hvert element bygges for sig, med egne endestolper og remme ved samlingerne. Et element, der ikke kan holdes inden for længden (en for bred åbning), forbliver helt, og væggen siger det.
+
+![En præfabrikeret væg i konfiguratoren](shots/wood-panels.webp)
+
+Elementerne mærkes med væggens navn og deres nummer langs den (W3-P1, W3-P2…). Væggens **Wood**-afsnit viser deres længder, skeletopstalten tegner samlingerne og mærkerne over væggen, og **Wood → Wall panels** viser hvert element med væg, længde, højde, åbninger, dele, trævolumen og masse, så de kan bestilles, laves og løftes i rækkefølge. Pladerne på et element bærer også dets mærke. I IFC er hvert element en IfcElementAssembly (Timber frame panel) med dets dele og plader.
+
 ## CLT
 
 I samme konfigurator kan en væg- eller dæktype bygges **af CLT-elementer**: lagene (hvert lags tykkelse, 3, 5, 7 eller 9), kvaliteten, det længste og højeste (eller bredeste) element pressen laver, samlingen mellem elementer (stød, halv overlap, fer), hvor langt en åbning holder sig fra elementkanten og monteringsfugen. En væg deles i elementer på langs, med samlingerne flyttet væk fra åbningerne; hvert element er kernens egen krop med råhullerne skåret ud. Et dæk deles over spændet (den korte vej, langs x eller y). **Wood → CLT panels** viser hvert element med mærke, mål, lag, kvalitet, samling, areal og volumen; i IFC er hvert et IfcBuildingElementPart kaldet CLT panel.
+
+- **Samlinger**: i en **halv-overlapning** (half lap) overlapper de to halvdele med det angivne mål; en **fjedersamling** (spline) har en fals på den ene side og en krydsfinerstrimmel i den, som en del for sig. Begge er modelleret i elementerne, så volumener og skema er det, værkstedet skærer.
+- **Åbningernes hjørner**: en fræser kan ikke skære et skarpt indvendigt hjørne. **Fræserens radius** efterlader den i hvert hjørne; en **dog-bone-overskæring** skærer en cirkel i hvert hjørne, så en firkantet karm passer. Konfiguratoren tegner fræsekonturen.
+- **Elementopstalt**: en CLT-vægs **Wood**-afsnit laver et snit langs den i 1:20 med elementernes samlinger og mærker og åbningernes råmål.
+- **CLT-tage**: vælg et skråt tag og sæt flueben ved **CLT panels** i dets **Wood**-afsnit: dets flader lægges som CLT-plader i stedet for spær (murremme og tagdækning bliver), med ovenlysvinduer og kviste skåret ud, i strimler med elementets bredde langs tagfoden, stødt sammen hvor en flade er længere end et element.
+
+## Bjælkelag
+
+En dæktype kan bygges **på bjælker**: vælg den i konfiguratoren og vælg **on joists**. Angiv bjælkernes tværsnit, afstand og styrkeklasse, hvilken vej de spænder (den korte vej, eller langs x eller y), om en **kantbjælke** lukker kanterne, **rækkerne af afstivere** og omkring hvert hul i dækket (en trappe, en skakt) **udvekslingsbjælkerne** på hver side og **lagene i vekslen** for enderne. Bjælker, som hullet afbryder, stopper ved vekslen, og en ekstra bjælke kommer ind, hvor udvekslingerne efterlader et mellemrum større end afstanden. **Fill the cavities** lægger kernens materiale mellem bjælkerne. Konfiguratoren viser et prøvedæk med trappehul.
+
+![En dæktype på bjælker](shots/wood-joists.webp)
+
+Bjælkerne erstatter dækkets kerne; lagene over og under bliver. Deres dele står i trælisten, og i IFC er hver en IfcBeam (JOIST, kantbjælke eller veksel efter navn) under dækket.
 
 ## Trælisten
 

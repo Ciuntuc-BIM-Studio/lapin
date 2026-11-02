@@ -616,7 +616,7 @@ public static class IfcExport
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
             // A door's frame and leaf, a column's body, a terrain: one element. Only a wall, a roof and a footing hold parts that are elements of their own.
             var grouped = o.Grouped && (kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair or "IfcElementAssembly"
-                || kind.Class == IfcClass.Slab && parts.Any(p => p.Key?.StartsWith("clt:", StringComparison.Ordinal) == true)) && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
+                || kind.Class == IfcClass.Slab && parts.Any(p => p.Key?.StartsWith("clt:", StringComparison.Ordinal) == true || p.Key?.StartsWith("wood:", StringComparison.Ordinal) == true)) && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
             // A door or window: placed with its local +Y the way its panels open, which IFC's left and right are seen along.
             var joinery = e.Class is IfcClass.Door or IfcClass.Window && !grouped ? s.Catalog.Get<IJoineryIfc>() : null;
             var at = joinery?.Place(m, e);
@@ -900,6 +900,7 @@ public static class IfcExport
             var refs = new List<string>();
             // A roof's trusses: each an element assembly of its members (keys "truss:<n>:<role>:<i>"), under the roof.
             var trusses = new Dictionary<string, List<string>>();
+            var panels = new Dictionary<string, List<string>>();
             var zones = (m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Attrs["zones"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
             for (var i = 0; i < parts.Count; i++)
             {
@@ -914,6 +915,8 @@ public static class IfcExport
                     Define(r, f.Add("IFCPROPERTYSET", Gid(e.Id, key + "/pset"), Null, S(p.PropertySet ?? "Lapin_Part"), Null, L(own.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(e.Id, key + "/pset-rel"));
                 partRefs[(e.Id, key)] = r;
                 if (kind.Class == IfcClass.Roof && key.Split(':') is ["truss", var n, ..]) { if (!trusses.TryGetValue(n, out var members)) trusses[n] = members = []; members.Add(r); }
+                // A prefabricated timber-frame wall's members and boards (decision 245), by the panel they belong to.
+                else if (kind.Class == IfcClass.Wall && p.Properties?.FirstOrDefault(x => x.Name == "Panel").Value is { Length: > 0 } mark) { if (!panels.TryGetValue(mark, out var members)) panels[mark] = members = []; members.Add(r); }
                 else refs.Add(r);
                 PartCount++;
             }
@@ -922,6 +925,12 @@ public static class IfcExport
                 var truss = f.Add("IFCELEMENTASSEMBLY", Gid(e.Id, "truss:" + n), Null, S($"Truss {n}"), Null, Null, Place(place, 0), Null, S($"{e.Id}/truss:{n}"), E("FACTORY"), E("TRUSS"));
                 f.Add("IFCRELAGGREGATES", Gid(e.Id, "truss-parts:" + n), Null, Null, Null, truss, L(members));
                 refs.Add(truss);
+            }
+            foreach (var (mark, members) in panels)
+            {
+                var panel = f.Add("IFCELEMENTASSEMBLY", Gid(e.Id, "panel:" + mark), Null, S(mark), Null, S("Timber frame panel"), Place(place, 0), Null, S(mark), E("FACTORY"), E("USERDEFINED"));
+                f.Add("IFCRELAGGREGATES", Gid(e.Id, "panel-parts:" + mark), Null, Null, Null, panel, L(members));
+                refs.Add(panel);
             }
             f.Add("IFCRELAGGREGATES", Gid(e.Id, "parts"), Null, Null, Null, parent, L(refs));
         }
@@ -960,7 +969,17 @@ public static class IfcExport
                 (IfcClass.Wall, "wood") => TimberKind(rest),
                 (IfcClass.Wall, "wood-insulation") => new("IfcCovering", "INSULATION", null),
                 // A CLT wall's or floor's panels (decision 241).
-                (IfcClass.Wall or IfcClass.Slab, "clt") => new("IfcBuildingElementPart", "USERDEFINED", "CLT panel"),
+                (IfcClass.Wall or IfcClass.Slab or IfcClass.Roof, "clt") => new("IfcBuildingElementPart", "USERDEFINED", "CLT panel"),
+                (IfcClass.Wall or IfcClass.Slab, "clt-spline") => new("IfcPlate", "USERDEFINED", "Spline"),
+                // A joisted floor's members (decision 244): joists as IfcBeam JOIST.
+                (IfcClass.Slab, "wood") => rest.Split(':')[0] switch
+                {
+                    "joist" or "tail" or "trimmer" => new(IfcClass.Beam, "JOIST", null),
+                    "rim" => new(IfcClass.Beam, "USERDEFINED", "Rim joist"),
+                    "header" => new(IfcClass.Beam, "USERDEFINED", "Header"),
+                    _ => new("IfcMember", "MEMBER", null),
+                },
+                (IfcClass.Slab, "wood-insulation") => new("IfcCovering", "INSULATION", null),
                 (IfcClass.Roof, "drainage" or "gutter") => new("IfcPipeSegment", "GUTTER", null),
                 (IfcClass.Roof, "downpipe") => new("IfcPipeSegment", "RIGIDSEGMENT", "Downpipe"),
                 (IfcClass.Roof, "snow") => new("IfcDiscreteAccessory", "USERDEFINED", "Snow guard"),

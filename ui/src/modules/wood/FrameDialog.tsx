@@ -18,11 +18,14 @@ export interface Spec {
   noggins: number[]; layoutFrom: 'start' | 'project'; loadBearing: boolean; gapSide: number; gapTop: number; gapBottom: number; minGap: number; minPier: number; openings: Rule[];
   corner?: 'three' | 'california' | 'l'; tee?: 'double' | 'ladder';
   boards?: { layer: number; width: number; height: number }[];
+  /** Prefabricated panels (decision 245): the longest panel, 0 for a frame built on site; the shortest. */
+  panelMax?: number; panelMin?: number;
 }
 export interface Framed {
   problem?: string; length: number; height: number;
   members: { role: string; section: string; opening?: string | null; face: number[] }[];
   insulation: number[][]; counts: Record<string, number>; warnings: string[];
+  panels?: [number, number][];
 }
 
 export const SECTIONS = ['45x95 mm', '45x120 mm', '45x145 mm', '45x170 mm', '45x195 mm', '45x220 mm', '45x245 mm', '50x100 mm', '50x150 mm', '50x200 mm', '70x220 mm', '90x315 mm', '90x360 mm', '115x360 mm'];
@@ -48,10 +51,38 @@ const ROMANIAN: Spec = {
 };
 
 /** A CLT wall or floor type's rules (decision 241). */
-export interface CltSpec { construction: 'clt'; plies: number[]; grade: string; maxLength: number; maxWidth: number; joint: string; minEdge: number; gap: number; direction: string }
-const CLT_WALL: CltSpec = { construction: 'clt', plies: [40, 40, 40], grade: 'C24', maxLength: 16, maxWidth: 3.5, joint: 'halfLap', minEdge: 0.3, gap: 0.01, direction: 'auto' };
-const CLT_FLOOR: CltSpec = { ...CLT_WALL, plies: [40, 20, 40, 20, 40] };
-interface CltPreview { problem?: string; length: number; height: number; joints: number[]; openings: number[][]; warnings: string[]; label: string }
+export interface CltSpec {
+  construction: 'clt'; plies: number[]; grade: string; maxLength: number; maxWidth: number; joint: string; minEdge: number; gap: number; direction: string;
+  /** Decision 246: the openings' corners as the router leaves them, and the joint's sizes. */
+  corners?: 'square' | 'round' | 'dogbone'; cornerRadius?: number; lapWidth?: number; splineWidth?: number; splineDepth?: number;
+}
+export const CLT_WALL: CltSpec = { construction: 'clt', plies: [40, 40, 40], grade: 'C24', maxLength: 16, maxWidth: 3.5, joint: 'halfLap', minEdge: 0.3, gap: 0.01, direction: 'auto', corners: 'square', cornerRadius: 0.02, lapWidth: 0.1, splineWidth: 0.12, splineDepth: 0.027 };
+export const CLT_FLOOR: CltSpec = { ...CLT_WALL, plies: [40, 20, 40, 20, 40] };
+interface CltPreview { problem?: string; length: number; height: number; joints: number[]; openings: number[][]; cutters?: number[][]; warnings: string[]; label: string }
+
+/** A joisted floor type's rules (decision 244). */
+export interface JoistSpec { construction: 'joists'; section: string; spacing: number; grade: string; direction: string; rim: boolean; blockingRows: number; trimmers: number; headerPlies: number; fill: boolean }
+const JOISTS: JoistSpec = { construction: 'joists', section: '45x220 mm', spacing: 0.6, grade: 'C24', direction: 'auto', rim: true, blockingRows: 1, trimmers: 2, headerPlies: 2, fill: false };
+interface JoistPreview { problem?: string; members: { role: string; pts: number[] }[]; counts: Record<string, number>; warnings: string[] }
+
+/** A sample floor, 6 × 4 m with a stairwell: its joists in plan. */
+function JoistPlan({ p }: { p: JoistPreview }) {
+  const width = 480, height = 330, pad = 14;
+  const k = Math.min((width - 2 * pad) / 6, (height - 2 * pad) / 4);
+  const X = (x: number) => pad + x * k;
+  const Y = (y: number) => height - pad - y * k;
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} aria-label="Floor joists">
+      <rect x={X(0)} y={Y(4)} width={6 * k} height={4 * k} fill="#f6efe2" stroke="#8a8378" strokeWidth={0.5} />
+      <rect x={X(0.6)} y={Y(1.6)} width={2.8 * k} height={1 * k} fill="#ffffff" stroke="#8a8378" strokeDasharray="3 2" strokeWidth={0.6} />
+      {p.members.map((m, i) => {
+        const pts: string[] = [];
+        for (let j = 0; j + 1 < m.pts.length; j += 2) pts.push(`${X(m.pts[j])},${Y(m.pts[j + 1])}`);
+        return <polygon key={i} points={pts.join(' ')} fill={ROLE_FILL[m.role] ?? (m.role === 'rim' || m.role === 'trimmer' ? '#a87a46' : '#c99a64')} stroke="#4a3418" strokeWidth={0.4}><title>{m.role}</title></polygon>;
+      })}
+    </svg>
+  );
+}
 
 /** A sample CLT wall: its panels between the joints, its rough openings. */
 function CltElevation({ p }: { p: CltPreview }) {
@@ -63,7 +94,12 @@ function CltElevation({ p }: { p: CltPreview }) {
   return (
     <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} aria-label="CLT panels">
       {edges.slice(0, -1).map((a, i) => <rect key={i} x={X(a) + 1} y={Z(p.height)} width={(edges[i + 1] - a) * k - 2} height={p.height * k} fill={i % 2 ? '#e2c08e' : '#d9b27c'} stroke="#4a3418" strokeWidth={0.6} />)}
-      {p.openings.map(([l, r, b, t], i) => <rect key={`o${i}`} x={X(l)} y={Z(t)} width={(r - l) * k} height={(t - b) * k} fill="#ffffff" stroke="#4a3418" strokeWidth={0.6} />)}
+      {(p.cutters ?? []).map((c, i) => {
+        const pts: string[] = [];
+        for (let j = 0; j + 1 < c.length; j += 2) pts.push(`${X(c[j])},${Z(c[j + 1])}`);
+        return <polygon key={`c${i}`} points={pts.join(' ')} fill="#ffffff" stroke="#4a3418" strokeWidth={0.6} />;
+      })}
+      {!p.cutters && p.openings.map(([l, r, b, t], i) => <rect key={`o${i}`} x={X(l)} y={Z(t)} width={(r - l) * k} height={(t - b) * k} fill="#ffffff" stroke="#4a3418" strokeWidth={0.6} />)}
       {edges.slice(0, -1).map((a, i) => <text key={`t${i}`} x={(X(a) + X(edges[i + 1])) / 2} y={Z(p.height) + 14} textAnchor="middle" fontSize={10}>{Math.round((edges[i + 1] - a) * 1000)}</text>)}
     </svg>
   );
@@ -106,6 +142,8 @@ export function FrameElevation({ f, width = 560, height = 260 }: { f: Framed; wi
         for (let j = 0; j + 1 < m.face.length; j += 2) pts.push(`${X(m.face[j])},${Z(m.face[j + 1])}`);
         return <polygon key={i} points={pts.join(' ')} fill={ROLE_FILL[m.role] ?? '#c99a64'} stroke="#4a3418" strokeWidth={0.5}><title>{`${m.role} ${m.section}`}</title></polygon>;
       })}
+      {(f.panels?.length ?? 0) > 1 && f.panels!.slice(1).map(([u0], i) => <line key={`p${i}`} x1={X(u0)} x2={X(u0)} y1={Z(f.height) - 6} y2={Z(0) + 4} stroke="#0b5cad" strokeWidth={1.5} strokeDasharray="5 3" />)}
+      {(f.panels?.length ?? 0) > 1 && f.panels!.map(([u0, u1], i) => <text key={`t${i}`} x={X((u0 + u1) / 2)} y={pad - 3} fontSize={10} textAnchor="middle" fill="#0b5cad">{`P${i + 1} · ${Math.round((u1 - u0) * 1000)}`}</text>)}
     </svg>
   );
 }
@@ -122,7 +160,11 @@ export function FrameDialog() {
   const stored = (type?.props.wood as (Spec | CltSpec) | undefined) ?? null;
   const [spec, setSpec] = useState<Spec>(stored?.construction === 'timberFrame' ? stored as Spec : NORDIC);
   const [clt, setClt] = useState<CltSpec>(stored?.construction === 'clt' ? stored as CltSpec : isSlab ? CLT_FLOOR : CLT_WALL);
-  const [mode, setMode] = useState<'layers' | 'frame' | 'clt'>(stored?.construction === 'clt' ? 'clt' : stored ? 'frame' : 'layers');
+  const [mode, setMode] = useState<'layers' | 'frame' | 'clt' | 'joists'>(stored?.construction === 'clt' ? 'clt' : (stored?.construction as string) === 'joists' ? 'joists' : stored ? 'frame' : 'layers');
+  const [joists, setJoists] = useState<JoistSpec>((stored?.construction as string) === 'joists' ? stored as unknown as JoistSpec : JOISTS);
+  const [joistPreview, setJoistPreview] = useState<JoistPreview | null>(null);
+  useEffect(() => { let live = true; void query<JoistPreview>('wood.joistPreview', { spec: joists }).then((p) => { if (live) setJoistPreview(p); }); return () => { live = false; }; }, [joists]);
+  const setJ = (patch: Partial<JoistSpec>) => setJoists((j) => ({ ...j, ...patch }));
   const on = mode === 'frame';
   const setOn = (v: boolean) => setMode(v ? 'frame' : 'layers');
   const [cltPreview, setCltPreview] = useState<CltPreview | null>(null);
@@ -138,11 +180,13 @@ export function FrameDialog() {
     const s = (n?.props.wood ?? null) as (Spec | CltSpec) | null;
     setSpec(s?.construction === 'timberFrame' ? structuredClone(s as Spec) : structuredClone(NORDIC));
     setClt(s?.construction === 'clt' ? structuredClone(s as CltSpec) : structuredClone(n?.type === 'IfcSlabType' ? CLT_FLOOR : CLT_WALL));
-    setMode(s?.construction === 'clt' ? 'clt' : s ? 'frame' : 'layers');
+    setJoists((s?.construction as string) === 'joists' ? structuredClone(s as unknown as JoistSpec) : structuredClone(JOISTS));
+    setMode(s?.construction === 'clt' ? 'clt' : (s?.construction as string) === 'joists' ? 'joists' : s ? 'frame' : 'layers');
   }, [editing]);
   useEffect(() => {
     let live = true;
-    void query<Framed>('wood.preview', { spec }).then((p) => { if (live) setPreview(p); });
+    // A prefabricated type's sample is longer, so it shows its joints.
+    void query<Framed>('wood.preview', spec.panelMax ? { spec, length: 10, openings: [{ along: 1.7, sill: 0.9, width: 1.2, height: 1.3 }, { along: 4.6, sill: 0, width: 0.9, height: 2.1, door: true }, { along: 7.8, sill: 0.9, width: 1.8, height: 1.3 }] } : { spec }).then((p) => { if (live) setPreview(p); });
     return () => { live = false; };
   }, [spec]);
 
@@ -154,7 +198,8 @@ export function FrameDialog() {
     if (!editing) return;
     if (mode === 'frame') void execute('wood.setWallFrame', { id: editing, spec });
     else if (mode === 'clt') void execute('wood.setClt', { id: editing, spec: clt });
-    else void execute(stored?.construction === 'clt' ? 'wood.setClt' : 'wood.setWallFrame', { id: editing, spec: null });
+    else if (mode === 'joists') void execute('wood.setFloorJoists', { id: editing, spec: joists });
+    else void execute(stored?.construction === 'clt' ? 'wood.setClt' : (stored?.construction as string) === 'joists' ? 'wood.setFloorJoists' : 'wood.setWallFrame', { id: editing, spec: null });
   };
   const setC = (patch: Partial<CltSpec>) => setClt((c) => ({ ...c, ...patch }));
   const [nogginText, setNogginText] = useState(spec.noggins.map((n) => Math.round(n * 1000)).join(' '));
@@ -171,8 +216,8 @@ export function FrameDialog() {
           <ul className="type-list">
             {types.map((t) => (
               <li key={t.id}>
-                <button type="button" className={`tree-item${editing === t.id ? ' on' : ''}`} onClick={() => setEditing(t.id)}>
-                  {t.name}<span className="muted small"> · {(t.props.wood as { construction?: string } | undefined)?.construction === 'clt' ? 'CLT' : t.props.wood ? 'timber frame' : 'layers'} · {relatedOf(model, t.id, 'IfcRelDefinesByType').length}</span>
+                <button type="button" className={`tree-item${editing === t.id ? ' on' : ''}`} data-class={t.type} onClick={() => setEditing(t.id)}>
+                  {t.name}<span className="muted small"> · {{ clt: 'CLT', joists: 'joists', timberFrame: 'timber frame' }[(t.props.wood as { construction?: string } | undefined)?.construction ?? ''] ?? 'layers'} · {relatedOf(model, t.id, 'IfcRelDefinesByType').length}</span>
                 </button>
               </li>
             ))}
@@ -184,12 +229,32 @@ export function FrameDialog() {
                   <select value={mode} data-testid="wood-mode" onChange={(e) => setMode(e.target.value as typeof mode)}>
                     <option value="layers">of its layers</option>
                     {!isSlab && <option value="frame">as a timber frame</option>}
+                    {isSlab && <option value="joists">on joists</option>}
                     <option value="clt">in CLT panels</option>
                   </select>
                 </label>
                 {!isSlab && <label className="field-line wood-field"><span className="eyebrow">Timber frame</span>
                   <input type="checkbox" checked={on} data-testid="wood-on" onChange={(e) => setOn(e.target.checked)} />
                 </label>}
+                {mode === 'joists' && (
+                  <>
+                    <label className="field-line wood-field"><span className="eyebrow">Joists</span>
+                      <select value={joists.section} onChange={(e) => setJ({ section: e.target.value })}>{SECTIONS.map((s) => <option key={s}>{s}</option>)}</select>
+                    </label>
+                    <Mm label="Spacing" value={joists.spacing} onChange={(v) => setJ({ spacing: v })} />
+                    <label className="field-line wood-field"><span className="eyebrow">Grade</span>
+                      <select value={joists.grade} onChange={(e) => setJ({ grade: e.target.value })}>{GRADES.map((g) => <option key={g}>{g}</option>)}</select>
+                    </label>
+                    <label className="field-line wood-field"><span className="eyebrow">Span</span>
+                      <select value={joists.direction} onChange={(e) => setJ({ direction: e.target.value })}><option value="auto">the short way</option><option value="x">along x</option><option value="y">along y</option></select>
+                    </label>
+                    <label className="field-line wood-field"><span className="eyebrow">Rim joist</span><input type="checkbox" checked={joists.rim} onChange={(e) => setJ({ rim: e.target.checked })} /></label>
+                    <Count label="Blocking rows" value={joists.blockingRows} max={5} onChange={(n) => setJ({ blockingRows: n })} />
+                    <Count label="Trimmers" value={joists.trimmers} min={1} onChange={(n) => setJ({ trimmers: n })} />
+                    <Count label="Header plies" value={joists.headerPlies} min={1} onChange={(n) => setJ({ headerPlies: n })} />
+                    <label className="field-line wood-field" title="The cavities between the joists filled with the core's material"><span className="eyebrow">Fill the cavities</span><input type="checkbox" checked={joists.fill} onChange={(e) => setJ({ fill: e.target.checked })} /></label>
+                  </>
+                )}
                 {mode === 'clt' && (
                   <>
                     <label className="field-line wood-field" title="Each ply's thickness, outside to outside, in mm: 3, 5, 7 or 9 of them"><span className="eyebrow">Plies (mm)</span>
@@ -203,6 +268,17 @@ export function FrameDialog() {
                     <label className="field-line wood-field"><span className="eyebrow">Joint</span>
                       <select value={clt.joint} onChange={(e) => setC({ joint: e.target.value })}><option value="butt">butt</option><option value="halfLap">half lap</option><option value="spline">spline</option></select>
                     </label>
+                    {clt.joint === 'halfLap' && <Mm label="Lap" value={clt.lapWidth ?? 0.1} onChange={(v) => setC({ lapWidth: v })} title="How far the two halves overlap" />}
+                    {clt.joint === 'spline' && <Mm label="Spline width" value={clt.splineWidth ?? 0.12} onChange={(v) => setC({ splineWidth: v })} title="The plywood strip let into a rebate across the joint" />}
+                    {clt.joint === 'spline' && <Mm label="Spline depth" value={clt.splineDepth ?? 0.027} onChange={(v) => setC({ splineDepth: v })} />}
+                    {!isSlab && (
+                      <label className="field-line wood-field" title="A router cannot cut a square inside corner: it leaves its radius, or overcuts so a square frame still fits"><span className="eyebrow">Opening corners</span>
+                        <select data-testid="clt-corners" value={clt.corners ?? 'square'} onChange={(e) => setC({ corners: e.target.value as CltSpec['corners'] })}>
+                          <option value="square">square</option><option value="round">the router's radius</option><option value="dogbone">dog-bone overcut</option>
+                        </select>
+                      </label>
+                    )}
+                    {!isSlab && (clt.corners ?? 'square') !== 'square' && <Mm label="Router radius" value={clt.cornerRadius ?? 0.02} onChange={(v) => setC({ cornerRadius: v })} />}
                     {!isSlab && <Mm label="Opening to panel edge" value={clt.minEdge} onChange={(v) => setC({ minEdge: v })} title="No joint closer than this to an opening's side" />}
                     {!isSlab && <Mm label="Fitting gap" value={clt.gap} onChange={(v) => setC({ gap: v })} />}
                     {isSlab && (
@@ -247,6 +323,15 @@ export function FrameDialog() {
                         <option value="double">a stud each side</option><option value="ladder">studs and ladder blocking</option>
                       </select>
                     </label>
+                    <label className="field-line wood-field" title="Made in the shop in panels, the joints clear of the openings and on the module where they can be"><span className="eyebrow">Prefabricated panels</span>
+                      <input type="checkbox" data-testid="wood-panels" checked={(spec.panelMax ?? 0) > 0} onChange={(e) => set({ panelMax: e.target.checked ? 4.8 : 0 })} />
+                    </label>
+                    {(spec.panelMax ?? 0) > 0 && (
+                      <>
+                        <Mm label="Longest panel" value={spec.panelMax!} onChange={(v) => set({ panelMax: v })} title="As long as the shop's table and the truck allow" />
+                        <Mm label="Shortest panel" value={spec.panelMin ?? 0.6} onChange={(v) => set({ panelMin: v })} />
+                      </>
+                    )}
                     <label className="field-line wood-field" title="A partition carries nothing: a flat member over its openings"><span className="eyebrow">Load-bearing</span>
                       <input type="checkbox" checked={spec.loadBearing} onChange={(e) => set({ loadBearing: e.target.checked })} />
                     </label>
@@ -299,7 +384,9 @@ export function FrameDialog() {
                 {on && preview?.problem && <p className="error-text">{preview.problem}</p>}
                 {on && preview && !preview.problem && (
                   <>
-                    <p className="muted small">A sample wall, 6 m × 2.7 m: a window 1200 × 1300, a door 900 × 2100.</p>
+                    {spec.panelMax
+                      ? <p className="muted small">A sample wall, 10 m × 2.7 m: two windows and a door, cut into panels.</p>
+                      : <p className="muted small">A sample wall, 6 m × 2.7 m: a window 1200 × 1300, a door 900 × 2100.</p>}
                     <p className="muted small">{Object.entries(preview.counts).map(([k, v]) => `${v} ${k}`).join(' · ')}</p>
                     {preview.warnings.map((w, i) => <p key={i} className="error-text">{w}</p>)}
                   </>
@@ -312,12 +399,21 @@ export function FrameDialog() {
                   </>
                 )}
                 {mode === 'clt' && cltPreview?.problem && <p className="error-text">{cltPreview.problem}</p>}
+                {mode === 'joists' && joistPreview && !joistPreview.problem && (
+                  <>
+                    <JoistPlan p={joistPreview} />
+                    <p className="muted small">A sample floor, 6 × 4 m, with a stairwell</p>
+                    <p className="muted small">{Object.entries(joistPreview.counts).map(([k, v]) => `${v} ${k}`).join(' · ')}</p>
+                    {joistPreview.warnings.map((w, i) => <p key={i} className="error-text">{w}</p>)}
+                  </>
+                )}
+                {mode === 'joists' && joistPreview?.problem && <p className="error-text">{joistPreview.problem}</p>}
                 {mode === 'clt' && isSlab && <p className="muted small">The floor in panels across its span, each at most as wide and as long as the press makes them.</p>}
                 {mode === 'layers' && <p className="muted small">Built of its layers. Tick Timber frame to build its core as studs, plates and the openings' framing.</p>}
               </div>
               <div className="row joinery-actions">
                 <span className="grow" />
-                <button type="button" className="btn primary" disabled={Boolean((on && preview?.problem) || (mode === 'clt' && cltPreview?.problem))} onClick={save}>Save type</button>
+                <button type="button" className="btn primary" disabled={Boolean((on && preview?.problem) || (mode === 'clt' && cltPreview?.problem) || (mode === 'joists' && joistPreview?.problem))} onClick={save}>Save type</button>
               </div>
               {error && <p className="error-text" role="alert">{error}</p>}
             </div>
