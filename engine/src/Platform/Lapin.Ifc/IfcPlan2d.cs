@@ -247,7 +247,7 @@ public sealed partial class IfcModel
     {
         string? hex = c?.Type switch
         {
-            "IFCCOLOURRGB" => $"#{(int)Math.Round(Math.Clamp(Num(c[1]), 0, 1) * 255):x2}{(int)Math.Round(Math.Clamp(Num(c[2]), 0, 1) * 255):x2}{(int)Math.Round(Math.Clamp(Num(c[3]), 0, 1) * 255):x2}",
+            "IFCCOLOURRGB" => HexColor.Of(Num(c[1]), Num(c[2]), Num(c[3])),
             "IFCDRAUGHTINGPREDEFINEDCOLOUR" => Str(c[0]) is { } n && Predefined.TryGetValue(n, out var h) ? h : null,
             _ => null,
         };

@@ -46,12 +46,7 @@ public static class PdfWriter
 
     static string F(double v) => double.IsFinite(v) ? v.ToString("0.###", CultureInfo.InvariantCulture) : "0";
 
-    static (double R, double G, double B) Rgb(string? css)
-    {
-        if (css is { Length: 7 } && css[0] == '#' && int.TryParse(css[1..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var n))
-            return (((n >> 16) & 255) / 255.0, ((n >> 8) & 255) / 255.0, (n & 255) / 255.0);
-        return (0, 0, 0);
-    }
+    static (double R, double G, double B) Rgb(string? css) => HexColor.Unit(css);
 
     static string Content(PaperPage page, Func<string, int?> picture, Func<double, int> alpha)
     {

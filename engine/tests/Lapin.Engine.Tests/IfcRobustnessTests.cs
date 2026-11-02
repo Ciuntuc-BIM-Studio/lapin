@@ -224,6 +224,61 @@ public class IfcRobustnessTests : IDisposable
         Assert.Equal(1.0, h.StartDirection, 12);
     }
 
+    /// <summary>
+    /// What the bodies' own lists hold read with care: face sets and indexed curves with indices past their lists
+    /// (their bad triangles dropped, not the element), a hoop swept round a circle (closed, no gap, no caps), a
+    /// profile scaled by a 2D non-uniform operator (its Scale2 is attribute 4), a colour beyond 0–1 (clamped).
+    /// </summary>
+    [Fact]
+    public void Bodies_read_their_lists_with_care()
+    {
+        var x = new Tiny();
+        var f = x.F;
+        var pts = f.Add("IFCCARTESIANPOINTLIST3D", "((0.,0.,0.),(1000.,0.,0.),(0.,1000.,0.),(0.,0.,1000.))");
+        var tris = f.Add("IFCTRIANGULATEDFACESET", pts, Null, Null, "((1,3,2),(1,2,4),(2,3,4),(3,1,4),(0,1,2),(1,2,9))", Null);
+        var triSet = x.Element("IFCBUILDINGELEMENTPROXY", "tris", "Tris", x.Place(0, 0, 0), x.Shape(tris, "Tessellation"), E("ELEMENT"));
+        var tris2 = f.Add("IFCTRIANGULATEDFACESET", pts, Null, Null, "((1,3,2),(1,2,4),(2,3,4),(3,1,4),(1,2,5))", "(1,2,3,4,7)");
+        var pnSet = x.Element("IFCBUILDINGELEMENTPROXY", "pn", "Pn", x.Place(0, 0, 0), x.Shape(tris2, "Tessellation"), E("ELEMENT"));
+        string Face(string ix) => f.Add("IFCINDEXEDPOLYGONALFACE", ix);
+        var poly = f.Add("IFCPOLYGONALFACESET", pts, Null, L([Face("(1,3,2)"), Face("(1,2,4)"), Face("(2,3,4)"), Face("(3,1,4)"), Face("(0,12,1)")]), Null);
+        var polySet = x.Element("IFCBUILDINGELEMENTPROXY", "poly", "Poly", x.Place(0, 0, 0), x.Shape(poly, "Tessellation"), E("ELEMENT"));
+        var curvePts = f.Add("IFCCARTESIANPOINTLIST2D", "((0.,0.),(1000.,0.),(1000.,1000.),(0.,1000.))");
+        var curve = f.Add("IFCINDEXEDPOLYCURVE", curvePts, "(IFCLINEINDEX((1,2,3,4,8,1)))", False);
+        var area = f.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, curve);
+        var at = f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), Null, Null);
+        var up = f.Add("IFCDIRECTION", "(0.,0.,1.)");
+        var plate = x.Element("IFCPLATE", "plate", "Plate", x.Place(0, 0, 0), x.Shape(f.Add("IFCEXTRUDEDAREASOLID", area, at, up, "100.")), E("NOTDEFINED"));
+        var circle = f.Add("IFCCIRCLE", f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), Null, Null), "500.");
+        var hoop = x.Element("IFCREINFORCINGBAR", "hoop", "Hoop", x.Place(0, 0, 0), x.Shape(f.Add("IFCSWEPTDISKSOLID", circle, "10.", Null, Null, Null), "AdvancedSweptSolid"), Null, Null, Null, Null, Null, E("LIGAMENT"), Null);
+        var square = f.Add("IFCRECTANGLEPROFILEDEF", E("AREA"), Null, f.Add("IFCAXIS2PLACEMENT2D", f.Add("IFCCARTESIANPOINT", "(0.,0.)"), Null), "1000.", "1000.");
+        var stretch = f.Add("IFCCARTESIANTRANSFORMATIONOPERATOR2DNONUNIFORM", Null, Null, f.Add("IFCCARTESIANPOINT", "(0.,0.)"), "1.", "2.");
+        var derived = f.Add("IFCDERIVEDPROFILEDEF", E("AREA"), Null, square, stretch, Null);
+        var solid = f.Add("IFCEXTRUDEDAREASOLID", derived, at, up, "100.");
+        f.Add("IFCSTYLEDITEM", solid, L([f.Add("IFCSURFACESTYLE", Null, E("BOTH"), L([f.Add("IFCSURFACESTYLESHADING", f.Add("IFCCOLOURRGB", Null, "-0.2", "1.4", "0.5"), Null)]))]), Null);
+        var stretched = x.Element("IFCPLATE", "stretched", "Stretched", x.Place(0, 0, 0), x.Shape(solid), E("NOTDEFINED"));
+        var model = new IfcModel(StepFile.Read(x.Write(Path.Combine(_dir, "lists.ifc"))));
+
+        MeshBuilder Body(string e) => model.Shape(Id(e)).Body.Single().Mesh;
+        Assert.Equal(4, Body(triSet).T.Count);
+        Assert.True(Body(triSet).Closed());
+        Assert.Equal(4, Body(pnSet).T.Count);
+        Assert.Equal(4, Body(polySet).T.Count);
+        var p = Body(plate);
+        Assert.Equal((1.0, 1.0), (p.V.Max(v => v.X), p.V.Max(v => v.Y)));
+        Assert.True(p.Closed());
+
+        var h = Body(hoop);
+        Assert.True(h.Closed());
+        Assert.Equal(2 * h.V.Count, h.T.Count); // a torus: every ring joined to the next, the last to the first, no caps
+
+        var s = model.Shape(Id(stretched)).Body.Single();
+        Assert.Equal((1.0, 2.0), (Math.Round(s.Mesh.V.Max(v => v.X) - s.Mesh.V.Min(v => v.X), 6), Math.Round(s.Mesh.V.Max(v => v.Y) - s.Mesh.V.Min(v => v.Y), 6)));
+        Assert.Equal("#00ff80", s.Colour);
+        Assert.Equal("#000000", HexColor.Of(double.NaN, -1, 0));
+        Assert.Equal((255, 0, 128), HexColor.Bytes("#ff0080"));
+        Assert.Equal((1, 2, 3), HexColor.Bytes("nope", (1, 2, 3)));
+    }
+
     /// <summary>Booleans that fail as manifold does on a body that is not closed.</summary>
     sealed class FailingBooleans : ISolidBooleans
     {

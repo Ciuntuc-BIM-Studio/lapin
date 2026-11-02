@@ -466,7 +466,7 @@ public static partial class IfcImport
                     foreach (var style in Items(styled[1]).Where(x => x.Type == "IFCSURFACESTYLE"))
                         foreach (var shading in Items(style[2]))
                             if (f.Get(shading[0]) is { Type: "IFCCOLOURRGB" } rgb)
-                                return $"#{(int)Math.Round(Num(rgb[1]) * 255):x2}{(int)Math.Round(Num(rgb[2]) * 255):x2}{(int)Math.Round(Num(rgb[3]) * 255):x2}";
+                                return HexColor.Of(Num(rgb[1]), Num(rgb[2]), Num(rgb[3]));
             return null;
         }
 

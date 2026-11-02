@@ -213,7 +213,7 @@ public sealed partial class IfcModel
     {
         var pts = PointList(s[0]).Select(at.Apply).ToList();
         var pn = Indices(s[3]);
-        List<Vec3> At(int[] ix) => [.. ix.Select(i => (pn.Length > 0 ? pn[i - 1] : i) - 1).Where(i => i >= 0 && i < pts.Count).Select(i => pts[i])];
+        List<Vec3> At(int[] ix) => [.. ix.Select(i => Vertex(i, pn, pts.Count)).Where(i => i >= 0).Select(i => pts[i])];
         var o = new List<PolyFace>();
         foreach (var f in Items(s[2]))
         {

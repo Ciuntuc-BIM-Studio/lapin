@@ -245,7 +245,7 @@ public sealed partial class IfcModel
             if (s.Type != "IFCSURFACESTYLE") continue;
             foreach (var r in Items(s[2]))
                 if (File.Get(r[0]) is { Type: "IFCCOLOURRGB" } rgb)
-                    return $"#{(int)Math.Round(Num(rgb[1]) * 255):x2}{(int)Math.Round(Num(rgb[2]) * 255):x2}{(int)Math.Round(Num(rgb[3]) * 255):x2}";
+                    return HexColor.Of(Num(rgb[1]), Num(rgb[2]), Num(rgb[3]));
         }
         return null;
     }
@@ -357,7 +357,10 @@ public sealed partial class IfcModel
         var z = is3 ? Direction(t[4]) ?? new Vec3(0, 0, 1) : new Vec3(0, 0, 1);
         var y = Direction(t[1]) ?? Vec3.Cross(z, x);
         var s = t[3] is null ? 1 : Num(t[3]);
-        double sy = t.Type.Contains("NONUNIFORM") && t[5] != null ? Num(t[5]) : s, sz = t.Type.Contains("NONUNIFORM") && t[6] != null ? Num(t[6]) : s;
+        // Scale2 is attribute 4 of a 2D non-uniform operator, 5 of a 3D one (whose attribute 4 is Axis3); Scale3, 6.
+        var nonUniform = t.Type.Contains("NONUNIFORM");
+        var scale2 = is3 ? 5 : 4;
+        double sy = nonUniform && t[scale2] != null ? Num(t[scale2]) : s, sz = nonUniform && is3 && t[6] != null ? Num(t[6]) : s;
         return new Xf(x * s, y * sy, z * sz, Point(t[2]));
     }
 
@@ -568,15 +571,27 @@ public sealed partial class IfcModel
 
     static int[] Indices(object? v) => v is List<object?> l ? [.. l.Select(x => (int)Num(x))] : [];
 
+    /// <summary>
+    /// A face set's index (from 1, through its PnIndex when it has one) as a vertex from 0, or -1 when it falls outside
+    /// the lists: a bad index drops its triangle or vertex, not the element.
+    /// </summary>
+    static int Vertex(int i, int[] pn, int count)
+    {
+        if (pn.Length > 0) i = i >= 1 && i <= pn.Length ? pn[i - 1] : 0;
+        return i >= 1 && i <= count ? i - 1 : -1;
+    }
+
     MeshBuilder TriangulatedSet(StepEntity s)
     {
         var m = new MeshBuilder();
         foreach (var p in PointList(s[0])) m.Add(p);
         var pn = Indices(s[4]);
-        int At(int i) => (pn.Length > 0 ? pn[i - 1] : i) - 1;
         if (s[3] is List<object?> tris)
             foreach (var t in tris.OfType<List<object?>>().Select(Indices).Where(t => t.Length == 3))
-                m.T.Add((At(t[0]), At(t[1]), At(t[2])));
+            {
+                int a = Vertex(t[0], pn, m.V.Count), b = Vertex(t[1], pn, m.V.Count), c = Vertex(t[2], pn, m.V.Count);
+                if (a >= 0 && b >= 0 && c >= 0) m.T.Add((a, b, c));
+            }
         return m;
     }
 
@@ -585,7 +600,7 @@ public sealed partial class IfcModel
         var m = new MeshBuilder();
         foreach (var p in PointList(s[0])) m.Add(p);
         var pn = Indices(s[3]);
-        int[] At(int[] ix) => [.. ix.Select(i => (pn.Length > 0 ? pn[i - 1] : i) - 1)];
+        int[] At(int[] ix) => [.. ix.Select(i => Vertex(i, pn, m.V.Count)).Where(i => i >= 0)];
         foreach (var f in Items(s[2]))
             m.Polygon(At(Indices(f[0])), f.Type == "IFCINDEXEDPOLYGONALFACEWITHVOIDS" && f[1] is List<object?> inner ? [.. inner.Select(i => At(Indices(i)))] : []);
         return m;
@@ -667,26 +682,31 @@ public sealed partial class IfcModel
 
     MeshBuilder? Tube(StepEntity s)
     {
-        var path = Curve(File.Get(s[0]));
+        var path = Curve(File.Get(s[0]), out var closed);
         var r = Num(s[1]) * _len;
         if (path.Count < 2 || r <= 0) return null;
+        // A hoop (a closed directrix: a circle, a closed stirrup) goes round to its start, without caps.
+        closed &= path.Count >= 3;
+        var n = path.Count;
         // A bar or a pipe by the chord rule, but never under 8 sides nor finer than needed: a rebar cage is thousands of them.
         var sides = Chords.Count(r, 2 * Math.PI, 8, Math.PI / 4);
         var m = new MeshBuilder();
         var rings = new List<int[]>();
-        for (var i = 0; i < path.Count; i++)
+        for (var i = 0; i < n; i++)
         {
-            var t = (path[Math.Min(i + 1, path.Count - 1)] - path[Math.Max(i - 1, 0)]).Normalized();
+            var t = closed ? (path[(i + 1) % n] - path[(i + n - 1) % n]).Normalized() : (path[Math.Min(i + 1, n - 1)] - path[Math.Max(i - 1, 0)]).Normalized();
             var u = Vec3.Cross(t, Math.Abs(t.Z) < 0.9 ? new Vec3(0, 0, 1) : new Vec3(1, 0, 0)).Normalized();
             var w = Vec3.Cross(t, u);
             rings.Add([.. Enumerable.Range(0, sides).Select(k => m.Add(path[i] + u * (r * Math.Cos(2 * Math.PI * k / sides)) + w * (r * Math.Sin(2 * Math.PI * k / sides))))]);
         }
-        for (var i = 0; i + 1 < rings.Count; i++)
+        for (var i = 0; i < (closed ? n : n - 1); i++)
             for (var k = 0; k < sides; k++)
             {
-                int a0 = rings[i][k], b0 = rings[i][(k + 1) % sides], a1 = rings[i + 1][k], b1 = rings[i + 1][(k + 1) % sides];
+                var next = rings[(i + 1) % n];
+                int a0 = rings[i][k], b0 = rings[i][(k + 1) % sides], a1 = next[k], b1 = next[(k + 1) % sides];
                 m.T.Add((a0, b0, b1)); m.T.Add((a0, b1, a1));
             }
+        if (closed) return m;
         m.Polygon([.. rings[0].Reverse()], []);
         m.Polygon(rings[^1], []);
         return m;
@@ -763,7 +783,7 @@ public sealed partial class IfcModel
                 if (c[1] is not List<object?> segs) { o.AddRange(pts); break; }
                 foreach (var seg in segs.OfType<StepTyped>())
                 {
-                    var ix = Indices(seg.Value).Select(i => pts[i - 1]).ToList();
+                    var ix = Indices(seg.Value).Where(i => i >= 1 && i <= pts.Count).Select(i => pts[i - 1]).ToList();
                     if (seg.Type == "IFCARCINDEX" && ix.Count == 3) o.AddRange(Arc3(ix[0], ix[1], ix[2]));
                     else o.AddRange(ix);
                 }

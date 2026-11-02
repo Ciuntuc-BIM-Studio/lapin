@@ -235,16 +235,9 @@ public static class IfcExport
         string Style(string hex)
         {
             if (styles.TryGetValue(hex, out var st)) return st;
-            var (r, g, b) = Rgb(hex);
+            var (r, g, b) = HexColor.Unit(hex, (0.75, 0.75, 0.75));
             var colour = f.Add("IFCCOLOURRGB", Null, R(r), R(g), R(b));
             return styles[hex] = f.Add("IFCSURFACESTYLE", S(hex), E("BOTH"), L(new[] { f.Add("IFCSURFACESTYLESHADING", colour, R(0)) }));
-        }
-
-        static (double R, double G, double B) Rgb(string hex)
-        {
-            var h = hex.TrimStart('#');
-            if (h.Length != 6 || !int.TryParse(h, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out var v)) return (0.75, 0.75, 0.75);
-            return (((v >> 16) & 255) / 255.0, ((v >> 8) & 255) / 255.0, (v & 255) / 255.0);
         }
 
         /// <summary>A solid as a faceted B-rep, its vertices relative to the placement's height, in its colour.</summary>

@@ -38,9 +38,7 @@ public sealed class DxfWriter(double patternScale = 1)
         return Weights.Aggregate(25, (best, w) => Math.Abs(w - v) < Math.Abs(best - v) ? w : best);
     }
 
-    public static (int R, int G, int B) Rgb(string? css) =>
-        css is { Length: 7 } && css[0] == '#' && int.TryParse(css[1..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var n)
-            ? ((n >> 16) & 255, (n >> 8) & 255, n & 255) : (0, 0, 0);
+    public static (int R, int G, int B) Rgb(string? css) => HexColor.Bytes(css);
 
     /// <summary>The nearest ACI colour (black and white both 7, "foreground").</summary>
     public static int AciOf(string? css)
