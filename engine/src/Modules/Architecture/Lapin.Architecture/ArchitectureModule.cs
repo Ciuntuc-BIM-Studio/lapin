@@ -782,7 +782,7 @@ static class RoofCuts
     /// <summary>A roof's body, cut by what has a higher cut priority.</summary>
     public static ElementGeometry? Geometry(Entity roof, IModelView m, IServices? services)
     {
-        var g = Roof.Geometry(roof, m);
+        var g = Roof.Geometry(roof, m, services);
         if (g == null || g.Parts.Count == 0 || services == null) return g;
         var problems = new List<string>();
         var parts = CutPriorities.Apply(roof, m, services, g.Parts.ToList(), problems);

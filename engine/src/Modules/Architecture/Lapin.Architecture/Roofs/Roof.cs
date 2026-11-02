@@ -232,10 +232,7 @@ public static class Roof
         "copper" => "#b87333", "zinc_titanium" => "#8c9399", "painted" => "#3c4247", _ => "#a9b0b6",
     };
 
-    /// <summary>The ground the downpipes reach: the lowest storey's floor.</summary>
-    static double Ground(IModelView m) => Spatial.Storeys(m).Select(s => s.Num("elevation")).DefaultIfEmpty(0).Min();
-
-    public static ElementGeometry? Geometry(Entity roof, IModelView m)
+    public static ElementGeometry? Geometry(Entity roof, IModelView m, IServices? services = null)
     {
         var diags = new List<string>();
         var r = Resolve(roof, m);
@@ -319,7 +316,7 @@ public static class Roof
             var body = Drainage.Gutter(gutters[gi], spec, stations, "gutter");
             if (body.Count > 0) parts.Add(new GeometryPart(spec.Box ? "Box gutter" : "Half-round gutter", metal, Openings.Combine(body, "gutter"), null, $"gutter:{gi + 1}"));
         }
-        var ground = Ground(m);
+        var ground = Drainage.GroundAt(m, services);
         var auto = 0;
         foreach (var (gi, station, element) in outlets)
         {
@@ -328,7 +325,7 @@ public static class Roof
             var outlet = Drainage.OutletAt(g, station, outlets.Where(x => x.Gutter == gi).Select(x => x.Station).ToList(), spec);
             var chain = Drainage.Chain(outlet, g.Out, Drainage.DefaultRoute(Drainage.OutFromWall(r, g, spec)), ground, false, Drainage.DefaultDiameter / 2);
             var pipe = Drainage.PipeSolids(chain, Drainage.DefaultDiameter / 2, "downpipe");
-            if (pipe.Count > 0) parts.Add(new GeometryPart("Downpipe", metal, Openings.Combine(pipe, "downpipe"), null, $"downpipe:{++auto}"));
+            if (pipe.Count > 0) parts.Add(Drainage.PipePart("Downpipe", metal, Openings.Combine(pipe, "downpipe"), $"downpipe:{++auto}", chain));
             var foot = chain[^1].Xy;
             plan.Add(new PlanItem("symbol", true, Enumerable.Range(0, 12).Select(k => foot + new Vec2(Math.Cos(k * Math.PI / 6), Math.Sin(k * Math.PI / 6)) * 0.05).ToArray()));
         }
@@ -395,14 +392,16 @@ public static class Roof
         if (gutters.Count > 0)
         {
             var spec = Drainage.Spec.Of(roof);
-            var ground = Ground(m);
+            // The automatic downpipes as they were built (to the terrain, when there is one), else to the ground floor.
+            var ground = Drainage.GroundAt(m, null);
             var all = Drainage.Outlets(m, r, gutters);
-            var autos = all.Where(x => x.Element == null).Select(x =>
+            var built = geometry?.Parts.Where(p => p.Key?.StartsWith("downpipe:") == true).Select(Drainage.BuiltLength).ToList();
+            var autos = all.Where(x => x.Element == null).Select((x, k) =>
             {
+                if (built != null && k < built.Count && built[k] is { } len) return len;
                 var g = gutters[x.Gutter];
                 var outlet = Drainage.OutletAt(g, x.Station, all.Where(y => y.Gutter == x.Gutter).Select(y => y.Station).ToList(), spec);
-                var chain = Drainage.Chain(outlet, g.Out, Drainage.DefaultRoute(Drainage.OutFromWall(r, g, spec)), ground, false, Drainage.DefaultDiameter / 2);
-                return chain.Zip(chain.Skip(1), (a, b) => (b - a).Length).Sum();
+                return Drainage.LengthOf(Drainage.Chain(outlet, g.Out, Drainage.DefaultRoute(Drainage.OutFromWall(r, g, spec)), ground, false, Drainage.DefaultDiameter / 2));
             }).ToList();
             var q2 = new List<Quantity>
             {

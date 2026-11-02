@@ -87,6 +87,27 @@ public class DrainageTests
     }
 
     [Fact]
+    public void Downpipes_reach_the_ground_floor_or_the_terrain_not_the_foundations()
+    {
+        var f = new Fixture(new Lapin.Architecture.ArchitectureModule(), new Lapin.Civil.CivilModule());
+        var ground = f.Storey;
+        f.Run("storey.create", new JsonObject { ["name"] = "Foundations", ["elevation"] = -1.5 });
+        Assert.Equal(0, Drainage.GroundFloor(f.Model), 9);
+        var roof = (string)f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = ground, ["points"] = House10x6, ["style"] = "fr_provence" })!["id"]!;
+        // Down to ±0.00, the ground floor, not to the foundations 1.5 m under it.
+        Assert.Equal(0, Box(Parts(f, roof, "downpipe:")).Min.Z, 2);
+        var length = Q(f, roof, "DownpipeLength");
+        var count = Q(f, roof, "DownpipeCount");
+        // A terrain 0.4 m lower: every pipe goes on down to it, and the quantities count what was built.
+        f.Run("civil.addFlatTerrain", new JsonObject { ["x1"] = -50, ["y1"] = -50, ["x2"] = 50, ["y2"] = 50, ["elevation"] = -0.4 });
+        Assert.Equal(-0.4, Box(Parts(f, roof, "downpipe:")).Min.Z, 2);
+        Assert.Equal(length + 0.4 * count, Q(f, roof, "DownpipeLength"), 3);
+        // As elements, the same.
+        var ids = ((JsonArray)f.Run("architecture.makeDownpipes", new JsonObject { ["id"] = roof })!["ids"]!).Select(x => (string)x!).ToList();
+        Assert.Equal(length + 0.4 * count, ids.Sum(id => Q(f, id, "Length")), 3);
+    }
+
+    [Fact]
     public void The_automatic_downpipes_become_elements_tied_to_their_gutter_and_are_edited_there()
     {
         var f = new Fixture();
@@ -115,7 +136,7 @@ public class DrainageTests
         Assert.Equal(0.4, (placed.Chain[1] - placed.Chain[0]).Length, 6);
         Assert.Equal(placed.Chain[0].Z, placed.Chain[1].Z, 6);
         Assert.Equal(placed.Chain[1].Xy.X, placed.Chain[2].Xy.X, 6);
-        Assert.Equal(Drainage.GroundOf(f.Model), placed.Chain[^1].Z, 3);
+        Assert.Equal(0, placed.Chain[^1].Z, 3);                         // the ground floor's level, the shoe's foot on it
         Assert.Throws<CommandException>(() => f.Run("architecture.updateDownpipe", new JsonObject { ["id"] = ids[0], ["route"] = new JsonArray(new JsonObject { ["angle"] = 120 }) }));
         // Another one on the north eave.
         var north = Drainage.EdgeOf(Roof.Resolve(f.Model.Get(roof)!, f.Model)!, Roof.Solve(Roof.Resolve(f.Model.Get(roof)!, f.Model)!).Shape!.Lines.Where(l => l.Kind == LineKind.Eave).MaxBy(l => l.A.Y)!);

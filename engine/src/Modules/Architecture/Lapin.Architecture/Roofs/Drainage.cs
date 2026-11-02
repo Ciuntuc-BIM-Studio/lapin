@@ -154,7 +154,7 @@ public static class Drainage
     }
 
     /// <summary>A downpipe's chain of points: from under its outlet, leg by leg (towards the wall, at its angle from the vertical), the last one to the ground unless its length is given; then the shoe, out from the wall.</summary>
-    public static List<Vec3> Chain(Vec3 outlet, Vec2 outward, IReadOnlyList<Leg> legs, double ground, bool shoe, double radius)
+    public static List<Vec3> Chain(Vec3 outlet, Vec2 outward, IReadOnlyList<Leg> legs, Func<Vec2, double> ground, bool shoe, double radius)
     {
         var pts = new List<Vec3> { outlet with { Z = outlet.Z - 0.05 } };
         var p = pts[0];
@@ -164,7 +164,7 @@ public static class Drainage
             var leg = legs[i];
             var t = leg.Angle * Math.PI / 180;
             var d = inward * Math.Sin(t) + new Vec3(0, 0, -Math.Cos(t));
-            var len = leg.Length ?? (Math.Cos(t) > 1e-6 ? Math.Max(0, (p.Z - ground - (shoe ? 0.25 * Math.Cos(Math.PI / 4) : 0)) / Math.Cos(t)) : 0);
+            var len = leg.Length ?? (Math.Cos(t) > 1e-6 ? Math.Max(0, (p.Z - ground(p.Xy) - (shoe ? 0.25 * Math.Cos(Math.PI / 4) : 0)) / Math.Cos(t)) : 0);
             if (len < 1e-4) continue;
             p += d * len;
             pts.Add(p);
@@ -189,22 +189,65 @@ public static class Drainage
     /// <summary>A downpipe element's place: its roof's gutter on its edge, the outlet at its station, its chain; null when the roof or the gutter is gone.</summary>
     public sealed record Placed(Entity Pipe, Entity Roof, RoofParts.Gutter Gutter, double Station, Vec3 Outlet, List<Vec3> Chain, double Diameter);
 
-    public static double GroundOf(IModelView m) => Spatial.Storeys(m).Select(s => s.Num("elevation")).DefaultIfEmpty(0).Min();
-
-    public static Placed? Place(IModelView m, Entity pipe)
+    /// <summary>
+    /// The building's ground floor level: the storey at or below ±0.00 closest to it (a new project's Ground floor, not its
+    /// Foundations at −1.50 under it), else the lowest storey, else 0.
+    /// </summary>
+    public static double GroundFloor(IModelView m)
     {
-        if (m.Get(pipe.Str("roofId") ?? "") is not { Class: IfcClass.Roof } roof || Roof.Resolve(roof, m) is not { } r || Roof.Solve(r).Shape is not { } shape) return null;
+        var levels = Spatial.Storeys(m).Select(s => s.Num("elevation")).ToList();
+        if (levels.Count == 0) return 0;
+        var under = levels.Where(z => z <= 1e-6).ToList();
+        return under.Count > 0 ? under.Max() : levels.Min();
+    }
+
+    /// <summary>The ground a downpipe reaches at a point: the terrain under it when the project has one (<see cref="IGround"/>), else the ground floor.</summary>
+    public static Func<Vec2, double> GroundAt(IModelView m, IServices? services)
+    {
+        var floor = GroundFloor(m);
+        var terrain = services?.Get<IGround>();
+        return terrain == null ? _ => floor : p => terrain.ElevationAt(m, p.X, p.Y) ?? floor;
+    }
+
+    /// <summary>A roof's gutters and its downpipes' stations, solved once per roof and revision: each of its pipes and every drawing asks.</summary>
+    public sealed record Drain(Roof.Resolved R, List<RoofParts.Gutter> Gutters, List<(int Gutter, double Station, Entity? Element)> Outlets);
+    static readonly RevisionCache<Drain?> Drains = new();
+
+    public static Drain? DrainOf(Entity roof, IModelView m) => Drains.Get(roof, m, v =>
+    {
+        if (Roof.Resolve(roof, v) is not { } r || RoofTop.ShapeOf(roof, v) is not { } shape) return null;
         var gutters = RoofParts.Gutters(r, shape);
+        return new Drain(r, gutters, Outlets(v, r, gutters));
+    });
+
+    public static Placed? Place(IModelView m, Entity pipe, IServices? services = null)
+    {
+        if (m.Get(pipe.Str("roofId") ?? "") is not { Class: IfcClass.Roof } roof || DrainOf(roof, m) is not { } drain) return null;
+        var gutters = drain.Gutters;
         var g = gutters.FirstOrDefault(x => x.Edge == (int)pipe.Num("edge"));
         if (g == null) return null;
         var station = Math.Clamp(pipe.Num("station"), 0, g.Length);
         var spec = Spec.Of(roof);
-        var outlets = Outlets(m, r, gutters).Where(x => gutters[x.Gutter] == g).Select(x => x.Station).ToList();
+        var outlets = drain.Outlets.Where(x => gutters[x.Gutter] == g).Select(x => x.Station).ToList();
         var outlet = OutletAt(g, station, outlets, spec);
         var d = pipe.NumOrNull("diameter") ?? DefaultDiameter;
-        var chain = Chain(outlet, g.Out, RouteOf(pipe), GroundOf(m), pipe.Str("shoe") != "False", d / 2);
+        var chain = Chain(outlet, g.Out, RouteOf(pipe), GroundAt(m, services), pipe.Str("shoe") != "False", d / 2);
         return new Placed(pipe, roof, g, station, outlet, chain, d);
     }
+
+    /// <summary>A chain's length along its legs.</summary>
+    public static double LengthOf(IReadOnlyList<Vec3> chain) => chain.Zip(chain.Skip(1), (a, b) => (b - a).Length).Sum();
+
+    /// <summary>
+    /// A downpipe's part, its length kept on it: the length is measured to the ground it was built to (the terrain, known to
+    /// geometry but not to quantities), and the quantities read it back from what was built.
+    /// </summary>
+    public static GeometryPart PipePart(string name, string color, Solid solid, string key, IReadOnlyList<Vec3> chain) =>
+        new(name, color, solid, null, key) { Properties = [("Length", LengthOf(chain).ToString("0.0###", System.Globalization.CultureInfo.InvariantCulture))], PropertySet = "Lapin_Downpipe" };
+
+    /// <summary>The length a downpipe part was built with; null when it says none.</summary>
+    public static double? BuiltLength(GeometryPart part) =>
+        part.Properties?.FirstOrDefault(x => x.Name == "Length").Value is { } v && double.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var len) ? len : null;
 
     // ------------------------------------------------------------ the downpipe as an element
 
@@ -216,8 +259,8 @@ public static class Drainage
             new("diameter", "Diameter", "length", Min: 0.04, Max: 0.3),
             new("shoe", "Shoe at the foot", "choice", Choices: ["True", "False"]),
         ], "#6b7178"));
-        r.Geometry(DownpipeClass, (e, m, _) => Geometry(e, m));
-        r.Quantities(DownpipeClass, (e, _, m) => Quantities(e, m));
+        r.Geometry(DownpipeClass, Geometry);
+        r.Quantities(DownpipeClass, Quantities);
 
         // A downpipe on a roof's gutter: {roofId, edge, station, diameter?, route?: [{length?, angle}], shoe?}; the roof's
         // downpipes become elements (its automatic ones no longer drawn) if they were not.
@@ -322,9 +365,9 @@ public static class Drainage
         return ids;
     }
 
-    public static ElementGeometry? Geometry(Entity pipe, IModelView m)
+    public static ElementGeometry? Geometry(Entity pipe, IModelView m, IServices? services)
     {
-        if (Place(m, pipe) is not { } p) return null;
+        if (Place(m, pipe, services) is not { } p) return null;
         var solids = PipeSolids(p.Chain, p.Diameter / 2, "downpipe");
         if (solids.Count == 0) return null;
         var foot = p.Chain[^1].Xy;
@@ -334,13 +377,13 @@ public static class Drainage
         for (var i = 0; i + 1 < p.Chain.Count; i++)
             if ((p.Chain[i + 1].Xy - p.Chain[i].Xy).Length > 0.01) plan.Add(new PlanItem("symbol", false, [p.Chain[i].Xy, p.Chain[i + 1].Xy]));
         var color = p.Roof.Str("gutterColor") is { Length: > 0 } c ? c : "#6b7178";
-        return new ElementGeometry([new GeometryPart(pipe.Name, color, Openings.Combine(solids, "downpipe"), null, "downpipe")], plan, [foot, p.Outlet.Xy]);
+        return new ElementGeometry([PipePart(pipe.Name, color, Openings.Combine(solids, "downpipe"), "downpipe", p.Chain)], plan, [foot, p.Outlet.Xy]);
     }
 
-    static IEnumerable<QuantitySet> Quantities(Entity pipe, IModelView m)
+    static IEnumerable<QuantitySet> Quantities(Entity pipe, ElementGeometry? built, IModelView m)
     {
         if (Place(m, pipe) is not { } p) yield break;
-        var length = p.Chain.Zip(p.Chain.Skip(1), (a, b) => (b - a).Length).Sum();
+        var length = built?.Parts.Select(BuiltLength).FirstOrDefault(x => x != null) ?? LengthOf(p.Chain);
         yield return new QuantitySet("Qto_PipeSegmentBaseQuantities",
         [
             new("Length", length, "LENGTH", $"Downpipe Ø{Math.Round(p.Diameter * 1000)}"),
