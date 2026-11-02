@@ -99,3 +99,21 @@ for (const file of files) {
 if (updates.length) sh(upload, [`${productId}-update`, ...updates]);
 if (downloads.length) sh(upload, [productId, ...downloads]);
 console.log(`✓ ${downloads.length} download(s), ${updates.length / 2} update(s) of ${productId}`);
+
+// Every published build is also kept, never served: the site's archive-builds.sh puts
+// each version's packages (and the update signatures) in the server's archive/<product>/<version>/.
+const archive = join(site, 'deploy/archive-builds.sh');
+if (existsSync(archive) && process.env.LAPIN_NO_ARCHIVE !== '1') {
+  const byVersion = new Map();
+  for (const file of files) {
+    const version = basename(file).match(/_(\d+\.\d+\.\d+)_/)?.[1];
+    if (!version) continue;
+    const list = byVersion.get(version) ?? [];
+    list.push(file, ...(existsSync(`${file}.sig`) ? [`${file}.sig`] : []));
+    byVersion.set(version, list);
+  }
+  for (const [version, list] of byVersion) {
+    const at = commitOf(version);
+    sh(archive, [productId, version, at ? git(['rev-parse', at]) : 'unknown', ...list]);
+  }
+} else console.log(`(not archived: no ${archive}, or LAPIN_NO_ARCHIVE=1)`);
