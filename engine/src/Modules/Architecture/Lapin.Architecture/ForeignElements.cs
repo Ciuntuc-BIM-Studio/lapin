@@ -49,7 +49,7 @@ public sealed class ForeignElements : IIfcRecognizer
         IReadOnlyList<Vec2>? outer = null;
         List<IReadOnlyList<Vec2>> islands = [];
         double? height = null, baseZ = null;
-        if (e.Prisms.Where(p => p.Vertical && p.Height > 1e-3).MaxBy(p => Math.Abs(Footprints.Area(Footprints.Plan(p.Outer)))) is { } prism)
+        if (e.Prisms.Where(p => p.Vertical && p.Height > 1e-3).MaxBy(p => Math.Abs(Polygon2.SignedArea(Footprints.Plan(p.Outer)))) is { } prism)
         {
             outer = Footprints.Plan(prism.Outer);
             islands = prism.Holes.Select(h => (IReadOnlyList<Vec2>)Footprints.Plan(h)).Where(h => h.Count >= 3).ToList();
@@ -65,7 +65,7 @@ public sealed class ForeignElements : IIfcRecognizer
             }
             if (e.Box is { } b) { height = b.Max.Z - b.Min.Z; baseZ = b.Min.Z; }
         }
-        if (outer != null && (outer.Count < 3 || Math.Abs(Footprints.Area(outer)) < 1e-3)) outer = null;
+        if (outer != null && (outer.Count < 3 || Math.Abs(Polygon2.SignedArea(outer)) < 1e-3)) outer = null;
         var attrs = new JsonObject { ["auto"] = false };
         if (outer != null)
         {
@@ -382,7 +382,7 @@ public sealed class ForeignElements : IIfcRecognizer
         if (bodies.Count > 1) { ctx.Skip($"{Label(e)} made of several bodies"); return false; }
         var candidates = e.Prisms.Where(wanted).ToList();
         if (candidates.Count == 0) { ctx.Skip(reason); return false; }
-        prism = candidates.OrderByDescending(p => Math.Abs(Footprints.Area(Footprints.Plan(p.Outer)))).First();
+        prism = candidates.OrderByDescending(p => Math.Abs(Polygon2.SignedArea(Footprints.Plan(p.Outer)))).First();
         return true;
     }
 
@@ -392,7 +392,7 @@ public sealed class ForeignElements : IIfcRecognizer
         if (e.Prisms.Count == 0) return null;
         var bodies = e.Prisms.GroupBy(p => p.Source == "brep" ? Key(p) : Guid.NewGuid().ToString()).Count();
         if (bodies > 1) return null;
-        return e.Prisms.Where(wanted).OrderByDescending(p => Math.Abs(Footprints.Area(Footprints.Plan(p.Outer)))).FirstOrDefault();
+        return e.Prisms.Where(wanted).OrderByDescending(p => Math.Abs(Polygon2.SignedArea(Footprints.Plan(p.Outer)))).FirstOrDefault();
     }
 
     static string Label(ForeignElement e) => e.IfcClass.Length > 3 ? "a " + e.IfcClass[3..].ToLowerInvariant() : e.IfcClass;

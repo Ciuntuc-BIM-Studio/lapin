@@ -133,9 +133,6 @@ public static class Footprints
         return o;
     }
 
-    /// <summary>The signed area (counter-clockwise positive): <see cref="Polygon2.SignedArea(IReadOnlyList{Vec2})"/>, which new code calls itself.</summary>
-    public static double Area(IReadOnlyList<Vec2> poly) => Polygon2.SignedArea(poly);
-
     /// <summary>
     /// A thin polygon's axis: along its longest edge; the thickness across it; the
     /// ends where the polygon ends along it; <c>Coverage</c>, how much of the two

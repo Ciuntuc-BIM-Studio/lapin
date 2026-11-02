@@ -238,7 +238,7 @@ public static partial class IfcImport
                 }
                 if (K(cur) == K(a0) && loop.Count >= 3) loops.Add(Footprints.Clean(loop));
             }
-            return loops.Count > 0 ? [.. loops.OrderByDescending(l => Math.Abs(Footprints.Area(l)))] : null;
+            return loops.Count > 0 ? [.. loops.OrderByDescending(l => Math.Abs(Polygon2.SignedArea(l)))] : null;
         }
 
         static bool Defined(string? v) => v is { Length: > 0 } and not "NOTDEFINED";

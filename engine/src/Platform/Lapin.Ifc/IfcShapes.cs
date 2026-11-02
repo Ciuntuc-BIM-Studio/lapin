@@ -62,14 +62,14 @@ public sealed partial class IfcModel
             }
             var pts = Curve(item).Select(p => { var w = at.Apply(p); return new Vec2(w.X, w.Y); }).ToList();
             if (pts.Count >= 3 && (pts[0] - pts[^1]).Length < 1e-6) pts.RemoveAt(pts.Count - 1);
-            if (pts.Count >= 3 && Math.Abs(Footprints.Area(pts)) > 1e-6) loops.Add(Footprints.Clean(pts));
+            if (pts.Count >= 3 && Math.Abs(Polygon2.SignedArea(pts)) > 1e-6) loops.Add(Footprints.Clean(pts));
         }
         foreach (var rep in Items(File.Get(e[6])?[2]))
         {
             if (rep[1] is not string id || !string.Equals(id, "FootPrint", StringComparison.OrdinalIgnoreCase)) continue;
             foreach (var item in Items(rep[3])) Item(item, place, 0);
         }
-        return loops.Count > 0 ? [.. loops.OrderByDescending(l => Math.Abs(Footprints.Area(l)))] : null;
+        return loops.Count > 0 ? [.. loops.OrderByDescending(l => Math.Abs(Polygon2.SignedArea(l)))] : null;
     }
 
     /// <summary>The body's extents in the frame of a line in plan (from <paramref name="origin"/> along <paramref name="dir"/>, a unit vector), from its triangles; null without a body.</summary>
