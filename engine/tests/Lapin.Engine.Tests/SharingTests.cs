@@ -70,7 +70,7 @@ public sealed class SharingTests : IAsyncLifetime
         readonly Dictionary<int, TaskCompletionSource<JsonObject>> _pending = [];
         Task? _loop;
 
-        public static async Task<TestGuest> Join(string code, string relay, string name, string? token = null)
+        public static async Task<TestGuest> Join(string code, string relay, string name, string? token = null, string? hello = null)
         {
             var g = new TestGuest();
             var parts = code.Split('.');
@@ -81,7 +81,7 @@ public sealed class SharingTests : IAsyncLifetime
             g._crypto = new ShareCrypto(secret, parts[0], salt, host: false);
             var welcome = new TaskCompletionSource<JsonObject>();
             g._loop = Task.Run(() => g.Loop(welcome));
-            await g.SendText(new JsonObject { ["hello"] = new JsonObject { ["name"] = name, ["protocol"] = Sharing.Protocol, ["token"] = token } }.ToJsonString());
+            await g.SendText(hello ?? new JsonObject { ["hello"] = new JsonObject { ["name"] = name, ["protocol"] = Sharing.Protocol, ["token"] = token } }.ToJsonString());
             var w = await welcome.Task.WaitAsync(TimeSpan.FromSeconds(10));
             if (w["refused"] != null) throw new InvalidOperationException((string?)w["refused"]);
             g.Welcome = (JsonObject)w["welcome"]!;
@@ -102,6 +102,13 @@ public sealed class SharingTests : IAsyncLifetime
         public Task Presence(JsonObject p) => SendText(new JsonObject { ["method"] = "presence.update", ["params"] = p }.ToJsonString());
 
         async Task Loop(TaskCompletionSource<JsonObject> welcome)
+        {
+            try { await Receive(welcome); }
+            // Closed before the welcome: the join failed.
+            finally { welcome.TrySetException(new InvalidOperationException("The host closed the connection.")); }
+        }
+
+        async Task Receive(TaskCompletionSource<JsonObject> welcome)
         {
             var buffer = new byte[1 << 16];
             while (_ws.State == WebSocketState.Open)
@@ -210,6 +217,22 @@ public sealed class SharingTests : IAsyncLifetime
         var edit = await guest.Call("doc.execute", new JsonObject { ["command"] = "storey.create", ["args"] = new JsonObject() });
         Assert.Contains("look", (string)edit["error"]!);
         Assert.Null(edit["result"]);
+        await hub.Sharing.Stop("done");
+    }
+
+    [Fact]
+    public async Task AMalformedHelloClosesOnlyThatGuest()
+    {
+        var f = new Fixture();
+        var hub = new EngineHub(f.Session, PackageFiles.Create());
+        var status = (JsonObject)(await hub.Sharing.Handle("share.start", new JsonObject { ["relay"] = _relayUrl }))!;
+        var code = (string)status["code"]!;
+        foreach (var bad in new[] { "{not json", """{"hello":{"protocol":"one"}}""", """{"hello":{"protocol":1,"name":5}}""" })
+            await Assert.ThrowsAsync<InvalidOperationException>(() => TestGuest.Join(code, _relayUrl, "x", hello: bad));
+        // The session goes on: the next guest joins and is answered.
+        await using var ana = await TestGuest.Join(code, _relayUrl, "Ana");
+        Assert.True((bool)(await ana.Call("doc.snapshot"))["result"]!["reset"]!);
+        Assert.True(hub.Sharing.Active);
         await hub.Sharing.Stop("done");
     }
 

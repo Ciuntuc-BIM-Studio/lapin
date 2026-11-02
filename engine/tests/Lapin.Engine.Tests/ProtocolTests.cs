@@ -12,6 +12,36 @@ namespace Lapin.Engine.Tests;
 /// <summary>The wire: the hub answers in binary frames whose meshes are raw arrays, referenced from the JSON header.</summary>
 public class ProtocolTests
 {
+    /// <summary>A client that never takes what it is sent (a frozen view, a guest behind a slow link).</summary>
+    sealed class StalledClient : EngineHub.Client
+    {
+        public int Sends;
+        public bool WasDropped;
+        public override Task SendBinary(byte[] frame) { Interlocked.Increment(ref Sends); return new TaskCompletionSource().Task; }
+        public override Task SendText(string text) => SendBinary([]);
+        protected override void Drop() => WasDropped = true;
+    }
+
+    [Fact]
+    public async Task A_client_that_stops_reading_holds_up_no_call_and_is_let_go_when_too_far_behind()
+    {
+        var f = new Fixture();
+        var hub = new EngineHub(f.Session, PackageFiles.Create());
+        var stalled = new StalledClient();
+        hub.Add(stalled);
+        for (var i = 0; i < 3; i++)
+        {
+            var call = hub.Handle(new JsonObject { ["id"] = i, ["method"] = "doc.execute", ["params"] = new JsonObject { ["command"] = "architecture.addWall", ["args"] = new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = i, ["x2"] = 5, ["y2"] = i } } }.ToJsonString());
+            Assert.Same(call, await Task.WhenAny(call, Task.Delay(TimeSpan.FromSeconds(10))));
+        }
+        Assert.Equal(3, f.Model.OfClass(Lapin.Model.IfcClass.Wall).Count());
+        // Its first frame is still being sent; the others wait in its queue, until there are too many.
+        Assert.Equal(1, stalled.Sends);
+        for (var i = 0; i <= EngineHub.Client.MaxFrames; i++) stalled.Post([0]);
+        Assert.True(stalled.WasDropped);
+        Assert.True(stalled.Dropped);
+    }
+
     [Fact]
     public async Task A_reply_is_a_frame_with_its_meshes_as_buffers()
     {

@@ -35,6 +35,7 @@ public sealed class Sharing(EngineHub hub)
 
     readonly SemaphoreSlim _relaySending = new(1, 1);
     readonly Dictionary<uint, Guest> _guests = [];
+    /// <summary>The participants who joined with this invitation, by token; changed from the relay's loop and from the host's calls, under its own lock.</summary>
     readonly Dictionary<string, Participant> _known = [];
     ClientWebSocket? _relay;
     CancellationTokenSource? _stop;
@@ -68,14 +69,17 @@ public sealed class Sharing(EngineHub hub)
             {
                 var who = Known((string?)p["id"]);
                 foreach (var g in Guests().Where(g => g.Participant == who)) await Close(g, "The host asked you to leave.");
-                _known.Remove(who.Token);
+                lock (_known) _known.Remove(who.Token);
                 return Status();
             }
             default: throw new CommandException($"Unknown method „{method}”.");
         }
     }
 
-    Participant Known(string? id) => _known.Values.FirstOrDefault(x => x.Id == id) ?? throw new CommandException("There is no such participant.");
+    Participant Known(string? id)
+    {
+        lock (_known) return _known.Values.FirstOrDefault(x => x.Id == id) ?? throw new CommandException("There is no such participant.");
+    }
 
     Guest[] Guests() { lock (_guests) return [.. _guests.Values]; }
 
@@ -109,7 +113,7 @@ public sealed class Sharing(EngineHub hub)
         // A new invitation each time: the last one's guests cannot come back with it.
         _room = RandomRoom();
         _secret = RandomNumberGenerator.GetBytes(16);
-        _known.Clear();
+        lock (_known) _known.Clear();
         var ws = new ClientWebSocket();
         ws.Options.KeepAliveInterval = TimeSpan.FromSeconds(20);
         try { await ws.ConnectAsync(new Uri($"{_relayUrl.TrimEnd('/')}/host?room={_room}"), CancellationToken.None); }
@@ -184,7 +188,14 @@ public sealed class Sharing(EngineHub hub)
                     case 3:
                         Guest? g;
                         lock (_guests) _guests.TryGetValue(gid, out g);
-                        if (g != null) await Receive(g, frame.AsMemory(5));
+                        if (g == null) break;
+                        // Whatever one guest's frame does wrong (a hello that is not one, a value of the wrong kind), only that guest goes.
+                        try { await Receive(g, frame.AsMemory(5)); }
+                        catch (Exception ex) when (ex is not OperationCanceledException)
+                        {
+                            Console.Error.WriteLine($"[share] A guest's frame was refused: {ex.Message}");
+                            await Close(g, null);
+                        }
                         break;
                 }
             }
@@ -207,7 +218,7 @@ public sealed class Sharing(EngineHub hub)
         if (g.Crypto.Open(payload.Span) is not { } plain || plain.Length < 1 || plain[0] != 1) { await Close(g, null); return; }
         var text = Encoding.UTF8.GetString(plain, 1, plain.Length - 1);
         if (g.Participant == null) { await Hello(g, text); return; }
-        if (await hub.Handle(text, g) is { } reply) await g.SendBinary(reply);
+        if (await hub.Handle(text, g) is { } reply) g.Post(reply);
     }
 
     /// <summary>A guest says who they are: welcomed as a participant (the same as before, when they come back with their token), or refused.</summary>
@@ -222,18 +233,22 @@ public sealed class Sharing(EngineHub hub)
             return;
         }
         var name = ((string?)hello["name"])?.Trim() is { Length: > 0 } n ? n[..Math.Min(n.Length, 40)] : "Guest";
-        if ((string?)hello["token"] is not { } token || !_known.TryGetValue(token, out var who))
+        Participant who;
+        lock (_known)
         {
-            var number = ++_count;
-            token = Base64Url(RandomNumberGenerator.GetBytes(16));
-            who = new Participant($"p{number}", name, Colors[number % Colors.Length], _role) { Token = token };
-            _known[token] = who;
+            if ((string?)hello["token"] is not { } token || !_known.TryGetValue(token, out who!))
+            {
+                var number = ++_count;
+                token = Base64Url(RandomNumberGenerator.GetBytes(16));
+                who = new Participant($"p{number}", name, Colors[number % Colors.Length], _role) { Token = token };
+                _known[token] = who;
+            }
+            else who.Name = name;
         }
-        else who.Name = name;
         g.Participant = who;
         g.Caller = new Caller(who.Id, who.Role);
-        hub.Add(g);
-        await g.SendText(new JsonObject
+        // The welcome first in the guest's queue, then the diffs and presence that follow it.
+        g.Post(new JsonObject
         {
             ["welcome"] = new JsonObject
             {
@@ -242,6 +257,7 @@ public sealed class Sharing(EngineHub hub)
                 ["modules"] = new JsonArray(hub.Session.Product.Modules.Select(m => (JsonNode)m).ToArray()),
             },
         }.ToJsonString());
+        hub.Add(g);
         await hub.BroadcastPresence();
         await hub.TellLocal("share", Status());
     }
@@ -281,8 +297,16 @@ public sealed class Sharing(EngineHub hub)
             while (!ct.IsCancellationRequested)
             {
                 await Task.Delay(every, ct);
-                if (hub.Session.Path is { Length: > 0 } && hub.Session.History.Dirty)
-                    await hub.Handle("{\"method\":\"project.save\",\"params\":{}}");
+                if (hub.Session.Path is { Length: > 0 } && hub.Session.History.Dirty
+                    && await hub.Handle("{\"id\":0,\"method\":\"project.save\",\"params\":{}}") is { } reply
+                    && (string?)JsonNode.Parse(BinaryFrame.HeaderText(reply))?["error"] is { } error)
+                {
+                    // Saved nowhere: the host is told (the sharing's state, with why), not left to believe everyone's work is safe.
+                    Console.Error.WriteLine($"[share] The autosave failed: {error}");
+                    var status = Status();
+                    status["autosaveError"] = $"The shared project could not be saved: {error}";
+                    await hub.TellLocal("share", status);
+                }
             }
         }
         catch (OperationCanceledException) { }
@@ -295,6 +319,7 @@ public sealed class Sharing(EngineHub hub)
         public ShareCrypto? Crypto { get; set; }
         public override Task SendBinary(byte[] frame) => Send(2, frame);
         public override Task SendText(string text) => Send(1, Encoding.UTF8.GetBytes(text));
+        protected override void Drop() => _ = owner.Close(this, null);
 
         Task Send(byte kind, byte[] body) => Crypto == null ? Task.CompletedTask : owner.ToRelay(3, id, Crypto.Seal(kind, body));
     }

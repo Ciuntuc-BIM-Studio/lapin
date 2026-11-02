@@ -1,6 +1,7 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Threading.Channels;
 using Lapin.Model;
 using Lapin.Platform;
 using Lapin.Protocol;
@@ -39,14 +40,76 @@ public sealed class EngineHub
     public Session Session => _session;
     public Sharing Sharing { get; }
 
-    /// <summary>One connected interface: who it is, and how a frame reaches it.</summary>
+    /// <summary>
+    /// One connected interface: who it is, and how a frame reaches it. What the hub sends it waits in its own queue,
+    /// sent in order by its own loop (<see cref="Post"/>), so a client that stops reading holds up only itself; one
+    /// that falls too far behind is dropped (<see cref="Drop"/>), its frames with it.
+    /// </summary>
     public abstract class Client
     {
+        /// <summary>The most frames, and bytes, a client may have waiting before it is dropped.</summary>
+        public const int MaxFrames = 4096;
+        public const long MaxBytes = 1L << 30;
+
+        readonly Channel<Func<Task>> _out = Channel.CreateUnbounded<Func<Task>>(new UnboundedChannelOptions { SingleReader = true });
+        long _waitingBytes;
+        int _waitingFrames;
+        int _dropped;
+        Task? _pump;
+
         public Caller Caller { get; set; } = Caller.Local;
         /// <summary>The participant it shows (null: a local window that has not said who it is, a detached view).</summary>
         public Participant? Participant { get; set; }
         public abstract Task SendBinary(byte[] frame);
         public abstract Task SendText(string text);
+
+        /// <summary>The client fell behind: its connection is ended, and its own loop removes it.</summary>
+        protected abstract void Drop();
+
+        /// <summary>Whether it was dropped for falling behind.</summary>
+        public bool Dropped => Volatile.Read(ref _dropped) != 0;
+
+        /// <summary>A frame sent after those posted before it, without waiting for the peer to take it.</summary>
+        public void Post(byte[] frame) => Post(() => SendBinary(frame), frame.Length);
+        public void Post(string text) => Post(() => SendText(text), text.Length);
+
+        void Post(Func<Task> send, long size)
+        {
+            if (Dropped) return;
+            if (Interlocked.Increment(ref _waitingFrames) > MaxFrames || Interlocked.Add(ref _waitingBytes, size) > MaxBytes)
+            {
+                if (Interlocked.Exchange(ref _dropped, 1) == 0)
+                {
+                    Console.Error.WriteLine("[engine] A client fell behind and was let go.");
+                    _out.Writer.TryComplete();
+                    Drop();
+                }
+                return;
+            }
+            _out.Writer.TryWrite(async () =>
+            {
+                try { await Safe(send()); }
+                finally { Interlocked.Decrement(ref _waitingFrames); Interlocked.Add(ref _waitingBytes, -size); }
+            });
+            if (_pump == null) lock (_out) _pump ??= Task.Run(Pump);
+        }
+
+        async Task Pump()
+        {
+            await foreach (var send in _out.Reader.ReadAllAsync()) await send();
+        }
+
+        /// <summary>The client gone: nothing more is posted to it; what is queued still goes, as far as it can.</summary>
+        public void Complete() => _out.Writer.TryComplete();
+
+        /// <summary>What is queued, sent (tests; a client that ends).</summary>
+        public Task Flushed()
+        {
+            var done = new TaskCompletionSource();
+            if (!_out.Writer.TryWrite(() => { done.TrySetResult(); return Task.CompletedTask; })) return Task.CompletedTask;
+            if (_pump == null) lock (_out) _pump ??= Task.Run(Pump);
+            return done.Task;
+        }
     }
 
     /// <summary>A local interface on its WebSocket, one frame at a time (a reply and another client's broadcast may be due together).</summary>
@@ -55,6 +118,7 @@ public sealed class EngineHub
         readonly SemaphoreSlim _sending = new(1, 1);
         public override Task SendBinary(byte[] frame) => Send(frame, WebSocketMessageType.Binary);
         public override Task SendText(string text) => Send(Encoding.UTF8.GetBytes(text), WebSocketMessageType.Text);
+        protected override void Drop() => socket.Abort();
 
         async Task Send(byte[] bytes, WebSocketMessageType type)
         {
@@ -87,7 +151,7 @@ public sealed class EngineHub
                     ms.Write(buffer, 0, r.Count);
                 } while (!r.EndOfMessage);
 
-                if (await Handle(Encoding.UTF8.GetString(ms.ToArray()), client) is { } reply) await Safe(client.SendBinary(reply));
+                if (await Handle(Encoding.UTF8.GetString(ms.ToArray()), client) is { } reply) client.Post(reply);
             }
         }
         catch (OperationCanceledException) { }
@@ -104,19 +168,21 @@ public sealed class EngineHub
     {
         bool had;
         lock (_clients) had = _clients.Remove(c);
+        c.Complete();
         if (had && c.Participant != null) await BroadcastPresence();
     }
 
     Client[] Clients() { lock (_clients) return [.. _clients]; }
 
     /// <summary>A send that may fail because its peer is gone (its own loop ends it): the others still get theirs.</summary>
-    static async Task Safe(Task send)
+    internal static async Task Safe(Task send)
     {
         try { await send; }
         catch (Exception ex) when (ex is WebSocketException or ObjectDisposedException or InvalidOperationException or OperationCanceledException) { }
     }
 
-    async Task Broadcast(Diff diff)
+    /// <summary>A diff to every client, queued for each (<see cref="Client.Post"/>): no client's pace holds up the next call.</summary>
+    void Broadcast(Diff diff)
     {
         // Each author's own undo and redo in their frame; one frame per author.
         foreach (var part in _dispatcher.Parts(diff))
@@ -126,7 +192,7 @@ public sealed class EngineHub
             {
                 var author = c.Caller.Author;
                 if (!frames.TryGetValue(author, out var frame)) frames[author] = frame = _dispatcher.DiffFrame(part, author);
-                await Safe(c.SendBinary(frame));
+                c.Post(frame);
             }
         }
     }
@@ -147,12 +213,12 @@ public sealed class EngineHub
         try
         {
             // A long call's progress (an import's stages) goes to the local interface that asked, as text events, while the call runs.
-            _dispatcher.Progress = client is SocketClient asking ? o => _ = Safe(asking.SendText(new JsonObject { ["event"] = "progress", ["data"] = o }.ToJsonString())) : null;
+            _dispatcher.Progress = client is SocketClient asking ? o => asking.Post(new JsonObject { ["event"] = "progress", ["data"] = o }.ToJsonString()) : null;
             var (reply, diff) = _dispatcher.Handle(text, caller);
             _dispatcher.Progress = null;
             // A big snapshot's first parts, to the one who asked, before the reply that carries its last.
-            foreach (var frame in _dispatcher.TakeCallerFrames()) if (client != null) await Safe(client.SendBinary(frame));
-            if (diff != null) await Broadcast(diff);
+            foreach (var frame in _dispatcher.TakeCallerFrames()) client?.Post(frame);
+            if (diff != null) Broadcast(diff);
             return reply;
         }
         finally
@@ -221,17 +287,19 @@ public sealed class EngineHub
     public Participant? Participant(string id) =>
         id == History.Me ? Sharing.Host : Clients().Select(c => c.Participant).FirstOrDefault(p => p?.Id == id);
 
-    public async Task BroadcastPresence()
+    public Task BroadcastPresence()
     {
         var text = new JsonObject { ["event"] = "presence", ["data"] = PresenceJson() }.ToJsonString();
-        foreach (var c in Clients()) await Safe(c.SendText(text));
+        foreach (var c in Clients()) c.Post(text);
+        return Task.CompletedTask;
     }
 
     /// <summary>An event to the computer's own interfaces (the sharing's state, for the window's dialog and bar).</summary>
-    public async Task TellLocal(string name, JsonNode data)
+    public Task TellLocal(string name, JsonNode data)
     {
         var text = new JsonObject { ["event"] = name, ["data"] = data }.ToJsonString();
-        foreach (var c in Clients().Where(c => !c.Caller.Remote)) await Safe(c.SendText(text));
+        foreach (var c in Clients().Where(c => !c.Caller.Remote)) c.Post(text);
+        return Task.CompletedTask;
     }
 
     /// <summary>The help menu's reports and links, sent and opened from this computer.</summary>
