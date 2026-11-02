@@ -18,13 +18,12 @@ public static class ViewBoundaries
     public const string Class = "LapinViewBoundary";
     public const string Color = "#b4502a";
 
-    static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
     static JsonArray J(Vec2 p) => new(Math.Round(p.X, 6), Math.Round(p.Y, 6));
 
     /// <summary>A boundary's rectangle in its view's coordinates.</summary>
     public static (Vec2 Min, Vec2 Max) Box(Entity b)
     {
-        var (a, c) = (P(b.Attrs["min"]), P(b.Attrs["max"]));
+        var (a, c) = (Args.PointOf(b.Attrs["min"]), Args.PointOf(b.Attrs["max"]));
         return (new Vec2(Math.Min(a.X, c.X), Math.Min(a.Y, c.Y)), new Vec2(Math.Max(a.X, c.X), Math.Max(a.Y, c.Y)));
     }
 

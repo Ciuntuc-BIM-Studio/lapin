@@ -26,6 +26,15 @@ public static class Args
         throw new CommandException($"The {what} is [x, y].");
     }
 
+    /// <summary>
+    /// A plan point as the model stores it, <c>[x, y]</c>, read leniently (a coordinate that is not a number reads 0);
+    /// null when it is not a list of two. Every module's own reader of stored points comes here.
+    /// </summary>
+    public static Vec2? TryPoint(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : null;
+
+    /// <summary><see cref="TryPoint"/>, the origin when there is none.</summary>
+    public static Vec2 PointOf(JsonNode? n) => TryPoint(n) ?? default;
+
     /// <summary>A plan point given as two numbers under <paramref name="x"/> and <paramref name="y"/>, both required.</summary>
     public static Vec2 Point(JsonObject a, string x, string y) => new(Number(a, x), Number(a, y));
 

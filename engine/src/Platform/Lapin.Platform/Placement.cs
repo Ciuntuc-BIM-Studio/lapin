@@ -77,7 +77,6 @@ public interface IPartPlacement
 /// </summary>
 public static class Placement
 {
-    static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
     static JsonArray J(Vec2 p) => new(p.X, p.Y);
 
     /// <summary>The element's attributes carried by the transformation.</summary>
@@ -85,12 +84,12 @@ public static class Placement
     {
         var a = e.CloneAttrs();
         foreach (var k in new[] { "start", "end", "at", "a", "b", "seed", "stampAt" })
-            if (a[k] is JsonArray { Count: >= 2 } p && e.Class != IfcClass.Annotation) a[k] = J(t.Point(P(p)));
+            if (a[k] is JsonArray { Count: >= 2 } p && e.Class != IfcClass.Annotation) a[k] = J(t.Point(Args.PointOf(p)));
         // The attribute is in degrees; the transformation works in radians.
         if (a["rotation"] != null && e.Class != IfcClass.Annotation) a["rotation"] = t.Angle((Json.Number(a["rotation"]) ?? 0) * Math.PI / 180) * 180 / Math.PI;
         if (a["contour"] is JsonArray c)
         {
-            var pts = c.OfType<JsonArray>().Select(p => t.Point(P(p))).ToList();
+            var pts = c.OfType<JsonArray>().Select(p => t.Point(Args.PointOf(p))).ToList();
             if (t.Mirrored) pts.Reverse(); // a mirrored outline keeps running counter-clockwise
             a["contour"] = new JsonArray(pts.Select(p => (JsonNode)J(p)).ToArray());
         }
@@ -98,17 +97,17 @@ public static class Placement
         if (a["islands"] is JsonArray isl)
             a["islands"] = new JsonArray(isl.OfType<JsonArray>().Select(l =>
             {
-                var q = l.OfType<JsonArray>().Select(p => t.Point(P(p))).ToList();
+                var q = l.OfType<JsonArray>().Select(p => t.Point(Args.PointOf(p))).ToList();
                 if (t.Mirrored) q.Reverse();
                 return (JsonNode)new JsonArray(q.Select(p => (JsonNode)J(p)).ToArray());
             }).ToArray());
         if (a["points"] is JsonArray pts3 && pts3.OfType<JsonArray>().All(p => p.Count >= 3))
             a["points"] = new JsonArray(pts3.OfType<JsonArray>().Select(p =>
             {
-                var q = t.Point(new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0));
+                var q = t.Point(Args.PointOf(p));
                 return (JsonNode)new JsonArray(q.X, q.Y, Json.Number(p[2]) ?? 0);
             }).ToArray());
-        if (a["ridgeDirection"] is JsonArray { Count: >= 2 } rd) a["ridgeDirection"] = J(t.Dir(P(rd)));
+        if (a["ridgeDirection"] is JsonArray { Count: >= 2 } rd) a["ridgeDirection"] = J(t.Dir(Args.PointOf(rd)));
         // A mirrored arc bulges to the other side of its chord.
         if (t.Mirrored && Json.Number(a[PathCurve.Key]) is { } rise && e.Class != IfcClass.Annotation) a[PathCurve.Key] = -rise;
         return a;
@@ -134,7 +133,7 @@ public static class Placement
         var m = ctx.Model;
         if (e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray && m.RelationsOf(e.Id, IfcClass.RelConnectsPathElements).Any())
         {
-            var (a, b) = (P(e.Attrs["start"]), P(e.Attrs["end"]));
+            var (a, b) = (Args.PointOf(e.Attrs["start"]), Args.PointOf(e.Attrs["end"]));
             var curve = PathCurve.Of(e);
             foreach (var r in m.RelationsOf(e.Id, IfcClass.RelConnectsPathElements).ToList())
                 foreach (var pid in r.Related.Append(r.Relating).Where(x => x != e.Id && moving?.Contains(x) != true).Distinct())
@@ -144,7 +143,7 @@ public static class Placement
                     var changed = false;
                     foreach (var k in new[] { "start", "end" })
                     {
-                        var q = P(attrs[k]);
+                        var q = Args.PointOf(attrs[k]);
                         if ((curve.IsArc ? curve.Distance(q) : DistToSegment(q, a, b)) < 1e-6) { attrs[k] = J(t.Point(q)); changed = true; }
                     }
                     if (changed) ctx.Replace(partner.With(attrs: attrs));

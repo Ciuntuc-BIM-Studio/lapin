@@ -29,11 +29,8 @@ public static class Joins
 {
     public const string Class = IfcClass.RelConnectsPathElements;
 
-    public static Vec2 Start(Entity e) => Point(e.Attrs["start"]);
-    public static Vec2 End(Entity e) => Point(e.Attrs["end"]);
-
-    static Vec2 Point(JsonNode? n) =>
-        n is JsonArray { Count: >= 2 } a && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y ? new Vec2(x, y) : default;
+    public static Vec2 Start(Entity e) => Args.PointOf(e.Attrs["start"]);
+    public static Vec2 End(Entity e) => Args.PointOf(e.Attrs["end"]);
 
     public static IEnumerable<Relation> Of(IModelView m, string id) => m.RelationsOf(id, Class);
 

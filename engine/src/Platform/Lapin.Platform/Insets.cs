@@ -20,7 +20,6 @@ public static class Insets
     public const string Class = "LapinInset";
     public const string Layer = "INSET";
 
-    static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
 
     public static void Register(IModuleRegistry r)
     {
@@ -74,7 +73,7 @@ public static class Insets
             if (Views.Find(c.Model, e.Str("source") ?? "") is not { } source || source.Id == c.View.Id) continue;
             var r = Views.Render(q, source, print: false, insets: false, withMarks: false);
             var mk = new ViewMark(e.Id);
-            var at = P(e.Attrs["at"]);
+            var at = Args.PointOf(e.Attrs["at"]);
             if (r.Problem != null || r.Bounds is not { } b)
             {
                 // Nothing to show: a small frame with the reason, so the inset can still be found and moved.

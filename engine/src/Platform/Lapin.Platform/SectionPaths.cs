@@ -32,7 +32,6 @@ public static class SectionPaths
     /// <summary>One straight piece of the line: its ends, its length and the station (the developed x) where it starts.</summary>
     public sealed record Piece(Vec2 A, Vec2 B, double Length, double Station);
 
-    static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
 
     public static JsonArray PointsJson(IEnumerable<Vec2> pts) => new(pts.Select(p => (JsonNode)new JsonArray(Math.Round(p.X, 6), Math.Round(p.Y, 6))).ToArray());
 
@@ -47,8 +46,8 @@ public static class SectionPaths
     /// <summary>The points the view keeps: <c>pts</c>, else its start and end; empty when it has neither.</summary>
     public static List<Vec2> Points(Entity view)
     {
-        if (view.Attrs["pts"] is JsonArray pts && pts.Count >= 2) return Clean(pts.Select(P));
-        if (view.Attrs["start"] is JsonArray s && view.Attrs["end"] is JsonArray e) return Clean([P(s), P(e)]);
+        if (view.Attrs["pts"] is JsonArray pts && pts.Count >= 2) return Clean(pts.Select(Args.PointOf));
+        if (view.Attrs["start"] is JsonArray s && view.Attrs["end"] is JsonArray e) return Clean([Args.PointOf(s), Args.PointOf(e)]);
         return [];
     }
 
@@ -135,7 +134,7 @@ public static class SectionPaths
         {
             var s = a["start"] ?? attrs["start"];
             var e = a["end"] ?? attrs["end"];
-            if (s is JsonArray && e is JsonArray) pts = Clean([P(s), P(e)]);
+            if (s is JsonArray && e is JsonArray) pts = Clean([Args.PointOf(s), Args.PointOf(e)]);
             else if (create && a["along"] == null) throw new CommandException("A section needs its line: start and end, or pts.");
         }
         if (a.ContainsKey("curve")) { if ((string?)a["curve"] is ArcCurve) attrs["curve"] = ArcCurve; else attrs.Remove("curve"); }

@@ -133,12 +133,8 @@ public static class Footprints
         return o;
     }
 
-    public static double Area(IReadOnlyList<Vec2> poly)
-    {
-        double a = 0;
-        for (var i = 0; i < poly.Count; i++) { var p = poly[i]; var q = poly[(i + 1) % poly.Count]; a += p.X * q.Y - q.X * p.Y; }
-        return a / 2;
-    }
+    /// <summary>The signed area (counter-clockwise positive): <see cref="Polygon2.SignedArea(IReadOnlyList{Vec2})"/>, which new code calls itself.</summary>
+    public static double Area(IReadOnlyList<Vec2> poly) => Polygon2.SignedArea(poly);
 
     /// <summary>
     /// A thin polygon's axis: along its longest edge; the thickness across it; the

@@ -29,6 +29,16 @@ public class ArgsTests
     }
 
     [Fact]
+    public void A_stored_point_is_read_leniently()
+    {
+        Assert.Equal(new Lapin.Geometry.Vec2(1, 2.5), Args.TryPoint(new JsonArray(1, 2.5, 7)));
+        Assert.Equal(new Lapin.Geometry.Vec2(1, 0), Args.TryPoint(new JsonArray(1, "a")));
+        Assert.Null(Args.TryPoint(new JsonArray(1)));
+        Assert.Null(Args.TryPoint(null));
+        Assert.Equal(default, Args.PointOf(JsonValue.Create("1,2")));
+    }
+
+    [Fact]
     public void An_outline_is_a_list_of_points_or_the_rectangle_between_two_corners()
     {
         var pts = Args.Points(new JsonObject { ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(4, 0), new JsonArray(4, 3)) });

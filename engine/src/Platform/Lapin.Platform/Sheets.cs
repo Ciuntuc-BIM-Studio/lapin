@@ -37,7 +37,7 @@ public sealed record SheetViewport(string Id, string ViewId, double X, double Y,
 
     public static SheetViewport? From(JsonNode? n) => n is JsonObject o && (string?)o["id"] is { } id && (string?)o["viewId"] is { } v
         ? new SheetViewport(id, v, Json.Number(o["x"]) ?? 0, Json.Number(o["y"]) ?? 0, Json.Number(o["width"]) ?? 0, Json.Number(o["height"]) ?? 0,
-            o["center"] is JsonArray c && c.Count >= 2 ? new Vec2(Json.Number(c[0]) ?? 0, Json.Number(c[1]) ?? 0) : null,
+            Args.TryPoint(o["center"]),
             (int)(Json.Number(o["page"]) ?? 1), (string?)o["boundary"], o["pinned"] is JsonValue pv && pv.TryGetValue<bool>(out var pinned) && pinned)
         : null;
 }
@@ -505,7 +505,7 @@ public static class Sheets
             {
                 X = Json.Number(a["x"]) ?? v.X, Y = Json.Number(a["y"]) ?? v.Y,
                 Width = Json.Number(a["width"]) ?? v.Width, Height = Json.Number(a["height"]) ?? v.Height,
-                Center = a.ContainsKey("center") ? a["center"] is JsonArray c && c.Count >= 2 ? new Vec2(Json.Number(c[0]) ?? 0, Json.Number(c[1]) ?? 0) : null : v.Center,
+                Center = a.ContainsKey("center") ? Args.TryPoint(a["center"]) : v.Center,
                 Pinned = a["pinned"] is JsonValue pv && pv.TryGetValue<bool>(out var pin) ? pin : v.Pinned,
             };
             // Bound to a boundary, or set free of it (keeping the box it had, so nothing moves on the paper).

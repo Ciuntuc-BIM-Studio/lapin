@@ -29,9 +29,6 @@ public static class ViewLinework
         ctx.Replace(view.With(attrs: attrs));
     }
 
-    static Vec2 P(JsonNode? n, string what) => n is JsonArray a && a.Count >= 2 && Json.Number(a[0]) is { } x && Json.Number(a[1]) is { } y
-        ? new Vec2(x, y) : throw new CommandException($"The {what} is [x, y].");
-
     /// <summary>The view's drawing as generated (before its edits), to pick edges in.</summary>
     static ViewDrawing Generated(ICommandContext ctx, Entity view)
     {
@@ -59,7 +56,7 @@ public static class ViewLinework
             var style = LineStyleSpec.From(a["style"]);
             if (action == "style" && (style == null || style.Empty)) throw new CommandException("A style needs a pen, a colour or a pattern.");
             if (style?.Pattern is { } pat && !LineStyles.Patterns.Contains(pat)) throw new CommandException($"„{pat}” is not a line pattern.");
-            var edge = Pick(ctx, view, P(a["at"], "point"), a);
+            var edge = Pick(ctx, view, Args.Point(a["at"], "point"), a);
             Write(ctx, view, Linework.Add(Edits(view), new LineEdit(ctx.NewId(), edge.Element, edge.A, edge.B, action, style)));
             return new JsonObject { ["element"] = edge.Element };
         });
@@ -71,8 +68,8 @@ public static class ViewLinework
             var mode = (string?)a["mode"] ?? "join";
             // One drawing for both picks.
             var drawing = Generated(ctx, view);
-            var first = Pick(drawing, view, P(a["first"], "first point"), a);
-            var second = Pick(drawing, view, P(a["second"], "second point"), a);
+            var first = Pick(drawing, view, Args.Point(a["first"], "first point"), a);
+            var second = Pick(drawing, view, Args.Point(a["second"], "second point"), a);
             var x = Linework.Crossing(first.A, first.B, second.A, second.B) ?? throw new CommandException("The two edges are parallel: they never meet.");
             var changes = mode switch
             {
@@ -102,7 +99,7 @@ public static class ViewLinework
             }
             else
             {
-                var edge = Pick(ctx, view, P(a["at"], "point"), a);
+                var edge = Pick(ctx, view, Args.Point(a["at"], "point"), a);
                 var u = (edge.B - edge.A).Normalized();
                 bool On(Vec2 p) => Math.Abs(Vec2.Cross(p - edge.A, u)) < 1e-4;
                 keep = edits.Where(e => !(e.Element == edge.Element && On(e.A) && On(e.B))).ToList();
