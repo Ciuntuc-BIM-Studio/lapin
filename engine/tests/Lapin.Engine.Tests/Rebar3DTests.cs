@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
+using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
 using Lapin.Rebar;
@@ -45,6 +46,34 @@ public class Rebar3DTests
         Assert.All(bars, b => { Assert.Equal(1.0, b[0].X, 9); Assert.Equal(5.0, b[^1].X, 9); });
         // The schedule counts all three, under the bar's mark.
         Assert.Contains(RebarSchedule.Entries(f.Model), x => x.Mark == Rebars.Mark(e) && x.Count == 3 && Math.Abs(x.Length - 4) < 1e-9);
+    }
+
+    [Fact]
+    public void A_bar_drawn_in_a_stair_s_section_belongs_to_it_and_is_laid_between_its_flight_s_faces()
+    {
+        // Decision 248: a stair is a host; its railings and finish do not widen it.
+        var f = F();
+        var stair = (string)f.Run("architecture.addStair", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 0, ["y"] = 0, ["x2"] = 1, ["y2"] = 0 })!["id"]!;
+        var g = f.Session.Geometry(stair)!;
+        var flight = g.Parts.First(p => p.Key == "flight:0");
+        var (min, max) = Measure.Bounds(flight.Solid)!.Value;
+        var all = g.Parts.SelectMany(p => p.Solid.Vertices).ToList();
+        // A section along the flight, looking across it; the bar drawn in the flight's cut, 150 mm under its box's middle (the box's middle is above the steps' nosings).
+        var along = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(min.X - 1, (min.Y + max.Y) / 2), ["end"] = new JsonArray(max.X + 1, (min.Y + max.Y) / 2), ["scale"] = 50 })!["id"]!;
+        var frame = Rebar3D.FrameOf(f.Model, f.Session.Catalog, f.Model.Get(along))!;
+        var mid = frame.Map(new Vec3((min.X + max.X) / 2, (min.Y + max.Y) / 2, (min.Z + max.Z) / 2));
+        var bar = (string)f.Run("rebar.add", new JsonObject { ["viewId"] = along, ["shape"] = "straight", ["at"] = new JsonArray(mid.X, mid.Y - 0.15), ["params"] = new JsonObject { ["length"] = 0.6 }, ["diameter"] = 0.012, ["across"] = new JsonObject { ["count"] = 5, ["mode"] = "cover" } })!["id"]!;
+        var e = f.Model.Get(bar)!;
+        Assert.Equal(stair, e.Str("host"));
+        var bars = Rebar3D.Bars(f.Model, null, id => f.Session.Geometry(id), e, RebarSettings.Of(f.Model));
+        Assert.Equal(5, bars.Count);
+        // Across the flight: the outer copies the cover and half a bar in from the concrete's faces, not from the railings'.
+        var cover = RebarSettings.Of(f.Model).Cover + 0.006;
+        var ys = bars.Select(b => b[0].Y).Order().ToList();
+        Assert.Equal(min.Y + cover, ys[0], 6);
+        Assert.Equal(max.Y - cover, ys[^1], 6);
+        Assert.True(all.Min(v => v.Y) <= min.Y + 1e-9 && all.Max(v => v.Y) >= max.Y - 1e-9);
+        Assert.Contains(RebarSchedule.Entries(f.Model), x => x.Mark == Rebars.Mark(e) && x.Count == 5);
     }
 
     [Fact]

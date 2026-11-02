@@ -28,7 +28,14 @@ public static class Rebar3D
     /// <summary>The even spread of <paramref name="n"/> places between <paramref name="lo"/> and <paramref name="hi"/> (the ends included); one in the middle; none for 0.</summary>
     public static List<double> Spread(int n, double lo, double hi) => n <= 0 ? [] : n == 1 ? [(lo + hi) / 2] : Enumerable.Range(0, n).Select(i => lo + (hi - lo) * i / (n - 1)).ToList();
 
-    static readonly HashSet<string> Hosts = [IfcClass.Beam, IfcClass.Column, IfcClass.Wall, IfcClass.Footing, IfcClass.Slab];
+    static readonly HashSet<string> Hosts = [IfcClass.Beam, IfcClass.Column, IfcClass.Wall, IfcClass.Footing, IfcClass.Slab, IfcClass.Stair];
+
+    /// <summary>
+    /// The parts of a host that hold its bars: a stair's flights, landings and winders (decision 248), never its railings,
+    /// their glass and posts or its finish, so a bar is laid between the concrete's faces; every part of any other host.
+    /// </summary>
+    public static IEnumerable<GeometryPart> Body(Entity host, ElementGeometry g) => host.Class != IfcClass.Stair ? g.Parts
+        : g.Parts.Where(p => (p.Key ?? "").Split(':')[0] is "flight" or "landing" or "winders");
 
     /// <summary>
     /// The element the point lies in on the view, to be the bar's host: the one whose cut holds it (a beam in a section
@@ -46,7 +53,7 @@ public static class Rebar3D
         foreach (var e in ctx.Model.Entities)
         {
             if (!Hosts.Contains(e.Class) || ctx.Query.Geometry(e.Id) is not { Parts.Count: > 0 } g) continue;
-            var pts = g.Parts.SelectMany(p => p.Solid.Vertices).ToList();
+            var pts = Body(e, g).SelectMany(p => p.Solid.Vertices).ToList();
             if (pts.Count == 0 || pts.Min(spec.Frame.Depth) < -1e-6) continue;
             var (x0, x1, y0, y1) = (pts.Min(p => spec.Frame.Map(p).X), pts.Max(p => spec.Frame.Map(p).X), pts.Min(p => spec.Frame.Map(p).Y), pts.Max(p => spec.Frame.Map(p).Y));
             if (at.X < x0 || at.X > x1 || at.Y < y0 || at.Y > y1) continue;
@@ -69,11 +76,11 @@ public static class Rebar3D
         if (Across.Of(e) is not { } across) return [0];
         if (across.Mode == "cover" && e.Str("host") is { } hostId && m.Get(hostId) is { } host && geometry?.Invoke(hostId) is { Parts.Count: > 0 } g)
         {
-            var depths = g.Parts.SelectMany(p => p.Solid.Vertices).Select(frame.Depth).ToList();
+            var depths = Body(host, g).SelectMany(p => p.Solid.Vertices).Select(frame.Depth).ToList();
             var stirrups = TypeStirrups.SpecOf(m, host);
             var d = e.NumOrNull("diameter") ?? 0.012;
             var inset = (stirrups?.Cover ?? st.Cover) + (stirrups is { Enabled: true } s ? s.Diameter : 0) + d / 2;
-            var (lo, hi) = (depths.Min() + inset, depths.Max() - inset);
+            var (lo, hi) = depths.Count == 0 ? (0.0, -1.0) : (depths.Min() + inset, depths.Max() - inset);
             if (hi >= lo) return Spread(across.Count, lo, hi);
         }
         // At a step, centred on the plane.
