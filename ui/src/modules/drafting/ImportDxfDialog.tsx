@@ -15,6 +15,7 @@ import { dxfFile } from '../../engine/files';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { zoomHost } from '../../viewport/zoom';
+import { shortNumber } from '../../platform/vec';
 
 interface Info {
   version: string;
@@ -32,7 +33,6 @@ interface Info {
 interface Result { file: string; entities: number; shapes: number; hatches: number; texts: number; dimensions: number; layers: string[]; patterns: string[]; skipped: Record<string, number>; units: string; unitsGuessed: boolean; flipped: boolean }
 
 const UNITS = [['auto', 'as the file says'], ['mm', 'millimetres'], ['cm', 'centimetres'], ['m', 'metres'], ['in', 'inches'], ['ft', 'feet']];
-const fmt = (v: number) => (Math.abs(v) >= 100 ? Math.round(v).toString() : v.toFixed(2));
 
 export function ImportDxfDialog() {
   const file = dxfFile.current;
@@ -77,7 +77,7 @@ export function ImportDxfDialog() {
   const view = viewId ? nodes.get(viewId) : undefined;
   const byMap = place === 'map' && info?.view?.kind === 'plan';
   const willFlip = !byMap && (flip === 'auto' ? Boolean(info?.view?.flip) : flip === 'yes');
-  const extent = info?.extents ? `${fmt(info.extents.max[0] - info.extents.min[0])} × ${fmt(info.extents.max[1] - info.extents.min[1])} units` : null;
+  const extent = info?.extents ? `${shortNumber(info.extents.max[0] - info.extents.min[0])} × ${shortNumber(info.extents.max[1] - info.extents.min[1])} units` : null;
   const run = async () => {
     if (!viewId || busy) return;
     setBusy(true);

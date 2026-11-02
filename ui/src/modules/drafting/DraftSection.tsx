@@ -17,12 +17,12 @@ import { sideLengths, withSideLength } from '../../viewport/cad/sides';
 import { formatLength, lengthText, unitLabel, useStandards } from '../../engine/unitsStore';
 import { Cell, LengthField, NumberField } from '../../shell/cells';
 import { useLayers, type DraftLayer } from '../../viewport/cad/layers';
+import { ptStrict } from '../../platform/vec';
 
 type Layer = DraftLayer;
 
 const deg = (rad: number) => Math.round((rad * 180) / Math.PI * 100) / 100;
 const m2 = (v: number) => `${v.toFixed(3)} m²`;
-const pt = (v: unknown): Vec2 | null => (Array.isArray(v) && typeof v[0] === 'number' && typeof v[1] === 'number' ? { x: v[0], y: v[1] } : null);
 const polygonArea = (pts: Vec2[]) => Math.abs(pts.reduce((a, p, i) => { const q = pts[(i + 1) % pts.length]; return a + p.x * q.y - q.x * p.y; }, 0)) / 2;
 const polylineLength = (pts: Vec2[], closed: boolean) => {
   let l = 0;
@@ -114,11 +114,11 @@ function HatchFields({ node, hatch }: { node: NodeDto; hatch: Record<string, unk
   useStandards((s) => s.units);
   const [patterns, setPatterns] = useState<string[]>([]);
   useEffect(() => { void query<{ name: string }[]>('hatch.list').then((r) => r && setPatterns(r.map((h) => h.name))); }, []);
-  const loops = Array.isArray(hatch.loops) ? (hatch.loops as unknown[][]).map((l) => l.map(pt).filter((p): p is Vec2 => !!p)) : [];
+  const loops = Array.isArray(hatch.loops) ? (hatch.loops as unknown[][]).map((l) => l.map(ptStrict).filter((p): p is Vec2 => !!p)) : [];
   const area = loops.length ? loops.reduce((a, l, i) => a + (i === 0 ? 1 : -1) * polygonArea(l), 0) : null;
   const set = (patch: Record<string, unknown>) => void execute('drafting.updateDraft', { id: node.id, hatch: patch });
   const pattern = String(hatch.pattern ?? 'SOLID');
-  const origin = pt(hatch.origin);
+  const origin = ptStrict(hatch.origin);
   return (
     <>
       <dt>Pattern</dt>
@@ -172,7 +172,7 @@ function Drafted({ node }: { node: NodeDto }) {
 
 function TextFields({ node }: { node: NodeDto }) {
   const set = (attrs: Record<string, unknown>) => void execute('element.update', { id: node.id, attrs });
-  const at = pt(node.props.at);
+  const at = ptStrict(node.props.at);
   const text = typeof node.props.text === 'string' ? node.props.text : '';
   const [body, setBody] = useState(text);
   useEffect(() => setBody(text), [text]);
@@ -189,11 +189,11 @@ function TextFields({ node }: { node: NodeDto }) {
 
 function DimensionFields({ node }: { node: NodeDto }) {
   // A string's points (pts); an older dimension's two ends (a, b).
-  const pts = Array.isArray(node.props.pts) ? (node.props.pts as unknown[]).map(pt).filter((p): p is NonNullable<ReturnType<typeof pt>> => !!p) : [pt(node.props.a), pt(node.props.b)].filter((p): p is NonNullable<ReturnType<typeof pt>> => !!p);
-  const a = pts[0], b = pts[pts.length - 1], at = pt(node.props.at);
+  const pts = Array.isArray(node.props.pts) ? (node.props.pts as unknown[]).map(ptStrict).filter((p): p is NonNullable<ReturnType<typeof ptStrict>> => !!p) : [ptStrict(node.props.a), ptStrict(node.props.b)].filter((p): p is NonNullable<ReturnType<typeof ptStrict>> => !!p);
+  const a = pts[0], b = pts[pts.length - 1], at = ptStrict(node.props.at);
   return (
     <dl className="fields">
-      <Row label="Kind" value={pt(node.props.dir) ? 'Linear' : 'Aligned'} />
+      <Row label="Kind" value={ptStrict(node.props.dir) ? 'Linear' : 'Aligned'} />
       <dt>Dimension style</dt><dd><input value={typeof node.props.dimStyle === 'string' ? node.props.dimStyle : ''} placeholder="default" onChange={(e) => void execute('element.update', { id: node.id, attrs: { dimStyle: e.target.value || null } })} /></dd>
       {pts.length > 2 && <Row label="Points" value={String(pts.length)} />}
       {a && <Point label="Start" p={a} />}
@@ -207,7 +207,7 @@ function DimensionFields({ node }: { node: NodeDto }) {
 function TagFields({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
   const target = typeof node.props.element === 'string' ? nodes.get(node.props.element) : undefined;
-  const at = pt(node.props.at);
+  const at = ptStrict(node.props.at);
   return (
     <dl className="fields">
       <Row label="Tagged element" value={target ? `${target.name} (${target.type})` : '—'} />

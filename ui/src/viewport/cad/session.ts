@@ -15,6 +15,7 @@ import { arcThrough, dist, toJson, type Shape } from './shapes';
 import { liveBegin, liveEnd } from '../liveInput';
 import { traceBegin, traceEnd } from '../moveTrace';
 import { lassoTest, type RegionTest } from '../selectBox';
+import { xy } from '../../platform/vec';
 
 /** What a 2D view lends the command line: its view, and what lies under a point. */
 export interface CadHost {
@@ -83,7 +84,6 @@ export const useCad = create<CadState>(() => ({
 
 const log = (line: string) => useCad.setState((s) => ({ history: [...s.history, line].slice(-50) }));
 const fmt = (v: number) => String(Math.round(v * 1000) / 1000);
-const V = (p: Vec2) => [p.x, p.y];
 
 /** Bumped when a command is cancelled or another starts: a step that answers after that is dropped. */
 let generation = 0;
@@ -259,7 +259,7 @@ function rotate(): Step | null | void | Promise<Step | null | void> {
   return withSelection((ids) => ({
     prompt: 'Base point', want: 'point',
     point: (c) => {
-      const go = async (deg: number) => { await execute('element.transform', { ids, op: 'rotate', center: V(c), angle: deg }); return null; };
+      const go = async (deg: number) => { await execute('element.transform', { ids, op: 'rotate', center: xy(c), angle: deg }); return null; };
       return { prompt: 'Angle (degrees, or a point)', want: 'point', base: c, preview: (p) => [{ type: 'line', a: c, b: p }], value: go, point: (p) => go((Math.atan2(p.y - c.y, p.x - c.x) * 180) / Math.PI) };
     },
   }));
@@ -272,7 +272,7 @@ function mirror(): Step | null | void | Promise<Step | null | void> {
     point: (a) => {
       const second = (): Step => ({
         prompt: `Second point [Erase source: ${erase ? 'yes' : 'no'}]`, want: 'point', base: a, preview: (p) => [{ type: 'line', a, b: p }],
-        point: async (b) => { await execute('element.transform', { ids, op: 'mirror', a: V(a), b: V(b), copy: !erase }); return null; },
+        point: async (b) => { await execute('element.transform', { ids, op: 'mirror', a: xy(a), b: xy(b), copy: !erase }); return null; },
         keywords: { E: () => { erase = !erase; return second(); } },
       });
       return second();
@@ -283,7 +283,7 @@ function mirror(): Step | null | void | Promise<Step | null | void> {
 function scale(): Step | null | void | Promise<Step | null | void> {
   return withSelection((ids) => ({
     prompt: 'Base point', want: 'point',
-    point: (c) => ({ prompt: 'Scale factor', want: 'none', base: c, value: async (k) => { await execute('drafting.transform', { ids, op: 'scale', center: V(c), factor: k }); return null; } }),
+    point: (c) => ({ prompt: 'Scale factor', want: 'none', base: c, value: async (k) => { await execute('drafting.transform', { ids, op: 'scale', center: xy(c), factor: k }); return null; } }),
   }));
 }
 
@@ -297,7 +297,7 @@ function offset(): Step {
     value: (d) => { if (d > 0) useCad.setState({ offset: d }); return pickStep(); },
     pick: (hit) => ({
       prompt: 'Which side?', want: 'point',
-      point: async (side) => { await execute('drafting.offset', { id: hit.id, distance: useCad.getState().offset, side: V(side) }); return pickStep(); },
+      point: async (side) => { await execute('drafting.offset', { id: hit.id, distance: useCad.getState().offset, side: xy(side) }); return pickStep(); },
     }),
     enter: () => null,
   });
@@ -307,7 +307,7 @@ function offset(): Step {
 function trimOrExtend(kind: 'trim' | 'extend'): Step {
   const step = (): Step => ({
     prompt: kind === 'trim' ? 'Pick the piece to cut away (Enter to finish)' : 'Pick the end to extend (Enter to finish)', want: 'pick',
-    pick: async (hit, at) => { await execute(`drafting.${kind}`, { id: hit.id, at: V(at) }); return step(); },
+    pick: async (hit, at) => { await execute(`drafting.${kind}`, { id: hit.id, at: xy(at) }); return step(); },
     enter: () => null,
   });
   return step();
@@ -322,7 +322,7 @@ function corner(kind: 'fillet' | 'chamfer'): Step {
       prompt: 'Second line', want: 'pick',
       pick: async (b, atB) => {
         const s = useCad.getState();
-        await execute(`drafting.${kind}`, kind === 'fillet' ? { a: a.id, atA: V(atA), b: b.id, atB: V(atB), radius: s.radius } : { a: a.id, atA: V(atA), b: b.id, atB: V(atB), d1: s.chamfer, d2: s.chamfer });
+        await execute(`drafting.${kind}`, kind === 'fillet' ? { a: a.id, atA: xy(atA), b: b.id, atB: xy(atB), radius: s.radius } : { a: a.id, atA: xy(atA), b: b.id, atB: xy(atB), d1: s.chamfer, d2: s.chamfer });
         return null;
       },
     }),
@@ -336,7 +336,7 @@ function hatch(): Step {
     point: async (p) => {
       const h = host(); if (!h) return null;
       const s = useCad.getState();
-      await execute('drafting.hatch', { viewId: h.viewId, at: V(p), pattern: s.pattern, scale: s.hatchScale, layer: s.layer });
+      await execute('drafting.hatch', { viewId: h.viewId, at: xy(p), pattern: s.pattern, scale: s.hatchScale, layer: s.layer });
       return step();
     },
     value: (v) => { if (v > 0) useCad.setState({ hatchScale: v }); return step(); },
@@ -351,7 +351,7 @@ function text(): Step {
     prompt: 'Where?', want: 'point',
     point: (p) => ({
       prompt: 'Text (Enter to place)', want: 'text',
-      text: async (t) => { const h = host(); if (h && t.trim()) await execute('drafting.addText', { viewId: h.viewId, at: V(p), text: t.trim() }); return null; },
+      text: async (t) => { const h = host(); if (h && t.trim()) await execute('drafting.addText', { viewId: h.viewId, at: xy(p), text: t.trim() }); return null; },
     }),
   };
 }

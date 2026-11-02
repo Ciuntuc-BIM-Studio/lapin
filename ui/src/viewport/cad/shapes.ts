@@ -5,6 +5,7 @@
  */
 
 import type { Vec2 } from '../../platform/module';
+import { cross2, ptStrict } from '../../platform/vec';
 
 export type Shape =
   | { type: 'line'; a: Vec2; b: Vec2 }
@@ -24,18 +25,17 @@ export const angleInArc = (a: number, start: number, end: number) => {
 const at = (c: Vec2, r: number, a: number): Vec2 => ({ x: c.x + Math.cos(a) * r, y: c.y + Math.sin(a) * r });
 
 type Json = Record<string, unknown>;
-const pt = (v: unknown): Vec2 | null => (Array.isArray(v) && v.length >= 2 && typeof v[0] === 'number' && typeof v[1] === 'number' ? { x: v[0], y: v[1] } : null);
 
 /** A shape from the engine's JSON ({type, a: [x, y]…}). */
 export function fromJson(o: Json): Shape | null {
   switch (o.type) {
-    case 'line': { const a = pt(o.a), b = pt(o.b); return a && b ? { type: 'line', a, b } : null; }
+    case 'line': { const a = ptStrict(o.a), b = ptStrict(o.b); return a && b ? { type: 'line', a, b } : null; }
     case 'polyline': {
-      const pts = Array.isArray(o.pts) ? o.pts.map(pt) : [];
+      const pts = Array.isArray(o.pts) ? o.pts.map(ptStrict) : [];
       return pts.length >= 2 && pts.every(Boolean) ? { type: 'polyline', pts: pts as Vec2[], closed: !!o.closed } : null;
     }
-    case 'circle': { const c = pt(o.c); return c && typeof o.r === 'number' ? { type: 'circle', c, r: o.r } : null; }
-    case 'arc': { const c = pt(o.c); return c && typeof o.r === 'number' ? { type: 'arc', c, r: o.r, start: Number(o.start) || 0, end: Number(o.end) || 0 } : null; }
+    case 'circle': { const c = ptStrict(o.c); return c && typeof o.r === 'number' ? { type: 'circle', c, r: o.r } : null; }
+    case 'arc': { const c = ptStrict(o.c); return c && typeof o.r === 'number' ? { type: 'arc', c, r: o.r, start: Number(o.start) || 0, end: Number(o.end) || 0 } : null; }
   }
   return null;
 }
@@ -127,7 +127,6 @@ export function keyPoints(s: Shape): KeyPoints {
   return k;
 }
 
-const cross = (a: Vec2, b: Vec2) => a.x * b.y - a.y * b.x;
 function addUnique(o: Vec2[], p: Vec2) { if (!o.some((q) => dist(p, q) < 1e-9)) o.push(p); }
 
 export function intersectPrims(p: Prim, q: Prim): Vec2[] {
@@ -141,16 +140,16 @@ export function intersectPrims(p: Prim, q: Prim): Vec2[] {
 
 function segSeg(s1: { a: Vec2; b: Vec2 }, s2: { a: Vec2; b: Vec2 }, o: Vec2[]) {
   const d1 = P(s1.b.x - s1.a.x, s1.b.y - s1.a.y), d2 = P(s2.b.x - s2.a.x, s2.b.y - s2.a.y);
-  const den = cross(d1, d2);
+  const den = cross2(d1, d2);
   const l1 = Math.hypot(d1.x, d1.y), l2 = Math.hypot(d2.x, d2.y);
   const w = P(s2.a.x - s1.a.x, s2.a.y - s1.a.y);
   if (Math.abs(den) / Math.max(l1 * l2, 1e-18) < 1e-12) {
-    if (Math.abs(cross(w, d1)) / Math.max(l1, 1e-18) > 1e-9) return;
+    if (Math.abs(cross2(w, d1)) / Math.max(l1, 1e-18) > 1e-9) return;
     for (const [p, a, b] of [[s1.a, s2.a, s2.b], [s1.b, s2.a, s2.b], [s2.a, s1.a, s1.b], [s2.b, s1.a, s1.b]] as const)
       if (nearestOnSegment(p, a, b).dist < 1e-9) addUnique(o, p);
     return;
   }
-  const t = cross(w, d2) / den, u = cross(w, d1) / den;
+  const t = cross2(w, d2) / den, u = cross2(w, d1) / den;
   if (t >= -1e-9 && t <= 1 + 1e-9 && u >= -1e-9 && u <= 1 + 1e-9) addUnique(o, P(s1.a.x + d1.x * t, s1.a.y + d1.y * t));
 }
 

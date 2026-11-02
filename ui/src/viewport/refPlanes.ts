@@ -13,6 +13,7 @@
 import * as THREE from 'three';
 import type { NodeDto } from '../engine/protocol';
 import type { Vec3 } from './camera';
+import { cross3 } from '../platform/vec';
 
 export interface RefPlane { id: string; name: string; origin: Vec3; right: Vec3; up: Vec3; normal: Vec3; width?: number; height?: number }
 
@@ -26,9 +27,9 @@ export function planeOf(node: NodeDto): RefPlane {
   const normal = { x: Math.cos(t) * Math.cos(b), y: Math.cos(t) * Math.sin(b), z: Math.sin(t) };
   // Level along the plane (the bearing turned a quarter clockwise), whatever the tilt.
   const x0 = { x: -Math.sin(b), y: Math.cos(b), z: 0 };
-  const nx0 = cross(normal, x0);
+  const nx0 = cross3(normal, x0);
   const right = norm({ x: x0.x * Math.cos(s) + nx0.x * Math.sin(s), y: x0.y * Math.cos(s) + nx0.y * Math.sin(s), z: x0.z * Math.cos(s) + nx0.z * Math.sin(s) });
-  const up = norm(cross(normal, right));
+  const up = norm(cross3(normal, right));
   const width = n(p.width), height = n(p.height);
   return { id: node.id, name: node.name, origin: { x: n(p.x), y: n(p.y), z: n(p.z) }, right, up, normal, width: width > 0 ? width : undefined, height: height > 0 ? height : undefined };
 }
@@ -48,7 +49,6 @@ export function refPlanesOf(nodes: ReadonlyMap<string, NodeDto>): RefPlane[] {
   return o;
 }
 
-const cross = (a: Vec3, b: Vec3): Vec3 => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
 const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
 const norm = (a: Vec3): Vec3 => { const l = Math.hypot(a.x, a.y, a.z) || 1; return { x: a.x / l, y: a.y / l, z: a.z / l }; };
 export const planePoint = (p: RefPlane, x: number, y: number, off = 0): Vec3 => ({

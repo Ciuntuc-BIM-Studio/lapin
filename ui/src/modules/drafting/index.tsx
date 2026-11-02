@@ -16,6 +16,7 @@ import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shap
 import { LayersDialog } from './LayersDialog';
 import { frontView } from '../../viewport/frontView';
 import { BoundarySection, boundaryGrips, viewBoundary } from './ViewBoundary';
+import { xy } from '../../platform/vec';
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string, one object. Points on an element's cut edge, a grid axis or a wall's centre line follow it. */
 const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG']);
@@ -94,8 +95,7 @@ const collinear = (pts: Vec2[]): boolean => {
 async function addString(pts: Vec2[], at: Vec2, dir: Vec2 | null): Promise<void> {
   const h = cadHost();
   if (!h) return;
-  const V = (p: Vec2) => [p.x, p.y];
-  await execute('drafting.addDimension', { viewId: h.viewId, pts: pts.map(V), at: V(at), ...(dir ? { dir: V(dir) } : {}) });
+  await execute('drafting.addDimension', { viewId: h.viewId, pts: pts.map(xy), at: xy(at), ...(dir ? { dir: xy(dir) } : {}) });
 }
 
 /** How a string will look: its dimension line through `at` along `u`, and each point's extension line onto it. */

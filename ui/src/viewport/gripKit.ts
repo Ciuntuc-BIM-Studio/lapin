@@ -8,8 +8,8 @@
 import type { Grip, GripStep, RefLine, Vec2 } from '../platform/module';
 import { edgeMiddles, insertVertex, moveVertex, offsetEdge, removeVertex, toPairs, type Outline } from './contour';
 import { arcLength, axisLine, isArc, middle, pointAt, riseThrough, tangentAt, type Arc } from './arc';
+export { pt } from '../platform/vec';
 
-export const pt = (raw: unknown): Vec2 | null => (Array.isArray(raw) && raw.length >= 2 ? { x: Number(raw[0]), y: Number(raw[1]) } : null);
 
 /**
  * An axis from a to b. `step(start, end)` writes both ends; a dragged end

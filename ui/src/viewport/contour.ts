@@ -7,11 +7,11 @@
  */
 
 import type { Vec2 } from '../platform/module';
+import { cross2 } from '../platform/vec';
 
 export interface Outline<E = unknown> { pts: Vec2[]; edges?: E[] }
 
 const sub = (a: Vec2, b: Vec2) => ({ x: a.x - b.x, y: a.y - b.y });
-const cross = (a: Vec2, b: Vec2) => a.x * b.y - a.y * b.x;
 
 export function moveVertex<E>(o: Outline<E>, i: number, to: Vec2): Outline<E> {
   return { ...o, pts: o.pts.map((p, k) => (k === i ? to : p)) };
@@ -39,9 +39,9 @@ export function removeVertex<E>(o: Outline<E>, i: number): Outline<E> | null {
 
 /** The intersection of two lines (point + direction), null when parallel. */
 function meet(p: Vec2, d: Vec2, q: Vec2, e: Vec2): Vec2 | null {
-  const den = cross(d, e);
+  const den = cross2(d, e);
   if (Math.abs(den) < 1e-12) return null;
-  const t = cross(sub(q, p), e) / den;
+  const t = cross2(sub(q, p), e) / den;
   return { x: p.x + d.x * t, y: p.y + d.y * t };
 }
 

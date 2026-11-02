@@ -17,6 +17,7 @@
 
 import type { RenderItem } from '../engine/protocol';
 import type { Vec3 } from './camera';
+import { cross3 } from '../platform/vec';
 
 /** The capsule: its radius and height (m), the eye over the feet, the highest step it climbs. */
 export const RADIUS = 0.25;
@@ -45,7 +46,6 @@ const add = (a: Vec3, b: Vec3) => v(a.x + b.x, a.y + b.y, a.z + b.z);
 const sub = (a: Vec3, b: Vec3) => v(a.x - b.x, a.y - b.y, a.z - b.z);
 const mul = (a: Vec3, s: number) => v(a.x * s, a.y * s, a.z * s);
 const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
-const cross = (a: Vec3, b: Vec3) => v(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
 const dist2 = (a: Vec3, b: Vec3) => { const d = sub(a, b); return dot(d, d); };
 const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 
@@ -97,13 +97,13 @@ function closestSegments(p1: Vec3, q1: Vec3, p2: Vec3, q2: Vec3): { d: number; c
 /** Where segment P→P+dir crosses triangle ABC, both sides (its parameter in 0..1), or null. */
 function segmentHits(p: Vec3, dir: Vec3, a: Vec3, b: Vec3, c: Vec3): number | null {
   const e1 = sub(b, a), e2 = sub(c, a);
-  const pv = cross(dir, e2);
+  const pv = cross3(dir, e2);
   const det = dot(e1, pv);
   if (Math.abs(det) < 1e-12) return null;
   const inv = 1 / det, tv = sub(p, a);
   const u = dot(tv, pv) * inv;
   if (u < 0 || u > 1) return null;
-  const qv = cross(tv, e1);
+  const qv = cross3(tv, e1);
   const w = dot(dir, qv) * inv;
   if (w < 0 || u + w > 1) return null;
   const t = dot(e2, qv) * inv;
@@ -486,7 +486,7 @@ export class Walker {
     if (dist > 1e-5) n = mul(sub(onSegment, onTriangle), 1 / dist);
     else {
       // Pierced: the face's normal, towards the capsule's middle.
-      n = cross(sub(b, a), sub(c, a));
+      n = cross3(sub(b, a), sub(c, a));
       const len = Math.hypot(n.x, n.y, n.z);
       if (len < 1e-12) return null;
       n = mul(n, 1 / len);

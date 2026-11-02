@@ -7,6 +7,7 @@
 
 import type { Grip, GripStep, Vec2 } from '../../platform/module';
 import { pt } from '../../viewport/gripKit';
+import { xy } from '../../platform/vec';
 
 /** What the engine tells of a label in a mark's data (`label`, or an entry of `labels`). */
 export interface LabelData {
@@ -29,7 +30,6 @@ export function labelPlaceGrips(label: LabelData | undefined, key: string, step:
   if (!label) return [];
   const grips: Grip[] = [];
   const { show, back } = map;
-  const xy = (p: Vec2) => [p.x, p.y];
   const at = pt(label.at);
   if (at) grips.push({ key, kind: 'move', at: show(at), title: 'Drag: move the label', step: (to) => step({ at: xy(back(to)) }) });
   const elbow = pt(label.elbow);
