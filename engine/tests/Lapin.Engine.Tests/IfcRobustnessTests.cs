@@ -1,3 +1,4 @@
+using Lapin.Alignments;
 using Lapin.Architecture;
 using Lapin.Civil;
 using Lapin.Drafting;
@@ -185,6 +186,42 @@ public class IfcRobustnessTests : IDisposable
         Assert.True(clock.ElapsedMilliseconds < 6000, $"{count} native elements took {clock.ElapsedMilliseconds} ms");
         Assert.Equal(count, fx.Session.Model.OfClass("IfcBuildingElementProxy").Count());
         Assert.Equal(count - 1, Enumerable.Range(1, count - 1).Count(i => fx.Session.Model.RelationsOf(Tiny.Gid($"e{i}"), IfcClass.RelConnectsPathElements).Any()));
+    }
+
+    /// <summary>
+    /// Alignments read in the project's own units: a project in metres whose file also holds a millimetre unit (a
+    /// property's) reads its alignments in metres (they came 1000× too small), one in feet in feet, its angles in radians.
+    /// </summary>
+    [Theory]
+    [InlineData("#5=IFCSIUNIT(*,.LENGTHUNIT.,$,.METRE.);", "#6=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);", 50.0)]
+    [InlineData("#5=IFCCONVERSIONBASEDUNIT(#4,.LENGTHUNIT.,'FOOT',#7);#7=IFCMEASUREWITHUNIT(IFCLENGTHMEASURE(304.8),#6);", "#6=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);", 15.24)]
+    public void Alignments_are_read_in_the_projects_units(string length, string other, double metres)
+    {
+        var ifc = $"""
+            ISO-10303-21;
+            DATA;
+            #1=IFCPROJECT('0YvctVUKr0kugbFTf53O9L',$,'P',$,$,$,$,$,#2);
+            #2=IFCUNITASSIGNMENT((#5,#8));
+            #3=IFCSIUNIT(*,.PLANEANGLEUNIT.,$,.RADIAN.);
+            #4=IFCDIMENSIONALEXPONENTS(1,0,0,0,0,0,0);
+            {length}
+            {other}
+            #8=IFCSIUNIT(*,.PLANEANGLEUNIT.,$,.RADIAN.);
+            #9=IFCCONVERSIONBASEDUNIT(#4,.PLANEANGLEUNIT.,'DEGREE',#10);
+            #10=IFCMEASUREWITHUNIT(IFCPLANEANGLEMEASURE(0.0174532925199433),#3);
+            #20=IFCALIGNMENT('g',$,'Main',$,$,$,$,$);
+            #21=IFCALIGNMENTHORIZONTAL('h',$,$,$,$,$,$);
+            #23=IFCRELNESTS('n',$,$,$,#20,(#21));
+            #28=IFCCARTESIANPOINT((0.,0.));
+            #29=IFCALIGNMENTHORIZONTALSEGMENT($,$,#28,1.,0.,0.,50.,$,.LINE.);
+            #30=IFCALIGNMENTSEGMENT('a',$,$,$,$,$,$,#29);
+            #34=IFCRELNESTS('m',$,$,$,#21,(#30));
+            ENDSEC;
+            END-ISO-10303-21;
+            """;
+        var h = Assert.Single(Assert.Single(IfcAlignmentReader.Read(ifc)).Alignment.Horizontal);
+        Assert.Equal(metres, h.Length, 9);
+        Assert.Equal(1.0, h.StartDirection, 12);
     }
 
     /// <summary>Booleans that fail as manifold does on a body that is not closed.</summary>

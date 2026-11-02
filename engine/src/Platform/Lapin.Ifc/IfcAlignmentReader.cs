@@ -10,9 +10,8 @@ public sealed record IfcAlignmentRead(int Id, string? Name, Alignment Alignment)
 /// Reading IFC 4.3 alignments' semantic segments from a STEP file — the
 /// business-logic layer, not the generated geometry: IfcAlignment →
 /// (IfcRelNests) IfcAlignmentHorizontal / Vertical / Cant → (IfcRelNests,
-/// ordered) IfcAlignmentSegment → DesignParameters. Plane angles are converted
-/// to radians when the file's PLANEANGLEUNIT is a degree; lengths to metres
-/// when LENGTHUNIT is an SI prefix of the metre. The zero-length segment IFC
+/// ordered) IfcAlignmentSegment → DesignParameters. Lengths and plane angles are
+/// converted to metres and radians by the project's own units (<see cref="IfcModel.ProjectUnits"/>). The zero-length segment IFC
 /// 4.3 ends each layer with is dropped.
 /// </summary>
 public static class IfcAlignmentReader
@@ -21,7 +20,7 @@ public static class IfcAlignmentReader
 
     public static List<IfcAlignmentRead> Read(StepFile f)
     {
-        var (length, angle) = Units(f);
+        var (length, angle) = IfcModel.ProjectUnits(f);
         var o = new List<IfcAlignmentRead>();
         foreach (var a in f.OfType("IFCALIGNMENT"))
         {
@@ -49,18 +48,6 @@ public static class IfcAlignmentReader
         return o;
     }
 
-    static (double Length, double Angle) Units(StepFile f)
-    {
-        double length = 1, angle = 1;
-        foreach (var e in f.OfType("IFCSIUNIT"))
-            if (e[1] is StepEnum { Value: "LENGTHUNIT" } && e[2] is StepEnum p)
-                length = p.Value switch { "MILLI" => 1e-3, "CENTI" => 1e-2, "DECI" => 1e-1, "KILO" => 1e3, _ => 1 };
-        foreach (var e in f.OfType("IFCCONVERSIONBASEDUNIT"))
-            if (e[1] is StepEnum { Value: "PLANEANGLEUNIT" })
-                angle = f.Get(e[3]) is { } factor ? Num(factor[0], Math.PI / 180) : Math.PI / 180;
-        return (length, angle);
-    }
-
     /// <summary>Children of an object through IfcRelNests, in their stored order.</summary>
     static List<StepEntity> Nested(StepFile f, int id)
     {
@@ -73,14 +60,7 @@ public static class IfcAlignmentReader
         return o;
     }
 
-    static double Num(object? v, double fallback = 0) => v switch
-    {
-        double d => d,
-        long l => l,
-        int i => i,
-        StepTyped t => Num(t.Value, fallback),
-        _ => fallback,
-    };
+    static double Num(object? v) => IfcModel.Num(v);
     static double? OptNum(object? v) => v == null ? null : Num(v);
 
     static HorizontalSegment Horizontal(StepFile f, StepEntity e, double u, double angle)

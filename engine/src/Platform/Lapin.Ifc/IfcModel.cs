@@ -119,7 +119,7 @@ public sealed partial class IfcModel
         File = file;
         var project = file.OfType("IFCPROJECT").FirstOrDefault();
         ProjectName = Str(project?[2]) ?? Str(project?[5]) ?? "";
-        (_len, _angle) = Units(project);
+        (_len, _angle) = ProjectUnits(file);
 
         foreach (var r in file.OfType("IFCRELCONTAINEDINSPATIALSTRUCTURE"))
         {
@@ -199,39 +199,41 @@ public sealed partial class IfcModel
     List<StepEntity> Items(object? v) => v is List<object?> l ? [.. l.Select(File.Get).OfType<StepEntity>()] : [];
 
     /// <summary>Metres per length unit of a file (its project's units), for a look at the file before it is read as a model.</summary>
-    public static double LengthUnit(StepFile f)
-    {
-        var project = f.OfType("IFCPROJECT").FirstOrDefault();
-        var units = f.Get(project?[8]);
-        if (units?[0] is not List<object?> list) return 1;
-        foreach (var u in list.Select(f.Get).OfType<StepEntity>())
-        {
-            if ((u[1] as StepEnum)?.Value != "LENGTHUNIT") continue;
-            if (u.Type == "IFCSIUNIT") return (u[2] as StepEnum)?.Value switch { "MILLI" => 1e-3, "CENTI" => 1e-2, "DECI" => 0.1, "KILO" => 1e3, _ => 1 };
-            if (u.Type == "IFCCONVERSIONBASEDUNIT" && f.Get(u[3]) is { } m) return Num(m[0]) * (f.Get(m[1]) is { Type: "IFCSIUNIT" } si && (si[2] as StepEnum)?.Value == "MILLI" ? 1e-3 : 1);
-        }
-        return 1;
-    }
+    public static double LengthUnit(StepFile f) => ProjectUnits(f).Length;
 
-    (double Len, double Angle) Units(StepEntity? project)
+    /// <summary>
+    /// The project's units (its IfcUnitAssignment, not every unit the file holds: a property may be in millimetres in a
+    /// project in metres): metres per length unit and radians per plane angle unit. An SI unit by its prefix; a
+    /// conversion-based one (a foot, a degree) by its factor in the unit it names, else by its name.
+    /// </summary>
+    public static (double Length, double Angle) ProjectUnits(StepFile f)
     {
         double len = 1, angle = 1;
-        var units = File.Get(project?[8]);
-        foreach (var u in Items(units?[0]))
-        {
-            var type = (u[1] as StepEnum)?.Value ?? (u.Type == "IFCSIUNIT" ? (u[1] as StepEnum)?.Value : null);
-            double Factor()
+        var project = f.OfType("IFCPROJECT").FirstOrDefault();
+        // A file with no project's units (a fragment): the units it holds, a conversion-based one over the SI unit it is based on.
+        var units = f.Get(project?[8])?[0] is List<object?> assigned ? assigned.Select(f.Get).OfType<StepEntity>()
+            : f.OfType("IFCSIUNIT").Concat(f.OfType("IFCCONVERSIONBASEDUNIT"));
+        foreach (var u in units)
+            switch ((u[1] as StepEnum)?.Value)
             {
-                if (u.Type == "IFCSIUNIT")
-                    return (u[2] as StepEnum)?.Value switch { "MILLI" => 1e-3, "CENTI" => 1e-2, "DECI" => 0.1, "KILO" => 1e3, _ => 1 };
-                if (u.Type == "IFCCONVERSIONBASEDUNIT" && File.Get(u[3]) is { } m)
-                    return Num(m[0]) * (File.Get(m[1]) is { Type: "IFCSIUNIT" } si && (si[2] as StepEnum)?.Value == "MILLI" ? 1e-3 : 1);
-                return 1;
+                case "LENGTHUNIT": len = UnitFactor(f, u, 0); break;
+                case "PLANEANGLEUNIT": angle = UnitFactor(f, u, 0); break;
             }
-            if (type == "LENGTHUNIT") len = Factor();
-            else if (type == "PLANEANGLEUNIT") angle = Factor();
-        }
         return (len, angle);
+    }
+
+    /// <summary>An IfcSIUnit's or IfcConversionBasedUnit's size in its SI unit (metres, radians).</summary>
+    static double UnitFactor(StepFile f, StepEntity u, int depth)
+    {
+        if (u.Type == "IFCSIUNIT")
+            return (u[2] as StepEnum)?.Value switch
+            {
+                "KILO" => 1e3, "HECTO" => 1e2, "DECA" => 10, "DECI" => 0.1, "CENTI" => 1e-2, "MILLI" => 1e-3, "MICRO" => 1e-6, "NANO" => 1e-9, _ => 1,
+            };
+        if (!u.Type.StartsWith("IFCCONVERSIONBASEDUNIT", StringComparison.Ordinal)) return 1;
+        if (depth < 4 && f.Get(u[3]) is { } measure && Num(measure[0]) is var v && v > 0)
+            return v * (f.Get(measure[1]) is { } of ? UnitFactor(f, of, depth + 1) : 1);
+        return (Str(u[2]) ?? "").ToUpperInvariant() switch { "DEGREE" => Math.PI / 180, "FOOT" => 0.3048, "INCH" => 0.0254, "YARD" => 0.9144, "MILE" => 1609.344, _ => 1 };
     }
 
     /// <summary>A surface style's colour, through IFC2X3's presentation style assignments.</summary>
