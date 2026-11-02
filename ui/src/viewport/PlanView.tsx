@@ -315,27 +315,30 @@ export function PlanView() {
   }, [tool, pts, pick, complete, view.scale, acquire]);
 
   useEffect(() => {
+    if (!active) return;
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.closest('input, select, textarea')) return;
+      if (e.key === 'Shift') setOrtho(true);
       // Esc while the selection is dragged by its body: nothing moves.
       if (e.key === 'Escape' && carrying()) { drag.current = null; carryEnd(); return; }
+      // What the key router took (a typed length committed or cleared, the command line) or a CAD step's: not the gesture's.
+      if (e.defaultPrevented || useCad.getState().step) return;
       // A pick-then-point gesture ended after its pick (Enter or Esc) completes with the pick alone; a typed length is the key router's (Enter takes it, Esc clears it).
       if ((e.key === 'Escape' || e.key === 'Enter') && tool?.gesture?.kind === 'pickThenPoint' && pts.length === 1 && picked.current) {
         const l = useLive.getState();
-        if (e.defaultPrevented || (l.owner === 'tool' && (l.len || l.ang))) return;
+        if (l.owner === 'tool' && (l.len || l.ang)) return;
         void complete([pts[0]], picked.current);
         return;
       }
       if (e.key === 'Escape') { if (pts.length) setPts([]); else setTool(null); }
       if (e.key === 'Enter' && tool?.gesture?.kind === 'polygon' && pts.length >= 3) void complete(pts);
       if (e.key === 'Enter' && tool?.gesture?.kind === 'polyline' && pts.length >= 2) void complete(pts);
-      if (e.key === 'Shift') setOrtho(true);
     };
     const onUp = (e: KeyboardEvent) => { if (e.key === 'Shift') setOrtho(false); };
     window.addEventListener('keydown', onKey);
     window.addEventListener('keyup', onUp);
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('keyup', onUp); };
-  }, [pts, tool, complete]);
+  }, [active, pts, tool, complete]);
 
   // A tool drawing from a point: its next segment's length and angle can be typed (Enter takes it).
   const live = useLive();

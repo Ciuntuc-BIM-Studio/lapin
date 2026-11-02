@@ -22,6 +22,7 @@ import { chipText, cutZ, settingOf } from './storeys3d';
 import { showAllStoreys3d } from './storeys3dActions';
 import { everyLayerPatch, layers3dOf, layersChip, shownIn } from './layers3d';
 import { select, setTool, useUi } from '../app/store';
+import { usePaneField } from '../app/pane';
 import { findTool } from '../platform/modules';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { completeTool } from './tools';
@@ -1185,7 +1186,7 @@ export function Viewport3D() {
   // The reinforcement as tubes (docs/plan-rebar.md, decision 221), while View → Bars in 3D is on.
   useRebar3d(scene, invalidate);
   // A saved 3D view opened: its camera (where it looks from, perspective or orthographic).
-  const view3dId = useUi((st) => st.view3dId);
+  const view3dId = usePaneField('view3dId');
   useEffect(() => {
     if (!view3dId) return;
     const cam = useSession.getState().nodes.get(view3dId)?.props.camera as { azimuth?: number; pitch?: number; distance?: number; target?: number[]; ortho?: boolean } | undefined;

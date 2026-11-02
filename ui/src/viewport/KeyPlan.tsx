@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Compass, X } from 'lucide-react';
 import { useInterface } from '../app/interface';
 import { useUi } from '../app/store';
+import { usePaneField } from '../app/pane';
 import { activeStorey, execute, query, useSession } from '../engine/session';
 import { num, storeys } from '../engine/model';
 import type { Vec2 } from '../platform/module';
@@ -69,7 +70,7 @@ function useFootprint(storeyId: string | null) {
 
 function KeyPlanMap({ mode, frame, onLookAt, viewId, onFold }: Props) {
   // CAD linework with heights (a DXF's 3D lines) in the 3D view: hidden until shown, kept on the view's graphics (Visibility / Graphics, category linework).
-  const view3dId = useUi((st) => st.view3dId);
+  const view3dId = usePaneField('view3dId');
   const nodesForLines = useSession((st) => st.nodes);
   const [linework, setLinework] = useState(false);
   useEffect(() => {
