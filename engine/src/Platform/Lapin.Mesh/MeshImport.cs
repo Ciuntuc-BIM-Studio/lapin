@@ -114,6 +114,8 @@ public static class MeshImport
     static bool Flag(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) && b;
     static double D(string s) => double.Parse(s, NumberStyles.Float, CultureInfo.InvariantCulture);
     const string Grey = "#c9ced6";
+    /// <summary>How deep a glTF node hierarchy may nest: far past any real file, well short of the stack.</summary>
+    const int MaxDepth = 256;
 
     // ------------------------------------------------------------ OBJ
 
@@ -312,8 +314,15 @@ public static class MeshImport
 
         var pieces = new List<MeshPiece>();
         var skipped = 0;
-        void Walk(int index, double[] parent)
+        // glTF's nodes form strict trees: a node on its own path is a cycle, one met again has a second parent; either would recurse without end.
+        var placed = new HashSet<int>();
+        var path = new HashSet<int>();
+        void Walk(int index, double[] parent, int depth)
         {
+            if (path.Contains(index)) throw new FormatException("the node hierarchy has a cycle.");
+            if (depth > MaxDepth) throw new FormatException($"the node hierarchy is deeper than {MaxDepth} levels.");
+            if (!placed.Add(index)) return;
+            path.Add(index);
             var node = nodes[index]!;
             var local = Matrix(node);
             var world = Mul(parent, local);
@@ -334,7 +343,8 @@ public static class MeshImport
                     pieces.Add(new MeshPiece(label, ColorOf(prim), pts, tris));
                 }
             }
-            foreach (var child in node["children"]?.AsArray() ?? []) Walk((int)child!, world);
+            foreach (var child in node["children"]?.AsArray() ?? []) Walk((int)child!, world, depth + 1);
+            path.Remove(index);
         }
         var identity = new double[] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
         var scenes = root["scenes"]?.AsArray();
@@ -345,7 +355,7 @@ public static class MeshImport
             var children = nodes.SelectMany(n => n?["children"]?.AsArray().Select(c => (int)c!) ?? []).ToHashSet();
             roots = Enumerable.Range(0, nodes.Count).Where(i => !children.Contains(i)).ToList();
         }
-        foreach (var r in roots) Walk(r, identity);
+        foreach (var r in roots) Walk(r, identity, 0);
         if (skipped > 0) notes.Add($"{skipped} primitive(s) of lines or points were left out.");
         return pieces;
     }

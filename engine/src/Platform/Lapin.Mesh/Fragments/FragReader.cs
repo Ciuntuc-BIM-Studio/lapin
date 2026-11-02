@@ -210,7 +210,17 @@ public static class FragReader
         return new FragShell(points, profiles, holes, t.Ushorts(FragSchema.Shell.ProfilesFaceIds) ?? [], big);
     }
 
-    static FragSpatial Spatial(FlatTable t) =>
-        new(t.Has(FragSchema.Spatial.LocalId) ? t.Uint(FragSchema.Spatial.LocalId) : null, t.String(FragSchema.Spatial.Category),
-            (t.Tables(FragSchema.Spatial.Children) ?? []).Select(Spatial).ToArray());
+    /// <summary>How deep the spatial tree may nest: far past any real file, well short of the stack.</summary>
+    const int MaxDepth = 256;
+
+    /// <summary>The spatial tree. A node met again (an offset pointing back up the tree, or at a node already read) is a crafted file, refused.</summary>
+    static FragSpatial Spatial(FlatTable t) => Spatial(t, [], 0);
+
+    static FragSpatial Spatial(FlatTable t, HashSet<int> seen, int depth)
+    {
+        if (!seen.Add(t.Pos)) throw new FormatException("the node hierarchy has a cycle.");
+        if (depth > MaxDepth) throw new FormatException($"the spatial tree is deeper than {MaxDepth} levels.");
+        return new(t.Has(FragSchema.Spatial.LocalId) ? t.Uint(FragSchema.Spatial.LocalId) : null, t.String(FragSchema.Spatial.Category),
+            (t.Tables(FragSchema.Spatial.Children) ?? []).Select(c => Spatial(c, seen, depth + 1)).ToArray());
+    }
 }

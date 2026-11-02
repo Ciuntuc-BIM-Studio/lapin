@@ -114,4 +114,27 @@ public class MeshImportTests
         Assert.Equal(8, Vol(f, Imported(f, "b.glb").Single()), 6);
         Assert.Throws<CommandException>(() => MeshImport.Run(f.Session, Encoding.UTF8.GetBytes("nothing"), "c.ply", new JsonObject(), null, out _));
     }
+
+    /// <summary>A glTF of nodes only, placed by <paramref name="roots"/>: what a crafted file holds.</summary>
+    static byte[] Gltf(JsonArray nodes, JsonArray roots) => Encoding.UTF8.GetBytes(new JsonObject
+    {
+        ["asset"] = new JsonObject { ["version"] = "2.0" },
+        ["scene"] = 0,
+        ["scenes"] = new JsonArray(new JsonObject { ["nodes"] = roots }),
+        ["nodes"] = nodes,
+    }.ToJsonString());
+
+    [Fact]
+    public void A_glTF_node_hierarchy_with_a_cycle_is_refused_not_recursed_forever()
+    {
+        var f = F();
+        var self = Gltf(new JsonArray(new JsonObject { ["children"] = new JsonArray(0) }), new JsonArray(0));
+        Assert.Contains("cycle", Assert.Throws<CommandException>(() => MeshImport.Run(f.Session, self, "self.gltf", new JsonObject(), null, out _)).Message);
+        var loop = Gltf(new JsonArray(new JsonObject { ["children"] = new JsonArray(1) }, new JsonObject { ["children"] = new JsonArray(0) }), new JsonArray(0));
+        Assert.Contains("cycle", Assert.Throws<CommandException>(() => MeshImport.Run(f.Session, loop, "loop.gltf", new JsonObject(), null, out _)).Message);
+        // A chain deeper than any real file, refused before the stack runs out.
+        var deep = new JsonArray();
+        for (var i = 0; i < 10_000; i++) deep.Add(i + 1 < 10_000 ? new JsonObject { ["children"] = new JsonArray(i + 1) } : new JsonObject());
+        Assert.Contains("deeper", Assert.Throws<CommandException>(() => MeshImport.Run(f.Session, Gltf(deep, new JsonArray(0)), "deep.gltf", new JsonObject(), null, out _)).Message);
+    }
 }

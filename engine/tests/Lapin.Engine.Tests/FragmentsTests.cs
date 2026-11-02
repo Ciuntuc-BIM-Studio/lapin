@@ -211,6 +211,41 @@ public class FragmentsTests
         Assert.Throws<CommandException>(() => FragImport.Run(g.Session, "ISO-10303-21;"u8.ToArray(), "x.ifc", out _));
     }
 
+    /// <summary>
+    /// The smallest model with a spatial tree (a root over one leaf), raw, with where the root table and the
+    /// children vector's first offset lie in it, so a test can point that offset anywhere.
+    /// </summary>
+    static (byte[] Bytes, int Root, int Child) SpatialModel()
+    {
+        var b = new FlatBuilder();
+        b.StartObject(FragSchema.Spatial.Fields);
+        b.AddUint(FragSchema.Spatial.LocalId, 1, force: true);
+        var leaf = b.EndObject();
+        var children = b.CreateOffsetVector([leaf]);
+        b.StartObject(FragSchema.Spatial.Fields);
+        b.AddOffset(FragSchema.Spatial.Children, children);
+        var root = b.EndObject();
+        b.StartObject(FragSchema.Meshes.Fields);
+        var meshes = b.EndObject();
+        b.StartObject(FragSchema.Model.Fields);
+        b.AddOffset(FragSchema.Model.Meshes, meshes);
+        b.AddOffset(FragSchema.Model.SpatialStructure, root);
+        var bytes = b.Finish(b.EndObject());
+        // Offsets count from the end of the buffer; the finished file is its tail.
+        return (bytes, bytes.Length - root, bytes.Length - children + 4);
+    }
+
+    [Fact]
+    public void A_spatial_tree_pointing_back_at_itself_is_refused_not_recursed_forever()
+    {
+        var (bytes, root, child) = SpatialModel();
+        Assert.Equal(1u, FragReader.Read(bytes).SpatialStructure!.Children.Single().LocalId);
+        // The root's only child made the root itself: an offset is relative to where it lies, and signed.
+        BitConverter.GetBytes(root - child).CopyTo(bytes, child);
+        var ex = Assert.Throws<CommandException>(() => FragImport.Read(bytes, "cycle.frag"));
+        Assert.Contains("cycle", ex.Message);
+    }
+
     /// <summary>The BubbleBIM converter's Python reader on Lapin's file, when it is at hand: LAPIN_FRAG_PYTHON (the interpreter) and LAPIN_FRAG_PACKAGE (the folder holding ifc_convert).</summary>
     [Fact]
     public void The_python_reader_of_the_converter_reads_the_file_the_same()
