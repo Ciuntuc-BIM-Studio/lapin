@@ -101,6 +101,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<ITypeAssigner>(new TypeAssigner());
         r.Service<IStoreyLevels>(new Levels());
         r.Service<IElementFaces>(new ArchitectureFaces());
+        r.Service<IElementPlacement>(new Roofs.RoofPlacement());
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Geometry(IfcClass.Window, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Quantities(IfcClass.Door, (fill, _, model) => FillQuantities(fill, model, "Qto_DoorBaseQuantities"));
@@ -404,6 +405,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             CheckRoof(ctx.Model, next);
             CheckRoofOpenings(ctx.Model, next);
             ctx.Replace(next);
+            // Its downpipes stay where they were on the gutters of the edges redrawn.
+            if (a["points"] != null || a["x1"] != null) RoofEdges.Downpipes(ctx, roof, next, RoofEdges.Match(Roof.Contour(roof), Roof.Contour(next)), p => p);
             return null;
         });
 
@@ -647,7 +650,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var f = fields.FirstOrDefault(x => x.Key == k && !x.ReadOnly) ?? (k is "lowEdge" or "gutterColor" ? new FieldDescriptor(k, k, k == "lowEdge" ? "number" : "color") : throw new CommandException($"„{k}” is not a roof field."));
             if (v == null) attrs.Remove(k); else attrs[k] = Fields.Check(f, v);
         }
-        if (a["points"] != null || a["x1"] != null) attrs["contour"] = Slabs.ContourJson(Slabs.CheckContour(Points(a)));
+        if (a["points"] != null || a["x1"] != null)
+        {
+            var outline = Slabs.CheckContour(Points(a));
+            attrs["contour"] = Slabs.ContourJson(outline);
+            // The rules kept by edge go with the edges they were on.
+            if (!a.ContainsKey("edges")) RoofEdges.Renumber(attrs, RoofEdges.Match(Roof.Contour(roof), outline));
+        }
         var corners = Slabs.Contour(roof.With(attrs: attrs)).Count;
         if (a.ContainsKey("edges"))
         {
