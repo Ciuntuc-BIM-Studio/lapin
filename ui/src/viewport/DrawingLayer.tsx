@@ -54,7 +54,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
         stroke={stroke ?? 'none'} strokeWidth={width} strokeLinecap={cap} strokeLinejoin={cap === 'square' ? 'miter' : 'round'}
         strokeDasharray={p.dash ? p.dash.map((v) => Math.max(1, Math.min(v * pxPerMm, v * 8)).toFixed(1)).join(' ') : undefined} />
     );
-  }), [drawing, toScreen, pxPerMm, onDark]);
+  }), [drawing, cap, toScreen, pxPerMm, onDark]);
   return <g className="drawing-layer">{paths}</g>;
 });
 
