@@ -20,6 +20,8 @@ describe('Ask Lapin', () => {
   });
 
   it('answers in Romanian, with or without diacritics', () => {
+    expect(best('cum ascund taburile pe care nu le folosesc')).toBe('workspaces');
+    expect(best('I only want to see the structure and rebar tabs')).toBe('workspaces');
     expect(best('cum schimb unitățile în picioare')).toBe('units');
     expect(best('cum schimb unitatile')).toBe('units');
     expect(best('copiere perete')).toBe('copy-move');

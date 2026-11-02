@@ -17,7 +17,7 @@ import { importDxf, importIfc, newProject, openProject, saveProject, importFragm
 import { engineInBrowser } from '../engine/session';
 import { isGuest, leave } from '../engine/share';
 import { Participants } from './Sharing';
-import { useInterface } from '../app/interface';
+import { useInterface, visibleTabIds } from '../app/interface';
 import { bindingText, hint, useBindings } from '../app/commands';
 import type { RibbonTabDef, ToolDef } from '../platform/module';
 
@@ -147,9 +147,12 @@ function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolea
 }
 
 export function Ribbon() {
+  const workspace = useInterface((s) => s.workspace);
+  const mine = useInterface((s) => s.mine);
   const hiddenTabs = useInterface((s) => s.hiddenTabs);
-  // The tabs this user hid (View → Interface…) are left out; the current one gone, the first stands in.
-  const tabs = ribbonTabs().filter((t) => !hiddenTabs.includes(t.id));
+  // The workspace's tabs in its order (View → Interface…, the start screen); the current one gone, the first stands in.
+  const all = ribbonTabs();
+  const tabs = visibleTabIds({ workspace, mine, hiddenTabs }, all).map((id) => all.find((t) => t.id === id)!);
   const tabId = useUi((s) => s.tab) ?? tabs[0]?.id;
   const theme = useUi((s) => s.theme);
   const doc = useSession((s) => s.doc);

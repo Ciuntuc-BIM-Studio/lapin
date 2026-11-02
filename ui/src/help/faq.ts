@@ -44,6 +44,16 @@ export const FAQ: Entry[] = [
     source: 'report #23',
   },
   {
+    id: 'workspaces',
+    q: ['How do I hide the tabs I do not use?', 'Can I see only the structure tabs?', 'How do I change the order of the ribbon tabs?', 'What is a workspace?'],
+    qRo: ['Cum ascund taburile pe care nu le folosesc?', 'Pot vedea doar taburile de structură?', 'Cum schimb ordinea taburilor din panglică?', 'Ce este un spațiu de lucru?'],
+    keywords: ['workspace', 'workspaces', 'tab', 'tabs', 'ribbon', 'hide', 'order', 'discipline', 'architecture', 'structure', 'mep', 'site', 'drafting', 'spatiu', 'lucru', 'taburi', 'panglica', 'ascund', 'ordinea', 'disciplina'],
+    a: 'Choose a workspace on the start screen, at the top of View → Interface… (Ctrl+.) or from Commands… (Workspace: …): All, Architecture, Structure & rebar, MEP, Site & site works or Drafting 2D. Each shows only its tabs, in its order; the project stays one, and a hidden tab\'s tools are still in Commands… and the shortcuts. Show, hide or move a tab under Tabs in the same dialog and it becomes My workspace, kept for next time.',
+    aRo: 'Alege un spațiu de lucru pe ecranul de start, sus în View → Interface… (Ctrl+.) sau din Commands… (Workspace: …): All, Architecture, Structure & rebar, MEP, Site & site works sau Drafting 2D. Fiecare arată doar taburile lui, în ordinea lui; proiectul rămâne unul singur, iar uneltele unui tab ascuns sunt tot în Commands… și în scurtături. Arată, ascunde sau mută un tab la Tabs, în același dialog, și devine My workspace, păstrat pentru data viitoare.',
+    action: { label: 'Open Interface', labelRo: 'Deschide Interface', run: { kind: 'tool', id: 'app.interface' } },
+    source: 'decision 243',
+  },
+  {
     id: 'import-dwg-pdf',
     q: ['Can I import a DWG or a PDF?', 'How do I bring in a CAD drawing?', 'Can I trace over a plan from AutoCAD?'],
     qRo: ['Pot importa un DWG sau un PDF?', 'Cum aduc un desen din AutoCAD?', 'Cum pun un plan CAD ca fundal?'],

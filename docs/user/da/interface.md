@@ -6,6 +6,14 @@ summary: Tilstandene Komfortabel, Kompakt og Fokus, sidepaneler der foldes ind, 
 
 <!-- video interface -->
 
+## Arbejdsområder
+
+Et arbejdsområde viser kun de faner i båndet, dit arbejde har brug for, i den rækkefølge arbejdet bruger dem. Vælg det på startskærmen, øverst i **View → Interface…** eller fra **Commands…** (Workspace: …): **Alle** (hver fane i din udgave), **Arkitektur**, **Konstruktion og armering**, **Installationer**, **Grund og byggepladsindretning** eller **Tegning 2D**. Projektet forbliver ét: en skjult fanes værktøjer er stadig i Commands… og tastaturgenvejene, og en model lavet i ét arbejdsområde åbner helt i et andet.
+
+![Arbejdsområderne i View → Interface…](shots/workspaces.webp)
+
+Vis, skjul eller flyt en fane under **Tabs** i samme dialog, og valget bliver **Mit arbejdsområde**, gemt på denne computer til næste gang; de andre arbejdsområder er der stadig at skifte til. **View** bliver altid, da Interface… ligger i den.
+
 ## Tre tilstande
 
 **Vis → Brugerflade…** (<kbd>Ctrl</kbd> <kbd>.</kbd>) vælger, hvor meget der står omkring visningen. Vælg en af de tre tilstande øverst i dialogen; ændringen ses med det samme.

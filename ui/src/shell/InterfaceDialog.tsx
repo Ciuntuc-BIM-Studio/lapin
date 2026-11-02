@@ -1,14 +1,16 @@
 /**
  * View → Interface… (Ctrl+.): the three presets as one choice, and each part
  * of the interface on its own; a part changed on its own makes the choice
- * Custom. Under them, the ribbon's tabs: each shown or hidden for this user,
- * the tools of a hidden tab still in the palette and the shortcuts. Applied
- * at once, kept for this user.
+ * Custom. Above them, the workspace (decision 243); under them, the ribbon's
+ * tabs as the workspace shows them, each shown, hidden or moved, which makes the
+ * user's own workspace; the tools of a hidden tab still in the palette and the
+ * shortcuts. Applied at once, kept for this user.
  */
 
-import { X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useUi } from '../app/store';
-import { ALWAYS_SHOWN_TABS, CHOICES, choosePart, choosePreset, showTab, useInterface, type InterfaceParts, type InterfacePreset } from '../app/interface';
+import { ALWAYS_SHOWN_TABS, CHOICES, choosePart, choosePreset, moveTab, showTab, useInterface, visibleTabIds, type InterfaceParts, type InterfacePreset } from '../app/interface';
+import { WorkspacePicker } from './WorkspacePicker';
 import { ribbonTabs } from '../platform/modules';
 import { bindingText } from '../app/commands';
 
@@ -33,6 +35,8 @@ export function InterfaceDialog() {
   const s = useInterface();
   const close = () => useUi.setState({ dialog: null });
   const keys = bindingText('app.interface');
+  const all = ribbonTabs();
+  const shownIds = visibleTabIds(s, all);
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Interface" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
       <div className="dialog interface-dialog">
@@ -41,6 +45,9 @@ export function InterfaceDialog() {
           <button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body">
+          <span className="part-label">Workspace</span>
+          <WorkspacePicker />
+          <p className="muted small">The tabs it shows, in its order; the project stays one. A tab shown, hidden or moved below makes it your own workspace, kept for next time.</p>
           <div className="seg presets" role="radiogroup" aria-label="Mode">
             {(Object.keys(PRESET_LABELS) as InterfacePreset[]).map((p) => (
               <button type="button" key={p} role="radio" aria-checked={s.preset === p} className={`seg-item${s.preset === p ? ' on' : ''}`} onClick={() => choosePreset(p)}>
@@ -64,13 +71,21 @@ export function InterfaceDialog() {
           </div>
           <div className="interface-tabs">
             <span className="part-label">Tabs</span>
-            <div className="tab-checks" role="group" aria-label="Tabs">
-              {ribbonTabs().map((t) => {
-                const fixed = ALWAYS_SHOWN_TABS.includes(t.id);
+            <div className="tab-order" role="group" aria-label="Tabs">
+              {[...shownIds, ...all.map((t) => t.id).filter((id) => !shownIds.includes(id))].map((id) => {
+                const t = all.find((x) => x.id === id)!;
+                const fixed = ALWAYS_SHOWN_TABS.includes(id);
+                const at = shownIds.indexOf(id);
                 return (
-                  <label key={t.id} className="check small" title={fixed ? 'Always shown: Interface… is here' : undefined}>
-                    <input type="checkbox" checked={!s.hiddenTabs.includes(t.id)} disabled={fixed} onChange={(e) => showTab(t.id, e.target.checked)} /> {t.label}
-                  </label>
+                  <span key={id} className="tab-slot">
+                    <label className="check small" title={fixed ? 'Always shown: Interface… is here' : undefined}>
+                      <input type="checkbox" checked={at >= 0} disabled={fixed} onChange={(e) => showTab(id, e.target.checked, all)} /> {t.label}
+                    </label>
+                    {at >= 0 && <>
+                      <button type="button" className="icon mini" title="Move left" disabled={at === 0} onClick={() => moveTab(id, -1, all)}><ChevronLeft size={12} /></button>
+                      <button type="button" className="icon mini" title="Move right" disabled={at === shownIds.length - 1} onClick={() => moveTab(id, 1, all)}><ChevronRight size={12} /></button>
+                    </>}
+                  </span>
                 );
               })}
             </div>

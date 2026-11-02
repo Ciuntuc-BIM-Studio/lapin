@@ -903,6 +903,13 @@ button.mode-chip:hover { color: var(--accent); }
 .seg-item:hover { background: var(--wash); }
 .seg-item.on { background: var(--accent-wash); box-shadow: inset 0 -2px var(--accent); }
 .seg.presets .seg-item { min-width: 180px; max-width: 240px; }
+/* The workspaces: a grid in View → Interface…, one column on the start screen. */
+.seg.workspaces { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.seg.workspaces .seg-item { border-bottom: 1px solid var(--rule); }
+.start .seg.workspaces { grid-template-columns: 1fr; }
+.start .seg.workspaces .seg-item { padding: 6px 10px; }
+.tab-order { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.tab-order .tab-slot { display: inline-flex; align-items: center; gap: 2px; }
 .seg.small .seg-item { flex: none; padding: 4px 9px; font-size: 12px; white-space: nowrap; }
 .interface-dialog { max-width: min(820px, calc(100vw - 32px)); }
 .interface-parts { display: flex; flex-direction: column; gap: 8px; margin: 16px 0 12px; }

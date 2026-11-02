@@ -6,6 +6,7 @@ import { JoinDialog } from './Sharing';
 import { modules, productInfo } from '../platform/modules';
 import { brand, tagline } from '../platform/brand';
 import { BrandName } from './BrandMark';
+import { WorkspacePicker } from './WorkspacePicker';
 import { engineInBrowser, useSession } from '../engine/session';
 import { discardWork, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
 import { useUi } from '../app/store';
@@ -33,6 +34,9 @@ export function StartScreen() {
         <button type="button" className="btn big" onClick={() => useUi.setState({ dialog: 'join' })}><Users size={18} />Join session…</button>
         {doc && (doc.path || doc.canUndo) && <button type="button" className="btn big" onClick={back}>Back to {projectTitle(doc.path)}</button>}
         {!connected && <p className="muted small">Starting the engine…</p>}
+        <p className="eyebrow">Workspace</p>
+        <WorkspacePicker />
+        <p className="muted small">Only the tabs your work needs; the project stays one. View → Interface… changes it at any time.</p>
         <p className="eyebrow">Start here</p>
         {brand.hint
           ? <p className="muted small">{brand.hint}</p>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { initialSettings, PRESETS, presetOf, withPart, withPreset, withTab } from './interface';
+import { initialSettings, PRESETS, presetOf, visibleTabIds, withPart, withPreset, withTab, withTabMoved, withWorkspace } from './interface';
 
 describe('the interface modes', () => {
   it('starts comfortable on the desktop, compact in the web build on a short window, until the user chooses', () => {
@@ -29,15 +29,49 @@ describe('the interface modes', () => {
     expect(initialSettings('garbage', { web: false, height: 900 }).preset).toBe('comfortable');
   });
 
-  it('hides tabs for this user, apart from the presets; View always stays; read back, unknown entries left out', () => {
-    const s = withTab(withTab(withPreset('compact'), 'structure', false), 'mep', false);
-    expect(s.hiddenTabs).toEqual(['structure', 'mep']);
-    expect(s.preset).toBe('compact');
-    expect(withTab(s, 'structure', true).hiddenTabs).toEqual(['mep']);
-    expect(withTab(s, 'view', false).hiddenTabs).toEqual(['structure', 'mep']);
-    expect(withPart(s, 'ribbon', 'large').hiddenTabs).toEqual(['structure', 'mep']);
-    expect(withPreset('focus', s.hiddenTabs).hiddenTabs).toEqual(['structure', 'mep']);
-    expect(initialSettings({ chosen: true, parts: PRESETS.compact, hiddenTabs: ['site', 3, 'view'] }, { web: false, height: 900 }).hiddenTabs).toEqual(['site']);
-    expect(initialSettings(null, { web: false, height: 900 }).hiddenTabs).toEqual([]);
+  // The tabs of the full edition, as the modules give them.
+  const TABS = [['draft', 10], ['architecture', 20], ['finishes', 25], ['structure', 30], ['wood', 33], ['rebar', 35], ['site', 40], ['mep', 45], ['sitework', 45], ['studio', 50], ['annotate', 60], ['manage', 80], ['quantities', 85], ['view', 90]].map(([id, order]) => ({ id: id as string, order: order as number }));
+  const shown = (s: Parameters<typeof visibleTabIds>[0], tabs = TABS) => visibleTabIds(s, tabs);
+
+  it('shows a workspace\'s tabs in its order, every tab in All, View always, a tab the edition lacks left out', () => {
+    const s = withPreset('compact');
+    expect(s.workspace).toBe('all');
+    expect(shown(s)).toEqual(TABS.map((t) => t.id));
+    expect(shown(withWorkspace(s, 'structure'))).toEqual(['draft', 'structure', 'rebar', 'wood', 'annotate', 'manage', 'quantities', 'view']);
+    expect(shown(withWorkspace(s, 'mep'))).toEqual(['draft', 'mep', 'annotate', 'manage', 'quantities', 'view']);
+    // An edition without Wood and Rebar (Architecture + Structure is lighter still): only what it has.
+    expect(shown(withWorkspace(s, 'structure'), TABS.filter((t) => !['wood', 'rebar'].includes(t.id)))).toEqual(['draft', 'structure', 'annotate', 'manage', 'quantities', 'view']);
+    // A workspace and the interface's mode are apart.
+    expect(withPart(withWorkspace(s, 'site'), 'ribbon', 'large').workspace).toBe('site');
+    expect(withPreset('focus', withWorkspace(s, 'site')).workspace).toBe('site');
+  });
+
+  it('makes a workspace the user\'s own when a tab is shown, hidden or moved, and keeps it', () => {
+    const arch = withWorkspace(withPreset('comfortable'), 'architecture');
+    // Rooms' schedules want Quantities, Finishes is not this office's: hidden, then Structure brought in, in its usual place.
+    let mine = withTab(arch, 'finishes', false, TABS);
+    expect(mine.workspace).toBe('mine');
+    expect(shown(mine)).toEqual(['draft', 'architecture', 'studio', 'annotate', 'manage', 'quantities', 'view']);
+    mine = withTab(mine, 'structure', true, TABS);
+    expect(shown(mine)).toEqual(['draft', 'architecture', 'structure', 'studio', 'annotate', 'manage', 'quantities', 'view']);
+    // Moved: Structure before Architecture; at an end it stays.
+    mine = withTabMoved(mine, 'structure', -1, TABS);
+    expect(shown(mine).slice(0, 3)).toEqual(['draft', 'structure', 'architecture']);
+    expect(withTabMoved(mine, 'draft', -1, TABS)).toBe(mine);
+    // View cannot be hidden; another workspace chosen and back, the user's own is still there.
+    expect(withTab(mine, 'view', false, TABS)).toBe(mine);
+    expect(shown(withWorkspace(withWorkspace(mine, 'all'), 'mine'))).toEqual(shown(mine));
+    // Kept and read back; unknown entries left out.
+    const back = initialSettings(JSON.parse(JSON.stringify(mine)), { web: false, height: 900 });
+    expect(back.workspace).toBe('mine');
+    expect(shown(back)).toEqual(shown(mine));
+    expect(initialSettings({ chosen: true, parts: PRESETS.compact, workspace: 'kitchen' }, { web: false, height: 900 }).workspace).toBe('all');
+  });
+
+  it('reads the tabs an older Lapin kept hidden as the user\'s own workspace', () => {
+    const s = initialSettings({ chosen: true, parts: PRESETS.compact, hiddenTabs: ['site', 3, 'view', 'mep'] }, { web: false, height: 900 });
+    expect(s.workspace).toBe('mine');
+    expect(shown(s)).toEqual(TABS.map((t) => t.id).filter((id) => !['site', 'mep'].includes(id)));
+    expect(initialSettings(null, { web: false, height: 900 }).workspace).toBe('all');
   });
 });

@@ -6,6 +6,14 @@ summary: Les modes Confortable, Compact et Concentration, le repli des panneaux 
 
 <!-- video interface -->
 
+## Espaces de travail
+
+Un espace de travail ne montre que les onglets du ruban dont votre travail a besoin, dans l’ordre où il s’en sert. Choisissez-le sur l’écran d’accueil, en haut de **View → Interface…** ou depuis **Commands…** (Workspace: …) : **Tout** (chaque onglet de votre édition), **Architecture**, **Structure et ferraillage**, **Fluides**, **Site et installations de chantier** ou **Dessin 2D**. Le projet reste un seul : les outils d’un onglet masqué restent dans Commands… et les raccourcis clavier, et un modèle fait dans un espace de travail s’ouvre entier dans un autre.
+
+![Les espaces de travail dans View → Interface…](shots/workspaces.webp)
+
+Affichez, masquez ou déplacez un onglet sous **Tabs**, dans le même dialogue, et le choix devient **Mon espace de travail**, gardé sur cet ordinateur pour la prochaine fois ; les autres espaces de travail restent là pour y revenir. **View** reste toujours, puisque Interface… s’y trouve.
+
 ## Trois modes
 
 **Vue → Interface…** (<kbd>Ctrl</kbd> <kbd>.</kbd>) choisit ce qui entoure la vue. Choisissez l’un des trois modes en haut de la boîte de dialogue ; le changement s’applique aussitôt.

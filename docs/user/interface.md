@@ -6,6 +6,14 @@ summary: Comfortable, Compact and Focus modes, folding the side panels, and the 
 
 <!-- video interface -->
 
+## Workspaces
+
+A workspace shows only the ribbon tabs your work needs, in the order that work uses them. Choose it on the start screen, at the top of **View → Interface…**, or from **Commands…** (Workspace: …): **All** (every tab of your edition), **Architecture**, **Structure & rebar**, **MEP**, **Site & site works** or **Drafting 2D**. The project stays one: a hidden tab's tools are still in Commands… and the keyboard shortcuts, and a model made in one workspace opens whole in another.
+
+![The workspaces in View → Interface…](shots/workspaces.webp)
+
+Show, hide or move a tab under **Tabs** in the same dialog and the choice becomes **My workspace**, kept on this computer for next time; the other workspaces are still there to switch to. **View** always stays, since Interface… is in it.
+
 ## Three modes
 
 **View → Interface…** (<kbd>Ctrl</kbd> <kbd>.</kbd>) chooses how much stands around the view. Pick one of the three modes at the top of the dialog; the change shows at once.

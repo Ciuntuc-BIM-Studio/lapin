@@ -6,6 +6,14 @@ summary: Los modos Cómodo, Compacto y Enfoque, cómo plegar los paneles lateral
 
 <!-- video interface -->
 
+## Espacios de trabajo
+
+Un espacio de trabajo muestra solo las pestañas de la cinta que su trabajo necesita, en el orden en que las usa. Elíjalo en la pantalla de inicio, arriba en **View → Interface…** o desde **Commands…** (Workspace: …): **Todo** (todas las pestañas de su edición), **Arquitectura**, **Estructura y armado**, **Instalaciones**, **Emplazamiento y medios auxiliares** o **Dibujo 2D**. El proyecto sigue siendo uno: las herramientas de una pestaña oculta siguen en Commands… y en los atajos de teclado, y un modelo hecho en un espacio de trabajo se abre completo en otro.
+
+![Los espacios de trabajo en View → Interface…](shots/workspaces.webp)
+
+Muestre, oculte o mueva una pestaña en **Tabs**, en el mismo diálogo, y la elección pasa a ser **Mi espacio de trabajo**, guardado en este ordenador para la próxima vez; los demás espacios siguen ahí para cambiar a ellos. **View** se queda siempre, porque Interface… está en ella.
+
 ## Tres modos
 
 **Vista → Interfaz…** (<kbd>Ctrl</kbd> <kbd>.</kbd>) elige cuánto rodea a la vista. Elija uno de los tres modos en la parte superior del cuadro de diálogo; el cambio se ve al instante.

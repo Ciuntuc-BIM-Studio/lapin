@@ -1703,6 +1703,13 @@ export const scenes = [
       await t.tool('app.interface');
       t.expect(await t.page.locator('.interface-dialog').count() === 1, 'View → Interface… opens its dialog');
       await t.shot('interface-dialog', { of: '.interface-dialog', pad: 0 });
+      // The workspaces (decision 243): MEP shows its tabs in its order; back to All for the rest of the scene.
+      await t.page.locator('.interface-dialog [data-workspace=mep]').click();
+      await t.wait(300);
+      t.expect((await t.page.locator('.tabs-row .tab').count()) <= 7, 'the MEP workspace shows only its tabs');
+      await t.shot('workspaces', { of: '.interface-dialog [data-field=workspace]', pad: 6 });
+      await t.page.locator('.interface-dialog [data-workspace=all]').click();
+      await t.wait(300);
       // Compact: an icon band, one status line, the quick tools on the edge, the browser on a rail.
       await t.page.locator('.seg.presets .seg-item').nth(1).click();
       await t.wait(300);

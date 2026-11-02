@@ -6,6 +6,14 @@ summary: Die Modi Komfortabel, Kompakt und Fokus, das Einklappen der Seitenberei
 
 <!-- video interface -->
 
+## Arbeitsbereiche
+
+Ein Arbeitsbereich zeigt nur die Registerkarten des Menübands, die Ihre Arbeit braucht, in der Reihenfolge, in der sie sie braucht. Sie wählen ihn auf dem Startbildschirm, oben in **View → Interface…** oder über **Commands…** (Workspace: …): **Alle** (jede Registerkarte Ihrer Edition), **Architektur**, **Tragwerk und Bewehrung**, **TGA**, **Gelände und Baustelleneinrichtung** oder **Zeichnen 2D**. Das Projekt bleibt eines: die Werkzeuge einer ausgeblendeten Registerkarte sind weiter in Commands… und den Tastenkürzeln, und ein Modell aus einem Arbeitsbereich öffnet sich vollständig in einem anderen.
+
+![Die Arbeitsbereiche in View → Interface…](shots/workspaces.webp)
+
+Zeigen, verbergen oder verschieben Sie unter **Tabs** im selben Dialog eine Registerkarte, und die Wahl wird **Mein Arbeitsbereich**, auf diesem Computer für das nächste Mal gespeichert; die anderen Arbeitsbereiche bleiben zum Wechseln da. **View** bleibt immer, denn Interface… liegt darin.
+
 ## Drei Modi
 
 **Ansicht → Oberfläche…** (<kbd>Strg</kbd> <kbd>.</kbd>) legt fest, wie viel um die Ansicht herum steht. Wählen Sie oben im Dialog einen der drei Modi; die Änderung ist sofort zu sehen.
