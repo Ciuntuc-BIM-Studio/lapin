@@ -90,7 +90,8 @@ public sealed record Transaction(long Seq, string Label, IReadOnlyList<Change<En
     /// <summary>
     /// Every id the transaction touched: its entities and relationships, and
     /// whom each relationship change concerns. A new or removed relationship,
-    /// or one whose relating entity changed, concerns everyone in it; one that
+    /// or one whose relating entity or attributes changed, concerns everyone in
+    /// it (a join restyled from mitre to butt recuts both walls); one that
     /// only gained or lost members concerns its relating entity and those
     /// members, not the others (a storey's thousandth wall leaves the 999
     /// before it alone).
@@ -101,7 +102,8 @@ public sealed record Transaction(long Seq, string Label, IReadOnlyList<Change<En
     public static IEnumerable<string> Concerned(Change<Relation> c)
     {
         yield return c.Id;
-        if (c.Before is not { } b || c.After is not { } a || b.Relating != a.Relating || b.Class != a.Class)
+        if (c.Before is not { } b || c.After is not { } a || b.Relating != a.Relating || b.Class != a.Class
+            || !System.Text.Json.Nodes.JsonNode.DeepEquals(b.Attrs, a.Attrs))
         {
             foreach (var r in new[] { c.Before, c.After })
                 if (r != null) { yield return r.Relating; foreach (var x in r.Related) yield return x; }
@@ -142,7 +144,9 @@ sealed class TransactionBuilder(ModelStore store, Func<string> newId) : IEdit
     {
         if (store.Get(entity.Id) != null || store.GetRelation(entity.Id) != null) throw new ModelException($"There is already an entity {entity.Id}.");
         Record(entity.Id, entity);
-        store.Put(entity);
+        // Removed earlier in this transaction and added again: back at its own place, as redo and replay put it.
+        var at = _entities[entity.Id].Order;
+        store.Put(entity, at >= 0 ? at : null);
         if (_entities[entity.Id].Order < 0) _entities[entity.Id] = _entities[entity.Id] with { Order = store.OrderOf(entity.Id)!.Value };
     }
 
@@ -215,7 +219,8 @@ sealed class TransactionBuilder(ModelStore store, Func<string> newId) : IEdit
     void PutRelation(Relation r)
     {
         Record(r.Id, r);
-        store.Put(r);
+        var at = _relations[r.Id].Order;
+        store.Put(r, at >= 0 ? at : null);
         if (_relations[r.Id].Order < 0) _relations[r.Id] = _relations[r.Id] with { Order = store.OrderOf(r.Id)!.Value };
     }
 
@@ -474,6 +479,22 @@ public sealed class History(ModelStore store)
         else _redo.RemoveAll(x => x.Author == t.Author);
         _undo.Add(t);
         return t;
+    }
+
+    /// <summary>
+    /// An undo or redo the recovery journal recorded with the transaction it undid or did again (<paramref name="recorded"/>),
+    /// done again: through the history when that transaction was replayed from the same journal and is the one
+    /// <paramref name="author"/>'s undo or redo would take; else (it was made before the last save, so the history
+    /// read from the file does not hold it) its changes applied, reverted for an undo, as a transaction of their own.
+    /// </summary>
+    public Transaction? ReplayUndo(Transaction recorded, bool undo, string author = Me)
+    {
+        var target = undo ? LastOf(author) : NextOf(author);
+        if (target != null && _replayed.TryGetValue(recorded.Seq, out var seq) && target.Seq == seq) return undo ? Undo(author) : Redo(author);
+        var entities = recorded.Entities.Select(c => undo ? new Change<Entity>(c.Id, c.After, c.Before, c.Order) : c).ToList();
+        var relations = recorded.Relations.Select(c => undo ? new Change<Relation>(c.Id, c.After, c.Before, c.Order) : c).ToList();
+        if (undo) { entities.Reverse(); relations.Reverse(); }
+        return Replay(new Transaction(0, recorded.Label, entities, relations, recorded.At, recorded.Author));
     }
 
     public void MarkSaved() => _savedAt = _undo.Count > 0 ? _undo[^1].Seq : 0;

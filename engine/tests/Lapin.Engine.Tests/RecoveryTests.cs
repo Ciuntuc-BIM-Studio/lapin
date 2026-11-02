@@ -111,6 +111,52 @@ public sealed class RecoveryTests : IDisposable
     }
 
     [Fact]
+    public void An_undo_and_a_redo_after_a_save_come_back_with_their_changes()
+    {
+        var path = Path.Combine(_dir, "undo.lapin");
+        var (model, a, b) = Crashed(f =>
+        {
+            var b = f.Wall(0, 5, 5, 5);
+            f.Session.Undo();                                // b undone before the save
+            var a = f.Wall(0, 0, 5, 0);
+            PackageFiles.Create().Save(f.Session, path);     // the file has a, not b
+            f.Session.Undo();                                // a undone: the history read from the file never held it
+            f.Session.Redo();                                // …done again…
+            f.Session.Undo();                                // …and undone once more
+            return (f.Model, a, b);
+        });
+        Assert.Null(model.Get(a));
+
+        var g = new Fixture();
+        using var next = new Recovery(_dir, g.Session);
+        next.Restore(Assert.Single(next.List()).File);
+        Same(model, g.Model);
+        Assert.Null(g.Model.Get(a));
+        Assert.Null(g.Model.Get(b));
+    }
+
+    [Fact]
+    public void A_redo_of_an_edit_undone_before_the_save_comes_back()
+    {
+        var path = Path.Combine(_dir, "redo.lapin");
+        var (model, b) = Crashed(f =>
+        {
+            var b = f.Wall(0, 5, 5, 5);
+            f.Session.Undo();
+            PackageFiles.Create().Save(f.Session, path);     // the file has no b
+            f.Session.Redo();                                // b again: the history read from the file cannot redo it
+            return (f.Model, b);
+        });
+        Assert.NotNull(model.Get(b));
+
+        var g = new Fixture();
+        using var next = new Recovery(_dir, g.Session);
+        next.Restore(Assert.Single(next.List()).File);
+        Same(model, g.Model);
+        Assert.True(g.Session.History.CanUndo);
+    }
+
+    [Fact]
     public void A_line_cut_off_by_the_crash_is_left_out()
     {
         var f = new Fixture();

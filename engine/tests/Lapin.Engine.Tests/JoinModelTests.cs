@@ -126,6 +126,25 @@ public class JoinModelTests
     }
 
     [Fact]
+    public void Restyling_one_corner_recuts_both_of_its_walls()
+    {
+        var f = new Fixture();
+        var a = f.Wall(0, 0, 5, 0, joinStyle: "mitre");
+        var b = f.Wall(5, 0, 5, 4, joinStyle: "mitre");
+        Assert.Single(JoinRels(f));
+        var relating = JoinRels(f)[0].Relating;
+        var before = new[] { Volume(f, a), Volume(f, b) };   // both built and cached
+        f.Run("architecture.restyleJoins", new JsonObject { ["ids"] = new JsonArray(a, b), ["style"] = "butt" });
+        var join = Assert.Single(JoinRels(f));
+        Assert.Equal("butt", Style(join));
+        Assert.Equal(relating, join.Relating);   // only the attributes changed
+        Assert.NotEqual(before[1], Volume(f, b), 6);
+        // The relating wall and the related one alike: the cached geometry is what a fresh build makes.
+        foreach (var id in new[] { a, b })
+            Assert.Equal(f.Session.Geometry(id, new GeometryOptions())!.Parts.Sum(p => Measure.Volume(p.Solid)), Volume(f, id), 9);
+    }
+
+    [Fact]
     public void A_wall_drawn_onto_the_body_of_another_makes_a_T_with_the_crossed_wall_through()
     {
         var f = new Fixture();

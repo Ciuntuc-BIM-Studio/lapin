@@ -185,6 +185,9 @@ public sealed class Session
                 {
                     case "tx": _history.Replay(e.Transaction ?? throw new InvalidDataException("A journal edit without its changes.")); break;
                     case "replay": (e.Replay ?? throw new InvalidDataException("A journal edit without a way to do it again."))(this); break;
+                    // An undo or redo with its changes: right even when what it undid was saved before the journal began.
+                    case "undo" when e.Transaction is { } u: _history.ReplayUndo(u, undo: true, e.Author ?? History.Me); break;
+                    case "redo" when e.Transaction is { } d: _history.ReplayUndo(d, undo: false, e.Author ?? History.Me); break;
                     case "undo": _history.Undo(e.Author ?? History.Me); break;
                     case "redo": _history.Redo(e.Author ?? History.Me); break;
                 }
@@ -277,7 +280,7 @@ public sealed class Session
     {
         author ??= Author;
         if (_history.Undo(author) is not { } t) return Empty();
-        if (t.Reverts != null) Emit("tx", t); else Emit("undo", null, author);
+        if (t.Reverts != null) Emit("tx", t); else Emit("undo", t, author);
         return DiffAfter(t);
     }
 
@@ -285,7 +288,7 @@ public sealed class Session
     {
         author ??= Author;
         if (_history.Redo(author) is not { } t) return Empty();
-        if (t.Redoes != null) Emit("tx", t); else Emit("redo", null, author);
+        if (t.Redoes != null) Emit("tx", t); else Emit("redo", t, author);
         return DiffAfter(t);
     }
 

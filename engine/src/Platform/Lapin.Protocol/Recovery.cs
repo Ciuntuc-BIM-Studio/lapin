@@ -16,7 +16,7 @@ namespace Lapin.Protocol;
 /// {"op":"start","at":…,"product":…,"path":null,"base":{"entities":[…],"relations":[…]}}   a new project
 /// {"op":"tx","label":…,"entities":[{id,before,after,order}],"relations":[…]}
 /// {"op":"import","label":…,"source":{"import":"/x.ifc","sha256":…,"mode":…,"seed":…}}   an import from a file, done again on recovery (its every entity, a big model's bodies among them, is not copied)
-/// {"op":"undo"}  {"op":"redo"}
+/// {"op":"undo",…} {"op":"redo",…}   with the transaction undone or done again, as a "tx" line (an older Lapin's journal: {"op":"undo"} alone)
 /// </code>
 /// Saving starts the journal again (the file now holds everything). A
 /// journal with no edit is not worth keeping and is removed. The open journal
@@ -55,7 +55,9 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
             case "saved": Start(keep: false); return;        // the file holds everything the journal held
             case "start": Start(keep: _edits > 0); return;   // another project over unsaved edits: their journal is the only trace of them
         }
-        var line = e.Kind == "tx" ? (_session.EditSource is { } source ? ImportLine(e.Transaction!, source) : TxLine(e.Transaction!)) : new JsonObject { ["op"] = e.Kind, ["author"] = e.Author };
+        // An undo or redo carries its transaction's changes: after a save the history read back from the file cannot undo what it never held.
+        var line = e.Kind == "tx" ? (_session.EditSource is { } source ? ImportLine(e.Transaction!, source) : TxLine(e.Transaction!))
+            : e.Transaction is { } t ? TxLine(t, e.Kind) : new JsonObject { ["op"] = e.Kind, ["author"] = e.Author };
         Write(line);
         _edits++;
     }
@@ -192,9 +194,9 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
     static Entity ReadEntity(JsonObject o) =>
         new((string)o["id"]!, (string)o["class"]!, (string?)o["name"] ?? "", o["attrs"] is JsonObject a ? (JsonObject)a.DeepClone() : [], (string?)o["predefinedType"]);
 
-    static JsonObject TxLine(Transaction t) => new()
+    static JsonObject TxLine(Transaction t, string op = "tx") => new()
     {
-        ["op"] = "tx",
+        ["op"] = op,
         ["label"] = t.Label,
         ["at"] = t.At,
         ["seq"] = t.Seq,
@@ -249,12 +251,12 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
             var source = o["source"] as JsonObject ?? throw new InvalidDataException("An import without its source.");
             return new HistoryEvent("replay", null, (string?)o["author"], s => Reimport(s, source));
         }
-        if (op != "tx") return new HistoryEvent(op, null, (string?)o["author"]);
+        if (op != "tx" && o["entities"] == null) return new HistoryEvent(op, null, (string?)o["author"]);
         var entities = (o["entities"] as JsonArray ?? []).Select(n => n!.AsObject()).Select(c => new Change<Entity>(
             (string)c["id"]!, c["before"] is JsonObject b ? ReadEntity(b) : null, c["after"] is JsonObject a ? ReadEntity(a) : null, (int)c["order"]!)).ToList();
         var relations = (o["relations"] as JsonArray ?? []).Select(n => n!.AsObject()).Select(c => new Change<Relation>(
             (string)c["id"]!, c["before"].Deserialize(ModelJson.Default.Relation), c["after"].Deserialize(ModelJson.Default.Relation), (int)c["order"]!)).ToList();
-        return new HistoryEvent("tx", new Transaction((long?)o["seq"] ?? 0, (string?)o["label"] ?? "", entities, relations, o["at"]?.GetValue<DateTimeOffset>() ?? DateTimeOffset.UtcNow,
+        return new HistoryEvent(op, new Transaction((long?)o["seq"] ?? 0, (string?)o["label"] ?? "", entities, relations, o["at"]?.GetValue<DateTimeOffset>() ?? DateTimeOffset.UtcNow,
             (string?)o["author"] ?? History.Me, (long?)o["reverts"], (long?)o["redoes"]));
     }
 }

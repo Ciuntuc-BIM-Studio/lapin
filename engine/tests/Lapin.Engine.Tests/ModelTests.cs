@@ -104,4 +104,28 @@ public class ModelTests
         Assert.Equal("0000000000000000000000", GlobalId.FromGuid(Guid.Empty));
         Assert.Equal("3zzzzzzzzzzzzzzzzzzzzz".Replace('z', '$'), GlobalId.FromGuid(new Guid("ffffffff-ffff-ffff-ffff-ffffffffffff")));
     }
+    [Fact]
+    public void A_relationship_whose_attributes_changed_concerns_all_its_members()
+    {
+        var r = new Relation("r", "IfcRelConnectsPathElements", "a", ["b"], new JsonObject { ["style"] = "mitre" });
+        var c = new Change<Relation>("r", r, r with { Attrs = new JsonObject { ["style"] = "butt" } }, 0);
+        Assert.Contains("b", Transaction.Concerned(c));
+        // Only a member gained: the others are left alone.
+        var grown = new Change<Relation>("r", r, r with { Related = ["b", "c"] }, 0);
+        Assert.DoesNotContain("b", Transaction.Concerned(grown));
+        Assert.Contains("c", Transaction.Concerned(grown));
+    }
+
+    [Fact]
+    public void An_entity_removed_and_added_again_in_one_transaction_keeps_its_place_through_redo()
+    {
+        var h = new History(new ModelStore());
+        h.Execute("make", e => { e.Add(E("a")); e.Add(E("b")); });
+        h.Execute("swap class", e => { e.Remove("a"); e.Add(E("a", "IfcColumn")); });
+        var live = h.Store.Entities.Select(x => x.Id).ToList();
+        h.Undo();
+        h.Redo();
+        Assert.Equal(live, h.Store.Entities.Select(x => x.Id).ToList());
+        Assert.Equal(["a", "b"], live);
+    }
 }
