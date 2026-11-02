@@ -124,6 +124,18 @@ public class StructureTests
         Assert.Equal(4 * 1.8 * 0.5 + 4 * 1 * 0.4 + (1.8 * 1.8 - 1) + 1, Q(f, pad, "OuterSurfaceArea"), 9);
     }
 
+    [Fact]
+    public void A_pad_cuts_with_the_box_of_all_its_steps()
+    {
+        var f = Both();
+        // A long low step under a square one of the same area: the envelope holds both.
+        var type = (string)f.Run("structure.createPadType", new JsonObject { ["steps"] = new JsonArray(
+            new JsonObject { ["length"] = 2.0, ["width"] = 0.5, ["height"] = 0.4 }, new JsonObject { ["length"] = 1.0, ["width"] = 1.0, ["height"] = 0.4 }) })!["id"]!;
+        var pad = (string)f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 0, ["y"] = 0, ["typeId"] = type })!["id"]!;
+        var b = Measure.Bounds(PadFootings.Envelope(f.Model.Get(pad)!, f.Model)!)!.Value;
+        Assert.Equal((2.0, 1.0), (Math.Round(b.Max.X - b.Min.X, 9), Math.Round(b.Max.Y - b.Min.Y, 9)));
+    }
+
     // ------------------------------------------------------------ columns, beams, cut priorities
 
     [Fact]

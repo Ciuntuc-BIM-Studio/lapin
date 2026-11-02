@@ -308,8 +308,9 @@ public static class PadFootings
         if (Place.TypeOf(m, pad.Id) is not { } type || !IsPad(type)) return null;
         var steps = Steps(type);
         var bottom = Place.Elevation(m, pad) + type.Num("bottom", -1.8);
-        var widest = steps.MaxBy(s => s.Length * s.Width)!;
-        return Prism.ExtrudeFootprint(Place.Placed(Section.Rectangle(widest.Length, widest.Width).Outline(), Place.Point(pad), pad.Num("rotation")), bottom, steps.Sum(s => s.Height), "pad");
+        // The steps' box: as long as the longest and as wide as the widest (a long low step under a square upper one).
+        var (length, width) = (steps.Max(s => s.Length), steps.Max(s => s.Width));
+        return Prism.ExtrudeFootprint(Place.Placed(Section.Rectangle(length, width).Outline(), Place.Point(pad), pad.Num("rotation")), bottom, steps.Sum(s => s.Height), "pad");
     }
 
     public static ElementGeometry? Geometry(Entity pad, IModelView m, IServices? services)
