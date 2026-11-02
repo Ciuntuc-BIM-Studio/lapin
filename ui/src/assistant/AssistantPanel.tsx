@@ -13,8 +13,8 @@ import { tableCsv, type Table } from './tools';
 import { cleanText } from './loop';
 import { Markdown } from './Markdown';
 import type { ChangeRow, Scalar } from './changeset';
-import { isDesktop } from '../engine/files';
-import { notify, useUi } from '../app/store';
+import { download, isDesktop } from '../engine/files';
+import { notify, select } from '../app/store';
 import { t, useLang } from '../i18n';
 
 const EXAMPLES = [
@@ -72,13 +72,7 @@ function Status({ status }: { status: OllamaStatus | null }) {
   return <span className="assistant-ok small">Ollama is running</span>;
 }
 
-function saveCsv(t: Table): void {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([tableCsv(t)], { type: 'text/csv' }));
-  a.download = `${t.title.replace(/[\\/:*?"<>|]+/g, '_') || 'report'}.csv`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
-}
+const saveCsv = (t: Table): void => download(new TextEncoder().encode(tableCsv(t)), `${t.title.replace(/[\\/:*?"<>|]+/g, '_') || 'report'}.csv`, 'text/csv');
 
 const PREVIEW_ROWS = 12;
 
@@ -126,7 +120,6 @@ const show = (v: Scalar | null) => (v === null ? '—' : typeof v === 'boolean' 
 
 function Changeset({ rows }: { rows: ChangeRow[] }) {
   const accepted = rows.filter((r) => r.accepted).length;
-  const select = (id: string) => useUi.setState({ selection: id, selected: [id] });
   return (
     <div className="assistant-changes" data-testid="assistant-changes">
       <div className="assistant-table-head">

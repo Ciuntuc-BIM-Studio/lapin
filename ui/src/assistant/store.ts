@@ -8,10 +8,10 @@
 
 import { create } from 'zustand';
 import { engine, execute, query, useSession } from '../engine/session';
-import { useUi } from '../app/store';
+import { notify, useUi } from '../app/store';
 import { isDesktop } from '../engine/files';
-import { mergeRows, toSteps, type ChangeRow, type StandardTable } from './changeset';
-import { runTurn, systemPrompt } from './loop';
+import { liveRows, mergeRows, toSteps, type ChangeRow, type StandardTable } from './changeset';
+import { cleanText, runTurn, systemPrompt } from './loop';
 import { useLang } from '../i18n';
 import { fetchTransport, shellTransport, transportFor, useAssistantSettings, type OllamaMessage, type OllamaTransport } from './ollama';
 import type { QuantitySet, Table, ToolContext } from './tools';
@@ -44,6 +44,8 @@ export interface AssistantState {
 export const useAssistant = create<AssistantState>(() => ({ entries: [], history: [], busy: false, changes: [] }));
 
 let controller: AbortController | null = null;
+/** The turn running now: a turn New chat left behind writes nothing more. */
+let turnId = 0;
 let standardTable: Promise<StandardTable> | null = null;
 
 const transport = (): OllamaTransport => (transportFor(location.origin, isDesktop()) === 'shell' ? shellTransport() : fetchTransport());
@@ -83,20 +85,26 @@ export async function send(text: string, deps: { transport?: OllamaTransport; ct
     busy: true,
     entries: [...s.entries, { role: 'user', text: question, tools: [], tables: [] }, { role: 'assistant', text: '', tools: [], tables: [] }],
   });
-  controller = new AbortController();
+  const turn = ++turnId;
+  const current = () => turn === turnId;
+  // Only this turn's answer is written, and only while it is the conversation's (New chat started another).
+  const patch = (f: (e: ChatEntry) => ChatEntry) => { if (current()) patchLast(f); };
+  const mine = new AbortController();
+  controller = mine;
   const started = performance.now();
   // What the model says after a tool call starts a paragraph of its own.
   let afterTool = false;
   try {
     const added = await runTurn({
-      transport: deps.transport ?? transport(), url, model, messages: [...history, asked], ctx: deps.ctx ?? sessionContext(), signal: controller.signal,
+      transport: deps.transport ?? transport(), url, model, messages: [...history, asked], ctx: deps.ctx ?? sessionContext(), signal: mine.signal,
       onEvent: (e) => {
-        if (e.type === 'text') { const gap = afterTool && useAssistant.getState().entries.at(-1)!.text ? '\n\n' : ''; afterTool = false; patchLast((x) => ({ ...x, text: x.text + gap + e.delta })); }
-        else if (e.type === 'stats') patchLast((x) => ({ ...x, speed: e.seconds > 0 ? e.tokens / e.seconds : undefined }));
+        if (!current()) return;
+        if (e.type === 'text') { const gap = afterTool && useAssistant.getState().entries.at(-1)!.text ? '\n\n' : ''; afterTool = false; patch((x) => ({ ...x, text: x.text + gap + e.delta })); }
+        else if (e.type === 'stats') patch((x) => ({ ...x, speed: e.seconds > 0 ? e.tokens / e.seconds : undefined }));
         else {
           const o = e.outcome;
           afterTool = true;
-          patchLast((x) => ({
+          patch((x) => ({
             ...x,
             tools: [...x.tools, { name: e.name, summary: o.summary, error: o.error, args: typeof e.args === 'string' ? e.args : JSON.stringify(e.args) }],
             tables: o.table && o.table.rows.length ? [...x.tables, o.table] : x.tables,
@@ -106,14 +114,20 @@ export async function send(text: string, deps: { transport?: OllamaTransport; ct
         }
       },
     });
-    useAssistant.setState({ history: [...history, asked, ...added] });
+    if (current()) useAssistant.setState({ history: [...history, asked, ...added] });
   } catch (e) {
-    patchLast((x) => ({ ...x, error: e instanceof Error ? e.message : String(e) }));
-    useAssistant.setState({ history: [...history, asked] });
+    if (current()) {
+      patch((x) => ({ ...x, error: e instanceof Error ? e.message : String(e) }));
+      // The question stays in the conversation only with an answer to it (what came before the failure), never alone.
+      const said = useAssistant.getState().entries.at(-1)?.text ?? '';
+      useAssistant.setState({ history: said ? [...history, asked, { role: 'assistant', content: cleanText(said) }] : history });
+    }
   } finally {
-    patchLast((x) => ({ ...x, seconds: (performance.now() - started) / 1000 }));
-    controller = null;
-    useAssistant.setState({ busy: false });
+    if (current()) {
+      patch((x) => ({ ...x, seconds: (performance.now() - started) / 1000 }));
+      controller = null;
+      useAssistant.setState({ busy: false });
+    }
   }
 }
 
@@ -123,7 +137,10 @@ export function stop(): void { controller?.abort(); }
 /** A new conversation; the changeset stays until it is applied or rejected. */
 export function newChat(): void {
   stop();
-  useAssistant.setState({ entries: [], history: [] });
+  // The turn under way (if any) is left behind: what it still brings is dropped.
+  turnId++;
+  controller = null;
+  useAssistant.setState({ entries: [], history: [], busy: false });
 }
 
 export function toggleChange(key: string, accepted?: boolean): void {
@@ -136,7 +153,13 @@ export function toggleAll(accepted: boolean): void {
 
 /** Write the accepted values: one engine edit, one undo step. The changeset empties when it went through. */
 export async function applyChanges(): Promise<boolean> {
-  const steps = toSteps(useAssistant.getState().changes);
+  // An element deleted since it was proposed is left out (said), so the rest still goes through.
+  const { kept, dropped } = liveRows(useAssistant.getState().changes, (id) => useSession.getState().nodes.has(id));
+  if (dropped.length) {
+    useAssistant.setState({ changes: kept });
+    notify(`${dropped.length} proposed change(s) left out: their element is no longer in the project.`);
+  }
+  const steps = toSteps(kept);
   if (!steps.length) return false;
   await execute('edit.batch', { steps });
   if (useSession.getState().error) return false;
@@ -145,3 +168,8 @@ export async function applyChanges(): Promise<boolean> {
 }
 
 export function rejectChanges(): void { useAssistant.setState({ changes: [] }); }
+
+// Another project (opened, or a new one: its document changes, its version starts again): the proposals were for the last one.
+useSession.subscribe((s, prev) => {
+  if ((s.doc?.path !== prev.doc?.path || s.version < prev.version) && useAssistant.getState().changes.length) useAssistant.setState({ changes: [] });
+});

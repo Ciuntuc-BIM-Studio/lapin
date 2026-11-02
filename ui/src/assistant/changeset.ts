@@ -48,8 +48,9 @@ interface StoredParam { name: string; kind: string; value: unknown; pset?: strin
 
 const isStandard = (set: string) => /^pset_/i.test(set);
 /** A set as stored: null for the user's own. */
-const setOf = (pset: string | null | undefined, own: string): string | null => {
-  const s = (pset ?? '').trim();
+const setOf = (pset: unknown, own: string): string | null => {
+  // The model may send anything here (a number, an object): only text names a set.
+  const s = typeof pset === 'string' ? pset.trim() : '';
   return !s || s === own ? null : s;
 };
 const rowKey = (id: string, pset: string | null, name: string) => `${id}/${(pset ?? '').toLowerCase()}/${name.toLowerCase()}`;
@@ -142,6 +143,13 @@ export function mergeRows(existing: ChangeRow[], rows: ChangeRow[]): ChangeRow[]
     if (i >= 0) out[i] = r; else out.push(r);
   }
   return out;
+}
+
+/** The rows whose element is still in the project, and those whose element went (deleted, or another project opened). */
+export function liveRows(rows: ChangeRow[], has: (id: string) => boolean): { kept: ChangeRow[]; dropped: ChangeRow[] } {
+  const kept: ChangeRow[] = [], dropped: ChangeRow[] = [];
+  for (const r of rows) (has(r.id) ? kept : dropped).push(r);
+  return { kept, dropped };
 }
 
 /** The accepted rows as the steps of one `edit.batch` (one undo step). */

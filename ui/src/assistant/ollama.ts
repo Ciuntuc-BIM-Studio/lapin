@@ -107,13 +107,15 @@ export function fetchTransport(f: typeof fetch = (...a) => fetch(...a)): OllamaT
   };
 }
 
+/** The shell requests' ids, one counter for every transport (a transport is made per question): a Stop names only its own request. */
+let nextShellCall = 1;
+
 /** The transport through the desktop shell (Rust, `ollama_request`): for a webview whose origin Ollama refuses. */
 export function shellTransport(): OllamaTransport {
-  let next = 1;
   const call = async (base: string, path: string, body: unknown, onLine: (line: string) => void, signal?: AbortSignal) => {
     const { invoke, Channel } = await import('@tauri-apps/api/core');
     const port = Number(new URL(base).port || 11434);
-    const id = next++;
+    const id = nextShellCall++;
     let ended: () => void = () => undefined;
     const end = new Promise<void>((r) => { ended = r; });
     const channel = new Channel<string>();

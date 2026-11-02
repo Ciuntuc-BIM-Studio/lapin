@@ -31,6 +31,8 @@ export interface ToolContext {
   quantities: (ids: string[]) => Promise<Record<string, QuantitySet[]>>;
   /** A schedule as CSV (the engine's schedule.csv). */
   scheduleCsv: (id: string) => Promise<string | null>;
+  /** Stop: a tool measuring many elements gives up between its requests. */
+  signal?: AbortSignal;
 }
 
 export type Cell = string | number | boolean | null;
@@ -326,11 +328,15 @@ async function select(ctx: ToolContext, a: Record<string, unknown>, fields: stri
   if (name) nodes = nodes.filter((n) => lc(n.name).includes(name));
   if (type) nodes = nodes.filter((n) => { const t = typeOf(model, n.id); return !!t && (t.id === a.type || lc(t.name).includes(type)); });
   const needQ = [...fields, ...where.map((w) => w.field)].some((f) => !isBuiltin(f));
+  // Measuring asks the engine for every candidate's quantities: at most MAX_TABLE_ROWS of them, said when cut.
+  const cut = needQ && nodes.length > MAX_TABLE_ROWS ? `Only the first ${MAX_TABLE_ROWS} of ${nodes.length} elements were measured: narrow the question (a class, a storey, a type).` : undefined;
+  if (cut) nodes = nodes.slice(0, MAX_TABLE_ROWS);
   const q = needQ && nodes.length ? await quantitiesOf(ctx, nodes.map((n) => n.id)) : {};
   // A field no candidate has is said, with the fields they do have, so the model can ask again rightly.
   const unknown = where.filter((w) => w.op !== 'missing' && nodes.length > 0 && nodes.every((n) => fieldValue(model, n, w.field, q[n.id]) === undefined)).map((w) => w.field);
-  const hint = unknown.length ? `No element here has ${unknown.join(', ')}. Fields they have: ${knownFields(nodes[0], q[nodes[0].id]).join(', ')}.` : undefined;
+  const missing = unknown.length ? `No element here has ${unknown.join(', ')}. Fields they have: ${knownFields(nodes[0], q[nodes[0].id]).join(', ')}.` : undefined;
   if (where.length) nodes = nodes.filter((n) => where.every((w) => holds(fieldValue(model, n, w.field, q[n.id]), w)));
+  const hint = [cut, missing].filter(Boolean).join(' ') || undefined;
   return { nodes, q, hint };
 }
 
@@ -345,8 +351,16 @@ function knownFields(n: NodeDto, q: QuantitySet[] | undefined): string[] {
 
 async function quantitiesOf(ctx: ToolContext, ids: string[]): Promise<Record<string, QuantitySet[]>> {
   const out: Record<string, QuantitySet[]> = {};
-  for (let i = 0; i < ids.length; i += 2000) Object.assign(out, await ctx.quantities(ids.slice(i, i + 2000)));
+  for (let i = 0; i < ids.length; i += 2000) {
+    if (ctx.signal?.aborted) throw new ToolError('Stopped by the user.');
+    Object.assign(out, await ctx.quantities(ids.slice(i, i + 2000)));
+  }
   return out;
+}
+
+/** JSON within MAX_CHARS that still parses: the text, else a note that it was too long (a cut string would not read). */
+function within(text: string): string {
+  return text.length <= MAX_CHARS ? text : JSON.stringify({ truncated: true, note: 'The result was too long to send: narrow the question (a class, a storey, fewer fields).' });
 }
 
 /** Storeys by their elevation, then by name. */
@@ -359,14 +373,14 @@ function byStorey(model: ModelState) {
 export function capped(result: Record<string, unknown>, rowsKey = 'rows'): { text: string; kept: number } {
   const rows = Array.isArray(result[rowsKey]) ? [...(result[rowsKey] as unknown[])] : null;
   let text = JSON.stringify(result);
-  if (text.length <= MAX_CHARS || !rows) return { text: text.length <= MAX_CHARS ? text : text.slice(0, MAX_CHARS), kept: rows?.length ?? 0 };
+  if (text.length <= MAX_CHARS || !rows) return { text: within(text), kept: text.length <= MAX_CHARS ? rows?.length ?? 0 : 0 };
   let keep = rows.length;
   while (keep > 0) {
     keep = Math.floor(keep * 0.75);
     text = JSON.stringify({ ...result, [rowsKey]: rows.slice(0, keep), truncated: true, rows_shown: keep });
     if (text.length <= MAX_CHARS) break;
   }
-  return { text, kept: keep };
+  return { text: within(text), kept: keep };
 }
 
 /** A page of rows for the model within MAX_CHARS: fewer rows when it would not fit, and where the next page starts. */
@@ -375,7 +389,7 @@ function paged(head: Record<string, unknown>, rows: unknown[], offset: number, t
   for (;;) {
     const next = offset + keep < total ? offset + keep : null;
     const text = JSON.stringify({ ...head, total, offset, rows: rows.slice(0, keep), next_offset: next, ...(keep < rows.length ? { truncated: true } : {}) });
-    if (text.length <= MAX_CHARS || keep === 0) return { text: text.slice(0, MAX_CHARS), shown: keep };
+    if (text.length <= MAX_CHARS || keep === 0) return { text: within(text), shown: keep };
     keep = Math.floor(keep * 0.75);
   }
 }
@@ -479,7 +493,7 @@ async function getElement(ctx: ToolContext, a: Record<string, unknown>): Promise
     quantities: q.map((s) => ({ set: s.name, values: Object.fromEntries(s.quantities.map((x) => [x.name, round(x.value)])) })),
   };
   let text = JSON.stringify(result);
-  if (text.length > MAX_CHARS) text = JSON.stringify({ ...result, ifc_property_sets: result.ifc_property_sets.slice(0, 3), truncated: true }).slice(0, MAX_CHARS);
+  if (text.length > MAX_CHARS) text = within(JSON.stringify({ ...result, ifc_property_sets: result.ifc_property_sets.slice(0, 3), truncated: true }));
   return { content: text, summary: `Read element ${n.name}` };
 }
 
@@ -559,12 +573,12 @@ async function propertyNames(ctx: ToolContext, a: Record<string, unknown>): Prom
     used_in_model: [...used].map(([set, names]) => ({ set, names: [...names].slice(0, 30) })),
     rule: `Standard sets (Pset_…) take only the names listed. Anything else goes in a set of the user's own (not starting with Pset_ or Qto_) or in ${table.own}.`,
   };
-  return { content: capped(result).text, summary: 'Read the standard property sets' };
+  return { content: capped(result, 'standard_sets').text, summary: 'Read the standard property sets' };
 }
 
 async function listSchedules(ctx: ToolContext): Promise<ToolOutcome> {
   const list = [...ctx.model.nodes.values()].filter((n) => n.type === 'LapinSchedule').map((s) => ({ id: s.id, name: s.name, kind: s.props.kind ?? null }));
-  return { content: JSON.stringify({ schedules: list }).slice(0, MAX_CHARS), summary: 'Listed the schedules' };
+  return { content: capped({ schedules: list }, 'schedules').text, summary: 'Listed the schedules' };
 }
 
 async function readSchedule(ctx: ToolContext, a: Record<string, unknown>): Promise<ToolOutcome> {
@@ -596,7 +610,7 @@ async function proposeProperties(ctx: ToolContext, a: Record<string, unknown>): 
     note: rows.length ? 'Shown to the user for approval. Nothing is applied until the user applies it; do not say it is done.' : 'Nothing to show.',
   };
   return {
-    content: JSON.stringify(result).slice(0, MAX_CHARS),
+    content: capped(result, 'refused').text,
     summary: refused.length ? `Proposed ${rows.length} change(s), ${refused.length} refused` : `Proposed ${rows.length} change(s)`,
     proposals: rows,
     error: rows.length === 0,

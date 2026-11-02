@@ -233,6 +233,8 @@ async fn ollama_request(
     }
     let method = if method == "GET" { "GET" } else { "POST" };
     let calls = calls.inner().clone();
+    // A Stop for an id that came after its request had ended stays in the set: it must not cut this new request short.
+    calls.0.lock().unwrap().remove(&id);
     tauri::async_runtime::spawn_blocking(move || {
         let mut stream = std::net::TcpStream::connect(("127.0.0.1", port)).map_err(|e| e.to_string())?;
         let body = body.unwrap_or_default();

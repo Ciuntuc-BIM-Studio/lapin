@@ -64,6 +64,10 @@ function chatBody(model: string, messages: OllamaMessage[]) {
   };
 }
 
+/** The answers of tool calls a Stop left unrun. */
+export const stoppedResults = (calls: OllamaToolCall[]): OllamaMessage[] =>
+  calls.map((c) => ({ role: 'tool', tool_name: c.function.name, content: JSON.stringify({ error: 'Stopped by the user.' }) }));
+
 /** Run the turn; the messages it adds to the conversation (the model's, the tools'), in order. */
 export async function runTurn(o: TurnOptions): Promise<OllamaMessage[]> {
   const added: OllamaMessage[] = [];
@@ -84,9 +88,11 @@ export async function runTurn(o: TurnOptions): Promise<OllamaMessage[]> {
     if (o.signal?.aborted) { if (content) added.push({ role: 'assistant', content }); return added; }
     if (!calls.length) { added.push({ role: 'assistant', content: cleanText(content) }); return added; }
     added.push({ role: 'assistant', content, tool_calls: calls });
-    for (const call of calls) {
-      if (o.signal?.aborted) return added;
-      const outcome = await runTool(o.ctx, call.function.name, call.function.arguments);
+    const ctx = o.signal ? { ...o.ctx, signal: o.signal } : o.ctx;
+    for (const [i, call] of calls.entries()) {
+      // Stopped in the middle of a round: every call asked for still gets its answer, so the conversation stays one the model can read on.
+      if (o.signal?.aborted) { added.push(...stoppedResults(calls.slice(i))); return added; }
+      const outcome = await runTool(ctx, call.function.name, call.function.arguments);
       o.onEvent({ type: 'tool', name: call.function.name, args: call.function.arguments, outcome });
       added.push({ role: 'tool', tool_name: call.function.name, content: outcome.content });
     }
