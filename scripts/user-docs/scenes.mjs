@@ -603,7 +603,17 @@ export const scenes = [
       await t.tool('architecture.roomColors');
       t.expect(await t.page.locator('[aria-label="Room colours"]').count() > 0, 'the Room colours dialog opens');
       await t.shot('room-colors', { of: '.dialog', pad: 0 });
-      await t.ui({ dialog: null, keyPlan: true });
+      // Nothing selected: every room of the plan.
+      await t.ui({ dialog: null, selected: [] });
+      // Annotate → Room dimensions (decision 249): a string inside each room along each side, the doors' and windows' jambs on it.
+      await t.button('Annotate', { exact: true });
+      await t.tool('drafting.roomDimensions');
+      await t.wait(1200);
+      const strings = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.room);
+      t.expect(strings.length >= 8, `room dimensions on every side of both rooms, found ${strings.length}`);
+      await t.fit();
+      await t.shot('room-dimensions', { of: '[data-testid=plan]', pad: 0 });
+      await t.ui({ keyPlan: true });
     },
   },
   {

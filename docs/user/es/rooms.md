@@ -45,6 +45,17 @@ Los colores se dibujan bajo los muros, el mobiliario y los giros de las puertas,
 
 **Anotar → Leyenda de colores**: haga clic donde va la leyenda en la planta. Enumera los colores que usan las habitaciones de la planta, con sus nombres, y sigue cualquier cambio del esquema. Desplácela con **Desplazar**.
 
+## Cotas de las habitaciones
+
+**Annotate → Room dimensions** (<kbd>ID</kbd>) acota de una vez el interior de las habitaciones de una planta. Cada lado de una habitación recibe una cadena de cotas alineada, justo dentro de él. La cadena tiene un punto en cada esquina del lado y en las jambas de cada puerta y ventana que hay en él.
+
+- Con habitaciones seleccionadas, solo se acotan esas. Sin selección, se acotan todas las habitaciones del nivel de la planta.
+- Los puntos se sujetan a los muros, como en cualquier cota. Mueve un muro y las cadenas lo siguen.
+- Vuelve a ejecutarlo en una habitación para rehacer sus cadenas, por ejemplo después de añadir una puerta. Las cadenas antiguas se sustituyen, no se duplican.
+- Los lados muy cortos, de menos de 30 cm, se dejan fuera. Cualquier cadena se edita o se borra como una dibujada a mano.
+
+![Dos habitaciones acotadas por dentro: la cadena de cada lado, con la puerta y las ventanas](shots/room-dimensions.webp)
+
 ## Habitaciones en 3D y en IFC
 
 Las habitaciones están ocultas en la vista 3D, para que no tapen el edificio. **Visibilidad / Gráficos** en la vista 3D puede mostrarlas.

@@ -60,4 +60,32 @@ public class WallReferenceTests
         Assert.Equal(10 + lo, P(east.Attrs["start"]).X, 9);
         Assert.Throws<CommandException>(() => f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 1, ["y2"] = 0, ["reference"] = "middle" }));
     }
+
+    [Theory]
+    [InlineData("exterior")]
+    [InlineData("interior")]
+    [InlineData("coreExterior")]
+    public void A_room_closed_on_its_faces_is_square_at_every_corner(string reference)
+    {
+        // A tester's report: the last wall of a room drawn on its faces came out askew (2 cm in a 3 m room of 50 cm walls),
+        // its second end met on a line already shortened by its first.
+        var f = new Fixture();
+        var type = f.Type("Thick", ("Brick", 0.5, true));
+        string Draw(double x1, double y1, double x2, double y2) =>
+            (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = type, ["x1"] = x1, ["y1"] = y1, ["x2"] = x2, ["y2"] = y2, ["reference"] = reference })!["id"]!;
+        var ids = new[] { Draw(0, 0, 3, 0), Draw(3, 0, 3, 3), Draw(3, 3, 0, 3), Draw(0, 3, 0, 0) };
+        var walls = ids.Select(id => f.Model.Get(id)!).ToList();
+        // Each wall straight along x or y, and each end on the next one's start.
+        foreach (var w in walls)
+        {
+            var (s, e) = (P(w.Attrs["start"]), P(w.Attrs["end"]));
+            Assert.True(Math.Abs(s.X - e.X) < 1e-9 || Math.Abs(s.Y - e.Y) < 1e-9, $"{s} → {e} is askew");
+        }
+        for (var i = 0; i < 4; i++)
+        {
+            var (end, next) = (P(walls[i].Attrs["end"]), P(walls[(i + 1) % 4].Attrs["start"]));
+            Assert.Equal(0, (end - next).Length, 9);
+            Assert.Equal(2, Joins.Of(f.Model, ids[i]).Count());
+        }
+    }
 }

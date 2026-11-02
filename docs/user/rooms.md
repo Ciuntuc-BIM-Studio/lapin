@@ -45,6 +45,17 @@ The colours are drawn under the walls, the furniture and the door swings, so the
 
 **Annotate → Colour legend**: click where the legend goes on the plan. It lists the colours the plan's rooms use, with their names, and follows any change to the scheme. Move it with **Move**.
 
+## Room dimensions
+
+**Annotate → Room dimensions** (<kbd>ID</kbd>) dimensions the inside of the rooms on a plan at once. Each side of a room gets an aligned dimension string just inside it. The string has a point at each corner of the side and at the jambs of each door and window in it.
+
+- With rooms selected, only those are dimensioned. With nothing selected, every room of the plan's level is.
+- The points hold on the walls, like any dimension's. Move a wall and the strings follow it.
+- Run it again on a room to make its strings anew, for example after adding a door. The old strings are replaced, not doubled.
+- Very short sides, under 30 cm, are left out. Edit or delete any string as you would one you drew.
+
+![Two rooms dimensioned inside: each side's string with the door and windows on it](shots/room-dimensions.webp)
+
 ## Rooms in 3D and in IFC
 
 Rooms are hidden in the 3D view, so they do not cover the building. **Visibility / Graphics** in the 3D view can show them.

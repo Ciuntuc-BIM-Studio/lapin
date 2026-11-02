@@ -1,6 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, Tag, Tags } from 'lucide-react';
+import { ArrowRightToLine, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
@@ -187,6 +187,23 @@ function tagCommand(): Step {
   return pick();
 }
 registerCommand({ names: ['TAG', 'TG'], label: 'Tag', start: tagCommand });
+/**
+ * Rooms' interior dimensions (decision 249): on a plan, an aligned string inside each room along each of its sides, its
+ * points at the corners and at the doors' and windows' jambs, held on the walls. The selected rooms, or every room of the
+ * plan's storey; a room done again has its strings made anew.
+ */
+const roomDimensions: ToolDef = {
+  id: 'drafting.roomDimensions', label: 'Room dimensions', icon: RulerDimensionLine, shortcut: 'ID',
+  run: () => void (async () => {
+    if (useUi.getState().view !== 'plan') { notify('Rooms are dimensioned on a plan: open one.'); return; }
+    const viewId = await frontView();
+    if (!viewId) return;
+    const nodes = useSession.getState().nodes;
+    const ids = useUi.getState().selected.filter((id) => nodes.get(id)?.type === 'IfcSpace');
+    const r = await execute('drafting.dimensionRooms', { viewId, ...(ids.length ? { ids } : {}) }) as { rooms?: number; strings?: number } | null;
+    if (r) notify(r.rooms ? `${r.strings} dimension strings in ${r.rooms} rooms.` : 'No room here to dimension: place rooms first (Architecture → Room).');
+  })(),
+};
 registerCommand({ names: ['DIMALIGNED', 'DAL', 'DIM'], label: 'Aligned dimension', start: () => dimCommand(false) });
 registerCommand({ names: ['DIMLINEAR', 'DLI'], label: 'Linear dimension', start: () => dimCommand(true) });
 
@@ -514,7 +531,7 @@ const drafting: LapinModule = {
     {
       id: 'annotate', label: 'Annotate', order: 60,
       groups: [
-        { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR')],
+        { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR'), roomDimensions],
           // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
           small: [cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimDel', 'Remove points', ListMinus, 'DIMDEL'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE')] },
         { label: 'Text', tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {

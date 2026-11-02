@@ -114,11 +114,14 @@ public static class Dimensions
     /// <summary>
     /// What an end placed at <paramref name="p"/> holds on: a cut edge within
     /// <paramref name="tolerance"/>, else (in a plan) a grid axis, else a wall's
-    /// or beam's centre line; null: a free end.
+    /// or beam's centre line; null: a free end. With <paramref name="along"/>
+    /// (the direction the string measures), of the edges as near, the one most
+    /// across it: at a corner, the face of the wall that closes the side, which
+    /// moves the point when that wall moves, not the end of the wall measured.
     /// </summary>
-    public static DimEndRef? Associate(IModelView m, string viewKind, ViewDrawing d, Vec2 p, double tolerance)
+    public static DimEndRef? Associate(IModelView m, string viewKind, ViewDrawing d, Vec2 p, double tolerance, Vec2? along = null)
     {
-        (DPolygon Poly, Vec2 A, Vec2 B, double Dist)? best = null;
+        (DPolygon Poly, Vec2 A, Vec2 B, double Dist, double Across)? best = null;
         foreach (var poly in d.Cuts)
             foreach (var l in poly.Loops)
                 for (var i = 0; i < l.Length; i++)
@@ -126,7 +129,9 @@ public static class Dimensions
                     var (a, b) = (l[i], l[(i + 1) % l.Length]);
                     if ((b - a).Length < 1e-6) continue;
                     var (dist, _) = Foot(p, a, b);
-                    if (dist <= tolerance && (best == null || dist < best.Value.Dist)) best = (poly, a, b, dist);
+                    if (dist > tolerance) continue;
+                    var across = along is { } u ? Math.Abs(Vec2.Cross((b - a).Normalized(), u)) : 0;
+                    if (best == null || dist < best.Value.Dist - 1e-6 || (dist <= best.Value.Dist + 1e-6 && across > best.Value.Across + 1e-9)) best = (poly, a, b, dist, across);
                 }
         if (best is { } hit && Middle(d, hit.Poly.Element) is { } mid)
         {

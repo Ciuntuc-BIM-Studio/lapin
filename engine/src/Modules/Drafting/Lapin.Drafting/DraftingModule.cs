@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Drawing;
+using Lapin.Drawing.Views;
 using Lapin.Model;
 using Lapin.Platform;
 
@@ -115,6 +116,20 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             var dim = new Entity(ctx.NewId(), IfcClass.Annotation, "Dimension", attrs, "DIMENSION");
             ctx.Add(dim);
             return new JsonObject { ["id"] = dim.Id, ["associated"] = new JsonArray(stations.Select(s => (JsonNode)(s.Item2 != null)).ToArray()) };
+        });
+
+        // Rooms' interior dimensions (decision 249): {viewId (a plan), ids? (rooms; none: every room of its storey), offset? (m)}.
+        r.Command("dimensionRooms", "Dimension rooms", (ctx, a) =>
+        {
+            var view = Views.Find(ctx.Model, (string?)a["viewId"] ?? "") is { } v && v.Str("kind") is "plan" or null ? v
+                : throw new CommandException("Rooms are dimensioned on a plan of their storey.");
+            var ids = a["ids"] is JsonArray ia && ia.Count > 0 ? ia.Select(x => (string?)x).OfType<string>().ToList() : null;
+            var offset = Json.Number(a["offset"]) is { } o ? (o > 0 ? o : throw new CommandException("The strings lie inside the room: the offset must be positive.")) : (double?)null;
+            var (drawing, spec, _) = Views.Generate(ctx.Query, view);
+            var tolerance = Tolerance(view);
+            Func<Vec2, Vec2, DimEndRef?> hold = drawing == null || spec == null ? (_, _) => null : (p, u) => Dimensions.Associate(ctx.Model, spec.Kind, drawing, p, tolerance, u);
+            var (rooms, strings) = RoomDimensions.Add(ctx, view, ids, offset, hold, drawing);
+            return new JsonObject { ["rooms"] = rooms, ["strings"] = strings };
         });
 
         // A driving dimension: typing a segment's value moves what it measures (and, in a string, what follows).
@@ -378,9 +393,12 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
     {
         var (drawing, spec, _) = Views.Generate(ctx.Query, view);
         if (drawing == null || spec == null) return _ => null;
-        var tolerance = Math.Max(0.01, 1.0 * (view.NumOrNull("scale") ?? 100) / 1000);
+        var tolerance = Tolerance(view);
         return p => Dimensions.Associate(ctx.Model, spec.Kind, drawing, p, tolerance);
     }
+
+    /// <summary>How near (m) a dimension's point must be to an edge to hold on it: 1 mm on the paper, at least 1 cm.</summary>
+    static double Tolerance(Entity view) => Math.Max(0.01, 1.0 * (view.NumOrNull("scale") ?? 100) / 1000);
 
     /// <summary>A string's points where they are drawn now (each on what it holds on; one that lost it where it was), with what they hold on.</summary>
     static List<(Vec2 P, DimEndRef? Ref)> Current(IQueryContext q, Entity dim)

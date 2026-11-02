@@ -45,6 +45,17 @@ Les couleurs sont dessinées sous les murs, le mobilier et les battements des po
 
 **Annoter → Légende de couleurs** : cliquez là où la légende doit aller sur le plan. Elle liste les couleurs qu’utilisent les pièces du plan, avec leurs noms, et suit toute modification du jeu. Déplacez-la avec **Déplacer**.
 
+## Cotes des pièces
+
+**Annotate → Room dimensions** (<kbd>ID</kbd>) cote d’un coup l’intérieur des pièces d’un plan. Chaque côté d’une pièce reçoit une chaîne de cotes alignée, juste à l’intérieur. La chaîne a un point à chaque angle du côté et aux tableaux de chaque porte et fenêtre qui s’y trouve.
+
+- Avec des pièces sélectionnées, seules celles-ci sont cotées. Sans sélection, toutes les pièces du niveau du plan le sont.
+- Les points tiennent aux murs, comme pour toute cote. Déplacez un mur et les chaînes le suivent.
+- Relancez-le sur une pièce pour refaire ses chaînes, par exemple après avoir ajouté une porte. Les anciennes chaînes sont remplacées, pas doublées.
+- Les côtés très courts, de moins de 30 cm, sont laissés de côté. Toute chaîne se modifie ou se supprime comme une chaîne dessinée à la main.
+
+![Deux pièces cotées à l’intérieur : la chaîne de chaque côté, avec la porte et les fenêtres](shots/room-dimensions.webp)
+
 ## Les pièces en 3D et en IFC
 
 Les pièces sont masquées dans la vue 3D, pour ne pas recouvrir le bâtiment. **Visibilité / Graphismes** dans la vue 3D peut les afficher.

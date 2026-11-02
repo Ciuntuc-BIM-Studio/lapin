@@ -45,6 +45,17 @@ Farverne tegnes under væggene, møblerne og dørslagene, så planen forbliver l
 
 **Annotér → Farveforklaring**: klik, hvor forklaringen skal stå på planen. Den viser de farver, planens rum bruger, med deres navne, og følger enhver ændring af skemaet. Flyt den med **Flyt**.
 
+## Rummål
+
+**Annotate → Room dimensions** (<kbd>ID</kbd>) måler indersiden af rummene på en plan på én gang. Hver side af et rum får en justeret målekæde lige indenfor. Kæden har et punkt i hvert hjørne af siden og ved lysningerne for hver dør og hvert vindue i den.
+
+- Med rum valgt måles kun de. Uden valg måles alle rum på planens etage.
+- Punkterne holder fast i væggene som ved ethvert mål. Flyt en væg, og kæderne følger med.
+- Kør det igen på et rum for at lave dets kæder på ny, for eksempel efter at have tilføjet en dør. De gamle kæder erstattes, de fordobles ikke.
+- Meget korte sider under 30 cm udelades. Enhver kæde redigeres eller slettes som en, du har tegnet selv.
+
+![To rum målt indvendigt: hver sides kæde med døren og vinduerne](shots/room-dimensions.webp)
+
 ## Rum i 3D og i IFC
 
 Rum er skjult i 3D-visningen, så de ikke dækker bygningen. **Synlighed / Grafik** i 3D-visningen kan vise dem.

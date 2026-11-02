@@ -19,6 +19,10 @@ public static class WallReference
     static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
     static JsonArray J(Vec2 p) => new(Math.Round(p.X, 9), Math.Round(p.Y, 9));
 
+    /// <summary>Whether a wall's end ("start" or "end") is joined to nothing yet: a joined end belongs to its corner and is not moved.</summary>
+    static bool FreeEnd(IModelView m, string id, string key) =>
+        !Joins.Of(m, id).Any(r => (string?)r.Attrs?[r.Relating == id ? "relatingConnection" : "relatedConnection"] == (key == "start" ? "ATSTART" : "ATEND"));
+
     /// <summary>How far left of the axis the reference line lies (the axis then goes that far right of the line drawn).</summary>
     public static double LeftOf(IReadOnlyList<Walls.Band> bands, string reference)
     {
@@ -48,26 +52,40 @@ public static class WallReference
         var (na, nb) = (a + shift, b + shift);
         var reach = 2.5 * Math.Abs(y) + 0.01;
         var storey = Spatial.StoreyOf(ctx.Model, wall.Id)?.Id;
-        foreach (var candidate in ctx.Model.OfClass(IfcClass.Wall).Where(w => w.Id != wall.Id && Spatial.StoreyOf(ctx.Model, w.Id)?.Id == storey && w.Attrs[PathCurve.Key] == null).ToList())
+        // Each end of the line drawn meets at most one wall's free end: the nearest crossing within reach. Both ends are worked
+        // out on the line as set off, before either moves, so the second end's crossing is not measured on a line already
+        // shortened by the first (a room closed on its faces came out with its last wall askew by up to 2 cm).
+        var (sa, sb) = (na, nb);
+        var candidates = ctx.Model.OfClass(IfcClass.Wall).Where(w => w.Id != wall.Id && Spatial.StoreyOf(ctx.Model, w.Id)?.Id == storey && w.Attrs[PathCurve.Key] == null).ToList();
+        var taken = new HashSet<(string, string)>();
+        foreach (var (mine, atStart) in new[] { (sa, true), (sb, false) })
         {
-            var other = candidate;
-            var (oa, ob) = (P(other.Attrs["start"]), P(other.Attrs["end"]));
-            var od = ob - oa;
-            if (od.Length < 1e-9 || Math.Abs(Vec2.Cross(d, od.Normalized())) < 0.05) continue;
-            // The two axes' lines crossing: where the faces drawn meet, set off alike.
-            var den = Vec2.Cross(b - a, od);
-            var t = Vec2.Cross(oa - na, od) / den;
-            var x = na + (nb - na) * t;
-            foreach (var (mine, setMine) in new (Vec2, Action<Vec2>)[] { (na, p => na = p), (nb, p => nb = p) })
+            (Entity Wall, string Key, Vec2 X, double D)? best = null;
+            foreach (var other in candidates)
+            {
+                var (oa, ob) = (P(other.Attrs["start"]), P(other.Attrs["end"]));
+                var od = ob - oa;
+                if (od.Length < 1e-9 || Math.Abs(Vec2.Cross(d, od.Normalized())) < 0.05) continue;
+                // The two axes' lines crossing: where the faces drawn meet, set off alike.
+                var t = Vec2.Cross(oa - sa, od) / Vec2.Cross(sb - sa, od);
+                var x = sa + (sb - sa) * t;
                 foreach (var (theirs, key) in new[] { (oa, "start"), (ob, "end") })
+                {
+                    if (taken.Contains((other.Id, key)) || !FreeEnd(ctx.Model, other.Id, key)) continue;
                     if ((mine - x).Length < reach && (theirs - x).Length < reach && (mine - theirs).Length < 2 * reach)
                     {
-                        setMine(x);
-                        var oattrs = other.CloneAttrs();
-                        oattrs[key] = J(x);
-                        ctx.Replace(other.With(attrs: oattrs));
-                        other = ctx.Model.Get(other.Id)!;
+                        var dist = (mine - theirs).Length;
+                        if (best == null || dist < best.Value.D) best = (other, key, x, dist);
                     }
+                }
+            }
+            if (best is not { } hit) continue;
+            taken.Add((hit.Wall.Id, hit.Key));
+            if (atStart) na = hit.X; else nb = hit.X;
+            var current = ctx.Model.Get(hit.Wall.Id)!;
+            var oattrs = current.CloneAttrs();
+            oattrs[hit.Key] = J(hit.X);
+            ctx.Replace(current.With(attrs: oattrs));
         }
         if ((nb - na).Length < 1e-3) throw new CommandException("The wall is too short once set off from its line.");
         var attrs = wall.CloneAttrs();

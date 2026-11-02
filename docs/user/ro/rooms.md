@@ -45,6 +45,17 @@ Culorile se desenează sub pereți, sub mobilier și sub deschiderile ușilor, a
 
 **Adnotări → Legenda culorilor**: dă clic pe plan unde vrei legenda. Ea listează culorile pe care le folosesc încăperile planului, cu numele lor, și urmează orice schimbare a schemei. O muți cu **Mută**.
 
+## Cotele încăperilor
+
+**Annotate → Room dimensions** (<kbd>ID</kbd>) cotează dintr-o dată interiorul încăperilor de pe un plan. Fiecare latură a unei încăperi primește un lanț de cote aliniat, chiar în interiorul ei. Lanțul are câte un punct la fiecare colț al laturii și la golurile fiecărei uși și ferestre din ea.
+
+- Cu încăperi selectate, se cotează doar acelea. Fără selecție, se cotează toate încăperile nivelului planului.
+- Punctele se țin de pereți, ca la orice cotă. Muți un perete și lanțurile îl urmează.
+- Rulează din nou comanda pe o încăpere ca să-i refaci lanțurile, de exemplu după ce ai adăugat o ușă. Lanțurile vechi sunt înlocuite, nu dublate.
+- Laturile foarte scurte, sub 30 cm, sunt lăsate deoparte. Orice lanț se editează sau se șterge ca unul desenat de mână.
+
+![Două încăperi cotate în interior: lanțul fiecărei laturi, cu ușa și ferestrele pe el](shots/room-dimensions.webp)
+
 ## Încăperile în 3D și în IFC
 
 Încăperile sunt ascunse în vederea 3D, ca să nu acopere clădirea. **Vizibilitate / Grafică** în vederea 3D le poate arăta.

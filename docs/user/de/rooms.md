@@ -45,6 +45,17 @@ Die Farben werden unter den Wänden, der Möblierung und den Türaufschlägen ge
 
 **Beschriften → Farblegende**: Klicken Sie dort in den Grundriss, wo die Legende stehen soll. Sie listet die Farben, die die Räume des Grundrisses verwenden, mit ihren Namen, und folgt jeder Änderung am Schema. Verschieben Sie sie mit **Verschieben**.
 
+## Raumbemaßung
+
+**Annotate → Room dimensions** (<kbd>ID</kbd>) bemaßt das Innere der Räume eines Grundrisses auf einmal. Jede Seite eines Raums erhält eine ausgerichtete Maßkette direkt innerhalb des Raums. Die Kette hat einen Punkt an jeder Ecke der Seite und an den Leibungen jeder Tür und jedes Fensters darin.
+
+- Sind Räume ausgewählt, werden nur diese bemaßt. Ohne Auswahl werden alle Räume der Ebene des Grundrisses bemaßt.
+- Die Punkte haften an den Wänden wie bei jeder Bemaßung. Verschieben Sie eine Wand, folgen ihr die Ketten.
+- Führen Sie es für einen Raum erneut aus, um seine Ketten neu zu erzeugen, etwa nach dem Einfügen einer Tür. Die alten Ketten werden ersetzt, nicht verdoppelt.
+- Sehr kurze Seiten unter 30 cm werden ausgelassen. Jede Kette lässt sich wie eine von Hand gezeichnete bearbeiten oder löschen.
+
+![Zwei innen bemaßte Räume: die Kette jeder Seite mit Tür und Fenstern](shots/room-dimensions.webp)
+
 ## Räume in 3D und in IFC
 
 Räume sind in der 3D-Ansicht ausgeblendet, damit sie das Gebäude nicht verdecken. **Sichtbarkeit / Grafiken** in der 3D-Ansicht kann sie anzeigen.
