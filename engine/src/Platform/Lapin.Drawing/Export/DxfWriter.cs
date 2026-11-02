@@ -26,6 +26,7 @@ public sealed class DxfWriter(double patternScale = 1)
     sealed record LayerDef(string Color, string LineType, int Weight);
     readonly Dictionary<string, LayerDef> _layers = [];
     readonly Dictionary<string, double[]> _lineTypes = [];
+    readonly Dictionary<string, string> _lineTypeOf = []; // a pattern (its dashes as text) → its line type's name
     readonly List<string> _out = [];
     int _handle = 0x100;
 
@@ -61,11 +62,10 @@ public sealed class DxfWriter(double patternScale = 1)
     {
         if (dash is not { Length: > 0 }) return "Continuous";
         var key = string.Join(",", dash.Select(Fmt));
-        var hit = _lineTypes.FirstOrDefault(x => string.Join(",", x.Value.Select(Fmt)) == key).Key;
-        if (hit != null) return hit;
+        if (_lineTypeOf.TryGetValue(key, out var hit)) return hit;
         var name = $"LAPIN{_lineTypes.Count + 1}";
         _lineTypes[name] = dash;
-        return name;
+        return _lineTypeOf[key] = name;
     }
 
     /// <summary>Register a layer (its first pen defines it); its DXF name.</summary>
@@ -122,16 +122,21 @@ public sealed class DxfWriter(double patternScale = 1)
         _out.AddRange(["100", "AcDbText"]);
     }
 
-    /// <summary>Text as windows-1252 carries it: what the code page lacks (ă, ș, ț) as \U+XXXX.</summary>
+    /// <summary>The characters windows-1252 has beyond Latin-1's (its 0x80–0x9F: €, „, …, Š, ž), for <see cref="Cp1252"/>.</summary>
+    static readonly HashSet<char> Cp1252Extra = [.. "€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ"];
+
+    /// <summary>
+    /// Text as windows-1252 carries it: what the code page lacks (ă, ș, ț) as \U+XXXX; a character beyond the BMP (an
+    /// emoji), which that escape's four digits cannot hold, as one replacement character, not as its two surrogates.
+    /// </summary>
     static string Cp1252(string s)
     {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-        var enc = Encoding.GetEncoding(1252, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
-        var b = new StringBuilder();
-        foreach (var ch in s)
+        var b = new StringBuilder(s.Length);
+        foreach (var r in s.EnumerateRunes())
         {
-            try { enc.GetBytes(ch.ToString()); b.Append(ch); }
-            catch (EncoderFallbackException) { b.Append($"\\U+{(int)ch:X4}"); }
+            var v = r.Value;
+            if (v < 0x80 || (v >= 0xA0 && v <= 0xFF) || (r.IsBmp && Cp1252Extra.Contains((char)v))) b.Append(r.ToString());
+            else b.Append($"\\U+{(r.IsBmp ? v : 0xFFFD):X4}");
         }
         return b.ToString();
     }
@@ -222,16 +227,24 @@ public sealed class DxfWriter(double patternScale = 1)
         return w.Bytes(comment);
     }
 
-    /// <summary>Loops filled even-odd, as triangles: each outer loop with the holes directly inside it.</summary>
+    /// <summary>
+    /// Loops filled even-odd, as triangles: each outer loop with the holes directly inside it. A loop's depth is read at
+    /// a point inside it (<see cref="Polygon2.InteriorPoint"/>), not at a vertex: two areas of one pen that share an edge
+    /// (abutting walls of a material) put one's vertices on the other's boundary, which made it a hole of it and lost
+    /// both fills. Only the loops whose bounds hold that point are tested.
+    /// </summary>
     public static IEnumerable<(Vec2, Vec2, Vec2)> Triangles(List<IReadOnlyList<Vec2>> loops)
     {
         var ls = loops.Where(l => l.Count >= 3).Select(l => l.ToArray()).ToList();
-        int Depth(int i) => ls.Where((l, j) => j != i && Polygon2.Contains(l, ls[i][0])).Count();
-        var depth = Enumerable.Range(0, ls.Count).Select(Depth).ToArray();
+        var box = ls.Select(l => (X0: l.Min(p => p.X), Y0: l.Min(p => p.Y), X1: l.Max(p => p.X), Y1: l.Max(p => p.Y))).ToArray();
+        var inner = ls.Select(l => Polygon2.InteriorPoint(l)).ToArray();
+        bool Holds(int j, int i) => j != i && inner[i].X >= box[j].X0 && inner[i].X <= box[j].X1 && inner[i].Y >= box[j].Y0 && inner[i].Y <= box[j].Y1
+            && Polygon2.Contains(ls[j], inner[i]);
+        var depth = Enumerable.Range(0, ls.Count).Select(i => Enumerable.Range(0, ls.Count).Count(j => Holds(j, i))).ToArray();
         for (var i = 0; i < ls.Count; i++)
         {
             if (depth[i] % 2 != 0) continue;
-            var holes = Enumerable.Range(0, ls.Count).Where(j => depth[j] == depth[i] + 1 && Polygon2.Contains(ls[i], ls[j][0])).ToList();
+            var holes = Enumerable.Range(0, ls.Count).Where(j => depth[j] == depth[i] + 1 && Holds(i, j)).ToList();
             var pts = new List<Vec3>();
             int[] Add(Vec2[] l) { var ids = new int[l.Length]; for (var k = 0; k < l.Length; k++) { ids[k] = pts.Count; pts.Add(new Vec3(l[k].X, l[k].Y, 0)); } return ids; }
             var outer = Add(ls[i]);

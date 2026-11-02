@@ -255,6 +255,30 @@ public static class Polygon2
         return o;
     }
 
+    /// <summary>
+    /// A point strictly inside a ring, just off the middle of one of its edges (the longest that works): what stands
+    /// for the ring in a test of what holds it, where a vertex may lie on another ring's boundary (two areas that share
+    /// an edge) and the test there is arbitrary. The first vertex when none works (a ring without area).
+    /// </summary>
+    public static Vec2 InteriorPoint(IReadOnlyList<Vec2> ring)
+    {
+        var n = ring.Count;
+        if (n < 3) return n > 0 ? ring[0] : new Vec2(0, 0);
+        var ccw = SignedArea(ring) >= 0;
+        foreach (var i in Enumerable.Range(0, n).OrderByDescending(i => (ring[(i + 1) % n] - ring[i]).Length).Take(8))
+        {
+            Vec2 a = ring[i], b = ring[(i + 1) % n], d = b - a;
+            var len = d.Length;
+            if (len < 1e-12) continue;
+            // Inside lies on the left of a counter-clockwise ring's edges.
+            var inward = (ccw ? new Vec2(-d.Y, d.X) : new Vec2(d.Y, -d.X)) * (1 / len);
+            var mid = (a + b) * 0.5;
+            for (var step = len * 1e-6; step <= len * 1e-2; step *= 10)
+                if (Contains(ring, mid + inward * step)) return mid + inward * step;
+        }
+        return ring[0];
+    }
+
     /// <summary>Even-odd point-in-polygon.</summary>
     public static bool Contains(IReadOnlyList<Vec2> poly, Vec2 p)
     {

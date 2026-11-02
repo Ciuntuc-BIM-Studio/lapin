@@ -13,8 +13,11 @@ public sealed record Raster(int W, int H, string ColorSpace, byte[] Data, bool J
     public static Raster? Read(byte[] b)
     {
         try { return b.Length > 3 && b[0] == 0xFF && b[1] == 0xD8 ? Jpg(b) : b.Length > 8 && b[0] == 0x89 && b[1] == 0x50 ? Png(b) : null; }
-        catch (Exception e) when (e is InvalidDataException or IndexOutOfRangeException or ArgumentException) { return null; }
+        catch (Exception e) when (e is InvalidDataException or IndexOutOfRangeException or ArgumentException or EndOfStreamException or OverflowException) { return null; }
     }
+
+    /// <summary>The most a decoded image may take (its rows, its samples), 1 GiB: past it, or past what an array holds, it is not read.</summary>
+    const long MaxBytes = 1L << 30;
 
     static Raster? Jpg(byte[] b)
     {
@@ -59,8 +62,11 @@ public sealed record Raster(int W, int H, string ColorSpace, byte[] Data, bool J
         }
         var channels = type switch { 0 => 1, 2 => 3, 3 => 1, 4 => 2, 6 => 4, _ => 0 };
         if (w <= 0 || h <= 0 || channels == 0 || interlace != 0 || (type == 3 && palette == null)) return null;
-        // The rows, unfiltered.
-        var rowBytes = (w * channels * depth + 7) / 8;
+        // The rows, unfiltered; their sizes in long (a 30,000 × 30,000 orthophoto overflows an int), none past the cap.
+        var rowLong = ((long)w * channels * depth + 7) / 8;
+        var colour = type is 2 or 6 || type == 3;
+        if ((rowLong + 1) * h > MaxBytes || (long)w * h * (colour ? 3 : 1) > MaxBytes) return null;
+        var rowBytes = (int)rowLong;
         var bpp = Math.Max(1, channels * depth / 8);
         var raw = new byte[(rowBytes + 1) * h];
         idat.Position = 0;
@@ -94,7 +100,6 @@ public sealed record Raster(int W, int H, string ColorSpace, byte[] Data, bool J
             var v = (rows[y * rowBytes + bit / 8] >> (8 - depth - bit % 8)) & ((1 << depth) - 1);
             return type == 3 ? v : v * 255 / ((1 << depth) - 1);
         }
-        var colour = type is 2 or 6 || type == 3;
         var data = new byte[w * h * (colour ? 3 : 1)];
         var alpha = type is 4 or 6 || (type == 3 && trns != null) ? new byte[w * h] : null;
         var n = 0;
