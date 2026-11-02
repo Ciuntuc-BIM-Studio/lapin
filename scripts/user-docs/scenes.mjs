@@ -466,6 +466,12 @@ export const scenes = [
       await t.page.locator('[data-testid=wood-frame-view]').click();
       await t.wait(1500);
       t.expect((await t.nodes()).some((n) => n.type === 'LapinView' && n.props?.woodFrame === walls[0]), 'the front wall has its frame elevation');
+      // CLT (decision 241): the configurator shows a sample wall in panels.
+      await t.tool('wood.frame');
+      await dialog.locator('[data-testid=wood-mode]').selectOption('clt');
+      await t.wait(800);
+      t.expect(await dialog.locator('svg[aria-label="CLT panels"] rect').count() > 3, 'the sample wall in CLT panels');
+      await t.ui({ dialog: null });
     },
   },
   {

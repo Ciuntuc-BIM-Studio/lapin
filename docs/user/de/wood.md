@@ -29,6 +29,10 @@ Wählen Sie eine Tür oder ein Fenster: der Abschnitt **Wood** zeigt die Rohbau�
 - **Platten**: kreuzen Sie eine Schicht an (OSB, Holzfaserplatte, Gipskarton) und geben Sie das Plattenformat an: die Schicht wird aus stehenden Platten verlegt, die Stöße im Ständerraster, an den Rohbauöffnungen und am oberen Rand geschnitten. **Wood → Boards schedule** zählt die Platten je Wand, ihre Nettofläche und den Verschnitt.
 - **Rahmenansicht**: im Abschnitt **Wood** einer Holzrahmenwand erzeugt die Schaltfläche einen Schnitt entlang der Wand durch die Kernmitte, 1:20, alle Bauteile geschnitten, mit einer Maßkette durch die Rohbauöffnungen, dem Ständerraster darunter und der Größe jeder Rohbauöffnung. Sie kommt wie jede Ansicht auf einen Plan.
 
+## BSP (CLT)
+
+Im selben Konfigurator kann ein Wand- oder Deckentyp **aus BSP-Elementen** gebaut werden: Lagen (die Dicke jeder, 3, 5, 7 oder 9), Klasse, das längste und höchste (oder breiteste) Element der Presse, der Stoß zwischen Elementen (stumpf, Stufenfalz, Feder), der Abstand einer Öffnung zum Elementrand und die Einbaufuge. Eine Wand wird der Länge nach in Elemente geteilt, die Stöße von den Öffnungen weg verschoben; jedes Element ist der Körper des Kerns, die Rohbauöffnungen ausgeschnitten. Eine Decke wird über ihre Spannweite geteilt (in kurzer Richtung, entlang x oder y). **Wood → CLT panels** listet jedes Element mit Marke, Maßen, Lagen, Klasse, Stoß, Fläche und Volumen; in IFC ist jedes ein IfcBuildingElementPart namens CLT panel.
+
 ## Die Holzliste
 
 **Wood → Timber schedule** erstellt die Zuschnittliste allen Holzes im Projekt, der Wände und der Dachstühle: Bauteil, Querschnitt, Klasse, Länge, Stück, Gesamtlänge und Volumen, mit Summen je Querschnitt. In IFC ist jedes Bauteil ein IfcMember (STUD, PLATE, Sturz und Brüstungsriegel mit Namen) unter seiner Wand, die Dämmung ein IfcCovering INSULATION.

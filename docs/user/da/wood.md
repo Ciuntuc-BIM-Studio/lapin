@@ -29,6 +29,10 @@ Vælg en dør eller et vindue: dets afsnit **Wood** viser råhulmålet, reglen o
 - **Plader**: sæt kryds ved et lag (OSB, træfiberplade, gipsplade) og angiv pladens format: laget lægges som stående plader med samlingerne på stolpemodulet, skåret ved råhullerne og langs toppen. **Wood → Boards schedule** tæller pladerne for hver væg, nettoarealet og spildet.
 - **Skeletopstalt**: i en skeletvægs afsnit **Wood** laver knappen et snit langs væggen gennem kernens midte, 1:20, alle dele skåret, med en målkæde gennem råhullerne, stolpemodulet under den og hvert råhuls størrelse. Den placeres på et ark som enhver visning.
 
+## CLT
+
+I samme konfigurator kan en væg- eller dæktype bygges **af CLT-elementer**: lagene (hvert lags tykkelse, 3, 5, 7 eller 9), kvaliteten, det længste og højeste (eller bredeste) element pressen laver, samlingen mellem elementer (stød, halv overlap, fer), hvor langt en åbning holder sig fra elementkanten og monteringsfugen. En væg deles i elementer på langs, med samlingerne flyttet væk fra åbningerne; hvert element er kernens egen krop med råhullerne skåret ud. Et dæk deles over spændet (den korte vej, langs x eller y). **Wood → CLT panels** viser hvert element med mærke, mål, lag, kvalitet, samling, areal og volumen; i IFC er hvert et IfcBuildingElementPart kaldet CLT panel.
+
 ## Trælisten
 
 **Wood → Timber schedule** laver en skæreliste over alt træ i projektet, væggenes dele og tagkonstruktionerne: del, tværsnit, kvalitet, længde, stk., samlet længde og volumen, med summer pr. tværsnit. I IFC er hver del et IfcMember (STUD, PLATE, overligger og bundstykke ved navn) under sin væg, og isoleringen et IfcCovering INSULATION.

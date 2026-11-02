@@ -112,7 +112,7 @@ Cerut de utilizator la 02.11.2026: un modul independent, numit `wood`, pentru co
 
 ## Stadiul (02.11.2026)
 
-Etapa 1 făcută (decizia 239), colțurile, T-urile, plăcile și elevația de cadru (decizia 240). Etapele 3 și 4 trec deocamdată la premium (decizia 240): în ediția liberă planșeele pe grinzi și panourile se fac manual. Următoarea: CLT (etapa 5).
+Etapa 1 făcută (decizia 239), colțurile, T-urile, plăcile și elevația de cadru (decizia 240). Etapele 3 și 4 trec deocamdată la premium (decizia 240): în ediția liberă planșeele pe grinzi și panourile se fac manual. CLT pentru pereți și plăci făcut (decizia 241); acoperișurile din CLT mai târziu.
 
 ## De decis
 

@@ -30,6 +30,40 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         r.Service<IGeometryFilter>(this);
         r.Service<IViewAnnotations>(this);
         r.Service<IScheduleSource>(new BoardSchedule());
+        r.Service<IScheduleSource>(new CltSchedule());
+
+        // A CLT wall or floor type (decision 241): {id (a wall or slab type), spec (null: built of its layers)}.
+        r.Command("setClt", "CLT", (ctx, a) =>
+        {
+            var type = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.WallType or IfcClass.SlabType } t ? t : throw new CommandException("CLT is set on a wall or floor type.");
+            var attrs = type.CloneAttrs();
+            if (a["spec"] is JsonObject o)
+            {
+                var spec = CltSpec.From(o, type.Class == IfcClass.SlabType ? CltSpec.Floor : CltSpec.Wall);
+                if (spec.Problem() is { } problem) throw new CommandException(problem);
+                attrs[FrameSpec.Key] = spec.ToJson();
+            }
+            else attrs.Remove(FrameSpec.Key);
+            ctx.Replace(type.With(attrs: attrs));
+            return null;
+        });
+
+        // The configurator's CLT preview: {spec, length?, height?, openings?} → the joints of a sample wall, its rough openings, the warnings.
+        r.Query("cltPreview", (q, a) =>
+        {
+            var spec = CltSpec.From(a["spec"], CltSpec.Wall);
+            if (spec.Problem() is { } problem) return new JsonObject { ["problem"] = problem };
+            var length = Json.Number(a["length"]) ?? 12;
+            var height = Json.Number(a["height"]) ?? 2.7;
+            var ros = new List<(string Id, double L, double R, double B, double T)> { ("Window", 1.4 - spec.Gap, 2.6 + spec.Gap, 0.9 - spec.Gap, 2.2 + spec.Gap), ("Door", 7.05 - spec.Gap, 7.95 + spec.Gap, 0, 2.1 + spec.Gap), ("Window 2", 9.4 - spec.Gap, 11.2 + spec.Gap, 0.9 - spec.Gap, 2.2 + spec.Gap) };
+            var (joints, warnings) = Clt.Joints(spec, 0, length, ros.Select(o => (o.Id, o.L, o.R)).ToList());
+            return new JsonObject
+            {
+                ["length"] = length, ["height"] = height, ["joints"] = new JsonArray([.. joints.Select(j => (JsonNode)Math.Round(j, 4))]),
+                ["openings"] = new JsonArray([.. ros.Select(o => (JsonNode)new JsonArray(Math.Round(o.L, 4), Math.Round(o.R, 4), Math.Round(o.B, 4), Math.Round(o.T, 4)))]),
+                ["warnings"] = new JsonArray([.. warnings.Select(w => (JsonNode)w)]), ["label"] = spec.Label,
+            };
+        });
 
         // A timber-frame wall's frame elevation (decision 240): a section along its axis through the middle of its core, every
         // member cut, at 1:20, with the frame's dimensions; {id (the wall)} → the view.
@@ -267,6 +301,9 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
     /// <summary>The members of a timber-frame wall in place of its core, each a part; the insulation between them; the lintels a masonry rule would put in, gone.</summary>
     public ElementGeometry? Apply(Entity entity, ElementGeometry geometry, IModelView model, IServices services)
     {
+        // CLT walls and floors (decision 241): their core in panels.
+        if (entity.Class == IfcClass.Wall && CltSpec.Of(Walls.TypeOf(model, entity.Id)) is { } wallClt) return Clt.Wall(entity, geometry, model, services, wallClt) ?? geometry;
+        if (entity.Class == IfcClass.Slab && CltSpec.Of(model.RelatingOf(entity.Id, IfcClass.RelDefinesByType)) is { } floorClt) return Clt.Floor(entity, geometry, model, services, floorClt) ?? geometry;
         if (entity.Class != IfcClass.Wall || Of(model, entity, geometry, services) is not { } f) return geometry;
         var core = Walls.Section(model, entity).First(b => b.Core);
         var parts = geometry.Parts.Where(p => p.Key != $"layer:{core.Index}" && !(p.Key?.StartsWith("lintel", StringComparison.Ordinal) ?? false)).ToList();

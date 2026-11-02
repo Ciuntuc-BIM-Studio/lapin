@@ -29,6 +29,10 @@ Selecciona una puerta o ventana: su sección **Wood** muestra el hueco bruto, la
 - **Tableros**: marca una capa (OSB, tablero de fibras, placa de yeso) y da el tamaño de la hoja: la capa se coloca en hojas verticales, con las juntas en el módulo de los montantes, cortadas en los huecos brutos y a lo largo de la coronación. **Wood → Boards schedule** cuenta las hojas de cada muro, su área neta y lo que se recorta.
 - **Alzado del entramado**: en la sección **Wood** de un muro de entramado, el botón crea una sección a lo largo del muro por el centro de su núcleo, a 1:20, con todas las piezas cortadas, una cadena de cotas por los huecos brutos, el módulo de montantes debajo y el tamaño de cada hueco bruto. Se coloca en una lámina como cualquier vista.
 
+## CLT
+
+En el mismo configurador un tipo de muro o forjado puede construirse **en paneles CLT**: indica las capas (el espesor de cada una, 3, 5, 7 o 9), la clase, el panel más largo y el más alto (o ancho) que hace la prensa, la junta entre paneles (a tope, media madera, lengüeta), la distancia de un hueco al borde del panel y su holgura. Un muro se corta en paneles a lo largo, con las juntas apartadas de los huecos; cada panel es el propio cuerpo del núcleo, con sus huecos brutos recortados. Un forjado se corta en paneles a lo largo de su luz (el sentido corto, o según x o y). **Wood → CLT panels** lista cada panel con su marca, tamaño, capas, clase, junta, área y volumen; en IFC cada uno es un IfcBuildingElementPart llamado CLT panel.
+
 ## La lista de madera
 
 **Wood → Timber schedule** hace la lista de despiece de toda la madera del proyecto, las piezas de los muros y las de las cubiertas: pieza, sección, clase, longitud, unidades, longitud total y volumen, con los totales por sección. En IFC cada pieza es un IfcMember (STUD, PLATE, el dintel y el alféizar por su nombre) bajo su muro, y el aislamiento un IfcCovering INSULATION.

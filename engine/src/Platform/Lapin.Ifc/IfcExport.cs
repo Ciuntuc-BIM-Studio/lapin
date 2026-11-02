@@ -615,7 +615,8 @@ public static class IfcExport
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
             // A door's frame and leaf, a column's body, a terrain: one element. Only a wall, a roof and a footing hold parts that are elements of their own.
-            var grouped = o.Grouped && kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair or "IfcElementAssembly" && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
+            var grouped = o.Grouped && (kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair or "IfcElementAssembly"
+                || kind.Class == IfcClass.Slab && parts.Any(p => p.Key?.StartsWith("clt:", StringComparison.Ordinal) == true)) && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
             // A door or window: placed with its local +Y the way its panels open, which IFC's left and right are seen along.
             var joinery = e.Class is IfcClass.Door or IfcClass.Window && !grouped ? s.Catalog.Get<IJoineryIfc>() : null;
             var at = joinery?.Place(m, e);
@@ -958,6 +959,8 @@ public static class IfcExport
                 // A timber-frame wall's members (the wood module, decision 239) and the insulation between them.
                 (IfcClass.Wall, "wood") => TimberKind(rest),
                 (IfcClass.Wall, "wood-insulation") => new("IfcCovering", "INSULATION", null),
+                // A CLT wall's or floor's panels (decision 241).
+                (IfcClass.Wall or IfcClass.Slab, "clt") => new("IfcBuildingElementPart", "USERDEFINED", "CLT panel"),
                 (IfcClass.Roof, "drainage" or "gutter") => new("IfcPipeSegment", "GUTTER", null),
                 (IfcClass.Roof, "downpipe") => new("IfcPipeSegment", "RIGIDSEGMENT", "Downpipe"),
                 (IfcClass.Roof, "snow") => new("IfcDiscreteAccessory", "USERDEFINED", "Snow guard"),

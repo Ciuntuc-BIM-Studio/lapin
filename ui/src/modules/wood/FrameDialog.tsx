@@ -47,6 +47,28 @@ const ROMANIAN: Spec = {
   ],
 };
 
+/** A CLT wall or floor type's rules (decision 241). */
+export interface CltSpec { construction: 'clt'; plies: number[]; grade: string; maxLength: number; maxWidth: number; joint: string; minEdge: number; gap: number; direction: string }
+const CLT_WALL: CltSpec = { construction: 'clt', plies: [40, 40, 40], grade: 'C24', maxLength: 16, maxWidth: 3.5, joint: 'halfLap', minEdge: 0.3, gap: 0.01, direction: 'auto' };
+const CLT_FLOOR: CltSpec = { ...CLT_WALL, plies: [40, 20, 40, 20, 40] };
+interface CltPreview { problem?: string; length: number; height: number; joints: number[]; openings: number[][]; warnings: string[]; label: string }
+
+/** A sample CLT wall: its panels between the joints, its rough openings. */
+function CltElevation({ p }: { p: CltPreview }) {
+  const width = 560, height = 200, pad = 14;
+  const k = Math.min((width - 2 * pad) / p.length, (height - 2 * pad) / p.height);
+  const X = (u: number) => pad + u * k;
+  const Z = (z: number) => height - pad - z * k;
+  const edges = [0, ...p.joints, p.length];
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} aria-label="CLT panels">
+      {edges.slice(0, -1).map((a, i) => <rect key={i} x={X(a) + 1} y={Z(p.height)} width={(edges[i + 1] - a) * k - 2} height={p.height * k} fill={i % 2 ? '#e2c08e' : '#d9b27c'} stroke="#4a3418" strokeWidth={0.6} />)}
+      {p.openings.map(([l, r, b, t], i) => <rect key={`o${i}`} x={X(l)} y={Z(t)} width={(r - l) * k} height={(t - b) * k} fill="#ffffff" stroke="#4a3418" strokeWidth={0.6} />)}
+      {edges.slice(0, -1).map((a, i) => <text key={`t${i}`} x={(X(a) + X(edges[i + 1])) / 2} y={Z(p.height) + 14} textAnchor="middle" fontSize={10}>{Math.round((edges[i + 1] - a) * 1000)}</text>)}
+    </svg>
+  );
+}
+
 export const ROLE_FILL: Record<string, string> = {
   plate: '#b48650', end: '#c99a64', stud: '#d4a970', king: '#c08a50', jack: '#cf9a5c', header: '#a87a46', sill: '#a87a46', cripple: '#dcb27c', noggin: '#c99a64',
 };
@@ -93,17 +115,31 @@ export function FrameDialog() {
   const relations = useSession((s) => s.relations);
   const error = useSession((s) => s.error);
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
-  const types = ofClass(model, 'IfcWallType');
+  const types = [...ofClass(model, 'IfcWallType'), ...ofClass(model, 'IfcSlabType')];
   const [editing, setEditing] = useState<string | null>(useUi.getState().wallTypeId ?? types[0]?.id ?? null);
   const type = editing ? nodes.get(editing) : undefined;
-  const stored = (type?.props.wood as Spec | undefined) ?? null;
-  const [spec, setSpec] = useState<Spec>(stored ?? NORDIC);
-  const [on, setOn] = useState(Boolean(stored));
+  const isSlab = type?.type === 'IfcSlabType';
+  const stored = (type?.props.wood as (Spec | CltSpec) | undefined) ?? null;
+  const [spec, setSpec] = useState<Spec>(stored?.construction === 'timberFrame' ? stored as Spec : NORDIC);
+  const [clt, setClt] = useState<CltSpec>(stored?.construction === 'clt' ? stored as CltSpec : isSlab ? CLT_FLOOR : CLT_WALL);
+  const [mode, setMode] = useState<'layers' | 'frame' | 'clt'>(stored?.construction === 'clt' ? 'clt' : stored ? 'frame' : 'layers');
+  const on = mode === 'frame';
+  const setOn = (v: boolean) => setMode(v ? 'frame' : 'layers');
+  const [cltPreview, setCltPreview] = useState<CltPreview | null>(null);
+  useEffect(() => { let live = true; void query<CltPreview>('wood.cltPreview', { spec: clt }).then((p) => { if (live) setCltPreview(p); }); return () => { live = false; }; }, [clt]);
+  const [pliesText, setPliesText] = useState(clt.plies.join(' '));
+  useEffect(() => setPliesText(clt.plies.join(' ')), [clt.plies]);
   const [preview, setPreview] = useState<Framed | null>(null);
   const [layers, setLayers] = useState<{ index: number; name: string; thickness: number; core: boolean }[]>([]);
   useEffect(() => { if (editing) void query<typeof layers>('wood.layers', { id: editing }).then((l) => setLayers(l ?? [])); }, [editing, nodes]);
   // Loaded when the type picked changes, not on every diff (that would throw away what is being typed).
-  useEffect(() => { const s = (editing ? useSession.getState().nodes.get(editing)?.props.wood : null) as Spec | undefined | null; setSpec(s ? structuredClone(s) : structuredClone(NORDIC)); setOn(Boolean(s)); }, [editing]);
+  useEffect(() => {
+    const n = editing ? useSession.getState().nodes.get(editing) : undefined;
+    const s = (n?.props.wood ?? null) as (Spec | CltSpec) | null;
+    setSpec(s?.construction === 'timberFrame' ? structuredClone(s as Spec) : structuredClone(NORDIC));
+    setClt(s?.construction === 'clt' ? structuredClone(s as CltSpec) : structuredClone(n?.type === 'IfcSlabType' ? CLT_FLOOR : CLT_WALL));
+    setMode(s?.construction === 'clt' ? 'clt' : s ? 'frame' : 'layers');
+  }, [editing]);
   useEffect(() => {
     let live = true;
     void query<Framed>('wood.preview', { spec }).then((p) => { if (live) setPreview(p); });
@@ -114,7 +150,13 @@ export function FrameDialog() {
   const setRule = (i: number, patch: Partial<Rule>) => set({ openings: spec.openings.map((r, k) => (k === i ? { ...r, ...patch } : r)) });
   const setHeader = (i: number, patch: Partial<Header>) => setRule(i, { header: { ...spec.openings[i].header, ...patch } });
   const close = () => useUi.setState({ dialog: null });
-  const save = () => { if (editing) void execute('wood.setWallFrame', { id: editing, spec: on ? spec : null }); };
+  const save = () => {
+    if (!editing) return;
+    if (mode === 'frame') void execute('wood.setWallFrame', { id: editing, spec });
+    else if (mode === 'clt') void execute('wood.setClt', { id: editing, spec: clt });
+    else void execute(stored?.construction === 'clt' ? 'wood.setClt' : 'wood.setWallFrame', { id: editing, spec: null });
+  };
+  const setC = (patch: Partial<CltSpec>) => setClt((c) => ({ ...c, ...patch }));
   const [nogginText, setNogginText] = useState(spec.noggins.map((n) => Math.round(n * 1000)).join(' '));
   useEffect(() => setNogginText(spec.noggins.map((n) => Math.round(n * 1000)).join(' ')), [spec.noggins]);
 
@@ -130,7 +172,7 @@ export function FrameDialog() {
             {types.map((t) => (
               <li key={t.id}>
                 <button type="button" className={`tree-item${editing === t.id ? ' on' : ''}`} onClick={() => setEditing(t.id)}>
-                  {t.name}<span className="muted small"> · {t.props.wood ? 'timber frame' : 'layers'} · {relatedOf(model, t.id, 'IfcRelDefinesByType').length}</span>
+                  {t.name}<span className="muted small"> · {(t.props.wood as { construction?: string } | undefined)?.construction === 'clt' ? 'CLT' : t.props.wood ? 'timber frame' : 'layers'} · {relatedOf(model, t.id, 'IfcRelDefinesByType').length}</span>
                 </button>
               </li>
             ))}
@@ -138,9 +180,38 @@ export function FrameDialog() {
           {type && (
             <div className="joinery-edit">
               <div className="joinery-form">
-                <label className="field-line wood-field"><span className="eyebrow">Timber frame</span>
-                  <input type="checkbox" checked={on} data-testid="wood-on" onChange={(e) => setOn(e.target.checked)} />
+                <label className="field-line wood-field"><span className="eyebrow">Built</span>
+                  <select value={mode} data-testid="wood-mode" onChange={(e) => setMode(e.target.value as typeof mode)}>
+                    <option value="layers">of its layers</option>
+                    {!isSlab && <option value="frame">as a timber frame</option>}
+                    <option value="clt">in CLT panels</option>
+                  </select>
                 </label>
+                {!isSlab && <label className="field-line wood-field"><span className="eyebrow">Timber frame</span>
+                  <input type="checkbox" checked={on} data-testid="wood-on" onChange={(e) => setOn(e.target.checked)} />
+                </label>}
+                {mode === 'clt' && (
+                  <>
+                    <label className="field-line wood-field" title="Each ply's thickness, outside to outside, in mm: 3, 5, 7 or 9 of them"><span className="eyebrow">Plies (mm)</span>
+                      <input value={pliesText} onChange={(e) => setPliesText(e.target.value)} onBlur={() => setC({ plies: pliesText.split(/[ ,;/]+/).map(Number).filter((x) => x > 0) })} />
+                    </label>
+                    <label className="field-line wood-field"><span className="eyebrow">Grade</span>
+                      <select value={clt.grade} onChange={(e) => setC({ grade: e.target.value })}>{[...GRADES, 'T14', 'T22'].map((g) => <option key={g}>{g}</option>)}</select>
+                    </label>
+                    <Mm label="Longest panel" value={clt.maxLength} onChange={(v) => setC({ maxLength: v })} />
+                    <Mm label={isSlab ? 'Widest panel' : 'Highest panel'} value={clt.maxWidth} onChange={(v) => setC({ maxWidth: v })} />
+                    <label className="field-line wood-field"><span className="eyebrow">Joint</span>
+                      <select value={clt.joint} onChange={(e) => setC({ joint: e.target.value })}><option value="butt">butt</option><option value="halfLap">half lap</option><option value="spline">spline</option></select>
+                    </label>
+                    {!isSlab && <Mm label="Opening to panel edge" value={clt.minEdge} onChange={(v) => setC({ minEdge: v })} title="No joint closer than this to an opening's side" />}
+                    {!isSlab && <Mm label="Fitting gap" value={clt.gap} onChange={(v) => setC({ gap: v })} />}
+                    {isSlab && (
+                      <label className="field-line wood-field"><span className="eyebrow">Span</span>
+                        <select value={clt.direction} onChange={(e) => setC({ direction: e.target.value })}><option value="auto">the short way</option><option value="x">along x</option><option value="y">along y</option></select>
+                      </label>
+                    )}
+                  </>
+                )}
                 {on && (
                   <>
                     <div className="row">
@@ -233,11 +304,20 @@ export function FrameDialog() {
                     {preview.warnings.map((w, i) => <p key={i} className="error-text">{w}</p>)}
                   </>
                 )}
-                {!on && <p className="muted small">Built of its layers. Tick Timber frame to build its core as studs, plates and the openings' framing.</p>}
+                {mode === 'clt' && !isSlab && cltPreview && !cltPreview.problem && (
+                  <>
+                    <CltElevation p={cltPreview} />
+                    <p className="muted small">{`A sample wall, 12 m: ${cltPreview.label}, ${cltPreview.joints.length + 1} panels.`}</p>
+                    {cltPreview.warnings.map((w, i) => <p key={i} className="error-text">{w}</p>)}
+                  </>
+                )}
+                {mode === 'clt' && cltPreview?.problem && <p className="error-text">{cltPreview.problem}</p>}
+                {mode === 'clt' && isSlab && <p className="muted small">The floor in panels across its span, each at most as wide and as long as the press makes them.</p>}
+                {mode === 'layers' && <p className="muted small">Built of its layers. Tick Timber frame to build its core as studs, plates and the openings' framing.</p>}
               </div>
               <div className="row joinery-actions">
                 <span className="grow" />
-                <button type="button" className="btn primary" disabled={Boolean(on && preview?.problem)} onClick={save}>Save type</button>
+                <button type="button" className="btn primary" disabled={Boolean((on && preview?.problem) || (mode === 'clt' && cltPreview?.problem))} onClick={save}>Save type</button>
               </div>
               {error && <p className="error-text" role="alert">{error}</p>}
             </div>

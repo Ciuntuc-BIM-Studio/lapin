@@ -29,6 +29,10 @@ Sélectionnez une porte ou une fenêtre : sa section **Wood** montre la baie bru
 - **Panneaux** : cochez une couche (OSB, fibre de bois, plaque de plâtre) et donnez le format de la plaque : la couche est posée en plaques verticales, les joints sur la trame des montants, découpées aux baies brutes et le long du haut. **Wood → Boards schedule** compte les plaques de chaque mur, leur surface nette et les chutes.
 - **Élévation d’ossature** : dans la section **Wood** d’un mur à ossature, le bouton crée une coupe le long du mur par le milieu de son noyau, à 1:20, toutes les pièces coupées, avec une chaîne de cotes par les baies brutes, la trame des montants dessous et la taille de chaque baie brute. Elle se place sur une feuille comme toute vue.
 
+## CLT
+
+Dans le même configurateur, un type de mur ou de plancher peut être construit **en panneaux CLT** : les plis (l’épaisseur de chacun, 3, 5, 7 ou 9), la classe, le panneau le plus long et le plus haut (ou large) que fait la presse, le joint entre panneaux (bout à bout, mi-bois, languette), la distance d’une baie au bord du panneau et le jeu de pose. Un mur est découpé en panneaux sur sa longueur, les joints écartés des baies ; chaque panneau est le corps même du noyau, ses baies brutes découpées. Un plancher est découpé sur sa portée (le sens court, ou selon x ou y). **Wood → CLT panels** liste chaque panneau avec son repère, ses dimensions, ses plis, sa classe, son joint, sa surface et son volume ; en IFC chacun est un IfcBuildingElementPart nommé CLT panel.
+
 ## La liste de bois
 
 **Wood → Timber schedule** fait la liste de débit de tout le bois du projet, les pièces des murs et des charpentes : pièce, section, classe, longueur, nombre, longueur totale et volume, avec les totaux par section. En IFC chaque pièce est un IfcMember (STUD, PLATE, le linteau et l’appui par leur nom) sous son mur, et l’isolant un IfcCovering INSULATION.
