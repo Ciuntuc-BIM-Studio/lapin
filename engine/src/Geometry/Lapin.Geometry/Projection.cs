@@ -86,8 +86,8 @@ public static class HiddenLines
             if (cut)
             {
                 var loops = Section(s, view);
-                if (span is { } sx) loops = ClipX(loops, sx.Min, sx.Max);
-                if (rise is { } sy) loops = ClipY(loops, sy.Min, sy.Max);
+                if (span is { } sx) loops = ClipBand(loops, sx.Min, sx.Max, p => p.X);
+                if (rise is { } sy) loops = ClipBand(loops, sy.Min, sy.Max, p => p.Y);
                 if (loops.Count > 0)
                 {
                     cuts.Add(new CutArea(loops, owner));
@@ -167,18 +167,18 @@ public static class HiddenLines
             if (face != null)
             {
                 var off = (b - a).Perp.Normalized() * 1e-4;
-                if (Inside(face.Rings, (a + b) * 0.5 + off)) off = -off;
+                if (Polygon2.Inside(face.Rings, (a + b) * 0.5 + off)) off = -off;
                 (outA, outB) = (a + off, b + off);
             }
             foreach (var o in grid.Near(a, b))
             {
                 if (o.Solid == e.Solid && (o.Face == e.FaceA || o.Face == e.FaceB)) continue;
-                if (face != null && Joins(e.Solid, o.Solid) && Coplanar(o, face, (a + b) * 0.5)) { InsideIntervals(o.Rings, outA, outB, 0, 1, covered); continue; }
+                if (face != null && Joins(e.Solid, o.Solid) && Coplanar(o, face, (a + b) * 0.5)) { Polygon2.InsideIntervals(o.Rings, outA, outB, 0, 1, covered); continue; }
                 if (o.MinDepth > Math.Max(dA, dB) - DepthEps) continue;
                 Covered(o, a, b, dA, dB, covered);
             }
             // The seams first in the list: they are no edge at all, hidden or not.
-            var shown = Visible(covered).ToList();
+            var shown = Polygon2.Outside(covered);
             foreach (var (s0, s1) in shown)
                 if (s1 - s0 > 1e-9) lines.Add(new Seg2(a + (b - a) * s0, a + (b - a) * s1, e.Owner));
             if (hidden)
@@ -187,24 +187,14 @@ public static class HiddenLines
                 var seam = new List<(double, double)>();
                 if (face != null)
                     foreach (var o in grid.Near(a, b))
-                        if (!(o.Solid == e.Solid && (o.Face == e.FaceA || o.Face == e.FaceB)) && Joins(e.Solid, o.Solid) && Coplanar(o, face, (a + b) * 0.5)) InsideIntervals(o.Rings, outA, outB, 0, 1, seam);
-                var notShown = Complement(shown);
+                        if (!(o.Solid == e.Solid && (o.Face == e.FaceA || o.Face == e.FaceB)) && Joins(e.Solid, o.Solid) && Coplanar(o, face, (a + b) * 0.5)) Polygon2.InsideIntervals(o.Rings, outA, outB, 0, 1, seam);
+                var notShown = Polygon2.Outside([.. shown]);
                 foreach (var (s0, s1) in notShown)
-                    foreach (var (h0, h1) in Visible([.. seam]).Select(v => (Math.Max(v.Item1, s0), Math.Min(v.Item2, s1))))
+                    foreach (var (h0, h1) in Polygon2.Outside(seam).Select(v => (Math.Max(v.Item1, s0), Math.Min(v.Item2, s1))))
                         if (h1 - h0 > 1e-9) behind.Add(new Seg2(a + (b - a) * h0, a + (b - a) * h1, e.Owner));
             }
         }
         return (lines, cuts, behind);
-    }
-
-    /// <summary>[0, 1] without the given (sorted, disjoint) intervals.</summary>
-    static List<(double, double)> Complement(List<(double A, double B)> shown)
-    {
-        var o = new List<(double, double)>();
-        var at = 0.0;
-        foreach (var (a, b) in shown) { if (a > at + 1e-12) o.Add((at, a)); at = b; }
-        if (at < 1 - 1e-12) o.Add((at, 1));
-        return o;
     }
 
     static Vec3 Lerp(Vec3 a, Vec3 b, double t) => a + (b - a) * t;
@@ -245,45 +235,19 @@ public static class HiddenLines
         double f0 = DepthAt(o, a) - da, f1 = DepthAt(o, b) - db;
         double lo = 0, hi = 1;
         if (!ClipInterval(-f0, -f1, DepthEps, ref lo, ref hi)) return;
-        InsideIntervals(o.Rings, a, b, lo, hi, hidden);
+        Polygon2.InsideIntervals(o.Rings, a, b, lo, hi, hidden);
     }
 
-    static void InsideIntervals(List<Vec2[]> rings, Vec2 a, Vec2 b, double lo, double hi, List<(double, double)> hidden) => Polygon2.InsideIntervals(rings, a, b, lo, hi, hidden);
-
-    static bool Inside(List<Vec2[]> rings, Vec2 p) => Polygon2.Inside(rings, p);
-
-    /// <summary>[0, 1] without the union of the hidden intervals.</summary>
-    static IEnumerable<(double, double)> Visible(List<(double A, double B)> hidden)
-    {
-        hidden.Sort((x, y) => x.A.CompareTo(y.A));
-        var at = 0.0;
-        foreach (var (h0, h1) in hidden)
-        {
-            if (h0 > at) yield return (at, h0);
-            at = Math.Max(at, h1);
-        }
-        if (at < 1) yield return (at, 1);
-    }
-
-    /// <summary>The loops' parts between x = <paramref name="min"/> and x = <paramref name="max"/> (each loop clipped on its own: even-odd stays even-odd under a convex clip).</summary>
-    static List<Vec2[]> ClipX(List<Vec2[]> loops, double min, double max)
+    /// <summary>
+    /// The loops' parts where <paramref name="along"/> (x or y) is between <paramref name="min"/> and <paramref name="max"/>
+    /// (each loop clipped on its own: even-odd stays even-odd under a convex clip).
+    /// </summary>
+    static List<Vec2[]> ClipBand(List<Vec2[]> loops, double min, double max, Func<Vec2, double> along)
     {
         var o = new List<Vec2[]>(loops.Count);
         foreach (var loop in loops)
         {
-            var kept = ClipHalf(ClipHalf(loop, p => p.X - min), p => max - p.X);
-            if (kept.Count >= 3) o.Add([.. kept]);
-        }
-        return o;
-    }
-
-    /// <summary>The loops' parts between y = <paramref name="min"/> and y = <paramref name="max"/>.</summary>
-    static List<Vec2[]> ClipY(List<Vec2[]> loops, double min, double max)
-    {
-        var o = new List<Vec2[]>(loops.Count);
-        foreach (var loop in loops)
-        {
-            var kept = ClipHalf(ClipHalf(loop, p => p.Y - min), p => max - p.Y);
+            var kept = ClipHalf(ClipHalf(loop, p => along(p) - min), p => max - along(p));
             if (kept.Count >= 3) o.Add([.. kept]);
         }
         return o;
@@ -337,6 +301,9 @@ public static class HiddenLines
                 {
                     int p = ring[i], q = ring[(i + 1) % ring.Length];
                     if ((depth[p] >= 0) == (depth[q] >= 0)) continue;
+                    // From the edge's lower vertex: the two faces that share it walk it opposite ways, and must find the same point
+                    // to the last bit, or at site coordinates their segments fall either side of a key and the loop stays open.
+                    if (p > q) (p, q) = (q, p);
                     var x = Lerp(s.Vertices[p], s.Vertices[q], depth[p] / (depth[p] - depth[q]));
                     hits.Add((Vec3.Dot(x, dir), view.Map(x)));
                 }

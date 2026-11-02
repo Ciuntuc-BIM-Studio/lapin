@@ -272,8 +272,20 @@ public static class Generator
             at.Clear();
             var (lo, hi) = (Key(new Vec2(Math.Min(line.A.X, line.B.X) - tol, Math.Min(line.A.Y, line.B.Y) - tol)), Key(new Vec2(Math.Max(line.A.X, line.B.X) + tol, Math.Max(line.A.Y, line.B.Y) + tol)));
             var len = Math.Sqrt(len2);
+            // Only the cells along the line (within tol of it), column by column: its whole bounding box was some
+            // 4·10⁶ cells for a kilometre's diagonal (a terrain's cut line in a site section).
             for (var x = lo.Item1; x <= hi.Item1; x++)
-                for (var y = lo.Item2; y <= hi.Item2; y++)
+            {
+                double ya, yb;
+                if (Math.Abs(d.X) < 1e-12) (ya, yb) = (Math.Min(line.A.Y, line.B.Y), Math.Max(line.A.Y, line.B.Y));
+                else
+                {
+                    var t0 = Math.Clamp((x * Cell - tol - line.A.X) / d.X, 0, 1);
+                    var t1 = Math.Clamp(((x + 1) * Cell + tol - line.A.X) / d.X, 0, 1);
+                    (ya, yb) = (Math.Min(line.A.Y + d.Y * t0, line.A.Y + d.Y * t1), Math.Max(line.A.Y + d.Y * t0, line.A.Y + d.Y * t1));
+                }
+                var (y0, y1) = (Math.Max(lo.Item2, (long)Math.Floor((ya - tol) / Cell)), Math.Min(hi.Item2, (long)Math.Floor((yb + tol) / Cell)));
+                for (var y = y0; y <= y1; y++)
                 {
                     if (!grid.TryGetValue((x, y), out var pts)) continue;
                     foreach (var v in pts)
@@ -285,6 +297,7 @@ public static class Generator
                         if (off <= tol) at.Add(t);
                     }
                 }
+            }
             if (at.Count == 0) { result.Add(line); continue; }
             at.Sort();
             var from = 0.0;

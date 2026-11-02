@@ -149,7 +149,8 @@ public static class Polygon2
     /// Offset every edge of a CCW polygon outward by its own distance (negative =
     /// inward) and re-join consecutive edges at their intersection — a mitred
     /// offset, as Standalone's insetPolygon does for contours. A single distance
-    /// applies to all edges.
+    /// applies to all edges. A repeated vertex (an edge shorter than <see cref="Tolerance.Distance"/>) has no direction:
+    /// its two copies both go to the mitre of the edges either side of it, so the count stays the input's.
     /// </summary>
     public static Vec2[] Offset(IReadOnlyList<Vec2> ccw, IReadOnlyList<double> distances)
     {
@@ -158,18 +159,24 @@ public static class Polygon2
         double D(int i) => distances.Count == 0 ? 0 : distances[Math.Min(i, distances.Count - 1)];
         // Edge i runs ccw[i] → ccw[i+1]; outward normal of a CCW ring is its right-hand side.
         var lines = new (Vec2 P, Vec2 Dir)[n];
+        var real = new bool[n];
         for (int i = 0; i < n; i++)
         {
             var a = ccw[i]; var b = ccw[(i + 1) % n];
-            var dir = (b - a).Normalized();
+            real[i] = (b - a).Length > Tolerance.Distance;
+            var dir = real[i] ? (b - a).Normalized() : new Vec2(0, 0);
             var outward = new Vec2(dir.Y, -dir.X);
             lines[i] = (a + outward * D(i), dir);
         }
+        if (!real.Any(r => r)) return [.. ccw];
+        // The edge that comes into vertex i and the one that leaves it, past any of no length.
+        int Before(int i) { var k = (i - 1 + n) % n; while (!real[k]) k = (k - 1 + n) % n; return k; }
+        int After(int i) { var k = i; while (!real[k]) k = (k + 1) % n; return k; }
         var o = new Vec2[n];
         for (int i = 0; i < n; i++)
         {
-            var (p1, d1) = lines[(i - 1 + n) % n];
-            var (p2, d2) = lines[i];
+            var (p1, d1) = lines[Before(i)];
+            var (p2, d2) = lines[After(i)];
             var den = Vec2.Cross(d1, d2);
             if (Math.Abs(den) < 1e-12) { o[i] = p2; continue; } // collinear edges: no corner to mitre
             var t = Vec2.Cross(p2 - p1, d2) / den;

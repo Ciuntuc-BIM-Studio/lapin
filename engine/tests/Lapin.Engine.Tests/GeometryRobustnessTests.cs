@@ -50,6 +50,80 @@ public class GeometryRobustnessTests
         Assert.True(Polygon2.Contains(ell, Polygon2.InteriorPoint(ell)));
     }
 
+    /// <summary>
+    /// A section through solids at site coordinates (half a million metres off the origin) closes every loop: the two
+    /// faces sharing a cut edge find the very same crossing point, whichever way they walk it.
+    /// </summary>
+    [Fact]
+    public void Sections_at_site_coordinates_close_their_loops()
+    {
+        var open = 0;
+        for (var k = 0; k < 500; k++)
+        {
+            var c = new Vec2(512_345.678 + k * 0.137, 701_234.321 - k * 0.091);
+            var solid = Prism.Cylinder(c, 101.3 + k * 0.01, 0.3 + k * 0.001, 3, 48)!;
+            var a = 0.1 + k * 0.031;
+            var dir = new Vec3(Math.Cos(a), Math.Sin(a), 0.02 * Math.Sin(k));
+            var right = Vec3.Cross(dir, Vec3.UnitZ).Normalized();
+            var view = new ViewFrame(new Vec3(c.X, c.Y, 102.7) + dir * 0.01 * Math.Cos(k), right, Vec3.Cross(right, dir).Normalized(), dir.Normalized());
+            if (HiddenLines.Section(solid, view).Count != 1) open++;
+        }
+        Assert.Equal(0, open);
+    }
+
+    /// <summary>An outline with a doubled point offsets as the outline without it: every corner mitred, no notch.</summary>
+    [Fact]
+    public void An_offset_takes_a_repeated_vertex()
+    {
+        Vec2[] square = [new(0, 0), new(4, 0), new(4, 4), new(0, 4)];
+        Vec2[] doubled = [new(0, 0), new(4, 0), new(4, 0), new(4, 4), new(0, 4)];
+        var a = Polygon2.Offset(square, [1.0]);
+        var b = Polygon2.Offset(doubled, [1.0]);
+        Assert.Equal(5, b.Length);
+        Assert.Equal([new Vec2(-1, -1), new Vec2(5, -1), new Vec2(5, -1), new Vec2(5, 5), new Vec2(-1, 5)], b.Select(p => new Vec2(Math.Round(p.X, 9), Math.Round(p.Y, 9))));
+        Assert.Equal(a[1], b[2]);
+    }
+
+    /// <summary>Cut lines a kilometre long split at the corners standing on them, without walking every cell of their bounds.</summary>
+    [Fact]
+    public void Long_diagonal_cut_lines_split_quickly()
+    {
+        var lines = new List<Lapin.Drawing.Views.DLine>();
+        for (var k = 0; k < 40; k++)
+            lines.Add(new(new Vec2(k, 0), new Vec2(k + 1000, 1000), Lapin.Drawing.LineRole.Cut, "e", "IfcWall"));
+        // A cut area's corner on the first line, halfway along it.
+        Lapin.Drawing.Views.DPolygon cut = new([[new(500, 500), new(510, 500), new(510, 510)]], "f", "IfcSlab", null, null);
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var split = Lapin.Drawing.Views.Generator.SplitAtCorners(lines, [cut]);
+        clock.Stop();
+        Assert.Equal(43, split.Count); // the first line split at two corners, the eleventh (x − 10 = y) at one
+        Assert.Contains(split, l => l.B == new Vec2(500, 500));
+        Assert.Contains(split, l => l.A == new Vec2(510, 510) || l.B == new Vec2(510, 510));
+        Assert.True(clock.ElapsedMilliseconds < 2000, $"{clock.ElapsedMilliseconds} ms");
+    }
+
+    /// <summary>A face of many vertices (a terrain's boundary, a hatch's outline) is triangulated in well under a second: n − 2 triangles covering its area.</summary>
+    [Fact]
+    public void A_face_of_thousands_of_vertices_triangulates_quickly()
+    {
+        const int n = 6000;
+        // A star-like ring: every other vertex pulled in, so half are reflex.
+        var pts = Enumerable.Range(0, n).Select(i =>
+        {
+            var a = 2 * Math.PI * i / n;
+            var r = i % 2 == 0 ? 100.0 : 97.0;
+            return new Vec3(r * Math.Cos(a), r * Math.Sin(a), 0);
+        }).ToList();
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var tris = Triangulator.Face(pts, [.. Enumerable.Range(0, n)], [], Vec3.UnitZ).ToList();
+        clock.Stop();
+        Assert.Equal(n - 2, tris.Count);
+        var area = tris.Sum(t => Vec3.Cross(pts[t.B] - pts[t.A], pts[t.C] - pts[t.A]).Z / 2);
+        var ring = pts.Select(p => new Vec2(p.X, p.Y)).ToArray();
+        Assert.Equal(Polygon2.SignedArea(ring), area, 6);
+        Assert.True(clock.ElapsedMilliseconds < 3000, $"{clock.ElapsedMilliseconds} ms");
+    }
+
     static byte[] Chunk(string kind, byte[] data)
     {
         var o = new List<byte>();

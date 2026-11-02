@@ -55,6 +55,13 @@ public static class Triangulator
     /// <summary>
     /// Ear-clip a simple CCW ring. Ids may repeat (bridging duplicates two
     /// vertices), so every test is positional rather than by identity.
+    /// <para>
+    /// Only the reflex (or flat) corners can stand inside an ear of a simple
+    /// ring, so only they are tested against it, and only those within the ear's
+    /// bounds; the search for the next ear goes on from where the last was cut,
+    /// not from the start. A face of thousands of vertices (a terrain's boundary,
+    /// a hatch's outline) took seconds, cubic.
+    /// </para>
     /// </summary>
     static List<(int, int, int)> EarClip(List<int> poly, Flat flat, double tol)
     {
@@ -62,26 +69,36 @@ public static class Triangulator
         var o = new List<(int, int, int)>();
         var ring = new List<int>(poly);
         int guard = ring.Count * ring.Count + 16;
+        var reflex = new List<int>();
+        var start = 0;
 
         while (ring.Count > 3 && guard-- > 0)
         {
             bool clipped = false;
-            for (int i = 0; i < ring.Count; i++)
+            int n = ring.Count;
+            reflex.Clear();
+            for (int j = 0; j < n; j++)
+                if (Cross2(at(ring[(j - 1 + n) % n]), at(ring[j]), at(ring[(j + 1) % n])) <= tol) reflex.Add(j);
+            for (int step = 0; step < n; step++)
             {
-                int n = ring.Count, ip = (i - 1 + n) % n, inx = (i + 1) % n;
+                int i = (start + step) % n, ip = (i - 1 + n) % n, inx = (i + 1) % n;
                 Vec2 a = at(ring[ip]), b = at(ring[i]), c = at(ring[inx]);
                 if (Cross2(a, b, c) <= tol) continue;
+                double x0 = Math.Min(a.X, Math.Min(b.X, c.X)), x1 = Math.Max(a.X, Math.Max(b.X, c.X));
+                double y0 = Math.Min(a.Y, Math.Min(b.Y, c.Y)), y1 = Math.Max(a.Y, Math.Max(b.Y, c.Y));
                 bool blocked = false;
-                for (int j = 0; j < n && !blocked; j++)
+                foreach (var j in reflex)
                 {
                     if (j == ip || j == i || j == inx) continue;
                     var p = at(ring[j]);
+                    if (p.X < x0 || p.X > x1 || p.Y < y0 || p.Y > y1) continue;
                     if (Same(p, a, tol) || Same(p, b, tol) || Same(p, c, tol)) continue;
-                    if (InTriangle(a, b, c, p)) blocked = true;
+                    if (InTriangle(a, b, c, p)) { blocked = true; break; }
                 }
                 if (blocked) continue;
                 o.Add((ring[ip], ring[i], ring[inx]));
                 ring.RemoveAt(i);
+                start = Math.Max(0, i - 1);
                 clipped = true;
                 break;
             }
@@ -93,13 +110,11 @@ public static class Triangulator
             double bestCross = double.NegativeInfinity;
             for (int i = 0; i < ring.Count; i++)
             {
-                int n = ring.Count;
                 var x = Cross2(at(ring[(i - 1 + n) % n]), at(ring[i]), at(ring[(i + 1) % n]));
                 if (x > bestCross) { bestCross = x; best = i; }
             }
             if (best < 0) break;
             {
-                int n = ring.Count;
                 o.Add((ring[(best - 1 + n) % n], ring[best], ring[(best + 1) % n]));
                 ring.RemoveAt(best);
             }
