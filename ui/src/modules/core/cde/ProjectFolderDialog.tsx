@@ -31,6 +31,7 @@ const NAMING: [keyof CdeSettings['naming'], string, string][] = [
 
 export function ProjectFolderDialog() {
   const nodes = useSession((s) => s.nodes);
+  const error = useSession((s) => s.error);
   const [s, setS] = useState<CdeSettings | null>(null);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [storage, setStorage] = useState<IssueStorage | null>(null);
@@ -106,7 +107,7 @@ export function ProjectFolderDialog() {
             </>
           )}
         </div>
-        <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
+        <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>
   );

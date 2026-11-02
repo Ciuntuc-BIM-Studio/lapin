@@ -16,6 +16,7 @@ interface MaterialRow { id: string; name: string; priority: number | null }
 
 export function CutOrderDialog() {
   const nodes = useSession((s) => s.nodes);
+  const error = useSession((s) => s.error);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [materials, setMaterials] = useState<MaterialRow[]>([]);
   const close = () => useUi.setState({ dialog: null });
@@ -80,7 +81,7 @@ export function CutOrderDialog() {
             </tbody>
           </table>
         </div>
-        <footer className="dialog-foot">
+        <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}
           <button type="button" className="btn" onClick={() => void execute('cutOrder.reset')}>Default order</button>
           <span className="grow" />
           <button type="button" className="btn primary" onClick={close}>Done</button>

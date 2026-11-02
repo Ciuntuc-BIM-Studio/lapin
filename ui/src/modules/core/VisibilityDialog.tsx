@@ -22,6 +22,7 @@ const LEGACY: Record<string, string> = { heavy: '0.7', medium: '0.5', light: '0.
 
 export function VisibilityDialog() {
   const nodes = useSession((s) => s.nodes);
+  const error = useSession((s) => s.error);
   const [target, setTarget] = useState<string | null>(null);
   const [v, setV] = useState<Visibility | null>(null);
   const [hatches, setHatches] = useState<string[]>([]);
@@ -113,7 +114,7 @@ export function VisibilityDialog() {
             </table>
           )}
         </div>
-        <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
+        <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ const NEW_LAYER = '\u0000new';
 
 export function SectionsDialog() {
   const nodes = useSession((s) => s.nodes);
+  const error = useSession((s) => s.error);
   const [target, setTarget] = useState<string | null>(null);
   const [d, setD] = useState<SectionMarkers | null>(null);
   const close = () => useUi.setState({ dialog: null });
@@ -89,7 +90,7 @@ export function SectionsDialog() {
             </table>
           )}
         </div>
-        <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
+        <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>
   );

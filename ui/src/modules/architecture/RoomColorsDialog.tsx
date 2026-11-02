@@ -23,6 +23,7 @@ const area = (m2: number) => `${m2.toFixed(2)} m²`;
 
 export function RoomColorsDialog() {
   const nodes = useSession((s) => s.nodes);
+  const error = useSession((s) => s.error);
   const uiView = useUi((x) => x.view);
   const [viewId, setViewId] = useState<string | null>(null);
   const [s] = useSchemes(viewId);
@@ -132,7 +133,7 @@ export function RoomColorsDialog() {
             <label className="row small muted"><input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} />Also the values no room has yet</label>
           )}
         </div>
-        <footer className="dialog-foot">
+        <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}
           {scheme && <button type="button" className="btn" title="Every value the rooms have gets an entry, and every entry without a look a colour of the palette"
             onClick={() => void (execute('architecture.fillColorScheme', { id: scheme.id }) as Promise<{ added?: number } | null>).then((r) => r && notify(r.added ? `${r.added} value(s) added.` : 'Every value has its colour.'))}><Paintbrush size={13} />Fill missing colours</button>}
           {scheme && view && <button type="button" className="btn" title="Click where the legend goes on the plan" onClick={() => { if (s.viewScheme !== scheme.id) showInView(scheme.id); close(); activate(colorLegend); }}>Place a legend</button>}
