@@ -30,6 +30,25 @@ public sealed class PackageTests : IDisposable
         return f;
     }
 
+    [Fact]
+    public void An_attribute_present_with_null_stays_present_and_an_absent_one_absent()
+    {
+        var rows = new List<Entity>
+        {
+            new("a", "IfcWall", "a", new JsonObject { ["membrane"] = null, ["height"] = 3.0 }),
+            new("b", "IfcWall", "b", new JsonObject { ["membrane"] = 0.2 }),
+            new("c", "IfcWall", "c", new JsonObject { ["membrane"] = new JsonObject { ["x"] = 1 } }),
+            new("d", "IfcWall", "d", new JsonObject { ["height"] = 2.5 }),
+        };
+        var read = ArrowTables.ReadEntities(ArrowTables.WriteEntities(rows, id => id[0] - 'a')).ToDictionary(x => x.Entity.Id, x => x.Entity.Attrs);
+        Assert.True(read["a"].ContainsKey("membrane"));
+        Assert.Null(read["a"]["membrane"]);
+        Assert.Equal(0.2, (double)read["b"]["membrane"]!);
+        Assert.Equal(1, (int)read["c"]["membrane"]!["x"]!);
+        Assert.False(read["d"].ContainsKey("membrane"));
+        Assert.Equal(2.5, (double)read["d"]["height"]!);
+    }
+
     static void SameModel(IModelView a, IModelView b)
     {
         Assert.Equal(a.Entities.Select(e => e.Id), b.Entities.Select(e => e.Id));   // creation order kept

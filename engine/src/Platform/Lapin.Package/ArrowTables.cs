@@ -46,12 +46,19 @@ public static class ArrowTables
         foreach (var key in keys)
         {
             var values = rows.Select(e => e.Attrs[key]).ToList();
-            var kind = KindOf(values);
+            // A key present with null (not the same as absent to whoever asks ContainsKey): a JSON column, the null written as its text.
+            var presentNull = rows.Any(e => e.Attrs.TryGetPropertyValue(key, out var v) && v == null);
+            var kind = presentNull ? Kind.Json : KindOf(values);
             fields.Add(new Field(AttrPrefix + key, TypeOf(kind), true, [new(KindKey, kind.ToString())]));
-            arrays.Add(Column(kind, values));
+            arrays.Add(presentNull
+                ? Strings(rows.Select(e => e.Attrs.TryGetPropertyValue(key, out var v) ? v?.ToJsonString(Json.Options) ?? PresentNull : null))
+                : Column(kind, values));
         }
         return Write(new Schema(fields, null), arrays, rows.Count);
     }
+
+    /// <summary>A key present with a JSON null, in a JSON column (absent is the column's null).</summary>
+    const string PresentNull = "null";
 
     public static List<(Entity Entity, int Order)> ReadEntities(byte[] bytes)
     {
@@ -72,7 +79,10 @@ public static class ArrowTables
             {
                 var a = new JsonObject();
                 foreach (var (key, kind, array) in attrs)
+                {
                     if (Value(kind, array, r) is { } v) a[key] = v;
+                    else if (kind == Kind.Json && !array.IsNull(r) && ((StringArray)array).GetString(r) == PresentNull) a[key] = null;
+                }
                 o.Add((new Entity(id.GetString(r), cls.GetString(r), name.GetString(r) ?? "", a, pre.IsNull(r) ? null : pre.GetString(r)), order.GetValue(r)!.Value));
             }
         }
