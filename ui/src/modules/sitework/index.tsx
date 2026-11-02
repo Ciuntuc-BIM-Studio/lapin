@@ -21,17 +21,18 @@ import { setSiteWorks, useSiteWorks } from './prefs';
 import { FormworkTypeFields, ScaffoldTypeFields } from './TypeFields';
 import { activate } from '../../platform/modules';
 import { typeOf } from '../../engine/model';
+import { rememberedType } from './typeChoice';
 
 const selectedOf = (...classes: string[]): string[] => {
   const nodes = useSession.getState().nodes;
   return useUi.getState().selected.filter((id) => classes.includes(nodes.get(id)?.type ?? ''));
 };
 
-/** The type chosen in the configurator, when it is one for this kind. */
-const formworkType = (kind: 'slab' | 'beam' | 'upright'): string | undefined => {
-  const id = useSiteWorks.getState().formworkTypeId;
-  return id && (useSession.getState().nodes.get(id)?.props.kind ?? 'slab') === kind ? id : undefined;
-};
+/** The type chosen in the configurator, when the project still has it and it is one for this kind. */
+const formworkType = (kind: 'slab' | 'beam' | 'upright'): string | undefined =>
+  rememberedType(useSession.getState().nodes, useSiteWorks.getState().formworkTypeId, 'LapinFormworkType', kind);
+/** The scaffold type chosen, when the project still has it. */
+const scaffoldType = (): string | undefined => rememberedType(useSession.getState().nodes, useSiteWorks.getState().scaffoldTypeId, 'LapinScaffoldType');
 
 const placed = (r: unknown, what: string) => { if (r) notify(`${what} placed in the execution phase: it shows in views of that phase (Manage → Phases).`); };
 
@@ -40,7 +41,7 @@ const scaffold: ToolDef = {
   id: 'sitework.scaffold', label: 'Scaffold', icon: Construction, shortcut: 'SC',
   gesture: { kind: 'polyline' },
   complete: async ({ points }, ctx) => {
-    const typeId = useSiteWorks.getState().scaffoldTypeId;
+    const typeId = scaffoldType();
     placed(await ctx.execute('sitework.addScaffold', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(typeId ? { typeId } : {}) }), 'Scaffold');
   },
 };
@@ -51,7 +52,7 @@ const scaffoldOnWalls: ToolDef = {
   run: () => {
     const wallIds = selectedOf('IfcWall');
     if (wallIds.length === 0) { notify('Select the walls the scaffold goes round (Shift-click for more), then press Scaffold on walls.'); return; }
-    const typeId = useSiteWorks.getState().scaffoldTypeId;
+    const typeId = scaffoldType();
     void execute('sitework.scaffoldFromWalls', { wallIds, ...(typeId ? { typeId } : {}) }).then((r) => placed(r, (r as { closed?: boolean } | null)?.closed ? 'A closed scaffold' : 'Scaffold'));
   },
 };

@@ -5,6 +5,7 @@ import { FileDown, FileUp } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { SURVEY, downloadLandXml, pickText } from './survey';
+import { notify } from '../../app/store';
 
 interface Legend { kind: string; area: number; bands: { key: string; label: string; color: string; area: number }[] }
 
@@ -57,7 +58,7 @@ export function TerrainSection({ node }: { node: NodeDto }) {
         <button type="button" disabled={!node.editable} onClick={() => void pickText(SURVEY).then((f) => f && execute('civil.updateTerrain', { id: node.id, text: f.text }))}>
           <FileUp size={13} /> Replace the points…
         </button>
-        <button type="button" onClick={() => void downloadLandXml([node.id])}><FileDown size={13} /> LandXML</button>
+        <button type="button" onClick={() => void downloadLandXml([node.id]).catch((e) => notify(e instanceof Error ? e.message : String(e)))}><FileDown size={13} /> LandXML</button>
       </div>
     </div>
   );

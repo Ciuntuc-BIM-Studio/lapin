@@ -12,7 +12,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { outlineGrips, outlineRef, toPairs } from '../../viewport/gripKit';
 import { edgeMiddles, fromPairs, insertVertex, moveVertex, removeVertex } from '../../viewport/contour';
 import { notify, useUi } from '../../app/store';
-import { execute } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
 import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './survey';
 import { TerrainSection } from './TerrainSection';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
@@ -71,7 +71,9 @@ const terrainFromDxf: ToolDef = {
   id: 'civil.dxfPoints', label: 'Points from DXF', icon: MapPin,
   run: () => void pickBinary('.dxf').then(async (file) => {
     if (!file) return;
-    const layers = await execute('civil.dxfPointLayers', { data: file.data }).catch(() => null) as { layer: string; points: number }[] | null;
+    const layers = await execute('civil.dxfPointLayers', { data: file.data }) as { layer: string; points: number }[] | null;
+    const refused = useSession.getState().error;
+    if (refused) { notify(refused); return; }
     let chosen: string[] | undefined;
     if (layers && layers.length > 1) {
       const answer = window.prompt(`Layers with surveyed points: ${layers.map((l) => `${l.layer} (${l.points})`).join(', ')}.\nWhich to take (comma separated; empty: all)?`, '');

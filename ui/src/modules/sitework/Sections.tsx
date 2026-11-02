@@ -12,6 +12,7 @@ import { ofClass, typeOf } from '../../engine/model';
 import { useUi } from '../../app/store';
 import { Mm } from './fields';
 import { setSiteWorks } from './prefs';
+import { NumberField } from '../../shell/cells';
 
 function TypeField({ node, cls, kind, command }: { node: NodeDto; cls: string; kind?: string; command: string }) {
   const nodes = useSession((s) => s.nodes);
@@ -96,8 +97,8 @@ export function FormworkSection({ node }: { node: NodeDto }) {
       {kind === 'slab' && <>
         <dt>Primary beams</dt>
         <dd>
-          <input className="num" type="number" step={15} value={typeof node.props.direction === 'number' ? node.props.direction : ''} placeholder="along the longest side"
-            onChange={(e) => set({ direction: e.target.value === '' ? null : Number(e.target.value) })} /> <span className="muted">°</span>
+          <NumberField value={typeof node.props.direction === 'number' ? node.props.direction : null} placeholder="along the longest side" blank suffix="°"
+            onCommit={(v) => set({ direction: v })} />
         </dd>
       </>}
     </dl>

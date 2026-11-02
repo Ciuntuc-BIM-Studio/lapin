@@ -51,3 +51,7 @@ export function parseKm(text: string): number | null {
   const p = Number(t.replace(',', '.'));
   return Number.isFinite(p) ? p : null;
 }
+
+/** Stations typed in one field, commas (or semicolons) between: blank pieces (an empty field, a trailing comma) and unreadable ones give none, never a 0. */
+export const parseStationList = (text: string): number[] =>
+  text.split(/[,;]/).map((x) => x.trim()).filter((x) => x !== '').map((x) => Number(x)).filter((x) => Number.isFinite(x));

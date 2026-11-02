@@ -15,7 +15,8 @@ import { useUi } from '../../app/store';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { fromPairs } from '../../viewport/contour';
-import { stationLabel } from './stations';
+import { parseStationList, stationLabel } from './stations';
+import { Cell, NumberField } from '../../shell/cells';
 
 type Pair = [number, number];
 type Curve = [number, number, number];
@@ -148,12 +149,13 @@ function LongSectionPlot({ d, station, onStation, onPvis }: { d: CorridorData; s
   );
 }
 
-/** A number field committed on Enter or blur; empty restores. */
-export function Num({ value, onCommit, step = 0.1, min, unit, width = 70 }: { value: number; onCommit: (v: number) => void; step?: number; min?: number; unit?: string; width?: number }) {
-  const [text, setText] = useState(String(value));
-  useEffect(() => setText(String(value)), [value]);
-  const done = () => { const n = Number(text.replace(',', '.')); if (text.trim() !== '' && Number.isFinite(n) && n !== value) onCommit(min != null ? Math.max(min, n) : n); else setText(String(value)); };
-  return <><input className="num" style={{ width }} type="number" step={step} value={text} onChange={(e) => setText(e.target.value)} onBlur={done} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />{unit && <span className="muted"> {unit}</span>}</>;
+/**
+ * A number with its unit beside it (stations and sizes in metres, a crossfall
+ * in %): the shared field, one commit on Enter or blur, empty restores.
+ * `step` is kept for the callers (the railway's too) and no longer used.
+ */
+export function Num({ value, onCommit, min, unit, width = 70 }: { value: number; onCommit: (v: number) => void; step?: number; min?: number; unit?: string; width?: number }) {
+  return <NumberField value={value} min={min} suffix={unit} style={{ width }} onCommit={(n) => { if (n != null) onCommit(n); }} />;
 }
 
 interface SideProps { gutter?: boolean; kerb?: boolean; sidewalk?: boolean; gutterWidth?: number; gutterDepth?: number; kerbWidth?: number; kerbHeight?: number; sidewalkWidth?: number }
@@ -270,6 +272,7 @@ function CurvesEditor({ node, d, onSave }: { node: NodeDto; d: CorridorData; onS
 export function CorridorDialog() {
   const id = useUi((s) => s.selection);
   const nodes = useSession((s) => s.nodes);
+  const error = useSession((s) => s.error);
   const node = id ? nodes.get(id) : undefined;
   const [tab, setTab] = useState<'section' | 'long' | 'curves' | 'stations'>('section');
   const [data, setData] = useState<CorridorData | null>(null);
@@ -280,10 +283,22 @@ export function CorridorDialog() {
   const close = () => useUi.setState({ dialog: null });
   const valid = !!node && (node.type === 'IfcPavement' || node.type === 'LapinRetainingWall' || node.type === 'LapinTrack' || (node.type === 'IfcEarthworksCut' && Array.isArray(node.props.path)));
 
-  // The model changes (this element, its terrain): read again.
-  useEffect(() => { if (valid && id) void query<CorridorData>('civil.corridor', { id }).then(setData); }, [valid, id, nodes]);
+  // Another element: its own stations from its start.
+  useEffect(() => { setStation(null); setData(null); setSection(null); }, [id]);
+  // The model changes (this element, its terrain): read again; an answer that comes after the next question is dropped.
+  useEffect(() => {
+    if (!valid || !id) return;
+    let live = true;
+    void query<CorridorData>('civil.corridor', { id }).then((d) => { if (live) setData(d); });
+    return () => { live = false; };
+  }, [valid, id, nodes]);
   const at = station ?? data?.start ?? 0;
-  useEffect(() => { if (valid && id && data) void query<Section>('civil.crossSection', { id, station: at }).then(setSection); }, [valid, id, data, at]);
+  useEffect(() => {
+    if (!valid || !id || !data) return;
+    let live = true;
+    void query<Section>('civil.crossSection', { id, station: at }).then((s) => { if (live) setSection(s); });
+    return () => { live = false; };
+  }, [valid, id, data, at]);
 
   const spec = data?.spec;
   const setCorridor = (args: Record<string, unknown>) => void execute('civil.setCorridor', { id, ...args });
@@ -416,7 +431,7 @@ export function CorridorDialog() {
                   <dt>Stations every</dt><dd><Num value={spec.interval} step={1} min={0.5} unit="m" onCommit={(v) => setCorridor({ interval: v })} /> <span className="muted small">{data.stations.length} stations</span></dd>
                   <dt>Joints every</dt><dd><Num value={spec.joints.every} step={1} min={0} unit="m" onCommit={(v) => setCorridor({ joints: { every: v } })} /> <span className="muted small">0: unbroken</span></dd>
                   <dt>Joint width</dt><dd><Num value={Math.round(spec.joints.width * 1000)} step={5} min={1} unit="mm" onCommit={(v) => setCorridor({ joints: { width: v / 1000 } })} /></dd>
-                  <dt>Joints at</dt><dd><input defaultValue={spec.joints.at.join(', ')} key={spec.joints.at.join(',')} placeholder="stations, comma between" onBlur={(e) => setCorridor({ joints: { at: e.target.value.split(',').map((x) => Number(x.trim())).filter((x) => x.toString() !== '' && Number.isFinite(x)) } })} /></dd>
+                  <dt>Joints at</dt><dd><Cell value={spec.joints.at.join(', ')} placeholder="stations, comma between" onCommit={(t) => setCorridor({ joints: { at: parseStationList(t) } })} /></dd>
                 </dl>
                 <p className="muted small">Corners are mitred, so the element runs on unbroken; it breaks only at its joints ({data.joints.length}).</p>
               </div>
@@ -442,7 +457,7 @@ export function CorridorDialog() {
             </div>
           )}
         </div>
-        <footer className="dialog-foot"><span className="muted small grow">Each change is one undo step.</span><button type="button" className="btn primary" onClick={close}>Done</button></footer>
+        <footer className="dialog-foot">{error ? <p className="error-text grow" role="alert">{error}</p> : <span className="muted small grow">Each change is one undo step.</span>}<button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>
   );

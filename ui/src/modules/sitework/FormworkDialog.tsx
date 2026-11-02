@@ -13,22 +13,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
-import { engine, execute, useSession } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
 import { ofClass, relatedOf } from '../../engine/model';
 import { Mm, MmList, Num } from './fields';
 import { setSiteWorks, useSiteWorks, type FormworkKind } from './prefs';
-import { openingType } from './typeChoice';
+import { openingType, rememberedType, selectedType } from './typeChoice';
+import { PendingDialog } from '../core/PendingDialog';
 import { deleteType } from '../core/deleteType';
 
 interface PropSize { name: string; min: number; max: number }
 interface Row { thickness: number; secondary: number; primary: number; prop: number }
 interface Yoke { depth: number; spacing: number }
-export interface SlabSpec {
+interface SlabSpec {
   system: 'beams' | 'panels'; plywood: number; secondaryHeight: number; primaryHeight: number; beamWidth: number; lengths: number[]; spacing: Row[];
   edgeInset: number; upstand: number; props: PropSize[]; panelLength: number; panelWidth: number; panelThickness: number; reuses: number;
 }
-export interface BeamSpec { plywood: number; bearerHeight: number; bearerWidth: number; bearers: number; propSpacing: number; yokes: Yoke[]; chamfer: number; props: PropSize[]; reuses: number }
-export interface UprightSpec { panelWidths: number[]; panelHeights: number[]; panelThickness: number; tieAlong: number; tieUp: number; clampSpacing: number; braceSpacing: number; reuses: number }
+interface BeamSpec { plywood: number; bearerHeight: number; bearerWidth: number; bearers: number; propSpacing: number; yokes: Yoke[]; chamfer: number; props: PropSize[]; reuses: number }
+interface UprightSpec { panelWidths: number[]; panelHeights: number[]; panelThickness: number; tieAlong: number; tieUp: number; clampSpacing: number; braceSpacing: number; reuses: number }
 type Spec = SlabSpec & BeamSpec & UprightSpec & { article: string; articleText: string };
 interface Preview {
   secondary?: number; primary?: number; prop?: number | string; propSize?: string | null; propLength?: number; yokeSpacing?: number; propSpacing?: number; rowThickness?: number;
@@ -41,11 +42,11 @@ const NAME: Record<FormworkKind, string> = { slab: 'Floor formwork', beam: 'Beam
 const Line = ({ label, children }: { label: string; children: React.ReactNode }) => <label className="field-line"><span className="eyebrow">{label}</span><span>{children}</span></label>;
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
-/** A small table of rows edited in place (mm columns). */
+/** A small table of rows edited in place (its length columns in the project's unit). */
 function Table<T extends object>({ rows, columns, onChange, fresh }: { rows: T[]; columns: [keyof T, string, 'mm' | 'text'][]; onChange: (rows: T[]) => void; fresh: () => T }) {
   return (
     <table className="panel-grid spec-grid">
-      <thead><tr>{columns.map(([, label, kind]) => <th key={label}>{label}{kind === 'mm' ? ' (mm)' : ''}</th>)}<th /></tr></thead>
+      <thead><tr>{columns.map(([, label]) => <th key={label}>{label}</th>)}<th /></tr></thead>
       <tbody>
         {rows.map((row, i) => (
           <tr key={i}>
@@ -72,8 +73,9 @@ export function FormworkDialog() {
   const error = useSession((s) => s.error);
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   // The selected formwork's type (and its kind) first: what the user is looking at is what they mean to change.
+  // Else the kind of the type chosen last (while the project has it), else the kind shown last.
   const [kind, setKind] = useState<FormworkKind>(() => {
-    const t = openingType(model, useUi.getState().selected, 'LapinFormwork', null, ofClass(model, 'LapinFormworkType'));
+    const t = selectedType(model, useUi.getState().selected, 'LapinFormwork') ?? rememberedType(nodes, useSiteWorks.getState().formworkTypeId, 'LapinFormworkType');
     return t ? ((nodes.get(t)?.props.kind as FormworkKind | undefined) ?? 'slab') : useSiteWorks.getState().formworkKind;
   });
   const types = ofClass(model, 'LapinFormworkType').filter((t) => (t.props.kind ?? 'slab') === kind);
@@ -84,6 +86,8 @@ export function FormworkDialog() {
   /** The kind the spec was loaded for: until it is the kind shown, the form waits (a floor's spec has no panels). */
   const [specKind, setSpecKind] = useState<FormworkKind | null>(null);
   const [size, setSize] = useState({ thickness: 0.2, height: 2.8, width: 0.3, depth: 0.5, length: 3 });
+  // Bumped by New type, so the editor reloads the default even when no type was picked.
+  const [freshTick, setFreshTick] = useState(0);
   const [preview, setPreview] = useState<Preview | null>(null);
 
   const modelRef = useRef(model);
@@ -92,21 +96,23 @@ export function FormworkDialog() {
     const t = editing ? modelRef.current.nodes.get(editing) : undefined;
     setSpec(fallback ? { ...structuredClone(fallback), ...((t?.props.spec as Partial<Spec> | undefined) ?? {}) } : null);
     setSpecKind(kind);
-    setName(t?.name ?? NAME[kind]);
-  }, [editing, fallback, kind]);
+    // A new type is named after the ones of its kind there are, so a second one is not a copy's name.
+    const others = ofClass(modelRef.current, 'LapinFormworkType').filter((x) => (x.props.kind ?? 'slab') === kind).length;
+    setName(t?.name ?? (others ? `${NAME[kind]} ${others + 1}` : NAME[kind]));
+  }, [editing, fallback, kind, freshTick]);
 
   useEffect(() => {
     if (!spec || specKind !== kind) return;
     let live = true;
-    void engine.call<Preview>('doc.query', { name: 'sitework.formworkPreview', args: { kind, spec, ...size, width: kind === 'upright' ? size.length : size.width } }).then((p) => { if (live) setPreview(p); }).catch(() => undefined);
+    void query<Preview>('sitework.formworkPreview', { kind, spec, ...size, width: kind === 'upright' ? size.length : size.width }).then((p) => { if (live) setPreview(p); });
     return () => { live = false; };
   }, [spec, size, kind, specKind]);
 
-  if (!spec || specKind !== kind) return null;
+  if (!spec || specKind !== kind) return <PendingDialog title="Formwork" />;
   const set = (patch: Partial<Spec>) => setSpec({ ...spec, ...patch });
   const close = () => useUi.setState({ dialog: null });
   const switchKind = (k: FormworkKind) => { setKind(k); setSiteWorks({ formworkKind: k }); setEditing(ofClass(model, 'LapinFormworkType').find((t) => (t.props.kind ?? 'slab') === k)?.id ?? null); };
-  const fresh = () => { setEditing(null); setSpec(structuredClone(fallback ?? spec)); setName(`${NAME[kind]} ${types.length + 1}`); };
+  const fresh = () => { setEditing(null); setFreshTick((n) => n + 1); };
   const save = async () => {
     if (editing) await execute('sitework.updateFormworkType', { id: editing, name, spec });
     else {

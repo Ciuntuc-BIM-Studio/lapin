@@ -7,8 +7,8 @@
 export interface Species { name: string; type: string; height: number; crown: number; color: string; share: number; latin?: string; ro?: string; family?: string }
 
 /** The picker's groups, in their order. */
-export const SPECIES_GROUPS = ['Fruit trees', 'Conifers', 'Deciduous trees', 'Shrubs', 'Ground cover'] as const;
-export type SpeciesGroup = (typeof SPECIES_GROUPS)[number];
+const SPECIES_GROUPS = ['Fruit trees', 'Conifers', 'Deciduous trees', 'Shrubs', 'Ground cover'] as const;
+type SpeciesGroup = (typeof SPECIES_GROUPS)[number];
 
 export function speciesGroup(s: Species): SpeciesGroup {
   if (s.type === 'grass' || s.family === 'ground') return 'Ground cover';

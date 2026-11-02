@@ -12,11 +12,11 @@ import { execute, useSession } from '../../engine/session';
 import { materialOf, materialsFor, services, systemsQuery, type Defaults, type SystemInfo } from './network';
 import { mepHooks } from './hooks';
 import { setMep, useMep, type Plane } from './prefs';
-
-const num = (t: string) => Number(t.replace(',', '.'));
+import { Cell, LengthField, NumberField } from '../../shell/cells';
 
 export function SystemsDialog() {
   const version = useSession((s) => s.version);
+  const error = useSession((s) => s.error);
   const prefs = useMep();
   const [systems, setSystems] = useState<SystemInfo[]>([]);
   const [service, setService] = useState('heating');
@@ -47,7 +47,7 @@ export function SystemsDialog() {
               {systems.map((s) => (
                 <tr key={s.id} className={s.id === current?.id ? 'selected' : ''}>
                   <td><input type="radio" name="mep-system" checked={s.id === prefs.systemId} onChange={() => setMep({ systemId: s.id })} /></td>
-                  <td><input className="cell" defaultValue={s.name} key={s.id + s.name} onBlur={(e) => { if (e.target.value.trim() && e.target.value.trim() !== s.name) rename(s.id, e.target.value.trim()); }} /></td>
+                  <td><Cell value={s.name} onCommit={(t) => { const v = t.trim(); if (!v) return false; if (v !== s.name) rename(s.id, v); }} /></td>
                   <td>{services().find((x) => x.id === s.service)?.label ?? s.service}</td>
                   <td className="num">{s.nodes}</td>
                   <td className="num">{s.runs}</td>
@@ -66,22 +66,22 @@ export function SystemsDialog() {
             <>
               <h4 className="eyebrow" style={{ marginTop: 14 }}>Defaults · {current.name}</h4>
               <dl className="fields">
-                <dt>Size (diameter)</dt><dd><input className="num" type="number" step={0.001} min={0.004} value={d.size} onChange={(e) => update(current.id, { size: Math.max(0.004, num(e.target.value) || 0.004) })} /> <span className="muted">m</span></dd>
+                <dt>Size (diameter)</dt><dd><LengthField metres={d.size} min={0.004} onCommit={(v) => { if (v != null) update(current.id, { size: v }); }} /></dd>
                 <dt>Plane</dt><dd><select value={d.plane} onChange={(e) => update(current.id, { plane: e.target.value as Plane })}><option value="floor">floor</option><option value="ceiling">ceiling</option><option value="wall">wall</option></select></dd>
-                <dt>Floor elevation</dt><dd><input className="num" type="number" step={0.05} value={d.floorElevation} onChange={(e) => update(current.id, { floorElevation: num(e.target.value) || 0 })} /> <span className="muted">m</span></dd>
-                <dt>Ceiling elevation</dt><dd><input className="num" type="number" step={0.05} value={d.ceilingElevation} onChange={(e) => update(current.id, { ceilingElevation: num(e.target.value) || 0 })} /> <span className="muted">m</span></dd>
-                <dt>Wall elevation</dt><dd><input className="num" type="number" step={0.05} value={d.wallElevation} onChange={(e) => update(current.id, { wallElevation: num(e.target.value) || 0 })} /> <span className="muted">m</span></dd>
-                <dt>Slope</dt><dd><input className="num" type="number" step={0.005} min={0} max={0.5} value={d.slope} onChange={(e) => update(current.id, { slope: Math.max(0, num(e.target.value) || 0) })} /> <span className="muted">m/m</span></dd>
+                <dt>Floor elevation</dt><dd><LengthField metres={d.floorElevation} onCommit={(v) => { if (v != null) update(current.id, { floorElevation: v }); }} /></dd>
+                <dt>Ceiling elevation</dt><dd><LengthField metres={d.ceilingElevation} onCommit={(v) => { if (v != null) update(current.id, { ceilingElevation: v }); }} /></dd>
+                <dt>Wall elevation</dt><dd><LengthField metres={d.wallElevation} onCommit={(v) => { if (v != null) update(current.id, { wallElevation: v }); }} /></dd>
+                <dt>Slope</dt><dd><NumberField value={d.slope} min={0} max={0.5} suffix="m/m" onCommit={(v) => { if (v != null) update(current.id, { slope: v }); }} /></dd>
                 <dt>Pair (supply and return)</dt><dd><input type="checkbox" checked={d.pair} onChange={(e) => update(current.id, { pair: e.target.checked })} /></dd>
-                <dt>Separation</dt><dd><input className="num" type="number" step={0.01} min={0} value={d.separation} onChange={(e) => update(current.id, { separation: Math.max(0, num(e.target.value) || 0) })} /> <span className="muted">m</span></dd>
+                <dt>Separation</dt><dd><LengthField metres={d.separation} min={0} onCommit={(v) => { if (v != null) update(current.id, { separation: v }); }} /></dd>
                 <dt>Material</dt><dd>
                   <select value={materialOf(current.service, d.material)?.id ?? ''} onChange={(e) => update(current.id, { material: e.target.value })}>
                     {materialsFor(current.service).map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
                   </select>
                   {rule && <span className="muted small"> {rule}</span>}
                 </dd>
-                <dt>Insulation</dt><dd><input className="num" type="number" step={0.005} min={0} value={d.insulation} onChange={(e) => update(current.id, { insulation: Math.max(0, num(e.target.value) || 0) })} /> <span className="muted">m</span></dd>
-                <dt>Bend radius</dt><dd><input className="num" type="number" step={0.01} min={0} value={d.bendRadius} onChange={(e) => update(current.id, { bendRadius: Math.max(0, num(e.target.value) || 0) })} /> <span className="muted">m</span></dd>
+                <dt>Insulation</dt><dd><LengthField metres={d.insulation} min={0} onCommit={(v) => { if (v != null) update(current.id, { insulation: v }); }} /></dd>
+                <dt>Bend radius</dt><dd><LengthField metres={d.bendRadius} min={0} onCommit={(v) => { if (v != null) update(current.id, { bendRadius: v }); }} /></dd>
               </dl>
             </>
           )}
@@ -92,7 +92,7 @@ export function SystemsDialog() {
           </dl>
           <p className="muted small">Nodes and runs take the system's defaults unless a value is set on them.</p>
         </div>
-        <footer className="dialog-foot"><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
+        <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>
   );

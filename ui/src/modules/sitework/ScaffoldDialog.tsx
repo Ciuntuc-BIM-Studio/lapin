@@ -11,14 +11,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
-import { engine, execute, useSession } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
 import { ofClass, relatedOf } from '../../engine/model';
 import { Mm, MmList, Num } from './fields';
 import { setSiteWorks, useSiteWorks } from './prefs';
 import { openingType } from './typeChoice';
+import { PendingDialog } from '../core/PendingDialog';
 import { deleteType } from '../core/deleteType';
 
-export interface ScaffoldSpec {
+interface ScaffoldSpec {
   system: 'modular' | 'frame'; bays: number[]; width: number; lift: number; wallGap: number; decks: 'every' | 'top'; guardrail: number; toeBoard: boolean;
   deckBoard: number; anchorSpacing: number; anchorEveryLifts: number; reach: number; jack: number; accessEvery: number; net: boolean; tube: number;
 }
@@ -45,26 +46,30 @@ export function ScaffoldDialog() {
   const [spec, setSpec] = useState<ScaffoldSpec | null>(null);
   const [size, setSize] = useState({ length: 10, height: 6 });
   const [preview, setPreview] = useState<Preview | null>(null);
+  // Bumped by New type, so the editor reloads the default even when no type was picked.
+  const [freshTick, setFreshTick] = useState(0);
 
   const modelRef = useRef(model);
   modelRef.current = model;
   useEffect(() => {
     const t = editing ? modelRef.current.nodes.get(editing) : undefined;
     setSpec(fallback ? { ...structuredClone(fallback), ...((t?.props.spec as Partial<ScaffoldSpec> | undefined) ?? {}) } : null);
-    setName(t?.name ?? 'Facade scaffold');
-  }, [editing, fallback]);
+    // A new type is named after the ones there are, so a second one is not a copy's name.
+    const others = ofClass(modelRef.current, 'LapinScaffoldType').length;
+    setName(t?.name ?? (others ? `Facade scaffold ${others + 1}` : 'Facade scaffold'));
+  }, [editing, fallback, freshTick]);
 
   useEffect(() => {
     if (!spec) return;
     let live = true;
-    void engine.call<Preview>('doc.query', { name: 'sitework.scaffoldPreview', args: { spec, ...size } }).then((p) => { if (live) setPreview(p); }).catch(() => undefined);
+    void query<Preview>('sitework.scaffoldPreview', { spec, ...size }).then((p) => { if (live) setPreview(p); });
     return () => { live = false; };
   }, [spec, size]);
 
-  if (!spec) return null;
+  if (!spec) return <PendingDialog title="Scaffolds" />;
   const set = (patch: Partial<ScaffoldSpec>) => setSpec({ ...spec, ...patch });
   const close = () => useUi.setState({ dialog: null });
-  const fresh = () => { setEditing(null); setSpec(structuredClone(fallback ?? spec)); setName(`Facade scaffold ${types.length + 1}`); };
+  const fresh = () => { setEditing(null); setFreshTick((n) => n + 1); };
   const save = async () => {
     if (editing) await execute('sitework.updateScaffoldType', { id: editing, name, spec });
     else {

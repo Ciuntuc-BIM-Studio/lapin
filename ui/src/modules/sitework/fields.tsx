@@ -1,35 +1,26 @@
-/** The small fields the site works' dialogs and sections share: lengths in mm, lists of lengths, numbers. */
+/** The small fields the site works' dialogs and sections share, over the interface's own: a length, a list of lengths, a number. */
 
-import { useEffect, useState } from 'react';
+import { useStandards } from '../../engine/unitsStore';
+import { Cell, LengthField, NumberField } from '../../shell/cells';
+import { formatLengths, parseLengths } from '../core/format';
 
-const mm = (v: number) => String(Math.round(v * 1000));
-
-/** A length in mm, committed on Enter or blur; empty commits null when `blank` says what empty means. */
+/**
+ * A length in the project's unit, committed on Enter or blur; `blank` (what
+ * empty means, shown as the placeholder) lets empty commit null. `unit`
+ * false leaves the unit's label off. `min` in mm (as the dialogs give it).
+ */
 export function Mm({ value, onCommit, min, blank, unit = true }: { value: number | null | undefined; onCommit: (m: number | null) => void; min?: number; blank?: string; unit?: boolean }) {
-  const shown = typeof value === 'number' ? mm(value) : '';
-  const [text, setText] = useState(shown);
-  useEffect(() => setText(shown), [shown]);
-  const done = () => {
-    if (text.trim() === '') { if (blank && shown !== '') onCommit(null); else setText(shown); return; }
-    const n = Number(text.replace(',', '.'));
-    if (Number.isFinite(n) && text !== shown) onCommit(Math.max(min ?? -Infinity, n) / 1000); else setText(shown);
-  };
-  return <><input className="num" value={text} placeholder={blank} onChange={(e) => setText(e.target.value)} onBlur={done} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />{unit && <> <span className="muted">mm</span></>}</>;
+  return <LengthField metres={value} min={min != null ? min / 1000 : undefined} blank={blank != null} placeholder={blank} noUnit={!unit} onCommit={(m) => { if (m != null || blank != null) onCommit(m); }} />;
 }
 
-/** Lengths in mm separated by spaces (a catalogue: 3070 2570 2070). */
+/** Lengths separated by spaces or semicolons (a catalogue: 3070 2570 2070), in the project's unit. */
 export function MmList({ value, onCommit }: { value: number[]; onCommit: (v: number[]) => void }) {
-  const shown = value.map(mm).join(' ');
-  const [text, setText] = useState(shown);
-  useEffect(() => setText(shown), [shown]);
-  const done = () => {
-    const l = text.split(/[ ,;]+/).map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0).map((x) => x / 1000);
-    if (l.length > 0) onCommit(l); else setText(shown);
-  };
-  return <input value={text} onChange={(e) => setText(e.target.value)} onBlur={done} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} title="Lengths in mm, separated by spaces" />;
+  const units = useStandards((s) => s.units);
+  return <Cell value={formatLengths(value, units)} title="Lengths separated by spaces or semicolons"
+    onCommit={(t) => { const l = parseLengths(t, units)?.filter((x) => x > 0); if (!l?.length) return false; onCommit(l); }} />;
 }
 
-/** A plain number kept as text while typing. */
-export function Num({ value, onCommit, step = 1, min }: { value: number; onCommit: (v: number) => void; step?: number; min?: number }) {
-  return <input className="num" type="number" step={step} min={min} value={value} onChange={(e) => { const n = Number(e.target.value); if (Number.isFinite(n)) onCommit(min != null ? Math.max(min, n) : n); }} />;
+/** A plain number, committed on Enter or blur. */
+export function Num({ value, onCommit, min }: { value: number; onCommit: (v: number) => void; step?: number; min?: number }) {
+  return <NumberField value={value} min={min} onCommit={(n) => { if (n != null) onCommit(n); }} />;
 }

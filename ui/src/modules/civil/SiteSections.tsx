@@ -2,31 +2,33 @@
  * The site's elements in the inspector, each in its own terms: an earthwork
  * (a platform's level, a ditch's section), a path's courses and kerbs, a
  * retaining wall's section and ground sides, a planting's mix and density.
- * Lengths in mm.
+ * Lengths in the project's unit.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
 import { isDitch } from './prefs';
 import { t, useLang } from '../../i18n';
 import { groupedSpecies, speciesName, type Species } from './species';
+import { lengthText } from '../../engine/unitsStore';
+import { LengthField, NumberField } from '../../shell/cells';
+import { MaterialPicker } from '../core/MaterialPicker';
 
 /** Opens the corridor configurator on the element selected. */
 export function Configure() {
   return <><dt /><dd><button type="button" className="btn compact" title="section, profile, stations" onClick={() => useUi.setState({ dialog: 'corridor' })}>Configurator…</button></dd></>;
 }
 
-const mm = (v: unknown, d = 0) => (typeof v === 'number' ? Math.round(v * 1000) : Math.round(d * 1000));
-
-/** A length in mm committed on Enter or blur (empty: the fallback goes back). */
+/**
+ * A length (the shared field: the project's unit, one commit on blur or
+ * Enter; empty puts the value back). `value` in metres, the fallback shown
+ * when it has none; `min` in mm, as the site's sections (and the railway's)
+ * give it.
+ */
 export function Mm({ value, fallback = 0, onCommit, min }: { value: unknown; fallback?: number; onCommit: (m: number) => void; min?: number }) {
-  const shown = String(mm(value, fallback));
-  const [text, setText] = useState(shown);
-  useEffect(() => setText(shown), [shown]);
-  const done = () => { const n = Number(text.replace(',', '.')); if (text.trim() !== '' && Number.isFinite(n) && text !== shown) onCommit(Math.max(min ?? -Infinity, n) / 1000); else setText(shown); };
-  return <><input className="num" value={text} onChange={(e) => setText(e.target.value)} onBlur={done} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} /> <span className="muted">mm</span></>;
+  return <LengthField metres={typeof value === 'number' ? value : fallback} min={min != null ? min / 1000 : undefined} onCommit={(m) => { if (m != null) onCommit(m); }} />;
 }
 
 /** A platform (its level) or a ditch (its depth, bottom and side slope). */
@@ -38,9 +40,9 @@ export function EarthworkSection({ node }: { node: NodeDto }) {
       <dl className="fields">
         <dt>Depth under the ground</dt><dd><Mm value={node.props.depth} fallback={0.5} min={50} onCommit={(v) => set({ depth: v })} /></dd>
         <dt>Bottom width</dt><dd><Mm value={node.props.bottomWidth} fallback={0.4} min={50} onCommit={(v) => set({ bottomWidth: v })} /></dd>
-        <dt>Side slope</dt><dd>1 : <input className="num" type="number" step={0.25} min={0} max={10} value={slope} onChange={(e) => set({ slope: Math.max(0, Number(e.target.value) || 0) })} /></dd>
+        <dt>Side slope</dt><dd>1 : <NumberField value={slope} min={0} max={10} onCommit={(v) => { if (v != null) set({ slope: v }); }} /></dd>
         <Configure />
-        <dt>Top width</dt><dd><span className="num">{mm((typeof node.props.bottomWidth === 'number' ? node.props.bottomWidth : 0.4) + 2 * slope * (typeof node.props.depth === 'number' ? node.props.depth : 0.5))} mm</span></dd>
+        <dt>Top width</dt><dd><span className="num">{lengthText((typeof node.props.bottomWidth === 'number' ? node.props.bottomWidth : 0.4) + 2 * slope * (typeof node.props.depth === 'number' ? node.props.depth : 0.5))}</span></dd>
       </dl>
     );
   }
@@ -60,9 +62,9 @@ export function PathSection({ node }: { node: NodeDto }) {
       <Configure />
       <dt>Width</dt><dd><Mm value={node.props.width} fallback={1.5} min={200} onCommit={(v) => set({ width: v })} /></dd>
       <dt>Surface course</dt><dd><Mm value={node.props.surfaceThickness} fallback={0.06} min={0} onCommit={(v) => set({ surfaceThickness: v })} /></dd>
-      <dt>Surface material</dt><dd><input defaultValue={mat('surfaceMaterial')} key={mat('surfaceMaterial')} onBlur={(e) => { if (e.target.value.trim() && e.target.value !== mat('surfaceMaterial')) set({ surfaceMaterial: e.target.value.trim() }); }} /></dd>
+      <dt>Surface material</dt><dd><MaterialPicker value={mat('surfaceMaterial')} onChange={(m) => { if (m && m !== mat('surfaceMaterial')) set({ surfaceMaterial: m }); }} /></dd>
       <dt>Base course</dt><dd><Mm value={node.props.baseThickness} fallback={0.2} min={0} onCommit={(v) => set({ baseThickness: v })} /></dd>
-      <dt>Base material</dt><dd><input defaultValue={mat('baseMaterial')} key={mat('baseMaterial')} onBlur={(e) => { if (e.target.value.trim() && e.target.value !== mat('baseMaterial')) set({ baseMaterial: e.target.value.trim() }); }} /></dd>
+      <dt>Base material</dt><dd><MaterialPicker value={mat('baseMaterial')} onChange={(m) => { if (m && m !== mat('baseMaterial')) set({ baseMaterial: m }); }} /></dd>
       <dt>Kerbs</dt><dd><input type="checkbox" checked={node.props.kerb === true} onChange={(e) => set({ kerb: e.target.checked })} /></dd>
       {node.props.kerb === true && <>
         <dt>Kerb height</dt><dd><Mm value={node.props.kerbHeight} fallback={0.1} min={20} onCommit={(v) => set({ kerbHeight: v })} /></dd>
@@ -109,8 +111,8 @@ export function PlantingSection({ node }: { node: NodeDto }) {
   return (
     <div className="layers">
       {zone && <dl className="fields">
-        <dt>Plants per 100 m²</dt><dd><input className="num" type="number" step={0.5} min={0.1} value={typeof node.props.density === 'number' ? node.props.density : 3} onChange={(e) => set({ density: Math.max(0.1, Number(e.target.value) || 0.1) })} /></dd>
-        <dt>Seed</dt><dd><input className="num" type="number" value={typeof node.props.seed === 'number' ? node.props.seed : 1} onChange={(e) => set({ seed: Number(e.target.value) || 1 })} /> <button type="button" className="link small" onClick={() => set({ seed: Math.floor(Math.random() * 100000) })}>shuffle</button></dd>
+        <dt>Plants per 100 m²</dt><dd><NumberField value={typeof node.props.density === 'number' ? node.props.density : 3} min={0.1} onCommit={(v) => { if (v != null) set({ density: v }); }} /></dd>
+        <dt>Seed</dt><dd><NumberField value={typeof node.props.seed === 'number' ? node.props.seed : 1} integer onCommit={(v) => { if (v != null) set({ seed: v }); }} /> <button type="button" className="link small" onClick={() => set({ seed: Math.floor(Math.random() * 100000) })}>shuffle</button></dd>
       </dl>}
       <p className="eyebrow">Species{zone ? ' · share' : ''}</p>
       <table className="panel-grid species">
@@ -118,7 +120,7 @@ export function PlantingSection({ node }: { node: NodeDto }) {
           {species.map((s, i) => (
             <tr key={i}>
               <td><span className="swatch" style={{ background: s.color }} /> <span data-no-i18n>{speciesName(named(s), lang)}</span> {named(s).latin && <i className="muted small" data-no-i18n>{named(s).latin}</i>} <span className="muted small" data-no-i18n>{Math.round(s.height * 10) / 10} m · ⌀ {Math.round(s.crown * 10) / 10} m</span></td>
-              {zone && <td><input className="num" type="number" step={0.1} min={0} value={s.share} onChange={(e) => setSpecies(species.map((x, k) => (k === i ? { ...x, share: Math.max(0, Number(e.target.value) || 0) } : x)))} /></td>}
+              {zone && <td><NumberField value={s.share} min={0} style={{ width: 56 }} onCommit={(v) => { if (v != null) setSpecies(species.map((x, k) => (k === i ? { ...x, share: v } : x))); }} /></td>}
               <td><button type="button" className="icon" title="Remove" disabled={species.length <= 1} onClick={() => setSpecies(species.filter((_, k) => k !== i))}>×</button></td>
             </tr>
           ))}

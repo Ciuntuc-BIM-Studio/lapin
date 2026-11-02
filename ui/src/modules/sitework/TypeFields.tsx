@@ -25,7 +25,7 @@ const ARTICLE: Field[] = [
 
 const SCAFFOLD: Field[] = [
   { key: 'system', label: 'System', kind: 'choice', options: [['modular', 'modular'], ['frame', 'frames']] },
-  { key: 'bays', label: 'Bay lengths (mm)', kind: 'lengths' },
+  { key: 'bays', label: 'Bay lengths', kind: 'lengths' },
   { key: 'width', label: 'Width', kind: 'length' },
   { key: 'lift', label: 'Lift', kind: 'length' },
   { key: 'wallGap', label: 'From the wall', kind: 'length' },
@@ -54,7 +54,7 @@ const slab = (spec: Spec): Field[] => [
       { key: 'secondaryHeight', label: 'Secondary beams', kind: 'length' },
       { key: 'primaryHeight', label: 'Primary beams', kind: 'length' },
       { key: 'beamWidth', label: 'Beam width', kind: 'length' },
-      { key: 'lengths', label: 'Beam lengths (mm)', kind: 'lengths' },
+      { key: 'lengths', label: 'Beam lengths', kind: 'lengths' },
     ] as Field[]),
   { key: 'edgeInset', label: 'First beam in from the edge', kind: 'length' },
   { key: 'upstand', label: 'Edge upstand', kind: 'length' },
@@ -72,8 +72,8 @@ const BEAM: Field[] = [
 ];
 
 const UPRIGHT: Field[] = [
-  { key: 'panelWidths', label: 'Panel widths (mm)', kind: 'lengths' },
-  { key: 'panelHeights', label: 'Panel heights (mm)', kind: 'lengths' },
+  { key: 'panelWidths', label: 'Panel widths', kind: 'lengths' },
+  { key: 'panelHeights', label: 'Panel heights', kind: 'lengths' },
   { key: 'panelThickness', label: 'Panel depth', kind: 'length' },
   { key: 'tieAlong', label: 'Ties every, along', kind: 'length' },
   { key: 'tieUp', label: 'Ties every, up', kind: 'length' },
