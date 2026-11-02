@@ -82,6 +82,9 @@ public class CivilTests
     {
         Assert.Equal([new Vec3(1, 2, 3), new Vec3(4, 5, 6)], Tin.ParseSurveyPoints("# header\n1,2,3\n4 5 6\n"));
         Assert.Equal([new Vec3(500, 4500, 120.5)], Tin.ParseSurveyPoints("7,4500.0,500.0,120.5,TREE"));
+        // Named points, as a total station exports them; a header line stays out.
+        Assert.Equal([new Vec3(634210.55, 512345.20, 245.37), new Vec3(634215, 512350, 245.9)],
+            Tin.ParseSurveyPoints("Name,N,E,Z,Code\nP1,512345.20,634210.55,245.37,CORNER\nST12;512350,00;634215,00;245,90;STATION\n"));
         var tin = Tin.FromMesh([0, 0, 0, 10, 0, 0, 0, 10, 0, 10, 0, 0, 0, 10, 0, 10, 10, 1], [0, 1, 2, 3, 4, 5]);
         Assert.Equal(4, tin.Points.Count);
         Assert.Equal(2, tin.Triangles.Count);
