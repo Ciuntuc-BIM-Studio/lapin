@@ -36,6 +36,18 @@ public class CivilLineworkTests
     static List<(double X, double Y)> PathOf(Entity e) => ((JsonArray)e.Attrs["path"]!).Select(p => (Json.Number(p!.AsArray()[0]) ?? 0, Json.Number(p.AsArray()[1]) ?? 0)).ToList();
 
     [Fact]
+    public void A_3D_polyline_with_a_repeated_vertex_keeps_the_heights_of_the_vertices_left()
+    {
+        string V(double x, double y, double z) => string.Join("\n", "0", "VERTEX", "8", "CONTOUR", "10", F(x), "20", F(y), "30", F(z), "70", "32");
+        var pl = string.Join("\n", "0", "POLYLINE", "8", "CONTOUR", "66", "1", "70", "8", V(0, 0, 10), V(10, 0, 11), V(10, 0, 11), V(20, 5, 12), "0", "SEQEND");
+        var f = new Fixture(new DraftingModule(), new CivilModule());
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        f.Run("drafting.importDxf", new JsonObject { ["viewId"] = plan, ["name"] = "contour.dxf", ["data"] = Convert.ToBase64String(Encoding.UTF8.GetBytes(Dxf(pl))) });
+        var line = f.Model.OfClass(IfcClass.Annotation).Single(e => e.Attrs["shape"] is JsonObject);
+        Assert.Equal([10.0, 11, 12], ((JsonArray)line.Attrs["heights"]!).Select(z => Json.Number(z)!.Value));
+    }
+
+    [Fact]
     public void A_DXF_lines_heights_are_kept_and_drawn_in_3D_as_linework()
     {
         var (f, _, lines) = Imported();

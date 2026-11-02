@@ -287,6 +287,8 @@ public static class DxfImport
         {
             DxfLine l when shape is Line && (l.ZA ?? l.ZB) != null => [l.ZA ?? l.ZB ?? 0, l.ZB ?? l.ZA ?? 0],
             DxfPolyline { Zs: { } zs } when shape is Polyline sp && sp.Pts.Count == zs.Count => zs,
+            // A vertex repeated (common in a survey's contours) went from the shape: its height goes with it.
+            DxfPolyline { Zs: { } zs } pl when shape is Polyline sp && zs.Count == pl.Vertices.Count && DedupeHeights(pl) is { } kept && kept.Count == sp.Pts.Count => kept,
             DxfPolyline { Zs: { } zs } when shape is Line && zs.Count == 2 => zs,
             DxfPolyline { Elevation: { } el } pl when shape is Polyline sp && sp.Pts.Count == pl.Vertices.Count => Enumerable.Repeat(el, sp.Pts.Count).ToList(),
             DxfPolyline { Elevation: { } el } pl when shape is Line && pl.Vertices.Count == 2 => [el, el],
@@ -641,6 +643,17 @@ public static class DxfImport
             run = [b.P];
         }
         Flush();
+        return o;
+    }
+
+    /// <summary>A straight polyline's heights for the vertices <see cref="Dedupe"/> keeps of it (the first of a repeated vertex).</summary>
+    static List<double>? DedupeHeights(DxfPolyline p)
+    {
+        if (p.Zs is not { } zs || zs.Count != p.Vertices.Count || p.Vertices.Any(v => Math.Abs(v.Bulge) >= 1e-12)) return null;
+        var (pts, o) = (new List<Vec2>(), new List<double>());
+        for (var i = 0; i < zs.Count; i++)
+            if (pts.Count == 0 || (pts[^1] - p.Vertices[i].P).Length > 1e-12) { pts.Add(p.Vertices[i].P); o.Add(zs[i]); }
+        if (p.Closed && pts.Count > 2 && (pts[0] - pts[^1]).Length <= 1e-12) o.RemoveAt(o.Count - 1);
         return o;
     }
 
