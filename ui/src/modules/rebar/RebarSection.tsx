@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
+import { LengthField, NumberField } from '../../shell/cells';
+import { lengthText } from '../../engine/unitsStore';
 import { LabelStyleFields, useRebarSettings, type LabelStylePatch } from './LabelStyleFields';
 import { lapFromTo, overStock, splitRefusal, stockLap } from './split';
 
@@ -18,12 +20,11 @@ export function useRebarCatalog(): RebarCatalog | null {
   return (info?.catalogs['rebar.shapes'] as unknown as RebarCatalog | undefined) ?? null;
 }
 
-const mm = (m: unknown) => (typeof m === 'number' ? Math.round(m * 1000) : '');
-
-function Mm({ label, value, min, onChange, step = 1 }: { label: string; value: unknown; min?: number; onChange: (m: number) => void; step?: number }) {
+/** A shape's length parameter, in the project's unit; `min` in metres. */
+function Len({ label, value, min, onChange }: { label: string; value: unknown; min?: number; onChange: (m: number) => void }) {
   return (
     <label className="field-line"><span className="eyebrow">{label}</span>
-      <input className="num" type="number" step={step} value={mm(value)} onChange={(e) => { const n = Number(e.target.value); if (Number.isFinite(n) && (min === undefined || n >= min)) onChange(n / 1000); }} /><span className="muted small"> mm</span>
+      <LengthField metres={typeof value === 'number' ? value : null} min={min} onCommit={(m) => { if (m != null) onChange(m); }} />
     </label>
   );
 }
@@ -59,7 +60,7 @@ function HookFields({ label, hook, diameter, onChange }: { label: string; hook: 
         <option value={-1}>As the shape</option><option value={0}>None</option><option value={90}>90°</option><option value={135}>135°</option><option value={180}>180°</option>
       </select>
       {hook && hook.angle > 0 && <>
-        <input className="num" type="number" style={{ width: 56 }} value={Math.round(hook.length * 1000)} onChange={(e) => onChange({ ...hook, length: Math.max(0, Number(e.target.value)) / 1000 })} /><span className="muted small">mm</span>
+        <LengthField style={{ width: 64 }} metres={hook.length} min={0} onCommit={(m) => { if (m != null) onChange({ ...hook, length: m }); }} />
         <label className="check small"><input type="checkbox" checked={!!hook.flip} onChange={(e) => onChange({ ...hook, flip: e.target.checked })} /> Other side</label>
       </>}
     </div>
@@ -75,10 +76,9 @@ function CoverField({ node, d, set }: { node: NodeDto; d: Described | null; set:
   return (
     <div className="row small" data-field="rebar-cover">
       <span className="eyebrow">Cover</span>
-      <input className="num" type="number" min={0} max={200} step={5} style={{ width: 56 }} value={own != null ? Math.round(own * 1000) : ''} placeholder={d?.cover != null ? String(Math.round(d.cover * 1000)) : ''}
+      <LengthField style={{ width: 64 }} metres={own} min={0} max={0.2} blank placeholder={d?.cover != null ? lengthText(d.cover) : ''}
         title="The cover the anchor grips stand off the bar by: drag an anchor onto the formwork face and the bar stops here inside it"
-        onChange={(e) => { const v = e.target.value; if (v === '') set({ cover: null }); else { const n = Number(v); if (Number.isFinite(n) && n >= 0 && n <= 200) set({ cover: n / 1000 }); } }} />
-      <span className="muted small">mm</span>
+        onCommit={(m) => set({ cover: m })} />
       {own == null && d?.coverSource === 'host' && <span className="muted small">from the host</span>}
       {own == null && d?.coverSource === 'settings' && <span className="muted small">from the settings</span>}
       {own != null && <button type="button" className="link small" onClick={() => set({ cover: null })}>Clear</button>}
@@ -191,7 +191,7 @@ export function RebarSection({ node }: { node: NodeDto }) {
           {catalog.shapes.map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}
         </select>
       </label>
-      {shape?.params.map((p) => <Mm key={p.key} label={p.label} value={params[p.key] ?? p.default} min={p.min * 1000} onChange={(v) => set({ params: { [p.key]: v } })} />)}
+      {shape?.params.map((p) => <Len key={p.key} label={p.label} value={params[p.key] ?? p.default} min={p.min} onChange={(v) => set({ params: { [p.key]: v } })} />)}
       {shape && !shape.freeVertices && shape.code !== 'dot' && <CoverField node={node} d={d} set={set} />}
       <label className="field-line"><span className="eyebrow">Diameter</span>
         <select value={diameter} onChange={(e) => set({ diameter: Number(e.target.value) })}>
@@ -208,14 +208,14 @@ export function RebarSection({ node }: { node: NodeDto }) {
       </div>
       <div className="row small" data-field="rebar-array">
         <span className="eyebrow">Array</span>
-        <input className="num" type="number" min={1} max={200} style={{ width: 44 }} value={array.nx} onChange={(e) => set({ array: { ...array, nx: Math.max(1, Number(e.target.value) || 1) } })} />
+        <NumberField style={{ width: 44 }} value={array.nx} min={1} max={200} integer onCommit={(n) => { if (n != null) set({ array: { ...array, nx: n } }); }} />
         <span>×</span>
-        <input className="num" type="number" style={{ width: 56 }} value={Math.round(array.dx * 1000)} onChange={(e) => set({ array: { ...array, dx: Number(e.target.value) / 1000 } })} />
-        <span className="muted small">mm along x;</span>
-        <input className="num" type="number" min={1} max={200} style={{ width: 44 }} value={array.ny} onChange={(e) => set({ array: { ...array, ny: Math.max(1, Number(e.target.value) || 1) } })} />
+        <LengthField style={{ width: 64 }} metres={array.dx} onCommit={(m) => { if (m != null) set({ array: { ...array, dx: m } }); }} />
+        <span className="muted small">along x;</span>
+        <NumberField style={{ width: 44 }} value={array.ny} min={1} max={200} integer onCommit={(n) => { if (n != null) set({ array: { ...array, ny: n } }); }} />
         <span>×</span>
-        <input className="num" type="number" style={{ width: 56 }} value={Math.round(array.dy * 1000)} onChange={(e) => set({ array: { ...array, dy: Number(e.target.value) / 1000 } })} />
-        <span className="muted small">mm along y</span>
+        <LengthField style={{ width: 64 }} metres={array.dy} onCommit={(m) => { if (m != null) set({ array: { ...array, dy: m } }); }} />
+        <span className="muted small">along y</span>
       </div>
       <p className="eyebrow">Across the drawing</p>
       {(() => {
@@ -223,12 +223,12 @@ export function RebarSection({ node }: { node: NodeDto }) {
         const host = typeof node.props.host === 'string' ? nodes.get(node.props.host) : undefined;
         return (
           <div className="row small" data-field="rebar-across">
-            <input className="num" type="number" min={1} max={40} style={{ width: 44 }} value={across.count} onChange={(e) => set({ across: { ...across, count: Math.max(1, Number(e.target.value) || 1) } })} />
+            <NumberField style={{ width: 44 }} value={across.count} min={1} max={40} integer onCommit={(n) => { if (n != null) set({ across: { ...across, count: n } }); }} />
             <span>×</span>
             <select value={across.mode} onChange={(e) => set({ across: { ...across, mode: e.target.value as 'cover' | 'step' } })}>
               <option value="cover">by the cover</option><option value="step">at a step</option>
             </select>
-            {across.mode === 'step' && <><input className="num" type="number" style={{ width: 56 }} step={5} min={5} value={Math.round(across.step * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 5) set({ across: { ...across, step: v / 1000 } }); }} /><span className="muted small">mm</span></>}
+            {across.mode === 'step' && <LengthField style={{ width: 64 }} metres={across.step} min={0.005} onCommit={(m) => { if (m != null) set({ across: { ...across, step: m } }); }} />}
             {host && <span className="muted small">in <span data-no-i18n>{host.name}</span></span>}
           </div>
         );
@@ -270,7 +270,7 @@ export function RebarRunSection({ node }: { node: NodeDto }) {
           {catalog.shapes.filter((s) => s.code !== 'dot').map((s) => <option key={s.code} value={s.code}>{s.label}</option>)}
         </select>
       </label>
-      {shape?.params.map((p) => <Mm key={p.key} label={p.label} value={params[p.key] ?? p.default} min={p.min * 1000} onChange={(v) => set({ params: { [p.key]: v } })} />)}
+      {shape?.params.map((p) => <Len key={p.key} label={p.label} value={params[p.key] ?? p.default} min={p.min} onChange={(v) => set({ params: { [p.key]: v } })} />)}
       <label className="field-line"><span className="eyebrow">Diameter</span>
         <select value={typeof node.props.diameter === 'number' ? node.props.diameter : 0.008} onChange={(e) => set({ diameter: Number(e.target.value) })}>
           {catalog.diameters.map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000)}</option>)}
@@ -280,8 +280,8 @@ export function RebarRunSection({ node }: { node: NodeDto }) {
       {zones.length === 0 && <p className="muted small">One step along the whole path. Zones put a closer step at the ends (a third each, for a seismic beam).</p>}
       {zones.map((z, i) => (
         <div key={i} className="row small">
-          <input className="num" type="number" style={{ width: 64 }} value={Math.round(z.length * 1000)} onChange={(e) => setZones(zones.map((x, j) => (j === i ? { ...x, length: Math.max(1, Number(e.target.value)) / 1000 } : x)))} /><span className="muted small">mm at</span>
-          <input className="num" type="number" style={{ width: 56 }} value={Math.round(z.step * 1000)} onChange={(e) => setZones(zones.map((x, j) => (j === i ? { ...x, step: Math.max(10, Number(e.target.value)) / 1000 } : x)))} /><span className="muted small">mm</span>
+          <LengthField style={{ width: 64 }} metres={z.length} min={0.001} onCommit={(m) => { if (m != null) setZones(zones.map((x, j) => (j === i ? { ...x, length: m } : x))); }} /><span className="muted small">at</span>
+          <LengthField style={{ width: 64 }} metres={z.step} min={0.01} onCommit={(m) => { if (m != null) setZones(zones.map((x, j) => (j === i ? { ...x, step: m } : x))); }} />
           <button type="button" className="link small" onClick={() => setZones(zones.filter((_, j) => j !== i))}>Remove</button>
         </div>
       ))}

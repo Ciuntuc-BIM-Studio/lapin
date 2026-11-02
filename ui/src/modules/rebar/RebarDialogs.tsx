@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { useRebarCatalog } from './RebarSection';
+import { LengthField, NumberField } from '../../shell/cells';
 import { LabelStyleFields, useRebarSettings, type LabelKind, type LabelStylePatch, type RebarSettings as Settings } from './LabelStyleFields';
 
 const KINDS: { id: LabelKind; label: string }[] = [{ id: 'bars', label: 'Bars' }, { id: 'stirrups', label: 'Stirrups on the type' }, { id: 'columnBars', label: 'Column bars' }, { id: 'runs', label: 'Distributions' }];
@@ -21,13 +22,13 @@ function StockAndLapFields({ s, set }: { s: Settings; set: (patch: Partial<Setti
         <select value={stockChoice} onChange={(e) => { if (e.target.value === 'custom') setCustom(true); else { setCustom(false); set({ stockLength: Number(e.target.value) }); } }}>
           <option value="6">6 m</option><option value="12">12 m</option><option value="custom">Another length</option>
         </select>
-        {stockChoice === 'custom' && <><input className="num" type="number" step={0.5} min={1} max={24} value={stock} onChange={(e) => { const v = Number(e.target.value); if (v >= 1 && v <= 24) set({ stockLength: v }); }} /><span className="muted small"> m</span></>}
+        {stockChoice === 'custom' && <LengthField metres={stock} min={1} max={24} onCommit={(m) => { if (m != null) set({ stockLength: m }); }} />}
       </label>
       <label className="field-line"><span className="eyebrow">Lap length</span>
         <select value={s.lapLength == null ? 'dia' : 'value'} onChange={(e) => set({ lapLength: e.target.value === 'dia' ? null : 0.8 })}>
           <option value="dia">50Ø</option><option value="value">A length</option>
         </select>
-        {s.lapLength != null && <><input className="num" type="number" step={10} min={10} max={5000} value={Math.round(s.lapLength * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 10 && v <= 5000) set({ lapLength: v / 1000 }); }} /><span className="muted small"> mm</span></>}
+        {s.lapLength != null && <LengthField metres={s.lapLength} min={0.01} max={5} onCommit={(m) => { if (m != null) set({ lapLength: m }); }} />}
       </label>
     </div>
   );
@@ -55,12 +56,12 @@ export function RebarSettingsDialog() {
         <div className="dialog-body">
           <label className="field-line check"><input type="checkbox" checked={s.colorByDiameter} onChange={(e) => set({ colorByDiameter: e.target.checked })} /><span>A colour for each diameter</span></label>
           <label className="field-line check"><input type="checkbox" checked={s.segmentLengths} onChange={(e) => set({ segmentLengths: e.target.checked })} /><span>Segment lengths written on the bars</span></label>
-          <label className="field-line"><span className="eyebrow">Text height</span><input className="num" type="number" step={0.5} min={1} max={10} value={s.textHeight} onChange={(e) => { const v = Number(e.target.value); if (v >= 1 && v <= 10) set({ textHeight: v }); }} /><span className="muted small"> mm on paper</span></label>
-          <label className="field-line"><span className="eyebrow">Mark balloon</span><input className="num" type="number" step={0.5} min={3} max={20} value={s.balloon} onChange={(e) => { const v = Number(e.target.value); if (v >= 3 && v <= 20) set({ balloon: v }); }} /><span className="muted small"> mm on paper</span></label>
+          <label className="field-line"><span className="eyebrow">Text height</span><NumberField value={s.textHeight} min={1} max={10} onCommit={(n) => { if (n != null) set({ textHeight: n }); }} /><span className="muted small"> mm on paper</span></label>
+          <label className="field-line"><span className="eyebrow">Mark balloon</span><NumberField value={s.balloon} min={3} max={20} onCommit={(n) => { if (n != null) set({ balloon: n }); }} /><span className="muted small"> mm on paper</span></label>
           <label className="field-line"><span className="eyebrow">Steel</span>
             <select value={s.steel} onChange={(e) => set({ steel: e.target.value })}>{catalog.steels.map((x) => <option key={x} value={x}>{x}</option>)}</select>
           </label>
-          <label className="field-line"><span className="eyebrow">Cover</span><input className="num" type="number" step={5} min={0} max={200} value={Math.round(s.cover * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 0 && v <= 200) set({ cover: v / 1000 }); }} /><span className="muted small"> mm</span></label>
+          <label className="field-line"><span className="eyebrow">Cover</span><LengthField metres={s.cover} min={0} max={0.2} onCommit={(m) => { if (m != null) set({ cover: m }); }} /></label>
           <p className="muted small">Bars are drawn as thick as they are; bend radii follow SR EN 1992-1-1 (a mandrel of 4Ø up to Ø16, 7Ø over). The schedule's lengths are the nominal ones, hooks included.</p>
           <StockAndLapFields s={s} set={set} />
           <p className="muted small">A bar longer than the stock length is cut in two with Split bar, the lap where you put it (from one station to another along the bar); this lap length is taken when only one point is given. Each piece has its own mark in the schedule.</p>

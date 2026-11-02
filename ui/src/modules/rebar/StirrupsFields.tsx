@@ -5,6 +5,7 @@
 
 import type { NodeDto } from '../../engine/protocol';
 import { execute } from '../../engine/session';
+import { LengthField, NumberField } from '../../shell/cells';
 import { useRebarCatalog } from './RebarSection';
 import { LabelStyleFields, useRebarSettings, type LabelStylePatch } from './LabelStyleFields';
 
@@ -33,17 +34,17 @@ export function StirrupsFields({ type, kind }: { type: NodeDto; kind: string }) 
             {catalog.diameters.filter((x) => x <= 0.02).map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000)}</option>)}
           </select>
         </label>
-        <label className="field-line"><span className="eyebrow">Cover</span><input className="num" type="number" step={5} min={0} max={200} value={Math.round(s.cover * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 0 && v <= 200) set({ cover: v / 1000 }); }} /><span className="muted small"> mm</span></label>
+        <label className="field-line"><span className="eyebrow">Cover</span><LengthField metres={s.cover} min={0} max={0.2} onCommit={(m) => { if (m != null) set({ cover: m }); }} /></label>
         <label className="field-line"><span className="eyebrow">Laid</span>
           <select value={s.mode} onChange={(e) => set({ mode: e.target.value as Spec['mode'] })}><option value="uniform">One step throughout</option><option value="zones">Three zones</option></select>
         </label>
         {s.mode === 'uniform'
-          ? <label className="field-line"><span className="eyebrow">Step</span><input className="num" type="number" step={10} min={10} value={Math.round(s.step * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 10) set({ step: v / 1000 }); }} /><span className="muted small"> mm</span></label>
+          ? <label className="field-line"><span className="eyebrow">Step</span><LengthField metres={s.step} min={0.01} onCommit={(m) => { if (m != null) set({ step: m }); }} /></label>
           : zones.map((z, i) => (
             <div key={i} className="row small">
               <span className="eyebrow">{i === 0 ? 'Start' : i === 1 ? 'Middle' : 'End'}</span>
-              <input className="num" type="number" style={{ width: 48 }} min={0} max={100} value={Math.round(z.share * 100)} onChange={(e) => setZone(i, { share: Math.max(0, Number(e.target.value)) / 100 })} /><span className="muted small">% of the length at</span>
-              <input className="num" type="number" style={{ width: 56 }} step={10} min={10} value={Math.round(z.step * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 10) setZone(i, { step: v / 1000 }); }} /><span className="muted small">mm</span>
+              <NumberField style={{ width: 48 }} value={Math.round(z.share * 100)} min={0} max={100} onCommit={(n) => { if (n != null) setZone(i, { share: n / 100 }); }} /><span className="muted small">% of the length at</span>
+              <LengthField style={{ width: 64 }} metres={z.step} min={0.01} onCommit={(m) => { if (m != null) setZone(i, { step: m }); }} />
             </div>
           ))}
         {kind === 'column' && <label className="field-line"><span className="eyebrow">Arrangement</span>
@@ -51,7 +52,7 @@ export function StirrupsFields({ type, kind }: { type: NodeDto; kind: string }) 
             <option value="single">Round the perimeter only</option><option value="diamond">With a diamond inside</option><option value="cross">With two inside, one each way</option>
           </select>
         </label>}
-        <label className="field-line"><span className="eyebrow">Mark</span><input className="num" type="number" min={1} value={s.mark || ''} onChange={(e) => { const v = Number(e.target.value); if (v >= 1) set({ mark: v }); }} /></label>
+        <label className="field-line"><span className="eyebrow">Mark</span><NumberField value={s.mark || null} min={1} integer onCommit={(n) => { if (n != null) set({ mark: n }); }} /></label>
         <p className="muted small">Drawn in sections as they lie to the axis, in structural plans and elevations, and counted in the bar schedule. The longitudinal bars are drawn by hand (Rebar 2D).</p>
         <p className="eyebrow">Label</p>
         <LabelStyleFields style={s.label} base={settings?.labels.stirrups} onChange={(label) => set({ label })} onReset={() => void execute('rebar.setTypeStirrups', { id: type.id, label: null })} testId="type-stirrups-label" withLine />
@@ -74,7 +75,7 @@ function ColumnBarsFields({ type }: { type: NodeDto }) {
       {b.enabled && <>
         <div className="row small">
           <span className="eyebrow">Each face</span>
-          <input className="num" type="number" style={{ width: 44 }} min={2} max={20} value={b.perFace} onChange={(e) => set({ perFace: Math.max(2, Number(e.target.value) || 2) })} />
+          <NumberField style={{ width: 44 }} value={b.perFace} min={2} max={20} integer onCommit={(n) => { if (n != null) set({ perFace: n }); }} />
           <span>×</span>
           <select value={b.diameter} onChange={(e) => set({ diameter: Number(e.target.value) })}>{catalog.diameters.map((x) => <option key={x} value={x}>Ø{Math.round(x * 1000)}</option>)}</select>
           {b.mark ? <span className="muted small">mark {b.mark}</span> : null}
@@ -84,7 +85,7 @@ function ColumnBarsFields({ type }: { type: NodeDto }) {
             <option value="auto">By the column above</option><option value="starter">Starter bars past the top</option><option value="hooks">90° hooks inside the top</option>
           </select>
         </label>
-        {b.top !== 'hooks' && <label className="field-line"><span className="eyebrow">Starter bars past the top</span><input className="num" type="number" step={50} min={0} max={5000} value={Math.round(b.lap * 1000)} onChange={(e) => { const v = Number(e.target.value); if (v >= 0 && v <= 5000) set({ lap: v / 1000 }); }} /><span className="muted small"> mm</span></label>}
+        {b.top !== 'hooks' && <label className="field-line"><span className="eyebrow">Starter bars past the top</span><LengthField metres={b.lap} min={0} max={5} onCommit={(m) => { if (m != null) set({ lap: m }); }} /></label>}
         <p className="muted small">The corners shared, the rest of each face spread evenly, inside the stirrups; from the base to the top and on by the lap, storey by storey. By the column above: where none stands on a column (the top storey), its bars end under the top with a 90° hook inwards.</p>
         <p className="eyebrow">Label</p>
         <LabelStyleFields style={b.label} base={settings?.labels.columnBars} onChange={(label) => set({ label })} onReset={() => void execute('rebar.setColumnBars', { id: type.id, label: null })} testId="column-bars-label" />

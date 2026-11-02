@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { query, useSession } from '../../engine/session';
+import { NumberField } from '../../shell/cells';
 
 export interface LabelStyle { parts: string[]; balloon: boolean; direction: string; side: string; offset: number; leader: 'none' | 'one' | 'each'; line: 'none' | 'string' }
 export type LabelStylePatch = Partial<Record<keyof LabelStyle, LabelStyle[keyof LabelStyle] | null>>;
@@ -78,13 +79,13 @@ export function LabelStyleFields({ style, base, onChange, onReset, testId, withL
         <select value={dirKind} onChange={(e) => onChange({ direction: e.target.value === 'angle' ? `angle:${angle || 30}` : e.target.value })}>
           <option value="horizontal">Horizontal</option><option value="along">Along the bars</option><option value="angle">At an angle</option>
         </select>
-        {dirKind === 'angle' && <><input className="num" type="number" style={{ width: 56 }} step={5} min={-180} max={180} value={angle} onChange={(e) => onChange({ direction: `angle:${Number(e.target.value) || 0}` })} /><span className="muted small">°</span></>}
+        {dirKind === 'angle' && <><NumberField style={{ width: 56 }} value={angle} min={-180} max={180} suffix="°" onCommit={(n) => onChange({ direction: `angle:${n ?? 0}` })} /></>}
       </label>
       <label className="field-line"><span className="eyebrow">Stands</span>
         <select value={of('side') ?? 'auto'} onChange={(e) => onChange({ side: e.target.value })}>
           <option value="auto">Where it fits</option><option value="above">Above the bars</option><option value="below">Below the bars</option><option value="left">Left of the bars</option><option value="right">Right of the bars</option>
         </select>
-        <input className="num" type="number" style={{ width: 56 }} step={1} min={0} max={100} value={of('offset') ?? 4} onChange={(e) => { const v = Number(e.target.value); if (v >= 0 && v <= 100) onChange({ offset: v }); }} /><span className="muted small">mm off them</span>
+        <NumberField style={{ width: 56 }} value={of('offset') ?? 4} min={0} max={100} onCommit={(n) => { if (n != null) onChange({ offset: n }); }} /><span className="muted small">mm off them</span>
       </label>
       {onReset && owned > 0 && <button type="button" className="link small" onClick={onReset}>Back to the project's style</button>}
     </div>
