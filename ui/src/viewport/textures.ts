@@ -217,6 +217,7 @@ export function imageOf(material: NodeDto | undefined, nodes: Map<string, NodeDt
   return { id, url: `data:${mime};base64,${data}`, width: w, height: h };
 }
 
+/** The images' textures, by image and wrap: repeated on a material's faces, clamped on an orthophoto. */
 const images = new Map<string, THREE.Texture>();
 const listeners = new Set<() => void>();
 
@@ -226,15 +227,17 @@ export function whenImagesLoad(f: () => void): () => void {
   return () => { listeners.delete(f); };
 }
 
-/** The texture of an image (loaded once per image). */
-export function imageTexture(img: OwnImage): THREE.Texture {
-  let t = images.get(img.id);
+/** The texture of an image (loaded once per image and wrap), repeated; shared by every mesh, so never freed with one. */
+export function imageTexture(img: OwnImage, wrap: THREE.Wrapping = THREE.RepeatWrapping): THREE.Texture {
+  const key = wrap === THREE.RepeatWrapping ? img.id : `${img.id}:${wrap}`;
+  let t = images.get(key);
   if (!t) {
     t = new THREE.TextureLoader().load(img.url, () => { for (const f of listeners) f(); });
-    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.wrapS = t.wrapT = wrap;
     t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = 4;
-    images.set(img.id, t);
+    t.userData.shared = true;
+    images.set(key, t);
   }
   return t;
 }
@@ -287,9 +290,5 @@ export function orthoUv(o: Ortho, x: number, y: number): [number, number] {
   return [s, 1 - t];
 }
 
-/** The orthophoto's texture: clamped at its edges, loaded once. */
-export function orthoTexture(o: Ortho): THREE.Texture {
-  const t = imageTexture(o.image);
-  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
-  return t;
-}
+/** The orthophoto's texture: clamped at its edges, loaded once (its own, so a material using the same picture keeps repeating). */
+export const orthoTexture = (o: Ortho): THREE.Texture => imageTexture(o.image, THREE.ClampToEdgeWrapping);
