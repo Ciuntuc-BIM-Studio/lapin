@@ -208,4 +208,16 @@ public class CivilTests
         Assert.Equal(10, Terrains.Of(f.Model.Get(id)!).ElevationAt(15, 20)!.Value, 6);
         Assert.Throws<CommandException>(() => f.Run("civil.importLandXml", new JsonObject { ["text"] = "<nope" }));
     }
+
+    [Fact]
+    public void A_LandXML_surface_in_feet_or_US_survey_feet_is_read_in_metres()
+    {
+        string Xml(string units) => $"<LandXML xmlns=\"http://www.landxml.org/schema/LandXML-1.2\"><Units>{units}</Units><Surfaces><Surface name=\"EG\"><Definition surfType=\"TIN\"><Pnts>"
+            + "<P id=\"1\">0 0 100</P><P id=\"2\">0 1000 100</P><P id=\"3\">1000 0 110</P></Pnts></Definition></Surface></Surfaces></LandXML>";
+        var feet = LandXml.Surfaces(Xml("<Imperial linearUnit=\"foot\" areaUnit=\"squareFoot\"/>")).Single().Points;
+        Assert.Equal(new Vec3(304.8, 0, 30.48), new Vec3(Math.Round(feet[1].X, 9), feet[1].Y, Math.Round(feet[1].Z, 9)));
+        var survey = LandXml.Surfaces(Xml("<Imperial linearUnit=\"USSurveyFoot\"/>")).Single().Points;
+        Assert.Equal(1000 * 1200.0 / 3937, survey[2].Y, 9);
+        Assert.Equal(1000, LandXml.Surfaces(Xml("<Metric linearUnit=\"meter\"/>")).Single().Points[1].X);
+    }
 }

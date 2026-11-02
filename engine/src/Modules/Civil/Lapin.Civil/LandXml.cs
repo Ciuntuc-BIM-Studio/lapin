@@ -225,12 +225,30 @@ public static class LandXml
 
     public sealed record Surface(string Name, List<Vec3> Points, int Faces);
 
+    /// <summary>
+    /// Metres in the file's length unit (<c>Units/*/@linearUnit</c>): a Civil
+    /// 3D file in feet or US survey feet is read at its size; none: metres.
+    /// </summary>
+    public static double LinearUnit(XDocument doc) =>
+        doc.Root?.Elements().FirstOrDefault(e => e.Name.LocalName == "Units")?.Elements().Select(e => (string?)e.Attribute("linearUnit")).FirstOrDefault(u => u != null) switch
+        {
+            "millimeter" => 0.001,
+            "centimeter" => 0.01,
+            "kilometer" => 1000,
+            "foot" => 0.3048,
+            "USSurveyFoot" => 1200.0 / 3937,
+            "inch" => 0.0254,
+            "mile" => 1609.344,
+            _ => 1,
+        };
+
     public static List<Surface> Surfaces(string xml)
     {
         XDocument doc;
         try { doc = XDocument.Parse(xml); }
         catch (System.Xml.XmlException ex) { throw new Lapin.Platform.CommandException($"Not a LandXML file: {ex.Message}"); }
         var o = new List<Surface>();
+        var unit = LinearUnit(doc);
         foreach (var s in doc.Descendants().Where(e => e.Name.LocalName == "Surface"))
         {
             var pts = new List<Vec3>();
@@ -238,7 +256,7 @@ public static class LandXml
             {
                 var f = p.Value.Split([' ', '\t', '\n', '\r', ','], StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => double.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : double.NaN).ToArray();
-                if (f.Length >= 3 && f.Take(3).All(double.IsFinite)) pts.Add(new Vec3(f[1], f[0], f[2]));
+                if (f.Length >= 3 && f.Take(3).All(double.IsFinite)) pts.Add(new Vec3(f[1] * unit, f[0] * unit, f[2] * unit));
             }
             if (pts.Count < 3) continue;
             var faces = s.Descendants().Count(e => e.Name.LocalName == "F");
