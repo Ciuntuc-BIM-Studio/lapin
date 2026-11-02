@@ -1,0 +1,1 @@
+{ "id": "wood", "name": "Wood", "assembly": "Lapin.Wood.dll", "requires": ["core", "architecture"] }

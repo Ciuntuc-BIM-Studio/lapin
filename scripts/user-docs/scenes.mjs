@@ -443,6 +443,26 @@ export const scenes = [
     },
   },
   {
+    id: 'wood',
+    async run(t) {
+      // The timber frame configurator (decision 239): the house's wall type made a timber frame, the sample wall framed, saved.
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      await t.tool('wood.frame');
+      const dialog = t.page.locator('[aria-label="Timber frame"]');
+      t.expect(await dialog.count() > 0, 'the timber frame configurator opens');
+      await dialog.locator('[data-testid=wood-on]').check();
+      await t.wait(900);
+      t.expect(await dialog.locator('svg[aria-label="Frame elevation"] polygon').count() > 20, 'the sample wall is framed');
+      await t.shot('wood-frame', { of: '.dialog', pad: 0 });
+      await dialog.locator('.btn.primary').click();
+      await t.wait(1200);
+      const framed = await t.call('doc.query', { name: 'wood.wall', args: { id: walls[0] } });
+      t.expect(framed?.framed && framed.counts.king > 0, `the house's walls are framed (${JSON.stringify(framed?.counts)})`);
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     id: 'stairs',
     async run(t) {
       await t.fresh();

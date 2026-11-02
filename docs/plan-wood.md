@@ -1,6 +1,6 @@
 # Modulul `wood`: pereți pe cadre din lemn și CLT
 
-Cerut de utilizator la 02.11.2026: un modul independent, numit `wood`, pentru construcția din lemn (timber framing și CLT), condus din configurator. Întrebarea grea e cum se tratează golurile de uși și ferestre, de aceea are capitolul ei, primul. Decizia 239 în `decisions-pending.md` (propusă, de aprobat).
+Cerut de utilizator la 02.11.2026: un modul independent, numit `wood`, pentru construcția din lemn (timber framing și CLT), condus din configurator. Întrebarea grea e cum se tratează golurile de uși și ferestre, de aceea are capitolul ei, primul. Decizia 239 în `decisions-pending.md`: aprobată la 02.11.2026 cu propunerile de la sfârșit; etapa 1 făcută (vezi rândul ei).
 
 ## Granița modulului
 

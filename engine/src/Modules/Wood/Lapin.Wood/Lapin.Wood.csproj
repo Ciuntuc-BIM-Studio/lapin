@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Wood (docs/plan-wood.md, decision 239): timber-frame walls (and, later, floors, prefabricated panels and CLT) from the
+    configurator. A wall type says how its core is built (studs on a module, plates, noggins, and how its door and window
+    openings are framed); every member is derived from the wall, its openings and the type's rules, never stored. It works on
+    the architecture module's walls and openings and changes nothing of them: without it a project draws as before.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>wood</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Drawing/Lapin.Drawing.csproj" Private="false" />
+    <ProjectReference Include="../../Architecture/Lapin.Architecture/Lapin.Architecture.csproj" Private="false" />
+  </ItemGroup>
+</Project>
