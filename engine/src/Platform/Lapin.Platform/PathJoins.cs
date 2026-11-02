@@ -186,11 +186,6 @@ public static class Joins
         edit.Replace(current.With(attrs: attrs));
     }
 
-    public static void Unjoin(IEdit edit, string a, string b)
-    {
-        if (Between(edit.Model, a, b) is { } r) edit.RemoveRelation(r.Id);
-    }
-
     /// <summary>The ends of the element that a join already takes (start, end).</summary>
     static bool[] JoinedEnds(IModelView m, Entity e)
     {
