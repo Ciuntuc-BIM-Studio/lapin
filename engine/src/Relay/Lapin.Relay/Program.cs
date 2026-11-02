@@ -116,22 +116,40 @@ static async IAsyncEnumerable<byte[]> Receive(WebSocket ws, [System.Runtime.Comp
     }
 }
 
-/// <summary>A socket and the turn to send on it.</summary>
+/// <summary>
+/// A socket and the turn to send on it. A peer that does not take a frame in time is cut off, so one stalled guest
+/// never holds up the room (the host's loop forwards to each guest in turn).
+/// </summary>
 sealed class Peer(WebSocket ws)
 {
+    static readonly TimeSpan SendTimeout = TimeSpan.FromSeconds(30);
+    static readonly TimeSpan CloseTimeout = TimeSpan.FromSeconds(5);
     readonly SemaphoreSlim _sending = new(1, 1);
 
     public async Task Send(ReadOnlyMemory<byte> frame)
     {
-        await _sending.WaitAsync();
-        try { if (ws.State == WebSocketState.Open) await ws.SendAsync(frame, WebSocketMessageType.Binary, true, default); }
-        catch (Exception ex) when (ex is WebSocketException or ObjectDisposedException or OperationCanceledException) { }
-        finally { _sending.Release(); }
+        using var cts = new CancellationTokenSource(SendTimeout);
+        try
+        {
+            await _sending.WaitAsync(cts.Token);
+            try { if (ws.State == WebSocketState.Open) await ws.SendAsync(frame, WebSocketMessageType.Binary, true, cts.Token); }
+            finally { _sending.Release(); }
+        }
+        catch (OperationCanceledException) { ws.Abort(); }
+        catch (Exception ex) when (ex is WebSocketException or ObjectDisposedException) { }
     }
 
+    /// <summary>Our side of the close sent, without waiting for the peer's answer (which a stalled peer never sends); cut off if even that does not go.</summary>
     public async Task Close()
     {
-        try { if (ws.State == WebSocketState.Open) await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, null, default); }
+        using var cts = new CancellationTokenSource(CloseTimeout);
+        try
+        {
+            await _sending.WaitAsync(cts.Token);
+            try { if (ws.State is WebSocketState.Open or WebSocketState.CloseReceived) await ws.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, null, cts.Token); }
+            finally { _sending.Release(); }
+        }
+        catch (OperationCanceledException) { ws.Abort(); }
         catch (Exception ex) when (ex is WebSocketException or ObjectDisposedException) { }
     }
 }
