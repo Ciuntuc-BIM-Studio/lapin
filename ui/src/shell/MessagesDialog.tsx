@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useLang } from '../i18n';
+import { useDialogFocus } from './dialogFocus';
 import {
   adoptCode, forgetMe, markSeen, refresh, sendMessage, setActive, setNickname, unreadOf, useReplies, validSecret,
   type InboxReport,
@@ -21,6 +22,7 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const focus = useDialogFocus<HTMLDivElement>();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -38,7 +40,7 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
   useEffect(() => { if (report && unreadOf(report) > 0) void markSeen(report); }, [report]);
 
   return (
-    <div className="dialog-backdrop" role="dialog" aria-label="Messages">
+    <div className="dialog-backdrop" role="dialog" aria-label="Messages" tabIndex={-1} ref={focus}>
       <div className="dialog wide messages">
         <header className="dialog-head">
           <span className="panel-title">Messages</span>

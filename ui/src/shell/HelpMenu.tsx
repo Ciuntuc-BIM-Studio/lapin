@@ -14,6 +14,7 @@ import { useSession } from '../engine/session';
 import { RECENT, openLink, reportParams, sendReport } from './support';
 import { contactFor, useReplies } from './replies';
 import { MessagesDialog } from './MessagesDialog';
+import { useDialogFocus } from './dialogFocus';
 import { isGuest } from '../engine/share';
 import { isDesktop } from '../engine/files';
 import { checkForUpdates } from '../app/updates';
@@ -48,6 +49,7 @@ function ReportDialog({ onClose, start }: { onClose: () => void; start?: ReportS
   const [nickname, setNickname] = useState(() => useReplies.getState().settings?.nickname ?? '');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const focus = useDialogFocus<HTMLDivElement>();
   const send = async () => {
     setBusy(true); setProblem(null);
     try {
@@ -60,7 +62,7 @@ function ReportDialog({ onClose, start }: { onClose: () => void; start?: ReportS
     } finally { setBusy(false); }
   };
   return (
-    <div className="dialog-backdrop" role="dialog" aria-label="Report an issue">
+    <div className="dialog-backdrop" role="dialog" aria-label="Report an issue" tabIndex={-1} ref={focus}>
       <div className="dialog">
         <header className="dialog-head">
           <span className="panel-title">Report an issue</span>
@@ -164,13 +166,14 @@ export function HelpMenu() {
  * anyone who needs it, in any way; Lapin asks nothing and takes no donations.
  */
 function AboutDialog({ version, onClose }: { version?: string; onClose: () => void }) {
+  const focus = useDialogFocus<HTMLDivElement>();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
   return (
-    <div className="dialog-backdrop" role="dialog" aria-label="About Lapin">
+    <div className="dialog-backdrop" role="dialog" aria-label="About Lapin" tabIndex={-1} ref={focus}>
       <div className="dialog about">
         <header className="dialog-head">
           <span className="panel-title">About Lapin</span>

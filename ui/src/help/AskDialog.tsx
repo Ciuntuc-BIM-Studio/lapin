@@ -15,6 +15,7 @@ import { openStandards } from '../modules/core/standardsTab';
 import { openLink } from '../shell/support';
 import { useLang } from '../i18n';
 import { FAQ, ask, type Entry } from './faq';
+import { useDialogFocus } from '../shell/dialogFocus';
 
 interface Message { from: 'you' | 'lapin'; text?: string; entry?: Entry; related?: Entry[]; unknown?: string }
 
@@ -27,6 +28,7 @@ export function AskDialog({ onClose, onReport }: { onClose: () => void; onReport
   const [text, setText] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const end = useRef<HTMLDivElement>(null);
+  const focus = useDialogFocus<HTMLDivElement>();
   useEffect(() => { end.current?.scrollIntoView({ block: 'end' }); }, [messages]);
 
   const title = (e: Entry) => (ro ? e.qRo[0] : e.q[0]);
@@ -54,7 +56,7 @@ export function AskDialog({ onClose, onReport }: { onClose: () => void; onReport
 
   return (
     <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog ask-dialog" role="dialog" aria-label="Ask Lapin" onClick={(e) => e.stopPropagation()}>
+      <div className="dialog ask-dialog" role="dialog" aria-label="Ask Lapin" tabIndex={-1} ref={focus} onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
           <span className="panel-title"><BunnyIcon size={16} /> Ask Lapin</span>
           <button type="button" className="icon" onClick={onClose} title="Close"><X size={15} /></button>
