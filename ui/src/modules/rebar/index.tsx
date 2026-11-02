@@ -42,7 +42,7 @@ const lBar = bar('L', 'L bar', LBarIcon);
 const uBar = bar('U', 'U bar', UBarIcon);
 const stirrup = bar('stirrup', 'Stirrup', StirrupIcon, 'RS');
 const tie = bar('tie', 'Tie', TieIcon);
-const dot = bar('dot', 'Bar in section', BarDotIcon, 'RD');
+const dot = bar('dot', 'Bar in section', BarDotIcon, 'BS');
 /** A bar bent as drawn: its vertices, the first one its point. */
 const polylineBar: ToolDef = {
   id: 'rebar.polyline', label: 'Polyline bar', icon: PolylineBarIcon,
@@ -61,7 +61,7 @@ const run: ToolDef = {
 };
 /** A section across the element clicked, where it was clicked, inset beside the click in this view. */
 const sectionHere: ToolDef = {
-  id: 'rebar.sectionHere', label: 'Section here', icon: Scissors, shortcut: 'SH',
+  id: 'rebar.sectionHere', label: 'Section here', icon: Scissors, shortcut: 'RH',
   gesture: { kind: 'pick', types: ACROSS },
   complete: async ({ points: [p], entity }, ctx) => {
     if (!entity) return;

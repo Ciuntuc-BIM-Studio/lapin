@@ -32,9 +32,9 @@ Alt, der importeres, gemmes i projektfilen. Et objekt får sit navn fra filen (e
 
 ## Veje, kurver og CAD-linjer
 
-En **vej** eller en **sti** følger sin akse. I **Korridor…** (CO) giver fanen **Kurver** hvert knækpunkt på aksen en radius med klotoide ind og ud, sådan som en vejprojekterende lægger en kurve; et knækpunkt sat til 0 forbliver et hjørne, og kurver, der ikke kan være mellem deres naboer, afvises med begrundelsen. Stationeringen, længdeprofilet og tværprofilerne følger den krumme akse, og IFC 4.3 skriver den som en linjeføring.
+En **vej** eller en **sti** følger sin akse. I **Korridor…** (CR) giver fanen **Kurver** hvert knækpunkt på aksen en radius med klotoide ind og ud, sådan som en vejprojekterende lægger en kurve; et knækpunkt sat til 0 forbliver et hjørne, og kurver, der ikke kan være mellem deres naboer, afvises med begrundelsen. Stationeringen, længdeprofilet og tværprofilerne følger den krumme akse, og IFC 4.3 skriver den som en linjeføring.
 
-CAD-linjer bliver til terrænelementer: **Vej fra CAD-linjer** (RL) og **Brudlinje fra CAD-linjer** (BL) tager en tegnet linje eller polylinje eller en fra en DXF, følger alle linjer på dens lag, der mødes ende mod ende, og laver en vej langs den eller en brudlinje i terrænet. Når linjerne har koter (en DXF's 3D-linjer), giver de vejens længdeprofil eller brudlinjens koter. Sådanne linjer beholder deres koter og kan vises i 3D (kategorien *linjer*).
+CAD-linjer bliver til terrænelementer: **Vej fra CAD-linjer** (LR) og **Brudlinje fra CAD-linjer** (BL) tager en tegnet linje eller polylinje eller en fra en DXF, følger alle linjer på dens lag, der mødes ende mod ende, og laver en vej langs den eller en brudlinje i terrænet. Når linjerne har koter (en DXF's 3D-linjer), giver de vejens længdeprofil eller brudlinjens koter. Sådanne linjer beholder deres koter og kan vises i 3D (kategorien *linjer*).
 
 ## Situationsplaner og oversigtskort
 
@@ -57,7 +57,7 @@ Skemaet **Matrikelkoordinater** (Skemaer → + → Matrikelkoordinater) er matri
 
 ## Træer og buske
 
-**Plante** (PL) sætter en plante med et klik, **Beplantningszone** (PZ) tilsår en omrids med en blanding af arter i en tæthed; markér dem og vælg arterne i egenskaberne. Arterne kommer fra et bibliotek af planter, der er hjemmehørende eller traditionelle i Rumænien, i grupper: **frugttræer** (æble, pære, blomme, sød- og surkirsebær, abrikos, kvæde), **nåletræer** (ædelgran, rødgran, skovfyr, østrigsk fyr), **løvtræer** (valnød, lind, birk, ahorn), **buske** (hassel, kirsebærkornel, hyld, hunderose, syren, havtorn, ribs, thuja, buksbom) og **bunddække**. Hver har sit latinske navn, sin sædvanlige højde og krone. Beplantningslisten viser det latinske og det rumænske navn ved hver art.
+**Plante** (PN) sætter en plante med et klik, **Beplantningszone** (PZ) tilsår en omrids med en blanding af arter i en tæthed; markér dem og vælg arterne i egenskaberne. Arterne kommer fra et bibliotek af planter, der er hjemmehørende eller traditionelle i Rumænien, i grupper: **frugttræer** (æble, pære, blomme, sød- og surkirsebær, abrikos, kvæde), **nåletræer** (ædelgran, rødgran, skovfyr, østrigsk fyr), **løvtræer** (valnød, lind, birk, ahorn), **buske** (hassel, kirsebærkornel, hyld, hunderose, syren, havtorn, ribs, thuja, buksbom) og **bunddække**. Hver har sit latinske navn, sin sædvanlige højde og krone. Beplantningslisten viser det latinske og det rumænske navn ved hver art.
 
 I plan tegnes hver plante set fra oven, som på en landskabsplan, i sort og så bred som kronen: et frugttræ som en fliget krone med gaflede grene, en valnød eller en lind som en bølget krone om en mørk kerne, en gran som en stjerne af nålekviste, en fyr som en rund nåletot, en busk som en lille sky. Lapin tegner selv hvert symbol, så nabotræer er lidt forskellige. Ved 1:1000 og mindre (oversigtskort) tegnes kun kronernes omrids. I 3D er nåletræer kegler, de andre træer har en rund krone på stammen og buske en lav kuppel.
 

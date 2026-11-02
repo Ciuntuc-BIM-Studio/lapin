@@ -53,7 +53,7 @@ Chaque pièce est une partie à part : le tableau **Roof timber** les donne en l
 
 ## Faux plafonds
 
-**Finitions → Plafond** (<kbd>CL</kbd>) dessine un faux plafond sur un contour cliqué ; **Plafond dans une pièce** remplit la pièce cliquée en suivant son contour. Un plafond est suspendu à sa **Hauteur** au-dessus de l’étage (2700 mm sauf réglage dans ses propriétés).
+**Finitions → Plafond** (<kbd>CG</kbd>) dessine un faux plafond sur un contour cliqué ; **Plafond dans une pièce** remplit la pièce cliquée en suivant son contour. Un plafond est suspendu à sa **Hauteur** au-dessus de l’étage (2700 mm sauf réglage dans ses propriétés).
 
 Son type, dans **Finitions → Types de plafond**, règle le **Système** : **Dalles sur ossature apparente** (largeur, longueur et épaisseur de la dalle, largeur vue, hauteur et rotation de l’ossature, suspentes jusqu’à la structure à leur espacement) ou **Plaques de plâtre, continu**. L’ossature est centrée sur le plafond, si bien que les dalles coupées en rive sont égales.
 

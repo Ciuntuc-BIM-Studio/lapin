@@ -38,7 +38,7 @@ const placed = (r: unknown, what: string) => { if (r) notify(`${what} placed in 
 
 /** A scaffold along a line drawn in plan, on its left (flipped in the inspector), 6 m high unless the inspector says otherwise. */
 const scaffold: ToolDef = {
-  id: 'sitework.scaffold', label: 'Scaffold', icon: Construction, shortcut: 'SC',
+  id: 'sitework.scaffold', label: 'Scaffold', icon: Construction, shortcut: 'FS',
   gesture: { kind: 'polyline' },
   complete: async ({ points }, ctx) => {
     const typeId = scaffoldType();
@@ -48,7 +48,7 @@ const scaffold: ToolDef = {
 
 /** A scaffold round the outer faces of the walls selected, up to their tops; it follows them as they change. */
 const scaffoldOnWalls: ToolDef = {
-  id: 'sitework.scaffoldOnWalls', label: 'Scaffold on walls', icon: Building2, shortcut: 'SW',
+  id: 'sitework.scaffoldOnWalls', label: 'Scaffold on walls', icon: Building2, shortcut: 'WS',
   run: () => {
     const wallIds = selectedOf('IfcWall');
     if (wallIds.length === 0) { notify('Select the walls the scaffold goes round (Shift-click for more), then press Scaffold on walls.'); return; }

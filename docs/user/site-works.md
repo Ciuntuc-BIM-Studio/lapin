@@ -14,8 +14,8 @@ Scaffolds and formwork are **temporary**: they are built and taken down in the *
 
 ## Scaffolding
 
-- **Scaffold on walls** (<kbd>SW</kbd>): select the walls (Shift-click for more), then press it. The scaffold goes round their outer faces, at its type's distance from the wall, up to the walls' top. It closes its corners itself. Move a wall or make it taller, and the scaffold follows.
-- **Scaffold** (<kbd>SC</kbd>): draw its line in plan along the facade, and press Enter to finish. The scaffold stands on the left of the line. Choose the other side in its properties.
+- **Scaffold on walls** (<kbd>WS</kbd>): select the walls (Shift-click for more), then press it. The scaffold goes round their outer faces, at its type's distance from the wall, up to the walls' top. It closes its corners itself. Move a wall or make it taller, and the scaffold follows.
+- **Scaffold** (<kbd>FS</kbd>): draw its line in plan along the facade, and press Enter to finish. The scaffold stands on the left of the line. Choose the other side in its properties.
 
 Each straight run is split into the type's bay lengths, with as few bays as reach its end. The lifts climb until the top deck is within reach of the work top. The guardrail stands above the top deck. The feet stand on the terrain, on base jacks. If the ground falls more than the jacks take up, Lapin says so.
 

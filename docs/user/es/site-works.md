@@ -14,8 +14,8 @@ Los andamios y encofrados son **temporales**: se montan y se desmontan en la fas
 
 ## Andamios
 
-- **Andamio en muros** (<kbd>SW</kbd>): seleccione los muros (Mayús-clic para añadir más) y pulse el botón. El andamio rodea sus caras exteriores, a la distancia del muro que fija su tipo, hasta la parte superior de los muros. Cierra sus esquinas por sí mismo. Si mueve un muro o lo hace más alto, el andamio lo sigue.
-- **Andamio** (<kbd>SC</kbd>): dibuje su línea en planta a lo largo de la fachada y pulse Intro para terminar. El andamio se sitúa a la izquierda de la línea. Elija el otro lado en sus propiedades.
+- **Andamio en muros** (<kbd>WS</kbd>): seleccione los muros (Mayús-clic para añadir más) y pulse el botón. El andamio rodea sus caras exteriores, a la distancia del muro que fija su tipo, hasta la parte superior de los muros. Cierra sus esquinas por sí mismo. Si mueve un muro o lo hace más alto, el andamio lo sigue.
+- **Andamio** (<kbd>FS</kbd>): dibuje su línea en planta a lo largo de la fachada y pulse Intro para terminar. El andamio se sitúa a la izquierda de la línea. Elija el otro lado en sus propiedades.
 
 Cada tramo recto se divide en las longitudes de módulo del tipo, con los menos módulos posibles para llegar a su extremo. Los niveles suben hasta que la plataforma superior queda al alcance de la cota de trabajo. La barandilla se sitúa por encima de la plataforma superior. Los pies se apoyan en el terreno, sobre husillos de base. Si el terreno baja más de lo que absorben los husillos, Lapin se lo indica.
 

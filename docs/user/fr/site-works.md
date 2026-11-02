@@ -14,8 +14,8 @@ Les échafaudages et les coffrages sont **temporaires** : ils sont montés et 
 
 ## Échafaudages
 
-- **Échafaudage sur les murs** (<kbd>SW</kbd>) : sélectionnez les murs (Maj-clic pour en ajouter), puis appuyez sur l’outil. L’échafaudage fait le tour de leurs faces extérieures, à la distance du mur fixée par son type, jusqu’au sommet des murs. Il ferme lui-même ses angles. Déplacez un mur ou rehaussez-le, et l’échafaudage suit.
-- **Échafaudage** (<kbd>SC</kbd>) : dessinez sa ligne en plan le long de la façade, et appuyez sur Entrée pour terminer. L’échafaudage se place à gauche de la ligne. Choisissez l’autre côté dans ses propriétés.
+- **Échafaudage sur les murs** (<kbd>WS</kbd>) : sélectionnez les murs (Maj-clic pour en ajouter), puis appuyez sur l’outil. L’échafaudage fait le tour de leurs faces extérieures, à la distance du mur fixée par son type, jusqu’au sommet des murs. Il ferme lui-même ses angles. Déplacez un mur ou rehaussez-le, et l’échafaudage suit.
+- **Échafaudage** (<kbd>FS</kbd>) : dessinez sa ligne en plan le long de la façade, et appuyez sur Entrée pour terminer. L’échafaudage se place à gauche de la ligne. Choisissez l’autre côté dans ses propriétés.
 
 Chaque tronçon droit est découpé selon les longueurs de travée du type, avec le moins de travées possible pour atteindre son extrémité. Les niveaux de plancher montent jusqu’à ce que le plancher supérieur permette d’atteindre le haut de l’ouvrage. Le garde-corps se dresse au-dessus du plancher supérieur. Les pieds reposent sur le terrain, sur des vérins de pied. Si le sol descend plus que les vérins ne peuvent rattraper, Lapin le signale.
 

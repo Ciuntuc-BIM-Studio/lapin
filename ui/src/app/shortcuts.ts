@@ -176,8 +176,6 @@ export const REVIT: Record<string, Binding[]> = {
   'view.layers': ['VV'], 'view.graphicsVg': ['VG'],
   'app.zoomFit': ['ZF', 'ZE'], 'app.zoomRegion': ['ZR'], 'app.zoomPrevious': ['ZP'], 'app.zoomOut': ['-', 'ZO'],
   'app.toggleProps': ['Ctrl+Shift+B', 'PP'], 'app.shortcuts': ['KS'],
-  // Lapin's own letters that Revit gives to something else.
-  'civil.corridor': ['CR'],
 };
 
 export const PRESETS: Record<PresetId, { label: string; patch: Record<string, Binding[]> }> = {

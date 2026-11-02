@@ -55,7 +55,8 @@ describe('the keymap', () => {
     expect(classic['modify.copy']).toEqual([]);
     const revit = presetBindings(COMMANDS, 'revit');
     expect(revit['modify.copy']).toEqual(['CO']);
-    expect(revit['civil.corridor']).toEqual(['CR']);
+    // A command Revit has no letters for keeps Lapin's.
+    expect(revit['civil.corridor']).toEqual(['CO']);
     expect(revit['app.zoomFit']).toEqual(['ZF', 'ZE']);
     const mine = withBinding(COMMANDS, withPreset('revit'), 'architecture.wall', 'Ctrl+Shift+W');
     expect(effectiveBindings(COMMANDS, mine)['architecture.wall']).toEqual(['WA', 'Ctrl+Shift+W']);

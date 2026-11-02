@@ -14,8 +14,8 @@ Schelele și cofrajele sunt **temporare**: se montează și se demontează în f
 
 ## Schele
 
-- **Schelă pe pereți** (<kbd>SW</kbd>): selectezi pereții (Shift-clic pentru mai mulți), apoi apeși butonul. Schela merge pe fețele lor exterioare, la distanța tipului de perete, până la partea de sus a pereților. Își închide singură colțurile. Muți un perete sau îl faci mai înalt, și schela îl urmează.
-- **Schelă** (<kbd>SC</kbd>): îi desenezi linia în plan, de-a lungul fațadei, și apeși Enter ca să termini. Schela stă la stânga liniei. Partea cealaltă o alegi în proprietăți.
+- **Schelă pe pereți** (<kbd>WS</kbd>): selectezi pereții (Shift-clic pentru mai mulți), apoi apeși butonul. Schela merge pe fețele lor exterioare, la distanța tipului de perete, până la partea de sus a pereților. Își închide singură colțurile. Muți un perete sau îl faci mai înalt, și schela îl urmează.
+- **Schelă** (<kbd>FS</kbd>): îi desenezi linia în plan, de-a lungul fațadei, și apeși Enter ca să termini. Schela stă la stânga liniei. Partea cealaltă o alegi în proprietăți.
 
 Fiecare tronson drept e împărțit în traveile tipului, cât mai puține câte ajung până la capăt. Nivelurile urcă până când podina de sus ajunge aproape de cota de lucru, iar parapetul stă deasupra ei. Tălpile stau pe teren, pe tălpi reglabile. Dacă terenul coboară mai mult decât preiau tălpile, Lapin îți spune.
 

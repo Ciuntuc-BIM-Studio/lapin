@@ -14,8 +14,8 @@ Stilladser og forskalling er **Midlertidig**: de opstilles og nedtages i fasen *
 
 ## Stilladser
 
-- **Stillads på vægge** (<kbd>SW</kbd>): markér væggene (Shift-klik for flere), og tryk derefter på den. Stilladset går rundt om deres ydersider, i typens afstand fra væggen, op til væggenes top. Det lukker selv sine hjørner. Flyt en væg, eller gør den højere, og stilladset følger med.
-- **Stillads** (<kbd>SC</kbd>): tegn dets linje i plan langs facaden, og tryk på Enter for at afslutte. Stilladset står til venstre for linjen. Vælg den anden side i dets egenskaber.
+- **Stillads på vægge** (<kbd>WS</kbd>): markér væggene (Shift-klik for flere), og tryk derefter på den. Stilladset går rundt om deres ydersider, i typens afstand fra væggen, op til væggenes top. Det lukker selv sine hjørner. Flyt en væg, eller gør den højere, og stilladset følger med.
+- **Stillads** (<kbd>FS</kbd>): tegn dets linje i plan langs facaden, og tryk på Enter for at afslutte. Stilladset står til venstre for linjen. Vælg den anden side i dets egenskaber.
 
 Hvert lige stykke deles op i typens faglængder, med så få fag som muligt for at nå enden. Etagerne stiger, indtil det øverste dæk er inden for rækkevidde af arbejdshøjden. Rækværket står over det øverste dæk. Fødderne står på terrænet, på fodspindler. Hvis terrænet falder mere, end spindlerne kan optage, siger Lapin det.
 

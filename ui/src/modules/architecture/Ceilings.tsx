@@ -24,7 +24,7 @@ export interface CeilingSpec {
 
 /** A ceiling: click its corners, then the first one again (or Enter). */
 export const ceiling: ToolDef = {
-  id: 'architecture.ceiling', label: 'Ceiling', icon: Grid3x3, shortcut: 'CL',
+  id: 'architecture.ceiling', label: 'Ceiling', icon: Grid3x3, shortcut: 'CG',
   gesture: { kind: 'polygon' },
   complete: async ({ points }, ctx) => {
     await ctx.execute('architecture.addCeiling', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(useUi.getState().ceilingTypeId ? { typeId: useUi.getState().ceilingTypeId } : {}) });

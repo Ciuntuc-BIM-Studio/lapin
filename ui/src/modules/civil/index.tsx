@@ -169,7 +169,7 @@ const platform: ToolDef = {
 
 /** A ditch along a polyline (Enter finishes), half a metre under the ground; its section is set in the inspector. */
 const ditch: ToolDef = {
-  id: 'civil.ditch', label: 'Ditch', icon: Waves, shortcut: 'DT',
+  id: 'civil.ditch', label: 'Ditch', icon: Waves, shortcut: 'DH',
   gesture: { kind: 'polyline' },
   complete: async ({ points }, ctx) => { await ctx.execute('civil.addDitch', { points: points.map((p) => [p.x, p.y]) }); },
 };
@@ -223,10 +223,10 @@ export function fromLinework(id: string, label: string, as: string, shortcut: st
     },
   };
 }
-const roadFromLinework = fromLinework('civil.roadFromLinework', 'Road from linework', 'road', 'RL');
+const roadFromLinework = fromLinework('civil.roadFromLinework', 'Road from linework', 'road', 'LR');
 const breaklineFromLinework = fromLinework('civil.breaklineFromLinework', 'Breakline from linework', 'breakline', 'BL');
 
-const corridor: ToolDef = { id: 'civil.corridor', label: 'Corridor…', icon: Spline, shortcut: 'CO', run: () => useUi.setState({ dialog: 'corridor' }) };
+const corridor: ToolDef = { id: 'civil.corridor', label: 'Corridor…', icon: Spline, shortcut: 'CR', run: () => useUi.setState({ dialog: 'corridor' }) };
 
 /** A retaining wall along a polyline, the high ground on its left; its section is set in the inspector. */
 const retainingWall: ToolDef = {
@@ -237,7 +237,7 @@ const retainingWall: ToolDef = {
 
 /** One plant at a click (the catalogue's first species; changed in the inspector). */
 const plant: ToolDef = {
-  id: 'civil.plant', label: 'Plant', icon: TreeDeciduous, shortcut: 'PL',
+  id: 'civil.plant', label: 'Plant', icon: TreeDeciduous, shortcut: 'PN',
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('civil.addPlanting', { storeyId: ctx.storeyId, x: p.x, y: p.y }); },
 };
@@ -272,7 +272,7 @@ const civil: LapinModule = {
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, parcel], small: [terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
-      { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SR'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
+      { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, road, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },
     ],
   }],

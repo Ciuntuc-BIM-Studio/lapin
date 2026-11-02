@@ -14,8 +14,8 @@ Gerüste und Schalungen sind **Temporär**: Sie werden in der Bauphase **Bauausf
 
 ## Gerüste
 
-- **Gerüst an Wänden** (<kbd>SW</kbd>): Wählen Sie die Wände aus (Umschalt-Klick für weitere), und klicken Sie dann darauf. Das Gerüst läuft um ihre Außenseiten, im Abstand seines Typs von der Wand, bis zur Oberkante der Wände. Seine Ecken schließt es selbst. Verschieben Sie eine Wand oder machen Sie sie höher, und das Gerüst folgt.
-- **Gerüst** (<kbd>SC</kbd>): Zeichnen Sie seine Linie im Grundriss entlang der Fassade, und drücken Sie Enter, um abzuschließen. Das Gerüst steht links der Linie. Die andere Seite wählen Sie in seinen Eigenschaften.
+- **Gerüst an Wänden** (<kbd>WS</kbd>): Wählen Sie die Wände aus (Umschalt-Klick für weitere), und klicken Sie dann darauf. Das Gerüst läuft um ihre Außenseiten, im Abstand seines Typs von der Wand, bis zur Oberkante der Wände. Seine Ecken schließt es selbst. Verschieben Sie eine Wand oder machen Sie sie höher, und das Gerüst folgt.
+- **Gerüst** (<kbd>FS</kbd>): Zeichnen Sie seine Linie im Grundriss entlang der Fassade, und drücken Sie Enter, um abzuschließen. Das Gerüst steht links der Linie. Die andere Seite wählen Sie in seinen Eigenschaften.
 
 Jeder gerade Abschnitt wird in die Feldlängen des Typs aufgeteilt, mit so wenigen Feldern, wie nötig sind, um sein Ende zu erreichen. Die Lagen steigen, bis der oberste Belag in Reichweite der Arbeitshöhe ist. Der Seitenschutz steht über dem obersten Belag. Die Fußpunkte stehen auf dem Gelände, auf Fußspindeln. Fällt das Gelände stärker ab, als die Spindeln ausgleichen können, meldet Lapin das.
 

@@ -48,7 +48,7 @@ export const sectionTools: ToolDef[] = [
     },
   },
   {
-    id: 'view.sectionCurved', label: 'Curved section', icon: Spline, shortcut: 'SC',
+    id: 'view.sectionCurved', label: 'Curved section', icon: Spline, shortcut: 'SV',
     gesture: { kind: 'threePoints', arc: true },
     complete: async ({ points: [a, b, c] }, ctx) => {
       // Three points: the arc's start, its end, then a point on it (as the curved wall is drawn).
