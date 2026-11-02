@@ -74,7 +74,7 @@ public static class CdePdfRemarks
     public static JsonArray Scan(Session session, JsonObject p)
     {
         var m = session.Model;
-        var folder = (string?)p["folder"] is { Length: > 0 } given ? given : Cde.Folder(m) ?? throw new CommandException("Choose the project folder first (Manage → Project folder).");
+        var folder = (string?)p["folder"] is { Length: > 0 } given ? HostFiles.Check(given) : Cde.Folder(m) ?? throw new CommandException("Choose the project folder first (Manage → Project folder).");
         if (!Directory.Exists(folder)) throw new CommandException("The project folder is not on this computer right now.");
         var issues = CdeIssues.All(m);
         var lastRead = CdeRemarks.Of(m)

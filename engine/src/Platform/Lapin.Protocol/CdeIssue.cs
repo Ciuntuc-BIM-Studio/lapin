@@ -29,7 +29,7 @@ public static class CdeIssue
         var q = session.Reader;
         // The folder is optional: the project's file holds the issue; a folder is where it is also exchanged. A browser has none (its file system is the page's own).
         var toFolder = !OperatingSystem.IsBrowser() && (p["toFolder"] is not JsonValue tv || !tv.TryGetValue<bool>(out var t) || t);
-        var folder = !toFolder ? null : (string?)p["folder"] is { Length: > 0 } given ? given : Cde.Folder(m);
+        var folder = !toFolder ? null : (string?)p["folder"] is { Length: > 0 } given ? HostFiles.Check(given) : Cde.Folder(m);
         var sheets = Cde.SheetsOf(m, p["sheets"]);
         var model = Flag(p, "model");
         if (sheets.Count == 0 && !model) throw new CommandException("Choose at least one sheet, or the model.");

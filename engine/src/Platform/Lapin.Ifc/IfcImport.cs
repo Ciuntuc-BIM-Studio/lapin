@@ -68,7 +68,7 @@ public sealed record IfcImportResult(int Elements, int Updated, int References, 
 public static partial class IfcImport
 {
     public static IfcImportResult Run(Session session, string path, IfcImportOptions? options, out Diff diff) =>
-        Run(session, File.ReadAllBytes(path), System.IO.Path.GetFileName(path), options, out diff);
+        Run(session, File.ReadAllBytes(HostFiles.Check(path)), System.IO.Path.GetFileName(path), options, out diff);
 
     /// <summary>An IFC file's bytes into the open project (<paramref name="name"/>: the file's name, for the undo label).</summary>
     public static IfcImportResult Run(Session session, byte[] bytes, string name, IfcImportOptions? options, out Diff diff)

@@ -512,13 +512,13 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
         {
             if ((string?)p["path"] is { Length: > 0 } path)
             {
-                File.WriteAllBytes(path, bytes);
+                File.WriteAllBytes(HostFiles.Check(path), bytes);
                 return new JsonObject { ["path"] = path, ["bytes"] = bytes.Length };
             }
             return new JsonObject { ["name"] = name, ["data"] = Convert.ToBase64String(bytes) };
         }
 
-        string PathParam() => (string?)p["path"] ?? throw new CommandException("The file's path is missing.");
+        string PathParam() => HostFiles.Check((string?)p["path"] ?? throw new CommandException("The file's path is missing."));
         int Number() => p["number"] is JsonValue nv && nv.TryGetValue<int>(out var n) ? n : throw new CommandException("Which version?");
 
         switch (method)
@@ -550,7 +550,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 var diff = files.Open(session, PathParam());
                 return (new JsonObject { ["notes"] = new JsonArray(files.LastNotes.Select(n => (JsonNode)n).ToArray()) }, diff);
             }
-            case "project.save": return (null, files.Save(session, (string?)p["path"]));
+            case "project.save": return (null, files.Save(session, (string?)p["path"] is { } savePath ? HostFiles.Check(savePath) : null));
             case "project.openBytes":
             {
                 // A project from its bytes (a host without files: the browser), base64 in `data`.
@@ -754,7 +754,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             {
                 // A link read again from its file (the desktop: a link made from a path): what it held goes, what the file holds now comes in its place.
                 var link = Links.Require(session.Model, (string?)p["id"]);
-                var path = link.Str("path") ?? throw new CommandException("This link has no file to read again (it was linked from the browser).");
+                var path = HostFiles.Check(link.Str("path") ?? throw new CommandException("This link has no file to read again (it was linked from the browser)."));
                 if (!File.Exists(path)) throw new CommandException($"The file is gone: {path}.");
                 if (link.Str("kind") == "dxf")
                 {
@@ -833,7 +833,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return (delivered, null);
             }
             case "cde.publishIssue":
-                return (CdeDeliverables.Publish(session.Model, files.Issues(session), (string?)p["id"], (string?)p["folder"], p["flat"]?.GetValue<bool>() == true), null);
+                return (CdeDeliverables.Publish(session.Model, files.Issues(session), (string?)p["id"], (string?)p["folder"] is { } publishTo ? HostFiles.Check(publishTo) : null, p["flat"]?.GetValue<bool>() == true), null);
             // The hashes an issue record says are kept that the project's file does not hold (a version restored from before they were let go).
             case "cde.missing":
             {

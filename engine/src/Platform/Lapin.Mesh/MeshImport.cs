@@ -271,8 +271,8 @@ public static class MeshImport
             if (uri == null) { buffers.Add(bin ?? throw new FormatException("a buffer without a uri needs a GLB's binary chunk.")); continue; }
             if (uri.StartsWith("data:", StringComparison.Ordinal)) { buffers.Add(Convert.FromBase64String(uri[(uri.IndexOf(',') + 1)..])); continue; }
             var file = folder != null ? Path.Combine(folder, Uri.UnescapeDataString(uri)) : null;
-            if (file == null || !File.Exists(file)) throw new FormatException($"its buffer „{uri}” is a file beside it: open the .gltf from its folder on the desktop, or use a .glb.");
-            buffers.Add(File.ReadAllBytes(file));
+            if (file == null || !File.Exists(HostFiles.Check(file))) throw new FormatException($"its buffer „{uri}” is a file beside it: open the .gltf from its folder on the desktop, or use a .glb.");
+            buffers.Add(File.ReadAllBytes(HostFiles.Check(file)));
         }
         var views = root["bufferViews"]?.AsArray() ?? [];
         var accessors = root["accessors"]?.AsArray() ?? [];

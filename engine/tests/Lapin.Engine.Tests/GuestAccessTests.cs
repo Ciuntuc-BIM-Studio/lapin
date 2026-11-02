@@ -61,6 +61,26 @@ public sealed class GuestAccessTests : IDisposable
     }
 
     [Fact]
+    public void A_gltfs_buffer_beside_it_is_not_read_for_a_guest()
+    {
+        File.WriteAllBytes(Path.Combine(_dir, "b.bin"), new byte[12]);
+        var gltf = System.Text.Encoding.UTF8.GetBytes(new JsonObject
+        {
+            ["asset"] = new JsonObject { ["version"] = "2.0" },
+            ["buffers"] = new JsonArray(new JsonObject { ["byteLength"] = 12, ["uri"] = "b.bin" }),
+        }.ToJsonString());
+        HostFiles.GuestCall = true;
+        try
+        {
+            var e = Assert.Throws<CommandException>(() => Lapin.Mesh.MeshImport.Gltf(gltf, false, _dir, []));
+            Assert.Equal(HostFiles.Refused, e.Message);
+        }
+        finally { HostFiles.GuestCall = false; }
+        // The host's own import reads it.
+        Assert.Empty(Lapin.Mesh.MeshImport.Gltf(gltf, false, _dir, []));
+    }
+
+    [Fact]
     public void A_guests_snapshot_carries_their_own_undo()
     {
         var f = new Fixture();
