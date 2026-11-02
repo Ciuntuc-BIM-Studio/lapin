@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
-using Lapin.Model;
+using Lapin.Platform;
 
 namespace Lapin.Civil;
 
@@ -12,14 +12,9 @@ namespace Lapin.Civil;
 /// </summary>
 public static class PointLists
 {
-    static double At(JsonArray p, int i) => i < p.Count && Json.Number(p[i]) is { } d ? d : double.NaN;
-
     /// <summary>Points in plan.</summary>
-    public static List<Vec2> Xy(JsonNode? n) =>
-        [.. ((n as JsonArray)?.OfType<JsonArray>() ?? []).Select(p => new Vec2(At(p, 0), At(p, 1))).Where(q => double.IsFinite(q.X) && double.IsFinite(q.Y))];
+    public static List<Vec2> Xy(JsonNode? n) => Args.StoredPoints(n);
 
     /// <summary>Points in space; with <paramref name="needZ"/> false, a point given in plan only stands at 0.</summary>
-    public static List<Vec3> Xyz(JsonNode? n, bool needZ = true) =>
-        [.. ((n as JsonArray)?.OfType<JsonArray>() ?? []).Select(p => new Vec3(At(p, 0), At(p, 1), !needZ && p.Count < 3 ? 0 : At(p, 2)))
-            .Where(q => double.IsFinite(q.X) && double.IsFinite(q.Y) && double.IsFinite(q.Z))];
+    public static List<Vec3> Xyz(JsonNode? n, bool needZ = true) => Args.StoredPoints3(n, needZ);
 }

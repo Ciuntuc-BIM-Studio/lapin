@@ -29,13 +29,21 @@ public class ArgsTests
     }
 
     [Fact]
-    public void A_stored_point_is_read_leniently()
+    public void A_stored_point_with_a_coordinate_that_is_no_number_is_none_never_read_as_zero()
     {
         Assert.Equal(new Lapin.Geometry.Vec2(1, 2.5), Args.TryPoint(new JsonArray(1, 2.5, 7)));
-        Assert.Equal(new Lapin.Geometry.Vec2(1, 0), Args.TryPoint(new JsonArray(1, "a")));
+        Assert.Null(Args.TryPoint(new JsonArray(1, "a")));
+        Assert.Null(Args.TryPoint(new JsonArray(1, double.NaN)));
         Assert.Null(Args.TryPoint(new JsonArray(1)));
         Assert.Null(Args.TryPoint(null));
         Assert.Equal(default, Args.PointOf(JsonValue.Create("1,2")));
+        Assert.Equal(new Lapin.Geometry.Vec3(1, 2, 3), Args.TryPoint3(new JsonArray(1, 2, 3)));
+        Assert.Null(Args.TryPoint3(new JsonArray(1, 2)));
+        Assert.Equal(new Lapin.Geometry.Vec3(1, 2, 0), Args.TryPoint3(new JsonArray(1, 2), needZ: false));
+        Assert.Null(Args.TryPoint3(new JsonArray(1, 2, "z"), needZ: false));
+        // A list keeps the good points and leaves out the rest (an empty one, a hatch loop's stray text) without failing.
+        Assert.Equal([new Lapin.Geometry.Vec2(1, 2), new Lapin.Geometry.Vec2(5, 6)],
+            Args.StoredPoints(JsonNode.Parse("[[1, 2], [], [\"a\", 4], 7, [5, 6]]")));
     }
 
     [Fact]

@@ -32,9 +32,7 @@ public static partial class Runs
     public static IEnumerable<Entity> All(IModelView m) => Classes.SelectMany(m.OfClass).Where(IsRun);
 
     /// <summary>The run's points as drawn; one whose coordinates are not numbers is left out (as every module reads stored points).</summary>
-    public static List<Vec2> Points(Entity e) => [.. ((e.Attrs["points"] as JsonArray)?.OfType<JsonArray>() ?? [])
-        .Select(p => p.Count >= 2 && Json.Number(p[0]) is { } x && Json.Number(p[1]) is { } y ? new Vec2(x, y) : (Vec2?)null).OfType<Vec2>()
-        .Where(q => double.IsFinite(q.X) && double.IsFinite(q.Y))];
+    public static List<Vec2> Points(Entity e) => Args.StoredPoints(e.Attrs["points"]);
     public static JsonArray J(IEnumerable<Vec2> pts) => new(pts.Select(p => (JsonNode)new JsonArray(p.X, p.Y)).ToArray());
 
     public static Entity? SystemOf(IModelView m, Entity run) => m.Get(run.Str("systemId") ?? "") is { Class: Systems.Class } s ? s : null;

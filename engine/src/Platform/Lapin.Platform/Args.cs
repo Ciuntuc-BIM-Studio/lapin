@@ -27,13 +27,31 @@ public static class Args
     }
 
     /// <summary>
-    /// A plan point as the model stores it, <c>[x, y]</c>, read leniently (a coordinate that is not a number reads 0);
-    /// null when it is not a list of two. Every module's own reader of stored points comes here.
+    /// A plan point as the model stores it, <c>[x, y]</c>; null when it is not a list of two finite numbers (a coordinate
+    /// that is not one is never read as 0). Every module's own reader of stored points comes here.
     /// </summary>
-    public static Vec2? TryPoint(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : null;
+    public static Vec2? TryPoint(JsonNode? n) => n is JsonArray a && a.Count >= 2 && Finite(a, 0) is { } x && Finite(a, 1) is { } y ? new Vec2(x, y) : null;
 
     /// <summary><see cref="TryPoint"/>, the origin when there is none.</summary>
     public static Vec2 PointOf(JsonNode? n) => TryPoint(n) ?? default;
+
+    /// <summary>
+    /// A point in space as the model stores it, <c>[x, y, z]</c>; null when a coordinate is not a finite number. With
+    /// <paramref name="needZ"/> false, a point given in plan only (<c>[x, y]</c>) stands at 0.
+    /// </summary>
+    public static Vec3? TryPoint3(JsonNode? n, bool needZ = true) =>
+        n is JsonArray a && a.Count >= 2 && Finite(a, 0) is { } x && Finite(a, 1) is { } y
+            && (a.Count >= 3 ? Finite(a, 2) : needZ ? null : 0) is { } z ? new Vec3(x, y, z) : null;
+
+    /// <summary>A stored list of plan points, <c>[[x, y], …]</c>: a point that is not two finite numbers is left out.</summary>
+    public static List<Vec2> StoredPoints(JsonNode? n) =>
+        [.. ((n as JsonArray)?.OfType<JsonArray>() ?? []).Select(p => TryPoint(p)).Where(p => p.HasValue).Select(p => p!.Value)];
+
+    /// <summary>A stored list of points in space, <c>[[x, y, z], …]</c>, read as <see cref="TryPoint3"/> reads each; the malformed left out.</summary>
+    public static List<Vec3> StoredPoints3(JsonNode? n, bool needZ = true) =>
+        [.. ((n as JsonArray)?.OfType<JsonArray>() ?? []).Select(p => TryPoint3(p, needZ)).Where(p => p.HasValue).Select(p => p!.Value)];
+
+    static double? Finite(JsonArray a, int i) => i < a.Count && Json.Number(a[i]) is { } d && double.IsFinite(d) ? d : null;
 
     /// <summary>A plan point given as two numbers under <paramref name="x"/> and <paramref name="y"/>, both required.</summary>
     public static Vec2 Point(JsonObject a, string x, string y) => new(Number(a, x), Number(a, y));

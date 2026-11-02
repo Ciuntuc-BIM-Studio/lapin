@@ -65,7 +65,7 @@ public static class Scaffolds
         (e.Attrs["walls"] as JsonArray)?.Select(x => (string?)x).OfType<string>().Select(m.Get).OfType<Entity>().Where(w => w.Class == IfcClass.Wall).ToList() ?? [];
 
     public static IReadOnlyList<Vec2> Path(Entity e) =>
-        e.Attrs["path"] is JsonArray arr ? arr.OfType<JsonArray>().Where(p => p.Count >= 2).Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList() : [];
+        Args.StoredPoints(e.Attrs["path"]);
 
     public static JsonArray PathJson(IEnumerable<Vec2> pts) => new(pts.Select(p => (JsonNode)new JsonArray(Math.Round(p.X, 6), Math.Round(p.Y, 6))).ToArray());
 

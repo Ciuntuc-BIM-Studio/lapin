@@ -156,7 +156,7 @@ public static class Drafts
 
     public static IReadOnlyList<IReadOnlyList<Vec2>> HatchLoops(Entity e) =>
         (e.Attrs["hatch"]?["loops"] as JsonArray)?.OfType<JsonArray>()
-            .Select(l => (IReadOnlyList<Vec2>)l.OfType<JsonArray>().Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList()).ToList() ?? [];
+            .Select(l => (IReadOnlyList<Vec2>)Args.StoredPoints(l)).ToList() ?? [];
 
     /// <summary>The view's drafted shapes, on their layers' pens.</summary>
     public static IEnumerable<ViewMark> Marks(ViewContext c)
