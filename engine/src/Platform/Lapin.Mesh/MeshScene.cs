@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Model;
@@ -313,8 +312,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
     /// <summary>#rrggbb as 0–1 (sRGB, as the formats take a base colour).</summary>
     public static (float R, float G, float B) Rgb(string? hex)
     {
-        if (hex is not { Length: 7 } || hex[0] != '#'
-            || !int.TryParse(hex.AsSpan(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var v)) return (0.79f, 0.81f, 0.84f);
-        return (((v >> 16) & 255) / 255f, ((v >> 8) & 255) / 255f, (v & 255) / 255f);
+        var (r, g, b) = HexColor.Unit(hex, (0.79, 0.81, 0.84));
+        return ((float)r, (float)g, (float)b);
     }
 }
