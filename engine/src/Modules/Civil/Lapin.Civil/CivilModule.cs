@@ -70,7 +70,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
             var pts = PointsOf(a);
             if (pts.Count < 3) throw new CommandException("The terrain needs at least three points.");
-            if (Tin.Delaunay(pts).Triangles.Count == 0) throw new CommandException("The terrain needs at least three points that are not in a line.");
+            if (!Tin.Spans(pts)) throw new CommandException("The terrain needs at least three points that are not in a line.");
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : "Terrain";
             var earth = Materials.Ensure(ctx, "Earth", Terrains.Color);
             var attrs = new JsonObject
@@ -92,7 +92,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             if (a["points"] != null || a["text"] != null)
             {
                 var pts = PointsOf(a);
-                if (Tin.Delaunay(pts).Triangles.Count == 0) throw new CommandException("The terrain needs at least three points that are not in a line.");
+                if (!Tin.Spans(pts)) throw new CommandException("The terrain needs at least three points that are not in a line.");
                 attrs["points"] = Terrains.PointsJson(pts);
             }
             foreach (var k in new[] { "datum", "interval", "majorEvery", "depth" })
@@ -116,7 +116,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             var ids = new JsonArray();
             foreach (var s in surfaces)
             {
-                if (Tin.Delaunay(s.Points).Triangles.Count == 0) continue;
+                if (!Tin.Spans(s.Points)) continue;
                 var t = new Entity(ctx.NewId(), IfcClass.GeographicElement, s.Name, new JsonObject
                 {
                     ["points"] = Terrains.PointsJson(s.Points), ["datum"] = Json.Number(a["datum"]) ?? 0, ["interval"] = 0.5, ["majorEvery"] = 5, ["depth"] = 2, ["material"] = earth.Id,
@@ -162,7 +162,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 var p = new Vec3(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0, Json.Number(a["z"]) ?? 0);
                 if (i >= 0 && i < pts.Count) pts[i] = p; else pts.Add(p);
             }
-            if (Tin.Delaunay(pts).Triangles.Count == 0) throw new CommandException("The terrain needs at least three points that are not in a line.");
+            if (!Tin.Spans(pts)) throw new CommandException("The terrain needs at least three points that are not in a line.");
             var attrs = t.CloneAttrs();
             attrs["points"] = Terrains.PointsJson(pts);
             ctx.Replace(t.With(attrs: attrs));

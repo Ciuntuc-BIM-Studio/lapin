@@ -32,52 +32,112 @@ public sealed record Tin(IReadOnlyList<Vec3> Points, IReadOnlyList<(int A, int B
         double minX = pts.Min(p => p.X), minY = pts.Min(p => p.Y), maxX = pts.Max(p => p.X), maxY = pts.Max(p => p.Y);
         var span = Math.Max(Math.Max(maxX - minX, maxY - minY), 1e-9) * 20;
         var (cx, cy) = ((minX + maxX) / 2, (minY + maxY) / 2);
-        var xy = pts.Select(p => (p.X, p.Y)).ToList();
-        xy.Add((cx - span, cy - span)); xy.Add((cx + span, cy - span)); xy.Add((cx, cy + span));
+        // Measured from the middle: a survey's coordinates (hundreds of km) would round the circles of small triangles away.
+        var xy = pts.Select(p => (X: p.X - cx, Y: p.Y - cy)).ToList();
+        xy.Add((-span, -span)); xy.Add((span, -span)); xy.Add((0, span));
 
-        // Each triangle with its circumcircle; dead ones are compacted from time to time.
+        // Each triangle with its circumcircle, and who owns each directed edge (the neighbour across a–b owns b–a).
         var tris = new List<(int A, int B, int C, double X, double Y, double R2, bool Alive)>();
+        var owner = new Dictionary<(int, int), int>();
+        // Triangles of three points in a line: their circle holds every point, so the next insertion takes them away wherever it is.
+        var flat = new List<int>();
         void Add(int a, int b, int c)
         {
             var (ax, ay) = xy[a]; var (bx, by) = xy[b]; var (qx, qy) = xy[c];
             if ((bx - ax) * (qy - ay) - (by - ay) * (qx - ax) < 0) (b, c) = (c, b);
             (ax, ay) = xy[a]; (bx, by) = xy[b]; (qx, qy) = xy[c];
+            var t = tris.Count;
+            owner[(a, b)] = t; owner[(b, c)] = t; owner[(c, a)] = t;
             var d = 2 * (ax * (by - qy) + bx * (qy - ay) + qx * (ay - by));
-            if (Math.Abs(d) < 1e-300) { tris.Add((a, b, c, 0, 0, double.PositiveInfinity, true)); return; }
+            if (Math.Abs(d) < 1e-300) { tris.Add((a, b, c, 0, 0, double.PositiveInfinity, true)); flat.Add(t); return; }
             double a2 = ax * ax + ay * ay, b2 = bx * bx + by * by, c2 = qx * qx + qy * qy;
             var ox = (a2 * (by - qy) + b2 * (qy - ay) + c2 * (ay - by)) / d;
             var oy = (a2 * (qx - bx) + b2 * (ax - qx) + c2 * (bx - ax)) / d;
             tris.Add((a, b, c, ox, oy, (ax - ox) * (ax - ox) + (ay - oy) * (ay - oy), true));
         }
+        bool InCircle(int t, double px, double py)
+        {
+            var tr = tris[t];
+            var dx = px - tr.X; var dy = py - tr.Y;
+            return !(dx * dx + dy * dy > tr.R2 * (1 + 1e-12));
+        }
+        double Side(int a, int b, double px, double py) => (xy[b].X - xy[a].X) * (py - xy[a].Y) - (xy[b].Y - xy[a].Y) * (px - xy[a].X);
+        // The triangle the point is in, walked to from the last one made; -1 when the walk gets lost.
+        int Locate(double px, double py)
+        {
+            var t = tris.Count - 1;
+            for (var steps = 0; steps <= tris.Count; steps++)
+            {
+                var tr = tris[t];
+                var next = -1;
+                foreach (var (a, b) in new[] { (tr.A, tr.B), (tr.B, tr.C), (tr.C, tr.A) })
+                    if (Side(a, b, px, py) < 0 && owner.TryGetValue((b, a), out var nb)) { next = nb; break; }
+                if (next < 0) return t;
+                t = next;
+            }
+            return -1;
+        }
         Add(n, n + 1, n + 2);
-        var dead = 0;
+        var cavity = new List<int>();
+        var queued = new HashSet<int>();
+        var stack = new Stack<int>();
         foreach (var i in Enumerable.Range(0, n).OrderBy(i => xy[i].X).ThenBy(i => xy[i].Y))
         {
             var (px, py) = xy[i];
+            // The triangles whose circle holds the point: from the one it is in, across their edges (a star around it), and those in a line.
+            cavity.Clear(); queued.Clear(); stack.Clear();
+            // The one it is in always goes, even when the rounding of its circle (far from the origin) says the point is just outside.
+            var seed = Locate(px, py);
+            if (seed < 0) for (var t = 0; t < tris.Count; t++) if (tris[t].Alive && InCircle(t, px, py)) { seed = t; break; }
+            if (seed >= 0) { stack.Push(seed); queued.Add(seed); }
+            foreach (var t in flat) if (tris[t].Alive && queued.Add(t)) stack.Push(t);
+            while (stack.TryPop(out var t))
+            {
+                if (t != seed && !InCircle(t, px, py)) continue;
+                cavity.Add(t);
+                var tr = tris[t];
+                foreach (var (a, b) in new[] { (tr.A, tr.B), (tr.B, tr.C), (tr.C, tr.A) })
+                    if (owner.TryGetValue((b, a), out var nb) && tris[nb].Alive && queued.Add(nb)) stack.Push(nb);
+            }
+            // In the order they were made, so the triangles come out as a scan of them all would make them.
+            cavity.Sort();
             var edges = new Dictionary<(int, int), int>();
-            for (var t = 0; t < tris.Count; t++)
+            foreach (var t in cavity)
             {
                 var tr = tris[t];
-                if (!tr.Alive) continue;
-                var dx = px - tr.X; var dy = py - tr.Y;
-                if (dx * dx + dy * dy > tr.R2 * (1 + 1e-12)) continue;
                 tris[t] = tr with { Alive = false };
-                dead++;
                 foreach (var (a, b) in new[] { (tr.A, tr.B), (tr.B, tr.C), (tr.C, tr.A) })
                 {
+                    if (owner.TryGetValue((a, b), out var o) && o == t) owner.Remove((a, b));
                     var k = a < b ? (a, b) : (b, a);
                     edges[k] = edges.GetValueOrDefault(k) + 1;
                 }
             }
+            flat.RemoveAll(t => !tris[t].Alive);
             // The cavity's boundary: edges only one removed triangle had.
             foreach (var ((a, b), count) in edges) if (count == 1) Add(a, b, i);
-            if (dead > tris.Count / 2 && tris.Count > 4 * n + 64) { tris.RemoveAll(t => !t.Alive); dead = 0; }
         }
         var result = tris.Where(t => t.Alive && t.A < n && t.B < n && t.C < n).Select(t => (t.A, t.B, t.C)).ToList();
         if (constraints is { Count: > 0 })
             result = Constrained.Apply(pts, result, constraints.Where(c => c.A >= 0 && c.B >= 0 && c.A < map.Length && c.B < map.Length)
                 .Select(c => (map[c.A], map[c.B])).Where(c => c.Item1 >= 0 && c.Item2 >= 0 && c.Item1 != c.Item2).ToList());
         return new Tin(pts, result);
+    }
+
+    /// <summary>
+    /// Whether the points span an area in plan (three that are not in a line,
+    /// counted as <see cref="Delaunay"/> counts them): what a triangulation
+    /// needs, found without making one.
+    /// </summary>
+    public static bool Spans(IReadOnlyList<Vec3> input)
+    {
+        var pts = input.Where(p => double.IsFinite(p.X) && double.IsFinite(p.Y) && double.IsFinite(p.Z))
+            .DistinctBy(p => ((long)Math.Round(p.X * 1e6), (long)Math.Round(p.Y * 1e6))).ToList();
+        if (pts.Count < 3) return false;
+        var a = pts[0];
+        var far = pts.MaxBy(p => (p.X - a.X) * (p.X - a.X) + (p.Y - a.Y) * (p.Y - a.Y))!;
+        var len2 = (far.X - a.X) * (far.X - a.X) + (far.Y - a.Y) * (far.Y - a.Y);
+        return pts.Any(p => Math.Abs(Cross(a, far, p)) > 1e-12 * len2);
     }
 
     /// <summary>A mesh (flat xyz, triangle indices) as a TIN: vertices merged to 5 decimals, degenerate triangles dropped, all counter-clockwise.</summary>

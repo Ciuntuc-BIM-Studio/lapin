@@ -155,7 +155,7 @@ public static class GeoImportCommands
 
     static JsonObject Terrain(ICommandContext ctx, JsonObject a, List<Vec3> pts, string name)
     {
-        if (Tin.Delaunay(pts).Triangles.Count == 0) throw new CommandException("The points lie in a line: no terrain.");
+        if (!Tin.Spans(pts)) throw new CommandException("The points lie in a line: no terrain.");
         // More points on a terrain that is there, or a new one.
         if ((string?)a["terrainId"] is { } tid && ctx.Model.Get(tid) is { } t0 && Terrains.IsTerrain(t0))
         {
