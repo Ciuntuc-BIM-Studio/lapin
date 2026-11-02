@@ -219,6 +219,42 @@ public static partial class IfcImport
             return d;
         }
 
+        /// <summary>
+        /// The file's relationships by the entity they are read for, indexed once: looked up per element, a scan of every
+        /// relationship of the file for each element was quadratic (10,000 elements, some 10⁹ steps).
+        /// </summary>
+        sealed class RelIndex
+        {
+            readonly Dictionary<int, List<StepEntity>> _of = [];
+
+            public RelIndex(IEnumerable<StepEntity> relationships, Func<StepEntity, IEnumerable<int>> keys)
+            {
+                foreach (var r in relationships)
+                    foreach (var k in keys(r).Distinct())
+                        (_of.TryGetValue(k, out var l) ? l : _of[k] = []).Add(r);
+            }
+
+            /// <summary>The relationships read for an entity, in the file's order.</summary>
+            public IReadOnlyList<StepEntity> this[int id] => _of.TryGetValue(id, out var l) ? l : [];
+        }
+
+        /// <summary>The indexes <see cref="Native"/>, <see cref="Types"/>, <see cref="Materials"/>, <see cref="Assembly"/> and <see cref="Referenced"/> read.</summary>
+        sealed class RelIndexes(StepFile f)
+        {
+            public RelIndex TypeOf => _typeOf ??= new(f.OfType("IFCRELDEFINESBYTYPE"), r => Refs(r[4]));                       // object → by type
+            public RelIndex MaterialOf => _materialOf ??= new(f.OfType("IFCRELASSOCIATESMATERIAL"), r => Refs(r[4]));          // object → its material
+            public RelIndex VoidsOf => _voidsOf ??= new(f.OfType("IFCRELVOIDSELEMENT"), r => [Ref(r[4])]);                   // element → its voids
+            public RelIndex FillsOf => _fillsOf ??= new(f.OfType("IFCRELFILLSELEMENT"), r => [Ref(r[4])]);                   // opening → its fills
+            public RelIndex JoinsOf => _joinsOf ??= new(f.OfType("IFCRELCONNECTSPATHELEMENTS"), r => [Ref(r[5])]);           // relating element → its joins
+            public RelIndex PartsOf => _partsOf ??= new(f.OfType("IFCRELAGGREGATES"), r => [Ref(r[4])]);                     // whole → its aggregations
+            public RelIndex PropertiesOf => _propertiesOf ??= new(f.OfType("IFCMATERIALPROPERTIES"), p => [Ref(p[3])]);       // material → its properties
+            public RelIndex RepresentationsOf => _repsOf ??= new(f.OfType("IFCMATERIALDEFINITIONREPRESENTATION"), r => [Ref(r[3])]); // material → its looks
+            RelIndex? _typeOf, _materialOf, _voidsOf, _fillsOf, _joinsOf, _partsOf, _propertiesOf, _repsOf;
+        }
+
+        RelIndexes Rels => rels ??= new RelIndexes(f);
+        RelIndexes? rels;
+
         static string ClassName(string upper) => ProperNames.TryGetValue(upper, out var n) ? n : IfcModel.ClassName(upper);
 
         /// <summary>The file's intent set on an entity: through IfcRelDefinesByProperties, or a type's own HasPropertySets, or a material's properties.</summary>
@@ -404,7 +440,7 @@ public static partial class IfcImport
             foreach (var mat in f.OfType("IFCMATERIAL"))
             {
                 var name = Str(mat[0]) ?? "Material";
-                var props = f.OfType("IFCMATERIALPROPERTIES").FirstOrDefault(p => Ref(p[3]) == mat.Id && IfcExport.IsIntentSet(Str(p[0])));
+                var props = Rels.PropertiesOf[mat.Id].FirstOrDefault(p => IfcExport.IsIntentSet(Str(p[0])));
                 var intent = props == null ? null : Parse(Items(props[2]));
                 string id;
                 if (intent?.LapinId is { } lapinId && GlobalId.IsValid(lapinId))
@@ -425,7 +461,7 @@ public static partial class IfcImport
         /// <summary>A material's colour from its representation (a styled item with a surface style).</summary>
         string? Colour(int material)
         {
-            foreach (var rep in f.OfType("IFCMATERIALDEFINITIONREPRESENTATION").Where(r => Ref(r[3]) == material))
+            foreach (var rep in Rels.RepresentationsOf[material])
                 foreach (var styled in Items(rep[2]).SelectMany(r => Items(r[3])).Where(i => i.Type == "IFCSTYLEDITEM"))
                     foreach (var style in Items(styled[1]).Where(x => x.Type == "IFCSURFACESTYLE"))
                         foreach (var shading in Items(style[2]))
@@ -465,7 +501,7 @@ public static partial class IfcImport
                 if (gid != Str(t[0]) && typeName.EndsWith(" (mirrored)", StringComparison.Ordinal)) typeName = typeName[..^" (mirrored)".Length];
                 Put(edit, gid, cls, typeName, intent.Attrs, intent.Predefined ?? Enum(t[9]), counts: false);
                 typeIds[t.Id] = gid;
-                foreach (var rel in f.OfType("IFCRELASSOCIATESMATERIAL").Where(r => Refs(r[4]).Contains(t.Id)))
+                foreach (var rel in Rels.MaterialOf[t.Id])
                     if (f.Get(rel[5]) is { Type: "IFCMATERIALLAYERSET" } set)
                     {
                         var setId = LayerSet(edit, set.Id, gid);
@@ -558,7 +594,7 @@ public static partial class IfcImport
         /// </summary>
         bool Assembly(IEdit edit, StepEntity e, string gid)
         {
-            var parts = f.OfType("IFCRELAGGREGATES").Where(r => Ref(r[4]) == e.Id).SelectMany(r => Refs(r[5]))
+            var parts = Rels.PartsOf[e.Id].SelectMany(r => Refs(r[5]))
                 .Select(id => f.Entities.GetValueOrDefault(id)).OfType<StepEntity>().Select(p => Str(p[0])).OfType<string>().ToList();
             if (parts.Count == 0) return false;
             if (edit.Model.Get(gid) is { } own && own.Attrs["reference"] == null) { seen.Add(gid); return true; }
@@ -613,12 +649,12 @@ public static partial class IfcImport
             var storey = StoreyFor(e.Id);
             relations.Add(x => Contain(x, gid, storey));
             if (intent.Host is { } host) relations.Add(x => Relate(x, null, IfcClass.RelVoidsElement, host, gid));
-            foreach (var rel in f.OfType("IFCRELDEFINESBYTYPE").Where(r => Refs(r[4]).Contains(e.Id)))
+            foreach (var rel in Rels.TypeOf[e.Id])
                 if (typeIds.TryGetValue(Ref(rel[5]), out var typeId)) relations.Add(x => Relate(x, null, IfcClass.RelDefinesByType, typeId, gid));
-            foreach (var rel in f.OfType("IFCRELASSOCIATESMATERIAL").Where(r => Refs(r[4]).Contains(e.Id)))
+            foreach (var rel in Rels.MaterialOf[e.Id])
                 if (f.Get(rel[5]) is { Type: "IFCMATERIALLAYERSETUSAGE" } usage && f.Get(usage[0]) is { } set)
                 {
-                    var owner = f.OfType("IFCRELDEFINESBYTYPE").FirstOrDefault(r => Refs(r[4]).Contains(e.Id)) is { } byType && typeIds.TryGetValue(Ref(byType[5]), out var tid) ? tid : gid;
+                    var owner = Rels.TypeOf[e.Id].FirstOrDefault() is { } byType && typeIds.TryGetValue(Ref(byType[5]), out var tid) ? tid : gid;
                     var setId = LayerSet(edit, set.Id, owner);
                     var attrs = Layers.WriteUsage(new LayerUsage(setId, Enum(usage[2]) == "NEGATIVE", Length(usage[3])));
                     attrs["layerSetDirection"] = Enum(usage[1]) ?? "AXIS2";
@@ -627,7 +663,7 @@ public static partial class IfcImport
                     var relId = Str(rel[0]);
                     relations.Add(x => Relate(x, relId, IfcClass.RelAssociatesMaterial, usageId, gid));
                 }
-            foreach (var rel in f.OfType("IFCRELVOIDSELEMENT").Where(r => Ref(r[4]) == e.Id))
+            foreach (var rel in Rels.VoidsOf[e.Id])
             {
                 if (f.Get(rel[5]) is not { } op) continue;
                 var opGid = Str(op[0]) ?? "";
@@ -636,7 +672,7 @@ public static partial class IfcImport
                 {
                     if (IntentOf(op.Id) is not { } opIntent) continue;
                     Put(edit, opGid, IfcClass.OpeningElement, Str(op[2]) ?? "Opening", opIntent.Attrs, opIntent.Predefined ?? "OPENING", counts: false);
-                    foreach (var fill in f.OfType("IFCRELFILLSELEMENT").Where(r => Ref(r[4]) == op.Id))
+                    foreach (var fill in Rels.FillsOf[op.Id])
                         if (f.Get(fill[5]) is { } filler && Str(filler[0]) is { } fillGid)
                         {
                             var fillRel = Str(fill[0]);
@@ -645,7 +681,7 @@ public static partial class IfcImport
                 }
                 relations.Add(x => Relate(x, relId, IfcClass.RelVoidsElement, gid, opGid));
             }
-            foreach (var rel in f.OfType("IFCRELCONNECTSPATHELEMENTS").Where(r => Ref(r[5]) == e.Id))
+            foreach (var rel in Rels.JoinsOf[e.Id])
                 if (f.Get(rel[6]) is { } other && Str(other[0]) is { } otherGid)
                 {
                     var attrs = new JsonObject
@@ -824,7 +860,7 @@ public static partial class IfcImport
             relations.Add(x => Contain(x, gid, storey));
             // A Studio solid keeps its type (Lapin's, read from its intent), as the native elements do.
             if (sketched.Contains(e.Id))
-                foreach (var rel in f.OfType("IFCRELDEFINESBYTYPE").Where(r => Refs(r[4]).Contains(e.Id)))
+                foreach (var rel in Rels.TypeOf[e.Id])
                     if (typeIds.TryGetValue(Ref(rel[5]), out var typeId)) relations.Add(x => Relate(x, null, IfcClass.RelDefinesByType, typeId, gid));
         }
 

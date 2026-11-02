@@ -151,6 +151,42 @@ public class IfcRobustnessTests : IDisposable
         Assert.Equal("é", StepFile.Decode("\\X\\E9"));
     }
 
+    /// <summary>
+    /// A Lapin file of many elements read back natively: each element's relationships (its type, material, openings,
+    /// joins) found through indexes made once, not by scanning every relationship of the file for each element
+    /// (10,000 elements took some 10⁹ steps).
+    /// </summary>
+    [Fact]
+    public void Many_native_elements_import_in_linear_time()
+    {
+        const int count = 6000;
+        var x = new Tiny();
+        var material = x.F.Add("IFCMATERIAL", S("Concrete"), Null, Null);
+        var type = x.F.Add("IFCBUILDINGELEMENTPROXYTYPE", x.G("type"), Null, S("Block"), Null, Null, Null, Null, Null, Null, E("NOTDEFINED"));
+        var typed = new List<string>();
+        for (var i = 0; i < count; i++)
+        {
+            var e = x.Element("IFCBUILDINGELEMENTPROXY", $"e{i}", $"E{i}", x.Place(i, 0, 0), Null, E("ELEMENT"));
+            var intent = x.F.Add("IFCPROPERTYSET", x.G($"intent{i}"), Null, S(IfcExport.IntentSetName), Null,
+                L([x.F.Add("IFCPROPERTYSINGLEVALUE", S("LapinClass"), Null, Typed("IFCLABEL", S("IfcBuildingElementProxy")), Null),
+                   x.F.Add("IFCPROPERTYSINGLEVALUE", S("index"), Null, Typed("IFCREAL", R(i)), Null)]));
+            x.F.Add("IFCRELDEFINESBYPROPERTIES", x.G($"def{i}"), Null, Null, Null, L([e]), intent);
+            x.F.Add("IFCRELASSOCIATESMATERIAL", x.G($"mat{i}"), Null, Null, Null, L([e]), material);
+            x.F.Add("IFCRELDEFINESBYTYPE", x.G($"rt{i}"), Null, Null, Null, L([e]), type);
+            if (i > 0) x.F.Add("IFCRELCONNECTSPATHELEMENTS", x.G($"join{i}"), Null, S("L"), S("butt"), Null, e, typed[^1], Null, Null, E("ATEND"), E("ATSTART"));
+            typed.Add(e);
+        }
+        var path = x.Write(Path.Combine(_dir, "many.ifc"));
+        var fx = Full();
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        IfcImport.Run(fx.Session, path, null, out _);
+        clock.Stop();
+        // About 0.6 s here, 12 s with the scans: a margin for a loaded machine.
+        Assert.True(clock.ElapsedMilliseconds < 6000, $"{count} native elements took {clock.ElapsedMilliseconds} ms");
+        Assert.Equal(count, fx.Session.Model.OfClass("IfcBuildingElementProxy").Count());
+        Assert.Equal(count - 1, Enumerable.Range(1, count - 1).Count(i => fx.Session.Model.RelationsOf(Tiny.Gid($"e{i}"), IfcClass.RelConnectsPathElements).Any()));
+    }
+
     /// <summary>Booleans that fail as manifold does on a body that is not closed.</summary>
     sealed class FailingBooleans : ISolidBooleans
     {
