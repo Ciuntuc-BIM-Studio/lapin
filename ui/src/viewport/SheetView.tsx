@@ -99,10 +99,12 @@ export function SheetView() {
     void execute('sheet.updateViewport', { id: sheet.id, viewportId: vp.id, x: (vp.x0 + vp.x1) / 2 + dx, y: (vp.y0 + vp.y1) / 2 + dy }).then(() => notify(null));
   }, [sheet]);
 
-  // The arrows nudge the active view: 1 mm, 10 mm with Shift.
+  // The arrows nudge the active view: 1 mm, 10 mm with Shift; only in the active pane, and never under a dialog or a menu.
   useEffect(() => {
+    if (!paneActive) return;
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.closest('input, select, textarea') || !active || !d) return;
+      if ((e.target as HTMLElement)?.closest('input, select, textarea, [role="dialog"], [role="menu"]') || !active || !d) return;
+      if (useUi.getState().dialog || document.querySelector('[role="dialog"]')) return;
       const step = e.shiftKey ? 10 : 1;
       const delta = ({ ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] } as Record<string, number[]>)[e.key];
       const vp = d.viewports.find((b) => b.id === active);
@@ -113,7 +115,7 @@ export function SheetView() {
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [active, d, moveTo]);
+  }, [paneActive, active, d, moveTo]);
 
   const v = z ?? { k: 1, ox: 0, oy: 0 };
   const zoomAbout = (k: number, mx = size.w / 2, my = size.h / 2) => ({ k, ox: mx - (mx - v.ox) * (k / v.k), oy: my - (my - v.oy) * (k / v.k) });
