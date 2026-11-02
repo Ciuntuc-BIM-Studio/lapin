@@ -20,7 +20,7 @@ export const parseLength = (text: string, unit?: Unit): number | null => parseBy
 
 /** A typed angle in degrees (a ° allowed, sums too), or null. */
 export function parseAngle(text: string): number | null {
-  const t = text.replace(/\s+/g, '').replace(/°/g, '').replace(',', '.');
+  const t = text.replace(/\s+/g, '').replace(/°/g, '').replace(/,/g, '.');
   if (!t) return null;
   const terms = t.match(/[+-]?[^+-]+/g);
   if (!terms) return null;

@@ -73,7 +73,7 @@ export function parseLength(text: string, dflt: Unit = unit()): number | null {
   const raw = text.trim();
   if (!raw) return null;
   if (/['"″′]/.test(raw)) return parseImperial(raw);
-  const t = raw.replace(/\s+/g, '').replace(',', '.');
+  const t = raw.replace(/\s+/g, '').replace(/,/g, '.');
   const terms = t.match(/[+-]?[^+-]+/g);
   if (!terms) return null;
   let sum = 0;

@@ -9,6 +9,7 @@ describe('live input', () => {
     expect(parseLength('3000+250')).toBeCloseTo(3.25, 12);
     expect(parseLength('3m-25cm')).toBeCloseTo(2.75, 12);
     expect(parseLength('2,5m')).toBeCloseTo(2.5, 12);
+    expect(parseLength('1,5m+2,5m')).toBeCloseTo(4, 12);
     expect(parseLength('abc')).toBeNull();
     expect(parseLength('')).toBeNull();
   });
@@ -17,6 +18,7 @@ describe('live input', () => {
     expect(parseAngle('30')).toBe(30);
     expect(parseAngle('90°')).toBe(90);
     expect(parseAngle('45+15')).toBe(60);
+    expect(parseAngle('22,5+22,5')).toBe(45);
     expect(parseAngle('x')).toBeNull();
   });
 
