@@ -21,8 +21,7 @@ public static class SiteFeatures
 
     public static string Kind(Entity e) => e.Str("kind") ?? "line";
 
-    public static List<Vec3> Points(Entity e) => (e.Attrs["pts"] as JsonArray)?.OfType<JsonArray>().Where(p => p.Count >= 2)
-        .Select(p => new Vec3(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0, p.Count > 2 ? Json.Number(p[2]) ?? 0 : 0)).ToList() ?? [];
+    public static List<Vec3> Points(Entity e) => PointLists.Xyz(e.Attrs["pts"], needZ: false);
 
     public static JsonArray Json3(IEnumerable<Vec3> pts, bool z) =>
         new(pts.Select(p => (JsonNode)(z ? new JsonArray(Math.Round(p.X, 4), Math.Round(p.Y, 4), Math.Round(p.Z, 4)) : new JsonArray(Math.Round(p.X, 4), Math.Round(p.Y, 4)))).ToArray());

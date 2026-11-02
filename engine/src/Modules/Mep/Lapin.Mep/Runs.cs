@@ -31,8 +31,10 @@ public static partial class Runs
     public static IEnumerable<Entity> Of(IModelView m, string systemId) => Classes.SelectMany(m.OfClass).Where(e => IsRun(e) && e.Str("systemId") == systemId);
     public static IEnumerable<Entity> All(IModelView m) => Classes.SelectMany(m.OfClass).Where(IsRun);
 
-    public static List<Vec2> Points(Entity e) => (e.Attrs["points"] as JsonArray)?.OfType<JsonArray>().Where(p => p.Count >= 2)
-        .Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList() ?? [];
+    /// <summary>The run's points as drawn; one whose coordinates are not numbers is left out (as every module reads stored points).</summary>
+    public static List<Vec2> Points(Entity e) => [.. ((e.Attrs["points"] as JsonArray)?.OfType<JsonArray>() ?? [])
+        .Select(p => p.Count >= 2 && Json.Number(p[0]) is { } x && Json.Number(p[1]) is { } y ? new Vec2(x, y) : (Vec2?)null).OfType<Vec2>()
+        .Where(q => double.IsFinite(q.X) && double.IsFinite(q.Y))];
     public static JsonArray J(IEnumerable<Vec2> pts) => new(pts.Select(p => (JsonNode)new JsonArray(p.X, p.Y)).ToArray());
 
     public static Entity? SystemOf(IModelView m, Entity run) => m.Get(run.Str("systemId") ?? "") is { Class: Systems.Class } s ? s : null;
@@ -403,7 +405,8 @@ public static partial class Runs
 
     static List<Vec2> PointsArg(JsonNode? n)
     {
-        var pts = (n as JsonArray)?.OfType<JsonArray>().Where(p => p.Count >= 2).Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList() ?? [];
+        // A point that is not [x, y] is refused, not drawn at the origin.
+        var pts = (n as JsonArray)?.Select((p, i) => Args.Point(p, $"point {i + 1} of the run")).ToList() ?? [];
         if (pts.Count < 2) throw new CommandException("A run needs at least two points [[x, y], …].");
         return pts;
     }

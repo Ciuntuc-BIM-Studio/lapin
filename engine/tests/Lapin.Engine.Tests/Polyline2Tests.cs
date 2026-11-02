@@ -32,4 +32,16 @@ public class Polyline2Tests
         Assert.Equal(2, Polyline2.Length([new(0, 0), new(1, 0), new(1, 1)]));
         Assert.Equal(1, Polyline2.SegmentDistance(new(5, 1), new(0, 0), new(10, 0)));
     }
+
+    [Fact]
+    public void A_malformed_point_is_left_out_of_a_stored_list_and_refused_in_a_run_never_read_as_the_origin()
+    {
+        var stored = System.Text.Json.Nodes.JsonNode.Parse("[[1, 2, 3], [\"x\", 5, 6], [7, 8], [9, 10, null]]");
+        Assert.Equal([new Vec3(1, 2, 3)], Lapin.Civil.PointLists.Xyz(stored));
+        Assert.Equal([new Vec3(1, 2, 3), new Vec3(7, 8, 0)], Lapin.Civil.PointLists.Xyz(stored, needZ: false));
+        Assert.Equal([new Vec2(1, 2), new Vec2(7, 8), new Vec2(9, 10)], Lapin.Civil.PointLists.Xy(stored));
+        var f = new MepFixture();
+        var s = f.System();
+        Assert.Throws<Lapin.Platform.CommandException>(() => f.Draw(s, System.Text.Json.Nodes.JsonNode.Parse("[[0, 0], [null, 4]]")!.AsArray()));
+    }
 }

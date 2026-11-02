@@ -25,10 +25,7 @@ public static class Terrains
     /// <summary>Whether an element is a terrain (not another geographic element).</summary>
     public static bool IsTerrain(Entity e) => e.Class == IfcClass.GeographicElement && e.PredefinedType == Predefined;
 
-    public static List<Vec3> Points(Entity e) =>
-        e.Attrs["points"] is JsonArray arr
-            ? arr.OfType<JsonArray>().Where(p => p.Count >= 3).Select(p => new Vec3(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0, Json.Number(p[2]) ?? 0)).ToList()
-            : [];
+    public static List<Vec3> Points(Entity e) => PointLists.Xyz(e.Attrs["points"]);
 
     public static JsonArray PointsJson(IEnumerable<Vec3> pts) => new(pts.Select(p => (JsonNode)new JsonArray(p.X, p.Y, p.Z)).ToArray());
 
@@ -91,7 +88,7 @@ public static class Terrains
     /// <summary>A terrain's breaklines: polylines of surveyed points [[x, y, z], …].</summary>
     public static List<IReadOnlyList<Vec3>> Breaklines(Entity e) =>
         (e.Attrs["breaklines"] as JsonArray)?.OfType<JsonArray>()
-            .Select(l => (IReadOnlyList<Vec3>)l.OfType<JsonArray>().Where(p => p.Count >= 3).Select(p => new Vec3(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0, Json.Number(p[2]) ?? 0)).ToList())
+            .Select(l => (IReadOnlyList<Vec3>)PointLists.Xyz(l))
             .Where(l => l.Count >= 2).ToList() ?? [];
 
     public static IEnumerable<Entity> Pads(IModelView m, string terrainId) =>
@@ -105,10 +102,7 @@ public static class Terrains
 
     public static Entity? TerrainOf(IModelView m, string padId) => m.RelatingOf(padId, IfcClass.RelVoidsElement);
 
-    public static IReadOnlyList<Vec2> Contour(Entity e, string key = "contour") =>
-        e.Attrs[key] is JsonArray arr
-            ? arr.OfType<JsonArray>().Where(p => p.Count >= 2).Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList()
-            : [];
+    public static IReadOnlyList<Vec2> Contour(Entity e, string key = "contour") => PointLists.Xy(e.Attrs[key]);
 
     public static JsonArray ContourJson(IEnumerable<Vec2> pts) => new(pts.Select(p => (JsonNode)new JsonArray(p.X, p.Y)).ToArray());
 

@@ -184,10 +184,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
     static List<Vec3> PointsOf(JsonObject a)
     {
         if ((string?)a["text"] is { } text) return Tin.ParseSurveyPoints(text);
-        if (a["points"] is JsonArray arr)
-            return arr.OfType<JsonArray>().Where(p => p.Count >= 3)
-                .Select(p => new Vec3(Json.Number(p[0]) ?? double.NaN, Json.Number(p[1]) ?? double.NaN, Json.Number(p[2]) ?? double.NaN))
-                .Where(p => double.IsFinite(p.X) && double.IsFinite(p.Y) && double.IsFinite(p.Z)).ToList();
+        if (a["points"] is JsonArray arr) return PointLists.Xyz(arr);
         throw new CommandException("A terrain needs points: [[x, y, z], …] or a survey file's text.");
     }
 

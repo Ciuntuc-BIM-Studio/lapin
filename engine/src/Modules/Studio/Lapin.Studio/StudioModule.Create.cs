@@ -171,7 +171,8 @@ public sealed partial class StudioModule
             case "torus": Size("radius", defaults.R); Size("radius2", defaults.R2); break;
         }
         if (exportAs != null) attrs["exportAs"] = exportAs;
-        var probe = Solids.Primitive(shape, Vec3.Zero, 0, attrs.Num("width"), attrs.Num("length"), attrs.Num("height"), attrs.Num("radius"), attrs.Num("radius2"));
+        double N(string key) => Json.Number(attrs[key]) ?? 0;
+        var probe = Solids.Primitive(shape, Vec3.Zero, 0, N("width"), N("length"), N("height"), N("radius"), N("radius2"));
         if (probe.Problem != null) throw new CommandException(probe.Problem);
         var label = char.ToUpperInvariant(shape[0]) + shape[1..];
         var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"{label} {ctx.Model.OfClass(cls).Count(x => x.Str("shape") == shape) + 1}";
@@ -180,9 +181,4 @@ public sealed partial class StudioModule
         Spatial.Contain(ctx, storey.Id, e.Id);
         return new JsonObject { ["id"] = e.Id };
     }
-}
-
-static class JsonNums
-{
-    public static double Num(this JsonObject o, string key) => Json.Number(o[key]) ?? 0;
 }
