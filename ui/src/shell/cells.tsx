@@ -43,13 +43,14 @@ export interface FieldProps extends CommitRules {
  * feet and inches, inches) or with a unit of its own (240cm, 2.4m, 3'6"),
  * sums allowed; one commit on blur or Enter (one undo step), only when the
  * value changes; empty or unreadable text is put back unless `blank` (then
- * empty commits null: the default). `min` and `max` are in metres.
+ * empty commits null: the default). `min` and `max` are in metres; `noUnit`
+ * leaves the unit's label off (the first of a pair, x before y).
  */
-export function LengthField({ metres, onCommit, placeholder, className, readOnly, title, style, testId, ...rules }: FieldProps & { metres: number | null | undefined; onCommit: (m: number | null) => void }) {
+export function LengthField({ metres, onCommit, placeholder, className, readOnly, title, style, testId, noUnit, ...rules }: FieldProps & { metres: number | null | undefined; onCommit: (m: number | null) => void; noUnit?: boolean }) {
   const u = useStandards((s) => s.units);
   const shown = typeof metres === 'number' ? formatLength(metres, u) : '';
   return (
-    <Cell value={shown} className={`num${className ? ` ${className}` : ''}`} suffix={unitLabel(u) || undefined} placeholder={placeholder} readOnly={readOnly} title={title} style={style} testId={testId}
+    <Cell value={shown} className={`num${className ? ` ${className}` : ''}`} suffix={noUnit ? undefined : unitLabel(u) || undefined} placeholder={placeholder} readOnly={readOnly} title={title} style={style} testId={testId}
       onCommit={(t) => { const v = commitLength(t, metres, rules); if (v !== NO_COMMIT) onCommit(v); return v !== NO_COMMIT; }} />
   );
 }

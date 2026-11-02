@@ -1,12 +1,12 @@
 /** A Studio solid in the inspector: what it is made by, its sketch, its steps. */
 
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useState, type CSSProperties } from 'react';
 import { ArrowDown, ArrowUp, PenTool, Trash2 } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { relatingOf } from '../../engine/model';
 import { notify, useUi } from '../../app/store';
-import { formatLength, parseLength, unitLabel } from '../../engine/unitsStore';
+import { LengthField, NumberField } from '../../shell/cells';
 import { editSketch, type Feature, type FeatureStep } from './sketch';
 import { solidFieldKeys } from './thick';
 
@@ -49,13 +49,11 @@ export function featureFieldKeys(node: NodeDto): string[] | null {
   }
 }
 
-/** A number typed in, committed on Enter or blur. */
-function Num({ value, onCommit, length, title }: { value: number; onCommit: (n: number) => void; length?: boolean; title?: string }) {
-  const shown = length ? formatLength(value) : String(Math.round(value * 1000) / 1000);
-  const [text, setText] = useState(shown);
-  useEffect(() => setText(shown), [shown]);
-  const done = () => { const n = length ? parseLength(text) : Number(text.replace(',', '.')); if (n != null && Number.isFinite(n) && text !== shown) onCommit(n); else setText(shown); };
-  return <input className="num" title={title} value={text} onChange={(e) => setText(e.target.value)} onBlur={done} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setText(shown); }} />;
+/** A number typed in, committed on Enter or blur: a length in the project's unit, or a plain number. */
+function Num({ value, onCommit, length, title, style }: { value: number; onCommit: (n: number) => void; length?: boolean; title?: string; style?: CSSProperties }) {
+  return length
+    ? <LengthField metres={value} title={title} style={style} onCommit={(m) => { if (m != null) onCommit(m); }} />
+    : <NumberField value={Math.round(value * 1000) / 1000} title={title} style={style} onCommit={(n) => { if (n != null) onCommit(n); }} />;
 }
 
 /** A step's main number: its distance, radius, thickness, count or angle. */
@@ -88,7 +86,7 @@ function Steps({ node, steps }: { node: NodeDto; steps: FeatureStep[] }) {
                 <button type="button" className="icon mini" title="Remove the step" onClick={() => void execute('studio.removeFeature', { id: node.id, index: i })}><Trash2 size={11} /></button>
               </span>
               {(main || s.op === 'shell' || s.op === 'slice') && <span className="step-edit">
-              {main && value != null && <label><span className="muted">{main.label}</span> <Num value={value} length={main.length} title={main.label} onCommit={(n) => set(i, { [main.key]: n })} /></label>}
+              {main && value != null && <label><span className="muted">{main.label}</span> <Num value={value} length={main.length} title={main.label} style={{ width: 72 }} onCommit={(n) => set(i, { [main.key]: n })} /></label>}
               {s.op === 'shell' && (
                 <select className="cell" title="Where it is open" value={String(s.open ?? 'none')} onChange={(e) => set(i, { open: e.target.value })}>
                   <option value="none">closed</option><option value="end">open at its end</option><option value="start">open at its sketch</option><option value="both">open at both</option>
@@ -117,7 +115,7 @@ function Place({ node }: { node: NodeDto }) {
       {['x', 'y', 'z'].map((axis, k) => (
         <Fragment key={axis}>
           <dt title="The middle of its base">{k === 0 ? 'Placed at' : ''}</dt>
-          <dd className="studio-xyz"><span className="muted">{axis}</span><Num length value={at[k] ?? 0} title={axis} onCommit={(v) => place(k, v)} /><span className="muted">{unitLabel()}</span></dd>
+          <dd className="studio-xyz"><span className="muted">{axis}</span><Num length value={at[k] ?? 0} title={axis} onCommit={(v) => place(k, v)} /></dd>
         </Fragment>
       ))}
     </>
@@ -132,7 +130,7 @@ function Pushed({ node }: { node: NodeDto }) {
     <>
       <dt>{d < 0 ? 'Pushed into' : 'Pulled from'}</dt><dd>{host?.name ?? '—'}</dd>
       <dt>Distance</dt>
-      <dd><Num length value={d} onCommit={(n) => { if (Math.abs(n) > 1e-9) void execute('studio.setPush', { id: node.id, distance: n }); }} /> <span className="muted">{unitLabel()} (negative pushes in)</span></dd>
+      <dd><Num length value={d} onCommit={(n) => { if (Math.abs(n) > 1e-9) void execute('studio.setPush', { id: node.id, distance: n }); }} /> <span className="muted">(negative pushes in)</span></dd>
     </>
   );
 }
@@ -143,8 +141,20 @@ export function FeatureCard({ node }: { node: NodeDto }) {
   const relations = useSession((s) => s.relations);
   const [f, setF] = useState<Feature | null>(null);
   const [classes, setClasses] = useState<Offered[]>([]);
-  useEffect(() => { void query<Feature>('studio.feature', { id: node.id }).then(setF); }, [node.id, nodes]);
-  useEffect(() => { offered ??= query<Offered[]>('studio.classes'); void offered.then((c) => setClasses(c ?? [])); }, []);
+  // Another solid selected: its card starts empty, and an earlier one's late answer is dropped (an edit would go to the wrong step).
+  useEffect(() => setF(null), [node.id]);
+  useEffect(() => {
+    let live = true;
+    void query<Feature>('studio.feature', { id: node.id }).then((r) => { if (live) setF(r); });
+    return () => { live = false; };
+  }, [node.id, nodes]);
+  useEffect(() => {
+    let live = true;
+    // Only an answer is kept for the session: a failure (the engine not ready) is asked again next time.
+    const asked = offered ??= query<Offered[]>('studio.classes').then((c) => { if (!c) offered = null; return c; });
+    void asked.then((c) => { if (live) setClasses(c ?? []); });
+    return () => { live = false; };
+  }, []);
   if (!f) return null;
   const op = OPS[f.operation] ?? f.operation[0].toUpperCase() + f.operation.slice(1);
   const thick = ['ring', 'box', 'wall', 'boxSlab'].includes(f.operation);

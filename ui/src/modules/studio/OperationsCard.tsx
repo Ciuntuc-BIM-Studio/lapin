@@ -9,7 +9,7 @@ import { MousePointerClick } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
-import { formatLength, parseLength, unitLabel } from '../../engine/unitsStore';
+import { LengthField } from '../../shell/cells';
 
 /** The tools working on an element (ids), from its interference relations. */
 export function toolsOf(id: string): string[] {
@@ -35,11 +35,9 @@ export function OperationsCard({ node }: { node: NodeDto }) {
             <dt title={t.props.void ? 'It cuts only, and is not drawn' : undefined}>{t.name}</dt>
             <dd>
               {pushed && (
-                <input className="num" defaultValue={formatLength(d)} key={d} title="Distance (negative pushes in)"
-                  onBlur={(e) => { const v = parseLength(e.target.value); if (v != null && Math.abs(v) > 1e-9 && Math.abs(v - d) > 1e-9) void execute('studio.setPush', { id: t.id, distance: v }); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+                <LengthField metres={d} title="Distance (negative pushes in)"
+                  onCommit={(v) => { if (v != null && Math.abs(v) > 1e-9) void execute('studio.setPush', { id: t.id, distance: v }); }} />
               )}
-              {pushed && <span className="muted"> {unitLabel()} </span>}
               <button type="button" className="icon mini" title="Select it" onClick={() => useUi.setState({ selection: t.id, selected: [t.id] })}><MousePointerClick size={12} /></button>
             </dd>
           </Fragment>

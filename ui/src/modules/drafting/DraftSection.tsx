@@ -4,7 +4,7 @@
  * ends, circles by centre and radius, polylines by their vertices, with the
  * lengths and areas that follow; a hatch by its pattern; a text by its words,
  * style, angle and place; a dimension and a tag by what they belong to.
- * Lengths in mm, angles in degrees, areas in m².
+ * Lengths in the project's unit, angles in degrees, areas in m².
  */
 
 import { Fragment, useEffect, useState } from 'react';
@@ -14,11 +14,13 @@ import type { Vec2 } from '../../platform/module';
 import { fromJson, toJson, type Shape } from '../../viewport/cad/shapes';
 import { ROLES, roleLabel } from '../../viewport/cad/session';
 import { sideLengths, withSideLength } from '../../viewport/cad/sides';
-import { formatLength, lengthText, parseLength, unitLabel, useStandards } from '../../engine/unitsStore';
+import { formatLength, lengthText, unitLabel, useStandards } from '../../engine/unitsStore';
+import { Cell, LengthField, NumberField } from '../../shell/cells';
+import { useLayers, type DraftLayer } from '../../viewport/cad/layers';
 
-interface Layer { name: string; color: string; weight: number; lineType: string; visible: boolean; locked: boolean }
+type Layer = DraftLayer;
 
-const deg = (rad: number) => String(Math.round((rad * 180) / Math.PI * 100) / 100);
+const deg = (rad: number) => Math.round((rad * 180) / Math.PI * 100) / 100;
 const m2 = (v: number) => `${v.toFixed(3)} m²`;
 const pt = (v: unknown): Vec2 | null => (Array.isArray(v) && typeof v[0] === 'number' && typeof v[1] === 'number' ? { x: v[0], y: v[1] } : null);
 const polygonArea = (pts: Vec2[]) => Math.abs(pts.reduce((a, p, i) => { const q = pts[(i + 1) % pts.length]; return a + p.x * q.y - q.x * p.y; }, 0)) / 2;
@@ -29,19 +31,12 @@ const polylineLength = (pts: Vec2[], closed: boolean) => {
   return l;
 };
 
-/** A number typed in, committed on Enter or blur; empty keeps the value. A length is shown and typed in the project's unit (metres in and out). */
-function Num({ value, onCommit, suffix, length }: { value: string; onCommit: (n: number) => void; suffix?: string; length?: boolean }) {
-  const [text, setText] = useState(value);
-  useEffect(() => setText(value), [value]);
-  const done = () => { const n = length ? parseLength(text) : Number(text.replace(',', '.')); if (text.trim() !== '' && n != null && Number.isFinite(n) && text !== value) onCommit(n); else setText(value); };
-  return (
-    <span className="commit">
-      <input className="num" value={text} onChange={(e) => setText(e.target.value)} onBlur={done}
-        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setText(value); }} />
-      {suffix && <span className="muted"> {suffix}</span>}
-    </span>
-  );
-}
+/** A length typed in the project's unit (metres in and out), committed on Enter or blur; empty keeps the value. */
+const Len = ({ value, onCommit, noUnit, min }: { value: number | null; onCommit: (m: number) => void; noUnit?: boolean; min?: number }) =>
+  <LengthField metres={value} noUnit={noUnit} min={min} onCommit={(m) => { if (m != null) onCommit(m); }} />;
+/** A number (an angle, a scale) typed in, committed on Enter or blur; empty keeps the value. */
+const Num = ({ value, onCommit, suffix }: { value: number; onCommit: (n: number) => void; suffix?: string }) =>
+  <NumberField value={value} suffix={suffix} onCommit={(n) => { if (n != null) onCommit(n); }} />;
 
 function Point({ label, p, onCommit }: { label: string; p: Vec2; onCommit?: (q: Vec2) => void }) {
   return (
@@ -49,7 +44,7 @@ function Point({ label, p, onCommit }: { label: string; p: Vec2; onCommit?: (q: 
       <dt>{label}</dt>
       <dd className="pair">
         {onCommit
-          ? <><Num length value={formatLength(p.x)} onCommit={(x) => onCommit({ x, y: p.y })} /><Num length value={formatLength(p.y)} onCommit={(y) => onCommit({ x: p.x, y })} suffix={unitLabel()} /></>
+          ? <><Len noUnit value={p.x} onCommit={(x) => onCommit({ x, y: p.y })} /><Len value={p.y} onCommit={(y) => onCommit({ x: p.x, y })} /></>
           : <span className="num">{formatLength(p.x)} · {formatLength(p.y)} {unitLabel()}</span>}
       </dd>
     </>
@@ -83,7 +78,7 @@ function ShapeFields({ node, shape }: { node: NodeDto; shape: Shape }) {
           {shape.pts.length <= 24 && sideLengths(shape.pts, shape.closed).map((l, i) => (
             <Fragment key={i}>
               <dt title="Type a length: the side's end moves along it, the sides after it follow up to the next one running the same way">Side {i + 1}</dt>
-              <dd><Num length value={formatLength(l)} onCommit={(v) => { const next = withSideLength(shape.pts, shape.closed, i, v); if (next) set({ ...shape, pts: next }); }} suffix={unitLabel()} /></dd>
+              <dd><Len value={l} onCommit={(v) => { const next = withSideLength(shape.pts, shape.closed, i, v); if (next) set({ ...shape, pts: next }); }} /></dd>
             </Fragment>
           ))}
         </>
@@ -92,7 +87,7 @@ function ShapeFields({ node, shape }: { node: NodeDto; shape: Shape }) {
       return (
         <>
           <Point label="Centre" p={shape.c} onCommit={(c) => set({ ...shape, c })} />
-          <dt>Radius</dt><dd><Num length value={formatLength(shape.r)} onCommit={(r) => { if (r > 0) set({ ...shape, r }); }} suffix={unitLabel()} /></dd>
+          <dt>Radius</dt><dd><Len value={shape.r} min={1e-6} onCommit={(r) => set({ ...shape, r })} /></dd>
           <Row label="Diameter" value={lengthText(2 * shape.r)} />
           <Row label="Circumference" value={lengthText(2 * Math.PI * shape.r)} />
           <Row label="Area" value={m2(Math.PI * shape.r * shape.r)} />
@@ -104,7 +99,7 @@ function ShapeFields({ node, shape }: { node: NodeDto; shape: Shape }) {
       return (
         <>
           <Point label="Centre" p={shape.c} onCommit={(c) => set({ ...shape, c })} />
-          <dt>Radius</dt><dd><Num length value={formatLength(shape.r)} onCommit={(r) => { if (r > 0) set({ ...shape, r }); }} suffix={unitLabel()} /></dd>
+          <dt>Radius</dt><dd><Len value={shape.r} min={1e-6} onCommit={(r) => set({ ...shape, r })} /></dd>
           <dt>Start angle</dt><dd><Num value={deg(shape.start)} onCommit={(a) => set({ ...shape, start: (a * Math.PI) / 180 })} suffix="°" /></dd>
           <dt>End angle</dt><dd><Num value={deg(shape.end)} onCommit={(a) => set({ ...shape, end: (a * Math.PI) / 180 })} suffix="°" /></dd>
           <Row label="Length" value={lengthText(shape.r * sweep)} />
@@ -128,12 +123,12 @@ function HatchFields({ node, hatch }: { node: NodeDto; hatch: Record<string, unk
     <>
       <dt>Pattern</dt>
       <dd><select value={pattern} onChange={(e) => set({ pattern: e.target.value })}>{(patterns.includes(pattern) ? patterns : [pattern, ...patterns]).map((p) => <option key={p} value={p}>{p}</option>)}</select></dd>
-      <dt>Scale</dt><dd><Num value={String(hatch.scale ?? 1)} onCommit={(s) => { if (s > 0) set({ scale: s }); }} /></dd>
-      <dt>Angle</dt><dd><Num value={String(hatch.angle ?? 0)} onCommit={(a) => set({ angle: a })} suffix="°" /></dd>
+      <dt>Scale</dt><dd><Num value={Number(hatch.scale ?? 1)} onCommit={(s) => { if (s > 0) set({ scale: s }); }} /></dd>
+      <dt>Angle</dt><dd><Num value={Number(hatch.angle ?? 0)} onCommit={(a) => set({ angle: a })} suffix="°" /></dd>
       <dt title="Where the pattern starts; empty: the view's origin">Origin</dt>
       <dd className="pair">
-        <Num length value={origin ? formatLength(origin.x) : ''} onCommit={(x) => set({ origin: [x, origin?.y ?? 0] })} />
-        <Num length value={origin ? formatLength(origin.y) : ''} onCommit={(y) => set({ origin: [origin?.x ?? 0, y] })} suffix={unitLabel()} />
+        <Len noUnit value={origin?.x ?? null} onCommit={(x) => set({ origin: [x, origin?.y ?? 0] })} />
+        <Len value={origin?.y ?? null} onCommit={(y) => set({ origin: [origin?.x ?? 0, y] })} />
         {origin && <button type="button" className="link" onClick={() => set({ origin: null })}>view's</button>}
       </dd>
       {area != null && <Row label="Area" value={m2(Math.abs(area))} />}
@@ -142,9 +137,7 @@ function HatchFields({ node, hatch }: { node: NodeDto; hatch: Record<string, unk
 }
 
 function Drafted({ node }: { node: NodeDto }) {
-  const nodes = useSession((s) => s.nodes);
-  const [layers, setLayers] = useState<Layer[]>([]);
-  useEffect(() => { void query<Layer[]>('drafting.layers').then((l) => l && setLayers(l)); }, [nodes]);
+  const layers = useLayers();
   const layerName = typeof node.props.layer === 'string' ? node.props.layer : '0';
   const layer = layers.find((l) => l.name === layerName);
   const own = typeof node.props.color === 'string' ? node.props.color : null;
@@ -187,8 +180,8 @@ function TextFields({ node }: { node: NodeDto }) {
     <dl className="fields">
       <dt>Text</dt>
       <dd><textarea rows={2} value={body} onChange={(e) => setBody(e.target.value)} onBlur={() => { if (body.trim() && body !== text) set({ text: body }); }} /></dd>
-      <dt>Text style</dt><dd><input value={typeof node.props.textStyle === 'string' ? node.props.textStyle : ''} placeholder="default" onChange={(e) => set({ textStyle: e.target.value || null })} /></dd>
-      <dt>Angle</dt><dd><Num value={String(typeof node.props.angle === 'number' ? node.props.angle : 0)} onCommit={(a) => set({ angle: a })} suffix="°" /></dd>
+      <dt>Text style</dt><dd><Cell value={typeof node.props.textStyle === 'string' ? node.props.textStyle : ''} placeholder="default" onCommit={(t) => set({ textStyle: t.trim() || null })} /></dd>
+      <dt>Angle</dt><dd><Num value={typeof node.props.angle === 'number' ? node.props.angle : 0} onCommit={(a) => set({ angle: a })} suffix="°" /></dd>
       {at && <Point label="Position" p={at} />}
     </dl>
   );

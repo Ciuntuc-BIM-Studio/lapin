@@ -7,25 +7,32 @@
  * into one string.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { select, useUi } from '../../app/store';
 import { startCommand } from '../../viewport/cad/session';
 import type { DimensionInfo } from '../../viewport/dimensionEdit';
+import { LengthField, NumberField } from '../../shell/cells';
 
 export function DimensionSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
   const selected = useUi((s) => s.selected);
   const [d, setD] = useState<DimensionInfo | null>(null);
-  useEffect(() => { void query<DimensionInfo>('drafting.dimension', { id: node.id }).then(setD); }, [node.id, nodes]);
+  // Another dimension selected: its rows start empty, and an earlier one's late answer is dropped (a value would drive the wrong segment).
+  useEffect(() => setD(null), [node.id]);
+  useEffect(() => {
+    let live = true;
+    void query<DimensionInfo>('drafting.dimension', { id: node.id }).then((r) => { if (live) setD(r); });
+    return () => { live = false; };
+  }, [node.id, nodes]);
   if (node.props.predefinedType !== 'DIMENSION' || !d) return null;
-  const drive = (v: string, segment: number, now: number | null) => {
-    const n = Number(v.replace(',', '.'));
-    if (n > 0 && Math.abs(n - (now ?? 0)) > 1e-6) void execute('drafting.setDimensionValue', { id: node.id, value: n, segment });
+  const drive = (n: number | null, segment: number) => {
+    if (n != null && n > 0) void execute('drafting.setDimensionValue', { id: node.id, value: n, segment });
   };
   const kind = d.kind ?? (node.props.dir ? 'linear' : 'aligned');
-  const unit = kind === 'angular' ? '°' : kind === 'slope' ? 'ratio' : 'm';
+  // An angle in degrees, a slope as a ratio; any other measure is a length, in the project's unit.
+  const unit = kind === 'angular' ? '°' : kind === 'slope' ? 'ratio' : null;
   const set = (attrs: Record<string, unknown>) => void execute('element.update', { id: node.id, attrs });
   const values = d.values ?? [d.value];
   const texts = Array.isArray(node.props.texts) ? (node.props.texts as unknown[]) : [];
@@ -43,8 +50,9 @@ export function DimensionSection({ node }: { node: NodeDto }) {
         <option value="auto">auto (% under 15 %, else degrees)</option><option value="%">%</option><option value="deg">degrees</option><option value="ratio">1:n</option>
       </select></dd></>}
       {values.map((v, i) => (
-        <SegmentRow key={`${i}:${v}`} label={string ? `Segment ${i + 1} (${unit})` : `Value (${unit})`} value={v} disabled={d.orphan || !(d.drives?.[i] ?? d.driving)} title={title}
-          onValue={(s) => drive(s, i, v)} text={d.kind ? null : textOf(i)}
+        <SegmentRow key={`${i}:${v}`} label={unit ? (string ? `Segment ${i + 1} (${unit})` : `Value (${unit})`) : string ? <>Segment {i + 1}</> : 'Value'}
+          value={v} length={!unit} disabled={d.orphan || !(d.drives?.[i] ?? d.driving)} title={title}
+          onValue={(n) => drive(n, i)} text={d.kind ? null : textOf(i)}
           onText={(t) => void execute('drafting.setDimensionText', { id: node.id, segment: i, text: t })} />
       ))}
       {!d.kind && <>
@@ -70,14 +78,15 @@ export function DimensionSection({ node }: { node: NodeDto }) {
   );
 }
 
-function SegmentRow({ label, value, disabled, title, onValue, text, onText }: {
-  label: string; value: number | null; disabled: boolean; title: string; onValue: (v: string) => void; text: string | null; onText: (t: string) => void;
+function SegmentRow({ label, value, length, disabled, title, onValue, text, onText }: {
+  label: ReactNode; value: number | null; length: boolean; disabled: boolean; title: string; onValue: (n: number | null) => void; text: string | null; onText: (t: string) => void;
 }) {
   return <>
     <dt>{label}</dt>
     <dd>
-      <input defaultValue={value == null ? '∞' : value.toFixed(3)} disabled={disabled} title={title}
-        onKeyDown={(e) => { if (e.key === 'Enter') onValue((e.target as HTMLInputElement).value); }} onBlur={(e) => onValue(e.target.value)} />
+      {length
+        ? <LengthField metres={value} placeholder="∞" readOnly={disabled} title={title} min={1e-6} onCommit={onValue} />
+        : <NumberField value={value == null ? null : Math.round(value * 1000) / 1000} placeholder="∞" readOnly={disabled} title={title} onCommit={onValue} />}
       {text != null && <input defaultValue={text} placeholder="text" title="Written over the segment instead of its measure (empty: the measure)"
         onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} onBlur={(e) => { if (e.target.value !== text) onText(e.target.value); }} />}
     </dd>
