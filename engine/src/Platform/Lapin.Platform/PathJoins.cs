@@ -292,6 +292,9 @@ public static class Joins
             if (detach) continue;
             if (moveJoinedEnds)
             {
+                // The other's far end, where its joined end would go: it would have no length.
+                var far = theirsConn == "ATSTART" ? End(other) : Start(other);
+                if ((to - far).Length < 1e-3) throw new CommandException("The joined element would have no length: its end would land on its other end.");
                 var attrs = other.CloneAttrs();
                 attrs[theirsConn == "ATSTART" ? "start" : "end"] = new JsonArray(to.X, to.Y);
                 edit.Replace(other.With(attrs: attrs));
@@ -330,6 +333,8 @@ public static class Joins
         {
             if ((string?)r.Attrs?["kind"] == "T") continue;
             if (m.GetRelation(r.Id) is not { } current) continue;
+            // A join that no longer meets (a type made thicker since) is left for Refresh, not restyled: Join would refuse the whole restyle.
+            if (Compute(m, current, paths, out _) == null) continue;
             Join(edit, paths, m.Get(current.Relating)!, m.Get(current.Related[0])!, style ?? StyleOf(current), swap ? 'b' : 'a');
             count++;
         }

@@ -145,6 +145,40 @@ public class JoinModelTests
     }
 
     [Fact]
+    public void A_corner_dragged_onto_the_other_walls_far_end_is_refused()
+    {
+        var f = new Fixture();
+        var a = f.Wall(0, 0, 5, 0);
+        var b = f.Wall(5, 0, 5, 4);
+        Assert.Single(JoinRels(f));
+        // b's joined start would come along to (5, 4), its own end: no length left.
+        Assert.Throws<CommandException>(() => f.Run("architecture.updateWall", new JsonObject { ["id"] = a, ["x2"] = 5, ["y2"] = 4 }));
+        Assert.Equal(new Vec2(5, 0), Joins.Start(Get(f, b)));
+        Assert.Single(JoinRels(f));
+    }
+
+    [Fact]
+    public void A_join_that_no_longer_meets_does_not_refuse_the_restyle_of_the_others()
+    {
+        var f = new Fixture();
+        var a = f.Wall(0, 0, 5, 0, joinStyle: "mitre");
+        var b = f.Wall(5, 0, 5, 4, joinStyle: "mitre");
+        var c = f.Wall(5, 4, 0, 4, joinStyle: "mitre");
+        Assert.Equal(2, JoinRels(f).Count);
+        // a moved far away behind the joins' back: its join with b is stale.
+        f.Session.Edit("away", e =>
+        {
+            var wall = e.Model.Get(a)!;
+            var attrs = wall.CloneAttrs();
+            attrs["start"] = new JsonArray(20, 20);
+            attrs["end"] = new JsonArray(25, 20);
+            e.Replace(wall.With(attrs: attrs));
+        });
+        f.Run("architecture.restyleJoins", new JsonObject { ["ids"] = new JsonArray(a, b, c), ["style"] = "butt" });
+        Assert.Equal("butt", Style(JoinRels(f).Single(r => r.Touches(c))));
+    }
+
+    [Fact]
     public void A_wall_drawn_onto_the_body_of_another_makes_a_T_with_the_crossed_wall_through()
     {
         var f = new Fixture();
