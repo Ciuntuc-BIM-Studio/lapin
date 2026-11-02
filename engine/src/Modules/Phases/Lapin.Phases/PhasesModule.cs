@@ -16,7 +16,11 @@ public sealed class PhasesModule : ILapinModule, IViewElementFilter
     public string Id => "phases";
     public string Name => "Phases";
 
-    public static PhaseSettings Settings(IModelView m) => PhaseSettings.Read(Spatial.Project(m)?.Attrs["phases"]) ?? PhaseSettings.Default;
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Entity, PhaseSettings> Cache = new();
+
+    /// <summary>The project's phases, read once per version of the project (an entity never changes: an edit makes a new one).</summary>
+    public static PhaseSettings Settings(IModelView m) =>
+        Spatial.Project(m) is { } project ? Cache.GetValue(project, p => PhaseSettings.Read(p.Attrs["phases"]) ?? PhaseSettings.Default) : PhaseSettings.Default;
 
     /// <summary>An element's state and how a filter shows it, seen from a phase; null state: not there.</summary>
     public static (string? State, string Presentation) Look(PhaseSettings s, Entity e, string phase, string? filter)
@@ -32,7 +36,8 @@ public sealed class PhasesModule : ILapinModule, IViewElementFilter
     {
         if (!Phased(m, e)) return null;
         var s = Settings(m);
-        var phase = view.Str("phaseId") ?? s.ActivePhase?.Id;
+        // A view on a phase that is gone follows the active one.
+        var phase = view.Str("phaseId") is { } own && s.IndexOf(own) >= 0 ? own : s.ActivePhase?.Id;
         if (phase == null) return null;
         var (state, presentation) = Look(s, e, phase, view.Str("phaseFilterId"));
         if (presentation == "hide") return (true, null);
@@ -97,18 +102,19 @@ public sealed class PhasesModule : ILapinModule, IViewElementFilter
             return null;
         });
 
-        // A phase goes: what was created or demolished in it falls back to no phase.
+        // A phase goes: what was created or demolished in it falls back to no phase, and the views on it follow the active phase.
         r.Command("removePhase", "Remove phase", (ctx, a) =>
         {
             var s = Settings(ctx.Model);
             var id = (string?)a["id"];
             if (s.Phases.Count <= 1) throw new CommandException("A project needs at least one phase.");
             if (s.Phases.All(p => p.Id != id)) throw new CommandException("There is no such phase.");
-            foreach (var e in ctx.Model.Entities.Where(e => e.Str("phaseCreated") == id || e.Str("phaseDemolished") == id).ToList())
+            foreach (var e in ctx.Model.Entities.Where(e => e.Str("phaseCreated") == id || e.Str("phaseDemolished") == id || e.Str("phaseId") == id).ToList())
             {
                 var attrs = e.CloneAttrs();
                 if (e.Str("phaseCreated") == id) attrs.Remove("phaseCreated");
                 if (e.Str("phaseDemolished") == id) attrs.Remove("phaseDemolished");
+                if (e.Str("phaseId") == id) attrs.Remove("phaseId");
                 ctx.Replace(e.With(attrs: attrs));
             }
             Write(ctx, s with { Phases = s.Phases.Where(p => p.Id != id).ToList(), Active = s.Active == id ? null : s.Active });

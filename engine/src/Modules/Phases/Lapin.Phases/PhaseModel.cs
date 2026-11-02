@@ -41,6 +41,14 @@ public sealed record PhaseSettings(IReadOnlyList<ProjectPhase> Phases, IReadOnly
             ["new"] = new("#4f9d5d", 1), ["existing"] = new("#a6a6a6", 1), ["demolished"] = new("#d64545", 0.45), ["temporary"] = new("#e8a33a", 0.85),
         });
 
+    /// <summary>Where a phase stands in the order, or −1 (a handful of phases: a walk, no copy of the list).</summary>
+    public int IndexOf(string? id)
+    {
+        if (id == null) return -1;
+        for (var i = 0; i < Phases.Count; i++) if (Phases[i].Id == id) return i;
+        return -1;
+    }
+
     /// <summary>The phase new elements go in: the active one, else the last.</summary>
     public ProjectPhase? ActivePhase => Phases.FirstOrDefault(p => p.Id == Active) ?? Phases.LastOrDefault();
 
@@ -50,12 +58,11 @@ public sealed record PhaseSettings(IReadOnlyList<ProjectPhase> Phases, IReadOnly
     /// <summary>An element's state seen from phase <paramref name="view"/>, or null when it is not there.</summary>
     public string? State(string? created, string? demolished, string view)
     {
-        int Index(string? id) => id == null ? -1 : Phases.ToList().FindIndex(p => p.Id == id);
-        var v = Index(view);
+        var v = IndexOf(view);
         if (v < 0) return "new";
-        var c = Index(created);
-        if (c < 0) c = DefaultCreated is { } dc ? Phases.ToList().IndexOf(dc) : 0;
-        var d = Index(demolished);
+        var c = IndexOf(created);
+        if (c < 0) c = Math.Max(0, IndexOf(DefaultCreated?.Id));
+        var d = IndexOf(demolished);
         if (c > v) return null;
         if (d >= 0 && d < v) return null;
         if (d == v) return c == v ? "temporary" : "demolished";

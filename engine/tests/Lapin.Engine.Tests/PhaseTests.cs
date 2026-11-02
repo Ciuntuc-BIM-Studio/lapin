@@ -91,4 +91,26 @@ public class PhaseTests
         f.Session.Undo();
         Assert.Equal("demolition", f.Model.Get(old)!.Str("phaseDemolished"));
     }
+
+    [Fact]
+    public void A_view_on_a_removed_phase_follows_the_active_one_and_does_not_show_everything_as_new()
+    {
+        var f = F();
+        var old = f.Wall(0, 0, 6, 0);
+        var added = f.Wall(0, 4, 6, 4);
+        f.Run("phases.assign", new JsonObject { ["id"] = old, ["created"] = "existing" });
+        f.Run("phases.addPhase", new JsonObject { ["name"] = "Later" });
+        f.Run("phases.assign", new JsonObject { ["id"] = added, ["created"] = "later" });
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        f.Run("phases.viewPhase", new JsonObject { ["id"] = plan, ["phase"] = "later", ["filter"] = "show-all" });
+        f.Run("phases.setActive", new JsonObject { ["phase"] = "existing" });
+        f.Run("phases.removePhase", new JsonObject { ["id"] = "later" });
+        // The view's phase went with it, in the same step.
+        Assert.Null(f.Model.Get(plan)!.Str("phaseId"));
+        f.Session.Undo();
+        Assert.Equal("later", f.Model.Get(plan)!.Str("phaseId"));
+        // A view left on an unknown phase (an older file) follows the active one: the wall of a later phase is not drawn as new.
+        var stale = f.Model.Get(plan)!.With(attrs: new JsonObject { ["phaseId"] = "gone", ["phaseFilterId"] = "show-all" });
+        Assert.Equal((true, (string?)null), new PhasesModule().For(f.Model, stale, f.Model.Get(added)!));
+    }
 }
