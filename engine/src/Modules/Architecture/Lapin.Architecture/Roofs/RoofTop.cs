@@ -29,17 +29,14 @@ public static class RoofTop
         public Vec2 B => A + Dir * Length;
     }
 
-    /// <summary>A roof's solved shape, cached per roof (an entity is immutable) and model revision: every wall of the storey asks for it.</summary>
-    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Entity, Tuple<long, RoofShape?>> Cache = new();
+    /// <summary>A roof's solved shape, cached per roof and model revision with what the solve read: every wall of the storey asks for it.</summary>
+    static readonly RevisionCache<RoofShape?> Cache = new();
 
-    public static RoofShape? ShapeOf(Entity roof, IModelView m)
+    public static RoofShape? ShapeOf(Entity roof, IModelView m) => Cache.Get(roof, m, v =>
     {
-        if (Cache.TryGetValue(roof, out var hit) && hit.Item1 == m.Revision) return hit.Item2;
-        var r = Roof.Resolve(roof, m);
-        var shape = r == null || r.Flat ? null : Roof.Solve(r).Shape;
-        Cache.AddOrUpdate(roof, Tuple.Create(m.Revision, shape));
-        return shape;
-    }
+        var r = Roof.Resolve(roof, v);
+        return r == null || r.Flat ? null : Roof.Solve(r).Shape;
+    });
 
     /// <summary>How a wall takes roofs: auto, attach or none.</summary>
     public static readonly string[] Modes = ["auto", "attach", "none"];

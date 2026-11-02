@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
 using Lapin.Architecture.Roofs;
 using Lapin.Geometry;
@@ -33,7 +32,7 @@ public static class WallTops
     sealed record Tri(Vec3 A, Vec3 B, Vec3 C, double X0, double X1, double Y0, double Y1, bool Down);
 
     /// <summary>A body's triangles, kept per entity (immutable) and model revision: every wall under it asks for them.</summary>
-    static readonly ConditionalWeakTable<Entity, Tuple<long, List<Tri>>> Cache = new();
+    static readonly RevisionCache<List<Tri>> Cache = new();
 
     /// <summary>The triangles of the bodies the wall rises to, besides Lapin's own roofs.</summary>
     static List<Tri> Bodies(Entity wall, IModelView m, IServices? services)
@@ -58,9 +57,10 @@ public static class WallTops
         return o;
     }
 
-    static List<Tri> TrianglesOf(Entity t, IModelView m, IServices services)
+    static List<Tri> TrianglesOf(Entity t, IModelView m, IServices services) => Cache.Get(t, m, v => Triangles(t, v, services));
+
+    static List<Tri> Triangles(Entity t, IModelView m, IServices services)
     {
-        if (Cache.TryGetValue(t, out var hit) && hit.Item1 == m.Revision) return hit.Item2;
         var producer = StoredBodies.Has(t) ? new GeometryProducer(StoredBodies.Geometry) : services.Get<IGeometryProducers>()?.Geometry(t.Class);
         var list = new List<Tri>();
         foreach (var part in producer?.Invoke(t, m, services)?.Parts ?? [])
@@ -74,7 +74,6 @@ public static class WallTops
                 list.Add(new Tri(p, q, r, Math.Min(p.X, Math.Min(q.X, r.X)), Math.Max(p.X, Math.Max(q.X, r.X)), Math.Min(p.Y, Math.Min(q.Y, r.Y)), Math.Max(p.Y, Math.Max(q.Y, r.Y)), nz < 0));
             }
         }
-        Cache.AddOrUpdate(t, Tuple.Create(m.Revision, list));
         return list;
     }
 

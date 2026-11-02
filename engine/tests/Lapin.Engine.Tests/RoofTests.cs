@@ -355,6 +355,22 @@ public class RoofTests
     }
 
     [Fact]
+    public void Every_wall_attached_to_a_roof_follows_what_only_the_roof_reads()
+    {
+        // Two walls take the attic roof's solved shape, cached for the revision: the second gets the reads of the first.
+        var f = new Fixture();
+        var attic = (string)f.Run("storey.create", new JsonObject { ["name"] = "Attic" })!["id"]!;   // +3.00
+        var roof = (string)f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = attic, ["points"] = House10x6, ["style"] = "traditional_campie" })!["id"]!;
+        var walls = new[] { f.Wall(4, 0.5, 4, 5.5), f.Wall(6, 0.5, 6, 5.5) };
+        f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(walls[0], walls[1]), ["roofIds"] = new JsonArray(roof) });
+        var tops = walls.Select(w => f.Bounds(w).Max.Z).ToArray();
+        // The attic goes up a metre: only its storey changed, which neither wall reads itself.
+        f.Run("storey.update", new JsonObject { ["id"] = attic, ["elevation"] = 4.0 });
+        Assert.Equal(tops[0] + 1, f.Bounds(walls[0]).Max.Z, 6);
+        Assert.Equal(tops[1] + 1, f.Bounds(walls[1]).Max.Z, 6);
+    }
+
+    [Fact]
     public void Roof_windows_and_dormers_cut_the_covering_and_are_built_with_the_roof()
     {
         var f = new Fixture();
@@ -485,6 +501,14 @@ public class RoofTests
         vs = f.Session.Geometry(wall)!.Parts.SelectMany(p => p.Solid.Vertices).ToList();
         Assert.Equal(3, vs.Where(v => v.X > 8.05).Max(v => v.Z), 2);
         Assert.Equal(6, f.Bounds(wall).Max.Z, 2);
+        // A second wall under the body, the triangles cached for the revision: it follows the sketch too.
+        var second = f.Wall(-1, 0.9, 12, 0.9);
+        f.Run("architecture.attachToRoof", new JsonObject { ["ids"] = new JsonArray(second), ["roofIds"] = new JsonArray(body) });
+        _ = f.Session.Geometry(wall); _ = f.Session.Geometry(second);
+        f.Run("drafting.updateDraft", new JsonObject { ["id"] = b, ["shape"] = new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(new JsonArray(8, 0), new JsonArray(10, 0), new JsonArray(10, 1), new JsonArray(8, 1)), ["closed"] = true } });
+        foreach (var w in new[] { wall, second })
+            Assert.Equal(51, Vol(f, w) / plain * 39, 1);
+        f.Run("element.delete", new JsonObject { ["id"] = second });
         // Detached, its own 3 m again; a wall is no body to rise to.
         f.Run("architecture.detachFromRoof", new JsonObject { ["ids"] = new JsonArray(wall) });
         Assert.Equal(3, f.Bounds(wall).Max.Z, 6);

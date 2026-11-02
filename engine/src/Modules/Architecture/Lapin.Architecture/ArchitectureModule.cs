@@ -790,13 +790,8 @@ static class RoofCuts
     }
 
     /// <summary>A roof's covering as what it cuts with, solved once per model revision (every wall around asks for it).</summary>
-    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Entity, Tuple<long, Solid?>> RoofEnvelopes = new();
-    public static Solid? Envelope(Entity roof, IModelView m)
-    {
-        if (RoofEnvelopes.TryGetValue(roof, out var hit) && hit.Item1 == m.Revision) return hit.Item2;
-        var covering = Roof.Geometry(roof, m)?.Parts.FirstOrDefault(p => p.Key == "covering")?.Solid;
-        RoofEnvelopes.AddOrUpdate(roof, Tuple.Create(m.Revision, covering));
-        return covering;
-    }
+    static readonly RevisionCache<Solid?> RoofEnvelopes = new();
+    public static Solid? Envelope(Entity roof, IModelView m) =>
+        RoofEnvelopes.Get(roof, m, v => Roof.Geometry(roof, v)?.Parts.FirstOrDefault(p => p.Key == "covering")?.Solid);
 
 }
