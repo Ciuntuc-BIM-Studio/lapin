@@ -97,8 +97,10 @@ public static class Schedules
                 var rule = own ?? wallRule;
                 var vs = part.Solid.Vertices;
                 double Extent(Func<Vec3, double> f) => vs.Max(f) - vs.Min(f);
-                var length = Extent(v => v.X * dir.X + v.Y * dir.Y);
-                var width = Extent(v => v.X * across.X + v.Y * across.Y);
+                // In a curved wall the lintel is bent along the arc: measured along the axis and across it (radially), not on the chord.
+                var curve = PathCurve.Of(wall);
+                var length = curve.IsArc ? Extent(v => curve.Project(v.Xy)) : Extent(v => v.X * dir.X + v.Y * dir.Y);
+                var width = curve.IsArc ? Extent(v => (v.Xy - curve.Centre).Length) : Extent(v => v.X * across.X + v.Y * across.Y);
                 var height = Extent(v => v.Z);
                 var precast = part.Name.Contains("precast", StringComparison.OrdinalIgnoreCase);
                 var product = precast && rule?.Product is { } p ? $"{p.Manufacturer} {p.Code}".Trim() : null;

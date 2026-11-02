@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Architecture;
+using Lapin.Architecture.Schedules;
 using Lapin.Model;
 using Lapin.Platform;
 using Lapin.Structure;
@@ -163,6 +164,23 @@ public class CurveTests
         var sill = Openings.OpeningOf(f.Model, window)!.Num("sill");
         Assert.Equal(sill + spec.Height, all.Min(b => b.Min.Z), 6);
         Assert.Contains(f.Session.Quantities(wall), q => q.Name == "Qto_BeamBaseQuantities");
+    }
+
+    [Fact]
+    public void A_lintel_in_a_curved_wall_is_scheduled_along_the_arc_as_in_a_straight_one()
+    {
+        LintelInfo Scheduled(double arc)
+        {
+            var f = new Fixture();
+            var wall = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 8, ["y2"] = 0, ["arc"] = arc })!["id"]!;
+            f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["x"] = 4, ["y"] = arc });
+            return Schedules.Of(f.Session.Reader, "lintel").Entries.Single().Lintel!;
+        }
+        var (straight, curved) = (Scheduled(0), Scheduled(3));
+        // Not the chord's projection, which is shorter, nor the sagitta added to the width.
+        Assert.Equal(straight.Length, curved.Length, 3);
+        Assert.Equal(straight.Width, curved.Width, 3);
+        Assert.Equal(straight.Height, curved.Height, 6);
     }
 
     [Fact]
