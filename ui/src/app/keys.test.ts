@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { keyIntent, type KeyPress, type KeySnapshot } from './keys';
+import { keyIntent, openDialog, type KeyPress, type KeySnapshot } from './keys';
 import { resolveKeymap, type CommandDef } from './shortcuts';
 
 const cmd = (id: string, defaults: string[], same?: string): CommandDef => ({ id, label: id, category: 'test', defaults, same, run: () => undefined });
@@ -41,6 +41,13 @@ describe('keyIntent', () => {
     // A dialog that keeps its own state (not the store's): the keys still stay with it.
     expect(keyIntent(press('Delete', { inDialog: true }), state({ selected: ['w1'] }))).toBeNull();
     expect(keyIntent(press('Escape', { inDialog: true }), state())).toBeNull();
+  });
+
+  it('does not let a dialog id with nothing on the screen hold the keys', () => {
+    expect(openDialog('materials', true)).toBe('materials');
+    expect(openDialog('materials', false)).toBeNull();
+    expect(openDialog(null, true)).toBeNull();
+    expect(keyIntent(press('Delete'), state({ dialog: openDialog('gone', false), selected: ['w1'] }))).toEqual({ kind: 'command', id: 'app.delete' });
   });
 
   it('runs the Ctrl/Cmd shortcuts', () => {
@@ -113,6 +120,19 @@ describe('keyIntent', () => {
     expect(keyIntent(press('Enter'), live('2400', true))).toEqual({ kind: 'liveCommit' });
     expect(keyIntent(press('Escape'), live('2400', true))).toEqual({ kind: 'liveClear' });
     expect(keyIntent(press('Backspace'), live('24', true))).toEqual({ kind: 'liveBack' });
+    // A unit after the length, typed out in full.
+    for (const typed of ['2400mm', '240cm', '24dm', '2.4m', '96in', '10ft', "10'", '42"', "3'6\""]) {
+      let text = '';
+      for (const k of typed) {
+        expect(keyIntent(press(k), live(text, !!text)), `${typed} at ${text}`).toEqual({ kind: 'liveType', key: k });
+        text += k;
+      }
+    }
+    expect(keyIntent(press('M'), live('2400m'))).toEqual({ kind: 'liveType', key: 'm' });
+    // Not a unit: the command line's.
+    expect(keyIntent(press('x'), live('2400'))).toEqual({ kind: 'type', buffer: 'x' });
+    expect(keyIntent(press('m'), live('2400mm'))).toEqual({ kind: 'type', buffer: 'm' });
+    expect(keyIntent(press('"'), live("3'"))).toBeNull();
     // Something on the command line (@2,3): the digits stay there.
     expect(keyIntent(press('3'), state({ live: { active: true, text: '', typed: false }, buffer: '@2,' }))).toEqual({ kind: 'type', buffer: '@2,3' });
   });

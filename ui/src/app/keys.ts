@@ -66,6 +66,23 @@ export type KeyIntent =
   | { kind: 'type'; buffer: string }
   | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' } | { kind: 'liveClear' } | { kind: 'liveCommit' };
 
+/** The units a typed length may end in (parseLength reads them). */
+const UNIT_SUFFIXES = ['mm', 'cm', 'dm', 'm', 'in', 'ft', "'", '"'];
+
+/** Whether `key` goes on a live length as (part of) its unit: 2400m → 2400mm, 240c → 240cm, 3' → 3'6", 10f → 10ft. */
+export function unitKey(text: string, key: string): boolean {
+  if (key.length !== 1) return false;
+  const m = /\d([a-z]*)$/i.exec(text);
+  if (!m) return false;
+  const suffix = (m[1] + key).toLowerCase();
+  return UNIT_SUFFIXES.some((u) => u.startsWith(suffix));
+}
+
+/** The open dialog's id when one is on the screen: an id with nothing rendered (a dialog that drew nothing) does not hold the keys. */
+export function openDialog(id: string | null, rendered: boolean): string | null {
+  return id && rendered ? id : null;
+}
+
 /** The commands a chord still runs while a dialog is open. */
 const IN_DIALOG = new Set(['app.save', 'app.saveAs']);
 
@@ -90,7 +107,7 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
     if (e.key === 'Escape' && s.live.typed) return { kind: 'liveClear' };
     if (e.key === 'Backspace' && s.live.text) return { kind: 'liveBack' };
     if (/^[0-9.,+]$/.test(e.key) || (e.key === '-' && s.live.text)) return { kind: 'liveType', key: e.key };
-    if (/^[mcd]$/i.test(e.key) && /\d$/.test(s.live.text)) return { kind: 'liveType', key: e.key.toLowerCase() };
+    if (unitKey(s.live.text, e.key)) return { kind: 'liveType', key: e.key.toLowerCase() };
   }
   const typing = s.buffer.length > 0 || !!s.step;
   if (e.key === 'Escape') return s.step || s.buffer ? { kind: 'cancel' } : null;
@@ -126,7 +143,7 @@ function snapshot(): KeySnapshot {
   const ui = useUi.getState();
   const cad = useCad.getState();
   return {
-    screen: ui.screen, dialog: ui.dialog, tool: ui.tool, selected: ui.selected,
+    screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool, selected: ui.selected,
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want } : null, hasLast: !!cad.last,
     hotbar: hotbarTools().length, keymap: keymap(),
     live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang) }; })(),
