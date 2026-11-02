@@ -119,6 +119,32 @@ public class MepNetworkTests
     }
 
     [Fact]
+    public void A_junction_that_would_close_a_loop_of_runs_is_refused_and_a_loop_from_a_file_still_builds()
+    {
+        var f = new MepFixture();
+        var s = f.System();
+        var a = f.Draw(s, MepFixture.Pts((0, 0), (4, 0)));
+        var b = f.Draw(s, MepFixture.Pts((4, 0), (4, 4)));
+        var c = f.Draw(s, MepFixture.Pts((4, 4), (0, 4)));
+        f.Run("mep.connect", new JsonObject { ["runId"] = a, ["end"] = "end", ["to"] = new JsonObject { ["runId"] = b, ["station"] = 0 } });
+        f.Run("mep.connect", new JsonObject { ["runId"] = b, ["end"] = "end", ["to"] = new JsonObject { ["runId"] = c, ["station"] = 0 } });
+        // A on B on C: C's end on A, or B's start on A, would build each from the other without end.
+        Assert.Throws<CommandException>(() => f.Run("mep.connect", new JsonObject { ["runId"] = c, ["end"] = "end", ["to"] = new JsonObject { ["runId"] = a, ["station"] = 0 } }));
+        Assert.Throws<CommandException>(() => f.Run("mep.connect", new JsonObject { ["runId"] = b, ["end"] = "start", ["to"] = new JsonObject { ["runId"] = a, ["station"] = 4 } }));
+        // A branch of C off A the other way round is no loop.
+        var d = f.Draw(s, MepFixture.Pts((2, 0), (2, 2)), new JsonObject { ["runId"] = a, ["station"] = 2 });
+        Assert.Equal(a, Runs.EndOf(f.Model, f.Model.Get(d)!, "start")!.RunId);
+        // A loop an older file carries is built, the junction back onto a run being built not followed.
+        f.Session.History.Execute("loop", e => e.AddRelation(new Relation(e.NewId(), Runs.Connects, c, [a], new JsonObject { ["end"] = "end", ["station"] = 0 })));
+        foreach (var id in new[] { a, b, c })
+        {
+            var run = f.Model.Get(id)!;
+            Assert.True(Runs.Centreline(f.Model, run, Runs.SettingOf(f.Model, run), out _).Count >= 2);
+            Assert.NotNull(f.Session.Geometry(id));
+        }
+    }
+
+    [Fact]
     public void A_rise_takes_a_run_from_the_floor_to_the_ceiling_with_a_riser_between()
     {
         var f = new MepFixture();

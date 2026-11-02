@@ -118,9 +118,32 @@ public static partial class Runs
     {
         if (trunk.Id == run.Id) throw new CommandException("A run cannot branch off itself.");
         if (trunk.Str("systemId") != run.Str("systemId")) throw new CommandException("A branch joins a run of its own system.");
+        if (DependsOn(ctx.Model, trunk, run.Id)) throw new CommandException($"„{trunk.Name}” is already joined to „{run.Name}” through its ends: the runs would close a loop.");
         var length = Pipes.Length(Points(trunk));
         Disconnect(ctx, run, end);
         ctx.AddRelation(new Relation(ctx.NewId(), Connects, run.Id, [trunk.Id], new JsonObject { ["end"] = end, ["station"] = Math.Clamp(station, 0, Math.Max(0, length)) }));
+    }
+
+    /// <summary>
+    /// Whether the run's ends lead, from junction to junction, to the run
+    /// <paramref name="targetId"/>: its centreline would then be built from
+    /// that run's, so a junction the other way would close a loop.
+    /// </summary>
+    public static bool DependsOn(IModelView m, Entity run, string targetId)
+    {
+        var seen = new HashSet<string>();
+        var todo = new Stack<Entity>([run]);
+        while (todo.TryPop(out var r))
+        {
+            if (!seen.Add(r.Id)) continue;
+            foreach (var end in new[] { "start", "end" })
+                if (EndOf(m, r, end) is { RunId: { } next })
+                {
+                    if (next == targetId) return true;
+                    if (m.Get(next) is { } e && IsRun(e)) todo.Push(e);
+                }
+        }
+        return false;
     }
 
     public static void Disconnect(ICommandContext ctx, Entity run, string end)
@@ -181,8 +204,11 @@ public static partial class Runs
     /// is written back into the run when what an end is on moves
     /// (<see cref="Refollow"/>), so the run's points are where it is drawn.
     /// </summary>
-    static (List<Vec2> Points, List<int?> Source, List<double?>? Levels, Vec3? StartAt, Vec3? EndAt) Follow(IModelView m, Entity run, Setting s, double zRun)
+    static (List<Vec2> Points, List<int?> Source, List<double?>? Levels, Vec3? StartAt, Vec3? EndAt) Follow(IModelView m, Entity run, Setting s, double zRun, HashSet<string>? visiting = null)
     {
+        // The runs whose centrelines are being built for this one: a junction back onto one of them (a loop left by an older file) is not followed.
+        visiting ??= [];
+        visiting.Add(run.Id);
         var pts = Points(run);
         var levels = LevelsOf(run);
         var src = Enumerable.Range(0, pts.Count).Select(i => (int?)i).ToList();
@@ -200,9 +226,9 @@ public static partial class Runs
                 var pair = Nodes.RoleOf(node)?.Ports.FirstOrDefault(p => p.Key == port.Port.Pair);
                 if (s.Pair && pair != null && Nodes.Port(m, node, pair.Key) is { } other) at = (port.At + other.At) * 0.5;
             }
-            else if (e.RunId != null && m.Get(e.RunId) is { } trunk && IsRun(trunk))
+            else if (e.RunId != null && !visiting.Contains(e.RunId) && m.Get(e.RunId) is { } trunk && IsRun(trunk))
             {
-                var line = Centreline(m, trunk, SettingOf(m, trunk), out _);
+                var line = Centreline(m, trunk, SettingOf(m, trunk), out _, out _, [.. visiting]);
                 var (p2, _, _) = Pipes.AtStation(Points(trunk), e.Station);
                 at = new Vec3(p2.X, p2.Y, line.Count > 0 ? ZAt(line, p2) : zRun);
             }
@@ -246,13 +272,15 @@ public static partial class Runs
     /// of its points, which of the run's own points it is (null: a jog to a
     /// port, or an elbow the material asked for).
     /// </summary>
-    public static List<Vec3> Centreline(IModelView m, Entity run, Setting s, out double z0, out List<int?> vertexOf)
+    public static List<Vec3> Centreline(IModelView m, Entity run, Setting s, out double z0, out List<int?> vertexOf) => Centreline(m, run, s, out z0, out vertexOf, null);
+
+    static List<Vec3> Centreline(IModelView m, Entity run, Setting s, out double z0, out List<int?> vertexOf, HashSet<string>? visiting)
     {
         z0 = Nodes.StoreyZ(m, run);
         var zRun = z0 + s.Elevation;
         vertexOf = [];
         if (Points(run).Count < 2) return [];
-        var (pts, src, levels, startAt, endAt) = Follow(m, run, s, zRun);
+        var (pts, src, levels, startAt, endAt) = Follow(m, run, s, zRun, visiting);
         var o = new List<Vec3>(pts.Count + 2);
         // The run's own elevations, set in its profile: each point at its own, the ends jogging to their ports.
         if (levels != null)
