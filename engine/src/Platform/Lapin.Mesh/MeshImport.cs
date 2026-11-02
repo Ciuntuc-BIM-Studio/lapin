@@ -61,12 +61,11 @@ public static class MeshImport
         }
         pieces = pieces.Where(p => p.Triangles.Count > 0).ToList();
         if (pieces.Count == 0) throw new CommandException($"„{name}” holds no triangles.");
-        // Units and up: glTF's are its own; OBJ and STL as told.
+        // Units and up: glTF is Y up by its rule; OBJ and STL as told. The scale as asked for every format.
         var scale = Json.Number(options["scale"]) is { } sc && sc > 0 ? sc : 1;
-        var up = (string?)options["up"] ?? (ext == "obj" ? "y" : "z");
-        if (ext is "gltf" or "glb") { up = "y"; scale = Json.Number(options["scale"]) is { } s2 && s2 > 0 ? s2 : 1; }
+        var up = ext is "gltf" or "glb" ? "y" : (string?)options["up"] ?? (ext == "obj" ? "y" : "z");
         var shift = options["at"] is JsonArray { Count: >= 3 } at && Json.Number(at[0]) is { } ax && Json.Number(at[1]) is { } ay && Json.Number(at[2]) is { } az ? new Vec3(ax, ay, az) : Vec3.Zero;
-        Vec3 Map(Vec3 p) { var q = p * scale; if (up == "y") q = new Vec3(q.X, -q.Z, q.Y); return q + shift; }
+        Vec3 Map(Vec3 p) { var q = p * scale; if (up == "y") q = MeshMath.FromYUp(q.X, q.Y, q.Z); return q + shift; }
         foreach (var p in pieces) for (var i = 0; i < p.Vertices.Count; i++) p.Vertices[i] = Map(p.Vertices[i]);
         if (Flag(options["oneElement"]) && pieces.Count > 1)
         {
@@ -88,14 +87,7 @@ public static class MeshImport
         diff = session.Edit($"Import {name}", outer => Groups.Around(outer, Path.GetFileNameWithoutExtension(name), edit =>
         {
             var storey = (string?)options["storeyId"] is { Length: > 0 } sid && edit.Model.Get(sid) is { Class: IfcClass.BuildingStorey } given ? given
-                : Spatial.Storeys(edit.Model).OrderBy(s => s.Num("elevation")).FirstOrDefault();
-            if (storey == null)
-            {
-                var building = Spatial.EnsureBuilding(edit);
-                storey = new Entity(edit.NewId(), IfcClass.BuildingStorey, "Ground floor", new JsonObject { ["elevation"] = 0.0, ["height"] = 3.0 });
-                edit.Add(storey);
-                edit.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
-            }
+                : Spatial.EnsureStorey(edit, session.Product);
             foreach (var p in pieces)
             {
                 var attrs = new JsonObject
@@ -135,6 +127,7 @@ public static class MeshImport
     {
         var all = new List<Vec3>();
         var pieces = new List<MeshPiece>();
+        var names = new HashSet<string>();
         MeshPiece? cur = null;
         Dictionary<int, int> local = [];
         string name = "Object";
@@ -158,7 +151,8 @@ public static class MeshImport
                 {
                     if (cur == null)
                     {
-                        cur = new MeshPiece(pieces.Any(p => p.Name == name) ? $"{name} {pieces.Count + 1}" : name, color, [], []);
+                        cur = new MeshPiece(names.Add(name) ? name : $"{name} {pieces.Count + 1}", color, [], []);
+                        names.Add(cur.Name);
                         pieces.Add(cur);
                         local = [];
                     }
@@ -190,16 +184,12 @@ public static class MeshImport
 
     // ------------------------------------------------------------ STL
 
-    /// <summary>STL, binary (80 bytes of header, a count, 50 bytes a triangle) or text (<c>facet … vertex x y z …</c>): one piece, its corners welded where they are the same point.</summary>
+    /// <summary>STL, binary (80 bytes of header, a count, 50 bytes a triangle) or text (<c>facet … vertex x y z …</c>): one piece, its corners welded where they are the same point (to <see cref="MeshMath.WeldDigits"/> decimals).</summary>
     public static List<MeshPiece> Stl(byte[] bytes, string name)
     {
         var piece = new MeshPiece(name, Grey, [], []);
-        var weld = new Dictionary<(double, double, double), int>();
-        int V(double x, double y, double z)
-        {
-            if (!weld.TryGetValue((x, y, z), out var i)) { i = piece.Vertices.Count; piece.Vertices.Add(new Vec3(x, y, z)); weld[(x, y, z)] = i; }
-            return i;
-        }
+        var weld = new MeshMath.Welder(piece.Vertices);
+        int V(double x, double y, double z) => weld.Add(new Vec3(x, y, z));
         if (IsBinaryStl(bytes))
         {
             var n = BitConverter.ToUInt32(bytes, 80);
@@ -363,11 +353,20 @@ public static class MeshImport
                     var pts = Positions(pos).Select(p => Apply(world, p)).ToList();
                     var idx = (int?)prim!["indices"] is { } ia ? Indices(ia) : Enumerable.Range(0, pts.Count).ToList();
                     if (idx.Any(k => k < 0 || k >= pts.Count)) throw new FormatException($"a primitive of mesh {mi} names a vertex it does not have.");
+                    // Corners welded as an STL's are (a flat-shaded file repeats them per face); a triangle they collapse is dropped.
+                    var welded = new List<Vec3>();
+                    var weld = new MeshMath.Welder(welded);
+                    var to = pts.Select(weld.Add).ToArray();
+                    var mirrored = Det(world) < 0;
                     var tris = new List<(int, int, int)>();
-                    for (var k = 0; k + 2 < idx.Count; k += 3) tris.Add((idx[k], idx[k + 1], idx[k + 2]));
-                    // A mirroring placement turns the triangles inside out: wound back.
-                    if (Det(world) < 0) tris = tris.Select(t => (t.Item1, t.Item3, t.Item2)).ToList();
-                    pieces.Add(new MeshPiece(label, ColorOf(prim), pts, tris));
+                    for (var k = 0; k + 2 < idx.Count; k += 3)
+                    {
+                        var (a, b, c) = (to[idx[k]], to[idx[k + 1]], to[idx[k + 2]]);
+                        if (a == b || b == c || a == c) continue;
+                        // A mirroring placement turns the triangles inside out: wound back.
+                        tris.Add(mirrored ? (a, c, b) : (a, b, c));
+                    }
+                    pieces.Add(new MeshPiece(label, ColorOf(prim), welded, tris));
                 }
             }
             foreach (var child in node["children"]?.AsArray() ?? []) Walk((int?)child ?? throw new FormatException($"node {index} has an empty child."), world, depth + 1);

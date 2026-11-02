@@ -83,9 +83,9 @@ public static class FragImport
     }
 
     /// <summary>Fragments' frame (Y up) to the model's (Z up): (x, y, z) → (x, −z, y).</summary>
-    static Vec3 ToModel((double X, double Y, double Z) p) => new(p.X, -p.Z, p.Y);
+    static Vec3 ToModel((double X, double Y, double Z) p) => MeshMath.FromYUp(p.X, p.Y, p.Z);
     /// <summary>The model's frame to Fragments': (x, y, z) → (x, z, −y).</summary>
-    static (double X, double Y, double Z) ToFrag(Vec3 p) => (p.X, p.Z, -p.Y);
+    static (double X, double Y, double Z) ToFrag(Vec3 p) => MeshMath.ToYUp(p.X, p.Y, p.Z);
 
     sealed class Reader(Session session, FragModel model, string name, FragImportOptions o)
     {
@@ -160,15 +160,8 @@ public static class FragImport
                 storeyOfLocal[local] = storey.Id;
                 storeysMade++;
             }
-            var fallback = Spatial.Storeys(edit.Model).OrderBy(s => s.Num("elevation")).FirstOrDefault()?.Id;
-            if (fallback == null)
-            {
-                var ground = new Entity(edit.NewId(), IfcClass.BuildingStorey, "Ground floor", new JsonObject { ["elevation"] = 0.0, ["height"] = 3.0 });
-                edit.Add(ground);
-                edit.Relate(IfcClass.RelAggregates, building.Id, ground.Id);
-                fallback = ground.Id;
-                storeysMade++;
-            }
+            if (!Spatial.Storeys(edit.Model).Any()) storeysMade++;
+            var fallback = Spatial.EnsureStorey(edit, session.Product).Id;
 
             // Items whose pieces are the same share a body: the key names the shells, materials and local placements.
             var keyOfMesh = new Dictionary<uint, string>();

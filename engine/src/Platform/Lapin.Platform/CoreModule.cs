@@ -325,6 +325,21 @@ public static class Spatial
         return building;
     }
 
+    /// <summary>
+    /// The lowest storey, made when the model has none (an import into an empty project): the product's first storey,
+    /// as the session starts one (Session.StartEmpty), else a ground floor.
+    /// </summary>
+    public static Entity EnsureStorey(IEdit edit, ProductManifest? product = null)
+    {
+        if (Storeys(edit.Model).FirstOrDefault() is { } s) return s;
+        var building = EnsureBuilding(edit);
+        var (name, elevation, height) = product?.Storeys is { Length: > 0 } own ? (own[0].Name, own[0].Elevation, own[0].Height) : ("Ground floor", 0.0, 3.0);
+        var storey = new Entity(edit.NewId(), IfcClass.BuildingStorey, name, new JsonObject { ["elevation"] = elevation, ["height"] = height });
+        edit.Add(storey);
+        edit.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
+        return storey;
+    }
+
     /// <summary>Places <paramref name="elementId"/> on <paramref name="storeyId"/>.</summary>
     public static void Contain(IEdit edit, string storeyId, string elementId)
     {

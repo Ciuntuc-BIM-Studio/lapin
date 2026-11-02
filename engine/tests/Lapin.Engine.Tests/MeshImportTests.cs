@@ -186,4 +186,47 @@ public class MeshImportTests
         Assert.Equal(12, r.Triangles);
         Assert.Equal(1, Vol(f, Imported(f, "padded.stl").Single()), 6);
     }
+
+    [Fact]
+    public void STL_and_glTF_corners_are_welded_to_the_same_tolerance_as_the_Fragments_writer()
+    {
+        // Two triangles on one edge, its second copy off by float noise (1e-7): one edge, four corners.
+        var text = "solid s\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\n"
+            + "facet normal 0 0 1\nouter loop\nvertex 1.0000001 0 0\nvertex 1 1 0\nvertex 0 1.0000001 0\nendloop\nendfacet\nendsolid s\n";
+        Assert.Equal(4, MeshImport.Stl(Encoding.UTF8.GetBytes(text), "s").Single().Vertices.Count);
+        // A flat-shaded glTF (a vertex per face corner, as Lapin's own export writes one): the cube's 36 corners are its 8.
+        var data = new List<byte>();
+        foreach (var t in Tris) foreach (var k in t) foreach (var v in new[] { Corners[k][0], Corners[k][2], -Corners[k][1] }) data.AddRange(BitConverter.GetBytes((float)v));
+        var doc = new JsonObject
+        {
+            ["asset"] = new JsonObject { ["version"] = "2.0" },
+            ["nodes"] = new JsonArray(new JsonObject { ["mesh"] = 0 }),
+            ["meshes"] = new JsonArray(new JsonObject { ["primitives"] = new JsonArray(new JsonObject { ["attributes"] = new JsonObject { ["POSITION"] = 0 } }) }),
+            ["buffers"] = new JsonArray(new JsonObject { ["byteLength"] = data.Count, ["uri"] = "data:application/octet-stream;base64," + Convert.ToBase64String(data.ToArray()) }),
+            ["bufferViews"] = new JsonArray(new JsonObject { ["buffer"] = 0, ["byteLength"] = data.Count }),
+            ["accessors"] = new JsonArray(new JsonObject { ["bufferView"] = 0, ["componentType"] = 5126, ["count"] = 36, ["type"] = "VEC3" }),
+        };
+        var piece = MeshImport.Gltf(Encoding.UTF8.GetBytes(doc.ToJsonString()), false, null, []).Single();
+        Assert.Equal(8, piece.Vertices.Count);
+        Assert.Equal(12, piece.Triangles.Count);
+    }
+
+    [Fact]
+    public void An_import_into_a_project_without_storeys_makes_the_products_first_storey()
+    {
+        var session = new Session(ModuleCatalog.Create([new ArchitectureModule()]), new ProductManifest("p", "P", ["core", "architecture"], Storeys: [new ProductStorey("Parter", 0, 2.8)]));
+        session.Edit("No storeys", edit => { foreach (var s in Spatial.Storeys(edit.Model).ToList()) edit.Remove(s.Id); });
+        Assert.Empty(Spatial.Storeys(session.Model));
+        MeshImport.Run(session, Encoding.UTF8.GetBytes("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n"), "t.obj", new JsonObject(), null, out _);
+        var storey = Spatial.Storeys(session.Model).Single();
+        Assert.Equal("Parter", storey.Name);
+        Assert.Equal(2.8, storey.Num("height"));
+    }
+
+    [Fact]
+    public void OBJ_pieces_of_one_name_are_told_apart()
+    {
+        var obj = "v 0 0 0\nv 1 0 0\nv 0 1 0\no A\nf 1 2 3\no A\nf 1 2 3\no B\nf 1 2 3\no A\nf 1 2 3\n";
+        Assert.Equal(["A", "A 2", "B", "A 4"], MeshImport.Obj(Encoding.UTF8.GetBytes(obj), []).Select(p => p.Name));
+    }
 }
