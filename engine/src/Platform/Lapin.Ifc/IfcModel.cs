@@ -589,7 +589,14 @@ public sealed partial class IfcModel
     static MeshBuilder Prism(List<Vec3> outer, List<List<Vec3>> holes, Vec3 v)
     {
         var m = new MeshBuilder();
-        if (v.Z < 0) { v = -v; } // the same body, swept the other way from the other cap
+        // Swept downwards: the same body, swept up from its other cap (the profile moved by the sweep), so the caps keep their faces outward.
+        if (v.Z < 0)
+        {
+            var d = v;
+            outer = [.. outer.Select(p => p + d)];
+            holes = [.. holes.Select(h => h.Select(p => p + d).ToList())];
+            v = -v;
+        }
         static List<Vec3> Oriented(List<Vec3> loop, bool ccw) => Area(loop) > 0 == ccw ? loop : [.. Enumerable.Reverse(loop)];
         var loops = new List<List<Vec3>> { Oriented(outer, true) };
         loops.AddRange(holes.Select(h => Oriented(h, false)));
