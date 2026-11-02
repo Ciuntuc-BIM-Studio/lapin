@@ -56,14 +56,20 @@ public static class GeoImport
     /// is; and, when asked, the vertices of contour lines at their elevation.
     /// Only the layers named, when some are.
     /// </summary>
-    public static List<Vec3> DxfSurvey(DxfDocument doc, IReadOnlyCollection<string>? layers = null, bool contours = true)
+    public static List<Vec3> DxfSurvey(DxfDocument doc, IReadOnlyCollection<string>? layers = null, bool contours = true) =>
+        DxfSurvey(doc.Entities.Where(e => layers == null || layers.Count == 0 || layers.Contains(e.Layer)), contours);
+
+    /// <summary>How many surveyed points each layer holds on its own, the drawing read once.</summary>
+    public static List<(string Layer, int Points)> DxfSurveyLayers(DxfDocument doc) =>
+        [.. doc.Entities.GroupBy(e => e.Layer).OrderBy(g => g.Key).Select(g => (g.Key, DxfSurvey(g, true).Count)).Where(x => x.Item2 > 0)];
+
+    static List<Vec3> DxfSurvey(IEnumerable<DxfEntity> entities, bool contours)
     {
-        bool On(DxfEntity e) => layers == null || layers.Count == 0 || layers.Contains(e.Layer);
         static double? Height(string s) => double.TryParse(s.Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && double.IsFinite(v) ? v : null;
         var withZ = new List<Vec3>();
         var bare = new List<Vec2>();
         var texts = new List<(Vec2 At, double Z, double H)>();
-        foreach (var e in doc.Entities.Where(On))
+        foreach (var e in entities)
             switch (e)
             {
                 case DxfPoint p:
@@ -87,17 +93,37 @@ public static class GeoImport
                     break;
             }
         // A height written beside a point without one: the nearest such point within a few text heights takes it; one far from any stands where it is written.
+        // The points in a grid of cells about a text's reach, so each text looks only at the cells its reach covers.
         var taken = new HashSet<int>();
+        var cell = texts.Count > 0 ? Math.Max(4 * texts.Select(t => t.H).Order().ElementAt(texts.Count / 2), 1e-3) : 1;
+        var grid = new Dictionary<(long, long), List<int>>();
+        (long, long) Cell(Vec2 p) => ((long)Math.Floor(p.X / cell), (long)Math.Floor(p.Y / cell));
+        for (var i = 0; i < bare.Count; i++) { var k = Cell(bare[i]); if (!grid.TryGetValue(k, out var l)) grid[k] = l = []; l.Add(i); }
         foreach (var (at, z, h) in texts)
         {
+            var reach = 4 * h;
             var (best, bd) = (-1, double.PositiveInfinity);
-            for (var i = 0; i < bare.Count; i++)
+            var (cx, cy) = Cell(at);
+            var span = (long)Math.Min(Math.Ceiling(reach / cell), 100000);
+            // A text far taller than most looks through the cells there are rather than every cell its reach covers.
+            var cells = (2 * span + 1) * (2 * span + 1) > grid.Count
+                ? grid.Where(c => Math.Abs(c.Key.Item1 - cx) <= span && Math.Abs(c.Key.Item2 - cy) <= span).Select(c => c.Value)
+                : CellsAround(cx, cy, span);
+            IEnumerable<List<int>> CellsAround(long x0, long y0, long sp)
             {
-                if (taken.Contains(i)) continue;
-                var d = (bare[i] - at).Length;
-                if (d < bd) (best, bd) = (i, d);
+                for (var gx = x0 - sp; gx <= x0 + sp; gx++)
+                    for (var gy = y0 - sp; gy <= y0 + sp; gy++)
+                        if (grid.TryGetValue((gx, gy), out var l)) yield return l;
             }
-            if (best >= 0 && bd <= 4 * h) { taken.Add(best); withZ.Add(new Vec3(bare[best].X, bare[best].Y, z)); }
+            foreach (var l in cells)
+                foreach (var i in l)
+                {
+                    if (taken.Contains(i)) continue;
+                    var d = (bare[i] - at).Length;
+                    // The nearest, the first drawn on a tie.
+                    if (d < bd || (d == bd && i < best)) (best, bd) = (i, d);
+                }
+            if (best >= 0 && bd <= reach) { taken.Add(best); withZ.Add(new Vec3(bare[best].X, bare[best].Y, z)); }
             else if (bare.Count == 0) withZ.Add(new Vec3(at.X, at.Y, z));
         }
         // The same spot twice (a point and its block): once.
@@ -112,13 +138,18 @@ public static class GeoImport
 
     public sealed record Feature(string Kind, string Name, List<List<Vec3>> Rings, bool HasZ, JsonObject Properties);
 
-    /// <summary>The features of a GeoJSON text and its declared system ("crs" member; none: WGS 84 as the standard says).</summary>
-    public static (List<Feature> Features, string Crs) GeoJson(string text)
+    /// <summary>
+    /// The features of a GeoJSON text and its system: the "crs" member's;
+    /// none, WGS 84 as the standard says when every coordinate is a longitude
+    /// and a latitude; else null, to be guessed (a cadastral export in Stereo
+    /// 70 written without its "crs").
+    /// </summary>
+    public static (List<Feature> Features, string? Crs) GeoJson(string text)
     {
         JsonNode? root;
         try { root = JsonNode.Parse(text); }
         catch (JsonException e) { throw new CommandException($"The file is not GeoJSON: {e.Message}"); }
-        var crs = GeoRef.Wgs84;
+        string? crs = null;
         if ((string?)root?["crs"]?["properties"]?["name"] is { } name)
         {
             var m = System.Text.RegularExpressions.Regex.Match(name, @"(\d{4,5})\s*$");
@@ -129,7 +160,8 @@ public static class GeoImport
         {
             "FeatureCollection" => (root!["features"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [],
             "Feature" => [(JsonObject)root!],
-            _ => root is JsonObject g && g["coordinates"] != null ? [new JsonObject { ["type"] = "Feature", ["geometry"] = g.DeepClone() }] : [],
+            // A bare geometry, a GeometryCollection's members included.
+            _ => root is JsonObject g && (g["coordinates"] != null || g["geometries"] is JsonArray) ? [new JsonObject { ["type"] = "Feature", ["geometry"] = g.DeepClone() }] : [],
         };
         foreach (var f in items)
         {
@@ -137,6 +169,7 @@ public static class GeoImport
             var label = FeatureName(props) ?? $"{o.Count + 1}";
             if (f["geometry"] is JsonObject geom) Geometry(geom, label, (JsonObject)props.DeepClone(), o);
         }
+        crs ??= o.SelectMany(f => f.Rings.SelectMany(r => r)).All(p => Math.Abs(p.X) <= 180 && Math.Abs(p.Y) <= 90) ? GeoRef.Wgs84 : null;
         return (o, crs);
     }
 
@@ -222,8 +255,9 @@ public static class GeoImport
             var surfaces = new List<(List<Vec3>, List<List<Vec3>>)>();
             void Surface(JsonNode? s)
             {
-                var rings = (s as JsonArray)?.OfType<JsonArray>().Select(r => r.Select(i => (int?)(Json.Number(i) is { } d ? (int)d : null)).Where(i => i is >= 0 && i < verts.Count).Select(i => verts[i!.Value]).ToList()).Where(r => r.Count >= 3).ToList() ?? [];
-                if (rings.Count > 0) surfaces.Add((rings[0], rings.Skip(1).ToList()));
+                var rings = (s as JsonArray)?.OfType<JsonArray>().Select(r => r.Select(i => (int?)(Json.Number(i) is { } d ? (int)d : null)).Where(i => i is >= 0 && i < verts.Count).Select(i => verts[i!.Value]).ToList()).ToList() ?? [];
+                // An outer ring left with fewer than three good vertices drops the surface (its first hole is no outline); a bad hole only itself.
+                if (rings.Count > 0 && rings[0].Count >= 3) surfaces.Add((rings[0], rings.Skip(1).Where(r => r.Count >= 3).ToList()));
             }
             var b = best["boundaries"];
             switch ((string?)best["type"])

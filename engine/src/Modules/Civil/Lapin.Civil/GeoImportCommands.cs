@@ -55,13 +55,7 @@ public static class GeoImportCommands
         r.Query("dxfPointLayers", (q, a) =>
         {
             var doc = DxfReader.Read(Text(a, "DXF"));
-            var o = new JsonArray();
-            foreach (var layer in doc.Entities.Select(e => e.Layer).Distinct().OrderBy(x => x))
-            {
-                var n = GeoImport.DxfSurvey(doc, [layer]).Count;
-                if (n > 0) o.Add((JsonNode)new JsonObject { ["layer"] = layer, ["points"] = n });
-            }
-            return o;
+            return new JsonArray([.. GeoImport.DxfSurveyLayers(doc).Select(x => (JsonNode)new JsonObject { ["layer"] = x.Layer, ["points"] = x.Points })]);
         });
 
         // GeoJSON: areas (one alone: the parcel), lines, points; a parcel also outlines the terrain's parcel when it has none.

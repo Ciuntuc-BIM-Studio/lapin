@@ -41,6 +41,29 @@ public class GeoImportTests
     }
 
     [Fact]
+    public void Twenty_thousand_crosses_with_their_heights_beside_them_on_thirty_layers_are_matched_in_seconds()
+    {
+        var sb = new StringBuilder();
+        for (var i = 0; i < 20000; i++)
+        {
+            var (x, y) = (587000 + i % 200 * 5.0, 325000 + i / 200 * 5.0);
+            sb.Append(Point(x, y, 0, $"L{i % 30}")).Append(Text(x + 0.4, y + 0.3, $"{100 + i % 50}.{i % 100:D2}", $"L{i % 30}"));
+        }
+        // A tall title far off, and a height with no cross near it, on a layer of their own.
+        sb.Append(Point(586000, 324000, 0, "T")).Append(Text(586000, 324030, "12.34", "T"));
+        var doc = Lapin.Drawing.Import.DxfReader.Read(Dxf(sb.ToString()));
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var all = GeoImport.DxfSurvey(doc);
+        var layers = GeoImport.DxfSurveyLayers(doc);
+        sw.Stop();
+        Assert.Equal(20000, all.Count);
+        Assert.Contains(all, p => p.X == 587005 && p.Y == 325000 && Math.Abs(p.Z - 101.01) < 1e-9);
+        Assert.Equal(30, layers.Count);
+        Assert.All(layers, l => Assert.InRange(l.Points, 666, 667));
+        Assert.True(sw.Elapsed.TotalSeconds < 5, $"{sw.Elapsed.TotalSeconds:F1} s");
+    }
+
+    [Fact]
     public void A_GeoJSON_parcel_in_WGS_84_lands_converted_and_outlines_the_terrain()
     {
         var f = F();
@@ -63,6 +86,38 @@ public class GeoImportTests
         Assert.NotNull(f.Model.Get(terrain)!.Attrs["parcel"]);
         var area = f.Session.Quantities(parcel.Id).Single().Quantities.Single(q => q.Name == "Area").Value;
         Assert.InRange(area, 395, 405);
+    }
+
+    [Fact]
+    public void A_GeoJSON_in_Stereo_70_without_its_crs_is_not_read_as_longitudes_and_latitudes()
+    {
+        var f = F();
+        // A cadastral export written without "crs": its numbers are no longitudes, so its system is guessed.
+        var json = "{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"properties\":{\"nr_cad\":\"777\"},\"geometry\":{\"type\":\"Polygon\",\"coordinates\":"
+            + "[[[587900,325820],[587920,325820],[587920,325840],[587900,325840],[587900,325820]]]}}]}";
+        Assert.Null(GeoImport.GeoJson(json).Crs);
+        var r = (JsonObject)f.Run("civil.importGeoJson", new JsonObject { ["text"] = json })!;
+        Assert.Equal(GeoRef.Stereo70, Location.Crs(f.Model));
+        var pts = SiteFeatures.Points(f.Model.Get((string)r["parcel"]!)!);
+        Assert.Equal(0, pts[0].X, 6);
+        Assert.Equal(20, pts[2].Y, 6);
+        // Longitudes and latitudes without "crs" are WGS 84, as the standard says.
+        Assert.Equal(GeoRef.Wgs84, GeoImport.GeoJson("{\"type\":\"Point\",\"coordinates\":[26.1,44.4]}").Crs);
+    }
+
+    [Fact]
+    public void A_bare_GeometryCollection_is_read_and_a_CityJSON_surface_with_a_bad_outer_ring_is_dropped()
+    {
+        var (features, _) = GeoImport.GeoJson("{\"type\":\"GeometryCollection\",\"geometries\":[{\"type\":\"Point\",\"coordinates\":[1,2]},{\"type\":\"LineString\",\"coordinates\":[[0,0],[1,1]]}]}");
+        Assert.Equal(["point", "line"], features.Select(f => f.Kind));
+        // The second surface's outer ring points at vertex 99: it is dropped, not outlined by its hole.
+        var json = """
+        {"type":"CityJSON","version":"2.0","vertices":[[0,0,0],[10,0,0],[10,8,0],[0,8,0],[2,2,0],[4,2,0],[4,4,0]],
+         "CityObjects":{"b1":{"type":"Building","geometry":[{"type":"MultiSurface","lod":"1","boundaries":[[[0,1,2,3]],[[0,99,1],[4,5,6]]]}]}}}
+        """;
+        var b = Assert.Single(GeoImport.CityJson(json).Buildings);
+        Assert.Single(b.Surfaces);
+        Assert.Equal(4, b.Surfaces[0].Outer.Count);
     }
 
     [Fact]
