@@ -537,7 +537,9 @@ public sealed partial class IfcModel
         var parts = Environment.ProcessorCount * 2;
         var size = (all.Count + parts - 1) / parts;
         var meshes = new MeshBuilder[(all.Count + size - 1) / size];
-        Parallel.For(0, meshes.Length, k => meshes[k] = FacesOf(all.Skip(k * size).Take(size).ToList()));
+        // What a part throws (a malformed face) is the element's, as it would be read in one: not an AggregateException.
+        try { Parallel.For(0, meshes.Length, k => meshes[k] = FacesOf(all.Skip(k * size).Take(size).ToList())); }
+        catch (AggregateException ae) { System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(ae.InnerExceptions[0]); }
         var m = meshes[0];
         for (var k = 1; k < meshes.Length; k++) m.Append(meshes[k]);
         return m;
