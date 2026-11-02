@@ -70,11 +70,15 @@ export function applyDiff(d: Diff): void {
   if (selected.some((id) => !alive(id))) useUi.setState({ selected: selected.filter(alive) });
   const storey = useUi.getState().storeyId;
   if (storey && !nodes.has(storey)) useUi.setState({ storeyId: null });
-  // A type that went is no longer what the tools build with.
+  // A type that went is no longer what the tools build with (nor a roof the configurator is open on, nor a view an inset was to go on).
   const ui = useUi.getState();
-  for (const k of ['wallTypeId', 'slabTypeId', 'doorTypeId', 'windowTypeId'] as const)
+  for (const k of REMEMBERED_IDS)
     if (ui[k] && !nodes.has(ui[k]!)) useUi.setState({ [k]: null });
+  if (ui.insetAt && !nodes.has(ui.insetAt.viewId)) useUi.setState({ insetAt: null });
 }
+
+/** The ids the interface keeps for the tools (the types they build with, the roof being configured): cleared when their node goes. */
+export const REMEMBERED_IDS = ['wallTypeId', 'slabTypeId', 'doorTypeId', 'windowTypeId', 'stairTypeId', 'ceilingTypeId', 'curtainTypeId', 'roofId'] as const;
 
 /** Run an engine command; its diff arrives as an event. Errors land in the session. */
 export async function execute(command: string, args: Record<string, unknown> = {}): Promise<unknown> {
@@ -169,11 +173,16 @@ async function resync(attempt = 0): Promise<void> {
 
 /** The project's units and line caps (its drafting standards), for the panels and the live input. */
 let standardsPending = false;
+/** A refresh asked for while one was on its way: asked again when it lands, so a units change is never missed. */
+let standardsAgain = false;
 async function refreshStandards(): Promise<void> {
-  if (standardsPending) return;
+  if (standardsPending) { standardsAgain = true; return; }
   standardsPending = true;
   try {
-    const b = await query<{ units?: Unit; lineCap?: 'round' | 'square' }>('standards.get');
-    if (b) useStandards.setState({ units: b.units ?? 'mm', lineCap: b.lineCap ?? 'round' });
+    do {
+      standardsAgain = false;
+      const b = await query<{ units?: Unit; lineCap?: 'round' | 'square' }>('standards.get');
+      if (b) useStandards.setState({ units: b.units ?? 'mm', lineCap: b.lineCap ?? 'round' });
+    } while (standardsAgain);
   } catch { /* no project open */ } finally { standardsPending = false; }
 }

@@ -87,6 +87,14 @@ describe('applyDiff', () => {
     ui = useUi.getState();
     expect([ui.storeyId, ui.slabTypeId, ui.windowTypeId]).toEqual([null, null, null]);
   });
+
+  it('forgets the stair, ceiling and curtain wall types, the roof being configured and an inset\'s view that went', () => {
+    applyDiff(diff({ version: 1, reset: true, nodes: [node('sa', 'IfcStairType'), node('ce', 'IfcCoveringType'), node('cw', 'IfcCurtainWallType'), node('r', 'IfcRoof'), node('v', 'IfcAnnotation')] }));
+    useUi.setState({ stairTypeId: 'sa', ceilingTypeId: 'ce', curtainTypeId: 'cw', roofId: 'r', insetAt: { viewId: 'v', x: 0, y: 0 } });
+    applyDiff(diff({ version: 2, removedNodes: ['sa', 'ce', 'cw', 'r', 'v'] }));
+    const ui = useUi.getState();
+    expect([ui.stairTypeId, ui.ceilingTypeId, ui.curtainTypeId, ui.roofId, ui.insetAt]).toEqual([null, null, null, null, null]);
+  });
 });
 
 describe('applyDiff over parts and shared meshes (docs/plan-instancing.md)', () => {
