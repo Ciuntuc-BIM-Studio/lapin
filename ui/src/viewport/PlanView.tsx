@@ -24,7 +24,8 @@ import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput'
 import { markSelected, pickAt, regionIds } from './planPick';
 import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
-import { pairs, toMm } from './snap';
+import { pairs } from './snap';
+import { formatLength, lengthText } from '../engine/unitsStore';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
 import { useDrawing } from './drawing';
@@ -530,7 +531,7 @@ export function PlanView() {
       return (
         <g className="plan-preview">
           <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
-          <text x={(a.x + b.x) / 2 + 8} y={(a.y + b.y) / 2 - 8}>{toMm(Math.hypot(cur.x - pts[0].x, cur.y - pts[0].y))}</text>
+          <text x={(a.x + b.x) / 2 + 8} y={(a.y + b.y) / 2 - 8}>{lengthText(Math.hypot(cur.x - pts[0].x, cur.y - pts[0].y))}</text>
         </g>
       );
     }
@@ -543,7 +544,7 @@ export function PlanView() {
       return (
         <g className="plan-preview">
           <polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} />
-          <text x={m.x + 8} y={m.y - 8}>{pts.length === 2 ? `R ${toMm(Math.abs(radiusOf(pts[0], b, cur)))}` : toMm(Math.hypot(b.x - pts[0].x, b.y - pts[0].y))}</text>
+          <text x={m.x + 8} y={m.y - 8}>{pts.length === 2 ? `R ${lengthText(Math.abs(radiusOf(pts[0], b, cur)))}` : lengthText(Math.hypot(b.x - pts[0].x, b.y - pts[0].y))}</text>
         </g>
       );
     }
@@ -553,7 +554,7 @@ export function PlanView() {
         <g className="plan-preview">
           <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
           {pts.length === 2 && <line x1={c.x} y1={c.y} x2={c.x + b.x - a.x} y2={c.y + b.y - a.y} />}
-          <text x={(a.x + b.x) / 2 + 8} y={(a.y + b.y) / 2 - 8}>{toMm(Math.hypot((pts[1] ?? cur).x - pts[0].x, (pts[1] ?? cur).y - pts[0].y))}</text>
+          <text x={(a.x + b.x) / 2 + 8} y={(a.y + b.y) / 2 - 8}>{lengthText(Math.hypot((pts[1] ?? cur).x - pts[0].x, (pts[1] ?? cur).y - pts[0].y))}</text>
         </g>
       );
     }
@@ -562,7 +563,7 @@ export function PlanView() {
       return (
         <g className="plan-preview">
           <rect x={Math.min(a.x, b.x)} y={Math.min(a.y, b.y)} width={Math.abs(b.x - a.x)} height={Math.abs(b.y - a.y)} />
-          <text x={Math.max(a.x, b.x) + 8} y={Math.min(a.y, b.y) - 6}>{toMm(Math.abs(cur.x - pts[0].x))} × {toMm(Math.abs(cur.y - pts[0].y))}</text>
+          <text x={Math.max(a.x, b.x) + 8} y={Math.min(a.y, b.y) - 6}>{formatLength(Math.abs(cur.x - pts[0].x))} × {lengthText(Math.abs(cur.y - pts[0].y))}</text>
         </g>
       );
     }

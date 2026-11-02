@@ -60,5 +60,3 @@ export const pairs = (flat: ArrayLike<number>): Vec2[] => {
   return o;
 };
 
-/** Metres as the plan shows them: millimetres. */
-export const toMm = (m: number) => `${Math.round(m * 1000)}`;
