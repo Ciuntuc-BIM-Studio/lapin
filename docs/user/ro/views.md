@@ -118,6 +118,8 @@ Mergi cum ar merge un om. Pereții, stâlpii, mobilierul și ferestrele închise
 
 Tabul **Vedere** setează ce arată vederea din față și cum arată.
 
+**Grid** (<kbd>F7</kbd>) ascunde sau arată grila de fundal a planului, iar **Linii subțiri** (<kbd>TL</kbd>) desenează toate liniile de un pixel, ca să citești un desen încărcat. Amândouă sunt doar pentru ecran: planșele, PDF-ul și DXF-ul își păstrează peniţele, iar prinderea pe grilă rămâne.
+
 ![Tabul Vedere](shots/ribbon-view.webp)
 
 - **Setările vederii.** Disciplina și stilul vederii, intervalul ei (cota de secționare și adâncimea) și grafica.

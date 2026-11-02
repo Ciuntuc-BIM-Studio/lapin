@@ -10,6 +10,8 @@ summary: Zeichnen Sie Wände Ecke für Ecke, ändern Sie sie im Eigenschaftenber
 
 Öffnen Sie die Registerkarte **Architektur** und wählen Sie **Wand**, oder geben Sie <kbd>WA</kbd> ein.
 
+Solange das Werkzeug aktiv ist, zeigt der Eigenschaftenbereich **Neues Bauteil**: den Typ, mit dem die Wände gezeichnet werden. Wählen Sie dort vor dem ersten Klick einen anderen und sehen Sie seine Schichten, seine Dicke und wie viele Wände ihn schon verwenden; **Typen bearbeiten…** öffnet Wall types. Tür, Fenster, Decke, abgehängte Decke und Vorhangfassade zeigen ihre Typen ebenso.
+
 ![Die Registerkarte Architektur](shots/ribbon-architecture.webp)
 
 Klicken Sie dort, wo die Wand beginnt, und dann an jeder Ecke. Die nächste Wand folgt der Maus. Während Sie zeichnen, können Sie statt zu klicken eine Länge und einen Winkel in die Felder über der Ansicht eingeben. Drücken Sie <kbd>Enter</kbd> oder <kbd>Esc</kbd>, um aufzuhören.

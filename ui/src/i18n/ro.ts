@@ -892,6 +892,8 @@ export const RO: Record<string, string> = {
   'Go to the Site tab': 'Mergi la fila Amplasament', 'Open Structure types': 'Deschide Tipuri de structură', 'Start Copy': 'Pornește Copiere', 'Open Materials': 'Deschide Materiale',
   'Go to the Architecture tab': 'Mergi la fila Arhitectură', 'Draw a wall': 'Desenează un perete', 'Show the active level only': 'Arată doar nivelul activ',
   'Open the user guide': 'Deschide ghidul utilizatorului',
+  // What a placing tool puts down, openings alone, the grid and thin lines (decision 247)
+  'New element': 'Element nou', 'The first one is made as you place it.': 'Primul se creează când îl pui.', 'Elements of this type:': 'Elemente de acest tip:', 'Edit types…': 'Editează tipurile…', 'Wall opening': 'Gol în perete', 'Thin lines': 'Linii subțiri',
 };
 
 /** Phrases with a number or a name in them. */

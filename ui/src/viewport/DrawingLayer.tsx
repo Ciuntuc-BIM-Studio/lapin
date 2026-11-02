@@ -6,6 +6,7 @@
 
 import { memo, useId, useMemo } from 'react';
 import { useSession } from '../engine/session';
+import { screenWidth, useDisplay } from '../app/display';
 import { screenInk, type DrawingDto, type PenDto } from './drawing';
 
 type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
@@ -14,6 +15,8 @@ type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
 export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPerMetre, onDark = false }: { drawing: DrawingDto; toScreen: ToScreen; pxPerMetre: number; onDark?: boolean }) {
   // Pixels per paper millimetre: a paper mm is scale/1000 m of the model.
   const pxPerMm = pxPerMetre * (drawing.scale ?? 100) / 1000;
+  // Thin lines (TL): every pen one pixel on screen, sheets and PDFs keeping theirs.
+  const thin = useDisplay((s) => s.thinLines);
   const cap = drawing.lineCap === 'square' ? 'square' : 'round';
   const paths = useMemo(() => drawing.pens.map((p, i) => {
     const stroke = screenInk(p.stroke, onDark), fill = screenInk(p.fill, onDark);
@@ -29,7 +32,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
       d += a === b ? `M${a}h0.8` : `M${a}L${b}`;
     }
     // True to paper, within what a screen shows well when zoomed far in or out.
-    const width = p.stroke ? Math.min(4, Math.max(0.5, p.width * pxPerMm)) : 0;
+    const width = p.stroke ? screenWidth(p.width, pxPerMm, thin) : 0;
     if (p.images?.length) return <PenImages key={i} pen={p} toScreen={toScreen} />;
     if (p.texts?.length) {
       return (

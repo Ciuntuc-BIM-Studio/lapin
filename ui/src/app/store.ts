@@ -91,6 +91,8 @@ export interface UiState extends Pane {
   insetAt: { viewId: string; x: number; y: number } | null;
   /** The curtain wall type the curtain wall tool draws with; null: the project's first. */
   curtainTypeId: string | null;
+  /** The size and sill the Wall opening tool cuts (metres). */
+  openingSize: { width: number; height: number; sill: number };
   /** The roof the roof configurator is open on. */
   roofId: string | null;
   /** The style a new roof takes (the catalogue's first when null). */
@@ -113,7 +115,7 @@ export interface UiState extends Pane {
 
 const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, rebar3d: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, ceilingTypeId: null, insetAt: null, curtainTypeId: null, roofId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
+  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, rebar3d: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, ceilingTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0 }, roofId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
 }));
 
 /**

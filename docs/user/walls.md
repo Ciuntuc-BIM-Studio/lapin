@@ -10,6 +10,8 @@ summary: Draw walls corner by corner, change them in the properties panel, and s
 
 Open the **Architecture** tab and choose **Wall**, or type <kbd>WA</kbd>.
 
+While the tool is on, the properties panel shows **New element**: the type the walls are drawn with. Choose another there before the first click, and see its layers, its thickness and how many walls already use it; **Edit types…** opens Wall types. Door, Window, Floor, Ceiling and Curtain wall show their types the same way.
+
 ![The Architecture tab](shots/ribbon-architecture.webp)
 
 Click where the wall starts, then click at each corner. The next wall follows the mouse. While you draw, you can type a length and an angle in the boxes above the view instead of clicking. Press <kbd>Enter</kbd> or <kbd>Esc</kbd> to stop.

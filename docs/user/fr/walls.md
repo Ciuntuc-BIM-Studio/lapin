@@ -10,6 +10,8 @@ summary: Dessinez les murs angle par angle, modifiez-les dans le panneau des pro
 
 Ouvrez l’onglet **Architecture** et choisissez **Mur**, ou tapez <kbd>WA</kbd>.
 
+Tant que l’outil est actif, le panneau des propriétés montre **Nouvel élément** : le type avec lequel les murs sont dessinés. Choisissez-en un autre là avant le premier clic, et voyez ses couches, son épaisseur et combien de murs l’utilisent déjà ; **Modifier les types…** ouvre Wall types. Porte, fenêtre, dalle, faux plafond et mur-rideau montrent leurs types de la même façon.
+
 ![L’onglet Architecture](shots/ribbon-architecture.webp)
 
 Cliquez là où le mur commence, puis cliquez à chaque angle. Le mur suivant suit la souris. Pendant que vous dessinez, vous pouvez taper une longueur et un angle dans les cases au-dessus de la vue au lieu de cliquer. Appuyez sur <kbd>Enter</kbd> ou <kbd>Esc</kbd> pour arrêter.

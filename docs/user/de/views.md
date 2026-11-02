@@ -118,6 +118,8 @@ Sie gehen, wie ein Mensch gehen würde. Wände, Stützen, Möbel und geschlossen
 
 Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt und wie sie aussieht.
 
+**Grid** (<kbd>F7</kbd>) blendet das Hintergrundraster des Grundrisses aus oder ein, und **Dünne Linien** (<kbd>TL</kbd>) zeichnet jede Linie ein Pixel dick, um eine dichte Zeichnung zu lesen. Beides gilt nur für den Bildschirm: Pläne, PDF und DXF behalten ihre Stifte, und das Fangen am Raster bleibt.
+
 ![Die Registerkarte Ansicht](shots/ribbon-view.webp)
 
 - **Ansichtseinstellungen.** Die Disziplin und der Stil der Ansicht, ihr Bereich (die Schnitthöhe und -tiefe) und ihre Grafiken.

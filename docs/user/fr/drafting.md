@@ -8,6 +8,8 @@ summary: Tapez des commandes comme en CAO, accrochez-vous aux points, déplacez 
 
 Tapez les lettres d’un outil n’importe où dans la fenêtre, puis appuyez sur <kbd>Enter</kbd>. Par exemple, tapez <kbd>WA</kbd> pour un mur, <kbd>CO</kbd> pour copier, <kbd>M</kbd> pour déplacer ou <kbd>L</kbd> pour une ligne. La ligne de commande en bas indique ce dont l’outil a besoin ensuite. Vous pouvez cliquer un point ou taper une longueur, un angle ou des coordonnées.
 
+Les coordonnées saisies sont dans l’unité du projet, comme les longueurs près du curseur : dans un projet en millimètres, `@4000,4000` après le premier coin d’un rectangle le fait de 4 m sur 4 m, et `4000<90` fait 4 m droit vers le haut.
+
 ![Copie d’un mur : après le point de base, la ligne de commande et la saisie dynamique affichent la longueur et l’angle jusqu’à la souris](shots/command-line.webp)
 
 Chaque outil affiche ses lettres dans son info-bulle ; vous pouvez les modifier dans **Vue → Raccourcis clavier…** (voir [L’interface et les raccourcis](interface.md)). Voici les plus utilisées :

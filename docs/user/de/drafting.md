@@ -8,6 +8,8 @@ summary: Geben Sie Befehle wie in CAD ein, fangen Sie Punkte, verschieben und ko
 
 Geben Sie die Buchstaben eines Werkzeugs an beliebiger Stelle im Fenster ein und drücken Sie dann <kbd>Enter</kbd>. Geben Sie zum Beispiel <kbd>WA</kbd> für eine Wand ein, <kbd>CO</kbd> zum Kopieren, <kbd>M</kbd> zum Verschieben oder <kbd>L</kbd> für eine Linie. Die Befehlszeile unten zeigt, was das Werkzeug als Nächstes braucht. Sie können einen Punkt anklicken oder eine Länge, einen Winkel oder Koordinaten eingeben.
 
+Eingegebene Koordinaten sind in der Einheit des Projekts, wie die Längen neben dem Cursor: in einem Projekt in Millimetern macht `@4000,4000` nach der ersten Ecke ein Rechteck von 4 m mal 4 m, und `4000<90` sind 4 m gerade nach oben.
+
 ![Eine Wand kopieren: Nach dem Basispunkt zeigen die Befehlszeile und die Live-Eingabe Länge und Winkel bis zur Maus](shots/command-line.webp)
 
 Jedes Werkzeug zeigt seine Buchstaben in seinem Tooltip; Sie können sie unter **Ansicht → Tastenkürzel…** ändern (siehe [Die Oberfläche und Tastenkürzel](interface.md)). Diese werden am häufigsten verwendet:

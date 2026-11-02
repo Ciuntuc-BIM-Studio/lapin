@@ -114,6 +114,8 @@ Usted camina como lo haría una persona. Los muros, los pilares, el mobiliario y
 
 La ficha **Vista** configura qué muestra la vista que está delante y cómo se ve.
 
+**Grid** (<kbd>F7</kbd>) oculta o muestra la rejilla de fondo de la planta, y **Líneas finas** (<kbd>TL</kbd>) dibuja todas las líneas de un píxel, para leer un dibujo denso. Las dos son solo para la pantalla: los planos, el PDF y el DXF conservan sus plumas, y el forzado a la rejilla sigue.
+
 ![La ficha Vista](shots/ribbon-view.webp)
 
 - **Configuración de vista.** La disciplina y el estilo de la vista, su rango (la altura y la profundidad del corte) y sus gráficos.

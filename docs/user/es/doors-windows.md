@@ -10,11 +10,17 @@ summary: Coloque puertas y ventanas en los muros, muévalas y diseñe sus tipos 
 
 Elija **Arquitectura → Puerta** (<kbd>DR</kbd>) o **Ventana** (<kbd>WN</kbd>) y haga clic en un muro donde quiera el hueco. Lapin corta el hueco en todas las capas del muro y añade el dintel que pide el tipo de muro.
 
+Mientras Door o Window está activa, el panel de propiedades muestra el tipo que colocará, con su tamaño: elija otro ahí antes de hacer clic en el muro.
+
 ![Una planta con una puerta y ventanas](shots/openings-plan.webp)
 
 Para mover una puerta o una ventana a lo largo de su muro, selecciónela y arrástrela. Para cambiarla, use el panel de propiedades: su tipo, la altura del alféizar y hacia qué lado abre (**Lado**).
 
 ![Las propiedades de una puerta](shots/door-properties.webp)
+
+## Huecos sin puerta ni ventana
+
+**Architecture → Wall opening** (<kbd>WO</kbd>) abre un hueco solo en un muro donde se hace clic: un paso, una trampilla, un hueco para una puerta que vendrá después. Su ancho, alto y antepecho se fijan en el panel de propiedades antes del clic. Seleccionado, ahí se cambian su tamaño, su posición a lo largo del muro y su antepecho; como una puerta, debe caber en el muro y no tocar los demás huecos. En IFC es una abertura que vacía el muro, sin nada que la rellene.
 
 ## El configurador
 

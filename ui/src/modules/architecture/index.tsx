@@ -32,11 +32,13 @@ import { CurtainWallSection } from './CurtainWallSection';
 import { RoomColorsDialog } from './RoomColorsDialog';
 import { RoomSection, RoomViewSection } from './RoomSection';
 import { roomGrips, roomRefs } from './rooms';
+import { newElement } from './NewElement';
+import { isWallOpening, wallOpening, WallOpeningSection } from './WallOpening';
 import { CeilingSection, CeilingTypesDialog, ceiling, ceilingDiffuser, ceilingInRoom, ceilingLight, ceilingTypes } from './Ceilings';
 import { colorLegend, room, roomColors, roomOutline, updateRooms } from './roomTools';
 
 const wall: ToolDef = {
-  id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA',
+  id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'),
   gesture: { kind: 'twoPoints', repeat: true },
   complete: async ({ points: [a, b] }, ctx) => {
     const typeId = useUi.getState().wallTypeId;
@@ -63,7 +65,7 @@ function WallLineOption() {
 
 /** A curved wall: its start, its end, then a point the arc passes through. */
 const curvedWall: ToolDef = {
-  id: 'architecture.curvedWall', label: 'Curved wall', icon: CurvedWallIcon, shortcut: 'WC',
+  id: 'architecture.curvedWall', label: 'Curved wall', icon: CurvedWallIcon, shortcut: 'WC', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'),
   gesture: { kind: 'threePoints', arc: true },
   complete: async ({ points: [a, b, p] }, ctx) => {
     const typeId = useUi.getState().wallTypeId;
@@ -72,7 +74,7 @@ const curvedWall: ToolDef = {
 };
 /** A curtain wall: two points (chained), of the type picked in the configurator, else the project's first. */
 const curtainWall: ToolDef = {
-  id: 'architecture.curtainWall', label: 'Curtain wall', icon: CurtainWallIcon, shortcut: 'CW',
+  id: 'architecture.curtainWall', label: 'Curtain wall', icon: CurtainWallIcon, shortcut: 'CW', properties: newElement('IfcCurtainWallType', 'curtainTypeId', 'curtainWalls'),
   gesture: { kind: 'twoPoints', repeat: true },
   complete: async ({ points: [a, b] }, ctx) => {
     const typeId = useUi.getState().curtainTypeId;
@@ -202,6 +204,7 @@ const wallTypes: ToolDef = { id: 'architecture.wallTypes', label: 'Wall types', 
 /** A door or window: click a wall where it goes (the type: the one picked in the configurator, else the project's first). */
 const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'], shortcut: string): ToolDef => ({
   id: `architecture.${kind}`, label, icon, shortcut,
+  properties: kind === 'door' ? newElement('IfcDoorType', 'doorTypeId', 'joinery') : newElement('IfcWindowType', 'windowTypeId', 'joinery'),
   gesture: { kind: 'pick', types: ['IfcWall'] },
   complete: async ({ points: [p], entity }, ctx) => {
     if (!entity) return;
@@ -214,7 +217,7 @@ const window_ = fillTool('window', 'Window', WindowIcon, 'WN');
 const joineryTypes: ToolDef = { id: 'architecture.joineryTypes', label: 'Doors & windows', icon: Settings2, run: () => useUi.setState({ dialog: 'joinery' }) };
 /** A floor: click its corners, then the first one again (or Enter). */
 const slab: ToolDef = {
-  id: 'architecture.slab', label: 'Floor', icon: SlabIcon, shortcut: 'SB',
+  id: 'architecture.slab', label: 'Floor', icon: SlabIcon, shortcut: 'SB', properties: newElement('IfcSlabType', 'slabTypeId', 'slabTypes'),
   gesture: { kind: 'polygon' },
   complete: async ({ points }, ctx) => {
     const typeId = useUi.getState().slabTypeId;
@@ -328,7 +331,7 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20, include: ['modify'],
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe, railing] },
+      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, wallOpening, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe, railing] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [room, roomColors], small: [roomOutline, updateRooms] },
@@ -353,6 +356,7 @@ const architecture: LapinModule = {
   propertySections: [
     { id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers },
     { id: 'joinery', label: 'Door or window', classes: ['IfcDoor', 'IfcWindow'], component: JoinerySection },
+    { id: 'wallOpening', label: 'Opening', classes: ['IfcOpeningElement'], shows: isWallOpening, component: WallOpeningSection },
     { id: 'slab', label: 'Floor', classes: ['IfcSlab'], component: SlabSection },
     { id: 'downpipe', label: 'Downpipe', classes: ['LapinDownpipe'], component: DownpipeSection },
     { id: 'roof', label: 'Roof', classes: ['IfcRoof'], component: RoofSection },

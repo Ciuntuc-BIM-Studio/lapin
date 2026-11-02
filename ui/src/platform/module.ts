@@ -72,6 +72,8 @@ export interface ToolDef {
   run?: () => void;
   /** What the tool lets one choose while it is on (the line a wall is drawn on), shown in the command line's bar. */
   options?: ComponentType;
+  /** What it puts down, shown in Properties while it is on (the type a wall is drawn with), before the first click. */
+  properties?: ComponentType;
 }
 
 export interface RibbonGroupDef { label: string; tools: ToolDef[]; small?: ToolDef[] }

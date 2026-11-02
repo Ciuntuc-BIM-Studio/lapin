@@ -17,7 +17,7 @@ import { view3dNode } from '../viewport/storeys3d';
 import { relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
 import type { FieldDescriptor, NodeDto } from '../engine/protocol';
 import type { PropertySectionDef } from '../platform/module';
-import { propertySections, typeFieldsOf } from '../platform/modules';
+import { findTool, propertySections, typeFieldsOf } from '../platform/modules';
 import { QuantitiesSection } from './QuantitiesSection';
 import { filterSets, importedSets } from './ifcProperties';
 
@@ -210,6 +210,22 @@ function useFilter(root: React.RefObject<HTMLElement | null>, text: string, deps
 
 export function PropertiesPanel() {
   const selection = useUi((s) => s.selection);
+  const toolId = useUi((s) => s.tool);
+  // A placing tool on: what it will put down (its type), before the first click.
+  const placing = findTool(toolId);
+  if (placing?.properties) {
+    const Section = placing.properties;
+    return (
+      <aside className="panel props" aria-label="Properties">
+        <div className="panel-head"><span className="eyebrow">New element</span><span className="panel-title">{placing.label}</span></div>
+        <Section />
+      </aside>
+    );
+  }
+  return <SelectionPanel selection={selection} />;
+}
+
+function SelectionPanel({ selection }: { selection: string | null }) {
   const nodes = useSession((s) => s.nodes);
   const node = selection ? nodes.get(selection) : undefined;
   // One grid axis (grid#tag): its label and which ends carry a bubble.

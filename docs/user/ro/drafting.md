@@ -8,6 +8,8 @@ summary: Scrii comenzi ca în CAD, te prinzi de puncte, muți și copiezi, desen
 
 Scrie oriunde în fereastră literele unei unelte, apoi apasă <kbd>Enter</kbd>. De exemplu <kbd>WA</kbd> pentru perete, <kbd>CO</kbd> pentru copiere, <kbd>M</kbd> pentru mutare sau <kbd>L</kbd> pentru linie. Linia de comandă de jos arată ce îi trebuie uneltei mai departe. Poți da clic pe un punct sau poți scrie o lungime, un unghi sau coordonate.
 
+Coordonatele tastate sunt în unitatea proiectului, ca lungimile de lângă cursor: într-un proiect în milimetri, `@4000,4000` după primul colț al unui dreptunghi îl face de 4 m pe 4 m, iar `4000<90` înseamnă 4 m drept în sus.
+
 ![Copierea unui perete: după punctul de bază, linia de comandă și căsuțele arată lungimea și unghiul până la mouse](shots/command-line.webp)
 
 Fiecare unealtă își arată literele când ții mouse-ul peste ea; le poți schimba în **Vedere → Scurtături de tastatură…** (vezi [Interfața și scurtăturile](interface.md)). Acestea sunt cele mai folosite:

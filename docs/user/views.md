@@ -118,6 +118,8 @@ You walk as a person would. Walls, columns, furniture and closed windows stop yo
 
 The **View** tab sets what the view in front shows and how it looks.
 
+**Grid** (<kbd>F7</kbd>) hides or shows the plan's background grid, and **Thin lines** (<kbd>TL</kbd>) draws every line one pixel thick, to read a dense drawing. Both are for the screen only: sheets, PDF and DXF keep their pens, and snapping to the grid stays.
+
 ![The View tab](shots/ribbon-view.webp)
 
 - **View settings.** The view's discipline and style, its range (the cut height and depth), and its graphics.

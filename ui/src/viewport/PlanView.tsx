@@ -28,6 +28,7 @@ import { pairs } from './snap';
 import { formatLength, lengthText } from '../engine/unitsStore';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
+import { useDisplay } from '../app/display';
 import { useDrawing } from './drawing';
 import { setUnderlay, useUnderlay } from './underlay';
 import { editDimension } from './dimensionEdit';
@@ -491,6 +492,8 @@ export function PlanView() {
     return `M${p.map((q) => `${q.x.toFixed(1)},${q.y.toFixed(1)}`).join('L')}${closed ? 'Z' : ''}`;
   }, [toScreen]);
 
+  // The background grid (F7) is for the eyes only: snapping to it stays.
+  const gridShown = useDisplay((st) => st.grid);
   const grid = useMemo(() => {
     const lines: { d: string; major: boolean }[] = [];
     if (!measured) return lines;
@@ -618,7 +621,7 @@ export function PlanView() {
           // A group's member opens the group for editing; a view's mark its view; anything else, its dimension.
           if (n && !openGroupOf(n.id) && !openPickedView(n.id)) void editDimension(n.id, w);
         }}>
-        <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>
+        {gridShown && <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>}
         {/* The drawing lays the orthophotos itself (CivilModule's marks, so sheets print them); the modelling lines lie over them here. */}
         {!(drawing && (planDrawing || siteView)) && orthophotos(nodes).filter((o) => !o.storeyId || o.storeyId === storey?.id).map((o) => {
           // The image's unit square onto its corners on screen: (1, 0) to the top right, (0, 1) to the bottom left.

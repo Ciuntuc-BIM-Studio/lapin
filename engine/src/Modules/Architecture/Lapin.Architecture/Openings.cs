@@ -140,6 +140,34 @@ public static class Openings
         return fill;
     }
 
+    /// <summary>
+    /// An opening alone (a tester's report, decision 247): a hole of its own width and height through the wall, at a
+    /// sill, with nothing filling it (a passage, a hatch, a niche's place); an IfcOpeningElement voiding the wall, as a
+    /// door's is. Refused when it does not fit.
+    /// </summary>
+    public static Entity AddBare(IEdit edit, Entity wall, double along, double sill, double width, double height)
+    {
+        CheckFits(edit.Model, wall, along, sill, width, height);
+        var opening = new Entity(edit.NewId(), IfcClass.OpeningElement, "Opening", new JsonObject { ["along"] = along, ["sill"] = sill, ["width"] = width, ["height"] = height }, "OPENING");
+        edit.Add(opening);
+        edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelVoidsElement, wall.Id, [opening.Id]));
+        return opening;
+    }
+
+    /// <summary>An opening alone resized (its width and height kept by itself; a door's or window's comes from its type), checked as it is placed.</summary>
+    public static void Resize(IEdit edit, Entity opening, double? width, double? height)
+    {
+        if (FillOf(edit.Model, opening.Id) is { } fill) throw new CommandException($"„{fill.Name}” sets its opening's size: change its type.");
+        var wall = WallOf(edit.Model, opening.Id) ?? throw new CommandException("The opening is in no wall.");
+        var p = Place(edit.Model, opening);
+        var (w, h) = (width ?? p.Width, height ?? p.Height);
+        CheckFits(edit.Model, wall, p.Along, p.Sill, w, h, opening.Id);
+        var attrs = opening.CloneAttrs();
+        attrs["width"] = w;
+        attrs["height"] = h;
+        edit.Replace(opening.With(attrs: attrs));
+    }
+
     /// <summary>Moves a door's, a window's (or a bare opening's) opening along its wall or up it.</summary>
     public static void Move(IEdit edit, Entity fillOrOpening, double? along, double? sill)
     {

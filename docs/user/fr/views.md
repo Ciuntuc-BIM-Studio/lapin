@@ -118,6 +118,8 @@ Vous marchez comme le ferait une personne. Les murs, les poteaux, les meubles et
 
 L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.
 
+**Grid** (<kbd>F7</kbd>) masque ou montre la grille de fond du plan, et **Traits fins** (<kbd>TL</kbd>) dessine chaque trait d’un pixel, pour lire un dessin chargé. Les deux ne valent que pour l’écran : les planches, le PDF et le DXF gardent leurs plumes, et l’accrochage à la grille reste.
+
 ![L’onglet Vue](shots/ribbon-view.webp)
 
 - **Paramètres de vue.** La discipline et le style de la vue, sa plage (la hauteur et la profondeur de coupe) et ses graphismes.

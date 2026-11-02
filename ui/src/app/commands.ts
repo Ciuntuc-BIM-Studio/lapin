@@ -10,6 +10,7 @@ import { useMemo } from 'react';
 import { select, useUi } from './store';
 import { toggleBothPanels, togglePanel, showOverlay, showPropsTab, usePanels, applyPanelsPart } from './panels';
 import { assistantAvailable } from '../assistant/available';
+import { toggleGrid, toggleThinLines } from './display';
 import { chooseWorkspace, onInterfaceChange, useInterface, WORKSPACE_IDS, WORKSPACE_LABELS } from './interface';
 import { effectiveBindings, formatBinding, resolveKeymap, useKeymap, type Binding, type CommandDef, type Keymap } from './shortcuts';
 import { activate, allTools, hotbarTools, ribbonTabs } from '../platform/modules';
@@ -42,6 +43,8 @@ function appCommands(): CommandDef[] {
     ...WORKSPACE_IDS.map((w) => ({ id: `app.workspace.${w}`, label: `Workspace: ${WORKSPACE_LABELS[w]}`, category: general, defaults: [], run: () => chooseWorkspace(w) })),
     { id: 'app.osnap', label: 'Object snap', category: draw, defaults: ['F3'], run: () => useCad.setState((s) => ({ osnap: !s.osnap })) },
     { id: 'app.ortho', label: 'Ortho', category: draw, defaults: ['F8'], run: () => useCad.setState((s) => ({ ortho: !s.ortho })) },
+    { id: 'app.grid', label: 'Grid', category: draw, defaults: ['F7'], run: toggleGrid },
+    { id: 'app.thinLines', label: 'Thin lines', category: views, defaults: [], same: 'TL', run: toggleThinLines },
     { id: 'app.polar', label: 'Polar tracking', category: draw, defaults: ['F10'], run: () => useCad.setState((s) => ({ polar: !s.polar })) },
     { id: 'app.zoomIn', label: 'Zoom in', category: views, defaults: ['Plus', '='], same: 'ZI', run: zoom((h) => h.zoomBy(1.25)) },
     { id: 'app.zoomOut', label: 'Zoom out', category: views, defaults: ['-'], same: 'ZO', run: zoom((h) => h.zoomBy(0.8)) },

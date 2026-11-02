@@ -8,6 +8,8 @@ summary: Skriv kommandoer som i CAD, fang til punkter, flyt og kopiér, tegn lin
 
 Skriv et værktøjs bogstaver hvor som helst i vinduet, og tryk derefter på <kbd>Enter</kbd>. Skriv for eksempel <kbd>WA</kbd> for en væg, <kbd>CO</kbd> for at kopiere, <kbd>M</kbd> for at flytte eller <kbd>L</kbd> for en linje. Kommandolinjen nederst viser, hvad værktøjet har brug for som det næste. Du kan klikke på et punkt eller skrive en længde, en vinkel eller koordinater.
 
+Indtastede koordinater er i projektets enhed, som længderne ved markøren: i et projekt i millimeter gør `@4000,4000` efter et rektangels første hjørne det 4 m gange 4 m, og `4000<90` er 4 m lige op.
+
 ![At kopiere en væg: efter basispunktet viser kommandolinjen og de direkte felter længden og vinklen hen til musen](shots/command-line.webp)
 
 Hvert værktøj viser sine bogstaver i sit værktøjstip; du kan ændre dem under **Vis → Tastaturgenveje…** (se [Brugerfladen og genveje](interface.md)). Disse er de mest brugte:

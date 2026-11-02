@@ -10,6 +10,8 @@ summary: Desenezi pereții colț cu colț, îi modifici în panoul de proprietă
 
 Deschide tabul **Arhitectură** și alege **Perete**, sau scrie <kbd>WA</kbd>.
 
+Cât timp unealta e activă, panoul de proprietăți arată **Element nou**: tipul cu care se desenează pereții. Alege altul acolo înainte de primul clic și vezi straturile lui, grosimea și câți pereți îl folosesc deja; **Editează tipurile…** deschide Wall types. Ușa, fereastra, placa, tavanul și peretele cortină își arată tipurile la fel.
+
 ![Tabul Arhitectură](shots/ribbon-architecture.webp)
 
 Dă clic unde începe peretele, apoi la fiecare colț. Peretele următor urmează mouse-ul. În timp ce desenezi, poți scrie o lungime și un unghi în căsuțele de deasupra vederii în loc să dai clic. <kbd>Enter</kbd> sau <kbd>Esc</kbd> oprește desenarea.

@@ -1,6 +1,7 @@
 /** Snaps, typed input and guides: ported from the old Lapin's snaps-input.test.ts (same cases and numbers), then the guide lines. */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { useStandards } from '../../engine/unitsStore';
 import type { Vec2 } from '../../platform/module';
 import { ALL_MODES, SnapIndex, findSnap, type SnapMode } from './snaps';
 import { applyOrtho, applyPolar, parseCoordinateInput, pointAlong } from './input';
@@ -80,6 +81,18 @@ describe('findSnap', () => {
 
 describe('coordinate input', () => {
   const last = P(1, 1);
+  // The cases below are in a project in metres; the project's unit is what typed numbers are in.
+  beforeEach(() => useStandards.setState({ units: 'm' }));
+  afterEach(() => useStandards.setState({ units: 'mm' }));
+  it('reads typed numbers in the project\'s unit: @4000,4000 is 4 m by 4 m in millimetres', () => {
+    useStandards.setState({ units: 'mm' });
+    expect(parseCoordinateInput('@4000,4000', { last: P(0, 0) })).toEqual({ kind: 'point', pt: P(4, 4) });
+    expect(parseCoordinateInput('4000', { last: null })).toEqual({ kind: 'distance', d: 4 });
+    const p = parseCoordinateInput('@4000<90', { last: P(0, 0) });
+    expect(p?.kind === 'point' && Math.abs(p.pt.y - 4) < 1e-9 && Math.abs(p.pt.x) < 1e-9).toBe(true);
+    useStandards.setState({ units: 'cm' });
+    expect(parseCoordinateInput('@400,250', { last: P(1, 1) })).toEqual({ kind: 'point', pt: P(5, 3.5) });
+  });
   it('parses absolute and relative cartesian points', () => {
     expect(parseCoordinateInput('3,4', { last: null })).toEqual({ kind: 'point', pt: P(3, 4) });
     expect(parseCoordinateInput(' -1.5 , 2. ', { last: null })).toEqual({ kind: 'point', pt: P(-1.5, 2) });

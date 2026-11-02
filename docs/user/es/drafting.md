@@ -8,6 +8,8 @@ summary: Escriba comandos como en CAD, fuerce el cursor a puntos, desplace y cop
 
 Escriba las letras de una herramienta en cualquier lugar de la ventana y pulse <kbd>Enter</kbd>. Por ejemplo, escriba <kbd>WA</kbd> para un muro, <kbd>CO</kbd> para copiar, <kbd>M</kbd> para desplazar o <kbd>L</kbd> para una línea. La línea de comandos de la parte inferior muestra lo que la herramienta necesita a continuación. Puede hacer clic en un punto o escribir una longitud, un ángulo o unas coordenadas.
 
+Las coordenadas tecleadas están en la unidad del proyecto, como las longitudes junto al cursor: en un proyecto en milímetros, `@4000,4000` tras la primera esquina de un rectángulo lo hace de 4 m por 4 m, y `4000<90` son 4 m hacia arriba.
+
 ![Copiar un muro: tras el punto base, la línea de comandos y la entrada en vivo muestran la longitud y el ángulo hasta el ratón](shots/command-line.webp)
 
 Cada herramienta muestra sus letras en su información sobre herramientas; puede cambiarlas en **Vista → Métodos abreviados de teclado…** (consulte [La interfaz y los métodos abreviados](interface.md)). Estas son las más usadas:

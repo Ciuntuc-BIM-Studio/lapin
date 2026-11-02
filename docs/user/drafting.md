@@ -8,6 +8,8 @@ summary: Type commands as in CAD, snap to points, move and copy, draw lines, and
 
 Type a tool's letters anywhere in the window, then press <kbd>Enter</kbd>. For example, type <kbd>WA</kbd> for a wall, <kbd>CO</kbd> to copy, <kbd>M</kbd> to move, or <kbd>L</kbd> for a line. The command line at the bottom shows what the tool needs next. You can click a point or type a length, an angle or coordinates.
 
+Typed coordinates are in the project's unit, as the lengths beside the cursor are: in a project in millimetres, `@4000,4000` after the first corner of a rectangle makes it 4 m by 4 m, and `4000<90` is 4 m straight up.
+
 ![Copying a wall: after the base point, the command line and the live input show the length and angle to the mouse](shots/command-line.webp)
 
 Every tool shows its letters in its tooltip; you can change them in **View → Keyboard shortcuts…** (see [The interface and shortcuts](interface.md)). These are the ones used most:

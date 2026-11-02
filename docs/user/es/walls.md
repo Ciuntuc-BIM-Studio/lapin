@@ -10,6 +10,8 @@ summary: Dibuje muros esquina a esquina, modifíquelos en el panel de propiedade
 
 Abra la ficha **Arquitectura** y elija **Muro**, o escriba <kbd>WA</kbd>.
 
+Mientras la herramienta está activa, el panel de propiedades muestra **Elemento nuevo**: el tipo con el que se dibujan los muros. Elija otro ahí antes del primer clic y vea sus capas, su espesor y cuántos muros lo usan ya; **Editar tipos…** abre Wall types. Puerta, ventana, forjado, falso techo y muro cortina muestran sus tipos igual.
+
 ![La ficha Arquitectura](shots/ribbon-architecture.webp)
 
 Haga clic donde empieza el muro y luego en cada esquina. El muro siguiente sigue al ratón. Mientras dibuja, puede escribir una longitud y un ángulo en las casillas sobre la vista en lugar de hacer clic. Pulse <kbd>Enter</kbd> o <kbd>Esc</kbd> para terminar.

@@ -10,6 +10,8 @@ summary: Tegn vægge hjørne for hjørne, ret dem i egenskabspanelet, og opsæt 
 
 Åbn fanen **Arkitektur**, og vælg **Væg**, eller skriv <kbd>WA</kbd>.
 
+Mens værktøjet er aktivt, viser egenskabspanelet **Nyt element**: den type, væggene tegnes med. Vælg en anden der før det første klik, og se dens lag, dens tykkelse og hvor mange vægge der allerede bruger den; **Redigér typer…** åbner Wall types. Dør, vindue, dæk, loft og glasfacade viser deres typer på samme måde.
+
 ![Fanen Arkitektur](shots/ribbon-architecture.webp)
 
 Klik, hvor væggen starter, og klik derefter ved hvert hjørne. Den næste væg følger musen. Mens du tegner, kan du skrive en længde og en vinkel i felterne over visningen i stedet for at klikke. Tryk på <kbd>Enter</kbd> eller <kbd>Esc</kbd> for at stoppe.

@@ -76,7 +76,8 @@ describe('LINE', () => {
 
   it('a typed relative point continues from the last one', async () => {
     await lineThrough(P(0, 0));
-    await submit('@2,0');
+    // In the project's unit (millimetres): 2 m along x.
+    await submit('@2000,0');
     expect(drawn()).toEqual(['0,0-2,0']);
   });
 

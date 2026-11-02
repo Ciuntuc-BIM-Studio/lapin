@@ -10,11 +10,17 @@ summary: Place doors and windows in walls, move them, and design their types in 
 
 Choose **Architecture → Door** (<kbd>DR</kbd>) or **Window** (<kbd>WN</kbd>), then click a wall where you want the opening. Lapin cuts the opening in every layer of the wall and adds the lintel the wall type asks for.
 
+While Door or Window is on, the properties panel shows the type it will place, with its size: choose another there before you click the wall.
+
 ![A plan with a door and windows](shots/openings-plan.webp)
 
 To move a door or window along its wall, select it and drag it. To change it, use the properties panel: its type, its sill height, and which side it opens to (**Side**).
 
 ![A door's properties](shots/door-properties.webp)
+
+## Openings without a door or window
+
+**Architecture → Wall opening** (<kbd>WO</kbd>) cuts an opening alone through a wall where you click it: a passage, a hatch, a hole for a door that comes later. Set its width, height and sill in the properties panel before the click. Selected, its size, its place along the wall and its sill are changed there; like a door, it must fit in the wall and stay clear of the wall's other openings. In IFC it is an opening voiding the wall, with nothing filling it.
 
 ## The configurator
 

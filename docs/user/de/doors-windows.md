@@ -10,11 +10,17 @@ summary: Türen und Fenster in Wände setzen, verschieben und ihre Typen im Konf
 
 Wählen Sie **Architektur → Tür** (<kbd>DR</kbd>) oder **Fenster** (<kbd>WN</kbd>) und klicken Sie dann auf eine Wand dort, wo Sie die Öffnung haben möchten. Lapin schneidet die Öffnung in jede Schicht der Wand und fügt den Sturz hinzu, den der Wandtyp verlangt.
 
+Solange Door oder Window aktiv ist, zeigt der Eigenschaftenbereich den Typ, der gesetzt wird, mit seiner Größe: wählen Sie dort einen anderen, bevor Sie auf die Wand klicken.
+
 ![Ein Grundriss mit einer Tür und Fenstern](shots/openings-plan.webp)
 
 Um eine Tür oder ein Fenster entlang seiner Wand zu verschieben, wählen Sie es aus und ziehen Sie es. Um es zu ändern, verwenden Sie den Eigenschaftenbereich: seinen Typ, seine Brüstungshöhe und die Seite, zu der es sich öffnet (**Seite**).
 
 ![Die Eigenschaften einer Tür](shots/door-properties.webp)
+
+## Öffnungen ohne Tür oder Fenster
+
+**Architecture → Wall opening** (<kbd>WO</kbd>) schneidet dort, wo Sie klicken, eine Öffnung allein durch eine Wand: einen Durchgang, eine Luke, ein Loch für eine spätere Tür. Breite, Höhe und Brüstung stellen Sie vor dem Klick im Eigenschaftenbereich ein. Ausgewählt werden dort ihre Größe, ihre Lage entlang der Wand und ihre Brüstung geändert; wie eine Tür muss sie in die Wand passen und von deren anderen Öffnungen frei bleiben. In IFC ist sie eine Öffnung, die die Wand ausspart, ohne Füllung.
 
 ## Der Konfigurator
 

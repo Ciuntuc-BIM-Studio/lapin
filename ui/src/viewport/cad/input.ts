@@ -2,7 +2,9 @@
  * Typed input on the command line (the old Lapin's forms): x,y absolute;
  * @dx,dy relative to the last point; @d<deg relative polar; d<deg absolute
  * polar; @ the last point; a bare number is a distance toward the cursor.
- * Ortho squares a point to its base; polar tracking rounds its angle.
+ * Numbers are in the project's unit (mm, cm, m, feet or inches), as the live
+ * length beside the cursor reads them: @4000,4000 is 4 m by 4 m in a project in
+ * millimetres. Ortho squares a point to its base; polar tracking rounds its angle.
  */
 
 import type { Vec2 } from '../../platform/module';
@@ -28,7 +30,8 @@ export function parseCoordinateInput(text: string, o: { last: Vec2 | null }): Pa
   // Feet and inches (3'6", 42"): a distance, or x,y of them; in an imperial project a bare number is feet.
   const imperial = /['"″′]/.test(t);
   const feet = unit() === 'ft-in' || unit() === 'in';
-  const len = (s: string): number | null => (imperial ? parseImperial(s) : feet ? Number(s) * (unit() === 'in' ? 0.0254 : 0.3048) : Number(s));
+  const metric = unit() === 'mm' ? 0.001 : unit() === 'cm' ? 0.01 : 1;
+  const len = (s: string): number | null => (imperial ? parseImperial(s) : feet ? Number(s) * (unit() === 'in' ? 0.0254 : 0.3048) : Number(s) * metric);
   if (imperial) {
     const parts = t.split(',');
     if (parts.length === 2) { const x = parseImperial(parts[0]), y = parseImperial(parts[1]); return x != null && y != null ? { kind: 'point', pt: { x: base.x + x, y: base.y + y } } : null; }

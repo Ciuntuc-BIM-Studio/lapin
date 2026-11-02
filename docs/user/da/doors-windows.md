@@ -10,11 +10,17 @@ summary: Placér døre og vinduer i vægge, flyt dem, og udform deres typer i ko
 
 Vælg **Arkitektur → Dør** (<kbd>DR</kbd>) eller **Vindue** (<kbd>WN</kbd>), og klik derefter på en væg, hvor du vil have åbningen. Lapin skærer åbningen i alle væggens lag og tilføjer den overligger, vægtypen beder om.
 
+Mens Door eller Window er aktivt, viser egenskabspanelet den type, det sætter, med dens størrelse: vælg en anden der, før du klikker på væggen.
+
 ![En plan med en dør og vinduer](shots/openings-plan.webp)
 
 Vil du flytte en dør eller et vindue langs sin væg, så markér den og træk i den. Du ændrer den i egenskabspanelet: dens type, dens brystningshøjde, og til hvilken side den åbner (**Side**).
 
 ![En dørs egenskaber](shots/door-properties.webp)
+
+## Åbninger uden dør eller vindue
+
+**Architecture → Wall opening** (<kbd>WO</kbd>) skærer en åbning alene gennem en væg, hvor du klikker: en gennemgang, en lem, et hul til en dør, der kommer senere. Dens bredde, højde og brystning indstilles i egenskabspanelet før klikket. Når den er valgt, ændres dens størrelse, dens plads langs væggen og dens brystning der; som en dør skal den passe i væggen og holde sig fri af væggens andre åbninger. I IFC er den en åbning, der udsparer væggen, uden noget, der fylder den.
 
 ## Konfiguratoren
 

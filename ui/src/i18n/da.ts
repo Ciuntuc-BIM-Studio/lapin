@@ -890,6 +890,8 @@ export const DA: Record<string, string> = {
   'Nodes': 'Knuder', 'Open Drafting standards': 'Åbn Tegnestandarder', 'Open Layers': 'Åbn Lag', 'Open Doors & windows': 'Åbn Døre og vinduer', 'Go to the Site tab': 'Gå til fanen Grund',
   'Open Structure types': 'Åbn Konstruktionstyper', 'Start Copy': 'Start Kopiér', 'Open Materials': 'Åbn Materialer', 'Go to the Architecture tab': 'Gå til fanen Arkitektur', 'Draw a wall': 'Tegn en væg',
   'Show the active level only': 'Vis kun det aktive niveau', 'Open the user guide': 'Åbn brugervejledningen',
+  // What a placing tool puts down, openings alone, the grid and thin lines (decision 247)
+  'New element': 'Nyt element', 'The first one is made as you place it.': 'Den første oprettes, når du placerer den.', 'Elements of this type:': 'Elementer af denne type:', 'Edit types…': 'Redigér typer…', 'Wall opening': 'Vægåbning', 'Thin lines': 'Tynde linjer',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

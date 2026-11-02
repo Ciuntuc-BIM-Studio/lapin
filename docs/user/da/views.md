@@ -118,6 +118,8 @@ Du går, som et menneske ville. Vægge, søjler, møbler og lukkede vinduer stop
 
 Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.
 
+**Grid** (<kbd>F7</kbd>) skjuler eller viser planens baggrundsgitter, og **Tynde linjer** (<kbd>TL</kbd>) tegner hver linje én pixel tyk, så en tæt tegning kan læses. Begge gælder kun skærmen: tegningsark, PDF og DXF beholder deres penne, og fang til gitteret bliver.
+
 ![Fanen Vis](shots/ribbon-view.webp)
 
 - **Visningsindstillinger.** Visningens fagområde og stil, dens område (snithøjde og -dybde) og dens grafik.

@@ -895,6 +895,8 @@ export const DE: Record<string, string> = {
   'Nodes': 'Knoten', 'Open Drafting standards': 'Zeichnungsstandards öffnen', 'Open Layers': 'Ebenen öffnen', 'Open Doors & windows': 'Türen & Fenster öffnen', 'Go to the Site tab': 'Zum Reiter Gelände',
   'Open Structure types': 'Tragwerkstypen öffnen', 'Start Copy': 'Kopieren starten', 'Open Materials': 'Materialien öffnen', 'Go to the Architecture tab': 'Zum Reiter Architektur',
   'Draw a wall': 'Eine Wand zeichnen', 'Show the active level only': 'Nur die aktive Ebene zeigen', 'Open the user guide': 'Benutzerhandbuch öffnen',
+  // What a placing tool puts down, openings alone, the grid and thin lines (decision 247)
+  'New element': 'Neues Bauteil', 'The first one is made as you place it.': 'Der erste entsteht beim Platzieren.', 'Elements of this type:': 'Bauteile dieses Typs:', 'Edit types…': 'Typen bearbeiten…', 'Wall opening': 'Wandöffnung', 'Thin lines': 'Dünne Linien',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

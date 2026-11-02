@@ -10,11 +10,17 @@ summary: Placez des portes et des fenêtres dans les murs, déplacez-les et conc
 
 Choisissez **Architecture → Porte** (<kbd>DR</kbd>) ou **Fenêtre** (<kbd>WN</kbd>), puis cliquez sur un mur là où vous voulez l’ouverture. Lapin découpe l’ouverture dans chaque couche du mur et ajoute le linteau que demande le type de mur.
 
+Tant que Door ou Window est actif, le panneau des propriétés montre le type qu’il posera, avec sa taille : choisissez-en un autre là avant de cliquer sur le mur.
+
 ![Un plan avec une porte et des fenêtres](shots/openings-plan.webp)
 
 Pour déplacer une porte ou une fenêtre le long de son mur, sélectionnez-la et faites-la glisser. Pour la modifier, utilisez le panneau des propriétés : son type, sa hauteur d’allège, et le côté vers lequel elle s’ouvre (**Côté**).
 
 ![Les propriétés d’une porte](shots/door-properties.webp)
+
+## Baies sans porte ni fenêtre
+
+**Architecture → Wall opening** (<kbd>WO</kbd>) découpe une baie seule dans un mur là où vous cliquez : un passage, une trappe, un trou pour une porte qui viendra plus tard. Sa largeur, sa hauteur et son allège se règlent dans le panneau des propriétés avant le clic. Sélectionnée, sa taille, sa place le long du mur et son allège s’y modifient ; comme une porte, elle doit tenir dans le mur et rester à l’écart de ses autres baies. En IFC, c’est une ouverture qui évide le mur, sans rien pour la remplir.
 
 ## Le configurateur
 

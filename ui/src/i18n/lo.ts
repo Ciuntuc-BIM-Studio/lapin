@@ -950,6 +950,8 @@ export const LO: Record<string, string> = {
   'Nodes': 'ໂນດ', 'Open Drafting standards': 'ເປີດມາດຕະຖານການແຕ້ມ', 'Open Layers': 'ເປີດເລເຢີ', 'Open Doors & windows': 'ເປີດ ປະຕູ ແລະ ປ່ອງຢ້ຽມ', 'Go to the Site tab': 'ໄປແຖບ ສະຖານທີ່',
   'Open Structure types': 'ເປີດປະເພດໂຄງສ້າງ', 'Start Copy': 'ເລີ່ມ ສຳເນົາ', 'Open Materials': 'ເປີດວັດສະດຸ', 'Go to the Architecture tab': 'ໄປແຖບ ສະຖາປັດຕະຍະກຳ', 'Draw a wall': 'ແຕ້ມຝາ',
   'Show the active level only': 'ສະແດງສະເພາະລະດັບທີ່ໃຊ້ງານ', 'Open the user guide': 'ເປີດຄູ່ມືຜູ້ໃຊ້',
+  // What a placing tool puts down, openings alone, the grid and thin lines (decision 247)
+  'New element': 'ອົງປະກອບໃໝ່', 'The first one is made as you place it.': 'ປະເພດທຳອິດຈະຖືກສ້າງເມື່ອທ່ານວາງມັນ.', 'Elements of this type:': 'ອົງປະກອບຂອງປະເພດນີ້:', 'Edit types…': 'ແກ້ໄຂປະເພດ…', 'Wall opening': 'ຊ່ອງເປີດໃນຝາ', 'Thin lines': 'ເສັ້ນບາງ',
 };
 
 /** Phrases with a number or a name in them. */
