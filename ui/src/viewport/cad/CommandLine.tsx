@@ -6,8 +6,7 @@
  * prompt goes in the command line, the length and angle inputs.
  */
 
-import { useEffect, useState } from 'react';
-import { query, useSession } from '../../engine/session';
+import { useShallow } from 'zustand/react/shallow';
 import { useUi } from '../../app/store';
 import { useInterface } from '../../app/interface';
 import { bindingText, useBindings } from '../../app/commands';
@@ -15,19 +14,17 @@ import { toolHint } from '../../shell/ViewportHud';
 import { LiveBar } from '../LiveBox';
 import { findTool } from '../../platform/modules';
 import { ROLES, roleLabel, useCad } from './session';
-
-interface LayerDto { name: string; color: string; visible: boolean; locked: boolean }
+import { useLayers } from './layers';
 
 /** The prompt, what is typed, the switches and the layer: the part both kinds of line have. */
 export function CadPrompt({ inline }: { inline?: boolean }) {
-  const { buffer, step, command, osnap, ortho, polar, layer, role } = useCad();
+  // Only what the prompt shows: not the cursor, which moves on every pointer move.
+  const { buffer, step, command, osnap, ortho, polar, layer, role } = useCad(useShallow((s) => ({ buffer: s.buffer, step: s.step, command: s.command, osnap: s.osnap, ortho: s.ortho, polar: s.polar, layer: s.layer, role: s.role })));
   const tool = useUi((s) => s.tool);
   const view = useUi((s) => s.view);
   const promptHere = useInterface((s) => s.parts.prompt === 'commandLine');
-  const nodes = useSession((s) => s.nodes);
   useBindings();
-  const [layers, setLayers] = useState<LayerDto[]>([]);
-  useEffect(() => { void query<LayerDto[]>('drafting.layers').then((l) => l && setLayers(l)); }, [nodes]);
+  const layers = useLayers();
   const hint = promptHere ? toolHint(tool) : null;
   const twoD = view === 'plan' || view === 'drawing';
   const key = (id: string) => { const k = bindingText(id).split(', ')[0]; return k ? ` (${k})` : ''; };
@@ -43,7 +40,7 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
       <button type="button" className={`cad-toggle${polar ? ' on' : ''}`} title={`Polar tracking every 45°${key('app.polar')}`} onClick={() => useCad.setState({ polar: !polar })}>POLAR</button>
       {(!inline || twoD) && <>
         <select className="cad-layer" value={layer} title="The layer new shapes go on" onChange={(e) => useCad.setState({ layer: e.target.value })}>
-          {(layers.length ? layers : [{ name: '0', color: '#18181b', visible: true, locked: false }]).map((l) => <option key={l.name} value={l.name}>{l.name}</option>)}
+          {(layers.length ? layers : [{ name: '0' }]).map((l) => <option key={l.name} value={l.name}>{l.name}</option>)}
         </select>
         <select className={`cad-layer${role ? ' on' : ''}`} value={role} title="The role new shapes take: a profile, a path… (Studio finds them by it); construction lines are never printed" onChange={(e) => useCad.setState({ role: e.target.value })}>
           <option value="">no role</option>
