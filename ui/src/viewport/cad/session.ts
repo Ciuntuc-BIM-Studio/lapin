@@ -122,7 +122,8 @@ function line(): Step {
   const from = (a: Vec2): Step => ({
     prompt: pts.length >= 2 ? 'Next point [Close/Undo]' : 'Next point [Undo]', want: 'point', base: a,
     preview: (c) => [{ type: 'line', a, b: c }],
-    point: async (b) => { await draw([{ type: 'line', a, b }]); pts.push(b); return from(b); },
+    // A segment refused (a locked layer, no view) is not one: the line goes on from where it was, and U never undoes an edit of before.
+    point: async (b) => { if (!(await draw([{ type: 'line', a, b }])).length) return from(a); pts.push(b); return from(b); },
     keywords: {
       C: async () => { if (pts.length >= 3) await draw([{ type: 'line', a, b: pts[0] }]); return null; },
       U: async () => { if (pts.length < 2) return from(a); await undo(); pts.pop(); return from(pts[pts.length - 1]); },

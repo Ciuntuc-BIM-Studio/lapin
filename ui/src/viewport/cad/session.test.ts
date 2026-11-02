@@ -48,6 +48,15 @@ describe('LINE', () => {
     expect(drawn()).toEqual(['0,0-1,0', '1,0-1,1', '1,0-2,0']);
   });
 
+  it('a refused segment is not taken: the line goes on from where it was and U undoes nothing of before', async () => {
+    await lineThrough(P(0, 0));
+    engine.execute.mockImplementationOnce(() => Promise.resolve(null));
+    await feedPoint(P(1, 0));
+    expect(useCad.getState().step?.base).toEqual(P(0, 0));
+    await submit('U');
+    expect(engine.undo).not.toHaveBeenCalled();
+  });
+
   it('C closes back to the first point and ends', async () => {
     await lineThrough(P(0, 0), P(1, 0), P(1, 1));
     await submit('C');
