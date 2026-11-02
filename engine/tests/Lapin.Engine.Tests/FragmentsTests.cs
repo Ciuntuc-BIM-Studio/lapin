@@ -246,6 +246,32 @@ public class FragmentsTests
         Assert.Contains("cycle", ex.Message);
     }
 
+    [Fact]
+    public void A_vector_longer_than_the_file_is_refused_before_it_is_allocated()
+    {
+        foreach (var count in new[] { int.MaxValue, -1, 1 << 20 })
+        {
+            var (bytes, _, child) = SpatialModel();
+            BitConverter.GetBytes(count).CopyTo(bytes, child - 4);
+            Assert.Throws<CommandException>(() => FragImport.Read(bytes, "corrupt.frag"));
+        }
+        // An offset pointing outside the file.
+        var (b2, _, c2) = SpatialModel();
+        BitConverter.GetBytes(1 << 30).CopyTo(b2, c2);
+        Assert.Throws<CommandException>(() => FragImport.Read(b2, "corrupt.frag"));
+    }
+
+    [Fact]
+    public void Shells_with_holes_are_noted_once_for_the_whole_import()
+    {
+        var model = FragReader.Read(FragWriter.Write(Scene(House()), raw: true, modelGuid: "holes"));
+        var holed = model with { Meshes = model.Meshes with { Shells = model.Meshes.Shells.Select(s => s with { Holes = [([0, 1, 2], 0)] }).ToArray() } };
+        Assert.True(holed.Meshes.Samples.Length > 1);
+        var g = new Fixture(new ArchitectureModule(), new StructureModule());
+        var r = FragImport.Run(g.Session, holed, "holes.frag", out _);
+        Assert.Single(r.Notes, n => n.Contains("holes"));
+    }
+
     /// <summary>The BubbleBIM converter's Python reader on Lapin's file, when it is at hand: LAPIN_FRAG_PYTHON (the interpreter) and LAPIN_FRAG_PACKAGE (the folder holding ifc_convert).</summary>
     [Fact]
     public void The_python_reader_of_the_converter_reads_the_file_the_same()

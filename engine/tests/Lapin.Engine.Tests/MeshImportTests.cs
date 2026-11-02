@@ -137,4 +137,53 @@ public class MeshImportTests
         for (var i = 0; i < 10_000; i++) deep.Add(i + 1 < 10_000 ? new JsonObject { ["children"] = new JsonArray(i + 1) } : new JsonObject());
         Assert.Contains("deeper", Assert.Throws<CommandException>(() => MeshImport.Run(f.Session, Gltf(deep, new JsonArray(0)), "deep.gltf", new JsonObject(), null, out _)).Message);
     }
+
+    [Fact]
+    public void A_malformed_glTF_or_OBJ_is_refused_with_a_reason()
+    {
+        var f = F();
+        var tri = new List<byte>();
+        foreach (var v in new float[] { 0, 0, 0, 1, 0, 0, 0, 0, 1 }) tri.AddRange(BitConverter.GetBytes(v));
+        var uri = "data:application/octet-stream;base64," + Convert.ToBase64String(tri.ToArray());
+        byte[] Doc(JsonObject accessor) => Encoding.UTF8.GetBytes(new JsonObject
+        {
+            ["asset"] = new JsonObject { ["version"] = "2.0" },
+            ["scene"] = 0,
+            ["scenes"] = new JsonArray(new JsonObject { ["nodes"] = new JsonArray(0) }),
+            ["nodes"] = new JsonArray(new JsonObject { ["mesh"] = 0 }),
+            ["meshes"] = new JsonArray(new JsonObject { ["primitives"] = new JsonArray(new JsonObject { ["attributes"] = new JsonObject { ["POSITION"] = 0 } }) }),
+            ["buffers"] = new JsonArray(new JsonObject { ["byteLength"] = 36, ["uri"] = uri }),
+            ["bufferViews"] = new JsonArray(new JsonObject { ["buffer"] = 0, ["byteLength"] = 36 }),
+            ["accessors"] = new JsonArray(accessor),
+        }.ToJsonString());
+        string Refused(byte[] bytes, string name) => Assert.Throws<CommandException>(() => MeshImport.Run(f.Session, bytes, name, new JsonObject(), null, out _)).Message;
+        Assert.Equal(1, MeshImport.Run(f.Session, Doc(new JsonObject { ["bufferView"] = 0, ["componentType"] = 5126, ["count"] = 3, ["type"] = "VEC3" }), "ok.gltf", new JsonObject(), null, out _).Elements);
+        // A sparse accessor has no view; an accessor may lack its count; or claim more than its buffer holds.
+        Assert.Contains("bufferView", Refused(Doc(new JsonObject { ["componentType"] = 5126, ["count"] = 3, ["type"] = "VEC3", ["sparse"] = new JsonObject { ["count"] = 0 } }), "sparse.gltf"));
+        Assert.Contains("count", Refused(Doc(new JsonObject { ["bufferView"] = 0, ["componentType"] = 5126, ["type"] = "VEC3" }), "nocount.gltf"));
+        Assert.Contains("past the end", Refused(Doc(new JsonObject { ["bufferView"] = 0, ["componentType"] = 5126, ["count"] = 1_000_000_000, ["type"] = "VEC3" }), "big.gltf"));
+        // A GLB chunk longer than the file.
+        var glb = new byte[28];
+        BitConverter.GetBytes(0x46546C67u).CopyTo(glb, 0); BitConverter.GetBytes(2u).CopyTo(glb, 4); BitConverter.GetBytes(28u).CopyTo(glb, 8);
+        BitConverter.GetBytes(0xFFFFFFF0u).CopyTo(glb, 12); BitConverter.GetBytes(0x4E4F534Au).CopyTo(glb, 16);
+        Assert.Contains("past the end", Refused(glb, "chunk.glb"));
+        // An OBJ face naming a vertex past what an int holds.
+        Refused(Encoding.UTF8.GetBytes("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 99999999999\n"), "huge.obj");
+    }
+
+    [Fact]
+    public void A_binary_STL_with_bytes_after_its_triangles_or_a_header_saying_solid_is_read()
+    {
+        var f = F();
+        var bin = new byte[84 + 50 * Tris.Length + 16];
+        Encoding.ASCII.GetBytes("solid exported by a program that writes its name here").CopyTo(bin, 0);
+        BitConverter.GetBytes((uint)Tris.Length).CopyTo(bin, 80);
+        for (var i = 0; i < Tris.Length; i++)
+            for (var k = 0; k < 3; k++)
+                for (var c = 0; c < 3; c++)
+                    BitConverter.GetBytes((float)Corners[Tris[i][k]][c]).CopyTo(bin, 84 + 50 * i + 12 + 12 * k + 4 * c);
+        var r = MeshImport.Run(f.Session, bin, "padded.stl", new JsonObject(), null, out _);
+        Assert.Equal(12, r.Triangles);
+        Assert.Equal(1, Vol(f, Imported(f, "padded.stl").Single()), 6);
+    }
 }

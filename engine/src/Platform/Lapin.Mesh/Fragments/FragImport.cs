@@ -43,7 +43,7 @@ public static class FragImport
     public static FragModel Read(byte[] bytes, string name)
     {
         try { return FragReader.Read(bytes); }
-        catch (Exception ex) when (ex is FormatException or IndexOutOfRangeException or ArgumentOutOfRangeException or InvalidDataException)
+        catch (Exception ex) when (ex is FormatException or IndexOutOfRangeException or ArgumentException or InvalidDataException or OverflowException)
         {
             throw new CommandException($"„{name}” is not a Fragments file Lapin can read: {ex.Message}");
         }
@@ -92,6 +92,8 @@ public static class FragImport
         readonly List<string> notes = [];
         readonly Dictionary<string, int> byClass = [];
         int elements, shared, storeysMade, skipped, native, leftOut;
+        /// <summary>Whether a shell read had holes: said once in the notes, however many pieces had them.</summary>
+        bool holes;
         public FragImportResult Result => new(elements, shared, storeysMade, skipped, notes, byClass, native, leftOut);
 
         /// <summary>One item's geometry: its samples (a shell in a material, placed by a local transform) and its global transform.</summary>
@@ -128,6 +130,7 @@ public static class FragImport
                     storeyItems.Add((model.LocalIds[i], Text(attrs, "Name") ?? $"Storey {model.LocalIds[i]}", Number(attrs, "Elevation")));
                 }
             // An element's storey: the one the file contains it in; else the lowest the model has.
+            var storeyLocals = storeyItems.Select(s => s.LocalId).ToHashSet();
             var meshOfLocal = new Dictionary<uint, uint>();
             for (uint k = 0; k < m.MeshesItems.Length; k++) if (m.MeshesItems[k] < model.LocalIds.Length) meshOfLocal[model.LocalIds[m.MeshesItems[k]]] = k;
             var storeyOfElement = new Dictionary<uint, uint>();
@@ -136,16 +139,17 @@ public static class FragImport
             {
                 if (!pieces.ContainsKey(mesh)) continue;
                 foreach (var id in model.RelationsOf(local).GetValueOrDefault("ContainedInStructure") ?? [])
-                    if (storeyItems.Any(s => s.LocalId == id)) { storeyOfElement[local] = id; break; }
+                    if (storeyLocals.Contains(id)) { storeyOfElement[local] = id; break; }
                 if (storeyOfElement.TryGetValue(local, out var sid) && mesh < m.GlobalTransforms.Length)
                 {
                     var z = ToModel((m.GlobalTransforms[mesh].X, m.GlobalTransforms[mesh].Y, m.GlobalTransforms[mesh].Z)).Z;
                     lowest[sid] = Math.Min(lowest.GetValueOrDefault(sid, double.MaxValue), z);
                 }
             }
+            var storeysUsed = storeyOfElement.Values.ToHashSet();
             foreach (var (local, storeyName, elevation) in storeyItems)
             {
-                if (!storeyOfElement.ContainsValue(local)) continue;
+                if (!storeysUsed.Contains(local)) continue;
                 if (o.Storeys != null && !o.Storeys.Contains(FragSurvey.KeyOf(model, local))) continue;
                 var existing = Spatial.Storeys(edit.Model).FirstOrDefault(s => string.Equals(s.Name, storeyName, StringComparison.OrdinalIgnoreCase));
                 if (existing != null) { storeyOfLocal[local] = existing.Id; continue; }
@@ -236,6 +240,7 @@ public static class FragImport
                 byClass[cls] = byClass.GetValueOrDefault(cls) + 1;
             }
             foreach (var (storeyId, ids) in joins) edit.RelateAll(IfcClass.RelContainedInSpatialStructure, storeyId, ids);
+            if (holes) notes.Add("Shells with holes were read by their outer profiles: the holes are filled.");
             if (native > 0) notes.Add($"{native} element(s) are already in the project as Lapin elements (the file came from it): they were left as they are.");
             var withoutGeometry = model.LocalIds.Length - meshOfLocal.Count;
             if (withoutGeometry > 0) notes.Add($"{withoutGeometry} item(s) without geometry (types, materials, the spatial structure) were read for their names only.");
@@ -263,7 +268,7 @@ public static class FragImport
                     if (profile.Any(k => k < 0 || k >= n)) continue;
                     for (var k = 1; k + 1 < profile.Length; k++) tris.Add((profile[0], profile[k], profile[k + 1]));
                 }
-                if (shell.Holes.Length > 0) notes.Add("A shell with holes was read by its outer profiles: the holes are filled.");
+                holes |= shell.Holes.Length > 0;
                 if (tris.Count == 0) continue;
                 o.Add(("Body", $"#{p.Material.R:x2}{p.Material.G:x2}{p.Material.B:x2}", vertices, tris));
             }
@@ -288,11 +293,7 @@ public static class FragImport
             return o;
         }
 
-        string? GuidOf(uint local)
-        {
-            var k = Array.IndexOf(model.GuidsItems, local);
-            return k >= 0 && k < model.Guids.Length && model.Guids[k].Length == 22 ? model.Guids[k] : null;
-        }
+        string? GuidOf(uint local) => model.GuidOf(local) is { Length: 22 } g ? g : null;
 
         /// <summary>A GlobalId the same for the same file and key, so an import done again finds what it made.</summary>
         string DerivedId(string key)

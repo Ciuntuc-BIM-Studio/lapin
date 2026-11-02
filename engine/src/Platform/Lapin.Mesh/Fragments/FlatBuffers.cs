@@ -188,18 +188,25 @@ public readonly struct FlatTable(byte[] buf, int pos)
     public readonly byte[] Buf = buf;
     public readonly int Pos = pos;
 
-    public static FlatTable Root(byte[] buf) => new(buf, BinaryPrimitives.ReadInt32LittleEndian(buf));
+    public static FlatTable Root(byte[] buf) => new(buf, Within(buf, BinaryPrimitives.ReadInt32LittleEndian(buf), 4));
+
+    /// <summary>
+    /// <paramref name="at"/> when <paramref name="size"/> bytes from it lie inside the buffer; else the file is corrupt
+    /// (or crafted), said as a FormatException before an allocation or a read runs off it.
+    /// </summary>
+    static int Within(byte[] buf, long at, long size) =>
+        at >= 0 && size >= 0 && at + size <= buf.Length ? (int)at : throw new FormatException("an offset or a length points outside the file.");
 
     /// <summary>A field's offset from the table, or 0 when the file has no such field.</summary>
     int Field(int slot)
     {
-        var vtable = Pos - BinaryPrimitives.ReadInt32LittleEndian(Buf.AsSpan(Pos));
+        var vtable = Within(Buf, (long)Pos - BinaryPrimitives.ReadInt32LittleEndian(Buf.AsSpan(Pos)), 4);
         var len = BinaryPrimitives.ReadUInt16LittleEndian(Buf.AsSpan(vtable));
         var o = 4 + slot * 2;
-        return o < len ? BinaryPrimitives.ReadUInt16LittleEndian(Buf.AsSpan(vtable + o)) : 0;
+        return o < len ? BinaryPrimitives.ReadUInt16LittleEndian(Buf.AsSpan(Within(Buf, vtable + o, 2))) : 0;
     }
 
-    int Indirect(int at) => at + BinaryPrimitives.ReadInt32LittleEndian(Buf.AsSpan(at));
+    int Indirect(int at) => Within(Buf, (long)at + BinaryPrimitives.ReadInt32LittleEndian(Buf.AsSpan(at)), 4);
 
     public bool Has(int slot) => Field(slot) != 0;
     public uint Uint(int slot, uint def = 0) => Field(slot) is var o and not 0 ? BinaryPrimitives.ReadUInt32LittleEndian(Buf.AsSpan(Pos + o)) : def;
@@ -214,21 +221,23 @@ public readonly struct FlatTable(byte[] buf, int pos)
     string ReadString(int at)
     {
         var n = BinaryPrimitives.ReadInt32LittleEndian(Buf.AsSpan(at));
-        return Encoding.UTF8.GetString(Buf, at + 4, n);
+        return Encoding.UTF8.GetString(Buf, Within(Buf, at + 4L, n), n);
     }
 
-    /// <summary>(start of the elements, their count), or null.</summary>
-    public (int Start, int Count)? Vector(int slot)
+    /// <summary>(start of the elements, their count), or null; the elements, <paramref name="elementSize"/> bytes each, checked to lie inside the file.</summary>
+    public (int Start, int Count)? Vector(int slot, int elementSize)
     {
         var o = Field(slot);
         if (o == 0) return null;
         var v = Indirect(Pos + o);
-        return (v + 4, BinaryPrimitives.ReadInt32LittleEndian(Buf.AsSpan(v)));
+        var n = BinaryPrimitives.ReadInt32LittleEndian(Buf.AsSpan(v));
+        if (n < 0) throw new FormatException("a vector has a negative length.");
+        return (Within(Buf, v + 4L, (long)n * elementSize), n);
     }
 
     public uint[]? Uints(int slot)
     {
-        if (Vector(slot) is not var (start, n)) return null;
+        if (Vector(slot, 4) is not var (start, n)) return null;
         var o = new uint[n];
         for (var i = 0; i < n; i++) o[i] = BinaryPrimitives.ReadUInt32LittleEndian(Buf.AsSpan(start + i * 4));
         return o;
@@ -236,7 +245,7 @@ public readonly struct FlatTable(byte[] buf, int pos)
 
     public int[]? Ints(int slot)
     {
-        if (Vector(slot) is not var (start, n)) return null;
+        if (Vector(slot, 4) is not var (start, n)) return null;
         var o = new int[n];
         for (var i = 0; i < n; i++) o[i] = BinaryPrimitives.ReadInt32LittleEndian(Buf.AsSpan(start + i * 4));
         return o;
@@ -244,7 +253,7 @@ public readonly struct FlatTable(byte[] buf, int pos)
 
     public ushort[]? Ushorts(int slot)
     {
-        if (Vector(slot) is not var (start, n)) return null;
+        if (Vector(slot, 2) is not var (start, n)) return null;
         var o = new ushort[n];
         for (var i = 0; i < n; i++) o[i] = BinaryPrimitives.ReadUInt16LittleEndian(Buf.AsSpan(start + i * 2));
         return o;
@@ -252,7 +261,7 @@ public readonly struct FlatTable(byte[] buf, int pos)
 
     public float[]? Floats(int slot, int perElement)
     {
-        if (Vector(slot) is not var (start, n)) return null;
+        if (Vector(slot, 4 * perElement) is not var (start, n)) return null;
         var o = new float[n * perElement];
         for (var i = 0; i < o.Length; i++) o[i] = BinaryPrimitives.ReadSingleLittleEndian(Buf.AsSpan(start + i * 4));
         return o;
@@ -260,7 +269,7 @@ public readonly struct FlatTable(byte[] buf, int pos)
 
     public string[]? Strings(int slot)
     {
-        if (Vector(slot) is not var (start, n)) return null;
+        if (Vector(slot, 4) is not var (start, n)) return null;
         var o = new string[n];
         for (var i = 0; i < n; i++) o[i] = ReadString(Indirect(start + i * 4));
         return o;
@@ -268,7 +277,7 @@ public readonly struct FlatTable(byte[] buf, int pos)
 
     public FlatTable[]? Tables(int slot)
     {
-        if (Vector(slot) is not var (start, n)) return null;
+        if (Vector(slot, 4) is not var (start, n)) return null;
         var o = new FlatTable[n];
         for (var i = 0; i < n; i++) o[i] = new FlatTable(Buf, Indirect(start + i * 4));
         return o;

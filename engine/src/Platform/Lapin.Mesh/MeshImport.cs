@@ -52,7 +52,10 @@ public static class MeshImport
                 _ => throw new CommandException($"„{name}” is not a mesh Lapin reads (OBJ, STL, glTF, GLB)."),
             };
         }
-        catch (Exception ex) when (ex is FormatException or IndexOutOfRangeException or ArgumentOutOfRangeException or InvalidDataException or JsonException or KeyNotFoundException or InvalidCastException)
+        // What a malformed file can raise while it is read (a null where a number is wanted, a number too big for an int,
+        // a string where a number is): a message, never the engine's failure.
+        catch (Exception ex) when (ex is FormatException or IndexOutOfRangeException or ArgumentException or InvalidDataException
+            or JsonException or KeyNotFoundException or InvalidCastException or InvalidOperationException or NullReferenceException or OverflowException)
         {
             throw new CommandException($"„{name}” could not be read: {ex.Message}");
         }
@@ -110,6 +113,9 @@ public static class MeshImport
         }));
         return new MeshImportResult(elements, pieces.Sum(p => p.Triangles.Count), notes, report);
     }
+
+    /// <summary>A required integer of a glTF object, or why the file is wrong (never a NullReferenceException).</summary>
+    static int Int(JsonNode node, string key, string what) => (int?)node[key] ?? throw new FormatException($"{what} has no {key}.");
 
     static bool Flag(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) && b;
     static double D(string s) => double.Parse(s, NumberStyles.Float, CultureInfo.InvariantCulture);
@@ -194,8 +200,7 @@ public static class MeshImport
             if (!weld.TryGetValue((x, y, z), out var i)) { i = piece.Vertices.Count; piece.Vertices.Add(new Vec3(x, y, z)); weld[(x, y, z)] = i; }
             return i;
         }
-        var binary = bytes.Length >= 84 && 84 + 50L * BitConverter.ToUInt32(bytes, 80) == bytes.Length;
-        if (binary)
+        if (IsBinaryStl(bytes))
         {
             var n = BitConverter.ToUInt32(bytes, 80);
             for (var t = 0; t < n; t++)
@@ -223,6 +228,21 @@ public static class MeshImport
         return [piece];
     }
 
+    /// <summary>
+    /// A binary STL holds its count's triangles after the header: the file is at least that long (some programs
+    /// pad or append after them). A text STL starts <c>solid</c> and goes on with <c>facet</c>; a binary header
+    /// may start <c>solid</c> too, so that alone does not make it text, nor does a length that matches exactly.
+    /// </summary>
+    static bool IsBinaryStl(byte[] bytes)
+    {
+        if (bytes.Length < 84) return false;
+        var length = 84 + 50L * BitConverter.ToUInt32(bytes, 80);
+        if (length == bytes.Length) return true;
+        if (length > bytes.Length) return false;
+        var head = Encoding.ASCII.GetString(bytes, 0, Math.Min(bytes.Length, 1024)).TrimStart();
+        return !(head.StartsWith("solid", StringComparison.Ordinal) && head.Contains("facet", StringComparison.Ordinal));
+    }
+
     // ------------------------------------------------------------ glTF
 
     /// <summary>
@@ -242,7 +262,9 @@ public static class MeshImport
             root = null!;
             while (at + 8 <= bytes.Length)
             {
-                var len = (int)BitConverter.ToUInt32(bytes, at);
+                var size = BitConverter.ToUInt32(bytes, at);
+                if (at + 8L + size > bytes.Length) throw new FormatException("a GLB chunk runs past the end of the file.");
+                var len = (int)size;
                 var type = BitConverter.ToUInt32(bytes, at + 4);
                 if (type == 0x4E4F534A) root = JsonNode.Parse(Encoding.UTF8.GetString(bytes, at + 8, len))!;
                 else if (type == 0x004E4942) bin = bytes[(at + 8)..(at + 8 + len)];
@@ -250,7 +272,7 @@ public static class MeshImport
             }
             if (root == null) throw new FormatException("the GLB has no JSON chunk.");
         }
-        else root = JsonNode.Parse(Encoding.UTF8.GetString(bytes))!;
+        else root = JsonNode.Parse(Encoding.UTF8.GetString(bytes)) ?? throw new FormatException("its JSON is empty.");
 
         var buffers = new List<byte[]>();
         foreach (var b in root["buffers"]?.AsArray() ?? [])
@@ -268,31 +290,35 @@ public static class MeshImport
         var materials = root["materials"]?.AsArray() ?? [];
         var nodes = root["nodes"]?.AsArray() ?? [];
 
-        (byte[] Data, int Offset, int Stride) View(int accessor, int size)
+        // An accessor's data: its view's buffer, where it starts, the step between elements and how many there are,
+        // each checked to lie inside the buffer (a sparse accessor, which has no view, is not read).
+        (byte[] Data, int Offset, int Stride, int Count) View(int accessor, int size)
         {
-            var a = accessors[accessor]!;
-            var v = views[(int)a["bufferView"]!]!;
-            var data = buffers[(int)v["buffer"]!];
+            var a = accessors[accessor] ?? throw new FormatException($"accessor {accessor} is missing.");
+            var v = views[Int(a, "bufferView", $"accessor {accessor}")] ?? throw new FormatException($"the view of accessor {accessor} is missing.");
+            var data = buffers[Int(v, "buffer", $"a view of accessor {accessor}")];
             var offset = ((int?)v["byteOffset"] ?? 0) + ((int?)a["byteOffset"] ?? 0);
-            return (data, offset, (int?)v["byteStride"] ?? size);
+            var stride = (int?)v["byteStride"] ?? size;
+            var n = Int(a, "count", $"accessor {accessor}");
+            if (offset < 0 || stride < size || n < 0 || n > 0 && offset + (long)(n - 1) * stride + size > data.Length)
+                throw new FormatException($"accessor {accessor} runs past the end of its buffer.");
+            return (data, offset, stride, n);
         }
         List<Vec3> Positions(int accessor)
         {
-            var a = accessors[accessor]!;
-            if ((int)a["componentType"]! != 5126 || (string?)a["type"] != "VEC3") throw new FormatException("its positions are not floats in threes.");
-            var (data, offset, stride) = View(accessor, 12);
-            var n = (int)a["count"]!;
+            var a = accessors[accessor] ?? throw new FormatException($"accessor {accessor} is missing.");
+            if (Int(a, "componentType", $"accessor {accessor}") != 5126 || (string?)a["type"] != "VEC3") throw new FormatException("its positions are not floats in threes.");
+            var (data, offset, stride, n) = View(accessor, 12);
             var o = new List<Vec3>(n);
             for (var i = 0; i < n; i++) { var at = offset + i * stride; o.Add(new Vec3(BitConverter.ToSingle(data, at), BitConverter.ToSingle(data, at + 4), BitConverter.ToSingle(data, at + 8))); }
             return o;
         }
         List<int> Indices(int accessor)
         {
-            var a = accessors[accessor]!;
-            var type = (int)a["componentType"]!;
+            var a = accessors[accessor] ?? throw new FormatException($"accessor {accessor} is missing.");
+            var type = Int(a, "componentType", $"accessor {accessor}");
             var size = type switch { 5121 => 1, 5123 => 2, 5125 => 4, _ => throw new FormatException("its indices are not bytes, shorts or ints.") };
-            var (data, offset, stride) = View(accessor, size);
-            var n = (int)a["count"]!;
+            var (data, offset, stride, n) = View(accessor, size);
             var o = new List<int>(n);
             for (var i = 0; i < n; i++)
             {
@@ -323,7 +349,7 @@ public static class MeshImport
             if (depth > MaxDepth) throw new FormatException($"the node hierarchy is deeper than {MaxDepth} levels.");
             if (!placed.Add(index)) return;
             path.Add(index);
-            var node = nodes[index]!;
+            var node = nodes[index] ?? throw new FormatException($"node {index} is missing.");
             var local = Matrix(node);
             var world = Mul(parent, local);
             if ((int?)node["mesh"] is { } mi && mi < meshes.Count)
@@ -336,6 +362,7 @@ public static class MeshImport
                     if ((int?)prim?["attributes"]?["POSITION"] is not { } pos) continue;
                     var pts = Positions(pos).Select(p => Apply(world, p)).ToList();
                     var idx = (int?)prim!["indices"] is { } ia ? Indices(ia) : Enumerable.Range(0, pts.Count).ToList();
+                    if (idx.Any(k => k < 0 || k >= pts.Count)) throw new FormatException($"a primitive of mesh {mi} names a vertex it does not have.");
                     var tris = new List<(int, int, int)>();
                     for (var k = 0; k + 2 < idx.Count; k += 3) tris.Add((idx[k], idx[k + 1], idx[k + 2]));
                     // A mirroring placement turns the triangles inside out: wound back.
@@ -343,7 +370,7 @@ public static class MeshImport
                     pieces.Add(new MeshPiece(label, ColorOf(prim), pts, tris));
                 }
             }
-            foreach (var child in node["children"]?.AsArray() ?? []) Walk((int)child!, world, depth + 1);
+            foreach (var child in node["children"]?.AsArray() ?? []) Walk((int?)child ?? throw new FormatException($"node {index} has an empty child."), world, depth + 1);
             path.Remove(index);
         }
         var identity = new double[] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };

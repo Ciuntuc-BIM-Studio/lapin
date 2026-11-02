@@ -35,11 +35,7 @@ public static class FragSurvey
     }
 
     /// <summary>A storey's key: its GlobalId, else its local id.</summary>
-    public static string KeyOf(FragModel m, uint local)
-    {
-        var k = Array.IndexOf(m.GuidsItems, local);
-        return k >= 0 && k < m.Guids.Length && m.Guids[k].Length == 22 ? m.Guids[k] : $"local:{local}";
-    }
+    public static string KeyOf(FragModel m, uint local) => m.GuidOf(local) is { Length: 22 } g ? g : $"local:{local}";
 
     /// <summary>The storey (its local id) each item the file contains in one stands on.</summary>
     public static Dictionary<uint, uint> StoreyOfItems(FragModel m, IEnumerable<uint> items, IReadOnlySet<uint> storeys)

@@ -66,8 +66,8 @@ public sealed record FragModel(string? Metadata, string[] Guids, uint[] GuidsIte
     {
         var o = new Dictionary<string, List<uint>>();
         if (Relations == null || RelationsItems == null) return o;
-        var k = Array.IndexOf(RelationsItems, (int)localId);
-        if (k < 0 || k >= Relations.Length) return o;
+        var index = FirstIndex(ref _relationIndex, RelationsItems, RelationsItems.Select(x => unchecked((uint)x)));
+        if (!index.TryGetValue(localId, out var k) || k >= Relations.Length) return o;
         foreach (var s in Relations[k])
         {
             try
@@ -79,6 +79,27 @@ public sealed record FragModel(string? Metadata, string[] Guids, uint[] GuidsIte
             }
             catch (System.Text.Json.JsonException) { }
         }
+        return o;
+    }
+
+    /// <summary>The GlobalId of an item (by its local id) as the file gives it, or null; looked up by a map made once (an import asks it per element).</summary>
+    public string? GuidOf(uint localId)
+    {
+        var index = FirstIndex(ref _guidIndex, GuidsItems, GuidsItems);
+        return index.TryGetValue(localId, out var k) && k < Guids.Length ? Guids[k] : null;
+    }
+
+    // Local id → index into the vector that lists it (the first where one is listed twice), made on first use, for the
+    // array it was made from (a copy made by `with` with another array makes its own).
+    (object Of, Dictionary<uint, int> Index)? _relationIndex, _guidIndex;
+
+    static Dictionary<uint, int> FirstIndex<T>(ref (object Of, Dictionary<uint, int> Index)? cache, T[] array, IEnumerable<uint> ids)
+    {
+        if (cache is { } c && ReferenceEquals(c.Of, array)) return c.Index;
+        var o = new Dictionary<uint, int>();
+        var i = 0;
+        foreach (var id in ids) o.TryAdd(id, i++);
+        cache = (array, o);
         return o;
     }
 }
@@ -138,7 +159,7 @@ public static class FragReader
 
     static FragTransform[] Transforms(FlatTable t, int slot)
     {
-        if (t.Vector(slot) is not var (start, n)) return [];
+        if (t.Vector(slot, FragSchema.SizeTransform) is not var (start, n)) return [];
         var o = new FragTransform[n];
         for (var i = 0; i < n; i++) o[i] = Transform(t.Buf, start + i * FragSchema.SizeTransform);
         return o;
@@ -149,7 +170,7 @@ public static class FragReader
         var buf = t.Buf;
         var coordinatesAt = t.Struct(FragSchema.Meshes.Coordinates);
         FragSample[] samples = [];
-        if (t.Vector(FragSchema.Meshes.Samples) is var (ss, sn))
+        if (t.Vector(FragSchema.Meshes.Samples, FragSchema.SizeSample) is var (ss, sn))
         {
             samples = new FragSample[sn];
             for (var i = 0; i < sn; i++)
@@ -159,7 +180,7 @@ public static class FragReader
             }
         }
         FragRepresentation[] reps = [];
-        if (t.Vector(FragSchema.Meshes.Representations) is var (rs, rn))
+        if (t.Vector(FragSchema.Meshes.Representations, FragSchema.SizeRepresentation) is var (rs, rn))
         {
             reps = new FragRepresentation[rn];
             for (var i = 0; i < rn; i++)
@@ -170,7 +191,7 @@ public static class FragReader
             }
         }
         FragMaterial[] mats = [];
-        if (t.Vector(FragSchema.Meshes.Materials) is var (ms, mn))
+        if (t.Vector(FragSchema.Meshes.Materials, FragSchema.SizeMaterial) is var (ms, mn))
         {
             mats = new FragMaterial[mn];
             for (var i = 0; i < mn; i++)
