@@ -30,17 +30,17 @@ describe('the interface modes', () => {
   });
 
   // The tabs of the full edition, as the modules give them.
-  const TABS = [['draft', 10], ['architecture', 20], ['finishes', 25], ['structure', 30], ['wood', 33], ['rebar', 35], ['site', 40], ['mep', 45], ['sitework', 45], ['studio', 50], ['annotate', 60], ['manage', 80], ['quantities', 85], ['view', 90]].map(([id, order]) => ({ id: id as string, order: order as number }));
+  const TABS = [['draft', 10], ['architecture', 20], ['finishes', 25], ['structure', 30], ['wood', 33], ['steel', 34], ['rebar', 35], ['site', 40], ['mep', 45], ['sitework', 45], ['studio', 50], ['annotate', 60], ['manage', 80], ['quantities', 85], ['view', 90]].map(([id, order]) => ({ id: id as string, order: order as number }));
   const shown = (s: Parameters<typeof visibleTabIds>[0], tabs = TABS) => visibleTabIds(s, tabs);
 
   it('shows a workspace\'s tabs in its order, every tab in All, View always, a tab the edition lacks left out', () => {
     const s = withPreset('compact');
     expect(s.workspace).toBe('all');
     expect(shown(s)).toEqual(TABS.map((t) => t.id));
-    expect(shown(withWorkspace(s, 'structure'))).toEqual(['draft', 'structure', 'rebar', 'wood', 'annotate', 'manage', 'quantities', 'view']);
+    expect(shown(withWorkspace(s, 'structure'))).toEqual(['draft', 'structure', 'rebar', 'wood', 'steel', 'annotate', 'manage', 'quantities', 'view']);
     expect(shown(withWorkspace(s, 'mep'))).toEqual(['draft', 'mep', 'annotate', 'manage', 'quantities', 'view']);
     // An edition without Wood and Rebar (Architecture + Structure is lighter still): only what it has.
-    expect(shown(withWorkspace(s, 'structure'), TABS.filter((t) => !['wood', 'rebar'].includes(t.id)))).toEqual(['draft', 'structure', 'annotate', 'manage', 'quantities', 'view']);
+    expect(shown(withWorkspace(s, 'structure'), TABS.filter((t) => !['wood', 'steel', 'rebar'].includes(t.id)))).toEqual(['draft', 'structure', 'annotate', 'manage', 'quantities', 'view']);
     // A workspace and the interface's mode are apart.
     expect(withPart(withWorkspace(s, 'site'), 'ribbon', 'large').workspace).toBe('site');
     expect(withPreset('focus', withWorkspace(s, 'site')).workspace).toBe('site');

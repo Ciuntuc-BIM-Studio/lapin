@@ -33,6 +33,9 @@
   <Folder Name="/src/Modules/Phases/">
     <Project Path="src/Modules/Phases/Lapin.Phases/Lapin.Phases.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Steel/">
+    <Project Path="src/Modules/Steel/Lapin.Steel/Lapin.Steel.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Studio/">
     <Project Path="src/Modules/Studio/Lapin.Studio/Lapin.Studio.csproj" />
   </Folder>

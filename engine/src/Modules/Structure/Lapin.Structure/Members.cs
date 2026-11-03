@@ -43,6 +43,13 @@ public static class Columns
     {
         var (section, material, _) = Spec(m, column);
         if (Envelope(column, m) is not { } solid) return new ElementGeometry([], Diagnostics: ["The column has no height."]);
+        // A hollow section stands open inside (decision 268); the envelope a column cuts with stays whole.
+        if (section.Holes() is { Count: > 0 } holes)
+        {
+            var z = Place.Elevation(m, column) + column.Num("baseOffset");
+            IReadOnlyList<Vec3> Up(IEnumerable<Vec2> ring) => Place.Placed(ring, Place.Point(column), column.Num("rotation")).Select(p => p.At(z)).ToList();
+            solid = Prism.Extrude(Up(section.Outline()), holes.Select(Up).ToList(), new Vec3(0, 0, Spec(m, column).Height), "column") ?? solid;
+        }
         var problems = new List<string>();
         var parts = CutPriorities.Apply(column, m, services, [new GeometryPart(column.Name, Materials.ColorOf(m, material), solid, material, "body")], problems);
         var footprint = Place.Placed(section.Outline(), Place.Point(column), column.Num("rotation"));
@@ -283,8 +290,11 @@ public static class Beams
             var u = (f.End - f.Start).Normalized();
             var side = new Vec3(-u.Y, u.X, 0);
             var mid = Top(m, beam) - section.Depth / 2;
-            var ring = outline.Select(p => new Vec3(f.Start.X, f.Start.Y, mid) + side * p.X + new Vec3(0, 0, p.Y)).ToList();
-            solid = Prism.Extrude(ring, null, new Vec3(u.X, u.Y, 0) * (f.End - f.Start).Length, "beam");
+            Vec3 At(Vec2 p) => new Vec3(f.Start.X, f.Start.Y, mid) + side * (beam.Bool("flipped") ? -p.X : p.X) + new Vec3(0, 0, p.Y);
+            var ring = section.Outline().Select(At).ToList();
+            // A hollow section's inside runs through it (decision 268).
+            var holes = section.Holes().Select(h => (IReadOnlyList<Vec3>)h.Select(At).ToList()).ToList();
+            solid = Prism.Extrude(ring, holes, new Vec3(u.X, u.Y, 0) * (f.End - f.Start).Length, "beam");
         }
         else solid = Prism.ExtrudeFootprint(fp, Top(m, beam) - section.Depth, section.Depth, "beam");
         if (solid == null) return new ElementGeometry([], Diagnostics: ["The beam has no section."]);

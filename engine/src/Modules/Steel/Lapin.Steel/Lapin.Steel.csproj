@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Steel (docs/plan-steel.md, decisions 266, 268): steel members with configurable ends (extension, a cut by a plane, a
+    mitre or a fit on another member, copes), made from a drafted outline too; IFC with boolean cuts. It owns LapinSteelMember
+    and its type (IfcMember and IfcMemberType in IFC; Studio owns IfcMember for its solids), and gives the structure module's steel beams and columns ends of the same kind: stored as rules
+    on the element, the body derived.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>steel</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="$(LapinGeometryDir)Lapin.Geometry/Lapin.Geometry.csproj" Private="false" />
+    <ProjectReference Include="../../Structure/Lapin.Structure/Lapin.Structure.csproj" Private="false" />
+  </ItemGroup>
+</Project>

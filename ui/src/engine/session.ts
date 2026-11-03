@@ -78,7 +78,7 @@ export function applyDiff(d: Diff): void {
 }
 
 /** The ids the interface keeps for the tools (the types they build with, the roof being configured): cleared when their node goes. */
-export const REMEMBERED_IDS = ['wallTypeId', 'slabTypeId', 'doorTypeId', 'windowTypeId', 'stairTypeId', 'rampTypeId', 'ceilingTypeId', 'skirtingTypeId', 'roomFinishTypeId', 'curtainTypeId', 'roofId'] as const;
+export const REMEMBERED_IDS = ['wallTypeId', 'slabTypeId', 'doorTypeId', 'windowTypeId', 'stairTypeId', 'rampTypeId', 'ceilingTypeId', 'skirtingTypeId', 'roomFinishTypeId', 'curtainTypeId', 'memberTypeId', 'roofId'] as const;
 
 /** Run an engine command; its diff arrives as an event. Errors land in the session. */
 export async function execute(command: string, args: Record<string, unknown> = {}): Promise<unknown> {

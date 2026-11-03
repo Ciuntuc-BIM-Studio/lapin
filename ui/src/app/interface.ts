@@ -62,10 +62,10 @@ export const WORKSPACE_LABELS: Record<WorkspaceId, string> = {
   all: 'All', architecture: 'Architecture', structure: 'Structure & rebar', mep: 'MEP', site: 'Site & site works', drafting: 'Drafting 2D', mine: 'My workspace',
 };
 
-/** Each discipline's tabs in its order; a tab the edition lacks is left out (Wood, Urban and Rail come with their modules). */
+/** Each discipline's tabs in its order; a tab the edition lacks is left out (Wood, Steel, Urban and Rail come with their modules). */
 export const WORKSPACE_TABS: Record<Exclude<WorkspaceId, 'all' | 'mine'>, readonly string[]> = {
   architecture: ['draft', 'architecture', 'finishes', 'studio', 'annotate', 'manage', 'quantities', 'view'],
-  structure: ['draft', 'structure', 'rebar', 'wood', 'annotate', 'manage', 'quantities', 'view'],
+  structure: ['draft', 'structure', 'rebar', 'wood', 'steel', 'annotate', 'manage', 'quantities', 'view'],
   mep: ['draft', 'mep', 'annotate', 'manage', 'quantities', 'view'],
   site: ['draft', 'site', 'sitework', 'urban', 'rail', 'studio', 'annotate', 'manage', 'quantities', 'view'],
   drafting: ['draft', 'annotate', 'manage', 'view'],

@@ -584,6 +584,55 @@ export const scenes = [
     },
   },
   {
+    // Steel, stage 1 (docs/plan-steel.md, decision 268): two outlines sketched on the plan, slanted at their ends, converted to
+    // members; a column of the structure, a member fitted to its flange and coped; the members' ends in Properties; the types.
+    id: 'steel',
+    async run(t) {
+      await t.fresh();
+      const storey = await t.storey();
+      const plan = `plan:${storey}`;
+      await t.button('Steel', { exact: true });
+      await t.shot('ribbon-steel', { of: '.topbar', pad: 0 });
+      // The user's sketch: a band 150 mm wide (an IPE 300's flanges), both ends slanted; and a second one beside it, square.
+      const slant = 0.15 * Math.tan(Math.PI / 6);
+      const a = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[0, 0], [6, 0], [6 + slant, 0.15], [slant, 0.15]], closed: true } })).ids[0];
+      const b = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[0, 2], [6, 2], [6, 2.15], [0, 2.15]], closed: true } })).ids[0];
+      await t.ui({ keyPlan: false, selection: a, selected: [a, b] });
+      await t.wait(600);
+      await t.fit();
+      await t.shot('steel-sketch', { of: '[data-testid=plan]', pad: 0 });
+      await t.tool('steel.convert');
+      await t.wait(1200);
+      const members = (await t.nodes()).filter((n) => n.type === 'LapinSteelMember');
+      t.expect(members.length === 2, `the two outlines are members (${members.length})`);
+      t.expect(!(await t.nodes()).some((n) => n.id === a || n.id === b), 'the sketches were replaced');
+      const slanted = members.find((m) => m.props.steelEnds?.end?.cut === 'plane' || m.props.steelEnds?.start?.cut === 'plane');
+      t.expect(slanted, 'the slanted ends are cuts by a plane');
+      t.expect(members.every((m) => m.name === 'Member IPE 300'), `the outlines' width found the IPE 300 (${members.map((m) => m.name).join(', ')})`);
+      // A column of HEA 200 at the far end, the square member fitted to its flange 10 mm off, its top flange coped.
+      const hea = await t.cmd('structure.createColumnType', { section: 'HEA 200' });
+      const column = await t.cmd('structure.addColumn', { storeyId: storey, typeId: hea.id, x: 7, y: 2.075 });
+      const square = members.find((m) => m.id !== slanted?.id);
+      await t.cmd('steel.setEnds', { ids: [square.id], end: { cut: 'fit', ref: column.id, extension: -0.01, copeLength: 0.12, copeDepth: 0.04, copeTop: true } });
+      await t.ui({ selection: square.id, selected: [square.id] });
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-field=steel-ends]').count() > 0, 'the member shows its ends in Properties');
+      t.expect(await t.page.locator('select[data-field=steel-end-cut]').inputValue() === 'fit', 'its end is fitted');
+      await t.shot('steel-ends', { of: 'aside.props', pad: 0, maxHeight: 760 });
+      // The steel types: the catalogue's profiles, hollow and cold-formed sections of one's own.
+      await t.tool('steel.types');
+      const dialog = t.page.locator('[data-dialog=steel-types]');
+      t.expect(await dialog.count() > 0, 'the Steel types dialog opens');
+      await dialog.locator('select[data-field=steel-profile]').selectOption('C 200×65×2');
+      await t.wait(400);
+      await t.shot('steel-types', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null, selection: null, selected: [] });
+      await open3d(t);
+      await t.shot('steel-3d', { of: 'canvas', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     id: 'stairs',
     async run(t) {
       await t.fresh();

@@ -624,8 +624,11 @@ public static class IfcExport
             // A railway element already has its linear placement and frame; the rest stand on their storey (or in the joinery's frame).
             place ??= at is { } jp ? JoineryPlace(relTo, jp, z0) : Place(relTo, 0);
             var reps = new List<string>();
+            // A body its module gives as constructive solids (a steel member: its profile swept, cut by its ends' planes, decision 268).
+            var swept = !grouped && at == null && railPart == null ? SweptOf(e) : null;
+            if (swept != null) reps.Add(SweptRep(swept, parts[0].Color, fr));
             // An instance of a shared body: the body once, as a representation map, each instance mapping it where it stands.
-            if (!grouped && at == null && railPart == null && geo!.Instance is { } inst && Mapped(inst, z0) is { } mapped) reps.Add(mapped);
+            else if (!grouped && at == null && railPart == null && geo!.Instance is { } inst && Mapped(inst, z0) is { } mapped) reps.Add(mapped);
             else if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, p.Color, v => Local(jp2, v)) : Brep(p.Solid, p.Color, fr))));
             if (AxisOf(e) is { } ax) reps.Add(ax);
             reps.AddRange(Plan2dOf(e));
@@ -645,8 +648,64 @@ public static class IfcExport
             if (src?["material"] == null) MaterialsOf(e, entity, parts, grouped);
             if (grouped) Parts(e, kind, parts, place, fr, entity);
             Openings(e, entity, place, z0, voids);
+            if (swept != null) SweptOpenings(e, swept, entity, place, fr);
             Properties(e, kind, entity, type);
             Quantities(e, entity, grouped);
+        }
+
+        /// <summary>The element's body as constructive solids, from the first module that gives one (<see cref="IIfcSweptBodies"/>).</summary>
+        IfcSweptBody? SweptOf(Entity e)
+        {
+            foreach (var src in s.Catalog.All<IIfcSweptBodies>())
+                if (src.BodyOf(m, e) is { } b) return b;
+            return null;
+        }
+
+        /// <summary>
+        /// A sweep as IFC has one: its profile (an IfcArbitraryClosedProfileDef, its holes as voids) placed on its origin, its
+        /// x and its axis in the frame, extruded along the placement's z by its depth (IfcExtrudedAreaSolid).
+        /// </summary>
+        string Sweep(IfcSweep w, Frame fr)
+        {
+            string Curve(IReadOnlyList<Vec2> loop) => f.Add("IFCPOLYLINE", L(loop.Append(loop[0]).Select(P2)));
+            string Dir(Vec3 n) => f.Add("IFCDIRECTION", L(new[] { R(n.X), R(n.Y), R(n.Z) }));
+            var outer = Polygon2.EnsureCcw(w.Profile);
+            var profile = w.Holes.Count == 0
+                ? f.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, Curve(outer))
+                : f.Add("IFCARBITRARYPROFILEDEFWITHVOIDS", E("AREA"), Null, Curve(outer), L(w.Holes.Select(h => Curve(Polygon2.EnsureCcw(h).Reverse().ToList()))));
+            var o = fr.Local(w.Origin);
+            var position = f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", L(new[] { R(o.X), R(o.Y), R(o.Z) })), Dir(fr.Turn(w.Axis)), Dir(fr.Turn(w.XDir)));
+            return f.Add("IFCEXTRUDEDAREASOLID", profile, position, f.Add("IFCDIRECTION", "(0.,0.,1.)"), R(w.Depth));
+        }
+
+        /// <summary>
+        /// A swept body cut by its planes: each an IfcHalfSpaceSolid on an IfcPlane whose normal points into the material
+        /// (AgreementFlag true: the half-space is what lies behind it, the part taken off), taken off the sweep in turn
+        /// (IfcBooleanClippingResult, DIFFERENCE); a "Clipping" representation, or "SweptSolid" with no cut.
+        /// </summary>
+        string SweptRep(IfcSweptBody b, string? hex, Frame fr)
+        {
+            string Dir(Vec3 n) => f.Add("IFCDIRECTION", L(new[] { R(n.X), R(n.Y), R(n.Z) }));
+            var item = Sweep(b.Body, fr);
+            foreach (var c in b.Clips)
+            {
+                var p = fr.Local(c.Point);
+                var plane = f.Add("IFCPLANE", f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", L(new[] { R(p.X), R(p.Y), R(p.Z) })), Dir(fr.Turn(-c.Normal)), Null));
+                item = f.Add("IFCBOOLEANCLIPPINGRESULT", E("DIFFERENCE"), item, f.Add("IFCHALFSPACESOLID", plane, True));
+            }
+            if (hex != null) f.Add("IFCSTYLEDITEM", item, L(new[] { Style(hex) }), Null);
+            return f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S(b.Clips.Count > 0 ? "Clipping" : "SweptSolid"), L(new[] { item }));
+        }
+
+        /// <summary>A swept body's openings (a steel member's copes): each an IfcOpeningElement voiding the element, its body a sweep, placed where the element is.</summary>
+        void SweptOpenings(Entity e, IfcSweptBody b, string entity, string place, Frame fr)
+        {
+            for (var i = 0; i < b.Openings.Count; i++)
+            {
+                var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("SweptSolid"), L(new[] { Sweep(b.Openings[i], fr) })) }));
+                var opening = f.Add("IFCOPENINGELEMENT", Gid(e.Id, $"cut{i}"), Null, S("Cope"), Null, Null, Place(place, 0), shape, Null, E("OPENING"));
+                f.Add("IFCRELVOIDSELEMENT", Gid(e.Id, $"cut{i}-rel"), Null, Null, Null, entity, opening);
+            }
         }
 
         /// <summary>
