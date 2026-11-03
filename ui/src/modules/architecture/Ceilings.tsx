@@ -16,6 +16,7 @@ import { LengthField, NumberField } from '../../shell/cells';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { PendingDialog } from '../core/PendingDialog';
 import { newElement, typedBy } from './NewElement';
+import { SlabThumb } from './Thumbs';
 
 export interface CeilingSpec {
   name: string; system: 'grid' | 'plain'; tileWidth: number; tileLength: number; thickness: number;
@@ -25,7 +26,7 @@ export interface CeilingSpec {
 
 /** A ceiling: click its corners, then the first one again (or Enter). */
 export const ceiling: ToolDef = {
-  id: 'architecture.ceiling', label: 'Ceiling', icon: Grid3x3, shortcut: 'CG', properties: newElement('LapinCeilingType', 'ceilingTypeId', 'ceilingTypes'), typed: typedBy('LapinCeilingType', 'ceilingTypeId'),
+  id: 'architecture.ceiling', label: 'Ceiling', icon: Grid3x3, shortcut: 'CG', properties: newElement('LapinCeilingType', 'ceilingTypeId', 'ceilingTypes'), typed: typedBy('LapinCeilingType', 'ceilingTypeId', 'ceilingTypes', SlabThumb),
   gesture: { kind: 'polygon' },
   complete: async ({ points }, ctx) => {
     await ctx.execute('architecture.addCeiling', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(useUi.getState().ceilingTypeId ? { typeId: useUi.getState().ceilingTypeId } : {}) });
@@ -34,7 +35,7 @@ export const ceiling: ToolDef = {
 
 /** A ceiling over the room clicked, following its outline. */
 export const ceilingInRoom: ToolDef = {
-  id: 'architecture.ceilingInRoom', label: 'Ceiling in a room', icon: LayoutGrid, properties: newElement('LapinCeilingType', 'ceilingTypeId', 'ceilingTypes'), typed: typedBy('LapinCeilingType', 'ceilingTypeId'),
+  id: 'architecture.ceilingInRoom', label: 'Ceiling in a room', icon: LayoutGrid, properties: newElement('LapinCeilingType', 'ceilingTypeId', 'ceilingTypes'), typed: typedBy('LapinCeilingType', 'ceilingTypeId', 'ceilingTypes', SlabThumb),
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => {
     await ctx.execute('architecture.addCeiling', { storeyId: ctx.storeyId, x: p.x, y: p.y, ...(useUi.getState().ceilingTypeId ? { typeId: useUi.getState().ceilingTypeId } : {}) });

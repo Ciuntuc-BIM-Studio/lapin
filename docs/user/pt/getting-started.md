@@ -8,6 +8,8 @@ summary: A tela inicial, um projeto novo, as partes da janela, como se mover por
 
 Quando o Lapin abre, ele mostra a tela inicial. **Novo projeto** começa um edifício vazio. **Abrir projeto…** abre um arquivo `.lapin`. Os projetos que você já abriu aparecem em **Recentes**.
 
+**Começar de** dá um projeto novo preparado para o seu trabalho: **Casa térrea** (fundações e térreo), **Sobrado** (e um pavimento superior), **Edifício residencial** (térreo e quatro pavimentos), **Galpão ou estrutura** (um pavimento de 6 m de altura, no espaço de trabalho de estrutura), **Só desenho** (um nível, no espaço de trabalho de desenho 2D) e **Começar de um IFC** (um projeto novo e depois o arquivo IFC a importar). Cada um escolhe também o seu espaço de trabalho; os níveis podem depois ser renomeados, acrescentados ou apagados como em qualquer projeto.
+
 ![A tela inicial](shots/start-screen.webp)
 
 Um projeto novo já tem três níveis: **Fundações** (−1.50), **Térreo** (±0.00) e **Primeiro andar** (+3.00). Ele abre na planta do térreo, pronto para a primeira parede.

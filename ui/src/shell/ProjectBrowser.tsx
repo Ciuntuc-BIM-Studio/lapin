@@ -20,6 +20,7 @@ import { IfcTree } from './IfcTree';
 import { openContextMenu } from './ContextMenu';
 import { toggleSection3d, useSection3d } from '../viewport/section3d';
 import { showLevelIn3d } from '../viewport/storeys3dActions';
+import { Catalog } from './Catalog';
 import { useSectionBox } from '../viewport/sectionBox';
 import { createSiteView, SITE_PURPOSES, type SitePurpose } from '../modules/core/SitePlans';
 import { countOpen } from '../modules/core/cde/pdfRemarks/remarks';
@@ -52,11 +53,11 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   const levels = storeys({ nodes, relations }).slice().reverse();
   const active = activeStorey();
   const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed);
-  const [kept, setTab] = useState<'project' | 'ifc'>(() => { try { return localStorage.getItem(TAB_KEY) === 'ifc' ? 'ifc' : 'project'; } catch { return 'project'; } });
+  const [kept, setTab] = useState<'project' | 'ifc' | 'catalog'>(() => { try { const t = localStorage.getItem(TAB_KEY); return t === 'ifc' || t === 'catalog' ? t : 'project'; } catch { return 'project'; } });
   const [shown, setShown] = useState(show);
   const tab = shown === 'ifc' ? 'ifc' : shown ? 'project' : kept;
   const levelsOnly = shown === 'levels';
-  const pickTab = (t: 'project' | 'ifc') => { setShown(undefined); setTab(t); try { localStorage.setItem(TAB_KEY, t); } catch { /* a convenience only */ } };
+  const pickTab = (t: 'project' | 'ifc' | 'catalog') => { setShown(undefined); setTab(t); try { localStorage.setItem(TAB_KEY, t); } catch { /* a convenience only */ } };
   const toggle = (id: string) => {
     const next = new Set(collapsed);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -222,9 +223,11 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
         <div className="browser-tabs" role="tablist">
           <button type="button" role="tab" className={`browser-tab${tab === 'project' ? ' on' : ''}`} aria-selected={tab === 'project'} onClick={() => pickTab('project')}>Project</button>
           <button type="button" role="tab" className={`browser-tab${tab === 'ifc' ? ' on' : ''}`} aria-selected={tab === 'ifc'} onClick={() => pickTab('ifc')}>IFC</button>
+          <button type="button" role="tab" className={`browser-tab${tab === 'catalog' ? ' on' : ''}`} aria-selected={tab === 'catalog'} data-tab="catalog" onClick={() => pickTab('catalog')}>Catalog</button>
         </div>
       </div>
       {tab === 'ifc' && <IfcTree />}
+      {tab === 'catalog' && <Catalog />}
       {tab === 'project' && <div className="tree-group">
         <div className="tree-label"><ChevronDown size={12} /><Layers size={13} />Levels<span className="count">{levels.length}</span>
           <button type="button" className="icon mini" title="New level above" onClick={() => void execute('storey.create', {})}><Plus size={12} /></button>

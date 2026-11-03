@@ -15,9 +15,10 @@ import { materialName, mm, ofClass, relatedOf, typeLayers } from '../../engine/m
 
 type TypeField = 'wallTypeId' | 'doorTypeId' | 'windowTypeId' | 'slabTypeId' | 'ceilingTypeId' | 'skirtingTypeId' | 'curtainTypeId' | 'stairTypeId' | 'rampTypeId';
 
-/** A tool's types for the quick slots (decision 260): the class, its choice kept in `field`. */
-export const typedBy = (cls: string, field: TypeField): TypedTool => ({
-  cls, get: () => useUi.getState()[field] as string | null, set: (id) => useUi.setState({ [field]: id } as Partial<UiState>),
+/** A tool's types for the quick slots (decision 260) and the catalog (decision 263): the class, its choice kept in `field`, edited in `dialog`, drawn by `thumb`. */
+export const typedBy = (cls: string, field: TypeField, dialog?: string, thumb?: ComponentType<{ type: NodeDto }>): TypedTool => ({
+  cls, get: () => useUi.getState()[field] as string | null, set: (id) => useUi.setState({ [field]: id } as Partial<UiState>), dialog, thumb,
+  about: (t) => { const { nodes, relations } = useSession.getState(); return about({ nodes, relations }, t); },
 });
 
 interface Spec { width?: number; height?: number; sillHeight?: number; profile?: string; thickness?: number; material?: string }

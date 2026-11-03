@@ -8,6 +8,8 @@ summary: Ekran startowy, nowy projekt, części okna, poruszanie się po rysunku
 
 Po uruchomieniu Lapin pokazuje ekran startowy. **Nowy projekt** zaczyna pusty budynek. **Otwórz projekt…** otwiera plik `.lapin`. Projekty otwierane wcześniej są wymienione w sekcji **Ostatnie**.
 
+**Zacznij od** daje nowy projekt przygotowany do swojej pracy: **Dom parterowy** (fundamenty i parter), **Dom piętrowy** (oraz piętro), **Budynek wielorodzinny** (parter i cztery piętra), **Hala lub szkielet** (jedna kondygnacja wysoka na 6 m, w obszarze roboczym konstrukcji), **Tylko rysunek** (jeden poziom, w obszarze roboczym rysunku 2D) i **Zacznij od IFC** (nowy projekt, a potem plik IFC do zaimportowania). Każdy wybiera też swój obszar roboczy; poziomy można potem zmieniać, dodawać i usuwać jak w każdym projekcie.
+
 ![Ekran startowy](shots/start-screen.webp)
 
 Nowy projekt ma już trzy poziomy: **Fundamenty** (−1.50), **Parter** (±0.00) i **Piętro** (+3.00). Otwiera się na rzucie parteru, gotowy na pierwszą ścianę.

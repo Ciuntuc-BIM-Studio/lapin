@@ -59,6 +59,18 @@ Plutind jos, fiecare loc arată numele uneltei, iar un loc gol după ultimul aș
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 
+## Catalogul
+
+Fila **Catalog** din browserul proiectului arată tipurile proiectului pentru fiecare unealtă care pune elemente cu tip: pereți, uși, ferestre, plăci, pereți cortină, scări, rampe, tavane și plinte. Fiecare tip e desenat mic (straturile unui perete ca în secțiunea din plan, ale unei plăci în secțiune, vederea unei uși sau ferestre, profilul unei plinte), cu ce este în câteva cuvinte.
+
+- un clic pe o carte pune elemente de acel tip: unealta pornește cu el;
+- trage o carte pe un loc rapid ca să păstrezi acolo unealta cu acel tip;
+- **Editează tipurile…** deschide dialogul în care se fac și se schimbă tipurile.
+
+![Catalogul: tipurile de pereți](shots/catalog.webp)
+
+![Tipurile de ferestre, desenate după vederea lor](shots/catalog-windows.webp)
+
 ## Plierea panourilor laterale
 
 În orice mod, browserul proiectului și panoul de proprietăți se pliază pe o bară subțire, pe partea lor:

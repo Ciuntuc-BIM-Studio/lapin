@@ -59,6 +59,18 @@ Flotando al pie, cada casilla muestra el nombre de su herramienta, y una casilla
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 
+## El catálogo
+
+La pestaña **Catálogo** del navegador del proyecto muestra los tipos del proyecto para cada herramienta que coloca elementos con tipo: muros, puertas, ventanas, forjados, muros cortina, escaleras, rampas, techos y rodapiés. Cada tipo se dibuja en pequeño (las capas de un muro como su corte en planta, las de un forjado en sección, el alzado de una puerta o ventana, el perfil de un rodapié), con lo que es en pocas palabras.
+
+- un clic en una tarjeta coloca elementos de ese tipo: la herramienta empieza con él;
+- arrastre una tarjeta a una casilla rápida para guardar allí la herramienta con ese tipo;
+- **Editar tipos…** abre el diálogo donde se crean y cambian esos tipos.
+
+![El catálogo: los tipos de muro](shots/catalog.webp)
+
+![Los tipos de ventana, dibujados por su alzado](shots/catalog-windows.webp)
+
 ## Plegar los paneles laterales
 
 En todos los modos, el explorador del proyecto y el panel de propiedades se pliegan en un carril fino a su lado:

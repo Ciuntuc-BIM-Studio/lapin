@@ -43,6 +43,34 @@ Pod częściami znajdują się **Karty**: odznacz karty wstążki, bez których 
 
 Lapin zapamiętuje twój wybór na tym komputerze, dla ciebie. Aplikacja desktopowa i przeglądarka zapamiętują swoje wybory osobno. W przeglądarce Lapin uruchamia się w trybie Kompaktowym, gdy okno ma mniej niż 800 pikseli wysokości, dopóki sam nie wybierzesz.
 
+## Szybkie narzędzia
+
+Szybkie narzędzia to ponumerowane miejsca na dole widoku (w trybach Kompaktowy i Skupienie na jego lewej krawędzi); uruchamiają je klawisze <kbd>1</kbd>–<kbd>9</kbd>. Każdy obszar roboczy ma własne: na początku takie, jakie daje Twoja edycja, a potem wybierasz je sam:
+
+- przeciągnij narzędzie ze wstążki na miejsce. Narzędzie stoi tylko w jednym miejscu, więc opuszcza poprzednie;
+- przeciągnij jedno miejsce na drugie, aby je zamienić;
+- kliknij miejsce prawym przyciskiem: **Wybierz narzędzie…**, **Opróżnij to miejsce** lub **Przywróć szybkie narzędzia**;
+- **Widok → Szybkie narzędzia…** ustawia dziewięć miejsc z list, a **Jak w edycji** przywraca te z Twojej edycji;
+- narzędzie, które wstawia elementy danego typu (ściana, drzwi, strop, schody…), może trzymać jeden z typów projektu: wybierz go w menu miejsca lub obok narzędzia w **Widok → Szybkie narzędzia…**. Miejsce pokazuje wtedy nazwę typu i uruchamia narzędzie z tym typem. Typ jest zapamiętany po nazwie: miejsce działa w każdym projekcie z typem o tej nazwie, a w projekcie bez niego narzędzie bierze swój bieżący typ.
+
+Na dole każde miejsce pokazuje nazwę swojego narzędzia, a puste miejsce za ostatnim czeka na narzędzie. Lapin zapamiętuje Twoje szybkie narzędzia na tym komputerze.
+
+![Szybkie narzędzia: typ ściany na miejscu 3, schody na 7, miejsce 2 puste](shots/quick-tools.webp)
+
+![Widok → Szybkie narzędzia…](shots/quick-tools-dialog.webp)
+
+## Katalog
+
+Karta **Katalog** w przeglądarce projektu pokazuje typy projektu dla każdego narzędzia, które wstawia elementy z typem: ściany, drzwi, okna, stropy, ściany osłonowe, schody, rampy, sufity i listwy przypodłogowe. Każdy typ jest narysowany w małej skali (warstwy ściany jak w przekroju rzutu, stropu w przekroju, widok drzwi lub okna, profil listwy), z krótkim opisem.
+
+- kliknięcie karty wstawia elementy tego typu: narzędzie startuje z nim;
+- przeciągnij kartę na szybkie miejsce, aby zachować tam narzędzie z tym typem;
+- **Edytuj typy…** otwiera okno, w którym te typy się tworzy i zmienia.
+
+![Katalog: typy ścian](shots/catalog.webp)
+
+![Typy okien, narysowane według ich widoku](shots/catalog-windows.webp)
+
 ## Zwijanie paneli bocznych
 
 W każdym trybie przeglądarka projektu i panel Właściwości zwijają się do wąskiego paska po swojej stronie:

@@ -78,8 +78,18 @@ export interface ToolDef {
   typed?: TypedTool;
 }
 
-/** A tool's types, for a quick slot holding the tool with one of them. */
-export interface TypedTool { cls: string; get: () => string | null; set: (id: string | null) => void }
+/** A tool's types, for a quick slot holding the tool with one of them and for the catalog (decision 263). */
+export interface TypedTool {
+  cls: string;
+  get: () => string | null;
+  set: (id: string | null) => void;
+  /** The dialog its types are edited in. */
+  dialog?: string;
+  /** A type drawn small for the catalog: its layers, its elevation, its profile. */
+  thumb?: ComponentType<{ type: NodeDto }>;
+  /** A type in a few words (its layers and thickness, a door's size). */
+  about?: (type: NodeDto) => string | null;
+}
 
 export interface RibbonGroupDef { label: string; tools: ToolDef[]; small?: ToolDef[] }
 

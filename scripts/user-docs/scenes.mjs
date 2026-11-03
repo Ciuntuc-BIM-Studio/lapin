@@ -1954,6 +1954,39 @@ export const scenes = [
     },
   },
   {
+    // The catalog (decision 263): the browser's Catalog tab, the project's types drawn small; a click places with the type, a card dragged onto a quick slot keeps it there.
+    id: 'catalog',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.fit();
+      await t.page.locator('nav.browser [data-tab=catalog]').click();
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-testid=catalog] .catalog-card').count() >= 1, 'the catalog shows the project\'s wall types');
+      await t.shot('catalog', { of: 'nav.browser', pad: 0 });
+      await t.page.locator('[data-testid=catalog] [data-kind="architecture.window"]').click();
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=catalog] .catalog-card svg polyline').count() > 0, 'a window type is drawn by its elevation');
+      await t.shot('catalog-windows', { of: 'nav.browser', pad: 0 });
+      // A window card dragged onto the empty quick slot after the last tool.
+      const card = t.page.locator('[data-testid=catalog] .catalog-card').first();
+      const name = await card.getAttribute('data-type');
+      const empty = t.page.locator('.hotbar.named .slot.empty').last();
+      if (await empty.count() === 0) await t.page.evaluate(async () => (await import('/src/platform/modules.ts')).putInSlot(8, null));
+      await card.dragTo(t.page.locator('.hotbar.named .slot.empty').last());
+      await t.wait(300);
+      t.expect(await t.page.locator(`.hotbar.named .slot[data-type="${name}"]`).count() === 1, 'the dragged card stands in a quick slot with its type');
+      // A click on a wall card places walls of that type.
+      await t.page.locator('[data-testid=catalog] [data-kind="architecture.wall"]').click();
+      await t.page.locator('[data-testid=catalog] .catalog-card').first().click();
+      await t.wait(200);
+      t.expect(await t.page.evaluate(async () => { const s = (await import('/src/app/store.ts')).useUi.getState(); return s.tool === 'architecture.wall' && !!s.wallTypeId; }), 'a card\'s click starts the tool with its type');
+      await t.keys('Escape');
+      await t.page.evaluate(async () => { (await import('/src/platform/modules.ts')).resetSlots(); });
+      await t.page.locator('nav.browser .browser-tab').first().click();
+    },
+  },
+  {
     // The CDE (docs/plan-cde.md, decision 185): the project file holds the issues; the folder is the desktop app's, so the guide's
     // browser run sets it with the development switch (the folder typed in) in a temporary folder. The project is saved as House.lapin
     // (an issue is a version in its file), issued for real, and the dialog shows the issue as issued, the project saved after it.

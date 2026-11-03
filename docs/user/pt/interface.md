@@ -43,6 +43,34 @@ Abaixo das partes, **Guias**: desmarque as guias da faixa de opções que você 
 
 O Lapin guarda a sua escolha neste computador, para você. O aplicativo de desktop e o navegador guardam as suas separadamente. No navegador, o Lapin começa no modo Compacta quando a janela tem menos de 800 pixels de altura, até você escolher.
 
+## Ferramentas rápidas
+
+As ferramentas rápidas são os espaços numerados no pé da vista (na borda esquerda dela nos modos Compacta e Foco); as teclas <kbd>1</kbd>–<kbd>9</kbd> as iniciam. Cada espaço de trabalho tem as suas: começam como sua edição as dá, e você as escolhe:
+
+- arraste uma ferramenta da faixa de opções para um espaço. Uma ferramenta fica em um só espaço, então deixa aquele onde estava;
+- arraste um espaço sobre outro para trocá-los;
+- clique com o botão direito em um espaço: **Escolha uma ferramenta…**, **Esvaziar este espaço** ou **Restaurar as ferramentas rápidas**;
+- **Vista → Ferramentas rápidas…** define os nove espaços em listas, e **Como na edição** traz de volta as da sua edição;
+- uma ferramenta que coloca elementos de um tipo (parede, porta, laje, escada…) pode guardar um dos tipos do projeto: escolha-o no menu do espaço ou ao lado da ferramenta em **Vista → Ferramentas rápidas…**. O espaço mostra então o nome do tipo e inicia a ferramenta com ele. O tipo é guardado pelo nome: o espaço funciona em qualquer projeto com um tipo desse nome, e num projeto sem ele a ferramenta usa seu tipo atual.
+
+No pé da vista, cada espaço mostra o nome da sua ferramenta, e um espaço vazio depois do último espera uma ferramenta. O Lapin guarda suas ferramentas rápidas neste computador, para você.
+
+![As ferramentas rápidas: um tipo de parede no espaço 3, a escada no 7, o espaço 2 vazio](shots/quick-tools.webp)
+
+![Vista → Ferramentas rápidas…](shots/quick-tools-dialog.webp)
+
+## O catálogo
+
+A guia **Catálogo** do navegador do projeto mostra os tipos do projeto para cada ferramenta que coloca elementos com tipo: paredes, portas, janelas, lajes, fachadas-cortina, escadas, rampas, forros e rodapés. Cada tipo é desenhado em pequeno (as camadas de uma parede como seu corte em planta, as de uma laje em corte, a elevação de uma porta ou janela, o perfil de um rodapé), com o que ele é em poucas palavras.
+
+- um clique num cartão coloca elementos desse tipo: a ferramenta começa com ele;
+- arraste um cartão para um espaço rápido para guardar ali a ferramenta com esse tipo;
+- **Editar tipos…** abre o diálogo onde esses tipos são criados e alterados.
+
+![O catálogo: os tipos de parede](shots/catalog.webp)
+
+![Os tipos de janela, desenhados pela sua elevação](shots/catalog-windows.webp)
+
 ## Recolher os painéis laterais
 
 Em todos os modos, o navegador de projeto e o painel Propriedades se recolhem em uma barra fina do seu lado:

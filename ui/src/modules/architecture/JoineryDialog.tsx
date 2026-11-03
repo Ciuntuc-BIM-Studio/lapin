@@ -102,14 +102,14 @@ function styleDetails(key: string, d: Details): Details {
     default: return bare;
   }
 }
-interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number; profile?: number[] | null; holes?: number[][] | null }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number }[]; ifcType: string }
-interface Stroke { pts: [number, number][]; weight: string; closed: boolean; dashed: boolean }
-interface Drawing { strokes: Stroke[] }
-interface Drawings { elevation: Drawing; exterior: Drawing; plan: Drawing; section: Drawing }
-type Preview2 = Preview & { drawings?: Drawings | null; symbols?: { convention: string; hardware: boolean } };
+export interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number; profile?: number[] | null; holes?: number[][] | null }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number }[]; ifcType: string }
+export interface Stroke { pts: [number, number][]; weight: string; closed: boolean; dashed: boolean }
+export interface Drawing { strokes: Stroke[] }
+export interface Drawings { elevation: Drawing; exterior: Drawing; plan: Drawing; section: Drawing }
+export type Preview2 = Preview & { drawings?: Drawings | null; symbols?: { convention: string; hardware: boolean } };
 
 /** One of the symbol engine's drawings in a box: X across, Y up, fitted; strokes by weight (cut, outline, thin), dashed where asked. */
-function Strokes({ drawing, w, h, flipX = false, label, children }: { drawing: Drawing | undefined; w: number; h: number; flipX?: boolean; label: string; children?: (sx: (x: number) => number, sy: (y: number) => number, k: number) => React.ReactNode }) {
+export function Strokes({ drawing, w, h, flipX = false, label, children }: { drawing: Drawing | undefined; w: number; h: number; flipX?: boolean; label: string; children?: (sx: (x: number) => number, sy: (y: number) => number, k: number) => React.ReactNode }) {
   const pts = (drawing?.strokes ?? []).flatMap((s) => s.pts);
   if (pts.length === 0) return <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-label={label} />;
   const xs = pts.map((p) => (flipX ? -p[0] : p[0])), ys = pts.map((p) => p[1]);

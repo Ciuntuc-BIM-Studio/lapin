@@ -59,6 +59,18 @@ Floating at the bottom, each slot shows its tool's name, and an empty slot after
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 
+## The catalog
+
+The project browser's **Catalog** tab shows the project's types for each tool that places typed elements: walls, doors, windows, floors, curtain walls, stairs, ramps, ceilings and skirtings. Each type is drawn small (a wall's layers as its plan cut, a floor's as its section, a door's or window's elevation, a skirting's profile), with what it is in a few words.
+
+- click a card to place elements of that type: the tool starts with it;
+- drag a card onto a quick slot to keep the tool with that type there;
+- **Edit types…** opens the dialog where those types are made and changed.
+
+![The catalog: the wall types](shots/catalog.webp)
+
+![The window types, drawn by their elevation](shots/catalog-windows.webp)
+
 ## Folding the side panels
 
 In every mode, the project browser and the properties panel fold to a thin rail on their side:

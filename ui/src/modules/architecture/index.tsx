@@ -33,6 +33,7 @@ import { RoomColorsDialog } from './RoomColorsDialog';
 import { RoomSection, RoomViewSection } from './RoomSection';
 import { roomGrips, roomRefs } from './rooms';
 import { newElement, typedBy } from './NewElement';
+import { WallThumb, SlabThumb, JoineryThumb } from './Thumbs';
 import { isWallOpening, wallOpening, WallOpeningSection } from './WallOpening';
 import { CeilingSection, CeilingTypesDialog, ceiling, ceilingDiffuser, ceilingInRoom, ceilingLight, ceilingTypes } from './Ceilings';
 import { SkirtingSection, SkirtingTypesDialog, skirting, skirtingGrips, skirtingInRoom, skirtingSchedule, skirtingTypes } from './Skirtings';
@@ -40,7 +41,7 @@ import { colorLegend, room, roomColors, roomOutline, roomTag, updateRooms } from
 import { RoomTagDialog } from './RoomTagDialog';
 
 const wall: ToolDef = {
-  id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'), typed: typedBy('IfcWallType', 'wallTypeId'),
+  id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'), typed: typedBy('IfcWallType', 'wallTypeId', 'wallTypes', WallThumb),
   gesture: { kind: 'twoPoints', repeat: true },
   complete: async ({ points: [a, b] }, ctx) => {
     const typeId = useUi.getState().wallTypeId;
@@ -67,7 +68,7 @@ function WallLineOption() {
 
 /** A curved wall: its start, its end, then a point the arc passes through. */
 const curvedWall: ToolDef = {
-  id: 'architecture.curvedWall', label: 'Curved wall', icon: CurvedWallIcon, shortcut: 'WC', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'), typed: typedBy('IfcWallType', 'wallTypeId'),
+  id: 'architecture.curvedWall', label: 'Curved wall', icon: CurvedWallIcon, shortcut: 'WC', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'), typed: typedBy('IfcWallType', 'wallTypeId', 'wallTypes', WallThumb),
   gesture: { kind: 'threePoints', arc: true },
   complete: async ({ points: [a, b, p] }, ctx) => {
     const typeId = useUi.getState().wallTypeId;
@@ -76,7 +77,7 @@ const curvedWall: ToolDef = {
 };
 /** A curtain wall: two points (chained), of the type picked in the configurator, else the project's first. */
 const curtainWall: ToolDef = {
-  id: 'architecture.curtainWall', label: 'Curtain wall', icon: CurtainWallIcon, shortcut: 'CW', properties: newElement('IfcCurtainWallType', 'curtainTypeId', 'curtainWalls'), typed: typedBy('IfcCurtainWallType', 'curtainTypeId'),
+  id: 'architecture.curtainWall', label: 'Curtain wall', icon: CurtainWallIcon, shortcut: 'CW', properties: newElement('IfcCurtainWallType', 'curtainTypeId', 'curtainWalls'), typed: typedBy('IfcCurtainWallType', 'curtainTypeId', 'curtainWalls'),
   gesture: { kind: 'twoPoints', repeat: true },
   complete: async ({ points: [a, b] }, ctx) => {
     const typeId = useUi.getState().curtainTypeId;
@@ -223,7 +224,7 @@ const wallTypes: ToolDef = { id: 'architecture.wallTypes', label: 'Wall types', 
 const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'], shortcut: string): ToolDef => ({
   id: `architecture.${kind}`, label, icon, shortcut,
   properties: kind === 'door' ? newElement('IfcDoorType', 'doorTypeId', 'joinery') : newElement('IfcWindowType', 'windowTypeId', 'joinery'),
-  typed: kind === 'door' ? typedBy('IfcDoorType', 'doorTypeId') : typedBy('IfcWindowType', 'windowTypeId'),
+  typed: kind === 'door' ? typedBy('IfcDoorType', 'doorTypeId', 'joinery', JoineryThumb) : typedBy('IfcWindowType', 'windowTypeId', 'joinery', JoineryThumb),
   gesture: { kind: 'pick', types: ['IfcWall'] },
   complete: async ({ points: [p], entity }, ctx) => {
     if (!entity) return;
@@ -236,7 +237,7 @@ const window_ = fillTool('window', 'Window', WindowIcon, 'WN');
 const joineryTypes: ToolDef = { id: 'architecture.joineryTypes', label: 'Doors & windows', icon: Settings2, run: () => useUi.setState({ dialog: 'joinery' }) };
 /** A floor: click its corners, then the first one again (or Enter). */
 const slab: ToolDef = {
-  id: 'architecture.slab', label: 'Floor', icon: SlabIcon, shortcut: 'SB', properties: newElement('IfcSlabType', 'slabTypeId', 'slabTypes'), typed: typedBy('IfcSlabType', 'slabTypeId'),
+  id: 'architecture.slab', label: 'Floor', icon: SlabIcon, shortcut: 'SB', properties: newElement('IfcSlabType', 'slabTypeId', 'slabTypes'), typed: typedBy('IfcSlabType', 'slabTypeId', 'slabTypes', SlabThumb),
   gesture: { kind: 'polygon' },
   complete: async ({ points }, ctx) => {
     const typeId = useUi.getState().slabTypeId;
@@ -343,9 +344,9 @@ registerCommand({ names: ['STAIR', 'ST'], label: 'Stair', start: () => stairComm
 registerCommand({ names: ['STEPS'], label: 'Entrance steps', start: () => stairCommand('entrance') });
 registerCommand({ names: ['RAMP', 'RU'], label: 'Ramp', start: () => stairCommand(undefined, true) });
 registerCommand({ names: ['ENTRANCERAMP'], label: 'Entrance ramp', start: () => stairCommand('entrance-ramp', true) });
-const stair: ToolDef = { id: 'architecture.stair', label: 'Stair', icon: StairIcon, shortcut: 'ST', typed: typedBy('IfcStairType', 'stairTypeId'), run: () => void startCommand('STAIR') };
+const stair: ToolDef = { id: 'architecture.stair', label: 'Stair', icon: StairIcon, shortcut: 'ST', typed: typedBy('IfcStairType', 'stairTypeId', 'stairTypes'), run: () => void startCommand('STAIR') };
 const entranceSteps: ToolDef = { id: 'architecture.entranceSteps', label: 'Entrance steps', icon: StairIcon, run: () => void startCommand('STEPS') };
-const ramp: ToolDef = { id: 'architecture.ramp', label: 'Ramp', icon: RampIcon, shortcut: 'RU', typed: typedBy('IfcRampType', 'rampTypeId'), run: () => void startCommand('RAMP') };
+const ramp: ToolDef = { id: 'architecture.ramp', label: 'Ramp', icon: RampIcon, shortcut: 'RU', typed: typedBy('IfcRampType', 'rampTypeId', 'stairTypes'), run: () => void startCommand('RAMP') };
 const entranceRamp: ToolDef = { id: 'architecture.entranceRamp', label: 'Entrance ramp', icon: RampIcon, run: () => void startCommand('ENTRANCERAMP') };
 const stairTypes: ToolDef = { id: 'architecture.stairTypes', label: 'Stair types', icon: Settings2, run: () => useUi.setState({ dialog: 'stairTypes' }) };
 const slabTypes: ToolDef = { id: 'architecture.slabTypes', label: 'Floor types', icon: Layers3, run: () => useUi.setState({ dialog: 'slabTypes' }) };

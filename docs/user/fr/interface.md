@@ -59,6 +59,18 @@ Flottant en bas, chaque emplacement montre le nom de son outil, et un emplacemen
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 
+## Le catalogue
+
+L’onglet **Catalogue** du navigateur de projet montre les types du projet pour chaque outil qui pose des éléments typés : murs, portes, fenêtres, dalles, murs-rideaux, escaliers, rampes, plafonds et plinthes. Chaque type est dessiné en petit (les couches d’un mur comme sa coupe en plan, celles d’une dalle en coupe, l’élévation d’une porte ou d’une fenêtre, le profil d’une plinthe), avec ce qu’il est en quelques mots.
+
+- un clic sur une carte pose des éléments de ce type : l’outil démarre avec lui ;
+- glissez une carte sur un emplacement rapide pour y garder l’outil avec ce type ;
+- **Modifier les types…** ouvre la boîte de dialogue où ces types se créent et se modifient.
+
+![Le catalogue : les types de mur](shots/catalog.webp)
+
+![Les types de fenêtre, dessinés par leur élévation](shots/catalog-windows.webp)
+
 ## Replier les panneaux latéraux
 
 Dans tous les modes, l’arborescence du projet et le panneau des propriétés se replient en une fine barre de leur côté :

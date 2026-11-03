@@ -59,6 +59,18 @@ Mobili in fondo, ogni posto mostra il nome del suo strumento, e un posto vuoto d
 
 ![Vista → Strumenti rapidi…](shots/quick-tools-dialog.webp)
 
+## Il catalogo
+
+La scheda **Catalogo** del browser di progetto mostra i tipi del progetto per ogni strumento che posa elementi con tipo: muri, porte, finestre, solai, facciate continue, scale, rampe, controsoffitti e battiscopa. Ogni tipo è disegnato in piccolo (gli strati di un muro come la sua sezione in pianta, quelli di un solaio in sezione, il prospetto di una porta o di una finestra, il profilo di un battiscopa), con quello che è in poche parole.
+
+- un clic su una scheda posa elementi di quel tipo: lo strumento parte con esso;
+- trascina una scheda su un posto rapido per tenervi lo strumento con quel tipo;
+- **Modifica tipi…** apre la finestra in cui quei tipi si creano e si modificano.
+
+![Il catalogo: i tipi di muro](shots/catalog.webp)
+
+![I tipi di finestra, disegnati dal loro prospetto](shots/catalog-windows.webp)
+
 ## Ridurre i pannelli laterali
 
 In ogni modalità, il browser di progetto e il pannello Proprietà si riducono a una sottile barra sul loro lato:

@@ -59,6 +59,18 @@ Svævende nederst viser hver plads værktøjets navn, og en tom plads efter den 
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 
+## Kataloget
+
+Fanen **Katalog** i projektbrowseren viser projektets typer for hvert værktøj, der sætter elementer med type: vægge, døre, vinduer, dæk, glasfacader, trapper, ramper, lofter og fodpaneler. Hver type er tegnet lille (en vægs lag som dens plansnit, et dæks i snit, en dørs eller et vindues opstalt, et fodpanels profil) med, hvad den er, i få ord.
+
+- et klik på et kort sætter elementer af den type: værktøjet starter med den;
+- træk et kort til en hurtigplads for at beholde værktøjet med den type der;
+- **Redigér typer…** åbner dialogen, hvor typerne laves og ændres.
+
+![Kataloget: vægtyperne](shots/catalog.webp)
+
+![Vinduestyperne, tegnet efter deres opstalt](shots/catalog-windows.webp)
+
 ## Sidepaneler der foldes ind
 
 I alle tilstande kan projektbrowseren og egenskabspanelet foldes ind til en tynd skinne i deres side:

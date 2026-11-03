@@ -59,6 +59,18 @@ Unten schwebend zeigt jeder Platz den Namen seines Werkzeugs, und ein leerer Pla
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 
+## Der Katalog
+
+Die Registerkarte **Katalog** im Projektbrowser zeigt die Typen des Projekts für jedes Werkzeug, das Elemente mit Typ setzt: Wände, Türen, Fenster, Decken, Vorhangfassaden, Treppen, Rampen, Unterdecken und Sockelleisten. Jeder Typ ist klein gezeichnet (die Schichten einer Wand als Grundrissschnitt, die einer Decke im Schnitt, die Ansicht einer Tür oder eines Fensters, das Profil einer Sockelleiste), dazu in wenigen Worten, was er ist.
+
+- Ein Klick auf eine Karte setzt Elemente dieses Typs: Das Werkzeug startet damit;
+- ziehen Sie eine Karte auf einen Schnellplatz, um dort das Werkzeug mit diesem Typ zu behalten;
+- **Typen bearbeiten…** öffnet den Dialog, in dem diese Typen angelegt und geändert werden.
+
+![Der Katalog: die Wandtypen](shots/catalog.webp)
+
+![Die Fenstertypen, nach ihrer Ansicht gezeichnet](shots/catalog-windows.webp)
+
 ## Die Seitenbereiche einklappen
 
 In jedem Modus klappen der Projektbrowser und der Eigenschaftenbereich zu einer schmalen Leiste an ihrer Seite ein:
