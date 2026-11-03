@@ -1,13 +1,14 @@
 ---
 title: Acero
 order: 56
-summary: Barras de acero con extremos configurables —prolongados o retranqueados, cortados por un plano, a inglete, ajustados a otra barra, rebajados—, hechas también desde un contorno dibujado; perfiles huecos y conformados en frío.
+summary: Barras de acero con extremos configurables —prolongados o retranqueados, cortados por un plano, a inglete, ajustados a otra barra, rebajados—, hechas también desde un contorno dibujado; perfiles huecos y conformados en frío; naves de pórticos con cartelas.
 ---
 
 ## La pestaña Acero
 
 ![La pestaña Acero](shots/ribbon-steel.webp)
 
+- **Nave de pórticos…**: una nave de acero completa a partir de unas pocas cifras, en el configurador de naves (más abajo).
 - **Barra** (<kbd>SM</kbd>): una barra de acero entre dos puntos, en la cota superior de la planta, con la cara superior de la sección sobre el eje, como una viga. Su tipo se elige en Propiedades antes del primer clic, o desde la pestaña **Catálogo**, donde cada tipo de acero se dibuja por su sección.
 - **Convertir en barra**: los contornos dibujados seleccionados se convierten en barras (más abajo).
 - **Inglete** y **Ajustar**: dos barras unidas por sus extremos (más abajo).
@@ -48,6 +49,35 @@ Los perfiles huecos están vacíos por dentro, en la vista 3D, en las secciones 
 
 ![Barras en 3D](shots/steel-3d.webp)
 
+## Naves de pórticos
+
+**Acero → Nave de pórticos…** abre el configurador de naves. Como el de cubiertas, tiene los estilos a la izquierda, los campos de la nave en pestañas en el centro y, a la derecha, la nave tal como Lapin la construiría: un pórtico tipo visto a lo largo de la nave, con sus cartelas, y un resumen de lo que pesa.
+
+![El configurador de naves](shots/steel-hall.webp)
+
+- **Estilos**: las naves típicas del catálogo (**Nave 20 m**, **Nave 30 m**, un **Cobertizo 10 m** a un agua) y las del proyecto. Un estilo elegido rellena todos los campos; luego puede cambiarse cualquiera. **Guardar como estilo…** guarda la nave tal como está configurada como estilo del proyecto; **Actualizar el estilo** la guarda de nuevo en su estilo, y todas las naves de ese estilo lo siguen.
+- **Pórtico**: la **Luz** (de eje de pilar a eje de pilar), las **Crujías** (iguales como `5 × 6`, o cada una: `6, 6, 7.5`), la **Altura de alero** (la cara superior de los dinteles sobre la cara exterior del pilar), la **Cubierta** (a dos aguas o a un agua) y su **Pendiente**, los perfiles de **Pilares** y **Dinteles**, y las **Bases de pilares** (articuladas o empotradas, guardadas para los nudos que vendrán).
+- **Cartelas**: la **Cartela en el alero** y la **Cartela en la cumbrera**, cada una con su **Longitud** a lo largo del dintel desde la cara del pilar (o la cumbrera) y su **Canto** bajo el dintel allí, y cómo está **Hecha**: **cortada del perfil del dintel** (un I cortado en diagonal por el alma, una mitad soldada bajo el dintel: el alma y el ala del propio dintel) o **de chapas soldadas** (una **Chapa del alma** y una **Chapa del ala** de su propio espesor, y el ancho del ala).
+
+![Las cartelas de chapas soldadas](shots/steel-hall-haunches.webp)
+
+- **Hastiales**: **pilares de hastial bajo un dintel simple** (pilares de esquina y pilares a la **Separación** elegida, con su eje fuerte perpendicular al muro de hastial, bajo un dintel más ligero que llega a la cara exterior de los muros, los pilares ajustados a su cara inferior), o **un pórtico normal** en cada extremo.
+
+![Un hastial con pilares](shots/steel-hall-gable.webp)
+
+- **Acero secundario**: la **Separación de correas**, la **Separación de correas laterales**, las **Crujías arriostradas** (sus números, desde la primera) y una **Viga de alero**. Se guardan con la nave para las correas y arriostramientos que vendrán; aún no se construyen.
+- **Colocación**: donde se cruzan el eje A y el eje 1, y la dirección de la luz en planta (**Rotación**); la vista previa muestra la retícula de la nave desde arriba.
+
+**Crear nave** la hace en un solo paso, que un deshacer revierte: su propia **retícula** (ejes 1, 2… en los pórticos, A y B en los pilares), y en cada pórtico dos **pilares** (pilares de la estructura de un perfil de acero, con el alma en el plano del pórtico y la cabeza cortada según la pendiente) y dos **dinteles** a inglete en la cumbrera (uno solo, del pilar bajo al alto, en una cubierta a un agua): barras de acero ajustadas a las caras de los pilares, con sus cartelas. La nave está en la planta actual; el alero y la cumbrera son alturas de sus pórticos, no plantas nuevas. El resumen da los pórticos, las alturas y el acero por tipo: pilares, dinteles, cartelas, pilares de hastial, en total y por m² de planta.
+
+![La nave en 3D](shots/steel-hall-3d.webp)
+
+La nave sigue siendo editable. Selecciona una de sus barras: su sección **Acero** muestra su nave y **Editar nave…**, que abre el configurador sobre ella; **Aplicar** vuelve a construir la nave sobre las mismas barras, que conservan su identidad (una barra que ya no hace falta se va, una nueva se añade). Allí se listan también las cartelas del dintel, cada una cambiada por separado (tipo, longitud, canto, chapas): una cartela ajustada así se conserva cuando la nave se reconstruye; **×** la quita.
+
+![Las cartelas de un dintel en Propiedades](shots/steel-hall-props.webp)
+
 ## IFC y cantidades
 
 Una barra se exporta como **IfcMember** con su **IfcMemberType**. Su cuerpo se escribe como escriben el acero los demás programas (Tekla, Advance Steel, Revit): su sección **extruida** (IfcExtrudedAreaSolid), **recortada** por los planos de sus extremos (IfcBooleanClippingResult con IfcHalfSpaceSolid), y cada rebaje un **IfcOpeningElement** que la vacía. Una viga o un pilar de acero con extremos se escribe igual. Las cantidades de cada barra dan su longitud entre cortes, el área de su sección, su volumen y su peso neto (7850 kg/m³).
+
+Una nave se exporta como **IfcBuildingSystem** (LOADBEARING) al que se asignan sus barras, con sus datos en el conjunto de propiedades `Lapin_SteelHall` y su propia **IfcGrid**. Un dintel con cartelas es un **IfcElementAssembly** del dintel y sus cartelas: una cartela cortada del perfil es un **IfcMember**, una de chapas soldadas dos **IfcPlate**, cada una extruida (IfcExtrudedAreaSolid). Las cartelas no entran en las cantidades del dintel; el resumen del configurador las pesa.

@@ -1,13 +1,14 @@
 ---
 title: Acier
 order: 56
-summary: Barres en acier aux extrémités paramétrables — prolongées ou en retrait, coupées selon un plan, en onglet, ajustées sur une autre barre, grugées —, faites aussi d’un contour dessiné ; profilés creux et formés à froid.
+summary: Barres en acier aux extrémités paramétrables — prolongées ou en retrait, coupées selon un plan, en onglet, ajustées sur une autre barre, grugées —, faites aussi d’un contour dessiné ; profilés creux et formés à froid ; bâtiments à portiques avec jarrets.
 ---
 
 ## L’onglet Acier
 
 ![L’onglet Acier](shots/ribbon-steel.webp)
 
+- **Bâtiment à portiques…** : tout un bâtiment métallique à partir de quelques chiffres, dans le configurateur de bâtiment (ci-dessous).
 - **Barre** (<kbd>SM</kbd>) : une barre en acier entre deux points, au niveau haut de l’étage, le dessus de sa section sur l’axe, comme une poutre. Son type se choisit dans Propriétés avant le premier clic, ou dans l’onglet **Catalogue**, où chaque type acier est dessiné par sa section.
 - **Convertir en barre** : les contours dessinés sélectionnés deviennent des barres (ci-dessous).
 - **Onglet** et **Ajuster** : deux barres assemblées par leurs extrémités (ci-dessous).
@@ -48,6 +49,35 @@ Les profilés creux sont vides à l’intérieur, dans la vue 3D, les coupes et 
 
 ![Des barres en 3D](shots/steel-3d.webp)
 
+## Bâtiments à portiques
+
+**Acier → Bâtiment à portiques…** ouvre le configurateur de bâtiment. Comme celui de la toiture, il a les styles à gauche, les champs du bâtiment en onglets au milieu et, à droite, le bâtiment tel que Lapin le construirait : un portique courant vu le long du bâtiment, avec ses jarrets, et un résumé de ce qu’il pèse.
+
+![Le configurateur de bâtiment](shots/steel-hall.webp)
+
+- **Styles** : les bâtiments types du catalogue (**Bâtiment 20 m**, **Bâtiment 30 m**, un **Appentis 10 m** monopente) et ceux du projet. Un style choisi remplit tous les champs ; chacun peut ensuite être modifié. **Enregistrer comme style…** garde le bâtiment tel que configuré comme style du projet ; **Mettre à jour le style** l’enregistre à nouveau dans son style, et tous les bâtiments de ce style suivent.
+- **Portique** : la **Portée** (d’axe de poteau à axe de poteau), les **Travées** (égales comme `5 × 6`, ou chacune : `6, 6, 7.5`), la **Hauteur à la sablière** (le dessus des traverses au droit de la face extérieure du poteau), la **Toiture** (deux versants ou monopente) et sa **Pente**, les profilés des **Poteaux** et des **Traverses**, et les **Pieds de poteaux** (articulés ou encastrés, gardés pour les assemblages à venir).
+- **Jarrets** : le **Jarret à la sablière** et le **Jarret au faîtage**, chacun avec sa **Longueur** le long de la traverse depuis la face du poteau (ou le faîtage) et sa **Hauteur** sous la traverse à cet endroit, et comment il est **Réalisé** : **découpé dans le profil de la traverse** (un I coupé en biais le long de son âme, une moitié soudée sous la traverse : l’âme et la semelle de la traverse) ou **en tôles soudées** (une **Tôle d’âme** et une **Tôle de semelle** de leur propre épaisseur, et la largeur de semelle).
+
+![Les jarrets en tôles soudées](shots/steel-hall-haunches.webp)
+
+- **Pignons** : des **potelets de pignon sous une traverse simple** (potelets d’angle et potelets à l’**Entraxe** choisi, leur axe fort perpendiculaire au mur de pignon, sous une traverse plus légère qui va jusqu’au nu extérieur des murs, les potelets ajustés sur sa face inférieure), ou **un portique courant** à chaque extrémité.
+
+![Un pignon à potelets](shots/steel-hall-gable.webp)
+
+- **Acier secondaire** : l’**Entraxe des pannes**, l’**Entraxe des lisses**, les **Travées contreventées** (leurs numéros, depuis la première) et une **Poutre sablière**. Ils sont gardés avec le bâtiment pour les pannes, lisses et contreventements à venir ; ils ne sont pas encore construits.
+- **Placement** : le croisement de l’axe A et de l’axe 1, et la direction de la portée en plan (**Rotation**) ; l’aperçu montre la trame du bâtiment vue du dessus.
+
+**Créer le bâtiment** le fait en une seule étape, qu’une annulation défait : sa propre **trame** (axes 1, 2… aux portiques, A et B aux poteaux), et à chaque portique deux **poteaux** (poteaux de la structure en profilé acier, l’âme dans le plan du portique, la tête coupée selon la pente) et deux **traverses** en onglet au faîtage (une seule, du poteau bas au poteau haut, en monopente) : des barres en acier ajustées sur les faces des poteaux, avec leurs jarrets. Le bâtiment est sur l’étage courant ; la sablière et le faîtage sont des hauteurs de ses portiques, pas de nouveaux étages. Le résumé donne les portiques, les hauteurs et l’acier par nature : poteaux, traverses, jarrets, potelets de pignon, au total et par m² de surface.
+
+![Le bâtiment en 3D](shots/steel-hall-3d.webp)
+
+Le bâtiment reste modifiable. Sélectionnez une de ses barres : sa section **Acier** indique son bâtiment et **Modifier le bâtiment…**, qui ouvre le configurateur dessus ; **Appliquer** reconstruit le bâtiment sur les mêmes barres, qui gardent leur identité (une barre devenue inutile disparaît, une nouvelle est ajoutée). Les jarrets de la traverse y sont aussi listés, chacun modifiable seul (nature, longueur, hauteur, tôles) : un jarret réglé ainsi reste tel quel quand le bâtiment est reconstruit ; **×** le retire.
+
+![Les jarrets d’une traverse dans les Propriétés](shots/steel-hall-props.webp)
+
 ## IFC et quantités
 
 Une barre s’exporte en **IfcMember** avec son **IfcMemberType**. Son corps est écrit comme les autres logiciels écrivent l’acier (Tekla, Advance Steel, Revit) : sa section **extrudée** (IfcExtrudedAreaSolid), **coupée** par les plans de ses extrémités (IfcBooleanClippingResult avec IfcHalfSpaceSolid), et chaque grugeage un **IfcOpeningElement** qui l’évide. Une poutre ou un poteau en acier avec extrémités s’écrit de même. Les quantités de chaque barre donnent sa longueur entre ses coupes, l’aire de sa section, son volume et son poids net (7850 kg/m³).
+
+Un bâtiment s’exporte comme un **IfcBuildingSystem** (LOADBEARING) auquel ses barres sont affectées, ses données dans le jeu de propriétés `Lapin_SteelHall`, avec sa propre **IfcGrid**. Une traverse avec jarrets est un **IfcElementAssembly** de la traverse et de ses jarrets : un jarret découpé dans le profil est un **IfcMember**, un jarret en tôles soudées deux **IfcPlate**, chacun extrudé (IfcExtrudedAreaSolid). Les jarrets ne comptent pas dans les quantités de la traverse ; le résumé du configurateur les pèse.

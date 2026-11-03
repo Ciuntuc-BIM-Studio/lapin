@@ -633,6 +633,66 @@ export const scenes = [
     },
   },
   {
+    // Steel, stage 2 (docs/plan-steel.md, decision 270): the portal frame hall configurator — a catalogue style, the haunch
+    // at the eaves welded from plates, the hall made in one step; a rafter's haunches in Properties; the hall edited again.
+    id: 'steel-hall',
+    async run(t) {
+      await t.fresh();
+      await t.button('Steel', { exact: true });
+      await t.tool('steel.hall');
+      const dialog = t.page.locator('[data-dialog=steel-hall]');
+      t.expect(await dialog.count() > 0, 'the hall configurator opens');
+      await dialog.locator('[data-field=hall-style-hall-20]').click();
+      await t.wait(1200);
+      t.expect(await dialog.locator('svg[data-field=hall-elevation] polygon').count() >= 12, 'the preview draws a typical frame with its haunches');
+      t.expect(await dialog.locator('[data-field=hall-summary] dt').count() >= 9, 'the summary weighs the hall');
+      await t.shot('steel-hall', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-tab=hall-haunches]').click();
+      await dialog.locator('select[data-field=hall-eaves-kind]').selectOption('plates');
+      await t.wait(1000);
+      await t.shot('steel-hall-haunches', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-tab=hall-gables]').click();
+      await t.wait(800);
+      t.expect(await dialog.locator('svg[data-field=hall-elevation] polygon').count() === 7, 'the Gables tab draws the gable: five posts under two rafters');
+      await t.shot('steel-hall-gable', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-tab=hall-placement]').click();
+      await t.wait(800);
+      t.expect(await dialog.locator('svg[data-field=hall-plan] line').count() === 8, 'the plan shows the hall\'s grid: six frames, two column lines');
+      await dialog.locator('[data-field=hall-apply]').click();
+      await t.wait(2500);
+      let nodes = await t.nodes();
+      const hall = nodes.find((n) => n.type === 'LapinSteelHall');
+      t.expect(hall, 'the hall is made');
+      const members = nodes.filter((n) => n.props?.hallRole);
+      t.expect(members.length === 30, `its frames, gables and posts (${members.length})`);
+      const rafter = members.find((n) => n.props.hallRole === 'f1:raf:a');
+      t.expect(rafter?.props.haunches?.start?.kind === 'plates' && rafter?.props.haunches?.end?.kind === 'cut', 'the eaves haunch welded from plates, the apex one cut from the rafter');
+      await t.ui({ dialog: null, keyPlan: false });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.3, pitch: -0.45, distance: 52, target: { x: 10, y: 15, z: 3 } }, false));
+      await t.wait(1500);
+      await t.shot('steel-hall-3d', { of: 'canvas', pad: 0 });
+      // A rafter selected: its haunches in Properties, and its hall opened again from there.
+      await select(t, rafter.id);
+      await t.wait(1000);
+      t.expect(await t.page.locator('select[data-field=steel-haunch-start-kind]').inputValue() === 'plates', 'the rafter shows its haunches');
+      await t.shot('steel-hall-props', { of: 'aside.props', pad: 0, maxHeight: 760 });
+      await t.page.locator('[data-field=steel-edit-hall]').click();
+      await t.wait(1000);
+      t.expect(await dialog.count() > 0, 'Edit hall opens the configurator on the hall');
+      const span = dialog.locator('input[data-field=hall-span]');
+      await span.fill('24000');
+      await span.press('Enter');
+      await t.wait(1200);
+      await dialog.locator('[data-field=hall-apply]').click();
+      await t.wait(2500);
+      nodes = await t.nodes();
+      const again = nodes.find((n) => n.id === rafter.id);
+      t.expect(again && Math.abs((again.props.end?.[0] ?? 0) - 12) < 1e-6, 'the hall is built again over the same members, 24 m wide');
+      await t.ui({ dialog: null, selection: null, selected: [], keyPlan: true });
+    },
+  },
+  {
     id: 'stairs',
     async run(t) {
       await t.fresh();

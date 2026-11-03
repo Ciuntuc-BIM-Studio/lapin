@@ -1,13 +1,14 @@
 ---
 title: Oțel
 order: 56
-summary: Bare metalice cu capete configurabile — prelungite sau retrase, tăiate după un plan, la 45°, ajustate pe altă bară, crestate — făcute și dintr-un contur desenat; profile tubulare și formate la rece.
+summary: Bare metalice cu capete configurabile — prelungite sau retrase, tăiate după un plan, la 45°, ajustate pe altă bară, crestate — făcute și dintr-un contur desenat; profile tubulare și formate la rece; hale cu cadre portal și vute.
 ---
 
 ## Tabul Oțel
 
 ![Tabul Oțel](shots/ribbon-steel.webp)
 
+- **Hală cu cadre portal…**: o hală metalică întreagă din câteva cifre, în configuratorul de hală (mai jos).
 - **Bară** (<kbd>SM</kbd>): o bară metalică între două puncte, la nivelul de sus al etajului, cu fața de sus a secțiunii pe axă, ca o grindă. Tipul îl alegi în Proprietăți înainte de primul clic, sau din tabul **Catalog**, unde fiecare tip metalic e desenat după secțiunea lui.
 - **Convertește în bară**: contururile desenate selectate devin bare (mai jos).
 - **La 45°** și **Încadrează**: două bare îmbinate la capete (mai jos).
@@ -48,6 +49,35 @@ Profilele tubulare sunt goale în interior, în vederea 3D, în secțiuni și î
 
 ![Bare în 3D](shots/steel-3d.webp)
 
+## Hale cu cadre portal
+
+**Oțel → Hală cu cadre portal…** deschide configuratorul de hală. Ca al acoperișului, are stilurile în stânga, câmpurile halei în file la mijloc și, în dreapta, hala așa cum ar construi-o Lapin: un cadru curent văzut de-a lungul halei, cu vutele lui, și un rezumat al greutăților.
+
+![Configuratorul de hală](shots/steel-hall.webp)
+
+- **Stilurile**: halele tipice din catalog (**Hală 20 m**, **Hală 30 m**, un **Șopron 10 m** într-o apă) și cele ale proiectului. Un stil ales completează toate câmpurile; oricare se poate schimba apoi. **Salvează ca stil…** păstrează hala așa cum e configurată ca stil al proiectului; **Actualizează stilul** o salvează din nou în stilul ei, iar toate halele stilului îl urmează.
+- **Cadru**: **Deschiderea** (de la axa unui stâlp la a celuilalt), **Traveile** (egale ca `5 × 6`, sau fiecare pe rând: `6, 6, 7.5`), **Înălțimea la streașină** (fața de sus a riglelor deasupra feței exterioare a stâlpului), **Acoperișul** (în două ape sau într-o apă) și **Panta** lui, profilele **Stâlpilor** și ale **Riglelor**, și **Picioarele stâlpilor** (articulate sau încastrate, păstrate pentru nodurile care vin).
+- **Vute**: **Vuta la streașină** și **Vuta la coamă**, fiecare cu **Lungimea** de-a lungul riglei de la fața stâlpului (sau de la coamă) și **Adâncimea** sub riglă acolo, și cum e **Executată**: **tăiată din profilul riglei** (un I tăiat oblic de-a lungul inimii, o jumătate sudată sub riglă: inima și talpa riglei) sau **din plăci sudate** (o **Placă a inimii** și o **Placă a tălpii** cu grosimile lor, și lățimea tălpii).
+
+![Vutele din plăci sudate](shots/steel-hall-haunches.webp)
+
+- **Frontoane**: **stâlpi de fronton sub o riglă simplă** (stâlpi de colț și stâlpi la **Distanța** aleasă, cu axa puternică perpendiculară pe peretele de fronton, sub o riglă mai ușoară care merge până la fața exterioară a pereților, stâlpii ajustați pe fața ei de jos), sau **un cadru curent** la fiecare capăt.
+
+![Un fronton cu stâlpi](shots/steel-hall-gable.webp)
+
+- **Elemente secundare**: **Distanța dintre pane**, **Distanța dintre riglele de perete**, **Traveile contravântuite** (numerele lor, de la prima) și o **Grindă de streașină**. Se păstrează cu hala pentru panele, riglele și contravântuirile care vin; încă nu se construiesc.
+- **Amplasare**: unde se întâlnesc axa A și axa 1, și direcția deschiderii în plan (**Rotire**); previzualizarea arată axele halei de sus.
+
+**Creează hala** o face într-un singur pas, pe care o anulare îl ia înapoi: **axele** ei proprii (axele 1, 2… la cadre, A și B la stâlpi), iar la fiecare cadru doi **stâlpi** (stâlpi ai structurii dintr-un profil metalic, cu inima în planul cadrului și capătul de sus tăiat după panta acoperișului) și două **rigle** îmbinate la 45° la coamă (una singură, de la stâlpul scund la cel înalt, la acoperișul într-o apă): bare metalice ajustate pe fețele stâlpilor, cu vutele lor. Hala stă pe etajul curent; streașina și coama sunt înălțimi ale cadrelor ei, nu etaje noi. Rezumatul dă cadrele, înălțimile și oțelul pe feluri: stâlpi, rigle, vute, stâlpi de fronton, în total și pe m² de pardoseală.
+
+![Hala în 3D](shots/steel-hall-3d.webp)
+
+Hala rămâne editabilă. Selectează una din barele ei: secțiunea **Oțel** arată hala și **Editează hala…**, care deschide configuratorul pe ea; **Aplică** reface hala peste aceleași bare, care își păstrează identitatea (o bară care nu mai trebuie dispare, una nouă se adaugă). Tot acolo sunt vutele riglei, fiecare schimbată separat (felul, lungimea, adâncimea, plăcile): o vută dată așa rămâne cum e când hala se reface; **×** o scoate.
+
+![Vutele unei rigle în Proprietăți](shots/steel-hall-props.webp)
+
 ## IFC și cantități
 
 O bară se exportă ca **IfcMember** cu **IfcMemberType**-ul ei. Corpul se scrie cum scriu oțelul celelalte programe (Tekla, Advance Steel, Revit): secțiunea **extrudată** (IfcExtrudedAreaSolid), **tăiată** de planele capetelor (IfcBooleanClippingResult cu IfcHalfSpaceSolid), iar fiecare crestătură un **IfcOpeningElement** care o golește. O grindă sau un stâlp metalic cu capete se scrie la fel. Cantitățile fiecărei bare dau lungimea dintre tăieturi, aria secțiunii, volumul și greutatea netă (7850 kg/m³).
+
+O hală se exportă ca **IfcBuildingSystem** (LOADBEARING) căruia îi sunt atribuite barele ei, cu datele ei în setul de proprietăți `Lapin_SteelHall`, și cu propriul **IfcGrid**. O riglă cu vute e un **IfcElementAssembly** al riglei și al vutelor ei: o vută tăiată din profil e un **IfcMember**, una din plăci sudate două **IfcPlate**, fiecare extrudată (IfcExtrudedAreaSolid). Vutele nu intră în cantitățile riglei; rezumatul configuratorului le cântărește.

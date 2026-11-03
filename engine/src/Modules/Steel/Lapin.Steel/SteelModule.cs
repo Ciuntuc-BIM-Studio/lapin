@@ -23,7 +23,7 @@ namespace Lapin.Steel;
 /// planes, the copes as openings. Convert to member reads a drafted closed outline as a band (<see cref="SketchBands"/>).
 /// </para>
 /// </summary>
-public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
+public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies, IIfcSystems
 {
     public string Id => "steel";
     public string Name => "Steel";
@@ -46,6 +46,8 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         r.Quantities(Member, Quantities);
         r.Service<IGeometryFilter>(this);
         r.Service<IIfcSweptBodies>(this);
+        r.Service<IIfcSystems>(this);
+        HallCommands.Register(r);
 
         r.Command("createType", "New member type", (ctx, a) =>
         {
@@ -260,7 +262,19 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
             : [new PlanItem("outline", true, Polygon2.ConvexHull(solid.Vertices.Select(v => v.Xy)))];
         var a = (ax.Start + u * built.S0).Xy;
         var b = (ax.Start + u * built.S1).Xy;
-        return new ElementGeometry([new GeometryPart(name, color, solid, material, "body")], plan, [a, b], problems);
+        var parts = new List<GeometryPart> { new(name, color, solid, material, "body") };
+        // A member's haunches (decision 270): the web and the flange of each, parts of its own.
+        if (e.Class == Member)
+        {
+            var hp = new List<string>();
+            foreach (var (at, _, shape) in Haunches.Of(e, ax, built, hp))
+            {
+                if (Haunches.Solid(ax, shape.WebOutline, shape.Web, "haunch") is { } w) parts.Add(new("Haunch", color, w, material, $"haunch:{at}:web"));
+                if (Haunches.Solid(ax, shape.FlangeOutline, shape.Width, "haunch") is { } f) parts.Add(new("Haunch", color, f, material, $"haunch:{at}:flange"));
+            }
+            if (hp.Count > 0) problems = [.. problems ?? [], .. hp];
+        }
+        return new ElementGeometry(parts, plan, [a, b], problems);
     }
 
     static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)
@@ -268,7 +282,8 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         if (g == null || g.Parts.Count == 0 || MemberAxes.Of(m, e) is not { } ax) yield break;
         var (start, end) = SteelEnd.Of(e);
         var built = SteelBody.Build(m, ax, start, end, null);
-        var net = g.Parts.Sum(p => Measure.Volume(p.Solid));
+        // The member's own body: its haunches are pieces welded on (their weight in the hall's summary).
+        var net = g.Parts.Where(p => p.Key == "body").Sum(p => Measure.Volume(p.Solid));
         var area = ax.Section.Area;
         yield return new QuantitySet("Qto_MemberBaseQuantities",
         [
@@ -301,6 +316,39 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         if (element.Class != Member && element.Attrs[SteelEnd.Key] is not JsonObject) return null;
         if (MemberAxes.Of(model, element) is not { } ax || element.Class != Member && !ax.Section.IsProfile) return null;
         var (start, end) = SteelEnd.Of(element);
-        return SteelBody.Swept(model, ax, start, end);
+        if (SteelBody.Swept(model, ax, start, end) is not { } swept) return null;
+        if (element.Class != Member || Haunch.Of(element) is (null, null)) return swept;
+        // The haunches: a piece cut from the section (an IfcMember), or a web and a flange plate (IfcPlate); with the member, an assembly.
+        var built = SteelBody.Build(model, ax, start, end, null);
+        var parts = new List<IfcSweptPart>();
+        foreach (var (end2, h, shape) in Haunches.Of(element, ax, built, []))
+        {
+            var web = Haunches.Sweep(ax, shape.WebOutline, shape.Web);
+            var flange = Haunches.Sweep(ax, shape.FlangeOutline, shape.Width);
+            if (h.Kind == "cut") parts.Add(new IfcSweptPart($"haunch:{end2}", "Haunch", "IfcMember", "USERDEFINED", "Haunch", [web, flange]));
+            else
+            {
+                parts.Add(new IfcSweptPart($"haunch:{end2}:web", "Haunch web", "IfcPlate", "USERDEFINED", "Haunch web plate", [web]));
+                parts.Add(new IfcSweptPart($"haunch:{end2}:flange", "Haunch flange", "IfcPlate", "USERDEFINED", "Haunch flange plate", [flange]));
+            }
+        }
+        return parts.Count == 0 ? swept : swept with { Parts = parts, Assembly = "Member with haunches" };
+    }
+
+    /// <summary>The project's halls as IFC's building systems: LOADBEARING, their members assigned, their spec as Lapin_SteelHall.</summary>
+    public IEnumerable<IfcSystem> Systems(IModelView model)
+    {
+        foreach (var hall in model.OfClass(Halls.Class))
+        {
+            var s = Halls.SpecOf(hall);
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            string L(double v) => v.ToString("0.###", inv);
+            var props = new List<(string, string)>
+            {
+                ("Span", L(s.Span)), ("Length", L(s.Length)), ("Bays", string.Join(" ", s.Bays.Select(L))), ("EavesHeight", L(s.Eaves)), ("RoofPitch", L(s.Pitch)),
+                ("Roof", s.Roof), ("Column", s.Column.Label), ("Rafter", s.Rafter.Label), ("Gable", s.Gable), ("ColumnBase", s.Base),
+            };
+            yield return new IfcSystem(hall.Id, hall.Name, "LOADBEARING", [.. Halls.Members(model, hall.Id).Values.Select(e => e.Id)], "Lapin_SteelHall", props);
+        }
     }
 }

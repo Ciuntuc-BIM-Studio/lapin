@@ -649,6 +649,7 @@ public static class IfcExport
             if (grouped) Parts(e, kind, parts, place, fr, entity);
             Openings(e, entity, place, z0, voids);
             if (swept != null) SweptOpenings(e, swept, entity, place, fr);
+            if (swept is { Parts.Count: > 0 }) SweptParts(e, swept, entity, spatial, place, fr, parts);
             Properties(e, kind, entity, type);
             Quantities(e, entity, grouped);
         }
@@ -706,6 +707,33 @@ public static class IfcExport
                 var opening = f.Add("IFCOPENINGELEMENT", Gid(e.Id, $"cut{i}"), Null, S("Cope"), Null, Null, Place(place, 0), shape, Null, E("OPENING"));
                 f.Add("IFCRELVOIDSELEMENT", Gid(e.Id, $"cut{i}-rel"), Null, Null, Null, entity, opening);
             }
+        }
+
+        /// <summary>
+        /// A swept body's pieces (a rafter's haunches, decision 270): each an element of its own (an IfcPlate, an IfcMember)
+        /// of sweeps, placed where the element is, in its material; the element and its pieces an IfcElementAssembly in the
+        /// storey in place of the element.
+        /// </summary>
+        void SweptParts(Entity e, IfcSweptBody b, string entity, string spatial, string place, Frame fr, List<GeometryPart> parts)
+        {
+            var refs = new List<string> { entity };
+            var color = parts[0].Color;
+            var material = parts[0].Material;
+            foreach (var p in b.Parts)
+            {
+                var items = p.Items.Select(w => Sweep(w, fr)).ToList();
+                foreach (var item in items) f.Add("IFCSTYLEDITEM", item, L(new[] { Style(color) }), Null);
+                var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("SweptSolid"), L(items)) }));
+                var r = Product(new Kind(p.Class, p.Predefined, p.ObjectType), Gid(e.Id, p.Key), p.Name, p.ObjectType, Place(place, 0), shape, $"{e.Id}/{p.Key}");
+                if (material != null) UseMaterial(material, r);
+                partRefs[(e.Id, p.Key)] = r;
+                refs.Add(r);
+                PartCount++;
+            }
+            var asm = f.Add("IFCELEMENTASSEMBLY", Gid(e.Id, "assembly"), Null, S(e.Name), Null, S(b.Assembly), Place(place, 0), Null, S($"{e.Id}/assembly"), E("FACTORY"), E("USERDEFINED"));
+            foreach (var list in contained.Values) list.Remove(entity);
+            Contain(spatial, asm);
+            f.Add("IFCRELAGGREGATES", Gid(e.Id, "assembly-parts"), Null, Null, Null, asm, L(refs));
         }
 
         /// <summary>
@@ -1609,6 +1637,18 @@ public static class IfcExport
 
         void Finish()
         {
+            // A module's systems of elements (a steel hall, decision 270): an IfcBuildingSystem assigned the members written, serving the building.
+            foreach (var src in s.Catalog.All<IIfcSystems>())
+                foreach (var sys in src.Systems(m))
+                {
+                    var members = sys.Members.Where(written.ContainsKey).Select(x => written[x]).ToList();
+                    if (members.Count == 0) continue;
+                    var system = f.Add("IFCBUILDINGSYSTEM", Gid(sys.Id), Null, S(sys.Name), Null, Null, E(sys.Predefined), Null);
+                    f.Add("IFCRELASSIGNSTOGROUP", Gid(sys.Id, "members"), Null, Null, Null, L(members), Null, system);
+                    f.Add("IFCRELSERVICESBUILDINGS", Gid(sys.Id, "serves"), Null, Null, Null, system, L(new[] { buildingRef }));
+                    if (sys.Properties.Count > 0)
+                        Define(system, f.Add("IFCPROPERTYSET", Gid(sys.Id, "pset"), Null, S(sys.PropertySet), Null, L(sys.Properties.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(sys.Id, "pset-rel"));
+                }
             // Lapin's groups (docs/groups.md) as IFC's: an IfcGroup assigned the members written.
             foreach (var g in Groups.All(m))
             {

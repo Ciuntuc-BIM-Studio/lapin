@@ -1,13 +1,14 @@
 ---
 title: Stahl
 order: 56
-summary: Stahlstäbe mit einstellbaren Enden – verlängert oder zurückgesetzt, nach einer Ebene geschnitten, auf Gehrung, an einen anderen Stab angepasst, ausgeklinkt –, auch aus einem gezeichneten Umriss; Hohl- und kaltgeformte Profile.
+summary: Stahlstäbe mit einstellbaren Enden – verlängert oder zurückgesetzt, nach einer Ebene geschnitten, auf Gehrung, an einen anderen Stab angepasst, ausgeklinkt –, auch aus einem gezeichneten Umriss; Hohl- und kaltgeformte Profile; Rahmenhallen mit Vouten.
 ---
 
 ## Der Reiter Stahl
 
 ![Der Reiter Stahl](shots/ribbon-steel.webp)
 
+- **Rahmenhalle…**: eine ganze Stahlhalle aus wenigen Zahlen, im Hallenkonfigurator (unten).
 - **Stab** (<kbd>SM</kbd>): ein Stahlstab zwischen zwei Punkten, auf der Oberkante des Geschosses, die Oberkante des Querschnitts auf der Achse, wie ein Träger. Sein Typ wird vor dem ersten Klick in den Eigenschaften gewählt, oder im Reiter **Katalog**, wo jeder Stahltyp mit seinem Querschnitt gezeichnet ist.
 - **In Stab umwandeln**: die gewählten gezeichneten Umrisse werden Stäbe (unten).
 - **Gehrung** und **Einpassen**: zwei Stäbe an ihren Enden verbunden (unten).
@@ -48,6 +49,35 @@ Hohlprofile sind innen hohl, in der 3D-Ansicht, in den Schnitten und in den Meng
 
 ![Stäbe in 3D](shots/steel-3d.webp)
 
+## Rahmenhallen
+
+**Stahl → Rahmenhalle…** öffnet den Hallenkonfigurator. Wie der des Dachs hat er links die Stile, in der Mitte die Felder der Halle in Reitern und rechts die Halle, wie Lapin sie bauen würde: einen typischen Rahmen entlang der Halle gesehen, mit seinen Vouten, und eine Übersicht dessen, was sie wiegt.
+
+![Der Hallenkonfigurator](shots/steel-hall.webp)
+
+- **Stile**: die typischen Hallen des Katalogs (**Halle 20 m**, **Halle 30 m**, ein **Pultanbau 10 m** mit Pultdach) und die eigenen des Projekts. Ein gewählter Stil füllt alle Felder; jedes lässt sich danach ändern. **Als Stil speichern…** behält die Halle, wie sie konfiguriert ist, als Stil des Projekts; **Stil aktualisieren** speichert sie erneut in ihren Stil, und alle Hallen dieses Stils folgen.
+- **Rahmen**: die **Spannweite** (Stützenachse bis Stützenachse), die **Felder** (gleiche als `5 × 6`, oder einzeln: `6, 6, 7.5`), die **Traufhöhe** (die Oberkante der Riegel über der Außenfläche der Stütze), das **Dach** (Sattel- oder Pultdach) und seine **Neigung**, die Profile der **Stützen** und **Riegel**, und die **Stützenfüße** (gelenkig oder eingespannt, für die kommenden Knoten gespeichert).
+- **Vouten**: die **Voute an der Traufe** und die **Voute am First**, jede mit ihrer **Länge** entlang des Riegels ab der Stützenfläche (oder dem First) und ihrer **Tiefe** unter dem Riegel dort, und ihrer **Ausführung**: **aus dem Riegelprofil geschnitten** (ein I schräg entlang des Stegs geschnitten, eine Hälfte unter den Riegel geschweißt: Steg und Flansch des Riegels selbst) oder **aus Blechen geschweißt** (ein **Stegblech** und ein **Flanschblech** eigener Dicke, und die Flanschbreite).
+
+![Die Vouten aus geschweißten Blechen](shots/steel-hall-haunches.webp)
+
+- **Giebel**: **Giebelstützen unter einem einfachen Riegel** (Eckstützen und Stützen im gewählten **Abstand**, ihre starke Achse quer zur Giebelwand, unter einem leichteren Riegel, der bis zur Außenkante der Wände reicht, die Stützen an seine Unterseite angepasst), oder **ein normaler Rahmen** an jedem Ende.
+
+![Ein Giebel mit Stützen](shots/steel-hall-gable.webp)
+
+- **Sekundärstahl**: der **Pfettenabstand**, der **Wandriegelabstand**, die **Verbandsfelder** (ihre Nummern, ab dem ersten) und ein **Traufriegel**. Sie werden mit der Halle für die kommenden Pfetten, Riegel und Verbände gespeichert; gebaut werden sie noch nicht.
+- **Platzierung**: wo sich Achse A und Achse 1 kreuzen, und die Richtung der Spannweite im Grundriss (**Drehung**); die Vorschau zeigt das Raster der Halle von oben.
+
+**Halle erstellen** baut sie in einem Schritt, den ein Rückgängig zurücknimmt: ihr eigenes **Raster** (Achsen 1, 2… an den Rahmen, A und B an den Stützen), und an jedem Rahmen zwei **Stützen** (Stützen des Tragwerks aus einem Stahlprofil, der Steg in der Rahmenebene, oben nach der Dachneigung geschnitten) und zwei am First auf Gehrung gestoßene **Riegel** (beim Pultdach einer, von der niedrigen zur hohen Stütze): Stahlstäbe, an die Stützenflächen angepasst, mit ihren Vouten. Die Halle steht auf dem aktuellen Geschoss; Traufe und First sind Höhen ihrer Rahmen, keine neuen Geschosse. Die Übersicht nennt die Rahmen, die Höhen und den Stahl nach Art: Stützen, Riegel, Vouten, Giebelstützen, gesamt und pro m² Grundfläche.
+
+![Die Halle in 3D](shots/steel-hall-3d.webp)
+
+Die Halle bleibt bearbeitbar. Wähle einen ihrer Stäbe: sein Abschnitt **Stahl** zeigt seine Halle und **Halle bearbeiten…**, das den Konfigurator darauf öffnet; **Anwenden** baut die Halle über denselben Stäben neu, die ihre Identität behalten (ein nicht mehr nötiger Stab entfällt, ein neuer kommt hinzu). Dort stehen auch die Vouten des Riegels, jede einzeln geändert (Art, Länge, Tiefe, Bleche): eine so eingestellte Voute bleibt, wie sie ist, wenn die Halle neu gebaut wird; **×** entfernt sie.
+
+![Die Vouten eines Riegels in den Eigenschaften](shots/steel-hall-props.webp)
+
 ## IFC und Mengen
 
 Ein Stab wird als **IfcMember** mit seinem **IfcMemberType** exportiert. Sein Körper wird so geschrieben, wie die anderen Programme Stahl schreiben (Tekla, Advance Steel, Revit): sein Querschnitt **extrudiert** (IfcExtrudedAreaSolid), **beschnitten** von den Ebenen seiner Enden (IfcBooleanClippingResult mit IfcHalfSpaceSolid), und jede Ausklinkung ein **IfcOpeningElement**, das ihn ausspart. Ein Stahlträger oder eine Stahlstütze mit Enden wird genauso geschrieben. Die Mengen jedes Stabs geben seine Länge zwischen den Schnitten, die Fläche seines Querschnitts, sein Volumen und sein Nettogewicht (7850 kg/m³).
+
+Eine Halle wird als **IfcBuildingSystem** (LOADBEARING) exportiert, dem ihre Stäbe zugeordnet sind, mit ihren Angaben im Eigenschaftssatz `Lapin_SteelHall` und ihrem eigenen **IfcGrid**. Ein Riegel mit Vouten ist ein **IfcElementAssembly** aus dem Riegel und seinen Vouten: eine aus dem Profil geschnittene Voute ist ein **IfcMember**, eine aus geschweißten Blechen zwei **IfcPlate**, jede extrudiert (IfcExtrudedAreaSolid). Die Vouten zählen nicht zu den Mengen des Riegels; die Übersicht des Konfigurators wiegt sie.

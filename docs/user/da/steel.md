@@ -1,13 +1,14 @@
 ---
 title: Stål
 order: 56
-summary: Stålstænger med indstillelige ender – forlænget eller trukket tilbage, skåret efter et plan, i gering, tilpasset til en anden stang, udklinket – også lavet ud fra et tegnet omrids; hulprofiler og koldformede profiler.
+summary: Stålstænger med indstillelige ender – forlænget eller trukket tilbage, skåret efter et plan, i gering, tilpasset til en anden stang, udklinket – også lavet ud fra et tegnet omrids; hulprofiler og koldformede profiler; rammehaller med vouter.
 ---
 
 ## Fanen Stål
 
 ![Fanen Stål](shots/ribbon-steel.webp)
 
+- **Rammehal…**: en hel stålhal ud fra få tal, i halkonfiguratoren (nedenfor).
 - **Stang** (<kbd>SM</kbd>): en stålstang mellem to punkter, ved etagens overkant med profilets overside på aksen, som en bjælke. Dens type vælges i Egenskaber før første klik, eller fra fanen **Katalog**, hvor hver ståltype er tegnet med sit profil.
 - **Konvertér til stang**: de valgte tegnede omrids bliver stænger (nedenfor).
 - **Geringssamling** og **Tilpas**: to stænger samlet ved deres ender (nedenfor).
@@ -48,6 +49,35 @@ Hulprofiler er hule indvendigt, i 3D-visningen, i snittene og i mængderne. De k
 
 ![Stænger i 3D](shots/steel-3d.webp)
 
+## Rammehaller
+
+**Stål → Rammehal…** åbner halkonfiguratoren. Som tagets har den stilene til venstre, hallens felter i faner i midten og til højre hallen, som Lapin ville bygge den: en typisk ramme set langs hallen, med sine vouter, og en oversigt over, hvad den vejer.
+
+![Halkonfiguratoren](shots/steel-hall.webp)
+
+- **Stile**: katalogets typiske haller (**Hal 20 m**, **Hal 30 m**, et **Halvtag 10 m** med ensidig hældning) og projektets egne. En valgt stil udfylder alle felter; ethvert felt kan derefter ændres. **Gem som stil…** gemmer hallen, som den er konfigureret, som en stil i projektet; **Opdatér stilen** gemmer den igen i dens stil, og alle haller med stilen følger med.
+- **Ramme**: **Spændet** (fra søjleakse til søjleakse), **Fagene** (lige store som `5 × 6`, eller hver for sig: `6, 6, 7.5`), **Højden ved tagfod** (spærenes overside over søjlens yderside), **Taget** (sadeltag eller ensidig hældning) og dets **Hældning**, profilerne for **Søjler** og **Spær**, og **Søjlefødderne** (charnier eller indspændt, gemt til de kommende samlinger).
+- **Vouter**: **Voute ved tagfod** og **Voute ved kip**, hver med sin **Længde** langs spæret fra søjlens flade (eller kippen) og sin **Dybde** under spæret der, og hvordan den er **Udført**: **skåret af spærets profil** (et I skåret skråt langs kroppen, den ene halvdel svejst under spæret: spærets egen krop og flange) eller **svejst af plader** (en **Kropsplade** og en **Flangeplade** i egen tykkelse, og flangens bredde).
+
+![Vouterne svejst af plader](shots/steel-hall-haunches.webp)
+
+- **Gavle**: **gavlsøjler under et simpelt spær** (hjørnesøjler og søjler i den valgte **Afstand**, deres stærke akse på tværs af gavlvæggen, under et lettere spær, der går ud til væggenes yderside, søjlerne tilpasset dets underside), eller **en almindelig ramme** i hver ende.
+
+![En gavl med søjler](shots/steel-hall-gable.webp)
+
+- **Sekundært stål**: **Åsafstanden**, **Afstanden mellem facaderigler**, de **Afstivede fag** (deres numre, fra det første) og en **Tagfodsbjælke**. De gemmes med hallen til de kommende åse, rigler og afstivninger; de bygges ikke endnu.
+- **Placering**: hvor akse A og akse 1 krydser hinanden, og spændets retning i plan (**Rotation**); forhåndsvisningen viser hallens akser ovenfra.
+
+**Opret hal** laver den i ét trin, som én fortrydelse tager tilbage: dens egne **akser** (akse 1, 2… ved rammerne, A og B ved søjlerne), og ved hver ramme to **søjler** (konstruktionens søjler af et stålprofil, kroppen i rammens plan, toppen skåret efter tagets hældning) og to **spær** i gering ved kippen (ét, fra den lave søjle til den høje, ved ensidig hældning): stålstænger tilpasset søjlernes flader, med deres vouter. Hallen står på den aktuelle etage; tagfod og kip er højder i dens rammer, ikke nye etager. Oversigten giver rammerne, højderne og stålet efter art: søjler, spær, vouter, gavlsøjler, i alt og pr. m² gulv.
+
+![Hallen i 3D](shots/steel-hall-3d.webp)
+
+Hallen kan stadig redigeres. Vælg en af dens stænger: dens afsnit **Stål** viser hallen og **Redigér hal…**, som åbner konfiguratoren på den; **Anvend** bygger hallen igen over de samme stænger, som beholder deres identitet (en stang, der ikke længere skal bruges, forsvinder, en ny tilføjes). Spærets vouter står også der, hver ændret for sig (art, længde, dybde, plader): en voute indstillet sådan bliver, som den er, når hallen bygges igen; **×** fjerner den.
+
+![Et spærs vouter i Egenskaber](shots/steel-hall-props.webp)
+
 ## IFC og mængder
 
 En stang eksporteres som **IfcMember** med sin **IfcMemberType**. Dens legeme skrives, som de andre programmer skriver stål (Tekla, Advance Steel, Revit): dens profil **ekstruderet** (IfcExtrudedAreaSolid), **beskåret** af endernes planer (IfcBooleanClippingResult med IfcHalfSpaceSolid), og hver udklinkning et **IfcOpeningElement**, der skærer den ud. En stålbjælke eller -søjle med ender skrives på samme måde. Hver stangs mængder giver dens længde mellem snittene, profilets areal, dens volumen og dens nettovægt (7850 kg/m³).
+
+En hal eksporteres som et **IfcBuildingSystem** (LOADBEARING), som dens stænger er tildelt, med dens data i egenskabssættet `Lapin_SteelHall` og sit eget **IfcGrid**. Et spær med vouter er en **IfcElementAssembly** af spæret og dets vouter: en voute skåret af profilet er en **IfcMember**, en svejst af plader to **IfcPlate**, hver ekstruderet (IfcExtrudedAreaSolid). Vouterne tælles ikke med i spærets mængder; konfiguratorens oversigt vejer dem.

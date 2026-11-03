@@ -3,16 +3,19 @@
  * straight beam or column of a steel profile, its two ends, each a set of rules — the extension (negative: set back),
  * the cut (square, by a plane turned in plan and in elevation, mitred with a member, fitted to a member's face) and a
  * cope of the flanges at the top and/or the bottom. The body follows the rules; a mitre or a fit follows the member it
- * names.
+ * names. A member's haunches (decision 270), each set on its own (a hall built again keeps it), and the hall a member
+ * belongs to, opened in its configurator.
  */
 
-import { Settings2 } from 'lucide-react';
+import { Settings2, Warehouse } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { ofClass, typeOf } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { LengthField, NumberField } from '../../shell/cells';
 import { sectionLabel, type SectionDto } from './sections';
+import { hallOf, type HaunchDto } from './hall';
+import { useHall } from './HallDialog';
 
 export interface SteelEnd {
   cut?: 'square' | 'plane' | 'mitre' | 'fit'; extension?: number; planAngle?: number; elevAngle?: number; ref?: string;
@@ -76,6 +79,32 @@ function EndRules({ node, which, end, others }: { node: NodeDto; which: 'start' 
   );
 }
 
+/** One haunch of a member: its kind, length and depth, each change setting it on its own (one engine command). */
+function HaunchRules({ node, which, h }: { node: NodeDto; which: 'start' | 'end'; h: HaunchDto }) {
+  const send = (patch: Partial<HaunchDto>) => void execute('steel.setHaunch', { id: node.id, end: which, haunch: { ...h, ...patch } });
+  const ro = !node.editable;
+  return (
+    <>
+      <dt className="eyebrow" title={h.own ? 'Set on its own: the hall keeps it' : undefined}>{which === 'start' ? 'Haunch at the start' : 'Haunch at the end'}</dt>
+      <dd><button type="button" className="icon mini" title="No haunch here" disabled={ro} onClick={() => void execute('steel.setHaunch', { id: node.id, end: which, haunch: null })}>×</button></dd>
+      <dt>Made</dt>
+      <dd><select className="cell" data-field={`steel-haunch-${which}-kind`} value={h.kind ?? 'cut'} disabled={ro} onChange={(e) => send({ kind: e.target.value as HaunchDto['kind'] })}>
+        <option value="cut">cut from the rafter's section</option><option value="plates">welded from plates</option>
+      </select></dd>
+      <dt>Length</dt>
+      <dd><LengthField metres={h.length} min={0.05} readOnly={ro} testId={`steel-haunch-${which}-length`} onCommit={(v) => { if (v != null) send({ length: v }); }} /></dd>
+      <dt data-i18n-ctx="hall">Depth</dt>
+      <dd><LengthField metres={h.depth} min={0.02} readOnly={ro} testId={`steel-haunch-${which}-depth`} onCommit={(v) => { if (v != null) send({ depth: v }); }} /></dd>
+      {h.kind === 'plates' && <>
+        <dt>Web plate</dt>
+        <dd><LengthField metres={h.web ?? 0.01} min={0.002} readOnly={ro} onCommit={(v) => { if (v != null) send({ web: v }); }} /></dd>
+        <dt>Flange plate</dt>
+        <dd><LengthField metres={h.flange ?? 0.012} min={0.002} readOnly={ro} onCommit={(v) => { if (v != null) send({ flange: v }); }} /></dd>
+      </>}
+    </>
+  );
+}
+
 export function SteelSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
@@ -88,8 +117,16 @@ export function SteelSection({ node }: { node: NodeDto }) {
   const others = STEEL_CLASSES.flatMap((c) => ofClass(model, c)).filter((o) => o.id !== node.id);
   const [s, e] = [point(node.props.start), point(node.props.end)];
   const types = ofClass(model, 'LapinSteelMemberType');
+  const hall = hallOf(model, node.id);
+  const haunches = (node.props.haunches ?? {}) as { start?: HaunchDto; end?: HaunchDto };
   return (
     <div className="layers" data-field="steel-ends">
+      {hall && (
+        <p className="row small">
+          <span className="grow" data-no-i18n>{hall.name}</span>
+          <button type="button" className="btn" data-field="steel-edit-hall" onClick={() => { useHall.setState({ id: hall.id }); useUi.setState({ dialog: 'steelHall' }); }}><Warehouse size={13} />Edit hall…</button>
+        </p>
+      )}
       {member && (
         <label className="type-pick">
           <span className="eyebrow">Type</span>
@@ -111,7 +148,18 @@ export function SteelSection({ node }: { node: NodeDto }) {
         </>}
         <EndRules node={node} which="start" end={ends.start ?? {}} others={others} />
         <EndRules node={node} which="end" end={ends.end ?? {}} others={others} />
+        {member && haunches.start && <HaunchRules node={node} which="start" h={haunches.start} />}
+        {member && haunches.end && <HaunchRules node={node} which="end" h={haunches.end} />}
       </dl>
+      {member && node.editable && (!haunches.start || !haunches.end) && (
+        <p className="row small">
+          {(['start', 'end'] as const).filter((w) => !haunches[w]).map((w) => (
+            <button key={w} type="button" className="btn" data-field={`steel-add-haunch-${w}`} onClick={() => void execute('steel.setHaunch', { id: node.id, end: w, haunch: { length: 1, depth: 0.3, kind: 'cut' } })}>
+              {w === 'start' ? 'Haunch at the start' : 'Haunch at the end'}
+            </button>
+          ))}
+        </p>
+      )}
     </div>
   );
 }

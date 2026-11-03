@@ -1,13 +1,14 @@
 ---
 title: Aço
 order: 56
-summary: Barras de aço com extremidades configuráveis — prolongadas ou recuadas, cortadas por um plano, em meia-esquadria, ajustadas a outra barra, recortadas — feitas também a partir de um contorno desenhado; perfis tubulares e formados a frio.
+summary: Barras de aço com extremidades configuráveis — prolongadas ou recuadas, cortadas por um plano, em meia-esquadria, ajustadas a outra barra, recortadas — feitas também a partir de um contorno desenhado; perfis tubulares e formados a frio; galpões de pórticos com mísulas.
 ---
 
 ## A aba Aço
 
 ![A aba Aço](shots/ribbon-steel.webp)
 
+- **Galpão de pórticos…**: um galpão de aço inteiro a partir de poucos números, no configurador de galpões (abaixo).
 - **Barra** (<kbd>SM</kbd>): uma barra de aço entre dois pontos, no nível superior do pavimento, com o topo da seção sobre o eixo, como uma viga. Seu tipo é escolhido em Propriedades antes do primeiro clique, ou na aba **Catálogo**, onde cada tipo de aço é desenhado pela sua seção.
 - **Converter em barra**: os contornos desenhados selecionados viram barras (abaixo).
 - **Meia-esquadria** e **Ajustar**: duas barras unidas pelas extremidades (abaixo).
@@ -48,6 +49,35 @@ Os perfis tubulares são ocos por dentro, na vista 3D, nos cortes e nas quantida
 
 ![Barras em 3D](shots/steel-3d.webp)
 
+## Galpões de pórticos
+
+**Aço → Galpão de pórticos…** abre o configurador de galpões. Como o da cobertura, tem os estilos à esquerda, os campos do galpão em abas no meio e, à direita, o galpão como o Lapin o construiria: um pórtico típico visto ao longo do galpão, com suas mísulas, e um resumo do que ele pesa.
+
+![O configurador de galpões](shots/steel-hall.webp)
+
+- **Estilos**: os galpões típicos do catálogo (**Galpão 20 m**, **Galpão 30 m**, um **Telheiro 10 m** de uma água) e os do projeto. Um estilo escolhido preenche todos os campos; qualquer um pode depois ser alterado. **Salvar como estilo…** guarda o galpão como está configurado como estilo do projeto; **Atualizar o estilo** o salva de novo no seu estilo, e todos os galpões desse estilo o seguem.
+- **Pórtico**: o **Vão** (de eixo de pilar a eixo de pilar), os **Módulos** (iguais como `5 × 6`, ou cada um: `6, 6, 7.5`), a **Altura do beiral** (o topo das vigas de cobertura sobre a face externa do pilar), a **Cobertura** (duas águas ou uma água) e sua **Inclinação**, os perfis dos **Pilares** e das **Vigas de cobertura**, e as **Bases dos pilares** (rotuladas ou engastadas, guardadas para os nós que virão).
+- **Mísulas**: a **Mísula no beiral** e a **Mísula na cumeeira**, cada uma com seu **Comprimento** ao longo da viga desde a face do pilar (ou da cumeeira) e sua **Altura** sob a viga ali, e como é **Feita**: **cortada do perfil da viga de cobertura** (um I cortado na diagonal ao longo da alma, uma metade soldada sob a viga: a alma e a mesa da própria viga) ou **de chapas soldadas** (uma **Chapa da alma** e uma **Chapa da mesa** de espessura própria, e a largura da mesa).
+
+![As mísulas de chapas soldadas](shots/steel-hall-haunches.webp)
+
+- **Oitões**: **pilares de oitão sob uma viga simples** (pilares de canto e pilares no **Espaçamento** escolhido, com o eixo forte perpendicular à parede do oitão, sob uma viga mais leve que vai até a face externa das paredes, os pilares ajustados à sua face inferior), ou **um pórtico comum** em cada extremidade.
+
+![Um oitão com pilares](shots/steel-hall-gable.webp)
+
+- **Aço secundário**: o **Espaçamento das terças**, o **Espaçamento das longarinas**, os **Módulos contraventados** (seus números, a partir do primeiro) e uma **Viga de beiral**. São guardados com o galpão para as terças, longarinas e contraventamentos que virão; ainda não são construídos.
+- **Posicionamento**: onde se cruzam o eixo A e o eixo 1, e a direção do vão em planta (**Rotação**); a pré-visualização mostra a malha do galpão vista de cima.
+
+**Criar galpão** o faz em um só passo, que um desfazer reverte: sua própria **malha de eixos** (eixos 1, 2… nos pórticos, A e B nos pilares), e em cada pórtico dois **pilares** (pilares da estrutura de um perfil de aço, com a alma no plano do pórtico e o topo cortado segundo a inclinação) e duas **vigas de cobertura** em meia-esquadria na cumeeira (uma só, do pilar baixo ao alto, numa cobertura de uma água): barras de aço ajustadas às faces dos pilares, com suas mísulas. O galpão fica no pavimento atual; o beiral e a cumeeira são alturas dos seus pórticos, não novos pavimentos. O resumo dá os pórticos, as alturas e o aço por tipo: pilares, vigas, mísulas, pilares de oitão, no total e por m² de piso.
+
+![O galpão em 3D](shots/steel-hall-3d.webp)
+
+O galpão continua editável. Selecione uma das suas barras: sua seção **Aço** mostra o galpão e **Editar galpão…**, que abre o configurador nele; **Aplicar** reconstrói o galpão sobre as mesmas barras, que mantêm sua identidade (uma barra que não é mais necessária sai, uma nova é acrescentada). Ali também aparecem as mísulas da viga, cada uma alterada sozinha (tipo, comprimento, altura, chapas): uma mísula ajustada assim fica como está quando o galpão é reconstruído; **×** a remove.
+
+![As mísulas de uma viga em Propriedades](shots/steel-hall-props.webp)
+
 ## IFC e quantidades
 
 Uma barra é exportada como **IfcMember** com seu **IfcMemberType**. Seu corpo é escrito como os outros programas escrevem o aço (Tekla, Advance Steel, Revit): a seção **extrudada** (IfcExtrudedAreaSolid), **cortada** pelos planos das extremidades (IfcBooleanClippingResult com IfcHalfSpaceSolid), e cada recorte um **IfcOpeningElement** que a esvazia. Uma viga ou um pilar de aço com extremidades é escrito da mesma forma. As quantidades de cada barra dão o comprimento entre os cortes, a área da seção, o volume e o peso líquido (7850 kg/m³).
+
+Um galpão é exportado como **IfcBuildingSystem** (LOADBEARING) ao qual suas barras são atribuídas, com seus dados no conjunto de propriedades `Lapin_SteelHall` e sua própria **IfcGrid**. Uma viga de cobertura com mísulas é um **IfcElementAssembly** da viga e das suas mísulas: uma mísula cortada do perfil é um **IfcMember**, uma de chapas soldadas duas **IfcPlate**, cada uma extrudada (IfcExtrudedAreaSolid). As mísulas ficam fora das quantidades da viga; o resumo do configurador as pesa.

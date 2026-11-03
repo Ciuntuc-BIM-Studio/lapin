@@ -18,7 +18,31 @@ public sealed record IfcClip(Vec3 Point, Vec3 Normal);
 /// IfcHalfSpaceSolid), and the openings voiding it (IfcOpeningElement, each a sweep), as Tekla, Advance Steel and
 /// Revit read a steel member's cuts and copes. The body is the same as the element's geometry, which the views draw.
 /// </summary>
-public sealed record IfcSweptBody(IfcSweep Body, IReadOnlyList<IfcClip> Clips, IReadOnlyList<IfcSweep> Openings);
+public sealed record IfcSweptBody(IfcSweep Body, IReadOnlyList<IfcClip> Clips, IReadOnlyList<IfcSweep> Openings)
+{
+    /// <summary>
+    /// Pieces welded onto the element (a rafter's haunches, decision 270), each written as an element of its own; the
+    /// element and its pieces then make an IfcElementAssembly named <see cref="Assembly"/>, as Tekla and Advance Steel write
+    /// a main part with its plates.
+    /// </summary>
+    public IReadOnlyList<IfcSweptPart> Parts { get; init; } = [];
+    public string? Assembly { get; init; }
+}
+
+/// <summary>A piece welded onto an element: its IFC class and type (an IfcPlate, an IfcMember), its name, and its body as sweeps.</summary>
+public sealed record IfcSweptPart(string Key, string Name, string Class, string Predefined, string? ObjectType, IReadOnlyList<IfcSweep> Items);
+
+/// <summary>
+/// A system a module's entity stands for in IFC (a steel hall: an IfcBuildingSystem, LOADBEARING), its members assigned to it
+/// (IfcRelAssignsToGroup) and serving the building, its own properties as a property set.
+/// </summary>
+public sealed record IfcSystem(string Id, string Name, string Predefined, IReadOnlyList<string> Members, string PropertySet, IReadOnlyList<(string Name, string Value)> Properties);
+
+/// <summary>A module's entities that IFC writes as systems of elements (IfcBuildingSystem).</summary>
+public interface IIfcSystems
+{
+    IEnumerable<IfcSystem> Systems(IModelView model);
+}
 
 /// <summary>A module's elements whose bodies the IFC export writes as constructive solids rather than as B-reps; null for the others.</summary>
 public interface IIfcSweptBodies

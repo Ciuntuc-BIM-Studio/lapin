@@ -141,8 +141,11 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
     public static readonly IReadOnlyDictionary<string, Section> Catalogue = new Dictionary<string, Section>(StringComparer.OrdinalIgnoreCase)
     {
         ["IPE 200"] = P("I", 200, 100, 5.6, 8.5, "IPE 200"), ["IPE 240"] = P("I", 240, 120, 6.2, 9.8, "IPE 240"), ["IPE 300"] = P("I", 300, 150, 7.1, 10.7, "IPE 300"),
-        ["IPE 360"] = P("I", 360, 170, 8, 12.7, "IPE 360"), ["IPE 400"] = P("I", 400, 180, 8.6, 13.5, "IPE 400"),
+        ["IPE 330"] = P("I", 330, 160, 7.5, 11.5, "IPE 330"), ["IPE 360"] = P("I", 360, 170, 8, 12.7, "IPE 360"), ["IPE 400"] = P("I", 400, 180, 8.6, 13.5, "IPE 400"),
+        ["IPE 450"] = P("I", 450, 190, 9.4, 14.6, "IPE 450"), ["IPE 500"] = P("I", 500, 200, 10.2, 16, "IPE 500"), ["IPE 550"] = P("I", 550, 210, 11.1, 17.2, "IPE 550"),
+        ["IPE 600"] = P("I", 600, 220, 12, 19, "IPE 600"),
         ["HEA 200"] = P("I", 190, 200, 6.5, 10, "HEA 200"), ["HEA 240"] = P("I", 230, 240, 7.5, 12, "HEA 240"), ["HEA 300"] = P("I", 290, 300, 8.5, 14, "HEA 300"),
+        ["HEA 400"] = P("I", 390, 300, 11, 19, "HEA 400"),
         ["HEB 200"] = P("I", 200, 200, 9, 15, "HEB 200"), ["HEB 300"] = P("I", 300, 300, 11, 19, "HEB 300"),
         ["UPN 200"] = P("U", 200, 75, 8.5, 11.5, "UPN 200"), ["UPN 300"] = P("U", 300, 100, 10, 16, "UPN 300"),
         ["L 80×80×8"] = P("L", 80, 80, 8, 8, "L 80×80×8"), ["L 100×100×10"] = P("L", 100, 100, 10, 10, "L 100×100×10"),
