@@ -152,6 +152,9 @@ public static class Joins
         if (priority == null && PathCurve.Of(a).IsArc != PathCurve.Of(b).IsArc) priority = PathCurve.Of(a).IsArc ? 'a' : 'b';
         var (fa, fb) = Tangents(a, b, existing, Frame(paths, edit.Model, a), Frame(paths, edit.Model, b));
         var join = WallJoins.Compute(fa, fb, new JoinOptions(Priority: priority, Style: style ?? (existing != null ? StyleOf(existing) : JoinStyle.Mitre)));
+        // A crossing is worked out on straight axes: an arc's frame is only a tangent, which says nothing of where it crosses.
+        if (join.Kind == JoinKind.X && (PathCurve.Of(a).IsArc || PathCurve.Of(b).IsArc))
+            throw new CommandException("A curved element is not joined where it crosses another: split it there.");
         MoveAxis(edit, a, join.A);
         MoveAxis(edit, b, join.B);
         var (relating, related, relatingSide, relatedSide) = join.Relating == 'a' ? (a, b, join.A, join.B) : (b, a, join.B, join.A);
@@ -246,6 +249,20 @@ public static class Joins
             if (JoinedEnds(m, current)[trial.B.Connection == Connection.AtStart ? 0 : 1]) continue;
             Join(edit, paths, e, current);
         }
+        // Others whose run this element's run crosses: an X, the one already there through (the thicker, when they differ).
+        foreach (var other in others)
+        {
+            if (Between(m, id, other.Id) != null) continue;
+            var current = m.Get(other.Id)!;
+            e = m.Get(id)!;
+            if (PathCurve.Of(e).IsArc || PathCurve.Of(current).IsArc) continue;
+            if (Pair(paths, m, current, e) is not (var fo, var fe)) continue;
+            WallJoin trial;
+            try { trial = WallJoins.Compute(fo, fe); }
+            catch (CommandException) { continue; }
+            if (trial.Kind != JoinKind.X) continue;
+            Join(edit, paths, current, e);
+        }
     }
 
     static double DistanceTo(Entity e, Vec2 p)
@@ -316,14 +333,15 @@ public static class Joins
         }
     }
 
-    /// <summary>Restyles the corners (L) and in-line joins of the elements: mitre, butt, or the other through.</summary>
+    /// <summary>Restyles the corners (L) and in-line joins of the elements: mitre, butt, or the other through; a crossing (X) only takes the other through.</summary>
     public static int Restyle(IEdit edit, IPathElements paths, IEnumerable<string> ids, JoinStyle? style, bool swap)
     {
         var m = edit.Model;
         var count = 0;
         foreach (var r in ids.SelectMany(id => Of(m, id)).DistinctBy(r => r.Id).ToList())
         {
-            if ((string?)r.Attrs?["kind"] == "T") continue;
+            var kind = (string?)r.Attrs?["kind"];
+            if (kind == "T" || kind == "X" && !swap) continue;
             if (m.GetRelation(r.Id) is not { } current) continue;
             // A join that no longer meets (a type made thicker since) is left for Refresh, not restyled: Join would refuse the whole restyle.
             if (Compute(m, current, paths, out _) == null) continue;

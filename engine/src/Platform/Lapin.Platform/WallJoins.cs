@@ -34,7 +34,8 @@ public sealed record JoinWall(Vec2 Start, Vec2 End, double YMin, double YMax, En
     }
 }
 
-public enum JoinKind { L, T, Butt }
+/// <summary>A corner (L), one wall ending on another's run (T), two in line end to end (Butt), two crossing each other (X).</summary>
+public enum JoinKind { L, T, Butt, X }
 public enum JoinStyle { Butt, Mitre }
 public enum Connection { AtStart, AtEnd, AtPath }
 
@@ -45,7 +46,7 @@ public sealed record JoinSide(Connection Connection, bool RunsThrough, JoinWall 
 public sealed record WallJoin(JoinKind Kind, JoinStyle Style, Vec2 Point, char Relating, JoinSide A, JoinSide B);
 
 /// <param name="Tolerance">How far an axis end may be from the joint and still count as being there. Default: twice the thicker wall.</param>
-/// <param name="Priority">Which wall runs through a corner and relates an in-line join: a or b. Default: the thicker, a on a tie. The crossed wall of a T always runs through.</param>
+/// <param name="Priority">Which wall runs through a corner or a crossing and relates an in-line join: a or b. Default: the thicker, a on a tie. The crossed wall of a T always runs through.</param>
 /// <param name="Style">Corners only: butt (one wall through) or mitre (both on the diagonal). A T and an in-line join are always butt.</param>
 public sealed record JoinOptions(double? Tolerance = null, char? Priority = null, JoinStyle Style = JoinStyle.Butt);
 
@@ -65,6 +66,11 @@ public sealed record WallOutline(Vec2[] Corners, bool Rectangular, double Length
 /// as it is; the ending wall is cut by the crossed wall's face on its side.</item>
 /// <item><b>In line (butt)</b>, the axes on one line, end to end. Both are cut
 /// square at the point halfway between the two tips.</item>
+/// <item><b>Crossing (X)</b>, each axis crossing the other's run. Neither body
+/// is cut here: the wall with priority runs through, and the other's layers
+/// are worked out against it where its geometry is built (its core stops at
+/// the through wall's core, its finishes at the through wall's faces, as at a
+/// T from each side).</item>
 /// </list>
 /// Cuts are kept as the reach of each face past the tip, so a square cut keeps
 /// the body a rectangle and a slanted one makes it a four-point polygon. No
@@ -210,10 +216,17 @@ public static class WallJoins
         var onB = lb.Reach(joint, tolerance);
         if (onA == null || onB == null)
             throw new CommandException($"The walls do not meet: where their axes would cross is more than {tolerance:0.###} m from an end.");
+        var priority = options.Priority ?? (b.Thickness > a.Thickness ? 'b' : 'a');
         if (onA == Connection.AtPath && onB == Connection.AtPath)
-            throw new CommandException("The walls cross each other; split one at the crossing before joining them.");
+        {
+            // A crossing: the wall with priority runs through, the other is left whole too (its layers meet the first's where its geometry is built).
+            var throughIsA = priority == 'a';
+            var sideA = new JoinSide(Connection.AtPath, throughIsA, a);
+            var sideB = new JoinSide(Connection.AtPath, !throughIsA, b);
+            return new WallJoin(JoinKind.X, JoinStyle.Butt, joint, throughIsA ? 'a' : 'b', sideA, sideB);
+        }
 
-        var firstIsA = onA == Connection.AtPath || (onB != Connection.AtPath && (options.Priority ?? (b.Thickness > a.Thickness ? 'b' : 'a')) == 'a');
+        var firstIsA = onA == Connection.AtPath || (onB != Connection.AtPath && priority == 'a');
         var (first, second, onFirst, onSecond) = firstIsA ? (la, lb, onA.Value, onB.Value) : (lb, la, onB.Value, onA.Value);
         var relating = firstIsA ? 'a' : 'b';
 

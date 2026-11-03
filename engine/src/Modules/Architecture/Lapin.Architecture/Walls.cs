@@ -138,6 +138,8 @@ public static class Walls
         Vec2 P(double x, double y) => start + dir * x + left * y;
         // At a corner, each layer turns it on its own (report #49): finishes meet their like, the cores meet as the join's style says.
         var corners = paths != null ? LayerCorners(m, wall, paths, start, dir, length, bands) : new Func<Band, (double From, double To)>?[2];
+        // Where a wall ends on this one or crosses it, the layers stop short of its core, or go through it (decision 255).
+        var crossings = paths != null ? LayerCrossings(m, wall, paths, start, dir, bands) : _ => [];
         double Reach(int end, Band b, bool atFrom) =>
             corners[end] is { } f ? (atFrom ? f(b).From : f(b).To) : At(end == 0 ? startCut : endCut, atFrom ? b.From : b.To);
 
@@ -187,36 +189,40 @@ public static class Walls
         foreach (var band in bands)
         {
             if (!(band.To - band.From > 1e-9)) continue;
-            Vec2[] footprint =
+            Vec2[] whole =
             [
                 P(-Reach(0, band, true), band.From), P(length + Reach(1, band, true), band.From),
                 P(length + Reach(1, band, false), band.To), P(-Reach(0, band, false), band.To),
             ];
-            // The core of a zoned wall is its zones, bottom to top; every other layer runs the whole height.
-            if (band.Core && zones.Count > 0)
+            // The band in the pieces the walls meeting this one leave of it (one, when none interrupts it).
+            foreach (var footprint in Pieces(whole, crossings(band), start, dir, length))
             {
-                foreach (var zb in zones)
+                // The core of a zoned wall is its zones, bottom to top; every other layer runs the whole height.
+                if (band.Core && zones.Count > 0)
                 {
-                    if (Prism.ExtrudeFootprint(footprint, z + zb.Z0, zb.Z1 - zb.Z0, zb.Zone.Name) is { } piece)
-                        parts.Add(Cut(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key), zb.Z0, zb.Z1, isCore: true));
+                    foreach (var zb in zones)
+                    {
+                        if (Prism.ExtrudeFootprint(footprint, z + zb.Z0, zb.Z1 - zb.Z0, zb.Zone.Name) is { } piece)
+                            parts.Add(Cut(new GeometryPart(zb.Zone.Name, Materials.ColorOf(m, zb.Zone.Material), piece, zb.Zone.Material, "zone:" + zb.Zone.Key), zb.Z0, zb.Z1, isCore: true));
+                    }
+                    // A gable rising over the storey: the masonry goes on above the ring beam.
+                    if (built > height + 1e-9 && (zones.LastOrDefault(zb => zb.Zone.Role == "masonry") ?? zones[^1]).Zone is var gz
+                        && Prism.ExtrudeFootprint(footprint, z + height, built - height, "gable") is { } gable)
+                        parts.Add(Cut(new GeometryPart($"Gable ({gz.Name})", Materials.ColorOf(m, gz.Material), gable, gz.Material, "zone:gable"), height, built, isCore: true));
                 }
-                // A gable rising over the storey: the masonry goes on above the ring beam.
-                if (built > height + 1e-9 && (zones.LastOrDefault(zb => zb.Zone.Role == "masonry") ?? zones[^1]).Zone is var gz
-                    && Prism.ExtrudeFootprint(footprint, z + height, built - height, "gable") is { } gable)
-                    parts.Add(Cut(new GeometryPart($"Gable ({gz.Name})", Materials.ColorOf(m, gz.Material), gable, gz.Material, "zone:gable"), height, built, isCore: true));
-            }
-            // A layer of its own height (report #44): from its bottom to its top over the wall's base, never above the wall.
-            else if (LayerSpan(band, built) is var (lz0, lz1) && Prism.ExtrudeFootprint(footprint, z + lz0, lz1 - lz0, band.Name) is { } solid)
-                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), lz0, lz1, isCore: band.Core));
-            // In plan, the band between the gaps the openings leave at the cut.
-            var x0 = -Math.Max(Reach(0, band, true), Reach(0, band, false));
-            var x1 = length + Math.Max(Reach(1, band, true), Reach(1, band, false));
-            var at = x0;
-            foreach (var g in gaps.Append((From: x1, To: x1)))
-            {
-                var piece = ClipX(footprint, start, dir, at, g.From);
-                if (piece.Count >= 3) plan.Add(new PlanItem("cut", true, piece));
-                at = Math.Max(at, g.To);
+                // A layer of its own height (report #44): from its bottom to its top over the wall's base, never above the wall.
+                else if (LayerSpan(band, built) is var (lz0, lz1) && Prism.ExtrudeFootprint(footprint, z + lz0, lz1 - lz0, band.Name) is { } solid)
+                    parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), lz0, lz1, isCore: band.Core));
+                // In plan, the band between the gaps the openings leave at the cut.
+                var x0 = footprint.Min(q => Vec2.Dot(q - start, dir));
+                var x1 = footprint.Max(q => Vec2.Dot(q - start, dir));
+                var at = x0;
+                foreach (var g in gaps.Append((From: x1, To: x1)))
+                {
+                    var piece = ClipX(footprint, start, dir, at, g.From);
+                    if (piece.Count >= 3) plan.Add(new PlanItem("cut", true, piece));
+                    at = Math.Max(at, g.To);
+                }
             }
         }
         // The roof first: the wall comes down under it, so the cut priorities after it have only what is left to settle (cut the other way round,
@@ -264,7 +270,9 @@ public static class Walls
     /// says: mitred, on their own diagonal; butt, the core of the wall that runs through goes on to
     /// the other core's outer face and the other core stops at its inner face. A wall of one layer
     /// ends exactly as the join cuts it. Per end, a band's reach past the joint at its From and To
-    /// edges; null where the end has no such corner.
+    /// edges; null where the end has no such corner. At a T (decision 255) the ending wall's layers end
+    /// each on its own line too: its core runs on through the crossed wall's finishes to that wall's
+    /// core, its other layers stop at the crossed wall's outer face, where they meet their like.
     /// </summary>
     static Func<Band, (double From, double To)>?[] LayerCorners(IModelView m, Entity wall, IPathElements paths, Vec2 start, Vec2 dir, double length, IReadOnlyList<Band> bands)
     {
@@ -272,17 +280,17 @@ public static class Walls
         foreach (var r in Joins.Of(m, wall.Id))
         {
             var join = Joins.Compute(m, r, paths, out _);
-            if (join == null || join.Kind != JoinKind.L) continue;
+            if (join == null || join.Kind is not (JoinKind.L or JoinKind.T)) continue;
             var side = r.Relating == wall.Id ? join.A : join.B;
             var i = side.Connection switch { Connection.AtStart => 0, Connection.AtEnd => 1, _ => -1 };
             if (i < 0 || o[i] != null || m.Get(Joins.Other(r, wall.Id)) is not { } other) continue;
-            o[i] = LayerCorner(m, start, dir, length, i == 0, bands, other, join.Style, side.RunsThrough);
+            o[i] = LayerCorner(m, start, dir, length, i == 0, bands, other, join.Style, side.RunsThrough, join.Kind == JoinKind.T);
         }
         return o;
     }
 
     /// <summary>One corner's layer ends (see <see cref="LayerCorners"/>); null when the other wall is curved or parallel.</summary>
-    static Func<Band, (double From, double To)>? LayerCorner(IModelView m, Vec2 start, Vec2 dir, double length, bool atStart, IReadOnlyList<Band> bands, Entity other, JoinStyle style, bool runsThrough)
+    static Func<Band, (double From, double To)>? LayerCorner(IModelView m, Vec2 start, Vec2 dir, double length, bool atStart, IReadOnlyList<Band> bands, Entity other, JoinStyle style, bool runsThrough, bool tee = false)
     {
         if (PathCurve.Of(other) is { IsArc: true }) return null;
         var (os, oe) = (Start(other), End(other));
@@ -313,6 +321,12 @@ public static class Walls
         {
             if (band.To - band.From < 1e-12) return (0, 0);
             var core = band.From >= me.CoreLo - 1e-9 && band.To <= me.CoreHi + 1e-9;
+            if (tee)
+            {
+                // Ending on the other wall's run: the core to the other core's face on this side, the rest to the outer face there.
+                var stop = core ? them.Inner[0] : them.Inner[^1];
+                return (ReachTo(band.From, stop), ReachTo(band.To, stop));
+            }
             if (core && style == JoinStyle.Butt)
             {
                 var stop = runsThrough ? them.Outer[0] : them.Inner[0];
@@ -320,6 +334,79 @@ public static class Walls
             }
             return (ReachTo(band.From, them.Partner(me, band.From)), ReachTo(band.To, them.Partner(me, band.To)));
         };
+    }
+
+    /// <summary>A straight line of the plan, where a layer stops: a point on it and its unit direction.</summary>
+    readonly record struct Cutter(Vec2 Point, Vec2 Dir);
+
+    /// <summary>
+    /// Where the layers are interrupted along the wall by the walls that meet its run (decision 255).
+    /// At a T, the ending wall's core runs on through this wall's finishes to its core, so the layers
+    /// outside the core on that side stop at the core's edges; at a crossing (X) the same on both
+    /// sides, while the wall that does not run through has its core stopped by the other's core
+    /// faces and its other layers by the other's outer faces. Per band, the pairs of lines between
+    /// which nothing of it is built; none for a wall nothing meets so. Only straight walls interrupt.
+    /// </summary>
+    static Func<Band, List<(Cutter A, Cutter B)>> LayerCrossings(IModelView m, Entity wall, IPathElements paths, Vec2 start, Vec2 dir, IReadOnlyList<Band> bands)
+    {
+        var rules = new List<(Func<Band, bool> Takes, Cutter A, Cutter B)>();
+        var me = new CornerEdges(bands, 1);
+        var left = dir.Perp;
+        bool Core(Band b) => b.From >= me.CoreLo - 1e-9 && b.To <= me.CoreHi + 1e-9;
+        foreach (var r in Joins.Of(m, wall.Id))
+        {
+            var join = Joins.Compute(m, r, paths, out _);
+            if (join == null || join.Kind is not (JoinKind.T or JoinKind.X)) continue;
+            var side = r.Relating == wall.Id ? join.A : join.B;
+            if (m.Get(Joins.Other(r, wall.Id)) is not { } other || PathCurve.Of(other) is { IsArc: true }) continue;
+            var (os, oe) = (Start(other), End(other));
+            if ((oe - os).Length < MinLength) continue;
+            var od = (oe - os).Normalized();
+            if (Math.Abs(Vec2.Cross(dir, od)) < 1e-6) continue;
+            var theirBands = Section(m, other);
+            var them = new CornerEdges(theirBands, 1);
+            Cutter Theirs(double y) => new(os + od.Perp * y, od);
+            if (side.RunsThrough)
+            {
+                // The other's core comes through to my core: my layers outside the core on its side (both sides at a crossing) stop at its edges.
+                var otherFar = (os - join.Point).Length > (oe - join.Point).Length ? os : oe;
+                var otherSide = join.Kind == JoinKind.X ? 0 : Math.Sign(Vec2.Dot(otherFar - join.Point, left));
+                rules.Add((b => !Core(b) && (otherSide == 0 || (otherSide > 0 ? b.From >= me.CoreHi - 1e-9 : b.To <= me.CoreLo + 1e-9)), Theirs(them.CoreLo), Theirs(them.CoreHi)));
+            }
+            else if (join.Kind == JoinKind.X)
+            {
+                // Crossed by the wall that runs through: my core stops at its core's faces, my other layers at its outer faces.
+                rules.Add((Core, Theirs(them.CoreLo), Theirs(them.CoreHi)));
+                rules.Add((b => !Core(b), Theirs(theirBands.Min(x => x.From)), Theirs(theirBands.Max(x => x.To))));
+            }
+        }
+        return band => rules.Where(r => r.Takes(band)).Select(r => (r.A, r.B)).ToList();
+    }
+
+    /// <summary>The footprint with each gap taken out of it: what lies before the gap's first line and what lies after its second; pieces with no area dropped.</summary>
+    static List<IReadOnlyList<Vec2>> Pieces(IReadOnlyList<Vec2> footprint, IReadOnlyList<(Cutter A, Cutter B)> gaps, Vec2 start, Vec2 dir, double length)
+    {
+        var pieces = new List<IReadOnlyList<Vec2>> { footprint };
+        if (gaps.Count == 0) return pieces;
+        var (behind, ahead) = (start - dir * (length + 1), start + dir * (2 * length + 1));
+        static double Side(Cutter c, Vec2 q) => Vec2.Cross(c.Dir, q - c.Point);
+        double Along(Cutter c) => Vec2.Cross(c.Point - start, c.Dir) / Vec2.Cross(dir, c.Dir);
+        foreach (var (a, b) in gaps)
+        {
+            // The gap's lines in the order the axis meets them; what the far end behind sees of the first stays, what the far end ahead sees of the second stays.
+            var (first, second) = Along(a) <= Along(b) ? (a, b) : (b, a);
+            var (sa, sb) = (Math.Sign(Side(first, behind)), Math.Sign(Side(second, ahead)));
+            var next = new List<IReadOnlyList<Vec2>>();
+            foreach (var p in pieces)
+            {
+                var before = ClipHalf(p, q => Side(first, q) * sa);
+                var after = ClipHalf(p, q => Side(second, q) * sb);
+                if (before.Count >= 3 && Math.Abs(Polygon2.SignedArea(before)) > 1e-8) next.Add(before);
+                if (after.Count >= 3 && Math.Abs(Polygon2.SignedArea(after)) > 1e-8) next.Add(after);
+            }
+            pieces = next;
+        }
+        return pieces;
     }
 
     /// <summary>
@@ -590,21 +677,23 @@ public static class Walls
     static List<Vec2> ClipX(IReadOnlyList<Vec2> poly, Vec2 origin, Vec2 dir, double from, double to)
     {
         if (to - from <= 1e-9) return [];
-        List<Vec2> Clip(IReadOnlyList<Vec2> pts, Func<Vec2, double> inside)
+        var first = ClipHalf(poly, p => Vec2.Dot(p - origin, dir) - from);
+        return first.Count < 3 ? [] : ClipHalf(first, p => to - Vec2.Dot(p - origin, dir));
+    }
+
+    /// <summary>The part of a convex polygon where <paramref name="inside"/> is not negative (a half-plane), its edge cut straight.</summary>
+    static List<Vec2> ClipHalf(IReadOnlyList<Vec2> pts, Func<Vec2, double> inside)
+    {
+        var o = new List<Vec2>();
+        for (var i = 0; i < pts.Count; i++)
         {
-            var o = new List<Vec2>();
-            for (var i = 0; i < pts.Count; i++)
-            {
-                var a = pts[i];
-                var b = pts[(i + 1) % pts.Count];
-                double da = inside(a), db = inside(b);
-                if (da >= 0) o.Add(a);
-                if ((da >= 0) != (db >= 0)) o.Add(a + (b - a) * (da / (da - db)));
-            }
-            return o;
+            var a = pts[i];
+            var b = pts[(i + 1) % pts.Count];
+            double da = inside(a), db = inside(b);
+            if (da >= 0) o.Add(a);
+            if ((da >= 0) != (db >= 0)) o.Add(a + (b - a) * (da / (da - db)));
         }
-        var first = Clip(poly, p => Vec2.Dot(p - origin, dir) - from);
-        return first.Count < 3 ? [] : Clip(first, p => to - Vec2.Dot(p - origin, dir));
+        return o;
     }
 
     /// <summary>
@@ -619,7 +708,8 @@ public static class Walls
         var height = wall.Num("height", DefaultHeight);
         var bands = Section(m, wall);
         var width = bands.Max(b => b.To) - bands.Min(b => b.From);
-        var volumes = geometry.Parts.ToDictionary(p => p.Key ?? p.Name, p => Measure.Volume(p.Solid));
+        // A layer interrupted by a wall crossing it is several parts of one key: measured together.
+        var volumes = geometry.Parts.GroupBy(p => p.Key ?? p.Name).ToDictionary(g => g.Key, g => g.Sum(p => Measure.Volume(p.Solid)));
         var net = volumes.Values.Sum();
         yield return new QuantitySet("Qto_WallBaseQuantities",
         [

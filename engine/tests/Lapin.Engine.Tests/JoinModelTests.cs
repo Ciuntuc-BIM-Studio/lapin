@@ -193,8 +193,71 @@ public class JoinModelTests
         Assert.Equal("ATPATH", (string?)rel.Attrs!["relatingConnection"]);
         Assert.Equal(new Vec2(5, 3), Walls.End(Get(f, ending)));
         Assert.Equal(crossedBefore, f.Bounds(crossed));
-        // The ending wall's body stops on the crossed wall's left face (its plaster side, 140 mm off the axis).
-        Assert.Equal(3 + LeftReach, f.Bounds(ending).Min.Y, 9);
+        // Decision 255: the ending wall's core runs on through the crossed wall's plaster to its core (125 mm off the axis);
+        // its own render and plaster stop on the crossed wall's left face (its plaster, 140 mm off), where they meet their like.
+        Assert.Equal(3 + Core / 2, f.Bounds(ending).Min.Y, 9);
+        Assert.Equal(3 + Core / 2, LayerBounds(f, ending, Core).Min.Y, 9);
+        Assert.Equal(3 + LeftReach, LayerBounds(f, ending, Plaster).Min.Y, 9);
+        Assert.Equal(3 + LeftReach, LayerBounds(f, ending, Render).Min.Y, 9);
+        // The crossed wall's plaster is interrupted where the core comes through: 8 m less the core's 250 mm; its core and render are whole.
+        Assert.Equal((8 - Core) * Plaster * Height, LayerVolume(f, crossed, Plaster), 9);
+        Assert.Equal(8 * Core * Height, LayerVolume(f, crossed, Core), 9);
+        Assert.Equal(8 * Render * Height, LayerVolume(f, crossed, Render), 9);
+        Assert.Equal(2, LayerParts(f, crossed, Plaster).Count);
+    }
+
+    [Fact]
+    public void A_wall_drawn_across_another_makes_an_X_with_the_one_already_there_through_and_each_layer_stops_at_its_like()
+    {
+        // Decision 255: two walls crossing join as an X, neither split. The one already there runs through whole; the new
+        // one's core stops at its core's faces, its render and plaster at its outer faces; its plaster and render interrupted by the new core.
+        var f = new Fixture();
+        var through = f.Wall(0, 3, 8, 3);
+        var throughBefore = f.Bounds(through);
+        var crossing = f.Wall(4, 0, 4, 6);
+        var rel = Assert.Single(JoinRels(f));
+        Assert.Equal("X", Kind(rel));
+        Assert.Equal(through, rel.Relating);
+        Assert.Equal("ATPATH", (string?)rel.Attrs!["relatingConnection"]);
+        Assert.Equal("ATPATH", (string?)rel.Attrs!["relatedConnection"]);
+        Assert.Equal(new Vec2(4, 0), Walls.Start(Get(f, crossing)));
+        Assert.Equal(new Vec2(4, 6), Walls.End(Get(f, crossing)));
+        Assert.Equal(throughBefore, f.Bounds(through));
+        Assert.Equal(8 * Core * Height, LayerVolume(f, through, Core), 9);
+        Assert.Equal((8 - Core) * Plaster * Height, LayerVolume(f, through, Plaster), 9);
+        Assert.Equal((8 - Core) * Render * Height, LayerVolume(f, through, Render), 9);
+        var thickness = LeftReach + RightReach;
+        Assert.Equal((6 - Core) * Core * Height, LayerVolume(f, crossing, Core), 9);
+        Assert.Equal((6 - thickness) * Plaster * Height, LayerVolume(f, crossing, Plaster), 9);
+        Assert.Equal((6 - thickness) * Render * Height, LayerVolume(f, crossing, Render), 9);
+        Assert.Equal(2, LayerParts(f, crossing, Core).Count);
+        // Nothing is built twice: together they fill exactly the union of the two bodies.
+        var union = 8 * thickness * Height + 6 * thickness * Height - thickness * thickness * Height;
+        Assert.Equal(union, Volume(f, through) + Volume(f, crossing), 9);
+        // Swapped, the new one runs through; moved off the other, the crossing is no join and both are whole again.
+        f.Run("architecture.restyleJoins", new JsonObject { ["ids"] = new JsonArray(crossing), ["swap"] = true });
+        Assert.Equal(crossing, Assert.Single(JoinRels(f)).Relating);
+        Assert.Equal(6 * Core * Height, LayerVolume(f, crossing, Core), 9);
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = crossing, ["x1"] = 12, ["x2"] = 12 });
+        Assert.Empty(JoinRels(f));
+        Assert.Equal(6 * thickness * Height, Volume(f, crossing), 9);
+    }
+
+    const double Core = 0.25, Render = 0.02, Plaster = 0.015;
+
+    /// <summary>The wall's parts of the layer <paramref name="thickness"/> thick (the default type's layers differ in thickness).</summary>
+    static List<GeometryPart> LayerParts(Fixture f, string wall, double thickness)
+    {
+        var band = Walls.Section(f.Model, Get(f, wall)).Single(b => Math.Abs(b.To - b.From - thickness) < 1e-9);
+        return f.Session.Geometry(wall)!.Parts.Where(p => p.Key == $"layer:{band.Index}").ToList();
+    }
+
+    static double LayerVolume(Fixture f, string wall, double thickness) => LayerParts(f, wall, thickness).Sum(p => Measure.Volume(p.Solid));
+
+    static (Vec3 Min, Vec3 Max) LayerBounds(Fixture f, string wall, double thickness)
+    {
+        var v = LayerParts(f, wall, thickness).SelectMany(p => p.Solid.Vertices).ToList();
+        return (new(v.Min(q => q.X), v.Min(q => q.Y), v.Min(q => q.Z)), new(v.Max(q => q.X), v.Max(q => q.Y), v.Max(q => q.Z)));
     }
 
     [Fact]
@@ -249,7 +312,7 @@ public class JoinModelTests
         var crossed = f.Wall(1, 3, 9, 3);
         var ending = f.Wall(5, 7, 5, 3);
         Assert.Single(JoinRels(f));
-        Assert.Equal(3 + LeftReach, f.Bounds(ending).Min.Y, 9);
+        Assert.Equal(3 + Core / 2, f.Bounds(ending).Min.Y, 9);
 
         f.Run("architecture.updateWall", new JsonObject { ["id"] = crossed, ["y1"] = 12, ["y2"] = 12 });
         Assert.Empty(JoinRels(f));

@@ -409,13 +409,6 @@ public class WallJoinTests
     static string RefusedWith(Func<WallJoin> act) => Assert.Throws<CommandException>(() => act()).Message;
 
     [Fact]
-    public void Walls_that_cross_must_be_split_first()
-    {
-        var m = RefusedWith(() => WallJoins.Compute(Straight(new(-2, 1), new(3, 1), 0.2), Straight(new(1, -2), new(1, 4), 0.2)));
-        Assert.Contains("cross", m);
-    }
-
-    [Fact]
     public void Walls_whose_axes_would_cross_far_from_any_end_do_not_meet()
     {
         var m = RefusedWith(() => WallJoins.Compute(Straight(new(-5, 0), new(-2, 0), 0.2), Straight(new(0, 1), new(0, 5), 0.2)));
@@ -533,5 +526,25 @@ public class WallJoinTests
         var sideB = SideHolding((cut.P, dir), b.End);
         SameShape(Body(join.A.Wall), Keep(Band(a, Connection.AtEnd), sideA.P, sideA.D));
         SameShape(Body(join.B.Wall), Keep(Band(b, Connection.AtStart), sideB.P, sideB.D));
+    }
+
+    [Fact]
+    public void Two_walls_crossing_make_an_X_with_the_thicker_through_and_neither_cut()
+    {
+        // Decision 255: a crossing is a join of its own. Neither body is cut here (the layers meet where the
+        // geometry is built); the thicker runs through, a on a tie, or the one asked for.
+        var a = Straight(new(0, 3), new(8, 3), 0.25);
+        var b = Straight(new(4, 0), new(4, 6), 0.3);
+        var join = WallJoins.Compute(a, b);
+        Assert.Equal(JoinKind.X, join.Kind);
+        Assert.Equal('b', join.Relating);
+        Assert.Equal((Connection.AtPath, Connection.AtPath), (join.A.Connection, join.B.Connection));
+        Assert.False(join.A.RunsThrough);
+        Assert.True(join.B.RunsThrough);
+        Assert.Equal(a, join.A.Wall);
+        Assert.Equal(b, join.B.Wall);
+        Assert.Equal(new Vec2(4, 3), join.Point);
+        Assert.Equal('a', WallJoins.Compute(a, Straight(new(4, 0), new(4, 6), 0.25)).Relating);
+        Assert.Equal('a', WallJoins.Compute(a, b, new JoinOptions(Priority: 'a')).Relating);
     }
 }

@@ -161,4 +161,39 @@ public sealed class ViewStyleTests
         Assert.Throws<CommandException>(() => f.Run("viewStyle.update", new JsonObject { ["id"] = "structural", ["layers"] = "some" }));
         Assert.Throws<CommandException>(() => f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = "nope" }));
     }
+
+    /// <summary>
+    /// Layered walls meeting in a T and crossing in an X read as one build-up (decision 255): the ending wall's core
+    /// runs through the crossed wall's plaster to its core, with no line between the two cores; its plaster meets the
+    /// crossed wall's plaster with no line between them; the crossed wall's plaster stops at the core's edges, where a
+    /// line stays. The default type: render 20 mm on the right, a 250 mm core, plaster 15 mm on the left.
+    /// </summary>
+    [Fact]
+    public void Walls_meeting_in_a_T_or_crossing_in_an_X_read_as_one_build_up()
+    {
+        var f = new Fixture(new ArchitectureModule(), new StructureModule());
+        f.Wall(0, 3, 8, 3);
+        // Ending on the crossed wall's plaster side (its left, y > 3): its own plaster lies at x 5.125–5.14, its core at 4.875–5.125.
+        f.Wall(5, 7, 5, 3);
+        // Crossing a second wall at (14, 3): the new one's core at x 13.875–14.125, its plaster at 13.86–13.875.
+        f.Wall(10, 3, 18, 3);
+        f.Wall(14, 0, 14, 6);
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        var r = Render(f, plan);
+        // The T: no line where the ending core meets the crossed core (y = 3.125), nor where its plaster meets the crossed plaster (y = 3.14).
+        Assert.Empty(On(r, new Vec2(4.875, 3.125), new Vec2(5.125, 3.125)));
+        Assert.Empty(On(r, new Vec2(5.125, 3.14), new Vec2(5.14, 3.14)));
+        // The crossed wall's plaster stops at the core's edges: a line across it there.
+        Assert.NotEmpty(On(r, new Vec2(4.875, 3.125), new Vec2(4.875, 3.14)));
+        Assert.NotEmpty(On(r, new Vec2(5.125, 3.125), new Vec2(5.125, 3.14)));
+        // And the crossed wall's outer line is whole beyond the ending wall.
+        Assert.NotEmpty(On(r, new Vec2(5.2, 3.14), new Vec2(7.9, 3.14)));
+        // The X: no line on either core face of the through wall within the crossing core, nor where the plasters meet on each side.
+        Assert.Empty(On(r, new Vec2(13.875, 3.125), new Vec2(14.125, 3.125)));
+        Assert.Empty(On(r, new Vec2(13.875, 2.875), new Vec2(14.125, 2.875)));
+        Assert.Empty(On(r, new Vec2(13.86, 3.14), new Vec2(13.875, 3.14)));
+        // The crossing wall's core stops at the through wall's core: no line of its own across the through core.
+        Assert.Empty(On(r, new Vec2(13.875, 2.875), new Vec2(13.875, 3.125)));
+        Assert.NotEmpty(On(r, new Vec2(13.875, 3.125), new Vec2(13.875, 3.14)));
+    }
 }
