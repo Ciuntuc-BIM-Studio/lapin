@@ -76,6 +76,7 @@ export const LO: Record<string, string> = {
   'The cut above the storeys shown, a section shown in 3D, the section box: the model cut there and closed in its materials, as on the screen': 'ຮອຍຕັດເໜືອຊັ້ນທີ່ສະແດງ, ໜ້າຕັດທີ່ສະແດງໃນ 3D, ກ່ອງຕັດ (section box): ແບບຈຳລອງຈະຖືກຕັດຢູ່ບ່ອນນັ້ນ ແລະ ປິດໜ້າຕັດດ້ວຍວັດສະດຸ, ຕາມທີ່ເຫັນເທິງໜ້າຈໍ',
   'Origin': 'ຈຸດກຳເນີດ', 'Edges': 'ຂອບ', 'every phase': 'ທຸກໄລຍະການກໍ່ສ້າງ', 'Exporting…': 'ກຳລັງສົ່ງອອກ…', 'Export': 'ສົ່ງອອກ',
   'Door & window tags': 'ປ້າຍກຳກັບປະຕູ ແລະ ປ່ອງຢ້ຽມ', 'Tags': 'ປ້າຍກຳກັບ', 'Text (outside)': 'ຂໍ້ຄວາມ (ດ້ານນອກ)', 'Inside': 'ດ້ານໃນ', 'Past faces mm': 'ໄລຍະກາຍໜ້າຜິວ (ມມ)', 'Classes': 'ຄລາສ',
+  'Copy to': 'ສຳເນົາໄປ', 'Moves the selection to another plan, where it is': 'ຍ້າຍສິ່ງທີ່ເລືອກໄປແຜນຜັງອື່ນ, ຢູ່ບ່ອນເດີມ', 'Copies the selection to another plan, where it is': 'ສຳເນົາສິ່ງທີ່ເລືອກໄປແຜນຜັງອື່ນ, ຢູ່ບ່ອນເດີມ',
   'by style': 'ຕາມຮູບແບບ', "On the paper; empty: the dimension style's": 'ເທິງເຈ້ຍ; ຫວ່າງ: ຕາມຮູບແບບການວັດ',
   'Room dimensions': 'ຂະໜາດຫ້ອງ', 'Rooms are dimensioned on a plan: open one.': 'ຫ້ອງຖືກວັດຂະໜາດໃນແຜນຜັງ: ເປີດແຜນຜັງໜຶ່ງ.', 'No room here to dimension: place rooms first (Architecture → Room).': 'ບໍ່ມີຫ້ອງໃຫ້ວັດຂະໜາດຢູ່ນີ້: ວາງຫ້ອງກ່ອນ (Architecture → Room).',
   // View settings and styles

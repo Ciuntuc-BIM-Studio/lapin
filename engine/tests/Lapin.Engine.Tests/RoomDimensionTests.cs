@@ -93,6 +93,36 @@ public class RoomDimensionTests
     }
 
     [Fact]
+    public void Dimensions_move_and_copy_to_another_plan_holding_on_what_it_cuts()
+    {
+        // Decision 274: a string made on the site plan (where it held on nothing) moved to the floor plan holds on the walls there.
+        var (f, walls, _) = Box();
+        var site = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["site"] = "situation", ["storeyId"] = f.Storey })!["id"]!;
+        var dim = (string)f.Run("drafting.addDimension", new JsonObject
+        {
+            ["viewId"] = site, ["a"] = new JsonArray(0.1, 2), ["b"] = new JsonArray(4.9, 2), ["at"] = new JsonArray(2.5, 2.5),
+        })!["id"]!;
+        var text = (string)f.Run("drafting.addText", new JsonObject { ["viewId"] = site, ["at"] = new JsonArray(1, 1), ["text"] = "Note" })!["id"]!;
+        f.Run("drafting.toView", new JsonObject { ["ids"] = new JsonArray(dim, text), ["viewId"] = Plan(f) });
+        var moved = f.Model.Get(dim)!;
+        Assert.Equal(Plan(f), moved.Str("viewId"));
+        Assert.Equal(Plan(f), f.Model.Get(text)!.Str("viewId"));
+        Assert.All(moved.Attrs["refs"]!.AsArray(), x => Assert.Equal("edge", (string?)x!["kind"]));
+        // It follows the east wall now.
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = walls[1], ["x1"] = 6, ["y1"] = 0, ["x2"] = 6, ["y2"] = 4 });
+        var drawing = Views.Generate(f.Session.Reader, Views.Find(f.Model, Plan(f))!).Drawing!;
+        Near(Dimensions.Points(f.Model, "plan", f.Model.Get(dim)!, drawing).Pts[^1], 5.9, 2);
+
+        // Copied back: the original stays, the copy is on the site plan.
+        var copies = f.Run("drafting.toView", new JsonObject { ["ids"] = new JsonArray(dim), ["viewId"] = site, ["copy"] = true })!["ids"]!.AsArray();
+        var copy = f.Model.Get((string)copies[0]!)!;
+        Assert.NotEqual(dim, copy.Id);
+        Assert.Equal(site, copy.Str("viewId"));
+        Assert.Equal(Plan(f), f.Model.Get(dim)!.Str("viewId"));
+        Assert.Throws<CommandException>(() => f.Run("drafting.toView", new JsonObject { ["ids"] = new JsonArray(walls[0]), ["viewId"] = site }));
+    }
+
+    [Fact]
     public void Only_rooms_on_a_plan_are_dimensioned()
     {
         var (f, walls, _) = Box();

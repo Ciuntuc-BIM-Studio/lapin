@@ -152,6 +152,52 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             return result;
         });
 
+        // Annotations moved or copied to another plan (decision 274): {ids, viewId, copy?}. Plans share their coordinates, so
+        // each keeps where it is; a dimension's points hold on what the new plan cuts there (free where it cuts nothing).
+        r.Command("toView", "Annotations to view", (ctx, a) =>
+        {
+            var m = ctx.Model;
+            var target = Views.Find(m, (string?)a["viewId"] ?? "") is { } tv && IsPlan(tv) ? tv : throw new CommandException("Annotations go from one plan to another: choose a plan.");
+            var copy = a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var c) && c;
+            var items = Args.Ids(a).Select(id => m.Get(id)).OfType<Entity>().Where(e => e.Class == IfcClass.Annotation && e.Str("viewId") != null).ToList();
+            if (items.Count == 0) throw new CommandException("Select dimensions, texts or drafted lines on a plan.");
+            var drawings = new Dictionary<string, ViewDrawing?>();
+            ViewDrawing? DrawingOf(Entity view) =>
+                drawings.TryGetValue(view.Id, out var d) ? d : drawings[view.Id] = Views.Generate(ctx.Query, view).Drawing;
+            var (targetDrawing, tolerance) = (DrawingOf(target), Tolerance(target));
+            var ids = new JsonArray();
+            foreach (var e in items)
+            {
+                var source = Views.Find(m, e.Str("viewId")!) ?? throw new CommandException($"„{e.Name}” has lost its view.");
+                if (!IsPlan(source)) throw new CommandException("Only a plan's annotations go to another plan: sections and elevations have coordinates of their own.");
+                if (source.Id == target.Id && !copy) { ids.Add((JsonNode)e.Id); continue; }
+                var attrs = e.CloneAttrs();
+                attrs["viewId"] = target.Id;
+                if (Dimensions.IsLinear(e) && DrawingOf(source) is { } sd)
+                {
+                    // Each point as drawn now, but one held on a wall's centre line where it was put: on a site plan, which cuts
+                    // nothing, a click on a wall's face holds on its axis, and the face is what the floor plan should hold on.
+                    var (now, _) = Dimensions.Points(m, "plan", e, sd);
+                    var pts = Dimensions.Stations(e).Select((s, i) => s.Ref is { Kind: "axis" } ? s.P : now[i]).ToList();
+                    var u = pts.Count > 1 && (pts[^1] - pts[0]).Length > 1e-9 ? (pts[^1] - pts[0]).Normalized() : (Vec2?)null;
+                    Dimensions.Write(attrs, pts.Select(p => (p, targetDrawing == null ? null : Dimensions.Associate(m, "plan", targetDrawing, p, tolerance, u))).ToList());
+                }
+                if (copy)
+                {
+                    var made = new Entity(ctx.NewId(), IfcClass.Annotation, e.Name, attrs, e.PredefinedType);
+                    ctx.Add(made);
+                    foreach (var rel in m.RelationsOf(e.Id).Where(x => x.Related.Contains(e.Id))) ctx.Relate(rel.Class, rel.Relating, made.Id);
+                    ids.Add((JsonNode)made.Id);
+                }
+                else
+                {
+                    ctx.Replace(e.With(attrs: attrs));
+                    ids.Add((JsonNode)e.Id);
+                }
+            }
+            return new JsonObject { ["ids"] = ids };
+        });
+
         // A driving dimension: typing a segment's value moves what it measures (and, in a string, what follows).
         r.Command("setDimensionValue", "Dimension value", (ctx, a) =>
         {
@@ -417,12 +463,15 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         return p => Dimensions.Associate(ctx.Model, spec.Kind, drawing, p, tolerance);
     }
 
-    /// <summary>How near (m) a dimension's point must be to an edge to hold on it: 1 mm on the paper, at least 1 cm.</summary>
+    /// <summary>A plan of any sort (a floor plan, a site or location plan, a ceiling plan): they all share the model's x and y.</summary>
+    static bool IsPlan(Entity view) => view.Str("kind") is "plan" or null;
+
     /// <summary>A storey's floor plan: its first plan view that is not a site view, else the storey's own plan.</summary>
     static Entity FloorPlan(IModelView m, string storey) =>
         m.OfClass(Views.Class).FirstOrDefault(v => v.Str("kind") == "plan" && v.Str("storeyId") == storey && SitePlans.Of(v) == null)
         ?? Views.Find(m, "plan:" + storey)!;
 
+    /// <summary>How near (m) a dimension's point must be to an edge to hold on it: 1 mm on the paper, at least 1 cm.</summary>
     static double Tolerance(Entity view) => Math.Max(0.01, 1.0 * (view.NumOrNull("scale") ?? 100) / 1000);
 
     /// <summary>A string's points where they are drawn now (each on what it holds on; one that lost it where it was), with what they hold on.</summary>

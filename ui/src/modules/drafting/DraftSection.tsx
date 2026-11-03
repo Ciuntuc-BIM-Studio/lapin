@@ -10,6 +10,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
+import { useUi } from '../../app/store';
 import type { Vec2 } from '../../platform/module';
 import { fromJson, toJson, type Shape } from '../../viewport/cad/shapes';
 import { ROLES, roleLabel } from '../../viewport/cad/session';
@@ -221,7 +222,43 @@ function TagFields({ node }: { node: NodeDto }) {
   );
 }
 
-export function DraftSection({ node }: { node: NodeDto }) {
+/** The plans an annotation can go to: every plan view (floor, site, location, ceiling), and each storey's own plan where it has no floor plan view. */
+function planTargets(nodes: Map<string, NodeDto>): { id: string; name: string }[] {
+  const all = [...nodes.values()];
+  const views = all.filter((n) => n.type === 'LapinView' && (n.props.kind ?? 'plan') === 'plan');
+  const storeys = all.filter((n) => n.type === 'IfcBuildingStorey')
+    .sort((a, b) => (Number(a.props.elevation) || 0) - (Number(b.props.elevation) || 0));
+  const own = storeys.filter((st) => !views.some((v) => v.props.storeyId === st.id && !v.props.site)).map((st) => ({ id: `plan:${st.id}`, name: st.name }));
+  return [...own, ...views.map((v) => ({ id: v.id, name: v.name }))];
+}
+
+/**
+ * The plan an annotation is on, and where to move or copy it (decision 274): plans share their coordinates, so it keeps
+ * its place; a dimension's points hold on what the new plan cuts. The selection goes with it.
+ */
+function ViewFields({ node }: { node: NodeDto }) {
+  const nodes = useSession((s) => s.nodes);
+  const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : null;
+  const targets = planTargets(nodes);
+  if (!viewId || !targets.some((t) => t.id === viewId)) return null;
+  const ids = () => { const sel = useUi.getState().selected; return sel.includes(node.id) ? sel : [node.id]; };
+  const send = (target: string, copy: boolean) => { if (target && (copy || target !== viewId)) void execute('drafting.toView', { ids: ids(), viewId: target, ...(copy ? { copy } : {}) }); };
+  return (
+    <dl className="fields">
+      <dt title="Moves the selection to another plan, where it is">View</dt>
+      <dd><select className="cell" value={viewId} onChange={(e) => send(e.target.value, false)}>
+        {targets.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+      </select></dd>
+      <dt title="Copies the selection to another plan, where it is">Copy to</dt>
+      <dd><select className="cell" value="" onChange={(e) => send(e.target.value, true)}>
+        <option value="">—</option>
+        {targets.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+      </select></dd>
+    </dl>
+  );
+}
+
+function Fields({ node }: { node: NodeDto }) {
   switch (node.props.predefinedType) {
     case 'DRAFT': return <Drafted node={node} />;
     case 'TEXT': return <TextFields node={node} />;
@@ -229,4 +266,8 @@ export function DraftSection({ node }: { node: NodeDto }) {
     case 'TAG': return <TagFields node={node} />;
     default: return null;
   }
+}
+
+export function DraftSection({ node }: { node: NodeDto }) {
+  return <><Fields node={node} /><ViewFields node={node} /></>;
 }
