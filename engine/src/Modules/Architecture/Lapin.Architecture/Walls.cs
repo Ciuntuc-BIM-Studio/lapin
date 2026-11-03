@@ -87,12 +87,12 @@ public static class Walls
     }
 
     /// <summary>A layer band of the wall's section: across the axis (left of it positive), its material, whether it is the core.</summary>
-    public readonly record struct Band(double From, double To, string? Material, string Name, bool Core = false, int Index = 0, double? Z0 = null, double? Z1 = null);
+    public readonly record struct Band(double From, double To, string? Material, string Name, bool Core = false, int Index = 0, double? Z0 = null, double? Z1 = null, IReadOnlyList<LayerPart>? Parts = null);
 
     /// <summary>The wall's section, first layer to last; one centred band for a wall without layers.</summary>
     public static IReadOnlyList<Band> Section(IModelView m, Entity wall)
     {
-        if (LayerSets.BandsOf(m, wall.Id) is { } bands) return bands.Select(b => new Band(b.From, b.To, b.Material, b.Name, b.Core, b.Index, b.Z0, b.Z1)).ToList();
+        if (LayerSets.BandsOf(m, wall.Id) is { } bands) return bands.Select(b => new Band(b.From, b.To, b.Material, b.Name, b.Core, b.Index, b.Z0, b.Z1, b.Parts)).ToList();
         var t = wall.NumOrNull("thickness") ?? DefaultThickness;
         return [new Band(-t / 2, t / 2, null, wall.Name, true)];
     }
@@ -211,8 +211,13 @@ public static class Walls
                         parts.Add(Cut(new GeometryPart($"Gable ({gz.Name})", Materials.ColorOf(m, gz.Material), gable, gz.Material, "zone:gable"), height, built, isCore: true));
                 }
                 // A layer of its own height (report #44): from its bottom to its top over the wall's base, never above the wall.
-                else if (LayerSpan(band, built) is var (lz0, lz1) && Prism.ExtrudeFootprint(footprint, z + lz0, lz1 - lz0, band.Name) is { } solid)
-                    parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), lz0, lz1, isCore: band.Core));
+                else if (LayerSpan(band, built) is var (lz0, lz1))
+                {
+                    // Its pieces in height (decision 264), each in its own material; one, of the layer's, for most layers.
+                    foreach (var h in HeightPieces(m, band, lz0, lz1))
+                        if (Prism.ExtrudeFootprint(footprint, z + h.Z0, h.Z1 - h.Z0, h.Name) is { } solid)
+                            parts.Add(Cut(new GeometryPart(h.Name, Materials.ColorOf(m, h.Material), solid, h.Material, $"layer:{band.Index}"), h.Z0, h.Z1, isCore: band.Core));
+                }
                 // In plan, the band between the gaps the openings leave at the cut.
                 var x0 = footprint.Min(q => Vec2.Dot(q - start, dir));
                 var x1 = footprint.Max(q => Vec2.Dot(q - start, dir));
@@ -250,6 +255,25 @@ public static class Walls
             }
         }
         return new ElementGeometry(parts, plan, [start, end], problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>
+    /// A layer's pieces in its height between <paramref name="z0"/> and <paramref name="z1"/> (decision 264): its parts from
+    /// its bottom up, each as high as it says, then the rest in the layer's own material; what goes past the top is cut there.
+    /// </summary>
+    internal static List<(double Z0, double Z1, string? Material, string Name)> HeightPieces(IModelView m, Band band, double z0, double z1)
+    {
+        var o = new List<(double, double, string?, string)>();
+        var at = z0;
+        foreach (var p in band.Parts ?? [])
+        {
+            if (at >= z1 - 1e-9) break;
+            var top = Math.Min(z1, at + p.Height);
+            if (top - at > 1e-9) o.Add((at, top, p.Material, p.Name ?? m.Get(p.Material)?.Name ?? band.Name));
+            at = top;
+        }
+        if (z1 - at > 1e-9) o.Add((at, z1, band.Material, band.Name));
+        return o;
     }
 
     /// <summary>A layer's height over the wall's base: its own bottom and top, else the whole of what is built; null when nothing of it is left.</summary>
@@ -532,8 +556,12 @@ public static class Walls
                     parts.Add(Cut(new GeometryPart($"Gable ({gz.Name})", Materials.ColorOf(m, gz.Material), gable, gz.Material, "zone:gable"), height, built, isCore: true));
             }
             // A layer of its own height (report #44): from its bottom to its top over the wall's base, never above the wall.
-            else if (LayerSpan(band, built) is var (lz0, lz1) && Prism.ExtrudeFootprint(footprint, z + lz0, lz1 - lz0, band.Name) is { } solid)
-                parts.Add(Cut(new GeometryPart(band.Name, Materials.ColorOf(m, band.Material), solid, band.Material, $"layer:{band.Index}"), lz0, lz1, isCore: band.Core));
+            else if (LayerSpan(band, built) is var (lz0, lz1))
+            {
+                foreach (var h in HeightPieces(m, band, lz0, lz1))
+                    if (Prism.ExtrudeFootprint(footprint, z + h.Z0, h.Z1 - h.Z0, h.Name) is { } solid)
+                        parts.Add(Cut(new GeometryPart(h.Name, Materials.ColorOf(m, h.Material), solid, h.Material, $"layer:{band.Index}"), h.Z0, h.Z1, isCore: band.Core));
+            }
             // In plan, the band between the gaps the openings leave at the cut.
             var at = double.NegativeInfinity;
             foreach (var g in gaps.Append((From: double.PositiveInfinity, To: double.PositiveInfinity)))
@@ -746,12 +774,18 @@ public static class Walls
             if (band.Core && zones.Count > 0) continue;
             if (!volumes.TryGetValue($"layer:{band.Index}", out var v)) continue;
             var t = band.To - band.From;
-            yield return new QuantitySet("Lapin_WallLayerQuantities",
-            [
-                new("Width", t, "LENGTH"),
-                new("NetSideArea", t > 0 ? v / t : 0, "AREA", "Net side area"),
-                new("NetVolume", v, "VOLUME", "Net volume"),
-            ], $"layer:{band.Index}", band.Name, band.Material);
+            // A layer of several materials in its height (decision 264): a set per material, its own pieces measured.
+            var byMaterial = geometry.Parts.Where(p => p.Key == $"layer:{band.Index}").GroupBy(p => p.Material).ToList();
+            foreach (var g in byMaterial)
+            {
+                var gv = byMaterial.Count == 1 ? v : g.Sum(p => Measure.Volume(p.Solid));
+                yield return new QuantitySet("Lapin_WallLayerQuantities",
+                [
+                    new("Width", t, "LENGTH"),
+                    new("NetSideArea", t > 0 ? gv / t : 0, "AREA", "Net side area"),
+                    new("NetVolume", gv, "VOLUME", "Net volume"),
+                ], byMaterial.Count == 1 ? $"layer:{band.Index}" : $"layer:{band.Index}:{g.Key}", byMaterial.Count == 1 ? band.Name : g.First().Name, g.Key ?? band.Material);
+            }
         }
     }
 }

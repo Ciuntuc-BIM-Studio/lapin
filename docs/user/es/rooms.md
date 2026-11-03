@@ -62,6 +62,28 @@ Los colores se dibujan bajo los muros, el mobiliario y los giros de las puertas,
 
 ![Dos habitaciones acotadas por dentro: la cadena de cada lado, con la puerta y las ventanas](shots/room-dimensions.webp)
 
+## Acabados de habitaciones
+
+**Acabados → Acabar habitación** (<kbd>FR</kbd>) coloca un acabado en la habitación en la que hace clic: su suelo, el acabado de sus paredes y su techo, cada uno siguiendo el contorno de la habitación como lo hace la habitación. Mueva un muro y los acabados lo siguen. **Acabados → Acabados de habitaciones** edita los acabados; **De la biblioteca** trae algunos ya hechos: Salón, Dormitorio, Baño, Cocina, Planta baja sobre losa y Cuarto técnico. Mientras la herramienta está activa, el panel de propiedades muestra el acabado que coloca, para elegirlo antes del clic. El **Acabado** de una habitación, en sus propiedades, coloca otro o lo quita.
+
+Un acabado tiene:
+
+- **Suelo**, sus capas desde el suelo terminado hacia abajo (baldosas, adhesivo, recrecido…). Los huecos de losa en la habitación (una caja de escalera) se descuentan. **A través de las puertas, hasta el eje del muro** prolonga el suelo bajo cada puerta, para que el suelo de la habitación vecina lo encuentre en el eje del muro.
+- **Paredes**, sus capas desde la cara del muro hacia la habitación, también alrededor de las islas de la habitación. Cada capa puede cambiar de material en su altura, como la capa de un tipo de muro: en el Baño, pintura sobre azulejos hasta 2100 (13 mm de espesor, azulejos y adhesivo); en la Cocina, una franja de azulejos de 900 a 1500. Una pieza sin material no deja nada allí. Las puertas y ventanas de los muros alrededor de la habitación se recortan. **Altura**: vacía, hasta el techo.
+- **Techo**, sus capas desde la losa sobre la habitación hacia abajo (desde la altura de la habitación cuando no hay losa), con sus huecos descontados.
+- **Rodapié**: un tipo de rodapié colocado alrededor de la habitación, interrumpido en sus puertas (vea Rodapiés, en Losas y cubiertas).
+- **Una losa estructural bajo el suelo**: una losa de hormigón armado propia bajo las capas del suelo, con su espesor y cuánto sobresale del contorno de la habitación (bajo los muros). Es una losa como cualquier otra, en la estructura y en su tabla.
+
+**Guardar** cambia el acabado, y cada habitación que lo tiene se vuelve a colocar. **Acabar habitaciones seleccionadas** lo coloca en las habitaciones seleccionadas.
+
+Cada acabado mide, por material, su superficie **bruta** (el contorno de la habitación, sin descontar nada: el área del suelo, el perímetro de las paredes por la altura de cada pieza) y la **neta** (lo construido: puertas, ventanas y huecos de losa descontados, el suelo bajo las puertas añadido), y su volumen. **Acabados → Tabla de acabados** lista cada habitación acabada por parte y material, con los totales por material al final; como cualquier tabla, hace gráficos, se exporta y va en una lámina. En IFC un acabado es un IfcCovering: FLOORING, CLADDING o CEILING.
+
+Un acabado reviste lo que ya tienen los muros de la habitación: si los tipos de muro llevan su propio enlucido, dé a las paredes de la habitación solo lo que va encima (pintura, azulejos), o use tipos de muro solo con el núcleo.
+
+![Los acabados de habitaciones: el suelo del Baño, las paredes con azulejos hasta 2100 y el techo](shots/room-finishes.webp)
+
+![Las propiedades de una habitación con su acabado](shots/room-finish-properties.webp)
+
 ## Habitaciones en 3D y en IFC
 
 Las habitaciones están ocultas en la vista 3D, para que no tapen el edificio. **Visibilidad / Gráficos** en la vista 3D puede mostrarlas.

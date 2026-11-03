@@ -62,6 +62,28 @@ As cores são desenhadas sob as paredes, os móveis e os giros das portas, para 
 
 ![Dois ambientes cotados por dentro: a linha de cotas de cada lado com a porta e as janelas nele](shots/room-dimensions.webp)
 
+## Acabamentos de ambientes
+
+**Acabamentos → Acabamento no ambiente** (<kbd>FR</kbd>) aplica um acabamento no ambiente em que você clica: o piso, o acabamento das paredes e o teto, cada um seguindo o contorno do ambiente como o próprio ambiente. Mova uma parede e os acabamentos vão com ela. **Acabamentos → Acabamentos de ambientes** edita os acabamentos; **Da biblioteca** traz alguns prontos: Sala de estar, Quarto, Banheiro, Cozinha, Térreo sobre laje e Sala técnica. Enquanto a ferramenta está ativa, o painel de propriedades mostra o acabamento que ela aplica, para escolhê-lo antes do clique. O **Acabamento** de um ambiente, nas suas propriedades, aplica outro ou o retira.
+
+Um acabamento tem:
+
+- **Piso**, suas camadas do piso acabado para baixo (piso cerâmico, argamassa colante, contrapiso…). As aberturas da laje no ambiente (um vão de escada) são descontadas. **Pelas portas, até o eixo da parede** continua o piso sob cada porta, de modo que o piso do ambiente vizinho o encontra no eixo da parede.
+- **Paredes**, suas camadas da face da parede para o ambiente, também em volta das ilhas do ambiente. Cada camada pode mudar de material na altura, como a camada de um tipo de parede: no Banheiro, pintura acima de azulejos até 2100 (13 mm de espessura, azulejos e argamassa colante); na Cozinha, uma faixa de azulejos de 900 a 1500. Uma peça sem material não deixa nada ali. As portas e janelas das paredes em volta do ambiente são recortadas. **Altura**: vazia, até o teto.
+- **Teto**, suas camadas da laje acima do ambiente para baixo (a partir da altura do ambiente quando não há laje), com as aberturas descontadas.
+- **Rodapé**: um tipo de rodapé aplicado em volta do ambiente, interrompido nas portas (veja Rodapés, em Pisos e telhados).
+- **Uma laje estrutural sob o piso**: uma laje de concreto armado própria sob as camadas do piso, com sua espessura e quanto passa além do contorno do ambiente (sob as paredes). É uma laje como qualquer outra, na estrutura e na sua tabela.
+
+**Salvar** altera o acabamento, e cada ambiente que o tem é refeito. **Aplicar aos ambientes selecionados** o aplica nos ambientes selecionados.
+
+Cada acabamento mede, por material, sua área **bruta** (o contorno do ambiente, sem descontos: a área do piso, o perímetro das paredes vezes a altura de cada peça) e sua área **líquida** (o que é executado: sem as portas, janelas e aberturas da laje, com o piso sob as portas), e seu volume. **Acabamentos → Tabela de acabamentos** lista cada ambiente com acabamento por parte e material, com os totais por material no fim; como qualquer tabela, gera gráficos, é exportada e vai para uma prancha. No IFC um acabamento é um IfcCovering: FLOORING, CLADDING ou CEILING.
+
+Um acabamento reveste o que as paredes do ambiente já têm: se os tipos de parede trazem o próprio reboco, dê às paredes do ambiente só o que vai por cima (pintura, azulejos), ou use tipos de parede só com o núcleo.
+
+![Os acabamentos de ambientes: o piso do Banheiro, paredes com azulejos até 2100 e o teto](shots/room-finishes.webp)
+
+![As propriedades de um ambiente com seu acabamento](shots/room-finish-properties.webp)
+
 ## Ambientes em 3D e no IFC
 
 Os ambientes ficam ocultos na vista 3D, para não cobrir o edifício. **Visibilidade / Gráficos** na vista 3D pode mostrá-los.

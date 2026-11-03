@@ -43,6 +43,10 @@ Der Eigenschaftenbereich zeigt die ausgewählte Wand. Oben im Bereich stehen ihr
 
 Ein Wandtyp ist eine Folge von Schichten, von der Außenseite zur Innenseite. Jede Schicht hat ein Material und eine Dicke, und eine Schicht ist der **Kern**. Die Achse der Wand verläuft entlang des Kerns. Um die Typen zu bearbeiten, wählen Sie **Architektur → Wandtypen**. Eine Schicht außer dem Kern kann eine eigene Höhe haben: **Von** und **Bis** legen fest, wie hoch sie über dem Wandfuß reicht (ein Fliesensockel bis 1500, eine Bekleidung ab 300); leer läuft sie über die ganze Höhe.
 
+Eine Schicht außer dem Kern kann auch über ihre Höhe das Material wechseln: Die Schaltfläche **Schichten** am Ende ihrer Zeile fügt ein Stück hinzu (Fliesen, standardmäßig 2100), von der Unterkante der Schicht aufwärts; fügen Sie weitere für ein Band hinzu (Anstrich bis 900, Fliesen bis 1500), und über dem letzten Stück läuft die Schicht in ihrem eigenen Material bis oben weiter. Jedes Stück wird gezeichnet, in Grundriss und Schnitten geschnitten und in seinem eigenen Material gemessen.
+
+![Eine Putzschicht mit Fliesen bis 2100 und dem Putz darüber](shots/wall-layer-parts.webp)
+
 ![Wandtypen: die Schichten einer Ziegelwand](shots/wall-types.webp)
 
 - **+ Schicht** fügt eine Schicht hinzu. Die Pfeile verschieben eine Schicht nach oben oder unten.

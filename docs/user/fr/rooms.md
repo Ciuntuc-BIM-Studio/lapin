@@ -62,6 +62,28 @@ Les couleurs sont dessinées sous les murs, le mobilier et les battements des po
 
 ![Deux pièces cotées à l’intérieur : la chaîne de chaque côté, avec la porte et les fenêtres](shots/room-dimensions.webp)
 
+## Finitions des pièces
+
+**Finitions → Revêtir la pièce** (<kbd>FR</kbd>) pose une finition dans la pièce où vous cliquez : son sol, la finition de ses murs et son plafond, chacun suivant le contour de la pièce comme la pièce le fait. Déplacez un mur et les finitions le suivent. **Finitions → Finitions des pièces** modifie les finitions ; **De la bibliothèque** en apporte de toutes faites : Séjour, Chambre, Salle de bains, Cuisine, Rez-de-chaussée sur dalle et Local technique. Tant que l’outil est actif, le panneau des propriétés montre la finition qu’il pose, à choisir avant le clic. La **Finition** d’une pièce, dans ses propriétés, en pose une autre ou l’enlève.
+
+Une finition a :
+
+- **Sol**, ses couches depuis le sol fini vers le bas (carrelage, colle, chape…). Les trémies de la dalle dans la pièce (une cage d’escalier) sont déduites. **À travers les portes, jusqu’à l’axe du mur** prolonge le sol sous chaque porte, pour que le sol de la pièce voisine le rejoigne à l’axe du mur.
+- **Murs**, leurs couches depuis la face du mur vers la pièce, autour des îlots de la pièce aussi. Chaque couche peut changer de matériau sur sa hauteur, comme la couche d’un type de mur : dans la Salle de bains, de la peinture au-dessus d’un carrelage jusqu’à 2100 (13 mm d’épaisseur, carrelage et colle) ; dans la Cuisine, une bande de carrelage de 900 à 1500. Un morceau sans matériau ne laisse rien à cet endroit. Les portes et fenêtres des murs autour de la pièce sont découpées. **Hauteur** : vide, jusqu’au plafond.
+- **Plafond**, ses couches depuis la dalle au-dessus de la pièce vers le bas (depuis la hauteur de la pièce quand il n’y a pas de dalle), ses trémies déduites.
+- **Plinthe** : un type de plinthe posé autour de la pièce, interrompu à ses portes (voir Plinthes, dans Dalles et toits).
+- **Une dalle structurelle sous le sol** : une dalle de béton armé à part sous les couches du sol, avec son épaisseur et de combien elle dépasse le contour de la pièce (sous les murs). C’est une dalle comme les autres, dans la structure et dans sa nomenclature.
+
+**Enregistrer** modifie la finition, et chaque pièce qui l’a est reposée. **Revêtir les pièces sélectionnées** la pose dans les pièces sélectionnées.
+
+Chaque finition mesure, par matériau, sa surface **brute** (le contour de la pièce, rien de déduit : l’aire du sol, le périmètre des murs fois la hauteur de chaque morceau) et sa surface **nette** (ce qui est construit : portes, fenêtres et trémies déduites, le sol sous les portes ajouté), et son volume. **Finitions → Nomenclature des finitions** liste chaque pièce finie par partie et par matériau, avec les totaux par matériau à la fin ; comme toute nomenclature, elle fait des graphiques, s’exporte et se place sur une feuille. En IFC, une finition est un IfcCovering : FLOORING, CLADDING ou CEILING.
+
+Une finition revêt ce que les murs de la pièce ont déjà : si les types de murs portent leur propre enduit, ne donnez aux murs de la pièce que ce qui vient par-dessus (peinture, carrelage), ou utilisez des types de murs réduits au noyau.
+
+![Les finitions des pièces : le sol de la Salle de bains, les murs carrelés jusqu’à 2100 et le plafond](shots/room-finishes.webp)
+
+![Les propriétés d’une pièce avec sa finition](shots/room-finish-properties.webp)
+
 ## Les pièces en 3D et en IFC
 
 Les pièces sont masquées dans la vue 3D, pour ne pas recouvrir le bâtiment. **Visibilité / Graphismes** dans la vue 3D peut les afficher.

@@ -4,12 +4,13 @@
  * one. Layers are listed from the face right of the drawn direction to the
  * left one; the core carries the axis. A type may also be composed in its
  * height: zones from the bottom up (a first course, the masonry, a ring
- * beam) that divide the core. Saving is one engine command; every wall of
+ * beam) that divide the core; any other layer may change material up its
+ * height (decision 264: tiles to 2.10 m, plaster over them). Saving is one engine command; every wall of
  * the type follows.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Layers, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { materialName, ofClass, relatedOf, typeLayers } from '../../engine/model';
@@ -22,7 +23,10 @@ import { TypeFiles } from './TypeFiles';
 import { deleteType } from '../core/deleteType';
 
 /** A layer as the editor holds it: lengths in metres; from and to null for the whole height. */
-interface Row { material: string; thickness: number; core: boolean; from: number | null; to: number | null }
+interface Row { material: string; thickness: number; core: boolean; from: number | null; to: number | null; parts: Part[] }
+
+/** A piece of a layer in its height, from the layer's bottom up (decision 264); above the last, the layer's own material. */
+interface Part { material: string; height: number }
 
 /** A block's length, height and joint, in metres. */
 type Block = { length: number; height: number; joint: number };
@@ -49,7 +53,7 @@ const fromRow = (r: ZoneRow) => ({
   ...(r.role !== 'masonry' && r.rebar ? { rebar: r.rebar } : {}),
 });
 
-const layer = (material: string, thickness: number, core = false): Row => ({ material, thickness, core, from: null, to: null });
+const layer = (material: string, thickness: number, core = false): Row => ({ material, thickness, core, from: null, to: null, parts: [] });
 const blank = (): Row[] => [layer('Render', 0.02), layer('Brick', 0.25, true), layer('Plaster', 0.015)];
 
 export function WallTypesDialog() {
@@ -77,7 +81,8 @@ export function WallTypesDialog() {
     if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); return; }
     setLintels((t.props.lintels as unknown as Rule | undefined) ?? DEFAULT_RULE);
     setName(t.name);
-    setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thickness: l.thickness, core: l.core === true, from: l.from || null, to: l.to || null })));
+    setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thickness: l.thickness, core: l.core === true, from: l.from || null, to: l.to || null,
+      parts: (l.parts ?? []).map((p) => ({ material: materialName(model, p.material), height: p.height })) })));
     const stored = Array.isArray(t.props.zones) ? (t.props.zones as unknown as ZoneJson[]) : [];
     setZones(stored.map((z) => toRow(z, (id) => materialName(model, id))));
   }, [editing]);
@@ -94,7 +99,11 @@ export function WallTypesDialog() {
   const total = rows.reduce((s, r) => s + r.thickness, 0);
   // A layer's own height (report #44): from and up to, over the wall's base; empty, the whole height.
   const height = (v: number | null) => (v != null && v > 0 ? v : null);
-  const layers = rows.map((r) => ({ material: r.material.trim(), thickness: r.thickness, core: r.core, from: height(r.from), to: height(r.to) }));
+  const layers = rows.map((r) => ({
+    material: r.material.trim(), thickness: r.thickness, core: r.core, from: height(r.from), to: height(r.to),
+    ...(!r.core && r.parts.length > 0 ? { parts: r.parts.map((p) => ({ material: p.material.trim(), height: p.height })) } : {}),
+  }));
+  const setPart = (i: number, k: number, patch: Partial<Part>) => set(i, { parts: rows[i].parts.map((p, j) => (j === k ? { ...p, ...patch } : p)) });
 
   const zoneJson = zones.map(fromRow);
   const setZone = (i: number, patch: Partial<ZoneRow>) => setZones(zones.map((z, k) => (k === i ? { ...z, ...patch } : patch.rest ? { ...z, rest: false } : z)));
@@ -138,7 +147,7 @@ export function WallTypesDialog() {
             <table className="layer-edit">
               <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th title="How high the layer goes over the wall's base; empty: the whole height">From</th><th title="How high the layer goes over the wall's base; empty: the whole height">Up to</th><th /></tr></thead>
               <tbody>
-                {rows.map((r, i) => (
+                {rows.map((r, i) => [
                   <tr key={i}>
                     <td><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /></td>
                     <td className="num"><LengthField metres={r.thickness} min={0} onCommit={(m) => { if (m != null) set(i, { thickness: m }); }} /></td>
@@ -148,10 +157,27 @@ export function WallTypesDialog() {
                     <td className="row-tools">
                       <button type="button" className="icon mini" title="Up" onClick={() => move(i, -1)}><ArrowUp size={12} /></button>
                       <button type="button" className="icon mini" title="Down" onClick={() => move(i, 1)}><ArrowDown size={12} /></button>
+                      {!r.core && <button type="button" className="icon mini" data-testid="layer-part-add" title="Another material up the layer's height (tiles to 2.10 m, the layer's own above)"
+                        onClick={() => set(i, { parts: [...r.parts, { material: 'Ceramic tiles', height: r.parts.length === 0 ? 2.1 : 0.5 }] })}><Layers size={12} /></button>}
                       <button type="button" className="icon mini" title="Remove" onClick={() => setRows(rows.filter((_, k) => k !== i))}><Trash2 size={12} /></button>
                     </td>
-                  </tr>
-                ))}
+                  </tr>,
+                  !r.core && r.parts.length > 0 && (
+                    <tr key={`${i}-parts`} className="layer-parts">
+                      <td colSpan={6} data-i18n-ctx="finish">
+                        <span className="muted small">Up its height, from {r.from ? formatLength(r.from) : 'the bottom'}:</span>
+                        {r.parts.map((p, k) => (
+                          <span key={k} className="layer-part" data-testid="layer-part">
+                            <MaterialPicker value={p.material} onChange={(material) => setPart(i, k, { material })} />
+                            <LengthField className="layer-height" metres={p.height} min={0} title="How high this piece goes" onCommit={(m) => { if (m != null && m > 0) setPart(i, k, { height: m }); }} />
+                            <button type="button" className="icon mini" title="Remove the piece" onClick={() => set(i, { parts: r.parts.filter((_, j) => j !== k) })}><X size={11} /></button>
+                          </span>
+                        ))}
+                        <span className="muted small">then {r.material || 'the layer\'s material'} to {r.to ? formatLength(r.to) : 'the top'}</span>
+                      </td>
+                    </tr>
+                  ),
+                ])}
                 <tr className="total"><td>Total</td><td className="num">{formatLength(total)}</td><td colSpan={4} /></tr>
               </tbody>
             </table>

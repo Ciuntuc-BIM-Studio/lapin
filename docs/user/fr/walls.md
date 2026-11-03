@@ -43,6 +43,10 @@ Le panneau des propriétés affiche le mur sélectionné. Le haut du panneau con
 
 Un type de mur est un ensemble de couches, de la face extérieure à la face intérieure. Chaque couche a un matériau et une épaisseur, et une couche est le **noyau**. La ligne du mur suit le noyau. Pour modifier les types, choisissez **Architecture → Types de murs**. Une couche autre que l’âme peut avoir sa propre hauteur : **De** et **Jusqu’à** règlent jusqu’où elle monte au-dessus du pied du mur (une faïence jusqu’à 1500, un bardage à partir de 300) ; vide, elle court sur toute la hauteur.
 
+Une couche autre que le noyau peut aussi changer de matériau sur sa hauteur : le bouton **couches** au bout de sa ligne ajoute un morceau (carrelage, 2100 par défaut), depuis le bas de la couche vers le haut ; ajoutez-en d’autres pour une bande (peinture jusqu’à 900, carrelage jusqu’à 1500), et au-dessus du dernier morceau la couche continue dans son propre matériau jusqu’en haut. Chaque morceau est dessiné, coupé en plan et en coupe, et métré dans son propre matériau.
+
+![Une couche d’enduit avec du carrelage jusqu’à 2100 et l’enduit au-dessus](shots/wall-layer-parts.webp)
+
 ![Types de murs : les couches d’un mur en brique](shots/wall-types.webp)
 
 - **+ Couche** ajoute une couche. Les flèches montent ou descendent une couche.

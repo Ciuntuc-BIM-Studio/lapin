@@ -4,7 +4,10 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>A layer as a command gives it: a material by name, a thickness in metres, the core mark.</summary>
-public sealed record LayerSpec(string Material, double Thickness, bool Core = false, string? Color = null, string? Name = null, double? From = null, double? To = null);
+public sealed record LayerSpec(string Material, double Thickness, bool Core = false, string? Color = null, string? Name = null, double? From = null, double? To = null, IReadOnlyList<LayerPartSpec>? Parts = null);
+
+/// <summary>A piece of a layer in its height as a command gives it (decision 264): a material by name, its height in metres.</summary>
+public sealed record LayerPartSpec(string Material, double Height, string? Name = null, string? Color = null);
 
 /// <summary>
 /// Layered types, whatever they are (a wall, a slab, a foundation's stem):
@@ -13,7 +16,7 @@ public sealed record LayerSpec(string Material, double Thickness, bool Core = fa
 /// platform's, since several modules build on it.
 /// </summary>
 /// <summary>One layer of an element's layer set as a band across its axis: from, to, its material, its name, its place in the set, whether it is the core.</summary>
-public readonly record struct LayerBand(double From, double To, string Material, string Name, int Index, bool Core, double? Z0 = null, double? Z1 = null);
+public readonly record struct LayerBand(double From, double To, string Material, string Name, int Index, bool Core, double? Z0 = null, double? Z1 = null, IReadOnlyList<LayerPart>? Parts = null);
 
 public static class LayerSets
 {
@@ -39,9 +42,25 @@ public static class LayerSets
             var from = Json.Number(l["from"]) is { } f && f > 0 ? f : (double?)null;
             var to = Json.Number(l["to"]) is { } t && t > 0 ? t : (double?)null;
             if (to is { } tt && tt <= (from ?? 0) + 1e-6) throw new CommandException("A layer's top must be above its bottom.");
-            o.Add(new LayerSpec(material, thickness.Value, l["core"] is JsonValue c && c.TryGetValue<bool>(out var core) && core, (string?)l["color"], (string?)l["name"], from, to));
+            o.Add(new LayerSpec(material, thickness.Value, l["core"] is JsonValue c && c.TryGetValue<bool>(out var core) && core, (string?)l["color"], (string?)l["name"], from, to, ParseParts(l["parts"])));
         }
         Validate(o, what);
+        return o;
+    }
+
+    /// <summary>A layer's pieces in its height (decision 264), bottom up: a material and a height each; none for a layer of one material.</summary>
+    static IReadOnlyList<LayerPartSpec>? ParseParts(JsonNode? node)
+    {
+        if (node is not JsonArray arr || arr.Count == 0) return null;
+        var o = new List<LayerPartSpec>();
+        foreach (var n in arr)
+        {
+            if (n is not JsonObject p) throw new CommandException("Every piece of a layer in its height is an object: material and height.");
+            var material = ((string?)p["material"])?.Trim();
+            if (string.IsNullOrEmpty(material)) throw new CommandException("Every piece of a layer in its height needs a material.");
+            if (Json.Number(p["height"]) is not { } h || !(h > 0)) throw new CommandException("Every piece of a layer in its height needs a height.");
+            o.Add(new LayerPartSpec(material, h, (string?)p["name"] is { Length: > 0 } name ? name : null, (string?)p["color"]));
+        }
         return o;
     }
 
@@ -54,7 +73,13 @@ public static class LayerSets
 
     /// <summary>The layers with their materials, made when the project has none of that name.</summary>
     public static List<MaterialLayer> Resolve(IEdit edit, IReadOnlyList<LayerSpec> layers) =>
-        layers.Select(l => new MaterialLayer(Materials.Ensure(edit, l.Material, l.Color).Id, l.Thickness, l.Core, l.Name, l.From, l.To)).ToList();
+        layers.Select(l => new MaterialLayer(Materials.Ensure(edit, l.Material, l.Color).Id, l.Thickness, l.Core, l.Name, l.From, l.To,
+            l.Parts is { Count: > 0 } ps ? ps.Select(p => new LayerPart(Materials.Ensure(edit, p.Material, p.Color).Id, p.Height, p.Name)).ToList() : null)).ToList();
+
+    /// <summary>A stored layer as a command would give it again (materials by name), its pieces in height with it.</summary>
+    public static LayerSpec SpecOf(IModelView m, MaterialLayer l) =>
+        new(m.Get(l.Material)?.Name ?? "Material", l.Thickness, l.Core, Name: l.Name, From: l.From, To: l.To,
+            Parts: l.Parts?.Select(p => new LayerPartSpec(m.Get(p.Material)?.Name ?? "Material", p.Height, p.Name)).ToList());
 
     /// <summary>A new layer set, associated with the type.</summary>
     public static Entity Attach(IEdit edit, Entity type, IReadOnlyList<LayerSpec> layers)
@@ -109,7 +134,7 @@ public static class LayerSets
         var layers = Layers.Read(set);
         var bands = Layers.Bands(layers, usage);
         var core = Layers.CoreIndex(layers);
-        return layers.Select((l, i) => new LayerBand(bands[i].From, bands[i].To, l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", i, i == core, l.From, l.To)).ToList();
+        return layers.Select((l, i) => new LayerBand(bands[i].From, bands[i].To, l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", i, i == core, l.From, l.To, l.Parts)).ToList();
     }
 
     /// <summary>Flips a layered element across its axis: its usage's sense turns and its offset changes sign (false: it has no layers).</summary>

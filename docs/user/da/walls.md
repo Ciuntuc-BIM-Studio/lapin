@@ -43,6 +43,10 @@ Egenskabspanelet viser den markerede væg. Øverst i panelet står dens type og 
 
 En vægtype er et sæt lag, fra yderside til inderside. Hvert lag har et materiale og en tykkelse, og ét lag er **Kerne**. Væggens linje løber langs kernen. Du redigerer typerne under **Arkitektur → Vægtyper**. Et andet lag end kernen kan have sin egen højde: **Fra** og **Op til** angiver, hvor højt det går over væggens fod (fliser op til 1500, en beklædning fra 300); tomt går det i hele højden.
 
+Et lag, der ikke er kernen, kan også skifte materiale op ad sin højde: knappen **lag** for enden af dets række tilføjer et stykke (fliser, 2100 som standard), fra lagets bund og op; tilføj flere for et bånd (maling til 900, fliser til 1500), og over det sidste stykke fortsætter laget i sit eget materiale til toppen. Hvert stykke tegnes, snittes i plan og snit og måles i sit eget materiale.
+
+![Et pudslag med fliser til 2100 og pudsen ovenover](shots/wall-layer-parts.webp)
+
 ![Vægtyper: lagene i en murstensvæg](shots/wall-types.webp)
 
 - **+ Layer** tilføjer et lag. Pilene flytter et lag op eller ned.

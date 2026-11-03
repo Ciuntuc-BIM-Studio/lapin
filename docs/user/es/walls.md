@@ -43,6 +43,10 @@ El panel de propiedades muestra el muro seleccionado. La parte superior del pane
 
 Un tipo de muro es un conjunto de capas, desde la cara exterior hasta la cara interior. Cada capa tiene un material y un espesor, y una capa es el **núcleo**. La línea del muro va por el núcleo. Para editar los tipos, elija **Arquitectura → Tipos de muro**. Una capa que no sea el núcleo puede tener su propia altura: **Desde** y **Hasta** fijan hasta dónde llega sobre la base del muro (un alicatado hasta 1500, un aplacado desde 300); vacío, ocupa toda la altura.
 
+Una capa que no sea el núcleo también puede cambiar de material en su altura: el botón **capas** al final de su fila añade una pieza (azulejos, 2100 por defecto), desde la base de la capa hacia arriba; añada más para una franja (pintura hasta 900, azulejos hasta 1500), y por encima de la última pieza la capa sigue en su propio material hasta arriba. Cada pieza se dibuja, se corta en planta y en secciones y se mide en su propio material.
+
+![Una capa de enlucido con azulejos hasta 2100 y el enlucido encima](shots/wall-layer-parts.webp)
+
 ![Tipos de muro: las capas de un muro de ladrillo](shots/wall-types.webp)
 
 - **+ Capa** añade una capa. Las flechas suben o bajan una capa.

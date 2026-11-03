@@ -93,6 +93,7 @@ export interface UiState extends Pane {
   ceilingTypeId: string | null;
   /** The skirting type the skirting tools lay; null: the project's first. */
   skirtingTypeId: string | null;
+  roomFinishTypeId: string | null;
   /** Where the Inset view tool was clicked (its view and point), while the view to show is chosen. */
   insetAt: { viewId: string; x: number; y: number } | null;
   /** The curtain wall type the curtain wall tool draws with; null: the project's first. */
@@ -121,7 +122,7 @@ export interface UiState extends Pane {
 
 const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, rebar3d: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, ceilingTypeId: null, skirtingTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0, shape: 'rect', rise: null }, roofId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
+  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, rebar3d: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, ceilingTypeId: null, skirtingTypeId: null, roomFinishTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0, shape: 'rect', rise: null }, roofId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
 }));
 
 /**

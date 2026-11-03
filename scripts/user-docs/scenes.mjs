@@ -721,6 +721,41 @@ export const scenes = [
     },
   },
   {
+    id: 'room-finishes',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      // Decision 265: a bathroom and a living room finished from the library; the configurator, the room's Finish field.
+      const rooms = [];
+      for (const [x, y] of [[3.5, 4], [9.5, 4]]) rooms.push((await t.cmd('architecture.addRoom', { storeyId: storey, x, y })).id);
+      const bath = (await t.cmd('architecture.roomFinishTypeFromLibrary', { name: 'Bathroom' })).id;
+      const living = (await t.cmd('architecture.roomFinishTypeFromLibrary', { name: 'Living room' })).id;
+      await t.cmd('architecture.applyRoomFinish', { roomIds: [rooms[0]], typeId: bath });
+      await t.cmd('architecture.applyRoomFinish', { roomIds: [rooms[1]], typeId: living });
+      await t.wait(800);
+      t.expect((await t.nodes()).filter((n) => n.type === 'LapinRoomFinish').length === 6, 'each room has its floor, walls and ceiling');
+      await t.ui({ roomFinishTypeId: bath });
+      await t.tool('architecture.roomFinishes');
+      const dialog = t.page.locator('.dialog');
+      await t.wait(800);
+      t.expect(await dialog.locator('[data-part=walls] tr.layer-parts').count() === 1, 'the walls show their tiles up the height');
+      await t.shot('room-finishes', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      await select(t, rooms[0]);
+      await t.wait(800);
+      t.expect(await t.page.locator('select[data-field=room-finish]').count() === 1, 'the room shows its finish');
+      await t.shot('room-finish-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
+      // A wall type's layer of two materials up its height: tiles to 2.10 m, the plaster over them.
+      await t.ui({ selection: null, selected: [] });
+      await t.tool('architecture.wallTypes');
+      const types = t.page.locator('.dialog');
+      await types.locator('[data-testid=layer-part-add]').last().click();
+      await t.wait(400);
+      t.expect(await types.locator('[data-testid=layer-part]').count() === 1, 'the layer has a piece up its height');
+      await t.shot('wall-layer-parts', { of: '.dialog', pad: 0 });
+    },
+  },
+  {
     id: 'rooms',
     async run(t) {
       await t.fresh();

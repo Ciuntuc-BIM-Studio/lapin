@@ -43,6 +43,10 @@ Panoul de proprietăți arată peretele selectat. Sus sunt tipul și straturile 
 
 Un tip de perete e un set de straturi, de la fața exterioară la cea interioară. Fiecare strat are un material și o grosime, iar unul dintre ele e **miezul**. Linia peretelui merge pe miez. Ca să editezi tipurile, alege **Arhitectură → Tipuri de pereți**. Un strat altul decât miezul poate avea înălțimea lui: **De la** și **Până la** spun cât de sus merge peste baza peretelui (un placaj de faianță până la 1500, un placaj de fațadă de la 300 în sus); gol, merge pe toată înălțimea.
 
+Un strat altul decât miezul poate și să-și schimbe materialul pe înălțime: butonul **straturi** de la capătul rândului lui adaugă o bucată (faianță, 2100 implicit), de la baza stratului în sus; mai adaugi pentru o bandă (vopsea până la 900, faianță până la 1500), iar deasupra ultimei bucăți stratul continuă în materialul lui până sus. Fiecare bucată e desenată, tăiată în plan și secțiuni și măsurată în materialul ei.
+
+![Un strat de tencuială cu faianță până la 2100 și tencuiala deasupra](shots/wall-layer-parts.webp)
+
 ![Tipuri de pereți: straturile unui perete de cărămidă](shots/wall-types.webp)
 
 - **+ Layer** adaugă un strat. Săgețile mută un strat în sus sau în jos.

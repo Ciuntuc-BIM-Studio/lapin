@@ -43,6 +43,10 @@ Panel Właściwości pokazuje zaznaczoną ścianę. U góry panelu są jej typ i
 
 Typ ściany to zestaw warstw, od lica zewnętrznego do lica wewnętrznego. Każda warstwa ma materiał i grubość, a jedna warstwa jest **rdzeniem**. Linia ściany biegnie wzdłuż rdzenia. Aby edytować typy, wybierz **Architektura → Typy ścian**. Warstwa inna niż rdzeń może mieć własną wysokość: **Od** i **Do** określają, jak wysoko sięga ponad podstawę ściany (lamperia z płytek do 1500, okładzina od 300 w górę); gdy są puste, warstwa biegnie przez całą wysokość.
 
+Warstwa inna niż rdzeń może też zmieniać materiał na wysokości: przycisk **warstwy** na końcu jej wiersza dodaje fragment (płytki, domyślnie do 2100), od dołu warstwy w górę; dodaj kolejne, aby uzyskać pas (farba do 900, płytki do 1500), a powyżej ostatniego fragmentu warstwa biegnie dalej we własnym materiale aż do góry. Każdy fragment jest rysowany, przecinany na rzutach i przekrojach oraz liczony we własnym materiale.
+
+![Warstwa tynku z płytkami ceramicznymi do 2100 i tynkiem powyżej](shots/wall-layer-parts.webp)
+
 ![Typy ścian: warstwy ściany ceglanej](shots/wall-types.webp)
 
 - **+ Warstwa** dodaje warstwę. Strzałki przesuwają warstwę w górę lub w dół.

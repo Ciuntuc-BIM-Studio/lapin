@@ -43,6 +43,10 @@ Il pannello Proprietà mostra il muro selezionato. La parte superiore del pannel
 
 Un tipo di muro è un insieme di strati, dalla faccia esterna alla faccia interna. Ogni strato ha un materiale e uno spessore, e uno strato è il **nucleo**. La linea del muro corre lungo il nucleo. Per modificare i tipi, scegli **Architettura → Tipi di muro**. Uno strato diverso dal nucleo può avere un’altezza propria: **Da** e **Fino a** stabiliscono fin dove arriva sopra la base del muro (uno zoccolo piastrellato fino a 1500, un rivestimento da 300 in su); se vuoti, lo strato corre per tutta l’altezza.
 
+Uno strato diverso dal nucleo può anche cambiare materiale lungo la sua altezza: il pulsante **strati** alla fine della sua riga aggiunge un pezzo (piastrelle, 2100 per impostazione predefinita), dalla base dello strato in su; aggiungine altri per una fascia (pittura fino a 900, piastrelle fino a 1500), e sopra l’ultimo pezzo lo strato prosegue nel suo materiale fino in cima. Ogni pezzo è disegnato, tagliato in pianta e in sezione e misurato nel suo materiale.
+
+![Uno strato di intonaco con piastrelle fino a 2100 e l’intonaco sopra](shots/wall-layer-parts.webp)
+
 ![Tipi di muro: gli strati di un muro in laterizio](shots/wall-types.webp)
 
 - **+ Strato** aggiunge uno strato. Le frecce spostano uno strato in su o in giù.

@@ -43,6 +43,10 @@ The properties panel shows the selected wall. The top of the panel holds its typ
 
 A wall type is a set of layers, from the outside face to the inside face. Each layer has a material and a thickness, and one layer is the **core**. The wall's line runs along the core. To edit the types, choose **Architecture → Wall types**. A layer other than the core may have a height of its own: **From** and **Up to** set how high it goes over the wall's base (a tiled dado up to 1500, a cladding from 300 up); empty, it runs the whole height.
 
+A layer other than the core may also change material up its height: the **layers** button at the end of its row adds a piece (tiles, 2100 by default), from the layer's bottom up; add more for a band (paint to 900, tiles to 1500), and above the last piece the layer goes on in its own material to its top. Each piece is drawn, cut in plan and sections, and measured in its own material.
+
+![A plaster layer with ceramic tiles up to 2100 and the plaster above them](shots/wall-layer-parts.webp)
+
 ![Wall types: the layers of a brick wall](shots/wall-types.webp)
 
 - **+ Layer** adds a layer. The arrows move a layer up or down.

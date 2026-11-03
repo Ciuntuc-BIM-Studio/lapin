@@ -23,7 +23,7 @@ public static class TypeExchange
         Kinds.Where(k => kinds is null || kinds.Count == 0 || kinds.Contains(k.Kind))
              .SelectMany(k => m.OfClass(k.Class).OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase).Select(t => (k.Kind, t)));
 
-    /// <summary>The types as a JSON document: <c>{format, version, types: [{kind, name, mark?, layers: [{material, thickness, core?, color?, name?, from?, to?}]}]}</c>, metres.</summary>
+    /// <summary>The types as a JSON document: <c>{format, version, types: [{kind, name, mark?, layers: [{material, thickness, core?, color?, name?, from?, to?, parts?: [{material, height}]}]}]}</c>, metres.</summary>
     public static JsonObject Json(IModelView m, IReadOnlyCollection<string>? kinds = null)
     {
         var types = new JsonArray();
@@ -39,6 +39,12 @@ public static class TypeExchange
                 if (l.Name is { Length: > 0 } n) o["name"] = n;
                 if (l.From is { } f) o["from"] = Math.Round(f, 6);
                 if (l.To is { } to) o["to"] = Math.Round(to, 6);
+                if (l.Parts is { Count: > 0 } parts)
+                    o["parts"] = new JsonArray(parts.Select(p => (JsonNode)new JsonObject
+                    {
+                        ["material"] = m.Get(p.Material)?.Name ?? p.Material, ["height"] = Math.Round(p.Height, 6),
+                        ["color"] = m.Get(p.Material)?.Str("color"), ["name"] = p.Name,
+                    }).ToArray());
                 layers.Add((JsonNode)o);
             }
             var type = new JsonObject { ["kind"] = kind, ["name"] = t.Name };

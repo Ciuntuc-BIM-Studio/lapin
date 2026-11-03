@@ -62,6 +62,28 @@ Kolory rysowane są pod ścianami, meblami i łukami otwierania drzwi, więc rzu
 
 ![Dwa pomieszczenia zwymiarowane od wewnątrz: łańcuch każdego boku z drzwiami i oknami na nim](shots/room-dimensions.webp)
 
+## Wykończenia pomieszczeń
+
+**Wykończenia → Wykończ pomieszczenie** (<kbd>FR</kbd>) układa wykończenie w klikniętym pomieszczeniu: jego posadzkę, wykończenie ścian i sufit, każde podążające za obrysem pomieszczenia tak jak samo pomieszczenie. Przesuń ścianę, a wykończenia przesuną się razem z nią. **Wykończenia → Wykończenia pomieszczeń** edytuje wykończenia; **Z biblioteki** dodaje gotowe: Salon, Sypialnia, Łazienka, Kuchnia, Parter na płycie i Pomieszczenie techniczne. Gdy narzędzie jest włączone, panel właściwości pokazuje wykończenie, które układa, aby można je było wybrać przed kliknięciem. **Wykończenie** pomieszczenia, w jego właściwościach, układa inne albo je usuwa.
+
+Wykończenie ma:
+
+- **Posadzka**, jej warstwy od posadzki w dół (płytki, klej, wylewka…). Otwory w stropie w obrębie pomieszczenia (klatka schodowa) są wycinane. **Przez drzwi, do osi ściany** prowadzi posadzkę dalej pod każdymi drzwiami, tak że posadzka sąsiedniego pomieszczenia spotyka się z nią w osi ściany.
+- **Ściany**, ich warstwy od lica ściany w stronę pomieszczenia, także wokół wysp pomieszczenia. Każda warstwa może zmieniać materiał na wysokości, tak jak warstwa typu ściany: w Łazience farba nad płytkami ceramicznymi do 2100 (13 mm grubości, płytki i klej); w Kuchni pas płytek od 900 do 1500. Fragment bez materiału niczego tam nie zostawia. Drzwi i okna ścian wokół pomieszczenia są wycinane. **Wysokość**: pusta, do sufitu.
+- **Sufit**, jego warstwy od płyty nad pomieszczeniem w dół (od wysokości pomieszczenia, gdy nie ma płyty), z wyciętymi otworami.
+- **Listwa przypodłogowa**: typ listwy ułożony wokół pomieszczenia, przerwany przy drzwiach (zobacz Listwy przypodłogowe, w Stropy i dachy).
+- **Płyta konstrukcyjna pod posadzką**: osobny strop żelbetowy pod warstwami posadzki, z grubością i tym, jak daleko wychodzi poza obrys pomieszczenia (pod ściany). Jest stropem jak każdy inny, w konstrukcji i w jej zestawieniu.
+
+**Zapisz** zmienia wykończenie i każde pomieszczenie, które je ma, jest układane ponownie. **Wykończ zaznaczone pomieszczenia** układa je w zaznaczonych pomieszczeniach.
+
+Każde wykończenie liczy, według materiału, swoją powierzchnię **brutto** (obrys pomieszczenia, bez odliczeń: powierzchnia posadzki, obwód ścian razy wysokość każdego fragmentu) i **netto** (to, co zostaje wykonane: bez drzwi, okien i otworów w stropie, z posadzką pod drzwiami), a także swoją objętość. **Wykończenia → Zestawienie wykończeń** wymienia każde wykończone pomieszczenie według części i materiału, z sumami według materiału na końcu; jak każde zestawienie można je pokazać na wykresie, wyeksportować i umieścić na arkuszu. W IFC wykończenie jest elementem IfcCovering: FLOORING, CLADDING lub CEILING.
+
+Wykończenie okłada to, co ściany pomieszczenia już mają: jeśli typy ścian mają własny tynk, daj ścianom pomieszczenia tylko to, co idzie na niego (farba, płytki), albo użyj typów ścian z samym rdzeniem.
+
+![Wykończenia pomieszczeń: posadzka Łazienki, ściany z płytkami do 2100 i sufit](shots/room-finishes.webp)
+
+![Właściwości pomieszczenia z jego wykończeniem](shots/room-finish-properties.webp)
+
 ## Pomieszczenia w 3D i w IFC
 
 Pomieszczenia są ukryte w widoku 3D, aby nie zasłaniały budynku. **Widoczność / Grafika** w widoku 3D może je pokazać.

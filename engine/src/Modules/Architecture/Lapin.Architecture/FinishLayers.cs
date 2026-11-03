@@ -138,7 +138,7 @@ public static class FinishLayers
         var type = Walls.TypeOf(m, host.Id);
         var usageEntity = LayerSets.UsageOf(m, host.Id);
         if (type == null || usageEntity == null || Layers.ReadUsage(usageEntity) is not { } usage) return;
-        var layers = LayerSets.LayersOf(m, type.Id).Select(l => new LayerSpec(m.Get(l.Material)?.Name ?? "Material", l.Thickness, l.Core, Name: l.Name, From: l.From, To: l.To)).ToList();
+        var layers = LayerSets.LayersOf(m, type.Id).Select(l => LayerSets.SpecOf(m, l)).ToList();
         var bands = Walls.Section(m, host);
         var (y0, y1) = (bands.Min(b => b.From), bands.Max(b => b.To));
         var sign = usage.Negative ? -1 : 1;

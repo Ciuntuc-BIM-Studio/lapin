@@ -13,7 +13,7 @@ import { useUi, type UiState } from '../../app/store';
 import { useSession } from '../../engine/session';
 import { materialName, mm, ofClass, relatedOf, typeLayers } from '../../engine/model';
 
-type TypeField = 'wallTypeId' | 'doorTypeId' | 'windowTypeId' | 'slabTypeId' | 'ceilingTypeId' | 'skirtingTypeId' | 'curtainTypeId' | 'stairTypeId' | 'rampTypeId';
+type TypeField = 'wallTypeId' | 'doorTypeId' | 'windowTypeId' | 'slabTypeId' | 'ceilingTypeId' | 'skirtingTypeId' | 'roomFinishTypeId' | 'curtainTypeId' | 'stairTypeId' | 'rampTypeId';
 
 /** A tool's types for the quick slots (decision 260) and the catalog (decision 263): the class, its choice kept in `field`, edited in `dialog`, drawn by `thumb`. */
 export const typedBy = (cls: string, field: TypeField, dialog?: string, thumb?: ComponentType<{ type: NodeDto }>): TypedTool => ({

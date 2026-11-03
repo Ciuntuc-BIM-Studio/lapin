@@ -7,9 +7,14 @@ namespace Lapin.Model;
 /// thickness in metres, and whether it is the structural core, which carries
 /// the element's axis (IFC: Category "LoadBearing"); and how high it goes (report #44,
 /// decision 191): <see cref="From"/> and <see cref="To"/> over the element's base, each null for
-/// the whole height (a tiled dado to 1.50 m, a cladding stopping short of the floor).
+/// the whole height (a tiled dado to 1.50 m, a cladding stopping short of the floor). A layer may change
+/// material up its height (decision 264): <see cref="Parts"/>, from its bottom up, each a material and how
+/// high it goes, the rest above them in the layer's own material (tiles to 2.10 m in a bathroom, plaster over).
 /// </summary>
-public sealed record MaterialLayer(string Material, double Thickness, bool Core = false, string? Name = null, double? From = null, double? To = null);
+public sealed record MaterialLayer(string Material, double Thickness, bool Core = false, string? Name = null, double? From = null, double? To = null, List<LayerPart>? Parts = null);
+
+/// <summary>A piece of a layer in its height (decision 264): its material (an IfcMaterial id), how high it is, its own name.</summary>
+public sealed record LayerPart(string Material, double Height, string? Name = null);
 
 /// <summary>
 /// An IfcMaterialLayerSetUsage: how an occurrence lays its type's layers

@@ -17,6 +17,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { Cell, LengthCell, NumberField } from '../../shell/cells';
 import { HatchSwatch } from '../core/HatchSwatch';
 import { useSchemes } from './rooms';
+import { RoomFinishField } from './RoomFinishes';
 
 /** A text field with suggestions (an HTML datalist): commits on blur or Enter. */
 function Suggest({ value, options, onCommit, id }: { value: string; options: string[]; onCommit: (v: string) => void; id: string }) {
@@ -56,6 +57,8 @@ export function RoomSection({ node }: { node: NodeDto }) {
         <dd><Suggest id={`dep-${node.id}`} value={str('department')} options={known('department')} onCommit={(v) => update('department', v.trim())} /></dd>
         <dt>Floor finish</dt>
         <dd><Suggest id={`ff-${node.id}`} value={str('finishFloor')} options={known('finishFloor')} onCommit={(v) => update('finishFloor', v.trim())} /></dd>
+        <dt title="What lines the room: its floor, walls and ceiling laid by Finishes → Finish room">Finish</dt>
+        <dd><RoomFinishField node={node} /></dd>
         <dt title="Empty: the storey's height">Height</dt>
         <dd><LengthCell metres={typeof node.props.height === 'number' ? node.props.height : null} placeholder="the storey's" onCommit={(m) => update('height', m)} /></dd>
         <dt title="How far above its storey's level the room starts (a gallery, a raised floor)">Base offset</dt>

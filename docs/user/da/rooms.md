@@ -62,6 +62,28 @@ Farverne tegnes under væggene, møblerne og dørslagene, så planen forbliver l
 
 ![To rum målt indvendigt: hver sides kæde med døren og vinduerne](shots/room-dimensions.webp)
 
+## Rumoverflader
+
+**Overflader → Beklæd rum** (<kbd>FR</kbd>) lægger en overflade i det rum, du klikker i: dets gulv, dets vægges overflade og dets loft, hver efter rummets omrids, som rummet selv. Flyt en væg, og overfladerne følger med. **Overflader → Rumoverflader** redigerer overfladerne; **Fra biblioteket** henter færdige: Stue, Soveværelse, Badeværelse, Køkken, Stueetage på terrændæk og Teknikrum. Mens værktøjet er aktivt, viser egenskabspanelet den overflade, det lægger, så du kan vælge den før klikket. Et rums **Overflade**, i dets egenskaber, lægger en anden eller fjerner den.
+
+En overflade har:
+
+- **Gulv**, dets lag fra færdigt gulv og ned (fliser, klæber, afretningslag…). Dækkets huller i rummet (et trapperum) trækkes fra. **Gennem dørene, til væggens akse** fører gulvet videre under hver dør, så naborummets gulv møder det i væggens akse.
+- **Vægge**, deres lag fra vægfladen ind i rummet, også rundt om rummets øer. Hvert lag kan skifte materiale op ad sin højde, som et lag i en vægtype: i Badeværelset maling over fliser til 2100 (13 mm tykt, fliser og klæber); i Køkkenet et flisebånd fra 900 til 1500. Et stykke uden materiale efterlader intet der. Dørene og vinduerne i væggene rundt om rummet skæres ud. **Højde**: tom, op til loftet.
+- **Loft**, dets lag fra dækket over rummet og ned (fra rummets højde, når der intet dæk er), dets huller trukket fra.
+- **Fodliste**: en fodlistetype lagt rundt om rummet, afbrudt ved dets døre (se Fodlister, under Dæk og tage).
+- **Et bærende dæk under gulvet**: et eget armeret betondæk under gulvets lag, med dets tykkelse og hvor langt det går ud over rummets omrids (under væggene). Det er et dæk som alle andre, i konstruktionen og i dets skema.
+
+**Gem** ændrer overfladen, og hvert rum, der har den, lægges igen. **Beklæd valgte rum** lægger den i de valgte rum.
+
+Hver overflade måler, pr. materiale, sit **brutto**areal (rummets omrids, intet fratrukket: gulvets areal, væggenes omkreds gange hvert stykkes højde) og sit **netto**areal (det, der bygges: døre, vinduer og dækhuller trukket fra, gulvet under dørene lagt til) samt sit volumen. **Overflader → Overfladeskema** viser hvert beklædt rum pr. del og materiale, med totalerne pr. materiale til sidst; som ethvert skema laver det diagrammer, eksporteres og kommer på et tegningsark. I IFC er en overflade en IfcCovering: FLOORING, CLADDING eller CEILING.
+
+En overflade beklæder det, rummets vægge allerede har: hvis vægtyperne har deres egen puds, så giv rummets vægge kun det, der kommer ovenpå (maling, fliser), eller brug vægtyper med kun kernen.
+
+![Rumoverfladerne: Badeværelsets gulv, væggene med fliser til 2100 og loftet](shots/room-finishes.webp)
+
+![Et rums egenskaber med dets overflade](shots/room-finish-properties.webp)
+
 ## Rum i 3D og i IFC
 
 Rum er skjult i 3D-visningen, så de ikke dækker bygningen. **Synlighed / Grafik** i 3D-visningen kan vise dem.

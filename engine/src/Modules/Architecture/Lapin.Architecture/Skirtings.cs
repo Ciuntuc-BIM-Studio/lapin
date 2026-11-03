@@ -123,7 +123,7 @@ public static class Skirtings
         });
     }
 
-    static Entity Add(ICommandContext ctx, JsonObject a)
+    internal static Entity Add(ICommandContext ctx, JsonObject a)
     {
         var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
         Spatial.Require(ctx.Model, storeyId, IfcClass.BuildingStorey);
@@ -221,6 +221,13 @@ public static class Skirtings
         var type = new Entity(ctx.NewId(), TypeClass, spec.Name, new JsonObject { ["spec"] = spec.ToJson(), ["exportAs"] = "IfcCoveringType", ["material"] = material.Id }, Predefined);
         ctx.Add(type);
         return type;
+    }
+
+    /// <summary>The project's skirting type of that name, else the library's brought in; null when neither has it.</summary>
+    internal static Entity? TypeNamed(ICommandContext ctx, string name)
+    {
+        if (ctx.Model.OfClass(TypeClass).FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase)) is { } found) return found;
+        return SkirtingSpec.Library.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)) is { } spec ? CreateType(ctx, spec) : null;
     }
 
     static Entity DefaultType(ICommandContext ctx) => ctx.Model.OfClass(TypeClass).FirstOrDefault() ?? CreateType(ctx, SkirtingSpec.Default());

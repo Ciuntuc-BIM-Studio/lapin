@@ -62,6 +62,28 @@ I colori vengono disegnati sotto i muri, gli arredi e le aperture delle porte, c
 
 ![Due locali quotati all’interno: la catena di ogni lato, con la porta e le finestre](shots/room-dimensions.webp)
 
+## Finiture dei locali
+
+**Finiture → Rifinisci il locale** (<kbd>FR</kbd>) posa una finitura nel locale in cui fai clic: il suo pavimento, la finitura delle sue pareti e il suo soffitto, ciascuno lungo il contorno del locale come il locale stesso. Sposta un muro e le finiture lo seguono. **Finiture → Finiture dei locali** modifica le finiture; **Dalla libreria** ne porta di già pronte: Soggiorno, Camera da letto, Bagno, Cucina, Piano terra su platea e Locale tecnico. Finché lo strumento è attivo, il pannello delle proprietà mostra la finitura che posa, da scegliere prima del clic. La **Finitura** di un locale, nelle sue proprietà, ne posa un’altra o la toglie.
+
+Una finitura ha:
+
+- **Pavimento**, i suoi strati dal pavimento finito verso il basso (piastrelle, adesivo, massetto…). I fori del solaio nel locale (un vano scala) sono tolti. **Attraverso le porte, fino all’asse del muro** porta il pavimento sotto ogni porta, così che il pavimento del locale accanto lo incontri sull’asse del muro.
+- **Pareti**, i loro strati dalla faccia del muro verso il locale, anche attorno alle isole del locale. Ogni strato può cambiare materiale lungo la sua altezza, come lo strato di un tipo di muro: nel Bagno, pittura sopra piastrelle fino a 2100 (13 mm di spessore, piastrelle e adesivo); nella Cucina, una fascia di piastrelle da 900 a 1500. Un pezzo senza materiale non lascia nulla lì. Le porte e le finestre dei muri attorno al locale sono ritagliate. **Altezza**: vuota, fino al soffitto.
+- **Soffitto**, i suoi strati dal solaio sopra il locale verso il basso (dall’altezza del locale quando non c’è solaio), con i suoi fori tolti.
+- **Battiscopa**: un tipo di battiscopa posato attorno al locale, interrotto alle sue porte (vedi Battiscopa, in Solai e tetti).
+- **Una soletta strutturale sotto il pavimento**: un solaio in calcestruzzo armato a sé sotto gli strati del pavimento, con il suo spessore e quanto va oltre il contorno del locale (sotto i muri). È un solaio come gli altri, nella struttura e nel suo abaco.
+
+**Salva** modifica la finitura, e ogni locale che la ha viene posato di nuovo. **Rifinisci i locali selezionati** la posa nei locali selezionati.
+
+Ogni finitura misura, per materiale, la sua superficie **lorda** (il contorno del locale, nulla dedotto: l’area del pavimento, il perimetro delle pareti per l’altezza di ogni pezzo) e quella **netta** (ciò che è costruito: porte, finestre e fori del solaio tolti, il pavimento sotto le porte aggiunto), e il suo volume. **Finiture → Abaco delle finiture** elenca ogni locale rifinito per parte e materiale, con i totali per materiale alla fine; come ogni abaco fa grafici, si esporta e va su una tavola. In IFC una finitura è un IfcCovering: FLOORING, CLADDING o CEILING.
+
+Una finitura riveste ciò che i muri del locale hanno già: se i tipi di muro portano il proprio intonaco, dai alle pareti del locale solo ciò che va sopra (pittura, piastrelle), oppure usa tipi di muro con il solo nucleo.
+
+![Le finiture dei locali: il pavimento del Bagno, le pareti con piastrelle fino a 2100 e il soffitto](shots/room-finishes.webp)
+
+![Le proprietà di un locale con la sua finitura](shots/room-finish-properties.webp)
+
 ## I locali in 3D e in IFC
 
 I locali sono nascosti nella vista 3D, così non coprono l’edificio. **Visibilità / Grafica** nella vista 3D può mostrarli.

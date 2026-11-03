@@ -43,6 +43,10 @@ O painel Propriedades mostra a parede selecionada. O alto do painel traz o tipo 
 
 Um tipo de parede é um conjunto de camadas, da face externa à face interna. Cada camada tem um material e uma espessura, e uma camada é o **núcleo**. A linha da parede corre ao longo do núcleo. Para editar os tipos, escolha **Arquitetura → Tipos de parede**. Uma camada que não é o núcleo pode ter uma altura própria: **De** e **Até** definem até onde ela sobe acima da base da parede (um barrado de azulejos até 1500, um revestimento de 300 para cima); vazios, ela ocupa a altura toda.
 
+Uma camada que não é o núcleo também pode mudar de material na altura: o botão **camadas** no fim da sua linha adiciona uma peça (azulejos, 2100 por padrão), da base da camada para cima; adicione mais para uma faixa (pintura até 900, azulejos até 1500), e acima da última peça a camada continua no seu próprio material até o topo. Cada peça é desenhada, cortada em planta e em cortes e medida no seu próprio material.
+
+![Uma camada de reboco com azulejos até 2100 e o reboco acima](shots/wall-layer-parts.webp)
+
 ![Tipos de parede: as camadas de uma parede de tijolos](shots/wall-types.webp)
 
 - **+ Camada** adiciona uma camada. As setas movem uma camada para cima ou para baixo.

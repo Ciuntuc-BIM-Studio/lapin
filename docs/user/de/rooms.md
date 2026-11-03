@@ -62,6 +62,28 @@ Die Farben werden unter den Wänden, der Möblierung und den Türaufschlägen ge
 
 ![Zwei innen bemaßte Räume: die Kette jeder Seite mit Tür und Fenstern](shots/room-dimensions.webp)
 
+## Raumbekleidungen
+
+**Ausbau → Raum bekleiden** (<kbd>FR</kbd>) legt eine Bekleidung in den Raum, in den Sie klicken: seinen Boden, die Bekleidung seiner Wände und seine Decke, jede dem Umriss des Raums folgend, wie der Raum selbst. Verschieben Sie eine Wand, und die Bekleidungen gehen mit. **Ausbau → Raumbekleidungen** bearbeitet die Bekleidungen; **Aus der Bibliothek** holt fertige: Wohnzimmer, Schlafzimmer, Bad, Küche, Erdgeschoss auf Bodenplatte und Technikraum. Solange das Werkzeug aktiv ist, zeigt das Eigenschaftenfenster die Bekleidung, die es verlegt, zur Wahl vor dem Klick. Die **Bekleidung** eines Raums, in seinen Eigenschaften, verlegt eine andere oder nimmt sie weg.
+
+Eine Bekleidung hat:
+
+- **Boden**, seine Schichten vom fertigen Fußboden nach unten (Fliesen, Kleber, Estrich…). Die Deckenöffnungen im Raum (ein Treppenauge) werden ausgespart. **Durch die Türen, bis zur Wandachse** führt den Boden unter jeder Tür weiter, sodass der Boden des Nachbarraums ihn in der Wandachse trifft.
+- **Wände**, ihre Schichten von der Wandfläche in den Raum, auch um die Inseln des Raums. Jede Schicht kann über ihre Höhe das Material wechseln, wie die Schicht eines Wandtyps: im Bad Anstrich über Fliesen bis 2100 (13 mm dick, Fliesen und Kleber); in der Küche ein Fliesenband von 900 bis 1500. Ein Stück ohne Material lässt dort nichts. Die Türen und Fenster der Wände um den Raum werden ausgeschnitten. **Höhe**: leer, bis zur Decke.
+- **Decke**, ihre Schichten von der Rohdecke über dem Raum nach unten (von der Raumhöhe, wenn keine Decke da ist), ihre Öffnungen ausgespart.
+- **Sockelleiste**: ein Sockelleistentyp, um den Raum verlegt, an seinen Türen unterbrochen (siehe Sockelleisten, unter Decken und Dächer).
+- **Eine tragende Platte unter dem Boden**: eine eigene Stahlbetondecke unter den Schichten des Bodens, mit ihrer Dicke und wie weit sie über den Umriss des Raums hinausgeht (unter die Wände). Sie ist eine Decke wie jede andere, im Tragwerk und in ihrer Liste.
+
+**Speichern** ändert die Bekleidung, und jeder Raum, der sie hat, wird neu verlegt. **Ausgewählte Räume bekleiden** verlegt sie in den ausgewählten Räumen.
+
+Jede Bekleidung misst, nach Material, ihre **Brutto**fläche (der Umriss des Raums, nichts abgezogen: die Bodenfläche, der Wandumfang mal der Höhe jedes Stücks) und ihre **Netto**fläche (was gebaut wird: Türen, Fenster und Deckenöffnungen abgezogen, der Boden unter den Türen hinzugefügt) sowie ihr Volumen. **Ausbau → Bekleidungsliste** listet jeden bekleideten Raum nach Teil und Material, mit den Summen je Material am Ende; wie jede Bauteilliste erstellt sie Diagramme, wird exportiert und kommt auf einen Plan. In IFC ist eine Bekleidung ein IfcCovering: FLOORING, CLADDING oder CEILING.
+
+Eine Bekleidung bekleidet, was die Wände des Raums schon haben: Wenn die Wandtypen ihren eigenen Putz tragen, geben Sie den Wänden des Raums nur, was darüber kommt (Anstrich, Fliesen), oder verwenden Sie Wandtypen nur mit dem Kern.
+
+![Die Raumbekleidungen: der Boden des Bads, die Wände mit Fliesen bis 2100 und die Decke](shots/room-finishes.webp)
+
+![Die Eigenschaften eines Raums mit seiner Bekleidung](shots/room-finish-properties.webp)
+
 ## Räume in 3D und in IFC
 
 Räume sind in der 3D-Ansicht ausgeblendet, damit sie das Gebäude nicht verdecken. **Sichtbarkeit / Grafiken** in der 3D-Ansicht kann sie anzeigen.

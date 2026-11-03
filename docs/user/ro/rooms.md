@@ -62,6 +62,28 @@ Culorile se desenează sub pereți, sub mobilier și sub deschiderile ușilor, a
 
 ![Două încăperi cotate în interior: lanțul fiecărei laturi, cu ușa și ferestrele pe el](shots/room-dimensions.webp)
 
+## Finisajele încăperilor
+
+**Finisaje → Finisează încăperea** (<kbd>FR</kbd>) pune un finisaj în încăperea pe care dai clic: pardoseala, finisajul pereților și tavanul, fiecare urmând conturul încăperii, ca și încăperea. Muți un perete și finisajele merg cu el. **Finisaje → Finisajele încăperilor** editează finisajele; **Din bibliotecă** aduce unele gata făcute: Living, Dormitor, Baie, Bucătărie, Parter pe placă și Cameră tehnică. Cât unealta e pornită, panoul de proprietăți arată finisajul pe care îl pune, ca să-l alegi înainte de clic. **Finisajul** unei încăperi, în proprietățile ei, pune altul sau îl scoate.
+
+Un finisaj are:
+
+- **Pardoseala**, straturile ei de la cota pardoselii finite în jos (gresie, adeziv, șapă…). Golurile din placă din încăpere (o casă a scării) sunt scoase. **Prin uși, până la axul peretelui** duce pardoseala mai departe pe sub fiecare ușă, ca pardoseala încăperii de alături s-o întâlnească în axul peretelui.
+- **Pereții**, straturile lor de la fața peretelui spre încăpere, și în jurul insulelor încăperii. Fiecare strat își poate schimba materialul pe înălțime, ca stratul unui tip de perete: la Baie, vopsea deasupra faianței până la 2100 (13 mm grosime, faianță și adeziv); la Bucătărie, o bandă de faianță de la 900 la 1500. O bucată fără material nu lasă nimic acolo. Ușile și ferestrele pereților din jurul încăperii sunt decupate. **Înălțimea**: goală, până la tavan.
+- **Tavanul**, straturile lui de la placa de deasupra încăperii în jos (de la înălțimea încăperii când nu e placă), cu golurile ei scoase.
+- **Plinta**: un tip de plintă pus în jurul încăperii, întrerupt la uși (vezi Plintele, la Plăci și acoperișuri).
+- **O placă structurală sub pardoseală**: o placă de beton armat a ei sub straturile pardoselii, cu grosimea ei și cât iese dincolo de conturul încăperii (sub pereți). E o placă ca oricare alta, în structură, și în extrasul ei.
+
+**Salvează** schimbă finisajul, iar fiecare încăpere care îl are e refăcută. **Finisează încăperile selectate** îl pune în încăperile selectate.
+
+Fiecare finisaj măsoară, pe material, suprafața **brută** (conturul încăperii, nimic scăzut: aria pardoselii, perimetrul pereților înmulțit cu înălțimea fiecărei bucăți) și cea **netă** (ce e construit: ușile, ferestrele și golurile din placă scoase, pardoseala de sub uși adăugată), și volumul. **Finisaje → Extrasul finisajelor** listează fiecare încăpere finisată pe parte și material, cu totalurile pe material la sfârșit; ca orice extras, face grafice, se exportă și merge pe o planșă. În IFC un finisaj e un IfcCovering: FLOORING, CLADDING sau CEILING.
+
+Un finisaj îmbracă ce au deja pereții încăperii: dacă tipurile de pereți au tencuiala lor, dă pereților încăperii doar ce vine peste ea (vopsea, faianță), sau folosește tipuri de pereți doar cu miezul.
+
+![Finisajele încăperilor: pardoseala Băii, pereții cu faianță până la 2100 și tavanul](shots/room-finishes.webp)
+
+![Proprietățile unei încăperi cu finisajul ei](shots/room-finish-properties.webp)
+
 ## Încăperile în 3D și în IFC
 
 Încăperile sunt ascunse în vederea 3D, ca să nu acopere clădirea. **Vizibilitate / Grafică** în vederea 3D le poate arăta.

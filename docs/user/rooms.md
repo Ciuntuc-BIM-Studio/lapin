@@ -62,6 +62,28 @@ The colours are drawn under the walls, the furniture and the door swings, so the
 
 ![Two rooms dimensioned inside: each side's string with the door and windows on it](shots/room-dimensions.webp)
 
+## Room finishes
+
+**Finishes → Finish room** (<kbd>FR</kbd>) lays a finish in the room you click: its floor, its walls' finish and its ceiling, each following the room's outline as the room does. Move a wall and the finishes go with it. **Finishes → Room finishes** edits the finishes; **From the library** brings in ready-made ones: Living room, Bedroom, Bathroom, Kitchen, Ground floor on slab and Technical room. While the tool is on, the properties panel shows the finish it lays, to choose before the click. A room's **Finish**, in its properties, lays another one or takes it off.
+
+A finish has:
+
+- **Floor**, its layers from the finished floor down (tiles, adhesive, screed…). The floor's openings in the room (a stairwell) are taken out. **Through the doors, to the wall's axis** carries the floor on under each door, so the next room's floor meets it at the wall's axis.
+- **Walls**, its layers from the wall's face into the room, round the room's islands too. Each layer may change material up its height, as a wall type's layer does: in the Bathroom, paint above ceramic tiles up to 2100 (13 mm thick, tiles and adhesive); in the Kitchen, a band of tiles from 900 to 1500. A piece with no material leaves nothing there. The doors and windows of the walls round the room are cut out. **Height**: empty, up to the ceiling.
+- **Ceiling**, its layers from the slab above the room down (from the room's height when there is no slab), its openings taken out.
+- **Skirting**: a skirting type laid round the room, broken at its doors (see Skirtings, under Floors and roofs).
+- **A structural slab under the floor**: a reinforced concrete floor of its own under the floor's layers, its thickness and how far past the room's outline it goes (under the walls). It is a floor like any other, in the structure, and its schedule.
+
+**Save** changes the finish, and every room that has it is laid again. **Finish selected rooms** lays it in the rooms selected.
+
+Each finish measures, by material, its **gross** area (the room's outline, nothing deducted: the floor's area, the walls' perimeter times each piece's height) and its **net** area (what is built: the doors, windows and floor openings taken out, the floor through the doors added), and its volume. **Finishes → Finishes schedule** lists every finished room by part and material, with the totals by material at the end; like any schedule it charts, exports and goes on a sheet. In IFC a finish is an IfcCovering: FLOORING, CLADDING or CEILING.
+
+A finish lines what the room's walls already have: if the wall types carry their own plaster, give the room's walls only what goes over it (paint, tiles), or use wall types of the core only.
+
+![The room finishes: the Bathroom's floor, walls with tiles up to 2100, and ceiling](shots/room-finishes.webp)
+
+![A room's properties with its finish](shots/room-finish-properties.webp)
+
 ## Rooms in 3D and in IFC
 
 Rooms are hidden in the 3D view, so they do not cover the building. **Visibility / Graphics** in the 3D view can show them.
