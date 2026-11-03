@@ -9,7 +9,7 @@ namespace Lapin.Architecture.Schedules;
 
 /// <summary>A schedule's own rows, typed cells, row order and card order (what its table settings say).</summary>
 public sealed record ScheduleTable(IReadOnlyList<string>? Rows, IReadOnlyList<(string Id, string Label)> CustomRows,
-    IReadOnlyDictionary<string, Dictionary<string, string>> Cells, string? Sort)
+    IReadOnlyDictionary<string, Dictionary<string, string>> Cells, string? Sort, bool? Lintel = null)
 {
     public static ScheduleTable Of(Entity schedule)
     {
@@ -20,12 +20,12 @@ public sealed record ScheduleTable(IReadOnlyList<string>? Rows, IReadOnlyList<(s
         if (schedule.Attrs["cells"] is JsonObject co)
             foreach (var (k, v) in co)
                 if (v is JsonObject row) cells[k] = row.Where(x => x.Value is JsonValue).ToDictionary(x => x.Key, x => (string?)x.Value ?? "");
-        return new ScheduleTable(rows, custom, cells, schedule.Str("sort"));
+        return new ScheduleTable(rows, custom, cells, schedule.Str("sort"), schedule.Str("kind") == "lintel");
     }
 }
 
-/// <summary>A row of the table: its id and label, its value per entry, whether the model gives it, bold.</summary>
-public sealed record ScheduleRow(string Id, string Label, Func<ScheduleEntry, string> Value, bool FromModel, bool Strong = false);
+/// <summary>A row of the table: its id and label, its value per entry, whether the model gives it, bold; a parameter's row names the parameter (typed into the type).</summary>
+public sealed record ScheduleRow(string Id, string Label, Func<ScheduleEntry, string> Value, bool FromModel, bool Strong = false, string? Param = null);
 
 /// <summary>A band of cards (paper mm, y down from its top): its size and pens.</summary>
 public sealed record ScheduleBand(double W, double H, List<Pen> Pens);
@@ -60,12 +60,19 @@ public static class ScheduleLayout
     /// <summary>The rows the data takes (lintel rows when every entry is a lintel), in the table's order, typed text over the model's.</summary>
     public static List<ScheduleRow> Rows(ScheduleData data, ScheduleTable table)
     {
-        var lintel = data.Entries.Count > 0 && data.Entries.All(e => e.Kind == "lintel");
+        var lintel = table.Lintel ?? (data.Entries.Count > 0 && data.Entries.All(e => e.Kind == "lintel"));
         var builtIn = lintel ? LintelRows : JoineryRows;
-        var order = table.Rows ?? [.. builtIn, .. table.CustomRows.Select(c => "custom:" + c.Id)];
+        var paramRows = lintel ? [] : ParamRows(data);
+        var order = table.Rows ?? [.. builtIn, .. paramRows, .. table.CustomRows.Select(c => "custom:" + c.Id)];
         var rows = new List<ScheduleRow>();
         foreach (var id in order)
         {
+            if (id.StartsWith(ParamPrefix, StringComparison.Ordinal))
+            {
+                var name = id[ParamPrefix.Length..];
+                if (!lintel) rows.Add(new ScheduleRow(id, name, e => e.Params?.GetValueOrDefault(name) is { Length: > 0 } v ? v : "—", true, Param: name));
+                continue;
+            }
             if (id.StartsWith("custom:", StringComparison.Ordinal))
             {
                 var c = table.CustomRows.FirstOrDefault(x => x.Id == id[7..]);
@@ -86,7 +93,7 @@ public static class ScheduleLayout
                 "sill" => data.Entries.Any(e => e.Kind == "window") ? new(id, "Sill height (mm)", e => e.Kind == "window" && e.Spec != null ? Mm(e.Spec.SillHeight) : "—", true) : null,
                 "total" => new(id, "Total", e => e.Total.ToString(CultureInfo.InvariantCulture), true, true),
                 "uValue" => new(id, "U (W/m²K)", e => e.Spec?.ThermalTransmittance is { } u ? u.ToString(CultureInfo.InvariantCulture) : "—", true),
-                "fire" => new(id, "Fire rating", e => e.Spec == null ? "—" : "—", true),
+                "fire" => new(id, "Fire rating", e => FireRating(e) is { Length: > 0 } f ? f : "—", true),
                 "lintel" => data.LintelMarks is { Count: > 0 } lm
                     ? new(id, "Lintel", e => e.Occurrences.Select(o => lm.GetValueOrDefault(o.Id)).OfType<string>().Distinct().Order().ToList() is { Count: > 0 } l ? string.Join(", ", l) : "—", true) : null,
                 "lintelKind" => new(id, "Precast or cast", e => e.Lintel!.Precast ? "Precast" : "Cast in place", true),
@@ -100,9 +107,19 @@ public static class ScheduleLayout
             };
             if (row != null) rows.Add(row);
         }
-        // Typed text wins over the model's value.
-        return rows.Select(r => r.FromModel ? r with { Value = e => table.Cells.GetValueOrDefault(e.Key)?.GetValueOrDefault(r.Id) ?? r.Value(e) } : r).ToList();
+        // Typed text wins over the model's value; a column of the schedule's own has only what is typed.
+        return rows.Select(r => r.FromModel ? r with { Value = e => table.Cells.GetValueOrDefault(e.Key)?.GetValueOrDefault(r.Id) ?? (e.Kind == ScheduleEntry.Manual ? "" : r.Value(e)) } : r).ToList();
     }
+
+    /// <summary>A parameter's row: <c>param:</c> and its name.</summary>
+    public const string ParamPrefix = "param:";
+
+    /// <summary>The rows of the parameters the listed types and their elements carry (decision 251), in the order first met; a fire rating goes in its own row.</summary>
+    public static List<string> ParamRows(ScheduleData data) =>
+        data.Entries.SelectMany(e => e.Params?.Keys ?? []).Where(n => !Schedules.IsFireRating(n)).Distinct(StringComparer.OrdinalIgnoreCase).Select(n => ParamPrefix + n).ToList();
+
+    /// <summary>A type's fire rating: its parameter (or its elements') named so, Pset_DoorCommon's or Pset_WindowCommon's FireRating among them.</summary>
+    public static string? FireRating(ScheduleEntry e) => e.Params?.Where(p => Schedules.IsFireRating(p.Key) && p.Value.Length > 0).Select(p => p.Value).FirstOrDefault();
 
     /// <summary>The cards' order: the data's (absent), by mark, name, width, height, or most first.</summary>
     public static List<ScheduleEntry> Sort(IEnumerable<ScheduleEntry> entries, string? sort) => sort switch
@@ -142,6 +159,7 @@ public static class ScheduleLayout
             if (vertical) s.Text(mid + new Vec2(-1, 0), text, 2, anchor: "middle", angle: 90);
             else s.Text(mid + new Vec2(0, -0.8), text, 2, anchor: "middle");
         }
+        if (e.Kind == ScheduleEntry.Manual) return (0, 0, (_, _) => { });
         if (e.Kind == "lintel" && e.Lintel is { } l)
         {
             var (lw, lh, sw) = (l.Length * k, l.Height * k, l.Width * k);
@@ -348,6 +366,7 @@ public static class ScheduleLayout
                     var o = new Pen(p.Layer, p.Stroke, p.Width, p.Fill, p.Dash);
                     o.Segments.AddRange(p.Segments.Select(sg => (sg.A + new Vec2(0, dy), sg.B + new Vec2(0, dy))));
                     o.Texts.AddRange(p.Texts.Select(t => t with { At = t.At + new Vec2(0, dy) }));
+                    o.Loops.AddRange(p.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(q => q + new Vec2(0, dy)).ToList()));
                     cur.Add(o);
                 }
                 w = Math.Max(w, band.W);

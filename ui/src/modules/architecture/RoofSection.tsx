@@ -62,6 +62,7 @@ export function RoofSection({ node }: { node: NodeDto }) {
       </table>
       {Array.isArray(node.props.openings) && node.props.openings.length > 0 && (
         <table className="roof-openings">
+          <caption className="muted small">Roof windows and dormers: drag one's grip in plan to move it; × or Ctrl/⌘-click on its grip removes it.</caption>
           <tbody>
             {(node.props.openings as { id: string; name: string; kind: string; width?: number; length?: number }[]).map((o) => (
               <tr key={o.id}>

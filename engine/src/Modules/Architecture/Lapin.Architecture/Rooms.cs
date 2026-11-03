@@ -382,6 +382,7 @@ public sealed class RoomSchedule : IScheduleSource
         var m = q.Model;
         var storeys = Spatial.Storeys(m).Select((s, i) => (s.Id, i)).ToDictionary(x => x.Id, x => x.i);
         var rows = new List<IReadOnlyList<string>>();
+        var keys = new List<string?>();
         double total = 0;
         string N(double v) => v.ToString("0.00", CultureInfo.InvariantCulture);
         foreach (var r in m.OfClass(Rooms.Class)
@@ -392,11 +393,12 @@ public sealed class RoomSchedule : IScheduleSource
             var h = Rooms.HeightOf(r.Room, m);
             string[] named = [r.Storey?.Name ?? "", r.Room.Str("number") ?? "", r.Room.Name, r.Room.Str("function") ?? "", r.Room.Str("department") ?? ""];
             // A room without an outline yet (a space imported without a shape) is listed, unmeasured.
+            keys.Add(r.Room.Id);
             if (Rooms.Of(r.Room, m, q.Geometry) is not { } o) { rows.Add([.. named, "", "", N(h), ""]); continue; }
             total += o.NetArea;
             rows.Add([.. named, N(o.NetArea), N(o.Perimeter), N(h), N(o.NetArea * h)]);
         }
-        if (rows.Count > 0) rows.Add(["Total", "", "", "", "", N(total), "", "", ""]);
-        return new ScheduleGrid(Label, ["Storey", "Number", "Name", "Function", "Department", "Area (m²)", "Perimeter (m)", "Height (m)", "Volume (m³)"], rows);
+        if (rows.Count > 0) { rows.Add(["Total", "", "", "", "", N(total), "", "", ""]); keys.Add(null); }
+        return new ScheduleGrid(Label, ["Storey", "Number", "Name", "Function", "Department", "Area (m²)", "Perimeter (m)", "Height (m)", "Volume (m³)"], rows, keys);
     }
 }

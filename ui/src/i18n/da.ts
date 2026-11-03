@@ -893,6 +893,22 @@ export const DA: Record<string, string> = {
   'Show the active level only': 'Vis kun det aktive niveau', 'Open the user guide': 'Åbn brugervejledningen',
   // What a placing tool puts down, openings alone, the grid and thin lines (decision 247)
   'New element': 'Nyt element', 'The first one is made as you place it.': 'Den første oprettes, når du placerer den.', 'Elements of this type:': 'Elementer af denne type:', 'Edit types…': 'Redigér typer…', 'Wall opening': 'Vægåbning', 'Thin lines': 'Tynde linjer',
+  // Schedules: columns and rows of your own, charts, type parameters; roof windows and dormers in plan
+  'Mark of the new column': 'Mærke for den nye kolonne', 'Column name': 'Kolonnenavn', 'Types no door or window in the model uses: left out unless shown': 'Typer, som ingen dør eller vindue i modellen bruger: udeladt, medmindre de vises',
+  'A row of your own, typed in': 'En egen række, skrevet ind', 'A column of your own: a card with no type, every value typed': 'En egen kolonne: et kort uden type, hver værdi skrevet ind', 'A column of your own, typed in': 'En egen kolonne, skrevet ind',
+  'Charts of the table': 'Tabellens diagrammer', 'Charts': 'Diagrammer', 'The column\'s mark': 'Kolonnens mærke',
+  'Remove the column': 'Fjern kolonnen', 'The column\'s name': 'Kolonnens navn', 'A parameter of the types: what is typed here goes into the type': 'En parameter for typerne: det, der skrives her, går ind i typen',
+  'Sort by this column (again: the other way, then as the model lists)': 'Sortér efter denne kolonne (igen: den anden vej, så som modellen oplister)', 'A chart of the table: a column for its categories, one to add up, drawn after the tables (on sheets too).': 'Et diagram over tabellen: en kolonne til dets kategorier, en at lægge sammen, tegnet efter tabellerne (også på tegningsark).', 'Change the chart': 'Ændr diagrammet',
+  'Remove the chart': 'Fjern diagrammet', 'New chart': 'Nyt diagram', 'Pie': 'Cirkel',
+  'Categories from': 'Kategorier fra', 'Sum': 'Sum', 'Average': 'Gennemsnit',
+  'Least': 'Mindst', 'Most': 'Mest', 'Count of rows': 'Antal rækker',
+  'Of': 'Af', 'At most (categories)': 'Højst (kategorier)', 'all': 'alle',
+  'as it shows': 'som det vises', 'Parameters · in schedules': 'Parametre · i skemaer', 'Save the type to give it parameters (a fire rating, a manufacturer…).': 'Gem typen for at give den parametre (en brandklasse, en producent…).',
+  'Fire rating': 'Brandklasse', 'Manufacturer': 'Producent', 'Product code': 'Produktkode',
+  'Website': 'Websted', 'A text parameter of the type': 'En tekstparameter for typen', 'Roof windows and dormers: drag one\'s grip in plan to move it; × or Ctrl/⌘-click on its grip removes it.': 'Ovenlysvinduer og kviste: træk i grebet på et af dem i planen for at flytte det; × eller Ctrl/⌘-klik på dets greb fjerner det.',
+  'A column needs a name.': 'En kolonne skal have et navn.', 'A chart needs the column it adds up, or counts the rows.': 'Et diagram skal have den kolonne, det lægger sammen, eller det tæller rækkerne.', 'A lintel schedule lists the lintels the walls make: it takes rows of its own, not columns.': 'Et skema over overliggere viser de overliggere, væggene danner: det tager egne rækker, ikke kolonner.',
+  'Nothing to show: the table has no rows.': 'Intet at vise: tabellen har ingen rækker.', 'The schedule has no such chart.': 'Skemaet har ikke et sådant diagram.', 'Which column of the schedule\'s own?': 'Hvilken af skemaets egne kolonner?',
+  'schedule|Column': 'Kolonne', 'chart|Columns': 'Søjler', 'chart|Bars': 'Bjælker',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -978,4 +994,13 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^Grouped (\d+) element\(s\)\.$/, (m) => `Grupperet: ${m[1]} element(er).`],
   [/^Nothing new from (.+): its (\d+) elements? (?:is|are) already in this project \(the file was exported from it\)\. Import it into another project, or a new one\.$/, (m) => `Intet nyt fra ${m[1]}: dens elementer (${m[2]}) er allerede i dette projekt (filen blev eksporteret derfra). Importér den i et andet projekt eller et nyt.`],
   [/^(\d+) dimension strings in (\d+) rooms\.$/, (m) => `${m[1]} målekæder i ${m[2]} rum.`],
+  [/^Unused types \((\d+)\)$/, (m) => `Ubrugte typer (${m[1]})`],
+  [/^(.+) of (.+): typed into the type \(its elements' own values stay theirs\)$/, (m) => `${DA[m[1]] ?? m[1]} for ${m[2]}: skrevet ind i typen (dens elementers egne værdier forbliver deres)`],
+  [/^(.+) takes yes or no\.$/, (m) => `${DA[m[1]] ?? m[1]} tager ja eller nej.`],
+  [/^(.+) takes a number\.$/, (m) => `${DA[m[1]] ?? m[1]} tager et tal.`],
+  [/^(.+?)\.(.+), as IFC keeps it$/, (m) => `${m[1]}.${m[2]}, som IFC gemmer det`],
+  [/^(.+) · Drag: move it on the roof · Ctrl\/⌘-click: remove it$/, (m) => `${m[1]} · Træk: flyt det på taget · Ctrl/⌘-klik: fjern det`],
+  [/^The table has no column „(.+)”\.$/, (m) => `Tabellen har ingen kolonne „${m[1]}”.`],
+  [/^A chart is one of: (.+)\.$/, (m) => `Et diagram er et af: ${m[1]}.`],
+  [/^A chart adds up by one of: (.+)\.$/, (m) => `Et diagram lægger sammen efter et af: ${m[1]}.`],
 ];

@@ -36,7 +36,9 @@ Seleziona il tetto per modificarlo nel pannello Proprietà:
 
 I muri sul livello del tetto si fermano sotto di esso e salgono da soli fino ai suoi timpani, anche sotto un tetto curvo. Un muro su un altro livello segue il tetto dopo **Architettura → Collega al tetto** (<kbd>AR</kbd>): seleziona i muri, poi fai clic sul tetto. Lo stesso strumento accetta qualsiasi altro corpo sopra i muri: un solido di Studio, una soletta, una trave, un elemento importato da IFC. I muri salgono fino al suo intradosso e vengono tagliati lungo di esso, qualunque sia la sua forma. **Scollega dal tetto** lo annulla.
 
-**Finestra da tetto** e **Abbaino** aggiungono aperture a un tetto.
+**Finestra da tetto** e **Abbaino** aggiungono aperture a un tetto: fai clic su una falda. Appartengono al tetto. Seleziona il tetto, e ognuno mostra in pianta una maniglia al suo centro: trascina la maniglia per spostarlo sul tetto (è rifiutato dove non ci starebbe), oppure fai Ctrl/⌘-clic su di essa per toglierlo. Anche le proprietà del tetto li elencano, ognuno con **×** per toglierlo, e il configuratore del tetto ne imposta la dimensione.
+
+![La maniglia di una finestra da tetto sul tetto selezionato](shots/roof-window-grip.webp)
 
 ### Orditura in legno
 

@@ -444,6 +444,79 @@ export const scenes = [
       await t.wait(800);
       t.expect((await t.nodes()).filter((n) => n.type === 'LapinDownpipe').length >= 2, 'the roof\'s downpipes are elements');
       await t.ui({ dialog: null });
+      // A roof window (decision 251): the roof selected in plan shows its grip, dragged to move it on the slope, Ctrl/⌘-click to remove it.
+      const opening = await t.cmd('architecture.addRoofOpening', { kind: 'window', x: 3.5, y: 1.6 });
+      t.expect(opening?.id, 'a roof window on the front slope');
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: await t.storey(), name: 'Roof plan' });
+      await t.ui({ view: 'plan', planViewId: plan.id, keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      await select(t, roof.id);
+      await t.wait(800);
+      // The grip as drawn: the square nearest the window's middle.
+      const [px, py] = await t.planPoint(3.5, 1.6);
+      const boxes = await t.page.locator('[data-testid=plan] .grip-layer g > rect').evaluateAll((rs) => rs.map((r) => { const b = r.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; }));
+      const [gx, gy] = boxes.sort((a, b) => Math.hypot(a[0] - px, a[1] - py) - Math.hypot(b[0] - px, b[1] - py))[0] ?? [px, py];
+      await t.page.mouse.move(gx, gy);
+      await t.page.mouse.down();
+      const [hx] = await t.planPoint(5, 1.6);
+      await t.page.mouse.move(gx + (hx - px), gy, { steps: 6 });
+      await t.page.mouse.up();
+      await t.wait(1000);
+      const moved = (await t.nodes()).find((n) => n.id === roof.id)?.props?.openings?.find((o) => o.id === opening.id);
+      t.expect(moved && Math.abs(moved.x - 3.5) > 0.5, `dragging its grip moves the roof window (x ${moved?.x})`);
+      await t.shot('roof-window-grip', { of: '[data-testid=plan]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    id: 'schedules',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const nodes = await t.nodes();
+      const doorType = nodes.find((n) => n.type === 'IfcDoorType');
+      const windowType = nodes.find((n) => n.type === 'IfcWindowType');
+      // The types' parameters (decision 251): the door's fire rating in IFC's own set, a maker for the windows.
+      await t.cmd('element.setParam', { ids: [doorType.id], pset: 'Pset_DoorCommon', name: 'FireRating', value: 'EI2 30' });
+      await t.cmd('element.setParam', { ids: [windowType.id], name: 'Manufacturer', kind: 'text', value: 'Rehau' });
+      await t.cmd('element.setParam', { ids: [doorType.id], name: 'Manufacturer', kind: 'text', value: 'Porta' });
+      const schedule = await t.cmd('architecture.createSchedule', { kind: 'all' });
+      await t.ui({ view: 'schedule', scheduleId: schedule.id, keyPlan: false });
+      await t.wait(1500);
+      t.expect(await t.page.locator('.schedule-grid input[value="EI2 30"]').count() === 1, 'the fire rating row reads the door type\'s FireRating');
+      t.expect(await t.page.locator('[data-testid^=param-Manufacturer]').count() >= 2, 'the types\' Manufacturer is a row');
+      await t.shot('joinery-schedule', { of: '.schedule-pane', pad: 0 });
+      // The configurator's parameters.
+      await t.ui({ dialog: 'joinery' });
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-testid=joinery-params]').count() === 1, 'the configurator shows the type\'s parameters');
+      await t.page.locator('[data-testid=joinery-params]').scrollIntoViewIfNeeded();
+      await t.wait(300);
+      await t.shot('joinery-params', { of: '[data-testid=joinery-params]', pad: 8 });
+      await t.ui({ dialog: null });
+      // A room schedule with a column and a row of its own, and a chart of the areas by function.
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4, name: 'Living room', function: 'Living' });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 9.5, y: 4, name: 'Bedroom', function: 'Bedroom' });
+      const rooms = await t.cmd('architecture.createSchedule', { kind: 'rooms' });
+      const column = await t.cmd('architecture.addScheduleColumn', { id: rooms.id, label: 'Floor finish' });
+      const row = await t.cmd('architecture.addScheduleManualRow', { id: rooms.id });
+      await t.cmd('architecture.scheduleCell', { id: rooms.id, entry: row.row, row: 'c:Name', text: 'Terrace' });
+      await t.cmd('architecture.scheduleCell', { id: rooms.id, entry: row.row, row: 'c:Function', text: 'Outside' });
+      await t.cmd('architecture.scheduleCell', { id: rooms.id, entry: row.row, row: 'c:Area (m²)', text: '12.00' });
+      await t.cmd('architecture.scheduleCell', { id: rooms.id, entry: row.row, row: column.column, text: 'Decking' });
+      await t.cmd('architecture.scheduleChart', { id: rooms.id, chart: { kind: 'pie', category: 'Function', value: 'Area (m²)', aggregate: 'sum' } });
+      await t.ui({ view: 'schedule', scheduleId: rooms.id });
+      await t.wait(1500);
+      await t.page.locator('[data-testid=schedule-charts-toggle]').click();
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=schedule-grid] input[value="Terrace"]').count() === 1, 'the room schedule has the row of its own');
+      t.expect(await t.page.locator('[data-testid=schedule-charts] li').count() === 1, 'the chart is listed beside the table');
+      await t.page.locator('[data-testid=schedule-charts] button[title="Change the chart"]').click();
+      await t.wait(400);
+      await t.fit();
+      await t.shot('schedule-chart', { of: '.schedule-pane', pad: 0 });
+      await t.ui({ keyPlan: true });
     },
   },
   {

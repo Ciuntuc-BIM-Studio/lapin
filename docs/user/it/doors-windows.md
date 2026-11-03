@@ -77,6 +77,10 @@ Sulla facciata, oltre alla cornice, una finestra può avere una **Chiave di volt
 
 **Maniglia** sceglie la maniglia del tipo: una **Maniglia a leva**, un **Pomolo**, un **Maniglione** o una **Maniglia per finestra**, oppure **Nessuno**. Per impostazione predefinita una porta ha una maniglia a leva e una finestra una maniglia per finestra. Una porta ha la maniglia su entrambe le facce, all’**Altezza della maniglia** che imposti; **Colore della maniglia** ne imposta il colore. Le maniglie si vedono in 3D, nelle sezioni e nei prospetti, e nei disegni del configuratore quando **Ferramenta** è spuntato.
 
+### Parametri
+
+**Parametri · negli abachi**, in fondo al configuratore, contiene i parametri propri del tipo: **+ Resistenza al fuoco** (tenuta in Pset_DoorCommon o Pset_WindowCommon di IFC come FireRating), **+ Produttore**, **+ Codice prodotto**, **+ Sito web**, o qualsiasi parametro a cui dai un nome. Le porte e le finestre del tipo li ereditano, e ognuno diventa una riga degli abachi dei serramenti: vedi [Abachi e grafici](schedules.md).
+
 ## Etichette in pianta
 
 **Annota → Etichette di porte e finestre** mette un contrassegno su ogni porta e finestra di una pianta: una linea attraverso il muro, la sigla all’esterno, e le dimensioni e il davanzale all’interno. Per cambiare l’aspetto delle etichette, vai in **Gestisci → Standard di disegno → Etichette**.

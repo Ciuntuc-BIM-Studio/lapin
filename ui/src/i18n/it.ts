@@ -899,6 +899,22 @@ export const IT: Record<string, string> = {
   'Open the user guide': 'Apri la guida utente',
   // What a placing tool puts down, openings alone, the grid and thin lines (decision 247)
   'New element': 'Nuovo elemento', 'The first one is made as you place it.': 'Il primo viene creato quando lo posizioni.', 'Elements of this type:': 'Elementi di questo tipo:', 'Edit types…': 'Modifica tipi…', 'Wall opening': 'Apertura nel muro', 'Thin lines': 'Linee sottili',
+  // Schedules: columns and rows of your own, charts, type parameters; roof windows and dormers in plan
+  'Mark of the new column': 'Contrassegno della nuova colonna', 'Column name': 'Nome della colonna', 'Types no door or window in the model uses: left out unless shown': 'Tipi che nessuna porta o finestra del modello usa: esclusi se non mostrati',
+  'A row of your own, typed in': 'Una riga tua, scritta a mano', 'A column of your own: a card with no type, every value typed': 'Una colonna tua: una scheda senza tipo, ogni valore scritto a mano', 'A column of your own, typed in': 'Una colonna tua, scritta a mano',
+  'Charts of the table': 'Grafici della tabella', 'Charts': 'Grafici', 'The column\'s mark': 'Il contrassegno della colonna',
+  'Remove the column': 'Rimuovi la colonna', 'The column\'s name': 'Il nome della colonna', 'A parameter of the types: what is typed here goes into the type': 'Un parametro dei tipi: ciò che si scrive qui va nel tipo',
+  'Sort by this column (again: the other way, then as the model lists)': 'Ordina per questa colonna (di nuovo: al contrario, poi come le elenca il modello)', 'A chart of the table: a column for its categories, one to add up, drawn after the tables (on sheets too).': 'Un grafico della tabella: una colonna per le sue categorie, una da sommare, disegnato dopo le tabelle (anche sulle tavole).', 'Change the chart': 'Cambia il grafico',
+  'Remove the chart': 'Rimuovi il grafico', 'New chart': 'Nuovo grafico', 'Pie': 'Torta',
+  'Categories from': 'Categorie da', 'Sum': 'Somma', 'Average': 'Media',
+  'Least': 'Minimo', 'Most': 'Massimo', 'Count of rows': 'Numero di righe',
+  'Of': 'Di', 'At most (categories)': 'Al massimo (categorie)', 'all': 'tutte',
+  'as it shows': 'come appare', 'Parameters · in schedules': 'Parametri · negli abachi', 'Save the type to give it parameters (a fire rating, a manufacturer…).': 'Salva il tipo per dargli dei parametri (una resistenza al fuoco, un produttore…).',
+  'Fire rating': 'Resistenza al fuoco', 'Manufacturer': 'Produttore', 'Product code': 'Codice prodotto',
+  'Website': 'Sito web', 'A text parameter of the type': 'Un parametro di testo del tipo', 'Roof windows and dormers: drag one\'s grip in plan to move it; × or Ctrl/⌘-click on its grip removes it.': 'Finestre da tetto e abbaini: trascina la maniglia di uno in pianta per spostarlo; × o Ctrl/⌘-clic sulla sua maniglia lo rimuove.',
+  'A column needs a name.': 'Una colonna ha bisogno di un nome.', 'A chart needs the column it adds up, or counts the rows.': 'Un grafico ha bisogno della colonna che somma, oppure conta le righe.', 'A lintel schedule lists the lintels the walls make: it takes rows of its own, not columns.': 'Un abaco degli architravi elenca gli architravi che fanno i muri: accetta righe proprie, non colonne.',
+  'Nothing to show: the table has no rows.': 'Niente da mostrare: la tabella non ha righe.', 'The schedule has no such chart.': 'L’abaco non ha un grafico simile.', 'Which column of the schedule\'s own?': 'Quale colonna propria dell’abaco?',
+  'schedule|Column': 'Colonna', 'chart|Columns': 'Colonne', 'chart|Bars': 'Barre',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -983,4 +999,13 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^Grouped (\d+) element\(s\)\.$/, (m) => `${n(m[1], 'elemento raggruppato', 'elementi raggruppati')}.`],
   [/^Nothing new from (.+): its (\d+) elements? (?:is|are) already in this project \(the file was exported from it\)\. Import it into another project, or a new one\.$/, (m) => `Niente di nuovo da ${m[1]}: i suoi elementi (${m[2]}) sono già in questo progetto (il file è stato esportato da qui). Importalo in un altro progetto o in uno nuovo.`],
   [/^(\d+) dimension strings in (\d+) rooms\.$/, (m) => `${m[1]} catene di quote in ${m[2]} locali.`],
+  [/^Unused types \((\d+)\)$/, (m) => `Tipi inutilizzati (${m[1]})`],
+  [/^(.+) of (.+): typed into the type \(its elements' own values stay theirs\)$/, (m) => `${IT[m[1]] ?? m[1]} di ${m[2]}: scritto nel tipo (i valori propri dei suoi elementi restano loro)`],
+  [/^(.+) takes yes or no\.$/, (m) => `${IT[m[1]] ?? m[1]} accetta sì o no.`],
+  [/^(.+) takes a number\.$/, (m) => `${IT[m[1]] ?? m[1]} accetta un numero.`],
+  [/^(.+?)\.(.+), as IFC keeps it$/, (m) => `${m[1]}.${m[2]}, come lo tiene IFC`],
+  [/^(.+) · Drag: move it on the roof · Ctrl\/⌘-click: remove it$/, (m) => `${m[1]} · Trascina: spostalo sul tetto · Ctrl/⌘-clic: rimuovilo`],
+  [/^The table has no column „(.+)”\.$/, (m) => `La tabella non ha la colonna «${m[1]}».`],
+  [/^A chart is one of: (.+)\.$/, (m) => `Un grafico è uno tra: ${m[1]}.`],
+  [/^A chart adds up by one of: (.+)\.$/, (m) => `Un grafico somma per uno tra: ${m[1]}.`],
 ];

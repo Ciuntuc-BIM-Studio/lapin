@@ -895,6 +895,22 @@ export const RO: Record<string, string> = {
   'Open the user guide': 'Deschide ghidul utilizatorului',
   // What a placing tool puts down, openings alone, the grid and thin lines (decision 247)
   'New element': 'Element nou', 'The first one is made as you place it.': 'Primul se creează când îl pui.', 'Elements of this type:': 'Elemente de acest tip:', 'Edit types…': 'Editează tipurile…', 'Wall opening': 'Gol în perete', 'Thin lines': 'Linii subțiri',
+  // Schedules: columns and rows of your own, charts, type parameters; roof windows and dormers in plan
+  'Mark of the new column': 'Marca coloanei noi', 'Column name': 'Numele coloanei', 'Types no door or window in the model uses: left out unless shown': 'Tipuri pe care nicio ușă sau fereastră din model nu le folosește: lăsate deoparte dacă nu sunt arătate',
+  'A row of your own, typed in': 'Un rând propriu, completat de mână', 'A column of your own: a card with no type, every value typed': 'O coloană proprie: o fișă fără tip, fiecare valoare completată de mână', 'A column of your own, typed in': 'O coloană proprie, completată de mână',
+  'Charts of the table': 'Graficele tabelului', 'Charts': 'Grafice', 'The column\'s mark': 'Marca coloanei',
+  'Remove the column': 'Scoate coloana', 'The column\'s name': 'Numele coloanei', 'A parameter of the types: what is typed here goes into the type': 'Un parametru al tipurilor: ce scrii aici intră în tip',
+  'Sort by this column (again: the other way, then as the model lists)': 'Sortează după această coloană (din nou: invers, apoi cum le listează modelul)', 'A chart of the table: a column for its categories, one to add up, drawn after the tables (on sheets too).': 'Un grafic al tabelului: o coloană pentru categoriile lui, una de adunat, desenat după tabele (și pe planșe).', 'Change the chart': 'Schimbă graficul',
+  'Remove the chart': 'Scoate graficul', 'New chart': 'Grafic nou', 'Pie': 'Circular',
+  'Categories from': 'Categorii din', 'Sum': 'Sumă', 'Average': 'Medie',
+  'Least': 'Minim', 'Most': 'Maxim', 'Count of rows': 'Număr de rânduri',
+  'Of': 'Din', 'At most (categories)': 'Cel mult (categorii)', 'all': 'toate',
+  'as it shows': 'cum se vede', 'Parameters · in schedules': 'Parametri · în extrase', 'Save the type to give it parameters (a fire rating, a manufacturer…).': 'Salvează tipul ca să-i dai parametri (o rezistență la foc, un producător…).',
+  'Fire rating': 'Rezistență la foc', 'Manufacturer': 'Producător', 'Product code': 'Cod produs',
+  'Website': 'Site web', 'A text parameter of the type': 'Un parametru text al tipului', 'Roof windows and dormers: drag one\'s grip in plan to move it; × or Ctrl/⌘-click on its grip removes it.': 'Ferestre de acoperiș și lucarne: trage de grip-ul uneia în plan ca s-o muți; × sau Ctrl/⌘-clic pe grip-ul ei o scoate.',
+  'A column needs a name.': 'O coloană are nevoie de un nume.', 'A chart needs the column it adds up, or counts the rows.': 'Un grafic are nevoie de coloana pe care o adună, sau numără rândurile.', 'A lintel schedule lists the lintels the walls make: it takes rows of its own, not columns.': 'Un extras de buiandrugi listează buiandrugii pe care îi fac pereții: primește rânduri proprii, nu coloane.',
+  'Nothing to show: the table has no rows.': 'Nimic de arătat: tabelul nu are rânduri.', 'The schedule has no such chart.': 'Extrasul nu are un asemenea grafic.', 'Which column of the schedule\'s own?': 'Care dintre coloanele proprii ale extrasului?',
+  'schedule|Column': 'Coloană', 'chart|Columns': 'Coloane', 'chart|Bars': 'Bare',
 };
 
 /** Phrases with a number or a name in them. */
@@ -978,4 +994,13 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Grouped (\d+) element\(s\)\.$/, (m) => `Grupat: ${m[1]} element(e).`],
   [/^Nothing new from (.+): its (\d+) elements? (?:is|are) already in this project \(the file was exported from it\)\. Import it into another project, or a new one\.$/, (m) => `Nimic nou din ${m[1]}: elementele lui (${m[2]}) sunt deja în acest proiect (fișierul a fost exportat din el). Importă-l în alt proiect sau într-unul nou.`],
   [/^(\d+) dimension strings in (\d+) rooms\.$/, (m) => `${m[1]} lanțuri de cote în ${m[2]} camere.`],
+  [/^Unused types \((\d+)\)$/, (m) => `Tipuri nefolosite (${m[1]})`],
+  [/^(.+) of (.+): typed into the type \(its elements' own values stay theirs\)$/, (m) => `${RO[m[1]] ?? m[1]} pentru ${m[2]}: scris în tip (valorile proprii ale elementelor lui rămân ale lor)`],
+  [/^(.+) takes yes or no\.$/, (m) => `${RO[m[1]] ?? m[1]} ia da sau nu.`],
+  [/^(.+) takes a number\.$/, (m) => `${RO[m[1]] ?? m[1]} ia un număr.`],
+  [/^(.+?)\.(.+), as IFC keeps it$/, (m) => `${m[1]}.${m[2]}, cum îl păstrează IFC`],
+  [/^(.+) · Drag: move it on the roof · Ctrl\/⌘-click: remove it$/, (m) => `${m[1]} · Trage: mut-o pe acoperiș · Ctrl/⌘-clic: scoate-o`],
+  [/^The table has no column „(.+)”\.$/, (m) => `Tabelul nu are coloana „${m[1]}”.`],
+  [/^A chart is one of: (.+)\.$/, (m) => `Un grafic e unul dintre: ${m[1]}.`],
+  [/^A chart adds up by one of: (.+)\.$/, (m) => `Un grafic adună după unul dintre: ${m[1]}.`],
 ];

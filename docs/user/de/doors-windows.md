@@ -77,6 +77,10 @@ An der Fassade kann ein Fenster neben der Fasche einen **Schlussstein**, eine **
 
 **Griff** wählt den Griff des Typs: **Drücker**, **Knauf**, **Stoßgriff**, **Fenstergriff** oder keinen. Standardmäßig hat eine Tür einen Drücker und ein Fenster einen Fenstergriff. Eine Tür hat den Griff auf beiden Seiten, in der angegebenen **Griffhöhe**; **Griffarbe** setzt seine Farbe. Griffe erscheinen in 3D, in Schnitten und Ansichten und in den Zeichnungen des Konfigurators, wenn **Beschläge** angehakt ist.
 
+### Parameter
+
+**Parameter · in Bauteillisten**, unten im Konfigurator, enthält die eigenen Parameter des Typs: **+ Feuerwiderstand** (in IFC in Pset_DoorCommon oder Pset_WindowCommon als FireRating geführt), **+ Hersteller**, **+ Produktcode**, **+ Website** oder jeden Parameter, den Sie benennen. Die Türen und Fenster des Typs erben sie, und jeder wird zu einer Zeile der Tür- und Fensterlisten: siehe [Bauteillisten und Diagramme](schedules.md).
+
 ## Beschriftungen im Grundriss
 
 **Beschriften → Tür- und Fensterbeschriftungen** setzt eine Markierung an jede Tür und jedes Fenster eines Grundrisses: eine Linie quer durch die Wand, das Kennzeichen außen sowie Größe und Brüstung innen. Um das Aussehen der Beschriftungen zu ändern, gehen Sie zu **Verwalten → Zeichnungsstandards → Beschriftungen**.

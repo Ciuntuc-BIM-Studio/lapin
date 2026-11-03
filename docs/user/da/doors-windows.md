@@ -77,6 +77,10 @@ På facaden kan et vindue ud over indfatningen have en **Slutsten**, en **Krone 
 
 **Greb** vælger typens greb: **Dørgreb**, **Knop**, **Trækstang**, **Vinduesgreb** eller intet. Som standard har en dør et dørgreb og et vindue et vinduesgreb. En dør har greb på begge sider i den **Grebshøjde**, du angiver; **Grebets farve** sætter farven. Greb vises i 3D, i snit og opstalter og i konfiguratorens tegninger, når **Beslag** er markeret.
 
+### Parametre
+
+**Parametre · i skemaer**, nederst i konfiguratoren, rummer typens egne parametre: **+ Brandmodstand** (holdt i IFC's Pset_DoorCommon eller Pset_WindowCommon som FireRating), **+ Producent**, **+ Varenummer**, **+ Websted** eller enhver parameter, du navngiver. Typens døre og vinduer arver dem, og hver bliver en række i snedkerskemaerne: se [Skemaer og diagrammer](schedules.md).
+
 ## Mærker i plan
 
 **Annotér → Dør- og vinduesmærker** sætter et mærke på hver dør og hvert vindue i en plan: en linje på tværs af væggen, mærket udenfor, og størrelsen og brystningen indenfor. Vil du ændre, hvordan mærkerne ser ud, så gå til **Administrer → Tegningsstandarder → Mærker**.

@@ -16,7 +16,11 @@ public sealed record LintelInfo(bool Precast, string? Product, double Width, dou
 /// on each level, the total, and each placed one.
 /// </summary>
 public sealed record ScheduleEntry(string Key, string Kind, JoinerySpec? Spec, string Mark, string Name, double Width, double Height,
-    Dictionary<string, int> Counts, int Total, List<Occurrence> Occurrences, LintelInfo? Lintel = null);
+    Dictionary<string, int> Counts, int Total, List<Occurrence> Occurrences, LintelInfo? Lintel = null, IReadOnlyDictionary<string, string>? Params = null)
+{
+    /// <summary>A column of the schedule's own (decision 251): no type behind it, every value typed.</summary>
+    public const string Manual = "manual";
+}
 
 /// <summary>What a schedule lists, its levels (lowest first), and for joinery the lintel mark over each door and window.</summary>
 public sealed record ScheduleData(List<ScheduleEntry> Entries, List<string> Levels, Dictionary<string, string>? LintelMarks = null);
@@ -60,7 +64,7 @@ public static class Schedules
                 foreach (var (_, level) in occ) counts[level] = counts.GetValueOrDefault(level) + 1;
                 var numbered = occ.OrderBy(x => levels.IndexOf(x.Level) is var i && i < 0 ? 99 : i).ThenBy(x => m.Order(x.e.Id))
                     .Select((x, i) => new Occurrence(x.e.Id, x.Level, i + 1, spec?.IsExternal)).ToList();
-                entries.Add(new ScheduleEntry(type.Id, k, spec, spec?.Mark ?? type.Str("mark") ?? "", type.Name, spec?.Width ?? 0, spec?.Height ?? 0, counts, placed.Count, numbered));
+                entries.Add(new ScheduleEntry(type.Id, k, spec, spec?.Mark ?? type.Str("mark") ?? "", type.Name, spec?.Width ?? 0, spec?.Height ?? 0, counts, placed.Count, numbered, Params: ParamValues(type, placed)));
             }
         }
         // Windows before doors, then by mark (numbers as numbers), then width.
@@ -133,6 +137,49 @@ public static class Schedules
     }
 
     static double Mm(double m) => Math.Round(m * 1000);
+
+    /// <summary>A stored parameter's value as the schedule writes it: a length in mm, an area in m², yes or no.</summary>
+    public static string ParamText(System.Text.Json.Nodes.JsonObject p)
+    {
+        var v = p["value"];
+        if (v is null) return "";
+        var kind = (string?)p["kind"] ?? "text";
+        if (kind == "bool") return v is System.Text.Json.Nodes.JsonValue b && b.TryGetValue<bool>(out var x) ? (x ? "yes" : "no") : v.ToString();
+        if (Json.Number(v) is { } n && kind is "number" or "length" or "area" or "angle")
+            return (kind == "length" ? Math.Round(n * 1000, 1) : Math.Round(n, 4)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return v.ToString();
+    }
+
+    static IEnumerable<System.Text.Json.Nodes.JsonObject> StoredParams(Entity e) =>
+        e.Attrs["params"] is System.Text.Json.Nodes.JsonArray a ? a.OfType<System.Text.Json.Nodes.JsonObject>().Where(p => ((string?)p["name"])?.Trim() is { Length: > 0 }) : [];
+
+    /// <summary>
+    /// A type's parameters as its schedule entry shows them (decision 251): the type's own, each placed one's own over it; where the
+    /// placed ones differ, their values one after another. Keyed by the parameter's name (case aside, the first spelling kept).
+    /// </summary>
+    static Dictionary<string, string> ParamValues(Entity type, List<Entity> placed)
+    {
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var typeValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in StoredParams(type)) { var n = ((string)p["name"]!).Trim(); names.TryAdd(n, n); typeValues[n] = ParamText(p); }
+        var own = placed.Select(e => StoredParams(e).GroupBy(p => ((string)p["name"]!).Trim(), StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => ParamText(g.Last()), StringComparer.OrdinalIgnoreCase)).ToList();
+        foreach (var o in own) foreach (var n in o.Keys) names.TryAdd(n, n);
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var n in names.Values)
+        {
+            var list = placed.Count == 0 ? [typeValues.GetValueOrDefault(n, "")]
+                : own.Select(o => o.TryGetValue(n, out var v) ? v : typeValues.GetValueOrDefault(n, "")).ToList();
+            values[n] = string.Join(", ", list.Where(v => v.Length > 0).Distinct());
+        }
+        return values;
+    }
+
+    /// <summary>Whether a parameter's name says a fire rating (Fire rating, Fire Rated, FireRating, Fire resistance): the schedule's Fire rating row reads it.</summary>
+    public static bool IsFireRating(string name)
+    {
+        var k = new string(name.Where(char.IsLetter).Select(char.ToLowerInvariant).ToArray());
+        return k is "firerating" or "firerated" or "fireresistance" or "fireresistancerating" or "rezistentalafoc" or "rezistenţalafoc";
+    }
 
     /// <summary>Steel of a cast lintel (kg): its bars along it, its stirrups round it (7850 kg/m³).</summary>
     static double Steel(LintelReinforcement r, double width, double height, double length)

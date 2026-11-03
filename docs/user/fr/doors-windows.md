@@ -77,6 +77,10 @@ Sur la façade, en plus de l’encadrement, une fenêtre peut avoir une **Clé d
 
 **Poignée** choisit la poignée du type : **Béquille**, **Bouton**, **Barre de tirage**, **Poignée de fenêtre** ou aucune. Par défaut, une porte a une béquille et une fenêtre une poignée de fenêtre. Une porte a sa poignée sur les deux faces, à la **Hauteur de la poignée** indiquée ; **Couleur de la poignée** règle sa couleur. Les poignées se voient en 3D, en coupe et en élévation, et dans les dessins du configurateur quand **Quincaillerie** est cochée.
 
+### Paramètres
+
+**Paramètres · dans les nomenclatures**, en bas du configurateur, contient les paramètres propres du type : **+ Résistance au feu** (rangée dans Pset_DoorCommon ou Pset_WindowCommon d’IFC comme FireRating), **+ Fabricant**, **+ Code produit**, **+ Site web**, ou tout paramètre que vous nommez. Les portes et fenêtres du type en héritent, et chacun devient une ligne des nomenclatures des menuiseries : voir [Nomenclatures et graphiques](schedules.md).
+
 ## Étiquettes en plan
 
 **Annoter → Étiquettes de portes et fenêtres** place un marqueur sur chaque porte et fenêtre d’un plan : une ligne en travers du mur, le repère à l’extérieur, et les dimensions et l’allège à l’intérieur. Pour changer l’aspect des étiquettes, allez dans **Gérer → Normes de dessin → Étiquettes**.

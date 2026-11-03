@@ -77,6 +77,10 @@ On the facade, besides the surround, a window can have a **Keystone**, a **Crown
 
 **Handle** picks the handle of the type: a **Lever**, a **Knob**, a **Pull bar** or a **Window handle**, or **None**. By default a door has a lever and a window a window handle. A door has its handle on both faces, at the **Handle height** you set; **Handle colour** sets its colour. Handles show in 3D, in sections and elevations, and in the configurator's drawings when **Hardware** is ticked.
 
+### Parameters
+
+**Parameters · in schedules**, at the bottom of the configurator, holds the type's own parameters: **+ Fire rating** (kept in IFC's Pset_DoorCommon or Pset_WindowCommon as FireRating), **+ Manufacturer**, **+ Product code**, **+ Website**, or any parameter you name. The type's doors and windows inherit them, and each one becomes a row of the joinery schedules: see [Schedules and charts](schedules.md).
+
 ## Tags in plan
 
 **Annotate → Door & window tags** puts a marker on each door and window of a plan: a line across the wall, the mark outside, and the size and sill inside. To change how the tags look, go to **Manage → Drafting standards → Tags**.

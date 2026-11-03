@@ -36,7 +36,9 @@ Markér taget for at ændre det i egenskabspanelet:
 
 Væggene på tagets niveau stopper under det og går selv op til dets gavle, også under et buet tag. En væg på et andet niveau følger taget efter **Arkitektur → Fastgør til tag** (<kbd>AR</kbd>): markér væggene, og klik derefter på taget. Samme værktøj tager ethvert andet legeme over væggene: et Studio-legeme, en plade, en bjælke, et element importeret fra IFC. Væggene går op til dets underside og skæres langs den, uanset formen. **Frigør fra tag** fortryder det.
 
-**Ovenlysvindue** og **Kvist** tilføjer åbninger i et tag.
+**Ovenlysvindue** og **Kvist** tilføjer åbninger i et tag: klik på en tagflade. De hører til taget. Markér taget, og hver af dem viser et greb i plan midt på sig: træk i grebet for at flytte den på taget (det afvises, hvor den ikke ville kunne være), eller Ctrl/⌘-klik på det for at fjerne den. Tagets egenskaber lister dem også, hver med **×** til at fjerne den, og tagkonfiguratoren sætter deres størrelse.
+
+![Et ovenlysvindues greb på det markerede tag](shots/roof-window-grip.webp)
 
 ### Trækonstruktion
 

@@ -77,6 +77,10 @@ Pe fațadă, pe lângă ancadrament, o fereastră poate avea **Cheie de boltă**
 
 **Mâner** alege mânerul tipului: **Clanță**, **Buton**, **Bară de tragere**, **Mâner de fereastră** sau niciunul. Implicit, o ușă are clanță, iar o fereastră mâner de fereastră. O ușă are mâner pe ambele fețe, la **Înălțimea mânerului** pe care o dai; **Culoarea mânerului** îi dă culoarea. Mânerele se văd în 3D, în secțiuni și fațade, și în desenele configuratorului când e bifată **Feronerie**.
 
+### Parametri
+
+**Parametri · în extrase**, în partea de jos a configuratorului, ține parametrii proprii ai tipului: **+ Rezistență la foc** (păstrată în Pset_DoorCommon sau Pset_WindowCommon din IFC ca FireRating), **+ Producător**, **+ Cod produs**, **+ Site web** sau orice parametru căruia îi dai un nume. Ușile și ferestrele tipului îi moștenesc, și fiecare devine un rând al extraselor de tâmplărie: vezi [Extrase și grafice](schedules.md).
+
 ## Etichete în plan
 
 **Adnotări → Etichete uși și ferestre** pune un marcaj pe fiecare ușă și fereastră dintr-un plan: o linie peste perete, marca în afară, dimensiunile și parapetul înăuntru. Cum arată etichetele se setează în **Gestionare → Standarde de desen → Etichete**.

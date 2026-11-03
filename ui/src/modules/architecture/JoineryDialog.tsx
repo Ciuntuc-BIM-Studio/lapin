@@ -17,6 +17,7 @@ import { ofClass, relatedOf } from '../../engine/model';
 import { LengthField, NumberField } from '../../shell/cells';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { PendingDialog } from '../core/PendingDialog';
+import { ParamsSection } from '../../shell/ParamsSection';
 import { deleteType } from '../core/deleteType';
 import { LintelRuleEditor } from './LintelRule';
 import type { Rule } from './lintels';
@@ -507,6 +508,7 @@ export function JoineryDialog() {
               <DressingFields kind={spec.kind} height={spec.height} details={details} onChange={setDetails} />
               <HardwareFields spec={spec} onChange={set} />
               {spec.kind === 'door' && <label className="field-line"><span className="eyebrow">Leaf</span><input type="color" value={spec.colors.leaf} onChange={(e) => set({ colors: { ...spec.colors, leaf: e.target.value } })} /></label>}
+              <TypeParams typeId={editing} kind={spec.kind} />
             </div>
             <div className="joinery-preview">
               <Strokes drawing={outside ? preview?.drawings?.exterior : preview?.drawings?.elevation} w={W} h={H} label={outside ? 'Elevation from outside' : 'Elevation from inside'}>
@@ -538,6 +540,42 @@ export function JoineryDialog() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** What a type's parameters offer to add at once: the fire rating in IFC's own set (its schedule row reads it), a manufacturer, a link. */
+const PARAM_PRESETS = (kind: 'door' | 'window'): { label: string; name: string; pset?: string }[] => [
+  { label: 'Fire rating', name: 'FireRating', pset: kind === 'door' ? 'Pset_DoorCommon' : 'Pset_WindowCommon' },
+  { label: 'Manufacturer', name: 'Manufacturer' },
+  { label: 'Product code', name: 'Product code' },
+  { label: 'Website', name: 'Website' },
+];
+
+/**
+ * The type's own parameters (decision 251): a fire rating, a manufacturer, a website, any of the user's; its doors or
+ * windows inherit them, and the joinery schedules show each as a row. Saved as they are typed, the type being in the
+ * project (a new type has them once saved).
+ */
+function TypeParams({ typeId, kind }: { typeId: string | null; kind: 'door' | 'window' }) {
+  const type = useSession((s) => (typeId ? s.nodes.get(typeId) : undefined));
+  if (!type) return <><p className="eyebrow">Parameters · in schedules</p><p className="muted small">Save the type to give it parameters (a fire rating, a manufacturer…).</p></>;
+  const has = new Set(((Array.isArray(type.props.params) ? type.props.params : []) as { name: string }[]).map((p) => p.name.toLowerCase()));
+  const presets = PARAM_PRESETS(kind).filter((p) => !has.has(p.name.toLowerCase()));
+  return (
+    <div className="type-params" data-testid="joinery-params">
+      <p className="eyebrow">Parameters · in schedules</p>
+      {presets.length > 0 && (
+        <div className="row wrap">
+          {presets.map((p) => (
+            <button key={p.name} type="button" className="chip" title={p.pset ? `${p.pset}.${p.name}, as IFC keeps it` : 'A text parameter of the type'}
+              onClick={() => void execute('element.setParam', { ids: [type.id], name: p.name, value: '', ...(p.pset ? { pset: p.pset } : { kind: 'text' }) })}>
+              <Plus size={11} /> {p.label}
+            </button>
+          ))}
+        </div>
+      )}
+      <ParamsSection node={type} ids={() => [type.id]} />
     </div>
   );
 }

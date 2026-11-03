@@ -36,7 +36,9 @@ Wählen Sie das Dach aus, um es im Eigenschaftenbereich zu ändern:
 
 Die Wände auf der Ebene des Dachs enden von selbst darunter und steigen bis zu seinen Giebeln, auch unter einem gekrümmten Dach. Eine Wand auf einer anderen Ebene folgt dem Dach nach **Architektur → An Dach anbinden** (<kbd>AR</kbd>): Wählen Sie die Wände aus und klicken Sie dann auf das Dach. Dasselbe Werkzeug nimmt jeden anderen Körper über den Wänden: einen Studio-Volumenkörper, eine Decke, einen Träger, ein aus IFC importiertes Element. Die Wände steigen bis zu seiner Unterseite und werden an ihr entlang geschnitten, welche Form sie auch hat. **Vom Dach lösen** macht dies rückgängig.
 
-**Dachfenster** und **Gaube** fügen einem Dach Öffnungen hinzu.
+**Dachfenster** und **Gaube** fügen einem Dach Öffnungen hinzu: Klicken Sie auf eine Dachfläche. Sie gehören zum Dach. Wählen Sie das Dach aus, und jedes zeigt im Grundriss einen Griff in seiner Mitte: Ziehen Sie den Griff, um es auf dem Dach zu verschieben (wo es nicht passen würde, wird es abgelehnt), oder entfernen Sie es mit Strg/⌘-Klick auf den Griff. Die Eigenschaften des Dachs listen sie ebenfalls auf, jedes mit **×** zum Entfernen, und der Dachkonfigurator legt ihre Größe fest.
+
+![Der Griff eines Dachfensters auf dem ausgewählten Dach](shots/roof-window-grip.webp)
 
 ### Holztragwerk
 

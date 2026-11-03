@@ -172,6 +172,22 @@ function contourGrips(command: string, withEdges = false) {
     return outlineGrips({ pts, edges }, (o) => ({ command, args: { id: node.id, points: toPairs(o.pts), ...(o.edges ? { edges: o.edges } : {}) } }));
   };
 }
+/**
+ * A roof: its outline, and each roof window's and dormer's middle (decision 251): dragged, it moves on the roof (refused
+ * where it would not fit); Ctrl/⌘-click takes it out.
+ */
+function roofGrips(node: NodeDto): Grip[] {
+  const openings = (Array.isArray(node.props.openings) ? node.props.openings : []) as { id: string; name?: string; kind?: string; x?: number; y?: number }[];
+  return [
+    ...contourGrips('architecture.updateRoof', true)(node),
+    ...openings.filter((o) => typeof o.x === 'number' && typeof o.y === 'number').map((o): Grip => ({
+      key: `opening:${o.id}`, kind: 'centre', at: { x: o.x!, y: o.y! },
+      title: `${o.name ?? (o.kind === 'dormer' ? 'Dormer' : 'Roof window')} · Drag: move it on the roof · Ctrl/⌘-click: remove it`,
+      step: (to) => ({ command: 'architecture.updateRoofOpening', args: { roofId: node.id, id: o.id, x: to.x, y: to.y } }),
+      remove: () => ({ command: 'architecture.removeRoofOpening', args: { roofId: node.id, id: o.id } }),
+    })),
+  ];
+}
 const contourRefs = (node: NodeDto): RefLine[] => { const pts = fromPairs(node.props.contour); return pts.length >= 3 ? [outlineRef(pts)] : []; };
 
 /**
@@ -367,7 +383,7 @@ const architecture: LapinModule = {
     { id: 'roomColors', label: 'Room colours', classes: ['LapinView'], component: RoomViewSection },
   ],
   dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog },
-  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: contourGrips('architecture.updateRoof', true), IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips },
+  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips },
   references: { IfcWall: pathRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: contourRefs, IfcSpace: roomRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },

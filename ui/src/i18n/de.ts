@@ -898,6 +898,22 @@ export const DE: Record<string, string> = {
   'Draw a wall': 'Eine Wand zeichnen', 'Show the active level only': 'Nur die aktive Ebene zeigen', 'Open the user guide': 'Benutzerhandbuch öffnen',
   // What a placing tool puts down, openings alone, the grid and thin lines (decision 247)
   'New element': 'Neues Bauteil', 'The first one is made as you place it.': 'Der erste entsteht beim Platzieren.', 'Elements of this type:': 'Bauteile dieses Typs:', 'Edit types…': 'Typen bearbeiten…', 'Wall opening': 'Wandöffnung', 'Thin lines': 'Dünne Linien',
+  // Schedules: columns and rows of your own, charts, type parameters; roof windows and dormers in plan
+  'Mark of the new column': 'Kennzeichen der neuen Spalte', 'Column name': 'Spaltenname', 'Types no door or window in the model uses: left out unless shown': 'Typen, die keine Tür und kein Fenster im Modell verwendet: ausgelassen, sofern nicht angezeigt',
+  'A row of your own, typed in': 'Eine eigene Zeile, von Hand eingetragen', 'A column of your own: a card with no type, every value typed': 'Eine eigene Spalte: eine Karte ohne Typ, jeder Wert von Hand eingetragen', 'A column of your own, typed in': 'Eine eigene Spalte, von Hand eingetragen',
+  'Charts of the table': 'Diagramme der Tabelle', 'Charts': 'Diagramme', 'The column\'s mark': 'Das Kennzeichen der Spalte',
+  'Remove the column': 'Spalte entfernen', 'The column\'s name': 'Der Name der Spalte', 'A parameter of the types: what is typed here goes into the type': 'Ein Parameter der Typen: was hier eingetragen wird, geht in den Typ',
+  'Sort by this column (again: the other way, then as the model lists)': 'Nach dieser Spalte sortieren (erneut: umgekehrt, dann wie das Modell sie auflistet)', 'A chart of the table: a column for its categories, one to add up, drawn after the tables (on sheets too).': 'Ein Diagramm der Tabelle: eine Spalte für seine Kategorien, eine zum Aufsummieren, nach den Tabellen gezeichnet (auch auf Plänen).', 'Change the chart': 'Diagramm ändern',
+  'Remove the chart': 'Diagramm entfernen', 'New chart': 'Neues Diagramm', 'Pie': 'Kreis',
+  'Categories from': 'Kategorien aus', 'Sum': 'Summe', 'Average': 'Mittelwert',
+  'Least': 'Minimum', 'Most': 'Maximum', 'Count of rows': 'Anzahl der Zeilen',
+  'Of': 'Von', 'At most (categories)': 'Höchstens (Kategorien)', 'all': 'alle',
+  'as it shows': 'wie angezeigt', 'Parameters · in schedules': 'Parameter · in Bauteillisten', 'Save the type to give it parameters (a fire rating, a manufacturer…).': 'Speichere den Typ, um ihm Parameter zu geben (eine Feuerwiderstandsklasse, einen Hersteller…).',
+  'Fire rating': 'Feuerwiderstand', 'Manufacturer': 'Hersteller', 'Product code': 'Produktcode',
+  'Website': 'Website', 'A text parameter of the type': 'Ein Textparameter des Typs', 'Roof windows and dormers: drag one\'s grip in plan to move it; × or Ctrl/⌘-click on its grip removes it.': 'Dachfenster und Gauben: den Griff eines davon im Grundriss ziehen, um es zu verschieben; × oder Strg/⌘-Klick auf seinen Griff entfernt es.',
+  'A column needs a name.': 'Eine Spalte braucht einen Namen.', 'A chart needs the column it adds up, or counts the rows.': 'Ein Diagramm braucht die Spalte, die es aufsummiert, oder es zählt die Zeilen.', 'A lintel schedule lists the lintels the walls make: it takes rows of its own, not columns.': 'Eine Sturzliste führt die Stürze auf, die die Wände bilden: sie nimmt eigene Zeilen, keine Spalten.',
+  'Nothing to show: the table has no rows.': 'Nichts anzuzeigen: die Tabelle hat keine Zeilen.', 'The schedule has no such chart.': 'Die Bauteilliste hat kein solches Diagramm.', 'Which column of the schedule\'s own?': 'Welche eigene Spalte der Bauteilliste?',
+  'schedule|Column': 'Spalte', 'chart|Columns': 'Säulen', 'chart|Bars': 'Balken',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -983,4 +999,13 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^Grouped (\d+) element\(s\)\.$/, (m) => `Gruppiert: ${m[1]} Element(e).`],
   [/^Nothing new from (.+): its (\d+) elements? (?:is|are) already in this project \(the file was exported from it\)\. Import it into another project, or a new one\.$/, (m) => `Nichts Neues aus ${m[1]}: Seine Elemente (${m[2]}) sind schon in diesem Projekt (die Datei wurde daraus exportiert). Importieren Sie sie in ein anderes oder neues Projekt.`],
   [/^(\d+) dimension strings in (\d+) rooms\.$/, (m) => `${m[1]} Maßketten in ${m[2]} Räumen.`],
+  [/^Unused types \((\d+)\)$/, (m) => `Unbenutzte Typen (${m[1]})`],
+  [/^(.+) of (.+): typed into the type \(its elements' own values stay theirs\)$/, (m) => `${DE[m[1]] ?? m[1]} von ${m[2]}: in den Typ eingetragen (die eigenen Werte seiner Elemente bleiben ihre)`],
+  [/^(.+) takes yes or no\.$/, (m) => `${DE[m[1]] ?? m[1]} nimmt Ja oder Nein.`],
+  [/^(.+) takes a number\.$/, (m) => `${DE[m[1]] ?? m[1]} nimmt eine Zahl.`],
+  [/^(.+?)\.(.+), as IFC keeps it$/, (m) => `${m[1]}.${m[2]}, wie IFC es führt`],
+  [/^(.+) · Drag: move it on the roof · Ctrl\/⌘-click: remove it$/, (m) => `${m[1]} · Ziehen: auf dem Dach verschieben · Strg/⌘-Klick: entfernen`],
+  [/^The table has no column „(.+)”\.$/, (m) => `Die Tabelle hat keine Spalte „${m[1]}“.`],
+  [/^A chart is one of: (.+)\.$/, (m) => `Ein Diagramm ist eines von: ${m[1]}.`],
+  [/^A chart adds up by one of: (.+)\.$/, (m) => `Ein Diagramm summiert nach einem von: ${m[1]}.`],
 ];

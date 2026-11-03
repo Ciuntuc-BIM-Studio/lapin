@@ -572,11 +572,21 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .sheet-warnings { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 10px; border-bottom: 1px solid var(--rule); }
 .chip.warn .link { margin-left: 6px; border: none; background: none; color: inherit; text-decoration: underline; cursor: pointer; font-size: inherit; padding: 0; }
 .schedule-body { display: flex; flex: 1; min-height: 0; }
+/* The schedule's toolbar in the pane's flow, above its drawing and its side panels, wrapping when the tools outgrow it. */
+.schedule-pane .view-toolbar { position: static; flex-wrap: wrap; justify-content: flex-end; row-gap: 4px; padding: 6px 12px; }
+.schedule-pane .view-toolbar .icon { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; width: auto; min-width: 28px; padding: 0 6px; }
 .schedule-body .schedule-svg { flex: 1; }
 .schedule-settings { width: 280px; overflow: auto; padding: 8px 12px; border-left: 1px solid var(--rule); background: var(--panel); font-size: 12px; }
 .schedule-settings h4 { margin: 12px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); }
 .schedule-settings ul.plain { list-style: none; margin: 0; padding: 0; }
 .schedule-settings li.row { padding: 2px 0; }
+.chart-form { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.chart-form label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--ink-muted); }
+.chart-form .seg { gap: 2px; }
+.schedule-grid td.param input { font-style: italic; }
+.schedule-grid tr.manual td { background: var(--tint, rgba(127, 127, 127, 0.06)); }
+.schedule-grid th input { width: 6em; border: none; background: transparent; font-weight: 600; }
+.type-params .row.wrap { flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
 .schedule-settings .link { border: none; background: none; color: var(--accent); cursor: pointer; padding: 2px 0; font-size: 11px; }
 .schedule-part { border: 1px solid var(--rule); border-radius: 3px; padding: 6px; margin-bottom: 6px; display: grid; gap: 4px; }
 .schedule-part input.wide { width: 100%; box-sizing: border-box; }

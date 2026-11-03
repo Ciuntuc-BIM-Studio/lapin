@@ -953,6 +953,22 @@ export const LO: Record<string, string> = {
   'Show the active level only': 'ສະແດງສະເພາະລະດັບທີ່ໃຊ້ງານ', 'Open the user guide': 'ເປີດຄູ່ມືຜູ້ໃຊ້',
   // What a placing tool puts down, openings alone, the grid and thin lines (decision 247)
   'New element': 'ອົງປະກອບໃໝ່', 'The first one is made as you place it.': 'ປະເພດທຳອິດຈະຖືກສ້າງເມື່ອທ່ານວາງມັນ.', 'Elements of this type:': 'ອົງປະກອບຂອງປະເພດນີ້:', 'Edit types…': 'ແກ້ໄຂປະເພດ…', 'Wall opening': 'ຊ່ອງເປີດໃນຝາ', 'Thin lines': 'ເສັ້ນບາງ',
+  // Schedules: columns and rows of your own, charts, type parameters; roof windows and dormers in plan
+  'Mark of the new column': 'ໝາຍເລກກຳກັບຂອງຖັນໃໝ່', 'Column name': 'ຊື່ຖັນ', 'Types no door or window in the model uses: left out unless shown': 'ປະເພດທີ່ບໍ່ມີປະຕູ ຫຼື ປ່ອງຢ້ຽມໃດໃນໂມເດວໃຊ້: ຖືກລະໄວ້ ເວັ້ນເສຍແຕ່ໃຫ້ສະແດງ',
+  'A row of your own, typed in': 'ແຖວຂອງທ່ານເອງ, ພິມໃສ່ເອງ', 'A column of your own: a card with no type, every value typed': 'ຖັນຂອງທ່ານເອງ: ບັດທີ່ບໍ່ມີປະເພດ, ທຸກຄ່າພິມໃສ່ເອງ', 'A column of your own, typed in': 'ຖັນຂອງທ່ານເອງ, ພິມໃສ່ເອງ',
+  'Charts of the table': 'ແຜນພູມຂອງຕາຕະລາງ', 'Charts': 'ແຜນພູມ', 'The column\'s mark': 'ໝາຍເລກກຳກັບຂອງຖັນ',
+  'Remove the column': 'ລຶບຖັນອອກ', 'The column\'s name': 'ຊື່ຂອງຖັນ', 'A parameter of the types: what is typed here goes into the type': 'ພາຣາມິເຕີຂອງປະເພດ: ສິ່ງທີ່ພິມຢູ່ນີ້ຈະເຂົ້າໄປໃນປະເພດ',
+  'Sort by this column (again: the other way, then as the model lists)': 'ຮຽງຕາມຖັນນີ້ (ອີກຄັ້ງ: ກັບກັນ, ແລ້ວຕາມທີ່ໂມເດວລຽງໄວ້)', 'A chart of the table: a column for its categories, one to add up, drawn after the tables (on sheets too).': 'ແຜນພູມຂອງຕາຕະລາງ: ຖັນໜຶ່ງສຳລັບໝວດໝູ່, ອີກຖັນໜຶ່ງເພື່ອລວມ, ແຕ້ມຫຼັງຕາຕະລາງ (ໃນແຜ່ນແບບນຳ).', 'Change the chart': 'ປ່ຽນແຜນພູມ',
+  'Remove the chart': 'ລຶບແຜນພູມອອກ', 'New chart': 'ແຜນພູມໃໝ່', 'Pie': 'ວົງມົນ',
+  'Categories from': 'ໝວດໝູ່ຈາກ', 'Sum': 'ຜົນລວມ', 'Average': 'ຄ່າສະເລ່ຍ',
+  'Least': 'ໜ້ອຍສຸດ', 'Most': 'ຫຼາຍສຸດ', 'Count of rows': 'ຈຳນວນແຖວ',
+  'Of': 'ຂອງ', 'At most (categories)': 'ສູງສຸດ (ໝວດໝູ່)', 'all': 'ທັງໝົດ',
+  'as it shows': 'ຕາມທີ່ສະແດງ', 'Parameters · in schedules': 'ພາຣາມິເຕີ · ໃນຕາຕະລາງລາຍການ', 'Save the type to give it parameters (a fire rating, a manufacturer…).': 'ບັນທຶກປະເພດກ່ອນ ເພື່ອໃຫ້ພາຣາມິເຕີແກ່ມັນ (ລະດັບການທົນໄຟ, ຜູ້ຜະລິດ…).',
+  'Fire rating': 'ລະດັບການທົນໄຟ', 'Manufacturer': 'ຜູ້ຜະລິດ', 'Product code': 'ລະຫັດຜະລິດຕະພັນ',
+  'Website': 'ເວັບໄຊ', 'A text parameter of the type': 'ພາຣາມິເຕີຂໍ້ຄວາມຂອງປະເພດ', 'Roof windows and dormers: drag one\'s grip in plan to move it; × or Ctrl/⌘-click on its grip removes it.': 'ປ່ອງຢ້ຽມຫຼັງຄາ ແລະ ປ່ອງຫຼັງຄາ: ລາກຈຸດຈັບຂອງອັນໜຶ່ງໃນແຜນຜັງເພື່ອຍ້າຍມັນ; × ຫຼື Ctrl/⌘-ຄລິກ ທີ່ຈຸດຈັບຂອງມັນຈະລຶບມັນອອກ.',
+  'A column needs a name.': 'ຖັນຕ້ອງມີຊື່.', 'A chart needs the column it adds up, or counts the rows.': 'ແຜນພູມຕ້ອງມີຖັນທີ່ມັນລວມ, ຫຼື ມັນນັບແຖວ.', 'A lintel schedule lists the lintels the walls make: it takes rows of its own, not columns.': 'ຕາຕະລາງລາຍການທັບຫຼັງ ລາຍຊື່ທັບຫຼັງທີ່ຝາສ້າງຂຶ້ນ: ມັນຮັບແຖວຂອງທ່ານເອງ, ບໍ່ແມ່ນຖັນ.',
+  'Nothing to show: the table has no rows.': 'ບໍ່ມີຫຍັງໃຫ້ສະແດງ: ຕາຕະລາງບໍ່ມີແຖວ.', 'The schedule has no such chart.': 'ຕາຕະລາງລາຍການບໍ່ມີແຜນພູມດັ່ງກ່າວ.', 'Which column of the schedule\'s own?': 'ຖັນໃດຂອງຕາຕະລາງລາຍການເອງ?',
+  'schedule|Column': 'ຖັນ', 'chart|Columns': 'ແທ່ງຕັ້ງ', 'chart|Bars': 'ແທ່ງນອນ',
 };
 
 /** Phrases with a number or a name in them. */
@@ -1036,4 +1052,13 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^Grouped (\d+) element\(s\)\.$/, (m) => `ຈັດກຸ່ມ ${m[1]} ອົງປະກອບແລ້ວ.`],
   [/^Nothing new from (.+): its (\d+) elements? (?:is|are) already in this project \(the file was exported from it\)\. Import it into another project, or a new one\.$/, (m) => `ບໍ່ມີຫຍັງໃໝ່ຈາກ ${m[1]}: ອົງປະກອບ ${m[2]} ອັນຂອງມັນມີຢູ່ໃນໂຄງການນີ້ແລ້ວ (ໄຟລ໌ຖືກສົ່ງອອກຈາກໂຄງການນີ້). ນຳເຂົ້າມັນໃນໂຄງການອື່ນ, ຫຼື ໂຄງການໃໝ່.`],
   [/^(\d+) dimension strings in (\d+) rooms\.$/, (m) => `${m[1]} ເສັ້ນຂະໜາດໃນ ${m[2]} ຫ້ອງ.`],
+  [/^Unused types \((\d+)\)$/, (m) => `ປະເພດທີ່ບໍ່ໄດ້ໃຊ້ (${m[1]})`],
+  [/^(.+) of (.+): typed into the type \(its elements' own values stay theirs\)$/, (m) => `${LO[m[1]] ?? m[1]} ຂອງ ${m[2]}: ພິມເຂົ້າໃນປະເພດ (ຄ່າຂອງອົງປະກອບຂອງມັນເອງຍັງເປັນຂອງມັນ)`],
+  [/^(.+) takes yes or no\.$/, (m) => `${LO[m[1]] ?? m[1]} ຮັບ ແມ່ນ ຫຼື ບໍ່.`],
+  [/^(.+) takes a number\.$/, (m) => `${LO[m[1]] ?? m[1]} ຮັບຕົວເລກ.`],
+  [/^(.+?)\.(.+), as IFC keeps it$/, (m) => `${m[1]}.${m[2]}, ຕາມທີ່ IFC ເກັບໄວ້`],
+  [/^(.+) · Drag: move it on the roof · Ctrl\/⌘-click: remove it$/, (m) => `${m[1]} · ລາກ: ຍ້າຍມັນເທິງຫຼັງຄາ · Ctrl/⌘-ຄລິກ: ລຶບມັນອອກ`],
+  [/^The table has no column „(.+)”\.$/, (m) => `ຕາຕະລາງບໍ່ມີຖັນ „${m[1]}”.`],
+  [/^A chart is one of: (.+)\.$/, (m) => `ແຜນພູມເປັນໜຶ່ງໃນ: ${m[1]}.`],
+  [/^A chart adds up by one of: (.+)\.$/, (m) => `ແຜນພູມລວມຕາມໜຶ່ງໃນ: ${m[1]}.`],
 ];

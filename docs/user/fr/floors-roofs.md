@@ -36,7 +36,9 @@ Sélectionnez le toit pour le modifier dans le panneau des propriétés :
 
 Les murs du niveau du toit s’arrêtent dessous et montent d’eux-mêmes jusqu’à ses pignons, sous un toit courbe aussi. Un mur d’un autre niveau suit le toit après **Architecture → Attacher au toit** (<kbd>AR</kbd>) : sélectionnez les murs, puis cliquez le toit. Le même outil accepte tout autre corps au-dessus des murs : un solide Studio, une dalle, une poutre, un élément importé d’IFC. Les murs montent jusqu’à sa sous-face et sont coupés le long de celle-ci, quelle que soit sa forme. **Détacher du toit** l’annule.
 
-**Fenêtre de toit** et **Lucarne** ajoutent des ouvertures à un toit.
+**Fenêtre de toit** et **Lucarne** ajoutent des ouvertures à un toit : cliquez sur un pan. Elles appartiennent au toit. Sélectionnez le toit, et chacune montre une poignée en plan en son milieu : faites glisser la poignée pour la déplacer sur le toit (c’est refusé là où elle ne tiendrait pas), ou faites Ctrl/⌘-clic dessus pour la retirer. Les propriétés du toit les listent aussi, chacune avec **×** pour la retirer, et le configurateur du toit règle leur taille.
+
+![La poignée d’une fenêtre de toit sur le toit sélectionné](shots/roof-window-grip.webp)
 
 ### Charpente bois
 

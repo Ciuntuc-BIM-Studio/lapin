@@ -77,6 +77,10 @@ En la fachada, además del recercado, una ventana puede tener **Clave**, **Remat
 
 **Manilla** elige la manilla del tipo: **Manilla de palanca**, **Pomo**, **Tirador de barra**, **Manilla de ventana** o ninguna. Por defecto, una puerta lleva manilla de palanca y una ventana manilla de ventana. Una puerta tiene manilla en ambas caras, a la **Altura de la manilla** que se indique; **Color de la manilla** le da su color. Las manillas se ven en 3D, en secciones y alzados, y en los dibujos del configurador cuando está marcado **Herrajes**.
 
+### Parámetros
+
+**Parámetros · en tablas**, al pie del configurador, guarda los parámetros propios del tipo: **+ Resistencia al fuego** (guardada en Pset_DoorCommon o Pset_WindowCommon de IFC como FireRating), **+ Fabricante**, **+ Código de producto**, **+ Sitio web**, o cualquier parámetro al que dé nombre. Las puertas y ventanas del tipo los heredan, y cada uno se convierte en una fila de las tablas de carpintería: vea [Tablas y gráficos](schedules.md).
+
 ## Etiquetas en planta
 
 **Anotar → Etiquetas de puertas y ventanas** pone una marca en cada puerta y ventana de una planta: una línea a través del muro, la marca fuera, y el tamaño y el alféizar dentro. Para cambiar el aspecto de las etiquetas, vaya a **Gestionar → Normas de dibujo → Etiquetas**.

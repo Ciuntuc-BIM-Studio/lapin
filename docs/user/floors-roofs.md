@@ -36,7 +36,9 @@ Select the roof to change it in the properties panel:
 
 The walls on the roof's level stop under it and rise to its gables by themselves, under a curved roof too. A wall on another level follows the roof after **Architecture → Attach to roof** (<kbd>AR</kbd>): select the walls, then click the roof. The same tool takes any other body over the walls: a Studio solid, a slab, a beam, an element imported from IFC. The walls rise to its underside and are cut along it, whatever its shape. **Detach from roof** undoes it.
 
-**Roof window** and **Dormer** add openings to a roof.
+**Roof window** and **Dormer** add openings to a roof: click on a slope. They belong to the roof. Select the roof, and each one shows a grip in plan at its middle: drag the grip to move it on the roof (it is refused where it would not fit), or **Ctrl/⌘-click** it to remove it. The roof's properties list them too, each with **×** to remove it, and the roof configurator sets their size.
+
+![A roof window's grip on the selected roof](shots/roof-window-grip.webp)
 
 ### Timber framing
 
