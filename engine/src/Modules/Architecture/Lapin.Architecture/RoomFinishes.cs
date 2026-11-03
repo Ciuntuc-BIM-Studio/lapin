@@ -318,6 +318,63 @@ public static class RoomFinishes
     static List<Vec2> Rect(Openings.WallFrame f, double x0, double x1, double y0, double y1) =>
         [f.Start + f.Dir * x0 + f.Left * y0, f.Start + f.Dir * x1 + f.Left * y0, f.Start + f.Dir * x1 + f.Left * y1, f.Start + f.Dir * x0 + f.Left * y1];
 
+    /// <summary>
+    /// A door's or window's reveal as the room's finish lines it, in the wall's frame: the opening's sides along it, the room's face
+    /// and the frame's face across it (a bare opening's: the wall's axis), its bottom and top; whether its bottom is lined (a
+    /// window's, when no sill board covers it on the room's side). A shaped head is left to the wall's own cut.
+    /// </summary>
+    sealed record RevealLining(Openings.WallFrame F, double X0, double X1, double Face, double Frame, double Z0, double Z1, bool Bottom)
+    {
+        Solid? Box(double x0, double x1, double y0, double y1, double z0, double z1) =>
+            x1 - x0 > 1e-6 && Math.Abs(y1 - y0) > 1e-6 && z1 - z0 > 1e-6
+                ? Prism.ExtrudeFootprint(Polygon2.EnsureCcw(Rect(F, x0, x1, Math.Min(y0, y1), Math.Max(y0, y1))), z0, z1 - z0, "reveal") : null;
+
+        /// <summary>
+        /// One layer's lining (from <paramref name="d0"/> to <paramref name="d1"/> in from the reveal's faces) where the piece it is
+        /// stands, between <paramref name="za"/> and <paramref name="zb"/>: the jambs there, the head when the piece reaches it (the
+        /// layer's last piece always does), the bottom when the piece starts under it. Across, from the frame to the layer's own face
+        /// in the room, so it meets the walls' ring at the corner.
+        /// </summary>
+        public IEnumerable<Solid> Boxes(double d0, double d1, double za, double zb, bool last)
+        {
+            var side = Face >= Frame ? 1 : -1;
+            var (y0, y1) = (Frame, Face + side * d1);
+            var (lo, hi) = (Bottom ? Z0 + d0 : Z0, Z1 - d0);
+            var (a, b) = (Math.Max(lo, za), Math.Min(hi, zb));
+            if (b - a > 1e-6)
+            {
+                if (Box(X0 + d0, X0 + d1, y0, y1, a, b) is { } left) yield return left;
+                if (Box(X1 - d1, X1 - d0, y0, y1, a, b) is { } right) yield return right;
+            }
+            if (Z1 - d1 >= za - 1e-9 && (Z1 - d1 < zb || last) && Box(X0 + d1, X1 - d1, y0, y1, Z1 - d1, Z1 - d0) is { } head) yield return head;
+            if (Bottom && Z0 + d0 >= za - 1e-9 && Z0 + d0 < zb && Box(X0 + d1, X1 - d1, y0, y1, Z0 + d0, Z0 + d1) is { } bottom) yield return bottom;
+        }
+    }
+
+    static RevealLining? Lining((Openings.WallFrame F, Openings.Placed P, double Face) x)
+    {
+        var (f, p, face) = x;
+        if (p.Width < 1e-3 || p.Height < 1e-3) return null;
+        if (p.Spec is { } shaped ? JoineryShapes.Shaped(shaped) : p.Shape is { Kind: not "rect" }) return null;
+        // The frame's face on the room's side: the type's frame across the wall (Y to the exterior, mapped as the joinery maps it), else the axis.
+        var frame = 0.0;
+        bool bottom;
+        if (p.Spec is { } spec && p.Fill != null)
+        {
+            var sy = p.Fill.Bool("flipSide") ? -1 : 1;
+            var (ya, yb) = (f.Centre - sy * (spec.Frame.Offset + spec.Frame.Depth / 2), f.Centre - sy * (spec.Frame.Offset - spec.Frame.Depth / 2));
+            frame = face >= f.Centre ? Math.Max(ya, yb) : Math.Min(ya, yb);
+            // The room on the interior side (the type's −Y) has the inside sill; else the outside one.
+            var interior = Math.Sign(face - f.Centre) == sy;
+            var sill = interior ? spec.Details?.SillInside : spec.Details?.SillOutside;
+            bottom = !spec.IsDoor && p.Sill > 1e-3 && sill is not { On: true };
+        }
+        else bottom = p.Sill > 1e-3;
+        if (Math.Abs(face - frame) < 1e-3) return null;
+        var z0 = f.Base + p.Sill;
+        return new RevealLining(f, p.Along - p.Width / 2, p.Along + p.Width / 2, face, frame, z0, z0 + p.Height, bottom);
+    }
+
     // ------------------------------------------------------------ the body
 
     static Solid? Slab(IReadOnlyList<Vec2> outer, IReadOnlyList<IReadOnlyList<Vec2>> holes, double z0, double t, string tag) =>
@@ -339,6 +396,8 @@ public static class RoomFinishes
         string? Mat(string name) => name.Length == 0 ? null : Materials.Find(m, name)?.Id;
         // What each layer's material covers by the outline, nothing deducted: its gross.
         var gross = new List<(int Layer, string Material, double Thickness, double Area, double Uncut)>();
+        // What lines the doors' and windows' reveals, by layer and material: added to the walls' net.
+        var reveals = new List<(int Layer, string Material, double Volume)>();
         void Add(string name, string material, Solid? solid, string key)
         {
             if (solid != null && Measure.Volume(solid) > 1e-12) parts.Add(new GeometryPart(name, Materials.ColorOf(m, Mat(material)), solid, Mat(material), key));
@@ -380,7 +439,8 @@ public static class RoomFinishes
             if (z1 - level < 1e-6) return new ElementGeometry([], Diagnostics: ["The walls' finish has no height: the ceiling is at the floor."]);
             var total = walls.Sum(l => Math.Max(l.Thickness, l.Parts?.Max(p => p.Thickness ?? 0) ?? 0));
             // The doors and windows of the walls along the outline, through every layer of the finish.
-            var cutters = OpeningsAlong(m, storeyId, o).Select(x =>
+            var along = OpeningsAlong(m, storeyId, o);
+            var cutters = along.Select(x =>
             {
                 var side = x.Face >= 0 ? 1 : -1;
                 var footprint = Polygon2.EnsureCcw(Rect(x.F, x.P.Along - x.P.Width / 2, x.P.Along + x.P.Width / 2, x.Face - side * 0.01, x.Face + side * (total + 0.01)));
@@ -396,6 +456,7 @@ public static class RoomFinishes
                     if (Slab(Polygon2.Offset(isl, [d1]), [Polygon2.Offset(isl, [d0])], z0, h, "walls") is { } si) o2.Add(si);
                 return o2;
             }
+            var linings = along.Select(Lining).OfType<RevealLining>().ToList();
             var d = 0.0;
             for (var i = 0; i < walls.Count; i++)
             {
@@ -417,7 +478,17 @@ public static class RoomFinishes
                             }
                             Add(p.Material, p.Material, cut, $"walls:{i}");
                         }
-                    if (p.Material.Length > 0 && top - at > 1e-9) gross.Add((i, p.Material, p.Thickness ?? l.Thickness, o.NetPerimeter * (top - at), 0));
+                    if (p.Material.Length > 0 && top - at > 1e-9)
+                    {
+                        gross.Add((i, p.Material, p.Thickness ?? l.Thickness, o.NetPerimeter * (top - at), 0));
+                        // The reveals of the doors and windows lined too, from the room's face to the frame, this piece where it reaches.
+                        foreach (var lining in linings)
+                            foreach (var box in lining.Boxes(d, d + (p.Thickness ?? l.Thickness), at, top, top >= z1 - 1e-9))
+                            {
+                                Add(p.Material, p.Material, box, $"walls:{i}");
+                                reveals.Add((i, p.Material, Measure.Volume(box)));
+                            }
+                    }
                     at = top;
                 }
                 d += l.Thickness;
@@ -432,8 +503,9 @@ public static class RoomFinishes
             var t = gr.First().Thickness;
             var area = gr.Sum(x => x.Area);
             // A floor's or a ceiling's net is what is built; the walls' is their gross less what the openings took out of it.
-            var net = gr.Any(x => x.Uncut < 0) ? (t > 0 ? v / t : 0) : Math.Max(0, area - (gr.Sum(x => x.Uncut) - v) / t);
-            return new FinishMeasure(part, gr.Key.Layer, gr.Key.Material, t, area, net, v);
+            var lined = reveals.Where(x => x.Layer == gr.Key.Layer && x.Material == gr.Key.Material).Sum(x => x.Volume);
+            var net = gr.Any(x => x.Uncut < 0) ? (t > 0 ? v / t : 0) : Math.Max(0, area - (gr.Sum(x => x.Uncut) - (v - lined)) / t) + lined / t;
+            return new FinishMeasure(part, gr.Key.Layer, gr.Key.Material, t, area, net, v, t > 0 ? lined / t : 0);
         }).ToList());
         return g;
     }
@@ -443,7 +515,7 @@ public static class RoomFinishes
     // ------------------------------------------------------------ what it measures
 
     /// <summary>A finish's measures by layer and material: gross (the outline's, nothing deducted) and net (as built) area, net volume.</summary>
-    public sealed record FinishMeasure(string Part, int Layer, string Material, double Thickness, double Gross, double Net, double Volume);
+    public sealed record FinishMeasure(string Part, int Layer, string Material, double Thickness, double Gross, double Net, double Volume, double Reveals = 0);
 
     /// <summary>What the finish's geometry measured when it was built (none for a geometry it did not build).</summary>
     public static List<FinishMeasure> Measures(ElementGeometry? g) => g != null && Built.TryGetValue(g, out var o) ? o : [];
@@ -467,6 +539,7 @@ public static class RoomFinishes
                 new("GrossArea", x.Gross, "AREA", "Gross area"),
                 new("NetArea", x.Net, "AREA", "Net area"),
                 new("NetVolume", x.Volume, "VOLUME", "Net volume"),
+                .. x.Part == "walls" ? [new Quantity("RevealArea", x.Reveals, "AREA", "Reveals")] : Array.Empty<Quantity>(),
             ], $"{x.Part}:{x.Layer}:{x.Material}", x.Material, Materials.Find(m, x.Material)?.Id);
     }
 }

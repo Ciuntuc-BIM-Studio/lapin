@@ -69,14 +69,14 @@ Farverne tegnes under væggene, møblerne og dørslagene, så planen forbliver l
 En overflade har:
 
 - **Gulv**, dets lag fra færdigt gulv og ned (fliser, klæber, afretningslag…). Dækkets huller i rummet (et trapperum) trækkes fra. **Gennem dørene, til væggens akse** fører gulvet videre under hver dør, så naborummets gulv møder det i væggens akse.
-- **Vægge**, deres lag fra vægfladen ind i rummet, også rundt om rummets øer. Hvert lag kan skifte materiale op ad sin højde, som et lag i en vægtype: i Badeværelset maling over fliser til 2100 (13 mm tykt, fliser og klæber); i Køkkenet et flisebånd fra 900 til 1500. Et stykke uden materiale efterlader intet der. Dørene og vinduerne i væggene rundt om rummet skæres ud. **Højde**: tom, op til loftet.
+- **Vægge**, deres lag fra vægfladen ind i rummet, også rundt om rummets øer. Hvert lag kan skifte materiale op ad sin højde, som et lag i en vægtype: i Badeværelset maling over fliser til 2100 (13 mm tykt, fliser og klæber); i Køkkenet et flisebånd fra 900 til 1500. Et stykke uden materiale efterlader intet der. Dørene og vinduerne i væggene rundt om rummet skæres ud, og deres lysninger beklædes med de samme lag, fra rummets flade til karmen (ved en tom åbning til væggens akse); også et vindues bundlysning, medmindre en vinduesplade dækker den på rummets side. **Højde**: tom, op til loftet.
 - **Loft**, dets lag fra dækket over rummet og ned (fra rummets højde, når der intet dæk er), dets huller trukket fra.
 - **Fodliste**: en fodlistetype lagt rundt om rummet, afbrudt ved dets døre (se Fodlister, under Dæk og tage).
 - **Et bærende dæk under gulvet**: et eget armeret betondæk under gulvets lag, med dets tykkelse og hvor langt det går ud over rummets omrids (under væggene). Det er et dæk som alle andre, i konstruktionen og i dets skema.
 
 **Gem** ændrer overfladen, og hvert rum, der har den, lægges igen. **Beklæd valgte rum** lægger den i de valgte rum.
 
-Hver overflade måler, pr. materiale, sit **brutto**areal (rummets omrids, intet fratrukket: gulvets areal, væggenes omkreds gange hvert stykkes højde) og sit **netto**areal (det, der bygges: døre, vinduer og dækhuller trukket fra, gulvet under dørene lagt til) samt sit volumen. **Overflader → Overfladeskema** viser hvert beklædt rum pr. del og materiale, med totalerne pr. materiale til sidst; som ethvert skema laver det diagrammer, eksporteres og kommer på et tegningsark. I IFC er en overflade en IfcCovering: FLOORING, CLADDING eller CEILING.
+Hver overflade måler, pr. materiale, sit **brutto**areal (rummets omrids, intet fratrukket: gulvets areal, væggenes omkreds gange hvert stykkes højde) og sit **netto**areal (det, der bygges: døre, vinduer og dækhuller trukket fra, lysningerne og gulvet under dørene lagt til; lysningernes andel står i mængderne, som RevealArea) samt sit volumen. **Overflader → Overfladeskema** viser hvert beklædt rum pr. del og materiale, med totalerne pr. materiale til sidst; som ethvert skema laver det diagrammer, eksporteres og kommer på et tegningsark. I IFC er en overflade en IfcCovering: FLOORING, CLADDING eller CEILING.
 
 En overflade beklæder det, rummets vægge allerede har: hvis vægtyperne har deres egen puds, så giv rummets vægge kun det, der kommer ovenpå (maling, fliser), eller brug vægtyper med kun kernen.
 

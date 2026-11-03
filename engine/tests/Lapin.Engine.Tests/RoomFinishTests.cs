@@ -63,12 +63,20 @@ public class RoomFinishTests
         var wallTiles = M(f, room, "walls", "Ceramic tiles");
         Assert.Equal(perimeter * 2.1, wallTiles.Gross, 6);
         var windowInTiles = Math.Max(0, Math.Min(2.1, window.Sill + window.Height) - window.Sill) * window.Width;
-        Assert.Equal(perimeter * 2.1 - door.Width * Math.Min(door.Height, 2.1) - windowInTiles, wallTiles.Net, 3);
+        Assert.Equal(perimeter * 2.1 - door.Width * Math.Min(door.Height, 2.1) - windowInTiles + wallTiles.Reveals, wallTiles.Net, 3);
         var paint = M(f, room, "walls", "Paint");
         Assert.Equal(perimeter * (height - 0.011 - 2.1), paint.Gross, 6);
         var plaster = M(f, room, "walls", "Plaster");
         Assert.Equal(perimeter * (height - 0.011), plaster.Gross, 6);
-        Assert.Equal(perimeter * (height - 0.011) - door.Width * door.Height - window.Width * window.Height, plaster.Net, 3);
+        Assert.Equal(perimeter * (height - 0.011) - door.Width * door.Height - window.Width * window.Height + plaster.Reveals, plaster.Net, 3);
+        // The reveals lined from the room's face to the frame: the door's jambs and head, the window's jambs, head and bottom (no sill board inside).
+        const double centre = (-0.145 + 0.14) / 2, t = 0.015;
+        double Depth(Openings.Placed p) => Inside - Math.Max(centre - (p.Spec!.Frame.Offset + p.Spec.Frame.Depth / 2), centre - (p.Spec.Frame.Offset - p.Spec.Frame.Depth / 2)) + t;
+        var doorLining = Depth(door) * (2 * door.Height + door.Width - 2 * t);
+        var windowLining = Depth(window) * (2 * window.Height + 2 * (window.Width - 2 * t));
+        Assert.Equal(doorLining + windowLining, plaster.Reveals, 6);
+        Assert.True(plaster.Reveals > 2 * door.Height * 0.05, $"the plaster lines the reveals ({plaster.Reveals:0.000} m²)");
+        Assert.True(M(f, room, "walls", "Paint").Reveals > 0, "the paint lines them too, above the tiles");
 
         // The ceiling: no slab over the room, so at its height; the covering's own quantities read its face.
         var ceiling = f.Session.Geometry(Finishes(f, room).Single(e => e.Str("part") == "ceiling").Id)!;
