@@ -89,20 +89,9 @@ public sealed partial class StudioModule
         if (Math.Abs(d) < 1e-6) throw new CommandException("Push or pull by more than nothing.");
         var (e, solids, p, n) = RequirePick(ctx, a, "a face");
         var face = BrepPick.Face(solids, p, n) ?? throw new CommandException("There is no flat face there.");
-        if (e.Str("operation") is { } op)
-        {
-            if (op == "prism")
-            {
-                SetDepth(ctx, e, e.Num("depth") + d);
-                return new JsonObject { ["how"] = "depth", ["id"] = e.Id };
-            }
-            if (op == "extrude" && Parametric(ctx, e, face, d) is { } how) return new JsonObject { ["how"] = how, ["id"] = e.Id };
-            var list = Features0(e);
-            var on = p - face.Normal * Vec3.Dot(p - face.Outer[0], face.Normal);
-            list.Add(new JsonObject { ["op"] = "pushPull", ["point"] = Features.J(on), ["normal"] = Features.J(face.Normal), ["distance"] = d });
-            WriteFeatures(ctx, e, list);
-            return new JsonObject { ["how"] = "step", ["id"] = e.Id };
-        }
+        // A pocket's floor or side (a shape drawn on the face and cut in): the cut is pushed or pulled, seen from inside.
+        if (CutFaceAt(ctx, e, p, n) is var (cut, inside)) return PushStudio(ctx, cut, inside, p, -d);
+        if (e.Str("operation") != null) return PushStudio(ctx, e, face, p, d);
         // Another element: a solid on its face, or a cut into it.
         var storey = Spatial.StoreyOf(ctx.Model, e.Id) ?? throw new CommandException($"„{e.Name}” is not an element.");
         var part = ctx.Query.Geometry(e.Id)?.Parts.FirstOrDefault(x => BrepPick.Face([x.Solid], p, n) != null);
@@ -120,6 +109,23 @@ public sealed partial class StudioModule
         Spatial.Contain(ctx, storey.Id, prism.Id);
         if (d < 0) ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelInterferesElements, e.Id, [prism.Id], new JsonObject { ["interferenceType"] = "Subtract", ["name"] = "Lapin push" }));
         return new JsonObject { ["how"] = d > 0 ? "solid" : "cut", ["id"] = prism.Id };
+    }
+
+    /// <summary>A Studio solid's face pushed or pulled: an extrusion's end or side parametrically, a pushed face's depth, else a step.</summary>
+    static JsonNode PushStudio(ICommandContext ctx, Entity e, BrepFace face, Vec3 p, double d)
+    {
+        var op = e.Str("operation")!;
+        if (op == "prism")
+        {
+            SetDepth(ctx, e, e.Num("depth") + d);
+            return new JsonObject { ["how"] = "depth", ["id"] = e.Id };
+        }
+        if (op == "extrude" && Parametric(ctx, e, face, d) is { } how) return new JsonObject { ["how"] = how, ["id"] = e.Id };
+        var list = Features0(e);
+        var on = p - face.Normal * Vec3.Dot(p - face.Outer[0], face.Normal);
+        list.Add(new JsonObject { ["op"] = "pushPull", ["point"] = Features.J(on), ["normal"] = Features.J(face.Normal), ["distance"] = d });
+        WriteFeatures(ctx, e, list);
+        return new JsonObject { ["how"] = "step", ["id"] = e.Id };
     }
 
     /// <summary>A pushed or pulled face's distance changed (<c>{id, distance}</c>): pulled out it is a solid of its own, pushed in a cut into its element.</summary>

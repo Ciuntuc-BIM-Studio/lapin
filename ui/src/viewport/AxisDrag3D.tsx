@@ -17,7 +17,7 @@ import * as THREE from 'three';
 import { Check, X } from 'lucide-react';
 import { useUi } from '../app/store';
 import { useCamera, type Vec3 } from './camera';
-import { add, alongLine, boxEdges3, commitAxisDrag, endAxisDrag, snapDistance, useAxisDrag } from './axisDrag';
+import { add, alongLine, boxEdges3, cancelAxisDrag, commitAxisDrag, endAxisDrag, snapDistance, useAxisDrag } from './axisDrag';
 import { formatLength, parseLength } from './liveInput';
 
 type Pt = { x: number; y: number };
@@ -99,7 +99,7 @@ export function AxisDrag3D({ camera, canvas }: { camera: React.RefObject<THREE.C
       const el = e.target as HTMLElement | null;
       if (el === input.current || (el?.closest?.('input, textarea, select, [contenteditable]') && !el.closest('.axis-drag-chip'))) return;
       if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); void commitAxisDrag(typed()); }
-      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); endAxisDrag(); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancelAxisDrag(); }
       else if (/^[0-9.,+\-'"a-z]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) input.current?.focus();
     };
     window.addEventListener('pointermove', onMove, true);
@@ -208,7 +208,7 @@ export function AxisDrag3D({ camera, canvas }: { camera: React.RefObject<THREE.C
             onChange={(e) => useAxisDrag.setState({ text: e.target.value })}
             onKeyDown={(e) => {
               if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); commitTyped(); }
-              else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); endAxisDrag(); }
+              else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); cancelAxisDrag(); }
               else if (e.key === 'Tab' && spec.axes.length > 1) { e.preventDefault(); useAxisDrag.setState((s) => ({ axis: (s.axis + 1) % spec.axes.length, distance: 0 })); }
             }} />
           {spec.axes[axis]?.name && <span className="axis-drag-axis" style={{ color: spec.axes[axis].color }}>{spec.axes[axis].name}</span>}
@@ -226,7 +226,7 @@ export function AxisDrag3D({ camera, canvas }: { camera: React.RefObject<THREE.C
           </span>
         )}
         <button type="button" onClick={commitTyped} title="Apply (Enter)"><Check size={12} />Apply</button>
-        <button type="button" className="mode-close" title="Cancel (Esc)" aria-label="Cancel" onClick={endAxisDrag}><X size={12} /></button>
+        <button type="button" className="mode-close" title="Cancel (Esc)" aria-label="Cancel" onClick={cancelAxisDrag}><X size={12} /></button>
       </div>
     </>
   );

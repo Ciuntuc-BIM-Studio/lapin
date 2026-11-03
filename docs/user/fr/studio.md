@@ -96,6 +96,18 @@ Ces outils travaillent sur les faces et les arêtes du corps tel qu’il est con
 
 ![L’arête arrondie : l’arrondi suit le bloc quand sa profondeur change](shots/studio-fillet.webp)
 
+## Dessiner sur une face
+
+Dans la vue 3D, vous pouvez dessiner directement sur une face, puis pousser ou tirer ce que vous avez dessiné. Le groupe **Sur face** de l’onglet **Studio** contient **Rectangle sur face** (FRE), **Cercle sur face** (FCI) et **Polygone sur face** (FPL).
+
+1. Cliquez sur une face de n’importe quel élément : un solide Studio, un mur, une dalle ou un poteau. Le clic est le premier point : le coin d’un rectangle, le centre d’un cercle ou le premier sommet d’un polygone. La face reste soulignée pendant que vous dessinez.
+2. Déplacez la souris. La forme la suit sur la face, avec sa taille à côté. Les points s’accrochent aux coins de la face, aux milieux de ses arêtes et à son milieu ; sinon ils avancent au centimètre, ou par 10 cm avec <kbd>Maj</kbd>. Cliquez sur le coin opposé, ou sur un point du cercle. Vous pouvez aussi taper la taille : la largeur et la hauteur d’un rectangle sous la forme `1200, 600`, ou le rayon d’un cercle. Un polygone prend un clic à chaque sommet, ou une longueur tapée dans la direction de la souris. Cliquez sur son premier sommet ou appuyez sur <kbd>Entrée</kbd> pour le fermer ; <kbd>Retour arrière</kbd> retire le dernier sommet.
+3. Dès que la forme est fermée, une flèche se dresse dessus, comme avec **Pousser/Tirer**. Tirez-la vers l’extérieur et elle devient un solide posé sur la face, dans le matériau de la face. Poussez-la vers l’intérieur et elle devient une découpe dans l’élément : une niche, une poche, ou un trou quand elle le traverse. Cliquez ou appuyez sur <kbd>Entrée</kbd> pour l’appliquer. <kbd>Échap</kbd>, ou une distance de 0, laisse la forme sur la face comme esquisse, à extruder plus tard.
+
+La forme est une esquisse sur un plan de référence posé sur la face. Le plan porte le nom de l’élément et de la face, par exemple *Extrude 1, north face*, et les formes dessinées sur la même face le partagent. La vue 3D ne dessine pas ces plans, car la face montre déjà où ils sont. Ouvrez-en un depuis l’arborescence du projet pour modifier l’esquisse en 2D ; le solide ou la découpe la suit. **Pousser/Tirer** sur l’extrémité du solide change sa profondeur. **Pousser/Tirer** sur le fond d’une poche rend la découpe plus ou moins profonde, au lieu d’ajouter à l’élément.
+
+![Un rectangle dessiné sur le côté d’un bloc, sa taille près du curseur](shots/studio-on-face.webp)
+
 ## Les étapes
 
 Les propriétés d’un solide Studio listent ses étapes dans l’ordre. Chaque étape peut être désactivée, avancée ou reculée, modifiée ou retirée. Modifiez l’esquisse, et chaque étape est refaite sur le nouveau corps. Une étape qui ne retrouve plus sa face ou son arête le dit sous **Problèmes**.

@@ -2354,6 +2354,31 @@ export const scenes = [
       await look({ x: 1.5, y: 1, z: 0.7 }, Math.PI * 0.8, -0.45, 8);
       await t.shot('studio-fillet', { of: '[data-testid=view3d]', pad: 0 });
 
+      // Drawing on a face: a rectangle on the block's north side (the camera at the north-west) follows the mouse, its size beside it; pulled 0.3 m, it is a
+      // solid of its own standing on the face, sketched on a plane lying on the face that the 3D view does not draw.
+      await look({ x: 1.3, y: 2, z: 0.5 }, -Math.PI / 3, -0.3, 7);
+      await t.tool('studio.rectOnFace');
+      await pickMiddle();
+      t.expect(await page.locator('.face-sketch').count() === 1, 'a click on a face begins the rectangle on it');
+      {
+        const [fx, fy] = await middle();
+        await page.mouse.move(fx + 110, fy - 70, { steps: 8 });
+        await t.wait(300);
+        t.expect(await page.locator('.face-sketch-shape').count() === 1, 'the rectangle follows the mouse on the face');
+        await t.shot('studio-on-face', { of: '[data-testid=view3d]', pad: 0 });
+        await page.mouse.click(fx + 110, fy - 70);
+        await t.wait(500);
+        t.expect(await page.locator('.axis-drag-value input').count() === 1, 'the rectangle closed, push/pull stands on it');
+        await page.locator('.axis-drag-value input').fill(await length(0.3));
+        await t.keys('Enter');
+        await t.wait(1000);
+        const all = await t.nodes();
+        const boss = all.find((n) => n.props.operation === 'extrude' && n.id !== block);
+        t.expect(boss && Math.abs(Number(boss.props.depth) - 0.3) < 1e-6, 'the rectangle pulled 0.3 m is a solid on the face');
+        t.expect(all.some((n) => n.props.kind === 'plane' && n.props.onFace === block), 'its sketch lies on a plane on the block\'s face');
+        await t.keys('Escape');
+      }
+
       // A cylinder placed from the ribbon, hollowed into a pipe: its steps in its properties.
       const pipe = (await t.cmd('studio.primitive', { shape: 'cylinder', at: [6, 1], radius: 0.6, height: 1.2, storeyId: storey })).id;
       await t.cmd('studio.addFeature', { id: pipe, feature: { op: 'shell', thickness: 0.08, open: 'end' } });

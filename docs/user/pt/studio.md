@@ -96,6 +96,18 @@ Estas ferramentas trabalham nas faces e nas arestas do corpo como ele está cons
 
 ![A aresta arredondada: o arredondamento acompanha o bloco quando a sua profundidade muda](shots/studio-fillet.webp)
 
+## Desenhar sobre uma face
+
+Na vista 3D você pode desenhar diretamente sobre uma face e empurrar ou puxar o que desenhou. O grupo **Na face** da guia **Studio** tem **Retângulo na face** (FRE), **Círculo na face** (FCI) e **Polígono na face** (FPL).
+
+1. Clique em uma face de qualquer elemento: um sólido do Studio, uma parede, uma laje ou um pilar. O clique é o primeiro ponto: o canto de um retângulo, o centro de um círculo ou o primeiro vértice de um polígono. A face fica contornada enquanto você desenha.
+2. Mova o mouse. A forma o acompanha sobre a face, com o seu tamanho ao lado. Os pontos se prendem aos cantos da face, aos pontos médios das suas arestas e ao seu centro; fora isso, andam de centímetro em centímetro, ou de 10 em 10 cm com <kbd>Shift</kbd>. Clique no canto oposto ou em um ponto do círculo. Você também pode digitar o tamanho: a largura e a altura de um retângulo como `1200, 600`, ou o raio de um círculo. Um polígono recebe um clique em cada vértice, ou um comprimento digitado na direção do mouse. Clique no seu primeiro vértice ou pressione <kbd>Enter</kbd> para fechá-lo; <kbd>Backspace</kbd> desfaz o último vértice.
+3. Assim que a forma se fecha, uma seta aparece sobre ela, como em **Empurrar/Puxar**. Puxe-a para fora e ela vira um sólido apoiado na face, no material da face. Empurre-a para dentro e ela vira um corte no elemento: um nicho, um rebaixo, ou um furo quando o atravessa. Clique ou pressione <kbd>Enter</kbd> para aplicar. <kbd>Esc</kbd>, ou uma distância de 0, deixa a forma na face como esboço, para extrudar depois.
+
+A forma é um esboço sobre um plano de referência apoiado na face. O plano leva o nome do elemento e da face, como *Extrude 1, north face*, e as formas desenhadas na mesma face o compartilham. A vista 3D não desenha esses planos, porque a face já mostra onde eles estão. Abra um pelo navegador do projeto para alterar o esboço em 2D; o sólido ou o corte o acompanha. **Empurrar/Puxar** na extremidade do sólido altera a sua profundidade. **Empurrar/Puxar** no fundo de um rebaixo deixa o corte mais fundo ou mais raso, em vez de acrescentar ao elemento.
+
+![Um retângulo desenhado na lateral de um bloco, com o seu tamanho ao lado do cursor](shots/studio-on-face.webp)
+
 ## Os passos
 
 As propriedades de um sólido do Studio listam os seus passos em ordem. Cada passo pode ser desativado, movido para antes ou para depois, alterado ou removido. Altere o esboço, e cada passo é refeito sobre o novo corpo. Um passo que não consegue mais encontrar a sua face ou aresta avisa em **Problemas**.

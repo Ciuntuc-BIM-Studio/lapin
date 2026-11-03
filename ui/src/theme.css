@@ -1155,4 +1155,9 @@ button.mode-chip:hover { color: var(--accent); }
 .axis-drag-chip { position: absolute; bottom: 128px; left: 50%; transform: translateX(-50%); z-index: 7; max-width: calc(100% - 32px); }
 .axis-drag-chip .mode-hint { overflow: hidden; text-overflow: ellipsis; }
 .axis-drag-chip button { display: inline-flex; align-items: center; gap: 4px; }
+.face-sketch .face-sketch-face { fill: var(--accent, #b5532d); fill-opacity: 0.08; stroke: var(--accent, #b5532d); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.face-sketch .face-sketch-shape { fill: #2f9e6a; fill-opacity: 0.18; stroke: #2f9e6a; stroke-width: 2; }
+.face-sketch .face-sketch-cursor { fill: var(--accent, #b5532d); }
+.face-sketch .face-sketch-snap { fill: none; stroke: #2f9e6a; stroke-width: 2; }
+.face-sketch-snap-name { position: absolute; z-index: 7; pointer-events: none; font-size: 11px; padding: 1px 5px; border-radius: 4px; background: var(--hud); color: var(--text); border: 1px solid #2f9e6a; white-space: nowrap; }
 .axis-drag-options { display: inline-flex; gap: 4px; }

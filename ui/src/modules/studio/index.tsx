@@ -9,7 +9,7 @@
  */
 
 import {
-  ArrowUpDown, ArrowUpToLine, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
+  ArrowUpDown, ArrowUpToLine, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
   RefreshCcw, Rotate3d, RotateCw, Scissors, Slice, SquareMinus, SquarePlus, SquareRoundCorner, SquareSplitHorizontal, SquareSquare, SquareStack, Torus, TriangleRight, Unlink, Waypoints,
 } from 'lucide-react';
 import type { Grip, LapinModule, RefLine, ToolDef, ToolInput } from '../../platform/module';
@@ -27,6 +27,7 @@ import { COMMAND, DEFAULT_JUSTIFY, JUSTIFY, frontViewId, makesNative, nativeArgs
 import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import { useCamera, type Vec3 } from '../../viewport/camera';
 import { XYZ, beginAxisDrag, middleOf } from '../../viewport/axisDrag';
+import { beginFaceSketch, frameOf, roundOnFace, snapPoints, type FaceShape } from '../../viewport/faceSketch';
 
 /** The thickness and height last used, the next command's defaults. */
 const last = { thickness: 0.2, height: 3 };
@@ -358,6 +359,53 @@ const pushPull: ToolDef = {
   },
 };
 
+const ON_FACE: Record<string, string> = {
+  solid: 'A solid stands on the face, from the shape drawn on it: Push/Pull its end, or change the sketch, and it follows.',
+  cut: 'Cut into the face, from the shape drawn on it: Push/Pull the pocket\'s floor to make it deeper or shallower.',
+};
+
+/**
+ * A rectangle, a circle or a polygon drawn right on a face in 3D (decision 272): the click on the face is its first point,
+ * the shape follows the mouse on the face; done, it is pushed or pulled at once (out a solid on the face, in a cut into it),
+ * and Esc or 0 leaves it on the face as a sketch, to extrude later.
+ */
+const onFace = (shape: FaceShape, label: string, icon: ToolDef['icon'], shortcut: string): ToolDef => ({
+  id: `studio.${shape}OnFace`, label, icon, shortcut,
+  gesture: faceGesture(),
+  complete: async (input) => {
+    const p = picked(input);
+    if (!p) return;
+    const face = await flatFace(p);
+    if (!face) return;
+    const frame = frameOf(face.normal, face.outline);
+    // The click is the first point: on the face's plane, at a corner or a middle close by, else to the centimetre.
+    const at = v3(p.point);
+    const reach = 0.03 * Math.max(...face.outline.map((q) => Math.hypot(q.x - at.x, q.y - at.y, q.z - at.z)), 0.1);
+    const near = snapPoints(face.outline).find((s) => Math.hypot(s.at.x - at.x, s.at.y - at.y, s.at.z - at.z) < reach);
+    beginFaceSketch({
+      shape, pick: p, frame, outline: face.outline,
+      done: (drawn) => {
+        const args = 'center' in drawn
+          ? { ...p, circle: { center: [drawn.center.x, drawn.center.y, drawn.center.z], radius: drawn.radius } }
+          : { ...p, outline: drawn.outline.map((q) => [q.x, q.y, q.z]) };
+        const keep = async () => { if (await execute('studio.onFace', args)) notify('The shape stays on the face as a sketch: extrude it later, or draw over it.'); };
+        beginAxisDrag({
+          title: 'Push/Pull', at: middleOf(drawn.outline), axes: [{ dir: face.normal }], preview: { kind: 'prism', outline: drawn.outline },
+          hint: 'Out adds, in takes away', zero: true,
+          cancel: () => void keep(),
+          commit: async (d) => {
+            if (Math.abs(d) < 1e-9) { await keep(); return; }
+            const r = await execute('studio.onFace', { ...args, distance: d }) as { how?: string; id?: string } | null;
+            if (!r) return;
+            if (r.how === 'solid') selectMade(r);
+            notify(ON_FACE[r.how ?? ''] ?? 'Done.');
+          },
+        });
+      },
+    }, near?.at ?? roundOnFace(frame, at));
+  },
+});
+
 /** Chamfer or fillet: the edge nearest the pick on the face picked (Shift: every edge round that face). */
 const roundTool = (op: 'chamfer' | 'fillet'): ToolDef => ({
   id: `studio.${op}`, label: op === 'chamfer' ? 'Chamfer edge' : 'Fillet edge', icon: op === 'chamfer' ? Octagon : SquareRoundCorner, shortcut: op === 'chamfer' ? 'CE' : 'FE',
@@ -530,6 +578,7 @@ const studio: LapinModule = {
     groups: [
       { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), cmd('loft', 'Loft', Layers2, 'LOFT'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
       { label: 'Thick', tools: [cmd('ring', 'Ring', Cylinder, 'RING'), cmd('box', 'Box', Container, 'BOX'), cmd('wallStrip', 'Wall strip', BrickWall, 'TWALL')] },
+      { label: 'On face', tools: [onFace('rect', 'Rectangle on face', RectangleHorizontal, 'FRE'), onFace('circle', 'Circle on face', Circle, 'FCI'), onFace('polygon', 'Polygon on face', Hexagon, 'FPL')] },
       { label: 'Work planes', tools: [cmd('refPlane', 'Plane from view', SquareStack, 'REFPLANE'), planeOnFace, planeBy3] },
       {
         label: 'Primitives',

@@ -96,6 +96,18 @@ Diese Werkzeuge arbeiten an den Flächen und Kanten des Körpers, wie er jetzt g
 
 ![Die abgerundete Kante: die Rundung folgt dem Block, wenn sich seine Tiefe ändert](shots/studio-fillet.webp)
 
+## Auf einer Fläche zeichnen
+
+In der 3D-Ansicht können Sie direkt auf eine Fläche zeichnen und das Gezeichnete hineindrücken oder herausziehen. Die Gruppe **Auf Fläche** der Registerkarte **Studio** enthält **Rechteck auf Fläche** (FRE), **Kreis auf Fläche** (FCI) und **Polygon auf Fläche** (FPL).
+
+1. Klicken Sie auf eine Fläche eines beliebigen Elements: eines Studio-Körpers, einer Wand, einer Decke oder einer Stütze. Der Klick ist der erste Punkt: die Ecke eines Rechtecks, der Mittelpunkt eines Kreises oder die erste Ecke eines Polygons. Die Fläche bleibt umrandet, solange Sie zeichnen.
+2. Bewegen Sie die Maus. Die Form folgt ihr auf der Fläche, ihre Größe daneben. Punkte fangen an den Ecken der Fläche, an den Mitten ihrer Kanten und an ihrer Mitte; sonst gehen sie in Zentimeterschritten, mit <kbd>Umschalt</kbd> in Schritten von 10 cm. Klicken Sie auf die gegenüberliegende Ecke oder auf einen Punkt des Kreises. Sie können die Größe auch eingeben: Breite und Höhe eines Rechtecks als `1200, 600`, oder den Radius eines Kreises. Ein Polygon nimmt einen Klick an jeder Ecke, oder eine eingegebene Länge in Richtung der Maus. Klicken Sie auf seine erste Ecke oder drücken Sie <kbd>Enter</kbd>, um es zu schließen; <kbd>Rücktaste</kbd> nimmt die letzte Ecke zurück.
+3. Sobald die Form geschlossen ist, steht ein Pfeil auf ihr, wie bei **Drücken/Ziehen**. Ziehen Sie ihn heraus, und sie wird ein Körper, der auf der Fläche steht, im Material der Fläche. Drücken Sie ihn hinein, und sie wird ein Schnitt in das Element: eine Nische, eine Tasche oder ein Loch, wenn sie ganz hindurchgeht. Klicken Sie oder drücken Sie <kbd>Enter</kbd>, um ihn anzuwenden. <kbd>Esc</kbd> oder ein Abstand von 0 lässt die Form als Skizze auf der Fläche, um sie später zu extrudieren.
+
+Die Form ist eine Skizze auf einer Referenzebene, die auf der Fläche liegt. Die Ebene ist nach dem Element und der Fläche benannt, etwa *Extrude 1, north face*, und Formen, die auf dieselbe Fläche gezeichnet werden, teilen sie sich. Die 3D-Ansicht zeichnet diese Ebenen nicht, weil die Fläche schon zeigt, wo sie liegen. Öffnen Sie eine im Projektbrowser, um die Skizze in 2D zu ändern; der Körper oder der Schnitt folgt ihr. **Drücken/Ziehen** auf dem Ende des Körpers ändert seine Tiefe. **Drücken/Ziehen** auf dem Boden einer Tasche macht den Schnitt tiefer oder flacher, statt dem Element etwas hinzuzufügen.
+
+![Ein Rechteck auf der Seite eines Blocks gezeichnet, seine Größe neben dem Mauszeiger](shots/studio-on-face.webp)
+
 ## Die Schritte
 
 Die Eigenschaften eines Studio-Körpers listen seine Schritte der Reihe nach. Jeder Schritt lässt sich ausschalten, früher oder später setzen, ändern oder entfernen. Ändern Sie die Skizze, wird jeder Schritt am neuen Körper neu ausgeführt. Ein Schritt, der seine Fläche oder Kante nicht mehr findet, sagt das unter **Probleme**.

@@ -96,6 +96,18 @@ Disse værktøjer arbejder på legemets flader og kanter, som det er bygget nu. 
 
 ![Kanten afrundet: rundingen følger blokken, når dens dybde ændres](shots/studio-fillet.webp)
 
+## Tegn på en flade
+
+I 3D-visningen kan du tegne direkte på en flade og skubbe eller trække det, du har tegnet. Gruppen **På flade** på fanen **Studio** har **Rektangel på flade** (FRE), **Cirkel på flade** (FCI) og **Polygon på flade** (FPL).
+
+1. Klik på en flade af et hvilket som helst element: et Studio-legeme, en væg, et dæk eller en søjle. Klikket er det første punkt: et rektangels hjørne, en cirkels centrum eller en polygons første hjørne. Fladen er omridset, mens du tegner.
+2. Flyt musen. Formen følger den på fladen, med sin størrelse ved siden af. Punkter fanger til fladens hjørner, midten af dens kanter og dens midte; ellers går de en centimeter ad gangen, eller 10 cm med <kbd>Shift</kbd>. Klik på det modsatte hjørne eller på et punkt på cirklen. Du kan også skrive størrelsen: et rektangels bredde og højde som `1200, 600`, eller en cirkels radius. En polygon tager et klik ved hvert hjørne, eller en skrevet længde i musens retning. Klik på dens første hjørne, eller tryk på <kbd>Enter</kbd> for at lukke den; <kbd>Backspace</kbd> tager det sidste hjørne tilbage.
+3. Så snart formen er lukket, står en pil på den, som med **Skub/Træk**. Træk den ud, og den bliver et legeme, der står på fladen, i fladens materiale. Skub den ind, og den bliver et snit ind i elementet: en niche, en lomme eller et hul, når den går hele vejen igennem. Klik eller tryk på <kbd>Enter</kbd> for at anvende den. <kbd>Esc</kbd> eller en afstand på 0 lader formen blive på fladen som en skitse, der kan ekstruderes senere.
+
+Formen er en skitse på et referenceplan, der ligger på fladen. Planet er opkaldt efter elementet og fladen, fx *Extrude 1, north face*, og former tegnet på samme flade deler det. 3D-visningen tegner ikke disse planer, fordi fladen allerede viser, hvor de er. Åbn et fra projektbrowseren for at ændre skitsen i 2D; legemet eller snittet følger med. **Skub/Træk** på legemets ende ændrer dets dybde. **Skub/Træk** på bunden af en lomme gør snittet dybere eller lavere i stedet for at tilføje til elementet.
+
+![Et rektangel tegnet på siden af en blok, med størrelsen ved markøren](shots/studio-on-face.webp)
+
 ## Trinene
 
 Et Studio-legemes egenskaber viser dets trin i rækkefølge. Hvert trin kan slås fra, flyttes tidligere eller senere, ændres eller fjernes. Ændr skitsen, og hvert trin udføres igen på det nye legeme. Et trin, der ikke længere finder sin flade eller kant, siger det under **Problemer**.

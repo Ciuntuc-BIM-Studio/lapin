@@ -96,6 +96,18 @@ Estas herramientas trabajan sobre las caras y aristas del cuerpo tal como está 
 
 ![La arista redondeada: el redondeo sigue al bloque cuando cambia su profundidad](shots/studio-fillet.webp)
 
+## Dibujar sobre una cara
+
+En la vista 3D puede dibujar directamente sobre una cara y empujar o tirar de lo dibujado. El grupo **En cara** de la ficha **Studio** tiene **Rectángulo en cara** (FRE), **Círculo en cara** (FCI) y **Polígono en cara** (FPL).
+
+1. Haga clic en una cara de cualquier elemento: un sólido Studio, un muro, una losa o un pilar. El clic es el primer punto: la esquina de un rectángulo, el centro de un círculo o la primera esquina de un polígono. La cara queda contorneada mientras dibuja.
+2. Mueva el ratón. La forma lo sigue sobre la cara, con su tamaño al lado. Los puntos se enganchan a las esquinas de la cara, a los puntos medios de sus aristas y a su centro; si no, avanzan de centímetro en centímetro, o de 10 en 10 cm con <kbd>Mayús</kbd>. Haga clic en la esquina opuesta o en un punto del círculo. También puede escribir el tamaño: el ancho y el alto de un rectángulo como `1200, 600`, o el radio de un círculo. Un polígono toma un clic en cada esquina, o una longitud escrita en la dirección del ratón. Haga clic en su primera esquina o pulse <kbd>Intro</kbd> para cerrarlo; <kbd>Retroceso</kbd> quita la última esquina.
+3. En cuanto la forma se cierra, aparece sobre ella una flecha, como con **Empujar/Tirar**. Tire hacia fuera y se convierte en un sólido apoyado en la cara, en el material de la cara. Empuje hacia dentro y se convierte en un corte en el elemento: un nicho, un cajeado o un agujero cuando lo atraviesa. Haga clic o pulse <kbd>Intro</kbd> para aplicarlo. <kbd>Esc</kbd>, o una distancia de 0, deja la forma sobre la cara como croquis, para extruirla más tarde.
+
+La forma es un croquis sobre un plano de referencia que descansa en la cara. El plano lleva el nombre del elemento y de la cara, como *Extrude 1, north face*, y las formas dibujadas sobre la misma cara lo comparten. La vista 3D no dibuja estos planos, porque la cara ya muestra dónde están. Abra uno desde el explorador del proyecto para cambiar el croquis en 2D; el sólido o el corte lo sigue. **Empujar/Tirar** sobre el extremo del sólido cambia su profundidad. **Empujar/Tirar** sobre el fondo de un cajeado hace el corte más profundo o menos profundo, en lugar de añadir al elemento.
+
+![Un rectángulo dibujado en el lateral de un bloque, con su tamaño junto al cursor](shots/studio-on-face.webp)
+
 ## Los pasos
 
 Las propiedades de un sólido Studio enumeran sus pasos en orden. Cada paso se puede desactivar, adelantar o retrasar, cambiar o quitar. Cambie el croquis, y cada paso se rehace sobre el cuerpo nuevo. Un paso que ya no encuentra su cara o su arista lo dice en **Problemas**.

@@ -96,6 +96,18 @@ Te narzędzia działają na ścianach i krawędziach bryły w jej obecnym kszta�
 
 ![Krawędź zaokrąglona: zaokrąglenie podąża za blokiem, gdy zmienia się jego głębokość](shots/studio-fillet.webp)
 
+## Rysowanie na ścianie
+
+W widoku 3D możesz rysować bezpośrednio na ścianie bryły i wypchnąć lub wciągnąć to, co narysujesz. Grupa **Na ścianie** na karcie **Studio** zawiera **Prostokąt na ścianie** (FRE), **Okrąg na ścianie** (FCI) i **Wielokąt na ścianie** (FPL).
+
+1. Kliknij ścianę dowolnego elementu: bryły Studio, ściany budynku, stropu lub słupa. Kliknięcie jest pierwszym punktem: narożnikiem prostokąta, środkiem okręgu lub pierwszym wierzchołkiem wielokąta. Podczas rysowania ściana jest obrysowana.
+2. Poruszaj myszą. Kształt podąża za nią po ścianie, a obok widać jego wymiar. Punkty przyciągają się do narożników ściany, środków jej krawędzi i jej środka; poza tym idą co centymetr, a z <kbd>Shift</kbd> co 10 cm. Kliknij przeciwległy narożnik lub punkt na okręgu. Możesz też wpisać wymiar: szerokość i wysokość prostokąta jako `1200, 600` albo promień okręgu. Wielokąt przyjmuje kliknięcie w każdym wierzchołku albo długość wpisaną w kierunku myszy. Kliknij jego pierwszy wierzchołek lub naciśnij <kbd>Enter</kbd>, aby go zamknąć; <kbd>Backspace</kbd> cofa ostatni wierzchołek.
+3. Gdy tylko kształt się zamknie, staje na nim strzałka, jak przy **Wypchnij/Wciągnij**. Wyciągnij ją na zewnątrz, a kształt stanie się bryłą stojącą na ścianie, w materiale tej ściany. Wepchnij ją do środka, a stanie się wycięciem w elemencie: niszą, kieszenią albo otworem, gdy przejdzie na wylot. Kliknij lub naciśnij <kbd>Enter</kbd>, aby zastosować. <kbd>Esc</kbd> albo odległość 0 zostawia kształt na ścianie jako szkic do późniejszego wyciągnięcia.
+
+Kształt jest szkicem na płaszczyźnie odniesienia leżącej na ścianie. Płaszczyzna nosi nazwę elementu i ściany, np. *Extrude 1, north face*, a kształty narysowane na tej samej ścianie korzystają z niej wspólnie. Widok 3D nie rysuje tych płaszczyzn, bo ściana i tak pokazuje, gdzie są. Otwórz jedną z przeglądarki projektu, aby zmienić szkic w 2D; bryła lub wycięcie podąża za nim. **Wypchnij/Wciągnij** na końcu bryły zmienia jej głębokość. **Wypchnij/Wciągnij** na dnie kieszeni pogłębia lub spłyca wycięcie, zamiast dodawać coś do elementu.
+
+![Prostokąt narysowany na boku bloku, z wymiarem obok kursora](shots/studio-on-face.webp)
+
 ## Kroki
 
 Właściwości bryły Studio wymieniają jej kroki po kolei. Każdy krok można wyłączyć, przesunąć wcześniej lub później, zmienić lub usunąć. Zmień szkic, a każdy krok zostanie wykonany ponownie na nowej bryle. Krok, który nie może już znaleźć swojej ściany lub krawędzi, mówi o tym w **Problemy**.

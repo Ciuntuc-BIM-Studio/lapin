@@ -46,6 +46,8 @@ export interface AxisDragSpec {
   hint?: string;
   /** Choices shown in the chip as toggles (a slice's side): their labels, the one on. */
   options?: { label: string; values: { value: string; label: string }[]; value: string };
+  /** Dropped (Esc, ×): what is left of it then (a shape drawn on a face stays a sketch); nothing when not given. */
+  cancel?(): void;
   /** Applies it; the drag ends whatever it returns. */
   commit(distance: number, axis: number, option?: string): void | Promise<unknown>;
 }
@@ -72,6 +74,13 @@ export function beginAxisDrag(spec: AxisDragSpec): void {
 
 export function endAxisDrag(): void {
   useAxisDrag.setState({ spec: null, axis: 0, distance: 0, text: '', option: undefined });
+}
+
+/** Dropped by the user (Esc, ×): the spec's own cancel, then the drag ends. */
+export function cancelAxisDrag(): void {
+  const { spec } = useAxisDrag.getState();
+  endAxisDrag();
+  spec?.cancel?.();
 }
 
 /** Applied: the distance (the typed one, else the dragged one, else the last applied when nothing moved) along the axis set. */

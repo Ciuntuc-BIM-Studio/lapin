@@ -42,10 +42,10 @@ export function refPlanesKey(nodes: ReadonlyMap<string, NodeDto>): string {
   return JSON.stringify(o);
 }
 
-/** Every reference plane among the nodes. */
+/** Every reference plane among the nodes, but those made for a face drawn on (the face shows where they are). */
 export function refPlanesOf(nodes: ReadonlyMap<string, NodeDto>): RefPlane[] {
   const o: RefPlane[] = [];
-  for (const node of nodes.values()) if (node.type === 'LapinView' && node.props.kind === 'plane') o.push(planeOf(node));
+  for (const node of nodes.values()) if (node.type === 'LapinView' && node.props.kind === 'plane' && !node.props.onFace) o.push(planeOf(node));
   return o;
 }
 

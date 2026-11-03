@@ -96,6 +96,18 @@ Questi strumenti lavorano sulle facce e sugli spigoli del corpo così com’è c
 
 ![Lo spigolo raccordato: il raccordo segue il blocco quando la sua profondità cambia](shots/studio-fillet.webp)
 
+## Disegnare su una faccia
+
+Nella vista 3D puoi disegnare direttamente su una faccia e poi spingere o tirare ciò che hai disegnato. Il gruppo **Su faccia** della scheda **Studio** contiene **Rettangolo su faccia** (FRE), **Cerchio su faccia** (FCI) e **Poligono su faccia** (FPL).
+
+1. Fai clic su una faccia di qualsiasi elemento: un solido Studio, un muro, un solaio o un pilastro. Il clic è il primo punto: l’angolo di un rettangolo, il centro di un cerchio o il primo vertice di un poligono. La faccia resta evidenziata mentre disegni.
+2. Muovi il mouse. La forma lo segue sulla faccia, con la sua misura accanto. I punti si agganciano agli angoli della faccia, ai punti medi dei suoi spigoli e al suo centro; altrimenti procedono di centimetro in centimetro, o di 10 cm con <kbd>Shift</kbd>. Fai clic sull’angolo opposto o su un punto del cerchio. Puoi anche digitare la misura: larghezza e altezza di un rettangolo come `1200, 600`, o il raggio di un cerchio. Un poligono prende un clic su ogni vertice, o una lunghezza digitata nella direzione del mouse. Fai clic sul primo vertice o premi <kbd>Enter</kbd> per chiuderlo; <kbd>Backspace</kbd> toglie l’ultimo vertice.
+3. Appena la forma è chiusa, su di essa compare una freccia, come con **Spingi/Tira**. Tirala in fuori e diventa un solido appoggiato sulla faccia, nel materiale della faccia. Spingila in dentro e diventa un taglio nell’elemento: una nicchia, una tasca, o un foro quando lo attraversa da parte a parte. Fai clic o premi <kbd>Enter</kbd> per applicarlo. <kbd>Esc</kbd>, o una distanza di 0, lascia la forma sulla faccia come schizzo, da estrudere più tardi.
+
+La forma è uno schizzo su un piano di riferimento che giace sulla faccia. Il piano prende il nome dall’elemento e dalla faccia, per esempio *Extrude 1, north face*, e le forme disegnate sulla stessa faccia lo condividono. La vista 3D non disegna questi piani, perché la faccia mostra già dove sono. Aprine uno dal browser di progetto per cambiare lo schizzo in 2D; il solido o il taglio lo segue. **Spingi/Tira** sull’estremità del solido ne cambia la profondità. **Spingi/Tira** sul fondo di una tasca rende il taglio più o meno profondo, invece di aggiungere all’elemento.
+
+![Un rettangolo disegnato sul fianco di un blocco, con la sua misura accanto al cursore](shots/studio-on-face.webp)
+
 ## I passi
 
 Le proprietà di un solido Studio elencano i suoi passi in ordine. Ogni passo può essere disattivato, spostato prima o dopo, modificato o rimosso. Cambia lo schizzo, e ogni passo viene rifatto sul nuovo corpo. Un passo che non trova più la sua faccia o il suo spigolo lo segnala in **Problemi**.

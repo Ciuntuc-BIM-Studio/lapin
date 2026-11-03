@@ -96,6 +96,18 @@ These tools work on the faces and edges of the body as it is built now. The face
 
 ![The edge filleted: the round follows the block when its depth changes](shots/studio-fillet.webp)
 
+## Drawing on a face
+
+In the 3D view you can draw right on a face and push or pull what you drew. The **On face** group of the **Studio** tab has **Rectangle on face** (FRE), **Circle on face** (FCI) and **Polygon on face** (FPL).
+
+1. Click a face of any element: a Studio solid, a wall, a slab or a column. The click is the first point: a rectangle's corner, a circle's centre or a polygon's first corner. The face is outlined while you draw.
+2. Move the mouse. The shape follows it on the face, with its size beside it. Points snap to the face's corners, the middles of its edges and its middle; otherwise they go by the centimetre, or by 10 cm with <kbd>Shift</kbd>. Click the opposite corner, or a point on the circle. You can also type the size: a rectangle's width and height as `1200, 600`, or a circle's radius. A polygon takes a click at each corner, or a typed length along the mouse's direction. Click its first corner or press <kbd>Enter</kbd> to close it; <kbd>Backspace</kbd> takes the last corner back.
+3. As soon as the shape is closed, an arrow stands on it, as with **Push/Pull**. Pull it out and it becomes a solid standing on the face, in the face's material. Push it in and it becomes a cut into the element: a niche, a pocket, or a hole when it goes right through. Click or press <kbd>Enter</kbd> to apply. <kbd>Esc</kbd>, or a distance of 0, leaves the shape on the face as a sketch, to extrude later.
+
+The shape is a sketch on a reference plane lying on the face. The plane is named after the element and the face, such as *Extrude 1, north face*, and shapes drawn on the same face share it. The 3D view doesn't draw these planes, because the face already shows where they are. Open one from the project browser to change the sketch in 2D; the solid or the cut follows it. **Push/Pull** on the solid's end changes its depth. **Push/Pull** on a pocket's floor makes the cut deeper or shallower, rather than adding to the element.
+
+![A rectangle drawn on the side of a block, its size beside the cursor](shots/studio-on-face.webp)
+
 ## The steps
 
 The properties of a Studio solid list its steps in order. Each step can be switched off, moved earlier or later, changed or removed. Change the sketch, and each step is done again on the new body. A step that can no longer find its face or edge says so under **Problems**.

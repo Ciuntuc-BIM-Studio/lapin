@@ -129,6 +129,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         r.Command("wall", "Wall strip", (ctx, a) => CreateThick(ctx, a, Thick.Wall));
         r.Command("primitive", "Primitive", Primitive);
         RegisterEdits(r);
+        RegisterOnFace(r);
 
         // A solid's class (and its predefined type) changed: written again under the new class, same id, same sketch, same type and booleans.
         r.Command("setClass", "Change class", (ctx, a) =>

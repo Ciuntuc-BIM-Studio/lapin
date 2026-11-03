@@ -96,6 +96,18 @@ Uneltele acestea lucrează pe fețele și muchiile corpului așa cum e construit
 
 ![Muchia racordată: rotunjirea urmează blocul când i se schimbă adâncimea](shots/studio-fillet.webp)
 
+## Desen pe o față
+
+În vederea 3D poți desena direct pe o față și apoi împingi sau tragi ce ai desenat. Grupul **Pe față** din fila **Studio** are **Dreptunghi pe față** (FRE), **Cerc pe față** (FCI) și **Poligon pe față** (FPL).
+
+1. Dă clic pe o față a oricărui element: un solid Studio, un perete, o placă sau un stâlp. Clicul e primul punct: colțul dreptunghiului, centrul cercului sau primul colț al poligonului. Fața rămâne conturată cât timp desenezi.
+2. Mișcă mouse-ul. Forma îl urmează pe față, cu dimensiunea ei alături. Punctele se prind de colțurile feței, de mijloacele muchiilor ei și de mijlocul ei; altfel merg din centimetru în centimetru, sau din 10 în 10 cm cu <kbd>Shift</kbd>. Dă clic pe colțul opus sau pe un punct al cercului. Poți și să scrii dimensiunea: lățimea și înălțimea dreptunghiului ca `1200, 600`, sau raza cercului. Un poligon ia câte un clic la fiecare colț, sau o lungime scrisă pe direcția mouse-ului. Dă clic pe primul colț sau apasă <kbd>Enter</kbd> ca să-l închizi; <kbd>Backspace</kbd> ia înapoi ultimul colț.
+3. Imediat ce forma e închisă, pe ea apare o săgeată, ca la **Împinge/Trage**. Trage-o în afară și devine un solid care stă pe față, în materialul feței. Împinge-o înăuntru și devine o tăietură în element: o nișă, un buzunar sau o gaură când trece dintr-o parte în alta. Dă clic sau apasă <kbd>Enter</kbd> ca s-o aplici. <kbd>Esc</kbd>, sau o distanță de 0, lasă forma pe față ca schiță, s-o extrudezi mai târziu.
+
+Forma e o schiță pe un plan de referință care stă pe față. Planul poartă numele elementului și al feței, de exemplu *Extrude 1, north face*, iar formele desenate pe aceeași față îl folosesc pe același. Vederea 3D nu desenează aceste planuri, pentru că fața arată deja unde sunt. Deschide unul din navigator ca să schimbi schița în 2D; solidul sau tăietura o urmează. **Împinge/Trage** pe capătul solidului îi schimbă adâncimea. **Împinge/Trage** pe fundul unui buzunar face tăietura mai adâncă sau mai puțin adâncă, în loc să adauge la element.
+
+![Un dreptunghi desenat pe latura unui bloc, cu dimensiunea lângă cursor](shots/studio-on-face.webp)
+
 ## Pașii
 
 Proprietățile unui solid Studio îi arată pașii în ordine. Fiecare pas poate fi oprit, mutat mai devreme sau mai târziu, schimbat sau scos. Schimbă schița, și fiecare pas se face din nou pe corpul nou. Un pas care nu-și mai găsește fața sau muchia spune asta la **Probleme**.
