@@ -22,6 +22,8 @@ Per spostare una porta o una finestra lungo il suo muro, selezionala e trascinal
 
 **Architettura → Apertura nel muro** (<kbd>WO</kbd>) taglia una semplice apertura attraverso un muro dove fai clic: un passaggio, una botola, un vano per una porta che arriverà più tardi. Imposta la sua larghezza, altezza e davanzale nel pannello Proprietà prima del clic. Quando è selezionata, lì se ne cambiano le dimensioni, la posizione lungo il muro e il davanzale; come una porta, deve stare nel muro e non interferire con le altre aperture del muro. In IFC è un’apertura che svuota il muro, senza nulla che la riempia.
 
+**Forma superiore** dà la forma della sua testa: **Rettangolo**, **Arco ribassato** (un arco poco rialzato), **Arco ellittico** (mezza ellisse, alta un quarto della larghezza se non dici altrimenti), **Semicerchio** o **Angoli arrotondati** (una testa piana con gli angoli superiori arrotondati). **Freccia dell’arco** stabilisce quanto sale una testa ribassata o ellittica, **Raggio degli angoli** quanto sono arrotondati gli angoli (150 mm se non dici altrimenti, mai più di metà della larghezza); vuoto, quello della forma. L’apertura nel muro segue il contorno in 3D, nei prospetti e nelle sezioni e nell’IFC; la pianta ne mostra le spalle come prima.
+
 ## Il configuratore
 
 **Architettura → Porte e finestre** apre il configuratore. Tutti i tipi di porta e finestra del progetto sono elencati a sinistra. Puoi modificare:
@@ -61,7 +63,7 @@ Ciascuno si posiziona rispetto alle facce reali del muro dove si trova la finest
 
 ### Forme, stili e ornamenti
 
-**Forma** dà a una porta o a una finestra una testa ad arco (**Arco a tutto sesto**, **Arco ribassato**, **Arco a sesto acuto**, **Coronamento triangolare**) oppure la rende una finestra **Tonda o ovale** (tonda quando larghezza e altezza sono uguali). Un tipo ad arco tiene le sue ante sotto un traverso alla linea d’imposta, e sopra di esso un sopraluce fisso che segue la testa, con barre se le vuoi: **A raggiera**, **I montanti prolungati** o una **Croce**. **Freccia dell’arco** stabilisce quanto sale una testa ribassata, a sesto acuto o triangolare. L’apertura nel muro, il telaio, il vetro, la cornice e i disegni seguono tutti il contorno.
+**Forma** dà a una porta o a una finestra una testa ad arco (**Arco a tutto sesto**, **Arco ribassato**, **Arco ellittico**, **Angoli arrotondati**, **Arco a sesto acuto**, **Coronamento triangolare**) oppure la rende una finestra **Tonda o ovale** (tonda quando larghezza e altezza sono uguali). Un tipo ad arco tiene le sue ante sotto un traverso alla linea d’imposta, e sopra di esso un sopraluce fisso che segue la testa, con barre se le vuoi: **A raggiera**, **I montanti prolungati** o una **Croce**. **Freccia dell’arco** stabilisce quanto sale una testa ribassata, ellittica, a sesto acuto o triangolare, **Raggio degli angoli** quanto sono arrotondati gli angoli di una testa ad angoli arrotondati. L’apertura nel muro, il telaio, il vetro, la cornice e i disegni seguono tutti il contorno.
 
 Le **Inglesine** dividono le ante: **Griglia (coloniale)** con i suoi riquadri in larghezza e in altezza, **Prairie** con barre vicino ai bordi, oppure **Losanghe**.
 

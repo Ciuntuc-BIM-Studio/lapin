@@ -26,6 +26,10 @@ public class JoineryShapeTests
     [Theory]
     [InlineData("round", null, 0.6)]
     [InlineData("segmental", 0.2, 0.2)]
+    [InlineData("elliptical", null, 0.3)]
+    [InlineData("elliptical", 0.45, 0.45)]
+    [InlineData("radiused", null, 0.15)]
+    [InlineData("radiused", 1.0, 0.6)]
     [InlineData("pointed", null, 1.0392304845413265)]
     [InlineData("gable", 0.3, 0.3)]
     public void A_headed_window_springs_from_its_jambs_and_its_head_rises_as_its_kind_says(string kind, double? rise, double expected)

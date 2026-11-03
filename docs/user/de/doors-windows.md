@@ -22,6 +22,8 @@ Um eine Tür oder ein Fenster entlang seiner Wand zu verschieben, wählen Sie es
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) schneidet dort, wo Sie klicken, eine Öffnung allein durch eine Wand: einen Durchgang, eine Luke, ein Loch für eine spätere Tür. Breite, Höhe und Brüstung stellen Sie vor dem Klick im Eigenschaftenbereich ein. Ausgewählt werden dort ihre Größe, ihre Lage entlang der Wand und ihre Brüstung geändert; wie eine Tür muss sie in die Wand passen und von deren anderen Öffnungen frei bleiben. In IFC ist sie eine Öffnung, die die Wand ausspart, ohne Füllung.
 
+**Sturzform** formt ihren oberen Abschluss: **Rechteck**, **Segmentbogen** (ein flacher Bogen), **Ellipsenbogen** (eine halbe Ellipse, ohne Angabe ein Viertel der Breite hoch), **Halbkreis** oder **Abgerundete Ecken** (ein gerader Sturz mit gerundeten oberen Ecken). **Stichhöhe** legt fest, wie hoch ein Segment- oder Ellipsenbogen steigt, **Eckradius**, wie rund die Ecken sind (ohne Angabe 150 mm, nie mehr als die halbe Breite); leer gilt der Wert der Form. Die Wandöffnung folgt dem Umriss in 3D, in Ansichten und Schnitten und im IFC; der Grundriss zeigt ihre Laibungen wie bisher.
+
 ## Der Konfigurator
 
 **Architektur → Türen und Fenster** öffnet den Konfigurator. Jeder Tür- und Fenstertyp des Projekts ist links aufgelistet. Sie können ändern:
@@ -61,7 +63,7 @@ Jedes Teil richtet sich nach den tatsächlichen Flächen der Wand dort, wo das F
 
 ### Formen, Stile und Schmuck
 
-**Form** gibt einer Tür oder einem Fenster einen Bogenabschluss (**Rundbogen**, **Segmentbogen**, **Spitzbogen**, **Dreiecksabschluss**) oder macht es **Rund oder oval** (rund bei gleicher Breite und Höhe). Ein Bogentyp behält seine Flügel unter einem Kämpfer am Bogenansatz, darüber ein festes Oberlicht, das dem Bogen folgt, auf Wunsch mit Sprossen: **Strahlen**, **Die Pfosten weitergeführt** oder **Kreuz**. **Stichhöhe** legt fest, wie hoch ein Segment-, Spitz- oder Dreiecksabschluss steigt. Die Wandöffnung, der Rahmen, das Glas, die Faschen und die Zeichnungen folgen dem Umriss.
+**Form** gibt einer Tür oder einem Fenster einen Bogenabschluss (**Rundbogen**, **Segmentbogen**, **Ellipsenbogen**, **Abgerundete Ecken**, **Spitzbogen**, **Dreiecksabschluss**) oder macht es **Rund oder oval** (rund bei gleicher Breite und Höhe). Ein Bogentyp behält seine Flügel unter einem Kämpfer am Bogenansatz, darüber ein festes Oberlicht, das dem Bogen folgt, auf Wunsch mit Sprossen: **Strahlen**, **Die Pfosten weitergeführt** oder **Kreuz**. **Stichhöhe** legt fest, wie hoch ein Segment-, Ellipsen-, Spitz- oder Dreiecksabschluss steigt, **Eckradius**, wie rund die Ecken eines Abschlusses mit abgerundeten Ecken sind. Die Wandöffnung, der Rahmen, das Glas, die Faschen und die Zeichnungen folgen dem Umriss.
 
 **Sprossen** teilen die Scheiben: **Raster (Kolonial)** mit Feldern in der Breite und Höhe, **Prairie** mit Sprossen nahe den Rändern, oder ein **Rautenmuster**.
 

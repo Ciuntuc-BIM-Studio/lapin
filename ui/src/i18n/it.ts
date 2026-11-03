@@ -917,6 +917,8 @@ export const IT: Record<string, string> = {
   'A column needs a name.': 'Una colonna ha bisogno di un nome.', 'A chart needs the column it adds up, or counts the rows.': 'Un grafico ha bisogno della colonna che somma, oppure conta le righe.', 'A lintel schedule lists the lintels the walls make: it takes rows of its own, not columns.': 'Un abaco degli architravi elenca gli architravi che fanno i muri: accetta righe proprie, non colonne.',
   'Nothing to show: the table has no rows.': 'Niente da mostrare: la tabella non ha righe.', 'The schedule has no such chart.': 'L’abaco non ha un grafico simile.', 'Which column of the schedule\'s own?': 'Quale colonna propria dell’abaco?',
   'schedule|Column': 'Colonna', 'chart|Columns': 'Colonne', 'chart|Bars': 'Barre',
+  // A wall opening's head (decision 253)
+  'Head': 'Forma superiore', 'Corner radius': 'Raggio degli angoli', 'Semicircle': 'Semicerchio', 'Elliptical arch': 'Arco ellittico', 'Radiused corners': 'Angoli arrotondati',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

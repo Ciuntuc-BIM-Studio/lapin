@@ -22,6 +22,8 @@ Pour déplacer une porte ou une fenêtre le long de son mur, sélectionnez-la et
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) découpe une baie seule dans un mur là où vous cliquez : un passage, une trappe, un trou pour une porte qui viendra plus tard. Sa largeur, sa hauteur et son allège se règlent dans le panneau des propriétés avant le clic. Sélectionnée, sa taille, sa place le long du mur et son allège s’y modifient ; comme une porte, elle doit tenir dans le mur et rester à l’écart de ses autres baies. En IFC, c’est une ouverture qui évide le mur, sans rien pour la remplir.
 
+**Couvrement** donne la forme de son haut : **Rectangle**, **Arc segmentaire** (un arc surbaissé), **Arc elliptique** (une demi-ellipse, haute d’un quart de la largeur sauf indication contraire), **Plein cintre** ou **Angles arrondis** (un haut droit aux angles supérieurs arrondis). **Flèche de l’arc** règle la montée d’un arc segmentaire ou elliptique, **Rayon des angles** l’arrondi des angles (150 mm sauf indication contraire, jamais plus de la moitié de la largeur) ; vide, celui de la forme. La baie dans le mur suit le contour en 3D, dans les élévations et les coupes et dans l’IFC ; le plan montre ses tableaux comme avant.
+
 ## Le configurateur
 
 **Architecture → Portes et fenêtres** ouvre le configurateur. Chaque type de porte et de fenêtre du projet est listé à gauche. Vous pouvez modifier :
@@ -61,7 +63,7 @@ Chacun se place d’après les faces réelles du mur à l’endroit de la fenêt
 
 ### Formes, styles et ornements
 
-**Forme** donne à une porte ou une fenêtre une tête cintrée (**Arc en plein cintre**, **Arc segmentaire**, **Arc brisé**, **Tête triangulaire**) ou la rend **Ronde ou ovale** (ronde quand la largeur et la hauteur sont égales). Un type cintré garde ses vantaux sous une traverse à la naissance de l’arc, et au-dessus une imposte fixe qui suit l’arc, avec des petits-bois si on le souhaite : **Éventail**, **Les meneaux prolongés** ou **Croix**. **Flèche de l’arc** règle la montée d’un arc segmentaire, brisé ou triangulaire. La baie dans le mur, le cadre, le vitrage, l’encadrement et les dessins suivent le contour.
+**Forme** donne à une porte ou une fenêtre une tête cintrée (**Arc en plein cintre**, **Arc segmentaire**, **Arc elliptique**, **Angles arrondis**, **Arc brisé**, **Tête triangulaire**) ou la rend **Ronde ou ovale** (ronde quand la largeur et la hauteur sont égales). Un type cintré garde ses vantaux sous une traverse à la naissance de l’arc, et au-dessus une imposte fixe qui suit l’arc, avec des petits-bois si on le souhaite : **Éventail**, **Les meneaux prolongés** ou **Croix**. **Flèche de l’arc** règle la montée d’un arc segmentaire, elliptique, brisé ou triangulaire, **Rayon des angles** l’arrondi des angles d’une tête aux angles arrondis. La baie dans le mur, le cadre, le vitrage, l’encadrement et les dessins suivent le contour.
 
 **Petits-bois** divisent les vitrages : **Grille (colonial)** avec ses carreaux en largeur et en hauteur, **Prairie** avec des barres près des bords, ou des **Losanges**.
 

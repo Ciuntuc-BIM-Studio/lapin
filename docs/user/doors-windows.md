@@ -22,6 +22,8 @@ To move a door or window along its wall, select it and drag it. To change it, us
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) cuts an opening alone through a wall where you click it: a passage, a hatch, a hole for a door that comes later. Set its width, height and sill in the properties panel before the click. Selected, its size, its place along the wall and its sill are changed there; like a door, it must fit in the wall and stay clear of the wall's other openings. In IFC it is an opening voiding the wall, with nothing filling it.
 
+**Head** shapes its top: **Rectangle**, **Segmental arch** (a shallow arc), **Elliptical arch** (a half ellipse, a quarter of the width high unless you say), **Semicircle**, or **Radiused corners** (a flat head with its top corners rounded). **Rise of the head** sets how high a segmental or elliptical head rises, **Corner radius** how round the corners are (150 mm unless you say, never more than half the width); empty, the kind's own. The wall's opening follows the outline in 3D, in elevations and sections and in IFC; a plan shows its jambs as before.
+
 ## The configurator
 
 **Architecture → Doors & windows** opens the configurator. Every door and window type of the project is listed on the left. You can change:
@@ -61,7 +63,7 @@ Each one sits by the wall's real faces where the window is, from the wall's laye
 
 ### Shapes, styles and ornaments
 
-**Shape** gives a door or window an arched head (**Round arch**, **Segmental arch**, **Pointed arch**, **Triangular head**) or makes it a **Round or oval** window (round when the width and height are equal). An arched type keeps its panes under a transom at the spring line, and above it a fixed fanlight that follows the head, with bars if you want them: a **Sunburst**, **The mullions carried up** or a **Cross**. **Rise of the head** sets how high a segmental, pointed or triangular head rises. The wall's opening, the frame, the glass, the surround and the drawings all follow the outline.
+**Shape** gives a door or window an arched head (**Round arch**, **Segmental arch**, **Elliptical arch**, **Radiused corners**, **Pointed arch**, **Triangular head**) or makes it a **Round or oval** window (round when the width and height are equal). An arched type keeps its panes under a transom at the spring line, and above it a fixed fanlight that follows the head, with bars if you want them: a **Sunburst**, **The mullions carried up** or a **Cross**. **Rise of the head** sets how high a segmental, elliptical, pointed or triangular head rises, **Corner radius** how round a radiused head's corners are. The wall's opening, the frame, the glass, the surround and the drawings all follow the outline.
 
 **Glazing bars** divide the panes: **Grid (colonial)** with its lites across and up, **Prairie** with bars near the edges, or a **Diamond lattice**.
 

@@ -22,6 +22,8 @@ Para mover una puerta o una ventana a lo largo de su muro, selecciónela y arrá
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) abre un hueco solo en un muro donde se hace clic: un paso, una trampilla, un hueco para una puerta que vendrá después. Su ancho, alto y antepecho se fijan en el panel de propiedades antes del clic. Seleccionado, ahí se cambian su tamaño, su posición a lo largo del muro y su antepecho; como una puerta, debe caber en el muro y no tocar los demás huecos. En IFC es una abertura que vacía el muro, sin nada que la rellene.
 
+**Forma superior** da forma a su remate: **Rectángulo**, **Arco rebajado** (un arco poco peraltado), **Arco elíptico** (media elipse, de una cuarta parte del ancho de alto salvo que se indique otra cosa), **Semicírculo** o **Esquinas redondeadas** (un remate recto con las esquinas superiores redondeadas). **Flecha del arco** fija cuánto sube un remate rebajado o elíptico, **Radio de las esquinas** cuán redondas son las esquinas (150 mm salvo que se indique otra cosa, nunca más de la mitad del ancho); vacío, el propio de la forma. El hueco del muro sigue el contorno en 3D, en alzados y secciones y en IFC; la planta muestra sus jambas como antes.
+
 ## El configurador
 
 **Arquitectura → Puertas y ventanas** abre el configurador. Todos los tipos de puerta y ventana del proyecto aparecen a la izquierda. Puede cambiar:
@@ -61,7 +63,7 @@ Cada una se sitúa según las caras reales del muro donde está la ventana, a pa
 
 ### Formas, estilos y ornamentos
 
-**Forma** da a una puerta o ventana un remate en arco (**Arco de medio punto**, **Arco rebajado**, **Arco apuntado**, **Remate triangular**) o la hace **Redonda u oval** (redonda cuando el ancho y el alto son iguales). Un tipo con arco conserva sus hojas bajo un travesaño en el arranque del arco, y encima un fijo que sigue el arco, con barrotillos si se quiere: **Abanico**, **Los montantes prolongados** o **Cruz**. **Flecha del arco** fija cuánto sube un arco rebajado, apuntado o triangular. El hueco del muro, el marco, el vidrio, el recercado y los dibujos siguen el contorno.
+**Forma** da a una puerta o ventana un remate en arco (**Arco de medio punto**, **Arco rebajado**, **Arco elíptico**, **Esquinas redondeadas**, **Arco apuntado**, **Remate triangular**) o la hace **Redonda u oval** (redonda cuando el ancho y el alto son iguales). Un tipo con arco conserva sus hojas bajo un travesaño en el arranque del arco, y encima un fijo que sigue el arco, con barrotillos si se quiere: **Abanico**, **Los montantes prolongados** o **Cruz**. **Flecha del arco** fija cuánto sube un arco rebajado, elíptico, apuntado o triangular, **Radio de las esquinas** cuán redondas son las esquinas de un remate con esquinas redondeadas. El hueco del muro, el marco, el vidrio, el recercado y los dibujos siguen el contorno.
 
 **Junquillos** dividen los vidrios: **Cuadrícula (colonial)** con sus vidrios a lo ancho y a lo alto, **Prairie** con barras cerca de los bordes, o **Rombos**.
 

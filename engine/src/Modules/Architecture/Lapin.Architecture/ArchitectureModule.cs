@@ -441,20 +441,22 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Command("addDoor", "Door", (ctx, a) => AddFill(ctx, a, "door"));
         r.Command("addWindow", "Window", (ctx, a) => AddFill(ctx, a, "window"));
 
-        // An opening alone in a wall, nothing filling it (decision 247): {wallId, x, y | along, width?, height?, sill?}.
+        // An opening alone in a wall, nothing filling it (decision 247): {wallId, x, y | along, width?, height?, sill?, shape?, rise?};
+        // its head (decision 253) "rect", "segmental", "elliptical", "round" (a semicircle) or "radiused" (rise: the corner radius).
         r.Command("addWallOpening", "Opening", (ctx, a) =>
         {
             var wall = Spatial.Require(ctx.Model, (string?)a["wallId"], IfcClass.Wall);
             var along = Json.Number(a["along"]) ?? Openings.AlongOf(wall, new Vec2(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0));
-            var opening = Openings.AddBare(ctx, wall, along, Json.Number(a["sill"]) ?? 0, Json.Number(a["width"]) ?? 0.9, Json.Number(a["height"]) ?? 2.1);
+            var opening = Openings.AddBare(ctx, wall, along, Json.Number(a["sill"]) ?? 0, Json.Number(a["width"]) ?? 0.9, Json.Number(a["height"]) ?? 2.1, (string?)a["shape"], Json.Number(a["rise"]));
             return new JsonObject { ["id"] = opening.Id };
         });
-        // Its size, place along the wall and sill: {id, width?, height?, along?, sill?}.
+        // Its size, place along the wall, sill and head: {id, width?, height?, along?, sill?, shape?, rise? (null: the kind's own)}.
         r.Command("updateWallOpening", "Change opening", (ctx, a) =>
         {
             var opening = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.OpeningElement);
             if (a["width"] != null || a["height"] != null) Openings.Resize(ctx, opening, Json.Number(a["width"]), Json.Number(a["height"]));
             if (a["along"] != null || a["sill"] != null) Openings.Move(ctx, ctx.Model.Get(opening.Id)!, Json.Number(a["along"]), Json.Number(a["sill"]));
+            if (a["shape"] != null || a.ContainsKey("rise")) Openings.Reshape(ctx, ctx.Model.Get(opening.Id)!, (string?)a["shape"], Json.Number(a["rise"]), a.ContainsKey("rise") && a["rise"] == null);
             return null;
         });
 

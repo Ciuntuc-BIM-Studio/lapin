@@ -15,7 +15,8 @@ namespace Lapin.Architecture;
 
 /// <summary>
 /// The outline of a door or window: <see cref="Kind"/> "rect", "round" (a semicircular head),
-/// "segmental" (an arc of <see cref="Rise"/>), "pointed" (two arcs meeting at the apex, gothic;
+/// "segmental" (an arc of <see cref="Rise"/>), "elliptical" (a half ellipse across the width, <see cref="Rise"/> high),
+/// "radiused" (a flat head with its top corners rounded, <see cref="Rise"/> their radius), "pointed" (two arcs meeting at the apex, gothic;
 /// equilateral unless <see cref="Rise"/> says), "gable" (a triangular head), "circle" (a round or
 /// oval window filling the width and height). <see cref="Rise"/>: the head's height over the
 /// spring line (null: the kind's own). <see cref="Bars"/>: the fanlight's or round window's
@@ -33,16 +34,16 @@ public sealed record JoineryMuntins(string Pattern = "none", int Across = 2, int
 
 public static class JoineryShapes
 {
-    public static readonly string[] Kinds = ["rect", "round", "segmental", "pointed", "gable", "circle"];
+    public static readonly string[] Kinds = ["rect", "round", "segmental", "elliptical", "radiused", "pointed", "gable", "circle"];
     public static readonly string[] HeadBars = ["none", "sunburst", "mullions", "cross"];
     public static readonly string[] MuntinPatterns = ["none", "grid", "prairie", "diamond"];
 
     public static string KindOf(JoinerySpec s) => s.Shape?.Kind is { } k && Kinds.Contains(k) ? k : "rect";
-    public static bool Headed(JoinerySpec s) => KindOf(s) is "round" or "segmental" or "pointed" or "gable";
+    public static bool Headed(JoinerySpec s) => KindOf(s) is "round" or "segmental" or "elliptical" or "radiused" or "pointed" or "gable";
     public static bool Round(JoinerySpec s) => KindOf(s) == "circle";
     public static bool Shaped(JoinerySpec s) => KindOf(s) != "rect";
 
-    /// <summary>The head's height over the spring line: a semicircle's half width, a segment's rise (a sixth of the width unless asked), an equilateral pointed arch's, a gable's quarter width; never more than leaves 150 mm of rectangle under it.</summary>
+    /// <summary>The head's height over the spring line: a semicircle's half width, a segment's rise (a sixth of the width unless asked), a half ellipse's (a quarter of the width unless asked), a radiused head's corner radius (150 mm unless asked, never more than half the width), an equilateral pointed arch's, a gable's quarter width; never more than leaves 150 mm of rectangle under it.</summary>
     public static double Rise(JoinerySpec s)
     {
         var w = s.Width;
@@ -50,12 +51,17 @@ public static class JoineryShapes
         {
             "round" => w / 2,
             "segmental" => Math.Clamp(s.Shape?.Rise ?? w / 6, 0.02, w / 2),
+            "elliptical" => Math.Clamp(s.Shape?.Rise ?? w / 4, 0.02, w),
+            "radiused" => Math.Clamp(s.Shape?.Rise ?? DefaultCornerRadius, 0.01, w / 2),
             "pointed" => Math.Max(0.05, s.Shape?.Rise ?? w * Math.Sqrt(3) / 2),
             "gable" => Math.Max(0.02, s.Shape?.Rise ?? w / 4),
             _ => 0,
         };
         return Math.Min(r, Math.Max(0, s.Height - 0.15));
     }
+
+    /// <summary>A radiused head's corner radius when none is asked.</summary>
+    public const double DefaultCornerRadius = 0.15;
 
     /// <summary>Where the head springs from the jambs, over the bottom.</summary>
     public static double Spring(JoinerySpec s) => s.Height - Rise(s);
@@ -79,6 +85,18 @@ public static class JoineryShapes
                 var r = (w * w / 4 + f * f) / (2 * f);
                 return zs + f - r + Root(Math.Pow(r - inset, 2) - x * x);
             }
+            case "elliptical":
+            {
+                // The half ellipse with both semi-axes less the inset (the frame's band nearly even all round).
+                var (a, b) = (w / 2 - inset, f - inset);
+                return a <= 0 || b <= 0 ? zs : zs + b * Root(1 - x * x / (a * a));
+            }
+            case "radiused":
+            {
+                // Each corner an arc about its own centre, the radius less the inset; square once the inset passes it.
+                var (cx, rc) = (w / 2 - f, f - inset);
+                return ax <= cx || rc <= 0 ? zs + f - inset : zs + Root(rc * rc - Math.Pow(ax - cx, 2));
+            }
             case "pointed":
             {
                 var r = (f * f + w * w / 4) / w;
@@ -98,6 +116,15 @@ public static class JoineryShapes
         var kind = KindOf(s);
         var xs = kind == "gable" ? [half, 0, -half]
             : Enumerable.Range(0, 33).Select(i => half * Math.Cos(Math.PI * i / 32)).ToList();
+        if (kind == "radiused")
+        {
+            // A quarter circle in each corner, the flat between them; the jamb's top square when the inset passes the radius.
+            var (f, cx) = (Rise(s), s.Width / 2 - Rise(s));
+            var rc = f - inset;
+            if (rc <= 1e-9) return [new(half, Top(s, half, inset)), new(-half, Top(s, -half, inset))];
+            var right = Enumerable.Range(0, 17).Select(i => cx + rc * Math.Cos(Math.PI / 2 * i / 16)).ToList();
+            xs = [.. right, .. Enumerable.Reverse(right).SkipWhile(x => x < 1e-9).Select(x => -x)];
+        }
         if (kind == "pointed")
         {
             // Each half its own arc, the apex exactly at the middle.

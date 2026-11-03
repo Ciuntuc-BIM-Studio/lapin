@@ -971,6 +971,8 @@ export const LO: Record<string, string> = {
   'A column needs a name.': 'ຖັນຕ້ອງມີຊື່.', 'A chart needs the column it adds up, or counts the rows.': 'ແຜນພູມຕ້ອງມີຖັນທີ່ມັນລວມ, ຫຼື ມັນນັບແຖວ.', 'A lintel schedule lists the lintels the walls make: it takes rows of its own, not columns.': 'ຕາຕະລາງລາຍການທັບຫຼັງ ລາຍຊື່ທັບຫຼັງທີ່ຝາສ້າງຂຶ້ນ: ມັນຮັບແຖວຂອງທ່ານເອງ, ບໍ່ແມ່ນຖັນ.',
   'Nothing to show: the table has no rows.': 'ບໍ່ມີຫຍັງໃຫ້ສະແດງ: ຕາຕະລາງບໍ່ມີແຖວ.', 'The schedule has no such chart.': 'ຕາຕະລາງລາຍການບໍ່ມີແຜນພູມດັ່ງກ່າວ.', 'Which column of the schedule\'s own?': 'ຖັນໃດຂອງຕາຕະລາງລາຍການເອງ?',
   'schedule|Column': 'ຖັນ', 'chart|Columns': 'ແທ່ງຕັ້ງ', 'chart|Bars': 'ແທ່ງນອນ',
+  // A wall opening's head (decision 253)
+  'Head': 'ຮູບຊົງດ້ານເທິງ', 'Corner radius': 'ລັດສະໝີມຸມ', 'Semicircle': 'ເຄິ່ງວົງມົນ', 'Elliptical arch': 'ໂຄ້ງຮູບໄຂ່', 'Radiused corners': 'ມຸມມົນ',
 };
 
 /** Phrases with a number or a name in them. */

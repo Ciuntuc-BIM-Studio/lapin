@@ -913,6 +913,8 @@ export const RO: Record<string, string> = {
   'A column needs a name.': 'O coloană are nevoie de un nume.', 'A chart needs the column it adds up, or counts the rows.': 'Un grafic are nevoie de coloana pe care o adună, sau numără rândurile.', 'A lintel schedule lists the lintels the walls make: it takes rows of its own, not columns.': 'Un extras de buiandrugi listează buiandrugii pe care îi fac pereții: primește rânduri proprii, nu coloane.',
   'Nothing to show: the table has no rows.': 'Nimic de arătat: tabelul nu are rânduri.', 'The schedule has no such chart.': 'Extrasul nu are un asemenea grafic.', 'Which column of the schedule\'s own?': 'Care dintre coloanele proprii ale extrasului?',
   'schedule|Column': 'Coloană', 'chart|Columns': 'Coloane', 'chart|Bars': 'Bare',
+  // A wall opening's head (decision 253)
+  'Head': 'Forma de sus', 'Corner radius': 'Raza colțurilor', 'Semicircle': 'Semicerc', 'Elliptical arch': 'Arc eliptic', 'Radiused corners': 'Colțuri rotunjite',
 };
 
 /** Phrases with a number or a name in them. */

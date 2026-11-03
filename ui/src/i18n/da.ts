@@ -911,6 +911,8 @@ export const DA: Record<string, string> = {
   'A column needs a name.': 'En kolonne skal have et navn.', 'A chart needs the column it adds up, or counts the rows.': 'Et diagram skal have den kolonne, det lægger sammen, eller det tæller rækkerne.', 'A lintel schedule lists the lintels the walls make: it takes rows of its own, not columns.': 'Et skema over overliggere viser de overliggere, væggene danner: det tager egne rækker, ikke kolonner.',
   'Nothing to show: the table has no rows.': 'Intet at vise: tabellen har ingen rækker.', 'The schedule has no such chart.': 'Skemaet har ikke et sådant diagram.', 'Which column of the schedule\'s own?': 'Hvilken af skemaets egne kolonner?',
   'schedule|Column': 'Kolonne', 'chart|Columns': 'Søjler', 'chart|Bars': 'Bjælker',
+  // A wall opening's head (decision 253)
+  'Head': 'Topform', 'Corner radius': 'Hjørneradius', 'Semicircle': 'Halvcirkel', 'Elliptical arch': 'Elliptisk bue', 'Radiused corners': 'Afrundede hjørner',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

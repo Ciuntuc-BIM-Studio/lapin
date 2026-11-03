@@ -22,6 +22,8 @@ Vil du flytte en dør eller et vindue langs sin væg, så markér den og træk i
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) skærer en åbning alene gennem en væg, hvor du klikker: en gennemgang, en lem, et hul til en dør, der kommer senere. Dens bredde, højde og brystning indstilles i egenskabspanelet før klikket. Når den er valgt, ændres dens størrelse, dens plads langs væggen og dens brystning der; som en dør skal den passe i væggen og holde sig fri af væggens andre åbninger. I IFC er den en åbning, der udsparer væggen, uden noget, der fylder den.
 
+**Topform** former dens top: **Rektangel**, **Segmentbue** (en flad bue), **Elliptisk bue** (en halv ellipse, en fjerdedel af bredden høj, medmindre du angiver andet), **Halvcirkel** eller **Afrundede hjørner** (en lige top med afrundede øverste hjørner). **Buens pilhøjde** angiver, hvor højt en segment- eller elliptisk bue rejser sig, **Hjørneradius**, hvor runde hjørnerne er (150 mm, medmindre du angiver andet, aldrig mere end halvdelen af bredden); tom gælder formens egen. Hullet i væggen følger omridset i 3D, i facader og snit og i IFC; planen viser lysningerne som før.
+
 ## Konfiguratoren
 
 **Arkitektur → Døre og vinduer** åbner konfiguratoren. Alle projektets dør- og vinduestyper står til venstre. Du kan ændre:
@@ -61,7 +63,7 @@ Hver af dem sidder efter væggens virkelige flader, hvor vinduet er, ud fra væg
 
 ### Former, stilarter og udsmykning
 
-**Form** giver en dør eller et vindue en buet top (**Rundbue**, **Segmentbue**, **Spidsbue**, **Trekantet top**) eller gør det **Rund eller oval** (rund når bredde og højde er ens). En buet type beholder sine rammer under en losholt ved buens vederlag, og derover et fast overvindue, der følger buen, med sprosser hvis du vil: **Vifte**, **Posterne ført op** eller **Kors**. **Buens pilhøjde** angiver, hvor højt en segment-, spids- eller trekantet top rejser sig. Hullet i væggen, karmen, glasset, indfatningen og tegningerne følger omridset.
+**Form** giver en dør eller et vindue en buet top (**Rundbue**, **Segmentbue**, **Elliptisk bue**, **Afrundede hjørner**, **Spidsbue**, **Trekantet top**) eller gør det **Rund eller oval** (rund når bredde og højde er ens). En buet type beholder sine rammer under en losholt ved buens vederlag, og derover et fast overvindue, der følger buen, med sprosser hvis du vil: **Vifte**, **Posterne ført op** eller **Kors**. **Buens pilhøjde** angiver, hvor højt en segment-, elliptisk, spids- eller trekantet top rejser sig, **Hjørneradius**, hvor runde hjørnerne på en top med afrundede hjørner er. Hullet i væggen, karmen, glasset, indfatningen og tegningerne følger omridset.
 
 **Sprosser** deler ruderne: **Gitter (kolonial)** med ruder i bredden og højden, **Prairie** med sprosser nær kanterne, eller et **Rudemønster**.
 

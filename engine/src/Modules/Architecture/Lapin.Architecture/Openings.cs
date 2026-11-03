@@ -23,8 +23,8 @@ public static class Openings
     /// <summary>The height above the storey the plan cuts at (a plan's view range comes with the drawings, M5).</summary>
     public const double PlanCut = 1.2;
 
-    /// <summary>An opening's place and size on its wall.</summary>
-    public readonly record struct Placed(Entity Opening, Entity? Fill, JoinerySpec? Spec, double Along, double Sill, double Width, double Height);
+    /// <summary>An opening's place and size on its wall; <paramref name="Shape"/>: its outline, the fill's type's or a bare opening's own (null: a rectangle).</summary>
+    public readonly record struct Placed(Entity Opening, Entity? Fill, JoinerySpec? Spec, double Along, double Sill, double Width, double Height, JoineryShape? Shape = null);
 
     public static IEnumerable<Entity> Of(IModelView m, string wallId) => m.RelatedOf(wallId, IfcClass.RelVoidsElement).Where(o => o.Class == IfcClass.OpeningElement);
 
@@ -42,8 +42,18 @@ public static class Openings
         var fill = FillOf(m, opening.Id);
         var spec = fill == null ? null : SpecOf(m, fill.Id);
         return new Placed(opening, fill, spec, opening.Num("along"), opening.Num("sill"),
-            spec?.Width ?? opening.Num("width", 1), spec?.Height ?? opening.Num("height", 2));
+            spec?.Width ?? opening.Num("width", 1), spec?.Height ?? opening.Num("height", 2), fill == null ? BareShape(opening) : spec?.Shape);
     }
+
+    /// <summary>The head kinds a bare opening takes (decision 253): "round" is the semicircle.</summary>
+    public static readonly string[] BareKinds = ["rect", "segmental", "elliptical", "round", "radiused"];
+
+    /// <summary>A bare opening's own outline (its <c>shape</c> and <c>rise</c>); null for a rectangle.</summary>
+    public static JoineryShape? BareShape(Entity opening) =>
+        opening.Str("shape") is { } k && k != "rect" && BareKinds.Contains(k) ? new JoineryShape(k, opening.NumOrNull("rise")) : null;
+
+    /// <summary>A bare opening's outline as the joinery's outline code takes it.</summary>
+    static readonly JoinerySpec BareSpec = JoinerySpec.DefaultWindow("Opening");
 
     public static IReadOnlyList<Placed> PlacedOn(IModelView m, string wallId) => Of(m, wallId).Select(o => Place(m, o)).ToList();
 
@@ -145,10 +155,12 @@ public static class Openings
     /// sill, with nothing filling it (a passage, a hatch, a niche's place); an IfcOpeningElement voiding the wall, as a
     /// door's is. Refused when it does not fit.
     /// </summary>
-    public static Entity AddBare(IEdit edit, Entity wall, double along, double sill, double width, double height)
+    public static Entity AddBare(IEdit edit, Entity wall, double along, double sill, double width, double height, string? shape = null, double? rise = null)
     {
         CheckFits(edit.Model, wall, along, sill, width, height);
-        var opening = new Entity(edit.NewId(), IfcClass.OpeningElement, "Opening", new JsonObject { ["along"] = along, ["sill"] = sill, ["width"] = width, ["height"] = height }, "OPENING");
+        var attrs = new JsonObject { ["along"] = along, ["sill"] = sill, ["width"] = width, ["height"] = height };
+        SetShape(attrs, shape ?? "rect", rise);
+        var opening = new Entity(edit.NewId(), IfcClass.OpeningElement, "Opening", attrs, "OPENING");
         edit.Add(opening);
         edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelVoidsElement, wall.Id, [opening.Id]));
         return opening;
@@ -166,6 +178,30 @@ public static class Openings
         attrs["width"] = w;
         attrs["height"] = h;
         edit.Replace(opening.With(attrs: attrs));
+    }
+
+    /// <summary>
+    /// A bare opening's head (decision 253): <paramref name="kind"/> one of <see cref="BareKinds"/> (null: kept),
+    /// <paramref name="rise"/> the head's rise or a radiused head's corner radius (null with <paramref name="clearRise"/>: the kind's own).
+    /// </summary>
+    public static void Reshape(IEdit edit, Entity opening, string? kind, double? rise, bool clearRise)
+    {
+        if (FillOf(edit.Model, opening.Id) is { } fill) throw new CommandException($"„{fill.Name}” sets its opening's shape: change its type.");
+        var attrs = opening.CloneAttrs();
+        SetShape(attrs, kind ?? opening.Str("shape") ?? "rect", rise ?? (clearRise || kind != null && kind != opening.Str("shape") ? null : opening.NumOrNull("rise")));
+        edit.Replace(opening.With(attrs: attrs));
+    }
+
+    /// <summary>The head's kind and rise into a bare opening's attributes, checked; a rectangle keeps neither.</summary>
+    static void SetShape(JsonObject attrs, string kind, double? rise)
+    {
+        if (!BareKinds.Contains(kind)) throw new CommandException($"An opening's head is one of: {string.Join(", ", BareKinds)} (not „{kind}”).");
+        if (rise is { } r && !(r > 0)) throw new CommandException("The head's rise must be more than zero.");
+        attrs.Remove("shape");
+        attrs.Remove("rise");
+        if (kind == "rect") return;
+        attrs["shape"] = kind;
+        if (rise is { } v && kind != "round") attrs["rise"] = v;
     }
 
     /// <summary>Moves a door's, a window's (or a bare opening's) opening along its wall or up it.</summary>
@@ -255,8 +291,9 @@ public static class Openings
     /// <summary>The box an opening takes out of its wall, through the whole thickness and a little past it.</summary>
     public static Solid? Cutter(WallFrame f, Placed p)
     {
-        // An arched or round door or window takes its own outline out of the wall.
-        if (p.Spec is { } spec && JoineryShapes.Shaped(spec))
+        // An arched or round door or window, or a bare opening with a shaped head (decision 253), takes its own outline out of the wall.
+        var shaped = p.Spec ?? (p.Shape is { } bare ? BareSpec with { Shape = bare } : null);
+        if (shaped is { } spec && JoineryShapes.Shaped(spec))
         {
             var sized = spec with { Width = p.Width, Height = p.Height };
             var near = f.YMin - 0.05;

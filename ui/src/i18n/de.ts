@@ -916,6 +916,8 @@ export const DE: Record<string, string> = {
   'A column needs a name.': 'Eine Spalte braucht einen Namen.', 'A chart needs the column it adds up, or counts the rows.': 'Ein Diagramm braucht die Spalte, die es aufsummiert, oder es zählt die Zeilen.', 'A lintel schedule lists the lintels the walls make: it takes rows of its own, not columns.': 'Eine Sturzliste führt die Stürze auf, die die Wände bilden: sie nimmt eigene Zeilen, keine Spalten.',
   'Nothing to show: the table has no rows.': 'Nichts anzuzeigen: die Tabelle hat keine Zeilen.', 'The schedule has no such chart.': 'Die Bauteilliste hat kein solches Diagramm.', 'Which column of the schedule\'s own?': 'Welche eigene Spalte der Bauteilliste?',
   'schedule|Column': 'Spalte', 'chart|Columns': 'Säulen', 'chart|Bars': 'Balken',
+  // A wall opening's head (decision 253)
+  'Head': 'Sturzform', 'Corner radius': 'Eckradius', 'Semicircle': 'Halbkreis', 'Elliptical arch': 'Ellipsenbogen', 'Radiused corners': 'Abgerundete Ecken',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

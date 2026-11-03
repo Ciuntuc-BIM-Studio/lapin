@@ -36,7 +36,7 @@ interface Spec {
   muntins?: Muntins | null;
   hardware?: Hardware | null;
 }
-interface Shape { kind: 'rect' | 'round' | 'segmental' | 'pointed' | 'gable' | 'circle'; rise?: number | null; bars: 'none' | 'sunburst' | 'mullions' | 'cross'; spokes: number }
+interface Shape { kind: 'rect' | 'round' | 'segmental' | 'elliptical' | 'radiused' | 'pointed' | 'gable' | 'circle'; rise?: number | null; bars: 'none' | 'sunburst' | 'mullions' | 'cross'; spokes: number }
 interface Muntins { pattern: 'none' | 'grid' | 'prairie' | 'diamond'; across: number; up: number; width: number; margin: number }
 interface Hardware { handle: 'auto' | 'lever' | 'knob' | 'pull' | 'window' | 'none'; height: number; color?: string | null }
 interface Keystone { on: boolean; width: number; height: number; projection: number; material?: string | null; color: string }
@@ -293,9 +293,11 @@ function ShapeFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial
       <label className="field-line"><span className="eyebrow">Shape</span>
         <select data-field="shape" value={sh.kind} onChange={(e) => setShape({ kind: e.target.value as Shape['kind'], rise: null })}>
           <option value="rect">Rectangle</option><option value="round">Round arch</option><option value="segmental">Segmental arch</option>
+          <option value="elliptical">Elliptical arch</option><option value="radiused">Radiused corners</option>
           <option value="pointed">Pointed arch</option><option value="gable">Triangular head</option><option value="circle">Round or oval</option>
         </select></label>
-      {(sh.kind === 'segmental' || sh.kind === 'pointed' || sh.kind === 'gable') && <Mm label="Rise of the head" value={sh.rise ?? (sh.kind === 'segmental' ? spec.width / 6 : sh.kind === 'pointed' ? spec.width * 0.866 : spec.width / 4)} onChange={(v) => setShape({ rise: v })} />}
+      {(sh.kind === 'segmental' || sh.kind === 'elliptical' || sh.kind === 'pointed' || sh.kind === 'gable') && <Mm label="Rise of the head" value={sh.rise ?? (sh.kind === 'segmental' ? spec.width / 6 : sh.kind === 'pointed' ? spec.width * 0.866 : spec.width / 4)} onChange={(v) => setShape({ rise: v })} />}
+      {sh.kind === 'radiused' && <Mm label="Corner radius" value={sh.rise ?? 0.15} onChange={(v) => setShape({ rise: v })} />}
       {sh.kind !== 'rect' && <label className="field-line"><span className="eyebrow">{sh.kind === 'circle' ? 'Bars' : 'Bars in the head'}</span>
         <select data-field="shape-bars" value={sh.bars} onChange={(e) => setShape({ bars: e.target.value as Shape['bars'] })}>
           <option value="none">None</option><option value="sunburst">Sunburst</option><option value="mullions">{sh.kind === 'circle' ? 'Upright' : 'The mullions carried up'}</option><option value="cross">Cross</option>
