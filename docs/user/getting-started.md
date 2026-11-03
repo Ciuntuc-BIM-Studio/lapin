@@ -8,6 +8,8 @@ summary: The start screen, a new project, the parts of the window, moving around
 
 When Lapin opens, it shows the start screen. **New project** starts an empty building. **Open project…** opens a `.lapin` file. The projects you have opened before are listed under **Recent**.
 
+**Start from** gives a new project set up for its work: **Single-storey house** (foundations and a ground floor), **Two-storey house** (and a first floor), **Apartment block** (a ground floor and four floors), **Hall or frame** (one storey 6 m tall, in the Structure & rebar workspace), **Drafting only** (one level, in the Drafting 2D workspace) and **Start from an IFC** (a new project, then the IFC file to import). Each chooses its workspace too; the levels can be renamed, added or deleted later as in any project.
+
 ![The start screen](shots/start-screen.webp)
 
 A new project already has three levels: **Foundations** (−1.50), **Ground floor** (±0.00) and **First floor** (+3.00). It opens on the ground floor's plan, ready for the first wall.

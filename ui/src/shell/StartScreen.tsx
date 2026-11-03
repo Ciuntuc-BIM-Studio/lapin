@@ -1,4 +1,4 @@
-/** The start screen, Atrium's way: the actions on the left; unsaved work to bring back and the recent projects on the right. */
+/** The start screen, Atrium's way: the actions on the left; unsaved work to bring back, the templates to start from (decision 261) and the recent projects on the right. */
 
 import { useEffect, useState } from 'react';
 import { FilePlus2, FolderOpen, History, Trash2, Users } from 'lucide-react';
@@ -7,6 +7,7 @@ import { modules, productInfo } from '../platform/modules';
 import { brand, tagline } from '../platform/brand';
 import { BrandName } from './BrandMark';
 import { WorkspacePicker } from './WorkspacePicker';
+import { startFrom, templates } from './templates';
 import { engineInBrowser, useSession } from '../engine/session';
 import { discardWork, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
 import { useUi } from '../app/store';
@@ -66,6 +67,18 @@ export function StartScreen() {
             ))}
           </>
         )}
+        {templates().length > 0 && <>
+          <p className="eyebrow">Start from</p>
+          <div className="templates" role="group" aria-label="Start from">
+            {templates().map((t) => (
+              <button type="button" key={t.id} className="template" data-template={t.id} disabled={!connected} onClick={() => void startFrom(t)}>
+                {t.picture}
+                <span className="template-name">{t.label}</span>
+                <span className="muted small">{t.note}</span>
+              </button>
+            ))}
+          </div>
+        </>}
         <p className="eyebrow">Recent</p>
         {recent.length === 0 && <p className="muted small">{engineInBrowser ? 'Open a project from a file on this computer.' : 'Projects you open or save appear here.'}</p>}
         {recent.map((path) => (

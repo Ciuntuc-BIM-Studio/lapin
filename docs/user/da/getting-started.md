@@ -8,6 +8,8 @@ summary: Startskærmen, et nyt projekt, vinduets dele, at bevæge sig rundt i en
 
 Når Lapin åbner, viser det startskærmen. **Nyt projekt** starter en tom bygning. **Åbn projekt…** åbner en `.lapin`-fil. De projekter, du har åbnet før, står under **Seneste**.
 
+**Start fra** giver et nyt projekt, der er gjort klar til sit arbejde: **Hus i ét plan** (fundamenter og stueetage), **Hus i to plan** (og en første sal), **Etageboligblok** (stueetage og fire etager), **Hal eller rammekonstruktion** (én etage på 6 m, i arbejdsområdet Konstruktion og armering), **Kun tegning** (ét niveau, i arbejdsområdet Tegning 2D) og **Start fra en IFC** (et nyt projekt, derefter IFC-filen der skal importeres). Hver vælger også sit arbejdsområde; niveauerne kan bagefter omdøbes, tilføjes eller slettes som i ethvert projekt.
+
 ![Startskærmen](shots/start-screen.webp)
 
 Et nyt projekt har allerede tre niveauer: **Foundations** (−1.50), **Ground floor** (±0.00) og **First floor** (+3.00). Det åbner på stueetagens plan, klar til den første væg.

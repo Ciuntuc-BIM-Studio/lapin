@@ -284,7 +284,14 @@ export const scenes = [
     id: 'start',
     async run(t) {
       await t.start();
-      await t.shot('start-screen', { clip: { x: 0, y: 0, width: 760, height: 430 } });
+      await t.shot('start-screen', { clip: { x: 0, y: 0, width: 1440, height: 640 } });
+      // A template (decision 261): the apartment block starts with its six levels, in the Architecture workspace.
+      await t.page.locator('[data-template=block]').click();
+      await t.wait(800);
+      const levels = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey');
+      t.expect(levels.length === 6, 'the apartment block starts with six levels');
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/interface.ts')).useInterface.getState().workspace) === 'architecture', 'a template chooses its workspace');
+      await t.page.evaluate(async () => (await import('/src/app/interface.ts')).chooseWorkspace('all'));
       await t.fresh();
       await house(t, { roof: false });
       await t.fit();

@@ -8,6 +8,8 @@ summary: Der Startbildschirm, ein neues Projekt, die Teile des Fensters, die Nav
 
 Wenn Lapin öffnet, zeigt es den Startbildschirm. **Neues Projekt** beginnt ein leeres Gebäude. **Projekt öffnen…** öffnet eine `.lapin`-Datei. Die Projekte, die Sie zuvor geöffnet haben, stehen unter **Zuletzt verwendet**.
 
+**Beginnen mit** gibt ein neues Projekt, das für seine Arbeit vorbereitet ist: **Einfamilienhaus, eingeschossig** (Fundamente und Erdgeschoss), **Einfamilienhaus, zweigeschossig** (dazu ein Obergeschoss), **Mehrfamilienhaus** (Erdgeschoss und vier Geschosse), **Halle oder Tragwerk** (ein 6 m hohes Geschoss, im Arbeitsbereich Tragwerk und Bewehrung), **Nur Zeichnen** (eine Ebene, im Arbeitsbereich Zeichnen 2D) und **Mit einer IFC-Datei beginnen** (ein neues Projekt, dann die zu importierende IFC-Datei). Jede Vorlage wählt auch ihren Arbeitsbereich; die Ebenen lassen sich später wie in jedem Projekt umbenennen, ergänzen oder löschen.
+
 ![Der Startbildschirm](shots/start-screen.webp)
 
 Ein neues Projekt hat bereits drei Ebenen: **Foundations** (−1.50), **Ground floor** (±0.00) und **First floor** (+3.00). Es öffnet sich im Grundriss des Erdgeschosses, bereit für die erste Wand.

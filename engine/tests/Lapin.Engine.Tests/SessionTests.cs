@@ -22,6 +22,29 @@ public class SessionTests
     }
 
     [Fact]
+    public void A_template_starts_a_new_project_with_its_own_levels_and_nothing_to_undo()
+    {
+        // Decision 261: the start screen's apartment block, five floors over the foundations.
+        var f = new Fixture();
+        var levels = Lapin.Protocol.EngineDispatcher.TemplateStoreys(JsonNode.Parse("""
+            [{"name":"Foundations","elevation":-1.5,"height":1.5},{"name":"Ground floor","elevation":0,"height":3},
+             {"name":"Floor 1","elevation":3,"height":3},{"name":"Floor 2","elevation":6,"height":3},
+             {"name":"Floor 3","elevation":9,"height":3},{"name":"Floor 4","elevation":12,"height":3}]
+            """));
+        f.Session.New(storeys: levels);
+        var storeys = Spatial.Storeys(f.Model).ToList();
+        Assert.Equal(["Foundations", "Ground floor", "Floor 1", "Floor 2", "Floor 3", "Floor 4"], storeys.Select(x => x.Name));
+        Assert.Equal(12.0, storeys[^1].Attrs["elevation"]!.GetValue<double>());
+        Assert.False(f.Session.History.CanUndo);
+        // A level without a name or a height, or none at all: the edition's own levels.
+        Assert.Null(Lapin.Protocol.EngineDispatcher.TemplateStoreys(JsonNode.Parse("""[{"name":"","elevation":0,"height":3}]""")));
+        Assert.Null(Lapin.Protocol.EngineDispatcher.TemplateStoreys(JsonNode.Parse("""[{"name":"A","elevation":0,"height":0}]""")));
+        Assert.Null(Lapin.Protocol.EngineDispatcher.TemplateStoreys(JsonNode.Parse("[]")));
+        f.Session.New();
+        Assert.Equal(["Foundations", "Ground floor", "First floor"], Spatial.Storeys(f.Model).Select(x => x.Name));
+    }
+
+    [Fact]
     public void Adding_a_wall_sends_its_entities_and_its_layers_to_draw_and_undo_takes_them_back()
     {
         var f = new Fixture();

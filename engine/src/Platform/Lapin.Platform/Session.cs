@@ -93,11 +93,15 @@ public sealed class Session
     /// A new project: the project, site and building, and its storeys
     /// (<see cref="NewProjectStoreys"/>); <paramref name="plain"/>: one ground
     /// floor only, for a project another file fills (an old project, an IFC
-    /// opened as a project). Nothing to undo, nothing to save.
+    /// opened as a project). <paramref name="storeys"/>: a start screen
+    /// template's own levels (decision 261), bottom up. Nothing to undo,
+    /// nothing to save.
     /// </summary>
-    public Diff New(bool plain = false)
+    public Diff New(bool plain = false, IReadOnlyList<(string Name, double Elevation, double Height)>? storeys = null)
     {
-        if (plain) StartEmpty(); else StartEmpty(_product.Storeys is { Length: > 0 } own ? [.. own.Select(x => (x.Name, x.Elevation, x.Height))] : NewProjectStoreys);
+        if (plain) StartEmpty();
+        else if (storeys is { Count: > 0 }) StartEmpty(storeys);
+        else StartEmpty(_product.Storeys is { Length: > 0 } own ? [.. own.Select(x => (x.Name, x.Elevation, x.Height))] : NewProjectStoreys);
         Path = null;
         Emit("start");
         return Snapshot();

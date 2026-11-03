@@ -8,6 +8,8 @@ summary: La pantalla de inicio, un proyecto nuevo, las partes de la ventana, có
 
 Cuando Lapin se abre, muestra la pantalla de inicio. **Proyecto nuevo** empieza un edificio vacío. **Abrir proyecto…** abre un archivo `.lapin`. Los proyectos que ha abierto antes aparecen en **Recientes**.
 
+**Empezar desde** da un proyecto nuevo preparado para su trabajo: **Casa de una planta** (cimentación y planta baja), **Casa de dos plantas** (y una planta primera), **Bloque de viviendas** (planta baja y cuatro plantas), **Nave o estructura** (una planta de 6 m de alto, en el espacio de trabajo Estructura y armado), **Solo dibujo** (un nivel, en el espacio de trabajo Dibujo 2D) y **Empezar desde un IFC** (un proyecto nuevo y luego el archivo IFC que importar). Cada uno elige también su espacio de trabajo; los niveles se pueden renombrar, añadir o borrar después, como en cualquier proyecto.
+
 ![La pantalla de inicio](shots/start-screen.webp)
 
 Un proyecto nuevo ya tiene tres niveles: **Foundations** (−1.50), **Ground floor** (±0.00) y **First floor** (+3.00). Se abre en la planta de Ground floor, lista para el primer muro.

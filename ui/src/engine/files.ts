@@ -134,13 +134,19 @@ function enter(): void {
   useUi.setState((s) => ({ viewTabs: [...s.viewTabs, { ...emptyPane('3d'), storeyId: null }] }));
 }
 
-export async function newProject(): Promise<void> {
-  if (!(await confirmDiscard('Start a new one'))) return;
+/** A level a new project starts with: its name, elevation and height (metres). */
+export interface NewStorey { name: string; elevation: number; height: number }
+
+/** A new project: the edition's levels, or a start screen template's (decision 261). False when the user kept the open one. */
+export async function newProject(storeys?: NewStorey[]): Promise<boolean> {
+  if (!(await confirmDiscard('Start a new one'))) return false;
   try {
-    await engine.call('project.new');
+    await engine.call('project.new', storeys?.length ? { storeys } : undefined);
     enter();
+    return true;
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
+    return false;
   }
 }
 

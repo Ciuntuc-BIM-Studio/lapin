@@ -69,6 +69,14 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .thumb { width: 120px; height: 66px; border-radius: 2px; background: linear-gradient(135deg, var(--wash), var(--rule-strong)); }
 .recent-body { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .recent-name { font-weight: 700; font-size: 14px; }
+/* The templates to start from (decision 261): a picture, a name and a line each. */
+.templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-bottom: 10px; }
+.template { display: flex; flex-direction: column; gap: 3px; padding: 0 0 10px; border: 1px solid var(--rule); border-radius: 4px; background: var(--panel); cursor: pointer; text-align: left; overflow: hidden; color: var(--ink); }
+.template:hover:not(:disabled) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.template:disabled { opacity: 0.6; cursor: default; }
+.template-pic { display: block; width: 100%; height: 96px; background: var(--accent-wash); margin-bottom: 6px; }
+.template-name { font-weight: 700; font-size: 14px; padding: 0 12px; }
+.template .muted { padding: 0 12px; }
 .start-foot { grid-column: 1 / -1; align-self: end; display: flex; justify-content: space-between; padding: 14px 0; border-top: 1px solid var(--rule); }
 
 /* Workspace */

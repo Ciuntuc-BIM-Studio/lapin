@@ -354,6 +354,21 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
         return (File.ReadAllBytes(path), info.Name, path, $"{path}:{info.Length}:{info.LastWriteTimeUtc.Ticks}");
     }
 
+    /// <summary>A start screen template's levels (decision 261): each a name, an elevation and a height in metres; null when none or one is unreadable.</summary>
+    public static List<(string Name, double Elevation, double Height)>? TemplateStoreys(JsonNode? n)
+    {
+        if (n is not JsonArray a || a.Count == 0) return null;
+        var list = new List<(string, double, double)>();
+        foreach (var x in a)
+        {
+            var name = (string?)x?["name"];
+            if (string.IsNullOrWhiteSpace(name) || x?["elevation"] is not JsonValue e || !e.TryGetValue<double>(out var elevation)
+                || x["height"] is not JsonValue h || !h.TryGetValue<double>(out var height) || height <= 0) return null;
+            list.Add((name.Trim(), elevation, height));
+        }
+        return list;
+    }
+
     static IReadOnlySet<string>? Chosen(JsonNode? n) => n is JsonArray a ? a.Select(x => (string?)x ?? "").ToHashSet() : null;
 
     /// <summary>
@@ -544,7 +559,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return (ids.Where(id => session.Model.Get(id) != null).ToDictionary(id => id, id => session.Quantities(id)), null);
             }
             // A new project with the default storeys; `plain`: one ground floor, for a file that fills it (an IFC opened as a project).
-            case "project.new": files.Reset(); return (null, session.New(p["plain"]?.GetValue<bool>() == true));
+            case "project.new": files.Reset(); return (null, session.New(p["plain"]?.GetValue<bool>() == true, TemplateStoreys(p["storeys"])));
             case "project.open":
             {
                 var diff = files.Open(session, PathParam());

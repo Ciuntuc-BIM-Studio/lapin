@@ -8,6 +8,8 @@ summary: La schermata iniziale, un nuovo progetto, le parti della finestra, come
 
 All’apertura, Lapin mostra la schermata iniziale. **Nuovo progetto** avvia un edificio vuoto. **Apri progetto…** apre un file `.lapin`. I progetti che hai già aperto sono elencati sotto **Recenti**.
 
+**Parti da** dà un nuovo progetto preparato per il suo lavoro: **Casa a un piano** (fondazioni e piano terra), **Casa a due piani** (e un primo piano), **Condominio** (piano terra e quattro piani), **Capannone o telaio** (un piano alto 6 m, nell’area di lavoro Strutture e armature), **Solo disegno** (un livello, nell’area di lavoro Disegno 2D) e **Parti da un IFC** (un nuovo progetto, poi il file IFC da importare). Ognuno sceglie anche la sua area di lavoro; i livelli si possono poi rinominare, aggiungere o eliminare come in ogni progetto.
+
 ![La schermata iniziale](shots/start-screen.webp)
 
 Un nuovo progetto ha già tre livelli: **Foundations** (−1.50), **Ground floor** (±0.00) e **First floor** (+3.00). Si apre sulla pianta del piano terra, pronto per il primo muro.

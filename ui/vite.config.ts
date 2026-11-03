@@ -23,7 +23,7 @@ function productModules(): Plugin {
     ? JSON.parse(readFileSync(file, 'utf8'))
     : resolveProduct(resolve(__dirname, '..'), process.env.LAPIN_PRODUCT ?? 'lapin')) as { id: string; name: string; brand?: Record<string, unknown> & { name: string; short: string }; disciplines?: string[]; modules: string[]; uiPaths?: Record<string, string> };
   const { identifier: _id, icons: _icons, ...brand } = (manifest.brand ?? { name: manifest.name, short: 'Lapin' }) as Record<string, unknown> & { name: string; short: string };
-  const info = JSON.stringify({ id: manifest.id, name: manifest.name, brand, disciplines: manifest.disciplines ?? null, tabs: (manifest as { tabs?: Record<string, number> }).tabs ?? null, modules: manifest.modules });
+  const info = JSON.stringify({ id: manifest.id, name: manifest.name, brand, disciplines: manifest.disciplines ?? null, tabs: (manifest as { tabs?: Record<string, number> }).tabs ?? null, storeys: (manifest as { storeys?: unknown[] }).storeys ?? null, modules: manifest.modules });
   // A module outside this repository (a private one) comes by its folder's path; it imports Lapin through the @lapin alias.
   const pathOf = (m: string) => manifest.uiPaths?.[m] ?? resolve(__dirname, 'src/modules', m);
   const present = manifest.modules.filter((m) => existsSync(resolve(pathOf(m), 'index.tsx')));
