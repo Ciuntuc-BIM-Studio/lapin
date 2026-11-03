@@ -397,6 +397,9 @@ export const COMMANDS: { names: string[]; label: string; start: Starter }[] = [
   { names: ['LAYER', 'LA'], label: 'Layer', start: layer },
 ];
 
+/** Words the command line also takes for a tool of the ribbon (MEASURE, DIST: the Measure tool, as CAD users type it). */
+export const TOOL_WORDS: Record<string, string> = { MEASURE: 'measure', MEA: 'measure', DIST: 'measure', DISTANCE: 'measure' };
+
 /** What a word no command knows may still be (a keyboard shortcut's letters, ZF ↵): true when it ran something. */
 let fallback: (text: string) => boolean = () => false;
 export const setCommandFallback = (f: (text: string) => boolean) => { fallback = f; };

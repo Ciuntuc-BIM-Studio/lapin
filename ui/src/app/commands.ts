@@ -16,7 +16,7 @@ import { effectiveBindings, formatBinding, resolveKeymap, useKeymap, type Bindin
 import { activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
 import { execute, redo, undo } from '../engine/session';
 import { newProject, openProject, saveProject } from '../engine/files';
-import { COMMANDS, setCommandFallback, startCommand, useCad } from '../viewport/cad/session';
+import { COMMANDS, TOOL_WORDS, setCommandFallback, startCommand, useCad } from '../viewport/cad/session';
 import { zoomHost } from '../viewport/zoom';
 
 const dialog = (id: string) => () => useUi.setState({ dialog: id });
@@ -144,7 +144,8 @@ export function useBindings(): Record<string, Binding[]> {
 
 // A word typed on the command line and ended with Enter that no command-line command knows: a sequence's command (ZF ↵).
 setCommandFallback((text) => {
-  const id = current().map.sequences[text.trim().toUpperCase()];
+  const word = text.trim().toUpperCase();
+  const id = current().map.sequences[word] ?? TOOL_WORDS[word];
   if (!id) return false;
   runCommand(id);
   return true;

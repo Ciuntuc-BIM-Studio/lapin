@@ -26,6 +26,10 @@ Fiecare unealtă își arată literele când ții mouse-ul peste ea; le poți sc
 | Măsoară | <kbd>ME</kbd> | Hașură, text | <kbd>H</kbd>, <kbd>T</kbd> |
 | Încadrează tot | <kbd>ZE</kbd> | Șterge | <kbd>E</kbd> |
 
+## Măsurarea
+
+**Măsoară** (<kbd>ME</kbd>, a doua unealtă rapidă, sau **MEASURE** ori **DIST** în linia de comandă) măsoară fără să deseneze ceva: dai clic pe puncte într-un plan, o secțiune sau o fațadă, cu snap, și apeși <kbd>Enter</kbd>. Cât dai clic, câmpul de introducere arată lungimea și unghiul fiecărui segment; la sfârșit, mesajul dă lungimea totală, fiecare segment (la unul singur, Δx, Δy și unghiul) și, de la trei puncte, aria pe care o închid.
+
 ## Snap și ajutoare
 
 Lapin se prinde de capetele, mijloacele și intersecțiile a ce e desenat, și de grilă. <kbd>F3</kbd> pornește sau oprește snap-ul, <kbd>F8</kbd> ortho și <kbd>F10</kbd> urmărirea polară. Starea lor se vede în dreapta jos a vederii.

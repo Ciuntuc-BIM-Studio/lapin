@@ -27,7 +27,7 @@ interface Info {
   blocks: number;
   view: { kind: string; scale: number; flip: boolean } | null;
   /** Whether the drawing looks like map coordinates, and whether the project is tied to the map. */
-  map?: { likely: boolean; georeferenced: boolean; crs: string | null };
+  map?: { likely: boolean; units?: string; georeferenced: boolean; crs: string | null };
 }
 
 interface Result { file: string; entities: number; shapes: number; hatches: number; texts: number; dimensions: number; layers: string[]; patterns: string[]; skipped: Record<string, number>; units: string; unitsGuessed: boolean; flipped: boolean }
@@ -132,7 +132,7 @@ export function ImportDxfDialog() {
                 <dt>Units</dt>
                 <dd>
                   <select value={units} onChange={(e) => setUnits(e.target.value)}>
-                    {UNITS.map(([v, l]) => <option key={v} value={v}>{v === 'auto' ? (byMap ? 'metres (map coordinates)' : `${info.units.guessed ? 'guessed' : 'the file says'}: ${info.units.name}`) : l}</option>)}
+                    {UNITS.map(([v, l]) => <option key={v} value={v}>{v === 'auto' ? (byMap ? (info.map?.units && info.map.units !== 'm' ? `${info.map.units} (map coordinates)` : 'metres (map coordinates)') : `${info.units.guessed ? 'guessed' : 'the file says'}: ${info.units.name}`) : l}</option>)}
                   </select>
                 </dd>
                 {!byMap && <>

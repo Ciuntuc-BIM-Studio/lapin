@@ -178,6 +178,25 @@ public static class DxfImport
         return (guess, true);
     }
 
+    /// <summary>A site this big (m) is no map drawing: read in metres, a millimetre plan would be tens of kilometres across.</summary>
+    const double MapSize = 10000;
+
+    /// <summary>
+    /// Metres per unit of a drawing in map coordinates (eastings and northings), or null when it is not one (a tester's report,
+    /// 03.11.2026: a plan in millimetres 69,600 units tall was taken for a map in metres, its 8,000 mm bays made 8 km). Its
+    /// lower-left corner far from zero in the file's own unit; else in metres, a file that says millimetres while its
+    /// coordinates are a cadastral plan's (ArchiCAD writes metres under $INSUNITS = 4); never a drawing that would be bigger
+    /// than a site in that unit.
+    /// </summary>
+    public static double? MapUnits(DxfDocument doc)
+    {
+        if (Extents(doc) is not { } e) return null;
+        var size = Math.Max(e.Max.X - e.Min.X, e.Max.Y - e.Min.Y);
+        bool Map(double f) => size * f <= MapSize && GeoRef.LooksLikeMap([(e.Min.X * f, e.Min.Y * f)]);
+        if (doc.UnitFactor is { } declared && Map(declared)) return declared;
+        return Map(1) ? 1 : null;
+    }
+
     // ------------------------------------------------------------ the summary (before importing)
 
     public static JsonObject Info(IModelView m, DxfDocument doc, string? viewId)
@@ -218,7 +237,8 @@ public static class DxfImport
             // Whether it is in map coordinates (a cadastral plan): its corner far from zero, as metres; and whether the project is tied to the map.
             ["map"] = new JsonObject
             {
-                ["likely"] = ext is { } me && GeoRef.LooksLikeMap([(me.Min.X, me.Min.Y), (me.Max.X, me.Max.Y)]),
+                ["likely"] = MapUnits(doc) != null,
+                ["units"] = DxfUnits.Name(MapUnits(doc) ?? 1),
                 ["georeferenced"] = GeoRef.Georeferenced(m), ["crs"] = Location.Crs(m),
             },
         };
@@ -473,8 +493,8 @@ public static class DxfImport
     {
         var view = Views.Find(ctx.Model, o.ViewId) ?? throw new CommandException("There is no such view.");
         if (view.Str("kind") == "3d") throw new CommandException("A DXF is imported into a plan, a section or an elevation.");
-        // In map coordinates a drawing is in metres unless told (a cadastral plan's kilometres would read as millimetres).
-        var (factor, guessed) = o.UnitFactor is { } uf ? (uf, false) : o.Map ? (1, false) : Units(doc);
+        // In map coordinates a drawing is in its own unit when that is a map's, else in metres (a cadastral plan's kilometres would read as millimetres).
+        var (factor, guessed) = o.UnitFactor is { } uf ? (uf, false) : o.Map ? (MapUnits(doc) ?? 1, false) : Units(doc);
         var flip = !o.Map && (o.Flip ?? FlipFor(view));
         var root = o.Map ? MapFrame(ctx, doc, view, factor)
             : Affine.Scale(flip ? -factor * o.Scale : factor * o.Scale, factor * o.Scale).Then(Affine.Rotate(o.RotationDeg)).Then(Affine.Translate(o.At));

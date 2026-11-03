@@ -587,6 +587,29 @@ public class DxfImportTests
         var h = F();
         Assert.Throws<CommandException>(() => h.Run("drafting.importDxf", Args(Plan(h), Dxf("0\nLINE\n8\n0\n10\n0\n20\n0\n11\n10\n21\n0", units: 6), a => a["map"] = true)));
     }
+
+    /// <summary>
+    /// A tester's report (03.11.2026): a building plan in millimetres, 17,300 × 69,600 units, is no map: its 8,000 mm bays
+    /// were read as 8 km. Its corner near zero, it is placed by its origin in the file's millimetres; a cadastral plan that
+    /// says millimetres while its coordinates are Stereo 70's metres is still a map, in metres.
+    /// </summary>
+    [Fact]
+    public void A_plan_in_millimetres_far_up_its_sheet_is_not_taken_for_a_map()
+    {
+        var bays = "0\nLINE\n8\n0\n10\n1000\n20\n69600\n11\n9000\n21\n69600\n0\nLINE\n8\n0\n10\n1000\n20\n0\n11\n18300\n21\n0";
+        var f = F();
+        var plan = Plan(f);
+        var info = (JsonObject)f.Session.Query("drafting.dxfInfo", Args(plan, Dxf(bays, units: 4)))!;
+        Assert.False((bool)info["map"]!["likely"]!);
+        Assert.Equal("mm", (string?)info["units"]!["name"]);
+        // Even asked to place it by the map, its own millimetres hold: it is refused as no map's, not made kilometres.
+        Assert.Throws<CommandException>(() => f.Run("drafting.importDxf", Args(plan, Dxf(bays, units: 4), a => a["map"] = true)));
+        // A cadastral plan saying millimetres with Stereo 70 coordinates in metres: a map, in metres.
+        var cadastre = "0\nLINE\n8\nCADASTRU\n10\n587010\n20\n326020\n11\n587030\n21\n326020";
+        var info2 = (JsonObject)f.Session.Query("drafting.dxfInfo", Args(plan, Dxf(cadastre, units: 4)))!;
+        Assert.True((bool)info2["map"]!["likely"]!);
+        Assert.Equal("m", (string?)info2["map"]!["units"]);
+    }
 }
 
 /// <summary>A real DXF brought into a plan, its summary and the plan as SVG, for the eye (LAPIN_DXF_SAMPLE=/path/file.dxf and LAPIN_DXF_SVG_DIR).</summary>

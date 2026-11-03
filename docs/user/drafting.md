@@ -26,6 +26,10 @@ Every tool shows its letters in its tooltip; you can change them in **View → K
 | Measure | <kbd>ME</kbd> | Hatch, text | <kbd>H</kbd>, <kbd>T</kbd> |
 | Fit everything | <kbd>ZE</kbd> | Erase | <kbd>E</kbd> |
 
+## Measuring
+
+**Measure** (<kbd>ME</kbd>, the second quick tool, or **MEASURE** or **DIST** on the command line) measures without drawing anything: click points in a plan, a section or an elevation, snapping as you go, and press <kbd>Enter</kbd>. While you click, the live input shows each leg's length and angle; at the end the notice gives the total length, each leg (for one leg, its Δx, Δy and angle) and, from three points on, the area they enclose.
+
 ## Snaps and helpers
 
 Lapin snaps to the ends, middles and intersections of what is drawn, and to the grid. <kbd>F3</kbd> turns snapping on or off, <kbd>F8</kbd> ortho and <kbd>F10</kbd> polar tracking. Their state shows at the bottom right of the view.
