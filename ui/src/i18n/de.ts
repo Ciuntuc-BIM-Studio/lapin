@@ -311,6 +311,7 @@ export const DE: Record<string, string> = {
   'Also the values no room has yet': 'Auch die Werte, die noch kein Raum hat', 'Colour legend: the view has no colour scheme': 'Farblegende: die Ansicht hat kein Farbschema',
   'Rooms': 'Räume', 'Room by outline': 'Raum nach Umriss', 'Update rooms': 'Räume aktualisieren', 'Room colours': 'Raumfarben',
   'Room colours…': 'Raumfarben…', 'Colour legend': 'Farblegende', 'Scheme': 'Schema', 'New': 'Neu',
+  'Room tag': 'Raumstempel', 'Room tag…': 'Raumstempel…', 'Text…': 'Text…', 'Add a line': 'Zeile hinzufügen', 'As at first': 'Wie anfangs', 'Net floor area': 'Netto-Bodenfläche', 'Empty: as its function': 'Leer: wie die Nutzung', 'What the rooms\' stamps show in plan': 'Was die Raumstempel im Grundriss zeigen', 'What each room\'s stamp shows in plan, line by line. The first line is written in bold.': 'Was der Stempel jedes Raums im Grundriss zeigt, Zeile für Zeile. Die erste Zeile wird fett geschrieben.', 'Text; {field} reads a field: {number}, {area}…': 'Text; {Feld} liest ein Feld: {number}, {area}…', 'A room keeps a number.': 'Ein Raum behält seine Nummer.',
   'Duplicate': 'Duplizieren', 'Colour by': 'Einfärben nach', 'This plan shows': 'Dieser Grundriss zeigt', 'no room colours': 'keine Raumfarben',
   'Show this scheme': 'Dieses Schema anzeigen', 'Open a plan to show room colours in it.': 'Öffnen Sie einen Grundriss, um darin Raumfarben anzuzeigen.', 'Value': 'Wert', 'Ink': 'Tinte',
   'Looks': 'Darstellung', 'Fill missing colours': 'Fehlende Farben ergänzen', 'Place a legend': 'Legende platzieren', 'Function': 'Nutzung',
@@ -1014,4 +1015,6 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^The table has no column „(.+)”\.$/, (m) => `Die Tabelle hat keine Spalte „${m[1]}“.`],
   [/^A chart is one of: (.+)\.$/, (m) => `Ein Diagramm ist eines von: ${m[1]}.`],
   [/^A chart adds up by one of: (.+)\.$/, (m) => `Ein Diagramm summiert nach einem von: ${m[1]}.`],
+  [/^„(.+)” is not a height in metres\.$/, (m) => `„${m[1]}“ ist keine Höhe in Metern.`],
+  [/^A room has no field „(.+)” to set\.$/, (m) => `Ein Raum hat kein Feld „${m[1]}“.`],
 ];

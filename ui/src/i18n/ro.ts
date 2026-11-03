@@ -321,6 +321,7 @@ export const RO: Record<string, string> = {
   'Also the values no room has yet': 'Și valorile pe care nu le are încă nicio încăpere', 'Colour legend: the view has no colour scheme': 'Legenda culorilor: vederea nu are o schemă de culori',
   'Rooms': 'Încăperi', 'Room by outline': 'Încăpere după contur', 'Update rooms': 'Actualizează încăperile', 'Room colours': 'Culorile încăperilor',
   'Room colours…': 'Culorile încăperilor…', 'Colour legend': 'Legenda culorilor', 'Scheme': 'Schemă', 'New': 'Nou',
+  'Room tag': 'Eticheta încăperii', 'Room tag…': 'Eticheta încăperii…', 'Text…': 'Text…', 'Add a line': 'Adaugă un rând', 'As at first': 'Ca la început', 'Net floor area': 'Aria netă a pardoselii', 'Empty: as its function': 'Gol: ca funcțiunea', 'What the rooms\' stamps show in plan': 'Ce arată etichetele încăperilor în plan', 'What each room\'s stamp shows in plan, line by line. The first line is written in bold.': 'Ce arată eticheta fiecărei încăperi în plan, rând cu rând. Primul rând se scrie îngroșat.', 'Text; {field} reads a field: {number}, {area}…': 'Text; {câmp} citește un câmp: {number}, {area}…', 'A room keeps a number.': 'O încăpere își păstrează numărul.',
   'Duplicate': 'Duplică', 'Colour by': 'Colorează după', 'This plan shows': 'Planul acesta arată', 'no room colours': 'fără culori de încăperi',
   'Show this scheme': 'Arată schema aceasta', 'Open a plan to show room colours in it.': 'Deschide un plan ca să arăți culorile încăperilor în el.', 'Value': 'Valoare', 'Ink': 'Cerneală',
   'Looks': 'Aspect', 'Fill missing colours': 'Completează culorile lipsă', 'Place a legend': 'Plasează o legendă', 'Function': 'Funcțiune',
@@ -1009,4 +1010,6 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^The table has no column „(.+)”\.$/, (m) => `Tabelul nu are coloana „${m[1]}”.`],
   [/^A chart is one of: (.+)\.$/, (m) => `Un grafic e unul dintre: ${m[1]}.`],
   [/^A chart adds up by one of: (.+)\.$/, (m) => `Un grafic adună după unul dintre: ${m[1]}.`],
+  [/^„(.+)” is not a height in metres\.$/, (m) => `„${m[1]}” nu e o înălțime în metri.`],
+  [/^A room has no field „(.+)” to set\.$/, (m) => `O încăpere nu are câmpul „${m[1]}”.`],
 ];

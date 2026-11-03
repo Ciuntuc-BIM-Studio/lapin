@@ -30,7 +30,7 @@ Every schedule can be filled by hand, as a spreadsheet would be:
 
 - **Row** adds a row of your own. In a joinery schedule it has a label, and you type its value for each type (Supplier, Delivery date…). In any other schedule it is a whole row, typed cell by cell (a terrace not modelled, a provision); it sits above the totals line.
 - **Column** adds a column of your own. In a joinery schedule it is a card with no type behind it, every value typed (a garage door ordered apart). In any other schedule it is a column after the model's (Floor finish, Notes…).
-- **Any cell** of the table under the drawing can be typed over. A value typed over the model's is marked; **↺** gives the model's value back. What you type stays with its row: a room's notes follow the room when the list is sorted or the room is renamed.
+- **Any cell** of the table under the drawing can be typed over. A value typed over the model's is marked; **↺** gives the model's value back. What you type stays with its row: a room's notes follow the room when the list is sorted or the room is renamed. In a **Rooms** schedule, a number, name, function, department, floor finish or height typed in a room's row goes into the room itself, as if typed in its properties; the plan's stamp and every other schedule follow.
 - **×** beside a row or a column of your own removes it, with what was typed in it.
 - The arrows in a table's header **sort** its rows by that column: once for rising, again for falling, a third time for the model's order. The totals line stays last.
 

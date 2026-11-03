@@ -30,7 +30,7 @@ Orice extras poate fi completat de mână, ca un tabel de calcul:
 
 - **Rând** adaugă un rând al tău. Într-un extras de tâmplărie are o etichetă, și îi scrii valoarea pentru fiecare tip (Furnizor, Data livrării…). În orice alt extras e un rând întreg, scris celulă cu celulă (o terasă nemodelată, o rezervă); stă deasupra rândului de totaluri.
 - **Coloană** adaugă o coloană a ta. Într-un extras de tâmplărie e o fișă fără niciun tip în spate, cu toate valorile scrise (o ușă de garaj comandată separat). În orice alt extras e o coloană după cele ale modelului (Finisajul pardoselii, Observații…).
-- **Orice celulă** din tabelul de sub desen poate fi scrisă peste. O valoare scrisă peste cea a modelului e marcată; **↺** aduce înapoi valoarea modelului. Ce scrii rămâne la rândul lui: observațiile unei încăperi o urmează când lista e sortată sau încăperea e redenumită.
+- **Orice celulă** din tabelul de sub desen poate fi scrisă peste. O valoare scrisă peste cea a modelului e marcată; **↺** aduce înapoi valoarea modelului. Ce scrii rămâne la rândul lui: observațiile unei încăperi o urmează când lista e sortată sau încăperea e redenumită. Într-un tabel **Rooms**, un număr, nume, funcțiune, departament, finisaj al pardoselii sau o înălțime scrise pe rândul unei încăperi intră în încăperea însăși, ca și cum ar fi scrise în proprietățile ei; eticheta din plan și celelalte tabele le urmează.
 - **×** de lângă un rând sau o coloană a ta o scoate, cu tot ce era scris în ea.
 - Săgețile din capul unui tabel îi **sortează** rândurile după acea coloană: o dată crescător, încă o dată descrescător, a treia oară în ordinea modelului. Rândul de totaluri rămâne ultimul.
 

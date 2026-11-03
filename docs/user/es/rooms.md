@@ -18,7 +18,7 @@ Para un espacio sin muros alrededor, como una terraza o un extremo de una zona d
 
 Seleccione una habitación haciendo clic en su sello o en cualquier punto de su interior. En el panel de propiedades:
 
-- **Nombre** y **Número.** Las habitaciones nuevas se numeran por nivel: 101, 102… en la planta baja.
+- **Nombre** y **Número.** Las habitaciones nuevas se numeran por nivel: 101, 102… en la planta baja. El nombre de una habitación es el de su función hasta que le das uno propio; vaciado, vuelve a la función.
 - **Uso**, **Departamento** y **Acabado del suelo.** Escriba lo que quiera o elija un valor que ya tengan otras habitaciones.
 - **Altura.** Vacía significa la altura del nivel.
 - **Color propio** y **Sombreado propio** sustituyen el esquema de colores para esta habitación.
@@ -26,6 +26,12 @@ Seleccione una habitación haciendo clic en su sello o en cualquier punto de su 
 Las cantidades de debajo muestran la superficie neta de la habitación (sin los pilares), su perímetro y su volumen. Arrastre el pinzamiento del sello para desplazar el sello.
 
 ![Las propiedades de una habitación](shots/room-properties.webp)
+
+## Etiqueta de habitación
+
+**Arquitectura → Etiqueta de habitación** (o **Etiqueta de habitación…** en las propiedades de una habitación) elige lo que muestra la etiqueta de cada habitación en las plantas, línea a línea: el nombre, el número, la función, el departamento, la superficie, la superficie bruta, el perímetro, la altura, el volumen o el acabado del suelo, o un texto propio. La primera línea va en negrita. **Normas de dibujo → Etiquetas** muestra la misma etiqueta como texto: `{name}|{number}|{area}`.
+
+![El diálogo Etiqueta de habitación](shots/room-tag.webp)
 
 ## Colores de habitación
 

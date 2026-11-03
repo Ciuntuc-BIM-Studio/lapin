@@ -303,4 +303,6 @@ public interface IScheduleSource
     string Kind { get; }
     string Label { get; }
     ScheduleGrid Grid(IQueryContext query);
+    /// <summary>A value typed in a row's cell written into what the row lists (<paramref name="key"/>, from the grid's keys) under <paramref name="column"/>; false when that column is not the model's to write (the value is then kept on the schedule).</summary>
+    bool Write(ICommandContext ctx, string key, string column, string? text) => false;
 }

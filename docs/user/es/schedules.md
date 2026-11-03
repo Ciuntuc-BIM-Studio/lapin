@@ -30,7 +30,7 @@ Cualquier tabla se puede completar a mano, como una hoja de cálculo:
 
 - **Fila** añade una fila propia. En una tabla de carpintería tiene una etiqueta, y usted escribe su valor para cada tipo (Proveedor, Fecha de entrega…). En cualquier otra tabla es una fila entera, escrita celda a celda (una terraza no modelada, una partida); se sitúa sobre la línea de totales.
 - **Columna** añade una columna propia. En una tabla de carpintería es una ficha sin tipo detrás, con todos los valores escritos (una puerta de garaje pedida aparte). En cualquier otra tabla es una columna después de las del modelo (Acabado del suelo, Notas…).
-- **Cualquier celda** de la tabla bajo el dibujo se puede sobrescribir. Un valor escrito sobre el del modelo queda marcado; **↺** devuelve el valor del modelo. Lo que escribe se queda con su fila: las notas de una habitación la siguen cuando la lista se ordena o la habitación se renombra.
+- **Cualquier celda** de la tabla bajo el dibujo se puede sobrescribir. Un valor escrito sobre el del modelo queda marcado; **↺** devuelve el valor del modelo. Lo que escribe se queda con su fila: las notas de una habitación la siguen cuando la lista se ordena o la habitación se renombra. En una tabla **Rooms**, un número, nombre, función, departamento, acabado del suelo o altura escritos en la fila de una habitación van a la habitación misma, como si se escribieran en sus propiedades; la etiqueta de la planta y las demás tablas los siguen.
 - **×** junto a una fila o una columna propia la quita, con lo que tenía escrito.
 - Las flechas de la cabecera de una tabla **ordenan** sus filas por esa columna: una vez de forma ascendente, otra vez descendente, una tercera vez en el orden del modelo. La línea de totales queda la última.
 

@@ -30,7 +30,7 @@ Ogni abaco si può completare a mano, come un foglio di calcolo:
 
 - **Riga** aggiunge una riga tua. In un abaco dei serramenti ha un’etichetta, e ne scrivi il valore per ogni tipo (Fornitore, Data di consegna…). In qualsiasi altro abaco è una riga intera, scritta cella per cella (una terrazza non modellata, un accantonamento); sta sopra la riga dei totali.
 - **Colonna** aggiunge una colonna tua. In un abaco dei serramenti è una scheda senza alcun tipo dietro, con ogni valore scritto (una porta da garage ordinata a parte). In qualsiasi altro abaco è una colonna dopo quelle del modello (Finitura del pavimento, Note…).
-- **Qualsiasi cella** della tabella sotto il disegno si può sovrascrivere. Un valore scritto sopra quello del modello è segnato; **↺** riporta il valore del modello. Ciò che scrivi resta con la sua riga: le note di un locale lo seguono quando l’elenco viene ordinato o il locale rinominato.
+- **Qualsiasi cella** della tabella sotto il disegno si può sovrascrivere. Un valore scritto sopra quello del modello è segnato; **↺** riporta il valore del modello. Ciò che scrivi resta con la sua riga: le note di un locale lo seguono quando l’elenco viene ordinato o il locale rinominato. In un abaco **Rooms**, un numero, nome, funzione, reparto, finitura del pavimento o altezza scritti nella riga di un locale vanno nel locale stesso, come scritti nelle sue proprietà; l’etichetta in pianta e ogni altro abaco seguono.
 - **×** accanto a una riga o a una colonna tua la toglie, con ciò che vi era scritto.
 - Le frecce nell’intestazione di una tabella ne **ordinano** le righe per quella colonna: una volta in ordine crescente, di nuovo decrescente, una terza volta nell’ordine del modello. La riga dei totali resta l’ultima.
 

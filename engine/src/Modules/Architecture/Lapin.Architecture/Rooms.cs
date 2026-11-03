@@ -232,6 +232,53 @@ public static class Rooms
         return room;
     }
 
+    /// <summary>The name a room has while no one has named it: its function, else "Room".</summary>
+    public static string DefaultName(string? function) => string.IsNullOrWhiteSpace(function) ? "Room" : function.Trim();
+
+    /// <summary>Whether the room's name is still the one it was given (its function's, or "Room"): it then follows its function.</summary>
+    public static bool Unnamed(Entity room, string? function) =>
+        room.Name == "Room" || string.Equals(room.Name, DefaultName(function), StringComparison.Ordinal);
+
+    /// <summary>The fields a room's schedule writes back into it, by its column: number, name, function, department, height (metres; empty: the storey's).</summary>
+    public static readonly IReadOnlyDictionary<string, string> Written = new Dictionary<string, string>
+    {
+        ["Number"] = "number", ["Name"] = "name", ["Function"] = "function", ["Department"] = "department", ["Floor finish"] = "finishFloor", ["Height (m)"] = "height",
+    };
+
+    /// <summary>
+    /// One of a room's fields set (null or empty clears it): its name (empty:
+    /// as its function), its number, function, department, floor finish or
+    /// height. A room no one has named takes its new function's name.
+    /// </summary>
+    public static void Set(ICommandContext ctx, Entity room, string field, string? text)
+    {
+        var value = text?.Trim() ?? "";
+        if (field == "name") { ctx.Replace(room.With(name: value.Length > 0 ? value : DefaultName(room.Str("function")))); return; }
+        var attrs = room.CloneAttrs();
+        if (field == "height")
+        {
+            if (value.Length == 0) attrs.Remove("height");
+            else if (double.TryParse(value.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var h) && h > 0) attrs["height"] = h;
+            else throw new CommandException($"„{value}” is not a height in metres.");
+        }
+        else if (field is "number" or "function" or "department" or "finishFloor")
+        {
+            if (value.Length == 0) { if (field == "number") throw new CommandException("A room keeps a number."); attrs.Remove(field); }
+            else attrs[field] = value;
+        }
+        else throw new CommandException($"A room has no field „{field}” to set.");
+        ctx.Replace(room.With(attrs: attrs));
+        if (field == "function") Renamed(ctx, room, ctx.Model.Get(room.Id)!);
+    }
+
+    /// <summary>A room whose function changed and that no one has named takes its new function's name.</summary>
+    public static void Renamed(ICommandContext ctx, Entity before, Entity after)
+    {
+        var (was, now) = (before.Str("function"), after.Str("function"));
+        if (was == now || !Unnamed(before, was)) return;
+        if (DefaultName(now) is var name && name != after.Name) ctx.Replace(after.With(name: name));
+    }
+
     /// <summary>
     /// A room's outline or stamp changed: a drawn outline (it keeps it), a new
     /// point to find its outline round, the stamp moved (or put back with
@@ -401,4 +448,28 @@ public sealed class RoomSchedule : IScheduleSource
         if (rows.Count > 0) { rows.Add(["Total", "", "", "", "", N(total), "", "", ""]); keys.Add(null); }
         return new ScheduleGrid(Label, ["Storey", "Number", "Name", "Function", "Department", "Area (m²)", "Perimeter (m)", "Height (m)", "Volume (m³)"], rows, keys);
     }
+
+    /// <summary>A value typed in the schedule goes into the room: its number, name, function, department or height.</summary>
+    public bool Write(ICommandContext ctx, string key, string column, string? text)
+    {
+        if (!Rooms.Written.TryGetValue(column, out var field) || ctx.Model.Get(key) is not { Class: Rooms.Class } room) return false;
+        Rooms.Set(ctx, room, field, text);
+        return true;
+    }
+}
+
+/// <summary>A room's function changed in its properties: no one having named it, it takes the function's name.</summary>
+sealed class RoomUpdate : IElementUpdate
+{
+    public void Updated(ICommandContext ctx, Entity before, Entity after)
+    {
+        if (after.Class == Rooms.Class) Rooms.Renamed(ctx, before, after);
+    }
+}
+
+/// <summary>Rooms kept as "Room" although they have a function (before rooms took their function's name): named after it.</summary>
+public sealed class RoomNameUpgrade : IProjectUpgrade
+{
+    public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgrade(IReadOnlyList<Entity> entities, IReadOnlyList<Relation> relations) =>
+        (entities.Select(e => e.Class == Rooms.Class && e.Name == "Room" && !string.IsNullOrWhiteSpace(e.Str("function")) ? e.With(name: Rooms.DefaultName(e.Str("function"))) : e).ToList(), relations);
 }

@@ -11,7 +11,7 @@ import type { NodeDto } from '../engine/protocol';
 interface Quantity { name: string; value: number; kind: string; label?: string | null; unit: string }
 interface QuantitySet { name: string; quantities: Quantity[]; part?: string | null; partName?: string | null; material?: string | null }
 
-const SHOWN = new Set(['Length', 'Height', 'Width', 'NetSideArea', 'NetVolume', 'BlockCount', 'MortarVolume', 'ReinforcementWeight', 'CrossSectionArea']);
+const SHOWN = new Set(['Length', 'Height', 'Width', 'NetSideArea', 'NetVolume', 'BlockCount', 'MortarVolume', 'ReinforcementWeight', 'CrossSectionArea', 'NetFloorArea', 'GrossPerimeter']);
 
 const format = (q: Quantity) => q.kind === 'COUNT' ? `${Math.round(q.value)} ${q.unit}` : q.kind === 'LENGTH' ? `${Math.round(q.value * 1000)} mm` : `${q.value.toFixed(q.kind === 'WEIGHT' ? 1 : 3)} ${q.unit}`;
 

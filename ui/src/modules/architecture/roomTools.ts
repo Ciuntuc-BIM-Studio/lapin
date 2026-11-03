@@ -1,6 +1,6 @@
 /** The room tools: a room by a click inside walls, or by its outline; rooms brought up to date; the room colours; a colour legend. */
 
-import { Palette, RefreshCw, Shapes, SquareDashed } from 'lucide-react';
+import { Palette, RefreshCw, Shapes, SquareDashed, Tag } from 'lucide-react';
 import { RoomIcon } from '../../icons';
 import type { ToolDef } from '../../platform/module';
 import { notify, useUi } from '../../app/store';
@@ -55,6 +55,9 @@ export const updateRooms: ToolDef = {
 
 /** The quick configurator of room colours and hatches. */
 export const roomColors: ToolDef = { id: 'architecture.roomColors', label: 'Room colours', icon: Palette, run: () => useUi.setState({ dialog: 'roomColors' }) };
+
+/** Room tag…: what the rooms' stamps show, line by line. */
+export const roomTag: ToolDef = { id: 'architecture.roomTag', label: 'Room tag', icon: Tag, run: () => useUi.setState({ dialog: 'roomTag' }) };
 
 /** A colour legend: click where it goes on the plan; it lists the colours the plan's rooms use. */
 export const colorLegend: ToolDef = {

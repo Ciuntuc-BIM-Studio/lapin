@@ -311,6 +311,7 @@ export const DA: Record<string, string> = {
   'Also the values no room has yet': 'Også de værdier, intet rum har endnu', 'Colour legend: the view has no colour scheme': 'Farveforklaring: visningen har intet farveskema',
   'Rooms': 'Rum', 'Room by outline': 'Rum efter omrids', 'Update rooms': 'Opdatér rum', 'Room colours': 'Rumfarver',
   'Room colours…': 'Rumfarver…', 'Colour legend': 'Farveforklaring', 'Scheme': 'Farveskema', 'New': 'Ny',
+  'Room tag': 'Rumstempel', 'Room tag…': 'Rumstempel…', 'Text…': 'Tekst…', 'Add a line': 'Tilføj en linje', 'As at first': 'Som fra start', 'Net floor area': 'Netto gulvareal', 'Empty: as its function': 'Tom: som funktionen', 'What the rooms\' stamps show in plan': 'Hvad rumstemplerne viser i plan', 'What each room\'s stamp shows in plan, line by line. The first line is written in bold.': 'Hvad hvert rums stempel viser i plan, linje for linje. Første linje skrives med fed.', 'Text; {field} reads a field: {number}, {area}…': 'Tekst; {felt} læser et felt: {number}, {area}…', 'A room keeps a number.': 'Et rum beholder sit nummer.',
   'Duplicate': 'Duplikér', 'Colour by': 'Farvelæg efter', 'This plan shows': 'Denne plan viser', 'no room colours': 'ingen rumfarver',
   'Show this scheme': 'Vis dette farveskema', 'Open a plan to show room colours in it.': 'Åbn en plan for at vise rumfarver i den.', 'Value': 'Værdi', 'Ink': 'Blæk',
   'Looks': 'Udseende', 'Fill missing colours': 'Udfyld manglende farver', 'Place a legend': 'Placér en farveforklaring', 'Function': 'Funktion',
@@ -1009,4 +1010,6 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^The table has no column „(.+)”\.$/, (m) => `Tabellen har ingen kolonne „${m[1]}”.`],
   [/^A chart is one of: (.+)\.$/, (m) => `Et diagram er et af: ${m[1]}.`],
   [/^A chart adds up by one of: (.+)\.$/, (m) => `Et diagram lægger sammen efter et af: ${m[1]}.`],
+  [/^„(.+)” is not a height in metres\.$/, (m) => `„${m[1]}” er ikke en højde i meter.`],
+  [/^A room has no field „(.+)” to set\.$/, (m) => `Et rum har intet felt „${m[1]}”.`],
 ];

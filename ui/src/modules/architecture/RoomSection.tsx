@@ -1,12 +1,12 @@
 /**
- * A room in the inspector: its number, function (the values other rooms have
+ * A room in the inspector: its name (its function's until named), number, function (the values other rooms have
  * offered first), department, floor finish and height; its own colour and
  * hatch, over its scheme's; where its outline comes from. Its areas are in
  * the quantities below.
  */
 
 import { useEffect, useState } from 'react';
-import { Palette, RefreshCw, SquareDashed, X } from 'lucide-react';
+import { Palette, RefreshCw, SquareDashed, Tag, X } from 'lucide-react';
 import { RoomIcon } from '../../icons';
 import { activate } from '../../platform/modules';
 import type { ToolDef } from '../../platform/module';
@@ -47,6 +47,8 @@ export function RoomSection({ node }: { node: NodeDto }) {
   return (
     <div className="room-section">
       <dl className="fields">
+        <dt title="Empty: as its function">Name</dt>
+        <dd><Cell value={node.name} onCommit={(v) => void execute('element.rename', { id: node.id, name: v.trim() || str('function').trim() || 'Room' })} /></dd>
         <dt>Number</dt><dd><Cell value={str('number')} onCommit={(v) => update('number', v.trim())} /></dd>
         <dt title="What the room is used for: a colour scheme by function colours it">Function</dt>
         <dd><Suggest id={`fn-${node.id}`} value={str('function')} options={known('function', s?.functions ?? [])} onCommit={(v) => update('function', v.trim())} /></dd>
@@ -77,6 +79,7 @@ export function RoomSection({ node }: { node: NodeDto }) {
       </dl>
       <div className="row">
         <button type="button" className="btn small" onClick={() => useUi.setState({ dialog: 'roomColors' })}><Palette size={12} />Room colours…</button>
+        <button type="button" className="btn small" title="What the rooms' stamps show in plan" onClick={() => useUi.setState({ dialog: 'roomTag' })}><Tag size={12} />Room tag…</button>
         {none && <button type="button" className="btn small" title="Then click inside its walls on its storey's plan" onClick={() => give(room)}><RoomIcon size={12} />Find by a click</button>}
         {none && <button type="button" className="btn small" title="Then draw its corners on its storey's plan" onClick={() => give(roomOutline)}><SquareDashed size={12} />Draw outline</button>}
         {Boolean(node.props.auto) && <button type="button" className="btn small" title="Store the outline the room finds now: what it keeps should its walls go" onClick={() => void execute('architecture.updateRooms', { ids: [node.id] })}><RefreshCw size={12} />Update outline</button>}

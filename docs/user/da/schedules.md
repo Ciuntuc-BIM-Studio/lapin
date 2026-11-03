@@ -30,7 +30,7 @@ Ethvert skema kan udfyldes i hånden, som et regneark:
 
 - **Række** tilføjer din egen række. I et snedkerskema har den en betegnelse, og du skriver dens værdi for hver type (Leverandør, Leveringsdato…). I ethvert andet skema er den en hel række, skrevet celle for celle (en terrasse, der ikke er modelleret, en reserve); den står over totallinjen.
 - **Kolonne** tilføjer din egen kolonne. I et snedkerskema er den et kort uden nogen type bag, hver værdi skrevet (en garageport bestilt for sig). I ethvert andet skema er den en kolonne efter modellens (Gulvbelægning, Noter…).
-- **Enhver celle** i tabellen under tegningen kan overskrives. En værdi skrevet oven i modellens er markeret; **↺** giver modellens værdi tilbage. Det, du skriver, bliver ved sin række: et rums noter følger rummet, når listen sorteres eller rummet omdøbes.
+- **Enhver celle** i tabellen under tegningen kan overskrives. En værdi skrevet oven i modellens er markeret; **↺** giver modellens værdi tilbage. Det, du skriver, bliver ved sin række: et rums noter følger rummet, når listen sorteres eller rummet omdøbes. I en **Rooms**-liste går et nummer, navn, en funktion, afdeling, gulvbelægning eller højde skrevet i et rums række ind i selve rummet, som var det skrevet i dets egenskaber; planens stempel og alle andre lister følger med.
 - **×** ved siden af din egen række eller kolonne fjerner den, med det, der var skrevet i den.
 - Pilene i en tabels overskrift **sorterer** rækkerne efter den kolonne: én gang stigende, igen faldende, tredje gang i modellens rækkefølge. Totallinjen bliver sidst.
 

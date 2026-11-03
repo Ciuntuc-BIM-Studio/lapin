@@ -18,7 +18,7 @@ Pour un espace qui n’est pas entouré de murs, comme une terrasse ou l’extr�
 
 Sélectionnez une pièce en cliquant son étiquette ou n’importe où à l’intérieur. Dans le panneau des propriétés :
 
-- **Nom** et **Numéro.** Les nouvelles pièces sont numérotées par niveau : 101, 102… au rez-de-chaussée.
+- **Nom** et **Numéro.** Les nouvelles pièces sont numérotées par niveau : 101, 102… au rez-de-chaussée. Le nom d’une pièce est celui de sa fonction tant que vous ne lui en donnez pas un ; vidé, il revient à la fonction.
 - **Fonction**, **Service** et **Revêtement de sol.** Saisissez ce que vous voulez, ou choisissez une valeur que d’autres pièces ont déjà.
 - **Hauteur.** Vide signifie la hauteur du niveau.
 - **Couleur propre** et **Hachure propre** remplacent le jeu de couleurs pour cette seule pièce.
@@ -26,6 +26,12 @@ Sélectionnez une pièce en cliquant son étiquette ou n’importe où à l’in
 Les quantités en dessous indiquent la surface nette de la pièce (sans les poteaux), son périmètre et son volume. Faites glisser la poignée de l’étiquette pour déplacer l’étiquette.
 
 ![Les propriétés d’une pièce](shots/room-properties.webp)
+
+## Étiquette de pièce
+
+**Architecture → Étiquette de pièce** (ou **Étiquette de pièce…** dans les propriétés d’une pièce) choisit ce que l’étiquette de chaque pièce montre sur les plans, ligne par ligne : le nom, le numéro, la fonction, le département, la surface, la surface brute, le périmètre, la hauteur, le volume ou le revêtement de sol, ou un texte à vous. La première ligne est en gras. **Normes de dessin → Étiquettes** montre la même étiquette en texte : `{name}|{number}|{area}`.
+
+![La boîte de dialogue Étiquette de pièce](shots/room-tag.webp)
 
 ## Couleurs des pièces
 

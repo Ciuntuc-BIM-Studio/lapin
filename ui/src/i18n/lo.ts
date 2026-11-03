@@ -295,6 +295,7 @@ export const LO: Record<string, string> = {
   'Also the values no room has yet': 'ລວມທັງຄ່າທີ່ຍັງບໍ່ມີຫ້ອງໃດກຳນົດ', 'Colour legend: the view has no colour scheme': 'ຄຳອະທິບາຍສີ: ມຸມມອງນີ້ບໍ່ມີແຜນຊຸດສີ',
   'Rooms': 'ຫ້ອງ', 'Room by outline': 'ຫ້ອງຕາມເສັ້ນຂອບ', 'Update rooms': 'ອັບເດດຫ້ອງ', 'Room colours': 'ສີຫ້ອງ',
   'Room colours…': 'ສີຫ້ອງ…', 'Colour legend': 'ຄຳອະທິບາຍສີ', 'Scheme': 'ຊຸດສີ', 'New': 'ໃໝ່',
+  'Room tag': 'ປ້າຍຫ້ອງ', 'Room tag…': 'ປ້າຍຫ້ອງ…', 'Text…': 'ຂໍ້ຄວາມ…', 'Add a line': 'ເພີ່ມແຖວ', 'As at first': 'ຄືເດີມ', 'Net floor area': 'ພື້ນທີ່ພື້ນສຸດທິ', 'Empty: as its function': 'ຫວ່າງ: ຕາມໜ້າທີ່', 'What the rooms\' stamps show in plan': 'ສິ່ງທີ່ປ້າຍຫ້ອງສະແດງໃນແຜນຜັງ', 'What each room\'s stamp shows in plan, line by line. The first line is written in bold.': 'ສິ່ງທີ່ປ້າຍຂອງແຕ່ລະຫ້ອງສະແດງໃນແຜນຜັງ, ແຖວຕໍ່ແຖວ. ແຖວທຳອິດຂຽນຕົວໜາ.', 'Text; {field} reads a field: {number}, {area}…': 'ຂໍ້ຄວາມ; {ຊ່ອງ} ອ່ານຊ່ອງຂໍ້ມູນ: {number}, {area}…', 'A room keeps a number.': 'ຫ້ອງຮັກສາເລກຂອງມັນໄວ້.',
   'Duplicate': 'ສຳເນົາຄືນ', 'Colour by': 'ໃສ່ສີຕາມ', 'This plan shows': 'ແຜນຜັງນີ້ສະແດງ', 'no room colours': 'ບໍ່ມີສີຫ້ອງ',
   'Show this scheme': 'ສະແດງຊຸດສີນີ້', 'Open a plan to show room colours in it.': 'ເປີດແຜນຜັງເພື່ອສະແດງສີຫ້ອງໃນນັ້ນ.', 'Value': 'ຄ່າ', 'Ink': 'ນ້ຳມຶກ',
   'Looks': 'ຮູບລັກສະນະ', 'Fill missing colours': 'ຕື່ມສີທີ່ຂາດ', 'Place a legend': 'ວາງຄຳອະທິບາຍສັນຍະລັກ', 'Function': 'ໜ້າທີ່ໃຊ້ງານ',
@@ -1067,4 +1068,6 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^The table has no column „(.+)”\.$/, (m) => `ຕາຕະລາງບໍ່ມີຖັນ „${m[1]}”.`],
   [/^A chart is one of: (.+)\.$/, (m) => `ແຜນພູມເປັນໜຶ່ງໃນ: ${m[1]}.`],
   [/^A chart adds up by one of: (.+)\.$/, (m) => `ແຜນພູມລວມຕາມໜຶ່ງໃນ: ${m[1]}.`],
+  [/^„(.+)” is not a height in metres\.$/, (m) => `„${m[1]}” ບໍ່ແມ່ນຄວາມສູງເປັນແມັດ.`],
+  [/^A room has no field „(.+)” to set\.$/, (m) => `ຫ້ອງບໍ່ມີຊ່ອງ „${m[1]}”.`],
 ];

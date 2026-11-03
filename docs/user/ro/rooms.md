@@ -18,7 +18,7 @@ Pentru un spațiu care nu e închis de pereți peste tot, cum e o terasă sau un
 
 Selectezi o încăpere cu un clic pe eticheta ei sau oriunde în interiorul ei. În panoul de proprietăți:
 
-- **Nume** și **Număr.** Încăperile noi sunt numerotate pe niveluri: 101, 102… la parter.
+- **Nume** și **Număr.** Încăperile noi sunt numerotate pe niveluri: 101, 102… la parter. Numele încăperii e cel al funcțiunii până îi dai unul al tău; golit, revine la funcțiune.
 - **Funcțiune**, **Departament** și **Finisajul pardoselii.** Scrii ce vrei sau alegi o valoare pe care o au deja alte încăperi.
 - **Înălțime.** Gol înseamnă înălțimea nivelului.
 - **Culoare proprie** și **Hașură proprie** înlocuiesc schema de culori doar pentru această încăpere.
@@ -26,6 +26,12 @@ Selectezi o încăpere cu un clic pe eticheta ei sau oriunde în interiorul ei. 
 Cantitățile de dedesubt arată aria netă a încăperii (fără stâlpi), perimetrul și volumul ei. Ca să muți eticheta, trage de punctul de pe ea.
 
 ![Proprietățile unei încăperi](shots/room-properties.webp)
+
+## Eticheta încăperii
+
+**Arhitectură → Eticheta încăperii** (sau **Eticheta încăperii…** în proprietățile unei încăperi) alege ce arată eticheta fiecărei încăperi în planuri, rând cu rând: numele, numărul, funcțiunea, departamentul, aria, aria brută, perimetrul, înălțimea, volumul sau finisajul pardoselii, ori un text al tău. Primul rând e îngroșat. **Standarde de desen → Etichete** arată aceeași etichetă ca text: `{name}|{number}|{area}`.
+
+![Dialogul Eticheta încăperii](shots/room-tag.webp)
 
 ## Culorile încăperilor
 

@@ -501,9 +501,53 @@ public sealed class RoomTests : IDisposable
         Assert.Equal(0.45, g.Model.Get(gallery.Id)!.Num("baseOffset"), 6);
         Assert.Equal(3.45, g.Bounds(gallery.Id).Min.Z, 6);
     }
+
+    [Fact]
+    public void A_room_no_one_has_named_takes_its_functions_name_and_one_named_keeps_its_own()
+    {
+        var (f, _) = Box();
+        var id = Room(f, 2, 2);
+        Assert.Equal("Room", f.Model.Get(id)!.Name);
+        f.Run("element.update", new JsonObject { ["id"] = id, ["attrs"] = new JsonObject { ["function"] = "Kitchen" } });
+        Assert.Equal("Kitchen", f.Model.Get(id)!.Name);
+        f.Run("element.update", new JsonObject { ["id"] = id, ["attrs"] = new JsonObject { ["function"] = "Dining" } });
+        Assert.Equal("Dining", f.Model.Get(id)!.Name);
+        f.Run("element.rename", new JsonObject { ["id"] = id, ["name"] = "Open plan" });
+        f.Run("element.update", new JsonObject { ["id"] = id, ["attrs"] = new JsonObject { ["function"] = "Living" } });
+        Assert.Equal("Open plan", f.Model.Get(id)!.Name);
+        // An old project's room left "Room" with a function is named after it on open.
+        var old = new Entity("r1", Rooms.Class, "Room", new JsonObject { ["function"] = "Storage" });
+        var named = new Entity("r2", Rooms.Class, "Hall", new JsonObject { ["function"] = "Circulation" });
+        var (up, _) = new RoomNameUpgrade().Upgrade([old, named], []);
+        Assert.Equal(["Storage", "Hall"], up.Select(e => e.Name));
+    }
+
+    [Fact]
+    public void A_value_typed_in_the_room_schedule_goes_into_the_room()
+    {
+        var (f, _) = Box();
+        var id = Room(f, 2, 2);
+        var s = (string)f.Run("architecture.createSchedule", new JsonObject { ["kind"] = "rooms" })!["id"]!;
+        void Type(string column, string? text) => f.Run("architecture.scheduleCell", new JsonObject { ["id"] = s, ["entry"] = $"r:{id}#1", ["row"] = $"c:{column}", ["text"] = text });
+        Type("Function", "Bedroom");
+        Type("Department", "Night");
+        Type("Number", "1.04");
+        Type("Height (m)", "2,6");
+        var room = f.Model.Get(id)!;
+        Assert.Equal(("Bedroom", "Bedroom", "Night", "1.04"), (room.Name, room.Str("function"), room.Str("department"), room.Str("number")));
+        Assert.Equal(2.6, room.Num("height"), 9);
+        Type("Name", "Guest room");
+        Type("Name", "");
+        Assert.Equal("Bedroom", f.Model.Get(id)!.Name);
+        // Nothing kept on the schedule: the room says it.
+        Assert.Null(f.Model.Get(s)!.Attrs["cells"]);
+        // A measured column is not the room's to take: kept on the schedule as before.
+        Type("Area (m²)", "20");
+        Assert.NotNull(f.Model.Get(s)!.Attrs["cells"]);
+        Assert.Throws<CommandException>(() => Type("Height (m)", "tall"));
+    }
 }
 
-/// <summary>A real file's spaces, when one is given (LAPIN_IFC_SAMPLE=/path/to/file.ifc): how many came in as rooms, with what, for the eye.</summary>
 public class RoomSampleTests(Xunit.Abstractions.ITestOutputHelper output)
 {
     [Fact]

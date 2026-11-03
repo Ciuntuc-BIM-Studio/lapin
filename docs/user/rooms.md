@@ -18,7 +18,7 @@ For a space without walls all round, such as a terrace or one end of an open-pla
 
 Select a room by clicking its stamp or anywhere inside it. In the properties panel:
 
-- **Name** and **Number.** New rooms are numbered by level: 101, 102… on the ground floor.
+- **Name** and **Number.** New rooms are numbered by level: 101, 102… on the ground floor. A room's name is its function's until you give it one of your own; emptied, it goes back to the function.
 - **Function**, **Department** and **Floor finish.** Type anything, or pick a value other rooms already have.
 - **Height.** Empty means the level's height.
 - **Own colour** and **Own hatch** override the colour scheme for this one room.
@@ -26,6 +26,12 @@ Select a room by clicking its stamp or anywhere inside it. In the properties pan
 The quantities below show the room's net area (without the columns), its perimeter and its volume. Drag the grip on the stamp to move the stamp.
 
 ![A room's properties](shots/room-properties.webp)
+
+## Room tag
+
+**Architecture → Room tag** (or **Room tag…** in a room's properties) sets what every room's stamp shows on plans, line by line: the name, number, function, department, area, gross area, perimeter, height, volume or floor finish, or a text of your own. The first line is bold. **Drafting standards → Tags** shows the same tag as text: `{name}|{number}|{area}`.
+
+![The Room tag dialog](shots/room-tag.webp)
 
 ## Room colours
 

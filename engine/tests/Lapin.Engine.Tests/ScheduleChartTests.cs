@@ -152,7 +152,9 @@ public class ScheduleChartTests
         Assert.Equal("Floor finish", (string)((JsonArray)grid["columns"]!)[^1]!["label"]!);
         Assert.Equal("Tiles", Cells(grid, 0)[^1]);
         Assert.Equal("Day", Cells(grid, 0)[4]);
-        Assert.Contains("c:Department", ((JsonArray)((JsonArray)grid["rows"]!)[0]!["typed"]!).Select(t => (string)t!));
+        // The department is the room's: typed in its row it goes into the room, not over it.
+        Assert.DoesNotContain("c:Department", ((JsonArray)((JsonArray)grid["rows"]!)[0]!["typed"]!).Select(t => (string)t!));
+        Assert.Equal("Day", f.Model.Get(kitchenKey[2..kitchenKey.LastIndexOf('#')])!.Str("department"));
         // The row of its own before the totals line.
         Assert.Equal("Garden shed", Cells(grid, 3)[2]);
         Assert.Equal("Total", Cells(grid, 4)[0]);

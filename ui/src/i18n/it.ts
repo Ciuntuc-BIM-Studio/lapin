@@ -311,6 +311,7 @@ export const IT: Record<string, string> = {
   'Also the values no room has yet': 'Anche i valori che nessun locale ha ancora', 'Colour legend: the view has no colour scheme': 'Legenda colori: la vista non ha uno schema di colori',
   'Rooms': 'Locali', 'Room by outline': 'Locale da contorno', 'Update rooms': 'Aggiorna locali', 'Room colours': 'Colori dei locali',
   'Room colours…': 'Colori dei locali…', 'Colour legend': 'Legenda colori', 'Scheme': 'Schema', 'New': 'Nuovo',
+  'Room tag': 'Etichetta del locale', 'Room tag…': 'Etichetta del locale…', 'Text…': 'Testo…', 'Add a line': 'Aggiungi una riga', 'As at first': 'Come all’inizio', 'Net floor area': 'Superficie netta del pavimento', 'Empty: as its function': 'Vuoto: come la funzione', 'What the rooms\' stamps show in plan': 'Cosa mostrano le etichette dei locali in pianta', 'What each room\'s stamp shows in plan, line by line. The first line is written in bold.': 'Cosa mostra l’etichetta di ogni locale in pianta, riga per riga. La prima riga è in grassetto.', 'Text; {field} reads a field: {number}, {area}…': 'Testo; {campo} legge un campo: {number}, {area}…', 'A room keeps a number.': 'Un locale mantiene il suo numero.',
   'Duplicate': 'Duplica', 'Colour by': 'Colora per', 'This plan shows': 'Questa pianta mostra', 'no room colours': 'nessun colore dei locali',
   'Show this scheme': 'Mostra questo schema', 'Open a plan to show room colours in it.': 'Apri una pianta per mostrarvi i colori dei locali.', 'Value': 'Valore', 'Ink': 'Inchiostro',
   'Looks': 'Aspetto', 'Fill missing colours': 'Completa i colori mancanti', 'Place a legend': 'Posiziona una legenda', 'Function': 'Destinazione d’uso',
@@ -1014,4 +1015,6 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^The table has no column „(.+)”\.$/, (m) => `La tabella non ha la colonna «${m[1]}».`],
   [/^A chart is one of: (.+)\.$/, (m) => `Un grafico è uno tra: ${m[1]}.`],
   [/^A chart adds up by one of: (.+)\.$/, (m) => `Un grafico somma per uno tra: ${m[1]}.`],
+  [/^„(.+)” is not a height in metres\.$/, (m) => `«${m[1]}» non è un’altezza in metri.`],
+  [/^A room has no field „(.+)” to set\.$/, (m) => `Un locale non ha il campo «${m[1]}».`],
 ];

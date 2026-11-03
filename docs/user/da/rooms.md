@@ -18,7 +18,7 @@ Til et område uden vægge hele vejen rundt, som en terrasse eller den ene ende 
 
 Markér et rum ved at klikke på dets stempel eller et vilkårligt sted inde i det. I egenskabspanelet:
 
-- **Navn** og **Nummer.** Nye rum nummereres efter niveau: 101, 102… på stueetagen.
+- **Navn** og **Nummer.** Nye rum nummereres efter niveau: 101, 102… på stueetagen. Et rums navn er dets funktions, indtil du giver det et eget; tømt, går det tilbage til funktionen.
 - **Funktion**, **Afdeling** og **Gulvbelægning.** Skriv hvad som helst, eller vælg en værdi, som andre rum allerede har.
 - **Højde.** Tomt betyder niveauets højde.
 - **Egen farve** og **Egen skravering** tilsidesætter farveskemaet for netop dette rum.
@@ -26,6 +26,12 @@ Markér et rum ved at klikke på dets stempel eller et vilkårligt sted inde i d
 Mængderne nedenfor viser rummets nettoareal (uden søjlerne), dets omkreds og dets volumen. Træk i grebet på stemplet for at flytte stemplet.
 
 ![Et rums egenskaber](shots/room-properties.webp)
+
+## Rumstempel
+
+**Arkitektur → Rumstempel** (eller **Rumstempel…** i et rums egenskaber) vælger, hvad hvert rums stempel viser på planer, linje for linje: navn, nummer, funktion, afdeling, areal, bruttoareal, omkreds, højde, volumen eller gulvbelægning, eller en egen tekst. Første linje er fed. **Tegningsstandarder → Mærker** viser samme stempel som tekst: `{name}|{number}|{area}`.
+
+![Dialogen Rumstempel](shots/room-tag.webp)
 
 ## Rumfarver
 

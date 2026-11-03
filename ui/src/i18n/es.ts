@@ -311,6 +311,7 @@ export const ES: Record<string, string> = {
   'Also the values no room has yet': 'También los valores que aún no tiene ninguna habitación', 'Colour legend: the view has no colour scheme': 'Leyenda de colores: la vista no tiene esquema de colores',
   'Rooms': 'Habitaciones', 'Room by outline': 'Habitación por contorno', 'Update rooms': 'Actualizar habitaciones', 'Room colours': 'Colores de habitación',
   'Room colours…': 'Colores de habitación…', 'Colour legend': 'Leyenda de colores', 'Scheme': 'Esquema', 'New': 'Nuevo',
+  'Room tag': 'Etiqueta de habitación', 'Room tag…': 'Etiqueta de habitación…', 'Text…': 'Texto…', 'Add a line': 'Añadir una línea', 'As at first': 'Como al principio', 'Net floor area': 'Superficie neta de suelo', 'Empty: as its function': 'Vacío: como su función', 'What the rooms\' stamps show in plan': 'Lo que muestran las etiquetas de las habitaciones en planta', 'What each room\'s stamp shows in plan, line by line. The first line is written in bold.': 'Lo que muestra la etiqueta de cada habitación en planta, línea a línea. La primera línea va en negrita.', 'Text; {field} reads a field: {number}, {area}…': 'Texto; {campo} lee un campo: {number}, {area}…', 'A room keeps a number.': 'Una habitación conserva su número.',
   'Duplicate': 'Duplicar', 'Colour by': 'Colorear por', 'This plan shows': 'Esta planta muestra', 'no room colours': 'sin colores de habitación',
   'Show this scheme': 'Mostrar este esquema', 'Open a plan to show room colours in it.': 'Abra una planta para mostrar en ella los colores de habitación.', 'Value': 'Valor', 'Ink': 'Tinta',
   'Looks': 'Aspecto', 'Fill missing colours': 'Rellenar los colores que faltan', 'Place a legend': 'Colocar una leyenda', 'Function': 'Uso',
@@ -1015,4 +1016,6 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^The table has no column „(.+)”\.$/, (m) => `La tabla no tiene la columna «${m[1]}».`],
   [/^A chart is one of: (.+)\.$/, (m) => `Un gráfico es uno de: ${m[1]}.`],
   [/^A chart adds up by one of: (.+)\.$/, (m) => `Un gráfico suma por uno de: ${m[1]}.`],
+  [/^„(.+)” is not a height in metres\.$/, (m) => `«${m[1]}» no es una altura en metros.`],
+  [/^A room has no field „(.+)” to set\.$/, (m) => `Una habitación no tiene el campo «${m[1]}».`],
 ];

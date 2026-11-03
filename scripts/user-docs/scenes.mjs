@@ -728,6 +728,13 @@ export const scenes = [
       await t.tool('architecture.roomColors');
       t.expect(await t.page.locator('[aria-label="Room colours"]').count() > 0, 'the Room colours dialog opens');
       await t.shot('room-colors', { of: '.dialog', pad: 0 });
+      // Room tag… (report #62): the stamp's lines, here with the perimeter added.
+      await t.ui({ dialog: null });
+      await t.cmd('standards.set', { kind: 'tag', entry: { id: 'room', template: '{name}|{number}|{area}|{perimeter}' } });
+      await t.tool('architecture.roomTag');
+      t.expect(await t.page.locator('[aria-label="Room tag"]').count() > 0, 'the Room tag dialog opens');
+      await t.wait(500);
+      await t.shot('room-tag', { of: '.dialog', pad: 0 });
       // Nothing selected: every room of the plan.
       await t.ui({ dialog: null, selected: [] });
       // Annotate → Room dimensions (decision 249): a string inside each room along each side, the doors' and windows' jambs on it.

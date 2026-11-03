@@ -18,7 +18,7 @@ Für einen Bereich ohne umlaufende Wände, etwa eine Terrasse oder ein Ende eine
 
 Wählen Sie einen Raum aus, indem Sie auf seinen Raumstempel oder irgendwo in ihn klicken. Im Eigenschaftenbereich:
 
-- **Name** und **Nummer.** Neue Räume werden nach Ebene nummeriert: 101, 102… im Erdgeschoss.
+- **Name** und **Nummer.** Neue Räume werden nach Ebene nummeriert: 101, 102… im Erdgeschoss. Der Name eines Raums ist der seiner Nutzung, bis Sie ihm einen eigenen geben; geleert, kehrt er zur Nutzung zurück.
 - **Nutzung**, **Abteilung** und **Bodenbelag.** Geben Sie beliebigen Text ein, oder wählen Sie einen Wert, den andere Räume bereits haben.
 - **Höhe.** Leer bedeutet die Höhe der Ebene.
 - **Eigene Farbe** und **Eigene Schraffur** setzen für diesen einen Raum das Farbschema außer Kraft.
@@ -26,6 +26,12 @@ Wählen Sie einen Raum aus, indem Sie auf seinen Raumstempel oder irgendwo in ih
 Die Mengen darunter zeigen die Nettofläche des Raums (ohne die Stützen), seinen Umfang und sein Volumen. Ziehen Sie den Griff am Raumstempel, um den Raumstempel zu verschieben.
 
 ![Die Eigenschaften eines Raums](shots/room-properties.webp)
+
+## Raumstempel
+
+**Architektur → Raumstempel** (oder **Raumstempel…** in den Eigenschaften eines Raums) legt fest, was der Stempel jedes Raums in Grundrissen zeigt, Zeile für Zeile: Name, Nummer, Nutzung, Abteilung, Fläche, Bruttofläche, Umfang, Höhe, Volumen oder Bodenbelag, oder einen eigenen Text. Die erste Zeile ist fett. **Zeichnungsstandards → Beschriftungen** zeigt denselben Stempel als Text: `{name}|{number}|{area}`.
+
+![Der Dialog Raumstempel](shots/room-tag.webp)
 
 ## Raumfarben
 

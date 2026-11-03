@@ -283,6 +283,10 @@ public sealed class ScheduleEntity : ISheetContent
         {
             var s = Require(ctx.Model, (string?)a["id"]);
             var (entry, row) = ((string?)a["entry"] ?? throw new CommandException("Which entry?"), (string?)a["row"] ?? throw new CommandException("Which row?"));
+            // A module's table whose column is the model's: the value goes into what the row lists ("r:<key>#<n>", "c:<column>"), not onto the schedule.
+            if (Source(ctx.Services, s.Str("kind")) is { } source && entry.StartsWith("r:", StringComparison.Ordinal) && entry.LastIndexOf('#') is var hash and > 2
+                && row.StartsWith("c:", StringComparison.Ordinal) && source.Write(ctx, entry[2..hash], row[2..], (string?)a["text"]))
+                return null;
             var attrs = s.CloneAttrs();
             var cells = attrs["cells"] as JsonObject ?? new JsonObject();
             var line = cells[entry] as JsonObject ?? new JsonObject();

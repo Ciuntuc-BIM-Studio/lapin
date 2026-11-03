@@ -311,6 +311,7 @@ export const FR: Record<string, string> = {
   'Also the values no room has yet': 'Aussi les valeurs qu’aucune pièce n’a encore', 'Colour legend: the view has no colour scheme': 'Légende de couleurs : la vue n’a pas de jeu de couleurs',
   'Rooms': 'Pièces', 'Room by outline': 'Pièce par contour', 'Update rooms': 'Mettre à jour les pièces', 'Room colours': 'Couleurs des pièces',
   'Room colours…': 'Couleurs des pièces…', 'Colour legend': 'Légende de couleurs', 'Scheme': 'Jeu de couleurs', 'New': 'Nouveau',
+  'Room tag': 'Étiquette de pièce', 'Room tag…': 'Étiquette de pièce…', 'Text…': 'Texte…', 'Add a line': 'Ajouter une ligne', 'As at first': 'Comme au début', 'Net floor area': 'Surface nette au sol', 'Empty: as its function': 'Vide : comme sa fonction', 'What the rooms\' stamps show in plan': 'Ce que montrent les étiquettes des pièces en plan', 'What each room\'s stamp shows in plan, line by line. The first line is written in bold.': 'Ce que montre l’étiquette de chaque pièce en plan, ligne par ligne. La première ligne est en gras.', 'Text; {field} reads a field: {number}, {area}…': 'Texte ; {champ} lit un champ : {number}, {area}…', 'A room keeps a number.': 'Une pièce garde un numéro.',
   'Duplicate': 'Dupliquer', 'Colour by': 'Colorer par', 'This plan shows': 'Ce plan montre', 'no room colours': 'aucune couleur de pièce',
   'Show this scheme': 'Afficher ce jeu de couleurs', 'Open a plan to show room colours in it.': 'Ouvrez un plan pour y afficher les couleurs des pièces.', 'Value': 'Valeur', 'Ink': 'Encre',
   'Looks': 'Aspect', 'Fill missing colours': 'Compléter les couleurs manquantes', 'Place a legend': 'Placer une légende', 'Function': 'Fonction',
@@ -1016,4 +1017,6 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^The table has no column „(.+)”\.$/, (m) => `Le tableau n’a pas de colonne « ${m[1]} ».`],
   [/^A chart is one of: (.+)\.$/, (m) => `Un graphique est l’un de : ${m[1]}.`],
   [/^A chart adds up by one of: (.+)\.$/, (m) => `Un graphique additionne par l’un de : ${m[1]}.`],
+  [/^„(.+)” is not a height in metres\.$/, (m) => `« ${m[1]} » n’est pas une hauteur en mètres.`],
+  [/^A room has no field „(.+)” to set\.$/, (m) => `Une pièce n’a pas de champ « ${m[1]} ».`],
 ];

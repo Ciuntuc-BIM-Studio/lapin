@@ -18,7 +18,7 @@ Per uno spazio non chiuso da muri su tutti i lati, come una terrazza o un’estr
 
 Seleziona un locale facendo clic sulla sua etichetta o in qualsiasi punto al suo interno. Nel pannello Proprietà:
 
-- **Nome** e **Numero.** I nuovi locali sono numerati per livello: 101, 102… al piano terra.
+- **Nome** e **Numero.** I nuovi locali sono numerati per livello: 101, 102… al piano terra. Il nome di un locale è quello della sua funzione finché non gliene dai uno tuo; svuotato, torna alla funzione.
 - **Destinazione d’uso**, **Reparto** e **Finitura del pavimento.** Digita qualsiasi cosa, oppure scegli un valore che altri locali hanno già.
 - **Altezza.** Vuota significa l’altezza del livello.
 - **Colore proprio** e **Retino proprio** sostituiscono lo schema di colori per questo solo locale.
@@ -26,6 +26,12 @@ Seleziona un locale facendo clic sulla sua etichetta o in qualsiasi punto al suo
 Le quantità qui sotto mostrano la superficie netta del locale (senza i pilastri), il suo perimetro e il suo volume. Trascina la maniglia sull’etichetta per spostarla.
 
 ![Le proprietà di un locale](shots/room-properties.webp)
+
+## Etichetta del locale
+
+**Architettura → Etichetta del locale** (o **Etichetta del locale…** nelle proprietà di un locale) sceglie cosa mostra l’etichetta di ogni locale nelle piante, riga per riga: nome, numero, funzione, reparto, superficie, superficie lorda, perimetro, altezza, volume o finitura del pavimento, oppure un testo tuo. La prima riga è in grassetto. **Standard di disegno → Etichette** mostra la stessa etichetta come testo: `{name}|{number}|{area}`.
+
+![La finestra di dialogo Etichetta del locale](shots/room-tag.webp)
 
 ## Colori dei locali
 
