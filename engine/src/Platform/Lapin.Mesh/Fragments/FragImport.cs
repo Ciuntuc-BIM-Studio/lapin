@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
@@ -291,7 +290,7 @@ public static class FragImport
         /// <summary>A GlobalId the same for the same file and key, so an import done again finds what it made.</summary>
         string DerivedId(string key)
         {
-            var bytes = MD5.HashData(Encoding.UTF8.GetBytes((model.Guid ?? name) + "\n" + key));
+            var bytes = Md5.HashData(Encoding.UTF8.GetBytes((model.Guid ?? name) + "\n" + key));
             return GlobalId.FromGuid(new Guid(bytes));
         }
 

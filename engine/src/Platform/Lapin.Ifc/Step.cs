@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Numerics;
-using System.Security.Cryptography;
 using System.Text;
+using Lapin.Platform;
 
 namespace Lapin.Ifc;
 
@@ -71,7 +71,7 @@ public sealed class Step
     /// </summary>
     public static string Guid(string seed, string key)
     {
-        var bytes = MD5.HashData(Encoding.UTF8.GetBytes(seed + "\n" + key));
+        var bytes = Md5.HashData(Encoding.UTF8.GetBytes(seed + "\n" + key));
         var n = new BigInteger(bytes, isUnsigned: true, isBigEndian: true);
         var c = new char[22];
         for (var i = 21; i >= 0; i--) { c[i] = Chars[(int)(n % 64)]; n /= 64; }
