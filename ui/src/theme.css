@@ -228,6 +228,18 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .slot.on { border-color: var(--accent); background: var(--accent-wash); box-shadow: 0 0 0 1px var(--accent); }
 .slot.on svg { color: var(--accent); }
 .slot-n { position: absolute; left: 4px; top: 2px; font-size: 9.5px; font-weight: 700; color: var(--ink-muted); }
+/* The quick tools floating: each slot with its name under the icon (decision 259); an empty one to drop a tool on. */
+.hotbar.named .slot { width: 64px; height: 52px; grid-template-rows: 1fr auto; padding: 6px 3px 4px; gap: 2px; }
+.slot-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; line-height: 1.1; color: var(--ink); }
+.slot.on .slot-name { color: var(--accent); }
+.slot.empty { border-style: dashed; background: transparent; }
+.slot-plus { font-size: 16px; color: var(--ink-muted); }
+.hotbar.named .slot.empty .slot-plus { grid-row: 1 / span 2; }
+.slot.over { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.quick-tools-dialog { max-width: min(520px, calc(100vw - 32px)); }
+.quick-slots { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.quick-slot-row { display: grid; grid-template-columns: 26px 22px 1fr; align-items: center; gap: 8px; }
+.quick-slot-icon { display: grid; place-items: center; color: var(--ink); }
 
 /* Properties */
 .type-pick { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; border-bottom: 1px solid var(--rule); }

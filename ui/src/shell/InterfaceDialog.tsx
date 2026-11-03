@@ -95,6 +95,7 @@ export function InterfaceDialog() {
         </div>
         <footer className="dialog-foot">
           <button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'shortcuts' })}>Keyboard shortcuts…</button>
+          <button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'quickTools' })}>Quick tools…</button>
           <span className="grow" />
           {keys && <span className="muted small"><span>This dialog:</span> <kbd data-no-i18n>{keys}</kbd></span>}
           <button type="button" className="btn primary" onClick={close}>Done</button>

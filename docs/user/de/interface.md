@@ -43,6 +43,21 @@ Unter den Teilen **Registerkarten**: Entfernen Sie das Häkchen bei den Register
 
 Lapin speichert Ihre Wahl auf diesem Computer, für Sie. Die Desktop-App und der Browser speichern ihre jeweils getrennt. Im Browser startet Lapin im Modus Kompakt, wenn das Fenster weniger als 800 Pixel hoch ist, bis Sie eine Wahl treffen.
 
+## Schnellwerkzeuge
+
+Die Schnellwerkzeuge sind die nummerierten Plätze unten in der Ansicht (in Kompakt und Fokus an ihrem linken Rand); die Tasten <kbd>1</kbd>–<kbd>9</kbd> starten sie. Jeder Arbeitsbereich hat seine eigenen: Sie beginnen so, wie Ihre Edition sie mitbringt, und Sie wählen sie selbst:
+
+- Ziehen Sie ein Werkzeug aus dem Menüband auf einen Platz. Ein Werkzeug steht nur auf einem Platz, also verlässt es den bisherigen;
+- ziehen Sie einen Platz auf einen anderen, um sie zu tauschen;
+- Rechtsklick auf einen Platz: **Werkzeug wählen…**, **Diesen Platz leeren** oder **Schnellwerkzeuge zurücksetzen**;
+- **View → Quick tools…** legt die neun Plätze über Listen fest, und **Die der Edition** holt die Ihrer Edition zurück.
+
+Unten schwebend zeigt jeder Platz den Namen seines Werkzeugs, und ein leerer Platz nach dem letzten wartet auf ein Werkzeug. Lapin speichert Ihre Schnellwerkzeuge auf diesem Computer, für Sie.
+
+![Die Schnellwerkzeuge, die Treppe auf Platz 7 und Platz 2 leer](shots/quick-tools.webp)
+
+![View → Quick tools…](shots/quick-tools-dialog.webp)
+
 ## Die Seitenbereiche einklappen
 
 In jedem Modus klappen der Projektbrowser und der Eigenschaftenbereich zu einer schmalen Leiste an ihrer Seite ein:

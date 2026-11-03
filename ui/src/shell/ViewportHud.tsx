@@ -2,13 +2,18 @@
  * Atrium's HUD over the view: the mode and level card, the hint, the
  * numbered tool bar (1–9). View → Interface puts the card in the status line
  * or leaves it out, the hint in the command line, and the tool bar floating
- * at the bottom, docked on the view's left edge, or off.
+ * at the bottom, docked on the view's left edge, or off. The tool bar's slots
+ * are the user's (decision 259): a ribbon tool dropped on one, two slots
+ * swapped by a drag, a slot's right-click menu; floating, each shows its name.
  */
 
 import { useUi } from '../app/store';
 import { useInterface } from '../app/interface';
 import { hint } from '../app/commands';
-import { activate, findTool, hotbarTools } from '../platform/modules';
+import { activate, findTool, hotbarIds, putInSlot, resetSlots, swapSlots } from '../platform/modules';
+import { reach, SLOT_DRAG, TOOL_DRAG, useHotbars } from '../app/hotbar';
+import { openContextMenu } from './ContextMenu';
+import { useState, type DragEvent, type MouseEvent } from 'react';
 import { activeStorey, useSession } from '../engine/session';
 import { num } from '../engine/model';
 import { ScopeBar } from './ScopeBar';
@@ -45,7 +50,29 @@ export function ViewportHud() {
   const tool = useUi((s) => s.tool);
   const parts = useInterface((s) => s.parts);
   const facts = useHudFacts();
-  const tools = hotbarTools();
+  const hotbars = useHotbars();
+  const workspace = useInterface((s) => s.workspace);
+  const ids = hotbarIds(hotbars, workspace);
+  // The slots up to the last tool, and one empty after it to drop a tool on.
+  const shown = ids.slice(0, Math.min(ids.length, reach(ids) + 1));
+  const [over, setOver] = useState<number | null>(null);
+  const docked = parts.quickTools === 'docked';
+  const drop = (i: number, e: DragEvent) => {
+    e.preventDefault();
+    setOver(null);
+    const tool = e.dataTransfer.getData(TOOL_DRAG);
+    const from = e.dataTransfer.getData(SLOT_DRAG);
+    if (tool) putInSlot(i, tool);
+    else if (from !== '') swapSlots(Number(from), i);
+  };
+  const menu = (i: number, e: MouseEvent) => {
+    e.preventDefault();
+    openContextMenu(e.clientX, e.clientY, [
+      { label: 'Choose a tool…', onSelect: () => useUi.setState({ dialog: 'quickTools' }) },
+      { label: 'Empty this slot', disabled: !ids[i], onSelect: () => putInSlot(i, null) },
+      { label: 'Reset quick tools', onSelect: resetSlots },
+    ]);
+  };
   const hintText = toolHint(tool);
   return (
     <>
@@ -60,13 +87,25 @@ export function ViewportHud() {
       <ScopeBar />
       {hintText && parts.prompt === 'banner' && <div className="hud-hint">{hintText}</div>}
       {parts.quickTools !== 'off' && (
-        <div className={`hotbar${parts.quickTools === 'docked' ? ' docked' : ''}`} role="toolbar" aria-label="Quick tools">
-          {tools.map((t, i) => (
-            <button type="button" key={t.id} className={`slot${tool === t.id ? ' on' : ''}`} onClick={() => activate(t)} title={hint(t.id, t.label)}>
-              <span className="slot-n">{i + 1}</span>
-              <t.icon size={parts.quickTools === 'docked' ? 17 : 20} strokeWidth={1.5} />
-            </button>
-          ))}
+        <div className={`hotbar${docked ? ' docked' : ' named'}`} role="toolbar" aria-label="Quick tools">
+          {shown.map((id, i) => {
+            const t = findTool(id);
+            const target = { onDragOver: (e: DragEvent) => { e.preventDefault(); setOver(i); }, onDragLeave: () => setOver(null), onDrop: (e: DragEvent) => drop(i, e), onContextMenu: (e: MouseEvent) => menu(i, e) };
+            if (!t) return (
+              <button type="button" key={i} className={`slot empty${over === i ? ' over' : ''}`} title="Drag a tool here from the ribbon, or click to choose one" onClick={() => useUi.setState({ dialog: 'quickTools' })} {...target}>
+                <span className="slot-n">{i + 1}</span>
+                <span className="slot-plus" aria-hidden>+</span>
+              </button>
+            );
+            return (
+              <button type="button" key={i} data-tool={t.id} className={`slot${tool === t.id ? ' on' : ''}${over === i ? ' over' : ''}`} onClick={() => activate(t)} title={hint(t.id, t.label)}
+                draggable onDragStart={(e) => { e.dataTransfer.setData(SLOT_DRAG, String(i)); e.dataTransfer.effectAllowed = 'move'; }} {...target}>
+                <span className="slot-n">{i + 1}</span>
+                <t.icon size={docked ? 17 : 20} strokeWidth={1.5} />
+                {!docked && <span className="slot-name">{t.label}</span>}
+              </button>
+            );
+          })}
         </div>
       )}
     </>

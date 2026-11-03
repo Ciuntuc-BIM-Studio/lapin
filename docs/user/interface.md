@@ -43,6 +43,21 @@ Below the parts, **Tabs**: untick the ribbon tabs you do without (an architect m
 
 Lapin keeps your choice on this computer, for you. The desktop app and the browser keep theirs apart. In the browser, Lapin starts in Compact when the window is less than 800 pixels tall, until you choose.
 
+## Quick tools
+
+The quick tools are the numbered slots at the bottom of the view (on its left edge in Compact and Focus); the keys <kbd>1</kbd>–<kbd>9</kbd> start them. Each workspace has its own: they start as your edition gives them, and you choose them yourself:
+
+- drag a tool from the ribbon onto a slot. A tool stands in one slot only, so it leaves the one it was in;
+- drag one slot onto another to swap them;
+- right-click a slot: **Choose a tool…**, **Empty this slot** or **Reset quick tools**;
+- **View → Quick tools…** sets the nine slots from lists, and **Reset to the edition's** brings back your edition's own.
+
+Floating at the bottom, each slot shows its tool's name, and an empty slot after the last waits for a tool. Lapin keeps your quick tools on this computer, for you.
+
+![The quick tools, the stair in slot 7 and slot 2 empty](shots/quick-tools.webp)
+
+![View → Quick tools…](shots/quick-tools-dialog.webp)
+
 ## Folding the side panels
 
 In every mode, the project browser and the properties panel fold to a thin rail on their side:

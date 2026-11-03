@@ -43,6 +43,21 @@ Debajo de las partes, **Pestañas**: desmarca las pestañas de la cinta que no n
 
 Lapin guarda su elección en este ordenador, para usted. La aplicación de escritorio y el navegador guardan la suya por separado. En el navegador, Lapin empieza en Compacto cuando la ventana mide menos de 800 píxeles de alto, hasta que usted elija.
 
+## Herramientas rápidas
+
+Las herramientas rápidas son las casillas numeradas al pie de la vista (en su borde izquierdo en Compacto y Enfoque); las teclas <kbd>1</kbd>–<kbd>9</kbd> las inician. Cada espacio de trabajo tiene las suyas: empiezan como las da su edición, y usted las elige:
+
+- arrastre una herramienta de la cinta a una casilla. Una herramienta está en una sola casilla, así que deja la que ocupaba;
+- arrastre una casilla sobre otra para intercambiarlas;
+- clic derecho en una casilla: **Elegir una herramienta…**, **Vaciar esta casilla** o **Restablecer las herramientas rápidas**;
+- **View → Quick tools…** fija las nueve casillas desde listas, y **Las de la edición** devuelve las de su edición.
+
+Flotando al pie, cada casilla muestra el nombre de su herramienta, y una casilla vacía tras la última espera una herramienta. Lapin guarda sus herramientas rápidas en este ordenador, para usted.
+
+![Las herramientas rápidas, la escalera en la casilla 7 y la 2 vacía](shots/quick-tools.webp)
+
+![View → Quick tools…](shots/quick-tools-dialog.webp)
+
 ## Plegar los paneles laterales
 
 En todos los modos, el explorador del proyecto y el panel de propiedades se pliegan en un carril fino a su lado:

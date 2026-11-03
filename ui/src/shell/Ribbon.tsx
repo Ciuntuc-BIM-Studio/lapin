@@ -6,7 +6,7 @@
  * from the shortcuts' registry.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { Moon, Redo2, Search, Sun, Undo2 } from 'lucide-react';
 import { HelpMenu } from './HelpMenu';
 import { BrandName } from './BrandMark';
@@ -18,6 +18,7 @@ import { engineInBrowser } from '../engine/session';
 import { isGuest, leave } from '../engine/share';
 import { Participants } from './Sharing';
 import { useInterface, visibleTabIds } from '../app/interface';
+import { TOOL_DRAG } from '../app/hotbar';
 import { bindingText, hint, useBindings } from '../app/commands';
 import type { RibbonTabDef, ToolDef } from '../platform/module';
 
@@ -95,6 +96,12 @@ function FileMenu() {
   );
 }
 
+/** A ribbon tool dragged onto a quick slot goes in it (decision 259). */
+const dragTool = (tl: ToolDef) => ({
+  draggable: true,
+  onDragStart: (e: DragEvent) => { e.dataTransfer.setData(TOOL_DRAG, tl.id); e.dataTransfer.effectAllowed = 'copy'; },
+});
+
 /** The band of the tab: large tools with their names and keys, or icons only. */
 function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolean; onPicked?: () => void; drop?: boolean }) {
   const tool = useUi((s) => s.tool);
@@ -106,7 +113,7 @@ function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolea
         <div className="group-inline" key={g.label} role="group" aria-label={g.label}>
           {gi > 0 && <span className="group-rule" aria-hidden />}
           {[...g.tools, ...(g.small ?? [])].map((tl) => (
-            <button type="button" key={tl.id} className={`tool icon-only${tool === tl.id ? ' on' : ''}`} onClick={() => press(tl)} title={hint(tl.id, tl.label, g.label)} aria-label={tl.label}>
+            <button type="button" key={tl.id} className={`tool icon-only${tool === tl.id ? ' on' : ''}`} onClick={() => press(tl)} {...dragTool(tl)} title={hint(tl.id, tl.label, g.label)} aria-label={tl.label}>
               <tl.icon size={18} strokeWidth={1.5} />
             </button>
           ))}
@@ -122,7 +129,7 @@ function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolea
             {g.tools.map((tl) => {
               const keys = bindingText(tl.id);
               return (
-                <button type="button" key={tl.id} className={`tool${tool === tl.id ? ' on' : ''}`} onClick={() => press(tl)} title={hint(tl.id, tl.label)}>
+                <button type="button" key={tl.id} className={`tool${tool === tl.id ? ' on' : ''}`} onClick={() => press(tl)} {...dragTool(tl)} title={hint(tl.id, tl.label)}>
                   <tl.icon size={22} strokeWidth={1.5} />
                   <span>{tl.label}</span>
                   {keys && <kbd className="tool-key" data-no-i18n>{keys.split(', ')[0]}</kbd>}
@@ -132,7 +139,7 @@ function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolea
             {g.small && g.small.length > 0 && (
               <div className="small-tools">
                 {g.small.map((tl) => (
-                  <button type="button" key={tl.id} className={`tool small${tool === tl.id ? ' on' : ''}`} onClick={() => press(tl)} title={hint(tl.id, tl.label)}>
+                  <button type="button" key={tl.id} className={`tool small${tool === tl.id ? ' on' : ''}`} onClick={() => press(tl)} {...dragTool(tl)} title={hint(tl.id, tl.label)}>
                     <tl.icon size={14} strokeWidth={1.6} /><span>{tl.label}</span>
                   </button>
                 ))}

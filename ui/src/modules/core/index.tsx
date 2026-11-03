@@ -3,7 +3,7 @@
 import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
 import { toggleGrid, toggleThinLines } from '../../app/display';
-import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Keyboard, Layers, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareMinus, SquareSplitHorizontal, Trash2, Ungroup, Wand2 } from 'lucide-react';
+import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Keyboard, Layers, LayoutGrid, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareMinus, SquareSplitHorizontal, Trash2, Ungroup, Wand2 } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -208,6 +208,7 @@ const core: LapinModule = {
       { label: 'Interface', tools: [
         { id: 'app.interface', label: 'Interface…', icon: PanelsTopLeft, run: () => useUi.setState({ dialog: 'interface' }) },
         { id: 'app.shortcuts', label: 'Keyboard shortcuts…', icon: Keyboard, run: () => useUi.setState({ dialog: 'shortcuts' }) },
+        { id: 'app.quickTools', label: 'Quick tools…', icon: LayoutGrid, run: () => useUi.setState({ dialog: 'quickTools' }) },
         // The model assistant (docs/plan-assistant.md): the desktop's only, absent from the web build.
         ...(import.meta.env.VITE_ENGINE !== 'worker' && assistantAvailable()
           ? [{ id: 'app.assistant', label: 'Assistant', icon: Bot, run: () => showPropsTab('assistant') }] : []),

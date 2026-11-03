@@ -26,6 +26,7 @@ import { StartScreen } from './shell/StartScreen';
 import { useHudFacts, ViewportHud } from './shell/ViewportHud';
 import { CadPrompt } from './viewport/cad/CommandLine';
 import { InterfaceDialog } from './shell/InterfaceDialog';
+import { QuickToolsDialog } from './shell/QuickToolsDialog';
 import { ShortcutsDialog } from './shell/ShortcutsDialog';
 import { BusyOverlay } from './shell/BusyOverlay';
 import { CommandPalette } from './shell/CommandPalette';
@@ -276,7 +277,7 @@ function PanelOverlay() {
 }
 
 /** The dialogs of working together (File → Share session…, Join session…), opened by the store's `dialog`. */
-const shareDialogs: Record<string, () => React.JSX.Element | null> = { share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, shortcuts: ShortcutsDialog, palette: CommandPalette };
+const shareDialogs: Record<string, () => React.JSX.Element | null> = { share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette };
 
 function Workspace() {
   const open = useUi((s) => s.dialog);

@@ -7,12 +7,15 @@ import type { NodeDto } from '../engine/protocol';
 import { toggleTool, useUi } from '../app/store';
 import { mergeTabs } from './ribbon';
 import { cancel, useCad } from '../viewport/cad/session';
+import { setSlots, slotsOf, useHotbars, withSlot, withSwap, type Slots } from '../app/hotbar';
+import { useInterface } from '../app/interface';
 
 export const modules: readonly LapinModule[] = loaded;
 export const productInfo = product;
 
 export const ribbonTabs = (): RibbonTabDef[] => mergeTabs(modules, product.tabs ?? undefined);
-export const hotbarTools = (): ToolDef[] => modules.flatMap((m) => m.hotbar ?? []).slice(0, 9);
+/** The modules' own quick tools, in their order: a workspace's slots until the user sets them. */
+export const defaultHotbar = (): ToolDef[] => modules.flatMap((m) => m.hotbar ?? []);
 export const propertySections = (ifcClass: string) => modules.flatMap((m) => m.propertySections ?? []).filter((s) => s.classes.includes(ifcClass) || s.classes.includes('*'));
 export const backgrounds = (): ComponentType[] => modules.map((m) => m.background).filter((b): b is ComponentType => Boolean(b));
 export const dialog = (id: string): ComponentType | null => modules.map((m) => m.dialogs?.[id]).find(Boolean) ?? null;
@@ -35,6 +38,20 @@ export const allTools = (): ToolDef[] => {
 };
 
 export const findTool = (id: string | null): ToolDef | null => (id ? allTools().find((t) => t.id === id) ?? null : null);
+
+/** The current workspace's quick tool ids, slot by slot (decision 259). */
+export const hotbarIds = (hotbars = useHotbars.getState(), workspace = useInterface.getState().workspace): Slots =>
+  slotsOf(hotbars, workspace, defaultHotbar().map((t) => t.id), (id) => findTool(id) !== null);
+
+/** The current workspace's quick tools, slot by slot; null for an empty slot. */
+export const hotbarSlots = (): (ToolDef | null)[] => hotbarIds().map(findTool);
+
+const current = () => useInterface.getState().workspace;
+/** A tool put in a quick slot of the current workspace (null empties it). */
+export const putInSlot = (i: number, id: string | null) => setSlots(current(), withSlot(hotbarIds(), i, id));
+export const swapSlots = (i: number, j: number) => setSlots(current(), withSwap(hotbarIds(), i, j));
+/** The current workspace's quick tools back to the modules' own. */
+export const resetSlots = () => setSlots(current(), null);
 
 /** Press a tool: a drawing tool switches on (or off), a button does its thing. */
 export function activate(t: ToolDef): void {

@@ -43,6 +43,21 @@ Sotto le parti, **Schede**: togli la spunta alle schede della barra multifunzion
 
 Lapin conserva la tua scelta su questo computer, per te. L’app desktop e il browser conservano ciascuno la propria. Nel browser, Lapin parte in Compatta quando la finestra è alta meno di 800 pixel, finché non scegli.
 
+## Strumenti rapidi
+
+Gli strumenti rapidi sono i posti numerati in fondo alla vista (sul suo bordo sinistro in Compatta e Concentrazione); i tasti <kbd>1</kbd>–<kbd>9</kbd> li avviano. Ogni area di lavoro ha i suoi: partono come li dà la tua edizione, e li scegli tu:
+
+- trascina uno strumento dalla barra multifunzione su un posto. Uno strumento sta in un solo posto, quindi lascia quello in cui era;
+- trascina un posto su un altro per scambiarli;
+- clic destro su un posto: **Scegli uno strumento…**, **Svuota questo posto** o **Ripristina gli strumenti rapidi**;
+- **Vista → Strumenti rapidi…** imposta i nove posti da elenchi, e **Quelli dell’edizione** riporta quelli della tua edizione.
+
+Mobili in fondo, ogni posto mostra il nome del suo strumento, e un posto vuoto dopo l’ultimo aspetta uno strumento. Lapin conserva i tuoi strumenti rapidi su questo computer, per te.
+
+![Gli strumenti rapidi, la scala nel posto 7 e il posto 2 vuoto](shots/quick-tools.webp)
+
+![Vista → Strumenti rapidi…](shots/quick-tools-dialog.webp)
+
 ## Ridurre i pannelli laterali
 
 In ogni modalità, il browser di progetto e il pannello Proprietà si riducono a una sottile barra sul loro lato:

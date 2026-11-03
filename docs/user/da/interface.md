@@ -43,6 +43,21 @@ Under delene **Faner**: fjern fluebenet ved de faner i båndet, du ikke bruger (
 
 Lapin husker dit valg på denne computer, for dig. Skrivebordsprogrammet og browseren husker hver deres. I browseren starter Lapin i Kompakt, når vinduet er under 800 pixels højt, indtil du selv vælger.
 
+## Hurtigværktøjer
+
+Hurtigværktøjerne er de nummererede pladser nederst i visningen (på dens venstre kant i Kompakt og Fokus); tasterne <kbd>1</kbd>–<kbd>9</kbd> starter dem. Hvert arbejdsområde har sine egne: de begynder, som din udgave giver dem, og du vælger dem selv:
+
+- træk et værktøj fra båndet til en plads. Et værktøj står kun på én plads, så det forlader den, det stod på;
+- træk en plads hen på en anden for at bytte dem;
+- højreklik på en plads: **Vælg et værktøj…**, **Tøm denne plads** eller **Nulstil hurtigværktøjer**;
+- **View → Quick tools…** sætter de ni pladser fra lister, og **Udgavens egne** henter din udgaves egne tilbage.
+
+Svævende nederst viser hver plads værktøjets navn, og en tom plads efter den sidste venter på et værktøj. Lapin gemmer dine hurtigværktøjer på denne computer, for dig.
+
+![Hurtigværktøjerne, trappen på plads 7 og plads 2 tom](shots/quick-tools.webp)
+
+![View → Quick tools…](shots/quick-tools-dialog.webp)
+
 ## Sidepaneler der foldes ind
 
 I alle tilstande kan projektbrowseren og egenskabspanelet foldes ind til en tynd skinne i deres side:

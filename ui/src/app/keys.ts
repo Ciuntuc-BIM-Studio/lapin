@@ -16,7 +16,8 @@
 
 import { useEffect } from 'react';
 import { useUi } from './store';
-import { hotbarTools } from '../platform/modules';
+import { hotbarIds } from '../platform/modules';
+import { reach } from './hotbar';
 import { cancel, submit, useCad } from '../viewport/cad/session';
 import { liveCommit, useLive } from '../viewport/liveInput';
 import { chordOf, isBareKey, matchSequence, PendingSequence, type Keymap } from './shortcuts';
@@ -50,7 +51,7 @@ export interface KeySnapshot {
   step: { want?: string } | null;
   /** Whether a command ran before (Enter or Space repeats it). */
   hasLast: boolean;
-  /** How many hotbar slots there are. */
+  /** How far the number keys reach: up to the last quick slot holding a tool. */
   hotbar: number;
   /** The bindings in force (shortcuts.ts). */
   keymap: Keymap;
@@ -145,7 +146,7 @@ function snapshot(): KeySnapshot {
   return {
     screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool, selected: ui.selected,
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want } : null, hasLast: !!cad.last,
-    hotbar: hotbarTools().length, keymap: keymap(),
+    hotbar: reach(hotbarIds()), keymap: keymap(),
     live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang) }; })(),
   };
 }

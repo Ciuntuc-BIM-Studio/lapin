@@ -43,6 +43,21 @@ Sous les éléments, **Onglets** : décochez les onglets du ruban dont vous n’
 
 Lapin garde votre choix sur cet ordinateur, pour vous. L’application de bureau et le navigateur gardent chacun le leur. Dans le navigateur, Lapin démarre en Compact quand la fenêtre fait moins de 800 pixels de haut, jusqu’à ce que vous choisissiez.
 
+## Outils rapides
+
+Les outils rapides sont les emplacements numérotés en bas de la vue (sur son bord gauche en Compact et Concentration) ; les touches <kbd>1</kbd>–<kbd>9</kbd> les lancent. Chaque espace de travail a les siens : ils commencent tels que votre édition les donne, et vous les choisissez vous-même :
+
+- glissez un outil du ruban sur un emplacement. Un outil n’occupe qu’un seul emplacement, il quitte donc celui où il était ;
+- glissez un emplacement sur un autre pour les échanger ;
+- clic droit sur un emplacement : **Choisir un outil…**, **Vider cet emplacement** ou **Réinitialiser les outils rapides** ;
+- **View → Quick tools…** règle les neuf emplacements depuis des listes, et **Ceux de l’édition** remet ceux de votre édition.
+
+Flottant en bas, chaque emplacement montre le nom de son outil, et un emplacement vide après le dernier attend un outil. Lapin garde vos outils rapides sur cet ordinateur, pour vous.
+
+![Les outils rapides, l’escalier à l’emplacement 7 et le 2 vide](shots/quick-tools.webp)
+
+![View → Quick tools…](shots/quick-tools-dialog.webp)
+
 ## Replier les panneaux latéraux
 
 Dans tous les modes, l’arborescence du projet et le panneau des propriétés se replient en une fine barre de leur côté :

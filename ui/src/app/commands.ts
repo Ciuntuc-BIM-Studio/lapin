@@ -13,7 +13,7 @@ import { assistantAvailable } from '../assistant/available';
 import { toggleGrid, toggleThinLines } from './display';
 import { chooseWorkspace, onInterfaceChange, useInterface, WORKSPACE_IDS, WORKSPACE_LABELS } from './interface';
 import { effectiveBindings, formatBinding, resolveKeymap, useKeymap, type Binding, type CommandDef, type Keymap } from './shortcuts';
-import { activate, allTools, hotbarTools, ribbonTabs } from '../platform/modules';
+import { activate, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
 import { execute, redo, undo } from '../engine/session';
 import { newProject, openProject, saveProject } from '../engine/files';
 import { COMMANDS, setCommandFallback, startCommand, useCad } from '../viewport/cad/session';
@@ -39,6 +39,7 @@ function appCommands(): CommandDef[] {
     { id: 'app.palette', label: 'Commands…', category: general, defaults: ['Ctrl+K'], run: dialog('palette') },
     { id: 'app.shortcuts', label: 'Keyboard shortcuts…', category: general, defaults: [], run: dialog('shortcuts') },
     { id: 'app.interface', label: 'Interface…', category: general, defaults: ['Ctrl+.'], run: dialog('interface') },
+    { id: 'app.quickTools', label: 'Quick tools…', category: general, defaults: [], run: dialog('quickTools') },
     // The workspaces (decision 243), each a command of its own: Commands… → "Workspace: MEP".
     ...WORKSPACE_IDS.map((w) => ({ id: `app.workspace.${w}`, label: `Workspace: ${WORKSPACE_LABELS[w]}`, category: general, defaults: [], run: () => chooseWorkspace(w) })),
     { id: 'app.osnap', label: 'Object snap', category: draw, defaults: ['F3'], run: () => useCad.setState((s) => ({ osnap: !s.osnap })) },
@@ -64,7 +65,7 @@ function appCommands(): CommandDef[] {
 
 const hotbarCommands = (): CommandDef[] => Array.from({ length: 9 }, (_, i) => ({
   id: `hotbar.${i + 1}`, label: `Quick tool ${i + 1}`, category: 'Quick tools', defaults: [String(i + 1)],
-  run: () => { const t = hotbarTools()[i]; if (t) activate(t); },
+  run: () => { const t = hotbarSlots()[i]; if (t) activate(t); },
 }));
 
 /** The command-line command a tool starts, when it is one (the Modify and Draft tools). */
@@ -92,7 +93,7 @@ export function commands(): CommandDef[] {
       same: SAME[t.id], run: () => activate(t),
     });
   };
-  for (const t of hotbarTools()) if (!ribbonTabs().some((tab) => tab.groups.some((g) => [...g.tools, ...(g.small ?? [])].some((x) => x.id === t.id)))) tool(t, 'Quick tools');
+  for (const t of defaultHotbar()) if (!ribbonTabs().some((tab) => tab.groups.some((g) => [...g.tools, ...(g.small ?? [])].some((x) => x.id === t.id)))) tool(t, 'Quick tools');
   for (const tab of ribbonTabs()) for (const g of tab.groups) for (const t of [...g.tools, ...(g.small ?? [])]) tool(t, tab.label, g.label);
   for (const t of allTools()) tool(t, 'Other');
   cached = out;

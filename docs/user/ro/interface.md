@@ -43,6 +43,21 @@ Sub părți, **Taburi**: debifează taburile din ribbon de care nu ai nevoie (un
 
 Lapin îți păstrează alegerea pe acest calculator, pentru tine. Aplicația desktop și browserul o țin separat. În browser, Lapin pornește în Compact când fereastra are sub 800 de pixeli înălțime, până alegi tu.
 
+## Uneltele rapide
+
+Uneltele rapide sunt locurile numerotate de jos din vedere (pe marginea ei din stânga în Compact și Concentrare); tastele <kbd>1</kbd>–<kbd>9</kbd> le pornesc. Fiecare spațiu de lucru are uneltele lui: pornesc așa cum le dă ediția ta, iar tu le alegi singur:
+
+- trage o unealtă din panglică pe un loc. O unealtă stă într-un singur loc, așa că îl lasă pe cel în care era;
+- trage un loc peste altul ca să le schimbi între ele;
+- clic dreapta pe un loc: **Alege o unealtă…**, **Golește acest loc** sau **Resetează uneltele rapide**;
+- **View → Quick tools…** stabilește cele nouă locuri din liste, iar **Înapoi la cele ale ediției** le aduce înapoi pe cele ale ediției tale.
+
+Plutind jos, fiecare loc arată numele uneltei, iar un loc gol după ultimul așteaptă o unealtă. Lapin îți păstrează uneltele rapide pe acest calculator, pentru tine.
+
+![Uneltele rapide, cu scara pe locul 7 și locul 2 gol](shots/quick-tools.webp)
+
+![View → Quick tools…](shots/quick-tools-dialog.webp)
+
 ## Plierea panourilor laterale
 
 În orice mod, browserul proiectului și panoul de proprietăți se pliază pe o bară subțire, pe partea lor:
