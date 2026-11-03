@@ -392,4 +392,69 @@ public class JoinModelTests
         }
         finally { Directory.Delete(dir, true); }
     }
+
+    static (Vec3 Min, Vec3 Max) BoundsOf(Fixture f, string id)
+    {
+        var v = f.Session.Geometry(id)!.Parts.SelectMany(p => p.Solid.Vertices).ToList();
+        return (new(v.Min(q => q.X), v.Min(q => q.Y), v.Min(q => q.Z)), new(v.Max(q => q.X), v.Max(q => q.Y), v.Max(q => q.Z)));
+    }
+
+    static void SameBounds((Vec3 Min, Vec3 Max) want, (Vec3 Min, Vec3 Max) got)
+    {
+        Assert.Equal(want.Min.X, got.Min.X, 6); Assert.Equal(want.Min.Y, got.Min.Y, 6); Assert.Equal(want.Min.Z, got.Min.Z, 6);
+        Assert.Equal(want.Max.X, got.Max.X, 6); Assert.Equal(want.Max.Y, got.Max.Y, 6); Assert.Equal(want.Max.Z, got.Max.Z, 6);
+    }
+
+    /// <summary>Bounds mirrored about the vertical line x = <paramref name="x"/>.</summary>
+    static (Vec3 Min, Vec3 Max) MirroredX((Vec3 Min, Vec3 Max) b, double x) =>
+        (new(2 * x - b.Max.X, b.Min.Y, b.Min.Z), new(2 * x - b.Min.X, b.Max.Y, b.Max.Z));
+
+    static List<string> Made(JsonNode? result) => result!["ids"]!.AsArray().Select(x => (string)x!).ToList();
+
+    static string WindowIn(Fixture f, string wall) =>
+        Openings.FillOf(f.Model, f.Model.RelatedOf(wall, IfcClass.RelVoidsElement).Single().Id)!.Id;
+
+    [Fact]
+    public void A_room_copied_keeps_its_corners_joined()
+    {
+        var (f, ids) = ClockwiseRoom();
+        var copies = Made(f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(ids.Select(x => (JsonNode)x).ToArray()), ["op"] = "copy", ["by"] = new JsonArray(10, 0) }));
+        Assert.Equal(4, copies.Count);
+        Assert.Equal(8, JoinRels(f).Count);
+        Assert.All(copies, c => Assert.Equal(2, Joins.Of(f.Model, c).Count()));
+        Assert.Equal(RingVolume(), copies.Sum(id => Volume(f, id)), 6);
+        for (var i = 0; i < ids.Length; i++)
+        {
+            var (lo, hi) = LayerBounds(f, ids[i], Render);
+            SameBounds((lo + new Vec3(10, 0, 0), hi + new Vec3(10, 0, 0)), LayerBounds(f, copies[i], Render));
+        }
+    }
+
+    [Fact]
+    public void A_room_mirrored_is_its_mirror_image_with_its_corners_joined_and_its_windows_facing_out()
+    {
+        var (f, ids) = ClockwiseRoom();
+        var window = (string)f.Run("architecture.addWindow", new JsonObject { ["wallId"] = ids[0], ["along"] = 1 })!["id"]!;
+        var line = new JsonObject { ["a"] = new JsonArray(10, 0), ["b"] = new JsonArray(10, 1) };
+        var before = ids.Select(id => (Render: LayerBounds(f, id, Render), Plaster: LayerBounds(f, id, Plaster))).ToList();
+        var windowBefore = BoundsOf(f, window);
+
+        // Mirrored as a copy: the copies are the originals' mirror image, render inside, the window's sill outside.
+        var copies = Made(f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(ids.Select(x => (JsonNode)x).ToArray()), ["op"] = "mirror", ["a"] = line["a"]!.DeepClone(), ["b"] = line["b"]!.DeepClone(), ["copy"] = true }));
+        Assert.Equal(8, JoinRels(f).Count);
+        Assert.All(copies, c => Assert.Equal(2, Joins.Of(f.Model, c).Count()));
+        Assert.Equal(ids.Sum(id => Volume(f, id)), copies.Sum(id => Volume(f, id)), 6);
+        for (var i = 0; i < ids.Length; i++)
+        {
+            SameBounds(MirroredX(before[i].Render, 10), LayerBounds(f, copies[i], Render));
+            SameBounds(MirroredX(before[i].Plaster, 10), LayerBounds(f, copies[i], Plaster));
+        }
+        SameBounds(MirroredX(windowBefore, 10), BoundsOf(f, WindowIn(f, copies[0])));
+
+        // Mirrored in place: the same image, the joins kept.
+        f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(ids.Select(x => (JsonNode)x).ToArray()), ["op"] = "mirror", ["a"] = line["a"]!.DeepClone(), ["b"] = line["b"]!.DeepClone() });
+        Assert.Equal(8, JoinRels(f).Count);
+        for (var i = 0; i < ids.Length; i++) SameBounds(MirroredX(before[i].Render, 10), LayerBounds(f, ids[i], Render));
+        SameBounds(MirroredX(windowBefore, 10), BoundsOf(f, window));
+    }
 }

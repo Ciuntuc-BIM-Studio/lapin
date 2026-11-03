@@ -226,6 +226,10 @@ public sealed class CoreModule : ILapinModule
                 if (copy) { var c = Placement.Copy(ctx, now, t); made.Add((JsonNode)c); copies[e.Id] = c; }
                 else Placement.Transform(ctx, now, t, moving);
             }
+            // Elements copied together keep their joins: a corner or a T between two of them joins their copies the same way.
+            if (copy)
+                foreach (var r in copies.Keys.SelectMany(id => ctx.Model.RelationsOf(id, IfcClass.RelConnectsPathElements)).DistinctBy(r => r.Id).Where(r => copies.ContainsKey(r.Relating) && r.Related.All(copies.ContainsKey)).ToList())
+                    ctx.AddRelation(new Relation(ctx.NewId(), r.Class, copies[r.Relating], r.Related.Select(x => copies[x]).ToList(), r.Attrs?.DeepClone() as JsonObject));
             // A group copied: its members' copies make a group of their own, with its name.
             if (copy)
                 foreach (var g in groups)

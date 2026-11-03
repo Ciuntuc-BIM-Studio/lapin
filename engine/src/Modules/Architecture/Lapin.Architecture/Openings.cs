@@ -389,8 +389,9 @@ public static class Openings
             if (r.Mode == "material") { var id = MaterialNamed(m, r.Material); return [(Math.Max(0, r.Thickness), id), (Math.Max(0, r.Thickness), id)]; }
             var bands = Walls.Section(m, wall);
             if (bands.Count < 2) return [(0, null), (0, null)];
-            // The exterior is the wall's right (its first layer), the left when the side is flipped.
-            var (ext, inte) = sy > 0 ? (bands[0], bands[^1]) : (bands[^1], bands[0]);
+            // The exterior is the wall's right face's layer, the left's when the side is flipped (by place: a flipped wall's first layer is on its left).
+            var (right, left) = (bands.MinBy(b => b.From), bands.MaxBy(b => b.To));
+            var (ext, inte) = sy > 0 ? (right, left) : (left, right);
             (double, string?) Of(Walls.Band b) => b.Core || b.Material == null ? (0, null) : (Math.Min(0.025, Math.Abs(b.To - b.From)), b.Material);
             return [Of(ext), Of(inte)];
         }
