@@ -2,8 +2,10 @@
 // The web build, checked as a tester uses it (docs/plan-browser-engine.md,
 // stage 3): build/<id>/web served as static files, opened in headless Chrome;
 // the engine must start in the worker within the budget, a new project must
-// open, a wall drawn with WA must show in the plan, and File → Export 3D…
-// must download that wall as GLB, USDZ and DAE (docs/plan-mesh-export.md).
+// open, a wall drawn with WA must show in the plan, File → Export 3D… must
+// download that wall as GLB, USDZ and DAE (docs/plan-mesh-export.md), and File →
+// Export IFC or Fragments… as IFC (the browser's .NET lacks some of the
+// platform's, MD5 among them: decision 258).
 //
 //   node scripts/check-web.mjs [id]       (default: lapin)
 // CHROME: the browser to drive (default: Chrome where it is usually installed).
@@ -115,6 +117,23 @@ try {
       if (!bytes || bytes.length < 100) fail(`Export 3D as ${format.toUpperCase()} downloaded nothing. ${errors.join(' | ')}`);
       else if (!MAGIC[format](bytes)) fail(`Export 3D as ${format.toUpperCase()} is not a ${format} file.`);
       else console.log(`▸ Export 3D as ${format.toUpperCase()}: ${file}, ${bytes.length} bytes`);
+    }
+    // File → Export IFC or Fragments…, IFC chosen as it is by default.
+    if (!failed) {
+      await ev(`[...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click()`);
+      await sleep(200);
+      await ev(`[...document.querySelectorAll('[role=menuitem]')].find(x => /Export IFC/.test(x.textContent))?.click()`);
+      await sleep(600);
+      const clicked = await ev(`(() => { const b = [...document.querySelectorAll('[aria-label="Export IFC or Fragments"] button')].find(x => x.textContent.trim() === 'Export'); if (!b || b.disabled) return false; b.click(); return true; })()`);
+      if (!clicked) fail('File → Export IFC or Fragments… did not open its dialog, or it has nothing to export.');
+      else {
+        let file = null;
+        for (let k = 0; k < 120 && !file; k++) { await sleep(250); file = readdirSync(downloads).find((f) => f.endsWith('.ifc')) ?? null; }
+        const bytes = file ? readFileSync(join(downloads, file)) : null;
+        if (!bytes || bytes.length < 100) fail(`Export IFC downloaded nothing. ${errors.join(' | ')}`);
+        else if (!bytes.toString('utf8', 0, 20).startsWith('ISO-10303-21')) fail('Export IFC is not an IFC (STEP) file.');
+        else console.log(`▸ Export IFC: ${file}, ${bytes.length} bytes`);
+      }
     }
     rmSync(downloads, { recursive: true, force: true });
   }
