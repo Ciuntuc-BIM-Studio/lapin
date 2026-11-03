@@ -17,6 +17,8 @@ export const LANGUAGES = [
   { id: 'fr', name: 'Français' },
   { id: 'da', name: 'Dansk' },
   { id: 'it', name: 'Italiano' },
+  { id: 'pl', name: 'Polski' },
+  { id: 'pt', name: 'Português' },
 ];
 
 export const LANGS = LANGUAGES.map((l) => l.id);

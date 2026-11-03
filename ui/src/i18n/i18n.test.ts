@@ -4,6 +4,8 @@ import { DE, DE_PATTERNS } from './de';
 import { ES, ES_PATTERNS } from './es';
 import { FR, FR_PATTERNS } from './fr';
 import { IT, IT_PATTERNS } from './it';
+import { PL, PL_PATTERNS } from './pl';
+import { PT, PT_PATTERNS } from './pt';
 import { LANGUAGES, translate, type Lang, type Language } from './index';
 import { LO, LO_PATTERNS } from './lo';
 import { RO, RO_PATTERNS } from './ro';
@@ -53,7 +55,7 @@ describe('the Spanish interface', () => {
 
 describe('the languages', () => {
   it('are offered each named in itself, English first', () => {
-    expect(LANGUAGES.map((l) => l.name)).toEqual(['English', 'Română', 'Español', 'Deutsch', 'Français', 'Dansk', 'Italiano', 'ພາສາລາວ']);
+    expect(LANGUAGES.map((l) => l.name)).toEqual(['English', 'Română', 'Español', 'Deutsch', 'Français', 'Dansk', 'Italiano', 'Polski', 'Português', 'ພາສາລາວ']);
   });
 
   it('English is the interface as written', () => {
@@ -140,8 +142,8 @@ describe('the languages', () => {
     }
   });
 
-  // German, French, Danish, Italian and Lao: the same phrases and patterns as Romanian and Spanish.
-  const others: [Lang, string, Language['dict'], Language['patterns']][] = [['de', 'German', DE, DE_PATTERNS], ['fr', 'French', FR, FR_PATTERNS], ['da', 'Danish', DA, DA_PATTERNS], ['it', 'Italian', IT, IT_PATTERNS], ['lo', 'Lao', LO, LO_PATTERNS]];
+  // German, French, Danish, Italian, Polish, Portuguese and Lao: the same phrases and patterns as Romanian and Spanish.
+  const others: [Lang, string, Language['dict'], Language['patterns']][] = [['de', 'German', DE, DE_PATTERNS], ['fr', 'French', FR, FR_PATTERNS], ['da', 'Danish', DA, DA_PATTERNS], ['it', 'Italian', IT, IT_PATTERNS], ['pl', 'Polish', PL, PL_PATTERNS], ['pt', 'Portuguese', PT, PT_PATTERNS], ['lo', 'Lao', LO, LO_PATTERNS]];
   const ends = (s: string) => s.trim().match(/[…:.?]$/)?.[0] ?? '';
   for (const [lang, name, dict, patterns] of others) {
     it(`${name} has every phrase Romanian has, and no other, each ending as the English does`, () => {
@@ -188,7 +190,7 @@ describe('the languages', () => {
 });
 
 describe('labels the guide found in English', () => {
-  const langs: Lang[] = ['ro', 'es', 'de', 'fr', 'da', 'it', 'lo'];
+  const langs: Lang[] = ['ro', 'es', 'de', 'fr', 'da', 'it', 'pl', 'pt', 'lo'];
   const labels = [
     'Import DXF', 'Import DXF…', 'Link IFC…', 'IFC properties', 'Placed', "by the map's coordinates", 'As a link', 'Units', 'Units:',
     'Roof window', 'Dormer', 'Side', 'Hand', 'Reassign', 'Underlay', 'Execution', 'detach', 'Planning', 'Engineering', 'Assist',

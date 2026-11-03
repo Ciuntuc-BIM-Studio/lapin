@@ -68,6 +68,12 @@ const WORDS = {
   it: { video: 'Video in inglese', play: 'Riproduci', watch: 'Guarda su YouTube', command: 'Comando', keys: 'Tasti', guide: 'Guida utente di Lapin', brand: 'guida utente', eyebrow: 'Guida utente', search: 'Cerca nella guida', theme: 'Chiaro o scuro', open: 'Apri Lapin', pages: 'Pagine', onPage: 'In questa pagina', prev: 'Precedente', next: 'Successivo', none: 'Nessun risultato. Prova Chiedimi nell’app.', language: 'Lingua',
     english: 'Questa pagina non è ancora tradotta: è mostrata in inglese.',
     footer: (date, commit) => `Immagini prese da Lapin stesso il ${dmy(date, '/')}${commit ? ` (build ${commit})` : ''}. Manca qualcosa o c’è un errore? Chiedi nell’app: <b>Chiedimi</b>, oppure <b>?</b> → Segnala un problema.` },
+  pl: { video: 'Film po angielsku', play: 'Odtwórz', watch: 'Obejrzyj w YouTube', command: 'Polecenie', keys: 'Klawisze', guide: 'Podręcznik użytkownika Lapin', brand: 'podręcznik użytkownika', eyebrow: 'Podręcznik użytkownika', search: 'Szukaj w podręczniku', theme: 'Jasny lub ciemny', open: 'Otwórz Lapin', pages: 'Strony', onPage: 'Na tej stronie', prev: 'Poprzednia', next: 'Następna', none: 'Nic nie znaleziono. Spróbuj Zapytaj mnie w aplikacji.', language: 'Język',
+    english: 'Ta strona nie jest jeszcze przetłumaczona: jest wyświetlana po angielsku.',
+    footer: (date, commit) => `Zdjęcia wykonane w samym Lapin dnia ${dmy(date, '.')}${commit ? ` (build ${commit})` : ''}. Czegoś brakuje albo coś jest nie tak? Zapytaj w aplikacji: <b>Zapytaj mnie</b> albo <b>?</b> → Zgłoś problem.` },
+  pt: { video: 'Vídeo em inglês', play: 'Reproduzir', watch: 'Assistir no YouTube', command: 'Comando', keys: 'Teclas', guide: 'Guia do usuário do Lapin', brand: 'guia do usuário', eyebrow: 'Guia do usuário', search: 'Pesquisar no guia', theme: 'Claro ou escuro', open: 'Abrir o Lapin', pages: 'Páginas', onPage: 'Nesta página', prev: 'Anterior', next: 'Próxima', none: 'Nada encontrado. Experimente Pergunte-me no aplicativo.', language: 'Idioma',
+    english: 'Esta página ainda não foi traduzida: ela é mostrada em inglês.',
+    footer: (date, commit) => `Imagens tiradas do próprio Lapin em ${dmy(date, '/')}${commit ? ` (build ${commit})` : ''}. Falta algo ou há um erro? Pergunte no aplicativo: <b>Pergunte-me</b>, ou <b>?</b> → Relatar um problema.` },
 };
 for (const l of LANGS) if (!WORDS[l]) throw new Error(`render.mjs: the guide's words in ${l} are missing (WORDS)`);
 

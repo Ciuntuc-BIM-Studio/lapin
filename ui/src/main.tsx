@@ -38,7 +38,7 @@ if (!detached) setTimeout(() => void checkForUpdates(), 8000);
 if (!detached && !isGuest()) startReplies();
 void syncWindows();
 createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);
-// The interface in the language chosen (English, Romanian, Spanish, German, French, Danish, Italian or Lao).
+// The interface in the language chosen (English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese or Lao).
 startTranslator(document.getElementById('root')!);
 
 installRecentErrors();

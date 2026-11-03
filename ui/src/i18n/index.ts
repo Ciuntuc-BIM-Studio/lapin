@@ -1,11 +1,11 @@
 /**
  * The interface's language (English, Romanian, Spanish, German, French,
- * Danish, Italian or Lao). The interface is
+ * Danish, Italian, Polish, Brazilian Portuguese or Lao). The interface is
  * written in English; in another language a translator walks what it shows
  * (texts, titles, placeholders) and puts each phrase it knows into that
  * language, keeping the English to put back. Drawings (SVG) and what the user
  * types are left as they are. Each language is one file (`ro.ts`, `es.ts`,
- * `de.ts`, `fr.ts`, `da.ts`, `it.ts`, `lo.ts`):
+ * `de.ts`, `fr.ts`, `da.ts`, `it.ts`, `pl.ts`, `pt.ts`, `lo.ts`):
  * its phrase list and its patterns; a phrase not in it stays English.
  *
  * One English word with two meanings (Join: a shared session or the wall-join
@@ -20,6 +20,8 @@ import { ES, ES_PATTERNS } from './es';
 import { FR, FR_PATTERNS } from './fr';
 import { IT, IT_PATTERNS } from './it';
 import { LO, LO_PATTERNS } from './lo';
+import { PL, PL_PATTERNS } from './pl';
+import { PT, PT_PATTERNS } from './pt';
 import { RO, RO_PATTERNS } from './ro';
 import { rebrand } from '../platform/brand';
 
@@ -36,6 +38,8 @@ const TABLES = {
   fr: { dict: FR, patterns: FR_PATTERNS },
   da: { dict: DA, patterns: DA_PATTERNS },
   it: { dict: IT, patterns: IT_PATTERNS },
+  pl: { dict: PL, patterns: PL_PATTERNS },
+  pt: { dict: PT, patterns: PT_PATTERNS },
   lo: { dict: LO, patterns: LO_PATTERNS },
 } satisfies Record<string, Language>;
 
@@ -50,6 +54,8 @@ export const LANGUAGES: { id: Lang; name: string }[] = [
   { id: 'fr', name: 'Français' },
   { id: 'da', name: 'Dansk' },
   { id: 'it', name: 'Italiano' },
+  { id: 'pl', name: 'Polski' },
+  { id: 'pt', name: 'Português' },
   { id: 'lo', name: 'ພາສາລາວ' },
 ];
 

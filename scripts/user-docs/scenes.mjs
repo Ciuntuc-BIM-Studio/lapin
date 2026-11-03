@@ -19,6 +19,8 @@ const ASK_COPY = {
   fr: 'comment copier un mur',
   da: 'hvordan kopierer jeg en væg',
   it: 'come copio un muro',
+  pl: 'jak skopiować ścianę',
+  pt: 'como copio uma parede',
 };
 
 /** The assistant's scene: the two questions asked, and the answers the stand-in model gives. */
@@ -31,6 +33,8 @@ const ASSISTANT = {
     fr: ['Combien de murs par niveau, et quelle longueur ?', 'Donne aux portes FireRating EI30.'],
     da: ['Hvor mange vægge er der pr. etage, og hvor lange er de?', 'Giv dørene FireRating EI30.'],
     it: ['Quanti muri ci sono per piano, e quanto sono lunghi?', 'Dai alle porte FireRating EI30.'],
+    pl: ['Ile ścian jest na każdej kondygnacji i jaka jest ich długość?', 'Nadaj drzwiom FireRating EI30.'],
+    pt: ['Quantas paredes há por pavimento, e qual o comprimento?', 'Dê às portas FireRating EI30.'],
   },
   proposed: {
     en: (n) => `I proposed EI30 for ${n} door. Review and apply it below.`,
@@ -40,6 +44,8 @@ const ASSISTANT = {
     fr: (n) => `J’ai proposé EI30 pour ${n} porte. Vérifiez et appliquez ci-dessous.`,
     da: (n) => `Jeg har foreslået EI30 til ${n} dør. Gennemse og anvend nedenfor.`,
     it: (n) => `Ho proposto EI30 per ${n} porta. Controlla e applica qui sotto.`,
+    pl: (n) => `Zaproponowałem EI30 dla ${n} drzwi. Sprawdź i zastosuj poniżej.`,
+    pt: (n) => `Propus EI30 para ${n} porta. Revise e aplique abaixo.`,
   },
   walls: {
     en: (s, n, m) => `**${s}** has **${n} walls**, **${m} m** in all.`,
@@ -49,6 +55,8 @@ const ASSISTANT = {
     fr: (s, n, m) => `**${s}** compte **${n} murs**, **${m} m** au total.`,
     da: (s, n, m) => `**${s}** har **${n} vægge**, i alt **${m} m**.`,
     it: (s, n, m) => `**${s}** ha **${n} muri**, **${m} m** in tutto.`,
+    pl: (s, n, m) => `**${s}**: **${n} ścian**, łącznie **${m} m**.`,
+    pt: (s, n, m) => `**${s}** tem **${n} paredes**, **${m} m** no total.`,
   },
 };
 
@@ -1805,7 +1813,7 @@ export const scenes = [
       await t.page.locator('.help-menu > button').click();
       await t.wait(300);
       await t.shot('help-menu', { clip: { x: 1100, y: 0, width: 340, height: 340 } });
-      t.expect((await t.page.locator('.menu-langs button').allTextContents()).join(' ') === 'English Română Español Deutsch Français Dansk Italiano ພາສາລາວ', 'the help menu offers the interface in English, Romanian, Spanish, German, French, Danish and Lao');
+      t.expect((await t.page.locator('.menu-langs button').allTextContents()).join(' ') === 'English Română Español Deutsch Français Dansk Italiano Polski Português ພາສາລາວ', 'the help menu offers the interface in English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese and Lao');
       await t.page.getByRole('menuitem', { name: 'About Lapin…' }).click();
       await t.wait(200);
       t.expect(await t.page.getByText('Helpware', { exact: true }).count() > 0, 'About Lapin says what helpware means');

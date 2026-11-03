@@ -27,7 +27,7 @@ Il pulsante **?** accanto a Chiedimi apre il menu di aiuto:
 - **Informazioni su Lapin…** mostra la versione, la licenza, un collegamento al codice sorgente e il significato di helpware.
 
   ![Informazioni su Lapin](shots/about.webp)
-- **English · Română · Español · Deutsch · Français · Dansk · Italiano · ພາສາລາວ** sceglie la lingua dell’interfaccia. La tua scelta viene ricordata su questo computer. Questa guida è disponibile nelle prime sette (in lao si apre in inglese), e **Guida utente** la apre in quella che hai scelto; il menu in cima a ogni pagina della guida la passa a un’altra.
+- **English · Română · Español · Deutsch · Français · Dansk · Italiano · Polski · Português · ພາສາລາວ** sceglie la lingua dell’interfaccia. La tua scelta viene ricordata su questo computer. Questa guida è disponibile nelle prime nove (in lao si apre in inglese), e **Guida utente** la apre in quella che hai scelto; il menu in cima a ogni pagina della guida la passa a un’altra.
 
 ## Le risposte alle tue segnalazioni
 
