@@ -34,6 +34,8 @@ Vous pouvez esquisser sur quatre sortes de vues :
 
 Chaque solide reste lié à son esquisse. Modifiez la forme et le solide la suit, avec le même GlobalId. Sélectionnez un solide pour changer sa classe IFC, son type prédéfini et son type dans le panneau des propriétés. **Modifier l’esquisse** ouvre la vue sur laquelle se trouve l’esquisse.
 
+Un solide qui vient d’être créé est sélectionné : il s’allume avec les poignées de son esquisse. Dans un plan, une coupe ou une élévation, là où la vue coupe un solide, sa coupe est remplie de blanc : les lignes de l’esquisse deviennent une forme qu’on voit pleine. Un matériau qui a son propre remplissage ou sa propre hachure la dessine avec celui-ci à la place.
+
 ## Anneau, Caisson et Bande de mur
 
 Ces trois outils donnent à une forme dessinée une épaisseur dans son propre plan, puis une hauteur à partir de ce plan :
@@ -79,16 +81,18 @@ Les coupes et les élévations sont aussi des plans. Un solide esquissé dans un
 En IFC, un anneau, les murs d’un caisson et une bande de mur sont des éléments IfcWall, le fond et le dessus d’un caisson des éléments IfcSlab, et un caisson avec eux un IfcElementAssembly avec IfcRelAggregates ; leurs types s’écrivent IfcWallType et IfcSlabType. Chaque export 3D (IFC, Fragments, glTF, USD, COLLADA) écrit un solide Studio là où il se trouve dans le modèle, quel que soit le plan sur lequel il a été esquissé, avec ses trous ; un assemblage est un nœud de groupe au-dessus de ses parties. Rouvert, l’IFC propre à Lapin ramène les solides comme références, à leur place, avec leur classe, leur type et leur assemblage, mais ils ne sont plus modifiables (leurs esquisses ne sont pas dans le fichier). L’historique de chaque solide est conservé dans le jeu de propriétés propre à Lapin, Lapin_Intent. Les solides Studio ne prennent que des types simples, sans couches : c’est la modélisation libre pour laquelle ils existent ; les murs à couches sont les murs natifs de Lapin.
 ## Modifier un solide en 3D
 
-Ces outils travaillent sur les faces et les arêtes du corps tel qu’il est construit maintenant. La face sous la souris s’allume. Quand un outil a besoin d’une valeur, une petite case s’ouvre près du curseur. Tapez la valeur et appuyez sur <kbd>Entrée</kbd>, ou sur <kbd>Échap</kbd> pour abandonner.
+Ces outils travaillent sur les faces et les arêtes du corps tel qu’il est construit maintenant. La face sous la souris s’allume.
 
-- **Pousser/Tirer** (PU) déplace une face vers l’extérieur d’une distance, ou vers l’intérieur quand la distance est négative. Sur une extrusion, son extrémité change la profondeur et son côté déplace l’arête de l’esquisse dessous. Sur un mur ou un autre élément, tirer ajoute un solide dans le matériau de la face, et pousser découpe l’élément.
+**Pousser/Tirer**, **Scinder**, **Trancher** et **Déplacer 3D** se manient sur le modèle lui-même. Cliquez sur une face, et une flèche se dresse dessus : la souris déplace la face le long de la flèche, et ce que fera l’étape se dessine au fur et à mesure. Pousser/Tirer dessine en vert ce qu’il ajoute et en rouge ce qu’il enlève. Une coupe en deux ou une tranche dessine son plan en jaune. La distance s’affiche près de la flèche. Tapez une valeur pour la fixer exactement, par exemple 500 ou -250. Cliquez ou appuyez sur <kbd>Entrée</kbd> pour l’appliquer, ou sur <kbd>Échap</kbd> pour abandonner ; l’outil reste actif pour la face suivante. <kbd>Entrée</kbd> sans rien déplacer ni taper répète la dernière distance. Un glissement avance au centimètre, ou par 10 cm avec <kbd>Maj</kbd>. Le bouton droit et celui du milieu font toujours tourner et déplacer la vue. Les autres outils demandent leur valeur dans une petite case près du curseur.
+
+- **Pousser/Tirer** (PU) déplace une face vers l’extérieur, ou vers l’intérieur quand la distance est négative. Sur une extrusion, son extrémité change la profondeur et son côté déplace l’arête de l’esquisse dessous. Sur un mur ou un autre élément, tirer ajoute un solide dans le matériau de la face, et pousser découpe l’élément.
 - **Arrondir l’arête** (FE) arrondit l’arête la plus proche du clic, et **Chanfreiner l’arête** (CE) la chanfreine. Choisissez *tout autour de la face* pour traiter toutes les arêtes de la face d’un coup.
 - **Coque** évide les solides sélectionnés, avec des parois aussi épaisses que vous le tapez. Elle peut rester fermée, ou être laissée ouverte à son extrémité, à son esquisse ou aux deux.
-- **Diviser** coupe un solide en deux par le plan de la face choisie, aussi loin dans la face que vous le tapez. Les deux parties gardent l’esquisse. **Trancher** ne garde qu’un côté.
+- **Scinder** coupe un solide en deux par un plan parallèle à la face choisie, aussi loin dans la face que vous le faites glisser ou le tapez. Les deux parties gardent l’esquisse. **Trancher** ne garde qu’un côté : choisissez **Garder derrière** ou **Garder devant** dans la barre en bas de la vue.
 - **Réseau** répète le solide en ligne, et **Réseau polaire** le répète autour d’une verticale.
-- **Rotation 3D** fait tourner le solide autour d’une arête choisie. **Symétrie 3D** le reflète dans le plan d’une face. **Déplacer 3D** le déplace en x, y et z.
+- **Rotation 3D** fait tourner le solide autour d’une arête choisie. **Symétrie 3D** le reflète dans le plan d’une face. **Déplacer 3D** pose des flèches selon x, y et z sur les solides sélectionnés : faites-en glisser une, ou tapez une distance pour l’axe affiché près de la valeur (<kbd>Tab</kbd> passe à l’axe suivant).
 
-![Pousser/Tirer : la face du dessus allumée et la distance tapée près du curseur](shots/studio-push-pull.webp)
+![Pousser/Tirer : la face du dessus tirée vers le haut, ce qu’elle ajoute dessiné en vert, et la distance près de la flèche](shots/studio-push-pull.webp)
 
 ![L’arête arrondie : l’arrondi suit le bloc quand sa profondeur change](shots/studio-fillet.webp)
 

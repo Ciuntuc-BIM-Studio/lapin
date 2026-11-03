@@ -757,7 +757,7 @@ export const LO: Record<string, string> = {
   'Pushed or pulled.': 'ດັນ ຫຼື ດຶງແລ້ວ.',
   'Chamfers and fillets go on Studio solids: make the element one first (Make Studio solid).': 'ການລົບຫຼ່ຽມ ແລະ ມົນມຸມເຮັດໄດ້ເທິງຮູບຊົງຕັນ Studio: ເຮັດອົງປະກອບໃຫ້ເປັນອັນນັ້ນກ່ອນ (ເຮັດເປັນຮູບຊົງຕັນ Studio).',
   'Select the Studio solid first, then pick the face whose plane cuts it (a face of the solid itself, or of any element).': 'ເລືອກຮູບຊົງຕັນ Studio ກ່ອນ, ແລ້ວເລືອກໜ້າທີ່ລະນາບຂອງມັນຕັດຜ່ານ (ໜ້າຂອງຮູບຊົງຕັນເອງ, ຫຼື ຂອງອົງປະກອບໃດກໍໄດ້).',
-  'There is no flat face there.': 'ບໍ່ມີໜ້າຮາບຢູ່ບ່ອນນັ້ນ.',
+  'There is no flat face there.': 'ບໍ່ມີໜ້າຮາບຢູ່ບ່ອນນັ້ນ.', 'Apply (Enter)': 'ນຳໃຊ້ (Enter)', 'Cancel (Esc)': 'ຍົກເລີກ (Esc)', 'Out adds, in takes away': 'ອອກນອກແມ່ນເພີ່ມ, ເຂົ້າໃນແມ່ນເອົາອອກ', 'The plane, into the face': 'ລະນາບ, ເຂົ້າໄປໃນໜ້າ', 'Keep behind': 'ເກັບດ້ານຫຼັງ', 'Keep in front': 'ເກັບດ້ານໜ້າ', 'Move the mouse or type a distance · click or Enter applies · Esc cancels': 'ເລື່ອນເມົ້າ ຫຼື ພິມໄລຍະ · ຄລິກ ຫຼື Enter ນຳໃຊ້ · Esc ຍົກເລີກ', 'Drag an arrow or type a distance · Tab: next axis · Enter applies · Esc cancels': 'ລາກລູກສອນ ຫຼື ພິມໄລຍະ · Tab: ແກນຕໍ່ໄປ · Enter ນຳໃຊ້ · Esc ຍົກເລີກ',
   'Split in two: both keep the sketch, so changing it changes both.': 'ແບ່ງເປັນສອງ: ທັງສອງຮັກສາຮູບສະເກັດໄວ້, ສະນັ້ນປ່ຽນມັນກໍປ່ຽນທັງສອງ.',
   'Select the Studio solid first, then pick the face it is mirrored in.': 'ເລືອກຮູບຊົງຕັນ Studio ກ່ອນ, ແລ້ວເລືອກໜ້າທີ່ຈະພິກກະຈົກຜ່ານ.',
   'Select the elements to make into Studio solids (a reference from IFC, an imported mesh, a wall…).': 'ເລືອກອົງປະກອບທີ່ຈະເຮັດເປັນຮູບຊົງຕັນ Studio (ການອ້າງອີງຈາກ IFC, ຕາໜ່າງທີ່ນຳເຂົ້າ, ຝາ…).',

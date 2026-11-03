@@ -562,6 +562,19 @@ public static class Views
             : layerSets[element] = LayerSets.BandsOf(m, element)?.Select(b => new LayerRef(b.Material, b.Name, Math.Abs(b.To - b.From))).ToList();
         var materials = MaterialDrawing.Apply(drawing, p => Resolved(p.Material), LayersOf,
             l => l.Thickness < MaterialGraphics.MembraneThickness || Resolved(l.Material)?.Membrane == true, joins: ViewStyles.Of(m, view).Joins);
+        // A cut left without a fill: the fill a module gives its elements (a Studio solid's white), asked once per element.
+        if (q.Services.All<ICutFill>() is { Count: > 0 } cutFills)
+        {
+            var fillOf = new Dictionary<string, string?>();
+            for (var i = 0; i < drawing.Cuts.Count; i++)
+            {
+                if (materials.HidePolygons.Contains(i) || materials.Fills.GetValueOrDefault(i) != null) continue;
+                var el = drawing.Cuts[i].Element;
+                if (!fillOf.TryGetValue(el, out var fill))
+                    fillOf[el] = fill = m.Get(el) is { } e ? cutFills.Select(f => f.FillOf(m, e)).FirstOrDefault(x => x != null) : null;
+                if (fill != null) materials.Fills[i] = fill;
+            }
+        }
         var project = Spatial.Project(m);
         var graphics = GraphicsSets.Of(m, view);
         var categories = (graphics?["categories"] as JsonObject)?.Select(c => (c.Key, G: CategoryGraphics.From(c.Value))).Where(x => x.G != null).ToDictionary(x => x.Key, x => x.G!);

@@ -37,6 +37,8 @@ export interface CameraApi {
   setOrtho(on: boolean): void;
   /** The view as drawn now, a PNG data URL at most `maxWidth` wide (a remark's snapshot); null when it cannot be read. */
   snapshot(maxWidth?: number): string | null;
+  /** The box round the elements given as they are drawn now (what a move's handles stand on); null when none is shown. */
+  boxOf?(ids: string[]): { min: Vec3; max: Vec3 } | null;
 }
 
 export const useCamera = create<CameraState & { api: CameraApi | null }>(() => ({

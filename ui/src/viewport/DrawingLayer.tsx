@@ -7,7 +7,7 @@
 import { memo, useId, useMemo } from 'react';
 import { useSession } from '../engine/session';
 import { screenWidth, useDisplay } from '../app/display';
-import { screenInk, type DrawingDto, type PenDto } from './drawing';
+import { screenFill, screenInk, type DrawingDto, type PenDto } from './drawing';
 
 type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
 
@@ -19,7 +19,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
   const thin = useDisplay((s) => s.thinLines);
   const cap = drawing.lineCap === 'square' ? 'square' : 'round';
   const paths = useMemo(() => drawing.pens.map((p, i) => {
-    const stroke = screenInk(p.stroke, onDark), fill = screenInk(p.fill, onDark);
+    const stroke = screenInk(p.stroke, onDark), fill = screenFill(p.fill, onDark);
     let d = '';
     const pt = (x: number, y: number) => { const s = toScreen({ x, y }); return `${s.x.toFixed(1)} ${s.y.toFixed(1)}`; };
     for (const loop of p.loops ?? []) {

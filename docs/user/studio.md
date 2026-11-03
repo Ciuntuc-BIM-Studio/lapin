@@ -34,6 +34,8 @@ You can sketch on four kinds of view:
 
 Each solid stays tied to its sketch. Change the shape and the solid follows, with the same GlobalId. Select a solid to change its IFC class, its predefined type and its type in the properties panel. **Edit sketch** opens the view the sketch lies on.
 
+A solid just made is selected, so it lights up with its sketch's grips. In a plan, a section or an elevation, where the view cuts a solid its cut is filled white: the sketch's lines become a shape you can see is solid. A material with its own fill or hatch draws it in that instead.
+
 ## Ring, Box and Wall strip
 
 These three tools give a drafted shape a thickness in its own plane, then a height away from that plane:
@@ -79,16 +81,18 @@ Sections and elevations are planes too. A solid sketched on a section stands on 
 In IFC, a ring, a box's walls and a wall strip are IfcWall elements, a box's bottom and top IfcSlab elements, and a box with them an IfcElementAssembly with IfcRelAggregates; their types are written as IfcWallType and IfcSlabType. Every 3D export (IFC, Fragments, glTF, USD, COLLADA) writes a Studio solid where it stands in the model, whichever plane it was sketched on, with its holes; an assembly is a group node over its parts. Opening Lapin's own IFC again brings the solids back as references, in place, under their class, type and assembly, but no longer editable (their sketches are not in the file). The history of each solid is kept in Lapin's own property set, Lapin_Intent. Studio solids take simple types only, without layers: that is the loose modelling they are for; walls with layers are Lapin's native walls.
 ## Changing a solid in 3D
 
-These tools work on the faces and edges of the body as it is built now. The face under the mouse lights up. When a tool needs a value, a small box opens beside the cursor. Type the value and press <kbd>Enter</kbd>, or press <kbd>Esc</kbd> to drop it.
+These tools work on the faces and edges of the body as it is built now. The face under the mouse lights up.
 
-- **Push/Pull** (PU) moves a face out by a distance, or in when the distance is negative. On an extrusion, its end changes the depth and its side moves the sketch's edge under it. On a wall or any other element, pulling adds a solid in the face's material, and pushing cuts into the element.
+**Push/Pull**, **Split**, **Slice** and **Move 3D** are handled on the model itself. Click a face, and an arrow stands on it: the mouse moves the face along the arrow, and what the step will make is drawn as you go. Push/pull draws in green what it adds and in red what it takes away; a split or a slice draws its plane in yellow. The distance reads beside the arrow. Type a value to set it exactly, such as 500 or -250. Click or press <kbd>Enter</kbd> to apply it, or press <kbd>Esc</kbd> to drop it; the tool stays on for the next face. <kbd>Enter</kbd> with nothing moved or typed repeats the last distance. A drag goes by the centimetre, or by 10 cm with <kbd>Shift</kbd>. The right and the middle button still turn and move the view. The other tools ask for their value in a small box beside the cursor.
+
+- **Push/Pull** (PU) moves a face out, or in when the distance is negative. On an extrusion, its end changes the depth and its side moves the sketch's edge under it. On a wall or any other element, pulling adds a solid in the face's material, and pushing cuts into the element.
 - **Fillet edge** (FE) rounds the edge nearest your click, and **Chamfer edge** (CE) bevels it. Choose *all round the face* to do every edge of the face at once.
 - **Shell** hollows the selected solids, with walls as thick as you type. It can stay closed, or be left open at its end, at its sketch or at both.
-- **Split** cuts a solid in two by the plane of the face you pick, as far into the face as you type. Both parts keep the sketch. **Slice** keeps one side only.
+- **Split** cuts a solid in two by a plane parallel to the face you pick, as far into the face as you drag or type. Both parts keep the sketch. **Slice** keeps one side only: choose **Keep behind** or **Keep in front** in the bar at the bottom of the view.
 - **Array** repeats the solid in a row, and **Polar array** repeats it round an upright.
-- **Rotate 3D** turns the solid about an edge you pick. **Mirror 3D** mirrors it in a face's plane. **Move 3D** moves it by x, y and z.
+- **Rotate 3D** turns the solid about an edge you pick. **Mirror 3D** mirrors it in a face's plane. **Move 3D** puts arrows along x, y and z on the selected solids: drag one, or type a distance for the axis shown beside the value (<kbd>Tab</kbd> goes to the next axis).
 
-![Push/pull: the top face lit up, and the distance typed beside the cursor](shots/studio-push-pull.webp)
+![Push/pull: the top face pulled up, what it adds drawn in green, and the distance beside the arrow](shots/studio-push-pull.webp)
 
 ![The edge filleted: the round follows the block when its depth changes](shots/studio-fillet.webp)
 

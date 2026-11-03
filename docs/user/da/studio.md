@@ -34,6 +34,8 @@ Du kan skitsere på fire slags visninger:
 
 Hvert legeme forbliver bundet til sin skitse. Ændr formen, og legemet følger med, med samme GlobalId. Markér et legeme for at ændre dets IFC-klasse, dets foruddefinerede type og dets type i egenskabspanelet. **Redigér skitse** åbner den visning, skitsen ligger på.
 
+Et legeme, du lige har lavet, er markeret, så det lyser op med sin skitses greb. I en plan, et snit eller en facade fyldes et legemes snit med hvidt, hvor visningen skærer det: skitsens linjer bliver en form, du kan se er massiv. Et materiale med sin egen fyldning eller skravering tegner den med den i stedet.
+
 ## Ring, Kasse og Vægstrimmel
 
 Disse tre værktøjer giver en tegnet form en tykkelse i dens eget plan og derefter en højde væk fra planet:
@@ -79,16 +81,18 @@ Snit og facader er også planer. Et legeme skitseret i et snit står på snitlin
 I IFC er en ring, en kasses vægge og en vægstrimmel IfcWall-elementer, en kasses bund og låg IfcSlab-elementer, og en kasse med dem en IfcElementAssembly med IfcRelAggregates; deres typer skrives som IfcWallType og IfcSlabType. Hver 3D-eksport (IFC, Fragments, glTF, USD, COLLADA) skriver et Studio-legeme dér, hvor det står i modellen, uanset hvilket plan det blev skitseret på, med dets huller; en samling er en gruppeknude over sine dele. Åbnes Lapins egen IFC igen, kommer legemerne tilbage som referencer, på deres plads, med klasse, type og samling, men de kan ikke længere redigeres (deres skitser er ikke i filen). Hvert legemes historik gemmes i Lapins eget egenskabssæt, Lapin_Intent. Studio-legemer tager kun simple typer uden lag: det er den frie modellering, de er til; vægge med lag er Lapins native vægge.
 ## At ændre et legeme i 3D
 
-Disse værktøjer arbejder på legemets flader og kanter, som det er bygget nu. Fladen under musen lyser op. Når et værktøj skal bruge en værdi, åbner en lille boks ved markøren. Skriv værdien og tryk på <kbd>Enter</kbd>, eller <kbd>Esc</kbd> for at droppe den.
+Disse værktøjer arbejder på legemets flader og kanter, som det er bygget nu. Fladen under musen lyser op.
 
-- **Skub/Træk** (PU) flytter en flade ud med en afstand, eller ind, når afstanden er negativ. På en ekstrudering ændrer enden dybden, og siden flytter skitsens kant under den. På en væg eller et andet element tilføjer et træk et legeme i fladens materiale, og et skub skærer ind i elementet.
+**Skub/Træk**, **Opdel**, **Afskær** og **Flyt 3D** styres direkte på modellen. Klik på en flade, og en pil står på den: musen flytter fladen langs pilen, og det, trinnet vil lave, tegnes undervejs. Skub/Træk tegner det, den tilføjer, med grønt og det, den fjerner, med rødt. En opdeling eller en afskæring tegner sit plan med gult. Afstanden står ved pilen. Skriv en værdi for at sætte den præcist, fx 500 eller -250. Klik eller tryk på <kbd>Enter</kbd> for at anvende den, eller <kbd>Esc</kbd> for at droppe den; værktøjet forbliver aktivt til den næste flade. <kbd>Enter</kbd>, uden at noget er flyttet eller skrevet, gentager den sidste afstand. Et træk går en centimeter ad gangen, eller 10 cm med <kbd>Shift</kbd>. Højre og midterste knap drejer og flytter stadig visningen. De andre værktøjer beder om deres værdi i en lille boks ved markøren.
+
+- **Skub/Træk** (PU) flytter en flade ud, eller ind, når afstanden er negativ. På en ekstrudering ændrer enden dybden, og siden flytter skitsens kant under den. På en væg eller et andet element tilføjer et træk et legeme i fladens materiale, og et skub skærer ind i elementet.
 - **Afrund kant** (FE) afrunder kanten nærmest klikket, og **Affas kant** (CE) affaser den. Vælg *hele vejen rundt om fladen* for at tage alle fladens kanter på én gang.
 - **Skal** udhuler de valgte legemer med vægge så tykke, som du skriver. Den kan forblive lukket eller være åben i enden, ved skitsen eller i begge.
-- **Del** skærer et legeme i to ved den valgte flades plan, så langt ind i fladen som du skriver. Begge dele beholder skitsen. **Afskær** beholder kun én side.
+- **Opdel** skærer et legeme i to ved et plan parallelt med den valgte flade, så langt ind i fladen som du trækker eller skriver. Begge dele beholder skitsen. **Afskær** beholder kun én side: vælg **Behold bagved** eller **Behold foran** i bjælken nederst i visningen.
 - **Række** gentager legemet på linje, og **Polær række** gentager det om en lodret akse.
-- **Rotér 3D** drejer legemet om en kant, du vælger. **Spejl 3D** spejler det i en flades plan. **Flyt 3D** flytter det med x, y og z.
+- **Rotér 3D** drejer legemet om en kant, du vælger. **Spejl 3D** spejler det i en flades plan. **Flyt 3D** sætter pile langs x, y og z på de valgte legemer: træk i en, eller skriv en afstand for den akse, der vises ved værdien (<kbd>Tab</kbd> går til næste akse).
 
-![Skub/Træk: topfladen lyser op, og afstanden skrives ved markøren](shots/studio-push-pull.webp)
+![Skub/Træk: topfladen trukket op, det, den tilføjer, tegnet med grønt, og afstanden ved pilen](shots/studio-push-pull.webp)
 
 ![Kanten afrundet: rundingen følger blokken, når dens dybde ændres](shots/studio-fillet.webp)
 

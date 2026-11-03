@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Architecture;
 using Lapin.Drafting;
+using Lapin.Drawing;
 using Lapin.Model;
 using Lapin.Platform;
 using Lapin.Studio;
@@ -48,6 +49,25 @@ public class StudioTests
         f.Run("element.delete", new JsonObject { ["id"] = plate });
         Assert.Empty(f.Session.Geometry(solid)!.Parts);
         Assert.Throws<CommandException>(() => f.Run("studio.extrude", new JsonObject { ["profileId"] = Draw(f, plan, Line(0, 0, 1, 1)) }));
+    }
+
+    [Fact]
+    public void A_solid_made_from_a_sketch_is_filled_white_where_a_plan_cuts_it()
+    {
+        var f = F();
+        var plan = Plan(f);
+        var outline = Draw(f, plan, Rect(0, 0, 2, 2));
+        // The sketch alone is lines: nothing is filled.
+        Assert.DoesNotContain(Views.Render(f.Session.Reader, f.Model.Get(plan)!).Pens, p => p.Layer == PenLayer.Fill);
+        f.Run("studio.extrude", new JsonObject { ["profileId"] = outline, ["depth"] = 3 });
+        // Made a solid 3 m high, the plan cuts it: its cut is filled with the paper's white, on screen and on a sheet.
+        foreach (var print in new[] { false, true })
+        {
+            var fill = Assert.Single(Views.Render(f.Session.Reader, f.Model.Get(plan)!, print: print).Pens, p => p.Layer == PenLayer.Fill);
+            Assert.Equal("#ffffff", fill.Fill);
+            var loop = Assert.Single(fill.Loops);
+            Assert.Equal(4, Math.Abs(loop.Select((a, i) => { var b = loop[(i + 1) % loop.Count]; return a.X * b.Y - b.X * a.Y; }).Sum() / 2), 6);
+        }
     }
 
     [Fact]

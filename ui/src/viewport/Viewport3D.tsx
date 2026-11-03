@@ -30,6 +30,7 @@ import { boxUv, boxUvSized, imageOf, imageTexture, orthophotos, orthoTexture, or
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
+import { AxisDrag3D } from './AxisDrag3D';
 import { SectionBox3D } from './SectionBox3D';
 import { RefPlanes3D, useRefPlaneDrag } from './RefPlanes3D';
 import { planePoint, refPlanesGroup, refPlanesKey, refPlanesOf } from './refPlanes';
@@ -600,6 +601,11 @@ export function Viewport3D() {
         applyPose(p);
         publish();
         invalidate.current();
+      },
+      boxOf: (ids) => {
+        const box = new THREE.Box3();
+        for (const id of ids) { const o = live.get(id)?.object; if (o?.visible) box.expandByObject(o); }
+        return box.isEmpty() ? null : { min: { x: box.min.x, y: box.min.y, z: box.min.z }, max: { x: box.max.x, y: box.max.y, z: box.max.z } };
       },
       // Drawn once more right before it is read: the drawing buffer is not kept between frames.
       snapshot: (maxWidth = 1280) => {
@@ -1445,6 +1451,7 @@ export function Viewport3D() {
       {faceLabel && <div className="face-label" style={{ left: faceLabel.x + 14, top: faceLabel.y + 14 }}>{faceLabel.text}</div>}
       <Grips3D camera={camRef} canvas={host} />
       {!walkStart && <SectionBox3D camera={camRef} canvas={host} />}
+      {!walkStart && <AxisDrag3D camera={camRef} canvas={host} />}
       {!walkStart && <RefPlanes3D camera={camRef} canvas={host} />}
       <KeyPlan mode="3d" />
     </>

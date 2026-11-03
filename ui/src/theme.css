@@ -1138,3 +1138,21 @@ button.mode-chip:hover { color: var(--accent); }
 /* Select region in 3D (docs/groups.md): the box or lasso drawn over the canvas, the plan's colours. */
 .region-3d { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
 
+
+/* Studio's on-canvas handles in 3D (AxisDrag3D): what an operation will make, its arrows and its distance. */
+.axis-drag .axis-handle { pointer-events: all; cursor: grab; }
+.axis-drag .axis-handle.active { cursor: grabbing; }
+.axis-drag .axis-handle:hover { filter: brightness(1.2); }
+.axis-drag .axis-hit { stroke: transparent; stroke-width: 18; }
+.axis-drag .axis-name { font: 600 11px/1 ui-sans-serif, system-ui, sans-serif; text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: var(--hud); stroke-width: 3px; }
+.axis-drag .axis-dim { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; }
+.axis-drag .axis-origin { fill: var(--hud); stroke: var(--accent, #b5532d); stroke-width: 1.5; }
+.axis-drag-value { position: absolute; z-index: 7; display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px; background: var(--hud); border: 1px solid var(--accent); border-radius: 4px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18); backdrop-filter: blur(4px); }
+.axis-drag-value input { width: 86px; border: 0; background: transparent; color: var(--ink); font: 600 13px/1.4 ui-monospace, Menlo, monospace; outline: none; padding: 1px 2px; }
+.axis-drag-value input::placeholder { color: var(--ink); opacity: 1; }
+.axis-drag-value input.bad { color: #d33f2f; }
+.axis-drag-axis { font: 700 11px/1 ui-sans-serif, system-ui, sans-serif; padding-right: 2px; }
+.axis-drag-chip { position: absolute; bottom: 128px; left: 50%; transform: translateX(-50%); z-index: 7; max-width: calc(100% - 32px); }
+.axis-drag-chip .mode-hint { overflow: hidden; text-overflow: ellipsis; }
+.axis-drag-chip button { display: inline-flex; align-items: center; gap: 4px; }
+.axis-drag-options { display: inline-flex; gap: 4px; }

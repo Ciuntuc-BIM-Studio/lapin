@@ -34,6 +34,8 @@ Puede dibujar en cuatro clases de vista:
 
 Cada sólido queda ligado a su boceto. Cambie la forma y el sólido la sigue, con el mismo GlobalId. Seleccione un sólido para cambiar su clase IFC, su tipo predefinido y su tipo en el panel de propiedades. **Editar boceto** abre la vista en la que está el boceto.
 
+Un sólido recién creado queda seleccionado, así que se ilumina con los pinzamientos de su boceto. En una planta, una sección o un alzado, donde la vista corta un sólido su corte se rellena de blanco: las líneas del boceto se convierten en una forma que se ve maciza. Un material con su propio relleno o sombreado lo dibuja con él.
+
 ## Anillo, Caja y Franja de muro
 
 Estas tres herramientas dan a una forma dibujada un espesor en su propio plano y luego una altura respecto a ese plano:
@@ -79,16 +81,18 @@ Las secciones y los alzados también son planos. Un sólido bocetado en una secc
 En IFC, un anillo, los muros de una caja y una franja de muro son elementos IfcWall, el fondo y la tapa de una caja elementos IfcSlab, y una caja con ellos un IfcElementAssembly con IfcRelAggregates; sus tipos se escriben como IfcWallType e IfcSlabType. Toda exportación 3D (IFC, Fragments, glTF, USD, COLLADA) escribe un sólido de Studio donde está en el modelo, sea cual sea el plano en el que se bocetó, con sus huecos; un conjunto es un nodo de grupo sobre sus partes. Al abrir de nuevo el IFC propio de Lapin, los sólidos vuelven como referencias, en su sitio, con su clase, su tipo y su conjunto, pero ya no se pueden editar (sus bocetos no están en el archivo). El historial de cada sólido se guarda en el conjunto de propiedades propio de Lapin, Lapin_Intent. Los sólidos de Studio solo admiten tipos simples, sin capas: ese es el modelado libre para el que existen; los muros con capas son los muros nativos de Lapin.
 ## Cambiar un sólido en 3D
 
-Estas herramientas trabajan sobre las caras y aristas del cuerpo tal como está construido ahora. La cara bajo el ratón se ilumina. Cuando una herramienta necesita un valor, se abre una pequeña casilla junto al cursor. Escriba el valor y pulse <kbd>Intro</kbd>, o <kbd>Esc</kbd> para dejarlo.
+Estas herramientas trabajan sobre las caras y aristas del cuerpo tal como está construido ahora. La cara bajo el ratón se ilumina.
 
-- **Empujar/Tirar** (PU) mueve una cara hacia fuera una distancia, o hacia dentro cuando la distancia es negativa. En una extrusión, su extremo cambia la profundidad y su lado mueve el borde del croquis bajo él. En un muro o cualquier otro elemento, tirar añade un sólido en el material de la cara, y empujar corta el elemento.
+**Empujar/Tirar**, **Dividir**, **Cortar** y **Desplazar 3D** se manejan sobre el propio modelo. Haga clic en una cara y aparece sobre ella una flecha: el ratón mueve la cara a lo largo de la flecha, y lo que hará el paso se dibuja mientras avanza. Empujar/Tirar dibuja en verde lo que añade y en rojo lo que quita. Una división o un corte dibuja su plano en amarillo. La distancia se lee junto a la flecha. Escriba un valor para fijarla con exactitud, como 500 o -250. Haga clic o pulse <kbd>Intro</kbd> para aplicarla, o <kbd>Esc</kbd> para dejarla; la herramienta sigue activa para la cara siguiente. <kbd>Intro</kbd> sin mover ni escribir nada repite la última distancia. Un arrastre avanza de centímetro en centímetro, o de 10 en 10 cm con <kbd>Mayús</kbd>. El botón derecho y el central siguen girando y desplazando la vista. Las demás herramientas piden su valor en una pequeña casilla junto al cursor.
+
+- **Empujar/Tirar** (PU) mueve una cara hacia fuera, o hacia dentro cuando la distancia es negativa. En una extrusión, su extremo cambia la profundidad y su lado mueve el borde del croquis bajo él. En un muro o cualquier otro elemento, tirar añade un sólido en el material de la cara, y empujar corta el elemento.
 - **Redondear arista** (FE) redondea la arista más cercana al clic, y **Achaflanar arista** (CE) la achaflana. Elija *alrededor de la cara* para tratar todas las aristas de la cara a la vez.
 - **Vaciado** vacía los sólidos seleccionados, con paredes tan gruesas como escriba. Puede quedar cerrado, o abierto en su extremo, en su croquis o en ambos.
-- **Dividir** corta un sólido en dos por el plano de la cara elegida, tan adentro de la cara como escriba. Las dos partes conservan el croquis. **Cortar** conserva solo un lado.
+- **Dividir** corta un sólido en dos por un plano paralelo a la cara elegida, tan adentro de la cara como arrastre o escriba. Las dos partes conservan el croquis. **Cortar** conserva solo un lado: elija **Conservar detrás** o **Conservar delante** en la barra de la parte inferior de la vista.
 - **Matriz** repite el sólido en fila, y **Matriz polar** lo repite alrededor de una vertical.
-- **Girar 3D** gira el sólido alrededor de una arista que elija. **Simetría 3D** lo refleja en el plano de una cara. **Desplazar 3D** lo mueve en x, y y z.
+- **Girar 3D** gira el sólido alrededor de una arista que elija. **Simetría 3D** lo refleja en el plano de una cara. **Desplazar 3D** pone flechas según x, y y z sobre los sólidos seleccionados: arrastre una, o escriba una distancia para el eje que se muestra junto al valor (<kbd>Tab</kbd> pasa al eje siguiente).
 
-![Empujar/Tirar: la cara superior iluminada y la distancia escrita junto al cursor](shots/studio-push-pull.webp)
+![Empujar/Tirar: la cara superior estirada hacia arriba, lo que añade dibujado en verde y la distancia junto a la flecha](shots/studio-push-pull.webp)
 
 ![La arista redondeada: el redondeo sigue al bloque cuando cambia su profundidad](shots/studio-fillet.webp)
 

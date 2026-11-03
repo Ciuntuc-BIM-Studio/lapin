@@ -2266,12 +2266,16 @@ export const scenes = [
       await page.waitForSelector('[data-testid=view3d] canvas', { timeout: 20_000 });
       await t.wait(1500);
 
-      // Push/pull: the top pulled up half a metre, typed in the box beside the cursor; the extrusion's depth takes it.
+      // Push/pull: the top picked, an arrow stands on it and the mouse pulls it up, what it adds drawn in green; half a metre typed
+      // beside the arrow holds it, Enter applies it, and the extrusion's depth takes it.
       await look({ x: 1.5, y: 1, z: 1 }, Math.PI / 4, -0.55);
       await t.tool('studio.pushPull');
       await pickMiddle();
-      t.expect(await page.locator('.ask-box').count() === 1, 'push/pull asks how far beside the cursor');
-      await page.locator('.ask-box input').first().fill(await length(0.5));
+      t.expect(await page.locator('.axis-drag-value input').count() === 1, 'push/pull puts its arrow and its distance on the face');
+      const [mx, my] = await middle();
+      await page.mouse.move(mx, my - 60, { steps: 8 });
+      await t.wait(300);
+      await page.locator('.axis-drag-value input').fill(await length(0.5));
       await t.shot('studio-push-pull', { of: '[data-testid=view3d]', pad: 0 });
       await t.keys('Enter');
       await t.wait(800);

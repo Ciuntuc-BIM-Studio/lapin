@@ -34,6 +34,8 @@ Możesz szkicować na czterech rodzajach widoków:
 
 Każda bryła pozostaje powiązana ze swoim szkicem. Zmień kształt, a bryła podąży za nim, z tym samym GlobalId. Zaznacz bryłę, aby zmienić w panelu Właściwości jej klasę IFC, jej typ predefiniowany i jej typ. **Edytuj szkic** otwiera widok, na którym leży szkic.
 
+Właśnie utworzona bryła jest zaznaczona, więc podświetla się z uchwytami swojego szkicu. Na rzucie, przekroju lub elewacji, tam gdzie widok przecina bryłę, jej przekrój jest wypełniony bielą: linie szkicu stają się kształtem, który widać jako pełny. Jeśli materiał ma własne wypełnienie lub kreskowanie, przekrój rysuje się nim.
+
 ## Pierścień, Skrzynia i Pas ściany
 
 Te trzy narzędzia nadają narysowanemu kształtowi grubość w jego własnej płaszczyźnie, a potem wysokość od tej płaszczyzny:
@@ -79,16 +81,18 @@ Przekroje i elewacje też są płaszczyznami. Bryła naszkicowana na przekroju s
 W IFC pierścień, ściany skrzyni i pas ściany są elementami IfcWall, dno i wierzch skrzyni elementami IfcSlab, a skrzynia z nimi to IfcElementAssembly z IfcRelAggregates; ich typy są zapisywane jako IfcWallType i IfcSlabType. Każdy eksport 3D (IFC, Fragments, glTF, USD, COLLADA) zapisuje bryłę Studio tam, gdzie stoi w modelu, niezależnie od płaszczyzny, na której ją naszkicowano, z jej otworami; zespół jest węzłem grupy nad swoimi częściami. Ponowne otwarcie własnego IFC Lapin przywraca bryły jako odniesienia, na miejscu, z ich klasą, typem i zespołem, ale już nieedytowalne (ich szkiców nie ma w pliku). Historia każdej bryły jest przechowywana we własnym zestawie właściwości Lapin, Lapin_Intent. Bryły Studio przyjmują tylko proste typy, bez warstw: do takiego swobodnego modelowania służą; ściany z warstwami to natywne ściany Lapin.
 ## Zmiana bryły w 3D
 
-Te narzędzia działają na ścianach i krawędziach bryły w jej obecnym kształcie. Ściana pod myszą się podświetla. Gdy narzędzie potrzebuje wartości, obok kursora otwiera się małe pole. Wpisz wartość i naciśnij <kbd>Enter</kbd> lub naciśnij <kbd>Esc</kbd>, aby zrezygnować.
+Te narzędzia działają na ścianach i krawędziach bryły w jej obecnym kształcie. Ściana pod myszą się podświetla.
 
-- **Wypchnij/Wciągnij** (PU) przesuwa ścianę na zewnątrz o odległość lub do środka, gdy odległość jest ujemna. Na wyciągnięciu jego koniec zmienia głębokość, a bok przesuwa krawędź szkicu pod nim. Na ścianie lub dowolnym innym elemencie wyciąganie dodaje bryłę w materiale ściany elementu, a wypychanie wcina się w element.
+**Wypchnij/Wciągnij**, **Podziel**, **Przetnij** i **Przesuń 3D** obsługuje się bezpośrednio na modelu. Kliknij ścianę, a stanie na niej strzałka: mysz przesuwa ścianę wzdłuż strzałki, a to, co zrobi krok, rysuje się na bieżąco. Wypchnij/Wciągnij rysuje na zielono to, co dodaje, a na czerwono to, co odejmuje. Podział lub przecięcie rysuje swoją płaszczyznę na żółto. Odległość widać obok strzałki. Wpisz wartość, aby ustawić ją dokładnie, np. 500 lub -250. Kliknij lub naciśnij <kbd>Enter</kbd>, aby ją zastosować, lub naciśnij <kbd>Esc</kbd>, aby zrezygnować; narzędzie pozostaje włączone dla następnej ściany. <kbd>Enter</kbd>, gdy nic nie przesunięto ani nie wpisano, powtarza ostatnią odległość. Przeciąganie idzie co centymetr, a z <kbd>Shift</kbd> co 10 cm. Prawy i środkowy przycisk nadal obracają i przesuwają widok. Pozostałe narzędzia pytają o wartość w małym polu obok kursora.
+
+- **Wypchnij/Wciągnij** (PU) przesuwa ścianę na zewnątrz lub do środka, gdy odległość jest ujemna. Na wyciągnięciu jego koniec zmienia głębokość, a bok przesuwa krawędź szkicu pod nim. Na ścianie lub dowolnym innym elemencie wyciąganie dodaje bryłę w materiale ściany elementu, a wypychanie wcina się w element.
 - **Zaokrąglij krawędź** (FE) zaokrągla krawędź najbliższą kliknięciu, a **Fazuj krawędź** (CE) ją fazuje. Wybierz *dookoła ściany*, aby zrobić to naraz ze wszystkimi krawędziami ściany.
 - **Skorupa** wydrąża zaznaczone bryły, ze ściankami tak grubymi, jak wpiszesz. Może pozostać zamknięta lub zostać otwarta na końcu, na szkicu lub na obu.
-- **Podziel** tnie bryłę na dwie płaszczyzną wybranej ściany, tak głęboko w ścianę, jak wpiszesz. Obie części zachowują szkic. **Przetnij** zachowuje tylko jedną stronę.
+- **Podziel** tnie bryłę na dwie płaszczyzną równoległą do wybranej ściany, tak głęboko w ścianę, jak przeciągniesz lub wpiszesz. Obie części zachowują szkic. **Przetnij** zachowuje tylko jedną stronę: wybierz **Zachowaj z tyłu** lub **Zachowaj z przodu** na pasku u dołu widoku.
 - **Szyk** powtarza bryłę w rzędzie, a **Szyk biegunowy** powtarza ją wokół pionowej osi.
-- **Obróć 3D** obraca bryłę wokół wybranej krawędzi. **Lustro 3D** odbija ją lustrzanie w płaszczyźnie ściany. **Przesuń 3D** przesuwa ją o x, y i z.
+- **Obróć 3D** obraca bryłę wokół wybranej krawędzi. **Lustro 3D** odbija ją lustrzanie w płaszczyźnie ściany. **Przesuń 3D** stawia strzałki wzdłuż x, y i z na zaznaczonych bryłach: przeciągnij jedną lub wpisz odległość dla osi pokazanej obok wartości (<kbd>Tab</kbd> przechodzi do następnej osi).
 
-![Wypychanie/wciąganie: górna ściana podświetlona, a odległość wpisana obok kursora](shots/studio-push-pull.webp)
+![Wypychanie/wciąganie: górna ściana wyciągnięta w górę, to, co dodaje, narysowane na zielono, a odległość obok strzałki](shots/studio-push-pull.webp)
 
 ![Krawędź zaokrąglona: zaokrąglenie podąża za blokiem, gdy zmienia się jego głębokość](shots/studio-fillet.webp)
 

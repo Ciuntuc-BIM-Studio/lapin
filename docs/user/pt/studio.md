@@ -34,6 +34,8 @@ Você pode esboçar em quatro tipos de vista:
 
 Cada sólido continua ligado ao seu esboço. Altere a forma e o sólido acompanha, com o mesmo GlobalId. Selecione um sólido para alterar a sua classe IFC, o seu tipo predefinido e o seu tipo no painel de propriedades. **Editar esboço** abre a vista em que o esboço está.
 
+Um sólido recém-criado fica selecionado, então ele se ilumina com as alças do seu esboço. Em uma planta, um corte ou uma elevação, onde a vista corta um sólido, o seu corte é preenchido de branco: as linhas do esboço viram uma forma que se vê maciça. Um material com preenchimento ou hachura próprios desenha o corte com eles.
+
 ## Anel, Caixa e Faixa de parede
 
 Estas três ferramentas dão a uma forma desenhada uma espessura no seu próprio plano e depois uma altura para fora desse plano:
@@ -79,16 +81,18 @@ Cortes e elevações também são planos. Um sólido esboçado em um corte fica 
 No IFC, um anel, as paredes de uma caixa e uma faixa de parede são elementos IfcWall, o fundo e o topo de uma caixa são elementos IfcSlab, e uma caixa com eles é um IfcElementAssembly com IfcRelAggregates; os seus tipos são gravados como IfcWallType e IfcSlabType. Cada exportação 3D (IFC, Fragments, glTF, USD, COLLADA) grava um sólido do Studio onde ele está no modelo, qualquer que seja o plano em que foi esboçado, com os seus furos; um conjunto é um nó de grupo sobre as suas partes. Abrir de novo o IFC do próprio Lapin traz os sólidos de volta como referências, no lugar, com a sua classe, tipo e conjunto, mas não mais editáveis (os seus esboços não estão no arquivo). O histórico de cada sólido fica guardado no conjunto de propriedades do próprio Lapin, Lapin_Intent. Os sólidos do Studio aceitam só tipos simples, sem camadas: essa é a modelagem livre para a qual eles servem; paredes com camadas são as paredes nativas do Lapin.
 ## Alterar um sólido em 3D
 
-Estas ferramentas trabalham nas faces e nas arestas do corpo como ele está construído agora. A face sob o mouse se ilumina. Quando uma ferramenta precisa de um valor, uma pequena caixa abre ao lado do cursor. Digite o valor e pressione <kbd>Enter</kbd>, ou pressione <kbd>Esc</kbd> para desistir.
+Estas ferramentas trabalham nas faces e nas arestas do corpo como ele está construído agora. A face sob o mouse se ilumina.
 
-- **Empurrar/Puxar** (PU) move uma face para fora a uma distância, ou para dentro quando a distância é negativa. Em uma extrusão, a sua extremidade altera a profundidade e a sua lateral move a aresta do esboço abaixo dela. Em uma parede ou em qualquer outro elemento, puxar adiciona um sólido no material da face, e empurrar corta o elemento.
+**Empurrar/Puxar**, **Dividir**, **Fatiar** e **Mover 3D** são usados no próprio modelo. Clique em uma face, e uma seta aparece sobre ela: o mouse move a face ao longo da seta, e o que o passo vai fazer é desenhado enquanto você move. Empurrar/Puxar desenha em verde o que adiciona e em vermelho o que tira. Uma divisão ou um fatiamento desenha o seu plano em amarelo. A distância aparece ao lado da seta. Digite um valor para defini-la com exatidão, como 500 ou -250. Clique ou pressione <kbd>Enter</kbd> para aplicá-la, ou pressione <kbd>Esc</kbd> para desistir; a ferramenta continua ativa para a próxima face. <kbd>Enter</kbd> sem nada movido ou digitado repete a última distância. Um arraste anda de centímetro em centímetro, ou de 10 em 10 cm com <kbd>Shift</kbd>. Os botões direito e do meio continuam girando e movendo a vista. As outras ferramentas pedem o seu valor em uma pequena caixa ao lado do cursor.
+
+- **Empurrar/Puxar** (PU) move uma face para fora, ou para dentro quando a distância é negativa. Em uma extrusão, a sua extremidade altera a profundidade e a sua lateral move a aresta do esboço abaixo dela. Em uma parede ou em qualquer outro elemento, puxar adiciona um sólido no material da face, e empurrar corta o elemento.
 - **Arredondar aresta** (FE) arredonda a aresta mais próxima do seu clique, e **Chanfrar aresta** (CE) a chanfra. Escolha *em toda a face* para fazer todas as arestas da face de uma vez.
 - **Casca** esvazia os sólidos selecionados, com paredes da espessura que você digitar. Ela pode ficar fechada, ou ficar aberta na sua extremidade, no seu esboço ou nos dois.
-- **Dividir** corta um sólido em dois pelo plano da face que você escolher, até a profundidade na face que você digitar. As duas partes mantêm o esboço. **Fatiar** mantém só um lado.
+- **Dividir** corta um sólido em dois por um plano paralelo à face que você escolher, até a profundidade na face que você arrastar ou digitar. As duas partes mantêm o esboço. **Fatiar** mantém só um lado: escolha **Manter atrás** ou **Manter na frente** na barra embaixo da vista.
 - **Matriz** repete o sólido em uma fileira, e **Matriz polar** o repete em volta de um eixo vertical.
-- **Girar 3D** gira o sólido em torno de uma aresta que você escolher. **Espelhar 3D** o espelha no plano de uma face. **Mover 3D** o move em x, y e z.
+- **Girar 3D** gira o sólido em torno de uma aresta que você escolher. **Espelhar 3D** o espelha no plano de uma face. **Mover 3D** coloca setas ao longo de x, y e z nos sólidos selecionados: arraste uma, ou digite uma distância para o eixo mostrado ao lado do valor (<kbd>Tab</kbd> vai para o próximo eixo).
 
-![Empurrar/puxar: a face de cima iluminada e a distância digitada ao lado do cursor](shots/studio-push-pull.webp)
+![Empurrar/puxar: a face de cima puxada para cima, o que ela adiciona desenhado em verde e a distância ao lado da seta](shots/studio-push-pull.webp)
 
 ![A aresta arredondada: o arredondamento acompanha o bloco quando a sua profundidade muda](shots/studio-fillet.webp)
 

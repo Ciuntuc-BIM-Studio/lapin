@@ -34,6 +34,8 @@ Poți schița pe patru feluri de vederi:
 
 Fiecare solid rămâne legat de schița lui. Schimbi forma și solidul o urmează, cu același GlobalId. Selectează un solid ca să-i schimbi clasa IFC, tipul predefinit și tipul în panoul de proprietăți. **Editează schița** deschide vederea pe care stă schița.
 
+Un solid abia făcut e selectat, deci se luminează cu mânerele schiței lui. Într-un plan, o secțiune sau o fațadă, acolo unde vederea taie un solid, tăietura lui e umplută cu alb: liniile schiței devin o formă care se vede că e plină. Un material cu umplutură sau hașură proprie o desenează cu ele, în locul albului.
+
 ## Inel, Cutie și Fâșie de perete
 
 Aceste trei unelte dau unei forme desenate o grosime în planul ei, apoi o înălțime față de acel plan:
@@ -79,16 +81,18 @@ Selectează planul în navigator ca să-l muți. **Origine x**, **y** și **z** 
 În IFC, un inel, pereții unei cutii și o fâșie de perete sunt elemente IfcWall, fundul și capacul unei cutii elemente IfcSlab, iar o cutie cu ele un IfcElementAssembly cu IfcRelAggregates; tipurile lor se scriu ca IfcWallType și IfcSlabType. Fiecare export 3D (IFC, Fragments, glTF, USD, COLLADA) scrie un solid Studio acolo unde stă în model, oricare ar fi planul pe care a fost schițat, cu golurile lui; un ansamblu e un nod-grup peste părțile lui. Deschis din nou, IFC-ul propriu al lui Lapin aduce solidele înapoi ca referințe, la locul lor, cu clasa, tipul și ansamblul lor, dar nu mai pot fi editate (schițele lor nu sunt în fișier). Istoria fiecărui solid e păstrată în setul de proprietăți al lui Lapin, Lapin_Intent. Solidele Studio iau doar tipuri simple, fără straturi: asta e modelarea liberă pentru care sunt făcute; pereții cu straturi sunt pereții nativi ai lui Lapin.
 ## Cum schimbi un solid în 3D
 
-Uneltele acestea lucrează pe fețele și muchiile corpului așa cum e construit acum. Fața de sub mouse se luminează. Când o unealtă are nevoie de o valoare, lângă cursor se deschide o casetă mică. Scrie valoarea și apasă <kbd>Enter</kbd>, sau <kbd>Esc</kbd> ca să renunți.
+Uneltele acestea lucrează pe fețele și muchiile corpului așa cum e construit acum. Fața de sub mouse se luminează.
 
-- **Împinge/Trage** (PU) mută o față în afară cu o distanță, sau înăuntru când distanța e negativă. La o extrudare, capătul îi schimbă adâncimea, iar latura mută muchia schiței de sub ea. La un perete sau la orice alt element, tragerea adaugă un solid în materialul feței, iar împingerea taie în element.
+**Împinge/Trage**, **Împarte**, **Retează** și **Mută 3D** se lucrează direct pe model. Dai clic pe o față și pe ea apare o săgeată: mouse-ul mută fața de-a lungul săgeții, iar ce va face pasul se desenează pe loc. Împinge/Trage desenează cu verde ce adaugă și cu roșu ce scoate. O împărțire sau o retezare își desenează planul cu galben. Distanța se citește lângă săgeată. Scrie o valoare ca s-o dai exact, de exemplu 500 sau -250. Dai clic sau apeși <kbd>Enter</kbd> ca s-o aplici, sau <kbd>Esc</kbd> ca să renunți; unealta rămâne pornită pentru fața următoare. <kbd>Enter</kbd> fără nimic mutat sau scris repetă ultima distanță. Când tragi, pasul e de un centimetru, sau de 10 cm cu <kbd>Shift</kbd>. Butonul din dreapta și cel din mijloc rotesc și mută vederea în continuare. Celelalte unelte își cer valoarea într-o casetă mică lângă cursor.
+
+- **Împinge/Trage** (PU) mută o față în afară, sau înăuntru când distanța e negativă. La o extrudare, capătul îi schimbă adâncimea, iar latura mută muchia schiței de sub ea. La un perete sau la orice alt element, tragerea adaugă un solid în materialul feței, iar împingerea taie în element.
 - **Racordează muchia** (FE) rotunjește muchia cea mai apropiată de clic, iar **Teșește muchia** (CE) o teșește. Alege *de jur împrejurul feței* ca să faci toate muchiile feței deodată.
 - **Coajă** golește solidele selectate, cu pereți groși cât scrii. Poate rămâne închisă sau poate fi lăsată deschisă la capăt, la schiță sau la ambele.
-- **Împarte** taie un solid în două după planul feței alese, cât de adânc în față scrii. Ambele părți păstrează schița. **Retează** păstrează doar o parte.
+- **Împarte** taie un solid în două după un plan paralel cu fața aleasă, cât de adânc în față tragi sau scrii. Ambele părți păstrează schița. **Retează** păstrează doar o parte: alege **Păstrează în spate** sau **Păstrează în față** în bara de jos a vederii.
 - **Matrice** repetă solidul pe un rând, iar **Matrice polară** îl repetă în jurul unei verticale.
-- **Rotește 3D** rotește solidul în jurul unei muchii alese. **Oglindește 3D** îl oglindește în planul unei fețe. **Mută 3D** îl mută cu x, y și z.
+- **Rotește 3D** rotește solidul în jurul unei muchii alese. **Oglindește 3D** îl oglindește în planul unei fețe. **Mută 3D** pune săgeți pe x, y și z pe solidele selectate: tragi de una sau scrii o distanță pentru axa arătată lângă valoare (<kbd>Tab</kbd> trece la axa următoare).
 
-![Împinge/Trage: fața de sus luminată și distanța scrisă lângă cursor](shots/studio-push-pull.webp)
+![Împinge/Trage: fața de sus trasă în sus, ce adaugă desenat cu verde și distanța lângă săgeată](shots/studio-push-pull.webp)
 
 ![Muchia racordată: rotunjirea urmează blocul când i se schimbă adâncimea](shots/studio-fillet.webp)
 

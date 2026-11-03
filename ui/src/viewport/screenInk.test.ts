@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DARK_INK, screenInk } from './drawing';
+import { DARK_INK, DARK_PAPER, screenFill, screenInk } from './drawing';
 
 describe('screenInk (report #36: a plan in the dark theme)', () => {
   it('draws black and near-black pens in the theme ink on a dark plan', () => {
@@ -14,5 +14,14 @@ describe('screenInk (report #36: a plan in the dark theme)', () => {
     expect(screenInk('#d33f2f', true)).toBe('#d33f2f');
     expect(screenInk('#000000', false)).toBe('#000000');
     expect(screenInk(null, true)).toBeNull();
+  });
+
+  it('fills of the paper\'s white become the dark paper on a dark plan, and stay white on paper', () => {
+    expect(screenFill('#ffffff', true)).toBe(DARK_PAPER);
+    expect(screenFill('#fff', true)).toBe(DARK_PAPER);
+    expect(screenFill('white', true)).toBe(DARK_PAPER);
+    expect(screenFill('#ffffff', false)).toBe('#ffffff');
+    expect(screenFill('#d9c7a3', true)).toBe('#d9c7a3');
+    expect(screenFill('#000000', true)).toBe(DARK_INK);
   });
 });

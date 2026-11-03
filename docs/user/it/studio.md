@@ -34,6 +34,8 @@ Puoi schizzare su quattro tipi di vista:
 
 Ogni solido resta legato al suo schizzo. Cambia la forma e il solido la segue, con lo stesso GlobalId. Seleziona un solido per cambiarne la classe IFC, il tipo predefinito e il tipo nel pannello Proprietà. **Modifica schizzo** apre la vista su cui si trova lo schizzo.
 
+Un solido appena creato resta selezionato, così si illumina con le maniglie del suo schizzo. In una pianta, una sezione o un prospetto, dove la vista taglia un solido il suo taglio è riempito di bianco: le linee dello schizzo diventano una forma che si vede piena. Un materiale con un proprio riempimento o retino lo disegna invece con quello.
+
 ## Anello, Scatola e Striscia di muro
 
 Questi tre strumenti danno a una forma disegnata uno spessore nel suo stesso piano, poi un’altezza a partire da quel piano:
@@ -79,16 +81,18 @@ Anche sezioni e prospetti sono piani. Un solido schizzato su una sezione sta sul
 In IFC, un anello, i muri di una scatola e una striscia di muro sono elementi IfcWall, il fondo e la copertura di una scatola elementi IfcSlab, e una scatola con essi un IfcElementAssembly con IfcRelAggregates; i loro tipi sono scritti come IfcWallType e IfcSlabType. Ogni esportazione 3D (IFC, Fragments, glTF, USD, COLLADA) scrive un solido Studio dove si trova nel modello, qualunque sia il piano su cui è stato schizzato, con i suoi fori; un assemblaggio è un nodo di gruppo sopra le sue parti. Riaprire l’IFC di Lapin riporta i solidi come riferimenti, al loro posto, con la loro classe, il loro tipo e il loro assemblaggio, ma non più modificabili (i loro schizzi non sono nel file). La storia di ogni solido è conservata nell’insieme di proprietà di Lapin, Lapin_Intent. I solidi Studio accettano solo tipi semplici, senza strati: è la modellazione libera per cui esistono; i muri a strati sono i muri nativi di Lapin.
 ## Modificare un solido in 3D
 
-Questi strumenti lavorano sulle facce e sugli spigoli del corpo così com’è costruito ora. La faccia sotto il mouse si illumina. Quando uno strumento ha bisogno di un valore, accanto al cursore si apre una piccola casella. Digita il valore e premi <kbd>Enter</kbd>, oppure premi <kbd>Esc</kbd> per lasciar perdere.
+Questi strumenti lavorano sulle facce e sugli spigoli del corpo così com’è costruito ora. La faccia sotto il mouse si illumina.
 
-- **Spingi/Tira** (PU) sposta una faccia verso l’esterno di una distanza, o verso l’interno quando la distanza è negativa. Su un’estrusione, la sua estremità cambia la profondità e il suo lato sposta lo spigolo dello schizzo che sta sotto. Su un muro o su qualsiasi altro elemento, tirare aggiunge un solido nel materiale della faccia, e spingere scava nell’elemento.
+**Spingi/Tira**, **Dividi**, **Seziona** e **Sposta 3D** si usano direttamente sul modello. Fai clic su una faccia, e su di essa compare una freccia: il mouse sposta la faccia lungo la freccia, e ciò che farà il passo viene disegnato mentre procedi. Spingi/Tira disegna in verde ciò che aggiunge e in rosso ciò che toglie. Una divisione o una sezione disegna il suo piano in giallo. La distanza si legge accanto alla freccia. Digita un valore per fissarla esattamente, per esempio 500 o -250. Fai clic o premi <kbd>Enter</kbd> per applicarla, oppure premi <kbd>Esc</kbd> per lasciar perdere; lo strumento resta attivo per la faccia successiva. <kbd>Enter</kbd> senza aver spostato né digitato nulla ripete l’ultima distanza. Un trascinamento procede di centimetro in centimetro, o di 10 cm con <kbd>Shift</kbd>. Il tasto destro e quello centrale continuano a ruotare e spostare la vista. Gli altri strumenti chiedono il loro valore in una piccola casella accanto al cursore.
+
+- **Spingi/Tira** (PU) sposta una faccia verso l’esterno, o verso l’interno quando la distanza è negativa. Su un’estrusione, la sua estremità cambia la profondità e il suo lato sposta lo spigolo dello schizzo che sta sotto. Su un muro o su qualsiasi altro elemento, tirare aggiunge un solido nel materiale della faccia, e spingere scava nell’elemento.
 - **Raccorda spigolo** (FE) arrotonda lo spigolo più vicino al tuo clic, e **Smussa spigolo** (CE) lo smussa. Scegli *tutto attorno alla faccia* per trattare in una volta tutti gli spigoli della faccia.
 - **Guscio** svuota i solidi selezionati, con pareti dello spessore che digiti. Può restare chiuso, oppure essere lasciato aperto alla sua estremità, al suo schizzo o a entrambi.
-- **Dividi** taglia un solido in due con il piano della faccia che scegli, tanto in profondità nella faccia quanto digiti. Entrambe le parti conservano lo schizzo. **Seziona** conserva un solo lato.
+- **Dividi** taglia un solido in due con un piano parallelo alla faccia che scegli, tanto in profondità nella faccia quanto trascini o digiti. Entrambe le parti conservano lo schizzo. **Seziona** conserva un solo lato: scegli **Tieni dietro** o **Tieni davanti** nella barra in fondo alla vista.
 - **Serie** ripete il solido in fila, e **Serie polare** lo ripete attorno a un asse verticale.
-- **Ruota 3D** ruota il solido attorno a uno spigolo che scegli. **Specchia 3D** lo specchia nel piano di una faccia. **Sposta 3D** lo sposta di x, y e z.
+- **Ruota 3D** ruota il solido attorno a uno spigolo che scegli. **Specchia 3D** lo specchia nel piano di una faccia. **Sposta 3D** mette frecce lungo x, y e z sui solidi selezionati: trascinane una, oppure digita una distanza per l’asse mostrato accanto al valore (<kbd>Tab</kbd> passa all’asse successivo).
 
-![Spingi/tira: la faccia superiore illuminata, e la distanza digitata accanto al cursore](shots/studio-push-pull.webp)
+![Spingi/tira: la faccia superiore tirata verso l’alto, ciò che aggiunge disegnato in verde, e la distanza accanto alla freccia](shots/studio-push-pull.webp)
 
 ![Lo spigolo raccordato: il raccordo segue il blocco quando la sua profondità cambia](shots/studio-fillet.webp)
 

@@ -42,6 +42,19 @@ export function screenInk(color: string | null | undefined, onDark: boolean): st
   return lum < 0.04 ? DARK_INK : color;
 }
 
+/** The paper a dark plan is drawn on, for fills of the paper's white (a Studio solid's cut). */
+export const DARK_PAPER = '#3a3732';
+
+/** A fill on screen: on a dark background the paper's white (luminance over 90 %) becomes the dark paper, so a cut stays a quiet surface; other fills as screenInk. */
+export function screenFill(color: string | null | undefined, onDark: boolean): string | null {
+  if (!color || !onDark) return color ?? null;
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim());
+  if (!m) return /^white$/i.test(color.trim()) ? DARK_PAPER : screenInk(color, onDark);
+  const h = m[1].length === 3 ? m[1].replace(/./g, (c) => c + c) : m[1];
+  const lin = (k: number) => { const v = parseInt(h.slice(k, k + 2), 16) / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  return 0.2126 * lin(0) + 0.7152 * lin(2) + 0.0722 * lin(4) > 0.9 ? DARK_PAPER : screenInk(color, onDark);
+}
+
 export interface DrawingDto {
   kind?: string;
   scale?: number;

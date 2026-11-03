@@ -34,6 +34,8 @@ Sie können auf vier Arten von Ansichten skizzieren:
 
 Jeder Körper bleibt an seine Skizze gebunden. Ändern Sie die Form, und der Körper folgt ihr, mit derselben GlobalId. Wählen Sie einen Körper aus, um im Eigenschaftenbereich seine IFC-Klasse, seinen vordefinierten Typ und seinen Typ zu ändern. **Skizze bearbeiten** öffnet die Ansicht, auf der die Skizze liegt.
 
+Ein gerade erstellter Körper ist ausgewählt, also leuchtet er mit den Griffen seiner Skizze auf. In einem Grundriss, einem Schnitt oder einer Ansicht wird der Schnitt eines Körpers weiß gefüllt, wo die Ansicht ihn schneidet: Aus den Linien der Skizze wird eine Form, die man als massiv erkennt. Ein Material mit eigener Füllung oder Schraffur zeichnet ihn stattdessen damit.
+
 ## Ring, Kasten und Wandstreifen
 
 Diese drei Werkzeuge geben einer gezeichneten Form eine Dicke in ihrer eigenen Ebene und dann eine Höhe von dieser Ebene weg:
@@ -79,16 +81,18 @@ Auch Schnitte und Ansichten sind Ebenen. Ein Körper, der in einem Schnitt skizz
 In IFC sind ein Ring, die Wände eines Kastens und ein Wandstreifen IfcWall-Elemente, Boden und Deckel eines Kastens IfcSlab-Elemente, und ein Kasten mit ihnen ein IfcElementAssembly mit IfcRelAggregates; ihre Typen werden als IfcWallType und IfcSlabType geschrieben. Jeder 3D-Export (IFC, Fragments, glTF, USD, COLLADA) schreibt einen Studio-Körper dorthin, wo er im Modell steht, auf welcher Ebene er auch skizziert wurde, mit seinen Löchern; eine Baugruppe ist ein Gruppenknoten über ihren Teilen. Wird Lapins eigene IFC-Datei wieder geöffnet, kommen die Körper als Referenzen zurück, an ihrem Platz, mit Klasse, Typ und Baugruppe, aber nicht mehr bearbeitbar (ihre Skizzen sind nicht in der Datei). Die Geschichte jedes Körpers wird in Lapins eigenem Eigenschaftssatz Lapin_Intent aufbewahrt. Studio-Körper nehmen nur einfache Typen ohne Schichten: das ist das freie Modellieren, für das sie da sind; Wände mit Schichten sind Lapins native Wände.
 ## Einen Körper in 3D ändern
 
-Diese Werkzeuge arbeiten an den Flächen und Kanten des Körpers, wie er jetzt gebaut ist. Die Fläche unter der Maus leuchtet auf. Braucht ein Werkzeug einen Wert, öffnet sich neben dem Mauszeiger ein kleines Feld. Geben Sie den Wert ein und drücken Sie <kbd>Enter</kbd>, oder <kbd>Esc</kbd>, um abzubrechen.
+Diese Werkzeuge arbeiten an den Flächen und Kanten des Körpers, wie er jetzt gebaut ist. Die Fläche unter der Maus leuchtet auf.
 
-- **Drücken/Ziehen** (PU) schiebt eine Fläche um einen Abstand hinaus, oder hinein, wenn der Abstand negativ ist. Bei einer Extrusion ändert ihr Ende die Tiefe, und ihre Seite verschiebt die Kante der Skizze darunter. Bei einer Wand oder einem anderen Element fügt Ziehen einen Körper im Material der Fläche hinzu, und Drücken schneidet in das Element.
+**Drücken/Ziehen**, **Teilen**, **Abschneiden** und **3D verschieben** arbeiten direkt am Modell. Klicken Sie auf eine Fläche, und ein Pfeil steht auf ihr: Die Maus verschiebt die Fläche entlang des Pfeils, und was der Schritt ergibt, wird laufend gezeichnet. Drücken/Ziehen zeichnet grün, was es hinzufügt, und rot, was es wegnimmt. Teilen und Abschneiden zeichnen ihre Ebene gelb. Der Abstand steht neben dem Pfeil. Geben Sie einen Wert ein, um ihn genau festzulegen, etwa 500 oder -250. Klicken Sie oder drücken Sie <kbd>Enter</kbd>, um ihn anzuwenden, oder <kbd>Esc</kbd>, um abzubrechen; das Werkzeug bleibt für die nächste Fläche aktiv. <kbd>Enter</kbd> ohne Bewegung oder Eingabe wiederholt den letzten Abstand. Beim Ziehen geht es in Zentimeterschritten, mit <kbd>Umschalt</kbd> in Schritten von 10 cm. Die rechte und die mittlere Maustaste drehen und verschieben weiterhin die Ansicht. Die anderen Werkzeuge fragen ihren Wert in einem kleinen Feld neben dem Mauszeiger ab.
+
+- **Drücken/Ziehen** (PU) schiebt eine Fläche hinaus, oder hinein, wenn der Abstand negativ ist. Bei einer Extrusion ändert ihr Ende die Tiefe, und ihre Seite verschiebt die Kante der Skizze darunter. Bei einer Wand oder einem anderen Element fügt Ziehen einen Körper im Material der Fläche hinzu, und Drücken schneidet in das Element.
 - **Kante abrunden** (FE) rundet die Kante, die dem Klick am nächsten liegt, und **Kante fasen** (CE) fast sie. Wählen Sie *rings um die Fläche*, um alle Kanten der Fläche auf einmal zu bearbeiten.
 - **Schale** höhlt die gewählten Körper aus, mit so dicken Wänden, wie Sie eingeben. Sie kann geschlossen bleiben oder am Ende, an der Skizze oder an beiden offen sein.
-- **Teilen** schneidet einen Körper in zwei, an der Ebene der gewählten Fläche, so tief in die Fläche, wie Sie eingeben. Beide Teile behalten die Skizze. **Abschneiden** behält nur eine Seite.
+- **Teilen** schneidet einen Körper in zwei, an einer Ebene parallel zur gewählten Fläche, so tief in die Fläche, wie Sie ziehen oder eingeben. Beide Teile behalten die Skizze. **Abschneiden** behält nur eine Seite: Wählen Sie **Dahinter behalten** oder **Davor behalten** in der Leiste unten in der Ansicht.
 - **Reihe** wiederholt den Körper in einer Linie, und **Polare Anordnung** wiederholt ihn um eine Senkrechte.
-- **3D drehen** dreht den Körper um eine gewählte Kante. **3D spiegeln** spiegelt ihn an der Ebene einer Fläche. **3D verschieben** verschiebt ihn um x, y und z.
+- **3D drehen** dreht den Körper um eine gewählte Kante. **3D spiegeln** spiegelt ihn an der Ebene einer Fläche. **3D verschieben** setzt Pfeile entlang x, y und z auf die gewählten Körper: Ziehen Sie an einem, oder geben Sie einen Abstand für die Achse ein, die neben dem Wert steht (<kbd>Tab</kbd> geht zur nächsten Achse).
 
-![Drücken/Ziehen: die obere Fläche leuchtet, der Abstand wird neben dem Mauszeiger eingegeben](shots/studio-push-pull.webp)
+![Drücken/Ziehen: die obere Fläche nach oben gezogen, was hinzukommt grün gezeichnet, der Abstand neben dem Pfeil](shots/studio-push-pull.webp)
 
 ![Die abgerundete Kante: die Rundung folgt dem Block, wenn sich seine Tiefe ändert](shots/studio-fillet.webp)
 

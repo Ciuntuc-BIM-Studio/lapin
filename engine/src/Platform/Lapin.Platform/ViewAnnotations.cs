@@ -101,6 +101,17 @@ public interface IViewAnnotations
     IEnumerable<ViewMark> Marks(ViewContext c);
 }
 
+/// <summary>
+/// The fill an element's cut takes in a plan, a section or an elevation when
+/// neither its material nor the view's graphics give one: a colour, or null
+/// to leave it to another module (a Studio solid is filled with the paper's
+/// white, so a sketch made a solid reads as matter, not as a thicker line).
+/// </summary>
+public interface ICutFill
+{
+    string? FillOf(IModelView model, Entity element);
+}
+
 /// <summary>How a module shows an element in a view: hidden, or drawn in another colour; null: as it is (phases).</summary>
 public interface IViewElementFilter
 {
