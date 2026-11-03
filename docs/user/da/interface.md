@@ -51,6 +51,7 @@ Hurtigværktøjerne er de nummererede pladser nederst i visningen (på dens vens
 - træk en plads hen på en anden for at bytte dem;
 - højreklik på en plads: **Vælg et værktøj…**, **Tøm denne plads** eller **Nulstil hurtigværktøjer**;
 - **View → Quick tools…** sætter de ni pladser fra lister, og **Udgavens egne** henter din udgaves egne tilbage.
+- et værktøj, der sætter elementer af en type (væg, dør, dæk, trappe…), kan holde en af projektets typer: vælg den i pladsens højrekliksmenu eller ved siden af værktøjet i **View → Quick tools…**. Pladsen viser så typens navn og starter værktøjet med den type, så én plads kan holde murstensvæggene og en anden skillevæggene. Typen gemmes ved sit navn: pladsen virker i hvert projekt med en type af det navn, og i et uden den tager værktøjet sin aktuelle type.
 
 Svævende nederst viser hver plads værktøjets navn, og en tom plads efter den sidste venter på et værktøj. Lapin gemmer dine hurtigværktøjer på denne computer, for dig.
 

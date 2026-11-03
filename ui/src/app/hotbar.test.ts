@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultSlots, reach, readHotbars, slotsOf, withSlot, withSwap } from './hotbar';
+import { defaultSlots, parseSlot, reach, readHotbars, slotOf, slotsOf, withSlot, withSlotType, withSwap } from './hotbar';
 
 const known = (id: string) => id !== 'gone';
 
@@ -38,5 +38,19 @@ describe('quick tools', () => {
   it('reads what was kept, leaving out what it cannot read', () => {
     expect(readHotbars(null)).toEqual({});
     expect(readHotbars({ mine: ['wall', 3, null], bad: 'x' })).toEqual({ mine: ['wall', null, null, null, null, null, null, null, null] });
+  });
+
+  it('holds a tool with a type by its name (decision 260), the same tool with two types in two slots', () => {
+    expect(parseSlot('architecture.wall|Brick 285 | plastered')).toEqual({ tool: 'architecture.wall', type: 'Brick 285 | plastered' });
+    expect(parseSlot('architecture.wall')).toEqual({ tool: 'architecture.wall', type: null });
+    expect(slotOf('architecture.wall', null)).toBe('architecture.wall');
+    let slots = withSlot(defaultSlots(['architecture.wall']), 1, slotOf('architecture.wall', 'Partition 125'));
+    expect(slots.slice(0, 2)).toEqual(['architecture.wall', 'architecture.wall|Partition 125']);
+    slots = withSlotType(slots, 0, 'Brick 285');
+    expect(slots.slice(0, 2)).toEqual(['architecture.wall|Brick 285', 'architecture.wall|Partition 125']);
+    expect(withSlotType(slots, 0, null)[0]).toBe('architecture.wall');
+    expect(withSlotType(slots, 5, 'x')).toBe(slots);
+    const kept = { mine: ['architecture.wall|Brick 285', 'gone|X'] };
+    expect(slotsOf(kept, 'mine', [], (id) => id !== 'gone').slice(0, 2)).toEqual(['architecture.wall|Brick 285', null]);
   });
 });

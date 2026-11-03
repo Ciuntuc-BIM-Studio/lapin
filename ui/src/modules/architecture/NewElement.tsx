@@ -8,11 +8,17 @@
 import type { ComponentType } from 'react';
 import { Settings2 } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
+import type { TypedTool } from '../../platform/module';
 import { useUi, type UiState } from '../../app/store';
 import { useSession } from '../../engine/session';
 import { materialName, mm, ofClass, relatedOf, typeLayers } from '../../engine/model';
 
-type TypeField = 'wallTypeId' | 'doorTypeId' | 'windowTypeId' | 'slabTypeId' | 'ceilingTypeId' | 'skirtingTypeId' | 'curtainTypeId';
+type TypeField = 'wallTypeId' | 'doorTypeId' | 'windowTypeId' | 'slabTypeId' | 'ceilingTypeId' | 'skirtingTypeId' | 'curtainTypeId' | 'stairTypeId' | 'rampTypeId';
+
+/** A tool's types for the quick slots (decision 260): the class, its choice kept in `field`. */
+export const typedBy = (cls: string, field: TypeField): TypedTool => ({
+  cls, get: () => useUi.getState()[field] as string | null, set: (id) => useUi.setState({ [field]: id } as Partial<UiState>),
+});
 
 interface Spec { width?: number; height?: number; sillHeight?: number; profile?: string; thickness?: number; material?: string }
 

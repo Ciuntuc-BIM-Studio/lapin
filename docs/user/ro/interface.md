@@ -51,10 +51,11 @@ Uneltele rapide sunt locurile numerotate de jos din vedere (pe marginea ei din s
 - trage un loc peste altul ca să le schimbi între ele;
 - clic dreapta pe un loc: **Alege o unealtă…**, **Golește acest loc** sau **Resetează uneltele rapide**;
 - **View → Quick tools…** stabilește cele nouă locuri din liste, iar **Înapoi la cele ale ediției** le aduce înapoi pe cele ale ediției tale.
+- o unealtă care pune elemente de un tip (perete, ușă, placă, scară…) poate ține și unul dintre tipurile proiectului: îl alegi din meniul de clic dreapta al locului sau lângă unealtă în **View → Quick tools…**. Locul arată atunci numele tipului, iar apăsat pornește unealta cu tipul acela, așa că un loc poate ține pereții de cărămidă și altul compartimentările. Tipul e păstrat după nume: locul merge în orice proiect cu un tip cu acel nume, iar într-unul fără el unealta ia tipul ei curent.
 
 Plutind jos, fiecare loc arată numele uneltei, iar un loc gol după ultimul așteaptă o unealtă. Lapin îți păstrează uneltele rapide pe acest calculator, pentru tine.
 
-![Uneltele rapide, cu scara pe locul 7 și locul 2 gol](shots/quick-tools.webp)
+![Uneltele rapide: un tip de perete pe locul 3, scara pe locul 7, locul 2 gol](shots/quick-tools.webp)
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 

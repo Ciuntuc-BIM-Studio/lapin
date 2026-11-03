@@ -10,7 +10,7 @@
 import { useUi } from '../app/store';
 import { useInterface } from '../app/interface';
 import { hint } from '../app/commands';
-import { activate, findTool, hotbarIds, putInSlot, resetSlots, swapSlots } from '../platform/modules';
+import { activateSlot, findTool, hotbarIds, putInSlot, quickSlot, resetSlots, swapSlots, typeSlot, typesOf } from '../platform/modules';
 import { reach, SLOT_DRAG, TOOL_DRAG, useHotbars } from '../app/hotbar';
 import { openContextMenu } from './ContextMenu';
 import { useState, type DragEvent, type MouseEvent } from 'react';
@@ -56,6 +56,9 @@ export function ViewportHud() {
   // The slots up to the last tool, and one empty after it to drop a tool on.
   const shown = ids.slice(0, Math.min(ids.length, reach(ids) + 1));
   const [over, setOver] = useState<number | null>(null);
+  // The tools' current types and the project's types: a typed slot is lit only while its type is the tool's.
+  useUi((s) => [s.wallTypeId, s.doorTypeId, s.windowTypeId, s.slabTypeId, s.stairTypeId, s.rampTypeId, s.ceilingTypeId, s.skirtingTypeId, s.curtainTypeId].join());
+  useSession((s) => s.nodes);
   const docked = parts.quickTools === 'docked';
   const drop = (i: number, e: DragEvent) => {
     e.preventDefault();
@@ -67,8 +70,15 @@ export function ViewportHud() {
   };
   const menu = (i: number, e: MouseEvent) => {
     e.preventDefault();
+    const q = quickSlot(ids[i]);
+    // A typed tool's slot: the tool's current type, or one of the project's (decision 260).
+    const types = typesOf(q?.tool ?? null).slice(0, 14);
     openContextMenu(e.clientX, e.clientY, [
       { label: 'Choose a tool…', onSelect: () => useUi.setState({ dialog: 'quickTools' }) },
+      ...(q?.tool.typed ? [
+        { label: 'The tool\'s current type', checked: !q.typeName, onSelect: () => typeSlot(i, null) },
+        ...types.map((t) => ({ label: t.name, checked: q.typeName === t.name, onSelect: () => typeSlot(i, t.name) })),
+      ] : []),
       { label: 'Empty this slot', disabled: !ids[i], onSelect: () => putInSlot(i, null) },
       { label: 'Reset quick tools', onSelect: resetSlots },
     ]);
@@ -89,7 +99,8 @@ export function ViewportHud() {
       {parts.quickTools !== 'off' && (
         <div className={`hotbar${docked ? ' docked' : ' named'}`} role="toolbar" aria-label="Quick tools">
           {shown.map((id, i) => {
-            const t = findTool(id);
+            const q = quickSlot(id);
+            const t = q?.tool ?? null;
             const target = { onDragOver: (e: DragEvent) => { e.preventDefault(); setOver(i); }, onDragLeave: () => setOver(null), onDrop: (e: DragEvent) => drop(i, e), onContextMenu: (e: MouseEvent) => menu(i, e) };
             if (!t) return (
               <button type="button" key={i} className={`slot empty${over === i ? ' over' : ''}`} title="Drag a tool here from the ribbon, or click to choose one" onClick={() => useUi.setState({ dialog: 'quickTools' })} {...target}>
@@ -97,12 +108,14 @@ export function ViewportHud() {
                 <span className="slot-plus" aria-hidden>+</span>
               </button>
             );
+            const on = tool === t.id && (!q!.typeId || t.typed?.get() === q!.typeId);
+            const title = q!.typeName ? `${hint(t.id, t.label)} · ${q!.typeName}${q!.typeId ? '' : ' (not in this project)'}` : hint(t.id, t.label);
             return (
-              <button type="button" key={i} data-tool={t.id} className={`slot${tool === t.id ? ' on' : ''}${over === i ? ' over' : ''}`} onClick={() => activate(t)} title={hint(t.id, t.label)}
+              <button type="button" key={i} data-tool={t.id} data-type={q!.typeName ?? undefined} className={`slot${on ? ' on' : ''}${over === i ? ' over' : ''}${q!.typeName ? ' typed' : ''}`} onClick={() => activateSlot(q!)} title={title}
                 draggable onDragStart={(e) => { e.dataTransfer.setData(SLOT_DRAG, String(i)); e.dataTransfer.effectAllowed = 'move'; }} {...target}>
                 <span className="slot-n">{i + 1}</span>
                 <t.icon size={docked ? 17 : 20} strokeWidth={1.5} />
-                {!docked && <span className="slot-name">{t.label}</span>}
+                {!docked && (q!.typeName ? <span className="slot-name" data-no-i18n>{q!.typeName}</span> : <span className="slot-name">{t.label}</span>)}
               </button>
             );
           })}

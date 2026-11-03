@@ -51,6 +51,7 @@ Gli strumenti rapidi sono i posti numerati in fondo alla vista (sul suo bordo si
 - trascina un posto su un altro per scambiarli;
 - clic destro su un posto: **Scegli uno strumento…**, **Svuota questo posto** o **Ripristina gli strumenti rapidi**;
 - **Vista → Strumenti rapidi…** imposta i nove posti da elenchi, e **Quelli dell’edizione** riporta quelli della tua edizione.
+- uno strumento che posa elementi di un tipo (muro, porta, solaio, scala…) può tenere uno dei tipi del progetto: sceglilo nel menu contestuale del posto o accanto allo strumento in **Vista → Strumenti rapidi…**. Il posto mostra allora il nome del tipo e avvia lo strumento con quel tipo, così un posto può tenere i muri in laterizio e un altro le tramezze. Il tipo è conservato per nome: il posto funziona in ogni progetto con un tipo di quel nome, e in uno senza lo strumento prende il suo tipo attuale.
 
 Mobili in fondo, ogni posto mostra il nome del suo strumento, e un posto vuoto dopo l’ultimo aspetta uno strumento. Lapin conserva i tuoi strumenti rapidi su questo computer, per te.
 

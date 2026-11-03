@@ -236,9 +236,10 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .slot-plus { font-size: 16px; color: var(--ink-muted); }
 .hotbar.named .slot.empty .slot-plus { grid-row: 1 / span 2; }
 .slot.over { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
-.quick-tools-dialog { max-width: min(520px, calc(100vw - 32px)); }
+.quick-tools-dialog { max-width: min(680px, calc(100vw - 32px)); }
 .quick-slots { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
-.quick-slot-row { display: grid; grid-template-columns: 26px 22px 1fr; align-items: center; gap: 8px; }
+.quick-slot-row { display: grid; grid-template-columns: 26px 22px minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 8px; }
+.quick-slot-type { min-width: 0; }
 .quick-slot-icon { display: grid; place-items: center; color: var(--ink); }
 
 /* Properties */

@@ -6,6 +6,11 @@
  * put in another, it leaves the first. Set by dragging a ribbon tool onto a
  * slot, by dragging one slot onto another (they swap), from a slot's menu,
  * or in View → Quick tools…; kept per user in the browser's storage.
+ *
+ * A slot may hold the tool with one of its types (decision 260): „Wall ·
+ * Brick 285”. The type is kept by its name, since the slots are the user's
+ * and the types the project's: pressed, the slot makes the project's type of
+ * that name the tool's current one; a project without it leaves the tool's.
  */
 
 import { create } from 'zustand';
@@ -16,11 +21,21 @@ export const SLOTS = 9;
 export const TOOL_DRAG = 'application/x-lapin-tool';
 export const SLOT_DRAG = 'application/x-lapin-slot';
 
-/** Nine slots: a tool's id, or null for an empty one. */
+/** Nine slots: a tool's id (with `|` and a type's name after it), or null for an empty one. */
 export type Slots = (string | null)[];
 
 /** The slots as kept: per workspace, only those the user set. */
 export type Hotbars = Record<string, Slots>;
+
+/** A slot's tool and the name of its type, if it has one. */
+export function parseSlot(slot: string | null): { tool: string; type: string | null } | null {
+  if (!slot) return null;
+  const at = slot.indexOf('|');
+  return at < 0 ? { tool: slot, type: null } : { tool: slot.slice(0, at), type: slot.slice(at + 1) || null };
+}
+
+/** A slot holding a tool, with a type's name or without. */
+export const slotOf = (tool: string, type?: string | null): string => (type ? `${tool}|${type}` : tool);
 
 /** The modules' quick tools laid in the slots, the first nine. */
 export function defaultSlots(defaults: readonly string[]): Slots {
@@ -31,15 +46,21 @@ export function defaultSlots(defaults: readonly string[]): Slots {
 export function slotsOf(hotbars: Hotbars, workspace: string, defaults: readonly string[], known: (id: string) => boolean): Slots {
   const own = hotbars[workspace];
   if (!own) return defaultSlots(defaults);
-  return Array.from({ length: SLOTS }, (_, i) => { const id = own[i] ?? null; return id && known(id) ? id : null; });
+  return Array.from({ length: SLOTS }, (_, i) => { const slot = own[i] ?? null; return slot && known(parseSlot(slot)!.tool) ? slot : null; });
 }
 
-/** A tool put in slot `i` (null empties it); the tool leaves any other slot it stood in. */
+/** A tool put in slot `i` (null empties it); the tool (with the same type) leaves any other slot it stood in. */
 export function withSlot(slots: Slots, i: number, id: string | null): Slots {
   if (i < 0 || i >= SLOTS) return slots;
   const out = slots.map((s) => (id && s === id ? null : s));
   out[i] = id;
   return out;
+}
+
+/** Slot `i`'s tool given a type by its name, or none (null). */
+export function withSlotType(slots: Slots, i: number, type: string | null): Slots {
+  const s = parseSlot(slots[i] ?? null);
+  return s ? withSlot(slots, i, slotOf(s.tool, type)) : slots;
 }
 
 /** Two slots swapped. */

@@ -51,6 +51,7 @@ Die Schnellwerkzeuge sind die nummerierten Plätze unten in der Ansicht (in Komp
 - ziehen Sie einen Platz auf einen anderen, um sie zu tauschen;
 - Rechtsklick auf einen Platz: **Werkzeug wählen…**, **Diesen Platz leeren** oder **Schnellwerkzeuge zurücksetzen**;
 - **View → Quick tools…** legt die neun Plätze über Listen fest, und **Die der Edition** holt die Ihrer Edition zurück.
+- ein Werkzeug, das Elemente eines Typs setzt (Wand, Tür, Decke, Treppe…), kann einen der Typen des Projekts mitnehmen: Wählen Sie ihn im Kontextmenü des Platzes oder neben dem Werkzeug in **View → Quick tools…**. Der Platz zeigt dann den Namen des Typs und startet das Werkzeug mit diesem Typ, sodass ein Platz die Ziegelwände und ein anderer die Trennwände halten kann. Der Typ wird über seinen Namen gemerkt: Der Platz funktioniert in jedem Projekt mit einem Typ dieses Namens, und in einem ohne ihn nimmt das Werkzeug seinen aktuellen Typ.
 
 Unten schwebend zeigt jeder Platz den Namen seines Werkzeugs, und ein leerer Platz nach dem letzten wartet auf ein Werkzeug. Lapin speichert Ihre Schnellwerkzeuge auf diesem Computer, für Sie.
 

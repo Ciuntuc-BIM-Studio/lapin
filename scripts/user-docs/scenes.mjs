@@ -1911,15 +1911,23 @@ export const scenes = [
       // The quick tools the user chooses (decision 259): slot 7 given the stair from View → Quick tools…, slot 2 emptied.
       await t.tool('app.quickTools');
       t.expect(await t.page.locator('.quick-tools-dialog').count() === 1, 'View → Quick tools… opens its dialog');
-      await t.page.locator('.quick-tools-dialog select').nth(6).selectOption('architecture.stair');
-      await t.page.locator('.quick-tools-dialog select').nth(1).selectOption('');
+      await t.page.locator('.quick-tools-dialog [data-slot="7"]').selectOption('architecture.stair');
+      await t.page.locator('.quick-tools-dialog [data-slot="2"]').selectOption('');
+      // The wall's slot with a type of its own (decision 260): the project's first wall type, by its name.
+      await t.page.locator('.quick-tools-dialog [data-slot-type="3"]').selectOption({ index: 1 });
       await t.wait(300);
       await t.shot('quick-tools-dialog', { of: '.quick-tools-dialog', pad: 0 });
       await t.page.locator('.quick-tools-dialog .btn.primary').click();
       await t.wait(300);
       t.expect(await t.page.locator('.hotbar.named .slot.empty').count() >= 1, 'an emptied slot waits for a tool');
       t.expect(await t.page.locator('.hotbar.named .slot').nth(6).getAttribute('data-tool') === 'architecture.stair', 'the stair stands in slot 7');
+      const typed = t.page.locator('.hotbar.named .slot.typed').first();
+      t.expect(await typed.count() === 1 && !!(await typed.getAttribute('data-type')), 'the wall\'s slot shows its type\'s name');
       await t.shot('quick-tools', { of: '.hotbar.named', pad: 8 });
+      await typed.click();
+      await t.wait(200);
+      t.expect(await t.page.evaluate(async () => { const { useUi } = await import('/src/app/store.ts'); const s = useUi.getState(); return s.tool === 'architecture.wall' && !!s.wallTypeId; }), 'the typed slot starts the wall tool with its type');
+      await t.keys('Escape');
       await t.page.evaluate(async () => { (await import('/src/platform/modules.ts')).resetSlots(); });
       await t.page.mouse.click(700, 500);
       await t.keys('k', 's');

@@ -51,6 +51,7 @@ Las herramientas rápidas son las casillas numeradas al pie de la vista (en su b
 - arrastre una casilla sobre otra para intercambiarlas;
 - clic derecho en una casilla: **Elegir una herramienta…**, **Vaciar esta casilla** o **Restablecer las herramientas rápidas**;
 - **View → Quick tools…** fija las nueve casillas desde listas, y **Las de la edición** devuelve las de su edición.
+- una herramienta que coloca elementos de un tipo (muro, puerta, forjado, escalera…) puede llevar uno de los tipos del proyecto: elíjalo en el menú contextual de la casilla o junto a la herramienta en **View → Quick tools…**. La casilla muestra entonces el nombre del tipo y, al pulsarla, inicia la herramienta con ese tipo, de modo que una casilla puede llevar los muros de ladrillo y otra los tabiques. El tipo se guarda por su nombre: la casilla funciona en cualquier proyecto con un tipo de ese nombre, y en uno sin él la herramienta toma su tipo actual.
 
 Flotando al pie, cada casilla muestra el nombre de su herramienta, y una casilla vacía tras la última espera una herramienta. Lapin guarda sus herramientas rápidas en este ordenador, para usted.
 

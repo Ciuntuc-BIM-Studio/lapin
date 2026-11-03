@@ -51,10 +51,11 @@ The quick tools are the numbered slots at the bottom of the view (on its left ed
 - drag one slot onto another to swap them;
 - right-click a slot: **Choose a tool…**, **Empty this slot** or **Reset quick tools**;
 - **View → Quick tools…** sets the nine slots from lists, and **Reset to the edition's** brings back your edition's own.
+- a tool that places elements of a type (a wall, a door, a floor, a stair…) can hold one of the project's types: choose it in the slot's right-click menu, or beside the tool in **View → Quick tools…**. The slot then shows the type's name, and pressing it starts the tool with that type, so one slot can hold the brick walls and another the partitions. The type is kept by its name: the slot works in every project with a type of that name, and in one without it the tool takes its current type.
 
 Floating at the bottom, each slot shows its tool's name, and an empty slot after the last waits for a tool. Lapin keeps your quick tools on this computer, for you.
 
-![The quick tools, the stair in slot 7 and slot 2 empty](shots/quick-tools.webp)
+![The quick tools: a wall type in slot 3, the stair in slot 7, slot 2 empty](shots/quick-tools.webp)
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 

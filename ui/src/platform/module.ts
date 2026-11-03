@@ -74,7 +74,12 @@ export interface ToolDef {
   options?: ComponentType;
   /** What it puts down, shown in Properties while it is on (the type a wall is drawn with), before the first click. */
   properties?: ComponentType;
+  /** The types it puts down: their class, and its current one read and set, so a quick slot holds the tool with a type (decision 260). */
+  typed?: TypedTool;
 }
+
+/** A tool's types, for a quick slot holding the tool with one of them. */
+export interface TypedTool { cls: string; get: () => string | null; set: (id: string | null) => void }
 
 export interface RibbonGroupDef { label: string; tools: ToolDef[]; small?: ToolDef[] }
 

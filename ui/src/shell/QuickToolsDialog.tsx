@@ -1,15 +1,19 @@
 /**
  * View → Quick tools… (decision 259): the nine quick slots of the current
  * workspace, each a tool chosen from the ribbon's tabs or empty, and the
- * modules' own set again. The same as dragging a ribbon tool onto a slot or a
- * slot's right-click menu; applied at once, kept for this user.
+ * modules' own set again; a tool that places typed elements takes one of the
+ * project's types too (decision 260), else the tool's current one. The same as
+ * dragging a ribbon tool onto a slot or a slot's right-click menu; applied at
+ * once, kept for this user.
  */
 
 import { X } from 'lucide-react';
 import { useUi } from '../app/store';
 import { useHotbars } from '../app/hotbar';
 import { useInterface, WORKSPACE_LABELS } from '../app/interface';
-import { defaultHotbar, findTool, hotbarIds, putInSlot, resetSlots, ribbonTabs } from '../platform/modules';
+import { defaultHotbar, hotbarIds, putInSlot, quickSlot, resetSlots, ribbonTabs, typeSlot, typesOf } from '../platform/modules';
+import { parseSlot } from '../app/hotbar';
+import { useSession } from '../engine/session';
 import type { ToolDef } from '../platform/module';
 
 /** The tools to choose from: each ribbon tab's, then the quick tools no tab has. */
@@ -29,6 +33,7 @@ function choices(): { label: string; tools: ToolDef[] }[] {
 export function QuickToolsDialog() {
   const hotbars = useHotbars();
   const workspace = useInterface((s) => s.workspace);
+  useSession((s) => s.nodes);
   const slots = hotbarIds(hotbars, workspace);
   const groups = choices();
   const close = () => useUi.setState({ dialog: null });
@@ -43,12 +48,14 @@ export function QuickToolsDialog() {
           <p className="muted small"><span>The tools the keys 1–9 start, for the workspace</span> <b>{WORKSPACE_LABELS[workspace]}</b>. <span>Drag a tool from the ribbon onto a slot, or one slot onto another to swap them; right-click a slot for its menu.</span></p>
           <div className="quick-slots">
             {slots.map((id, i) => {
-              const t = findTool(id);
+              const q = quickSlot(id);
+              const t = q?.tool ?? null;
+              const types = typesOf(t);
               return (
-                <label className="quick-slot-row" key={i}>
+                <div className="quick-slot-row" key={i}>
                   <kbd data-no-i18n>{i + 1}</kbd>
                   <span className="quick-slot-icon">{t ? <t.icon size={18} strokeWidth={1.5} /> : null}</span>
-                  <select aria-label={`Quick tool ${i + 1}`} value={id ?? ''} onChange={(e) => putInSlot(i, e.target.value || null)}>
+                  <select aria-label={`Quick tool ${i + 1}`} data-slot={i + 1} value={parseSlot(id)?.tool ?? ''} onChange={(e) => putInSlot(i, e.target.value || null)}>
                     <option value="">(empty)</option>
                     {groups.map((g) => (
                       <optgroup key={g.label} label={g.label}>
@@ -56,7 +63,14 @@ export function QuickToolsDialog() {
                       </optgroup>
                     ))}
                   </select>
-                </label>
+                  {t?.typed
+                    ? <select aria-label={`Type of quick tool ${i + 1}`} data-slot-type={i + 1} className="quick-slot-type" value={q!.typeName ?? ''} onChange={(e) => typeSlot(i, e.target.value || null)}>
+                        <option value="">The tool's current type</option>
+                        {q!.typeName && !q!.typeId && <option value={q!.typeName} data-no-i18n>{q!.typeName} (not in this project)</option>}
+                        {types.map((x) => <option key={x.id} value={x.name} data-no-i18n>{x.name}</option>)}
+                      </select>
+                    : <span />}
+                </div>
               );
             })}
           </div>

@@ -51,6 +51,7 @@ Les outils rapides sont les emplacements numérotés en bas de la vue (sur son b
 - glissez un emplacement sur un autre pour les échanger ;
 - clic droit sur un emplacement : **Choisir un outil…**, **Vider cet emplacement** ou **Réinitialiser les outils rapides** ;
 - **View → Quick tools…** règle les neuf emplacements depuis des listes, et **Ceux de l’édition** remet ceux de votre édition.
+- un outil qui pose des éléments d’un type (mur, porte, dalle, escalier…) peut garder l’un des types du projet : choisissez-le dans le menu contextuel de l’emplacement, ou à côté de l’outil dans **View → Quick tools…**. L’emplacement montre alors le nom du type et lance l’outil avec ce type, si bien qu’un emplacement peut garder les murs en brique et un autre les cloisons. Le type est gardé par son nom : l’emplacement marche dans tout projet ayant un type de ce nom, et dans un projet sans lui l’outil prend son type actuel.
 
 Flottant en bas, chaque emplacement montre le nom de son outil, et un emplacement vide après le dernier attend un outil. Lapin garde vos outils rapides sur cet ordinateur, pour vous.
 

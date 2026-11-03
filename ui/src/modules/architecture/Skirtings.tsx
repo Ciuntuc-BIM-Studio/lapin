@@ -16,21 +16,21 @@ import { LengthField } from '../../shell/cells';
 import { pt } from '../../viewport/gripKit';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { PendingDialog } from '../core/PendingDialog';
-import { newElement } from './NewElement';
+import { newElement, typedBy } from './NewElement';
 import { PROFILES, profilePath, type SkirtingSpec } from './skirtingProfile';
 
 const chosenType = () => (useUi.getState().skirtingTypeId ? { typeId: useUi.getState().skirtingTypeId } : {});
 
 /** A skirting round the room clicked (or inside the walls round the click), broken at its doors. */
 export const skirtingInRoom: ToolDef = {
-  id: 'architecture.skirtingInRoom', label: 'Skirting in room', icon: SquareSquare, shortcut: 'SK', properties: newElement('LapinSkirtingType', 'skirtingTypeId', 'skirtingTypes'),
+  id: 'architecture.skirtingInRoom', label: 'Skirting in room', icon: SquareSquare, shortcut: 'SK', properties: newElement('LapinSkirtingType', 'skirtingTypeId', 'skirtingTypes'), typed: typedBy('LapinSkirtingType', 'skirtingTypeId'),
   gesture: { kind: 'point' },
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('architecture.addSkirting', { storeyId: ctx.storeyId, x: p.x, y: p.y, ...chosenType() }); },
 };
 
 /** A skirting along a line drawn on a wall's face (Enter finishes), its board on the side away from the wall. */
 export const skirting: ToolDef = {
-  id: 'architecture.skirting', label: 'Skirting', icon: PanelBottom, properties: newElement('LapinSkirtingType', 'skirtingTypeId', 'skirtingTypes'),
+  id: 'architecture.skirting', label: 'Skirting', icon: PanelBottom, properties: newElement('LapinSkirtingType', 'skirtingTypeId', 'skirtingTypes'), typed: typedBy('LapinSkirtingType', 'skirtingTypeId'),
   gesture: { kind: 'polyline' },
   complete: async ({ points }, ctx) => { await ctx.execute('architecture.addSkirting', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...chosenType() }); },
 };

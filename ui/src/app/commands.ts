@@ -13,7 +13,7 @@ import { assistantAvailable } from '../assistant/available';
 import { toggleGrid, toggleThinLines } from './display';
 import { chooseWorkspace, onInterfaceChange, useInterface, WORKSPACE_IDS, WORKSPACE_LABELS } from './interface';
 import { effectiveBindings, formatBinding, resolveKeymap, useKeymap, type Binding, type CommandDef, type Keymap } from './shortcuts';
-import { activate, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
+import { activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
 import { execute, redo, undo } from '../engine/session';
 import { newProject, openProject, saveProject } from '../engine/files';
 import { COMMANDS, setCommandFallback, startCommand, useCad } from '../viewport/cad/session';
@@ -65,7 +65,7 @@ function appCommands(): CommandDef[] {
 
 const hotbarCommands = (): CommandDef[] => Array.from({ length: 9 }, (_, i) => ({
   id: `hotbar.${i + 1}`, label: `Quick tool ${i + 1}`, category: 'Quick tools', defaults: [String(i + 1)],
-  run: () => { const t = hotbarSlots()[i]; if (t) activate(t); },
+  run: () => { const t = hotbarSlots()[i]; if (t) activateSlot(t); },
 }));
 
 /** The command-line command a tool starts, when it is one (the Modify and Draft tools). */

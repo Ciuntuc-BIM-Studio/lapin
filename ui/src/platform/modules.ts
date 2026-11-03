@@ -7,7 +7,8 @@ import type { NodeDto } from '../engine/protocol';
 import { toggleTool, useUi } from '../app/store';
 import { mergeTabs } from './ribbon';
 import { cancel, useCad } from '../viewport/cad/session';
-import { setSlots, slotsOf, useHotbars, withSlot, withSwap, type Slots } from '../app/hotbar';
+import { parseSlot, setSlots, slotsOf, useHotbars, withSlot, withSlotType, withSwap, type Slots } from '../app/hotbar';
+import { useSession } from '../engine/session';
 import { useInterface } from '../app/interface';
 
 export const modules: readonly LapinModule[] = loaded;
@@ -43,13 +44,40 @@ export const findTool = (id: string | null): ToolDef | null => (id ? allTools().
 export const hotbarIds = (hotbars = useHotbars.getState(), workspace = useInterface.getState().workspace): Slots =>
   slotsOf(hotbars, workspace, defaultHotbar().map((t) => t.id), (id) => findTool(id) !== null);
 
+/** A quick slot as it stands: its tool, and its type by name with the project's type of that name (null when the project has none). */
+export interface QuickSlot { tool: ToolDef; typeName: string | null; typeId: string | null }
+
+/** The types a tool puts down in the open project, in their order. */
+export const typesOf = (t: ToolDef | null): { id: string; name: string }[] => {
+  if (!t?.typed) return [];
+  const cls = t.typed.cls;
+  return [...useSession.getState().nodes.values()].filter((n) => n.type === cls).map((n) => ({ id: n.id, name: n.name ?? '' })).filter((x) => x.name);
+};
+
+/** A slot read: its tool, its type's name and the project's type of that name. */
+export function quickSlot(slot: string | null): QuickSlot | null {
+  const p = parseSlot(slot);
+  const tool = p ? findTool(p.tool) : null;
+  if (!p || !tool) return null;
+  const typeName = tool.typed ? p.type : null;
+  return { tool, typeName, typeId: typeName ? typesOf(tool).find((x) => x.name === typeName)?.id ?? null : null };
+}
+
 /** The current workspace's quick tools, slot by slot; null for an empty slot. */
-export const hotbarSlots = (): (ToolDef | null)[] => hotbarIds().map(findTool);
+export const hotbarSlots = (): (QuickSlot | null)[] => hotbarIds().map(quickSlot);
+
+/** Press a quick slot: its type (when the project has it) made the tool's current one, then the tool. */
+export function activateSlot(slot: QuickSlot): void {
+  if (slot.typeId) slot.tool.typed?.set(slot.typeId);
+  activate(slot.tool);
+}
 
 const current = () => useInterface.getState().workspace;
 /** A tool put in a quick slot of the current workspace (null empties it). */
 export const putInSlot = (i: number, id: string | null) => setSlots(current(), withSlot(hotbarIds(), i, id));
 export const swapSlots = (i: number, j: number) => setSlots(current(), withSwap(hotbarIds(), i, j));
+/** A quick slot's tool given one of its types by name (null: the tool's current type). */
+export const typeSlot = (i: number, type: string | null) => setSlots(current(), withSlotType(hotbarIds(), i, type));
 /** The current workspace's quick tools back to the modules' own. */
 export const resetSlots = () => setSlots(current(), null);
 
