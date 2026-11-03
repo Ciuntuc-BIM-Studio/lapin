@@ -49,3 +49,16 @@ public interface IIfcSweptBodies
 {
     IfcSweptBody? BodyOf(IModelView model, Entity element);
 }
+
+/// <summary>
+/// A connection between two elements an element realizes (a steel connection between a column and a rafter, decision 273):
+/// written as IfcRelConnectsWithRealizingElements, <see cref="Realizing"/> the element (an assembly of plates and bolts)
+/// that makes it, <see cref="Type"/> its ConnectionType.
+/// </summary>
+public sealed record IfcConnection(string Realizing, string Relating, string Related, string? Type);
+
+/// <summary>A module's elements that connect others (steel connections).</summary>
+public interface IIfcConnections
+{
+    IEnumerable<IfcConnection> Connections(IModelView model);
+}

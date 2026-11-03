@@ -1,9 +1,11 @@
 /**
  * The portal frame hall configurator (decision 270), like the roof's: the styles on the left (the project's own, then the
  * catalogue's), the hall's fields in tabs in the middle (frame, haunches, gables, secondary steel, placement), and the
- * engine's preview of the draft on the right — a typical frame's elevation with its haunches (a gable's on the Gables tab),
- * the plan of the grid and the members, and the summary (frames, heights, steel by kind). Apply is one engine command, one
- * undo step: a new hall, or the hall built again over its members.
+ * engine's preview of the draft on the right — a typical frame's elevation with its haunches and its connections (a
+ * gable's on the Gables tab), the plan of the grid and the members, and the summary (frames, heights, steel by kind, the
+ * connections' bolts and anchors). The Nodes tab sets the frames' connections (decision 273): on or off, the column bases
+ * pinned or fixed, their anchors, the eaves' and the apex's end plates and bolts. Apply is one engine command, one undo
+ * step: a new hall, or the hall built again over its members and connections; Delete hall takes them all away.
  */
 
 import { useEffect, useState } from 'react';
@@ -16,6 +18,7 @@ import { LengthField, NumberField } from '../../shell/cells';
 import { t, useLang } from '../../i18n';
 import { baysText, fit, parseBays, parseBracing, summaryRows, type HallAttrs, type HallPreview, type HaunchDto, type PreviewItem } from './hall';
 import type { SectionDto } from './sections';
+import { anchorCounts, BOLT_SIZES, boltLabel, GRADES, type NodeParamsDto } from './nodes';
 
 /** The hall the configurator is open on; null: a new one. */
 export const useHall = create<{ id: string | null }>(() => ({ id: null }));
@@ -23,10 +26,10 @@ export const useHall = create<{ id: string | null }>(() => ({ id: null }));
 type Style = { id: string; label: string; description?: string; attrs: HallAttrs };
 interface Draft { style?: string; attrs: HallAttrs }
 
-const TABS = [['frame', 'Frame'], ['haunches', 'Haunches'], ['gables', 'Gables'], ['secondary', 'Secondary steel'], ['placement', 'Placement']] as const;
+const TABS = [['frame', 'Frame'], ['haunches', 'Haunches'], ['gables', 'Gables'], ['nodes', 'Nodes'], ['secondary', 'Secondary steel'], ['placement', 'Placement']] as const;
 type Tab = (typeof TABS)[number][0];
 
-const FILL: Record<PreviewItem['role'], string> = { column: '#5d6b7a', rafter: '#7f8c99', haunch: '#b4502a', post: '#9aa6b2' };
+const FILL: Record<PreviewItem['role'], string> = { column: '#5d6b7a', rafter: '#7f8c99', haunch: '#b4502a', post: '#9aa6b2', node: '#1e2a3a' };
 
 /** A profile's name as the spec keeps it: a catalogue name, or a section of its own (its name or kind). */
 const profileName = (v: unknown): string => (typeof v === 'string' ? v : (v as SectionDto | undefined)?.name ?? (v as SectionDto | undefined)?.kind ?? '');
@@ -36,7 +39,7 @@ function Plot({ items, axes, label, w = 380, h = 220 }: { items: PreviewItem[]; 
   const ends = (axes ?? []).flatMap((a) => [a.a, a.b]);
   const f = fit(items, ends, w, h, 18);
   if (!f) return <svg width={w} height={h} />;
-  const order = (r: string) => (r === 'haunch' ? 2 : r === 'rafter' ? 1 : 0);
+  const order = (r: string) => (r === 'node' ? 3 : r === 'haunch' ? 2 : r === 'rafter' ? 1 : 0);
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-label={label} data-field={`hall-${label.toLowerCase()}`}>
       {(axes ?? []).map((a) => (
@@ -48,7 +51,7 @@ function Plot({ items, axes, label, w = 380, h = 220 }: { items: PreviewItem[]; 
       ))}
       {[...items].sort((a, b) => order(a.role) - order(b.role)).map((it, i) => (
         <polygon key={i} points={Array.from({ length: it.pts.length / 2 }, (_, j) => `${f.X(it.pts[2 * j])},${f.Y(it.pts[2 * j + 1])}`).join(' ')}
-          fill={FILL[it.role]} stroke="#1e2a3a" strokeWidth={0.4} />
+          fill={FILL[it.role]} stroke="#1e2a3a" strokeWidth={it.role === 'node' ? 0.2 : 0.4} data-role={it.role} />
       ))}
     </svg>
   );
@@ -82,6 +85,16 @@ function HaunchFields({ which, h, set }: { which: 'eaves' | 'apex'; h: HaunchDto
   );
 }
 
+/** The bolts' (or anchors') diameter: by the profiles, or one of the sizes. */
+function BoltPick({ value, set, testId }: { value: number | undefined; set: (d: number | null) => void; testId: string }) {
+  return (
+    <select value={value ?? ''} data-field={testId} onChange={(e) => set(e.target.value ? Number(e.target.value) : null)}>
+      <option value="">by the profile</option>
+      {BOLT_SIZES.map((d) => <option key={d} value={d} data-no-i18n>{boltLabel(d)}</option>)}
+    </select>
+  );
+}
+
 export function HallDialog() {
   useLang((s) => s.lang);
   const hallId = useHall((s) => s.id);
@@ -112,6 +125,20 @@ export function HallDialog() {
   const dirty = Boolean(draft.style) || Object.keys(draft.attrs).length > 0;
   const value = <K extends keyof HallAttrs>(k: K): HallAttrs[K] => (k in draft.attrs ? draft.attrs[k] : preview?.attrs?.[k]);
   const set = <K extends keyof HallAttrs>(k: K, v: HallAttrs[K]) => setDraft((d) => ({ ...d, attrs: { ...d.attrs, [k]: v } }));
+  // A kind of connection's parameter: given, or (null) back to the profiles'.
+  type NodeKind = keyof NonNullable<HallAttrs['nodeParams']>;
+  const nodeParams = value('nodeParams') ?? {};
+  const nodeParam = <F extends keyof NodeParamsDto>(kind: NodeKind, f: F): NodeParamsDto[F] => nodeParams[kind]?.[f];
+  const setNode = (kind: NodeKind, f: keyof NodeParamsDto, v: unknown) => {
+    const cur: NodeParamsDto = { ...(nodeParams[kind] ?? {}) };
+    if (v == null) delete cur[f]; else (cur as Record<string, unknown>)[f] = v;
+    set('nodeParams', { ...nodeParams, [kind]: cur });
+  };
+  const remove = async () => {
+    if (!hallId || !window.confirm(t('Delete the hall with its members and connections?'))) return;
+    await execute('element.delete', { ids: [hallId] });
+    if (!useSession.getState().error) { useUi.setState({ selection: null, selected: [] }); close(); }
+  };
   const pickStyle = (id: string) => { setDraft({ style: id, attrs: {} }); setBaysDraft(null); setBracingDraft(null); };
   const args = () => ({ ...(hallId ? { id: hallId } : { storeyId: useUi.getState().storeyId ?? undefined }), ...(draft.style ? { style: draft.style } : {}), attrs: draft.attrs });
   const apply = async () => {
@@ -207,11 +234,6 @@ export function HallDialog() {
                   </label>
                   {profile('column', 'Columns')}
                   {profile('rafter', 'Rafters')}
-                  <label className="field-line roof-field" title="Kept for the column bases of the nodes to come"><span className="eyebrow">Column bases</span>
-                    <select value={value('base') ?? 'pinned'} data-field="hall-base" onChange={(e) => set('base', e.target.value as HallAttrs['base'])}>
-                      <option value="pinned">pinned</option><option value="fixed">fixed</option>
-                    </select>
-                  </label>
                 </>}
                 {tab === 'haunches' && <>
                   <HaunchFields which="eaves" h={value('eavesHaunch')} set={(h) => set('eavesHaunch', h)} />
@@ -228,6 +250,61 @@ export function HallDialog() {
                     {len('postSpacing', 'Post spacing', 1)}
                     {profile('post', 'Gable posts')}
                     {profile('gableRafter', 'Gable rafters')}
+                  </>}
+                </>}
+                {tab === 'nodes' && <>
+                  <label className="field-line roof-field"><span className="eyebrow">Connections</span>
+                    <input type="checkbox" checked={value('nodes') !== false} data-field="hall-nodes" onChange={(e) => set('nodes', e.target.checked)} />
+                  </label>
+                  {value('nodes') !== false && <>
+                    <label className="field-line roof-field"><span className="eyebrow">Column bases</span>
+                      <select value={value('base') ?? 'pinned'} data-field="hall-base" onChange={(e) => set('base', e.target.value as HallAttrs['base'])}>
+                        <option value="pinned">pinned</option><option value="fixed">fixed</option>
+                      </select>
+                    </label>
+                    <label className="field-line roof-field"><span className="eyebrow">Anchors</span>
+                      <select value={value('anchor') ?? 'straight'} data-field="hall-anchor" onChange={(e) => set('anchor', e.target.value as HallAttrs['anchor'])}>
+                        <option value="straight">straight</option><option value="hooked">hooked</option><option value="plate">with an anchor plate</option>
+                      </select>
+                    </label>
+                    <label className="field-line roof-field"><span className="eyebrow">Number of anchors</span>
+                      <select value={nodeParam('base', 'anchors') ?? ''} data-field="hall-anchors" onChange={(e) => setNode('base', 'anchors', e.target.value ? Number(e.target.value) : null)}>
+                        <option value="">by the profile</option>
+                        {anchorCounts(value('base')).map((n) => <option key={n} value={n} data-no-i18n>{n}</option>)}
+                      </select>
+                    </label>
+                    <label className="field-line roof-field"><span className="eyebrow">Anchor length</span>
+                      <LengthField metres={nodeParam('base', 'anchorLength') ?? null} min={0.1} blank placeholder="—" testId="hall-anchor-length" onCommit={(v) => setNode('base', 'anchorLength', v)} />
+                    </label>
+                    <p className="eyebrow">Eaves connection</p>
+                    <label className="field-line roof-field"><span className="eyebrow">Plate thickness</span>
+                      <LengthField metres={nodeParam('eaves', 'plate') ?? null} min={0.004} blank placeholder="—" testId="hall-eaves-plate" onCommit={(v) => setNode('eaves', 'plate', v)} />
+                    </label>
+                    <label className="field-line roof-field"><span className="eyebrow">Bolt diameter</span>
+                      <BoltPick value={nodeParam('eaves', 'bolt')} set={(d) => setNode('eaves', 'bolt', d)} testId="hall-eaves-bolt" />
+                    </label>
+                    <label className="field-line roof-field"><span className="eyebrow">Bolt grade</span>
+                      <select value={nodeParam('eaves', 'grade') ?? ''} data-field="hall-eaves-grade" onChange={(e) => setNode('eaves', 'grade', e.target.value || null)}>
+                        <option value="">by the profile</option>
+                        {GRADES.map((g) => <option key={g} value={g} data-no-i18n>{g}</option>)}
+                      </select>
+                    </label>
+                    <label className="field-line roof-field"><span className="eyebrow">Above the rafter</span>
+                      <LengthField metres={nodeParam('eaves', 'extension') ?? null} min={0} blank placeholder="—" testId="hall-eaves-extension" onCommit={(v) => setNode('eaves', 'extension', v)} />
+                    </label>
+                    <label className="field-line roof-field"><span className="eyebrow">Column stiffeners</span>
+                      <input type="checkbox" checked={nodeParam('eaves', 'stiffeners') !== false} data-field="hall-eaves-stiffeners" onChange={(e) => setNode('eaves', 'stiffeners', e.target.checked ? null : false)} />
+                    </label>
+                    {!mono && <>
+                      <p className="eyebrow">Apex connection</p>
+                      <label className="field-line roof-field"><span className="eyebrow">Plate thickness</span>
+                        <LengthField metres={nodeParam('apex', 'plate') ?? null} min={0.004} blank placeholder="—" testId="hall-apex-plate" onCommit={(v) => setNode('apex', 'plate', v)} />
+                      </label>
+                      <label className="field-line roof-field"><span className="eyebrow">Bolt diameter</span>
+                        <BoltPick value={nodeParam('apex', 'bolt')} set={(d) => setNode('apex', 'bolt', d)} testId="hall-apex-bolt" />
+                      </label>
+                    </>}
+                    <p className="muted small">What is left empty is chosen by the profiles. Each connection may also be set on its own in its properties.</p>
                   </>}
                 </>}
                 {tab === 'secondary' && <>
@@ -253,7 +330,7 @@ export function HallDialog() {
               <div className="joinery-preview">
                 {tab === 'placement'
                   ? <Plot items={preview?.plan ?? []} axes={preview?.axes} label="Plan" />
-                  : <Plot items={items} label="Elevation" />}
+                  : <Plot items={tab === 'gables' && preview?.gable ? items : [...items, ...(preview?.frameNodes ?? [])]} label="Elevation" />}
                 <p className="muted small">{tab === 'placement' ? 'The grid and the members, from above.' : tab === 'gables' && preview?.gable ? 'The gable, seen along the hall.' : 'A typical frame, seen along the hall.'}</p>
                 {preview?.problem && <p className="error-text" data-field="hall-problem">{preview.problem}</p>}
                 {preview?.summary && (
@@ -264,6 +341,7 @@ export function HallDialog() {
               </div>
               <div className="row joinery-actions">
                 <span className="muted small grow">{status}</span>
+                {node && <button type="button" className="btn" data-field="hall-delete" title="Delete the hall with its members and connections" onClick={() => void remove()}><Trash2 size={14} />Delete hall</button>}
                 <button type="button" className="btn" disabled={!dirty} onClick={() => { setDraft({ attrs: {} }); setBaysDraft(null); }}><RotateCcw size={14} />Reset</button>
                 {ownStyle && hallId && <button type="button" className="btn" disabled={Boolean(preview?.problem)} title="Save the hall as it is configured into its style; every hall of the style follows" onClick={() => void update()}><Save size={14} />Update style</button>}
                 <button type="button" className="btn" disabled={Boolean(preview?.problem)} title="Save the hall as it is configured as a style of the project" onClick={() => void saveAs()}><Save size={14} />Save as style…</button>

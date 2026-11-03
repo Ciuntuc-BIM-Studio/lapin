@@ -85,8 +85,11 @@ function HaunchRules({ node, which, h }: { node: NodeDto; which: 'start' | 'end'
   const ro = !node.editable;
   return (
     <>
-      <dt className="eyebrow" title={h.own ? 'Set on its own: the hall keeps it' : undefined}>{which === 'start' ? 'Haunch at the start' : 'Haunch at the end'}</dt>
-      <dd><button type="button" className="icon mini" title="No haunch here" disabled={ro} onClick={() => void execute('steel.setHaunch', { id: node.id, end: which, haunch: null })}>×</button></dd>
+      {/* The heading spans the row: "Vută la început" and its kin are longer than the label column (decision 273). */}
+      <dt className="eyebrow wide" title={h.own ? 'Set on its own: the hall keeps it' : undefined}>
+        <span>{which === 'start' ? 'Haunch at the start' : 'Haunch at the end'}</span>
+        <button type="button" className="icon mini" title="No haunch here" disabled={ro} onClick={() => void execute('steel.setHaunch', { id: node.id, end: which, haunch: null })}>×</button>
+      </dt>
       <dt>Made</dt>
       <dd><select className="cell" data-field={`steel-haunch-${which}-kind`} value={h.kind ?? 'cut'} disabled={ro} onChange={(e) => send({ kind: e.target.value as HaunchDto['kind'] })}>
         <option value="cut">cut from the rafter's section</option><option value="plates">welded from plates</option>

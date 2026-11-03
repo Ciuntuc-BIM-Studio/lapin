@@ -56,7 +56,7 @@ Os perfis tubulares são ocos por dentro, na vista 3D, nos cortes e nas quantida
 ![O configurador de galpões](shots/steel-hall.webp)
 
 - **Estilos**: os galpões típicos do catálogo (**Galpão 20 m**, **Galpão 30 m**, um **Telheiro 10 m** de uma água) e os do projeto. Um estilo escolhido preenche todos os campos; qualquer um pode depois ser alterado. **Salvar como estilo…** guarda o galpão como está configurado como estilo do projeto; **Atualizar o estilo** o salva de novo no seu estilo, e todos os galpões desse estilo o seguem.
-- **Pórtico**: o **Vão** (de eixo de pilar a eixo de pilar), os **Módulos** (iguais como `5 × 6`, ou cada um: `6, 6, 7.5`), a **Altura do beiral** (o topo das vigas de cobertura sobre a face externa do pilar), a **Cobertura** (duas águas ou uma água) e sua **Inclinação**, os perfis dos **Pilares** e das **Vigas de cobertura**, e as **Bases dos pilares** (rotuladas ou engastadas, guardadas para os nós que virão).
+- **Pórtico**: o **Vão** (de eixo de pilar a eixo de pilar), os **Módulos** (iguais como `5 × 6`, ou cada um: `6, 6, 7.5`), a **Altura do beiral** (o topo das vigas de cobertura sobre a face externa do pilar), a **Cobertura** (duas águas ou uma água) e sua **Inclinação**, os perfis dos **Pilares** e das **Vigas de cobertura**.
 - **Mísulas**: a **Mísula no beiral** e a **Mísula na cumeeira**, cada uma com seu **Comprimento** ao longo da viga desde a face do pilar (ou da cumeeira) e sua **Altura** sob a viga ali, e como é **Feita**: **cortada do perfil da viga de cobertura** (um I cortado na diagonal ao longo da alma, uma metade soldada sob a viga: a alma e a mesa da própria viga) ou **de chapas soldadas** (uma **Chapa da alma** e uma **Chapa da mesa** de espessura própria, e a largura da mesa).
 
 ![As mísulas de chapas soldadas](shots/steel-hall-haunches.webp)
@@ -76,8 +76,33 @@ O galpão continua editável. Selecione uma das suas barras: sua seção **Aço*
 
 ![As mísulas de uma viga em Propriedades](shots/steel-hall-props.webp)
 
+## Ligações
+
+Os pórticos de um galpão vêm com as suas **ligações** (Steel → Portal frame hall…, aba **Nós**): uma **base de pilar** sob cada pilar e pilar de oitão, uma **ligação de beiral** onde cada viga chega ao seu pilar, uma **ligação de cumeeira** onde duas vigas se encontram, e uma chapa de ligação sob a viga acima de cada pilar de oitão. Cada uma é um elemento próprio que sabe que barras liga; as suas chapas, parafusos e chumbadores são feitos dos seus parâmetros e das barras como estão, e acompanham-nas quando o galpão muda.
+
+![A aba Nós](shots/steel-nodes-hall.webp)
+
+- **Ligações**: ligadas ou não para todo o galpão.
+- **Bases dos pilares**: **rotuladas** (uma placa de base, dois chumbadores de cada lado da alma ou quatro entre as mesas) ou **engastadas** (uma placa mais longa e espessa, de quatro a oito chumbadores fora das mesas, nervuras no plano da alma). Os **Chumbadores** são **retos**, **com gancho** ou **com placa de ancoragem** no pé; o **Número de chumbadores** e o **Comprimento dos chumbadores** (abaixo do topo do concreto) são escolhidos pelo perfil quando ficam vazios. Quando há sob o pilar uma sapata da estrutura, os chumbadores entram nela (e param 50 mm acima do seu fundo); senão descem o seu comprimento abaixo do graute.
+- **Ligação de beiral**: uma chapa de topo estendida na viga, aparafusada à mesa do pilar: a sua **Espessura da chapa**, o **Diâmetro dos parafusos** e a sua **Classe**, quanto sobressai **Acima da viga** (com uma linha de parafusos ali) e os **Enrijecedores do pilar** na altura da mesa superior da viga e da mesa da mísula.
+- **Ligação de cumeeira**: as chapas de topo das duas vigas aparafusadas uma à outra sobre o corte em meia-esquadria, com as suas mísulas.
+
+O que fica vazio é escolhido pelos perfis: parafusos de M16 a M27 pela altura da barra aparafusada, uma chapa tão espessa quanto os seus parafusos, distâncias às bordas e espaçamentos pelos furos. Uma ligação recua as extremidades das suas barras com o que põe entre elas (a viga com a sua chapa de topo, o pilar com a sua placa de base, o pilar de oitão com uma folga de 20 mm), pelas regras de extremidade das próprias barras.
+
+![Uma ligação de beiral](shots/steel-nodes-eaves.webp)
+
+![Uma base engastada sobre chumbadores com gancho](shots/steel-nodes-base.webp)
+
+Selecione uma ligação para vê-la nas Propriedades: as barras que liga, cada parâmetro como está agora (um tamanho escolhido pelo perfil aparece como tal) e as suas peças: chapas, parafusos e chumbadores por tamanho e classe, as soldas por garganta com o seu comprimento, o seu peso, a sapata em que entram os chumbadores. Um parâmetro mudado ali vale só para essa ligação, e o galpão reconstruído o mantém. **Editar galpão…** abre o seu galpão.
+
+![Uma ligação nas Propriedades](shots/steel-nodes-props.webp)
+
+As barras desenhadas à mão recebem as suas ligações com **Steel → Encontrar ligações**: uma base sob cada barra vertical, uma ligação de beiral onde uma barra está ajustada a um pilar, a de um pilar de oitão onde um pilar está ajustado sob uma barra, uma cumeeira onde duas barras estão cortadas em meia-esquadria uma com a outra, uma emenda onde duas seguem em linha, ponta com ponta; para as barras selecionadas, ou o modelo inteiro quando nada está selecionado. **Steel → Peças de aço** cria a tabela das chapas, parafusos, chumbadores e soldas das ligações. Excluir uma ligação devolve às suas barras as suas extremidades; excluir uma barra leva as suas ligações; **Excluir galpão** no configurador remove o galpão com as suas barras, ligações e eixos, num só passo.
+
 ## IFC e quantidades
 
 Uma barra é exportada como **IfcMember** com seu **IfcMemberType**. Seu corpo é escrito como os outros programas escrevem o aço (Tekla, Advance Steel, Revit): a seção **extrudada** (IfcExtrudedAreaSolid), **cortada** pelos planos das extremidades (IfcBooleanClippingResult com IfcHalfSpaceSolid), e cada recorte um **IfcOpeningElement** que a esvazia. Uma viga ou um pilar de aço com extremidades é escrito da mesma forma. As quantidades de cada barra dão o comprimento entre os cortes, a área da seção, o volume e o peso líquido (7850 kg/m³).
 
 Um galpão é exportado como **IfcBuildingSystem** (LOADBEARING) ao qual suas barras são atribuídas, com seus dados no conjunto de propriedades `Lapin_SteelHall` e sua própria **IfcGrid**. Uma viga de cobertura com mísulas é um **IfcElementAssembly** da viga e das suas mísulas: uma mísula cortada do perfil é um **IfcMember**, uma de chapas soldadas duas **IfcPlate**, cada uma extrudada (IfcExtrudedAreaSolid). As mísulas ficam fora das quantidades da viga; o resumo do configurador as pesa.
+
+Uma ligação exporta-se como **IfcElementAssembly** das suas chapas (**IfcPlate**), parafusos (**IfcMechanicalFastener** BOLT), chumbadores (ANCHORBOLT) e placas de ancoragem (**IfcDiscreteAccessory** ANCHORPLATE), cada um com tamanho e classe em `Lapin_SteelPart`; realiza a ligação das barras que une (**IfcRelConnectsWithRealizingElements**; uma base, entre a sapata e o seu pilar). As soldas ficam como dados, não como corpos.

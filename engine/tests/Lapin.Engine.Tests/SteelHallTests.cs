@@ -23,6 +23,9 @@ public class SteelHallTests
         return (string)f.Run("steel.addHall", a)!["id"]!;
     }
 
+    /// <summary>A hall's fields without its connections: the members' ends as stage 2 built them, before the connections set them back (SteelNodeTests).</summary>
+    static JsonObject Bare(JsonObject? attrs = null) { var o = attrs ?? []; o["nodes"] = false; return o; }
+
     static void Update(Fixture f, string hall, JsonObject attrs) => f.Run("steel.updateHall", new JsonObject { ["id"] = hall, ["attrs"] = attrs });
 
     static Dictionary<string, Entity> Members(Fixture f, string hall) => Halls.Members(f.Model, hall);
@@ -48,7 +51,7 @@ public class SteelHallTests
         Assert.Equal(6 + 20.4 * Tan(5), mono.ApexHeight, 9);
 
         var f = F();
-        var hall = Hall(f);
+        var hall = Hall(f, Bare());
         var m = Members(f, hall);
         // A typical frame: the rafters' axes on their top, from the columns' axes to the apex, the columns as tall as the rafters' top over them.
         var raf = m["f1:raf:a"];
@@ -73,7 +76,7 @@ public class SteelHallTests
     public void A_mono_pitch_frame_runs_one_rafter_from_the_low_column_to_the_high_one()
     {
         var f = F();
-        var hall = Hall(f, null, "lean-to");
+        var hall = Hall(f, Bare(), "lean-to");
         var m = Members(f, hall);
         Assert.False(m.ContainsKey("f1:raf:a"));
         var raf = m["f1:raf"];
@@ -139,7 +142,7 @@ public class SteelHallTests
     public void A_hall_puts_its_haunches_kind_under_its_rafters_and_keeps_one_set_on_its_own()
     {
         var f = F();
-        var hall = Hall(f, new JsonObject { ["eavesHaunch"] = new JsonObject { ["length"] = 2, ["depth"] = 0.36, ["kind"] = "plates", ["web"] = 0.012, ["flange"] = 0.015 } });
+        var hall = Hall(f, Bare(new JsonObject { ["eavesHaunch"] = new JsonObject { ["length"] = 2, ["depth"] = 0.36, ["kind"] = "plates", ["web"] = 0.012, ["flange"] = 0.015 } }));
         var raf = Members(f, hall)["f2:raf:a"];
         var (eaves, apex) = Haunch.Of(raf);
         Assert.Equal("plates", eaves!.Kind);
@@ -163,7 +166,7 @@ public class SteelHallTests
     public void A_gable_is_posts_under_a_simple_rafter_or_a_regular_frame()
     {
         var f = F();
-        var hall = Hall(f);
+        var hall = Hall(f, Bare());
         var m = Members(f, hall);
         // Five bays: six frames, four regular (2 columns, 2 rafters), two gables of posts (2 corner posts, 3 posts at 5 m, 2 rafters).
         Assert.Equal(4 * 4 + 2 * 7, m.Count);
@@ -290,7 +293,11 @@ public class SteelHallTests
         Assert.Equal(kg(r => r.Contains(":raf"), k => k == "body"), (double)w["rafter"]!, 0.1);
         Assert.Equal(kg(r => r.Contains(":raf"), k => k.StartsWith("haunch", StringComparison.Ordinal)), (double)w["haunch"]!, 0.1);
         Assert.Equal(kg(r => r.Contains(":col") && r is not ("f0:col:a" or "f0:col:b" or "f5:col:a" or "f5:col:b"), _ => true), (double)w["column"]!, 0.1);
-        Assert.Equal(kg(_ => true, _ => true), (double)w["total"]!, 0.1);
+        // The connections' plates, bolts and anchors weighed too, and in the total.
+        var nodes = Halls.Nodes(f.Model, hall).Values.SelectMany(n => f.Session.Geometry(n.Id)!.Parts).Sum(g => Measure.Volume(g.Solid)) * SteelModule.SteelDensity;
+        Assert.True(nodes > 0);
+        Assert.Equal(nodes, (double)w["node"]!, 0.1);
+        Assert.Equal(kg(_ => true, _ => true) + nodes, (double)w["total"]!, 0.1);
         Assert.Equal((double)w["total"]! / 600, (double)sum["perArea"]!, 2);
         // A typical frame's elevation: two columns, two rafters, four haunches of two pieces each; a gable's of posts.
         Assert.Equal(12, p["frame"]!.AsArray().Count);
@@ -333,7 +340,7 @@ public class SteelHallTests
         var f = F();
         var hall = Hall(f, new JsonObject
         {
-            ["bays"] = J(6, 6), ["gable"] = "frame",
+            ["bays"] = J(6, 6), ["gable"] = "frame", ["nodes"] = false,
             ["apexHaunch"] = new JsonObject { ["length"] = 1, ["depth"] = 0.2, ["kind"] = "plates", ["web"] = 0.01, ["flange"] = 0.015 },
         });
         var path = Path.Combine(Path.GetTempPath(), $"hall-{Guid.NewGuid():N}.ifc");

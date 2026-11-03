@@ -4,10 +4,12 @@
  * outlines into members (two long parallel edges: the axis and the width; the edges across the ends: the cuts; a notch on
  * a section: a cope), mitres two members or fits one to another, edits the steel types (the catalogue's profiles, hollow
  * and cold-formed sections of one's own) as member, beam or column types, and opens the hall configurator (a new hall, or
- * the hall of the member selected). The properties panel shows a member's ends and haunches.
+ * the hall of the member selected). The properties panel shows a member's ends and haunches. Connections (decision 273):
+ * found where the selected members (or all) meet, each with its plates, bolts and anchors, its parameters in the
+ * properties panel; the Steel parts schedule.
  */
 
-import { ArrowRightToLine, Layers3, Slash, WandSparkles, Warehouse } from 'lucide-react';
+import { ArrowRightToLine, Layers3, Link2, Slash, Table2, WandSparkles, Warehouse } from 'lucide-react';
 import { BeamIcon } from '../../icons';
 import type { Grip, LapinModule, ToolDef } from '../../platform/module';
 import { notify, useUi } from '../../app/store';
@@ -15,6 +17,7 @@ import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { newElement, typedBy } from '../architecture/NewElement';
 import { SteelSection } from './SteelSection';
+import { NodeSection } from './NodeSection';
 import { HallDialog, useHall } from './HallDialog';
 import { hallOf } from './hall';
 import { SectionGlyph, SteelTypesDialog } from './SteelTypesDialog';
@@ -67,6 +70,21 @@ const mitre = pair('steel.mitre', 'Mitre', Slash, 'steel.mitre', 'Select the two
 const fit = pair('steel.fit', 'Fit', ArrowRightToLine, 'steel.fit', 'Select the member to fit, then the one it is fitted to.');
 const types: ToolDef = { id: 'steel.types', label: 'Steel types', icon: Layers3, run: () => useUi.setState({ dialog: 'steelTypes' }) };
 
+/** The connections the selected members' meeting asks for (all the model's when nothing is selected), each made with its parts. */
+const connections: ToolDef = {
+  id: 'steel.nodes', label: 'Find connections', icon: Link2,
+  run: () => void execute('steel.findNodes', { ids: useUi.getState().selected }).then((r) => {
+    const ids = (r as { ids?: string[] } | null)?.ids;
+    if (!ids) return;
+    if (!ids.length) { notify('No new connections: where these members meet, each has one already.'); return; }
+    useUi.setState({ selected: ids, selection: ids[0] ?? null });
+  }),
+};
+const parts: ToolDef = {
+  id: 'steel.parts', label: 'Steel parts', icon: Table2,
+  run: () => void execute('architecture.createSchedule', { kind: 'steelParts' }).then((r) => { if (r) notify('Steel parts schedule made: it is in the project browser, under Schedules.'); }),
+};
+
 /** The hall configurator: on the hall of the member selected, else a new hall. */
 export function openHall(id?: string | null) {
   const { nodes, relations } = useSession.getState();
@@ -90,17 +108,21 @@ function memberGrips(node: NodeDto): Grip[] {
 const steel: LapinModule = {
   id: 'steel',
   name: 'Steel',
-  summary: 'Steel members with configurable ends (extension, cuts by a plane, mitres, fits, copes), made from a drafted outline too; hollow and cold-formed sections; portal frame halls with haunches.',
+  summary: 'Steel members with configurable ends (extension, cuts by a plane, mitres, fits, copes), made from a drafted outline too; hollow and cold-formed sections; portal frame halls with haunches and their connections.',
   tabs: [{
     id: 'steel', label: 'Steel', order: 34, include: ['modify'],
     groups: [
       { label: 'Halls', tools: [hall] },
       { label: 'Members', tools: [member, convert] },
       { label: 'Ends', tools: [mitre, fit] },
+      { label: 'Nodes', tools: [connections, parts] },
       { label: 'Types', tools: [types] },
     ],
   }],
-  propertySections: [{ id: 'steel', label: 'Steel', classes: STEEL, component: SteelSection }],
+  propertySections: [
+    { id: 'steel', label: 'Steel', classes: STEEL, component: SteelSection },
+    { id: 'steelNode', label: 'Connection', classes: ['LapinSteelNode'], component: NodeSection },
+  ],
   dialogs: { steelTypes: SteelTypesDialog, steelHall: HallDialog },
   grips: { LapinSteelMember: memberGrips },
   setType: { LapinSteelMember: (ids, typeId) => execute('steel.setType', { ids, typeId }) },

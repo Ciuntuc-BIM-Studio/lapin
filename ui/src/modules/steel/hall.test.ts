@@ -54,4 +54,13 @@ describe('the hall configurator', () => {
     expect(rows.find((r) => r[0] === 'Per m² of floor')?.[1]).toBe('13.1 kg/m²');
     expect(summaryRows({ ...s, posts: 10 }, String).map((r) => r[0])).toContain('Gable posts');
   });
+
+  it('says the connections, their bolts and anchors when the hall has some', () => {
+    const s = { frames: 6, span: 20, length: 30, area: 600, eaves: 6, apex: 7.8, columns: 8, rafters: 12, posts: 0, weights: { column: 2950, rafter: 4620.4, haunch: 312.6, post: 0, node: 777.6, total: 8660.6 }, perArea: 14.4 };
+    expect(summaryRows(s, String).map((r) => r[0])).not.toContain('Connections');
+    const rows = summaryRows({ ...s, nodes: 42, bolts: 156, anchors: 58 }, String);
+    expect(rows.find((r) => r[0] === 'Connections')?.[1]).toBe('42 · 778 kg');
+    expect(rows.find((r) => r[0] === 'Bolts')?.[1]).toBe('156');
+    expect(rows.slice(-2).map((r) => r[0])).toEqual(['Total steel', 'Per m² of floor']);
+  });
 });

@@ -40,6 +40,15 @@ public static class Halls
         return o;
     }
 
+    /// <summary>The connections a hall made (its own, by their place: "base@f1:col:a@start").</summary>
+    public static Dictionary<string, Entity> Nodes(IModelView m, string hallId)
+    {
+        var o = new Dictionary<string, Entity>();
+        foreach (var e in m.RelatedOf(hallId, IfcClass.RelAggregates))
+            if (e.Class == SteelNodes.Class && e.Str(SteelNodes.RoleKey) is { } role) o.TryAdd(role, e);
+        return o;
+    }
+
     /// <summary>The hall a member belongs to, if any.</summary>
     public static Entity? Of(IModelView m, string memberId) => m.RelatingOf(memberId, IfcClass.RelAggregates) is { Class: Class } h ? h : null;
 
@@ -105,7 +114,100 @@ public static class Halls
             if (edit.Model.RelatingOf(id, IfcClass.RelAggregates)?.Id != hall.Id) edit.Relate(IfcClass.RelAggregates, hall.Id, id);
         }
         foreach (var (role, e) in existing) if (!ids.ContainsKey(role) || ids[role] != e.Id) edit.Remove(e.Id);
+        BuildNodes(edit, storey, hall, s, plan, ids);
         Grid(edit, hall, s);
+    }
+
+    /// <summary>A connection a hall plans: its place, kind, members (by role, with their ends) and the hall's parameters for it.</summary>
+    sealed record PlannedNode(string Role, string Kind, List<(string Role, string? End)> Members, NodeParams Params);
+
+    /// <summary>
+    /// The connections of a hall's frames (decision 273): a base under every column and post (a post's pinned), an eaves
+    /// where each rafter comes to a column, an apex where two rafters meet, a gable post's under each post; none when the
+    /// hall has its connections off.
+    /// </summary>
+    static List<PlannedNode> PlanNodes(HallSpec s, IEnumerable<Planned> members)
+    {
+        var o = new List<PlannedNode>();
+        if (!s.Nodes) return o;
+        var baseParams = new NodeParams(Base: s.Base, Anchor: s.Anchor).Over(s.NodeParamsOf("base"));
+        var postBase = new NodeParams(Base: "pinned", Anchor: s.Anchor, AnchorLength: s.NodeParamsOf("base").AnchorLength, Grout: s.NodeParamsOf("base").Grout);
+        var roles = members.Select(p => p.Role).ToHashSet();
+        foreach (var p in members)
+        {
+            var bits = p.Role.Split(':');
+            var f = bits[0];
+            switch (p.Kind)
+            {
+                case "column":
+                    o.Add(new($"base@{p.Role}@start", "base", [(p.Role, "start")], baseParams));
+                    break;
+                case "post":
+                    o.Add(new($"base@{p.Role}@start", "base", [(p.Role, "start")], postBase));
+                    var raf = s.Mono ? $"{f}:raf" : $"{f}:raf:{(Halls.PostX(s, p.Role) <= s.ApexX + 1e-9 ? "a" : "b")}";
+                    o.Add(new($"post@{p.Role}@end", "post", [(raf, null), (p.Role, "end")], s.NodeParamsOf("post")));
+                    break;
+                case "rafter" when roles.Contains($"{f}:col:a") && !IsGable(s, f):
+                    // A frame's rafter: its eaves at the column it starts from (a mono-pitch one at both).
+                    var side = s.Mono ? "a" : bits[2];
+                    o.Add(new($"eaves@{p.Role}@start", "eaves", [($"{f}:col:{side}", null), (p.Role, "start")], s.NodeParamsOf("eaves")));
+                    if (s.Mono) o.Add(new($"eaves@{p.Role}@end", "eaves", [($"{f}:col:b", null), (p.Role, "end")], s.NodeParamsOf("eaves")));
+                    break;
+            }
+            if (p.Kind == "rafter" && !s.Mono && bits.Length > 2 && bits[2] == "a")
+                o.Add(new($"apex@{f}", "apex", [(p.Role, "end"), ($"{f}:raf:b", "end")], s.NodeParamsOf("apex")));
+        }
+        return o;
+    }
+
+    static bool IsGable(HallSpec s, string f) => s.Gable == "posts" && (f == "f0" || f == $"f{s.Bays.Count}");
+
+    /// <summary>Where a gable's post (or corner post) stands across the span.</summary>
+    static double PostX(HallSpec s, string role)
+    {
+        var bits = role.Split(':');
+        return bits[1] == "col" ? (bits[2] == "a" ? 0 : s.Span) : s.PostStations[int.Parse(bits[2]) - 1];
+    }
+
+    /// <summary>
+    /// Builds the hall's connections over those it had, as its members: one of the same place keeps its id (and its
+    /// parameters when they were set on it), one no longer needed goes, a new one is added; each then writes its members'
+    /// setbacks (their ends were just built again without them).
+    /// </summary>
+    static void BuildNodes(IEdit edit, Entity storey, Entity hall, HallSpec s, List<Planned> members, Dictionary<string, string> ids)
+    {
+        var existing = Nodes(edit.Model, hall.Id);
+        var keep = new HashSet<string>();
+        foreach (var p in PlanNodes(s, members))
+        {
+            var joined = new JsonArray([.. p.Members.Select(x => (JsonNode)new SteelNodes.Joined(ids[x.Role], x.End).ToJson())]);
+            var label = SteelNodes.Label(p.Kind);
+            Entity node;
+            if (existing.TryGetValue(p.Role, out var was))
+            {
+                var attrs = was.CloneAttrs();
+                attrs["kind"] = p.Kind;
+                attrs["objectType"] = label;
+                attrs["members"] = joined;
+                if (!was.Bool("own")) attrs["params"] = p.Params.ToJson();
+                node = was.With(attrs: attrs);
+                edit.Replace(node);
+                if (Spatial.StoreyOf(edit.Model, node.Id)?.Id != storey.Id) Spatial.Contain(edit, storey.Id, node.Id);
+            }
+            else
+            {
+                node = new Entity(edit.NewId(), SteelNodes.Class, label, new JsonObject
+                {
+                    ["exportAs"] = "IfcElementAssembly", ["objectType"] = label, ["kind"] = p.Kind, ["members"] = joined, ["params"] = p.Params.ToJson(), [SteelNodes.RoleKey] = p.Role,
+                }, "USERDEFINED");
+                edit.Add(node);
+                Spatial.Contain(edit, storey.Id, node.Id);
+                edit.Relate(IfcClass.RelAggregates, hall.Id, node.Id);
+            }
+            keep.Add(node.Id);
+            SteelNodes.Apply(edit, node);
+        }
+        foreach (var e in existing.Values) if (!keep.Contains(e.Id)) edit.Remove(e.Id);
     }
 
     /// <summary>The members a spec makes, frame by frame: their role, class, section and attributes (without their ends).</summary>
@@ -264,7 +366,8 @@ public static class Halls
     /// <summary>
     /// What a spec builds, without touching the model: the hall built in a model of its own (one storey at 0), then a typical
     /// frame's elevation (and a gable's when it has posts) as the members' outlines seen along the hall, the plan (grid,
-    /// columns, rafters) in the hall's own x and y, and the summary: frames, heights, steel by kind (kg), per m².
+    /// columns, rafters) in the hall's own x and y, and the summary: frames, heights, steel by kind (kg; the connections'
+    /// plates, bolts and anchors too, counted), per m².
     /// </summary>
     public static JsonObject Preview(HallSpec s)
     {
@@ -302,6 +405,22 @@ public static class Halls
                 if (part != "haunch") plan.Add((JsonNode)Item(k, solid.Vertices.Select(v => v.Xy)));
             }
         }
+        // The connections: their parts weighed and counted, a typical frame's drawn over it.
+        var frameNodes = new JsonArray();
+        var (nodeCount, plates, bolts, anchors, nodeKg) = (0, 0, 0, 0, 0.0);
+        foreach (var (role, node) in Nodes(m, hall.Id))
+        {
+            nodeCount++;
+            var built = SteelNodes.Build(m, node);
+            var fi = int.Parse(role.Split('@')[1].Split(':')[0][1..]);
+            foreach (var part in built.Parts)
+            {
+                nodeKg += Measure.Volume(part.Solid) * SteelModule.SteelDensity;
+                switch (SteelNodes.P(part.Properties ?? [], "Part")) { case "Plate" or "Anchor plate": plates++; break; case "Bolt": bolts++; break; case "Anchor": anchors++; break; }
+                if (fi == typical) frameNodes.Add((JsonNode)Item("node", part.Solid.Vertices.Select(v => new Vec2(v.X, v.Z))));
+            }
+        }
+        weights["node"] = nodeKg;
         var axes = new JsonArray();
         if ((string?)m.Get(hall.Id)!.Attrs["gridId"] is { } gid && m.Get(gid)?.Attrs["axes"] is JsonArray ga)
             foreach (var a in ga) axes.Add(a!.DeepClone());
@@ -309,7 +428,7 @@ public static class Halls
         var area = s.Span * s.Length;
         var o = new JsonObject
         {
-            ["frame"] = frame, ["plan"] = plan, ["axes"] = axes,
+            ["frame"] = frame, ["frameNodes"] = frameNodes, ["plan"] = plan, ["axes"] = axes,
             ["summary"] = new JsonObject
             {
                 ["frames"] = s.Frames, ["span"] = s.Span, ["length"] = Math.Round(s.Length, 6), ["area"] = Math.Round(area, 3),
@@ -318,8 +437,9 @@ public static class Halls
                 ["weights"] = new JsonObject
                 {
                     ["column"] = Math.Round(weights["column"], 1), ["rafter"] = Math.Round(weights["rafter"], 1),
-                    ["haunch"] = Math.Round(weights["haunch"], 1), ["post"] = Math.Round(weights["post"], 1), ["total"] = Math.Round(total, 1),
+                    ["haunch"] = Math.Round(weights["haunch"], 1), ["post"] = Math.Round(weights["post"], 1), ["node"] = Math.Round(weights["node"], 1), ["total"] = Math.Round(total, 1),
                 },
+                ["nodes"] = nodeCount, ["plates"] = plates, ["bolts"] = bolts, ["anchors"] = anchors,
                 ["perArea"] = Math.Round(total / area, 2),
             },
         };

@@ -117,6 +117,9 @@ public static class IfcExport
         ["IfcBuildingElementPart"] = ["INSULATION", "PRECASTPANEL"],
         ["IfcPipeSegment"] = ["CULVERT", "FLEXIBLESEGMENT", "RIGIDSEGMENT", "GUTTER", "SPOOL"],
         ["IfcDiscreteAccessory"] = ["ANCHORPLATE", "BRACKET", "SHOE"],
+        // A steel connection's fasteners (decision 273): bolts and anchors, welds.
+        ["IfcMechanicalFastener"] = ["ANCHORBOLT", "BOLT", "DOWEL", "NAIL", "NAILPLATE", "RIVET", "SCREW", "SHEARCONNECTOR", "STAPLE", "STUDSHEARCONNECTOR"],
+        ["IfcFastener"] = ["GLUE", "MORTAR", "WELD"],
         // Formwork and scaffolding (the site works module): assemblies of members, plates and accessories.
         ["IfcElementAssembly"] = ["ACCESSORY_ASSEMBLY", "ARCH", "BEAM_GRID", "BRACED_FRAME", "GIRDER", "REINFORCEMENT_UNIT", "RIGID_FRAME", "SLAB_FIELD", "TRUSS"],
         // The distribution elements (the MEP module's nodes and runs), IFC4's enumerations.
@@ -846,6 +849,8 @@ public static class IfcExport
                 IfcClass.Door => f.Add(up, [.. common, Opt(height), Opt(width), E(k.Predefined), operation, userDefined]),
                 IfcClass.Window => f.Add(up, [.. common, Opt(height), Opt(width), E(k.Predefined), operation, userDefined]),
                 "IfcElementAssembly" => f.Add(up, [.. common, Null, E(k.Predefined)]),
+                // NominalDiameter and NominalLength, left to the part's properties.
+                "IfcMechanicalFastener" => f.Add(up, [.. common, Null, Null, E(k.Predefined)]),
                 IfcClass.StairFlight => f.Add(up, [.. common, flight?.Risers is { } nr ? nr.ToString(System.Globalization.CultureInfo.InvariantCulture) : Null, flight?.Treads is { } nt ? nt.ToString(System.Globalization.CultureInfo.InvariantCulture) : Null, Opt(flight?.RiserHeight), Opt(flight?.TreadLength), E(k.Predefined)]),
                 _ when k.Predefined.Length == 0 => f.Add(up, common),
                 _ => f.Add(up, [.. common, E(k.Predefined)]),
@@ -1077,6 +1082,11 @@ public static class IfcExport
                 ("IfcElementAssembly", "primary" or "secondary" or "bearers" or "chamfers") => new("IfcMember", "USERDEFINED", p.Name),
                 ("IfcElementAssembly", "decks" or "toe" or "plywood" or "edges" or "bottom" or "sides" or "net") => new("IfcPlate", "USERDEFINED", p.Name),
                 ("IfcElementAssembly", "jacks" or "anchors") => new("IfcDiscreteAccessory", "USERDEFINED", p.Name),
+                // A steel connection's parts (decision 273): plates, bolts, anchors and their plates.
+                ("IfcElementAssembly", "steel-plate") => new("IfcPlate", "USERDEFINED", p.Name),
+                ("IfcElementAssembly", "steel-bolt") => new("IfcMechanicalFastener", "BOLT", null),
+                ("IfcElementAssembly", "steel-anchor") => new("IfcMechanicalFastener", "ANCHORBOLT", null),
+                ("IfcElementAssembly", "steel-anchorplate") => new("IfcDiscreteAccessory", "ANCHORPLATE", null),
                 ("IfcCurtainWall", "mullion") => new("IfcMember", "MULLION", null),
                 ("IfcCurtainWall", "transom") => new("IfcMember", "USERDEFINED", "TRANSOM"),
                 ("IfcCurtainWall", "panel") => new("IfcPlate", "CURTAIN_PANEL", null),
@@ -1649,6 +1659,11 @@ public static class IfcExport
                     if (sys.Properties.Count > 0)
                         Define(system, f.Add("IFCPROPERTYSET", Gid(sys.Id, "pset"), Null, S(sys.PropertySet), Null, L(sys.Properties.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(sys.Id, "pset-rel"));
                 }
+            // Connections an element realizes (a steel connection, decision 273): between the elements it joins, as it is made.
+            foreach (var src in s.Catalog.All<IIfcConnections>())
+                foreach (var c in src.Connections(m))
+                    if (written.TryGetValue(c.Realizing, out var by) && written.TryGetValue(c.Relating, out var a) && written.TryGetValue(c.Related, out var b))
+                        f.Add("IFCRELCONNECTSWITHREALIZINGELEMENTS", Gid(c.Realizing, $"connects/{c.Relating}/{c.Related}"), Null, S(c.Type), Null, Null, a, b, L(new[] { by }), S(c.Type));
             // Lapin's groups (docs/groups.md) as IFC's: an IfcGroup assigned the members written.
             foreach (var g in Groups.All(m))
             {

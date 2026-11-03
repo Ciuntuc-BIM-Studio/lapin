@@ -56,7 +56,7 @@ Los perfiles huecos están vacíos por dentro, en la vista 3D, en las secciones 
 ![El configurador de naves](shots/steel-hall.webp)
 
 - **Estilos**: las naves típicas del catálogo (**Nave 20 m**, **Nave 30 m**, un **Cobertizo 10 m** a un agua) y las del proyecto. Un estilo elegido rellena todos los campos; luego puede cambiarse cualquiera. **Guardar como estilo…** guarda la nave tal como está configurada como estilo del proyecto; **Actualizar el estilo** la guarda de nuevo en su estilo, y todas las naves de ese estilo lo siguen.
-- **Pórtico**: la **Luz** (de eje de pilar a eje de pilar), las **Crujías** (iguales como `5 × 6`, o cada una: `6, 6, 7.5`), la **Altura de alero** (la cara superior de los dinteles sobre la cara exterior del pilar), la **Cubierta** (a dos aguas o a un agua) y su **Pendiente**, los perfiles de **Pilares** y **Dinteles**, y las **Bases de pilares** (articuladas o empotradas, guardadas para los nudos que vendrán).
+- **Pórtico**: la **Luz** (de eje de pilar a eje de pilar), las **Crujías** (iguales como `5 × 6`, o cada una: `6, 6, 7.5`), la **Altura de alero** (la cara superior de los dinteles sobre la cara exterior del pilar), la **Cubierta** (a dos aguas o a un agua) y su **Pendiente**, los perfiles de **Pilares** y **Dinteles**.
 - **Cartelas**: la **Cartela en el alero** y la **Cartela en la cumbrera**, cada una con su **Longitud** a lo largo del dintel desde la cara del pilar (o la cumbrera) y su **Canto** bajo el dintel allí, y cómo está **Hecha**: **cortada del perfil del dintel** (un I cortado en diagonal por el alma, una mitad soldada bajo el dintel: el alma y el ala del propio dintel) o **de chapas soldadas** (una **Chapa del alma** y una **Chapa del ala** de su propio espesor, y el ancho del ala).
 
 ![Las cartelas de chapas soldadas](shots/steel-hall-haunches.webp)
@@ -76,8 +76,33 @@ La nave sigue siendo editable. Selecciona una de sus barras: su sección **Acero
 
 ![Las cartelas de un dintel en Propiedades](shots/steel-hall-props.webp)
 
+## Uniones
+
+Los pórticos de una nave vienen con sus **uniones** (Steel → Portal frame hall…, pestaña **Nodos**): una **base de pilar** bajo cada pilar y pilar hastial, una **unión de alero** donde cada dintel llega a su pilar, una **unión de cumbrera** donde se encuentran dos dinteles y una cartela bajo el dintel sobre cada pilar hastial. Cada una es un elemento propio que sabe qué barras une; sus placas, tornillos y anclajes se hacen de sus parámetros y de las barras tal como están, así que las siguen cuando la nave cambia.
+
+![La pestaña Nodos](shots/steel-nodes-hall.webp)
+
+- **Uniones**: activadas o no para toda la nave.
+- **Bases de pilares**: **articuladas** (una placa base, dos anclajes a cada lado del alma o cuatro entre las alas) o **empotradas** (una placa más larga y gruesa, de cuatro a ocho anclajes fuera de las alas, nervios en el plano del alma). Los **Anclajes** son **rectos**, **con gancho** o **con placa de anclaje** en el pie; el **Número de anclajes** y la **Longitud de anclaje** (bajo la cara del hormigón) los elige el perfil cuando quedan vacíos. Si bajo el pilar hay una zapata de la estructura, los anclajes entran en ella (y se detienen 50 mm sobre su fondo); si no, bajan su longitud bajo el mortero.
+- **Unión de alero**: una placa de testa extendida en el dintel atornillada al ala del pilar: su **Espesor de la placa**, el **Diámetro de los tornillos** y su **Calidad**, cuánto sobresale **Sobre el dintel** (con una fila de tornillos allí) y los **Rigidizadores del pilar** a la altura del ala superior del dintel y del ala de su cartela.
+- **Unión de cumbrera**: las placas de testa de los dos dinteles atornilladas entre sí sobre el inglete, con sus cartelas.
+
+Lo que se deja vacío lo eligen los perfiles: tornillos de M16 a M27 según el canto de la barra atornillada, una placa tan gruesa como sus tornillos, distancias al borde y entre filas según los agujeros. Una unión retranquea los extremos de sus barras con lo que pone entre ellas (el dintel con su placa de testa, el pilar con su placa base, el pilar hastial con una holgura de 20 mm), mediante las reglas de extremo de las propias barras.
+
+![Una unión de alero](shots/steel-nodes-eaves.webp)
+
+![Una base empotrada sobre anclajes con gancho](shots/steel-nodes-base.webp)
+
+Selecciona una unión para verla en Propiedades: las barras que une, cada parámetro tal como está (un tamaño elegido por el perfil se muestra así) y sus piezas: placas, tornillos y anclajes por tamaño y calidad, las soldaduras por garganta con su longitud, su peso y la zapata en la que entran los anclajes. Un parámetro cambiado allí se fija solo en esa unión, y la nave reconstruida lo conserva. **Editar nave…** abre su nave.
+
+![Una unión en Propiedades](shots/steel-nodes-props.webp)
+
+Las barras dibujadas a mano reciben sus uniones con **Steel → Buscar uniones**: una base bajo cada barra vertical, una unión de alero donde una barra se ajusta a un pilar, la de un pilar hastial donde un pilar se ajusta bajo una barra, una de cumbrera donde dos barras están ingleteadas entre sí, un empalme donde dos van en línea, extremo con extremo; para las barras seleccionadas, o todo el modelo si no hay nada seleccionado. **Steel → Piezas de acero** crea la lista de placas, tornillos, anclajes y soldaduras de las uniones. Eliminar una unión devuelve a sus barras sus extremos; eliminar una barra se lleva sus uniones; **Eliminar nave** en el configurador quita la nave con sus barras, uniones y ejes, en un solo paso.
+
 ## IFC y cantidades
 
 Una barra se exporta como **IfcMember** con su **IfcMemberType**. Su cuerpo se escribe como escriben el acero los demás programas (Tekla, Advance Steel, Revit): su sección **extruida** (IfcExtrudedAreaSolid), **recortada** por los planos de sus extremos (IfcBooleanClippingResult con IfcHalfSpaceSolid), y cada rebaje un **IfcOpeningElement** que la vacía. Una viga o un pilar de acero con extremos se escribe igual. Las cantidades de cada barra dan su longitud entre cortes, el área de su sección, su volumen y su peso neto (7850 kg/m³).
 
 Una nave se exporta como **IfcBuildingSystem** (LOADBEARING) al que se asignan sus barras, con sus datos en el conjunto de propiedades `Lapin_SteelHall` y su propia **IfcGrid**. Un dintel con cartelas es un **IfcElementAssembly** del dintel y sus cartelas: una cartela cortada del perfil es un **IfcMember**, una de chapas soldadas dos **IfcPlate**, cada una extruida (IfcExtrudedAreaSolid). Las cartelas no entran en las cantidades del dintel; el resumen del configurador las pesa.
+
+Una unión se exporta como **IfcElementAssembly** de sus placas (**IfcPlate**), tornillos (**IfcMechanicalFastener** BOLT), anclajes (ANCHORBOLT) y placas de anclaje (**IfcDiscreteAccessory** ANCHORPLATE), cada uno con su tamaño y calidad en `Lapin_SteelPart`; realiza la conexión de las barras que une (**IfcRelConnectsWithRealizingElements**; una base, entre la zapata y su pilar). Las soldaduras quedan como datos, no como cuerpos.

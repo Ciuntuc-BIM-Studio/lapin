@@ -56,7 +56,7 @@ Hollow sections are open inside, in the 3D view, the sections and the quantities
 ![The hall configurator](shots/steel-hall.webp)
 
 - **Styles**: the catalogue's typical halls (**Hall 20 m**, **Hall 30 m**, a mono-pitch **Lean-to 10 m**) and the project's own. A style picked fills every field in; any field may then be changed. **Save as style…** keeps the hall as it is configured as a style of the project; **Update style** saves it again into its style, and every hall of that style follows.
-- **Frame**: the **Span** (column axis to column axis), the **Bays** (equal ones as `5 × 6`, or each listed: `6, 6, 7.5`), the **Eaves height** (the rafters' top over the column's outer face), the **Roof** (duo-pitch or mono-pitch) and its **Pitch**, the **Columns**' and **Rafters**' profiles, and the **Column bases** (pinned or fixed, kept for the column bases to come).
+- **Frame**: the **Span** (column axis to column axis), the **Bays** (equal ones as `5 × 6`, or each listed: `6, 6, 7.5`), the **Eaves height** (the rafters' top over the column's outer face), the **Roof** (duo-pitch or mono-pitch) and its **Pitch**, the **Columns**' and **Rafters**' profiles.
 - **Haunches**: the **Haunch at the eaves** and the **Haunch at the apex**, each with its **Length** along the rafter from the column's face (or the apex) and its **Depth** below the rafter there, and how it is **Made**: **cut from the rafter's section** (an I cut obliquely along its web, one half welded under the rafter: the rafter's own web and flange) or **welded from plates** (a **Web plate** and a **Flange plate** of their own thickness, and the flange's width).
 
 ![The haunches welded from plates](shots/steel-hall-haunches.webp)
@@ -76,8 +76,33 @@ The hall stays editable. Select one of its members: its **Steel** section shows 
 
 ![A rafter's haunches in Properties](shots/steel-hall-props.webp)
 
+## Connections
+
+A hall's frames come with their **connections** (Steel → Portal frame hall…, tab **Nodes**): a **column base** under every column and gable post, an **eaves connection** where each rafter comes to its column, an **apex connection** where two rafters meet, and a fin plate under the rafter over each gable post. Each one is an element of its own that knows the members it joins; its plates, bolts and anchors are made from its parameters and from the members as they are, so they follow when the hall is changed.
+
+![The Nodes tab](shots/steel-nodes-hall.webp)
+
+- **Connections**: on or off for the whole hall.
+- **Column bases**: **pinned** (a base plate, two anchors either side of the web or four inside the flanges) or **fixed** (a longer, thicker plate, four to eight anchors outside the flanges, ribs in the web's plane). The **Anchors** are **straight**, **hooked** or **with an anchor plate** at their foot; the **Number of anchors** and the **Anchor length** (below the concrete's top) are chosen by the profile when left empty. When a footing of the structure stands under the column, the anchors go into it (and stop 50 mm above its bottom); otherwise they go their length under the grout.
+- **Eaves connection**: an extended end plate on the rafter bolted to the column's flange: its **Plate thickness**, the **Bolt diameter** and **Bolt grade**, how far it stands **Above the rafter** (a row of bolts there), and the **Column stiffeners** in line with the rafter's top flange and its haunch's flange.
+- **Apex connection**: the two rafters' end plates bolted together on the mitre, with their haunches.
+
+What is left empty is chosen by the profiles: M16 to M27 bolts by the depth of the member bolted, a plate as thick as its bolts, edges and pitches from the holes. A connection sets back the ends of its members by what it puts between them (a rafter by its end plate, a column by its base plate, a gable post by a 20 mm gap), through the members' own end rules.
+
+![An eaves connection](shots/steel-nodes-eaves.webp)
+
+![A fixed column base on hooked anchors](shots/steel-nodes-base.webp)
+
+Select a connection to see it in Properties: the members it joins, every parameter as it is now (a size chosen by the profile is shown as such), and its parts: plates, bolts and anchors by size and grade, the welds by throat with their length, its weight, the footing its anchors go into. A parameter changed there is set on that connection alone, and a hall built again keeps it. **Edit hall…** opens its hall.
+
+![A connection in Properties](shots/steel-nodes-props.webp)
+
+Members drawn by hand get their connections from **Steel → Find connections**: a base under each vertical member, an eaves where a member is fitted to a column, a gable post's where a post is fitted under a member, an apex where two members are mitred with each other, a splice where two run in line end to end; for the selected members, or the whole model when nothing is selected. **Steel → Steel parts** makes the schedule of the connections' plates, bolts, anchors and welds. Deleting a connection gives its members their ends back; deleting a member takes its connections with it; **Delete hall** in the configurator takes the hall away with its members, connections and grid, in one step.
+
 ## IFC and quantities
 
 A member exports as an **IfcMember** with its **IfcMemberType**. Its body is written as the other programs write steel (Tekla, Advance Steel, Revit): its section **extruded** (IfcExtrudedAreaSolid), **clipped** by its ends' planes (IfcBooleanClippingResult with IfcHalfSpaceSolid), and each cope an **IfcOpeningElement** voiding it. A steel beam or column with ends is written the same way. Each member's quantities give its length between its cuts, its section's area, its volume and its net weight (7850 kg/m³).
 
 A hall exports as an **IfcBuildingSystem** (LOADBEARING) its members are assigned to, its spec as the property set `Lapin_SteelHall`, with its own **IfcGrid**. A rafter with haunches is an **IfcElementAssembly** of the rafter and its haunches: a haunch cut from the section is an **IfcMember**, one welded from plates two **IfcPlate**s, each swept (IfcExtrudedAreaSolid). The haunches are left out of the rafter's own quantities; the configurator's summary weighs them.
+
+A connection exports as an **IfcElementAssembly** of its plates (**IfcPlate**), bolts (**IfcMechanicalFastener** BOLT), anchors (ANCHORBOLT) and anchor plates (**IfcDiscreteAccessory** ANCHORPLATE), each with its size and grade in `Lapin_SteelPart`; it realizes the connection of the members it joins (**IfcRelConnectsWithRealizingElements**; a base, between the footing and its column). The welds are kept as data, not as bodies.

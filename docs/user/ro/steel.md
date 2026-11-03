@@ -56,7 +56,7 @@ Profilele tubulare sunt goale în interior, în vederea 3D, în secțiuni și î
 ![Configuratorul de hală](shots/steel-hall.webp)
 
 - **Stilurile**: halele tipice din catalog (**Hală 20 m**, **Hală 30 m**, un **Șopron 10 m** într-o apă) și cele ale proiectului. Un stil ales completează toate câmpurile; oricare se poate schimba apoi. **Salvează ca stil…** păstrează hala așa cum e configurată ca stil al proiectului; **Actualizează stilul** o salvează din nou în stilul ei, iar toate halele stilului îl urmează.
-- **Cadru**: **Deschiderea** (de la axa unui stâlp la a celuilalt), **Traveile** (egale ca `5 × 6`, sau fiecare pe rând: `6, 6, 7.5`), **Înălțimea la streașină** (fața de sus a riglelor deasupra feței exterioare a stâlpului), **Acoperișul** (în două ape sau într-o apă) și **Panta** lui, profilele **Stâlpilor** și ale **Riglelor**, și **Picioarele stâlpilor** (articulate sau încastrate, păstrate pentru nodurile care vin).
+- **Cadru**: **Deschiderea** (de la axa unui stâlp la a celuilalt), **Traveile** (egale ca `5 × 6`, sau fiecare pe rând: `6, 6, 7.5`), **Înălțimea la streașină** (fața de sus a riglelor deasupra feței exterioare a stâlpului), **Acoperișul** (în două ape sau într-o apă) și **Panta** lui, profilele **Stâlpilor** și ale **Riglelor**.
 - **Vute**: **Vuta la streașină** și **Vuta la coamă**, fiecare cu **Lungimea** de-a lungul riglei de la fața stâlpului (sau de la coamă) și **Adâncimea** sub riglă acolo, și cum e **Executată**: **tăiată din profilul riglei** (un I tăiat oblic de-a lungul inimii, o jumătate sudată sub riglă: inima și talpa riglei) sau **din plăci sudate** (o **Placă a inimii** și o **Placă a tălpii** cu grosimile lor, și lățimea tălpii).
 
 ![Vutele din plăci sudate](shots/steel-hall-haunches.webp)
@@ -76,8 +76,33 @@ Hala rămâne editabilă. Selectează una din barele ei: secțiunea **Oțel** ar
 
 ![Vutele unei rigle în Proprietăți](shots/steel-hall-props.webp)
 
+## Noduri
+
+Cadrele unei hale vin cu **nodurile** lor (Steel → Portal frame hall…, fila **Noduri**): un **picior de stâlp** sub fiecare stâlp și stâlp de fronton, un **nod de streașină** unde fiecare riglă ajunge la stâlpul ei, un **nod de coamă** unde se întâlnesc două rigle și o placă de prindere sub rigla de deasupra fiecărui stâlp de fronton. Fiecare e un element al lui, care știe ce bare leagă; plăcile, șuruburile și ancorele lui se fac din parametrii lui și din bare așa cum sunt, deci le urmează când hala se schimbă.
+
+![Fila Noduri](shots/steel-nodes-hall.webp)
+
+- **Noduri**: pornite sau oprite pentru toată hala.
+- **Picioarele stâlpilor**: **articulate** (o placă de bază, două ancore de o parte și de alta a inimii sau patru între tălpi) sau **încastrate** (o placă mai lungă și mai groasă, patru până la opt ancore în afara tălpilor, nervuri în planul inimii). **Ancorele** sunt **drepte**, **cu cârlig** sau **cu placă de ancoraj** la capăt; **Numărul de ancore** și **Lungimea ancorelor** (sub fața betonului) se aleg după profil când rămân goale. Când sub stâlp e o fundație din structură, ancorele intră în ea (și se opresc la 50 mm deasupra fundului ei); altfel merg lungimea lor sub subturnare.
+- **Nodul de streașină**: o placă de capăt extinsă pe riglă, prinsă cu șuruburi de talpa stâlpului: **Grosimea plăcii**, **Diametrul șuruburilor** și **Grupa șuruburilor**, cât iese **Peste riglă** (cu un rând de șuruburi acolo) și **Rigidizările în stâlp** în dreptul tălpii de sus a riglei și al tălpii vutei.
+- **Nodul de coamă**: plăcile de capăt ale celor două rigle prinse cu șuruburi una de alta, pe planul de îmbinare, cu vutele lor.
+
+Ce rămâne gol se alege după profile: șuruburi de la M16 la M27 după înălțimea barei prinse, o placă groasă cât diametrul șuruburilor, distanțele la margini și între rânduri după găuri. Un nod retrage capetele barelor cu ce pune între ele (rigla cu placa de capăt, stâlpul cu placa de bază, stâlpul de fronton cu un rost de 20 mm), prin regulile capetelor barelor.
+
+![Un nod de streașină](shots/steel-nodes-eaves.webp)
+
+![Un picior de stâlp încastrat pe ancore cu cârlig](shots/steel-nodes-base.webp)
+
+Selectează un nod ca să-l vezi în Proprietăți: barele pe care le leagă, fiecare parametru așa cum e acum (o mărime aleasă după profil se arată ca atare) și piesele lui: plăcile, șuruburile și ancorele după mărime și grupă, sudurile după grosime cu lungimea lor, greutatea, fundația în care intră ancorele. Un parametru schimbat acolo se dă doar acelui nod, iar hala refăcută îl păstrează. **Editează hala…** îi deschide hala.
+
+![Un nod în Proprietăți](shots/steel-nodes-props.webp)
+
+Barele desenate de mână își primesc nodurile din **Steel → Găsește nodurile**: un picior sub fiecare bară verticală, un nod de streașină unde o bară e ajustată pe un stâlp, prinderea unui stâlp de fronton unde un stâlp e ajustat sub o bară, un nod de coamă unde două bare sunt tăiate în unghi una cu alta, o înnădire unde două bare merg în prelungire, cap la cap; pentru barele selectate, sau pentru tot modelul când nu e nimic selectat. **Steel → Piese metalice** face extrasul plăcilor, șuruburilor, ancorelor și sudurilor din noduri. Un nod șters dă barelor capetele înapoi; o bară ștearsă își ia nodurile cu ea; **Șterge hala** din configurator ia hala cu barele, nodurile și axele ei, într-un singur pas.
+
 ## IFC și cantități
 
 O bară se exportă ca **IfcMember** cu **IfcMemberType**-ul ei. Corpul se scrie cum scriu oțelul celelalte programe (Tekla, Advance Steel, Revit): secțiunea **extrudată** (IfcExtrudedAreaSolid), **tăiată** de planele capetelor (IfcBooleanClippingResult cu IfcHalfSpaceSolid), iar fiecare crestătură un **IfcOpeningElement** care o golește. O grindă sau un stâlp metalic cu capete se scrie la fel. Cantitățile fiecărei bare dau lungimea dintre tăieturi, aria secțiunii, volumul și greutatea netă (7850 kg/m³).
 
 O hală se exportă ca **IfcBuildingSystem** (LOADBEARING) căruia îi sunt atribuite barele ei, cu datele ei în setul de proprietăți `Lapin_SteelHall`, și cu propriul **IfcGrid**. O riglă cu vute e un **IfcElementAssembly** al riglei și al vutelor ei: o vută tăiată din profil e un **IfcMember**, una din plăci sudate două **IfcPlate**, fiecare extrudată (IfcExtrudedAreaSolid). Vutele nu intră în cantitățile riglei; rezumatul configuratorului le cântărește.
+
+Un nod se exportă ca **IfcElementAssembly** al plăcilor (**IfcPlate**), șuruburilor (**IfcMechanicalFastener** BOLT), ancorelor (ANCHORBOLT) și plăcilor de ancoraj (**IfcDiscreteAccessory** ANCHORPLATE), fiecare cu mărimea și grupa în `Lapin_SteelPart`; el realizează legătura dintre barele pe care le leagă (**IfcRelConnectsWithRealizingElements**; un picior, între fundație și stâlpul lui). Sudurile rămân date, nu corpuri.

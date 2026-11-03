@@ -12,16 +12,25 @@ namespace Lapin.Steel;
 /// (the rafter's top over the column's outer face, from the storey's level), its <see cref="Pitch"/>, a duo-pitch or a
 /// mono-pitch <see cref="Roof"/>; the frames' column and rafter profiles; the haunches at the eaves and at the apex; the
 /// gable frames (a regular frame, or gable posts every <see cref="PostSpacing"/> under a simple rafter); the column bases
-/// (pinned or fixed, for the nodes of stage 3); and the secondary steel to come (stage 4): purlins and side rails at their
-/// spacing, the bays braced, an eaves beam — kept, not built yet.
+/// (pinned or fixed) and their <see cref="Anchor"/>s (straight, hooked, with an anchor plate); whether its frames get
+/// their connections (<see cref="Nodes"/>, decision 273) and their parameters by kind (<see cref="NodeSet"/>: base, eaves,
+/// apex, post; what is not given chosen by the profiles); and the secondary steel to come (stage 4): purlins and side
+/// rails at their spacing, the bays braced, an eaves beam — kept, not built yet.
 /// </summary>
 public sealed record HallSpec(
     double X, double Y, double Angle,
     double Span, IReadOnlyList<double> Bays, double Eaves, double Pitch, string Roof,
     Section Column, Section Rafter, Haunch? EavesHaunch, Haunch? ApexHaunch,
     string Gable, double PostSpacing, Section Post, Section GableRafter,
-    string Base, double PurlinSpacing, double RailSpacing, IReadOnlyList<int> Bracing, bool EavesBeam)
+    string Base, double PurlinSpacing, double RailSpacing, IReadOnlyList<int> Bracing, bool EavesBeam,
+    bool Nodes = true, string Anchor = "straight", IReadOnlyDictionary<string, NodeParams>? NodeSet = null)
 {
+    /// <summary>The kinds of connection a hall sets parameters for.</summary>
+    public static readonly string[] NodeKinds = ["base", "eaves", "apex", "post"];
+
+    /// <summary>The parameters the hall gives its connections of a kind (none: all by the profiles).</summary>
+    public NodeParams NodeParamsOf(string kind) => NodeSet != null && NodeSet.TryGetValue(kind, out var p) ? p : NodeParams.None;
+
     public static readonly string[] Roofs = ["duo", "mono"];
     public static readonly string[] Gables = ["frame", "posts"];
     public static readonly string[] Bases = ["pinned", "fixed"];
@@ -31,6 +40,7 @@ public sealed record HallSpec(
     [
         "span", "bays", "eaves", "pitch", "roof", "column", "rafter", "eavesHaunch", "apexHaunch",
         "gable", "postSpacing", "post", "gableRafter", "base", "purlinSpacing", "railSpacing", "bracing", "eavesBeam",
+        "nodes", "anchor", "nodeParams",
     ];
 
     public static readonly string[] Placement = ["x", "y", "angle"];
@@ -67,7 +77,11 @@ public sealed record HallSpec(
             ["gable"] = Gable, ["postSpacing"] = PostSpacing, ["post"] = SectionJson(Post), ["gableRafter"] = SectionJson(GableRafter),
             ["base"] = Base, ["purlinSpacing"] = PurlinSpacing, ["railSpacing"] = RailSpacing,
             ["bracing"] = new JsonArray([.. Bracing.Select(b => (JsonNode)b)]), ["eavesBeam"] = EavesBeam,
+            ["nodes"] = Nodes, ["anchor"] = Anchor,
         };
+        var set = new JsonObject();
+        foreach (var k in NodeKinds) if (NodeParamsOf(k).ToJson() is { Count: > 0 } pj) set[k] = pj;
+        o["nodeParams"] = set;
         o["eavesHaunch"] = EavesHaunch?.ToJson();
         o["apexHaunch"] = ApexHaunch?.ToJson();
         return o;
@@ -84,10 +98,19 @@ public sealed record HallSpec(
         var bays = o["bays"] is JsonArray ba ? ba.Select(x => Json.Number(x) ?? 0).ToList() : d.Bays.ToList();
         var bracing = o["bracing"] is JsonArray br ? br.Select(x => (int)(Json.Number(x) ?? 0)).Where(x => x > 0).Distinct().Order().ToList() : d.Bracing.ToList();
         var beam = o["eavesBeam"] is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : d.EavesBeam;
+        var nodes = o["nodes"] is JsonValue nv && nv.TryGetValue<bool>(out var nb) ? nb : d.Nodes;
+        var set = d.NodeSet;
+        if (o["nodeParams"] is JsonObject np)
+        {
+            var next = new Dictionary<string, NodeParams>();
+            foreach (var k in NodeKinds) if (np.ContainsKey(k)) next[k] = NodeParams.From(np[k]); else if (d.NodeSet?.TryGetValue(k, out var was) == true) next[k] = was;
+            set = next;
+        }
         return new HallSpec(N("x", d.X), N("y", d.Y), N("angle", d.Angle), N("span", d.Span), bays, N("eaves", d.Eaves), N("pitch", d.Pitch), C("roof", Roofs, d.Roof),
             S("column", d.Column), S("rafter", d.Rafter), H("eavesHaunch", d.EavesHaunch), H("apexHaunch", d.ApexHaunch),
             C("gable", Gables, d.Gable), N("postSpacing", d.PostSpacing), S("post", d.Post), S("gableRafter", d.GableRafter),
-            C("base", Bases, d.Base), N("purlinSpacing", d.PurlinSpacing), N("railSpacing", d.RailSpacing), bracing, beam);
+            C("base", Bases, d.Base), N("purlinSpacing", d.PurlinSpacing), N("railSpacing", d.RailSpacing), bracing, beam,
+            nodes, C("anchor", NodeParams.AnchorKinds, d.Anchor), set);
     }
 
     /// <summary>The spec checked as a command takes it: sizes in range, steel profiles, haunches that fit their rafters.</summary>
@@ -108,6 +131,8 @@ public sealed record HallSpec(
         foreach (var h in new[] { EavesHaunch, ApexHaunch })
             if (h != null && h.Depth > 3 * Rafter.Depth + 0.5) throw new CommandException("A haunch is deeper than three times its rafter.");
         if (Bracing.Any(b => b > Bays.Count)) throw new CommandException("A braced bay is one of the hall's bays.");
+        // Each kind's parameters checked as a connection's would be.
+        foreach (var k in NodeKinds) NodeParams.Patch(NodeParams.None, NodeParamsOf(k).ToJson());
         return this;
     }
 

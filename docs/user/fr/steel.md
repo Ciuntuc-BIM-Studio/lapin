@@ -56,7 +56,7 @@ Les profilés creux sont vides à l’intérieur, dans la vue 3D, les coupes et 
 ![Le configurateur de bâtiment](shots/steel-hall.webp)
 
 - **Styles** : les bâtiments types du catalogue (**Bâtiment 20 m**, **Bâtiment 30 m**, un **Appentis 10 m** monopente) et ceux du projet. Un style choisi remplit tous les champs ; chacun peut ensuite être modifié. **Enregistrer comme style…** garde le bâtiment tel que configuré comme style du projet ; **Mettre à jour le style** l’enregistre à nouveau dans son style, et tous les bâtiments de ce style suivent.
-- **Portique** : la **Portée** (d’axe de poteau à axe de poteau), les **Travées** (égales comme `5 × 6`, ou chacune : `6, 6, 7.5`), la **Hauteur à la sablière** (le dessus des traverses au droit de la face extérieure du poteau), la **Toiture** (deux versants ou monopente) et sa **Pente**, les profilés des **Poteaux** et des **Traverses**, et les **Pieds de poteaux** (articulés ou encastrés, gardés pour les assemblages à venir).
+- **Portique** : la **Portée** (d’axe de poteau à axe de poteau), les **Travées** (égales comme `5 × 6`, ou chacune : `6, 6, 7.5`), la **Hauteur à la sablière** (le dessus des traverses au droit de la face extérieure du poteau), la **Toiture** (deux versants ou monopente) et sa **Pente**, les profilés des **Poteaux** et des **Traverses**.
 - **Jarrets** : le **Jarret à la sablière** et le **Jarret au faîtage**, chacun avec sa **Longueur** le long de la traverse depuis la face du poteau (ou le faîtage) et sa **Hauteur** sous la traverse à cet endroit, et comment il est **Réalisé** : **découpé dans le profil de la traverse** (un I coupé en biais le long de son âme, une moitié soudée sous la traverse : l’âme et la semelle de la traverse) ou **en tôles soudées** (une **Tôle d’âme** et une **Tôle de semelle** de leur propre épaisseur, et la largeur de semelle).
 
 ![Les jarrets en tôles soudées](shots/steel-hall-haunches.webp)
@@ -76,8 +76,33 @@ Le bâtiment reste modifiable. Sélectionnez une de ses barres : sa section **Ac
 
 ![Les jarrets d’une traverse dans les Propriétés](shots/steel-hall-props.webp)
 
+## Assemblages
+
+Les portiques d'un bâtiment viennent avec leurs **assemblages** (Steel → Portal frame hall…, onglet **Nœuds**) : un **pied de poteau** sous chaque poteau et potelet de pignon, un **assemblage en rive** où chaque traverse arrive à son poteau, un **assemblage au faîtage** où deux traverses se rencontrent, et un gousset sous la traverse au-dessus de chaque potelet. Chacun est un élément à part qui connaît les barres qu'il assemble ; ses plaques, boulons et ancrages sont faits de ses paramètres et des barres telles qu'elles sont, et les suivent quand le bâtiment change.
+
+![L'onglet Nœuds](shots/steel-nodes-hall.webp)
+
+- **Assemblages** : activés ou non pour tout le bâtiment.
+- **Pieds de poteaux** : **articulés** (une platine, deux ancrages de part et d'autre de l'âme ou quatre entre les ailes) ou **encastrés** (une platine plus longue et plus épaisse, quatre à huit ancrages hors des ailes, des raidisseurs dans le plan de l'âme). Les **Ancrages** sont **droits**, **à crochet** ou **avec plaque d'ancrage** au pied ; le **Nombre d'ancrages** et la **Longueur d'ancrage** (sous le dessus du béton) sont choisis par le profilé quand ils restent vides. Si une semelle de la structure se trouve sous le poteau, les ancrages y entrent (et s'arrêtent à 50 mm au-dessus de son fond) ; sinon ils descendent de leur longueur sous le mortier de calage.
+- **Assemblage en rive** : une platine d'about débordante sur la traverse, boulonnée à l'aile du poteau : son **Épaisseur de la plaque**, le **Diamètre des boulons** et leur **Classe**, combien elle dépasse **Au-dessus de la traverse** (avec une rangée de boulons) et les **Raidisseurs du poteau** au droit de l'aile supérieure de la traverse et de l'aile du jarret.
+- **Assemblage au faîtage** : les platines d'about des deux traverses boulonnées l'une à l'autre sur la coupe d'onglet, avec leurs jarrets.
+
+Ce qui reste vide est choisi par les profilés : boulons de M16 à M27 selon la hauteur de la barre boulonnée, une plaque aussi épaisse que ses boulons, pinces et entraxes d'après les trous. Un assemblage recule les extrémités de ses barres de ce qu'il met entre elles (la traverse de sa platine, le poteau de sa platine de pied, le potelet d'un jeu de 20 mm), par les règles d'extrémité des barres elles-mêmes.
+
+![Un assemblage en rive](shots/steel-nodes-eaves.webp)
+
+![Un pied de poteau encastré sur ancrages à crochet](shots/steel-nodes-base.webp)
+
+Sélectionnez un assemblage pour le voir dans les Propriétés : les barres qu'il assemble, chaque paramètre tel qu'il est (une taille choisie par le profilé est montrée comme telle) et ses pièces : plaques, boulons et ancrages par taille et classe, les soudures par gorge avec leur longueur, son poids, la semelle où vont ses ancrages. Un paramètre changé là ne vaut que pour cet assemblage, et le bâtiment reconstruit le garde. **Modifier le bâtiment…** ouvre son bâtiment.
+
+![Un assemblage dans les Propriétés](shots/steel-nodes-props.webp)
+
+Les barres dessinées à la main reçoivent leurs assemblages par **Steel → Trouver les assemblages** : un pied sous chaque barre verticale, un assemblage en rive où une barre est ajustée sur un poteau, celui d'un potelet où un poteau est ajusté sous une barre, un faîtage où deux barres sont coupées d'onglet l'une avec l'autre, un éclissage où deux barres se suivent bout à bout ; pour les barres sélectionnées, ou tout le modèle si rien n'est sélectionné. **Steel → Pièces métalliques** crée la liste des plaques, boulons, ancrages et soudures des assemblages. Supprimer un assemblage rend à ses barres leurs extrémités ; supprimer une barre emporte ses assemblages ; **Supprimer le bâtiment** dans le configurateur enlève le bâtiment avec ses barres, assemblages et axes, en une seule étape.
+
 ## IFC et quantités
 
 Une barre s’exporte en **IfcMember** avec son **IfcMemberType**. Son corps est écrit comme les autres logiciels écrivent l’acier (Tekla, Advance Steel, Revit) : sa section **extrudée** (IfcExtrudedAreaSolid), **coupée** par les plans de ses extrémités (IfcBooleanClippingResult avec IfcHalfSpaceSolid), et chaque grugeage un **IfcOpeningElement** qui l’évide. Une poutre ou un poteau en acier avec extrémités s’écrit de même. Les quantités de chaque barre donnent sa longueur entre ses coupes, l’aire de sa section, son volume et son poids net (7850 kg/m³).
 
 Un bâtiment s’exporte comme un **IfcBuildingSystem** (LOADBEARING) auquel ses barres sont affectées, ses données dans le jeu de propriétés `Lapin_SteelHall`, avec sa propre **IfcGrid**. Une traverse avec jarrets est un **IfcElementAssembly** de la traverse et de ses jarrets : un jarret découpé dans le profil est un **IfcMember**, un jarret en tôles soudées deux **IfcPlate**, chacun extrudé (IfcExtrudedAreaSolid). Les jarrets ne comptent pas dans les quantités de la traverse ; le résumé du configurateur les pèse.
+
+Un assemblage s'exporte comme **IfcElementAssembly** de ses plaques (**IfcPlate**), boulons (**IfcMechanicalFastener** BOLT), ancrages (ANCHORBOLT) et plaques d'ancrage (**IfcDiscreteAccessory** ANCHORPLATE), chacun avec sa taille et sa classe dans `Lapin_SteelPart` ; il réalise la liaison des barres qu'il assemble (**IfcRelConnectsWithRealizingElements** ; un pied, entre la semelle et son poteau). Les soudures restent des données, pas des corps.

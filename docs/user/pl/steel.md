@@ -56,7 +56,7 @@ Profile zamknięte są puste w środku, w widoku 3D, w przekrojach i w ilościac
 ![Konfigurator hali](shots/steel-hall.webp)
 
 - **Style**: typowe hale z katalogu (**Hala 20 m**, **Hala 30 m**, jednospadowa **Wiata 10 m**) i własne style projektu. Wybrany styl wypełnia wszystkie pola; każde można potem zmienić. **Zapisz jako styl…** zachowuje halę tak skonfigurowaną jako styl projektu; **Aktualizuj styl** zapisuje ją ponownie w jej stylu, a wszystkie hale tego stylu za nim podążają.
-- **Rama**: **Rozpiętość** (od osi słupa do osi słupa), **Przęsła** (równe jako `5 × 6` lub każde osobno: `6, 6, 7.5`), **Wysokość okapu** (góra rygli nad zewnętrznym licem słupa), **Dach** (dwuspadowy lub jednospadowy) i jego **Nachylenie**, profile **Słupów** i **Rygli** oraz **Podstawy słupów** (przegubowe lub utwierdzone, zachowane dla przyszłych węzłów).
+- **Rama**: **Rozpiętość** (od osi słupa do osi słupa), **Przęsła** (równe jako `5 × 6` lub każde osobno: `6, 6, 7.5`), **Wysokość okapu** (góra rygli nad zewnętrznym licem słupa), **Dach** (dwuspadowy lub jednospadowy) i jego **Nachylenie**, profile **Słupów** i **Rygli**.
 - **Wuty**: **Wuta przy okapie** i **Wuta w kalenicy**, każda ze swoją **Długością** wzdłuż rygla od lica słupa (lub od kalenicy) i **Wysokością** pod ryglem w tym miejscu, oraz tym, jak jest **Wykonana**: **wycięta z profilu rygla** (dwuteownik przecięty ukośnie wzdłuż środnika, jedna połowa przyspawana pod ryglem: środnik i pas samego rygla) lub **spawana z blach** (**Blacha środnika** i **Blacha pasa** o własnej grubości oraz szerokość pasa).
 
 ![Wuty spawane z blach](shots/steel-hall-haunches.webp)
@@ -76,8 +76,33 @@ Hala pozostaje edytowalna. Zaznacz jeden z jej prętów: jego sekcja **Stal** po
 
 ![Wuty rygla we Właściwościach](shots/steel-hall-props.webp)
 
+## Połączenia
+
+Ramy hali przychodzą ze swoimi **połączeniami** (Steel → Portal frame hall…, karta **Węzły**): **stopa słupa** pod każdym słupem i słupem ściany szczytowej, **węzeł okapowy** tam, gdzie rygiel dochodzi do słupa, **węzeł kalenicowy** tam, gdzie spotykają się dwa rygle, i blacha węzłowa pod ryglem nad każdym słupem szczytowym. Każde jest osobnym elementem, który wie, jakie pręty łączy; jego blachy, śruby i kotwy powstają z jego parametrów i z prętów takich, jakie są, więc idą za nimi, gdy hala się zmienia.
+
+![Karta Węzły](shots/steel-nodes-hall.webp)
+
+- **Połączenia**: włączone lub wyłączone dla całej hali.
+- **Podstawy słupów**: **przegubowe** (blacha podstawy, dwie kotwy po obu stronach środnika lub cztery między półkami) lub **utwierdzone** (dłuższa, grubsza blacha, od czterech do ośmiu kotew poza półkami, żebra w płaszczyźnie środnika). **Kotwy** są **proste**, **z hakiem** lub **z płytką kotwiącą** u dołu; **Liczbę kotew** i **Długość kotew** (poniżej wierzchu betonu) dobiera profil, gdy pozostają puste. Gdy pod słupem stoi stopa fundamentowa z konstrukcji, kotwy wchodzą w nią (i kończą się 50 mm nad jej spodem); inaczej sięgają swojej długości pod podlewką.
+- **Węzeł okapowy**: wysunięta blacha czołowa na ryglu przykręcona do półki słupa: jej **Grubość blachy**, **Średnica śrub** i **Klasa śrub**, jak daleko wystaje **Nad ryglem** (z rzędem śrub tam) oraz **Żebra słupa** na wysokości górnej półki rygla i półki wuty.
+- **Węzeł kalenicowy**: blachy czołowe dwóch rygli skręcone ze sobą na cięciu ukośnym, z ich wutami.
+
+Co zostaje puste, dobierają profile: śruby od M16 do M27 według wysokości przykręcanego pręta, blacha tak gruba jak jej śruby, odległości od krawędzi i rozstawy według otworów. Połączenie cofa końce swoich prętów o to, co między nie wkłada (rygiel o blachę czołową, słup o blachę podstawy, słup szczytowy o szczelinę 20 mm), przez reguły końców samych prętów.
+
+![Węzeł okapowy](shots/steel-nodes-eaves.webp)
+
+![Utwierdzona stopa słupa na kotwach z hakiem](shots/steel-nodes-base.webp)
+
+Zaznacz połączenie, aby zobaczyć je we Właściwościach: pręty, które łączy, każdy parametr taki, jaki jest teraz (rozmiar dobrany przez profil jest tak pokazany), i jego części: blachy, śruby i kotwy według rozmiaru i klasy, spoiny według grubości z ich długością, ciężar, stopę, w którą wchodzą kotwy. Parametr zmieniony tam dotyczy tylko tego połączenia, a odbudowana hala go zachowuje. **Edytuj halę…** otwiera jego halę.
+
+![Połączenie we Właściwościach](shots/steel-nodes-props.webp)
+
+Pręty rysowane ręcznie dostają połączenia przez **Steel → Znajdź połączenia**: stopę pod każdym pionowym prętem, węzeł okapowy tam, gdzie pręt jest dopasowany do słupa, połączenie słupa szczytowego tam, gdzie słup jest dopasowany pod prętem, węzeł kalenicowy tam, gdzie dwa pręty są ucięte ukośnie względem siebie, styk tam, gdzie dwa biegną w linii, koniec do końca; dla zaznaczonych prętów albo całego modelu, gdy nic nie jest zaznaczone. **Steel → Części stalowe** tworzy zestawienie blach, śrub, kotew i spoin połączeń. Usunięte połączenie oddaje prętom ich końce; usunięty pręt zabiera swoje połączenia; **Usuń halę** w konfiguratorze usuwa halę z jej prętami, połączeniami i osiami w jednym kroku.
+
 ## IFC i ilości
 
 Pręt eksportuje się jako **IfcMember** ze swoim **IfcMemberType**. Jego bryła jest zapisana tak, jak stal zapisują inne programy (Tekla, Advance Steel, Revit): przekrój **wyciągnięty** (IfcExtrudedAreaSolid), **przycięty** płaszczyznami końców (IfcBooleanClippingResult z IfcHalfSpaceSolid), a każde podcięcie jako **IfcOpeningElement**, który go wycina. Stalowa belka lub słup z końcami zapisuje się tak samo. Ilości każdego pręta podają jego długość między cięciami, pole przekroju, objętość i ciężar netto (7850 kg/m³).
 
 Hala jest eksportowana jako **IfcBuildingSystem** (LOADBEARING), do którego przypisane są jej pręty, z jej danymi w zestawie właściwości `Lapin_SteelHall` i własną **IfcGrid**. Rygiel z wutami to **IfcElementAssembly** rygla i jego wut: wuta wycięta z profilu to **IfcMember**, wuta spawana z blach to dwie **IfcPlate**, każda wyciągnięta (IfcExtrudedAreaSolid). Wuty nie wchodzą do ilości rygla; podsumowanie konfiguratora je waży.
+
+Połączenie eksportuje się jako **IfcElementAssembly** jego blach (**IfcPlate**), śrub (**IfcMechanicalFastener** BOLT), kotew (ANCHORBOLT) i płytek kotwiących (**IfcDiscreteAccessory** ANCHORPLATE), każde z rozmiarem i klasą w `Lapin_SteelPart`; realizuje ono połączenie prętów, które łączy (**IfcRelConnectsWithRealizingElements**; stopa — między fundamentem a jej słupem). Spoiny pozostają danymi, nie bryłami.

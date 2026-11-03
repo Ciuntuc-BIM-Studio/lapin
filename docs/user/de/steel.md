@@ -56,7 +56,7 @@ Hohlprofile sind innen hohl, in der 3D-Ansicht, in den Schnitten und in den Meng
 ![Der Hallenkonfigurator](shots/steel-hall.webp)
 
 - **Stile**: die typischen Hallen des Katalogs (**Halle 20 m**, **Halle 30 m**, ein **Pultanbau 10 m** mit Pultdach) und die eigenen des Projekts. Ein gewählter Stil füllt alle Felder; jedes lässt sich danach ändern. **Als Stil speichern…** behält die Halle, wie sie konfiguriert ist, als Stil des Projekts; **Stil aktualisieren** speichert sie erneut in ihren Stil, und alle Hallen dieses Stils folgen.
-- **Rahmen**: die **Spannweite** (Stützenachse bis Stützenachse), die **Felder** (gleiche als `5 × 6`, oder einzeln: `6, 6, 7.5`), die **Traufhöhe** (die Oberkante der Riegel über der Außenfläche der Stütze), das **Dach** (Sattel- oder Pultdach) und seine **Neigung**, die Profile der **Stützen** und **Riegel**, und die **Stützenfüße** (gelenkig oder eingespannt, für die kommenden Knoten gespeichert).
+- **Rahmen**: die **Spannweite** (Stützenachse bis Stützenachse), die **Felder** (gleiche als `5 × 6`, oder einzeln: `6, 6, 7.5`), die **Traufhöhe** (die Oberkante der Riegel über der Außenfläche der Stütze), das **Dach** (Sattel- oder Pultdach) und seine **Neigung**, die Profile der **Stützen** und **Riegel**.
 - **Vouten**: die **Voute an der Traufe** und die **Voute am First**, jede mit ihrer **Länge** entlang des Riegels ab der Stützenfläche (oder dem First) und ihrer **Tiefe** unter dem Riegel dort, und ihrer **Ausführung**: **aus dem Riegelprofil geschnitten** (ein I schräg entlang des Stegs geschnitten, eine Hälfte unter den Riegel geschweißt: Steg und Flansch des Riegels selbst) oder **aus Blechen geschweißt** (ein **Stegblech** und ein **Flanschblech** eigener Dicke, und die Flanschbreite).
 
 ![Die Vouten aus geschweißten Blechen](shots/steel-hall-haunches.webp)
@@ -76,8 +76,33 @@ Die Halle bleibt bearbeitbar. Wähle einen ihrer Stäbe: sein Abschnitt **Stahl*
 
 ![Die Vouten eines Riegels in den Eigenschaften](shots/steel-hall-props.webp)
 
+## Anschlüsse
+
+Die Rahmen einer Halle kommen mit ihren **Anschlüssen** (Steel → Portal frame hall…, Registerkarte **Knoten**): ein **Stützenfuß** unter jeder Stütze und Giebelstütze, ein **Traufanschluss**, wo jeder Riegel an seine Stütze kommt, ein **Firstanschluss**, wo sich zwei Riegel treffen, und ein Fahnenblech unter dem Riegel über jeder Giebelstütze. Jeder ist ein eigenes Element, das die Stäbe kennt, die es verbindet; seine Platten, Schrauben und Anker entstehen aus seinen Parametern und aus den Stäben, wie sie sind, und folgen ihnen, wenn die Halle geändert wird.
+
+![Die Registerkarte Knoten](shots/steel-nodes-hall.webp)
+
+- **Anschlüsse**: für die ganze Halle an oder aus.
+- **Stützenfüße**: **gelenkig** (eine Fußplatte, zwei Anker beiderseits des Stegs oder vier zwischen den Flanschen) oder **eingespannt** (eine längere, dickere Platte, vier bis acht Anker außerhalb der Flansche, Rippen in der Stegebene). Die **Anker** sind **gerade**, **mit Haken** oder **mit Ankerplatte** am Fuß; **Anzahl der Anker** und **Ankerlänge** (unter der Betonoberkante) wählt das Profil, wenn sie leer bleiben. Steht unter der Stütze ein Fundament der Tragwerksplanung, gehen die Anker hinein (und enden 50 mm über seiner Sohle); sonst reichen sie ihre Länge unter den Unterguss.
+- **Traufanschluss**: eine überstehende Stirnplatte am Riegel, an den Stützenflansch geschraubt: ihre **Plattendicke**, **Schraubendurchmesser** und **Schraubenfestigkeitsklasse**, wie weit sie **Über dem Riegel** steht (mit einer Schraubenreihe dort) und die **Stützensteifen** in Höhe des Riegelobergurts und des Vouteflanschs.
+- **Firstanschluss**: die Stirnplatten der beiden Riegel auf dem Gehrungsschnitt miteinander verschraubt, mit ihren Vouten.
+
+Was leer bleibt, wählen die Profile: Schrauben M16 bis M27 nach der Höhe des verschraubten Stabs, eine Platte so dick wie ihre Schrauben, Rand- und Lochabstände aus den Löchern. Ein Anschluss setzt die Enden seiner Stäbe um das zurück, was er dazwischen setzt (den Riegel um seine Stirnplatte, die Stütze um ihre Fußplatte, die Giebelstütze um einen Spalt von 20 mm), über die Endregeln der Stäbe selbst.
+
+![Ein Traufanschluss](shots/steel-nodes-eaves.webp)
+
+![Ein eingespannter Stützenfuß auf Hakenankern](shots/steel-nodes-base.webp)
+
+Wähle einen Anschluss, um ihn in den Eigenschaften zu sehen: die Stäbe, die er verbindet, jeden Parameter, wie er jetzt ist (eine vom Profil gewählte Größe wird so angezeigt), und seine Teile: Platten, Schrauben und Anker nach Größe und Festigkeitsklasse, die Schweißnähte nach Nahtdicke mit ihrer Länge, sein Gewicht, das Fundament, in das seine Anker gehen. Ein dort geänderter Parameter gilt nur für diesen Anschluss, und eine neu aufgebaute Halle behält ihn. **Halle bearbeiten…** öffnet seine Halle.
+
+![Ein Anschluss in den Eigenschaften](shots/steel-nodes-props.webp)
+
+Von Hand gezeichnete Stäbe erhalten ihre Anschlüsse mit **Steel → Anschlüsse finden**: ein Fuß unter jedem senkrechten Stab, ein Traufanschluss, wo ein Stab an eine Stütze angepasst ist, der einer Giebelstütze, wo eine Stütze unter einen Stab angepasst ist, ein Firstanschluss, wo zwei Stäbe auf Gehrung geschnitten sind, ein Stoß, wo zwei in einer Linie Ende an Ende laufen; für die gewählten Stäbe, oder das ganze Modell, wenn nichts gewählt ist. **Steel → Stahlteile** erstellt die Liste der Platten, Schrauben, Anker und Schweißnähte der Anschlüsse. Ein gelöschter Anschluss gibt seinen Stäben ihre Enden zurück; ein gelöschter Stab nimmt seine Anschlüsse mit; **Halle löschen** im Konfigurator entfernt die Halle mit ihren Stäben, Anschlüssen und Achsen in einem Schritt.
+
 ## IFC und Mengen
 
 Ein Stab wird als **IfcMember** mit seinem **IfcMemberType** exportiert. Sein Körper wird so geschrieben, wie die anderen Programme Stahl schreiben (Tekla, Advance Steel, Revit): sein Querschnitt **extrudiert** (IfcExtrudedAreaSolid), **beschnitten** von den Ebenen seiner Enden (IfcBooleanClippingResult mit IfcHalfSpaceSolid), und jede Ausklinkung ein **IfcOpeningElement**, das ihn ausspart. Ein Stahlträger oder eine Stahlstütze mit Enden wird genauso geschrieben. Die Mengen jedes Stabs geben seine Länge zwischen den Schnitten, die Fläche seines Querschnitts, sein Volumen und sein Nettogewicht (7850 kg/m³).
 
 Eine Halle wird als **IfcBuildingSystem** (LOADBEARING) exportiert, dem ihre Stäbe zugeordnet sind, mit ihren Angaben im Eigenschaftssatz `Lapin_SteelHall` und ihrem eigenen **IfcGrid**. Ein Riegel mit Vouten ist ein **IfcElementAssembly** aus dem Riegel und seinen Vouten: eine aus dem Profil geschnittene Voute ist ein **IfcMember**, eine aus geschweißten Blechen zwei **IfcPlate**, jede extrudiert (IfcExtrudedAreaSolid). Die Vouten zählen nicht zu den Mengen des Riegels; die Übersicht des Konfigurators wiegt sie.
+
+Ein Anschluss wird als **IfcElementAssembly** seiner Platten (**IfcPlate**), Schrauben (**IfcMechanicalFastener** BOLT), Anker (ANCHORBOLT) und Ankerplatten (**IfcDiscreteAccessory** ANCHORPLATE) exportiert, jeweils mit Größe und Festigkeitsklasse in `Lapin_SteelPart`; er realisiert die Verbindung der Stäbe, die er verbindet (**IfcRelConnectsWithRealizingElements**; ein Fuß zwischen Fundament und Stütze). Die Schweißnähte bleiben Daten, keine Körper.

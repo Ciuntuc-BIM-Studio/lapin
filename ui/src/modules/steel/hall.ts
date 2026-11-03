@@ -1,11 +1,12 @@
 /**
  * The hall configurator's own logic (decision 270), kept apart from its dialog so it is tested: the bays as the user types
  * them ("6, 6, 7.5" or "5 × 6"), the braced bays, the hall a member belongs to, the preview's polygons fitted to a box, and
- * the summary's rows (each label a phrase the interface translates).
+ * the summary's rows (each label a phrase the interface translates; the connections, their bolts and anchors when it has some).
  */
 
 import type { ModelState } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
+import type { NodeParamsDto } from './nodes';
 
 export interface HaunchDto { length: number; depth: number; kind?: 'cut' | 'plates'; web?: number; flange?: number; width?: number; own?: boolean }
 
@@ -16,20 +17,25 @@ export interface HallAttrs {
   column?: unknown; rafter?: unknown; eavesHaunch?: HaunchDto | null; apexHaunch?: HaunchDto | null;
   gable?: 'frame' | 'posts'; postSpacing?: number; post?: unknown; gableRafter?: unknown;
   base?: 'pinned' | 'fixed'; purlinSpacing?: number; railSpacing?: number; bracing?: number[]; eavesBeam?: boolean;
+  /** The frames' connections (decision 273): on or off, the anchors' kind, and each kind's parameters (none: by the profiles). */
+  nodes?: boolean; anchor?: 'straight' | 'hooked' | 'plate';
+  nodeParams?: { base?: NodeParamsDto; eaves?: NodeParamsDto; apex?: NodeParamsDto; post?: NodeParamsDto };
   style?: string;
 }
 
-export interface PreviewItem { role: 'column' | 'rafter' | 'haunch' | 'post'; pts: number[] }
+export interface PreviewItem { role: 'column' | 'rafter' | 'haunch' | 'post' | 'node'; pts: number[] }
 export interface HallSummary {
   frames: number; span: number; length: number; area: number; eaves: number; apex: number;
   columns: number; rafters: number; posts: number;
-  weights: { column: number; rafter: number; haunch: number; post: number; total: number };
+  weights: { column: number; rafter: number; haunch: number; post: number; node?: number; total: number };
   perArea: number;
+  nodes?: number; plates?: number; bolts?: number; anchors?: number;
 }
 export interface HallPreview {
   problem?: string | null;
   attrs?: HallAttrs;
   frame?: PreviewItem[];
+  frameNodes?: PreviewItem[];
   gable?: PreviewItem[];
   plan?: PreviewItem[];
   axes?: { tag: string; a: [number, number]; b: [number, number] }[];
@@ -108,6 +114,7 @@ export function summaryRows(s: HallSummary, length: (m: number) => string): [str
     ['Haunches', kg(s.weights.haunch)],
   ];
   if (s.posts > 0) rows.push(['Gable posts', `${s.posts} · ${kg(s.weights.post)}`]);
+  if (s.nodes) rows.push(['Connections', `${s.nodes} · ${kg(s.weights.node ?? 0)}`], ['Bolts', String(s.bolts ?? 0)], ['Anchors', String(s.anchors ?? 0)]);
   rows.push(['Total steel', kg(s.weights.total)], ['Per m² of floor', `${s.perArea.toFixed(1)} kg/m²`]);
   return rows;
 }

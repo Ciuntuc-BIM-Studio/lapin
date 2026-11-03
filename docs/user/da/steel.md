@@ -56,7 +56,7 @@ Hulprofiler er hule indvendigt, i 3D-visningen, i snittene og i mængderne. De k
 ![Halkonfiguratoren](shots/steel-hall.webp)
 
 - **Stile**: katalogets typiske haller (**Hal 20 m**, **Hal 30 m**, et **Halvtag 10 m** med ensidig hældning) og projektets egne. En valgt stil udfylder alle felter; ethvert felt kan derefter ændres. **Gem som stil…** gemmer hallen, som den er konfigureret, som en stil i projektet; **Opdatér stilen** gemmer den igen i dens stil, og alle haller med stilen følger med.
-- **Ramme**: **Spændet** (fra søjleakse til søjleakse), **Fagene** (lige store som `5 × 6`, eller hver for sig: `6, 6, 7.5`), **Højden ved tagfod** (spærenes overside over søjlens yderside), **Taget** (sadeltag eller ensidig hældning) og dets **Hældning**, profilerne for **Søjler** og **Spær**, og **Søjlefødderne** (charnier eller indspændt, gemt til de kommende samlinger).
+- **Ramme**: **Spændet** (fra søjleakse til søjleakse), **Fagene** (lige store som `5 × 6`, eller hver for sig: `6, 6, 7.5`), **Højden ved tagfod** (spærenes overside over søjlens yderside), **Taget** (sadeltag eller ensidig hældning) og dets **Hældning**, profilerne for **Søjler** og **Spær**.
 - **Vouter**: **Voute ved tagfod** og **Voute ved kip**, hver med sin **Længde** langs spæret fra søjlens flade (eller kippen) og sin **Dybde** under spæret der, og hvordan den er **Udført**: **skåret af spærets profil** (et I skåret skråt langs kroppen, den ene halvdel svejst under spæret: spærets egen krop og flange) eller **svejst af plader** (en **Kropsplade** og en **Flangeplade** i egen tykkelse, og flangens bredde).
 
 ![Vouterne svejst af plader](shots/steel-hall-haunches.webp)
@@ -76,8 +76,33 @@ Hallen kan stadig redigeres. Vælg en af dens stænger: dens afsnit **Stål** vi
 
 ![Et spærs vouter i Egenskaber](shots/steel-hall-props.webp)
 
+## Samlinger
+
+En hals rammer kommer med deres **samlinger** (Steel → Portal frame hall…, fanen **Knuder**): en **søjlefod** under hver søjle og gavlsøjle, en **tagfodssamling** hvor hvert spær møder sin søjle, en **kipsamling** hvor to spær mødes, og en knudeplade under spæret over hver gavlsøjle. Hver er sit eget element, der kender de stænger, den samler; dens plader, bolte og ankre laves af dens parametre og af stængerne, som de er, og følger dem, når hallen ændres.
+
+![Fanen Knuder](shots/steel-nodes-hall.webp)
+
+- **Samlinger**: til eller fra for hele hallen.
+- **Søjlefødder**: **charnier** (en fodplade, to ankre på hver side af kroppen eller fire mellem flangerne) eller **indspændt** (en længere, tykkere plade, fire til otte ankre uden for flangerne, ribber i kroppens plan). **Ankrene** er **lige**, **med krog** eller **med ankerplade** forneden; **Antal ankre** og **Ankerlængde** (under betonens overside) vælges efter profilet, når de står tomme. Står der et fundament fra konstruktionen under søjlen, går ankrene ned i det (og stopper 50 mm over dets bund); ellers går de deres længde under understøbningen.
+- **Tagfodssamling**: en udragende endeplade på spæret, boltet til søjlens flange: dens **Pladetykkelse**, **Boltdiameter** og **Boltklasse**, hvor langt den står **Over spæret** (med en boltrække der) og **Søjleafstivningerne** ud for spærets overflange og voutens flange.
+- **Kipsamling**: de to spærs endeplader boltet sammen på geringen, med deres vouter.
+
+Det, der står tomt, vælges efter profilerne: bolte fra M16 til M27 efter højden af den boltede stang, en plade så tyk som dens bolte, kant- og rækkeafstande efter hullerne. En samling trækker sine stængers ender tilbage med det, den sætter imellem dem (spæret med sin endeplade, søjlen med sin fodplade, gavlsøjlen med en spalte på 20 mm), gennem stængernes egne enderegler.
+
+![En tagfodssamling](shots/steel-nodes-eaves.webp)
+
+![En indspændt søjlefod på ankre med krog](shots/steel-nodes-base.webp)
+
+Vælg en samling for at se den i Egenskaber: de stænger, den samler, hver parameter som den er nu (en størrelse valgt efter profilet vises som sådan) og dens dele: plader, bolte og ankre efter størrelse og klasse, svejsningerne efter a-mål med deres længde, dens vægt, det fundament ankrene går ned i. En parameter ændret der gælder kun den samling, og en hal bygget igen beholder den. **Redigér hal…** åbner dens hal.
+
+![En samling i Egenskaber](shots/steel-nodes-props.webp)
+
+Stænger tegnet i hånden får deres samlinger med **Steel → Find samlinger**: en fod under hver lodret stang, en tagfodssamling hvor en stang er tilpasset en søjle, en gavlsøjles hvor en søjle er tilpasset under en stang, en kipsamling hvor to stænger er geringsskåret med hinanden, et stød hvor to løber i forlængelse, ende mod ende; for de valgte stænger, eller hele modellen når intet er valgt. **Steel → Ståldele** laver listen over samlingernes plader, bolte, ankre og svejsninger. En slettet samling giver sine stænger deres ender tilbage; en slettet stang tager sine samlinger med; **Slet hal** i konfiguratoren fjerner hallen med dens stænger, samlinger og akser i ét trin.
+
 ## IFC og mængder
 
 En stang eksporteres som **IfcMember** med sin **IfcMemberType**. Dens legeme skrives, som de andre programmer skriver stål (Tekla, Advance Steel, Revit): dens profil **ekstruderet** (IfcExtrudedAreaSolid), **beskåret** af endernes planer (IfcBooleanClippingResult med IfcHalfSpaceSolid), og hver udklinkning et **IfcOpeningElement**, der skærer den ud. En stålbjælke eller -søjle med ender skrives på samme måde. Hver stangs mængder giver dens længde mellem snittene, profilets areal, dens volumen og dens nettovægt (7850 kg/m³).
 
 En hal eksporteres som et **IfcBuildingSystem** (LOADBEARING), som dens stænger er tildelt, med dens data i egenskabssættet `Lapin_SteelHall` og sit eget **IfcGrid**. Et spær med vouter er en **IfcElementAssembly** af spæret og dets vouter: en voute skåret af profilet er en **IfcMember**, en svejst af plader to **IfcPlate**, hver ekstruderet (IfcExtrudedAreaSolid). Vouterne tælles ikke med i spærets mængder; konfiguratorens oversigt vejer dem.
+
+En samling eksporteres som en **IfcElementAssembly** af dens plader (**IfcPlate**), bolte (**IfcMechanicalFastener** BOLT), ankre (ANCHORBOLT) og ankerplader (**IfcDiscreteAccessory** ANCHORPLATE), hver med størrelse og klasse i `Lapin_SteelPart`; den realiserer forbindelsen mellem de stænger, den samler (**IfcRelConnectsWithRealizingElements**; en fod, mellem fundamentet og dens søjle). Svejsningerne forbliver data, ikke legemer.

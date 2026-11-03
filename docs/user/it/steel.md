@@ -56,7 +56,7 @@ I profili cavi sono vuoti all’interno, nella vista 3D, nelle sezioni e nelle q
 ![Il configuratore di capannoni](shots/steel-hall.webp)
 
 - **Stili**: i capannoni tipici del catalogo (**Capannone 20 m**, **Capannone 30 m**, una **Tettoia 10 m** a una falda) e quelli del progetto. Uno stile scelto compila tutti i campi; ciascuno si può poi cambiare. **Salva come stile…** conserva il capannone così configurato come stile del progetto; **Aggiorna lo stile** lo salva di nuovo nel suo stile, e tutti i capannoni di quello stile lo seguono.
-- **Portale**: la **Luce** (da asse di pilastro ad asse di pilastro), le **Campate** (uguali come `5 × 6`, o ciascuna: `6, 6, 7.5`), l’**Altezza in gronda** (l’estradosso dei traversi sopra la faccia esterna del pilastro), la **Copertura** (a due falde o a una falda) e la sua **Pendenza**, i profili di **Pilastri** e **Traversi**, e le **Basi dei pilastri** (incernierate o incastrate, conservate per i nodi a venire).
+- **Portale**: la **Luce** (da asse di pilastro ad asse di pilastro), le **Campate** (uguali come `5 × 6`, o ciascuna: `6, 6, 7.5`), l’**Altezza in gronda** (l’estradosso dei traversi sopra la faccia esterna del pilastro), la **Copertura** (a due falde o a una falda) e la sua **Pendenza**, i profili di **Pilastri** e **Traversi**.
 - **Squadrette**: la **Squadretta in gronda** e la **Squadretta in colmo**, ciascuna con la sua **Lunghezza** lungo il traverso dalla faccia del pilastro (o dal colmo) e la sua **Altezza** sotto il traverso lì, e come è **Realizzata**: **tagliata dal profilo del traverso** (un I tagliato in obliquo lungo l’anima, una metà saldata sotto il traverso: l’anima e l’ala del traverso stesso) o **in piatti saldati** (un **Piatto d’anima** e un **Piatto d’ala** del loro spessore, e la larghezza dell’ala).
 
 ![Le squadrette in piatti saldati](shots/steel-hall-haunches.webp)
@@ -76,8 +76,33 @@ Il capannone resta modificabile. Seleziona una delle sue aste: la sua sezione **
 
 ![Le squadrette di un traverso nelle Proprietà](shots/steel-hall-props.webp)
 
+## Collegamenti
+
+I portali di un capannone arrivano con i loro **collegamenti** (Steel → Portal frame hall…, scheda **Nodi**): un **piede di pilastro** sotto ogni pilastro e ritto di testata, un **collegamento di gronda** dove ogni traverso arriva al suo pilastro, un **collegamento di colmo** dove si incontrano due traversi e una piastra d'anima sotto il traverso sopra ogni ritto. Ognuno è un elemento a sé che sa quali aste collega; le sue piastre, i bulloni e i tirafondi sono fatti dai suoi parametri e dalle aste come sono, e le seguono quando il capannone cambia.
+
+![La scheda Nodi](shots/steel-nodes-hall.webp)
+
+- **Collegamenti**: attivi o no per tutto il capannone.
+- **Basi dei pilastri**: **incernierate** (una piastra di base, due tirafondi ai lati dell'anima o quattro tra le ali) o **incastrate** (una piastra più lunga e spessa, da quattro a otto tirafondi fuori dalle ali, nervature nel piano dell'anima). I **Tirafondi** sono **dritti**, **con uncino** o **con piastra di ancoraggio** al piede; il **Numero di tirafondi** e la **Lunghezza dei tirafondi** (sotto l'estradosso del calcestruzzo) li sceglie il profilo quando restano vuoti. Se sotto il pilastro c'è una fondazione della struttura, i tirafondi vi entrano (e si fermano 50 mm sopra il suo fondo); altrimenti scendono della loro lunghezza sotto la malta.
+- **Collegamento di gronda**: una piastra di testa estesa sul traverso imbullonata all'ala del pilastro: il suo **Spessore della piastra**, il **Diametro dei bulloni** e la loro **Classe**, quanto sporge **Sopra il traverso** (con una fila di bulloni lì) e gli **Irrigidimenti del pilastro** in corrispondenza dell'ala superiore del traverso e dell'ala della squadretta.
+- **Collegamento di colmo**: le piastre di testa dei due traversi imbullonate tra loro sul taglio a quartabuono, con le loro squadrette.
+
+Ciò che resta vuoto è scelto dai profili: bulloni da M16 a M27 secondo l'altezza dell'asta imbullonata, una piastra spessa quanto i suoi bulloni, distanze dai bordi e passi dai fori. Un collegamento arretra le estremità delle sue aste di ciò che mette tra loro (il traverso della piastra di testa, il pilastro della piastra di base, il ritto di un gioco di 20 mm), tramite le regole d'estremità delle aste stesse.
+
+![Un collegamento di gronda](shots/steel-nodes-eaves.webp)
+
+![Un piede di pilastro incastrato su tirafondi con uncino](shots/steel-nodes-base.webp)
+
+Seleziona un collegamento per vederlo nelle Proprietà: le aste che collega, ogni parametro com'è ora (una misura scelta dal profilo è mostrata come tale) e i suoi pezzi: piastre, bulloni e tirafondi per misura e classe, le saldature per sezione di gola con la loro lunghezza, il peso, la fondazione in cui vanno i tirafondi. Un parametro cambiato lì vale solo per quel collegamento, e il capannone ricostruito lo conserva. **Modifica capannone…** apre il suo capannone.
+
+![Un collegamento nelle Proprietà](shots/steel-nodes-props.webp)
+
+Le aste disegnate a mano ricevono i loro collegamenti con **Steel → Trova collegamenti**: un piede sotto ogni asta verticale, una gronda dove un'asta è adattata a un pilastro, quello di un ritto dove un pilastro è adattato sotto un'asta, un colmo dove due aste sono tagliate a quartabuono tra loro, un giunto dove due proseguono in linea, testa a testa; per le aste selezionate, o tutto il modello quando nulla è selezionato. **Steel → Pezzi in acciaio** crea l'abaco di piastre, bulloni, tirafondi e saldature dei collegamenti. Un collegamento eliminato restituisce alle sue aste le loro estremità; un'asta eliminata si porta via i suoi collegamenti; **Elimina capannone** nel configuratore toglie il capannone con aste, collegamenti e assi, in un solo passo.
+
 ## IFC e quantità
 
 Un’asta si esporta come **IfcMember** con il suo **IfcMemberType**. Il suo corpo è scritto come gli altri programmi scrivono l’acciaio (Tekla, Advance Steel, Revit): la sezione **estrusa** (IfcExtrudedAreaSolid), **tagliata** dai piani delle estremità (IfcBooleanClippingResult con IfcHalfSpaceSolid), e ogni intaglio un **IfcOpeningElement** che la svuota. Una trave o un pilastro in acciaio con estremità si scrive allo stesso modo. Le quantità di ogni asta danno la sua lunghezza tra i tagli, l’area della sezione, il volume e il peso netto (7850 kg/m³).
 
 Un capannone si esporta come **IfcBuildingSystem** (LOADBEARING) a cui sono assegnate le sue aste, con i suoi dati nel set di proprietà `Lapin_SteelHall` e la sua **IfcGrid**. Un traverso con squadrette è un **IfcElementAssembly** del traverso e delle sue squadrette: una squadretta tagliata dal profilo è un **IfcMember**, una in piatti saldati due **IfcPlate**, ciascuna estrusa (IfcExtrudedAreaSolid). Le squadrette non entrano nelle quantità del traverso; il riepilogo del configuratore le pesa.
+
+Un collegamento si esporta come **IfcElementAssembly** delle sue piastre (**IfcPlate**), bulloni (**IfcMechanicalFastener** BOLT), tirafondi (ANCHORBOLT) e piastre di ancoraggio (**IfcDiscreteAccessory** ANCHORPLATE), ognuno con misura e classe in `Lapin_SteelPart`; realizza il collegamento delle aste che unisce (**IfcRelConnectsWithRealizingElements**; un piede, tra la fondazione e il suo pilastro). Le saldature restano dati, non corpi.

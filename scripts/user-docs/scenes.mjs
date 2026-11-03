@@ -693,6 +693,56 @@ export const scenes = [
     },
   },
   {
+    // Steel, stage 3 (docs/plan-steel.md, decision 273): the frames' connections — the Nodes tab of the hall configurator
+    // (fixed bases on hooked anchors), the hall made with its column bases, eaves, apexes and gable posts' fin plates; an
+    // eaves and a base in 3D; a connection's parameters and parts in Properties.
+    id: 'steel-nodes',
+    async run(t) {
+      await t.fresh();
+      await t.button('Steel', { exact: true });
+      await t.tool('steel.hall');
+      const dialog = t.page.locator('[data-dialog=steel-hall]');
+      await dialog.locator('[data-field=hall-style-hall-20]').click();
+      await t.wait(1200);
+      await dialog.locator('[data-tab=hall-nodes]').click();
+      await dialog.locator('select[data-field=hall-base]').selectOption('fixed');
+      await dialog.locator('select[data-field=hall-anchor]').selectOption('hooked');
+      await t.wait(1500);
+      t.expect(await dialog.locator('svg[data-field=hall-elevation] polygon[data-role=node]').count() > 20, 'the preview draws the frame\'s connections');
+      t.expect(await dialog.locator('[data-field=hall-summary] dt').count() >= 12, 'the summary counts the connections, their bolts and anchors');
+      await t.shot('steel-nodes-hall', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-field=hall-apply]').click();
+      await t.wait(3000);
+      const nodes = await t.nodes();
+      const conns = nodes.filter((n) => n.type === 'LapinSteelNode');
+      t.expect(conns.length === 42, `the hall's connections: bases, eaves, apexes, gable posts (${conns.length})`);
+      const eaves = conns.find((n) => n.props.hallNode === 'eaves@f1:raf:a@start');
+      const base = conns.find((n) => n.props.hallNode === 'base@f1:col:a@start');
+      t.expect(eaves && base, 'an eaves and a column base, each in its place');
+      await t.ui({ dialog: null, keyPlan: false });
+      await open3d(t);
+      const orbit = (view) => t.page.evaluate(async (v) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo(v, false), view);
+      // The canvas runs under the quick tools: the target is drawn low, so it stands under what is shown.
+      await orbit({ azimuth: 0.7, pitch: -0.25, distance: 4.5, target: { x: 0.1, y: 6, z: 4.7 } });
+      await t.wait(1500);
+      await t.shot('steel-nodes-eaves', { of: 'canvas', pad: 0 });
+      await orbit({ azimuth: 0.9, pitch: -0.6, distance: 3.2, target: { x: 0, y: 6, z: -0.9 } });
+      await t.wait(1500);
+      await t.shot('steel-nodes-base', { of: 'canvas', pad: 0 });
+      // The eaves selected: its parameters and parts in Properties.
+      await select(t, eaves.id);
+      await t.wait(1200);
+      t.expect(await t.page.locator('[data-field=steel-node]').count() > 0, 'the connection shows in Properties');
+      t.expect(await t.page.locator('[data-field=node-parts] dt').count() >= 4, 'its plates, bolts, welds and weight');
+      await t.page.locator('select[data-field=node-cols]').selectOption('4');
+      await t.wait(1500);
+      const after = (await t.nodes()).find((n) => n.id === eaves.id);
+      t.expect(after?.props.params?.cols === 4 && after?.props.own === true, 'four bolts a row, set on the connection itself');
+      await t.shot('steel-nodes-props', { of: 'aside.props', pad: 0, maxHeight: 760 });
+      await t.ui({ dialog: null, selection: null, selected: [], keyPlan: true });
+    },
+  },
+  {
     id: 'stairs',
     async run(t) {
       await t.fresh();

@@ -667,6 +667,9 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .props .fields dt, .props .fields dd { display: flex; align-items: center; min-height: 27px; margin: 0; border-bottom: 1px solid var(--rule); }
 .props .fields dt { position: relative; padding: 0 8px; background: var(--wash); border-right: 1px solid var(--rule); color: var(--ink-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .props .fields dd { padding: 0 6px; gap: 4px; min-width: 0; }
+/* A heading across both columns (a member's haunch, with its × at the end), never cut short; rows grouped in a div. */
+.props .fields dt.wide { grid-column: 1 / -1; justify-content: space-between; overflow: visible; white-space: normal; border-right: 0; }
+.fields .contents { display: contents; }
 .props .fields dd.ro, .props .fields dd.num { justify-content: flex-end; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .props .fields > dt:nth-last-of-type(1), .props .fields > dd:last-child, .props .fields .qrow:last-child > * { border-bottom: 0; }
 .props .fields input:not([type=checkbox]):not([type=color]):not([type=radio]), .props .fields select { width: 100%; min-width: 0; height: 26px; margin: 0; padding: 0 4px; border: 0; border-radius: 0; background: transparent; color: var(--ink); }

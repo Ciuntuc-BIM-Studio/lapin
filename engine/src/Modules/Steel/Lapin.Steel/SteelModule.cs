@@ -22,8 +22,13 @@ namespace Lapin.Steel;
 /// IFC: the body as constructive solids (<see cref="IIfcSweptBodies"/>), the section extruded, clipped by the ends'
 /// planes, the copes as openings. Convert to member reads a drafted closed outline as a band (<see cref="SketchBands"/>).
 /// </para>
+/// <para>
+/// Portal frame halls (<see cref="Halls"/>, decision 270) and the connections of their frames, or of any members that
+/// meet (<see cref="SteelNodes"/>, decision 273): column bases, eaves, apexes, splices, gable posts, their plates, bolts
+/// and anchors derived from their parameters; the Steel parts schedule.
+/// </para>
 /// </summary>
-public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies, IIfcSystems
+public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies, IIfcSystems, IIfcConnections
 {
     public string Id => "steel";
     public string Name => "Steel";
@@ -47,7 +52,9 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         r.Service<IGeometryFilter>(this);
         r.Service<IIfcSweptBodies>(this);
         r.Service<IIfcSystems>(this);
+        r.Service<IIfcConnections>(this);
         HallCommands.Register(r);
+        NodeCommands.Register(r);
 
         r.Command("createType", "New member type", (ctx, a) =>
         {
@@ -348,7 +355,27 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
                 ("Span", L(s.Span)), ("Length", L(s.Length)), ("Bays", string.Join(" ", s.Bays.Select(L))), ("EavesHeight", L(s.Eaves)), ("RoofPitch", L(s.Pitch)),
                 ("Roof", s.Roof), ("Column", s.Column.Label), ("Rafter", s.Rafter.Label), ("Gable", s.Gable), ("ColumnBase", s.Base),
             };
-            yield return new IfcSystem(hall.Id, hall.Name, "LOADBEARING", [.. Halls.Members(model, hall.Id).Values.Select(e => e.Id)], "Lapin_SteelHall", props);
+            yield return new IfcSystem(hall.Id, hall.Name, "LOADBEARING",
+                [.. Halls.Members(model, hall.Id).Values.Select(e => e.Id), .. Halls.Nodes(model, hall.Id).Values.Select(e => e.Id)], "Lapin_SteelHall", props);
+        }
+    }
+
+    /// <summary>
+    /// The steel connections as IFC's realizing elements (decision 273): an eaves and a gable post's between the member it is
+    /// fixed to and the one that comes to it, an apex and a splice between their two members, a base between the footing
+    /// under it (when there is one) and its column.
+    /// </summary>
+    public IEnumerable<IfcConnection> Connections(IModelView model)
+    {
+        foreach (var node in model.OfClass(SteelNodes.Class))
+        {
+            var js = SteelNodes.MembersOf(node);
+            var kind = SteelNodes.KindOf(node);
+            if (kind == "base")
+            {
+                if (js.Count > 0 && SteelNodes.Build(model, node).Footing is { } footing) yield return new IfcConnection(node.Id, footing.Id, js[0].Id, node.Name);
+            }
+            else if (js.Count >= 2) yield return new IfcConnection(node.Id, js[0].Id, js[1].Id, node.Name);
         }
     }
 }
