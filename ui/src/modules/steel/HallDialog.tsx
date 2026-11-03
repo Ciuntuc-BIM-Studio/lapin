@@ -4,8 +4,10 @@
  * engine's preview of the draft on the right — a typical frame's elevation with its haunches and its connections (a
  * gable's on the Gables tab), the plan of the grid and the members, and the summary (frames, heights, steel by kind, the
  * connections' bolts and anchors). The Nodes tab sets the frames' connections (decision 273): on or off, the column bases
- * pinned or fixed, their anchors, the eaves' and the apex's end plates and bolts. Apply is one engine command, one undo
- * step: a new hall, or the hall built again over its members and connections; Delete hall takes them all away.
+ * pinned or fixed, their anchors, the eaves' and the apex's end plates and bolts. The Secondary steel tab (decision 275):
+ * purlins, side rails, bracing, the eaves beam and fly braces, on or off, their profiles and spacings; the preview shows
+ * them from above. Apply is one engine command, one undo step: a new hall, or the hall built again over its members and
+ * connections; Delete hall takes them all away.
  */
 
 import { useEffect, useState } from 'react';
@@ -16,7 +18,7 @@ import { execute, query, useSession } from '../../engine/session';
 import { lengthText } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { t, useLang } from '../../i18n';
-import { baysText, fit, parseBays, parseBracing, summaryRows, type HallAttrs, type HallPreview, type HaunchDto, type PreviewItem } from './hall';
+import { baysText, fit, parseBays, parseBracing, secondaryName, secondaryProfiles, secondaryValue, summaryRows, type HallAttrs, type HallPreview, type HaunchDto, type PreviewItem, type PreviewRole } from './hall';
 import type { SectionDto } from './sections';
 import { anchorCounts, BOLT_SIZES, boltLabel, GRADES, type NodeParamsDto } from './nodes';
 
@@ -29,7 +31,10 @@ interface Draft { style?: string; attrs: HallAttrs }
 const TABS = [['frame', 'Frame'], ['haunches', 'Haunches'], ['gables', 'Gables'], ['nodes', 'Nodes'], ['secondary', 'Secondary steel'], ['placement', 'Placement']] as const;
 type Tab = (typeof TABS)[number][0];
 
-const FILL: Record<PreviewItem['role'], string> = { column: '#5d6b7a', rafter: '#7f8c99', haunch: '#b4502a', post: '#9aa6b2', node: '#1e2a3a' };
+const FILL: Record<PreviewRole, string> = {
+  column: '#5d6b7a', rafter: '#7f8c99', haunch: '#b4502a', post: '#9aa6b2', node: '#1e2a3a',
+  purlin: '#3f7cac', rail: '#5a9367', eaves: '#5a9367', brace: '#c08a1e', fly: '#8e5ea2',
+};
 
 /** A profile's name as the spec keeps it: a catalogue name, or a section of its own (its name or kind). */
 const profileName = (v: unknown): string => (typeof v === 'string' ? v : (v as SectionDto | undefined)?.name ?? (v as SectionDto | undefined)?.kind ?? '');
@@ -39,7 +44,7 @@ function Plot({ items, axes, label, w = 380, h = 220 }: { items: PreviewItem[]; 
   const ends = (axes ?? []).flatMap((a) => [a.a, a.b]);
   const f = fit(items, ends, w, h, 18);
   if (!f) return <svg width={w} height={h} />;
-  const order = (r: string) => (r === 'node' ? 3 : r === 'haunch' ? 2 : r === 'rafter' ? 1 : 0);
+  const order = (r: string) => (r === 'node' ? 4 : r === 'brace' || r === 'fly' ? 3 : r === 'haunch' ? 2 : r === 'rafter' || r === 'purlin' ? 1 : 0);
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-label={label} data-field={`hall-${label.toLowerCase()}`}>
       {(axes ?? []).map((a) => (
@@ -104,7 +109,8 @@ export function HallDialog() {
   const project = useSession((s) => [...s.nodes.values()].find((n) => n.type === 'IfcProject'));
   const styles = (info?.catalogs['steel.hallStyles'] as unknown as Style[] | undefined) ?? [];
   const own = (project?.props.hallStyles as Style[] | undefined) ?? [];
-  const profiles = ((info?.catalogs['steel.profiles'] as unknown as SectionDto[] | undefined) ?? []).filter((p) => p.kind === 'I' || p.kind === 'RHS');
+  const catalogue = (info?.catalogs['steel.profiles'] as unknown as SectionDto[] | undefined) ?? [];
+  const profiles = catalogue.filter((p) => p.kind === 'I' || p.kind === 'RHS');
   const [tab, setTab] = useState<Tab>('frame');
   const [draft, setDraft] = useState<Draft>({ attrs: {} });
   const [preview, setPreview] = useState<HallPreview | null>(null);
@@ -173,12 +179,30 @@ export function HallDialog() {
       </label>
     );
   };
-  const len = (k: 'span' | 'eaves' | 'postSpacing' | 'purlinSpacing' | 'railSpacing' | 'x' | 'y', label: string, min = 0) => (
+  const len = (k: 'span' | 'eaves' | 'postSpacing' | 'purlinSpacing' | 'railSpacing' | 'purlinOverhang' | 'railBottom' | 'x' | 'y', label: string, min = 0) => (
     <label className="field-line roof-field"><span className="eyebrow">{label}</span>
       <LengthField metres={value(k) ?? null} min={min} testId={`hall-${k}`} onCommit={(v) => { if (v != null) set(k, v); }} />
     </label>
   );
   const bays = value('bays');
+  // A secondary member's profile: the catalogue's of its kind, a round bar for the bracing.
+  const secondary = (k: 'purlin' | 'rail' | 'brace' | 'eavesBeamProfile', label: string) => {
+    const name = secondaryName(value(k));
+    const names = secondaryProfiles(k === 'eavesBeamProfile' ? 'eaves' : k, catalogue as unknown as { kind: string; name?: string }[]);
+    return (
+      <label className="field-line roof-field"><span className="eyebrow">{label}</span>
+        <select value={name} data-field={`hall-${k}`} onChange={(e) => set(k, secondaryValue(e.target.value))}>
+          {!names.includes(name) && <option value={name} data-no-i18n>{name}</option>}
+          {names.map((n) => <option key={n} value={n} data-no-i18n>{n}</option>)}
+        </select>
+      </label>
+    );
+  };
+  const check = (k: 'secondary' | 'roofBracing' | 'wallBracing' | 'flyBraces' | 'eavesBeam', label: string, on: boolean) => (
+    <label className="field-line roof-field"><span className="eyebrow">{label}</span>
+      <input type="checkbox" checked={on} data-field={`hall-${k}`} onChange={(e) => set(k, e.target.checked)} />
+    </label>
+  );
 
   const items = tab === 'gables' && preview?.gable ? preview.gable : preview?.frame ?? [];
   const styleLabel = draft.style ? styles.find((s) => s.id === draft.style)?.label ?? own.find((s) => s.id === draft.style)?.label ?? '' : '';
@@ -308,16 +332,34 @@ export function HallDialog() {
                   </>}
                 </>}
                 {tab === 'secondary' && <>
-                  {len('purlinSpacing', 'Purlin spacing', 0.1)}
-                  {len('railSpacing', 'Side rail spacing', 0.1)}
-                  <label className="field-line roof-field" title="The bays' numbers, from the first: 1, 6"><span className="eyebrow">Braced bays</span>
-                    <input value={bracingDraft ?? (value('bracing') ?? []).join(', ')} data-field="hall-bracing" onChange={(e) => setBracingDraft(e.target.value)}
-                      onBlur={() => { if (bracingDraft == null) return; const b = parseBracing(bracingDraft); if (b) set('bracing', b); setBracingDraft(null); }} />
-                  </label>
-                  <label className="field-line roof-field"><span className="eyebrow">Eaves beam</span>
-                    <input type="checkbox" checked={value('eavesBeam') === true} onChange={(e) => set('eavesBeam', e.target.checked)} />
-                  </label>
-                  <p className="muted small">Kept with the hall for the secondary steel to come; not built yet.</p>
+                  {check('secondary', 'Secondary steel', value('secondary') !== false)}
+                  {value('secondary') !== false && <>
+                    <p className="eyebrow">Purlins</p>
+                    {secondary('purlin', 'Profile')}
+                    {len('purlinSpacing', 'Purlin spacing', 0.3)}
+                    {len('purlinOverhang', 'Past the gables', 0)}
+                    <label className="field-line roof-field"><span className="eyebrow">Lengths</span>
+                      <select value={value('purlinRun') ?? 'bay'} data-field="hall-purlin-run" onChange={(e) => set('purlinRun', e.target.value as HallAttrs['purlinRun'])}>
+                        <option value="bay">one a bay</option><option value="continuous">continuous</option>
+                      </select>
+                    </label>
+                    <p className="eyebrow">Side rails</p>
+                    {secondary('rail', 'Profile')}
+                    {len('railSpacing', 'Side rail spacing', 0.3)}
+                    {len('railBottom', 'First rail at', 0)}
+                    {check('eavesBeam', 'Eaves beam', value('eavesBeam') === true)}
+                    {value('eavesBeam') === true && secondary('eavesBeamProfile', 'Profile')}
+                    <p className="eyebrow">Bracing</p>
+                    <label className="field-line roof-field" title="The bays' numbers, from the first: 1, 6"><span className="eyebrow">Braced bays</span>
+                      <input value={bracingDraft ?? (value('bracing') ?? []).join(', ')} data-field="hall-bracing" onChange={(e) => setBracingDraft(e.target.value)}
+                        onBlur={() => { if (bracingDraft == null) return; const b = parseBracing(bracingDraft); if (b) set('bracing', b); setBracingDraft(null); }} />
+                    </label>
+                    {secondary('brace', 'Profile')}
+                    {check('roofBracing', 'In the roof', value('roofBracing') !== false)}
+                    {check('wallBracing', 'In the long walls', value('wallBracing') !== false)}
+                    {check('flyBraces', 'Fly braces', value('flyBraces') !== false)}
+                    <p className="muted small">Purlins on the rafters and side rails on the columns and gable posts, each on a cleat; X bracing on gusset plates; fly braces from every second purlin and rail to the inner flange.</p>
+                  </>}
                 </>}
                 {tab === 'placement' && <>
                   {len('x', 'Axis A at x')}
@@ -328,10 +370,10 @@ export function HallDialog() {
                 </>}
               </div>
               <div className="joinery-preview">
-                {tab === 'placement'
+                {tab === 'placement' || tab === 'secondary'
                   ? <Plot items={preview?.plan ?? []} axes={preview?.axes} label="Plan" />
                   : <Plot items={tab === 'gables' && preview?.gable ? items : [...items, ...(preview?.frameNodes ?? [])]} label="Elevation" />}
-                <p className="muted small">{tab === 'placement' ? 'The grid and the members, from above.' : tab === 'gables' && preview?.gable ? 'The gable, seen along the hall.' : 'A typical frame, seen along the hall.'}</p>
+                <p className="muted small">{tab === 'placement' || tab === 'secondary' ? 'The grid and the members, from above.' : tab === 'gables' && preview?.gable ? 'The gable, seen along the hall.' : 'A typical frame, seen along the hall.'}</p>
                 {preview?.problem && <p className="error-text" data-field="hall-problem">{preview.problem}</p>}
                 {preview?.summary && (
                   <dl className="fields roof-summary" data-field="hall-summary">

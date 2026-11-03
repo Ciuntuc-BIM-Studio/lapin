@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ModelState } from '../../engine/model';
 import type { NodeDto, RelationDto } from '../../engine/protocol';
-import { baysText, fit, hallOf, parseBays, parseBracing, summaryRows } from './hall';
+import { baysText, fit, hallOf, parseBays, parseBracing, secondaryName, secondaryProfiles, secondaryValue, summaryRows } from './hall';
 
 const node = (id: string, type: string): NodeDto => ({ id, type, name: id, props: {}, editable: true } as unknown as NodeDto);
 
@@ -62,5 +62,25 @@ describe('the hall configurator', () => {
     expect(rows.find((r) => r[0] === 'Connections')?.[1]).toBe('42 · 778 kg');
     expect(rows.find((r) => r[0] === 'Bolts')?.[1]).toBe('156');
     expect(rows.slice(-2).map((r) => r[0])).toEqual(['Total steel', 'Per m² of floor']);
+  });
+
+  it('says the secondary steel by kind, each that the hall has (decision 275)', () => {
+    const s = { frames: 6, span: 20, length: 30, area: 600, eaves: 6, apex: 7.8, columns: 8, rafters: 12, posts: 0, weights: { column: 2950, rafter: 4620.4, haunch: 312.6, post: 0, purlin: 2788, rail: 1600, brace: 120.4, fly: 0, total: 12391 }, perArea: 20.65 };
+    const rows = summaryRows({ ...s, purlins: 80, rails: 86, braces: 12, flyBraces: 0, eavesBeams: 0 }, String);
+    expect(rows.find((r) => r[0] === 'Purlins')?.[1]).toBe('80 · 2.79 t');
+    expect(rows.find((r) => r[0] === 'Bracing')?.[1]).toBe('12 · 120 kg');
+    expect(rows.map((r) => r[0])).not.toContain('Fly braces');
+    expect(rows.map((r) => r[0])).not.toContain('Eaves beam');
+  });
+
+  it('offers cold-formed profiles for purlins and rails, round bars, angles and tubes for the bracing', () => {
+    const cat = [{ kind: 'I', name: 'IPE 400' }, { kind: 'Z', name: 'Z 200×65×2' }, { kind: 'C', name: 'C 150×50×2' }, { kind: 'L', name: 'L 60×60×6' }, { kind: 'CHS', name: 'CHS 60.3×3.2' }];
+    expect(secondaryProfiles('purlin', cat)).toEqual(['Z 200×65×2', 'C 150×50×2']);
+    expect(secondaryProfiles('brace', cat)).toEqual(['Ø16', 'Ø20', 'Ø24', 'Ø27', 'Ø30', 'L 60×60×6', 'CHS 60.3×3.2']);
+    // A round bar is kept as its section, named back by its diameter.
+    expect(secondaryValue('Ø20')).toEqual({ kind: 'circle', width: 0.02, depth: 0.02 });
+    expect(secondaryValue('L 60×60×6')).toBe('L 60×60×6');
+    expect(secondaryName({ kind: 'circle', width: 0.024, depth: 0.024 })).toBe('Ø24');
+    expect(secondaryName('Z 200×65×2')).toBe('Z 200×65×2');
   });
 });

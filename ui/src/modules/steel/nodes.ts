@@ -3,7 +3,7 @@
  * of connection shows, the bolts' sizes offered, and its parts and welds as the panel lists them.
  */
 
-export type NodeKind = 'base' | 'eaves' | 'apex' | 'splice' | 'post';
+export type NodeKind = 'base' | 'eaves' | 'apex' | 'splice' | 'post' | 'cleat' | 'gusset' | 'fly';
 
 /** A connection's parameters as the engine keeps them (each given, or left to the profiles: `NodeParams`). */
 export interface NodeParamsDto {
@@ -34,6 +34,10 @@ export function nodeFields(kind: NodeKind, base?: string): NodeField[] {
     case 'apex':
     case 'splice': return ['plate', 'bolt', 'grade', 'rows', 'cols', 'edge', 'pitch', 'gauge', 'extension'];
     case 'post': return ['plate', 'bolt', 'grade', 'rows', 'edge', 'pitch', 'gap'];
+    // The secondary steel's (decision 275): a cleat's plate and bolts, a gusset's and its bolts' spacing, a fly brace's bolts.
+    case 'cleat': return ['plate', 'bolt', 'grade'];
+    case 'gusset': return ['plate', 'bolt', 'grade', 'edge', 'pitch'];
+    case 'fly': return ['bolt', 'grade'];
   }
 }
 

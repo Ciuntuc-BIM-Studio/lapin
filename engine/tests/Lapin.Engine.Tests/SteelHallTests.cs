@@ -16,9 +16,12 @@ public class SteelHallTests
     static Fixture F() => new(new StructureModule(), new SteelModule(), new DraftingModule(), new StudioModule());
     static double Tan(double deg) => Math.Tan(deg * Math.PI / 180);
 
+    /// <summary>A hall as stage 2 and 3 built it: its secondary steel off (decision 275; SteelSecondaryTests).</summary>
     static string Hall(Fixture f, JsonObject? attrs = null, string? style = null)
     {
-        var a = new JsonObject { ["storeyId"] = f.Storey, ["attrs"] = attrs ?? [] };
+        var o = attrs ?? [];
+        if (!o.ContainsKey("secondary")) o["secondary"] = false;
+        var a = new JsonObject { ["storeyId"] = f.Storey, ["attrs"] = o };
         if (style != null) a["style"] = style;
         return (string)f.Run("steel.addHall", a)!["id"]!;
     }
@@ -277,7 +280,7 @@ public class SteelHallTests
     public void The_preview_weighs_what_the_hall_builds()
     {
         var f = F();
-        var p = (JsonObject)f.Session.Query("steel.hallPreview", new JsonObject { ["attrs"] = new JsonObject() })!;
+        var p = (JsonObject)f.Session.Query("steel.hallPreview", new JsonObject { ["attrs"] = new JsonObject { ["secondary"] = false } })!;
         Assert.Null(p["problem"]);
         var sum = p["summary"]!;
         Assert.Equal(6, (int)sum["frames"]!);

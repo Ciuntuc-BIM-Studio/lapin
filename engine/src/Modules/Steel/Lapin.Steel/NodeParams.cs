@@ -116,11 +116,15 @@ public sealed record NodeSpec(
         var bolt = p.Bolt ?? (basePlate
             ? fixedBase ? (h < 0.5 ? 0.024 : 0.03) : (h < 0.4 ? 0.02 : 0.024)
             : kind == "post" ? 0.016
+            : kind == "cleat" ? (h < 0.25 ? 0.012 : 0.016)
+            : kind == "gusset" ? (h < 0.07 ? 0.012 : 0.016)
+            : kind == "fly" ? 0.012
             : h < 0.3 ? 0.016 : h < 0.45 ? 0.02 : h < 0.6 ? 0.024 : 0.027);
         var hole = bolt + (bolt > 0.024 ? 0.003 : 0.002);
         var edge = p.Edge ?? Up5(1.5 * hole);
         var pitch = p.Pitch ?? Up5(Math.Max(3 * hole, 0.06));
-        var plate = p.Plate ?? (basePlate ? (fixedBase ? (h < 0.5 ? 0.03 : 0.04) : (h < 0.4 ? 0.02 : 0.025)) : kind == "post" ? 0.01 : Math.Max(0.012, Up5(bolt)));
+        var plate = p.Plate ?? (basePlate ? (fixedBase ? (h < 0.5 ? 0.03 : 0.04) : (h < 0.4 ? 0.02 : 0.025))
+            : kind is "post" or "gusset" ? 0.01 : kind == "cleat" ? (h < 0.25 ? 0.008 : 0.01) : kind == "fly" ? 0.006 : Math.Max(0.012, Up5(bolt)));
         var b = bolted.Width;
         var gauge = p.Gauge ?? Math.Clamp(Math.Round((b - 2 * edge) * 200) / 200, 0.07, 0.14);
         var anchors = p.Anchors ?? (fixedBase ? (h < 0.4 ? 4 : h < 0.6 ? 6 : 8) : h < 0.3 ? 2 : 4);

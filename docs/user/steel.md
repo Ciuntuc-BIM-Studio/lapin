@@ -1,7 +1,7 @@
 ---
 title: Steel
 order: 56
-summary: Steel members with configurable ends — extended or set back, cut by a plane, mitred, fitted to another member, coped — made from a drafted outline too; hollow and cold-formed sections; portal frame halls with haunches.
+summary: Steel members with configurable ends — extended or set back, cut by a plane, mitred, fitted to another member, coped — made from a drafted outline too; hollow and cold-formed sections; portal frame halls with haunches, their connections and their secondary steel.
 ---
 
 ## The Steel tab
@@ -65,7 +65,7 @@ Hollow sections are open inside, in the 3D view, the sections and the quantities
 
 ![A gable of posts](shots/steel-hall-gable.webp)
 
-- **Secondary steel**: the **Purlin spacing**, the **Side rail spacing**, the **Braced bays** (their numbers, from the first) and an **Eaves beam**. They are kept with the hall for the purlins, rails and bracing to come; they are not built yet.
+- **Secondary steel**: the purlins, side rails, bracing, eaves beam and fly braces (below).
 - **Placement**: where axis A and axis 1 cross, and the span's direction in plan (**Rotation**); the preview shows the hall's grid from above.
 
 **Create hall** makes it in one step, which one undo takes back: its own **grid** (axes 1, 2… at the frames, A and B at the columns), and at each frame two **columns** (the structure's columns of a steel profile, their web in the frame's plane, their top cut along the roof's slope) and two **rafters** mitred at the apex (one, from the low column to the high one, on a mono-pitch roof): steel members fitted to the columns' faces, with their haunches. The hall stands on the current storey; the eaves and the apex are heights of its frames, not new storeys. The summary gives the frames, the heights, and the steel by kind: columns, rafters, haunches, gable posts, in all and per m² of floor.
@@ -99,10 +99,30 @@ Select a connection to see it in Properties: the members it joins, every paramet
 
 Members drawn by hand get their connections from **Steel → Find connections**: a base under each vertical member, an eaves where a member is fitted to a column, a gable post's where a post is fitted under a member, an apex where two members are mitred with each other, a splice where two run in line end to end; for the selected members, or the whole model when nothing is selected. **Steel → Steel parts** makes the schedule of the connections' plates, bolts, anchors and welds. Deleting a connection gives its members their ends back; deleting a member takes its connections with it; **Delete hall** in the configurator takes the hall away with its members, connections and grid, in one step.
 
+## Secondary steel
+
+A hall comes with its **secondary steel** (Steel → Portal frame hall…, tab **Secondary steel**), built with it and again with it when it is changed, each member keeping its identity:
+
+![The Secondary steel tab](shots/steel-secondary-hall.webp)
+
+- **Secondary steel**: on or off for the whole hall.
+- **Purlins**: their **Profile** (the cold-formed Z, C and Σ, a channel or a light I), the **Purlin spacing** along the slope, how far they run **Past the gables**, and their **Lengths**: **one a bay** (frame to frame) or **continuous** (the hall's length). They stand on the rafters' top, their web square to the roof, from 150 mm inside the columns' face to 200 mm short of the apex, in as many lines as the spacing asks.
+- **Side rails**: their **Profile** and the **Side rail spacing**, from the **First rail at** up to under the eaves, one a bay on the columns' outer face, their web level and their toes down; on the gables, from post to post (or column to column of a gable frame), as high as the rafter over them lets. An **Eaves beam** takes the top of the long walls (its own **Profile**), the rails a spacing under it.
+- **Bracing**: the **Braced bays** (their numbers, from the first), the bars' **Profile** (round bars from Ø16 to Ø30, angles or tubes), and where: **In the roof** (an X in the roof's plane, under the rafters' top flange, in panels about as long as the bay) and **In the long walls** (an X in the walls' plane through the columns' axes, from the first rail's height to under the haunch).
+- **Fly braces**: from every second purlin and side rail down to the rafter's bottom flange and the column's inner flange, either side, clear of the haunches.
+
+![The secondary steel in 3D](shots/steel-secondary-3d.webp)
+
+Each purlin and rail sits on a **cleat** on every rafter, column or post it crosses: a plate welded to the member's face, beside the purlin's web (outside a C's, on the side of a Z away from its bottom flange), bolted through the web, two bolts a purlin end (M12 on a purlin up to 250 mm deep, M16 over). A corner post narrower than the columns gets a taller cleat, up to the rail. Each X sits on **gusset plates** welded to the rafters' or the columns' web, a diagonal on each face; an angle or a tube is bolted to it with two bolts, a round bar's threaded end takes its nut. A fly brace is bolted at both ends. They are connections like the frames': select one to see its plate and bolts in Properties, and change them there. The configurator's summary counts and weighs the purlins, rails, eaves beam, bracing and fly braces; the **Steel parts** schedule has their cleats, gussets and bolts.
+
+![A purlin on its cleat, a fly brace under it](shots/steel-secondary-cleat.webp)
+
+![The roof bracing on its gussets](shots/steel-secondary-bracing.webp)
+
 ## IFC and quantities
 
 A member exports as an **IfcMember** with its **IfcMemberType**. Its body is written as the other programs write steel (Tekla, Advance Steel, Revit): its section **extruded** (IfcExtrudedAreaSolid), **clipped** by its ends' planes (IfcBooleanClippingResult with IfcHalfSpaceSolid), and each cope an **IfcOpeningElement** voiding it. A steel beam or column with ends is written the same way. Each member's quantities give its length between its cuts, its section's area, its volume and its net weight (7850 kg/m³).
 
-A hall exports as an **IfcBuildingSystem** (LOADBEARING) its members are assigned to, its spec as the property set `Lapin_SteelHall`, with its own **IfcGrid**. A rafter with haunches is an **IfcElementAssembly** of the rafter and its haunches: a haunch cut from the section is an **IfcMember**, one welded from plates two **IfcPlate**s, each swept (IfcExtrudedAreaSolid). The haunches are left out of the rafter's own quantities; the configurator's summary weighs them.
+A hall exports as an **IfcBuildingSystem** (LOADBEARING) its members and connections are assigned to: its purlins **IfcMember** PURLIN, its bracing and fly braces BRACE, its side rails and eaves beam USERDEFINED (**Side rail**, **Eaves beam**); its spec as the property set `Lapin_SteelHall`, with its own **IfcGrid**. A rafter with haunches is an **IfcElementAssembly** of the rafter and its haunches: a haunch cut from the section is an **IfcMember**, one welded from plates two **IfcPlate**s, each swept (IfcExtrudedAreaSolid). The haunches are left out of the rafter's own quantities; the configurator's summary weighs them.
 
 A connection exports as an **IfcElementAssembly** of its plates (**IfcPlate**), bolts (**IfcMechanicalFastener** BOLT), anchors (ANCHORBOLT) and anchor plates (**IfcDiscreteAccessory** ANCHORPLATE), each with its size and grade in `Lapin_SteelPart`; it realizes the connection of the members it joins (**IfcRelConnectsWithRealizingElements**; a base, between the footing and its column). The welds are kept as data, not as bodies.

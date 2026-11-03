@@ -65,7 +65,7 @@ Hulprofiler er hule indvendigt, i 3D-visningen, i snittene og i mængderne. De k
 
 ![En gavl med søjler](shots/steel-hall-gable.webp)
 
-- **Sekundært stål**: **Åsafstanden**, **Afstanden mellem facaderigler**, de **Afstivede fag** (deres numre, fra det første) og en **Tagfodsbjælke**. De gemmes med hallen til de kommende åse, rigler og afstivninger; de bygges ikke endnu.
+- **Sekundært stål**: åsene, facadereglerne, afstivningen, tagfodsbjælken og kipstiverne (nedenfor).
 - **Placering**: hvor akse A og akse 1 krydser hinanden, og spændets retning i plan (**Rotation**); forhåndsvisningen viser hallens akser ovenfra.
 
 **Opret hal** laver den i ét trin, som én fortrydelse tager tilbage: dens egne **akser** (akse 1, 2… ved rammerne, A og B ved søjlerne), og ved hver ramme to **søjler** (konstruktionens søjler af et stålprofil, kroppen i rammens plan, toppen skåret efter tagets hældning) og to **spær** i gering ved kippen (ét, fra den lave søjle til den høje, ved ensidig hældning): stålstænger tilpasset søjlernes flader, med deres vouter. Hallen står på den aktuelle etage; tagfod og kip er højder i dens rammer, ikke nye etager. Oversigten giver rammerne, højderne og stålet efter art: søjler, spær, vouter, gavlsøjler, i alt og pr. m² gulv.
@@ -99,10 +99,30 @@ Vælg en samling for at se den i Egenskaber: de stænger, den samler, hver param
 
 Stænger tegnet i hånden får deres samlinger med **Steel → Find samlinger**: en fod under hver lodret stang, en tagfodssamling hvor en stang er tilpasset en søjle, en gavlsøjles hvor en søjle er tilpasset under en stang, en kipsamling hvor to stænger er geringsskåret med hinanden, et stød hvor to løber i forlængelse, ende mod ende; for de valgte stænger, eller hele modellen når intet er valgt. **Steel → Ståldele** laver listen over samlingernes plader, bolte, ankre og svejsninger. En slettet samling giver sine stænger deres ender tilbage; en slettet stang tager sine samlinger med; **Slet hal** i konfiguratoren fjerner hallen med dens stænger, samlinger og akser i ét trin.
 
+## Sekundært stål
+
+En hal kommer med sit **sekundære stål** (Steel → Portal frame hall…, fanen **Sekundært stål**), lavet med den og igen med den, når den ændres; hver stang beholder sin identitet:
+
+![Fanen Sekundært stål](shots/steel-secondary-hall.webp)
+
+- **Sekundært stål**: til eller fra for hele hallen.
+- **Åse**: deres **Profil** (koldformede Z, C og Σ, en U eller en let I), **Åsafstanden** langs taghældningen, hvor langt de går **Ud over gavlene**, og deres **Længder**: **én pr. fag** (fra ramme til ramme) eller **fuldt optrukket** (hele hallens længde). De ligger på spærenes overside med kroppen vinkelret på taget, fra 150 mm inden for søjlernes yderside til 200 mm fra kippen, i så mange rækker, som afstanden kræver.
+- **Facaderigler**: deres **Profil** og **Afstanden mellem facaderigler**, fra **Første rigel ved** op til under tagfoden, én pr. fag på søjlernes yderside, kroppen vandret og læberne nedad; på gavlene fra søjle til søjle (eller mellem en gavlrammes søjler), så højt som spæret over dem tillader. En **Tagfodsbjælke** tager toppen af langvæggene (med sin **Profil**), reglerne en afstand under den.
+- **Afstivning**: de **Afstivede fag** (deres numre, fra det første), stængernes **Profil** (rundstål Ø16 til Ø30, vinkler eller rør) og hvor: **I taget** (et X i tagets plan under spærenes overflange, i felter omtrent så lange som faget) og **I langvæggene** (et X i væggenes plan gennem søjlernes akser, fra den første rigels højde til under vouten).
+- **Kipstivere**: fra hver anden ås og facaderigel ned til spærets underflange og søjlens indre flange, på begge sider, uden for vouterne.
+
+![Det sekundære stål i 3D](shots/steel-secondary-3d.webp)
+
+Hver ås og rigel sidder på en **åseholder** på hvert spær, hver søjle eller gavlsøjle den krydser: en plade svejst på stangens flade ved siden af åsens krop (uden for kroppen på en C, på den side af en Z, der vender væk fra dens underflange), boltet gennem kroppen, to bolte pr. åseende (M12 op til 250 mm højde, M16 derover). En hjørnesøjle, der er smallere end søjlerne, får en højere åseholder op til riglen. Hvert X sidder på **knudeplader** svejst på spærenes eller søjlernes krop, en diagonal på hver side; en vinkel eller et rør boltes med to bolte, rundstålets gevindende tager sin møtrik. En kipstiver er boltet i begge ender. De er samlinger som rammernes: vælg en for at se dens plade og bolte i Egenskaber og ændre dem dér. Konfiguratorens oversigt tæller og vejer åse, regler, tagfodsbjælke, afstivning og kipstivere; listen **Steel parts** har deres åseholdere, knudeplader og bolte.
+
+![En ås på sin åseholder, en kipstiver under den](shots/steel-secondary-cleat.webp)
+
+![Tagafstivningen på sine knudeplader](shots/steel-secondary-bracing.webp)
+
 ## IFC og mængder
 
 En stang eksporteres som **IfcMember** med sin **IfcMemberType**. Dens legeme skrives, som de andre programmer skriver stål (Tekla, Advance Steel, Revit): dens profil **ekstruderet** (IfcExtrudedAreaSolid), **beskåret** af endernes planer (IfcBooleanClippingResult med IfcHalfSpaceSolid), og hver udklinkning et **IfcOpeningElement**, der skærer den ud. En stålbjælke eller -søjle med ender skrives på samme måde. Hver stangs mængder giver dens længde mellem snittene, profilets areal, dens volumen og dens nettovægt (7850 kg/m³).
 
-En hal eksporteres som et **IfcBuildingSystem** (LOADBEARING), som dens stænger er tildelt, med dens data i egenskabssættet `Lapin_SteelHall` og sit eget **IfcGrid**. Et spær med vouter er en **IfcElementAssembly** af spæret og dets vouter: en voute skåret af profilet er en **IfcMember**, en svejst af plader to **IfcPlate**, hver ekstruderet (IfcExtrudedAreaSolid). Vouterne tælles ikke med i spærets mængder; konfiguratorens oversigt vejer dem.
+En hal eksporteres som et **IfcBuildingSystem** (LOADBEARING), som dens stænger er tildelt, med dens data i egenskabssættet `Lapin_SteelHall` og sit eget **IfcGrid**. Et spær med vouter er en **IfcElementAssembly** af spæret og dets vouter: en voute skåret af profilet er en **IfcMember**, en svejst af plader to **IfcPlate**, hver ekstruderet (IfcExtrudedAreaSolid). Vouterne tælles ikke med i spærets mængder; konfiguratorens oversigt vejer dem. Åsene eksporteres som **IfcMember** PURLIN, afstivning og kipstivere som BRACE, facaderegler og tagfodsbjælke som USERDEFINED (**Side rail**, **Eaves beam**), alle tildelt hallens system med deres samlinger.
 
 En samling eksporteres som en **IfcElementAssembly** af dens plader (**IfcPlate**), bolte (**IfcMechanicalFastener** BOLT), ankre (ANCHORBOLT) og ankerplader (**IfcDiscreteAccessory** ANCHORPLATE), hver med størrelse og klasse i `Lapin_SteelPart`; den realiserer forbindelsen mellem de stænger, den samler (**IfcRelConnectsWithRealizingElements**; en fod, mellem fundamentet og dens søjle). Svejsningerne forbliver data, ikke legemer.

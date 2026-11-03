@@ -31,11 +31,15 @@ public static class SteelNodes
     public const string Class = "LapinSteelNode";
     /// <summary>The key a hall's connection keeps its place in the hall under ("eaves@f1:raf:a@start"): its members' roles.</summary>
     public const string RoleKey = "hallNode";
-    public static readonly string[] Kinds = ["base", "eaves", "apex", "splice", "post"];
+    public static readonly string[] Kinds = ["base", "eaves", "apex", "splice", "post", "cleat", "gusset", "fly"];
+
+    /// <summary>The kinds of the secondary steel (decision 275): they write no setbacks; their first member is the one they are fixed to.</summary>
+    public static readonly string[] SecondaryKinds = ["cleat", "gusset", "fly"];
 
     public static string Label(string kind) => kind switch
     {
-        "base" => "Column base", "eaves" => "Eaves connection", "apex" => "Apex connection", "splice" => "Splice", _ => "Gable post connection",
+        "base" => "Column base", "eaves" => "Eaves connection", "apex" => "Apex connection", "splice" => "Splice", "cleat" => "Cleat",
+        "gusset" => "Gusset plate", "fly" => "Fly brace connection", _ => "Gable post connection",
     };
 
     /// <summary>A member a connection joins: its id, and the end of it that comes there (null: joined along its side).</summary>
@@ -65,7 +69,10 @@ public static class SteelNodes
     public static NodeSpec Spec(IModelView m, Entity node)
     {
         var kind = KindOf(node);
-        var section = Bolted(MembersOf(node)) is { } j && m.Get(j.Id) is { } e && MemberAxes.Of(m, e) is { } ax ? ax.Section : Section.Catalogue["IPE 300"];
+        var js = MembersOf(node);
+        // A secondary connection's bolts are chosen by what is fixed (a purlin, a brace), not by what it is fixed to.
+        var bolted = SecondaryKinds.Contains(kind) ? js.Skip(1).FirstOrDefault() : Bolted(js);
+        var section = bolted is { } j && m.Get(j.Id) is { } e && MemberAxes.Of(m, e) is { } ax ? ax.Section : Section.Catalogue["IPE 300"];
         return NodeSpec.Resolve(kind, section, ParamsOf(node));
     }
 
@@ -107,6 +114,7 @@ public static class SteelNodes
     /// </summary>
     public static void Apply(IEdit edit, Entity node)
     {
+        if (SecondaryKinds.Contains(KindOf(node))) return;
         var spec = Spec(edit.Model, node);
         var ext = KindOf(node) == "post" ? -spec.Gap : -spec.Plate;
         foreach (var j in MembersOf(node)) if (j.End != null) SetExtension(edit, j.Id, j.End, ext);
@@ -115,6 +123,7 @@ public static class SteelNodes
     /// <summary>The setbacks the connection wrote taken back (it is going).</summary>
     public static void Release(IEdit edit, Entity node)
     {
+        if (SecondaryKinds.Contains(KindOf(node))) return;
         foreach (var j in MembersOf(node)) if (j.End != null) SetExtension(edit, j.Id, j.End, 0);
     }
 
@@ -284,6 +293,9 @@ public static class SteelNodes
                 case "eaves": rows = Eaves(m, js, spec, parts, welds, problems); break;
                 case "apex" or "splice": rows = EndToEnd(m, js, spec, parts, welds, problems); break;
                 case "post": rows = Post(m, js, spec, parts, welds, problems); break;
+                case "cleat": rows = Cleat(m, js, spec, parts, welds, problems); break;
+                case "gusset": rows = Gusset(m, node, js, spec, parts, welds, problems); break;
+                case "fly": rows = Fly(m, js, spec, parts, problems); break;
             }
         return new Built(parts.List, welds, problems, footing, spec, rows, parts.Plan);
     }
@@ -543,6 +555,161 @@ public static class SteelNodes
         for (var k = 0; k < rows; k++)
             parts.Bolt(ax.At(new Vec2(tw / 2 + fin, 0), top - spec.Gap - spec.Edge - k * spec.Pitch), -ax.Frame.V, fin + tw);
         return rows;
+    }
+
+    // ------------------------------------------------------------ secondary steel (decision 275)
+
+    /// <summary>Where two axes come closest: the station along each (metres from their starts); null when they run parallel.</summary>
+    static (double A, double B)? Closest(MemberAxis a, MemberAxis b)
+    {
+        var r = a.Start - b.Start;
+        double ab = Vec3.Dot(a.U, b.U), ar = Vec3.Dot(a.U, r), br = Vec3.Dot(b.U, r);
+        var den = 1 - ab * ab;
+        if (den < 1e-9) return null;
+        return ((ab * br - ar) / den, (br - ab * ar) / den);
+    }
+
+    /// <summary>How far a member's section box reaches along a direction from its axis at a station (its outermost corner).</summary>
+    static double Reach(MemberAxis ax, double station, Vec3 dir, Vec3 from)
+    {
+        var (outline, _) = ax.Profile;
+        double x0 = outline.Min(p => p.X), x1 = outline.Max(p => p.X), y0 = outline.Min(p => p.Y), y1 = outline.Max(p => p.Y);
+        return new[] { new Vec2(x0, y0), new Vec2(x1, y0), new Vec2(x1, y1), new Vec2(x0, y1) }.Max(c => Vec3.Dot(ax.At(c, station) - from, dir));
+    }
+
+    static bool ColdFormed(Section s) => s.Kind is "C" or "Z" or "SIGMA";
+
+    /// <summary>
+    /// A cleat: what runs over a rafter or a column's face (purlins, side rails, an eaves beam) fixed to it. A cold-formed
+    /// section on a plate welded to the host's face, square to the member and beside its web (outside a channel's, on the side
+    /// of a Z away from its bottom flange), as tall as 60 % of the section, as wide as the host's flange; bolted through the
+    /// web, two bolts a member end (either side for one that runs through), in one or two rows. Any other section bolted
+    /// through its bottom flange to the host's.
+    /// </summary>
+    static int Cleat(IModelView m, List<Joined> js, NodeSpec spec, Parts parts, List<Weld> welds, List<string> problems)
+    {
+        if (js.Count < 2 || Member(m, js[0].Id) is not var (hax, _, _)) { problems.Add("A cleat fixes a purlin or a rail to the member it runs over."); return 0; }
+        var rows = 0;
+        var first = true;
+        foreach (var j in js.Skip(1))
+        {
+            if (Member(m, j.Id) is not var (ax, _, _)) continue;
+            if (Closest(ax, hax) is not var (st, hst)) { problems.Add("A cleat's member runs along the one it is fixed to."); continue; }
+            var sec = ax.Section;
+            var (_, w) = ax.Frame;
+            var y0 = -sec.Depth / 2;
+            var bottom = ax.At(new Vec2(0, y0), st);
+            // The gap from the member's face down to the host's (a corner post narrower than the columns).
+            var gap = Math.Max(0, -Reach(hax, hst, w, bottom));
+            var stations = j.End switch { "end" => new[] { st - 0.04 }, "start" => [st + 0.04], _ => [st - 0.04, st + 0.04] };
+            var hostWidth = Math.Max(0.08, hax.Section.Width);
+            if (ColdFormed(sec))
+            {
+                var t = sec.Web;
+                var webX = HallSecondary.WebX(ax);
+                // The cleat's side: outside a channel's web, away from a Z's bottom flange.
+                var side = sec.Kind == "Z" ? (ax.Flipped ? -1 : 1) : Math.Sign(webX) is 0 ? -1 : Math.Sign(webX);
+                var xIn = webX + side * t / 2;
+                var xOut = xIn + side * spec.Plate;
+                var hc = Up10(Math.Max(0.08, 0.6 * sec.Depth));
+                if (first)
+                {
+                    var (a, b) = (st - hostWidth / 2, st + hostWidth / 2);
+                    IReadOnlyList<Vec2> q = [new(Math.Min(xIn, xOut), y0 - gap), new(Math.Max(xIn, xOut), y0 - gap), new(Math.Max(xIn, xOut), y0 + hc), new(Math.Min(xIn, xOut), y0 + hc)];
+                    parts.Plate("Cleat", Prism.Extrude(q.Select(p => ax.At(p, a)).ToList(), null, ax.U * (b - a), "cleat"), spec.Plate, hostWidth, hc + gap, plan: false);
+                    welds.Add(new Weld("Cleat to member", Throat(spec.Plate), 2 * hostWidth));
+                    first = false;
+                }
+                var ys = hc >= 0.1 ? new[] { y0 + 0.35 * hc, y0 + 0.75 * hc } : [y0 + 0.5 * hc];
+                rows = Math.Max(rows, ys.Length);
+                var (v, _) = ax.Frame;
+                foreach (var sb in stations)
+                    foreach (var y in ys)
+                        parts.Bolt(ax.At(new Vec2(xOut, y), sb), v * -side, spec.Plate + t);
+            }
+            else
+            {
+                // Bolted down through its bottom flange and the host's.
+                var tf = sec.Flange > 0 ? sec.Flange : sec.Web;
+                var htf = hax.Section.Flange > 0 ? hax.Section.Flange : hax.Section.Web;
+                rows = 1;
+                foreach (var sb in stations)
+                    foreach (var x in new[] { -sec.Width / 4, sec.Width / 4 })
+                        parts.Bolt(ax.At(new Vec2(x, y0 + tf), sb), -w, tf + gap + htf);
+            }
+        }
+        return rows;
+    }
+
+    /// <summary>
+    /// A gusset plate: where bracing comes to a rafter or a column, a plate in the bracing's plane (a depth under the host's
+    /// axis, kept on the connection), welded to the host's web (or its flange, when the plane is its web's) and reaching into
+    /// the bay; each diagonal on one face of it, bolted through it near its end (two bolts an angle or a tube; a round bar's
+    /// threaded end takes its nut, not modelled).
+    /// </summary>
+    static int Gusset(IModelView m, Entity node, List<Joined> js, NodeSpec spec, Parts parts, List<Weld> welds, List<string> problems)
+    {
+        if (js.Count < 2 || Member(m, js[0].Id) is not var (hax, _, _)) { problems.Add("A gusset joins bracing to the member it comes to."); return 0; }
+        var braces = js.Skip(1).Where(j => j.End != null).Select(j => (J: j, M: Member(m, j.Id))).Where(x => x.M != null).Select(x => (x.J, x.M!.Value.Ax, x.M.Value.E)).ToList();
+        if (braces.Count == 0) { problems.Add("A gusset has no bracing coming to it."); return 0; }
+        var depth = node.Num("depth");
+        // Where on the host: the stations of the braces' ends, as they come to it; the bay's way: theirs, square to the host.
+        var ends = braces.Select(b => b.J.End == "end" ? b.Ax.End : b.Ax.Start).ToList();
+        var st = ends.Average(p => Vec3.Dot(p - hax.Start, hax.U));
+        var into = braces.Select(b => b.J.End == "end" ? -b.Ax.U : b.Ax.U).Aggregate(Vec3.Zero, (a, b) => a + b);
+        var d = into - hax.U * Vec3.Dot(into, hax.U);
+        if (d.Length < 1e-6) { problems.Add("The bracing runs along the member it comes to."); return 0; }
+        d = d.Normalized();
+        var (hv, hw) = hax.Frame;
+        var n = Vec3.Cross(hax.U, d).Normalized();
+        var c = hax.At(new Vec2(0, hax.Insertion switch { "top" => hax.Section.Depth / 2, "bottom" => -hax.Section.Depth / 2, _ => 0 }), st) - hw * depth;
+        // From the host's web (when the bay lies across it) or its flange (when it lies along the section's depth).
+        var hs = hax.Section;
+        var start = Math.Abs(Vec3.Dot(d, hv)) >= Math.Abs(Vec3.Dot(d, hw)) ? (hs.Web > 0 ? hs.Web : 0.01) / 2 : hs.Depth / 2;
+        var reach = Up10(Math.Max(0.2, start + 0.18));
+        var width = 0.3;
+        var t = spec.Plate;
+        IReadOnlyList<Vec3> q = [c + d * start - hax.U * (width / 2) - n * (t / 2), c + d * reach - hax.U * (width / 2) - n * (t / 2), c + d * reach + hax.U * (width / 2) - n * (t / 2), c + d * start + hax.U * (width / 2) - n * (t / 2)];
+        parts.Plate("Gusset plate", Prism.Extrude(q, null, n * t, "gusset"), t, reach - start, width, plan: false);
+        welds.Add(new Weld("Gusset to member", Throat(t), 2 * width));
+        var rows = 0;
+        foreach (var (j, ax, _) in braces)
+        {
+            var sec = ax.Section;
+            if (sec.Kind == "circle") continue;
+            var tb = sec.Kind == "L" ? sec.Flange : sec.Web > 0 ? sec.Web : 0.004;
+            var atEnd = j.End == "end";
+            var way = atEnd ? -ax.U : ax.U;
+            var (s0, s1) = SteelEnd.Of(m.Get(j.Id)!);
+            var set = -(atEnd ? s1 : s0).Extension;
+            var tip = (atEnd ? ax.End : ax.Start) + way * set;
+            var side = Math.Sign(Vec3.Dot(n, tip - c)) is 0 ? 1 : Math.Sign(Vec3.Dot(n, tip - c));
+            rows = Math.Max(rows, 2);
+            for (var k = 0; k < 2; k++)
+            {
+                var p = tip + way * (spec.Edge + k * spec.Pitch);
+                var onPlane = p - n * Vec3.Dot(n, p - c);
+                parts.Bolt(onPlane + n * (side * (t / 2 + tb)), n * -side, t + tb);
+            }
+        }
+        return rows;
+    }
+
+    /// <summary>A fly brace's bolts: one through the purlin's (or rail's) web at its top, one through the rafter's (or column's) flange at its foot.</summary>
+    static int Fly(IModelView m, List<Joined> js, NodeSpec spec, Parts parts, List<string> problems)
+    {
+        if (js.Count < 3 || Member(m, js[0].Id) is not var (hax, _, _) || Member(m, js[1].Id) is not var (pax, _, _) || Member(m, js[2].Id) is not var (fax, _, _))
+        { problems.Add("A fly brace's connection joins the brace, the purlin or rail it hangs from and the member it holds."); return 0; }
+        var tfly = fax.Section.Flange > 0 ? fax.Section.Flange : 0.005;
+        var (pv, _) = pax.Frame;
+        var side = Math.Sign(Vec3.Dot(pv, fax.End - fax.Start)) is 0 ? 1 : Math.Sign(Vec3.Dot(pv, fax.End - fax.Start));
+        var pt = pax.Section.Web > 0 ? pax.Section.Web : 0.002;
+        parts.Bolt(fax.Start - pv * (side * (pt / 2 + tfly)), pv * side, pt + tfly);
+        var (_, hw) = hax.Frame;
+        var htf = hax.Section.Flange > 0 ? hax.Section.Flange : hax.Section.Web;
+        var up = Math.Sign(Vec3.Dot(hw, fax.Start - fax.End)) is 0 ? 1 : Math.Sign(Vec3.Dot(hw, fax.Start - fax.End));
+        parts.Bolt(fax.End + hw * (up * (htf / 2 + tfly)), hw * -up, htf + tfly);
+        return 1;
     }
 
     // ------------------------------------------------------------ info

@@ -653,7 +653,7 @@ export const scenes = [
       await t.shot('steel-hall-haunches', { of: '.dialog', pad: 0 });
       await dialog.locator('[data-tab=hall-gables]').click();
       await t.wait(800);
-      t.expect(await dialog.locator('svg[data-field=hall-elevation] polygon').count() === 7, 'the Gables tab draws the gable: five posts under two rafters');
+      t.expect(await dialog.locator('svg[data-field=hall-elevation] polygon[data-role=post]').count() === 5, 'the Gables tab draws the gable: five posts under two rafters');
       await t.shot('steel-hall-gable', { of: '.dialog', pad: 0 });
       await dialog.locator('[data-tab=hall-placement]').click();
       await t.wait(800);
@@ -663,7 +663,7 @@ export const scenes = [
       let nodes = await t.nodes();
       const hall = nodes.find((n) => n.type === 'LapinSteelHall');
       t.expect(hall, 'the hall is made');
-      const members = nodes.filter((n) => n.props?.hallRole);
+      const members = nodes.filter((n) => /^f\d/.test(n.props?.hallRole ?? ''));
       t.expect(members.length === 30, `its frames, gables and posts (${members.length})`);
       const rafter = members.find((n) => n.props.hallRole === 'f1:raf:a');
       t.expect(rafter?.props.haunches?.start?.kind === 'plates' && rafter?.props.haunches?.end?.kind === 'cut', 'the eaves haunch welded from plates, the apex one cut from the rafter');
@@ -714,7 +714,7 @@ export const scenes = [
       await dialog.locator('[data-field=hall-apply]').click();
       await t.wait(3000);
       const nodes = await t.nodes();
-      const conns = nodes.filter((n) => n.type === 'LapinSteelNode');
+      const conns = nodes.filter((n) => n.type === 'LapinSteelNode' && ['base', 'eaves', 'apex', 'post'].includes(n.props.kind));
       t.expect(conns.length === 42, `the hall's connections: bases, eaves, apexes, gable posts (${conns.length})`);
       const eaves = conns.find((n) => n.props.hallNode === 'eaves@f1:raf:a@start');
       const base = conns.find((n) => n.props.hallNode === 'base@f1:col:a@start');
@@ -739,6 +739,55 @@ export const scenes = [
       const after = (await t.nodes()).find((n) => n.id === eaves.id);
       t.expect(after?.props.params?.cols === 4 && after?.props.own === true, 'four bolts a row, set on the connection itself');
       await t.shot('steel-nodes-props', { of: 'aside.props', pad: 0, maxHeight: 760 });
+      await t.ui({ dialog: null, selection: null, selected: [], keyPlan: true });
+    },
+  },
+  {
+    // Steel, stage 4 (docs/plan-steel.md, decision 275): the hall's secondary steel — the Secondary steel tab (an eaves beam,
+    // bays 1 and 5 braced with angles), the plan of the preview with the bracing; the hall in 3D with its purlins, side rails
+    // and bracing; a purlin's cleat with a fly brace, and the bracing's gussets, close up.
+    id: 'steel-secondary',
+    async run(t) {
+      await t.fresh();
+      await t.button('Steel', { exact: true });
+      await t.tool('steel.hall');
+      const dialog = t.page.locator('[data-dialog=steel-hall]');
+      await dialog.locator('[data-field=hall-style-hall-20]').click();
+      await t.wait(1200);
+      await dialog.locator('[data-tab=hall-secondary]').click();
+      await dialog.locator('input[data-field=hall-eavesBeam]').check();
+      const bracing = dialog.locator('input[data-field=hall-bracing]');
+      await bracing.fill('1, 5');
+      await bracing.press('Tab');
+      await dialog.locator('select[data-field=hall-brace]').selectOption('L 60×60×6');
+      await t.wait(2500);
+      t.expect(await dialog.locator('svg[data-field=hall-plan] polygon[data-role=brace]').count() >= 16, 'the plan shows the roof bracing of both braced bays');
+      t.expect(await dialog.locator('svg[data-field=hall-plan] polygon[data-role=purlin]').count() >= 80, 'and the purlins');
+      t.expect(await dialog.locator('[data-field=hall-summary] dt').count() >= 15, 'the summary weighs the purlins, rails, eaves beam, bracing and fly braces');
+      await t.shot('steel-secondary-hall', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-field=hall-apply]').click();
+      await t.wait(5000);
+      const nodes = await t.nodes();
+      const role = (p) => nodes.filter((n) => (n.props?.hallRole ?? '').startsWith(p));
+      t.expect(role('pur:').length === 80, `80 purlins, one a bay (${role('pur:').length})`);
+      t.expect(role('rbr:').length === 16 && role('wbr:').length === 8, `the bracing of bays 1 and 5 (${role('rbr:').length}, ${role('wbr:').length})`);
+      t.expect(role('eb:').length === 10, 'an eaves beam on each long wall');
+      const cleats = nodes.filter((n) => n.type === 'LapinSteelNode' && n.props.kind === 'cleat');
+      t.expect(cleats.length > 200, `every purlin and rail on its cleats (${cleats.length})`);
+      await t.ui({ dialog: null, keyPlan: false });
+      await open3d(t);
+      const orbit = (view) => t.page.evaluate(async (v) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo(v, false), view);
+      await orbit({ azimuth: -2.3, pitch: -0.45, distance: 50, target: { x: 10, y: 15, z: 3 } });
+      await t.wait(2500);
+      await t.shot('steel-secondary-3d', { of: 'canvas', pad: 0 });
+      // A purlin on its cleat over the rafter of frame 3, a fly brace down to the rafter's bottom flange.
+      await orbit({ azimuth: 0.8, pitch: -0.35, distance: 2.4, target: { x: 4.4, y: 12, z: 6.5 } });
+      await t.wait(2000);
+      await t.shot('steel-secondary-cleat', { of: 'canvas', pad: 0 });
+      // The roof bracing's gussets at a rafter of the first braced bay.
+      await orbit({ azimuth: -0.5, pitch: 0.55, distance: 4, target: { x: 5, y: 0.8, z: 5.9 } });
+      await t.wait(2000);
+      await t.shot('steel-secondary-bracing', { of: 'canvas', pad: 0 });
       await t.ui({ dialog: null, selection: null, selected: [], keyPlan: true });
     },
   },

@@ -28,8 +28,11 @@ public static class Halls
     /// <summary>How far the grid's axes run past the hall.</summary>
     const double AxisOverrun = 1.5;
 
-    /// <summary>A member a hall plans: its role, what it is (column, rafter or post) and its entity's attributes but the ends.</summary>
-    sealed record Planned(string Role, string Kind, string Class, Section Section, JsonObject Attrs, string Predefined);
+    /// <summary>
+    /// A member a hall plans: its role, what it is (column, rafter, post; purlin, rail, eaves, brace, fly) and its entity's
+    /// attributes but the ends, which a frame's member takes from its role and a secondary one is planned with.
+    /// </summary>
+    internal sealed record Planned(string Role, string Kind, string Class, Section Section, JsonObject Attrs, string Predefined, (SteelEnd Start, SteelEnd End)? OwnEnds = null);
 
     /// <summary>The members a hall is made of (its own, by their role).</summary>
     public static Dictionary<string, Entity> Members(IModelView m, string hallId)
@@ -82,7 +85,7 @@ public static class Halls
             var key = p.Section.ToJson();
             t = p.Class == IfcClass.Column
                 ? edit.Model.OfClass(IfcClass.ColumnType).FirstOrDefault(x => JsonNode.DeepEquals(x.Attrs["section"], key) || Section.From(x.Attrs["section"]) == p.Section) ?? Columns.CreateType(edit, null, p.Section, null, "Steel")
-                : edit.Model.OfClass(SteelModule.MemberType).FirstOrDefault(x => JsonNode.DeepEquals(x.Attrs["section"], key) || Section.From(x.Attrs["section"]) == p.Section) ?? SteelModule.CreateType(edit, null, p.Section);
+                : edit.Model.OfClass(SteelModule.MemberType).FirstOrDefault(x => JsonNode.DeepEquals(x.Attrs["section"], key) || Section.From(x.Attrs["section"]) == p.Section) ?? SteelModule.CreateType(edit, null, p.Section, "Steel");
             return types[(p.Class, p.Section)] = t;
         }
         foreach (var p in plan)
@@ -90,7 +93,7 @@ public static class Halls
             var id = ids[p.Role];
             var attrs = (JsonObject)p.Attrs.DeepClone();
             attrs[RoleKey] = p.Role;
-            var (start, end) = Ends(s, p.Role, ids);
+            var (start, end) = p.OwnEnds ?? Ends(s, p.Role, ids);
             attrs[SteelEnd.Key] = SteelEnd.Json2(start, end);
             if (p.Kind == "rafter" && HaunchesOf(s, p.Role) is { } planned)
             {
@@ -118,8 +121,8 @@ public static class Halls
         Grid(edit, hall, s);
     }
 
-    /// <summary>A connection a hall plans: its place, kind, members (by role, with their ends) and the hall's parameters for it.</summary>
-    sealed record PlannedNode(string Role, string Kind, List<(string Role, string? End)> Members, NodeParams Params);
+    /// <summary>A connection a hall plans: its place, kind, members (by role, with their ends), the hall's parameters for it and what else it keeps (a gusset's depth).</summary>
+    internal sealed record PlannedNode(string Role, string Kind, List<(string Role, string? End)> Members, NodeParams Params, JsonObject? Extra = null);
 
     /// <summary>
     /// The connections of a hall's frames (decision 273): a base under every column and post (a post's pinned), an eaves
@@ -130,6 +133,8 @@ public static class Halls
     {
         var o = new List<PlannedNode>();
         if (!s.Nodes) return o;
+        // The secondary steel's connections (decision 275): its cleats, gussets and fly braces' bolts.
+        o.AddRange(HallSecondary.Plan(s).Nodes);
         var baseParams = new NodeParams(Base: s.Base, Anchor: s.Anchor).Over(s.NodeParamsOf("base"));
         var postBase = new NodeParams(Base: "pinned", Anchor: s.Anchor, AnchorLength: s.NodeParamsOf("base").AnchorLength, Grout: s.NodeParamsOf("base").Grout);
         var roles = members.Select(p => p.Role).ToHashSet();
@@ -180,6 +185,8 @@ public static class Halls
         var keep = new HashSet<string>();
         foreach (var p in PlanNodes(s, members))
         {
+            // A connection whose members are not all planned (a fly brace's purlin past a gable) is not made.
+            if (p.Members.Any(x => !ids.ContainsKey(x.Role))) continue;
             var joined = new JsonArray([.. p.Members.Select(x => (JsonNode)new SteelNodes.Joined(ids[x.Role], x.End).ToJson())]);
             var label = SteelNodes.Label(p.Kind);
             Entity node;
@@ -190,16 +197,19 @@ public static class Halls
                 attrs["objectType"] = label;
                 attrs["members"] = joined;
                 if (!was.Bool("own")) attrs["params"] = p.Params.ToJson();
+                if (p.Extra != null) foreach (var (k, v) in p.Extra) attrs[k] = v?.DeepClone();
                 node = was.With(attrs: attrs);
                 edit.Replace(node);
                 if (Spatial.StoreyOf(edit.Model, node.Id)?.Id != storey.Id) Spatial.Contain(edit, storey.Id, node.Id);
             }
             else
             {
-                node = new Entity(edit.NewId(), SteelNodes.Class, label, new JsonObject
+                var attrs = new JsonObject
                 {
                     ["exportAs"] = "IfcElementAssembly", ["objectType"] = label, ["kind"] = p.Kind, ["members"] = joined, ["params"] = p.Params.ToJson(), [SteelNodes.RoleKey] = p.Role,
-                }, "USERDEFINED");
+                };
+                if (p.Extra != null) foreach (var (k, v) in p.Extra) attrs[k] = v?.DeepClone();
+                node = new Entity(edit.NewId(), SteelNodes.Class, label, attrs, "USERDEFINED");
                 edit.Add(node);
                 Spatial.Contain(edit, storey.Id, node.Id);
                 edit.Relate(IfcClass.RelAggregates, hall.Id, node.Id);
@@ -245,6 +255,8 @@ public static class Halls
                 o.AddRange(Rafters(s, f, y, s.GableRafter, "rafter"));
             }
         }
+        // The secondary steel (decision 275): purlins, rails, the eaves beam, bracing, fly braces.
+        o.AddRange(HallSecondary.Plan(s).Members);
         return o;
     }
 
@@ -382,8 +394,9 @@ public static class Halls
         });
         var m = (IModelView)store;
         var members = Members(m, hall!.Id);
-        var weights = new Dictionary<string, double> { ["column"] = 0, ["rafter"] = 0, ["haunch"] = 0, ["post"] = 0 };
-        var counts = new Dictionary<string, int> { ["column"] = 0, ["rafter"] = 0, ["post"] = 0 };
+        string[] kinds = ["column", "rafter", "haunch", "post", "purlin", "rail", "eaves", "brace", "fly"];
+        var weights = kinds.ToDictionary(k => k, _ => 0.0);
+        var counts = kinds.ToDictionary(k => k, _ => 0);
         var problems = new List<string>();
         var typical = s.Bays.Count >= 2 ? 1 : 0;
         var frame = new JsonArray();
@@ -391,33 +404,36 @@ public static class Halls
         var plan = new JsonArray();
         foreach (var (role, e) in members.OrderBy(x => x.Key, StringComparer.Ordinal))
         {
-            var bits = role.Split(':');
-            var fi = int.Parse(bits[0][1..]);
-            var isGable = s.Gable == "posts" && (fi == 0 || fi == s.Bays.Count);
-            var kind = bits[1] == "raf" ? "rafter" : isGable ? "post" : "column";
+            var kind = KindOfRole(s, role);
             counts[kind]++;
+            var fi = FrameOf(role);
+            // Seen along the hall: a typical frame's own members, the purlins and rails of its first bay (their sections), its fly braces; a gable's rails.
+            var inFrame = fi == typical || (kind is "purlin" or "rail" or "eaves" && !role.StartsWith("grail", StringComparison.Ordinal) && BayOf(role) is null or 1);
+            var inGable = (fi == 0 && IsGable(s, "f0")) || role.StartsWith("grail:0:", StringComparison.Ordinal);
             foreach (var (part, solid) in Solids(m, e, problems))
             {
                 var k = part == "haunch" ? "haunch" : kind;
                 weights[k] += Measure.Volume(solid) * SteelModule.SteelDensity;
-                if (fi == typical) frame.Add((JsonNode)Item(k, solid.Vertices.Select(v => new Vec2(v.X, v.Z))));
-                if (isGable && fi == 0) gable.Add((JsonNode)Item(k, solid.Vertices.Select(v => new Vec2(v.X, v.Z))));
-                if (part != "haunch") plan.Add((JsonNode)Item(k, solid.Vertices.Select(v => v.Xy)));
+                if (inFrame && kind != "brace") frame.Add((JsonNode)Item(k, solid.Vertices.Select(v => new Vec2(v.X, v.Z))));
+                if (inGable && kind is not ("brace" or "fly" or "purlin")) gable.Add((JsonNode)Item(k, solid.Vertices.Select(v => new Vec2(v.X, v.Z))));
+                if (part != "haunch" && kind is not ("fly" or "rail")) plan.Add((JsonNode)Item(k, solid.Vertices.Select(v => v.Xy)));
             }
         }
         // The connections: their parts weighed and counted, a typical frame's drawn over it.
         var frameNodes = new JsonArray();
         var (nodeCount, plates, bolts, anchors, nodeKg) = (0, 0, 0, 0, 0.0);
+        var byId = members.ToDictionary(x => x.Value.Id, x => x.Key);
         foreach (var (role, node) in Nodes(m, hall.Id))
         {
             nodeCount++;
             var built = SteelNodes.Build(m, node);
-            var fi = int.Parse(role.Split('@')[1].Split(':')[0][1..]);
+            var host = SteelNodes.MembersOf(node).Select(j => byId.GetValueOrDefault(j.Id)).FirstOrDefault(r => r != null && FrameOf(r) != null);
+            var drawn = host != null && FrameOf(host) == typical && SteelNodes.KindOf(node) != "gusset";
             foreach (var part in built.Parts)
             {
                 nodeKg += Measure.Volume(part.Solid) * SteelModule.SteelDensity;
                 switch (SteelNodes.P(part.Properties ?? [], "Part")) { case "Plate" or "Anchor plate": plates++; break; case "Bolt": bolts++; break; case "Anchor": anchors++; break; }
-                if (fi == typical) frameNodes.Add((JsonNode)Item("node", part.Solid.Vertices.Select(v => new Vec2(v.X, v.Z))));
+                if (drawn) frameNodes.Add((JsonNode)Item("node", part.Solid.Vertices.Select(v => new Vec2(v.X, v.Z))));
             }
         }
         weights["node"] = nodeKg;
@@ -426,6 +442,9 @@ public static class Halls
             foreach (var a in ga) axes.Add(a!.DeepClone());
         var total = weights.Values.Sum();
         var area = s.Span * s.Length;
+        var w = new JsonObject();
+        foreach (var (k, v) in weights) w[k] = Math.Round(v, 1);
+        w["total"] = Math.Round(total, 1);
         var o = new JsonObject
         {
             ["frame"] = frame, ["frameNodes"] = frameNodes, ["plan"] = plan, ["axes"] = axes,
@@ -434,11 +453,8 @@ public static class Halls
                 ["frames"] = s.Frames, ["span"] = s.Span, ["length"] = Math.Round(s.Length, 6), ["area"] = Math.Round(area, 3),
                 ["eaves"] = s.Eaves, ["apex"] = Math.Round(s.ApexHeight, 6),
                 ["columns"] = counts["column"], ["rafters"] = counts["rafter"], ["posts"] = counts["post"],
-                ["weights"] = new JsonObject
-                {
-                    ["column"] = Math.Round(weights["column"], 1), ["rafter"] = Math.Round(weights["rafter"], 1),
-                    ["haunch"] = Math.Round(weights["haunch"], 1), ["post"] = Math.Round(weights["post"], 1), ["node"] = Math.Round(weights["node"], 1), ["total"] = Math.Round(total, 1),
-                },
+                ["purlins"] = counts["purlin"], ["rails"] = counts["rail"], ["eavesBeams"] = counts["eaves"], ["braces"] = counts["brace"], ["flyBraces"] = counts["fly"],
+                ["weights"] = w,
                 ["nodes"] = nodeCount, ["plates"] = plates, ["bolts"] = bolts, ["anchors"] = anchors,
                 ["perArea"] = Math.Round(total / area, 2),
             },
@@ -446,6 +462,28 @@ public static class Halls
         if (gable.Count > 0) o["gable"] = gable;
         if (problems.Count > 0) o["problem"] = problems[0];
         return o;
+    }
+
+    /// <summary>The frame a frame member's role names ("f2:col:a" → 2); null for the secondary steel's.</summary>
+    public static int? FrameOf(string role) =>
+        role.Length > 1 && role[0] == 'f' && char.IsDigit(role[1]) && int.TryParse(role.Split(':')[0][1..], out var i) ? i : null;
+
+    /// <summary>The bay a secondary member that runs bay by bay is in ("pur:a:3:2" → 2); null for one that is not.</summary>
+    static int? BayOf(string role)
+    {
+        var bits = role.Split(':');
+        return bits[0] is "pur" or "rail" && bits.Length == 4 && int.TryParse(bits[3], out var b) ? b : bits[0] == "eb" && bits.Length == 3 && int.TryParse(bits[2], out var e) ? e : null;
+    }
+
+    /// <summary>What a hall member is by its role: column, rafter, post (a gable's), purlin, rail, eaves (beam), brace, fly (brace).</summary>
+    public static string KindOfRole(HallSpec s, string role)
+    {
+        var bits = role.Split(':');
+        return bits[0] switch
+        {
+            "pur" => "purlin", "rail" or "grail" => "rail", "eb" => "eaves", "rbr" or "wbr" => "brace", "fly" or "cfly" => "fly",
+            _ => bits.Length > 1 && bits[1] == "raf" ? "rafter" : IsGable(s, bits[0]) ? "post" : "column",
+        };
     }
 
     static JsonObject Item(string role, IEnumerable<Vec2> pts)

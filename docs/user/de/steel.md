@@ -65,7 +65,7 @@ Hohlprofile sind innen hohl, in der 3D-Ansicht, in den Schnitten und in den Meng
 
 ![Ein Giebel mit Stützen](shots/steel-hall-gable.webp)
 
-- **Sekundärstahl**: der **Pfettenabstand**, der **Wandriegelabstand**, die **Verbandsfelder** (ihre Nummern, ab dem ersten) und ein **Traufriegel**. Sie werden mit der Halle für die kommenden Pfetten, Riegel und Verbände gespeichert; gebaut werden sie noch nicht.
+- **Sekundärstahl**: die Pfetten, Wandriegel, Verbände, der Traufriegel und die Kippstreben (unten).
 - **Platzierung**: wo sich Achse A und Achse 1 kreuzen, und die Richtung der Spannweite im Grundriss (**Drehung**); die Vorschau zeigt das Raster der Halle von oben.
 
 **Halle erstellen** baut sie in einem Schritt, den ein Rückgängig zurücknimmt: ihr eigenes **Raster** (Achsen 1, 2… an den Rahmen, A und B an den Stützen), und an jedem Rahmen zwei **Stützen** (Stützen des Tragwerks aus einem Stahlprofil, der Steg in der Rahmenebene, oben nach der Dachneigung geschnitten) und zwei am First auf Gehrung gestoßene **Riegel** (beim Pultdach einer, von der niedrigen zur hohen Stütze): Stahlstäbe, an die Stützenflächen angepasst, mit ihren Vouten. Die Halle steht auf dem aktuellen Geschoss; Traufe und First sind Höhen ihrer Rahmen, keine neuen Geschosse. Die Übersicht nennt die Rahmen, die Höhen und den Stahl nach Art: Stützen, Riegel, Vouten, Giebelstützen, gesamt und pro m² Grundfläche.
@@ -99,10 +99,30 @@ Wähle einen Anschluss, um ihn in den Eigenschaften zu sehen: die Stäbe, die er
 
 Von Hand gezeichnete Stäbe erhalten ihre Anschlüsse mit **Steel → Anschlüsse finden**: ein Fuß unter jedem senkrechten Stab, ein Traufanschluss, wo ein Stab an eine Stütze angepasst ist, der einer Giebelstütze, wo eine Stütze unter einen Stab angepasst ist, ein Firstanschluss, wo zwei Stäbe auf Gehrung geschnitten sind, ein Stoß, wo zwei in einer Linie Ende an Ende laufen; für die gewählten Stäbe, oder das ganze Modell, wenn nichts gewählt ist. **Steel → Stahlteile** erstellt die Liste der Platten, Schrauben, Anker und Schweißnähte der Anschlüsse. Ein gelöschter Anschluss gibt seinen Stäben ihre Enden zurück; ein gelöschter Stab nimmt seine Anschlüsse mit; **Halle löschen** im Konfigurator entfernt die Halle mit ihren Stäben, Anschlüssen und Achsen in einem Schritt.
 
+## Sekundärstahl
+
+Eine Halle kommt mit ihrem **Sekundärstahl** (Steel → Portal frame hall…, Reiter **Sekundärstahl**), mit ihr erzeugt und mit ihr neu erzeugt, wenn sie geändert wird; jeder Stab behält seine Identität:
+
+![Der Reiter Sekundärstahl](shots/steel-secondary-hall.webp)
+
+- **Sekundärstahl**: ein oder aus für die ganze Halle.
+- **Pfetten**: ihr **Profil** (kaltgeformte Z, C und Σ, ein U oder ein leichtes I), der **Pfettenabstand** entlang der Neigung, wie weit sie **Über die Giebel hinaus** reichen, und ihre **Längen**: **je Feld eine** (von Rahmen zu Rahmen) oder **durchgehend** (über die ganze Hallenlänge). Sie liegen auf der Oberseite der Sparren, ihr Steg rechtwinklig zum Dach, von 150 mm innerhalb der Stützenaußenseite bis 200 mm vor dem First, in so vielen Reihen, wie der Abstand verlangt.
+- **Wandriegel**: ihr **Profil** und der **Wandriegelabstand**, vom **Erster Riegel bei** bis unter die Traufe, je Feld einer an der Außenseite der Stützen, ihr Steg waagerecht, ihre Kanten nach unten; an den Giebeln von Stütze zu Stütze (oder zwischen den Stützen eines Giebelrahmens), so hoch, wie der Sparren darüber es zulässt. Ein **Traufriegel** nimmt den oberen Rand der Längswände ein (mit seinem **Profil**), die Wandriegel einen Abstand darunter.
+- **Verbände**: die **Verbandsfelder** (ihre Nummern, ab dem ersten), das **Profil** der Stäbe (Rundstäbe Ø16 bis Ø30, Winkel oder Rohre) und wo: **Im Dach** (ein X in der Dachebene, unter dem Obergurt der Sparren, in Feldern etwa so lang wie das Hallenfeld) und **In den Längswänden** (ein X in der Wandebene durch die Stützenachsen, von der Höhe des ersten Riegels bis unter die Voute).
+- **Kippstreben**: von jeder zweiten Pfette und jedem zweiten Wandriegel hinunter zum Untergurt des Sparrens und zum Innengurt der Stütze, beidseitig, außerhalb der Vouten.
+
+![Der Sekundärstahl in 3D](shots/steel-secondary-3d.webp)
+
+Jede Pfette und jeder Riegel sitzt auf einem **Pfettenschuh** an jedem Sparren, jeder Stütze oder Giebelstütze, die er kreuzt: ein auf die Stabfläche geschweißtes Blech neben dem Steg der Pfette (außen am Steg eines C, auf der Seite eines Z gegenüber seinem Untergurt), durch den Steg verschraubt, zwei Schrauben je Pfettenende (M12 bis 250 mm Höhe, M16 darüber). Eine Eckstütze, schmaler als die Stützen, bekommt einen höheren Pfettenschuh bis zum Riegel. Jedes X sitzt auf **Knotenblechen**, an den Steg der Sparren oder Stützen geschweißt, eine Diagonale auf jeder Seite; ein Winkel oder ein Rohr wird mit zwei Schrauben angeschlossen, das Gewindeende eines Rundstabs nimmt seine Mutter. Eine Kippstrebe ist an beiden Enden verschraubt. Sie sind Anschlüsse wie die der Rahmen: einen auswählen, um sein Blech und seine Schrauben in den Eigenschaften zu sehen und dort zu ändern. Die Zusammenfassung des Konfigurators zählt und wiegt Pfetten, Riegel, Traufriegel, Verbände und Kippstreben; die Liste **Steel parts** enthält ihre Pfettenschuhe, Knotenbleche und Schrauben.
+
+![Eine Pfette auf ihrem Pfettenschuh, eine Kippstrebe darunter](shots/steel-secondary-cleat.webp)
+
+![Der Dachverband auf seinen Knotenblechen](shots/steel-secondary-bracing.webp)
+
 ## IFC und Mengen
 
 Ein Stab wird als **IfcMember** mit seinem **IfcMemberType** exportiert. Sein Körper wird so geschrieben, wie die anderen Programme Stahl schreiben (Tekla, Advance Steel, Revit): sein Querschnitt **extrudiert** (IfcExtrudedAreaSolid), **beschnitten** von den Ebenen seiner Enden (IfcBooleanClippingResult mit IfcHalfSpaceSolid), und jede Ausklinkung ein **IfcOpeningElement**, das ihn ausspart. Ein Stahlträger oder eine Stahlstütze mit Enden wird genauso geschrieben. Die Mengen jedes Stabs geben seine Länge zwischen den Schnitten, die Fläche seines Querschnitts, sein Volumen und sein Nettogewicht (7850 kg/m³).
 
-Eine Halle wird als **IfcBuildingSystem** (LOADBEARING) exportiert, dem ihre Stäbe zugeordnet sind, mit ihren Angaben im Eigenschaftssatz `Lapin_SteelHall` und ihrem eigenen **IfcGrid**. Ein Riegel mit Vouten ist ein **IfcElementAssembly** aus dem Riegel und seinen Vouten: eine aus dem Profil geschnittene Voute ist ein **IfcMember**, eine aus geschweißten Blechen zwei **IfcPlate**, jede extrudiert (IfcExtrudedAreaSolid). Die Vouten zählen nicht zu den Mengen des Riegels; die Übersicht des Konfigurators wiegt sie.
+Eine Halle wird als **IfcBuildingSystem** (LOADBEARING) exportiert, dem ihre Stäbe zugeordnet sind, mit ihren Angaben im Eigenschaftssatz `Lapin_SteelHall` und ihrem eigenen **IfcGrid**. Ein Riegel mit Vouten ist ein **IfcElementAssembly** aus dem Riegel und seinen Vouten: eine aus dem Profil geschnittene Voute ist ein **IfcMember**, eine aus geschweißten Blechen zwei **IfcPlate**, jede extrudiert (IfcExtrudedAreaSolid). Die Vouten zählen nicht zu den Mengen des Riegels; die Übersicht des Konfigurators wiegt sie. Die Pfetten werden als **IfcMember** PURLIN exportiert, Verbände und Kippstreben als BRACE, Wandriegel und Traufriegel als USERDEFINED (**Side rail**, **Eaves beam**), alle mit ihren Anschlüssen dem System der Halle zugeordnet.
 
 Ein Anschluss wird als **IfcElementAssembly** seiner Platten (**IfcPlate**), Schrauben (**IfcMechanicalFastener** BOLT), Anker (ANCHORBOLT) und Ankerplatten (**IfcDiscreteAccessory** ANCHORPLATE) exportiert, jeweils mit Größe und Festigkeitsklasse in `Lapin_SteelPart`; er realisiert die Verbindung der Stäbe, die er verbindet (**IfcRelConnectsWithRealizingElements**; ein Fuß zwischen Fundament und Stütze). Die Schweißnähte bleiben Daten, keine Körper.

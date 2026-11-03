@@ -14,8 +14,12 @@ namespace Lapin.Steel;
 /// gable frames (a regular frame, or gable posts every <see cref="PostSpacing"/> under a simple rafter); the column bases
 /// (pinned or fixed) and their <see cref="Anchor"/>s (straight, hooked, with an anchor plate); whether its frames get
 /// their connections (<see cref="Nodes"/>, decision 273) and their parameters by kind (<see cref="NodeSet"/>: base, eaves,
-/// apex, post; what is not given chosen by the profiles); and the secondary steel to come (stage 4): purlins and side
-/// rails at their spacing, the bays braced, an eaves beam — kept, not built yet.
+/// apex, post; what is not given chosen by the profiles); and its secondary steel (decision 275: <see cref="Secondary"/>):
+/// purlins of their profile at their spacing on the rafters, past the gables by <see cref="PurlinOverhang"/>, one a bay
+/// or continuous (<see cref="PurlinRun"/>); side rails on the columns and the gable posts from <see cref="RailBottom"/>
+/// up at their spacing; the bays braced (<see cref="Bracing"/>) in the roof and the long walls, X of rods, angles or
+/// tubes (<see cref="Brace"/>'s section); an eaves beam on the columns' outer face; fly braces from every second purlin
+/// and rail to the rafters' and the columns' inner flange.
 /// </summary>
 public sealed record HallSpec(
     double X, double Y, double Angle,
@@ -23,10 +27,21 @@ public sealed record HallSpec(
     Section Column, Section Rafter, Haunch? EavesHaunch, Haunch? ApexHaunch,
     string Gable, double PostSpacing, Section Post, Section GableRafter,
     string Base, double PurlinSpacing, double RailSpacing, IReadOnlyList<int> Bracing, bool EavesBeam,
-    bool Nodes = true, string Anchor = "straight", IReadOnlyDictionary<string, NodeParams>? NodeSet = null)
+    bool Nodes = true, string Anchor = "straight", IReadOnlyDictionary<string, NodeParams>? NodeSet = null,
+    bool Secondary = true, Section? PurlinSection = null, double PurlinOverhang = 0.15, string PurlinRun = "bay",
+    Section? RailSection = null, double RailBottom = 0.3, Section? BraceSection = null, bool RoofBracing = true, bool WallBracing = true,
+    Section? EavesBeamSection = null, bool FlyBraces = true)
 {
+    public static readonly string[] Runs = ["bay", "continuous"];
+
+    /// <summary>The secondary steel's profiles: what the spec gives, else a Z 200 purlin, C 200 rails and eaves beam, Ø20 rods, L 50 fly braces.</summary>
+    public Section Purlin => PurlinSection ?? Section.Catalogue["Z 200×65×2"];
+    public Section Rail => RailSection ?? Section.Catalogue["C 200×65×2"];
+    public Section Brace => BraceSection ?? Section.Circle(0.02);
+    public Section EavesBeamProfile => EavesBeamSection ?? Section.Catalogue["C 200×65×2"];
+    public static Section FlyBrace => Section.Catalogue["L 50×50×5"];
     /// <summary>The kinds of connection a hall sets parameters for.</summary>
-    public static readonly string[] NodeKinds = ["base", "eaves", "apex", "post"];
+    public static readonly string[] NodeKinds = ["base", "eaves", "apex", "post", "cleat", "gusset"];
 
     /// <summary>The parameters the hall gives its connections of a kind (none: all by the profiles).</summary>
     public NodeParams NodeParamsOf(string kind) => NodeSet != null && NodeSet.TryGetValue(kind, out var p) ? p : NodeParams.None;
@@ -41,6 +56,7 @@ public sealed record HallSpec(
         "span", "bays", "eaves", "pitch", "roof", "column", "rafter", "eavesHaunch", "apexHaunch",
         "gable", "postSpacing", "post", "gableRafter", "base", "purlinSpacing", "railSpacing", "bracing", "eavesBeam",
         "nodes", "anchor", "nodeParams",
+        "secondary", "purlin", "purlinOverhang", "purlinRun", "rail", "railBottom", "brace", "roofBracing", "wallBracing", "eavesBeamProfile", "flyBraces",
     ];
 
     public static readonly string[] Placement = ["x", "y", "angle"];
@@ -78,6 +94,9 @@ public sealed record HallSpec(
             ["base"] = Base, ["purlinSpacing"] = PurlinSpacing, ["railSpacing"] = RailSpacing,
             ["bracing"] = new JsonArray([.. Bracing.Select(b => (JsonNode)b)]), ["eavesBeam"] = EavesBeam,
             ["nodes"] = Nodes, ["anchor"] = Anchor,
+            ["secondary"] = Secondary, ["purlin"] = SectionJson(Purlin), ["purlinOverhang"] = PurlinOverhang, ["purlinRun"] = PurlinRun,
+            ["rail"] = SectionJson(Rail), ["railBottom"] = RailBottom, ["brace"] = SectionJson(Brace), ["roofBracing"] = RoofBracing, ["wallBracing"] = WallBracing,
+            ["eavesBeamProfile"] = SectionJson(EavesBeamProfile), ["flyBraces"] = FlyBraces,
         };
         var set = new JsonObject();
         foreach (var k in NodeKinds) if (NodeParamsOf(k).ToJson() is { Count: > 0 } pj) set[k] = pj;
@@ -98,7 +117,8 @@ public sealed record HallSpec(
         var bays = o["bays"] is JsonArray ba ? ba.Select(x => Json.Number(x) ?? 0).ToList() : d.Bays.ToList();
         var bracing = o["bracing"] is JsonArray br ? br.Select(x => (int)(Json.Number(x) ?? 0)).Where(x => x > 0).Distinct().Order().ToList() : d.Bracing.ToList();
         var beam = o["eavesBeam"] is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : d.EavesBeam;
-        var nodes = o["nodes"] is JsonValue nv && nv.TryGetValue<bool>(out var nb) ? nb : d.Nodes;
+        bool B(string k, bool v) => o[k] is JsonValue x && x.TryGetValue<bool>(out var r) ? r : v;
+        var nodes = B("nodes", d.Nodes);
         var set = d.NodeSet;
         if (o["nodeParams"] is JsonObject np)
         {
@@ -110,7 +130,10 @@ public sealed record HallSpec(
             S("column", d.Column), S("rafter", d.Rafter), H("eavesHaunch", d.EavesHaunch), H("apexHaunch", d.ApexHaunch),
             C("gable", Gables, d.Gable), N("postSpacing", d.PostSpacing), S("post", d.Post), S("gableRafter", d.GableRafter),
             C("base", Bases, d.Base), N("purlinSpacing", d.PurlinSpacing), N("railSpacing", d.RailSpacing), bracing, beam,
-            nodes, C("anchor", NodeParams.AnchorKinds, d.Anchor), set);
+            nodes, C("anchor", NodeParams.AnchorKinds, d.Anchor), set,
+            B("secondary", d.Secondary), S("purlin", d.Purlin), N("purlinOverhang", d.PurlinOverhang), C("purlinRun", Runs, d.PurlinRun),
+            S("rail", d.Rail), N("railBottom", d.RailBottom), S("brace", d.Brace), B("roofBracing", d.RoofBracing), B("wallBracing", d.WallBracing),
+            S("eavesBeamProfile", d.EavesBeamProfile), B("flyBraces", d.FlyBraces));
     }
 
     /// <summary>The spec checked as a command takes it: sizes in range, steel profiles, haunches that fit their rafters.</summary>
@@ -131,6 +154,16 @@ public sealed record HallSpec(
         foreach (var h in new[] { EavesHaunch, ApexHaunch })
             if (h != null && h.Depth > 3 * Rafter.Depth + 0.5) throw new CommandException("A haunch is deeper than three times its rafter.");
         if (Bracing.Any(b => b > Bays.Count)) throw new CommandException("A braced bay is one of the hall's bays.");
+        if (Secondary)
+        {
+            foreach (var (sec, what) in new[] { (Purlin, "purlins"), (Rail, "side rails"), (EavesBeamProfile, "eaves beam") })
+                if (!sec.IsProfile) throw new CommandException($"The hall's {what} need a steel profile.");
+            if (!Brace.IsProfile && Brace.Kind != "circle") throw new CommandException("The bracing is of round bars or of steel profiles.");
+            if (!(PurlinSpacing >= 0.3 && PurlinSpacing <= 5)) throw new CommandException("Purlins stand from 0.3 m to 5 m apart.");
+            if (!(RailSpacing >= 0.3 && RailSpacing <= 5)) throw new CommandException("Side rails stand from 0.3 m to 5 m apart.");
+            if (!(PurlinOverhang >= 0 && PurlinOverhang <= 2)) throw new CommandException("Purlins reach at most 2 m past the gables.");
+            if (!(RailBottom >= 0 && RailBottom < Eaves - 0.3)) throw new CommandException("The first side rail is under the eaves.");
+        }
         // Each kind's parameters checked as a connection's would be.
         foreach (var k in NodeKinds) NodeParams.Patch(NodeParams.None, NodeParamsOf(k).ToJson());
         return this;

@@ -65,7 +65,7 @@ Los perfiles huecos están vacíos por dentro, en la vista 3D, en las secciones 
 
 ![Un hastial con pilares](shots/steel-hall-gable.webp)
 
-- **Acero secundario**: la **Separación de correas**, la **Separación de correas laterales**, las **Crujías arriostradas** (sus números, desde la primera) y una **Viga de alero**. Se guardan con la nave para las correas y arriostramientos que vendrán; aún no se construyen.
+- **Acero secundario**: las correas, las correas laterales, el arriostramiento, la viga de alero y los tornapuntas (abajo).
 - **Colocación**: donde se cruzan el eje A y el eje 1, y la dirección de la luz en planta (**Rotación**); la vista previa muestra la retícula de la nave desde arriba.
 
 **Crear nave** la hace en un solo paso, que un deshacer revierte: su propia **retícula** (ejes 1, 2… en los pórticos, A y B en los pilares), y en cada pórtico dos **pilares** (pilares de la estructura de un perfil de acero, con el alma en el plano del pórtico y la cabeza cortada según la pendiente) y dos **dinteles** a inglete en la cumbrera (uno solo, del pilar bajo al alto, en una cubierta a un agua): barras de acero ajustadas a las caras de los pilares, con sus cartelas. La nave está en la planta actual; el alero y la cumbrera son alturas de sus pórticos, no plantas nuevas. El resumen da los pórticos, las alturas y el acero por tipo: pilares, dinteles, cartelas, pilares de hastial, en total y por m² de planta.
@@ -99,10 +99,30 @@ Selecciona una unión para verla en Propiedades: las barras que une, cada parám
 
 Las barras dibujadas a mano reciben sus uniones con **Steel → Buscar uniones**: una base bajo cada barra vertical, una unión de alero donde una barra se ajusta a un pilar, la de un pilar hastial donde un pilar se ajusta bajo una barra, una de cumbrera donde dos barras están ingleteadas entre sí, un empalme donde dos van en línea, extremo con extremo; para las barras seleccionadas, o todo el modelo si no hay nada seleccionado. **Steel → Piezas de acero** crea la lista de placas, tornillos, anclajes y soldaduras de las uniones. Eliminar una unión devuelve a sus barras sus extremos; eliminar una barra se lleva sus uniones; **Eliminar nave** en el configurador quita la nave con sus barras, uniones y ejes, en un solo paso.
 
+## Acero secundario
+
+Una nave viene con su **acero secundario** (Steel → Portal frame hall…, pestaña **Acero secundario**), hecho con ella y de nuevo cuando se cambia, cada barra conservando su identidad:
+
+![La pestaña Acero secundario](shots/steel-secondary-hall.webp)
+
+- **Acero secundario**: activado o no para toda la nave.
+- **Correas**: su **Perfil** (Z, C y Σ conformados en frío, un U o un I ligero), la **Separación de correas** a lo largo de la pendiente, cuánto van **Más allá de los hastiales** y sus **Longitudes**: **una por crujía** (de pórtico a pórtico) o **continua** (todo el largo de la nave). Apoyan sobre la cara superior de los cabios, con el alma perpendicular a la cubierta, desde 150 mm dentro de la cara de los pilares hasta 200 mm de la cumbrera, en tantas líneas como pide la separación.
+- **Correas laterales**: su **Perfil** y la **Separación de correas laterales**, desde la **Primera correa a** hasta bajo el alero, una por crujía en la cara exterior de los pilares, con el alma horizontal y las pestañas hacia abajo; en los hastiales, de pilar a pilar (o entre los pilares de un pórtico de hastial), tan altas como lo permite el cabio de encima. Una **Viga de alero** ocupa lo alto de las fachadas largas (con su **Perfil**), las correas una separación por debajo.
+- **Arriostramiento**: las **Crujías arriostradas** (sus números, desde la primera), el **Perfil** de las barras (redondos de Ø16 a Ø30, angulares o tubos) y dónde: **En la cubierta** (una X en el plano de la cubierta, bajo el ala superior de los cabios, en paneles de más o menos la crujía) y **En las fachadas largas** (una X en el plano de las fachadas, por los ejes de los pilares, desde la altura de la primera correa hasta bajo la cartela).
+- **Tornapuntas**: desde una de cada dos correas y correas laterales hasta el ala inferior del cabio y el ala interior del pilar, a ambos lados, fuera de las cartelas.
+
+![El acero secundario en 3D](shots/steel-secondary-3d.webp)
+
+Cada correa apoya sobre un **ejión** en cada cabio, pilar o pilar de hastial que cruza: una placa soldada a la cara de la barra, junto al alma de la correa (fuera del alma de una C, del lado de una Z opuesto a su ala inferior), atornillada por el alma, dos tornillos por extremo de correa (M12 hasta 250 mm de canto, M16 por encima). Un pilar de esquina más estrecho que los pilares lleva un ejión más alto, hasta la correa. Cada X apoya sobre **placas de nudo** soldadas al alma de los cabios o de los pilares, una diagonal en cada cara; un angular o un tubo se fija con dos tornillos, el extremo roscado de un redondo lleva su tuerca. Un tornapuntas va atornillado en sus dos extremos. Son uniones como las de los pórticos: selecciona una para ver su placa y sus tornillos en Propiedades y cambiarlos allí. El resumen del configurador cuenta y pesa las correas, las correas laterales, la viga de alero, el arriostramiento y los tornapuntas; la tabla **Steel parts** tiene sus ejiones, placas de nudo y tornillos.
+
+![Una correa sobre su ejión, un tornapuntas debajo](shots/steel-secondary-cleat.webp)
+
+![El arriostramiento de cubierta sobre sus placas de nudo](shots/steel-secondary-bracing.webp)
+
 ## IFC y cantidades
 
 Una barra se exporta como **IfcMember** con su **IfcMemberType**. Su cuerpo se escribe como escriben el acero los demás programas (Tekla, Advance Steel, Revit): su sección **extruida** (IfcExtrudedAreaSolid), **recortada** por los planos de sus extremos (IfcBooleanClippingResult con IfcHalfSpaceSolid), y cada rebaje un **IfcOpeningElement** que la vacía. Una viga o un pilar de acero con extremos se escribe igual. Las cantidades de cada barra dan su longitud entre cortes, el área de su sección, su volumen y su peso neto (7850 kg/m³).
 
-Una nave se exporta como **IfcBuildingSystem** (LOADBEARING) al que se asignan sus barras, con sus datos en el conjunto de propiedades `Lapin_SteelHall` y su propia **IfcGrid**. Un dintel con cartelas es un **IfcElementAssembly** del dintel y sus cartelas: una cartela cortada del perfil es un **IfcMember**, una de chapas soldadas dos **IfcPlate**, cada una extruida (IfcExtrudedAreaSolid). Las cartelas no entran en las cantidades del dintel; el resumen del configurador las pesa.
+Una nave se exporta como **IfcBuildingSystem** (LOADBEARING) al que se asignan sus barras, con sus datos en el conjunto de propiedades `Lapin_SteelHall` y su propia **IfcGrid**. Un dintel con cartelas es un **IfcElementAssembly** del dintel y sus cartelas: una cartela cortada del perfil es un **IfcMember**, una de chapas soldadas dos **IfcPlate**, cada una extruida (IfcExtrudedAreaSolid). Las cartelas no entran en las cantidades del dintel; el resumen del configurador las pesa. Las correas se exportan como **IfcMember** PURLIN, el arriostramiento y los tornapuntas como BRACE, las correas laterales y la viga de alero como USERDEFINED (**Side rail**, **Eaves beam**), todos asignados al sistema de la nave, con sus uniones.
 
 Una unión se exporta como **IfcElementAssembly** de sus placas (**IfcPlate**), tornillos (**IfcMechanicalFastener** BOLT), anclajes (ANCHORBOLT) y placas de anclaje (**IfcDiscreteAccessory** ANCHORPLATE), cada uno con su tamaño y calidad en `Lapin_SteelPart`; realiza la conexión de las barras que une (**IfcRelConnectsWithRealizingElements**; una base, entre la zapata y su pilar). Las soldaduras quedan como datos, no como cuerpos.

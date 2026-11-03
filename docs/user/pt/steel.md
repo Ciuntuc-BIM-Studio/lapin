@@ -65,7 +65,7 @@ Os perfis tubulares são ocos por dentro, na vista 3D, nos cortes e nas quantida
 
 ![Um oitão com pilares](shots/steel-hall-gable.webp)
 
-- **Aço secundário**: o **Espaçamento das terças**, o **Espaçamento das longarinas**, os **Módulos contraventados** (seus números, a partir do primeiro) e uma **Viga de beiral**. São guardados com o galpão para as terças, longarinas e contraventamentos que virão; ainda não são construídos.
+- **Aço secundário**: as terças, as longarinas, o contraventamento, a viga de beiral e as escoras (abaixo).
 - **Posicionamento**: onde se cruzam o eixo A e o eixo 1, e a direção do vão em planta (**Rotação**); a pré-visualização mostra a malha do galpão vista de cima.
 
 **Criar galpão** o faz em um só passo, que um desfazer reverte: sua própria **malha de eixos** (eixos 1, 2… nos pórticos, A e B nos pilares), e em cada pórtico dois **pilares** (pilares da estrutura de um perfil de aço, com a alma no plano do pórtico e o topo cortado segundo a inclinação) e duas **vigas de cobertura** em meia-esquadria na cumeeira (uma só, do pilar baixo ao alto, numa cobertura de uma água): barras de aço ajustadas às faces dos pilares, com suas mísulas. O galpão fica no pavimento atual; o beiral e a cumeeira são alturas dos seus pórticos, não novos pavimentos. O resumo dá os pórticos, as alturas e o aço por tipo: pilares, vigas, mísulas, pilares de oitão, no total e por m² de piso.
@@ -99,10 +99,30 @@ Selecione uma ligação para vê-la nas Propriedades: as barras que liga, cada p
 
 As barras desenhadas à mão recebem as suas ligações com **Steel → Encontrar ligações**: uma base sob cada barra vertical, uma ligação de beiral onde uma barra está ajustada a um pilar, a de um pilar de oitão onde um pilar está ajustado sob uma barra, uma cumeeira onde duas barras estão cortadas em meia-esquadria uma com a outra, uma emenda onde duas seguem em linha, ponta com ponta; para as barras selecionadas, ou o modelo inteiro quando nada está selecionado. **Steel → Peças de aço** cria a tabela das chapas, parafusos, chumbadores e soldas das ligações. Excluir uma ligação devolve às suas barras as suas extremidades; excluir uma barra leva as suas ligações; **Excluir galpão** no configurador remove o galpão com as suas barras, ligações e eixos, num só passo.
 
+## Aço secundário
+
+Um galpão vem com seu **aço secundário** (Steel → Portal frame hall…, aba **Aço secundário**), feito com ele e refeito com ele quando é alterado, cada barra mantendo sua identidade:
+
+![A aba Aço secundário](shots/steel-secondary-hall.webp)
+
+- **Aço secundário**: ligado ou não para todo o galpão.
+- **Terças**: seu **Perfil** (Z, C e Σ formados a frio, um U ou um I leve), o **Espaçamento das terças** ao longo da inclinação, quanto vão **Além das empenas** e seus **Comprimentos**: **uma por vão** (de pórtico a pórtico) ou **contínua** (todo o comprimento do galpão). Apoiam sobre a face superior dos caibros, com a alma perpendicular à cobertura, de 150 mm para dentro da face dos pilares até 200 mm da cumeeira, em tantas linhas quantas o espaçamento pede.
+- **Longarinas**: seu **Perfil** e o **Espaçamento das longarinas**, da **Primeira longarina a** até sob o beiral, uma por vão na face externa dos pilares, a alma horizontal e as abas para baixo; nas empenas, de pilar a pilar (ou entre os pilares de um pórtico de empena), tão alto quanto o caibro acima permite. Uma **Viga de beiral** ocupa o topo das fachadas longas (com seu **Perfil**), as longarinas um espaçamento abaixo.
+- **Contraventamento**: os **Módulos contraventados** (seus números, a partir do primeiro), o **Perfil** das barras (barras redondas de Ø16 a Ø30, cantoneiras ou tubos) e onde: **Na cobertura** (um X no plano da cobertura, sob a mesa superior dos caibros, em painéis mais ou menos do comprimento do vão) e **Nas fachadas longas** (um X no plano das fachadas, pelos eixos dos pilares, da altura da primeira longarina até sob a mísula).
+- **Escoras**: de cada segunda terça e longarina até a mesa inferior do caibro e a mesa interna do pilar, dos dois lados, fora das mísulas.
+
+![O aço secundário em 3D](shots/steel-secondary-3d.webp)
+
+Cada terça e longarina apoia numa **patilha** em cada caibro, pilar ou pilar de oitão que atravessa: uma chapa soldada na face da barra, junto à alma da terça (por fora da alma de um C, do lado de um Z oposto à sua mesa inferior), parafusada pela alma, dois parafusos por extremidade (M12 até 250 mm de altura, M16 acima). Um pilar de canto mais estreito que os pilares recebe uma patilha mais alta, até a longarina. Cada X apoia em **chapas de nó** soldadas à alma dos caibros ou dos pilares, uma diagonal em cada face; uma cantoneira ou um tubo é parafusado com dois parafusos, a ponta roscada de uma barra redonda leva sua porca. Uma escora é parafusada nas duas pontas. São ligações como as dos pórticos: selecione uma para ver sua chapa e seus parafusos nas Propriedades e alterá-los ali. O resumo do configurador conta e pesa terças, longarinas, viga de beiral, contraventamento e escoras; a tabela **Steel parts** traz suas patilhas, chapas de nó e parafusos.
+
+![Uma terça na sua patilha, uma escora por baixo](shots/steel-secondary-cleat.webp)
+
+![O contraventamento da cobertura nas suas chapas de nó](shots/steel-secondary-bracing.webp)
+
 ## IFC e quantidades
 
 Uma barra é exportada como **IfcMember** com seu **IfcMemberType**. Seu corpo é escrito como os outros programas escrevem o aço (Tekla, Advance Steel, Revit): a seção **extrudada** (IfcExtrudedAreaSolid), **cortada** pelos planos das extremidades (IfcBooleanClippingResult com IfcHalfSpaceSolid), e cada recorte um **IfcOpeningElement** que a esvazia. Uma viga ou um pilar de aço com extremidades é escrito da mesma forma. As quantidades de cada barra dão o comprimento entre os cortes, a área da seção, o volume e o peso líquido (7850 kg/m³).
 
-Um galpão é exportado como **IfcBuildingSystem** (LOADBEARING) ao qual suas barras são atribuídas, com seus dados no conjunto de propriedades `Lapin_SteelHall` e sua própria **IfcGrid**. Uma viga de cobertura com mísulas é um **IfcElementAssembly** da viga e das suas mísulas: uma mísula cortada do perfil é um **IfcMember**, uma de chapas soldadas duas **IfcPlate**, cada uma extrudada (IfcExtrudedAreaSolid). As mísulas ficam fora das quantidades da viga; o resumo do configurador as pesa.
+Um galpão é exportado como **IfcBuildingSystem** (LOADBEARING) ao qual suas barras são atribuídas, com seus dados no conjunto de propriedades `Lapin_SteelHall` e sua própria **IfcGrid**. Uma viga de cobertura com mísulas é um **IfcElementAssembly** da viga e das suas mísulas: uma mísula cortada do perfil é um **IfcMember**, uma de chapas soldadas duas **IfcPlate**, cada uma extrudada (IfcExtrudedAreaSolid). As mísulas ficam fora das quantidades da viga; o resumo do configurador as pesa. As terças são exportadas como **IfcMember** PURLIN, o contraventamento e as escoras como BRACE, as longarinas e a viga de beiral como USERDEFINED (**Side rail**, **Eaves beam**), todos atribuídos ao sistema do galpão com suas ligações.
 
 Uma ligação exporta-se como **IfcElementAssembly** das suas chapas (**IfcPlate**), parafusos (**IfcMechanicalFastener** BOLT), chumbadores (ANCHORBOLT) e placas de ancoragem (**IfcDiscreteAccessory** ANCHORPLATE), cada um com tamanho e classe em `Lapin_SteelPart`; realiza a ligação das barras que une (**IfcRelConnectsWithRealizingElements**; uma base, entre a sapata e o seu pilar). As soldas ficam como dados, não como corpos.

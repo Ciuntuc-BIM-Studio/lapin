@@ -65,7 +65,7 @@ I profili cavi sono vuoti all’interno, nella vista 3D, nelle sezioni e nelle q
 
 ![Una testata con pilastri](shots/steel-hall-gable.webp)
 
-- **Acciaio secondario**: l’**Interasse degli arcarecci**, l’**Interasse dei correnti di parete**, le **Campate controventate** (i loro numeri, dalla prima) e una **Trave di gronda**. Sono conservati con il capannone per arcarecci, correnti e controventi a venire; non sono ancora costruiti.
+- **Acciaio secondario**: gli arcarecci, i correnti di parete, i controventi, la trave di gronda e i ritegni (sotto).
 - **Posizionamento**: dove si incrociano l’asse A e l’asse 1, e la direzione della luce in pianta (**Rotazione**); l’anteprima mostra la griglia del capannone dall’alto.
 
 **Crea capannone** lo fa in un solo passo, che un annulla riporta indietro: la sua **griglia** (assi 1, 2… ai portali, A e B ai pilastri), e a ogni portale due **pilastri** (pilastri della struttura in profilo d’acciaio, con l’anima nel piano del portale e la testa tagliata secondo la pendenza) e due **traversi** a quartabuono al colmo (uno solo, dal pilastro basso a quello alto, con la copertura a una falda): aste in acciaio adattate alle facce dei pilastri, con le loro squadrette. Il capannone sta sul piano corrente; gronda e colmo sono altezze dei suoi portali, non piani nuovi. Il riepilogo dà i portali, le altezze e l’acciaio per tipo: pilastri, traversi, squadrette, pilastri di testata, in totale e per m² di pianta.
@@ -99,10 +99,30 @@ Seleziona un collegamento per vederlo nelle Proprietà: le aste che collega, ogn
 
 Le aste disegnate a mano ricevono i loro collegamenti con **Steel → Trova collegamenti**: un piede sotto ogni asta verticale, una gronda dove un'asta è adattata a un pilastro, quello di un ritto dove un pilastro è adattato sotto un'asta, un colmo dove due aste sono tagliate a quartabuono tra loro, un giunto dove due proseguono in linea, testa a testa; per le aste selezionate, o tutto il modello quando nulla è selezionato. **Steel → Pezzi in acciaio** crea l'abaco di piastre, bulloni, tirafondi e saldature dei collegamenti. Un collegamento eliminato restituisce alle sue aste le loro estremità; un'asta eliminata si porta via i suoi collegamenti; **Elimina capannone** nel configuratore toglie il capannone con aste, collegamenti e assi, in un solo passo.
 
+## Acciaio secondario
+
+Un capannone viene con il suo **acciaio secondario** (Steel → Portal frame hall…, scheda **Acciaio secondario**), fatto con lui e rifatto con lui quando cambia, ogni asta mantenendo la sua identità:
+
+![La scheda Acciaio secondario](shots/steel-secondary-hall.webp)
+
+- **Acciaio secondario**: attivo o no per tutto il capannone.
+- **Arcarecci**: il loro **Profilo** (Z, C e Σ formati a freddo, un U o un I leggero), l’**Interasse degli arcarecci** lungo la falda, quanto vanno **Oltre le testate** e le loro **Lunghezze**: **una per campata** (da portale a portale) o **continua** (tutta la lunghezza del capannone). Poggiano sulla faccia superiore dei puntoni, l’anima perpendicolare alla copertura, da 150 mm all’interno della faccia dei pilastri fino a 200 mm dal colmo, in tante file quante ne chiede l’interasse.
+- **Correnti di parete**: il loro **Profilo** e l’**Interasse dei correnti di parete**, dal **Primo corrente a** fin sotto la gronda, uno per campata sulla faccia esterna dei pilastri, l’anima orizzontale e i risvolti in basso; sulle testate, da pilastro a pilastro (o tra i pilastri di un portale di testata), tanto in alto quanto lo permette il puntone sopra. Una **Trave di gronda** prende la sommità delle pareti lunghe (con il suo **Profilo**), i correnti un interasse più in basso.
+- **Controventi**: le **Campate controventate** (i loro numeri, dalla prima), il **Profilo** delle aste (tondi da Ø16 a Ø30, angolari o tubi) e dove: **In copertura** (una X nel piano della copertura, sotto la piattabanda superiore dei puntoni, in pannelli lunghi circa quanto la campata) e **Nelle pareti lunghe** (una X nel piano delle pareti, per gli assi dei pilastri, dall’altezza del primo corrente fin sotto la squadretta).
+- **Ritegni**: da un arcareccio e un corrente su due fino alla piattabanda inferiore del puntone e a quella interna del pilastro, da entrambi i lati, fuori dalle squadrette.
+
+![L’acciaio secondario in 3D](shots/steel-secondary-3d.webp)
+
+Ogni arcareccio e corrente poggia su una **staffa** su ogni puntone, pilastro o pilastro di testata che attraversa: una piastra saldata sulla faccia dell’asta, accanto all’anima dell’arcareccio (fuori dall’anima di una C, dal lato di una Z opposto alla sua piattabanda inferiore), bullonata attraverso l’anima, due bulloni per estremità (M12 fino a 250 mm di altezza, M16 oltre). Un pilastro d’angolo più stretto dei pilastri riceve una staffa più alta, fino al corrente. Ogni X poggia su **fazzoletti** saldati all’anima dei puntoni o dei pilastri, una diagonale per faccia; un angolare o un tubo vi è bullonato con due bulloni, l’estremità filettata di un tondo prende il suo dado. Un ritegno è bullonato alle due estremità. Sono collegamenti come quelli dei portali: selezionane uno per vedere la sua piastra e i suoi bulloni nelle Proprietà e cambiarli lì. Il riepilogo del configuratore conta e pesa arcarecci, correnti, trave di gronda, controventi e ritegni; l’abaco **Steel parts** ne riporta staffe, fazzoletti e bulloni.
+
+![Un arcareccio sulla sua staffa, un ritegno sotto](shots/steel-secondary-cleat.webp)
+
+![Il controvento di copertura sui suoi fazzoletti](shots/steel-secondary-bracing.webp)
+
 ## IFC e quantità
 
 Un’asta si esporta come **IfcMember** con il suo **IfcMemberType**. Il suo corpo è scritto come gli altri programmi scrivono l’acciaio (Tekla, Advance Steel, Revit): la sezione **estrusa** (IfcExtrudedAreaSolid), **tagliata** dai piani delle estremità (IfcBooleanClippingResult con IfcHalfSpaceSolid), e ogni intaglio un **IfcOpeningElement** che la svuota. Una trave o un pilastro in acciaio con estremità si scrive allo stesso modo. Le quantità di ogni asta danno la sua lunghezza tra i tagli, l’area della sezione, il volume e il peso netto (7850 kg/m³).
 
-Un capannone si esporta come **IfcBuildingSystem** (LOADBEARING) a cui sono assegnate le sue aste, con i suoi dati nel set di proprietà `Lapin_SteelHall` e la sua **IfcGrid**. Un traverso con squadrette è un **IfcElementAssembly** del traverso e delle sue squadrette: una squadretta tagliata dal profilo è un **IfcMember**, una in piatti saldati due **IfcPlate**, ciascuna estrusa (IfcExtrudedAreaSolid). Le squadrette non entrano nelle quantità del traverso; il riepilogo del configuratore le pesa.
+Un capannone si esporta come **IfcBuildingSystem** (LOADBEARING) a cui sono assegnate le sue aste, con i suoi dati nel set di proprietà `Lapin_SteelHall` e la sua **IfcGrid**. Un traverso con squadrette è un **IfcElementAssembly** del traverso e delle sue squadrette: una squadretta tagliata dal profilo è un **IfcMember**, una in piatti saldati due **IfcPlate**, ciascuna estrusa (IfcExtrudedAreaSolid). Le squadrette non entrano nelle quantità del traverso; il riepilogo del configuratore le pesa. Gli arcarecci si esportano come **IfcMember** PURLIN, i controventi e i ritegni come BRACE, i correnti di parete e la trave di gronda come USERDEFINED (**Side rail**, **Eaves beam**), tutti assegnati al sistema del capannone con i loro collegamenti.
 
 Un collegamento si esporta come **IfcElementAssembly** delle sue piastre (**IfcPlate**), bulloni (**IfcMechanicalFastener** BOLT), tirafondi (ANCHORBOLT) e piastre di ancoraggio (**IfcDiscreteAccessory** ANCHORPLATE), ognuno con misura e classe in `Lapin_SteelPart`; realizza il collegamento delle aste che unisce (**IfcRelConnectsWithRealizingElements**; un piede, tra la fondazione e il suo pilastro). Le saldature restano dati, non corpi.

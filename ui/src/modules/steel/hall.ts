@@ -1,7 +1,8 @@
 /**
  * The hall configurator's own logic (decision 270), kept apart from its dialog so it is tested: the bays as the user types
  * them ("6, 6, 7.5" or "5 × 6"), the braced bays, the hall a member belongs to, the preview's polygons fitted to a box, and
- * the summary's rows (each label a phrase the interface translates; the connections, their bolts and anchors when it has some).
+ * the summary's rows (each label a phrase the interface translates; the connections, their bolts and anchors when it has some;
+ * the secondary steel by kind, decision 275), and the profiles each kind of secondary member is offered.
  */
 
 import type { ModelState } from '../../engine/model';
@@ -19,17 +20,22 @@ export interface HallAttrs {
   base?: 'pinned' | 'fixed'; purlinSpacing?: number; railSpacing?: number; bracing?: number[]; eavesBeam?: boolean;
   /** The frames' connections (decision 273): on or off, the anchors' kind, and each kind's parameters (none: by the profiles). */
   nodes?: boolean; anchor?: 'straight' | 'hooked' | 'plate';
-  nodeParams?: { base?: NodeParamsDto; eaves?: NodeParamsDto; apex?: NodeParamsDto; post?: NodeParamsDto };
+  nodeParams?: { base?: NodeParamsDto; eaves?: NodeParamsDto; apex?: NodeParamsDto; post?: NodeParamsDto; cleat?: NodeParamsDto; gusset?: NodeParamsDto };
+  /** The secondary steel (decision 275): on or off, the purlins (profile, overhang, a bay or continuous), the rails, the bracing's section and planes, the eaves beam's profile, the fly braces. */
+  secondary?: boolean; purlin?: unknown; purlinOverhang?: number; purlinRun?: 'bay' | 'continuous';
+  rail?: unknown; railBottom?: number; brace?: unknown; roofBracing?: boolean; wallBracing?: boolean; eavesBeamProfile?: unknown; flyBraces?: boolean;
   style?: string;
 }
 
-export interface PreviewItem { role: 'column' | 'rafter' | 'haunch' | 'post' | 'node'; pts: number[] }
+export type PreviewRole = 'column' | 'rafter' | 'haunch' | 'post' | 'node' | 'purlin' | 'rail' | 'eaves' | 'brace' | 'fly';
+export interface PreviewItem { role: PreviewRole; pts: number[] }
 export interface HallSummary {
   frames: number; span: number; length: number; area: number; eaves: number; apex: number;
   columns: number; rafters: number; posts: number;
-  weights: { column: number; rafter: number; haunch: number; post: number; node?: number; total: number };
+  weights: { column: number; rafter: number; haunch: number; post: number; node?: number; purlin?: number; rail?: number; eaves?: number; brace?: number; fly?: number; total: number };
   perArea: number;
   nodes?: number; plates?: number; bolts?: number; anchors?: number;
+  purlins?: number; rails?: number; eavesBeams?: number; braces?: number; flyBraces?: number;
 }
 export interface HallPreview {
   problem?: string | null;
@@ -114,7 +120,45 @@ export function summaryRows(s: HallSummary, length: (m: number) => string): [str
     ['Haunches', kg(s.weights.haunch)],
   ];
   if (s.posts > 0) rows.push(['Gable posts', `${s.posts} · ${kg(s.weights.post)}`]);
+  // The secondary steel, each kind that has some.
+  const secondary: [string, number | undefined, number | undefined][] = [
+    ['Purlins', s.purlins, s.weights.purlin], ['Side rails', s.rails, s.weights.rail], ['Eaves beam', s.eavesBeams, s.weights.eaves],
+    ['Bracing', s.braces, s.weights.brace], ['Fly braces', s.flyBraces, s.weights.fly],
+  ];
+  for (const [label, n, w] of secondary) if (n) rows.push([label, `${n} · ${kg(w ?? 0)}`]);
   if (s.nodes) rows.push(['Connections', `${s.nodes} · ${kg(s.weights.node ?? 0)}`], ['Bolts', String(s.bolts ?? 0)], ['Anchors', String(s.anchors ?? 0)]);
   rows.push(['Total steel', kg(s.weights.total)], ['Per m² of floor', `${s.perArea.toFixed(1)} kg/m²`]);
   return rows;
+}
+
+/** A profile as the catalogue lists it (its kind and name). */
+interface Named { kind: string; name?: string }
+
+/**
+ * The profiles each kind of secondary member is offered: cold-formed (and channels, I) for purlins, rails and the eaves
+ * beam; round bars, angles and tubes for the bracing. A round bar is a section of its own, named by its diameter.
+ */
+export function secondaryProfiles(kind: 'purlin' | 'rail' | 'eaves' | 'brace', catalogue: Named[]): string[] {
+  if (kind === 'brace') return [...ROD_SIZES.map(rodName), ...catalogue.filter((p) => p.kind === 'L' || p.kind === 'CHS').map((p) => p.name ?? '')];
+  const cold = catalogue.filter((p) => p.kind === 'Z' || p.kind === 'C' || p.kind === 'SIGMA');
+  const hot = catalogue.filter((p) => p.kind === 'U' || (p.kind === 'I' && /^IPE (200|240)$/.test(p.name ?? '')) || p.kind === 'RHS');
+  return [...cold, ...hot].map((p) => p.name ?? '');
+}
+
+/** Round bars offered for bracing, metres. */
+export const ROD_SIZES = [0.016, 0.02, 0.024, 0.027, 0.03];
+export const rodName = (d: number) => `Ø${Math.round(d * 1000)}`;
+
+/** A secondary profile as the spec keeps it: a round bar as its section, any other by its catalogue name. */
+export function secondaryValue(name: string): unknown {
+  const rod = /^Ø(\d+)$/.exec(name);
+  return rod ? { kind: 'circle', width: Number(rod[1]) / 1000, depth: Number(rod[1]) / 1000 } : name;
+}
+
+/** The name a spec's profile goes by in the pickers: a catalogue name, or a round bar's diameter. */
+export function secondaryName(v: unknown): string {
+  if (typeof v === 'string') return v;
+  const s = v as { kind?: string; width?: number; name?: string } | undefined;
+  if (s?.kind === 'circle' && s.width) return rodName(s.width);
+  return s?.name ?? s?.kind ?? '';
 }

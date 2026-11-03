@@ -65,7 +65,7 @@ Profile zamknięte są puste w środku, w widoku 3D, w przekrojach i w ilościac
 
 ![Szczyt ze słupami](shots/steel-hall-gable.webp)
 
-- **Stal drugorzędna**: **Rozstaw płatwi**, **Rozstaw rygli ściennych**, **Przęsła stężone** (ich numery, od pierwszego) i **Belka okapowa**. Są zachowane z halą dla przyszłych płatwi, rygli i stężeń; jeszcze nie są budowane.
+- **Stal drugorzędna**: płatwie, rygle ścienne, stężenia, belka okapowa i zastrzały (niżej).
 - **Umiejscowienie**: gdzie krzyżują się oś A i oś 1 oraz kierunek rozpiętości w rzucie (**Obrót**); podgląd pokazuje siatkę osi hali z góry.
 
 **Utwórz halę** tworzy ją w jednym kroku, który jedno cofnięcie odwraca: jej własną **siatkę osi** (osie 1, 2… przy ramach, A i B przy słupach), a przy każdej ramie dwa **słupy** (słupy konstrukcji z profilu stalowego, środnikiem w płaszczyźnie ramy, z głowicą ciętą według spadku dachu) i dwa **rygle** połączone na ukos w kalenicy (przy dachu jednospadowym jeden, od niskiego słupa do wysokiego): pręty stalowe dopasowane do lic słupów, z ich wutami. Hala stoi na bieżącej kondygnacji; okap i kalenica to wysokości jej ram, a nie nowe kondygnacje. Podsumowanie podaje ramy, wysokości i stal według rodzaju: słupy, rygle, wuty, słupy szczytowe, razem i na m² posadzki.
@@ -99,10 +99,30 @@ Zaznacz połączenie, aby zobaczyć je we Właściwościach: pręty, które łą
 
 Pręty rysowane ręcznie dostają połączenia przez **Steel → Znajdź połączenia**: stopę pod każdym pionowym prętem, węzeł okapowy tam, gdzie pręt jest dopasowany do słupa, połączenie słupa szczytowego tam, gdzie słup jest dopasowany pod prętem, węzeł kalenicowy tam, gdzie dwa pręty są ucięte ukośnie względem siebie, styk tam, gdzie dwa biegną w linii, koniec do końca; dla zaznaczonych prętów albo całego modelu, gdy nic nie jest zaznaczone. **Steel → Części stalowe** tworzy zestawienie blach, śrub, kotew i spoin połączeń. Usunięte połączenie oddaje prętom ich końce; usunięty pręt zabiera swoje połączenia; **Usuń halę** w konfiguratorze usuwa halę z jej prętami, połączeniami i osiami w jednym kroku.
 
+## Stal drugorzędna
+
+Hala ma swoją **stal drugorzędną** (Steel → Portal frame hall…, karta **Stal drugorzędna**), tworzoną razem z nią i od nowa, gdy się zmienia; każdy pręt zachowuje swoją tożsamość:
+
+![Karta Stal drugorzędna](shots/steel-secondary-hall.webp)
+
+- **Stal drugorzędna**: włączona lub nie dla całej hali.
+- **Płatwie**: ich **Profil** (gięte na zimno Z, C i Σ, ceownik lub lekki dwuteownik), **Rozstaw płatwi** wzdłuż spadku, jak daleko wychodzą **Poza szczyty** i ich **Długości**: **jedna na przęsło** (od ramy do ramy) lub **ciągła** (cała długość hali). Leżą na górze krokwi, ze środnikiem prostopadłym do dachu, od 150 mm wewnątrz lica słupów do 200 mm od kalenicy, w tylu rzędach, ile wymaga rozstaw.
+- **Rygle ścienne**: ich **Profil** i **Rozstaw rygli ściennych**, od **Pierwszy rygiel na** aż pod okap, jeden na przęsło na zewnętrznym licu słupów, środnik poziomo, krawędzie w dół; w szczytach od słupa do słupa (lub między słupami ramy szczytowej), tak wysoko, jak pozwala krokiew nad nimi. **Belka okapowa** zajmuje górę ścian podłużnych (ze swoim **Profilem**), rygle jeden rozstaw niżej.
+- **Stężenia**: **Przęsła stężone** (ich numery, od pierwszego), **Profil** prętów (pręty okrągłe Ø16–Ø30, kątowniki lub rury) i gdzie: **W dachu** (krzyż w płaszczyźnie dachu, pod pasem górnym krokwi, w polach mniej więcej długości przęsła) i **W ścianach podłużnych** (krzyż w płaszczyźnie ścian przez osie słupów, od wysokości pierwszego rygla aż pod wutę).
+- **Zastrzały**: od co drugiej płatwi i rygla ściennego do pasa dolnego krokwi i pasa wewnętrznego słupa, po obu stronach, poza wutami.
+
+![Stal drugorzędna w 3D](shots/steel-secondary-3d.webp)
+
+Każda płatew i rygiel leży na **łapie** na każdej krokwi, słupie lub słupie szczytowym, który przecina: blacha przyspawana do lica pręta obok środnika płatwi (na zewnątrz środnika C, po stronie Z przeciwnej do jego dolnej półki), skręcona przez środnik, dwie śruby na koniec płatwi (M12 do 250 mm wysokości, M16 powyżej). Słup narożny węższy od słupów dostaje wyższą łapę, aż do rygla. Każdy krzyż leży na **blachach węzłowych** przyspawanych do środnika krokwi lub słupów, po jednej przekątnej z każdej strony; kątownik lub rura jest przykręcona dwiema śrubami, gwintowany koniec pręta okrągłego bierze swoją nakrętkę. Zastrzał jest przykręcony na obu końcach. To połączenia jak te ram: zaznacz jedno, aby zobaczyć jego blachę i śruby we Właściwościach i tam je zmienić. Podsumowanie konfiguratora liczy i waży płatwie, rygle, belkę okapową, stężenia i zastrzały; zestawienie **Steel parts** zawiera ich łapy, blachy węzłowe i śruby.
+
+![Płatew na swojej łapie, zastrzał pod nią](shots/steel-secondary-cleat.webp)
+
+![Stężenie dachu na blachach węzłowych](shots/steel-secondary-bracing.webp)
+
 ## IFC i ilości
 
 Pręt eksportuje się jako **IfcMember** ze swoim **IfcMemberType**. Jego bryła jest zapisana tak, jak stal zapisują inne programy (Tekla, Advance Steel, Revit): przekrój **wyciągnięty** (IfcExtrudedAreaSolid), **przycięty** płaszczyznami końców (IfcBooleanClippingResult z IfcHalfSpaceSolid), a każde podcięcie jako **IfcOpeningElement**, który go wycina. Stalowa belka lub słup z końcami zapisuje się tak samo. Ilości każdego pręta podają jego długość między cięciami, pole przekroju, objętość i ciężar netto (7850 kg/m³).
 
-Hala jest eksportowana jako **IfcBuildingSystem** (LOADBEARING), do którego przypisane są jej pręty, z jej danymi w zestawie właściwości `Lapin_SteelHall` i własną **IfcGrid**. Rygiel z wutami to **IfcElementAssembly** rygla i jego wut: wuta wycięta z profilu to **IfcMember**, wuta spawana z blach to dwie **IfcPlate**, każda wyciągnięta (IfcExtrudedAreaSolid). Wuty nie wchodzą do ilości rygla; podsumowanie konfiguratora je waży.
+Hala jest eksportowana jako **IfcBuildingSystem** (LOADBEARING), do którego przypisane są jej pręty, z jej danymi w zestawie właściwości `Lapin_SteelHall` i własną **IfcGrid**. Rygiel z wutami to **IfcElementAssembly** rygla i jego wut: wuta wycięta z profilu to **IfcMember**, wuta spawana z blach to dwie **IfcPlate**, każda wyciągnięta (IfcExtrudedAreaSolid). Wuty nie wchodzą do ilości rygla; podsumowanie konfiguratora je waży. Płatwie są eksportowane jako **IfcMember** PURLIN, stężenia i zastrzały jako BRACE, rygle ścienne i belka okapowa jako USERDEFINED (**Side rail**, **Eaves beam**), wszystkie przypisane do systemu hali wraz z połączeniami.
 
 Połączenie eksportuje się jako **IfcElementAssembly** jego blach (**IfcPlate**), śrub (**IfcMechanicalFastener** BOLT), kotew (ANCHORBOLT) i płytek kotwiących (**IfcDiscreteAccessory** ANCHORPLATE), każde z rozmiarem i klasą w `Lapin_SteelPart`; realizuje ono połączenie prętów, które łączy (**IfcRelConnectsWithRealizingElements**; stopa — między fundamentem a jej słupem). Spoiny pozostają danymi, nie bryłami.

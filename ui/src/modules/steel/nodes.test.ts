@@ -10,6 +10,10 @@ describe('the steel connections', () => {
     expect(nodeFields('apex')).not.toContain('stiffeners');
     expect(nodeFields('post')).toContain('gap');
     expect(nodeFields('post')).not.toContain('cols');
+    // The secondary steel's (decision 275): a cleat's plate and bolts, a gusset's spacing, a fly brace's bolts alone.
+    expect(nodeFields('cleat')).toEqual(['plate', 'bolt', 'grade']);
+    expect(nodeFields('gusset')).toEqual(expect.arrayContaining(['edge', 'pitch']));
+    expect(nodeFields('fly')).not.toContain('plate');
   });
 
   it('name bolts by their diameter and offer the anchors a base takes', () => {

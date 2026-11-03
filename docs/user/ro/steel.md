@@ -65,7 +65,7 @@ Profilele tubulare sunt goale în interior, în vederea 3D, în secțiuni și î
 
 ![Un fronton cu stâlpi](shots/steel-hall-gable.webp)
 
-- **Elemente secundare**: **Distanța dintre pane**, **Distanța dintre riglele de perete**, **Traveile contravântuite** (numerele lor, de la prima) și o **Grindă de streașină**. Se păstrează cu hala pentru panele, riglele și contravântuirile care vin; încă nu se construiesc.
+- **Elemente secundare**: panele, riglele de perete, contravântuirile, grinda de streașină și contrafișele (mai jos).
 - **Amplasare**: unde se întâlnesc axa A și axa 1, și direcția deschiderii în plan (**Rotire**); previzualizarea arată axele halei de sus.
 
 **Creează hala** o face într-un singur pas, pe care o anulare îl ia înapoi: **axele** ei proprii (axele 1, 2… la cadre, A și B la stâlpi), iar la fiecare cadru doi **stâlpi** (stâlpi ai structurii dintr-un profil metalic, cu inima în planul cadrului și capătul de sus tăiat după panta acoperișului) și două **rigle** îmbinate la 45° la coamă (una singură, de la stâlpul scund la cel înalt, la acoperișul într-o apă): bare metalice ajustate pe fețele stâlpilor, cu vutele lor. Hala stă pe etajul curent; streașina și coama sunt înălțimi ale cadrelor ei, nu etaje noi. Rezumatul dă cadrele, înălțimile și oțelul pe feluri: stâlpi, rigle, vute, stâlpi de fronton, în total și pe m² de pardoseală.
@@ -99,10 +99,30 @@ Selectează un nod ca să-l vezi în Proprietăți: barele pe care le leagă, fi
 
 Barele desenate de mână își primesc nodurile din **Steel → Găsește nodurile**: un picior sub fiecare bară verticală, un nod de streașină unde o bară e ajustată pe un stâlp, prinderea unui stâlp de fronton unde un stâlp e ajustat sub o bară, un nod de coamă unde două bare sunt tăiate în unghi una cu alta, o înnădire unde două bare merg în prelungire, cap la cap; pentru barele selectate, sau pentru tot modelul când nu e nimic selectat. **Steel → Piese metalice** face extrasul plăcilor, șuruburilor, ancorelor și sudurilor din noduri. Un nod șters dă barelor capetele înapoi; o bară ștearsă își ia nodurile cu ea; **Șterge hala** din configurator ia hala cu barele, nodurile și axele ei, într-un singur pas.
 
+## Elemente secundare
+
+O hală vine cu **elementele ei secundare** (Steel → Portal frame hall…, fila **Elemente secundare**), făcute odată cu ea și din nou când e schimbată, fiecare bară păstrându-și identitatea:
+
+![Fila Elemente secundare](shots/steel-secondary-hall.webp)
+
+- **Elemente secundare**: pornite sau oprite pentru toată hala.
+- **Pane**: **Profilul** lor (Z, C și Σ formate la rece, un U sau un I ușor), **Distanța dintre pane** pe pantă, cât trec **Peste frontoane** și **Lungimile**: **câte una pe travee** (de la cadru la cadru) sau **continuă** (pe toată lungimea halei). Stau pe fața de sus a riglelor, cu inima perpendiculară pe acoperiș, de la 150 mm în interiorul feței stâlpilor până la 200 mm de coamă, în atâtea șiruri câte cere distanța.
+- **Rigle de perete**: **Profilul** și **Distanța dintre riglele de perete**, de la **Prima riglă la** până sub streașină, câte una pe travee pe fața exterioară a stâlpilor, cu inima orizontală și buzele în jos; pe frontoane, de la stâlp la stâlp (sau între stâlpii unui cadru de fronton), cât de sus le lasă rigla de deasupra. **Grinda de streașină** ia partea de sus a pereților lungi (cu **Profilul** ei), riglele stând la o distanță sub ea.
+- **Contravântuiri**: **Traveile contravântuite** (numerele lor, de la prima), **Profilul** barelor (bare rotunde de la Ø16 la Ø30, corniere sau țevi) și unde: **În acoperiș** (un X în planul acoperișului, sub talpa de sus a riglelor, în panouri cam cât travea) și **În pereții lungi** (un X în planul pereților, prin axele stâlpilor, de la înălțimea primei rigle până sub vută).
+- **Contrafișe**: de la fiecare a doua pană și riglă de perete până la talpa de jos a riglei și talpa interioară a stâlpului, de o parte și de alta, în afara vutelor.
+
+![Elementele secundare în 3D](shots/steel-secondary-3d.webp)
+
+Fiecare pană și riglă stă pe câte o **eclisă** pe fiecare riglă, stâlp sau stâlp de fronton pe care îl traversează: o placă sudată pe fața barei, lângă inima panei (în afara inimii unui C, pe partea unui Z opusă tălpii lui de jos), prinsă cu șuruburi prin inimă, două șuruburi la fiecare capăt de pană (M12 la o pană de până la 250 mm înălțime, M16 peste). Un stâlp de colț mai îngust decât stâlpii are o eclisă mai înaltă, până la riglă. Fiecare X stă pe **gușee** sudate pe inima riglelor sau a stâlpilor, câte o diagonală pe fiecare față; o cornieră sau o țeavă e prinsă cu două șuruburi, capătul filetat al unei bare rotunde își ia piulița. O contrafișă e prinsă cu șurub la ambele capete. Sunt noduri ca ale cadrelor: selectează unul ca să-i vezi placa și șuruburile în Proprietăți și să le schimbi acolo. Rezumatul configuratorului numără și cântărește panele, riglele, grinda de streașină, contravântuirile și contrafișele; extrasul **Steel parts** are eclisele, gușeele și șuruburile lor.
+
+![O pană pe eclisa ei, o contrafișă sub ea](shots/steel-secondary-cleat.webp)
+
+![Contravântuirea acoperișului pe gușeele ei](shots/steel-secondary-bracing.webp)
+
 ## IFC și cantități
 
 O bară se exportă ca **IfcMember** cu **IfcMemberType**-ul ei. Corpul se scrie cum scriu oțelul celelalte programe (Tekla, Advance Steel, Revit): secțiunea **extrudată** (IfcExtrudedAreaSolid), **tăiată** de planele capetelor (IfcBooleanClippingResult cu IfcHalfSpaceSolid), iar fiecare crestătură un **IfcOpeningElement** care o golește. O grindă sau un stâlp metalic cu capete se scrie la fel. Cantitățile fiecărei bare dau lungimea dintre tăieturi, aria secțiunii, volumul și greutatea netă (7850 kg/m³).
 
-O hală se exportă ca **IfcBuildingSystem** (LOADBEARING) căruia îi sunt atribuite barele ei, cu datele ei în setul de proprietăți `Lapin_SteelHall`, și cu propriul **IfcGrid**. O riglă cu vute e un **IfcElementAssembly** al riglei și al vutelor ei: o vută tăiată din profil e un **IfcMember**, una din plăci sudate două **IfcPlate**, fiecare extrudată (IfcExtrudedAreaSolid). Vutele nu intră în cantitățile riglei; rezumatul configuratorului le cântărește.
+O hală se exportă ca **IfcBuildingSystem** (LOADBEARING) căruia îi sunt atribuite barele ei, cu datele ei în setul de proprietăți `Lapin_SteelHall`, și cu propriul **IfcGrid**. O riglă cu vute e un **IfcElementAssembly** al riglei și al vutelor ei: o vută tăiată din profil e un **IfcMember**, una din plăci sudate două **IfcPlate**, fiecare extrudată (IfcExtrudedAreaSolid). Vutele nu intră în cantitățile riglei; rezumatul configuratorului le cântărește. Panele se exportă ca **IfcMember** PURLIN, contravântuirile și contrafișele ca BRACE, riglele de perete și grinda de streașină ca USERDEFINED (**Side rail**, **Eaves beam**), toate atribuite sistemului halei, cu nodurile lor.
 
 Un nod se exportă ca **IfcElementAssembly** al plăcilor (**IfcPlate**), șuruburilor (**IfcMechanicalFastener** BOLT), ancorelor (ANCHORBOLT) și plăcilor de ancoraj (**IfcDiscreteAccessory** ANCHORPLATE), fiecare cu mărimea și grupa în `Lapin_SteelPart`; el realizează legătura dintre barele pe care le leagă (**IfcRelConnectsWithRealizingElements**; un picior, între fundație și stâlpul lui). Sudurile rămân date, nu corpuri.

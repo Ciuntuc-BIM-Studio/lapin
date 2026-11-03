@@ -17,9 +17,12 @@ public class SteelNodeTests
     static double Tan(double deg) => Math.Tan(deg * Math.PI / 180);
     static JsonArray J(params double[] v) => new([.. v.Select(x => (JsonNode)x)]);
 
+    /// <summary>A hall as stage 2 and 3 built it: its secondary steel off (decision 275; SteelSecondaryTests).</summary>
     static string Hall(Fixture f, JsonObject? attrs = null, string? style = null)
     {
-        var a = new JsonObject { ["storeyId"] = f.Storey, ["attrs"] = attrs ?? [] };
+        var o = attrs ?? [];
+        if (!o.ContainsKey("secondary")) o["secondary"] = false;
+        var a = new JsonObject { ["storeyId"] = f.Storey, ["attrs"] = o };
         if (style != null) a["style"] = style;
         return (string)f.Run("steel.addHall", a)!["id"]!;
     }
@@ -285,7 +288,7 @@ public class SteelNodeTests
         var grid = f.Session.Catalog.All<IScheduleSource>().Single(s => s.Kind == "steelParts").Grid(new QueryContextFor(f));
         Assert.Equal("Total", grid.Rows[^1][0]);
         // The configurator's preview: the same connections, a typical frame's drawn over it.
-        var p = (JsonObject)f.Session.Query("steel.hallPreview", new JsonObject { ["attrs"] = new JsonObject() })!;
+        var p = (JsonObject)f.Session.Query("steel.hallPreview", new JsonObject { ["attrs"] = new JsonObject { ["secondary"] = false } })!;
         var sum = p["summary"]!;
         Assert.Equal(42, (int)sum["nodes"]!);
         Assert.Equal(Count("Bolt"), (int)sum["bolts"]!);

@@ -65,7 +65,7 @@ Les profilés creux sont vides à l’intérieur, dans la vue 3D, les coupes et 
 
 ![Un pignon à potelets](shots/steel-hall-gable.webp)
 
-- **Acier secondaire** : l’**Entraxe des pannes**, l’**Entraxe des lisses**, les **Travées contreventées** (leurs numéros, depuis la première) et une **Poutre sablière**. Ils sont gardés avec le bâtiment pour les pannes, lisses et contreventements à venir ; ils ne sont pas encore construits.
+- **Acier secondaire** : les pannes, les lisses, le contreventement, la poutre sablière et les bracons (ci-dessous).
 - **Placement** : le croisement de l’axe A et de l’axe 1, et la direction de la portée en plan (**Rotation**) ; l’aperçu montre la trame du bâtiment vue du dessus.
 
 **Créer le bâtiment** le fait en une seule étape, qu’une annulation défait : sa propre **trame** (axes 1, 2… aux portiques, A et B aux poteaux), et à chaque portique deux **poteaux** (poteaux de la structure en profilé acier, l’âme dans le plan du portique, la tête coupée selon la pente) et deux **traverses** en onglet au faîtage (une seule, du poteau bas au poteau haut, en monopente) : des barres en acier ajustées sur les faces des poteaux, avec leurs jarrets. Le bâtiment est sur l’étage courant ; la sablière et le faîtage sont des hauteurs de ses portiques, pas de nouveaux étages. Le résumé donne les portiques, les hauteurs et l’acier par nature : poteaux, traverses, jarrets, potelets de pignon, au total et par m² de surface.
@@ -99,10 +99,30 @@ Sélectionnez un assemblage pour le voir dans les Propriétés : les barres qu'i
 
 Les barres dessinées à la main reçoivent leurs assemblages par **Steel → Trouver les assemblages** : un pied sous chaque barre verticale, un assemblage en rive où une barre est ajustée sur un poteau, celui d'un potelet où un poteau est ajusté sous une barre, un faîtage où deux barres sont coupées d'onglet l'une avec l'autre, un éclissage où deux barres se suivent bout à bout ; pour les barres sélectionnées, ou tout le modèle si rien n'est sélectionné. **Steel → Pièces métalliques** crée la liste des plaques, boulons, ancrages et soudures des assemblages. Supprimer un assemblage rend à ses barres leurs extrémités ; supprimer une barre emporte ses assemblages ; **Supprimer le bâtiment** dans le configurateur enlève le bâtiment avec ses barres, assemblages et axes, en une seule étape.
 
+## Acier secondaire
+
+Un bâtiment vient avec son **acier secondaire** (Steel → Portal frame hall…, onglet **Acier secondaire**), fait avec lui et refait avec lui quand il change, chaque barre gardant son identité :
+
+![L’onglet Acier secondaire](shots/steel-secondary-hall.webp)
+
+- **Acier secondaire** : activé ou non pour tout le bâtiment.
+- **Pannes** : leur **Profil** (Z, C et Σ formés à froid, un U ou un I léger), l’**Entraxe des pannes** le long du rampant, de combien elles vont **Au-delà des pignons**, et leurs **Longueurs** : **une par travée** (de portique à portique) ou **continue** (toute la longueur du bâtiment). Elles reposent sur le dessus des chevrons, l’âme perpendiculaire à la toiture, de 150 mm à l’intérieur de la face des poteaux jusqu’à 200 mm du faîtage, en autant de files que l’entraxe le demande.
+- **Lisses de bardage** : leur **Profil** et l’**Entraxe des lisses**, de la **Première lisse à** jusque sous l’égout, une par travée sur la face extérieure des poteaux, l’âme horizontale et les bords tombés vers le bas ; aux pignons, de potelet à potelet (ou entre les poteaux d’un portique de pignon), aussi haut que le chevron au-dessus le permet. Une **Poutre sablière** prend le haut des longs pans (avec son **Profil**), les lisses un entraxe plus bas.
+- **Contreventement** : les **Travées contreventées** (leurs numéros, depuis la première), le **Profil** des barres (ronds de Ø16 à Ø30, cornières ou tubes) et où : **En toiture** (une croix dans le plan de la toiture, sous la semelle supérieure des chevrons, en panneaux à peu près longs comme la travée) et **Dans les longs pans** (une croix dans le plan des parois, par les axes des poteaux, de la hauteur de la première lisse jusque sous le jarret).
+- **Bracons** : d’une panne et d’une lisse sur deux jusqu’à la semelle inférieure du chevron et la semelle intérieure du poteau, de part et d’autre, hors des jarrets.
+
+![L’acier secondaire en 3D](shots/steel-secondary-3d.webp)
+
+Chaque panne et chaque lisse repose sur une **échantignolle** sur chaque chevron, poteau ou potelet qu’elle croise : une plaque soudée sur la face de la barre, contre l’âme de la panne (à l’extérieur de l’âme d’un C, du côté d’un Z opposé à sa semelle inférieure), boulonnée à travers l’âme, deux boulons par bout de panne (M12 jusqu’à 250 mm de hauteur, M16 au-delà). Un poteau d’angle plus étroit que les poteaux reçoit une échantignolle plus haute, jusqu’à la lisse. Chaque croix repose sur des **goussets** soudés à l’âme des chevrons ou des poteaux, une diagonale sur chaque face ; une cornière ou un tube y est boulonné par deux boulons, le bout fileté d’un rond prend son écrou. Un bracon est boulonné à ses deux bouts. Ce sont des assemblages comme ceux des portiques : sélectionnez-en un pour voir sa plaque et ses boulons dans les Propriétés, et les y changer. Le résumé du configurateur compte et pèse les pannes, les lisses, la poutre sablière, le contreventement et les bracons ; la nomenclature **Steel parts** donne leurs échantignolles, goussets et boulons.
+
+![Une panne sur son échantignolle, un bracon dessous](shots/steel-secondary-cleat.webp)
+
+![Le contreventement de toiture sur ses goussets](shots/steel-secondary-bracing.webp)
+
 ## IFC et quantités
 
 Une barre s’exporte en **IfcMember** avec son **IfcMemberType**. Son corps est écrit comme les autres logiciels écrivent l’acier (Tekla, Advance Steel, Revit) : sa section **extrudée** (IfcExtrudedAreaSolid), **coupée** par les plans de ses extrémités (IfcBooleanClippingResult avec IfcHalfSpaceSolid), et chaque grugeage un **IfcOpeningElement** qui l’évide. Une poutre ou un poteau en acier avec extrémités s’écrit de même. Les quantités de chaque barre donnent sa longueur entre ses coupes, l’aire de sa section, son volume et son poids net (7850 kg/m³).
 
-Un bâtiment s’exporte comme un **IfcBuildingSystem** (LOADBEARING) auquel ses barres sont affectées, ses données dans le jeu de propriétés `Lapin_SteelHall`, avec sa propre **IfcGrid**. Une traverse avec jarrets est un **IfcElementAssembly** de la traverse et de ses jarrets : un jarret découpé dans le profil est un **IfcMember**, un jarret en tôles soudées deux **IfcPlate**, chacun extrudé (IfcExtrudedAreaSolid). Les jarrets ne comptent pas dans les quantités de la traverse ; le résumé du configurateur les pèse.
+Un bâtiment s’exporte comme un **IfcBuildingSystem** (LOADBEARING) auquel ses barres sont affectées, ses données dans le jeu de propriétés `Lapin_SteelHall`, avec sa propre **IfcGrid**. Une traverse avec jarrets est un **IfcElementAssembly** de la traverse et de ses jarrets : un jarret découpé dans le profil est un **IfcMember**, un jarret en tôles soudées deux **IfcPlate**, chacun extrudé (IfcExtrudedAreaSolid). Les jarrets ne comptent pas dans les quantités de la traverse ; le résumé du configurateur les pèse. Les pannes s’exportent comme **IfcMember** PURLIN, le contreventement et les bracons comme BRACE, les lisses et la poutre sablière comme USERDEFINED (**Side rail**, **Eaves beam**), tous affectés au système du bâtiment avec leurs assemblages.
 
 Un assemblage s'exporte comme **IfcElementAssembly** de ses plaques (**IfcPlate**), boulons (**IfcMechanicalFastener** BOLT), ancrages (ANCHORBOLT) et plaques d'ancrage (**IfcDiscreteAccessory** ANCHORPLATE), chacun avec sa taille et sa classe dans `Lapin_SteelPart` ; il réalise la liaison des barres qu'il assemble (**IfcRelConnectsWithRealizingElements** ; un pied, entre la semelle et son poteau). Les soudures restent des données, pas des corps.
