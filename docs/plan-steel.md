@@ -28,7 +28,7 @@ Geometria: extrudarea profilului tăiată cu semispații. În IFC: `IfcExtrudedA
 
 - deschiderea, lungimea, traveile (egale sau date), înălțimea la streașină, acoperiș în două ape sau într-o apă, panta;
 - stâlpii și riglele cadrului (profilele), **vuta la streașină** (lungime, adâncime) și **vuta la coamă**;
-- vuta: **tăiată din același profil** (un T tăiat oblic și sudat sub riglă, implicit) sau **din plăci sudate**; riglele cu inima variabilă rămân pentru mai târziu;
+- vuta, la alegere: **tăiată din același profil** (un T tăiat oblic și sudat sub riglă) sau **din plăci sudate**; riglele cu inima variabilă rămân pentru mai târziu;
 - cadrele de fronton: stâlpi de fronton cu riglă simplă, sau cadru curent la capăt;
 - picioarele stâlpilor: articulate sau încastrate;
 - panele și riglele de perete, contravântuirile (traveile alese), grinda de streașină.
@@ -41,7 +41,7 @@ Iese: axele și nivelurile, stâlpii, riglele cu vutele lor, nodurile cu tipuril
 
 Îmbinările obișnuite la halele cu vute, în ordinea în care vin:
 
-1. **Picior de stâlp articulat**: placă de bază, 2 sau 4 ancore, fără rigidizări.
+1. **Picior de stâlp articulat**: placă de bază, 2 sau 4 ancore (drepte, cu cârlig sau cu placă de ancoraj, modelate și în fundație), fără rigidizări.
 2. **Picior de stâlp încastrat**: placă de bază mai mare, 4–8 ancore, rigidizări (nervuri) pe tălpi și inimă.
 3. **Nodul de streașină (colț de cadru)**: rigla cu vuta prinsă de stâlp cu **placă de capăt extinsă** și șuruburi; rigidizări în stâlp în dreptul tălpilor riglei și ale vutei; rigidizare de compresiune când trebuie.
 4. **Nodul de coamă**: cele două rigle prinse cap la cap prin plăci de capăt, cu vuta de coamă.
@@ -63,8 +63,8 @@ Parametrii unui tip de nod: grosimea plăcilor, numărul, diametrul (M12–M30) 
 
 Fiecare etapă: teste în engine, pagina ei din ghid în toate limbile și scena ei.
 
-## De hotărât de utilizator
+## Hotărât de utilizator (03.11.2026)
 
-- Catalogul profilelor formate la rece: de la ce producători (sau doar forme generice Z/C cu dimensiuni)?
-- Vuta implicită tăiată din același profil: bine așa, sau plăci sudate?
-- Ancorele: tije drepte, cu cârlig, sau cu placă de ancoraj; se modelează și în fundație?
+- **Profilele formate la rece**: forme generice cu dimensiuni (Z, C, Σ: înălțime, tălpi, grosime, îndoituri), fără cataloage de producător.
+- **Vuta**: se poate alege, pe tipul de cadru și pe fiecare vută: **tăiată din același profil** (un T tăiat oblic, sudat sub riglă) sau **din plăci sudate** (inimă și talpă cu grosimile lor).
+- **Ancorele**: toate trei felurile, alese pe tipul de picior: **tije drepte**, **cu cârlig** și **cu placă de ancoraj**; ancorele se **modelează și în fundație** (intră în fundația sub stâlp, cu lungimea de ancorare, și apar în planul ancorelor și în extrase).
