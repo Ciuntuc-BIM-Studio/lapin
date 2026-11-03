@@ -64,3 +64,15 @@ Il suo tipo, in **Finiture → Tipi di controsoffitto**, imposta il **Sistema**:
 ![Le proprietà di un controsoffitto: il suo tipo, l’altezza e i corpi installati](shots/ceiling-properties.webp)
 
 ![Controsoffitti a quadrotti con pannelli luminosi e diffusori d’aria, in 3D](shots/ceilings-3d.webp)
+
+## Battiscopa
+
+**Finiture → Battiscopa nel locale** (<kbd>SK</kbd>) posa un battiscopa tutt’intorno al locale cliccato, lungo le facce dei muri, interrotto a ogni porta (qualsiasi apertura che scende fino al pavimento); un clic tra muri senza locale li segue allo stesso modo. Il battiscopa di un locale segue il locale: sposta un muro o una porta e il battiscopa va con loro. **Battiscopa** ne disegna uno lungo una linea cliccata sulla faccia di un muro (Invio termina); il battiscopa va dal lato opposto al muro, e **Cambia lato** nelle sue proprietà lo gira.
+
+Il suo tipo, in **Finiture → Tipi di battiscopa**, fissa il **Profilo** — **Liscio (squadrato)**, **Smussato (MDF)**, **Sagomato (legno)**, **Con sguscia (metallo)**, **Bordo a matita** o **Bordo arrotondato**, disegnato accanto in scala —, l’**Altezza** (da 40 a 300 mm), lo **Spessore** (da 5 a 40 mm), il **Materiale** e il suo colore. **Dalla libreria** porta nel progetto tipi già pronti: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 e Bullnose 70. Finché uno strumento battiscopa è attivo, il pannello delle proprietà mostra il tipo che posa, da scegliere prima del clic.
+
+Nelle sue proprietà un battiscopa ha il suo tipo, un **Offset di base** sopra il pavimento e **Interrotto alle porte** (disattivato, passa davanti). **Abaco dei battiscopa** (o **Battiscopa** nell’elenco dei nuovi abachi del browser di progetto) li elenca per tipo con i pezzi e la lunghezza, senza i vuoti delle porte. Il battiscopa è tagliato a 45° negli angoli; una pianta ne disegna il bordo anteriore, e un battiscopa va in IFC come un IfcCovering di tipo SKIRTINGBOARD, di un IfcCoveringType dello stesso tipo.
+
+![I tipi di battiscopa: il profilo disegnato in scala, la libreria](shots/skirting-types.webp)
+
+![Le proprietà di un battiscopa: il suo tipo, l’offset di base e i vuoti alle porte](shots/skirting-properties.webp)

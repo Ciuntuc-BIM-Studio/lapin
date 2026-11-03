@@ -64,3 +64,15 @@ Dets type i **Overflader → Lofttyper** angiver **Systemet**: **Plader på synl
 ![Et lofts egenskaber: type, højde og armaturer](shots/ceiling-properties.webp)
 
 ![Systemlofter med lyspaneler og luftindblæsninger i 3D](shots/ceilings-3d.webp)
+
+## Fodlister
+
+**Overflader → Fodliste i rum** (<kbd>SK</kbd>) lægger en fodliste rundt i det rum, du klikker i, langs væggenes flader, afbrudt ved hver dør (enhver åbning, der går ned til gulvet); et klik mellem vægge uden rum følger dem på samme måde. Et rums fodliste følger rummet: flyt en væg eller en dør, og fodlisten går med. **Fodliste** tegner en langs en linje, du klikker på en vægs flade (Enter afslutter); listen kommer på siden væk fra væggen, og **Skift side** i dens egenskaber vender den.
+
+Dens type, under **Overflader → Fodlistetyper**, sætter **Profilet** — **Glat (firkantet)**, **Affaset (MDF)**, **Profileret (træ)**, **Med hulkehl (metal)**, **Halvrund top** eller **Afrundet kant**, tegnet ved siden af i skala —, **Højden** (40 til 300 mm), **Tykkelsen** (5 til 40 mm), **Materialet** og dets farve. **Fra biblioteket** henter færdige typer ind i projektet: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 og Bullnose 70. Mens et fodlisteværktøj er aktivt, viser egenskabspanelet den type, det lægger, til at vælge før klikket.
+
+I sine egenskaber har en fodliste sin type, en **Fodforskydning** over gulvet og **Huller ved dørene** (slået fra løber den forbi dem). **Fodlisteskema** (eller **Fodlister** i projektbrowserens liste over nye skemaer) viser dem efter type med stykker og længde, uden dørenes huller. Listen er geret i hjørnerne; en plan tegner dens forkant, og en fodliste går til IFC som en IfcCovering af typen SKIRTINGBOARD, af en IfcCoveringType af samme type.
+
+![Fodlistetyperne: profilet tegnet i skala, biblioteket](shots/skirting-types.webp)
+
+![En fodlistes egenskaber: dens type, fodforskydningen og hullerne ved dørene](shots/skirting-properties.webp)

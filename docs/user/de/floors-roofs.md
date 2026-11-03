@@ -64,3 +64,15 @@ Ihr Typ in **Ausbau → Deckentypen** legt das **System** fest: **Platten auf si
 ![Die Eigenschaften einer Decke: Typ, Höhe und Einbauten](shots/ceiling-properties.webp)
 
 ![Rasterdecken mit Leuchtenpaneelen und Luftauslässen in 3D](shots/ceilings-3d.webp)
+
+## Sockelleisten
+
+**Ausbau → Sockelleiste im Raum** (<kbd>SK</kbd>) legt eine Sockelleiste rund um den angeklickten Raum, an den Wandflächen entlang, an jeder Tür unterbrochen (jede Öffnung, die bis zum Boden reicht); ein Klick zwischen Wänden ohne Raum folgt ihnen genauso. Die Sockelleiste eines Raums folgt dem Raum: Wird eine Wand oder eine Tür verschoben, geht die Sockelleiste mit. **Sockelleiste** zeichnet eine entlang einer Linie, die du auf einer Wandfläche anklickst (Enter beendet); die Leiste liegt auf der von der Wand abgewandten Seite, und **Seite wechseln** in ihren Eigenschaften dreht sie um.
+
+Ihr Typ, unter **Ausbau → Sockelleistentypen**, legt das **Profil** fest — **Glatt (eckig)**, **Abgeschrägt (MDF)**, **Profiliert (Holz)**, **Mit Hohlkehle (Metall)**, **Halbrund oben** oder **Abgerundete Kante**, maßstäblich daneben gezeichnet —, die **Höhe** (40 bis 300 mm), die **Dicke** (5 bis 40 mm), das **Material** und seine Farbe. **Aus der Bibliothek** holt fertige Typen ins Projekt: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 und Bullnose 70. Solange ein Sockelleisten-Werkzeug aktiv ist, zeigt das Eigenschaftenfenster den Typ, den es legt, vor dem Klick zu wählen.
+
+In ihren Eigenschaften hat eine Sockelleiste ihren Typ, einen **Versatz unten** über dem Boden und **Lücken an den Türen** (aus: Sie läuft vor ihnen durch). **Sockelleistenliste** (oder **Sockelleisten** in der Liste neuer Bauteillisten im Projektbrowser) führt sie nach Typ mit Stücken und Länge auf, ohne die Lücken der Türen. Die Leiste ist an den Ecken auf Gehrung geschnitten; ein Grundriss zeichnet ihre Vorderkante, und in IFC wird eine Sockelleiste ein IfcCovering vom Typ SKIRTINGBOARD, eines IfcCoveringType desselben Typs.
+
+![Die Sockelleistentypen: das Profil maßstäblich gezeichnet, die Bibliothek](shots/skirting-types.webp)
+
+![Die Eigenschaften einer Sockelleiste: ihr Typ, der Versatz unten und die Lücken an den Türen](shots/skirting-properties.webp)

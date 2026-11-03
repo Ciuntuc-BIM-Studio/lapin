@@ -64,3 +64,15 @@ Su tipo, en **Acabados → Tipos de falso techo**, fija el **Sistema**: **Placas
 ![Las propiedades de un falso techo: su tipo, su altura y sus elementos](shots/ceiling-properties.webp)
 
 ![Falsos techos registrables con paneles de luz y difusores, en 3D](shots/ceilings-3d.webp)
+
+## Rodapiés
+
+**Acabados → Rodapié en la habitación** (<kbd>SK</kbd>) coloca un rodapié alrededor de la habitación en la que haces clic, por las caras de los muros, interrumpido en cada puerta (cualquier hueco que baje hasta el suelo); con un clic dentro de muros sin habitación, los sigue igual. El rodapié de una habitación la sigue: mueve un muro o una puerta y el rodapié va con ellos. **Rodapié** dibuja uno a lo largo de una línea que marcas con clics sobre la cara de un muro (Intro termina); la pieza va del lado contrario al muro, y **Cambiar de lado** en sus propiedades la da la vuelta.
+
+Su tipo, en **Acabados → Tipos de rodapié**, fija el **Perfil** — **Recto (cuadrado)**, **Biselado (MDF)**, **Moldurado (madera)**, **Con pie curvo (metal)**, **Canto redondo (lápiz)** o **Borde redondeado**, dibujado al lado a escala —, la **Altura** (40 a 300 mm), el **Espesor** (5 a 40 mm), el **Material** y su color. **De la biblioteca** trae al proyecto tipos ya hechos: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 y Bullnose 70. Mientras una herramienta de rodapié está activa, el panel de propiedades muestra el tipo que coloca, para elegirlo antes del clic.
+
+En sus propiedades un rodapié tiene su tipo, un **Desfase de base** sobre el suelo y **Huecos en las puertas** (desactivado, sigue por delante de ellas). **Tabla de rodapiés** (o **Rodapiés** en la lista de tablas nuevas del navegador del proyecto) los lista por tipo con sus piezas y su longitud, sin los huecos de las puertas. La pieza se corta a inglete en las esquinas; la planta dibuja su canto frontal, y un rodapié va a IFC como un IfcCovering de tipo SKIRTINGBOARD, de un IfcCoveringType del mismo tipo.
+
+![Los tipos de rodapié: el perfil dibujado a escala, la biblioteca](shots/skirting-types.webp)
+
+![Las propiedades de un rodapié: su tipo, el desfase de base y los huecos en las puertas](shots/skirting-properties.webp)

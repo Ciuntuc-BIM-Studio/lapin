@@ -64,3 +64,15 @@ Its type, in **Finishes → Ceiling types**, sets the **System**: **Tiles on an 
 ![A ceiling's properties: its type, height and fixtures](shots/ceiling-properties.webp)
 
 ![Grid ceilings with light panels and air diffusers, in 3D](shots/ceilings-3d.webp)
+
+## Skirtings
+
+**Finishes → Skirting in room** (<kbd>SK</kbd>) lays a skirting board round the room you click, along the walls' faces, broken at each door (any opening that comes down to the floor); clicked inside walls with no room, it follows them the same way. A room's skirting follows the room: move a wall or a door and the skirting goes with it. **Skirting** draws one along a line you click on a wall's face (Enter finishes); the board goes on the side away from the wall, and **Flip side** in its properties turns it over.
+
+Its type, in **Finishes → Skirting types**, sets the **Profile** — **Flush (square)**, **Bevelled (MDF)**, **Moulded (wooden)**, **Cove foot (metal)**, **Pencil round** or **Bullnose**, drawn beside it to scale — the **Height** (40 to 300 mm), the **Thickness** (5 to 40 mm), the **Material** and its colour. **From the library** brings ready-made types into the project: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 and Bullnose 70. While a skirting tool is on, the properties panel shows the type it lays, to choose before the click.
+
+A skirting's properties hold its type, its **Base offset** over the floor (under Dimensions) and **Gaps at the doors** (off, it runs on across them). **Skirting schedule** (or **Skirtings** in the project browser's list of new schedules) lists them by type with their pieces and length, the doors' gaps left out. The board is mitred at the corners; a plan draws its front edge, and a skirting goes to IFC as an IfcCovering of type SKIRTINGBOARD, of an IfcCoveringType of the same.
+
+![The skirting types: the profile drawn to scale, the library](shots/skirting-types.webp)
+
+![A skirting's properties: its type, base offset and the gaps at the doors](shots/skirting-properties.webp)

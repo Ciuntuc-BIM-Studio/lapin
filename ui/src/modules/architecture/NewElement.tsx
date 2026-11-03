@@ -12,9 +12,9 @@ import { useUi, type UiState } from '../../app/store';
 import { useSession } from '../../engine/session';
 import { materialName, mm, ofClass, relatedOf, typeLayers } from '../../engine/model';
 
-type TypeField = 'wallTypeId' | 'doorTypeId' | 'windowTypeId' | 'slabTypeId' | 'ceilingTypeId' | 'curtainTypeId';
+type TypeField = 'wallTypeId' | 'doorTypeId' | 'windowTypeId' | 'slabTypeId' | 'ceilingTypeId' | 'skirtingTypeId' | 'curtainTypeId';
 
-interface Spec { width?: number; height?: number; sillHeight?: number }
+interface Spec { width?: number; height?: number; sillHeight?: number; profile?: string; thickness?: number; material?: string }
 
 /** A type in a few words: a layered type's layers and thickness, a door's or window's size and sill. */
 function about(model: { nodes: Map<string, NodeDto>; relations: Parameters<typeof typeLayers>[0]['relations'] }, t: NodeDto): string | null {
@@ -24,6 +24,8 @@ function about(model: { nodes: Map<string, NodeDto>; relations: Parameters<typeo
     return `${layers.map((l) => `${materialName(model, l.material)} ${mm(l.thickness)}${l.core ? '*' : ''}`).join(' · ')} = ${mm(total)}`;
   }
   const spec = t.props.spec as Spec | undefined;
+  // A skirting's: its profile, height × thickness and material.
+  if (spec?.profile && spec.height && spec.thickness) return `${spec.profile} · ${mm(spec.height)} × ${mm(spec.thickness)}${spec.material ? ` · ${spec.material}` : ''}`;
   if (spec?.width && spec.height) return `${mm(spec.width)} × ${mm(spec.height)}${spec.sillHeight ? ` · sill ${mm(spec.sillHeight)}` : ''}`;
   return null;
 }

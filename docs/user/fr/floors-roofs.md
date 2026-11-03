@@ -64,3 +64,15 @@ Son type, dans **Finitions → Types de plafond**, règle le **Système** : **Da
 ![Les propriétés d’un plafond : son type, sa hauteur et ses équipements](shots/ceiling-properties.webp)
 
 ![Plafonds à dalles avec dalles lumineuses et diffuseurs, en 3D](shots/ceilings-3d.webp)
+
+## Plinthes
+
+**Finitions → Plinthe dans la pièce** (<kbd>SK</kbd>) pose une plinthe tout autour de la pièce cliquée, le long des faces des murs, interrompue à chaque porte (toute ouverture qui descend jusqu’au sol) ; un clic entre des murs sans pièce les suit de la même façon. La plinthe d’une pièce suit la pièce : déplacez un mur ou une porte et la plinthe les suit. **Plinthe** en dessine une le long d’une ligne cliquée sur la face d’un mur (Entrée termine) ; la plinthe se place du côté opposé au mur, et **Changer de côté** dans ses propriétés la retourne.
+
+Son type, dans **Finitions → Types de plinthe**, fixe le **Profil** — **Droite (carrée)**, **Biseautée (MDF)**, **Moulurée (bois)**, **À gorge (métal)**, **Bord demi-rond** ou **Bord arrondi**, dessiné à côté à l’échelle —, la **Hauteur** (40 à 300 mm), l’**Épaisseur** (5 à 40 mm), le **Matériau** et sa couleur. **De la bibliothèque** apporte au projet des types tout faits : MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 et Bullnose 70. Tant qu’un outil de plinthe est actif, le panneau des propriétés montre le type qu’il pose, à choisir avant le clic.
+
+Dans ses propriétés, une plinthe a son type, un **Décalage de base** au-dessus du sol et **Interrompue aux portes** (décoché, elle passe devant). **Nomenclature des plinthes** (ou **Plinthes** dans la liste des nouvelles nomenclatures du navigateur du projet) les liste par type avec leurs morceaux et leur longueur, sans les vides des portes. La plinthe est coupée d’onglet aux angles ; un plan dessine son arête avant, et une plinthe part en IFC comme un IfcCovering de type SKIRTINGBOARD, d’un IfcCoveringType du même type.
+
+![Les types de plinthe : le profil dessiné à l’échelle, la bibliothèque](shots/skirting-types.webp)
+
+![Les propriétés d’une plinthe : son type, le décalage de base et les vides aux portes](shots/skirting-properties.webp)

@@ -683,6 +683,29 @@ export const scenes = [
     },
   },
   {
+    id: 'skirtings',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      // Report #61: an oak skirting round the room with the door, broken at it; the types' dialog with its profile and library.
+      const room = (await t.cmd('architecture.addRoom', { storeyId: storey, x: 3.5, y: 4 })).id;
+      const oak = (await t.cmd('architecture.skirtingTypeFromLibrary', { name: 'Oak 70 moulded' })).id;
+      const id = (await t.cmd('architecture.addSkirting', { storeyId: storey, roomId: room, typeId: oak })).id;
+      await t.wait(800);
+      t.expect((await t.nodes()).some((n) => n.type === 'LapinSkirting'), 'the room has its skirting');
+      await t.tool('architecture.skirtingTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('[data-library="Bullnose 70"]').click();
+      await t.wait(800);
+      t.expect(await dialog.locator('svg.skirting-preview').count() === 1, 'the profile is drawn');
+      await t.shot('skirting-types', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      await select(t, id);
+      await t.wait(800);
+      await t.shot('skirting-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+    },
+  },
+  {
     id: 'rooms',
     async run(t) {
       await t.fresh();
