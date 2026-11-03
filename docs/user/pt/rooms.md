@@ -56,6 +56,7 @@ As cores são desenhadas sob as paredes, os móveis e os giros das portas, para 
 **Anotar → Cotas dos ambientes** (<kbd>ID</kbd>) cota o interior dos ambientes de uma planta de uma vez. Cada lado de um ambiente ganha uma linha de cotas alinhada logo por dentro dele. A linha tem um ponto em cada canto do lado e nos batentes de cada porta e janela nele.
 
 - Com ambientes selecionados, só eles são cotados. Sem nada selecionado, todos os ambientes do nível da planta são.
+- Pedidas numa planta de situação, que vê todo o modelo de cima e não corta nenhuma parede, as linhas vão para a planta do nível. A altura do texto de uma cota pode ser dada à parte em Propriedades (**Altura do texto**, mm no papel; vazio: a do seu estilo de cota). As alturas de texto são no papel, por isso numa planta de situação a 1:500 o mesmo texto é cinco vezes maior no modelo do que numa planta a 1:100.
 - Os pontos ficam presos às paredes, como os de qualquer cota. Mova uma parede e as linhas de cotas a acompanham.
 - Execute de novo em um ambiente para refazer as linhas de cotas dele, por exemplo depois de adicionar uma porta. As linhas antigas são substituídas, não duplicadas.
 - Lados muito curtos, abaixo de 30 cm, ficam de fora. Edite ou exclua qualquer linha de cotas como faria com uma que você desenhou.

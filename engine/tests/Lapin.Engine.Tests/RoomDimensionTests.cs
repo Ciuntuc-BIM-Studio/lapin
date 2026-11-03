@@ -75,6 +75,24 @@ public class RoomDimensionTests
     }
 
     [Fact]
+    public void Asked_on_a_site_plan_the_rooms_are_dimensioned_on_their_floor_plan_at_the_walls_faces()
+    {
+        // A tester's report (decision 271): run on the site plan, the strings stayed there, held on the walls' axes.
+        var (f, _, _) = Box();
+        var site = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["site"] = "situation", ["storeyId"] = f.Storey })!["id"]!;
+        f.Run("drafting.dimensionRooms", new JsonObject { ["viewId"] = site });
+        var r = f.Run("drafting.dimensionRooms", new JsonObject { ["viewId"] = site })!;
+        Assert.Equal(4, (int)r["strings"]!);
+        Assert.Equal(f.Model.Get(f.Storey)!.Name, (string)r["views"]![0]!);
+        var strings = Strings(f);
+        Assert.Equal(4, strings.Count);
+        Assert.All(strings, s => Assert.Equal(Plan(f), s.Dim.Str("viewId")));
+        Assert.All(strings, s => Assert.All(s.Dim.Attrs["refs"]!.AsArray(), x => Assert.Equal("edge", (string?)x!["kind"])));
+        var south = strings.Single(s => s.Pts.Count == 4).Pts.OrderBy(p => p.X).ToList();
+        Near(south[0], 0.1, 0.1); Near(south[^1], 4.9, 0.1);
+    }
+
+    [Fact]
     public void Only_rooms_on_a_plan_are_dimensioned()
     {
         var (f, walls, _) = Box();

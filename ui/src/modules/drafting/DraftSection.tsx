@@ -195,6 +195,10 @@ function DimensionFields({ node }: { node: NodeDto }) {
     <dl className="fields">
       <Row label="Kind" value={ptStrict(node.props.dir) ? 'Linear' : 'Aligned'} />
       <dt>Dimension style</dt><dd><input value={typeof node.props.dimStyle === 'string' ? node.props.dimStyle : ''} placeholder="default" onChange={(e) => void execute('element.update', { id: node.id, attrs: { dimStyle: e.target.value || null } })} /></dd>
+      {/* Its own text height on the paper (decision 271); empty: the dimension style's. */}
+      <dt title="On the paper; empty: the dimension style's">Text height</dt>
+      <dd><NumberField value={typeof node.props.textHeight === 'number' ? node.props.textHeight : null} placeholder="by style" suffix="mm" min={0.5} max={50}
+        onCommit={(h) => void execute('element.update', { id: node.id, attrs: { textHeight: h } })} /></dd>
       {pts.length > 2 && <Row label="Points" value={String(pts.length)} />}
       {a && <Point label="Start" p={a} />}
       {b && <Point label="End" p={b} />}

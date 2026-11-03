@@ -56,6 +56,7 @@ Culorile se desenează sub pereți, sub mobilier și sub deschiderile ușilor, a
 **Annotate → Room dimensions** (<kbd>ID</kbd>) cotează dintr-o dată interiorul încăperilor de pe un plan. Fiecare latură a unei încăperi primește un lanț de cote aliniat, chiar în interiorul ei. Lanțul are câte un punct la fiecare colț al laturii și la golurile fiecărei uși și ferestre din ea.
 
 - Cu încăperi selectate, se cotează doar acelea. Fără selecție, se cotează toate încăperile nivelului planului.
+- Cerută pe o planimetrie, care vede tot modelul de sus și nu taie niciun perete, cotarea se face pe planul nivelului. Înălțimea textului unei cote se poate da separat în Proprietăți (**Text height**, mm pe hârtie; gol: cea a stilului de cotare). Înălțimile textelor sunt pe hârtie, deci pe o planimetrie la 1:500 același text e de cinci ori mai mare în model decât pe un plan la 1:100.
 - Punctele se țin de pereți, ca la orice cotă. Muți un perete și lanțurile îl urmează.
 - Rulează din nou comanda pe o încăpere ca să-i refaci lanțurile, de exemplu după ce ai adăugat o ușă. Lanțurile vechi sunt înlocuite, nu dublate.
 - Laturile foarte scurte, sub 30 cm, sunt lăsate deoparte. Orice lanț se editează sau se șterge ca unul desenat de mână.

@@ -76,6 +76,7 @@ export const LO: Record<string, string> = {
   'The cut above the storeys shown, a section shown in 3D, the section box: the model cut there and closed in its materials, as on the screen': 'ຮອຍຕັດເໜືອຊັ້ນທີ່ສະແດງ, ໜ້າຕັດທີ່ສະແດງໃນ 3D, ກ່ອງຕັດ (section box): ແບບຈຳລອງຈະຖືກຕັດຢູ່ບ່ອນນັ້ນ ແລະ ປິດໜ້າຕັດດ້ວຍວັດສະດຸ, ຕາມທີ່ເຫັນເທິງໜ້າຈໍ',
   'Origin': 'ຈຸດກຳເນີດ', 'Edges': 'ຂອບ', 'every phase': 'ທຸກໄລຍະການກໍ່ສ້າງ', 'Exporting…': 'ກຳລັງສົ່ງອອກ…', 'Export': 'ສົ່ງອອກ',
   'Door & window tags': 'ປ້າຍກຳກັບປະຕູ ແລະ ປ່ອງຢ້ຽມ', 'Tags': 'ປ້າຍກຳກັບ', 'Text (outside)': 'ຂໍ້ຄວາມ (ດ້ານນອກ)', 'Inside': 'ດ້ານໃນ', 'Past faces mm': 'ໄລຍະກາຍໜ້າຜິວ (ມມ)', 'Classes': 'ຄລາສ',
+  'by style': 'ຕາມຮູບແບບ', "On the paper; empty: the dimension style's": 'ເທິງເຈ້ຍ; ຫວ່າງ: ຕາມຮູບແບບການວັດ',
   'Room dimensions': 'ຂະໜາດຫ້ອງ', 'Rooms are dimensioned on a plan: open one.': 'ຫ້ອງຖືກວັດຂະໜາດໃນແຜນຜັງ: ເປີດແຜນຜັງໜຶ່ງ.', 'No room here to dimension: place rooms first (Architecture → Room).': 'ບໍ່ມີຫ້ອງໃຫ້ວັດຂະໜາດຢູ່ນີ້: ວາງຫ້ອງກ່ອນ (Architecture → Room).',
   // View settings and styles
   'View settings': 'ການຕັ້ງຄ່າມຸມມອງ', 'View styles': 'ຮູບແບບມຸມມອງ', 'Join materials': 'ເຊື່ອມຕໍ່ວັດສະດຸ', 'IFC 2D symbols': 'ສັນຍະລັກ 2D ຂອງ IFC',
@@ -1067,6 +1068,7 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^Imported (.+): (\d+) references?, (\d+) triangles\. Select one and use Studio → Make Studio solid to edit it\.(.*)$/, (m) => `ນຳເຂົ້າ ${m[1]} ແລ້ວ: ${m[2]} ການອ້າງອີງ, ${m[3]} ສາມຫຼ່ຽມ. ເລືອກອັນໜຶ່ງ ແລ້ວໃຊ້ ສະຕູດິໂອ → ເຮັດເປັນຮູບຊົງຕັນ Studio ເພື່ອແກ້ໄຂມັນ.${m[4]}`],
   [/^Grouped (\d+) element\(s\)\.$/, (m) => `ຈັດກຸ່ມ ${m[1]} ອົງປະກອບແລ້ວ.`],
   [/^Nothing new from (.+): its (\d+) elements? (?:is|are) already in this project \(the file was exported from it\)\. Import it into another project, or a new one\.$/, (m) => `ບໍ່ມີຫຍັງໃໝ່ຈາກ ${m[1]}: ອົງປະກອບ ${m[2]} ອັນຂອງມັນມີຢູ່ໃນໂຄງການນີ້ແລ້ວ (ໄຟລ໌ຖືກສົ່ງອອກຈາກໂຄງການນີ້). ນຳເຂົ້າມັນໃນໂຄງການອື່ນ, ຫຼື ໂຄງການໃໝ່.`],
+  [/^(\d+) dimension strings in (\d+) rooms, on the floor plan: (.+)\.$/, (m) => `${m[1]} ເສັ້ນຂະໜາດໃນ ${m[2]} ຫ້ອງ, ໃນແຜນຜັງ: ${m[3]}.`],
   [/^(\d+) dimension strings in (\d+) rooms\.$/, (m) => `${m[1]} ເສັ້ນຂະໜາດໃນ ${m[2]} ຫ້ອງ.`],
   [/^Unused types \((\d+)\)$/, (m) => `ປະເພດທີ່ບໍ່ໄດ້ໃຊ້ (${m[1]})`],
   [/^(.+) of (.+): typed into the type \(its elements' own values stay theirs\)$/, (m) => `${LO[m[1]] ?? m[1]} ຂອງ ${m[2]}: ພິມເຂົ້າໃນປະເພດ (ຄ່າຂອງອົງປະກອບຂອງມັນເອງຍັງເປັນຂອງມັນ)`],

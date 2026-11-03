@@ -75,6 +75,7 @@ export const RO: Record<string, string> = {
   'Origin': 'Origine', 'Edges': 'Muchii', 'every phase': 'toate fazele', 'Exporting…': 'Se exportă…', 'Export': 'Exportă',
   'Export IFC': 'Export IFC', 'Schema': 'Schemă', 'IFC4: read everywhere': 'IFC4: citit peste tot', 'IFC4X3: terrain and infrastructure as IFC 4.3 names them': 'IFC4X3: terenul și infrastructura cum le numește IFC 4.3', 'Detail': 'Detaliu', 'parts as elements of their own': 'piesele ca elemente de sine stătătoare', 'one body per element': 'un corp pe element', 'Geometry': 'Geometrie', 'faceted B-rep: exact, a face entity per face': 'B-rep fațetat: exact, o entitate pe față', 'face sets: the same faces, a much smaller file': 'seturi de fețe: aceleași fețe, un fișier mult mai mic', 'Simplify': 'Simplifică', 'fewer triangles where a body is meshed, never further from it than the tolerance': 'mai puține triunghiuri unde un corp e o rețea de triunghiuri, niciodată mai departe de el decât toleranța', 'Tolerance (mm)': 'Toleranță (mm)',
   'Door & window tags': 'Etichete uși și ferestre', 'Tags': 'Etichete', 'Text (outside)': 'Text (exterior)', 'Inside': 'Interior', 'Past faces mm': 'Peste fețe mm', 'Classes': 'Clase',
+  'by style': 'după stil', "On the paper; empty: the dimension style's": 'Pe hârtie; gol: cel al stilului de cotare',
   'Room dimensions': 'Cote camere', 'Rooms are dimensioned on a plan: open one.': 'Camerele se cotează pe un plan: deschide unul.', 'No room here to dimension: place rooms first (Architecture → Room).': 'Nicio cameră de cotat aici: plasează întâi camere (Architecture → Room).',
   // View settings and styles
   'View settings': 'Setările vederii', 'View styles': 'Stiluri de vedere', 'Join materials': 'Unește materialele', 'IFC 2D symbols': 'Simboluri 2D din IFC',
@@ -1009,6 +1010,7 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Imported (.+): (\d+) references?, (\d+) triangles\. Select one and use Studio → Make Studio solid to edit it\.(.*)$/, (m) => `Importat ${m[1]}: ${m[2]} referințe, ${m[3]} triunghiuri. Selectează una și folosește Studio → Fă solid Studio ca s-o editezi.${m[4]}`],
   [/^Grouped (\d+) element\(s\)\.$/, (m) => `Grupat: ${m[1]} element(e).`],
   [/^Nothing new from (.+): its (\d+) elements? (?:is|are) already in this project \(the file was exported from it\)\. Import it into another project, or a new one\.$/, (m) => `Nimic nou din ${m[1]}: elementele lui (${m[2]}) sunt deja în acest proiect (fișierul a fost exportat din el). Importă-l în alt proiect sau într-unul nou.`],
+  [/^(\d+) dimension strings in (\d+) rooms, on the floor plan: (.+)\.$/, (m) => `${m[1]} lanțuri de cote în ${m[2]} camere, pe planul etajului: ${m[3]}.`],
   [/^(\d+) dimension strings in (\d+) rooms\.$/, (m) => `${m[1]} lanțuri de cote în ${m[2]} camere.`],
   [/^Unused types \((\d+)\)$/, (m) => `Tipuri nefolosite (${m[1]})`],
   [/^(.+) of (.+): typed into the type \(its elements' own values stay theirs\)$/, (m) => `${RO[m[1]] ?? m[1]} pentru ${m[2]}: scris în tip (valorile proprii ale elementelor lui rămân ale lor)`],

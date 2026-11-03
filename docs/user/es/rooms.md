@@ -56,6 +56,7 @@ Los colores se dibujan bajo los muros, el mobiliario y los giros de las puertas,
 **Annotate → Room dimensions** (<kbd>ID</kbd>) acota de una vez el interior de las habitaciones de una planta. Cada lado de una habitación recibe una cadena de cotas alineada, justo dentro de él. La cadena tiene un punto en cada esquina del lado y en las jambas de cada puerta y ventana que hay en él.
 
 - Con habitaciones seleccionadas, solo se acotan esas. Sin selección, se acotan todas las habitaciones del nivel de la planta.
+- Pedidas en un plano de situación, que ve todo el modelo desde arriba y no corta ningún muro, las cadenas van a la planta del nivel. La altura del texto de una cota se puede dar por separado en Propiedades (**Text height**, mm en el papel; vacío: la de su estilo de cota). Las alturas de texto son en el papel, así que en un plano de situación a 1:500 el mismo texto es cinco veces mayor en el modelo que en una planta a 1:100.
 - Los puntos se sujetan a los muros, como en cualquier cota. Mueve un muro y las cadenas lo siguen.
 - Vuelve a ejecutarlo en una habitación para rehacer sus cadenas, por ejemplo después de añadir una puerta. Las cadenas antiguas se sustituyen, no se duplican.
 - Los lados muy cortos, de menos de 30 cm, se dejan fuera. Cualquier cadena se edita o se borra como una dibujada a mano.

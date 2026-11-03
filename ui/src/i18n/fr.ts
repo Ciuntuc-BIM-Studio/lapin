@@ -77,6 +77,7 @@ export const FR: Record<string, string> = {
   'Origin': 'Origine', 'Edges': 'Arêtes', 'every phase': 'toutes les phases', 'Exporting…': 'Exportation…', 'Export': 'Exporter',
   'Export IFC': 'Exporter IFC', 'Schema': 'Schéma', 'IFC4: read everywhere': 'IFC4 : lu partout', 'IFC4X3: terrain and infrastructure as IFC 4.3 names them': 'IFC4X3 : le terrain et l’infrastructure comme IFC 4.3 les nomme', 'Detail': 'Détail', 'parts as elements of their own': 'les pièces comme éléments à part entière', 'one body per element': 'un corps par élément', 'Geometry': 'Géométrie', 'faceted B-rep: exact, a face entity per face': 'B-rep à facettes : exact, une entité par face', 'face sets: the same faces, a much smaller file': 'ensembles de faces : les mêmes faces, un fichier bien plus petit', 'Simplify': 'Simplifier', 'fewer triangles where a body is meshed, never further from it than the tolerance': 'moins de triangles là où un corps est maillé, jamais plus loin de lui que la tolérance', 'Tolerance (mm)': 'Tolérance (mm)',
   'Door & window tags': 'Étiquettes de portes et fenêtres', 'Tags': 'Étiquettes', 'Text (outside)': 'Texte (à l’extérieur)', 'Inside': 'À l’intérieur', 'Past faces mm': 'Au-delà des faces mm', 'Classes': 'Classes',
+  'by style': 'selon le style', "On the paper; empty: the dimension style's": 'Sur le papier ; vide : celle du style de cote',
   'Room dimensions': 'Cotes des pièces', 'Rooms are dimensioned on a plan: open one.': 'Les pièces se cotent sur un plan : ouvrez-en un.', 'No room here to dimension: place rooms first (Architecture → Room).': 'Aucune pièce à coter ici : placez d’abord des pièces (Architecture → Room).',
   // View settings and styles
   'View settings': 'Paramètres de vue', 'View styles': 'Styles de vue', 'Join materials': 'Joindre les matériaux', 'IFC 2D symbols': 'Symboles 2D IFC',
@@ -1016,6 +1017,7 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^Imported (.+): (\d+) references?, (\d+) triangles\. Select one and use Studio → Make Studio solid to edit it\.(.*)$/, (m) => `${m[1]} importé : ${m[2]} références, ${m[3]} triangles. Sélectionnez-en une et utilisez Studio → Faire un solide Studio pour la modifier.${m[4]}`],
   [/^Grouped (\d+) element\(s\)\.$/, (m) => `Groupé : ${m[1]} élément(s).`],
   [/^Nothing new from (.+): its (\d+) elements? (?:is|are) already in this project \(the file was exported from it\)\. Import it into another project, or a new one\.$/, (m) => `Rien de nouveau dans ${m[1]} : ses éléments (${m[2]}) sont déjà dans ce projet (le fichier en a été exporté). Importez-le dans un autre projet, ou un nouveau.`],
+  [/^(\d+) dimension strings in (\d+) rooms, on the floor plan: (.+)\.$/, (m) => `${m[1]} chaînes de cotes dans ${m[2]} pièces, sur le plan : ${m[3]}.`],
   [/^(\d+) dimension strings in (\d+) rooms\.$/, (m) => `${m[1]} chaînes de cotes dans ${m[2]} pièces.`],
   [/^Unused types \((\d+)\)$/, (m) => `Types inutilisés (${m[1]})`],
   [/^(.+) of (.+): typed into the type \(its elements' own values stay theirs\)$/, (m) => `${FR[m[1]] ?? m[1]} de ${m[2]} : saisi dans le type (les valeurs propres de ses éléments restent les leurs)`],

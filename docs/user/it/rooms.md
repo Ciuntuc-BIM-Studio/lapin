@@ -56,6 +56,7 @@ I colori vengono disegnati sotto i muri, gli arredi e le aperture delle porte, c
 **Annota → Quote dei locali** (<kbd>ID</kbd>) quota in una volta sola l’interno dei locali di una pianta. Ogni lato di un locale riceve una catena di quote allineata, appena all’interno. La catena ha un punto in ogni angolo del lato e sugli stipiti di ogni porta e finestra che vi si trova.
 
 - Con dei locali selezionati, si quotano solo quelli. Senza selezione, si quotano tutti i locali del livello della pianta.
+- Richieste su una planimetria, che vede tutto il modello dall’alto e non taglia alcun muro, le catene vanno nella pianta del livello. L’altezza del testo di una quota si imposta a parte nelle Proprietà (**Altezza del testo**, mm sulla carta; vuoto: quella del suo stile di quota). Le altezze dei testi sono sulla carta: su una planimetria in scala 1:500 lo stesso testo è cinque volte più grande nel modello che su una pianta in scala 1:100.
 - I punti restano agganciati ai muri, come in ogni quota. Sposta un muro e le catene lo seguono.
 - Eseguilo di nuovo su un locale per rifarne le catene, per esempio dopo aver aggiunto una porta. Le vecchie catene vengono sostituite, non raddoppiate.
 - I lati molto corti, sotto i 30 cm, sono esclusi. Modifica o elimina qualsiasi catena come una disegnata a mano.

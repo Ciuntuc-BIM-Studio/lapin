@@ -409,6 +409,8 @@ public static class Dimensions
         var p = new JsonObject();
         foreach (var k in new[] { "textStyle", "dimStyle" }) if (e.Str(k) is { } v) p[k] = v;
         if (e.Attrs["overrides"] is JsonObject o) foreach (var (k, v) in o) p["o." + k] = v?.DeepClone();
+        // Its own text height (paper mm, decision 271) over the style's.
+        if (e.NumOrNull("textHeight") is { } h) p["o.height"] = h;
         return p;
     }
 

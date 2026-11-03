@@ -56,6 +56,7 @@ Kolory rysowane są pod ścianami, meblami i łukami otwierania drzwi, więc rzu
 **Opisz → Wymiary pomieszczeń** (<kbd>ID</kbd>) wymiaruje od razu wnętrza pomieszczeń na rzucie. Każdy bok pomieszczenia dostaje wyrównany łańcuch wymiarowy tuż wewnątrz niego. Łańcuch ma punkt w każdym narożniku boku i na ościeżach każdych drzwi i okna w nim.
 
 - Gdy pomieszczenia są zaznaczone, wymiarowane są tylko one. Gdy nic nie jest zaznaczone, wymiarowane jest każde pomieszczenie poziomu rzutu.
+- Wywołane na planie sytuacyjnym, który widzi cały model z góry i nie przecina żadnej ściany, łańcuchy trafiają na rzut poziomu. Wysokość tekstu wymiaru można ustawić osobno we Właściwościach (**Wysokość tekstu**, mm na papierze; puste: ze stylu wymiarowania). Wysokości tekstów są na papierze, więc na planie sytuacyjnym 1:500 ten sam tekst jest w modelu pięć razy większy niż na rzucie 1:100.
 - Punkty trzymają się ścian, jak w każdym wymiarze. Przesuń ścianę, a łańcuchy podążą za nią.
 - Uruchom polecenie ponownie na pomieszczeniu, aby utworzyć jego łańcuchy od nowa, na przykład po dodaniu drzwi. Stare łańcuchy są zastępowane, nie podwajane.
 - Bardzo krótkie boki, poniżej 30 cm, są pomijane. Edytuj lub usuń dowolny łańcuch tak, jak narysowany przez siebie.

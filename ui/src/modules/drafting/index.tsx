@@ -200,8 +200,11 @@ const roomDimensions: ToolDef = {
     if (!viewId) return;
     const nodes = useSession.getState().nodes;
     const ids = useUi.getState().selected.filter((id) => nodes.get(id)?.type === 'IfcSpace');
-    const r = await execute('drafting.dimensionRooms', { viewId, ...(ids.length ? { ids } : {}) }) as { rooms?: number; strings?: number } | null;
-    if (r) notify(r.rooms ? `${r.strings} dimension strings in ${r.rooms} rooms.` : 'No room here to dimension: place rooms first (Architecture → Room).');
+    const r = await execute('drafting.dimensionRooms', { viewId, ...(ids.length ? { ids } : {}) }) as { rooms?: number; strings?: number; views?: string[] } | null;
+    if (!r) return;
+    // Asked on a site plan: the strings went to the storey's floor plan.
+    if (r.rooms && r.views?.length) notify(`${r.strings} dimension strings in ${r.rooms} rooms, on the floor plan: ${r.views.join(', ')}.`);
+    else notify(r.rooms ? `${r.strings} dimension strings in ${r.rooms} rooms.` : 'No room here to dimension: place rooms first (Architecture → Room).');
   })(),
 };
 registerCommand({ names: ['DIMALIGNED', 'DAL', 'DIM'], label: 'Aligned dimension', start: () => dimCommand(false) });

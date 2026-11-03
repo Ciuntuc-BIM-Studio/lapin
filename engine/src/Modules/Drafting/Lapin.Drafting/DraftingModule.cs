@@ -18,7 +18,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Class(new(IfcClass.Grid, "Grid", [], "#555555", Kind: "annotation"));
         r.Class(new(IfcClass.Annotation, "Annotation",
             [new("text", "Text", "text"), new("textStyle", "Text style", "text"), new("dimStyle", "Dimension style", "text"), new("angle", "Angle", "angle"),
-             new("format", "Slope written as", "choice", Choices: DimensionKinds.SlopeFormats), new("z", "Level written", "length")], "#555555", Kind: "annotation"));
+             new("format", "Slope written as", "choice", Choices: DimensionKinds.SlopeFormats), new("z", "Level written", "length"), new("textHeight", "Text height", "number", Min: 0.5, Max: 50)], "#555555", Kind: "annotation"));
         // A draft with heights (a DXF's 3D lines) shows in 3D as lines; the rest have no geometry.
         r.Geometry(IfcClass.Annotation, Cad.Drafts.Geometry3d);
         r.Service<IViewAnnotations>(this);
@@ -125,11 +125,31 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
                 : throw new CommandException("Rooms are dimensioned on a plan of their storey.");
             var ids = a["ids"] is JsonArray ia && ia.Count > 0 ? ia.Select(x => (string?)x).OfType<string>().ToList() : null;
             var offset = Json.Number(a["offset"]) is { } o ? (o > 0 ? o : throw new CommandException("The strings lie inside the room: the offset must be positive.")) : (double?)null;
-            var (drawing, spec, _) = Views.Generate(ctx.Query, view);
-            var tolerance = Tolerance(view);
-            Func<Vec2, Vec2, DimEndRef?> hold = drawing == null || spec == null ? (_, _) => null : (p, u) => Dimensions.Associate(ctx.Model, spec.Kind, drawing, p, tolerance, u);
-            var (rooms, strings) = RoomDimensions.Add(ctx, view, ids, offset, hold, drawing);
-            return new JsonObject { ["rooms"] = rooms, ["strings"] = strings };
+            // A site plan sees the whole model from above and cuts nothing: its rooms are dimensioned on their storeys'
+            // floor plans instead (a tester's report, decision 271), and the strings it was given before go.
+            var targets = new List<(Entity View, IReadOnlyCollection<string>? Ids)>();
+            if (SitePlans.Of(view) != null)
+            {
+                var m = ctx.Model;
+                var chosen = ids ?? m.OfClass(IfcClass.Space).Where(s => Spatial.StoreyOf(m, s.Id)?.Id == view.Str("storeyId")).Select(s => s.Id).ToList();
+                foreach (var old in m.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == "DIMENSION" && x.Str("viewId") == view.Id && x.Str(RoomDimensions.RoomKey) is { } rid && chosen.Contains(rid)).ToList())
+                    ctx.Remove(old.Id);
+                foreach (var g in chosen.GroupBy(id => Spatial.StoreyOf(m, id)?.Id))
+                    if (g.Key != null) targets.Add((FloorPlan(m, g.Key), g.ToList()));
+            }
+            else targets.Add((view, ids));
+            var (rooms, strings) = (0, 0);
+            foreach (var (target, only) in targets)
+            {
+                var (drawing, spec, _) = Views.Generate(ctx.Query, target);
+                var tolerance = Tolerance(target);
+                Func<Vec2, Vec2, DimEndRef?> hold = drawing == null || spec == null ? (_, _) => null : (p, u) => Dimensions.Associate(ctx.Model, spec.Kind, drawing, p, tolerance, u);
+                var (rc, sc) = RoomDimensions.Add(ctx, target, only, offset, hold, drawing);
+                (rooms, strings) = (rooms + rc, strings + sc);
+            }
+            var result = new JsonObject { ["rooms"] = rooms, ["strings"] = strings };
+            if (targets.Count > 0 && targets[0].View != view) result["views"] = new JsonArray(targets.Select(t => t.View.Name).Distinct().Select(n => (JsonNode)JsonValue.Create(n)!).ToArray());
+            return result;
         });
 
         // A driving dimension: typing a segment's value moves what it measures (and, in a string, what follows).
@@ -398,6 +418,11 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
     }
 
     /// <summary>How near (m) a dimension's point must be to an edge to hold on it: 1 mm on the paper, at least 1 cm.</summary>
+    /// <summary>A storey's floor plan: its first plan view that is not a site view, else the storey's own plan.</summary>
+    static Entity FloorPlan(IModelView m, string storey) =>
+        m.OfClass(Views.Class).FirstOrDefault(v => v.Str("kind") == "plan" && v.Str("storeyId") == storey && SitePlans.Of(v) == null)
+        ?? Views.Find(m, "plan:" + storey)!;
+
     static double Tolerance(Entity view) => Math.Max(0.01, 1.0 * (view.NumOrNull("scale") ?? 100) / 1000);
 
     /// <summary>A string's points where they are drawn now (each on what it holds on; one that lost it where it was), with what they hold on.</summary>

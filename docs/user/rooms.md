@@ -56,6 +56,7 @@ The colours are drawn under the walls, the furniture and the door swings, so the
 **Annotate → Room dimensions** (<kbd>ID</kbd>) dimensions the inside of the rooms on a plan at once. Each side of a room gets an aligned dimension string just inside it. The string has a point at each corner of the side and at the jambs of each door and window in it.
 
 - With rooms selected, only those are dimensioned. With nothing selected, every room of the plan's level is.
+- Asked on a site plan, which sees the whole model from above and cuts no wall, the strings go to the level's floor plan instead. A dimension's text height can be set on its own in Properties (**Text height**, mm on the paper; empty: its dimension style's). Text heights are on the paper, so on a 1:500 site plan the same text is five times larger in the model than on a 1:100 plan.
 - The points hold on the walls, like any dimension's. Move a wall and the strings follow it.
 - Run it again on a room to make its strings anew, for example after adding a door. The old strings are replaced, not doubled.
 - Very short sides, under 30 cm, are left out. Edit or delete any string as you would one you drew.

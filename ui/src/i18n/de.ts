@@ -77,6 +77,7 @@ export const DE: Record<string, string> = {
   'Origin': 'Ursprung', 'Edges': 'Kanten', 'every phase': 'alle Bauphasen', 'Exporting…': 'Wird exportiert…', 'Export': 'Exportieren',
   'Export IFC': 'IFC exportieren', 'Schema': 'Schema', 'IFC4: read everywhere': 'IFC4: überall lesbar', 'IFC4X3: terrain and infrastructure as IFC 4.3 names them': 'IFC4X3: Gelände und Infrastruktur, wie IFC 4.3 sie benennt', 'Detail': 'Detail', 'parts as elements of their own': 'Teile als eigene Elemente', 'one body per element': 'ein Körper je Element', 'Geometry': 'Geometrie', 'faceted B-rep: exact, a face entity per face': 'facettiertes B-Rep: exakt, eine Entität je Fläche', 'face sets: the same faces, a much smaller file': 'Flächenmengen: dieselben Flächen, eine viel kleinere Datei', 'Simplify': 'Vereinfachen', 'fewer triangles where a body is meshed, never further from it than the tolerance': 'weniger Dreiecke, wo ein Körper vernetzt ist, nie weiter von ihm entfernt als die Toleranz', 'Tolerance (mm)': 'Toleranz (mm)',
   'Door & window tags': 'Tür- und Fensterbeschriftungen', 'Tags': 'Beschriftungen', 'Text (outside)': 'Text (außen)', 'Inside': 'Innen', 'Past faces mm': 'Über die Flächen hinaus mm', 'Classes': 'Klassen',
+  'by style': 'nach Stil', "On the paper; empty: the dimension style's": 'Auf dem Papier; leer: die des Bemaßungsstils',
   'Room dimensions': 'Raumbemaßung', 'Rooms are dimensioned on a plan: open one.': 'Räume werden in einem Grundriss bemaßt: öffne einen.', 'No room here to dimension: place rooms first (Architecture → Room).': 'Hier gibt es keinen Raum zu bemaßen: setze zuerst Räume (Architecture → Room).',
   // View settings and styles
   'View settings': 'Ansichtseinstellungen', 'View styles': 'Ansichtsstile', 'Join materials': 'Materialien verbinden', 'IFC 2D symbols': 'IFC-2D-Symbole',
@@ -1014,6 +1015,7 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^Imported (.+): (\d+) references?, (\d+) triangles\. Select one and use Studio → Make Studio solid to edit it\.(.*)$/, (m) => `${m[1]} importiert: ${m[2]} Referenzen, ${m[3]} Dreiecke. Wählen Sie eine und nutzen Sie Studio → Zu Studio-Körper machen, um sie zu bearbeiten.${m[4]}`],
   [/^Grouped (\d+) element\(s\)\.$/, (m) => `Gruppiert: ${m[1]} Element(e).`],
   [/^Nothing new from (.+): its (\d+) elements? (?:is|are) already in this project \(the file was exported from it\)\. Import it into another project, or a new one\.$/, (m) => `Nichts Neues aus ${m[1]}: Seine Elemente (${m[2]}) sind schon in diesem Projekt (die Datei wurde daraus exportiert). Importieren Sie sie in ein anderes oder neues Projekt.`],
+  [/^(\d+) dimension strings in (\d+) rooms, on the floor plan: (.+)\.$/, (m) => `${m[1]} Maßketten in ${m[2]} Räumen, im Grundriss: ${m[3]}.`],
   [/^(\d+) dimension strings in (\d+) rooms\.$/, (m) => `${m[1]} Maßketten in ${m[2]} Räumen.`],
   [/^Unused types \((\d+)\)$/, (m) => `Unbenutzte Typen (${m[1]})`],
   [/^(.+) of (.+): typed into the type \(its elements' own values stay theirs\)$/, (m) => `${DE[m[1]] ?? m[1]} von ${m[2]}: in den Typ eingetragen (die eigenen Werte seiner Elemente bleiben ihre)`],

@@ -75,6 +75,7 @@ export const PT: Record<string, string> = {
   'Origin': 'Origem', 'Edges': 'Arestas', 'every phase': 'todas as fases', 'Exporting…': 'Exportando…', 'Export': 'Exportar',
   'Export IFC': 'Exportar IFC', 'Schema': 'Esquema', 'IFC4: read everywhere': 'IFC4: lido em qualquer lugar', 'IFC4X3: terrain and infrastructure as IFC 4.3 names them': 'IFC4X3: terreno e infraestrutura como o IFC 4.3 os nomeia', 'Detail': 'Detalhe', 'parts as elements of their own': 'as partes como elementos próprios', 'one body per element': 'um corpo por elemento', 'Geometry': 'Geometria', 'faceted B-rep: exact, a face entity per face': 'B-rep facetado: exato, uma entidade por face', 'face sets: the same faces, a much smaller file': 'conjuntos de faces: as mesmas faces, um arquivo muito menor', 'Simplify': 'Simplificar', 'fewer triangles where a body is meshed, never further from it than the tolerance': 'menos triângulos onde um corpo é uma malha, nunca mais longe dele que a tolerância', 'Tolerance (mm)': 'Tolerância (mm)',
   'Door & window tags': 'Identificadores de portas e janelas', 'Tags': 'Identificadores', 'Text (outside)': 'Texto (externo)', 'Inside': 'Interno', 'Past faces mm': 'Além das faces mm', 'Classes': 'Classes',
+  'by style': 'pelo estilo', "On the paper; empty: the dimension style's": 'No papel; vazio: a do estilo de cota',
   'Room dimensions': 'Cotas dos ambientes', 'Rooms are dimensioned on a plan: open one.': 'Os ambientes são cotados em uma planta: abra uma.', 'No room here to dimension: place rooms first (Architecture → Room).': 'Nenhum ambiente aqui para cotar: posicione primeiro os ambientes (Arquitetura → Ambiente).',
   // View settings and styles
   'View settings': 'Configurações da vista', 'View styles': 'Estilos de vista', 'Join materials': 'Unir materiais', 'IFC 2D symbols': 'Símbolos 2D do IFC',
@@ -1013,6 +1014,7 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^Imported (.+): (\d+) references?, (\d+) triangles\. Select one and use Studio → Make Studio solid to edit it\.(.*)$/, (m) => `Importado ${m[1]}: ${n(m[2], 'referência', 'referências')}, ${n(m[3], 'triângulo', 'triângulos')}. Selecione uma e use Studio → Tornar sólido Studio para editá-la.${m[4]}`],
   [/^Grouped (\d+) element\(s\)\.$/, (m) => `${n(m[1], 'elemento agrupado', 'elementos agrupados')}.`],
   [/^Nothing new from (.+): its (\d+) elements? (?:is|are) already in this project \(the file was exported from it\)\. Import it into another project, or a new one\.$/, (m) => `Nada de novo em ${m[1]}: os seus elementos (${m[2]}) já estão neste projeto (o arquivo foi exportado dele). Importe-o em outro projeto, ou em um novo.`],
+  [/^(\d+) dimension strings in (\d+) rooms, on the floor plan: (.+)\.$/, (m) => `${m[1]} cadeias de cotas em ${m[2]} ambientes, na planta: ${m[3]}.`],
   [/^(\d+) dimension strings in (\d+) rooms\.$/, (m) => `${m[1]} cadeias de cotas em ${m[2]} ambientes.`],
   [/^Unused types \((\d+)\)$/, (m) => `Tipos não usados (${m[1]})`],
   [/^(.+) of (.+): typed into the type \(its elements' own values stay theirs\)$/, (m) => `${PT[m[1]] ?? m[1]} de ${m[2]}: digitado no tipo (os valores próprios dos seus elementos continuam deles)`],

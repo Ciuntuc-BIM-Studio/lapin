@@ -77,6 +77,7 @@ export const IT: Record<string, string> = {
   'Origin': 'Origine', 'Edges': 'Spigoli', 'every phase': 'tutte le fasi', 'Exporting…': 'Esportazione…', 'Export': 'Esporta',
   'Export IFC': 'Esporta IFC', 'Schema': 'Schema', 'IFC4: read everywhere': 'IFC4: si legge ovunque', 'IFC4X3: terrain and infrastructure as IFC 4.3 names them': 'IFC4X3: il terreno e le infrastrutture come li chiama IFC 4.3', 'Detail': 'Dettaglio', 'parts as elements of their own': 'le parti come elementi propri', 'one body per element': 'un corpo per elemento', 'Geometry': 'Geometria', 'faceted B-rep: exact, a face entity per face': 'B-rep sfaccettato: esatto, un’entità per faccia', 'face sets: the same faces, a much smaller file': 'insiemi di facce: le stesse facce, un file molto più piccolo', 'Simplify': 'Semplifica', 'fewer triangles where a body is meshed, never further from it than the tolerance': 'meno triangoli dove un corpo è una mesh, mai più lontano da esso della tolleranza', 'Tolerance (mm)': 'Tolleranza (mm)',
   'Door & window tags': 'Etichette di porte e finestre', 'Tags': 'Etichette', 'Text (outside)': 'Testo (esterno)', 'Inside': 'Interno', 'Past faces mm': 'Oltre le facce mm', 'Classes': 'Classi',
+  'by style': 'da stile', "On the paper; empty: the dimension style's": 'Sulla carta; vuoto: quella dello stile di quota',
   'Room dimensions': 'Quote dei locali', 'Rooms are dimensioned on a plan: open one.': 'I locali si quotano in una pianta: aprine una.', 'No room here to dimension: place rooms first (Architecture → Room).': 'Nessun locale da quotare qui: posiziona prima i locali (Architettura → Locale).',
   // View settings and styles
   'View settings': 'Impostazioni di vista', 'View styles': 'Stili di vista', 'Join materials': 'Unisci materiali', 'IFC 2D symbols': 'Simboli 2D IFC',
@@ -1014,6 +1015,7 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^Imported (.+): (\d+) references?, (\d+) triangles\. Select one and use Studio → Make Studio solid to edit it\.(.*)$/, (m) => `Importato ${m[1]}: ${n(m[2], 'riferimento', 'riferimenti')}, ${n(m[3], 'triangolo', 'triangoli')}. Selezionane uno e usa Studio → Converti in solido Studio per modificarlo.${m[4]}`],
   [/^Grouped (\d+) element\(s\)\.$/, (m) => `${n(m[1], 'elemento raggruppato', 'elementi raggruppati')}.`],
   [/^Nothing new from (.+): its (\d+) elements? (?:is|are) already in this project \(the file was exported from it\)\. Import it into another project, or a new one\.$/, (m) => `Niente di nuovo da ${m[1]}: i suoi elementi (${m[2]}) sono già in questo progetto (il file è stato esportato da qui). Importalo in un altro progetto o in uno nuovo.`],
+  [/^(\d+) dimension strings in (\d+) rooms, on the floor plan: (.+)\.$/, (m) => `${m[1]} catene di quote in ${m[2]} locali, nella pianta: ${m[3]}.`],
   [/^(\d+) dimension strings in (\d+) rooms\.$/, (m) => `${m[1]} catene di quote in ${m[2]} locali.`],
   [/^Unused types \((\d+)\)$/, (m) => `Tipi inutilizzati (${m[1]})`],
   [/^(.+) of (.+): typed into the type \(its elements' own values stay theirs\)$/, (m) => `${IT[m[1]] ?? m[1]} di ${m[2]}: scritto nel tipo (i valori propri dei suoi elementi restano loro)`],

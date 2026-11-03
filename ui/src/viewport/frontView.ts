@@ -16,7 +16,8 @@ export async function frontView(): Promise<string | null> {
   if (ui.planViewId && nodes.get(ui.planViewId)?.props.storeyId === storey?.id) return ui.planViewId;
   if (!storey) return null;
   // The storey's first plan view, else a new one (made once, however often asked).
-  const existing = [...nodes.values()].find((n) => n.type === 'LapinView' && n.props.kind === 'plan' && n.props.storeyId === storey.id);
+  // Never a site plan, which stands on a storey too but cuts nothing (decision 271).
+  const existing = [...nodes.values()].find((n) => n.type === 'LapinView' && n.props.kind === 'plan' && n.props.storeyId === storey.id && !n.props.site);
   if (existing) { useUi.setState({ planViewId: existing.id }); return existing.id; }
   making ??= (execute('view.create', { kind: 'plan', storeyId: storey.id }) as Promise<{ id?: string } | null>).then((r) => {
     making = null;

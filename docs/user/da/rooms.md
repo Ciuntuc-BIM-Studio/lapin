@@ -56,6 +56,7 @@ Farverne tegnes under væggene, møblerne og dørslagene, så planen forbliver l
 **Annotate → Room dimensions** (<kbd>ID</kbd>) måler indersiden af rummene på en plan på én gang. Hver side af et rum får en justeret målekæde lige indenfor. Kæden har et punkt i hvert hjørne af siden og ved lysningerne for hver dør og hvert vindue i den.
 
 - Med rum valgt måles kun de. Uden valg måles alle rum på planens etage.
+- Bedt om på en situationsplan, som ser hele modellen ovenfra og ikke skærer nogen væg, kommer kæderne i stedet på etagens plan. En måls teksthøjde kan sættes for sig i Egenskaber (**Text height**, mm på papiret; tom: målestilens). Teksthøjder gælder på papiret, så på en situationsplan i 1:500 er den samme tekst fem gange større i modellen end på en plan i 1:100.
 - Punkterne holder fast i væggene som ved ethvert mål. Flyt en væg, og kæderne følger med.
 - Kør det igen på et rum for at lave dets kæder på ny, for eksempel efter at have tilføjet en dør. De gamle kæder erstattes, de fordobles ikke.
 - Meget korte sider under 30 cm udelades. Enhver kæde redigeres eller slettes som en, du har tegnet selv.

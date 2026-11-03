@@ -77,6 +77,7 @@ export const DA: Record<string, string> = {
   'Origin': 'Origo', 'Edges': 'Kanter', 'every phase': 'alle faser', 'Exporting…': 'Eksporterer…', 'Export': 'Eksportér',
   'Export IFC': 'Eksportér IFC', 'Schema': 'Skema', 'IFC4: read everywhere': 'IFC4: læses overalt', 'IFC4X3: terrain and infrastructure as IFC 4.3 names them': 'IFC4X3: terræn og infrastruktur, som IFC 4.3 navngiver dem', 'Detail': 'Detalje', 'parts as elements of their own': 'dele som selvstændige elementer', 'one body per element': 'ét legeme pr. element', 'Geometry': 'Geometri', 'faceted B-rep: exact, a face entity per face': 'facetteret B-rep: nøjagtig, én entitet pr. flade', 'face sets: the same faces, a much smaller file': 'fladesæt: de samme flader, en meget mindre fil', 'Simplify': 'Forenkl', 'fewer triangles where a body is meshed, never further from it than the tolerance': 'færre trekanter, hvor et legeme er et net, aldrig længere fra det end tolerancen', 'Tolerance (mm)': 'Tolerance (mm)',
   'Door & window tags': 'Dør- og vinduesmærker', 'Tags': 'Mærker', 'Text (outside)': 'Tekst (udenfor)', 'Inside': 'Indenfor', 'Past faces mm': 'Forbi flader mm', 'Classes': 'Klasser',
+  'by style': 'efter stil', "On the paper; empty: the dimension style's": 'På papiret; tom: målestilens',
   'Room dimensions': 'Rummål', 'Rooms are dimensioned on a plan: open one.': 'Rum måles på en plan: åbn en.', 'No room here to dimension: place rooms first (Architecture → Room).': 'Intet rum at måle her: placer først rum (Architecture → Room).',
   // View settings and styles
   'View settings': 'Visningsindstillinger', 'View styles': 'Visningsstile', 'Join materials': 'Sammenføj materialer', 'IFC 2D symbols': 'IFC 2D-symboler',
@@ -1009,6 +1010,7 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^Imported (.+): (\d+) references?, (\d+) triangles\. Select one and use Studio → Make Studio solid to edit it\.(.*)$/, (m) => `Importeret ${m[1]}: ${m[2]} referencer, ${m[3]} trekanter. Vælg en og brug Studio → Gør til Studio-legeme for at redigere den.${m[4]}`],
   [/^Grouped (\d+) element\(s\)\.$/, (m) => `Grupperet: ${m[1]} element(er).`],
   [/^Nothing new from (.+): its (\d+) elements? (?:is|are) already in this project \(the file was exported from it\)\. Import it into another project, or a new one\.$/, (m) => `Intet nyt fra ${m[1]}: dens elementer (${m[2]}) er allerede i dette projekt (filen blev eksporteret derfra). Importér den i et andet projekt eller et nyt.`],
+  [/^(\d+) dimension strings in (\d+) rooms, on the floor plan: (.+)\.$/, (m) => `${m[1]} målekæder i ${m[2]} rum, på planen: ${m[3]}.`],
   [/^(\d+) dimension strings in (\d+) rooms\.$/, (m) => `${m[1]} målekæder i ${m[2]} rum.`],
   [/^Unused types \((\d+)\)$/, (m) => `Ubrugte typer (${m[1]})`],
   [/^(.+) of (.+): typed into the type \(its elements' own values stay theirs\)$/, (m) => `${DA[m[1]] ?? m[1]} for ${m[2]}: skrevet ind i typen (dens elementers egne værdier forbliver deres)`],

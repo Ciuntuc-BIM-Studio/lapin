@@ -56,6 +56,7 @@ Les couleurs sont dessinées sous les murs, le mobilier et les battements des po
 **Annotate → Room dimensions** (<kbd>ID</kbd>) cote d’un coup l’intérieur des pièces d’un plan. Chaque côté d’une pièce reçoit une chaîne de cotes alignée, juste à l’intérieur. La chaîne a un point à chaque angle du côté et aux tableaux de chaque porte et fenêtre qui s’y trouve.
 
 - Avec des pièces sélectionnées, seules celles-ci sont cotées. Sans sélection, toutes les pièces du niveau du plan le sont.
+- Demandées sur un plan de masse, qui voit tout le modèle d’en haut et ne coupe aucun mur, les chaînes vont au plan du niveau. La hauteur du texte d’une cote se règle à part dans les Propriétés (**Text height**, mm sur le papier ; vide : celle de son style de cote). Les hauteurs de texte sont sur le papier : sur un plan de masse au 1:500, le même texte est cinq fois plus grand dans le modèle que sur un plan au 1:100.
 - Les points tiennent aux murs, comme pour toute cote. Déplacez un mur et les chaînes le suivent.
 - Relancez-le sur une pièce pour refaire ses chaînes, par exemple après avoir ajouté une porte. Les anciennes chaînes sont remplacées, pas doublées.
 - Les côtés très courts, de moins de 30 cm, sont laissés de côté. Toute chaîne se modifie ou se supprime comme une chaîne dessinée à la main.
