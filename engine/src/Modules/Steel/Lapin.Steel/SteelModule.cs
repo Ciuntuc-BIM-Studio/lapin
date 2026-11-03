@@ -55,6 +55,7 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         r.Service<IIfcConnections>(this);
         HallCommands.Register(r);
         NodeCommands.Register(r);
+        SteelDrawings.Register(r);
 
         r.Command("createType", "New member type", (ctx, a) =>
         {

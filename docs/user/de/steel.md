@@ -119,6 +119,18 @@ Jede Pfette und jeder Riegel sitzt auf einem **Pfettenschuh** an jedem Sparren, 
 
 ![Der Dachverband auf seinen Knotenblechen](shots/steel-secondary-bracing.webp)
 
+## Listen und Zeichnungen
+
+**Steel → Steel members** erstellt die Liste des Stahls im Projekt: die Stäbe sowie die Träger und Stützen aus einem Stahlprofil, nach Halle (die ohne Halle zuletzt), je eine **Marke** für gleiche Stäbe einer Art in Profil, Länge und Endschnitten (C Stützen, R Sparren, GP Giebelstützen, P Pfetten, SR Wandriegel, EB Traufriegel, B Verbände, FB Kippstreben, M andere Stäbe, BM Träger), nummeriert vom schwersten Profil und dem längsten an. Eine Zeile nennt **Profil**, **Länge**, **Schnitt am Anfang** und **Schnitt am Ende** (um wie viel die Ebene des Endes von rechtwinklig abweicht, und eine Ausklinkung: die Winkel der Zuschnittliste), die **Anzahl**, das Gewicht je Meter, **Je Stück** und insgesamt, und die Fläche für den **Anstrich**; eine Summe unter jeder Halle und eine für alles. **Steel parts** listet Bleche, Schrauben, Anker und Schweißnähte der Anschlüsse, mit ihren Pfettenschuhen und Knotenblechen.
+
+![Die Stahlstabliste](shots/steel-members.webp)
+
+**Steel → Anchor plan** zeichnet die Stützenfüße der Halle für die Fundamente: einen Grundriss des Geschosses der Halle im Maßstab 1:50, knapp über den Fußplatten geschnitten, jeder Anker umkreist, sein Abstand zur Achse (± bei symmetrisch angeordneten Ankern), jeder Fuß nach seinem Typ markiert (**B1**, **B2**…: gleiche Platte, Anker, Festigkeitsklasse und Vergussfuge), die Felder und die Spannweite des Rasters, und daneben die Tabelle der Typen: Anzahl, Art, Platte, Anker (Anzahl, Größe, Form), Festigkeitsklasse und Vergussfuge. **Steel → Frame elevation** zeichnet einen Rahmen (den typischen oder den des gewählten Stabs), entlang der Halle gesehen, im Maßstab 1:50, mit Spannweite, Trauf- und Firsthöhe. Beide sind Ansichten der Halle (erneut angefordert, öffnet sich dieselbe) und kommen wie jede andere auf Pläne; sie folgen der Halle, wenn sie geändert wird.
+
+![Ein Ankerplan](shots/steel-anchor-plan.webp)
+
+![Die Ansicht eines Rahmens](shots/steel-frame-view.webp)
+
 ## IFC und Mengen
 
 Ein Stab wird als **IfcMember** mit seinem **IfcMemberType** exportiert. Sein Körper wird so geschrieben, wie die anderen Programme Stahl schreiben (Tekla, Advance Steel, Revit): sein Querschnitt **extrudiert** (IfcExtrudedAreaSolid), **beschnitten** von den Ebenen seiner Enden (IfcBooleanClippingResult mit IfcHalfSpaceSolid), und jede Ausklinkung ein **IfcOpeningElement**, das ihn ausspart. Ein Stahlträger oder eine Stahlstütze mit Enden wird genauso geschrieben. Die Mengen jedes Stabs geben seine Länge zwischen den Schnitten, die Fläche seines Querschnitts, sein Volumen und sein Nettogewicht (7850 kg/m³).

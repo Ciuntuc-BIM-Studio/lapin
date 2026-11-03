@@ -119,6 +119,18 @@ Każda płatew i rygiel leży na **łapie** na każdej krokwi, słupie lub słup
 
 ![Stężenie dachu na blachach węzłowych](shots/steel-secondary-bracing.webp)
 
+## Zestawienia i rysunki
+
+**Steel → Steel members** tworzy zestawienie stali projektu: pręty oraz belki i słupy z profilu stalowego, według hal (te spoza hal na końcu), po jednej **Marce** dla prętów jednego rodzaju o tym samym profilu, długości i cięciach końców (C słupy, R krokwie, GP słupy szczytowe, P płatwie, SR rygle ścienne, EB belki okapowe, B stężenia, FB zastrzały, M inne pręty, BM belki), numerowane od najcięższego profilu i najdłuższego. Wiersz podaje **Profil**, **Długość**, **Cięcie na początku** i **Cięcie na końcu** (o ile płaszczyzna końca odchyla się od prostej, oraz podcięcie: kąty listy cięcia), **Liczbę**, ciężar na metr, **Sztuki** i łączny, oraz powierzchnię do **Malowania**; sumę pod każdą halą i ogólną. **Steel parts** podaje blachy, śruby, kotwy i spoiny połączeń, z łapami i blachami węzłowymi.
+
+![Zestawienie prętów stalowych](shots/steel-members.webp)
+
+**Steel → Anchor plan** rysuje stopy słupów hali dla fundamentów: rzut kondygnacji hali w skali 1:50, cięty tuż nad blachami podstaw, każda kotwa w kółku, jej odległość od osi (± gdy kotwy stoją symetrycznie względem niej), każda stopa oznaczona typem (**B1**, **B2**…: ta sama blacha, kotwy, klasa i podlewka), przęsła i rozpiętość siatki, oraz tabela typów obok hali: liczba, rodzaj, blacha, kotwy (liczba, rozmiar, kształt), klasa i podlewka. **Steel → Frame elevation** rysuje ramę (typową lub ramę zaznaczonego pręta) widzianą wzdłuż hali w skali 1:50, z rozpiętością oraz wysokościami okapu i kalenicy. Oba to widoki hali (ponownie zażądane, otwiera się ten sam) i trafiają na arkusze jak każdy inny; nadążają za halą, gdy się zmienia.
+
+![Plan kotew](shots/steel-anchor-plan.webp)
+
+![Widok ramy](shots/steel-frame-view.webp)
+
 ## IFC i ilości
 
 Pręt eksportuje się jako **IfcMember** ze swoim **IfcMemberType**. Jego bryła jest zapisana tak, jak stal zapisują inne programy (Tekla, Advance Steel, Revit): przekrój **wyciągnięty** (IfcExtrudedAreaSolid), **przycięty** płaszczyznami końców (IfcBooleanClippingResult z IfcHalfSpaceSolid), a każde podcięcie jako **IfcOpeningElement**, który go wycina. Stalowa belka lub słup z końcami zapisuje się tak samo. Ilości każdego pręta podają jego długość między cięciami, pole przekroju, objętość i ciężar netto (7850 kg/m³).

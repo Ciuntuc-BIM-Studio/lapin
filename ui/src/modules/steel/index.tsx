@@ -6,10 +6,11 @@
  * and cold-formed sections of one's own) as member, beam or column types, and opens the hall configurator (a new hall, or
  * the hall of the member selected). The properties panel shows a member's ends and haunches. Connections (decision 273):
  * found where the selected members (or all) meet, each with its plates, bolts and anchors, its parameters in the
- * properties panel; the Steel parts schedule.
+ * properties panel; the Steel parts schedule. Stage 5 (decision 276): the Steel members list, a hall's anchor plan and
+ * frame elevation, opened as drawings.
  */
 
-import { ArrowRightToLine, Layers3, Link2, Slash, Table2, WandSparkles, Warehouse } from 'lucide-react';
+import { Anchor, ArrowRightToLine, Frame, Layers3, Link2, ListOrdered, Slash, Table2, WandSparkles, Warehouse } from 'lucide-react';
 import { BeamIcon } from '../../icons';
 import type { Grip, LapinModule, ToolDef } from '../../platform/module';
 import { notify, useUi } from '../../app/store';
@@ -85,6 +86,25 @@ const parts: ToolDef = {
   run: () => void execute('architecture.createSchedule', { kind: 'steelParts' }).then((r) => { if (r) notify('Steel parts schedule made: it is in the project browser, under Schedules.'); }),
 };
 
+const members: ToolDef = {
+  id: 'steel.members', label: 'Steel members', icon: ListOrdered,
+  run: () => void execute('architecture.createSchedule', { kind: 'steelMembers' }).then((r) => { if (r) notify('Steel members schedule made: it is in the project browser, under Schedules.'); }),
+};
+
+/** A hall's drawing (its anchor plan, a frame's elevation), opened: for the hall of what is selected, else the model's only hall. */
+const drawing = (id: string, label: string, icon: ToolDef['icon'], command: string): ToolDef => ({
+  id, label, icon,
+  run: () => {
+    const sel = useUi.getState().selection;
+    void execute(command, sel ? { id: sel } : {}).then((r) => {
+      const view = (r as { id?: string } | null)?.id;
+      if (view) useUi.setState({ view: 'drawing', drawingViewId: view });
+    });
+  },
+});
+const anchorPlan = drawing('steel.anchorPlan', 'Anchor plan', Anchor, 'steel.anchorPlan');
+const frameView = drawing('steel.frameView', 'Frame elevation', Frame, 'steel.frameView');
+
 /** The hall configurator: on the hall of the member selected, else a new hall. */
 export function openHall(id?: string | null) {
   const { nodes, relations } = useSession.getState();
@@ -115,7 +135,9 @@ const steel: LapinModule = {
       { label: 'Halls', tools: [hall] },
       { label: 'Members', tools: [member, convert] },
       { label: 'Ends', tools: [mitre, fit] },
-      { label: 'Nodes', tools: [connections, parts] },
+      { label: 'Nodes', tools: [connections] },
+      { label: 'Drawings', tools: [anchorPlan, frameView] },
+      { label: 'Schedules', tools: [members, parts] },
       { label: 'Types', tools: [types] },
     ],
   }],

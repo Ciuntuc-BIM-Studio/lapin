@@ -119,6 +119,18 @@ Chaque panne et chaque lisse repose sur une **échantignolle** sur chaque chevro
 
 ![Le contreventement de toiture sur ses goussets](shots/steel-secondary-bracing.webp)
 
+## Listes et dessins
+
+**Steel → Steel members** fait la liste de l’acier du projet : les barres, et les poutres et poteaux d’un profilé acier, par bâtiment (ceux d’aucun bâtiment à la fin), un **Repère** pour les barres d’un même type identiques en profil, longueur et coupes d’extrémité (C poteaux, R chevrons, GP potelets de pignon, P pannes, SR lisses, EB poutres sablières, B contreventement, FB bracons, M autres barres, BM poutres), numérotés du profil le plus lourd et du plus long. Une ligne donne le **Profil**, la **Longueur**, la **Coupe au début** et la **Coupe à la fin** (de combien le plan de l’extrémité tourne par rapport à l’équerre, et un grugeage : les angles de la liste de débit), le **Nombre**, le poids au mètre, **Unitaire** et total, et la surface de **Peinture** ; un total sous chaque bâtiment et un général. **Steel parts** donne les plaques, boulons, ancrages et soudures des assemblages, avec leurs échantignolles et goussets.
+
+![La nomenclature des barres en acier](shots/steel-members.webp)
+
+**Steel → Anchor plan** dessine les pieds de poteaux du bâtiment pour les fondations : un plan du niveau du bâtiment au 1:50, coupé juste au-dessus des platines, chaque ancrage cerclé, sa distance à l’axe (± quand les ancrages sont symétriques par rapport à lui), chaque pied repéré par son type (**B1**, **B2**… : même platine, ancrages, classe et calage), les travées et la portée de la trame, et le tableau des types à côté du bâtiment : nombre, type, platine, ancrages (nombre, taille, forme), classe et calage. **Steel → Frame elevation** dessine un portique (le courant, ou celui de la barre sélectionnée) vu le long du bâtiment au 1:50, avec sa portée et ses hauteurs à l’égout et au faîtage. Les deux sont des vues du bâtiment (demandées à nouveau, la même s’ouvre) et se posent sur des planches comme les autres ; elles suivent le bâtiment quand il change.
+
+![Un plan des ancrages](shots/steel-anchor-plan.webp)
+
+![L’élévation d’un portique](shots/steel-frame-view.webp)
+
 ## IFC et quantités
 
 Une barre s’exporte en **IfcMember** avec son **IfcMemberType**. Son corps est écrit comme les autres logiciels écrivent l’acier (Tekla, Advance Steel, Revit) : sa section **extrudée** (IfcExtrudedAreaSolid), **coupée** par les plans de ses extrémités (IfcBooleanClippingResult avec IfcHalfSpaceSolid), et chaque grugeage un **IfcOpeningElement** qui l’évide. Une poutre ou un poteau en acier avec extrémités s’écrit de même. Les quantités de chaque barre donnent sa longueur entre ses coupes, l’aire de sa section, son volume et son poids net (7850 kg/m³).

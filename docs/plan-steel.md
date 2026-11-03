@@ -58,7 +58,7 @@ Parametrii unui tip de nod: grosimea plăcilor, numărul, diametrul (M12–M30) 
 2. **Configuratorul de hală** — cadrele cu vute (vuta tăiată din profil), frontoanele, axele și nivelurile, previzualizarea. **Făcută (03.11.2026, decizia 270)**, vezi mai jos.
 3. **Nodurile principale** — `LapinSteelNode`, găsirea nodurilor din topologia axelor, tipurile de nod: picior articulat și încastrat, streașină, coamă, înnădire; plăcile, șuruburile și sudurile ca piese derivate. **Făcută (03.11.2026, decizia 273)**, vezi mai jos.
 4. **Elementele secundare** — pane și rigle de perete (Z, C), clemele lor, contravântuirile cu gușeele, grinda de streașină, contrafișele. **Făcută (03.11.2026, decizia 275)**, vezi mai jos.
-5. **Extrase și desene** — lista de profile (greutăți), plăci, șuruburi și ancore, lista de debitare cu unghiurile; elevația cadrului (ca `wood.frameView`) și **planul ancorelor** (plăcile de bază și ancorele cotate, pentru fundații).
+5. **Extrase și desene** — lista de profile (greutăți), plăci, șuruburi și ancore, lista de debitare cu unghiurile; elevația cadrului (ca `wood.frameView`) și **planul ancorelor** (plăcile de bază și ancorele cotate, pentru fundații). **Făcută (03.11.2026, decizia 276)**, vezi mai jos.
 6. **Premium (`steel-pro`)** — DSTV/NC, desenele de execuție pe piesă și pe ansamblu, numerotarea pentru atelier; verificările EC3 mai târziu.
 
 Fiecare etapă: teste în engine, pagina ei din ghid în toate limbile și scena ei.
@@ -118,3 +118,12 @@ Fiecare etapă: teste în engine, pagina ei din ghid în toate limbile și scena
 - **IFC**: panele `IfcMember` PURLIN, contravântuirile și contrafișele BRACE, riglele și grinda de streașină USERDEFINED, nodurile ca ansambluri; testat și citit înapoi.
 
 **Rămas din etapa 4:** manșoanele și suprapunerile panelor la reazem (acum una pe travee sau continuă, fără eclise de continuitate); golurile de uși în riglele de perete; contravântuirile frontoanelor și grinzile de vânt verticale la stâlpii de fronton; întinzătoarele barelor rotunde; contrafișele în zona vutelor.
+
+## Etapa 5, făcută (03.11.2026, decizia 276)
+
+- **Extrasul Steel members** (`SteelMembersSchedule`, `steelMembers`): barele, grinzile și stâlpii dintr-un profil metalic, pe hale (cele fără hală la sfârșit), o **marcă** pentru barele de un fel cu același profil, aceeași lungime (la mm, între tăieturi) și aceleași tăieturi (C, R, GP, P, SR, EB, B, FB, M, BM; numerotate de la profilul cel mai greu și cea mai lungă); coloanele: profilul, lungimea, tăietura la început și la sfârșit (cât se rotește planul capătului față de drept, și crestătura — unghiurile listei de debitare), numărul, kg/m, greutatea bucății și totală, suprafața de vopsit (perimetrul secțiunii pe lungime); un total pe hală (când sunt mai multe) și unul general. Mărcile sunt calculate, nu păstrate pe bare (numerotarea pentru atelier rămâne în `steel-pro`). Extrasul **Steel parts** cuprinde acum și eclisele, gușeele și șuruburile etapei 4.
+- **Planul ancorelor** (`steel.anchorPlan`, Steel → Anchor plan): o vedere în plan a etajului halei, la 1:50, tăiată la 0,12 m (peste plăcile de bază), cu cheia `steelAnchors`; ceruta din nou, se deschide aceeași. Adnotările (`IViewAnnotations`): fiecare ancoră încercuită cu cruce, distanța ancorelor până la axă pe ambele direcții (± o singură dată când sunt simetrice, altfel lanț), fiecare picior cu marca tipului său (**B1**, **B2**…: aceeași placă, ancore, grupă, subturnare), traveile și deschiderea axelor, tabelul tipurilor (număr, fel, placă, ancore, grupă, subturnare) lângă hală.
+- **Elevația cadrului** (`steel.frameView`, Steel → Frame elevation): o secțiune la 0,5 m înaintea cadrului, privind spre el, adâncime 1 m, 1:50, cheile `steelFrame` și `steelFrameIndex`; cadrul curent sau al barei selectate; cotele deschiderii (și până la coamă), înălțimilor la streașină și la coamă, titlul cu profilele și panta.
+- Amândouă sunt vederi obișnuite: se pun pe planșe, se tipăresc; urmează hala.
+
+**Rămas din etapa 5:** detaliul unui picior (o secțiune prin placa de bază și fundație); planul ancorelor nu arată încă fundațiile (sunt sub tăietură); cotele la axe ale picioarelor de fronton dintr-un cadru rotit sunt în coordonatele halei, textele fixe în engleză (ca celelalte desene generate); numerotarea pentru atelier și desenele de execuție: `steel-pro`.

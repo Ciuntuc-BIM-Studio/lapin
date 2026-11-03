@@ -643,7 +643,8 @@ export const scenes = [
       const dialog = t.page.locator('[data-dialog=steel-hall]');
       t.expect(await dialog.count() > 0, 'the hall configurator opens');
       await dialog.locator('[data-field=hall-style-hall-20]').click();
-      await t.wait(1200);
+      // The preview builds the whole hall, its secondary steel and connections too.
+      await t.page.waitForFunction(() => document.querySelectorAll('[data-dialog=steel-hall] svg[data-field=hall-elevation] polygon').length >= 12, null, { timeout: 15000 }).catch(() => {});
       t.expect(await dialog.locator('svg[data-field=hall-elevation] polygon').count() >= 12, 'the preview draws a typical frame with its haunches');
       t.expect(await dialog.locator('[data-field=hall-summary] dt').count() >= 9, 'the summary weighs the hall');
       await t.shot('steel-hall', { of: '.dialog', pad: 0 });
@@ -789,6 +790,44 @@ export const scenes = [
       await t.wait(2000);
       await t.shot('steel-secondary-bracing', { of: 'canvas', pad: 0 });
       await t.ui({ dialog: null, selection: null, selected: [], keyPlan: true });
+    },
+  },
+  {
+    // Steel, stage 5 (docs/plan-steel.md, decision 276): a hall's anchor plan (its bases, anchors dimensioned to the grid,
+    // the table of base types) and a frame's elevation, from the Steel tab; the Steel members list.
+    id: 'steel-drawings',
+    async run(t) {
+      await t.fresh();
+      const ground = (await t.nodes()).find((n) => n.type === 'IfcBuildingStorey' && Math.abs(n.props?.elevation ?? 1) < 1e-6);
+      const { id: hall } = await t.cmd('steel.addHall', { storeyId: ground?.id, style: 'hall-20', attrs: {} });
+      await t.button('Steel', { exact: true });
+      await t.tool('steel.anchorPlan');
+      await t.wait(3000);
+      const views = (await t.nodes()).filter((n) => n.type === 'LapinView');
+      t.expect(views.some((v) => v.props?.steelAnchors === hall), 'the hall has its anchor plan');
+      t.expect(await t.page.locator('[data-testid=drawing]').count() > 0, 'the anchor plan opens as a drawing');
+      // Zoomed in on the base at axes A and 2 (a wheel event zooms one notch at most).
+      const zoomAt = async (fx, fy, notches) => {
+        const box = await t.page.locator('[data-testid=drawing]').boundingBox();
+        await t.page.mouse.move(box.x + fx * box.width, box.y + fy * box.height);
+        for (let i = 0; i < notches; i++) { await t.page.mouse.wheel(0, -100); await t.wait(80); }
+        await t.wait(800);
+      };
+      const fitDrawing = async () => { await t.page.locator('button:has(svg.lucide-maximize):visible').first().click(); await t.wait(800); };
+      await fitDrawing();
+      await zoomAt(0.232, 0.726, 32);
+      await t.shot('steel-anchor-plan', { of: '[data-testid=drawing]', pad: 0 });
+      await t.tool('steel.frameView');
+      await t.wait(3000);
+      t.expect((await t.nodes()).some((v) => v.type === 'LapinView' && v.props?.steelFrame === hall), 'and a frame\'s elevation');
+      await fitDrawing();
+      await t.shot('steel-frame-view', { of: '[data-testid=drawing]', pad: 0 });
+      const schedule = await t.cmd('architecture.createSchedule', { kind: 'steelMembers' });
+      await t.ui({ view: 'schedule', scheduleId: schedule.id, keyPlan: false });
+      await t.wait(1500);
+      t.expect(await t.page.locator('.schedule-grid').count() > 0, 'the Steel members list');
+      await t.shot('steel-members', { of: '.schedule-pane', pad: 0, maxHeight: 760 });
+      await t.ui({ view: 'plan', keyPlan: true });
     },
   },
   {

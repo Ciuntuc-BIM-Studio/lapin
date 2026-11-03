@@ -13,6 +13,7 @@ summary: Steel members with configurable ends — extended or set back, cut by a
 - **Convert to member**: the selected drafted outlines made members (below).
 - **Mitre** and **Fit**: two members joined at their ends (below).
 - **Steel types**: the project's member types, and new ones.
+- **Find connections**, **Anchor plan**, **Frame elevation**, **Steel members** and **Steel parts**: connections, drawings and lists (below).
 
 A member is an IfcMember: its axis runs anywhere in space (a brace, a rafter, a post), its section comes from its type, it can be turned about its axis (**Rotation**) and its axis can run through the section's centre, top or bottom (**Insertion point**). The structure's beams and columns of a steel profile take the same ends.
 
@@ -118,6 +119,18 @@ Each purlin and rail sits on a **cleat** on every rafter, column or post it cros
 ![A purlin on its cleat, a fly brace under it](shots/steel-secondary-cleat.webp)
 
 ![The roof bracing on its gussets](shots/steel-secondary-bracing.webp)
+
+## Lists and drawings
+
+**Steel → Steel members** makes the list of the project's steel: the members, and the beams and columns of a steel profile, by hall (those of no hall last), each **Mark** for the members of one kind alike in profile, length and end cuts (C columns, R rafters, GP gable posts, P purlins, SR side rails, EB eaves beams, B bracing, FB fly braces, M other members, BM beams), numbered from the heaviest profile and the longest. A row gives the **Profile**, the **Length**, the **Start cut** and **End cut** (how far the end's plane turns from square, and a cope: the cutting list's angles), the **Count**, the weight per metre, **Each** and in all, and the area to **Paint**; a total under each hall, and one for all. **Steel parts** lists the connections' plates, bolts, anchors and welds, the cleats and gussets with them.
+
+![The Steel members list](shots/steel-members.webp)
+
+**Steel → Anchor plan** draws the hall's column bases for the foundations: a plan of the hall's storey at 1:50, cut just over the base plates, with each anchor circled, its distance to the grid axis (± when the anchors stand symmetrically about it), each base marked by its type (**B1**, **B2**…: the same plate, anchors, grade and grout), the grid's bays and span, and the table of the types beside the hall: their count, kind, plate, anchors (number, size, shape), grade and grout. **Steel → Frame elevation** draws a frame (the typical one, or the frame of the member selected) seen along the hall at 1:50, with its span, its eaves and apex heights. Both are views of the hall (asked again, the same view opens) and go on sheets like any other; they follow the hall when it is changed.
+
+![An anchor plan](shots/steel-anchor-plan.webp)
+
+![A frame elevation](shots/steel-frame-view.webp)
 
 ## IFC and quantities
 

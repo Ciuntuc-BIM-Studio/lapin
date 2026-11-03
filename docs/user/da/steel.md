@@ -119,6 +119,18 @@ Hver ås og rigel sidder på en **åseholder** på hvert spær, hver søjle elle
 
 ![Tagafstivningen på sine knudeplader](shots/steel-secondary-bracing.webp)
 
+## Lister og tegninger
+
+**Steel → Steel members** laver listen over projektets stål: stængerne og bjælker og søjler af et stålprofil, efter hal (dem uden hal til sidst), et **Mærke** for stænger af én slags, der er ens i profil, længde og endesnit (C søjler, R spær, GP gavlsøjler, P åse, SR facaderigler, EB tagfodsbjælker, B afstivning, FB kipstivere, M andre stænger, BM bjælker), nummereret fra det tungeste profil og den længste. En række giver **Profil**, **Længde**, **Snit ved start** og **Snit ved slut** (hvor meget endens plan drejer fra vinkelret, og en udklinkning: tilskæringslistens vinkler), **Antal**, vægten pr. meter, **Pr. stk.** og i alt, og arealet til **Maling**; en sum under hver hal og én for det hele. **Steel parts** viser samlingernes plader, bolte, ankre og svejsninger, med deres åseholdere og knudeplader.
+
+![Stålstangslisten](shots/steel-members.webp)
+
+**Steel → Anchor plan** tegner hallens søjlefødder til fundamenterne: en plan af hallens etage i 1:50, snittet lige over fodpladerne, hvert anker med en cirkel, dets afstand til aksen (± når ankrene står symmetrisk om den), hver fod mærket efter sin type (**B1**, **B2**…: samme plade, ankre, styrkeklasse og understøbning), rastrets fag og spænd, og tabellen over typerne ved siden af hallen: antal, art, plade, ankre (antal, størrelse, form), styrkeklasse og understøbning. **Steel → Frame elevation** tegner en ramme (den typiske eller den valgte stangs) set langs hallen i 1:50 med spænd, tagfods- og kiphøjde. Begge er visninger af hallen (bedt om igen åbnes den samme) og kommer på tegningsark som alle andre; de følger hallen, når den ændres.
+
+![En ankerplan](shots/steel-anchor-plan.webp)
+
+![En rammes opstalt](shots/steel-frame-view.webp)
+
 ## IFC og mængder
 
 En stang eksporteres som **IfcMember** med sin **IfcMemberType**. Dens legeme skrives, som de andre programmer skriver stål (Tekla, Advance Steel, Revit): dens profil **ekstruderet** (IfcExtrudedAreaSolid), **beskåret** af endernes planer (IfcBooleanClippingResult med IfcHalfSpaceSolid), og hver udklinkning et **IfcOpeningElement**, der skærer den ud. En stålbjælke eller -søjle med ender skrives på samme måde. Hver stangs mængder giver dens længde mellem snittene, profilets areal, dens volumen og dens nettovægt (7850 kg/m³).

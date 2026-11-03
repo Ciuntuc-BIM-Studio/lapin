@@ -119,6 +119,18 @@ Cada correa apoya sobre un **ejión** en cada cabio, pilar o pilar de hastial qu
 
 ![El arriostramiento de cubierta sobre sus placas de nudo](shots/steel-secondary-bracing.webp)
 
+## Listas y dibujos
+
+**Steel → Steel members** hace la lista del acero del proyecto: las barras, y las vigas y pilares de un perfil de acero, por nave (las que no son de ninguna al final), una **Marca** para las barras de un tipo iguales en perfil, longitud y cortes de extremo (C pilares, R cabios, GP pilares de hastial, P correas, SR correas laterales, EB vigas de alero, B arriostramiento, FB tornapuntas, M otras barras, BM vigas), numeradas desde el perfil más pesado y la más larga. Una fila da el **Perfil**, la **Longitud**, el **Corte inicial** y el **Corte final** (cuánto gira el plano del extremo respecto del corte recto, y un rebaje: los ángulos de la lista de corte), el **Número**, el peso por metro, **Cada una** y en total, y la superficie de **Pintura**; un total bajo cada nave y uno general. **Steel parts** lista las placas, tornillos, anclajes y soldaduras de las uniones, con sus ejiones y placas de nudo.
+
+![La lista de barras de acero](shots/steel-members.webp)
+
+**Steel → Anchor plan** dibuja las bases de los pilares de la nave para la cimentación: una planta de la planta de la nave a 1:50, cortada justo sobre las placas base, con cada anclaje en un círculo, su distancia al eje (± cuando los anclajes están simétricos respecto de él), cada base marcada por su tipo (**B1**, **B2**…: la misma placa, anclajes, calidad y mortero), las crujías y la luz de la retícula, y la tabla de los tipos junto a la nave: su número, tipo, placa, anclajes (número, tamaño, forma), calidad y mortero. **Steel → Frame elevation** dibuja un pórtico (el típico, o el de la barra seleccionada) visto a lo largo de la nave a 1:50, con su luz y sus alturas de alero y cumbrera. Ambos son vistas de la nave (pedidas de nuevo, se abre la misma) y van en planos como cualquier otra; siguen a la nave cuando cambia.
+
+![Un plano de anclajes](shots/steel-anchor-plan.webp)
+
+![El alzado de un pórtico](shots/steel-frame-view.webp)
+
 ## IFC y cantidades
 
 Una barra se exporta como **IfcMember** con su **IfcMemberType**. Su cuerpo se escribe como escriben el acero los demás programas (Tekla, Advance Steel, Revit): su sección **extruida** (IfcExtrudedAreaSolid), **recortada** por los planos de sus extremos (IfcBooleanClippingResult con IfcHalfSpaceSolid), y cada rebaje un **IfcOpeningElement** que la vacía. Una viga o un pilar de acero con extremos se escribe igual. Las cantidades de cada barra dan su longitud entre cortes, el área de su sección, su volumen y su peso neto (7850 kg/m³).

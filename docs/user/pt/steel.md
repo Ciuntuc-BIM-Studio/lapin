@@ -119,6 +119,18 @@ Cada terça e longarina apoia numa **patilha** em cada caibro, pilar ou pilar de
 
 ![O contraventamento da cobertura nas suas chapas de nó](shots/steel-secondary-bracing.webp)
 
+## Tabelas e desenhos
+
+**Steel → Steel members** faz a tabela do aço do projeto: as barras, e as vigas e pilares de um perfil de aço, por galpão (os de nenhum galpão no fim), uma **Marca** para as barras de um tipo iguais em perfil, comprimento e cortes de extremidade (C pilares, R caibros, GP pilares de oitão, P terças, SR longarinas, EB vigas de beiral, B contraventamento, FB escoras, M outras barras, BM vigas), numeradas a partir do perfil mais pesado e da mais longa. Uma linha dá o **Perfil**, o **Comprimento**, o **Corte inicial** e o **Corte final** (quanto o plano da extremidade gira em relação ao esquadro, e um recorte: os ângulos da lista de corte), o **Número**, o peso por metro, **Cada** e no total, e a área de **Pintura**; um total sob cada galpão e um geral. **Steel parts** lista as chapas, parafusos, chumbadores e soldas das ligações, com suas patilhas e chapas de nó.
+
+![A tabela de barras de aço](shots/steel-members.webp)
+
+**Steel → Anchor plan** desenha as bases dos pilares do galpão para as fundações: uma planta do pavimento do galpão em 1:50, cortada logo acima das chapas de base, cada chumbador num círculo, sua distância ao eixo (± quando os chumbadores ficam simétricos em relação a ele), cada base marcada pelo seu tipo (**B1**, **B2**…: mesma chapa, chumbadores, classe e graute), os vãos e a largura da grelha, e a tabela dos tipos ao lado do galpão: número, tipo, chapa, chumbadores (número, tamanho, forma), classe e graute. **Steel → Frame elevation** desenha um pórtico (o típico, ou o da barra selecionada) visto ao longo do galpão em 1:50, com seu vão e as alturas do beiral e da cumeeira. Ambos são vistas do galpão (pedidas de novo, abre-se a mesma) e vão para as pranchas como qualquer outra; acompanham o galpão quando ele muda.
+
+![Uma planta dos chumbadores](shots/steel-anchor-plan.webp)
+
+![A elevação de um pórtico](shots/steel-frame-view.webp)
+
 ## IFC e quantidades
 
 Uma barra é exportada como **IfcMember** com seu **IfcMemberType**. Seu corpo é escrito como os outros programas escrevem o aço (Tekla, Advance Steel, Revit): a seção **extrudada** (IfcExtrudedAreaSolid), **cortada** pelos planos das extremidades (IfcBooleanClippingResult com IfcHalfSpaceSolid), e cada recorte um **IfcOpeningElement** que a esvazia. Uma viga ou um pilar de aço com extremidades é escrito da mesma forma. As quantidades de cada barra dão o comprimento entre os cortes, a área da seção, o volume e o peso líquido (7850 kg/m³).

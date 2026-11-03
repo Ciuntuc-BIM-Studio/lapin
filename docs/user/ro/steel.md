@@ -119,6 +119,18 @@ Fiecare pană și riglă stă pe câte o **eclisă** pe fiecare riglă, stâlp s
 
 ![Contravântuirea acoperișului pe gușeele ei](shots/steel-secondary-bracing.webp)
 
+## Extrase și desene
+
+**Steel → Steel members** face extrasul oțelului din proiect: barele, grinzile și stâlpii dintr-un profil metalic, pe hale (cele fără hală la sfârșit), câte o **Marcă** pentru barele de același fel cu același profil, aceeași lungime și aceleași tăieturi la capete (C stâlpi, R rigle, GP stâlpi de fronton, P pane, SR rigle de perete, EB grinzi de streașină, B contravântuiri, FB contrafișe, M alte bare, BM grinzi), numerotate de la profilul cel mai greu și cea mai lungă. Un rând dă **Profilul**, **Lungimea**, **Tăierea la început** și **Tăierea la sfârșit** (cât se rotește planul capătului față de drept, și crestătura: unghiurile listei de debitare), **Numărul**, greutatea pe metru, a **Bucății** și totală, și suprafața de **Vopsire**; un total sub fiecare hală și unul general. **Steel parts** are plăcile, șuruburile, ancorele și sudurile nodurilor, cu eclisele și gușeele lor.
+
+![Extrasul barelor metalice](shots/steel-members.webp)
+
+**Steel → Anchor plan** desenează picioarele stâlpilor halei pentru fundații: un plan al etajului halei la 1:50, tăiat chiar peste plăcile de bază, cu fiecare ancoră încercuită, distanța ei până la axă (± când ancorele stau simetric față de ea), fiecare picior marcat după tipul lui (**B1**, **B2**…: aceeași placă, aceleași ancore, grupă și subturnare), traveile și deschiderea axelor, și tabelul tipurilor lângă hală: numărul, felul, placa, ancorele (câte, mărimea, forma), grupa și subturnarea. **Steel → Frame elevation** desenează un cadru (cel curent, sau cadrul barei selectate) văzut de-a lungul halei la 1:50, cu deschiderea, înălțimea la streașină și la coamă. Amândouă sunt vederi ale halei (cerute din nou, se deschide aceeași) și se pun pe planșe ca oricare alta; urmează hala când e schimbată.
+
+![Un plan al ancorelor](shots/steel-anchor-plan.webp)
+
+![Elevația unui cadru](shots/steel-frame-view.webp)
+
 ## IFC și cantități
 
 O bară se exportă ca **IfcMember** cu **IfcMemberType**-ul ei. Corpul se scrie cum scriu oțelul celelalte programe (Tekla, Advance Steel, Revit): secțiunea **extrudată** (IfcExtrudedAreaSolid), **tăiată** de planele capetelor (IfcBooleanClippingResult cu IfcHalfSpaceSolid), iar fiecare crestătură un **IfcOpeningElement** care o golește. O grindă sau un stâlp metalic cu capete se scrie la fel. Cantitățile fiecărei bare dau lungimea dintre tăieturi, aria secțiunii, volumul și greutatea netă (7850 kg/m³).

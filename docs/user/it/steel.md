@@ -119,6 +119,18 @@ Ogni arcareccio e corrente poggia su una **staffa** su ogni puntone, pilastro o 
 
 ![Il controvento di copertura sui suoi fazzoletti](shots/steel-secondary-bracing.webp)
 
+## Abachi e disegni
+
+**Steel → Steel members** crea l’abaco dell’acciaio del progetto: le aste, e le travi e i pilastri di un profilo in acciaio, per capannone (quelli di nessun capannone alla fine), una **Marca** per le aste di un tipo uguali per profilo, lunghezza e tagli d’estremità (C pilastri, R puntoni, GP pilastri di testata, P arcarecci, SR correnti di parete, EB travi di gronda, B controventi, FB ritegni, M altre aste, BM travi), numerate dal profilo più pesante e dalla più lunga. Una riga dà il **Profilo**, la **Lunghezza**, il **Taglio iniziale** e il **Taglio finale** (di quanto il piano dell’estremità ruota dal taglio retto, e un intaglio: gli angoli della distinta di taglio), il **Numero**, il peso al metro, **Cad.** e totale, e la superficie di **Verniciatura**; un totale sotto ogni capannone e uno generale. **Steel parts** elenca piastre, bulloni, tirafondi e saldature dei collegamenti, con staffe e fazzoletti.
+
+![L’abaco delle aste in acciaio](shots/steel-members.webp)
+
+**Steel → Anchor plan** disegna le basi dei pilastri del capannone per le fondazioni: una pianta del piano del capannone in scala 1:50, tagliata appena sopra le piastre di base, ogni tirafondo cerchiato, la sua distanza dall’asse (± quando i tirafondi sono simmetrici rispetto ad esso), ogni base marcata per tipo (**B1**, **B2**…: stessa piastra, tirafondi, classe e malta), le campate e la luce della griglia, e la tabella dei tipi accanto al capannone: numero, tipo, piastra, tirafondi (numero, dimensione, forma), classe e malta. **Steel → Frame elevation** disegna un portale (quello tipico, o quello dell’asta selezionata) visto lungo il capannone in scala 1:50, con la luce e le altezze di gronda e di colmo. Entrambi sono viste del capannone (richieste di nuovo, si apre la stessa) e vanno sulle tavole come le altre; seguono il capannone quando cambia.
+
+![Una pianta dei tirafondi](shots/steel-anchor-plan.webp)
+
+![Il prospetto di un portale](shots/steel-frame-view.webp)
+
 ## IFC e quantità
 
 Un’asta si esporta come **IfcMember** con il suo **IfcMemberType**. Il suo corpo è scritto come gli altri programmi scrivono l’acciaio (Tekla, Advance Steel, Revit): la sezione **estrusa** (IfcExtrudedAreaSolid), **tagliata** dai piani delle estremità (IfcBooleanClippingResult con IfcHalfSpaceSolid), e ogni intaglio un **IfcOpeningElement** che la svuota. Una trave o un pilastro in acciaio con estremità si scrive allo stesso modo. Le quantità di ogni asta danno la sua lunghezza tra i tagli, l’area della sezione, il volume e il peso netto (7850 kg/m³).
