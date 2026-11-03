@@ -1,7 +1,7 @@
 ---
-title: Stairs
+title: Stairs and ramps
 order: 42
-summary: Place a stair between storeys, set it up in its type, and make the few steps up to a porch or a door.
+summary: Place a stair or a ramp between storeys or up to any height, set it up in its type, and make the few steps up to a porch or a door.
 ---
 
 ## Stairs
@@ -54,17 +54,48 @@ The steps up to a front door have a rise of their own: from the ground, a few st
 
 The type is added to the project the first time you use it. To change it, open **Architecture → Stair types** and pick **Entrance steps**:
 
-- **Shape → A rise of its own.** The type's rise; each stair can still change it with **Rise**.
+- **Shape → Climbs → A height of its own.** The type's rise, climbed **Up to its storey's level, from below (an entrance)**; each stair can still change it with **Rise**.
 - **Rules → Rule set → entrance steps.** Risers of 120–170 mm and treads of 300–400 mm, with a single riser allowed.
 - **Construction → Built as.** **Solid, cast on the ground** fills the steps down to their base. **Waist slab under the steps** builds them like an indoor stair.
 
 ![The Entrance steps type in the stair configurator](shots/stair-types.webp)
 
-To make another stair type climb a rise of its own, tick **A rise of its own** on its **Shape** tab. To change a placed stair into entrance steps, pick **Entrance steps** as its **Stair type**: it moves down so that its top is at its storey's level.
+To make any other stair type climb a height of its own, choose **Climbs → Up to → A height of its own** on its **Shape** tab (see the next section). To change a placed stair into entrance steps, pick **Entrance steps** as its **Stair type**: it moves down so that its top is at its storey's level.
 
 ![The house with its porch and entrance steps in 3D](shots/entrance-steps-3d.webp)
 
 In IFC, the steps are an IfcStair of type STRAIGHT_RUN_STAIR. Its flight is an IfcStairFlight with its NumberOfRisers, NumberOfTreads, RiserHeight and TreadLength, and Pset_StairCommon carries the same numbers. The porch is an IfcSlab.
+
+## A stair to any height
+
+A stair does not have to go from one storey to the next. On a type's **Shape** tab, **Climbs → Up to** chooses **The storey above** or **A height of its own**, with its **Rise**, and **Starts** says where it starts:
+
+- **Up to its storey's level, from below (an entrance).** It ends at the storey's level and starts the rise lower, as entrance steps do.
+- **From its storey's level up (a terrace, a platform).** It starts at the storey's level and climbs the rise: 1.20 m up to a terrace or a loading dock, for example.
+
+Each stair placed can climb another height: type it in **Rise** in its properties (empty: the type's). Climbing from the level, a new rise keeps the foot where it is; coming up from below, it keeps the top.
+
+## Ramps
+
+Choose **Architecture → Ramp** (<kbd>RU</kbd>). Click the middle of the ramp's lower end, then a point in the direction it climbs; for an L or a switchback, a third click left or right of the flight sets which way it turns. The first time, the project gets the library's **Ramp 6 %**: 1.20 m wide at 6 %, in flights of at most 9 m with landings of 1.50 m between them, a slab of reinforced concrete under a finish, handrails on both sides. It climbs to the storey above unless its type or its **Rise** says otherwise.
+
+**Architecture → Entrance ramp** is placed like entrance steps: click the middle of the porch edge, then the side the ramp goes out to. It comes up 450 mm from the ground to ±0.00, solid on the ground, and **Rise** changes it as it does the steps.
+
+Ramp types are made in the same configurator, **Architecture → Stair types**, with **New ramp type**, or from the library's **Switchback ramp** and **Entrance ramp**:
+
+- **Shape.** **Straight**, **Straight, with landings**, **L shape** or **Switchback (back and forth)** with its **Gap between flights**; the **Width**, the **Slope** in per cent, the **Longest flight** (longer, the ramp is split into flights of equal length with landings between them) and the **Landing length**. The run in plan is the height over the slope: 3 m at 6 % is 50 m. **Climbs** works as for stairs.
+- **Rules.** **Steepest slope** (8 % by default), **Minimum width** and **Headroom**. The checks show in red a slope steeper than the rules allow, a flight longer than the longest, and a landing shorter than 1.50 m or the ramp's width.
+- **Construction.** **A sloping slab of reinforced concrete** of its **Slab thickness**, or **Solid, cast on the ground**; the finish and the railing as for stairs.
+
+![The switchback ramp in the configurator](shots/ramp-types.webp)
+
+Select a ramp to see its type, **Width**, **Turn**, **Base offset** and **Rise**, a **Slope** and a **Landing length** of its own (empty: the type's), its flights' lengths and its checks. Plans draw its flights and landings, the arrow up, and the slope in per cent along each flight. A ramp that climbs to the storey above asks that floor for an opening, as a stair does.
+
+![The switchback ramp and the entrance ramp in plan, the slope along each flight](shots/ramps-plan.webp)
+
+![The ramps in 3D](shots/ramps-3d.webp)
+
+In IFC a ramp is an IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTER_TURN_RAMP or HALF_TURN_RAMP) typed by an IfcRampType, made of IfcRampFlights, landings (IfcSlab LANDING) and IfcRailings.
 
 ## Railings
 

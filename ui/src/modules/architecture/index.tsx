@@ -1,7 +1,7 @@
 /** Architecture: layered walls and their types, doors and windows, floors, roofs, rooms and their colours. */
 
 import { ArrowLeftRight, CornerDownRight, Layers3, Link2, Settings2, Slash } from 'lucide-react';
-import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
+import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RampIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { flipAcross, frameAt, outlineGrips, outlineRef, pathGrips, pathRef, toPairs } from '../../viewport/gripKit';
 import { arcOf, project } from '../../viewport/arc';
@@ -197,7 +197,7 @@ const contourRefs = (node: NodeDto): RefLine[] => { const pts = fromPairs(node.p
  */
 const attachRoof: ToolDef = {
   id: 'architecture.attachRoof', label: 'Attach to roof', icon: AttachRoofIcon, shortcut: 'AR',
-  gesture: { kind: 'pick', types: ['IfcRoof', 'IfcSlab', 'IfcBeam', 'IfcBuildingElementProxy', 'IfcCovering', 'IfcPlate', 'IfcMember', 'IfcBuildingElementPart', 'IfcStair', 'IfcFooting', 'IfcColumn', 'IfcRailing'] },
+  gesture: { kind: 'pick', types: ['IfcRoof', 'IfcSlab', 'IfcBeam', 'IfcBuildingElementProxy', 'IfcCovering', 'IfcPlate', 'IfcMember', 'IfcBuildingElementPart', 'IfcStair', 'IfcRamp', 'IfcFooting', 'IfcColumn', 'IfcRailing'] },
   complete: async ({ entity }) => {
     const ids = useUi.getState().selected.filter((id) => useSession.getState().nodes.get(id)?.type === 'IfcWall');
     if (!entity) return;
@@ -280,13 +280,16 @@ const roofOpening = (kind: 'window' | 'dormer'): ToolDef => ({
  * picked (else the project's first). The footprint the engine works out
  * follows the cursor.
  */
-function stairCommand(library?: string): Step {
+function stairCommand(library?: string, ramp = false): Step {
   // The plan's storey: the one chosen, else the one a new project's plan shows (the ground floor).
   const storeyId = useUi.getState().storeyId ?? activeStorey()?.id ?? null;
-  if (!storeyId) { notify('Open a plan to place a stair.'); return { prompt: '', want: 'none' }; }
-  // Entrance steps come from the library (the project gets its copy of the type with the first one placed); a stair, from the type picked.
-  const typeId = library ? undefined : useUi.getState().stairTypeId ?? undefined;
-  const which = library ? { library } : typeId ? { typeId } : {};
+  if (!storeyId) { notify(ramp ? 'Open a plan to place a ramp.' : 'Open a plan to place a stair.'); return { prompt: '', want: 'none' }; }
+  // Entrance steps come from the library (the project gets its copy of the type with the first one placed); a stair, from the type picked;
+  // a ramp from the ramp type picked, else the library's ramp.
+  const typeId = library ? undefined : ramp ? useUi.getState().rampTypeId ?? undefined : useUi.getState().stairTypeId ?? undefined;
+  if (ramp && !typeId) library = 'ramp';
+  const which = typeId ? { typeId } : library ? { library } : {};
+  const byTop = library === 'entrance' || library === 'entrance-ramp';
   const plans: Record<string, StairNumbers | null> = { left: null, right: null };
   for (const turn of ['left', 'right']) void query<StairNumbers>('architecture.stairPlan', { storeyId, ...which, turn }).then((p) => { plans[turn] = p; });
   const footprint = (turn: string, at: Vec2, dir: Vec2): Shape[] => {
@@ -302,20 +305,20 @@ function stairCommand(library?: string): Step {
     if (r?.id) useUi.setState({ selection: r.id, selected: [r.id] });
     return null;
   };
-  if (library) {
+  if (byTop) {
     // By the top: the middle of the porch's edge, then the way down; the foot is a run away.
     const run = () => (plans.left ?? plans.right)?.run ?? 0;
     return {
-      prompt: 'Top of the steps: click the middle of the porch edge (or the door sill)', want: 'point',
+      prompt: ramp ? 'Top of the ramp: click the middle of the porch edge (or the door sill)' : 'Top of the steps: click the middle of the porch edge (or the door sill)', want: 'point',
       point: (top) => ({
-        prompt: 'The way down: click on the side the steps go out to', want: 'point', base: top,
+        prompt: ramp ? 'The way down: click on the side the ramp goes out to' : 'The way down: click on the side the steps go out to', want: 'point', base: top,
         preview: (c) => { const { foot, up } = footFromTop(top, c, run()); return footprint('left', foot, up); },
         point: (c) => { const { foot, up } = footFromTop(top, c, run()); return place(foot, up, 'left'); },
       }),
     };
   }
   return {
-    prompt: 'Foot of the stair: click the centre of the first riser', want: 'point',
+    prompt: ramp ? 'Foot of the ramp: click the middle of its lower end' : 'Foot of the stair: click the centre of the first riser', want: 'point',
     point: (a) => ({
       prompt: 'Direction of the first flight', want: 'point', base: a,
       preview: (c) => footprint('left', a, dirOf(a, c)),
@@ -335,8 +338,12 @@ function stairCommand(library?: string): Step {
 }
 registerCommand({ names: ['STAIR', 'ST'], label: 'Stair', start: () => stairCommand() });
 registerCommand({ names: ['STEPS'], label: 'Entrance steps', start: () => stairCommand('entrance') });
+registerCommand({ names: ['RAMP', 'RU'], label: 'Ramp', start: () => stairCommand(undefined, true) });
+registerCommand({ names: ['ENTRANCERAMP'], label: 'Entrance ramp', start: () => stairCommand('entrance-ramp', true) });
 const stair: ToolDef = { id: 'architecture.stair', label: 'Stair', icon: StairIcon, shortcut: 'ST', run: () => void startCommand('STAIR') };
 const entranceSteps: ToolDef = { id: 'architecture.entranceSteps', label: 'Entrance steps', icon: StairIcon, run: () => void startCommand('STEPS') };
+const ramp: ToolDef = { id: 'architecture.ramp', label: 'Ramp', icon: RampIcon, shortcut: 'RU', run: () => void startCommand('RAMP') };
+const entranceRamp: ToolDef = { id: 'architecture.entranceRamp', label: 'Entrance ramp', icon: RampIcon, run: () => void startCommand('ENTRANCERAMP') };
 const stairTypes: ToolDef = { id: 'architecture.stairTypes', label: 'Stair types', icon: Settings2, run: () => useUi.setState({ dialog: 'stairTypes' }) };
 const slabTypes: ToolDef = { id: 'architecture.slabTypes', label: 'Floor types', icon: Layers3, run: () => useUi.setState({ dialog: 'slabTypes' }) };
 
@@ -351,7 +358,7 @@ const architecture: LapinModule = {
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [room, roomColors], small: [roomOutline, updateRooms] },
-      { label: 'Circulation', tools: [stair, stairTypes], small: [entranceSteps] },
+      { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [entranceSteps, entranceRamp] },
     ],
   }, {
     // Finishes, after Architecture: what lines a room (false ceilings now; floor and wall finishes, skirtings later). Other modules add their groups by this id.
@@ -376,7 +383,7 @@ const architecture: LapinModule = {
     { id: 'slab', label: 'Floor', classes: ['IfcSlab'], component: SlabSection },
     { id: 'downpipe', label: 'Downpipe', classes: ['LapinDownpipe'], component: DownpipeSection },
     { id: 'roof', label: 'Roof', classes: ['IfcRoof'], component: RoofSection },
-    { id: 'stair', label: 'Stair', classes: ['IfcStair'], component: StairSection },
+    { id: 'stair', label: 'Stair', classes: ['IfcStair', 'IfcRamp'], component: StairSection },
     { id: 'ceiling', label: 'Ceiling', classes: ['LapinCeiling'], component: CeilingSection },
     { id: 'curtainWall', label: 'Curtain wall', classes: ['IfcCurtainWall'], component: CurtainWallSection },
     { id: 'room', label: 'Room', classes: ['IfcSpace'], component: RoomSection, replacesFields: () => true },

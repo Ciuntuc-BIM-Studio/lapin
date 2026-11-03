@@ -32,7 +32,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     /// <c>openingSymbols</c> turns them off.
     /// </summary>
     public IEnumerable<ViewMark> Marks(ViewContext c) =>
-        (c.Kind == "plan" ? OpeningMarkers.Marks(c).Concat(Rooms.Marks(c)).Concat(Stairs.StairMarks.Marks(c)).Concat(ColorSchemes.Legends(c)) : ElevationSymbols(c).Concat(ColorSchemes.Legends(c)))
+        (c.Kind == "plan" ? OpeningMarkers.Marks(c).Concat(Rooms.Marks(c)).Concat(Stairs.StairMarks.Marks(c)).Concat(Stairs.RampMarks.Marks(c)).Concat(ColorSchemes.Legends(c)) : ElevationSymbols(c).Concat(ColorSchemes.Legends(c)))
             .Concat(c.Kind == "3d" ? [] : Drainage.Marks(c));
 
     IEnumerable<ViewMark> ElevationSymbols(ViewContext c)

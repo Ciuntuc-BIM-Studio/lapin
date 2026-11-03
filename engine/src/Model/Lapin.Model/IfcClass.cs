@@ -33,6 +33,9 @@ public static class IfcClass
     public const string Stair = "IfcStair";
     public const string StairType = "IfcStairType";
     public const string StairFlight = "IfcStairFlight";
+    public const string Ramp = "IfcRamp";
+    public const string RampType = "IfcRampType";
+    public const string RampFlight = "IfcRampFlight";
     public const string GeographicElement = "IfcGeographicElement";
     public const string EarthworksCut = "IfcEarthworksCut";
     public const string Pavement = "IfcPavement";

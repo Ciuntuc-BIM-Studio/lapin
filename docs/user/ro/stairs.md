@@ -1,7 +1,7 @@
 ---
-title: Scări
+title: Scări și rampe
 order: 42
-summary: Pui o scară între etaje, o configurezi în tipul ei și faci cele câteva trepte până la o terasă sau o ușă.
+summary: Pui o scară sau o rampă între etaje sau până la orice înălțime, o configurezi în tipul ei și faci cele câteva trepte până la o terasă sau o ușă.
 ---
 
 ## Scări
@@ -54,17 +54,48 @@ Treptele până la ușa de la intrare au o diferență de nivel proprie: urcă d
 
 Tipul intră în proiect prima oară când îl folosești. Ca să-l schimbi, deschide **Arhitectură → Tipuri de scări** și alege **Trepte de intrare**:
 
-- **Formă → O diferență de nivel proprie.** Diferența de nivel a tipului; fiecare scară o poate schimba în continuare la **Diferența de nivel**.
+- **Formă → Urcă → O înălțime proprie.** Diferența de nivel a tipului, urcată **Până la cota etajului, de dedesubt (o intrare)**; fiecare scară o poate schimba în continuare la **Diferența de nivel**.
 - **Reguli → Setul de reguli → trepte de intrare.** Contratrepte de 120–170 mm și trepte de 300–400 mm, cu voie pentru o singură contratreaptă.
 - **Construcție → Alcătuire.** **Plin, turnat pe teren** umple treptele până la bază. **Placă înclinată sub trepte** le face ca pe o scară interioară.
 
 ![Tipul Trepte de intrare în configuratorul de scări](shots/stair-types.webp)
 
-Ca un alt tip de scară să urce o diferență de nivel proprie, bifează **O diferență de nivel proprie** în fila lui **Formă**. Ca să transformi o scară deja pusă în trepte de intrare, alege-i **Trepte de intrare** la **Tip de scară**: coboară astfel încât capătul ei de sus să fie la cota etajului.
+Ca orice alt tip de scară să urce o înălțime proprie, alege **Urcă → Până la → O înălțime proprie** în fila lui **Formă** (vezi secțiunea următoare). Ca să transformi o scară deja pusă în trepte de intrare, alege-i **Trepte de intrare** la **Tip de scară**: coboară astfel încât capătul ei de sus să fie la cota etajului.
 
 ![Casa cu terasa și treptele de intrare, în 3D](shots/entrance-steps-3d.webp)
 
 În IFC, treptele sunt un IfcStair de tipul STRAIGHT_RUN_STAIR. Rampa lui e un IfcStairFlight cu NumberOfRisers, NumberOfTreads, RiserHeight și TreadLength, iar Pset_StairCommon are aceleași valori. Terasa e un IfcSlab.
+
+## O scară până la orice înălțime
+
+O scară nu trebuie să meargă neapărat de la un etaj la următorul. În fila **Formă** a tipului, **Urcă → Până la** alege **Etajul de deasupra** sau **O înălțime proprie**, cu **Diferența de nivel**, iar **Pornește** spune de unde pornește:
+
+- **Până la cota etajului, de dedesubt (o intrare).** Se termină la cota etajului și pornește mai jos cu diferența de nivel, ca treptele de intrare.
+- **De la cota etajului în sus (o terasă, o platformă).** Pornește de la cota etajului și urcă diferența de nivel: de exemplu 1,20 m până la o terasă sau o rampă de descărcare.
+
+Fiecare scară pusă poate urca altă înălțime: scrie-o la **Diferența de nivel** în proprietățile ei (gol: a tipului). Când urcă de la cotă, o diferență nouă păstrează piciorul pe loc; când vine de dedesubt, păstrează capătul de sus.
+
+## Rampe
+
+Alege **Arhitectură → Rampă** (<kbd>RU</kbd>). Dă clic pe mijlocul capătului de jos al rampei, apoi pe un punct în direcția în care urcă; pentru una în L sau în zigzag, un al treilea clic la stânga sau la dreapta tronsonului spune încotro întoarce. Prima dată, proiectul primește din bibliotecă **Ramp 6 %**: lată de 1,20 m, cu panta de 6 %, în tronsoane de cel mult 9 m cu podeste de 1,50 m între ele, o placă de beton armat sub un finisaj, mâini curente pe ambele părți. Urcă până la etajul de deasupra, dacă tipul sau **Diferența de nivel** nu spun altceva.
+
+**Arhitectură → Rampă de intrare** se pune ca treptele de intrare: dă clic pe mijlocul marginii terasei, apoi în partea spre care iese rampa. Urcă 450 mm de la teren până la ±0,00, plină, turnată pe teren, iar **Diferența de nivel** o schimbă ca la trepte.
+
+Tipurile de rampe se fac în același configurator, **Arhitectură → Tipuri de scări**, cu **Tip de rampă nou**, sau din bibliotecă: **Switchback ramp** (în zigzag) și **Entrance ramp** (de intrare):
+
+- **Formă.** **Dreaptă**, **Dreaptă, cu podeste**, **În L** sau **În zigzag (dus-întors)** cu **Ochiul scării** dintre tronsoane; **Lățimea**, **Panta** în procente, **Cea mai lungă rampă** (mai lungă, rampa se împarte în tronsoane egale cu podeste între ele) și **Lungimea podestului**. Lungimea în plan e înălțimea împărțită la pantă: 3 m la 6 % înseamnă 50 m. **Urcă** merge ca la scări.
+- **Reguli.** **Panta cea mai mare** (8 % implicit), **Lățimea minimă** și **Înălțimea liberă**. Verificările arată cu roșu o pantă mai mare decât permit regulile, un tronson mai lung decât cel mai lung și un podest mai scurt de 1,50 m sau decât lățimea rampei.
+- **Construcție.** **O placă înclinată din beton armat**, cu **Grosimea plăcii**, sau **Plin, turnat pe teren**; finisajul și balustrada ca la scări.
+
+![Rampa în zigzag în configurator](shots/ramp-types.webp)
+
+Selectează o rampă ca să-i vezi tipul, **Lățime**, **Întoarcere**, **Decalaj la bază** și **Diferența de nivel**, o **Pantă** și o **Lungime a podestului** proprii (goale: ale tipului), lungimile tronsoanelor și verificările. Planurile îi desenează tronsoanele și podestele, săgeata de urcare și panta în procente de-a lungul fiecărui tronson. O rampă care urcă până la etajul de deasupra cere un gol în placa acestuia, ca o scară.
+
+![Rampa în zigzag și rampa de intrare în plan, cu panta pe fiecare tronson](shots/ramps-plan.webp)
+
+![Rampele în 3D](shots/ramps-3d.webp)
+
+În IFC o rampă e un IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTER_TURN_RAMP sau HALF_TURN_RAMP) de tipul unui IfcRampType, alcătuit din IfcRampFlight, podeste (IfcSlab LANDING) și IfcRailing.
 
 ## Balustrade
 

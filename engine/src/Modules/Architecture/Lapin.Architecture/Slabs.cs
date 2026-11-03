@@ -145,7 +145,7 @@ public static class Slabs
 
     /// <summary>An opening's outline: its own, or, for the opening a stair asked for, the stair's as it is now.</summary>
     public static IReadOnlyList<Vec2> HoleContour(IModelView m, Entity opening) =>
-        opening.Str("stairId") is { } stairId && m.Get(stairId) is { Class: IfcClass.Stair } stair ? Stairs.StairBuilder.OpeningContour(m, stair) ?? [] : Contour(opening);
+        opening.Str("stairId") is { } stairId && m.Get(stairId) is { Class: IfcClass.Stair or IfcClass.Ramp } stair ? Stairs.StairBuilder.OpeningContour(m, stair) ?? [] : Contour(opening);
 
     public static Entity AddOpening(IEdit edit, Entity slab, IReadOnlyList<Vec2> contour)
     {

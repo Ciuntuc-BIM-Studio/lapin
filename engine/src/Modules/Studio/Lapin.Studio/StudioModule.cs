@@ -23,9 +23,9 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
     public string Id => "studio";
     public string Name => "Studio";
 
-    /// <summary>The classes a Studio solid can be (those no other module builds); others, the stair among them since architecture builds stairs, are written as a proxy with <c>exportAs</c>.</summary>
+    /// <summary>The classes a Studio solid can be (those no other module builds); others, the stair and the ramp among them since architecture builds them (decision 252), are written as a proxy with <c>exportAs</c>.</summary>
     public static readonly string[] Classes =
-        [IfcClass.BuildingElementProxy, "IfcMember", "IfcPlate", "IfcCovering", "IfcRailing", "IfcRamp", "IfcChimney", "IfcFurnishingElement"];
+        [IfcClass.BuildingElementProxy, "IfcMember", "IfcPlate", "IfcCovering", "IfcRailing", "IfcChimney", "IfcFurnishingElement"];
 
     /// <summary>A Studio solid's type (shared by the solids that take it); exported as the type of the solid's IFC class (IfcMemberType, IfcSlabType…).</summary>
     public const string TypeClass = "LapinSolidType";
@@ -110,6 +110,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         // A box's walls with its bottom and top: an assembly (IfcElementAssembly) of separate elements, without a body of its own.
         r.Class(new(Boxes.AssemblyClass, "Assembly", [], "#b9b2a6"));
         r.Service<IGeometryFilter>(this);
+        r.Service<IProjectUpgrade>(new RampSolidUpgrade());
         r.Service<IElementPlacement>(new StudioPlacement());
         // An import's references made editable on request (the import's third way, docs/spec-ifc.md).
         r.Service<IReferenceEditor>(new ReferenceSolids());
@@ -539,4 +540,25 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         }
         return g with { Parts = parts, Diagnostics = problems.Count > 0 ? [.. g.Diagnostics ?? [], .. problems] : g.Diagnostics };
     }
+}
+
+/// <summary>
+/// A Studio solid an older Lapin classed IfcRamp, from before architecture built ramps (decision 252): a proxy
+/// that exports as IfcRamp, as a solid classed a stair always was.
+/// </summary>
+public sealed class RampSolidUpgrade : IProjectUpgrade
+{
+    public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgrade(IReadOnlyList<Entity> entities, IReadOnlyList<Relation> relations)
+    {
+        if (!entities.Any(IsRampSolid)) return (entities, relations);
+        return (entities.Select(e =>
+        {
+            if (!IsRampSolid(e)) return e;
+            var attrs = e.CloneAttrs();
+            attrs["exportAs"] = IfcClass.Ramp;
+            return new Entity(e.Id, IfcClass.BuildingElementProxy, e.Name, attrs, e.PredefinedType);
+        }).ToList(), relations);
+    }
+
+    static bool IsRampSolid(Entity e) => e.Class == IfcClass.Ramp && e.Str("operation") != null;
 }

@@ -85,6 +85,8 @@ export interface UiState extends Pane {
   slabTypeId: string | null;
   /** The stair type the stair tool places; null: the project's first. */
   stairTypeId: string | null;
+  /** The ramp type the Ramp tool places (decision 252); null: the library's ramp. */
+  rampTypeId: string | null;
   /** The ceiling type the ceiling tools place; null: the project's first. */
   ceilingTypeId: string | null;
   /** Where the Inset view tool was clicked (its view and point), while the view to show is chosen. */
@@ -115,7 +117,7 @@ export interface UiState extends Pane {
 
 const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, rebar3d: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, ceilingTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0 }, roofId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
+  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, rebar3d: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, ceilingTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0 }, roofId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
 }));
 
 /**

@@ -1,7 +1,7 @@
 ---
-title: Escaliers
+title: Escaliers et rampes
 order: 42
-summary: Placez un escalier entre deux niveaux, réglez-le dans son type, et créez les quelques marches qui mènent à un perron ou à une porte.
+summary: Placez un escalier ou une rampe entre les étages ou jusqu’à une hauteur quelconque, réglez-le dans son type et faites les quelques marches jusqu’à un perron ou une porte.
 ---
 
 ## Escaliers
@@ -54,17 +54,48 @@ Les marches qui mènent à une porte d’entrée ont une hauteur propre : depu
 
 Le type est ajouté au projet la première fois que vous l’utilisez. Pour le modifier, ouvrez **Architecture → Types d’escaliers** et choisissez **Marches d’entrée** :
 
-- **Forme → Une hauteur propre.** La hauteur du type ; chaque escalier peut encore la changer avec **Hauteur à franchir**.
+- **Forme → Monte → Une hauteur propre.** La hauteur du type, franchie **Jusqu’au niveau de son étage, depuis le bas (une entrée)** ; chaque escalier peut encore la changer avec **Hauteur à franchir**.
 - **Règles → Jeu de règles → marches d’entrée.** Contremarches de 120 à 170 mm et girons de 300 à 400 mm, une seule contremarche étant permise.
 - **Construction → Construit en.** **Massif, coulé sur le terrain** remplit les marches jusqu’à leur base. **Paillasse sous les marches** les construit comme un escalier intérieur.
 
 ![Le type Marches d’entrée dans le configurateur d’escaliers](shots/stair-types.webp)
 
-Pour qu’un autre type d’escalier monte une hauteur propre, cochez **Une hauteur propre** dans son onglet **Forme**. Pour changer un escalier placé en marches d’entrée, choisissez **Marches d’entrée** comme **Type d’escalier** : il descend de sorte que son haut soit au niveau de son étage.
+Pour qu’un autre type d’escalier monte une hauteur propre, choisissez **Monte → Jusqu’à → Une hauteur propre** dans son onglet **Forme** (voir la section suivante). Pour changer un escalier placé en marches d’entrée, choisissez **Marches d’entrée** comme **Type d’escalier** : il descend de sorte que son haut soit au niveau de son étage.
 
 ![La maison avec son perron et ses marches d’entrée en 3D](shots/entrance-steps-3d.webp)
 
 En IFC, les marches sont un IfcStair de type STRAIGHT_RUN_STAIR. Sa volée est un IfcStairFlight avec ses NumberOfRisers, NumberOfTreads, RiserHeight et TreadLength, et Pset_StairCommon porte les mêmes nombres. Le perron est un IfcSlab.
+
+## Un escalier jusqu’à une hauteur quelconque
+
+Un escalier ne va pas forcément d’un étage au suivant. Dans l’onglet **Forme** du type, **Monte → Jusqu’à** choisit **L’étage au-dessus** ou **Une hauteur propre**, avec sa **Hauteur à franchir**, et **Commence** dit d’où il part :
+
+- **Jusqu’au niveau de son étage, depuis le bas (une entrée).** Il finit au niveau de l’étage et commence plus bas, comme les marches d’entrée.
+- **Depuis le niveau de son étage vers le haut (une terrasse, une plateforme).** Il part du niveau de l’étage et monte la hauteur : 1,20 m jusqu’à une terrasse ou un quai de chargement, par exemple.
+
+Chaque escalier placé peut monter une autre hauteur : saisissez-la dans **Hauteur à franchir** dans ses propriétés (vide : celle du type). Quand il monte depuis le niveau, une nouvelle hauteur garde le pied en place ; quand il vient d’en bas, elle garde le haut.
+
+## Rampes
+
+Choisissez **Architecture → Rampe** (<kbd>RU</kbd>). Cliquez le milieu de l’extrémité basse de la rampe, puis un point dans la direction où elle monte ; pour une rampe en L ou en lacet, un troisième clic à gauche ou à droite de la volée indique de quel côté elle tourne. La première fois, le projet reçoit de la bibliothèque **Ramp 6 %** : 1,20 m de large à 6 %, en volées de 9 m au plus avec des paliers de 1,50 m entre elles, une dalle en béton armé sous un revêtement, des mains courantes des deux côtés. Elle monte jusqu’à l’étage au-dessus, sauf si son type ou sa **Hauteur à franchir** dit autre chose.
+
+**Architecture → Rampe d’entrée** se place comme des marches d’entrée : cliquez le milieu du bord du perron, puis le côté où sort la rampe. Elle monte de 450 mm du terrain à ±0,00, massive sur le terrain, et **Hauteur à franchir** la change comme pour les marches.
+
+Les types de rampe se font dans le même configurateur, **Architecture → Types d’escaliers**, avec **Nouveau type de rampe**, ou depuis la bibliothèque : **Switchback ramp** (en lacet) et **Entrance ramp** (d’entrée) :
+
+- **Forme.** **Droit**, **Droit, avec paliers**, **En L** ou **En lacet (aller-retour)** avec son **Écart entre volées** ; la **Largeur**, la **Pente** en pour cent, la **Volée la plus longue** (plus longue, la rampe est divisée en volées égales avec des paliers entre elles) et la **Longueur du palier**. La longueur en plan est la hauteur divisée par la pente : 3 m à 6 % font 50 m. **Monte** fonctionne comme pour les escaliers.
+- **Règles.** **Pente maximale** (8 % par défaut), **Largeur minimale** et **Échappée**. Les vérifications montrent en rouge une pente plus forte que ne le permettent les règles, une volée plus longue que la plus longue et un palier plus court que 1,50 m ou que la largeur de la rampe.
+- **Construction.** **Une dalle inclinée en béton armé** de son **Épaisseur de la dalle**, ou **Massif, coulé sur le terrain** ; le revêtement et le garde-corps comme pour les escaliers.
+
+![La rampe en lacet dans le configurateur](shots/ramp-types.webp)
+
+Sélectionnez une rampe pour voir son type, **Largeur**, **Changement de direction**, **Décalage de base** et **Hauteur à franchir**, une **Pente** et une **Longueur du palier** propres (vides : celles du type), les longueurs de ses volées et ses vérifications. Les plans dessinent ses volées et ses paliers, la flèche de montée et la pente en pour cent le long de chaque volée. Une rampe qui monte à l’étage au-dessus demande une trémie dans son plancher, comme un escalier.
+
+![La rampe en lacet et la rampe d’entrée en plan, la pente le long de chaque volée](shots/ramps-plan.webp)
+
+![Les rampes en 3D](shots/ramps-3d.webp)
+
+En IFC, une rampe est un IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTER_TURN_RAMP ou HALF_TURN_RAMP) typé par un IfcRampType, fait d’IfcRampFlight, de paliers (IfcSlab LANDING) et d’IfcRailing.
 
 ## Garde-corps
 

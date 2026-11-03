@@ -106,6 +106,7 @@ public static class IfcExport
         ["IfcRailing"] = ["HANDRAIL", "GUARDRAIL", "BALUSTRADE"],
         ["IfcStair"] = ["STRAIGHT_RUN_STAIR", "TWO_STRAIGHT_RUN_STAIR", "QUARTER_WINDING_STAIR", "QUARTER_TURN_STAIR", "HALF_WINDING_STAIR", "HALF_TURN_STAIR", "TWO_QUARTER_WINDING_STAIR", "TWO_QUARTER_TURN_STAIR", "THREE_QUARTER_WINDING_STAIR", "THREE_QUARTER_TURN_STAIR", "SPIRAL_STAIR", "DOUBLE_RETURN_STAIR", "CURVED_RUN_STAIR", "TWO_CURVED_RUN_STAIR"],
         [IfcClass.StairFlight] = ["STRAIGHT", "WINDER", "SPIRAL", "CURVED", "FREEFORM"],
+        [IfcClass.RampFlight] = ["STRAIGHT", "SPIRAL"],
         ["IfcRamp"] = ["STRAIGHT_RUN_RAMP", "TWO_STRAIGHT_RUN_RAMP", "QUARTER_TURN_RAMP", "TWO_QUARTER_TURN_RAMP", "HALF_TURN_RAMP", "SPIRAL_RAMP"],
         ["IfcChimney"] = [],
         ["IfcFurnishingElement"] = null,
@@ -615,7 +616,7 @@ public static class IfcExport
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
             // A door's frame and leaf, a column's body, a terrain: one element. Only a wall, a roof and a footing hold parts that are elements of their own.
-            var grouped = o.Grouped && (kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair or "IfcElementAssembly"
+            var grouped = o.Grouped && (kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair or IfcClass.Ramp or "IfcElementAssembly"
                 || kind.Class == IfcClass.Slab && parts.Any(p => p.Key?.StartsWith("clt:", StringComparison.Ordinal) == true || p.Key?.StartsWith("wood:", StringComparison.Ordinal) == true)) && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
             // A door or window: placed with its local +Y the way its panels open, which IFC's left and right are seen along.
             var joinery = e.Class is IfcClass.Door or IfcClass.Window && !grouped ? s.Catalog.Get<IJoineryIfc>() : null;
@@ -997,6 +998,10 @@ public static class IfcExport
                 (IfcClass.Stair, "landing") => new(IfcClass.Slab, "LANDING", null),
                 (IfcClass.Stair, "railing") => new("IfcRailing", "HANDRAIL", null),
                 (IfcClass.Stair, "finish") => new("IfcCovering", "FLOORING", null),
+                (IfcClass.Ramp, "flight") => new(IfcClass.RampFlight, "STRAIGHT", null),
+                (IfcClass.Ramp, "landing") => new(IfcClass.Slab, "LANDING", null),
+                (IfcClass.Ramp, "railing") => new("IfcRailing", "HANDRAIL", null),
+                (IfcClass.Ramp, "finish") => new("IfcCovering", "FLOORING", null),
                 (IfcClass.Footing, "footing") => new(IfcClass.Footing, "STRIP_FOOTING", null),
                 (IfcClass.Footing, "step") => new(IfcClass.Footing, "PAD_FOOTING", null),
                 _ => new("IfcBuildingElementPart", "NOTDEFINED", p.Name),

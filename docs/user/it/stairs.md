@@ -1,7 +1,7 @@
 ---
-title: Scale
+title: Scale e rampe
 order: 42
-summary: Posiziona una scala tra i piani, impostala nel suo tipo e crea i pochi gradini che salgono a un portico o a una porta.
+summary: Posa una scala o una rampa tra i piani o fino a un’altezza qualsiasi, impostala nel suo tipo e fai i pochi gradini fino a un portico o a una porta.
 ---
 
 ## Scale
@@ -54,17 +54,48 @@ I gradini che salgono a una porta d’ingresso hanno un dislivello proprio: dal 
 
 Il tipo viene aggiunto al progetto la prima volta che lo usi. Per modificarlo, apri **Architettura → Tipi di scala** e scegli **Gradini d’ingresso**:
 
-- **Forma → Un dislivello proprio.** Il dislivello del tipo; ogni scala può comunque cambiarlo con **Dislivello**.
+- **Forma → Sale → Un’altezza propria.** Il dislivello del tipo, salito **Fino alla quota del suo piano, da sotto (un ingresso)**; ogni scala può comunque cambiarlo con **Dislivello**.
 - **Regole → Insieme di regole → gradini d’ingresso.** Alzate da 120–170 mm e pedate da 300–400 mm, con una sola alzata consentita.
 - **Costruzione → Costruita come.** **Piena, gettata sul terreno** riempie i gradini fino alla loro base. **Soletta rampante sotto i gradini** li costruisce come una scala interna.
 
 ![Il tipo Gradini d’ingresso nel configuratore delle scale](shots/stair-types.webp)
 
-Perché un altro tipo di scala salga un dislivello proprio, spunta **Un dislivello proprio** nella sua scheda **Forma**. Per trasformare una scala posizionata in gradini d’ingresso, scegli **Gradini d’ingresso** come suo **Tipo di scala**: scende in modo che la sua sommità sia al livello del suo piano.
+Perché qualsiasi altro tipo di scala salga un’altezza propria, scegli **Sale → Fino a → Un’altezza propria** nella sua scheda **Forma** (vedi la sezione seguente). Per trasformare una scala posizionata in gradini d’ingresso, scegli **Gradini d’ingresso** come suo **Tipo di scala**: scende in modo che la sua sommità sia al livello del suo piano.
 
 ![La casa con il portico e i gradini d’ingresso in 3D](shots/entrance-steps-3d.webp)
 
 In IFC, i gradini sono un IfcStair di tipo STRAIGHT_RUN_STAIR. La sua rampa è un IfcStairFlight con NumberOfRisers, NumberOfTreads, RiserHeight e TreadLength, e Pset_StairCommon riporta gli stessi valori. Il portico è un IfcSlab.
+
+## Una scala fino a un’altezza qualsiasi
+
+Una scala non deve per forza andare da un piano al successivo. Nella scheda **Forma** del tipo, **Sale → Fino a** sceglie **Il piano sopra** o **Un’altezza propria**, con il suo **Dislivello**, e **Parte** dice da dove comincia:
+
+- **Fino alla quota del suo piano, da sotto (un ingresso).** Finisce alla quota del piano e comincia il dislivello più in basso, come i gradini d’ingresso.
+- **Dalla quota del suo piano in su (una terrazza, una piattaforma).** Parte dalla quota del piano e sale il dislivello: per esempio 1,20 m fino a una terrazza o a una banchina di carico.
+
+Ogni scala posata può salire un’altra altezza: scrivila in **Dislivello** nelle sue proprietà (vuoto: quella del tipo). Se sale dalla quota, un dislivello nuovo tiene fermo il piede; se viene da sotto, tiene ferma la sommità.
+
+## Rampe
+
+Scegli **Architettura → Rampa** (<kbd>RU</kbd>). Fai clic al centro dell’estremità bassa della rampa, poi su un punto nella direzione in cui sale; per una rampa a L o a zigzag, un terzo clic a sinistra o a destra del tratto stabilisce da che parte gira. La prima volta il progetto riceve dalla libreria **Ramp 6 %**: larga 1,20 m al 6 %, in tratti di al massimo 9 m con pianerottoli di 1,50 m in mezzo, una soletta in cemento armato sotto una finitura e corrimano su entrambi i lati. Sale fino al piano sopra, a meno che il suo tipo o il suo **Dislivello** non dicano altro.
+
+**Architettura → Rampa d’ingresso** si posa come i gradini d’ingresso: fai clic al centro del bordo del portico, poi sul lato verso cui esce la rampa. Sale di 450 mm dal terreno fino a ±0,00, piena sul terreno, e **Dislivello** la cambia come per i gradini.
+
+I tipi di rampa si fanno nello stesso configuratore, **Architettura → Tipi di scala**, con **Nuovo tipo di rampa**, oppure dalla libreria: **Switchback ramp** (a zigzag) e **Entrance ramp** (d’ingresso):
+
+- **Forma.** **Rettilinea**, **Rettilinea, con pianerottoli**, **A L** o **A zigzag (andata e ritorno)** con la sua **Distanza tra le rampe**; la **Larghezza**, la **Pendenza** in percentuale, il **Tratto più lungo** (se è più lunga, la rampa si divide in tratti uguali con pianerottoli in mezzo) e la **Lunghezza del pianerottolo**. La lunghezza in pianta è l’altezza divisa per la pendenza: 3 m al 6 % fanno 50 m. **Sale** funziona come per le scale.
+- **Regole.** **Pendenza massima** (8 % di default), **Larghezza minima** e **Altezza libera di passaggio**. I controlli mostrano in rosso una pendenza più ripida di quanto permettono le regole, un tratto più lungo del più lungo e un pianerottolo più corto di 1,50 m o della larghezza della rampa.
+- **Costruzione.** **Una soletta inclinata in cemento armato** con il suo **Spessore della soletta**, oppure **Piena, gettata sul terreno**; la finitura e il parapetto come per le scale.
+
+![La rampa a zigzag nel configuratore](shots/ramp-types.webp)
+
+Seleziona una rampa per vederne il tipo, **Larghezza**, **Svolta**, **Offset di base** e **Dislivello**, una **Pendenza** e una **Lunghezza del pianerottolo** proprie (vuote: quelle del tipo), le lunghezze dei suoi tratti e i suoi controlli. Le piante disegnano i suoi tratti e pianerottoli, la freccia di salita e la pendenza in percentuale lungo ogni tratto. Una rampa che sale al piano sopra chiede un foro nel suo solaio, come una scala.
+
+![La rampa a zigzag e la rampa d’ingresso in pianta, con la pendenza lungo ogni tratto](shots/ramps-plan.webp)
+
+![Le rampe in 3D](shots/ramps-3d.webp)
+
+In IFC una rampa è un IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTER_TURN_RAMP o HALF_TURN_RAMP) tipizzato da un IfcRampType, fatto di IfcRampFlight, pianerottoli (IfcSlab LANDING) e IfcRailing.
 
 ## Parapetti
 

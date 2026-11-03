@@ -17,7 +17,9 @@ public sealed record StairRules(
     public static readonly StairRules Residential = new("residential", 0.15, 0.18, 0.17, 0.26, 0.32, 0.28, 0.60, 0.64, 0.90, 18, 2.00, 0.08);
     public static readonly StairRules Public = new("public", 0.13, 0.16, 0.16, 0.28, 0.34, 0.30, 0.60, 0.64, 1.20, 16, 2.10, 0.06);
     public static readonly StairRules Entrance = new("entrance", 0.12, 0.17, 0.15, 0.30, 0.40, 0.33, 0.60, 0.70, 1.20, 10, 2.10, 0.06, MinRisers: 1);
-    public static StairRules Of(string? set) => set switch { "public" => Public, "entrance" => Entrance, _ => Residential };
+    /// <summary>A ramp's (decision 252): what counts is the slope (at most 8 %), the width (1.20 m) and the headroom; the steps' bounds are not used.</summary>
+    public static readonly StairRules Ramp = Public with { Set = "ramp", MinWidth = 1.20, MaxSlope = 0.08 };
+    public static StairRules Of(string? set) => set switch { "public" => Public, "entrance" => Entrance, "ramp" => Ramp, _ => Residential };
 }
 
 /// <summary>
@@ -51,6 +53,12 @@ public sealed record StairPlanSymbols(bool Numbers = false, bool Label = false, 
 /// straight run with a landing, an L or a U, the turn made as a landing or as
 /// winders), the rules, the construction, the finish and the railing. The
 /// instance adds where it stands, how high it climbs and what it fixes.
+/// <see cref="Kind"/> "ramp" (decision 252) makes it a ramp's type: it climbs
+/// by <see cref="Slope"/> instead of risers, in flights of at most
+/// <see cref="MaxRun"/> with landings of <see cref="LandingLength"/> between.
+/// A rise of its own (<see cref="Rise"/>) is climbed from below the storey's
+/// level up to it (<see cref="RiseFrom"/> "below": entrance steps, an entrance
+/// ramp) or from the level up (<c>"level"</c>: to a terrace, a loading dock).
 /// </summary>
 public sealed record StairSpec(
     string Kind,
@@ -74,9 +82,16 @@ public sealed record StairSpec(
     /// <summary>The width of a split stair's two return flights; null: 60 % of the main flight's, never under the rules' least.</summary>
     double? SideWidth = null,
     /// <summary>What the plan writes on it; null: the arrow's "UP" alone.</summary>
-    StairPlanSymbols? Symbols = null)
+    StairPlanSymbols? Symbols = null,
+    /// <summary>Where a rise of its own starts: "below" the storey's level, ending at it, or at the "level", climbing from it.</summary>
+    string RiseFrom = "below",
+    /// <summary>A ramp's longest flight in plan, metres, before a landing; 0: no limit.</summary>
+    double MaxRun = 9.0)
 {
     public static readonly string[] Shapes = ["straight", "straight-landing", "l", "u", "spiral", "curved", "split"];
+    /// <summary>The shapes a ramp takes: straight, straight with landings, an L, a switchback.</summary>
+    public static readonly string[] RampShapes = ["straight", "straight-landing", "l", "u"];
+    public static readonly string[] RiseAnchors = ["below", "level"];
     public static readonly string[] Constructions = ["rc", "solid", "treads", "stringers"];
     public static readonly string[] RailingStyles = ["bar", "balusters", "glass", "cable", "panel"];
     public static readonly string[] Turns = ["landing", "winders"];
@@ -102,6 +117,18 @@ public sealed record StairSpec(
         new StairRailing("none", 0.9, 0.04, 0.03, 1.2),
         Rise: 0.45);
 
+    /// <summary>
+    /// A ramp (decision 252): 1.20 m wide at 6 %, flights of at most 9 m with landings of 1.50 m between,
+    /// a slab of reinforced concrete under a finish, handrails on both sides; up to the storey above.
+    /// </summary>
+    public static StairSpec Ramp(string name = "Ramp 6 %") => new(
+        "ramp", name, "straight-landing", "landing", 3, 1.2, 0.1, 1.5,
+        StairRules.Ramp,
+        new StairConstruction("rc", 0.2, 0.2, "Reinforced concrete"),
+        new StairFinish(0.03, "Stone", 0),
+        new StairRailing("both", 0.9, 0.04, 0.03, 1.2, Extension: 0.3),
+        Slope: 0.06);
+
     /// <summary>The stair types Lapin offers ready made, by key; a project gets its copy the first time one is asked for.</summary>
     public static readonly IReadOnlyDictionary<string, Func<StairSpec>> Library = new Dictionary<string, Func<StairSpec>>
     {
@@ -125,10 +152,27 @@ public sealed record StairSpec(
             Railing = new StairRailing("right", 0.9, 0.04, 0.03, 1.2, "glass", "round"),
         },
         ["split"] = () => Default("Split stair") with { Shape = "split", Width = 1.6, Gap = 0.1, Railing = new StairRailing("both", 0.9, 0.05, 0.04, 1.2, "balusters", "round") },
+        ["ramp"] = () => Ramp(),
+        ["switchback-ramp"] = () => Ramp("Switchback ramp") with { Shape = "u", MaxRun = 6 },
+        // An entrance ramp (report #53): from the ground up to the storey's level, solid, as the entrance steps are.
+        ["entrance-ramp"] = () => Ramp("Entrance ramp") with { Shape = "straight", Rise = 0.45, Construction = new StairConstruction("solid", 0.2, 0.2, "Concrete") },
     };
 
+    public bool IsRamp => Kind == "ramp";
+
+    /// <summary>The IFC class of the type and of its elements: IfcStairType and IfcStair, or IfcRampType and IfcRamp.</summary>
+    public string TypeClass => IsRamp ? IfcClass.RampType : IfcClass.StairType;
+    public string ElementClass => IsRamp ? IfcClass.Ramp : IfcClass.Stair;
+
     /// <summary>The IFC predefined type of the shape, as the turn is made.</summary>
-    public string PredefinedType => Shape switch
+    public string PredefinedType => IsRamp ? Shape switch
+    {
+        "straight" => "STRAIGHT_RUN_RAMP",
+        "straight-landing" => "TWO_STRAIGHT_RUN_RAMP",
+        "l" => "QUARTER_TURN_RAMP",
+        "u" => "HALF_TURN_RAMP",
+        _ => "NOTDEFINED",
+    } : Shape switch
     {
         "straight" => "STRAIGHT_RUN_STAIR",
         "straight-landing" => "TWO_STRAIGHT_RUN_STAIR",
@@ -160,9 +204,14 @@ public sealed record StairSpec(
             if (s.Railing.Profile is not ("square" or "round")) s = s with { Railing = s.Railing with { Profile = "square" } };
             if (!Constructions.Contains(s.Construction.Kind)) s = s with { Construction = s.Construction with { Kind = "rc" } };
             if (s.Rules.MinRisers < 1) s = s with { Rules = s.Rules with { MinRisers = 1 } };
+            if (s.Kind == "ramp" && !RampShapes.Contains(s.Shape)) s = s with { Shape = "straight-landing" };
+            if (s.Kind == "ramp" && s.Construction.Kind is not ("rc" or "solid")) s = s with { Construction = s.Construction with { Kind = "rc" } };
             return s with
             {
                 Kind = s.Kind == "ramp" ? "ramp" : "stair",
+                RiseFrom = RiseAnchors.Contains(s.RiseFrom) ? s.RiseFrom : "below",
+                MaxRun = Math.Clamp(s.MaxRun, 0, 100),
+                Slope = Math.Clamp(s.Slope, 0.005, 0.5),
                 Winders = Math.Clamp(s.Winders, 1, 6),
                 Width = Math.Clamp(s.Width, 0.5, 5),
                 Gap = Math.Clamp(s.Gap, 0, 2),

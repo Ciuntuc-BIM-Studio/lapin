@@ -47,6 +47,7 @@ export const BeamIcon = icon('beam');
 export const StripFootingIcon = icon('stripFooting');
 export const PadFootingIcon = icon('padFooting');
 export const StairIcon = icon('stair');
+export const RampIcon = icon('ramp');
 export const RoomIcon = icon('room');
 export const SectionIcon = icon('section');
 export const ElevationIcon = icon('elevation');

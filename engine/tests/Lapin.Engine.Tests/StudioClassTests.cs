@@ -22,6 +22,25 @@ public class StudioClassTests
     static double Vol(Fixture f, string id) => f.Session.Geometry(id)!.Parts.Sum(p => Measure.Volume(p.Solid));
 
     [Fact]
+    public void A_solid_classed_a_ramp_is_a_proxy_exporting_as_one_since_architecture_builds_ramps()
+    {
+        var f = F();
+        var solid = (string)f.Run("studio.extrude", new JsonObject { ["profileId"] = Draw(f, Plan(f), Rect(0, 0, 4, 1.2)), ["depth"] = 0.3, ["class"] = "RAMP" })!["id"]!;
+        var e = f.Model.Get(solid)!;
+        Assert.Equal(IfcClass.BuildingElementProxy, e.Class);
+        Assert.Equal(IfcClass.Ramp, e.Str("exportAs"));
+        Assert.Equal(4 * 1.2 * 0.3, Vol(f, solid), 6);
+        // A solid an older Lapin classed IfcRamp opens as such a proxy; a native ramp is left as it is.
+        var old = new Entity("old", IfcClass.Ramp, "Old ramp", new JsonObject { ["operation"] = "extrude" }, "STRAIGHT_RUN_RAMP");
+        var native = new Entity("ramp", IfcClass.Ramp, "Ramp 1", new JsonObject { ["at"] = new JsonArray(0, 0) });
+        var (es, _) = new RampSolidUpgrade().Upgrade([old, native], []);
+        Assert.Equal(IfcClass.BuildingElementProxy, es[0].Class);
+        Assert.Equal(IfcClass.Ramp, es[0].Str("exportAs"));
+        Assert.Equal("STRAIGHT_RUN_RAMP", es[0].PredefinedType);
+        Assert.Same(native, es[1]);
+    }
+
+    [Fact]
     public void A_pavement_slab_measured_as_a_slab_ranked_as_slabs_and_exported_with_its_type()
     {
         var f = F();

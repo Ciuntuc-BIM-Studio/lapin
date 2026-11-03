@@ -1,7 +1,7 @@
 ---
-title: Treppen
+title: Treppen und Rampen
 order: 42
-summary: Platzieren Sie eine Treppe zwischen Geschossen, richten Sie sie in ihrem Typ ein und erstellen Sie die wenigen Stufen hinauf zu einem Vorplatz oder einer Tür.
+summary: Setzen Sie eine Treppe oder eine Rampe zwischen Geschosse oder bis zu einer beliebigen Höhe, richten Sie sie in ihrem Typ ein und legen Sie die wenigen Stufen zu einem Vorplatz oder einer Tür an.
 ---
 
 ## Treppen
@@ -54,17 +54,48 @@ Die Stufen hinauf zu einer Haustür haben einen eigenen Höhenunterschied: vom G
 
 Der Typ wird dem Projekt hinzugefügt, wenn Sie ihn zum ersten Mal verwenden. Um ihn zu ändern, öffnen Sie **Architektur → Treppentypen** und wählen Sie **Eingangsstufen**:
 
-- **Form → eigener Höhenunterschied.** Der Höhenunterschied des Typs; jede Treppe kann ihn mit **Höhenunterschied** weiterhin ändern.
+- **Form → Steigt → Eine eigene Höhe.** Der Höhenunterschied des Typs, überwunden **Bis zur Höhe ihres Geschosses, von unten (ein Eingang)**; jede Treppe kann ihn mit **Höhenunterschied** weiterhin ändern.
 - **Regeln → Regelsatz → Eingangsstufen.** Steigungen von 120–170 mm und Auftritte von 300–400 mm, wobei eine einzelne Steigung erlaubt ist.
 - **Konstruktion → Ausführung.** **Massiv, auf dem Erdreich betoniert** füllt die Stufen bis zu ihrer Unterseite aus. **Laufplatte unter den Stufen** baut sie wie eine Innentreppe.
 
 ![Der Typ Eingangsstufen im Treppenkonfigurator](shots/stair-types.webp)
 
-Damit ein anderer Treppentyp einen eigenen Höhenunterschied überwindet, setzen Sie auf seiner Registerkarte **Form** das Häkchen bei **eigener Höhenunterschied**. Um eine platzierte Treppe in Eingangsstufen umzuwandeln, wählen Sie **Eingangsstufen** als ihren **Treppentyp**: Sie wandert nach unten, sodass ihre Oberkante auf der Höhe ihres Geschosses liegt.
+Damit ein beliebiger anderer Treppentyp eine eigene Höhe überwindet, wählen Sie auf seiner Registerkarte **Form** **Steigt → Bis → Eine eigene Höhe** (siehe den nächsten Abschnitt). Um eine platzierte Treppe in Eingangsstufen umzuwandeln, wählen Sie **Eingangsstufen** als ihren **Treppentyp**: Sie rückt nach unten, sodass ihr oberes Ende auf der Höhe ihres Geschosses liegt.
 
 ![Das Haus mit seinem Vorplatz und den Eingangsstufen in 3D](shots/entrance-steps-3d.webp)
 
 In IFC sind die Stufen eine IfcStair vom Typ STRAIGHT_RUN_STAIR. Ihr Lauf ist ein IfcStairFlight mit NumberOfRisers, NumberOfTreads, RiserHeight und TreadLength, und Pset_StairCommon trägt dieselben Werte. Der Vorplatz ist ein IfcSlab.
+
+## Eine Treppe bis zu einer beliebigen Höhe
+
+Eine Treppe muss nicht von einem Geschoss zum nächsten führen. Auf der Registerkarte **Form** des Typs wählt **Steigt → Bis** **Das Geschoss darüber** oder **Eine eigene Höhe** mit ihrem **Höhenunterschied**, und **Beginnt** sagt, wo sie anfängt:
+
+- **Bis zur Höhe ihres Geschosses, von unten (ein Eingang).** Sie endet auf der Höhe des Geschosses und beginnt den Höhenunterschied tiefer, wie Eingangsstufen.
+- **Von der Höhe ihres Geschosses nach oben (eine Terrasse, eine Plattform).** Sie beginnt auf der Höhe des Geschosses und steigt den Höhenunterschied hinauf, zum Beispiel 1,20 m zu einer Terrasse oder einer Laderampe.
+
+Jede platzierte Treppe kann eine andere Höhe überwinden: Geben Sie sie in ihren Eigenschaften unter **Höhenunterschied** ein (leer: die des Typs). Steigt sie von der Geschosshöhe aus, behält ein neuer Wert den Fuß an seiner Stelle; kommt sie von unten, behält er das obere Ende.
+
+## Rampen
+
+Wählen Sie **Architektur → Rampe** (<kbd>RU</kbd>). Klicken Sie auf die Mitte des unteren Endes der Rampe und dann auf einen Punkt in der Richtung, in die sie steigt; bei einer L- oder Zickzackrampe legt ein dritter Klick links oder rechts vom Lauf fest, wohin sie sich wendet. Beim ersten Mal erhält das Projekt aus der Bibliothek **Ramp 6 %**: 1,20 m breit mit 6 % Neigung, in Läufen von höchstens 9 m mit Podesten von 1,50 m dazwischen, eine Stahlbetonplatte unter einem Belag, Handläufe auf beiden Seiten. Sie steigt bis zum Geschoss darüber, sofern ihr Typ oder ihr **Höhenunterschied** nichts anderes sagt.
+
+**Architektur → Eingangsrampe** wird wie Eingangsstufen gesetzt: Klicken Sie auf die Mitte der Vorplatzkante und dann auf die Seite, zu der die Rampe hinausgeht. Sie steigt 450 mm vom Gelände bis ±0,00, massiv auf dem Erdreich, und **Höhenunterschied** ändert sie wie bei den Stufen.
+
+Rampentypen entstehen im selben Konfigurator, **Architektur → Treppentypen**, mit **Neuer Rampentyp** oder aus der Bibliothek: **Switchback ramp** (im Zickzack) und **Entrance ramp** (Eingang):
+
+- **Form.** **Gerade**, **Gerade, mit Podesten**, **L-förmig** oder **Im Zickzack (hin und zurück)** mit ihrem **Abstand zwischen Läufen**; die **Breite**, die **Neigung** in Prozent, der **Längster Lauf** (ist die Rampe länger, wird sie in gleich lange Läufe mit Podesten dazwischen geteilt) und die **Podestlänge**. Die Länge im Grundriss ist die Höhe durch die Neigung: 3 m bei 6 % sind 50 m. **Steigt** wirkt wie bei Treppen.
+- **Regeln.** **Größte Neigung** (standardmäßig 8 %), **Mindestbreite** und **Durchgangshöhe**. Die Prüfungen zeigen rot eine Neigung, die steiler ist, als die Regeln erlauben, einen Lauf, der länger ist als der längste, und ein Podest, das kürzer ist als 1,50 m oder als die Breite der Rampe.
+- **Konstruktion.** **Eine geneigte Stahlbetonplatte** mit ihrer **Plattendicke** oder **Massiv, auf dem Erdreich betoniert**; Belag und Geländer wie bei Treppen.
+
+![Die Zickzackrampe im Konfigurator](shots/ramp-types.webp)
+
+Wählen Sie eine Rampe aus, um ihren Typ, **Breite**, **Wendung**, **Versatz unten** und **Höhenunterschied**, eine eigene **Neigung** und **Podestlänge** (leer: die des Typs), die Längen ihrer Läufe und ihre Prüfungen zu sehen. Grundrisse zeichnen ihre Läufe und Podeste, den Pfeil nach oben und die Neigung in Prozent entlang jedes Laufs. Eine Rampe, die bis zum Geschoss darüber steigt, verlangt von dessen Decke eine Öffnung, wie eine Treppe.
+
+![Die Zickzackrampe und die Eingangsrampe im Grundriss, die Neigung an jedem Lauf](shots/ramps-plan.webp)
+
+![Die Rampen in 3D](shots/ramps-3d.webp)
+
+In IFC ist eine Rampe ein IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTER_TURN_RAMP oder HALF_TURN_RAMP) mit einem IfcRampType, aus IfcRampFlight, Podesten (IfcSlab LANDING) und IfcRailing.
 
 ## Geländer
 

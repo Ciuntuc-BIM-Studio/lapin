@@ -44,6 +44,9 @@ public static class StairBuilder
     public static double? OwnRise(IModelView m, Entity stair) =>
         stair.NumOrNull("rise") is { } r && r > 0 ? Math.Max(r, 0.05) : SpecOf(m, stair).Rise;
 
+    /// <summary>Where a stair's base sits by default: a rise of its own from below ends at the storey's level (−rise), one from the level starts at it (0).</summary>
+    public static double DefaultBase(double? rise, string riseFrom) => rise is { } r && riseFrom != "level" ? -r : 0.0;
+
     /// <summary>The storey the stair climbs to: the one named, else the first above its own; null when none, or when it has a rise of its own.</summary>
     public static Entity? TopStorey(IModelView m, Entity stair, Entity storey) =>
         OwnRise(m, stair) != null ? null
@@ -221,7 +224,7 @@ public static class StairBuilder
     }
 
     /// <summary>A profile extruded so the solid comes out with positive volume, whichever way the ring runs.</summary>
-    static Solid? Oriented(List<Vec3> ring, Vec3 across, string tag)
+    internal static Solid? Oriented(List<Vec3> ring, Vec3 across, string tag)
     {
         var s = Prism.Extrude(ring, null, across, tag);
         if (s == null || Measure.SignedVolume(s) >= 0) return s;
@@ -444,12 +447,14 @@ public static class StairBuilder
 
     // ─── The opening in the floor above ─────────────────────────────────────
 
-    /// <summary>What the stair asks of the floor above: the box, in plan, of everything that comes within the headroom of that floor's underside.</summary>
+    /// <summary>What the stair (or ramp) asks of the floor above: the box, in plan, of everything that comes within the headroom of that floor's underside.</summary>
     public static IReadOnlyList<Vec2>? OpeningContour(IModelView m, Entity stair)
     {
-        if (Resolve(m, stair) is not var (r, place, spec) || Spatial.StoreyOf(m, stair.Id) is not { } storey || TopStorey(m, stair, storey) is not { } top) return null;
-        var slab = SlabUnder(m, top, place.World(r.Top.At));
+        if (TopPoint(m, stair) is not { } topAt || Spatial.StoreyOf(m, stair.Id) is not { } storey || TopStorey(m, stair, storey) is not { } top) return null;
+        var slab = SlabUnder(m, top, topAt);
         var thickness = slab != null ? Slabs.Section(m, slab).Sum(s => s.To - s.From) : 0.2;
+        if (stair.Class == IfcClass.Ramp) return RampBuilder.OpeningContour(m, stair, thickness);
+        if (Resolve(m, stair) is not var (r, place, spec)) return null;
         var limit = r.Height - thickness - spec.Rules.Headroom;
         var pts = new List<Vec2>();
         foreach (var fl in r.Flights)
@@ -467,6 +472,12 @@ public static class StairBuilder
         return [place.World(new Vec2(x0, y0)), place.World(new Vec2(x1, y0)), place.World(new Vec2(x1, y1)), place.World(new Vec2(x0, y1))];
     }
 
+    /// <summary>Where a stair or a ramp arrives, in plan.</summary>
+    static Vec2? TopPoint(IModelView m, Entity e) =>
+        e.Class == IfcClass.Ramp
+            ? RampBuilder.Resolve(m, e) is var (rr, rp, _) ? rp.World(rr.Top.At) : null
+            : Resolve(m, e) is var (r, place, _) ? place.World(r.Top.At) : null;
+
     static Entity? SlabUnder(IModelView m, Entity storey, Vec2 at) =>
         m.OfClass(IfcClass.Slab).Where(s => Spatial.StoreyOf(m, s.Id)?.Id == storey.Id)
             .FirstOrDefault(s => Slabs.Contour(s) is { Count: >= 3 } c && Polygon2.Contains(c, at));
@@ -481,8 +492,8 @@ public static class StairBuilder
         var m = ctx.Model;
         var existing = OpeningOf(m, stair.Id);
         Entity? slab = null;
-        if (!stair.Bool("noOpening") && Resolve(m, stair) is var (r, place, _) && Spatial.StoreyOf(m, stair.Id) is { } storey && TopStorey(m, stair, storey) is { } top)
-            slab = SlabUnder(m, top, place.World(r.Top.At));
+        if (!stair.Bool("noOpening") && TopPoint(m, stair) is { } at && Spatial.StoreyOf(m, stair.Id) is { } storey && TopStorey(m, stair, storey) is { } top)
+            slab = SlabUnder(m, top, at);
         if (slab == null || OpeningContour(m, stair) == null)
         {
             if (existing != null) ctx.Remove(existing.Id);
@@ -490,7 +501,7 @@ public static class StairBuilder
         }
         if (existing != null && m.RelatingOf(existing.Id, IfcClass.RelVoidsElement)?.Id == slab.Id) return;
         if (existing != null) ctx.Remove(existing.Id);
-        var opening = new Entity(ctx.NewId(), IfcClass.OpeningElement, "Stair opening", new JsonObject { ["stairId"] = stair.Id }, "OPENING");
+        var opening = new Entity(ctx.NewId(), IfcClass.OpeningElement, stair.Class == IfcClass.Ramp ? "Ramp opening" : "Stair opening", new JsonObject { ["stairId"] = stair.Id }, "OPENING");
         ctx.Add(opening);
         ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelVoidsElement, slab.Id, [opening.Id]));
     }

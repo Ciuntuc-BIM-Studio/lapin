@@ -54,6 +54,16 @@ export const FAQ: Entry[] = [
     source: 'decision 243',
   },
   {
+    id: 'ramps',
+    q: ['How do I make a ramp?', 'Can a stair go up to a terrace, not to the next storey?', 'How do I set the slope of a ramp?', 'Can I make a wheelchair ramp?'],
+    qRo: ['Cum fac o rampă?', 'Poate o scară să urce până la o terasă, nu la etajul următor?', 'Cum setez panta unei rampe?', 'Pot face o rampă pentru scaun cu rotile?'],
+    keywords: ['ramp', 'ramps', 'slope', 'wheelchair', 'accessible', 'switchback', 'terrace', 'height', 'rise', 'rampa', 'rampe', 'panta', 'terasa', 'inaltime', 'scara'],
+    a: 'Architecture → Ramp (RU) places one: click the middle of its lower end, then the way it climbs. Its type (Architecture → Stair types, New ramp type) sets the shape (straight, with landings, L or switchback), the width, the slope in per cent, the longest flight before a landing and the landing\'s length; the checks show a slope steeper than the rules in red. Entrance ramp comes up from the ground to the storey\'s level. Any stair or ramp may climb a height of its own instead of the storey above: Climbs → A height of its own on the type\'s Shape tab, from below the level (an entrance) or up from it (a terrace), or Rise in its properties.',
+    aRo: 'Architecture → Ramp (RU) pune una: dă clic pe mijlocul capătului de jos, apoi în direcția în care urcă. Tipul ei (Architecture → Stair types, New ramp type) dă forma (dreaptă, cu podeste, în L sau în zigzag), lățimea, panta în procente, cel mai lung tronson până la un podest și lungimea podestului; verificările arată cu roșu o pantă mai mare decât permit regulile. Entrance ramp urcă de la teren până la cota etajului. Orice scară sau rampă poate urca o înălțime proprie în loc de etajul de deasupra: Climbs → A height of its own în fila Shape a tipului, de sub cotă (o intrare) sau de la cotă în sus (o terasă), ori Rise în proprietățile ei.',
+    action: { label: 'Place a ramp', labelRo: 'Pune o rampă', run: { kind: 'tool', id: 'architecture.ramp' } },
+    source: 'decision 252',
+  },
+  {
     id: 'import-dwg-pdf',
     q: ['Can I import a DWG or a PDF?', 'How do I bring in a CAD drawing?', 'Can I trace over a plan from AutoCAD?'],
     qRo: ['Pot importa un DWG sau un PDF?', 'Cum aduc un desen din AutoCAD?', 'Cum pun un plan CAD ca fundal?'],

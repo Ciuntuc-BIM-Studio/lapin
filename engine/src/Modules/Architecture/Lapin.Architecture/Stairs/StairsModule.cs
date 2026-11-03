@@ -35,6 +35,23 @@ public static class StairsModule
         ], "#c9b79c"));
         r.Geometry(IfcClass.Stair, (e, m, _) => StairBuilder.Geometry(e, m));
         r.Quantities(IfcClass.Stair, StairBuilder.Quantities);
+        // Ramps (decision 252): types of kind "ramp" from the same configurator, placed and changed by the same commands.
+        r.Class(new(IfcClass.RampType, "Ramp type", [], "#b9a68a", Kind: "type"));
+        r.Class(new(IfcClass.Ramp, "Ramp",
+        [
+            new("width", "Width", "length", Min: 0.5, Max: 5),
+            new("baseOffset", "Base offset", "length", Min: -5, Max: 5),
+            new("topOffset", "Top offset", "length", Min: -5, Max: 5),
+            new("rise", "Rise (own)", "length", Min: 0.01, Max: 10),
+            new("slope", "Slope (fixed)", "number", Min: 0.005, Max: 0.5),
+            new("landing", "Landing (fixed)", "length", Min: 0.3, Max: 5),
+            new("turn", "Turn", "choice", Choices: ["left", "right"]),
+            new("railingSides", "Railing", "choice", Choices: ["none", "left", "right", "both"]),
+            new("rotation", "Rotation (°)", "angle", Min: -360, Max: 360),
+            new("noOpening", "No opening in the floor above", "bool"),
+        ], "#c9b79c"));
+        r.Geometry(IfcClass.Ramp, (e, m, _) => RampBuilder.Geometry(e, m));
+        r.Quantities(IfcClass.Ramp, RampBuilder.Quantities);
         r.Service<IDeletion>(new StairDeletion());
 
         var web = new JsonSerializerOptions(JsonSerializerDefaults.Web);
@@ -46,10 +63,13 @@ public static class StairsModule
                 ["residential"] = JsonSerializer.SerializeToNode(StairRules.Residential, ArchitectureCatalogJson.Default.StairRules),
                 ["public"] = JsonSerializer.SerializeToNode(StairRules.Public, ArchitectureCatalogJson.Default.StairRules),
                 ["entrance"] = JsonSerializer.SerializeToNode(StairRules.Entrance, ArchitectureCatalogJson.Default.StairRules),
+                ["ramp"] = JsonSerializer.SerializeToNode(StairRules.Ramp, ArchitectureCatalogJson.Default.StairRules),
             },
             ["library"] = new JsonArray(StairSpec.Library.Select(x => (JsonNode)new JsonObject { ["key"] = x.Key, ["spec"] = x.Value().ToJson() }).ToArray()),
             ["constructions"] = new JsonArray(StairSpec.Constructions.Select(x => (JsonNode)x).ToArray()),
             ["shapes"] = new JsonArray(StairSpec.Shapes.Select(x => (JsonNode)x).ToArray()),
+            ["rampShapes"] = new JsonArray(StairSpec.RampShapes.Select(x => (JsonNode)x).ToArray()),
+            ["ramp"] = StairSpec.Ramp().ToJson(),
             ["turns"] = new JsonArray(StairSpec.Turns.Select(x => (JsonNode)x).ToArray()),
             ["sides"] = new JsonArray(StairSpec.Sides.Select(x => (JsonNode)x).ToArray()),
             ["railingStyles"] = new JsonArray(StairSpec.RailingStyles.Select(x => (JsonNode)x).ToArray()),
@@ -67,24 +87,23 @@ public static class StairsModule
 
         r.Command("updateStairType", "Change stair type", (ctx, a) =>
         {
-            var type = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.StairType);
+            var type = RequireType(ctx.Model, (string?)a["id"]);
             var spec = StairSpec.From(a["spec"]) ?? throw new CommandException("The stair type's specification cannot be read.");
+            if (spec.TypeClass != type.Class) throw new CommandException(spec.IsRamp ? "A stair type cannot become a ramp: make a new ramp type." : "A ramp type cannot become a stair: make a new stair type.");
             EnsureMaterials(ctx, spec);
-            var riseBefore = StairSpec.From(type.Attrs["spec"])?.Rise;
+            var before = StairSpec.From(type.Attrs["spec"]);
+            var baseBefore = StairBuilder.DefaultBase(before?.Rise, before?.RiseFrom ?? "below");
+            var baseAfter = StairBuilder.DefaultBase(spec.Rise, spec.RiseFrom);
             var attrs = type.CloneAttrs();
             attrs["spec"] = spec.ToJson();
             ctx.Replace(type.With(name: spec.Name, attrs: attrs, predefinedType: spec.PredefinedType));
-            // Its stairs take the shape's IFC name and ask the floor above again; those climbing the type's own rise keep their tops where they were.
+            // Its stairs take the shape's IFC name and ask the floor above again; those climbing the type's own rise keep their
+            // tops where they were when it comes up from below (entrance steps), their feet when it climbs from the level.
             foreach (var stair in ctx.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).ToList())
             {
                 var own = stair.CloneAttrs();
-                if (stair.NumOrNull("rise") == null && riseBefore != spec.Rise)
-                    own["baseOffset"] = (riseBefore, spec.Rise) switch
-                    {
-                        ({ } b, { } n) => stair.Num("baseOffset") + b - n,
-                        (null, { } n) => -n,
-                        _ => 0.0,
-                    };
+                if (stair.NumOrNull("rise") == null && Math.Abs(baseBefore - baseAfter) > 1e-12)
+                    own["baseOffset"] = spec.Rise == null ? 0.0 : stair.Num("baseOffset") - baseBefore + baseAfter;
                 var renamed = stair.With(attrs: own, predefinedType: spec.PredefinedType);
                 ctx.Replace(renamed);
                 StairBuilder.EnsureOpening(ctx, renamed);
@@ -98,7 +117,7 @@ public static class StairsModule
         {
             var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
             Spatial.Require(ctx.Model, storeyId, IfcClass.BuildingStorey);
-            var type = (string?)a["typeId"] is { } tid ? Spatial.Require(ctx.Model, tid, IfcClass.StairType)
+            var type = (string?)a["typeId"] is { } tid ? RequireType(ctx.Model, tid)
                 : (string?)a["library"] is { } key ? LibraryType(ctx, key) : DefaultType(ctx);
             var at = Args.Point(a, "x", "y");
             var rotation = Json.Number(a["rotation"]);
@@ -113,12 +132,12 @@ public static class StairsModule
                 ["at"] = new JsonArray(at.X, at.Y), ["rotation"] = rotation ?? 0, ["turn"] = (string?)a["turn"] == "right" ? "right" : "left",
                 ["baseOffset"] = 0.0, ["topOffset"] = 0.0,
             };
-            foreach (var k in new[] { "width", "risers", "riserHeight", "tread", "landing", "height", "rise", "topOffset", "sweep" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
+            foreach (var k in new[] { "width", "risers", "riserHeight", "tread", "landing", "height", "rise", "topOffset", "sweep", "slope" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
             if ((string?)a["topStoreyId"] is { } top) attrs["topStoreyId"] = Spatial.Require(ctx.Model, top, IfcClass.BuildingStorey).Id;
             var spec = StairSpec.From(type.Attrs["spec"]) ?? StairSpec.Default();
             var ownRise = Json.Number(a["rise"]) is { } ar && ar > 0 ? ar : spec.Rise;
-            attrs["baseOffset"] = Json.Number(a["baseOffset"]) ?? (ownRise is { } rise ? -rise : 0.0);
-            var stair = new Entity(ctx.NewId(), IfcClass.Stair, Name(ctx.Model, spec), attrs, spec.PredefinedType);
+            attrs["baseOffset"] = Json.Number(a["baseOffset"]) ?? StairBuilder.DefaultBase(ownRise, spec.RiseFrom);
+            var stair = new Entity(ctx.NewId(), spec.ElementClass, Name(ctx.Model, spec), attrs, spec.PredefinedType);
             ctx.Add(stair);
             Spatial.Contain(ctx, storeyId, stair.Id);
             ctx.Relate(IfcClass.RelDefinesByType, type.Id, stair.Id);
@@ -129,15 +148,17 @@ public static class StairsModule
         // What the inspector changes: the type, the width, the turn, the offsets, what is fixed (null frees it), the opening.
         r.Command("updateStair", "Change stair", (ctx, a) =>
         {
-            var stair = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Stair);
+            var stair = RequireStair(ctx.Model, (string?)a["id"]);
             var attrs = stair.CloneAttrs();
             var riseBefore = StairBuilder.OwnRise(ctx.Model, stair);
-            foreach (var k in new[] { "width", "baseOffset", "topOffset", "risers", "riserHeight", "tread", "landing", "height", "rotation", "rise", "sweep" })
+            var fromLevel = StairBuilder.SpecOf(ctx.Model, stair).RiseFrom == "level";
+            foreach (var k in new[] { "width", "baseOffset", "topOffset", "risers", "riserHeight", "tread", "landing", "height", "rotation", "rise", "sweep", "slope" })
                 if (a.ContainsKey(k)) { if (Json.Number(a[k]) is { } v) attrs[k] = v; else attrs.Remove(k); }
             // The railing's sides for this stair alone (null: the type's).
             if (a.ContainsKey("railingSides")) { if ((string?)a["railingSides"] is { } rs && StairSpec.Sides.Contains(rs)) attrs["railingSides"] = rs; else attrs.Remove("railingSides"); }
-            // A rise of its own changed (and no base offset with it): the top stays where it was, at the porch or the door, and the foot moves.
-            if (a.ContainsKey("rise") && !a.ContainsKey("baseOffset") && riseBefore is { } before && Json.Number(a["rise"]) is { } after && after > 0)
+            // A rise of its own changed (and no base offset with it): the top stays where it was, at the porch or the door, and the foot moves;
+            // climbing from its storey's level, the foot stays.
+            if (a.ContainsKey("rise") && !a.ContainsKey("baseOffset") && !fromLevel && riseBefore is { } before && Json.Number(a["rise"]) is { } after && after > 0)
                 attrs["baseOffset"] = stair.Num("baseOffset") + before - Math.Max(after, 0.05);
             if (a.ContainsKey("x") && a.ContainsKey("y")) { var at = Args.Point(a, "x", "y"); attrs["at"] = new JsonArray(at.X, at.Y); }
             if ((string?)a["turn"] is { } turn) attrs["turn"] = turn == "right" ? "right" : "left";
@@ -146,13 +167,14 @@ public static class StairsModule
             var predefined = stair.PredefinedType;
             if ((string?)a["typeId"] is { } tid)
             {
-                var type = Spatial.Require(ctx.Model, tid, IfcClass.StairType);
-                ctx.Relate(IfcClass.RelDefinesByType, type.Id, stair.Id);
+                var type = RequireType(ctx.Model, tid);
                 var typeSpec = StairSpec.From(type.Attrs["spec"]) ?? StairSpec.Default();
+                if (typeSpec.ElementClass != stair.Class) throw new CommandException(stair.Class == IfcClass.Ramp ? "A ramp takes a ramp type." : "A stair takes a stair type.");
+                ctx.Relate(IfcClass.RelDefinesByType, type.Id, stair.Id);
                 predefined = typeSpec.PredefinedType;
                 // Into entrance steps (a rise of their own) or out of them: the stair keeps its top at its storey's level, or starts from it again.
                 if (!a.ContainsKey("baseOffset") && !attrs.ContainsKey("rise") && (riseBefore == null) != (typeSpec.Rise == null))
-                    attrs["baseOffset"] = typeSpec.Rise is { } typeRise ? -typeRise : 0.0;
+                    attrs["baseOffset"] = StairBuilder.DefaultBase(typeSpec.Rise, typeSpec.RiseFrom);
             }
             var updated = stair.With(attrs: attrs, predefinedType: predefined);
             ctx.Replace(updated);
@@ -165,8 +187,10 @@ public static class StairsModule
         {
             var spec = StairSpec.From(a["spec"]) ?? throw new CommandException("The stair type's specification cannot be read.");
             var height = spec.Rise ?? Json.Number(a["height"]) ?? Spatial.Storeys(q.Model).FirstOrDefault()?.Num("height", 3) ?? 3;
-            var r = StairSolver.Resolve(spec, height, new StairInputs(Json.Number(a["width"])), (string?)a["turn"] != "right");
-            return Describe(r, new StairPlacement(new Vec2(0, 0), new Vec2(1, 0), (string?)a["turn"] != "right", 0), spec);
+            var place = new StairPlacement(new Vec2(0, 0), new Vec2(1, 0), (string?)a["turn"] != "right", 0);
+            if (spec.IsRamp) return DescribeRamp(RampSolver.Resolve(spec, height, new RampInputs(Json.Number(a["width"])), place.TurnLeft), place);
+            var r = StairSolver.Resolve(spec, height, new StairInputs(Json.Number(a["width"])), place.TurnLeft);
+            return Describe(r, place, spec);
         });
 
         // The tool's preview: the stair a type would make on a storey, in its own frame (foot at the origin, climbing +X).
@@ -176,13 +200,14 @@ public static class StairsModule
             // A library type (the Entrance steps tool): the project's copy when it has one, else the library's own spec.
             var key = (string?)a["library"];
             var type = (string?)a["typeId"] is { } tid ? q.Model.Get(tid)
-                : key != null ? q.Model.OfClass(IfcClass.StairType).FirstOrDefault(t => t.Str("library") == key)
+                : key != null ? Types(q.Model).FirstOrDefault(t => t.Str("library") == key)
                 : FirstStoreyType(q.Model);
             var spec = (type != null ? StairSpec.From(type.Attrs["spec"]) : null)
                 ?? (key != null && StairSpec.Library.TryGetValue(key, out var make) ? make() : StairSpec.Default());
             var above = Spatial.Storeys(q.Model).FirstOrDefault(s => s.Num("elevation") > storey.Num("elevation") + 1e-6);
             var height = spec.Rise ?? (above?.Num("elevation") ?? storey.Num("elevation") + storey.Num("height", 3)) - storey.Num("elevation");
             var left = (string?)a["turn"] != "right";
+            if (spec.IsRamp) return DescribeRamp(RampSolver.Resolve(spec, height, new RampInputs(Json.Number(a["width"])), left), new StairPlacement(new Vec2(0, 0), new Vec2(1, 0), left, 0));
             var r = StairSolver.Resolve(spec, height, new StairInputs(Json.Number(a["width"])), left);
             return Describe(r, new StairPlacement(new Vec2(0, 0), new Vec2(1, 0), left, 0), spec);
         });
@@ -203,15 +228,17 @@ public static class StairsModule
             JsonNode? Run(string command, JsonObject args) { s.Execute(command, args, out var result); return result; }
             var ground = Spatial.Storeys(s.Model).First();
             var type = (string)Run("architecture.createStairType", new JsonObject { ["spec"] = spec.ToJson() })!["id"]!;
-            var r0 = StairSolver.Resolve(spec, height, new StairInputs(Json.Number(a["width"])), turn == "left");
-            var pts = r0.Footprint().SelectMany(x => x).ToList();
+            var pts = (spec.IsRamp ? RampSolver.Resolve(spec, height, new RampInputs(Json.Number(a["width"])), turn == "left").Footprint()
+                : StairSolver.Resolve(spec, height, new StairInputs(Json.Number(a["width"])), turn == "left").Footprint()).SelectMany(x => x).ToList();
             double x0 = pts.Min(p => p.X) - 1.5, x1 = pts.Max(p => p.X) + 1.5, y0 = pts.Min(p => p.Y) - 1.5, y1 = pts.Max(p => p.Y) + 1.5;
-            if (spec.Rise == null)
+            if (spec.Rise == null || spec.RiseFrom == "level")
             {
                 var upper = (string)Run("storey.create", new JsonObject { ["name"] = "Above", ["elevation"] = height, ["height"] = 3.0 })!["id"]!;
                 Run("architecture.addSlab", new JsonObject { ["storeyId"] = upper, ["points"] = new JsonArray(new JsonArray(x0, y0), new JsonArray(x1, y0), new JsonArray(x1, y1), new JsonArray(x0, y1)) });
             }
             var stair = new JsonObject { ["storeyId"] = ground.Id, ["typeId"] = type, ["x"] = 0, ["y"] = 0, ["x2"] = 1, ["y2"] = 0, ["turn"] = turn, ["baseOffset"] = 0.0 };
+            // A long ramp's section along its first flight: as far as the flight runs.
+            if (spec.IsRamp) (x0, x1) = (Math.Min(x0, -1.5), Math.Max(x1, 1.5));
             if (Json.Number(a["width"]) is { } width) stair["width"] = width;
             Run("architecture.addStair", stair);
             var plan = (string)Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = ground.Id, ["scale"] = scale })!["id"]!;
@@ -222,15 +249,27 @@ public static class StairsModule
         // A stair as it is: its numbers and checks, for the inspector.
         r.Query("stairCheck", (q, a) =>
         {
-            var stair = Spatial.Require(q.Model, (string?)a["id"], IfcClass.Stair);
-            if (StairBuilder.Resolve(q.Model, stair) is not var (r, place, spec)) return null;
-            var o = Describe(r, place, spec);
+            var stair = RequireStair(q.Model, (string?)a["id"]);
+            JsonObject o;
+            double from, to;
+            if (stair.Class == IfcClass.Ramp)
+            {
+                if (RampBuilder.Resolve(q.Model, stair) is not var (rr, rp, _)) return null;
+                o = DescribeRamp(rr, rp);
+                (from, to) = (rp.Z0, rp.Z0 + rr.Height);
+            }
+            else
+            {
+                if (StairBuilder.Resolve(q.Model, stair) is not var (r, place, spec)) return null;
+                o = Describe(r, place, spec);
+                (from, to) = (place.Z0, place.Z0 + r.Height);
+            }
             o["opening"] = StairBuilder.OpeningOf(q.Model, stair.Id)?.Id;
             var st = Spatial.StoreyOf(q.Model, stair.Id);
             o["topStorey"] = st != null ? StairBuilder.TopStorey(q.Model, stair, st)?.Id : null;
             o["ownRise"] = StairBuilder.OwnRise(q.Model, stair);
-            o["fromLevel"] = place.Z0;
-            o["toLevel"] = place.Z0 + r.Height;
+            o["fromLevel"] = from;
+            o["toLevel"] = to;
             return o;
         });
     }
@@ -265,16 +304,44 @@ public static class StairsModule
             ["run"] = r.Flights.Sum(f => (f.Risers - 1) * r.Tread) + (r.Arc?.Steps ?? 0) * r.Tread,
             ["sweep"] = r.Arc is { } arc ? Math.Abs(arc.Step * arc.Steps) * 180 / Math.PI : null,
             ["numbers"] = new JsonArray(StairMarks.StepCentres(r).Select(x => { var p = place.World(x.At); return (JsonNode)new JsonArray(p.X, p.Y, x.Number); }).ToArray()), ["ok"] = r.Ok, ["checks"] = checks, ["outlines"] = outlines, ["risersLines"] = risers,
-            ["profile"] = profile, ["top"] = new JsonArray(top.X, top.Y), ["predefinedType"] = spec.PredefinedType, ["shape"] = spec.Shape,
+            ["profile"] = profile, ["top"] = new JsonArray(top.X, top.Y), ["predefinedType"] = spec.PredefinedType, ["shape"] = spec.Shape, ["kind"] = "stair",
         };
     }
 
-    static string Name(IModelView m, StairSpec spec) => $"Stair {Numbering.Next(m.OfClass(IfcClass.Stair))}";
+    /// <summary>A resolved ramp as JSON, in the stair's keys where they mean the same: the slope and run, the flights' lengths, the checks, the outlines.</summary>
+    static JsonObject DescribeRamp(RampResolved r, StairPlacement place)
+    {
+        static JsonArray Pts(IEnumerable<Vec2> pts) => new(pts.SelectMany(p => new JsonNode[] { Math.Round(p.X, 4), Math.Round(p.Y, 4) }).ToArray());
+        var outlines = new JsonArray();
+        foreach (var fl in r.Flights) outlines.Add((JsonNode)new JsonObject { ["kind"] = "flight", ["points"] = Pts(fl.Outline().Select(p => place.World(p))) });
+        foreach (var ld in r.Landings) outlines.Add((JsonNode)new JsonObject { ["kind"] = "landing", ["points"] = Pts(ld.Outline.Select(p => place.World(p))) });
+        var checks = new JsonArray(r.Checks.Select(c => (JsonNode)new JsonObject { ["key"] = c.Key, ["label"] = c.Label, ["value"] = c.Value, ["min"] = c.Min, ["max"] = c.Max, ["ok"] = c.Ok }).ToArray());
+        var top = place.World(r.Top.At);
+        var f0 = r.Flights[0];
+        return new JsonObject
+        {
+            ["kind"] = "ramp", ["slope"] = r.Slope, ["width"] = r.Width, ["height"] = r.Height, ["landing"] = r.LandingLength, ["run"] = r.Run,
+            ["flights"] = new JsonArray(r.Flights.Select(f => (JsonNode)Math.Round(f.Length, 4)).ToArray()), ["ok"] = r.Ok, ["checks"] = checks, ["outlines"] = outlines,
+            ["risers"] = 0, ["riserHeight"] = 0, ["tread"] = 0, ["step"] = 0, ["winders"] = 0, ["risersLines"] = new JsonArray(), ["numbers"] = new JsonArray(),
+            ["profile"] = new JsonArray(0, f0.Z0, f0.Length, f0.Z1), ["top"] = new JsonArray(top.X, top.Y), ["predefinedType"] = r.Spec.PredefinedType, ["shape"] = r.Spec.Shape,
+        };
+    }
+
+    static string Name(IModelView m, StairSpec spec) => spec.IsRamp ? $"Ramp {Numbering.Next(m.OfClass(IfcClass.Ramp))}" : $"Stair {Numbering.Next(m.OfClass(IfcClass.Stair))}";
+
+    /// <summary>The project's stair and ramp types.</summary>
+    public static IEnumerable<Entity> Types(IModelView m) => m.OfClass(IfcClass.StairType).Concat(m.OfClass(IfcClass.RampType));
+
+    static Entity RequireType(IModelView m, string? id) =>
+        m.Get(id ?? "") is { Class: IfcClass.StairType or IfcClass.RampType } t ? t : throw new CommandException($"No stair or ramp type „{id}”.");
+
+    static Entity RequireStair(IModelView m, string? id) =>
+        m.Get(id ?? "") is { Class: IfcClass.Stair or IfcClass.Ramp } e ? e : throw new CommandException($"No stair or ramp „{id}”.");
 
     static Entity CreateType(ICommandContext ctx, StairSpec spec)
     {
         EnsureMaterials(ctx, spec);
-        var type = new Entity(ctx.NewId(), IfcClass.StairType, spec.Name, new JsonObject { ["spec"] = spec.ToJson() }, spec.PredefinedType);
+        var type = new Entity(ctx.NewId(), spec.TypeClass, spec.Name, new JsonObject { ["spec"] = spec.ToJson() }, spec.PredefinedType);
         ctx.Add(type);
         return type;
     }
@@ -283,7 +350,7 @@ public static class StairsModule
     public static Entity LibraryType(ICommandContext ctx, string? key)
     {
         if (key == null || !StairSpec.Library.TryGetValue(key, out var make)) throw new CommandException($"No stair type „{key}” in the library.");
-        if (ctx.Model.OfClass(IfcClass.StairType).FirstOrDefault(t => t.Str("library") == key) is { } existing) return existing;
+        if (Types(ctx.Model).FirstOrDefault(t => t.Str("library") == key) is { } existing) return existing;
         var type = CreateType(ctx, make());
         var attrs = type.CloneAttrs();
         attrs["library"] = key;
@@ -312,7 +379,7 @@ sealed class StairDeletion : IDeletion
 {
     public bool Delete(ICommandContext ctx, string id)
     {
-        if (ctx.Model.Get(id) is not { Class: IfcClass.Stair }) return false;
+        if (ctx.Model.Get(id) is not { Class: IfcClass.Stair or IfcClass.Ramp }) return false;
         if (StairBuilder.OpeningOf(ctx.Model, id) is { } opening) ctx.Remove(opening.Id);
         ctx.Remove(id);
         return true;

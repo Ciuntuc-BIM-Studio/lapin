@@ -1,7 +1,7 @@
 ---
-title: Escaleras
+title: Escaleras y rampas
 order: 42
-summary: Coloque una escalera entre plantas, configúrela en su tipo y cree los pocos escalones que suben a un porche o a una puerta.
+summary: Coloque una escalera o una rampa entre plantas o hasta cualquier altura, configúrela en su tipo y haga los pocos escalones hasta un porche o una puerta.
 ---
 
 ## Escaleras
@@ -54,17 +54,48 @@ Los escalones que suben a una puerta de entrada tienen un desnivel propio: desde
 
 El tipo se añade al proyecto la primera vez que lo usa. Para modificarlo, abra **Arquitectura → Tipos de escalera** y elija **Escalones de entrada**:
 
-- **Forma → Un desnivel propio.** El desnivel del tipo; cada escalera puede cambiarlo igualmente con **Desnivel**.
+- **Forma → Sube → Una altura propia.** El desnivel del tipo, subido **Hasta el nivel de su planta, desde abajo (una entrada)**; cada escalera puede cambiarlo igualmente con **Desnivel**.
 - **Reglas → Conjunto de reglas → escalones de entrada.** Contrahuellas de 120–170 mm y huellas de 300–400 mm, con una sola contrahuella permitida.
 - **Construcción → Tipo de construcción.** **Maciza, hormigonada sobre el terreno** rellena los escalones hasta su base. **Losa inclinada bajo los peldaños** los construye como una escalera interior.
 
 ![El tipo Escalones de entrada en el configurador de escaleras](shots/stair-types.webp)
 
-Para que otro tipo de escalera suba un desnivel propio, marque **Un desnivel propio** en su ficha **Forma**. Para convertir una escalera colocada en escalones de entrada, elija **Escalones de entrada** como su **Tipo de escalera**: baja de modo que su parte superior quede al nivel de su planta.
+Para que cualquier otro tipo de escalera suba una altura propia, elija **Sube → Hasta → Una altura propia** en su ficha **Forma** (vea la sección siguiente). Para convertir una escalera colocada en escalones de entrada, elija **Escalones de entrada** como su **Tipo de escalera**: baja de modo que su parte superior quede al nivel de su planta.
 
 ![La casa con su porche y los escalones de entrada en 3D](shots/entrance-steps-3d.webp)
 
 En IFC, los escalones son un IfcStair de tipo STRAIGHT_RUN_STAIR. Su tramo es un IfcStairFlight con sus NumberOfRisers, NumberOfTreads, RiserHeight y TreadLength, y Pset_StairCommon lleva los mismos valores. El porche es un IfcSlab.
+
+## Una escalera hasta cualquier altura
+
+Una escalera no tiene por qué ir de una planta a la siguiente. En la ficha **Forma** del tipo, **Sube** elige **La planta de arriba** o **Una altura propia**, con su **Desnivel**, y **Empieza** indica desde dónde empieza:
+
+- **Hasta el nivel de su planta, desde abajo (una entrada).** Termina al nivel de la planta y empieza el desnivel más abajo, como los escalones de entrada.
+- **Desde el nivel de su planta hacia arriba (una terraza, una plataforma).** Empieza al nivel de la planta y sube el desnivel: por ejemplo 1,20 m hasta una terraza o un muelle de carga.
+
+Cada escalera colocada puede subir otra altura: escríbala en **Desnivel** en sus propiedades (vacío: la del tipo). Si sube desde el nivel, un desnivel nuevo mantiene el pie donde está; si viene desde abajo, mantiene la parte superior.
+
+## Rampas
+
+Elija **Arquitectura → Rampa** (<kbd>RU</kbd>). Haga clic en el centro del extremo inferior de la rampa y luego en un punto en la dirección en que sube; para una en L o en zigzag, un tercer clic a la izquierda o a la derecha del tramo indica hacia dónde gira. La primera vez, el proyecto recibe de la biblioteca **Ramp 6 %**: 1,20 m de ancho al 6 %, en tramos de 9 m como máximo con descansillos de 1,50 m entre ellos, una losa de hormigón armado bajo un acabado y pasamanos a ambos lados. Sube hasta la planta de arriba salvo que su tipo o su **Desnivel** digan otra cosa.
+
+**Arquitectura → Rampa de entrada** se coloca como los escalones de entrada: haga clic en el centro del borde del porche y luego en el lado hacia el que sale la rampa. Sube 450 mm desde el terreno hasta ±0,00, maciza sobre el terreno, y **Desnivel** la cambia como a los escalones.
+
+Los tipos de rampa se hacen en el mismo configurador, **Arquitectura → Tipos de escalera**, con **Nuevo tipo de rampa**, o desde la biblioteca: **Switchback ramp** (en zigzag) y **Entrance ramp** (de entrada):
+
+- **Forma.** **Recta**, **Recta, con descansillos**, **En L** o **En zigzag (ida y vuelta)** con su **Separación entre tramos**; el **Ancho**, la **Pendiente** en porcentaje, el **Tramo más largo** (más larga, la rampa se divide en tramos iguales con descansillos entre ellos) y la **Longitud del descansillo**. La longitud en planta es la altura dividida por la pendiente: 3 m al 6 % son 50 m. **Sube** funciona como en las escaleras.
+- **Reglas.** **Pendiente máxima** (8 % por defecto), **Ancho mínimo** y **Altura libre de paso**. Las comprobaciones muestran en rojo una pendiente mayor de la que permiten las reglas, un tramo más largo que el más largo y un descansillo más corto que 1,50 m o que el ancho de la rampa.
+- **Construcción.** **Una losa inclinada de hormigón armado** con su **Espesor de la losa**, o **Maciza, hormigonada sobre el terreno**; el acabado y la barandilla como en las escaleras.
+
+![La rampa en zigzag en el configurador](shots/ramp-types.webp)
+
+Seleccione una rampa para ver su tipo, **Ancho**, **Giro**, **Desfase de base** y **Desnivel**, una **Pendiente** y una **Longitud del descansillo** propias (vacías: las del tipo), las longitudes de sus tramos y sus comprobaciones. Las plantas dibujan sus tramos y descansillos, la flecha de subida y la pendiente en porcentaje a lo largo de cada tramo. Una rampa que sube a la planta de arriba pide un hueco en su forjado, como una escalera.
+
+![La rampa en zigzag y la rampa de entrada en planta, con la pendiente en cada tramo](shots/ramps-plan.webp)
+
+![Las rampas en 3D](shots/ramps-3d.webp)
+
+En IFC una rampa es un IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTER_TURN_RAMP o HALF_TURN_RAMP) tipificado por un IfcRampType, formado por IfcRampFlight, descansillos (IfcSlab LANDING) e IfcRailing.
 
 ## Barandillas
 

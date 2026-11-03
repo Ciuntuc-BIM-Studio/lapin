@@ -635,6 +635,31 @@ export const scenes = [
     },
   },
   {
+    // Ramps in the stair configurator (decision 252): a switchback ramp up to the floor above and an entrance ramp from the ground.
+    id: 'ramps',
+    async run(t) {
+      await t.fresh();
+      const storey = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').find((n) => Math.abs(n.props.elevation ?? 0) < 1e-6);
+      await t.cmd('architecture.addStair', { storeyId: storey.id, library: 'switchback-ramp', x: 0, y: 0, x2: 1, y2: 0 });
+      await t.cmd('architecture.addStair', { storeyId: storey.id, library: 'entrance-ramp', x: 0, y: -4, x2: 1, y2: -4 });
+      const ramps = (await t.nodes()).filter((n) => n.type === 'IfcRamp');
+      t.expect(ramps.length === 2, `two ramps placed (${ramps.length})`);
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(1000);
+      await t.shot('ramps-plan', { of: '[data-testid=plan]', pad: 0 });
+      await t.tool('architecture.stairTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('.type-list').getByText('Switchback ramp', { exact: false }).first().click();
+      await t.wait(1500);
+      t.expect(await dialog.locator('select[data-field=ramp-shape]').count() > 0, 'the ramp type is edited as a ramp');
+      await t.shot('ramp-types', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null, keyPlan: true });
+      await open3d(t);
+      await t.shot('ramps-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     id: 'ceilings',
     async run(t) {
       await t.fresh();

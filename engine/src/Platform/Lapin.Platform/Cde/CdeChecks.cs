@@ -71,8 +71,8 @@ sealed class Rule(string id, string label, bool blocking, Func<CdeCheckContext, 
 public static class CdeChecks
 {
     /// <summary>The building classes the model-basics rules look at (what stands on a storey, has a type, a material).</summary>
-    static readonly string[] Building = [IfcClass.Wall, IfcClass.Slab, IfcClass.Roof, IfcClass.Column, IfcClass.Beam, IfcClass.Door, IfcClass.Window, "IfcStair", "IfcCurtainWall", "IfcFooting", "IfcMember", "IfcCovering", "IfcRailing"];
-    static readonly string[] Typed = [IfcClass.Wall, IfcClass.Slab, IfcClass.Roof, IfcClass.Door, IfcClass.Window, "IfcCurtainWall", "IfcStair"];
+    static readonly string[] Building = [IfcClass.Wall, IfcClass.Slab, IfcClass.Roof, IfcClass.Column, IfcClass.Beam, IfcClass.Door, IfcClass.Window, "IfcStair", "IfcRamp", "IfcCurtainWall", "IfcFooting", "IfcMember", "IfcCovering", "IfcRailing"];
+    static readonly string[] Typed = [IfcClass.Wall, IfcClass.Slab, IfcClass.Roof, IfcClass.Door, IfcClass.Window, "IfcCurtainWall", "IfcStair", "IfcRamp"];
     static readonly string[] WithMaterial = [IfcClass.Wall, IfcClass.Slab, IfcClass.Roof, IfcClass.Column, IfcClass.Beam, "IfcFooting", "IfcMember"];
 
     /// <summary>The Pset_…Common properties required by default: the property and the classes it is asked on.</summary>

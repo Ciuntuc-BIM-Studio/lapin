@@ -1,7 +1,7 @@
 ---
-title: Trapper
+title: Trapper og ramper
 order: 42
-summary: Placér en trappe mellem etager, opsæt den i dens type, og lav de få trin op til en trappeafsats eller en dør.
+summary: Placér en trappe eller en rampe mellem etager eller op til en hvilken som helst højde, indstil den i dens type, og lav de få trin op til en trappeafsats eller en dør.
 ---
 
 ## Trapper
@@ -54,17 +54,48 @@ Trinene op til en hoveddør har en egen stigning: fra terrænet, nogle trin unde
 
 Typen føjes til projektet, første gang du bruger den. Vil du ændre den, så åbn **Arkitektur → Trappetyper** og vælg **Indgangstrin**:
 
-- **Form → En egen stigning.** Typens stigning; hver trappe kan stadig ændre den med **Stigning**.
+- **Form → Stiger → En egen højde.** Typens stigning, besteget **Op til etagens kote, nedefra (en indgang)**; hver trappe kan stadig ændre den med **Stigning**.
 - **Regler → Regelsæt → indgangstrin.** Stigninger på 120–170 mm og grunde på 300–400 mm, hvor en enkelt stigning er tilladt.
 - **Konstruktion → Bygget som.** **Massive, støbt på terræn** fylder trinene ned til deres bund. **Bundplade under trinene** bygger dem som en indendørs trappe.
 
 ![Typen Indgangstrin i trappekonfiguratoren](shots/stair-types.webp)
 
-Vil du have en anden trappetype til at stige en egen stigning, så sæt flueben ved **En egen stigning** på dens fane **Form**. Vil du lave en placeret trappe om til indgangstrin, så vælg **Indgangstrin** som dens **Trappetype**: den flytter ned, så dens top ligger i dens etages niveau.
+Vil du have en hvilken som helst anden trappetype til at stige en egen højde, så vælg **Stiger → Op til → En egen højde** på dens fane **Form** (se næste afsnit). Vil du lave en placeret trappe om til indgangstrin, så vælg **Indgangstrin** som dens **Trappetype**: den flytter ned, så dens top ligger i dens etages niveau.
 
 ![Huset med trappeafsats og indgangstrin i 3D](shots/entrance-steps-3d.webp)
 
 I IFC er trinene en IfcStair af typen STRAIGHT_RUN_STAIR. Dens løb er en IfcStairFlight med sine NumberOfRisers, NumberOfTreads, RiserHeight og TreadLength, og Pset_StairCommon bærer de samme tal. Trappeafsatsen er en IfcSlab.
+
+## En trappe op til en hvilken som helst højde
+
+En trappe behøver ikke gå fra én etage til den næste. På typens fane **Form** vælger **Stiger → Op til** **Etagen ovenover** eller **En egen højde** med dens **Stigning**, og **Starter** siger, hvor den begynder:
+
+- **Op til etagens kote, nedefra (en indgang).** Den ender i etagens kote og begynder stigningen længere nede, som indgangstrin.
+- **Fra etagens kote og op (en terrasse, en platform).** Den begynder i etagens kote og stiger op: for eksempel 1,20 m op til en terrasse eller en læsserampe.
+
+Hver placeret trappe kan stige en anden højde: skriv den i **Stigning** i dens egenskaber (tom: typens). Stiger den fra koten, holder en ny stigning foden på plads; kommer den nedefra, holder den toppen.
+
+## Ramper
+
+Vælg **Arkitektur → Rampe** (<kbd>RU</kbd>). Klik på midten af rampens nederste ende og derefter på et punkt i den retning, den stiger; for en L-rampe eller en rampe i zigzag angiver et tredje klik til venstre eller højre for løbet, hvilken vej den drejer. Første gang får projektet bibliotekets **Ramp 6 %**: 1,20 m bred med 6 % hældning, i løb på højst 9 m med reposer på 1,50 m imellem, en plade af armeret beton under en belægning og håndlister i begge sider. Den stiger op til etagen ovenover, medmindre dens type eller dens **Stigning** siger noget andet.
+
+**Arkitektur → Indgangsrampe** placeres som indgangstrin: klik på midten af trappeafsatsens kant og derefter på den side, rampen går ud til. Den stiger 450 mm fra terrænet op til ±0,00, massiv på terrænet, og **Stigning** ændrer den som ved trinene.
+
+Rampetyper laves i den samme konfigurator, **Arkitektur → Trappetyper**, med **Ny rampetype** eller fra biblioteket: **Switchback ramp** (i zigzag) og **Entrance ramp** (indgang):
+
+- **Form.** **Lige**, **Lige, med reposer**, **L-form** eller **I zigzag (frem og tilbage)** med sin **Afstand mellem løb**; **Bredde**, **Hældning** i procent, **Længste løb** (er rampen længere, deles den i lige lange løb med reposer imellem) og **Reposlængde**. Længden i plan er højden divideret med hældningen: 3 m ved 6 % er 50 m. **Stiger** virker som for trapper.
+- **Regler.** **Største hældning** (8 % som standard), **Mindste bredde** og **Fri højde**. Kontrollerne viser med rødt en hældning, der er stejlere end reglerne tillader, et løb, der er længere end det længste, og en repos, der er kortere end 1,50 m eller rampens bredde.
+- **Konstruktion.** **En skrå plade af armeret beton** med sin **Pladetykkelse**, eller **Massive, støbt på terræn**; belægning og rækværk som for trapper.
+
+![Zigzagrampen i konfiguratoren](shots/ramp-types.webp)
+
+Vælg en rampe for at se dens type, **Bredde**, **Drej**, **Fodforskydning** og **Stigning**, en egen **Hældning** og **Reposlængde** (tomme: typens), længderne af dens løb og dens kontroller. Planer tegner dens løb og reposer, pilen op og hældningen i procent langs hvert løb. En rampe, der stiger op til etagen ovenover, beder om en åbning i dens dæk, som en trappe gør.
+
+![Zigzagrampen og indgangsrampen i plan, med hældningen langs hvert løb](shots/ramps-plan.webp)
+
+![Ramperne i 3D](shots/ramps-3d.webp)
+
+I IFC er en rampe en IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTER_TURN_RAMP eller HALF_TURN_RAMP) med en IfcRampType, lavet af IfcRampFlight, reposer (IfcSlab LANDING) og IfcRailing.
 
 ## Rækværker
 
