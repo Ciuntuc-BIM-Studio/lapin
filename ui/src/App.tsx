@@ -128,6 +128,7 @@ function PaneTabs({ i }: { i: number }) {
       case 'sheet': return (t.sheetId && nodes.get(t.sheetId)?.name) || 'Sheet';
       case 'gantt': return moduleView('gantt')?.label ?? 'Gantt';
       case 'estimate': return moduleView('estimate')?.label ?? 'Estimate';
+      case 'costTime': return moduleView('costTime')?.label ?? 'Cost over time';
       default: return (t.scheduleId && nodes.get(t.scheduleId)?.name) || 'Schedule';
     }
   };

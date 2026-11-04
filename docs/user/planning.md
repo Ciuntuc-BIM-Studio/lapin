@@ -262,6 +262,12 @@ With a baseline, the simulation compares: an element not built (or not started) 
 - **IFC** writes them in each task's IfcTaskTime (the status time, the actual start and finish, the time left, the completion), and the baseline as a second IfcWorkSchedule of type BASELINE; Lapin's own fields (the percentage typed, the marks) go in `Lapin_Task`. Both come back to the same dates.
 - **Manage → Versions → Compare** says, beside the elements, what changed in the schedule: the finish, the working days, the status date, and the tasks added, removed, moved (by how many working days), whose duration changed or whose progress changed.
 
+## The cost of the tasks
+
+![The Gantt with the Cost column](shots/planning-cost.webp)
+
+With an estimate (**Cost → Estimate…**), the Gantt gets a **Cost** column: each task's share of the estimate, from the lines that price its elements (a summary's is its tasks'). The toolbar shows the **budget** (the estimate's direct costs) and the cost **to date** (each task's cost times its % complete); Properties shows a task's cost and the part done. **Cost → Cost over time** draws the S-curve and the month table (see [Cost estimate](cost.md)).
+
 ## The calendar
 
 ![The work calendar](shots/planning-calendar.webp)
@@ -285,4 +291,4 @@ Lapin's own fields that other programs have no place for (a task's constraint, w
 
 ## What comes next
 
-The cost estimate comes in the next stages.
+The cost over time is in [Cost estimate](cost.md). Resource levelling, earned value, monthly progress billing and several baselines and scenarios are for the premium edition.

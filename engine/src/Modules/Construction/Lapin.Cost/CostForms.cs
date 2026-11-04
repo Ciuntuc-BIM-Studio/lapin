@@ -36,12 +36,13 @@ public static class CostForms
         ("c7", "Materials (C7)"),
         ("c8", "Equipment (C8)"),
         ("c9", "Transport (C9)"),
+        ("monthly", "Cost per month"),
     ];
 
     /// <summary>The default chapters as the Romanian forms name them.</summary>
     static readonly Dictionary<string, string> ChaptersRo = new()
     {
-        ["Earthworks"] = "Terasamente", ["Foundations"] = "Fundații", ["Structure"] = "Structura de rezistență", ["Walls"] = "Zidării și pereți",
+        ["Demolition"] = "Demolări", ["Earthworks"] = "Terasamente", ["Foundations"] = "Fundații", ["Structure"] = "Structura de rezistență", ["Walls"] = "Zidării și pereți",
         ["Roof"] = "Acoperiș", ["Doors and windows"] = "Tâmplărie", ["Finishes and insulation"] = "Finisaje și izolații", ["Installations"] = "Instalații",
         ["Site works"] = "Lucrări provizorii și organizare de șantier", ["Other"] = "Alte lucrări",
     };
@@ -76,6 +77,7 @@ public static class CostForms
         "c7" => Resources(q, r, new Fmt(raw), "material"),
         "c8" => Resources(q, r, new Fmt(raw), "equipment"),
         "c9" => Resources(q, r, new Fmt(raw), "transport"),
+        "monthly" => CostTimeOutputs.Monthly(q, r, raw),
         _ => Estimate(q, r, new Fmt(raw)),
     };
 
@@ -263,13 +265,16 @@ public static class CostForms
     public static byte[] Xlsx(IReadOnlyList<CostForm> forms) =>
         XlsxWriter.Write(forms.Select(f => (SheetName(f.Id), (IReadOnlyList<IReadOnlyList<string>>)[[f.Title], [f.Subtitle], .. f.Table])).ToList());
 
-    static string SheetName(string id) => id switch { "estimate" => "Deviz", "object" => "F2", _ => id.ToUpperInvariant() };
+    static string SheetName(string id) => id switch { "estimate" => "Deviz", "object" => "F2", "monthly" => "Monthly", _ => id.ToUpperInvariant() };
 
     /// <summary>
     /// Forms as a PDF: A4 landscape pages, the title and the project over each, the columns sized to what they hold
     /// (the description widest, cut short past its share), headings repeated on every page, chapters and totals in bold.
     /// </summary>
-    public static byte[] Pdf(IReadOnlyList<CostForm> forms)
+    public static byte[] Pdf(IReadOnlyList<CostForm> forms) => PdfWriter.Write(PdfPages(forms));
+
+    /// <summary>The forms' pages (<see cref="Pdf"/>), to print with others.</summary>
+    public static List<PaperPage> PdfPages(IReadOnlyList<CostForm> forms)
     {
         const double W = 297, H = 210, M = 12, Size = 2.2, Line = 4.4, Top = 26;
         var pages = new List<PaperPage>();
@@ -335,7 +340,7 @@ public static class CostForms
                 pages.Add(new PaperPage(W, H, [shade, thin, rules, ink], $"{form.Title} {pi + 1}"));
             }
         }
-        return PdfWriter.Write(pages);
+        return pages;
     }
 
     sealed class Res(string code, string name, string unit, double price)

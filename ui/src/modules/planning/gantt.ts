@@ -24,6 +24,8 @@ export interface TaskDto {
   marks?: Record<string, ElementMark>; marked?: { done: number; started: number; of: number };
   /** Its baseline and how far it moved from it (working days; positive: later). */
   baselineStart?: string; baselineFinish?: string; baselineDuration?: number; startVariance?: number; finishVariance?: number;
+  /** Its cost from the estimate (stage 7, with the cost module): its elements' share of the lines that price them, and the part done. */
+  cost?: number; costDone?: number;
 }
 export type TaskStatus = 'planned' | 'started' | 'done';
 export type ProgressFrom = 'none' | 'manual' | 'elements' | 'actual' | 'children';
@@ -47,6 +49,15 @@ export interface ScheduleDto {
   /** The whole schedule's percentage done (by the tasks' durations), and its baseline: when saved, the finish it had, how far the finish moved, how many tasks are late. */
   complete?: number;
   baseline?: { saved: string | null; finish: string; finishVariance: number; late: number } | null;
+  /** The estimate on the schedule (stage 7): the budget at completion (its direct costs), what the tasks carry of it, the cost to date. */
+  cost?: { currency: string; budget: number; scheduled: number; toDate: number } | null;
+}
+
+/** A cost as the Gantt's column shows it: whole units, thin spaces between the thousands; nothing for none. */
+export function costText(v: number | null | undefined): string {
+  if (v == null || !Number.isFinite(v) || v === 0) return '';
+  const whole = String(Math.round(Math.abs(v))).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `${v < 0 ? '−' : ''}${whole}`;
 }
 
 // ── Dates ────────────────────────────────────────────────────────────────────

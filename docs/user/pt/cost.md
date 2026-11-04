@@ -15,6 +15,7 @@ A aba que se chamava **Quantitativos** agora é **Custos**. Ela mantém os quant
 - **Atribuir composições…**: qual composição dá preço a cada tipo e a cada material (abaixo).
 - **Orçamento…**: abre o orçamento sob a vista (ele é criado da primeira vez).
 - **Formulário na prancha**, **Orçamento XLSX** e **Orçamento PDF**: o orçamento e os seus formulários em uma prancha, em uma pasta de trabalho ou em um PDF (abaixo).
+- **Custo no tempo**: o orçamento colocado no cronograma da obra, a curva S e a tabela mensal (abaixo).
 
 O orçamento é calculado a partir do modelo sempre que este muda. Uma parede que você desenha agora entra no orçamento na hora, com as suas quantidades. Só são guardados os preços, as composições dos tipos, as regras e as suas próprias linhas.
 
@@ -47,6 +48,8 @@ A composição do tipo vem primeiro. Uma camada que as composições do seu tipo
 **Custos → Atribuir composições…** lista os tipos do projeto usados pelos elementos e os materiais das suas camadas. Cada linha começa com a composição que tem, ou a que você escolheu para um tipo ou material com o mesmo nome em um projeto anterior, ou a que o Lapin sugere: um código escrito no seu nome, ou a composição que partilha mais palavras com ele (*zidărie*, *BCA*, *tencuială*, *C25/30*). Para um tipo em camadas, ele propõe o núcleo. Digite ou escolha um código, escolha a parte e a medida, marque as linhas que quer e clique em **Aplicar**: um só passo para desfazer. As suas escolhas são lembradas neste computador para os seus próximos projetos.
 
 Os tipos de fôrma e de andaime da aba **Canteiro de obras** já tinham um código de composição (decisão 152): é uma composição no tipo, medida pela unidade do preço.
+
+As fases contam: um elemento que já existia antes da obra (criado em uma fase *existente*) não é orçado. Um demolido é orçado só pela composição do seu tipo cuja parte é **A sua demolição (só quando demolido)**, no capítulo **Demolição**.
 
 ## O orçamento
 
@@ -85,6 +88,31 @@ Os formulários seguem a prática comum segundo a metodologia da Ordem 863/2008.
 
 **Colocar na prancha** coloca a tabela mostrada em uma prancha nova, pronta para imprimir com as outras. **XLSX** salva o orçamento e cada formulário em uma pasta de trabalho, uma planilha cada. **PDF** salva-os como PDF, A4 paisagem, pronto para imprimir.
 
+## Custo no tempo
+
+![Custo no tempo: a curva S sobre as barras dos meses, a tabela mensal embaixo](shots/cost-time.webp)
+
+Com um cronograma da obra no projeto (a aba **Planejamento**), o orçamento é colocado nele sem nenhum vínculo próprio. O valor de cada linha é dividido entre os seus elementos, e a parte de cada elemento vai para as tarefas que constroem a parte que a linha mede: a composição da alvenaria para a tarefa que pega o núcleo das paredes, a do reboco para a que pega os acabamentos. Uma composição no elemento inteiro, construída em duas tarefas, é dividida igualmente entre elas. Uma linha sua vai para a tarefa escolhida ao lado da descrição (**Em nenhuma tarefa** por padrão). O custo de uma tarefa é distribuído igualmente pelos seus dias úteis: nada é gasto em um fim de semana, em um feriado ou, para uma tarefa úmida, na pausa de inverno.
+
+**Custos → Custo no tempo** abre, sob a vista:
+
+- a **curva S**: o custo acumulado planejado ao longo do cronograma, o da **linha de base** (tracejado) quando há uma salva, e o **trabalho feito** (grosso) até a data de status: o custo de cada tarefa vezes o seu % concluído, distribuído desde o seu início real;
+- as barras dos meses, na escala da direita: planejado e feito;
+- acima, o **orçamento na conclusão** (os custos diretos do orçamento), o **custo até a data** e o que está **não programado**, se houver: linhas cujos elementos nenhuma tarefa constrói (um clique abre o orçamento);
+- embaixo, a **tabela mensal**: o custo de cada capítulo por mês, o não programado e o seu total.
+
+Os valores são custos diretos, como as linhas do orçamento. O Gantt mostra o custo de cada tarefa na coluna **Custo** (veja [Planejamento](planning.md)).
+
+![A curva S em uma prancha](shots/cost-curve-sheet.webp)
+
+**Colocar na prancha** coloca a curva em uma prancha nova, desenhada em vetores com a sua legenda. **Tabela mensal na prancha** coloca a tabela mensal, que é também o formulário **Custo por mês** na lista do orçamento: os capítulos mês a mês, depois os custos diretos, os totais sem IVA e com IVA (repartidos em proporção), os custos acumulados e, com progresso, o trabalho feito. Cada linha soma o total do orçamento. **XLSX** salva a curva dia a dia, a tabela mensal e os custos das tarefas em uma pasta de trabalho; **PDF** salva a curva e a tabela mensal.
+
+**Gerenciar → Versões → Comparar** diz, ao lado dos elementos e do cronograma, o que mudou no orçamento: o total com IVA, os custos diretos e a diferença, cada capítulo cujo custo mudou, e as linhas adicionadas, removidas ou alteradas (quantidade e valor).
+
+As medições mensais (*situații de lucrări*), o valor agregado e várias linhas de base são da edição premium.
+
 ## IFC
 
 **Arquivo → Exportar IFC…** escreve o orçamento como um **IfcCostSchedule**: os seus capítulos e linhas como **IfcCostItem**, a quantidade de cada linha e os seus preços unitários como quatro **IfcCostValue** (Material, Mão de obra, Equipamentos, Transporte), os elementos que cada linha mede atribuídos a ela (**IfcRelAssignsToControl**), a moeda como a **IfcMonetaryUnit** do projeto. Importado, um orçamento mantém as linhas como o arquivo as tem, com os mesmos totais. Marque **Linhas do modelo** para acrescentar as linhas que o seu modelo dá.
+
+Com um cronograma da obra, cada linha é atribuída também às tarefas em que é feita (**IfcRelAssignsToControl** para as suas **IfcTask**). Importadas, as linhas mantêm as suas tarefas, então a curva S volta igual.

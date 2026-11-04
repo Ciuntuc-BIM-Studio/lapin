@@ -15,6 +15,7 @@ Karta, która nazywała się **Ilości**, nazywa się teraz **Koszty**. Zachowuj
 - **Przypisz pozycje…**: która pozycja wycenia każdy typ i każdy materiał (poniżej).
 - **Kosztorys…**: otwiera kosztorys pod widokiem (za pierwszym razem go tworzy).
 - **Formularz na arkuszu**, **Kosztorys XLSX** i **Kosztorys PDF**: kosztorys i jego formularze na arkuszu, w skoroszycie albo w PDF (poniżej).
+- **Koszt w czasie**: kosztorys położony na harmonogramie robót, krzywa S i tabela miesięczna (poniżej).
 
 Kosztorys jest liczony z modelu przy każdej jego zmianie. Ściana, którą teraz narysujesz, od razu jest w kosztorysie, ze swoimi ilościami. Zapisywane są tylko ceny, pozycje na typach, reguły i twoje własne wiersze.
 
@@ -47,6 +48,8 @@ Pozycja typu ma pierwszeństwo. Warstwa, którą mierzą już pozycje jej typu, 
 **Koszty → Przypisz pozycje…** wymienia typy projektu, których używają elementy, i materiały ich warstw. Każdy wiersz zaczyna się od pozycji, którą ma, albo od tej, którą wybrałeś dla typu lub materiału o tej samej nazwie we wcześniejszym projekcie, albo od tej, którą podpowiada Lapin: kodu zapisanego w nazwie albo pozycji mającej z nią najwięcej wspólnych słów (*zidărie*, *BCA*, *tencuială*, *C25/30*). Dla typu warstwowego proponuje rdzeń. Wpisz lub wybierz kod, wybierz część i miarę, zaznacz wiersze, które chcesz, i kliknij **Zastosuj**: jeden krok do cofnięcia. Twoje wybory są zapamiętywane na tym komputerze na następne projekty.
 
 Typy szalunków i rusztowań z karty **Roboty pomocnicze** miały już kod pozycji (decyzja 152): to pozycja na typie, mierzona według jednostki ceny.
+
+Fazy się liczą: element, który był przed robotami (utworzony w fazie *istniejącej*), nie jest wyceniany. Rozebrany jest wyceniany tylko pozycją swojego typu, której częścią jest **Jego rozbiórka (tylko gdy rozebrany)**, w rozdziale **Rozbiórka**.
 
 ## Kosztorys
 
@@ -85,6 +88,31 @@ Formularze są zgodne z powszechną praktyką według metodologii Rozporządzeni
 
 **Umieść na arkuszu** umieszcza pokazaną tabelę na nowym arkuszu, gotową do druku razem z innymi. **XLSX** zapisuje kosztorys i każdy formularz w jednym skoroszycie, każdy na osobnym arkuszu. **PDF** zapisuje je jako PDF, A4 poziomo, gotowy do druku.
 
+## Koszt w czasie
+
+![Koszt w czasie: krzywa S nad słupkami miesięcy, tabela miesięczna pod nią](shots/cost-time.webp)
+
+Gdy projekt ma harmonogram robót (karta **Harmonogram**), kosztorys kładzie się na nim bez żadnego własnego powiązania. Wartość każdej pozycji dzieli się między jej elementy, a udział każdego elementu idzie do zadań, które budują część mierzoną przez pozycję: pozycja murów do zadania, które bierze rdzeń ścian, pozycja tynku do tego, które bierze ich wykończenia. Pozycja na całym elemencie, budowanym w dwóch zadaniach, dzieli się po równo. Własna pozycja idzie do zadania wybranego obok jej opisu (domyślnie **W żadnym zadaniu**). Koszt zadania rozkłada się równo na jego dni robocze: nic nie jest wydawane w weekend, w święto ani, dla zadania mokrego, w przerwie zimowej.
+
+**Koszty → Koszt w czasie** otwiera pod widokiem:
+
+- **krzywą S**: planowany koszt narastająco w czasie harmonogramu, koszt **planu bazowego** (przerywany), gdy jest zapisany, i **wykonane roboty** (grubo) do daty stanu: koszt każdego zadania razy jego % wykonania, rozłożony od jego rzeczywistego rozpoczęcia;
+- słupki miesięcy, na prawej skali: planowane i wykonane;
+- nad nią **budżet na zakończenie** (koszty bezpośrednie kosztorysu), **koszt do dziś** i to, co **niezaplanowane**, jeśli jest: pozycje, których elementów nie buduje żadne zadanie (kliknięcie otwiera kosztorys);
+- pod nią **tabelę miesięczną**: koszt każdego rozdziału w miesiącu, niezaplanowane i jego sumę.
+
+Wartości to koszty bezpośrednie, jak pozycje kosztorysu. Gantt pokazuje koszt każdego zadania w kolumnie **Koszt** (zob. [Harmonogram](planning.md)).
+
+![Krzywa S na arkuszu](shots/cost-curve-sheet.webp)
+
+**Umieść na arkuszu** kładzie krzywą na nowym arkuszu, narysowaną wektorowo z legendą. **Tabela miesięczna na arkuszu** umieszcza tabelę miesięczną, która jest też formularzem **Koszt w miesiącach** na liście kosztorysu: rozdziały miesiąc po miesiącu, potem koszty bezpośrednie, sumy bez VAT i z VAT (rozdzielone proporcjonalnie), koszty narastająco i, z postępem, wykonane roboty. Każdy wiersz sumuje się do sumy kosztorysu. **XLSX** zapisuje krzywą dzień po dniu, tabelę miesięczną i koszty zadań w skoroszycie; **PDF** zapisuje krzywą i tabelę miesięczną.
+
+**Zarządzaj → Wersje → Porównaj** mówi, obok elementów i harmonogramu, co zmieniło się w kosztorysie: suma z VAT, koszty bezpośrednie i różnica, każdy rozdział, którego koszt się zmienił, oraz pozycje dodane, usunięte lub zmienione (ilość i wartość).
+
+Miesięczne rozliczenia robót (*situații de lucrări*), wartość wypracowana i wiele planów bazowych należą do edycji premium.
+
 ## IFC
 
 **Plik → Eksportuj IFC…** zapisuje kosztorys jako **IfcCostSchedule**: jego działy i wiersze jako **IfcCostItem**, ilość każdego wiersza i jego ceny jednostkowe jako cztery **IfcCostValue** (Material, Labour, Equipment, Transport), elementy mierzone przez każdy wiersz przypisane do niego (**IfcRelAssignsToControl**), walutę jako **IfcMonetaryUnit** projektu. Zaimportowany kosztorys zachowuje wiersze tak, jak ma je plik, z tymi samymi sumami. Zaznacz **Wiersze z modelu**, aby dodać wiersze, które daje twój model.
+
+Z harmonogramem robót każda pozycja jest też przypisana do zadań, w których jest wykonywana (**IfcRelAssignsToControl** do ich **IfcTask**). Zaimportowane pozycje zachowują swoje zadania, więc krzywa S wraca taka sama.

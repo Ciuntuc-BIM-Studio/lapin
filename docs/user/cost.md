@@ -15,6 +15,7 @@ The tab that was called **Quantities** is now **Cost**. It keeps the quantities 
 - **Map articles…**: which article prices each type and each material (below).
 - **Estimate…**: opens the estimate under the view (it is made the first time).
 - **Form on sheet**, **Estimate XLSX** and **Estimate PDF**: the estimate and its forms on a sheet, in a workbook or in a PDF (below).
+- **Cost over time**: the estimate laid on the work schedule, the S-curve and the month table (below).
 
 The estimate is worked out from the model every time it changes. A wall you draw now is in the estimate at once, with its quantities. Only the prices, the articles on the types, the rules and your own lines are stored.
 
@@ -47,6 +48,8 @@ The type's article comes first. A layer its type's articles already measure is n
 **Cost → Map articles…** lists the project's types that elements use, and the materials of their layers. Each row starts with the article it has, or the one you chose for a type or material of the same name in an earlier project, or the one Lapin suggests: a code written in its name, or the article sharing the most words with it (*zidărie*, *BCA*, *tencuială*, *C25/30*). For a layered type it proposes the core. Type or pick a code, choose the part and the measure, tick the rows you want and click **Apply**: one step to undo. Your choices are remembered on this computer for your next projects.
 
 The formwork and scaffolding types of the **Site works** tab already had an article code (decision 152): it is an article on the type, measured by the price's unit.
+
+The phases count: an element that was there before the works (made in an *existing* phase) is not priced. A demolished one is priced only by its type's article whose part is **Its demolition (only when demolished)**, under the chapter **Demolition**.
 
 ## The estimate
 
@@ -85,6 +88,31 @@ The forms follow common practice under the methodology of Order 863/2008. Check 
 
 **Place on sheet** puts the table shown on a new sheet, ready to print with the others. **XLSX** saves the estimate and every form in one workbook, a sheet each. **PDF** saves them as a PDF, landscape A4, ready to print.
 
+## Cost over time
+
+![Cost over time: the S-curve over the months' bars, the month table under it](shots/cost-time.webp)
+
+With a work schedule in the project (the **Planning** tab), the estimate is laid on it with no linking of its own. Each line's value is shared by its elements, and each element's share goes to the tasks that build the part the line measures: the masonry's article to the task that takes the walls' core, the plaster's to the one that takes their finishes. An article on the whole element, built in two tasks, is shared between them alike. A line of your own goes to the task you choose beside its description (**In no task** by default). A task's cost is spread evenly over its working days, so nothing is spent on a weekend, a holiday or, for a wet task, in the winter break.
+
+**Cost → Cost over time** opens, under the view:
+
+- the **S-curve**: the planned cumulative cost over the schedule, the **baseline**'s (dashed) when one is saved, and the **work done** (thick) up to the status date: each task's cost times its % complete, spread from its actual start;
+- the months' bars, against the right-hand scale: planned and done;
+- above it, the **budget at completion** (the estimate's direct costs), the **cost to date** and what is **not scheduled**, if anything: lines whose elements no task builds (click it to open the estimate);
+- under it, the **month table**: each chapter's cost a month, what is not scheduled and its total.
+
+The values are direct costs, as the estimate's lines are. The Gantt shows each task's cost in its **Cost** column (see [Planning](planning.md)).
+
+![The S-curve on a sheet](shots/cost-curve-sheet.webp)
+
+**Place on sheet** puts the curve on a new sheet, drawn as vectors with its legend. **Month table on sheet** places the month table, which is also the form **Cost per month** in the estimate's list: the chapters month by month, then the direct costs, the totals without VAT and with VAT (shared in proportion), the cumulative costs and, with progress, the work done. Each row adds up to the estimate's total. **XLSX** saves the curve day by day, the month table and the tasks' costs in a workbook; **PDF** saves the curve and the month table.
+
+**Manage → Versions → Compare** says, beside the elements and the schedule, what changed in the estimate: the total with VAT, the direct costs and the difference, each chapter whose cost changed, and the lines added, removed or changed (their quantity and value).
+
+Monthly progress billing (*situații de lucrări*), earned value and several baselines are for the premium edition.
+
 ## IFC
 
 **File → Export IFC…** writes the estimate as an **IfcCostSchedule**: its chapters and lines as **IfcCostItem**s, each line's quantity and its unit prices as four **IfcCostValue**s (Material, Labour, Equipment, Transport), the elements each line measures assigned to it (**IfcRelAssignsToControl**), the currency as the project's **IfcMonetaryUnit**. Imported, an estimate keeps the lines as the file has them, with the same totals. Tick **Lines from the model** to add the lines your model gives.
+
+With a work schedule, each line is also assigned to the tasks it is done in (**IfcRelAssignsToControl** to their **IfcTask**s). Imported, the lines keep their tasks, so the S-curve comes back the same.

@@ -15,6 +15,7 @@ La scheda che si chiamava **Quantità** ora si chiama **Costi**. Mantiene le qua
 - **Assegna voci…**: quale voce prezza ogni tipo e ogni materiale (più sotto).
 - **Preventivo…**: apre il preventivo sotto la vista (la prima volta viene creato).
 - **Modulo su tavola**, **Preventivo XLSX** e **Preventivo PDF**: il preventivo e i suoi moduli su una tavola, in una cartella di lavoro o in un PDF (più sotto).
+- **Costo nel tempo**: il preventivo posato sul programma lavori, la curva a S e la tabella mensile (sotto).
 
 Il preventivo è calcolato dal modello a ogni sua modifica. Un muro che disegni ora entra subito nel preventivo, con le sue quantità. Si salvano solo i prezzi, le voci sui tipi, le regole e le tue righe.
 
@@ -47,6 +48,8 @@ La voce del tipo viene prima. Uno strato già misurato dalle voci del suo tipo n
 **Costi → Assegna voci…** elenca i tipi del progetto usati dagli elementi e i materiali dei loro strati. Ogni riga parte con la voce che ha, oppure quella che hai scelto per un tipo o un materiale con lo stesso nome in un progetto precedente, oppure quella che Lapin suggerisce: un codice scritto nel suo nome, o la voce che ha più parole in comune con esso (*zidărie*, *BCA*, *tencuială*, *C25/30*). Per un tipo stratificato propone il nucleo. Scrivi o scegli un codice, scegli la parte e la misura, spunta le righe che vuoi e fai clic su **Applica**: un solo passo da annullare. Le tue scelte sono ricordate su questo computer per i prossimi progetti.
 
 I tipi di casseforme e ponteggi della scheda **Opere provvisionali** avevano già un codice voce (decisione 152): è una voce sul tipo, misurata secondo l'unità del prezzo.
+
+Le fasi contano: un elemento che c'era prima dei lavori (creato in una fase *esistente*) non viene prezzato. Uno demolito viene prezzato solo dalla voce del suo tipo la cui parte è **La sua demolizione (solo se demolito)**, nel capitolo **Demolizione**.
 
 ## Il preventivo
 
@@ -85,6 +88,31 @@ I moduli seguono la pratica comune secondo la metodologia dell'Ordine 863/2008. 
 
 **Metti su tavola** mette la tabella mostrata su una nuova tavola, pronta da stampare con le altre. **XLSX** salva il preventivo e ogni modulo in una sola cartella di lavoro, un foglio ciascuno. **PDF** li salva come PDF, A4 orizzontale, pronto da stampare.
 
+## Costo nel tempo
+
+![Costo nel tempo: la curva a S sulle barre dei mesi, la tabella mensile sotto](shots/cost-time.webp)
+
+Con un programma lavori nel progetto (la scheda **Pianificazione**), il preventivo vi viene posato senza alcun collegamento proprio. Il valore di ogni voce si divide tra i suoi elementi, e la parte di ogni elemento va alle attività che costruiscono la parte misurata dalla voce: la voce della muratura all'attività che prende il nucleo dei muri, quella dell'intonaco a quella che prende le finiture. Una voce sull'elemento intero, costruito in due attività, si divide in parti uguali. Una voce propria va all'attività scelta accanto alla descrizione (**In nessuna attività** per impostazione predefinita). Il costo di un'attività si distribuisce in parti uguali sui suoi giorni lavorativi: nulla si spende in un fine settimana, in un festivo o, per un'attività umida, nella pausa invernale.
+
+**Costi → Costo nel tempo** apre, sotto la vista:
+
+- la **curva a S**: il costo cumulato pianificato sul programma, quello della **linea di base** (tratteggiato) quando ne è salvata una, e il **lavoro fatto** (spesso) fino alla data di stato: il costo di ogni attività per la sua % completata, distribuito dal suo inizio effettivo;
+- le barre dei mesi, sulla scala di destra: pianificato e fatto;
+- sopra, il **budget a completamento** (i costi diretti del preventivo), il **costo a oggi** e ciò che è **non programmato**, se c'è: voci i cui elementi nessuna attività costruisce (un clic apre il preventivo);
+- sotto, la **tabella mensile**: il costo di ogni capitolo al mese, il non programmato e il suo totale.
+
+I valori sono costi diretti, come le voci del preventivo. Il Gantt mostra il costo di ogni attività nella colonna **Costo** (vedi [Pianificazione](planning.md)).
+
+![La curva a S su una tavola](shots/cost-curve-sheet.webp)
+
+**Metti su tavola** mette la curva su una nuova tavola, disegnata in vettori con la sua legenda. **Tabella mensile su tavola** posa la tabella mensile, che è anche il modulo **Costo per mese** nell'elenco del preventivo: i capitoli mese per mese, poi i costi diretti, i totali senza IVA e con IVA (ripartiti in proporzione), i costi cumulati e, con l'avanzamento, il lavoro fatto. Ogni riga dà il totale del preventivo. **XLSX** salva la curva giorno per giorno, la tabella mensile e i costi delle attività in una cartella di lavoro; **PDF** salva la curva e la tabella mensile.
+
+**Gestisci → Versioni → Confronta** dice, accanto agli elementi e al programma, cosa è cambiato nel preventivo: il totale con IVA, i costi diretti e la differenza, ogni capitolo il cui costo è cambiato, e le voci aggiunte, tolte o cambiate (quantità e valore).
+
+Gli stati di avanzamento mensili (*situații de lucrări*), il valore guadagnato e più linee di base sono dell'edizione premium.
+
 ## IFC
 
 **File → Esporta IFC…** scrive il preventivo come **IfcCostSchedule**: i suoi capitoli e le righe come **IfcCostItem**, la quantità di ogni riga e i suoi prezzi unitari come quattro **IfcCostValue** (Material, Labour, Equipment, Transport), gli elementi che ogni riga misura assegnati a essa (**IfcRelAssignsToControl**), la valuta come **IfcMonetaryUnit** del progetto. Importato, un preventivo mantiene le righe come le ha il file, con gli stessi totali. Spunta **Righe dal modello** per aggiungere le righe che dà il tuo modello.
+
+Con un programma lavori, ogni voce è assegnata anche alle attività in cui si esegue (**IfcRelAssignsToControl** verso le loro **IfcTask**). Importate, le voci mantengono le loro attività, quindi la curva a S torna uguale.

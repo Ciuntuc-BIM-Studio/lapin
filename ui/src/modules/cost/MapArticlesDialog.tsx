@@ -106,6 +106,7 @@ export function MapArticlesDialog() {
                         <option value="">Whole element</option>
                         {t.layered && <option value="core">Core (structure)</option>}
                         {t.layered && <option value="finishes">Finishes (layers but the core)</option>}
+                        <option value="demolition">Its demolition (only when demolished)</option>
                       </select>
                     </td>
                     <td><select value={r.basis} onChange={(e) => set(k, { basis: e.target.value })}>{BASES.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}</select></td>

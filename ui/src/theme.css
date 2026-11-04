@@ -1434,6 +1434,28 @@ dl.fields label.check input { width: auto; margin: 0; }
 .estimate-rate input:not([type=checkbox]) { width: 48px; text-align: right; }
 .estimate-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 4px 12px; font-size: 12px; border-bottom: 1px solid var(--rule); }
 .estimate-facts .link { display: inline-flex; align-items: center; gap: 4px; }
+.cost-time-scroll { padding: 8px 12px 24px; }
+.estimate-task { margin-left: 6px; max-width: 160px; font-size: 11px; }
+.cost-chart { display: block; width: 100%; max-width: 1100px; height: auto; font-size: 11px; }
+.cost-chart .grid { stroke: var(--rule); stroke-width: 1; }
+.cost-chart .axis { stroke: var(--ink-muted); stroke-width: 1; }
+.cost-chart .tick { fill: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.cost-chart .bar-planned { fill: #c9d9ec; }
+.cost-chart .bar-done { fill: #8fc9a8; }
+.cost-chart path { fill: none; stroke-linejoin: round; }
+.cost-chart .curve-planned { stroke: #2f6db3; stroke-width: 2; }
+.cost-chart .curve-baseline { stroke: #8a949e; stroke-width: 1.5; stroke-dasharray: 6 3; }
+.cost-chart .curve-done { stroke: #2e8b57; stroke-width: 3; }
+.cost-chart .status { stroke: var(--err); stroke-width: 1; stroke-dasharray: 4 3; }
+.cost-legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 4px 0 10px; font-size: 11px; color: var(--ink-muted); }
+.cost-legend i { display: inline-block; width: 18px; height: 0; margin-right: 6px; vertical-align: middle; border-top: 2px solid #2f6db3; }
+.cost-legend .key-baseline { border-top: 2px dashed #8a949e; }
+.cost-legend .key-done { border-top: 3px solid #2e8b57; }
+.cost-legend .key-bar-planned { height: 10px; border: 0; background: #c9d9ec; }
+.cost-legend .key-bar-done { height: 10px; border: 0; background: #8fc9a8; }
+[data-theme="graphite"] .cost-chart .bar-planned, [data-theme="graphite"] .cost-legend .key-bar-planned { fill: #36506e; background: #36506e; }
+[data-theme="graphite"] .cost-chart .bar-done, [data-theme="graphite"] .cost-legend .key-bar-done { fill: #2f6b4b; background: #2f6b4b; }
+[data-theme="graphite"] .cost-chart .curve-planned { stroke: #6f9fd0; }
 .estimate-scroll, .estimate-form { flex: 1; min-height: 0; min-width: 0; overflow: auto; padding: 0 0 24px; }
 .estimate-form { padding: 8px 12px 24px; }
 .estimate-form h3 { margin: 4px 0 0; font-size: 14px; }

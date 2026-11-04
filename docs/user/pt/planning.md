@@ -262,6 +262,12 @@ Com uma linha de base, a simulação compara: um elemento não construído (ou n
 - **IFC** escreve-os no IfcTaskTime de cada tarefa (a hora de status, o início e o fim reais, o tempo restante, o grau de conclusão), e a linha de base como um segundo IfcWorkSchedule do tipo BASELINE; os campos próprios do Lapin (a porcentagem escrita, as marcas) vão em `Lapin_Task`. Ambos voltam às mesmas datas.
 - **Gerenciar → Versões → Comparar** diz, além dos elementos, o que mudou no cronograma: o fim, os dias úteis, a data de status, e as tarefas acrescentadas, removidas, movidas (quantos dias úteis), com a duração ou o progresso alterados.
 
+## O custo das tarefas
+
+![O Gantt com a coluna Custo](shots/planning-cost.webp)
+
+Com um orçamento (**Custos → Orçamento…**), o Gantt ganha a coluna **Custo**: a parte do orçamento de cada tarefa, das linhas que orçam os seus elementos (a de um resumo é a das suas tarefas). A barra de ferramentas mostra o **orçamento** (os custos diretos) e o custo **até a data** (o custo de cada tarefa vezes o seu % concluído); Propriedades mostra o custo de uma tarefa e a parte feita. **Custos → Custo no tempo** desenha a curva S e a tabela mensal (veja [Orçamento](cost.md)).
+
 ## O calendário
 
 ![O calendário de trabalho](shots/planning-calendar.webp)
@@ -285,4 +291,4 @@ Os campos próprios do Lapin para os quais outros programas não têm lugar (a r
 
 ## O que vem a seguir
 
-O orçamento vem nas próximas etapas.
+O custo no tempo está em [Orçamento](cost.md). O nivelamento de recursos, o valor agregado, as medições mensais e várias linhas de base e cenários são da edição premium.

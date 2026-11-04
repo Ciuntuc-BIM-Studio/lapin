@@ -15,6 +15,7 @@ Tabul care se numea **Cantități** se numește acum **Cost**. Păstrează canti
 - **Atribuie articole…**: ce articol prețuiește fiecare tip și fiecare material (mai jos).
 - **Deviz…**: deschide devizul sub vedere (prima dată îl și face).
 - **Formular pe planșă**, **Deviz XLSX** și **Deviz PDF**: devizul și formularele lui pe o planșă, într-un registru de calcul sau într-un PDF (mai jos).
+- **Costul în timp**: devizul pus pe programul lucrărilor, curba S și tabelul lunar (mai jos).
 
 Devizul se calculează din model la fiecare schimbare. Un perete pe care îl desenezi acum intră imediat în deviz, cu cantitățile lui. Se păstrează doar prețurile, articolele de pe tipuri, regulile și rândurile tale.
 
@@ -47,6 +48,8 @@ Articolul de pe tip are întâietate. Un strat pe care articolele tipului îl m�
 **Cost → Atribuie articole…** listează tipurile proiectului pe care le folosesc elementele și materialele straturilor lor. Fiecare rând pornește cu articolul pe care îl are, sau cu cel ales pentru un tip sau material cu același nume într-un proiect anterior, sau cu cel sugerat de Lapin: un cod scris în numele lui, sau articolul cu cele mai multe cuvinte comune (*zidărie*, *BCA*, *tencuială*, *C25/30*). Pentru un tip stratificat propune miezul. Scrie sau alege un cod, alege partea și măsura, bifează rândurile dorite și apasă **Aplică**: un singur pas de anulat. Alegerile tale sunt ținute minte pe acest calculator pentru proiectele următoare.
 
 Tipurile de cofraj și de schelă din tabul **Organizare de șantier** aveau deja un cod de articol (decizia 152): el e un articol pe tip, măsurat după unitatea prețului.
+
+Fazele contează: un element care era acolo înainte de lucrări (făcut într-o fază *existentă*) nu se prețuiește. Unul demolat se prețuiește doar prin articolul tipului său a cărui parte e **Demolarea lui (doar când e demolat)**, la capitolul **Demolare**.
 
 ## Devizul
 
@@ -85,6 +88,31 @@ Formularele urmează practica obișnuită după metodologia Ordinului 863/2008. 
 
 **Pune pe planșă** așază tabelul arătat pe o planșă nouă, gata de tipărit cu celelalte. **XLSX** salvează devizul și toate formularele într-un registru de calcul, câte o foaie fiecare. **PDF** le salvează ca PDF, A4 orizontal, gata de tipărit.
 
+## Costul în timp
+
+![Costul în timp: curba S peste barele lunilor, tabelul lunar sub ea](shots/cost-time.webp)
+
+Când proiectul are un program al lucrărilor (tabul **Planificare**), devizul se pune pe el fără nicio legare în plus. Valoarea fiecărui rând se împarte pe elementele lui, iar partea fiecărui element merge la sarcinile care construiesc partea măsurată de rând: articolul zidăriei la sarcina care ia miezul pereților, al tencuielii la cea care le ia finisajele. Un articol pe tot elementul, construit în două sarcini, se împarte egal între ele. Un rând propriu merge la sarcina aleasă lângă descrierea lui (implicit **În nicio sarcină**). Costul unei sarcini se întinde egal pe zilele ei lucrătoare, deci nu se cheltuie nimic într-un sfârșit de săptămână, într-o sărbătoare sau, pentru o sarcină umedă, în pauza de iarnă.
+
+**Cost → Costul în timp** deschide, sub vedere:
+
+- **curba S**: costul cumulat planificat pe durata programului, cel al **liniei de bază** (întrerupt) când e salvată una, și **lucrul realizat** (gros) până la data de stare: costul fiecărei sarcini înmulțit cu procentul ei realizat, întins de la începutul ei real;
+- barele lunilor, pe scara din dreapta: planificat și realizat;
+- deasupra, **bugetul la terminare** (cheltuielile directe ale devizului), **costul la zi** și ce e **neprogramat**, dacă e ceva: rânduri ale căror elemente nu le construiește nicio sarcină (un clic deschide devizul);
+- dedesubt, **tabelul lunar**: costul fiecărui capitol pe lună, ce e neprogramat și totalul lui.
+
+Valorile sunt cheltuieli directe, ca rândurile devizului. Gantt-ul arată costul fiecărei sarcini în coloana **Cost** (vezi [Planificare](planning.md)).
+
+![Curba S pe o planșă](shots/cost-curve-sheet.webp)
+
+**Pune pe planșă** pune curba pe o planșă nouă, desenată vectorial, cu legenda ei. **Tabelul lunar pe planșă** pune tabelul lunar, care e și formularul **Costul pe luni** din lista devizului: capitolele lună de lună, apoi cheltuielile directe, totalurile fără TVA și cu TVA (împărțite proporțional), costurile cumulate și, cu progres, lucrul realizat. Fiecare rând se adună la totalul devizului. **XLSX** salvează curba zi de zi, tabelul lunar și costurile sarcinilor într-un registru; **PDF** salvează curba și tabelul lunar.
+
+**Gestionare → Versiuni → Compară** spune, pe lângă elemente și program, ce s-a schimbat în deviz: totalul cu TVA, cheltuielile directe și diferența, fiecare capitol al cărui cost s-a schimbat și rândurile adăugate, scoase sau schimbate (cantitatea și valoarea lor).
+
+Situațiile de lucrări lunare, valoarea câștigată și mai multe linii de bază sunt pentru ediția premium.
+
 ## IFC
 
 **Fișier → Export IFC…** scrie devizul ca **IfcCostSchedule**: capitolele și rândurile ca **IfcCostItem**, cantitatea fiecărui rând și prețurile lui unitare ca patru **IfcCostValue** (Material, Labour, Equipment, Transport), elementele pe care le măsoară fiecare rând atribuite lui (**IfcRelAssignsToControl**), moneda ca **IfcMonetaryUnit** al proiectului. La import, un deviz își păstrează rândurile cum le are fișierul, cu aceleași totaluri. Bifează **Rânduri din model** ca să adaugi rândurile pe care le dă modelul tău.
+
+Cu un program al lucrărilor, fiecare rând e atribuit și sarcinilor în care se execută (**IfcRelAssignsToControl** spre **IfcTask**-urile lor). La import, rândurile își păstrează sarcinile, deci curba S revine la fel.

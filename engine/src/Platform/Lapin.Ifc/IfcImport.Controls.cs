@@ -33,11 +33,16 @@ public static partial class IfcImport
             var children = parentOf.GroupBy(kv => kv.Value).ToDictionary(g => g.Key, g => g.Select(kv => kv.Key).OrderBy(c => childOrder.GetValueOrDefault(c)).ToList());
             // What each item measures: the elements (not items, not schedules) among the objects it controls, by GlobalId.
             var measured = new Dictionary<int, List<string>>();
+            // And the tasks its work is done in (stage 7), by GlobalId.
+            var tasksOf = new Dictionary<int, List<string>>();
             foreach (var r in controls)
                 if (byId.ContainsKey(Ref(r[6])))
                     foreach (var o in Refs(r[4]))
-                        if (f.Get(new StepRef(o)) is { } obj && obj.Type is not ("IFCCOSTITEM" or "IFCCOSTSCHEDULE" or "IFCTASK") && Str(obj[0]) is { } g)
-                            (measured.TryGetValue(Ref(r[6]), out var l) ? l : measured[Ref(r[6])] = []).Add(g);
+                        if (f.Get(new StepRef(o)) is { } obj && obj.Type is not ("IFCCOSTITEM" or "IFCCOSTSCHEDULE") && Str(obj[0]) is { } g)
+                        {
+                            var to = obj.Type == "IFCTASK" ? tasksOf : measured;
+                            (to.TryGetValue(Ref(r[6]), out var l) ? l : to[Ref(r[6])] = []).Add(g);
+                        }
             string? IdOf(string gid)
             {
                 if (edit.Model.Get(gid) != null) return gid;
@@ -73,7 +78,7 @@ public static partial class IfcImport
                         values.Add(new IfcCostValueData(Str(v[6]) ?? "Material", amount));
                     }
                     list.Add(new IfcCostItemData(Gid(it), Str(it[2]) ?? "Item", Str(it[5]), parent, quantity, kind, values,
-                        measured.GetValueOrDefault(id) ?? [], "Lapin_CostItem", PropertiesOf(id, "Lapin_CostItem")));
+                        measured.GetValueOrDefault(id) ?? [], "Lapin_CostItem", PropertiesOf(id, "Lapin_CostItem"), tasksOf.GetValueOrDefault(id)));
                     foreach (var c in children.GetValueOrDefault(id) ?? []) Walk(c, Gid(it));
                 }
                 foreach (var t in top) Walk(t, null);

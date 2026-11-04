@@ -15,6 +15,8 @@ export interface LineDto {
   key: string; code: string; name: string; unit: string; qty: number; basis: string;
   m: number; l: number; e: number; t: number; unitPrice: number; value: number; other: number; hours?: number | null;
   manual?: string | null; priced: boolean; elements: string[];
+  /** The tasks a line of the user's is done in (stage 7). */
+  tasks?: string[] | null;
 }
 export interface ChapterDto { name: string; m: number; l: number; e: number; t: number; direct: number; lines: LineDto[] }
 export interface TotalsDto { m: number; l: number; e: number; t: number; direct: number; labourTax: number; directTotal: number; overheads: number; profit: number; net: number; vat: number; total: number; other: number }
@@ -35,6 +37,7 @@ export const FORMS: { id: string; label: string }[] = [
   { id: 'c7', label: 'Materials (C7)' },
   { id: 'c8', label: 'Equipment (C8)' },
   { id: 'c9', label: 'Transport (C9)' },
+  { id: 'monthly', label: 'Cost per month' },
 ];
 
 export const useEstimate = create<{ data: EstimateDto | null; version: number; form: string }>(() => ({ data: null, version: -2, form: 'estimate' }));

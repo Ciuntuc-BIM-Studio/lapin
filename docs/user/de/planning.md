@@ -262,6 +262,12 @@ Mit einem Basisplan vergleicht die Simulation: ein Element, das an einem Tag nic
 - **IFC** schreibt sie in die IfcTaskTime jedes Vorgangs (die Statuszeit, den tatsächlichen Anfang und das tatsächliche Ende, die Restzeit, den Fertigstellungsgrad) und den Basisplan als zweiten IfcWorkSchedule vom Typ BASELINE; Lapins eigene Felder (der eingegebene Prozentsatz, die Markierungen) stehen in `Lapin_Task`. Beides kommt auf dieselben Termine zurück.
 - **Verwalten → Versionen → Vergleichen** sagt neben den Elementen, was sich im Terminplan geändert hat: das Ende, die Arbeitstage, das Statusdatum und die Vorgänge, die hinzukamen, gelöscht oder verschoben wurden (um wie viele Arbeitstage) oder deren Dauer oder Fortschritt sich geändert hat.
 
+## Die Kosten der Vorgänge
+
+![Das Gantt mit der Spalte Kosten](shots/planning-cost.webp)
+
+Mit einer Kostenberechnung (**Kosten → Kostenberechnung…**) erhält das Gantt eine Spalte **Kosten**: der Anteil jedes Vorgangs an der Kostenberechnung, aus den Positionen, die seine Bauteile bepreisen (der eines Sammelvorgangs ist der seiner Vorgänge). Die Werkzeugleiste zeigt das **Budget** (die direkten Kosten) und die Kosten **bis heute** (die Kosten jedes Vorgangs mal seinem Fertigstellungsgrad); Eigenschaften zeigt die Kosten eines Vorgangs und den erledigten Teil. **Kosten → Kosten im Zeitverlauf** zeichnet die S-Kurve und die Monatstabelle (siehe [Kostenberechnung](cost.md)).
+
 ## Der Kalender
 
 ![Der Arbeitskalender](shots/planning-calendar.webp)
@@ -285,4 +291,4 @@ Lapins eigene Felder, für die andere Programme keinen Platz haben (die Einschr�
 
 ## Was als Nächstes kommt
 
-Die Kostenberechnung kommt in den nächsten Stufen.
+Die Kosten im Zeitverlauf stehen in [Kostenberechnung](cost.md). Kapazitätsabgleich, Earned Value, monatliche Abschlagsrechnungen und mehrere Basispläne und Szenarien gehören zur Premium-Edition.

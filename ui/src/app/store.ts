@@ -14,11 +14,11 @@
 import { create } from 'zustand';
 
 export type Theme = 'paper' | 'graphite';
-/** The views of the panes; 'gantt' is the planning module's, 'estimate' the cost module's (a module adds its own through `views`). */
-export type ViewKind = '3d' | 'plan' | 'drawing' | 'sheet' | 'schedule' | 'gantt' | 'estimate';
+/** The views of the panes; 'gantt' is the planning module's, 'estimate' and 'costTime' the cost module's (a module adds its own through `views`). */
+export type ViewKind = '3d' | 'plan' | 'drawing' | 'sheet' | 'schedule' | 'gantt' | 'estimate' | 'costTime';
 
 /** The views that are tables with their own toolbar (the Gantt, the estimate): no HUD, quick tools or selection card over them. */
-export const isTableView = (v: ViewKind | undefined | null): boolean => v === 'gantt' || v === 'estimate';
+export const isTableView = (v: ViewKind | undefined | null): boolean => v === 'gantt' || v === 'estimate' || v === 'costTime';
 export type Dialog = string | null;
 /** A bare wall opening's head (decision 253): 'round' is the semicircle. */
 export type OpeningHead = 'rect' | 'segmental' | 'elliptical' | 'round' | 'radiused';
@@ -58,6 +58,7 @@ export function tabKey(t: Pane & { storeyId?: string | null }): string {
     case 'schedule': return t.scheduleId ?? 'schedule:none';
     case 'gantt': return 'gantt';
     case 'estimate': return 'estimate';
+    case 'costTime': return 'costTime';
     default: return t.view3dId ?? '3d';
   }
 }

@@ -18,9 +18,12 @@ public sealed class CostIfc : IIfcControls
 
     public IEnumerable<IfcCostScheduleData> CostSchedules(IQueryContext query)
     {
+        // The tasks each line is done in (stage 7), when the project has a work schedule.
+        var times = query.Model.OfClass(Costing.Class).Any() ? query.Services.Get<IWorkSchedules>()?.Times(query) : null;
         foreach (var e in query.Model.OfClass(Costing.Class))
         {
             var r = Costing.Compute(query, e);
+            var over = times != null ? CostOverTime.Of(r, times) : null;
             var s = r.Settings;
             var items = new List<IfcCostItemData>();
             for (var ci = 0; ci < r.Chapters.Count; ci++)
@@ -39,7 +42,7 @@ public sealed class CostIfc : IIfcControls
                     if (l.Hours is { } h) props.Add(("Hours", N(h)));
                     if (!l.Priced) props.Add(("Priced", "false"));
                     items.Add(new IfcCostItemData($"{e.Id}/line/{l.Key.Replace('\u001f', '/')}", l.Name, l.Code, chId, l.Qty, Units.KindOf(l.Basis), values,
-                        l.Elements.ToList(), "Lapin_CostItem", props));
+                        l.Elements.ToList(), "Lapin_CostItem", props, over?.LineTasks.GetValueOrDefault(l.Key)));
                 }
             }
             yield return new IfcCostScheduleData(e.Id, e.Name, e.PredefinedType ?? "COSTPLAN", s.Currency, items, "Lapin_Estimate",
@@ -78,6 +81,9 @@ public sealed class CostIfc : IIfcControls
                 if (p.TryGetValue("Hours", out var hs) && double.TryParse(hs, NumberStyles.Float, CultureInfo.InvariantCulture, out var hv)) o["hours"] = hv;
                 var els = it.Elements.Select(idOf).OfType<string>().Distinct().ToList();
                 if (els.Count > 0) o["elements"] = new JsonArray(els.Select(x => (JsonNode)x).ToArray());
+                // The tasks it is done in, those the project has (read by the planning module before).
+                var tasks = (it.Tasks ?? []).Select(idOf).OfType<string>().Where(t => edit.Model.Get(t)?.Class == "IfcTask").Distinct().ToList();
+                if (tasks.Count > 0) o["tasks"] = new JsonArray(tasks.Select(x => (JsonNode)x).ToArray());
                 lines.Add((JsonNode)o);
                 items++;
             }

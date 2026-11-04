@@ -262,6 +262,12 @@ Z planem bazowym symulacja porównuje: element niezbudowany (lub nierozpoczęty)
 - **IFC** zapisuje je w IfcTaskTime każdego zadania (czas stanu, rzeczywisty początek i koniec, pozostały czas, stopień wykonania), a plan bazowy jako drugi IfcWorkSchedule typu BASELINE; własne pola Lapin (wpisany procent, oznaczenia) trafiają do `Lapin_Task`. Oba wracają do tych samych dat.
 - **Zarządzaj → Wersje → Porównaj** mówi, obok elementów, co zmieniło się w harmonogramie: koniec, dni robocze, data stanu oraz zadania dodane, usunięte, przesunięte (o ile dni roboczych), ze zmienionym czasem trwania lub postępem.
 
+## Koszt zadań
+
+![Gantt z kolumną Koszt](shots/planning-cost.webp)
+
+Z kosztorysem (**Koszty → Kosztorys…**) Gantt dostaje kolumnę **Koszt**: udział każdego zadania w kosztorysie, z pozycji wyceniających jego elementy (zadania sumarycznego to suma jego zadań). Pasek narzędzi pokazuje **budżet** (koszty bezpośrednie kosztorysu) i koszt **do dziś** (koszt każdego zadania razy jego % wykonania); Właściwości pokazują koszt zadania i część wykonaną. **Koszty → Koszt w czasie** rysuje krzywą S i tabelę miesięczną (zob. [Kosztorys](cost.md)).
+
 ## Kalendarz
 
 ![Kalendarz pracy](shots/planning-calendar.webp)
@@ -285,4 +291,4 @@ Własne pola Lapin, dla których inne programy nie mają miejsca (ograniczenie z
 
 ## Co dalej
 
-Kosztorys przyjdzie w następnych etapach.
+Koszt w czasie jest w [Kosztorys](cost.md). Bilansowanie zasobów, wartość wypracowana, miesięczne rozliczenia robót oraz wiele planów bazowych i scenariuszy należą do edycji premium.

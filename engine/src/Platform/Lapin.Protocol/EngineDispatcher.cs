@@ -286,10 +286,18 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         if (compares.Count == 0) return o;
         var a = new ModelSnapshot(ae, ar);
         var b = new ModelSnapshot(be, br);
+        // A comparison that measures (the estimate) reads each state through a session of its own, made once when asked.
+        IQueryContext? qa = null, qb = null;
+        IQueryContext Measured(IReadOnlyList<Entity> es, IReadOnlyList<Relation> rs)
+        {
+            var side = new Session(session.Catalog, session.Product);
+            side.Load(es, rs, session.Path);
+            return side.Reader;
+        }
         foreach (var c in compares)
         {
             VersionDiffSection? s;
-            try { s = c.Compare(a, b); }
+            try { s = c.Measures ? c.Compare(qa ??= Measured(ae, ar), qb ??= Measured(be, br)) : c.Compare(a, b); }
             catch (CommandException) { continue; }
             if (s == null) continue;
             o.Add((JsonNode)new JsonObject

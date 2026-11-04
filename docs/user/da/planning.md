@@ -262,6 +262,12 @@ Med en basisplan sammenligner simuleringen: et element, der ikke er bygget (elle
 - **IFC** skriver dem i hver opgaves IfcTaskTime (statustiden, faktisk start og slut, den resterende tid, færdiggørelsesgraden) og basisplanen som et andet IfcWorkSchedule af typen BASELINE; Lapins egne felter (den skrevne procentdel, markeringerne) står i `Lapin_Task`. Begge kommer tilbage til de samme datoer.
 - **Administrer → Versioner → Sammenlign** siger ud over elementerne, hvad der ændrede sig i tidsplanen: slutningen, arbejdsdagene, statusdatoen og de opgaver, der kom til, blev slettet, flyttet (hvor mange arbejdsdage), eller hvis varighed eller fremdrift ændrede sig.
 
+## Opgavernes omkostninger
+
+![Gantt-diagrammet med kolonnen Omkostning](shots/planning-cost.webp)
+
+Med et overslag (**Økonomi → Overslag…**) får Gantt-diagrammet kolonnen **Omkostning**: hver opgaves andel af overslaget, fra de poster der prissætter dens elementer (en sammenfatnings er dens opgavers). Værktøjslinjen viser **budgettet** (overslagets direkte omkostninger) og omkostningen **til dato** (hver opgaves omkostning gange dens færdiggørelse i %); Egenskaber viser en opgaves omkostning og den udførte del. **Økonomi → Omkostninger over tid** tegner S-kurven og månedstabellen (se [Overslag](cost.md)).
+
 ## Kalenderen
 
 ![Arbejdskalenderen](shots/planning-calendar.webp)
@@ -285,4 +291,4 @@ Lapins egne felter, som andre programmer ikke har plads til (en opgaves begræns
 
 ## Hvad der kommer
 
-Overslaget kommer i de næste trin.
+Omkostninger over tid står i [Overslag](cost.md). Ressourceudjævning, optjent værdi, månedlige acontoopgørelser og flere basisplaner og scenarier hører til premiumudgaven.

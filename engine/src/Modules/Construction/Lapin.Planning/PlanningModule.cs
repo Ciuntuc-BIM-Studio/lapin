@@ -518,6 +518,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         RegisterSimulation(r);
         RegisterProgress(r);
         r.Service<IVersionCompare>(new ScheduleCompare());
+        // The schedule read by others (stage 7: the cost module lays its estimate on it).
+        r.Service<IWorkSchedules>(new ScheduleTimesOf());
 
         r.Query("schedule", (q, _) => ScheduleJson(q));
 
@@ -641,6 +643,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         var p = ReadResolved(q, out var links);
         var (r, problem) = Solve(p);
         var (none, partial) = links.Unlinked();
+        // Each task's cost from the estimate (stage 7), when the cost module is there and the project has one.
+        var costs = p.Rows.Count > 0 ? q.Services.Get<IScheduleCosts>()?.Costs(q, ScheduleTimesOf.Of(p, r, links)) : null;
         var incoming = p.Links.GroupBy(l => l.To).ToDictionary(g => g.Key, g => g.OrderBy(l => p.RowOf.GetValueOrDefault(l.From)).ToList());
         var tasks = new JsonArray();
         foreach (var t in p.Rows)
@@ -687,6 +691,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
                 if (t.ActualFinish is { } ownF) o["actualFinishOwn"] = D(ownF);
                 if (t.Marks.Count > 0) o["marks"] = new JsonObject(t.Marks.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.ToJson())));
             }
+            if (costs != null && costs.Tasks.TryGetValue(t.Id, out var tc)) { o["cost"] = tc.Cost; o["costDone"] = tc.Done; }
             if (t.Baseline is { } bl)
             {
                 o["baselineStart"] = D(bl.Start);
@@ -735,6 +740,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             ["calendar"] = cal,
             ["nonWorking"] = new JsonArray(p.Calendar.NonWorking(shownFrom, shownTo).Select(x => (JsonNode)new JsonObject { ["date"] = D(x.Day), ["why"] = x.Why }).ToArray()),
             ["tasks"] = tasks, ["links"] = linkRows, ["problem"] = problem,
+            // The estimate on the schedule (stage 7): the budget at completion, what the tasks carry of it, the cost to date.
+            ["cost"] = costs == null ? null : new JsonObject { ["currency"] = costs.Currency, ["budget"] = costs.Budget, ["scheduled"] = costs.Scheduled, ["toDate"] = costs.ToDate },
             // The elements a task could take, how many some task takes, and those no task takes (whole, or some of their layers).
             ["elements"] = new JsonObject { ["total"] = links.Candidates.Count(links.NeedsTask), ["none"] = none.Count, ["partial"] = partial.Count },
             // The formwork and scaffolds, each on site while its hosts' tasks need it.

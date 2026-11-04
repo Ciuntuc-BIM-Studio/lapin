@@ -3,16 +3,19 @@
  * takeoff, every other schedule the edition makes, the takeoff as a workbook; schedules are the Architecture module's
  * and go on sheets like views. The estimate (docs/plan-4d5d.md, stage 6): the user's price lists, the articles on types
  * and the rules on materials (Map articles), the estimate worked out from the model, its Romanian forms (F3, F2,
- * C6–C9) on sheets, in a workbook and a PDF. The tab was Quantities until the estimate came.
+ * C6–C9) on sheets, in a workbook and a PDF. The tab was Quantities until the estimate came. Cost over time (stage 7): the
+ * estimate laid on the work schedule, the S-curve and the month table, when the Planning module is there too.
  */
 
-import { Calculator, FileSpreadsheet, FileText, ListChecks, Sheet, Sigma, Table2, Tags } from 'lucide-react';
+import { Calculator, CalendarRange, FileSpreadsheet, FileText, ListChecks, Sheet, Sigma, Table2, Tags } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { SchedulesDialog } from './SchedulesDialog';
 import { PriceListsDialog } from './PriceListsDialog';
 import { MapArticlesDialog } from './MapArticlesDialog';
 import { EstimateView } from './EstimateView';
+import { CostTimeView } from './CostTimeView';
+import { openCostTime } from './costTime';
 import { exportPdf, exportXlsx, formOnSheet, openEstimate, useEstimate } from './estimate';
 import { exportTakeoff, takeoff } from './schedules';
 
@@ -39,6 +42,7 @@ const cost: LapinModule = {
       {
         label: 'Estimate', tools: [
           { id: 'cost.estimate', label: 'Estimate…', icon: Calculator, run: () => void openEstimate() },
+          { id: 'cost.overTime', label: 'Cost over time', icon: CalendarRange, run: () => openCostTime() },
         ],
         small: [
           { id: 'cost.formSheet', label: 'Form on sheet', icon: Sheet, run: () => void formOnSheet(useEstimate.getState().form) },
@@ -48,7 +52,7 @@ const cost: LapinModule = {
       },
     ],
   }],
-  views: { estimate: { label: 'Estimate', component: EstimateView } },
+  views: { estimate: { label: 'Estimate', component: EstimateView }, costTime: { label: 'Cost over time', component: CostTimeView } },
   dialogs: { schedules: SchedulesDialog, 'cost.prices': PriceListsDialog, 'cost.map': MapArticlesDialog },
 };
 

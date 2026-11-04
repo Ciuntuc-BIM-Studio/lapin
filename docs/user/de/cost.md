@@ -15,6 +15,7 @@ Die Registerkarte, die **Mengen** hieß, heißt jetzt **Kosten**. Sie behält di
 - **Positionen zuordnen…**: welche Position jeden Typ und jedes Material bepreist (unten).
 - **Kostenberechnung…**: öffnet die Kostenberechnung unter der Ansicht (beim ersten Mal wird sie erstellt).
 - **Formular auf Plan**, **Kostenberechnung XLSX** und **Kostenberechnung PDF**: die Kostenberechnung und ihre Formulare auf einem Plan, in einer Arbeitsmappe oder in einem PDF (unten).
+- **Kosten im Zeitverlauf**: die Kostenberechnung auf dem Terminplan, die S-Kurve und die Monatstabelle (unten).
 
 Die Kostenberechnung wird bei jeder Änderung neu aus dem Modell berechnet. Eine Wand, die Sie jetzt zeichnen, steht sofort mit ihren Mengen darin. Gespeichert werden nur die Preise, die Positionen auf den Typen, die Regeln und Ihre eigenen Zeilen.
 
@@ -47,6 +48,8 @@ Die Position des Typs geht vor. Eine Schicht, die die Positionen ihres Typs scho
 **Kosten → Positionen zuordnen…** listet die Typen des Projekts, die Elemente verwenden, und die Materialien ihrer Schichten. Jede Zeile beginnt mit der Position, die sie hat, oder der, die Sie in einem früheren Projekt für einen Typ oder ein Material desselben Namens gewählt haben, oder der, die Lapin vorschlägt: einem Code in ihrem Namen oder der Position, die die meisten Wörter mit ihm teilt (*zidărie*, *BCA*, *tencuială*, *C25/30*). Für einen mehrschichtigen Typ schlägt es den Kern vor. Tippen oder wählen Sie einen Code, wählen Sie den Teil und die Messgröße, haken Sie die gewünschten Zeilen an und klicken Sie auf **Anwenden**: ein Schritt zum Rückgängigmachen. Ihre Auswahl wird auf diesem Computer für Ihre nächsten Projekte gemerkt.
 
 Die Schalungs- und Gerüsttypen der Registerkarte **Baustelleneinrichtung** hatten schon einen Positionscode (Entscheidung 152): Er ist eine Position auf dem Typ, nach der Einheit des Preises gemessen.
+
+Die Phasen zählen: ein Bauteil, das vor den Arbeiten schon da war (in einer *bestehenden* Phase erstellt), wird nicht bepreist. Ein abgebrochenes wird nur durch den Artikel seines Typs bepreist, dessen Teil **Sein Abbruch (nur wenn abgebrochen)** ist, im Kapitel **Abbruch**.
 
 ## Die Kostenberechnung
 
@@ -85,6 +88,31 @@ Die Formulare folgen der üblichen Praxis nach der Methodik des Erlasses 863/200
 
 **Auf Plan setzen** setzt die gezeigte Tabelle auf einen neuen Plan, druckfertig mit den anderen. **XLSX** speichert die Kostenberechnung und jedes Formular in einer Arbeitsmappe, je ein Blatt. **PDF** speichert sie als PDF, A4 quer, druckfertig.
 
+## Kosten im Zeitverlauf
+
+![Kosten im Zeitverlauf: die S-Kurve über den Balken der Monate, die Monatstabelle darunter](shots/cost-time.webp)
+
+Hat das Projekt einen Terminplan (Register **Terminplanung**), wird die Kostenberechnung ohne eigene Verknüpfung auf ihn gelegt. Der Wert jeder Position wird auf ihre Bauteile verteilt, und der Anteil jedes Bauteils geht an die Vorgänge, die den gemessenen Teil bauen: der Artikel des Mauerwerks an den Vorgang, der den Kern der Wände nimmt, der des Putzes an den, der ihre Bekleidungen nimmt. Ein Artikel auf dem ganzen Bauteil, das in zwei Vorgängen gebaut wird, wird zu gleichen Teilen geteilt. Eine eigene Position geht an den Vorgang, den Sie neben ihrer Beschreibung wählen (standardmäßig **In keinem Vorgang**). Die Kosten eines Vorgangs werden gleichmäßig auf seine Arbeitstage verteilt: an einem Wochenende, einem Feiertag oder, bei einem nassen Vorgang, in der Winterpause wird nichts ausgegeben.
+
+**Kosten → Kosten im Zeitverlauf** öffnet unter der Ansicht:
+
+- die **S-Kurve**: die geplanten kumulierten Kosten über den Terminplan, die des **Basisplans** (gestrichelt), wenn einer gespeichert ist, und die **erledigte Arbeit** (dick) bis zum Statusdatum: die Kosten jedes Vorgangs mal seinem Fertigstellungsgrad, ab seinem tatsächlichen Beginn verteilt;
+- die Balken der Monate, an der rechten Skala: geplant und erledigt;
+- darüber das **Budget bei Fertigstellung** (die direkten Kosten der Kostenberechnung), die **Kosten bis heute** und, falls vorhanden, was **nicht terminiert** ist: Positionen, deren Bauteile kein Vorgang baut (ein Klick öffnet die Kostenberechnung);
+- darunter die **Monatstabelle**: die Kosten jedes Kapitels pro Monat, das nicht Terminierte und seine Summe.
+
+Die Werte sind direkte Kosten, wie die Positionen der Kostenberechnung. Das Gantt zeigt die Kosten jedes Vorgangs in seiner Spalte **Kosten** (siehe [Terminplanung](planning.md)).
+
+![Die S-Kurve auf einem Plan](shots/cost-curve-sheet.webp)
+
+**Auf Plan setzen** setzt die Kurve auf einen neuen Plan, als Vektoren mit ihrer Legende gezeichnet. **Monatstabelle auf Plan** setzt die Monatstabelle, die auch das Formular **Kosten pro Monat** in der Liste der Kostenberechnung ist: die Kapitel Monat für Monat, dann die direkten Kosten, die Summen ohne und mit MwSt. (anteilig verteilt), die kumulierten Kosten und, mit Fortschritt, die erledigte Arbeit. Jede Zeile ergibt die Summe der Kostenberechnung. **XLSX** speichert die Kurve Tag für Tag, die Monatstabelle und die Kosten der Vorgänge in einer Arbeitsmappe; **PDF** speichert die Kurve und die Monatstabelle.
+
+**Verwalten → Versionen → Vergleichen** sagt neben den Bauteilen und dem Terminplan, was sich in der Kostenberechnung geändert hat: die Summe mit MwSt., die direkten Kosten und die Differenz, jedes Kapitel, dessen Kosten sich geändert haben, und die hinzugefügten, entfernten oder geänderten Positionen (Menge und Wert).
+
+Monatliche Abschlagsrechnungen (*situații de lucrări*), Earned Value und mehrere Basispläne gehören zur Premium-Edition.
+
 ## IFC
 
 **Datei → IFC exportieren…** schreibt die Kostenberechnung als **IfcCostSchedule**: ihre Kapitel und Zeilen als **IfcCostItem**s, die Menge jeder Zeile und ihre Einheitspreise als vier **IfcCostValue**s (Material, Lohn, Geräte, Transport), die Elemente, die jede Zeile misst, ihr zugewiesen (**IfcRelAssignsToControl**), die Währung als **IfcMonetaryUnit** des Projekts. Importiert behält eine Kostenberechnung die Zeilen, wie die Datei sie hat, mit denselben Summen. Haken Sie **Zeilen aus dem Modell** an, um die Zeilen hinzuzufügen, die Ihr Modell ergibt.
+
+Mit einem Terminplan wird jede Position auch den Vorgängen zugeordnet, in denen sie ausgeführt wird (**IfcRelAssignsToControl** zu ihren **IfcTask**s). Importiert behalten die Positionen ihre Vorgänge, die S-Kurve kommt also gleich zurück.

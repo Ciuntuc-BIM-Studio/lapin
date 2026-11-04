@@ -196,6 +196,8 @@ public static class IfcExport
         /// <summary>The rooms of each storey (by the storey's IFC entity), aggregated into it.</summary>
         readonly Dictionary<string, List<string>> spaces = [];
         readonly Dictionary<string, string> styles = [], materials = [], layerSets = [], written = [];
+        /// <summary>The IfcTasks written, by their id: what a cost item's tasks are (stage 7 of docs/plan-4d5d.md).</summary>
+        readonly Dictionary<string, string> tasksWritten = [];
         /// <summary>A style key naming a material (its id after it), as against a colour (#rrggbb).</summary>
         const string MaterialKey = "material:";
         readonly Dictionary<string, (string Ref, List<string> Occurrences)> types = [];
@@ -1899,6 +1901,7 @@ public static class IfcExport
                         var task = f.Add("IFCTASK", Gid(t.Id), Null, S(t.Name), S(t.Description), Null, S(t.Identification), Null, Null, Null,
                             t.IsMilestone ? Step.True : Step.False, Null, time, E(kind));
                         taskRef[t.Id] = task;
+                        tasksWritten[t.Id] = task;
                         if (t.Properties.Count > 0)
                             Define(task, f.Add("IFCPROPERTYSET", Gid(t.Id, "pset"), Null, S(t.PropertySet), Null, L(t.Properties.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(t.Id, "pset-rel"));
                     }
@@ -1980,6 +1983,9 @@ public static class IfcExport
                             Define(item, f.Add("IFCPROPERTYSET", Gid(it.Id, "pset"), Null, S(it.PropertySet), Null, L(it.Properties.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(it.Id, "pset-rel"));
                         if (it.Elements.Where(written.ContainsKey).Select(id => written[id]).Distinct().ToList() is { Count: > 0 } measured)
                             f.Add("IFCRELASSIGNSTOCONTROL", Gid(it.Id, "controls"), Null, Null, Null, L(measured), Null, item);
+                        // The tasks its work is done in (stage 7): controlled by it too, in a relationship of their own (RelatedObjectsType PROCESS).
+                        if ((it.Tasks ?? []).Where(tasksWritten.ContainsKey).Select(id => tasksWritten[id]).Distinct().ToList() is { Count: > 0 } tasks)
+                            f.Add("IFCRELASSIGNSTOCONTROL", Gid(it.Id, "controls-tasks"), Null, Null, Null, L(tasks), E("PROCESS"), item);
                     }
                     var top = cs.Items.Where(i => i.Parent == null || !itemRef.ContainsKey(i.Parent)).Select(i => itemRef[i.Id]).ToList();
                     if (top.Count > 0) f.Add("IFCRELASSIGNSTOCONTROL", Gid(cs.Id, "controls"), Null, Null, Null, L(top), Null, schedule);

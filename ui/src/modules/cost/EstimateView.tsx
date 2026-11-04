@@ -73,6 +73,9 @@ export function EstimateView() {
   const data = useEstimateData();
   const form = useEstimate((s) => s.form);
   const selected = useUi((s) => s.selected);
+  const nodes = useSession((s) => s.nodes);
+  // The work schedule's tasks, for a line of the user's to be done in (stage 7: its cost then goes on the S-curve).
+  const tasks = useMemo(() => [...nodes.values()].filter((n) => n.type === 'IfcTask'), [nodes]);
   const [folded, setFolded] = useState<Set<string>>(new Set());
   const holding = useMemo(() => linesHolding(data, selected), [data, selected]);
   if (!data) {
@@ -162,7 +165,13 @@ export function EstimateView() {
                     <tr key={l.key} className={`row-line${holding.has(l.key) ? ' holds' : ''}${l.priced ? '' : ' unpriced'}${l.manual ? ' manual' : ''}`} onClick={(e) => !(e.target as HTMLElement).closest('input,button') && pick(l)} data-testid="estimate-line" data-code={l.code}>
                       <td data-no-i18n>{`${ci + 1}.${li + 1}`}</td>
                       <td data-no-i18n>{l.manual ? <Cell value={l.code} onCommit={(v) => update(l.manual!, 'code', v)} /> : l.code}</td>
-                      <td data-no-i18n title={l.elements.length ? 'Click to select its elements' : undefined}>{l.manual ? <Cell value={l.name} onCommit={(v) => update(l.manual!, 'name', v)} /> : l.name}{!l.priced && <>{' '}<span className="error-text small">no price</span></>}</td>
+                      <td data-no-i18n title={l.elements.length ? 'Click to select its elements' : undefined}>{l.manual ? <Cell value={l.name} onCommit={(v) => update(l.manual!, 'name', v)} /> : l.name}{!l.priced && <>{' '}<span className="error-text small">no price</span></>}
+                        {l.manual && tasks.length > 0 && (
+                          <select className="estimate-task" value={l.tasks?.[0] ?? ''} onChange={(e) => void execute('cost.updateLine', { line: l.manual, tasks: e.target.value ? [e.target.value] : [] })} title="The task its work is done in: its cost goes on the S-curve with it" data-testid="estimate-line-task">
+                            <option value="">In no task</option>
+                            {tasks.map((t) => <option key={t.id} value={t.id} data-no-i18n>{t.name}</option>)}
+                          </select>
+                        )}</td>
                       <td data-no-i18n>{l.manual ? <Cell value={l.unit} onCommit={(v) => update(l.manual!, 'unit', v)} /> : l.unit}</td>
                       <td className="num" data-no-i18n>{l.manual ? <Cell num value={String(l.qty)} onCommit={(v) => update(l.manual!, 'qty', v)} /> : qty(l.qty)}</td>
                       {(['m', 'l', 'e', 't'] as const).map((k) => <td key={k} className="num" data-no-i18n>{l.manual ? <Cell num value={String(l[k])} onCommit={(v) => update(l.manual!, k, v)} /> : money(l[k])}</td>)}

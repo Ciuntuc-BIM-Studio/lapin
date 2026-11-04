@@ -34,7 +34,7 @@ interface DiffSection {
 }
 
 /** How a module's row says what changed. */
-const WHAT: Record<string, string> = { added: 'Added', removed: 'Removed', moved: 'Moved', duration: 'Duration changed', finish: 'Finish moved', progress: 'Progress' };
+const WHAT: Record<string, string> = { added: 'Added', removed: 'Removed', moved: 'Moved', duration: 'Duration changed', finish: 'Finish moved', progress: 'Progress', chapter: 'Chapter changed', cost: 'Cost changed' };
 
 const CURRENT = 'current';
 /** A version's time, kept in UTC, shown in the user's own. */

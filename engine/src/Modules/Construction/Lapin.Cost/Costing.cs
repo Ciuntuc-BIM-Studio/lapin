@@ -70,6 +70,10 @@ public sealed class EstimateLine(string key, string chapter, string code)
     public string? Manual { get; set; }
     public HashSet<string> Elements { get; } = [];
     public List<LineResource> Resources { get; } = [];
+    /// <summary>What each element gives the line, by the part measured (stage 7: the line's cost is laid on the tasks that build those parts).</summary>
+    public List<LineShare> Shares { get; } = [];
+    /// <summary>The tasks a line of the user's is done in (stage 7; ids: a summary stands for its tasks).</summary>
+    public List<string> Tasks { get; } = [];
 
     public double Qty => Math.Round(Quantity, 3);
     public double VM => Money.Round(Qty * M);
@@ -79,6 +83,9 @@ public sealed class EstimateLine(string key, string chapter, string code)
     public double UnitPrice => Money.Round(M + L + E + T);
     public double Value => VM + VL + VE + VT;
 }
+
+/// <summary>An element's share of a line: the part of it measured (null: the whole) and the quantity it gives.</summary>
+public sealed record LineShare(string Element, string? Part, double Quantity);
 
 /// <summary>Money as estimates write it: two decimals, half away from zero.</summary>
 public static class Money
@@ -144,7 +151,7 @@ public static class Costing
 
     /// <summary>The chapters by kind of work, in their order.</summary>
     public static readonly string[] Chapters =
-        ["Earthworks", "Foundations", "Structure", "Walls", "Roof", "Doors and windows", "Finishes and insulation", "Installations", "Site works", "Other"];
+        ["Demolition", "Earthworks", "Foundations", "Structure", "Walls", "Roof", "Doors and windows", "Finishes and insulation", "Installations", "Site works", "Other"];
 
     static readonly string[] Mep = ["Pipe", "Duct", "Cable", "Flow", "Sanitary", "Light", "Valve", "Pump", "Boiler", "SpaceHeater", "Distribution", "Electric", "Fire", "Tank", "Fan", "AirTerminal", "Outlet", "Switch"];
 
@@ -178,6 +185,32 @@ public static class Costing
     }
 
     public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
+
+    /// <summary>
+    /// The project's phases' kinds by id (existing, construction, execution), as the phases module keeps them on the project
+    /// (read here so cost needs no phases module): Existing and New construction when the project has none of its own.
+    /// </summary>
+    public static Dictionary<string, string> PhaseKinds(IModelView m)
+    {
+        var o = new Dictionary<string, string>();
+        if (Spatial.Project(m)?.Attrs["phases"] is JsonObject ph && ph["phases"] is JsonArray list)
+            foreach (var p in list.OfType<JsonObject>())
+                if ((string?)p["id"] is { Length: > 0 } id) o[id] = (string?)p["kind"] ?? "construction";
+        if (o.Count == 0) { o["existing"] = "existing"; o["new-construction"] = "construction"; }
+        return o;
+    }
+
+    /// <summary>
+    /// What the works do to an element by its phases: an element that was there before the works (made in an existing phase) is
+    /// not new work, and one demolished (in a phase after it was made: formwork made and struck in one is temporary, new work).
+    /// </summary>
+    public static (bool Existing, bool Demolished) WorkOn(Entity e, IReadOnlyDictionary<string, string> kinds)
+    {
+        var created = e.Str("phaseCreated");
+        var demolished = e.Str("phaseDemolished");
+        var temporary = created != null && created == demolished;
+        return (created != null && kinds.GetValueOrDefault(created) == "existing", demolished != null && !temporary);
+    }
 
     /// <summary>The project's estimate: the one asked for, else the first.</summary>
     public static Entity? EstimateOf(IModelView m, string? id = null) =>
@@ -290,13 +323,29 @@ public static class Costing
             }
             line.Quantity += qty;
             line.Elements.Add(e.Id);
+            // Each part's share of what the element gives (by its own measure; alike when none has one).
+            if (sets.Count <= 1) line.Shares.Add(new LineShare(e.Id, sets.Count == 1 ? sets[0].Part : null, qty));
+            else
+            {
+                var each = sets.Select(x => (x.Part, Q: Measures.Quantity([x], basis, a, hit?.Row) ?? 0)).ToList();
+                var sum = each.Sum(x => x.Q);
+                foreach (var (part, pq) in each) line.Shares.Add(new LineShare(e.Id, part, sum > 0 ? qty * pq / sum : qty / each.Count));
+            }
         }
 
+        var kinds = PhaseKinds(m);
         if (s.Derive)
             foreach (var (e, sets) in Measured(q))
             {
                 var type = TypeOf(m, e);
-                var arts = ArticleRef.Of(type);
+                var all = ArticleRef.Of(type);
+                // The phases: what was there and stays is not priced; a demolition is priced by the type's demolition article, if it has one.
+                var (existing, demolished) = WorkOn(e, kinds);
+                if (demolished)
+                    foreach (var d in all.Where(x => x.Part == Parts.Demolition))
+                        Add(e, d with { Part = null, Chapter = d.Chapter ?? "Demolition" }, Parts.Select(m, e.Id, sets, null), true);
+                if (existing) continue;
+                var arts = all.Where(x => x.Part != Parts.Demolition).ToList();
                 var whole = false;
                 var covered = new HashSet<string>();
                 var priced = false;
@@ -352,6 +401,7 @@ public static class Costing
                     line.Priced = true;
                 }
                 if (o["elements"] is JsonArray els) foreach (var x in els.Select(x => (string?)x).OfType<string>()) line.Elements.Add(x);
+                if (o["tasks"] is JsonArray tks) line.Tasks.AddRange(tks.Select(x => (string?)x).OfType<string>().Distinct());
                 lines[line.Key] = line;
                 chapterMeta.TryAdd(chapter, OrderOf(chapter, null));
             }

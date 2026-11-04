@@ -262,6 +262,12 @@ Cu o linie de bază, simularea compară: un element neconstruit (sau neînceput)
 - **IFC** le scrie în IfcTaskTime-ul fiecărei sarcini (timpul de stare, începutul și finalul real, timpul rămas, gradul de realizare), iar linia de bază ca al doilea IfcWorkSchedule, de tip BASELINE; câmpurile proprii ale lui Lapin (procentul scris, marcajele) merg în `Lapin_Task`. Amândouă revin la aceleași date.
 - **Gestionare → Versiuni → Compară** spune, pe lângă elemente, ce s-a schimbat în program: finalul, zilele lucrătoare, data de stare și sarcinile adăugate, șterse, mutate (cu câte zile lucrătoare), cele cu durata sau progresul schimbat.
 
+## Costul sarcinilor
+
+![Gantt-ul cu coloana Cost](shots/planning-cost.webp)
+
+Cu un deviz (**Cost → Deviz…**), Gantt-ul primește coloana **Cost**: partea din deviz a fiecărei sarcini, din rândurile care îi prețuiesc elementele (a unui rezumat e a sarcinilor lui). Bara de unelte arată **bugetul** (cheltuielile directe ale devizului) și costul **la zi** (costul fiecărei sarcini înmulțit cu procentul ei realizat); Proprietăți arată costul unei sarcini și partea realizată. **Cost → Costul în timp** desenează curba S și tabelul lunar (vezi [Devizul](cost.md)).
+
 ## Calendarul
 
 ![Calendarul de lucru](shots/planning-calendar.webp)
@@ -285,4 +291,4 @@ Câmpurile proprii ale lui Lapin pentru care alte programe n-au loc (constrânge
 
 ## Ce urmează
 
-Devizul vine în etapele următoare.
+Costul în timp e în [Devizul](cost.md). Nivelarea resurselor, valoarea câștigată, situațiile de lucrări lunare și mai multe linii de bază și scenarii sunt pentru ediția premium.

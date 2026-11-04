@@ -262,6 +262,12 @@ Con una baseline, la simulazione confronta: un elemento non costruito (o non ini
 - **IFC** li scrive nell’IfcTaskTime di ogni attività (l’ora di stato, l’inizio e la fine effettivi, il tempo rimanente, il grado di completamento), e la baseline come un secondo IfcWorkSchedule di tipo BASELINE; i campi propri di Lapin (la percentuale scritta, i segni) vanno in `Lapin_Task`. Entrambi tornano alle stesse date.
 - **Gestisci → Versioni → Confronta** dice, oltre agli elementi, cosa è cambiato nel cronoprogramma: la fine, i giorni lavorativi, la data di stato, e le attività aggiunte, eliminate, spostate (di quanti giorni lavorativi), con la durata o l’avanzamento cambiati.
 
+## Il costo delle attività
+
+![Il Gantt con la colonna Costo](shots/planning-cost.webp)
+
+Con un preventivo (**Costi → Preventivo…**), il Gantt riceve la colonna **Costo**: la parte del preventivo di ogni attività, dalle voci che ne prezzano gli elementi (quella di un riepilogo è delle sue attività). La barra degli strumenti mostra il **budget** (i costi diretti del preventivo) e il costo **a oggi** (il costo di ogni attività per la sua % completata); Proprietà mostra il costo di un'attività e la parte fatta. **Costi → Costo nel tempo** disegna la curva a S e la tabella mensile (vedi [Preventivo](cost.md)).
+
 ## Il calendario
 
 ![Il calendario di lavoro](shots/planning-calendar.webp)
@@ -285,4 +291,4 @@ I campi propri di Lapin per cui gli altri programmi non hanno posto (il vincolo 
 
 ## Cosa viene dopo
 
-Il computo metrico estimativo arriva nelle prossime fasi.
+Il costo nel tempo è in [Preventivo](cost.md). Il livellamento delle risorse, il valore guadagnato, gli stati di avanzamento mensili e più linee di base e scenari sono dell'edizione premium.

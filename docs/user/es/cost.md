@@ -15,6 +15,7 @@ La pestaña que se llamaba **Cantidades** ahora es **Costes**. Conserva las cant
 - **Asignar partidas…**: qué partida da precio a cada tipo y a cada material (más abajo).
 - **Presupuesto…**: abre el presupuesto bajo la vista (se crea la primera vez).
 - **Formulario en lámina**, **Presupuesto XLSX** y **Presupuesto PDF**: el presupuesto y sus formularios en una lámina, en un libro de cálculo o en un PDF (más abajo).
+- **Coste en el tiempo**: el presupuesto puesto sobre el programa de obra, la curva S y la tabla mensual (abajo).
 
 El presupuesto se calcula desde el modelo cada vez que este cambia. Un muro que dibujas ahora está en el presupuesto al momento, con sus cantidades. Solo se guardan los precios, las partidas de los tipos, las reglas y tus líneas propias.
 
@@ -47,6 +48,8 @@ La partida del tipo va primero. Una capa que ya miden las partidas de su tipo no
 **Costes → Asignar partidas…** lista los tipos del proyecto que usan los elementos y los materiales de sus capas. Cada fila empieza con la partida que tiene, o la que elegiste para un tipo o material del mismo nombre en un proyecto anterior, o la que propone Lapin: un código escrito en su nombre, o la partida que comparte más palabras con él (*zidărie*, *BCA*, *tencuială*, *C25/30*). Para un tipo por capas propone el núcleo. Escribe o elige un código, elige la parte y la medida, marca las filas que quieres y haz clic en **Aplicar**: un solo paso para deshacer. Tus elecciones se recuerdan en este ordenador para tus próximos proyectos.
 
 Los tipos de encofrado y andamio de la pestaña **Medios auxiliares** ya tenían un código de partida (decisión 152): es una partida en el tipo, medida por la unidad del precio.
+
+Las fases cuentan: un elemento que estaba antes de las obras (hecho en una fase *existente*) no se valora. Uno demolido se valora solo con la partida de su tipo cuya parte es **Su demolición (solo si se demuele)**, en el capítulo **Demolición**.
 
 ## El presupuesto
 
@@ -85,6 +88,31 @@ Los formularios siguen la práctica habitual según la metodología de la Orden 
 
 **Colocar en lámina** pone la tabla mostrada en una lámina nueva, lista para imprimir con las demás. **XLSX** guarda el presupuesto y cada formulario en un libro de cálculo, una hoja cada uno. **PDF** los guarda como PDF, A4 apaisado, listo para imprimir.
 
+## Coste en el tiempo
+
+![Coste en el tiempo: la curva S sobre las barras de los meses, la tabla mensual debajo](shots/cost-time.webp)
+
+Con un programa de obra en el proyecto (la pestaña **Planificación**), el presupuesto se pone sobre él sin ningún enlace propio. El valor de cada partida se reparte entre sus elementos, y la parte de cada elemento va a las tareas que construyen la parte que mide la partida: la de la fábrica a la tarea que toma el núcleo de los muros, la del enlucido a la que toma sus acabados. Una partida sobre el elemento entero, construido en dos tareas, se reparte por igual entre ellas. Una partida propia va a la tarea que elija junto a su descripción (**En ninguna tarea** por defecto). El coste de una tarea se reparte por igual en sus días laborables: nada se gasta un fin de semana, un festivo o, en una tarea húmeda, en la pausa de invierno.
+
+**Costes → Coste en el tiempo** abre, bajo la vista:
+
+- la **curva S**: el coste acumulado planificado a lo largo del programa, el de la **línea base** (discontinuo) cuando hay una guardada, y el **trabajo hecho** (grueso) hasta la fecha de estado: el coste de cada tarea por su % completado, repartido desde su inicio real;
+- las barras de los meses, en la escala de la derecha: planificado y hecho;
+- encima, el **presupuesto a la conclusión** (los costes directos del presupuesto), el **coste a la fecha** y lo que está **sin programar**, si hay algo: partidas cuyos elementos no construye ninguna tarea (un clic abre el presupuesto);
+- debajo, la **tabla mensual**: el coste de cada capítulo al mes, lo sin programar y su total.
+
+Los valores son costes directos, como las partidas del presupuesto. El Gantt muestra el coste de cada tarea en su columna **Coste** (vea [Planificación](planning.md)).
+
+![La curva S en una lámina](shots/cost-curve-sheet.webp)
+
+**Colocar en lámina** pone la curva en una lámina nueva, dibujada en vectores con su leyenda. **Tabla mensual en lámina** coloca la tabla mensual, que es también el formulario **Coste por mes** de la lista del presupuesto: los capítulos mes a mes, luego los costes directos, los totales sin IVA y con IVA (repartidos en proporción), los costes acumulados y, con avance, el trabajo hecho. Cada fila suma el total del presupuesto. **XLSX** guarda la curva día a día, la tabla mensual y los costes de las tareas en un libro; **PDF** guarda la curva y la tabla mensual.
+
+**Gestionar → Versiones → Comparar** dice, junto a los elementos y el programa, qué cambió en el presupuesto: el total con IVA, los costes directos y la diferencia, cada capítulo cuyo coste cambió, y las partidas añadidas, quitadas o cambiadas (su cantidad y su valor).
+
+Las certificaciones mensuales (*situații de lucrări*), el valor ganado y varias líneas base son de la edición premium.
+
 ## IFC
 
 **Archivo → Exportar IFC…** escribe el presupuesto como un **IfcCostSchedule**: sus capítulos y líneas como **IfcCostItem**, la cantidad de cada línea y sus precios unitarios como cuatro **IfcCostValue** (Material, Mano de obra, Maquinaria, Transporte), los elementos que mide cada línea asignados a ella (**IfcRelAssignsToControl**), la moneda como la **IfcMonetaryUnit** del proyecto. Importado, un presupuesto conserva las líneas como las tiene el archivo, con los mismos totales. Marca **Líneas del modelo** para añadir las líneas que da tu modelo.
+
+Con un programa de obra, cada partida se asigna también a las tareas en que se ejecuta (**IfcRelAssignsToControl** hacia sus **IfcTask**). Importadas, las partidas conservan sus tareas, así que la curva S vuelve igual.

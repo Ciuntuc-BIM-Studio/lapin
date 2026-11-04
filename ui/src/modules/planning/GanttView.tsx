@@ -19,7 +19,7 @@ import { select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { useLang } from '../../i18n';
 import {
-  arrowPoints, barOf, baselineBarOf, dateOf, dayOf, doneBar, dragDays, endAt, fitScale, isLate, linkLabel, linkType, MAX_PX, MIN_PX, movedFinish, movedStart, namesOf, parseDate, parsePercent, percentText, varianceText,
+  arrowPoints, barOf, costText, baselineBarOf, dateOf, dayOf, doneBar, dragDays, endAt, fitScale, isLate, linkLabel, linkType, MAX_PX, MIN_PX, movedFinish, movedStart, namesOf, parseDate, parsePercent, percentText, varianceText,
   rowWindow, showDate, span, ticks, tierOf, today, visibleRows, workingDaysBetween, workingTest, ZOOMS, type Bar, type LinkDto, type LinkType, type TaskDto, type Zoom,
 } from './gantt';
 import { addTask, assignTo, deleteSelected, indent, linkSelected, outdent, selectUnlinked, showTaskElements, unlinkSelected, useSchedule } from './schedule';
@@ -40,12 +40,13 @@ const COLUMNS = [
   { key: 'float', label: 'Float', w: 46 },
   { key: 'elements', label: 'Elements', w: 70 },
   { key: 'variance', label: 'Variance', w: 58 },
+  { key: 'cost', label: 'Cost', w: 72 },
 ] as const;
 type Column = (typeof COLUMNS)[number]['key'];
-/** The columns shown: the variance only with a baseline saved. */
-const columnsOf = (baseline: boolean) => COLUMNS.filter((c) => baseline || c.key !== 'variance');
+/** The columns shown: the variance only with a baseline saved, the cost only with an estimate (stage 7). */
+const columnsOf = (baseline: boolean, cost: boolean) => COLUMNS.filter((c) => (baseline || c.key !== 'variance') && (cost || c.key !== 'cost'));
 /** The columns that leave the bars room in a narrow pane: the least needed go first while the table takes more than 60 % of the width. */
-const DROP: Column[] = ['elements', 'predecessors', 'float', 'wbs'];
+const DROP: Column[] = ['elements', 'predecessors', 'float', 'wbs', 'variance', 'cost'];
 function fitColumns(cols: (typeof COLUMNS)[number][], width: number): (typeof COLUMNS)[number][] {
   let o = cols;
   for (const k of DROP) {
@@ -112,7 +113,7 @@ export function GanttView() {
   }, []);
 
   const rows = useMemo(() => visibleRows(data?.tasks ?? [], collapsed), [data, collapsed]);
-  const columns = useMemo(() => fitColumns(columnsOf(!!data?.baseline), size.w), [data?.baseline, size.w]);
+  const columns = useMemo(() => fitColumns(columnsOf(!!data?.baseline, !!data?.cost), size.w), [data?.baseline, data?.cost, size.w]);
   const TABLE_W = columns.reduce((s, c) => s + c.w, 0);
   const rowOf = useMemo(() => new Map(rows.map((t, i) => [t.id, i])), [rows]);
   const range = useMemo(() => (data ? span(data) : { from: today() - 7, to: today() + 90 }), [data]);
@@ -308,6 +309,7 @@ export function GanttView() {
       case 'elements': return t.count ? String(t.count) : '';
       case 'complete': return percentText(t.complete);
       case 'variance': return varianceText(t.finishVariance);
+      case 'cost': return costText(t.cost);
       default: return t.summary ? '' : `${t.totalFloat} d`;
     }
   };
@@ -373,6 +375,7 @@ export function GanttView() {
           {data.baseline && (data.baseline.late > 0
             ? <span className="error-text" data-testid="gantt-late">{`${data.baseline.late} tasks late · finish ${varianceText(data.baseline.finishVariance)}`}</span>
             : <span className="muted" data-testid="gantt-late">{`on the baseline · finish ${varianceText(data.baseline.finishVariance)}`}</span>)}
+          {data.cost && <span data-testid="gantt-cost" title="The estimate on the schedule: its direct costs, and each task's cost times how much of it is done"><span>Budget</span><span data-no-i18n>{` ${costText(data.cost.budget)} ${data.cost.currency} · `}</span><span>to date</span><span data-no-i18n>{` ${costText(data.cost.toDate) || '0'}`}</span></span>}
           {data.problem && <span className="error-text">{data.problem}</span>}
           {data.tasks.some((t) => t.count > 0) && (data.elements.none > 0 || data.elements.partial > 0
             ? <button type="button" className="link cde-warn" onClick={() => void selectUnlinked()} title="Select them, to drag them onto a task" data-testid="gantt-unlinked">{`${data.elements.none + data.elements.partial} of ${data.elements.total} elements without a task`}</button>

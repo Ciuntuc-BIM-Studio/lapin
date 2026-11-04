@@ -111,6 +111,7 @@ public sealed class CostModule : ILapinModule
         ["m"] = l.M, ["l"] = l.L, ["e"] = l.E, ["t"] = l.T, ["unitPrice"] = l.UnitPrice, ["value"] = l.Value,
         ["other"] = Money.Round(s.InOther(l.Value)), ["hours"] = l.Hours, ["manual"] = l.Manual, ["priced"] = l.Priced,
         ["elements"] = new JsonArray(l.Elements.Select(x => (JsonNode)x).ToArray()),
+        ["tasks"] = l.Tasks.Count > 0 ? new JsonArray(l.Tasks.Select(x => (JsonNode)x).ToArray()) : null,
     };
 
     public static JsonObject EstimateJson(IQueryContext q, EstimateResult r)
@@ -145,9 +146,19 @@ public sealed class CostModule : ILapinModule
         };
     }
 
-    static List<string> FormsArg(JsonObject a)
+    /// <summary>The tasks a line of the user's is done in, checked: the project's IfcTasks.</summary>
+    static List<string> TasksArg(IModelView m, JsonNode? n)
+    {
+        var ids = n is JsonArray arr ? arr.Select(x => (string?)x).OfType<string>().Distinct().ToList() : [];
+        foreach (var id in ids) if (m.Get(id)?.Class != "IfcTask") throw new CommandException("A line is done in tasks of the work schedule.");
+        return ids;
+    }
+
+    static List<string> FormsArg(IQueryContext q, JsonObject a)
     {
         var all = CostForms.All.Select(f => f.Id).ToList();
+        // All of them: the month table only when there is a schedule to lay the estimate on.
+        if (a["forms"] is null && a["form"] is null && q.Services.Get<IWorkSchedules>()?.Times(q) == null) all.Remove("monthly");
         if (a["forms"] is JsonArray fs) return fs.Select(x => (string?)x).OfType<string>().Where(all.Contains).ToList() is { Count: > 0 } l ? l : all;
         return (string?)a["form"] is { } one && all.Contains(one) ? [one] : all;
     }
@@ -159,6 +170,10 @@ public sealed class CostModule : ILapinModule
         r.Class(new(ArticleRule.Class, "Article rule", [], "#7a6a3a", Kind: "resource"));
         r.Service<IIfcControls>(new CostIfc());
         foreach (var (id, label) in CostForms.All) r.Service<IScheduleSource>(new CostSchedule(id, label));
+        // Cost over time (stage 7): the tasks' costs for the Gantt, the S-curve on sheets, the estimates of two versions compared.
+        r.Service<IScheduleCosts>(new ScheduleCostsOf());
+        r.Service<ISheetContent>(new CostCurveSheet());
+        r.Service<IVersionCompare>(new CostCompare());
         r.Catalog("forms", new JsonArray(CostForms.All.Select(f => (JsonNode)new JsonObject { ["id"] = f.Id, ["label"] = f.Label }).ToArray()));
 
         // ---------------------------------------------------------------- price lists
@@ -315,6 +330,7 @@ public sealed class CostModule : ILapinModule
             var id = ctx.NewId();
             var o = new JsonObject { ["id"] = id, ["chapter"] = ((string?)a["chapter"])?.Trim() is { Length: > 0 } c ? c : "Other", ["code"] = (string?)a["code"] ?? "", ["name"] = (string?)a["name"] ?? "New line", ["unit"] = (string?)a["unit"] ?? "pcs", ["qty"] = Json.Number(a["qty"]) ?? 1 };
             foreach (var k in new[] { "m", "l", "e", "t", "hours" }) if (Json.Number(a[k]) is { } v) o[k] = v;
+            if (TasksArg(ctx.Model, a["tasks"]) is { Count: > 0 } tasks) o["tasks"] = new JsonArray(tasks.Select(x => (JsonNode)x).ToArray());
             lines.Add((JsonNode)o);
             attrs["lines"] = lines;
             ctx.Replace(e.With(attrs: attrs));
@@ -333,6 +349,11 @@ public sealed class CostModule : ILapinModule
                     if (a[k] is null) line.Remove(k);
                     else line[k] = Json.Number(a[k]) is { } v && double.IsFinite(v) ? v : throw new CommandException($"„{k}” is a number.");
                 }
+            if (a.ContainsKey("tasks"))
+            {
+                var tasks = TasksArg(ctx.Model, a["tasks"]);
+                if (tasks.Count > 0) line["tasks"] = new JsonArray(tasks.Select(x => (JsonNode)x).ToArray()); else line.Remove("tasks");
+            }
             ctx.Replace(e.With(attrs: attrs));
             return null;
         });
@@ -373,14 +394,51 @@ public sealed class CostModule : ILapinModule
         {
             var e = EstimateArg(q.Model, a);
             var res = Costing.Compute(q, e);
-            return Convert.ToBase64String(CostForms.Xlsx(FormsArg(a).Select(f => CostForms.Make(q, res, f, raw: true)).ToList()));
+            return Convert.ToBase64String(CostForms.Xlsx(FormsArg(q, a).Select(f => CostForms.Make(q, res, f, raw: true)).ToList()));
+        });
+
+        // ---------------------------------------------------------------- cost over time (stage 7)
+
+        // The S-curve and the months: planned, the baseline's, the work done; the tasks' costs. Null with why when there is no estimate or schedule.
+        r.Query("overTime", (q, a) =>
+        {
+            var (o, why) = CostOverTime.For(q, (string?)a["id"]);
+            return o?.ToJson() ?? new JsonObject { ["why"] = why };
+        });
+
+        r.Query("overTimeXlsx", (q, a) =>
+        {
+            var (o, why) = CostOverTime.For(q, (string?)a["id"]);
+            return Convert.ToBase64String(CostTimeOutputs.Xlsx(q, o ?? throw new CommandException(why!)));
+        });
+
+        r.Query("overTimePdf", (q, a) =>
+        {
+            var (o, why) = CostOverTime.For(q, (string?)a["id"]);
+            return Convert.ToBase64String(CostTimeOutputs.Pdf(q, o ?? throw new CommandException(why!)));
+        });
+
+        // The S-curve on a new sheet (A3 landscape unless asked): the estimate is the sheet's content.
+        r.Command("curveSheet", "S-curve on sheet", (ctx, a) =>
+        {
+            var e = EstimateArg(ctx.Model, a);
+            var (o, why) = CostOverTime.For(ctx.Query, e.Id);
+            if (o == null) throw new CommandException(why!);
+            var paper = (string?)a["paper"] ?? "A3";
+            var portrait = (string?)a["orientation"] == "portrait";
+            if (!Sheets.Papers.TryGetValue(paper, out var size)) throw new CommandException("A sheet is A0, A1, A2, A3 or A4.");
+            var (pw, ph) = portrait ? (size.H, size.W) : (size.W, size.H);
+            var (fw, fh) = (pw - 2 * Sheets.Margin - 4, ph - 2 * Sheets.Margin - Sheets.TitleBlock.H - 4);
+            var (w, h, _) = new CostCurveSheet().Pages(ctx.Query, e, fw, fh)[0];
+            var sheet = Sheets.AddSheet(ctx, $"S-curve · {e.Name}", paper, portrait, [(e.Id, Sheets.Margin + 4 + w / 2, Sheets.Margin + 4 + h / 2, 1)]);
+            return new JsonObject { ["sheetId"] = sheet.Id };
         });
 
         r.Query("pdf", (q, a) =>
         {
             var e = EstimateArg(q.Model, a);
             var res = Costing.Compute(q, e);
-            return Convert.ToBase64String(CostForms.Pdf(FormsArg(a).Select(f => CostForms.Make(q, res, f)).ToList()));
+            return Convert.ToBase64String(CostForms.Pdf(FormsArg(q, a).Select(f => CostForms.Make(q, res, f)).ToList()));
         });
     }
 }

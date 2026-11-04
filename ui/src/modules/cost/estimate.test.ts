@@ -62,8 +62,8 @@ describe('the estimate as shown', () => {
     expect(parseRate('ten')).toBeNull();
   });
 
-  it('offers the estimate and the six Romanian forms, the estimate first', () => {
-    expect(FORMS.map((f) => f.id)).toEqual(['estimate', 'f3', 'object', 'c6', 'c7', 'c8', 'c9']);
+  it('offers the estimate and the six Romanian forms, the estimate first, then the cost per month (stage 7)', () => {
+    expect(FORMS.map((f) => f.id)).toEqual(['estimate', 'f3', 'object', 'c6', 'c7', 'c8', 'c9', 'monthly']);
   });
 });
 

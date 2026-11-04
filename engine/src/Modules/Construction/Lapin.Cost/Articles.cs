@@ -123,16 +123,18 @@ public sealed record ArticleRule(string Id, string? Material, string? Category, 
 public static class Parts
 {
     public const string Core = "core", Finishes = "finishes", LayerPrefix = "layer:", MaterialPrefix = "material:", CategoryPrefix = "category:";
+    /// <summary>An article on the element's demolition: the whole element, priced only when it is demolished (stage 7, the phases).</summary>
+    public const string Demolition = "demolition";
 
     /// <summary>A part as a command gives it, checked; null for the whole element.</summary>
     public static string? Parse(string? s)
     {
         s = s?.Trim();
         if (string.IsNullOrEmpty(s) || s == "all") return null;
-        if (s is Core or Finishes) return s;
+        if (s is Core or Finishes or Demolition) return s;
         foreach (var p in new[] { LayerPrefix, MaterialPrefix, CategoryPrefix })
             if (s.StartsWith(p, StringComparison.Ordinal) && s.Length > p.Length) return s;
-        throw new CommandException("An article measures the whole element, its core, its finishes, a layer (layer:0), a material (material:<id>) or a category of material (category:Finish).");
+        throw new CommandException("An article measures the whole element, its core, its finishes, a layer (layer:0), a material (material:<id>), a category of material (category:Finish) or its demolition.");
     }
 
     /// <summary>Whether a material is of a category: its own, else (for Finish) one by its name, as view styles tell finishes.</summary>

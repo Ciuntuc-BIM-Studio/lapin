@@ -11,7 +11,7 @@ import { Trash2 } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute } from '../../engine/session';
 import { select } from '../../app/store';
-import { linkLabel, parsePercent, percentText, showDate, varianceText, type LinkType, type TaskDto } from './gantt';
+import { costText, linkLabel, parsePercent, percentText, showDate, varianceText, type LinkType, type TaskDto } from './gantt';
 import { openGantt, taskOf, useSchedule } from './schedule';
 import { quantityText } from './generator';
 
@@ -58,6 +58,10 @@ export function TaskSection({ node }: { node: NodeDto }) {
       <dt>Start</dt><dd>{showDate(t.start)}</dd>
       <dt data-i18n-ctx="schedule">Finish</dt><dd>{showDate(t.finish)}</dd>
       <TaskProgress t={t} />
+      {t.cost != null && <>
+        <dt title="From the estimate: its elements' share of the lines that price them (direct costs)" data-i18n-ctx="schedule">Cost</dt>
+        <dd data-testid="task-cost"><span data-no-i18n>{costText(t.cost) || '0'}</span>{t.costDone ? <><span data-no-i18n>{` · ${costText(t.costDone)} `}</span><span className="muted small">to date</span></> : null}</dd>
+      </>}
       {!t.summary && <>
         <dt title="What holds the start, besides the links">Constraint</dt>
         <dd>

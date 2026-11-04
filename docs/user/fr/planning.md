@@ -262,6 +262,12 @@ Avec une planification initiale, la simulation compare : un élément non constr
 - **IFC** les écrit dans l’IfcTaskTime de chaque tâche (l’heure d’état, le début et la fin réels, le temps restant, le degré d’achèvement), et la planification initiale comme un second IfcWorkSchedule de type BASELINE ; les champs propres à Lapin (le pourcentage saisi, les marques) vont dans `Lapin_Task`. Les deux reviennent aux mêmes dates.
 - **Gérer → Versions → Comparer** dit, à côté des éléments, ce qui a changé dans le planning : la fin, les jours ouvrés, la date d’état, et les tâches ajoutées, supprimées, déplacées (de combien de jours ouvrés), dont la durée ou l’avancement a changé.
 
+## Le coût des tâches
+
+![Le Gantt avec la colonne Coût](shots/planning-cost.webp)
+
+Avec un devis (**Coûts → Devis…**), le Gantt reçoit une colonne **Coût** : la part du devis de chaque tâche, d'après les lignes qui chiffrent ses éléments (celle d'un récapitulatif est celle de ses tâches). La barre d'outils montre le **budget** (les coûts directs du devis) et le coût **à date** (le coût de chaque tâche fois son % achevé) ; Propriétés montre le coût d'une tâche et la part réalisée. **Coûts → Coût dans le temps** dessine la courbe en S et le tableau mensuel (voir [Devis](cost.md)).
+
 ## Le calendrier
 
 ![Le calendrier de travail](shots/planning-calendar.webp)
@@ -285,4 +291,4 @@ Les champs propres à Lapin pour lesquels les autres programmes n'ont pas de pla
 
 ## La suite
 
-Le devis vient dans les étapes suivantes.
+Le coût dans le temps est dans [Devis](cost.md). Le nivellement des ressources, la valeur acquise, les situations de travaux mensuelles et plusieurs références et scénarios sont pour l'édition premium.

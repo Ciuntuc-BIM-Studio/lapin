@@ -9,10 +9,12 @@ public sealed record IfcCostValueData(string Category, double UnitValue);
 /// An IfcCostItem: its GlobalId, name, code (Identification), the item it is nested in (IfcRelNests; null at the top: a
 /// chapter, or an item of no chapter), its quantity (a value and its kind: VOLUME, AREA, LENGTH, COUNT, WEIGHT; none for a
 /// chapter), its unit rates by category, the elements it measures (IfcRelAssignsToControl, by id; GlobalIds in a file) and
-/// the module's own fields as a property set (the unit as the price list writes it). Siblings come in their order.
+/// the module's own fields as a property set (the unit as the price list writes it); the tasks its work is done in (stage 7:
+/// IfcRelAssignsToControl to IfcTasks, by id; GlobalIds in a file). Siblings come in their order.
 /// </summary>
 public sealed record IfcCostItemData(string Id, string Name, string? Identification, string? Parent, double? Quantity, string? QuantityKind,
-    IReadOnlyList<IfcCostValueData> Values, IReadOnlyList<string> Elements, string PropertySet, IReadOnlyList<(string Name, string Value)> Properties);
+    IReadOnlyList<IfcCostValueData> Values, IReadOnlyList<string> Elements, string PropertySet, IReadOnlyList<(string Name, string Value)> Properties,
+    IReadOnlyList<string>? Tasks = null);
 
 /// <summary>
 /// A cost schedule as IFC has it (docs/plan-4d5d.md, stage 6): the IfcCostSchedule (its GlobalId, name, PredefinedType

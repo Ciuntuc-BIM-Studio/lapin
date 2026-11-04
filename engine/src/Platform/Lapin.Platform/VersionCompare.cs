@@ -15,6 +15,10 @@ public sealed record VersionDiffSection(string Key, string Title, IReadOnlyList<
 public interface IVersionCompare
 {
     VersionDiffSection? Compare(IModelView a, IModelView b);
+    /// <summary>Whether it reads what the model measures (the estimate, stage 7 of docs/plan-4d5d.md): it is then given each state as a query.</summary>
+    bool Measures => false;
+    /// <summary>The two states as queries (each its quantities), for a comparison that <see cref="Measures"/>.</summary>
+    VersionDiffSection? Compare(IQueryContext a, IQueryContext b) => Compare(a.Model, b.Model);
 }
 
 /// <summary>A state of the model held as lists (a version read from the file), read like the model.</summary>

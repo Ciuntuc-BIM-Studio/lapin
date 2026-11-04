@@ -712,6 +712,110 @@ export const scenes = [
     },
   },
   {
+    // Cost over time (docs/plan-4d5d.md, stage 7): the estimate laid on the schedule with no linking of its own — each task's
+    // cost in the Gantt's Cost column, the budget and the cost to date in its toolbar; the S-curve (planned, the baseline's,
+    // the work done to the status date) over the months' bars and the month table; the curve placed on a sheet.
+    id: 'cost-time',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const csv = 'Cod articol;Denumire;U.M.;Material;Manoperă;Utilaj;Transport\n'
+        + 'ZID01;Zidărie din cărămidă 25 cm;mc;380,00;85,00;6,00;14,00\n'
+        + 'TEN01;Tencuială de var pe pereți;mp;18,00;22,00;1,00;1,00\n'
+        + 'BET01;Beton C25/30 în plăci;mc;410,00;95,00;22,00;18,00\n'
+        + 'FER01;Fereastră PVC montată;mp;650,00;80,00;2,00;10,00\n';
+      await t.cmd('cost.importPrices', { data: Buffer.from(csv, 'utf8').toString('base64'), name: 'Prețuri 2027.csv' });
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 250 plastered', layers: [
+        { material: 'Lime plaster', thickness: 0.02 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Lime plaster', thickness: 0.02 },
+      ] })).id;
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+      const walls = [];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: type })).id);
+      }
+      walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: 7, y1: 0, x2: 7, y2: 8, typeId: type })).id);
+      for (const [w, x, y] of [[0, 9.5, 0], [2, 3.5, 8], [2, 9.5, 8], [1, 12, 4]]) await t.cmd('architecture.addWindow', { wallId: walls[w], x, y });
+      await t.cmd('architecture.addSlab', { storeyId: s, points: outline });
+      const nodes = await t.nodes();
+      const typeOf = (cls) => nodes.find((n) => n.type === cls)?.id;
+      await t.cmd('cost.setArticles', { type, articles: [{ code: 'ZID01', part: 'core' }] });
+      await t.cmd('cost.setRule', { material: nodes.find((n) => n.type === 'IfcMaterial' && n.name === 'Lime plaster').id, code: 'TEN01' });
+      await t.cmd('cost.setArticles', { type: typeOf('IfcSlabType'), articles: [{ code: 'BET01', basis: 'volume' }] });
+      await t.cmd('cost.setArticles', { type: typeOf('IfcWindowType'), articles: [{ code: 'FER01', basis: 'area' }] });
+      await t.cmd('cost.createEstimate', { name: 'Estimate: House' });
+      // The schedule, as the Planning scenes make it; the baseline, then the site at the status date.
+      await t.cmd('planning.updateSchedule', { name: 'House', start: '2027-03-01' });
+      const add = async (name, duration, extra = {}) => {
+        const id = (await t.cmd('planning.addTask', { name, duration })).id;
+        if (Object.keys(extra).length) await t.cmd('planning.updateTask', { id, ...extra });
+        return id;
+      };
+      const slab = await add('Floor slab', 6, { rule: { classes: ['IfcSlab'] }, wet: true });
+      const masonry = await add('Masonry', 15, { rule: { classes: ['IfcWall'] }, part: 'core' });
+      const joinery = await add('Windows', 4, { rule: { classes: ['IfcWindow'] } });
+      const plaster = await add('Plaster', 12, { rule: { classes: ['IfcWall'] }, part: 'finishes', wet: true });
+      await t.cmd('planning.link', { from: slab, to: masonry });
+      await t.cmd('planning.link', { from: masonry, to: joinery });
+      await t.cmd('planning.link', { from: joinery, to: plaster });
+      await t.cmd('planning.saveBaseline', { date: '2027-02-26' });
+      await t.cmd('planning.setProgress', { id: slab, actualStart: '2027-03-01', actualFinish: '2027-03-10' });
+      await t.cmd('planning.setProgress', { id: masonry, actualStart: '2027-03-11', complete: 45 });
+      await t.cmd('planning.updateSchedule', { dataDate: '2027-03-26' });
+      // The Gantt: the Cost column, the budget and the cost to date.
+      await open3d(t);
+      await t.button('Planning', { exact: true });
+      await t.tool('planning.gantt');
+      await t.wait(1500);
+      const sched = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.schedule'));
+      const row = (id) => sched.tasks.find((x) => x.id === id);
+      t.expect(sched.cost && sched.cost.budget > 0 && Math.abs(sched.cost.scheduled - sched.cost.budget) < 0.01, 'every line of the estimate on a task');
+      t.expect(row(masonry).cost > 0 && row(plaster).cost > 0 && Math.abs(row(masonry).costDone - row(masonry).cost * 0.45) < 0.02, "the masonry's cost, 45 % of it done");
+      // The Gantt alone in the window, wide enough for its Cost column (a narrow pane drops it after the others).
+      await t.page.evaluate(async () => { const { useUi } = await import('/src/app/store.ts'); const p = useUi.getState().panes; useUi.setState({ panes: [p[1]], pane: 0 }); });
+      await t.wait(1000);
+      await t.page.evaluate(async () => { const { usePanels } = await import('/src/app/panels.ts'); usePanels.setState({ browserOpen: false }); });
+      await t.wait(800);
+      await t.page.locator('[data-testid=gantt-fit]').click();
+      await t.wait(800);
+      t.expect(await t.page.locator('.gantt-th.c-cost').count() === 1, 'the Gantt has the Cost column');
+      t.expect(await t.page.locator('[data-testid=gantt-cost]').count() === 1, 'the budget and the cost to date in the toolbar');
+      await t.ui({ selection: masonry, selected: [masonry] });
+      await t.wait(1200);
+      await t.shot('planning-cost');
+      await t.page.evaluate(async () => { const { usePanels } = await import('/src/app/panels.ts'); usePanels.setState({ browserOpen: true }); });
+      // Cost → Cost over time: the S-curve and the month table.
+      await t.ui({ selection: null, selected: [] });
+      await t.page.locator('button.tab', { hasText: /^Cost$/ }).first().click();
+      await t.wait(300);
+      await t.tool('cost.overTime');
+      await t.page.locator('[data-testid=cost-chart]').waitFor({ timeout: 10_000 });
+      await t.wait(800);
+      const ot = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('cost.overTime'));
+      t.expect(ot.planned.length > 20 && Math.abs(ot.planned[ot.planned.length - 1] - ot.budget) < 0.01, 'the planned curve ends at the budget');
+      t.expect(ot.baseline && ot.done.length > 0 && Math.abs(ot.toDate - sched.cost.toDate) < 0.01, 'the baseline and the work done to the status date');
+      t.expect(await t.page.locator('[data-testid=cost-curve-done]').count() === 1 && await t.page.locator('[data-testid=cost-curve-baseline]').count() === 1, 'the three curves drawn');
+      t.expect(await t.page.locator('[data-testid=cost-time-table] tbody tr').count() >= 4, 'the month table by chapter');
+      // The view alone in the window, to show it whole.
+      await t.page.evaluate(async () => { const { useUi } = await import('/src/app/store.ts'); const p = useUi.getState().panes; const i = p.findIndex((x) => x.view === 'costTime'); useUi.setState({ panes: [p[i]], pane: 0 }); });
+      await t.wait(1000);
+      await t.shot('cost-time', { of: '[data-testid=cost-time]', pad: 0 });
+      // The curve on a sheet, drawn by the engine.
+      await t.ui({ keyPlan: false });
+      await t.page.locator('[data-testid=cost-time-sheet]').click();
+      await t.wait(2500);
+      t.expect(await t.page.locator('[data-testid=sheet]').count() === 1, 'the sheet opens');
+      await t.fit();
+      const texts = await t.page.locator('[data-testid=sheet] text').allTextContents();
+      t.expect(texts.some((x) => x.startsWith('Cost over time')) && texts.includes('Planned, cumulative'), 'the sheet draws the curve with its legend');
+      const quiet = await t.page.addStyleTag({ content: '.hotbar, .hud-card { display: none !important }' });
+      await t.wait(300);
+      await t.shot('cost-curve-sheet', { of: '.view-pane:has([data-testid=sheet])', pad: 0 });
+      await quiet.evaluate((el) => el.remove());
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     id: 'wood',
     async run(t) {
       // The timber frame configurator (decision 239): the house's wall type made a timber frame, the sample wall framed, saved.
