@@ -9,12 +9,12 @@ summary: List doors, windows, lintels, rooms and anything a module counts; add r
 Everything Lapin models is measured from its geometry: a wall's length, height, gross and net side area and volume, each layer's area and volume, a floor's areas and volume, a room's area and perimeter, a door's count. There are three ways to get the numbers:
 
 - **One element.** Select it: the **Quantities** section of the Properties panel lists what it measures, then each of its layers or parts.
-- **The whole model.** **Quantities → Quantity takeoff** makes (or opens) the takeoff: every element the model measures, added up row by row, with the count, length, gross and net area, gross and net volume and weight. Its toolbar chooses what is added up together: **By kind and type** (the default: the walls of each wall type, the floors of each floor type…), **By material** (each layer under its own material: the brick, the plaster and the insulation of the walls apart, the lintels' concrete), by storey, or a mix of them. **All elements** chooses which kinds it lists (only walls and floors, say). The takeoff follows the model like any schedule, and takes rows and columns of your own (a provision, a unit price).
-- **Any other list.** **Quantities → Schedules…** makes any schedule this edition offers: rooms, room finishes, joinery, type assemblies, timber, rebar, formwork, steel… The same list is under **+** beside **Schedules** in the project browser.
+- **The whole model.** **Cost → Quantity takeoff** makes (or opens) the takeoff: every element the model measures, added up row by row, with the count, length, gross and net area, gross and net volume and weight. Its toolbar chooses what is added up together: **By kind and type** (the default: the walls of each wall type, the floors of each floor type…), **By material** (each layer under its own material: the brick, the plaster and the insulation of the walls apart, the lintels' concrete), by storey, or a mix of them. **All elements** chooses which kinds it lists (only walls and floors, say). The takeoff follows the model like any schedule, and takes rows and columns of your own (a provision, a unit price).
+- **Any other list.** **Cost → Schedules…** makes any schedule this edition offers: rooms, room finishes, joinery, type assemblies, timber, rebar, formwork, steel… The same list is under **+** beside **Schedules** in the project browser.
 
 ![The quantity takeoff grouped by kind and material](shots/quantity-takeoff.webp)
 
-**Quantities → Export XLSX** saves the takeoff as a workbook straight away (downloaded in a browser).
+**Cost → Export XLSX** saves the takeoff as a workbook straight away (downloaded in a browser).
 
 ## Quantities on a sheet
 
@@ -88,7 +88,7 @@ The drawings **On each card** (interior view, exterior view, plan, section), in 
 
 ## Wall sweeps
 
-The **Wall sweeps** schedule (**Architecture → Wall sweeps schedule**, or **Quantities → Schedules…** → **Wall sweeps**) adds up the project's wall sweeps and reveals by profile, kind and material: how many there are, their pieces (a sweep the openings cut is several), their length along the faces and their volume; for a reveal, the volume it takes out of the wall. A total for the sweeps and one for the reveals close the table. Its toolbar adds them up **by profile**, **by storey** or **by wall type** first. Returns count in the volume, not in the length.
+The **Wall sweeps** schedule (**Architecture → Wall sweeps schedule**, or **Cost → Schedules…** → **Wall sweeps**) adds up the project's wall sweeps and reveals by profile, kind and material: how many there are, their pieces (a sweep the openings cut is several), their length along the faces and their volume; for a reveal, the volume it takes out of the wall. A total for the sweeps and one for the reveals close the table. Its toolbar adds them up **by profile**, **by storey** or **by wall type** first. Returns count in the volume, not in the length.
 
 ## Exporting
 

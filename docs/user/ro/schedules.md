@@ -9,12 +9,12 @@ summary: Listezi uși, ferestre, buiandrugi, încăperi și tot ce numără un m
 Tot ce modelează Lapin e măsurat din geometrie: lungimea, înălțimea, aria laterală brută și netă și volumul unui perete, aria și volumul fiecărui strat, ariile și volumul unei plăci, aria și perimetrul unei încăperi, numărul ușilor. Ai trei căi:
 
 - **Un singur element.** Selectează-l: secțiunea **Cantități** din panoul Proprietăți arată ce măsoară, apoi fiecare strat sau parte a lui.
-- **Tot modelul.** **Cantități → Antemăsurătoare** face (sau deschide) antemăsurătoarea: toate elementele pe care le măsoară modelul, adunate rând cu rând, cu numărul, lungimea, aria brută și netă, volumul brut și net și masa. Bara ei alege ce se adună la un loc: **Pe tip de element și tip** (implicit: pereții fiecărui tip de perete, plăcile fiecărui tip de placă…), **Pe material** (fiecare strat la materialul lui: cărămida, tencuiala și izolația pereților separat, betonul buiandrugilor), pe nivel sau combinate. **Toate elementele** alege ce tipuri de elemente listează (doar pereți și plăci, de exemplu). Antemăsurătoarea urmează modelul ca orice extras și primește rânduri și coloane proprii (o rezervă, un preț unitar).
-- **Orice altă listă.** **Cantități → Extrase…** face orice extras oferă ediția: încăperi, finisaje, tâmplărie, alcătuiri de tipuri, lemn, armături, cofraje, oțel… Aceeași listă e la **+** lângă **Extrase** în navigatorul proiectului.
+- **Tot modelul.** **Cost → Antemăsurătoare** face (sau deschide) antemăsurătoarea: toate elementele pe care le măsoară modelul, adunate rând cu rând, cu numărul, lungimea, aria brută și netă, volumul brut și net și masa. Bara ei alege ce se adună la un loc: **Pe tip de element și tip** (implicit: pereții fiecărui tip de perete, plăcile fiecărui tip de placă…), **Pe material** (fiecare strat la materialul lui: cărămida, tencuiala și izolația pereților separat, betonul buiandrugilor), pe nivel sau combinate. **Toate elementele** alege ce tipuri de elemente listează (doar pereți și plăci, de exemplu). Antemăsurătoarea urmează modelul ca orice extras și primește rânduri și coloane proprii (o rezervă, un preț unitar).
+- **Orice altă listă.** **Cost → Extrase…** face orice extras oferă ediția: încăperi, finisaje, tâmplărie, alcătuiri de tipuri, lemn, armături, cofraje, oțel… Aceeași listă e la **+** lângă **Extrase** în navigatorul proiectului.
 
 ![Antemăsurătoarea grupată pe tip de element și material](shots/quantity-takeoff.webp)
 
-**Cantități → Export XLSX** salvează direct antemăsurătoarea ca registru de calcul (în browser se descarcă).
+**Cost → Export XLSX** salvează direct antemăsurătoarea ca registru de calcul (în browser se descarcă).
 
 ## Cantitățile pe planșă
 
@@ -88,7 +88,7 @@ Desenele **Pe fiecare fișă** (vedere din interior, vedere din exterior, plan, 
 
 ## Profile de perete
 
-Extrasul **Profile de perete** (**Arhitectură → Extras de profile de perete**, sau **Cantități → Extrase…** → **Profile de perete**) adună profilele și canalele din pereții proiectului pe profil, fel și material: câte sunt, bucățile lor (un profil tăiat de goluri e mai multe), lungimea de-a lungul fețelor și volumul; la un canal, volumul scos din perete. Un total pentru profile și unul pentru canale încheie tabelul. Bara lui le adună întâi **pe profil**, **pe nivel** sau **pe tip de perete**. Întoarcerile intră în volum, nu în lungime.
+Extrasul **Profile de perete** (**Arhitectură → Extras de profile de perete**, sau **Cost → Extrase…** → **Profile de perete**) adună profilele și canalele din pereții proiectului pe profil, fel și material: câte sunt, bucățile lor (un profil tăiat de goluri e mai multe), lungimea de-a lungul fețelor și volumul; la un canal, volumul scos din perete. Un total pentru profile și unul pentru canale încheie tabelul. Bara lui le adună întâi **pe profil**, **pe nivel** sau **pe tip de perete**. Întoarcerile intră în volum, nu în lungime.
 
 ## Exportul
 

@@ -152,6 +152,9 @@ describe('the languages', () => {
     '41.7 % done',
     '2 tasks late · finish +2 d',
     'on the baseline · finish 0 d',
+    '12 line(s)',
+    '3 type(s) unpriced, 7 element(s)',
+    'Price list imported: 15 article(s), 2 row(s) skipped.',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 
@@ -224,6 +227,7 @@ describe('labels the guide found in English', () => {
     'Generate schedule…', 'Sequence', 'Durations', 'Productivity norms', 'Import norms…', "Use Lapin's indicative values", 'Elements linked', 'Durations from norms',
     'Kept as edited', 'Concrete frame', 'Load-bearing masonry', 'Steel hall', 'Site set-up', 'Struck after (working days)',
     'Simulate', '4D simulation', 'Stages sheet…', 'Gantt on sheet', 'Export video…', 'State at date', 'Under way', 'Being demolished', 'Formwork and scaffolding',
+    'Cost', 'Price lists…', 'Map articles…', 'Estimate…', 'Import…', 'Use the indicative values', 'Bill of quantities (F3)', 'Object estimate (F2)', 'Place on sheet', 'Total with VAT',
   ];
   for (const lang of langs) {
     it(`are translated into ${lang}`, () => {
@@ -260,6 +264,10 @@ describe('a word with two meanings', () => {
     // A date range's To (until) is not a move's To (towards).
     expect(translate('To', 'ro', 'period')).toBe('Până la');
     expect(translate('To', 'ro')).toBe('Către');
+    // The estimate's row number (No.) is not a count of pieces; its measure is not the Measure tool.
+    expect(translate('No.', 'ro', 'row')).toBe('Nr.');
+    expect(translate('Measure', 'ro', 'cost')).toBe('Măsura');
+    expect(translate('Measure', 'ro')).toBe('Măsoară');
     // A context with no phrase of its own falls back to the common one.
     expect(translate('Wall', 'es', 'session')).toBe('Muro');
   });

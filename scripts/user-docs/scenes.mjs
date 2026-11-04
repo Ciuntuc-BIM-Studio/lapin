@@ -588,13 +588,13 @@ export const scenes = [
   {
     id: 'quantities',
     async run(t) {
-      // Getting quantities (decision 287, the tester's report #75): Quantities → Quantity takeoff, grouped by kind and
+      // Getting quantities (decision 287, the tester's report #75): Cost → Quantity takeoff, grouped by kind and
       // material, then placed on a new sheet, its table drawn there with its numbers.
       await t.fresh();
       const { storey } = await house(t, { roof: false });
       await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4 });
       await t.ui({ keyPlan: false });
-      await t.page.locator('button.tab', { hasText: /^Quantities$/ }).first().click();
+      await t.page.locator('button.tab', { hasText: /^Cost$/ }).first().click();
       await t.wait(300);
       await t.page.locator('.band button', { hasText: 'Quantity takeoff' }).first().click();
       await t.wait(1500);
@@ -614,6 +614,100 @@ export const scenes = [
       const texts = await t.page.locator('[data-testid=sheet] text').allTextContents();
       t.expect(texts.includes('Quantity takeoff') && texts.includes('Wall') && texts.filter((x) => /^\d+\.\d{2,3}$/.test(x)).length > 10, 'the sheet draws the table with its numbers (report #75)');
       await t.shot('takeoff-sheet', { of: '.view-pane:has([data-testid=sheet])', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // The estimate (docs/plan-4d5d.md, stage 6): a price list imported from a Romanian CSV (its columns guessed from the
+    // headings), Map articles suggesting the walls' article by its words and the plaster's by its material, the estimate
+    // under the view with a wall line selecting its walls, the F3 form of the same estimate.
+    id: 'cost-estimate',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Zidărie cărămidă 25 tencuită', layers: [
+        { material: 'Tencuială de var', thickness: 0.02 }, { material: 'Cărămidă', thickness: 0.25, core: true }, { material: 'Tencuială de var', thickness: 0.02 },
+      ] })).id;
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+      const walls = [];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: type })).id);
+      }
+      walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: 7, y1: 0, x2: 7, y2: 8, typeId: type })).id);
+      await t.cmd('architecture.addDoor', { wallId: walls[4], x: 7, y: 4 });
+      for (const [w, x, y] of [[0, 9.5, 0], [2, 3.5, 8], [2, 9.5, 8], [1, 12, 4]]) await t.cmd('architecture.addWindow', { wallId: walls[w], x, y });
+      await t.cmd('architecture.addSlab', { storeyId: s, points: outline });
+      await t.ui({ keyPlan: false });
+      await t.page.locator('button.tab', { hasText: /^Cost$/ }).first().click();
+      await t.wait(400);
+      await t.shot('ribbon-cost', { of: '.topbar', pad: 0 });
+      // Cost → Price lists… → Import…: a CSV as an estimating program writes it, Romanian headings, decimal commas.
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const { writeFileSync } = await import('node:fs');
+      const csv = join(tmpdir(), 'Preturi-2026.csv');
+      writeFileSync(csv, '\uFEFFCod articol;Denumire;U.M.;Material;Manoperă;Utilaj;Transport;Normă de timp;Meserie\n'
+        + 'ZID01;Zidărie din cărămidă 25 cm;mc;380,00;85,00;6,00;14,00;4;Zidar\n'
+        + 'TEN01;Tencuială de var pe pereți;mp;18,00;22,00;1,00;1,00;0,5;Tencuitor\n'
+        + 'BET01;Beton C25/30 în plăci;mc;410,00;95,00;22,00;18,00;6;Betonist\n'
+        + 'USA01;Ușă interioară montată;buc;900,00;120,00;0;15,00;3;Tâmplar\n'
+        + 'FER01;Fereastră PVC montată;mp;650,00;80,00;2,00;10,00;1,5;Tâmplar\n');
+      await t.tool('cost.prices');
+      await t.page.evaluate(() => { delete window.showOpenFilePicker; });
+      const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
+      await t.page.locator('[data-testid=price-import]').click();
+      await (await chooser).setFiles(csv);
+      await t.page.locator('[data-testid=price-matching]').waitFor({ timeout: 10_000 });
+      const guessed = await t.page.locator('[data-testid^=price-column-]').evaluateAll((els) => els.map((e) => e.value));
+      t.expect(guessed.join(',') === 'code,name,unit,material,labour,equipment,transport,hours,trade', `the columns guessed from the Romanian headings (${guessed.join(',')})`);
+      await t.shot('price-import', { of: '[data-testid=price-lists-dialog]', pad: 0 });
+      await t.page.locator('[data-testid=price-import-go]').click();
+      await t.wait(800);
+      t.expect((await t.nodes()).some((n) => n.type === 'LapinPriceList'), 'the list is in the project');
+      await t.ui({ dialog: null });
+      // Cost → Map articles…: the walls' type suggested ZID01 on its core, the plaster TEN01 by its material.
+      await t.tool('cost.map');
+      await t.page.locator('[data-testid=map-types]').waitFor({ timeout: 10_000 });
+      await t.wait(800);
+      const typeCode = await t.page.locator(`[data-testid=map-types] tr[data-type="${type}"] [data-testid=map-code]`).inputValue();
+      t.expect(typeCode === 'ZID01', `the walls' article suggested by its words (${typeCode})`);
+      const plaster = (await t.nodes()).find((n) => n.type === 'IfcMaterial' && n.name === 'Tencuială de var').id;
+      t.expect(await t.page.locator(`[data-testid=map-materials] tr[data-material="${plaster}"] [data-testid=map-code]`).inputValue() === 'TEN01', 'the plaster suggested by its material');
+      await t.page.locator(`[data-testid=map-materials] tr[data-material="${plaster}"] input[type=checkbox]`).check();
+      await t.shot('map-articles', { of: '[data-testid=map-articles]', pad: 0 });
+      await t.page.locator('[data-testid=map-apply]').click();
+      await t.wait(800);
+      // The floor, the door and the windows by their types; a line of one's own for the site fence.
+      const nodes = await t.nodes();
+      const typeOf = (cls) => nodes.find((n) => n.type === cls)?.id;
+      await t.cmd('cost.setArticles', { type: typeOf('IfcSlabType'), articles: [{ code: 'BET01', basis: 'volume' }] });
+      await t.cmd('cost.setArticles', { type: typeOf('IfcDoorType'), articles: [{ code: 'USA01' }] });
+      await t.cmd('cost.setArticles', { type: typeOf('IfcWindowType'), articles: [{ code: 'FER01', basis: 'area' }] });
+      // Cost → Estimate…: under the plan, a wall line clicked selecting its walls.
+      await t.tool('cost.estimate');
+      await t.wait(1500);
+      await t.cmd('cost.addLine', { chapter: 'Site works', name: 'Împrejmuire șantier', unit: 'm', qty: 40, m: 25, l: 10 });
+      await t.wait(1200);
+      const est = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('cost.estimate'));
+      const codes = est.chapters.flatMap((c) => c.lines.map((l) => l.code));
+      t.expect(['ZID01', 'TEN01', 'BET01', 'USA01', 'FER01'].every((c) => codes.includes(c)), `every article priced (${codes.join(', ')})`);
+      t.expect(est.chapters.find((c) => c.name === 'Walls')?.lines.length === 1 && est.chapters.find((c) => c.name === 'Finishes and insulation'), 'the walls priced layer by layer: masonry under Walls, plaster under Finishes');
+      t.expect(est.totals.total > est.totals.net && est.totals.net > est.totals.direct, 'overheads, profit and VAT over the direct costs');
+      await t.page.locator('[data-testid=estimate-line][data-code=ZID01]').click();
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-testid=estimate-line].holds').count() >= 1, 'the line of the walls selected marked');
+      await t.shot('estimate');
+      // The F3 form of the same estimate.
+      await t.page.locator('[data-testid=estimate-form-pick]').selectOption('f3');
+      await t.wait(1200);
+      const f3 = await t.page.locator('[data-testid=estimate-form] td').allTextContents();
+      t.expect(f3.includes('TOTAL cu TVA') && f3.some((x) => x.startsWith('Capitolul')), 'the F3 lists the chapters and its totals');
+      // The estimate alone in the window, to show the form whole.
+      await t.page.evaluate(async () => { const { useUi } = await import('/src/app/store.ts'); const p = useUi.getState().panes; useUi.setState({ panes: [p[1]], pane: 0 }); });
+      await t.wait(1000);
+      await t.shot('estimate-f3', { of: '[data-testid=estimate]', pad: 0 });
+      await t.page.locator('[data-testid=estimate-form-pick]').selectOption('estimate');
       await t.ui({ keyPlan: true });
     },
   },

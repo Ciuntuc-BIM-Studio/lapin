@@ -9,12 +9,12 @@ summary: Elenca porte, finestre, architravi, locali e tutto ciò che un modulo c
 Tutto ciò che Lapin modella è misurato dalla sua geometria: la lunghezza, l’altezza, l’area laterale lorda e netta e il volume di un muro, l’area e il volume di ogni strato, le aree e il volume di un solaio, l’area e il perimetro di un locale, il numero delle porte. Ci sono tre vie:
 
 - **Un elemento.** Selezionalo: la sezione **Quantità** del pannello delle proprietà mostra ciò che misura, poi ogni suo strato o parte.
-- **Tutto il modello.** **Quantità → Computo delle quantità** crea (o apre) il computo: tutti gli elementi che il modello misura, sommati riga per riga, con il numero, la lunghezza, l’area lorda e netta, il volume lordo e netto e il peso. La sua barra sceglie cosa sommare insieme: **Per categoria e tipo** (predefinito: i muri di ogni tipo di muro, i solai di ogni tipo…), **Per materiale** (ogni strato sotto il suo materiale: il laterizio, l’intonaco e l’isolante dei muri a parte, il calcestruzzo degli architravi), per piano, o combinati. **Tutti gli elementi** sceglie quali categorie elenca (solo muri e solai, per esempio). Il computo segue il modello come ogni abaco e accetta righe e colonne proprie (un accantonamento, un prezzo unitario).
-- **Qualsiasi altro elenco.** **Quantità → Abachi…** crea qualsiasi abaco offerto dall’edizione: locali, finiture, serramenti, stratigrafie dei tipi, legno, armature, casseforme, acciaio… Lo stesso elenco è sotto **+** accanto ad **Abachi** nel browser del progetto.
+- **Tutto il modello.** **Costi → Computo delle quantità** crea (o apre) il computo: tutti gli elementi che il modello misura, sommati riga per riga, con il numero, la lunghezza, l’area lorda e netta, il volume lordo e netto e il peso. La sua barra sceglie cosa sommare insieme: **Per categoria e tipo** (predefinito: i muri di ogni tipo di muro, i solai di ogni tipo…), **Per materiale** (ogni strato sotto il suo materiale: il laterizio, l’intonaco e l’isolante dei muri a parte, il calcestruzzo degli architravi), per piano, o combinati. **Tutti gli elementi** sceglie quali categorie elenca (solo muri e solai, per esempio). Il computo segue il modello come ogni abaco e accetta righe e colonne proprie (un accantonamento, un prezzo unitario).
+- **Qualsiasi altro elenco.** **Costi → Abachi…** crea qualsiasi abaco offerto dall’edizione: locali, finiture, serramenti, stratigrafie dei tipi, legno, armature, casseforme, acciaio… Lo stesso elenco è sotto **+** accanto ad **Abachi** nel browser del progetto.
 
 ![Il computo raggruppato per categoria e materiale](shots/quantity-takeoff.webp)
 
-**Quantità → Esporta XLSX** salva subito il computo come cartella di lavoro (in un browser viene scaricato).
+**Costi → Esporta XLSX** salva subito il computo come cartella di lavoro (in un browser viene scaricato).
 
 ## Le quantità su una tavola
 
@@ -88,7 +88,7 @@ I disegni **Su ogni scheda** (vista interna, vista esterna, pianta, sezione), ne
 
 ## Modanature di muro
 
-L'abaco **Modanature di muro** (**Architettura → Abaco delle modanature di muro**, oppure **Quantità → Abachi…** → **Modanature di muro**) somma le modanature e le scanalature di muro del progetto per profilo, genere e materiale: quante sono, i loro pezzi (una modanatura interrotta dalle aperture è più pezzi), la loro lunghezza lungo le facce e il loro volume; per una scanalatura, il volume che toglie al muro. Un totale per le modanature e uno per le scanalature chiudono la tabella. La sua barra le somma prima **per profilo**, **per piano** o **per tipo di muro**. I risvolti contano nel volume, non nella lunghezza.
+L'abaco **Modanature di muro** (**Architettura → Abaco delle modanature di muro**, oppure **Costi → Abachi…** → **Modanature di muro**) somma le modanature e le scanalature di muro del progetto per profilo, genere e materiale: quante sono, i loro pezzi (una modanatura interrotta dalle aperture è più pezzi), la loro lunghezza lungo le facce e il loro volume; per una scanalatura, il volume che toglie al muro. Un totale per le modanature e uno per le scanalature chiudono la tabella. La sua barra le somma prima **per profilo**, **per piano** o **per tipo di muro**. I risvolti contano nel volume, non nella lunghezza.
 
 ## Esportare
 

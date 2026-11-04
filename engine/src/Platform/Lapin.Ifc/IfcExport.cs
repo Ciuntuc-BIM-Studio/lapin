@@ -225,6 +225,7 @@ public static class IfcExport
             carry?.Finish(buildingRef);
             Finish();
             Processes();
+            Controls();
         }
 
         // ─── Ids and small helpers ──────────────────────────────────────────
@@ -462,13 +463,17 @@ public static class IfcExport
             body = f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("Body"), S("Model"), Derived, Derived, Derived, Derived, model, Null, E("MODEL_VIEW"), Null);
             axis = f.Add("IFCGEOMETRICREPRESENTATIONSUBCONTEXT", S("Axis"), S("Model"), Derived, Derived, Derived, Derived, model, Null, E("GRAPH_VIEW"), Null);
             metre = f.Add("IFCSIUNIT", Derived, E("LENGTHUNIT"), Null, E("METRE"));
-            var units = f.Add("IFCUNITASSIGNMENT", L(new[]
+            var unitList = new List<string>
             {
                 metre,
                 f.Add("IFCSIUNIT", Derived, E("AREAUNIT"), Null, E("SQUARE_METRE")),
                 f.Add("IFCSIUNIT", Derived, E("VOLUMEUNIT"), Null, E("CUBIC_METRE")),
                 f.Add("IFCSIUNIT", Derived, E("PLANEANGLEUNIT"), Null, E("RADIAN")),
-            }));
+            };
+            // The estimate's currency (docs/plan-4d5d.md, stage 6): the money its IfcCostValues are in.
+            if (s.Catalog.All<IIfcControls>().SelectMany(c => c.CostSchedules(s.Reader)).Select(c => c.Currency).FirstOrDefault() is { Length: > 0 } currency)
+                unitList.Add(f.Add("IFCMONETARYUNIT", S(currency)));
+            var units = f.Add("IFCUNITASSIGNMENT", L(unitList));
             projectRef = f.Add("IFCPROJECT", Gid(project.Id), Null, S(project.Name), Null, Null, S(project.Str("longName")), S(project.Str("phase")), L(new[] { model }), units);
             // What the project itself holds that an import rebuilds: its location and its phases (the drafting standards and views stay in .lapin).
             Define(projectRef, IntentOf(project, Gid(project.Id, IntentKey), null, only: ProjectIntent), Gid(project.Id, "intent-rel"));
@@ -1920,6 +1925,66 @@ public static class IfcExport
                     foreach (var t in ws.Tasks)
                         if (t.Inputs?.Where(written.ContainsKey).Select(id => written[id]).ToList() is { Count: > 0 } inputs)
                             f.Add("IFCRELASSIGNSTOPROCESS", Gid(t.Id, "inputs"), Null, Null, Null, L(inputs), Null, taskRef[t.Id], Null);
+                }
+        }
+
+        // ─── Controls: the estimate (docs/plan-4d5d.md, stage 6) ──────────────
+
+        static string QuantityEntity(string kind) => kind switch
+        {
+            "VOLUME" => "IFCQUANTITYVOLUME", "AREA" => "IFCQUANTITYAREA", "LENGTH" => "IFCQUANTITYLENGTH", "WEIGHT" => "IFCQUANTITYWEIGHT", _ => "IFCQUANTITYCOUNT",
+        };
+
+        static string MeasureOf(string kind) => kind switch
+        {
+            "VOLUME" => "IFCVOLUMEMEASURE", "AREA" => "IFCAREAMEASURE", "LENGTH" => "IFCLENGTHMEASURE", "WEIGHT" => "IFCMASSMEASURE", _ => "IFCCOUNTMEASURE",
+        };
+
+        /// <summary>
+        /// The modules' cost schedules (IIfcControls): each an IfcCostSchedule declared by the project, its chapters and articles
+        /// IfcCostItems nested in one another (IfcRelNests), the top ones controlled by the schedule (IfcRelAssignsToControl);
+        /// each article's quantity an IfcPhysicalQuantity, its unit rate one IfcCostValue a category (Material, Labour, Equipment,
+        /// Transport) per unit of it (UnitBasis), the elements it measures controlled by it (IfcRelAssignsToControl); the
+        /// schedule's and each item's own fields a property set.
+        /// </summary>
+        void Controls()
+        {
+            var units = new Dictionary<string, string>();
+            string Unit(string kind) => units.TryGetValue(kind, out var u) ? u : units[kind] = kind switch
+            {
+                "VOLUME" => f.Add("IFCSIUNIT", Derived, E("VOLUMEUNIT"), Null, E("CUBIC_METRE")),
+                "AREA" => f.Add("IFCSIUNIT", Derived, E("AREAUNIT"), Null, E("SQUARE_METRE")),
+                "LENGTH" => metre,
+                "WEIGHT" => f.Add("IFCSIUNIT", Derived, E("MASSUNIT"), E("KILO"), E("GRAM")),
+                _ => f.Add("IFCCONTEXTDEPENDENTUNIT", Derived, E("USERDEFINED"), S("pcs")),
+            };
+            foreach (var src in s.Catalog.All<IIfcControls>())
+                foreach (var cs in src.CostSchedules(s.Reader))
+                {
+                    var schedule = f.Add("IFCCOSTSCHEDULE", Gid(cs.Id), Null, S(cs.Name), Null, Null, Null, E(cs.Predefined), Null, Null, IfcDateTime(DateTime.UtcNow));
+                    f.Add("IFCRELDECLARES", Gid(cs.Id, "declares"), Null, Null, Null, projectRef, L(new[] { schedule }));
+                    if (cs.Properties.Count > 0)
+                        Define(schedule, f.Add("IFCPROPERTYSET", Gid(cs.Id, "pset"), Null, S(cs.PropertySet), Null, L(cs.Properties.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(cs.Id, "pset-rel"));
+                    var itemRef = new Dictionary<string, string>();
+                    foreach (var it in cs.Items)
+                    {
+                        var kind = it.QuantityKind ?? "COUNT";
+                        var values = it.Values.Select(v => f.Add("IFCCOSTVALUE", Null, Null, Typed("IFCMONETARYMEASURE", R(v.UnitValue)),
+                            it.Quantity != null ? f.Add("IFCMEASUREWITHUNIT", Typed(MeasureOf(kind), R(1)), Unit(kind)) : Null, Null, Null, S(v.Category), Null, Null, Null)).ToList();
+                        var quantities = it.Quantity is { } q
+                            ? L(new[] { f.Add(QuantityEntity(kind), S("Quantity"), Null, Null, R(q), Null) })
+                            : Null;
+                        var item = f.Add("IFCCOSTITEM", Gid(it.Id), Null, S(it.Name), Null, Null, S(it.Identification), E("NOTDEFINED"), values.Count > 0 ? L(values) : Null, quantities);
+                        itemRef[it.Id] = item;
+                        if (it.Properties.Count > 0)
+                            Define(item, f.Add("IFCPROPERTYSET", Gid(it.Id, "pset"), Null, S(it.PropertySet), Null, L(it.Properties.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(it.Id, "pset-rel"));
+                        if (it.Elements.Where(written.ContainsKey).Select(id => written[id]).Distinct().ToList() is { Count: > 0 } measured)
+                            f.Add("IFCRELASSIGNSTOCONTROL", Gid(it.Id, "controls"), Null, Null, Null, L(measured), Null, item);
+                    }
+                    var top = cs.Items.Where(i => i.Parent == null || !itemRef.ContainsKey(i.Parent)).Select(i => itemRef[i.Id]).ToList();
+                    if (top.Count > 0) f.Add("IFCRELASSIGNSTOCONTROL", Gid(cs.Id, "controls"), Null, Null, Null, L(top), Null, schedule);
+                    foreach (var g in cs.Items.Where(i => i.Parent != null && itemRef.ContainsKey(i.Parent)).GroupBy(i => i.Parent!))
+                        f.Add("IFCRELNESTS", Gid(g.Key, "nests"), Null, Null, Null, itemRef[g.Key], L(g.Select(i => itemRef[i.Id])));
                 }
         }
 

@@ -10,7 +10,7 @@ import { closeOverlay, columns, setPanelWidth, showOverlay, showPropsTab, toggle
 import { assistantAvailable } from './assistant/available';
 import { useInterface } from './app/interface';
 import { bindingText } from './app/commands';
-import { closePane, closeTab, focusPane, notify, openTab, splitPane, tabKey, useUi, type ViewTab } from './app/store';
+import { closePane, closeTab, focusPane, isTableView, notify, openTab, splitPane, tabKey, useUi, type ViewTab } from './app/store';
 import { PaneContext } from './app/pane';
 import { openViewWindow } from './app/windows';
 import { useShortcuts } from './app/keys';
@@ -127,6 +127,7 @@ function PaneTabs({ i }: { i: number }) {
       case 'drawing': return (t.drawingViewId && nodes.get(t.drawingViewId)?.name) || 'Drawing';
       case 'sheet': return (t.sheetId && nodes.get(t.sheetId)?.name) || 'Sheet';
       case 'gantt': return moduleView('gantt')?.label ?? 'Gantt';
+      case 'estimate': return moduleView('estimate')?.label ?? 'Estimate';
       default: return (t.scheduleId && nodes.get(t.scheduleId)?.name) || 'Schedule';
     }
   };
@@ -174,10 +175,10 @@ function PaneBody({ i }: { i: number }) {
         <PaneTabs i={i} />
         <div className="view-area">
           {view === 'plan' ? <PlanView /> : view === 'drawing' ? <DrawingView /> : view === 'sheet' ? <SheetView /> : view === 'schedule' ? <ScheduleView /> : view && view !== '3d' && ModuleView(view) ? <ModuleViewBody kind={view} /> : <Viewport3D />}
-          {/* The Gantt is a table with its own toolbar: no HUD, quick tools or selection card over it. */}
-          {active && view !== 'gantt' && <ViewportHud />}
-          {active && view !== 'gantt' && <SelectionCard />}
-          {active && view !== 'gantt' && overlays().map((Overlay, k) => <Overlay key={k} />)}
+          {/* The Gantt and the estimate are tables with their own toolbar: no HUD, quick tools or selection card over them. */}
+          {active && !isTableView(view) && <ViewportHud />}
+          {active && !isTableView(view) && <SelectionCard />}
+          {active && !isTableView(view) && overlays().map((Overlay, k) => <Overlay key={k} />)}
           {active && error && <div className="error" role="alert" onClick={() => useSession.setState({ error: null })}>{error}</div>}
           {active && <Notice />}
         </div>

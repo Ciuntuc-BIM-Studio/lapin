@@ -1423,3 +1423,53 @@ dl.fields label.check input { width: auto; margin: 0; }
 [data-testid='view-date'] dd { flex-wrap: wrap; gap: 4px; }
 [data-testid='view-date'] input[type='date'], [data-testid='video-dialog'] input[type='date'], [data-testid='stages-dialog'] input[type='date'] { min-width: 150px; }
 [data-testid='view-date'] .link { white-space: nowrap; font-size: 12px; }
+
+/* The estimate (docs/plan-4d5d.md, stage 6): a table view with its toolbar, chapters folding, the totals under it */
+.estimate-pane { position: absolute; inset: 0; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; background: var(--panel); }
+.estimate-toolbar { position: static; max-width: none; justify-content: flex-start; flex-wrap: wrap; padding: 6px 10px; border-bottom: 1px solid var(--rule); gap: 6px; }
+.estimate-toolbar .group-rule { width: 1px; height: 20px; background: var(--rule); margin: 0 4px; }
+.estimate-toolbar select { max-width: 200px; }
+.estimate-name { width: 140px; font-weight: 600; }
+.estimate-rate { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; white-space: nowrap; }
+.estimate-rate input:not([type=checkbox]) { width: 48px; text-align: right; }
+.estimate-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 4px 12px; font-size: 12px; border-bottom: 1px solid var(--rule); }
+.estimate-facts .link { display: inline-flex; align-items: center; gap: 4px; }
+.estimate-scroll, .estimate-form { flex: 1; min-height: 0; min-width: 0; overflow: auto; padding: 0 0 24px; }
+.estimate-form { padding: 8px 12px 24px; }
+.estimate-form h3 { margin: 4px 0 0; font-size: 14px; }
+.estimate-empty { padding: 24px; display: grid; gap: 12px; justify-items: start; max-width: 640px; }
+.estimate-table { border-collapse: collapse; width: 100%; font-size: 12px; font-variant-numeric: tabular-nums; }
+.estimate-table th { position: sticky; top: 0; z-index: 1; background: var(--panel); text-align: left; font-weight: 600; padding: 5px 6px; border-bottom: 1px solid var(--rule-strong); white-space: nowrap; }
+.estimate-table.form th { white-space: normal; vertical-align: bottom; font-size: 11px; }
+.estimate-table td { padding: 3px 6px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.estimate-table .num { text-align: right; }
+.estimate-table .c-name { width: 40%; }
+.estimate-table td:nth-child(3) { white-space: normal; }
+.estimate-table .row-chapter td { background: var(--accent-wash); font-weight: 600; cursor: pointer; }
+.estimate-table .row-line { cursor: default; }
+.estimate-table .row-line:hover td { background: var(--hover, rgba(0, 0, 0, 0.03)); }
+.estimate-table .row-line.holds td { background: var(--accent-wash); }
+.estimate-table .row-line.holds td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.estimate-table .row-line.unpriced td { color: var(--error, #b42318); }
+.estimate-table .row-subtotal td { color: var(--ink-muted); }
+.estimate-table .row-total td { font-weight: 700; border-top: 1px solid var(--rule-strong); }
+.estimate-table .row-add td { border-bottom: none; padding-top: 6px; }
+.estimate-table .row-add .link { display: inline-flex; align-items: center; gap: 4px; }
+.estimate-cell { width: 100%; min-width: 48px; font: inherit; padding: 1px 3px; border: 1px solid transparent; background: transparent; }
+.estimate-cell:hover, .estimate-cell:focus { border-color: var(--rule-strong); background: var(--panel); }
+.estimate-cell.num { text-align: right; max-width: 90px; }
+.price-sample-wrap { overflow: auto; max-height: 280px; border: 1px solid var(--rule); margin: 8px 0; }
+.price-sample { border-collapse: collapse; font-size: 12px; }
+.price-sample th, .price-sample td { padding: 3px 6px; border-bottom: 1px solid var(--rule); text-align: left; white-space: nowrap; }
+.price-sample th { position: sticky; top: 0; background: var(--panel); vertical-align: top; }
+.price-sample th select { max-width: 150px; }
+.price-matching .row, .price-lists + .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+.price-lists li { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.map-articles .dialog-body { max-width: 1040px; }
+.map-table { border-collapse: collapse; width: 100%; font-size: 12px; margin-bottom: 12px; }
+.map-table th, .map-table td { padding: 3px 6px; border-bottom: 1px solid var(--rule); text-align: left; }
+.map-table .num { text-align: right; }
+.map-table tr.on td { background: var(--accent-wash); }
+.map-code { display: inline-flex; align-items: center; gap: 6px; }
+.map-code input { width: 110px; }
+.estimate-table.form td:nth-child(3) { min-width: 220px; }

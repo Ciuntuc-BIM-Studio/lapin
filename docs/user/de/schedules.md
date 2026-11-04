@@ -9,12 +9,12 @@ summary: Türen, Fenster, Stürze, Räume und alles, was ein Modul zählt, aufli
 Alles, was Lapin modelliert, wird aus seiner Geometrie gemessen: Länge, Höhe, Brutto- und Netto-Seitenfläche und Volumen einer Wand, Fläche und Volumen jeder Schicht, Flächen und Volumen einer Decke, Fläche und Umfang eines Raums, die Anzahl der Türen. Es gibt drei Wege:
 
 - **Ein Element.** Wählen Sie es aus: der Abschnitt **Mengen** im Eigenschaftenbereich zeigt, was es misst, danach jede Schicht oder jeden Teil.
-- **Das ganze Modell.** **Mengen → Mengenermittlung** erstellt (oder öffnet) die Mengenermittlung: alle Elemente, die das Modell misst, Zeile für Zeile zusammengezählt, mit Anzahl, Länge, Brutto- und Nettofläche, Brutto- und Nettovolumen und Gewicht. Ihre Werkzeugleiste wählt, was zusammengezählt wird: **Nach Art und Typ** (Standard: die Wände jedes Wandtyps, die Decken jedes Deckentyps…), **Nach Material** (jede Schicht unter ihrem Material: Ziegel, Putz und Dämmung der Wände getrennt, der Beton der Stürze), nach Geschoss oder kombiniert. **Alle Elemente** wählt, welche Arten sie auflistet (etwa nur Wände und Decken). Die Mengenermittlung folgt dem Modell wie jede Liste und nimmt eigene Zeilen und Spalten auf (eine Pauschale, einen Einheitspreis).
-- **Jede andere Liste.** **Mengen → Bauteillisten…** erstellt jede Liste, die die Edition anbietet: Räume, Raumoberflächen, Fenster und Türen, Typaufbauten, Holz, Bewehrung, Schalung, Stahl… Dieselbe Liste steht unter **+** neben **Bauteillisten** im Projektbrowser.
+- **Das ganze Modell.** **Kosten → Mengenermittlung** erstellt (oder öffnet) die Mengenermittlung: alle Elemente, die das Modell misst, Zeile für Zeile zusammengezählt, mit Anzahl, Länge, Brutto- und Nettofläche, Brutto- und Nettovolumen und Gewicht. Ihre Werkzeugleiste wählt, was zusammengezählt wird: **Nach Art und Typ** (Standard: die Wände jedes Wandtyps, die Decken jedes Deckentyps…), **Nach Material** (jede Schicht unter ihrem Material: Ziegel, Putz und Dämmung der Wände getrennt, der Beton der Stürze), nach Geschoss oder kombiniert. **Alle Elemente** wählt, welche Arten sie auflistet (etwa nur Wände und Decken). Die Mengenermittlung folgt dem Modell wie jede Liste und nimmt eigene Zeilen und Spalten auf (eine Pauschale, einen Einheitspreis).
+- **Jede andere Liste.** **Kosten → Bauteillisten…** erstellt jede Liste, die die Edition anbietet: Räume, Raumoberflächen, Fenster und Türen, Typaufbauten, Holz, Bewehrung, Schalung, Stahl… Dieselbe Liste steht unter **+** neben **Bauteillisten** im Projektbrowser.
 
 ![Die Mengenermittlung nach Art und Material gruppiert](shots/quantity-takeoff.webp)
 
-**Mengen → XLSX exportieren** speichert die Mengenermittlung direkt als Arbeitsmappe (im Browser wird sie heruntergeladen).
+**Kosten → XLSX exportieren** speichert die Mengenermittlung direkt als Arbeitsmappe (im Browser wird sie heruntergeladen).
 
 ## Mengen auf einem Plan
 
@@ -88,7 +88,7 @@ Die Zeichnungen **Auf jeder Karte** (Innenansicht, Außenansicht, Grundriss, Sch
 
 ## Wandprofile
 
-Die Liste **Wandprofile** (**Architektur → Wandprofilliste** oder **Mengen → Bauteillisten…** → **Wandprofile**) fasst die Wandprofile und Wandnuten des Projekts nach Profil, Art und Material zusammen: wie viele es sind, ihre Stücke (ein Profil, das Öffnungen unterbrechen, sind mehrere), ihre Länge entlang der Wandseiten und ihr Volumen; bei einer Nut das Volumen, das sie der Wand nimmt. Eine Summe für die Profile und eine für die Nuten schließen die Tabelle ab. Ihre Leiste fasst sie zuerst **nach Profil**, **nach Geschoss** oder **nach Wandtyp** zusammen. Rückläufe zählen im Volumen, nicht in der Länge.
+Die Liste **Wandprofile** (**Architektur → Wandprofilliste** oder **Kosten → Bauteillisten…** → **Wandprofile**) fasst die Wandprofile und Wandnuten des Projekts nach Profil, Art und Material zusammen: wie viele es sind, ihre Stücke (ein Profil, das Öffnungen unterbrechen, sind mehrere), ihre Länge entlang der Wandseiten und ihr Volumen; bei einer Nut das Volumen, das sie der Wand nimmt. Eine Summe für die Profile und eine für die Nuten schließen die Tabelle ab. Ihre Leiste fasst sie zuerst **nach Profil**, **nach Geschoss** oder **nach Wandtyp** zusammen. Rückläufe zählen im Volumen, nicht in der Länge.
 
 ## Exportieren
 

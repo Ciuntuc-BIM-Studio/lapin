@@ -18,7 +18,7 @@ Nowy projekt ma już trzy poziomy: **Fundamenty** (−1.50), **Parter** (±0.00)
 
 ![Części okna Lapina](shots/workspace.webp)
 
-1. **Karty wstążki.** Rysunek, Architektura, Wykończenia, Konstrukcja, Zagospodarowanie, Studio, Opisz, Zarządzaj, Ilości i Widok grupują swoje narzędzia. **Plik** otwiera, zapisuje, importuje i eksportuje. **Cofnij** i **Ponów** są na prawym końcu tego samego paska (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
+1. **Karty wstążki.** Rysunek, Architektura, Wykończenia, Konstrukcja, Zagospodarowanie, Studio, Opisz, Zarządzaj, Koszty i Widok grupują swoje narzędzia. **Plik** otwiera, zapisuje, importuje i eksportuje. **Cofnij** i **Ponów** są na prawym końcu tego samego paska (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
 2. **Wstążka.** Zawiera narzędzia bieżącej karty. Najedź na narzędzie, aby zobaczyć jego nazwę i litery skrótu.
 3. **Przeglądarka projektu.** Wymienia poziomy, rzuty, przekroje, elewacje, widoki 3D, arkusze i zestawienia. Kliknij dwukrotnie pozycję, aby otworzyć ją w karcie. Projekt otwiera się na rzucie parteru, z widokiem 3D w karcie obok.
 4. **Widok.** Tu rysujesz: rzut, przekrój, widok 3D lub arkusz. Kilka widoków obok siebie otworzysz dwoma przyciskami w prawym górnym rogu widoku.

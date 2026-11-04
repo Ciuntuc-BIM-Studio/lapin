@@ -9,12 +9,12 @@ summary: Listez portes, fenêtres, linteaux, pièces et tout ce qu’un module c
 Tout ce que Lapin modélise est mesuré à partir de sa géométrie : la longueur, la hauteur, la surface latérale brute et nette et le volume d’un mur, la surface et le volume de chaque couche, les surfaces et le volume d’un plancher, la surface et le périmètre d’une pièce, le nombre de portes. Il y a trois chemins :
 
 - **Un élément.** Sélectionnez-le : la section **Métrés** du panneau des propriétés montre ce qu’il mesure, puis chacune de ses couches ou parties.
-- **Tout le modèle.** **Métrés → Métré** crée (ou ouvre) le métré : tous les éléments que le modèle mesure, additionnés ligne par ligne, avec le nombre, la longueur, la surface brute et nette, le volume brut et net et le poids. Sa barre choisit ce qui est additionné ensemble : **Par catégorie et type** (par défaut : les murs de chaque type de mur, les planchers de chaque type…), **Par matériau** (chaque couche sous son matériau : la brique, l’enduit et l’isolant des murs séparément, le béton des linteaux), par niveau, ou combinés. **Tous les éléments** choisit les catégories qu’il liste (seulement les murs et les planchers, par exemple). Le métré suit le modèle comme toute nomenclature et accepte des lignes et des colonnes à vous (une provision, un prix unitaire).
-- **Toute autre liste.** **Métrés → Nomenclatures…** crée toute nomenclature que l’édition propose : pièces, finitions, menuiseries, compositions de types, bois, armatures, coffrages, acier… La même liste est sous **+** à côté de **Nomenclatures** dans le navigateur du projet.
+- **Tout le modèle.** **Coûts → Métré** crée (ou ouvre) le métré : tous les éléments que le modèle mesure, additionnés ligne par ligne, avec le nombre, la longueur, la surface brute et nette, le volume brut et net et le poids. Sa barre choisit ce qui est additionné ensemble : **Par catégorie et type** (par défaut : les murs de chaque type de mur, les planchers de chaque type…), **Par matériau** (chaque couche sous son matériau : la brique, l’enduit et l’isolant des murs séparément, le béton des linteaux), par niveau, ou combinés. **Tous les éléments** choisit les catégories qu’il liste (seulement les murs et les planchers, par exemple). Le métré suit le modèle comme toute nomenclature et accepte des lignes et des colonnes à vous (une provision, un prix unitaire).
+- **Toute autre liste.** **Coûts → Nomenclatures…** crée toute nomenclature que l’édition propose : pièces, finitions, menuiseries, compositions de types, bois, armatures, coffrages, acier… La même liste est sous **+** à côté de **Nomenclatures** dans le navigateur du projet.
 
 ![Le métré groupé par catégorie et matériau](shots/quantity-takeoff.webp)
 
-**Métrés → Exporter XLSX** enregistre directement le métré comme classeur (téléchargé dans un navigateur).
+**Coûts → Exporter XLSX** enregistre directement le métré comme classeur (téléchargé dans un navigateur).
 
 ## Les quantités sur une feuille
 
@@ -88,7 +88,7 @@ Les dessins **Sur chaque fiche** (vue intérieure, vue extérieure, plan, coupe)
 
 ## Moulures de mur
 
-La nomenclature **Moulures de mur** (**Architecture → Nomenclature des moulures de mur**, ou **Métrés → Nomenclatures…** → **Moulures de mur**) additionne les moulures et engravures de mur du projet par profil, genre et matériau : combien il y en a, leurs pièces (une moulure coupée par des ouvertures en fait plusieurs), leur longueur le long des faces et leur volume ; pour une engravure, le volume qu'elle retire au mur. Un total pour les moulures et un pour les engravures terminent le tableau. Sa barre les additionne d'abord **par profil**, **par niveau** ou **par type de mur**. Les retours comptent dans le volume, pas dans la longueur.
+La nomenclature **Moulures de mur** (**Architecture → Nomenclature des moulures de mur**, ou **Coûts → Nomenclatures…** → **Moulures de mur**) additionne les moulures et engravures de mur du projet par profil, genre et matériau : combien il y en a, leurs pièces (une moulure coupée par des ouvertures en fait plusieurs), leur longueur le long des faces et leur volume ; pour une engravure, le volume qu'elle retire au mur. Un total pour les moulures et un pour les engravures terminent le tableau. Sa barre les additionne d'abord **par profil**, **par niveau** ou **par type de mur**. Les retours comptent dans le volume, pas dans la longueur.
 
 ## Exporter
 

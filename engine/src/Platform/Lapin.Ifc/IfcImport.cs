@@ -200,6 +200,7 @@ public static partial class IfcImport
             ProvisionOpenings(edit);
             WriteContainment(edit);
             if (ReadProcesses && !o.ReferenceOnly) Processes(edit);
+            if (ReadProcesses && !o.ReferenceOnly) Controls(edit);
             var left = edit.Model.Entities.Count(e => s.Catalog.Geometry(e.Class) != null && !seen.Contains(e.Id) && e.Class is not (IfcClass.OpeningElement or IfcClass.Annotation or IfcClass.Grid));
             if (left > 0 && elements + updated > 0) notes.Add($"{left} element(s) of the project are not in the file; they stay as they are.");
         }

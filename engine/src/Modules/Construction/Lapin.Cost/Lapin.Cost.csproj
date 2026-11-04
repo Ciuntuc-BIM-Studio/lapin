@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Cost (5D, docs/plan-4d5d.md, stage 6): the user's price lists imported from CSV or XLSX, articles on types and
+    article rules by material, the estimate (IfcCostSchedule) worked out from the model's quantities, its Romanian forms
+    (F3, F2, C6-C9) as schedules, workbooks and PDF, and IFC cost schedules both ways. It reads the model's quantities
+    through the platform, so it needs no other module's code; the Quantities tab's schedules are the architecture
+    module's, hence its requires.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>cost</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+  </ItemGroup>
+</Project>

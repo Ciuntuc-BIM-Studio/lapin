@@ -9,12 +9,12 @@ summary: List døre, vinduer, overliggere, rum og alt, hvad et modul tæller; ti
 Alt, hvad Lapin modellerer, måles ud fra geometrien: en væg længde, højde, brutto- og nettosideareal og volumen, hvert lags areal og volumen, et dæks arealer og volumen, et rums areal og omkreds, antallet af døre. Der er tre veje:
 
 - **Ét element.** Vælg det: afsnittet **Mængder** i egenskabspanelet viser, hvad det måler, derefter hvert lag eller hver del.
-- **Hele modellen.** **Mængder → Mængdeudtræk** laver (eller åbner) mængdeudtrækket: alle de elementer, modellen måler, lagt sammen række for række, med antal, længde, brutto- og nettoareal, brutto- og nettovolumen og vægt. Dets værktøjslinje vælger, hvad der lægges sammen: **Efter art og type** (standard: væggene af hver vægtype, dækkene af hver dæktype…), **Efter materiale** (hvert lag under sit materiale: væggenes tegl, puds og isolering hver for sig, overliggernes beton), efter etage eller kombineret. **Alle elementer** vælger, hvilke arter det viser (kun vægge og dæk, for eksempel). Mængdeudtrækket følger modellen som ethvert skema og tager egne rækker og kolonner (et tillæg, en enhedspris).
-- **Enhver anden liste.** **Mængder → Skemaer…** laver ethvert skema, udgaven tilbyder: rum, rumoverflader, døre og vinduer, typeopbygninger, tømmer, armering, forskalling, stål… Den samme liste ligger under **+** ved **Skemaer** i projektbrowseren.
+- **Hele modellen.** **Økonomi → Mængdeudtræk** laver (eller åbner) mængdeudtrækket: alle de elementer, modellen måler, lagt sammen række for række, med antal, længde, brutto- og nettoareal, brutto- og nettovolumen og vægt. Dets værktøjslinje vælger, hvad der lægges sammen: **Efter art og type** (standard: væggene af hver vægtype, dækkene af hver dæktype…), **Efter materiale** (hvert lag under sit materiale: væggenes tegl, puds og isolering hver for sig, overliggernes beton), efter etage eller kombineret. **Alle elementer** vælger, hvilke arter det viser (kun vægge og dæk, for eksempel). Mængdeudtrækket følger modellen som ethvert skema og tager egne rækker og kolonner (et tillæg, en enhedspris).
+- **Enhver anden liste.** **Økonomi → Skemaer…** laver ethvert skema, udgaven tilbyder: rum, rumoverflader, døre og vinduer, typeopbygninger, tømmer, armering, forskalling, stål… Den samme liste ligger under **+** ved **Skemaer** i projektbrowseren.
 
 ![Mængdeudtrækket grupperet efter art og materiale](shots/quantity-takeoff.webp)
 
-**Mængder → Eksportér XLSX** gemmer mængdeudtrækket direkte som regneark (i en browser hentes det ned).
+**Økonomi → Eksportér XLSX** gemmer mængdeudtrækket direkte som regneark (i en browser hentes det ned).
 
 ## Mængder på et ark
 
@@ -88,7 +88,7 @@ Tegningerne **På hvert kort** (indvendig visning, udvendig visning, plan, snit)
 
 ## Vægprofiler
 
-Skemaet **Vægprofiler** (**Arkitektur → Vægprofilskema**, eller **Mængder → Skemaer…** → **Vægprofiler**) lægger projektets vægprofiler og vægnoter sammen efter profil, art og materiale: hvor mange der er, deres stykker (en profil, som åbninger afbryder, er flere), deres længde langs siderne og deres volumen; for en not det volumen, den tager ud af væggen. En sum for profilerne og en for noterne afslutter tabellen. Dens bjælke lægger dem først sammen **efter profil**, **efter etage** eller **efter vægtype**. Returer tæller med i volumen, ikke i længden.
+Skemaet **Vægprofiler** (**Arkitektur → Vægprofilskema**, eller **Økonomi → Skemaer…** → **Vægprofiler**) lægger projektets vægprofiler og vægnoter sammen efter profil, art og materiale: hvor mange der er, deres stykker (en profil, som åbninger afbryder, er flere), deres længde langs siderne og deres volumen; for en not det volumen, den tager ud af væggen. En sum for profilerne og en for noterne afslutter tabellen. Dens bjælke lægger dem først sammen **efter profil**, **efter etage** eller **efter vægtype**. Returer tæller med i volumen, ikke i længden.
 
 ## Eksport
 

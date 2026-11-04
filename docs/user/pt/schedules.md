@@ -9,12 +9,12 @@ summary: Liste portas, janelas, vergas, ambientes e tudo o que um módulo conta;
 Tudo o que o Lapin modela é medido pela sua geometria: o comprimento, a altura, a área lateral bruta e líquida e o volume de uma parede, a área e o volume de cada camada, as áreas e o volume de uma laje, a área e o perímetro de um ambiente, o número de portas. Há três caminhos:
 
 - **Um elemento.** Selecione-o: a secção **Quantitativos** do painel de propriedades mostra o que ele mede, e depois cada camada ou parte.
-- **Todo o modelo.** **Quantitativos → Levantamento de quantidades** cria (ou abre) o levantamento: todos os elementos que o modelo mede, somados linha a linha, com a contagem, o comprimento, a área bruta e líquida, o volume bruto e líquido e o peso. A sua barra escolhe o que é somado junto: **Por categoria e tipo** (o padrão: as paredes de cada tipo de parede, as lajes de cada tipo…), **Por material** (cada camada sob o seu material: o tijolo, o reboco e o isolamento das paredes à parte, o concreto das vergas), por pavimento, ou combinados. **Todos os elementos** escolhe quais categorias ele lista (só paredes e lajes, por exemplo). O levantamento acompanha o modelo como qualquer tabela e aceita linhas e colunas próprias (uma verba, um preço unitário).
-- **Qualquer outra lista.** **Quantitativos → Tabelas…** cria qualquer tabela que a edição oferece: ambientes, acabamentos, esquadrias, composições de tipos, madeira, armaduras, fôrmas, aço… A mesma lista está em **+** ao lado de **Tabelas** no navegador do projeto.
+- **Todo o modelo.** **Custos → Levantamento de quantidades** cria (ou abre) o levantamento: todos os elementos que o modelo mede, somados linha a linha, com a contagem, o comprimento, a área bruta e líquida, o volume bruto e líquido e o peso. A sua barra escolhe o que é somado junto: **Por categoria e tipo** (o padrão: as paredes de cada tipo de parede, as lajes de cada tipo…), **Por material** (cada camada sob o seu material: o tijolo, o reboco e o isolamento das paredes à parte, o concreto das vergas), por pavimento, ou combinados. **Todos os elementos** escolhe quais categorias ele lista (só paredes e lajes, por exemplo). O levantamento acompanha o modelo como qualquer tabela e aceita linhas e colunas próprias (uma verba, um preço unitário).
+- **Qualquer outra lista.** **Custos → Tabelas…** cria qualquer tabela que a edição oferece: ambientes, acabamentos, esquadrias, composições de tipos, madeira, armaduras, fôrmas, aço… A mesma lista está em **+** ao lado de **Tabelas** no navegador do projeto.
 
 ![O levantamento agrupado por categoria e material](shots/quantity-takeoff.webp)
 
-**Quantitativos → Exportar XLSX** guarda logo o levantamento como pasta de trabalho (num navegador é descarregado).
+**Custos → Exportar XLSX** guarda logo o levantamento como pasta de trabalho (num navegador é descarregado).
 
 ## Quantidades numa prancha
 
@@ -88,7 +88,7 @@ Os desenhos **Em cada ficha** (vista interior, vista exterior, planta, corte), n
 
 ## Molduras de parede
 
-A tabela **Molduras de parede** (**Arquitetura → Tabela de molduras de parede**, ou **Quantitativos → Tabelas…** → **Molduras de parede**) soma as molduras e frisos de parede do projeto por perfil, tipo de peça e material: quantas há, as suas peças (uma moldura cortada por vãos são várias), o seu comprimento ao longo das faces e o seu volume; num friso, o volume que tira à parede. Um total para as molduras e outro para os frisos fecham a tabela. A sua barra soma-as primeiro **por perfil**, **por piso** ou **por tipo de parede**. Os retornos contam no volume, não no comprimento.
+A tabela **Molduras de parede** (**Arquitetura → Tabela de molduras de parede**, ou **Custos → Tabelas…** → **Molduras de parede**) soma as molduras e frisos de parede do projeto por perfil, tipo de peça e material: quantas há, as suas peças (uma moldura cortada por vãos são várias), o seu comprimento ao longo das faces e o seu volume; num friso, o volume que tira à parede. Um total para as molduras e outro para os frisos fecham a tabela. A sua barra soma-as primeiro **por perfil**, **por piso** ou **por tipo de parede**. Os retornos contam no volume, não no comprimento.
 
 ## Exportar
 

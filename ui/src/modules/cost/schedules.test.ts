@@ -8,17 +8,21 @@ import { modules } from '../../platform/modules';
 import cost from './index';
 import { TAKEOFF_GROUPINGS, groupingOf } from './schedules';
 
-describe('the Quantities tab', () => {
+describe('the Cost tab (Quantities until stage 6 of docs/plan-4d5d.md)', () => {
   it('has no button that does nothing: each tool draws (a gesture) or runs', () => {
     const dead = modules.flatMap((m) => (m.tabs ?? []).flatMap((t) => t.groups.flatMap((g) => [...g.tools, ...(g.small ?? [])])))
       .filter((t) => !t.gesture && !t.run).map((t) => t.id);
     expect(dead).toEqual([]);
   });
 
-  it('makes the quantity takeoff, lists every schedule and exports the workbook', () => {
-    const tools = cost.tabs![0].groups.flatMap((g) => g.tools).map((t) => t.id);
-    expect(tools).toEqual(['cost.takeoff', 'cost.schedules', 'cost.xlsx']);
+  it('makes the quantity takeoff, lists every schedule, exports the workbook, and prices the model', () => {
+    expect(cost.tabs![0].label).toBe('Cost');
+    const tools = cost.tabs![0].groups.flatMap((g) => [...g.tools, ...(g.small ?? [])]).map((t) => t.id);
+    expect(tools).toEqual(['cost.takeoff', 'cost.schedules', 'cost.xlsx', 'cost.prices', 'cost.map', 'cost.estimate', 'cost.formSheet', 'cost.estimateXlsx', 'cost.estimatePdf']);
     expect(cost.dialogs?.schedules).toBeTruthy();
+    expect(cost.dialogs?.['cost.prices']).toBeTruthy();
+    expect(cost.dialogs?.['cost.map']).toBeTruthy();
+    expect(cost.views?.estimate).toBeTruthy();
   });
 });
 
