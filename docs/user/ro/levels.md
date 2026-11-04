@@ -10,7 +10,7 @@ summary: Adaugi niveluri, le setezi cotele și vezi alt nivel sub planul pe care
 
 Navigatorul proiectului listează nivelurile sus, cel mai înalt primul. **+** de lângă **Niveluri** adaugă un nivel peste cel mai înalt.
 
-Selectează un nivel ca să vezi **cota de bază** și **cota superioară**. Oricare poate fi deasupra sau dedesubtul cotei ±0,00. Înălțimea nivelului e distanța dintre ele. Când muți baza, partea de sus rămâne pe loc. Un proiect nou începe cu Foundations, Ground floor și First floor.
+Selectează un nivel ca să vezi **cota de bază** și **cota superioară**. Oricare poate fi deasupra sau dedesubtul cotei ±0,00. Înălțimea nivelului e distanța dintre ele. Când muți baza, partea de sus rămâne pe loc. Un proiect nou începe cu Foundations, Ground floor și First floor. Un nivel are cel mult 100 m înălțime și stă în ±10 km față de ±0,00: o valoare scrisă în altă unitate e refuzată. O scară care ar urca mai mult de 50 m până la nivelul de deasupra se oprește acolo și spune de ce.
 
 ![Proprietățile unui nivel: cota de bază, cota superioară și înălțimea](shots/level-properties.webp)
 

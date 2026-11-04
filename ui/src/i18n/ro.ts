@@ -937,6 +937,10 @@ export const RO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  // Testers' reports #73: a stair asked to climb too far, a storey's level or height out of bounds.
+  [/^It would climb ([\d.,]+) m to the level above; drawn to (\d+) m\. Check the storeys' levels\.$/, (m) => `Ar urca ${m[1]} m până la nivelul de deasupra; desenată până la ${m[2]} m. Verifică cotele nivelurilor.`],
+  [/^A storey is at most (\d+) m high \(asked ([\d.,]+) m\)\. Check the unit the level was typed in\.$/, (m) => `Un nivel are cel mult ${m[1]} m înălțime (s-au cerut ${m[2]} m). Verifică unitatea în care a fost scrisă cota.`],
+  [/^A storey's level must be within ±10 km of ±0\.00 \(asked ([-\d.,E+]+) m\)\.$/, (m) => `Cota unui nivel trebuie să fie în ±10 km față de ±0.00 (s-au cerut ${m[1]} m).`],
   [/^(.+): (\d+) remark\(s\) added, (\d+) updated\.$/, (m) => `${m[1]}: ${m[2]} observații adăugate, ${m[3]} actualizate.`],
   [/^Importing (.+)$/, (m) => `Se importă ${m[1]}`],
   [/^Linking (.+)$/, (m) => `Se leagă ${m[1]}`],

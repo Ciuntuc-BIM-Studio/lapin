@@ -14,7 +14,7 @@ Mentre Porta o Finestra è attivo, il pannello Proprietà mostra il tipo che ver
 
 ![Una pianta con una porta e delle finestre](shots/openings-plan.webp)
 
-Per spostare una porta o una finestra lungo il suo muro, selezionala e trascinala. Per modificarla, usa il pannello Proprietà: il suo tipo, l’altezza del davanzale e il lato verso cui si apre (**Lato**).
+Per spostare una porta o una finestra lungo il suo muro, selezionala e trascinala. Per modificarla, usa il pannello Proprietà: il suo tipo, l’altezza del davanzale e il lato verso cui si apre (**Lato**). Con più porte e finestre selezionate, **Verso**, **Lato**, il davanzale e il tipo le cambiano tutte in un solo passo, così come una freccia di inversione in pianta.
 
 ![Le proprietà di una porta](shots/door-properties.webp)
 

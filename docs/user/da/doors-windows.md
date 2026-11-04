@@ -14,7 +14,7 @@ Mens Door eller Window er aktivt, viser egenskabspanelet den type, det sætter, 
 
 ![En plan med en dør og vinduer](shots/openings-plan.webp)
 
-Vil du flytte en dør eller et vindue langs sin væg, så markér den og træk i den. Du ændrer den i egenskabspanelet: dens type, dens brystningshøjde, og til hvilken side den åbner (**Side**).
+Vil du flytte en dør eller et vindue langs sin væg, så markér den og træk i den. Du ændrer den i egenskabspanelet: dens type, dens brystningshøjde, og til hvilken side den åbner (**Side**). Med flere døre og vinduer markeret ændrer **Hængsling**, **Side**, brystningen og typen dem alle i ét trin, og det samme gør en vendepil i planen.
 
 ![En dørs egenskaber](shots/door-properties.webp)
 

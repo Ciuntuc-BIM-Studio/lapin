@@ -10,7 +10,7 @@ summary: Adicione níveis, defina as alturas deles e veja outro nível sob a pla
 
 O navegador do projeto lista os níveis no topo, o mais alto primeiro. O **+** ao lado de **Níveis** adiciona um nível acima do mais alto.
 
-Selecione um nível para ver o seu **nível da base** e o seu **nível do topo**. Qualquer um deles pode estar acima ou abaixo de ±0,00. A altura é a distância entre eles. Quando você move a base, o topo fica onde está. Um projeto novo começa com Fundações, Térreo e Primeiro pavimento.
+Selecione um nível para ver o seu **nível da base** e o seu **nível do topo**. Qualquer um deles pode estar acima ou abaixo de ±0,00. A altura é a distância entre eles. Quando você move a base, o topo fica onde está. Um projeto novo começa com Fundações, Térreo e Primeiro pavimento. Um nível tem no máximo 100 m de altura e fica a ±10 km de ±0,00: um valor escrito na unidade errada é recusado. Uma escada que subiria mais de 50 m até ao nível acima para aí e diz porquê.
 
 ![As propriedades de um nível: nível da base, nível do topo e altura](shots/level-properties.webp)
 

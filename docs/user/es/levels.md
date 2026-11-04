@@ -10,7 +10,7 @@ summary: Añada niveles, fije sus cotas y vea otro nivel bajo la planta en la qu
 
 El navegador del proyecto muestra los niveles arriba, el más alto primero. **+** junto a **Niveles** añade un nivel por encima del más alto.
 
-Seleccione un nivel para ver su **Nivel de base** y su **Nivel superior**. Cualquiera de los dos puede estar por encima o por debajo de ±0.00. Su altura es la distancia entre ellos. Cuando mueve la base, la parte superior se queda donde está. Un proyecto nuevo empieza con Foundations, Ground floor y First floor.
+Seleccione un nivel para ver su **Nivel de base** y su **Nivel superior**. Cualquiera de los dos puede estar por encima o por debajo de ±0.00. Su altura es la distancia entre ellos. Cuando mueve la base, la parte superior se queda donde está. Un proyecto nuevo empieza con Foundations, Ground floor y First floor. Un nivel mide como máximo 100 m de alto y está a ±10 km de ±0.00: un valor escrito en otra unidad se rechaza. Una escalera que subiría más de 50 m hasta el nivel superior se detiene ahí y dice por qué.
 
 ![Las propiedades de un nivel: nivel de base, nivel superior y altura](shots/level-properties.webp)
 

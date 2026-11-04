@@ -81,6 +81,9 @@ public sealed record Resolved(
 /// </summary>
 public static class StairSolver
 {
+    /// <summary>The most risers a stair is made of (a tester's report, #73).</summary>
+    public const int MaxRisers = 400;
+
     public static Resolved Resolve(StairSpec spec, double height, StairInputs? inputs = null, bool turnLeft = true)
     {
         inputs ??= new StairInputs();
@@ -101,6 +104,8 @@ public static class StairSolver
             if (height / n > r.RiserMax + 1e-9) n = (int)Math.Ceiling(height / r.RiserMax);
             if (height / n < r.RiserMin - 1e-9) n = Math.Max(least, (int)Math.Floor(height / r.RiserMin));
         }
+        // Never more risers than a stair of the highest climb has (a typed count too): each is a solid of its own.
+        n = Math.Min(n, MaxRisers);
         var h = height / n;
         // The tread: as fixed, else from the step rule, to the half centimetre, within the bounds.
         var b = inputs.Tread is { } fixedB && fixedB > 0.05 ? fixedB

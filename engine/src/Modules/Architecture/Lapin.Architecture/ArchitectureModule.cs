@@ -467,8 +467,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
 
         r.Command("moveOpening", "Move opening", (ctx, a) =>
         {
-            var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("Nothing to move.");
-            Openings.Move(ctx, e, Json.Number(a["along"]), Json.Number(a["sill"]));
+            // Several at once (a sill for every selected window, #74), one step.
+            var ids = Ids(a).ToList();
+            if (ids.Count == 0) throw new CommandException("Nothing to move.");
+            foreach (var id in ids) Openings.Move(ctx, ctx.Model.Get(id) ?? throw new CommandException("Nothing to move."), Json.Number(a["along"]), Json.Number(a["sill"]));
             return null;
         });
 

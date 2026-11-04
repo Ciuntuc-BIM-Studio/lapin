@@ -9,6 +9,7 @@ import { execute, useSession } from '../../engine/session';
 import { materialColor, materialName, ofClass, typeLayers, typeOf, usageOf, wallLength } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { lengthText } from '../../engine/unitsStore';
+import { sameKind } from '../../shell/params';
 
 export function WallLayers({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -26,7 +27,7 @@ export function WallLayers({ node }: { node: NodeDto }) {
       <label className="type-pick">
         <span className="eyebrow">Type</span>
         <span className="row">
-          <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('architecture.setWallType', { id: node.id, typeId: e.target.value })}>
+          <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('architecture.setWallType', { ids: sameKind(node), typeId: e.target.value })}>
             {!type && <option value="">(none)</option>}
             {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
@@ -56,7 +57,7 @@ export function WallLayers({ node }: { node: NodeDto }) {
         <dt>Layers run</dt><dd>{usage ? (usage.negative ? 'flipped' : 'as drawn') : '—'}</dd>
       </dl>
       {node.editable && (
-        <button type="button" className="btn" title="Swap the wall's faces (its ends stay)" onClick={() => void execute('architecture.flipWall', { id: node.id })}>
+        <button type="button" className="btn" title="Swap the wall's faces (its ends stay)" onClick={() => void execute('architecture.flipWall', { ids: sameKind(node) })}>
           <FlipHorizontal2 size={14} />Flip
         </button>
       )}

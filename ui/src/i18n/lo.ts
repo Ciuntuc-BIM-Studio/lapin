@@ -995,6 +995,10 @@ export const LO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const LO_PATTERNS: Language['patterns'] = [
+  // Testers' reports #73: a stair asked to climb too far, a storey's level or height out of bounds.
+  [/^It would climb ([\d.,]+) m to the level above; drawn to (\d+) m\. Check the storeys' levels\.$/, (m) => `ມັນຈະຂຶ້ນ ${m[1]} ມ ໄປຫາຊັ້ນຂ້າງເທິງ; ແຕ້ມເຖິງ ${m[2]} ມ. ກວດລະດັບຂອງຊັ້ນຕ່າງໆ.`],
+  [/^A storey is at most (\d+) m high \(asked ([\d.,]+) m\)\. Check the unit the level was typed in\.$/, (m) => `ຊັ້ນໜຶ່ງສູງໄດ້ສູງສຸດ ${m[1]} ມ (ຂໍ ${m[2]} ມ). ກວດຫົວໜ່ວຍທີ່ໃຊ້ພິມລະດັບ.`],
+  [/^A storey's level must be within ±10 km of ±0\.00 \(asked ([-\d.,E+]+) m\)\.$/, (m) => `ລະດັບຂອງຊັ້ນຕ້ອງຢູ່ພາຍໃນ ±10 ກມ ຈາກ ±0.00 (ຂໍ ${m[1]} ມ).`],
   [/^(.+): (\d+) remark\(s\) added, (\d+) updated\.$/, (m) => `${m[1]}: ເພີ່ມ ${m[2]} ຂໍ້ສັງເກດ, ອັບເດດ ${m[3]}.`],
   [/^Importing (.+)$/, (m) => `ກຳລັງນຳເຂົ້າ ${m[1]}`],
   [/^Linking (.+)$/, (m) => `ກຳລັງເຊື່ອມໂຍງ ${m[1]}`],

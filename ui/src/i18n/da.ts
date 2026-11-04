@@ -937,6 +937,10 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const DA_PATTERNS: Language['patterns'] = [
+  // Testers' reports #73: a stair asked to climb too far, a storey's level or height out of bounds.
+  [/^It would climb ([\d.,]+) m to the level above; drawn to (\d+) m\. Check the storeys' levels\.$/, (m) => `Den ville stige ${m[1]} m til etagen ovenover; tegnet til ${m[2]} m. Tjek etagernes koter.`],
+  [/^A storey is at most (\d+) m high \(asked ([\d.,]+) m\)\. Check the unit the level was typed in\.$/, (m) => `En etage er højst ${m[1]} m høj (${m[2]} m ønsket). Tjek den enhed koten blev skrevet i.`],
+  [/^A storey's level must be within ±10 km of ±0\.00 \(asked ([-\d.,E+]+) m\)\.$/, (m) => `En etages kote skal ligge inden for ±10 km af ±0.00 (${m[1]} m ønsket).`],
   [/^(.+): (\d+) remark\(s\) added, (\d+) updated\.$/, (m) => `${m[1]}: ${m[2]} bemærkning(er) tilføjet, ${m[3]} opdateret.`],
   [/^Importing (.+)$/, (m) => `Importerer ${m[1]}`],
   [/^Linking (.+)$/, (m) => `Linker ${m[1]}`],

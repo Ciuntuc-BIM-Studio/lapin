@@ -941,6 +941,10 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const PT_PATTERNS: Language['patterns'] = [
+  // Testers' reports #73: a stair asked to climb too far, a storey's level or height out of bounds.
+  [/^It would climb ([\d.,]+) m to the level above; drawn to (\d+) m\. Check the storeys' levels\.$/, (m) => `Subiria ${m[1]} m até ao nível acima; desenhada até ${m[2]} m. Verifica as cotas dos pisos.`],
+  [/^A storey is at most (\d+) m high \(asked ([\d.,]+) m\)\. Check the unit the level was typed in\.$/, (m) => `Um piso tem no máximo ${m[1]} m de altura (pedidos ${m[2]} m). Verifica a unidade em que a cota foi escrita.`],
+  [/^A storey's level must be within ±10 km of ±0\.00 \(asked ([-\d.,E+]+) m\)\.$/, (m) => `A cota de um piso tem de estar a ±10 km de ±0.00 (pedidos ${m[1]} m).`],
   [/^(.+): (\d+) remark\(s\) added, (\d+) updated\.$/, (m) => `${m[1]}: ${n(m[2], 'observação adicionada', 'observações adicionadas')}, ${m[3]} ${m[3] === '1' ? 'atualizada' : 'atualizadas'}.`],
   [/^Importing (.+)$/, (m) => `Importando ${m[1]}`],
   [/^Linking (.+)$/, (m) => `Vinculando ${m[1]}`],

@@ -10,7 +10,10 @@ namespace Lapin.Geometry;
 /// each with the planes of its triangles; the edge whose collapse moves the
 /// surface least goes first, to the best of its two ends and its middle. A
 /// collapse that would fold a triangle over, or join two sheets (the link
-/// condition), is not done; open edges hold their place by a plane across them.
+/// condition), is not done. Open edges and folds (an arched opening's edge between
+/// the wall's face and its reveal) hold their place by planes across them, counted
+/// whole, not averaged by area with the faces beside them: averaged, a big flat face
+/// let the arch's edge be cut into a few straight pieces (a tester's report, #70).
 /// One pass makes every level: it stops at each level's error, keeps what it
 /// has, and goes on.
 /// </para>
@@ -31,6 +34,9 @@ public static class MeshSimplify
 
     /// <summary>The fold past which a level's edge is drawn (a coarse curve shows its facets less than its outline).</summary>
     const double CreaseDeg = 40;
+
+    /// <summary>The fold past which an edge is held in place like an open one (the model's drawn edges: <see cref="Tessellator.CreaseDeg"/>).</summary>
+    const double FeatureDeg = Tessellator.CreaseDeg;
 
     /// <summary>The levels worth having (finest first); null when none is.</summary>
     public static IReadOnlyList<Level>? Levels(TriMesh m)
@@ -60,7 +66,9 @@ public static class MeshSimplify
         readonly int[] _into;          // the vertex each was collapsed into (itself while it stands)
         readonly double[] _q;          // the quadric per vertex: a² ab ac ad b² bc bd c² cd d², weighted by area
         readonly double[] _w;          // the area of the triangles in each vertex's quadric
+        readonly double[] _e;          // the planes across each vertex's open edges and folds, one each, not averaged
         readonly int[] _f;             // a b c per triangle
+        readonly int[] _f0;            // the triangles as they were
         readonly bool[] _dead;
         readonly bool[] _gone;         // a vertex collapsed into another
         readonly int[] _stamp;
@@ -99,6 +107,7 @@ public static class MeshSimplify
             _gone = new bool[n];
             _stamp = new int[n];
             _q = new double[10 * n];
+            _e = new double[10 * n];
             _w = new double[n];
             _faces = new List<int>[n];
             for (var i = 0; i < n; i++) _faces[i] = new List<int>(6);
@@ -109,8 +118,9 @@ public static class MeshSimplify
                 x1 = Math.Max(x1, _p[3 * i]); y1 = Math.Max(y1, _p[3 * i + 1]); z1 = Math.Max(z1, _p[3 * i + 2]);
             }
             Diagonal = n == 0 ? 0 : Math.Sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) + (z1 - z0) * (z1 - z0));
-            // Each triangle's plane on its corners; each open edge's plane across it, heavier, so the outline stays.
+            // Each triangle's plane on its corners; each open edge's and fold's plane across it, so the outline stays.
             var onEdge = new Dictionary<long, int>(EdgeKeys.Comparer);
+            var firstOn = new Dictionary<long, int>(EdgeKeys.Comparer);
             for (var t = 0; t < T; t++)
             {
                 for (var e = 0; e < 3; e++)
@@ -118,21 +128,31 @@ public static class MeshSimplify
                     _faces[_f[3 * t + e]].Add(t);
                     var key = EdgeKeys.Undirected(_f[3 * t + e], _f[3 * t + (e + 1) % 3]);
                     onEdge[key] = onEdge.TryGetValue(key, out var c) ? c + 1 : 1;
+                    firstOn.TryAdd(key, t);
                 }
                 if (Normal(t, -1, 0, 0, 0, 0) is not { } nn) continue;
                 var (nx, ny, nz) = nn;
                 var a = _f[3 * t];
                 var d = -(nx * _p[3 * a] + ny * _p[3 * a + 1] + nz * _p[3 * a + 2]);
                 var area = Area(t);
-                for (var e = 0; e < 3; e++) { AddPlane(_f[3 * t + e], nx, ny, nz, d, area); _w[_f[3 * t + e]] += area; }
+                for (var e = 0; e < 3; e++) { AddPlane(_q, _f[3 * t + e], nx, ny, nz, d, area); _w[_f[3 * t + e]] += area; }
             }
+            _f0 = [.. _f];
+            var fold = Math.Cos(FeatureDeg * Math.PI / 180);
             for (var t = 0; t < T; t++)
             {
                 if (Normal(t, -1, 0, 0, 0, 0) is not { } nn) continue;
                 for (var e = 0; e < 3; e++)
                 {
                     int u = _f[3 * t + e], v = _f[3 * t + (e + 1) % 3];
-                    if (onEdge[EdgeKeys.Undirected(u, v)] != 1) continue;
+                    var key = EdgeKeys.Undirected(u, v);
+                    if (onEdge[key] == 2)
+                    {
+                        // A fold: the other triangle's normal turns from this one's by more than FeatureDeg.
+                        var other = firstOn[key];
+                        if (other == t) foreach (var o in _faces[u]) if (o != t && Has(o, v)) { other = o; break; }
+                        if (other == t || Normal(other, -1, 0, 0, 0, 0) is not { } on || nn.X * on.X + nn.Y * on.Y + nn.Z * on.Z >= fold) continue;
+                    }
                     double ex = _p[3 * v] - _p[3 * u], ey = _p[3 * v + 1] - _p[3 * u + 1], ez = _p[3 * v + 2] - _p[3 * u + 2];
                     // Across the edge: perpendicular to both the edge and the triangle.
                     double cx = ey * nn.Z - ez * nn.Y, cy = ez * nn.X - ex * nn.Z, cz = ex * nn.Y - ey * nn.X;
@@ -140,17 +160,15 @@ public static class MeshSimplify
                     if (len < 1e-18) continue;
                     (cx, cy, cz) = (cx / len, cy / len, cz / len);
                     var d = -(cx * _p[3 * u] + cy * _p[3 * u + 1] + cz * _p[3 * u + 2]);
-                    // As heavy as a strip of ten times the edge's length beside it.
-                    var w = 10 * (ex * ex + ey * ey + ez * ez);
-                    AddPlane(u, cx, cy, cz, d, w); AddPlane(v, cx, cy, cz, d, w);
+                    AddPlane(_e, u, cx, cy, cz, d, 1); AddPlane(_e, v, cx, cy, cz, d, 1);
                 }
             }
             foreach (var key in onEdge.Keys) { var (u, v) = EdgeKeys.Ends(key); Push(u, v); }
         }
 
-        void AddPlane(int v, double a, double b, double c, double d, double w)
+        static void AddPlane(double[] into, int v, double a, double b, double c, double d, double w)
         {
-            var q = _q.AsSpan(10 * v, 10);
+            var q = into.AsSpan(10 * v, 10);
             q[0] += w * a * a; q[1] += w * a * b; q[2] += w * a * c; q[3] += w * a * d; q[4] += w * b * b;
             q[5] += w * b * c; q[6] += w * b * d; q[7] += w * c * c; q[8] += w * c * d; q[9] += w * d * d;
         }
@@ -164,13 +182,19 @@ public static class MeshSimplify
             return Math.Sqrt(nx * nx + ny * ny + nz * nz) / 2;
         }
 
-        /// <summary>The mean squared distance from x y z to the planes of u's and v's triangles, by their area.</summary>
+        /// <summary>
+        /// The mean squared distance from x y z to the planes of u's and v's triangles, by their area, and the
+        /// whole squared distance to the planes across their open edges and folds (at least the farthest one's).
+        /// </summary>
         double Cost(int u, int v, double x, double y, double z)
         {
-            double C(int k) => _q[10 * u + k] + _q[10 * v + k];
-            var e = C(0) * x * x + 2 * C(1) * x * y + 2 * C(2) * x * z + 2 * C(3) * x + C(4) * y * y
-                + 2 * C(5) * y * z + 2 * C(6) * y + C(7) * z * z + 2 * C(8) * z + C(9);
-            return e / Math.Max(_w[u] + _w[v], 1e-18);
+            static double Q(double[] q, int u, int v, double x, double y, double z)
+            {
+                double C(int k) => q[10 * u + k] + q[10 * v + k];
+                return C(0) * x * x + 2 * C(1) * x * y + 2 * C(2) * x * z + 2 * C(3) * x + C(4) * y * y
+                    + 2 * C(5) * y * z + 2 * C(6) * y + C(7) * z * z + 2 * C(8) * z + C(9);
+            }
+            return Q(_q, u, v, x, y, z) / Math.Max(_w[u] + _w[v], 1e-18) + Q(_e, u, v, x, y, z);
         }
 
         /// <summary>The best place for u and v together: u, v or their middle, and what it costs.</summary>
@@ -263,7 +287,7 @@ public static class MeshSimplify
                 if (!Keeps(u, u, v, x, y, z) || !Keeps(v, u, v, x, y, z)) continue;
                 // v into u.
                 _p[3 * u] = x; _p[3 * u + 1] = y; _p[3 * u + 2] = z;
-                for (var k = 0; k < 10; k++) _q[10 * u + k] += _q[10 * v + k];
+                for (var k = 0; k < 10; k++) { _q[10 * u + k] += _q[10 * v + k]; _e[10 * u + k] += _e[10 * v + k]; }
                 _w[u] += _w[v];
                 foreach (var t in _faces[v])
                 {
@@ -291,11 +315,13 @@ public static class MeshSimplify
 
         /// <summary>
         /// The most an original corner lies from what is left: each measured to the triangles round the vertex it went
-        /// into, so a chord's sag across a curve counts, not only the corners' own moves.
+        /// into, so a chord's sag across a curve counts, not only the corners' own moves; and the most what is left lies
+        /// from the original (its triangles' corners, middles of edges and centres, each to the original triangles round
+        /// the corners that went into its own): a face spread over a hole holds every original corner, yet strays.
         /// </summary>
         public double Stray()
         {
-            var worst = 0.0;
+            var worst = Back();
             for (var v = 0; v < _into.Length; v++)
             {
                 var r = Root(v);
@@ -311,13 +337,114 @@ public static class MeshSimplify
             return worst;
         }
 
-        /// <summary>The distance from a point to triangle t (Ericson's closest point on a triangle).</summary>
-        double PointTriangle(double px, double py, double pz, int t)
+        Grid? _grid;
+
+        /// <summary>The most a point of what is left lies from the original surface.</summary>
+        double Back()
         {
-            int ia = _f[3 * t], ib = _f[3 * t + 1], ic = _f[3 * t + 2];
-            var a = new Vec3(_p[3 * ia], _p[3 * ia + 1], _p[3 * ia + 2]);
-            var b = new Vec3(_p[3 * ib], _p[3 * ib + 1], _p[3 * ib + 2]);
-            var c = new Vec3(_p[3 * ic], _p[3 * ic + 1], _p[3 * ic + 2]);
+            _grid ??= new Grid(_f0, _p0);
+            var worst = 0.0;
+            Span<double> s = stackalloc double[21];
+            for (var t = 0; t < _dead.Length; t++)
+            {
+                if (_dead[t]) continue;
+                int a = _f[3 * t], b = _f[3 * t + 1], c = _f[3 * t + 2];
+                for (var k = 0; k < 3; k++)
+                {
+                    double pa = _p[3 * a + k], pb = _p[3 * b + k], pc = _p[3 * c + k];
+                    s[k] = pa; s[3 + k] = pb; s[6 + k] = pc;
+                    s[9 + k] = (pa + pb) / 2; s[12 + k] = (pb + pc) / 2; s[15 + k] = (pc + pa) / 2; s[18 + k] = (pa + pb + pc) / 3;
+                }
+                for (var i = 0; i < 7; i++) worst = Math.Max(worst, _grid.Distance(s[3 * i], s[3 * i + 1], s[3 * i + 2], worst));
+            }
+            return worst;
+        }
+
+        /// <summary>The original triangles in a grid of cells, for the distance from a point to the nearest.</summary>
+        sealed class Grid
+        {
+            readonly int[] _f;
+            readonly double[] _p;
+            readonly double _x0, _y0, _z0, _h;
+            readonly int _nx, _ny, _nz;
+            readonly Dictionary<long, List<int>> _cells = [];
+            readonly int[] _seen;
+            int _token;
+
+            public Grid(int[] f, double[] p)
+            {
+                (_f, _p) = (f, p);
+                var T = f.Length / 3;
+                _seen = new int[T];
+                double x0 = double.MaxValue, y0 = double.MaxValue, z0 = double.MaxValue, x1 = double.MinValue, y1 = double.MinValue, z1 = double.MinValue;
+                for (var i = 0; i < p.Length; i += 3)
+                {
+                    x0 = Math.Min(x0, p[i]); y0 = Math.Min(y0, p[i + 1]); z0 = Math.Min(z0, p[i + 2]);
+                    x1 = Math.Max(x1, p[i]); y1 = Math.Max(y1, p[i + 1]); z1 = Math.Max(z1, p[i + 2]);
+                }
+                (_x0, _y0, _z0) = (x0, y0, z0);
+                // About as many cells along the box's longest side as the cube root of the triangles, at most 256.
+                var span = Math.Max(Math.Max(x1 - x0, y1 - y0), Math.Max(z1 - z0, 1e-9));
+                _h = span / Math.Clamp(Math.Ceiling(Math.Pow(T, 1.0 / 3) * 2), 1, 256);
+                (_nx, _ny, _nz) = (Cell(x1, x0) + 1, Cell(y1, y0) + 1, Cell(z1, z0) + 1);
+                for (var t = 0; t < T; t++)
+                {
+                    int a = 3 * f[3 * t], b = 3 * f[3 * t + 1], c = 3 * f[3 * t + 2];
+                    int i0 = Cell(Math.Min(p[a], Math.Min(p[b], p[c])), x0), i1 = Cell(Math.Max(p[a], Math.Max(p[b], p[c])), x0);
+                    int j0 = Cell(Math.Min(p[a + 1], Math.Min(p[b + 1], p[c + 1])), y0), j1 = Cell(Math.Max(p[a + 1], Math.Max(p[b + 1], p[c + 1])), y0);
+                    int k0 = Cell(Math.Min(p[a + 2], Math.Min(p[b + 2], p[c + 2])), z0), k1 = Cell(Math.Max(p[a + 2], Math.Max(p[b + 2], p[c + 2])), z0);
+                    for (var i = i0; i <= i1; i++) for (var j = j0; j <= j1; j++) for (var k = k0; k <= k1; k++)
+                    {
+                        var key = Key(i, j, k);
+                        if (!_cells.TryGetValue(key, out var list)) _cells[key] = list = [];
+                        list.Add(t);
+                    }
+                }
+            }
+
+            int Cell(double v, double v0) => (int)Math.Floor((v - v0) / _h);
+            static long Key(int i, int j, int k) => ((long)i * 1_000_003 + j) * 1_000_003 + k;
+
+            /// <summary>The distance from x y z to the nearest triangle; any answer at most <paramref name="enough"/> is as good (the search stops).</summary>
+            public double Distance(double x, double y, double z, double enough)
+            {
+                if (++_token == int.MaxValue) { Array.Clear(_seen); _token = 1; }
+                int ci = Math.Clamp(Cell(x, _x0), 0, _nx - 1), cj = Math.Clamp(Cell(y, _y0), 0, _ny - 1), ck = Math.Clamp(Cell(z, _z0), 0, _nz - 1);
+                var best = double.MaxValue;
+                var reach = Math.Max(_nx, Math.Max(_ny, _nz));
+                for (var r = 0; r <= reach; r++)
+                {
+                    // Every cell on the ring r cells out (a cube's shell), each triangle once.
+                    for (var i = ci - r; i <= ci + r; i++)
+                    for (var j = cj - r; j <= cj + r; j++)
+                    for (var k = ck - r; k <= ck + r; k++)
+                    {
+                        if (Math.Max(Math.Abs(i - ci), Math.Max(Math.Abs(j - cj), Math.Abs(k - ck))) != r) continue;
+                        if (!_cells.TryGetValue(Key(i, j, k), out var list)) continue;
+                        foreach (var t in list)
+                        {
+                            if (_seen[t] == _token) continue;
+                            _seen[t] = _token;
+                            best = Math.Min(best, PointTriangle(x, y, z, t, _f, _p));
+                        }
+                    }
+                    // Past this ring a triangle is at least r cells away (the point may lie outside the box: its cell is clamped).
+                    if (best <= enough || best <= r * _h) break;
+                }
+                return best;
+            }
+        }
+
+        /// <summary>The distance from a point to triangle t (Ericson's closest point on a triangle).</summary>
+        double PointTriangle(double px, double py, double pz, int t) => PointTriangle(px, py, pz, t, _f, _p);
+
+        /// <summary>The distance from a point to triangle t of <paramref name="f"/> over the points <paramref name="pts"/>.</summary>
+        static double PointTriangle(double px, double py, double pz, int t, int[] f, double[] pts)
+        {
+            int ia = f[3 * t], ib = f[3 * t + 1], ic = f[3 * t + 2];
+            var a = new Vec3(pts[3 * ia], pts[3 * ia + 1], pts[3 * ia + 2]);
+            var b = new Vec3(pts[3 * ib], pts[3 * ib + 1], pts[3 * ib + 2]);
+            var c = new Vec3(pts[3 * ic], pts[3 * ic + 1], pts[3 * ic + 2]);
             var p = new Vec3(px, py, pz);
             Vec3 ab = b - a, ac = c - a, ap = p - a;
             double d1 = Vec3.Dot(ab, ap), d2 = Vec3.Dot(ac, ap);

@@ -41,6 +41,7 @@ import { finishRoom, roomFinishSchedule, roomFinishes } from './roomFinishTools'
 import { SkirtingSection, SkirtingTypesDialog, skirting, skirtingGrips, skirtingInRoom, skirtingSchedule, skirtingTypes } from './Skirtings';
 import { colorLegend, room, roomColors, roomOutline, roomTag, updateRooms } from './roomTools';
 import { RoomTagDialog } from './RoomTagDialog';
+import { sameKind } from '../../shell/params';
 
 const wall: ToolDef = {
   id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'), typed: typedBy('IfcWallType', 'wallTypeId', 'wallTypes', WallThumb),
@@ -133,7 +134,7 @@ function wallGrips(node: NodeDto): Grip[] {
   const flipped = usageOf(useSession.getState(), node.id)?.negative ?? false;
   return [
     ...pathGrips(c, (s, e, rise) => ({ command: 'architecture.updateWall', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise, detachJoinedEnds: true } })),
-    flipAcross(c, flipped ? 1 : -1, 'Flip: swap the wall\'s faces (its exterior goes to the other side)', () => ({ command: 'architecture.flipWall', args: { id: node.id } })),
+    flipAcross(c, flipped ? 1 : -1, 'Flip: swap the wall\'s faces (its exterior goes to the other side)', () => ({ command: 'architecture.flipWall', args: { ids: sameKind(node) } })),
   ];
 }
 const pathRefs = (node: NodeDto): RefLine[] => { const c = arcOf(node.props); return c ? [pathRef(c)] : []; };
@@ -150,8 +151,9 @@ function joineryGrips(node: NodeDto): Grip[] {
   const c = wall ? arcOf(wall.props) : null;
   if (!opening || !c) return [];
   const f = frameAt(c, num(opening, 'along'));
-  const hand = () => ({ command: 'architecture.flipJoinery', args: { id: node.id, axis: 'x' } });
-  const side = () => ({ command: 'architecture.flipJoinery', args: { id: node.id, axis: 'y' } });
+  // With several selected, an arrow flips them all (#74).
+  const hand = () => ({ command: 'architecture.flipJoinery', args: { ids: sameKind(node, ['IfcDoor', 'IfcWindow']), axis: 'x' } });
+  const side = () => ({ command: 'architecture.flipJoinery', args: { ids: sameKind(node, ['IfcDoor', 'IfcWindow']), axis: 'y' } });
   const arrow = (key: string, d: { x: number; y: number }, title: string, click: () => { command: string; args: Record<string, unknown> }): Grip =>
     ({ key, kind: 'flip', at: f.at, dir: d, title, click });
   return [

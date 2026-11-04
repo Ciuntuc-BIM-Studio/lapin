@@ -109,34 +109,85 @@ public static class JoineryShapes
         }
     }
 
-    /// <summary>The head's curve from the right jamb to the left, taken <paramref name="inset"/> in (its ends on the jamb lines ±(w/2 − inset)).</summary>
+    /// <summary>
+    /// The head's curve from the right jamb to the left, taken <paramref name="inset"/> in (its ends on the jamb lines ±(w/2 − inset)).
+    /// Each arc in even steps of its own angle, as many as <see cref="Chords"/> asks of its radius (at least
+    /// <see cref="MinPieces"/> to a head), so a wide arch strays from its circle no more than a curved wall does.
+    /// </summary>
     public static List<Vec2> Head(JoinerySpec s, double inset)
     {
         var half = s.Width / 2 - inset;
-        var kind = KindOf(s);
-        var xs = kind == "gable" ? [half, 0, -half]
-            : Enumerable.Range(0, 33).Select(i => half * Math.Cos(Math.PI * i / 32)).ToList();
-        if (kind == "radiused")
+        var (w, f) = (s.Width, Rise(s));
+        // The x of n + 1 points in even steps of angle from a0 to a1 on a circle of radius rho about cx.
+        static IEnumerable<double> Arc(double cx, double rho, double a0, double a1, int min) =>
+            Enumerable.Range(0, Pieces(rho, a1 - a0, min) + 1).Select(i => cx + rho * Math.Cos(a0 + (a1 - a0) * i / Pieces(rho, a1 - a0, min)));
+        static double Acos(double v) => Math.Acos(Math.Clamp(v, -1, 1));
+        List<double> xs;
+        switch (KindOf(s))
         {
-            // A quarter circle in each corner, the flat between them; the jamb's top square when the inset passes the radius.
-            var (f, cx) = (Rise(s), s.Width / 2 - Rise(s));
-            var rc = f - inset;
-            if (rc <= 1e-9) return [new(half, Top(s, half, inset)), new(-half, Top(s, -half, inset))];
-            var right = Enumerable.Range(0, 17).Select(i => cx + rc * Math.Cos(Math.PI / 2 * i / 16)).ToList();
-            xs = [.. right, .. Enumerable.Reverse(right).SkipWhile(x => x < 1e-9).Select(x => -x)];
-        }
-        if (kind == "pointed")
-        {
-            // Each half its own arc, the apex exactly at the middle.
-            var right = Enumerable.Range(0, 17).Select(i => half * (1 - i / 16.0));
-            xs = [.. right, .. right.Reverse().Skip(1).Select(x => -x)];
+            case "gable":
+                xs = [half, 0, -half];
+                break;
+            case "segmental":
+            {
+                // The arc of its circle between the jamb lines.
+                var rho = (w * w / 4 + f * f) / (2 * f) - inset;
+                if (rho <= half + 1e-12) goto default;
+                var a0 = Acos(half / rho);
+                xs = [half, .. Arc(0, rho, a0, Math.PI - a0, MinPieces).Skip(1).SkipLast(1), -half];
+                break;
+            }
+            case "elliptical":
+            {
+                // Even steps of the ellipse's own angle, as many as its flattest curve (the top's radius a²/b) asks.
+                var (a, b) = (half, f - inset);
+                var rho = a > 0 && b > 0 ? Math.Max(a * a / b, b * b / a) : half;
+                var n = Pieces(rho, Math.PI, MinPieces);
+                xs = [.. Enumerable.Range(0, n + 1).Select(i => half * Math.Cos(Math.PI * i / n))];
+                break;
+            }
+            case "radiused":
+            {
+                // A quarter circle in each corner, the flat between them; the jamb's top square when the inset passes the radius.
+                var (cx, rc) = (w / 2 - f, f - inset);
+                if (rc <= 1e-9) return [new(half, Top(s, half, inset)), new(-half, Top(s, -half, inset))];
+                var right = Arc(cx, rc, 0, Math.PI / 2, MinPieces / 2).ToList();
+                xs = [.. right, .. Enumerable.Reverse(right).SkipWhile(x => x < 1e-9).Select(x => -x)];
+                break;
+            }
+            case "pointed":
+            {
+                // Each half its own arc about a centre on the far side of the axis, the apex exactly at the middle.
+                var r = (f * f + w * w / 4) / w;
+                var (cx, rho) = (w / 2 - r, r - inset);
+                var right = (rho > 0 ? Arc(cx, rho, Acos((half - cx) / rho), Acos(-cx / rho), MinPieces / 2) : [half, 0]).ToList();
+                right[0] = half; right[^1] = 0;
+                xs = [.. right, .. Enumerable.Reverse(right).Skip(1).Select(x => -x)];
+                break;
+            }
+            default:
+                // A semicircle (or a segment flattened to one): even steps of its angle.
+                xs = [.. Arc(0, Math.Max(half, 1e-9), 0, Math.PI, MinPieces)];
+                xs[0] = half; xs[^1] = -half;
+                break;
         }
         return xs.Select(x => new Vec2(x, Top(s, x, inset))).ToList();
     }
 
-    /// <summary>An ellipse filling the width and height, taken <paramref name="inset"/> in, counter-clockwise from the right.</summary>
-    public static List<Vec2> Ellipse(JoinerySpec s, double inset, int n = 48)
+    /// <summary>The fewest pieces a head's curve is made of (a small arch stays as round as before the chord rule).</summary>
+    public const int MinPieces = 32;
+
+    /// <summary>The pieces an arc of <paramref name="radius"/> turning <paramref name="sweep"/> is made of: the chord rule's, at least <paramref name="min"/>.</summary>
+    static int Pieces(double radius, double sweep, int min) => Chords.Count(radius, sweep, min);
+
+    /// <summary>
+    /// An ellipse filling the width and height, taken <paramref name="inset"/> in, counter-clockwise from the right: as many
+    /// points as the chord rule asks of its flattest curve (at least 48), the same for every inset so a ring's two sides pair.
+    /// </summary>
+    public static List<Vec2> Ellipse(JoinerySpec s, double inset)
     {
+        var (a0, b0) = (Math.Max(s.Width / 2, 1e-6), Math.Max(s.Height / 2, 1e-6));
+        var n = Pieces(Math.Max(a0 * a0 / b0, b0 * b0 / a0), 2 * Math.PI, 48);
         var (a, b) = (s.Width / 2 - inset, s.Height / 2 - inset);
         return Enumerable.Range(0, n).Select(i => new Vec2(a * Math.Cos(2 * Math.PI * i / n), s.Height / 2 + b * Math.Sin(2 * Math.PI * i / n))).ToList();
     }

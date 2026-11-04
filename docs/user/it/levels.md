@@ -10,7 +10,7 @@ summary: Aggiungi livelli, impostane le altezze e vedi un altro livello sotto la
 
 Il browser di progetto elenca i livelli in alto, il più alto per primo. **+** accanto a **Livelli** aggiunge un livello sopra il più alto.
 
-Seleziona un livello per vederne il **livello di base** e il **livello superiore**. Ciascuno dei due può stare sopra o sotto ±0.00. La sua altezza è la distanza tra i due. Quando sposti la base, la sommità resta dov’è. Un nuovo progetto parte con Foundations, Ground floor e First floor.
+Seleziona un livello per vederne il **livello di base** e il **livello superiore**. Ciascuno dei due può stare sopra o sotto ±0.00. La sua altezza è la distanza tra i due. Quando sposti la base, la sommità resta dov’è. Un nuovo progetto parte con Foundations, Ground floor e First floor. Un livello è alto al massimo 100 m e sta entro ±10 km da ±0.00: un valore scritto nell’unità sbagliata viene rifiutato. Una scala che salirebbe più di 50 m fino al livello superiore si ferma lì e dice perché.
 
 ![Le proprietà di un livello: livello di base, livello superiore e altezza](shots/level-properties.webp)
 

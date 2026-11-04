@@ -6,6 +6,7 @@ import { execute, useSession } from '../../engine/session';
 import { ofClass, typeOf } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { describeType } from './describe';
+import { sameKind } from '../../shell/params';
 
 const TYPE_CLASS: Record<string, string> = { IfcColumn: 'IfcColumnType', IfcBeam: 'IfcBeamType', IfcFooting: 'IfcFootingType' };
 
@@ -21,7 +22,7 @@ export function StructureSection({ node }: { node: NodeDto }) {
       <label className="type-pick">
         <span className="eyebrow">Type</span>
         <span className="row">
-          <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('structure.setType', { id: node.id, typeId: e.target.value })}>
+          <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('structure.setType', { ids: sameKind(node), typeId: e.target.value })}>
             {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
           <button type="button" className="icon" title="Structure types…" onClick={() => useUi.setState({ dialog: 'structureTypes' })}><Settings2 size={14} /></button>

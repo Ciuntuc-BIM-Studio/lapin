@@ -181,6 +181,7 @@ public static class RampBuilder
         var foot = r.Flights[0];
         Vec2[] snaps = [place.World(foot.Start - foot.Left * (foot.Width / 2)), place.World(foot.Start + foot.Left * (foot.Width / 2)), place.World(r.Top.At)];
         foreach (var c in r.Checks.Where(c => !c.Ok)) problems.Add($"{c.Label} {Fmt(c)} is outside {(c.Min is { } lo ? Fmt(c, lo) : "—")} … {(c.Max is { } hi ? Fmt(c, hi) : "—")}.");
+        if (StairBuilder.TooHigh(m, ramp) is { } high) problems.Add(high);
         return new ElementGeometry(parts, Plan(r, place), snaps, problems.Count > 0 ? problems : null);
     }
 

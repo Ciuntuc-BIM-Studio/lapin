@@ -14,7 +14,7 @@ Gdy Drzwi lub Okno jest włączone, panel Właściwości pokazuje typ, który zo
 
 ![Rzut z drzwiami i oknami](shots/openings-plan.webp)
 
-Aby przesunąć drzwi lub okno wzdłuż ściany, zaznacz je i przeciągnij. Aby je zmienić, użyj panelu Właściwości: typ, wysokość parapetu i strona otwierania (**Strona**).
+Aby przesunąć drzwi lub okno wzdłuż ściany, zaznacz je i przeciągnij. Aby je zmienić, użyj panelu Właściwości: typ, wysokość parapetu i strona otwierania (**Strona**). Gdy zaznaczonych jest kilka drzwi i okien, **Strona zawiasów**, **Strona**, parapet i typ zmieniają je wszystkie w jednym kroku, podobnie strzałka odwracania na rzucie.
 
 ![Właściwości drzwi](shots/door-properties.webp)
 

@@ -6,6 +6,7 @@ import { execute, useSession } from '../../engine/session';
 import { materialColor, materialName, ofClass, typeLayers, typeOf } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { lengthText } from '../../engine/unitsStore';
+import { sameKind } from '../../shell/params';
 
 export function SlabSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -18,7 +19,7 @@ export function SlabSection({ node }: { node: NodeDto }) {
       <label className="type-pick">
         <span className="eyebrow">Type</span>
         <span className="row">
-          <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('architecture.setSlabType', { id: node.id, typeId: e.target.value })}>
+          <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('architecture.setSlabType', { ids: sameKind(node), typeId: e.target.value })}>
             {ofClass(model, 'IfcSlabType').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
           <button type="button" className="icon" title="Floor types…" onClick={() => useUi.setState({ dialog: 'slabTypes' })}><Settings2 size={14} /></button>

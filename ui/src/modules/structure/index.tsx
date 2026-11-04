@@ -11,6 +11,7 @@ import { notify, useUi } from '../../app/store';
 import { ensureStorey, execute, useSession } from '../../engine/session';
 import { StructureSection } from './StructureSection';
 import { StructureTypesDialog } from './StructureTypesDialog';
+import { sameKind } from '../../shell/params';
 
 const column: ToolDef = {
   id: 'structure.column', label: 'Column', icon: ColumnIcon, shortcut: 'CL',
@@ -76,7 +77,7 @@ function memberGrips(node: NodeDto): Grip[] {
   const beam = node.type === 'IfcBeam';
   return [
     ...pathGrips(c, (s, e, rise) => ({ command: 'structure.updatePath', args: { id: node.id, x1: s.x, y1: s.y, x2: e.x, y2: e.y, arc: rise, detachJoinedEnds: true } })),
-    flipAcross(c, (beam ? node.props.flipped : usageOf(useSession.getState(), node.id)?.negative) ? 1 : -1, beam ? 'Flip: mirror the section across the axis' : 'Flip: swap the foundation\'s faces', () => ({ command: 'structure.flip', args: { id: node.id } })),
+    flipAcross(c, (beam ? node.props.flipped : usageOf(useSession.getState(), node.id)?.negative) ? 1 : -1, beam ? 'Flip: mirror the section across the axis' : 'Flip: swap the foundation\'s faces', () => ({ command: 'structure.flip', args: { ids: sameKind(node) } })),
   ];
 }
 const pathRefs = (node: NodeDto): RefLine[] => { const c = arcOf(node.props); return c ? [pathRef(c)] : []; };

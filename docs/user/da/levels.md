@@ -10,7 +10,7 @@ summary: Tilføj niveauer, indstil deres højder, og se et andet niveau under de
 
 Projektbrowseren viser niveauerne øverst, det højeste først. **+** ved siden af **Niveauer** tilføjer et niveau over det højeste.
 
-Markér et niveau for at se dets **Basisniveau** og **Topniveau**. Begge kan ligge over eller under ±0.00. Højden er afstanden mellem dem. Når du flytter basen, bliver toppen, hvor den er. Et nyt projekt starter med Foundations, Ground floor og First floor.
+Markér et niveau for at se dets **Basisniveau** og **Topniveau**. Begge kan ligge over eller under ±0.00. Højden er afstanden mellem dem. Når du flytter basen, bliver toppen, hvor den er. Et nyt projekt starter med Foundations, Ground floor og First floor. Et niveau er højst 100 m højt og ligger inden for ±10 km af ±0.00: en værdi skrevet i den forkerte enhed afvises. En trappe, der ville stige mere end 50 m til niveauet ovenover, stopper der og siger hvorfor.
 
 ![Et niveaus egenskaber: basisniveau, topniveau og højde](shots/level-properties.webp)
 

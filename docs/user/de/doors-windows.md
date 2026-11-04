@@ -14,7 +14,7 @@ Solange Door oder Window aktiv ist, zeigt der Eigenschaftenbereich den Typ, der 
 
 ![Ein Grundriss mit einer Tür und Fenstern](shots/openings-plan.webp)
 
-Um eine Tür oder ein Fenster entlang seiner Wand zu verschieben, wählen Sie es aus und ziehen Sie es. Um es zu ändern, verwenden Sie den Eigenschaftenbereich: seinen Typ, seine Brüstungshöhe und die Seite, zu der es sich öffnet (**Seite**).
+Um eine Tür oder ein Fenster entlang seiner Wand zu verschieben, wählen Sie es aus und ziehen Sie es. Um es zu ändern, verwenden Sie den Eigenschaftenbereich: seinen Typ, seine Brüstungshöhe und die Seite, zu der es sich öffnet (**Seite**). Sind mehrere Türen und Fenster ausgewählt, ändern **Anschlag**, **Seite**, die Brüstung und der Typ alle in einem Schritt, ebenso ein Umkehrpfeil im Grundriss.
 
 ![Die Eigenschaften einer Tür](shots/door-properties.webp)
 

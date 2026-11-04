@@ -14,7 +14,7 @@ Mientras Door o Window está activa, el panel de propiedades muestra el tipo que
 
 ![Una planta con una puerta y ventanas](shots/openings-plan.webp)
 
-Para mover una puerta o una ventana a lo largo de su muro, selecciónela y arrástrela. Para cambiarla, use el panel de propiedades: su tipo, la altura del alféizar y hacia qué lado abre (**Lado**).
+Para mover una puerta o una ventana a lo largo de su muro, selecciónela y arrástrela. Para cambiarla, use el panel de propiedades: su tipo, la altura del alféizar y hacia qué lado abre (**Lado**). Con varias puertas y ventanas seleccionadas, **Mano**, **Lado**, el alféizar y el tipo las cambian todas en un solo paso, y también una flecha de giro en la planta.
 
 ![Las propiedades de una puerta](shots/door-properties.webp)
 

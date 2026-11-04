@@ -10,6 +10,10 @@ import { execute, useSession } from '../../engine/session';
 import { mm, num, ofClass, relatedOf, relatingOf, typeOf } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { LengthField } from '../../shell/cells';
+import { sameKind } from '../../shell/params';
+
+/** Doors and windows flip together. */
+const JOINERY = ['IfcDoor', 'IfcWindow'];
 
 export function JoinerySection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -25,7 +29,7 @@ export function JoinerySection({ node }: { node: NodeDto }) {
       <label className="type-pick">
         <span className="eyebrow">Type</span>
         <span className="row">
-          <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('architecture.setJoineryType', { id: node.id, typeId: e.target.value })}>
+          <select value={type?.id ?? ''} disabled={!node.editable} onChange={(e) => void execute('architecture.setJoineryType', { ids: sameKind(node), typeId: e.target.value })}>
             {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
           <button type="button" className="icon" title="Doors and windows…" onClick={() => useUi.setState({ dialog: 'joinery' })}><Settings2 size={14} /></button>
@@ -36,14 +40,14 @@ export function JoinerySection({ node }: { node: NodeDto }) {
         <dt>In wall</dt><dd>{wall?.name ?? '—'}</dd>
         {opening && node.editable && <>
           <dt>Along the wall</dt><dd><LengthField metres={num(opening, 'along')} onCommit={(v) => { if (v != null) void execute('architecture.moveOpening', { id: node.id, along: v }); }} /></dd>
-          <dt>Sill</dt><dd><LengthField metres={num(opening, 'sill')} onCommit={(v) => { if (v != null) void execute('architecture.moveOpening', { id: node.id, sill: v }); }} /></dd>
+          <dt>Sill</dt><dd><LengthField metres={num(opening, 'sill')} onCommit={(v) => { if (v != null) void execute('architecture.moveOpening', { ids: sameKind(node, JOINERY), sill: v }); }} /></dd>
         </>}
         <dt>Of its type</dt><dd className="num">{type ? relatedOf(model, type.id, 'IfcRelDefinesByType').length : 0}</dd>
       </dl>
       {node.editable && (
         <div className="row">
-          <button type="button" className="btn" title="Hinges on the other side" onClick={() => void execute('architecture.flipJoinery', { id: node.id, axis: 'x' })}><FlipHorizontal2 size={14} />Hand</button>
-          <button type="button" className="btn" title="Opens to the other side of the wall" onClick={() => void execute('architecture.flipJoinery', { id: node.id, axis: 'y' })}><FlipVertical2 size={14} />Side</button>
+          <button type="button" className="btn" title="Hinges on the other side" onClick={() => void execute('architecture.flipJoinery', { ids: sameKind(node, JOINERY), axis: 'x' })}><FlipHorizontal2 size={14} />Hand</button>
+          <button type="button" className="btn" title="Opens to the other side of the wall" onClick={() => void execute('architecture.flipJoinery', { ids: sameKind(node, JOINERY), axis: 'y' })}><FlipVertical2 size={14} />Side</button>
         </div>
       )}
     </div>

@@ -14,7 +14,7 @@ While Door or Window is on, the properties panel shows the type it will place, w
 
 ![A plan with a door and windows](shots/openings-plan.webp)
 
-To move a door or window along its wall, select it and drag it. To change it, use the properties panel: its type, its sill height, and which side it opens to (**Side**).
+To move a door or window along its wall, select it and drag it. To change it, use the properties panel: its type, its sill height, and which side it opens to (**Side**). With several doors and windows selected, **Hand**, **Side**, the sill and the type change all of them in one step, and so does a flip arrow in the plan.
 
 ![A door's properties](shots/door-properties.webp)
 

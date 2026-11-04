@@ -14,7 +14,7 @@ Cât timp Door sau Window e activă, panoul de proprietăți arată tipul pe car
 
 ![Un plan cu o ușă și ferestre](shots/openings-plan.webp)
 
-Ca să muți o ușă sau o fereastră de-a lungul peretelui, selectează-o și trage de ea. Ca s-o schimbi, folosește panoul de proprietăți: tipul, înălțimea parapetului și partea în care se deschide.
+Ca să muți o ușă sau o fereastră de-a lungul peretelui, selectează-o și trage de ea. Ca s-o schimbi, folosește panoul de proprietăți: tipul, înălțimea parapetului și partea în care se deschide. Cu mai multe uși și ferestre selectate, **Balamale**, **Parte**, parapetul și tipul le schimbă pe toate dintr-un pas, la fel și o săgeată de întoarcere din plan.
 
 ![Proprietățile unei uși](shots/door-properties.webp)
 

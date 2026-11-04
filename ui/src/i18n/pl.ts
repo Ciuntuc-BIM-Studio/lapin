@@ -947,6 +947,10 @@ const n = (count: string, one: string, few: string, many: string) => `${count} $
 
 /** Phrases with a number or a name in them. */
 export const PL_PATTERNS: Language['patterns'] = [
+  // Testers' reports #73: a stair asked to climb too far, a storey's level or height out of bounds.
+  [/^It would climb ([\d.,]+) m to the level above; drawn to (\d+) m\. Check the storeys' levels\.$/, (m) => `Wznosiłyby się o ${m[1]} m do poziomu powyżej; narysowane do ${m[2]} m. Sprawdź rzędne kondygnacji.`],
+  [/^A storey is at most (\d+) m high \(asked ([\d.,]+) m\)\. Check the unit the level was typed in\.$/, (m) => `Kondygnacja ma najwyżej ${m[1]} m wysokości (podano ${m[2]} m). Sprawdź jednostkę, w której wpisano rzędną.`],
+  [/^A storey's level must be within ±10 km of ±0\.00 \(asked ([-\d.,E+]+) m\)\.$/, (m) => `Rzędna kondygnacji musi mieścić się w ±10 km od ±0.00 (podano ${m[1]} m).`],
   [/^(.+): (\d+) remark\(s\) added, (\d+) updated\.$/, (m) => `${m[1]}: ${n(m[2], 'uwaga dodana', 'uwagi dodane', 'uwag dodanych')}, ${m[3]} ${form(m[3], 'zaktualizowana', 'zaktualizowane', 'zaktualizowanych')}.`],
   [/^Importing (.+)$/, (m) => `Importowanie ${m[1]}`],
   [/^Linking (.+)$/, (m) => `Łączenie ${m[1]}`],

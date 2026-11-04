@@ -10,7 +10,7 @@ summary: Add levels, set their heights, and see another level under the plan you
 
 The project browser lists the levels at the top, the highest first. **+** next to **Levels** adds a level above the highest one.
 
-Select a level to see its **base level** and **top level**. Either can be above or below ±0.00. Its height is the distance between them. When you move the base, the top stays where it is. A new project starts with Foundations, Ground floor and First floor.
+Select a level to see its **base level** and **top level**. Either can be above or below ±0.00. Its height is the distance between them. When you move the base, the top stays where it is. A new project starts with Foundations, Ground floor and First floor. A level is at most 100 m high and lies within ±10 km of ±0.00: a value typed in the wrong unit is refused. A stair that would climb more than 50 m to the level above stops there and says why.
 
 ![A level's properties: base level, top level and height](shots/level-properties.webp)
 

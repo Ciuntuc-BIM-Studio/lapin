@@ -10,7 +10,7 @@ summary: Fügen Sie Ebenen hinzu, legen Sie ihre Höhen fest und sehen Sie eine 
 
 Der Projektbrowser listet oben die Ebenen auf, die höchste zuerst. **+** neben **Ebenen** fügt eine Ebene über der höchsten hinzu.
 
-Wählen Sie eine Ebene aus, um ihre **Basisebene** und ihre **Obere Ebene** zu sehen. Beide können über oder unter ±0.00 liegen. Ihre Höhe ist der Abstand zwischen ihnen. Wenn Sie die Basis verschieben, bleibt die Oberkante, wo sie ist. Ein neues Projekt beginnt mit Foundations, Ground floor und First floor.
+Wählen Sie eine Ebene aus, um ihre **Basisebene** und ihre **Obere Ebene** zu sehen. Beide können über oder unter ±0.00 liegen. Ihre Höhe ist der Abstand zwischen ihnen. Wenn Sie die Basis verschieben, bleibt die Oberkante, wo sie ist. Ein neues Projekt beginnt mit Foundations, Ground floor und First floor. Eine Ebene ist höchstens 100 m hoch und liegt innerhalb von ±10 km um ±0.00: ein in der falschen Einheit eingegebener Wert wird abgelehnt. Eine Treppe, die mehr als 50 m bis zur Ebene darüber steigen würde, endet dort und sagt warum.
 
 ![Die Eigenschaften einer Ebene: Basisebene, obere Ebene und Höhe](shots/level-properties.webp)
 

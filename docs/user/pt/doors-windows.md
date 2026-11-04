@@ -14,7 +14,7 @@ Enquanto Porta ou Janela está ativa, o painel de propriedades mostra o tipo que
 
 ![Uma planta com uma porta e janelas](shots/openings-plan.webp)
 
-Para mover uma porta ou janela ao longo da sua parede, selecione-a e arraste-a. Para mudá-la, use o painel de propriedades: o tipo, a altura do peitoril e para que lado ela abre (**Lado**).
+Para mover uma porta ou janela ao longo da sua parede, selecione-a e arraste-a. Para mudá-la, use o painel de propriedades: o tipo, a altura do peitoril e para que lado ela abre (**Lado**). Com várias portas e janelas selecionadas, **Mão**, **Lado**, o peitoril e o tipo mudam todas num só passo, tal como uma seta de inversão na planta.
 
 ![As propriedades de uma porta](shots/door-properties.webp)
 

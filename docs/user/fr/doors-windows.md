@@ -14,7 +14,7 @@ Tant que Door ou Window est actif, le panneau des propriétés montre le type qu
 
 ![Un plan avec une porte et des fenêtres](shots/openings-plan.webp)
 
-Pour déplacer une porte ou une fenêtre le long de son mur, sélectionnez-la et faites-la glisser. Pour la modifier, utilisez le panneau des propriétés : son type, sa hauteur d’allège, et le côté vers lequel elle s’ouvre (**Côté**).
+Pour déplacer une porte ou une fenêtre le long de son mur, sélectionnez-la et faites-la glisser. Pour la modifier, utilisez le panneau des propriétés : son type, sa hauteur d’allège, et le côté vers lequel elle s’ouvre (**Côté**). Avec plusieurs portes et fenêtres sélectionnées, **Main**, **Côté**, l’allège et le type les changent toutes en une seule étape, de même qu’une flèche de retournement en plan.
 
 ![Les propriétés d’une porte](shots/door-properties.webp)
 

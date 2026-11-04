@@ -10,7 +10,7 @@ summary: Ajoutez des niveaux, réglez leurs hauteurs et voyez un autre niveau so
 
 L’arborescence du projet liste les niveaux en haut, le plus haut en premier. Le **+** à côté de **Niveaux** ajoute un niveau au-dessus du plus haut.
 
-Sélectionnez un niveau pour voir son **niveau de base** et son **niveau supérieur**. L’un comme l’autre peut se trouver au-dessus ou au-dessous de ±0.00. Sa hauteur est la distance entre les deux. Quand vous déplacez la base, le haut reste où il est. Un nouveau projet commence avec Foundations, Ground floor et First floor.
+Sélectionnez un niveau pour voir son **niveau de base** et son **niveau supérieur**. L’un comme l’autre peut se trouver au-dessus ou au-dessous de ±0.00. Sa hauteur est la distance entre les deux. Quand vous déplacez la base, le haut reste où il est. Un nouveau projet commence avec Foundations, Ground floor et First floor. Un niveau fait au plus 100 m de haut et reste à ±10 km de ±0.00 : une valeur saisie dans la mauvaise unité est refusée. Un escalier qui monterait de plus de 50 m jusqu’au niveau au-dessus s’arrête là et dit pourquoi.
 
 ![Les propriétés d’un niveau : niveau de base, niveau supérieur et hauteur](shots/level-properties.webp)
 

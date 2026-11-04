@@ -59,12 +59,28 @@ public static class StairBuilder
     /// finished floor with the offsets; without a storey above, the stair's
     /// own height, else the storey's.
     /// </summary>
-    public static double Height(IModelView m, Entity stair, Entity storey)
+    public static double Height(IModelView m, Entity stair, Entity storey) => Math.Min(Climb(m, stair, storey), MaxClimb);
+
+    /// <summary>
+    /// The most a stair or ramp climbs (m): a storey's level typed in the wrong unit (a tester's report, #73: 3000 m
+    /// for 3000 mm) asked thousands of risers of the stair under it and froze the program. Past it, the stair stops
+    /// there and says so (<see cref="TooHigh"/>).
+    /// </summary>
+    public const double MaxClimb = 50;
+
+    /// <summary>The height asked of the stair, before <see cref="MaxClimb"/>.</summary>
+    public static double Climb(IModelView m, Entity stair, Entity storey)
     {
         if (OwnRise(m, stair) is { } rise) return rise;
         var top = TopStorey(m, stair, storey)?.Num("elevation") ?? storey.Num("elevation") + (stair.NumOrNull("height") ?? storey.Num("height", 3));
         return top + stair.Num("topOffset") - (storey.Num("elevation") + stair.Num("baseOffset"));
     }
+
+    /// <summary>The diagnostic of a stair or ramp asked to climb more than <see cref="MaxClimb"/>; null when it is not.</summary>
+    public static string? TooHigh(IModelView m, Entity stair) =>
+        Spatial.StoreyOf(m, stair.Id) is { } storey && Climb(m, stair, storey) is var c && c > MaxClimb
+            ? $"It would climb {c:0.##} m to the level above; drawn to {MaxClimb:0} m. Check the storeys' levels."
+            : null;
 
     public static StairPlacement PlacementOf(Entity stair, Entity storey)
     {
@@ -171,6 +187,7 @@ public static class StairBuilder
         var foot = r.Foot;
         Vec2[] snaps = [place.World(foot.At - foot.Left * (foot.Width / 2)), place.World(foot.At + foot.Left * (foot.Width / 2)), place.World(r.Top.At)];
         foreach (var c in r.Checks.Where(c => !c.Ok)) problems.Add($"{c.Label} {Fmt(c.Value)} is outside {Fmt(c.Min)} … {Fmt(c.Max)}.");
+        if (TooHigh(m, stair) is { } high) problems.Add(high);
         return new ElementGeometry(parts, plan, snaps, problems.Count > 0 ? problems : null);
     }
 
