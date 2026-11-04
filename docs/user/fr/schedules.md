@@ -4,6 +4,30 @@ order: 95
 summary: Listez portes, fenêtres, linteaux, pièces et tout ce qu’un module compte ; ajoutez vos propres lignes et colonnes, écrivez par-dessus les valeurs du modèle et tirez un graphique du tableau.
 ---
 
+## Obtenir les quantités
+
+Tout ce que Lapin modélise est mesuré à partir de sa géométrie : la longueur, la hauteur, la surface latérale brute et nette et le volume d’un mur, la surface et le volume de chaque couche, les surfaces et le volume d’un plancher, la surface et le périmètre d’une pièce, le nombre de portes. Il y a trois chemins :
+
+- **Un élément.** Sélectionnez-le : la section **Métrés** du panneau des propriétés montre ce qu’il mesure, puis chacune de ses couches ou parties.
+- **Tout le modèle.** **Métrés → Métré** crée (ou ouvre) le métré : tous les éléments que le modèle mesure, additionnés ligne par ligne, avec le nombre, la longueur, la surface brute et nette, le volume brut et net et le poids. Sa barre choisit ce qui est additionné ensemble : **Par catégorie et type** (par défaut : les murs de chaque type de mur, les planchers de chaque type…), **Par matériau** (chaque couche sous son matériau : la brique, l’enduit et l’isolant des murs séparément, le béton des linteaux), par niveau, ou combinés. **Tous les éléments** choisit les catégories qu’il liste (seulement les murs et les planchers, par exemple). Le métré suit le modèle comme toute nomenclature et accepte des lignes et des colonnes à vous (une provision, un prix unitaire).
+- **Toute autre liste.** **Métrés → Nomenclatures…** crée toute nomenclature que l’édition propose : pièces, finitions, menuiseries, compositions de types, bois, armatures, coffrages, acier… La même liste est sous **+** à côté de **Nomenclatures** dans le navigateur du projet.
+
+![Le métré groupé par catégorie et matériau](shots/quantity-takeoff.webp)
+
+**Métrés → Exporter XLSX** enregistre directement le métré comme classeur (téléchargé dans un navigateur).
+
+## Les quantités sur une feuille
+
+Une nomenclature se place sur une feuille comme une vue, et y est dessinée avec toutes ses lignes et valeurs, ses totaux et ses graphiques :
+
+- **Placer sur une feuille…** dans la barre de la nomenclature : **Nouvelle feuille** crée une feuille A3 avec le tableau et l’ouvre, ou choisissez une feuille existante.
+- Ou faites glisser la nomenclature du navigateur du projet sur une feuille ouverte : elle arrive là où vous la lâchez. Plans, coupes et façades se glissent de même.
+- Ou **Placer une vue…** dans la barre de la feuille.
+
+Sur la feuille, faites glisser le tableau pour le déplacer ; un tableau plus long que le cadre continue sur d’autres pages (la feuille le signale, et **la placer sur une nouvelle feuille** le continue). Le tableau suit le modèle : ajoutez un mur et les chiffres de la feuille changent. Il s’imprime avec **Imprimer** et va dans le PDF et le DXF de la feuille tel qu’il est dessiné.
+
+![Le métré placé sur une nouvelle feuille](shots/takeoff-sheet.webp)
+
 ## Créer une nomenclature
 
 Une nomenclature est un tableau que le modèle remplit : portes et fenêtres, linteaux, pièces, armatures, bois, coffrages et plus encore. Cliquez sur le **+** à côté de **Nomenclatures** dans l’arborescence et choisissez ce qu’elle liste, ou utilisez l’outil d’un module (Bois → Liste de bois, Installations de chantier → Nomenclature de coffrage…). Double-cliquez dessus dans l’arborescence pour l’ouvrir dans un onglet. Une nomenclature suit le modèle : déplacez un mur, ajoutez une fenêtre, et le tableau change avec eux.

@@ -1175,3 +1175,10 @@ button.mode-chip:hover { color: var(--accent); }
 .face-sketch .face-sketch-snap { fill: none; stroke: #2f9e6a; stroke-width: 2; }
 .face-sketch-snap-name { position: absolute; z-index: 7; pointer-events: none; font-size: 11px; padding: 1px 5px; border-radius: 4px; background: var(--hud); color: var(--text); border: 1px solid #2f9e6a; white-space: nowrap; }
 .axis-drag-options { display: inline-flex; gap: 4px; }
+
+/* Quantities → Schedules… (decision 287): the kinds of schedule as buttons, the project's schedules as links. */
+.schedule-kinds { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; }
+.plain-list { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 4px; }
+.sheet-svg.drop-target { outline: 2px dashed var(--accent); outline-offset: -4px; }
+.takeoff-kinds { position: relative; display: inline-flex; }
+.takeoff-kinds-menu { position: absolute; top: 100%; left: 0; z-index: 20; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 8px; display: grid; gap: 2px; min-width: 200px; max-height: 320px; overflow: auto; box-shadow: 0 4px 16px rgba(0,0,0,.18); }

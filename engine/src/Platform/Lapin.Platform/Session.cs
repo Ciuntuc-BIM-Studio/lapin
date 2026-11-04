@@ -954,6 +954,8 @@ public sealed class Session
         public string? Title => s.Path is { Length: > 0 } p ? System.IO.Path.GetFileNameWithoutExtension(p.Replace('\\', '/').Split('/')[^1]) : null;
         public IReadOnlyList<string> DependentsOf(string id) => s.DependentsOf(id);
         public IReadOnlyList<string> DependenciesOf(string id) => s.DependenciesOf(id);
+        public IReadOnlyList<QuantitySet> Quantities(string id) => s.Quantities(id);
+        public ClassDescriptor? Describe(string ifcClass) => s._catalog.Class(ifcClass);
     }
 }
 

@@ -4,6 +4,30 @@ order: 95
 summary: List døre, vinduer, overliggere, rum og alt, hvad et modul tæller; tilføj dine egne rækker og kolonner, skriv oven i modellens værdier, og lav et diagram af tabellen.
 ---
 
+## Mængder
+
+Alt, hvad Lapin modellerer, måles ud fra geometrien: en væg længde, højde, brutto- og nettosideareal og volumen, hvert lags areal og volumen, et dæks arealer og volumen, et rums areal og omkreds, antallet af døre. Der er tre veje:
+
+- **Ét element.** Vælg det: afsnittet **Mængder** i egenskabspanelet viser, hvad det måler, derefter hvert lag eller hver del.
+- **Hele modellen.** **Mængder → Mængdeudtræk** laver (eller åbner) mængdeudtrækket: alle de elementer, modellen måler, lagt sammen række for række, med antal, længde, brutto- og nettoareal, brutto- og nettovolumen og vægt. Dets værktøjslinje vælger, hvad der lægges sammen: **Efter art og type** (standard: væggene af hver vægtype, dækkene af hver dæktype…), **Efter materiale** (hvert lag under sit materiale: væggenes tegl, puds og isolering hver for sig, overliggernes beton), efter etage eller kombineret. **Alle elementer** vælger, hvilke arter det viser (kun vægge og dæk, for eksempel). Mængdeudtrækket følger modellen som ethvert skema og tager egne rækker og kolonner (et tillæg, en enhedspris).
+- **Enhver anden liste.** **Mængder → Skemaer…** laver ethvert skema, udgaven tilbyder: rum, rumoverflader, døre og vinduer, typeopbygninger, tømmer, armering, forskalling, stål… Den samme liste ligger under **+** ved **Skemaer** i projektbrowseren.
+
+![Mængdeudtrækket grupperet efter art og materiale](shots/quantity-takeoff.webp)
+
+**Mængder → Eksportér XLSX** gemmer mængdeudtrækket direkte som regneark (i en browser hentes det ned).
+
+## Mængder på et ark
+
+Et skema placeres på et ark som en visning og tegnes der med alle sine rækker og værdier, totaler og diagrammer:
+
+- **Placér på tegningsark…** i skemaets værktøjslinje: **Nyt tegningsark** laver et A3-ark med tabellen og åbner det, eller vælg et ark, du har.
+- Eller træk skemaet fra projektbrowseren hen på et åbent ark: det lander, hvor du slipper det. Planer, snit og facader trækkes på samme måde.
+- Eller **Placér visning…** i arkets egen værktøjslinje.
+
+På arket trækker du tabellen for at flytte den; en tabel, der er længere end rammen, fortsætter på flere sider (arket siger det, og **placér den på et nyt ark** fortsætter den). Tabellen følger modellen: tilføj en væg, og tallene på arket ændres. Den udskrives med **Udskriv** og kommer med i arkets PDF og DXF, præcis som den er tegnet.
+
+![Mængdeudtrækket placeret på et nyt ark](shots/takeoff-sheet.webp)
+
 ## At lave et skema
 
 Et skema er en tabel, som modellen udfylder: døre og vinduer, overliggere, rum, armering, træ, forskalling og mere. Klik på **+** ved siden af **Skemaer** i projektbrowseren, og vælg, hvad det skal liste, eller brug et moduls værktøj (Træ → Træliste, Byggepladsindretning → Forskallingsskema…). Dobbeltklik på det i browseren for at åbne det i en fane. Et skema følger modellen: flyt en væg, tilføj et vindue, og tabellen ændrer sig med dem.

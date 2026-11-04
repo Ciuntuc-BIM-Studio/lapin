@@ -4,6 +4,30 @@ order: 95
 summary: Listezi uși, ferestre, buiandrugi, încăperi și tot ce numără un modul; adaugi rânduri și coloane proprii, scrii peste valorile modelului și faci un grafic din tabel.
 ---
 
+## Cum scoți cantitățile
+
+Tot ce modelează Lapin e măsurat din geometrie: lungimea, înălțimea, aria laterală brută și netă și volumul unui perete, aria și volumul fiecărui strat, ariile și volumul unei plăci, aria și perimetrul unei încăperi, numărul ușilor. Ai trei căi:
+
+- **Un singur element.** Selectează-l: secțiunea **Cantități** din panoul Proprietăți arată ce măsoară, apoi fiecare strat sau parte a lui.
+- **Tot modelul.** **Cantități → Antemăsurătoare** face (sau deschide) antemăsurătoarea: toate elementele pe care le măsoară modelul, adunate rând cu rând, cu numărul, lungimea, aria brută și netă, volumul brut și net și masa. Bara ei alege ce se adună la un loc: **Pe tip de element și tip** (implicit: pereții fiecărui tip de perete, plăcile fiecărui tip de placă…), **Pe material** (fiecare strat la materialul lui: cărămida, tencuiala și izolația pereților separat, betonul buiandrugilor), pe nivel sau combinate. **Toate elementele** alege ce tipuri de elemente listează (doar pereți și plăci, de exemplu). Antemăsurătoarea urmează modelul ca orice extras și primește rânduri și coloane proprii (o rezervă, un preț unitar).
+- **Orice altă listă.** **Cantități → Extrase…** face orice extras oferă ediția: încăperi, finisaje, tâmplărie, alcătuiri de tipuri, lemn, armături, cofraje, oțel… Aceeași listă e la **+** lângă **Extrase** în navigatorul proiectului.
+
+![Antemăsurătoarea grupată pe tip de element și material](shots/quantity-takeoff.webp)
+
+**Cantități → Export XLSX** salvează direct antemăsurătoarea ca registru de calcul (în browser se descarcă).
+
+## Cantitățile pe planșă
+
+Un extras se pune pe planșă ca o vedere și e desenat acolo cu toate rândurile și valorile, totalurile și graficele lui:
+
+- **Pune pe planșă…** din bara extrasului: **Planșă nouă** face o planșă A3 cu tabelul pe ea și o deschide, sau alege o planșă pe care o ai.
+- Sau trage extrasul din navigatorul proiectului pe o planșă deschisă: ajunge unde îl lași. Planurile, secțiunile și fațadele se trag la fel.
+- Sau **Pune o vedere…** din bara planșei.
+
+Pe planșă, trage tabelul ca să-l muți; un tabel mai lung decât chenarul continuă pe alte pagini (planșa îți spune, iar **pune-l pe o planșă nouă** îl continuă). Tabelul urmează modelul: adaugi un perete și cifrele de pe planșă se schimbă. Se tipărește cu **Tipărește** și intră în PDF-ul și DXF-ul planșei exact cum e desenat.
+
+![Antemăsurătoarea pusă pe o planșă nouă](shots/takeoff-sheet.webp)
+
 ## Cum faci un extras
 
 Un extras e un tabel pe care îl umple modelul: uși și ferestre, buiandrugi, încăperi, armături, lemn, cofraje și altele. Dă clic pe **+** de lângă **Extrase** în navigator și alege ce listează, sau folosește unealta unui modul (Lemn → Extras de lemn, Organizare de șantier → Extras de cofraje…). Dă dublu clic pe el în navigator ca să-l deschizi într-un tab. Extrasul urmează modelul: muți un perete, adaugi o fereastră, și tabelul se schimbă odată cu ele.

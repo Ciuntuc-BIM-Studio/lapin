@@ -25,6 +25,7 @@ import { countOpen, remarksOf, useRemarkUi } from '../modules/core/cde/pdfRemark
 import { DrawingLayer } from './DrawingLayer';
 import type { PenDto } from './drawing';
 import { printSheet } from './printSheet';
+import { VIEW_DRAG } from '../shell/browserSets';
 import { PX_PER_MM, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
 
 interface Vp {
@@ -65,6 +66,7 @@ export function SheetView() {
   const [cropped, setCropped] = useState<{ id: string; x0: number; y0: number; x1: number; y1: number } | null>(null);
   const [slid, setSlid] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const [active, setActive] = useState<string | null>(null);
+  const [dropping, setDropping] = useState(false);
   // The remarks read from reviewed PDFs: shown over the paper (the screen alone; the sheet prints without them).
   const showRemarks = useRemarkUi((s) => s.show);
   const remarkCount = id ? countOpen(nodes, id) : 0;
@@ -217,7 +219,18 @@ export function SheetView() {
           ))}
         </div>
       )}
-      <svg ref={ref} className="plan-svg sheet-svg" data-testid="sheet" tabIndex={0}
+      <svg ref={ref} className={`plan-svg sheet-svg${dropping ? ' drop-target' : ''}`} data-testid="sheet" tabIndex={0}
+        // A view or schedule dragged from the project browser (decision 287): placed where it is dropped.
+        onDragOver={(e) => { if (e.dataTransfer.types.includes(VIEW_DRAG)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setDropping(true); } }}
+        onDragLeave={() => setDropping(false)}
+        onDrop={(e) => {
+          setDropping(false);
+          const viewId = e.dataTransfer.getData(VIEW_DRAG);
+          if (!viewId) return;
+          e.preventDefault();
+          const p = paperAt(e);
+          void execute('sheet.addViewport', { id: sheet.id, viewId, x: p.x, y: p.y });
+        }}
         onWheel={(e) => {
           const r = ref.current!.getBoundingClientRect();
           const now = performance.now();
@@ -273,9 +286,9 @@ export function SheetView() {
             {/* While a view is dragged, its own pens go with the pointer; the frame, the title block and the other views stay. */}
             {moved ? (
               <>
-                <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport !== moved.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />
+                <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport !== moved.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} minText={1} />
                 <g transform={`translate(${moved.dx * v.k} ${moved.dy * v.k})`}>
-                  <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport === moved.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />
+                  <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport === moved.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} minText={1} />
                 </g>
               </>
             ) : slid ? (() => {
@@ -284,14 +297,14 @@ export function SheetView() {
               const a = toScreen({ x: b.x0, y: b.y0 });
               return (
                 <>
-                  <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport !== slid.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />
+                  <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport !== slid.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} minText={1} />
                   <clipPath id="sheet-slide-clip"><rect x={a.x} y={a.y} width={(b.x1 - b.x0) * v.k} height={(b.y1 - b.y0) * v.k} /></clipPath>
                   <g clipPath="url(#sheet-slide-clip)"><g transform={`translate(${slid.dx * v.k} ${slid.dy * v.k})`}>
-                    <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport === slid.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />
+                    <DrawingLayer drawing={{ pens: d.pens.filter((p) => p.viewport === slid.id), scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} minText={1} />
                   </g></g>
                 </>
               );
-            })() : <DrawingLayer drawing={{ pens: d.pens, scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} />}
+            })() : <DrawingLayer drawing={{ pens: d.pens, scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} minText={1} />}
             {d.viewports.map((b) => {
               const box = cropped?.id === b.id ? cropped : b;
               const a = toScreen({ x: box.x0, y: box.y0 });

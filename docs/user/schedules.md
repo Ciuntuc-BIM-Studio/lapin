@@ -4,6 +4,30 @@ order: 95
 summary: List doors, windows, lintels, rooms and anything a module counts; add rows and columns of your own, type over the model's values, and chart the table.
 ---
 
+## Getting quantities
+
+Everything Lapin models is measured from its geometry: a wall's length, height, gross and net side area and volume, each layer's area and volume, a floor's areas and volume, a room's area and perimeter, a door's count. There are three ways to get the numbers:
+
+- **One element.** Select it: the **Quantities** section of the Properties panel lists what it measures, then each of its layers or parts.
+- **The whole model.** **Quantities → Quantity takeoff** makes (or opens) the takeoff: every element the model measures, added up row by row, with the count, length, gross and net area, gross and net volume and weight. Its toolbar chooses what is added up together: **By kind and type** (the default: the walls of each wall type, the floors of each floor type…), **By material** (each layer under its own material: the brick, the plaster and the insulation of the walls apart, the lintels' concrete), by storey, or a mix of them. **All elements** chooses which kinds it lists (only walls and floors, say). The takeoff follows the model like any schedule, and takes rows and columns of your own (a provision, a unit price).
+- **Any other list.** **Quantities → Schedules…** makes any schedule this edition offers: rooms, room finishes, joinery, type assemblies, timber, rebar, formwork, steel… The same list is under **+** beside **Schedules** in the project browser.
+
+![The quantity takeoff grouped by kind and material](shots/quantity-takeoff.webp)
+
+**Quantities → Export XLSX** saves the takeoff as a workbook straight away (downloaded in a browser).
+
+## Quantities on a sheet
+
+A schedule goes on a sheet like a view, and is drawn there with all its rows and values, its totals and its charts:
+
+- **Place on sheet…** in the schedule's toolbar: **New sheet** makes an A3 sheet with the table on it and opens it, or pick a sheet you have.
+- Or drag the schedule from the project browser onto an open sheet: it lands where you drop it. Plans, sections and elevations are dragged the same way.
+- Or **Place view…** in the sheet's own toolbar.
+
+On the sheet, drag the table to move it; a table longer than the frame goes on over more pages (the sheet says so, and **place it on a new sheet** continues it). The table follows the model: add a wall and the sheet's numbers change. It prints with **Print** and goes into the sheet's PDF and DXF exactly as it is drawn.
+
+![The quantity takeoff placed on a new sheet](shots/takeoff-sheet.webp)
+
 ## Making a schedule
 
 A schedule is a table the model fills: doors and windows, lintels, rooms, rebar, timber, formwork and more. Click **+** beside **Schedules** in the project browser and pick what it lists, or use a module's tool (Wood → Timber schedule, Site works → Formwork schedule…). Double-click it in the browser to open it in a tab. A schedule follows the model: move a wall, add a window, and the table changes with it.

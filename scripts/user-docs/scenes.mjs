@@ -583,6 +583,38 @@ export const scenes = [
     },
   },
   {
+    id: 'quantities',
+    async run(t) {
+      // Getting quantities (decision 287, the tester's report #75): Quantities → Quantity takeoff, grouped by kind and
+      // material, then placed on a new sheet, its table drawn there with its numbers.
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4 });
+      await t.ui({ keyPlan: false });
+      await t.page.locator('button.tab', { hasText: /^Quantities$/ }).first().click();
+      await t.wait(300);
+      await t.page.locator('.band button', { hasText: 'Quantity takeoff' }).first().click();
+      await t.wait(1500);
+      const takeoff = (await t.nodes()).find((n) => n.type === 'LapinSchedule' && n.props.kind === 'quantities');
+      t.expect(takeoff, 'Quantity takeoff makes the takeoff schedule');
+      t.expect(await t.page.locator('[data-testid=schedule-grid] input[value="Wall"]').count() === 1, 'the takeoff lists the walls');
+      await t.page.locator('[data-testid=takeoff-group]').selectOption('kind,material');
+      await t.wait(1500);
+      t.expect(await t.page.locator('[data-testid=schedule-grid] th', { hasText: 'Material' }).count() === 1, 'grouped by material, the takeoff has a Material column');
+      await t.fit();
+      await t.shot('quantity-takeoff', { of: '.schedule-pane', pad: 0 });
+      // Place on sheet… → New sheet: the sheet opens with the table on it.
+      await t.page.locator('[data-testid=schedule-place]').selectOption('new');
+      await t.wait(2500);
+      t.expect(await t.page.locator('[data-testid=sheet]').count() === 1, 'the new sheet opens');
+      await t.fit();
+      const texts = await t.page.locator('[data-testid=sheet] text').allTextContents();
+      t.expect(texts.includes('Quantity takeoff') && texts.includes('Wall') && texts.filter((x) => /^\d+\.\d{2,3}$/.test(x)).length > 10, 'the sheet draws the table with its numbers (report #75)');
+      await t.shot('takeoff-sheet', { of: '.view-pane:has([data-testid=sheet])', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     id: 'wood',
     async run(t) {
       // The timber frame configurator (decision 239): the house's wall type made a timber frame, the sample wall framed, saved.

@@ -122,3 +122,8 @@ export function groupItems(sets: BrowserSet[], items: BrowserItem[]): SetGroup[]
 
 /** The discipline a view or sheet made in a set takes: the one its filter names, else the default. */
 export const disciplineOf = (set: BrowserSet | null): string => (set?.filter.disciplines?.length === 1 ? set.filter.disciplines[0] : DEFAULT_DISCIPLINE);
+
+/** A view or schedule dragged from the project browser onto a sheet (decision 287): its id under this type. */
+export const VIEW_DRAG = 'application/x-lapin-view';
+/** What the browser lets one drag onto a sheet: drawings and schedules (a 3D view and a sheet are not placed). */
+export const SHEETABLE = new Set<BrowserItem['kind']>(['plan', 'site', 'section', 'elevation', 'plane', 'schedule']);

@@ -4,6 +4,30 @@ order: 95
 summary: Liste portas, janelas, vergas, ambientes e tudo o que um módulo conta; adicione linhas e colunas suas, digite por cima dos valores do modelo e faça gráficos da tabela.
 ---
 
+## Obter quantidades
+
+Tudo o que o Lapin modela é medido pela sua geometria: o comprimento, a altura, a área lateral bruta e líquida e o volume de uma parede, a área e o volume de cada camada, as áreas e o volume de uma laje, a área e o perímetro de um ambiente, o número de portas. Há três caminhos:
+
+- **Um elemento.** Selecione-o: a secção **Quantitativos** do painel de propriedades mostra o que ele mede, e depois cada camada ou parte.
+- **Todo o modelo.** **Quantitativos → Levantamento de quantidades** cria (ou abre) o levantamento: todos os elementos que o modelo mede, somados linha a linha, com a contagem, o comprimento, a área bruta e líquida, o volume bruto e líquido e o peso. A sua barra escolhe o que é somado junto: **Por categoria e tipo** (o padrão: as paredes de cada tipo de parede, as lajes de cada tipo…), **Por material** (cada camada sob o seu material: o tijolo, o reboco e o isolamento das paredes à parte, o concreto das vergas), por pavimento, ou combinados. **Todos os elementos** escolhe quais categorias ele lista (só paredes e lajes, por exemplo). O levantamento acompanha o modelo como qualquer tabela e aceita linhas e colunas próprias (uma verba, um preço unitário).
+- **Qualquer outra lista.** **Quantitativos → Tabelas…** cria qualquer tabela que a edição oferece: ambientes, acabamentos, esquadrias, composições de tipos, madeira, armaduras, fôrmas, aço… A mesma lista está em **+** ao lado de **Tabelas** no navegador do projeto.
+
+![O levantamento agrupado por categoria e material](shots/quantity-takeoff.webp)
+
+**Quantitativos → Exportar XLSX** guarda logo o levantamento como pasta de trabalho (num navegador é descarregado).
+
+## Quantidades numa prancha
+
+Uma tabela vai para uma prancha como uma vista e é desenhada lá com todas as suas linhas e valores, totais e gráficos:
+
+- **Colocar na prancha…** na barra da tabela: **Nova prancha** cria uma prancha A3 com a tabela e abre-a, ou escolha uma prancha que já tem.
+- Ou arraste a tabela do navegador do projeto para uma prancha aberta: fica onde a largar. Plantas, cortes e fachadas arrastam-se do mesmo modo.
+- Ou **Posicionar vista…** na barra da própria prancha.
+
+Na prancha, arraste a tabela para movê-la; uma tabela mais longa do que a moldura continua em outras páginas (a prancha avisa, e **colocá-la numa nova prancha** continua-a). A tabela acompanha o modelo: acrescente uma parede e os números da prancha mudam. Imprime-se com **Imprimir** e vai para o PDF e o DXF da prancha exatamente como está desenhada.
+
+![O levantamento colocado numa nova prancha](shots/takeoff-sheet.webp)
+
 ## Criar uma tabela
 
 Uma tabela é um quadro que o modelo preenche: portas e janelas, vergas, ambientes, armaduras, madeira, fôrmas e mais. Clique em **+** ao lado de **Tabelas** no navegador de projeto e escolha o que ela lista, ou use a ferramenta de um módulo (Madeira → Tabela de madeira, Obras → Tabela de fôrmas…). Dê um clique duplo nela no navegador para abri-la em uma guia. Uma tabela acompanha o modelo: mova uma parede, adicione uma janela, e o quadro muda junto.

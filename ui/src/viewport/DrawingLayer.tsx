@@ -11,8 +11,12 @@ import { screenFill, screenInk, type DrawingDto, type PenDto } from './drawing';
 
 type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
 
-/** `onDark`: drawn straight on a dark background (a plan in the graphite theme), so black pens show in the theme's ink. */
-export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPerMetre, onDark = false }: { drawing: DrawingDto; toScreen: ToScreen; pxPerMetre: number; onDark?: boolean }) {
+/**
+ * `onDark`: drawn straight on a dark background (a plan in the graphite theme), so black pens show in the theme's ink.
+ * `minText`: texts smaller on screen (px) are left out; a sheet or schedule keeps its tables' words down to a pixel, so a
+ * table seen whole still shows it is filled (report #75: a takeoff on an A1 sheet looked empty at fit).
+ */
+export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPerMetre, onDark = false, minText = 3 }: { drawing: DrawingDto; toScreen: ToScreen; pxPerMetre: number; onDark?: boolean; minText?: number }) {
   // Pixels per paper millimetre: a paper mm is scale/1000 m of the model.
   const pxPerMm = pxPerMetre * (drawing.scale ?? 100) / 1000;
   // Thin lines (TL): every pen one pixel on screen, sheets and PDFs keeping theirs.
@@ -40,7 +44,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
           {p.texts.map((t, k) => {
             const at = toScreen({ x: t.x, y: t.y });
             const size = t.height * pxPerMm;
-            if (size < 3) return null;
+            if (size < minText) return null;
             return (
               <text key={k} x={at.x} y={at.y} fontSize={size} fontWeight={t.bold ? 700 : 400} fontStyle={t.italic ? 'italic' : undefined}
                 fontFamily={t.font === 'serif' ? 'ui-serif, Georgia, serif' : t.font === 'mono' ? 'ui-monospace, Menlo, monospace' : 'ui-sans-serif, system-ui, sans-serif'}
@@ -57,7 +61,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
         stroke={stroke ?? 'none'} strokeWidth={width} strokeLinecap={cap} strokeLinejoin={cap === 'square' ? 'miter' : 'round'}
         strokeDasharray={p.dash ? p.dash.map((v) => Math.max(1, Math.min(v * pxPerMm, v * 8)).toFixed(1)).join(' ') : undefined} />
     );
-  }), [drawing, cap, toScreen, pxPerMm, onDark]);
+  }), [drawing, cap, toScreen, pxPerMm, onDark, minText]);
   return <g className="drawing-layer">{paths}</g>;
 });
 

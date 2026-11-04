@@ -153,6 +153,16 @@ export const FAQ: Entry[] = [
     source: 'tester 0.1.561',
   },
   {
+    id: 'quantities',
+    q: ['How do I get quantities from the model?', 'Where is the bill of quantities?', 'How do I put quantities on a sheet?', 'How do I export quantities to Excel?'],
+    qRo: ['Cum scot cantitățile din model?', 'Unde e antemăsurătoarea?', 'Cum pun cantitățile pe o planșă?', 'Cum export cantitățile în Excel?'],
+    keywords: ['quantity', 'quantities', 'takeoff', 'bill', 'boq', 'measure', 'measurements', 'area', 'volume', 'material', 'materials', 'excel', 'xlsx', 'sheet', 'cantitati', 'cantitate', 'antemasuratoare', 'masuratori', 'arie', 'volum', 'materiale', 'plansa', 'extras', 'extrase'],
+    a: 'Quantities → Quantity takeoff lists every element the model measures, added up by kind and type (or by material, by storey…: the choice in its toolbar), with the count, length, gross and net area, volume and weight; Quantities → Schedules… makes any other schedule (rooms, finishes, joinery, timber, rebar…). Each follows the model. Place on sheet… in the schedule\'s toolbar, or dragging it from the project browser onto an open sheet, draws the table on the sheet, in Print and in the PDF; CSV and XLSX export it. One element\'s own quantities are in the Properties panel, under Quantities.',
+    aRo: 'Quantities → Quantity takeoff listează toate elementele pe care le măsoară modelul, adunate pe tip de element și tip (sau pe material, pe nivel…: alegerea din bara lui), cu numărul, lungimea, aria brută și netă, volumul și masa; Quantities → Schedules… face orice alt extras (încăperi, finisaje, tâmplărie, lemn, armături…). Fiecare urmează modelul. Place on sheet… din bara extrasului, sau tras din navigatorul proiectului pe o planșă deschisă, desenează tabelul pe planșă, la tipărire și în PDF; CSV și XLSX îl exportă. Cantitățile unui singur element sunt în panoul Proprietăți, la Quantities.',
+    action: { label: 'Make the quantity takeoff', labelRo: 'Fă antemăsurătoarea', run: { kind: 'tool', id: 'cost.takeoff' } },
+    source: 'report #75',
+  },
+  {
     id: 'schedule-own-rows-charts',
     q: ['Why are types I do not use in the schedule?', 'Can I add my own rows and columns to a schedule?', 'Can I make a chart from a schedule?'],
     qRo: ['De ce apar în tabel tipuri pe care nu le folosesc?', 'Pot adăuga rânduri și coloane proprii într-un tabel?', 'Pot face un grafic dintr-un tabel?'],

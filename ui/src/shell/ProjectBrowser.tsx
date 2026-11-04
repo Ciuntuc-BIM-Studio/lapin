@@ -8,14 +8,14 @@
  */
 
 import { hasModule } from '../platform/brand';
-import { useState } from 'react';
+import { useState, type DragEvent } from 'react';
 import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, Frame, Layers, Map as MapIcon, Plus, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
 import { notify, useUi } from '../app/store';
 import { execute, activeStorey, useSession } from '../engine/session';
 import { num, storeys } from '../engine/model';
 import { projectTitle } from '../engine/files';
 import { useCamera } from '../viewport/camera';
-import { disciplineOf, groupItems, implicitPlan, itemOf, setsOf, THREE_D, type BrowserItem, type BrowserSet } from './browserSets';
+import { disciplineOf, groupItems, implicitPlan, itemOf, setsOf, SHEETABLE, THREE_D, VIEW_DRAG, type BrowserItem, type BrowserSet } from './browserSets';
 import { IfcTree } from './IfcTree';
 import { openContextMenu } from './ContextMenu';
 import { toggleSection3d, useSection3d } from '../viewport/section3d';
@@ -132,7 +132,8 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   };
   const Row = ({ item, on, open, children }: { item: BrowserItem; on: boolean; open: () => void; children?: React.ReactNode }) => (
     <span className="tree-row">
-      <button type="button" className={`tree-item${on ? ' on' : ''}`} onClick={open} onContextMenu={item.kind === 'section' || item.kind === 'elevation' ? drawingMenu(item) : undefined}>{item.kind === 'sheet' ? `${String(item.node?.props.number ?? '')} · ${item.name}` : item.name}</button>
+      <button type="button" className={`tree-item${on ? ' on' : ''}`} onClick={open} onContextMenu={item.kind === 'section' || item.kind === 'elevation' ? drawingMenu(item) : undefined}
+        {...(SHEETABLE.has(item.kind) ? { draggable: true, onDragStart: (e: DragEvent) => { e.dataTransfer.setData(VIEW_DRAG, item.id); e.dataTransfer.effectAllowed = 'copy'; }, title: 'Drag onto an open sheet to place it there' } : {})}>{item.kind === 'sheet' ? `${String(item.node?.props.number ?? '')} · ${item.name}` : item.name}</button>
       {item.kind === 'sheet' && countOpen(nodes, item.id) > 0 && <span className="count remarks" title="Remarks read from PDFs, still open" data-testid="sheet-remark-count">{countOpen(nodes, item.id)}</span>}
       {children}
       {item.node && <button type="button" className="icon mini" title={item.kind === 'sheet' ? 'Delete the sheet' : item.kind === 'schedule' ? 'Delete the schedule' : 'Delete the view'} onClick={() => remove(item.id)}><Trash2 size={11} /></button>}
@@ -207,7 +208,7 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
           {hasModule('architecture') && <Kind id={`${id}:schedules`} icon={<Table2 size={13} />} label="Schedules" list={of('schedule')}
             plus={set && (
               <select className="mini-select" value="" title="New schedule" onChange={(e) => { const kind = e.target.value; if (kind) void execute('architecture.createSchedule', { kind }).then((r) => { const n = made(r); if (n) showSchedule(n); }); }}>
-                <option value="">+</option><option value="all">Joinery</option><option value="parcel">Parcel coordinates</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option><option value="rooms">Rooms</option><option value="skirtings">Skirtings</option><option value="types">Type assemblies</option><option value="planting">Planting</option>
+                <option value="">+</option><option value="quantities">Quantity takeoff</option><option value="all">Joinery</option><option value="parcel">Parcel coordinates</option><option value="door">Doors</option><option value="window">Windows</option><option value="lintel">Lintels</option><option value="rooms">Rooms</option><option value="skirtings">Skirtings</option><option value="types">Type assemblies</option><option value="planting">Planting</option>
               </select>
             )}>
             {(item) => <Row item={item} on={view === 'schedule' && ui.scheduleId === item.id} open={() => showSchedule(item.id)} />}

@@ -161,6 +161,10 @@ public interface IQueryContext
     IReadOnlyList<string> DependentsOf(string id) => [];
     /// <summary>What the element <paramref name="id"/> was built from: the entities its geometry read (its type, its host, the walls it joins).</summary>
     IReadOnlyList<string> DependenciesOf(string id) => [];
+    /// <summary>What the entity <paramref name="id"/> measures (its quantity sets and its parts'), as the properties panel shows it; none when its class has no measures.</summary>
+    IReadOnlyList<QuantitySet> Quantities(string id) => [];
+    /// <summary>What a class is in this product (its label), whichever module owns it; null when none does.</summary>
+    ClassDescriptor? Describe(string ifcClass) => null;
 }
 
 /// <summary>How the inspector shows and edits one attribute. Lengths are metres in the engine; the UI shows mm.</summary>
@@ -316,6 +320,8 @@ public interface IScheduleSource
     string Kind { get; }
     string Label { get; }
     ScheduleGrid Grid(IQueryContext query);
+    /// <summary>The table as <paramref name="schedule"/> (the schedule entity showing it) asks for it: its own options (a takeoff's grouping); by default the plain table.</summary>
+    ScheduleGrid Grid(IQueryContext query, Entity schedule) => Grid(query);
     /// <summary>A value typed in a row's cell written into what the row lists (<paramref name="key"/>, from the grid's keys) under <paramref name="column"/>; false when that column is not the model's to write (the value is then kept on the schedule).</summary>
     bool Write(ICommandContext ctx, string key, string column, string? text) => false;
 }

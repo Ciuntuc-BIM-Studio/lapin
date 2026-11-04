@@ -4,6 +4,30 @@ order: 95
 summary: Zestawiaj drzwi, okna, nadproża, pomieszczenia i wszystko, co liczy dany moduł; dodawaj własne wiersze i kolumny, nadpisuj wartości modelu i twórz wykresy z tabeli.
 ---
 
+## Jak uzyskać ilości
+
+Wszystko, co Lapin modeluje, jest mierzone z geometrii: długość, wysokość, powierzchnia boczna brutto i netto oraz objętość ściany, powierzchnia i objętość każdej warstwy, powierzchnie i objętość stropu, powierzchnia i obwód pomieszczenia, liczba drzwi. Są trzy drogi:
+
+- **Jeden element.** Zaznacz go: sekcja **Ilości** w panelu właściwości pokazuje, co mierzy, a potem każdą jego warstwę lub część.
+- **Cały model.** **Ilości → Przedmiar** tworzy (lub otwiera) przedmiar: wszystkie elementy, które model mierzy, zsumowane wiersz po wierszu, z liczbą, długością, powierzchnią brutto i netto, objętością brutto i netto i masą. Jego pasek wybiera, co jest sumowane razem: **Według rodzaju i typu** (domyślnie: ściany każdego typu ściany, stropy każdego typu…), **Według materiału** (każda warstwa pod swoim materiałem: cegła, tynk i izolacja ścian osobno, beton nadproży), według kondygnacji albo łącznie. **Wszystkie elementy** wybiera, jakie rodzaje wymienia (na przykład tylko ściany i stropy). Przedmiar nadąża za modelem jak każde zestawienie i przyjmuje własne wiersze i kolumny (rezerwę, cenę jednostkową).
+- **Każda inna lista.** **Ilości → Zestawienia…** tworzy każde zestawienie, jakie oferuje edycja: pomieszczenia, wykończenia, stolarkę, układy warstw typów, drewno, zbrojenie, deskowania, stal… Ta sama lista jest pod **+** obok **Zestawień** w przeglądarce projektu.
+
+![Przedmiar pogrupowany według rodzaju i materiału](shots/quantity-takeoff.webp)
+
+**Ilości → Eksportuj XLSX** zapisuje od razu przedmiar jako skoroszyt (w przeglądarce jest pobierany).
+
+## Ilości na arkuszu
+
+Zestawienie trafia na arkusz jak widok i jest tam rysowane ze wszystkimi wierszami i wartościami, sumami i wykresami:
+
+- **Umieść na arkuszu…** na pasku zestawienia: **Nowy arkusz** tworzy arkusz A3 z tabelą i go otwiera, albo wybierz arkusz, który masz.
+- Albo przeciągnij zestawienie z przeglądarki projektu na otwarty arkusz: trafia tam, gdzie je upuścisz. Rzuty, przekroje i elewacje przeciąga się tak samo.
+- Albo **Umieść widok…** na pasku samego arkusza.
+
+Na arkuszu przeciągnij tabelę, aby ją przesunąć; tabela dłuższa niż ramka ciągnie się na kolejnych stronach (arkusz to mówi, a **umieść ją na nowym arkuszu** ją kontynuuje). Tabela nadąża za modelem: dodaj ścianę, a liczby na arkuszu się zmienią. Drukuje się przez **Drukuj** i trafia do PDF i DXF arkusza dokładnie tak, jak jest narysowana.
+
+![Przedmiar umieszczony na nowym arkuszu](shots/takeoff-sheet.webp)
+
 ## Tworzenie zestawienia
 
 Zestawienie to tabela wypełniana przez model: drzwi i okna, nadproża, pomieszczenia, zbrojenie, drewno, deskowanie i nie tylko. Kliknij **+** obok **Zestawienia** w przeglądarce projektu i wybierz, co ma zestawiać, albo użyj narzędzia modułu (Drewno → Zestawienie tarcicy, Roboty pomocnicze → Zestawienie szalunków…). Kliknij je dwukrotnie w przeglądarce, aby otworzyć je na karcie. Zestawienie podąża za modelem: przesuń ścianę, dodaj okno, a tabela zmieni się razem z nim.

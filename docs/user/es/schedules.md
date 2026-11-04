@@ -4,6 +4,30 @@ order: 95
 summary: Liste puertas, ventanas, dinteles, habitaciones y todo lo que cuenta un módulo; añada filas y columnas propias, escriba sobre los valores del modelo y haga un gráfico de la tabla.
 ---
 
+## Obtener cantidades
+
+Todo lo que Lapin modela se mide a partir de su geometría: la longitud, la altura, el área lateral bruta y neta y el volumen de un muro, el área y el volumen de cada capa, las áreas y el volumen de un forjado, el área y el perímetro de un local, el número de puertas. Hay tres caminos:
+
+- **Un elemento.** Selecciónalo: la sección **Cantidades** del panel de propiedades muestra lo que mide, y después cada capa o parte.
+- **Todo el modelo.** **Cantidades → Mediciones** crea (o abre) las mediciones: todos los elementos que el modelo mide, sumados fila a fila, con el número, la longitud, el área bruta y neta, el volumen bruto y neto y el peso. Su barra elige qué se suma junto: **Por clase y tipo** (por defecto: los muros de cada tipo de muro, los forjados de cada tipo…), **Por material** (cada capa bajo su material: el ladrillo, el enlucido y el aislamiento de los muros por separado, el hormigón de los dinteles), por planta o combinados. **Todos los elementos** elige qué clases lista (solo muros y forjados, por ejemplo). Las mediciones siguen al modelo como cualquier tabla y admiten filas y columnas propias (una partida alzada, un precio unitario).
+- **Cualquier otra lista.** **Cantidades → Tablas…** crea cualquier tabla que ofrezca la edición: locales, acabados, carpintería, composiciones de tipos, madera, armaduras, encofrados, acero… La misma lista está en **+** junto a **Tablas** en el navegador del proyecto.
+
+![Las mediciones agrupadas por clase y material](shots/quantity-takeoff.webp)
+
+**Cantidades → Exportar XLSX** guarda directamente las mediciones como libro de cálculo (en el navegador se descarga).
+
+## Cantidades en una lámina
+
+Una tabla se coloca en una lámina como una vista y se dibuja allí con todas sus filas y valores, sus totales y sus gráficos:
+
+- **Colocar en lámina…** en la barra de la tabla: **Lámina nueva** crea una lámina A3 con la tabla y la abre, o elige una lámina que ya tengas.
+- O arrastra la tabla desde el navegador del proyecto a una lámina abierta: queda donde la sueltas. Plantas, secciones y alzados se arrastran igual.
+- O **Colocar vista…** en la barra de la propia lámina.
+
+En la lámina, arrastra la tabla para moverla; una tabla más larga que el marco sigue en más páginas (la lámina lo indica, y **colocarla en una lámina nueva** la continúa). La tabla sigue al modelo: añade un muro y los números de la lámina cambian. Se imprime con **Imprimir** y va al PDF y al DXF de la lámina tal como se dibuja.
+
+![Las mediciones colocadas en una lámina nueva](shots/takeoff-sheet.webp)
+
 ## Crear una tabla
 
 Una tabla es una lista que rellena el modelo: puertas y ventanas, dinteles, habitaciones, armaduras, madera, encofrados y más. Haga clic en **+** junto a **Tablas** en el navegador del proyecto y elija lo que lista, o use la herramienta de un módulo (Madera → Lista de madera, Medios auxiliares → Tabla de encofrados…). Haga doble clic en ella en el navegador para abrirla en una pestaña. Una tabla sigue al modelo: mueva un muro, añada una ventana, y la tabla cambia con ellos.

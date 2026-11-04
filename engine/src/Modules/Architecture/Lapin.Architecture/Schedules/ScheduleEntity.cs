@@ -56,7 +56,7 @@ public sealed class ScheduleEntity : ISheetContent
     }
 
     /// <summary>A module's table as the schedule shows it: its own columns and rows, typed cells, its order.</summary>
-    public static EditableGrid SourceGrid(IQueryContext q, Entity s, IScheduleSource source) => ScheduleGrids.Apply(source.Grid(q), s);
+    public static EditableGrid SourceGrid(IQueryContext q, Entity s, IScheduleSource source) => ScheduleGrids.Apply(source.Grid(q, s), s);
 
     /// <summary>The table a schedule's charts read: a module's as shown, or the joinery's as its CSV lays it out.</summary>
     public static (IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows) ChartGrid(IQueryContext q, Entity s)
@@ -259,6 +259,7 @@ public sealed class ScheduleEntity : ISheetContent
             new("sort", "Order", "choice", Choices: ["mark", "name", "width", "height", "total"]),
         ], "#555555", Kind: "view"));
         r.Service<ISheetContent>(this);
+        r.Service<IScheduleSource>(new QuantityTakeoff());
 
         r.Command("createSchedule", "New schedule", (ctx, a) =>
         {
@@ -279,7 +280,7 @@ public sealed class ScheduleEntity : ISheetContent
         {
             var s = Require(ctx.Model, (string?)a["id"]);
             var attrs = s.CloneAttrs();
-            foreach (var key in new[] { "rows", "sort", "drawings", "parts", "reviewed", "unused", "sortBy", "sortDesc" })
+            foreach (var key in new[] { "rows", "sort", "drawings", "parts", "reviewed", "unused", "sortBy", "sortDesc", "groupBy", "classes" })
             {
                 if (!a.ContainsKey(key)) continue;
                 if (a[key] is null) attrs.Remove(key); else attrs[key] = a[key]!.DeepClone();
@@ -531,6 +532,15 @@ public sealed class ScheduleEntity : ISheetContent
             }
             return Convert.ToBase64String(ToXlsx(s, Data(q, s)));
         });
+
+        // Every kind of schedule this product makes, with its name: the joinery's, then the modules' tables (the Quantities tab, the browser's list).
+        r.Query("schedule.kinds", (q, _) => new JsonArray([
+            .. new[] { ("all", "Joinery schedule"), ("door", "Door schedule"), ("window", "Window schedule"), ("lintel", "Lintel schedule") }
+                .Select(k => (JsonNode)new JsonObject { ["kind"] = k.Item1, ["label"] = k.Item2 }),
+            .. q.Services.All<IScheduleSource>().Select(x => (JsonNode)new JsonObject { ["kind"] = x.Kind, ["label"] = x.Label })]));
+
+        // What a quantity takeoff can list: the classes the model measures, with their names and counts.
+        r.Query("schedule.takeoffClasses", (q, _) => new JsonArray([.. QuantityTakeoff.Classes(q).Select(c => (JsonNode)new JsonObject { ["class"] = c.Class, ["label"] = c.Label, ["count"] = c.Count })]));
 
         r.Query("schedule.csv", (q, a) =>
         {

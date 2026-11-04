@@ -16,6 +16,8 @@ import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, query, useSession } from '../engine/session';
 import { saveFile, safeFileName } from '../engine/files';
 import { DrawingLayer } from './DrawingLayer';
+import { TakeoffControls } from './TakeoffControls';
+import { placeOnSheet, sheetsFor } from '../modules/cost/schedules';
 import type { PenDto } from './drawing';
 import { PX_PER_MM, middleDouble, popHistory, pushHistory, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
 
@@ -157,6 +159,13 @@ export function ScheduleView() {
         <button type="button" className="icon" title={joinery ? 'A row of your own' : 'A row of your own, typed in'} onClick={addRow} data-testid="schedule-add-row"><Plus size={14} /><span className="small">Row</span></button>
         {kind !== 'lintel' && <button type="button" className="icon" title={joinery ? 'A column of your own: a card with no type, every value typed' : 'A column of your own, typed in'} onClick={addColumn} data-testid="schedule-add-column" data-i18n-ctx="schedule"><Plus size={14} /><span className="small">Column</span></button>}
         <button type="button" className={`icon${side === 'charts' ? ' on' : ''}`} title="Charts of the table" onClick={() => setSide(side === 'charts' ? null : 'charts')} data-testid="schedule-charts-toggle"><ChartColumn size={14} /><span className="small">Charts</span></button>
+        {kind === 'quantities' && <TakeoffControls id={node.id} groupBy={node.props.groupBy} classes={node.props.classes} />}
+        <select value="" title="Place the schedule on a sheet: it is drawn there as it is here, follows the model, and prints and goes to PDF with the sheet" data-testid="schedule-place"
+          onChange={(e) => { const v = e.target.value; if (v) void placeOnSheet(node.id, v === 'new' ? null : v); }}>
+          <option value="">Place on sheet…</option>
+          <option value="new">New sheet</option>
+          {sheetsFor(node.id).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+        </select>
         <button type="button" className="icon" title="Export CSV" onClick={() => void csv()}><FileDown size={14} /><span className="small">CSV</span></button>
         <button type="button" className="icon" title="Export XLSX (a sheet a table)" onClick={() => void xlsx()}><FileDown size={14} /><span className="small">XLSX</span></button>
         {joinery && <button type="button" className={`icon${side === 'settings' ? ' on' : ''}`} title="Rows, card drawings, tables, what to check" onClick={() => setSide(side === 'settings' ? null : 'settings')}><Settings2 size={14} /><span className="small">Settings</span></button>}
@@ -176,7 +185,7 @@ export function ScheduleView() {
         onPointerMove={(e) => { const g = drag.current; if (g) setZ({ ...g.start, ox: g.start.ox + e.clientX - g.x, oy: g.start.oy + e.clientY - g.y }); }}
         onPointerUp={() => { drag.current = null; }}>
         {d && <><rect x={v.ox - 5 * v.k} y={v.oy - 5 * v.k} width={(d.w + 10) * v.k} height={(d.h + 10) * v.k} className="paper-sheet" />
-          <DrawingLayer drawing={{ pens: d.pens, scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} /></>}
+          <DrawingLayer drawing={{ pens: d.pens, scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} minText={1} /></>}
       </svg>
       {side === 'settings' && d && joinery && <ScheduleSettings id={node.id} s={d} kind={kind} />}
       {side === 'charts' && d && <ScheduleChartsPanel id={node.id} charts={d.charts ?? []} columns={d.chartColumns ?? []} />}

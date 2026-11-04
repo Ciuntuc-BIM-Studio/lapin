@@ -486,7 +486,13 @@ public static class Sheets
                 throw new CommandException(boundary != null ? $"That boundary of the view is on sheet {on.Str("number")} already." : $"The view is on sheet {on.Str("number")} already.");
             var (W, H) = PaperOf(sheet);
             var vps = Viewports(sheet);
-            var vp = new SheetViewport(ctx.NewId(), viewId, Json.Number(a["x"]) ?? (W - TitleBlock.W) / 2, Json.Number(a["y"]) ?? H / 2, Page: page, Boundary: boundary);
+            var (x, y) = (Json.Number(a["x"]) ?? (W - TitleBlock.W) / 2, Json.Number(a["y"]) ?? H / 2);
+            // A schedule placed with no point (decision 287): its top-left corner in the frame's, where a table is read from, not
+            // its middle in the paper's (a wide table ran past the frame on the left).
+            if (isContent && a["x"] is null && a["y"] is null && ctx.Services.All<ISheetContent>().First(c => c.Handles(ctx.Model.Get(viewId)!)) is var content
+                && content.Pages(ctx.Query, ctx.Model.Get(viewId)!, FrameSize(sheet).W, FrameSize(sheet).H) is { } pages && page - 1 < pages.Count)
+                (x, y) = (Margin + 4 + pages[page - 1].W / 2, Margin + 4 + pages[page - 1].H / 2);
+            var vp = new SheetViewport(ctx.NewId(), viewId, x, y, Page: page, Boundary: boundary);
             vps.Add(vp);
             Write(ctx, sheet, vps);
             return new JsonObject { ["viewportId"] = vp.Id };
