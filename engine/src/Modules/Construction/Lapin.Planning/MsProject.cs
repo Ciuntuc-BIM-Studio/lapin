@@ -18,6 +18,9 @@ public static class MsProject
 {
     const string Ns = "http://schemas.microsoft.com/project";
 
+    /// <summary>MS Project's custom field Text1 (its field id), which carries a task's elements under the name <see cref="LinksAlias"/>.</summary>
+    const string LinksField = "188743731", LinksAlias = "Lapin elements";
+
     static string Dt(DateOnly d, string time) => $"{WorkCalendar.Date(d)}T{time}:00";
 
     static string Time(TimeOnly t) => t.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
@@ -55,6 +58,19 @@ public static class MsProject
         E("MinutesPerWeek", $"{minutesPerDay * cal.Days.Count}");
         E("DaysPerMonth", "20");
         E("DurationFormat", "7");
+
+        // The tasks' elements (their rule, part and exceptions) in the custom field Text1, named so (stage 2).
+        var withLinks = p.Rows.Any(t => TaskLinkData.Of(t) != null);
+        if (withLinks)
+        {
+            w.WriteStartElement("ExtendedAttributes", Ns);
+            w.WriteStartElement("ExtendedAttribute", Ns);
+            E("FieldID", LinksField);
+            E("FieldName", "Text1");
+            E("Alias", LinksAlias);
+            w.WriteEndElement();
+            w.WriteEndElement();
+        }
 
         // The calendar: Sunday is DayType 1 … Saturday 7; each day not worked between the schedule's first and last years an exception (DayType 0).
         w.WriteStartElement("Calendars", Ns);
@@ -187,6 +203,13 @@ public static class MsProject
                 E("LagFormat", "7");
                 w.WriteEndElement();
             }
+            if (TaskLinkData.Of(t) is { } links)
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", LinksField);
+                E("Value", links.ToJsonString());
+                w.WriteEndElement();
+            }
             w.WriteEndElement();
         }
         w.WriteEndElement();   // Tasks
@@ -261,6 +284,9 @@ public static class MsProject
             .Where(t => Val(t, "IsNull") != "1" && Int(t, "UID", -1) > 0 && Int(t, "OutlineLevel", 1) >= 1)
             .OrderBy(t => Int(t, "ID", int.MaxValue)).ThenBy(t => Int(t, "UID")).ToList();
         var tasks = new List<ImportedTask>();
+        // The field Lapin wrote the tasks' elements in (by its name; Text1 when the file has the field without it).
+        var fields = Els(El(project, "ExtendedAttributes"), "ExtendedAttribute").ToList();
+        var linksField = fields.FirstOrDefault(x => Val(x, "Alias") == LinksAlias) is { } fa ? Val(fa, "FieldID") : fields.Count == 0 ? LinksField : null;
         var stack = new List<(int Level, string Key)>();
         var summaryKeys = new HashSet<string>();
         foreach (var t in rows)
@@ -279,8 +305,9 @@ public static class MsProject
             var constraintDate = When(Val(t, "ConstraintDate")) is { } cd ? DateOnly.FromDateTime(cd) : (DateOnly?)null;
             if (constraintDate == null) constraint = null;
             string? id = Guid.TryParse(Val(t, "GUID"), out var g) ? GlobalId.FromGuid(g) : null;
+            var elementLinks = linksField == null ? null : TaskLinkData.Parse(Els(t, "ExtendedAttribute").FirstOrDefault(x => Val(x, "FieldID") == linksField) is { } xa ? Val(xa, "Value") : null);
             tasks.Add(new ImportedTask(key, id, Val(t, "Name") ?? "", parent, duration, milestone && duration == 0, constraint, constraintDate,
-                When(Val(t, "Start")) is { } s ? DateOnly.FromDateTime(s) : null, Notes: Val(t, "Notes")));
+                When(Val(t, "Start")) is { } s ? DateOnly.FromDateTime(s) : null, Notes: Val(t, "Notes"), Links: elementLinks));
         }
         var links = new List<ImportedLink>();
         foreach (var t in rows)

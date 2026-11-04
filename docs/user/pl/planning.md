@@ -12,6 +12,7 @@ summary: Harmonogram robót na wykresie Gantta: zadania w strukturze WBS, kamien
 - **Kalendarz…**: dni i godziny robocze, święta i przerwa zimowa (poniżej).
 - **Zadanie** i **Kamień milowy**: nowe zadanie lub kamień milowy przed zadaniem zaznaczonym w Gantcie (albo na końcu).
 - **Zwiększ wcięcie**, **Zmniejsz wcięcie**, **Połącz zadania** i **Rozłącz zadania**: WBS i powiązania zaznaczonych zadań.
+- **Dodaj do zadania…** (TA) i **Elementy bez zadania**: elementy modelu w zadaniach (poniżej).
 - **Importuj MS Project…**, **Eksportuj MS Project…**, **Eksportuj XLSX** i **Eksportuj IFC…**: harmonogram do i z innych programów (poniżej).
 
 Projekt ma jeden harmonogram. Powstaje przy pierwszym dodaniu zadania i zaczyna się w następny poniedziałek. Jego początek zmienisz na pasku Gantta.
@@ -65,6 +66,40 @@ Zaznacz zadanie, a Właściwości je pokażą: jego nazwę, rodzaj w IFC, czas t
 
 Lapin liczy harmonogram po każdej zmianie. Przejście w przód znajduje daty najwcześniejsze, a przejście wstecz najpóźniejsze. Zadania bez zapasu tworzą ścieżkę krytyczną, a opóźnienie któregokolwiek z nich przesuwa koniec. Powiązanie z zadaniem podsumowującym trzyma wszystkie zadania pod nim. Powiązanie od zadania podsumowującego zaczyna się na początku jego pierwszego zadania i kończy na końcu ostatniego. Lapin odrzuca powiązanie, które utworzyłoby pętlę.
 
+## Elementy modelu w zadaniach
+
+![Zaznaczone zadanie Murowanie: jego ściany pokazane jako zaznaczone w 3D](shots/planning-links.webp)
+
+Zadanie bierze elementy modelu, więc harmonogram wie, co i kiedy jest budowane. Zaznacz zadanie, a jego elementy zostaną pokazane jako zaznaczone w 3D i na rzutach; dwukrotne kliknięcie jego paska zaznacza je i kadruje. Zaznacz elementy w widoku, a wiersze ich zadań zostaną oznaczone w Gantcie. Kolumna **Elementy** liczy elementy każdego zadania (zadania sumarycznego razem z elementami zadań pod nim).
+
+### Reguła
+
+![Elementy zadania we Właściwościach](shots/planning-task-elements.webp)
+
+W sekcji **Elementy** we Właściwościach zaznacz **Znajdź je regułą** i wybierz, co bierze zadanie, jak w filtrze zestawienia: **Rodzaje**, **Kondygnacje**, **Typy**, **Materiały**, **Grupy** i **Fazy**, każda wartość z liczbą elementów, które ją mają. Każdy ustawiony warunek musi być spełniony; pusty przepuszcza wszystko. Zapisywana jest reguła, nie elementy: ściana narysowana jutro na parterze sama trafi do zadania „Murowanie parteru”. **Reguła z zaznaczenia** tworzy regułę z rodzajów i kondygnacji zaznaczonych elementów.
+
+### Część elementów
+
+**Część** mówi, co zadanie bierze z każdego elementu: **całe elementy**, ich **rdzeń** (warstwę konstrukcyjną), ich **wykończenia** (wszystkie warstwy poza rdzeniem), warstwy jednego materiału albo jednej kategorii materiału (Wykończenie, Izolacja…). Tak ściana warstwowa jest murowana w zadaniu Murowanie (rdzeń) i tynkowana w zadaniu Tynki (wykończenia). Element bez warstw jest swoim własnym rdzeniem i nie ma wykończeń.
+
+### Ręcznie
+
+![Karta zaznaczenia nad widokiem 3D, dwa zadania ściany oznaczone w Gantcie](shots/planning-element-tasks.webp)
+
+Gdy Gantt jest otwarty, karta nad widokiem modelu mówi, ile elementów jest zaznaczonych i w jakich zadaniach są. Przeciągnij ją za uchwyt na wiersz zadania: elementy trafią do tego zadania. Przytrzymaj <kbd>Shift</kbd> przy upuszczaniu, aby je z niego usunąć. **Dodaj do zadania…** (<kbd>T</kbd> <kbd>A</kbd>, także na karcie Harmonogram) wybiera zadanie z listy.
+
+![Dodaj do zadania](shots/planning-assign.webp)
+
+To, co dodajesz lub usuwasz ręcznie, to **wyjątki** zadania: reguła pozostaje bez zmian. Właściwości je liczą, a × obok każdego je zapomina. Właściwości elementu wymieniają jego zadania w sekcji **Harmonogram robót**, każde z × do usunięcia go z zadania. Każda zmiana to jeden krok do cofnięcia.
+
+### Elementy bez zadania
+
+Gdy tylko jakieś zadanie bierze elementy, pasek Gantta mówi, ile elementów nie ma zadania albo ma warstwy, których nie bierze żadne zadanie; kliknięcie je zaznacza, gotowe do przeciągnięcia na zadanie. **Harmonogram → Elementy bez zadania** robi to samo. **Zarządzaj → Sprawdź** też je wymienia, pod *Elements with a task*: jedno ostrzeżenie na element, kliknięcie go zaznacza. Istniejące elementy, które zostają, nie potrzebują zadania.
+
+### W IFC i MS Project
+
+Eksport IFC zapisuje to, co buduje każde zadanie, jako IfcRelAssignsToProduct (element z zadaniami, które go budują), a to, na co działa zadanie rozbiórki, usunięcia lub demontażu, jako IfcRelAssignsToProcess. Reguła, część i wyjątki są zapisywane w `Lapin_Task`, więc Lapin odczytuje regułę z powrotem; plik z innego programu daje zadania z elementami, które im przypisuje. MS Project XML przenosi je w polu Text1 o nazwie *Lapin elements*. Skoroszyt ma kolumny **Elements** i **Rule**.
+
 ## Kalendarz
 
 ![Kalendarz pracy](shots/planning-calendar.webp)
@@ -88,4 +123,5 @@ Własne pola Lapin, dla których inne programy nie mają miejsca (ograniczenie z
 
 ## Co dalej
 
-Powiązanie elementów modelu z zadaniami, harmonogram wygenerowany z modelu, symulacja 4D budynku rosnącego w 3D, postęp i plany bazowe oraz kosztorys pojawią się w następnych etapach.
+Harmonogram wygenerowany z modelu, symulacja 4D budynku rosnącego w 3D, postęp i plany bazowe oraz kosztorys przyjdą w kolejnych etapach.
+

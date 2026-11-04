@@ -2,14 +2,16 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Lapin.Model;
+using Lapin.Phases;
 using Lapin.Platform;
 
 namespace Lapin.Planning;
 
 /// <summary>
-/// Planning (4D, docs/plan-4d5d.md, stage 1): the project's work schedule — tasks in a WBS, milestones, links FS / SS /
-/// FF / SF with lags, the work calendar with Romania's legal holidays — the critical path worked out on every change, and
-/// the schedule in and out as IFC processes, MS Project XML and a workbook. Every command is one undo step; the dates,
+/// Planning (4D, docs/plan-4d5d.md, stages 1–2): the project's work schedule — tasks in a WBS, milestones, links FS / SS /
+/// FF / SF with lags, the work calendar with Romania's legal holidays — the critical path worked out on every change, the
+/// model's elements in the tasks (each task's rule, part and exceptions, <see cref="TaskElements"/>), and the schedule in
+/// and out as IFC processes, MS Project XML and a workbook. Every command is one undo step; the dates,
 /// floats and critical flags are derived (<see cref="Cpm"/>), never stored.
 /// </summary>
 public sealed class PlanningModule : ILapinModule, IDeletion
@@ -145,6 +147,7 @@ public sealed class PlanningModule : ILapinModule, IDeletion
         r.Class(new(Plan.TaskClass, "Task", [], "#5b7a99", Kind: "resource"));
         r.Service<IDeletion>(this);
         r.Service<IIfcProcesses>(new ScheduleIfc());
+        r.Service<Lapin.Platform.Cde.ICdeRule>(new TaskCheck());
 
         r.Command("createSchedule", "New work schedule", (ctx, a) =>
         {
@@ -253,6 +256,7 @@ public sealed class PlanningModule : ILapinModule, IDeletion
             }
             if (a.ContainsKey("wet")) { if (a["wet"] is JsonValue wv && wv.TryGetValue<bool>(out var w) && w) attrs["wet"] = true; else attrs.Remove("wet"); }
             if (a.ContainsKey("notes")) { if (((string?)a["notes"])?.Trim() is { Length: > 0 } notes) attrs["notes"] = notes; else attrs.Remove("notes"); }
+            SetLinks(attrs, a);
             ctx.Replace(new Entity(e.Id, e.Class, name ?? e.Name, attrs, kind == null ? e.PredefinedType : kind.Length == 0 ? null : kind));
             return null;
         });
@@ -444,7 +448,79 @@ public sealed class PlanningModule : ILapinModule, IDeletion
             return ScheduleImport.Apply(ctx, s).ToJson();
         });
 
-        r.Query("schedule", (q, _) => ScheduleJson(q.Model));
+        // Elements put in a task by hand (dragged onto its row, TA), or taken out of it (Shift): exceptions to its rule, the rule kept.
+        r.Command("assign", "Add to task", (ctx, a) =>
+        {
+            var e = RequireTask(ctx.Model, (string?)a["task"] ?? (string?)a["id"]);
+            var remove = a["remove"] is JsonValue rv && rv.TryGetValue<bool>(out var rb) && rb;
+            var (ids, _) = Groups.Expand(ctx.Model, IdList(a["ids"]));
+            var p = Plan.Read(ctx.Model);
+            var task = p.ById[e.Id];
+            var links = TaskElements.Resolve(ctx, p);
+            var elements = ids.Select(links.Facts).OfType<ElementFacts>().ToList();
+            if (elements.Count == 0) throw new CommandException(remove ? "Select the task's elements to take out of it." : "Select elements of the model to add to the task.");
+            var add = task.Add.ToList();
+            var gone = task.Remove.ToList();
+            int changed = 0, noPart = 0;
+            foreach (var f in elements)
+            {
+                var id = f.Element.Id;
+                var byRule = links.RuleTakes(task, f);
+                if (remove)
+                {
+                    if (add.Remove(id)) changed++;
+                    if (byRule && !gone.Contains(id)) { gone.Add(id); changed++; }
+                }
+                else
+                {
+                    if (TaskParts.Mask(task.Part, f, ctx.Model) == 0) { noPart++; continue; }
+                    if (gone.Remove(id)) changed++;
+                    if (!byRule && !add.Contains(id)) { add.Add(id); changed++; }
+                }
+            }
+            if (changed > 0)
+            {
+                var attrs = e.CloneAttrs();
+                WriteIds(attrs, "add", add);
+                WriteIds(attrs, "remove", gone);
+                ctx.Replace(e.With(attrs: attrs));
+            }
+            return new JsonObject { ["changed"] = changed, ["noPart"] = noPart, ["count"] = TaskElements.Resolve(ctx).ByTask.GetValueOrDefault(e.Id)?.Count ?? 0 };
+        });
+
+        // A rule made from the elements selected: their classes and their storeys; the exceptions it now covers dropped.
+        r.Command("ruleFromSelection", "Task rule", (ctx, a) =>
+        {
+            var e = RequireTask(ctx.Model, (string?)a["id"]);
+            var (ids, _) = Groups.Expand(ctx.Model, IdList(a["ids"]));
+            var links = TaskElements.Resolve(ctx);
+            var elements = ids.Select(links.Facts).OfType<ElementFacts>().ToList();
+            if (elements.Count == 0) throw new CommandException("Select elements of the model: the rule takes their kinds and storeys.");
+            var rule = new TaskRule(elements.Select(f => f.Element.Class).Distinct().ToList(), [], elements.Select(f => f.Storey).OfType<string>().Distinct().ToList(), [], [], []);
+            var attrs = e.CloneAttrs();
+            attrs["rule"] = rule.ToJson();
+            var task = Plan.ReadTask(e);
+            WriteIds(attrs, "add", task.Add.Where(id => links.Facts(id) is not { } f || !rule.Matches(f, PhasesModule.Settings(ctx.Model).DefaultCreated?.Id ?? "")).ToList());
+            ctx.Replace(e.With(attrs: attrs));
+            return null;
+        });
+
+        r.Query("schedule", (q, _) => ScheduleJson(q));
+
+        // What a task's rule can name, from the model's elements: their classes, types, storeys, materials, groups and phases, each with how many elements have it.
+        r.Query("ruleOptions", (q, _) => RuleOptions(q));
+
+        // The elements no task takes, and those some of whose layers no task takes (what the CDE check lists).
+        r.Query("unlinked", (q, _) =>
+        {
+            var links = TaskElements.Resolve(q);
+            var (none, partial) = links.Unlinked();
+            return new JsonObject
+            {
+                ["none"] = new JsonArray(none.Select(f => (JsonNode)f.Element.Id).ToArray()),
+                ["partial"] = new JsonArray(partial.Select(x => (JsonNode)x.Element.Element.Id).ToArray()),
+            };
+        });
 
         // A year's legal holidays (the calendar dialog lists them).
         r.Query("holidays", (q, a) =>
@@ -462,8 +538,61 @@ public sealed class PlanningModule : ILapinModule, IDeletion
         r.Query("exportXlsx", (q, _) =>
         {
             var p = Plan.Read(q.Model);
-            return Convert.ToBase64String(Lapin.Drawing.Export.XlsxWriter.Write([("Schedule", Table(p, Solve(p).Result)), ("Calendar", CalendarTable(p))]));
+            return Convert.ToBase64String(Lapin.Drawing.Export.XlsxWriter.Write([("Schedule", Table(p, Solve(p).Result, q)), ("Calendar", CalendarTable(p))]));
         });
+    }
+
+    // ------------------------------------------------------------------ the elements of a task (stage 2)
+
+    static List<string> IdList(JsonNode? n) => n is JsonArray arr ? arr.Select(x => x is JsonValue v && v.TryGetValue<string>(out var s) ? s : null).OfType<string>().Distinct().ToList() : [];
+
+    static void WriteIds(JsonObject attrs, string key, IReadOnlyList<string> ids)
+    {
+        if (ids.Count == 0) attrs.Remove(key);
+        else attrs[key] = new JsonArray(ids.Select(x => (JsonNode)x).ToArray());
+    }
+
+    /// <summary>A task's rule (an object, null to take it off), its part (null or "all": the whole elements) and its exceptions (the lists as given) set from a command's arguments.</summary>
+    static void SetLinks(JsonObject attrs, JsonObject a)
+    {
+        if (a.ContainsKey("rule"))
+        {
+            if (a["rule"] is JsonObject) attrs["rule"] = TaskRule.Read(a["rule"])!.ToJson();
+            else if (a["rule"] is null) attrs.Remove("rule");
+            else throw new CommandException("A task's rule is an object (classes, types, storeys, materials, groups, phases), or null.");
+        }
+        if (a.ContainsKey("part")) { if (TaskParts.Parse(a["part"]) is { } part) attrs["part"] = part; else attrs.Remove("part"); }
+        if (a.ContainsKey("add")) WriteIds(attrs, "add", IdList(a["add"]));
+        if (a.ContainsKey("remove")) WriteIds(attrs, "remove", IdList(a["remove"]));
+    }
+
+    static JsonObject RuleOptions(IQueryContext q)
+    {
+        var links = TaskElements.Resolve(q);
+        var m = q.Model;
+        JsonArray Counted(IEnumerable<string?> keys, Func<string, JsonObject?> make)
+        {
+            var o = new JsonArray();
+            foreach (var g in keys.OfType<string>().GroupBy(k => k).OrderBy(g => g.Key, StringComparer.Ordinal))
+                if (make(g.Key) is { } x) { x["count"] = g.Count(); o.Add((JsonNode)x); }
+            return o;
+        }
+        JsonObject? Named(string id) => m.Get(id) is { } e ? new JsonObject { ["id"] = id, ["name"] = e.Name } : null;
+        var storeyOrder = Spatial.Storeys(m).Select((s, i) => (s.Id, i)).ToDictionary(x => x.Id, x => x.i);
+        var storeys = Counted(links.Candidates.Select(f => f.Storey), Named);
+        var sorted = storeys.OfType<JsonObject>().OrderBy(o => storeyOrder.GetValueOrDefault((string)o["id"]!, int.MaxValue)).Select(o => (JsonNode)o.DeepClone()).ToArray();
+        var ph = PhasesModule.Settings(m);
+        var defaultPhase = ph.DefaultCreated?.Id ?? "";
+        return new JsonObject
+        {
+            ["classes"] = Counted(links.Candidates.Select(f => f.Element.Class), c => new JsonObject { ["id"] = c, ["name"] = q.Describe(c)?.Label ?? c.Replace("Ifc", "") }),
+            ["types"] = Counted(links.Candidates.Select(f => f.Type), id => m.Get(id) is { } t ? new JsonObject { ["id"] = id, ["name"] = t.Name, ["class"] = t.Class } : null),
+            ["storeys"] = new JsonArray(sorted),
+            ["materials"] = Counted(links.Candidates.SelectMany(f => f.Materials), id => m.Get(id) is { } mat ? new JsonObject { ["id"] = id, ["name"] = mat.Name, ["category"] = mat.Str("category") } : null),
+            ["groups"] = Counted(links.Candidates.Select(f => f.Group), Named),
+            ["phases"] = new JsonArray(ph.Phases.Select(p => (JsonNode)new JsonObject { ["id"] = p.Id, ["name"] = p.Name, ["kind"] = p.Kind, ["count"] = links.Candidates.Count(f => (f.Phase ?? defaultPhase) == p.Id) }).ToArray()),
+            ["categories"] = new JsonArray(Platform.Materials.Categories.Select(c => (JsonNode)c).ToArray()),
+        };
     }
 
     static void UpdateSchedule(ICommandContext ctx, Entity s, JsonObject a)
@@ -490,10 +619,13 @@ public sealed class PlanningModule : ILapinModule, IDeletion
     static string D(DateOnly d) => WorkCalendar.Date(d);
 
     /// <summary>The schedule as the Gantt shows it: its tasks in row order with their dates, floats and critical flags; the links; the calendar and its days not worked.</summary>
-    public static JsonObject ScheduleJson(IModelView m)
+    public static JsonObject ScheduleJson(IQueryContext q)
     {
+        var m = q.Model;
         var p = Plan.Read(m);
         var (r, problem) = Solve(p);
+        var links = TaskElements.Resolve(q, p);
+        var (none, partial) = links.Unlinked();
         var incoming = p.Links.GroupBy(l => l.To).ToDictionary(g => g.Key, g => g.OrderBy(l => p.RowOf.GetValueOrDefault(l.From)).ToList());
         var tasks = new JsonArray();
         foreach (var t in p.Rows)
@@ -515,9 +647,17 @@ public sealed class PlanningModule : ILapinModule, IDeletion
             if (t.Wet) o["wet"] = true;
             if (t.Kind != null) o["kind"] = t.Kind;
             if (t.Notes != null) o["notes"] = t.Notes;
+            // Its elements (a summary's: those of the tasks under it too), and how they are found.
+            var elements = links.Under(t.Id);
+            o["count"] = elements.Count;
+            if (elements.Count > 0) o["elements"] = new JsonArray(elements.Select(x => (JsonNode)x).ToArray());
+            if (t.Rule != null) o["rule"] = t.Rule.ToJson();
+            if (t.Part != null) o["part"] = t.Part;
+            if (t.Add.Count > 0) o["added"] = t.Add.Count;
+            if (t.Remove.Count > 0) o["removed"] = t.Remove.Count;
             tasks.Add((JsonNode)o);
         }
-        var links = new JsonArray(p.Links.Select(l => (JsonNode)new JsonObject
+        var linkRows = new JsonArray(p.Links.Select(l => (JsonNode)new JsonObject
         {
             ["id"] = l.Id, ["from"] = l.From, ["to"] = l.To, ["type"] = l.Type, ["lag"] = l.Lag, ["critical"] = r.CriticalLinks.Contains(l.Id),
         }).ToArray());
@@ -534,15 +674,18 @@ public sealed class PlanningModule : ILapinModule, IDeletion
             ["workingDays"] = p.Calendar.WorkingDays(p.Calendar.NextWorking(p.Start), r.Finish),
             ["calendar"] = cal,
             ["nonWorking"] = new JsonArray(p.Calendar.NonWorking(shownFrom, shownTo).Select(x => (JsonNode)new JsonObject { ["date"] = D(x.Day), ["why"] = x.Why }).ToArray()),
-            ["tasks"] = tasks, ["links"] = links, ["problem"] = problem,
+            ["tasks"] = tasks, ["links"] = linkRows, ["problem"] = problem,
+            // The elements a task could take, how many some task takes, and those no task takes (whole, or some of their layers).
+            ["elements"] = new JsonObject { ["total"] = links.Candidates.Count(links.NeedsTask), ["none"] = none.Count, ["partial"] = partial.Count },
         };
     }
 
     /// <summary>The schedule as a table: what the Gantt's columns show, a row a task.</summary>
-    public static List<IReadOnlyList<string>> Table(Plan p, CpmResult r)
+    public static List<IReadOnlyList<string>> Table(Plan p, CpmResult r, IQueryContext q)
     {
         var incoming = p.Links.GroupBy(l => l.To).ToDictionary(g => g.Key, g => g.ToList());
-        var rows = new List<IReadOnlyList<string>> { new[] { "ID", "WBS", "Task", "Duration (working days)", "Start", "Finish", "Predecessors", "Total float", "Free float", "Critical", "Milestone", "Summary" } };
+        var links = TaskElements.Resolve(q, p);
+        var rows = new List<IReadOnlyList<string>> { new[] { "ID", "WBS", "Task", "Duration (working days)", "Start", "Finish", "Predecessors", "Total float", "Free float", "Critical", "Milestone", "Summary", "Elements", "Rule" } };
         foreach (var t in p.Rows)
         {
             var tm = r.Times[t.Id];
@@ -552,6 +695,7 @@ public sealed class PlanningModule : ILapinModule, IDeletion
                 $"{p.RowOf[t.Id]}", p.Wbs[t.Id], new string(' ', 2 * p.Level[t.Id]) + t.Name, $"{(summary ? tm.Duration : milestone ? 0 : t.Duration)}",
                 D(tm.Start), D(tm.Finish), string.Join(", ", (incoming.GetValueOrDefault(t.Id) ?? []).Select(p.LinkText)),
                 $"{tm.TotalFloat}", $"{tm.FreeFloat}", tm.Critical ? "yes" : "", milestone ? "yes" : "", summary ? "yes" : "",
+                $"{links.Under(t.Id).Count}", t.Links || t.Part != null ? TaskElements.Describe(q.Model, q.Describe, t.Rule, t.Part, t.Add.Count, t.Remove.Count) : "",
             ]);
         }
         return rows;

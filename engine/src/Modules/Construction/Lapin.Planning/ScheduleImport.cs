@@ -4,9 +4,9 @@ using Lapin.Platform;
 
 namespace Lapin.Planning;
 
-/// <summary>A task read from a file (MS Project, IFC): its key in the file, its id when it carries one (a GlobalId), its parent's key, and what Lapin keeps of it.</summary>
+/// <summary>A task read from a file (MS Project, IFC): its key in the file, its id when it carries one (a GlobalId), its parent's key, and what Lapin keeps of it (its elements: <see cref="TaskLinkData"/>).</summary>
 public sealed record ImportedTask(string Key, string? Id, string Name, string? ParentKey, int Duration, bool Milestone, string? Constraint = null, DateOnly? ConstraintDate = null,
-    DateOnly? Start = null, bool Wet = false, string? Kind = null, string? Notes = null);
+    DateOnly? Start = null, bool Wet = false, string? Kind = null, string? Notes = null, JsonObject? Links = null);
 
 /// <summary>A link read from a file, between two tasks' keys.</summary>
 public sealed record ImportedLink(string FromKey, string ToKey, string Type, int Lag, string? Id = null);
@@ -64,6 +64,7 @@ public static class ScheduleImport
             if (t.Constraint != null && t.ConstraintDate is { } cd) { attrs["constraint"] = t.Constraint; attrs["constraintDate"] = WorkCalendar.Date(cd); }
             if (t.Wet) attrs["wet"] = true;
             if (!string.IsNullOrWhiteSpace(t.Notes)) attrs["notes"] = t.Notes;
+            if (t.Links != null) TaskLinkData.Write(attrs, t.Links);
             var kind = t.Kind is { } k && Plan.Kinds.Contains(k) ? k : null;
             edit.Add(new Entity(idOf[t.Key], Plan.TaskClass, t.Name.Length > 0 ? t.Name : "Task", attrs, kind));
         }

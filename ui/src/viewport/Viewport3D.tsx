@@ -48,7 +48,7 @@ import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddSha
 import { clampPitch, easeEye, exitWalk, lookVector, toggleFly, useWalk, walkStep, walkWish, EYE_HEIGHT, WALK_KEYS, type WalkStart } from './walk';
 import { TICK, Walker, worldOf } from './walkPhysics';
 import { InstanceLayer } from './instancing';
-import { openGroupOf, pickTarget, pickTargets, shownSelection } from '../platform/groups';
+import { openGroupOf, pickTarget, pickTargets, shownSelection, useExpansion } from '../platform/groups';
 import { boxEdges, boxOf, projectSegments, takes, toggleRegion3d, useRegion3d, type Project } from './select3d';
 import { dragTo, isWindow, regionTestOf, SelectRegion, toggleLasso, type SelectDrag } from './selectDrag';
 import type { Seg } from './selectBox';
@@ -1252,6 +1252,8 @@ export function Viewport3D() {
   }, [view3dId, keptBox]);
 
   const selected = useUi((st) => st.selected);
+  // What the modules draw with it (a task's elements) moves with its own version.
+  const expansion = useExpansion((st) => st.version);
   const regionOn = useRegion3d((st) => st.on);
   const regionDrag = useRegion3d((st) => st.drag);
   const hiding = useTemporary(temporaryOn);
@@ -1305,7 +1307,7 @@ export function Viewport3D() {
     const layer = instances.current;
     if (layer) { layer.sync(render, meshes); layer.restyle(looks, [...shown], visualStyle, layers); }
     invalidate.current();
-  }, [render, meshes, layers, selected, looks, visualStyle, walking, capsShown]);
+  }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown]);
 
   // A walk asked for (a plan's right-click on a room), or ended; the model changed or shown otherwise under a walker.
   useEffect(() => { if (walkStart) walkApi.current.start(walkStart); else walkApi.current.stop(); }, [walkStart]);

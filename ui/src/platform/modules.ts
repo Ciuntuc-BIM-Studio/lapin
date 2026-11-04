@@ -10,9 +10,13 @@ import { cancel, useCad } from '../viewport/cad/session';
 import { parseSlot, setSlots, slotsOf, useHotbars, withSlot, withSlotType, withSwap, type Slots } from '../app/hotbar';
 import { useSession } from '../engine/session';
 import { useInterface } from '../app/interface';
+import { addSelectionExpander } from './groups';
 
 export const modules: readonly LapinModule[] = loaded;
 export const productInfo = product;
+for (const m of modules) if (m.expandSelection) addSelectionExpander(m.expandSelection);
+/** What the modules show over the active model view (the planning module's card to drag the selection onto a task). */
+export const overlays = (): ComponentType[] => modules.flatMap((m) => m.overlays ?? []);
 
 export const ribbonTabs = (): RibbonTabDef[] => mergeTabs(modules, product.tabs ?? undefined);
 /** The modules' own quick tools, in their order: a workspace's slots until the user sets them. */

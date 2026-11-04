@@ -7,9 +7,17 @@ namespace Lapin.Planning;
 /// <summary>
 /// A task as the scheduler reads it from its IfcTask: its place in the WBS (parent and order among its siblings), its
 /// duration in working days (0: a milestone), its constraint (start no earlier than, must start on, with a date), and
-/// whether it is wet (it keeps the calendar's winter break). Element links, crews and norms come in later stages.
+/// whether it is wet (it keeps the calendar's winter break); and its elements (stage 2): the rule they are found by, those
+/// added and taken off by hand (ids), and the part of them it takes (<see cref="TaskParts"/>). Crews and norms come later.
 /// </summary>
-public sealed record PlanTask(string Id, string Name, string? Parent, double Order, int Duration, bool Milestone, string? Constraint, DateOnly? ConstraintDate, bool Wet, string? Kind, string? Notes);
+public sealed record PlanTask(string Id, string Name, string? Parent, double Order, int Duration, bool Milestone, string? Constraint, DateOnly? ConstraintDate, bool Wet, string? Kind, string? Notes,
+    TaskRule? Rule = null, string? Part = null, IReadOnlyList<string>? AddIds = null, IReadOnlyList<string>? RemoveIds = null)
+{
+    public IReadOnlyList<string> Add => AddIds ?? [];
+    public IReadOnlyList<string> Remove => RemoveIds ?? [];
+    /// <summary>Whether the task takes elements at all (a rule, or elements added by hand).</summary>
+    public bool Links => Rule != null || Add.Count > 0;
+}
 
 /// <summary>An IfcRelSequence: the predecessor, the successor, FS / SS / FF / SF, and the lag in working days (negative: a lead).</summary>
 public sealed record PlanLink(string Id, string From, string To, string Type, int Lag);
@@ -63,7 +71,12 @@ public sealed class Plan
         e.Id, e.Name, e.Str("parent"), e.Num("order"),
         Math.Max(0, (int)Math.Round(e.Num("duration", 1))), e.Bool("milestone"),
         e.Str("constraint") is { } c && Constraints.Contains(c) ? c : null, WorkCalendar.ParseDate(e.Str("constraintDate")),
-        e.Bool("wet"), e.PredefinedType, e.Str("notes"));
+        e.Bool("wet"), e.PredefinedType, e.Str("notes"),
+        TaskRule.Read(e.Attrs["rule"]), PartOf(e.Str("part")), Ids(e.Attrs["add"]), Ids(e.Attrs["remove"]));
+
+    static string? PartOf(string? s) { try { return TaskParts.Parse(s); } catch (CommandException) { return null; } }
+
+    static List<string>? Ids(JsonNode? n) => n is JsonArray a ? a.Select(x => (string?)x).OfType<string>().Distinct().ToList() : null;
 
     public static PlanLink? ReadLink(Relation r) =>
         r.Class == SequenceClass && r.Related.Count > 0

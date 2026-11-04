@@ -12,6 +12,7 @@ summary: Il programma dei lavori in un diagramma di Gantt: attività in una WBS,
 - **Calendario…**: i giorni e le ore lavorative, le festività e la pausa invernale (più sotto).
 - **Attività** e **Milestone**: una nuova attività o milestone prima dell'attività selezionata nel Gantt (o in fondo).
 - **Rientra**, **Riduci rientro**, **Collega le attività** e **Scollega le attività**: la WBS e i collegamenti delle attività selezionate.
+- **Aggiungi all'attività…** (TA) ed **Elementi senza attività**: gli elementi del modello nelle attività (più avanti).
 - **Importa MS Project…**, **Esporta MS Project…**, **Esporta XLSX** e **Esporta IFC…**: il programma da e verso altri programmi (più sotto).
 
 Un progetto ha un solo programma. Si crea la prima volta che aggiungi un'attività e inizia il lunedì successivo. Cambia il suo inizio nella barra del Gantt.
@@ -65,6 +66,40 @@ Seleziona un'attività e Proprietà la mostra: il suo nome, il suo tipo IFC, la 
 
 Lapin calcola il programma dopo ogni modifica. Un passaggio in avanti trova le date più anticipate e uno all'indietro le più tardive. Le attività senza margine formano il percorso critico, e un ritardo di una qualsiasi di esse sposta la fine. Un collegamento verso un'attività di riepilogo trattiene tutte le attività sotto di essa. Un collegamento da un'attività di riepilogo parte dall'inizio della sua prima attività e finisce alla fine dell'ultima. Lapin rifiuta un collegamento che creerebbe un ciclo.
 
+## Gli elementi del modello nelle attività
+
+![L'attività Muratura selezionata: i suoi muri disegnati selezionati in 3D](shots/planning-links.webp)
+
+Un'attività prende elementi del modello, così il cronoprogramma sa cosa si costruisce e quando. Seleziona un'attività e i suoi elementi appaiono selezionati in 3D e nelle piante; un doppio clic sulla sua barra li seleziona e li inquadra. Seleziona elementi in una vista e le righe delle loro attività vengono segnate nel Gantt. La colonna **Elementi** conta gli elementi di ogni attività (quelli di un riepilogo con quelli delle attività sottostanti).
+
+### Una regola
+
+![Gli elementi di un'attività in Proprietà](shots/planning-task-elements.webp)
+
+In **Elementi** nelle Proprietà, spunta **Trovali con una regola** e scegli cosa prende l'attività, come nel filtro di un abaco: **Classi**, **Piani**, **Tipi**, **Materiali**, **Gruppi** e **Fasi**, ogni valore con quanti elementi lo hanno. Ogni condizione posta deve valere; una lasciata vuota fa passare tutto. Si conserva la regola, non gli elementi: un muro disegnato domani al piano terra entra da solo nell'attività «Muratura piano terra». **Regola dalla selezione** crea una regola con le classi e i piani degli elementi selezionati.
+
+### Una parte degli elementi
+
+**Parte** dice cosa prende l'attività da ogni elemento: gli **elementi interi**, il loro **nucleo** (lo strato strutturale), le loro **finiture** (tutti gli strati tranne il nucleo), gli strati di un materiale o quelli di una categoria di materiale (Finitura, Isolamento…). Così un muro a strati si costruisce in un'attività Muratura (il nucleo) e si intonaca in un'attività Intonaci (le finiture). Un elemento senza strati è il proprio nucleo e non ha finiture.
+
+### A mano
+
+![La scheda della selezione sopra il 3D, le due attività di un muro segnate nel Gantt](shots/planning-element-tasks.webp)
+
+Finché il Gantt è aperto, una scheda sopra la vista del modello dice quanti elementi sono selezionati e in quali attività si trovano. Trascinala per la sua maniglia sulla riga di un'attività: gli elementi entrano in quell'attività. Tieni <kbd>Maiusc</kbd> al rilascio per toglierli. **Aggiungi all'attività…** (<kbd>T</kbd> <kbd>A</kbd>, anche nella scheda Pianificazione) sceglie l'attività da un elenco.
+
+![Aggiungi all'attività](shots/planning-assign.webp)
+
+Ciò che aggiungi o togli a mano sono le **eccezioni** dell'attività: la regola resta com'è. Le Proprietà le contano, e la × accanto a ciascuna le dimentica. Le Proprietà di un elemento elencano le sue attività in **Cronoprogramma dei lavori**, ognuna con una × per toglierlo. Ogni modifica è un passo da annullare.
+
+### Elementi senza attività
+
+Appena un'attività prende elementi, la barra del Gantt dice quanti elementi non hanno un'attività o hanno strati che nessuna attività prende; un clic li seleziona, pronti da trascinare su un'attività. **Pianificazione → Elementi senza attività** fa lo stesso. **Gestisci → Verifica** li elenca anche, in *Elements with a task*: un avviso per ciascuno, un clic lo seleziona. Gli elementi esistenti che restano non hanno bisogno di un'attività.
+
+### In IFC e MS Project
+
+L'esportazione IFC scrive ciò che ogni attività costruisce come IfcRelAssignsToProduct (l'elemento, con le attività che lo costruiscono), e ciò su cui agisce un'attività di demolizione, rimozione o smontaggio come IfcRelAssignsToProcess. La regola, la parte e le eccezioni viaggiano in `Lapin_Task`, così Lapin rilegge la regola; un file di un altro programma dà attività con gli elementi che assegna loro. MS Project XML le porta nel campo Text1, chiamato *Lapin elements*. La cartella di lavoro ha le colonne **Elements** e **Rule**.
+
 ## Il calendario
 
 ![Il calendario di lavoro](shots/planning-calendar.webp)
@@ -88,4 +123,5 @@ I campi propri di Lapin per cui gli altri programmi non hanno posto (il vincolo 
 
 ## Cosa viene dopo
 
-Il collegamento degli elementi del modello alle attività, un programma generato dal modello, la simulazione 4D dell'edificio che cresce in 3D, l'avanzamento e le baseline, e il computo dei costi arriveranno nelle prossime fasi.
+Un cronoprogramma generato dal modello, la simulazione 4D dell'edificio che cresce in 3D, l'avanzamento e le linee di base, e il computo metrico estimativo arrivano nelle prossime fasi.
+

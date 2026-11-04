@@ -12,6 +12,7 @@ summary: Der Bauzeitenplan als Gantt-Diagramm: Vorgänge in einem PSP, Meilenste
 - **Kalender…**: die Arbeitstage und -stunden, die Feiertage und die Winterpause (unten).
 - **Vorgang** und **Meilenstein**: ein neuer Vorgang oder Meilenstein vor dem im Gantt gewählten Vorgang (oder am Ende).
 - **Einrücken**, **Ausrücken**, **Vorgänge verknüpfen** und **Verknüpfungen lösen**: der PSP und die Verknüpfungen der gewählten Vorgänge.
+- **Zu Vorgang hinzufügen…** (TA) und **Elemente ohne Vorgang**: die Elemente des Modells in den Vorgängen (unten).
 - **MS Project importieren…**, **MS Project exportieren…**, **XLSX exportieren** und **IFC exportieren…**: der Terminplan zu und von anderen Programmen (unten).
 
 Ein Projekt hat einen Terminplan. Er wird beim ersten Hinzufügen eines Vorgangs angelegt und beginnt am nächsten Montag. Den Beginn ändern Sie in der Leiste des Gantt.
@@ -65,6 +66,40 @@ Wählen Sie einen Vorgang, und die Eigenschaften zeigen ihn: seinen Namen, seine
 
 Lapin berechnet den Terminplan nach jeder Änderung. Eine Vorwärtsrechnung findet die frühesten Daten und eine Rückwärtsrechnung die spätesten. Die Vorgänge ohne Puffer bilden den kritischen Pfad, und eine Verzögerung eines davon verschiebt das Ende. Eine Verknüpfung zu einem Sammelvorgang hält alle Vorgänge darunter. Eine Verknüpfung von einem Sammelvorgang beginnt am Anfang seines ersten Vorgangs und endet am Ende seines letzten. Lapin lehnt eine Verknüpfung ab, die eine Schleife ergäbe.
 
+## Die Elemente des Modells in den Vorgängen
+
+![Der Vorgang Mauerwerk gewählt: seine Wände in 3D gewählt dargestellt](shots/planning-links.webp)
+
+Ein Vorgang nimmt Elemente des Modells, so weiß der Bauzeitenplan, was wann gebaut wird. Wähle einen Vorgang, und seine Elemente erscheinen in 3D und in den Grundrissen gewählt; ein Doppelklick auf seinen Balken wählt sie und passt sie ein. Wähle Elemente in einer Ansicht, und die Zeilen ihrer Vorgänge werden im Gantt markiert. Die Spalte **Elemente** zählt die Elemente jedes Vorgangs (bei einem Sammelvorgang mit denen der Vorgänge darunter).
+
+### Eine Regel
+
+![Die Elemente eines Vorgangs in den Eigenschaften](shots/planning-task-elements.webp)
+
+Unter **Elemente** in den Eigenschaften setze **Per Regel finden** und wähle, was der Vorgang nimmt, wie beim Filter einer Liste: **Arten**, **Geschosse**, **Typen**, **Materialien**, **Gruppen** und **Bauphasen**, jeder Wert mit der Zahl der Elemente, die ihn haben. Jede gesetzte Bedingung muss gelten; eine leere lässt alles durch. Gespeichert wird die Regel, nicht die Elemente: Eine morgen im Erdgeschoss gezeichnete Wand kommt von selbst in den Vorgang „Mauerwerk EG“. **Regel aus der Auswahl** macht eine Regel aus den Arten und Geschossen der gewählten Elemente.
+
+### Ein Teil der Elemente
+
+**Teil** sagt, was der Vorgang von jedem Element nimmt: die **ganzen Elemente**, ihren **Kern** (die tragende Schicht), ihre **Beläge** (alle Schichten außer dem Kern), die Schichten eines Materials oder die einer Materialkategorie (Belag, Dämmung…). So wird eine geschichtete Wand in einem Vorgang Mauerwerk (ihr Kern) gemauert und in einem Vorgang Putz (ihre Beläge) verputzt. Ein Element ohne Schichten ist sein eigener Kern und hat keine Beläge.
+
+### Von Hand
+
+![Die Karte der Auswahl über dem 3D, die zwei Vorgänge einer Wand im Gantt markiert](shots/planning-element-tasks.webp)
+
+Solange das Gantt offen ist, sagt eine Karte über der Modellansicht, wie viele Elemente gewählt sind und in welchen Vorgängen sie stehen. Ziehe sie an ihrem Griff auf die Zeile eines Vorgangs: Die Elemente kommen in diesen Vorgang. Halte beim Loslassen <kbd>Umschalt</kbd>, um sie herauszunehmen. **Zu Vorgang hinzufügen…** (<kbd>T</kbd> <kbd>A</kbd>, auch im Reiter Terminplanung) wählt den Vorgang aus einer Liste.
+
+![Zu Vorgang hinzufügen](shots/planning-assign.webp)
+
+Was du von Hand hinzufügst oder herausnimmst, sind die **Ausnahmen** des Vorgangs: Die Regel bleibt, wie sie ist. Die Eigenschaften zählen sie, und das × daneben vergisst sie. Die Eigenschaften eines Elements listen seine Vorgänge unter **Bauzeitenplan**, jeden mit einem ×, um es herauszunehmen. Jede Änderung ist ein Schritt zum Rückgängigmachen.
+
+### Elemente ohne Vorgang
+
+Sobald ein Vorgang Elemente nimmt, sagt die Leiste des Gantt, wie viele Elemente keinen Vorgang haben oder Schichten, die kein Vorgang nimmt; ein Klick wählt sie, bereit, auf einen Vorgang gezogen zu werden. **Terminplanung → Elemente ohne Vorgang** tut dasselbe. **Verwalten → Prüfung** listet sie ebenfalls, unter *Elements with a task*: eine Warnung je Element, ein Klick wählt es. Bestehende Elemente, die bleiben, brauchen keinen Vorgang.
+
+### In IFC und MS Project
+
+Der IFC-Export schreibt, was jeder Vorgang baut, als IfcRelAssignsToProduct (das Element mit den Vorgängen, die es bauen), und worauf ein Abbruch-, Entfernungs- oder Rückbauvorgang wirkt, als IfcRelAssignsToProcess. Regel, Teil und Ausnahmen reisen in `Lapin_Task`, so liest Lapin die Regel zurück; eine Datei aus einem anderen Programm ergibt Vorgänge mit den Elementen, die sie ihnen zuweist. MS Project XML trägt sie im Feld Text1 mit dem Namen *Lapin elements*. Die Arbeitsmappe hat die Spalten **Elements** und **Rule**.
+
 ## Der Kalender
 
 ![Der Arbeitskalender](shots/planning-calendar.webp)
@@ -88,4 +123,5 @@ Lapins eigene Felder, für die andere Programme keinen Platz haben (die Einschr�
 
 ## Was als Nächstes kommt
 
-Die Verknüpfung der Modellelemente mit Vorgängen, ein aus dem Modell erzeugter Terminplan, die 4D-Simulation des in 3D wachsenden Gebäudes, Fortschritt und Basispläne sowie die Kostenschätzung folgen in den nächsten Stufen.
+Ein aus dem Modell erzeugter Terminplan, die 4D-Simulation des in 3D wachsenden Gebäudes, Fortschritt und Basispläne sowie die Kostenberechnung kommen in den nächsten Stufen.
+

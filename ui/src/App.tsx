@@ -18,7 +18,7 @@ import { useSession } from './engine/session';
 import { unitLabel, useStandards } from './engine/unitsStore';
 import { openStandards } from './modules/core/standardsTab';
 import { isDesktop, projectTitle } from './engine/files';
-import { backgrounds, dialog, moduleView, modules, productInfo } from './platform/modules';
+import { backgrounds, dialog, moduleView, modules, overlays, productInfo } from './platform/modules';
 import { ProjectBrowser } from './shell/ProjectBrowser';
 import { PropertiesPanel } from './shell/PropertiesPanel';
 import { Ribbon } from './shell/Ribbon';
@@ -177,6 +177,7 @@ function PaneBody({ i }: { i: number }) {
           {/* The Gantt is a table with its own toolbar: no HUD, quick tools or selection card over it. */}
           {active && view !== 'gantt' && <ViewportHud />}
           {active && view !== 'gantt' && <SelectionCard />}
+          {active && view !== 'gantt' && overlays().map((Overlay, k) => <Overlay key={k} />)}
           {active && error && <div className="error" role="alert" onClick={() => useSession.setState({ error: null })}>{error}</div>}
           {active && <Notice />}
         </div>

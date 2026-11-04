@@ -966,6 +966,72 @@ export const scenes = [
     },
   },
   {
+    // Planning, stage 2 (docs/plan-4d5d.md): a house's elements in the tasks by rules (the walls' core in one, their finishes in
+    // another), a task selected showing its elements in 3D, the rule in Properties, the selection dragged onto a row, TA.
+    id: 'planning-links',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 250 plastered', layers: [
+        { material: 'Lime plaster', thickness: 0.02 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Gypsum plaster', thickness: 0.015 },
+      ] })).id;
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+      const walls = [];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: type })).id);
+      }
+      walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: 7, y1: 0, x2: 7, y2: 8, typeId: type })).id);
+      const door = (await t.cmd('architecture.addDoor', { wallId: walls[0], x: 3, y: 0 })).id;
+      for (const [w, x, y] of [[0, 9.5, 0], [2, 3.5, 8], [2, 9.5, 8], [1, 12, 4]]) await t.cmd('architecture.addWindow', { wallId: walls[w], x, y });
+      await t.cmd('architecture.addSlab', { storeyId: s, points: outline });
+      await t.cmd('planning.updateSchedule', { name: 'House', start: '2026-11-16' });
+      const add = async (name, duration, extra = {}) => {
+        const id = (await t.cmd('planning.addTask', { name, duration })).id;
+        if (Object.keys(extra).length) await t.cmd('planning.updateTask', { id, ...extra });
+        return id;
+      };
+      const slab = await add('Floor slab', 6, { rule: { classes: ['IfcSlab'] }, wet: true });
+      const masonry = await add('Masonry', 10, { rule: { classes: ['IfcWall'], storeys: [s] }, part: 'core' });
+      const joinery = await add('Windows and doors', 4, { rule: { classes: ['IfcWindow'] } });
+      const plaster = await add('Plaster', 8, { rule: { classes: ['IfcWall'] }, part: 'finishes', wet: true });
+      await t.cmd('planning.link', { from: slab, to: masonry });
+      await t.cmd('planning.link', { from: masonry, to: joinery, type: 'SS', lag: 5 });
+      await t.cmd('planning.link', { from: joinery, to: plaster });
+      await open3d(t);
+      await t.tool('planning.gantt');
+      await t.wait(1500);
+      let sched = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.schedule'));
+      const row = (id) => sched.tasks.find((x) => x.id === id);
+      t.expect(row(masonry).count === 5 && row(plaster).count === 5 && row(joinery).count === 4 && row(slab).count === 1, 'the rules find the walls, windows and slab');
+      t.expect(sched.elements.none === 1, 'the door has no task yet');
+      // A task selected: its elements drawn selected in 3D, its rule in Properties.
+      await t.ui({ selection: masonry, selected: [masonry] });
+      await t.wait(1000);
+      await t.shot('planning-links');
+      await t.page.locator('[data-testid=task-links]').scrollIntoViewIfNeeded();
+      await t.wait(300);
+      await t.shot('planning-task-elements', { of: '[data-testid=task-links]', pad: 8 });
+      // The door selected: the card to drag it from, the rows of its tasks marked (none yet); dragged onto Windows and doors.
+      await t.ui({ selection: door, selected: [door], pane: 0 });
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=selection-to-task]').count() === 1, 'the selection card shows over the 3D');
+      await t.page.locator('[data-testid=selection-drag]').dragTo(t.page.locator(`.gantt-row[data-task="${joinery}"]`));
+      await t.wait(1200);
+      sched = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.schedule'));
+      t.expect(row(joinery).count === 5 && row(joinery).added === 1 && sched.elements.none === 0, 'the door dropped on its row joins the task');
+      await t.ui({ selection: walls[1], selected: [walls[1]], pane: 0 });
+      await t.wait(1000);
+      t.expect(await t.page.locator('.gantt-row.holds').count() === 2, "a wall's two tasks marked in the Gantt");
+      await t.shot('planning-element-tasks');
+      // TA: the same from a list.
+      await t.tool('planning.assign');
+      await t.wait(600);
+      await t.shot('planning-assign', { of: '[data-testid=assign-dialog]', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     id: 'stairs',
     async run(t) {
       await t.fresh();

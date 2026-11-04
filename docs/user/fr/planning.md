@@ -12,6 +12,7 @@ summary: Le planning des travaux dans un diagramme de Gantt : tâches dans une W
 - **Calendrier…** : les jours et heures ouvrés, les jours fériés et la pause hivernale (ci-dessous).
 - **Tâche** et **Jalon** : une nouvelle tâche ou un nouveau jalon avant la tâche sélectionnée dans le Gantt (ou à la fin).
 - **Abaisser**, **Hausser**, **Lier les tâches** et **Délier les tâches** : la WBS et les liens des tâches sélectionnées.
+- **Ajouter à la tâche…** (TA) et **Éléments sans tâche** : les éléments du modèle dans les tâches (plus bas).
 - **Importer MS Project…**, **Exporter MS Project…**, **Exporter XLSX** et **Exporter IFC…** : le planning vers et depuis d'autres programmes (ci-dessous).
 
 Un projet a un seul planning. Il est créé la première fois que vous ajoutez une tâche et commence le lundi suivant. Changez son début dans la barre du Gantt.
@@ -65,6 +66,40 @@ Sélectionnez une tâche et Propriétés l'affiche : son nom, son genre IFC, sa 
 
 Lapin calcule le planning après chaque modification. Un passage aller trouve les dates au plus tôt et un passage retour les dates au plus tard. Les tâches sans marge forment le chemin critique, et un retard sur l'une d'elles décale la fin. Un lien vers une récapitulative retient toutes les tâches en dessous. Un lien depuis une récapitulative part du début de sa première tâche et finit à la fin de sa dernière. Lapin refuse un lien qui formerait une boucle.
 
+## Les éléments du modèle dans les tâches
+
+![La tâche Maçonnerie sélectionnée : ses murs dessinés sélectionnés en 3D](shots/planning-links.webp)
+
+Une tâche prend des éléments du modèle : le planning sait ainsi ce qui est construit et quand. Sélectionnez une tâche et ses éléments sont dessinés sélectionnés en 3D et dans les plans ; un double-clic sur sa barre les sélectionne et les cadre. Sélectionnez des éléments dans une vue et les lignes de leurs tâches sont marquées dans le Gantt. La colonne **Éléments** compte les éléments de chaque tâche (ceux d'une tâche récapitulative avec ceux des tâches en dessous).
+
+### Une règle
+
+![Les éléments d'une tâche dans Propriétés](shots/planning-task-elements.webp)
+
+Sous **Éléments** dans Propriétés, cochez **Les trouver par une règle** et choisissez ce que prend la tâche, comme dans le filtre d'une nomenclature : **Classes**, **Niveaux**, **Types**, **Matériaux**, **Groupes** et **Phases**, chaque valeur avec le nombre d'éléments qui l'ont. Chaque condition posée doit être remplie ; une condition vide laisse tout passer. C'est la règle qui est gardée, pas les éléments : un mur dessiné demain au rez-de-chaussée entre de lui-même dans la tâche « Maçonnerie RDC ». **Règle d'après la sélection** fait une règle des classes et niveaux des éléments sélectionnés.
+
+### Une partie des éléments
+
+**Partie** dit ce que la tâche prend de chaque élément : les **éléments entiers**, leur **âme** (la couche porteuse), leurs **finitions** (toutes les couches sauf l'âme), les couches d'un matériau ou celles d'une catégorie de matériau (Finition, Isolant…). Ainsi un mur multicouche est monté dans une tâche Maçonnerie (son âme) et enduit dans une tâche Enduits (ses finitions). Un élément sans couches est sa propre âme et n'a pas de finitions.
+
+### À la main
+
+![La carte de la sélection sur la 3D, les deux tâches d'un mur marquées dans le Gantt](shots/planning-element-tasks.webp)
+
+Tant que le Gantt est ouvert, une carte sur la vue du modèle dit combien d'éléments sont sélectionnés et dans quelles tâches ils sont. Glissez-la par sa poignée sur la ligne d'une tâche : les éléments entrent dans cette tâche. Maintenez <kbd>Maj</kbd> en lâchant pour les en retirer. **Ajouter à la tâche…** (<kbd>T</kbd> <kbd>A</kbd>, aussi dans l'onglet Planification) choisit la tâche dans une liste.
+
+![Ajouter à la tâche](shots/planning-assign.webp)
+
+Ce que vous ajoutez ou retirez à la main, ce sont les **exceptions** de la tâche : la règle reste telle quelle. Propriétés les compte, et le × à côté de chacune les oublie. Les Propriétés d'un élément listent ses tâches sous **Planning des travaux**, chacune avec un × pour l'en retirer. Chaque modification est un pas d'annulation.
+
+### Éléments sans tâche
+
+Dès qu'une tâche prend des éléments, la barre du Gantt dit combien d'éléments n'ont pas de tâche, ou ont des couches qu'aucune tâche ne prend ; un clic les sélectionne, prêts à être glissés sur une tâche. **Planification → Éléments sans tâche** fait de même. **Gérer → Vérification** les liste aussi, sous *Elements with a task* : un avertissement par élément, un clic le sélectionne. Les éléments existants qui restent n'ont pas besoin de tâche.
+
+### En IFC et MS Project
+
+L'export IFC écrit ce que chaque tâche construit comme IfcRelAssignsToProduct (l'élément, avec les tâches qui le construisent), et ce sur quoi agit une tâche de démolition, d'enlèvement ou de démontage comme IfcRelAssignsToProcess. La règle, la partie et les exceptions voyagent dans `Lapin_Task`, Lapin relit donc la règle ; un fichier d'un autre programme donne des tâches tenant les éléments qu'il leur affecte. MS Project XML les porte dans le champ Text1, nommé *Lapin elements*. Le classeur a les colonnes **Elements** et **Rule**.
+
 ## Le calendrier
 
 ![Le calendrier de travail](shots/planning-calendar.webp)
@@ -88,4 +123,5 @@ Les champs propres à Lapin pour lesquels les autres programmes n'ont pas de pla
 
 ## La suite
 
-Lier les éléments du modèle aux tâches, un planning généré à partir du modèle, la simulation 4D du bâtiment qui grandit en 3D, l'avancement et les références, et l'estimation des coûts viendront dans les prochaines étapes.
+Un planning généré à partir du modèle, la simulation 4D du bâtiment qui grandit en 3D, l'avancement et les plannings de référence, et le devis arrivent dans les prochaines étapes.
+

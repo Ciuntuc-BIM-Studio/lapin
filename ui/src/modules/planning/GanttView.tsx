@@ -8,18 +8,19 @@
  * smoothly. The keyboard works as in a table: arrows, Insert, Delete, Tab and Shift+Tab to indent and outdent, F2 to rename.
  */
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   CalendarDays, ChevronDown, ChevronRight, Crosshair, Diamond, IndentDecrease, IndentIncrease, Link2, Maximize, Plus, Route, Trash2, Unlink2, X,
 } from 'lucide-react';
 import { select, useUi } from '../../app/store';
-import { execute } from '../../engine/session';
+import { execute, useSession } from '../../engine/session';
 import { useLang } from '../../i18n';
 import {
   arrowPoints, barOf, dateOf, dayOf, dragDays, endAt, fitScale, linkLabel, linkType, MAX_PX, MIN_PX, movedFinish, movedStart, namesOf, parseDate,
   rowWindow, showDate, span, ticks, tierOf, today, visibleRows, workingDaysBetween, workingTest, ZOOMS, type Bar, type LinkDto, type LinkType, type TaskDto, type Zoom,
 } from './gantt';
-import { addTask, deleteSelected, indent, linkSelected, outdent, unlinkSelected, useSchedule } from './schedule';
+import { addTask, assignTo, deleteSelected, indent, linkSelected, outdent, selectUnlinked, showTaskElements, unlinkSelected, useSchedule } from './schedule';
+import { DRAG_TYPE, dropOf, elementIds, ruleSummary, tasksHolding } from './links';
 
 const ROW_H = 26;
 const HEAD_H = 40;
@@ -32,6 +33,7 @@ const COLUMNS = [
   { key: 'finish', label: 'Finish', w: 84 },
   { key: 'predecessors', label: 'Predecessors', w: 84 },
   { key: 'float', label: 'Float', w: 46 },
+  { key: 'elements', label: 'Elements', w: 70 },
 ] as const;
 type Column = (typeof COLUMNS)[number]['key'];
 const TABLE_W = COLUMNS.reduce((s, c) => s + c.w, 0);
@@ -61,6 +63,7 @@ function CellEditor({ value, onCommit, onDone, testId }: { value: string; onComm
 export function GanttView() {
   const data = useSchedule();
   const selected = useUi((s) => s.selected);
+  const nodes = useSession((s) => s.nodes);
   const lang = useLang((s) => s.lang);
   const names = useMemo(() => namesOf(lang), [lang]);
   const scroller = useRef<HTMLDivElement>(null);
@@ -74,6 +77,8 @@ export function GanttView() {
   const [drag, setDrag] = useState<Drag | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const [linkEdit, setLinkEdit] = useState<{ link: LinkDto; x: number; y: number } | null>(null);
+  // The row the selection is being dragged over (stage 2: dropped, its elements go into that task).
+  const [dropRow, setDropRow] = useState<string | null>(null);
   const fitted = useRef(false);
 
   useEffect(() => {
@@ -115,6 +120,10 @@ export function GanttView() {
   const goToday = () => scroller.current?.scrollTo({ left: Math.max(0, xOf(today()) - viewW / 3) });
 
   const sel = useMemo(() => new Set(selected), [selected]);
+  // The tasks holding the elements selected in the views: their rows marked.
+  const holding = useMemo(() => tasksHolding(data?.tasks ?? [], elementIds(selected, nodes)), [data, selected, nodes]);
+  const nameOf = (id: string) => nodes.get(id)?.name;
+  const classLabel = (cls: string) => cls.replace(/^Ifc/, '');
   const first = rows.findIndex((t) => sel.has(t.id));
 
   // ── Pointer on the chart ────────────────────────────────────────────────
@@ -230,6 +239,16 @@ export function GanttView() {
     }
   };
 
+  /** The selection dropped on a task's row: its elements put in the task, or (Shift) taken out of it. */
+  const drop = (e: ReactDragEvent, t: TaskDto | undefined) => {
+    setDropRow(null);
+    const d = dropOf(e.dataTransfer.getData(DRAG_TYPE), e.shiftKey);
+    if (!d || !t) return;
+    e.preventDefault();
+    select(t.id);
+    void assignTo(t.id, d.ids, d.remove);
+  };
+
   const toggle = (id: string) => setCollapsed((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   // ── What is in view ─────────────────────────────────────────────────────
@@ -249,6 +268,7 @@ export function GanttView() {
       case 'start': return showDate(t.start);
       case 'finish': return showDate(t.finish);
       case 'predecessors': return t.predecessors;
+      case 'elements': return t.count ? String(t.count) : '';
       default: return t.summary ? '' : `${t.totalFloat} d`;
     }
   };
@@ -307,6 +327,9 @@ export function GanttView() {
           <label title="The day the schedule starts">Start <input type="date" value={data.start} onChange={(e) => e.target.value && void execute('planning.updateSchedule', { start: e.target.value })} /></label>
           <span>{`${data.tasks.length} tasks · ${data.workingDays} working days · finish ${showDate(data.finish)}`}</span>
           {data.problem && <span className="error-text">{data.problem}</span>}
+          {data.tasks.some((t) => t.count > 0) && (data.elements.none > 0 || data.elements.partial > 0
+            ? <button type="button" className="link cde-warn" onClick={() => void selectUnlinked()} title="Select them, to drag them onto a task" data-testid="gantt-unlinked">{`${data.elements.none + data.elements.partial} of ${data.elements.total} elements without a task`}</button>
+            : <span className="muted" data-testid="gantt-unlinked">{`all ${data.elements.total} elements have a task`}</span>)}
         </span>
       </div>
       <div className="gantt-scroll" ref={scroller} onScroll={(e) => { const el = e.currentTarget; setScroll({ left: el.scrollLeft, top: el.scrollTop }); setLinkEdit(null); }}>
@@ -323,7 +346,10 @@ export function GanttView() {
             {/* The chart */}
             <svg className="gantt-chart" style={{ left: TABLE_W, top: HEAD_H, width: viewW, height: viewH }}
               onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={() => !drag && setHover(null)}
-              onDoubleClick={() => { const t = first >= 0 ? rows[first] : null; if (t) useUi.setState({ selection: t.id }); }} data-testid="gantt-chart">
+              onDoubleClick={() => { const t = first >= 0 ? rows[first] : null; if (t) showTaskElements(t); }}
+              onDragOver={(e) => { if (!e.dataTransfer.types.includes(DRAG_TYPE)) return; e.preventDefault(); e.dataTransfer.dropEffect = e.shiftKey ? 'move' : 'copy'; setDropRow(rows[rowAt(at(e).y)]?.id ?? null); }}
+              onDragLeave={() => setDropRow(null)}
+              onDrop={(e) => { const t = rows[rowAt(at(e).y)]; drop(e, t); }} data-testid="gantt-chart">
               <defs>
                 <marker id="gantt-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" className="gantt-arrowhead" /></marker>
                 <marker id="gantt-arrow-critical" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" className="gantt-arrowhead critical" /></marker>
@@ -331,7 +357,7 @@ export function GanttView() {
               <g transform={`translate(${-scroll.left},${-scroll.top})`}>
                 {shading.map((d) => <rect key={d} x={xOf(d)} y={scroll.top} width={ppd} height={viewH} className="gantt-off" />)}
                 {scale.bottom.map((k) => (k.to - k.from) * ppd >= 14 && <line key={k.from} x1={xOf(k.from)} x2={xOf(k.from)} y1={scroll.top} y2={scroll.top + viewH} className="gantt-grid" />)}
-                {rows.slice(r0, r1 + 1).map((t, k) => sel.has(t.id) && <rect key={t.id} x={scroll.left} y={(r0 + k) * ROW_H} width={viewW} height={ROW_H} className="gantt-row-on" />)}
+                {rows.slice(r0, r1 + 1).map((t, k) => (sel.has(t.id) || holding.has(t.id) || dropRow === t.id) && <rect key={t.id} x={scroll.left} y={(r0 + k) * ROW_H} width={viewW} height={ROW_H} className={dropRow === t.id ? 'gantt-row-drop' : sel.has(t.id) ? 'gantt-row-on' : 'gantt-row-holds'} />)}
                 <line x1={xOf(now)} x2={xOf(now)} y1={scroll.top} y2={scroll.top + viewH} className="gantt-today" />
                 {data.dataDate && <line x1={xOf(dayOf(data.dataDate))} x2={xOf(dayOf(data.dataDate))} y1={scroll.top} y2={scroll.top + viewH} className="gantt-data-date" />}
                 {data.links.map((l) => {
@@ -380,11 +406,15 @@ export function GanttView() {
               {rows.slice(r0, r1 + 1).map((t, k) => {
                 const i = r0 + k;
                 return (
-                  <div key={t.id} className={`gantt-row${sel.has(t.id) ? ' on' : ''}${t.summary ? ' summary' : ''}${critical && t.critical ? ' critical' : ''}`}
-                    style={{ top: i * ROW_H - scroll.top, height: ROW_H }} data-row={t.row}
+                  <div key={t.id} className={`gantt-row${sel.has(t.id) ? ' on' : ''}${holding.has(t.id) ? ' holds' : ''}${dropRow === t.id ? ' drop' : ''}${t.summary ? ' summary' : ''}${critical && t.critical ? ' critical' : ''}`}
+                    style={{ top: i * ROW_H - scroll.top, height: ROW_H }} data-row={t.row} data-task={t.id}
+                    onDragOver={(e) => { if (!e.dataTransfer.types.includes(DRAG_TYPE)) return; e.preventDefault(); e.dataTransfer.dropEffect = e.shiftKey ? 'move' : 'copy'; setDropRow(t.id); }}
+                    onDragLeave={() => setDropRow((r) => (r === t.id ? null : r))}
+                    onDrop={(e) => drop(e, t)}
                     onPointerDown={(e) => { if (!(e.target as HTMLElement).closest('input')) { root.current?.focus(); select(t.id, e.shiftKey || e.ctrlKey || e.metaKey); } }}>
                     {COLUMNS.map((c) => (
                       <span key={c.key} className={`gantt-td c-${c.key}`} style={{ width: c.w, ...(c.key === 'name' ? { paddingLeft: 4 + t.level * 14 } : {}) }}
+                        title={c.key === 'elements' && t.count ? ruleSummary(t, nameOf, classLabel) || undefined : undefined}
                         onDoubleClick={() => editable(t, c.key) && setEditing({ id: t.id, col: c.key })}>
                         {c.key === 'name' && (t.summary
                           ? <button type="button" className="gantt-fold" onClick={(e) => { e.stopPropagation(); toggle(t.id); }} title={collapsed.has(t.id) ? 'Show the tasks under it' : 'Hide the tasks under it'}>{collapsed.has(t.id) ? <ChevronRight size={12} /> : <ChevronDown size={12} />}</button>

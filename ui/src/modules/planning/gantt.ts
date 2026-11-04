@@ -12,7 +12,11 @@ export interface TaskDto {
   summary: boolean; milestone: boolean; duration: number; start: string; finish: string; lateStart: string; lateFinish: string;
   totalFloat: number; freeFloat: number; critical: boolean; predecessors: string;
   constraint?: 'snet' | 'mso'; constraintDate?: string; wet?: boolean; kind?: string; notes?: string;
+  /** Its elements (stage 2): how many, which (a summary's: its tasks' too), the rule they are found by, the part taken, the exceptions. */
+  count: number; elements?: string[]; rule?: TaskRule; part?: string; added?: number; removed?: number;
 }
+/** A task's rule: every condition given must hold (ids, classes by their IFC name). */
+export interface TaskRule { classes?: string[]; types?: string[]; storeys?: string[]; materials?: string[]; groups?: string[]; phases?: string[] }
 export interface LinkDto { id: string; from: string; to: string; type: LinkType; lag: number; critical: boolean }
 export interface CalendarException { from: string; to: string; working: boolean; name: string }
 export interface CalendarDto {
@@ -22,6 +26,8 @@ export interface CalendarDto {
 export interface ScheduleDto {
   id: string | null; name: string; start: string; finish: string; dataDate: string | null; workingDays: number;
   calendar: CalendarDto; nonWorking: { date: string; why: string }[]; tasks: TaskDto[]; links: LinkDto[]; problem: string | null;
+  /** The elements that need a task, those no task takes, and those some of whose layers none takes. */
+  elements: { total: number; none: number; partial: number };
 }
 
 // ── Dates ────────────────────────────────────────────────────────────────────

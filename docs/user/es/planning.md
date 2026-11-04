@@ -12,6 +12,7 @@ summary: El cronograma de obra en un diagrama de Gantt: tareas en una EDT, hitos
 - **Calendario…**: los días y horas laborables, los festivos y la pausa de invierno (más abajo).
 - **Tarea** e **Hito**: una tarea o un hito nuevo antes de la tarea seleccionada en el Gantt (o al final).
 - **Aumentar sangría**, **Reducir sangría**, **Vincular tareas** y **Desvincular tareas**: la EDT y los vínculos de las tareas seleccionadas.
+- **Añadir a la tarea…** (TA) y **Elementos sin tarea**: los elementos del modelo en las tareas (más abajo).
 - **Importar MS Project…**, **Exportar MS Project…**, **Exportar XLSX** y **Exportar IFC…**: el cronograma hacia y desde otros programas (más abajo).
 
 Un proyecto tiene un solo cronograma. Se crea la primera vez que añades una tarea y empieza el lunes siguiente. Cambia su inicio en la barra del Gantt.
@@ -65,6 +66,40 @@ Selecciona una tarea y Propiedades la muestra: su nombre, su tipo IFC, su duraci
 
 Lapin calcula el cronograma después de cada cambio. Un cálculo hacia delante halla las fechas más tempranas y uno hacia atrás las más tardías. Las tareas sin holgura forman la ruta crítica y un retraso en cualquiera de ellas mueve el fin. Un vínculo hacia un resumen sujeta todas las tareas que tiene debajo. Un vínculo desde un resumen parte del inicio de su primera tarea y termina en el fin de su última. Lapin rechaza un vínculo que cree un bucle.
 
+## Los elementos del modelo en las tareas
+
+![La tarea Albañilería seleccionada: sus muros dibujados seleccionados en 3D](shots/planning-links.webp)
+
+Una tarea toma elementos del modelo, así el cronograma sabe qué se construye y cuándo. Selecciona una tarea y sus elementos se dibujan seleccionados en 3D y en las plantas; doble clic en su barra los selecciona y los encuadra. Selecciona elementos en una vista y las filas de sus tareas se marcan en el Gantt. La columna **Elementos** cuenta los elementos de cada tarea (los de un resumen, con los de las tareas que tiene debajo).
+
+### Una regla
+
+![Los elementos de una tarea en Propiedades](shots/planning-task-elements.webp)
+
+En **Elementos** de Propiedades, marca **Encontrarlos por una regla** y elige qué toma la tarea, como en el filtro de una tabla: **Clases**, **Plantas**, **Tipos**, **Materiales**, **Grupos** y **Fases**, cada valor con cuántos elementos lo tienen. Cada condición puesta debe cumplirse; una vacía lo deja pasar todo. Se guarda la regla, no los elementos: un muro dibujado mañana en la planta baja entra solo en la tarea «Albañilería planta baja». **Regla a partir de la selección** hace una regla con las clases y plantas de los elementos seleccionados.
+
+### Una parte de los elementos
+
+**Parte** dice qué toma la tarea de cada elemento: los **elementos enteros**, su **núcleo** (la capa estructural), sus **acabados** (todas las capas salvo el núcleo), las capas de un material o las de una categoría de material (Acabado, Aislamiento…). Así, un muro por capas se levanta en una tarea de Albañilería (su núcleo) y se enluce en una de Enlucido (sus acabados). Un elemento sin capas es su propio núcleo y no tiene acabados.
+
+### A mano
+
+![La tarjeta de la selección sobre el 3D, las dos tareas de un muro marcadas en el Gantt](shots/planning-element-tasks.webp)
+
+Con el Gantt abierto, una tarjeta sobre la vista del modelo dice cuántos elementos hay seleccionados y en qué tareas están. Arrástrala por su asa a la fila de una tarea: los elementos entran en esa tarea. Mantén <kbd>Shift</kbd> al soltar para sacarlos de ella. **Añadir a la tarea…** (<kbd>T</kbd> <kbd>A</kbd>, también en la pestaña Planificación) elige la tarea de una lista.
+
+![Añadir a la tarea](shots/planning-assign.webp)
+
+Lo que añades o sacas a mano son las **excepciones** de la tarea: la regla queda como está. Propiedades las cuenta, y la × junto a cada una las olvida. Las Propiedades de un elemento listan sus tareas en **Cronograma de obra**, cada una con una × para sacarlo. Cada cambio es un paso para deshacer.
+
+### Elementos sin tarea
+
+En cuanto una tarea toma elementos, la barra del Gantt dice cuántos elementos no tienen tarea o tienen capas que ninguna toma; un clic los selecciona, listos para arrastrarlos a una tarea. **Planificación → Elementos sin tarea** hace lo mismo. **Gestionar → Comprobación** también los lista, en *Elements with a task*: un aviso por cada uno, un clic lo selecciona. Los elementos existentes que se quedan no necesitan tarea.
+
+### En IFC y MS Project
+
+La exportación IFC escribe lo que construye cada tarea como IfcRelAssignsToProduct (el elemento, con las tareas que lo construyen), y aquello sobre lo que actúa una tarea de demolición, retirada o desmontaje como IfcRelAssignsToProcess. La regla, la parte y las excepciones viajan en `Lapin_Task`, así Lapin relee la regla; un archivo de otro programa da tareas con los elementos que les asigna. MS Project XML las lleva en el campo Text1, llamado *Lapin elements*. El libro XLSX tiene las columnas **Elements** y **Rule**.
+
 ## El calendario
 
 ![El calendario de trabajo](shots/planning-calendar.webp)
@@ -88,4 +123,5 @@ Los campos propios de Lapin para los que otros programas no tienen sitio (la res
 
 ## Lo que viene
 
-Vincular los elementos del modelo a las tareas, un cronograma generado a partir del modelo, la simulación 4D del edificio creciendo en 3D, el avance y las líneas base, y el presupuesto llegarán en las próximas etapas.
+Un cronograma generado a partir del modelo, la simulación 4D del edificio creciendo en 3D, el avance y las líneas base, y el presupuesto llegan en las próximas etapas.
+

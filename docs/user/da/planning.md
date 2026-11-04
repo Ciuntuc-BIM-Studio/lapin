@@ -12,6 +12,7 @@ summary: Arbejdsplanen i et Gantt-diagram: opgaver i en WBS, milepæle, kæder m
 - **Kalender…**: arbejdsdage og arbejdstimer, helligdage og vinterpausen (nedenfor).
 - **Opgave** og **Milepæl**: en ny opgave eller milepæl før den opgave, der er valgt i Gantt (eller til sidst).
 - **Indryk**, **Ryk ud**, **Kæd opgaver** og **Fjern kæder**: WBS og kæderne for de valgte opgaver.
+- **Føj til opgave…** (TA) og **Elementer uden opgave**: modellens elementer i opgaverne (nedenfor).
 - **Importér MS Project…**, **Eksportér MS Project…**, **Eksportér XLSX** og **Eksportér IFC…**: tidsplanen til og fra andre programmer (nedenfor).
 
 Et projekt har én tidsplan. Den oprettes første gang, du tilføjer en opgave, og starter den næste mandag. Ret starten i Gantts værktøjslinje.
@@ -65,6 +66,40 @@ Vælg en opgave, og Egenskaber viser den: dens navn, dens IFC-art, dens varighed
 
 Lapin beregner tidsplanen efter hver ændring. En fremadgående gennemgang finder de tidligste datoer og en baglæns de seneste. Opgaverne uden buffer udgør den kritiske vej, og en forsinkelse af en af dem flytter slutningen. En kæde til en sammenfatning holder alle opgaver under den. En kæde fra en sammenfatning starter ved første opgaves start og slutter ved sidste opgaves slut. Lapin afviser en kæde, der ville give en løkke.
 
+## Modellens elementer i opgaverne
+
+![Opgaven Murværk valgt: dens vægge vist markeret i 3D](shots/planning-links.webp)
+
+En opgave tager elementer fra modellen, så tidsplanen ved, hvad der bygges hvornår. Vælg en opgave, og dens elementer vises markeret i 3D og i planerne; dobbeltklik på dens bjælke markerer dem og zoomer ind på dem. Markér elementer i en visning, og rækkerne for deres opgaver markeres i Gantt. Kolonnen **Elementer** tæller hver opgaves elementer (for en sammenfatning med opgaverne under den).
+
+### En regel
+
+![En opgaves elementer i Egenskaber](shots/planning-task-elements.webp)
+
+Under **Elementer** i Egenskaber sætter du flueben ved **Find dem med en regel** og vælger, hvad opgaven tager, som i en listes filter: **Arter**, **Etager**, **Typer**, **Materialer**, **Grupper** og **Faser**, hver værdi med hvor mange elementer der har den. Hver betingelse, du sætter, skal gælde; en tom lader alt gå igennem. Det er reglen, der gemmes, ikke elementerne: en væg tegnet i morgen i stueetagen kommer selv med i opgaven "Murværk stueetage". **Regel ud fra markeringen** laver en regel af de markerede elementers arter og etager.
+
+### En del af elementerne
+
+**Del** siger, hvad opgaven tager af hvert element: **hele elementer**, deres **kerne** (det bærende lag), deres **overflader** (alle lag undtagen kernen), lagene af ét materiale eller af en materialekategori (Overflade, Isolering…). Så en lagdelt væg mures i en opgave Murværk (kernen) og pudses i en opgave Puds (overfladerne). Et element uden lag er sin egen kerne og har ingen overflader.
+
+### I hånden
+
+![Markeringens kort over 3D, en vægs to opgaver markeret i Gantt](shots/planning-element-tasks.webp)
+
+Mens Gantt er åben, siger et kort over modelvisningen, hvor mange elementer der er markeret, og hvilke opgaver de er i. Træk det i håndtaget hen på en opgaves række: elementerne kommer med i opgaven. Hold <kbd>Skift</kbd>, når du slipper, for at tage dem ud af den. **Føj til opgave…** (<kbd>T</kbd> <kbd>A</kbd>, også på fanen Tidsplanlægning) vælger opgaven fra en liste.
+
+![Føj til opgave](shots/planning-assign.webp)
+
+Det, du lægger i eller tager ud i hånden, er opgavens **undtagelser**: reglen forbliver som den er. Egenskaber tæller dem, og × ved hver glemmer dem. Et elements egne Egenskaber viser dets opgaver under **Byggetidsplan**, hver med et × for at tage det ud. Hver ændring er ét trin at fortryde.
+
+### Elementer uden opgave
+
+Så snart en opgave tager elementer, siger Gantts værktøjslinje, hvor mange elementer der ikke har nogen opgave eller har lag, som ingen opgave tager; et klik markerer dem, klar til at trække hen på en opgave. **Tidsplanlægning → Elementer uden opgave** gør det samme. **Administrer → Kontrol** viser dem også, under *Elements with a task*: én advarsel pr. element, et klik markerer det. Eksisterende elementer, der bliver stående, behøver ingen opgave.
+
+### I IFC og MS Project
+
+IFC-eksporten skriver, hvad hver opgave bygger, som IfcRelAssignsToProduct (elementet med de opgaver, der bygger det), og hvad en nedrivnings-, fjernelses- eller demonteringsopgave virker på, som IfcRelAssignsToProcess. Regel, del og undtagelser rejser i `Lapin_Task`, så Lapin læser reglen tilbage; en fil fra et andet program giver opgaver med de elementer, den tildeler dem. MS Project XML bærer dem i feltet Text1, kaldet *Lapin elements*. Projektmappen har kolonnerne **Elements** og **Rule**.
+
 ## Kalenderen
 
 ![Arbejdskalenderen](shots/planning-calendar.webp)
@@ -88,4 +123,5 @@ Lapins egne felter, som andre programmer ikke har plads til (en opgaves begræns
 
 ## Hvad der kommer
 
-At knytte modellens elementer til opgaver, en tidsplan genereret ud fra modellen, 4D-simuleringen af bygningen, der vokser i 3D, fremdrift og basisplaner samt overslaget kommer i de næste trin.
+En tidsplan genereret ud fra modellen, 4D-simuleringen af bygningen, der vokser i 3D, fremdrift og basisplaner samt overslaget kommer i de næste trin.
+

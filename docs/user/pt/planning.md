@@ -12,6 +12,7 @@ summary: O cronograma da obra em um gráfico de Gantt: tarefas em uma EAP, marco
 - **Calendário…**: os dias e horas de trabalho, os feriados e a pausa de inverno (abaixo).
 - **Tarefa** e **Marco**: uma nova tarefa ou marco antes da tarefa selecionada no Gantt (ou no fim).
 - **Recuar**, **Avançar**, **Vincular tarefas** e **Desvincular tarefas**: a EAP e os vínculos das tarefas selecionadas.
+- **Adicionar à tarefa…** (TA) e **Elementos sem tarefa**: os elementos do modelo nas tarefas (abaixo).
 - **Importar MS Project…**, **Exportar MS Project…**, **Exportar XLSX** e **Exportar IFC…**: o cronograma para e de outros programas (abaixo).
 
 Um projeto tem um cronograma. Ele é criado na primeira vez que você adiciona uma tarefa e começa na segunda-feira seguinte. Mude o início na barra do Gantt.
@@ -65,6 +66,40 @@ Selecione uma tarefa e Propriedades a mostra: seu nome, seu tipo no IFC, sua dur
 
 O Lapin calcula o cronograma após cada mudança. Uma passagem para a frente encontra as datas mais cedo e uma passagem para trás as mais tardias. As tarefas sem folga formam o caminho crítico, e um atraso em qualquer uma delas move o término. Um vínculo para uma tarefa resumo prende todas as tarefas abaixo dela. Um vínculo de uma tarefa resumo parte do início da sua primeira tarefa e termina no término da última. O Lapin recusa um vínculo que criaria um laço.
 
+## Os elementos do modelo nas tarefas
+
+![A tarefa Alvenaria selecionada: suas paredes desenhadas selecionadas em 3D](shots/planning-links.webp)
+
+Uma tarefa leva elementos do modelo, assim o cronograma sabe o que é construído e quando. Selecione uma tarefa e seus elementos aparecem selecionados em 3D e nas plantas; um clique duplo na sua barra os seleciona e enquadra. Selecione elementos numa vista e as linhas das tarefas deles são marcadas no Gantt. A coluna **Elementos** conta os elementos de cada tarefa (os de um resumo, com os das tarefas abaixo dele).
+
+### Uma regra
+
+![Os elementos de uma tarefa em Propriedades](shots/planning-task-elements.webp)
+
+Em **Elementos** nas Propriedades, marque **Encontrá-los por uma regra** e escolha o que a tarefa leva, como no filtro de uma tabela: **Classes**, **Pavimentos**, **Tipos**, **Materiais**, **Grupos** e **Fases**, cada valor com quantos elementos o têm. Toda condição definida deve valer; uma vazia deixa tudo passar. Guarda-se a regra, não os elementos: uma parede desenhada amanhã no térreo entra sozinha na tarefa “Alvenaria térreo”. **Regra a partir da seleção** faz uma regra com as classes e pavimentos dos elementos selecionados.
+
+### Uma parte dos elementos
+
+**Parte** diz o que a tarefa leva de cada elemento: os **elementos inteiros**, seu **núcleo** (a camada estrutural), seus **acabamentos** (todas as camadas exceto o núcleo), as camadas de um material ou as de uma categoria de material (Acabamento, Isolamento…). Assim uma parede em camadas é erguida numa tarefa Alvenaria (o núcleo) e rebocada numa tarefa Reboco (os acabamentos). Um elemento sem camadas é seu próprio núcleo e não tem acabamentos.
+
+### À mão
+
+![O cartão da seleção sobre o 3D, as duas tarefas de uma parede marcadas no Gantt](shots/planning-element-tasks.webp)
+
+Enquanto o Gantt está aberto, um cartão sobre a vista do modelo diz quantos elementos estão selecionados e em quais tarefas estão. Arraste-o pela alça para a linha de uma tarefa: os elementos entram nessa tarefa. Segure <kbd>Shift</kbd> ao soltar para retirá-los dela. **Adicionar à tarefa…** (<kbd>T</kbd> <kbd>A</kbd>, também na aba Planejamento) escolhe a tarefa numa lista.
+
+![Adicionar à tarefa](shots/planning-assign.webp)
+
+O que você adiciona ou retira à mão são as **exceções** da tarefa: a regra fica como está. As Propriedades as contam, e o × ao lado de cada uma as esquece. As Propriedades de um elemento listam suas tarefas em **Cronograma da obra**, cada uma com um × para retirá-lo. Cada mudança é um passo para desfazer.
+
+### Elementos sem tarefa
+
+Assim que uma tarefa leva elementos, a barra do Gantt diz quantos elementos não têm tarefa ou têm camadas que nenhuma tarefa leva; um clique os seleciona, prontos para arrastar para uma tarefa. **Planejamento → Elementos sem tarefa** faz o mesmo. **Gerenciar → Verificar** também os lista, em *Elements with a task*: um aviso para cada um, um clique o seleciona. Elementos existentes que permanecem não precisam de tarefa.
+
+### Em IFC e MS Project
+
+A exportação IFC escreve o que cada tarefa constrói como IfcRelAssignsToProduct (o elemento, com as tarefas que o constroem), e aquilo em que atua uma tarefa de demolição, remoção ou desmontagem como IfcRelAssignsToProcess. A regra, a parte e as exceções viajam em `Lapin_Task`, então o Lapin relê a regra; um arquivo de outro programa dá tarefas com os elementos que ele lhes atribui. O MS Project XML as leva no campo Text1, chamado *Lapin elements*. A pasta de trabalho tem as colunas **Elements** e **Rule**.
+
 ## O calendário
 
 ![O calendário de trabalho](shots/planning-calendar.webp)
@@ -88,4 +123,5 @@ Os campos próprios do Lapin para os quais outros programas não têm lugar (a r
 
 ## O que vem a seguir
 
-Vincular os elementos do modelo às tarefas, um cronograma gerado a partir do modelo, a simulação 4D do edifício crescendo em 3D, o progresso e as linhas de base, e a estimativa de custos virão nas próximas etapas.
+Um cronograma gerado a partir do modelo, a simulação 4D do edifício crescendo em 3D, o avanço e as linhas de base, e o orçamento chegam nas próximas etapas.
+

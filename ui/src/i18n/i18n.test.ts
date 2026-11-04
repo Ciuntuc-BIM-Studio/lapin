@@ -136,6 +136,15 @@ describe('the languages', () => {
     'Remarks: 3 added, 1 updated (Manage → Model remarks…).',
     '13 tasks · 51 working days · finish 03.02.2027',
     'Imported casa.xml: 4 tasks, 2 links.',
+    '12 selected',
+    '9 (with the tasks under it)',
+    '+2 added',
+    '−1 taken out',
+    '3 of 40 elements without a task',
+    'all 40 elements have a task',
+    '1 element(s) have no such part and stay out of „Plaster”.',
+    '„Masonry” takes 12 element(s).',
+    '2 element(s) without a task, 3 with layers without one: selected.',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 
@@ -204,6 +213,7 @@ describe('labels the guide found in English', () => {
     'Radiator', 'Wash basin', 'Layer', 'Architectural', 'Structural', 'hip', 'gable', 'shed', 'mansard', 'barrel', 'flat',
     'Width: how wide one copy of the picture lies on the model', 'Height: how high one copy of the picture lies on the model',
     'Gantt', 'Critical path', 'Work calendar', 'Import MS Project…',
+    'Add to task…', 'Elements without a task', 'Rule', 'Whole elements', 'Core (structure)', 'Finishes (layers but the core)', 'Add the selection', 'Rule from the selection',
   ];
   for (const lang of langs) {
     it(`are translated into ${lang}`, () => {
@@ -232,6 +242,11 @@ describe('a word with two meanings', () => {
     expect(translate('Layer', 'fr', 'cad')).toBe('Calque');
     expect(translate('gable', 'de', 'edge')).toBe('Giebel');
     expect(translate('gable', 'de')).toBe('Satteldach');
+    // A task's Part is a part of its elements, its Kinds their classes (elsewhere a piece, and kinds of view).
+    expect(translate('Part', 'ro', 'task')).toBe('Parte');
+    expect(translate('Part', 'ro')).toBe('Piesă');
+    expect(translate('Kinds', 'es', 'task')).toBe('Clases');
+    expect(translate('Kinds', 'es')).toBe('Clases de vista');
     // A context with no phrase of its own falls back to the common one.
     expect(translate('Wall', 'es', 'session')).toBe('Muro');
   });

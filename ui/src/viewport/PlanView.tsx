@@ -5,7 +5,7 @@
  * engine command. Hold Shift to square a line; Esc drops the gesture.
  */
 
-import { openGroupOf, pickTarget, pickTargets, shownSelection } from '../platform/groups';
+import { openGroupOf, pickTarget, pickTargets, shownSelection, useExpansion } from '../platform/groups';
 import { orthophotos } from './textures';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
@@ -189,7 +189,9 @@ export function PlanView() {
   // In an edit scope only its elements are picked (the rest stays to snap to).
   const scope = useScope((s) => s.scope);
   // What the selection draws highlighted: a group's members with it.
-  const shown = useMemo(() => shownSelection(selected, nodes, relations), [selected, nodes, relations]);
+  const expansion = useExpansion((s) => s.version);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const shown = useMemo(() => shownSelection(selected, nodes, relations), [selected, nodes, relations, expansion]);
   const pickItems = useMemo(() => (scope ? items.filter((r) => pickable(nodes.get(r.nodeId))) : items), [scope, items, nodes]);
   const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null =>
     pickAt(p, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks, types), [pickItems, nodes, view.scale, drawing, scope]);

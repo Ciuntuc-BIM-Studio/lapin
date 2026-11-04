@@ -17,10 +17,11 @@ public sealed class ScheduleIfc : IIfcProcesses
     static string SequenceType(string t) => t switch { "SS" => "START_START", "FF" => "FINISH_FINISH", "SF" => "START_FINISH", _ => "FINISH_START" };
     static string LinkType(string t) => t switch { "START_START" => "SS", "FINISH_FINISH" => "FF", "START_FINISH" => "SF", _ => "FS" };
 
-    public IEnumerable<IfcScheduleData> Schedules(IModelView model)
+    public IEnumerable<IfcScheduleData> Schedules(IQueryContext query)
     {
-        var p = Plan.Read(model);
+        var p = Plan.Read(query.Model);
         if (p.Schedule == null) yield break;
+        var links = p.Rows.Any(t => t.Links) ? TaskElements.Resolve(query, p) : null;
         CpmResult r;
         try { r = Cpm.Solve(p); }
         catch (CommandException) { r = new CpmResult(new Dictionary<string, TaskTimes>(), p.Start, new HashSet<string>()); }
@@ -50,13 +51,23 @@ public sealed class ScheduleIfc : IIfcProcesses
             if (t.Constraint != null && t.ConstraintDate is { } cd) { props.Add(("Constraint", t.Constraint)); props.Add(("ConstraintDate", WorkCalendar.Date(cd))); }
             if (t.Wet) props.Add(("Wet", "true"));
             props.Add(("Duration", $"{(milestone ? 0 : t.Duration)}"));
-            tasks.Add(new IfcTaskData(t.Id, t.Name, t.Notes, p.Wbs[t.Id], t.Parent is { } par && p.ById.ContainsKey(par) ? par : null, milestone, t.Kind, time, TaskSet, props));
+            // Its elements: the ones it takes now, as IFC's assignments; how it finds them (rule, part, exceptions) in the set, so Lapin reads the rule back.
+            if (t.Rule != null) props.Add(("Rule", t.Rule.ToJson().ToJsonString()));
+            if (t.Part != null) props.Add(("Part", t.Part));
+            if (t.Add.Count > 0) props.Add(("Add", new System.Text.Json.Nodes.JsonArray(t.Add.Select(x => (System.Text.Json.Nodes.JsonNode)x).ToArray()).ToJsonString()));
+            if (t.Remove.Count > 0) props.Add(("Remove", new System.Text.Json.Nodes.JsonArray(t.Remove.Select(x => (System.Text.Json.Nodes.JsonNode)x).ToArray()).ToJsonString()));
+            List<string>? elements = links?.ByTask.TryGetValue(t.Id, out var own) == true ? [.. own.Keys] : null;
+            var acts = t.Kind is "DEMOLITION" or "REMOVAL" or "DISMANTLE" or "DISPOSAL";
+            tasks.Add(new IfcTaskData(t.Id, t.Name, t.Notes, p.Wbs[t.Id], t.Parent is { } par && p.ById.ContainsKey(par) ? par : null, milestone, t.Kind, time, TaskSet, props,
+                acts ? null : elements, acts ? elements : null));
         }
         var sequences = p.Links.Select(l => new IfcSequenceData(l.Id, l.From, l.To, SequenceType(l.Type), l.Lag)).ToList();
         yield return new IfcScheduleData(p.Schedule.Id, p.Name, At(p.Start, dayStart), At(finish, dayEnd), "PLANNED", calendar, tasks, sequences);
     }
 
-    public IfcProcessImport Import(IEdit edit, IReadOnlyList<IfcScheduleData> schedules)
+    public IfcProcessImport Import(IEdit edit, IReadOnlyList<IfcScheduleData> schedules) => Import(edit, schedules, id => edit.Model.Get(id) != null ? id : null);
+
+    public IfcProcessImport Import(IEdit edit, IReadOnlyList<IfcScheduleData> schedules, Func<string, string?> idOf)
     {
         // One schedule a project: the file's first (the one with the most tasks when it has several).
         var s = schedules.OrderByDescending(x => x.Tasks.Count).FirstOrDefault();
@@ -66,6 +77,7 @@ public sealed class ScheduleIfc : IIfcProcesses
         var calendar = Calendar(s.Calendar);
         var hours = calendar.Hours;
         var tasks = new List<ImportedTask>();
+        var missing = 0;
         foreach (var t in s.Tasks)
         {
             string? Prop(string name) => t.Properties.FirstOrDefault(x => x.Name == name).Value;
@@ -78,7 +90,7 @@ public sealed class ScheduleIfc : IIfcProcesses
             var constraint = Prop("Constraint") is { } c && Plan.Constraints.Contains(c) ? c : null;
             var cdate = WorkCalendar.ParseDate(Prop("ConstraintDate"));
             tasks.Add(new ImportedTask(t.Id, t.Id, t.Name, t.Parent, t.IsMilestone ? 0 : Math.Max(0, duration), t.IsMilestone, cdate != null ? constraint : null, cdate,
-                t.Time?.ScheduleStart is { } st ? DateOnly.FromDateTime(st) : null, Prop("Wet") == "true", t.Predefined, t.Description));
+                t.Time?.ScheduleStart is { } st ? DateOnly.FromDateTime(st) : null, Prop("Wet") == "true", t.Predefined, t.Description, LinksOf(idOf, t, Prop, ref missing)));
         }
         // Parents before their children, siblings in the file's order.
         var byKey = tasks.ToDictionary(t => t.Key);
@@ -99,7 +111,44 @@ public sealed class ScheduleIfc : IIfcProcesses
             GlobalId.IsValid(s.Id) ? s.Id : null, calendarId, s.Calendar?.Name);
         var r = ScheduleImport.Apply(edit, imported);
         notes.AddRange(r.Notes);
+        if (missing > 0) notes.Add($"{missing} element(s) assigned to tasks in the file are not in the project: left out of their tasks.");
         return new IfcProcessImport(1, r.Tasks, r.Links, notes);
+    }
+
+    /// <summary>
+    /// A task's elements as a file gives them: Lapin's own rule, part and exceptions when it wrote them (Lapin_Task), else the
+    /// elements the file assigns to it (its outputs and inputs) that the project has, added by hand.
+    /// </summary>
+    static System.Text.Json.Nodes.JsonObject? LinksOf(Func<string, string?> idOf, IfcTaskData t, Func<string, string?> prop, ref int missing)
+    {
+        static System.Text.Json.Nodes.JsonArray Ids(IEnumerable<string> ids) => new(ids.Select(x => (System.Text.Json.Nodes.JsonNode)x).ToArray());
+        if (prop("Rule") != null || prop("Part") != null || prop("Add") != null || prop("Remove") != null)
+        {
+            var o = new System.Text.Json.Nodes.JsonObject();
+            System.Text.Json.Nodes.JsonNode? Json(string? text) { try { return text == null ? null : System.Text.Json.Nodes.JsonNode.Parse(text); } catch (System.Text.Json.JsonException) { return null; } }
+            List<string> Strings(System.Text.Json.Nodes.JsonNode? n) => n is System.Text.Json.Nodes.JsonArray a ? a.Select(x => (string?)x).OfType<string>().ToList() : [];
+            // The ids the rule names (storeys, types, materials, groups) as the project has them now; an element no longer there dropped.
+            if (Json(prop("Rule")) is System.Text.Json.Nodes.JsonObject rule)
+            {
+                foreach (var key in TaskRule.Keys.Where(k => k != "classes" && k != "phases"))
+                    if (rule[key] is System.Text.Json.Nodes.JsonArray) rule[key] = Ids(Strings(rule[key]).Select(id => idOf(id) ?? id).Distinct());
+                o["rule"] = rule;
+            }
+            if (prop("Part") is { } part) o["part"] = part.StartsWith(TaskParts.MaterialPrefix, StringComparison.Ordinal) && idOf(part[TaskParts.MaterialPrefix.Length..]) is { } mat ? TaskParts.MaterialPrefix + mat : part;
+            foreach (var key in new[] { "Add", "Remove" })
+            {
+                var given = Strings(Json(prop(key)));
+                var found = given.Select(idOf).OfType<string>().Distinct().ToList();
+                missing += given.Count - found.Count;
+                if (found.Count > 0) o[key.ToLowerInvariant()] = Ids(found);
+            }
+            return o;
+        }
+        var ids = (t.Outputs ?? []).Concat(t.Inputs ?? []).Distinct().ToList();
+        if (ids.Count == 0) return null;
+        var elements = ids.Select(idOf).OfType<string>().Distinct().ToList();
+        missing += ids.Count - elements.Count;
+        return elements.Count == 0 ? null : new System.Text.Json.Nodes.JsonObject { ["add"] = Ids(elements) };
     }
 
     /// <summary>The calendar a file gave: Lapin's own rules back when it wrote them, else its weekdays and hours with the days it lists not worked.</summary>

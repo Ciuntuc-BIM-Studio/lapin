@@ -5,6 +5,7 @@
  * id as its members (delete, move, copy, rotate, mirror).
  */
 
+import { create } from 'zustand';
 import type { NodeDto, RelationDto } from '../engine/protocol';
 import { useSession } from '../engine/session';
 import { enterScope, useScope } from './scope';
@@ -44,10 +45,25 @@ export function pickTarget(id: string | null | undefined): string | null {
 /** Several picks (a box, a lasso): each as its group, once. */
 export const pickTargets = (ids: readonly string[]): string[] => [...new Set(ids.map(pickTarget).filter((x): x is string => !!x))];
 
-/** What a selection draws highlighted: its elements, and every member of a group in it. */
+/**
+ * What a module draws highlighted with what is selected (a task of the work schedule: its elements), by id: null when it
+ * adds nothing for that id. Registered from the modules' `expandSelection`; `useExpansion`'s version moves when what they
+ * would answer changes (the schedule read again), so the views draw it again.
+ */
+type Expander = (id: string, node: NodeDto | undefined) => readonly string[] | null;
+const expanders: Expander[] = [];
+export const useExpansion = create<{ version: number }>(() => ({ version: 0 }));
+export function addSelectionExpander(f: Expander): void { if (!expanders.includes(f)) expanders.push(f); }
+export function expansionChanged(): void { useExpansion.setState((s) => ({ version: s.version + 1 })); }
+
+/** What a selection draws highlighted: its elements, every member of a group in it, and what the modules add (a task's elements). */
 export function shownSelection(selected: readonly string[], nodes: ReadonlyMap<string, NodeDto> = useSession.getState().nodes, relations: Relations = useSession.getState().relations): Set<string> {
   const out = new Set(selected);
-  for (const id of selected) if (nodes.get(id)?.type === GROUP) for (const m of membersOf(id, relations)) out.add(m);
+  for (const id of selected) {
+    const node = nodes.get(id);
+    if (node?.type === GROUP) for (const m of membersOf(id, relations)) out.add(m);
+    for (const f of expanders) for (const m of f(id, node) ?? []) out.add(m);
+  }
   return out;
 }
 

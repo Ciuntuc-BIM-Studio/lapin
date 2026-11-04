@@ -64,6 +64,18 @@ public static partial class IfcImport
                 var i = 0;
                 foreach (var c in Refs(r[5])) if (byId.ContainsKey(c)) { parentOf.TryAdd(c, Ref(r[4])); childOrder.TryAdd(c, i++); }
             }
+            // The elements each task builds (IfcRelAssignsToProduct: the product, the tasks among its related objects) and acts on
+            // (IfcRelAssignsToProcess: the task, its related objects): by their GlobalIds; programs write one or the other.
+            var outputs = new Dictionary<int, List<string>>();
+            var inputs = new Dictionary<int, List<string>>();
+            foreach (var r in f.OfType("IFCRELASSIGNSTOPRODUCT"))
+                if (f.Get(r[6]) is { } product && Str(product[0]) is { } pg)
+                    foreach (var t in Refs(r[4])) if (byId.ContainsKey(t)) (outputs.TryGetValue(t, out var l) ? l : outputs[t] = []).Add(pg);
+            foreach (var r in f.OfType("IFCRELASSIGNSTOPROCESS"))
+                if (byId.ContainsKey(Ref(r[6])))
+                    foreach (var o in Refs(r[4]))
+                        if (f.Get(o) is { } obj && obj.Type is not ("IFCTASK" or "IFCTASKTYPE") && Str(obj[0]) is { } og)
+                            (inputs.TryGetValue(Ref(r[6]), out var l) ? l : inputs[Ref(r[6])] = []).Add(og);
             var calendars = f.OfType("IFCWORKCALENDAR").ToList();
             var schedules = f.OfType("IFCWORKSCHEDULE").ToList();
             var claimed = new HashSet<int>();
@@ -117,7 +129,8 @@ public static partial class IfcImport
                     var milestone = ((ifc2x3 ? t[8] : t[9]) as StepEnum)?.Value == "T";
                     var parent = parentOf.TryGetValue(t.Id, out var pid) && seen.Contains(pid) ? gidOf[pid] : null;
                     data.Add(new IfcTaskData(gidOf[t.Id], Str(t[2]) ?? "Task", Str(t[3]), Str(ifc2x3 ? t[5] : t[5]), parent, milestone,
-                        ifc2x3 ? null : (t[12] as StepEnum)?.Value is { } k && k is not ("NOTDEFINED" or "USERDEFINED") ? k : null, time, "Lapin_Task", PropertiesOf(t.Id, "Lapin_Task")));
+                        ifc2x3 ? null : (t[12] as StepEnum)?.Value is { } k && k is not ("NOTDEFINED" or "USERDEFINED") ? k : null, time, "Lapin_Task", PropertiesOf(t.Id, "Lapin_Task"),
+                        outputs.GetValueOrDefault(t.Id), inputs.GetValueOrDefault(t.Id)));
                 }
                 var sequences = new List<IfcSequenceData>();
                 foreach (var r in f.OfType("IFCRELSEQUENCE"))
@@ -145,9 +158,14 @@ public static partial class IfcImport
             var loose = tasks.Where(t => !claimed.Contains(t.Id) && (!parentOf.TryGetValue(t.Id, out var p) || !byId.ContainsKey(p))).ToList();
             if (loose.Count > 0) result.Add(Make(Step.Guid(FileName ?? "ifc", "schedule"), "Work schedule", null, "PLANNED", loose));
             if (result.Count == 0) return;
+            // What the file names by GlobalId as the project has it now: its storeys and types where they were matched to the project's, else the same id.
+            var mapped = new Dictionary<string, string>();
+            foreach (var (stepId, modelId) in storeyOf.Concat(typeIds))
+                if (f.Get(new StepRef(stepId)) is { } e && Str(e[0]) is { } g) mapped.TryAdd(g, modelId);
+            string? IdOf(string gid) => mapped.TryGetValue(gid, out var x) ? x : edit.Model.Get(gid) != null ? gid : null;
             foreach (var service in services)
             {
-                var r = service.Import(edit, result);
+                var r = service.Import(edit, result, IdOf);
                 if (r.Tasks > 0) notes.Add($"Work schedule: {r.Tasks} task(s), {r.Sequences} link(s) (Planning → Gantt).");
                 notes.AddRange(r.Notes);
             }

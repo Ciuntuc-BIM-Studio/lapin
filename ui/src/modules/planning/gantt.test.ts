@@ -6,7 +6,7 @@ import {
 
 const task = (id: string, parent: string | null, start: string, finish: string, extra: Partial<TaskDto> = {}): TaskDto => ({
   id, row: 0, name: id, wbs: '', level: 0, parent, summary: false, milestone: false, duration: 1, start, finish, lateStart: start, lateFinish: finish,
-  totalFloat: 0, freeFloat: 0, critical: false, predecessors: '', ...extra,
+  totalFloat: 0, freeFloat: 0, critical: false, predecessors: '', count: 0, ...extra,
 });
 
 const cal: CalendarDto = {

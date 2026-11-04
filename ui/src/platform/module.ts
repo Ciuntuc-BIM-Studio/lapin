@@ -207,4 +207,8 @@ export interface LapinModule {
   setType?: Record<string, (ids: string[], typeId: string) => Promise<unknown>>;
   /** What a type's configurator sets, shown and edited under Type parameters on its elements, by the type's class. */
   typeFields?: Record<string, ComponentType<{ type: NodeDto; node: NodeDto }>>;
+  /** What the views draw highlighted with an entity selected (a task: its elements); null when nothing for it. */
+  expandSelection?: (id: string, node: NodeDto | undefined) => readonly string[] | null;
+  /** Shown over the active pane's model view (not over a module's own view): a card the selection is dragged from. */
+  overlays?: ComponentType[];
 }

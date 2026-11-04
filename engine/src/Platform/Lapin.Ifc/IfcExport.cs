@@ -1859,7 +1859,7 @@ public static class IfcExport
         void Processes()
         {
             foreach (var src in s.Catalog.All<IIfcProcesses>())
-                foreach (var ws in src.Schedules(m))
+                foreach (var ws in src.Schedules(s.Reader))
                 {
                     var schedule = f.Add("IFCWORKSCHEDULE", Gid(ws.Id), Null, S(ws.Name), Null, Null, Null, IfcDateTime(DateTime.UtcNow), Null, Null, Null, Null,
                         IfcDateTime(ws.Start), ws.Finish is { } fin ? IfcDateTime(fin) : Null, E(ws.Predefined));
@@ -1908,6 +1908,17 @@ public static class IfcExport
                         var lag = f.Add("IFCLAGTIME", Null, Null, Null, Typed("IFCDURATION", IfcDuration(q.LagDays)), E("WORKTIME"));
                         f.Add("IFCRELSEQUENCE", Gid(q.Id), Null, Null, Null, a, b, lag, E(q.Type), Null);
                     }
+                    // The elements: what a task builds is its output (one IfcRelAssignsToProduct an element, every task building it
+                    // among its related objects); what it acts on (a demolition) its input (one IfcRelAssignsToProcess a task).
+                    var builtBy = new Dictionary<string, List<string>>();
+                    foreach (var t in ws.Tasks)
+                        foreach (var id in t.Outputs ?? [])
+                            if (written.ContainsKey(id)) (builtBy.TryGetValue(id, out var l) ? l : builtBy[id] = []).Add(taskRef[t.Id]);
+                    foreach (var (id, tasks) in builtBy)
+                        f.Add("IFCRELASSIGNSTOPRODUCT", Gid(id, ws.Id + "/built-by"), Null, Null, Null, L(tasks), Null, written[id]);
+                    foreach (var t in ws.Tasks)
+                        if (t.Inputs?.Where(written.ContainsKey).Select(id => written[id]).ToList() is { Count: > 0 } inputs)
+                            f.Add("IFCRELASSIGNSTOPROCESS", Gid(t.Id, "inputs"), Null, Null, Null, L(inputs), Null, taskRef[t.Id], Null);
                 }
         }
 

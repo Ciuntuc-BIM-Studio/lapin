@@ -20,10 +20,13 @@ public sealed record IfcTaskTimeData(double? DurationDays, DateTime? ScheduleSta
 /// <summary>
 /// An IfcTask of a schedule: its GlobalId, name, WBS code (Identification), the task it is nested in (IfcRelNests; null at
 /// the top), whether it is a milestone, its IfcTaskTypeEnum (null: NOTDEFINED), its time, and the module's own fields as a
-/// property set (a constraint, whether it is wet). Siblings come in their order.
+/// property set (a constraint, whether it is wet). Siblings come in their order. Its elements (by id, GlobalIds in a
+/// file): those it builds, its <see cref="Outputs"/> (IfcRelAssignsToProduct: the element the product, the task in its
+/// related objects), and those it acts on, its <see cref="Inputs"/> (IfcRelAssignsToProcess: a demolition's elements).
 /// </summary>
 public sealed record IfcTaskData(string Id, string Name, string? Description, string? Identification, string? Parent, bool IsMilestone, string? Predefined,
-    IfcTaskTimeData? Time, string PropertySet, IReadOnlyList<(string Name, string Value)> Properties);
+    IfcTaskTimeData? Time, string PropertySet, IReadOnlyList<(string Name, string Value)> Properties,
+    IReadOnlyList<string>? Outputs = null, IReadOnlyList<string>? Inputs = null);
 
 /// <summary>An IfcRelSequence: its GlobalId, the predecessor and successor tasks, FINISH_START / START_START / FINISH_FINISH / START_FINISH, the lag in working days.</summary>
 public sealed record IfcSequenceData(string Id, string Relating, string Related, string Type, double LagDays);
@@ -45,6 +48,11 @@ public sealed record IfcProcessImport(int Schedules, int Tasks, int Sequences, I
 /// </summary>
 public interface IIfcProcesses
 {
-    IEnumerable<IfcScheduleData> Schedules(IModelView model);
-    IfcProcessImport Import(IEdit edit, IReadOnlyList<IfcScheduleData> schedules);
+    /// <summary>The schedules as the export writes them, read through a query (the product's classes tell which entities are elements).</summary>
+    IEnumerable<IfcScheduleData> Schedules(IQueryContext query);
+    /// <summary>
+    /// The file's schedules made the module's own. <paramref name="idOf"/> gives the project's id of what the file names by
+    /// GlobalId (a storey matched to the project's by name, an element, a type), null when the project has nothing of it.
+    /// </summary>
+    IfcProcessImport Import(IEdit edit, IReadOnlyList<IfcScheduleData> schedules, Func<string, string?> idOf);
 }

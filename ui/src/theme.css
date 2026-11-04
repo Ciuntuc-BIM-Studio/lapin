@@ -1320,3 +1320,33 @@ button.mode-chip:hover { color: var(--accent); }
 .calendar-dialog ul { columns: 2; margin: 4px 0 0; padding-left: 18px; }
 .fields .task-preds select { width: 4.8em; min-width: 4.8em; }
 .fields .task-preds input { width: 3.5em; min-width: 0; }
+/* Planning, stage 2: the elements of the tasks (rows holding the selection, drops, the rule in Properties, the drag card). */
+.gantt-row.holds { box-shadow: inset 3px 0 0 var(--accent); }
+.gantt-row.drop { background: var(--accent-wash); outline: 1px dashed var(--accent); outline-offset: -1px; }
+.gantt-row-holds { fill: var(--accent-wash); opacity: 0.3; }
+.gantt-row-drop { fill: var(--accent-wash); opacity: 0.9; }
+.gantt-td.c-elements { text-align: right; padding-right: 6px; font-variant-numeric: tabular-nums; }
+.gantt-facts .link { font-size: 12px; }
+.sel-card.task-drag { left: 12px; right: auto; bottom: 120px; width: auto; max-width: 300px; }
+.task-drag-handle { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border: 1px dashed var(--accent); border-radius: 3px; cursor: grab; user-select: none; font-size: 12px; }
+.task-drag-handle:active { cursor: grabbing; }
+.task-links dd.rule-wide { grid-column: 1 / -1; display: grid; gap: 4px; padding: 6px 8px; }
+.rule-editor { display: grid; gap: 6px; }
+.rule-condition { display: grid; gap: 2px; }
+.rule-condition .chips { display: flex; flex-wrap: wrap; gap: 3px; }
+.rule-condition .chip { white-space: nowrap; margin: 0; cursor: pointer; background: none; color: var(--ink-muted); border-color: var(--rule-strong); text-transform: none; letter-spacing: 0; font-size: 11px; padding: 1px 7px; }
+.rule-condition .chip.on { color: var(--accent); border-color: var(--accent); background: var(--accent-wash); }
+.task-links .check, .assign-dialog .check { display: flex; align-items: center; gap: 6px; }
+.task-links .check input, .assign-dialog .check input { width: auto; margin: 0; }
+.task-exception { display: inline-flex; align-items: center; gap: 2px; margin-right: 8px; }
+.task-links dd.task-link-buttons { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.task-link-buttons .link, .task-links dd > .link { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+.task-link-buttons .link { margin-left: 0; }
+.element-task { display: contents; }
+.element-task dd { display: flex; align-items: center; gap: 6px; }
+.assign-dialog { width: min(440px, calc(100vw - 32px)); max-height: calc(100vh - 80px); display: flex; flex-direction: column; }
+.assign-dialog .dialog-body { display: grid; gap: 6px; overflow: auto; }
+.assign-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--rule); max-height: 50vh; overflow: auto; }
+.assign-row { display: grid; grid-template-columns: 3em 1fr auto; gap: 6px; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--rule); background: none; padding: 4px 6px; font: inherit; font-size: 12px; cursor: pointer; }
+.assign-row:hover { background: var(--accent-wash); }
+.assign-row.holds { box-shadow: inset 3px 0 0 var(--accent); }

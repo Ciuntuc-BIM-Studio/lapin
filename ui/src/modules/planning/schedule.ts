@@ -10,7 +10,12 @@ import { focusPane, notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { pickFile, safeFileName, saveFile, toBase64 } from '../../engine/files';
 import { t } from '../../i18n';
+import type { NodeDto } from '../../engine/protocol';
+import { expansionChanged } from '../../platform/groups';
+import { useCamera } from '../../viewport/camera';
+import { zoomHost } from '../../viewport/zoom';
 import type { ScheduleDto, TaskDto } from './gantt';
+import { elementIds, frameDistance, TASK } from './links';
 
 export const usePlanning = create<{ data: ScheduleDto | null; version: number }>(() => ({ data: null, version: -2 }));
 
@@ -23,7 +28,7 @@ async function refresh(version: number): Promise<void> {
   // A newer change asked again meanwhile: its answer is the one kept.
   if (asking !== version) return;
   asking = null;
-  if (d) usePlanning.setState({ data: d, version });
+  if (d) { usePlanning.setState({ data: d, version }); expansionChanged(); }
 }
 
 /** The schedule, kept in step with the model. */
@@ -111,3 +116,61 @@ export async function importMsp(): Promise<void> {
 
 /** The task in front of the properties panel, as the schedule has it now. */
 export const taskOf = (data: ScheduleDto | null, id: string): TaskDto | undefined => data?.tasks.find((t) => t.id === id);
+
+// ── The elements of the tasks (stage 2) ──────────────────────────────────────
+
+/** What a task selected draws highlighted in the views: its elements (a summary's: its tasks' too). */
+export function taskElementsOf(id: string, node: NodeDto | undefined): readonly string[] | null {
+  if (node?.type !== TASK) return null;
+  return usePlanning.getState().data?.tasks.find((x) => x.id === id)?.elements ?? null;
+}
+
+/** The elements of the selection (not its tasks). */
+export const selectedElements = (): string[] => elementIds(useUi.getState().selected, useSession.getState().nodes);
+
+/** Elements put in a task (an exception to its rule), or with `remove` taken out of it; what came of it said. */
+export async function assignTo(task: string, ids: string[], remove = false): Promise<void> {
+  if (!ids.length) { notify('Select elements of the model first: in 3D or in a plan.'); return; }
+  const r = await execute('planning.assign', { task, ids, remove }) as { changed: number; noPart: number; count: number } | null;
+  if (!r) return;
+  const name = usePlanning.getState().data?.tasks.find((x) => x.id === task)?.name ?? '';
+  if (r.noPart > 0) notify(`${r.noPart} element(s) have no such part and stay out of „${name}”.`);
+  else notify(`„${name}” takes ${r.count} element(s).`);
+}
+
+/** The elements of a task selected in the views (a double-click on its bar), and framed: in 3D by the camera, in a plan by its zoom. */
+export function showTaskElements(task: TaskDto): void {
+  const ids = task.elements ?? [];
+  if (!ids.length) { notify('This task takes no elements yet: drag the selection onto its row, or give it a rule in Properties.'); return; }
+  const s = useUi.getState();
+  const model = s.panes.findIndex((p) => p.view !== 'gantt');
+  if (model >= 0) focusPane(model);
+  useUi.setState({ selected: ids, selection: ids[ids.length - 1] });
+  requestAnimationFrame(() => {
+    if (zoomHost()?.fitSelection()) return;
+    const cam = useCamera.getState();
+    const box = cam.api?.boxOf?.(ids);
+    if (!cam.api || !box) return;
+    const c = { x: (box.min.x + box.max.x) / 2, y: (box.min.y + box.max.y) / 2, z: (box.min.z + box.max.z) / 2 };
+    cam.api.orbitTo({ target: c, distance: frameDistance(box.min, box.max, cam.fov) });
+  });
+}
+
+/** The elements no task takes (wholly or in part), selected, so they can be dragged onto a task. */
+export async function selectUnlinked(): Promise<void> {
+  const r = await query<{ none: string[]; partial: string[] }>('planning.unlinked');
+  if (!r) return;
+  const ids = [...r.none, ...r.partial];
+  if (!ids.length) { notify('Every element has a task.'); return; }
+  const s = useUi.getState();
+  const model = s.panes.findIndex((p) => p.view !== 'gantt');
+  if (model >= 0) focusPane(model);
+  useUi.setState({ selected: ids, selection: ids[ids.length - 1] });
+  notify(`${r.none.length} element(s) without a task, ${r.partial.length} with layers without one: selected.`);
+}
+
+/** TA: the elements selected put in a task chosen from a list. */
+export function assignSelection(): void {
+  if (!selectedElements().length) { notify('Select elements of the model first: in 3D or in a plan.'); return; }
+  useUi.setState({ dialog: 'planning.assign' });
+}

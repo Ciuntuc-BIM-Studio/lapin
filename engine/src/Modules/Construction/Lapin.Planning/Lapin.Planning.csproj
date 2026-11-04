@@ -11,5 +11,6 @@
   <ItemGroup>
     <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
     <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="../../Phases/Lapin.Phases/Lapin.Phases.csproj" Private="false" />
   </ItemGroup>
 </Project>
