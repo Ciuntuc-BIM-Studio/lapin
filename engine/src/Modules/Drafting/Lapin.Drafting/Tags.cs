@@ -85,7 +85,7 @@ public static class Tags
             mk.Polyline(box, true, "TAG", Pens.Default.Hatch, color);
             for (var i = 0; i < lines.Count; i++)
                 mk.Text(new PenText(new Vec2(at.X, at.Y + halfH - 0.25 * h - 1.5 * h * (i + 0.5)), lines[i], style.Height, 0, "middle", "middle", style.Bold, style.Font, style.Italic), color);
-            var data = new JsonObject { ["at"] = J(at), ["leader"] = t.Attrs["leader"] is not JsonValue lv || !lv.TryGetValue<bool>(out var on) || on };
+            var data = new JsonObject { ["at"] = J(at), ["leader"] = t.Attrs["leader"] is not JsonValue lv || !lv.TryGetValue<bool>(out var on) || on, ["of"] = e?.Id };
             // The leader: to the spot it was pointed at, else the middle of what the element draws here; through its elbow.
             var end = Pt(t.Attrs["end"]) ?? (e != null ? Anchor(c.Drawing, e.Id) : null);
             var elbow = Pt(t.Attrs["elbow"]);

@@ -52,6 +52,41 @@ describe('pickAt', () => {
   });
 });
 
+describe('pickAt: a door in its wall (tester report, Lapin 0.1.592)', () => {
+  // A wall along y = 0, 0.25 thick, with a 0.9 m door at x = 2.55..3.45: the wall cut on both sides of the opening.
+  const wallCut = item('w', [rect('cut', -0.125, -0.125, 2.55, 0.125), rect('cut', 3.45, -0.125, 6, 0.125)]);
+  const door = item('d', [
+    rect('hit', 2.55, -0.125, 3.45, 0.125),
+    { kind: 'symbol', closed: false, points: [2.55, -0.125, 2.55, 0.125] },
+    { kind: 'symbol', closed: false, points: [3.45, -0.125, 3.45, 0.125] },
+    rect('heavy', 2.6, 0.05, 2.64, 0.85),
+  ]);
+  const doorNodes = nodesOf(node('w'), node('d', 'IfcDoor'), node('f', 'LapinRoomFinish'), node('t', 'IfcAnnotation'));
+  // The drawing's pick lines (for sections): the wall's cut outline, beside the jamb; a floor finish's threshold across the opening (it has no plan lines).
+  const pickLines: Mark[] = [
+    { id: 'w', pick: true, segments: [2.53, -0.125, 2.53, 0.125, 2.53, 0.125, 2.55, 0.125] },
+    { id: 'f', pick: true, segments: [2.55, 0, 3.45, 0, 3.45, 0, 3.45, 0.125] },
+  ];
+  // The door's marker (decision 143): a line across the wall through the opening's middle.
+  const tag: Mark = { id: 't', segments: [3, -0.6, 3, 0.6], data: { of: 'd' } };
+
+  it('takes the door at its jamb and its leaf, not the wall by the drawing\'s pick lines', () => {
+    expect(pickAt(P(2.55, 0), 0.05, [wallCut, door], doorNodes, pickLines)?.id).toBe('d');
+    expect(pickAt(P(2.62, 0.1), 0.05, [wallCut, door], doorNodes, pickLines)?.id).toBe('d');
+    expect(pickAt(P(1, 0), 0.05, [wallCut, door], doorNodes, pickLines)?.id).toBe('w');
+  });
+
+  it('takes the door in its opening over a room finish drawn across it, the finish elsewhere', () => {
+    expect(pickAt(P(3, 0), 0.05, [wallCut, door], doorNodes, pickLines)?.id).toBe('d');
+    expect(pickAt(P(3, 0), 0.05, [wallCut], doorNodes, pickLines)?.id).toBe('f');
+  });
+
+  it('takes the door where its marker crosses it, the marker outside the wall', () => {
+    expect(pickAt(P(3, 0.02), 0.05, [wallCut, door], doorNodes, [tag, ...pickLines])?.id).toBe('d');
+    expect(pickAt(P(3, -0.5), 0.05, [wallCut, door], doorNodes, [tag, ...pickLines])?.id).toBe('t');
+  });
+});
+
 describe('boxIds', () => {
   it('a window takes what lies wholly inside it', () => {
     expect(boxIds(P(-1, -1), P(5, 1), true, [wall, slab], nodes, marks)).toEqual(['w']);

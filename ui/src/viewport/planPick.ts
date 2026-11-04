@@ -2,7 +2,12 @@
  * What a plan's click and selection box take: annotations first (a grid's
  * axis on its own, as grid#tag), then the element whose line or face lies
  * under the point, by the line's kind (a hit area or a symbol before a cut,
- * a cut before an outline, overhead lines last).
+ * a cut before an outline, overhead lines last). The drawing's pick lines
+ * (an element's cut and seen lines, for sections) count only for what has no
+ * plan lines of its own (a room's finishes), after them: a wall's pick lines
+ * never take a click from the door in it. A tag gives way to the element it
+ * marks where that element is under the point (a door's marker across its
+ * opening).
  */
 
 import type { NodeDto, RenderItem } from '../engine/protocol';
@@ -10,8 +15,8 @@ import type { Vec2 } from '../platform/module';
 import { boxTest, segsOf, type RegionTest, type Seg } from './selectBox';
 import { distToSegment, pairs, pointInPolygon } from './snap';
 
-/** A drawing's annotations: their ids and segments (x1, y1, x2, y2, …). */
-export type Mark = { id: string; segments: number[] };
+/** A drawing's marks: their ids and segments (x1, y1, x2, y2, …); pick: an element's own pick lines from the drawing (never drawn); data.of: the element a tag marks. */
+export type Mark = { id: string; segments: number[]; pick?: boolean; data?: Record<string, unknown> };
 
 /**
  * The element a mark belongs to when its id is not an element's: a grid's axis is `grid#tag` (selected on its own, as that id),
@@ -31,27 +36,22 @@ export function markOwner(id: string, nodes: Map<string, NodeDto>): { owner: Nod
 export const markSelected = (id: string, selected: string[]): boolean => selected.includes(id) || (id.includes(':') && !id.includes('#') && selected.includes(id.slice(0, id.indexOf(':'))));
 
 const PICK_PRIORITY: Record<string, number> = { hit: 0, symbol: 0, heavy: 0, cut: 1, room: 1.5, outline: 2, overhead: 8, roomIsland: 9 };
+/** A drawing's pick line, for an element with no plan lines of its own: as a cut, after the plan lines on a tie. */
+const PICK_MARK_PRIORITY = 1;
+
+const near = (p: Vec2, s: number[], tol: number): boolean => {
+  for (let k = 0; k + 3 < s.length; k += 4) if (distToSegment(p, { x: s[k], y: s[k + 1] }, { x: s[k + 2], y: s[k + 3] }) < tol) return true;
+  return false;
+};
+const drawsInPlan = (r: RenderItem): boolean => r.plan.some((it) => it.kind !== 'label' && it.kind !== 'grid');
 
 /** What lies under `p` within `tol` (metres); with `types`, only elements of those classes (annotations then are not picked). */
 export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<string, NodeDto>, marks: Mark[] | undefined, types?: string[]): NodeDto | null {
-  // Annotations (dimensions, texts, grids, section lines) lie over the model: they are picked first.
-  if (!types && marks) {
-    for (const m of marks) {
-      const s = m.segments;
-      for (let k = 0; k + 3 < s.length; k += 4) {
-        if (distToSegment(p, { x: s[k], y: s[k + 1] }, { x: s[k + 2], y: s[k + 3] }) >= tol) continue;
-        const hit = markOwner(m.id, nodes);
-        if (!hit) continue;
-        if (hit.pick === hit.owner.id) return hit.owner;
-        // One axis of a grid (grid#tag): selected on its own.
-        return { ...hit.owner, id: m.id, name: `Axis ${m.id.slice(m.id.indexOf('#') + 1)}` };
-      }
-    }
-  }
+  const takes = (e: NodeDto) => !types || types.includes('*') || types.includes(e.type);
   let best: { e: NodeDto; prio: number } | null = null;
   for (const r of items) {
     const e = nodes.get(r.nodeId);
-    if (!e || (types && !types.includes('*') && !types.includes(e.type))) continue;
+    if (!e || !takes(e)) continue;
     for (const it of r.plan) {
       if (it.kind === 'label' || it.kind === 'grid') continue;
       const poly = pairs(it.points);
@@ -61,6 +61,27 @@ export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<str
       if (!hit) continue;
       const prio = PICK_PRIORITY[it.kind] ?? 9;
       if (!best || prio <= best.prio) best = { e, prio };
+    }
+  }
+  // Annotations (dimensions, texts, grids, section lines) lie over the model: they are picked first, a tag but where its element is under the point.
+  if (!types && marks) {
+    for (const m of marks) {
+      if (m.pick || !near(p, m.segments, tol)) continue;
+      const hit = markOwner(m.id, nodes);
+      if (!hit) continue;
+      if (typeof m.data?.of === 'string' && m.data.of === best?.e.id) continue;
+      if (hit.pick === hit.owner.id) return hit.owner;
+      // One axis of a grid (grid#tag): selected on its own.
+      return { ...hit.owner, id: m.id, name: `Axis ${m.id.slice(m.id.indexOf('#') + 1)}` };
+    }
+  }
+  // The drawing's pick lines of what draws nothing of its own in the plan.
+  if (marks && (!best || best.prio > PICK_MARK_PRIORITY)) {
+    const drawn = new Set(items.filter(drawsInPlan).map((r) => r.nodeId));
+    for (const m of marks) {
+      if (!m.pick || !near(p, m.segments, tol)) continue;
+      const e = markOwner(m.id, nodes)?.owner;
+      if (e && !drawn.has(e.id) && takes(e)) return e;
     }
   }
   return best?.e ?? null;

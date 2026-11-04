@@ -65,6 +65,8 @@ public sealed class ViewMark(string? owner)
     public string? Owner { get; } = owner;
     /// <summary>Drawn under the model's own pens, not over them: a room's colour fill and hatch, which walls and furniture stand on.</summary>
     public bool Under { get; init; }
+    /// <summary>An element's pick lines from the drawing (never drawn): a plan picks the element by its own plan lines first, these only for what has none.</summary>
+    public bool Pick { get; init; }
     public List<(Vec2 A, Vec2 B, string Layer, double Width, string Color, double[]? Dash)> Lines { get; } = [];
     public List<(PenText Text, string Color)> Texts { get; } = [];
     public List<Vec2> Snaps { get; } = [];

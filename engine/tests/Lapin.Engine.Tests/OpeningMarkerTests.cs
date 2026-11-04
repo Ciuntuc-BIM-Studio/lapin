@@ -74,6 +74,22 @@ public sealed class OpeningMarkerTests
     }
 
     [Fact]
+    public void The_plan_tells_the_interface_what_a_marker_marks_and_which_marks_are_pick_lines()
+    {
+        // A plan's click (ui planPick): a door's marker gives way to the door where it crosses it, and the drawing's
+        // pick lines (for sections) never take a click from an element's own plan lines (tester report, Lapin 0.1.592).
+        var (f, wall, door, _, plan) = Project();
+        f.Run("architecture.tagOpenings", new JsonObject { ["viewId"] = plan });
+        var marks = Views.Drawing(new Q(f), Views.Find(f.Model, plan)!)["marks"]!.AsArray().OfType<JsonObject>().ToList();
+        var tag = f.Model.OfClass(IfcClass.Annotation).Single(t => t.Str("element") == door).Id;
+        var tagMark = marks.Single(m => (string)m["id"]! == tag);
+        Assert.Equal(door, (string?)tagMark["data"]?["of"]);
+        Assert.Null(tagMark["pick"]);
+        Assert.Contains(marks, m => (string)m["id"]! == wall && m["pick"]?.GetValue<bool>() == true);
+        Assert.Contains(marks, m => (string)m["id"]! == door && m["pick"]?.GetValue<bool>() == true);
+    }
+
+    [Fact]
     public void A_flipped_window_turns_its_marker_and_the_standards_change_what_it_says()
     {
         var (f, _, _, window, plan) = Project();

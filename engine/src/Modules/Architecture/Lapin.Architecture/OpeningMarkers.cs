@@ -47,7 +47,8 @@ public static class OpeningMarkers
 
         var style = Standards.TextOf(c.Book, tag.Str("textStyle") ?? type.TextStyle);
         var color = style.Color ?? "#000000";
-        var mark = new ViewMark(tag.Id);
+        // What it marks (of): a click on the door or window where the marker's line crosses it takes the element.
+        var mark = new ViewMark(tag.Id) { Data = new JsonObject { ["of"] = fill.Id } };
         mark.Line(a, b, "TAG", Pens.Default.Hatch, color);
 
         var values = new Dictionary<string, string>

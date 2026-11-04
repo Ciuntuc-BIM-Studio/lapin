@@ -682,6 +682,7 @@ public static class Views
                 ["snaps"] = new JsonArray(x.Snaps.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
                 ["shapes"] = x.Shapes.Count > 0 ? new JsonArray(x.Shapes.Select(sh => (JsonNode)sh.DeepClone()).ToArray()) : null,
                 ["data"] = x.Data?.DeepClone(),
+                ["pick"] = x.Pick ? true : null,
             }).ToArray()),
         };
         if (r.Bounds is { } b) o["bounds"] = new JsonArray(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y);
@@ -942,7 +943,7 @@ public static class Views
     {
         var byElement = new Dictionary<string, ViewMark>();
         var loops = new Dictionary<string, JsonArray>();
-        ViewMark Of(string id) => byElement.TryGetValue(id, out var mk) ? mk : byElement[id] = new ViewMark(id);
+        ViewMark Of(string id) => byElement.TryGetValue(id, out var mk) ? mk : byElement[id] = new ViewMark(id) { Pick = true };
         void Loop(string id, IReadOnlyList<Vec2> loop)
         {
             if (loop.Count < 3) return;
