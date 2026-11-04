@@ -427,6 +427,10 @@ table.layer-edit:not(.zones) > tbody > tr:not(.layer-parts):not(.total) > td:fir
 .joinery-preview { display: flex; flex-direction: column; gap: 6px; position: sticky; top: 0; } /* stays in view while the long form scrolls */
 .joinery-preview svg { background: var(--raised); border: 1px solid var(--rule); }
 .joinery-actions { grid-column: 1 / -1; }
+/* The configurators' buttons stay in view and on top: on a short screen (1366 x 768) the sticky preview with its summary ran
+   over them and took their clicks (report #84: "the buttons are not working"); there the preview scrolls with the form. */
+.joinery-actions { position: sticky; bottom: 0; z-index: 2; background: var(--panel); padding-block: 8px; }
+@media (max-height: 860px) { .joinery-preview { position: static; } }
 .panel-grid { border-collapse: collapse; }
 .panel-grid td { padding: 2px; }
 .panel-grid select { width: 100%; font-size: 11.5px; }
