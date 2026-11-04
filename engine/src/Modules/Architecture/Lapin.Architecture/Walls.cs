@@ -86,13 +86,13 @@ public static class Walls
         LayerSets.Flip(edit, wall.Id);
     }
 
-    /// <summary>A layer band of the wall's section: across the axis (left of it positive), its material, whether it is the core.</summary>
-    public readonly record struct Band(double From, double To, string? Material, string Name, bool Core = false, int Index = 0, double? Z0 = null, double? Z1 = null, IReadOnlyList<LayerPart>? Parts = null);
+    /// <summary>A layer band of the wall's section: across the axis (left of it positive), its material, whether it is the core, its priority at joins (<see cref="Layers.Rank"/>).</summary>
+    public readonly record struct Band(double From, double To, string? Material, string Name, bool Core = false, int Index = 0, double? Z0 = null, double? Z1 = null, IReadOnlyList<LayerPart>? Parts = null, int Rank = Layers.CoreRank);
 
     /// <summary>The wall's section, first layer to last; one centred band for a wall without layers.</summary>
     public static IReadOnlyList<Band> Section(IModelView m, Entity wall)
     {
-        if (LayerSets.BandsOf(m, wall.Id) is { } bands) return bands.Select(b => new Band(b.From, b.To, b.Material, b.Name, b.Core, b.Index, b.Z0, b.Z1, b.Parts)).ToList();
+        if (LayerSets.BandsOf(m, wall.Id) is { } bands) return bands.Select(b => new Band(b.From, b.To, b.Material, b.Name, b.Core, b.Index, b.Z0, b.Z1, b.Parts, b.Rank)).ToList();
         var t = wall.NumOrNull("thickness") ?? DefaultThickness;
         return [new Band(-t / 2, t / 2, null, wall.Name, true)];
     }
@@ -137,9 +137,11 @@ public static class Walls
         double At(EndCut c, double y) => yMax - yMin < 1e-12 ? c.Right : c.Right + (c.Left - c.Right) * (y - yMin) / (yMax - yMin);
         Vec2 P(double x, double y) => start + dir * x + left * y;
         // At a corner, each layer turns it on its own (report #49): finishes meet their like, the cores meet as the join's style says.
-        var corners = paths != null ? LayerCorners(m, wall, paths, start, dir, length, bands) : new Func<Band, (double From, double To)>?[2];
-        // Where a wall ends on this one or crosses it, the layers stop short of its core, or go through it (decision 255).
-        var crossings = paths != null ? LayerCrossings(m, wall, paths, start, dir, bands) : _ => [];
+        // Where a wall ends on this one or crosses it, the layers stop short of its core, or go through it (decision 255), each by its priority (report #81).
+        var cutOrder = services?.Get<ICutters>();
+        Func<Entity, int?> ranked = e => cutOrder?.PriorityOf(e, m);
+        var corners = paths != null ? LayerCorners(m, wall, paths, start, dir, length, bands, ranked) : new Func<Band, (double From, double To)>?[2];
+        var crossings = paths != null ? LayerCrossings(m, wall, paths, start, dir, bands, ranked) : _ => [];
         double Reach(int end, Band b, bool atFrom) =>
             corners[end] is { } f ? (atFrom ? f(b).From : f(b).To) : At(end == 0 ? startCut : endCut, atFrom ? b.From : b.To);
 
@@ -292,13 +294,18 @@ public static class Walls
     /// on the other wall's last face on that side), and each pair meets on the line between where
     /// their edges cross: a finish turns the corner unbroken. The cores meet as the join's style
     /// says: mitred, on their own diagonal; butt, the core of the wall that runs through goes on to
-    /// the other core's outer face and the other core stops at its inner face. A wall of one layer
-    /// ends exactly as the join cuts it. Per end, a band's reach past the joint at its From and To
-    /// edges; null where the end has no such corner. At a T (decision 255) the ending wall's layers end
-    /// each on its own line too: its core runs on through the crossed wall's finishes to that wall's
-    /// core, its other layers stop at the crossed wall's outer face, where they meet their like.
+    /// the other core's outer face and the other core stops at its inner face. A core of a higher
+    /// priority than the other's (report #81: its layer's, else its material's) runs through whatever
+    /// the style; of equal ones at a butt corner, the wall of the higher element priority, else the
+    /// one the join says. A wall of one layer ends exactly as the join cuts it. Per end, a band's
+    /// reach past the joint at its From and To edges; null where the end has no such corner. At a T
+    /// (decision 255) the ending wall's layers end each on its own line too: each goes on into the
+    /// crossed wall through its layers of a lower priority and stops at the first as high or higher
+    /// (<see cref="TeeStop"/>): by default its core runs through the crossed wall's finishes to that
+    /// wall's core, its other layers stop at the crossed wall's outer face, where they meet their like.
+    /// The element priorities never take a wall into the other's core: what is joined is settled here.
     /// </summary>
-    static Func<Band, (double From, double To)>?[] LayerCorners(IModelView m, Entity wall, IPathElements paths, Vec2 start, Vec2 dir, double length, IReadOnlyList<Band> bands)
+    static Func<Band, (double From, double To)>?[] LayerCorners(IModelView m, Entity wall, IPathElements paths, Vec2 start, Vec2 dir, double length, IReadOnlyList<Band> bands, Func<Entity, int?> ranked)
     {
         var o = new Func<Band, (double From, double To)>?[2];
         foreach (var r in Joins.Of(m, wall.Id))
@@ -308,13 +315,45 @@ public static class Walls
             var side = r.Relating == wall.Id ? join.A : join.B;
             var i = side.Connection switch { Connection.AtStart => 0, Connection.AtEnd => 1, _ => -1 };
             if (i < 0 || o[i] != null || m.Get(Joins.Other(r, wall.Id)) is not { } other) continue;
-            o[i] = LayerCorner(m, start, dir, length, i == 0, bands, other, join.Style, side.RunsThrough, join.Kind == JoinKind.T);
+            var elements = Math.Sign((ranked(wall) ?? 0) - (ranked(other) ?? 0));
+            o[i] = LayerCorner(m, start, dir, length, i == 0, bands, other, join.Style, side.RunsThrough, join.Kind == JoinKind.T, elements);
         }
         return o;
     }
 
+    /// <summary>The rank of a wall's core at a join: its core layer's priority (the highest of its core's).</summary>
+    static int CoreRank(IReadOnlyList<Band> bands) =>
+        bands.Where(b => b.Core).Select(b => b.Rank).DefaultIfEmpty(bands.OrderByDescending(b => b.To - b.From).First().Rank).Max();
+
+    /// <summary>
+    /// Whether this wall's core runs through the other's where they meet at a corner or cross (report #81): the higher
+    /// core priority does; of equal ones the higher element priority (<paramref name="elements"/>: the sign of mine less
+    /// theirs) when <paramref name="byElement"/>; then <paramref name="fallback"/> (the join's own choice), null for none.
+    /// </summary>
+    static bool? CoreThrough(IReadOnlyList<Band> mine, IReadOnlyList<Band> theirs, int elements, bool byElement, bool? fallback)
+    {
+        var cores = CoreRank(mine).CompareTo(CoreRank(theirs));
+        if (cores != 0) return cores > 0;
+        if (byElement && elements != 0) return elements > 0;
+        return fallback;
+    }
+
+    /// <summary>
+    /// Where a layer of a wall coming into another (at a T, or crossing it) stops, as an edge of the other wall across its
+    /// axis (report #81): it goes on from the face it comes in at through the other's layers ranked under it and stops at
+    /// the first ranked as high or higher (an equal one holds it: the wall it comes into keeps its layer), else at the far
+    /// face. <paramref name="side"/>: +1 when it comes in from the other wall's left (its higher edges), −1 from its right.
+    /// </summary>
+    static double TeeStop(Band layer, IReadOnlyList<Band> other, int side)
+    {
+        var order = side > 0 ? other.OrderByDescending(b => b.To).ThenByDescending(b => b.From) : other.OrderBy(b => b.From).ThenBy(b => b.To);
+        foreach (var b in order)
+            if (b.Rank >= layer.Rank) return side > 0 ? b.To : b.From;
+        return side > 0 ? other.Min(b => b.From) : other.Max(b => b.To);
+    }
+
     /// <summary>One corner's layer ends (see <see cref="LayerCorners"/>); null when the other wall is curved or parallel.</summary>
-    static Func<Band, (double From, double To)>? LayerCorner(IModelView m, Vec2 start, Vec2 dir, double length, bool atStart, IReadOnlyList<Band> bands, Entity other, JoinStyle style, bool runsThrough, bool tee = false)
+    static Func<Band, (double From, double To)>? LayerCorner(IModelView m, Vec2 start, Vec2 dir, double length, bool atStart, IReadOnlyList<Band> bands, Entity other, JoinStyle style, bool runsThrough, bool tee, int elements)
     {
         if (PathCurve.Of(other) is { IsArc: true }) return null;
         var (os, oe) = (Start(other), End(other));
@@ -330,8 +369,9 @@ public static class Walls
         var mine = Math.Sign(Vec2.Dot(otherFar - joint, left));
         var theirs = Math.Sign(Vec2.Dot(myFar - joint, od.Perp));
         if (mine == 0 || theirs == 0) return null;
+        var theirBands = Section(m, other);
         var me = new CornerEdges(bands, mine);
-        var them = new CornerEdges(Section(m, other), theirs);
+        var them = new CornerEdges(theirBands, theirs);
         Vec2 Mine(double y) => start + left * y;
         Vec2 Theirs(double y) => os + od.Perp * y;
         double ReachTo(double y, double yOther)
@@ -341,19 +381,21 @@ public static class Walls
             var s = Vec2.Cross(Theirs(yOther) - p, od) / cross;
             return atStart ? -s : s - length;
         }
+        // At a corner, whether my core runs through the other's (null: they meet on the mitre).
+        var through = CoreThrough(bands, theirBands, elements, style == JoinStyle.Butt, style == JoinStyle.Butt ? runsThrough : null);
         return band =>
         {
             if (band.To - band.From < 1e-12) return (0, 0);
-            var core = band.From >= me.CoreLo - 1e-9 && band.To <= me.CoreHi + 1e-9;
             if (tee)
             {
-                // Ending on the other wall's run: the core to the other core's face on this side, the rest to the outer face there.
-                var stop = core ? them.Inner[0] : them.Inner[^1];
+                // Ending on the other wall's run: each layer into it as far as its priority takes it.
+                var stop = TeeStop(band, theirBands, theirs);
                 return (ReachTo(band.From, stop), ReachTo(band.To, stop));
             }
-            if (core && style == JoinStyle.Butt)
+            var core = band.From >= me.CoreLo - 1e-9 && band.To <= me.CoreHi + 1e-9;
+            if (core && through is { } t)
             {
-                var stop = runsThrough ? them.Outer[0] : them.Inner[0];
+                var stop = t ? them.Outer[0] : them.Inner[0];
                 return (ReachTo(band.From, stop), ReachTo(band.To, stop));
             }
             return (ReachTo(band.From, them.Partner(me, band.From)), ReachTo(band.To, them.Partner(me, band.To)));
@@ -364,47 +406,73 @@ public static class Walls
     readonly record struct Cutter(Vec2 Point, Vec2 Dir);
 
     /// <summary>
-    /// Where the layers are interrupted along the wall by the walls that meet its run (decision 255).
-    /// At a T, the ending wall's core runs on through this wall's finishes to its core, so the layers
-    /// outside the core on that side stop at the core's edges; at a crossing (X) the same on both
-    /// sides, while the wall that does not run through has its core stopped by the other's core
-    /// faces and its other layers by the other's outer faces. Per band, the pairs of lines between
-    /// which nothing of it is built; none for a wall nothing meets so. Only straight walls interrupt.
+    /// Where the layers are interrupted along the wall by the walls that meet its run (decision 255, report #81).
+    /// At a T, each layer of the ending wall comes in from its side as far as its priority takes it
+    /// (<see cref="TeeStop"/>), and my layers it passes are interrupted between its edges: by default the
+    /// ending wall's core through my finishes on that side, to my core. At a crossing (X) the wall whose core
+    /// ranks higher runs through (of equal ones, the higher element priority, else the one the join says);
+    /// the other's layers come into it from both sides the same way, each interrupted between the edges it
+    /// stops on (none when it gets through), mine interrupted where they pass. Per band, the pairs of lines
+    /// between which nothing of it is built; none for a wall nothing meets so. Only straight walls interrupt.
     /// </summary>
-    static Func<Band, List<(Cutter A, Cutter B)>> LayerCrossings(IModelView m, Entity wall, IPathElements paths, Vec2 start, Vec2 dir, IReadOnlyList<Band> bands)
+    static Func<Band, List<(Cutter A, Cutter B)>> LayerCrossings(IModelView m, Entity wall, IPathElements paths, Vec2 start, Vec2 dir, IReadOnlyList<Band> bands, Func<Entity, int?> ranked)
     {
-        var rules = new List<(Func<Band, bool> Takes, Cutter A, Cutter B)>();
-        var me = new CornerEdges(bands, 1);
+        var gaps = new Dictionary<int, List<(Cutter A, Cutter B)>>();
+        void Gap(Band b, Cutter a, Cutter c) { if (!gaps.TryGetValue(b.Index, out var l)) gaps[b.Index] = l = []; l.Add((a, c)); }
         var left = dir.Perp;
-        bool Core(Band b) => b.From >= me.CoreLo - 1e-9 && b.To <= me.CoreHi + 1e-9;
+        const double eps = 1e-9;
         foreach (var r in Joins.Of(m, wall.Id))
         {
             var join = Joins.Compute(m, r, paths, out _);
             if (join == null || join.Kind is not (JoinKind.T or JoinKind.X)) continue;
             var side = r.Relating == wall.Id ? join.A : join.B;
+            if (join.Kind == JoinKind.T && !side.RunsThrough) continue;
             if (m.Get(Joins.Other(r, wall.Id)) is not { } other || PathCurve.Of(other) is { IsArc: true }) continue;
             var (os, oe) = (Start(other), End(other));
             if ((oe - os).Length < MinLength) continue;
             var od = (oe - os).Normalized();
             if (Math.Abs(Vec2.Cross(dir, od)) < 1e-6) continue;
             var theirBands = Section(m, other);
-            var them = new CornerEdges(theirBands, 1);
             Cutter Theirs(double y) => new(os + od.Perp * y, od);
-            if (side.RunsThrough)
+            var elements = Math.Sign((ranked(wall) ?? 0) - (ranked(other) ?? 0));
+            var through = join.Kind == JoinKind.T || CoreThrough(bands, theirBands, elements, true, side.RunsThrough) == true;
+            if (through)
             {
-                // The other's core comes through to my core: my layers outside the core on its side (both sides at a crossing) stop at its edges.
-                var otherFar = (os - join.Point).Length > (oe - join.Point).Length ? os : oe;
-                var otherSide = join.Kind == JoinKind.X ? 0 : Math.Sign(Vec2.Dot(otherFar - join.Point, left));
-                rules.Add((b => !Core(b) && (otherSide == 0 || (otherSide > 0 ? b.From >= me.CoreHi - 1e-9 : b.To <= me.CoreLo + 1e-9)), Theirs(them.CoreLo), Theirs(them.CoreHi)));
+                // The other's layers come into mine from its side (both sides at a crossing): each of mine they pass is interrupted between their edges.
+                int[] sides;
+                if (join.Kind == JoinKind.X) sides = [1, -1];
+                else
+                {
+                    var otherFar = (os - join.Point).Length > (oe - join.Point).Length ? os : oe;
+                    sides = [Math.Sign(Vec2.Dot(otherFar - join.Point, left))];
+                    if (sides[0] == 0) continue;
+                }
+                var stops = theirBands.Where(e => e.To - e.From > 1e-12).Select(e => (Band: e, Stops: sides.Select(s => (Side: s, At: TeeStop(e, bands, s))).ToList())).ToList();
+                foreach (var b in bands)
+                {
+                    var passing = stops.Where(x =>
+                        (join.Kind == JoinKind.X && x.Stops[0].At <= x.Stops[1].At + eps)
+                        || x.Stops.Any(s => s.Side > 0 ? b.From >= s.At - eps : b.To <= s.At + eps))
+                        .Select(x => (x.Band.From, x.Band.To)).OrderBy(x => x.From).ToList();
+                    // Their layers side by side make one gap.
+                    var merged = new List<(double From, double To)>();
+                    foreach (var p in passing)
+                        if (merged.Count > 0 && p.From <= merged[^1].To + eps) merged[^1] = (merged[^1].From, Math.Max(merged[^1].To, p.To));
+                        else merged.Add(p);
+                    foreach (var (lo, hi) in merged) Gap(b, Theirs(lo), Theirs(hi));
+                }
             }
-            else if (join.Kind == JoinKind.X)
+            else
             {
-                // Crossed by the wall that runs through: my core stops at its core's faces, my other layers at its outer faces.
-                rules.Add((Core, Theirs(them.CoreLo), Theirs(them.CoreHi)));
-                rules.Add((b => !Core(b), Theirs(theirBands.Min(x => x.From)), Theirs(theirBands.Max(x => x.To))));
+                // Crossed by the wall that runs through: each of my layers comes into it from both sides and is interrupted between where it stops.
+                foreach (var b in bands)
+                {
+                    var (fromLeft, fromRight) = (TeeStop(b, theirBands, 1), TeeStop(b, theirBands, -1));
+                    if (fromLeft > fromRight + eps) Gap(b, Theirs(fromRight), Theirs(fromLeft));
+                }
             }
         }
-        return band => rules.Where(r => r.Takes(band)).Select(r => (r.A, r.B)).ToList();
+        return band => gaps.TryGetValue(band.Index, out var l) ? l : [];
     }
 
     /// <summary>The footprint with each gap taken out of it: what lies before the gap's first line and what lies after its second; pieces with no area dropped.</summary>

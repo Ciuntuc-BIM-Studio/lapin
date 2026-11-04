@@ -87,6 +87,9 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
     public IReadOnlyList<Solid> For(Entity target, IModelView model, (Vec3 Min, Vec3 Max) bounds)
     {
         if (PriorityOf(target, model) is not { } mine) return [];
+        // Elements joined to the target (two walls at a corner, a T or a crossing) settle their meeting layer by layer
+        // in their join (testers' report #81): the higher one's envelope, square at its axis' end, would cut into the other's core.
+        var joined = IsPath(target.Class) ? Joins.Of(model, target.Id).Select(r => Joins.Other(r, target.Id)).ToHashSet() : [];
         var o = new List<Solid>();
         foreach (var (cls, (_, envelope)) in _cutters)
         {
@@ -100,7 +103,7 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
                 : model.OfClass(cls).Where(e => Raised(e, model, mine));
             foreach (var e in candidates)
             {
-                if (e.Id == target.Id || PriorityOf(e, model) is not { } theirs || theirs <= mine) continue;
+                if (e.Id == target.Id || joined.Contains(e.Id) || PriorityOf(e, model) is not { } theirs || theirs <= mine) continue;
                 if (envelope(e, model) is not { } solid || Measure.Bounds(solid) is not { } b) continue;
                 const double eps = 1e-6;
                 if (b.Min.X >= bounds.Max.X - eps || b.Max.X <= bounds.Min.X + eps || b.Min.Y >= bounds.Max.Y - eps || b.Max.Y <= bounds.Min.Y + eps || b.Min.Z >= bounds.Max.Z - eps || b.Max.Z <= bounds.Min.Z + eps) continue;

@@ -3,8 +3,8 @@ using Lapin.Model;
 
 namespace Lapin.Platform;
 
-/// <summary>A layer as a command gives it: a material by name, a thickness in metres, the core mark.</summary>
-public sealed record LayerSpec(string Material, double Thickness, bool Core = false, string? Color = null, string? Name = null, double? From = null, double? To = null, IReadOnlyList<LayerPartSpec>? Parts = null);
+/// <summary>A layer as a command gives it: a material by name, a thickness in metres, the core mark, its priority at joins (null: its material's).</summary>
+public sealed record LayerSpec(string Material, double Thickness, bool Core = false, string? Color = null, string? Name = null, double? From = null, double? To = null, IReadOnlyList<LayerPartSpec>? Parts = null, int? Priority = null);
 
 /// <summary>A piece of a layer in its height as a command gives it (decision 264): a material by name, its height in metres.</summary>
 public sealed record LayerPartSpec(string Material, double Height, string? Name = null, string? Color = null);
@@ -16,7 +16,7 @@ public sealed record LayerPartSpec(string Material, double Height, string? Name 
 /// platform's, since several modules build on it.
 /// </summary>
 /// <summary>One layer of an element's layer set as a band across its axis: from, to, its material, its name, its place in the set, whether it is the core.</summary>
-public readonly record struct LayerBand(double From, double To, string Material, string Name, int Index, bool Core, double? Z0 = null, double? Z1 = null, IReadOnlyList<LayerPart>? Parts = null);
+public readonly record struct LayerBand(double From, double To, string Material, string Name, int Index, bool Core, double? Z0 = null, double? Z1 = null, IReadOnlyList<LayerPart>? Parts = null, int Rank = 0);
 
 public static class LayerSets
 {
@@ -43,7 +43,14 @@ public static class LayerSets
             var from = Json.Number(l["from"]) is { } f && f > 0 ? f : (double?)null;
             var to = Json.Number(l["to"]) is { } t && t > 0 ? t : (double?)null;
             if (to is { } tt && tt <= (from ?? 0) + 1e-6) throw new CommandException("A layer's top must be above its bottom.");
-            o.Add(new LayerSpec(material, thickness.Value, l["core"] is JsonValue c && c.TryGetValue<bool>(out var core) && core, (string?)l["color"], (string?)l["name"], from, to, ParseParts(l["parts"])));
+            // Its priority where elements join (report #81), 0–100; none: its material's.
+            int? priority = null;
+            if (l["priority"] is JsonValue pv)
+            {
+                if (Json.Number(pv) is not { } pn || pn < 0 || pn > 100) throw new CommandException("A layer's priority runs from 0 to 100.");
+                priority = (int)Math.Round(pn);
+            }
+            o.Add(new LayerSpec(material, thickness.Value, l["core"] is JsonValue c && c.TryGetValue<bool>(out var core) && core, (string?)l["color"], (string?)l["name"], from, to, ParseParts(l["parts"]), priority));
         }
         Validate(o, what);
         return o;
@@ -78,12 +85,12 @@ public static class LayerSets
     /// <summary>The layers with their materials, made when the project has none of that name.</summary>
     public static List<MaterialLayer> Resolve(IEdit edit, IReadOnlyList<LayerSpec> layers) =>
         layers.Select(l => new MaterialLayer(Materials.Ensure(edit, l.Material, l.Color).Id, l.Thickness, l.Core, l.Name, l.From, l.To,
-            l.Parts is { Count: > 0 } ps ? ps.Select(p => new LayerPart(Materials.Ensure(edit, p.Material, p.Color).Id, p.Height, p.Name)).ToList() : null)).ToList();
+            l.Parts is { Count: > 0 } ps ? ps.Select(p => new LayerPart(Materials.Ensure(edit, p.Material, p.Color).Id, p.Height, p.Name)).ToList() : null, l.Priority)).ToList();
 
     /// <summary>A stored layer as a command would give it again (materials by name), its pieces in height with it.</summary>
     public static LayerSpec SpecOf(IModelView m, MaterialLayer l) =>
         new(m.Get(l.Material)?.Name ?? "Material", l.Thickness, l.Core, Name: l.Name, From: l.From, To: l.To,
-            Parts: l.Parts?.Select(p => new LayerPartSpec(m.Get(p.Material)?.Name ?? "Material", p.Height, p.Name)).ToList());
+            Parts: l.Parts?.Select(p => new LayerPartSpec(m.Get(p.Material)?.Name ?? "Material", p.Height, p.Name)).ToList(), Priority: l.Priority);
 
     /// <summary>A new layer set, associated with the type.</summary>
     public static Entity Attach(IEdit edit, Entity type, IReadOnlyList<LayerSpec> layers)
@@ -131,14 +138,16 @@ public static class LayerSets
     }
 
     /// <summary>An occurrence's own layer set usage, if it has one.</summary>
-    /// <summary>The element's layers as bands across its axis (by its usage), with material, name, place and whether it is the core; null when it has no layer set.</summary>
+    /// <summary>The element's layers as bands across its axis (by its usage), with material, name, place, whether it is the core and its priority at joins (<see cref="Layers.Rank"/>); null when it has no layer set.</summary>
     public static IReadOnlyList<LayerBand>? BandsOf(IModelView m, string occurrenceId)
     {
         if (UsageOf(m, occurrenceId) is not { } u || Layers.ReadUsage(u) is not { } usage || m.Get(usage.ForLayerSet) is not { } set) return null;
         var layers = Layers.Read(set);
         var bands = Layers.Bands(layers, usage);
         var core = Layers.CoreIndex(layers);
-        return layers.Select((l, i) => new LayerBand(bands[i].From, bands[i].To, l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", i, i == core, l.From, l.To, l.Parts)).ToList();
+        var table = CutOrder.MaterialsOf(m);
+        return layers.Select((l, i) => new LayerBand(bands[i].From, bands[i].To, l.Material, l.Name ?? m.Get(l.Material)?.Name ?? $"Layer {i + 1}", i, i == core, l.From, l.To, l.Parts,
+            Layers.Rank(l.Priority, table != null && Json.Number(table[l.Material]) is { } n ? (int)n : null, i == core))).ToList();
     }
 
     /// <summary>Flips a layered element across its axis: its usage's sense turns and its offset changes sign (false: it has no layers).</summary>

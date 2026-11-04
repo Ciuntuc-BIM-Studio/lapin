@@ -483,7 +483,9 @@ public static partial class IfcImport
         {
             if (layerSets.TryGetValue(fileSet, out var id)) return id;
             var set = f.Entities[fileSet];
-            var layers = Items(set[0]).Select(l => new MaterialLayer(MaterialId(edit, Ref(l[0])), Length(l[1]), Str(l[5]) == "Core", Str(l[3]))).ToList();
+            // IFC4's Priority (0–100): how the layer meets another element's where they join (report #81).
+            var layers = Items(set[0]).Select(l => new MaterialLayer(MaterialId(edit, Ref(l[0])), Length(l[1]), Str(l[5]) == "Core", Str(l[3]),
+                Priority: l.Args.Count > 6 && l[6] is long or double or StepTyped ? (int)Math.Clamp(Math.Round(Num(l[6])), 0, 100) : null)).ToList();
             id = Step.Guid(ownerId, "layerset");
             Put(edit, id, IfcClass.MaterialLayerSet, Str(set[1]) ?? "Layers", Layers.Write(layers), null, counts: false);
             return layerSets[fileSet] = id;

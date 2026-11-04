@@ -1128,6 +1128,7 @@ button.mode-chip:hover { color: var(--accent); }
 
 /* A wall layer's own height (report #44): narrow From / Up to fields. */
 .layer-edit .layer-height { width: 56px; }
+.layer-edit .layer-priority { width: 44px; }
 .layer-edit tr.layer-parts td { border-top: none; padding-left: 18px; }
 .layer-edit tr.layer-parts td > * { margin-right: 8px; vertical-align: middle; }
 .layer-edit .layer-part { display: inline-flex; gap: 3px; align-items: center; }

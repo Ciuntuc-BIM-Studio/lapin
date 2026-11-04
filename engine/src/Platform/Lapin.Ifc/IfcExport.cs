@@ -984,7 +984,7 @@ public static class IfcExport
         {
             if (layerSets.TryGetValue(set.Id, out var r)) return r;
             var layers = Layers.Read(set).Select(l =>
-                f.Add("IFCMATERIALLAYER", Material(l.Material), R(l.Thickness), Null, S(l.Name ?? m.Get(l.Material)?.Name), Null, S(l.Core ? "Core" : null), Null)).ToList();
+                f.Add("IFCMATERIALLAYER", Material(l.Material), R(l.Thickness), Null, S(l.Name ?? m.Get(l.Material)?.Name), Null, S(l.Core ? "Core" : null), l.Priority is { } p ? I(Math.Clamp(p, 0, 100)) : Null)).ToList();
             return layerSets[set.Id] = f.Add("IFCMATERIALLAYERSET", L(layers), S(set.Name), Null);
         }
 

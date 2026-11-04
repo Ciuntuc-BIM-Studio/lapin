@@ -10,8 +10,11 @@ namespace Lapin.Model;
 /// the whole height (a tiled dado to 1.50 m, a cladding stopping short of the floor). A layer may change
 /// material up its height (decision 264): <see cref="Parts"/>, from its bottom up, each a material and how
 /// high it goes, the rest above them in the layer's own material (tiles to 2.10 m in a bathroom, plaster over).
+/// Its <see cref="Priority"/> (testers' report #81; IFC4's IfcMaterialLayer.Priority, 0–100) says how it meets the layers of
+/// another element where the two join: a layer goes on through the other's layers ranked under it and stops at the first
+/// ranked as high or higher. Null: its material's priority in the cut order, else the defaults (<see cref="Layers.Rank"/>).
 /// </summary>
-public sealed record MaterialLayer(string Material, double Thickness, bool Core = false, string? Name = null, double? From = null, double? To = null, List<LayerPart>? Parts = null);
+public sealed record MaterialLayer(string Material, double Thickness, bool Core = false, string? Name = null, double? From = null, double? To = null, List<LayerPart>? Parts = null, int? Priority = null);
 
 /// <summary>A piece of a layer in its height (decision 264): its material (an IfcMaterial id), how high it is, its own name.</summary>
 public sealed record LayerPart(string Material, double Height, string? Name = null);
@@ -39,6 +42,18 @@ public readonly record struct LayerSection(double Thickness, double BodyOffset, 
 /// </summary>
 public static class Layers
 {
+    /// <summary>A core's priority at a join when neither the layer nor its material gives one.</summary>
+    public const int CoreRank = 50;
+    /// <summary>Any other layer's priority at a join when neither the layer nor its material gives one: under every core.</summary>
+    public const int FinishRank = 0;
+
+    /// <summary>
+    /// A layer's priority where elements join (report #81): its own, else its material's in the project's cut order,
+    /// else <see cref="CoreRank"/> for a core and <see cref="FinishRank"/> for the rest, so that by default cores meet
+    /// cores and every other layer stops at the faces.
+    /// </summary>
+    public static int Rank(int? own, int? material, bool core) => own ?? material ?? (core ? CoreRank : FinishRank);
+
     /// <summary>The core: the layer marked so, else the thickest (the first of equals).</summary>
     public static int CoreIndex(IReadOnlyList<MaterialLayer> layers)
     {
