@@ -7,9 +7,10 @@
  */
 
 import type { Vec2 } from '../../platform/module';
+import { formatLevel } from '../../engine/unitsStore';
 
-/** A level as drawings write it: ±0.00, +0.45, −0.45 (metres, two decimals). */
-export const levelText = (v: number): string => (Math.abs(v) < 0.005 ? '±0.00' : `${v > 0 ? '+' : '−'}${Math.abs(v).toFixed(2)}`);
+/** A level as drawings write it: ±0.00, +0.45, −0.45 (metres, two decimals); in feet and inches in an imperial project. */
+export const levelText = (v: number): string => formatLevel(v, undefined, true);
 
 /** The unit vector from a to c; +X when they coincide. */
 export function dirOf(a: Vec2, c: Vec2): Vec2 {

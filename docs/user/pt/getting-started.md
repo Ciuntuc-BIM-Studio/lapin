@@ -42,7 +42,7 @@ O Lapin trabalha em milímetros, a menos que você escolha outra coisa. Para mud
 
 ![Padrões de desenho, guia Projeto: as unidades do projeto](shots/standards-project.webp)
 
-Todo comprimento segue essa configuração: os painéis, os valores que você digita enquanto desenha, a linha de comando e as cotas. O modelo em si é guardado em metros, então mudar as unidades nunca muda o seu edifício.
+Todo comprimento segue essa configuração: os painéis, os valores que você digita enquanto desenha, a linha de comando e as cotas. O modelo em si é guardado em metros, então mudar as unidades nunca muda o seu edifício. Os níveis e os eixos da grade também a seguem.
 
 ## Salvar
 

@@ -18,6 +18,8 @@ Jede Ebene hat ihren eigenen Grundriss unter **Grundrisse**. Doppelklicken Sie a
 
 In Schnitten und Ansichten wird jede Ebene rechts mit Namen und Höhe markiert. **Verwalten → Objektstile → Verdeckte Linien** legt auch die **Höhenmarke** fest: ein offenes Dreieck, ein Dreieck mit schwarzer linker Hälfte (wie die rumänische Norm es zeichnet), ein schwarzes Dreieck oder ein Strich, und ihre Größe auf dem Papier.
 
+Höhenkoten werden in den Einheiten des Projekts geschrieben: in Metern (+3.00) in einem metrischen Projekt, wie Pläne sie schreiben, und in Fuß und Zoll (+9'-10 1/8") in einem imperialen. Ihnen folgen der Projektbrowser, der Kasten oben links in der Ansicht, die Höhenmarken in Schnitten und Ansichten und die Höhenkoten.
+
 ## Die Ebene darunter sehen
 
 Um beim Zeichnen eine andere Ebene zu sehen, wählen Sie sie in der Leiste des Grundrisses unter **Unterlage**. Der Grundriss dieser Ebene wird darunter gezeichnet, blass und grau. Sie können darauf fangen, sie aber nicht auswählen.

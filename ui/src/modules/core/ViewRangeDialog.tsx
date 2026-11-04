@@ -12,6 +12,7 @@ import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { LengthField } from '../../shell/cells';
 import { PendingDialog } from './PendingDialog';
+import { formatLevel, useStandards } from '../../engine/unitsStore';
 
 interface Edge { level: string; offset: number }
 interface RangeDto { cutHeight: number; range: { top: Edge; bottom: Edge; depth: Edge }; custom: boolean; problems: string[]; resolved: { cut: number; top: number | null; bottom: number | null; depth: number | null } }
@@ -22,9 +23,10 @@ const PROBLEMS: Record<string, string> = {
   bottomAboveCut: 'Bottom is above the cut plane.',
   depthAboveBottom: 'View depth is above Bottom.',
 };
-const fmt = (v: number | null) => (v == null ? 'unlimited' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(2)}`);
+const fmt = (v: number | null) => (v == null ? 'unlimited' : formatLevel(v));
 
 export function ViewRangeDialog() {
+  useStandards((s) => s.units);
   const nodes = useSession((s) => s.nodes);
   const error = useSession((s) => s.error);
   const [id, setId] = useState<string | null>(null);

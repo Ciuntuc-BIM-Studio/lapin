@@ -42,7 +42,7 @@ Lapin lavora in millimetri, a meno che tu non scelga altrimenti. Per cambiare le
 
 ![Standard di disegno, scheda Progetto: le unità del progetto](shots/standards-project.webp)
 
-Ogni lunghezza segue questa impostazione: i pannelli, i valori che digiti mentre disegni, la riga di comando e le quote. Il modello stesso è conservato in metri, quindi cambiare le unità non modifica mai il tuo edificio.
+Ogni lunghezza segue questa impostazione: i pannelli, i valori che digiti mentre disegni, la riga di comando e le quote. Il modello stesso è conservato in metri, quindi cambiare le unità non modifica mai il tuo edificio. Anche i livelli e gli assi della griglia la seguono.
 
 ## Salvare
 

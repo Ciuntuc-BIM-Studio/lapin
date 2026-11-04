@@ -20,6 +20,7 @@ import type { PropertySectionDef } from '../platform/module';
 import { findTool, propertySections, typeFieldsOf } from '../platform/modules';
 import { QuantitiesSection } from './QuantitiesSection';
 import { ParamsSection } from './ParamsSection';
+import { AxisFields } from './AxisFields';
 import { paramKey, sameKind, type Param } from './params';
 import { filterSets, importedSets } from './ifcProperties';
 
@@ -190,6 +191,7 @@ function SelectionPanel({ selection }: { selection: string | null }) {
             <option value="">as its axis type</option><option value="both">both ends</option><option value="start">start</option><option value="end">end</option><option value="none">none</option>
           </select></dd>
         </dl>
+        <AxisFields gridId={axis.gridId} tag={axis.tag} />
         <div className="pad"><button type="button" className="btn" title="Parallel axes start and end on the same lines; with several axes selected, only those"
           onClick={() => {
             const tags = useUi.getState().selected.filter((s) => s.startsWith(`${axis.gridId}#`)).map((s) => s.slice(axis.gridId.length + 1));

@@ -11,6 +11,7 @@
  */
 
 import type { NodeDto } from '../engine/protocol';
+import { lengthText } from '../engine/unitsStore';
 
 export type Storeys3dMode = 'all' | 'some' | 'active' | 'below';
 
@@ -115,7 +116,7 @@ export function chipText(s: Storeys3d, storeys: NodeDto[], activeId: string | nu
   if (isAll(s)) return null;
   const active = storeys.find((st) => st.id === activeId);
   const shown = shownStoreys(s, storeys, activeId);
-  const cut = s.cut !== null ? `cut at ${s.cut.toFixed(2)} m` : null;
+  const cut = s.cut !== null ? `cut at ${lengthText(s.cut)}` : null;
   if (s.mode === 'active') return { name: active?.name ?? null, text: 'only', cut };
   if (s.mode === 'below') return { name: active?.name ?? null, text: 'and below', cut };
   if (s.mode === 'some' && shown) {

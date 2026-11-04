@@ -62,4 +62,32 @@ Una quota allineata o lineare si posa come una catena: dopo i primi due punti e 
 
 Le annotazioni di una pianta (quote, testi, linee disegnate, etichette) possono passare a un’altra pianta nello stesso punto, poiché le piante condividono le coordinate: selezionale e scegli la pianta nelle loro proprietà, in **Vista** per spostarle o in **Copia in** per copiarle. Così anche le quote fatte su una planimetria arrivano alla pianta del livello. I punti di una quota si agganciano poi a ciò che la nuova pianta taglia in quel punto: muri, spigoli, assi.
 
+### Etichette
+
+**Annota → Etichetta** (<kbd>TG</kbd>) mette su una vista un riquadro con ciò che un elemento dice di sé, e una linea di richiamo fino a esso. Mentre lo strumento è attivo, la barra sotto la vista sceglie cosa mostra l’etichetta: la sigla, il nome, la classe o il tipo, **Resistenza al fuoco**, **Isolamento acustico**, **Trasmittanza termica** o **Altro parametro…** per nome; oppure un tipo di etichetta degli standard di disegno; e **RICHIAMO** attiva o disattiva la linea di richiamo. Fai clic sull’elemento, poi dove va l’etichetta (digita prima **E** per piegare la linea in un gomito). **Annota → Etichetta un parametro** chiede il nome del parametro e avvia lo strumento con esso.
+
+![La barra dello strumento Etichetta sotto la vista](shots/tag-options.webp)
+
+Un’etichetta legge qualsiasi parametro: quello dell’elemento, quello del suo tipo (allora lo mostrano tutti gli elementi del tipo), una proprietà standard come `Pset_WallCommon.FireRating` o una con cui è arrivato un elemento importato. Un nome si trova anche senza spazi, quindi **Fire rating** e `FireRating` sono lo stesso. Per compilarlo usa **Parametri** nelle proprietà dell’elemento o del suo tipo: scrivi un nome (sono proposti Fire rating, Sound rating, Moisture resistance e Thermal resistance) oppure scegli **Aggiungi una proprietà standard…** per le proprietà IFC della sua classe. L’etichetta segue non appena c’è un valore, e le lunghezze si scrivono nelle unità del progetto.
+
+Un’etichetta selezionata ha delle maniglie. Trascina il riquadro per spostare l’etichetta: la linea di richiamo continua a puntare dove puntava. Trascina il centro della linea per piegarla in un gomito (Ctrl/⌘-clic sul gomito la raddrizza) e la sua estremità per farla puntare altrove (Ctrl/⌘-clic: di nuovo al centro dell’elemento). Le proprietà cambiano ciò che l’etichetta **Mostra**, le danno un **Testo** proprio (`{mark}|{FireRating}` scrive due righe), un **Tipo di etichetta**, o disattivano la **Linea di richiamo**. Il motore disegna le etichette, così tavole e PDF le stampano come le vedi. I tipi di etichetta in **Gestisci → Standard di disegno → Etichette** leggono gli stessi campi nei loro modelli; un nuovo progetto ha tra questi Resistenza al fuoco, Isolamento acustico e Trasmittanza termica.
+
+![La linea di richiamo di un’etichetta piegata, con le sue maniglie](shots/tag-leader.webp)
+
+![Le proprietà di un’etichetta](shots/tag-properties.webp)
+
+### Assi della griglia
+
+**Annota → Asse di griglia** (<kbd>GR</kbd>) disegna un asse dalle sue due estremità; prende l’etichetta successiva della sua direzione. **Annota → Griglia di assi…** posa un’intera griglia in una volta: gli interassi **In orizzontale** (gli assi numerati, da sinistra a destra) e **In verticale** (gli assi con lettere, dal basso in alto) nelle unità del progetto, come `6000 6000 4500` o `3*6000`; l’**Origine** dove si incrociano i primi assi, un **Angolo**, quanto gli assi proseguono **Oltre la griglia**, le **Prime etichette** e il **Tipo di asse**. Con **sostituisci gli assi della griglia** spuntato, gli assi disegnati finora spariscono.
+
+![La finestra Griglia di assi](shots/grid-dialog.webp)
+
+Fai clic su un asse per selezionarlo. Le sue proprietà mostrano **Inizio** e **Fine**, **Lunghezza**, **Angolo** e l’interasse dall’asse parallelo precedente (↔). Scrivi un nuovo interasse e l’asse si sposta; si spostano anche gli assi successivi, a meno che tu non tolga la spunta da **si spostano anche gli assi successivi**. **Bolle** sceglie quali estremità hanno una bolla. **Stili degli assi…** apre **Standard di disegno → Assi della griglia**, dove si impostano la bolla, la sua dimensione, il tipo di linea e la prima etichetta. Seleziona l’intera griglia per vederne gli assi e gli interassi.
+
+![Le proprietà di un asse](shots/axis-properties.webp)
+
+Tutte queste lunghezze seguono le unità del progetto. In piedi e pollici, estremità e interassi si leggono 19'-8 1/4", e anche i livelli si scrivono in piedi e pollici.
+
+![Lo stesso asse in piedi e pollici](shots/axis-properties-imperial.webp)
+
 ![La scheda Annota](shots/ribbon-annotate.webp)

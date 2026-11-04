@@ -70,8 +70,8 @@ public static class OpeningMarkers
                 mark.Text(new PenText(at, lines[i], style.Height, angle, "middle", "middle", style.Bold, style.Font, style.Italic), color);
             }
         }
-        Write(b, outward, TagText.Lines(type.Template, c.Model, fill, values));
-        Write(a, outward * -1, TagText.Lines(type.Inner, c.Model, fill, values));
+        Write(b, outward, TagText.Lines(type.Template, c.Model, fill, values, c.Book.Units));
+        Write(a, outward * -1, TagText.Lines(type.Inner, c.Model, fill, values, c.Book.Units));
         mark.Snaps.Add(a);
         mark.Snaps.Add(b);
         return mark;

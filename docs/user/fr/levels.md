@@ -18,6 +18,8 @@ Chaque niveau a son propre plan sous **Vues en plan**. Double-cliquez sur un pla
 
 Dans les coupes et les façades, chaque niveau est repéré à droite par son nom et sa cote. **Gérer → Styles d’objets → Lignes cachées** règle aussi le **repère de niveau** : triangle vide, triangle à moitié gauche noire (comme le dessine la norme roumaine), triangle noir ou trait, et sa taille sur papier.
 
+Les altitudes s’écrivent dans les unités du projet : en mètres (+3.00) dans un projet métrique, comme les plans les écrivent, et en pieds et pouces (+9'-10 1/8") dans un projet impérial. Le navigateur, le cadre en haut à gauche de la vue, les repères de niveau des coupes et des façades et les cotes de niveau les suivent.
+
 ## Voir le niveau du dessous
 
 Pour voir un autre niveau pendant que vous dessinez, choisissez-le dans **Calque de fond** dans la barre du plan. Le plan de ce niveau est dessiné en dessous, estompé et gris. Vous pouvez vous y accrocher, mais vous ne pouvez pas le sélectionner.

@@ -19,6 +19,7 @@ import { formatLength, lengthText, unitLabel, useStandards } from '../../engine/
 import { Cell, LengthField, NumberField } from '../../shell/cells';
 import { useLayers, type DraftLayer } from '../../viewport/cad/layers';
 import { ptStrict } from '../../platform/vec';
+import { TagFields } from './tag';
 
 type Layer = DraftLayer;
 
@@ -204,19 +205,6 @@ function DimensionFields({ node }: { node: NodeDto }) {
       {a && <Point label="Start" p={a} />}
       {b && <Point label="End" p={b} />}
       {a && b && <Row label="Length" value={lengthText(Math.hypot(b.x - a.x, b.y - a.y))} />}
-      {at && <Point label="Position" p={at} />}
-    </dl>
-  );
-}
-
-function TagFields({ node }: { node: NodeDto }) {
-  const nodes = useSession((s) => s.nodes);
-  const target = typeof node.props.element === 'string' ? nodes.get(node.props.element) : undefined;
-  const at = ptStrict(node.props.at);
-  return (
-    <dl className="fields">
-      <Row label="Tagged element" value={target ? `${target.name} (${target.type})` : '—'} />
-      <Row label="Field" value={String(node.props.field ?? 'mark')} />
       {at && <Point label="Position" p={at} />}
     </dl>
   );

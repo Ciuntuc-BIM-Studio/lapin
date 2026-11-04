@@ -62,4 +62,32 @@ Uma cota alinhada ou linear entra como uma cadeia: depois dos dois primeiros pon
 
 As anotações de uma planta (cotas, textos, linhas desenhadas, etiquetas) podem passar para outra planta no mesmo lugar, pois as plantas partilham as coordenadas: selecione-as e escolha a planta nas propriedades, em **Vista** para as mover ou em **Copiar para** para as copiar. Assim as cotas feitas numa planta de situação vão para a planta do nível. Os pontos de uma cota prendem-se então ao que a nova planta corta nesse lugar: paredes, arestas, eixos.
 
+### Identificadores
+
+**Anotar → Identificador** (<kbd>TG</kbd>) coloca numa vista uma caixa com o que um elemento diz de si mesmo, e uma linha de chamada até ele. Enquanto a ferramenta está ativa, a barra sob a vista escolhe o que o identificador mostra: a marca, o nome, a classe ou o tipo, **Resistência ao fogo**, **Isolamento acústico**, **Transmitância térmica** ou **Outro parâmetro…** pelo nome; ou um tipo de etiqueta dos padrões de desenho; e **CHAMADA** liga ou desliga a linha de chamada. Clique no elemento e depois onde vai o identificador (digite antes **E** para dobrar a linha num cotovelo). **Anotar → Etiquetar um parâmetro** pede o nome do parâmetro e inicia a ferramenta com ele.
+
+![A barra da ferramenta Identificador sob a vista](shots/tag-options.webp)
+
+Um identificador lê qualquer parâmetro: o do elemento, o do seu tipo (então todos os elementos do tipo o mostram), uma propriedade padrão como `Pset_WallCommon.FireRating`, ou uma com que veio um elemento importado. Um nome é encontrado também sem espaços, então **Fire rating** e `FireRating` são o mesmo. Para preenchê-lo, use **Parâmetros** nas propriedades do elemento ou do seu tipo: digite um nome (são sugeridos Fire rating, Sound rating, Moisture resistance e Thermal resistance) ou escolha **Adicionar uma propriedade padrão…** para as propriedades IFC da sua classe. O identificador acompanha assim que há um valor, e os comprimentos são escritos nas unidades do projeto.
+
+Um identificador selecionado tem pegas. Arraste a caixa para mover o identificador: a linha de chamada continua a apontar para onde apontava. Arraste o meio da linha para dobrá-la num cotovelo (Ctrl/⌘-clique no cotovelo endireita-a) e a sua ponta para apontar para outro ponto (Ctrl/⌘-clique: de volta ao meio do elemento). As propriedades mudam o que o identificador **Mostra**, dão-lhe um **Texto** próprio (`{mark}|{FireRating}` escreve duas linhas), um **Tipo de etiqueta**, ou desligam a **Linha de chamada**. O motor desenha os identificadores, por isso folhas e PDFs imprimem-nos como os vê. Os tipos em **Gerenciar → Padrões de desenho → Identificadores** leem os mesmos campos nos seus modelos; um projeto novo traz entre eles Resistência ao fogo, Isolamento acústico e Transmitância térmica.
+
+![A linha de chamada de um identificador dobrada, com as suas pegas](shots/tag-leader.webp)
+
+![As propriedades de um identificador](shots/tag-properties.webp)
+
+### Eixos da grade
+
+**Anotar → Eixo de grade** (<kbd>GR</kbd>) desenha um eixo pelas suas duas pontas; recebe o rótulo seguinte da sua direção. **Anotar → Grelha de eixos…** coloca uma grade inteira de uma vez: os espaçamentos **Na transversal** (os eixos numerados, da esquerda para a direita) e **Na longitudinal** (os eixos com letras, de baixo para cima) nas unidades do projeto, como `6000 6000 4500` ou `3*6000`; a **Origem** onde se cruzam os primeiros eixos, um **Ângulo**, quanto os eixos se prolongam **Além da grelha**, os **Primeiros rótulos** e o **Tipo de eixo**. Com **substituir os eixos da grelha** marcado, os eixos desenhados até então desaparecem.
+
+![O diálogo Grelha de eixos](shots/grid-dialog.webp)
+
+Clique num eixo para selecioná-lo. As suas propriedades mostram o **Início** e o **Fim**, o **Comprimento**, o **Ângulo** e o espaçamento desde o eixo paralelo anterior (↔). Digite um novo espaçamento e o eixo move-se; os eixos seguintes também se movem, a não ser que desmarque **os eixos seguintes também se movem**. **Bolhas** escolhe que pontas têm bolha. **Estilos de eixo…** abre **Padrões de desenho → Eixos da grade**, onde se ajustam a bolha, o seu tamanho, o tipo de linha e o primeiro rótulo. Selecione a grade inteira para ver os seus eixos e espaçamentos.
+
+![As propriedades de um eixo](shots/axis-properties.webp)
+
+Todos estes comprimentos seguem as unidades do projeto. Em pés e polegadas, pontas e espaçamentos leem-se 19'-8 1/4", e os níveis também são escritos em pés e polegadas.
+
+![O mesmo eixo em pés e polegadas](shots/axis-properties-imperial.webp)
+
 ![A guia Anotar](shots/ribbon-annotate.webp)

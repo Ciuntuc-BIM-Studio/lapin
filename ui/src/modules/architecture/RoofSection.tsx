@@ -11,6 +11,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { t, useLang } from '../../i18n';
 import { LengthField, NumberField } from '../../shell/cells';
 import { mergeEdge, type Edge } from './roofEdges';
+import { lengthText } from '../../engine/unitsStore';
 
 type Style = { id: string; label: string; family: string; shape: string; pitch: number; covering: string };
 
@@ -47,7 +48,7 @@ export function RoofSection({ node }: { node: NodeDto }) {
             const len = Math.hypot(q[0] - p[0], q[1] - p[1]);
             return (
               <tr key={i}>
-                <td className="num" title={`${len.toFixed(2)} m`}>{i + 1}</td>
+                <td className="num" title={lengthText(len)}>{i + 1}</td>
                 <td>
                   <select value={e?.kind ?? ''} disabled={!node.editable} data-i18n-ctx="edge" onChange={(ev) => setEdge(i, { kind: (ev.target.value || undefined) as 'eave' | 'gable' | undefined })}>
                     <option value="">auto</option><option value="eave">eave</option><option value="gable">gable</option>

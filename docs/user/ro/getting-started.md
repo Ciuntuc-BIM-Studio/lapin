@@ -42,7 +42,7 @@ Lapin lucrează în milimetri dacă nu alegi altceva. Ca să schimbi unitățile
 
 ![Standarde de desen, tabul Proiect: unitățile proiectului](shots/standards-project.webp)
 
-Toate lungimile urmează setarea: panourile, valorile pe care le scrii când desenezi, linia de comandă și cotele. Modelul în sine e ținut în metri, așa că schimbarea unităților nu-ți schimbă niciodată clădirea.
+Toate lungimile urmează setarea: panourile, valorile pe care le scrii când desenezi, linia de comandă și cotele. Modelul în sine e ținut în metri, așa că schimbarea unităților nu-ți schimbă niciodată clădirea. Nivelurile și axele o urmează și ele.
 
 ## Salvarea
 

@@ -62,4 +62,32 @@ Wymiar wyrównany lub liniowy wstawiasz jako łańcuch: po pierwszych dwóch pun
 
 Opisy na rzucie (wymiary, teksty, narysowane linie, etykiety) mogą przejść na inny rzut w to samo miejsce, bo rzuty mają te same współrzędne: zaznacz je i wybierz rzut we właściwościach, w **Widok**, by je przenieść, lub w **Kopiuj do**, by je skopiować. Tak również wymiary zrobione na planie sytuacyjnym trafiają na rzut poziomu. Punkty wymiaru trzymają się wtedy tego, co nowy rzut przecina w tym miejscu: ścian, krawędzi, osi.
 
+### Etykiety
+
+**Opisz → Etykieta** (<kbd>TG</kbd>) umieszcza na widoku ramkę z tym, co element mówi o sobie, i linię odniesienia do niego. Gdy narzędzie jest włączone, pasek pod widokiem wybiera, co pokazuje etykieta: znak, nazwę, klasę lub typ, **Odporność ogniowa**, **Izolacyjność akustyczna**, **Współczynnik przenikania ciepła** albo **Inny parametr…** po nazwie; albo typ etykiety ze standardów rysunkowych; a **ODNOŚNIK** włącza lub wyłącza linię odniesienia. Kliknij element, potem miejsce etykiety (najpierw wpisz **E**, aby załamać linię). **Opisz → Oznacz parametr** pyta o nazwę parametru i uruchamia z nim narzędzie.
+
+![Pasek narzędzia Etykieta pod widokiem](shots/tag-options.webp)
+
+Etykieta odczytuje dowolny parametr: elementu, jego typu (wtedy pokazują go wszystkie elementy typu), właściwość standardową, np. `Pset_WallCommon.FireRating`, albo taką, z którą przyszedł element zaimportowany. Nazwa jest znajdowana także bez spacji, więc **Fire rating** i `FireRating` to to samo. Aby ją wypełnić, użyj **Parametry** we właściwościach elementu lub typu: wpisz nazwę (proponowane są Fire rating, Sound rating, Moisture resistance i Thermal resistance) albo wybierz **Dodaj właściwość standardową…** dla właściwości IFC jego klasy. Etykieta podąża, gdy tylko jest wartość, a długości są zapisywane w jednostkach projektu.
+
+Zaznaczona etykieta ma uchwyty. Przeciągnij ramkę, aby przesunąć etykietę: linia odniesienia wskazuje to samo miejsce. Przeciągnij środek linii, aby ją załamać (Ctrl/⌘-klik na załamaniu prostuje ją), a jej koniec, aby wskazywała inny punkt (Ctrl/⌘-klik: z powrotem na środek elementu). We właściwościach zmieniasz, co etykieta **Pokazuje**, dajesz jej własny **Tekst** (`{mark}|{FireRating}` pisze dwa wiersze), **Typ etykiety** albo wyłączasz **Linię odniesienia**. Etykiety rysuje silnik, więc arkusze i PDF drukują je tak, jak je widzisz. Typy etykiet w **Zarządzaj → Standardy rysunkowe → Etykiety** odczytują te same pola w swoich szablonach; nowy projekt ma wśród nich Odporność ogniową, Izolacyjność akustyczną i Współczynnik przenikania ciepła.
+
+![Załamana linia odniesienia etykiety z jej uchwytami](shots/tag-leader.webp)
+
+![Właściwości etykiety](shots/tag-properties.webp)
+
+### Osie siatki
+
+**Opisz → Oś siatki** (<kbd>GR</kbd>) rysuje jedną oś przez jej dwa końce; dostaje kolejną etykietę swojego kierunku. **Opisz → Siatka osi…** wstawia od razu całą siatkę: rozstawy **W poprzek** (osie numerowane, od lewej do prawej) i **Wzdłuż** (osie literowane, od dołu do góry) w jednostkach projektu, np. `6000 6000 4500` lub `3*6000`; **Początek**, gdzie przecinają się pierwsze osie, **Kąt**, jak daleko osie wychodzą **Poza siatkę**, **Pierwsze etykiety** i **Typ osi**. Gdy zaznaczysz **zastąp osie siatki**, dotychczasowe osie znikają.
+
+![Okno Siatka osi](shots/grid-dialog.webp)
+
+Kliknij oś, aby ją zaznaczyć. Jej właściwości pokazują **Początek** i **Koniec**, **Długość**, **Kąt** i rozstaw od poprzedniej równoległej osi (↔). Wpisz nowy rozstaw, a oś się przesunie; kolejne osie też się przesuną, chyba że odznaczysz **kolejne osie też się przesuwają**. **Kółka** wybiera, które końce mają kółko. **Style osi…** otwiera **Standardy rysunkowe → Osie siatki**, gdzie ustawia się kółko, jego rozmiar, rodzaj linii i pierwszą etykietę. Zaznacz całą siatkę, aby zobaczyć jej osie i rozstawy.
+
+![Właściwości osi](shots/axis-properties.webp)
+
+Wszystkie te długości podążają za jednostkami projektu. W stopach i calach końce i rozstawy mają postać 19'-8 1/4", a poziomy też są zapisywane w stopach i calach.
+
+![Ta sama oś w stopach i calach](shots/axis-properties-imperial.webp)
+
 ![Karta Opisz](shots/ribbon-annotate.webp)

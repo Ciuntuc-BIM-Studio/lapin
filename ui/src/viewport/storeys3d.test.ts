@@ -79,7 +79,7 @@ describe('the storeys a 3D view shows (report #29)', () => {
   it('says on the chip what is shown', () => {
     expect(chipText(ALL_STOREYS, storeys, 'gf')).toBeNull();
     expect(chipText({ ...ALL_STOREYS, mode: 'active' }, storeys, 'gf')).toEqual({ name: 'gf', text: 'only', cut: null });
-    expect(chipText({ ...ALL_STOREYS, mode: 'below', cut: 1.2 }, storeys, 'ff')).toEqual({ name: 'ff', text: 'and below', cut: 'cut at 1.20 m' });
+    expect(chipText({ ...ALL_STOREYS, mode: 'below', cut: 1.2 }, storeys, 'ff')).toEqual({ name: 'ff', text: 'and below', cut: 'cut at 1200 mm' });
     expect(chipText({ ...ALL_STOREYS, mode: 'some', ids: ['gf', 'ff'] }, storeys, 'gf')?.text).toBe('2 of 3 storeys');
     expect(chipText({ ...ALL_STOREYS, mode: 'some', ids: ['ff'] }, storeys, 'gf')).toEqual({ name: 'ff', text: 'only', cut: null });
   });

@@ -10,6 +10,10 @@ describe('the core dialogs’ formatters', () => {
   it('a level with its sign', () => {
     expect(level(3)).toBe('+3.00');
     expect(level(-0.5)).toBe('−0.50');
+    // In an imperial project, feet and inches (report #68).
+    expect(level(3.048, 'ft-in')).toBe('+10\'-0"');
+    expect(level(0, 'ft-in')).toBe('±0"');
+    expect(level(-0.4572, 'in')).toBe('−18"');
   });
   it('a label capitalised; an empty one stays empty', () => {
     expect(label('wall')).toBe('Wall');

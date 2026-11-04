@@ -2555,6 +2555,67 @@ export const scenes = [
       await t.shot('studio-helix', { of: '[data-testid=view3d]', pad: 0 });
     },
   },
+  {
+    // Tags (report #64): what a tag shows chosen in the command line's bar (here the walls' fire rating, a parameter of the
+    // user's own), the leader bent at an elbow by its grips, and the tag's properties.
+    id: 'tags',
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      await t.cmd('element.setParam', { ids: [walls[0]], name: 'Fire rating', kind: 'text', value: 'REI 120' });
+      await t.fit();
+      await t.button('Annotate', { exact: true });
+      await t.tool('cad.tag');
+      t.expect(await t.page.locator('[data-tag-field]').count() > 0, 'TAG offers what it shows in the command line\'s bar');
+      await t.page.locator('[data-tag-field]').selectOption('FireRating');
+      await t.wait(300);
+      for (const [x, y] of [[5, 0], [5, 2]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(500); }
+      await t.shot('tag-options', { of: '[data-testid=command-line]', pad: 0 });
+      await t.keys('Escape', 'Escape');
+      const tag = (await t.nodes()).find((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === 'TAG');
+      t.expect(tag && tag.props.field === 'FireRating', `a tag of the fire rating (${tag?.props.field})`);
+      await t.cmd('drafting.updateTag', { id: tag.id, at: [3, 2.2], elbow: [4.5, 2.2] });
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=plan] text', { hasText: 'REI 120' }).count() > 0, 'the tag shows the wall\'s fire rating');
+      await select(t, tag.id);
+      await t.wait(600);
+      const [cx, cy] = await t.planPoint(4, 1.2);
+      await t.shot('tag-leader', { clip: { x: cx - 260, y: cy - 170, width: 520, height: 300 } });
+      t.expect(await t.page.locator('[data-tag-fields]').count() > 0, 'a tag\'s properties say what it shows and its leader');
+      await t.shot('tag-properties', { of: 'aside.props', pad: 0, maxHeight: 520 });
+    },
+  },
+  {
+    // The axis grid (report #68): Annotate → Axis grid… lays a grid from its spacings; a selected axis shows its ends, length,
+    // angle and spacing in the project's units, here in feet and inches after the units are changed.
+    id: 'grid',
+    async run(t) {
+      await t.fresh();
+      await t.button('Annotate', { exact: true });
+      await t.tool('drafting.grid');
+      t.expect(await t.page.locator('[data-grid-dialog-body]').count() > 0, 'the Axis grid dialog opens');
+      await t.page.locator('[data-grid-across]').fill('6000 6000 4500');
+      await t.page.locator('[data-grid-along]').fill('2*5000');
+      await t.wait(300);
+      await t.shot('grid-dialog', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-grid-make]').click();
+      await t.wait(1000);
+      const grid = (await t.nodes()).find((n) => n.type === 'IfcGrid');
+      t.expect(grid && grid.props.axes.length === 7, `a grid of 4 + 3 axes (${grid?.props.axes?.length})`);
+      await t.fit();
+      await t.ui({ selection: `${grid.id}#2`, selected: [`${grid.id}#2`] });
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-field=axis-spacing]').count() > 0, 'a selected axis shows its spacing');
+      await t.shot('axis-properties', { of: 'aside.props', pad: 0, maxHeight: 520 });
+      // Feet and inches: the axis's spacing and the levels follow.
+      await t.cmd('standards.options', { units: 'ft-in' });
+      await t.wait(800);
+      const spacing = await t.page.locator('[data-field=axis-spacing]').first().inputValue();
+      t.expect(/'/.test(spacing), `the spacing in feet and inches (${spacing})`);
+      await t.shot('axis-properties-imperial', { of: 'aside.props', pad: 0, maxHeight: 520 });
+      await t.cmd('standards.options', { units: 'mm' });
+    },
+  },
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */

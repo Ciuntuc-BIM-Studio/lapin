@@ -42,7 +42,7 @@ Lapin pracuje w milimetrach, chyba że wybierzesz inaczej. Aby zmienić jednostk
 
 ![Standardy rysunkowe, karta Projekt: jednostki projektu](shots/standards-project.webp)
 
-Każda długość stosuje się do tego ustawienia: panele, wartości wpisywane podczas rysowania, wiersz poleceń i wymiary. Sam model jest przechowywany w metrach, więc zmiana jednostek nigdy nie zmienia budynku.
+Każda długość stosuje się do tego ustawienia: panele, wartości wpisywane podczas rysowania, wiersz poleceń i wymiary. Sam model jest przechowywany w metrach, więc zmiana jednostek nigdy nie zmienia budynku. Poziomy i osie siatki też za tym podążają.
 
 ## Zapisywanie
 

@@ -18,6 +18,8 @@ Fiecare nivel are planul lui sub **Planuri**. Dublu clic pe un plan ca să desen
 
 În secțiuni și fațade fiecare nivel e marcat în dreapta cu numele și cota lui. **Gestionare → Stiluri de obiecte → Linii ascunse** stabilește și **semnul cotei de nivel**: triunghi gol, triunghi cu jumătatea stângă neagră (cum îl desenează standardul românesc), triunghi negru sau liniuță, și mărimea lui pe hârtie.
 
+Cotele de nivel se scriu în unitățile proiectului: în metri (+3.00) într-un proiect metric, cum le scriu planșele, și în picioare și țoli (+9'-10 1/8") într-unul imperial. Le urmează browserul, caseta din stânga sus a vederii, marcajele de nivel din secțiuni și fațade și cotele de nivel.
+
 ## Nivelul de dedesubt
 
 Ca să vezi alt nivel în timp ce desenezi, alege-l în lista **Fundal** din bara planului. Planul acelui nivel se desenează dedesubt, estompat și gri. Te poți prinde (snap) de el, dar nu-l poți selecta.

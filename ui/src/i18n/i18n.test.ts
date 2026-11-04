@@ -83,7 +83,7 @@ describe('the languages', () => {
     'aligned · 4 segments',
     '12 elements',
     '2 of 3 storeys',
-    'cut at 1.20 m',
+    'cut at 1200 mm',
     'Underlay: Ground floor',
     "4 survey points imported, in the project's coordinates (Manage → Location shows its system and survey point).",
     '3 to check',
@@ -129,6 +129,7 @@ describe('the languages', () => {
     'Import chair.obj',
     'Imported chair.obj: 3 references, 1200 triangles. Select one and use Studio → Make Studio solid to edit it.',
     'Grouped 12 element(s).',
+    'POINTS · GRID 50 mm',
     'Nothing new from house.frag: its 8 elements are already in this project (the file was exported from it). Import it into another project, or a new one.',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));

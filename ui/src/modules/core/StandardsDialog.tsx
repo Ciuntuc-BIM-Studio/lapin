@@ -44,11 +44,14 @@ const TABS: Tab[] = [
     { key: 'lineType', label: 'Line', kind: 'choice', choices: LINE_TYPES }, { key: 'group', label: 'Group', kind: 'group' }, { key: 'visible', label: 'On', kind: 'bool' }, { key: 'locked', label: 'Lock', kind: 'bool' }] },
 ];
 
+/** How a tag's template reads the element (report #64), one phrase for the translations. */
+const TAG_HELP = 'A template reads the element: {mark}, {name}, {type}, {class}, any parameter by its name ({Fire rating}) or a standard one ({Pset_WallCommon.FireRating}); | starts a new line.';
+
 export function StandardsDialog() {
   const nodes = useSession((s) => s.nodes);
   const error = useSession((s) => s.error);
   const [book, setBook] = useState<Book | null>(null);
-  const [tab, setTab] = useState<Tab>(TABS[0]);
+  const [tab, setTab] = useState<Tab>(() => TABS.find((t) => t.id === standardsTab()) ?? TABS[0]);
   const [group, setGroup] = useState('');
   const [project, setProject] = useState(() => standardsTab() === 'project');
   useEffect(() => { clearStandardsTab(); }, []);
@@ -125,6 +128,7 @@ export function StandardsDialog() {
               ))}
             </tbody>
           </table>
+          {tab.id === 'tag' && <p className="muted small" data-tag-help>{TAG_HELP}</p>}
           <div className="row">
             <button type="button" className="btn" onClick={() => set({ ...tab.fresh, name: `${tab.fresh.name} ${rows.length + 1}` })}><Plus size={14} />New</button>
             {tab.id === 'layer' && (

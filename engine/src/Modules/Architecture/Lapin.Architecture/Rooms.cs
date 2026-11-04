@@ -395,7 +395,7 @@ public static class Rooms
     static ViewMark Stamp(ViewContext c, Entity room, Outline o, TagType type, TextStyle style)
     {
         var at = StampPoint(room, o);
-        var lines = TagText.Lines(type.Template, c.Model, room, Values(room, o, c.Model, c.Book.Units));
+        var lines = TagText.Lines(type.Template, c.Model, room, Values(room, o, c.Model, c.Book.Units), c.Book.Units);
         var h = style.Height * c.Mm;
         var step = h * 1.5;
         var color = o.Lost ? "#c0392b" : style.Color ?? "#000000";

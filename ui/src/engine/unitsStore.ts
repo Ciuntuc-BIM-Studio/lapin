@@ -51,6 +51,19 @@ export function formatLength(m: number, u: Unit = unit()): string {
   }
 }
 
+/**
+ * A level (metres) in the project's units (report #68): metric projects write levels in metres, as drawings do (+3.00,
+ * −0.50; ±0.00 with `zero`), imperial ones in feet and inches or inches (+10'-0", ±0"), as the engine draws them.
+ */
+export function formatLevel(z: number, u: Unit = unit(), zero = false): string {
+  if (u === 'ft-in' || u === 'in') {
+    const text = formatLength(Math.abs(z), u);
+    return text === '0"' ? '±0"' : `${z > 0 ? '+' : '−'}${text}`;
+  }
+  if (zero && Math.abs(z) < 0.005) return '±0.00';
+  return `${z >= 0 ? '+' : '−'}${Math.abs(z).toFixed(2)}`;
+}
+
 /** A length with its label: "2400 mm", "12'-3 1/2"". */
 export const lengthText = (m: number, u: Unit = unit()): string => `${formatLength(m, u)}${unitLabel(u) ? ` ${unitLabel(u)}` : ''}`;
 

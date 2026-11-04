@@ -18,6 +18,8 @@ Hvert niveau har sin egen plan under **Etageplaner**. Dobbeltklik på en plan fo
 
 I snit og facader markeres hvert niveau til højre med navn og kote. **Administrer → Objektstile → Skjulte linjer** sætter også **niveaumærket**: en åben trekant, en trekant med venstre halvdel sort (som den rumænske standard tegner den), en sort trekant eller en streg, og dens størrelse på papir.
 
+Koter skrives i projektets enheder: i meter (+3.00) i et metrisk projekt, som tegninger skriver dem, og i fod og tommer (+9'-10 1/8") i et imperialt. Browseren, boksen øverst til venstre i visningen, niveaumærkerne i snit og facader og kotemålene følger med.
+
 ## At se niveauet nedenunder
 
 Vil du se et andet niveau, mens du tegner, så vælg det under **Underlag** i planens bjælke. Det niveaus plan tegnes nedenunder, falmet og gråt. Du kan fange til det, men du kan ikke markere det.

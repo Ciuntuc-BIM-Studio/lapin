@@ -17,8 +17,9 @@ import { useState, type DragEvent, type MouseEvent } from 'react';
 import { activeStorey, useSession } from '../engine/session';
 import { num } from '../engine/model';
 import { ScopeBar } from './ScopeBar';
+import { formatLevel, lengthText, useStandards } from '../engine/unitsStore';
 
-const level = (e: number) => `${e >= 0 ? '+' : '−'}${Math.abs(e).toFixed(2)}`;
+const level = (e: number) => formatLevel(e);
 
 /** What the active tool asks for, when it is a two-point or a pick-then-point tool; null otherwise. */
 export function toolHint(tool: string | null): string | null {
@@ -36,13 +37,14 @@ export function useHudFacts() {
   const view = useUi((s) => s.view);
   useUi((s) => s.storeyId);
   useSession((s) => s.nodes);
+  useStandards((s) => s.units);
   const storey = activeStorey();
   const active = findTool(tool);
   return {
     mode: active ? active.label.toUpperCase() : 'SELECT',
     level: (storey?.name ?? '—').toUpperCase(), elevation: level(num(storey ?? undefined, 'elevation')),
     view: view === 'plan' ? 'PLAN' : view === 'drawing' ? 'DRAWING' : view === 'sheet' ? 'SHEET' : view === 'schedule' ? 'SCHEDULE' : '3D · SHADED',
-    snap: 'POINTS · GRID 0.05 m',
+    snap: `POINTS · GRID ${lengthText(0.05)}`,
   };
 }
 

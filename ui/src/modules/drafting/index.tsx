@@ -1,6 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags } from 'lucide-react';
+import { ArrowRightToLine, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2 } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
@@ -17,6 +17,10 @@ import { LayersDialog } from './LayersDialog';
 import { frontView } from '../../viewport/frontView';
 import { BoundarySection, boundaryGrips, viewBoundary } from './ViewBoundary';
 import { xy } from '../../platform/vec';
+import { GridDialog, GridSection } from './GridDialog';
+import { openStandards } from '../core/standardsTab';
+import { formatLength, formatLevel } from '../../engine/unitsStore';
+import { TagOptions, tagCommand, tagGrips, useTagPrefs } from './tag';
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string, one object. Points on an element's cut edge, a grid axis or a wall's centre line follow it. */
 const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG']);
@@ -31,12 +35,25 @@ const text: ToolDef = {
     if (body?.trim()) await ctx.execute('drafting.addText', { viewId: ctx.viewId, at: [p.x, p.y], text: body.trim() });
   },
 };
-/** A grid axis: its two ends; it takes the next label of its direction. */
+/** A grid axis: its two ends; it takes the next label of its direction. Its bar: the whole grid's dialog and the axis types (report #68). */
 const axis: ToolDef = {
   id: 'drafting.axis', label: 'Grid axis', icon: GridAxisIcon, shortcut: 'GR',
   gesture: { kind: 'twoPoints' },
   complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('drafting.addAxis', { x1: a.x, y1: a.y, x2: b.x, y2: b.y }); },
+  options: AxisOptions,
 };
+/** A whole grid from its spacings (report #68). */
+const gridTool: ToolDef = { id: 'drafting.grid', label: 'Axis grid…', icon: Grid3x3, run: () => useUi.setState({ dialog: 'grid' }) };
+/** How axes look: Drafting standards → Grid axes. */
+const axisStylesTool: ToolDef = { id: 'drafting.axisStyles', label: 'Axis styles…', icon: Settings2, run: () => openStandards('axis') };
+function AxisOptions() {
+  return (
+    <>
+      <button type="button" className="cad-toggle" data-axis-grid title="A whole grid from its spacings" onClick={() => useUi.setState({ dialog: 'grid' })}>AXIS GRID…</button>
+      <button type="button" className="cad-toggle" title="How axes look: bubbles, ends, size, line type, the first label" onClick={() => openStandards('axis')}>AXIS STYLES…</button>
+    </>
+  );
+}
 
 /**
  * DIM (aligned) and DLI (linear: horizontal or vertical, by where its line
@@ -168,25 +185,7 @@ function dimDelCommand(): Step {
 }
 registerCommand({ names: ['DIMDEL', 'DRP'], label: 'Remove dimension points', start: dimDelCommand });
 
-/** TAG: click an element, then where its tag goes [MARK/NAME/CLASS/TYPE]. */
-let tagField = 'mark';
-function tagCommand(): Step {
-  const pick = (): Step => ({
-    prompt: `Click the element to tag [${tagField.toUpperCase()}: MARK/NAME/CLASS/TYPE]`, want: 'select',
-    keywords: Object.fromEntries(['MARK', 'NAME', 'CLASS', 'TYPE'].map((k) => [k, () => { tagField = k.toLowerCase(); return pick(); }])),
-    point: (p) => {
-      const id = cadHost()?.pickAny(p);
-      if (!id || id.includes('#')) return pick();
-      return {
-        prompt: 'Where the tag goes', want: 'point', base: p, preview: (c) => [{ type: 'line', a: p, b: c }],
-        point: async (at) => { const h = cadHost(); if (h) await execute('drafting.addTag', { viewId: h.viewId, element: id, field: tagField, at: [at.x, at.y] }); return pick(); },
-      };
-    },
-    enter: () => null,
-  });
-  return pick();
-}
-registerCommand({ names: ['TAG', 'TG'], label: 'Tag', start: tagCommand });
+registerCommand({ names: ['TAG', 'TG'], label: 'Tag', start: tagCommand, options: TagOptions });
 /**
  * Rooms' interior dimensions (decision 249): on a plan, an aligned string inside each room along each of its sides, its
  * points at the corners and at the doors' and windows' jambs, held on the walls. The selected rooms, or every room of the
@@ -283,7 +282,7 @@ function levelCommand(): Step {
     point: (a) => {
       let z: number | null = null;
       const side = (): Step => ({
-        prompt: `Which side the text goes${z != null ? ` (level ${z} m)` : ' (type a level to write it)'}`, want: 'point', base: a,
+        prompt: `Which side the text goes${z != null ? ` (level ${formatLevel(z)})` : ' (type a level to write it)'}`, want: 'point', base: a,
         value: (v) => { z = v; return side(); },
         point: (at) => addKind('level', { a: pair(a), at: pair(at), ...(z != null ? { z } : {}) }),
       });
@@ -296,7 +295,7 @@ const ordinate = { origin: { x: 0, y: 0 } as Vec2 };
 function ordinateCommand(): Step {
   let axis: 'x' | 'y' = 'x';
   const step = (): Step => ({
-    prompt: `The point [X/Y: ${axis}; Origin at ${ordinate.origin.x}, ${ordinate.origin.y}]`, want: 'point',
+    prompt: `The point [X/Y: ${axis}; Origin at ${formatLength(ordinate.origin.x)}, ${formatLength(ordinate.origin.y)}]`, want: 'point',
     keywords: { X: () => { axis = 'x'; return step(); }, Y: () => { axis = 'y'; return step(); }, O: () => ({ prompt: 'The origin', want: 'point', point: (o) => { ordinate.origin = o; return step(); } }) },
     point: (a) => ({ prompt: 'Where the leader ends', want: 'point', base: a, preview: (q) => [{ type: 'line', a, b: q }], point: (at) => addKind('ordinate', { a: pair(a), at: pair(at), axis, o: pair(ordinate.origin) }) }),
   });
@@ -499,8 +498,8 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
   return grips.map((g) => ({ ...g, view: viewId }));
 }
 
-/** An annotation's grips: a drafted shape's, a dimension string's. */
-const annotationGrips = (node: NodeDto, view?: GripView): Grip[] => [...draftGrips(node), ...dimensionGrips(node, view)];
+/** An annotation's grips: a drafted shape's, a dimension string's, a tag's. */
+const annotationGrips = (node: NodeDto, view?: GripView): Grip[] => [...draftGrips(node), ...dimensionGrips(node, view), ...tagGrips(node, view)];
 
 /** A grid's axes: each axis's ends and middle (keys "<tag>:start"…), shown when that axis is selected (grid#tag). */
 function gridGrips(node: NodeDto): Grip[] {
@@ -513,6 +512,18 @@ function gridGrips(node: NodeDto): Grip[] {
 }
 const gridRefs = (node: NodeDto): RefLine[] => ((node.props.axes as { tag: string; a: number[]; b: number[] }[] | undefined) ?? [])
   .flatMap((ax) => { const a = pt(ax.a), b = pt(ax.b); return a && b ? [{ ...axisRef(a, b), tag: ax.tag }] : []; });
+
+/** Tag a parameter (report #64): TAG showing one the user names (Fire rating, Pset_WallCommon.FireRating); the bar under the view changes it. */
+const tagParameter: ToolDef = {
+  id: 'drafting.tagParameter', label: 'Tag a parameter', icon: Tag,
+  run: () => {
+    const f = window.prompt('The parameter to show: its name (Fire rating) or a standard one (Pset_WallCommon.FireRating)', useTagPrefs.getState().field === 'mark' ? 'FireRating' : useTagPrefs.getState().field);
+    const field = f?.trim().replace(/^\{|\}$/g, '').trim();
+    if (!field) return;
+    useTagPrefs.setState({ field, tagType: '' });
+    void startCommand('TAG');
+  },
+};
 
 const drafting: LapinModule = {
   id: 'drafting',
@@ -537,7 +548,7 @@ const drafting: LapinModule = {
         { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR'), roomDimensions],
           // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
           small: [cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimDel', 'Remove points', ListMinus, 'DIMDEL'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE')] },
-        { label: 'Text', tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
+        { label: 'Text', small: [tagParameter], tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
           id: 'tagOpenings', label: 'Door & window tags', icon: Tags,
           run: () => void (async () => {
             // Every door and window of the plan's storey not tagged yet: a marker across its wall (Drafting standards → Tags).
@@ -548,7 +559,7 @@ const drafting: LapinModule = {
             if (r) notify(r.tagged ? `${r.tagged} doors and windows tagged.` : 'Every door and window here has its tag already.');
           })(),
         }] },
-        { label: 'Datum', tools: [
+        { label: 'Datum', small: [gridTool, axisStylesTool], tools: [
           axis,
           { id: 'level', label: 'Level', icon: LevelIcon, shortcut: 'LL', run: () => void startCommand('DIMLEVEL') },
         ] },
@@ -557,12 +568,13 @@ const drafting: LapinModule = {
     },
   ],
   hotbar: [dimension],
-  dialogs: { draftLayers: LayersDialog, importDxf: ImportDxfDialog },
+  dialogs: { draftLayers: LayersDialog, importDxf: ImportDxfDialog, grid: GridDialog },
   propertySections: [
     // The drafted kinds show their own fields (a line its ends, a circle its radius), so the class's generic ones stay out.
     { id: 'draft', label: 'Drafting', classes: ['IfcAnnotation'], component: DraftSection, replacesFields: draftsFields },
     { id: 'dimension', label: 'Dimension', classes: ['IfcAnnotation'], component: DimensionSection },
     { id: 'viewBoundary', label: 'View boundary', classes: ['LapinViewBoundary'], component: BoundarySection },
+    { id: 'grid', label: 'Axes', classes: ['IfcGrid'], component: GridSection },
   ],
   grips: { IfcAnnotation: annotationGrips, IfcGrid: gridGrips, LapinViewBoundary: boundaryGrips },
   references: { IfcGrid: gridRefs },

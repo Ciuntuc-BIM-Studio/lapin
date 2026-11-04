@@ -8,7 +8,7 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Survey, SurveyGroup } from '../../engine/ifcImport';
-import { toggle } from './format';
+import { level, toggle } from './format';
 
 /** A checkbox showing all, none or some of its rows. */
 function Tri({ on, some, onChange, label }: { on: boolean; some: boolean; onChange: (on: boolean) => void; label: string }) {
@@ -91,7 +91,7 @@ export function SurveyChoice({ survey, whatLabel, offKinds, setOffKinds, offStor
             <li key={s.id} className="import-row">
               <label>
                 <input type="checkbox" checked={!offStoreys.has(s.id)} onChange={(e) => setOffStoreys(toggle(offStoreys, [s.id], e.target.checked))} />
-                <span data-no-i18n>{s.name}</span> <span className="muted small">{s.elevation >= 0 ? '+' : ''}{s.elevation.toFixed(2)}</span>
+                <span data-no-i18n>{s.name}</span> <span className="muted small" data-no-i18n>{level(s.elevation)}</span>
               </label>
               <span className="grow" /><span className="num muted">{s.count}</span>
             </li>

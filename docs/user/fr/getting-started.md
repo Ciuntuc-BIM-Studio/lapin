@@ -42,7 +42,7 @@ Lapin travaille en millimètres, sauf si vous choisissez autre chose. Pour chang
 
 ![Normes de dessin, onglet Projet : les unités du projet](shots/standards-project.webp)
 
-Chaque longueur suit ce réglage : les panneaux, les valeurs que vous tapez en dessinant, la ligne de commande et les cotes. Le modèle lui-même est conservé en mètres, si bien que changer d’unités ne modifie jamais votre bâtiment.
+Chaque longueur suit ce réglage : les panneaux, les valeurs que vous tapez en dessinant, la ligne de commande et les cotes. Le modèle lui-même est conservé en mètres, si bien que changer d’unités ne modifie jamais votre bâtiment. Les niveaux et les axes du quadrillage la suivent aussi.
 
 ## Enregistrer
 

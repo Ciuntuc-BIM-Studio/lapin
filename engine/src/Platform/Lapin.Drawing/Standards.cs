@@ -137,13 +137,18 @@ public static class Standards
     /// <summary>
     /// The tag types a project starts with: a door's and a window's marker,
     /// the mark at the exterior end, width/height (and a window's sill
-    /// height) at the interior end, in centimetres.
+    /// height) at the interior end, in centimetres; a room's stamp; boxes for
+    /// the fire and acoustic ratings and the thermal transmittance.
     /// </summary>
     public static readonly IReadOnlyList<TagType> DefaultTagTypes =
     [
         new("door", "Door marker", "{mark}", ["IfcDoor"], "opening", "{width}/{height}"),
         new("window", "Window marker", "{mark}", ["IfcWindow"], "opening", "{width}/{height}|sill {sill}"),
         DefaultRoomTag,
+        // Boxes any element can take (report #64): a parameter read by its name, the user's own ("Fire rating") or a standard set's.
+        new("fire", "Fire rating", "{FireRating}", []),
+        new("acoustic", "Acoustic rating", "{AcousticRating}", []),
+        new("thermal", "Thermal transmittance", "U = {ThermalTransmittance}", []),
     ];
 
     /// <summary>A tag's type: the one it names, else the first that tags its element's class; null when none does.</summary>
@@ -258,6 +263,20 @@ public static class Standards
         var r = Math.Round(z, 2);
         if (Math.Abs(r) < 0.005) return "±0.00";
         return (r > 0 ? "+" : "\u2212") + Math.Abs(r).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>Whether a unit is feet and inches or inches.</summary>
+    public static bool IsImperial(string unit) => unit is "ft-in" or "in";
+
+    /// <summary>
+    /// A level in the project's units (report #68): metric projects write levels in metres as drawings do (±0.00, +3.06);
+    /// imperial ones in feet and inches or inches, to 1/16" (±0", +9'-10 1/8", −1'-3 3/4").
+    /// </summary>
+    public static string FormatLevel(double z, string units)
+    {
+        if (!IsImperial(units)) return FormatLevel(z);
+        var text = FormatImperial(Math.Abs(z), units == "ft-in", 2);
+        return text is "0\"" ? "±0\"" : (z > 0 ? "+" : "\u2212") + text;
     }
 
     /// <summary>Text reads left to right, and bottom to top when it runs vertically: a screen angle (°, y down) folded into [−90°, 90°).</summary>

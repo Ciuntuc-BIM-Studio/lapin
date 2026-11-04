@@ -7,16 +7,18 @@
 import { useEffect, useState } from 'react';
 import { engine, useSession } from '../engine/session';
 import type { NodeDto } from '../engine/protocol';
+import { lengthText, useStandards } from '../engine/unitsStore';
 
 interface Quantity { name: string; value: number; kind: string; label?: string | null; unit: string }
 interface QuantitySet { name: string; quantities: Quantity[]; part?: string | null; partName?: string | null; material?: string | null }
 
 const SHOWN = new Set(['Length', 'Height', 'Width', 'NetSideArea', 'NetVolume', 'BlockCount', 'MortarVolume', 'ReinforcementWeight', 'CrossSectionArea', 'NetFloorArea', 'GrossPerimeter']);
 
-const format = (q: Quantity) => q.kind === 'COUNT' ? `${Math.round(q.value)} ${q.unit}` : q.kind === 'LENGTH' ? `${Math.round(q.value * 1000)} mm` : `${q.value.toFixed(q.kind === 'WEIGHT' ? 1 : 3)} ${q.unit}`;
+const format = (q: Quantity) => q.kind === 'COUNT' ? `${Math.round(q.value)} ${q.unit}` : q.kind === 'LENGTH' ? lengthText(q.value) : `${q.value.toFixed(q.kind === 'WEIGHT' ? 1 : 3)} ${q.unit}`;
 
 export function QuantitiesSection({ node }: { node: NodeDto }) {
   const version = useSession((s) => s.version);
+  useStandards((s) => s.units);
   const [sets, setSets] = useState<QuantitySet[]>([]);
   useEffect(() => {
     let live = true;

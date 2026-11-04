@@ -66,4 +66,32 @@ O cotă aliniată sau liniară continuă ca lanț: după primele două puncte ș
 
 Adnotările de pe un plan (cote, texte, linii desenate, etichete) pot trece pe alt plan, în același loc, pentru că planurile au aceleași coordonate: selectează-le și alege planul în proprietăți, la **View** ca să le muți sau la **Copy to** ca să le copiezi. Așa ajung și cotele făcute pe o planimetrie pe planul nivelului. Punctele unei cote se agață apoi de ce taie noul plan în acel loc: pereți, muchii, axe.
 
+### Etichete
+
+**Adnotări → Etichetă** (<kbd>TG</kbd>) pune pe o vedere o casetă cu ce spune un element despre el, cu o linie de indicație până la el. Cât timp unealta e pornită, bara de sub vedere alege ce arată eticheta: marca, numele, clasa sau tipul, **Rezistență la foc**, **Izolare acustică**, **Transmitanță termică** sau **Alt parametru…** după nume; ori un tip de etichetă din standardele de desen; iar **INDICAȚIE** pornește sau oprește linia de indicație. Dă clic pe element, apoi unde merge eticheta (tastează întâi **E** ca să frângi linia într-un cot). **Adnotări → Etichetează un parametru** cere numele parametrului și pornește unealta cu el.
+
+![Bara uneltei Etichetă sub vedere](shots/tag-options.webp)
+
+O etichetă citește orice parametru: al elementului, al tipului lui (atunci îl arată toate elementele tipului), o proprietate standard ca `Pset_WallCommon.FireRating` sau una cu care a venit un element importat. Numele se găsește și fără spații, deci **Fire rating** și `FireRating` sunt același. Ca să-l completezi, folosește **Parametri** în proprietățile elementului sau ale tipului: scrie un nume (îți sunt propuse Fire rating, Sound rating, Moisture resistance și Thermal resistance) sau alege **Adaugă o proprietate standard…** pentru proprietățile IFC ale clasei lui. Eticheta urmează de îndată ce există o valoare, iar lungimile se scriu în unitățile proiectului.
+
+O etichetă selectată are mânere. Trage de casetă ca s-o muți: linia de indicație arată în continuare unde arăta. Trage de mijlocul liniei ca s-o frângi într-un cot (Ctrl/⌘-clic pe cot o îndreaptă din nou) și de capătul ei ca s-o îndrepți spre alt punct (Ctrl/⌘-clic: înapoi pe mijlocul elementului). În proprietăți schimbi ce **Arată** eticheta, îi dai un **Text** propriu (`{mark}|{FireRating}` scrie două rânduri), un **Tip de etichetă**, sau oprești **Linia de indicație**. Etichetele le desenează motorul, așa că planșele și PDF-urile le tipăresc cum le vezi. Tipurile de etichetă din **Gestionare → Standarde de desen → Etichete** citesc aceleași câmpuri în șabloanele lor; un proiect nou are printre ele Rezistență la foc, Izolare acustică și Transmitanță termică.
+
+![Linia de indicație a unei etichete frântă în cot, cu mânerele ei](shots/tag-leader.webp)
+
+![Proprietățile unei etichete](shots/tag-properties.webp)
+
+### Axe
+
+**Adnotări → Axă** (<kbd>GR</kbd>) desenează o axă după cele două capete; ia următoarea etichetă a direcției ei. **Adnotări → Rețea de axe…** pune o rețea întreagă dintr-odată: distanțele pe **Transversal** (axele numerotate, de la stânga la dreapta) și pe **Longitudinal** (axele cu litere, de jos în sus), în unitățile proiectului, ca `6000 6000 4500` sau `3*6000`; **Originea** unde se intersectează primele axe, un **Unghi**, cât trec axele **Dincolo de rețea**, **Primele etichete** și **Tipul de axă**. Cu **înlocuiește axele rețelei** bifat, axele desenate până atunci dispar.
+
+![Dialogul Rețea de axe](shots/grid-dialog.webp)
+
+Dă clic pe o axă ca s-o selectezi. Proprietățile ei arată **Începutul** și **Sfârșitul**, **Lungimea**, **Unghiul** și distanța față de axa paralelă dinaintea ei (↔). Scrie o distanță nouă și axa se mută; se mută și axele de după ea, dacă nu debifezi **se mută și axele de după ea**. **Buline** alege capetele care au bulină. **Stiluri de axe…** deschide **Standarde de desen → Axe**, unde se stabilesc bulina, mărimea ei, tipul de linie și prima etichetă. Selectează toată rețeaua ca să vezi axele și distanțele dintre ele.
+
+![Proprietățile unei axe](shots/axis-properties.webp)
+
+Toate lungimile de aici urmează unitățile proiectului. În picioare și țoli, capetele și distanțele se citesc 19'-8 1/4", iar nivelurile se scriu tot în picioare și țoli.
+
+![Aceeași axă în picioare și țoli](shots/axis-properties-imperial.webp)
+
 ![Tabul Adnotări](shots/ribbon-annotate.webp)

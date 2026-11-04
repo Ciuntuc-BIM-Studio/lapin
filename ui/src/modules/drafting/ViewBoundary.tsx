@@ -10,6 +10,7 @@ import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import type { Grip, ToolDef, Vec2 } from '../../platform/module';
 import { pt } from '../../viewport/gripKit';
+import { lengthText } from '../../engine/unitsStore';
 
 export const viewBoundary: ToolDef = {
   id: 'drafting.viewBoundary', label: 'View boundary', icon: SquareDashed, shortcut: 'VB',
@@ -56,7 +57,7 @@ export function BoundarySection({ node }: { node: NodeDto }) {
     <dl className="fields">
       <dt>Name</dt>
       <dd><input className="cell" value={name} disabled={!node.editable} onChange={(e) => setName(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); }} /></dd>
-      {a && b && <><dt>Size</dt><dd className="num">{`${Math.abs(b.x - a.x).toFixed(2)} × ${Math.abs(b.y - a.y).toFixed(2)} m`}</dd></>}
+      {a && b && <><dt>Size</dt><dd className="num">{`${lengthText(Math.abs(b.x - a.x))} × ${lengthText(Math.abs(b.y - a.y))}`}</dd></>}
       <dt>On sheets</dt>
       <dd>{sheets.length ? sheets.map((s) => `${String(s.props.number ?? '')} ${s.name}`.trim()).join(', ') : '—'}</dd>
     </dl>

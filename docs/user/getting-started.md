@@ -42,7 +42,7 @@ Lapin works in millimetres unless you choose otherwise. To change the units, ope
 
 ![Drafting standards, Project tab: the project's units](shots/standards-project.webp)
 
-Every length follows this setting: the panels, the values you type while drawing, the command line and the dimensions. The model itself is kept in metres, so changing the units never changes your building.
+Every length follows this setting: the panels, the values you type while drawing, the command line and the dimensions. The model itself is kept in metres, so changing the units never changes your building. Levels and grid axes follow it too.
 
 ## Saving
 

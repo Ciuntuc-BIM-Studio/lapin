@@ -42,7 +42,7 @@ Lapin trabaja en milímetros, salvo que usted elija otra cosa. Para cambiar las 
 
 ![Normas de dibujo, ficha Proyecto: las unidades del proyecto](shots/standards-project.webp)
 
-Todas las longitudes siguen este ajuste: los paneles, los valores que escribe mientras dibuja, la línea de comandos y las cotas. El modelo en sí se guarda en metros, así que cambiar las unidades nunca cambia su edificio.
+Todas las longitudes siguen este ajuste: los paneles, los valores que escribe mientras dibuja, la línea de comandos y las cotas. El modelo en sí se guarda en metros, así que cambiar las unidades nunca cambia su edificio. Los niveles y los ejes de rejilla también la siguen.
 
 ## Guardar
 

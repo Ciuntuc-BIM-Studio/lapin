@@ -18,6 +18,8 @@ Cada nível tem a sua própria planta em **Plantas**. Clique duas vezes em uma p
 
 Nos cortes e nas elevações, cada nível é marcado à direita com o seu nome e a sua cota. **Gerenciar → Estilos de objeto → Linhas ocultas** também define o **marcador de nível**: um triângulo vazado, um triângulo com a metade esquerda preta (como a norma romena o desenha), um triângulo preto ou um traço, e o seu tamanho no papel.
 
+As cotas de nível são escritas nas unidades do projeto: em metros (+3.00) num projeto métrico, como os desenhos as escrevem, e em pés e polegadas (+9'-10 1/8") num imperial. Seguem-nas o navegador, a caixa no canto superior esquerdo da vista, as marcas de nível em cortes e alçados e as cotas de nível.
+
 ## Ver o nível de baixo
 
 Para ver outro nível enquanto desenha, escolha-o em **Subjacente** na barra da planta. A planta desse nível é desenhada por baixo, esmaecida e cinza. Você pode usar o snap nela, mas não pode selecioná-la.

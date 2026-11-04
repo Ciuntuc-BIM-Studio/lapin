@@ -24,10 +24,12 @@ import { Catalog } from './Catalog';
 import { useSectionBox } from '../viewport/sectionBox';
 import { createSiteView, SITE_PURPOSES, type SitePurpose } from '../modules/core/SitePlans';
 import { countOpen } from '../modules/core/cde/pdfRemarks/remarks';
+import { formatLevel, useStandards } from '../engine/unitsStore';
 
 const TAB_KEY = 'lapin.browser.tab';
 
-const level = (e: number) => `${e >= 0 ? '+' : '−'}${Math.abs(e).toFixed(2)}`;
+/** A level's elevation in the project's units (report #68). */
+const level = (e: number) => formatLevel(e);
 const COLLAPSED_KEY = 'lapin.browser.collapsed';
 
 function loadCollapsed(): Set<string> {
@@ -44,6 +46,7 @@ const made = (r: unknown): string | null => (r as { id?: string } | null)?.id ??
 
 /** `show`: a folded browser opened over the view on one of its parts (the rail's icons): the project, its levels alone, or the IFC tree. */
 export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' } = {}) {
+  useStandards((s) => s.units);
   const view = useUi((s) => s.view);
   useUi((s) => s.storeyId);
   const nodes = useSession((s) => s.nodes);

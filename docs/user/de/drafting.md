@@ -62,4 +62,32 @@ Eine ausgerichtete oder lineare Bemaßung entsteht als Kette: Nach den ersten be
 
 Beschriftungen eines Grundrisses (Bemaßungen, Texte, gezeichnete Linien, Tags) können an derselben Stelle in einen anderen Grundriss gehen, da Grundrisse dieselben Koordinaten haben: wähle sie aus und wähle den Grundriss in ihren Eigenschaften, unter **View** zum Verschieben oder **Copy to** zum Kopieren. So kommen auch Bemaßungen aus einem Lageplan in den Grundriss der Ebene. Die Punkte einer Bemaßung halten sich dann an das, was der neue Grundriss dort schneidet: Wände, Kanten, Achsen.
 
+### Beschriftungen
+
+**Beschriften → Beschriftung** (<kbd>TG</kbd>) setzt in eine Ansicht einen Kasten mit dem, was ein Element über sich sagt, und eine Hinweislinie zu ihm. Solange das Werkzeug aktiv ist, wählt die Leiste unter der Ansicht, was die Beschriftung zeigt: die Marke, den Namen, die Klasse oder den Typ, **Feuerwiderstand**, **Schallschutz**, **Wärmedurchgangskoeffizient** oder **Anderer Parameter…** nach seinem Namen; oder einen Beschriftungstyp der Zeichnungsstandards; und **HINWEISLINIE** schaltet die Hinweislinie ein oder aus. Klicken Sie auf das Element, dann dorthin, wo die Beschriftung hin soll (tippen Sie vorher **E**, um die Linie in einem Knick abzuwinkeln). **Beschriften → Parameter beschriften** fragt nach dem Namen des Parameters und startet das Werkzeug damit.
+
+![Die Leiste des Werkzeugs Beschriftung unter der Ansicht](shots/tag-options.webp)
+
+Eine Beschriftung liest jeden Parameter: den des Elements, den seines Typs (dann zeigen ihn alle Elemente des Typs), eine Standardeigenschaft wie `Pset_WallCommon.FireRating` oder eine, mit der ein importiertes Element kam. Ein Name wird auch ohne Leerzeichen gefunden, **Fire rating** und `FireRating` sind also dasselbe. Zum Ausfüllen dient **Parameter** in den Eigenschaften des Elements oder seines Typs: Geben Sie einen Namen ein (angeboten werden Fire rating, Sound rating, Moisture resistance und Thermal resistance) oder wählen Sie **Standardeigenschaft hinzufügen…** für die IFC-Eigenschaften seiner Klasse. Die Beschriftung folgt, sobald es einen Wert gibt, und Längen werden in den Einheiten des Projekts geschrieben.
+
+Eine ausgewählte Beschriftung hat Griffe. Ziehen Sie den Kasten, um die Beschriftung zu verschieben: Die Hinweislinie zeigt weiter dorthin, wohin sie zeigte. Ziehen Sie die Mitte der Linie, um sie in einem Knick abzuwinkeln (Strg/⌘-Klick auf den Knick macht sie wieder gerade), und ihr Ende, um sie auf einen anderen Punkt zeigen zu lassen (Strg/⌘-Klick: zurück zur Mitte des Elements). In den Eigenschaften ändern Sie, was die Beschriftung **Zeigt**, geben ihr einen eigenen **Text** (`{mark}|{FireRating}` schreibt zwei Zeilen), einen **Beschriftungstyp**, oder schalten die **Hinweislinie** aus. Die Engine zeichnet die Beschriftungen, Pläne und PDFs drucken sie also so, wie Sie sie sehen. Die Beschriftungstypen unter **Verwalten → Zeichnungsstandards → Beschriftungen** lesen dieselben Felder in ihren Vorlagen; ein neues Projekt hat darunter Feuerwiderstand, Schallschutz und Wärmedurchgangskoeffizient.
+
+![Die Hinweislinie einer Beschriftung mit Knick und ihren Griffen](shots/tag-leader.webp)
+
+![Die Eigenschaften einer Beschriftung](shots/tag-properties.webp)
+
+### Rasterachsen
+
+**Beschriften → Rasterachse** (<kbd>GR</kbd>) zeichnet eine Achse über ihre beiden Enden; sie erhält die nächste Bezeichnung ihrer Richtung. **Beschriften → Achsraster…** legt ein ganzes Raster auf einmal an: die Abstände **Quer** (die nummerierten Achsen, von links nach rechts) und **Längs** (die Achsen mit Buchstaben, von unten nach oben) in den Einheiten des Projekts, etwa `6000 6000 4500` oder `3*6000`; den **Ursprung**, wo sich die ersten Achsen kreuzen, einen **Winkel**, wie weit die Achsen **Über das Raster hinaus** laufen, die **Ersten Bezeichnungen** und den **Achstyp**. Mit **die Achsen des Rasters ersetzen** entfallen die bisher gezeichneten Achsen.
+
+![Der Dialog Achsraster](shots/grid-dialog.webp)
+
+Klicken Sie auf eine Achse, um sie auszuwählen. Ihre Eigenschaften zeigen **Anfang** und **Ende**, **Länge**, **Winkel** und den Abstand von der parallelen Achse davor (↔). Geben Sie einen neuen Abstand ein, und die Achse rückt; die Achsen dahinter rücken mit, außer Sie deaktivieren **die Achsen dahinter bewegen sich mit**. **Achsköpfe** wählt, welche Enden einen Achskopf tragen. **Achsstile…** öffnet **Zeichnungsstandards → Rasterachsen**, wo Achskopf, Größe, Linientyp und erste Bezeichnung eingestellt werden. Wählen Sie das ganze Raster, um seine Achsen und ihre Abstände zu sehen.
+
+![Die Eigenschaften einer Rasterachse](shots/axis-properties.webp)
+
+Alle Längen hier folgen den Einheiten des Projekts. In Fuß und Zoll lauten Enden und Abstände 19'-8 1/4", und auch die Ebenen werden in Fuß und Zoll geschrieben.
+
+![Dieselbe Achse in Fuß und Zoll](shots/axis-properties-imperial.webp)
+
 ![Die Registerkarte Beschriften](shots/ribbon-annotate.webp)

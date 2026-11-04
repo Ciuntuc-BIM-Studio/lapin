@@ -18,6 +18,8 @@ Każdy poziom ma własny rzut w grupie **Rzuty**. Kliknij dwukrotnie rzut, aby r
 
 Na przekrojach i elewacjach każdy poziom jest oznaczony po prawej stronie swoją nazwą i rzędną. **Zarządzaj → Style obiektów → Linie ukryte** ustawia też **znacznik poziomu**: pusty trójkąt, trójkąt z zaczernioną lewą połową (tak jak rysuje go norma rumuńska), czarny trójkąt lub kreskę, oraz jego wielkość na papierze.
 
+Rzędne są zapisywane w jednostkach projektu: w metrach (+3.00) w projekcie metrycznym, tak jak zapisują je rysunki, i w stopach i calach (+9'-10 1/8") w imperialnym. Podążają za tym przeglądarka, ramka w lewym górnym rogu widoku, znaczniki poziomów w przekrojach i elewacjach oraz wymiary rzędnych.
+
 ## Widok poziomu poniżej
 
 Aby widzieć inny poziom podczas rysowania, wybierz go w polu **Podkład** na pasku rzutu. Rzut tego poziomu jest rysowany pod spodem, wyblakły i szary. Możesz się do niego przyciągać, ale nie możesz go zaznaczyć.

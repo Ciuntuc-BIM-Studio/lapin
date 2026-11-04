@@ -18,6 +18,8 @@ Ogni livello ha la sua pianta in **Piante**. Fai doppio clic su una pianta per d
 
 Nelle sezioni e nei prospetti ogni livello è segnato a destra con il suo nome e la sua quota. **Gestisci → Stili oggetto → Linee nascoste** imposta anche il **simbolo di livello**: un triangolo vuoto, un triangolo con la metà sinistra nera (come lo disegna la norma rumena), un triangolo nero o un trattino, e la sua dimensione sulla carta.
 
+Le quote di livello si scrivono nelle unità del progetto: in metri (+3.00) in un progetto metrico, come le scrivono i disegni, e in piedi e pollici (+9'-10 1/8") in uno imperiale. Le seguono il browser, il riquadro in alto a sinistra della vista, i simboli di livello nelle sezioni e nei prospetti e le quote di livello.
+
 ## Vedere il livello sottostante
 
 Per vedere un altro livello mentre disegni, sceglilo in **Sottostante** nella barra della pianta. La pianta di quel livello è disegnata sotto, sbiadita e grigia. Puoi fare snap su di essa, ma non puoi selezionarla.

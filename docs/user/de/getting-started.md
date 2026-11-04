@@ -42,7 +42,7 @@ Lapin arbeitet in Millimetern, sofern Sie nichts anderes wählen. Um die Einheit
 
 ![Zeichnungsstandards, Registerkarte Projekt: die Einheiten des Projekts](shots/standards-project.webp)
 
-Jede Länge folgt dieser Einstellung: die Bereiche, die Werte, die Sie beim Zeichnen eingeben, die Befehlszeile und die Bemaßungen. Das Modell selbst wird in Metern geführt, sodass eine Änderung der Einheiten Ihr Gebäude nie verändert.
+Jede Länge folgt dieser Einstellung: die Bereiche, die Werte, die Sie beim Zeichnen eingeben, die Befehlszeile und die Bemaßungen. Das Modell selbst wird in Metern geführt, sodass eine Änderung der Einheiten Ihr Gebäude nie verändert. Ebenen und Rasterachsen folgen ihr ebenfalls.
 
 ## Speichern
 

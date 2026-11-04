@@ -796,7 +796,7 @@ public static class Views
                     case "half": mk.Fills.Add(([new[] { apex, left, mid }], ink)); mk.Polyline([apex, left, right], true, "LEVEL", Pens.Default.Seen, ink); mk.Line(apex, mid, "LEVEL", Pens.Default.Seen, ink); break;
                     default: mk.Polyline([apex, left, right], true, "LEVEL", Pens.Default.Seen, ink); break;
                 }
-                mk.Text(new PenText(new Vec2(x1 + w + 1.0 * c.Mm, y + t * 0.2), $"{storey.Name} {(z >= 0 ? "+" : "−")}{Math.Abs(z):0.00}", text.Height, Anchor: "start", Font: text.Font), "#555555");
+                mk.Text(new PenText(new Vec2(x1 + w + 1.0 * c.Mm, y + t * 0.2), $"{storey.Name} {(Standards.IsImperial(c.Book.Units) ? Standards.FormatLevel(z, c.Book.Units) : $"{(z >= 0 ? "+" : "−")}{Math.Abs(z):0.00}")}", text.Height, Anchor: "start", Font: text.Font), "#555555");
                 yield return mk;
             }
         }

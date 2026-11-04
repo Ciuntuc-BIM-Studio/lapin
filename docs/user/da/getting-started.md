@@ -42,7 +42,7 @@ Lapin arbejder i millimeter, medmindre du vælger andet. Du skifter enhederne un
 
 ![Tegningsstandarder, fanen Projekt: projektets enheder](shots/standards-project.webp)
 
-Alle længder følger denne indstilling: panelerne, de værdier du skriver, mens du tegner, kommandolinjen og målene. Selve modellen gemmes i meter, så et skift af enheder ændrer aldrig din bygning.
+Alle længder følger denne indstilling: panelerne, de værdier du skriver, mens du tegner, kommandolinjen og målene. Selve modellen gemmes i meter, så et skift af enheder ændrer aldrig din bygning. Niveauer og modullinjer følger den også.
 
 ## At gemme
 

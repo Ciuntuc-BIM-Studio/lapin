@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { query } from '../../engine/session';
-import { formatLength, parseLength, type Unit } from '../../engine/unitsStore';
+import { formatLength, formatLevel, parseLength, type Unit } from '../../engine/unitsStore';
 
 /** An ISO date and time as the reader's locale writes it (the text itself when it does not read; '' for none). */
 export function when(iso: string | null | undefined): string {
@@ -22,8 +22,8 @@ export const formatSize = (bytes: number) => (bytes >= 1_048_576 ? `${(bytes / 1
 /** A word with its first letter capitalised (a category, a role). */
 export const label = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
-/** A level (metres) as storeys show it: +3.00, −0.50. */
-export const level = (z: number) => `${z >= 0 ? '+' : '−'}${Math.abs(z).toFixed(2)}`;
+/** A level (metres) as storeys show it, in the project's units: +3.00, −0.50; +10'-0" in feet and inches. */
+export const level = (z: number, u?: Unit) => formatLevel(z, u);
 
 /** The set of what is left out with `keys` ticked on (taken out of it) or off (put in). */
 export function toggle(set: ReadonlySet<string>, keys: string[], on: boolean): Set<string> {

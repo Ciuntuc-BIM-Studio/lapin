@@ -222,7 +222,7 @@ public static class DimensionKinds
                     mk.Polyline([a, a + new Vec2(-s * 0.6, s), a + new Vec2(s * 0.6, s)], true, "DIMENSION", w, color);
                     var end = a + new Vec2(side * Math.Max(Math.Abs(at.X - a.X), 12 * mm), s);
                     mk.Line(a + new Vec2(side * s * 0.6, s), end, "DIMENSION", w, color);
-                    Label(a + new Vec2(side * s, s + style.TextGap * mm), Standards.FormatLevel(value), 0, side > 0 ? "start" : "end");
+                    Label(a + new Vec2(side * s, s + style.TextGap * mm), Standards.FormatLevel(value, style.Unit), 0, side > 0 ? "start" : "end");
                     mk.Snaps.Add(a);
                     break;
                 }

@@ -62,4 +62,32 @@ Una cota alineada o lineal se coloca como una cadena: tras los dos primeros punt
 
 Las anotaciones de una planta (cotas, textos, líneas dibujadas, etiquetas) pueden pasar a otra planta en el mismo sitio, ya que las plantas comparten coordenadas: selecciónalas y elige la planta en sus propiedades, en **View** para moverlas o en **Copy to** para copiarlas. Así las cotas hechas en un plano de situación llegan a la planta del nivel. Los puntos de una cota se sujetan entonces a lo que la nueva planta corta en ese sitio: muros, aristas, ejes.
 
+### Etiquetas
+
+**Anotar → Etiqueta** (<kbd>TG</kbd>) pone en una vista un recuadro con lo que un elemento dice de sí mismo y una línea de referencia hasta él. Mientras la herramienta está activa, la barra bajo la vista elige lo que muestra la etiqueta: la marca, el nombre, la clase o el tipo, **Resistencia al fuego**, **Aislamiento acústico**, **Transmitancia térmica** u **Otro parámetro…** por su nombre; o un tipo de etiqueta de las normas de dibujo; y **REFERENCIA** activa o desactiva la línea de referencia. Haga clic en el elemento y luego donde va la etiqueta (escriba antes **E** para quebrar la línea en un codo). **Anotar → Etiquetar un parámetro** pide el nombre del parámetro e inicia la herramienta con él.
+
+![La barra de la herramienta Etiqueta bajo la vista](shots/tag-options.webp)
+
+Una etiqueta lee cualquier parámetro: el del elemento, el de su tipo (entonces lo muestran todos los elementos del tipo), una propiedad estándar como `Pset_WallCommon.FireRating` o una con la que llegó un elemento importado. El nombre se encuentra también sin espacios, así que **Fire rating** y `FireRating` son lo mismo. Para rellenarlo, use **Parámetros** en las propiedades del elemento o de su tipo: escriba un nombre (se proponen Fire rating, Sound rating, Moisture resistance y Thermal resistance) o elija **Añadir una propiedad estándar…** para las propiedades IFC de su clase. La etiqueta lo sigue en cuanto hay un valor, y las longitudes se escriben en las unidades del proyecto.
+
+Una etiqueta seleccionada tiene pinzamientos. Arrastre el recuadro para mover la etiqueta: la línea de referencia sigue señalando donde señalaba. Arrastre el centro de la línea para quebrarla en un codo (Ctrl/⌘-clic en el codo la endereza) y su extremo para que señale otro punto (Ctrl/⌘-clic: de vuelta al centro del elemento). Las propiedades cambian lo que la etiqueta **Muestra**, le dan un **Texto** propio (`{mark}|{FireRating}` escribe dos líneas), un **Tipo de etiqueta**, o desactivan la **Línea de referencia**. El motor dibuja las etiquetas, así que los planos y los PDF las imprimen como las ve. Los tipos de etiqueta de **Gestionar → Normas de dibujo → Etiquetas** leen los mismos campos en sus plantillas; un proyecto nuevo trae entre ellos Resistencia al fuego, Aislamiento acústico y Transmitancia térmica.
+
+![La línea de referencia de una etiqueta quebrada en su codo, con sus pinzamientos](shots/tag-leader.webp)
+
+![Las propiedades de una etiqueta](shots/tag-properties.webp)
+
+### Ejes de rejilla
+
+**Anotar → Eje de rejilla** (<kbd>GR</kbd>) dibuja un eje por sus dos extremos; toma la siguiente etiqueta de su dirección. **Anotar → Retícula de ejes…** coloca una retícula entera de una vez: las separaciones **En horizontal** (los ejes numerados, de izquierda a derecha) y **En vertical** (los ejes con letras, de abajo arriba) en las unidades del proyecto, como `6000 6000 4500` o `3*6000`; el **Origen** donde se cruzan los primeros ejes, un **Ángulo**, cuánto se prolongan los ejes **Más allá de la retícula**, las **Primeras etiquetas** y el **Tipo de eje**. Con **sustituir los ejes de la retícula** marcado, los ejes dibujados hasta entonces desaparecen.
+
+![El diálogo Retícula de ejes](shots/grid-dialog.webp)
+
+Haga clic en un eje para seleccionarlo. Sus propiedades muestran su **Inicio** y su **Fin**, la **Longitud**, el **Ángulo** y la separación desde el eje paralelo anterior (↔). Escriba una separación nueva y el eje se mueve; los ejes que siguen también se mueven, salvo que desmarque **los ejes que siguen también se mueven**. **Burbujas** elige qué extremos llevan burbuja. **Estilos de eje…** abre **Normas de dibujo → Ejes de rejilla**, donde se ajustan la burbuja, su tamaño, el tipo de línea y la primera etiqueta. Seleccione toda la retícula para ver sus ejes y sus separaciones.
+
+![Las propiedades de un eje](shots/axis-properties.webp)
+
+Todas estas longitudes siguen las unidades del proyecto. En pies y pulgadas, los extremos y las separaciones se leen 19'-8 1/4", y los niveles también se escriben en pies y pulgadas.
+
+![El mismo eje en pies y pulgadas](shots/axis-properties-imperial.webp)
+
 ![La ficha Anotar](shots/ribbon-annotate.webp)

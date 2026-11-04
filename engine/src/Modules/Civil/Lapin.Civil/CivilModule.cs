@@ -222,14 +222,14 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 if (segs.Count == 0) continue;
                 var (a, b) = segs.MaxBy(s => (s.B - s.A).Length);
                 var angle = -Standards.ReadableDeg(-Math.Atan2(b.Y - a.Y, b.X - a.X) * 180 / Math.PI);
-                mk.Text(new PenText((a + b) * 0.5, Standards.FormatLevel(z), text.Height * 0.8, angle, "middle", "middle", false, text.Font), "#5d7a3e");
+                mk.Text(new PenText((a + b) * 0.5, Standards.FormatLevel(z, c.Book.Units), text.Height * 0.8, angle, "middle", "middle", false, text.Font), "#5d7a3e");
             }
             foreach (var pad in Terrains.Pads(c.Model, e.Id))
             {
                 var o = Terrains.Contour(pad);
                 if (o.Count < 3) continue;
                 var mid = new Vec2(o.Average(p => p.X), o.Average(p => p.Y));
-                mk.Text(new PenText(mid, $"{pad.Name} {Standards.FormatLevel(pad.Num("elevation"))}", text.Height, 0, "middle", "middle", true, text.Font), "#000000");
+                mk.Text(new PenText(mid, $"{pad.Name} {Standards.FormatLevel(pad.Num("elevation"), c.Book.Units)}", text.Height, 0, "middle", "middle", true, text.Font), "#000000");
             }
             // Spot levels: a cross and the designed ground's height beside it.
             var r = 1.2 * c.Mm;
@@ -238,7 +238,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 if (Analysis.Proposed(c.Model, e, t, p) is not { } z) continue;
                 mk.Line(p - new Vec2(r, 0), p + new Vec2(r, 0), "LEVELS", Pens.Default.Seen, "#000000");
                 mk.Line(p - new Vec2(0, r), p + new Vec2(0, r), "LEVELS", Pens.Default.Seen, "#000000");
-                mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), Standards.FormatLevel(z), text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#000000");
+                mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), Standards.FormatLevel(z, c.Book.Units), text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#000000");
                 mk.Snaps.Add(p);
             }
             // The parcel: its boundary, dash-dotted, and its area.

@@ -18,6 +18,8 @@ Each level has its own plan under **Floor plans**. Double-click a plan to draw o
 
 In sections and elevations every level is marked at the right with its name and elevation. **Manage → Object styles → Hidden lines** also sets the **level marker**: an open triangle, a triangle with its left half black (as the Romanian standard draws it), a black triangle or a tick, and its size on paper.
 
+Elevations are written in the project's units: in metres (+3.00) in a metric project, as drawings write levels, and in feet and inches (+9'-10 1/8") in an imperial one. The browser, the box at the top left of the view, the level marks in sections and elevations, and level dimensions all follow.
+
 ## Seeing the level below
 
 To see another level while you draw, choose it in **Underlay** in the plan's bar. That level's plan is drawn beneath, faded and grey. You can snap to it, but you cannot select it.

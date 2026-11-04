@@ -63,6 +63,43 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        // A whole grid at once (report #68, Annotate → Grid…): axes square to x at the origin and after each spacing (labelled
+        // from firstX, numbers by default), axes square to y likewise (from firstY, letters), each running past the outer ones by
+        // `extend`; the grid turned by `angle` (degrees) about the origin. With `replace`, the grid's axes so far go.
+        r.Command("makeGrid", "Grid", (ctx, a) =>
+        {
+            static List<double> Spacings(JsonNode? n) => n is JsonArray arr ? arr.Select(v => Json.Number(v) ?? double.NaN).ToList() : [];
+            var (xs, ys) = (Spacings(a["x"]), Spacings(a["y"]));
+            if (xs.Any(v => !(v > 1e-3)) || ys.Any(v => !(v > 1e-3))) throw new CommandException("A spacing is a length above zero.");
+            if (xs.Count + ys.Count > 400) throw new CommandException("At most 400 spacings.");
+            if (xs.Count + ys.Count == 0) throw new CommandException("Give the spacings across, along or both.");
+            var origin = a["origin"] is JsonArray ? P(a["origin"]) : default;
+            var extend = Json.Number(a["extend"]) ?? 1.5;
+            if (!(extend >= 0)) throw new CommandException("The axes run past the grid by a length of zero or more.");
+            var turn = (Json.Number(a["angle"]) ?? 0) * Math.PI / 180;
+            var (u, v) = (new Vec2(Math.Cos(turn), Math.Sin(turn)), new Vec2(-Math.Sin(turn), Math.Cos(turn)));
+            var grid = Grids.Ensure(ctx);
+            var axes = a["replace"] is JsonValue rv && rv.TryGetValue<bool>(out var replace) && replace ? [] : Grids.Axes(grid);
+            var (width, depth) = (xs.Sum(), ys.Sum());
+            if (Math.Min(xs.Count > 0 ? depth : double.MaxValue, ys.Count > 0 ? width : double.MaxValue) + 2 * extend < 1e-3) throw new CommandException("The axes need a length: give spacings both ways, or let them run past the grid.");
+            Vec2 W(double s, double t) => origin + u * s + v * t;
+            string Label(string? asked, string fallback) => asked?.Trim() is { Length: > 0 } t ? t : fallback;
+            var made = new JsonArray();
+            void Line(string tag, Vec2 p, Vec2 q)
+            {
+                if (axes.Any(x => x.Tag == tag)) throw new CommandException($"The grid has an axis {tag} already: start the labels after it, or replace the grid.");
+                axes.Add(new Axis(tag, p, q));
+                made.Add((JsonNode)tag);
+            }
+            static IEnumerable<double> Stations(List<double> spacings) { double at = 0; yield return 0; foreach (var d in spacings) yield return at += d; }
+            var tag = Label((string?)a["firstX"], "1");
+            foreach (var s in Stations(xs)) { Line(tag, W(s, -extend), W(s, depth + extend)); tag = Grids.Next(tag); }
+            tag = Label((string?)a["firstY"], "A");
+            foreach (var t in Stations(ys)) { Line(tag, W(-extend, t), W(width + extend, t)); tag = Grids.Next(tag); }
+            Write(ctx, grid, axes);
+            return new JsonObject { ["gridId"] = grid.Id, ["tags"] = made };
+        });
+
         r.Command("alignAxes", "Line up grid axes", (ctx, a) =>
         {
             var grid = Spatial.Require(ctx.Model, (string?)a["gridId"], IfcClass.Grid);

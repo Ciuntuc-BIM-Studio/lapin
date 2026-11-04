@@ -6,6 +6,7 @@
  * cancels. Each finished edit is one engine command, so one undo step.
  */
 
+import type { ComponentType } from 'react';
 import { create } from 'zustand';
 import type { Vec2 } from '../../platform/module';
 import { select, useUi } from '../../app/store';
@@ -375,7 +376,9 @@ export const ROLES = ['draft', 'profile', 'hole', 'path', 'rail', 'axis', 'endPr
 export const roleLabel = (r: string) => ({ draft: 'construction', endProfile: 'end profile' } as Record<string, string>)[r] ?? r;
 
 export type Starter = () => Step | null | void | Promise<Step | null | void>;
-export const COMMANDS: { names: string[]; label: string; start: Starter }[] = [
+/** A command: its words, its label, how it starts, and what it lets one choose while it runs (TAG's field), shown in the command line's bar. */
+export interface CommandDef { names: string[]; label: string; start: Starter; options?: ComponentType }
+export const COMMANDS: CommandDef[] = [
   { names: ['LINE', 'L'], label: 'Line', start: line },
   { names: ['PLINE', 'PL'], label: 'Polyline', start: pline },
   { names: ['RECTANGLE', 'REC', 'RECT'], label: 'Rectangle', start: rectangle },
@@ -407,7 +410,7 @@ export const setCommandFallback = (f: (text: string) => boolean) => { fallback =
 export const findCommand = (name: string) => COMMANDS.find((c) => c.names.includes(name.trim().toUpperCase()));
 
 /** A module's own command for the command line (Studio's EXTRUDE…). */
-export function registerCommand(c: { names: string[]; label: string; start: Starter }): void {
+export function registerCommand(c: CommandDef): void {
   if (!COMMANDS.some((x) => x.names[0] === c.names[0])) COMMANDS.push(c);
 }
 

@@ -66,4 +66,32 @@ An aligned or linear dimension goes on as a string: after the first two points a
 
 Annotations on a plan (dimensions, texts, drafted lines, tags) can go to another plan where they are, since plans share their coordinates: select them and choose the plan in their properties, under **View** to move them or **Copy to** to copy them. This also brings dimensions made on a site plan to the level's floor plan. A dimension's points then hold on what the new plan cuts at that place: walls, edges, axes.
 
+### Tags
+
+**Annotate → Tag** (<kbd>TG</kbd>) puts a box on a view with what an element says of itself, and a leader to it. While the tool is on, the bar under the view chooses what the tag shows: the mark, name, class or type, **Fire rating**, **Acoustic rating**, **Thermal transmittance**, or **Another parameter…** by its name; or a tag type of the drafting standards; and **LEADER** turns the leader on or off. Click the element, then where the tag goes (type **E** first to bend the leader at an elbow). **Annotate → Tag a parameter** asks for the parameter's name and starts the tool with it.
+
+![The Tag tool's bar under the view](shots/tag-options.webp)
+
+A tag reads any parameter: the element's own, its type's (then every element of the type shows it), a standard property such as `Pset_WallCommon.FireRating`, or one an imported element came with. A name is found without its spaces, so **Fire rating** and `FireRating` are the same. To fill one in, use **Parameters** in the element's or its type's properties: type a name (Fire rating, Sound rating, Moisture resistance and Thermal resistance are offered), or choose **Add a standard property…** for the IFC properties of its class. The tag follows as soon as there is a value, and lengths are written in the project's units.
+
+A selected tag has grips. Drag the box to move the tag: the leader keeps pointing where it did. Drag the leader's middle to bend it at an elbow (Ctrl/⌘-click the elbow to straighten it again), and its end to point it at another spot (Ctrl/⌘-click: back on the element's middle). The properties change what the tag **Shows**, give it a **Text** of its own (`{mark}|{FireRating}` writes two lines), a **Tag type**, or turn the **Leader** off. The engine draws tags, so sheets and PDFs print them as you see them. The tag types in **Manage → Drafting standards → Tags** read the same fields in their templates; a new project has Fire rating, Acoustic rating and Thermal transmittance among them.
+
+![A tag's leader bent at its elbow, with its grips](shots/tag-leader.webp)
+
+![A tag's properties](shots/tag-properties.webp)
+
+### Grid axes
+
+**Annotate → Grid axis** (<kbd>GR</kbd>) draws one axis by its two ends; it takes the next label of its direction. **Annotate → Axis grid…** lays a whole grid at once: the spacings **Across** (the numbered axes, left to right) and **Along** (the lettered axes, bottom to top) in the project's units, as `6000 6000 4500` or `3*6000`; the **Origin** where the first axes cross, an **Angle**, how far the axes run **Past the grid**, the **First labels** and the **Axis type**. With **replace the grid's axes** ticked, the axes drawn so far go.
+
+![The Axis grid dialog](shots/grid-dialog.webp)
+
+Click an axis to select it. Its properties show its **Start** and **End**, **Length**, **Angle**, and its spacing from the parallel axis before it (↔). Type a new spacing and the axis moves; the axes beyond it move too, unless you untick **the axes beyond move too**. **Bubbles** chooses which ends carry a bubble. **Axis styles…** opens **Drafting standards → Grid axes**, where the bubble, its size, the line type and the first label are set. Select the whole grid to list its axes and their spacings.
+
+![A grid axis's properties](shots/axis-properties.webp)
+
+Every length here follows the project's units. In feet and inches, the ends and spacings read 19'-8 1/4", and the levels are written in feet and inches too.
+
+![The same axis in feet and inches](shots/axis-properties-imperial.webp)
+
 ![The Annotate tab](shots/ribbon-annotate.webp)

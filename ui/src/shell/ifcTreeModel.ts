@@ -8,6 +8,7 @@
 
 import type { NodeDto, RelationDto } from '../engine/protocol';
 import { num, storeys, type ModelState } from '../engine/model';
+import { formatLevel } from '../engine/unitsStore';
 
 export interface TreeElement { node: NodeDto; openings: { opening: NodeDto; fill: NodeDto | null }[]; shape: ShapeItem[] }
 export interface TreeType { id: string; name: string; node: NodeDto | null; elements: TreeElement[] }
@@ -71,7 +72,7 @@ export function ifcTree(s: ModelState): TreeStorey[] {
   };
   const out: TreeStorey[] = levels.map((st) => {
     const list = byStorey.get(st.id) ?? [];
-    return { node: st, name: `${st.name} · ${num(st, 'elevation') >= 0 ? '+' : '−'}${Math.abs(num(st, 'elevation')).toFixed(2)}`, classes: classesOf(list), count: list.length };
+    return { node: st, name: `${st.name} · ${formatLevel(num(st, 'elevation'))}`, classes: classesOf(list), count: list.length };
   });
   const loose = byStorey.get(null) ?? [];
   if (loose.length) out.push({ node: null, name: 'Not on a level', classes: classesOf(loose), count: loose.length });

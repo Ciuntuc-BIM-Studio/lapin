@@ -62,4 +62,32 @@ Une cote alignée ou linéaire se pose en chaîne : après les deux premiers p
 
 Les annotations d’un plan (cotes, textes, lignes dessinées, étiquettes) peuvent passer sur un autre plan, au même endroit, puisque les plans partagent leurs coordonnées : sélectionnez-les et choisissez le plan dans leurs propriétés, sous **View** pour les déplacer ou **Copy to** pour les copier. Les cotes faites sur un plan de masse vont ainsi au plan du niveau. Les points d’une cote s’accrochent alors à ce que le nouveau plan coupe à cet endroit : murs, arêtes, axes.
 
+### Étiquettes
+
+**Annoter → Étiquette** (<kbd>TG</kbd>) pose sur une vue un cadre avec ce qu’un élément dit de lui-même, et une ligne de rappel jusqu’à lui. Tant que l’outil est actif, la barre sous la vue choisit ce que l’étiquette affiche : le repère, le nom, la classe ou le type, **Résistance au feu**, **Isolement acoustique**, **Transmission thermique** ou **Autre paramètre…** par son nom ; ou un type d’étiquette des normes de dessin ; et **RAPPEL** active ou désactive la ligne de rappel. Cliquez sur l’élément, puis là où va l’étiquette (tapez d’abord **E** pour couder la ligne). **Annoter → Étiqueter un paramètre** demande le nom du paramètre et lance l’outil avec lui.
+
+![La barre de l’outil Étiquette sous la vue](shots/tag-options.webp)
+
+Une étiquette lit n’importe quel paramètre : celui de l’élément, celui de son type (tous les éléments du type l’affichent alors), une propriété standard comme `Pset_WallCommon.FireRating`, ou une propriété venue avec un élément importé. Un nom est trouvé même sans ses espaces : **Fire rating** et `FireRating` sont donc le même. Pour le remplir, utilisez **Paramètres** dans les propriétés de l’élément ou de son type : tapez un nom (Fire rating, Sound rating, Moisture resistance et Thermal resistance sont proposés) ou choisissez **Ajouter une propriété standard…** pour les propriétés IFC de sa classe. L’étiquette suit dès qu’il y a une valeur, et les longueurs s’écrivent dans les unités du projet.
+
+Une étiquette sélectionnée a des poignées. Faites glisser le cadre pour déplacer l’étiquette : la ligne de rappel continue de pointer au même endroit. Faites glisser le milieu de la ligne pour la couder (Ctrl/⌘-clic sur le coude la redresse) et son extrémité pour la faire pointer ailleurs (Ctrl/⌘-clic : de nouveau au milieu de l’élément). Les propriétés changent ce que l’étiquette **Affiche**, lui donnent un **Texte** propre (`{mark}|{FireRating}` écrit deux lignes), un **Type d’étiquette**, ou désactivent la **Ligne de rappel**. Le moteur dessine les étiquettes : les feuilles et les PDF les impriment telles que vous les voyez. Les types d’étiquette de **Gérer → Normes de dessin → Étiquettes** lisent les mêmes champs dans leurs modèles ; un nouveau projet compte parmi eux Résistance au feu, Isolement acoustique et Transmission thermique.
+
+![La ligne de rappel d’une étiquette coudée, avec ses poignées](shots/tag-leader.webp)
+
+![Les propriétés d’une étiquette](shots/tag-properties.webp)
+
+### Axes du quadrillage
+
+**Annoter → Axe de quadrillage** (<kbd>GR</kbd>) dessine un axe par ses deux extrémités ; il prend le repère suivant de sa direction. **Annoter → Trame d’axes…** pose une trame entière d’un coup : les espacements **En travers** (les axes numérotés, de gauche à droite) et **En long** (les axes lettrés, de bas en haut) dans les unités du projet, comme `6000 6000 4500` ou `3*6000` ; l’**Origine** où se croisent les premiers axes, un **Angle**, de combien les axes vont **Au-delà de la trame**, les **Premiers repères** et le **Type d’axe**. Avec **remplacer les axes de la trame** coché, les axes dessinés jusque-là disparaissent.
+
+![Le dialogue Trame d’axes](shots/grid-dialog.webp)
+
+Cliquez sur un axe pour le sélectionner. Ses propriétés montrent son **Début** et sa **Fin**, sa **Longueur**, son **Angle** et son espacement depuis l’axe parallèle précédent (↔). Tapez un nouvel espacement et l’axe se déplace ; les axes au-delà se déplacent aussi, sauf si vous décochez **les axes au-delà se déplacent aussi**. **Bulles** choisit les extrémités qui portent une bulle. **Styles d’axes…** ouvre **Normes de dessin → Axes du quadrillage**, où se règlent la bulle, sa taille, le type de ligne et le premier repère. Sélectionnez toute la trame pour voir ses axes et leurs espacements.
+
+![Les propriétés d’un axe](shots/axis-properties.webp)
+
+Toutes ces longueurs suivent les unités du projet. En pieds et pouces, les extrémités et les espacements se lisent 19'-8 1/4", et les niveaux s’écrivent aussi en pieds et pouces.
+
+![Le même axe en pieds et pouces](shots/axis-properties-imperial.webp)
+
 ![L’onglet Annoter](shots/ribbon-annotate.webp)
