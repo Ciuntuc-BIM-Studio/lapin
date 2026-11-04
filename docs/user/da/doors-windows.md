@@ -16,6 +16,8 @@ Mens Door eller Window er aktivt, viser egenskabspanelet den type, det sætter, 
 
 Vil du flytte en dør eller et vindue langs sin væg, så markér den og træk i den. Du ændrer den i egenskabspanelet: dens type, dens brystningshøjde, og til hvilken side den åbner (**Side**). Med flere døre og vinduer markeret ændrer **Hængsling**, **Side**, brystningen og typen dem alle i ét trin, og det samme gør en vendepil i planen.
 
+Til en nøjagtig afstand bruger du **Flyt** (<kbd>M</kbd>) eller **Kopiér** (<kbd>CO</kbd>) i kommandolinjen, som for ethvert element: markér døren, vinduet eller vægåbningen, klik på et basispunkt, og skriv så afstanden (`500`) eller klik på et andet punkt. Kun den del af flytningen, der ligger langs væggen, tæller: åbningen glider langs sin væg og beholder sin brystning. Flyttes den ind i en anden væg på samme etage, går den over i den væg og åbner stadig på samme måde ind i rummet. En kopi er en ny dør eller et nyt vindue af samme type med det næste nummer. Kan den ikke være der (forbi væggens ende eller over en anden åbning), flytter intet sig. **Rotér** og **Spejl** placerer den på samme måde, og en spejling skifter dens hængsling.
+
 ![En dørs egenskaber](shots/door-properties.webp)
 
 ## Åbninger uden dør eller vindue
@@ -35,6 +37,8 @@ Vil du flytte en dør eller et vindue langs sin væg, så markér den og træk i
 - lysningens overflade, indfatningen på facaden, dørtrinnet og farverne.
 
 Tegningerne til højre viser typen, som den vil blive tegnet i opstalt, plan og snit, mens du ændrer den.
+
+**Venstre og højre.** En dørs eller et vindues hængsling navngives, som IFC navngiver den: set af den, der skubber den op. En dør *swing left* har hængslerne til venstre for den, der skubber den op; set fra det rum, den åbner ind i, sidder de altså til højre. Gitteret **Rammer** er set udefra, fra den side rammerne skubbes fra, så dets venstre er navnenes venstre. Facaden er set indefra, fra den side rammerne åbner mod, medmindre **Udefra** er slået til; ligesom planen viser den døren, som den står i modellen. En dør vendt til den anden hængsling (**Hængsling** eller en vendepil langs væggen) er spejlbilledet af sin type; skemaerne viser den på sit eget kort (se [Skemaer](schedules.md)).
 
 ![Konfiguratoren til døre og vinduer](shots/joinery-configurator.webp)
 

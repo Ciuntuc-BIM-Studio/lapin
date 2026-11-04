@@ -153,7 +153,11 @@ export interface MarkDto { id: string; segments: number[]; snaps?: number[]; dat
 export interface GripView { mark?: MarkDto; marks?: MarkDto[]; view?: string }
 
 /** A line drawn over a selected element: its axis (walls, beams), its outline (slabs, roofs), its sketch (Studio). */
-export interface RefLine { points: Vec2[]; closed: boolean; kind: 'axis' | 'outline' | 'sketch'; view?: string; /** A grid axis's tag: drawn only when that axis is selected. */ tag?: string }
+export interface RefLine {
+  points: Vec2[]; closed: boolean; kind: 'axis' | 'outline' | 'sketch'; view?: string; /** A grid axis's tag: drawn only when that axis is selected. */ tag?: string;
+  /** A wall's axis: an arrowhead the way it was drawn and its faces' letters, R on its right, L on its left (report #79; viewport/faceMarks.ts). */
+  faces?: boolean;
+}
 
 /** A section of the properties panel for a selected entity of some IFC classes. */
 export interface PropertySectionDef {

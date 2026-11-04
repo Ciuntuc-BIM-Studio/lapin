@@ -87,7 +87,7 @@ public sealed class ScheduleEntity : ISheetContent
     public static ScheduleData PartData(ScheduleData data, SchedulePart p)
     {
         var levels = p.Levels == null ? data.Levels : data.Levels.Where(p.Levels.Contains).ToList();
-        bool TypeOk(ScheduleEntry e) => (p.Kind == null || e.Kind == p.Kind) && (p.Types == null || p.Types.Contains(e.Key));
+        bool TypeOk(ScheduleEntry e) => (p.Kind == null || e.Kind == p.Kind) && (p.Types == null || p.Types.Contains(e.TypeKey));
         var whole = p.Levels == null && p.External == null && p.Exclude == null && p.Include == null;
         var entries = new List<ScheduleEntry>();
         foreach (var e in data.Entries)
@@ -177,7 +177,7 @@ public sealed class ScheduleEntity : ISheetContent
         var table = ScheduleTable.Of(e);
         var drawings = Drawings(e);
         var (convention, hardware) = Joinery.SymbolSettings(q.Model);
-        var tables = Tables(e, data).Select(t => (t.Title, ScheduleLayout.Bands(t.Data, table, Scale(e), maxWidth, _ => drawings, convention, hardware))).ToList();
+        var tables = Tables(e, data).Select(t => (t.Title, ScheduleLayout.Bands(t.Data, table, Scale(e), maxWidth, _ => drawings, convention, hardware, ScheduleLayout.HandNote(t.Data, drawings)))).ToList();
         return ScheduleLayout.Pages([.. tables, .. Charts(q, e, maxWidth)], maxHeight);
     }
 
@@ -494,7 +494,7 @@ public sealed class ScheduleEntity : ISheetContent
                 ["w"] = w, ["h"] = h, ["pens"] = new JsonArray(pens.Select(p => (JsonNode)p.ToJson()).ToArray()),
                 ["entries"] = new JsonArray(ScheduleLayout.Sort(data.Entries, ScheduleTable.Of(s).Sort).Select(e => (JsonNode)new JsonObject
                 {
-                    ["key"] = e.Key, ["mark"] = e.Mark, ["name"] = e.Name, ["total"] = e.Total, ["manual"] = e.Kind == ScheduleEntry.Manual,
+                    ["key"] = e.Key, ["type"] = e.TypeKey, ["mark"] = e.Mark, ["name"] = e.Name, ["total"] = e.Total, ["manual"] = e.Kind == ScheduleEntry.Manual,
                     ["rows"] = new JsonObject(ScheduleLayout.Rows(data, ScheduleTable.Of(s)).Select(r => KeyValuePair.Create(r.Id, (JsonNode?)r.Value(e)))),
                 }).ToArray()),
                 ["rows"] = new JsonArray(ScheduleLayout.Rows(data, ScheduleTable.Of(s)).Select(r => (JsonNode)new JsonObject { ["id"] = r.Id, ["label"] = r.Label, ["fromModel"] = r.FromModel, ["param"] = r.Param }).ToArray()),

@@ -34,6 +34,8 @@ Uma tabela é um quadro que o modelo preenche: portas e janelas, vergas, ambient
 
 As tabelas de **Esquadrias**, de **portas**, de **janelas** e de **vergas** mostram um cartão para cada tipo, com o desenho dele (a vista interna por padrão) e os valores linha por linha. As outras tabelas são um quadro simples, uma linha por item e uma linha de totais no fim.
 
+Uma porta ou janela invertida para a outra mão do seu tipo (**Mão**, ou uma única seta de inversão; invertida nos dois sentidos, ela está apenas girada) é a imagem espelhada do seu tipo e ganha um cartão próprio: a marca termina em **-M** (D-M), o nome em "(mirrored)", e a linha **Opening**, o desenho e as contagens são os da outra mão. Inverta-a de volta e ela volta ao cartão do seu tipo. Esquerda e direita são as do IFC: as dobradiças vistas por quem a empurra para abrir. Os desenhos mostram cada porta como está no modelo, vista pelo lado de dentro, o lado para onde ela abre (assim, as dobradiças de uma porta *swing left* ficam à direita). Uma nota abaixo dos cartões diz isso.
+
 ![Uma tabela de esquadrias com as linhas de resistência ao fogo e de fabricante](shots/joinery-schedule.webp)
 
 ## Resistência ao fogo, fabricantes e outros parâmetros

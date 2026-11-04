@@ -46,6 +46,8 @@ Mientras desplaza o copia, un marcador permanece en el punto base y una línea d
 
 También puede arrastrar. Arrastre la cruz del centro de un elemento seleccionado para desplazarlo. Mantenga pulsada <kbd>Ctrl</kbd> (<kbd>⌘</kbd> en un Mac) mientras arrastra para dejar una copia.
 
+Una puerta, una ventana o un hueco de muro se desplaza y se copia a lo largo de su muro: solo cuenta la parte del desplazamiento a lo largo del muro, así que escribir `500` tras el punto base lo desliza 500 por el muro; llevado a otro muro, pasa a ese muro. Si el muro también está seleccionado, se mueve con él.
+
 Un eje de rejilla se desplaza, se copia, se gira y se refleja por sí solo o junto con otros elementos. Una copia es un nuevo eje de la misma rejilla, con el nombre que sigue al último eje en su dirección: con los ejes 1, 2 y 3, la copia de cualquiera de ellos es el 4.
 
 ## Dibujo

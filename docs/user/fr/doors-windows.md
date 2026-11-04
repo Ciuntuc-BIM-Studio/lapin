@@ -16,6 +16,8 @@ Tant que Door ou Window est actif, le panneau des propriétés montre le type qu
 
 Pour déplacer une porte ou une fenêtre le long de son mur, sélectionnez-la et faites-la glisser. Pour la modifier, utilisez le panneau des propriétés : son type, sa hauteur d’allège, et le côté vers lequel elle s’ouvre (**Côté**). Avec plusieurs portes et fenêtres sélectionnées, **Main**, **Côté**, l’allège et le type les changent toutes en une seule étape, de même qu’une flèche de retournement en plan.
 
+Pour une distance exacte, utilisez **Déplacer** (<kbd>M</kbd>) ou **Copier** (<kbd>CO</kbd>) dans la ligne de commande, comme pour tout élément : sélectionnez la porte, la fenêtre ou l’ouverture du mur, cliquez un point de base, puis tapez la distance (`500`) ou cliquez un second point. Seule la part du déplacement le long du mur compte : l’ouverture glisse le long de son mur et garde son allège. Déplacée dans un autre mur du même niveau, elle passe dans ce mur et s’ouvre toujours de la même façon dans la pièce. Une copie est une nouvelle porte ou fenêtre du même type, avec le numéro suivant. Si elle ne tient pas (au-delà de l’extrémité du mur, ou sur une autre ouverture), rien ne bouge. **Faire pivoter** et **Symétrie** la placent de la même façon, et une symétrie change sa main.
+
 ![Les propriétés d’une porte](shots/door-properties.webp)
 
 ## Baies sans porte ni fenêtre
@@ -35,6 +37,8 @@ Pour déplacer une porte ou une fenêtre le long de son mur, sélectionnez-la et
 - la finition de l’embrasure, l’encadrement en façade, le seuil et les couleurs.
 
 Les dessins à droite montrent le type tel qu’il sera dessiné en élévation, en plan et en coupe, pendant que vous le modifiez.
+
+**Gauche et droite.** La main d’une porte ou d’une fenêtre est nommée comme IFC la nomme : vue par la personne qui la pousse pour l’ouvrir. Une porte *swing left* a ses paumelles à gauche de la personne qui la pousse ; depuis la pièce vers laquelle elle s’ouvre, elles sont donc à droite. La grille **Vantaux** est vue de l’extérieur, du côté d’où l’on pousse les vantaux, si bien que sa gauche est celle des noms. L’élévation est vue de l’intérieur, du côté vers lequel s’ouvrent les vantaux, sauf si **Depuis l’extérieur** est coché ; comme le plan, elle montre la porte telle qu’elle est dans le modèle. Une porte retournée sur l’autre main (**Main**, ou une flèche de retournement le long du mur) est l’image en miroir de son type ; les nomenclatures la mettent sur une fiche à part (voir [Nomenclatures](schedules.md)).
 
 ![Le configurateur des portes et fenêtres](shots/joinery-configurator.webp)
 

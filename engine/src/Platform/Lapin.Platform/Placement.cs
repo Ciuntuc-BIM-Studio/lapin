@@ -50,6 +50,18 @@ public interface IElementPlacement
     string? Copy(ICommandContext ctx, Entity e, Placement2D t) => null;
 }
 
+/// <summary>
+/// What a module places in a host and moves with it (a door, a window or an opening in its wall), moved, turned,
+/// mirrored or copied on its own while its host stays (tester's report #82: MOVE and COPY on a window). The module
+/// keeps it in a host: it slides along its own, or goes into the host it lands in.
+/// </summary>
+public interface IHostedPlacement
+{
+    bool Handles(IModelView m, Entity e);
+    /// <summary>These elements carried by <paramref name="t"/> together, or (<paramref name="copy"/>) copies of them: the copies' ids.</summary>
+    IReadOnlyList<string> Transform(ICommandContext ctx, IReadOnlyList<Entity> elements, Placement2D t, bool copy);
+}
+
 /// <summary>What a module does when element.update has changed an element (a node moved by its x, y or rotation: the runs on its ports follow it), in the same undo step.</summary>
 public interface IElementUpdate
 {

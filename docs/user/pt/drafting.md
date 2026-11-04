@@ -46,6 +46,8 @@ Enquanto você move ou copia, um marcador fica no ponto base e uma linha traceja
 
 Você também pode arrastar. Arraste a cruz no meio de um elemento selecionado para movê-lo. Segure <kbd>Ctrl</kbd> (<kbd>⌘</kbd> num Mac) enquanto arrasta para deixar uma cópia.
 
+Uma porta, uma janela ou uma abertura na parede se move e se copia ao longo da sua parede: só conta a parte do movimento ao longo da parede, então digitar `500` depois do ponto base a desliza 500 ao longo da parede; movida para outra parede, ela passa para essa parede. Com a parede também selecionada, ela vai junto com a parede.
+
 Um eixo da malha move, copia, gira e espelha sozinho ou junto com outros elementos. Uma cópia é um novo eixo da mesma malha, nomeado a partir do último eixo que corre no mesmo sentido: com os eixos 1, 2 e 3, uma cópia de qualquer um deles é o 4.
 
 ## Desenho

@@ -43,7 +43,7 @@ Mais abaixo, **Dependências** mostra o que é construído a partir da parede e 
 
 ## Tipos de parede
 
-Um tipo de parede é um conjunto de camadas, da face externa à face interna. Cada camada tem um material e uma espessura, e uma camada é o **núcleo**. A linha da parede corre ao longo do núcleo. Para editar os tipos, escolha **Arquitetura → Tipos de parede**. Uma camada que não é o núcleo pode ter uma altura própria: **De** e **Até** definem até onde ela sobe acima da base da parede (um barrado de azulejos até 1500, um revestimento de 300 para cima); vazios, ela ocupa a altura toda.
+Um tipo de parede é um conjunto de camadas, da face à direita do sentido em que a parede é desenhada (a externa, quando você desenha ao redor de um edifício no sentido anti-horário) à face à sua esquerda. Cada camada tem um material e uma espessura, e uma camada é o **núcleo**. A linha da parede corre ao longo do núcleo. Para editar os tipos, escolha **Arquitetura → Tipos de parede**. Uma camada que não é o núcleo pode ter uma altura própria: **De** e **Até** definem até onde ela sobe acima da base da parede (um barrado de azulejos até 1500, um revestimento de 300 para cima); vazios, ela ocupa a altura toda.
 
 A coluna **Prioridade** (de 0 a 100) diz como a camada encontra as camadas de outra parede onde as paredes se unem: atravessa as camadas da outra de prioridade menor e para na primeira de prioridade igual ou maior. Vazia, a camada assume a prioridade do seu material em **Gerenciar → Ordem de corte**, senão 50 para o núcleo e 0 para as demais camadas (o número mostrado em cinza). Assim, um núcleo de concreto de 100 não é interrompido por um núcleo de montantes de 99 e atravessa a divisória, e um reboco duro de 60 segura o núcleo de uma parede que termina nele. A exportação IFC a grava como a Priority da camada, e a importação a lê de volta.
 
@@ -54,6 +54,8 @@ Uma camada que não é o núcleo pode ter espessura 0, para um material fino dem
 ![Uma camada de reboco com azulejos até 2100 e o reboco acima](shots/wall-layer-parts.webp)
 
 ![Tipos de parede: as camadas de uma parede de tijolos](shots/wall-types.webp)
+
+A legenda acima das camadas mostra a parede em planta como uma parede selecionada a mostra: o eixo tracejado com uma ponta de seta no sentido em que foi desenhada, **D** na face direita e **E** na face esquerda. As camadas são numeradas de 1, na face D, até a última, na face E, com os mesmos números das linhas da tabela; o núcleo, por onde passa a linha da parede, fica destacado. Uma parede invertida com **Inverter** tem as camadas ao contrário, de E para D. A mensagem de um salvamento recusado some assim que você muda o tipo de novo.
 
 - **+ Camada** adiciona uma camada. As setas movem uma camada para cima ou para baixo.
 - **Zonas na altura** divide o núcleo de baixo para cima, por exemplo uma primeira fiada, a alvenaria e uma cinta.

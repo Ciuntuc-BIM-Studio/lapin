@@ -34,6 +34,8 @@ Et skema er en tabel, som modellen udfylder: døre og vinduer, overliggere, rum,
 
 Skemaer for **snedkerarbejder**, **døre**, **vinduer** og **overliggere** viser et kort for hver type, med dens tegning (som standard den indvendige visning) og dens værdier række for række. Andre skemaer er en almindelig tabel, én række pr. element og en totallinje til sidst.
 
+En dør eller et vindue vendt til den anden hængsling af sin type (**Hængsling** eller én vendepil; vendt begge veje er den kun drejet) er spejlbilledet af sin type og får sit eget kort: dens mærke ender på **-M** (D-M), dens navn på "(mirrored)", og dens række **Opening**, tegning og antal er den anden hængslings. Vend den tilbage, så kommer den tilbage på sin types kort. Venstre og højre er IFC's: hængslerne set af den, der skubber den op. Tegningerne viser hver dør, som den står i modellen, set indefra, fra den side den åbner mod (så hængslerne på en dør *swing left* sidder til højre). En note under kortene siger det.
+
 ![Et snedkerskema med rækker for brandmodstand og producent](shots/joinery-schedule.webp)
 
 ## Brandmodstand, producenter og andre parametre

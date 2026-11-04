@@ -16,6 +16,8 @@ Solange Door oder Window aktiv ist, zeigt der Eigenschaftenbereich den Typ, der 
 
 Um eine Tür oder ein Fenster entlang seiner Wand zu verschieben, wählen Sie es aus und ziehen Sie es. Um es zu ändern, verwenden Sie den Eigenschaftenbereich: seinen Typ, seine Brüstungshöhe und die Seite, zu der es sich öffnet (**Seite**). Sind mehrere Türen und Fenster ausgewählt, ändern **Anschlag**, **Seite**, die Brüstung und der Typ alle in einem Schritt, ebenso ein Umkehrpfeil im Grundriss.
 
+Für einen genauen Abstand verwenden Sie **Verschieben** (<kbd>M</kbd>) oder **Kopieren** (<kbd>CO</kbd>) in der Befehlszeile, wie bei jedem Element: Wählen Sie die Tür, das Fenster oder die Wandöffnung aus, klicken Sie einen Basispunkt an und geben Sie dann den Abstand ein (`500`) oder klicken Sie einen zweiten Punkt an. Es zählt nur der Anteil der Verschiebung entlang der Wand: Die Öffnung gleitet entlang ihrer Wand und behält ihre Brüstung. In eine andere Wand desselben Geschosses verschoben, wechselt sie in diese Wand und öffnet weiterhin gleich in den Raum. Eine Kopie ist eine neue Tür oder ein neues Fenster desselben Typs mit der nächsten Nummer. Passt sie nicht (über das Wandende hinaus oder über eine andere Öffnung), bewegt sich nichts. **Drehen** und **Spiegeln** platzieren sie ebenso, und Spiegeln wechselt ihren Anschlag.
+
 ![Die Eigenschaften einer Tür](shots/door-properties.webp)
 
 ## Öffnungen ohne Tür oder Fenster
@@ -35,6 +37,8 @@ Um eine Tür oder ein Fenster entlang seiner Wand zu verschieben, wählen Sie es
 - die Laibungsoberfläche, die Umrahmung an der Fassade, die Schwelle und die Farben.
 
 Die Zeichnungen rechts zeigen den Typ so, wie er in Ansicht, Grundriss und Schnitt gezeichnet wird, während Sie ihn ändern.
+
+**Links und rechts.** Der Anschlag einer Tür oder eines Fensters wird so benannt, wie IFC ihn benennt: gesehen von der Person, die sie aufdrückt. Eine Tür *swing left* hat ihre Bänder links von der Person, die sie aufdrückt; vom Raum aus, in den sie aufgeht, liegen sie also rechts. (DIN benennt umgekehrt, von der Öffnungsseite aus.) Das Raster **Flügel** ist von außen gesehen, von der Seite, von der die Flügel aufgedrückt werden, sodass sein Links das Links der Namen ist. Die Ansicht ist von innen gesehen, von der Seite, zu der die Flügel aufgehen, sofern **Von außen** nicht angehakt ist; wie der Grundriss zeigt sie die Tür so, wie sie im Modell steht. Eine auf den anderen Anschlag umgekehrte Tür (**Anschlag** oder ein Umkehrpfeil entlang der Wand) ist das Spiegelbild ihres Typs; die Bauteillisten führen sie auf einer eigenen Karte (siehe [Bauteillisten](schedules.md)).
 
 ![Der Konfigurator für Türen und Fenster](shots/joinery-configurator.webp)
 

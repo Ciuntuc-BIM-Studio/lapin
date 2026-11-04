@@ -108,6 +108,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IElementFaces>(new ArchitectureFaces());
         r.Service<IElementPlacement>(new Roofs.RoofPlacement());
         r.Service<IElementPlacement>(new WallPlacement());
+        r.Service<IHostedPlacement>(new HostedOpenings());
         r.Service<IDeletion>(new Roofs.RoofDeletion());
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Geometry(IfcClass.Window, (fill, model, _) => Openings.FillGeometry(fill, model));

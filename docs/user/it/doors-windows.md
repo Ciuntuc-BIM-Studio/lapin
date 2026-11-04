@@ -16,6 +16,8 @@ Mentre Porta o Finestra è attivo, il pannello Proprietà mostra il tipo che ver
 
 Per spostare una porta o una finestra lungo il suo muro, selezionala e trascinala. Per modificarla, usa il pannello Proprietà: il suo tipo, l’altezza del davanzale e il lato verso cui si apre (**Lato**). Con più porte e finestre selezionate, **Verso**, **Lato**, il davanzale e il tipo le cambiano tutte in un solo passo, così come una freccia di inversione in pianta.
 
+Per una distanza esatta, usa **Sposta** (<kbd>M</kbd>) o **Copia** (<kbd>CO</kbd>) nella riga di comando, come per qualsiasi elemento: seleziona la porta, la finestra o l’apertura nel muro, fai clic su un punto base, poi digita la distanza (`500`) o fai clic su un secondo punto. Conta solo la parte dello spostamento lungo il muro: l’apertura scorre lungo il suo muro e mantiene il davanzale. Spostata in un altro muro dello stesso piano, passa in quel muro e si apre ancora allo stesso modo nella stanza. Una copia è una nuova porta o finestra dello stesso tipo, con il numero successivo. Se non ci sta (oltre la fine del muro o sopra un’altra apertura), non si sposta nulla. **Ruota** e **Specchia** la collocano allo stesso modo, e la specchiatura ne cambia il verso.
+
 ![Le proprietà di una porta](shots/door-properties.webp)
 
 ## Aperture senza porta né finestra
@@ -35,6 +37,8 @@ Per spostare una porta o una finestra lungo il suo muro, selezionala e trascinal
 - la finitura della mazzetta, la cornice in facciata, la soglia e i colori.
 
 I disegni a destra mostrano il tipo come verrà disegnato in prospetto, in pianta e in sezione, mentre lo modifichi.
+
+**Sinistra e destra.** Il verso di una porta o di una finestra si chiama come lo chiama IFC: visto da chi la spinge per aprirla. Una porta *swing left* ha le cerniere alla sinistra di chi la spinge, quindi dalla stanza verso cui si apre sono a destra. La griglia **Ante** è vista dall’esterno, il lato da cui si spingono le ante, così la sua sinistra è quella dei nomi. Il prospetto è visto dall’interno, il lato verso cui si aprono le ante, a meno che non sia spuntato **Dall’esterno**; come la pianta, mostra la porta com’è nel modello. Una porta invertita sull’altro verso (**Verso**, o una freccia di inversione lungo il muro) è l’immagine speculare del suo tipo; gli abachi la mettono su una scheda a sé (vedi [Abachi](schedules.md)).
 
 ![Il configuratore di porte e finestre](shots/joinery-configurator.webp)
 

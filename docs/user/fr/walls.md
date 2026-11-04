@@ -43,7 +43,7 @@ Plus bas, **Dépendances** montre ce qui est construit à partir du mur et ce à
 
 ## Types de murs
 
-Un type de mur est un ensemble de couches, de la face extérieure à la face intérieure. Chaque couche a un matériau et une épaisseur, et une couche est le **noyau**. La ligne du mur suit le noyau. Pour modifier les types, choisissez **Architecture → Types de murs**. Une couche autre que l’âme peut avoir sa propre hauteur : **De** et **Jusqu’à** règlent jusqu’où elle monte au-dessus du pied du mur (une faïence jusqu’à 1500, un bardage à partir de 300) ; vide, elle court sur toute la hauteur.
+Un type de mur est un ensemble de couches, de la face à droite du sens dans lequel le mur est tracé (l’extérieur, si vous tracez autour d’un bâtiment dans le sens inverse des aiguilles d’une montre) à la face à sa gauche. Chaque couche a un matériau et une épaisseur, et une couche est le **noyau**. La ligne du mur suit le noyau. Pour modifier les types, choisissez **Architecture → Types de murs**. Une couche autre que l’âme peut avoir sa propre hauteur : **De** et **Jusqu’à** règlent jusqu’où elle monte au-dessus du pied du mur (une faïence jusqu’à 1500, un bardage à partir de 300) ; vide, elle court sur toute la hauteur.
 
 La colonne **Priorité** (de 0 à 100) indique comment la couche rencontre les couches d'un autre mur là où les murs se joignent : elle traverse les couches de l'autre de priorité inférieure et s'arrête à la première de priorité égale ou supérieure. Vide, la couche prend la priorité de son matériau dans **Gérer → Ordre de coupe**, sinon 50 pour le noyau et 0 pour les autres couches (le nombre affiché en grisé). Ainsi, un noyau en béton de 100 n'est pas interrompu par une ossature métallique de 99 et traverse la cloison, et un enduit dur de 60 arrête le noyau d'un mur qui vient s'y terminer. L'export IFC l'écrit comme la Priority de la couche, et l'import la relit.
 
@@ -54,6 +54,8 @@ Une couche autre que le noyau peut avoir une épaisseur de 0, pour un matériau 
 ![Une couche d’enduit avec du carrelage jusqu’à 2100 et l’enduit au-dessus](shots/wall-layer-parts.webp)
 
 ![Types de murs : les couches d’un mur en brique](shots/wall-types.webp)
+
+La légende au-dessus des couches montre le mur en plan comme le montre un mur sélectionné : l’axe en tirets avec une pointe de flèche dans le sens où il a été tracé, **D** sur sa face droite et **G** sur sa face gauche. Les couches sont numérotées de 1, sur la face D, à la dernière, sur la face G, avec les mêmes numéros que les lignes du tableau ; le noyau, qui porte la ligne du mur, est mis en évidence. Un mur retourné avec **Retourner** a ses couches dans l’autre sens, de G à D. Le message d’un enregistrement refusé disparaît dès que vous modifiez à nouveau le type.
 
 - **+ Couche** ajoute une couche. Les flèches montent ou descendent une couche.
 - **Zones en hauteur** divise le noyau de bas en haut, par exemple une première assise, la maçonnerie et un chaînage.

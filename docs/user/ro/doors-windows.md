@@ -16,6 +16,8 @@ Cât timp Door sau Window e activă, panoul de proprietăți arată tipul pe car
 
 Ca să muți o ușă sau o fereastră de-a lungul peretelui, selectează-o și trage de ea. Ca s-o schimbi, folosește panoul de proprietăți: tipul, înălțimea parapetului și partea în care se deschide. Cu mai multe uși și ferestre selectate, **Balamale**, **Parte**, parapetul și tipul le schimbă pe toate dintr-un pas, la fel și o săgeată de întoarcere din plan.
 
+Pentru o distanță exactă, folosește **Mută** (<kbd>M</kbd>) sau **Copiază** (<kbd>CO</kbd>) din linia de comandă, ca la orice element: selectează ușa, fereastra sau golul din perete, dă clic pe un punct de bază, apoi tastează distanța (`500`) sau dă clic pe un al doilea punct. Contează doar partea mutării de-a lungul peretelui: golul alunecă pe perete și își păstrează parapetul. Mutat într-un alt perete de pe același nivel, trece în acel perete și se deschide în continuare la fel în cameră. O copie e o ușă sau o fereastră nouă de același tip, cu numărul următor. Dacă nu încape (dincolo de capătul peretelui sau peste alt gol), nu se mută nimic. **Rotește** și **Oglindește** îl așază la fel, iar oglindirea îi schimbă mâna.
+
 ![Proprietățile unei uși](shots/door-properties.webp)
 
 ## Goluri fără ușă sau fereastră
@@ -35,6 +37,8 @@ Ca să muți o ușă sau o fereastră de-a lungul peretelui, selectează-o și t
 - finisajul glafului, ancadramentul de pe fațadă, pragul și culorile.
 
 Desenele din dreapta arată tipul așa cum va fi desenat în fațadă, plan și secțiune, chiar în timp ce îl schimbi.
+
+**Stânga și dreapta.** Mâna unei uși sau ferestre se numește cum o numește IFC: văzută de cel care o împinge ca s-o deschidă. O ușă *swing left* are balamalele în stânga celui care o împinge, deci, din camera spre care se deschide, ele sunt în dreapta. Grila **Canate** e văzută din exterior, partea dinspre care se împing canatele, așa că stânga ei e stânga din nume. Vederea e din interior, partea spre care se deschid canatele, dacă nu e bifat **Din exterior**; ca și planul, arată ușa așa cum stă în model. O ușă întoarsă pe cealaltă mână (**Balamale** sau o săgeată de întoarcere de-a lungul peretelui) e imaginea în oglindă a tipului ei; extrasele o pun pe o fișă a ei (vezi [Extrase](schedules.md)).
 
 ![Configuratorul de uși și ferestre](shots/joinery-configurator.webp)
 

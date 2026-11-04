@@ -50,6 +50,8 @@ Cât muți sau copiezi, un marcaj rămâne pe punctul de bază și o linie într
 
 Poți și să tragi. Trage de crucea din mijlocul unui element selectat ca să-l muți. Ține <kbd>Ctrl</kbd> (<kbd>⌘</kbd> pe Mac) cât tragi ca să lași o copie.
 
+O ușă, o fereastră sau un gol din perete se mută și se copiază de-a lungul peretelui: contează doar partea mutării de-a lungul lui, așa că `500` tastat după punctul de bază îl alunecă 500 pe perete; mutat într-un alt perete, trece în acel perete. Cu peretele selectat și el, merge odată cu peretele.
+
 O axă se mută, se copiază, se rotește și se oglindește singură sau împreună cu alte elemente. O copie e o axă nouă a aceluiași caroiaj, numită după ultima axă care merge în aceeași direcție: cu axele 1, 2 și 3, copia oricăreia e 4.
 
 ## Desen

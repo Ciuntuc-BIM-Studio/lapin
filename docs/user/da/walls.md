@@ -43,7 +43,7 @@ Længere nede viser **Afhængigheder**, hvad der er bygget af væggen, og hvad v
 
 ## Vægtyper
 
-En vægtype er et sæt lag, fra yderside til inderside. Hvert lag har et materiale og en tykkelse, og ét lag er **Kerne**. Væggens linje løber langs kernen. Du redigerer typerne under **Arkitektur → Vægtyper**. Et andet lag end kernen kan have sin egen højde: **Fra** og **Op til** angiver, hvor højt det går over væggens fod (fliser op til 1500, en beklædning fra 300); tomt går det i hele højden.
+En vægtype er et sæt lag, fra siden til højre for den retning, væggen tegnes i (ydersiden, når du tegner rundt om en bygning mod uret), til siden til venstre. Hvert lag har et materiale og en tykkelse, og ét lag er **Kerne**. Væggens linje løber langs kernen. Du redigerer typerne under **Arkitektur → Vægtyper**. Et andet lag end kernen kan have sin egen højde: **Fra** og **Op til** angiver, hvor højt det går over væggens fod (fliser op til 1500, en beklædning fra 300); tomt går det i hele højden.
 
 Kolonnen **Prioritet** (0 til 100) angiver, hvordan laget møder en anden vægs lag, hvor væggene sammenføjes: det går gennem den andens lag med lavere prioritet og stopper ved det første med samme eller højere. Tom tager laget sit materiales prioritet i **Administrer → Snitrækkefølge**, ellers 50 for kernen og 0 for de andre lag (tallet vist i gråt). Så en betonkerne på 100 afbrydes ikke af en stolpekerne på 99 og løber gennem skillevæggen, og en hård puds på 60 stopper kernen i en væg, der ender på den. IFC-eksporten skriver den som lagets Priority, og importen læser den tilbage.
 
@@ -54,6 +54,8 @@ Et andet lag end kernen kan have tykkelsen 0, for et materiale, der er for tyndt
 ![Et pudslag med fliser til 2100 og pudsen ovenover](shots/wall-layer-parts.webp)
 
 ![Vægtyper: lagene i en murstensvæg](shots/wall-types.webp)
+
+Signaturforklaringen over lagene viser væggen i plan, sådan som en markeret væg viser den: den stiplede akse med en pilespids i den retning, den blev tegnet, **H** på dens højre side og **V** på dens venstre. Lagene er nummereret fra 1 på H-siden til det sidste på V-siden med de samme numre som tabellens rækker; kernen, som væggens linje løber langs, er fremhævet. En væg vendt med **Vend** har lagene den anden vej, fra V til H. Beskeden fra en afvist gemning forsvinder, så snart du ændrer typen igen.
 
 - **+ Layer** tilføjer et lag. Pilene flytter et lag op eller ned.
 - **Zoner i højden** deler kernen op fra bund til top, for eksempel et første skifte, murværket og en ringbjælke.

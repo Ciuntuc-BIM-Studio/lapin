@@ -59,7 +59,7 @@ export function JoineryThumb({ type }: { type: NodeDto }) {
     void previews.get(key)!.then((p) => { if (live) setPreview(p); });
     return () => { live = false; };
   }, [key]);
-  return <span className="thumb-svg"><Strokes drawing={preview?.drawings?.elevation} w={W} h={H} label={type.name ?? ''} /></span>;
+  return <span className="thumb-svg"><Strokes drawing={preview?.drawings?.elevation} w={W} h={H} flipX label={type.name ?? ''} /></span>;
 }
 
 /** A skirting's profile to scale, the wall on its left, in its colour. */

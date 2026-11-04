@@ -46,6 +46,8 @@ Pendant que vous déplacez ou copiez, un repère reste sur le point de base et u
 
 Vous pouvez aussi faire glisser. Faites glisser la croix au milieu d’un élément sélectionné pour le déplacer. Maintenez <kbd>Ctrl</kbd> (<kbd>⌘</kbd> sur Mac) pendant que vous faites glisser pour laisser une copie.
 
+Une porte, une fenêtre ou une ouverture de mur se déplace et se copie le long de son mur : seule la part du déplacement le long du mur compte, si bien que taper `500` après le point de base la fait glisser de 500 le long du mur ; déplacée dans un autre mur, elle passe dans ce mur. Si son mur est sélectionné aussi, elle suit le mur.
+
 Un axe de quadrillage se déplace, se copie, pivote et se reflète seul ou avec d’autres éléments. Une copie est un nouvel axe de la même grille, nommé d’après le dernier axe qui court dans sa direction : avec les axes 1, 2 et 3, la copie de n’importe lequel d’entre eux est 4.
 
 ## Dessin

@@ -46,6 +46,8 @@ Mens du flytter eller kopierer, bliver en markør stående på basispunktet, og 
 
 Du kan også trække i stedet. Træk i krydset midt på et markeret element for at flytte det. Hold <kbd>Ctrl</kbd> (<kbd>⌘</kbd> på en Mac) nede, mens du trækker, for at efterlade en kopi.
 
+En dør, et vindue eller en vægåbning flyttes og kopieres langs sin væg: kun den del af flytningen, der ligger langs væggen, tæller, så `500` skrevet efter basispunktet skubber den 500 langs væggen; flyttet ind i en anden væg går den over i den væg. Er dens væg også markeret, følger den med væggen.
+
 En modullinje flyttes, kopieres, roteres og spejles for sig selv eller sammen med andre elementer. En kopi er en ny modullinje i samme net, opkaldt efter den sidste modullinje, der løber samme vej: med modullinjerne 1, 2 og 3 bliver en kopi af en hvilken som helst af dem til 4.
 
 ## Tegning

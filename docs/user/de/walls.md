@@ -43,7 +43,7 @@ Weiter unten zeigt **Abhängigkeiten**, was aus der Wand aufgebaut ist und worau
 
 ## Wandtypen
 
-Ein Wandtyp ist eine Folge von Schichten, von der Außenseite zur Innenseite. Jede Schicht hat ein Material und eine Dicke, und eine Schicht ist der **Kern**. Die Achse der Wand verläuft entlang des Kerns. Um die Typen zu bearbeiten, wählen Sie **Architektur → Wandtypen**. Eine Schicht außer dem Kern kann eine eigene Höhe haben: **Von** und **Bis** legen fest, wie hoch sie über dem Wandfuß reicht (ein Fliesensockel bis 1500, eine Bekleidung ab 300); leer läuft sie über die ganze Höhe.
+Ein Wandtyp ist eine Folge von Schichten, von der Seite rechts der Richtung, in der die Wand gezeichnet wird (die Außenseite, wenn Sie gegen den Uhrzeigersinn um ein Gebäude zeichnen), zur Seite links davon. Jede Schicht hat ein Material und eine Dicke, und eine Schicht ist der **Kern**. Die Achse der Wand verläuft entlang des Kerns. Um die Typen zu bearbeiten, wählen Sie **Architektur → Wandtypen**. Eine Schicht außer dem Kern kann eine eigene Höhe haben: **Von** und **Bis** legen fest, wie hoch sie über dem Wandfuß reicht (ein Fliesensockel bis 1500, eine Bekleidung ab 300); leer läuft sie über die ganze Höhe.
 
 Die Spalte **Priorität** (0 bis 100) gibt an, wie die Schicht auf die Schichten einer anderen Wand trifft, wo die Wände sich verbinden: Sie läuft durch deren Schichten mit niedrigerer Priorität und endet an der ersten mit gleicher oder höherer. Leer nimmt die Schicht die Priorität ihres Materials unter **Verwalten → Schnittreihenfolge**, sonst 50 für den Kern und 0 für die übrigen Schichten (die grau angezeigte Zahl). So wird ein Betonkern mit 100 von einem Ständerkern mit 99 nicht unterbrochen und läuft durch die Ständerwand, und ein harter Putz mit 60 hält den Kern einer Wand auf, die an ihm endet. Der IFC-Export schreibt sie als Priority der Schicht, der Import liest sie wieder ein.
 
@@ -54,6 +54,8 @@ Eine Schicht außer dem Kern kann die Dicke 0 haben, für ein Material, das zu d
 ![Eine Putzschicht mit Fliesen bis 2100 und dem Putz darüber](shots/wall-layer-parts.webp)
 
 ![Wandtypen: die Schichten einer Ziegelwand](shots/wall-types.webp)
+
+Die Legende über den Schichten zeigt die Wand im Grundriss so, wie eine ausgewählte Wand sie zeigt: die gestrichelte Achse mit einer Pfeilspitze in der Richtung, in der sie gezeichnet wurde, **R** auf ihrer rechten und **L** auf ihrer linken Seite. Die Schichten sind von 1 auf der Seite R bis zur letzten auf der Seite L nummeriert, mit denselben Nummern wie die Zeilen der Tabelle; der Kern, auf dem die Wandlinie liegt, ist hervorgehoben. Eine mit **Umkehren** gedrehte Wand hat ihre Schichten andersherum, von L nach R. Die Meldung einer abgelehnten Speicherung verschwindet, sobald Sie den Typ wieder ändern.
 
 - **+ Schicht** fügt eine Schicht hinzu. Die Pfeile verschieben eine Schicht nach oben oder unten.
 - **Zonen in der Höhe** teilt den Kern von unten nach oben, zum Beispiel in eine erste Steinlage, das Mauerwerk und einen Ringbalken.

@@ -46,6 +46,8 @@ Podczas przesuwania lub kopiowania na punkcie bazowym zostaje znacznik, a od nie
 
 Możesz też po prostu przeciągać. Przeciągnij krzyżyk na środku zaznaczonego elementu, aby go przesunąć. Przytrzymaj <kbd>Ctrl</kbd> (<kbd>⌘</kbd> na Macu) podczas przeciągania, aby zostawić kopię.
 
+Drzwi, okno lub otwór w ścianie przesuwa się i kopiuje wzdłuż swojej ściany: liczy się tylko część przesunięcia wzdłuż ściany, więc `500` wpisane po punkcie bazowym przesuwa go o 500 wzdłuż ściany; przesunięty do innej ściany przechodzi do niej. Gdy zaznaczona jest też jego ściana, przesuwa się razem ze ścianą.
+
 Oś siatki przesuwa się, kopiuje, obraca i odbija lustrzanie sama albo razem z innymi elementami. Kopia jest nową osią tej samej siatki, nazwaną według ostatniej osi biegnącej w tym samym kierunku: przy osiach 1, 2 i 3 kopia każdej z nich to 4.
 
 ## Rysowanie

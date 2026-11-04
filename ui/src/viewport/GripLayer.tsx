@@ -24,12 +24,29 @@ import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, u
 import { traceBegin, traceEnd } from './moveTrace';
 import { useCad } from './cad/session';
 import type { Shape } from './cad/shapes';
+import { useLang } from '../i18n';
+import { faceLetters } from './faceMarks';
 
 /** Where a model point shows on screen; `z` (the 3D view's) is the height it stands at. */
 type ToScreen = (p: Vec2, z?: number) => { x: number; y: number };
 
 /** How far out from its point a flip arrow is drawn, px. */
 const FLIP_OUT = 22;
+
+/** A point a fraction of the way along a polyline (model), with the direction it runs there. */
+function alongLine(pts: Vec2[], frac: number): { at: Vec2; dir: Vec2 } {
+  const lens = pts.slice(1).map((p, i) => Math.hypot(p.x - pts[i].x, p.y - pts[i].y));
+  let left = lens.reduce((a, b) => a + b, 0) * frac;
+  for (let i = 0; i < lens.length; i++) {
+    if (left <= lens[i] || i === lens.length - 1) {
+      const k = lens[i] > 0 ? Math.min(1, left / lens[i]) : 0;
+      const [a, b] = [pts[i], pts[i + 1]];
+      return { at: { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k }, dir: { x: (b.x - a.x) / (lens[i] || 1), y: (b.y - a.y) / (lens[i] || 1) } };
+    }
+    left -= lens[i];
+  }
+  return { at: pts[0], dir: { x: 1, y: 0 } };
+}
 
 export interface GripEditorOptions {
   /** The view's id as drafted shapes name it: a plan view, "plan:<storey>", a section. */
@@ -59,6 +76,7 @@ interface Drag { group: GripGroup; members: Grip[]; at: Vec2; moved: boolean; co
 export function useGripEditor(o: GripEditorOptions) {
   const selected = useUi((s) => s.selected);
   const nodes = useSession((s) => s.nodes);
+  const letters = faceLetters(useLang((s) => s.lang));
   const [hover, setHover] = useState<GripGroup | null>(null);
   const [pick, setPick] = useState<Record<string, number>>({});
   const [drag, setDrag] = useState<Drag | null>(null);
@@ -235,7 +253,26 @@ export function useGripEditor(o: GripEditorOptions) {
         const ps = r.points.map((p) => o.toScreen(p, z));
         if (ps.length < 2) return null;
         const d = `M${ps.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join('L')}${r.closed ? 'Z' : ''}`;
-        return <path key={`ref${i}`} d={d} className={`ref-line ${r.kind}`} />;
+        if (!r.faces) return <path key={`ref${i}`} d={d} className={`ref-line ${r.kind}`} />;
+        // A wall's axis (report #79): an arrowhead the way it was drawn, three quarters along (its middle has the move and
+        // flip grips), and its faces' letters a quarter along, R on its right and L on its left, as the Wall types legend shows.
+        const unit = (at: Vec2, v: Vec2) => {
+          const a = o.toScreen(at, z), b = o.toScreen({ x: at.x + v.x * 0.01, y: at.y + v.y * 0.01 }, z);
+          const l = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+          return { q: a, x: (b.x - a.x) / l, y: (b.y - a.y) / l };
+        };
+        const head = alongLine(r.points, 0.75), mid = alongLine(r.points, 0.25);
+        const t = unit(head.at, head.dir), n = unit(mid.at, { x: -mid.dir.y, y: mid.dir.x });
+        const tn = { x: -t.y, y: t.x };
+        const arrow = `M${t.q.x + t.x * 7} ${t.q.y + t.y * 7}L${t.q.x - t.x * 4 + tn.x * 4.5} ${t.q.y - t.y * 4 + tn.y * 4.5}L${t.q.x - t.x * 4 - tn.x * 4.5} ${t.q.y - t.y * 4 - tn.y * 4.5}Z`;
+        return (
+          <g key={`ref${i}`} data-testid="wall-faces">
+            <path d={d} className={`ref-line ${r.kind}`} />
+            <path d={arrow} className="ref-arrow" />
+            <text x={n.q.x - n.x * 14} y={n.q.y - n.y * 14} className="ref-face" data-face="right">{letters.right}</text>
+            <text x={n.q.x + n.x * 14} y={n.q.y + n.y * 14} className="ref-face" data-face="left">{letters.left}</text>
+          </g>
+        );
       })}
       {groups.map(shape)}
       {drag?.moved && o.zOf && (() => {

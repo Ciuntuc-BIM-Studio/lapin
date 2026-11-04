@@ -46,6 +46,8 @@ Während Sie verschieben oder kopieren, bleibt eine Markierung auf dem Basispunk
 
 Sie können stattdessen auch ziehen. Ziehen Sie das Kreuz in der Mitte eines ausgewählten Elements, um es zu verschieben. Halten Sie beim Ziehen <kbd>Strg</kbd> (<kbd>⌘</kbd> auf einem Mac) gedrückt, um eine Kopie zurückzulassen.
 
+Eine Tür, ein Fenster oder eine Wandöffnung wird entlang ihrer Wand verschoben und kopiert: Es zählt nur der Anteil der Verschiebung entlang der Wand, sodass `500` nach dem Basispunkt sie 500 entlang der Wand verschiebt; in eine andere Wand verschoben, wechselt sie in diese Wand. Ist auch ihre Wand ausgewählt, geht sie mit der Wand.
+
 Eine Rasterachse lässt sich allein oder zusammen mit anderen Elementen verschieben, kopieren, drehen und spiegeln. Eine Kopie ist eine neue Achse desselben Rasters, benannt nach der letzten Achse in ihrer Richtung: Bei den Achsen 1, 2 und 3 ist eine Kopie einer beliebigen von ihnen die 4.
 
 ## Zeichnen

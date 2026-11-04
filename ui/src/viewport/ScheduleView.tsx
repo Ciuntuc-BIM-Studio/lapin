@@ -29,7 +29,8 @@ interface GridDto {
 interface Layout {
   w: number; h: number; pens: PenDto[];
   rows: { id: string; label: string; fromModel: boolean; param?: string | null }[];
-  entries: { key: string; mark: string; name: string; total: number; manual?: boolean; rows: Record<string, string> }[];
+  /** type: the type an entry lists (a mirror image's entry, D-M, is its type's: report #83). */
+  entries: { key: string; type?: string; mark: string; name: string; total: number; manual?: boolean; rows: Record<string, string> }[];
   problems: { twice: number; none: number; marks: string[] };
   overridden?: Record<string, string[]>;
   /** A module's table, made editable. */
@@ -211,7 +212,7 @@ export function ScheduleView() {
                     if (r.param && !e.manual) {
                       return (
                         <td key={e.key} className="param" title={`${r.param} of ${e.name}: typed into the type (its elements' own values stay theirs)`}>
-                          <CellInput value={shown === '—' ? '' : shown} onCommit={(t) => void setTypeParam(e.key, r.param!, t)} testId={`param-${r.param}-${e.mark}`} />
+                          <CellInput value={shown === '—' ? '' : shown} onCommit={(t) => void setTypeParam(e.type ?? e.key, r.param!, t)} testId={`param-${r.param}-${e.mark}`} />
                         </td>
                       );
                     }

@@ -43,7 +43,7 @@ Più in basso, **Dipendenze** mostra cosa è costruito dal muro e da cosa è cos
 
 ## Tipi di muro
 
-Un tipo di muro è un insieme di strati, dalla faccia esterna alla faccia interna. Ogni strato ha un materiale e uno spessore, e uno strato è il **nucleo**. La linea del muro corre lungo il nucleo. Per modificare i tipi, scegli **Architettura → Tipi di muro**. Uno strato diverso dal nucleo può avere un’altezza propria: **Da** e **Fino a** stabiliscono fin dove arriva sopra la base del muro (uno zoccolo piastrellato fino a 1500, un rivestimento da 300 in su); se vuoti, lo strato corre per tutta l’altezza.
+Un tipo di muro è un insieme di strati, dalla faccia a destra del verso in cui il muro è disegnato (l’esterno, se disegni intorno all’edificio in senso antiorario) alla faccia alla sua sinistra. Ogni strato ha un materiale e uno spessore, e uno strato è il **nucleo**. La linea del muro corre lungo il nucleo. Per modificare i tipi, scegli **Architettura → Tipi di muro**. Uno strato diverso dal nucleo può avere un’altezza propria: **Da** e **Fino a** stabiliscono fin dove arriva sopra la base del muro (uno zoccolo piastrellato fino a 1500, un rivestimento da 300 in su); se vuoti, lo strato corre per tutta l’altezza.
 
 La colonna **Priorità** (da 0 a 100) dice come lo strato incontra gli strati di un altro muro dove i muri si uniscono: attraversa gli strati dell'altro di priorità minore e si ferma al primo di priorità uguale o maggiore. Se la lasci vuota, lo strato prende la priorità del suo materiale in **Gestisci → Ordine di taglio**, altrimenti 50 per il nucleo e 0 per gli altri strati (il numero mostrato in grigio). Così un nucleo di calcestruzzo a 100 non viene interrotto da un nucleo di montanti a 99 e attraversa il tramezzo, e un intonaco duro a 60 ferma il nucleo di un muro che vi termina contro. L'esportazione IFC la scrive come Priority dello strato, e l'importazione la rilegge.
 
@@ -54,6 +54,8 @@ Uno strato diverso dal nucleo può avere spessore 0, per un materiale troppo sot
 ![Uno strato di intonaco con piastrelle fino a 2100 e l’intonaco sopra](shots/wall-layer-parts.webp)
 
 ![Tipi di muro: gli strati di un muro in laterizio](shots/wall-types.webp)
+
+La legenda sopra gli strati mostra il muro in pianta come lo mostra un muro selezionato: l’asse tratteggiato con una punta di freccia nel verso in cui è stato disegnato, **D** sulla faccia destra e **S** sulla faccia sinistra. Gli strati sono numerati da 1, sulla faccia D, all’ultimo, sulla faccia S, con gli stessi numeri delle righe della tabella; il nucleo, lungo cui corre la linea del muro, è evidenziato. Un muro capovolto con **Capovolgi** ha gli strati al contrario, da S a D. Il messaggio di un salvataggio rifiutato scompare appena modifichi di nuovo il tipo.
 
 - **+ Strato** aggiunge uno strato. Le frecce spostano uno strato in su o in giù.
 - **Zone in altezza** divide il nucleo dal basso verso l’alto, per esempio un primo corso, la muratura e un cordolo.

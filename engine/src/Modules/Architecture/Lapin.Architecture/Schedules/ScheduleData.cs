@@ -20,6 +20,15 @@ public sealed record ScheduleEntry(string Key, string Kind, JoinerySpec? Spec, s
 {
     /// <summary>A column of the schedule's own (decision 251): no type behind it, every value typed.</summary>
     public const string Manual = "manual";
+
+    /// <summary>The key's ending for a type's mirror image (report #83), as IFC derives its mirrored type's GlobalId.</summary>
+    public const string MirroredKey = "#mirrored";
+
+    /// <summary>The type the entry lists (its key without the mirror's ending).</summary>
+    public string TypeKey => Key.EndsWith(MirroredKey, StringComparison.Ordinal) ? Key[..^MirroredKey.Length] : Key;
+
+    /// <summary>Whether it lists a type's mirror image: the doors and windows of the type flipped to its other hand.</summary>
+    public bool Mirrored => Key.EndsWith(MirroredKey, StringComparison.Ordinal);
 }
 
 /// <summary>What a schedule lists, its levels (lowest first), and for joinery the lintel mark over each door and window.</summary>
@@ -47,7 +56,15 @@ public static class Schedules
         return (storeys.Select(s => s.Name).Distinct().ToList(), id => Spatial.StoreyOf(m, id)?.Name ?? NoLevel);
     }
 
-    /// <summary>Doors, windows or both: one entry per type, its occurrences numbered by level, then as placed.</summary>
+    /// <summary>The mark's ending for a type's mirror image: D and D-M (report #83).</summary>
+    public const string MirroredMark = "-M";
+
+    /// <summary>
+    /// Doors, windows or both: one entry per type, its occurrences numbered by level, then as placed. The ones flipped to
+    /// the type's other hand (on one axis, not both: <see cref="Architecture.Joinery.IsMirrored"/>) are an entry of their own
+    /// (report #83): the type's mirror image, its mark with <see cref="MirroredMark"/>, "(mirrored)" after its name (as the
+    /// IFC export names the mirrored type), its opening and drawings the other hand's.
+    /// </summary>
     public static ScheduleData Joinery(IModelView m, string kind)
     {
         var (levels, levelOf) = LevelsOf(m);
@@ -58,13 +75,23 @@ public static class Schedules
             foreach (var type in m.OfClass(typeClass))
             {
                 var spec = JoinerySpec.From(type.Attrs["spec"]);
-                var placed = m.RelatedOf(type.Id, IfcClass.RelDefinesByType).Where(e => e.Class is IfcClass.Door or IfcClass.Window).ToList();
-                var counts = new Dictionary<string, int>();
-                var occ = placed.Select(e => (e, Level: levelOf(e.Id))).ToList();
-                foreach (var (_, level) in occ) counts[level] = counts.GetValueOrDefault(level) + 1;
-                var numbered = occ.OrderBy(x => levels.IndexOf(x.Level) is var i && i < 0 ? 99 : i).ThenBy(x => m.Order(x.e.Id))
-                    .Select((x, i) => new Occurrence(x.e.Id, x.Level, i + 1, spec?.IsExternal)).ToList();
-                entries.Add(new ScheduleEntry(type.Id, k, spec, spec?.Mark ?? type.Str("mark") ?? "", type.Name, spec?.Width ?? 0, spec?.Height ?? 0, counts, placed.Count, numbered, Params: ParamValues(type, placed)));
+                var all = m.RelatedOf(type.Id, IfcClass.RelDefinesByType).Where(e => e.Class is IfcClass.Door or IfcClass.Window).ToList();
+                var mark = spec?.Mark ?? type.Str("mark") ?? "";
+                var mirrored = all.Where(Architecture.Joinery.IsMirrored).ToList();
+                var own = all.Except(mirrored).ToList();
+                ScheduleEntry Entry(string key, JoinerySpec? s, string mk, string name, List<Entity> placed)
+                {
+                    var counts = new Dictionary<string, int>();
+                    var occ = placed.Select(e => (e, Level: levelOf(e.Id))).ToList();
+                    foreach (var (_, level) in occ) counts[level] = counts.GetValueOrDefault(level) + 1;
+                    var numbered = occ.OrderBy(x => levels.IndexOf(x.Level) is var i && i < 0 ? 99 : i).ThenBy(x => m.Order(x.e.Id))
+                        .Select((x, i) => new Occurrence(x.e.Id, x.Level, i + 1, s?.IsExternal)).ToList();
+                    return new ScheduleEntry(key, k, s, mk, name, s?.Width ?? 0, s?.Height ?? 0, counts, placed.Count, numbered, Params: ParamValues(type, placed));
+                }
+                // A type only ever placed flipped is listed by its mirror image alone; one placed nowhere, as itself (unused).
+                if (own.Count > 0 || mirrored.Count == 0) entries.Add(Entry(type.Id, spec, mark, type.Name, own));
+                if (mirrored.Count > 0)
+                    entries.Add(Entry(type.Id + ScheduleEntry.MirroredKey, spec == null ? null : Architecture.Joinery.Mirrored(spec), mark.Length > 0 ? mark + MirroredMark : mark, $"{type.Name} (mirrored)", mirrored));
             }
         }
         // Windows before doors, then by mark (numbers as numbers), then width.

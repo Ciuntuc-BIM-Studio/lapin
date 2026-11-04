@@ -34,6 +34,8 @@ Zestawienie to tabela wypełniana przez model: drzwi i okna, nadproża, pomieszc
 
 Zestawienia **Stolarka**, **drzwi**, **okien** i **nadproży** pokazują kartę dla każdego typu, z jego rysunkiem (domyślnie widok od wewnątrz) i jego wartościami wiersz po wierszu. Inne zestawienia są zwykłą tabelą, z jednym wierszem na pozycję i wierszem sum na końcu.
 
+Drzwi lub okno odwrócone na drugą stronę swojego typu (**Strona zawiasów** albo jedna strzałka odwracania; odwrócone w obie strony są tylko obrócone) są lustrzanym odbiciem typu i dostają osobną kartę: ich oznaczenie kończy się na **-M** (D-M), nazwa na „(mirrored)”, a wiersz **Opening**, rysunek i liczby są drugiej strony. Odwróć je z powrotem, a wrócą na kartę swojego typu. Lewe i prawe są jak w IFC: zawiasy widziane przez osobę, która pcha skrzydło, by je otworzyć. Rysunki pokazują każde drzwi takie, jakie stoją w modelu, widziane od wewnątrz, od strony, w którą się otwierają (więc zawiasy drzwi *swing left* są po prawej). Mówi o tym uwaga pod kartami.
+
 ![Zestawienie stolarki z wierszami odporności ogniowej i producenta](shots/joinery-schedule.webp)
 
 ## Odporność ogniowa, producenci i inne parametry

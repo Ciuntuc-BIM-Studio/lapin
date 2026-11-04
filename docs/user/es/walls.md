@@ -43,7 +43,7 @@ Más abajo, **Dependencias** muestra lo que se construye a partir del muro y a p
 
 ## Tipos de muro
 
-Un tipo de muro es un conjunto de capas, desde la cara exterior hasta la cara interior. Cada capa tiene un material y un espesor, y una capa es el **núcleo**. La línea del muro va por el núcleo. Para editar los tipos, elija **Arquitectura → Tipos de muro**. Una capa que no sea el núcleo puede tener su propia altura: **Desde** y **Hasta** fijan hasta dónde llega sobre la base del muro (un alicatado hasta 1500, un aplacado desde 300); vacío, ocupa toda la altura.
+Un tipo de muro es un conjunto de capas, desde la cara a la derecha del sentido en que se dibuja el muro (el exterior, si dibuja alrededor del edificio en sentido antihorario) hasta la cara de su izquierda. Cada capa tiene un material y un espesor, y una capa es el **núcleo**. La línea del muro va por el núcleo. Para editar los tipos, elija **Arquitectura → Tipos de muro**. Una capa que no sea el núcleo puede tener su propia altura: **Desde** y **Hasta** fijan hasta dónde llega sobre la base del muro (un alicatado hasta 1500, un aplacado desde 300); vacío, ocupa toda la altura.
 
 La columna **Prioridad** (de 0 a 100) indica cómo se encuentra la capa con las capas de otro muro donde los muros se unen: atraviesa las capas del otro de menor prioridad y se detiene en la primera de prioridad igual o mayor. Si la deja vacía, la capa toma la prioridad de su material en **Gestionar → Orden de corte**, si no 50 para el núcleo y 0 para las demás capas (el número que se muestra en gris). Así, un núcleo de hormigón de 100 no queda interrumpido por un núcleo de montantes de 99 y atraviesa el tabique, y un enlucido duro de 60 detiene el núcleo de un muro que termina en él. La exportación IFC la escribe como la Priority de la capa, y la importación la vuelve a leer.
 
@@ -54,6 +54,8 @@ Una capa que no sea el núcleo puede tener espesor 0, para un material demasiado
 ![Una capa de enlucido con azulejos hasta 2100 y el enlucido encima](shots/wall-layer-parts.webp)
 
 ![Tipos de muro: las capas de un muro de ladrillo](shots/wall-types.webp)
+
+La leyenda sobre las capas muestra el muro en planta tal como lo muestra un muro seleccionado: el eje discontinuo con una punta de flecha en el sentido en que se dibujó, **D** en su cara derecha e **I** en su cara izquierda. Las capas se numeran desde 1, en la cara D, hasta la última, en la cara I, con los mismos números que las filas de la tabla; el núcleo, por el que va la línea del muro, aparece resaltado. Un muro volteado con **Voltear** tiene las capas al revés, de I a D. El mensaje de un guardado rechazado desaparece en cuanto vuelve a cambiar el tipo.
 
 - **+ Capa** añade una capa. Las flechas suben o bajan una capa.
 - **Zonas en altura** divide el núcleo de abajo arriba, por ejemplo una primera hilada, la fábrica y una viga de atado.

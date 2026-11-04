@@ -244,6 +244,27 @@ public static class Joinery
         return new CellRect(cols[p.Col].A, cols[c1].B, rows[p.Row].A, rows[r1].B);
     }
 
+    /// <summary>
+    /// The type's mirror image (a door or window flipped on one axis, report #83): its columns in the other order, each panel
+    /// in the column across from its own, and the other hand (swing-left ↔ swing-right, tilt-turn-left ↔ tilt-turn-right…).
+    /// </summary>
+    public static JoinerySpec Mirrored(JoinerySpec s)
+    {
+        var nc = s.Columns.Length;
+        return s with
+        {
+            Columns = [.. s.Columns.Reverse()],
+            Panels = [.. s.Panels.Select(p =>
+            {
+                var span = Math.Max(1, Math.Min(p.ColSpan, nc - p.Col));
+                return p with { Col = p.Col >= 0 && p.Col < nc ? nc - p.Col - span : p.Col, ColSpan = span, Operation = IfcHands.MirrorText(p.Operation) };
+            })],
+        };
+    }
+
+    /// <summary>Whether a door or window is its type's mirror image: flipped on one axis, not both (two flips turn it round).</summary>
+    public static bool IsMirrored(Entity fill) => fill.Bool("flipHand") != fill.Bool("flipSide");
+
     /// <summary>Every grid cell covered by exactly one panel: overlapping panels are dropped, cells no panel covers become fixed glazing.</summary>
     public static List<JoineryPanel> Normalised(JoinerySpec s)
     {

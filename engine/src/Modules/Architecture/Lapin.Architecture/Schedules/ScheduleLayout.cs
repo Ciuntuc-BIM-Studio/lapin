@@ -184,7 +184,11 @@ public static class ScheduleLayout
         // Each drawing's extent (m): an elevation is the type's width × height; a plan the width by its depth and swing; a section its depth by its height.
         static List<Stroke> Segs(IEnumerable<JStroke> strokes) => strokes.SelectMany(st => Enumerable.Range(0, st.Pts.Count - (st.Closed ? 0 : 1))
             .Select(i => new Stroke(st.Pts[i], st.Pts[(i + 1) % st.Pts.Count], st.Weight, st.Dashed))).ToList();
-        var plan = e.Spec != null ? Segs(JoinerySymbols.Plan(e.Spec)) : [];
+        // The type's frame is the model's mirror image (X along the wall, +Y to the exterior on its right): its drawings are
+        // turned over to show the door as it stands (report #83), the plan from above, the elevation from the interior, the
+        // side it opens to, where a swing-left door's hinges are on the right.
+        static List<Stroke> AsBuilt(List<Stroke> strokes) => strokes.Select(x => x with { A = new Vec2(-x.A.X, x.A.Y), B = new Vec2(-x.B.X, x.B.Y) }).ToList();
+        var plan = e.Spec != null ? AsBuilt(Segs(JoinerySymbols.Plan(e.Spec))) : [];
         var section = e.Spec != null ? Segs(JoinerySymbols.Section(e.Spec)) : [];
         var (sMinX, sMaxX) = section.Count > 0 ? (section.Min(x => Math.Min(x.A.X, x.B.X)), section.Max(x => Math.Max(x.A.X, x.B.X))) : (0, 0);
         var (pMinX, pMaxX) = plan.Count > 0 ? (plan.Min(x => Math.Min(x.A.X, x.B.X)), plan.Max(x => Math.Max(x.A.X, x.B.X))) : (-e.Width / 2, e.Width / 2);
@@ -220,7 +224,7 @@ public static class ScheduleLayout
                 var xv = x0;
                 Vec2 P(Vec2 q) => new(xv + (q.X + e.Width / 2) * k, bottom - q.Y * k);
                 if (e.Spec != null)
-                    foreach (var st in Segs(JoinerySymbols.Elevation(e.Spec, view == "exterior", convention, hardware)))
+                    foreach (var st in AsBuilt(Segs(JoinerySymbols.Elevation(e.Spec, view == "exterior", convention, hardware))))
                         s.Line(P(st.A), P(st.B), DrawingPen[st.Weight], st.Dashed ? [1.2, 0.8] : null, "SCHEDULE-SYMBOLS");
                 else
                 {
@@ -236,8 +240,24 @@ public static class ScheduleLayout
         });
     }
 
-    /// <summary>A table's cards in bands no wider than <paramref name="maxWidth"/> (paper mm), each band's pens from its own top.</summary>
-    public static List<ScheduleBand> Bands(ScheduleData data, ScheduleTable table, double scale = 50, double maxWidth = 380, Func<ScheduleEntry, IReadOnlyList<string>>? drawingsOf = null, string convention = "handle", bool hardware = false)
+    /// <summary>
+    /// What a joinery schedule says under its cards (report #83): how it names the hand, IFC's way (docs/spec-ifc.md),
+    /// where its elevations are seen from, and what a mark's -M is.
+    /// </summary>
+    public static List<string> HandNote(ScheduleData data, IReadOnlyList<string> drawings)
+    {
+        if (!data.Entries.Any(e => e.Spec != null)) return [];
+        var lines = new List<string> { "Left and right: the hinges as seen by someone pushing it open (IFC's hand)." };
+        if (drawings.Contains("interior") || !drawings.Any(d => d is "interior" or "exterior")) lines.Add("Elevations seen from the interior, the side it opens to" + (drawings.Contains("exterior") ? "; exterior ones from outside." : "."));
+        else if (drawings.Contains("exterior")) lines.Add("Elevations seen from outside, the side it is pushed from.");
+        if (data.Entries.Any(e => e.Mirrored)) lines.Add($"{Schedules.MirroredMark}: the type's mirror image, flipped to the other hand.");
+        return lines;
+    }
+
+    const double NoteRow = 4.2;
+
+    /// <summary>A table's cards in bands no wider than <paramref name="maxWidth"/> (paper mm), each band's pens from its own top; <paramref name="note"/> under the last.</summary>
+    public static List<ScheduleBand> Bands(ScheduleData data, ScheduleTable table, double scale = 50, double maxWidth = 380, Func<ScheduleEntry, IReadOnlyList<string>>? drawingsOf = null, string convention = "handle", bool hardware = false, IReadOnlyList<string>? note = null)
     {
         var k = 1000 / scale;
         var rows = Rows(data, table);
@@ -290,7 +310,10 @@ public static class ScheduleLayout
                 }
                 x += cw;
             }
-            bands.Add(new ScheduleBand(w, bandH, s.Pens.Values.ToList()));
+            var h = bandH;
+            if (note is { Count: > 0 } && g == groups[^1])
+                foreach (var line in note) { h += NoteRow; s.Text(new Vec2(0, h - 0.8), line, 2); }
+            bands.Add(new ScheduleBand(w, h, s.Pens.Values.ToList()));
         }
         return bands;
     }

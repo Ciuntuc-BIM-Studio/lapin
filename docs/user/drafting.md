@@ -50,6 +50,8 @@ While you move or copy, a marker stays on the base point and a dashed line runs 
 
 You can also drag instead. Drag the cross in the middle of a selected element to move it. Hold <kbd>Ctrl</kbd> (<kbd>⌘</kbd> on a Mac) while you drag to leave a copy.
 
+A door, a window or a wall opening moves and copies along its wall: only the part of the move along the wall counts, so typing `500` after the base point slides it 500 along the wall; moved into another wall, it goes into that wall. With its wall selected too, it goes with the wall.
+
 A grid axis moves, copies, rotates and mirrors on its own, or together with other elements. A copy is a new axis of the same grid, named after the last axis that runs its way: with axes 1, 2 and 3, a copy of any of them is 4.
 
 ## Drafting

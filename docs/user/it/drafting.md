@@ -46,6 +46,8 @@ Mentre sposti o copi, un indicatore resta sul punto base e una linea tratteggiat
 
 Puoi anche trascinare. Trascina la croce al centro di un elemento selezionato per spostarlo. Tieni premuto <kbd>Ctrl</kbd> (<kbd>⌘</kbd> su Mac) mentre trascini per lasciare una copia.
 
+Una porta, una finestra o un’apertura nel muro si sposta e si copia lungo il suo muro: conta solo la parte dello spostamento lungo il muro, quindi digitare `500` dopo il punto base la fa scorrere di 500 lungo il muro; spostata in un altro muro, passa in quel muro. Se è selezionato anche il suo muro, va con il muro.
+
 Un asse della griglia si sposta, si copia, ruota e si specchia da solo o insieme ad altri elementi. Una copia è un nuovo asse della stessa griglia, chiamato in base all’ultimo asse che corre nella sua direzione: con gli assi 1, 2 e 3, una copia di uno qualsiasi di essi è 4.
 
 ## Disegno

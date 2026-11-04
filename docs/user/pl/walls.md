@@ -43,7 +43,7 @@ Niżej sekcja **Zależności** pokazuje, co jest zbudowane ze ściany i z czego 
 
 ## Typy ścian
 
-Typ ściany to zestaw warstw, od lica zewnętrznego do lica wewnętrznego. Każda warstwa ma materiał i grubość, a jedna warstwa jest **rdzeniem**. Linia ściany biegnie wzdłuż rdzenia. Aby edytować typy, wybierz **Architektura → Typy ścian**. Warstwa inna niż rdzeń może mieć własną wysokość: **Od** i **Do** określają, jak wysoko sięga ponad podstawę ściany (lamperia z płytek do 1500, okładzina od 300 w górę); gdy są puste, warstwa biegnie przez całą wysokość.
+Typ ściany to zestaw warstw, od lica po prawej stronie kierunku, w którym rysowana jest ściana (zewnętrznego, gdy rysujesz wokół budynku przeciwnie do ruchu wskazówek zegara), do lica po jej lewej. Każda warstwa ma materiał i grubość, a jedna warstwa jest **rdzeniem**. Linia ściany biegnie wzdłuż rdzenia. Aby edytować typy, wybierz **Architektura → Typy ścian**. Warstwa inna niż rdzeń może mieć własną wysokość: **Od** i **Do** określają, jak wysoko sięga ponad podstawę ściany (lamperia z płytek do 1500, okładzina od 300 w górę); gdy są puste, warstwa biegnie przez całą wysokość.
 
 Kolumna **Priorytet** (od 0 do 100) mówi, jak warstwa spotyka się z warstwami innej ściany tam, gdzie ściany się łączą: przechodzi przez warstwy drugiej ściany o niższym priorytecie i zatrzymuje się na pierwszej o równym lub wyższym. Pusta — warstwa bierze priorytet swojego materiału z **Zarządzaj → Kolejność cięcia**, a w jego braku 50 dla rdzenia i 0 dla pozostałych warstw (liczba pokazana na szaro). Dzięki temu rdzeń betonowy o priorytecie 100 nie jest przerywany przez rdzeń z profili o 99 i przechodzi przez ściankę, a twardy tynk o 60 zatrzymuje rdzeń ściany, która się na nim kończy. Eksport IFC zapisuje go jako Priority warstwy, a import odczytuje go z powrotem.
 
@@ -54,6 +54,8 @@ Warstwa inna niż rdzeń może mieć grubość 0, dla materiału zbyt cienkiego,
 ![Warstwa tynku z płytkami ceramicznymi do 2100 i tynkiem powyżej](shots/wall-layer-parts.webp)
 
 ![Typy ścian: warstwy ściany ceglanej](shots/wall-types.webp)
+
+Legenda nad warstwami pokazuje ścianę na rzucie tak, jak pokazuje ją zaznaczona ściana: przerywaną oś z grotem strzałki w kierunku, w którym była rysowana, **P** na jej prawym licu i **L** na lewym. Warstwy są ponumerowane od 1 na licu P do ostatniej na licu L, tymi samymi numerami co wiersze tabeli; rdzeń, wzdłuż którego biegnie linia ściany, jest wyróżniony. Ściana odwrócona przyciskiem **Odwróć** ma warstwy w odwrotnej kolejności, od L do P. Komunikat o odrzuconym zapisie znika, gdy tylko znowu zmienisz typ.
 
 - **+ Warstwa** dodaje warstwę. Strzałki przesuwają warstwę w górę lub w dół.
 - **Strefy na wysokości** dzieli rdzeń od dołu do góry, na przykład na pierwszą warstwę, mur i wieniec.

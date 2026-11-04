@@ -16,6 +16,8 @@ Gdy Drzwi lub Okno jest włączone, panel Właściwości pokazuje typ, który zo
 
 Aby przesunąć drzwi lub okno wzdłuż ściany, zaznacz je i przeciągnij. Aby je zmienić, użyj panelu Właściwości: typ, wysokość parapetu i strona otwierania (**Strona**). Gdy zaznaczonych jest kilka drzwi i okien, **Strona zawiasów**, **Strona**, parapet i typ zmieniają je wszystkie w jednym kroku, podobnie strzałka odwracania na rzucie.
 
+Aby przesunąć o dokładną odległość, użyj **Przesuń** (<kbd>M</kbd>) lub **Kopiuj** (<kbd>CO</kbd>) w wierszu poleceń, jak przy każdym elemencie: zaznacz drzwi, okno lub otwór w ścianie, kliknij punkt bazowy, a potem wpisz odległość (`500`) albo kliknij drugi punkt. Liczy się tylko część przesunięcia wzdłuż ściany: otwór przesuwa się wzdłuż swojej ściany i zachowuje parapet. Przesunięty do innej ściany na tej samej kondygnacji przechodzi do tej ściany i nadal otwiera się tak samo do pomieszczenia. Kopia to nowe drzwi lub nowe okno tego samego typu z kolejnym numerem. Jeśli się nie mieści (za końcem ściany albo na innym otworze), nic się nie przesuwa. **Obróć** i **Lustro** umieszczają go tak samo, a odbicie lustrzane zmienia stronę zawiasów.
+
 ![Właściwości drzwi](shots/door-properties.webp)
 
 ## Otwory bez drzwi i okien
@@ -35,6 +37,8 @@ Aby przesunąć drzwi lub okno wzdłuż ściany, zaznacz je i przeciągnij. Aby 
 - wykończenie ościeża, opaskę na elewacji, próg i kolory.
 
 Rysunki po prawej pokazują typ tak, jak zostanie narysowany na elewacji, rzucie i przekroju, na bieżąco podczas zmian.
+
+**Lewe i prawe.** Stronę drzwi lub okna nazywa się tak, jak nazywa ją IFC: widzianą przez osobę, która je pcha, by otworzyć. Drzwi *swing left* mają zawiasy po lewej stronie osoby, która je pcha, więc od strony pomieszczenia, do którego się otwierają, są po prawej. Siatka **Kwatery** jest widziana od zewnątrz, od strony, z której pcha się skrzydła, więc jej lewa strona to lewa strona z nazw. Widok jest od wewnątrz, od strony, w którą otwierają się skrzydła, chyba że zaznaczone jest **Od zewnątrz**; tak jak rzut pokazuje drzwi takie, jakie stoją w modelu. Drzwi odwrócone na drugą stronę (**Strona zawiasów** albo strzałka odwracania wzdłuż ściany) są lustrzanym odbiciem swojego typu; zestawienia pokazują je na osobnej karcie (zobacz [Zestawienia](schedules.md)).
 
 ![Konfigurator drzwi i okien](shots/joinery-configurator.webp)
 

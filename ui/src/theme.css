@@ -399,6 +399,18 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .ref-line.axis { stroke-dasharray: 10 3 2 3; }
 .ref-line.outline { stroke-dasharray: 5 3; }
 .ref-line.sketch { stroke-dasharray: 2 3; stroke-width: 1.6; }
+/* A selected wall's drawn direction and faces (report #79), the Wall types legend's marks. */
+.ref-arrow { fill: var(--accent); stroke: none; pointer-events: none; }
+/* The Wall types legend: the wall in plan, its layers numbered as the table's rows (report #79). */
+.wall-legend { display: block; margin: 2px 0 6px; overflow: visible; }
+.wall-legend .band { fill: var(--wash); stroke: var(--ink-muted); stroke-width: 0.8; }
+.wall-legend .band.core { fill: var(--accent-wash); stroke: var(--accent); }
+.wall-legend .band-no { fill: var(--ink); font: 600 10px var(--font); text-anchor: end; dominant-baseline: central; }
+.wall-legend .axis { stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 10 3 2 3; }
+table.layer-edit:not(.zones) > tbody { counter-reset: layer; }
+table.layer-edit:not(.zones) > tbody > tr:not(.layer-parts):not(.total) > td:first-child { position: relative; padding-left: 16px; }
+table.layer-edit:not(.zones) > tbody > tr:not(.layer-parts):not(.total) > td:first-child::before { counter-increment: layer; content: counter(layer); position: absolute; left: 2px; top: 50%; transform: translateY(-50%); font-weight: 600; font-size: 11px; color: var(--ink); }
+.ref-face { fill: var(--accent); font: 700 11px var(--font); text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: var(--bg, #fff); stroke-width: 3px; }
 .grip-hint { font-size: 11px; fill: var(--accent); font-weight: 600; pointer-events: none; }
 .plan-grip-drag { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
 .qset + .qset { margin-top: 10px; }

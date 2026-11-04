@@ -34,6 +34,8 @@ Una tabla es una lista que rellena el modelo: puertas y ventanas, dinteles, habi
 
 Las tablas de **carpintería**, de **puertas**, de **ventanas** y de **dinteles** muestran una ficha por tipo, con su dibujo (la vista interior por defecto) y sus valores fila a fila. Las demás tablas son una tabla simple, una fila por elemento y una línea de totales al final.
 
+Una puerta o ventana volteada a la otra mano de su tipo (**Mano**, o una sola flecha de giro; volteada en los dos sentidos solo está girada) es la imagen en espejo de su tipo y recibe una ficha propia: su marca termina en **-M** (D-M), su nombre en «(mirrored)», y su fila **Opening**, su dibujo y sus cantidades son los de la otra mano. Si la vuelve a voltear, regresa a la ficha de su tipo. Izquierda y derecha son las de IFC: las bisagras vistas por quien la empuja para abrirla. Los dibujos muestran cada puerta tal como está en el modelo, vista desde el interior, el lado hacia el que abre (así, las bisagras de una puerta *swing left* quedan a la derecha). Una nota bajo las fichas lo indica.
+
 ![Una tabla de carpintería con sus filas de resistencia al fuego y fabricante](shots/joinery-schedule.webp)
 
 ## Resistencia al fuego, fabricantes y otros parámetros

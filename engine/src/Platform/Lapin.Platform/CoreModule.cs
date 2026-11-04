@@ -229,12 +229,19 @@ public sealed class CoreModule : ILapinModule
                 _ => throw new CommandException($"„{op}” is not move, copy, rotate or mirror."),
             };
             var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
-            var entities = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>().ToList();
-            // What a module places itself (an opening in its wall) goes with its host, not on its own.
-            entities = entities.Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)
-                && ctx.Model.RelatingOf(e.Id, IfcClass.RelFillsElement) == null && ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement) == null).ToList();
-            if (entities.FirstOrDefault(StoredBodies.Has) is { } fixedOne) throw new CommandException($"„{fixedOne.Name}” is a reference from an IFC file: it stays where the file put it.");
+            var all = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>()
+                .Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)).ToList();
+            if (all.FirstOrDefault(StoredBodies.Has) is { } fixedOne) throw new CommandException($"„{fixedOne.Name}” is a reference from an IFC file: it stays where the file put it.");
+            // What a module places in a host (a door in its opening, the opening in its wall) is not moved on its own like the rest.
+            string? HostOf(Entity e) => ctx.Model.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening
+                ? ctx.Model.RelatingOf(opening.Id, IfcClass.RelVoidsElement)?.Id ?? opening.Id
+                : ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement)?.Id;
+            var entities = all.Where(e => HostOf(e) == null).ToList();
             var moving = entities.Select(e => e.Id).ToHashSet();
+            // One whose host moves too goes with it; one whose host stays is its module's to move in a host (report #82: MOVE
+            // and COPY on a window slide it along its wall), once: an opening selected with its door is the door's.
+            var hostedIds = all.Where(e => HostOf(e) is { } h && !moving.Contains(h)).Select(e => e.Id).ToHashSet();
+            var hosted = all.Where(e => hostedIds.Contains(e.Id) && !ctx.Model.RelatedOf(e.Id, IfcClass.RelFillsElement).Any(f => hostedIds.Contains(f.Id))).ToList();
             var made = new JsonArray();
             var copies = new Dictionary<string, string>();
             foreach (var e in entities)
@@ -243,6 +250,9 @@ public sealed class CoreModule : ILapinModule
                 if (copy) { var c = Placement.Copy(ctx, now, t); made.Add((JsonNode)c); copies[e.Id] = c; }
                 else Placement.Transform(ctx, now, t, moving);
             }
+            foreach (var own in ctx.Services.All<IHostedPlacement>())
+                if (hosted.Where(e => own.Handles(ctx.Model, e)).ToList() is { Count: > 0 } mine)
+                    foreach (var c in own.Transform(ctx, mine, t, copy)) made.Add((JsonNode)c);
             // Elements copied together keep their joins: a corner or a T between two of them joins their copies the same way.
             if (copy)
                 foreach (var r in copies.Keys.SelectMany(id => ctx.Model.RelationsOf(id, IfcClass.RelConnectsPathElements)).DistinctBy(r => r.Id).Where(r => copies.ContainsKey(r.Relating) && r.Related.All(copies.ContainsKey)).ToList())

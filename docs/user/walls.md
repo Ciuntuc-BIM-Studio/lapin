@@ -43,7 +43,7 @@ Further down, **Dependencies** shows what is built from the wall and what the wa
 
 ## Wall types
 
-A wall type is a set of layers, from the outside face to the inside face. Each layer has a material and a thickness, and one layer is the **core**. The wall's line runs along the core. To edit the types, choose **Architecture → Wall types**. A layer other than the core may have a height of its own: **From** and **Up to** set how high it goes over the wall's base (a tiled dado up to 1500, a cladding from 300 up); empty, it runs the whole height.
+A wall type is a set of layers, from the face on the right of the way the wall is drawn (the outside, when you draw round a building anticlockwise) to the face on its left. Each layer has a material and a thickness, and one layer is the **core**. The wall's line runs along the core. To edit the types, choose **Architecture → Wall types**. A layer other than the core may have a height of its own: **From** and **Up to** set how high it goes over the wall's base (a tiled dado up to 1500, a cladding from 300 up); empty, it runs the whole height.
 
 The **Priority** column (0 to 100) says how the layer meets another wall's layers where the walls join: it goes on through the other's layers of a lower priority and stops at the first as high or higher. Empty, the layer takes its material's priority in **Manage → Cut order**, else 50 for the core and 0 for the other layers (the number shown greyed). So a concrete core of 100 is not interrupted by a stud core of 99 and runs through the stud wall, and a hard plaster of 60 holds the core of a wall ending on it. The IFC export writes it as the layer's Priority, and the import reads it back.
 
@@ -54,6 +54,8 @@ A layer other than the core may have a thickness of 0, for a material too thin t
 ![A plaster layer with ceramic tiles up to 2100 and the plaster above them](shots/wall-layer-parts.webp)
 
 ![Wall types: the layers of a brick wall](shots/wall-types.webp)
+
+The legend above the layers shows the wall in plan the way a selected wall shows it: the dashed axis with an arrowhead the way it was drawn, **R** on its right face and **L** on its left face. The layers are numbered from 1, on the R face, to the last, on the L face, with the same numbers as the rows of the table; the core, which carries the wall's line, is shaded. A wall turned with **Flip** has its layers the other way round, from L to R. A message from a save that was refused goes away as soon as you change the type again.
 
 - **+ Layer** adds a layer. The arrows move a layer up or down.
 - **Zones in height** splits the core from bottom to top, for example a first course, the masonry and a ring beam.

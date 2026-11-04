@@ -16,6 +16,8 @@ Enquanto Porta ou Janela está ativa, o painel de propriedades mostra o tipo que
 
 Para mover uma porta ou janela ao longo da sua parede, selecione-a e arraste-a. Para mudá-la, use o painel de propriedades: o tipo, a altura do peitoril e para que lado ela abre (**Lado**). Com várias portas e janelas selecionadas, **Mão**, **Lado**, o peitoril e o tipo mudam todas num só passo, tal como uma seta de inversão na planta.
 
+Para uma distância exata, use **Mover** (<kbd>M</kbd>) ou **Copiar** (<kbd>CO</kbd>) na linha de comando, como para qualquer elemento: selecione a porta, a janela ou a abertura na parede, clique num ponto base e depois digite a distância (`500`) ou clique num segundo ponto. Só conta a parte do movimento ao longo da parede: a abertura desliza pela sua parede e mantém o peitoril. Movida para outra parede do mesmo pavimento, ela passa para essa parede e continua abrindo do mesmo jeito para o cômodo. Uma cópia é uma nova porta ou janela do mesmo tipo, com o número seguinte. Se não couber (além do fim da parede ou sobre outra abertura), nada se move. **Girar** e **Espelhar** a posicionam do mesmo modo, e o espelhamento troca a sua mão.
+
 ![As propriedades de uma porta](shots/door-properties.webp)
 
 ## Aberturas sem porta nem janela
@@ -35,6 +37,8 @@ Para mover uma porta ou janela ao longo da sua parede, selecione-a e arraste-a. 
 - o acabamento da ombreira, a moldura na fachada, a soleira e as cores.
 
 Os desenhos à direita mostram o tipo como ele será desenhado em elevação, planta e corte, enquanto você o muda.
+
+**Esquerda e direita.** A mão de uma porta ou janela é nomeada como o IFC a nomeia: vista por quem a empurra para abrir. Uma porta *swing left* tem as dobradiças à esquerda de quem a empurra; vistas do cômodo para onde ela abre, ficam à direita. A grade **Folhas** é vista pelo lado de fora, o lado de onde se empurram as folhas, então a esquerda dela é a esquerda dos nomes. A elevação é vista pelo lado de dentro, o lado para onde as folhas abrem, a menos que **Pelo lado externo** esteja marcado; como a planta, ela mostra a porta como está no modelo. Uma porta invertida para a outra mão (**Mão**, ou uma seta de inversão ao longo da parede) é a imagem espelhada do seu tipo; as tabelas a mostram num cartão próprio (veja [Tabelas](schedules.md)).
 
 ![O configurador de portas e janelas](shots/joinery-configurator.webp)
 

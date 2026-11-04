@@ -43,7 +43,7 @@ Mai jos, **Dependențe** arată ce e construit din perete și din ce e construit
 
 ## Tipurile de pereți
 
-Un tip de perete e un set de straturi, de la fața exterioară la cea interioară. Fiecare strat are un material și o grosime, iar unul dintre ele e **miezul**. Linia peretelui merge pe miez. Ca să editezi tipurile, alege **Arhitectură → Tipuri de pereți**. Un strat altul decât miezul poate avea înălțimea lui: **De la** și **Până la** spun cât de sus merge peste baza peretelui (un placaj de faianță până la 1500, un placaj de fațadă de la 300 în sus); gol, merge pe toată înălțimea.
+Un tip de perete e un set de straturi, de la fața din dreapta sensului în care e desenat peretele (exteriorul, când desenezi în jurul clădirii în sens trigonometric) la fața din stânga. Fiecare strat are un material și o grosime, iar unul dintre ele e **miezul**. Linia peretelui merge pe miez. Ca să editezi tipurile, alege **Arhitectură → Tipuri de pereți**. Un strat altul decât miezul poate avea înălțimea lui: **De la** și **Până la** spun cât de sus merge peste baza peretelui (un placaj de faianță până la 1500, un placaj de fațadă de la 300 în sus); gol, merge pe toată înălțimea.
 
 Coloana **Prioritate** (de la 0 la 100) spune cum întâlnește stratul straturile altui perete unde pereții se îmbină: trece prin straturile celuilalt cu prioritate mai mică și se oprește la primul cu prioritate egală sau mai mare. Goală, stratul ia prioritatea materialului său din **Gestionare → Ordinea de tăiere**, altfel 50 pentru miez și 0 pentru celelalte straturi (numărul arătat estompat). Astfel un miez de beton cu 100 nu e întrerupt de un miez de montanți cu 99 și trece prin peretele de gips-carton, iar o tencuială dură cu 60 oprește miezul unui perete care se termină în ea. Exportul IFC o scrie ca Priority a stratului, iar importul o citește înapoi.
 
@@ -54,6 +54,8 @@ Un strat altul decât miezul poate avea grosimea 0, pentru un material prea sub�
 ![Un strat de tencuială cu faianță până la 2100 și tencuiala deasupra](shots/wall-layer-parts.webp)
 
 ![Tipuri de pereți: straturile unui perete de cărămidă](shots/wall-types.webp)
+
+Legenda de deasupra straturilor arată peretele în plan așa cum îl arată un perete selectat: axa întreruptă cu o săgeată în sensul în care a fost desenat, **D** pe fața din dreapta și **S** pe cea din stânga. Straturile sunt numerotate de la 1, pe fața D, până la ultimul, pe fața S, cu aceleași numere ca rândurile tabelului; miezul, pe care merge linia peretelui, e evidențiat. Un perete întors cu **Întoarce** are straturile invers, de la S la D. Mesajul unei salvări refuzate dispare imediat ce schimbi din nou tipul.
 
 - **+ Layer** adaugă un strat. Săgețile mută un strat în sus sau în jos.
 - **Zone pe înălțime** împarte miezul de jos în sus, de exemplu un prim rând, zidăria și o centură.

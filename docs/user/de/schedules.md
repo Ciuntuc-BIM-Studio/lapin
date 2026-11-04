@@ -34,6 +34,8 @@ Eine Bauteilliste ist eine Tabelle, die das Modell füllt: Türen und Fenster, S
 
 Die Listen für **Türen und Fenster**, für **Türen**, für **Fenster** und für **Stürze** zeigen eine Karte je Typ, mit seiner Zeichnung (standardmäßig die Innenansicht) und seinen Werten Zeile für Zeile. Die anderen Bauteillisten sind eine einfache Tabelle, eine Zeile je Element und eine Summenzeile am Ende.
 
+Eine Tür oder ein Fenster, auf den anderen Anschlag ihres Typs umgekehrt (**Anschlag** oder ein einzelner Umkehrpfeil; in beide Richtungen umgekehrt ist sie nur gedreht), ist das Spiegelbild ihres Typs und erhält eine eigene Karte: Ihre Marke endet auf **-M** (D-M), ihr Name auf „(mirrored)“, und ihre Zeile **Opening**, ihre Zeichnung und ihre Anzahlen sind die des anderen Anschlags. Kehren Sie sie zurück, steht sie wieder auf der Karte ihres Typs. Links und rechts sind die von IFC: die Bänder, gesehen von der Person, die sie aufdrückt. Die Zeichnungen zeigen jede Tür so, wie sie im Modell steht, von innen gesehen, von der Seite, zu der sie aufgeht (die Bänder einer Tür *swing left* liegen also rechts). Ein Hinweis unter den Karten sagt das.
+
 ![Eine Tür- und Fensterliste mit ihren Zeilen für Feuerwiderstand und Hersteller](shots/joinery-schedule.webp)
 
 ## Feuerwiderstand, Hersteller und andere Parameter

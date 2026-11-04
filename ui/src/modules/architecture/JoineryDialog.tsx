@@ -112,7 +112,11 @@ export interface Drawing { strokes: Stroke[] }
 export interface Drawings { elevation: Drawing; exterior: Drawing; plan: Drawing; section: Drawing }
 export type Preview2 = Preview & { drawings?: Drawings | null; symbols?: { convention: string; hardware: boolean } };
 
-/** One of the symbol engine's drawings in a box: X across, Y up, fitted; strokes by weight (cut, outline, thin), dashed where asked. */
+/**
+ * One of the symbol engine's drawings in a box: X across, Y up, fitted; strokes by weight (cut, outline, thin), dashed where asked.
+ * The engine draws in the type's frame, the model's mirror image: flipX shows the door or window as it stands (report #83),
+ * an elevation from inside with a swing-left door's hinges on the right, the plan from above.
+ */
 export function Strokes({ drawing, w, h, flipX = false, label, children }: { drawing: Drawing | undefined; w: number; h: number; flipX?: boolean; label: string; children?: (sx: (x: number) => number, sy: (y: number) => number, k: number) => React.ReactNode }) {
   const pts = (drawing?.strokes ?? []).flatMap((s) => s.pts);
   if (pts.length === 0) return <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-label={label} />;
@@ -509,7 +513,7 @@ export function JoineryDialog() {
               <Mm label="Frame width" value={spec.frame.width} onChange={(v) => set({ frame: { ...spec.frame, width: v } })} />
               <label className="field-line"><span className="eyebrow">Columns of panes</span><input data-field="columns" value={cols} title="Relative widths, e.g. 1 1 or 2 1" onChange={(e) => setGrid(e.target.value, rows)} /></label>
               <label className="field-line"><span className="eyebrow">Rows of panes</span><input value={rows} title="Relative heights, bottom to top" onChange={(e) => setGrid(cols, e.target.value)} /></label>
-              <p className="eyebrow">Panels · seen from inside</p>
+              <p className="eyebrow">Panels · seen from outside</p>
               <table className="panel-grid">
                 <tbody>
                   {[...spec.rows.keys()].reverse().map((row) => (
@@ -559,13 +563,13 @@ export function JoineryDialog() {
               <TypeParams typeId={editing} kind={spec.kind} />
             </div>
             <div className="joinery-preview">
-              <Strokes drawing={outside ? preview?.drawings?.exterior : preview?.drawings?.elevation} w={W} h={H} label={outside ? 'Elevation from outside' : 'Elevation from inside'}>
+              <Strokes drawing={outside ? preview?.drawings?.exterior : preview?.drawings?.elevation} w={W} h={H} flipX label={outside ? 'Elevation from outside' : 'Elevation from inside'}>
                 {(sx, sy, kk) => !outside && boxes.map((b, i) => b.profile
                   ? <path key={i} d={[b.profile, ...(b.holes ?? [])].map((l) => loopPath(l, sx, sy)).join(' ')} fillRule="evenodd" fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />
-                  : <rect key={i} x={sx(b.x0)} y={sy(b.z1)} width={(b.x1 - b.x0) * kk} height={(b.z1 - b.z0) * kk} fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />)}
+                  : <rect key={i} x={Math.min(sx(b.x0), sx(b.x1))} y={sy(b.z1)} width={(b.x1 - b.x0) * kk} height={(b.z1 - b.z0) * kk} fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />)}
               </Strokes>
               <div className="joinery-small">
-                <figure><Strokes drawing={preview?.drawings?.plan} w={150} h={90} label="Plan" /><figcaption className="muted small">Plan</figcaption></figure>
+                <figure><Strokes drawing={preview?.drawings?.plan} w={150} h={90} flipX label="Plan" /><figcaption className="muted small">Plan</figcaption></figure>
                 <figure><Strokes drawing={preview?.drawings?.section} w={90} h={150} label="Section" /><figcaption className="muted small">Section</figcaption></figure>
               </div>
               <div className="row joinery-symbols">

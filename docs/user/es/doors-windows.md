@@ -16,6 +16,8 @@ Mientras Door o Window está activa, el panel de propiedades muestra el tipo que
 
 Para mover una puerta o una ventana a lo largo de su muro, selecciónela y arrástrela. Para cambiarla, use el panel de propiedades: su tipo, la altura del alféizar y hacia qué lado abre (**Lado**). Con varias puertas y ventanas seleccionadas, **Mano**, **Lado**, el alféizar y el tipo las cambian todas en un solo paso, y también una flecha de giro en la planta.
 
+Para una distancia exacta, use **Desplazar** (<kbd>M</kbd>) o **Copiar** (<kbd>CO</kbd>) en la línea de comandos, como con cualquier elemento: seleccione la puerta, la ventana o el hueco del muro, haga clic en un punto base y luego escriba la distancia (`500`) o haga clic en un segundo punto. Solo cuenta la parte del desplazamiento a lo largo del muro: el hueco se desliza por su muro y conserva su alféizar. Si lo lleva a otro muro de la misma planta, pasa a ese muro y sigue abriendo igual hacia la habitación. Una copia es una puerta o ventana nueva del mismo tipo, con el número siguiente. Si no cabe (más allá del final del muro o sobre otro hueco), no se mueve nada. **Girar** y **Simetría** lo colocan del mismo modo, y la simetría le cambia la mano.
+
 ![Las propiedades de una puerta](shots/door-properties.webp)
 
 ## Huecos sin puerta ni ventana
@@ -35,6 +37,8 @@ Para mover una puerta o una ventana a lo largo de su muro, selecciónela y arrá
 - el acabado de la mocheta, el recercado en la fachada, el umbral y los colores.
 
 Los dibujos de la derecha muestran el tipo tal como se dibujará en alzado, planta y sección, mientras lo cambia.
+
+**Izquierda y derecha.** La mano de una puerta o ventana se nombra como la nombra IFC: vista por quien la empuja para abrirla. Una puerta *swing left* tiene las bisagras a la izquierda de quien la empuja, así que desde la habitación hacia la que abre quedan a la derecha. La cuadrícula **Hojas** se ve desde el exterior, el lado desde el que se empujan las hojas, de modo que su izquierda es la de los nombres. El alzado se ve desde el interior, el lado hacia el que abren las hojas, salvo que marque **Desde el exterior**; como la planta, muestra la puerta tal como está en el modelo. Una puerta volteada a la otra mano (**Mano**, o una flecha de giro a lo largo del muro) es la imagen en espejo de su tipo; las tablas la muestran en una ficha propia (consulte [Tablas](schedules.md)).
 
 ![El configurador de puertas y ventanas](shots/joinery-configurator.webp)
 

@@ -16,6 +16,8 @@ While Door or Window is on, the properties panel shows the type it will place, w
 
 To move a door or window along its wall, select it and drag it. To change it, use the properties panel: its type, its sill height, and which side it opens to (**Side**). With several doors and windows selected, **Hand**, **Side**, the sill and the type change all of them in one step, and so does a flip arrow in the plan.
 
+For an exact distance, use **Move** (<kbd>M</kbd>) or **Copy** (<kbd>CO</kbd>) on the command line, as for any element: select the door, window or wall opening, click a base point, then type the distance (`500`) or click a second point. Only the part of the move along the wall counts: the opening slides along its wall and keeps its sill. Moved into another wall of the same storey, it goes into that wall and still opens the same way in the room. A copy is a new door or window of the same type, with the next number. If it would not fit (past the wall's end, or over another opening), nothing moves. **Rotate** and **Mirror** place it the same way, and a mirror changes its hand.
+
 ![A door's properties](shots/door-properties.webp)
 
 ## Openings without a door or window
@@ -35,6 +37,8 @@ To move a door or window along its wall, select it and drag it. To change it, us
 - the reveal finish, the surround on the facade, the threshold, and the colours.
 
 The drawings on the right show the type as it will be drawn in elevation, plan and section, while you change it.
+
+**Left and right.** A door's or window's hand is named the way IFC names it: as seen by someone pushing it open. A *swing left* door has its hinges on the left of the person who pushes it, so from the room it opens into they are on the right. The **Panels** grid is seen from outside, the side the panels are pushed from, so its left is the left of the names. The elevation is seen from inside, the side the panels open to, unless **From outside** is ticked; like the plan, it shows the door as it stands in the model. A door flipped to the other hand (**Hand**, or a flip arrow along the wall) is the mirror image of its type; the schedules list it on its own card (see [Schedules](schedules.md)).
 
 ![The configurator for doors and windows](shots/joinery-configurator.webp)
 

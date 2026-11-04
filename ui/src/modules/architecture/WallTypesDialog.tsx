@@ -22,6 +22,7 @@ import { DEFAULT_RULE, type Rule } from './lintels';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { TypeFiles } from './TypeFiles';
 import { deleteType } from '../core/deleteType';
+import { WallLayersLegend } from './WallLayersLegend';
 
 /** A layer as the editor holds it: lengths in metres; from and to null for the whole height. */
 interface Row { material: string; thickness: number; core: boolean; from: number | null; to: number | null; parts: Part[]; priority: number | null }
@@ -88,6 +89,9 @@ export function WallTypesDialog() {
     setZones(stored.map((z) => toRow(z, (id) => materialName(model, id))));
   }, [editing]);
 
+  // A refusal speaks of what was saved then (report #79: "Every layer needs a thickness." under layers that all had one): it goes once the type is edited or another picked.
+  useEffect(() => { if (useSession.getState().error) useSession.setState({ error: null }); }, [editing, name, rows, zones, lintels]);
+
   const close = () => useUi.setState({ dialog: null });
   const set = (i: number, patch: Partial<Row>) => setRows(rows.map((r, k) => (k === i ? { ...r, ...patch } : patch.core ? { ...r, core: false } : r)));
   const move = (i: number, d: number) => {
@@ -146,6 +150,7 @@ export function WallTypesDialog() {
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
             <p className="muted small">Layers from the face right of the drawn direction to the left face. The core carries the wall's axis.</p>
+            <WallLayersLegend layers={rows} />
             <table className="layer-edit">
               <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th title="How high the layer goes over the wall's base; empty: the whole height">From</th><th title="How high the layer goes over the wall's base; empty: the whole height">Up to</th><th title="Where walls join, a layer goes on through the other wall's layers of a lower priority and stops at the first as high or higher; empty: its material's priority in the cut order, else 50 for the core and 0 for the rest">Priority</th><th /></tr></thead>
               <tbody>
