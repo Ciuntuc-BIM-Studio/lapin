@@ -432,6 +432,10 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .roof-own .icon.mini { opacity: 0.55; }
 .roof-own:hover .icon.mini { opacity: 1; }
 .roof-edit { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+/* The space under a stair (report #71): the form scrolls beside its preview, the buttons stay in sight. */
+.under-stair-dialog .joinery-form { max-height: 62vh; overflow: auto; padding-right: 6px; }
+.under-stair-dialog .joinery-form > .eyebrow { margin: 10px 0 2px; }
+.under-stair-links { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .roof-field { grid-template-columns: 150px 1fr; }
 /* The timber frame configurator (decision 239). */
 .wood-field { grid-template-columns: 150px 1fr; }

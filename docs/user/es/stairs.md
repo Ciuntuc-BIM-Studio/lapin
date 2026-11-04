@@ -75,6 +75,35 @@ Una escalera no tiene por qué ir de una planta a la siguiente. En la ficha **Fo
 
 Cada escalera colocada puede subir otra altura: escríbala en **Desnivel** en sus propiedades (vacío: la del tipo). Si sube desde el nivel, un desnivel nuevo mantiene el pie donde está; si viene desde abajo, mantiene la parte superior.
 
+## El espacio bajo la escalera
+
+El espacio bajo un tramo se puede amueblar: un armario de almacenaje, una oficina en armario, un rincón de lectura, un recibidor con banco y percheros, una casita de juegos para los pequeños o una cama para el perro. Selecciona una escalera de tramos rectos y pulsa **Espacio bajo la escalera…** al final de sus propiedades (o **Arquitectura → Espacio bajo la escalera**).
+
+![El configurador del espacio bajo la escalera: el rincón de lectura bajo el tramo](shots/under-stair-dialog.webp)
+
+A la izquierda están los estilos ya hechos: **Armario de almacenaje**, **Oficina en armario**, **Rincón de lectura**, **Recibidor**, **Casita de juegos infantil** y **Caseta para perro**, y encima los estilos del proyecto. Elige uno y cámbialo en el centro:
+
+- **Ubicación.** **Bajo el tramo** (en una escalera en L o U), el **Lado abierto** (por defecto el opuesto al giro), dónde **Empieza en** y **Termina en** a lo largo del tramo (vacío: desde donde el intradós está a 300 mm del suelo, hasta la última contrahuella) y su **Profundidad** (vacía: tan ancha como la escalera).
+- **El frente.** La **Parte baja** cerrada con **Puertas de armario** (cada una del **Ancho de la puerta**, con **Estantes detrás de las puertas**), un **Panel cerrado** o dejada abierta; una **Librería en el extremo alto**.
+- **Elemento principal.** Un **Escritorio con un estante** (y una luz), un **Banco con cojines** (cajones en el frente), un **Banco de recibidor y percheros** (casilleros para zapatos debajo), una **Puerta de casita de juegos** (y una **Ventana junto a la puerta**) o una **Cama para perro** tras un hueco enmarcado, cada uno con sus medidas.
+- **Materiales.** El **Espesor del tablero** y los materiales del **Cuerpo**, los **Frentes** y la **Tela**, de los del proyecto.
+
+A la derecha, la vista previa muestra el espacio visto desde su lado abierto bajo el intradós del tramo y desde arriba, su longitud, profundidad y alturas, y sus piezas. Cada pieza se corta con la pendiente; la que no cabe (un escritorio donde la escalera es demasiado baja) se omite y la vista previa lo dice. **Crear** o **Aplicar** es un solo paso de deshacer. **Guardar como estilo…** guarda lo que llena el espacio como estilo del proyecto; **Actualizar el estilo** lo guarda de nuevo y todos los espacios del estilo lo siguen.
+
+![El espacio bajo la escalera en el panel de propiedades](shots/under-stair-properties.webp)
+
+El espacio es un elemento propio, alojado por su escalera. Cuando la escalera cambia (ancho, giro, peldaños, tipo), el espacio se rehace bajo ella, y se elimina con ella. Sus campos de ubicación están en el panel de propiedades y **Configurar…** vuelve a abrir el configurador.
+
+![Los seis estilos, bajo seis escaleras](shots/under-stair-3d.webp)
+
+Las plantas, secciones, alzados y planos lo dibujan como cualquier otro elemento: cortado donde corta la planta, visto por debajo.
+
+![El rincón de lectura en planta, los demás al lado](shots/under-stair-plan.webp)
+
+![Una sección a lo largo del tramo por el rincón de lectura](shots/under-stair-section.webp)
+
+**Arquitectura → Listado de espacios bajo escalera** lista las piezas de cada espacio, con su número, material y volumen, y los totales por material. En IFC, el espacio es un IfcElementAssembly ("Under-stair space") de IfcFurniture (estantes, escritorio, banco, cojines, cama), IfcDoor, IfcPlate, IfcDiscreteAccessory (tiradores, percheros) e IfcLightFixture, conectado a su IfcStair.
+
 ## Rampas
 
 Elija **Arquitectura → Rampa** (<kbd>RU</kbd>). Haga clic en el centro del extremo inferior de la rampa y luego en un punto en la dirección en que sube; para una en L o en zigzag, un tercer clic a la izquierda o a la derecha del tramo indica hacia dónde gira. La primera vez, el proyecto recibe de la biblioteca **Ramp 6 %**: 1,20 m de ancho al 6 %, en tramos de 9 m como máximo con descansillos de 1,50 m entre ellos, una losa de hormigón armado bajo un acabado y pasamanos a ambos lados. Sube hasta la planta de arriba salvo que su tipo o su **Desnivel** digan otra cosa.

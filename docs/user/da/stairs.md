@@ -75,6 +75,35 @@ En trappe behøver ikke gå fra én etage til den næste. På typens fane **Form
 
 Hver placeret trappe kan stige en anden højde: skriv den i **Stigning** i dens egenskaber (tom: typens). Stiger den fra koten, holder en ny stigning foden på plads; kommer den nedefra, holder den toppen.
 
+## Rummet under trappen
+
+Rummet under et trappeløb kan indrettes: et opbevaringsskab, et kontor i skab, en læsekrog, en entré med bænk og knager, et legehus til småbørn eller en hundeseng. Vælg en trappe med lige løb, og klik på **Rummet under trappen…** nederst i dens egenskaber (eller **Arkitektur → Rum under trappen**).
+
+![Konfiguratoren for rummet under trappen: læsekrogen under løbet](shots/under-stair-dialog.webp)
+
+Til venstre står de færdige stile: **Opbevaringsskab**, **Kontor i skab**, **Læsekrog**, **Entré og bryggers**, **Legehus til småbørn** og **Hundehus**, og over dem projektets egne stile. Vælg en, og ret den i midten:
+
+- **Placering.** **Under løbet** (på en L- eller U-trappe), den **Åbne side** (som standard væk fra drejet), hvor det **Begynder ved** og **Slutter ved** langs løbet (tom: fra hvor undersiden er 300 mm over gulvet til sidste stødtrin) og dets **Dybde** (tom: så bred som trappen).
+- **Fronten.** **Den lave del** lukket med **Skabslåger** (hver omtrent **Lågebredde**, med **Hylder bag lågerne**), et **Lukket panel** eller ladt åben; en **Reol i den høje ende**.
+- **Hovedelement.** Et **Skrivebord med en hylde** (og en lampe), en **Bænk med hynder** (skuffer i fronten), en **Entrébænk og knager** (rum til sko under den), en **Legehusdør** (og et **Vindue ved siden af døren**) eller en **Hundeseng** bag en indrammet åbning, hver med sine mål.
+- **Materialer.** **Pladetykkelse** og materialerne til **Korpus**, **Fronter** og **Stof**, blandt projektets.
+
+Til højre viser forhåndsvisningen rummet set fra den åbne side under løbets underside og oppefra, dets længde, dybde og højder og dets dele. Hver del skæres af skråningen; en del uden plads (et skrivebord, hvor trappen er for lav) udelades, og forhåndsvisningen siger det. **Opret** eller **Anvend** er ét fortryd-trin. **Gem som stil…** gemmer indretningen som en stil i projektet; **Opdatér stilen** gemmer den igen, og alle stilens rum følger med.
+
+![Rummet under trappen i egenskaberne](shots/under-stair-properties.webp)
+
+Rummet er et element for sig, båret af sin trappe. Når trappen ændres (bredde, drejning, trin, type), bygges rummet igen under den, og det slettes sammen med den. Placeringsfelterne står i egenskaberne, og **Indret…** åbner konfiguratoren igen.
+
+![De seks stile under seks trapper](shots/under-stair-3d.webp)
+
+Planer, snit, opstalter og tegningsark tegner det som ethvert andet element: skåret hvor planen skærer, set nedenunder.
+
+![Læsekrogen i plan, de andre ved siden af](shots/under-stair-plan.webp)
+
+![Et snit langs løbet gennem læsekrogen](shots/under-stair-section.webp)
+
+**Arkitektur → Liste over rum under trapper** viser hvert rums dele med antal, materiale og volumen og totaler pr. materiale. I IFC er rummet en IfcElementAssembly ("Under-stair space") af IfcFurniture (hylder, skrivebord, bænk, hynder, seng), IfcDoor, IfcPlate, IfcDiscreteAccessory (greb, knager) og IfcLightFixture, forbundet med sin IfcStair.
+
 ## Ramper
 
 Vælg **Arkitektur → Rampe** (<kbd>RU</kbd>). Klik på midten af rampens nederste ende og derefter på et punkt i den retning, den stiger; for en L-rampe eller en rampe i zigzag angiver et tredje klik til venstre eller højre for løbet, hvilken vej den drejer. Første gang får projektet bibliotekets **Ramp 6 %**: 1,20 m bred med 6 % hældning, i løb på højst 9 m med reposer på 1,50 m imellem, en plade af armeret beton under en belægning og håndlister i begge sider. Den stiger op til etagen ovenover, medmindre dens type eller dens **Stigning** siger noget andet.

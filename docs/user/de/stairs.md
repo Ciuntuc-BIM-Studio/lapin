@@ -75,6 +75,35 @@ Eine Treppe muss nicht von einem Geschoss zum nächsten führen. Auf der Registe
 
 Jede platzierte Treppe kann eine andere Höhe überwinden: Geben Sie sie in ihren Eigenschaften unter **Höhenunterschied** ein (leer: die des Typs). Steigt sie von der Geschosshöhe aus, behält ein neuer Wert den Fuß an seiner Stelle; kommt sie von unten, behält er das obere Ende.
 
+## Der Raum unter der Treppe
+
+Der Raum unter einem Lauf lässt sich einrichten: ein Abstellschrank, ein Büro im Schrank, eine Leseecke, ein Eingang mit Bank und Mantelhaken, ein Spielhaus für Kleinkinder oder ein Hundebett. Wählen Sie eine Treppe mit geraden Läufen und klicken Sie unten in ihren Eigenschaften auf **Raum unter der Treppe…** (oder **Architektur → Raum unter der Treppe**).
+
+![Der Konfigurator für den Raum unter der Treppe: die Leseecke unter dem Lauf](shots/under-stair-dialog.webp)
+
+Links stehen die fertigen Stile: **Abstellschrank**, **Büro im Schrank**, **Leseecke**, **Eingang und Garderobe**, **Spielhaus für Kleinkinder** und **Hundehütte**, darüber die Stile des Projekts. Wählen Sie einen und ändern Sie ihn in der Mitte:
+
+- **Platzierung.** **Unter dem Lauf** (bei einer L- oder U-Treppe), die **Offene Seite** (standardmäßig von der Wendung weg), wo er entlang des Laufs **Beginnt bei** und **Endet bei** (leer: ab 300 mm Untersicht über dem Boden bis zur letzten Setzstufe) und seine **Tiefe** (leer: so breit wie die Treppe).
+- **Die Front.** Der **Niedrige Teil** mit **Schranktüren** (je etwa die **Türbreite**, mit **Fachböden hinter den Türen**), einer **Geschlossenen Platte** oder offen; ein **Bücherregal am hohen Ende**.
+- **Hauptelement.** Ein **Schreibtisch mit Ablage** (und Leuchte), eine **Sitzbank mit Kissen** (Schubladen vorn), eine **Garderobenbank und Mantelhaken** (Schuhfächer darunter), eine **Spielhaustür** (und ein **Fenster neben der Tür**) oder ein **Hundebett** hinter einer gerahmten Öffnung, jeweils mit seinen Maßen.
+- **Materialien.** Die **Plattenstärke** und die Materialien für **Korpus**, **Fronten** und **Stoff**, aus denen des Projekts.
+
+Rechts zeigt die Vorschau den Raum von der offenen Seite unter der Laufuntersicht und von oben, Länge, Tiefe und Höhen sowie seine Teile. Jedes Teil wird von der Schräge beschnitten; ein Teil ohne Platz (ein Schreibtisch, wo die Treppe zu niedrig ist) entfällt, und die Vorschau sagt es. **Erstellen** oder **Anwenden** ist ein Rückgängig-Schritt. **Als Stil speichern…** behält die Einrichtung als Stil des Projekts; **Stil aktualisieren** speichert ihn erneut, und alle Räume des Stils folgen.
+
+![Der Raum unter der Treppe in den Eigenschaften](shots/under-stair-properties.webp)
+
+Der Raum ist ein eigenes Element, das zu seiner Treppe gehört. Ändert sich die Treppe (Breite, Drehung, Stufen, Typ), wird der Raum darunter neu gebaut, und er wird mit ihr gelöscht. Seine Platzierungsfelder stehen in den Eigenschaften; **Einrichten…** öffnet den Konfigurator wieder.
+
+![Die sechs Stile unter sechs Treppen](shots/under-stair-3d.webp)
+
+Grundrisse, Schnitte, Ansichten und Pläne zeichnen ihn wie jedes andere Element: geschnitten, wo der Grundriss schneidet, darunter gesehen.
+
+![Die Leseecke im Grundriss, die anderen daneben](shots/under-stair-plan.webp)
+
+![Ein Schnitt entlang des Laufs durch die Leseecke](shots/under-stair-section.webp)
+
+**Architektur → Liste der Räume unter Treppen** listet die Teile jedes Raums mit Stückzahl, Material und Volumen sowie Summen je Material. In IFC ist der Raum ein IfcElementAssembly ("Under-stair space") aus IfcFurniture (Fachböden, Schreibtisch, Bank, Kissen, Bett), IfcDoor, IfcPlate, IfcDiscreteAccessory (Griffe, Mantelhaken) und IfcLightFixture, mit seiner IfcStair verbunden.
+
 ## Rampen
 
 Wählen Sie **Architektur → Rampe** (<kbd>RU</kbd>). Klicken Sie auf die Mitte des unteren Endes der Rampe und dann auf einen Punkt in der Richtung, in die sie steigt; bei einer L- oder Zickzackrampe legt ein dritter Klick links oder rechts vom Lauf fest, wohin sie sich wendet. Beim ersten Mal erhält das Projekt aus der Bibliothek **Ramp 6 %**: 1,20 m breit mit 6 % Neigung, in Läufen von höchstens 9 m mit Podesten von 1,50 m dazwischen, eine Stahlbetonplatte unter einem Belag, Handläufe auf beiden Seiten. Sie steigt bis zum Geschoss darüber, sofern ihr Typ oder ihr **Höhenunterschied** nichts anderes sagt.

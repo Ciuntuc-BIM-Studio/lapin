@@ -75,6 +75,35 @@ O scară nu trebuie să meargă neapărat de la un etaj la următorul. În fila 
 
 Fiecare scară pusă poate urca altă înălțime: scrie-o la **Diferența de nivel** în proprietățile ei (gol: a tipului). Când urcă de la cotă, o diferență nouă păstrează piciorul pe loc; când vine de dedesubt, păstrează capătul de sus.
 
+## Spațiul de sub scară
+
+Spațiul de sub o rampă se poate mobila: un dulap de depozitare, un birou în dulap, un colț de lectură, un hol de intrare cu bancă și cuiere, o căsuță de joacă pentru cei mici sau un culcuș pentru câine. Selectează o scară cu rampe drepte și dă clic pe **Spațiul de sub scară…** jos în proprietățile ei (sau **Arhitectură → Spațiu sub scară**).
+
+![Configuratorul spațiului de sub scară: colțul de lectură sub rampă](shots/under-stair-dialog.webp)
+
+Configuratorul arată stilurile gata făcute în stânga: **Dulap de depozitare**, **Birou în dulap**, **Colț de lectură**, **Hol de intrare**, **Căsuță de joacă pentru cei mici** și **Culcuș pentru câine**, iar deasupra lor stilurile proiectului. Alege unul și schimbă-l la mijloc:
+
+- **Amplasare.** **Sub rampa** (la o scară în L sau U), **Latura deschisă** (implicit cea opusă întoarcerii), unde **Începe la** și **Se termină la** de-a lungul rampei (gol: de unde intradosul e la 300 mm peste pardoseală, până la ultima contratreaptă) și **Adâncimea** (gol: cât lățimea scării).
+- **Fața.** **Partea joasă** închisă cu **Uși de dulap** (fiecare cam de **Lățimea ușii**, cu **Rafturi în spatele ușilor**), un **Panou închis** sau **Lăsat deschis**; o **Bibliotecă la capătul înalt**.
+- **Element principal.** Un **Birou cu un raft** (și o lampă), o **Bancă cu perne** (cu sertare în față), o **Bancă de hol și cuiere** (cu compartimente pentru pantofi dedesubt), o **Ușă de căsuță de joacă** (și o **Fereastră lângă ușă**) sau un **Pat de câine** în spatele unui gol ancadrat, fiecare cu dimensiunile lui.
+- **Materiale.** **Grosimea plăcii de mobilier** și materialele pentru **Corp**, **Fronturi** și **Țesătură**, din cele ale proiectului.
+
+În dreapta, previzualizarea arată spațiul văzut din latura deschisă, sub intradosul rampei, și de sus, lungimea, adâncimea și înălțimile lui și piesele. Fiecare piesă e tăiată de pantă; o piesă care nu are loc (un birou unde scara e prea joasă) e lăsată deoparte, iar previzualizarea spune asta. **Creează** sau **Aplică** e un singur pas de anulare. **Salvează ca stil…** păstrează mobilierul ca stil al proiectului; **Actualizează stilul** îl salvează din nou, iar toate spațiile stilului îl urmează.
+
+![Spațiul de sub scară în panoul de proprietăți](shots/under-stair-properties.webp)
+
+Spațiul e un element separat, găzduit de scara lui. Când scara se schimbă (lățime, rotire, trepte, tip), spațiul se reface sub ea, iar odată cu scara se șterge și el. Câmpurile de amplasare sunt în panoul de proprietăți, iar **Configurează…** redeschide configuratorul.
+
+![Cele șase stiluri, sub șase scări](shots/under-stair-3d.webp)
+
+Planurile, secțiunile, fațadele și planșele îl desenează ca pe orice alt element: secționat unde îl taie planul, văzut dedesubt.
+
+![Colțul de lectură în plan, celelalte alături](shots/under-stair-plan.webp)
+
+![O secțiune de-a lungul rampei prin colțul de lectură](shots/under-stair-section.webp)
+
+**Arhitectură → Extrasul spațiilor sub scară** listează piesele fiecărui spațiu, cu bucățile, materialul și volumul lor, și totalurile pe material. În IFC, spațiul e un IfcElementAssembly („Under-stair space”) din IfcFurniture (rafturi, birou, bancă, perne, pat), IfcDoor, IfcPlate, IfcDiscreteAccessory (mânere, cuiere) și IfcLightFixture, legat de IfcStair-ul lui.
+
 ## Rampe
 
 Alege **Arhitectură → Rampă** (<kbd>RU</kbd>). Dă clic pe mijlocul capătului de jos al rampei, apoi pe un punct în direcția în care urcă; pentru una în L sau în zigzag, un al treilea clic la stânga sau la dreapta tronsonului spune încotro întoarce. Prima dată, proiectul primește din bibliotecă **Ramp 6 %**: lată de 1,20 m, cu panta de 6 %, în tronsoane de cel mult 9 m cu podeste de 1,50 m între ele, o placă de beton armat sub un finisaj, mâini curente pe ambele părți. Urcă până la etajul de deasupra, dacă tipul sau **Diferența de nivel** nu spun altceva.

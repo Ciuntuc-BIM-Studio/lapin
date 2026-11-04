@@ -75,6 +75,35 @@ A stair does not have to go from one storey to the next. On a type's **Shape** t
 
 Each stair placed can climb another height: type it in **Rise** in its properties (empty: the type's). Climbing from the level, a new rise keeps the foot where it is; coming up from below, it keeps the top.
 
+## The space under a stair
+
+The space under a flight can be furnished: a storage cupboard, a closet office, a reading nook, an entry with a bench and coat hooks, a playhouse for small children or a dog's bed. Select a straight stair and click **Space under the stair…** at the bottom of its properties (or **Architecture → Under-stair space**).
+
+![The under-stair configurator: the reading nook under the flight](shots/under-stair-dialog.webp)
+
+The configurator lists the ready-made styles on the left: **Storage cupboard**, **Closet office**, **Reading nook**, **Entry and mudroom**, **Toddler playhouse** and **Dog bed house**, and your project's own styles above them. Pick one and change it in the middle:
+
+- **Placement.** **Under flight** (on an L or U stair), the **Open side** (by default the side away from the turn), where it **Starts at** and **Ends at** along the flight (empty: from where the underside is 300 mm over the floor, to the last riser) and its **Depth** (empty: as wide as the stair).
+- **The front.** The **Low part** closed by **Cupboard doors** (about the **Door width** each, with **Shelves behind the doors**), a **Closed panel**, or **Left open**; a **Bookcase at the high end**.
+- **Feature.** A **Desk with a shelf** (and a light), a **Bench with cushions** (drawers in its front), a **Mudroom bench and coat hooks** (cubbies for shoes under it), a **Playhouse door** (and a **Window beside the door**) or a **Dog bed** behind a framed opening, each with its sizes.
+- **Materials.** The **Board thickness** and the **Carcass**, **Fronts** and **Fabric** materials, from the project's.
+
+On the right, the preview shows the space seen from its open side under the flight's soffit and from above, its length, depth and heights, and its parts. Every part is cut by the slope; a part with no room under it (a desk where the stair is too low) is left out and the preview says so. **Create** or **Apply** is one undo step. **Save as style…** keeps what fills the space as a style of the project; **Update style** saves it again, and every space of that style follows.
+
+![Under-stair space in the properties panel](shots/under-stair-properties.webp)
+
+The space is an element of its own, hosted by its stair. When the stair changes (width, rotation, risers, type), the space is built again under it, and it is deleted with the stair. Its placement fields are in the properties panel, and **Configure…** opens the configurator again.
+
+![The six styles, under six stairs](shots/under-stair-3d.webp)
+
+Plans, sections, elevations and sheets draw it like any other element: cut where the plan cuts it, seen below.
+
+![The reading nook in plan, the others beside it](shots/under-stair-plan.webp)
+
+![A section along the flight through the reading nook](shots/under-stair-section.webp)
+
+**Architecture → Under-stair schedule** lists each space's parts, with their pieces, material and volume, and totals by material. In IFC, the space is an IfcElementAssembly ("Under-stair space") of IfcFurniture (shelves, desk, bench, cushions, bed), IfcDoor, IfcPlate, IfcDiscreteAccessory (handles, coat hooks) and IfcLightFixture, connected to its IfcStair.
+
 ## Ramps
 
 Choose **Architecture → Ramp** (<kbd>RU</kbd>). Click the middle of the ramp's lower end, then a point in the direction it climbs; for an L or a switchback, a third click left or right of the flight sets which way it turns. The first time, the project gets the library's **Ramp 6 %**: 1.20 m wide at 6 %, in flights of at most 9 m with landings of 1.50 m between them, a slab of reinforced concrete under a finish, handrails on both sides. It climbs to the storey above unless its type or its **Rise** says otherwise.

@@ -75,6 +75,35 @@ Uma escada não precisa ir de um pavimento ao seguinte. Na guia **Forma** de um 
 
 Cada escada colocada pode subir outra altura: digite-a em **Desnível** nas suas propriedades (em branco: a do tipo). Subindo a partir do nível, uma nova altura mantém o pé onde está; vindo de baixo, mantém o topo.
 
+## O espaço sob a escada
+
+O espaço sob um lance pode ser mobiliado: um armário de arrumação, um escritório no armário, um cantinho de leitura, uma entrada com banco e cabides, uma casinha de brincar para os pequenos ou uma caminha de cachorro. Selecione uma escada de lances retos e clique em **Espaço sob a escada…** no fim das propriedades dela (ou **Arquitetura → Espaço sob a escada**).
+
+![O configurador do espaço sob a escada: o cantinho de leitura sob o lance](shots/under-stair-dialog.webp)
+
+À esquerda estão os estilos prontos: **Armário de arrumação**, **Escritório no armário**, **Cantinho de leitura**, **Entrada e vestíbulo**, **Casinha de brincar infantil** e **Casinha de cachorro**, e acima deles os estilos do projeto. Escolha um e altere-o no meio:
+
+- **Posição.** **Sob o lance** (numa escada em L ou U), o **Lado aberto** (por padrão o oposto à volta), onde **Começa em** e **Termina em** ao longo do lance (vazio: de onde o intradorso fica 300 mm acima do piso até o último espelho) e a **Profundidade** (vazia: tão larga quanto a escada).
+- **A frente.** A **Parte baixa** fechada com **Portas de armário** (cada uma com cerca da **Largura da porta**, com **Prateleiras atrás das portas**), um **Painel fechado** ou deixada aberta; uma **Estante no extremo alto**.
+- **Elemento principal.** Uma **Escrivaninha com prateleira** (e uma luz), um **Banco com almofadas** (gavetas na frente), um **Banco de entrada e cabides** (nichos para sapatos embaixo), uma **Porta de casinha de brincar** (e uma **Janela ao lado da porta**) ou uma **Caminha de cachorro** atrás de uma abertura emoldurada, cada um com suas medidas.
+- **Materiais.** A **Espessura da chapa** e os materiais do **Corpo**, das **Frentes** e do **Tecido**, entre os do projeto.
+
+À direita, a pré-visualização mostra o espaço visto do lado aberto sob o intradorso do lance e de cima, seu comprimento, profundidade e alturas, e suas peças. Cada peça é cortada pela inclinação; a que não cabe (uma escrivaninha onde a escada é baixa demais) fica de fora e a pré-visualização avisa. **Criar** ou **Aplicar** é um único passo de desfazer. **Salvar como estilo…** guarda o que preenche o espaço como estilo do projeto; **Atualizar o estilo** salva de novo e todos os espaços do estilo acompanham.
+
+![O espaço sob a escada nas propriedades](shots/under-stair-properties.webp)
+
+O espaço é um elemento próprio, hospedado pela sua escada. Quando a escada muda (largura, rotação, degraus, tipo), o espaço é refeito embaixo dela, e é excluído junto com ela. Os campos de posição ficam nas propriedades, e **Configurar…** reabre o configurador.
+
+![Os seis estilos sob seis escadas](shots/under-stair-3d.webp)
+
+Plantas, cortes, elevações e folhas o desenham como qualquer outro elemento: cortado onde a planta corta, visto abaixo.
+
+![O cantinho de leitura em planta, os outros ao lado](shots/under-stair-plan.webp)
+
+![Um corte ao longo do lance pelo cantinho de leitura](shots/under-stair-section.webp)
+
+**Arquitetura → Tabela de espaços sob escada** lista as peças de cada espaço, com quantidade, material e volume, e os totais por material. Em IFC, o espaço é um IfcElementAssembly ("Under-stair space") de IfcFurniture (prateleiras, escrivaninha, banco, almofadas, caminha), IfcDoor, IfcPlate, IfcDiscreteAccessory (puxadores, cabides) e IfcLightFixture, ligado à sua IfcStair.
+
 ## Rampas
 
 Escolha **Arquitetura → Rampa** (<kbd>RU</kbd>). Clique no meio da extremidade baixa da rampa e depois num ponto na direção em que ela sobe; para uma rampa em L ou em zigue-zague, um terceiro clique à esquerda ou à direita do lance define para que lado ela vira. Na primeira vez, o projeto recebe a **Rampa 6 %** da biblioteca: 1,20 m de largura a 6 %, em lances de no máximo 9 m com patamares de 1,50 m entre eles, uma laje de concreto armado sob um revestimento, corrimãos dos dois lados. Ela sobe até o pavimento de cima, a menos que o seu tipo ou a sua **Desnível** digam outra coisa.

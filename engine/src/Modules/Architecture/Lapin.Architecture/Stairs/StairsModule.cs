@@ -374,13 +374,15 @@ public static class StairsModule
     }
 }
 
-/// <summary>A stair deleted takes the opening it asked of the floor above with it.</summary>
+/// <summary>A stair deleted takes the opening it asked of the floor above and the spaces furnished under it with it.</summary>
 sealed class StairDeletion : IDeletion
 {
     public bool Delete(ICommandContext ctx, string id)
     {
         if (ctx.Model.Get(id) is not { Class: IfcClass.Stair or IfcClass.Ramp }) return false;
         if (StairBuilder.OpeningOf(ctx.Model, id) is { } opening) ctx.Remove(opening.Id);
+        // The space furnished under it goes with it (a tester's report, #71).
+        foreach (var nook in UnderStairs.Of(ctx.Model, id).ToList()) ctx.Remove(nook.Id);
         ctx.Remove(id);
         return true;
     }

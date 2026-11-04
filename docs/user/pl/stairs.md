@@ -75,6 +75,35 @@ Schody nie muszą prowadzić z jednej kondygnacji na następną. Na karcie **Ksz
 
 Każde umieszczone schody mogą pokonywać inną wysokość: wpisz ją w polu **Różnica wysokości** w ich właściwościach (puste: wysokość typu). Przy wchodzeniu od poziomu nowa wysokość zachowuje początek w miejscu; przy wchodzeniu od dołu zachowuje górę.
 
+## Przestrzeń pod schodami
+
+Przestrzeń pod biegiem schodów można urządzić: szafa na rzeczy, biuro w szafie, kącik do czytania, wejście z ławką i wieszakami, domek do zabawy dla maluchów albo legowisko dla psa. Zaznacz schody o prostych biegach i kliknij **Przestrzeń pod schodami…** na dole ich właściwości (lub **Architektura → Przestrzeń pod schodami**).
+
+![Konfigurator przestrzeni pod schodami: kącik do czytania pod biegiem](shots/under-stair-dialog.webp)
+
+Po lewej są gotowe style: **Szafa na rzeczy**, **Biuro w szafie**, **Kącik do czytania**, **Wejście i przedsionek**, **Domek do zabawy dla maluchów** i **Buda dla psa**, a nad nimi style projektu. Wybierz jeden i zmień go pośrodku:
+
+- **Położenie.** **Pod biegiem** (przy schodach w kształcie L lub U), **Strona otwarta** (domyślnie z dala od zakrętu), gdzie **Zaczyna się od** i **Kończy się na** wzdłuż biegu (puste: od miejsca, gdzie spód jest 300 mm nad podłogą, do ostatniego podstopnia) i jej **Głębokość** (pusta: tak szeroko jak schody).
+- **Front.** **Niska część** zamknięta **Drzwiami szafy** (każde mniej więcej o **Szerokości drzwi**, z **Półkami za drzwiami**), **Zamkniętym panelem** albo zostawiona otwarta; **Regał na książki przy wysokim końcu**.
+- **Główny element.** **Biurko z półką** (i lampą), **Ławka z poduszkami** (szuflady z przodu), **Ławka w przedpokoju i wieszaki** (przegródki na buty pod spodem), **Drzwi domku do zabawy** (i **Okno obok drzwi**) albo **Legowisko dla psa** za obramowanym otworem, każdy ze swoimi wymiarami.
+- **Materiały.** **Grubość płyty** oraz materiały **Korpusu**, **Frontów** i **Tkaniny**, spośród materiałów projektu.
+
+Po prawej podgląd pokazuje przestrzeń od strony otwartej pod spodem biegu i z góry, jej długość, głębokość i wysokości oraz części. Każda część jest przycinana przez skos; część, która się nie mieści (biurko tam, gdzie schody są za niskie), zostaje pominięta, a podgląd o tym mówi. **Utwórz** lub **Zastosuj** to jeden krok cofania. **Zapisz jako styl…** zachowuje wyposażenie jako styl projektu; **Aktualizuj styl** zapisuje go ponownie, a wszystkie przestrzenie stylu za nim podążają.
+
+![Przestrzeń pod schodami we właściwościach](shots/under-stair-properties.webp)
+
+Przestrzeń jest osobnym elementem, osadzonym w swoich schodach. Gdy schody się zmieniają (szerokość, obrót, stopnie, typ), przestrzeń jest budowana pod nimi na nowo i jest usuwana razem z nimi. Pola położenia są we właściwościach, a **Konfiguruj…** ponownie otwiera konfigurator.
+
+![Sześć stylów pod sześcioma schodami](shots/under-stair-3d.webp)
+
+Rzuty, przekroje, widoki i arkusze rysują ją jak każdy inny element: przeciętą tam, gdzie tnie rzut, widzianą poniżej.
+
+![Kącik do czytania w rzucie, pozostałe obok](shots/under-stair-plan.webp)
+
+![Przekrój wzdłuż biegu przez kącik do czytania](shots/under-stair-section.webp)
+
+**Architektura → Zestawienie przestrzeni pod schodami** podaje części każdej przestrzeni z liczbą sztuk, materiałem i objętością oraz sumy według materiału. W IFC przestrzeń to IfcElementAssembly ("Under-stair space") z IfcFurniture (półki, biurko, ławka, poduszki, legowisko), IfcDoor, IfcPlate, IfcDiscreteAccessory (uchwyty, wieszaki) i IfcLightFixture, połączony ze swoim IfcStair.
+
 ## Pochylnie
 
 Wybierz **Architektura → Pochylnia** (<kbd>RU</kbd>). Kliknij środek dolnego końca pochylni, a potem punkt w kierunku, w którym się wznosi; przy kształcie L lub pochylni zawracającej trzecie kliknięcie po lewej lub prawej stronie biegu określa, w którą stronę skręca. Za pierwszym razem projekt otrzymuje z biblioteki **Pochylnię 6%**: szerokość 1,20 m, nachylenie 6%, biegi najwyżej 9 m ze spocznikami 1,50 m między nimi, płyta żelbetowa pod wykończeniem, pochwyty po obu stronach. Wznosi się na kondygnację wyżej, chyba że jej typ lub **Różnica wysokości** stanowią inaczej.

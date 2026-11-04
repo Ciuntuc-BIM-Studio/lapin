@@ -75,6 +75,35 @@ Una scala non deve per forza andare da un piano al successivo. Nella scheda **Fo
 
 Ogni scala posata può salire un’altra altezza: scrivila in **Dislivello** nelle sue proprietà (vuoto: quella del tipo). Se sale dalla quota, un dislivello nuovo tiene fermo il piede; se viene da sotto, tiene ferma la sommità.
 
+## Lo spazio sotto la scala
+
+Lo spazio sotto una rampa si può arredare: un ripostiglio, un ufficio nell’armadio, un angolo lettura, un ingresso con panca e appendiabiti, una casetta dei giochi per i più piccoli o una cuccia. Seleziona una scala a rampe dritte e fai clic su **Spazio sotto la scala…** in fondo alle sue proprietà (o **Architettura → Spazio sotto la scala**).
+
+![Il configuratore dello spazio sotto la scala: l’angolo lettura sotto la rampa](shots/under-stair-dialog.webp)
+
+A sinistra ci sono gli stili pronti: **Ripostiglio**, **Ufficio nell’armadio**, **Angolo lettura**, **Ingresso e guardaroba**, **Casetta dei giochi per bambini** e **Cuccia per il cane**, e sopra gli stili del progetto. Scegline uno e modificalo al centro:
+
+- **Posizionamento.** **Sotto la rampa** (in una scala a L o a U), il **Lato aperto** (di norma opposto alla svolta), dove **Inizia a** e **Finisce a** lungo la rampa (vuoto: da dove l’intradosso è a 300 mm dal pavimento fino all’ultima alzata) e la sua **Profondità** (vuota: larga quanto la scala).
+- **Il fronte.** La **Parte bassa** chiusa da **Ante dell’armadio** (ciascuna circa della **Larghezza dell’anta**, con **Ripiani dietro le ante**), un **Pannello chiuso** o lasciata aperta; una **Libreria all’estremità alta**.
+- **Elemento principale.** Una **Scrivania con un ripiano** (e una luce), una **Panca con cuscini** (cassetti sul fronte), una **Panca d’ingresso e appendiabiti** (vani per le scarpe sotto), una **Porta della casetta dei giochi** (e una **Finestra accanto alla porta**) o una **Cuccia** dietro un’apertura incorniciata, ciascuno con le sue misure.
+- **Materiali.** Lo **Spessore del pannello** e i materiali di **Struttura**, **Frontali** e **Tessuto**, tra quelli del progetto.
+
+A destra l’anteprima mostra lo spazio visto dal lato aperto sotto l’intradosso della rampa e dall’alto, la lunghezza, la profondità e le altezze, e le sue parti. Ogni parte è tagliata dalla pendenza; una parte che non ci sta (una scrivania dove la scala è troppo bassa) è tralasciata e l’anteprima lo dice. **Crea** o **Applica** è un solo passo di annullamento. **Salva come stile…** conserva ciò che riempie lo spazio come stile del progetto; **Aggiorna lo stile** lo salva di nuovo e tutti gli spazi dello stile seguono.
+
+![Lo spazio sotto la scala nelle proprietà](shots/under-stair-properties.webp)
+
+Lo spazio è un elemento a sé, ospitato dalla sua scala. Quando la scala cambia (larghezza, rotazione, gradini, tipo), lo spazio si ricostruisce sotto di essa e viene eliminato con lei. I campi di posizionamento sono nelle proprietà, e **Configura…** riapre il configuratore.
+
+![I sei stili sotto sei scale](shots/under-stair-3d.webp)
+
+Piante, sezioni, prospetti e tavole lo disegnano come ogni altro elemento: sezionato dove la pianta lo taglia, visto sotto.
+
+![L’angolo lettura in pianta, gli altri accanto](shots/under-stair-plan.webp)
+
+![Una sezione lungo la rampa attraverso l’angolo lettura](shots/under-stair-section.webp)
+
+**Architettura → Abaco degli spazi sotto scala** elenca le parti di ogni spazio con numero di pezzi, materiale e volume, e i totali per materiale. In IFC lo spazio è un IfcElementAssembly ("Under-stair space") di IfcFurniture (ripiani, scrivania, panca, cuscini, cuccia), IfcDoor, IfcPlate, IfcDiscreteAccessory (maniglie, appendiabiti) e IfcLightFixture, collegato alla sua IfcStair.
+
 ## Rampe
 
 Scegli **Architettura → Rampa** (<kbd>RU</kbd>). Fai clic al centro dell’estremità bassa della rampa, poi su un punto nella direzione in cui sale; per una rampa a L o a zigzag, un terzo clic a sinistra o a destra del tratto stabilisce da che parte gira. La prima volta il progetto riceve dalla libreria **Ramp 6 %**: larga 1,20 m al 6 %, in tratti di al massimo 9 m con pianerottoli di 1,50 m in mezzo, una soletta in cemento armato sotto una finitura e corrimano su entrambi i lati. Sale fino al piano sopra, a meno che il suo tipo o il suo **Dislivello** non dicano altro.

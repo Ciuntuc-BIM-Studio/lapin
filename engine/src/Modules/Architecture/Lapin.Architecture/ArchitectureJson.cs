@@ -19,6 +19,7 @@ namespace Lapin.Architecture;
 [JsonSerializable(typeof(CeilingSpec))]
 [JsonSerializable(typeof(SkirtingSpec))]
 [JsonSerializable(typeof(RoomFinishSpec))]
+[JsonSerializable(typeof(UnderStairSpec))]
 public partial class ArchitectureJson : JsonSerializerContext;
 
 /// <summary>The catalogues the interface reads (roof styles and coverings, stair rule sets), with plain web options (nulls written).</summary>

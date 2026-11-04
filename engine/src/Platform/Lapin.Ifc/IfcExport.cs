@@ -1091,6 +1091,15 @@ public static class IfcExport
                 ("IfcElementAssembly", "steel-bolt") => new("IfcMechanicalFastener", "BOLT", null),
                 ("IfcElementAssembly", "steel-anchor") => new("IfcMechanicalFastener", "ANCHORBOLT", null),
                 ("IfcElementAssembly", "steel-anchorplate") => new("IfcDiscreteAccessory", "ANCHORPLATE", null),
+                // The space under a stair (a tester's report, #71): its furniture, doors, boards, fittings and light.
+                ("IfcElementAssembly", "nook-door") => new(IfcClass.Door, "DOOR", p.Name),
+                ("IfcElementAssembly", "nook-panel" or "nook-trim") => new("IfcPlate", "USERDEFINED", p.Name),
+                ("IfcElementAssembly", "nook-shelves" or "nook-bookcase" or "nook-cubbies") => new("IfcFurniture", "SHELF", p.Name),
+                ("IfcElementAssembly", "nook-desk") => new("IfcFurniture", "DESK", null),
+                ("IfcElementAssembly", "nook-bed") => new("IfcFurniture", "BED", p.Name),
+                ("IfcElementAssembly", "nook-bench" or "nook-drawers" or "nook-cushion") => new("IfcFurniture", "USERDEFINED", p.Name),
+                ("IfcElementAssembly", "nook-handles" or "nook-hooks") => new("IfcDiscreteAccessory", "USERDEFINED", p.Name),
+                ("IfcElementAssembly", "nook-light") => new("IfcLightFixture", "POINTSOURCE", null),
                 ("IfcCurtainWall", "mullion") => new("IfcMember", "MULLION", null),
                 ("IfcCurtainWall", "transom") => new("IfcMember", "USERDEFINED", "TRANSOM"),
                 ("IfcCurtainWall", "panel") => new("IfcPlate", "CURTAIN_PANEL", null),
@@ -1697,7 +1706,7 @@ public static class IfcExport
                     f.Add("IFCRELASSIGNSTOPRODUCT", Gid(e.Id, "resource-rel"), Null, Null, Null, L(new[] { resource }), Null, element);
                 }
                 if (e.Str("host") is { } host && written.TryGetValue(host, out var h))
-                    f.Add("IFCRELCONNECTSELEMENTS", Gid(e.Id, "host-rel"), Null, S("Formwork"), Null, Null, h, element);
+                    f.Add("IFCRELCONNECTSELEMENTS", Gid(e.Id, "host-rel"), Null, S(e.Str("hostRelation") ?? "Formwork"), Null, Null, h, element);
             }
             // A platform voiding the terrain: IFC 4.3 has it as a feature; in IFC4 it is a proxy and only stands there.
             if (o.Ifc43)

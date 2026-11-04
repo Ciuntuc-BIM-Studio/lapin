@@ -970,6 +970,54 @@ export const scenes = [
     },
   },
   {
+    // The space under a stair (a tester's report, #71): the configurator from the stair's properties, a reading nook made,
+    // the six ready-made styles under six stairs in 3D, the nook in plan and in a section along its flight.
+    id: 'under-stair',
+    async run(t) {
+      await t.fresh();
+      const storey = await t.storey();
+      // A stair along a wall: the wall on its left as one climbs, the open side towards the room.
+      await t.cmd('architecture.addWall', { storeyId: storey, x1: -0.5, y1: 1.5, x2: 33.5, y2: 1.5 });
+      const stair = (await t.cmd('architecture.addStair', { storeyId: storey, x: 0.6, y: 0.8, x2: 2, y2: 0.8 })).id;
+      await t.ui({ keyPlan: false });
+      await select(t, stair);
+      await t.wait(800);
+      await t.page.locator('[data-field=under-stair-open]').click();
+      const dialog = t.page.locator('[data-dialog=under-stair]');
+      t.expect(await dialog.count() > 0, 'the under-stair configurator opens from the stair\'s properties');
+      await dialog.locator('[data-style=reading]').click();
+      await t.page.waitForFunction(() => document.querySelectorAll('[data-dialog=under-stair] svg[data-field=under-stair-elevation] polygon[data-role=fabric]').length >= 2, null, { timeout: 15000 }).catch(() => {});
+      t.expect(await dialog.locator('svg[data-field=under-stair-elevation] polygon[data-role=fabric]').count() >= 2, 'the preview draws the bench\'s cushions under the flight');
+      await t.shot('under-stair-dialog', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-field=under-stair-apply]').click();
+      await t.wait(1500);
+      const nook = (await t.nodes()).find((n) => n.type === 'LapinUnderStair');
+      t.expect(nook?.props?.host === stair && nook?.props?.style === 'reading', 'a reading nook is made under the stair');
+      await t.ui({ dialog: null });
+      await t.wait(600);
+      await t.shot('under-stair-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+      // The other five styles, each under a stair of its own beside the first.
+      const styles = ['storage', 'office', 'mudroom', 'playhouse', 'dogbed'];
+      for (let i = 0; i < styles.length; i++) {
+        const x = 0.6 + (i + 1) * 5.6;
+        const s = (await t.cmd('architecture.addStair', { storeyId: storey, x, y: 0.8, x2: x + 1, y2: 0.8 })).id;
+        await t.cmd('architecture.addUnderStair', { stairId: s, style: styles[i] });
+      }
+      t.expect((await t.nodes()).filter((n) => n.type === 'LapinUnderStair').length === 6, 'six spaces, one of each style');
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('under-stair-plan', { of: '[data-testid=plan]', pad: 0 });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.72, pitch: -0.2, distance: 33, target: { x: 18.6, y: 0.8, z: 2.4 } }, false));
+      await t.wait(1800);
+      await t.shot('under-stair-3d', { of: 'canvas', pad: 0 });
+      await t.cmd('view.create', { kind: 'section', name: 'Nook', start: [-0.8, 0.8], end: [5.9, 0.8], depth: 1, scale: 50 });
+      await t.wait(600);
+      await openFromBrowser(t, 'Nook', 2500);
+      await t.shot('under-stair-section', { of: '[data-testid=drawing]', pad: 0 });
+    },
+  },
+  {
     id: 'ceilings',
     async run(t) {
       await t.fresh();

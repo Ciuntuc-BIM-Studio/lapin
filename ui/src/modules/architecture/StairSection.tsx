@@ -14,6 +14,7 @@ import { useUi } from '../../app/store';
 import { formatLength, lengthText } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { levelText } from './stairPlacement';
+import { UnderStairLinks } from './UnderStairSection';
 
 export interface StairCheck { key: string; label: string; value: number; min: number | null; max: number | null; ok: boolean }
 export interface StairNumbers {
@@ -115,6 +116,7 @@ export function StairSection({ node }: { node: NodeDto }) {
         <input type="checkbox" checked={!node.props.noOpening} disabled={!topStorey} onChange={(e) => set({ noOpening: !e.target.checked })} />
         Opening in the floor above{n?.opening ? '' : topStorey ? ' (no floor found over the top of the stair)' : ''}
       </label>
+      {!ramp && <UnderStairLinks stairId={node.id} />}
     </div>
   );
 }

@@ -184,6 +184,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         LintelProducts.Register(r);
         CurtainWalls.Register(r);
         Stairs.StairsModule.Register(r);
+        Stairs.UnderStairs.Register(r);
         Ceilings.Register(r);
         Skirtings.Register(r);
         RoomFinishes.Register(r);
