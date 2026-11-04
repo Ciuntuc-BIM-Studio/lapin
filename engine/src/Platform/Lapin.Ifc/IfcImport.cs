@@ -195,6 +195,7 @@ public static partial class IfcImport
             }
             Elements(edit);
             foreach (var r in relations) r(edit);
+            ProvisionOpenings(edit);
             WriteContainment(edit);
             var left = edit.Model.Entities.Count(e => s.Catalog.Geometry(e.Class) != null && !seen.Contains(e.Id) && e.Class is not (IfcClass.OpeningElement or IfcClass.Annotation or IfcClass.Grid));
             if (left > 0 && elements + updated > 0) notes.Add($"{left} element(s) of the project are not in the file; they stay as they are.");
@@ -265,6 +266,64 @@ public static partial class IfcImport
             foreach (var sid in sets)
                 if (f.Entities.GetValueOrDefault(sid) is { Type: "IFCPROPERTYSET" } set && IfcExport.IsIntentSet(Str(set[2]))) return Parse(Items(set[4]));
             return null;
+        }
+
+        /// <summary>The provision openings of Lapin's own IFC (decision 296): their host's GlobalId and the IfcOpeningElement.</summary>
+        readonly List<(string Host, StepEntity Opening)> provisions = [];
+
+        /// <summary>An opening's Lapin_ProvisionOpening set (decision 293: an MEP run's provision opening): its properties, or null.</summary>
+        Dictionary<string, object?>? ProvisionOf(int id)
+        {
+            foreach (var sid in definitions.GetValueOrDefault(id) ?? [])
+                if (f.Entities.GetValueOrDefault(sid) is { Type: "IFCPROPERTYSET" } set && Str(set[2]) == IfcExport.ProvisionSetName)
+                {
+                    var o = new Dictionary<string, object?>();
+                    foreach (var p in Items(set[4]))
+                        if (p.Type == "IFCPROPERTYSINGLEVALUE" && Str(p[0]) is { } name) o[name] = Value(p[2]);
+                    return o;
+                }
+            return null;
+        }
+
+        /// <summary>
+        /// Lapin's own IFC read back (decision 296): a provision opening is not taken as an opening when the run that cut it
+        /// came too and cuts it again by the cut order (it would be cut twice); without its run (left out, or a project that
+        /// does not cut), it comes in as a real opening of its host — a bare one in a wall, an outline in a floor — so nothing is lost.
+        /// </summary>
+        void ProvisionOpenings(IEdit edit)
+        {
+            if (provisions.Count == 0) return;
+            var makers = s.Catalog.All<Lapin.Platform.Coordination.IOpeningMaker>();
+            int made = 0, lost = 0;
+            foreach (var (hostId, op) in provisions)
+            {
+                if (edit.Model.Get(hostId) is not { } host || ProvisionOf(op.Id) is not { } p) continue;
+                var source = p.GetValueOrDefault("Source") as string;
+                if (source != null && Lapin.Platform.Coordination.Provisions.Of(edit.Model, s.Catalog, host).Any(x => x.Cuts && x.SourceId == source)) continue;
+                var pts = model.Shape(op.Id).Body.SelectMany(b => b.Mesh.V).ToList();
+                double W(string k) => p.GetValueOrDefault(k) is double d ? d * model.Scale : 0;
+                var (width, height) = (W("Width"), W("Height"));
+                if (pts.Count == 0 || width <= 0 || height <= 0) { lost++; continue; }
+                var min = new Vec3(pts.Min(q => q.X), pts.Min(q => q.Y), pts.Min(q => q.Z));
+                var max = new Vec3(pts.Max(q => q.X), pts.Max(q => q.Y), pts.Max(q => q.Z));
+                var round = p.GetValueOrDefault("Shape") as string == Lapin.Platform.Coordination.OpeningVoids.Round;
+                // A rectangle's direction in plan: the side of its outline as long as its width.
+                Vec2? along = null;
+                var hull = Polygon2.ConvexHull(pts.Select(q => q.Xy).ToList());
+                for (var i = 0; i < hull.Length && along == null; i++)
+                {
+                    var side = hull[(i + 1) % hull.Length] - hull[i];
+                    if (Math.Abs(side.Length - width) < 2e-3) along = side.Normalized();
+                }
+                try
+                {
+                    if (makers.Select(x => x.MakeAt(edit, host, (min + max) * 0.5, width, height, round, along)).FirstOrDefault(x => x != null) != null) made++;
+                    else lost++;
+                }
+                catch (Exception ex) when (ex is CommandException or ModelException or ArgumentException or InvalidOperationException) { lost++; }
+            }
+            if (made > 0) notes.Add($"{made} provision opening(s) came without the MEP run that cut them: kept as openings of their hosts.");
+            if (lost > 0) notes.Add($"{lost} provision opening(s) came without their run and could not be kept as openings.");
         }
 
         Intent Parse(IEnumerable<StepEntity> properties)
@@ -673,6 +732,8 @@ public static partial class IfcImport
                 var relId = Str(rel[0]);
                 if (op.Type == "IFCOPENINGELEMENT")
                 {
+                    // A provision opening an MEP run cut (decision 296): made again by the run when it comes too, else a real opening (ProvisionOpenings).
+                    if (ProvisionOf(op.Id) != null) { provisions.Add((gid, op)); continue; }
                     if (IntentOf(op.Id) is not { } opIntent) continue;
                     Put(edit, opGid, IfcClass.OpeningElement, Str(op[2]) ?? "Opening", opIntent.Attrs, opIntent.Predefined ?? "OPENING", counts: false);
                     foreach (var fill in Rels.FillsOf[op.Id])

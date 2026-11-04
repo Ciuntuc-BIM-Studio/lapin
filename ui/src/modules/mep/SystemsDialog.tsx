@@ -86,7 +86,7 @@ export function SystemsDialog() {
                     <dt>Pressure class</dt><dd><select data-gas-pressure value={d.pressure ?? 'low'} onChange={(e) => update(current.id, { pressure: e.target.value as 'low' | 'medium' })}><option value="low">Low pressure</option><option value="medium">Medium pressure</option></select></dd>
                   </>
                 )}
-                <dt title="Whether its runs cut their own openings in the walls and floors they cross (Manage → Cut order)">Runs cut walls and floors</dt>
+                <dt title="Whether its runs cut their own openings in the walls, floors and roofs they cross (Manage → Cut order)">Runs cut walls, floors and roofs</dt>
                 <dd><select data-system-cut value={current.cutHosts == null ? '' : current.cutHosts ? 'yes' : 'no'} onChange={(e) => void execute('mep.updateSystem', { id: current.id, cutHosts: e.target.value === '' ? null : e.target.value === 'yes' })}><option value="">as the cut order</option><option value="yes">yes</option><option value="no">no</option></select></dd>
                 <dt>Insulation</dt><dd><LengthField metres={d.insulation} min={0} onCommit={(v) => { if (v != null) update(current.id, { insulation: v }); }} /></dd>
                 <dt>Bend radius</dt><dd><LengthField metres={d.bendRadius} min={0} onCommit={(v) => { if (v != null) update(current.id, { bendRadius: v }); }} /></dd>

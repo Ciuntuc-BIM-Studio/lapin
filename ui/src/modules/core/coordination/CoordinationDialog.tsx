@@ -231,7 +231,7 @@ export function CoordinationDialog() {
               <dt>3D view</dt>
               <dd><label><input type="checkbox" data-testid="void-show" style={{ width: 'auto', marginRight: 6 }} checked={voidsOn} onChange={(e) => { void keep(); useUi.setState({ openingVoids: e.target.checked }); }} /> show the voids (View → Opening voids)</label></dd>
               <dt>Cut order</dt>
-              <dd><button type="button" className="link" data-testid="clash-cut-order" onClick={() => useUi.setState({ dialog: 'cutOrder' })}>Runs that cut walls and floors (Manage → Cut order)…</button></dd>
+              <dd><button type="button" className="link" data-testid="clash-cut-order" onClick={() => useUi.setState({ dialog: 'cutOrder' })}>Runs that cut walls, floors and roofs (Manage → Cut order)…</button></dd>
             </dl>
           )}
         </div>

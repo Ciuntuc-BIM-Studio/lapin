@@ -18,7 +18,7 @@ sealed class OpeningMaker : IOpeningMaker
 {
     const int CircleSides = 32;
 
-    public string? Make(ICommandContext ctx, Entity host, IReadOnlyList<Solid> through, OpeningRequest r)
+    public string? Make(IEdit ctx, Entity host, IReadOnlyList<Solid> through, OpeningRequest r)
     {
         var m = ctx.Model;
         if (host.Class == IfcClass.Wall)
@@ -31,7 +31,38 @@ sealed class OpeningMaker : IOpeningMaker
         return null;
     }
 
-    public bool Enlarge(ICommandContext ctx, Entity host, Entity opening, IReadOnlyList<Solid> through, OpeningRequest r)
+    /// <summary>
+    /// A real opening where a provision opening was (decision 296: Lapin's own IFC read back without the run that cut it):
+    /// a bare opening in a wall (round: the circle kind) at its middle, an outline in a floor; a roof makes none.
+    /// </summary>
+    public string? MakeAt(IEdit edit, Entity host, Vec3 centre, double width, double height, bool round, Vec2? along = null)
+    {
+        var m = edit.Model;
+        if (host.Class == IfcClass.Wall)
+        {
+            var u = Openings.AlongOf(host, centre.Xy);
+            var f = Openings.FrameOf(m, host, u);
+            var length = PathCurve.Of(host).Length;
+            var wallHeight = host.Num("height", Walls.DefaultHeight);
+            var (w, h) = (Math.Min(width, length), Math.Min(height, wallHeight));
+            u = Math.Clamp(u, w / 2, Math.Max(w / 2, length - w / 2));
+            var sill = Math.Clamp(centre.Z - f.Base - h / 2, 0, Math.Max(0, wallHeight - h));
+            return Openings.AddBare(edit, host, u, sill, w, h, round ? "circle" : null).Id;
+        }
+        if (host.Class == IfcClass.Slab)
+        {
+            var c = centre.Xy;
+            var d = along is { } a && a.Length > 1e-9 ? a.Normalized() : new Vec2(1, 0);
+            var n = d.Perp;
+            IReadOnlyList<Vec2> contour = round
+                ? Enumerable.Range(0, CircleSides).Select(i => c + new Vec2(Math.Cos(2 * Math.PI * i / CircleSides), Math.Sin(2 * Math.PI * i / CircleSides)) * (width / 2 / Math.Cos(Math.PI / CircleSides))).ToList()
+                : [c - d * (width / 2) - n * (height / 2), c + d * (width / 2) - n * (height / 2), c + d * (width / 2) + n * (height / 2), c - d * (width / 2) + n * (height / 2)];
+            return Slabs.AddOpening(edit, host, contour).Id;
+        }
+        return null;
+    }
+
+    public bool Enlarge(IEdit ctx, Entity host, Entity opening, IReadOnlyList<Solid> through, OpeningRequest r)
     {
         var m = ctx.Model;
         if (host.Class == IfcClass.Wall)

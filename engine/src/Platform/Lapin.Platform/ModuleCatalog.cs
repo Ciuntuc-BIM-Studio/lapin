@@ -112,6 +112,8 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
         }
         return o;
     }
+    /// <summary>Whether a class ranks in the cut order but cuts by provision openings (MEP runs, decision 293): its edits build again the hosts near it (decision 296).</summary>
+    public bool CutsByProvisions(string ifcClass) => _cutters.TryGetValue(ifcClass, out var c) && c.Envelope == null;
     public Solid? EnvelopeOf(Entity element, IModelView model) => _cutters.TryGetValue(element.Class, out var c) ? c.Envelope?.Invoke(element, model) : null;
 
     public IReadOnlyList<T> All<T>() where T : class => _services.Where(s => s.Contract == typeof(T)).Select(s => (T)s.Implementation).ToList();

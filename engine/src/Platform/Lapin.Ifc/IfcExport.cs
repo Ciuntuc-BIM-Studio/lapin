@@ -1248,7 +1248,7 @@ public static class IfcExport
                 }
             // The provision openings MEP runs cut by the cut order (decision 293): IfcOpeningElements of their own, voiding the host,
             // with what made them (Lapin_ProvisionOpening); the voids option writes them as provisions for voids too.
-            if (e.Class is IfcClass.Wall or IfcClass.Slab)
+            if (e.Class is IfcClass.Wall or IfcClass.Slab or IfcClass.Roof)
                 foreach (var p in Lapin.Platform.Coordination.Provisions.Of(m, s.Catalog, e).Where(p => p.Cuts))
                 {
                     var body = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { BodyOf([Brep(p.Cutter, null, Frame.AtZ(z0))]) }));

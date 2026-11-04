@@ -20,6 +20,8 @@ public sealed record OpeningClash(string Status, string? MepId, string HostId, O
     public string PairKey => MepId != null ? $"{MepId}|{HostId}" : $"-|{HostId}|{Void?.Key}";
     /// <summary>Why the cut order's MEP rule did not cut this opening (decision 293): "structural" or "order"; null otherwise.</summary>
     public string? Held { get; init; }
+    /// <summary>What of the element passes through its void (decision 296): its width and height there (a wall's along it and up it, a floor's or roof's in plan); for a fit.</summary>
+    public (double W, double H)? Fit { get; init; }
 
     public JsonObject ToJson(IModelView m)
     {
@@ -118,6 +120,7 @@ public static class OpeningClashes
                         if (Measure.Bounds(a) is { } ba && Measure.Bounds(b) is { } bb && Overlap(ba, bb) && booleans.Intersection(a, b) is { } x && Measure.Volume(x) > VolumeEps) pieces.Add(x);
                 // The voids it goes through, and with a clearance what of it lies in the ring the clearance keeps clear.
                 var through = new List<OpeningVoid>();
+                var insideOf = new Dictionary<string, List<Solid>>();
                 foreach (var (v, box) in voidsOf.GetValueOrDefault(host.Entity.Id) ?? [])
                 {
                     if (!Overlap(mep.Box, box)) continue;
@@ -125,6 +128,7 @@ public static class OpeningClashes
                     foreach (var a in mep.Solids)
                         if (booleans.Intersection(a, v.Solid) is { } x && Measure.Volume(x) > VolumeEps) inside.Add(x);
                     if (inside.Count == 0) continue;
+                    insideOf[v.Key] = inside;
                     through.Add(v);
                     used.Add(v.Key);
                     if (o.Clearance > 0 && shrunk.TryGetValue(v.Key, out var inner))
@@ -136,7 +140,7 @@ public static class OpeningClashes
                 if (pieces.Count == 0)
                 {
                     var ok = through[0];
-                    results.Add(new OpeningClash(Ok, e.Id, host.Entity.Id, ok, 0, centre, $"{Label(e)} goes through {ok.Mark} in {Label(host.Entity)}."));
+                    results.Add(new OpeningClash(Ok, e.Id, host.Entity.Id, ok, 0, centre, $"{Label(e)} goes through {ok.Mark} in {Label(host.Entity)}.") { Fit = SizeIn(ok, insideOf[ok.Key]) });
                     continue;
                 }
                 if (through.Count == 0)
@@ -151,7 +155,7 @@ public static class OpeningClashes
                 var by = pieces.SelectMany(p => p.Vertices).Max(p => target.Min(v => DistanceTo(v.Solid, p)));
                 if (by < DistanceEps)
                 {
-                    results.Add(new OpeningClash(Ok, e.Id, host.Entity.Id, through[0], 0, centre, $"{Label(e)} goes through {through[0].Mark} in {Label(host.Entity)}."));
+                    results.Add(new OpeningClash(Ok, e.Id, host.Entity.Id, through[0], 0, centre, $"{Label(e)} goes through {through[0].Mark} in {Label(host.Entity)}.") { Fit = SizeIn(through[0], insideOf[through[0].Key]) });
                     continue;
                 }
                 var mm = Math.Ceiling(by * 1000 - 0.05);
@@ -163,6 +167,32 @@ public static class OpeningClashes
             foreach (var v in exact.Where(v => !used.Contains(v.Key) && v.Kind is OpeningVoids.Wall or OpeningVoids.Slab && !IsStairwell(m, v)))
                 results.Add(new OpeningClash(Empty, null, v.HostId, v, 0, Centre([v.Solid]), $"{v.Mark} in {(m.Get(v.HostId) is { } h ? Label(h) : "?")}: nothing goes through it."));
         return results.OrderBy(r => r.Status switch { Missing => 0, TooSmall => 1, Empty => 2, _ => 3 }).ToList();
+    }
+
+    /// <summary>
+    /// What of an element lies in a void, measured as the opening is: in a wall along the wall and up it; in a floor or a
+    /// roof in plan, along the void's own longer side (a rectangle's) or the axes.
+    /// </summary>
+    static (double W, double H)? SizeIn(OpeningVoid v, List<Solid> inside)
+    {
+        var pts = inside.SelectMany(s => s.Vertices).ToList();
+        if (pts.Count == 0) return null;
+        if (v.Along is { } along)
+        {
+            var u = pts.Select(p => Vec2.Dot(p.Xy, along)).ToList();
+            return (u.Max() - u.Min(), pts.Max(p => p.Z) - pts.Min(p => p.Z));
+        }
+        var dir = new Vec2(1, 0);
+        var hull = Polygon2.ConvexHull(v.Solid.Vertices.Select(p => p.Xy).ToList());
+        for (var i = 0; i < hull.Length; i++)
+        {
+            var side = hull[(i + 1) % hull.Length] - hull[i];
+            if (hull.Length == 4 && side.Length > 1e-6 && Math.Abs(side.Length - v.Width) < 2e-3) { dir = side.Normalized(); break; }
+        }
+        var n = dir.Perp;
+        var a = pts.Select(p => Vec2.Dot(p.Xy, dir)).ToList();
+        var b = pts.Select(p => Vec2.Dot(p.Xy, n)).ToList();
+        return (a.Max() - a.Min(), b.Max() - b.Min());
     }
 
     /// <summary>A floor's opening a stair asked for: a stairwell, empty by design.</summary>

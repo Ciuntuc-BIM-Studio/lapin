@@ -33,6 +33,36 @@ public interface IProvisionOpenings
     IEnumerable<ProvisionOpening> Of(IModelView m, IServices services, Entity? host, double offset = 0);
 }
 
+/// <summary>
+/// Which hosts a run's edit builds again (decision 296): a host's provisions read the runs near it under keys of a grid
+/// in plan (<see cref="Provisions.ReadNear"/>), never their classes whole; a run built again touches the cells of where it
+/// was and where it is (the session, <see cref="Provisions.CellKeys"/>), so only the walls, floors and roofs it crossed
+/// before or crosses now are built again.
+/// </summary>
+public static class ProvisionCells
+{
+    /// <summary>The side of a cell in plan (m).</summary>
+    public const double Size = 4;
+    /// <summary>How far round a box its cells reach: more than any clearance, so a crossing always shares a cell.</summary>
+    public const double Margin = 0.5;
+    /// <summary>The key every host reads: touched when a run's place is not known (no body), so every host looks again.</summary>
+    public const string Any = "pcell:*";
+    /// <summary>A box over more cells than this reads and touches <see cref="Any"/> instead.</summary>
+    const int MaxCells = 4096;
+
+    public static string Key(long x, long y) => $"pcell:{x},{y}";
+
+    /// <summary>The cells a box (with the margin) falls in; <see cref="Any"/> alone for one too large or not finite.</summary>
+    public static IEnumerable<string> Of((Vec3 Min, Vec3 Max) b)
+    {
+        double x0 = Math.Floor((b.Min.X - Margin) / Size), y0 = Math.Floor((b.Min.Y - Margin) / Size), x1 = Math.Floor((b.Max.X + Margin) / Size), y1 = Math.Floor((b.Max.Y + Margin) / Size);
+        if (!double.IsFinite(x0 + y0 + x1 + y1) || (x1 - x0 + 1) * (y1 - y0 + 1) > MaxCells) { yield return Any; yield break; }
+        for (var x = (long)x0; x <= (long)x1; x++)
+            for (var y = (long)y0; y <= (long)y1; y++)
+                yield return Key(x, y);
+    }
+}
+
 /// <summary>A new opening made in a host round what goes through it (Make opening, Enlarge opening, decision 293).</summary>
 public sealed record OpeningRequest(double Clearance, bool Round, CutOrder.MepCut Rule);
 
@@ -44,9 +74,15 @@ public sealed record OpeningRequest(double Clearance, bool Round, CutOrder.MepCu
 public interface IOpeningMaker
 {
     /// <summary>The new opening's id; null when the host is not one this module makes openings in. Refuses (CommandException) what does not fit.</summary>
-    string? Make(ICommandContext ctx, Entity host, IReadOnlyList<Solid> through, OpeningRequest r);
+    string? Make(IEdit ctx, Entity host, IReadOnlyList<Solid> through, OpeningRequest r);
+    /// <summary>
+    /// A real opening where an imported provision opening was (decision 296: Lapin's own IFC read back without the run
+    /// that cut it): <paramref name="centre"/> its middle, its width and height (a wall's along it and up it; a floor's or
+    /// a roof's along <paramref name="along"/> and across it), round or not. Null when the host is not one this module makes openings in.
+    /// </summary>
+    string? MakeAt(IEdit edit, Entity host, Vec3 centre, double width, double height, bool round, Vec2? along = null) => null;
     /// <summary>The opening grown to take in what passes through (it keeps what it had); false when it is not one this module grows.</summary>
-    bool Enlarge(ICommandContext ctx, Entity host, Entity opening, IReadOnlyList<Solid> through, OpeningRequest r);
+    bool Enlarge(IEdit ctx, Entity host, Entity opening, IReadOnlyList<Solid> through, OpeningRequest r);
 }
 
 /// <summary>The provision openings of every module, cut out of their hosts and offered as voids.</summary>
@@ -60,6 +96,20 @@ public static class Provisions
             try { o.AddRange(p.Of(m, services, host, offset)); }
             catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException) { }
         return o;
+    }
+
+    /// <summary>The model under a geometry build's tracking view, read without noting what is read (what a host's provisions filter runs by).</summary>
+    public static IModelView Untracked(IModelView m) => m is TrackingView tv ? tv.Inner : m;
+
+    /// <summary>Whether the model is read by a geometry build (its reads noted): the model does not change meanwhile.</summary>
+    public static bool Building(IModelView m) => m is TrackingView;
+
+    /// <summary>A host's build notes the cells round its box (and <see cref="ProvisionCells.Any"/>): a run built again there builds it again.</summary>
+    public static void ReadNear(IModelView m, (Vec3 Min, Vec3 Max) box)
+    {
+        if (m is not TrackingView tv) return;
+        tv.Read.Add(ProvisionCells.Any);
+        foreach (var k in ProvisionCells.Of(box)) tv.Read.Add(k);
     }
 
     /// <summary>Whether an element bears load: Pset_…Common LoadBearing true on it or its type, or its own <c>loadBearing</c>.</summary>
@@ -82,7 +132,7 @@ public static class Provisions
     {
         public ElementGeometry? Apply(Entity entity, ElementGeometry geometry, IModelView model, IServices services)
         {
-            if (entity.Class is not (IfcClass.Wall or IfcClass.Slab) || geometry.Parts.Count == 0) return null;
+            if (entity.Class is not (IfcClass.Wall or IfcClass.Slab or IfcClass.Roof) || geometry.Parts.Count == 0) return null;
             if (services.Get<GeometryOptions>()?.CutOpenings == false) return null;
             var cutters = Of(model, services, entity).Where(p => p.Cuts).Select(p => p.Cutter).ToList();
             if (cutters.Count == 0) return null;

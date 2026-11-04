@@ -117,6 +117,8 @@ export type ItemKind = 'missing' | 'held' | 'tooSmall' | 'empty';
 export interface ClashItem {
   n: number; key: string; kind: ClashStatus; held?: 'structural' | 'order'; mepId?: string | null; hostId: string; mark?: string | null; openingId?: string | null; voidKey?: string | null;
   by: number; centre: [number, number, number]; message: string; state: ItemState; comment?: string; fixedBy?: string;
+  /** When it was first found resolved (decision 296): its message then says how the opening and the run are at the latest run. */
+  resolvedAt?: string;
   mep?: string | null; mepClass?: string | null; host?: string | null; hostClass?: string | null;
 }
 

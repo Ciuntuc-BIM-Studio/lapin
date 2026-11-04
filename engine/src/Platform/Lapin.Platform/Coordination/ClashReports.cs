@@ -15,7 +15,7 @@ namespace Lapin.Platform.Coordination;
 /// ignored (with a comment).
 /// </summary>
 public sealed record ClashItem(int Number, string Key, string Kind, string? MepId, string HostId, string? Mark, string? OpeningId, string? VoidKey,
-    double By, Vec3 Centre, string Message, string State, string? Comment = null, string? Held = null, string? FixedBy = null)
+    double By, Vec3 Centre, string Message, string State, string? Comment = null, string? Held = null, string? FixedBy = null, string? ResolvedAt = null)
 {
     public JsonObject ToJson(IModelView? m = null)
     {
@@ -28,6 +28,7 @@ public sealed record ClashItem(int Number, string Key, string Kind, string? MepI
         if (Comment != null) o["comment"] = Comment;
         if (Held != null) o["held"] = Held;
         if (FixedBy != null) o["fixedBy"] = FixedBy;
+        if (ResolvedAt != null) o["resolvedAt"] = ResolvedAt;
         if (m != null)
         {
             o["mep"] = MepId is { } id ? m.Get(id)?.Name : null;
@@ -44,7 +45,7 @@ public sealed record ClashItem(int Number, string Key, string Kind, string? MepI
         var c = o["centre"] as JsonArray;
         Vec3 centre = c is { Count: 3 } ? new(Json.Number(c[0]) ?? 0, Json.Number(c[1]) ?? 0, Json.Number(c[2]) ?? 0) : new(0, 0, 0);
         return new((int)(Json.Number(o["n"]) ?? 0), key, (string?)o["kind"] ?? OpeningClashes.Missing, (string?)o["mepId"], host, (string?)o["mark"], (string?)o["openingId"], (string?)o["voidKey"],
-            Json.Number(o["by"]) ?? 0, centre, (string?)o["message"] ?? "", (string?)o["state"] ?? ClashReports.Open, (string?)o["comment"], (string?)o["held"], (string?)o["fixedBy"]);
+            Json.Number(o["by"]) ?? 0, centre, (string?)o["message"] ?? "", (string?)o["state"] ?? ClashReports.Open, (string?)o["comment"], (string?)o["held"], (string?)o["fixedBy"], (string?)o["resolvedAt"]);
     }
 }
 
@@ -153,6 +154,7 @@ public static class ClashReports
     public static ClashReport Run(ICommandContext ctx, OpeningClashes.Options o)
     {
         var m = ctx.Model;
+        var date = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
         var hash = ModelHash(m);
         var found = OpeningClashes.Run(ctx.Query, o);
         var old = Read(m);
@@ -167,12 +169,51 @@ public static class ClashReports
             var state = prev?.State == Ignored ? Ignored : Open;
             items.Add(new ClashItem(prev?.Number ?? next++, c.PairKey, c.Status, c.MepId, c.HostId, c.Void?.Mark, c.Void?.OpeningId, c.Void?.Key, c.By, c.Centre, c.Message, state, prev?.Comment, c.Held));
         }
-        // What the last run found and this one does not: fixed (an ignored one stays ignored, a fixed one fixed).
+        // What the last run found and this one does not: resolved (an ignored one stays ignored), its message and sizes as they are now (decision 296):
+        // the opening it goes through and the run's size in it, or that the pair no longer meets; the run it was first found resolved at kept.
+        var fits = found.Where(c => c.Status == OpeningClashes.Ok).GroupBy(c => c.PairKey).ToDictionary(g => g.Key, g => g.First());
         foreach (var prev in before.Values.Where(p => !seen.Contains(p.Key)))
-            items.Add(prev.State == Open ? prev with { State = Fixed } : prev);
+        {
+            if (prev.State == Ignored) { items.Add(prev); continue; }
+            var at = prev.State == Fixed && prev.ResolvedAt != null ? prev.ResolvedAt : date;
+            var fit = fits.GetValueOrDefault(prev.Key);
+            items.Add(prev with
+            {
+                State = Fixed, ResolvedAt = at, By = 0, Message = ResolvedMessage(m, prev, fit, at),
+                Mark = fit?.Void?.Mark ?? prev.Mark, OpeningId = fit?.Void?.OpeningId ?? prev.OpeningId, VoidKey = fit?.Void?.Key ?? prev.VoidKey, Centre = fit?.Centre ?? prev.Centre,
+            });
+        }
         var ok = found.Count(c => c.Status == OpeningClashes.Ok);
-        Write(ctx, old, hash, o.Clearance, ok, items);
+        Write(ctx, old, hash, o.Clearance, ok, items, date);
         return Read(ctx.Model)!;
+    }
+
+    /// <summary>
+    /// A resolved item's message as the run finds it (decision 296): "Resolved at the run of 04.11.2026 14:00: opening 160 mm, run 110 mm"
+    /// (a rectangle's width × height; the run's size in the opening, as it passes), or that the pair no longer meets.
+    /// </summary>
+    public static string ResolvedMessage(IModelView m, ClashItem item, OpeningClash? fit, string at)
+    {
+        var head = $"Resolved at the run of {Day(at)}";
+        if (fit?.Void is { } v)
+        {
+            var opening = $"opening {(v.Mark is { Length: > 0 } mark ? mark + " " : "")}{Mm(v.Width, v.Shape == OpeningVoids.Round ? null : v.Height)}";
+            return fit.Fit is { } size ? $"{head}: {opening}, run {Mm(size.W, size.H)}." : $"{head}: {opening}.";
+        }
+        var mep = item.MepId is { } id ? m.Get(id) : null;
+        var host = m.Get(item.HostId);
+        if (mep == null) return $"{head}: the MEP element is gone.";
+        if (host == null) return $"{head}: its host is gone.";
+        return $"{head}: {Name(mep)} no longer goes through {Name(host)}.";
+    }
+
+    static string Name(Entity e) => e.Name is { Length: > 0 } n ? n : e.Class.Replace("Ifc", "");
+
+    /// <summary>A size in whole mm: one number when both ways match (a circle, a square), else width × height.</summary>
+    static string Mm(double w, double? h)
+    {
+        static string R(double x) => Math.Round(x * 1000).ToString("0", CultureInfo.InvariantCulture);
+        return h is not { } hh || Math.Abs(w - hh) < 0.0015 ? $"{R(w)} mm" : $"{R(w)} × {R(hh)} mm";
     }
 
     /// <summary>The report's items with these numbers, refused when there is no report or a number is not in it.</summary>

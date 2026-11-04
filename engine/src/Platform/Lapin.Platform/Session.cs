@@ -592,26 +592,60 @@ public sealed class Session
         var emit = new List<string>();
         // Where the rebuilt elements were and are: the neighbours there get their seams again, or lose them.
         var boxes = new List<(Vec3 Min, Vec3 Max)>();
-        var hadItems = new HashSet<string>();
-        foreach (var id in rebuild)
+        // What cuts provision openings (MEP runs, decision 296): the cells of where it was and is, whose hosts are built again after it.
+        var cells = new HashSet<string>();
+        var runBoxes = new List<(Vec3 Min, Vec3 Max)>();
+        var anyCell = false;
+        Dictionary<string, string>? goneClass = null;
+        string? ClassOf(string id) => _store.Get(id)?.Class
+            ?? (goneClass ??= t.Entities.Where(c => c.Before != null).GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First().Before!.Class)).GetValueOrDefault(id);
+        void Rebuild(IReadOnlyList<string> ids)
         {
-            if (_built.TryGetValue(id, out var old) && old.Item != null) hadItems.Add(id);
-            if (old?.Bounds is { } was) boxes.Add(was);
-            Forget(id);
-        }
-        // Built on every core, then taken in the order they came.
-        var live = rebuild.Select(_store.Get).OfType<Entity>().ToList();
-        var made = BuildMany(live);
-        var byId = new Dictionary<string, Built?>();
-        for (var i = 0; i < live.Count; i++) byId[live[i].Id] = made[i];
-        foreach (var id in rebuild)
-        {
-            if (byId.GetValueOrDefault(id) is { Item: not null } built)
+            var hadItems = new HashSet<string>();
+            var was = new Dictionary<string, (Vec3 Min, Vec3 Max)?>();
+            foreach (var id in ids)
             {
-                emit.Add(id);
-                if (built.Bounds is { } now) boxes.Add(now);
+                if (_built.TryGetValue(id, out var old) && old.Item != null) hadItems.Add(id);
+                if (old?.Bounds is { } box) boxes.Add(box);
+                was[id] = old?.Bounds;
+                Forget(id);
             }
-            else if (hadItems.Contains(id)) renderRemoved.Add(id);
+            // Built on every core, then taken in the order they came.
+            var live = ids.Select(_store.Get).OfType<Entity>().ToList();
+            var made = BuildMany(live);
+            var byId = new Dictionary<string, Built?>();
+            for (var i = 0; i < live.Count; i++) byId[live[i].Id] = made[i];
+            foreach (var id in ids)
+            {
+                var built = byId.GetValueOrDefault(id);
+                if (built is { Item: not null })
+                {
+                    emit.Add(id);
+                    if (built.Bounds is { } now) boxes.Add(now);
+                }
+                else if (hadItems.Contains(id)) renderRemoved.Add(id);
+                var cls = ClassOf(id);
+                if (cls == null || !_catalog.CutsByProvisions(cls)) continue;
+                var (before, after) = (was.GetValueOrDefault(id), built?.Bounds);
+                if (before == null && after == null) { cells.Add(Coordination.ProvisionCells.Any); anyCell = true; }
+                foreach (var b in new[] { before, after }.OfType<(Vec3 Min, Vec3 Max)>())
+                {
+                    cells.UnionWith(Coordination.ProvisionCells.Of(b));
+                    runBoxes.Add(b);
+                }
+            }
+        }
+        Rebuild(rebuild);
+        // The hosts round the runs rebuilt (where they were and are), built again with their provision openings; only those.
+        if (cells.Count > 0)
+        {
+            var done = rebuild.ToHashSet();
+            // The cells find them; their boxes say which the run reaches (a host beside it in the same cell is left alone).
+            const double reach = Coordination.ProvisionCells.Margin;
+            bool Reached(string id) => anyCell || !_built.TryGetValue(id, out var b) || b.Bounds is not { } hb
+                || runBoxes.Any(rb => Overlaps(hb, (rb.Min - new Vec3(reach, reach, reach), rb.Max + new Vec3(reach, reach, reach))));
+            var hosts = cells.SelectMany(k => _readers.TryGetValue(k, out var r) ? r : (IEnumerable<string>)[]).Where(id => !done.Contains(id)).Distinct().Where(Reached).ToList();
+            if (hosts.Count > 0) { Rebuild(hosts); rebuild = [.. rebuild, .. hosts]; }
         }
         var grid = new BoxGrid(_built);
         emit.AddRange(Neighbours(grid, boxes, rebuild.ToHashSet()));
