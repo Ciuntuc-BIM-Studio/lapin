@@ -302,7 +302,7 @@ export function DrawingView() {
           if (gestureClick(aimed.point, raw)) return;
           select(pickAny(raw), e.shiftKey);
         }}
-        onPointerLeave={() => setHover(null)}
+        onPointerLeave={() => { setHover(null); editor.onPointerLeave(); }}
         onDoubleClick={(e) => {
           if (useCad.getState().step) return;
           const r = ref.current!.getBoundingClientRect();

@@ -7,6 +7,7 @@
  *   one undo step. Alt moves only the element the grip is shown for; Tab, over
  *   a shared grip, picks which one that is (each, then all), named in the hint.
  * - Ctrl/⌘-click on an edge's middle inserts a vertex; on a vertex, removes it.
+ * - A grip of a thing of its own (a roof window on its roof): a right-click offers to remove it, and Delete over it does.
  *
  * Plans show the grips of elements on their storey and of shapes drafted on
  * them; sections and elevations show the grips of shapes drafted on them.
@@ -17,7 +18,8 @@ import { useUi } from '../app/store';
 import { execute, useSession } from '../engine/session';
 import type { Grip, GripView, RefLine, Vec2 } from '../platform/module';
 import { gripsOf, referencesOf } from '../platform/modules';
-import { dropGrips, groupGrips, movers, runSteps, type GripGroup } from './grips';
+import { dropGrips, groupGrips, movers, runSteps, setHotRemove, type GripGroup } from './grips';
+import { openContextMenu } from '../shell/ContextMenu';
 import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { traceBegin, traceEnd } from './moveTrace';
 import { useCad } from './cad/session';
@@ -101,6 +103,9 @@ export function useGripEditor(o: GripEditorOptions) {
 
   // A view that goes while a grip is dragged takes its trace with it.
   useEffect(() => () => traceEnd('grip'), []);
+  // Delete over a grip of a thing of its own removes that thing (decision 280).
+  useEffect(() => { setHotRemove(hover?.members.length === 1 ? hover.members[0] : null); }, [hover]);
+  useEffect(() => () => setHotRemove(null), []);
 
   // Tab over a shared grip: the next owner, then all.
   useEffect(() => {
@@ -167,6 +172,15 @@ export function useGripEditor(o: GripEditorOptions) {
     if (!o.zOf) traceBegin('grip', g.at, ghostOf(who), who[0].kind === 'move');
     return true;
   };
+  /** A right-click on a grip of a thing of its own: a menu to remove it. True when it opened. */
+  const onContextMenu = (e: { clientX: number; clientY: number }): boolean => {
+    const g = hit(e);
+    const items = (g?.members ?? []).filter((m) => m.remove && m.removeLabel)
+      .map((m) => ({ label: m.removeLabel!, onSelect: () => { setHover(null); void runSteps([m.remove!()]); } }));
+    if (!items.length) return false;
+    openContextMenu(e.clientX, e.clientY, items);
+    return true;
+  };
   /** True while dragging a grip. */
   const onPointerMove = (e: React.PointerEvent): boolean => {
     if (!drag) { setHover(hit(e)); return false; }
@@ -211,7 +225,7 @@ export function useGripEditor(o: GripEditorOptions) {
       : kind === 'move' ? <path d={`M${q.x - 6} ${q.y}H${q.x + 6}M${q.x} ${q.y - 6}V${q.y + 6}`} className={`${cls} cross`} />
       : kind === 'rotate' || kind === 'radius' ? <circle cx={q.x} cy={q.y} r={4} className={cls} />
       : <rect x={q.x - 4} y={q.y - 4} width={8} height={8} className={cls} />;
-    return <g key={`${g.key}:${i}`}>{body}<title>{title}</title></g>;
+    return <g key={`${g.key}:${i}`} data-grip={g.members[0].key}>{body}<title>{title}</title></g>;
   };
 
   const render = (
@@ -243,5 +257,5 @@ export function useGripEditor(o: GripEditorOptions) {
     </g>
   );
 
-  return { render, onPointerDown, onPointerMove, onPointerUp, dragging: drag, hasGrips: groups.length > 0 };
+  return { render, onPointerDown, onPointerMove, onPointerUp, onContextMenu, onPointerLeave: () => { if (!drag) setHover(null); }, dragging: drag, hasGrips: groups.length > 0 };
 }

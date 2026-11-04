@@ -91,6 +91,15 @@ public interface IGeometryFilter
     ElementGeometry? Apply(Entity entity, ElementGeometry geometry, IModelView model, IServices services);
 }
 
+/// <summary>
+/// What the interface is told of an entity besides its attributes: derived, never stored, worked out each time the
+/// entity is sent (a roof window's frame on its slope, so its grips stand on its edges). A failure leaves the props as they are.
+/// </summary>
+public interface INodeProps
+{
+    void Add(Entity entity, IModelView model, JsonObject props);
+}
+
 /// <summary>Deleting what is not an entity of its own (one axis of a grid, selected as grid#tag): true when it was handled.</summary>
 public interface IDeletion
 {

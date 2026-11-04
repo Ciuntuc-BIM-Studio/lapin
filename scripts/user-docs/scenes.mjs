@@ -467,7 +467,7 @@ export const scenes = [
       await t.wait(800);
       t.expect((await t.nodes()).filter((n) => n.type === 'LapinDownpipe').length >= 2, 'the roof\'s downpipes are elements');
       await t.ui({ dialog: null });
-      // A roof window (decision 251): the roof selected in plan shows its grip, dragged to move it on the slope, Ctrl/⌘-click to remove it.
+      // A roof window (decisions 251, 280): the roof selected in plan shows its grips: the middle moves it on the slope, an edge resizes it, Delete over a grip removes it.
       const opening = await t.cmd('architecture.addRoofOpening', { kind: 'window', x: 3.5, y: 1.6 });
       t.expect(opening?.id, 'a roof window on the front slope');
       const plan = await t.cmd('view.create', { kind: 'plan', storeyId: await t.storey(), name: 'Roof plan' });
@@ -476,10 +476,11 @@ export const scenes = [
       await t.fit();
       await select(t, roof.id);
       await t.wait(800);
-      // The grip as drawn: the square nearest the window's middle.
-      const [px, py] = await t.planPoint(3.5, 1.6);
-      const boxes = await t.page.locator('[data-testid=plan] .grip-layer g > rect').evaluateAll((rs) => rs.map((r) => { const b = r.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; }));
-      const [gx, gy] = boxes.sort((a, b) => Math.hypot(a[0] - px, a[1] - py) - Math.hypot(b[0] - px, b[1] - py))[0] ?? [px, py];
+      // The grips as drawn (data-grip: the grip's key): the window's middle, then its right edge.
+      const gripAt = async (key) => { const r = await t.page.locator(`[data-testid=plan] [data-grip="${key}"]`).first().boundingBox(); return r ? [r.x + r.width / 2, r.y + r.height / 2] : null; };
+      const [px] = await t.planPoint(3.5, 1.6);
+      const [gx, gy] = (await gripAt(`opening:${opening.id}`)) ?? [0, 0];
+      t.expect(gx > 0, 'the roof window shows its middle grip');
       await t.page.mouse.move(gx, gy);
       await t.page.mouse.down();
       const [hx] = await t.planPoint(5, 1.6);
@@ -487,8 +488,35 @@ export const scenes = [
       await t.page.mouse.up();
       await t.wait(1000);
       const moved = (await t.nodes()).find((n) => n.id === roof.id)?.props?.openings?.find((o) => o.id === opening.id);
-      t.expect(moved && Math.abs(moved.x - 3.5) > 0.5, `dragging its grip moves the roof window (x ${moved?.x})`);
+      t.expect(moved && Math.abs(moved.x - 3.5) > 0.5 && Math.abs((moved.width ?? 0.78) - 0.78) < 1e-6, `dragging its grip moves the roof window (x ${moved?.x})`);
+      // Its right edge's grip (decision 280): dragged 0.3 m out along the eave, the window as much wider, its left edge kept.
+      const [ex, ey] = (await gripAt(`opening:${opening.id}:1:0`)) ?? [0, 0];
+      t.expect(ex > 0, 'the roof window shows its edges\' grips');
+      const [r0] = await t.planPoint(0, 1.6), [r1] = await t.planPoint(0.3, 1.6);
+      const ex2 = ex + (r1 - r0);
+      await t.page.mouse.move(ex, ey);
+      await t.page.mouse.down();
+      await t.page.mouse.move(ex2, ey, { steps: 6 });
+      await t.page.mouse.up();
+      await t.wait(1000);
+      const resized = (await t.nodes()).find((n) => n.id === roof.id)?.props?.openings?.find((o) => o.id === opening.id);
+      t.expect(resized && Math.abs((resized.width ?? 0.78) - (moved.width ?? 0.78) - 0.3) < 0.05, `dragging its edge's grip resizes the roof window (width ${resized?.width})`);
+      await t.page.mouse.move(ex2 + 40, ey + 40);
+      await t.wait(300);
       await t.shot('roof-window-grip', { of: '[data-testid=plan]', pad: 0 });
+      // A right-click on its grip offers to remove it; Delete with the cursor over the grip removes the window, not the roof.
+      const [mx, my] = (await gripAt(`opening:${opening.id}`)) ?? [0, 0];
+      await t.page.mouse.click(mx, my, { button: 'right' });
+      await t.wait(300);
+      t.expect(await t.page.locator('.context-menu .context-item').count() === 1, 'a right-click on its grip offers Remove roof window');
+      await t.page.keyboard.press('Escape');
+      await t.page.mouse.move(mx + 30, my + 30);
+      await t.page.mouse.move(mx, my, { steps: 3 });
+      await t.wait(300);
+      await t.page.keyboard.press('Delete');
+      await t.wait(1000);
+      const after = (await t.nodes()).find((n) => n.id === roof.id);
+      t.expect(after && !(after.props?.openings ?? []).some((o) => o.id === opening.id), 'Delete over its grip removes the roof window and keeps the roof');
       await t.ui({ keyPlan: true });
     },
   },

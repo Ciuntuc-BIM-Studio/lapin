@@ -205,3 +205,28 @@ public static class RoofOpenings
         yield return new Quantity("DormerRoofArea", parts.Sum(d => d.RoofPlanes.Sum(Area)), "AREA", "Dormer covering");
     }
 }
+
+/// <summary>
+/// Each roof window's and dormer's frame on its slope, told to the interface with the roof (<c>openingFrames</c>, by the
+/// opening's id; never stored): the eave's direction <c>d</c> and the up-slope one <c>n</c> in plan, and <c>k</c>, what a
+/// length up the slope measures in plan. The roof's grips stand on a window's edges and corners and a dormer's sides by it,
+/// and dragging one resizes it on the slope (decision 280).
+/// </summary>
+public sealed class RoofOpeningFrames : INodeProps
+{
+    public void Add(Entity e, IModelView m, JsonObject props)
+    {
+        if (e.Class != IfcClass.Roof || e.Attrs["openings"] is not JsonArray { Count: > 0 }) return;
+        if (RoofTop.ShapeOf(e, m) is not { } s) return;
+        var frames = new JsonObject();
+        foreach (var o in RoofOpenings.Of(e))
+            if (RoofOpenings.HostAt(s, o.At) is { } h)
+                frames[o.Id] = new JsonObject
+                {
+                    ["d"] = new JsonArray(h.D.X, h.D.Y),
+                    ["n"] = new JsonArray(h.N.X, h.N.Y),
+                    ["k"] = Math.Cos(Math.Atan(h.Tan)),
+                };
+        if (frames.Count > 0) props["openingFrames"] = frames;
+    }
+}

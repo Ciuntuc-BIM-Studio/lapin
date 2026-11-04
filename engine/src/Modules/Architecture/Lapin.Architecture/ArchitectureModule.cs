@@ -99,6 +99,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IJoineryIfc>(new JoineryIfc());
         r.Service<IIfcRecognizer>(new ForeignElements());
         r.Service<ITypeAssigner>(new TypeAssigner());
+        // A roof window's and dormer's frame on its slope, for their grips (decision 280).
+        r.Service<INodeProps>(new RoofOpeningFrames());
         r.Service<IStoreyLevels>(new Levels());
         r.Service<IElementFaces>(new ArchitectureFaces());
         r.Service<IElementPlacement>(new Roofs.RoofPlacement());
@@ -378,6 +380,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             foreach (var k in new[] { "x", "y", "width", "length", "wallHeight", "pitch", "overhang", "thickness" }) if (Json.Number(a[k]) is { } v) o[k] = v;
             if ((string?)a["dormerShape"] is "shed" or "gable") o["dormerShape"] = (string?)a["dormerShape"];
             if (((string?)a["name"])?.Trim() is { Length: > 0 } n) o["name"] = n;
+            // Resized by its grips or typed (decision 280): never thinner than a frame.
+            if (Json.Number(o["width"]) is < 0.2 || Json.Number(o["length"]) is < 0.2) throw new CommandException("A roof window or a dormer is at least 200 mm wide and long.");
             WriteRoofOpenings(ctx, roof, [.. list], (string)o["id"]!);
             return null;
         });

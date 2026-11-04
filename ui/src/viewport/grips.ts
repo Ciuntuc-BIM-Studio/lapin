@@ -43,6 +43,21 @@ export async function runSteps(steps: (GripStep | null | undefined)[]): Promise<
   return execute('edit.batch', { steps: list });
 }
 
+/**
+ * The grip under the cursor that takes out a thing of its own (`removeLabel`), so Delete removes that and not the
+ * selection (decision 280); set by the view the cursor is over, cleared when it leaves the grip.
+ */
+let hotRemove: Grip | null = null;
+export function setHotRemove(g: Grip | null): void { hotRemove = g?.remove && g.removeLabel ? g : null; }
+/** Delete pressed: true when a grip under the cursor took it (its thing removed). */
+export function takeHotRemove(): boolean {
+  const g = hotRemove;
+  if (!g?.remove) return false;
+  hotRemove = null;
+  void runSteps([g.remove()]);
+  return true;
+}
+
 /** A drag let go: each mover goes to the point (its step, else its own move). */
 export async function dropGrips(members: Grip[], to: Vec2): Promise<unknown> {
   const withSteps = members.filter((g) => g.step);

@@ -135,6 +135,11 @@ export interface Grip {
   insert?: () => GripStep | null;
   /** Ctrl/⌘-click: take this vertex out. */
   remove?: () => GripStep | null;
+  /**
+   * What `remove` takes out when it is a thing of its own (a roof window on its roof: "Remove roof window"): offered on a
+   * right-click on the grip, and Delete over the grip does it instead of deleting the selection (decision 280).
+   */
+  removeLabel?: string;
 }
 
 /** A mark the engine drew: an annotation's points as drawn now, and what it tells of itself in `data`. */

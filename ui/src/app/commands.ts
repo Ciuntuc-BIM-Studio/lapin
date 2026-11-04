@@ -18,6 +18,7 @@ import { execute, redo, undo } from '../engine/session';
 import { newProject, openProject, saveProject } from '../engine/files';
 import { COMMANDS, TOOL_WORDS, setCommandFallback, startCommand, useCad } from '../viewport/cad/session';
 import { zoomHost } from '../viewport/zoom';
+import { takeHotRemove } from '../viewport/grips';
 
 const dialog = (id: string) => () => useUi.setState({ dialog: id });
 const zoom = (f: (h: NonNullable<ReturnType<typeof zoomHost>>) => void) => () => { const h = zoomHost(); if (h) f(h); };
@@ -33,6 +34,8 @@ function appCommands(): CommandDef[] {
     { id: 'app.save', label: 'Save', category: general, defaults: ['Ctrl+S'], run: () => void saveProject() },
     { id: 'app.saveAs', label: 'Save as…', category: general, defaults: ['Ctrl+Shift+S'], run: () => void saveProject(true) },
     { id: 'app.delete', label: 'Delete the selection', category: general, defaults: ['Delete', 'Backspace'], run: () => {
+      // Over a roof window's grip on its selected roof: that window, not the roof (decision 280).
+      if (takeHotRemove()) return;
       const ids = useUi.getState().selected;
       if (ids.length) { void execute('element.delete', { ids }); select(null); }
     } },

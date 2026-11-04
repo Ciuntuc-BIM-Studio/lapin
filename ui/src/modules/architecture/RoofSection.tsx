@@ -12,6 +12,7 @@ import { t, useLang } from '../../i18n';
 import { LengthField, NumberField } from '../../shell/cells';
 import { mergeEdge, type Edge } from './roofEdges';
 import { lengthText } from '../../engine/unitsStore';
+import { lengthOf, MIN_SIZE, openingName, widthOf, type RoofOpeningProps } from './roofOpeningGrips';
 
 type Style = { id: string; label: string; family: string; shape: string; pitch: number; covering: string };
 
@@ -63,12 +64,15 @@ export function RoofSection({ node }: { node: NodeDto }) {
       </table>
       {Array.isArray(node.props.openings) && node.props.openings.length > 0 && (
         <table className="roof-openings">
-          <caption className="muted small">Roof windows and dormers: drag one's grip in plan to move it; × or Ctrl/⌘-click on its grip removes it.</caption>
+          <caption className="muted small">Roof windows and dormers: drag one's middle grip in plan to move it, its edges' grips to resize it; ×, Delete over its grip or a right-click on it removes it.</caption>
           <tbody>
-            {(node.props.openings as { id: string; name: string; kind: string; width?: number; length?: number }[]).map((o) => (
+            {(node.props.openings as unknown as RoofOpeningProps[]).map((o) => (
               <tr key={o.id}>
-                <td>{o.name}</td>
-                <td className="muted small">{o.kind === 'dormer' ? 'dormer' : `${Math.round((o.width ?? 0.78) * 100)}×${Math.round((o.length ?? 1.18) * 100)}`}</td>
+                <td>{openingName(o)}</td>
+                {/* Its size as the model keeps it (decision 280): the width along the eave, the length up the slope (a dormer's follows its heights). */}
+                <td><LengthField metres={widthOf(o)} min={MIN_SIZE} noUnit readOnly={!node.editable} title="Width" onCommit={(v) => { if (v != null) void execute('architecture.updateRoofOpening', { roofId: node.id, id: o.id, width: v }); }} /></td>
+                <td>{o.kind === 'dormer' ? <span className="muted small">dormer</span>
+                  : <LengthField metres={lengthOf(o)} min={MIN_SIZE} readOnly={!node.editable} title="Length up the slope" onCommit={(v) => { if (v != null) void execute('architecture.updateRoofOpening', { roofId: node.id, id: o.id, length: v }); }} />}</td>
                 <td><button type="button" className="icon mini" title="Remove" onClick={() => void execute('architecture.removeRoofOpening', { roofId: node.id, id: o.id })}>×</button></td>
               </tr>
             ))}

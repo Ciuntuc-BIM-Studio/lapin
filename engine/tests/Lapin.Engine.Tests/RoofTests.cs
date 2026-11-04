@@ -400,6 +400,43 @@ public class RoofTests
         Assert.Equal(0, Q(f, roof, "RoofWindows", "openings"));
     }
 
+    [Fact]
+    public void A_roof_window_is_resized_on_its_slope_by_its_grips()
+    {
+        // Decision 280: the roof tells the interface each opening's frame on its slope, so the grips stand on its edges.
+        var f = new Fixture();
+        var roof = AddRoof(f, "modern_barn");
+        var gross = Q(f, roof, "GrossArea");
+        var w = (string)f.Run("architecture.addRoofOpening", new JsonObject { ["x"] = 3, ["y"] = 1.5 })!["id"]!;
+        var node = f.Session.Snapshot().Nodes.Single(n => n.Id == roof);
+        var frame = node.Props["openingFrames"]![w]!;
+        var (d, n, k) = (new Vec2((double)frame["d"]![0]!, (double)frame["d"]![1]!), new Vec2((double)frame["n"]![0]!, (double)frame["n"]![1]!), (double)frame["k"]!);
+        Assert.Equal(1, d.Length, 9);
+        Assert.Equal(1, n.Length, 9);
+        Assert.Equal(0, Vec2.Dot(d, n), 9);
+        // The south slope rises to +Y; a length up the slope measures less in plan, by the pitch.
+        Assert.Equal(1, Math.Abs(n.Y), 9);
+        Assert.True(k is > 0 and < 1);
+        // Its top edge dragged up 0.2 m in plan: longer by 0.2 / k on the slope, its bottom edge where it was.
+        f.Run("architecture.updateRoofOpening", new JsonObject { ["roofId"] = roof, ["id"] = w, ["length"] = 1.18 + 0.2 / k, ["x"] = 3, ["y"] = 1.5 + n.Y * 0.1, ["width"] = 1.14 });
+        Assert.Equal(gross - 1.14 * (1.18 + 0.2 / k), Q(f, roof, "NetArea"), 6);
+        // One undo step each.
+        f.Session.Undo();
+        Assert.Equal(gross - 0.78 * 1.18, Q(f, roof, "NetArea"), 6);
+        // Past the slope's edges, or thinner than a frame: refused, the window as it was.
+        Assert.Throws<CommandException>(() => f.Run("architecture.updateRoofOpening", new JsonObject { ["roofId"] = roof, ["id"] = w, ["width"] = 20 }));
+        Assert.Throws<CommandException>(() => f.Run("architecture.updateRoofOpening", new JsonObject { ["roofId"] = roof, ["id"] = w, ["length"] = 0.1 }));
+        Assert.Equal(gross - 0.78 * 1.18, Q(f, roof, "NetArea"), 6);
+        // A dormer's frame too.
+        var dormer = (string)f.Run("architecture.addRoofOpening", new JsonObject { ["x"] = 7, ["y"] = 0.6, ["kind"] = "dormer", ["width"] = 1.4, ["wallHeight"] = 0.9 })!["id"]!;
+        f.Run("architecture.updateRoofOpening", new JsonObject { ["roofId"] = roof, ["id"] = dormer, ["width"] = 1.8, ["x"] = 7.2 });
+        Assert.NotNull(f.Session.Snapshot().Nodes.Single(x => x.Id == roof).Props["openingFrames"]![dormer]);
+        // Gone with the last opening.
+        f.Run("architecture.removeRoofOpening", new JsonObject { ["roofId"] = roof, ["id"] = w });
+        f.Run("architecture.removeRoofOpening", new JsonObject { ["roofId"] = roof, ["id"] = dormer });
+        Assert.Null(f.Session.Snapshot().Nodes.Single(x => x.Id == roof).Props["openingFrames"]);
+    }
+
     // ------------------------------------------------------------ a barrel vault
 
     [Fact]

@@ -600,6 +600,8 @@ public sealed class Session
         // A remark's snapshots (a PNG each) are asked for when shown.
         Cde.Remarks.Remarks.Strip(e, props);
         if (e.PredefinedType != null) props["predefinedType"] = e.PredefinedType;
+        foreach (var extra in _catalog.All<INodeProps>())
+            try { extra.Add(e, _store, props); } catch (Exception) { /* derived only: the node goes without it */ }
         var owner = _catalog.OwnerOf(e.Class);
         var storey = e.Class == IfcClass.BuildingStorey ? null : Spatial.StoreyOf(_store, e.Id)?.Id;
         return new NodeDto(e.Id, e.Class, e.Name, Spatial.ParentOf(_store, e.Id)?.Id, 0, 0, props, owner != null, owner, storey);

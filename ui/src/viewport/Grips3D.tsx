@@ -64,7 +64,7 @@ export function Grips3D({ camera, canvas }: { camera: React.RefObject<THREE.Came
   });
   return (
     <svg ref={svg} className="grip-overlay" onPointerDown={(e) => { if (editor.onPointerDown(e)) e.stopPropagation(); }}
-      onPointerMove={(e) => { editor.onPointerMove(e); }} onPointerUp={() => { editor.onPointerUp(); }}>
+      onPointerMove={(e) => { editor.onPointerMove(e); }} onPointerUp={() => { editor.onPointerUp(); }} onPointerLeave={editor.onPointerLeave}>
       {editor.render}
     </svg>
   );

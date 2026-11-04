@@ -22,6 +22,7 @@ import { SlabSection } from './SlabSection';
 import { SlabTypesDialog } from './SlabTypesDialog';
 import { RoofSection } from './RoofSection';
 import { RoofDialog } from './RoofDialog';
+import { roofOpeningGrips, roofOpeningRefs } from './roofOpeningGrips';
 import { DownpipeSection, downpipe, downpipeGrips } from './Downpipe';
 import { railing, railingGrips } from './Railing';
 import { StairSection, type StairNumbers } from './StairSection';
@@ -180,21 +181,11 @@ function contourGrips(command: string, withEdges = false) {
   };
 }
 /**
- * A roof: its outline, and each roof window's and dormer's middle (decision 251): dragged, it moves on the roof (refused
- * where it would not fit); Ctrl/⌘-click takes it out.
+ * A roof: its outline, and each roof window's and dormer's grips (decisions 251 and 280): the middle moves it, a window's
+ * edges and corners and a dormer's sides resize it on its slope (refused where it would not fit); Ctrl/⌘-click, Delete
+ * over a grip or its right-click menu takes it out.
  */
-function roofGrips(node: NodeDto): Grip[] {
-  const openings = (Array.isArray(node.props.openings) ? node.props.openings : []) as { id: string; name?: string; kind?: string; x?: number; y?: number }[];
-  return [
-    ...contourGrips('architecture.updateRoof', true)(node),
-    ...openings.filter((o) => typeof o.x === 'number' && typeof o.y === 'number').map((o): Grip => ({
-      key: `opening:${o.id}`, kind: 'centre', at: { x: o.x!, y: o.y! },
-      title: `${o.name ?? (o.kind === 'dormer' ? 'Dormer' : 'Roof window')} · Drag: move it on the roof · Ctrl/⌘-click: remove it`,
-      step: (to) => ({ command: 'architecture.updateRoofOpening', args: { roofId: node.id, id: o.id, x: to.x, y: to.y } }),
-      remove: () => ({ command: 'architecture.removeRoofOpening', args: { roofId: node.id, id: o.id } }),
-    })),
-  ];
-}
+const roofGrips = (node: NodeDto): Grip[] => [...contourGrips('architecture.updateRoof', true)(node), ...roofOpeningGrips(node)];
 const contourRefs = (node: NodeDto): RefLine[] => { const pts = fromPairs(node.props.contour); return pts.length >= 3 ? [outlineRef(pts)] : []; };
 
 /**
@@ -402,7 +393,7 @@ const architecture: LapinModule = {
   ],
   dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog },
   grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips },
-  references: { IfcWall: pathRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: contourRefs, IfcSpace: roomRefs },
+  references: { IfcWall: pathRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: (n) => [...contourRefs(n), ...roofOpeningRefs(n)], IfcSpace: roomRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },
     IfcSlab: (n) => { useUi.setState({ slabTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(slab); },
