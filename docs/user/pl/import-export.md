@@ -70,6 +70,7 @@ Przestrzenie z pliku (z Revita, ArchiCAD-a i innych) wchodzą jako pomieszczenia
 | USDZ | AR Quick Look Apple, Reality Composer, Omniverse. Obrazy dołączone. |
 | USDA | OpenUSD jako tekst, jeden plik. |
 | DAE | COLLADA, dla SketchUpa i starszych narzędzi. |
+| OBJ + MTL | Plik .zip dla Twinmotion, Lumion, 3ds Max i dowolnego programu do renderingu. Z obrazami. |
 
 **Importuj siatkę (OBJ, STL, glTF)…** wprowadza siatkę z innego programu 3D (OBJ, STL, glTF lub GLB) jako odniesienia na aktywnym poziomie. glTF podaje swoją jednostkę i kierunek do góry; dla OBJ i STL Lapin o to pyta. Polecenie Studio **Utwórz bryłę Studio** czyni odniesienie edytowalnym (zobacz [Studio](studio.md)).
 

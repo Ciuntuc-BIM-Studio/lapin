@@ -70,6 +70,7 @@ The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each
 | USDZ | Apple's AR Quick Look, Reality Composer, Omniverse. Images included. |
 | USDA | OpenUSD as text, one file. |
 | DAE | COLLADA, for SketchUp and older tools. |
+| OBJ + MTL | A .zip for Twinmotion, Lumion, 3ds Max and any renderer. Images included. |
 
 **Import mesh (OBJ, STL, glTF)…** brings in a mesh from another 3D program (OBJ, STL, glTF or GLB) as references on the active level. glTF says its unit and which way is up; for OBJ and STL Lapin asks. Studio's **Make Studio solid** makes a reference editable (see [Studio](studio.md)).
 

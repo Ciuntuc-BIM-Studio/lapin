@@ -499,6 +499,48 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        // One material for a part of every door, window or curtain wall type at once (report #76: all window frames one dark grey
+        // metal, all glass one blue glass): kind "window", "door", "curtain" or "all"; parts by name (frame, sash, glass, leaf, board,
+        // hardware, and a curtain wall's panel), "" back to the part's colour. One undo step; a material not in the project is made.
+        r.Command("joineryMaterials", "Set door and window materials", (ctx, a) =>
+        {
+            var kind = (string?)a["kind"] ?? "all";
+            if (kind is not ("window" or "door" or "curtain" or "all")) throw new CommandException("Kind is window, door, curtain or all.");
+            var given = new Dictionary<string, string?>();
+            foreach (var part in JoineryMaterials.Parts.Append("panel"))
+                if (a.ContainsKey(part)) given[part] = ((string?)a[part])?.Trim() is { Length: > 0 } n ? n : null;
+            if (given.Count == 0) throw new CommandException("Name a part and its material.");
+            foreach (var name in given.Values.OfType<string>()) Materials.Ensure(ctx, name);
+            var changed = 0;
+            foreach (var type in ctx.Model.Entities.Where(t => t.Class is IfcClass.DoorType or IfcClass.WindowType).ToList())
+            {
+                if (kind is "curtain" || kind == "window" && type.Class != IfcClass.WindowType || kind == "door" && type.Class != IfcClass.DoorType) continue;
+                if (JoinerySpec.From(type.Attrs["spec"]) is not { } spec) continue;
+                var mats = spec.Materials ?? new JoineryMaterials();
+                foreach (var (part, name) in given) if (part != "panel" && (part != "leaf" || spec.IsDoor)) mats = mats.With(part, name);
+                if (mats == spec.Materials) continue;
+                var attrs = type.CloneAttrs();
+                attrs["spec"] = (spec with { Materials = mats }).ToJson();
+                ctx.Replace(type.With(attrs: attrs));
+                changed++;
+            }
+            if (kind is "curtain" or "all")
+                foreach (var type in ctx.Model.OfClass(CurtainWalls.TypeClass).ToList())
+                {
+                    var spec = CurtainWalls.SpecOf(ctx.Model, type);
+                    var next = spec;
+                    if (given.TryGetValue("frame", out var f)) next = next with { FrameMaterial = f };
+                    if (given.TryGetValue("glass", out var g)) next = next with { GlassMaterial = g };
+                    if (given.TryGetValue("panel", out var p)) next = next with { OpaqueMaterial = p };
+                    if (next == spec) continue;
+                    var attrs = type.CloneAttrs();
+                    attrs["spec"] = next.ToJson();
+                    ctx.Replace(type.With(attrs: attrs));
+                    changed++;
+                }
+            return new JsonObject { ["types"] = changed };
+        });
+
         r.Command("setJoineryType", "Change type", (ctx, a) =>
         {
             var type = ctx.Model.Get((string?)a["typeId"] ?? "") is { Class: IfcClass.DoorType or IfcClass.WindowType } t ? t : throw new CommandException("There is no such door or window type.");

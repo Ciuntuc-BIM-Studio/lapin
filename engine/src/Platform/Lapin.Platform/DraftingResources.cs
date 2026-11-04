@@ -64,11 +64,162 @@ public static class DraftingResources
 
     /// <summary>Whether anything in the model names the entity (an attribute holding its id, a relation).</summary>
     static bool InUse(IModelView m, string id) =>
-        m.Entities.Any(e => e.Id != id && e.Attrs.ToJsonString().Contains($"\"{id}\"", StringComparison.Ordinal)) || m.RelationsOf(id).Any();
+        m.Entities.Any(e => e.Id != id && e.Attrs.ToJsonString().Contains($"\"{id}\"", StringComparison.Ordinal)) || m.RelationsOf(id).Any()
+        // A material named by its name (a door's frame, a sill, a curtain wall's glass) is in use too.
+        || m.Get(id) is { } mat && m.Entities.Any(e => e.Id != id && e.Attrs.ToJsonString().Contains(mat.Name, StringComparison.OrdinalIgnoreCase) && Names(e.Attrs, false, mat.Name));
+
+    /// <summary>Whether a JSON tree names a material by <paramref name="name"/> under a material key.</summary>
+    static bool Names(JsonNode node, bool named, string name) => node switch
+    {
+        JsonObject o => o.Any(kv => kv.Value is JsonValue v && v.TryGetValue<string>(out var s)
+            ? (named || MaterialKey(kv.Key)) && string.Equals(s, name, StringComparison.OrdinalIgnoreCase)
+            : kv.Value != null && Names(kv.Value, named || MaterialKey(kv.Key), name)),
+        JsonArray a => a.Any(x => x is JsonValue v && v.TryGetValue<string>(out var s) ? named && string.Equals(s, name, StringComparison.OrdinalIgnoreCase) : x != null && Names(x, named, name)),
+        _ => false,
+    };
+
+    /// <summary>A material with a command's changes (material.update's fields), checked.</summary>
+    static Entity Updated(ICommandContext ctx, Entity mat, JsonObject a)
+    {
+        var attrs = mat.CloneAttrs();
+        if (a["color"] is { } c) attrs["color"] = (string?)c is { } cs && System.Text.RegularExpressions.Regex.IsMatch(cs, "^#[0-9a-fA-F]{6}$") ? cs : throw new CommandException("A colour is #rrggbb.");
+        MaterialLook.Apply(attrs, a);
+        if (a.ContainsKey("category")) { if ((string?)a["category"] is { Length: > 0 } cat) attrs["category"] = cat; else attrs.Remove("category"); }
+        // Its look in 3D: a texture (brick, concrete, wood, plaster, stone, metal, insulation, earth, tiles; "none"; null: guessed from its hatch and name).
+        // Its faces along it (texture), its ends (textureEnd: where a wall is cut across, a brick's holes) and its top and bottom (textureTop); the ends and top follow the faces unless given.
+        foreach (var key in new[] { "texture", "textureEnd", "textureTop" })
+            if (a.ContainsKey(key))
+            {
+                if ((string?)a[key] is { Length: > 0 } tex)
+                    attrs[key] = Textures.Contains(tex) ? tex : throw new CommandException($"„{tex}” is not a texture: {string.Join(", ", Textures)}.");
+                else attrs.Remove(key);
+            }
+        // Its own texture: an image of the project (null takes it off; an image nothing uses goes) and how large it lies on the model, metres.
+        if (a.ContainsKey("textureImage"))
+        {
+            var had = attrs["textureImage"] is JsonValue hv ? (string?)hv : null;
+            if ((string?)a["textureImage"] is { Length: > 0 } img)
+            {
+                if (ctx.Model.Get(img) is not { Class: Images.Class }) throw new CommandException("There is no such image in the project.");
+                attrs["textureImage"] = img;
+            }
+            else attrs.Remove("textureImage");
+            if (had != null && had != (string?)attrs["textureImage"]) Images.DropIfUnused(ctx, had, mat.Id);
+        }
+        if (a.ContainsKey("textureSize"))
+        {
+            if (a["textureSize"] is JsonArray { Count: 2 } ts && Json.Number(ts[0]) is { } tw && Json.Number(ts[1]) is { } th)
+            {
+                if (!(tw >= 0.01 && th >= 0.01 && tw <= 1000 && th <= 1000)) throw new CommandException("A texture lies 1 cm to 1 km wide and high.");
+                attrs["textureSize"] = new JsonArray(tw, th);
+            }
+            else if (a["textureSize"] is null) attrs.Remove("textureSize");
+            else throw new CommandException("A texture's size is [width, height] in metres.");
+        }
+        foreach (var flag in new[] { "membrane", "drawJoints" })
+            if (a.ContainsKey(flag))
+            {
+                if (a[flag] is JsonValue fv && fv.TryGetValue<bool>(out var b)) attrs[flag] = b; else attrs.Remove(flag);
+            }
+        foreach (var kind in MaterialGraphics.Kinds)
+        {
+            if (!a.ContainsKey(kind)) continue;
+            if (a[kind] is not JsonObject g) { attrs.Remove(kind); continue; }
+            // Fields merge into what the view had (replace: they are all it has); a field set to null is "none" (hatch, fill).
+            var replace = a["replace"] is JsonValue rv && rv.TryGetValue<bool>(out var rb) && rb;
+            var merged = !replace && attrs[kind] as JsonObject is { } had ? (JsonObject)had.DeepClone() : new JsonObject();
+            foreach (var (k, v) in CheckGraphics(ctx.Model, g, mat.Name)) merged[k] = v?.DeepClone();
+            if (merged.Count > 0) attrs[kind] = merged; else attrs.Remove(kind);
+        }
+        return mat.With(name: ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : null, attrs: attrs);
+    }
+
+    /// <summary>A name no material has: the one asked for, else with a number after it.</summary>
+    static string FreeName(IModelView m, string name)
+    {
+        if (Materials.Find(m, name) == null) return name;
+        for (var i = 2; ; i++) if (Materials.Find(m, $"{name} {i}") == null) return $"{name} {i}";
+    }
+
+    /// <summary>Whether a JSON key names a material (material, gutterMaterial, materials: {frame…}).</summary>
+    static bool MaterialKey(string? key) => key != null && key.Contains("material", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Every use of <paramref name="from"/> made a use of <paramref name="to"/>: its id anywhere in an entity's attributes
+    /// (layer sets, zones, a column's type, a finish), its name under a key that names a material (a door's frame, a sill,
+    /// a roof's gutter), and the relationships it is in (IfcRelAssociatesMaterial). How many entities and relationships changed.
+    /// </summary>
+    public static int Replace(IEdit edit, Entity from, Entity to)
+    {
+        var n = 0;
+        foreach (var e in edit.Model.Entities.ToList())
+        {
+            if (e.Id == from.Id || e.Id == to.Id) continue;
+            var text = e.Attrs.ToJsonString();
+            if (!text.Contains(from.Id, StringComparison.Ordinal) && !text.Contains(from.Name, StringComparison.OrdinalIgnoreCase)) continue;
+            var attrs = e.CloneAttrs();
+            if (Swap(attrs, null, false, from, to)) { edit.Replace(e.With(attrs: attrs)); n++; }
+        }
+        foreach (var r in edit.Model.RelationsOf(from.Id).ToList())
+        {
+            var related = r.Related.Select(x => x == from.Id ? to.Id : x).Distinct().ToList();
+            edit.ReplaceRelation(r with { Relating = r.Relating == from.Id ? to.Id : r.Relating, Related = related });
+            n++;
+        }
+        return n;
+    }
+
+    /// <summary>A material renamed: where it is named (under a material key), the new name.</summary>
+    static void Rename(IEdit edit, string oldName, string newName, string id)
+    {
+        var to = new Entity(id, IfcClass.Material, newName, []);
+        var from = new Entity("\u0000none", IfcClass.Material, oldName, []);
+        foreach (var e in edit.Model.Entities.ToList())
+        {
+            if (e.Id == id || !e.Attrs.ToJsonString().Contains(oldName, StringComparison.OrdinalIgnoreCase)) continue;
+            var attrs = e.CloneAttrs();
+            if (Swap(attrs, null, false, from, to)) edit.Replace(e.With(attrs: attrs));
+        }
+    }
+
+    /// <summary>Swaps the material's id (anywhere) and name (under a material key) in a JSON tree; whether anything changed.</summary>
+    static bool Swap(JsonNode node, string? key, bool named, Entity from, Entity to)
+    {
+        var changed = false;
+        switch (node)
+        {
+            case JsonObject o:
+                foreach (var k in o.Select(kv => kv.Key).ToList())
+                {
+                    var v = o[k];
+                    if (v is JsonValue jv && jv.TryGetValue<string>(out var s))
+                    {
+                        if (s == from.Id) { o[k] = to.Id; changed = true; }
+                        else if ((named || MaterialKey(k)) && string.Equals(s, from.Name, StringComparison.OrdinalIgnoreCase)) { o[k] = to.Name; changed = true; }
+                    }
+                    else if (v != null) changed |= Swap(v, k, named || MaterialKey(k), from, to);
+                }
+                break;
+            case JsonArray arr:
+                for (var i = 0; i < arr.Count; i++)
+                {
+                    var v = arr[i];
+                    if (v is JsonValue jv && jv.TryGetValue<string>(out var s))
+                    {
+                        if (s == from.Id) { arr[i] = to.Id; changed = true; }
+                        else if (named && string.Equals(s, from.Name, StringComparison.OrdinalIgnoreCase)) { arr[i] = to.Name; changed = true; }
+                    }
+                    else if (v != null) changed |= Swap(v, key, named, from, to);
+                }
+                break;
+        }
+        return changed;
+    }
 
     public static void Register(IModuleRegistry r)
     {
         // ------------------------------------------------------------ materials
+        // A new material, with whatever material.update takes (a preset from the library comes in one step).
         r.Command("material.create", "New material", (ctx, a) =>
         {
             var name = ((string?)a["name"])?.Trim();
@@ -76,68 +227,62 @@ public static class DraftingResources
             if (Materials.Find(ctx.Model, name) != null) throw new CommandException($"There is already a material „{name}”.");
             var color = (string?)a["color"];
             if (color != null && !System.Text.RegularExpressions.Regex.IsMatch(color, "^#[0-9a-fA-F]{6}$")) throw new CommandException("A colour is #rrggbb.");
-            return new JsonObject { ["id"] = Materials.Ensure(ctx, name, color).Id };
+            var mat = Materials.Ensure(ctx, name, color);
+            var rest = (JsonObject)a.DeepClone();
+            rest.Remove("name");
+            if (rest.Count > 0) ctx.Replace(Updated(ctx, mat, rest));
+            return new JsonObject { ["id"] = mat.Id };
+        });
+
+        // A copy of a material under a new name (its look, graphics and image), unused.
+        r.Command("material.duplicate", "Duplicate material", (ctx, a) =>
+        {
+            var mat = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Material);
+            var name = ((string?)a["name"])?.Trim() is { Length: > 0 } given ? given : FreeName(ctx.Model, mat.Name + " copy");
+            if (Materials.Find(ctx.Model, name) != null) throw new CommandException($"There is already a material „{name}”.");
+            var copy = new Entity(ctx.NewId(), IfcClass.Material, name, mat.CloneAttrs());
+            ctx.Add(copy);
+            return new JsonObject { ["id"] = copy.Id };
+        });
+
+        // Everything that uses one material uses another: layers, zones, types, joinery parts, elements (one undo step); the first deleted on request.
+        r.Command("material.replace", "Replace material", (ctx, a) =>
+        {
+            var from = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Material);
+            var to = Spatial.Require(ctx.Model, (string?)a["with"], IfcClass.Material);
+            if (from.Id == to.Id) throw new CommandException("A material is replaced by another.");
+            var n = Replace(ctx, from, to);
+            if (a["delete"] is JsonValue dv && dv.TryGetValue<bool>(out var del) && del) ctx.Remove(from.Id);
+            return new JsonObject { ["changed"] = n };
+        });
+
+        // The elements whose body has a part in the material (a wall's layer, a window's frame), to select them.
+        r.Query("material.uses", (q, a) =>
+        {
+            var id = (string?)a["id"] ?? "";
+            var o = new JsonArray();
+            foreach (var e in q.Model.Entities)
+            {
+                if (e.Class == IfcClass.Material) continue;
+                ElementGeometry? g;
+                try { g = q.Geometry(e.Id); }
+                catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException or CommandException) { continue; }
+                if (g?.Parts.Any(p => p.Material == id) == true) o.Add((JsonNode)e.Id);
+            }
+            return o;
         });
 
         // One step: the colour, transparency, category, membrane and joints, and each kind of view's graphics (null: back to the name / the section).
         r.Command("material.update", "Change material", (ctx, a) =>
         {
             var mat = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Material);
-            var attrs = mat.CloneAttrs();
-            if (a["color"] is { } c) attrs["color"] = (string?)c is { } cs && System.Text.RegularExpressions.Regex.IsMatch(cs, "^#[0-9a-fA-F]{6}$") ? cs : throw new CommandException("A colour is #rrggbb.");
-            if (a.ContainsKey("transparency"))
-            {
-                if (a["transparency"] is null) attrs.Remove("transparency");
-                else attrs["transparency"] = Json.Number(a["transparency"]) is { } t && t >= 0 && t <= 1 ? t : throw new CommandException("Transparency is 0 to 1.");
-            }
-            if (a.ContainsKey("category")) { if ((string?)a["category"] is { Length: > 0 } cat) attrs["category"] = cat; else attrs.Remove("category"); }
-            // Its look in 3D: a texture (brick, concrete, wood, plaster, stone, metal, insulation, earth, tiles; "none"; null: guessed from its hatch and name).
-            // Its faces along it (texture), its ends (textureEnd: where a wall is cut across, a brick's holes) and its top and bottom (textureTop); the ends and top follow the faces unless given.
-            foreach (var key in new[] { "texture", "textureEnd", "textureTop" })
-                if (a.ContainsKey(key))
-                {
-                    if ((string?)a[key] is { Length: > 0 } tex)
-                        attrs[key] = Textures.Contains(tex) ? tex : throw new CommandException($"„{tex}” is not a texture: {string.Join(", ", Textures)}.");
-                    else attrs.Remove(key);
-                }
-            // Its own texture: an image of the project (null takes it off; an image nothing uses goes) and how large it lies on the model, metres.
-            if (a.ContainsKey("textureImage"))
-            {
-                var had = attrs["textureImage"] is JsonValue hv ? (string?)hv : null;
-                if ((string?)a["textureImage"] is { Length: > 0 } img)
-                {
-                    if (ctx.Model.Get(img) is not { Class: Images.Class }) throw new CommandException("There is no such image in the project.");
-                    attrs["textureImage"] = img;
-                }
-                else attrs.Remove("textureImage");
-                if (had != null && had != (string?)attrs["textureImage"]) Images.DropIfUnused(ctx, had, mat.Id);
-            }
-            if (a.ContainsKey("textureSize"))
-            {
-                if (a["textureSize"] is JsonArray { Count: 2 } ts && Json.Number(ts[0]) is { } tw && Json.Number(ts[1]) is { } th)
-                {
-                    if (!(tw >= 0.01 && th >= 0.01 && tw <= 1000 && th <= 1000)) throw new CommandException("A texture lies 1 cm to 1 km wide and high.");
-                    attrs["textureSize"] = new JsonArray(tw, th);
-                }
-                else if (a["textureSize"] is null) attrs.Remove("textureSize");
-                else throw new CommandException("A texture's size is [width, height] in metres.");
-            }
-            foreach (var flag in new[] { "membrane", "drawJoints" })
-                if (a.ContainsKey(flag))
-                {
-                    if (a[flag] is JsonValue fv && fv.TryGetValue<bool>(out var b)) attrs[flag] = b; else attrs.Remove(flag);
-                }
-            foreach (var kind in MaterialGraphics.Kinds)
-            {
-                if (!a.ContainsKey(kind)) continue;
-                if (a[kind] is not JsonObject g) { attrs.Remove(kind); continue; }
-                // Fields merge into what the view had (replace: they are all it has); a field set to null is "none" (hatch, fill).
-                var replace = a["replace"] is JsonValue rv && rv.TryGetValue<bool>(out var rb) && rb;
-                var merged = !replace && attrs[kind] as JsonObject is { } had ? (JsonObject)had.DeepClone() : new JsonObject();
-                foreach (var (k, v) in CheckGraphics(ctx.Model, g, mat.Name)) merged[k] = v?.DeepClone();
-                if (merged.Count > 0) attrs[kind] = merged; else attrs.Remove(kind);
-            }
-            ctx.Replace(mat.With(name: ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : null, attrs: attrs));
+            if (((string?)a["name"])?.Trim() is { Length: > 0 } n && !string.Equals(n, mat.Name, StringComparison.OrdinalIgnoreCase) && Materials.Find(ctx.Model, n) != null)
+                throw new CommandException($"There is already a material „{n}”.");
+            var renamed = ((string?)a["name"])?.Trim() is { Length: > 0 } nn && nn != mat.Name ? nn : null;
+            var updated = Updated(ctx, mat, a);
+            ctx.Replace(updated);
+            // A material named elsewhere by its name (a door's frame, a sill, a zone) follows the new name.
+            if (renamed != null) Rename(ctx, mat.Name, renamed, mat.Id);
             return null;
         });
 
@@ -154,7 +299,14 @@ public static class DraftingResources
         r.Command("material.delete", "Delete material", (ctx, a) =>
         {
             var mat = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Material);
-            if (InUse(ctx.Model, mat.Id)) throw new CommandException($"„{mat.Name}” is in use.");
+            // In use, it goes only with another to take its place (replaceWith), in the same step.
+            if ((string?)a["replaceWith"] is { Length: > 0 } with)
+            {
+                var to = Spatial.Require(ctx.Model, with, IfcClass.Material);
+                if (to.Id == mat.Id) throw new CommandException("A material is replaced by another.");
+                Replace(ctx, mat, to);
+            }
+            else if (InUse(ctx.Model, mat.Id)) throw new CommandException($"„{mat.Name}” is in use.");
             ctx.Remove(mat.Id);
             return null;
         });
@@ -162,7 +314,9 @@ public static class DraftingResources
         // Every material, how it draws in each kind of view, and whether it is used.
         r.Query("material.list", (q, _) => new JsonArray(q.Model.OfClass(IfcClass.Material).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).Select(mat =>
         {
-            var o = new JsonObject { ["id"] = mat.Id, ["name"] = mat.Name, ["color"] = Materials.ColorOf(q.Model, mat.Id), ["inUse"] = InUse(q.Model, mat.Id) };
+            var o = new JsonObject { ["id"] = mat.Id, ["name"] = mat.Name, ["color"] = Materials.ColorOf(q.Model, mat.Id), ["inUse"] = InUse(q.Model, mat.Id), ["category"] = mat.Str("category") };
+            // How it renders: its own values and, for the rest, what its name gives.
+            o["look"] = MaterialLook.Of(mat).ToJson(mat);
             foreach (var kind in MaterialGraphics.Kinds) o[kind] = MaterialGraphics.Resolve(mat, kind).ToJson();
             o["own"] = new JsonObject(MaterialGraphics.Kinds.Where(k => mat.Attrs[k] != null).Select(k => KeyValuePair.Create(k, (JsonNode?)mat.Attrs[k]!.DeepClone())));
             return (JsonNode)o;

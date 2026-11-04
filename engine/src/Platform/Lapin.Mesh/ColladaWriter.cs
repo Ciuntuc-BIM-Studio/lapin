@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Xml;
 using static Lapin.Mesh.MeshMath;
+using Lapin.Platform;
 
 namespace Lapin.Mesh;
 
@@ -45,8 +46,8 @@ public static class ColladaWriter
             w.WriteEndElement();
 
             var edges = scene.Groups.Any(g => g.Elements.Any(e => e.Edges.Length >= 6));
-            var materials = scene.Materials.Select((m, i) => (Id: $"m{i}", Name: Name(m.Name), m.R, m.G, m.B, m.Alpha)).ToList();
-            if (edges) materials.Add(("medges", "Edges", 0, 0, 0, 1));
+            var materials = scene.Materials.Select((m, i) => (Id: $"m{i}", Name: Name(m.Name), m.R, m.G, m.B, m.Alpha, m.Pbr)).ToList();
+            if (edges) materials.Add(("medges", "Edges", 0, 0, 0, 1, MaterialLook.Plain));
 
             w.WriteStartElement("library_effects");
             foreach (var m in materials)
@@ -55,9 +56,17 @@ public static class ColladaWriter
                 w.WriteStartElement("profile_COMMON");
                 w.WriteStartElement("technique"); w.WriteAttributeString("sid", "common");
                 w.WriteStartElement("lambert");
+                // In the schema's order: a light's emission, the colour, how much it reflects (a metal, a smooth face), its opacity, glass's index.
+                if (m.Pbr.Emissive != null)
+                {
+                    var (er, eg, eb) = MeshScene.Rgb(m.Pbr.Emissive);
+                    w.WriteStartElement("emission"); w.WriteElementString("color", $"{F(er)} {F(eg)} {F(eb)} 1"); w.WriteEndElement();
+                }
                 w.WriteStartElement("diffuse");
                 w.WriteStartElement("color"); w.WriteAttributeString("sid", "diffuse"); w.WriteString($"{F(m.R)} {F(m.G)} {F(m.B)} 1"); w.WriteEndElement();
                 w.WriteEndElement();
+                var reflectivity = Math.Round((1 - m.Pbr.Roughness) * (0.1 + 0.9 * m.Pbr.Metalness), 4);
+                if (reflectivity > 0.01) { w.WriteStartElement("reflectivity"); w.WriteElementString("float", F(reflectivity)); w.WriteEndElement(); }
                 if (m.Alpha < 1)
                 {
                     // A_ONE: the opacity is the transparent colour's alpha times the transparency.
@@ -66,6 +75,7 @@ public static class ColladaWriter
                     w.WriteEndElement();
                     w.WriteStartElement("transparency"); w.WriteElementString("float", "1"); w.WriteEndElement();
                 }
+                if (Math.Abs(m.Pbr.Ior - 1.5) > 1e-6 || m.Pbr.Transmission > 0) { w.WriteStartElement("index_of_refraction"); w.WriteElementString("float", F(m.Pbr.Ior)); w.WriteEndElement(); }
                 w.WriteEndElement(); w.WriteEndElement(); w.WriteEndElement(); w.WriteEndElement();
             }
             w.WriteEndElement();

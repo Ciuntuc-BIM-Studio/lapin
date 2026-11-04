@@ -11,7 +11,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
-import { useUi } from '../../app/store';
+import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { ofClass, relatedOf } from '../../engine/model';
 import { LengthField, NumberField } from '../../shell/cells';
@@ -35,7 +35,11 @@ interface Spec {
   shape?: Shape | null;
   muntins?: Muntins | null;
   hardware?: Hardware | null;
+  materials?: Materials | null;
 }
+/** The parts' materials by name (report #76); a part without one keeps its colour. */
+interface Materials { frame?: string | null; sash?: string | null; glass?: string | null; leaf?: string | null; board?: string | null; hardware?: string | null }
+type MaterialPart = keyof Materials;
 interface Shape { kind: 'rect' | 'round' | 'segmental' | 'elliptical' | 'radiused' | 'pointed' | 'gable' | 'circle'; rise?: number | null; bars: 'none' | 'sunburst' | 'mullions' | 'cross'; spokes: number }
 interface Muntins { pattern: 'none' | 'grid' | 'prairie' | 'diamond'; across: number; up: number; width: number; margin: number }
 interface Hardware { handle: 'auto' | 'lever' | 'knob' | 'pull' | 'window' | 'none'; height: number; color?: string | null }
@@ -150,6 +154,39 @@ function Num({ label, value, onChange, integer, min }: { label: string; value: n
     <label className="field-line"><span className="eyebrow">{label}</span>
       <NumberField value={value} integer={integer} min={min} onCommit={(n) => { if (n != null) onChange(n); }} />
     </label>
+  );
+}
+
+/** The parts a door or window names materials for, in the configurator's order. */
+const PARTS: { part: MaterialPart; label: string; door?: boolean; window?: boolean }[] = [
+  { part: 'frame', label: 'Frame material' }, { part: 'sash', label: 'Sash material', window: true }, { part: 'glass', label: 'Glass material' },
+  { part: 'leaf', label: 'Leaf material', door: true }, { part: 'board', label: 'Board material', window: true }, { part: 'hardware', label: 'Hardware material' },
+];
+
+/**
+ * The parts' materials (report #76), and the button that gives every door or window of the project the same ones: all window
+ * frames one dark grey metal, all glass one blue glass. One undo step (architecture.joineryMaterials).
+ */
+function PartMaterials({ spec, onChange }: { spec: Spec; onChange: (m: Materials) => void }) {
+  const mats = spec.materials ?? {};
+  const parts = PARTS.filter((p) => (spec.kind === 'door' ? !p.window : !p.door));
+  const applyAll = async () => {
+    const args: Record<string, unknown> = { kind: spec.kind };
+    for (const { part } of parts) args[part] = mats[part] ?? '';
+    const r = await execute('architecture.joineryMaterials', args);
+    if (r) notify(spec.kind === 'door' ? 'Every door type has these materials now.' : 'Every window type has these materials now.');
+  };
+  return (
+    <div className="part-materials" data-testid="joinery-materials">
+      <p className="eyebrow">Materials</p>
+      {parts.map(({ part, label }) => (
+        <label key={part} className="field-line"><span className="eyebrow">{label}</span>
+          <span data-part={part}><MaterialPicker value={mats[part] ?? ''} allowEmpty placeholder={part === 'sash' ? 'as the frame' : 'its colour'} onChange={(m) => onChange({ ...mats, [part]: m || null })} /></span></label>
+      ))}
+      <button type="button" className="btn compact" data-action="joinery-materials-all" title="Every type of this kind takes these materials, part by part: one undo step" onClick={() => void applyAll()}>
+        {spec.kind === 'door' ? 'Use for all doors' : 'Use for all windows'}
+      </button>
+    </div>
   );
 }
 
@@ -419,7 +456,15 @@ export function JoineryDialog() {
   // The elevation's box; the strokes are fitted into it.
   const W = 300, H = 300;
   const boxes = [...(preview?.boxes ?? [])].sort((a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9));
-  const fill = (role: string) => role === 'glass' ? spec.colors.glass : role === 'leaf' ? spec.colors.leaf : role === 'handle' || role === 'hardware' ? spec.hardware?.color ?? '#5a5a5a' : role === 'board' ? '#dcdcdc' : spec.colors.frame;
+  // A part's colour in the preview: its material's (report #76), else the type's colour for it.
+  const materialColor = (role: string): string | null => {
+    const m = spec.materials;
+    const name = !m ? null : role === 'frame' ? m.frame : role === 'sash' || role === 'muntin' ? m.sash ?? m.frame : role === 'glass' ? m.glass : role === 'leaf' ? m.leaf : role === 'board' ? m.board : role === 'handle' || role === 'hardware' ? m.hardware : null;
+    const mat = name ? ofClass(model, 'IfcMaterial').find((x) => x.name.toLowerCase() === name.toLowerCase()) : undefined;
+    return typeof mat?.props.color === 'string' ? mat.props.color : null;
+  };
+  const fill = (role: string) => materialColor(role) ?? colorOf(role);
+  const colorOf = (role: string) => role === 'glass' ? spec.colors.glass : role === 'leaf' ? spec.colors.leaf : role === 'handle' || role === 'hardware' ? spec.hardware?.color ?? '#5a5a5a' : role === 'board' ? '#dcdcdc' : spec.colors.frame;
 
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Doors and windows">
@@ -480,7 +525,8 @@ export function JoineryDialog() {
                   ))}
                 </tbody>
               </table>
-              <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>
+              <PartMaterials spec={spec} onChange={(materials) => set({ materials })} />
+              {!spec.materials?.frame && <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>}
               <LintelRuleEditor inherit rule={spec.lintel ?? null} onChange={(r) => set({ lintel: r })} />
               <p className="eyebrow">Details</p>
 
@@ -509,7 +555,7 @@ export function JoineryDialog() {
               </>}
               <DressingFields kind={spec.kind} height={spec.height} details={details} onChange={setDetails} />
               <HardwareFields spec={spec} onChange={set} />
-              {spec.kind === 'door' && <label className="field-line"><span className="eyebrow">Leaf</span><input type="color" value={spec.colors.leaf} onChange={(e) => set({ colors: { ...spec.colors, leaf: e.target.value } })} /></label>}
+              {spec.kind === 'door' && !spec.materials?.leaf && <label className="field-line"><span className="eyebrow">Leaf</span><input type="color" value={spec.colors.leaf} onChange={(e) => set({ colors: { ...spec.colors, leaf: e.target.value } })} /></label>}
               <TypeParams typeId={editing} kind={spec.kind} />
             </div>
             <div className="joinery-preview">

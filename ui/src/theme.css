@@ -1182,3 +1182,24 @@ button.mode-chip:hover { color: var(--accent); }
 .sheet-svg.drop-target { outline: 2px dashed var(--accent); outline-offset: -4px; }
 .takeoff-kinds { position: relative; display: inline-flex; }
 .takeoff-kinds-menu { position: absolute; top: 100%; left: 0; z-index: 20; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 8px; display: grid; gap: 2px; min-width: 200px; max-height: 320px; overflow: auto; box-shadow: 0 4px 16px rgba(0,0,0,.18); }
+/* Materials (report #76): the list's search, the library's swatches, the appearance's preview and sliders. */
+.materials-dialog .dialog-body.split { grid-template-columns: 250px minmax(0, 1fr); }
+.material-side { display: flex; flex-direction: column; gap: 6px; }
+.material-search { gap: 6px; align-items: center; }
+.material-search input { flex: 1; }
+.material-list { max-height: 46vh; overflow: auto; }
+.material-actions, .material-replace { gap: 6px; align-items: center; flex-wrap: wrap; }
+.material-look { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: start; }
+.material-look-fields { display: flex; flex-direction: column; gap: 6px; }
+.material-look-fields .row { gap: 10px; align-items: end; flex-wrap: wrap; }
+.material-preview { border: 1px solid var(--rule); border-radius: 4px; background: #f4f2ec; }
+.slider-line { display: grid; grid-template-columns: 130px minmax(0, 1fr) 40px; gap: 8px; align-items: center; }
+.slider-line input[type=range] { width: 100%; accent-color: var(--accent); }
+.slider-line.own > span:first-child { font-weight: 600; }
+.slider-line .num-out { text-align: right; font-variant-numeric: tabular-nums; }
+.material-library { max-height: 64vh; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+.preset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; margin-top: 4px; }
+.preset { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; border: 1px solid var(--rule); border-radius: 4px; background: var(--raised); color: var(--ink); cursor: pointer; text-align: center; }
+.preset:hover { border-color: var(--accent); }
+.preset-ball { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--rule-strong); }
+@media (max-width: 720px) { .material-look { grid-template-columns: 1fr; } }

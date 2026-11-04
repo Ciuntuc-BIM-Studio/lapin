@@ -8,6 +8,52 @@ summary: Legen Sie für jedes Material Farbe, Schraffuren und Fugen fest, legen 
 
 ![Der Dialog Materialien](shots/materials-dialog.webp)
 
+## Erscheinungsbild: wie ein Material gerendert wird
+
+Die Registerkarte **Erscheinungsbild** legt fest, wie das Material in 3D und in den Renderern aussieht, in die Sie exportieren. Die Registerkarte **2D-Grafik** behält seine Schraffuren und Stifte wie bisher.
+
+![Das Erscheinungsbild eines Materials mit seiner Live-Vorschau](shots/material-appearance.webp)
+
+- **Farbe** und **Textur**: eine gezeichnete Textur (Ziegel, Holzdielen, Fliesen…) oder Ihr eigenes Bild. **W** und **H** legen fest, wie groß eine Kachel auf dem Modell liegt, in Metern; **Drehung** dreht sie.
+- **Rauheit**: 0 ist ein Spiegel, 1 ist Kreide. **Metallanteil**: 1 für blankes Metall (eloxiertes Aluminium, Stahl, Chrom), 0 für alles Lackierte oder Pulverbeschichtete, Holz und Stein.
+- **Transparenz**: wie viel durchscheint. **Glas (Transmission)** und **IOR** (1,52 für Glas) lassen Glas im Renderer brechen.
+- **Leuchtet** gibt Licht ab, wie der Diffusor einer Leuchte.
+
+Die Kugel zeigt das Ergebnis sofort. Was Sie nicht setzen, kommt aus dem Namen: ein Material namens *Glas* ist klar, *Stahl* metallisch, *Parkett* und *Laminat* sind Holzdielen. **Erscheinungsbild aus dem Namen** nimmt Ihre Werte wieder weg.
+
+## Aus der Bibliothek
+
+**Aus der Bibliothek…** bietet fertige Materialien: Metalle (Aluminium RAL 7016 anthrazit, eloxiert, Stahl, Kupfer…), Glas (klar, blau, grün, grau, satiniert, reflektierend), Hölzer als Dielen, Beton, Ziegel, Putz und Farbe, Fliesen und Stein, Kunststoff und Stoff. Ein Klick fügt eines dem Projekt hinzu; ändern Sie es wie jedes andere.
+
+![Die Materialbibliothek](shots/material-library.webp)
+
+## Ein Material für alle Rahmen und alles Glas
+
+Neue Türen und Fenster bestehen aus gemeinsamen Materialien, Teil für Teil: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** und **Hardware**. Ändern Sie **Window frame** einmal, und alle Fensterrahmen ändern sich.
+
+Für andere Materialien öffnen Sie **Architektur → Türen und Fenster**, wählen für einen Typ **Rahmenmaterial**, **Glasmaterial** und die übrigen und klicken auf **Für alle Fenster verwenden** (oder **Für alle Türen verwenden**). Jeder Typ dieser Art übernimmt sie, in einem Rückgängig-Schritt. Vorhangfassaden haben ebenfalls ein Rahmen- und ein Glasmaterial.
+
+![Die Materialien der Teile im Tür- und Fensterkonfigurator](shots/joinery-materials.webp)
+
+## Duplizieren, ersetzen, auswählen
+
+- **Duplizieren** kopiert ein Material unter einem neuen Namen.
+- **Ersetzen durch** ein Material, dann **Ersetzen**: jede Schicht, jeder Typ, jede Tür, jedes Fenster und Element mit dem ersten nimmt nun das zweite, in einem Rückgängig-Schritt. **Ersetzen und löschen** entfernt außerdem das erste. Sonst lässt sich ein verwendetes Material nicht löschen.
+- **Elemente auswählen** wählt alle Elemente mit einem Teil aus diesem Material.
+- **Materialien suchen** und die Kategorienliste filtern die Liste.
+
+## Materialien für das Rendering
+
+Twinmotion, Lumion, Enscape, Blender und andere Renderer tauschen Materialien nach Namen aus. Lapin schreibt jedes Material **einmal, unter seinem eigenen Namen**, mit Farbe, Textur, Rauheit, Metallanteil und Glas, und teilt das Netz jedes Elements nach Material.
+
+1. Benennen Sie Ihre Materialien so, wie Sie sie im Renderer haben wollen, zum Beispiel *Aluminium RAL 7016 anthracite* für alle Rahmen und *Glass blue tinted* für alles Glas.
+2. **Datei → 3D-Export (glTF, USD, DAE)…** und wählen Sie **GLB** (empfohlen: eine Datei mit den Texturen, den genauen Namen und dem Glas), **USDZ** oder **OBJ + MTL** (eine .zip mit den Texturen; Leerzeichen in Namen werden zu Unterstrichen).
+3. Importieren Sie die Datei in den Renderer. Dort teilen alle Rahmen ein Material; ersetzen Sie es einmal durch ein Metall des Renderers, und alle ändern sich.
+
+![Ein Haus mit dunkelgrauen Rahmen und blauem Glas](shots/materials-render-3d.webp)
+
+Auch der IFC-Export benennt den Oberflächenstil jedes Materials nach ihm, mit seiner Transparenz und seiner Art zu spiegeln.
+
 ## Was ein Material festlegt
 
 - **Farbe (3D)** und die Flächenzeichnung darauf in 3D. Lapin leitet sie aus dem Namen ab, zum Beispiel die Steinlagen eines Ziegels oder das Raster einer Fliese. **Enden** sowie **Oben und unten** können anders aussehen als die Flächen.

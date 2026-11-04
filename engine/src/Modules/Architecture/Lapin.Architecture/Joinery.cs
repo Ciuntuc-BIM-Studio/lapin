@@ -20,6 +20,31 @@ public sealed record JoineryBoard(double Interior, double Exterior);
 public sealed record JoineryColors(string Frame, string Glass, string Leaf);
 
 /// <summary>
+/// The materials of a door's or window's parts, by name (report #76: every window frame one dark grey metal, every glass one
+/// blue glass, as a renderer swaps them by name). <see cref="Sash"/> and the glazing bars follow the frame unless given; a part
+/// whose material is not set, or not in the project, keeps its colour (<see cref="JoineryColors"/>).
+/// </summary>
+public sealed record JoineryMaterials(string? Frame = null, string? Glass = null, string? Leaf = null, string? Hardware = null, string? Board = null, string? Sash = null)
+{
+    /// <summary>The material of a part of the body by its role (frame, sash, muntin, glass, leaf, board, handle, hardware).</summary>
+    public string? Of(string role) => role switch
+    {
+        "frame" => Frame, "sash" or "muntin" => Sash ?? Frame, "glass" => Glass, "leaf" => Leaf, "board" => Board,
+        "handle" or "hardware" => Hardware, _ => null,
+    };
+
+    /// <summary>The parts a type names materials for, as the configurator and Set for all… offer them.</summary>
+    public static readonly string[] Parts = ["frame", "sash", "glass", "leaf", "board", "hardware"];
+
+    public JoineryMaterials With(string part, string? name) => part switch
+    {
+        "frame" => this with { Frame = name }, "sash" => this with { Sash = name }, "glass" => this with { Glass = name }, "leaf" => this with { Leaf = name },
+        "board" => this with { Board = name }, "hardware" => this with { Hardware = name },
+        _ => throw new CommandException($"„{part}” is not a part of a door or window: {string.Join(", ", Parts)}."),
+    };
+}
+
+/// <summary>
 /// How the opening is finished around the frame (asked 25.10.2026, pending
 /// decision 127): the reveal's finish on the jambs and head, by mode: "wall"
 /// (the wall's own face layers, each side its own, as thick as the layer up to
@@ -82,7 +107,9 @@ public sealed record JoinerySpec(
     /// <summary>Glazing bars on the rectangular panes; null: none.</summary>
     JoineryMuntins? Muntins = null,
     /// <summary>The handles; null: a lever on doors, a window handle on windows.</summary>
-    JoineryHardware? Hardware = null)
+    JoineryHardware? Hardware = null,
+    /// <summary>The parts' materials by name; null: their colours only (a type made before report #76).</summary>
+    JoineryMaterials? Materials = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,

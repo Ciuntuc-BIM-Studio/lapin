@@ -8,6 +8,52 @@ summary: Set each material's colour, hatches and joints, put your own image on i
 
 ![The Materials dialog](shots/materials-dialog.webp)
 
+## Appearance: how a material renders
+
+The **Appearance** tab sets how the material looks in 3D and in the renderers you export to. The **2D graphics** tab keeps its hatches and pens, as before.
+
+![A material's appearance, with its live preview](shots/material-appearance.webp)
+
+- **Colour** and **Texture**: a drawn texture (brick, wood planks, tiles…) or your own image. **W** and **H** set how large one tile lies on the model, in metres; **Rotation** turns it.
+- **Roughness**: 0 is a mirror, 1 is chalk. **Metalness**: 1 for bare metal (anodised aluminium, steel, chrome), 0 for anything painted or powder-coated, wood and stone.
+- **Transparency**: how much shows through. **Glass (transmission)** and **IOR** (1.52 for glass) make glass refract in a renderer.
+- **Glows** gives off light, like a lamp's diffuser.
+
+The sphere shows the result at once. What you do not set comes from the name: a material called *glass* is clear, *steel* is metallic, *parquet* and *laminate* are wood planks. **Appearance from the name** takes your values off again.
+
+## From the library
+
+**From the library…** offers ready-made materials: metals (aluminium RAL 7016 anthracite, anodised, steel, copper…), glass (clear, blue, green, grey, frosted, reflective), woods as planks, concrete, brick, plaster and paint, tiles and stone, plastic and fabric. A click adds one to the project; change it as any other.
+
+![The material library](shots/material-library.webp)
+
+## One material for all frames and all glass
+
+New doors and windows are made of shared materials, part by part: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** and **Hardware**. Change **Window frame** once and every window frame changes.
+
+To use other materials, open **Architecture → Doors & windows**, choose the **Frame material**, **Glass material** and the others for a type, and click **Use for all windows** (or **Use for all doors**). Every type of that kind takes them, in one undo step. Curtain walls have a frame and a glass material too.
+
+![The parts' materials in the door and window configurator](shots/joinery-materials.webp)
+
+## Duplicate, replace, select
+
+- **Duplicate** copies a material under a new name.
+- **Replace with** a material, then **Replace**: every layer, type, door, window and element that used the first now uses the second, in one undo step. **Replace and delete** also removes the first. A material in use cannot be deleted otherwise.
+- **Select elements** selects every element with a part in the material.
+- **Search materials** and the category list filter the list.
+
+## Materials for rendering
+
+Twinmotion, Lumion, Enscape, Blender and other renderers swap materials by name. Lapin writes each material **once, under its own name**, with its colour, texture, roughness, metalness and glass, and splits every element's mesh by material.
+
+1. Name your materials as you want them in the renderer, for example *Aluminium RAL 7016 anthracite* for all frames and *Glass blue tinted* for all glass.
+2. **File → Export 3D (glTF, USD, DAE)…** and choose **GLB** (recommended: one file with the textures, the exact names and the glass), **USDZ**, or **OBJ + MTL** (a .zip with the textures; spaces in names become underscores).
+3. Import the file into the renderer. Every frame shares one material there; replace it once with the renderer's own metal, and all frames change.
+
+![A house with dark grey frames and blue glass](shots/materials-render-3d.webp)
+
+The IFC export names each material's surface style after it too, with its transparency and how it reflects.
+
 ## What a material sets
 
 - **Colour (3D)** and the faces drawn on it in 3D. Lapin guesses them from the name, for example a brick's courses or a tile's grid. **Ends** and **Top and bottom** can look different from the faces.

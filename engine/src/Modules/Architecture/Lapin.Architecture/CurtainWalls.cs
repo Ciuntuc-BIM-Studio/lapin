@@ -71,7 +71,7 @@ public readonly record struct CurtainSection(double Width, double Depth);
 
 /// <summary>What a curtain wall type holds: its grid, its members and panels, their colours.</summary>
 public sealed record CurtainSpec(CurtainGrid U, CurtainGrid V, CurtainSection Mullion, CurtainSection Transom, bool Edge, double PanelThickness, string PanelKind,
-    string FrameColor, string GlassColor, string OpaqueColor)
+    string FrameColor, string GlassColor, string OpaqueColor, string? FrameMaterial = null, string? GlassMaterial = null, string? OpaqueMaterial = null)
 {
     public static readonly CurtainSpec Default = new(new CurtainGrid("max", Spacing: 1.5), new CurtainGrid("max", Spacing: 1.5),
         new CurtainSection(0.05, 0.15), new CurtainSection(0.05, 0.15), true, 0.024, "glass", "#3f3f46", "#9cc3e6", "#a1a1aa");
@@ -82,14 +82,16 @@ public sealed record CurtainSpec(CurtainGrid U, CurtainGrid V, CurtainSection Mu
         if (n is not JsonObject o) return d;
         static CurtainSection Sec(JsonNode? x, CurtainSection f) => x is JsonObject s ? new(Json.Number(s["width"]) ?? f.Width, Json.Number(s["depth"]) ?? f.Depth) : f;
         static string Colour(JsonNode? x, string f) => (string?)x is { Length: 7 } c && c[0] == '#' ? c : f;
+        static string? Named(JsonNode? x) => x is JsonValue v && v.TryGetValue<string>(out var t) && t.Trim().Length > 0 ? t.Trim() : null;
         var panel = o["panel"] as JsonObject;
         return new CurtainSpec(CurtainGrid.From(o["u"], d.U), CurtainGrid.From(o["v"], d.V), Sec(o["mullion"], d.Mullion), Sec(o["transom"], d.Transom),
             o["edge"] is JsonValue e && e.TryGetValue<bool>(out var edge) ? edge : d.Edge,
             Json.Number(panel?["thickness"]) ?? d.PanelThickness, (string?)panel?["kind"] is "glass" or "opaque" ? (string)panel!["kind"]! : d.PanelKind,
-            Colour(o["frameColor"], d.FrameColor), Colour(o["glassColor"], d.GlassColor), Colour(o["opaqueColor"], d.OpaqueColor));
+            Colour(o["frameColor"], d.FrameColor), Colour(o["glassColor"], d.GlassColor), Colour(o["opaqueColor"], d.OpaqueColor),
+            Named(o["frameMaterial"]), Named(o["glassMaterial"]), Named(o["opaqueMaterial"]));
     }
 
-    public JsonObject ToJson() => new()
+    public JsonObject ToJson() => WithMaterials(new()
     {
         ["u"] = U.ToJson(), ["v"] = V.ToJson(),
         ["mullion"] = new JsonObject { ["width"] = Mullion.Width, ["depth"] = Mullion.Depth },
@@ -97,7 +99,16 @@ public sealed record CurtainSpec(CurtainGrid U, CurtainGrid V, CurtainSection Mu
         ["edge"] = Edge,
         ["panel"] = new JsonObject { ["thickness"] = PanelThickness, ["kind"] = PanelKind },
         ["frameColor"] = FrameColor, ["glassColor"] = GlassColor, ["opaqueColor"] = OpaqueColor,
-    };
+    });
+
+    /// <summary>The materials' names, those it has (a type made before report #76 is written as it was).</summary>
+    internal JsonObject WithMaterials(JsonObject o)
+    {
+        if (FrameMaterial != null) o["frameMaterial"] = FrameMaterial;
+        if (GlassMaterial != null) o["glassMaterial"] = GlassMaterial;
+        if (OpaqueMaterial != null) o["opaqueMaterial"] = OpaqueMaterial;
+        return o;
+    }
 
     /// <summary>Why the spec cannot be built (null: it can).</summary>
     public string? Problem()
@@ -260,7 +271,14 @@ public static class CurtainWalls
     public static Entity EnsureType(IEdit edit)
     {
         if (edit.Model.OfClass(TypeClass).FirstOrDefault() is { } t) return t;
-        var type = new Entity(edit.NewId(), TypeClass, "Curtain wall 1500", new JsonObject { ["spec"] = CurtainSpec.Default.ToJson() }, "NOTDEFINED");
+        // Its frame and glass as materials of their own (report #76), the glass the doors' and windows'.
+        var d = CurtainSpec.Default;
+        var spec = d with
+        {
+            FrameMaterial = Openings.EnsureMaterial(edit, "Curtain wall frame", d.FrameColor, new JsonObject { ["roughness"] = 0.3, ["metalness"] = 1 }),
+            GlassMaterial = Openings.EnsureMaterial(edit, "Glass", d.GlassColor, Openings.GlassLook()),
+        };
+        var type = new Entity(edit.NewId(), TypeClass, "Curtain wall 1500", new JsonObject { ["spec"] = spec.ToJson() }, "NOTDEFINED");
         edit.Add(type);
         return type;
     }
@@ -355,14 +373,19 @@ public static class CurtainWalls
         var problems = Fit(spec, layout, c.Length) is { } p ? new List<string> { p } : null;
         var parts = new List<GeometryPart>();
         var plan = new List<PlanItem>();
-        var infill = spec.PanelKind == "glass" ? spec.GlassColor : spec.OpaqueColor;
+        // The materials by name (report #76), each giving its colour; without one, the type's colours.
+        string? Mat(string? name) => name != null ? Materials.Find(m, name)?.Id : null;
+        var frameMat = Mat(spec.FrameMaterial);
+        var infillMat = Mat(spec.PanelKind == "glass" ? spec.GlassMaterial : spec.OpaqueMaterial);
+        var frameColor = frameMat != null ? Materials.ColorOf(m, frameMat) : spec.FrameColor;
+        var infill = infillMat != null ? Materials.ColorOf(m, infillMat) : spec.PanelKind == "glass" ? spec.GlassColor : spec.OpaqueColor;
         foreach (var piece in layout.Pieces)
         {
             if (!(piece.Z1 - piece.Z0 > 1e-9)) continue;
             var fp = Footprint(c, layout, piece);
             if (Prism.ExtrudeFootprint(fp, z + piece.Z0, piece.Z1 - piece.Z0, piece.Role) is not { } solid) continue;
             var name = piece.Role switch { "mullion" => "Mullion", "transom" => "Transom", _ => spec.PanelKind == "glass" ? "Glass panel" : "Panel" };
-            parts.Add(new GeometryPart(name, piece.Role == "panel" ? infill : spec.FrameColor, solid, null, piece.Key));
+            parts.Add(new GeometryPart(name, piece.Role == "panel" ? infill : frameColor, solid, piece.Role == "panel" ? infillMat : frameMat, piece.Key));
             // In plan: the mullions cut, the panels at the cut height as thin bands.
             if (piece.Role == "mullion") plan.Add(new PlanItem("cut", true, fp));
             else if (piece.Role == "panel" && piece.Z0 <= PlanCut && piece.Z1 > PlanCut) plan.Add(new PlanItem("symbol", true, fp));

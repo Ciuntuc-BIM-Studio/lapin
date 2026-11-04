@@ -3,7 +3,8 @@
  * rendering, visualisation and AR, not as a model (IFC is that). GLB (one
  * glTF file, the default), glTF, USDZ (OpenUSD packed, for Apple's AR Quick
  * Look and the USD tools), USDA (OpenUSD text) or DAE (COLLADA 1.4.1, which
- * SketchUp imports). Everything, or the model as the 3D view in front shows
+ * SketchUp imports) or OBJ with its MTL in a zip (every renderer; report #76). Every
+ * material goes out once, named as in the project, with its look. Everything, or the model as the 3D view in front shows
  * it (the default when the view leaves anything out): its hidden elements and
  * categories (the engine reads them off the view), and what only the
  * interface knows: the elements it does not draw (the storeys it does not
@@ -34,7 +35,10 @@ const FORMATS: [string, string][] = [
   ['usdz', 'USDZ: OpenUSD packed (AR Quick Look, Omniverse, USD tools)'],
   ['usda', 'USDA: OpenUSD as text'],
   ['dae', 'DAE: COLLADA 1.4.1 (SketchUp, Rhino, 3ds Max, Blender)'],
+  ['obj', 'OBJ + MTL in a .zip (Twinmotion, Lumion, 3ds Max, any renderer)'],
 ];
+/** The file a format goes out as: OBJ zipped with its MTL and images. */
+const extOf = (format: string) => (format === 'obj' ? 'zip' : format);
 
 export function ExportMeshDialog() {
   const path = useSession((s) => s.doc?.path ?? null);
@@ -60,7 +64,7 @@ export function ExportMeshDialog() {
   const run = async () => {
     setBusy(true);
     const view = what === 'view' ? { viewId: view3dId ?? '3d', hidden, ...(cuts && planes.length ? { planes } : {}) } : {};
-    await exportFile('project.exportMesh', { format, edges, origin, ...view, ...(phase ? { phase } : {}) }, `${projectTitle(path)}.${format}`, format);
+    await exportFile('project.exportMesh', { format, edges, origin, ...view, ...(phase ? { phase } : {}) }, `${projectTitle(path)}.${extOf(format)}`, extOf(format));
     setBusy(false);
     close();
   };
@@ -96,6 +100,7 @@ export function ExportMeshDialog() {
             <dd><input type="checkbox" checked={edges} onChange={(e) => setEdges(e.target.checked)} /></dd>
           </dl>
           <p className="muted small">Surfaces for rendering, visualisation and AR: each element a node with its GlobalId, IFC class and type, a mesh per material. To exchange the model itself, use Export IFC.</p>
+          <p className="muted small">Each material goes out once under its name, with its colour, texture, roughness, metalness and glass, so a renderer such as Twinmotion can swap it by name (Manage → Materials).</p>
         </div>
         <footer className="dialog-foot">
           <span className="grow" />

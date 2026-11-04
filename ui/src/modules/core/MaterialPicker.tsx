@@ -24,8 +24,9 @@ export function MaterialPicker({ value, onChange, placeholder, allowEmpty }: { v
   return (
     <select value={known || !value ? value : value} onChange={(e) => void pick(e.target.value)}>
       {(allowEmpty || !value) && <option value="">{placeholder ?? '—'}</option>}
-      {!known && value && <option value={value}>{value} (new)</option>}
-      {names.map((n) => <option key={n} value={n}>{n}</option>)}
+      {!known && value && <option value={value} data-no-i18n>{value} (new)</option>}
+      {/* Names are the project's data: never translated (a renderer finds them by name). */}
+      {names.map((n) => <option key={n} value={n} data-no-i18n>{n}</option>)}
       <option value={NEW}>New material…</option>
     </select>
   );

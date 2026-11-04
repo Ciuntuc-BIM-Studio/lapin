@@ -99,6 +99,7 @@ public static class Openings
     public static Entity CreateType(IEdit edit, JoinerySpec spec)
     {
         if (Joinery.Problem(spec) is { } problem) throw new CommandException(problem);
+        spec = WithDefaultMaterials(edit, spec);
         var (cls, predefined) = spec.IsDoor ? (IfcClass.DoorType, "DOOR") : (IfcClass.WindowType, "WINDOW");
         var type = new Entity(edit.NewId(), cls, spec.Name, TypeAttrs(spec), predefined);
         edit.Add(type);
@@ -307,6 +308,41 @@ public static class Openings
 
     static readonly Dictionary<string, string> HandleColor = new() { ["handle"] = "#5a5a5a", ["board"] = "#dcdcdc" };
 
+    /// <summary>The id of the project's material a part of the type is made of (its role's), or null.</summary>
+    public static string? MaterialOfPart(IModelView m, JoinerySpec spec, string role) =>
+        spec.Materials?.Of(role) is { Length: > 0 } name ? Materials.Find(m, name.Trim())?.Id : null;
+
+    /// <summary>A material by name, made in the colour and look given when the project has none; its name.</summary>
+    public static string EnsureMaterial(IEdit edit, string name, string color, JsonObject? look = null)
+    {
+        if (Materials.Find(edit.Model, name) is { } found) return found.Name;
+        var attrs = new JsonObject { ["color"] = color };
+        foreach (var (k, v) in look ?? []) attrs[k] = v?.DeepClone();
+        edit.Add(new Entity(edit.NewId(), IfcClass.Material, name, attrs));
+        return name;
+    }
+
+    /// <summary>The look of the glass every new door, window and curtain wall shares.</summary>
+    public static JsonObject GlassLook() => new() { ["roughness"] = 0.05, ["transparency"] = 0.6, ["transmission"] = 0.9, ["ior"] = 1.52 };
+
+    /// <summary>
+    /// The materials a new type is made with (report #76): one per part, shared by every type of its kind, so all window frames
+    /// (or all glass) change at once in Manage → Materials and a renderer finds them by name. Made when the project has none,
+    /// in the type's colours and with a look that suits them (glass clear, hardware metal).
+    /// </summary>
+    public static JoinerySpec WithDefaultMaterials(IEdit edit, JoinerySpec spec)
+    {
+        if (spec.Materials != null) return spec;
+        string Make(string name, string color, JsonObject? look = null) => EnsureMaterial(edit, name, color, look);
+        var door = spec.IsDoor;
+        var frame = Make(door ? "Door frame" : "Window frame", spec.Colors.Frame, new JsonObject { ["roughness"] = 0.4 });
+        var glass = Make("Glass", spec.Colors.Glass, GlassLook());
+        var hardware = Make("Hardware", spec.Hardware?.Color ?? HandleColor["handle"], new JsonObject { ["roughness"] = 0.35, ["metalness"] = 1 });
+        string? leaf = door ? Make("Door leaf", spec.Colors.Leaf, new JsonObject { ["roughness"] = 0.6, ["texture"] = "wood" }) : null;
+        string? board = door ? null : Make("Window board", HandleColor["board"], new JsonObject { ["roughness"] = 0.5 });
+        return spec with { Materials = new JoineryMaterials(frame, glass, leaf, hardware, board) };
+    }
+
     /// <summary>
     /// A door's or window's body in its wall: the configurator's boxes, from
     /// the type frame (X along the opening, Y to the exterior, Z up) into the
@@ -332,13 +368,15 @@ public static class Openings
         {
             var solids = group.Select(b => Box(b, Map)).OfType<Solid>().ToList();
             if (solids.Count == 0) continue;
-            var color = group.Key switch
+            // The part's material (by name, report #76) gives its colour; without one, the type's colour for the part.
+            var material = MaterialOfPart(m, spec, group.Key);
+            var color = material != null ? Materials.ColorOf(m, material) : group.Key switch
             {
                 "glass" => spec.Colors.Glass, "leaf" => spec.Colors.Leaf,
                 "handle" or "hardware" => spec.Hardware?.Color ?? HandleColor["handle"],
                 _ => HandleColor.GetValueOrDefault(group.Key, spec.Colors.Frame),
             };
-            parts.Add(new GeometryPart(group.Key, color, Combine(solids, group.Key), null, group.Key));
+            parts.Add(new GeometryPart(group.Key, color, Combine(solids, group.Key), material, group.Key));
         }
         if (dressing != null) parts.AddRange(dressing.Parts());
         return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, dressing != null), [f.At(p.Along, f.Centre, 0).Xy]);

@@ -8,6 +8,52 @@ summary: Indstil hvert materiales farve, skraveringer og fuger, læg dit eget bi
 
 ![Dialogen Materialer](shots/materials-dialog.webp)
 
+## Udseende: hvordan et materiale renderes
+
+Fanen **Udseende** bestemmer, hvordan materialet ser ud i 3D og i de renderprogrammer, du eksporterer til. Fanen **2D-grafik** beholder skraveringer og penne som før.
+
+![Et materiales udseende med forhåndsvisning](shots/material-appearance.webp)
+
+- **Farve** og **Tekstur**: en tegnet tekstur (mursten, træbrædder, fliser…) eller dit eget billede. **W** og **H** angiver, hvor stor én flise ligger på modellen, i meter; **Drejning** drejer den.
+- **Ruhed**: 0 er et spejl, 1 er kridt. **Metalliskhed**: 1 for bart metal (anodiseret aluminium, stål, krom), 0 for alt malet eller pulverlakeret, træ og sten.
+- **Gennemsigtighed**: hvor meget man ser igennem. **Glas (transmission)** og **IOR** (1,52 for glas) får glas til at bryde lyset i et renderprogram.
+- **Lyser** udsender lys, som en lampes diffusor.
+
+Kuglen viser resultatet med det samme. Det, du ikke sætter, kommer fra navnet: et materiale kaldet *glas* er klart, *stål* metallisk, *parket* og *laminat* er træbrædder. **Udseende fra navnet** fjerner dine værdier igen.
+
+## Fra biblioteket
+
+**Fra biblioteket…** giver færdige materialer: metaller (aluminium RAL 7016 antracit, anodiseret, stål, kobber…), glas (klart, blåt, grønt, gråt, matteret, reflekterende), træ som brædder, beton, mursten, puds og maling, fliser og sten, plast og stof. Et klik føjer et til projektet; ret det som ethvert andet.
+
+![Materialebiblioteket](shots/material-library.webp)
+
+## Ét materiale til alle karme og alt glas
+
+Nye døre og vinduer er lavet af fælles materialer, del for del: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** og **Hardware**. Ret **Window frame** én gang, og alle vindueskarme ændres.
+
+Vil du bruge andre materialer, så åbn **Arkitektur → Døre og vinduer**, vælg **Karmmateriale**, **Glasmateriale** og de andre for en type, og klik på **Brug til alle vinduer** (eller **Brug til alle døre**). Alle typer af den slags får dem, i ét fortryd-trin. Glasfacader har også et ramme- og et glasmateriale.
+
+![Delenes materialer i dør- og vindueskonfiguratoren](shots/joinery-materials.webp)
+
+## Dupliker, erstat, vælg
+
+- **Dupliker** kopierer et materiale under et nyt navn.
+- **Erstat med** et materiale og derefter **Erstat**: hvert lag, hver type, dør, hvert vindue og element, der brugte det første, bruger nu det andet, i ét fortryd-trin. **Erstat og slet** fjerner også det første. Ellers kan et materiale i brug ikke slettes.
+- **Vælg elementer** vælger alle elementer med en del i materialet.
+- **Søg i materialer** og kategorilisten filtrerer listen.
+
+## Materialer til rendering
+
+Twinmotion, Lumion, Enscape, Blender og andre renderprogrammer bytter materialer ud efter navn. Lapin skriver hvert materiale **én gang, under sit eget navn**, med farve, tekstur, ruhed, metalliskhed og glas, og deler hvert elements net efter materiale.
+
+1. Navngiv dine materialer, som du vil have dem i renderprogrammet, for eksempel *Aluminium RAL 7016 anthracite* til alle karme og *Glass blue tinted* til alt glas.
+2. **Filer → 3D-eksport (glTF, USD, DAE)…** og vælg **GLB** (anbefalet: én fil med teksturerne, de præcise navne og glasset), **USDZ** eller **OBJ + MTL** (en .zip med teksturerne; mellemrum i navne bliver til understreger).
+3. Importér filen i renderprogrammet. Der deler alle karme ét materiale; erstat det én gang med programmets eget metal, og alle ændres.
+
+![Et hus med mørkegrå karme og blåt glas](shots/materials-render-3d.webp)
+
+IFC-eksporten navngiver også hvert materiales overfladestil efter det, med dets gennemsigtighed og måden, det reflekterer på.
+
 ## Hvad et materiale indstiller
 
 - **Farve (3D)** og de flader, der tegnes på det i 3D. Lapin gætter dem ud fra navnet, for eksempel en murstens skifter eller en flises gitter. **Ender** og **Top og bund** kan se anderledes ud end fladerne.

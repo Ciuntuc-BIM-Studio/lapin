@@ -26,7 +26,9 @@ import { usePaneField } from '../app/pane';
 import { findTool } from '../platform/modules';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { completeTool } from './tools';
-import { boxUv, boxUvSized, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, splitByFace, textureFor, textureOf, whenImagesLoad, type Face, type TextureKind } from './textures';
+import { boxUv, boxUvSized, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, splitByFace, textureFor, textureOf, tileOf, whenImagesLoad, type Face, type TextureKind } from './textures';
+import { lookOf } from './look';
+import { reflections, standardMaterial } from './materialLook';
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
@@ -113,6 +115,8 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
         mesh.castShadow = mesh.receiveShadow = true;
         group.add(mesh);
       }
+      // How it renders (report #76): rough or glossy, metal, see-through, glowing; its texture's size and turn.
+      const lk = lookOf(mat);
       // The material's own image: on every face, untinted, at its size in metres.
       const own = imageOf(mat, nodes);
       if (own) {
@@ -121,8 +125,8 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
         if (normals.length === positions.length) g.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
         else g.computeVertexNormals();
         g.setIndex(new THREE.BufferAttribute(new Uint32Array(indices.buffer, indices.byteOffset, indices.length), 1));
-        boxUvSized(g, own.width, own.height);
-        const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0xffffff, map: imageTexture(own), roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
+        boxUvSized(g, own.width, own.height, lk.textureRotation);
+        const mesh = new THREE.Mesh(g, standardMaterial(0xffffff, imageTexture(own), lk));
         mesh.userData.nodeId = nodeId;
         mesh.castShadow = mesh.receiveShadow = true;
         group.add(mesh);
@@ -140,13 +144,12 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
         g.setIndex(new THREE.BufferAttribute(idx, 1));
         // The material's texture, tinted by its colour, laid on in metres.
         const kind = kinds[face];
-        if (kind) boxUv(g, kind);
-        const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
-          color: kind ? 0xffffff : new THREE.Color(color), map: kind ? textureFor(kind, color) : null,
-          roughness: kind === 'metal' ? 0.45 : 0.85, metalness: kind === 'metal' ? 0.3 : 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
-        }));
+        if (kind) boxUv(g, kind, tileOf(mat), lk.textureRotation);
+        const mesh = new THREE.Mesh(g, standardMaterial(kind ? 0xffffff : new THREE.Color(color), kind ? textureFor(kind, color) : null, lk));
         mesh.userData.nodeId = nodeId;
-        mesh.castShadow = mesh.receiveShadow = true;
+        // What is seen through casts no shadow (glass lets the sun in).
+        mesh.castShadow = lk.transparency <= 0;
+        mesh.receiveShadow = true;
         group.add(mesh);
       }
     }
@@ -252,8 +255,10 @@ function capsOf(item: CapItem): THREE.Group {
 function highlight(group: THREE.Object3D, on: boolean) {
   group.traverse((c) => {
     const m = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
-    if (m && 'emissive' in m) m.emissive = on ? SELECTED : new THREE.Color(0);
-    if (m && 'emissiveIntensity' in m) m.emissiveIntensity = on ? 0.45 : 0;
+    // Off, a glowing material gets its own glow back.
+    const own = m?.userData.emissive as { hex: number; intensity: number } | undefined;
+    if (m && 'emissive' in m) m.emissive = on ? SELECTED : new THREE.Color(own?.hex ?? 0);
+    if (m && 'emissiveIntensity' in m) m.emissiveIntensity = on ? 0.45 : own?.intensity ?? 0;
   });
 }
 
@@ -265,7 +270,8 @@ function look(group: THREE.Object3D, l: Look | undefined) {
     if (!m || !('emissive' in m)) return;
     if (m.userData.own === undefined) m.userData.own = m.color.getHex();
     m.color.setHex(l?.color ? new THREE.Color(l.color).getHex() : m.userData.own as number);
-    const opacity = l?.opacity ?? 1;
+    // A see-through material (glass) stays as see-through as it is, and fades further with the look.
+    const opacity = (l?.opacity ?? 1) * ((m.userData.opacity as number | undefined) ?? 1);
     // Turning see-through, or back, changes the shader three.js compiled: it must be told.
     if (m.transparent !== opacity < 1) m.needsUpdate = true;
     m.transparent = opacity < 1;
@@ -532,6 +538,8 @@ export function Viewport3D() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setClearColor(CLEAR[useUi.getState().theme]);
     rendererRef.current = renderer;
+    // The room metals and glossy faces reflect (materialLook.ts), made once.
+    reflections(renderer);
     el.appendChild(renderer.domElement);
     THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
     const s = new THREE.Scene();

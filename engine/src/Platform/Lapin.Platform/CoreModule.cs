@@ -404,13 +404,18 @@ public static class Materials
     /// <summary>A colour from the material's name, until the project gives it one.</summary>
     public static string DefaultColor(string name)
     {
-        var n = name.ToLowerInvariant();
-        if (n.Contains("brick") || n.Contains("cărămid")) return "#b5654a";
-        if (n.Contains("concrete") || n.Contains("beton")) return "#a8a8a8";
-        if (n.Contains("insulation") || n.Contains("xps") || n.Contains("eps") || n.Contains("wool")) return "#f2c46d";
-        if (n.Contains("plaster") || n.Contains("render") || n.Contains("tencu")) return "#e8e2d6";
-        if (n.Contains("timber") || n.Contains("wood") || n.Contains("lemn")) return "#c08a4f";
-        if (n.Contains("aac") || n.Contains("bca")) return "#d9d6cf";
+        var n = MaterialLook.Fold(name);
+        bool Has(params string[] w) => w.Any(x => n.Contains(x, StringComparison.Ordinal));
+        if (Has("insulation", "xps", "eps", "wool")) return "#f2c46d";
+        if (Has("glass", "glazing", "sticla", "geam")) return "#9cc8e8";
+        if (Has("brick", "caramid")) return "#b5654a";
+        if (Has("concrete", "beton")) return "#a8a8a8";
+        if (Has("plaster", "render", "tencu")) return "#e8e2d6";
+        // Parquet and laminate are wood floors (report #76: they came out grey).
+        if (Has("parquet", "parchet", "laminat")) return "#b98a5a";
+        if (Has("timber", "wood", "lemn", "oak", "stejar", "plank")) return "#c08a4f";
+        if (Has("aac", "bca")) return "#d9d6cf";
+        if (Has("steel", "otel", "inox", "alumin", "metal", "zinc")) return "#9a9fa6";
         return "#c9ced6";
     }
 }

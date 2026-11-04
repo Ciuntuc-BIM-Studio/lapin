@@ -6,7 +6,7 @@ using Lapin.Platform;
 namespace Lapin.Mesh;
 
 /// <summary>
-/// What a mesh export takes: its format (glb, gltf, usdz, usda, dae, frag), what it shows
+/// What a mesh export takes: its format (glb, gltf, usdz, usda, dae, obj, frag), what it shows
 /// (a 3D view's visible elements, else the whole model), at the end of which
 /// phase, whether the elements' edges go too, and where the origin is: the
 /// project's base point (the default), its internal origin, or the survey
@@ -24,7 +24,7 @@ namespace Lapin.Mesh;
 public sealed record MeshExportOptions(string Format = "glb", string? ViewId = null, string? Phase = null, bool Edges = false, string Origin = "base",
     IReadOnlySet<string>? Hidden = null, IReadOnlyList<ClipPlane>? Planes = null, bool Caps = true, string? Layers = null)
 {
-    public static readonly string[] Formats = ["glb", "gltf", "usdz", "usda", "dae", "frag"];
+    public static readonly string[] Formats = ["glb", "gltf", "usdz", "usda", "dae", "obj", "frag"];
     public static readonly string[] Origins = ["base", "internal", "survey"];
 
     public static MeshExportOptions From(JsonObject p)
@@ -57,14 +57,21 @@ public sealed record MeshExportOptions(string Format = "glb", string? ViewId = n
         return o;
     }
 
-    public string Extension => Format;
+    /// <summary>The file's extension: OBJ goes out as a zip with its MTL and images.</summary>
+    public string Extension => Format == "obj" ? "zip" : Format;
 }
 
 /// <summary>A material's own image: its file as it came (PNG or JPEG), its name, and how large it lies on the model (metres).</summary>
 public sealed record MeshTexture(string Name, string Mime, byte[] Bytes, double Width, double Height);
 
-/// <summary>A material as the exports write it: its name, its colour (0–1) and opacity, the IFC category it has, its own image.</summary>
-public sealed record MeshMaterial(string Name, float R, float G, float B, float Alpha, string? Category, MeshTexture? Texture = null);
+/// <summary>
+/// A material as the exports write it: its name (exactly the project's, so a renderer swaps it by name), its colour (0–1) and
+/// opacity, the IFC category it has, its own image, and how it renders (<see cref="MaterialLook"/>: roughness, metalness, glass).
+/// </summary>
+public sealed record MeshMaterial(string Name, float R, float G, float B, float Alpha, string? Category, MeshTexture? Texture = null, MaterialLook? Look = null)
+{
+    public MaterialLook Pbr => Look ?? MaterialLook.Plain;
+}
 
 /// <summary>
 /// One material's triangles of an element: flat shaded (vertices per face), positions and normals Z up, metres, from the export's origin;
@@ -142,7 +149,9 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             var key = mat?.Id ?? "colour:" + p.Color;
             if (materialIndex.TryGetValue(key, out var i)) return i;
             var (r, g, b) = Rgb(mat?.Str("color") ?? p.Color);
-            var alpha = 1 - Math.Clamp(mat?.NumOrNull("transparency") ?? 0, 0, 1);
+            // A part without a material of its own renders as its colour; one with a material, as the material's look.
+            var look = mat != null ? MaterialLook.Of(mat) : MaterialLook.Plain;
+            var alpha = 1 - Math.Clamp(look.Transparency, 0, 1);
             MeshTexture? texture = null;
             if (mat != null && Images.Of(m, mat) is { } image)
             {
@@ -150,7 +159,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
                 try { texture = new MeshTexture(image.Name, image.Str("mime") ?? "image/png", Images.Bytes(image), size[0], size[1]); }
                 catch (FormatException) { notes.Add($"The image of „{mat.Name}” could not be read: the material goes out in its colour."); }
             }
-            materials.Add(new MeshMaterial(mat?.Name ?? "Colour " + p.Color.TrimStart('#'), r, g, b, (float)alpha, mat?.Str("category"), texture));
+            materials.Add(new MeshMaterial(mat?.Name ?? "Colour " + p.Color.TrimStart('#'), r, g, b, (float)alpha, mat?.Str("category"), texture, look));
             return materialIndex[key] = materials.Count - 1;
         }
 
@@ -197,7 +206,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             {
                 var merged = TriMesh.Merge(kv.Value);
                 // A material's image is laid on in the model's own metres, before the origin moves (as the 3D view lays it).
-                var uvs = materials[kv.Key].Texture is { } t ? BoxUv(merged.Positions, merged.Normals, t.Width, t.Height) : null;
+                var uvs = materials[kv.Key].Texture is { } t ? BoxUv(merged.Positions, merged.Normals, t.Width, t.Height, materials[kv.Key].Pbr.TextureRotation) : null;
                 return new MeshPart(kv.Key, Shift(merged.Positions, ox, oy, oz), merged.Normals, merged.Indices, uvs);
             }).ToList();
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Name;
@@ -221,15 +230,18 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
     /// face's dominant axis drops out (Z up: on a wall u runs along it and v up),
     /// metres over the image's width and height. v grows upwards.
     /// </summary>
-    public static float[] BoxUv(float[] positions, float[] normals, double width, double height)
+    public static float[] BoxUv(float[] positions, float[] normals, double width, double height, double rotation = 0)
     {
         var n = positions.Length / 3;
         var uv = new float[n * 2];
+        // The texture turned on the face by its rotation (degrees, counter-clockwise), as the 3D view turns it.
+        var (c, s) = (Math.Cos(rotation * Math.PI / 180), Math.Sin(rotation * Math.PI / 180));
         for (var i = 0; i < n; i++)
         {
             double x = positions[i * 3], y = positions[i * 3 + 1], z = positions[i * 3 + 2];
             double ax = Math.Abs(normals[i * 3]), ay = Math.Abs(normals[i * 3 + 1]), az = Math.Abs(normals[i * 3 + 2]);
-            var (u, v) = az >= ax && az >= ay ? (x, y) : ax >= ay ? (y, z) : (x, z);
+            var (u0, v0) = az >= ax && az >= ay ? (x, y) : ax >= ay ? (y, z) : (x, z);
+            var (u, v) = rotation == 0 ? (u0, v0) : (u0 * c + v0 * s, -u0 * s + v0 * c);
             uv[i * 2] = (float)(u / width);
             uv[i * 2 + 1] = (float)(v / height);
         }

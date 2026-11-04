@@ -70,6 +70,7 @@ Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på si
 | USDZ | Apples AR Quick Look, Reality Composer, Omniverse. Billeder kommer med. |
 | USDA | OpenUSD som tekst, én fil. |
 | DAE | COLLADA, til SketchUp og ældre værktøjer. |
+| OBJ + MTL | En .zip til Twinmotion, Lumion, 3ds Max og ethvert renderprogram. Med billeder. |
 
 **Importér mesh (OBJ, STL, glTF)…** henter et mesh fra et andet 3D-program (OBJ, STL, glTF eller GLB) ind som referencer på den aktive etage. glTF siger sin enhed og hvilken akse der vender op; for OBJ og STL spørger Lapin. **Gør til Studio-legeme** i Studio gør en reference redigerbar (se [Studio](studio.md)).
 

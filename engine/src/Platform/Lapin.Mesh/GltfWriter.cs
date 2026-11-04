@@ -12,7 +12,8 @@ namespace Lapin.Mesh;
 /// parts' nodes), a primitive per material, and the element's identity in
 /// <c>extras</c> (GlobalId, IFC class, type). Y up
 /// as glTF asks (the model's Z up turns: x, z, −y), metres; base colours in
-/// linear RGB with metallic 0, rough 0.9, blended where a material is
+/// linear RGB with each material's metallic and roughness, glass through
+/// KHR_materials_transmission and KHR_materials_ior, blended where a material is
 /// transparent. Edges, when the scene has them, are a LINES primitive.
 /// GLB is one binary file (JSON chunk, BIN chunk); .gltf keeps the buffer
 /// inside as a data URI, so either is one file.
@@ -137,6 +138,9 @@ public static class GltfWriter
         {
             w.WriteStartObject();
             w.WriteStartObject("asset"); w.WriteString("version", "2.0"); w.WriteString("generator", "Lapin"); w.WriteEndObject();
+            // The material extensions the materials use (glass, an index of refraction, a light's strength): a reader without them still reads the core values.
+            var used = Extensions(scene);
+            if (used.Count > 0) { w.WriteStartArray("extensionsUsed"); foreach (var x in used) w.WriteStringValue(x); w.WriteEndArray(); }
             w.WriteNumber("scene", 0);
             w.WriteStartArray("scenes"); w.WriteStartObject(); w.WriteString("name", scene.Project); w.WriteStartArray("nodes"); w.WriteNumberValue(0); w.WriteEndArray(); w.WriteEndObject(); w.WriteEndArray();
 
@@ -243,8 +247,8 @@ public static class GltfWriter
             {
                 var mat = scene.Materials[mi];
                 // Textured, the image carries the colour: the factor stays white.
-                if (textureOf.TryGetValue(mi, out var tex)) Material(w, mat.Name, 1, 1, 1, mat.Alpha, mat.Category, tex);
-                else Material(w, mat.Name, Linear(mat.R), Linear(mat.G), Linear(mat.B), mat.Alpha, mat.Category);
+                if (textureOf.TryGetValue(mi, out var tex)) Material(w, mat.Name, 1, 1, 1, mat.Alpha, mat.Category, tex, mat.Pbr);
+                else Material(w, mat.Name, Linear(mat.R), Linear(mat.G), Linear(mat.B), mat.Alpha, mat.Category, null, mat.Pbr);
             }
             if (anyEdges) Material(w, "Edges", 0, 0, 0, 1, null);
             w.WriteEndArray();
@@ -294,17 +298,47 @@ public static class GltfWriter
         return o;
     }
 
-    static void Material(Utf8JsonWriter w, string name, float r, float g, float b, float a, string? category, int? texture = null)
+    /// <summary>The glTF extensions a scene's materials need.</summary>
+    static List<string> Extensions(MeshScene scene)
     {
+        var o = new List<string>();
+        if (scene.Materials.Any(m => m.Pbr.Transmission > 0)) o.Add("KHR_materials_transmission");
+        if (scene.Materials.Any(m => Math.Abs(m.Pbr.Ior - 1.5) > 1e-6)) o.Add("KHR_materials_ior");
+        if (scene.Materials.Any(m => m.Pbr.Emissive != null && m.Pbr.EmissiveStrength > 1)) o.Add("KHR_materials_emissive_strength");
+        return o;
+    }
+
+    /// <summary>
+    /// A material after glTF's metallic-roughness model: its name exactly as the project has it, the base colour (linear) and
+    /// opacity, metallic and roughness from its look; glass with KHR_materials_transmission (and its alpha, for readers without it),
+    /// its index of refraction (KHR_materials_ior), a light's emissive colour.
+    /// </summary>
+    static void Material(Utf8JsonWriter w, string name, float r, float g, float b, float a, string? category, int? texture = null, MaterialLook? look = null)
+    {
+        var l = look ?? MaterialLook.Plain;
         w.WriteStartObject();
         w.WriteString("name", name);
         w.WriteStartObject("pbrMetallicRoughness");
         w.WriteStartArray("baseColorFactor"); w.WriteNumberValue(r); w.WriteNumberValue(g); w.WriteNumberValue(b); w.WriteNumberValue(a); w.WriteEndArray();
         if (texture is { } t) { w.WriteStartObject("baseColorTexture"); w.WriteNumber("index", t); w.WriteEndObject(); }
-        w.WriteNumber("metallicFactor", 0); w.WriteNumber("roughnessFactor", 0.9);
+        w.WriteNumber("metallicFactor", Math.Round(l.Metalness, 4)); w.WriteNumber("roughnessFactor", Math.Round(l.Roughness, 4));
         w.WriteEndObject();
+        if (l.Emissive != null)
+        {
+            var (er, eg, eb) = MeshScene.Rgb(l.Emissive);
+            w.WriteStartArray("emissiveFactor"); w.WriteNumberValue(Linear(er)); w.WriteNumberValue(Linear(eg)); w.WriteNumberValue(Linear(eb)); w.WriteEndArray();
+        }
         if (a < 1) w.WriteString("alphaMode", "BLEND");
         w.WriteBoolean("doubleSided", true);
+        var ext = l.Transmission > 0 || Math.Abs(l.Ior - 1.5) > 1e-6 || l.Emissive != null && l.EmissiveStrength > 1;
+        if (ext)
+        {
+            w.WriteStartObject("extensions");
+            if (l.Transmission > 0) { w.WriteStartObject("KHR_materials_transmission"); w.WriteNumber("transmissionFactor", Math.Round(l.Transmission, 4)); w.WriteEndObject(); }
+            if (Math.Abs(l.Ior - 1.5) > 1e-6) { w.WriteStartObject("KHR_materials_ior"); w.WriteNumber("ior", Math.Round(l.Ior, 4)); w.WriteEndObject(); }
+            if (l.Emissive != null && l.EmissiveStrength > 1) { w.WriteStartObject("KHR_materials_emissive_strength"); w.WriteNumber("emissiveStrength", Math.Round(l.EmissiveStrength, 4)); w.WriteEndObject(); }
+            w.WriteEndObject();
+        }
         if (category != null) { w.WriteStartObject("extras"); w.WriteString("category", category); w.WriteEndObject(); }
         w.WriteEndObject();
     }

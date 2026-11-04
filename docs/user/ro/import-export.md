@@ -70,6 +70,7 @@ Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapi
 | USDZ | AR Quick Look de la Apple, Reality Composer, Omniverse. Imagini incluse. |
 | USDA | OpenUSD ca text, un singur fișier. |
 | DAE | COLLADA, pentru SketchUp și programe mai vechi. |
+| OBJ + MTL | Un .zip pentru Twinmotion, Lumion, 3ds Max și orice program de randare. Cu imaginile. |
 
 **Importă rețea (OBJ, STL, glTF)…** aduce o rețea dintr-un alt program 3D (OBJ, STL, glTF sau GLB) ca referințe pe nivelul activ. glTF își spune unitatea și care axă e în sus; pentru OBJ și STL, Lapin întreabă. **Fă solid Studio** din Studio face o referință editabilă (vezi [Studio](studio.md)).
 

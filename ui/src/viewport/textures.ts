@@ -7,13 +7,14 @@
 
 import * as THREE from 'three';
 import type { NodeDto } from '../engine/protocol';
+import { rotateUv } from './look';
 
 export type TextureKind = 'brick' | 'brick-end' | 'concrete' | 'wood' | 'wood-end' | 'plaster' | 'stone' | 'metal' | 'insulation' | 'earth' | 'tiles';
 /** Which face of a part a texture is for: along it, its ends (cut across), its top and bottom. */
 export type Face = 'side' | 'end' | 'top';
 
-/** A texture's repeat on the model (m per tile). */
-const TILE: Record<TextureKind, number> = { brick: 0.52, 'brick-end': 0.5, concrete: 1, wood: 0.6, 'wood-end': 0.4, plaster: 1, stone: 0.8, metal: 0.5, insulation: 0.4, earth: 2, tiles: 0.6 };
+/** A texture's repeat on the model (m per tile); wood is eight 150 mm boards, each 1.2 m long. */
+export const TILE: Record<TextureKind, number> = { brick: 0.52, 'brick-end': 0.5, concrete: 1, wood: 1.2, 'wood-end': 0.4, plaster: 1, stone: 0.8, metal: 0.5, insulation: 0.4, earth: 2, tiles: 0.6 };
 
 /** What a material looks like in 3D on a face (null: plain): its own texture for that face, else the faces' (the ends of brick and wood show their section). */
 export function textureOf(material: NodeDto | undefined, face: Face = 'side'): TextureKind | null {
@@ -35,7 +36,8 @@ export function textureOf(material: NodeDto | undefined, face: Face = 'side'): T
   const n = material.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   if (/brick|caramid|masonry|zidari/.test(n)) return 'brick';
   if (/concrete|beton|screed|sapa/.test(n)) return 'concrete';
-  if (/timber|wood|lemn|clt|osb/.test(n)) return 'wood';
+  // Floors of wood by any name (report #76: parquet and laminate came out plain grey).
+  if (/timber|wood|lemn|clt|osb|parquet|parchet|laminat|plank|scandur|deck|oak|stejar|pine|beech|walnut|plywood|placaj/.test(n)) return 'wood';
   if (/insul|wool|eps|xps|vata|polistiren/.test(n)) return 'insulation';
   if (/plaster|render|tencu|gips/.test(n)) return 'plaster';
   if (/stone|piatra|granit|marmur/.test(n)) return 'stone';
@@ -113,9 +115,28 @@ function draw(kind: TextureKind, color: string): HTMLCanvasElement {
       break;
     }
     case 'wood': {
-      for (let x = 0; x < S; x += 2) { g.fillStyle = shade(color, 0.85 + 0.25 * Math.sin(x * 0.11 + Math.sin(x * 0.023) * 3)); g.fillRect(x, 0, 2, S); }
-      g.strokeStyle = shade(color, 0.7); g.lineWidth = 1;
-      for (let i = 0; i < 6; i++) { const x = r() * S; g.beginPath(); g.moveTo(x, 0); for (let y = 0; y <= S; y += 16) g.lineTo(x + Math.sin(y * 0.05 + i) * 4, y); g.stroke(); }
+      // Planks: eight boards a tile (150 mm of 1.2 m), each its own shade, end joints staggered, the grain along them.
+      const rows = 8, h = S / rows;
+      for (let y = 0; y < rows; y++) {
+        const joints = [((y * 0.37) % 1) * S, (((y * 0.37) % 1 + 0.5 + (y % 3) * 0.07) % 1) * S].sort((a, b) => a - b);
+        const cuts = [0, ...joints, S];
+        for (let k = 0; k + 1 < cuts.length; k++) {
+          const [x0, x1] = [cuts[k], cuts[k + 1]];
+          g.fillStyle = shade(color, 0.86 + r() * 0.24);
+          g.fillRect(x0, y * h, x1 - x0, h);
+          g.strokeStyle = shade(color, 0.78); g.lineWidth = 1;
+          for (let i = 0; i < 4; i++) {
+            const gy = y * h + 3 + r() * (h - 6), ph = r() * 6;
+            g.beginPath(); g.moveTo(x0, gy);
+            for (let x = x0; x <= x1; x += 8) g.lineTo(x, gy + Math.sin(x * 0.05 + ph) * 1.2);
+            g.stroke();
+          }
+        }
+        // The joint between boards along, and the board ends.
+        g.fillStyle = shade(color, 0.55);
+        g.fillRect(0, y * h, S, 1);
+        for (const x of joints) g.fillRect(x, y * h, 1, h);
+      }
       break;
     }
     case 'metal': for (let x = 0; x < S; x += S / 8) { g.fillStyle = shade(color, 0.82); g.fillRect(x, 0, 3, S); g.fillStyle = shade(color, 1.15); g.fillRect(x + 3, 0, 2, S); } break;
@@ -146,24 +167,21 @@ export function textureFor(kind: TextureKind, color: string): THREE.Texture {
   return t;
 }
 
-/** Box-projected texture coordinates (metres / the texture's tile) for a geometry with normals. */
-export function boxUv(geometry: THREE.BufferGeometry, kind: TextureKind): void {
-  const pos = geometry.getAttribute('position');
-  const nrm = geometry.getAttribute('normal');
-  if (!pos || !nrm) return;
-  const tile = TILE[kind];
-  const uv = new Float32Array(pos.count * 2);
-  for (let i = 0; i < pos.count; i++) {
-    const [x, y, z] = [pos.getX(i), pos.getY(i), pos.getZ(i)];
-    const [ax, ay, az] = [Math.abs(nrm.getX(i)), Math.abs(nrm.getY(i)), Math.abs(nrm.getZ(i))];
-    // The face's dominant axis drops out (the scene is z-up): on a wall, u runs along it and v up.
-    let u: number, v: number;
-    if (az >= ax && az >= ay) { u = x; v = y; } else if (ax >= ay) { u = y; v = z; } else { u = x; v = z; }
-    uv[2 * i] = u / tile;
-    uv[2 * i + 1] = v / tile;
-  }
-  geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+/**
+ * Box-projected texture coordinates (metres / the texture's tile) for a geometry with normals; the tile's size given
+ * (a material's own, width × height in metres) or the texture's, turned by `rotation` degrees.
+ */
+export function boxUv(geometry: THREE.BufferGeometry, kind: TextureKind, size?: [number, number] | null, rotation = 0): void {
+  const [tw, th] = size ?? [TILE[kind], TILE[kind]];
+  boxUvSized(geometry, tw, th, rotation);
 }
+
+/** A material's own size for its drawn texture, when it sets one (textureSize). */
+export function tileOf(material: NodeDto | undefined): [number, number] | null {
+  const size = material?.props.textureSize;
+  return Array.isArray(size) && size.length === 2 && size.every((x) => typeof x === 'number' && x > 0) ? [size[0] as number, size[1] as number] : null;
+}
+
 
 /**
  * A part's triangles by the face they lie on: top and bottom (horizontal),
@@ -243,7 +261,7 @@ export function imageTexture(img: OwnImage, wrap: THREE.Wrapping = THREE.RepeatW
 }
 
 /** Box-projected coordinates for an image <paramref name="width"/> × <paramref name="height"/> metres (as the exports lay it). */
-export function boxUvSized(geometry: THREE.BufferGeometry, width: number, height: number): void {
+export function boxUvSized(geometry: THREE.BufferGeometry, width: number, height: number, rotation = 0): void {
   const pos = geometry.getAttribute('position');
   const nrm = geometry.getAttribute('normal');
   if (!pos || !nrm) return;
@@ -253,6 +271,7 @@ export function boxUvSized(geometry: THREE.BufferGeometry, width: number, height
     const [ax, ay, az] = [Math.abs(nrm.getX(i)), Math.abs(nrm.getY(i)), Math.abs(nrm.getZ(i))];
     let u: number, v: number;
     if (az >= ax && az >= ay) { u = x; v = y; } else if (ax >= ay) { u = y; v = z; } else { u = x; v = z; }
+    [u, v] = rotateUv(u, v, rotation);
     uv[2 * i] = u / width;
     uv[2 * i + 1] = v / height;
   }

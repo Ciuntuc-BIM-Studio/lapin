@@ -8,6 +8,52 @@ summary: Imposta il colore, i retini e i giunti di ogni materiale, applicagli un
 
 ![La finestra di dialogo Materiali](shots/materials-dialog.webp)
 
+## Aspetto: come viene reso un materiale
+
+La scheda **Aspetto** imposta come appare il materiale in 3D e nei programmi di rendering verso cui esporti. La scheda **Grafica 2D** mantiene retini e penne, come prima.
+
+![L’aspetto di un materiale, con l’anteprima dal vivo](shots/material-appearance.webp)
+
+- **Colore** e **Texture**: una texture disegnata (mattoni, doghe di legno, piastrelle…) o la tua immagine. **W** e **H** fissano quanto è grande una piastrella sul modello, in metri; **Rotazione** la ruota.
+- **Rugosità**: 0 è uno specchio, 1 è gesso. **Metallicità**: 1 per il metallo nudo (alluminio anodizzato, acciaio, cromo), 0 per tutto ciò che è verniciato o verniciato a polvere, legno e pietra.
+- **Trasparenza**: quanto si vede attraverso. **Vetro (trasmissione)** e **IOR** (1,52 per il vetro) fanno rifrangere il vetro in un programma di rendering.
+- **Emette luce** come il diffusore di una lampada.
+
+La sfera mostra subito il risultato. Ciò che non imposti viene dal nome: un materiale chiamato *vetro* o *glass* è trasparente, *acciaio* o *steel* metallico, *parquet* e *laminato* sono doghe di legno. **Aspetto dal nome** toglie di nuovo i tuoi valori.
+
+## Dalla libreria
+
+**Dalla libreria…** offre materiali pronti: metalli (alluminio RAL 7016 antracite, anodizzato, acciaio, rame…), vetro (chiaro, blu, verde, grigio, satinato, riflettente), legni a doghe, calcestruzzo, mattoni, intonaco e pittura, piastrelle e pietra, plastica e tessuto. Un clic ne aggiunge uno al progetto; modificalo come qualsiasi altro.
+
+![La libreria dei materiali](shots/material-library.webp)
+
+## Un materiale per tutti i telai e tutto il vetro
+
+Le nuove porte e finestre sono fatte di materiali condivisi, parte per parte: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** e **Hardware**. Modifica **Window frame** una volta e cambiano tutti i telai delle finestre.
+
+Per usare altri materiali, apri **Architettura → Porte e finestre**, scegli per un tipo il **Materiale del telaio**, il **Materiale del vetro** e gli altri, e fai clic su **Usa per tutte le finestre** (o **Usa per tutte le porte**). Ogni tipo di quel genere li prende, in un solo passo di annullamento. Anche le facciate continue hanno un materiale del telaio e uno del vetro.
+
+![I materiali delle parti nel configuratore di porte e finestre](shots/joinery-materials.webp)
+
+## Duplica, sostituisci, seleziona
+
+- **Duplica** copia un materiale con un nuovo nome.
+- **Sostituisci con** un materiale, poi **Sostituisci**: ogni strato, tipo, porta, finestra ed elemento che usava il primo ora usa il secondo, in un solo passo di annullamento. **Sostituisci ed elimina** toglie anche il primo. Altrimenti un materiale in uso non si può eliminare.
+- **Seleziona elementi** seleziona tutti gli elementi con una parte in quel materiale.
+- **Cerca materiali** e l’elenco delle categorie filtrano la lista.
+
+## Materiali per il rendering
+
+Twinmotion, Lumion, Enscape, Blender e altri programmi di rendering sostituiscono i materiali per nome. Lapin scrive ogni materiale **una sola volta, con il suo nome**, con colore, texture, rugosità, metallicità e vetro, e divide la mesh di ogni elemento per materiale.
+
+1. Dai ai materiali il nome che vuoi nel programma di rendering, per esempio *Aluminium RAL 7016 anthracite* per tutti i telai e *Glass blue tinted* per tutto il vetro.
+2. **File → Esporta 3D (glTF, USD, DAE)…** e scegli **GLB** (consigliato: un file con le texture, i nomi esatti e il vetro), **USDZ** oppure **OBJ + MTL** (uno .zip con le texture; gli spazi nei nomi diventano trattini bassi).
+3. Importa il file nel programma di rendering. Lì tutti i telai condividono un materiale; sostituiscilo una volta con un metallo del programma e cambiano tutti.
+
+![Una casa con telai grigio scuro e vetro blu](shots/materials-render-3d.webp)
+
+Anche l’export IFC chiama lo stile di superficie di ogni materiale come il materiale, con la sua trasparenza e il modo in cui riflette.
+
 ## Cosa imposta un materiale
 
 - **Colore (3D)** e le facce disegnate su di esso in 3D. Lapin le deduce dal nome, per esempio i corsi di un mattone o la griglia di una piastrella. Le **Estremità** e **Superiore e inferiore** possono apparire diverse dalle facce.

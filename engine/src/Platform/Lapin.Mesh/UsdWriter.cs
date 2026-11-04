@@ -111,9 +111,18 @@ public static class UsdWriter
             // Its own image: the colour comes from it, read at the mesh's st.
             if (files.TryGetValue(mi, out var file)) o.Append($"                color3f inputs:diffuseColor.connect = <{path}/Image.outputs:rgb>\n");
             else o.Append($"                color3f inputs:diffuseColor = ({F(GltfWriter.Linear(m.R))}, {F(GltfWriter.Linear(m.G))}, {F(GltfWriter.Linear(m.B))})\n");
-            o.Append("                float inputs:metallic = 0\n");
+            // How it renders: metallic and roughness, glass's opacity and index of refraction, a light's emissive colour.
+            var look = m.Pbr;
+            if (look.Emissive != null)
+            {
+                var (er, eg, eb) = MeshScene.Rgb(look.Emissive);
+                var k = (float)Math.Max(1, look.EmissiveStrength);
+                o.Append($"                color3f inputs:emissiveColor = ({F(GltfWriter.Linear(er) * k)}, {F(GltfWriter.Linear(eg) * k)}, {F(GltfWriter.Linear(eb) * k)})\n");
+            }
+            if (Math.Abs(look.Ior - 1.5) > 1e-6) o.Append($"                float inputs:ior = {F((float)look.Ior)}\n");
+            o.Append($"                float inputs:metallic = {F((float)look.Metalness)}\n");
             if (m.Alpha < 1) o.Append($"                float inputs:opacity = {F(m.Alpha)}\n");
-            o.Append("                float inputs:roughness = 0.9\n");
+            o.Append($"                float inputs:roughness = {F((float)look.Roughness)}\n");
             o.Append("                token outputs:surface\n");
             o.Append("            }\n");
             if (files.TryGetValue(mi, out var image))

@@ -70,6 +70,7 @@ Die Räume der Datei (aus Revit, ArchiCAD und anderen) kommen als Lapin-Räume h
 | USDZ | Apples AR Quick Look, Reality Composer, Omniverse. Bilder enthalten. |
 | USDA | OpenUSD als Text, eine Datei. |
 | DAE | COLLADA, für SketchUp und ältere Werkzeuge. |
+| OBJ + MTL | Eine .zip für Twinmotion, Lumion, 3ds Max und jeden Renderer. Mit Bildern. |
 
 **Netz importieren (OBJ, STL, glTF)…** holt ein Netz aus einem anderen 3D-Programm (OBJ, STL, glTF oder GLB) als Referenzen auf das aktive Geschoss. glTF nennt seine Einheit und welche Achse oben ist; bei OBJ und STL fragt Lapin. **Zu Studio-Körper machen** in Studio macht eine Referenz bearbeitbar (siehe [Studio](studio.md)).
 

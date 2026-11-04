@@ -70,6 +70,7 @@ Los espacios del archivo (de Revit, ArchiCAD y otros) entran como habitaciones d
 | USDZ | AR Quick Look de Apple, Reality Composer, Omniverse. Imágenes incluidas. |
 | USDA | OpenUSD como texto, un solo archivo. |
 | DAE | COLLADA, para SketchUp y herramientas más antiguas. |
+| OBJ + MTL | Un .zip para Twinmotion, Lumion, 3ds Max y cualquier programa de render. Con las imágenes. |
 
 **Importar malla (OBJ, STL, glTF)…** trae una malla de otro programa 3D (OBJ, STL, glTF o GLB) como referencias en la planta activa. glTF indica su unidad y qué eje va hacia arriba; para OBJ y STL, Lapin lo pregunta. **Convertir en sólido Studio** en Studio hace editable una referencia (consulte [Studio](studio.md)).
 

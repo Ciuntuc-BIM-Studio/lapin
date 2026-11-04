@@ -190,6 +190,8 @@ public static class IfcExport
         /// <summary>The rooms of each storey (by the storey's IFC entity), aggregated into it.</summary>
         readonly Dictionary<string, List<string>> spaces = [];
         readonly Dictionary<string, string> styles = [], materials = [], layerSets = [], written = [];
+        /// <summary>A style key naming a material (its id after it), as against a colour (#rrggbb).</summary>
+        const string MaterialKey = "material:";
         readonly Dictionary<string, (string Ref, List<string> Occurrences)> types = [];
         readonly Dictionary<string, List<string>> materialUses = [];
         readonly Dictionary<(string Element, string Key), string> partRefs = [];
@@ -240,12 +242,34 @@ public static class IfcExport
 
         void Define(string entity, string definition, string gid) => f.Add("IFCRELDEFINESBYPROPERTIES", gid, Null, Null, Null, L(new[] { entity }), definition);
 
+        // A part's style: its material's (named after it, with how it renders) when it has one, else its colour's.
+        string? StyleKey(GeometryPart p) => p.Material != null && m.Get(p.Material) is { Class: IfcClass.Material } ? MaterialKey + p.Material : p.Color;
+
         string Style(string hex)
         {
             if (styles.TryGetValue(hex, out var st)) return st;
+            if (hex.StartsWith(MaterialKey, StringComparison.Ordinal)) return styles[hex] = MaterialStyle(hex[MaterialKey.Length..]);
             var (r, g, b) = HexColor.Unit(hex, (0.75, 0.75, 0.75));
             var colour = f.Add("IFCCOLOURRGB", Null, R(r), R(g), R(b));
             return styles[hex] = f.Add("IFCSURFACESTYLE", S(hex), E("BOTH"), L(new[] { f.Add("IFCSURFACESTYLESHADING", colour, R(0)) }));
+        }
+
+        /// <summary>
+        /// A material's surface style (report #76): named after it, as renderers reading IFC swap materials by name, an
+        /// IfcSurfaceStyleRendering with its colour and transparency, its specular share and roughness, and how it reflects
+        /// (METAL, GLASS, MATT or PLASTIC) after its look.
+        /// </summary>
+        string MaterialStyle(string id)
+        {
+            var mat = m.Get(id);
+            var look = MaterialLook.Of(mat);
+            var (r, g, b) = HexColor.Unit(Materials.ColorOf(m, id), (0.75, 0.75, 0.75));
+            var colour = f.Add("IFCCOLOURRGB", Null, R(r), R(g), R(b));
+            var method = look.Metalness >= 0.5 ? "METAL" : look.Transmission > 0 || look.Transparency > 0 ? "GLASS" : look.Roughness >= 0.8 ? "MATT" : "PLASTIC";
+            var rendering = f.Add("IFCSURFACESTYLERENDERING", colour, R(Math.Clamp(look.Transparency, 0, 1)), Typed("IFCNORMALISEDRATIOMEASURE", R(1)),
+                look.Transmission > 0 ? Typed("IFCNORMALISEDRATIOMEASURE", R(Math.Round(look.Transmission, 4))) : Null, Null, Null,
+                Typed("IFCNORMALISEDRATIOMEASURE", R(Math.Round(0.04 + 0.96 * look.Metalness, 4))), Typed("IFCSPECULARROUGHNESS", R(Math.Round(look.Roughness, 4))), E(method));
+            return f.Add("IFCSURFACESTYLE", S(mat?.Name ?? id), E("BOTH"), L(new[] { rendering }));
         }
 
         /// <summary>A solid as a faceted B-rep, its vertices relative to the placement's height, in its colour.</summary>
@@ -389,7 +413,7 @@ public static class IfcExport
             {
                 map = m.Get(inst.Body) is { } shared && StoredBodies.SharedParts(shared) is { Count: > 0 } parts
                     ? f.Add("IFCREPRESENTATIONMAP", f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", "(0.,0.,0.)"), Null, Null),
-                        BodyOf(parts.Select(p => Brep(p.Solid, p.Color, 0))))
+                        BodyOf(parts.Select(p => Brep(p.Solid, StyleKey(p), 0))))
                     : null;
                 maps[inst.Body] = map;
             }
@@ -636,7 +660,7 @@ public static class IfcExport
             if (swept != null) reps.Add(SweptRep(swept, parts[0].Color, fr));
             // An instance of a shared body: the body once, as a representation map, each instance mapping it where it stands.
             else if (!grouped && at == null && railPart == null && geo!.Instance is { } inst && Mapped(inst, z0) is { } mapped) reps.Add(mapped);
-            else if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, p.Color, v => Local(jp2, v)) : Brep(p.Solid, p.Color, fr))));
+            else if (!grouped) reps.Add(BodyOf(parts.Select(p => at is { } jp2 ? Brep(p.Solid, StyleKey(p), v => Local(jp2, v)) : Brep(p.Solid, StyleKey(p), fr))));
             if (AxisOf(e) is { } ax) reps.Add(ax);
             reps.AddRange(Plan2dOf(e));
             var shape = reps.Count > 0 ? f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(reps)) : Null;
@@ -966,7 +990,7 @@ public static class IfcExport
             materials[id] = r;
             // Its Lapin id and attributes, so an import gives the material the same id and what refers to it (a column type, a zone) still finds it.
             if (mat != null) f.Add("IFCMATERIALPROPERTIES", S(IntentSetName), Null, L(IntentProperties(mat, null, [("LapinId", mat.Id)])), r);
-            var style = Style(Materials.ColorOf(m, id));
+            var style = Style(MaterialKey + id);
             f.Add("IFCMATERIALDEFINITIONREPRESENTATION", Null, Null,
                 L(new[] { f.Add("IFCSTYLEDREPRESENTATION", model, Null, Null, L(new[] { f.Add("IFCSTYLEDITEM", Null, L(new[] { style }), Null) })) }), r);
             return r;
@@ -1004,7 +1028,7 @@ public static class IfcExport
                 var p = parts[i];
                 var key = p.Key ?? $"part:{i}";
                 var pk = PartKind(kind.Class, key, p, zones);
-                var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { p.Unit != null && p.Instances is { Count: > 0 } copies ? Mapped(p.Unit, copies, p.Color, fr) : BodyOf([Brep(p.Solid, p.Color, fr)]) }));
+                var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { p.Unit != null && p.Instances is { Count: > 0 } copies ? Mapped(p.Unit, copies, StyleKey(p), fr) : BodyOf([Brep(p.Solid, StyleKey(p), fr)]) }));
                 var r = Product(pk, Gid(e.Id, key), p.Name, pk.ObjectType, Place(place, 0), shape, $"{e.Id}/{key}", flight: pk.Class == IfcClass.StairFlight ? FlightOf(e, key) : null);
                 if (p.Material != null) UseMaterial(p.Material, r);
                 StandardSets(e, p, r, $"{e.Id}/{key}");

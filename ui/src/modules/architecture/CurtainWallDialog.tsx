@@ -16,6 +16,7 @@ import { useStandards } from '../../engine/unitsStore';
 import { Cell, LengthField, NumberField } from '../../shell/cells';
 import { formatLengths, parseLengths } from '../core/format';
 import { PendingDialog } from '../core/PendingDialog';
+import { MaterialPicker } from '../core/MaterialPicker';
 import { deleteType } from '../core/deleteType';
 
 interface Grid { mode: 'count' | 'spacing' | 'max' | 'offsets'; count?: number; spacing?: number; justify?: 'start' | 'center' | 'end'; offsets?: number[] }
@@ -24,6 +25,8 @@ export interface CurtainSpec {
   u: Grid; v: Grid; mullion: Section; transom: Section; edge: boolean;
   panel: { thickness: number; kind: 'glass' | 'opaque' };
   frameColor: string; glassColor: string; opaqueColor: string;
+  /** The materials by name (report #76); without one, the colour. */
+  frameMaterial?: string | null; glassMaterial?: string | null; opaqueMaterial?: string | null;
 }
 interface Preview { problem: string | null; u?: number[]; v?: number[]; pieces?: { role: string; x0: number; x1: number; z0: number; z1: number }[] }
 
@@ -159,10 +162,15 @@ export function CurtainWallDialog() {
                 </select>
               </label>
               <Mm label="Panel thickness" value={spec.panel.thickness} onChange={(v) => set({ panel: { ...spec.panel, thickness: v } })} />
-              <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.frameColor} onChange={(e) => set({ frameColor: e.target.value })} /></label>
-              <label className="field-line"><span className="eyebrow">{spec.panel.kind === 'glass' ? 'Glass' : 'Panel'}</span>
+              <label className="field-line"><span className="eyebrow">Frame material</span>
+                <MaterialPicker value={spec.frameMaterial ?? ''} allowEmpty placeholder="its colour" onChange={(m) => set({ frameMaterial: m || null })} /></label>
+              {!spec.frameMaterial && <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.frameColor} onChange={(e) => set({ frameColor: e.target.value })} /></label>}
+              <label className="field-line"><span className="eyebrow">{spec.panel.kind === 'glass' ? 'Glass material' : 'Panel material'}</span>
+                <MaterialPicker value={(spec.panel.kind === 'glass' ? spec.glassMaterial : spec.opaqueMaterial) ?? ''} allowEmpty placeholder="its colour"
+                  onChange={(m) => set(spec.panel.kind === 'glass' ? { glassMaterial: m || null } : { opaqueMaterial: m || null })} /></label>
+              {!(spec.panel.kind === 'glass' ? spec.glassMaterial : spec.opaqueMaterial) && <label className="field-line"><span className="eyebrow">{spec.panel.kind === 'glass' ? 'Glass' : 'Panel'}</span>
                 <input type="color" value={infill} onChange={(e) => set(spec.panel.kind === 'glass' ? { glassColor: e.target.value } : { opaqueColor: e.target.value })} />
-              </label>
+              </label>}
             </div>
             <div className="joinery-preview">
               <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-label="Elevation">

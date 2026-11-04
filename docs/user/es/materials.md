@@ -8,6 +8,52 @@ summary: Defina el color, los sombreados y las juntas de cada material, ponga en
 
 ![El cuadro de diálogo Materiales](shots/materials-dialog.webp)
 
+## Apariencia: cómo se renderiza un material
+
+La pestaña **Apariencia** define cómo se ve el material en 3D y en los programas de render a los que exportas. La pestaña **Gráficos 2D** conserva sus sombreados y plumas, como antes.
+
+![La apariencia de un material, con su vista previa](shots/material-appearance.webp)
+
+- **Color** y **Textura**: una textura dibujada (ladrillo, tablas de madera, baldosas…) o tu propia imagen. **W** y **H** fijan el tamaño de una pieza sobre el modelo, en metros; **Rotación** la gira.
+- **Rugosidad**: 0 es un espejo, 1 es tiza. **Metalicidad**: 1 para metal desnudo (aluminio anodizado, acero, cromo), 0 para todo lo pintado o lacado en polvo, la madera y la piedra.
+- **Transparencia**: cuánto se ve a través. **Vidrio (transmisión)** e **IOR** (1,52 para el vidrio) hacen que el vidrio refracte en un programa de render.
+- **Brilla** emite luz, como el difusor de una lámpara.
+
+La esfera muestra el resultado al momento. Lo que no fijas viene del nombre: un material llamado *vidrio* o *glass* es transparente, *acero* o *steel* metálico, *parquet* y *laminado* son tablas de madera. **Apariencia desde el nombre** quita de nuevo tus valores.
+
+## De la biblioteca
+
+**De la biblioteca…** ofrece materiales listos: metales (aluminio RAL 7016 antracita, anodizado, acero, cobre…), vidrio (claro, azul, verde, gris, mate, reflectante), maderas en tablas, hormigón, ladrillo, yeso y pintura, baldosas y piedra, plástico y tejido. Un clic añade uno al proyecto; cámbialo como cualquier otro.
+
+![La biblioteca de materiales](shots/material-library.webp)
+
+## Un material para todos los marcos y todo el vidrio
+
+Las puertas y ventanas nuevas se hacen con materiales compartidos, parte por parte: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** y **Hardware**. Cambia **Window frame** una vez y cambian todos los marcos de ventana.
+
+Para usar otros materiales, abre **Arquitectura → Puertas y ventanas**, elige el **Material del marco**, el **Material del vidrio** y los demás para un tipo, y pulsa **Usar para todas las ventanas** (o **Usar para todas las puertas**). Todos los tipos de esa clase los toman, en un solo paso de deshacer. Los muros cortina también tienen un material de marco y otro de vidrio.
+
+![Los materiales de las partes en el configurador de puertas y ventanas](shots/joinery-materials.webp)
+
+## Duplicar, sustituir, seleccionar
+
+- **Duplicar** copia un material con un nombre nuevo.
+- **Sustituir por** un material y luego **Sustituir**: cada capa, tipo, puerta, ventana y elemento que usaba el primero usa ahora el segundo, en un solo paso de deshacer. **Sustituir y eliminar** quita además el primero. Si no, un material en uso no se puede eliminar.
+- **Seleccionar elementos** selecciona todos los elementos con una parte de ese material.
+- **Buscar materiales** y la lista de categorías filtran la lista.
+
+## Materiales para render
+
+Twinmotion, Lumion, Enscape, Blender y otros programas de render sustituyen los materiales por su nombre. Lapin escribe cada material **una sola vez, con su propio nombre**, con su color, textura, rugosidad, metalicidad y vidrio, y divide la malla de cada elemento por material.
+
+1. Nombra tus materiales como los quieres en el programa de render, por ejemplo *Aluminium RAL 7016 anthracite* para todos los marcos y *Glass blue tinted* para todo el vidrio.
+2. **Archivo → Exportar 3D (glTF, USD, DAE)…** y elige **GLB** (recomendado: un archivo con las texturas, los nombres exactos y el vidrio), **USDZ** u **OBJ + MTL** (un .zip con las texturas; los espacios de los nombres pasan a guiones bajos).
+3. Importa el archivo en el programa de render. Allí todos los marcos comparten un material; sustitúyelo una vez por un metal del programa y cambian todos.
+
+![Una casa con marcos gris oscuro y vidrio azul](shots/materials-render-3d.webp)
+
+La exportación IFC también nombra el estilo de superficie de cada material como él, con su transparencia y cómo refleja.
+
 ## Lo que define un material
 
 - **Color (3D)** y las caras dibujadas sobre él en 3D. Lapin las deduce del nombre, por ejemplo las hiladas de un ladrillo o la retícula de una baldosa. Los **Extremos** y **Superior e inferior** pueden verse distintos de las caras.

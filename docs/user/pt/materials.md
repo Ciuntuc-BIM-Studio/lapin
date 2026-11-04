@@ -8,6 +8,52 @@ summary: Defina a cor, as hachuras e as juntas de cada material, coloque nele a 
 
 ![A caixa de diálogo Materiais](shots/materials-dialog.webp)
 
+## Aparência: como um material é renderizado
+
+A aba **Aparência** define como o material aparece em 3D e nos programas de renderização para os quais você exporta. A aba **Gráficos 2D** mantém as hachuras e penas, como antes.
+
+![A aparência de um material, com a sua pré-visualização ao vivo](shots/material-appearance.webp)
+
+- **Cor** e **Textura**: uma textura desenhada (tijolo, tábuas de madeira, ladrilhos…) ou a sua própria imagem. **W** e **H** definem o tamanho de um ladrilho no modelo, em metros; **Rotação** o gira.
+- **Rugosidade**: 0 é um espelho, 1 é giz. **Metalicidade**: 1 para metal nu (alumínio anodizado, aço, cromo), 0 para tudo o que é pintado ou pintado a pó, madeira e pedra.
+- **Transparência**: quanto se vê através. **Vidro (transmissão)** e **IOR** (1,52 para o vidro) fazem o vidro refratar num programa de renderização.
+- **Brilha** emite luz, como o difusor de uma luminária.
+
+A esfera mostra o resultado na hora. O que você não define vem do nome: um material chamado *vidro* ou *glass* é transparente, *aço* ou *steel* metálico, *parquet* e *laminado* são tábuas de madeira. **Aparência pelo nome** retira de novo os seus valores.
+
+## Da biblioteca
+
+**Da biblioteca…** oferece materiais prontos: metais (alumínio RAL 7016 antracite, anodizado, aço, cobre…), vidro (incolor, azul, verde, cinza, fosco, refletivo), madeiras em tábuas, concreto, tijolo, reboco e pintura, revestimentos e pedra, plástico e tecido. Um clique adiciona um ao projeto; altere-o como qualquer outro.
+
+![A biblioteca de materiais](shots/material-library.webp)
+
+## Um material para todos os caixilhos e todo o vidro
+
+As novas portas e janelas são feitas de materiais compartilhados, parte por parte: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** e **Hardware**. Altere **Window frame** uma vez e todos os caixilhos de janela mudam.
+
+Para usar outros materiais, abra **Arquitetura → Portas e janelas**, escolha para um tipo o **Material do caixilho**, o **Material do vidro** e os demais, e clique em **Usar em todas as janelas** (ou **Usar em todas as portas**). Todos os tipos desse gênero os recebem, num só passo de desfazer. As fachadas-cortina também têm um material de caixilho e um de vidro.
+
+![Os materiais das partes no configurador de portas e janelas](shots/joinery-materials.webp)
+
+## Duplicar, substituir, selecionar
+
+- **Duplicar** copia um material com um novo nome.
+- **Substituir por** um material e depois **Substituir**: cada camada, tipo, porta, janela e elemento que usava o primeiro passa a usar o segundo, num só passo de desfazer. **Substituir e excluir** também remove o primeiro. Caso contrário, um material em uso não pode ser excluído.
+- **Selecionar elementos** seleciona todos os elementos com uma parte nesse material.
+- **Pesquisar materiais** e a lista de categorias filtram a lista.
+
+## Materiais para renderização
+
+Twinmotion, Lumion, Enscape, Blender e outros programas de renderização trocam materiais pelo nome. O Lapin escreve cada material **uma só vez, com o seu próprio nome**, com cor, textura, rugosidade, metalicidade e vidro, e divide a malha de cada elemento por material.
+
+1. Dê aos materiais o nome que quer no programa de renderização, por exemplo *Aluminium RAL 7016 anthracite* para todos os caixilhos e *Glass blue tinted* para todo o vidro.
+2. **Arquivo → Exportar 3D (glTF, USD, DAE)…** e escolha **GLB** (recomendado: um arquivo com as texturas, os nomes exatos e o vidro), **USDZ** ou **OBJ + MTL** (um .zip com as texturas; os espaços nos nomes viram sublinhados).
+3. Importe o arquivo no programa de renderização. Lá todos os caixilhos compartilham um material; troque-o uma vez por um metal do programa e todos mudam.
+
+![Uma casa com caixilhos cinza-escuro e vidro azul](shots/materials-render-3d.webp)
+
+A exportação IFC também nomeia o estilo de superfície de cada material como ele, com a sua transparência e a forma como reflete.
+
 ## O que um material define
 
 - **Cor (3D)** e as faces desenhadas sobre ele em 3D. O Lapin as deduz pelo nome, por exemplo as fiadas de um tijolo ou a grade de uma cerâmica. **Extremidades** e **Topo e base** podem ter aparência diferente das faces.

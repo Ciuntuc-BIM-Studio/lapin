@@ -2043,6 +2043,52 @@ export const scenes = [
     },
   },
   {
+    // Materials for rendering (report #76): from the library, the appearance with its preview, every window's frame and glass at once, the house in 3D.
+    id: 'materials-render',
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      await t.tool('manage.materials');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('[data-action=material-library]').click();
+      await t.wait(400);
+      t.expect(await dialog.locator('[data-preset="Glass blue tinted"]').count() === 1, 'the library offers blue glass');
+      await t.shot('material-library', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-preset="Aluminium RAL 7016 anthracite"]').click();
+      await t.wait(600);
+      await dialog.locator('[data-action=material-library]').click();
+      await dialog.locator('[data-preset="Glass blue tinted"]').click();
+      await t.wait(1500);
+      t.expect(await dialog.locator('[data-testid=material-preview]').count() === 1, 'the appearance shows its live preview');
+      t.expect(await dialog.locator('[data-material="Glass blue tinted"].on').count() === 1, 'the new glass is the one edited');
+      await t.shot('material-appearance', { of: '.dialog', pad: 0 });
+      await dialog.locator('button[title="Close"]').first().click();
+      await t.wait(300);
+      // Every window's frame one dark grey metal, every glass one blue glass: from the configurator, in one step.
+      await t.tool('architecture.joineryTypes');
+      const conf = t.page.locator('.dialog');
+      await conf.locator('.type-list .tree-item', { hasText: 'Window' }).first().click();
+      await t.wait(600);
+      const parts = conf.locator('[data-testid=joinery-materials]');
+      await parts.locator('[data-part=frame] select').selectOption('Aluminium RAL 7016 anthracite');
+      await parts.locator('[data-part=glass] select').selectOption('Glass blue tinted');
+      await t.wait(400);
+      await parts.locator('[data-action=joinery-materials-all]').click();
+      await t.wait(800);
+      const windowType = (await t.nodes()).find((n) => n.type === 'IfcWindowType');
+      t.expect(windowType?.props?.spec?.materials?.frame === 'Aluminium RAL 7016 anthracite', 'every window type takes the frame material');
+      t.expect(windowType?.props?.spec?.materials?.glass === 'Glass blue tinted', 'every window type takes the glass material');
+      await parts.scrollIntoViewIfNeeded();
+      await t.shot('joinery-materials', { of: '[data-testid=joinery-materials]', pad: 8 });
+      await conf.locator('button[title="Close"]').first().click();
+      await t.wait(300);
+      // The doors' frames too, as the command line or another type would.
+      await t.cmd('architecture.joineryMaterials', { kind: 'door', frame: 'Aluminium RAL 7016 anthracite' });
+      await open3d(t);
+      await t.shot('materials-render-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'standards',
     async run(t) {
       await t.fresh();

@@ -70,6 +70,7 @@ Os espaços do arquivo (do Revit, do ArchiCAD e de outros) entram como ambientes
 | USDZ | AR Quick Look da Apple, Reality Composer, Omniverse. Imagens incluídas. |
 | USDA | OpenUSD como texto, um único arquivo. |
 | DAE | COLLADA, para o SketchUp e ferramentas mais antigas. |
+| OBJ + MTL | Um .zip para Twinmotion, Lumion, 3ds Max e qualquer programa de renderização. Com as imagens. |
 
 **Importar malha (OBJ, STL, glTF)…** traz uma malha de outro programa 3D (OBJ, STL, glTF ou GLB) como referências no nível ativo. O glTF diz a sua unidade e qual lado é para cima; para OBJ e STL o Lapin pergunta. **Tornar sólido Studio**, do Studio, torna uma referência editável (veja [Studio](studio.md)).
 

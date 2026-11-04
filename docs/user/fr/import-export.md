@@ -70,6 +70,7 @@ Les espaces du fichier (de Revit, ArchiCAD et autres) entrent comme pièces Lapi
 | USDZ | AR Quick Look d’Apple, Reality Composer, Omniverse. Images incluses. |
 | USDA | OpenUSD en texte, un seul fichier. |
 | DAE | COLLADA, pour SketchUp et des outils plus anciens. |
+| OBJ + MTL | Un .zip pour Twinmotion, Lumion, 3ds Max et tout logiciel de rendu. Images comprises. |
 
 **Importer un maillage (OBJ, STL, glTF)…** fait entrer un maillage d’un autre logiciel 3D (OBJ, STL, glTF ou GLB) sous forme de références sur le niveau actif. glTF indique son unité et l’axe vers le haut ; pour OBJ et STL, Lapin le demande. **Faire un solide Studio** dans Studio rend une référence modifiable (voir [Studio](studio.md)).
 
