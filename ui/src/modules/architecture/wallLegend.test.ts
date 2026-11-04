@@ -11,7 +11,7 @@ describe('the Wall types legend (report #79)', () => {
     const svg = renderToStaticMarkup(createElement(WallLayersLegend, { layers }));
     // Top to bottom: the last layer (the L face) first, layer 1 on the R face.
     expect([...svg.matchAll(/data-layer="(\d)"/g)].map((m) => m[1])).toEqual(['3', '2', '1']);
-    expect(svg).toMatch(/data-layer="2"><rect[^>]*class="band core"/);
+    expect(svg).toMatch(/data-layer="2"><rect[^>]*class="layer-band core"/);
     expect(svg).toMatch(/data-face="right">R</);
     expect(svg).toMatch(/data-face="left">L</);
   });

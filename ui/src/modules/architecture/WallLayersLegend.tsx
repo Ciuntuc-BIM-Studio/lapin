@@ -12,6 +12,7 @@ import { faceLetters } from '../../viewport/faceMarks';
 
 export interface LegendLayer { thickness: number; core: boolean }
 
+// Its bands are "layer-band": the ribbon's ".band" (height 86px) would size an SVG rect too and run it over the table.
 const W = 300, X0 = 34, X1 = 250, MIN = 11, MAX = 64;
 
 /** The bands' heights (px, top to bottom: the last layer first) scaled to the wall's thickness, each at least {@link MIN}. */
@@ -37,7 +38,7 @@ export function WallLayersLegend({ layers }: { layers: LegendLayer[] }) {
     <svg className="wall-legend" viewBox={`0 0 ${W} ${h}`} width={W} height={h} role="img" aria-label="Wall layers legend" data-testid="wall-legend">
       {bands.map((b) => (
         <g key={b.i} data-layer={b.i + 1}>
-          <rect x={X0} y={b.y} width={X1 - X0} height={b.h} className={layers[b.i].core ? 'band core' : 'band'} />
+          <rect x={X0} y={b.y} width={X1 - X0} height={b.h} className={layers[b.i].core ? 'layer-band core' : 'layer-band'} />
           <text x={X0 - 6} y={b.y + b.h / 2} className="band-no">{b.i + 1}</text>
         </g>
       ))}
