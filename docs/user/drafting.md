@@ -80,6 +80,8 @@ A selected tag has grips. Drag the box to move the tag: the leader keeps pointin
 
 ![A tag's properties](shots/tag-properties.webp)
 
+A door's or window's marker is edited part by part, each text moved or turned and each end of its line drawn out: see [Doors and windows](doors-windows.md).
+
 ### Grid axes
 
 **Annotate → Grid axis** (<kbd>GR</kbd>) draws one axis by its two ends; it takes the next label of its direction. **Annotate → Axis grid…** lays a whole grid at once: the spacings **Across** (the numbered axes, left to right) and **Along** (the lettered axes, bottom to top) in the project's units, as `6000 6000 4500` or `3*6000`; the **Origin** where the first axes cross, an **Angle**, how far the axes run **Past the grid**, the **First labels** and the **Axis type**. With **replace the grid's axes** ticked, the axes drawn so far go.

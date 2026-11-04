@@ -114,6 +114,14 @@ Med en plan, et snit eller en facade forrest tegner **Vis → Åbningsvolumener*
 
 ![Planen med udsparingerne: skåret i væggene, dækåbningen set, hver krydset og mærket](shots/mep-voids-plan.webp)
 
+En udsparings mærkat står ved siden af den, på tværs af væggen, hvor intet andet er tegnet: en dørs slagfelt, dørens eller vinduets mærke, andre mærkater. Er begge sider af væggen optaget, flytter den langs væggen forbi åbningen, ellers længere ud.
+
+![En dørs udsparing: dens mærkat fri af slagfeltet og af dørens mærke](shots/void-label.webp)
+
+For at flytte en mærkat klikker du på den (eller på udsparingen): det vælger åbningen, hvis mærkat viser et firkantet greb til at flytte den og et rundt til at dreje den. Ctrl/⌘-klik på et greb sætter mærkaten tilbage, hvor den står som standard, eller vandret igen. En flyttet mærkat gemmes af den visning, langs og på tværs af væggen fra udsparingens midte, så den følger åbningen, når væggen flyttes; tegninger og PDF udskriver den, hvor du satte den.
+
+![Udsparingens mærkat flyttet med sit greb](shots/void-label-moved.webp)
+
 Det er en indstilling på visningen, også i dens egenskaber (**Vis → Visningsindstillinger**): **Åbningsvolumener**, og **Udsparingers størrelser** for størrelsen under mærket. Som standard tegner ingen visning dem; visningsstilen **Koordinering** (**Administrer → Visningsstile**, valgt som visningens **Stil**) tegner dem i hver visning der bruger den. Deres linjer er kategorien **Volumener**: penne og farver i **Administrer → Objektstile** (snit-, projektions-, skjulte og overliggende linjer), vist eller skjult pr. visning i **Vis → Synlighed / Grafik…**.
 
 For at give volumenerne til et kollisionsprogram markeres **Åbningsvolumener** i **Filer → Eksportér IFC eller Fragments…** (eller **Eksportér 3D…**). I IFC er hvert volumen en **IfcBuildingElementProxy** af typen **PROVISIONFORVOID** med **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter for en rund, Depth) og Lapins **Lapin_OpeningVoid** (mærke, slags, vært, åbning og forskydning), knyttet til sin vært; åbningerne forbliver IfcOpeningElement. Hvert volumen beholder sit GlobalId fra eksport til eksport. I en mesh-eksport er de en gruppe for sig, **Opening voids**. Uden markering er eksporterne som før.

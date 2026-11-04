@@ -76,6 +76,8 @@ Et valgt mærke har greb. Træk i boksen for at flytte mærket: henvisningslinje
 
 ![Et mærkes egenskaber](shots/tag-properties.webp)
 
+En dørs eller et vindues mærke redigeres del for del, hver tekst flyttet eller drejet og hver ende af linjen forlænget: se [Døre og vinduer](doors-windows.md).
+
 ### Modullinjer
 
 **Annotér → Modullinje** (<kbd>GR</kbd>) tegner én akse ud fra dens to ender; den får den næste betegnelse i sin retning. **Annotér → Aksenet…** lægger et helt net på én gang: afstandene **På tværs** (de nummererede akser, fra venstre mod højre) og **På langs** (akserne med bogstaver, nedefra og op) i projektets enheder, fx `6000 6000 4500` eller `3*6000`; **Origo**, hvor de første akser krydser, en **Vinkel**, hvor langt akserne går **Ud over nettet**, de **Første betegnelser** og **Aksetypen**. Med **erstat nettets akser** markeret forsvinder de akser, der er tegnet indtil da.

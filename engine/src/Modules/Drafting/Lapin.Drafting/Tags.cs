@@ -135,7 +135,9 @@ public static class Tags
 
         // A tag changed (report #64): its head moved (at), its leader bent (elbow; null: straight again), pointed elsewhere (end;
         // null: back on the element's middle), switched on or off (leader); what it shows: a field, a template of its own (""
-        // or null: none), a tag type (null: none, the field shows). Several tags take the same.
+        // or null: none), a tag type (null: none, the field shows). A door's or window's marker edited part by part (decision
+        // 292): part (o0, o1… its outer lines, i0… its inner ones, a and b its line's ends) with offset ([along, across] paper
+        // mm), rot (degrees) or ext (paper mm); reset: true (that part, or every part). Several tags take the same.
         r.Command("updateTag", "Change tag", (ctx, a) =>
         {
             var ids = Args.Ids(a).ToList();
@@ -176,6 +178,11 @@ public static class Tags
                         attrs["tagType"] = typeId;
                     }
                     else attrs.Remove("tagType");
+                }
+                // A marker's part edited on screen (decision 292): part with offset, rot or ext; reset (a part's, or all).
+                if (a.ContainsKey("part") || a.ContainsKey("reset"))
+                {
+                    if (LabelParts.Apply(attrs["parts"] as JsonObject, a) is { } parts) attrs["parts"] = parts; else attrs.Remove("parts");
                 }
                 ctx.Replace(t.With(attrs: attrs));
             }

@@ -114,6 +114,14 @@ With a plan, section or elevation in front, **View → Opening voids** draws the
 
 ![The plan with the voids: cut through the walls, the floor opening seen, each crossed and marked](shots/mep-voids-plan.webp)
 
+A void's label stands beside it across its wall, clear of what is already drawn there: a door's swing, the door's or window's marker, other labels. Where both sides of the wall are taken it moves along the wall past the opening, else further out.
+
+![A door's void: its label clear of the swing and of the door's marker](shots/void-label.webp)
+
+To move a label, click it (or the void): that selects the opening, whose label shows a square grip to move it and a round one to turn it. Ctrl/⌘-click a grip to put the label back where it stands by default, or level again. A moved label is kept by that view, along and across the wall from the void's middle, so it follows the opening when the wall moves; sheets and PDF print it where you put it.
+
+![The void's label moved by its grip](shots/void-label-moved.webp)
+
 It is a setting of the view, also in its properties (**View → View settings**): **Opening voids**, and **Void sizes** for the size under the mark. Views draw none by default; the **Coordination** view style (**Manage → View styles**, chosen as the view's **Style**) draws them in every view that takes it. Their lines are the **Voids** category: their pens and colours in **Manage → Object styles** (cut, projection, hidden, overhead lines), shown or hidden per view in **View → Visibility / Graphics…**.
 
 To hand the voids to a clash program, tick **Opening voids** in **File → Export IFC or Fragments…** (or **Export 3D…**). In IFC each void is an **IfcBuildingElementProxy** of type **PROVISIONFORVOID** with **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter for a round one, Depth) and Lapin's **Lapin_OpeningVoid** (its mark, kind, host, opening and offset), related to its host; the openings themselves stay IfcOpeningElements as always. Each void keeps its GlobalId from one export to the next, so the clash program follows it. In a mesh export they are a group of their own, **Opening voids**. Without the box ticked, the exports are as they were.

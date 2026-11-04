@@ -114,6 +114,14 @@ Com uma planta, corte ou alçado à frente, **Vista → Volumes de abertura** de
 
 ![A planta com os volumes: cortados nas paredes, a abertura da laje vista, cada um em cruz e marcado](shots/mep-voids-plan.webp)
 
+A etiqueta de um vazio fica ao lado dele, através da sua parede, onde nada mais está desenhado: o giro de uma porta, o marcador da porta ou janela, outras etiquetas. Se os dois lados da parede estão ocupados, ela se desloca ao longo da parede para além da abertura, senão mais para fora.
+
+![O vazio de uma porta: sua etiqueta longe do giro e do marcador da porta](shots/void-label.webp)
+
+Para mover uma etiqueta, clique nela (ou no vazio): isso seleciona a abertura, cuja etiqueta mostra um grip quadrado para movê-la e um redondo para girá-la. Ctrl/⌘-clique num grip devolve a etiqueta ao seu lugar padrão, ou horizontal de novo. Uma etiqueta movida é guardada por aquela vista, ao longo e através da parede a partir do meio do vazio, então segue a abertura quando a parede se move; as folhas e o PDF a imprimem onde você a pôs.
+
+![A etiqueta do vazio movida pelo seu grip](shots/void-label-moved.webp)
+
 É uma definição da vista, também nas suas propriedades (**Vista → Configurações da vista**): **Volumes de abertura**, e **Tamanhos das aberturas** para o tamanho sob a marca. Por omissão nenhuma vista os desenha; o estilo de vista **Coordenação** (**Gerenciar → Estilos de vista**, escolhido como **Estilo** da vista) desenha-os em cada vista que o usa. As suas linhas são a categoria **Volumes**: canetas e cores em **Gerenciar → Estilos de objeto** (linhas de corte, projeção, ocultas, acima), mostradas ou ocultas por vista em **Vista → Visibilidade / Gráficos…**.
 
 Para passar os volumes a um programa de conflitos, marque **Volumes de abertura** em **Arquivo → Exportar IFC ou Fragments…** (ou **Exportar 3D…**). Em IFC cada volume é um **IfcBuildingElementProxy** do tipo **PROVISIONFORVOID** com **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter se redondo, Depth) e o conjunto do Lapin **Lapin_OpeningVoid** (marca, tipo, hospedeiro, abertura e deslocamento), ligado ao hospedeiro; as aberturas continuam IfcOpeningElement. Cada volume mantém o seu GlobalId de uma exportação para outra. Numa exportação de malhas formam um grupo próprio, **Opening voids**. Sem a marca, as exportações ficam como antes.

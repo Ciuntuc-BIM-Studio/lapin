@@ -76,6 +76,8 @@ Um identificador selecionado tem pegas. Arraste a caixa para mover o identificad
 
 ![As propriedades de um identificador](shots/tag-properties.webp)
 
+O marcador de uma porta ou janela é editado parte por parte, cada texto movido ou girado e cada ponta da sua linha alongada: veja [Portas e janelas](doors-windows.md).
+
 ### Eixos da grade
 
 **Anotar → Eixo de grade** (<kbd>GR</kbd>) desenha um eixo pelas suas duas pontas; recebe o rótulo seguinte da sua direção. **Anotar → Grelha de eixos…** coloca uma grade inteira de uma vez: os espaçamentos **Na transversal** (os eixos numerados, da esquerda para a direita) e **Na longitudinal** (os eixos com letras, de baixo para cima) nas unidades do projeto, como `6000 6000 4500` ou `3*6000`; a **Origem** onde se cruzam os primeiros eixos, um **Ângulo**, quanto os eixos se prolongam **Além da grelha**, os **Primeiros rótulos** e o **Tipo de eixo**. Com **substituir os eixos da grelha** marcado, os eixos desenhados até então desaparecem.

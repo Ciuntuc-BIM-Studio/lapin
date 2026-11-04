@@ -76,6 +76,8 @@ Eine ausgewählte Beschriftung hat Griffe. Ziehen Sie den Kasten, um die Beschri
 
 ![Die Eigenschaften einer Beschriftung](shots/tag-properties.webp)
 
+Die Markierung einer Tür oder eines Fensters wird Teil für Teil bearbeitet, jeder Text verschoben oder gedreht und jedes Linienende verlängert: siehe [Türen und Fenster](doors-windows.md).
+
 ### Rasterachsen
 
 **Beschriften → Rasterachse** (<kbd>GR</kbd>) zeichnet eine Achse über ihre beiden Enden; sie erhält die nächste Bezeichnung ihrer Richtung. **Beschriften → Achsraster…** legt ein ganzes Raster auf einmal an: die Abstände **Quer** (die nummerierten Achsen, von links nach rechts) und **Längs** (die Achsen mit Buchstaben, von unten nach oben) in den Einheiten des Projekts, etwa `6000 6000 4500` oder `3*6000`; den **Ursprung**, wo sich die ersten Achsen kreuzen, einen **Winkel**, wie weit die Achsen **Über das Raster hinaus** laufen, die **Ersten Bezeichnungen** und den **Achstyp**. Mit **die Achsen des Rasters ersetzen** entfallen die bisher gezeichneten Achsen.

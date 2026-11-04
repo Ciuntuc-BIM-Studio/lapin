@@ -114,6 +114,14 @@ Avec un plan, une coupe ou une façade devant, **Vue → Volumes de réservation
 
 ![Le plan avec les réservations : coupées dans les murs, la trémie vue, chacune barrée et marquée](shots/mep-voids-plan.webp)
 
+L’étiquette d’une réservation se place à côté d’elle, en travers de son mur, là où rien n’est déjà dessiné : le débattement d’une porte, le repère de la porte ou de la fenêtre, d’autres étiquettes. Si les deux côtés du mur sont pris, elle se décale le long du mur au-delà de l’ouverture, sinon plus loin.
+
+![La réservation d’une porte : son étiquette à l’écart du débattement et du repère de la porte](shots/void-label.webp)
+
+Pour déplacer une étiquette, cliquez dessus (ou sur la réservation) : cela sélectionne l’ouverture, dont l’étiquette montre une poignée carrée pour la déplacer et une ronde pour la tourner. Ctrl/⌘-clic sur une poignée la remet à sa place par défaut, ou de nouveau horizontale. Une étiquette déplacée est gardée par cette vue, le long et en travers du mur depuis le milieu de la réservation, si bien qu’elle suit l’ouverture quand le mur bouge ; les planches et le PDF l’impriment où vous l’avez mise.
+
+![L’étiquette de la réservation déplacée par sa poignée](shots/void-label-moved.webp)
+
 C'est un réglage de la vue, aussi dans ses propriétés (**Vue → Paramètres de vue**) : **Volumes de réservation**, et **Tailles des réservations** pour la taille sous la marque. Par défaut aucune vue ne les dessine ; le style de vue **Coordination** (**Gérer → Styles de vue**, choisi comme **Style** de la vue) les dessine dans chaque vue qui le prend. Leurs lignes sont la catégorie **Volumes** : plumes et couleurs dans **Gérer → Styles d’objets** (lignes coupées, en projection, cachées, au-dessus), montrées ou masquées par vue dans **Vue → Visibilité / Graphismes…**.
 
 Pour donner les volumes à un outil de conflits, cochez **Volumes de réservation** dans **Fichier → Exporter IFC ou Fragments…** (ou **Exporter en 3D…**). En IFC chaque volume est un **IfcBuildingElementProxy** de type **PROVISIONFORVOID** avec **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter pour un rond, Depth) et le jeu Lapin **Lapin_OpeningVoid** (marque, type, hôte, ouverture et décalage), lié à son hôte ; les ouvertures restent des IfcOpeningElement. Chaque volume garde son GlobalId d'un export à l'autre. Dans un export de maillages, ils forment un groupe à part, **Opening voids**. Case décochée, les exports restent comme avant.

@@ -76,6 +76,8 @@ Un’etichetta selezionata ha delle maniglie. Trascina il riquadro per spostare 
 
 ![Le proprietà di un’etichetta](shots/tag-properties.webp)
 
+Il contrassegno di una porta o di una finestra si modifica parte per parte, ogni testo spostato o ruotato e ogni estremità della sua linea allungata: vedi [Porte e finestre](doors-windows.md).
+
 ### Assi della griglia
 
 **Annota → Asse di griglia** (<kbd>GR</kbd>) disegna un asse dalle sue due estremità; prende l’etichetta successiva della sua direzione. **Annota → Griglia di assi…** posa un’intera griglia in una volta: gli interassi **In orizzontale** (gli assi numerati, da sinistra a destra) e **In verticale** (gli assi con lettere, dal basso in alto) nelle unità del progetto, come `6000 6000 4500` o `3*6000`; l’**Origine** dove si incrociano i primi assi, un **Angolo**, quanto gli assi proseguono **Oltre la griglia**, le **Prime etichette** e il **Tipo di asse**. Con **sostituisci gli assi della griglia** spuntato, gli assi disegnati finora spariscono.

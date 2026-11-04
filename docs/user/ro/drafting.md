@@ -80,6 +80,8 @@ O etichetă selectată are mânere. Trage de casetă ca s-o muți: linia de indi
 
 ![Proprietățile unei etichete](shots/tag-properties.webp)
 
+Marcajul unei uși sau ferestre se modifică parte cu parte, fiecare text mutat sau rotit și fiecare capăt al liniei lungit: vezi [Uși și ferestre](doors-windows.md).
+
 ### Axe
 
 **Adnotări → Axă** (<kbd>GR</kbd>) desenează o axă după cele două capete; ia următoarea etichetă a direcției ei. **Adnotări → Rețea de axe…** pune o rețea întreagă dintr-odată: distanțele pe **Transversal** (axele numerotate, de la stânga la dreapta) și pe **Longitudinal** (axele cu litere, de jos în sus), în unitățile proiectului, ca `6000 6000 4500` sau `3*6000`; **Originea** unde se intersectează primele axe, un **Unghi**, cât trec axele **Dincolo de rețea**, **Primele etichete** și **Tipul de axă**. Cu **înlocuiește axele rețelei** bifat, axele desenate până atunci dispar.

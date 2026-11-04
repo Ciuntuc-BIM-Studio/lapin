@@ -86,3 +86,19 @@ An der Fassade kann ein Fenster neben der Fasche einen **Schlussstein**, eine **
 ## Beschriftungen im Grundriss
 
 **Beschriften → Tür- und Fensterbeschriftungen** setzt eine Markierung an jede Tür und jedes Fenster eines Grundrisses: eine Linie quer durch die Wand, das Kennzeichen außen sowie Größe und Brüstung innen. Um das Aussehen der Beschriftungen zu ändern, gehen Sie zu **Verwalten → Zeichnungsstandards → Beschriftungen**.
+
+### Eine Markierung auf dem Bildschirm bearbeiten
+
+Jede Markierung lässt sich von Hand anordnen, Teil für Teil. Klicken Sie auf ihre Linie oder einen ihrer Texte, um sie auszuwählen: Jeder Text hat dann einen quadratischen Griff (ziehen, um den Text zu verschieben) und einen runden hinter seinem Ende (ziehen, um den Text zu drehen), und jedes Linienende hat einen Griff (ziehen, um die Linie zu verlängern oder zu kürzen; der Text an diesem Ende geht mit). Strg/⌘-Klick auf einen Griff setzt diesen Teil zurück. Jedes Ziehen ist ein Schritt zum Rückgängigmachen. Sind mehrere Markierungen desselben Grundrisses ausgewählt, ändert ein an einer gezogener Teil denselben Teil bei allen.
+
+![Die Markierung einer Tür ausgewählt: ein Griff je Text, sein Drehgriff und einer an jedem Linienende](shots/marker-grips.webp)
+
+![Das Kennzeichen verschoben und gedreht, das äußere Linienende verlängert](shots/marker-edited.webp)
+
+Die Änderungen gehören zur Markierung und damit zu diesem Grundriss: Dieselbe Tür kann in einem anderen Grundriss anders angeordnet sein. Sie werden längs und quer zur Wand gespeichert und folgen der Tür, wenn sie verschoben, gedreht oder auf die andere Seite gespiegelt wird. In den Eigenschaften der Markierung listet **Markierung** ihre Teile: Geben Sie die Drehung eines Textes in Grad oder die Reichweite eines Endes in Papiermillimetern ein, setzen Sie einen Teil mit ↺ zurück oder alle mit **Beschriftung zurücksetzen**. Die Engine zeichnet Markierungen wie bearbeitet, daher drucken Pläne, PDF und DXF sie genauso.
+
+![Die Teile einer Markierung in ihren Eigenschaften](shots/marker-properties.webp)
+
+Ob die Texte quer zur Markierungslinie (längs der Wand, die Vorgabe) oder entlang der Linie liegen, wird je Beschriftungstyp in **Verwalten → Zeichnungsstandards → Beschriftungen**, Spalte **Textrichtung**, festgelegt: **senkrecht zur Beschriftungslinie** oder **entlang der Beschriftungslinie**. In beiden Fällen werden sie lesbar gezeichnet, nie kopfüber; auch ein von Hand gedrehter Text bleibt lesbar.
+
+![Die Texte der Türmarkierung entlang der Beschriftungslinie](shots/marker-along.webp)

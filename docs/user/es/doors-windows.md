@@ -86,3 +86,19 @@ En la fachada, además del recercado, una ventana puede tener **Clave**, **Remat
 ## Etiquetas en planta
 
 **Anotar → Etiquetas de puertas y ventanas** pone una marca en cada puerta y ventana de una planta: una línea a través del muro, la marca fuera, y el tamaño y el alféizar dentro. Para cambiar el aspecto de las etiquetas, vaya a **Gestionar → Normas de dibujo → Etiquetas**.
+
+### Editar un marcador en pantalla
+
+Cada marcador puede colocarse a mano, parte por parte. Haz clic en su línea o en uno de sus textos para seleccionarlo: cada texto tiene entonces un pinzamiento cuadrado (arrástralo para mover el texto) y uno redondo pasado su final (arrástralo para girar el texto), y cada extremo de la línea tiene un pinzamiento (arrástralo para alargar o acortar la línea; el texto de ese extremo va con él). Ctrl/⌘-clic en un pinzamiento devuelve esa parte a como estaba. Cada arrastre es un paso de deshacer. Con varios marcadores de la misma planta seleccionados, una parte arrastrada en uno cambia la misma parte en todos.
+
+![El marcador de una puerta seleccionado: un pinzamiento por texto, su pinzamiento de giro y uno en cada extremo de la línea](shots/marker-grips.webp)
+
+![La marca movida y girada, el extremo exterior de la línea alargado](shots/marker-edited.webp)
+
+Los cambios pertenecen al marcador, y por tanto a esa planta: la misma puerta puede colocarse de otra forma en otra planta. Se guardan a lo largo y a través del muro, así que siguen a la puerta cuando se mueve, gira o cambia de lado. En las propiedades del marcador, **Marcador** lista sus partes: escribe el giro de un texto en grados o cuánto llega un extremo en milímetros de papel, devuelve una parte con ↺, o todas con **Devolver la etiqueta a su sitio**. El motor dibuja los marcadores tal como se editan, así que los planos, el PDF y el DXF los imprimen igual.
+
+![Las partes de un marcador en sus propiedades](shots/marker-properties.webp)
+
+Si los textos van a través de la línea del marcador (a lo largo del muro, por defecto) o a lo largo de ella se elige para cada tipo de etiqueta, en **Gestionar → Normas de dibujo → Etiquetas**, columna **Dirección del texto**: **perpendicular a la línea de la etiqueta** o **a lo largo de la línea de la etiqueta**. En ambos casos se dibujan legibles, nunca boca abajo; un texto girado a mano también se mantiene legible.
+
+![Los textos del marcador de la puerta a lo largo de la línea de la etiqueta](shots/marker-along.webp)

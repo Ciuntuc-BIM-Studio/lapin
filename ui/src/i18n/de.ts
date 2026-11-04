@@ -1017,6 +1017,24 @@ export const DE: Record<string, string> = {
   'Void sizes': 'Größen der Aussparungen',
   'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Unter der Marke jeder Aussparung Breite × Höhe (bei einer runden der Durchmesser) und die Unterkante einer Wandöffnung',
   'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Grundrisse, Schnitte und Ansichten zeichnen die Aussparungskörper der Öffnungen, durchkreuzt, mit ihren Marken',
+  // Labels edited part by part (decision 292).
+  'Drag: lengthen or shorten the line · Ctrl/⌘-click: back to its length': 'Ziehen: Linie verlängern oder kürzen · Strg/⌘-Klick: zurück auf ihre Länge',
+  'Drag: move this text · Ctrl/⌘-click: back in its place': 'Ziehen: diesen Text verschieben · Strg/⌘-Klick: zurück an seinen Platz',
+  'Drag: turn this text · Ctrl/⌘-click: as the tag type lays it': 'Ziehen: diesen Text drehen · Strg/⌘-Klick: wie der Beschriftungstyp ihn legt',
+  'Drag: move the label · Ctrl/⌘-click: back where it stood': 'Ziehen: Beschriftung verschieben · Strg/⌘-Klick: zurück, wo sie stand',
+  'Drag: turn the label · Ctrl/⌘-click: level again': 'Ziehen: Beschriftung drehen · Strg/⌘-Klick: wieder waagerecht',
+  'Back as by default': 'Zurück zur Vorgabe',
+  'Outer line': 'Äußere Zeile',
+  'Inner line': 'Innere Zeile',
+  'Its turn from the way the tag type lays it, in degrees; it is always drawn upright': 'Seine Drehung gegenüber der Lage, die der Beschriftungstyp vorgibt, in Grad; er wird immer lesbar gezeichnet',
+  'How much further this end of the line reaches, paper mm (negative: shorter)': 'Wie viel weiter dieses Linienende reicht, mm auf dem Papier (negativ: kürzer)',
+  'Each text and each end of the marker\'s line has its grips in the plan: drag to move, turn or lengthen; Ctrl/⌘-click a grip puts that part back': 'Jeder Text und jedes Ende der Markierungslinie hat seine Griffe im Grundriss: ziehen zum Verschieben, Drehen oder Verlängern; Strg/⌘-Klick auf einen Griff setzt diesen Teil zurück',
+  'Marker': 'Markierung',
+  'Outer end': 'Äußeres Ende',
+  'Inner end': 'Inneres Ende',
+  'Text direction': 'Textrichtung',
+  'perpendicular to the tag line': 'senkrecht zur Beschriftungslinie',
+  'along the tag line': 'entlang der Beschriftungslinie',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

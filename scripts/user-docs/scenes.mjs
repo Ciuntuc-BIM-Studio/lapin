@@ -2864,6 +2864,89 @@ export const scenes = [
     },
   },
   {
+    // Labels edited part by part (decision 292): a door's marker selected shows a grip for each text (move, turn) and each
+    // end of its line; the mark dragged and turned, the line drawn out by their grips; the texts along the tag line as the
+    // tag type says; an opening void's label placed clear of the door's swing, then moved by its grip.
+    id: 'label-edit',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.tool('tagOpenings');
+      await t.wait(1000);
+      const nodes = await t.nodes();
+      const door = nodes.find((n) => n.type === 'IfcDoor');
+      const tagOf = async (id) => (await t.nodes()).find((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === 'TAG' && n.props.element === id);
+      const tag = await tagOf(door.id);
+      t.expect(!!tag, 'Door & window tags gives the door its marker');
+      // Zoomed in about the door, the quick tools out of the way.
+      const quiet = await t.page.addStyleTag({ content: '.hotbar { display: none !important }' });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: 0.5, y: -2.2 }, { x: 5.5, y: 2.2 }));
+      await t.wait(800);
+      await select(t, tag.id);
+      await t.wait(700);
+      for (const g of ['o0', 'o0:turn', 'i0', 'a', 'b'])
+        t.expect(await t.page.locator(`[data-grip="${g}"]`).count() === 1, `the selected marker has its grip ${g}`);
+      // The pictures about the door: the middle of its marker's line, from its two end grips (the zoom stays as it is).
+      const ends = await Promise.all(['a', 'b'].map((k) => t.page.locator(`[data-grip="${k}"]`).boundingBox()));
+      const [cx, cy] = [(ends[0].x + ends[1].x + ends[0].width) / 2, (ends[0].y + ends[1].y + ends[0].height) / 2];
+      const clip = async () => ({ x: cx - 260, y: cy - 220, width: 660, height: 440 });
+      await t.shot('marker-grips', { clip: await clip() });
+      // Each drag one step: the mark moved along the wall, turned, the line's outer end drawn out.
+      const drag = async (key, dx, dy) => {
+        const b = await t.page.locator(`[data-grip="${key}"]`).boundingBox();
+        const [x, y] = [b.x + b.width / 2, b.y + b.height / 2];
+        await t.page.mouse.move(x, y);
+        await t.page.mouse.down();
+        await t.page.mouse.move(x + dx / 2, y + dy / 2, { steps: 4 });
+        await t.page.mouse.move(x + dx, y + dy, { steps: 4 });
+        await t.page.mouse.up();
+        await t.wait(900);
+      };
+      await drag('o0', 45, 0);
+      await drag('b', 0, 30);
+      await drag('o0:turn', 0, -40);
+      const edited = (await tagOf(door.id)).props.parts ?? {};
+      t.expect(!!edited.o0?.d && edited.o0?.rot != null && edited.b?.ext > 0, `the mark moved and turned, the line longer (${JSON.stringify(edited)})`);
+      await t.shot('marker-edited', { clip: await clip() });
+      t.expect(await t.page.locator('[data-marker-reset-all]').count() === 1, 'the marker\'s properties list its parts');
+      await t.shot('marker-properties', { of: 'aside.props', pad: 0, maxHeight: 520 });
+      // Back as by default, then the texts along the tag line for every door marker (Drafting standards → Tags).
+      await t.page.locator('[data-marker-reset-all]').click();
+      await t.wait(800);
+      t.expect(!(await tagOf(door.id)).props.parts, 'Put the label back takes every edit off');
+      await t.cmd('standards.set', { kind: 'tag', entry: { id: 'door', textOrientation: 'along' } });
+      await t.ui({ selection: null, selected: [] });
+      await t.wait(900);
+      await t.shot('marker-along', { clip: await clip() });
+      await t.cmd('standards.set', { kind: 'tag', entry: { id: 'door', textOrientation: 'across' } });
+      // The voids: the door's label stands beside the wall clear of the swing and the marker; dragged by its grip, it stays there.
+      await t.tool('view.openingVoids');
+      await t.wait(1500);
+      await t.shot('void-label', { clip: await clip() });
+      const [dx, dy] = [cx, cy];
+      const labels = t.page.locator('[data-testid=plan] text').filter({ hasText: /^V\d+$/ });
+      let nearest = null, best = Infinity;
+      for (let i = 0; i < await labels.count(); i++) {
+        const b = await labels.nth(i).boundingBox();
+        const d = b ? Math.hypot(b.x + b.width / 2 - dx, b.y + b.height / 2 - dy) : Infinity;
+        if (d < best) { best = d; nearest = labels.nth(i); }
+      }
+      { const b = await nearest.boundingBox(); await t.page.mouse.click(b.x + b.width / 2, b.y + b.height / 2); }
+      await t.wait(700);
+      const grip = t.page.locator('[data-grip^="void:"][data-grip$=":label"]');
+      t.expect(await grip.count() === 1, 'a click on the void selects its opening, whose label has its grips');
+      await drag(await grip.getAttribute('data-grip'), -40, -25);
+      const plan = (await t.nodes()).find((n) => n.props.voidLabels);
+      t.expect(!!plan, 'the moved label is kept on the view');
+      await t.shot('void-label-moved', { clip: await clip() });
+      await t.tool('view.openingVoids');
+      await quiet.evaluate((el) => el.remove());
+      await t.ui({ keyPlan: true, selection: null, selected: [] });
+    },
+  },
+  {
     // The axis grid (report #68): Annotate → Axis grid… lays a grid from its spacings; a selected axis shows its ends, length,
     // angle and spacing in the project's units, here in feet and inches after the units are changed.
     id: 'grid',

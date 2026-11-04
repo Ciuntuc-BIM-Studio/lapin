@@ -1014,6 +1014,24 @@ export const RO: Record<string, string> = {
   'Void sizes': 'Dimensiunile golurilor',
   'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Sub marca fiecărui gol, lățime × înălțime (diametrul la unul rotund) și cota de jos a unui gol din perete',
   'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Planurile, secțiunile și fațadele desenează volumele golurilor, cu diagonale și cu mărcile lor',
+  // Labels edited part by part (decision 292).
+  'Drag: lengthen or shorten the line · Ctrl/⌘-click: back to its length': 'Trage: lungește sau scurtează linia · Ctrl/⌘-clic: înapoi la lungimea ei',
+  'Drag: move this text · Ctrl/⌘-click: back in its place': 'Trage: mută acest text · Ctrl/⌘-clic: înapoi la locul lui',
+  'Drag: turn this text · Ctrl/⌘-click: as the tag type lays it': 'Trage: rotește acest text · Ctrl/⌘-clic: cum îl așază tipul etichetei',
+  'Drag: move the label · Ctrl/⌘-click: back where it stood': 'Trage: mută eticheta · Ctrl/⌘-clic: înapoi unde stătea',
+  'Drag: turn the label · Ctrl/⌘-click: level again': 'Trage: rotește eticheta · Ctrl/⌘-clic: din nou orizontală',
+  'Back as by default': 'Înapoi ca implicit',
+  'Outer line': 'Rândul exterior',
+  'Inner line': 'Rândul interior',
+  'Its turn from the way the tag type lays it, in degrees; it is always drawn upright': 'Rotirea lui față de cum îl așază tipul etichetei, în grade; e desenat mereu citibil',
+  'How much further this end of the line reaches, paper mm (negative: shorter)': 'Cât trece mai departe acest capăt al liniei, mm pe hârtie (negativ: mai scurt)',
+  'Each text and each end of the marker\'s line has its grips in the plan: drag to move, turn or lengthen; Ctrl/⌘-click a grip puts that part back': 'Fiecare text și fiecare capăt al liniei marcajului au mânerele lor în plan: trage ca să muți, să rotești sau să lungești; Ctrl/⌘-clic pe un mâner pune acea parte la loc',
+  'Marker': 'Marcaj',
+  'Outer end': 'Capătul exterior',
+  'Inner end': 'Capătul interior',
+  'Text direction': 'Direcția textului',
+  'perpendicular to the tag line': 'perpendicular pe linia etichetei',
+  'along the tag line': 'de-a lungul liniei etichetei',
 };
 
 /** Phrases with a number or a name in them. */

@@ -1019,6 +1019,24 @@ export const FR: Record<string, string> = {
   'Void sizes': 'Tailles des réservations',
   'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Sous la marque de chaque réservation, largeur × hauteur (le diamètre pour une ronde) et le niveau bas d\'une ouverture dans un mur',
   'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Les plans, coupes et façades dessinent les volumes des ouvertures, barrés en croix, avec leurs marques',
+  // Labels edited part by part (decision 292).
+  'Drag: lengthen or shorten the line · Ctrl/⌘-click: back to its length': 'Glisser : allonger ou raccourcir la ligne · Ctrl/⌘-clic : revenir à sa longueur',
+  'Drag: move this text · Ctrl/⌘-click: back in its place': 'Glisser : déplacer ce texte · Ctrl/⌘-clic : le remettre à sa place',
+  'Drag: turn this text · Ctrl/⌘-click: as the tag type lays it': 'Glisser : tourner ce texte · Ctrl/⌘-clic : comme le type d\'étiquette le pose',
+  'Drag: move the label · Ctrl/⌘-click: back where it stood': 'Glisser : déplacer l\'étiquette · Ctrl/⌘-clic : la remettre où elle était',
+  'Drag: turn the label · Ctrl/⌘-click: level again': 'Glisser : tourner l\'étiquette · Ctrl/⌘-clic : de nouveau horizontale',
+  'Back as by default': 'Revenir par défaut',
+  'Outer line': 'Ligne extérieure',
+  'Inner line': 'Ligne intérieure',
+  'Its turn from the way the tag type lays it, in degrees; it is always drawn upright': 'Sa rotation par rapport à la pose du type d\'étiquette, en degrés ; il est toujours dessiné lisible',
+  'How much further this end of the line reaches, paper mm (negative: shorter)': 'De combien cette extrémité de la ligne va plus loin, mm papier (négatif : plus courte)',
+  'Each text and each end of the marker\'s line has its grips in the plan: drag to move, turn or lengthen; Ctrl/⌘-click a grip puts that part back': 'Chaque texte et chaque extrémité de la ligne du repère a ses poignées dans le plan : glisser pour déplacer, tourner ou allonger ; Ctrl/⌘-clic sur une poignée remet cette partie en place',
+  'Marker': 'Repère',
+  'Outer end': 'Extrémité extérieure',
+  'Inner end': 'Extrémité intérieure',
+  'Text direction': 'Direction du texte',
+  'perpendicular to the tag line': 'perpendiculaire à la ligne d\'étiquette',
+  'along the tag line': 'le long de la ligne d\'étiquette',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

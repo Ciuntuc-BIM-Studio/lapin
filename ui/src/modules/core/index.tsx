@@ -12,6 +12,7 @@ import { notify } from '../../app/store';
 import { setTypeOf, similarOf } from '../../platform/modules';
 import { registerCommand, startCommand, useCad, cadLog, type Step } from '../../viewport/cad/session';
 import type { LapinModule } from '../../platform/module';
+import { voidLabelGrips } from '../../platform/labelParts';
 import type { NodeDto } from '../../engine/protocol';
 import { viewShowsField } from './planeFields';
 import { closePane, setTool, splitPane, useUi } from '../../app/store';
@@ -229,7 +230,8 @@ const core: LapinModule = {
       ] },
     ],
   }],
-  grips: { LapinView: sectionGrips },
+  // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
+  grips: { LapinView: sectionGrips, IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
   references: { LapinView: sectionRefs },
   dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, exportExchange: ExchangeExportDialog, sections: SectionsDialog, coordination: CoordinationDialog },
   background: CoreBackground,

@@ -86,3 +86,19 @@ Pe fațadă, pe lângă ancadrament, o fereastră poate avea **Cheie de boltă**
 ## Etichete în plan
 
 **Adnotări → Etichete uși și ferestre** pune un marcaj pe fiecare ușă și fereastră dintr-un plan: o linie peste perete, marca în afară, dimensiunile și parapetul înăuntru. Cum arată etichetele se setează în **Gestionare → Standarde de desen → Etichete**.
+
+### Marcajul modificat pe ecran
+
+Fiecare marcaj se poate aranja de mână, parte cu parte. Dă clic pe linia lui sau pe unul dintre texte ca să-l selectezi: fiecare text are atunci un mâner pătrat (trage-l ca să muți textul) și unul rotund după capătul lui (trage-l ca să rotești textul), iar fiecare capăt al liniei are un mâner (trage-l ca să lungești sau să scurtezi linia; textul de la acel capăt merge cu el). Ctrl/⌘-clic pe un mâner pune acea parte cum era. Fiecare tragere e un pas de anulare. Cu mai multe marcaje din același plan selectate, o parte trasă la unul schimbă aceeași parte la toate.
+
+![Marcajul unei uși selectat: câte un mâner pentru fiecare text, mânerul de rotire și câte unul la fiecare capăt al liniei](shots/marker-grips.webp)
+
+![Marca mutată și rotită, capătul exterior al liniei lungit](shots/marker-edited.webp)
+
+Modificările țin de marcaj, deci de acel plan: aceeași ușă poate fi aranjată altfel în alt plan. Sunt păstrate de-a lungul și de-a curmezișul peretelui, așa că urmează ușa când se mută, se rotește sau se întoarce pe partea cealaltă. În proprietățile marcajului, **Marcaj** îi arată părțile: scrie rotirea unui text în grade sau cât trece un capăt, în milimetri pe hârtie, pune o parte la loc cu ↺ sau pe toate cu **Pune eticheta la loc**. Motorul desenează marcajele așa cum sunt modificate, deci planșele, PDF-ul și DXF-ul le tipăresc la fel.
+
+![Părțile unui marcaj în proprietățile lui](shots/marker-properties.webp)
+
+Dacă textele stau de-a curmezișul liniei marcajului (de-a lungul peretelui, implicit) sau de-a lungul ei se alege pentru fiecare tip de etichetă, în **Gestionare → Standarde de desen → Etichete**, coloana **Direcția textului**: **perpendicular pe linia etichetei** sau **de-a lungul liniei etichetei**. Oricum ar fi, sunt desenate citibil, niciodată cu susul în jos; și un text rotit de mână rămâne citibil.
+
+![Textele marcajului ușii de-a lungul liniei etichetei](shots/marker-along.webp)

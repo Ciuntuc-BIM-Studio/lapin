@@ -34,8 +34,15 @@ public static class VoidDrawings
     public static readonly (double Cut, double Seen, double Overhead) Widths = (0.35, 0.25, 0.18);
 
     /// <summary>How each void is drawn in a view (pieces: a developed section's, each with its station; one for any other view).</summary>
+    /// <remarks>
+    /// A label stands by default where nothing else is drawn (decision 292): beside the void across its wall, else moved
+    /// along the wall, else further out, clear of the door's swing, the door's marker and the labels before it
+    /// (<paramref name="others"/>: the view's annotations so far). Moved or turned by its grips, it keeps its offset from
+    /// the void's middle along and across the wall in the view's <c>voidLabels</c> (by the void's key), so it follows the
+    /// opening.
+    /// </remarks>
     public static List<ViewMark> Marks(IQueryContext q, ViewContext c, ViewSpec spec, IReadOnlyList<(ViewSpec Spec, double Station)> pieces, bool sizes,
-        LineStyles.Resolver? styles, CategoryGraphics? graphics)
+        LineStyles.Resolver? styles, CategoryGraphics? graphics, IReadOnlyList<ViewMark>? others = null)
     {
         var m = q.Model;
         var view = c.View;
@@ -49,13 +56,14 @@ public static class VoidDrawings
         var storey = view.Str("storeyId");
         var list = pieces.Count > 1 ? pieces : [(spec, 0.0)];
         var pens = new Pens(styles, graphics);
+        var obstacles = new Obstacles(c, others);
         foreach (var v in voids)
         {
             if (m.Get(v.HostId) is not { } host || hidden.Contains(host.Id) || GraphicsSets.Hides(viewGraphics, host)) continue;
             if (v.OpeningId != null && hidden.Contains(v.OpeningId)) continue;
             if (spec.Kind == "plan" && display.Shows(storey, Spatial.StoreyOf(m, host.Id)?.Id) == null) continue;
             foreach (var (s, station) in list)
-                if (Mark(c, v, s, station, pieces.Count <= 1, sizes, pens) is { } mk) o.Add(mk);
+                if (Mark(c, v, s, station, pieces.Count <= 1, sizes, pens, obstacles) is { } mk) o.Add(mk);
         }
         return o;
     }
@@ -74,7 +82,50 @@ public static class VoidDrawings
 
     enum Seen { Cut, Seen, Hidden, Overhead }
 
-    static ViewMark? Mark(ViewContext c, OpeningVoid v, ViewSpec s, double station, bool plain, bool sizes, Pens pens)
+    /// <summary>What a label should not stand on: the drawing's lines and cut outlines, the view's annotations, the labels placed before.</summary>
+    sealed class Obstacles
+    {
+        readonly List<(Vec2 A, Vec2 B, double X0, double Y0, double X1, double Y1)> segments = [];
+
+        public Obstacles(ViewContext c, IReadOnlyList<ViewMark>? others)
+        {
+            foreach (var l in c.Drawing.Lines) Add(l.A, l.B);
+            foreach (var p in c.Drawing.Cuts)
+                foreach (var loop in p.Loops)
+                    for (var i = 0; i < loop.Length; i++) Add(loop[i], loop[(i + 1) % loop.Length]);
+            foreach (var t in c.Drawing.Texts ?? []) Box(LabelParts.BoxOf(new PenText(t.At, t.Text, t.Height ?? 2.5, t.Angle, "middle", "middle"), c.Mm));
+            foreach (var mk in others ?? [])
+            {
+                if (mk.Pick) continue;
+                foreach (var l in mk.Lines) Add(l.A, l.B);
+                foreach (var (t, _) in mk.Texts) Box(LabelParts.BoxOf(t, c.Mm));
+            }
+        }
+
+        void Add(Vec2 a, Vec2 b) => segments.Add((a, b, Math.Min(a.X, b.X), Math.Min(a.Y, b.Y), Math.Max(a.X, b.X), Math.Max(a.Y, b.Y)));
+
+        /// <summary>A text's box as four sides (and its middle crossed, so a box inside another counts).</summary>
+        public void Box((Vec2 C, double Hw, double Hh, double Deg) box)
+        {
+            foreach (var (a, b) in LabelParts.Sides(box)) Add(a, b);
+            var u = LabelParts.Dir(box.Deg) * box.Hw;
+            Add(box.C - u, box.C + u);
+        }
+
+        /// <summary>How many of them cross a box standing upright at <paramref name="c"/>.</summary>
+        public int Hits(Vec2 c, double hw, double hh)
+        {
+            var n = 0;
+            foreach (var s in segments)
+            {
+                if (s.X1 < c.X - hw || s.X0 > c.X + hw || s.Y1 < c.Y - hh || s.Y0 > c.Y + hh) continue;
+                if (LabelParts.Crosses((c, hw, hh, 0), s.A, s.B)) n++;
+            }
+            return n;
+        }
+    }
+
+    static ViewMark? Mark(ViewContext c, OpeningVoid v, ViewSpec s, double station, bool plain, bool sizes, Pens pens, Obstacles obstacles)
     {
         var solid = v.Solid;
         if (solid.Vertices.Length == 0) return null;
@@ -158,23 +209,94 @@ public static class VoidDrawings
         foreach (var (a, b) in Cross(hull)) mark.Line(a + shift, b + shift, Layer, Math.Min(width, Widths.Overhead), color, dash);
         foreach (var p in hull) mark.Snaps.Add(p + shift);
 
-        // The mark and its size beside the void: over a wide one, right of a tall one.
+        // The mark and its size beside the void: across its wall, else along it or further out, where nothing else is drawn.
         var style = Standards.TextOf(c.Book, null);
-        var h = style.Height * c.Mm;
-        var (lo, hi) = (new Vec2(hull.Min(p => p.X), hull.Min(p => p.Y)), new Vec2(hull.Max(p => p.X), hull.Max(p => p.Y)));
+        var mm = c.Mm;
+        var h = style.Height * mm;
+        var (lo, hi) = (new Vec2(hull.Min(p => p.X), hull.Min(p => p.Y)) + shift, new Vec2(hull.Max(p => p.X), hull.Max(p => p.Y)) + shift);
         var text = new List<string> { v.Mark };
         if (sizes) text.Add(Size(v, c.Book.Units));
-        var wide = hi.X - lo.X >= hi.Y - lo.Y;
-        // A wall's opening in a plan: beside the wall, whichever way it runs (its thickness across, the void's depth).
-        if (s.Kind == "plan" && inWall) wide = Math.Abs(hi.X - lo.X - v.Depth) > Math.Abs(hi.Y - lo.Y - v.Depth);
-        for (var i = 0; i < text.Count; i++)
+        var (bw, bh) = (text.Max(t => LabelParts.Width(t, h)), h * (1 + 1.4 * (text.Count - 1)));
+        // The label's own directions: along the wall (read left to right) and across it; the view's x and y for any other void.
+        var u = new Vec2(1, 0);
+        if (s.Kind == "plan" && inWall && v.Along is { } dir)
         {
-            var (at, anchor) = wide
-                ? (new Vec2((lo.X + hi.X) / 2, hi.Y + h * (0.6 + 1.4 * (text.Count - 1 - i))), "middle")
-                : (new Vec2(hi.X + h * 0.6, (lo.Y + hi.Y) / 2 + h * 1.4 * ((text.Count - 1) / 2.0 - i)), "start");
-            mark.Text(new PenText(at + shift, text[i], style.Height, 0, anchor, wide ? "bottom" : "middle", i == 0 || style.Bold, style.Font, style.Italic), color);
+            var d = new Vec2(Vec3.Dot(dir.At(0), f.Right), Vec3.Dot(dir.At(0), f.Up));
+            if (d.Length > 1e-9) u = d.Normalized();
         }
+        if (u.X < -1e-9 || Math.Abs(u.X) <= 1e-9 && u.Y < 0) u = u * -1;
+        var across = new Vec2(-u.Y, u.X);
+        var middle = (lo + hi) * 0.5;
+        var labels = c.View.Attrs["voidLabels"] as System.Text.Json.Nodes.JsonObject;
+        var part = LabelParts.Of(labels, v.Key);
+        var pos = part.D is { } off ? middle + (u * off.X + across * off.Y) * mm : Place(v, s, inWall, hull, shift, middle, u, across, bw, bh, h, obstacles);
+        var angle = part.Rot is { } r ? LabelParts.Upright(LabelParts.AngleOf(u) + r) : 0;
+        var tdir = LabelParts.Dir(angle);
+        var up = new Vec2(-tdir.Y, tdir.X);
+        for (var i = 0; i < text.Count; i++)
+            mark.Text(new PenText(pos + up * (bh / 2 - h / 2 - 1.4 * h * i), text[i], style.Height, angle, "middle", "middle", i == 0 || style.Bold, style.Font, style.Italic), color);
+        obstacles.Box((pos, bw / 2, bh / 2, angle));
+        mark.Data!["label"] = LabelParts.TextData("label", pos, middle, u, across, mm, angle, LabelParts.AngleOf(u), pos + tdir * (bw / 2 + h), part, (pos, bw / 2, bh / 2, angle));
+        mark.Data!["view"] = c.View.Id;
         return mark;
+    }
+
+    /// <summary>
+    /// Where a void's label stands by default: beside it across its wall (over a wide void, right of a tall one, as
+    /// before), else on the other side, else beside it and moved along the wall past its end, else further out, else
+    /// along the wall; the first place nothing else crosses, else the one fewest things cross.
+    /// </summary>
+    static Vec2 Place(OpeningVoid v, ViewSpec s, bool inWall, Vec2[] hull, Vec2 shift, Vec2 middle, Vec2 u, Vec2 across, double bw, double bh, double h, Obstacles obstacles)
+    {
+        var gap = 0.6 * h;
+        // The void's and the label's half sizes along a direction.
+        double Of(Vec2 n) => hull.Max(p => Vec2.Dot(p + shift - middle, n));
+        double Box(Vec2 n) => Math.Abs(n.X) * bw / 2 + Math.Abs(n.Y) * bh / 2;
+        Vec2 sideways, along;
+        if (s.Kind == "plan" && inWall && v.Along != null) (sideways, along) = (across, u);
+        else
+        {
+            var wide = hull.Max(p => p.X) - hull.Min(p => p.X) >= hull.Max(p => p.Y) - hull.Min(p => p.Y);
+            (sideways, along) = wide ? (new Vec2(0, 1), new Vec2(1, 0)) : (new Vec2(1, 0), new Vec2(0, 1));
+        }
+        // Over (or right of) the void first, as a label was put before it could move.
+        if (Vec2.Dot(sideways, new Vec2(1, 1)) < 0) sideways = sideways * -1;
+        Vec2 Out(Vec2 n, double extra = 0) => n * (Of(n) + gap + Box(n) + extra);
+        var candidates = new List<Vec2>();
+        foreach (var side in new[] { sideways, sideways * -1 }) candidates.Add(middle + Out(side));
+        foreach (var side in new[] { sideways, sideways * -1 })
+            foreach (var end in new[] { along, along * -1 })
+                candidates.Add(middle + Out(side) + Out(end));
+        foreach (var side in new[] { sideways, sideways * -1 }) candidates.Add(middle + Out(side, bh + gap));
+        foreach (var end in new[] { along, along * -1 }) candidates.Add(middle + Out(end));
+        var (best, fewest) = (candidates[0], int.MaxValue);
+        foreach (var at in candidates)
+        {
+            var n = obstacles.Hits(at, bw / 2 + gap / 2, bh / 2 + gap / 2);
+            if (n == 0) return at;
+            if (n < fewest) (best, fewest) = (at, n);
+        }
+        return best;
+    }
+
+    /// <summary>
+    /// A void's label moved (offset: [along, across] paper mm from the void's middle; null: back where it stands by
+    /// default), turned (rot: degrees from the wall; null: level again) or reset (reset: true; with no key, every label
+    /// of the view): kept on the view by the void's key (decision 292).
+    /// </summary>
+    public static void Register(IModuleRegistry r)
+    {
+        r.Command("view.voidLabel", "Move void label", (ctx, a) =>
+        {
+            var (view, write) = GraphicsSets.Target(ctx, (string?)a["viewId"] ?? throw new CommandException("A void's label is on a view."));
+            var key = ((string?)a["key"])?.Trim();
+            var args = a.DeepClone().AsObject();
+            args["part"] = key;
+            var attrs = view.CloneAttrs();
+            if (LabelParts.Apply(attrs["voidLabels"] as System.Text.Json.Nodes.JsonObject, args) is { } labels) attrs["voidLabels"] = labels; else attrs.Remove("voidLabels");
+            write(attrs);
+            return null;
+        });
     }
 
     /// <summary>A void's size as a coordination drawing writes it: width × height (a round one's diameter), and a wall opening's bottom level.</summary>

@@ -1017,6 +1017,24 @@ export const PL: Record<string, string> = {
   'Void sizes': 'Wymiary otworów',
   'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Pod oznaczeniem każdego otworu szerokość × wysokość (średnica okrągłego) i rzędna dołu otworu w ścianie',
   'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Rzuty, przekroje i elewacje rysują bryły otworów, przekreślone, z ich oznaczeniami',
+  // Labels edited part by part (decision 292).
+  'Drag: lengthen or shorten the line · Ctrl/⌘-click: back to its length': 'Przeciągnij: wydłuż lub skróć linię · Ctrl/⌘-klik: z powrotem do jej długości',
+  'Drag: move this text · Ctrl/⌘-click: back in its place': 'Przeciągnij: przesuń ten tekst · Ctrl/⌘-klik: z powrotem na miejsce',
+  'Drag: turn this text · Ctrl/⌘-click: as the tag type lays it': 'Przeciągnij: obróć ten tekst · Ctrl/⌘-klik: tak, jak układa go typ etykiety',
+  'Drag: move the label · Ctrl/⌘-click: back where it stood': 'Przeciągnij: przesuń etykietę · Ctrl/⌘-klik: z powrotem tam, gdzie była',
+  'Drag: turn the label · Ctrl/⌘-click: level again': 'Przeciągnij: obróć etykietę · Ctrl/⌘-klik: znów poziomo',
+  'Back as by default': 'Z powrotem domyślnie',
+  'Outer line': 'Wiersz zewnętrzny',
+  'Inner line': 'Wiersz wewnętrzny',
+  'Its turn from the way the tag type lays it, in degrees; it is always drawn upright': 'Jego obrót względem ułożenia z typu etykiety, w stopniach; zawsze rysowany czytelnie',
+  'How much further this end of the line reaches, paper mm (negative: shorter)': 'O ile dalej sięga ten koniec linii, mm na papierze (ujemnie: krócej)',
+  'Each text and each end of the marker\'s line has its grips in the plan: drag to move, turn or lengthen; Ctrl/⌘-click a grip puts that part back': 'Każdy tekst i każdy koniec linii znacznika ma swoje uchwyty na rzucie: przeciągnij, aby przesunąć, obrócić lub wydłużyć; Ctrl/⌘-klik na uchwycie przywraca tę część',
+  'Marker': 'Znacznik',
+  'Outer end': 'Koniec zewnętrzny',
+  'Inner end': 'Koniec wewnętrzny',
+  'Text direction': 'Kierunek tekstu',
+  'perpendicular to the tag line': 'prostopadle do linii etykiety',
+  'along the tag line': 'wzdłuż linii etykiety',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

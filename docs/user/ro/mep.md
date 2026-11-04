@@ -114,6 +114,14 @@ Cu un plan, o secțiune sau o fațadă în față, **Vedere → Volume de gol** 
 
 ![Planul cu volumele de gol: secționate prin pereți, golul din placă văzut, fiecare cu diagonale și marcă](shots/mep-voids-plan.webp)
 
+Eticheta unui gol stă lângă el, de-a curmezișul peretelui, unde nu e deja desenat altceva: deschiderea unei uși, marcajul ușii sau al ferestrei, alte etichete. Când ambele părți ale peretelui sunt ocupate, se mută de-a lungul peretelui, după gol, altfel mai departe.
+
+![Golul unei uși: eticheta lui ferită de deschiderea ușii și de marcajul ei](shots/void-label.webp)
+
+Ca să muți o etichetă, dă clic pe ea (sau pe gol): asta selectează golul, a cărui etichetă are un mâner pătrat ca s-o muți și unul rotund ca s-o rotești. Ctrl/⌘-clic pe un mâner pune eticheta înapoi unde stă implicit, sau din nou orizontală. O etichetă mutată e păstrată de acea vedere, de-a lungul și de-a curmezișul peretelui față de mijlocul golului, așa că urmează golul când se mută peretele; planșele și PDF-ul o tipăresc unde ai pus-o.
+
+![Eticheta golului mutată de mânerul ei](shots/void-label-moved.webp)
+
 E o setare a vederii, și în proprietățile ei (**Vedere → Setările vederii**): **Volume de gol**, și **Dimensiunile golurilor** pentru dimensiunea de sub marcă. Implicit nicio vedere nu le desenează; stilul de vedere **Coordonare** (**Gestionare → Stiluri de vedere**, ales ca **Stil** al vederii) le desenează în fiecare vedere care îl ia. Liniile lor sunt categoria **Volume**: creioanele și culorile în **Gestionare → Stiluri de obiecte** (linii secționate, în proiecție, ascunse, deasupra), arătate sau ascunse pe vedere în **Vedere → Vizibilitate / Grafică…**.
 
 Ca să dai volumele unui program de coliziuni, bifează **Volume de gol** în **Fișier → Export IFC sau Fragments…** (sau **Export 3D…**). În IFC fiecare volum e un **IfcBuildingElementProxy** de tip **PROVISIONFORVOID** cu **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter pentru unul rotund, Depth) și setul Lapin **Lapin_OpeningVoid** (marca, felul, gazda, golul și decalajul), legat de gazda lui; golurile înseși rămân IfcOpeningElement ca întotdeauna. Fiecare volum își păstrează GlobalId-ul de la un export la altul, așa că programul de coliziuni îl urmărește. Într-un export de suprafețe 3D ele sunt un grup aparte, **Opening voids**. Fără bifă, exporturile sunt ca înainte.

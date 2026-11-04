@@ -86,3 +86,19 @@ On the facade, besides the surround, a window can have a **Keystone**, a **Crown
 ## Tags in plan
 
 **Annotate → Door & window tags** puts a marker on each door and window of a plan: a line across the wall, the mark outside, and the size and sill inside. To change how the tags look, go to **Manage → Drafting standards → Tags**.
+
+### Editing a marker on screen
+
+Each marker can be laid out by hand, part by part. Click its line or one of its texts to select it: every text then has a square grip (drag it to move the text) and a round one past its end (drag it to turn the text), and each end of the line has a grip (drag it to lengthen or shorten the line; the text at that end goes with it). Ctrl/⌘-click a grip to put that part back as it was. Each drag is one step to undo. With several markers of the same plan selected, a part dragged on one changes the same part of all of them.
+
+![A door's marker selected: a grip for each text, its turning grip, and one at each end of the line](shots/marker-grips.webp)
+
+![The mark moved and turned, the outer end of the line drawn out](shots/marker-edited.webp)
+
+The edits belong to the marker, and so to that plan: the same door can be laid out differently in another plan. They are kept along and across the wall, so they follow the door when it moves, turns or flips to the other side. In the marker's properties, **Marker** lists its parts: type a text's turn in degrees or an end's reach in paper millimetres, put one part back with ↺, or all of them with **Put the label back**. The engine draws markers as edited, so sheets, PDF and DXF print them the same.
+
+![A marker's parts in its properties](shots/marker-properties.webp)
+
+Whether the texts lie across the marker's line (along the wall, as by default) or along it is set for each tag type, in **Manage → Drafting standards → Tags**, column **Text direction**: **perpendicular to the tag line** or **along the tag line**. Either way they are drawn upright, never upside down; a text turned by hand is kept upright too.
+
+![The door marker's texts along the tag line](shots/marker-along.webp)

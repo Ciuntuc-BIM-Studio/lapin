@@ -86,3 +86,19 @@ Na elewacji, oprócz opaski, okno może mieć **Zwornik**, **Zwieńczenie nad ot
 ## Etykiety na rzucie
 
 **Opisz → Etykiety drzwi i okien** stawia znacznik na każdych drzwiach i oknie rzutu: linię w poprzek ściany, oznaczenie na zewnątrz, a wymiary i parapet wewnątrz. Aby zmienić wygląd etykiet, przejdź do **Zarządzaj → Standardy rysunkowe → Etykiety**.
+
+### Edycja znacznika na ekranie
+
+Każdy znacznik można ułożyć ręcznie, część po części. Kliknij jego linię lub jeden z tekstów, aby go zaznaczyć: każdy tekst ma wtedy kwadratowy uchwyt (przeciągnij, aby przesunąć tekst) i okrągły za jego końcem (przeciągnij, aby obrócić tekst), a każdy koniec linii ma uchwyt (przeciągnij, aby wydłużyć lub skrócić linię; tekst przy tym końcu idzie razem z nim). Ctrl/⌘-klik na uchwycie przywraca tę część. Każde przeciągnięcie to jeden krok cofania. Gdy zaznaczonych jest kilka znaczników tego samego rzutu, część przeciągnięta na jednym zmienia tę samą część we wszystkich.
+
+![Zaznaczony znacznik drzwi: uchwyt dla każdego tekstu, jego uchwyt obrotu i po jednym na każdym końcu linii](shots/marker-grips.webp)
+
+![Oznaczenie przesunięte i obrócone, zewnętrzny koniec linii wydłużony](shots/marker-edited.webp)
+
+Zmiany należą do znacznika, a więc do tego rzutu: te same drzwi mogą być ułożone inaczej na innym rzucie. Są zapisane wzdłuż i w poprzek ściany, więc podążają za drzwiami, gdy się przesuwają, obracają lub przechodzą na drugą stronę. We właściwościach znacznika **Znacznik** wymienia jego części: wpisz obrót tekstu w stopniach lub o ile sięga koniec w milimetrach na papierze, przywróć jedną część przez ↺ lub wszystkie przez **Przywróć etykietę na miejsce**. Silnik rysuje znaczniki tak, jak je zmieniono, więc arkusze, PDF i DXF drukują je tak samo.
+
+![Części znacznika w jego właściwościach](shots/marker-properties.webp)
+
+Czy teksty leżą w poprzek linii znacznika (wzdłuż ściany, domyślnie), czy wzdłuż niej, ustala się dla każdego typu etykiety w **Zarządzaj → Standardy rysunkowe → Etykiety**, kolumna **Kierunek tekstu**: **prostopadle do linii etykiety** lub **wzdłuż linii etykiety**. W obu przypadkach są rysowane czytelnie, nigdy do góry nogami; ręcznie obrócony tekst też pozostaje czytelny.
+
+![Teksty znacznika drzwi wzdłuż linii etykiety](shots/marker-along.webp)

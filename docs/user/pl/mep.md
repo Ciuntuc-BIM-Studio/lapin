@@ -114,6 +114,14 @@ Z rzutem, przekrojem lub elewacją z przodu **Widok → Bryły otworów** rysuje
 
 ![Rzut z bryłami otworów: przecięte w ścianach, otwór w stropie widziany, każdy przekreślony i oznaczony](shots/mep-voids-plan.webp)
 
+Etykieta otworu stoi obok niego, w poprzek ściany, tam gdzie nic innego nie jest narysowane: zakres otwierania drzwi, znacznik drzwi lub okna, inne etykiety. Gdy obie strony ściany są zajęte, przesuwa się wzdłuż ściany za otwór, a jeśli i to nie, dalej na zewnątrz.
+
+![Otwór drzwi: jego etykieta z dala od zakresu otwierania i od znacznika drzwi](shots/void-label.webp)
+
+Aby przesunąć etykietę, kliknij ją (lub otwór): zaznacza to otwór, którego etykieta ma kwadratowy uchwyt do przesuwania i okrągły do obracania. Ctrl/⌘-klik na uchwycie przywraca etykietę na domyślne miejsce lub znów poziomo. Przesuniętą etykietę zapamiętuje ten widok, wzdłuż i w poprzek ściany od środka otworu, więc podąża za otworem, gdy ściana się przesuwa; arkusze i PDF drukują ją tam, gdzie ją postawiono.
+
+![Etykieta otworu przesunięta uchwytem](shots/void-label-moved.webp)
+
 To ustawienie widoku, także w jego właściwościach (**Widok → Ustawienia widoku**): **Bryły otworów** oraz **Wymiary otworów** dla wymiaru pod oznaczeniem. Domyślnie żaden widok ich nie rysuje; styl widoku **Koordynacja** (**Zarządzaj → Style widoku**, wybrany jako **Styl** widoku) rysuje je w każdym widoku, który go przyjmie. Ich linie to kategoria **Bryły**: pióra i kolory w **Zarządzaj → Style obiektów** (linie cięcia, rzutu, ukryte, nad cięciem), pokazywane lub ukrywane w widoku w **Widok → Widoczność / Grafika…**.
 
 Aby przekazać bryły do programu kolizji, zaznacz **Bryły otworów** w **Plik → Eksportuj IFC lub Fragments…** (lub **Eksportuj 3D…**). W IFC każda bryła to **IfcBuildingElementProxy** typu **PROVISIONFORVOID** z **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter dla okrągłej, Depth) i zestawem Lapina **Lapin_OpeningVoid** (znak, rodzaj, element nośny, otwór, odsunięcie), powiązana z elementem nośnym; same otwory pozostają IfcOpeningElement. Każda bryła zachowuje GlobalId między eksportami. W eksporcie siatek tworzą osobną grupę **Opening voids**. Bez zaznaczenia eksporty są jak dotąd.

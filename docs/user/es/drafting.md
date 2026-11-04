@@ -76,6 +76,8 @@ Una etiqueta seleccionada tiene pinzamientos. Arrastre el recuadro para mover la
 
 ![Las propiedades de una etiqueta](shots/tag-properties.webp)
 
+El marcador de una puerta o ventana se edita parte por parte, cada texto movido o girado y cada extremo de su línea alargado: ver [Puertas y ventanas](doors-windows.md).
+
 ### Ejes de rejilla
 
 **Anotar → Eje de rejilla** (<kbd>GR</kbd>) dibuja un eje por sus dos extremos; toma la siguiente etiqueta de su dirección. **Anotar → Retícula de ejes…** coloca una retícula entera de una vez: las separaciones **En horizontal** (los ejes numerados, de izquierda a derecha) y **En vertical** (los ejes con letras, de abajo arriba) en las unidades del proyecto, como `6000 6000 4500` o `3*6000`; el **Origen** donde se cruzan los primeros ejes, un **Ángulo**, cuánto se prolongan los ejes **Más allá de la retícula**, las **Primeras etiquetas** y el **Tipo de eje**. Con **sustituir los ejes de la retícula** marcado, los ejes dibujados hasta entonces desaparecen.

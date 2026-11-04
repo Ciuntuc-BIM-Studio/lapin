@@ -13,6 +13,8 @@ import { execute, query, useSession } from '../../engine/session';
 import { cadHost, type Step } from '../../viewport/cad/session';
 import { Cell } from '../../shell/cells';
 import { pt } from '../../viewport/gripKit';
+import { useUi } from '../../app/store';
+import { isPart, partGrips } from '../../platform/labelParts';
 import { formatLength, unitLabel } from '../../engine/unitsStore';
 
 /** What the TAG command puts down: the field it shows (a parameter's name too), a tag type (its template wins), a leader or none. */
@@ -122,7 +124,13 @@ export function tagCommand(): Step {
  */
 export function tagGrips(node: NodeDto, view?: GripView): Grip[] {
   if (node.props.predefinedType !== 'TAG') return [];
-  const data = view?.mark?.data as { at?: unknown; elbow?: unknown; end?: unknown; from?: unknown } | undefined;
+  const data = view?.mark?.data as { at?: unknown; elbow?: unknown; end?: unknown; from?: unknown; marker?: boolean; parts?: unknown[] } | undefined;
+  // A door's or window's marker (decision 292): a grip for each of its parts. Several markers of one view selected take the same change.
+  if (data?.marker) {
+    const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
+    const ids = markersAlike(node);
+    return partGrips((data.parts ?? []).filter(isPart), (args) => ({ command: 'drafting.updateTag', args: { ids, ...args } })).map((g) => ({ ...g, view: viewId }));
+  }
   const at = pt(data?.at) ?? pt(node.props.at);
   if (!at) return [];
   const id = node.id;
@@ -149,6 +157,73 @@ export function tagGrips(node: NodeDto, view?: GripView): Grip[] {
   }
   const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
   return grips.map((g) => ({ ...g, view: viewId }));
+}
+
+/** The selected markers of the same view as `node` (it first): what a part's grip changes. */
+function markersAlike(node: NodeDto): string[] {
+  const nodes = useSession.getState().nodes;
+  const others = useUi.getState().selected.filter((id) => id !== node.id).filter((id) => {
+    const n = nodes.get(id);
+    const e = typeof n?.props.element === 'string' ? nodes.get(n.props.element) : undefined;
+    return n?.props.predefinedType === 'TAG' && n.props.viewId === node.props.viewId && (e?.type === 'IfcDoor' || e?.type === 'IfcWindow');
+  });
+  return [node.id, ...others];
+}
+
+interface PartEdit { d?: number[]; rot?: number; ext?: number }
+interface MarkerTypeDto { id: string; template?: string; inner?: string }
+
+/** How many lines a template writes ("|" starts a new one). */
+const lineCount = (t: string | undefined) => (t ? t.split('|').length : 0);
+
+/**
+ * A door's or window's marker part by part (decision 292): each text line's turn (typed; its grips in the plan move and
+ * turn it), each end of its line's reach, each put back on its own or all at once.
+ */
+function MarkerParts({ node, tagType }: { node: NodeDto; tagType: string }) {
+  const nodes = useSession((s) => s.nodes);
+  const [type, setType] = useState<MarkerTypeDto | null>(null);
+  useEffect(() => {
+    let live = true;
+    void query<{ tagTypes?: MarkerTypeDto[] }>('standards.get').then((b) => { if (live) setType(b?.tagTypes?.find((t) => t.id === tagType) ?? null); });
+    return () => { live = false; };
+  }, [tagType, nodes]);
+  const parts = (node.props.parts ?? {}) as Record<string, PartEdit>;
+  const set = (args: Record<string, unknown>) => void execute('drafting.updateTag', { id: node.id, ...args });
+  const reset = (part: string) => <button type="button" className="btn mini" title="Back as by default" data-marker-reset={part} onClick={() => set({ part, reset: true })}>↺</button>;
+  const num = (part: string, field: 'rot' | 'ext', value: number | undefined, title: string) => (
+    <input className="cell num" key={`${part}${field}${value ?? ''}`} defaultValue={value == null ? '' : String(value)} placeholder="0" title={title} data-marker-part={`${part}.${field}`} style={{ width: 64 }}
+      onBlur={(e) => {
+        const t = e.target.value.trim().replace(',', '.');
+        const n = t === '' ? null : Number(t);
+        if (n !== null && !Number.isFinite(n)) return;
+        if ((n ?? 0) !== (value ?? 0)) set({ part, [field]: n === 0 ? null : n });
+      }} />
+  );
+  const texts: [string, string, number][] = [
+    ...Array.from({ length: lineCount(type?.template) }, (_, i): [string, string, number] => [`o${i}`, 'Outer line', i + 1]),
+    ...Array.from({ length: lineCount(type?.inner) }, (_, i): [string, string, number] => [`i${i}`, 'Inner line', i + 1]),
+  ];
+  const turnTitle = 'Its turn from the way the tag type lays it, in degrees; it is always drawn upright';
+  const reachTitle = 'How much further this end of the line reaches, paper mm (negative: shorter)';
+  return (
+    <>
+      <dt title={'Each text and each end of the marker\'s line has its grips in the plan: drag to move, turn or lengthen; Ctrl/⌘-click a grip puts that part back'}>Marker</dt>
+      <dd><button type="button" className="btn mini" data-marker-reset-all disabled={!node.props.parts} onClick={() => set({ reset: true })}>Put the label back</button></dd>
+      {texts.map(([key, label, n]) => (
+        <span key={key} style={{ display: 'contents' }}>
+          <dt><span>{label}</span><span data-no-i18n style={{ marginLeft: '0.35em' }}>{n}</span></dt>
+          <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}>{num(key, 'rot', parts[key]?.rot, turnTitle)}<span className="muted">°</span>{parts[key] && reset(key)}</dd>
+        </span>
+      ))}
+      {([['b', 'Outer end'], ['a', 'Inner end']] as const).map(([key, label]) => (
+        <span key={key} style={{ display: 'contents' }}>
+          <dt>{label}</dt>
+          <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}>{num(key, 'ext', parts[key]?.ext, reachTitle)}<span className="muted">mm</span>{parts[key] && reset(key)}</dd>
+        </span>
+      ))}
+    </>
+  );
 }
 
 interface FieldDto { field: string; set: string | null; name: string; group: string; value: string }
@@ -219,7 +294,8 @@ export function TagFields({ node }: { node: NodeDto }) {
           {!!node.props.end && <button type="button" className="btn mini" title="The leader points at the element's middle again" onClick={() => set({ end: null })}>On the element</button>}
         </dd>
       </>}
-      {at && <><dt>Position</dt><dd className="pair"><Pair p={at} /></dd></>}
+      {marker && <MarkerParts node={node} tagType={tagType} />}
+      {at && !marker && <><dt>Position</dt><dd className="pair"><Pair p={at} /></dd></>}
     </dl>
   );
 }

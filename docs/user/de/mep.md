@@ -114,6 +114,14 @@ Mit einem Grundriss, Schnitt oder einer Ansicht vorn zeichnet **Ansicht → Öff
 
 ![Der Grundriss mit den Öffnungskörpern: in den Wänden geschnitten, die Deckenöffnung gesehen, jede durchkreuzt und markiert](shots/mep-voids-plan.webp)
 
+Die Beschriftung einer Aussparung steht neben ihr quer zur Wand, wo noch nichts gezeichnet ist: der Aufschlag einer Tür, die Markierung der Tür oder des Fensters, andere Beschriftungen. Sind beide Seiten der Wand belegt, rückt sie entlang der Wand über die Öffnung hinaus, sonst weiter nach außen.
+
+![Die Aussparung einer Tür: ihre Beschriftung frei vom Aufschlag und von der Türmarkierung](shots/void-label.webp)
+
+Um eine Beschriftung zu verschieben, klicken Sie darauf (oder auf die Aussparung): Das wählt die Öffnung aus, deren Beschriftung einen quadratischen Griff zum Verschieben und einen runden zum Drehen zeigt. Strg/⌘-Klick auf einen Griff setzt die Beschriftung an ihren Standardplatz zurück bzw. wieder waagerecht. Eine verschobene Beschriftung speichert diese Ansicht, längs und quer zur Wand von der Mitte der Aussparung aus, sodass sie der Öffnung folgt, wenn die Wand verschoben wird; Pläne und PDF drucken sie dort, wo Sie sie hingesetzt haben.
+
+![Die Beschriftung der Aussparung mit ihrem Griff verschoben](shots/void-label-moved.webp)
+
 Es ist eine Einstellung der Ansicht, auch in ihren Eigenschaften (**Ansicht → Ansichtseinstellungen**): **Öffnungskörper**, und **Größen der Aussparungen** für die Größe unter der Marke. Standardmäßig zeichnet keine Ansicht sie; der Ansichtsstil **Koordination** (**Verwalten → Ansichtsstile**, als **Stil** der Ansicht gewählt) zeichnet sie in jeder Ansicht, die ihn nimmt. Ihre Linien sind die Kategorie **Körper**: Stifte und Farben in **Verwalten → Objektstile** (Schnitt-, Projektions-, verdeckte und darüberliegende Linien), je Ansicht gezeigt oder verborgen in **Ansicht → Sichtbarkeit / Grafiken…**.
 
 Um die Körper einem Kollisionsprogramm zu geben, hake **Öffnungskörper** in **Datei → IFC oder Fragments exportieren…** (oder **3D exportieren…**) an. In IFC ist jeder Körper ein **IfcBuildingElementProxy** vom Typ **PROVISIONFORVOID** mit **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter bei runden, Depth) und Lapins **Lapin_OpeningVoid** (Marke, Art, Wirt, Öffnung, Versatz), mit seinem Wirt verbunden; die Öffnungen bleiben IfcOpeningElement. Jeder Körper behält seine GlobalId von Export zu Export. In einem Mesh-Export bilden sie eine eigene Gruppe, **Opening voids**. Ohne Haken bleiben die Exporte wie bisher.

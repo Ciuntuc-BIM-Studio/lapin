@@ -86,3 +86,19 @@ Sulla facciata, oltre alla cornice, una finestra può avere una **Chiave di volt
 ## Etichette in pianta
 
 **Annota → Etichette di porte e finestre** mette un contrassegno su ogni porta e finestra di una pianta: una linea attraverso il muro, la sigla all’esterno, e le dimensioni e il davanzale all’interno. Per cambiare l’aspetto delle etichette, vai in **Gestisci → Standard di disegno → Etichette**.
+
+### Modificare un contrassegno a schermo
+
+Ogni contrassegno si può disporre a mano, parte per parte. Fai clic sulla sua linea o su uno dei suoi testi per selezionarlo: ogni testo ha allora un grip quadrato (trascinalo per spostare il testo) e uno rotondo oltre la sua fine (trascinalo per ruotare il testo), e ogni estremità della linea ha un grip (trascinalo per allungare o accorciare la linea; il testo a quell’estremità la segue). Ctrl/⌘-clic su un grip rimette quella parte com’era. Ogni trascinamento è un passo di annullamento. Con più contrassegni della stessa pianta selezionati, una parte trascinata su uno cambia la stessa parte di tutti.
+
+![Il contrassegno di una porta selezionato: un grip per ogni testo, il suo grip di rotazione e uno a ogni estremità della linea](shots/marker-grips.webp)
+
+![La sigla spostata e ruotata, l’estremità esterna della linea allungata](shots/marker-edited.webp)
+
+Le modifiche appartengono al contrassegno, e quindi a quella pianta: la stessa porta può essere disposta diversamente in un’altra pianta. Sono tenute lungo e attraverso il muro, quindi seguono la porta quando si sposta, ruota o passa dall’altra parte. Nelle proprietà del contrassegno, **Contrassegno** elenca le sue parti: scrivi la rotazione di un testo in gradi o di quanto arriva un’estremità in millimetri su carta, rimetti una parte con ↺, o tutte con **Riporta l’etichetta al suo posto**. Il motore disegna i contrassegni come modificati, quindi tavole, PDF e DXF li stampano uguali.
+
+![Le parti di un contrassegno nelle sue proprietà](shots/marker-properties.webp)
+
+Se i testi stanno attraverso la linea del contrassegno (lungo il muro, come predefinito) o lungo di essa si sceglie per ogni tipo di etichetta, in **Gestisci → Standard di disegno → Etichette**, colonna **Direzione del testo**: **perpendicolare alla linea dell’etichetta** o **lungo la linea dell’etichetta**. In entrambi i casi sono disegnati leggibili, mai capovolti; anche un testo ruotato a mano resta leggibile.
+
+![I testi del contrassegno della porta lungo la linea dell’etichetta](shots/marker-along.webp)

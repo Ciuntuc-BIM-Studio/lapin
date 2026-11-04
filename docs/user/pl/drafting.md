@@ -76,6 +76,8 @@ Zaznaczona etykieta ma uchwyty. Przeciągnij ramkę, aby przesunąć etykietę: 
 
 ![Właściwości etykiety](shots/tag-properties.webp)
 
+Znacznik drzwi lub okna edytuje się część po części: każdy tekst przesunięty lub obrócony, każdy koniec jego linii wydłużony; zob. [Drzwi i okna](doors-windows.md).
+
 ### Osie siatki
 
 **Opisz → Oś siatki** (<kbd>GR</kbd>) rysuje jedną oś przez jej dwa końce; dostaje kolejną etykietę swojego kierunku. **Opisz → Siatka osi…** wstawia od razu całą siatkę: rozstawy **W poprzek** (osie numerowane, od lewej do prawej) i **Wzdłuż** (osie literowane, od dołu do góry) w jednostkach projektu, np. `6000 6000 4500` lub `3*6000`; **Początek**, gdzie przecinają się pierwsze osie, **Kąt**, jak daleko osie wychodzą **Poza siatkę**, **Pierwsze etykiety** i **Typ osi**. Gdy zaznaczysz **zastąp osie siatki**, dotychczasowe osie znikają.

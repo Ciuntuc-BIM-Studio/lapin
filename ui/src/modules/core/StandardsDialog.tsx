@@ -19,7 +19,7 @@ type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list:
 
 const LINE_TYPES = ['continuous', 'dashed', 'dotted', 'dashdot'];
 /** How a choice reads where its value alone would not say it. */
-const CHOICE_LABELS: Record<string, string> = { project: 'as the project' };
+const CHOICE_LABELS: Record<string, string> = { project: 'as the project', across: 'perpendicular to the tag line', along: 'along the tag line' };
 const TABS: Tab[] = [
   { id: 'text', label: 'Text', list: 'textStyles', fresh: { name: 'Text', height: 2.5 }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'height', label: 'Height mm', kind: 'mm' }, { key: 'font', label: 'Font', kind: 'choice', choices: ['sans', 'serif', 'mono'] },
@@ -38,6 +38,8 @@ const TABS: Tab[] = [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'shape', label: 'Shape', kind: 'choice', choices: ['box', 'opening', 'room'] },
     { key: 'template', label: 'Text (outside)', kind: 'text' }, { key: 'inner', label: 'Inside', kind: 'text' },
     { key: 'unit', label: 'Unit', kind: 'choice', choices: ['cm', 'mm', 'm', 'ft-in', 'in', 'project'] }, { key: 'reach', label: 'Past faces mm', kind: 'mm' },
+    // A door's or window's marker: its texts across its line (along the wall) or along it, always upright (decision 292).
+    { key: 'textOrientation', label: 'Text direction', kind: 'choice', choices: ['across', 'along'] },
     { key: 'textStyle', label: 'Text', kind: 'style' }, { key: 'classes', label: 'Classes', kind: 'text' }] },
   { id: 'layer', label: 'Layers', list: 'layers', fresh: { name: 'Layer' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'color', label: 'Colour', kind: 'color' }, { key: 'lineWeight', label: 'Pen mm', kind: 'mm' },

@@ -1018,6 +1018,24 @@ export const ES: Record<string, string> = {
   'Void sizes': 'Tamaños de huecos',
   'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Bajo la marca de cada hueco, su ancho × alto (el diámetro si es redondo) y la cota inferior de un hueco en muro',
   'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Las plantas, secciones y alzados dibujan los volúmenes de los huecos, en cruz, con sus marcas',
+  // Labels edited part by part (decision 292).
+  'Drag: lengthen or shorten the line · Ctrl/⌘-click: back to its length': 'Arrastra: alarga o acorta la línea · Ctrl/⌘-clic: vuelve a su longitud',
+  'Drag: move this text · Ctrl/⌘-click: back in its place': 'Arrastra: mueve este texto · Ctrl/⌘-clic: vuelve a su sitio',
+  'Drag: turn this text · Ctrl/⌘-click: as the tag type lays it': 'Arrastra: gira este texto · Ctrl/⌘-clic: como lo coloca el tipo de etiqueta',
+  'Drag: move the label · Ctrl/⌘-click: back where it stood': 'Arrastra: mueve la etiqueta · Ctrl/⌘-clic: vuelve a donde estaba',
+  'Drag: turn the label · Ctrl/⌘-click: level again': 'Arrastra: gira la etiqueta · Ctrl/⌘-clic: horizontal de nuevo',
+  'Back as by default': 'Volver al valor por defecto',
+  'Outer line': 'Línea exterior',
+  'Inner line': 'Línea interior',
+  'Its turn from the way the tag type lays it, in degrees; it is always drawn upright': 'Su giro respecto a como lo coloca el tipo de etiqueta, en grados; siempre se dibuja legible',
+  'How much further this end of the line reaches, paper mm (negative: shorter)': 'Cuánto más llega este extremo de la línea, mm en papel (negativo: más corta)',
+  'Each text and each end of the marker\'s line has its grips in the plan: drag to move, turn or lengthen; Ctrl/⌘-click a grip puts that part back': 'Cada texto y cada extremo de la línea del marcador tiene sus pinzamientos en la planta: arrastra para mover, girar o alargar; Ctrl/⌘-clic en un pinzamiento devuelve esa parte a su sitio',
+  'Marker': 'Marcador',
+  'Outer end': 'Extremo exterior',
+  'Inner end': 'Extremo interior',
+  'Text direction': 'Dirección del texto',
+  'perpendicular to the tag line': 'perpendicular a la línea de la etiqueta',
+  'along the tag line': 'a lo largo de la línea de la etiqueta',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

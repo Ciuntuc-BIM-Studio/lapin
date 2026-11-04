@@ -86,3 +86,19 @@ På facaden kan et vindue ud over indfatningen have en **Slutsten**, en **Krone 
 ## Mærker i plan
 
 **Annotér → Dør- og vinduesmærker** sætter et mærke på hver dør og hvert vindue i en plan: en linje på tværs af væggen, mærket udenfor, og størrelsen og brystningen indenfor. Vil du ændre, hvordan mærkerne ser ud, så gå til **Administrer → Tegningsstandarder → Mærker**.
+
+### Rediger et mærke på skærmen
+
+Hvert mærke kan lægges til rette i hånden, del for del. Klik på dets linje eller en af dets tekster for at vælge det: hver tekst har så et firkantet greb (træk for at flytte teksten) og et rundt efter dens ende (træk for at dreje teksten), og hver ende af linjen har et greb (træk for at forlænge eller afkorte linjen; teksten ved den ende følger med). Ctrl/⌘-klik på et greb sætter den del tilbage. Hvert træk er ét fortryd-trin. Er flere mærker i samme plan valgt, ændrer en del trukket på ét den samme del på dem alle.
+
+![En dørs mærke valgt: et greb for hver tekst, dens drejegreb og et ved hver ende af linjen](shots/marker-grips.webp)
+
+![Mærket flyttet og drejet, linjens ydre ende forlænget](shots/marker-edited.webp)
+
+Ændringerne hører til mærket og dermed til den plan: samme dør kan lægges anderledes i en anden plan. De gemmes langs og på tværs af væggen, så de følger døren, når den flyttes, drejes eller vendes til den anden side. I mærkets egenskaber viser **Markør** dets dele: skriv en teksts drejning i grader eller en endes rækkevidde i millimeter på papiret, sæt en del tilbage med ↺, eller alle med **Sæt etiketten tilbage**. Motoren tegner mærkerne som redigeret, så tegninger, PDF og DXF udskriver dem ens.
+
+![Et mærkes dele i dets egenskaber](shots/marker-properties.webp)
+
+Om teksterne ligger på tværs af mærkets linje (langs væggen, som standard) eller langs den vælges for hver mærketype i **Administrer → Tegningsstandarder → Mærker**, kolonnen **Tekstretning**: **vinkelret på mærkelinjen** eller **langs mærkelinjen**. Begge veje tegnes de læselige, aldrig på hovedet; en tekst drejet i hånden holdes også læselig.
+
+![Dørmærkets tekster langs mærkelinjen](shots/marker-along.webp)

@@ -1012,6 +1012,24 @@ export const DA: Record<string, string> = {
   'Void sizes': 'Udsparingers størrelser',
   'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Under hver udsparings mærke dens bredde × højde (en rund ens diameter) og en vægåbnings underkant',
   'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Planer, snit og facader tegner åbningernes udsparingslegemer, krydset, med deres mærker',
+  // Labels edited part by part (decision 292).
+  'Drag: lengthen or shorten the line · Ctrl/⌘-click: back to its length': 'Træk: forlæng eller afkort linjen · Ctrl/⌘-klik: tilbage til dens længde',
+  'Drag: move this text · Ctrl/⌘-click: back in its place': 'Træk: flyt denne tekst · Ctrl/⌘-klik: tilbage på sin plads',
+  'Drag: turn this text · Ctrl/⌘-click: as the tag type lays it': 'Træk: drej denne tekst · Ctrl/⌘-klik: som mærketypen lægger den',
+  'Drag: move the label · Ctrl/⌘-click: back where it stood': 'Træk: flyt mærkaten · Ctrl/⌘-klik: tilbage hvor den stod',
+  'Drag: turn the label · Ctrl/⌘-click: level again': 'Træk: drej mærkaten · Ctrl/⌘-klik: vandret igen',
+  'Back as by default': 'Tilbage til standard',
+  'Outer line': 'Ydre linje',
+  'Inner line': 'Indre linje',
+  'Its turn from the way the tag type lays it, in degrees; it is always drawn upright': 'Dens drejning i forhold til hvordan mærketypen lægger den, i grader; den tegnes altid læselig',
+  'How much further this end of the line reaches, paper mm (negative: shorter)': 'Hvor meget længere denne ende af linjen rækker, mm på papiret (negativ: kortere)',
+  'Each text and each end of the marker\'s line has its grips in the plan: drag to move, turn or lengthen; Ctrl/⌘-click a grip puts that part back': 'Hver tekst og hver ende af markørens linje har sine greb i planen: træk for at flytte, dreje eller forlænge; Ctrl/⌘-klik på et greb sætter den del tilbage',
+  'Marker': 'Markør',
+  'Outer end': 'Ydre ende',
+  'Inner end': 'Indre ende',
+  'Text direction': 'Tekstretning',
+  'perpendicular to the tag line': 'vinkelret på mærkelinjen',
+  'along the tag line': 'langs mærkelinjen',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -75,6 +75,7 @@ public sealed class CoreModule : ILapinModule
         // What foreign elements share in their file (a type, a system, a material), kept for the export.
         r.Class(new(IfcSource.RecordClass, "IFC record", [], "#888888", Kind: "resource"));
         ViewStyles.Register(r);
+        Coordination.VoidDrawings.Register(r);
         ElementFaces.Register(r);
         Dependencies.Register(r);
 

@@ -86,3 +86,19 @@ Na fachada, além da moldura, uma janela pode ter uma **Fecho de arco**, um **Co
 ## Etiquetas na planta
 
 **Anotar → Identificadores de portas e janelas** coloca um marcador em cada porta e janela de uma planta: uma linha atravessando a parede, a marca do lado de fora e o tamanho e o peitoril do lado de dentro. Para mudar a aparência dos identificadores, vá em **Gerenciar → Padrões de desenho → Identificadores**.
+
+### Editar um marcador na tela
+
+Cada marcador pode ser arrumado à mão, parte por parte. Clique na sua linha ou num dos seus textos para selecioná-lo: cada texto tem então um grip quadrado (arraste para mover o texto) e um redondo depois do seu fim (arraste para girar o texto), e cada ponta da linha tem um grip (arraste para alongar ou encurtar a linha; o texto daquela ponta vai junto). Ctrl/⌘-clique num grip devolve aquela parte ao que era. Cada arraste é um passo de desfazer. Com vários marcadores da mesma planta selecionados, uma parte arrastada num muda a mesma parte em todos.
+
+![O marcador de uma porta selecionado: um grip por texto, seu grip de giro e um em cada ponta da linha](shots/marker-grips.webp)
+
+![A marca movida e girada, a ponta externa da linha alongada](shots/marker-edited.webp)
+
+As alterações pertencem ao marcador, e portanto àquela planta: a mesma porta pode ser arrumada de outro jeito em outra planta. Elas são guardadas ao longo e através da parede, então seguem a porta quando ela se move, gira ou passa para o outro lado. Nas propriedades do marcador, **Marcador** lista suas partes: digite o giro de um texto em graus ou quanto uma ponta avança em milímetros no papel, devolva uma parte com ↺, ou todas com **Recolocar o rótulo no lugar**. O motor desenha os marcadores como editados, então as folhas, o PDF e o DXF os imprimem igual.
+
+![As partes de um marcador nas suas propriedades](shots/marker-properties.webp)
+
+Se os textos ficam através da linha do marcador (ao longo da parede, o padrão) ou ao longo dela é escolhido para cada tipo de etiqueta, em **Gerenciar → Padrões de desenho → Identificadores**, coluna **Direção do texto**: **perpendicular à linha da etiqueta** ou **ao longo da linha da etiqueta**. Nos dois casos são desenhados legíveis, nunca de cabeça para baixo; um texto girado à mão também fica legível.
+
+![Os textos do marcador da porta ao longo da linha da etiqueta](shots/marker-along.webp)

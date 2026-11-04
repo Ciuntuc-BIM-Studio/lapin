@@ -114,6 +114,14 @@ Con una planta, sección o alzado delante, **Vista → Volúmenes de hueco** los
 
 ![La planta con los volúmenes: cortados en los muros, el hueco del forjado visto, cada uno en cruz y con su marca](shots/mep-voids-plan.webp)
 
+La etiqueta de un hueco se coloca junto a él, a través de su muro, donde no hay nada dibujado: el barrido de una puerta, el marcador de la puerta o ventana, otras etiquetas. Si ambos lados del muro están ocupados, se desplaza a lo largo del muro más allá del hueco, o más lejos.
+
+![El hueco de una puerta: su etiqueta libre del barrido y del marcador de la puerta](shots/void-label.webp)
+
+Para mover una etiqueta, haz clic en ella (o en el hueco): así se selecciona la abertura, cuya etiqueta muestra un pinzamiento cuadrado para moverla y uno redondo para girarla. Ctrl/⌘-clic en un pinzamiento la devuelve a su sitio por defecto, o de nuevo horizontal. Una etiqueta movida la guarda esa vista, a lo largo y a través del muro desde el centro del hueco, así que sigue a la abertura cuando el muro se mueve; los planos y el PDF la imprimen donde la pusiste.
+
+![La etiqueta del hueco movida por su pinzamiento](shots/void-label-moved.webp)
+
 Es un ajuste de la vista, también en sus propiedades (**Vista → Configuración de vista**): **Volúmenes de hueco**, y **Tamaños de huecos** para el tamaño bajo la marca. Por defecto ninguna vista los dibuja; el estilo de vista **Coordinación** (**Gestionar → Estilos de vista**, elegido como **Estilo** de la vista) los dibuja en cada vista que lo toma. Sus líneas son la categoría **Volúmenes**: sus plumas y colores en **Gestionar → Estilos de objeto** (líneas de corte, proyección, ocultas, por encima), mostradas u ocultas por vista en **Vista → Visibilidad / Gráficos…**.
 
 Para pasar los volúmenes a un programa de colisiones, marca **Volúmenes de hueco** en **Archivo → Exportar IFC o Fragments…** (o **Exportar 3D…**). En IFC cada volumen es un **IfcBuildingElementProxy** de tipo **PROVISIONFORVOID** con **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter si es redondo, Depth) y el conjunto de Lapin **Lapin_OpeningVoid** (marca, tipo, anfitrión, hueco y desfase), relacionado con su anfitrión; los huecos siguen siendo IfcOpeningElement. Cada volumen conserva su GlobalId de una exportación a otra. En una exportación de mallas son un grupo propio, **Opening voids**. Sin marcar la casilla, las exportaciones quedan como estaban.

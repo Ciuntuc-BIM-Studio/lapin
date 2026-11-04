@@ -10,6 +10,7 @@
  * opening).
  */
 
+import { hitsLabel } from '../platform/labelParts';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { Vec2 } from '../platform/module';
 import { boxTest, segsOf, type RegionTest, type Seg } from './selectBox';
@@ -66,7 +67,8 @@ export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<str
   // Annotations (dimensions, texts, grids, section lines) lie over the model: they are picked first, a tag but where its element is under the point.
   if (!types && marks) {
     for (const m of marks) {
-      if (m.pick || !near(p, m.segments, tol)) continue;
+      // A label's texts pick it too (a marker's, a void's: decision 292).
+      if (m.pick || !(near(p, m.segments, tol) || hitsLabel(p, m.data, tol))) continue;
       const hit = markOwner(m.id, nodes);
       if (!hit) continue;
       if (typeof m.data?.of === 'string' && m.data.of === best?.e.id) continue;

@@ -1018,6 +1018,24 @@ export const IT: Record<string, string> = {
   'Void sizes': 'Dimensioni dei fori',
   'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Sotto la sigla di ogni foro, larghezza × altezza (il diametro se tondo) e la quota inferiore di un\'apertura nel muro',
   'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Piante, sezioni e prospetti disegnano i volumi delle aperture, con la croce, con le loro sigle',
+  // Labels edited part by part (decision 292).
+  'Drag: lengthen or shorten the line · Ctrl/⌘-click: back to its length': 'Trascina: allunga o accorcia la linea · Ctrl/⌘-clic: torna alla sua lunghezza',
+  'Drag: move this text · Ctrl/⌘-click: back in its place': 'Trascina: sposta questo testo · Ctrl/⌘-clic: torna al suo posto',
+  'Drag: turn this text · Ctrl/⌘-click: as the tag type lays it': 'Trascina: ruota questo testo · Ctrl/⌘-clic: come lo dispone il tipo di etichetta',
+  'Drag: move the label · Ctrl/⌘-click: back where it stood': 'Trascina: sposta l\'etichetta · Ctrl/⌘-clic: torna dov\'era',
+  'Drag: turn the label · Ctrl/⌘-click: level again': 'Trascina: ruota l\'etichetta · Ctrl/⌘-clic: di nuovo orizzontale',
+  'Back as by default': 'Torna al predefinito',
+  'Outer line': 'Riga esterna',
+  'Inner line': 'Riga interna',
+  'Its turn from the way the tag type lays it, in degrees; it is always drawn upright': 'La sua rotazione rispetto a come lo dispone il tipo di etichetta, in gradi; è sempre disegnato leggibile',
+  'How much further this end of the line reaches, paper mm (negative: shorter)': 'Di quanto si allunga questa estremità della linea, mm su carta (negativo: più corta)',
+  'Each text and each end of the marker\'s line has its grips in the plan: drag to move, turn or lengthen; Ctrl/⌘-click a grip puts that part back': 'Ogni testo e ogni estremità della linea del contrassegno ha i suoi grip nella pianta: trascina per spostare, ruotare o allungare; Ctrl/⌘-clic su un grip rimette a posto quella parte',
+  'Marker': 'Contrassegno',
+  'Outer end': 'Estremità esterna',
+  'Inner end': 'Estremità interna',
+  'Text direction': 'Direzione del testo',
+  'perpendicular to the tag line': 'perpendicolare alla linea dell\'etichetta',
+  'along the tag line': 'lungo la linea dell\'etichetta',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

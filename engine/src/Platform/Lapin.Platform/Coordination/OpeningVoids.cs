@@ -25,6 +25,8 @@ public sealed record OpeningVoid(string Key, string HostId, string? OpeningId, s
     public string Mark { get; init; } = "";
     /// <summary>A round void's diameter (its width), else null.</summary>
     public double? Diameter => Shape == OpeningVoids.Round ? Width : null;
+    /// <summary>A wall opening's wall direction where it stands (plan, unit), else null: its label's directions in a plan (decision 292).</summary>
+    public Vec2? Along { get; init; }
     /// <summary>What a click on it selects: its opening, else its host.</summary>
     public string SelectId => OpeningId ?? HostId;
     /// <summary>The void's GlobalId as an element of its own (the IFC proxy, a mesh export's element): derived from its key, the same at every export.</summary>

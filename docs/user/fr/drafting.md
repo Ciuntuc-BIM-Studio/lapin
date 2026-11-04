@@ -76,6 +76,8 @@ Une étiquette sélectionnée a des poignées. Faites glisser le cadre pour dép
 
 ![Les propriétés d’une étiquette](shots/tag-properties.webp)
 
+Le repère d’une porte ou d’une fenêtre se modifie partie par partie, chaque texte déplacé ou tourné et chaque extrémité de sa ligne allongée : voir [Portes et fenêtres](doors-windows.md).
+
 ### Axes du quadrillage
 
 **Annoter → Axe de quadrillage** (<kbd>GR</kbd>) dessine un axe par ses deux extrémités ; il prend le repère suivant de sa direction. **Annoter → Trame d’axes…** pose une trame entière d’un coup : les espacements **En travers** (les axes numérotés, de gauche à droite) et **En long** (les axes lettrés, de bas en haut) dans les unités du projet, comme `6000 6000 4500` ou `3*6000` ; l’**Origine** où se croisent les premiers axes, un **Angle**, de combien les axes vont **Au-delà de la trame**, les **Premiers repères** et le **Type d’axe**. Avec **remplacer les axes de la trame** coché, les axes dessinés jusque-là disparaissent.

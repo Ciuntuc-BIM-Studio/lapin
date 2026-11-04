@@ -86,3 +86,19 @@ Sur la façade, en plus de l’encadrement, une fenêtre peut avoir une **Clé d
 ## Étiquettes en plan
 
 **Annoter → Étiquettes de portes et fenêtres** place un marqueur sur chaque porte et fenêtre d’un plan : une ligne en travers du mur, le repère à l’extérieur, et les dimensions et l’allège à l’intérieur. Pour changer l’aspect des étiquettes, allez dans **Gérer → Normes de dessin → Étiquettes**.
+
+### Modifier un repère à l’écran
+
+Chaque repère peut être disposé à la main, partie par partie. Cliquez sur sa ligne ou sur l’un de ses textes pour le sélectionner : chaque texte a alors une poignée carrée (glissez-la pour déplacer le texte) et une ronde après sa fin (glissez-la pour tourner le texte), et chaque extrémité de la ligne a une poignée (glissez-la pour allonger ou raccourcir la ligne ; le texte de cette extrémité suit). Ctrl/⌘-clic sur une poignée remet cette partie comme avant. Chaque glissement est un pas d’annulation. Avec plusieurs repères du même plan sélectionnés, une partie glissée sur l’un change la même partie de tous.
+
+![Le repère d’une porte sélectionné : une poignée par texte, sa poignée de rotation et une à chaque extrémité de la ligne](shots/marker-grips.webp)
+
+![Le repère déplacé et tourné, l’extrémité extérieure de la ligne allongée](shots/marker-edited.webp)
+
+Les modifications appartiennent au repère, donc à ce plan : la même porte peut être disposée autrement dans un autre plan. Elles sont gardées le long et en travers du mur, si bien qu’elles suivent la porte quand elle se déplace, tourne ou passe de l’autre côté. Dans les propriétés du repère, **Repère** liste ses parties : tapez la rotation d’un texte en degrés ou l’avancée d’une extrémité en millimètres papier, remettez une partie avec ↺, ou toutes avec **Remettre l’étiquette en place**. Le moteur dessine les repères tels qu’ils sont modifiés, donc les planches, le PDF et le DXF les impriment pareil.
+
+![Les parties d’un repère dans ses propriétés](shots/marker-properties.webp)
+
+Que les textes soient en travers de la ligne du repère (le long du mur, par défaut) ou le long de celle-ci se règle pour chaque type d’étiquette, dans **Gérer → Normes de dessin → Étiquettes**, colonne **Direction du texte** : **perpendiculaire à la ligne d’étiquette** ou **le long de la ligne d’étiquette**. Dans les deux cas ils sont dessinés lisibles, jamais à l’envers ; un texte tourné à la main reste lisible aussi.
+
+![Les textes du repère de la porte le long de la ligne d’étiquette](shots/marker-along.webp)

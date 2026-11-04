@@ -23,13 +23,15 @@ public sealed record AxisStyle(string Id, string Name, string TextStyle, string 
 /// <see cref="Reach"/> paper mm past both faces, the <see cref="Template"/>
 /// at its exterior end and the <see cref="Inner"/> one at its interior end.
 /// A template's "|" starts a new line; sizes ({width}, {height}, {sill}) are
-/// written in <see cref="Unit"/>.
+/// written in <see cref="Unit"/>. A marker's texts run across its line (along
+/// the wall, "across") or along it ("along"), <see cref="TextOrientation"/>,
+/// always upright (decision 292).
 /// </summary>
 public sealed record TagType(string Id, string Name, string Template, IReadOnlyList<string> Classes,
-    string Shape = "box", string Inner = "", string Unit = "cm", double Reach = 6, string TextStyle = Standards.Standard)
+    string Shape = "box", string Inner = "", string Unit = "cm", double Reach = 6, string TextStyle = Standards.Standard, string TextOrientation = "across")
 {
     public bool Equals(TagType? o) => o is not null && Id == o.Id && Name == o.Name && Template == o.Template && Classes.SequenceEqual(o.Classes)
-        && Shape == o.Shape && Inner == o.Inner && Unit == o.Unit && Reach == o.Reach && TextStyle == o.TextStyle;
+        && Shape == o.Shape && Inner == o.Inner && Unit == o.Unit && Reach == o.Reach && TextStyle == o.TextStyle && TextOrientation == o.TextOrientation;
     public override int GetHashCode() => HashCode.Combine(Id, Name, Template, Shape, Inner);
 }
 
@@ -123,11 +125,13 @@ public static class Standards
                 : [];
         return new TagType(id, Str(v["name"], "Tag"), template, classes,
             OneOf(v["shape"], TagShapes, "box"), v["inner"] is JsonValue iv && iv.TryGetValue<string>(out var inner) ? inner : "",
-            OneOf(v["unit"], TagUnits, "cm"), Positive(v["reach"], 6), Str(v["textStyle"], Standard));
+            OneOf(v["unit"], TagUnits, "cm"), Positive(v["reach"], 6), Str(v["textStyle"], Standard), OneOf(v["textOrientation"], TagOrientations, "across"));
     }
 
     /// <summary>A tag's shape: a box with a leader, a door's or window's marker across its wall in plan, or a room's stamp.</summary>
     public static readonly string[] TagShapes = ["box", "opening", "room"];
+    /// <summary>How a marker's texts lie to its line: across it (along the wall), or along it.</summary>
+    public static readonly string[] TagOrientations = ["across", "along"];
     /// <summary>The unit a tag writes sizes in.</summary>
     public static readonly string[] TagUnits = ["cm", "mm", "m", "ft-in", "in", "project"];
 

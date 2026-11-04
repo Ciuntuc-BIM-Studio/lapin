@@ -54,7 +54,7 @@ sealed class ArchitectureVoids : IOpeningVoids
         if (solid == null) return null;
         var kind = p.Fill == null ? OpeningVoids.Wall : p.Fill.Class == IfcClass.Door ? OpeningVoids.Door : OpeningVoids.Window;
         var shape = !isShaped ? OpeningVoids.Rectangle : shaped!.Shape?.Kind == "circle" ? OpeningVoids.Round : OpeningVoids.Undefined;
-        return new OpeningVoid(opening.Id, wall.Id, opening.Id, p.Fill?.Id, kind, shape, p.Width, p.Height, f.YMax - f.YMin, solid, Spatial.StoreyOf(m, wall.Id)?.Id);
+        return new OpeningVoid(opening.Id, wall.Id, opening.Id, p.Fill?.Id, kind, shape, p.Width, p.Height, f.YMax - f.YMin, solid, Spatial.StoreyOf(m, wall.Id)?.Id) { Along = f.Dir };
     }
 
     static OpeningVoid? InSlab(IModelView m, Entity slab, Entity opening, IReadOnlyList<Vec2> contour, double offset)

@@ -1072,6 +1072,24 @@ export const LO: Record<string, string> = {
   'Void sizes': 'ຂະໜາດຊ່ອງ',
   'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'ກ້ອງເຄື່ອງໝາຍຂອງແຕ່ລະຊ່ອງ: ກວ້າງ × ສູງ (ເສັ້ນຜ່າສູນກາງຖ້າມົນ) ແລະ ລະດັບລຸ່ມຂອງຊ່ອງເປີດໃນຝາ',
   'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'ແຜນຜັງ, ພາກຕັດ ແລະ ຮູບດ້ານ ແຕ້ມບລັອກຊ່ອງຂອງຊ່ອງເປີດ, ມີເສັ້ນຂວາງ, ພ້ອມເຄື່ອງໝາຍ',
+  // Labels edited part by part (decision 292).
+  'Drag: lengthen or shorten the line · Ctrl/⌘-click: back to its length': 'ລາກ: ຍືດ ຫຼື ຫຍໍ້ເສັ້ນ · Ctrl/⌘-ຄລິກ: ກັບຄືນຄວາມຍາວເດີມ',
+  'Drag: move this text · Ctrl/⌘-click: back in its place': 'ລາກ: ຍ້າຍຂໍ້ຄວາມນີ້ · Ctrl/⌘-ຄລິກ: ກັບຄືນບ່ອນເດີມ',
+  'Drag: turn this text · Ctrl/⌘-click: as the tag type lays it': 'ລາກ: ໝຸນຂໍ້ຄວາມນີ້ · Ctrl/⌘-ຄລິກ: ຕາມທີ່ປະເພດປ້າຍວາງໄວ້',
+  'Drag: move the label · Ctrl/⌘-click: back where it stood': 'ລາກ: ຍ້າຍປ້າຍ · Ctrl/⌘-ຄລິກ: ກັບໄປບ່ອນທີ່ມັນເຄີຍຢູ່',
+  'Drag: turn the label · Ctrl/⌘-click: level again': 'ລາກ: ໝຸນປ້າຍ · Ctrl/⌘-ຄລິກ: ກັບເປັນແນວນອນ',
+  'Back as by default': 'ກັບເປັນຄ່າເລີ່ມຕົ້ນ',
+  'Outer line': 'ແຖວນອກ',
+  'Inner line': 'ແຖວໃນ',
+  'Its turn from the way the tag type lays it, in degrees; it is always drawn upright': 'ການໝຸນຂອງມັນທຽບກັບທີ່ປະເພດປ້າຍວາງໄວ້, ເປັນອົງສາ; ມັນຖືກແຕ້ມໃຫ້ອ່ານໄດ້ສະເໝີ',
+  'How much further this end of the line reaches, paper mm (negative: shorter)': 'ປາຍເສັ້ນນີ້ຍາວອອກໄປອີກເທົ່າໃດ, mm ເທິງເຈ້ຍ (ລົບ: ສັ້ນລົງ)',
+  'Each text and each end of the marker\'s line has its grips in the plan: drag to move, turn or lengthen; Ctrl/⌘-click a grip puts that part back': 'ແຕ່ລະຂໍ້ຄວາມ ແລະ ແຕ່ລະປາຍຂອງເສັ້ນເຄື່ອງໝາຍມີຈຸດຈັບຂອງມັນໃນແຜນຜັງ: ລາກເພື່ອຍ້າຍ, ໝຸນ ຫຼື ຍືດ; Ctrl/⌘-ຄລິກທີ່ຈຸດຈັບເພື່ອເອົາສ່ວນນັ້ນກັບຄືນ',
+  'Marker': 'ເຄື່ອງໝາຍ',
+  'Outer end': 'ປາຍນອກ',
+  'Inner end': 'ປາຍໃນ',
+  'Text direction': 'ທິດທາງຂໍ້ຄວາມ',
+  'perpendicular to the tag line': 'ຕັ້ງສາກກັບເສັ້ນປ້າຍ',
+  'along the tag line': 'ຕາມເສັ້ນປ້າຍ',
 };
 
 /** Phrases with a number or a name in them. */

@@ -114,6 +114,14 @@ Con una pianta, una sezione o un prospetto davanti, **Vista → Volumi di foro**
 
 ![La pianta con i volumi: tagliati nei muri, il foro del solaio visto, ciascuno con la croce e la sigla](shots/mep-voids-plan.webp)
 
+L’etichetta di un vuoto sta accanto a esso, attraverso il suo muro, dove non c’è già altro disegnato: l’apertura di una porta, il contrassegno della porta o della finestra, altre etichette. Se entrambi i lati del muro sono occupati, si sposta lungo il muro oltre l’apertura, altrimenti più in fuori.
+
+![Il vuoto di una porta: la sua etichetta lontana dall’apertura e dal contrassegno della porta](shots/void-label.webp)
+
+Per spostare un’etichetta, fai clic su di essa (o sul vuoto): così si seleziona l’apertura, la cui etichetta mostra un grip quadrato per spostarla e uno rotondo per ruotarla. Ctrl/⌘-clic su un grip la rimette dove sta di default, o di nuovo orizzontale. Un’etichetta spostata è tenuta da quella vista, lungo e attraverso il muro dal centro del vuoto, quindi segue l’apertura quando il muro si sposta; tavole e PDF la stampano dove l’hai messa.
+
+![L’etichetta del vuoto spostata con il suo grip](shots/void-label-moved.webp)
+
 È un'impostazione della vista, anche nelle sue proprietà (**Vista → Impostazioni di vista**): **Volumi di foro**, e **Dimensioni dei fori** per la dimensione sotto la sigla. Di base nessuna vista li disegna; lo stile di vista **Coordinamento** (**Gestisci → Stili di vista**, scelto come **Stile** della vista) li disegna in ogni vista che lo usa. Le loro linee sono la categoria **Volumi**: penne e colori in **Gestisci → Stili oggetto** (linee di taglio, in proiezione, nascoste, sopra), mostrate o nascoste per vista in **Vista → Visibilità / Grafica…**.
 
 Per dare i volumi a un programma di interferenze, spunta **Volumi di foro** in **File → Esporta IFC o Fragments…** (o **Esporta 3D…**). In IFC ogni volume è un **IfcBuildingElementProxy** di tipo **PROVISIONFORVOID** con **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter se tondo, Depth) e il set di Lapin **Lapin_OpeningVoid** (marca, tipo, ospite, apertura e scostamento), legato al suo ospite; le aperture restano IfcOpeningElement. Ogni volume conserva il suo GlobalId da un'esportazione all'altra. In un'esportazione mesh formano un gruppo a sé, **Opening voids**. Senza spunta le esportazioni restano come prima.
