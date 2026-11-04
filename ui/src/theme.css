@@ -762,6 +762,17 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .cde-block { color: var(--err); }
 .cde-warn { color: var(--warn, #b7791f); }
 .cde-ok { color: var(--ok); }
+/* Manage → Openings vs MEP (decision 289): the kinds side by side, the tabs, the results as a table of rows to click. */
+.coordination .coordination-kinds { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.coordination .tabs-row { display: flex; gap: 6px; margin: 10px 0 6px; }
+.coordination .tabs-row .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.coordination .coordination-counts { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.coordination-table { border-collapse: collapse; width: 100%; font-size: 12px; }
+.coordination-table th, .coordination-table td { text-align: left; padding: 3px 12px 3px 0; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.coordination-table td.num, .coordination-table th:last-child { text-align: right; }
+.coordination-table tbody tr { cursor: pointer; }
+.coordination-table tbody tr:hover { background: var(--accent-wash); }
+.coordination .coordination-results { max-height: 320px; overflow: auto; }
 
 /* Remarks on sheets read from PDFs (docs/plan-cde.md, stage 3): the overlay over the sheet, its card, the list in Manage → Remarks */
 :root { --remark: #d6452a; }

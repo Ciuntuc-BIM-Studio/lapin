@@ -68,6 +68,8 @@ public sealed class CoreModule : ILapinModule
         // The project folder as a CDE: naming, checks, issues (docs/plan-cde.md); the remarks on the model exchanged as BCF.
         Cde.Cde.Register(r);
         Cde.Remarks.Remarks.Register(r);
+        // Openings as solid voids, and MEP checked against them (decision 289).
+        Coordination.OpeningVoids.Register(r);
         // A body many references share (docs/plan-instancing.md): drawn by its instances, never on its own.
         r.Class(new(StoredBodies.SharedClass, "Shared body", [], "#888888", Kind: "resource"));
         // What foreign elements share in their file (a type, a system, a material), kept for the export.

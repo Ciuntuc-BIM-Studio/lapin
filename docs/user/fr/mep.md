@@ -87,6 +87,31 @@ Sous **Rue**, **Conduite de gaz le long de…** (<kbd>GM</kbd>) pose une conduit
 
 Dimensionner les tubes d’après la consommation des appareils et vérifier la perte de charge relèvent de l’ingénierie, dans l’édition **Lapin MEP**.
 
+## Coordination : volumes de réservation et contrôle des conflits
+
+Chaque ouverture dans un mur, une dalle ou un toit peut devenir un **volume de réservation** : un solide aussi grand que l'ouverture, sur toute l'épaisseur de son hôte, revêtements compris. Les outils de détection de conflits (Navisworks, Solibri, BIMcollab) testent les réseaux contre ces volumes avec « entièrement à l'intérieur » : un tuyau, une gaine ou un chemin de câbles entièrement dans un volume passe ; celui qui en dépasse, ou qui traverse un mur sans ouverture, est un conflit. Lapin fait lui-même le même contrôle.
+
+**Gérer → Ouvertures vs fluides…** fixe pour quelles ouvertures les volumes sont faits (**Ouvertures de murs**, **Ouvertures de portes**, **Ouvertures de fenêtres**, **Trémies de dalles**, **Ouvertures de toit**), de combien ils sont plus grands ou plus petits (**Décalage de la réservation**) et le **Jeu** qu'un élément de fluides doit garder avec les côtés d'une réservation. **Lancer le contrôle** parcourt chaque tuyau, gaine et chemin de câbles — les réseaux de Lapin comme les segments d'une maquette fluides importée, et ses propres demandes de réservation — et liste chaque endroit où l'un traverse un mur, une dalle ou un toit :
+
+- **Pas d'ouverture** : il traverse l'hôte là où il n'y en a pas ;
+- **Ouverture trop petite** : il passe par une ouverture mais en dépasse, jeu compris ; **Manque** donne les millimètres du pire côté ;
+- **Passe** (avec **afficher ce qui passe**) : entièrement dans le volume, avec le jeu ;
+- **Réservation vide** (avec **Réservations vides** coché) : une ouverture de mur ou de dalle que rien ne traverse (une trémie d'escalier n'en est jamais une).
+
+Un clic sur une ligne montre la paire en 3D, toutes deux sélectionnées. **Créer des remarques** fait de chaque conflit une remarque de type **Clash** avec son point de vue (**Gérer → Remarques sur le modèle…**), prête à partir en BCF ; relancé, il met à jour les mêmes remarques. Les conflits figurent aussi parmi les avertissements de **Gérer → Vérification**.
+
+![Ouvertures vs fluides : pour quoi les volumes sont faits, le jeu et le contrôle de trois tuyaux](shots/mep-voids-check.webp)
+
+L'onglet **Volumes** liste chaque volume avec sa marque (V1, V2… niveau par niveau), son hôte, la porte ou la fenêtre qu'il contient, sa taille et sa profondeur ; un clic sélectionne son ouverture.
+
+![Les volumes avec leurs marques et leurs tailles](shots/mep-voids-list.webp)
+
+**Vue → Volumes de réservation** les dessine en 3D, violet translucide, avec leurs marques ; un clic sur l'un sélectionne son ouverture. Ils sont pour l'écran : les planches et les dessins ne les portent jamais.
+
+![Les volumes du mur intérieur, avec les tuyaux qui les traversent](shots/mep-voids-3d.webp)
+
+Pour donner les volumes à un outil de conflits, cochez **Volumes de réservation** dans **Fichier → Exporter IFC ou Fragments…** (ou **Exporter en 3D…**). En IFC chaque volume est un **IfcBuildingElementProxy** de type **PROVISIONFORVOID** avec **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter pour un rond, Depth) et le jeu Lapin **Lapin_OpeningVoid** (marque, type, hôte, ouverture et décalage), lié à son hôte ; les ouvertures restent des IfcOpeningElement. Chaque volume garde son GlobalId d'un export à l'autre. Dans un export de maillages, ils forment un groupe à part, **Opening voids**. Case décochée, les exports restent comme avant.
+
 ## MEP Pro
 
 L’ingénierie du réseau — le débit que porte chaque tronçon et la taille qui le supporte, les vérifications (extrémités ouvertes, coudes trop serrés, pentes d’évacuation, sources surchargées), les règles de pose par matériau (le cuivre par pas de 45°, le PVC tournant au plus de 45°), les radiateurs proposés sous les fenêtres, les tracés suggérés le long des murs, le profil d’un tronçon et l’isométrie d’un système — se trouve dans l’édition **Lapin MEP**, qui ajoute les groupes **Ingénierie** et **Assistants** à cet onglet.

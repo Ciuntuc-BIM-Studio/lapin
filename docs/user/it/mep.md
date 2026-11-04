@@ -87,6 +87,31 @@ Sotto **Strada**, **Condotta del gas lungo…** (<kbd>GM</kbd>) posa una condott
 
 Dimensionare i tubi dal consumo degli apparecchi e verificare la perdita di carico è ingegneria, nell’edizione **Lapin MEP**.
 
+## Coordinamento: volumi di foro e verifica delle interferenze
+
+Ogni apertura in un muro, un solaio o un tetto può essere un **volume di foro** a sé: un solido grande quanto l'apertura, attraverso tutto lo spessore del suo ospite, finiture comprese. I programmi di interferenze (Navisworks, Solibri, BIMcollab) verificano gli impianti contro tali volumi con «completamente dentro»: un tubo, un canale o una passerella portacavi interamente dentro un volume passa; uno che sporge, o che attraversa un muro senza apertura, è un'interferenza. Lapin esegue la stessa verifica.
+
+**Gestisci → Aperture vs impianti…** stabilisce per quali aperture si fanno i volumi (**Aperture nei muri**, **Aperture delle porte**, **Aperture delle finestre**, **Fori nei solai**, **Aperture nel tetto**), di quanto sono più grandi o più piccoli delle aperture (**Scostamento del foro**) e il **Franco** che un elemento degli impianti deve tenere dai lati di un foro. **Esegui la verifica** passa ogni tubo, canale e passerella — le linee di Lapin come i segmenti di un modello impiantistico importato, e le sue richieste di foro — ed elenca ogni punto in cui uno attraversa un muro, un solaio o un tetto:
+
+- **Nessun foro**: attraversa l'ospite dove non ce n'è;
+- **Foro troppo piccolo**: passa per un'apertura ma ne sporge, franco compreso; **Manca** dice quanti millimetri sul lato peggiore;
+- **Ci sta** (con **mostra ciò che ci sta**): interamente nel volume, con il franco;
+- **Foro vuoto** (con **Fori vuoti** spuntato): un'apertura in muro o solaio da cui non passa nulla (un vano scala non lo è mai).
+
+Un clic su una riga mostra la coppia in 3D, entrambi selezionati. **Crea osservazioni** fa di ogni interferenza un'osservazione di tipo **Clash** con il suo punto di vista (**Gestisci → Osservazioni sul modello…**), pronta per il BCF; rieseguita, aggiorna le stesse osservazioni. Le interferenze compaiono anche tra gli avvisi di **Gestisci → Verifica**.
+
+![Aperture vs impianti: per cosa si fanno i volumi, il franco e la verifica di tre tubi](shots/mep-voids-check.webp)
+
+La scheda **Volumi** elenca ogni volume con la sua marca (V1, V2… piano per piano), l'ospite, la porta o finestra che contiene, dimensione e profondità; un clic ne seleziona l'apertura.
+
+![I volumi con marche e dimensioni](shots/mep-voids-list.webp)
+
+**Vista → Volumi di foro** li disegna in 3D, viola traslucido con le loro marche; un clic su uno ne seleziona l'apertura. Sono per lo schermo: tavole e disegni non li portano mai.
+
+![I volumi nel muro interno, con i tubi che li attraversano](shots/mep-voids-3d.webp)
+
+Per dare i volumi a un programma di interferenze, spunta **Volumi di foro** in **File → Esporta IFC o Fragments…** (o **Esporta 3D…**). In IFC ogni volume è un **IfcBuildingElementProxy** di tipo **PROVISIONFORVOID** con **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter se tondo, Depth) e il set di Lapin **Lapin_OpeningVoid** (marca, tipo, ospite, apertura e scostamento), legato al suo ospite; le aperture restano IfcOpeningElement. Ogni volume conserva il suo GlobalId da un'esportazione all'altra. In un'esportazione mesh formano un gruppo a sé, **Opening voids**. Senza spunta le esportazioni restano come prima.
+
 ## MEP Pro
 
 La parte ingegneristica sulla rete (la portata che ogni tratto trasporta e la dimensione che la regge, le verifiche: estremità aperte, curve strette, pendenze di scarico, sorgenti sovraccariche; le regole di posa per materiale: rame a passi di 45°, PVC con curve di 45° al massimo; radiatori proposti sotto le finestre, percorsi suggeriti lungo i muri, il profilo di un tratto e l’assonometria di un sistema) si trova nell’edizione **Lapin MEP**, che aggiunge a questa scheda i gruppi **Ingegneria** e **Assistenti**.

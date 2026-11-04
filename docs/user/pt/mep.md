@@ -87,6 +87,31 @@ Em **Rua**, **Rede de gás ao longo de…** (<kbd>GM</kbd>) assenta uma rede de 
 
 Dimensionar os tubos pelo consumo dos aparelhos e verificar a perda de carga é engenharia, na edição **Lapin MEP**.
 
+## Coordenação: volumes de abertura e verificação de conflitos
+
+Cada abertura numa parede, laje ou telhado pode ser um **volume de abertura** próprio: um sólido do tamanho da abertura, por toda a espessura do seu hospedeiro, acabamentos incluídos. Os programas de conflitos (Navisworks, Solibri, BIMcollab) testam as instalações contra esses volumes com "completamente dentro": um tubo, duto ou eletrocalha inteiro dentro de um volume passa; um que sai dele, ou que atravessa uma parede sem abertura, é um conflito. O Lapin faz a mesma verificação.
+
+**Gerenciar → Aberturas vs instalações…** define para que aberturas se fazem volumes (**Aberturas em paredes**, **Aberturas de portas**, **Aberturas de janelas**, **Aberturas em lajes**, **Aberturas no telhado**), quanto maiores ou menores que as aberturas eles são (**Deslocamento da abertura**) e a **Folga** que um elemento de instalações deve manter dos lados de uma abertura. **Executar verificação** percorre cada tubo, duto e eletrocalha — os traçados do Lapin e os segmentos de um modelo de instalações importado, e os pedidos de abertura desse modelo — e lista cada lugar onde um atravessa uma parede, laje ou telhado:
+
+- **Sem abertura**: atravessa o hospedeiro onde não há nenhuma;
+- **Abertura pequena demais**: passa por uma abertura mas sai dela, folga incluída; **Falta** diz quantos milímetros do pior lado;
+- **Cabe** (com **mostrar o que cabe**): inteiro dentro do volume, com a folga;
+- **Abertura vazia** (com **Aberturas vazias** marcado): uma abertura em parede ou laje por onde nada passa (um vão de escada nunca é).
+
+Um clique numa linha mostra o par em 3D, ambos selecionados. **Criar observações** faz de cada conflito uma observação do tipo **Clash** com o seu ponto de vista (**Gerenciar → Observações do modelo…**), pronta para sair como BCF; executada de novo, atualiza as mesmas observações. Os conflitos também aparecem entre os avisos de **Gerenciar → Verificar**.
+
+![Aberturas vs instalações: para que se fazem os volumes, a folga e a verificação de três tubos](shots/mep-voids-check.webp)
+
+A guia **Volumes** lista cada volume com a sua marca (V1, V2… pavimento a pavimento), o hospedeiro, a porta ou janela nele, tamanho e profundidade; um clique seleciona a abertura.
+
+![Os volumes com marcas e tamanhos](shots/mep-voids-list.webp)
+
+**Vista → Volumes de abertura** desenha-os em 3D, violeta translúcido com as suas marcas; um clique num seleciona a abertura. São para a tela: pranchas e desenhos nunca os levam.
+
+![Os volumes na parede interna, com os tubos através deles](shots/mep-voids-3d.webp)
+
+Para passar os volumes a um programa de conflitos, marque **Volumes de abertura** em **Arquivo → Exportar IFC ou Fragments…** (ou **Exportar 3D…**). Em IFC cada volume é um **IfcBuildingElementProxy** do tipo **PROVISIONFORVOID** com **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter se redondo, Depth) e o conjunto do Lapin **Lapin_OpeningVoid** (marca, tipo, hospedeiro, abertura e deslocamento), ligado ao hospedeiro; as aberturas continuam IfcOpeningElement. Cada volume mantém o seu GlobalId de uma exportação para outra. Numa exportação de malhas formam um grupo próprio, **Opening voids**. Sem a marca, as exportações ficam como antes.
+
 ## MEP Pro
 
 A engenharia sobre a rede — a demanda que cada trecho leva e a dimensão que a comporta, as verificações (pontas abertas, curvas fechadas demais, caimentos de esgoto, fontes sobrecarregadas), as regras de assentamento por material (cobre em passos de 45°, PVC virando no máximo 45°), radiadores propostos sob as janelas, percursos sugeridos ao longo das paredes, o perfil de um trecho e a isométrica de um sistema — está na edição **Lapin MEP**, que acrescenta os grupos **Engenharia** e **Assistentes** a esta guia.

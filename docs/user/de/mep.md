@@ -87,6 +87,31 @@ Unter **Straße** verlegt **Gasleitung entlang…** (<kbd>GM</kbd>) eine Gasleit
 
 Die Rohrbemessung aus dem Verbrauch der Geräte und der Nachweis des Druckverlusts sind Ingenieurarbeit, in der Edition **Lapin MEP**.
 
+## Koordination: Öffnungskörper und Kollisionsprüfung
+
+Jede Öffnung in Wand, Decke oder Dach kann ein eigener **Öffnungskörper** sein: ein Körper so groß wie die Öffnung, durch die ganze Dicke ihres Wirtsbauteils, Bekleidungen eingeschlossen. Kollisionsprogramme (Navisworks, Solibri, BIMcollab) prüfen die TGA mit „vollständig innerhalb“ gegen solche Körper: ein Rohr, ein Kanal oder eine Kabeltrasse ganz in einem Körper ist in Ordnung; eines, das herausragt oder eine Wand ohne Öffnung kreuzt, ist eine Kollision. Lapin führt dieselbe Prüfung selbst aus.
+
+**Verwalten → Öffnungen vs TGA…** legt fest, für welche Öffnungen Körper entstehen (**Wandöffnungen**, **Türöffnungen**, **Fensteröffnungen**, **Deckenöffnungen**, **Dachöffnungen**), um wie viel größer oder kleiner als die Öffnungen sie sind (**Versatz der Öffnung**) und welchen **Abstand** ein TGA-Element zu den Seiten einer Öffnung halten muss. **Prüfung ausführen** geht jedes Rohr, jeden Kanal und jede Kabeltrasse durch — Lapins Leitungen ebenso wie die Segmente eines importierten TGA-Modells und dessen eigene Aussparungsanforderungen — und listet jede Stelle, an der eines eine Wand, Decke oder ein Dach kreuzt:
+
+- **Keine Öffnung**: es kreuzt das Bauteil, wo keine ist;
+- **Öffnung zu klein**: es geht durch eine Öffnung, ragt aber heraus, Abstand eingeschlossen; **Fehlt** nennt die Millimeter an der ungünstigsten Seite;
+- **Passt** (mit **zeigen, was passt**): ganz im Körper, mit Abstand;
+- **Leere Öffnung** (mit **Leere Öffnungen** angehakt): eine Wand- oder Deckenöffnung, durch die nichts führt (ein Treppenloch nie).
+
+Ein Klick auf eine Zeile zeigt das Paar in 3D, beide ausgewählt. **Anmerkungen erstellen** macht aus jeder Kollision eine Anmerkung vom Typ **Clash** mit ihrem Blickpunkt (**Verwalten → Anmerkungen am Modell…**), bereit für BCF; erneut ausgeführt, aktualisiert es dieselben Anmerkungen. Die Kollisionen erscheinen auch unter den Warnungen von **Verwalten → Prüfung**.
+
+![Öffnungen vs TGA: wofür die Körper entstehen, der Abstand und die Prüfung über drei Rohre](shots/mep-voids-check.webp)
+
+Der Reiter **Körper** listet jeden Öffnungskörper mit seiner Marke (V1, V2… Geschoss für Geschoss), seinem Wirt, der Tür oder dem Fenster darin, Größe und Tiefe; ein Klick wählt seine Öffnung.
+
+![Die Öffnungskörper mit Marken und Größen](shots/mep-voids-list.webp)
+
+**Ansicht → Öffnungskörper** zeichnet sie in 3D, durchscheinend violett mit ihren Marken; ein Klick wählt die Öffnung. Sie sind nur für den Bildschirm: Pläne und Zeichnungen tragen sie nie.
+
+![Die Öffnungskörper in der Innenwand, mit den Rohren hindurch](shots/mep-voids-3d.webp)
+
+Um die Körper einem Kollisionsprogramm zu geben, hake **Öffnungskörper** in **Datei → IFC oder Fragments exportieren…** (oder **3D exportieren…**) an. In IFC ist jeder Körper ein **IfcBuildingElementProxy** vom Typ **PROVISIONFORVOID** mit **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter bei runden, Depth) und Lapins **Lapin_OpeningVoid** (Marke, Art, Wirt, Öffnung, Versatz), mit seinem Wirt verbunden; die Öffnungen bleiben IfcOpeningElement. Jeder Körper behält seine GlobalId von Export zu Export. In einem Mesh-Export bilden sie eine eigene Gruppe, **Opening voids**. Ohne Haken bleiben die Exporte wie bisher.
+
 ## MEP Pro
 
 Die Ingenieursarbeit am Netz – der Bedarf, den jede Leitung trägt, und die Größe, die ihn aufnimmt, die Prüfungen (offene Enden, enge Bögen, Abwassergefälle, überlastete Quellen), die Verlegeregeln nach Material (Kupfer in 45°-Schritten, PVC mit höchstens 45° Richtungsänderung), Heizkörper als Vorschlag unter Fenstern, Verläufe als Vorschlag entlang der Wände, das Profil einer Leitung und die Isometrie eines Systems – steckt in der Edition **Lapin MEP**, die dieser Registerkarte die Gruppen **Auslegung** und **Assistenten** hinzufügt.

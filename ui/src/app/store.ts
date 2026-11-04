@@ -118,13 +118,15 @@ export interface UiState extends Pane {
   refPlanes: boolean;
   /** The reinforcement drawn as tubes in the 3D view (View → Bars in 3D); off by default, never saved: it costs memory. */
   rebar3d: boolean;
+  /** The openings' voids drawn in the 3D view (View → Opening voids, decision 289): translucent, picked as their openings; off by default. */
+  openingVoids: boolean;
   /** The key plan over the views (the camera's place in 3D, the frame in 2D). */
   keyPlan: boolean;
 }
 
 const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, rebar3d: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, memberTypeId: null, ceilingTypeId: null, skirtingTypeId: null, roomFinishTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0, shape: 'rect', rise: null }, roofId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
+  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, rebar3d: false, openingVoids: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, memberTypeId: null, ceilingTypeId: null, skirtingTypeId: null, roomFinishTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0, shape: 'rect', rise: null }, roofId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
 }));
 
 /**

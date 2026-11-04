@@ -87,6 +87,31 @@ Under **Gade** lægger **Gasledning langs…** (<kbd>GM</kbd>) en gasledning lan
 
 At dimensionere rørene ud fra apparaternes forbrug og eftervise tryktabet er ingeniørarbejde, i udgaven **Lapin MEP**.
 
+## Koordinering: åbningsvolumener og kollisionskontrol
+
+Hver åbning i en væg, et dæk eller et tag kan være et **åbningsvolumen** for sig: et legeme så stort som åbningen, gennem hele værtens tykkelse, beklædning medregnet. Kollisionsprogrammer (Navisworks, Solibri, BIMcollab) tester installationer mod sådanne volumener med "helt indeni": et rør, en kanal eller en kabelbakke helt inde i et volumen er i orden; en, der stikker ud, eller som krydser en væg uden åbning, er en kollision. Lapin kører selv den samme kontrol.
+
+**Administrer → Åbninger mod installationer…** bestemmer, hvilke åbninger der får volumener (**Vægåbninger**, **Døråbninger**, **Vinduesåbninger**, **Dækåbninger**, **Tagåbninger**), hvor meget større eller mindre end åbningerne de er (**Forskydning af åbningen**), og den **Frigang**, et installationselement skal holde til en åbnings sider. **Kør kontrol** gennemgår hvert rør, hver kanal og kabelbakke — Lapins føringer såvel som segmenterne i en importeret installationsmodel og dens egne udsparingsønsker — og viser hvert sted, hvor en krydser en væg, et dæk eller et tag:
+
+- **Ingen åbning**: den krydser værten, hvor der ingen er;
+- **Åbning for lille**: den går gennem en åbning men stikker ud, frigang medregnet; **Mangler** siger hvor mange millimeter på den værste side;
+- **Passer** (med **vis det, der passer**): helt inde i volumenet, med frigang;
+- **Tom åbning** (med **Tomme åbninger** markeret): en væg- eller dækåbning, som intet går igennem (et trappehul er aldrig en).
+
+Et klik på en række viser parret i 3D, begge valgt. **Lav bemærkninger** gør hver kollision til en bemærkning af typen **Clash** med sit synspunkt (**Administrer → Bemærkninger til modellen…**), klar til BCF; kørt igen opdaterer den de samme bemærkninger. Kollisionerne vises også blandt advarslerne i **Administrer → Kontrol**.
+
+![Åbninger mod installationer: hvad volumenerne laves for, frigangen og kontrollen af tre rør](shots/mep-voids-check.webp)
+
+Fanen **Volumener** viser hvert volumen med sit mærke (V1, V2… etage for etage), værten, døren eller vinduet i det, størrelse og dybde; et klik vælger åbningen.
+
+![Volumenerne med mærker og størrelser](shots/mep-voids-list.webp)
+
+**Vis → Åbningsvolumener** tegner dem i 3D, gennemsigtigt violette med deres mærker; et klik vælger åbningen. De er kun til skærmen: tegningsark og tegninger viser dem aldrig.
+
+![Volumenerne i den indre væg, med rørene igennem](shots/mep-voids-3d.webp)
+
+For at give volumenerne til et kollisionsprogram markeres **Åbningsvolumener** i **Filer → Eksportér IFC eller Fragments…** (eller **Eksportér 3D…**). I IFC er hvert volumen en **IfcBuildingElementProxy** af typen **PROVISIONFORVOID** med **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter for en rund, Depth) og Lapins **Lapin_OpeningVoid** (mærke, slags, vært, åbning og forskydning), knyttet til sin vært; åbningerne forbliver IfcOpeningElement. Hvert volumen beholder sit GlobalId fra eksport til eksport. I en mesh-eksport er de en gruppe for sig, **Opening voids**. Uden markering er eksporterne som før.
+
 ## MEP Pro
 
 Ingeniørarbejdet på netværket — den belastning hver strækning bærer og den dimension der kan klare den, kontrollerne (åbne ender, skarpe bøjninger, fald på afløb, overbelastede kilder), føringsreglerne efter materiale (kobber i trin på 45°, PVC der drejer højst 45°), radiatorer foreslået under vinduer, føringer foreslået langs væggene, en strækningsprofil og et systems isometri — ligger i udgaven **Lapin MEP**, som føjer grupperne **Dimensionering** og **Assistenter** til denne fane.

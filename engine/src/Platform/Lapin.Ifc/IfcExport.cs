@@ -20,7 +20,9 @@ namespace Lapin.Ifc;
 /// which a body's triangles are simplified (<see cref="Simplifier"/>).
 /// </summary>
 /// <summary><paramref name="Exclude"/>: elements left out (the kinds and storeys not chosen, what the 3D view hides: <see cref="ModelSurvey.Excluded"/>).</summary>
-public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null)
+/// <summary><paramref name="Voids"/>: the openings also as solid voids (IfcBuildingElementProxy PROVISIONFORVOID, decision 289), of the kinds asked, their sides moved by the offset; off by default.</summary>
+public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null,
+    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0)
 {
     public bool Ifc43 => Schema.StartsWith("IFC4X3", StringComparison.OrdinalIgnoreCase);
     public bool Grouped => !string.Equals(Detail, "simple", StringComparison.OrdinalIgnoreCase);
@@ -58,6 +60,8 @@ public static class IfcExport
     public const string IntentSetName = "Lapin_Intent";
     public const string PhaseSetName = "Lapin_Phase";
     public const string ParamsSetName = "Lapin_Parameters";
+    /// <summary>An opening void's own set (decision 289): its mark, kind, host, opening, fill and offset.</summary>
+    public const string VoidSetName = "Lapin_OpeningVoid";
     /// <summary>The intent set's name until 25.10.2026: files written before still carry it.</summary>
     public const string OldIntentSetName = "Pset_Lapin_Intent";
     public static bool IsIntentSet(string? name) => name is IntentSetName or OldIntentSetName;
@@ -213,6 +217,7 @@ public static class IfcExport
             // The alignments before the elements: an element of the railway is placed along its alignment's curve (IfcLinearPlacement).
             Alignments();
             WriteElements();
+            ProvisionVoids();
             Assemblies();
             Network();
             carry?.Finish(buildingRef);
@@ -1165,6 +1170,47 @@ public static class IfcExport
                 "trimmer" => new("IfcMember", "USERDEFINED", "Trimmer"),
                 _ => new("IfcMember", "MEMBER", null),
             };
+        }
+
+        /// <summary>
+        /// The openings as solid voids, for clash tools (decision 289): each an IfcBuildingElementProxy PROVISIONFORVOID with the
+        /// opening's body through its host's whole thickness, Pset_ProvisionForVoid (Shape, Width, Height, Diameter, Depth) and
+        /// Lapin_OpeningVoid (mark, kind, host, opening, fill, offset), interfering with its host (IfcRelInterferesElements). Its
+        /// GlobalId is derived from the opening's, the same at every export. The IfcOpeningElements stay as they are.
+        /// </summary>
+        void ProvisionVoids()
+        {
+            if (!o.Voids) return;
+            var voids = Lapin.Platform.Coordination.OpeningVoids.Of(m, s.Catalog, new Lapin.Platform.Coordination.VoidOptions(o.VoidKinds ?? Lapin.Platform.Coordination.OpeningVoids.Kinds.ToHashSet(), o.VoidOffset));
+            var n = 0;
+            foreach (var v in voids)
+            {
+                // Only where its host went out (not a kind, storey or phase left out).
+                if (!written.TryGetValue(v.HostId, out var host)) continue;
+                var storey = v.StoreyId is { } sid ? m.Get(sid) : null;
+                var (spatial, relTo, z0) = storey != null && storeyRef.TryGetValue(storey.Id, out var sr) ? (sr, storeyPlace[storey.Id], storeyZ[storey.Id]) : (siteRef, sitePlace, 0.0);
+                var place = Place(relTo, 0);
+                var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { BodyOf([Brep(v.Solid, Lapin.Platform.Coordination.OpeningVoids.Color, Frame.AtZ(z0))]) }));
+                var gid = S(v.GlobalId);
+                var entity = Product(new Kind(IfcClass.BuildingElementProxy, "PROVISIONFORVOID", null), gid, $"Opening void {v.Mark}", "Opening void", place, shape, v.Key);
+                Contain(spatial, entity);
+                Elements++;
+                n++;
+                var props = new List<string> { Single("Shape", Typed("IFCLABEL", S(v.Shape))), Single("Width", Typed("IFCPOSITIVELENGTHMEASURE", R(v.Width))), Single("Height", Typed("IFCPOSITIVELENGTHMEASURE", R(v.Height))) };
+                if (v.Diameter is { } d) props.Add(Single("Diameter", Typed("IFCPOSITIVELENGTHMEASURE", R(d))));
+                props.Add(Single("Depth", Typed("IFCPOSITIVELENGTHMEASURE", R(v.Depth))));
+                Define(entity, f.Add("IFCPROPERTYSET", Gid(v.Key, "void-pset"), Null, S("Pset_ProvisionForVoid"), Null, L(props)), Gid(v.Key, "void-pset-rel"));
+                var own = new List<string>
+                {
+                    Single("Mark", Typed("IFCLABEL", S(v.Mark))), Single("Kind", Typed("IFCLABEL", S(v.Kind))), Single("Host", Typed("IFCIDENTIFIER", S(GlobalIdOf(v.HostId)))),
+                    Single("Offset", Typed("IFCLENGTHMEASURE", R(o.VoidOffset))),
+                };
+                if (v.OpeningId is { } op) own.Add(Single("Opening", Typed("IFCIDENTIFIER", S(GlobalIdOf(op)))));
+                if (v.FillId is { } fill) own.Add(Single("Fill", Typed("IFCIDENTIFIER", S(GlobalIdOf(fill)))));
+                Define(entity, f.Add("IFCPROPERTYSET", Gid(v.Key, "void-lapin"), Null, S(VoidSetName), Null, L(own)), Gid(v.Key, "void-lapin-rel"));
+                f.Add("IFCRELINTERFERESELEMENTS", Gid(v.Key, "void-interferes"), Null, S("Opening void"), Null, host, entity, Null, S("Provision for void"), ".U.");
+            }
+            if (n > 0) Notes.Add($"{n} opening void{(n == 1 ? "" : "s")} written as IfcBuildingElementProxy PROVISIONFORVOID.");
         }
 
         /// <summary>The element's openings with their bodies, voiding it; a void that is an element of its own (a platform in the terrain) is related at the end, in IFC 4.3.</summary>

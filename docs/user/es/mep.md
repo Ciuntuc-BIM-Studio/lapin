@@ -87,6 +87,31 @@ En **Calle**, **Red de gas a lo largo de…** (<kbd>GM</kbd>) tiende una red de 
 
 Dimensionar las tuberías por el consumo de los aparatos y comprobar la pérdida de carga es ingeniería, en la edición **Lapin MEP**.
 
+## Coordinación: volúmenes de hueco y comprobación de colisiones
+
+Cada hueco en un muro, losa o cubierta puede ser un **volumen** propio: un sólido del tamaño del hueco, a través de todo el espesor de su anfitrión, acabados incluidos. Los programas de colisiones (Navisworks, Solibri, BIMcollab) comprueban las instalaciones contra esos volúmenes con «completamente dentro»: una tubería, un conducto o una bandeja de cables entero dentro de un volumen pasa; uno que sobresale, o que atraviesa un muro donde no hay hueco, es una colisión. Lapin hace la misma comprobación.
+
+**Gestionar → Huecos vs instalaciones…** fija para qué huecos se hacen volúmenes (**Huecos en muros**, **Huecos de puertas**, **Huecos de ventanas**, **Huecos en losas**, **Huecos en cubierta**), cuánto mayores o menores son que sus huecos (**Desfase del hueco**) y la **Holgura** que un elemento de instalaciones debe guardar con los lados de un hueco. **Ejecutar comprobación** recorre cada tubería, conducto y bandeja — los recorridos de Lapin y los segmentos de un modelo de instalaciones importado, y las reservas de hueco del propio modelo de instalaciones — y lista cada lugar donde uno atraviesa un muro, losa o cubierta:
+
+- **Sin hueco**: atraviesa el anfitrión donde no hay ninguno;
+- **Hueco demasiado pequeño**: pasa por un hueco pero sobresale, holgura incluida; **Falta** dice cuántos milímetros en el peor lado;
+- **Cabe** (con **mostrar lo que cabe**): entero dentro del volumen, con la holgura;
+- **Hueco vacío** (con **Huecos vacíos** marcado): un hueco en muro o losa por el que no pasa nada (un hueco de escalera nunca lo es).
+
+Un clic en una fila muestra el par en 3D, ambos seleccionados. **Crear observaciones** convierte cada colisión en una observación de tipo **Clash** con su punto de vista (**Gestionar → Observaciones en el modelo…**), lista para salir como BCF; ejecutada de nuevo, actualiza las mismas en vez de añadir otras. Las colisiones también aparecen entre los avisos de **Gestionar → Comprobación**.
+
+![Huecos vs instalaciones: para qué se hacen los volúmenes, la holgura y la comprobación de tres tuberías](shots/mep-voids-check.webp)
+
+La pestaña **Volúmenes** lista cada volumen con su marca (V1, V2… planta por planta), su anfitrión, la puerta o ventana que contiene, su tamaño y profundidad; un clic selecciona su hueco.
+
+![Los volúmenes con sus marcas y tamaños](shots/mep-voids-list.webp)
+
+**Vista → Volúmenes de hueco** los dibuja en 3D, violeta translúcido, con sus marcas; un clic en uno selecciona su hueco. Son para la pantalla: los planos y dibujos nunca los llevan.
+
+![Los volúmenes del muro interior, con las tuberías que los atraviesan](shots/mep-voids-3d.webp)
+
+Para pasar los volúmenes a un programa de colisiones, marca **Volúmenes de hueco** en **Archivo → Exportar IFC o Fragments…** (o **Exportar 3D…**). En IFC cada volumen es un **IfcBuildingElementProxy** de tipo **PROVISIONFORVOID** con **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter si es redondo, Depth) y el conjunto de Lapin **Lapin_OpeningVoid** (marca, tipo, anfitrión, hueco y desfase), relacionado con su anfitrión; los huecos siguen siendo IfcOpeningElement. Cada volumen conserva su GlobalId de una exportación a otra. En una exportación de mallas son un grupo propio, **Opening voids**. Sin marcar la casilla, las exportaciones quedan como estaban.
+
 ## MEP Pro
 
 La ingeniería sobre la red —la demanda que lleva cada tramo y el tamaño que la soporta, las comprobaciones (extremos abiertos, codos cerrados, pendientes de saneamiento, fuentes sobrecargadas), las reglas de trazado por material (cobre en pasos de 45°, PVC con giros de 45° como máximo), radiadores propuestos bajo las ventanas, recorridos sugeridos alrededor de los muros, el perfil de un tramo y la isometría de un sistema— está en la edición **Lapin MEP**, que añade a esta ficha los grupos **Ingeniería** y **Asistentes**.

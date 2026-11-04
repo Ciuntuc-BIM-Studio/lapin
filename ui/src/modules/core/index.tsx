@@ -4,7 +4,7 @@ import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
 import { toggleGrid, toggleThinLines } from '../../app/display';
 import { measure } from './measure';
-import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Keyboard, Layers, LayoutGrid, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareMinus, SquareSplitHorizontal, Trash2, Ungroup, Wand2 } from 'lucide-react';
+import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Keyboard, Layers, LayoutGrid, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, Trash2, Ungroup, Wand2 } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -36,6 +36,7 @@ import { ExportMeshDialog } from './ExportMeshDialog';
 import { ProjectFolderDialog } from './cde/ProjectFolderDialog';
 import { IssueDialog } from './cde/IssueDialog';
 import { CheckDialog } from './cde/CheckDialog';
+import { CoordinationDialog } from './coordination/CoordinationDialog';
 import { RemarksDialog } from './remarks/RemarksDialog';
 import { RemarksDialog as SheetRemarksDialog } from './cde/pdfRemarks/RemarksDialog';
 import { DisplayQualityDialog } from './DisplayQualityDialog';
@@ -149,6 +150,10 @@ const core: LapinModule = {
         // The reviewers' PDF annotations read back as remarks on the sheets (stage 3).
         { id: 'manage.sheetRemarks', label: 'Sheet remarks…', icon: MessageSquare, run: () => useUi.setState({ dialog: 'cdeRemarks' }) },
       ] },
+      // Openings as solid voids and MEP checked against them (a tester's request, decision 289).
+      { label: 'Coordination', tools: [
+        { id: 'manage.openingsMep', label: 'Openings vs MEP…', icon: SquareDashed, run: () => useUi.setState({ dialog: 'coordination' }) },
+      ] },
     ],
   }, {
     id: 'view', label: 'View', order: 90,
@@ -190,6 +195,8 @@ const core: LapinModule = {
         { id: 'view.sections', label: 'Sections…', icon: SectionIcon, run: () => useUi.setState({ dialog: 'sections' }) },
         // The reinforcement as tubes in 3D (docs/plan-rebar.md, decision 221): asked of the engine while on, freed when off.
         { id: 'view.rebar3d', label: 'Bars in 3D', icon: Cable, run: () => useUi.setState((s) => ({ rebar3d: !s.rebar3d })) },
+        // The openings as translucent voids in 3D (decision 289): asked of the engine while on.
+        { id: 'view.openingVoids', label: 'Opening voids', icon: SquareDashed, run: () => useUi.setState((s) => ({ openingVoids: !s.openingVoids, ...(s.view !== '3d' && !s.openingVoids ? { view: '3d' as const } : {}) })) },
         { id: 'view.displayQuality', label: 'Display quality', icon: Gauge, run: () => useUi.setState({ dialog: 'displayQuality' }) },
       ] },
       // Selecting and clearing up in 3D (docs/groups.md): a region, and hiding for now, with Revit's keys.
@@ -218,7 +225,7 @@ const core: LapinModule = {
   }],
   grips: { LapinView: sectionGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, exportExchange: ExchangeExportDialog, sections: SectionsDialog },
+  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, exportExchange: ExchangeExportDialog, sections: SectionsDialog, coordination: CoordinationDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },

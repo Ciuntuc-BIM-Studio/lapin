@@ -87,6 +87,31 @@ Under **Street**, **Gas main along…** (<kbd>GM</kbd>) lays a gas main along wh
 
 Sizing the pipes from the appliances' consumption and checking the pressure drop are engineering, in the **Lapin MEP** edition.
 
+## Coordination: opening voids and clash checks
+
+Every opening in a wall, floor or roof can be a **void** of its own: a solid as large as the opening, through the whole thickness of its host, finishes included. Clash programs (Navisworks, Solibri, BIMcollab) test MEP against such voids with "completely inside": a pipe, duct or cable tray wholly inside a void passes, one that sticks out of it, or crosses a wall where there is none, is a clash. Lapin runs the same check itself.
+
+**Manage → Openings vs MEP…** sets what the voids are made for (**Wall openings**, **Door openings**, **Window openings**, **Floor openings**, **Roof openings**), how much bigger or smaller than their openings they are (**Void offset**), and the **Clearance** an MEP element must keep from a void's sides. **Run check** goes through every pipe, duct and cable carrier — Lapin's runs and the segments of an imported MEP model alike, and an MEP model's own provisions for voids — and lists each place one crosses a wall, floor or roof:
+
+- **No opening**: it goes through the host where there is none;
+- **Opening too small**: it goes through an opening but stands out of it, the clearance included; **Short by** says by how many millimetres on the worst side;
+- **Fits** (with **show what fits**): wholly inside the void, keeping the clearance;
+- **Empty void** (with **Empty voids** ticked): a wall or floor opening nothing goes through (a stairwell is never one).
+
+A click on a row shows the pair in 3D, both selected. **Make remarks** turns each clash into a remark of type **Clash** with its viewpoint (**Manage → Model remarks…**), ready to go out as BCF; run again, it updates the same remarks instead of adding others. The clashes also show among the warnings of **Manage → Check**.
+
+![Openings vs MEP: what the voids are made for, the clearance, and the check over three pipes](shots/mep-voids-check.webp)
+
+The **Voids** tab lists every void with its mark (V1, V2… storey by storey), its host, the door or window in it, its size and depth; a click selects its opening.
+
+![The voids listed with their marks and sizes](shots/mep-voids-list.webp)
+
+**View → Opening voids** draws them in 3D, translucent violet with their marks; a click on one selects its opening. They are for the screen: sheets and drawings never carry them.
+
+![The voids in the inner wall and the floor, with the pipes through them](shots/mep-voids-3d.webp)
+
+To hand the voids to a clash program, tick **Opening voids** in **File → Export IFC or Fragments…** (or **Export 3D…**). In IFC each void is an **IfcBuildingElementProxy** of type **PROVISIONFORVOID** with **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter for a round one, Depth) and Lapin's **Lapin_OpeningVoid** (its mark, kind, host, opening and offset), related to its host; the openings themselves stay IfcOpeningElements as always. Each void keeps its GlobalId from one export to the next, so the clash program follows it. In a mesh export they are a group of their own, **Opening voids**. Without the box ticked, the exports are as they were.
+
 ## MEP Pro
 
 The engineering on the network — the demand each run carries and the size that takes it, the checks (open ends, tight bends, drainage falls, overloaded sources), the laying rules by material (copper at 45° steps, PVC turning 45° at most), radiators proposed under windows, routes suggested around the walls, a run's profile and a system's isometric — is in the **Lapin MEP** edition, which adds the **Engineering** and **Assist** groups to this tab.

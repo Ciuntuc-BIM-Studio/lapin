@@ -36,6 +36,8 @@ export function ExchangeExportDialog() {
   const [simplify, setSimplify] = useState(false);
   const [tolerance, setTolerance] = useState('2');
   const [origin, setOrigin] = useState('base');
+  // The openings also as solid voids for clash tools (decision 289): off, the export is as it always was.
+  const [voids, setVoids] = useState(false);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
@@ -48,7 +50,7 @@ export function ExchangeExportDialog() {
     setBusy(true);
     const common = {
       ...(choice.kinds ? { kinds: choice.kinds } : {}), ...(choice.storeys ? { storeys: choice.storeys } : {}),
-      ...(phase ? { phase } : {}), ...(onlyShown ? { hidden } : {}),
+      ...(phase ? { phase } : {}), ...(onlyShown ? { hidden } : {}), ...(voids ? { voids: true } : {}),
     };
     if (format === 'ifc') await exportFile('project.exportIfc', { ...common, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
     else await exportFile('project.exportMesh', { ...common, format: 'frag', origin, ...(onlyShown ? { viewId: view3dId ?? '3d' } : {}) }, `${projectTitle(path)}.frag`, 'frag');
@@ -86,6 +88,8 @@ export function ExchangeExportDialog() {
                 <dd><label><input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={onlyShown} onChange={(e) => setOnlyShown(e.target.checked)} /> only what it shows</label></dd>
               </>
             )}
+            <dt title="Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP">Opening voids</dt>
+            <dd><label><input type="checkbox" data-testid="export-voids" style={{ width: 'auto', marginRight: 6 }} checked={voids} onChange={(e) => setVoids(e.target.checked)} /> as solids, for clash tools</label></dd>
             {format === 'ifc' ? (
               <>
                 <dt>Schema</dt>

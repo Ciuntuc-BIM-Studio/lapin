@@ -40,6 +40,7 @@ import { SectionBox3D } from './SectionBox3D';
 import { RefPlanes3D, useRefPlaneDrag } from './RefPlanes3D';
 import { planePoint, refPlanesGroup, refPlanesKey, refPlanesOf } from './refPlanes';
 import { useRebar3d } from './rebar3d';
+import { useVoids3d, VOIDS_GROUP } from './voids3d';
 import { boxPlanes, modelBounds, planesKey, useSectionBox, type SectionBox } from './sectionBox';
 import { alignSectionBox, commitBox, cutAtPlan, fitSectionBox } from './sectionBoxTools';
 import { useDrawing, type DrawingDto } from './drawing';
@@ -759,6 +760,9 @@ export function Viewport3D() {
       // The reference planes' quads pick as elements (a click selects the plane) while no tool is on.
       const refPlanes = s.getObjectByName('ref-planes');
       if (refPlanes?.visible && !useUi.getState().tool) for (const c of refPlanes.children) if (c.userData.refPlane) meshes.push(c);
+      // The openings' voids pick as their openings (View → Opening voids, decision 289), while no tool is on.
+      const voids = s.getObjectByName(VOIDS_GROUP);
+      if (voids && !useUi.getState().tool) for (const c of voids.children) if (c.userData.openingVoid) meshes.push(c);
       const cut = cutRef.current;
       return ray.intersectObjects(meshes, true).find((h) => nodeOfHit(h) && (cut === null || h.point.z <= cut + 1e-3));
     };
@@ -1223,6 +1227,8 @@ export function Viewport3D() {
   }, [planesKeyNow, render, meshes, selectedNow, planeHover, refPlanesShown, planeDrag]);
   // The reinforcement as tubes (docs/plan-rebar.md, decision 221), while View → Bars in 3D is on.
   useRebar3d(scene, invalidate);
+  // The openings' voids, translucent, while View → Opening voids is on (decision 289).
+  useVoids3d(scene, invalidate);
   // A saved 3D view opened: its camera (where it looks from, perspective or orthographic).
   const view3dId = usePaneField('view3dId');
   useEffect(() => {

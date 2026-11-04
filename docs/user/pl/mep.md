@@ -87,6 +87,31 @@ W **Ulica** narzędzie **Gazociąg wzdłuż…** (<kbd>GM</kbd>) układa gazoci�
 
 Dobór średnic rur ze zużycia urządzeń i sprawdzenie spadku ciśnienia to inżynieria, w edycji **Lapin MEP**.
 
+## Koordynacja: bryły otworów i sprawdzanie kolizji
+
+Każdy otwór w ścianie, stropie lub dachu może być osobną **bryłą otworu**: bryłą tak dużą jak otwór, przez całą grubość elementu nośnego, z wykończeniami. Programy wykrywania kolizji (Navisworks, Solibri, BIMcollab) sprawdzają instalacje względem takich brył regułą „całkowicie wewnątrz”: rura, kanał lub koryto kablowe w całości w bryle jest w porządku; element wystający z niej albo przechodzący przez ścianę bez otworu to kolizja. Lapin wykonuje to samo sprawdzenie.
+
+**Zarządzaj → Otwory a instalacje…** ustala, dla jakich otworów powstają bryły (**Otwory w ścianach**, **Otwory drzwiowe**, **Otwory okienne**, **Otwory w stropach**, **Otwory w dachu**), o ile są większe lub mniejsze od otworów (**Odsunięcie otworu**) i jaki **Luz** element instalacji musi zachować od boków otworu. **Uruchom sprawdzenie** przechodzi przez każdą rurę, kanał i koryto — trasy Lapina, segmenty zaimportowanego modelu instalacji i jego własne zapotrzebowania na otwory — i wypisuje każde miejsce, gdzie któryś przechodzi przez ścianę, strop lub dach:
+
+- **Brak otworu**: przechodzi przez element tam, gdzie otworu nie ma;
+- **Za mały otwór**: przechodzi przez otwór, ale z niego wystaje, z luzem; **Brakuje** podaje milimetry po najgorszej stronie;
+- **Mieści się** (z **pokaż to, co się mieści**): w całości w bryle, z luzem;
+- **Pusty otwór** (z zaznaczonym **Puste otwory**): otwór w ścianie lub stropie, przez który nic nie przechodzi (otwór schodowy nigdy).
+
+Kliknięcie wiersza pokazuje parę w 3D, obie zaznaczone. **Utwórz uwagi** zmienia każdą kolizję w uwagę typu **Clash** z jej punktem widzenia (**Zarządzaj → Uwagi do modelu…**), gotową do BCF; ponownie uruchomione aktualizuje te same uwagi. Kolizje pojawiają się też wśród ostrzeżeń **Zarządzaj → Sprawdź**.
+
+![Otwory a instalacje: dla czego powstają bryły, luz i sprawdzenie trzech rur](shots/mep-voids-check.webp)
+
+Karta **Bryły** wypisuje każdą bryłę z jej znakiem (V1, V2… kondygnacja po kondygnacji), elementem nośnym, drzwiami lub oknem w niej, rozmiarem i głębokością; kliknięcie zaznacza jej otwór.
+
+![Bryły ze znakami i rozmiarami](shots/mep-voids-list.webp)
+
+**Widok → Bryły otworów** rysuje je w 3D, półprzezroczyste fioletowe ze znakami; kliknięcie zaznacza otwór. Są tylko na ekran: arkusze i rysunki nigdy ich nie zawierają.
+
+![Bryły w ścianie wewnętrznej, z rurami przez nie](shots/mep-voids-3d.webp)
+
+Aby przekazać bryły do programu kolizji, zaznacz **Bryły otworów** w **Plik → Eksportuj IFC lub Fragments…** (lub **Eksportuj 3D…**). W IFC każda bryła to **IfcBuildingElementProxy** typu **PROVISIONFORVOID** z **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter dla okrągłej, Depth) i zestawem Lapina **Lapin_OpeningVoid** (znak, rodzaj, element nośny, otwór, odsunięcie), powiązana z elementem nośnym; same otwory pozostają IfcOpeningElement. Każda bryła zachowuje GlobalId między eksportami. W eksporcie siatek tworzą osobną grupę **Opening voids**. Bez zaznaczenia eksporty są jak dotąd.
+
 ## MEP Pro
 
 Obliczenia inżynierskie sieci — zapotrzebowanie przenoszone przez każdy przewód i dobrany do niego rozmiar, sprawdzenia (otwarte końce, ciasne kolana, spadki kanalizacji, przeciążone źródła), zasady prowadzenia według materiału (miedź w krokach co 45°, PVC skręcające najwyżej o 45°), grzejniki proponowane pod oknami, trasy sugerowane wzdłuż ścian, profil przewodu i aksonometria systemu — znajdują się w edycji **Lapin MEP**, która dodaje do tej karty grupy **Inżynieria** i **Asystenci**.

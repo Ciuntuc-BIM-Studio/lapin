@@ -87,6 +87,31 @@ Din **Stradă**, **Conductă de gaz de-a lungul…** (<kbd>GM</kbd>) pozează o 
 
 Dimensionarea țevilor după consumul aparatelor și verificarea căderii de presiune țin de inginerie, în ediția **Lapin MEP**.
 
+## Coordonare: volume de gol și verificarea coliziunilor
+
+Fiecare gol dintr-un perete, o placă sau un acoperiș poate fi un **volum de gol** al lui: un solid cât golul, prin toată grosimea elementului-gazdă, cu finisaje cu tot. Programele de coliziuni (Navisworks, Solibri, BIMcollab) verifică instalațiile față de astfel de volume cu „complet în interior”: o țeavă, o tubulatură sau un jgheab de cabluri aflat în întregime într-un volum trece; unul care iese din el, sau care trece printr-un perete unde nu e niciun gol, e o coliziune. Lapin face aceeași verificare singur.
+
+**Gestionare → Goluri vs instalații…** stabilește pentru ce goluri se fac volume (**Goluri în pereți**, **Goluri de uși**, **Goluri de ferestre**, **Goluri în plăci**, **Goluri în acoperiș**), cu cât sunt mai mari sau mai mici decât golurile (**Decalajul golului**) și **Distanța liberă** pe care un element de instalații trebuie s-o păstreze față de laturile unui gol. **Rulează verificarea** trece prin fiecare țeavă, tubulatură și jgheab de cabluri — traseele Lapin și segmentele unui model de instalații importat deopotrivă, plus golurile cerute de modelul de instalații (provisions for void) — și listează fiecare loc unde unul trece printr-un perete, o placă sau un acoperiș:
+
+- **Fără gol**: trece prin gazdă acolo unde nu e niciun gol;
+- **Gol prea mic**: trece printr-un gol, dar iese din el, cu distanța liberă inclusă; **Lipsă** spune cu câți milimetri pe partea cea mai rea;
+- **Încape** (cu **arată ce încape**): în întregime în volum, păstrând distanța liberă;
+- **Gol neocupat** (cu **Goluri neocupate** bifat): un gol în perete sau placă prin care nu trece nimic (un gol de scară nu e niciodată unul).
+
+Un clic pe un rând arată perechea în 3D, ambele selectate. **Fă observații** transformă fiecare coliziune într-o observație de tip **Clash** cu punctul ei de vedere (**Gestionare → Observații pe model…**), gata de trimis ca BCF; rulată din nou, actualizează aceleași observații în loc să adauge altele. Coliziunile apar și printre avertismentele din **Gestionare → Verificare**.
+
+![Goluri vs instalații: pentru ce se fac volumele, distanța liberă și verificarea a trei țevi](shots/mep-voids-check.webp)
+
+Fila **Volume** listează fiecare volum cu marca lui (V1, V2… etaj cu etaj), gazda, ușa sau fereastra din el, dimensiunea și adâncimea; un clic îi selectează golul.
+
+![Volumele listate cu mărcile și dimensiunile lor](shots/mep-voids-list.webp)
+
+**Vedere → Volume de gol** le desenează în 3D, violet transparent, cu mărcile lor; un clic pe unul îi selectează golul. Sunt doar pentru ecran: planșele și desenele nu le poartă niciodată.
+
+![Volumele din peretele interior, cu țevile prin ele](shots/mep-voids-3d.webp)
+
+Ca să dai volumele unui program de coliziuni, bifează **Volume de gol** în **Fișier → Export IFC sau Fragments…** (sau **Export 3D…**). În IFC fiecare volum e un **IfcBuildingElementProxy** de tip **PROVISIONFORVOID** cu **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter pentru unul rotund, Depth) și setul Lapin **Lapin_OpeningVoid** (marca, felul, gazda, golul și decalajul), legat de gazda lui; golurile înseși rămân IfcOpeningElement ca întotdeauna. Fiecare volum își păstrează GlobalId-ul de la un export la altul, așa că programul de coliziuni îl urmărește. Într-un export de suprafețe 3D ele sunt un grup aparte, **Opening voids**. Fără bifă, exporturile sunt ca înainte.
+
 ## Instalații Pro
 
 Ingineria pe rețea — cererea pe care o duce fiecare traseu și dimensiunea care o preia, verificările (capete libere, coturi strânse, pante de canalizare, surse supraîncărcate), regulile de pozare pe material (cupru în pași de 45°, PVC cu coturi de cel mult 45°), radiatoarele propuse sub ferestre, traseele sugerate ocolind pereții, profilul unui traseu și izometria unui sistem — e în ediția **Lapin MEP**, care adaugă grupurile **Inginerie** și **Asistenți** în această filă.

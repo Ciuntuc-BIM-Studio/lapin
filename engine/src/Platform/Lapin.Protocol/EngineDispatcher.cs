@@ -618,8 +618,11 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 // The project as IFC (docs/spec-ifc.md): IFC4, or IFC4X3; parts grouped under their element, or one body each; a phase, or everything;
                 // bodies as B-reps or face sets, simplified within a tolerance (metres) or exact; the kinds, storeys and hidden left out (ModelSurvey).
                 var exclude = Lapin.Ifc.ModelSurvey.Excluded(session, p);
+                // `voids`: the openings also as solid voids for clash tools (PROVISIONFORVOID, decision 289), of `voidKinds` grown by `voidOffset` (the project's settings when not sent).
+                var voidOptions = Lapin.Platform.Coordination.VoidOptions.From(session.Model, new JsonObject { ["kinds"] = p["voidKinds"]?.DeepClone(), ["offset"] = p["voidOffset"]?.DeepClone() });
                 var options = new IfcExportOptions((string?)p["schema"] ?? "IFC4", (string?)p["detail"] ?? "group", (string?)p["phase"],
-                    (string?)p["geometry"] ?? "brep", Math.Clamp(Json.Number(p["tolerance"]) ?? 0, 0, 0.1), exclude.Count > 0 ? exclude : null);
+                    (string?)p["geometry"] ?? "brep", Math.Clamp(Json.Number(p["tolerance"]) ?? 0, 0, 0.1), exclude.Count > 0 ? exclude : null,
+                    p["voids"] is JsonValue vv && vv.TryGetValue<bool>(out var withVoids) && withVoids, voidOptions.Kinds, voidOptions.Offset);
                 if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, ifcPath, options).ToJson(), null);
                 using var ms = new MemoryStream();
                 IfcExport.Write(session, ms, "project.ifc", options);

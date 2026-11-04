@@ -1277,6 +1277,54 @@ export const scenes = [
     },
   },
   {
+    // Openings vs MEP (a tester's request, decision 289): the openings as voids in 3D, and the check over three heating pipes
+    // through the inner wall — one through an opening it fits, one through an opening too small, one where there is none —
+    // with a floor opening nothing goes through; the voids listed with their marks.
+    id: 'mep-voids',
+    async run(t) {
+      await t.fresh();
+      const { storey, walls } = await house(t, { roof: false });
+      await t.cmd('architecture.addWallOpening', { wallId: walls.inner, along: 2, width: 0.2, height: 0.2, sill: 0.9 });
+      await t.cmd('architecture.addWallOpening', { wallId: walls.inner, along: 5, width: 0.15, height: 0.15, sill: 0.925 });
+      await t.cmd('architecture.addSlabOpening', { storeyId: storey, points: [[2, 6], [2.4, 6], [2.4, 6.4], [2, 6.4]] });
+      const system = (await t.cmd('mep.createSystem', { service: 'heating' })).id;
+      for (const [y, size] of [[2, 0.16], [5, 0.16], [6.5, 0.1]]) {
+        const run = await t.cmd('mep.drawRun', { systemId: system, storeyId: storey, points: [[5, y], [9, y]], pair: false });
+        await t.cmd('element.update', { ids: [run.id], attrs: { size, elevation: 1.0 } });
+      }
+      await t.ui({ keyPlan: false });
+      await t.tool('manage.openingsMep');
+      t.expect(await t.page.locator('[data-testid=coordination-dialog]').count() === 1, 'Openings vs MEP opens');
+      await t.page.locator('[data-testid=void-empty]').check();
+      await t.page.locator('[data-testid=clash-run]').click();
+      await t.page.waitForSelector('[data-testid=clash-counts]', { timeout: 30_000 });
+      await t.wait(500);
+      t.expect(await t.page.locator('tr[data-clash-status=missing]').count() === 1, 'the pipe with no opening is a clash');
+      t.expect(await t.page.locator('tr[data-clash-status=tooSmall]').count() === 1, 'the opening too small is a clash');
+      t.expect(await t.page.locator('tr[data-clash-status=empty]').count() === 1, 'the floor opening nothing goes through is reported');
+      await t.page.locator('.coordination-counts input[type=checkbox]').check();
+      t.expect(await t.page.locator('tr[data-clash-status=ok]').count() === 1, 'the pipe that fits is listed when asked');
+      await t.shot('mep-voids-check', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-coordination-tab=voids]').click();
+      await t.wait(400);
+      t.expect(await t.page.locator('tr[data-void-mark]').count() === 8, 'eight voids: a door, four windows, two wall openings, a floor opening');
+      await t.shot('mep-voids-list', { of: '.dialog', pad: 0 });
+      // The clashes as remarks, then the voids in 3D.
+      await t.page.locator('[data-coordination-tab=check]').click();
+      await t.page.locator('[data-testid=clash-remarks]').click();
+      await t.wait(800);
+      t.expect((await t.nodes()).filter((n) => n.type === 'LapinRemark').length === 2, 'two clashes, two remarks');
+      await t.ui({ dialog: null, openingVoids: true });
+      await open3d(t);
+      const quiet = await t.page.addStyleTag({ content: '.hotbar { display: none !important }' });
+      await t.page.evaluate(async ([target, azimuth, pitch, distance]) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ target, azimuth, pitch, distance }, false), [{ x: 7, y: 4.2, z: 1 }, Math.PI * 0.05, -0.35, 5.5]);
+      await t.wait(2000);
+      await t.shot('mep-voids-3d', { of: '[data-testid=view3d]', pad: 0 });
+      await quiet.evaluate((el) => el.remove());
+      await t.ui({ openingVoids: false, view: 'plan', keyPlan: true });
+    },
+  },
+  {
     id: 'structure',
     async run(t) {
       await t.fresh();

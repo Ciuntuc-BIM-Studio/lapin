@@ -22,7 +22,7 @@ namespace Lapin.Mesh;
 /// view's export takes the view's own layers mode, and the whole model every layer.
 /// </summary>
 public sealed record MeshExportOptions(string Format = "glb", string? ViewId = null, string? Phase = null, bool Edges = false, string Origin = "base",
-    IReadOnlySet<string>? Hidden = null, IReadOnlyList<ClipPlane>? Planes = null, bool Caps = true, string? Layers = null)
+    IReadOnlySet<string>? Hidden = null, IReadOnlyList<ClipPlane>? Planes = null, bool Caps = true, string? Layers = null, bool Voids = false)
 {
     public static readonly string[] Formats = ["glb", "gltf", "usdz", "usda", "dae", "obj", "frag"];
     public static readonly string[] Origins = ["base", "internal", "survey"];
@@ -38,7 +38,8 @@ public sealed record MeshExportOptions(string Format = "glb", string? ViewId = n
             p["edges"] is JsonValue ev && ev.TryGetValue<bool>(out var e) && e, origin,
             hidden is { Count: > 0 } ? hidden : null, PlanesOf(p["planes"]) is { Count: > 0 } planes ? planes : null,
             !(p["caps"] is JsonValue cv && cv.TryGetValue<bool>(out var c) && !c),
-            p["layers"] is { } l ? ViewStyles.LayersOf(l) : null);
+            p["layers"] is { } l ? ViewStyles.LayersOf(l) : null,
+            p["voids"] is JsonValue vv && vv.TryGetValue<bool>(out var voids) && voids);
     }
 
     /// <summary>Clipping planes as the 3D view gives them: [{normal: [x, y, z], constant}] (at most twelve; a malformed one is skipped).</summary>
@@ -218,11 +219,33 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
         }
         Assemblies(m, elementOf);
 
+        // The openings as solid voids, for clash tools (decision 289): a group of their own, "Opening voids", each a provision for void.
+        var voidGroup = o.Voids ? VoidGroup(session, ox, oy, oz, materials, notes) : null;
+
         if (layers != "all") notes.Add(layers == "core" ? "The layered elements with their cores only, as the 3D view shows them." : "The layered elements without their finishes, as the 3D view shows them.");
         if (planes.Length > 0) notes.Add($"Cut as the 3D view cuts it ({planes.Length} plane{(planes.Length == 1 ? "" : "s")}){(o.Caps ? ", the cuts closed in their materials" : "")}.");
         var list = groups.Values.Where(g => g.Elements.Count > 0).ToList();
         if (siteGroup.Elements.Count > 0) list.Insert(0, siteGroup);
+        if (voidGroup is { Elements.Count: > 0 }) list.Add(voidGroup);
         return new MeshScene(project?.Name ?? "Project", Spatial.Building(m)?.Name ?? "Building", list, materials, root, notes);
+    }
+
+    /// <summary>The voids of the project's openings (the kinds and offset its settings say), as elements of a group named "Opening voids", in a translucent violet.</summary>
+    static MeshGroup VoidGroup(Session session, double ox, double oy, double oz, List<MeshMaterial> materials, List<string> notes)
+    {
+        var voids = Lapin.Platform.Coordination.OpeningVoids.Of(session.Model, session.Catalog, Lapin.Platform.Coordination.VoidOptions.From(session.Model, null));
+        var (r, g, b) = Rgb(Lapin.Platform.Coordination.OpeningVoids.Color);
+        materials.Add(new MeshMaterial("Opening void", r, g, b, 0.35f, null, null, MaterialLook.Plain with { Transparency = 0.65 }));
+        var k = materials.Count - 1;
+        var group = new MeshGroup(Lapin.Platform.Coordination.OpeningVoids.DerivedId("opening-voids", "group"), "Opening voids", "IfcGroup", 0, []);
+        foreach (var v in voids)
+        {
+            var mesh = Tessellator.Tessellate(v.Solid);
+            if (mesh.Indices.Length == 0) continue;
+            group.Elements.Add(new MeshElement(v.GlobalId, $"Opening void {v.Mark}", IfcClass.BuildingElementProxy, "Opening void", [new MeshPart(k, Shift(mesh.Positions, ox, oy, oz), mesh.Normals, mesh.Indices)], []));
+        }
+        if (group.Elements.Count > 0) notes.Add($"{group.Elements.Count} opening void{(group.Elements.Count == 1 ? "" : "s")} in the group „Opening voids”.");
+        return group;
     }
 
     /// <summary>

@@ -59,12 +59,13 @@ export function ExportMeshDialog() {
   const phases = usePhaseList();
   const [edges, setEdges] = useState(false);
   const [origin, setOrigin] = useState('base');
+  const [voids, setVoids] = useState(false);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
   const run = async () => {
     setBusy(true);
     const view = what === 'view' ? { viewId: view3dId ?? '3d', hidden, ...(cuts && planes.length ? { planes } : {}) } : {};
-    await exportFile('project.exportMesh', { format, edges, origin, ...view, ...(phase ? { phase } : {}) }, `${projectTitle(path)}.${extOf(format)}`, extOf(format));
+    await exportFile('project.exportMesh', { format, edges, origin, ...view, ...(phase ? { phase } : {}), ...(voids ? { voids: true } : {}) }, `${projectTitle(path)}.${extOf(format)}`, extOf(format));
     setBusy(false);
     close();
   };
@@ -98,6 +99,8 @@ export function ExportMeshDialog() {
             <dd><select value={origin} onChange={(e) => setOrigin(e.target.value)}>{ORIGINS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></dd>
             <dt title="The elements' edges as lines, besides their faces; most programs do not use them">Edges</dt>
             <dd><input type="checkbox" checked={edges} onChange={(e) => setEdges(e.target.checked)} /></dd>
+            <dt title="Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP">Opening voids</dt>
+            <dd><input type="checkbox" data-testid="export-mesh-voids" checked={voids} onChange={(e) => setVoids(e.target.checked)} /></dd>
           </dl>
           <p className="muted small">Surfaces for rendering, visualisation and AR: each element a node with its GlobalId, IFC class and type, a mesh per material. To exchange the model itself, use Export IFC.</p>
           <p className="muted small">Each material goes out once under its name, with its colour, texture, roughness, metalness and glass, so a renderer such as Twinmotion can swap it by name (Manage → Materials).</p>

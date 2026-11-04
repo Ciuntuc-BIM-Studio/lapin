@@ -133,6 +133,7 @@ describe('the languages', () => {
     'Nothing new from house.frag: its 8 elements are already in this project (the file was exported from it). Import it into another project, or a new one.',
     'Door 3',
     'The playhouse door is lowered to 950 mm to fit under the slope.',
+    'Remarks: 3 added, 1 updated (Manage → Model remarks…).',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 
